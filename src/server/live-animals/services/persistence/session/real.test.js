@@ -6,6 +6,14 @@ import { STUB_USER } from '../../../engine/persistence/session.js'
 
 const buildServer = async () => {
   const server = Hapi.server()
+  server.auth.scheme('test-session', () => ({
+    authenticate(request, h) {
+      return h.authenticated({
+        credentials: { sub: request.headers['x-test-auth-sub'] }
+      })
+    }
+  }))
+  server.auth.strategy('test-session', 'test-session')
   await server.register({
     plugin: yar,
     options: {
@@ -69,6 +77,21 @@ const buildServer = async () => {
       path: '/flow/{journeyId}',
       handler: async (request) => ({
         values: await session.flowOnlyAnswers(request, request.params.journeyId)
+      })
+    },
+    {
+      method: 'GET',
+      path: '/user-id/authenticated',
+      options: { auth: 'test-session' },
+      handler: async (request) => ({
+        userId: await session.userId(request)
+      })
+    },
+    {
+      method: 'GET',
+      path: '/user-id/auth-off',
+      handler: async (request) => ({
+        userId: await session.userId(request)
       })
     }
   ])
@@ -189,12 +212,23 @@ describe('#session.flowOnlyAnswers (real, yar)', () => {
 
 describe('#session.userId (real, yar)', () => {
   it('Should read the authenticated OIDC sub when present', async () => {
-    expect(
-      await session.userId({ auth: { credentials: { sub: 'user-99' } } })
-    ).toBe('user-99')
+    const server = await buildServer()
+    const response = await server.inject({
+      method: 'GET',
+      url: '/user-id/authenticated',
+      headers: { 'x-test-auth-sub': 'user-99' }
+    })
+
+    expect(response.result.userId).toBe('user-99')
   })
 
-  it('Should fall back to the stub user until real auth is wired', async () => {
-    expect(await session.userId({})).toBe(STUB_USER)
+  it('Should use the stub user only for an auth-off request', async () => {
+    const server = await buildServer()
+    const response = await server.inject({
+      method: 'GET',
+      url: '/user-id/auth-off'
+    })
+
+    expect(response.result.userId).toBe(STUB_USER)
   })
 })

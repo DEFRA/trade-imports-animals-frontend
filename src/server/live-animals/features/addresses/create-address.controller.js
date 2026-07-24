@@ -2,7 +2,7 @@ import { pagePath, pageRoutePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, maxText, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
-import { open } from '../../shared/kit.js'
+import { routeOptions } from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import * as countries from '../../services/countries/index.js'
 import * as addressBook from '../../services/address-book/index.js'
@@ -172,13 +172,13 @@ export const routes = [
   {
     method: 'GET',
     path: pageRoutePath(CREATE_ADDRESS_SLUG),
-    options: open,
+    options: routeOptions,
     handler: get
   },
   {
     method: 'POST',
     path: pageRoutePath(CREATE_ADDRESS_SLUG),
-    options: open,
+    options: routeOptions,
     handler: post
   }
 ]

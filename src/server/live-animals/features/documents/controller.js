@@ -11,7 +11,7 @@ import {
   validate
 } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
-import { open } from '../../shared/kit.js'
+import { routeOptions } from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import { copy as sharedEn } from '../../shared/copy.en.js'
 import { copy as sharedCy } from '../../shared/copy.cy.js'
@@ -607,14 +607,14 @@ export const routes = [
   {
     method: 'GET',
     path: pageRoutePath(page.slug),
-    options: open,
+    options: routeOptions,
     handler: get
   },
   {
     method: 'POST',
     path: pageRoutePath(page.slug),
     options: {
-      ...open,
+      ...routeOptions,
       payload: {
         maxBytes: MAX_PAYLOAD_BYTES,
         parse: true,
@@ -629,14 +629,14 @@ export const routes = [
   {
     method: 'GET',
     path: pageRoutePath(`${page.slug}/status`),
-    options: open,
+    options: routeOptions,
     handler: getStatus
   },
   {
     method: 'GET',
     path: pageRoutePath(`${page.slug}/{uploadId}/file`),
     options: {
-      ...open,
+      ...routeOptions,
       validate: {
         params: Joi.object({
           journeyId: Joi.string().required(),

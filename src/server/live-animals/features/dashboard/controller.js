@@ -12,7 +12,7 @@ import {
   listKnownJourneys,
   startJourney
 } from '../../engine/journey.js'
-import { CYA_SLUG, journeyStrip, open } from '../../shared/kit.js'
+import { CYA_SLUG, journeyStrip, routeOptions } from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import { importTypeFilterPage } from '../import-type-filter/page.js'
 import { dashboardPage as page } from './page.js'
@@ -85,25 +85,25 @@ export const routes = [
   {
     method: 'GET',
     path: dashboardPath(),
-    options: open,
+    options: routeOptions,
     handler: listGet
   },
   {
     method: 'GET',
     path: BASE,
-    options: open,
+    options: routeOptions,
     handler: (_request, h) => backToDashboard(h)
   },
   {
     method: 'POST',
     path: pageRoutePath('amend'),
-    options: open,
+    options: routeOptions,
     handler: amendPost
   },
   {
     method: 'POST',
     path: createPath(),
-    options: open,
+    options: routeOptions,
     handler: async (request, h) => {
       const journey = await startJourney(request, h)
       return h.redirect(pagePath(journey.journeyId, importTypeFilterPage.slug))

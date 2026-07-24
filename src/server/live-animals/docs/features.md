@@ -392,7 +392,7 @@ separately with `toHaveRole` / `toHaveAccessibleName`.
 `shared/kit.js` holds the genuinely uniform mechanical bits: `base`,
 `pageRoutes`, `errorSummary`, `fieldError`, `nextTarget`, `exitTarget`,
 `hubExitTarget`, `changeContext`, `withChangeContext`, `readDate`,
-`dateField`, `journeyStrip`, `open` and `CYA_SLUG`.
+`dateField`, `journeyStrip`, `routeOptions` and `CYA_SLUG`.
 
 The boundary rule: every helper is independently callable and none owns
 what renders. No helper accepts a template name or a field schema and

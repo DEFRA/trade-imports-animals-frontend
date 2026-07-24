@@ -1,7 +1,7 @@
 import { pagePath, pageRoutePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import * as kit from '../../shared/kit.js'
-import { open } from '../../shared/kit.js'
+import { routeOptions } from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import { copy as sharedEn } from '../../shared/copy.en.js'
 import { copy as sharedCy } from '../../shared/copy.cy.js'
@@ -233,13 +233,13 @@ export const routes = PARTIES.flatMap((party) => [
   {
     method: 'GET',
     path: pageRoutePath(party.slug),
-    options: open,
+    options: routeOptions,
     handler: get(party)
   },
   {
     method: 'POST',
     path: pageRoutePath(party.slug),
-    options: open,
+    options: routeOptions,
     handler: post(party)
   }
 ])

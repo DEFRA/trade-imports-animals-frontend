@@ -14,7 +14,7 @@ import { sectionStatus } from '../../flow/section-status.js'
 import { rowStatus, taskRowById } from '../../flow/task-rows.js'
 import { completeOpeningRun } from '../../flow/run-state.js'
 import { dashboardPage } from '../dashboard/page.js'
-import { journeyStrip, open } from '../../shared/kit.js'
+import { journeyStrip, routeOptions } from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import { copy as en } from './copy.en.js'
 import { copy as cy } from './copy.cy.js'
@@ -162,5 +162,5 @@ const handler = async (request, h) => {
 }
 
 export const routes = [
-  { method: 'GET', path: hubRoutePath(), options: open, handler }
+  { method: 'GET', path: hubRoutePath(), options: routeOptions, handler }
 ]

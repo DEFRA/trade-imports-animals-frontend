@@ -14,7 +14,7 @@ import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
 import { isRecoverableBackendError } from '../services/persistence/records/errors.js'
 
-export const open = { auth: false }
+export const routeOptions = {}
 
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
@@ -114,13 +114,13 @@ export const pageRoutes = (page, { get, post }) => [
   {
     method: 'GET',
     path: pageRoutePath(page.slug),
-    options: open,
+    options: routeOptions,
     handler: get
   },
   {
     method: 'POST',
     path: pageRoutePath(page.slug),
-    options: open,
+    options: routeOptions,
     handler: post
   }
 ]

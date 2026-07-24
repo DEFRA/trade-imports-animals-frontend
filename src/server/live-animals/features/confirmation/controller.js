@@ -1,6 +1,6 @@
 import { BASE, hubPath, pageRoutePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
-import { base, open } from '../../shared/kit.js'
+import { base, routeOptions } from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import { dashboardPage } from '../dashboard/page.js'
 import { confirmationPage as page } from './page.js'
@@ -36,7 +36,7 @@ export const routes = [
   {
     method: 'GET',
     path: pageRoutePath(page.slug),
-    options: open,
+    options: routeOptions,
     handler: get
   }
 ]

@@ -24,6 +24,7 @@ const openingRunByJourneyFrom = (request) => {
 
 export const session = {
   async userId(request) {
+    // The fallback supports auth-off real-mode development and parity tests only.
     return request?.auth?.credentials?.sub ?? STUB_USER
   },
 

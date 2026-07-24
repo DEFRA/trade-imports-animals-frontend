@@ -6,6 +6,7 @@
 {% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 {% from "govuk/components/service-navigation/macro.njk" import govukServiceNavigation %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
+{% from "service-header/macro.njk" import appServiceHeader %}
 
 {% set homeUrl = "/prototype-standalone/live-animals" %}
 
@@ -29,6 +30,13 @@
     serviceName: sharedCopy.layout.serviceName,
     serviceUrl: homeUrl
   }) }}
+{% endblock %}
+
+{% block containerStart %}
+  {% if userSession and userSession.isAuthenticated %}
+    {{ appServiceHeader({ userSession: userSession }) }}
+  {% endif %}
+  {{ super() }}
 {% endblock %}
 
 {% block beforeContent %}

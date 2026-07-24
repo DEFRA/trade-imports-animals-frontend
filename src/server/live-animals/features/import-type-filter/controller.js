@@ -109,7 +109,7 @@ export const routes = [
   {
     method: 'GET',
     path: pageRoutePath(NOT_AVAILABLE_SLUG),
-    options: kit.open,
+    options: kit.routeOptions,
     handler: getNotAvailable
   }
 ]
