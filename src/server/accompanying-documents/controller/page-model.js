@@ -15,6 +15,12 @@ export const getAttempt = (request) => {
 }
 
 const fetchScanStatus = async (doc, traceId, logger) => {
+  // EUDPA-106 spike: docs committed by /upload-successful carry an
+  // authoritative scanStatus from cdp-uploader — trust it and skip the backend
+  // call, which has no record of the upload under the direct-to-uploader flow.
+  if (doc.scanStatus === 'COMPLETE' || doc.scanStatus === 'REJECTED') {
+    return doc
+  }
   try {
     const { scanStatus } = await documentClient.getStatus(doc.uploadId, traceId)
     return { ...doc, scanStatus }

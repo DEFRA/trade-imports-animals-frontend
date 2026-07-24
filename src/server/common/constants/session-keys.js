@@ -25,5 +25,9 @@ export const sessionKeys = Object.freeze({
   importer: 'importer',
   destination: 'destination',
   cphNumber: 'cphNumber',
-  documents: 'documents'
+  documents: 'documents',
+  // EUDPA-106 spike: currently-in-flight cdp-uploader session (uploadId,
+  // uploadUrl, statusUrl) — set on the accompanying-documents GET, consumed
+  // by /accompanying-documents/upload-successful after the 302 lands.
+  currentUpload: 'currentUpload'
 })

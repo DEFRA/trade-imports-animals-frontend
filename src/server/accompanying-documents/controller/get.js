@@ -1,5 +1,8 @@
 import { getTraceId } from '@defra/hapi-tracing'
-import { getSessionValue } from '../../common/helpers/session-helpers.js'
+import {
+  getSessionValue,
+  setSessionValue
+} from '../../common/helpers/session-helpers.js'
 import { sessionKeys } from '../../common/constants/session-keys.js'
 import { cdpUploaderClient } from '../../common/clients/cdp-uploader-client.js'
 import { config } from '../../../config/config.js'
@@ -41,6 +44,13 @@ export const getHandler = async (request, h) => {
     getDocumentsWithStatus(rawDocuments, traceId, request.logger),
     initiateCdpUploaderSession(request.logger)
   ])
+
+  // EUDPA-106 spike: /upload-successful runs on a fresh redirect from
+  // cdp-uploader and needs to know which upload it is — stash the session on
+  // yar so it can be recovered without the browser round-tripping any id.
+  if (cdpUploaderSession) {
+    setSessionValue(request, sessionKeys.currentUpload, cdpUploaderSession)
+  }
 
   return h.view(
     'accompanying-documents/index',

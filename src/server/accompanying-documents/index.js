@@ -65,6 +65,11 @@ export const accompanyingDocuments = {
         },
         {
           method: 'GET',
+          path: '/accompanying-documents/upload-successful',
+          ...accompanyingDocumentsController.uploadSuccessful
+        },
+        {
+          method: 'GET',
           path: '/accompanying-documents/{uploadId}/file',
           ...accompanyingDocumentsController.download
         },

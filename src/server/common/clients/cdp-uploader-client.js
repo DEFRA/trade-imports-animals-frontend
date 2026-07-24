@@ -40,10 +40,14 @@ export const cdpUploaderClient = {
     return response.json()
   },
 
-  // statusUrl comes back absolute from /initiate — hit it directly rather than
-  // routing through cdpUploaderBaseUrl. Falls through the same error shape.
+  // statusUrl comes back from /initiate absolute against cdp-uploader's own
+  // host binding (e.g. http://localhost:7337/...) which reflects the URL the
+  // browser would use. Server-side we're inside the docker network — swap
+  // the host for the configured cdpUploaderBaseUrl so the call actually lands.
   async getStatus(statusUrl) {
-    const response = await fetch(statusUrl)
+    const url = new URL(statusUrl)
+    const rewritten = `${cdpUploaderBaseUrl}${url.pathname}${url.search}`
+    const response = await fetch(rewritten)
     if (!response.ok) {
       const error = new Error('Failed to get cdp-uploader status')
       error.status = response.status

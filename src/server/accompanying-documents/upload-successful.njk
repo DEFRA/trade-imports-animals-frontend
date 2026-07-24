@@ -1,0 +1,23 @@
+{% extends 'layouts/page.njk' %}
+
+{% set pageTitle = pageTitle %}
+
+{% block head %}
+  {{ super() }}
+  {# EUDPA-106 spike: no-JS async polling — the browser re-issues the GET on
+     an interval, and the handler re-checks cdp-uploader status server-side
+     until it flips to ready, then 302s back to /accompanying-documents. #}
+  <meta http-equiv="refresh" content="2;url=/accompanying-documents/upload-successful?attempt={{ nextAttempt }}">
+{% endblock %}
+
+{% block content %}
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <h1 class="govuk-heading-xl">Uploading your file</h1>
+      <p class="govuk-body">We're scanning your file for viruses. This page will refresh automatically.</p>
+      <p class="govuk-body">
+        <a href="/accompanying-documents/upload-successful?attempt={{ nextAttempt }}" class="govuk-link">Refresh now</a>
+      </p>
+    </div>
+  </div>
+{% endblock %}
