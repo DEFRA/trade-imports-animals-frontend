@@ -29,7 +29,7 @@ describe('model import boundary', () => {
 
   it('Should allow intra-model and services/<name>/index.js imports', () => {
     const source = [
-      "import { domain } from '../domain/index.js'",
+      "import { isBlankValue } from './is-blank-value.js'",
       "import * as countries from '../../services/countries/index.js'",
       "export { readGate } from './helper-internals.js'"
     ].join('\n')

@@ -4,10 +4,9 @@ This guide adds one data field to a page that already exists. The worked
 example adds `exporterReference` — the exporter's own reference for the
 consignment — to the Origin page. Every step names the real file to edit.
 
-The prototype has three layers. The **model** owns identity, scope and value
-legality. The **flow** owns which page presents the field. The **frontend**
-owns rendering, validation and persistence. A field is a small slice through
-all three.
+The prototype has three layers. The **model** owns identity and scope. The
+**flow** owns which page presents the field. The **frontend** owns rendering,
+validation and persistence. A field is a small slice through all three.
 
 A field is called an **obligation** in the model — a data-field requirement.
 The model never renders and carries no display copy. Declaring an obligation
@@ -17,15 +16,14 @@ preserves or purges its value with the rest of the canonical fulfilment, and its
 widget, the page-level validation, the persistence wiring and the Check your
 answers row by hand.
 
-Adding a field touches up to seven places:
+Adding a field touches up to six places:
 
 1. Declare the obligation in the model manifest.
-2. Add a domain entry if the value has legality rules.
-3. Add the obligation name to the owning page's `collects`.
-4. Add the feature-owned fulfilment binding.
-5. Wire the controller — the GET seed and the POST value map.
-6. Render the widget in the template.
-7. Add the Check your answers row.
+2. Add the obligation name to the owning page's `collects`.
+3. Add the feature-owned fulfilment binding.
+4. Wire the controller — the GET seed, validation and the POST value map.
+5. Render the widget in the template.
+6. Add the Check your answers row.
 
 To add a repeating collection rather than a single field, see
 [add-a-collection.md](add-a-collection.md). To add a whole new page, see
@@ -71,53 +69,10 @@ field carries an `applyTo` scope closure instead — see
 
 The model carries no `label`, `title`, `hint`, `legend` or `widget`. Those are
 display keys. `model/no-display-keys.js` runs at boot (via
-`obligation-purity.js`) and fails startup if any appear on an obligation or a
-domain entry. Copy lives in the template; option lists come from the services.
+`obligation-purity.js`) and fails startup if any appear on an obligation.
+Copy lives in the template; option lists come from the services.
 
-## 2. Add a domain entry (only if the value has legality rules)
-
-The domain layer, `model/domain/index.js`, owns "what is a legal value?" —
-enum option lists, length caps, format predicates — keyed by obligation id.
-It owns nothing about identity, cardinality, scope or presentation.
-
-`exporterReference` is free text capped at 58 characters, so it earns a
-predicate entry. Import the obligation, build the entry with the `predicate`
-factory, and register it in the `domain` map:
-
-```js
-import { exporterReference } from '../obligations/obligations.js'
-
-export const exporterReferenceDomain = predicate(
-  'string',
-  stringMaxLength(58, exporterReference),
-  [reasons.stringMaxLength]
-)
-```
-
-```js
-export const domain = new Map([
-  // ...existing entries...
-  [exporterReference.id, exporterReferenceDomain]
-])
-```
-
-The factory to reach for depends on the value:
-
-- `staticEnum(options)` — a fixed option list.
-- `computedEnum(fn, readsFrom)` — options that depend on other answers or come
-  from a service. Every MDM-backed field delegates its `options` to the same
-  reference-data accessor the controllers call (for example
-  `countries.originCountries()`), returning codes only.
-- `predicate(type, fn, reasons)` — a scalar with a length, range or format
-  rule. `type` is `'string'`, `'integer'` or `'date'`.
-- `addressBlock(obligation, { subFields, required, subFieldRules })` — a
-  composite address value.
-
-Skip this step for a field with no value-legality rule (a plain yes/no radio
-whose two values are enforced by the controller's `oneOf`, say). The domain
-map is sparse — not every obligation has an entry.
-
-## 3. Add the obligation to the page's `collects`
+## 2. Add the obligation to the page's `collects`
 
 Each page declares the obligations it presents as a string array of obligation
 names on its controller `meta`. Add the new name to the owning page —
@@ -145,7 +100,7 @@ the missing `collects` entry is the crash message.
 The Change links on Check your answers resolve the owning page through this
 index (`pageOfObligation`), so you never hardcode a slug.
 
-## 4. Add the fulfilment binding
+## 3. Add the fulfilment binding
 
 The durable key is the obligation UUID, not its page-field name. Add the scalar
 binding to the owning feature's `evaluation.js`, for example
@@ -175,7 +130,7 @@ to the relevant forward projection in
 `services/persistence/records/notification-mapper.js`. Notifications are
 downstream projections, not the resume source.
 
-## 5. Wire the controller
+## 4. Wire the controller
 
 Two edits in `features/origin/controller.js`.
 
@@ -211,15 +166,15 @@ const values = {
 
 `lib/validate/` gives GDS-shaped field errors: `compose`, `requiredText`,
 `maxText`, `oneOf`, `requiredOneOf`, `pattern`, `dateParts` and more. These are
-the page's own Joi-style checks and are separate from the domain predicates in
-step 2 — the domain layer proves the value is legal for the model; the
-controller shapes the error the user sees.
+the page's own Joi-style checks: the controller owns value legality and shapes
+the error the user sees. Composite values such as addresses follow the same
+rule; their page validates every required sub-field before committing them.
 
 `state.commit(request, h, values)` writes the answers and returns the
 recomputed `scope`; the origin controller already redirects with
 `kit.nextTarget`.
 
-## 6. Render the widget
+## 5. Render the widget
 
 Add a govuk macro to `features/origin/template.njk`. The template already
 imports `govukInput`:
@@ -240,7 +195,7 @@ Copy lives here, in the template — the label, hint and legend the model is
 forbidden to hold. Stay inside the govuk-frontend toolbox: govuk-\* components
 and utility classes, no custom CSS.
 
-## 7. Add the Check your answers row
+## 6. Add the Check your answers row
 
 Check your answers is bespoke composition, sectioned into summary cards in
 `features/check-answers/controller.js`. Add one `row(...)` to the card that
@@ -356,5 +311,5 @@ inside a govuk radios `conditional` block. The model owns scope and purge; the
 page owns how the reveal looks.
 
 If the gate obligation lives elsewhere in the manifest, it is already in the
-same file — one manifest, no cross-feature imports. Give the conditional field
-a domain entry (step 2) as usual; scope and value legality are independent.
+same file — one manifest, no cross-feature imports. Scope stays in the model;
+value legality stays in the collecting controller.

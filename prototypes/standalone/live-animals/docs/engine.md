@@ -172,7 +172,8 @@ evaluator state is kept between calls; each query stands alone.
 
 The 5-way task and section status (`not-applicable` / `optional` /
 `not-started` / `in-progress` / `fulfilled`) is classified in the bridge —
-`status.js` below — from these queries plus the domain's completeness rules.
+`status.js` below — from these queries plus the shared non-blank completeness
+rule.
 `submitted` is a user-driven event owned by the journey engine, not a derived
 status.
 
@@ -204,8 +205,8 @@ other bridge modules project that state into the shapes controllers consume.
   runtime source of the 5-way task and section status. It projects the manifest
   into a structural registry shape (`toStructural`) and reads completeness from
   the evaluator state — per-record scope from the implication's `records`,
-  per-record mandate from `effectiveStatus`, fulfilment from the domain's
-  `isComplete` / `isBlankValue`.
+  per-record mandate from `effectiveStatus`, and fulfilment from
+  `!isBlankValue`.
 - **`purge.js`** — `purgeFulfilments` evaluates a canonical input and returns
   the converged post-purge fulfilment used by the write path. `wipeSet` remains
   the path projection used by focused bridge tests.

@@ -136,8 +136,8 @@ Key points:
   [`lib/validate/`](../lib/validate/) (`compose`, `oneOf`, `requiredOneOf`,
   `maxText`, `pattern`, …). `validate(fields, payload)` returns
   `{ value, errors }`; on `errors` you re-render with the raw submitted values.
-  Value legality that belongs to the model (enum membership, formats) lives in
-  the domain layer, not here — see [validation.md](validation.md).
+  The controller owns value legality such as enum membership and formats — see
+  [validation.md](validation.md).
 - **Pass `journey` into `kit.base`** so the shared layout renders the
   reference/status strip.
 - **Redirect via `kit.nextTarget`.** It resolves the three save exits (primary

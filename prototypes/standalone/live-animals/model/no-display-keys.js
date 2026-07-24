@@ -4,23 +4,23 @@
  * Enforces "No display logic in the model." The import-specifier
  * guard in `obligation-purity.js` is necessary but not sufficient — it never
  * inspects a key, so it would not catch someone adding `titleKey:` or
- * `label:` directly onto an obligation or domain entry.
+ * `label:` directly onto an obligation.
  *
- * This checker adds the key-level teeth. It walks the LIVE obligation and
- * domain objects (not their source text) and reports any object that carries
- * a display key. Object-scoped by design: the `analysis/` tree carries
+ * This checker adds the key-level teeth. It walks the LIVE obligation objects
+ * (not their source text) and reports any object that carries a display key.
+ * Object-scoped by design: the `analysis/` tree carries
  * engine-introspection constants (`OPERATOR_LABELS`, helper-type "labels")
  * that NAME AST operators — a source grep would false-positive on them, but
- * they are structurally unreachable from the obligation + domain object
- * graphs this walk is handed, so they cannot.
+ * they are structurally unreachable from the obligation object graph this
+ * walk is handed, so they cannot.
  *
  * Pure and argument-driven so the vitest gate and the boot-time enforcement
  * (`obligation-purity.js`, run at plugin registration via `routes.js`) call
- * the same code: pass the real `obligations` array and `domain` map in.
+ * the same code: pass the real `obligations` array in.
  */
 
-// Display keys banned anywhere on an obligation or domain entry. Extend this
-// list if a new display-ish key appears in the model.
+// Display keys banned anywhere on an obligation. Extend this list if a new
+// display-ish key appears in the model.
 export const DISPLAY_KEYS = Object.freeze([
   'label',
   'title',
@@ -74,18 +74,15 @@ const walk = (value, path, banned, seen, offenders) => {
 }
 
 /**
- * findDisplayKeyOffenders — walk the obligation and domain object graphs and
- * return the path of every banned display key found. Empty array ⇒ clean.
+ * findDisplayKeyOffenders — walk the obligation object graph and return the
+ * path of every banned display key found. Empty array ⇒ clean.
  *
  * @param {object[]} obligations — the obligations manifest array.
- * @param {Map<string, object>|object} domain — the domain map (id → entry),
- *   or a plain object of the same shape.
  * @param {Iterable<string>} [bannedKeys] — override the banned-key set.
  * @returns {string[]} offending paths (e.g. `obligations[cph].label`).
  */
 export function findDisplayKeyOffenders(
   obligations,
-  domain,
   bannedKeys = DISPLAY_KEYS
 ) {
   const banned = new Set(bannedKeys)
@@ -97,35 +94,23 @@ export function findDisplayKeyOffenders(
     walk(obligation, `obligations[${id}]`, banned, seen, offenders)
   }
 
-  const domainEntries =
-    domain instanceof Map ? [...domain.entries()] : Object.entries(domain ?? {})
-  for (const [id, entry] of domainEntries) {
-    walk(entry, `domain[${String(id)}]`, banned, seen, offenders)
-  }
-
   return offenders
 }
 
 /**
- * assertNoDisplayKeys — throw if any obligation or domain entry carries a
- * display key. This is the form M3 wires into `obligation-purity.js` so the
- * key-level check fails the boot the same way the import-specifier assert
- * does.
+ * assertNoDisplayKeys — throw if any obligation carries a display key. This
+ * is the form wired into `obligation-purity.js` so the key-level check fails
+ * the boot the same way the import-specifier assert does.
  *
  * @param {object[]} obligations — the obligations manifest array.
- * @param {Map<string, object>|object} domain — the domain map (id → entry).
  * @param {Iterable<string>} [bannedKeys] — override the banned-key set.
  */
-export function assertNoDisplayKeys(
-  obligations,
-  domain,
-  bannedKeys = DISPLAY_KEYS
-) {
-  const offenders = findDisplayKeyOffenders(obligations, domain, bannedKeys)
+export function assertNoDisplayKeys(obligations, bannedKeys = DISPLAY_KEYS) {
+  const offenders = findDisplayKeyOffenders(obligations, bannedKeys)
   if (offenders.length > 0) {
     throw new Error(
       'Model purity violated — display logic does not live in the model: no ' +
-        `obligation or domain entry may carry a display key (${[...bannedKeys].join(', ')}). ` +
+        `obligation may carry a display key (${[...bannedKeys].join(', ')}). ` +
         `Offending paths: ${offenders.join('; ')}`
     )
   }

@@ -11,12 +11,16 @@ import { evaluateAnswers } from './evaluation.js'
 
 const address = {
   name: 'Owner',
-  addressLine1: '1 Farm Lane',
-  town: 'Yorkton',
-  postcode: 'YO1 1AA',
-  country: 'United Kingdom',
-  telephone: '01000 000000',
-  email: 'owner@example.test'
+  address: {
+    addressLine1: '1 Farm Lane',
+    addressLine2: '',
+    townOrCity: 'Yorkton',
+    county: '',
+    postalOrZipCode: 'YO1 1AA',
+    country: 'United Kingdom',
+    telephoneNumber: '01000 000000',
+    emailAddress: 'owner@example.test'
+  }
 }
 
 const completeLine = {

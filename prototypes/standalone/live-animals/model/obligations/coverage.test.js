@@ -1,57 +1,10 @@
 /**
  * Coverage test.
- *
- * Domain-wiring contract (post Item 9 ruling — "validation is owned by
- * the feature folders, not by the modelling"): the domain carries ONLY
- * address completeness entries. Every address-block obligation must
- * have one (the status classifiers' completeness signal), and nothing
- * else may acquire a domain entry — a scalar entry appearing here is
- * the deleted validation layer creeping back.
  */
 
 import { describe, it, expect } from 'vitest'
 import { obligations } from './obligations.js'
 import { obligationMetadata } from './helpers.js'
-import { domain } from '../domain/index.js'
-
-// The manifest's address-block obligations — the composite value shape
-// whose completeness the classifiers judge via `isComplete`.
-const ADDRESS_OBLIGATIONS = new Set([
-  'commercialTransporter',
-  'privateTransporter',
-  'placeOfOrigin',
-  'consignor',
-  'consignee',
-  'importer',
-  'placeOfDestination',
-  'contactAddress',
-  'permanentAddress'
-])
-
-describe('coverage — domain carries exactly the address completeness entries', () => {
-  it('every address obligation has an address-typed domain entry', () => {
-    const missing = obligations
-      .filter((o) => ADDRESS_OBLIGATIONS.has(o.name))
-      .filter((o) => domain.get(o.id)?.type !== 'address')
-      .map((o) => o.name)
-    expect(missing).toEqual([])
-  })
-
-  it('no non-address obligation has a domain entry', () => {
-    const unexpected = obligations
-      .filter((o) => domain.has(o.id) && !ADDRESS_OBLIGATIONS.has(o.name))
-      .map((o) => o.name)
-    expect(unexpected).toEqual([])
-  })
-
-  it('ADDRESS_OBLIGATIONS entries all correspond to real obligations', () => {
-    // A rename in obligations.js must reach this list too.
-    const orphans = [...ADDRESS_OBLIGATIONS].filter(
-      (name) => !obligations.some((o) => o.name === name)
-    )
-    expect(orphans).toEqual([])
-  })
-})
 
 // Guard against a self-loop or a cycle hanging buildAncestorGroups' `while
 // (cur) cur = cur.within` walk forever. Any real `within` chain in the

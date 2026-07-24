@@ -45,9 +45,8 @@
  *     + org address + org telephone).
  * Both are listed on the V4 spec so the manifest reflects them. Their
  * value legality is enforced upstream (the system that mints the id;
- * gov.identity for the person), so neither carries a domain entry;
- * both are on the `KNOWN_UNWIRED` allow-list in `coverage.test.js`
- * with a reason.
+ * gov.identity for the person); both are on the `KNOWN_UNWIRED`
+ * allow-list in `coverage.test.js` with a reason.
  *
  * MDM-sourced enum values (commodities / species / ports of
  * entry / country of origin / animals-certified-for options) are
@@ -201,8 +200,7 @@ export const poApprovedReferenceNumber = {
 
 // V4: Consumed from gov.identity on authentication. Composite:
 // { person, telephone, email, orgName, orgAddress, orgTelephone }.
-// gov.identity guarantees the shape upstream so the model does not
-// enforce a domain-level predicate.
+// gov.identity guarantees the shape upstream.
 export const responsiblePersonForLoad = {
   id: 'ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e',
   name: 'responsiblePersonForLoad',

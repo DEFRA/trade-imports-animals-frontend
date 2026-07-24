@@ -1,18 +1,15 @@
 # The obligation model
 
 An obligation is a small data record that says "the journey owes this
-answer". The model is a single manifest of obligations plus a parallel
-registry of value rules. It carries identity, scope and legality — never
-display copy. Pages own presentation, controllers own save-blocking, and
-the model keeps only the facts the evaluator and the derivation engine
-read.
+answer". The model is a single manifest of obligations. It carries identity
+and scope — never display copy or field validation. Pages own presentation
+and controllers own save-blocking; the model keeps only the facts the
+evaluator and the derivation engine read.
 
-The model has two files at its core:
+The model has one file at its core:
 
 - `model/obligations/obligations.js` — the obligation manifest: what the
   journey can owe, and when.
-- `model/domain/index.js` — the value-legality registry: what a legal
-  answer to each obligation looks like.
 
 Two supporting files complete the picture: `model/obligations/helpers.js`
 (the gate-helper library that builds scope closures) and
@@ -27,7 +24,7 @@ An obligation is a plain object with at most these keys:
 
 | Key        | Kind      | Meaning                                                                                                                                                             |
 | ---------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`       | identity  | A stable UUID. The key under which the obligation's value is stored in the flat `fulfilments` map, and the key the domain registry uses.                            |
+| `id`       | identity  | A stable UUID. The key under which the obligation's value is stored in the flat `fulfilments` map.                                                                  |
 | `name`     | identity  | The obligation's field name (`countryOfOrigin`, `commoditySelection`). The vocabulary the frontend, storage answers and bridge speak.                               |
 | `within`   | structure | A direct JS reference to the parent group obligation. Present on every member of a group; absent on notification-level obligations.                                 |
 | `status`   | mandate   | `'mandatory'` or `'optional'`. Present on an obligation that is always in scope. A group carries no `status`; a gated obligation gets it from its gate.             |
@@ -36,14 +33,12 @@ An obligation is a plain object with at most these keys:
 
 That is the whole vocabulary. There is deliberately no `type`, no copy,
 no widget choice and no page-level validation on an obligation. Those
-live where they are read — in the templates, controllers and the domain
-registry.
+live where they are read — in the templates and controllers.
 
 `id` and `name` split two roles. `id` is the canonical storage key and the
-domain registry key; `name` is the request-local field vocabulary controllers
-and templates speak. Feature-owned bindings assemble name-keyed answers into
-the flat fulfilment map; the bridge projects canonical fulfilment back to
-nested answers.
+`name` is the request-local field vocabulary controllers and templates speak.
+Feature-owned bindings assemble name-keyed answers into the flat fulfilment
+map; the bridge projects canonical fulfilment back to nested answers.
 
 ### Always-in-scope vs gated
 
@@ -108,7 +103,7 @@ Two obligations are **system-populated**: `poApprovedReferenceNumber`
 (minted at notification-creation time) and `responsiblePersonForLoad`
 (taken from gov.identity). They are declared for completeness and carry
 `status: 'mandatory'`, but no page presents them and their value
-legality is enforced upstream, so neither carries a domain entry.
+legality is enforced upstream.
 
 `commodityType` is a normal collected obligation within `commodityLines`.
 The commodity search derives the stored type id from each selected species
@@ -278,92 +273,31 @@ A group can pin invariants the evaluator enforces:
 `requires` to emit one invariant error per violating instance; the bridge's
 status rollups hold a group at in-progress until the invariant is satisfied.
 
-## The domain: value legality
+## Completeness and value validation
 
-`model/domain/index.js` is the value-legality registry — Layer 1.25 of
-the architecture. It owns "what is a legal value?" and nothing else. No
-identity, no cardinality, no scope (those are the obligation manifest);
-no pages, sections or navigation (those are the flow); and no display
-copy.
+The status and collection-completeness projections use the same rule for every
+obligation: a stored value is complete when `isBlankValue(value)` is false.
+Address composites are not a special case.
 
-`domain` is a `Map` keyed by obligation `id`. Each entry is a pure
-function of `fulfilments`, the same idiom as an obligation's `applyTo`.
-There are five entry shapes:
-
-- **`enum`** — `options(fulfilments, ids, ctx) → string[]`. The legal
-  option list, as codes/values only.
-- **`integer` / `string` / `date`** — `predicate(value, ctx) → error[]`
-  plus a `reasons` list. Returns an empty array on pass.
-- **`address`** — a composite block: `subFields`, `required`,
-  `subFieldRules`, an `isComplete(value)` check and a `predicate`.
-
-Four factories build these entries, each attaching a `.metadata`
-sidecar mirroring the obligations helpers: `staticEnum`, `computedEnum`,
-`predicate` and `addressBlock`. A shared `reasons` map at the top of the
-file holds every failure code (`domain.enum.notInOptions`,
-`domain.string.maxLength`, the address sub-field codes, and so on), so
-error formatting can name-check them.
-
-### Options come from the reference-data services
-
-Enum options are codes, not copy, and the closed lists come from the
-MDM reference-data services — the same accessors the frontend
-controllers call:
-
-| Obligation                              | Service accessor                                 |
-| --------------------------------------- | ------------------------------------------------ |
-| `reasonForImport`                       | `import-reason-purpose.reasons()`                |
-| `purposeInInternalMarket`               | `import-reason-purpose.purposes()` (gated)       |
-| `countryOfOrigin`, `transitedCountries` | `countries.originCountries()`                    |
-| `portOfEntry`                           | `ports.list()`                                   |
-| `meansOfTransport`                      | `transport-reference.meansOfTransport()`         |
-| `transporterType`                       | `transport-reference.transporterTypes()`         |
-| `commodityCode`                         | `commodities.list()`                             |
-| `species`                               | `commodities.speciesFor(line's commodity)`       |
-| `animalsCertifiedFor`                   | `certification-purposes.certificationPurposes()` |
-| `accompanyingDocumentType`              | `document-types.documentTypes()`                 |
-| `accompanyingDocumentAttachmentType`    | `document-types.attachmentTypes()`               |
-
-A `computedEnum` closure delegates to the service and returns values
-only. A handful of enums stay static because no service backs them —
-`containsUnweanedAnimals` and `regionOfOriginCodeRequirement` (yes/no)
-and `commodityType` (a small placeholder set). The domain never carries
-option labels: the templates render the copy, the services supply the
-codes.
-
-### Predicates and address blocks
-
-The `predicate` entries express the V4 field rules: max-length caps
-(`internalReferenceNumber` max 58, `cph` max 11, `regionCode` max 5),
-integer floors (`numberOfPackages`, `numberOfAnimals` — at least 1),
-date format (`arrivalDateAtPort`, `accompanyingDocumentDateOfIssue` —
-calendar-valid DD/MM/YYYY), and the transited-countries max-12-selection
-cap. A blank value passes every predicate — completeness is a separate
-concern from legality, decided by the derivation engine.
-
-The `addressBlock` factory models the V4 standard address as a composite
-of nine sub-fields (six required, three optional) with per-sub-field
-rules for max-length, email format and the MDM country enum. Every
-address obligation reuses it; `commercialTransporter` extends the base
-set with a `transporterAuthorisationNumber` sub-field. The block
-validates only the sub-fields the user supplied; whether a partly-blank
-address blocks completeness is surfaced by `isComplete(value)`, not by
-the predicate.
+Field-level legality belongs to the page that collects the value. Address
+controllers validate the required sub-fields, lengths, formats and country
+membership before committing the nested address object. A malformed or partial
+submission is re-rendered with field errors rather than stored. Other pages use
+the same controller-owned validation seam for their value shapes and option
+membership.
 
 ## No display logic in the model
 
 The model carries no display copy — no `label`, `title`, `titleKey`,
-`hint`, `legend` or `widget` on any obligation or domain entry. Copy
+`hint`, `legend` or `widget` on any obligation. Copy
 lives in the `.njk` templates; option lists come from the reference-data
-services. The model owns identity, cardinality and scope (obligations),
-value legality (domain), and status and navigation derivation (engine) —
-never presentation.
+services. The model owns identity, cardinality and scope (obligations), and
+status and navigation derivation (engine) — never presentation.
 
 This is enforced at boot, not just in tests. `model/no-display-keys.js`
-exports `assertNoDisplayKeys(obligations, domain)`, which walks the live
-obligation and domain object graphs — objects, arrays and the `.metadata`
-sidecars hung off gate closures — and throws if any object carries a
-banned key from `DISPLAY_KEYS`:
+exports `assertNoDisplayKeys(obligations)`, which walks the live obligation
+object graph — objects, arrays and the `.metadata` sidecars hung off gate
+closures — and throws if any object carries a banned key from `DISPLAY_KEYS`:
 
 ```js
 export const DISPLAY_KEYS = Object.freeze([
@@ -378,11 +312,11 @@ export const DISPLAY_KEYS = Object.freeze([
 
 `obligation-purity.js` wraps it as `assertObligationPurity()`, and
 `routes.js` calls that during plugin registration. A display key added to
-an obligation or a domain entry fails the boot — the server does not
-start with presentation smuggled into the model.
+an obligation fails the boot — the server does not start with presentation
+smuggled into the model.
 
 The check walks the live object graph rather than the source text on
 purpose: it inspects the actual keys reachable from the obligation array
-and domain map, so it cannot false-positive on the engine-introspection
-constants elsewhere in the tree that merely name AST operators, and it
-catches a display key however it was assembled.
+so it cannot false-positive on the engine-introspection constants elsewhere
+in the tree that merely name AST operators, and it catches a display key
+however it was assembled.

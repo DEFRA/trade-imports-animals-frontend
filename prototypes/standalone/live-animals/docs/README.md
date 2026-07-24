@@ -57,9 +57,8 @@ npm run dump:live-animals
 
 The code is three layers plus a bridge seam. The **model** (`model/`) is pure
 data and pure functions: obligations declare identity, cardinality and scope
-(`model/obligations/`); the domain registry declares value legality
-(`model/domain/`); the evaluator turns a flat map of answers into per-obligation
-in-scope decisions (`model/obligations/evaluator.js`); and the state queries
+(`model/obligations/`); the evaluator turns a flat map of answers into
+per-obligation in-scope decisions (`model/obligations/evaluator.js`); and the state queries
 (`model/obligations/state-queries.js`) answer mandate and group-invariant
 questions over that output. The model
 carries no display copy — no `label`, `title`, `hint`, `legend` or `widget` — and
@@ -100,7 +99,7 @@ Then pick the topic you need from the table below.
 | [kit-library-not-framework.md](kit-library-not-framework.md) | What `shared/kit.js` gives a page and what it deliberately leaves the page to own                                                      |
 | [services.md](services.md)                                   | The reference-data (MDM) and persistence services, stub-vs-real selection, and the `LIVE_ANIMALS_MODE` switch                          |
 | [persistence.md](persistence.md)                             | The session and records ports, the two notification mappers, and why submit is a status flip                                           |
-| [validation.md](validation.md)                               | In-controller field validation via `lib/validate/`, separate from the domain value-legality predicates                                 |
+| [validation.md](validation.md)                               | In-controller field validation via `lib/validate/`, including address field completeness                                               |
 | [add-a-page.md](add-a-page.md)                               | Numbered steps to add a new page, traced against a real feature                                                                        |
 | [add-a-field.md](add-a-field.md)                             | Numbered steps to add a new field or obligation, including a conditional one gated by `applyTo`                                        |
 | [add-a-collection.md](add-a-collection.md)                   | Numbered steps to add a repeating collection, including a per-entry conditional field                                                  |

@@ -1,19 +1,14 @@
 # The validation seam
 
-Validation lives in two places, each with one job.
-
-- **Page controllers** decide what a well-formed answer looks like when
-  a user submits a page. They run Joi field validators from
-  `lib/validate/` against the POST payload and return GDS field errors.
-- **The domain layer** (`model/domain/index.js`) declares what a legal
-  value _is_ for each obligation — enum membership, string length,
-  date shape, address rules — as pure, introspectable data.
+Validation lives in page controllers. They decide what a well-formed answer
+looks like when a user submits a page, run Joi field validators from
+`lib/validate/` against the POST payload and return GDS field errors.
 
 The obligation model records what is owed; a page decides what a
 well-formed answer looks like in its own context. The same value can
 validate differently on different pages, so field validity is never
-stamped on an obligation. The model stores; the page validates shape;
-the domain declares legality.
+stamped on an obligation. The model stores; the page validates shape and
+legality.
 
 ## Controller-owned field validation, by design
 
@@ -235,47 +230,18 @@ Field name, input id and error key are the same string, so the summary
 link, the inline message and the input all line up without any mapping
 table.
 
-## Value legality in the domain layer
+## Address completeness
 
-`model/domain/index.js` is the model's declaration of what a legal value
-is. `domain` is a `Map` keyed by obligation id; each entry is a pure
-function of state, the same idiom as an obligation's `applyTo`. Entry
-shapes:
+Address values use the same completion rule as every other obligation:
+`isBlankValue(value)` must be false. The model does not inspect individual
+address fields when deriving status or per-entry collection completeness.
 
-- `enum` — `options(fulfilments, ids, ctx) → string[]`.
-- `integer` / `string` / `date` — `predicate(value, ctx) → error[]`
-  (empty on pass) plus a `reasons` list of the failure codes it can emit.
-- `address` — a composite: `subFields`, `required`, `subFieldRules`,
-  `isComplete(value)` and a `predicate` that checks per-sub-field
-  max-length, email format and MDM country membership.
-
-Factories `staticEnum`, `computedEnum`, `predicate` and `addressBlock`
-build the entries, each hanging a `.metadata` sidecar so the data
-dictionary and reachability tooling can read the rule without running the
-closure. The `reasons` const map at the top of the file names every
-failure code (`domain.enum.notInOptions`, `domain.string.maxLength`, and
-so on).
-
-Enum options are delegated to the MDM services — `countries`, `ports`,
-`commodities`, `document-types`, `certification-purposes`,
-`import-reason-purpose`, `transport-reference` — through the same
-accessors the controllers call, returning codes and values only. So a
-`computedEnum` for `countryOfOrigin` reads
-`countries.originCountries()`, exactly what `features/origin` renders and
-validates against.
-
-The domain layer holds no identity, cardinality or scope — those live in
-the obligations manifest — and no display copy. That last rule is
-enforced at boot: `obligation-purity.js` walks both the obligations
-manifest and the domain map through `assertNoDisplayKeys`
-(`model/no-display-keys.js`), so a `label`, `title`, `hint`, `legend` or
-`widget` on any entry fails the boot, not just a test.
-
-The domain layer is the single source of truth for value legality that
-tooling reads. The per-page Joi validators are the runtime enforcement a
-user meets on POST. Keep the two in step: when a domain rule changes
-(a max-length, an option source), update the page validator that
-enforces it.
+Field completeness is enforced before storage by the page that collects the
+address. `features/addresses/create-address.controller.js` and the animal
+identification controller validate the required nested sub-fields and
+re-render with field errors on a partial submission; only a valid address is
+committed. Option membership and other value rules likewise remain in the
+collecting controller, using the current reference-data service values.
 
 ## Related
 

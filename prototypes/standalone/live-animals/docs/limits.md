@@ -9,15 +9,14 @@ honest about being a stub.
 
 The obligation model under `model/` is JavaScript, not serialisable data.
 An obligation's scope is an `applyTo` closure built by a gate helper
-([model/obligations/helpers.js](../model/obligations/helpers.js)); the value
-domain is a registry of predicate functions
-([model/domain/index.js](../model/domain/index.js)). The `.metadata` sidecar
-on each closure makes the dependency graph inspectable, but the decision
-logic itself is a function, not a rule you can read out as JSON.
+([model/obligations/helpers.js](../model/obligations/helpers.js)). The
+`.metadata` sidecar on each closure makes the dependency graph inspectable,
+but the decision logic itself is a function, not a rule you can read out as
+JSON.
 
 The consequence: you cannot ship the model to a non-JS runtime, drive it from
 a database, or let a non-developer edit it. Growing the model means writing
-JavaScript — a new obligation object, a gate helper, a domain entry — not
+JavaScript — a new obligation object and, when needed, a gate helper — not
 editing a config file. See [obligation-model.md](obligation-model.md).
 
 ## The bridge preserves vocabulary, with two representation edges

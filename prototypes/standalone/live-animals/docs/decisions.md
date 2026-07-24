@@ -57,8 +57,8 @@ Two boot guards keep the spine honest, both wired in
   [`flow/dispatch.js`](../flow/dispatch.js)) — every non-system obligation
   at every depth is collected by exactly one page, or boot crashes.
 - the **model-purity guard**
-  ([`obligation-purity.js`](../obligation-purity.js)) — no obligation or
-  domain entry may carry a display key (principle 6).
+  ([`obligation-purity.js`](../obligation-purity.js)) — no obligation may
+  carry a display key (principle 6).
 
 ### Accepted costs
 
@@ -233,13 +233,11 @@ The split of responsibilities:
 
 - **Copy lives in the templates.** Field copy is in the `.njk` files that
   render each page.
-- **Value options come from the MDM services.** The value-legality layer
-  ([`model/domain/index.js`](../model/domain/index.js)) declares which
-  values are legal, and its enum entries delegate their option lists to the
+- **Value options come from the MDM services.** Controllers use the
   reference-data services under [`services/`](../services/) (countries,
   ports, commodities, document types, certification purposes, import
-  reasons, transport reference) — the same accessors the controllers call,
-  returning codes only.
+  reasons, transport reference) for both rendered options and membership
+  validation.
 - **Field validation lives in the controllers**, backed by the reusable
   factories in [`lib/validate/`](../lib/validate/validators.js).
 
@@ -256,9 +254,8 @@ to drift.
 The rule is enforced at boot, not just in tests.
 [`obligation-purity.js`](../obligation-purity.js) delegates to
 [`model/no-display-keys.js`](../model/no-display-keys.js), which walks the
-live obligation and domain object graphs and throws if any of the banned
-display keys appears. A display key added to the model fails plugin
-registration.
+live obligation object graph and throws if any of the banned display keys
+appears. A display key added to the model fails plugin registration.
 
 ### Accepted costs
 

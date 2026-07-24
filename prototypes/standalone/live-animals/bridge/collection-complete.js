@@ -33,7 +33,6 @@ import { instanceFulfilmentId } from './fulfilment-id.js'
 import { fulfilmentRegistry } from './fulfilment-registry.js'
 import { groupInvariantErrors } from '../model/obligations/state-queries.js'
 import { isBlankValue } from '../model/obligations/is-blank-value.js'
-import { domain } from '../model/domain/index.js'
 
 const obligationByName = new Map(
   obligations.map((obligation) => [obligation.name, obligation])
@@ -44,13 +43,7 @@ const STRUCTURAL_PLACEHOLDERS = new Set([
   'responsiblePersonForLoad'
 ])
 
-const isFulfilled = (obligationId, value) => {
-  const entry = domain.get(obligationId)
-  if (entry?.type === 'address' && typeof entry.isComplete === 'function') {
-    return entry.isComplete(value)
-  }
-  return !isBlankValue(value)
-}
+const isFulfilled = (value) => !isBlankValue(value)
 
 // A leaf record's fulfilmentId belongs to instance P iff it IS P (a direct
 // leaf of the instance's own group) or sits beneath it (`P/...`, a nested
@@ -79,14 +72,14 @@ const groupsFrom = (group) =>
 const emptyEntryBlocks = (leaf, group, instanceId, stored) => {
   if (leaf.within !== group || leaf.applyTo) return false
   if ((leaf.status ?? 'mandatory') !== 'mandatory') return false
-  return !isFulfilled(leaf.id, stored?.[instanceId])
+  return !isFulfilled(stored?.[instanceId])
 }
 
 const belongingRecordBlocks = (leaf, belonging, stored) =>
   belonging.some(
     (record) =>
       (record.status ?? 'mandatory') === 'mandatory' &&
-      !isFulfilled(leaf.id, stored?.[record.fulfilmentId])
+      !isFulfilled(stored?.[record.fulfilmentId])
   )
 
 const leafBlocksInstance = (

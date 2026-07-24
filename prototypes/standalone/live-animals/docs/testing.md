@@ -62,10 +62,9 @@ The net is layered: the model tiers prove the engine headlessly, the bridge and 
 The obligation model is pure and synchronous, so it is proven entirely in unit tests with no server:
 
 - **Obligations** — `model/obligations/evaluator.test.js`, `evaluator.units.test.js`, `helpers.test.js`, `whitelists.test.js` and `coverage.test.js` pin the evaluator's scope, purge-to-fixpoint and implication output, the gate-helper factories, the exported whitelist arrays, and full obligation coverage.
-- **Domain** — `model/domain/index.test.js` pins value-legality: enum option sourcing, predicate error codes and the address-block rules.
 - **State queries** — `model/obligations/state-queries.test.js` and `is-blank-value.test.js` pin the group-invariant rules and the shared blank-check over evaluator output.
 - **Analysis** — `model/analysis/reachability.test.js` and `coverage.test.js` pin the obligation-dependency reachability prover and its witness synthesis.
-- **No display copy** — `model/no-display-keys.test.js` pins the rule that no obligation or domain entry carries a display key (`label`, `title`, `titleKey`, `hint`, `legend`, `widget`). `obligation-purity.test.js` runs the same assertion the server runs at boot.
+- **No display copy** — `model/no-display-keys.test.js` pins the rule that no obligation carries a display key (`label`, `title`, `titleKey`, `hint`, `legend`, `widget`). `obligation-purity.test.js` runs the same assertion the server runs at boot.
 
 ### Bridge tier (`bridge/**`)
 
@@ -80,8 +79,8 @@ pin the assembly and projections the controllers and templates depend on:
 - `fulfilments.characterisation.test.js` — the increment-0 canonical,
   evaluator, answer, and notification boundary oracles.
 - `scope.test.js` — the in-scope path-key set the controllers read.
-- `status.test.js` — the five status constants (`NA`, `NOT_STARTED`, `IN_PROGRESS`, `FULFILLED`, `OPTIONAL`) and the completeness projection.
-- `collection-complete.test.js` — per-instance completeness for the collection views.
+- `status.test.js` — the five status constants (`NA`, `NOT_STARTED`, `IN_PROGRESS`, `FULFILLED`, `OPTIONAL`) and the shared non-blank completeness projection.
+- `collection-complete.test.js` — per-instance completeness for the collection views, using the same non-blank rule for address composites and other values.
 
 ### Engine tier (`engine/**`)
 

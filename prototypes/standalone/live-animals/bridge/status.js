@@ -22,8 +22,7 @@
  *                          (post-purge membership).
  *   - per-record MANDATE  — `effectiveStatus(leaf, recId, state)` (mandatory /
  *                          optional per record).
- *   - FULFILMENT          — `domainEntry.isComplete` for addresses, else
- *                          `!isBlankValue` (incl. partial-address handling).
+ *   - FULFILMENT          — `!isBlankValue` for every part.
  *
  * The empty-collection floor is manifest-sourced (`requiredAtLeastOne`:
  * `requires.minEntries` or `requires.anyOfIds`) and stays a presentation
@@ -40,7 +39,6 @@ import {
   groupInvariantErrors
 } from '../model/obligations/state-queries.js'
 import { isBlankValue } from '../model/obligations/is-blank-value.js'
-import { domain } from '../model/domain/index.js'
 import { isAnswered } from '../lib/answered.js'
 import { SYSTEM_POPULATED } from '../flow/obligation-source.js'
 
@@ -152,14 +150,6 @@ const partStarted = (part, answers) => {
 
 // --- completeness: the evaluator state ------------------------------------
 
-const isValueFulfilled = (name, value) => {
-  const entry = domain.get(name)
-  if (entry?.type === 'address' && typeof entry.isComplete === 'function') {
-    return entry.isComplete(value)
-  }
-  return !isBlankValue(value)
-}
-
 // The record map for a grouped leaf ({ fulfilmentId: value }), or undefined.
 const recordMap = (obligation, state) => {
   const stored = state.fulfilments?.[obligation.id]
@@ -188,7 +178,7 @@ const leafMandatoryForRecord = (name, recId, state) =>
 
 const leafFulfilledForRecord = (name, recId, state) => {
   const map = recordMap(obligationFor(name), state)
-  return map === undefined ? false : isValueFulfilled(name, map[recId])
+  return map === undefined ? false : !isBlankValue(map[recId])
 }
 
 // A top-level scalar. Flow-only obligations the manifest does not carry
@@ -197,7 +187,7 @@ const leafFulfilledForRecord = (name, recId, state) => {
 const singletonFulfilled = (name, answers, state) => {
   const obligation = obligationFor(name)
   return obligation
-    ? isValueFulfilled(name, state.fulfilments?.[obligation.id])
+    ? !isBlankValue(state.fulfilments?.[obligation.id])
     : isAnswered(answers[name])
 }
 

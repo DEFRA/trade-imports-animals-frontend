@@ -15,7 +15,7 @@ each field is in scope, and what a partly-filled journey's status is.
 features/  →  flow/            (page spine + sequencing)
            →  engine/          (the state facade pages call)
                  └─ bridge/     (the seam)
-                       └─ model/  (identity, scope, legality, derivation)
+                       └─ model/  (identity, scope, derivation)
 services/  supplies option lists and the persistence ports
 ```
 
@@ -26,7 +26,7 @@ request.
 
 ### model/ — the pure core
 
-The model is plain data plus pure functions. It has four parts:
+The model is plain data plus pure functions. It has three parts:
 
 - **Obligations** — [`model/obligations/obligations.js`](../model/obligations/obligations.js)
   is the manifest: one object per data requirement, each with a UUID `id`, a
@@ -37,10 +37,6 @@ The model is plain data plus pure functions. It has four parts:
   fixpoint, purges out-of-scope data and returns
   `{ fulfilments, obligations: implicationsByObligation }`. See
   [obligation-model.md](obligation-model.md).
-- **Domain** — [`model/domain/index.js`](../model/domain/index.js) holds value
-  legality: enums, integer/string/date predicates and address blocks, keyed by
-  obligation id. Enum options are delegated to the MDM services under
-  `services/`; the domain carries no display copy.
 - **State queries** — [`model/obligations/state-queries.js`](../model/obligations/state-queries.js)
   holds small pure functions over evaluator output: `effectiveStatus` (the
   per-record mandate) and `groupInvariantErrors` (the five `requires` rule
@@ -49,7 +45,7 @@ The model is plain data plus pure functions. It has four parts:
   proves every obligation's scope gate can fire. See [analysis.md](analysis.md).
 
 The model carries **no display copy** — no `label`, `title`, `hint`, `legend`
-or `widget` on any obligation or domain entry. This is enforced at boot by
+or `widget` on any obligation. This is enforced at boot by
 [`model/no-display-keys.js`](../model/no-display-keys.js) (called through
 [`obligation-purity.js`](../obligation-purity.js)): a display key on the model
 fails the boot, not just a test. Copy lives in the `.njk` templates; value
@@ -220,7 +216,6 @@ live-animals/
 
   model/                  THE PURE CORE — no frontend imports
     obligations/          manifest, gate helpers, evaluator, state queries
-    domain/               value legality (enum/predicate/address)
     analysis/             reachability prover
     no-display-keys.js    the purity assertion
 

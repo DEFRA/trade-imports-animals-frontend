@@ -3,13 +3,12 @@ import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { obligations } from './model/obligations/obligations.js'
-import { domain } from './model/domain/index.js'
 import { assertNoDisplayKeys } from './model/no-display-keys.js'
 
 // Model purity gate: no display logic in the model.
 // Two boot-time checks over the live model:
-//   - key-level: no `label`/`title`/`hint` etc. on any obligation or domain
-//     entry (assertNoDisplayKeys);
+//   - key-level: no `label`/`title`/`hint` etc. on any obligation
+//     (assertNoDisplayKeys);
 //   - import-level: model/** may import only itself and the sanctioned MDM
 //     route `services/<name>/index.js` (assertModelImportBoundary). Anything
 //     else — lib/, flow/, engine/, features/, bare modules — fails the boot,
@@ -79,6 +78,6 @@ export const assertModelImportBoundary = ({
 }
 
 export const assertObligationPurity = () => {
-  assertNoDisplayKeys(obligations, domain)
+  assertNoDisplayKeys(obligations)
   assertModelImportBoundary()
 }
