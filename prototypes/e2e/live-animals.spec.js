@@ -2351,6 +2351,44 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeChecked()
   })
 
+  test('contact address — adding a new contact returns to the contact page with it selectable and selected', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await unlockSections(page)
+
+    const contactRow = page.locator('.govuk-task-list__item', {
+      hasText: 'Contact address'
+    })
+    await page.getByRole('link', { name: 'Contact address' }).click()
+    await page.getByRole('link', { name: 'Add a new contact address' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Add a new address' })
+    ).toBeVisible()
+
+    await page
+      .getByLabel('Name or organisation name')
+      .fill('Created Contact Ltd')
+    await page.getByLabel('Address line 1').fill('12 Contact Street')
+    await page.getByLabel('Town or city').fill('Bristol')
+    await page.getByLabel('Postal or zip code').fill('BS1 1AA')
+    await page.getByLabel('Country').selectOption('United Kingdom')
+    await page.getByLabel('Telephone number').fill('0117 555 0101')
+    await page.getByLabel('Email address').fill('contact@example.co.uk')
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Contact address for consignment' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('radio', { name: 'Created Contact Ltd' })
+    ).toBeChecked()
+
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(contactRow).toContainText('Completed')
+  })
+
   test('import purpose — owed only for the internal market; changing the reason wipes a saved purpose', async ({
     page
   }) => {

@@ -1,9 +1,11 @@
-import { hubPath, TEMPLATES } from '../../config.js'
+import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import * as addressBook from '../../services/address-book/index.js'
+import { CREATE_ADDRESS_SLUG } from '../addresses/create-address.controller.js'
+import { CONTACT_PARTY } from '../addresses/parties.js'
 import { consignmentContactSelectPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
 import { copy as cy } from './copy.cy.js'
@@ -15,13 +17,14 @@ const copy = copyFor({ en, cy })
 
 const HTTP_STATUS_BAD_REQUEST = 400
 
-const fields = compose(
-  oneOf(
-    'contactAddress',
-    addressBook.parties('contact').map((option) => option.id),
-    copy.errors.contactRequired
+const fields = () =>
+  compose(
+    oneOf(
+      'contactAddress',
+      addressBook.parties('contact').map((option) => option.id),
+      copy.errors.contactRequired
+    )
   )
-)
 
 const addressSummary = (address) =>
   [
@@ -42,6 +45,9 @@ const render = (h, journey, values, errors = {}) =>
     copy,
     errors,
     errorSummary: kit.errorSummary(errors),
+    createAddressHref: pagePath(
+      `${CREATE_ADDRESS_SLUG}?for=${CONTACT_PARTY.id}`
+    ),
     contactOptions: addressBook.parties('contact').map((option) => ({
       value: option.id,
       text: option.name,
@@ -57,7 +63,7 @@ const get = async (request, h) => {
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
-  const { errors } = validate(fields, payload)
+  const { errors } = validate(fields(), payload)
   if (errors) {
     const { journey } = await state.get(request, h)
     return render(h, journey, {}, errors).code(HTTP_STATUS_BAD_REQUEST)

@@ -24,6 +24,7 @@ import * as countries from '../../services/countries/index.js'
 
 import * as createAddress from './create-address.controller.js'
 import * as partyPicker from './party-picker.controller.js'
+import { CONTACT_PARTY, PARTIES, partyOf } from './parties.js'
 
 const postCreate = postHandlerEndingWith(createAddress, 'addresses/create')
 const postConsignorSpoke = postHandlerEndingWith(
@@ -97,6 +98,41 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
     expect(result.view).toBeUndefined()
     expect(result.after.consignor.name).toBe('Second Created Ltd')
     expect(result.after.consignor.address.townOrCity).toBe('Carlisle')
+  })
+
+  it('Should resolve contact separately from the five hub spokes, copy its new address and return to the contact page', async () => {
+    expect(partyOf('contactAddress')).toBe(CONTACT_PARTY)
+    expect(PARTIES).toHaveLength(5)
+    expect(PARTIES).not.toContain(CONTACT_PARTY)
+
+    const result = await driveHandler(postCreate, {
+      payload: validPayload({
+        for: 'contactAddress',
+        nameOrOrganisationName: 'Created Contact Ltd'
+      })
+    })
+
+    expect(result.response).toEqual({
+      redirect: '/prototype-standalone/live-animals/consignment/contact/select'
+    })
+    expect(result.after.contactAddress).toEqual({
+      name: 'Created Contact Ltd',
+      address: {
+        addressLine1: '99 New Lane',
+        addressLine2: '',
+        townOrCity: 'Carlisle',
+        county: '',
+        postalOrZipCode: 'CA1 1AA',
+        country: 'United Kingdom',
+        telephoneNumber: '01228 555 0101',
+        emailAddress: 'farm@example.co.uk'
+      }
+    })
+    expect(
+      addressBook
+        .parties('contact')
+        .some((option) => option.name === 'Created Contact Ltd')
+    ).toBe(true)
   })
 
   it('Should reject a blank submit with an error per mandatory field and commit nothing', async () => {

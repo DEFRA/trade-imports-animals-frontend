@@ -142,7 +142,7 @@ const post = async (request, h) => {
   await state.commit(request, h, {
     [party.id]: { name: record.name, address: { ...record.address } }
   })
-  return h.redirect(pagePath('addresses'))
+  return h.redirect(pagePath(party.returnSlug))
 }
 
 export const routes = [

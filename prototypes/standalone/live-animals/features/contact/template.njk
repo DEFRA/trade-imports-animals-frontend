@@ -22,6 +22,10 @@
       items: contactOptions
     }) }}
 
+    <p class="govuk-body">
+      <a class="govuk-link" href="{{ createAddressHref }}">{{ copy.addNewAddress }}</a>
+    </p>
+
     {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
 {% endblock %}
