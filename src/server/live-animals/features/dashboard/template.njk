@@ -2,6 +2,7 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
+{% from "govuk/components/pagination/macro.njk" import govukPagination %}
 
 {% block journeyContent %}
   {% if deletionSucceeded %}
@@ -9,6 +10,15 @@
       type: "success",
       titleText: sharedCopy.notificationActions.delete.successTitle,
       text: sharedCopy.notificationActions.delete.successBody,
+      role: "alert"
+    }) }}
+  {% endif %}
+
+  {% if copySucceeded %}
+    {{ govukNotificationBanner({
+      type: "success",
+      titleText: sharedCopy.notificationActions.copy.successTitle,
+      text: sharedCopy.notificationActions.copy.successBody,
       role: "alert"
     }) }}
   {% endif %}
@@ -22,29 +32,36 @@
   </form>
 
   <h2 class="govuk-heading-m">{{ copy.notificationsHeading }}</h2>
+  <div class="notification-list__toolbar">
+    <p class="govuk-label govuk-label--s notification-list__results">{{ resultsLabel }}</p>
+
+    <form method="get" action="{{ listAction }}" class="notification-list__sort-form">
+      {% if currentPage > 1 %}
+        <input type="hidden" name="page" value="{{ currentPage }}" />
+      {% endif %}
+      <div class="govuk-form-group govuk-!-width-auto">
+        <label class="govuk-label govuk-label--s" for="sort">{{ copy.sort.label }}</label>
+        <select class="govuk-select" id="sort" name="sort">
+          {% for option in sortOptions %}
+            <option value="{{ option.value }}" {% if option.value == sort %}selected{% endif %}>{{ option.text }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {{ govukButton({
+        text: copy.sort.update,
+        classes: "govuk-button--secondary"
+      }) }}
+    </form>
+  </div>
+
   {% if notificationRows.length %}
-    <table class="govuk-table">
-      <caption class="govuk-table__caption govuk-visually-hidden">{{ copy.notificationsHeading }}</caption>
-      <thead class="govuk-table__head">
-        <tr class="govuk-table__row">
-          <th scope="col" class="govuk-table__header">{{ copy.table.reference }}</th>
-          <th scope="col" class="govuk-table__header">{{ copy.table.status }}</th>
-          <th scope="col" class="govuk-table__header">{{ copy.table.created }}</th>
-          <th scope="col" class="govuk-table__header">{{ copy.table.submitted }}</th>
-          <th scope="col" class="govuk-table__header">{{ copy.table.actions }}</th>
-        </tr>
-      </thead>
-      <tbody class="govuk-table__body">
-        {% for row in notificationRows %}
-          <tr class="govuk-table__row">
-            <th scope="row" class="govuk-table__header">{{ row.reference }}</th>
-            <td class="govuk-table__cell">
-              {{ govukTag({ text: row.status.text, classes: row.status.classes }) }}
-            </td>
-            <td class="govuk-table__cell">{{ row.created }}</td>
-            <td class="govuk-table__cell">{{ row.submitted }}</td>
-            <td class="govuk-table__cell">
-              {% for action in row.actions %}
+    {% for row in notificationRows %}
+      <div class="govuk-summary-card notification-list">
+        <div class="govuk-summary-card__title-wrapper">
+          <h3 class="govuk-summary-card__title">{{ row.reference }}</h3>
+          <ul class="govuk-summary-card__actions">
+            {% for action in row.actions %}
+              <li class="govuk-summary-card__action">
                 {% if action.postAction %}
                   <form method="post" action="{{ action.postAction }}" class="app-form-inline">
                     <input type="hidden" name="crumb" value="{{ crumb }}" />
@@ -52,22 +69,68 @@
                       <input type="hidden" name="idempotencyKey" value="{{ action.idempotencyKey }}" />
                       <input type="hidden" name="copyOrigin" value="{{ action.copyOrigin }}" />
                     {% endif %}
-                    <button type="submit" class="govuk-link app-link-button govuk-!-margin-right-2">
+                    <button type="submit" class="govuk-link app-link-button">
                       {{ action.text }}<span class="govuk-visually-hidden"> {{ copy.actionHidden(row.reference) }}</span>
                     </button>
                   </form>
                 {% else %}
-                  <a class="govuk-link govuk-!-margin-right-2" href="{{ action.href }}">
+                  <a class="govuk-link" href="{{ action.href }}">
                     {{ action.text }}<span class="govuk-visually-hidden"> {{ copy.actionHidden(row.reference) }}</span>
                   </a>
                 {% endif %}
-              {% endfor %}
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="govuk-summary-card__content">
+          <dl class="notification-list__grid-row">
+            <div class="notification-list__grid-column-30">
+              <dt class="notification-list__heading">{{ copy.table.commodity }}</dt>
+              <dd class="notification-list__value">{{ row.commodity }}</dd>
+            </div>
+            <div class="notification-list__grid-column-30">
+              <dt class="notification-list__heading">{{ copy.table.origin }}</dt>
+              <dd class="notification-list__value">{{ row.origin }}</dd>
+            </div>
+            <div class="notification-list__grid-column-30">
+              <dt class="notification-list__heading">{{ copy.table.arrival }}</dt>
+              <dd class="notification-list__value">{{ row.arrival }}</dd>
+            </div>
+          </dl>
+          <dl class="notification-list__grid-row">
+            <div class="notification-list__grid-column-30">
+              <dt class="notification-list__heading">{{ copy.table.consignee }}</dt>
+              <dd class="notification-list__value">{{ row.consignee }}</dd>
+            </div>
+            <div class="notification-list__grid-column-30">
+              <dt class="notification-list__heading">{{ copy.table.consignor }}</dt>
+              <dd class="notification-list__value">{{ row.consignor }}</dd>
+            </div>
+            <div class="notification-list__grid-column-30">
+              <dt class="notification-list__heading">{{ copy.table.status }}</dt>
+              <dd class="notification-list__value">
+                {{ govukTag({ text: row.status.text, classes: row.status.classes }) }}
+              </dd>
+            </div>
+          </dl>
+          <dl class="notification-list__grid-row">
+            <div class="notification-list__grid-column-30">
+              <dt class="notification-list__heading">{{ copy.table.created }}</dt>
+              <dd class="notification-list__value">{{ row.created }}</dd>
+            </div>
+            <div class="notification-list__grid-column-30">
+              <dt class="notification-list__heading">{{ copy.table.submitted }}</dt>
+              <dd class="notification-list__value">{{ row.submitted }}</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    {% endfor %}
   {% else %}
     <p class="govuk-body">{{ copy.emptyText }}</p>
+  {% endif %}
+
+  {% if pagination %}
+    {{ govukPagination(pagination) }}
   {% endif %}
 {% endblock %}

@@ -9,9 +9,11 @@ import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments
 } from './fulfilment-codec.js'
+import { projectAnswers } from '../../../bridge/fulfilments.js'
 
 const CROCKFORD_BASE32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
 const REFERENCE_BODY_LENGTH = 6
+const LIST_PAGE_SIZE = 20
 
 const mintReferenceNumber = () => {
   const year = String(new Date().getFullYear() % 100).padStart(2, '0')
@@ -40,6 +42,38 @@ const marshal = (document) => ({
   submittedAt: document.submittedAt,
   fulfilment: decodePersistedFulfilment(document.fulfilment)
 })
+
+const isoFromDateParts = (parts) => {
+  const { day, month, year } = parts ?? {}
+  if (day == null || month == null || year == null) return null
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+const marshalListItem = (document) => {
+  const answers = projectAnswers(decodePersistedFulfilment(document.fulfilment))
+  const commodityName = answers.commodityLines?.[0]?.commoditySelection
+
+  return {
+    journeyId: document.id,
+    status: document.status,
+    createdAt: document.createdAt,
+    submittedAt: document.submittedAt,
+    reference: document.id,
+    commodity: commodityName ? { name: commodityName } : null,
+    originCountryCode: answers.countryOfOrigin ?? null,
+    arrivalDate: isoFromDateParts(answers.arrivalDateAtPort),
+    consignorName: answers.consignor?.name ?? null,
+    consigneeName: answers.consignee?.name ?? null
+  }
+}
+
+const validPage = (page) => (Number.isInteger(page) && page > 0 ? page : 1)
+
+const sortByCreatedAt = (sort) => {
+  const direction = sort?.endsWith(',asc') ? 1 : -1
+  return (left, right) =>
+    direction * left.createdAt.localeCompare(right.createdAt)
+}
 
 const assertWritable = (journey) => {
   if (journey.status !== DRAFT && journey.status !== AMEND) {
@@ -80,11 +114,29 @@ export const records = {
     return journey ? structuredClone(marshal(journey)) : undefined
   },
 
-  async list({ journeyIds = [], owner: _owner } = {}) {
-    return journeyIds
+  async list({
+    journeyIds = [],
+    owner: _owner,
+    page = 1,
+    sort = 'arrivalDate,desc'
+  } = {}) {
+    const resolvedPage = validPage(page)
+    const rows = journeyIds
       .map((journeyId) => journeys.get(journeyId))
       .filter((journey) => journey && journey.status !== DELETED)
-      .map((journey) => structuredClone(marshal(journey)))
+      .map(marshalListItem)
+      .sort(sortByCreatedAt(sort))
+    const totalElements = rows.length
+    const totalPages = Math.ceil(totalElements / LIST_PAGE_SIZE)
+    const offset = (resolvedPage - 1) * LIST_PAGE_SIZE
+
+    return {
+      rows: structuredClone(rows.slice(offset, offset + LIST_PAGE_SIZE)),
+      page: resolvedPage,
+      size: LIST_PAGE_SIZE,
+      totalElements,
+      totalPages
+    }
   },
 
   async has(journeyId) {

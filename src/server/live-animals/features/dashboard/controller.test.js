@@ -4,6 +4,7 @@ import {
   configureRecords,
   records,
   AMEND,
+  DELETED,
   SUBMITTED
 } from '../../engine/persistence/records.js'
 import {
@@ -31,10 +32,14 @@ const startPost = routes.find(
   (route) => route.method === 'POST' && route.path === createPath()
 ).handler
 
-const buildRequest = ({ knownJourneyIds = [], journeyId } = {}) => ({
+const buildRequest = ({
+  knownJourneyIds = [],
+  journeyId,
+  query = {}
+} = {}) => ({
   payload: {},
   params: journeyId ? { journeyId } : {},
-  query: {},
+  query,
   state: { [KNOWN_JOURNEYS_COOKIE]: knownJourneyIds },
   headers: {},
   app: {}
@@ -95,7 +100,7 @@ describe('dashboard notifications list', () => {
       classes: 'govuk-tag--blue'
     })
     expect(row.created).toEqual(expect.any(String))
-    expect(row.submitted).toBe('Not submitted')
+    expect(row.submitted).toBe('')
     expect(row.actions.map((action) => action.text)).toEqual([
       'Resume',
       'Copy as new',
@@ -122,7 +127,7 @@ describe('dashboard notifications list', () => {
       classes: 'govuk-tag--green'
     })
     expect(row.submitted).toEqual(expect.any(String))
-    expect(row.submitted).not.toBe('Not submitted')
+    expect(row.submitted).toMatch(/^\d{1,2} \w{3} \d{4}$/)
     expect(row.actions.map((action) => action.text)).toEqual([
       'View',
       'Amend',
@@ -149,6 +154,109 @@ describe('dashboard notifications list', () => {
     expect(
       h.captured.view.context.notificationRows.map((row) => row.reference)
     ).toEqual([known.journeyId])
+  })
+
+  it('Should build rich display fields using cached country and commodity reference data', async () => {
+    const draft = await startDraft()
+    await records.replaceFulfilment(
+      draft.journeyId,
+      assembleFulfilments({
+        countryOfOrigin: 'FR',
+        arrivalDateAtPort: { day: '5', month: '3', year: '2026' },
+        consignor: { name: 'Consignor Ltd' },
+        consignee: { name: 'Consignee Ltd' },
+        commodityLines: [{ commoditySelection: 'Cow' }]
+      })
+    )
+    const h = buildH()
+
+    await listGet(buildRequest({ knownJourneyIds: [draft.journeyId] }), h)
+
+    expect(h.captured.view.context.notificationRows[0]).toMatchObject({
+      commodity: 'Cow',
+      origin: 'France',
+      arrival: '5 Mar 2026',
+      consignor: 'Consignor Ltd',
+      consignee: 'Consignee Ltd'
+    })
+  })
+
+  it('Should default invalid page and sort query values', async () => {
+    const draft = await startDraft()
+    const h = buildH()
+
+    await listGet(
+      buildRequest({
+        knownJourneyIds: [draft.journeyId],
+        query: { page: '-4', sort: 'reference,sideways' }
+      }),
+      h
+    )
+
+    expect(h.captured.view.context).toMatchObject({
+      currentPage: 1,
+      sort: 'arrivalDate,desc',
+      resultsLabel: 'Showing 1 Result'
+    })
+  })
+
+  it('Should build result ranges and previous/next links while preserving sort', async () => {
+    const journeys = await Promise.all(
+      Array.from({ length: 21 }, () => startDraft())
+    )
+    const knownJourneyIds = journeys.map((journey) => journey.journeyId)
+    const firstPage = buildH()
+    const secondPage = buildH()
+
+    await listGet(
+      buildRequest({
+        knownJourneyIds,
+        query: { sort: 'createdAt,asc' }
+      }),
+      firstPage
+    )
+    await listGet(
+      buildRequest({
+        knownJourneyIds,
+        query: { page: '2', sort: 'createdAt,asc' }
+      }),
+      secondPage
+    )
+
+    expect(firstPage.captured.view.context).toMatchObject({
+      resultsLabel: 'Showing 1 to 20 of 21 Results',
+      pagination: {
+        next: {
+          href: `${firstPage.captured.view.context.listAction}?page=2&sort=createdAt%2Casc`
+        }
+      }
+    })
+    expect(secondPage.captured.view.context).toMatchObject({
+      currentPage: 2,
+      resultsLabel: 'Showing 21 of 21 Results',
+      pagination: {
+        previous: {
+          href: `${secondPage.captured.view.context.listAction}?sort=createdAt%2Casc`
+        }
+      }
+    })
+  })
+
+  it('Should keep deleted journeys absent from the list', async () => {
+    const owner = {
+      sub: STUB_USER,
+      organisation: ''
+    }
+    const deleted = await records.create({ owner })
+    await records.softDelete(deleted.journeyId, owner)
+    const h = buildH()
+
+    await listGet(buildRequest({ knownJourneyIds: [deleted.journeyId] }), h)
+
+    expect(h.captured.view.context.notificationRows).toEqual([])
+    expect((await records.load({ journeyId: deleted.journeyId })).status).toBe(
+      DELETED
+    )
   })
 })
 
@@ -203,7 +311,7 @@ describe('dashboard row actions', () => {
       text: 'Amending',
       classes: 'govuk-tag--yellow'
     })
-    expect(row.submitted).toBe('Not submitted')
+    expect(row.submitted).toBe('')
     expect(row.actions.map((action) => action.text)).toEqual([
       'Resume',
       'Copy as new',
@@ -276,6 +384,17 @@ describe('dashboard row actions', () => {
 
     expect(ordinary.captured.view.context.deletionSucceeded).toBe(false)
     expect(deleted.captured.view.context.deletionSucceeded).toBe(true)
+  })
+
+  it('Should expose the copy success banner only after a copy redirect', async () => {
+    const ordinary = buildH()
+    const copied = buildH()
+
+    await listGet(buildRequest(), ordinary)
+    await listGet(buildRequest({ query: { copied: '1' } }), copied)
+
+    expect(ordinary.captured.view.context.copySucceeded).toBe(false)
+    expect(copied.captured.view.context.copySucceeded).toBe(true)
   })
 })
 

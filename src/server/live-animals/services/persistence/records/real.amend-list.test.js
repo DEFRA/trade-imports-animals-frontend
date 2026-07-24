@@ -19,6 +19,12 @@ const fulfilment = (id, status) => ({
   status,
   createdAt: '2026-07-14T09:00:00',
   submittedAt: status === 'SUBMITTED' ? '2026-07-14T10:00:00' : null,
+  reference: id,
+  commodityDisplay: { name: 'Cow' },
+  originCountryCode: 'FR',
+  arrivalDate: '2026-07-20',
+  consignorName: 'Consignor Ltd',
+  consigneeName: 'Consignee Ltd',
   fulfilment: []
 })
 
@@ -55,7 +61,7 @@ describe('real records adapter — owner-scoped paged list', () => {
     fetchMocker.resetMocks()
   })
 
-  test('Should issue one owner-scoped first-page GET and map summaries to dashboard rows', async () => {
+  test('Should issue one owner-scoped paged GET and map the enriched response to dashboard rows', async () => {
     fetchMocker.mockResponse(
       JSON.stringify({
         page: 1,
@@ -72,33 +78,59 @@ describe('real records adapter — owner-scoped paged list', () => {
 
     const listed = await records.list({
       journeyIds: ['session-id-is-ignored-in-real-mode'],
-      owner
+      owner,
+      page: 2,
+      sort: 'createdAt,asc'
     })
 
     const [request] = fetchMocker.requests()
-    expect(request.url).toBe(`${fulfilmentsUrl}?page=1&sort=createdAt,desc`)
+    expect(request.url).toBe(`${fulfilmentsUrl}?page=2&sort=createdAt,asc`)
     expect(request.method).toBe('GET')
     expectOwnerHeaders(request)
-    expect(listed).toEqual([
-      {
-        journeyId: 'GBN-1',
-        status: DRAFT,
-        createdAt: '2026-07-14T09:00:00',
-        submittedAt: null
-      },
-      {
-        journeyId: 'GBN-2',
-        status: SUBMITTED,
-        createdAt: '2026-07-14T09:00:00',
-        submittedAt: '2026-07-14T10:00:00'
-      },
-      {
-        journeyId: 'GBN-3',
-        status: AMEND,
-        createdAt: '2026-07-14T09:00:00',
-        submittedAt: null
-      }
-    ])
+    expect(listed).toEqual({
+      page: 1,
+      size: 20,
+      totalElements: 3,
+      totalPages: 1,
+      rows: [
+        {
+          journeyId: 'GBN-1',
+          status: DRAFT,
+          createdAt: '2026-07-14T09:00:00',
+          submittedAt: null,
+          reference: 'GBN-1',
+          commodity: { name: 'Cow' },
+          originCountryCode: 'FR',
+          arrivalDate: '2026-07-20',
+          consignorName: 'Consignor Ltd',
+          consigneeName: 'Consignee Ltd'
+        },
+        {
+          journeyId: 'GBN-2',
+          status: SUBMITTED,
+          createdAt: '2026-07-14T09:00:00',
+          submittedAt: '2026-07-14T10:00:00',
+          reference: 'GBN-2',
+          commodity: { name: 'Cow' },
+          originCountryCode: 'FR',
+          arrivalDate: '2026-07-20',
+          consignorName: 'Consignor Ltd',
+          consigneeName: 'Consignee Ltd'
+        },
+        {
+          journeyId: 'GBN-3',
+          status: AMEND,
+          createdAt: '2026-07-14T09:00:00',
+          submittedAt: null,
+          reference: 'GBN-3',
+          commodity: { name: 'Cow' },
+          originCountryCode: 'FR',
+          arrivalDate: '2026-07-20',
+          consignorName: 'Consignor Ltd',
+          consigneeName: 'Consignee Ltd'
+        }
+      ]
+    })
   })
 
   test('Should implement has with an exact-id canonical GET', async () => {

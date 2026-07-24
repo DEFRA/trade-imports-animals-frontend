@@ -10,9 +10,35 @@ export const copy = {
   table: {
     reference: 'Cyfeirnod',
     status: 'Statws',
+    commodity: 'Nwydd',
+    origin: 'Tarddiad',
+    arrival: 'Cyrraedd y gyrchfan',
+    consignor: 'Traddodwr',
+    consignee: 'Derbynnydd',
     created: 'Dyddiad creu',
     submitted: 'Dyddiad cyflwyno',
     actions: 'Camau gweithredu'
+  },
+  sort: {
+    label: 'Trefnu yn ôl',
+    update: 'Diweddaru’r drefn',
+    options: {
+      arrivalNewest: 'Cyrraedd (mwyaf newydd i’r hynaf)',
+      arrivalOldest: 'Cyrraedd (hynaf i’r mwyaf newydd)',
+      createdNewest: 'Dyddiad creu (mwyaf newydd i’r hynaf)',
+      createdOldest: 'Dyddiad creu (hynaf i’r mwyaf newydd)'
+    }
+  },
+  pagination: {
+    previous: 'Blaenorol',
+    next: 'Nesaf',
+    results: {
+      none: 'Dim canlyniadau',
+      one: 'Yn dangos 1 canlyniad',
+      oneOf: (item, total) => `Yn dangos ${item} o ${total} o ganlyniadau`,
+      many: (start, end, total) =>
+        `Yn dangos ${start} i ${end} o ${total} o ganlyniadau`
+    }
   },
   notSubmitted: 'Heb ei gyflwyno',
   actions: {

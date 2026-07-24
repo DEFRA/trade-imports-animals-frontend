@@ -175,17 +175,35 @@ describe('records durable port', () => {
       owner
     })
 
-    expect(listed.map((journey) => journey.journeyId)).toEqual([
+    expect(listed.rows.map((journey) => journey.journeyId)).toEqual([
       second.journeyId,
       first.journeyId
     ])
+    expect(listed).toMatchObject({
+      page: 1,
+      size: 20,
+      totalElements: 2,
+      totalPages: 1
+    })
   })
 
   it('Should list nothing for an empty id set', async () => {
     const owner = { sub: 'user-A', organisation: 'organisation-A' }
     await records.create({ owner })
-    expect(await records.list({ journeyIds: [], owner })).toEqual([])
-    expect(await records.list()).toEqual([])
+    expect(await records.list({ journeyIds: [], owner })).toEqual({
+      rows: [],
+      page: 1,
+      size: 20,
+      totalElements: 0,
+      totalPages: 0
+    })
+    expect(await records.list()).toEqual({
+      rows: [],
+      page: 1,
+      size: 20,
+      totalElements: 0,
+      totalPages: 0
+    })
   })
 
   it('Should copy source content into one new draft per owner and idempotency key', async () => {
@@ -236,7 +254,7 @@ describe('records durable port', () => {
     expect(deleted.status).toBe(DELETED)
     expect(retry.status).toBe(DELETED)
     expect(
-      await records.list({ journeyIds: [journey.journeyId], owner })
+      (await records.list({ journeyIds: [journey.journeyId], owner })).rows
     ).toEqual([])
   })
 })

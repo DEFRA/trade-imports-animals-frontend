@@ -17,6 +17,9 @@ import { copy as documentsCopy } from '../../src/server/live-animals/features/do
 const BASE = '/prototype-standalone/live-animals'
 const GBN_REFERENCE = /GBN-AG-\d{2}-[0-9A-HJKMNP-TV-Z]{6}/
 
+const dashboardCard = (page, reference) =>
+  page.locator('.govuk-summary-card').filter({ hasText: reference })
+
 const journeyIdFromPage = (page) => {
   const match = new URL(page.url()).pathname.match(
     /\/prototype-standalone\/live-animals\/notifications\/([^/]+)/
@@ -332,6 +335,9 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(
       page.getByText('You have not started any notifications in this session.')
     ).toBeVisible()
+    await page.getByLabel('Sort by').selectOption('createdAt,asc')
+    await page.getByRole('button', { name: 'Update sort' }).click()
+    await expect(page).toHaveURL(/sort=createdAt%2Casc/)
 
     await startNotification(page)
     const stripText = await page.locator('.app-journey-strip').textContent()
@@ -339,9 +345,11 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // The draft is listed with its Draft tag, created date and a Resume action.
     await page.goto(`${BASE}/home`)
-    const row = page.getByRole('row', { name: new RegExp(reference) })
+    const row = dashboardCard(page, reference)
     await expect(row.getByText('Draft')).toBeVisible()
-    await expect(row.getByText('Not submitted')).toBeVisible()
+    await expect(row.getByText('Commodity')).toBeVisible()
+    await expect(row.getByText('Origin')).toBeVisible()
+    await expect(row.getByText('Date submitted')).toBeVisible()
     await row
       .getByRole('link', { name: `Resume notification ${reference}` })
       .click()
@@ -354,10 +362,8 @@ test.describe('live-animals (page-owned spine)', () => {
       reference
     )
     await page.goto(`${BASE}/home`)
-    await expect(page.getByRole('row', { name: GBN_REFERENCE })).toHaveCount(2)
-    await expect(
-      page.getByRole('row', { name: new RegExp(reference) })
-    ).toBeVisible()
+    await expect(page.locator('.govuk-summary-card')).toHaveCount(2)
+    await expect(dashboardCard(page, reference)).toBeVisible()
   })
 
   test('dashboard copy and delete — Copy as new lands in one new draft, then confirmation-gated Delete removes it from the list', async ({
@@ -368,9 +374,7 @@ test.describe('live-animals (page-owned spine)', () => {
     const sourceReference = journeyIdFromPage(page)
 
     await page.goto(`${BASE}/home`)
-    const sourceRow = page.getByRole('row', {
-      name: new RegExp(sourceReference)
-    })
+    const sourceRow = dashboardCard(page, sourceReference)
     await sourceRow
       .getByRole('button', {
         name: `Copy as new notification ${sourceReference}`
@@ -383,9 +387,7 @@ test.describe('live-animals (page-owned spine)', () => {
     expect(copiedReference).not.toBe(sourceReference)
 
     await page.goto(`${BASE}/home`)
-    const copiedRow = page.getByRole('row', {
-      name: new RegExp(copiedReference)
-    })
+    const copiedRow = dashboardCard(page, copiedReference)
     await expect(copiedRow).toBeVisible()
     await copiedRow
       .getByRole('link', { name: `Delete notification ${copiedReference}` })
@@ -400,12 +402,8 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(
       page.getByText('The notification has been deleted.')
     ).toBeVisible()
-    await expect(
-      page.getByRole('row', { name: new RegExp(copiedReference) })
-    ).toHaveCount(0)
-    await expect(
-      page.getByRole('row', { name: new RegExp(sourceReference) })
-    ).toBeVisible()
+    await expect(dashboardCard(page, copiedReference)).toHaveCount(0)
+    await expect(dashboardCard(page, sourceReference)).toBeVisible()
   })
 
   test('import type — a blank answer blocks Continue, a non-live-animals answer routes to the holding page, live animals opens the run', async ({
@@ -3109,8 +3107,8 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // The dashboard row has flipped to Submitted with View + Amend actions.
     await page.goto(`${BASE}/home`)
-    const row = page.getByRole('row', { name: new RegExp(reference) })
-    await expect(row.getByText('Submitted')).toBeVisible()
+    const row = dashboardCard(page, reference)
+    await expect(row.getByText('Submitted', { exact: true })).toBeVisible()
 
     // View opens the read view of the submitted notification.
     await row
@@ -3200,7 +3198,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // And the row reads Submitted once more.
     await page.goto(`${BASE}/home`)
-    await expect(row.getByText('Submitted')).toBeVisible()
+    await expect(row.getByText('Submitted', { exact: true })).toBeVisible()
   })
 })
 

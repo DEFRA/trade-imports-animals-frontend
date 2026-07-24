@@ -69,7 +69,13 @@ const marshalListItem = (item) => ({
   journeyId: item.id,
   status: mapStatus(item.status),
   createdAt: item.createdAt ?? null,
-  submittedAt: item.submittedAt ?? null
+  submittedAt: item.submittedAt ?? null,
+  reference: item.reference,
+  commodity: item.commodityDisplay,
+  originCountryCode: item.originCountryCode,
+  arrivalDate: item.arrivalDate,
+  consignorName: item.consignorName,
+  consigneeName: item.consigneeName
 })
 
 const resolveStatus = async (journeyId, known, owner) => {
@@ -165,7 +171,7 @@ export const records = {
     return undefined
   },
 
-  async list({ owner, page = 1, sort = 'createdAt,desc' } = {}) {
+  async list({ owner, page = 1, sort = 'arrivalDate,desc' } = {}) {
     const response = await fetch(
       `${fulfilmentsUrl}?page=${page}&sort=${sort}`,
       {
@@ -175,7 +181,13 @@ export const records = {
     )
     if (!response.ok) throw failed('list fulfilments', response)
     const result = await response.json()
-    return result.items.map(marshalListItem)
+    return {
+      rows: result.items.map(marshalListItem),
+      page: result.page,
+      size: result.size,
+      totalElements: result.totalElements,
+      totalPages: result.totalPages
+    }
   },
 
   async has(journeyId, owner) {

@@ -72,10 +72,12 @@ describe('delete notification routes', () => {
       DELETED
     )
     expect(
-      await records.list({
-        journeyIds: [journey.journeyId],
-        owner
-      })
+      (
+        await records.list({
+          journeyIds: [journey.journeyId],
+          owner
+        })
+      ).rows
     ).toEqual([])
   })
 

@@ -89,10 +89,10 @@ export const replaceJourneyFulfilment = async (
   return known ? { ...known, fulfilment: structuredClone(fulfilment) } : saved
 }
 
-export const listKnownJourneys = async (request) => {
+export const listKnownJourneys = async (request, { page, sort } = {}) => {
   const journeyIds = await session.knownJourneyIds(request)
   const owner = await session.owner(request)
-  return records.list({ journeyIds, owner })
+  return records.list({ journeyIds, owner, page, sort })
 }
 
 export const isKnownJourney = async (request, journeyId) =>

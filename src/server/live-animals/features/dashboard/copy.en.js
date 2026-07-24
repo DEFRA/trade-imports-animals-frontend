@@ -9,9 +9,35 @@ export const copy = {
   table: {
     reference: 'Reference',
     status: 'Status',
+    commodity: 'Commodity',
+    origin: 'Origin',
+    arrival: 'Arrival at destination',
+    consignor: 'Consignor',
+    consignee: 'Consignee',
     created: 'Date created',
     submitted: 'Date submitted',
     actions: 'Actions'
+  },
+  sort: {
+    label: 'Sort by',
+    update: 'Update sort',
+    options: {
+      arrivalNewest: 'Arrival (newest to oldest)',
+      arrivalOldest: 'Arrival (oldest to newest)',
+      createdNewest: 'Date created (newest to oldest)',
+      createdOldest: 'Date created (oldest to newest)'
+    }
+  },
+  pagination: {
+    previous: 'Previous',
+    next: 'Next',
+    results: {
+      none: 'No Results',
+      one: 'Showing 1 Result',
+      oneOf: (item, total) => `Showing ${item} of ${total} Results`,
+      many: (start, end, total) =>
+        `Showing ${start} to ${end} of ${total} Results`
+    }
   },
   notSubmitted: 'Not submitted',
   actions: {

@@ -7,7 +7,7 @@ import {
   pageRoutePath,
   TEMPLATES
 } from '../../config.js'
-import { AMEND, DRAFT, SUBMITTED } from '../../engine/index.js'
+import { AMEND, DELETED, DRAFT, SUBMITTED } from '../../engine/index.js'
 import {
   amendJourney,
   listKnownJourneys,
@@ -15,26 +15,43 @@ import {
 } from '../../engine/journey.js'
 import { CYA_SLUG, journeyStrip, routeOptions } from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
+import * as commodities from '../../services/commodities/index.js'
+import * as countries from '../../services/countries/index.js'
 import { importTypeFilterPage } from '../import-type-filter/page.js'
 import { dashboardPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
 import { copy as cy } from './copy.cy.js'
 import { copy as sharedEn } from '../../shared/copy.en.js'
 import { copy as sharedCy } from '../../shared/copy.cy.js'
+import {
+  buildHomeListQueryString,
+  buildPageResultsRangeLabel,
+  buildPaginationLinks,
+  formatCommodity,
+  formatDisplayDate,
+  normalizePageNumber,
+  NOTIFICATION_SORT_OPTIONS,
+  parseNotificationSort
+} from './notification-helper.js'
 
 const view = `${TEMPLATES}/features/dashboard/template`
 
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
-const dateText = (value) =>
-  value
-    ? new Date(value).toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-      })
-    : null
+const dashboardPath = () => `${BASE}/${page.slug}`
+
+const sortOptionText = [
+  copy.sort.options.arrivalNewest,
+  copy.sort.options.arrivalOldest,
+  copy.sort.options.createdNewest,
+  copy.sort.options.createdOldest
+]
+
+const sortOptions = NOTIFICATION_SORT_OPTIONS.map((option, index) => ({
+  ...option,
+  text: sortOptionText[index]
+}))
 
 const rowActions = (journey) => {
   const copyAction = {
@@ -89,10 +106,18 @@ const rowActions = (journey) => {
 }
 
 const toRow = (journey, retryCopy = null) => ({
-  reference: journey.journeyId,
+  reference: journey.reference ?? journey.journeyId,
   status: journeyStrip(journey).status,
-  created: dateText(journey.createdAt),
-  submitted: dateText(journey.submittedAt) ?? copy.notSubmitted,
+  commodity: formatCommodity(journey.commodity, commodities.commodityNameFor),
+  origin: journey.originCountryCode
+    ? (countries.originLabel(journey.originCountryCode) ??
+      journey.originCountryCode)
+    : '',
+  arrival: formatDisplayDate(journey.arrivalDate),
+  consignor: journey.consignorName ?? '',
+  consignee: journey.consigneeName ?? '',
+  created: formatDisplayDate(journey.createdAt),
+  submitted: formatDisplayDate(journey.submittedAt),
   actions: rowActions(journey).map((action) =>
     retryCopy?.journeyId === journey.journeyId &&
     action.idempotencyKey !== undefined
@@ -106,21 +131,55 @@ export const renderDashboard = async (
   h,
   { recoverableError = false, retryCopy = null } = {}
 ) => {
-  const journeys = await listKnownJourneys(request)
+  const queryPage = Number.parseInt(request.query?.page, 10)
+  const requestedPage = normalizePageNumber(queryPage)
+  const sort = parseNotificationSort(request.query?.sort)
+  const listed = await listKnownJourneys(request, {
+    page: requestedPage,
+    sort
+  })
+  const currentPage = normalizePageNumber(listed.page, listed.totalPages)
+  const rows = listed.rows.filter((journey) => journey.status !== DELETED)
+  const pagination = {
+    page: currentPage,
+    size: listed.size,
+    totalElements: listed.totalElements,
+    totalPages: listed.totalPages
+  }
+
   return h.view(view, {
     pageTitle: copy.title,
     copy,
     sharedCopy,
     startAction: createPath(),
-    notificationRows: journeys.map((journey) => toRow(journey, retryCopy)),
+    listAction: dashboardPath(),
+    notificationRows: rows.map((journey) => toRow(journey, retryCopy)),
+    resultsLabel: buildPageResultsRangeLabel(
+      pagination,
+      rows.length,
+      copy.pagination.results
+    ),
+    pagination: buildPaginationLinks(
+      pagination,
+      dashboardPath(),
+      sort,
+      copy.pagination
+    ),
+    currentPage,
+    sort,
+    sortOptions,
+    listQuerySuffix: buildHomeListQueryString({
+      page: currentPage,
+      sort
+    }),
     recoverableError,
-    deletionSucceeded: request.query?.deleted === '1'
+    deletionSucceeded: request.query?.deleted === '1',
+    copySucceeded: request.query?.copied === '1'
   })
 }
 
 const listGet = async (request, h) => renderDashboard(request, h)
 
-const dashboardPath = () => `${BASE}/${page.slug}`
 const backToDashboard = (h) => h.redirect(dashboardPath())
 
 const amendPost = async (request, h) => {
