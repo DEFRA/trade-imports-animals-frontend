@@ -28,6 +28,10 @@ export const copy = {
   errorSummary: {
     title: 'There is a problem'
   },
+  recoverableError: {
+    title: 'There is a problem',
+    body: 'Sorry, there is a problem with the service. Your answers on this page have been saved. Try again in a few minutes.'
+  },
   saveActions: {
     saveAndContinue: 'Save and continue',
     saveAndReturnToHub: 'Save and return to hub',

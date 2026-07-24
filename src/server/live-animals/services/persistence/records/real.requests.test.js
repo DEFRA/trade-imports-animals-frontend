@@ -14,6 +14,7 @@ import {
   answersToTargetNotification,
   fulfilmentToNotification
 } from './mapper.js'
+import { isRecoverableBackendError } from './errors.js'
 import { records } from './real.js'
 
 const fetchMocker = createFetchMock(vi)
@@ -63,6 +64,31 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       submittedAt: null,
       fulfilment: {}
     })
+  })
+
+  it('Should classify the adapter fetch failure shape, but not programming errors, as recoverable', async () => {
+    fetchMocker.mockResponse('Unavailable', {
+      status: 503,
+      statusText: 'Service Unavailable'
+    })
+
+    let surfaced
+    try {
+      await records.create()
+    } catch (error) {
+      surfaced = error
+    }
+
+    expect(surfaced).toMatchObject({
+      name: 'BackendRequestError',
+      status: 503,
+      statusText: 'Service Unavailable'
+    })
+    expect(isRecoverableBackendError(surfaced)).toBe(true)
+    expect(isRecoverableBackendError(new Error('plain failure'))).toBe(false)
+    expect(
+      isRecoverableBackendError(new TypeError('programming failure'))
+    ).toBe(false)
   })
 
   it('Should load and decode the canonical persisted fulfilment directly', async () => {
@@ -183,6 +209,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       journeyId,
       failedProjections: ['current notification']
     })
+    expect(isRecoverableBackendError(surfaced)).toBe(true)
     expect(surfaced.message).toMatch(
       /Canonical fulfilment .* saved, but projection writes failed/
     )

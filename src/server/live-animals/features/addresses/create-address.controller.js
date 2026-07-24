@@ -73,11 +73,19 @@ const countryItems = (selected) => [
 const emptyValues = () =>
   Object.fromEntries(FIELD_ORDER.map((field) => [field, '']))
 
-const render = (h, journey, party, values, errors = {}) =>
+const render = (
+  h,
+  journey,
+  party,
+  values,
+  errors = {},
+  recoverableError = false
+) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: pagePath(journey.journeyId, party.slug),
-      journey
+      journey,
+      recoverableError
     }),
     copy,
     partyId: party.id,
@@ -142,10 +150,21 @@ const post = async (request, h) => {
     )
   }
 
-  const record = addressBook.addParty(party.role, addressRecordFrom(values))
-  await state.commit(request, h, {
-    [party.id]: { name: record.name, address: { ...record.address } }
-  })
+  const record = addressRecordFrom(values)
+  const failure = await kit.recoverableSave(
+    async () => {
+      await state.commit(request, h, {
+        [party.id]: { name: record.name, address: { ...record.address } }
+      })
+    },
+    async () => {
+      const { journey } = await state.get(request, h)
+      return render(h, journey, party, values, {}, true).code(500)
+    }
+  )
+  if (failure) return failure
+
+  addressBook.addParty(party.role, record)
   return h.redirect(pagePath(request.params.journeyId, party.returnSlug))
 }
 

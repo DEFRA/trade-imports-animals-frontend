@@ -17,11 +17,12 @@ const fields = compose(
   oneOf('transporterType', transportReference.transporterTypes())
 )
 
-const render = (h, journey, values, errors = {}) =>
+const render = (h, journey, values, errors = {}, recoverableError = false) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
-      journey
+      journey,
+      recoverableError
     }),
     copy,
     values,
@@ -43,7 +44,19 @@ const post = async (request, h) => {
     return render(h, journey, values, errors)
   }
 
-  const { scope } = await state.commit(request, h, values)
+  let committed
+  const failure = await kit.recoverableSave(
+    async () => {
+      committed = await state.commit(request, h, values)
+    },
+    async () => {
+      const { journey } = await state.get(request, h)
+      return render(h, journey, values, {}, true).code(500)
+    }
+  )
+  if (failure) return failure
+
+  const { scope } = committed
   return h.redirect(await kit.nextTarget(request, page, scope))
 }
 

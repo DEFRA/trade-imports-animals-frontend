@@ -47,11 +47,12 @@ const transitedCountriesErrors = (selected, adding) => {
   return {}
 }
 
-const render = (h, journey, selected, errors = {}) =>
+const render = (h, journey, selected, errors = {}, recoverableError = false) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
-      journey
+      journey,
+      recoverableError
     }),
     copy,
     errors,
@@ -83,9 +84,21 @@ const post = async (request, h) => {
     return render(h, journey, selected, errors).code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  const { scope } = await state.commit(request, h, {
-    transitedCountries: selected
-  })
+  let committed
+  const failure = await kit.recoverableSave(
+    async () => {
+      committed = await state.commit(request, h, {
+        transitedCountries: selected
+      })
+    },
+    async () => {
+      const { journey } = await state.get(request, h)
+      return render(h, journey, selected, {}, true).code(500)
+    }
+  )
+  if (failure) return failure
+
+  const { scope } = committed
   if (payload.addCountry !== undefined) {
     return h.redirect(
       kit.withChangeContext(

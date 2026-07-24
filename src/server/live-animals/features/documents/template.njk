@@ -19,6 +19,14 @@
         data-max-file-size="{{ maxFileSize }}"
         data-oversize-error="{{ oversizeFileMessage }}">
     <input type="hidden" name="crumb" value="{{ crumb }}" />
+    {% if pendingDocumentSave %}
+      <input type="hidden" name="retryUploadId" value="{{ pendingDocumentSave.uploadId }}" />
+      <input type="hidden" name="retryFilename" value="{{ pendingDocumentSave.filename }}" />
+    {% endif %}
+    {% if pendingDocumentRemoval %}
+      <input type="hidden" name="retryRemoveIndex" value="{{ pendingDocumentRemoval.index }}" />
+      <input type="hidden" name="retryRemoveUploadId" value="{{ pendingDocumentRemoval.uploadId }}" />
+    {% endif %}
 
     {{ govukInput({
       id: "accompanyingDocumentReference",

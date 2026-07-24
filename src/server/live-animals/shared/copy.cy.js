@@ -21,6 +21,10 @@ export const copy = {
   errorSummary: {
     title: 'Mae problem'
   },
+  recoverableError: {
+    title: 'Mae problem',
+    body: "Mae'n ddrwg gennym, mae problem gyda'r gwasanaeth. Mae eich atebion ar y dudalen hon wedi'u cadw. Rhowch gynnig arall arni ymhen ychydig funudau."
+  },
   saveActions: {
     saveAndContinue: 'Cadw a pharhau',
     saveAndReturnToHub: "Cadw a dychwelyd i'r hyb",

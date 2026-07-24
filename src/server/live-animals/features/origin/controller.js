@@ -85,12 +85,20 @@ const fields = () =>
 const journeyIfStarted = (journey, answers) =>
   hasCommittedNotificationAnswers(answers) ? journey : undefined
 
-const render = (h, journey, values, errors = {}, answers = values) =>
+const render = (
+  h,
+  journey,
+  values,
+  errors = {},
+  answers = values,
+  recoverableError = false
+) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
       journey: journeyIfStarted(journey, answers),
-      journeyId: journey.journeyId
+      journeyId: journey.journeyId,
+      recoverableError
     }),
     copy,
     values,
@@ -117,7 +125,19 @@ const post = async (request, h) => {
     )
   }
 
-  const { scope } = await state.commit(request, h, values)
+  let committed
+  const failure = await kit.recoverableSave(
+    async () => {
+      committed = await state.commit(request, h, values)
+    },
+    async () => {
+      const { journey, answers } = await state.get(request, h)
+      return render(h, journey, values, {}, answers, true).code(500)
+    }
+  )
+  if (failure) return failure
+
+  const { scope } = committed
   return h.redirect(await kit.nextTarget(request, page, scope))
 }
 

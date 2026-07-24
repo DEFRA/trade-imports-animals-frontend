@@ -5,6 +5,7 @@ import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments
 } from './fulfilment-codec.js'
+import { BackendRequestError, markRecoverableBackendError } from './errors.js'
 import {
   answersToTargetNotification,
   fulfilmentToNotification
@@ -29,14 +30,7 @@ const headers = () => ({
   [tracingHeader]: getTraceId() ?? ''
 })
 
-const failed = (action, response) => {
-  const error = new Error(
-    `Failed to ${action}: ${response.status} ${response.statusText}`
-  )
-  error.status = response.status
-  error.statusText = response.statusText
-  return error
-}
+const failed = (action, response) => new BackendRequestError(action, response)
 
 const mapStatus = (backendStatus) =>
   backendStatus === BACKEND_SUBMITTED ? SUBMITTED : IN_PROGRESS
@@ -109,9 +103,11 @@ const putProjection = async ({ journeyId, name, url, body }) => {
 
 const throwProjectionFailure = (journeyId, failures) => {
   const failedProjections = failures.map(({ name }) => name)
-  const error = new AggregateError(
-    failures.map(({ error: cause }) => cause),
-    `Canonical fulfilment "${journeyId}" saved, but projection writes failed: ${failedProjections.join(', ')}`
+  const error = markRecoverableBackendError(
+    new AggregateError(
+      failures.map(({ error: cause }) => cause),
+      `Canonical fulfilment "${journeyId}" saved, but projection writes failed: ${failedProjections.join(', ')}`
+    )
   )
   error.canonicalSaved = true
   error.journeyId = journeyId

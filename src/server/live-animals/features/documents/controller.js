@@ -362,12 +362,20 @@ const capacityExceededError = () => [
   }
 ]
 
-const documentAddErrors = (payload, bare) => {
+const pendingDocumentSaveFrom = (payload) => {
+  const uploadId = payload.retryUploadId ?? ''
+  const filename = payload.retryFilename ?? ''
+  return UPLOAD_ID_PATTERN.test(uploadId) && attachmentTypeFor(filename)
+    ? { uploadId, filename }
+    : null
+}
+
+const documentAddErrors = (payload, bare, pendingDocumentSave) => {
   const { errors } = validate(fields, payload)
   return {
     ...errors,
     ...presenceErrors(bare),
-    ...fileErrors(payload.file)
+    ...(pendingDocumentSave ? {} : fileErrors(payload.file))
   }
 }
 
@@ -385,7 +393,8 @@ const uploadOutcome = async (pageState, entry, file, filename) => {
 const postAdd = async (request, h, payload) => {
   const pageState = await loadPage(request, h)
   const bare = documentFromPayload(payload)
-  if (pageState.documents.length >= MAX_DOCUMENTS) {
+  const pendingDocumentSave = pendingDocumentSaveFrom(payload)
+  if (!pendingDocumentSave && pageState.documents.length >= MAX_DOCUMENTS) {
     return render(
       request,
       h,
@@ -395,31 +404,57 @@ const postAdd = async (request, h, payload) => {
       capacityExceededError()
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
-  const allErrors = documentAddErrors(payload, bare)
+  const allErrors = documentAddErrors(payload, bare, pendingDocumentSave)
   if (Object.keys(allErrors).length > 0) {
     return render(request, h, pageState, bare, allErrors).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
 
-  const filename = payload.file.filename ?? 'upload'
+  const filename = pendingDocumentSave?.filename ?? payload.file.filename
   const entry = {
     ...bare,
     accompanyingDocumentType: deriveDocumentTypeFromFilename(filename)
   }
-  const outcome = await uploadOutcome(pageState, entry, payload.file, filename)
+  const outcome = pendingDocumentSave
+    ? { uploadId: pendingDocumentSave.uploadId }
+    : await uploadOutcome(pageState, entry, payload.file, filename)
   if (outcome.failed) {
     return render(request, h, pageState, bare, {
       file: UPLOAD_FAILURE_MESSAGE
     }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   }
 
-  await state.appendEntry(request, h, 'documents', {
+  const savedEntry = {
     ...entry,
     accompanyingDocumentAttachmentType: attachmentTypeFor(filename),
     uploadId: outcome.uploadId,
     filename
-  })
+  }
+  const failure = await kit.recoverableSave(
+    async () => {
+      const alreadyCanonicallySaved = pageState.documents.some(
+        ({ entry: document }) => document.uploadId === savedEntry.uploadId
+      )
+      if (alreadyCanonicallySaved) {
+        await state.commit(request, h, {
+          documents: pageState.answers.documents ?? []
+        })
+      } else {
+        await state.appendEntry(request, h, 'documents', savedEntry)
+      }
+    },
+    () =>
+      render(request, h, pageState, bare, {}, [], {
+        recoverableError: true,
+        pendingDocumentSave: {
+          uploadId: savedEntry.uploadId,
+          filename: savedEntry.filename
+        }
+      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+  )
+  if (failure) return failure
+
   return h.redirect(
     kit.withChangeContext(
       request,
@@ -444,29 +479,90 @@ const removeIndexOf = (action) =>
 const documentAt = (answers, evaluation, index) =>
   state.collectionView(answers, ['documents'], evaluation)[index]?.entry
 
-const postRemove = async (request, h, index) => {
-  const { answers, evaluation } = await state.get(request, h)
-  const entry = documentAt(answers, evaluation, index)
+const retryProjectionSave = async (
+  request,
+  h,
+  pageState,
+  pendingDocumentRemoval
+) => {
+  const failure = await kit.recoverableSave(
+    async () => {
+      await state.commit(request, h, {
+        documents: pageState.answers.documents ?? []
+      })
+    },
+    () =>
+      render(request, h, pageState, EMPTY_FORM, {}, [], {
+        recoverableError: true,
+        pendingDocumentRemoval
+      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+  )
+  if (failure) return failure
+  return h.redirect(
+    kit.withChangeContext(
+      request,
+      pagePath(request.params.journeyId, page.slug)
+    )
+  )
+}
+
+const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
+  const pageState = await loadPage(request, h)
+  const retryIndex = retryUploadId
+    ? pageState.documents.findIndex(
+        ({ entry: document }) => document.uploadId === retryUploadId
+      )
+    : index
+  if (retryUploadId && retryIndex === -1) {
+    return retryProjectionSave(request, h, pageState, {
+      index,
+      uploadId: retryUploadId
+    })
+  }
+
+  const entry = documentAt(pageState.answers, pageState.evaluation, retryIndex)
   if (!entry) return h.response().code(HTTP_STATUS_BAD_REQUEST)
 
   const backToPage = kit.withChangeContext(
     request,
     pagePath(request.params.journeyId, page.slug)
   )
-  if (entry.uploadId) {
+  if (entry.uploadId && !retryUploadId) {
     try {
       await documentUploads.remove(entry.uploadId)
     } catch {
       return h.redirect(backToPage)
     }
   }
-  await state.removeEntry(request, h, 'documents', index)
+  const failure = await kit.recoverableSave(
+    async () => {
+      await state.removeEntry(request, h, 'documents', retryIndex)
+    },
+    () =>
+      render(request, h, pageState, EMPTY_FORM, {}, [], {
+        recoverableError: true,
+        pendingDocumentRemoval: {
+          index,
+          uploadId: entry.uploadId
+        }
+      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+  )
+  if (failure) return failure
+
   return h.redirect(backToPage)
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const action = payload.action ?? ''
+  if (
+    payload.retryRemoveUploadId &&
+    UPLOAD_ID_PATTERN.test(payload.retryRemoveUploadId)
+  ) {
+    return postRemove(request, h, Number(payload.retryRemoveIndex), {
+      retryUploadId: payload.retryRemoveUploadId
+    })
+  }
   if (action === 'add') return postAdd(request, h, payload)
   if (isRemoveAction(action)) {
     return postRemove(request, h, removeIndexOf(action))

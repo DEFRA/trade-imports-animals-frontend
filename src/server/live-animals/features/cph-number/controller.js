@@ -41,11 +41,19 @@ const hubEntryReturn = (request) =>
     ? pagePath(request.params.journeyId, 'addresses')
     : null
 
-const render = (request, h, journey, values, errors = {}) =>
+const render = (
+  request,
+  h,
+  journey,
+  values,
+  errors = {},
+  recoverableError = false
+) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubEntryReturn(request) ?? hubPath(journey.journeyId),
-      journey
+      journey,
+      recoverableError
     }),
     copy,
     values,
@@ -78,7 +86,19 @@ const post = async (request, h) => {
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  const { scope } = await state.commit(request, h, values)
+  let committed
+  const failure = await kit.recoverableSave(
+    async () => {
+      committed = await state.commit(request, h, values)
+    },
+    async () => {
+      const { journey } = await state.get(request, h)
+      return render(request, h, journey, values, {}, true).code(500)
+    }
+  )
+  if (failure) return failure
+
+  const { scope } = committed
   return h.redirect(
     kit.hubExitTarget(request) ??
       hubEntryReturn(request) ??

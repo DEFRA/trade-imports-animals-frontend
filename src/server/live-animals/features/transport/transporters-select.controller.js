@@ -31,11 +31,12 @@ const addressSummary = (address) =>
     .filter((part) => part)
     .join(', ')
 
-const render = (h, journey, values, errors = {}) =>
+const render = (h, journey, values, errors = {}, recoverableError = false) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: pagePath(journey.journeyId, 'transporters'),
-      journey
+      journey,
+      recoverableError
     }),
     copy,
     errors,
@@ -87,7 +88,21 @@ const post = async (request, h) => {
     'commercialTransporter',
     payload.commercialTransporter
   )
-  const { scope } = await commitOrSkip(request, h, chosen)
+  let committed
+  const failure = await kit.recoverableSave(
+    async () => {
+      committed = await commitOrSkip(request, h, chosen)
+    },
+    async () => {
+      const { journey } = await state.get(request, h)
+      return render(h, journey, { selectedName: chosen?.name }, {}, true).code(
+        500
+      )
+    }
+  )
+  if (failure) return failure
+
+  const { scope } = committed
   return h.redirect(await kit.nextTarget(request, page, scope))
 }
 

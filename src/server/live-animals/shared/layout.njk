@@ -3,6 +3,7 @@
 {% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 {% from "govuk/components/breadcrumbs/macro.njk" import govukBreadcrumbs %}
 {% from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 {% from "govuk/components/service-navigation/macro.njk" import govukServiceNavigation %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
 
@@ -52,6 +53,13 @@
 {% block content %}
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
+      {% if recoverableError %}
+        {{ govukNotificationBanner({
+          titleText: sharedCopy.recoverableError.title,
+          text: sharedCopy.recoverableError.body,
+          role: "alert"
+        }) }}
+      {% endif %}
       {% if journeyStrip %}
         <div class="app-journey-strip govuk-!-margin-bottom-4">
           {{ govukTag({ text: journeyStrip.status.text, classes: journeyStrip.status.classes }) }}

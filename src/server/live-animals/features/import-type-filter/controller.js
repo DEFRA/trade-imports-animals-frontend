@@ -31,11 +31,12 @@ const fields = compose(
   )
 )
 
-const render = (h, journey, values, errors = {}) =>
+const render = (h, journey, values, errors = {}, recoverableError = false) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: `${BASE}/home`,
-      journeyId: journey.journeyId
+      journeyId: journey.journeyId,
+      recoverableError
     }),
     copy,
     values,
@@ -65,8 +66,17 @@ const post = async (request, h) => {
     return render(h, journey, values, errors)
   }
 
-  const { answers: before } = await state.get(request, h)
-  const { scope } = await state.commit(request, h, values)
+  const { answers: before, journey } = await state.get(request, h)
+  let committed
+  const failure = await kit.recoverableSave(
+    async () => {
+      committed = await state.commit(request, h, values)
+    },
+    () => render(h, journey, values, {}, true).code(500)
+  )
+  if (failure) return failure
+
+  const { scope } = committed
   if (values.importType !== LIVE_ANIMALS) {
     return h.redirect(pagePath(request.params.journeyId, NOT_AVAILABLE_SLUG))
   }

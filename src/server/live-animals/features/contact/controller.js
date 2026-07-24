@@ -36,11 +36,12 @@ const addressSummary = (address) =>
     .filter((part) => part)
     .join(', ')
 
-const render = (h, journey, values, errors = {}) =>
+const render = (h, journey, values, errors = {}, recoverableError = false) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
-      journey
+      journey,
+      recoverableError
     }),
     copy,
     errors,
@@ -71,11 +72,28 @@ const post = async (request, h) => {
   }
 
   const chosen = addressBook.party('contact', payload.contactAddress)
-  const { scope } = chosen
-    ? await state.commit(request, h, {
-        contactAddress: { name: chosen.name, address: { ...chosen.address } }
-      })
-    : await state.get(request, h)
+  let committed
+  const failure = await kit.recoverableSave(
+    async () => {
+      committed = chosen
+        ? await state.commit(request, h, {
+            contactAddress: {
+              name: chosen.name,
+              address: { ...chosen.address }
+            }
+          })
+        : await state.get(request, h)
+    },
+    async () => {
+      const { journey } = await state.get(request, h)
+      return render(h, journey, { selectedName: chosen?.name }, {}, true).code(
+        500
+      )
+    }
+  )
+  if (failure) return failure
+
+  const { scope } = committed
   return h.redirect(await kit.nextTarget(request, page, scope))
 }
 

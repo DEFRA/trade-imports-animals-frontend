@@ -1,4 +1,5 @@
 import { statusCodes } from '../constants/status-codes.js'
+import { base } from '../../live-animals/shared/kit.js'
 
 function statusCodeMessage(statusCode) {
   switch (statusCode) {
@@ -30,8 +31,8 @@ export function catchAll(request, h) {
   }
 
   return h
-    .view('error/index', {
-      pageTitle: errorMessage,
+    .view('live-animals/shared/error', {
+      ...base(errorMessage),
       heading: statusCode,
       message: errorMessage
     })

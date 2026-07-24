@@ -109,7 +109,12 @@ const errorSummary = (error, hasRows) =>
       }
     : null
 
-const render = (h, journey, party, { query, page, selectedId, error }) => {
+const render = (
+  h,
+  journey,
+  party,
+  { query, page, selectedId, error, recoverableError = false }
+) => {
   const found = addressBook.search(party.role, { query, page })
   const selected = selectedId
     ? addressBook.party(party.role, selectedId)
@@ -119,7 +124,8 @@ const render = (h, journey, party, { query, page, selectedId, error }) => {
   return h.view(view, {
     ...kit.base(party.title, {
       backLink: pagePath(journey.journeyId, 'addresses'),
-      journey
+      journey,
+      recoverableError
     }),
     heading: party.title,
     description: party.hint,
@@ -175,10 +181,24 @@ const isSearchAction = (payload) => payload.action === 'search'
 const chosenPartyFor = (party, selectedId) =>
   selectedId ? addressBook.party(party.role, selectedId) : undefined
 
-const commitSelection = async (request, h, party, chosen) => {
-  await state.commit(request, h, {
-    [party.id]: { name: chosen.name, address: { ...chosen.address } }
-  })
+const commitSelection = async (request, h, party, chosen, form) => {
+  const failure = await kit.recoverableSave(
+    async () => {
+      await state.commit(request, h, {
+        [party.id]: { name: chosen.name, address: { ...chosen.address } }
+      })
+    },
+    async () => {
+      const { journey } = await state.get(request, h)
+      return render(h, journey, party, {
+        ...form,
+        selectedId: chosen.id,
+        recoverableError: true
+      }).code(500)
+    }
+  )
+  if (failure) return failure
+
   return h.redirect(pagePath(request.params.journeyId, 'addresses'))
 }
 
@@ -203,7 +223,10 @@ const post = (party) => async (request, h) => {
     }).code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  return commitSelection(request, h, party, chosen)
+  return commitSelection(request, h, party, chosen, {
+    query,
+    page: pageNumber(payload.page)
+  })
 }
 
 export const routes = PARTIES.flatMap((party) => [

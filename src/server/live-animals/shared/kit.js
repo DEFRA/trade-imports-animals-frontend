@@ -1,5 +1,5 @@
 import {
-  breadcrumbs,
+  breadcrumbs as buildBreadcrumbs,
   hubPath,
   LAYOUT,
   pagePath,
@@ -12,6 +12,7 @@ import { inOpeningRun } from '../flow/run-state.js'
 import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
+import { isRecoverableBackendError } from '../services/persistence/records/errors.js'
 
 export const open = { auth: false }
 
@@ -78,16 +79,34 @@ export const nextTarget = async (request, page, scope) =>
 
 export const base = (
   title,
-  { backLink, journey, journeyId = journey?.journeyId } = {}
+  {
+    backLink,
+    journey,
+    journeyId = journey?.journeyId,
+    recoverableError = false
+  } = {}
 ) => {
+  const hasJourney = journeyId != null
   return {
     layout: LAYOUT,
     pageTitle: title,
-    breadcrumbs: breadcrumbs(journeyId, title),
+    breadcrumbs: hasJourney ? buildBreadcrumbs(journeyId, title) : false,
     backLink,
-    hubHref: hubPath(journeyId),
+    hubHref: hasJourney ? hubPath(journeyId) : undefined,
     journeyStrip: journeyStrip(journey),
-    sharedCopy
+    sharedCopy,
+    recoverableError
+  }
+}
+
+export const recoverableSave = async (saveThunk, onRecoverableFailure) => {
+  try {
+    return await saveThunk()
+  } catch (error) {
+    if (isRecoverableBackendError(error)) {
+      return onRecoverableFailure()
+    }
+    throw error
   }
 }
 
