@@ -1,0 +1,31 @@
+{% extends "live-animals/shared/layout.njk" %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "live-animals/shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "live-animals/shared/error-summary.njk" %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukRadios({
+      name: "contactAddress",
+      fieldset: {
+        legend: {
+          text: copy.legend,
+          isPageHeading: true,
+          classes: "govuk-fieldset__legend--l"
+        }
+      },
+      hint: { text: copy.hint },
+      errorMessage: errors.contactAddress and { text: errors.contactAddress },
+      items: contactOptions
+    }) }}
+
+    <p class="govuk-body">
+      <a class="govuk-link" href="{{ createAddressHref }}">{{ copy.addNewAddress }}</a>
+    </p>
+
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+  </form>
+{% endblock %}

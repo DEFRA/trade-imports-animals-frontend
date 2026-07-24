@@ -1,15 +1,15 @@
 import { readFileSync } from 'node:fs'
 import { test, expect } from '@playwright/test'
 
-import { COUNTRY_LABELS } from '../standalone/live-animals/services/countries/stub.js'
-import { PORTS } from '../standalone/live-animals/services/ports/stub.js'
-import { copy as transportCopy } from '../standalone/live-animals/features/transport/copy.en.js'
-import { copy as documentsCopy } from '../standalone/live-animals/features/documents/copy.en.js'
+import { COUNTRY_LABELS } from '../../src/server/live-animals/services/countries/stub.js'
+import { PORTS } from '../../src/server/live-animals/services/ports/stub.js'
+import { copy as transportCopy } from '../../src/server/live-animals/features/transport/copy.en.js'
+import { copy as documentsCopy } from '../../src/server/live-animals/features/documents/copy.en.js'
 
 /**
  * Happy-path walk of the live-animals journey. Grows one leg per increment
  * as pages land, driven by the values in
- * `prototypes/standalone/live-animals/flow/fixtures/happy-path.json`.
+ * `src/server/live-animals/flow/fixtures/happy-path.json`.
  * As of inc-028 no car-domain feature remains — every leg walks the
  * live-animals journey end to end (dashboard -> tasks -> declaration ->
  * submit -> confirmation).
@@ -20,7 +20,7 @@ const GBN_REFERENCE = /GBN-AG-\d{2}-[0-9A-HJKMNP-TV-Z]{6}/
 const { values } = JSON.parse(
   readFileSync(
     new URL(
-      '../standalone/live-animals/flow/fixtures/happy-path.json',
+      '../../src/server/live-animals/flow/fixtures/happy-path.json',
       import.meta.url
     ),
     'utf8'

@@ -1,0 +1,68 @@
+{% extends "live-animals/shared/layout.njk" %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "live-animals/shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "live-animals/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukDateInput(arrivalDate) }}
+
+    {{ govukSelect({
+      id: "portOfEntry",
+      name: "portOfEntry",
+      label: { text: copy.port.label, classes: "govuk-label--s" },
+      hint: { text: copy.port.hint },
+      value: values.portOfEntry,
+      errorMessage: errors.portOfEntry and { text: errors.portOfEntry },
+      items: portItems,
+      attributes: { "data-select-autocomplete": "" }
+    }) }}
+
+    {{ govukRadios({
+      name: "meansOfTransport",
+      fieldset: { legend: { text: copy.means.legend, classes: "govuk-fieldset__legend--s" } },
+      errorMessage: errors.meansOfTransport and { text: errors.meansOfTransport },
+      items: [
+        { value: "AIRPLANE", text: copy.means.options["AIRPLANE"], checked: values.meansOfTransport == "AIRPLANE" },
+        { value: "RAILWAY", text: copy.means.options["RAILWAY"], checked: values.meansOfTransport == "RAILWAY" },
+        { value: "ROAD_VEHICLE", text: copy.means.options["ROAD_VEHICLE"], checked: values.meansOfTransport == "ROAD_VEHICLE" },
+        { value: "VESSEL", text: copy.means.options["VESSEL"], checked: values.meansOfTransport == "VESSEL" }
+      ]
+    }) }}
+
+    {{ govukInput({
+      id: "transportIdentification",
+      name: "transportIdentification",
+      label: { text: copy.identification.label, classes: "govuk-label--s" },
+      hint: { text: copy.identification.hint },
+      classes: "govuk-!-width-one-half",
+      value: values.transportIdentification,
+      errorMessage: errors.transportIdentification and { text: errors.transportIdentification }
+    }) }}
+
+    {{ govukInput({
+      id: "transportDocumentReference",
+      name: "transportDocumentReference",
+      label: { text: copy.documentReference.label, classes: "govuk-label--s" },
+      hint: { text: copy.documentReference.hint },
+      classes: "govuk-!-width-one-half",
+      value: values.transportDocumentReference,
+      errorMessage: errors.transportDocumentReference and { text: errors.transportDocumentReference }
+    }) }}
+
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+  </form>
+{% endblock %}
+
+{% block bodyEnd %}
+  {{ super() }}
+  <script type="module" src="{{ getAssetPath('selectAutocomplete.js') }}"></script>
+{% endblock %}

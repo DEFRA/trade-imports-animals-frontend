@@ -1,0 +1,43 @@
+{% extends "live-animals/shared/layout.njk" %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "live-animals/shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "live-animals/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukRadios({
+      name: "animalsCertifiedFor",
+      fieldset: {
+        legend: {
+          text: copy.certified.legend,
+          classes: "govuk-fieldset__legend--s"
+        }
+      },
+      hint: { text: copy.certified.hint },
+      errorMessage: errors.animalsCertifiedFor and { text: errors.animalsCertifiedFor },
+      items: certifiedOptions
+    }) }}
+
+    {% if showUnweaned %}
+      {{ govukRadios({
+        name: "containsUnweanedAnimals",
+        fieldset: {
+          legend: {
+            text: copy.unweaned.legend,
+            classes: "govuk-fieldset__legend--s"
+          }
+        },
+        hint: { text: copy.unweaned.hint },
+        errorMessage: errors.containsUnweanedAnimals and { text: errors.containsUnweanedAnimals },
+        items: unweanedOptions
+      }) }}
+    {% endif %}
+
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+  </form>
+{% endblock %}

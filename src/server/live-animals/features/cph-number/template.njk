@@ -1,0 +1,27 @@
+{% extends "live-animals/shared/layout.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "live-animals/shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "live-animals/shared/error-summary.njk" %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukInput({
+      id: "countyParishHoldingCph",
+      name: "countyParishHoldingCph",
+      label: {
+        text: copy.cph.label,
+        isPageHeading: true,
+        classes: "govuk-label--l"
+      },
+      hint: { text: copy.cph.hint },
+      classes: "govuk-input--width-10",
+      value: values.countyParishHoldingCph,
+      errorMessage: errors.countyParishHoldingCph and { text: errors.countyParishHoldingCph }
+    }) }}
+
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+  </form>
+{% endblock %}

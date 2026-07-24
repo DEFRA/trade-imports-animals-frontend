@@ -1,0 +1,18 @@
+{% extends "live-animals/shared/layout.njk" %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{% from "live-animals/shared/save-actions.njk" import saveActions %}
+{% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
+  {{ govukWarningText({ text: copy.warning }) }}
+
+  {{ govukSummaryList({ rows: rows }) }}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ saveActions(hubHref, { text: copy.continueButton }, sharedCopy.saveActions) }}
+  </form>
+{% endblock %}

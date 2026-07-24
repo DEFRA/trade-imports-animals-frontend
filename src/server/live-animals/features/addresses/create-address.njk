@@ -1,0 +1,95 @@
+{% extends "live-animals/shared/layout.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "live-animals/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
+  <p class="govuk-body">{{ copy.intro }}</p>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <input type="hidden" name="for" value="{{ partyId }}" />
+
+    {{ govukInput({
+      id: "nameOrOrganisationName", name: "nameOrOrganisationName",
+      label: { text: copy.fields.nameOrOrganisationName },
+      autocomplete: "name",
+      value: values.nameOrOrganisationName,
+      errorMessage: errors.nameOrOrganisationName and { text: errors.nameOrOrganisationName }
+    }) }}
+
+    {{ govukInput({
+      id: "addressLine1", name: "addressLine1",
+      label: { text: copy.fields.addressLine1 },
+      autocomplete: "address-line1",
+      value: values.addressLine1,
+      errorMessage: errors.addressLine1 and { text: errors.addressLine1 }
+    }) }}
+
+    {{ govukInput({
+      id: "addressLine2", name: "addressLine2",
+      label: { text: copy.fields.addressLine2 },
+      autocomplete: "address-line2",
+      value: values.addressLine2,
+      errorMessage: errors.addressLine2 and { text: errors.addressLine2 }
+    }) }}
+
+    {{ govukInput({
+      id: "townOrCity", name: "townOrCity",
+      label: { text: copy.fields.townOrCity },
+      classes: "govuk-!-width-two-thirds",
+      autocomplete: "address-level2",
+      value: values.townOrCity,
+      errorMessage: errors.townOrCity and { text: errors.townOrCity }
+    }) }}
+
+    {{ govukInput({
+      id: "county", name: "county",
+      label: { text: copy.fields.county },
+      classes: "govuk-!-width-two-thirds",
+      value: values.county,
+      errorMessage: errors.county and { text: errors.county }
+    }) }}
+
+    {{ govukInput({
+      id: "postalOrZipCode", name: "postalOrZipCode",
+      label: { text: copy.fields.postalOrZipCode },
+      classes: "govuk-input--width-10",
+      autocomplete: "postal-code",
+      value: values.postalOrZipCode,
+      errorMessage: errors.postalOrZipCode and { text: errors.postalOrZipCode }
+    }) }}
+
+    {{ govukSelect({
+      id: "country", name: "country",
+      label: { text: copy.fields.country },
+      items: countryItems,
+      errorMessage: errors.country and { text: errors.country }
+    }) }}
+
+    {{ govukInput({
+      id: "telephoneNumber", name: "telephoneNumber",
+      label: { text: copy.fields.telephoneNumber },
+      type: "tel",
+      classes: "govuk-input--width-20",
+      autocomplete: "tel",
+      value: values.telephoneNumber,
+      errorMessage: errors.telephoneNumber and { text: errors.telephoneNumber }
+    }) }}
+
+    {{ govukInput({
+      id: "emailAddress", name: "emailAddress",
+      label: { text: copy.fields.emailAddress },
+      type: "email",
+      autocomplete: "email",
+      value: values.emailAddress,
+      errorMessage: errors.emailAddress and { text: errors.emailAddress }
+    }) }}
+
+    {{ govukButton({ text: copy.saveAndContinue }) }}
+  </form>
+{% endblock %}

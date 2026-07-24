@@ -1,0 +1,322 @@
+# The obligation model
+
+An obligation is a small data record that says "the journey owes this
+answer". The model is a single manifest of obligations. It carries identity
+and scope — never display copy or field validation. Pages own presentation
+and controllers own save-blocking; the model keeps only the facts the
+evaluator and the derivation engine read.
+
+The model has one file at its core:
+
+- `model/obligations/obligations.js` — the obligation manifest: what the
+  journey can owe, and when.
+
+Two supporting files complete the picture: `model/obligations/helpers.js`
+(the gate-helper library that builds scope closures) and
+`model/no-display-keys.js` (the boot-time purity check).
+
+All file paths in this document are relative to the prototype root
+(`src/server/live-animals/`).
+
+## What an obligation carries
+
+An obligation is a plain object with at most these keys:
+
+| Key        | Kind      | Meaning                                                                                                                                                             |
+| ---------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`       | identity  | A stable UUID. The key under which the obligation's value is stored in the flat `fulfilments` map.                                                                  |
+| `name`     | identity  | The obligation's field name (`countryOfOrigin`, `commoditySelection`). The vocabulary the frontend, storage answers and bridge speak.                               |
+| `within`   | structure | A direct JS reference to the parent group obligation. Present on every member of a group; absent on notification-level obligations.                                 |
+| `status`   | mandate   | `'mandatory'` or `'optional'`. Present on an obligation that is always in scope. A group carries no `status`; a gated obligation gets it from its gate.             |
+| `applyTo`  | scope     | A closure `(fulfilments, fulfilmentIdsByObligationId) → decision` that decides whether this obligation is in scope, and with what status. Absent = always in scope. |
+| `requires` | mandate   | Group-level invariants: a collection floor (`minEntries`) and/or a per-instance "at least one of" rule (`anyOfIds`). Only meaningful on a group.                    |
+
+That is the whole vocabulary. There is deliberately no `type`, no copy,
+no widget choice and no page-level validation on an obligation. Those
+live where they are read — in the templates and controllers.
+
+`id` and `name` split two roles. `id` is the canonical storage key and the
+`name` is the request-local field vocabulary controllers and templates speak.
+Feature-owned bindings assemble name-keyed answers into the flat fulfilment
+map; the bridge projects canonical fulfilment back to nested answers.
+
+### Always-in-scope vs gated
+
+An obligation with a `status` and no `applyTo` is always in scope —
+`countryOfOrigin`, the address blocks, the notification-level scalars.
+An obligation with an `applyTo` closure is gated: the closure decides,
+per evaluation, whether the obligation is in scope and (when in scope)
+what status it takes. A group is neither — it has neither `status` nor a
+value; it exists to hold members via `within`.
+
+## The manifest
+
+`model/obligations/obligations.js` exports one obligation object per
+declaration, plus two collection exports:
+
+- `obligations` — the flat array of every obligation, in declaration
+  order. Order does not affect evaluation: the evaluator rebuilds the
+  group hierarchy from `within` back-references, so an obligation may be
+  declared before or after the group it belongs to.
+- `groups` — derived, not authored:
+
+  ```js
+  export const groups = obligations.filter((o) =>
+    obligations.some((other) => other.within === o)
+  )
+  ```
+
+  A group is simply an obligation that at least one other obligation
+  points at via `within`. Today the groups are `commodityLine`
+  (name `commodityLines`), `unitRecord` (name `animalIdentifiers`,
+  nested inside `commodityLine`) and `documents`.
+
+The manifest also exports the commodity-code whitelists that the gates
+read as plain const arrays — `PACKAGE_COUNT_COMMODITIES`,
+`CPH_REQUIRED_COMMODITIES`, `PASSPORT_COMMODITIES`, `TATTOO_COMMODITIES`,
+`EAR_TAG_COMMODITIES`, `HORSE_NAME_COMMODITIES`,
+`PERMANENT_ADDRESS_COMMODITIES`, `UNWEANED_APPLICABLE_COMMODITIES` and
+`SPECIFIC_IDENTIFIER_WHITELISTS`. Keeping them named and exported means
+a gate declaration stays a one-liner and the same list can be inspected
+by tests.
+
+### Structure of the manifest
+
+The manifest lays out the V4 data fields:
+
+- **Notification-level scalars and address blocks** — `countryOfOrigin`,
+  `reasonForImport`, `transporterType`, `meansOfTransport`, the arrival
+  and port fields, `animalsCertifiedFor`, and the address blocks
+  (`placeOfOrigin`, `consignor`, `consignee`, `importer`,
+  `placeOfDestination`, `contactAddress`).
+- **`commodityLine`** (name `commodityLines`) — a user-driven group.
+  Each line owns `commodityCode` (name `commoditySelection`),
+  `commodityType`, `species` (name `speciesSelection`), `numberOfAnimals`
+  and the conditionally-scoped `numberOfPackages`.
+- **`unitRecord`** (name `animalIdentifiers`) — a group nested inside
+  `commodityLine`. Each unit owns the six identifier obligations
+  (`passport`, `tattoo`, `earTag`, `horseName`, `identificationDetails`,
+  `description`) and `permanentAddress`.
+- **`documents`** — a group of four accompanying-document fields.
+
+Two obligations are **system-populated**: `poApprovedReferenceNumber`
+(minted at notification-creation time) and `responsiblePersonForLoad`
+(taken from gov.identity). They are declared for completeness and carry
+`status: 'mandatory'`, but no page presents them and their value
+legality is enforced upstream.
+
+`commodityType` is a normal collected obligation within `commodityLines`.
+The commodity search derives the stored type id from each selected species
+when it reconciles the line entries. A multi-type commodity exposes a type
+filter to narrow the species list; a single-type commodity derives its sole
+type without rendering a control.
+
+## Scope: the gate helpers and their metadata
+
+Every conditionally-scoped obligation carries an `applyTo` closure. The
+closure is never hand-written — it is built by a pure helper from
+`model/obligations/helpers.js`. Each helper returns the closure and hangs
+a `.metadata` sidecar off it describing the gate as data. That gives one
+mechanism and one testing story: any obligation's `applyTo` runs as a
+plain function call over a `fulfilments` map, and the same gate is
+inspectable without executing it.
+
+The closure signature is
+`(fulfilments, fulfilmentIdsByObligationId) → decision`, where
+`fulfilments` is the flat storage map and `fulfilmentIdsByObligationId`
+maps each obligation id to its current instance-paths (so a gate can look
+up a group's live instances without walking storage itself).
+
+The decision object is `{ inScope, status?, reasons?, records? }`:
+
+- `inScope: false` — out of scope. Any stored value is purged.
+- `inScope: true` with a `status` — in scope, mandatory or optional.
+- `reasons` — an array of reason objects explaining the decision (no
+  display copy — a machine-readable code plus an explanation string).
+- `records` — for a group-scoped gate, the instance-paths on which the
+  obligation is in scope.
+
+Two decision patterns recur:
+
+- **Status-flip** — both branches are `inScope: true` with different
+  `status`. `regionCode` is mandatory when
+  `regionOfOriginCodeRequirement` is `yes` and drops out of scope
+  otherwise.
+- **Purge-on-flip** — the false branch is `{ inScope: false }`, so
+  leaving scope destroys the stored value. `purposeInInternalMarket`
+  (gated on `reasonForImport`) and `commercialTransporter` (gated on
+  `transporterType`) work this way.
+
+### Which helper for which gate
+
+The helper depends on the SHAPE of the value the gate reads, not on how
+deep the gated obligation sits.
+
+**Scalar gates** read a plain top-level value (`fulfilments[gate.id]` is
+a scalar) and return a single decision:
+
+- `equalsGate(gate, value, whenTrue, whenFalse)` — value equality. The
+  workhorse for status-flip and purge-on-flip (`regionCode`,
+  `purposeInInternalMarket`, `commercialTransporter`,
+  `privateTransporter`).
+- `includesGate(gate, values, whenTrue, whenFalse)` — the gate value is
+  one of a set (`transitedCountries` on land-transport modes).
+- `presentGate(gate, whenTrue, whenFalse)` — the gate has any non-blank
+  answer.
+- `anyAllowListed(gate, values, whenTrue, whenFalse)` — aggregates over a
+  group's records to a single notification-level decision. `cph` and
+  `containsUnweanedAnimals` use it: in scope when ANY commodity line has
+  a qualifying code.
+- `alwaysInScope(status, reasons)` — no gate; unconditional, but with a
+  `reasons` list attached. Reserved for an always-in-scope obligation
+  that must explain itself; idle on the manifest today.
+- `matches` and `branchedGate` are escape hatches for opaque predicates.
+  Neither appears on the manifest.
+
+**Group-scoped gates** read a records-map (`fulfilments[gate.id]` is
+`{ instancePath: value }`, because the gate obligation is `within` a
+group) and return per-record decisions:
+
+- `allowListed(gate, values, projectionGroup, reasons)` — in scope on
+  records whose gate value is in the allowlist.
+- `notInUnionOf(gate, unionOfAllowlists, projectionGroup, reasons)` — the
+  dual: in scope where the gate value is in NONE of the given allowlists.
+  The union is derived once at build time and pinned on
+  `.metadata.values`, so the complement can never drift from the
+  positive gates it negates. The two free-text identifier fields
+  (`identificationDetails`, `description`) use it — they apply on units
+  whose commodity has no typed identifier.
+- `presentPerRecord(gate, projectionGroup, reasons)` — in scope on each
+  record where the gate value is answered. The three dependent
+  accompanying-document fields gate on `accompanyingDocumentType` this
+  way.
+
+The `projectionGroup` argument handles depth. Pass `null` when the gate
+and the gated obligation sit at the same identity level — `numberOfPackages`
+reads `commoditySelection`, both `within: commodityLine`. Pass the gated
+obligation's parent group when it sits deeper — the per-unit identifiers
+read the line's `commoditySelection` and project onto `unitRecord`, so
+the engine walks each matching line's unit records.
+
+### Metadata and the dependency graph
+
+Every helper attaches `.metadata` describing the gate: `{ type,
+obligation, values?, projection?, whenTrue?, whenFalse?, reasons? }`.
+`obligationMetadata(obligation)` merges that sidecar with a derived
+`dependsOn` list — `deriveDependsOn` reads `metadata.obligation` to
+recover which obligation each gate reads. A closure is opaque to a static
+reachability prover; the metadata makes the gate's dependency graph
+inspectable data without duplicating it on the obligation.
+
+## Groups and the `within` reference
+
+A repeating list is a group obligation — one that other obligations
+reference via `within`. The reference is a real JS object reference, not
+a string id:
+
+```js
+export const commodityCode = {
+  id: '21f60718-192a-4d4e-8bcd-17e8f9a0b1c3',
+  name: 'commoditySelection',
+  within: commodityLine,
+  status: 'mandatory'
+}
+```
+
+Because members point at the group object directly, a misspelt reference
+throws when the module loads, editors navigate straight to the group
+definition, and searching for the group constant finds every member. The
+group itself carries no `status` and no value — it is a structural node.
+
+Nesting is literal: `unitRecord` is `within: commodityLine`, and the
+six identifier obligations are `within: unitRecord`. That gives the
+model its depth-2 shape — a unit record lives inside a commodity line,
+and each unit owns its own identifier fields.
+
+### Group invariants: `requires`
+
+A group can pin invariants the evaluator enforces:
+
+- **Collection floor** — `{ minEntries, errorCode }`. `commodityLine`
+  requires at least one line on every consignment:
+
+  ```js
+  requires: {
+    minEntries: 1,
+    errorCode: 'obligation.commodityLine.atLeastOne'
+  }
+  ```
+
+  Without the floor a zero-line session would collapse to
+  not-applicable in the status roll-up.
+
+- **Per-instance "at least one of"** — `{ anyOfIds, errorCode }`. Every
+  `unitRecord` must carry at least one of the six identifier obligations,
+  named by literal id:
+
+  ```js
+  requires: {
+    anyOfIds: [
+      '39657a80-...', // passport
+      '3a768b91-...', // tattoo
+      /* ...earTag, horseName, identificationDetails, description */
+    ],
+    errorCode: 'obligation.unitRecord.identifiersRequired'
+  }
+  ```
+
+  Referencing by literal id (rather than obligation reference) keeps the
+  "requires-any-of" edge legible as data, and avoids coupling to
+  declaration order.
+
+`groupInvariantErrors` (`model/obligations/state-queries.js`) reads
+`requires` to emit one invariant error per violating instance; the bridge's
+status rollups hold a group at in-progress until the invariant is satisfied.
+
+## Completeness and value validation
+
+The status and collection-completeness projections use the same rule for every
+obligation: a stored value is complete when `isBlankValue(value)` is false.
+Address composites are not a special case.
+
+Field-level legality belongs to the page that collects the value. Address
+controllers validate the required sub-fields, lengths, formats and country
+membership before committing the nested address object. A malformed or partial
+submission is re-rendered with field errors rather than stored. Other pages use
+the same controller-owned validation seam for their value shapes and option
+membership.
+
+## No display logic in the model
+
+The model carries no display copy — no `label`, `title`, `titleKey`,
+`hint`, `legend` or `widget` on any obligation. Copy
+lives in the `.njk` templates; option lists come from the reference-data
+services. The model owns identity, cardinality and scope (obligations), and
+status and navigation derivation (engine) — never presentation.
+
+This is enforced at boot, not just in tests. `model/no-display-keys.js`
+exports `assertNoDisplayKeys(obligations)`, which walks the live obligation
+object graph — objects, arrays and the `.metadata` sidecars hung off gate
+closures — and throws if any object carries a banned key from `DISPLAY_KEYS`:
+
+```js
+export const DISPLAY_KEYS = Object.freeze([
+  'label',
+  'title',
+  'titleKey',
+  'hint',
+  'legend',
+  'widget'
+])
+```
+
+`obligation-purity.js` wraps it as `assertObligationPurity()`, and
+`routes.js` calls that during plugin registration. A display key added to
+an obligation fails the boot — the server does not start with presentation
+smuggled into the model.
+
+The check walks the live object graph rather than the source text on
+purpose: it inspects the actual keys reachable from the obligation array
+so it cannot false-positive on the engine-introspection constants elsewhere
+in the tree that merely name AST operators, and it catches a display key
+however it was assembled.

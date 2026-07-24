@@ -1,0 +1,33 @@
+{% extends "live-animals/shared/layout.njk" %}
+{% from "live-animals/features/commodities/_selected-commodities-table.njk" import selectedCommoditiesTable %}
+{% from "live-animals/features/commodities/_species-quantities.njk" import speciesQuantityGroup %}
+{% from "live-animals/shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "live-animals/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
+  {% if hasLines %}
+    <form method="post" novalidate>
+      <input type="hidden" name="crumb" value="{{ crumb }}" />
+      {{ selectedCommoditiesTable(groups, copy.table) }}
+    </form>
+  {% else %}
+    <p class="govuk-body">{{ copy.emptyText }}</p>
+  {% endif %}
+
+  <p class="govuk-body">
+    <a class="govuk-link" href="{{ addHref }}">{{ addText }}</a>
+  </p>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {% for group in groups %}
+      {{ speciesQuantityGroup(group, copy) }}
+    {% endfor %}
+
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+  </form>
+{% endblock %}

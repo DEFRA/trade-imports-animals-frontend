@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { test, expect } from '@playwright/test'
 
-import { copy as transportCopy } from '../standalone/live-animals/features/transport/copy.en.js'
+import { copy as transportCopy } from '../../src/server/live-animals/features/transport/copy.en.js'
 
 /**
  * Cross-journey persistence equivalence.
@@ -45,7 +45,7 @@ const strip = (doc) => {
 const { values } = JSON.parse(
   readFileSync(
     new URL(
-      '../standalone/live-animals/flow/fixtures/happy-path.json',
+      '../../src/server/live-animals/flow/fixtures/happy-path.json',
       import.meta.url
     ),
     'utf8'

@@ -1,0 +1,64 @@
+{% extends "live-animals/shared/layout.njk" %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "live-animals/shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "live-animals/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukSelect({
+      id: "countryOfOrigin",
+      name: "countryOfOrigin",
+      label: { text: copy.country.label, classes: "govuk-label--s" },
+      value: values.countryOfOrigin,
+      errorMessage: errors.countryOfOrigin and { text: errors.countryOfOrigin },
+      items: countryItems,
+      attributes: { "data-select-autocomplete": "" }
+    }) }}
+
+    {% set regionCodeHtml %}
+      {{ govukInput({
+        id: "regionOfOriginCode",
+        name: "regionOfOriginCode",
+        label: { text: copy.regionCode.label },
+        hint: { text: copy.regionCode.hint },
+        classes: "govuk-input--width-5",
+        value: values.regionOfOriginCode,
+        errorMessage: errors.regionOfOriginCode and { text: errors.regionOfOriginCode }
+      }) }}
+    {% endset %}
+
+    {{ govukRadios({
+      name: "regionOfOriginCodeRequirement",
+      fieldset: { legend: { text: copy.regionRequirement.legend, classes: "govuk-fieldset__legend--s" } },
+      hint: { text: copy.regionRequirement.hint },
+      items: [
+        { value: "yes", text: copy.regionRequirement.yes, checked: values.regionOfOriginCodeRequirement == "yes", conditional: { html: regionCodeHtml } },
+        { value: "no", text: copy.regionRequirement.no, checked: values.regionOfOriginCodeRequirement == "no" }
+      ]
+    }) }}
+
+    {{ govukInput({
+      id: "internalReferenceNumber",
+      name: "internalReferenceNumber",
+      label: { text: copy.internalReference.label },
+      hint: { text: copy.internalReference.hint },
+      classes: "govuk-!-width-three-quarters",
+      value: values.internalReferenceNumber,
+      errorMessage: errors.internalReferenceNumber and { text: errors.internalReferenceNumber }
+    }) }}
+
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+  </form>
+{% endblock %}
+
+{% block bodyEnd %}
+  {{ super() }}
+  <script type="module" src="{{ getAssetPath('selectAutocomplete.js') }}"></script>
+{% endblock %}

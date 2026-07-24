@@ -36,8 +36,7 @@ export default {
       import: './javascripts/select-autocomplete.js'
     },
     liveAnimalsDocuments: {
-      import:
-        '../../prototypes/standalone/live-animals/features/documents/client.js'
+      import: '../server/live-animals/features/documents/client.js'
     }
   },
   experiments: {

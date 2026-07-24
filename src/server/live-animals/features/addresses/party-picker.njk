@@ -1,0 +1,12 @@
+{% extends "live-animals/shared/layout.njk" %}
+{% from "live-animals/features/addresses/_address-picker.njk" import addressPicker %}
+
+{% block journeyContent %}
+  {% include "live-animals/shared/error-summary.njk" %}
+
+  <span class="govuk-caption-l">{{ pickerCopy.caption }}</span>
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+  <p class="govuk-body">{{ description }}</p>
+
+  {{ addressPicker(picker, crumb, pickerCopy) }}
+{% endblock %}

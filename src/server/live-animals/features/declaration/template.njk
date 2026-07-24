@@ -1,0 +1,45 @@
+{% extends "live-animals/shared/layout.njk" %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "live-animals/shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
+  <h2 class="govuk-heading-m">{{ copy.body.contactUk }}</h2>
+
+  <h2 class="govuk-heading-m">{{ copy.body.responsible }}</h2>
+
+  <h2 class="govuk-heading-m">{{ copy.body.accountableFor }}</h2>
+
+  <ul class="govuk-list govuk-list--bullet">
+    {% for item in copy.body.accountableItems %}
+      <li>{{ item }}</li>
+    {% endfor %}
+  </ul>
+
+  <p class="govuk-body">{{ copy.body.authorised }}</p>
+
+  <p class="govuk-body">{{ copy.body.legallyAct }}</p>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukCheckboxes({
+      name: "declaration",
+      errorMessage: errors.declaration and { text: errors.declaration },
+      items: [
+        {
+          value: "confirmed",
+          text: copy.declarationLabel,
+          checked: values.declaration == "confirmed"
+        }
+      ]
+    }) }}
+
+    <p class="govuk-body">{{ copy.dateOfDeclaration }} {{ submissionDate }}</p>
+
+    {{ govukButton({ text: copy.continueButton }) }}
+  </form>
+{% endblock %}

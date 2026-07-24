@@ -26,6 +26,7 @@ import { serveStaticFiles } from './common/helpers/serve-static-files.js'
 import { prototypes } from '../../prototypes/index.js'
 import { standalonePrototypes } from '../../prototypes/standalone/index.js'
 import { config } from '../config/config.js'
+import { liveAnimals } from './live-animals/routes.js'
 
 export const router = {
   plugin: {
@@ -69,6 +70,7 @@ export const router = {
       if (config.get('features.prototypes.enabled')) {
         routes.push(prototypes)
         routes.push(standalonePrototypes)
+        routes.push(liveAnimals)
       }
 
       await server.register(routes)

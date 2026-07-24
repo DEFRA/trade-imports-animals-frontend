@@ -1,0 +1,59 @@
+{% extends "live-animals/shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/tag/macro.njk" import govukTag %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-xl">{{ copy.title }}</h1>
+  <p class="govuk-body">{{ copy.body }}</p>
+
+  <form method="post" action="{{ startAction }}" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    {{ govukButton({ text: copy.startButton, isStartButton: true }) }}
+  </form>
+
+  <h2 class="govuk-heading-m">{{ copy.notificationsHeading }}</h2>
+  {% if notificationRows.length %}
+    <table class="govuk-table">
+      <caption class="govuk-table__caption govuk-visually-hidden">{{ copy.notificationsHeading }}</caption>
+      <thead class="govuk-table__head">
+        <tr class="govuk-table__row">
+          <th scope="col" class="govuk-table__header">{{ copy.table.reference }}</th>
+          <th scope="col" class="govuk-table__header">{{ copy.table.status }}</th>
+          <th scope="col" class="govuk-table__header">{{ copy.table.created }}</th>
+          <th scope="col" class="govuk-table__header">{{ copy.table.submitted }}</th>
+          <th scope="col" class="govuk-table__header">{{ copy.table.actions }}</th>
+        </tr>
+      </thead>
+      <tbody class="govuk-table__body">
+        {% for row in notificationRows %}
+          <tr class="govuk-table__row">
+            <th scope="row" class="govuk-table__header">{{ row.reference }}</th>
+            <td class="govuk-table__cell">
+              {{ govukTag({ text: row.status.text, classes: row.status.classes }) }}
+            </td>
+            <td class="govuk-table__cell">{{ row.created }}</td>
+            <td class="govuk-table__cell">{{ row.submitted }}</td>
+            <td class="govuk-table__cell">
+              {% for action in row.actions %}
+                {% if action.postAction %}
+                  <form method="post" action="{{ action.postAction }}" class="app-form-inline">
+                    <input type="hidden" name="crumb" value="{{ crumb }}" />
+                    <button type="submit" class="govuk-link app-link-button govuk-!-margin-right-2">
+                      {{ action.text }}<span class="govuk-visually-hidden"> {{ copy.actionHidden(row.reference) }}</span>
+                    </button>
+                  </form>
+                {% else %}
+                  <a class="govuk-link govuk-!-margin-right-2" href="{{ action.href }}">
+                    {{ action.text }}<span class="govuk-visually-hidden"> {{ copy.actionHidden(row.reference) }}</span>
+                  </a>
+                {% endif %}
+              {% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="govuk-body">{{ copy.emptyText }}</p>
+  {% endif %}
+{% endblock %}
