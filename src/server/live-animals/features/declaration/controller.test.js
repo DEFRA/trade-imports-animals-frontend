@@ -56,7 +56,9 @@ describe('#declaration', () => {
         const result = await driveHandler(post, {
           payload: { declaration: 'confirmed' }
         })
-        expect(result.response).toEqual({ redirect: pagePath('confirmation') })
+        expect(result.response).toEqual({
+          redirect: pagePath(result.journeyId, 'confirmation')
+        })
       })
     })
   })
@@ -76,7 +78,9 @@ describe('#declaration', () => {
 
       const response = await get(journeyRequest(journeyId), stubH())
 
-      expect(response).toEqual({ redirect: pagePath('confirmation') })
+      expect(response).toEqual({
+        redirect: pagePath(journeyId, 'confirmation')
+      })
     })
   })
 })

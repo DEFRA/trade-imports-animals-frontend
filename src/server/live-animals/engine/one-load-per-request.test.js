@@ -3,7 +3,10 @@ import createFetchMock from 'vitest-fetch-mock'
 import { get, commit } from './index.js'
 import { configureRecords } from './persistence/records.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
-import { JOURNEY_COOKIE, configureSession } from './persistence/session.js'
+import {
+  KNOWN_JOURNEYS_COOKIE,
+  configureSession
+} from './persistence/session.js'
 import { records as realRecords } from '../services/persistence/records/real.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { recordingH } from './test-support.js'
@@ -35,7 +38,8 @@ const fulfilmentBody = JSON.stringify({
 })
 
 const buildRequest = () => ({
-  state: { [JOURNEY_COOKIE]: ref },
+  params: { journeyId: ref },
+  state: { [KNOWN_JOURNEYS_COOKIE]: [ref] },
   app: {},
   headers: {}
 })

@@ -422,8 +422,10 @@ describe('#buildSections (check-answers GET)', () => {
 
   describe('POST navigation', () => {
     it('Should redirect to the hub when the next review page is not yet reachable', async () => {
-      const { response } = await driveHandler(postHandler, { seed: {} })
-      expect(response.redirect).toBe(hubPath())
+      const { journeyId, response } = await driveHandler(postHandler, {
+        seed: {}
+      })
+      expect(response.redirect).toBe(hubPath(journeyId))
     })
 
     it('Should redirect to the declaration once its prerequisites are answered', async () => {

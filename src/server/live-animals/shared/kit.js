@@ -1,4 +1,10 @@
-import { breadcrumbs, hubPath, LAYOUT, pagePath } from '../config.js'
+import {
+  breadcrumbs,
+  hubPath,
+  LAYOUT,
+  pagePath,
+  pageRoutePath
+} from '../config.js'
 import { SUBMITTED } from '../engine/index.js'
 import { nextInSection } from '../flow/navigation.js'
 import { nextRunTarget } from '../flow/run.js'
@@ -45,7 +51,7 @@ export const fieldError = (fieldErrors, field) =>
   fieldErrors?.[field] ? { text: fieldErrors[field] } : undefined
 
 export const hubExitTarget = (request) =>
-  request.payload?.exit === 'hub' ? hubPath() : null
+  request.payload?.exit === 'hub' ? hubPath(request.params.journeyId) : null
 
 export const changeContext = (request) => Boolean(request.query.change)
 
@@ -54,30 +60,50 @@ export const withChangeContext = (request, href) =>
 
 export const exitTarget = (request, fallback) =>
   hubExitTarget(request) ??
-  (changeContext(request) ? pagePath(CYA_SLUG) : fallback)
+  (changeContext(request)
+    ? pagePath(request.params.journeyId, CYA_SLUG)
+    : fallback)
 
 export const runTarget = async (request, stepId, scope) =>
-  (await inOpeningRun(request)) ? nextRunTarget(stepId, scope) : null
+  (await inOpeningRun(request, request.params.journeyId))
+    ? nextRunTarget(stepId, scope, request.params.journeyId)
+    : null
 
 export const nextTarget = async (request, page, scope) =>
   exitTarget(
     request,
-    (await runTarget(request, page.id, scope)) ?? nextInSection(page.id, scope)
+    (await runTarget(request, page.id, scope)) ??
+      nextInSection(page.id, scope, request.params.journeyId)
   )
 
-export const base = (title, { backLink, journey } = {}) => ({
-  layout: LAYOUT,
-  pageTitle: title,
-  breadcrumbs: breadcrumbs(title),
-  backLink,
-  hubHref: hubPath(),
-  journeyStrip: journeyStrip(journey),
-  sharedCopy
-})
+export const base = (
+  title,
+  { backLink, journey, journeyId = journey?.journeyId } = {}
+) => {
+  return {
+    layout: LAYOUT,
+    pageTitle: title,
+    breadcrumbs: breadcrumbs(journeyId, title),
+    backLink,
+    hubHref: hubPath(journeyId),
+    journeyStrip: journeyStrip(journey),
+    sharedCopy
+  }
+}
 
 export const pageRoutes = (page, { get, post }) => [
-  { method: 'GET', path: pagePath(page.slug), options: open, handler: get },
-  { method: 'POST', path: pagePath(page.slug), options: open, handler: post }
+  {
+    method: 'GET',
+    path: pageRoutePath(page.slug),
+    options: open,
+    handler: get
+  },
+  {
+    method: 'POST',
+    path: pageRoutePath(page.slug),
+    options: open,
+    handler: post
+  }
 ]
 
 export const readDate = (payload, name) => ({

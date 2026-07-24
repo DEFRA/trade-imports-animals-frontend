@@ -13,6 +13,7 @@ import {
 } from '../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import * as addressBook from '../../services/address-book/index.js'
+import { pagePath } from '../../config.js'
 
 import * as contact from './controller.js'
 import * as createAddress from '../addresses/create-address.controller.js'
@@ -46,7 +47,7 @@ describe('GET contact — select or create an address', () => {
     const result = await driveHandler(get)
 
     expect(result.view.context.createAddressHref).toBe(
-      '/prototype-standalone/live-animals/addresses/create?for=contactAddress'
+      pagePath(result.journeyId, 'addresses/create?for=contactAddress')
     )
     expect(result.view.context.copy.addNewAddress).toBe(
       'Add a new contact address'

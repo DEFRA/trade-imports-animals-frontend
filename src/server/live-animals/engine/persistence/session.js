@@ -1,6 +1,5 @@
 export const STUB_USER = 'stub-user-0001'
 export const STUB_USER_HEADER = 'x-stub-user'
-export const JOURNEY_COOKIE = 'liveAnimalsJourneyId'
 export const KNOWN_JOURNEYS_COOKIE = 'liveAnimalsKnownJourneys'
 export const OPENING_RUN_COOKIE = 'liveAnimalsOpeningRun'
 export const FLOW_ONLY_ANSWERS_COOKIE = 'liveAnimalsFlowOnlyAnswers'
@@ -11,11 +10,8 @@ const unconfigured = () => {
 
 let impl = {
   userId: unconfigured,
-  activeJourneyId: unconfigured,
-  setActiveJourney: unconfigured,
   knownJourneyIds: unconfigured,
   addKnownJourney: unconfigured,
-  clearActive: unconfigured,
   openingRun: unconfigured,
   setOpeningRun: unconfigured,
   flowOnlyAnswers: unconfigured,
@@ -28,11 +24,8 @@ export const configureSession = (newImpl) => {
 
 export const session = {
   userId: (...args) => impl.userId(...args),
-  activeJourneyId: (...args) => impl.activeJourneyId(...args),
-  setActiveJourney: (...args) => impl.setActiveJourney(...args),
   knownJourneyIds: (...args) => impl.knownJourneyIds(...args),
   addKnownJourney: (...args) => impl.addKnownJourney(...args),
-  clearActive: (...args) => impl.clearActive(...args),
   openingRun: (...args) => impl.openingRun(...args),
   setOpeningRun: (...args) => impl.setOpeningRun(...args),
   flowOnlyAnswers: (...args) => impl.flowOnlyAnswers(...args),

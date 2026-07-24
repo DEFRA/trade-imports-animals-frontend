@@ -21,6 +21,7 @@ import {
 import { dispatchPages } from '../index.js'
 import * as addressBook from '../../services/address-book/index.js'
 import * as countries from '../../services/countries/index.js'
+import { pagePath } from '../../config.js'
 
 import * as createAddress from './create-address.controller.js'
 import * as partyPicker from './party-picker.controller.js'
@@ -58,7 +59,7 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
     const result = await driveHandler(postCreate, { payload: validPayload() })
 
     expect(result.response).toEqual({
-      redirect: '/prototype-standalone/live-animals/addresses'
+      redirect: pagePath(result.journeyId, 'addresses')
     })
     expect(result.after.consignor).toEqual({
       name: 'Created Farm Ltd',
@@ -113,7 +114,7 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
     })
 
     expect(result.response).toEqual({
-      redirect: '/prototype-standalone/live-animals/consignment/contact/select'
+      redirect: pagePath(result.journeyId, 'consignment/contact/select')
     })
     expect(result.after.contactAddress).toEqual({
       name: 'Created Contact Ltd',
@@ -171,7 +172,7 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
     })
 
     expect(result.response).toEqual({
-      redirect: '/prototype-standalone/live-animals/addresses'
+      redirect: pagePath(result.journeyId, 'addresses')
     })
     expect(result.after).toEqual({})
     expect(addressBook.parties('consignor')).toHaveLength(before)

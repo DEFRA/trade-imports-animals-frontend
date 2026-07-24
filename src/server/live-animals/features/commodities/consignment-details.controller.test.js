@@ -227,14 +227,14 @@ describe('#consignmentDetailsController — per-species quantities over every li
 
     const forged = await server.inject({
       method: 'POST',
-      url: pagePath('consignment-details'),
+      url: pagePath('journey-1', 'consignment-details'),
       payload: { action: 'remove:0' }
     })
     expect(forged.statusCode).toBe(403)
 
     const prefetched = await server.inject({
       method: 'GET',
-      url: pagePath('consignment-details/Cow/remove')
+      url: pagePath('journey-1', 'consignment-details/Cow/remove')
     })
     expect(prefetched.statusCode).toBe(404)
   })

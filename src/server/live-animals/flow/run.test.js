@@ -15,7 +15,9 @@ import { makeScope } from '../engine/index.js'
 import { buildDispatch } from './dispatch.js'
 import { nextRunTarget } from './run.js'
 
-const next = (stepId, answers) => nextRunTarget(stepId, makeScope(answers))
+const JOURNEY_ID = 'journey-1'
+const next = (stepId, answers) =>
+  nextRunTarget(stepId, makeScope(answers), JOURNEY_ID)
 
 const lineSeed = {
   countryOfOrigin: 'FR',
@@ -28,28 +30,30 @@ describe('#nextRunTarget — the opening run sequence', () => {
   })
 
   it('Should send the entry filter to origin on a blank journey', () => {
-    expect(next('importTypeFilter', {})).toBe(pagePath('origin'))
+    expect(next('importTypeFilter', {})).toBe(pagePath(JOURNEY_ID, 'origin'))
   })
 
   it('Should send origin to the commodity search page once the country is answered', () => {
     expect(next('origin', { countryOfOrigin: 'FR' })).toBe(
-      pagePath('commodities')
+      pagePath(JOURNEY_ID, 'commodities')
     )
   })
 
   it('Should send the search page to the consignment details page once a line exists', () => {
     expect(next(commoditiesPage.id, lineSeed)).toBe(
-      pagePath('consignment-details')
+      pagePath(JOURNEY_ID, 'consignment-details')
     )
   })
 
   it('Should skip the consignment details page while no line exists — with no line the whole tail is gated and the run collapses to the hub', () => {
-    expect(next(commoditiesPage.id, { countryOfOrigin: 'FR' })).toBe(hubPath())
+    expect(next(commoditiesPage.id, { countryOfOrigin: 'FR' })).toBe(
+      hubPath(JOURNEY_ID)
+    )
   })
 
   it('Should send the consignment details page to import reason', () => {
     expect(next(consignmentDetailsPage.id, lineSeed)).toBe(
-      pagePath('import-reason')
+      pagePath(JOURNEY_ID, 'import-reason')
     )
   })
 
@@ -59,10 +63,10 @@ describe('#nextRunTarget — the opening run sequence', () => {
         ...lineSeed,
         reasonForImport: 'internalMarket'
       })
-    ).toBe(pagePath('import-purpose'))
+    ).toBe(pagePath(JOURNEY_ID, 'import-purpose'))
     expect(
       next(importReasonPage.id, { ...lineSeed, reasonForImport: 'transit' })
-    ).toBe(pagePath(animalIdentificationPage.slug))
+    ).toBe(pagePath(JOURNEY_ID, animalIdentificationPage.slug))
   })
 
   it('Should send import purpose to the identification surface', () => {
@@ -71,17 +75,17 @@ describe('#nextRunTarget — the opening run sequence', () => {
         ...lineSeed,
         reasonForImport: 'internalMarket'
       })
-    ).toBe(pagePath(animalIdentificationPage.slug))
+    ).toBe(pagePath(JOURNEY_ID, animalIdentificationPage.slug))
   })
 
   it('Should pass identification through to additional details with zero identifier records', () => {
     expect(next(animalIdentificationPage.id, lineSeed)).toBe(
-      pagePath('additional-details')
+      pagePath(JOURNEY_ID, 'additional-details')
     )
   })
 
   it('Should end the run on the hub after additional details', () => {
-    expect(next(additionalDetailsPage.id, lineSeed)).toBe(hubPath())
+    expect(next(additionalDetailsPage.id, lineSeed)).toBe(hubPath(JOURNEY_ID))
   })
 
   it('Should collapse to the hub when every later step is unreachable', () => {
@@ -90,7 +94,7 @@ describe('#nextRunTarget — the opening run sequence', () => {
         countryOfOrigin: 'FR',
         reasonForImport: 'internalMarket'
       })
-    ).toBe(hubPath())
+    ).toBe(hubPath(JOURNEY_ID))
   })
 
   it('Should return null for a page outside the run — transport is hub-only, never a run step', () => {

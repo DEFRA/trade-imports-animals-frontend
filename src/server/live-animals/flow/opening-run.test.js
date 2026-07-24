@@ -1,11 +1,11 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { BASE, hubPath, pagePath, startPath } from '../config.js'
+import { BASE, createPath, hubPath, pagePath } from '../config.js'
 import { store } from '../engine/store.js'
 import { configureRecords } from '../engine/persistence/records.js'
 import {
   configureSession,
-  JOURNEY_COOKIE,
+  KNOWN_JOURNEYS_COOKIE,
   OPENING_RUN_COOKIE
 } from '../engine/persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
@@ -48,11 +48,11 @@ const captureH = () => {
 
 const buildRequest = (journeyId, { record, ...overrides } = {}) => ({
   payload: {},
-  params: {},
+  params: journeyId ? { journeyId } : {},
   query: {},
   headers: {},
   state: {
-    ...(journeyId ? { [JOURNEY_COOKIE]: journeyId } : {}),
+    ...(journeyId ? { [KNOWN_JOURNEYS_COOKIE]: [journeyId] } : {}),
     ...(record ? { [OPENING_RUN_COOKIE]: record } : {})
   },
   ...overrides
@@ -66,7 +66,7 @@ const drive = async (handler, { seed = {}, ...overrides } = {}) => {
   return { journeyId: journey.journeyId, h }
 }
 
-const active = (journeyId) => ({ journeyId, phase: RUN_ACTIVE })
+const active = (journeyId) => ({ [journeyId]: RUN_ACTIVE })
 
 const lineSeed = {
   countryOfOrigin: 'FR',
@@ -95,16 +95,16 @@ describe('the opening run', () => {
       const { journeyId, h } = await drive(post, {
         payload: { importType: 'live-animals' }
       })
-      expect(h.captured.redirect).toBe(pagePath('origin'))
+      expect(h.captured.redirect).toBe(pagePath(journeyId, 'origin'))
       expect(h.captured.cookies[OPENING_RUN_COOKIE]).toEqual(active(journeyId))
     })
 
     it('Should NOT begin the run for a journey with committed answers — the filter keeps its normal exit', async () => {
-      const { h } = await drive(post, {
+      const { journeyId, h } = await drive(post, {
         payload: { importType: 'live-animals' },
         seed: { countryOfOrigin: 'FR' }
       })
-      expect(h.captured.redirect).toBe(hubPath())
+      expect(h.captured.redirect).toBe(hubPath(journeyId))
       expect(OPENING_RUN_COOKIE in h.captured.cookies).toBe(false)
     })
 
@@ -113,7 +113,7 @@ describe('the opening run', () => {
         payload: { importType: 'live-animals' },
         seed: { importType: 'poao' }
       })
-      expect(h.captured.redirect).toBe(pagePath('origin'))
+      expect(h.captured.redirect).toBe(pagePath(journeyId, 'origin'))
       expect(h.captured.cookies[OPENING_RUN_COOKIE]).toEqual(active(journeyId))
     })
 
@@ -130,15 +130,19 @@ describe('the opening run', () => {
         }),
         h
       )
-      expect(h.captured.redirect).toBe(pagePath('origin'))
+      expect(h.captured.redirect).toBe(pagePath(journey.journeyId, 'origin'))
       expect(h.captured.cookies[OPENING_RUN_COOKIE]).toEqual(
         active(journey.journeyId)
       )
     })
 
     it('Should route a non-live-animals answer to the holding page with no run begun', async () => {
-      const { h } = await drive(post, { payload: { importType: 'poao' } })
-      expect(h.captured.redirect).toBe(pagePath('import-type/not-available'))
+      const { journeyId, h } = await drive(post, {
+        payload: { importType: 'poao' }
+      })
+      expect(h.captured.redirect).toBe(
+        pagePath(journeyId, 'import-type/not-available')
+      )
       expect(OPENING_RUN_COOKIE in h.captured.cookies).toBe(false)
     })
   })
@@ -155,7 +159,7 @@ describe('the opening run', () => {
         payload: originPayload,
         record: undefined
       })
-      expect(h.captured.redirect).toBe(hubPath())
+      expect(h.captured.redirect).toBe(hubPath(journeyId))
 
       const again = await store.create()
       const h2 = captureH()
@@ -166,7 +170,9 @@ describe('the opening run', () => {
         }),
         h2
       )
-      expect(h2.captured.redirect).toBe(pagePath('commodities'))
+      expect(h2.captured.redirect).toBe(
+        pagePath(again.journeyId, 'commodities')
+      )
       expect(journeyId).not.toBe(again.journeyId)
     })
 
@@ -181,7 +187,9 @@ describe('the opening run', () => {
         }),
         h
       )
-      expect(h.captured.redirect).toBe(pagePath('import-reason'))
+      expect(h.captured.redirect).toBe(
+        pagePath(inRun.journeyId, 'import-reason')
+      )
 
       // Outside the run the page is the commodities section's last page, so
       // the section flow rests on the hub.
@@ -189,7 +197,7 @@ describe('the opening run', () => {
         payload: { 'numberOfAnimalsQuantity-0': '2' },
         seed: lineSeed
       })
-      expect(outside.h.captured.redirect).toBe(hubPath())
+      expect(outside.h.captured.redirect).toBe(hubPath(outside.journeyId))
     })
 
     it('Should pass a zero-record identification Save-and-finish through to additional details mid-run', async () => {
@@ -203,7 +211,9 @@ describe('the opening run', () => {
         }),
         h
       )
-      expect(h.captured.redirect).toBe(pagePath('additional-details'))
+      expect(h.captured.redirect).toBe(
+        pagePath(journey.journeyId, 'additional-details')
+      )
     })
 
     it('Should send import purpose to the first line identification mid-run', async () => {
@@ -220,7 +230,9 @@ describe('the opening run', () => {
         }),
         h
       )
-      expect(h.captured.redirect).toBe(pagePath('commodities/identification'))
+      expect(h.captured.redirect).toBe(
+        pagePath(journey.journeyId, 'commodities/identification')
+      )
     })
 
     it('Should land additional details on the hub — the run is exhausted', async () => {
@@ -234,7 +246,7 @@ describe('the opening run', () => {
         }),
         h
       )
-      expect(h.captured.redirect).toBe(hubPath())
+      expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
     })
   })
 
@@ -255,7 +267,7 @@ describe('the opening run', () => {
         }),
         h
       )
-      expect(h.captured.redirect).toBe(hubPath())
+      expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
     })
 
     it('Should honour the change context over the run target', async () => {
@@ -272,7 +284,9 @@ describe('the opening run', () => {
         }),
         h
       )
-      expect(h.captured.redirect).toBe(pagePath('notification-view'))
+      expect(h.captured.redirect).toBe(
+        pagePath(journey.journeyId, 'notification-view')
+      )
     })
   })
 
@@ -289,8 +303,7 @@ describe('the opening run', () => {
         h
       )
       expect(h.captured.cookies[OPENING_RUN_COOKIE]).toEqual({
-        journeyId: journey.journeyId,
-        phase: RUN_COMPLETE
+        [journey.journeyId]: RUN_COMPLETE
       })
     })
 
@@ -299,7 +312,7 @@ describe('the opening run', () => {
       const h = captureH()
       await hubGet(
         buildRequest(journey.journeyId, {
-          record: { journeyId: journey.journeyId, phase: RUN_COMPLETE }
+          record: { [journey.journeyId]: RUN_COMPLETE }
         }),
         h
       )
@@ -315,11 +328,11 @@ describe('the opening run', () => {
             countryOfOrigin: 'FR',
             regionOfOriginCodeRequirement: 'no'
           },
-          record: { journeyId: journey.journeyId, phase: RUN_COMPLETE }
+          record: { [journey.journeyId]: RUN_COMPLETE }
         }),
         h
       )
-      expect(h.captured.redirect).toBe(hubPath())
+      expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
     })
   })
 
@@ -337,55 +350,63 @@ describe('the opening run', () => {
         }),
         h
       )
-      expect(h.captured.redirect).toBe(hubPath())
+      expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
     })
   })
 
   describe('journey entry', () => {
     it('Should send Start a new notification to the entry filter', async () => {
       const startPost = dashboard.routes.find(
-        (route) => route.method === 'POST' && route.path === startPath()
+        (route) => route.method === 'POST' && route.path === createPath()
       ).handler
       const h = captureH()
       await startPost(buildRequest(undefined), h)
-      expect(h.captured.redirect).toBe(pagePath('import-type'))
+      const journeyId = h.captured.cookies[KNOWN_JOURNEYS_COOKIE][0]
+      expect(h.captured.redirect).toBe(pagePath(journeyId, 'import-type'))
     })
   })
 
   describe('deep-link guard', () => {
     it('Should exempt the dashboard, the filter, the holding page and start', () => {
       expect(guardedJourneyPath(BASE)).toBe(false)
-      expect(guardedJourneyPath(pagePath('home'))).toBe(false)
-      expect(guardedJourneyPath(pagePath('home/j-1/resume'))).toBe(false)
-      expect(guardedJourneyPath(pagePath('import-type'))).toBe(false)
-      expect(guardedJourneyPath(pagePath('import-type/not-available'))).toBe(
-        false
-      )
-      expect(guardedJourneyPath(startPath())).toBe(false)
+      expect(guardedJourneyPath(`${BASE}/home`)).toBe(false)
+      expect(guardedJourneyPath(pagePath('j-1', 'import-type'))).toBe(false)
+      expect(
+        guardedJourneyPath(pagePath('j-1', 'import-type/not-available'))
+      ).toBe(false)
+      expect(guardedJourneyPath(createPath())).toBe(false)
       expect(guardedJourneyPath('/some-other-prototype/origin')).toBe(false)
     })
 
     it('Should guard every post-filter journey page', () => {
-      expect(guardedJourneyPath(hubPath())).toBe(true)
-      expect(guardedJourneyPath(pagePath('origin'))).toBe(true)
-      expect(guardedJourneyPath(pagePath('consignment-details'))).toBe(true)
-      expect(guardedJourneyPath(pagePath('notification-view'))).toBe(true)
+      expect(guardedJourneyPath(hubPath('j-1'))).toBe(true)
+      expect(guardedJourneyPath(pagePath('j-1', 'origin'))).toBe(true)
+      expect(guardedJourneyPath(pagePath('j-1', 'consignment-details'))).toBe(
+        true
+      )
+      expect(guardedJourneyPath(pagePath('j-1', 'notification-view'))).toBe(
+        true
+      )
     })
 
     it('Should redirect a fresh journey to the filter', async () => {
       const journey = await store.create()
       const target = await entryGuardTarget(
-        buildRequest(journey.journeyId, { path: pagePath('origin') }),
+        buildRequest(journey.journeyId, {
+          path: pagePath(journey.journeyId, 'origin')
+        }),
         captureH()
       )
-      expect(target).toBe(pagePath('import-type'))
+      expect(target).toBe(pagePath(journey.journeyId, 'import-type'))
     })
 
     it('Should let a journey with a committed answer straight through', async () => {
       const journey = await store.create()
       await store.seedAnswers(journey.journeyId, { countryOfOrigin: 'FR' })
       const target = await entryGuardTarget(
-        buildRequest(journey.journeyId, { path: pagePath('origin') }),
+        buildRequest(journey.journeyId, {
+          path: pagePath(journey.journeyId, 'origin')
+        }),
         captureH()
       )
       expect(target).toBe(null)
@@ -395,10 +416,12 @@ describe('the opening run', () => {
       const journey = await store.create()
       await store.seedAnswers(journey.journeyId, { importType: 'poao' })
       const target = await entryGuardTarget(
-        buildRequest(journey.journeyId, { path: pagePath('origin') }),
+        buildRequest(journey.journeyId, {
+          path: pagePath(journey.journeyId, 'origin')
+        }),
         captureH()
       )
-      expect(target).toBe(pagePath('import-type'))
+      expect(target).toBe(pagePath(journey.journeyId, 'import-type'))
     })
 
     it('Should let a journey that entered through the filter straight through — any phase', async () => {
@@ -406,8 +429,8 @@ describe('the opening run', () => {
       for (const phase of [RUN_ACTIVE, RUN_COMPLETE]) {
         const target = await entryGuardTarget(
           buildRequest(journey.journeyId, {
-            path: pagePath('origin'),
-            record: { journeyId: journey.journeyId, phase }
+            path: pagePath(journey.journeyId, 'origin'),
+            record: { [journey.journeyId]: phase }
           }),
           captureH()
         )
@@ -419,17 +442,17 @@ describe('the opening run', () => {
       const journey = await store.create()
       const target = await entryGuardTarget(
         buildRequest(journey.journeyId, {
-          path: pagePath('origin'),
+          path: pagePath(journey.journeyId, 'origin'),
           record: active('some-other-journey')
         }),
         captureH()
       )
-      expect(target).toBe(pagePath('import-type'))
+      expect(target).toBe(pagePath(journey.journeyId, 'import-type'))
     })
 
     it('Should never consult the journey for an exempt path', async () => {
       const target = await entryGuardTarget(
-        buildRequest(undefined, { path: pagePath('import-type') }),
+        buildRequest(undefined, { path: createPath() }),
         captureH()
       )
       expect(target).toBe(null)

@@ -1,5 +1,5 @@
 import { store } from './store.js'
-import { JOURNEY_COOKIE } from './journey.js'
+import { KNOWN_JOURNEYS_COOKIE } from './journey.js'
 
 const stubResponse = (payload) => ({
   payload,
@@ -33,11 +33,14 @@ export const stubH = () => {
 
 export const journeyRequest = (journeyId, overrides = {}) => ({
   payload: {},
-  params: {},
   query: {},
-  state: { [JOURNEY_COOKIE]: journeyId },
   headers: {},
-  ...overrides
+  ...overrides,
+  params: { journeyId, ...overrides.params },
+  state: {
+    [KNOWN_JOURNEYS_COOKIE]: [journeyId],
+    ...overrides.state
+  }
 })
 
 export const recordingH = () => {
@@ -69,6 +72,7 @@ export const driveHandler = async (
   )
   const after = (await store.get(journey.journeyId)).answers
   return {
+    journeyId: journey.journeyId,
     before: seed,
     after,
     response,

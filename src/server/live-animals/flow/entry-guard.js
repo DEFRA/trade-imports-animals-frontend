@@ -1,24 +1,23 @@
-import { BASE, pagePath, startPath } from '../config.js'
+import { BASE, createPath, pagePath } from '../config.js'
 import { isAnswered } from '../lib/answered.js'
 import { get } from '../engine/read.js'
 import { obligationByName, SYSTEM_POPULATED } from './obligation-source.js'
-import { dashboardPage } from '../features/dashboard/page.js'
 import { importTypeFilterPage } from '../features/import-type-filter/page.js'
 import { hasEnteredThroughFilter } from './run-state.js'
 
 const IMPORT_TYPE_KEY = 'importType'
 
-const EXEMPT_PREFIXES = [
-  pagePath(dashboardPage.slug),
-  pagePath(importTypeFilterPage.slug),
-  startPath()
-]
+const JOURNEY_PREFIX = `${BASE}/notifications/`
 
-export const guardedJourneyPath = (path) =>
-  path.startsWith(`${BASE}/`) &&
-  !EXEMPT_PREFIXES.some(
-    (prefix) => path === prefix || path.startsWith(`${prefix}/`)
-  )
+export const guardedJourneyPath = (path) => {
+  if (!path.startsWith(JOURNEY_PREFIX) || path === createPath()) return false
+  const [journeyId, ...slugParts] = path.slice(JOURNEY_PREFIX.length).split('/')
+  const slug = slugParts.join('/')
+  const isEntrySurface =
+    slug === importTypeFilterPage.slug ||
+    slug.startsWith(`${importTypeFilterPage.slug}/`)
+  return Boolean(journeyId) && !isEntrySurface
+}
 
 /** Only a model answer the USER entered starts a journey.
  *
@@ -42,5 +41,5 @@ export const entryGuardTarget = async (request, h) => {
   const { journey, answers } = await get(request, h)
   if (await hasEnteredThroughFilter(request, journey.journeyId)) return null
   if (hasCommittedNotificationAnswers(answers)) return null
-  return pagePath(importTypeFilterPage.slug)
+  return pagePath(request.params.journeyId, importTypeFilterPage.slug)
 }

@@ -80,11 +80,15 @@ describe('#buildDispatch', () => {
 
   it('Should fall back to the hub when the page belongs to no section', () => {
     expect(
-      nextInSection('not-a-real-page', {
-        inScope: new Set(),
-        answered: () => true
-      })
-    ).toMatch(/\/hub$/)
+      nextInSection(
+        'not-a-real-page',
+        {
+          inScope: new Set(),
+          answered: () => true
+        },
+        'journey-1'
+      )
+    ).toMatch(/\/notifications\/journey-1$/)
   })
 
   it('Should crash boot when an obligation (and its derived sub-obligations) is uncovered', () => {
@@ -119,21 +123,25 @@ describe('#buildDispatch', () => {
       inScope: makeScope({ transporterType: 'Private' }).inScope,
       answered
     }
-    expect(nextInSection('transporters', scopeCommercial)).toMatch(
+    expect(nextInSection('transporters', scopeCommercial, 'journey-1')).toMatch(
       /\/transporters\/select$/
     )
-    expect(nextInSection('transporters', scopePrivate)).toMatch(
+    expect(nextInSection('transporters', scopePrivate, 'journey-1')).toMatch(
       /\/transporters\/private$/
     )
-    expect(nextInSection('transporters', scopeNoType)).toMatch(/\/hub$/)
-    expect(nextInSection('private-transporter-details', scopePrivate)).toMatch(
-      /\/hub$/
+    expect(nextInSection('transporters', scopeNoType, 'journey-1')).toMatch(
+      /\/notifications\/journey-1$/
     )
+    expect(
+      nextInSection('private-transporter-details', scopePrivate, 'journey-1')
+    ).toMatch(/\/notifications\/journey-1$/)
   })
 
   it('Should enter a section at its first gated-in page', () => {
     const scope = { inScope: makeScope({}).inScope, answered: () => true }
-    expect(sectionEntry('transport', scope)).toMatch(/\/port-of-entry$/)
+    expect(sectionEntry('transport', scope, 'journey-1')).toMatch(
+      /\/port-of-entry$/
+    )
   })
 
   it('Should report ready-to-submit only once every section is complete', () => {

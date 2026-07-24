@@ -1,4 +1,4 @@
-import { hubPath, pagePath, TEMPLATES } from '../../config.js'
+import { BASE, hubRoutePath, TEMPLATES } from '../../config.js'
 import { sections } from '../../flow/flow.js'
 import { rowEntry, rowGatePasses, sectionEntry } from '../../flow/navigation.js'
 import { sectionGatePasses } from '../../flow/gates.js'
@@ -65,7 +65,13 @@ const CANNOT_START_STATUS = {
 
 const reviewSection = () => sections.find((section) => section.id === 'review')
 
-const buildReviewItem = ({ title, hint }, answers, scope, evaluation) => {
+const buildReviewItem = (
+  { title, hint },
+  answers,
+  scope,
+  evaluation,
+  journeyId
+) => {
   const section = reviewSection()
   const base = { title: { text: title }, hint: { text: hint } }
   if (!sectionGatePasses(section, scope)) {
@@ -73,7 +79,7 @@ const buildReviewItem = ({ title, hint }, answers, scope, evaluation) => {
   }
   return {
     ...base,
-    href: sectionEntry('review', scope),
+    href: sectionEntry('review', scope, journeyId),
     status: statusTag(
       sectionStatus(section, answers, scope.inScope, evaluation)
     )
@@ -84,32 +90,38 @@ const isHiddenRow = (row, status) => row.conditional && status === NA
 
 const blockedRowItem = (base) => ({ ...base, status: CANNOT_START_STATUS })
 
-const openRowItem = (base, row, scope, status) => ({
+const openRowItem = (base, row, scope, status, journeyId) => ({
   ...base,
-  href: rowEntry(row, scope),
+  href: rowEntry(row, scope, journeyId),
   status: statusTag(status)
 })
 
-const buildRowItem = (id, answers, scope, evaluation) => {
+const buildRowItem = (id, answers, scope, evaluation, journeyId) => {
   const { title, hint } = copy.rows[id]
   if (id === 'review') {
-    return buildReviewItem({ title, hint }, answers, scope, evaluation)
+    return buildReviewItem(
+      { title, hint },
+      answers,
+      scope,
+      evaluation,
+      journeyId
+    )
   }
   const row = taskRowById(id)
   const status = rowStatus(row, answers, scope.inScope, evaluation)
   if (isHiddenRow(row, status)) return null
   const base = { title: { text: title }, hint: { text: hint } }
   return rowGatePasses(row, scope)
-    ? openRowItem(base, row, scope, status)
+    ? openRowItem(base, row, scope, status, journeyId)
     : blockedRowItem(base)
 }
 
-const buildGroups = (answers, scope, evaluation) =>
+const buildGroups = (answers, scope, evaluation, journeyId) =>
   GROUPS.map((group) => ({
     id: group.id,
     caption: copy.groups[group.id],
     items: group.rows
-      .map((id) => buildRowItem(id, answers, scope, evaluation))
+      .map((id) => buildRowItem(id, answers, scope, evaluation, journeyId))
       .filter(Boolean)
   }))
 
@@ -131,7 +143,8 @@ const buildCommodityTotals = (answers, evaluation) => {
 }
 
 const handler = async (request, h) => {
-  await completeOpeningRun(request, h)
+  const { journeyId } = request.params
+  await completeOpeningRun(request, h, journeyId)
   const { journey, answers, scope, evaluation } = await state.get(request, h)
 
   return h.view(view, {
@@ -141,13 +154,13 @@ const handler = async (request, h) => {
     sharedCopy,
     journeyStrip: journeyStrip(journey),
     commodityTotals: buildCommodityTotals(answers, evaluation),
-    groups: buildGroups(answers, scope, evaluation),
-    dashboardHref: pagePath(dashboardPage.slug),
-    backLink: pagePath(dashboardPage.slug),
+    groups: buildGroups(answers, scope, evaluation, journeyId),
+    dashboardHref: `${BASE}/${dashboardPage.slug}`,
+    backLink: `${BASE}/${dashboardPage.slug}`,
     breadcrumbs: false
   })
 }
 
 export const routes = [
-  { method: 'GET', path: hubPath(), options: open, handler }
+  { method: 'GET', path: hubRoutePath(), options: open, handler }
 ]

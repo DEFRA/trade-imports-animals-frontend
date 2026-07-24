@@ -4,8 +4,7 @@ import { get, configureReadyForCheckYourAnswers } from './read.js'
 import { records, configureRecords } from './persistence/records.js'
 import {
   configureSession,
-  FLOW_ONLY_ANSWERS_COOKIE,
-  JOURNEY_COOKIE
+  FLOW_ONLY_ANSWERS_COOKIE
 } from './persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
@@ -34,7 +33,6 @@ describe('flow-only answers — session round-trip', () => {
 
     const freshRequest = journeyRequest(journey.journeyId, {
       state: {
-        [JOURNEY_COOKIE]: journey.journeyId,
         [FLOW_ONLY_ANSWERS_COOKIE]: writeH.cookies[FLOW_ONLY_ANSWERS_COOKIE]
       }
     })
@@ -51,7 +49,6 @@ describe('flow-only answers — session round-trip', () => {
     const request = journeyRequest(journey.journeyId, {
       app: {},
       state: {
-        [JOURNEY_COOKIE]: journey.journeyId,
         [FLOW_ONLY_ANSWERS_COOKIE]: {
           [journey.journeyId]: { importType: 'live-animals' }
         }

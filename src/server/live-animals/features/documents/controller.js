@@ -1,7 +1,7 @@
 import { Readable } from 'node:stream'
 import Joi from 'joi'
 
-import { hubPath, pagePath, TEMPLATES } from '../../config.js'
+import { hubPath, pagePath, pageRoutePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { isBlank } from '../../lib/answered.js'
 import {
@@ -168,12 +168,13 @@ const removeButton = (index) =>
   `<button type="submit" class="govuk-link app-link-button" name="action" value="${REMOVE_ACTION_PREFIX}${index}">` +
   `${copy.remove}<span class="govuk-visually-hidden"> ${copy.removeHidden(index + 1)}</span></button>`
 
-const filePath = (uploadId) => pagePath(`${page.slug}/${uploadId}/file`)
+const filePath = (journeyId, uploadId) =>
+  pagePath(journeyId, `${page.slug}/${uploadId}/file`)
 
 // Reading the file back is a read, so it is a link, not a submit — it needs
 // no crumb and the form's client-side submit handling never sees it.
-const viewFileLink = (entry, index) =>
-  `<a class="govuk-link govuk-!-margin-right-3" href="${filePath(entry.uploadId)}">` +
+const viewFileLink = (entry, index, journeyId) =>
+  `<a class="govuk-link govuk-!-margin-right-3" href="${filePath(journeyId, entry.uploadId)}">` +
   `${copy.viewFile}<span class="govuk-visually-hidden"> ${copy.viewFileHidden(index + 1)}</span></a>`
 
 // A file is only offered once its scan has settled clean — a pending or
@@ -181,9 +182,9 @@ const viewFileLink = (entry, index) =>
 const isViewable = (entry, scanStatus) =>
   Boolean(entry.uploadId) && scanStatus === SCAN_STATUS.COMPLETE
 
-const actionsCell = ({ entry, index, scanStatus }) => ({
+const actionsCell = ({ entry, index, scanStatus, journeyId }) => ({
   html: isViewable(entry, scanStatus)
-    ? `${viewFileLink(entry, index)}${removeButton(index)}`
+    ? `${viewFileLink(entry, index, journeyId)}${removeButton(index)}`
     : removeButton(index),
   attributes: {
     'data-view-file-text': copy.viewFile,
@@ -200,13 +201,13 @@ const statusCell = (entry, scanStatus) => ({
     : undefined
 })
 
-const documentRows = (documents) =>
+const documentRows = (documents, journeyId) =>
   documents.map(({ index, entry, scanStatus }) => [
     { text: cellText(entry.accompanyingDocumentReference) },
     { text: cellText(copy.types[entry.accompanyingDocumentType]) },
     { text: dateText(entry.accompanyingDocumentDateOfIssue) },
     statusCell(entry, scanStatus),
-    actionsCell({ entry, index, scanStatus })
+    actionsCell({ entry, index, scanStatus, journeyId })
   ])
 
 const rejectedErrors = (documents) =>
@@ -225,7 +226,10 @@ const getAttempt = (request) => {
 }
 
 const refreshHref = (request, attempt) => {
-  const base = kit.withChangeContext(request, pagePath(page.slug))
+  const base = kit.withChangeContext(
+    request,
+    pagePath(request.params.journeyId, page.slug)
+  )
   const separator = base.includes('?') ? '&' : '?'
   return `${base}${separator}attempt=${attempt}`
 }
@@ -249,10 +253,13 @@ const render = (
     ...(kit.errorSummary(errors)?.errorList ?? [])
   ]
   return h.view(view, {
-    ...kit.base(copy.title, { backLink: hubPath(), journey }),
+    ...kit.base(copy.title, {
+      backLink: hubPath(journey.journeyId),
+      journey
+    }),
     ...extra,
     copy,
-    rows: documentRows(documents),
+    rows: documentRows(documents, journey.journeyId),
     hasDocuments: documents.length > 0,
     values,
     errors,
@@ -413,7 +420,12 @@ const postAdd = async (request, h, payload) => {
     uploadId: outcome.uploadId,
     filename
   })
-  return h.redirect(kit.withChangeContext(request, pagePath(page.slug)))
+  return h.redirect(
+    kit.withChangeContext(
+      request,
+      pagePath(request.params.journeyId, page.slug)
+    )
+  )
 }
 
 const isStillSettling = (documents) =>
@@ -437,7 +449,10 @@ const postRemove = async (request, h, index) => {
   const entry = documentAt(answers, evaluation, index)
   if (!entry) return h.response().code(HTTP_STATUS_BAD_REQUEST)
 
-  const backToPage = kit.withChangeContext(request, pagePath(page.slug))
+  const backToPage = kit.withChangeContext(
+    request,
+    pagePath(request.params.journeyId, page.slug)
+  )
   if (entry.uploadId) {
     try {
       await documentUploads.remove(entry.uploadId)
@@ -493,10 +508,15 @@ export const handleOversizePayload = async (request, h) => {
 }
 
 export const routes = [
-  { method: 'GET', path: pagePath(page.slug), options: open, handler: get },
+  {
+    method: 'GET',
+    path: pageRoutePath(page.slug),
+    options: open,
+    handler: get
+  },
   {
     method: 'POST',
-    path: pagePath(page.slug),
+    path: pageRoutePath(page.slug),
     options: {
       ...open,
       payload: {
@@ -512,17 +532,18 @@ export const routes = [
   },
   {
     method: 'GET',
-    path: pagePath(`${page.slug}/status`),
+    path: pageRoutePath(`${page.slug}/status`),
     options: open,
     handler: getStatus
   },
   {
     method: 'GET',
-    path: pagePath(`${page.slug}/{uploadId}/file`),
+    path: pageRoutePath(`${page.slug}/{uploadId}/file`),
     options: {
       ...open,
       validate: {
         params: Joi.object({
+          journeyId: Joi.string().required(),
           uploadId: Joi.string().pattern(UPLOAD_ID_PATTERN).required()
         })
       }

@@ -106,12 +106,18 @@ const render = (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: kit.withChangeContext(request, pagePath(commoditiesPage.slug)),
+      backLink: kit.withChangeContext(
+        request,
+        pagePath(request.params.journeyId, commoditiesPage.slug)
+      ),
       journey
     }),
     copy,
     hasLines: lines.length > 0,
-    addHref: kit.withChangeContext(request, pagePath(commoditiesPage.slug)),
+    addHref: kit.withChangeContext(
+      request,
+      pagePath(request.params.journeyId, commoditiesPage.slug)
+    ),
     addText: lines.length > 0 ? copy.addAnother : copy.addFirst,
     groups: buildGroups(lines, values, errors),
     errors,
@@ -135,7 +141,7 @@ const countDropIssueFor = (request, { index, entry }, values) => {
       text: copy.errors.countDrop(records, species, entered),
       href: `${kit.withChangeContext(
         request,
-        pagePath(animalIdentificationPage.slug)
+        pagePath(request.params.journeyId, animalIdentificationPage.slug)
       )}#identification-card-${index}`
     }
   ]
@@ -218,7 +224,12 @@ const postRemove = async (request, h, index) => {
     (entry) => entry.commoditySelection !== name
   )
   await state.reconcileEntriesAt(request, h, ['commodityLines'], lineKey, kept)
-  return h.redirect(kit.withChangeContext(request, pagePath(page.slug)))
+  return h.redirect(
+    kit.withChangeContext(
+      request,
+      pagePath(request.params.journeyId, page.slug)
+    )
+  )
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

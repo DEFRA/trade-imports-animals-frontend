@@ -9,6 +9,7 @@ import { session as sessionStub } from '../../services/persistence/session/stub.
 import { stubH, journeyRequest } from '../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import { leaves, isCopyLeaf } from '../../shared/copy-leaves.js'
+import { pagePath } from '../../config.js'
 
 import { routes } from './controller.js'
 import { copy } from './copy.en.js'
@@ -20,7 +21,7 @@ const renderHub = async (seed = {}) => {
   await store.seedAnswers(journey.journeyId, seed)
   const h = stubH()
   await hubHandler(journeyRequest(journey.journeyId), h)
-  return h.captured.view.context
+  return { ...h.captured.view.context, journeyId: journey.journeyId }
 }
 
 const allItems = (context) => context.groups.flatMap((group) => group.items)
@@ -117,11 +118,12 @@ describe('#hubHandler', () => {
   })
 
   it('Should render the always-open origin row as a blue "Not yet started" tag with a link', async () => {
+    const context = await renderHub()
     const originRow = rowByTitle(
-      await renderHub(),
+      context,
       'Where is this consignment coming from?'
     )
-    expect(originRow.href).toBe('/prototype-standalone/live-animals/origin')
+    expect(originRow.href).toBe(pagePath(context.journeyId, 'origin'))
     expect(originRow.status).toEqual({
       tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
     })
@@ -176,7 +178,7 @@ describe('#hubHandler', () => {
       tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
     })
     expect(identificationRow.href).toBe(
-      '/prototype-standalone/live-animals/commodities/identification'
+      pagePath(context.journeyId, 'commodities/identification')
     )
   })
 
@@ -196,7 +198,7 @@ describe('#hubHandler', () => {
     })
     const transitRow = rowByTitle(byRoad, 'Transit countries')
     expect(transitRow.href).toBe(
-      '/prototype-standalone/live-animals/transit-countries'
+      pagePath(byRoad.journeyId, 'transit-countries')
     )
     expect(transitRow.status).toEqual({
       tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
@@ -214,13 +216,13 @@ describe('#hubHandler', () => {
   it('Should enter each movement row at its first page', async () => {
     const context = await renderHub(unlockedSeed)
     expect(rowByTitle(context, 'Arrival details').href).toBe(
-      '/prototype-standalone/live-animals/port-of-entry'
+      pagePath(context.journeyId, 'port-of-entry')
     )
     expect(rowByTitle(context, 'Transporter').href).toBe(
-      '/prototype-standalone/live-animals/transporters'
+      pagePath(context.journeyId, 'transporters')
     )
     expect(rowByTitle(context, 'Roles and addresses').href).toBe(
-      '/prototype-standalone/live-animals/addresses'
+      pagePath(context.journeyId, 'addresses')
     )
   })
 

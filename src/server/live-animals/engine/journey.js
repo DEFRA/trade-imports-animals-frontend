@@ -1,14 +1,14 @@
+import Boom from '@hapi/boom'
 import { BASE } from '../config.js'
 import {
   session,
-  JOURNEY_COOKIE,
   KNOWN_JOURNEYS_COOKIE,
   OPENING_RUN_COOKIE,
   FLOW_ONLY_ANSWERS_COOKIE
 } from './persistence/session.js'
 import { records, SUBMITTED } from './persistence/records.js'
 
-export { JOURNEY_COOKIE, KNOWN_JOURNEYS_COOKIE } from './persistence/session.js'
+export { KNOWN_JOURNEYS_COOKIE } from './persistence/session.js'
 
 const cookieOptions = Object.freeze({
   path: BASE,
@@ -22,7 +22,6 @@ const cookieOptions = Object.freeze({
 })
 
 export const registerJourneyCookie = (server) => {
-  server.state(JOURNEY_COOKIE, cookieOptions)
   server.state(KNOWN_JOURNEYS_COOKIE, {
     ...cookieOptions,
     encoding: 'base64json'
@@ -47,18 +46,13 @@ const memoWrite = (request, journey) => {
   }
 }
 
-const makeActive = async (request, h, journey) => {
-  await session.setActiveJourney(h, journey.journeyId)
-  await session.addKnownJourney(request, h, journey.journeyId)
-  memoWrite(request, journey)
-  return journey
-}
-
 export const startJourney = async (request, h) => {
   const journey = await records.create({
     userId: await session.userId(request)
   })
-  return makeActive(request, h, journey)
+  await session.addKnownJourney(request, h, journey.journeyId)
+  memoWrite(request, journey)
+  return journey
 }
 
 export const currentJourney = async (request, h) => {
@@ -66,13 +60,13 @@ export const currentJourney = async (request, h) => {
   if (cached) {
     return structuredClone(cached)
   }
-  const journeyId = await session.activeJourneyId(request)
-  const loaded = journeyId ? await records.load({ journeyId }) : undefined
-  if (loaded) {
-    memoWrite(request, loaded)
-    return structuredClone(loaded)
-  }
-  return startJourney(request, h)
+  const journeyId = request.params?.journeyId
+  if (!journeyId) throw Boom.notFound()
+  if (!(await isKnownJourney(request, journeyId))) throw Boom.notFound()
+  const loaded = await records.load({ journeyId })
+  if (!loaded) throw Boom.notFound()
+  memoWrite(request, loaded)
+  return structuredClone(loaded)
 }
 
 export const replaceJourneyFulfilment = async (
@@ -98,18 +92,12 @@ export const listKnownJourneys = async (request) =>
 export const isKnownJourney = async (request, journeyId) =>
   (await session.knownJourneyIds(request)).includes(journeyId)
 
-export const selectJourney = async (request, h, journeyId) => {
-  if (!(await isKnownJourney(request, journeyId))) return undefined
-  const journey = await records.load({ journeyId })
-  if (!journey) return undefined
-  return makeActive(request, h, journey)
-}
-
 export const amendJourney = async (request, h, journeyId) => {
   if (!(await isKnownJourney(request, journeyId))) return undefined
   const journey = await records.load({ journeyId })
   if (!journey) return undefined
   const editable =
     journey.status === SUBMITTED ? await records.amend(journeyId) : journey
-  return makeActive(request, h, editable)
+  memoWrite(request, editable)
+  return editable
 }

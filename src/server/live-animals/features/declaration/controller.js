@@ -29,7 +29,7 @@ const dateText = (value) =>
 const render = (h, journey, values, errors = {}) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: pagePath(kit.CYA_SLUG),
+      backLink: pagePath(journey.journeyId, kit.CYA_SLUG),
       journey
     }),
     copy,
@@ -42,7 +42,7 @@ const render = (h, journey, values, errors = {}) =>
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   if (journey.status === state.SUBMITTED) {
-    return h.redirect(pagePath(confirmationPage.slug))
+    return h.redirect(pagePath(journey.journeyId, confirmationPage.slug))
   }
   return render(h, journey, { declaration: answers.declaration ?? '' })
 }
@@ -50,7 +50,7 @@ const get = async (request, h) => {
 const post = async (request, h) => {
   const { journey } = await state.get(request, h)
   if (journey.status === state.SUBMITTED) {
-    return h.redirect(pagePath(confirmationPage.slug))
+    return h.redirect(pagePath(journey.journeyId, confirmationPage.slug))
   }
 
   const payload = request.payload ?? {}
@@ -62,8 +62,10 @@ const post = async (request, h) => {
 
   await state.commit(request, h, values)
   const result = await state.submitJourney(request, h)
-  if (!result.ok) return h.redirect(pagePath(kit.CYA_SLUG))
-  return h.redirect(pagePath(confirmationPage.slug))
+  if (!result.ok) {
+    return h.redirect(pagePath(journey.journeyId, kit.CYA_SLUG))
+  }
+  return h.redirect(pagePath(journey.journeyId, confirmationPage.slug))
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

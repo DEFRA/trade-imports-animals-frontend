@@ -229,13 +229,15 @@ describe('#rowGatePasses / #rowEntry — a row is gated exactly as its first pag
 
   it('Should enter a row at its first gate-passing page', () => {
     const scope = makeScope(unlocked)
-    expect(rowEntry(taskRowById('arrivalDetails'), scope)).toMatch(
+    expect(rowEntry(taskRowById('arrivalDetails'), scope, 'journey-1')).toMatch(
       /\/port-of-entry$/
     )
-    expect(rowEntry(taskRowById('transporter'), scope)).toMatch(
+    expect(rowEntry(taskRowById('transporter'), scope, 'journey-1')).toMatch(
       /\/transporters$/
     )
-    expect(rowEntry(taskRowById('addresses'), scope)).toMatch(/\/addresses$/)
+    expect(rowEntry(taskRowById('addresses'), scope, 'journey-1')).toMatch(
+      /\/addresses$/
+    )
   })
 })
 

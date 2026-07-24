@@ -1,4 +1,4 @@
-import { pagePath, TEMPLATES } from '../../config.js'
+import { BASE, pagePath, pageRoutePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, requiredOneOf, validate } from '../../lib/validate/index.js'
 import { hasCommittedNotificationAnswers } from '../../flow/entry-guard.js'
@@ -31,9 +31,12 @@ const fields = compose(
   )
 )
 
-const render = (h, values, errors = {}) =>
+const render = (h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base(copy.title, { backLink: pagePath('home') }),
+    ...kit.base(copy.title, {
+      backLink: `${BASE}/home`,
+      journeyId: journey.journeyId
+    }),
     copy,
     values,
     errors,
@@ -45,46 +48,57 @@ const render = (h, values, errors = {}) =>
   })
 
 const get = async (request, h) => {
-  const { answers } = await state.get(request, h)
-  return render(h, { importType: answers.importType ?? '' })
+  const { journey, answers } = await state.get(request, h)
+  return render(h, journey, { importType: answers.importType ?? '' })
 }
 
 const shouldOpenRun = async (request, answersBeforeCommit) =>
-  (await inOpeningRun(request)) ||
+  (await inOpeningRun(request, request.params.journeyId)) ||
   !hasCommittedNotificationAnswers(answersBeforeCommit)
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const values = { importType: payload.importType ?? '' }
   const { errors } = validate(fields, payload)
-  if (errors) return render(h, values, errors)
+  if (errors) {
+    const { journey } = await state.get(request, h)
+    return render(h, journey, values, errors)
+  }
 
   const { answers: before } = await state.get(request, h)
   const { scope } = await state.commit(request, h, values)
   if (values.importType !== LIVE_ANIMALS) {
-    return h.redirect(pagePath(NOT_AVAILABLE_SLUG))
+    return h.redirect(pagePath(request.params.journeyId, NOT_AVAILABLE_SLUG))
   }
   if (await shouldOpenRun(request, before)) {
-    await beginOpeningRun(request, h)
-    return h.redirect(kit.exitTarget(request, nextRunTarget(page.id, scope)))
+    await beginOpeningRun(request, h, request.params.journeyId)
+    return h.redirect(
+      kit.exitTarget(
+        request,
+        nextRunTarget(page.id, scope, request.params.journeyId)
+      )
+    )
   }
   return h.redirect(await kit.nextTarget(request, page, scope))
 }
 
-const getNotAvailable = (_request, h) =>
-  h.view(holdingView, {
+const getNotAvailable = async (request, h) => {
+  const { journey } = await state.get(request, h)
+  return h.view(holdingView, {
     ...kit.base(copy.notAvailable.title, {
-      backLink: pagePath(page.slug)
+      backLink: pagePath(journey.journeyId, page.slug),
+      journeyId: journey.journeyId
     }),
     copy,
-    changeAnswerHref: pagePath(page.slug)
+    changeAnswerHref: pagePath(journey.journeyId, page.slug)
   })
+}
 
 export const routes = [
   ...kit.pageRoutes(page, { get, post }),
   {
     method: 'GET',
-    path: pagePath(NOT_AVAILABLE_SLUG),
+    path: pageRoutePath(NOT_AVAILABLE_SLUG),
     options: kit.open,
     handler: getNotAvailable
   }

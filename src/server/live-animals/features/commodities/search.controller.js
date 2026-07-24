@@ -109,7 +109,7 @@ const render = (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: hubPath(),
+      backLink: hubPath(journey.journeyId),
       journey
     }),
     copy,
@@ -207,7 +207,10 @@ const commitSelection = async (request, h, selected) => {
   )
   return h.redirect(
     kit.hubExitTarget(request) ??
-      kit.withChangeContext(request, pagePath(consignmentDetailsPage.slug))
+      kit.withChangeContext(
+        request,
+        pagePath(request.params.journeyId, consignmentDetailsPage.slug)
+      )
   )
 }
 

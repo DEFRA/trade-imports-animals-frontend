@@ -29,7 +29,12 @@ const drivePost = async (
     h
   )
   const after = (await store.get(journey.journeyId)).answers
-  return { response, after, view: h.captured.view }
+  return {
+    journeyId: journey.journeyId,
+    response,
+    after,
+    view: h.captured.view
+  }
 }
 
 describe('save actions — hub exit semantics', () => {
@@ -41,13 +46,27 @@ describe('save actions — hub exit semantics', () => {
   beforeEach(() => store.clear())
 
   it('Should expose the hub href for the cancel link from kit.base', () => {
-    expect(base('Any page').hubHref).toBe(hubPath())
+    expect(
+      base('Any page', { journey: { journeyId: 'journey-1' } }).hubHref
+    ).toBe(hubPath('journey-1'))
   })
 
   it('Should resolve the hub target only for the named exit submit', () => {
-    expect(hubExitTarget({ payload: { exit: 'hub' } })).toBe(hubPath())
-    expect(hubExitTarget({ payload: {} })).toBeNull()
-    expect(hubExitTarget({ payload: undefined })).toBeNull()
+    expect(
+      hubExitTarget({
+        payload: { exit: 'hub' },
+        params: { journeyId: 'journey-1' }
+      })
+    ).toBe(hubPath('journey-1'))
+    expect(
+      hubExitTarget({ payload: {}, params: { journeyId: 'journey-1' } })
+    ).toBeNull()
+    expect(
+      hubExitTarget({
+        payload: undefined,
+        params: { journeyId: 'journey-1' }
+      })
+    ).toBeNull()
   })
 
   // purposeInInternalMarket is activated by reasonForImport=internalMarket,
@@ -61,20 +80,28 @@ describe('save actions — hub exit semantics', () => {
   }
 
   it('Should commit the page and redirect to the hub on Save and return to hub', async () => {
-    const { response, after } = await drivePost(postHandlerOf(importPurpose), {
-      payload: { purposeInInternalMarket: 'breeding', exit: 'hub' },
-      seed: purposeInScope
-    })
-    expect(response).toEqual({ redirect: hubPath() })
+    const { journeyId, response, after } = await drivePost(
+      postHandlerOf(importPurpose),
+      {
+        payload: { purposeInInternalMarket: 'breeding', exit: 'hub' },
+        seed: purposeInScope
+      }
+    )
+    expect(response).toEqual({ redirect: hubPath(journeyId) })
     expect(after.purposeInInternalMarket).toBe('breeding')
   })
 
   it('Should keep Save and continue on the flow target when no exit is named', async () => {
-    const { response, after } = await drivePost(postHandlerOf(importPurpose), {
-      payload: { purposeInInternalMarket: 'breeding' },
-      seed: purposeInScope
+    const { journeyId, response, after } = await drivePost(
+      postHandlerOf(importPurpose),
+      {
+        payload: { purposeInInternalMarket: 'breeding' },
+        seed: purposeInScope
+      }
+    )
+    expect(response).toEqual({
+      redirect: pagePath(journeyId, 'additional-details')
     })
-    expect(response).toEqual({ redirect: pagePath('additional-details') })
     expect(after.purposeInInternalMarket).toBe('breeding')
   })
 
@@ -95,21 +122,29 @@ describe('save actions — hub exit semantics', () => {
   })
 
   it('Should send a change-context Save and continue back to check your answers', async () => {
-    const { response } = await drivePost(postHandlerOf(importPurpose), {
-      payload: { purposeInInternalMarket: 'breeding' },
-      query: { change: '1' },
-      seed: purposeInScope
+    const { journeyId, response } = await drivePost(
+      postHandlerOf(importPurpose),
+      {
+        payload: { purposeInInternalMarket: 'breeding' },
+        query: { change: '1' },
+        seed: purposeInScope
+      }
+    )
+    expect(response).toEqual({
+      redirect: pagePath(journeyId, 'notification-view')
     })
-    expect(response).toEqual({ redirect: pagePath('notification-view') })
   })
 
   it('Should let an explicit hub exit win over the change context', async () => {
-    const { response, after } = await drivePost(postHandlerOf(importPurpose), {
-      payload: { purposeInInternalMarket: 'breeding', exit: 'hub' },
-      query: { change: '1' },
-      seed: purposeInScope
-    })
-    expect(response).toEqual({ redirect: hubPath() })
+    const { journeyId, response, after } = await drivePost(
+      postHandlerOf(importPurpose),
+      {
+        payload: { purposeInInternalMarket: 'breeding', exit: 'hub' },
+        query: { change: '1' },
+        seed: purposeInScope
+      }
+    )
+    expect(response).toEqual({ redirect: hubPath(journeyId) })
     expect(after.purposeInInternalMarket).toBe('breeding')
   })
 
@@ -124,26 +159,26 @@ describe('save actions — hub exit semantics', () => {
         }
       ]
     }
-    const { response, after } = await drivePost(
+    const { journeyId, response, after } = await drivePost(
       postHandlerOf(consignmentDetails),
       {
         payload: { 'numberOfAnimalsQuantity-0': '2', exit: 'hub' },
         seed
       }
     )
-    expect(response).toEqual({ redirect: hubPath() })
+    expect(response).toEqual({ redirect: hubPath(journeyId) })
     expect(after.commodityLines[0].numberOfAnimalsQuantity).toBe(2)
   })
 
   it('Should commit a depth-2 identifier unit and redirect to the hub on the exit submit', async () => {
-    const { response, after } = await drivePost(
+    const { journeyId, response, after } = await drivePost(
       postHandlerOf(animalIdentification),
       {
         payload: { 'animalIdentifierPassport-0': 'UK123456789', exit: 'hub' },
         seed: { commodityLines: [{ commoditySelection: 'Cat' }] }
       }
     )
-    expect(response).toEqual({ redirect: hubPath() })
+    expect(response).toEqual({ redirect: hubPath(journeyId) })
     expect(after.commodityLines[0].animalIdentifiers).toHaveLength(1)
     expect(
       after.commodityLines[0].animalIdentifiers[0].animalIdentifierPassport
@@ -154,7 +189,7 @@ describe('save actions — hub exit semantics', () => {
     const exit = await drivePost(postHandlerOf(documents), {
       payload: { exit: 'hub' }
     })
-    expect(exit.response).toEqual({ redirect: hubPath() })
+    expect(exit.response).toEqual({ redirect: hubPath(exit.journeyId) })
 
     const add = await drivePost(postHandlerOf(documents), {
       payload: {
@@ -171,7 +206,7 @@ describe('save actions — hub exit semantics', () => {
       }
     })
     expect(add.response).toEqual({
-      redirect: pagePath('accompanying-documents')
+      redirect: pagePath(add.journeyId, 'accompanying-documents')
     })
     expect(add.after.documents).toHaveLength(1)
   })
@@ -186,14 +221,16 @@ describe('save actions — hub exit semantics', () => {
       query: { return: 'addresses' },
       seed: cphInScope
     })
-    expect(returned.response).toEqual({ redirect: pagePath('addresses') })
+    expect(returned.response).toEqual({
+      redirect: pagePath(returned.journeyId, 'addresses')
+    })
 
     const exit = await drivePost(postHandlerOf(cphNumber), {
       payload: { countyParishHoldingCph: '123456789', exit: 'hub' },
       query: { return: 'addresses' },
       seed: cphInScope
     })
-    expect(exit.response).toEqual({ redirect: hubPath() })
+    expect(exit.response).toEqual({ redirect: hubPath(exit.journeyId) })
     expect(exit.after.countyParishHoldingCph).toBe('123456789')
   })
 })

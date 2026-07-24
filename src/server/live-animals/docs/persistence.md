@@ -18,37 +18,34 @@ map in the stub and the trade-imports backend in real mode.
 
 ### SESSION (`engine/persistence/session.js`)
 
-The SESSION port answers three questions for a request: who is the user,
-which journey is active, and which journeys this session knows about. It
-also carries the presentation state for the pre-hub linear run (the
+The SESSION port answers who the user is and which journeys this session
+knows about. The journey being handled comes from the URL, not session
+state. The port also carries presentation state for the pre-hub linear run (the
 "opening run" — see [flow-and-gates.md](flow-and-gates.md)) and the
 journey-keyed flow-only answers (`importType`, `declaration`) that do not
 belong to the notification.
 
-Its surface: `userId`, `activeJourneyId` / `setActiveJourney` /
-`clearActive`, `knownJourneyIds` / `addKnownJourney`, and `openingRun` /
-`setOpeningRun`, plus `flowOnlyAnswers` / `setFlowOnlyAnswers`.
+Its surface: `userId`, `knownJourneyIds` / `addKnownJourney`,
+`openingRun` / `setOpeningRun`, and `flowOnlyAnswers` /
+`setFlowOnlyAnswers`.
 
 **Stub** (`services/persistence/session/stub.js`) keeps everything in
 cookies:
 
 - `userId` returns the constant `stub-user-0001`. An `x-stub-user`
   request header overrides it, so a test can play a second user cheaply.
-- The active-journey pointer is a cookie (`liveAnimalsJourneyId`) that
-  carries the `journeyId` directly.
-- A second cookie (`liveAnimalsKnownJourneys`, base64json) carries the
+- `liveAnimalsKnownJourneys` (base64json) carries the
   session's known-journeys list — every reference this session has
   created, resumed or amended. The dashboard lists and acts on only
   these references.
-- A third cookie (`liveAnimalsOpeningRun`, base64json) carries the
-  opening-run record `{ journeyId, phase }` — presentation state only,
-  never notification data.
-- A fourth cookie (`liveAnimalsFlowOnlyAnswers`, base64json) maps each
+- `liveAnimalsOpeningRun` (base64json) maps each `journeyId` to its
+  opening-run phase — presentation state only, never notification data.
+- `liveAnimalsFlowOnlyAnswers` (base64json) maps each
   `journeyId` to its flow-only values, so switching journeys in one
   session cannot leak the filter or declaration selection.
 
-**Real** (`services/persistence/session/real.js`) keeps the same four
-values in the server-side session (`request.yar`, backed by Redis), and
+**Real** (`services/persistence/session/real.js`) keeps the same three
+state values in the server-side session (`request.yar`, backed by Redis), and
 reads the user from the Defra ID OIDC credentials
 (`request.auth.credentials.sub`), falling back to the stub user when
 auth is off.
@@ -181,21 +178,18 @@ request is tied to a journey document. It memoises the loaded journey on
 `request.app` so a request loads at most once.
 
 - `startJourney` mints a fresh journey (`records.create`, stamped with
-  the user), pins it active, and appends it to the session's
-  known-journeys list. Every Start-now begins a new journey; earlier
-  journeys stay listed on the dashboard.
-- `currentJourney` returns the memoised journey, else loads the one
-  named by the active pointer, else mints a fresh one (load-or-create
-  per request).
+  the user) and appends it to the session's known-journeys list. Every
+  create POST begins a new journey; earlier journeys stay listed on the
+  dashboard.
+- `currentJourney` returns the memoised journey, else loads the one named
+  by `request.params.journeyId` after checking the session-known list.
+  Missing, unknown and stale references are answered with 404; reads
+  never create a journey.
 - `listKnownJourneys` loads the session's known references through
   `records.list` — the dashboard's data source.
-- `selectJourney` repoints the active journey at a session-known
-  reference (dashboard Resume / View). An unknown reference is refused —
-  the session-known check is the authorisation seam.
-- `amendJourney` is select-plus-unfreeze: for a session-known submitted
-  journey it calls `records.amend`, then makes it active again. An
-  already-editable journey just re-enters, so a repeated POST is not an
-  error.
+- `amendJourney` checks the session-known reference and unfreezes a
+  submitted journey with `records.amend`. An already-editable journey
+  just re-enters, so a repeated POST is not an error.
 
 ## Write-through and submit-is-finalise
 

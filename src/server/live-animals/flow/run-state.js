@@ -1,31 +1,21 @@
 import { session } from '../engine/persistence/session.js'
-import { currentJourney } from '../engine/journey.js'
 
 export const RUN_ACTIVE = 'active'
 export const RUN_COMPLETE = 'complete'
 
-// Session-side presentation state `{ journeyId, phase }` for the opening
-// run — never canonical fulfilment data (see docs/flow-and-gates.md). Shared shape
-// read/written by all four exports below.
+// Session-side presentation state keyed by journey id for the opening run —
+// never canonical fulfilment data (see docs/flow-and-gates.md).
 
-export const beginOpeningRun = async (request, h) => {
-  const { journeyId } = await currentJourney(request, h)
-  await session.setOpeningRun(h, { journeyId, phase: RUN_ACTIVE })
+export const beginOpeningRun = async (request, h, journeyId) =>
+  session.setOpeningRun(h, journeyId, RUN_ACTIVE, request)
+
+export const completeOpeningRun = async (request, h, journeyId) => {
+  if ((await session.openingRun(request, journeyId)) !== RUN_ACTIVE) return
+  await session.setOpeningRun(h, journeyId, RUN_COMPLETE, request)
 }
 
-export const completeOpeningRun = async (request, h) => {
-  const record = await session.openingRun(request)
-  if (record?.phase !== RUN_ACTIVE) return
-  await session.setOpeningRun(h, { ...record, phase: RUN_COMPLETE })
-}
+export const inOpeningRun = async (request, journeyId) =>
+  (await session.openingRun(request, journeyId)) === RUN_ACTIVE
 
-export const inOpeningRun = async (request) => {
-  const record = await session.openingRun(request)
-  if (record?.phase !== RUN_ACTIVE) return false
-  return record.journeyId === (await session.activeJourneyId(request))
-}
-
-export const hasEnteredThroughFilter = async (request, journeyId) => {
-  const record = await session.openingRun(request)
-  return record?.journeyId === journeyId
-}
+export const hasEnteredThroughFilter = async (request, journeyId) =>
+  (await session.openingRun(request, journeyId)) !== undefined

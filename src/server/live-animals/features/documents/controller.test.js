@@ -5,7 +5,10 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pagePath } from '../../config.js'
 import { buildDispatch } from '../../flow/dispatch.js'
 import { store } from '../../engine/store.js'
-import { JOURNEY_COOKIE, registerJourneyCookie } from '../../engine/journey.js'
+import {
+  KNOWN_JOURNEYS_COOKIE,
+  registerJourneyCookie
+} from '../../engine/journey.js'
 import { configureRecords } from '../../engine/persistence/records.js'
 import { configureSession } from '../../engine/persistence/session.js'
 import { records as recordsStub } from '../../services/persistence/records/stub.js'
@@ -199,7 +202,7 @@ describe('documents — real upload leg on the single-page loop', () => {
     const h = stubH()
     const request = journeyRequest(journey.journeyId, {
       response: { isBoom: true, output: { statusCode: 413 } },
-      state: { [JOURNEY_COOKIE]: journey.journeyId, crumb: 'test-crumb' }
+      state: { crumb: 'test-crumb' }
     })
     const response = await documents.handleOversizePayload(request, h)
     expect(response.statusCode).toBe(400)
@@ -338,14 +341,14 @@ describe('documents — real upload leg on the single-page loop', () => {
 
     const forged = await server.inject({
       method: 'POST',
-      url: pagePath('accompanying-documents'),
+      url: pagePath('journey-1', 'accompanying-documents'),
       payload: { action: 'remove:0' }
     })
     expect(forged.statusCode).toBe(403)
 
     const prefetched = await server.inject({
       method: 'GET',
-      url: pagePath('accompanying-documents/0/remove')
+      url: pagePath('journey-1', 'accompanying-documents/0/remove')
     })
     expect(prefetched.statusCode).toBe(404)
   })
@@ -473,7 +476,7 @@ describe('documents — real upload leg on the single-page loop', () => {
 
     const settled = await driveHandler(get, { seed })
     expect(settled.view.context.rows[0][4].html).toContain(
-      `href="${pagePath(`accompanying-documents/${uploadId}/file`)}"`
+      `href="${pagePath(settled.journeyId, `accompanying-documents/${uploadId}/file`)}"`
     )
     expect(settled.view.context.rows[0][4].html).toContain('Remove')
   })
@@ -528,11 +531,20 @@ describe('documents — reading an uploaded file back', () => {
     return { server, journeyId: journey.journeyId }
   }
 
-  const readFile = ({ server, journeyId }, uploadId) =>
+  const knownCookie = (journeyIds) =>
+    `${KNOWN_JOURNEYS_COOKIE}=${Buffer.from(
+      JSON.stringify(journeyIds)
+    ).toString('base64')}`
+
+  const readFile = (
+    { server, journeyId },
+    uploadId,
+    knownJourneyIds = [journeyId]
+  ) =>
     server.inject({
       method: 'GET',
-      url: pagePath(`accompanying-documents/${uploadId}/file`),
-      headers: { cookie: `${JOURNEY_COOKIE}=${journeyId}` }
+      url: pagePath(journeyId, `accompanying-documents/${uploadId}/file`),
+      headers: { cookie: knownCookie(knownJourneyIds) }
     })
 
   it('Should stream an owned upload with its content type, disposition and nosniff', async () => {
@@ -559,6 +571,20 @@ describe('documents — reading an uploaded file back', () => {
     expect(response.statusCode).toBe(404)
   })
 
+  it("Should not expose journey A's upload through journey B's URL in one session", async () => {
+    const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
+    const heldByA = await journeyHolding(uploadId)
+    const journeyB = await store.create()
+
+    const response = await readFile(
+      { server: heldByA.server, journeyId: journeyB.journeyId },
+      uploadId,
+      [heldByA.journeyId, journeyB.journeyId]
+    )
+
+    expect(response.statusCode).toBe(404)
+  })
+
   it('Should refuse a malformed upload id before it reaches the upload service', async () => {
     const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
     const held = await journeyHolding(uploadId)
@@ -576,8 +602,8 @@ describe('documents — reading an uploaded file back', () => {
 
     const response = await server.inject({
       method: 'GET',
-      url: pagePath('accompanying-documents/up-1234/file'),
-      headers: { cookie: `${JOURNEY_COOKIE}=${journey.journeyId}` }
+      url: pagePath(journey.journeyId, 'accompanying-documents/up-1234/file'),
+      headers: { cookie: knownCookie([journey.journeyId]) }
     })
 
     expect(response.statusCode).toBe(404)

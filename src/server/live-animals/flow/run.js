@@ -11,8 +11,8 @@ import { importPurposePage } from '../features/import-purpose/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
 import { pageGatePasses } from './gates.js'
 
-const flowPageTarget = (page) => (scope) =>
-  pageGatePasses(page, scope) ? pagePath(page.slug) : null
+const flowPageTarget = (page) => (scope, journeyId) =>
+  pageGatePasses(page, scope) ? pagePath(journeyId, page.slug) : null
 
 /** The opening run's ordered steps — a null target skips the step (see
  * docs/flow-and-gates.md, "The opening run"). The commodity leg is a
@@ -40,12 +40,12 @@ export const RUN_STEPS = [
   }
 ]
 
-export const nextRunTarget = (stepId, scope) => {
+export const nextRunTarget = (stepId, scope, journeyId) => {
   const index = RUN_STEPS.findIndex((step) => step.id === stepId)
   if (index === -1) return null
   for (const step of RUN_STEPS.slice(index + 1)) {
-    const target = step.target(scope)
+    const target = step.target(scope, journeyId)
     if (target) return target
   }
-  return hubPath()
+  return hubPath(journeyId)
 }

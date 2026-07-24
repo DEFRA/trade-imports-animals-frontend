@@ -17,6 +17,17 @@ import { copy as documentsCopy } from '../../src/server/live-animals/features/do
 const BASE = '/prototype-standalone/live-animals'
 const GBN_REFERENCE = /GBN-AG-\d{2}-[0-9A-HJKMNP-TV-Z]{6}/
 
+const journeyIdFromPage = (page) => {
+  const match = new URL(page.url()).pathname.match(
+    /\/prototype-standalone\/live-animals\/notifications\/([^/]+)/
+  )
+  if (!match) throw new Error(`No journey id in URL: ${page.url()}`)
+  return match[1]
+}
+
+const journeyUrl = (page, slug = '') =>
+  `${BASE}/notifications/${journeyIdFromPage(page)}${slug ? `/${slug}` : ''}`
+
 const { values } = JSON.parse(
   readFileSync(
     new URL(
@@ -50,7 +61,7 @@ const startNotification = async (page) => {
   await expect(
     page.getByRole('heading', { name: 'Origin of the import' })
   ).toBeVisible()
-  await page.goto(`${BASE}/hub`)
+  await page.goto(journeyUrl(page))
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
@@ -398,7 +409,7 @@ test.describe('live-animals (page-owned spine)', () => {
       page.getByRole('heading', { name: 'Origin of the import' })
     ).toBeVisible()
 
-    await page.goto(`${BASE}/import-type`)
+    await page.goto(journeyUrl(page, 'import-type'))
     await expect(
       page.getByRole('radio', { name: 'Live animals or germinal products' })
     ).toBeChecked()
@@ -417,9 +428,9 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // Deep-link guard (D10): a fresh journey — nothing committed, filter
     // not yet passed — is sent back to the filter from any journey page.
-    await page.goto(`${BASE}/origin`)
+    await page.goto(journeyUrl(page, 'origin'))
     await expect(heading('What are you importing?')).toBeVisible()
-    await page.goto(`${BASE}/hub`)
+    await page.goto(journeyUrl(page))
     await expect(heading('What are you importing?')).toBeVisible()
 
     // Filter → origin.
@@ -469,7 +480,7 @@ test.describe('live-animals (page-owned spine)', () => {
 
     // Deep links behave normally on a started journey, and a later save
     // follows the ordinary section flow back to the hub (run mode is over).
-    await page.goto(`${BASE}/origin`)
+    await page.goto(journeyUrl(page, 'origin'))
     await expect(heading('Origin of the import')).toBeVisible()
     await save()
     await expect(heading('Overview')).toBeVisible()
@@ -654,7 +665,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(strip).toContainText(reference)
 
     // The import-type filter is a pre-origin surface — never a strip.
-    await page.goto(`${BASE}/import-type`)
+    await page.goto(journeyUrl(page, 'import-type'))
     await expect(
       page.getByRole('heading', { name: 'What are you importing?' })
     ).toBeVisible()
@@ -663,7 +674,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Origin shows nothing while the journey has no notification answers —
     // the service-routing importType saved by the filter does not count
     // (inc-060): the reference is minted at the origin POST...
-    await page.goto(`${BASE}/hub`)
+    await page.goto(journeyUrl(page))
     await page
       .getByRole('link', { name: 'Where is this consignment coming from?' })
       .click()
@@ -683,7 +694,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(strip).toContainText(reference)
 
     // Every post-origin task page inherits the strip from the shared layout.
-    await page.goto(`${BASE}/hub`)
+    await page.goto(journeyUrl(page))
     await page.getByRole('link', { name: 'What are you importing?' }).click()
     await expect(page.getByLabel(SEARCH_LABEL)).toBeVisible()
     await expect(strip).toBeVisible()
@@ -1952,7 +1963,7 @@ test.describe('live-animals (page-owned spine)', () => {
         name: 'What type of transporter will move the animals?'
       })
     ).toBeVisible()
-    await page.goto(`${BASE}/port-of-entry`)
+    await page.goto(journeyUrl(page, 'port-of-entry'))
     await expect(combo).toHaveValue(FIXTURE_PORT_OPTION)
     await expect(select).toHaveValue(values.portOfEntry)
   })
@@ -2487,7 +2498,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // so each call ADDS a line; the counts are submit-enforced, so the
     // details page saves blank straight back to the hub.
     const addCommodity = async (query, species) => {
-      await page.goto(`${BASE}/hub`)
+      await page.goto(journeyUrl(page))
       await page.getByRole('link', { name: 'What are you importing?' }).click()
       await searchAndSelect(page, query, [species])
       await page.getByRole('button', { name: 'Save and continue' }).click()
@@ -2503,7 +2514,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // A blank reason (enforcedAt=submit) walks straight to the tail page,
     // skipping the internal-market purpose page.
     const openAdditionalDetails = async () => {
-      await page.goto(`${BASE}/hub`)
+      await page.goto(journeyUrl(page))
       await page
         .getByRole('link', { name: 'Main reason for importing' })
         .click()
@@ -2562,7 +2573,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // so each call ADDS a line; the counts are submit-enforced, so the
     // details page saves blank straight back to the hub.
     const addCommodity = async (query, species) => {
-      await page.goto(`${BASE}/hub`)
+      await page.goto(journeyUrl(page))
       await page.getByRole('link', { name: 'What are you importing?' }).click()
       await searchAndSelect(page, query, [species])
       await page.getByRole('button', { name: 'Save and continue' }).click()
@@ -2574,7 +2585,7 @@ test.describe('live-animals (page-owned spine)', () => {
     }
 
     const openAddresses = async () => {
-      await page.goto(`${BASE}/hub`)
+      await page.goto(journeyUrl(page))
       await page.getByRole('link', { name: 'Roles and addresses' }).click()
       await expect(addressesHeading).toBeVisible()
     }

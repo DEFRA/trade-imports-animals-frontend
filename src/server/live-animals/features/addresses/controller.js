@@ -27,7 +27,7 @@ const CPH_ROW = {
   slug: 'cph-number?return=addresses'
 }
 
-const hubRow = ({ title, hint, slug }, valueText) => ({
+const hubRow = (journeyId, { title, hint, slug }, valueText) => ({
   key: {
     html: `<span>${title}</span><span class="govuk-hint govuk-!-display-block govuk-!-margin-bottom-0">${hint}</span>`
   },
@@ -35,7 +35,7 @@ const hubRow = ({ title, hint, slug }, valueText) => ({
   actions: {
     items: [
       {
-        href: pagePath(slug),
+        href: pagePath(journeyId, slug),
         text: valueText ? copy.change : copy.add,
         visuallyHiddenText: title.toLowerCase()
       }
@@ -43,19 +43,22 @@ const hubRow = ({ title, hint, slug }, valueText) => ({
   }
 })
 
-const rows = (answers) => [
-  ...PARTIES.map((party) => hubRow(party, answers[party.id]?.name)),
+const rows = (journeyId, answers) => [
+  ...PARTIES.map((party) => hubRow(journeyId, party, answers[party.id]?.name)),
   ...(isCphApplicable(answers)
-    ? [hubRow(CPH_ROW, answers.countyParishHoldingCph)]
+    ? [hubRow(journeyId, CPH_ROW, answers.countyParishHoldingCph)]
     : [])
 ]
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   return h.view(view, {
-    ...kit.base(copy.title, { backLink: hubPath(), journey }),
+    ...kit.base(copy.title, {
+      backLink: hubPath(journey.journeyId),
+      journey
+    }),
     copy,
-    rows: rows(answers)
+    rows: rows(journey.journeyId, answers)
   })
 }
 

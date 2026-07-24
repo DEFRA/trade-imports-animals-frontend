@@ -1,6 +1,5 @@
 import { STUB_USER } from '../../../engine/persistence/session.js'
 
-const ACTIVE_JOURNEY = 'liveAnimalsActiveJourney'
 const KNOWN_JOURNEYS = 'liveAnimalsKnownJourneys'
 const OPENING_RUN = 'liveAnimalsOpeningRun'
 const FLOW_ONLY_ANSWERS = 'liveAnimalsFlowOnlyAnswers'
@@ -18,17 +17,14 @@ const flowOnlyByJourneyFrom = (request) => {
   return isObject(stored) ? stored : {}
 }
 
+const openingRunByJourneyFrom = (request) => {
+  const stored = request?.yar?.get(OPENING_RUN)
+  return isObject(stored) ? stored : {}
+}
+
 export const session = {
   async userId(request) {
     return request?.auth?.credentials?.sub ?? STUB_USER
-  },
-
-  async activeJourneyId(request) {
-    return request?.yar?.get(ACTIVE_JOURNEY) ?? undefined
-  },
-
-  async setActiveJourney(h, journeyId) {
-    h.request.yar.set(ACTIVE_JOURNEY, journeyId)
   },
 
   async knownJourneyIds(request) {
@@ -41,16 +37,16 @@ export const session = {
     h.request.yar.set(KNOWN_JOURNEYS, [...known, journeyId])
   },
 
-  async clearActive(h) {
-    h.request.yar.clear(ACTIVE_JOURNEY)
+  async openingRun(request, journeyId) {
+    return openingRunByJourneyFrom(request)[journeyId]
   },
 
-  async openingRun(request) {
-    return request?.yar?.get(OPENING_RUN) ?? undefined
-  },
-
-  async setOpeningRun(h, record) {
-    h.request.yar.set(OPENING_RUN, record)
+  async setOpeningRun(h, journeyId, phase) {
+    const byJourney = openingRunByJourneyFrom(h.request)
+    h.request.yar.set(OPENING_RUN, {
+      ...byJourney,
+      [journeyId]: phase
+    })
   },
 
   async flowOnlyAnswers(request, journeyId) {

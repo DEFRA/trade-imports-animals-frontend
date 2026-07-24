@@ -13,6 +13,7 @@ import {
   stubH
 } from '../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import { hubPath, pagePath } from '../../config.js'
 
 import * as cphNumber from './controller.js'
 
@@ -29,7 +30,11 @@ const driveWithQuery = async (handler, { payload = {}, query = {} } = {}) => {
     journeyRequest(journey.journeyId, { payload, query }),
     h
   )
-  return { response, view: h.captured.view }
+  return {
+    journeyId: journey.journeyId,
+    response,
+    view: h.captured.view
+  }
 }
 
 describe('POST cph-number — the 9-digit rule after slash stripping', () => {
@@ -121,15 +126,13 @@ describe('cph-number — addresses-hub entry (?return=addresses)', () => {
         query: { return: 'addresses' }
       })
       expect(result.view.context.backLink).toBe(
-        '/prototype-standalone/live-animals/addresses'
+        pagePath(result.journeyId, 'addresses')
       )
     })
 
     it('Should back-link to the main hub on a sequential-walk entry', async () => {
       const result = await driveWithQuery(getCph)
-      expect(result.view.context.backLink).toBe(
-        '/prototype-standalone/live-animals/hub'
-      )
+      expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
     })
   })
 
@@ -140,7 +143,7 @@ describe('cph-number — addresses-hub entry (?return=addresses)', () => {
         query: { return: 'addresses' }
       })
       expect(result.response).toEqual({
-        redirect: '/prototype-standalone/live-animals/addresses'
+        redirect: pagePath(result.journeyId, 'addresses')
       })
     })
 
@@ -149,7 +152,7 @@ describe('cph-number — addresses-hub entry (?return=addresses)', () => {
         payload: { countyParishHoldingCph: '12/345/6789' }
       })
       expect(result.response).toEqual({
-        redirect: '/prototype-standalone/live-animals/hub'
+        redirect: hubPath(result.journeyId)
       })
     })
   })

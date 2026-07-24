@@ -88,8 +88,9 @@ const journeyIfStarted = (journey, answers) =>
 const render = (h, journey, values, errors = {}, answers = values) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: hubPath(),
-      journey: journeyIfStarted(journey, answers)
+      backLink: hubPath(journey.journeyId),
+      journey: journeyIfStarted(journey, answers),
+      journeyId: journey.journeyId
     }),
     copy,
     values,

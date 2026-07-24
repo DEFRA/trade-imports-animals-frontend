@@ -19,29 +19,6 @@ const buildServer = async () => {
   server.route([
     {
       method: 'POST',
-      path: '/active',
-      handler: async (request, h) => {
-        await session.setActiveJourney(h, request.payload.id)
-        return { ok: true }
-      }
-    },
-    {
-      method: 'GET',
-      path: '/active',
-      handler: async (request) => ({
-        id: (await session.activeJourneyId(request)) ?? null
-      })
-    },
-    {
-      method: 'GET',
-      path: '/clear',
-      handler: async (request, h) => {
-        await session.clearActive(h)
-        return { id: (await session.activeJourneyId(request)) ?? null }
-      }
-    },
-    {
-      method: 'POST',
       path: '/known',
       handler: async (request, h) => {
         await session.addKnownJourney(request, h, request.payload.id)
@@ -57,17 +34,22 @@ const buildServer = async () => {
     },
     {
       method: 'POST',
-      path: '/run',
+      path: '/run/{journeyId}',
       handler: async (request, h) => {
-        await session.setOpeningRun(h, request.payload)
+        await session.setOpeningRun(
+          h,
+          request.params.journeyId,
+          request.payload.phase
+        )
         return { ok: true }
       }
     },
     {
       method: 'GET',
-      path: '/run',
+      path: '/run/{journeyId}',
       handler: async (request) => ({
-        record: (await session.openingRun(request)) ?? null
+        phase:
+          (await session.openingRun(request, request.params.journeyId)) ?? null
       })
     },
     {
@@ -94,77 +76,6 @@ const buildServer = async () => {
 }
 
 const cookieOf = (res) => res.headers['set-cookie']?.[0]?.split(';')[0]
-
-describe('#session.activeJourneyId (real, yar/Catbox-memory)', () => {
-  it('Should round-trip the active-journey pointer through server-side yar', async () => {
-    const server = await buildServer()
-    const set = await server.inject({
-      method: 'POST',
-      url: '/active',
-      payload: { id: 'J-1' }
-    })
-    const cookie = cookieOf(set)
-    const get = await server.inject({
-      method: 'GET',
-      url: '/active',
-      headers: { cookie }
-    })
-    expect(get.result.id).toBe('J-1')
-  })
-
-  it('Should return undefined for a fresh session with no active journey', async () => {
-    const server = await buildServer()
-    const get = await server.inject({ method: 'GET', url: '/active' })
-    expect(get.result.id).toBe(null)
-  })
-
-  it('Should keep two parallel session contexts isolated by session id', async () => {
-    const server = await buildServer()
-    const cookieA = cookieOf(
-      await server.inject({
-        method: 'POST',
-        url: '/active',
-        payload: { id: 'J-A' }
-      })
-    )
-    const cookieB = cookieOf(
-      await server.inject({
-        method: 'POST',
-        url: '/active',
-        payload: { id: 'J-B' }
-      })
-    )
-    const getA = await server.inject({
-      method: 'GET',
-      url: '/active',
-      headers: { cookie: cookieA }
-    })
-    const getB = await server.inject({
-      method: 'GET',
-      url: '/active',
-      headers: { cookie: cookieB }
-    })
-    expect(getA.result.id).toBe('J-A')
-    expect(getB.result.id).toBe('J-B')
-  })
-
-  it('Should clear the active-journey pointer', async () => {
-    const server = await buildServer()
-    const cookie = cookieOf(
-      await server.inject({
-        method: 'POST',
-        url: '/active',
-        payload: { id: 'J-1' }
-      })
-    )
-    const cleared = await server.inject({
-      method: 'GET',
-      url: '/clear',
-      headers: { cookie }
-    })
-    expect(cleared.result.id).toBe(null)
-  })
-})
 
 describe('#session.knownJourneyIds (real, yar)', () => {
   it('Should accumulate known journeys server-side without duplicates', async () => {
@@ -204,26 +115,37 @@ describe('#session.knownJourneyIds (real, yar)', () => {
 })
 
 describe('#session.openingRun (real, yar)', () => {
-  it('Should round-trip the opening-run record server-side', async () => {
+  it('Should retain journey-keyed phases without leaking across journeys', async () => {
     const server = await buildServer()
-    const record = { journeyId: 'J-1', phase: 'active' }
-    const set = await server.inject({
+    const first = await server.inject({
       method: 'POST',
-      url: '/run',
-      payload: record
+      url: '/run/J-1',
+      payload: { phase: 'active' }
     })
-    const get = await server.inject({
+    const second = await server.inject({
+      method: 'POST',
+      url: '/run/J-2',
+      payload: { phase: 'complete' },
+      headers: { cookie: cookieOf(first) }
+    })
+    const getOne = await server.inject({
       method: 'GET',
-      url: '/run',
-      headers: { cookie: cookieOf(set) }
+      url: '/run/J-1',
+      headers: { cookie: cookieOf(second) }
     })
-    expect(get.result.record).toEqual(record)
+    const getTwo = await server.inject({
+      method: 'GET',
+      url: '/run/J-2',
+      headers: { cookie: cookieOf(second) }
+    })
+    expect(getOne.result.phase).toBe('active')
+    expect(getTwo.result.phase).toBe('complete')
   })
 
   it('Should report no opening run for a fresh session', async () => {
     const server = await buildServer()
-    const get = await server.inject({ method: 'GET', url: '/run' })
-    expect(get.result.record).toBe(null)
+    const get = await server.inject({ method: 'GET', url: '/run/J-1' })
+    expect(get.result.phase).toBe(null)
   })
 })
 

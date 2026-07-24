@@ -50,7 +50,7 @@ const transitedCountriesErrors = (selected, adding) => {
 const render = (h, journey, selected, errors = {}) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: hubPath(),
+      backLink: hubPath(journey.journeyId),
       journey
     }),
     copy,
@@ -87,7 +87,12 @@ const post = async (request, h) => {
     transitedCountries: selected
   })
   if (payload.addCountry !== undefined) {
-    return h.redirect(kit.withChangeContext(request, pagePath(page.slug)))
+    return h.redirect(
+      kit.withChangeContext(
+        request,
+        pagePath(request.params.journeyId, page.slug)
+      )
+    )
   }
   return h.redirect(await kit.nextTarget(request, page, scope))
 }

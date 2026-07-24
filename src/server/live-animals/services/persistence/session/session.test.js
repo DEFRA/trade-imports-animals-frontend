@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { session } from './stub.js'
 import {
-  JOURNEY_COOKIE,
   KNOWN_JOURNEYS_COOKIE,
   OPENING_RUN_COOKIE,
   FLOW_ONLY_ANSWERS_COOKIE
@@ -10,27 +9,6 @@ import { recordingH } from '../../../engine/test-support.js'
 
 const requestKnowing = (...journeyIds) => ({
   state: { [KNOWN_JOURNEYS_COOKIE]: journeyIds }
-})
-
-describe('#session.clearActive', () => {
-  it('Should remove the journey cookie via h.unstate', async () => {
-    const h = recordingH()
-    await session.setActiveJourney(h, 'journey-1')
-    expect(h.cookies[JOURNEY_COOKIE]).toBe('journey-1')
-
-    await session.clearActive(h)
-
-    expect(JOURNEY_COOKIE in h.cookies).toBe(false)
-  })
-
-  it('Should keep the known-journeys list when the active pointer is cleared', async () => {
-    const h = recordingH()
-    await session.addKnownJourney({ state: {} }, h, 'journey-1')
-
-    await session.clearActive(h)
-
-    expect(h.cookies[KNOWN_JOURNEYS_COOKIE]).toEqual(['journey-1'])
-  })
 })
 
 describe('#session.knownJourneyIds', () => {
@@ -58,19 +36,39 @@ describe('#session.knownJourneyIds', () => {
 })
 
 describe('#session.openingRun', () => {
-  const record = { journeyId: 'journey-1', phase: 'active' }
-
-  it('Should round-trip the opening-run record through the cookie', async () => {
+  it('Should round-trip phases without leaking them between journeys', async () => {
     const h = recordingH()
-    await session.setOpeningRun(h, record)
-    expect(h.cookies[OPENING_RUN_COOKIE]).toEqual(record)
+    const request = { state: {} }
+    await session.setOpeningRun(h, 'journey-1', 'active', request)
+    const stored = h.cookies[OPENING_RUN_COOKIE]
+    expect(stored).toEqual({ 'journey-1': 'active' })
     expect(
-      await session.openingRun({ state: { [OPENING_RUN_COOKIE]: record } })
-    ).toEqual(record)
+      await session.openingRun(
+        { state: { [OPENING_RUN_COOKIE]: stored } },
+        'journey-1'
+      )
+    ).toBe('active')
+    expect(
+      await session.openingRun(
+        { state: { [OPENING_RUN_COOKIE]: stored } },
+        'journey-2'
+      )
+    ).toBeUndefined()
   })
 
   it('Should report no opening run for a fresh session', async () => {
-    expect(await session.openingRun({ state: {} })).toBeUndefined()
+    expect(await session.openingRun({ state: {} }, 'journey-1')).toBeUndefined()
+  })
+
+  it('Should preserve another journey phase while updating the current one', async () => {
+    const h = recordingH()
+    await session.setOpeningRun(h, 'journey-2', 'complete', {
+      state: { [OPENING_RUN_COOKIE]: { 'journey-1': 'active' } }
+    })
+    expect(h.cookies[OPENING_RUN_COOKIE]).toEqual({
+      'journey-1': 'active',
+      'journey-2': 'complete'
+    })
   })
 })
 

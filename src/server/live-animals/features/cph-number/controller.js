@@ -37,12 +37,14 @@ const fields = compose(
 )
 
 const hubEntryReturn = (request) =>
-  request.query.return === 'addresses' ? pagePath('addresses') : null
+  request.query.return === 'addresses'
+    ? pagePath(request.params.journeyId, 'addresses')
+    : null
 
 const render = (request, h, journey, values, errors = {}) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: hubEntryReturn(request) ?? hubPath(),
+      backLink: hubEntryReturn(request) ?? hubPath(journey.journeyId),
       journey
     }),
     copy,

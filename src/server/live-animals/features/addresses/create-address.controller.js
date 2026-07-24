@@ -1,4 +1,4 @@
-import { pagePath, TEMPLATES } from '../../config.js'
+import { pagePath, pageRoutePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, maxText, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
@@ -76,7 +76,7 @@ const emptyValues = () =>
 const render = (h, journey, party, values, errors = {}) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: pagePath(party.slug),
+      backLink: pagePath(journey.journeyId, party.slug),
       journey
     }),
     copy,
@@ -89,7 +89,9 @@ const render = (h, journey, party, values, errors = {}) =>
 
 const get = async (request, h) => {
   const party = partyOf(request.query.for)
-  if (!party) return h.redirect(pagePath('addresses'))
+  if (!party) {
+    return h.redirect(pagePath(request.params.journeyId, 'addresses'))
+  }
   const { journey } = await state.get(request, h)
   return render(h, journey, party, emptyValues())
 }
@@ -127,7 +129,9 @@ const addressRecordFrom = (values) => ({
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const party = partyOf(payload.for)
-  if (!party) return h.redirect(pagePath('addresses'))
+  if (!party) {
+    return h.redirect(pagePath(request.params.journeyId, 'addresses'))
+  }
 
   const values = trimmedValues(payload)
   const allErrors = fieldErrors(payload, values)
@@ -142,19 +146,19 @@ const post = async (request, h) => {
   await state.commit(request, h, {
     [party.id]: { name: record.name, address: { ...record.address } }
   })
-  return h.redirect(pagePath(party.returnSlug))
+  return h.redirect(pagePath(request.params.journeyId, party.returnSlug))
 }
 
 export const routes = [
   {
     method: 'GET',
-    path: pagePath(CREATE_ADDRESS_SLUG),
+    path: pageRoutePath(CREATE_ADDRESS_SLUG),
     options: open,
     handler: get
   },
   {
     method: 'POST',
-    path: pagePath(CREATE_ADDRESS_SLUG),
+    path: pageRoutePath(CREATE_ADDRESS_SLUG),
     options: open,
     handler: post
   }

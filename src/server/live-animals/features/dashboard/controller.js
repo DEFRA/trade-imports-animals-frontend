@@ -1,9 +1,15 @@
-import { BASE, hubPath, pagePath, startPath, TEMPLATES } from '../../config.js'
+import {
+  BASE,
+  createPath,
+  hubPath,
+  pagePath,
+  pageRoutePath,
+  TEMPLATES
+} from '../../config.js'
 import { SUBMITTED } from '../../engine/index.js'
 import {
   amendJourney,
   listKnownJourneys,
-  selectJourney,
   startJourney
 } from '../../engine/journey.js'
 import { CYA_SLUG, journeyStrip, open } from '../../shared/kit.js'
@@ -29,25 +35,22 @@ const dateText = (value) =>
       })
     : null
 
-const journeyActionPath = (journeyId, action) =>
-  pagePath(`home/${journeyId}/${action}`)
-
 const rowActions = (journey) =>
   journey.status === SUBMITTED
     ? [
         {
           text: copy.actions.view,
-          href: journeyActionPath(journey.journeyId, 'view')
+          href: pagePath(journey.journeyId, CYA_SLUG)
         },
         {
           text: copy.actions.amend,
-          postAction: journeyActionPath(journey.journeyId, 'amend')
+          postAction: pagePath(journey.journeyId, 'amend')
         }
       ]
     : [
         {
           text: copy.actions.resume,
-          href: journeyActionPath(journey.journeyId, 'resume')
+          href: hubPath(journey.journeyId)
         }
       ]
 
@@ -65,32 +68,23 @@ const listGet = async (request, h) => {
     pageTitle: copy.title,
     copy,
     sharedCopy,
-    startAction: startPath(),
+    startAction: createPath(),
     notificationRows: journeys.map(toRow)
   })
 }
 
-const backToDashboard = (h) => h.redirect(pagePath(page.slug))
-
-const resumeGet = async (request, h) => {
-  const journey = await selectJourney(request, h, request.params.journeyId)
-  return journey ? h.redirect(hubPath()) : backToDashboard(h)
-}
-
-const viewGet = async (request, h) => {
-  const journey = await selectJourney(request, h, request.params.journeyId)
-  return journey ? h.redirect(pagePath(CYA_SLUG)) : backToDashboard(h)
-}
+const dashboardPath = () => `${BASE}/${page.slug}`
+const backToDashboard = (h) => h.redirect(dashboardPath())
 
 const amendPost = async (request, h) => {
   const journey = await amendJourney(request, h, request.params.journeyId)
-  return journey ? h.redirect(hubPath()) : backToDashboard(h)
+  return journey ? h.redirect(hubPath(journey.journeyId)) : backToDashboard(h)
 }
 
 export const routes = [
   {
     method: 'GET',
-    path: pagePath(page.slug),
+    path: dashboardPath(),
     options: open,
     handler: listGet
   },
@@ -101,30 +95,18 @@ export const routes = [
     handler: (_request, h) => backToDashboard(h)
   },
   {
-    method: 'GET',
-    path: pagePath('home/{journeyId}/resume'),
-    options: open,
-    handler: resumeGet
-  },
-  {
-    method: 'GET',
-    path: pagePath('home/{journeyId}/view'),
-    options: open,
-    handler: viewGet
-  },
-  {
     method: 'POST',
-    path: pagePath('home/{journeyId}/amend'),
+    path: pageRoutePath('amend'),
     options: open,
     handler: amendPost
   },
   {
     method: 'POST',
-    path: startPath(),
+    path: createPath(),
     options: open,
     handler: async (request, h) => {
-      await startJourney(request, h)
-      return h.redirect(pagePath(importTypeFilterPage.slug))
+      const journey = await startJourney(request, h)
+      return h.redirect(pagePath(journey.journeyId, importTypeFilterPage.slug))
     }
   }
 ]

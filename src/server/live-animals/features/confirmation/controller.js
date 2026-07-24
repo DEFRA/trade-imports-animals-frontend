@@ -1,4 +1,4 @@
-import { hubPath, pagePath, TEMPLATES } from '../../config.js'
+import { BASE, hubPath, pageRoutePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { base, open } from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
@@ -20,16 +20,23 @@ const dateText = (value) =>
 
 const get = async (request, h) => {
   const { journey } = await state.get(request, h)
-  if (journey.status !== state.SUBMITTED) return h.redirect(hubPath())
+  if (journey.status !== state.SUBMITTED) {
+    return h.redirect(hubPath(journey.journeyId))
+  }
   return h.view(view, {
-    ...base(copy.title),
+    ...base(copy.title, { journeyId: journey.journeyId }),
     copy,
     referenceNumber: journey.journeyId,
     submissionDate: dateText(journey.submittedAt),
-    dashboardHref: pagePath(dashboardPage.slug)
+    dashboardHref: `${BASE}/${dashboardPage.slug}`
   })
 }
 
 export const routes = [
-  { method: 'GET', path: pagePath(page.slug), options: open, handler: get }
+  {
+    method: 'GET',
+    path: pageRoutePath(page.slug),
+    options: open,
+    handler: get
+  }
 ]

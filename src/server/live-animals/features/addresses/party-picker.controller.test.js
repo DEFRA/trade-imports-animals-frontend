@@ -9,6 +9,7 @@ import { session as sessionStub } from '../../services/persistence/session/stub.
 import { driveHandler } from '../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import * as addressBook from '../../services/address-book/index.js'
+import { pagePath } from '../../config.js'
 
 import * as partyPicker from './party-picker.controller.js'
 import { PARTIES } from './parties.js'
@@ -71,20 +72,19 @@ describe('GET /consignors/select', () => {
   })
 
   it('Should render a later page, carrying the search and the selection into every pagination link', async () => {
-    const picker = pickerFrom(
-      await driveHandler(getConsignor, {
-        query: { page: '3', selected: 'iberian-swine' }
-      })
-    )
+    const result = await driveHandler(getConsignor, {
+      query: { page: '3', selected: 'iberian-swine' }
+    })
+    const picker = pickerFrom(result)
 
     expect(picker.page).toBe(3)
     expect(idsOf(picker)).toContain('irish-beef-traders')
     expect(picker.selected.name).toBe('Iberian Swine SA')
     expect(picker.pagination.next.href).toBe(
-      '/prototype-standalone/live-animals/consignors/select?page=4&selected=iberian-swine'
+      `${pagePath(result.journeyId, 'consignors/select')}?page=4&selected=iberian-swine`
     )
     expect(picker.pagination.items[0].href).toBe(
-      '/prototype-standalone/live-animals/consignors/select?page=1&selected=iberian-swine'
+      `${pagePath(result.journeyId, 'consignors/select')}?page=1&selected=iberian-swine`
     )
   })
 
@@ -151,7 +151,7 @@ describe('POST /consignors/select', () => {
     })
 
     expect(result.response).toEqual({
-      redirect: '/prototype-standalone/live-animals/addresses'
+      redirect: pagePath(result.journeyId, 'addresses')
     })
     expect(result.after.consignor).toEqual({
       name: 'Iberian Swine SA',
@@ -240,7 +240,7 @@ describe('The five spokes share the one picker', () => {
         address: record.address
       })
       expect(result.response).toEqual({
-        redirect: '/prototype-standalone/live-animals/addresses'
+        redirect: pagePath(result.journeyId, 'addresses')
       })
     }
   })
@@ -251,7 +251,7 @@ describe('The five spokes share the one picker', () => {
 
       expect(result.view.context.heading).toBe(party.title)
       expect(result.view.context.picker.createAddressHref).toBe(
-        `/prototype-standalone/live-animals/addresses/create?for=${party.id}`
+        pagePath(result.journeyId, `addresses/create?for=${party.id}`)
       )
     }
   })

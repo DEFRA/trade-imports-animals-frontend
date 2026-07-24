@@ -37,26 +37,18 @@ const buildServer = async () => {
   server.route([
     {
       method: 'POST',
-      path: '/active',
+      path: '/known',
       handler: async (request, h) => {
-        await session.setActiveJourney(h, request.payload.id)
+        await session.addKnownJourney(request, h, request.payload.id)
         return { ok: true }
       }
     },
     {
       method: 'GET',
-      path: '/active',
+      path: '/known',
       handler: async (request) => ({
-        id: (await session.activeJourneyId(request)) ?? null
+        ids: await session.knownJourneyIds(request)
       })
-    },
-    {
-      method: 'GET',
-      path: '/clear',
-      handler: async (request, h) => {
-        await session.clearActive(h)
-        return { id: (await session.activeJourneyId(request)) ?? null }
-      }
     }
   ])
   await server.initialize()
@@ -83,80 +75,32 @@ describe.skipIf(!runsIt('testcontainer'))('#session (real, Redis)', () => {
     await container.stop()
   })
 
-  it('Should round-trip the active-journey pointer over Redis', async () => {
+  it('Should round-trip known journeys over Redis', async () => {
     const server = await buildServer()
     const set = await server.inject({
       method: 'POST',
-      url: '/active',
+      url: '/known',
       payload: { id: 'J-1' }
     })
-    const cookie = cookieOf(set)
     const get = await server.inject({
       method: 'GET',
-      url: '/active',
-      headers: { cookie }
+      url: '/known',
+      headers: { cookie: cookieOf(set) }
     })
-    expect(get.result.id).toBe('J-1')
+    expect(get.result.ids).toEqual(['J-1'])
   })
 
-  it('Should return null for a fresh session with no active journey', async () => {
+  it('Should return an empty known list for a fresh session', async () => {
     const server = await buildServer()
-    const get = await server.inject({ method: 'GET', url: '/active' })
-    expect(get.result.id).toBe(null)
-  })
-
-  it('Should keep two parallel session contexts isolated by session id', async () => {
-    const server = await buildServer()
-    const cookieA = cookieOf(
-      await server.inject({
-        method: 'POST',
-        url: '/active',
-        payload: { id: 'J-A' }
-      })
-    )
-    const cookieB = cookieOf(
-      await server.inject({
-        method: 'POST',
-        url: '/active',
-        payload: { id: 'J-B' }
-      })
-    )
-    const getA = await server.inject({
-      method: 'GET',
-      url: '/active',
-      headers: { cookie: cookieA }
-    })
-    const getB = await server.inject({
-      method: 'GET',
-      url: '/active',
-      headers: { cookie: cookieB }
-    })
-    expect(getA.result.id).toBe('J-A')
-    expect(getB.result.id).toBe('J-B')
-  })
-
-  it('Should clear the active-journey pointer', async () => {
-    const server = await buildServer()
-    const cookie = cookieOf(
-      await server.inject({
-        method: 'POST',
-        url: '/active',
-        payload: { id: 'J-1' }
-      })
-    )
-    const cleared = await server.inject({
-      method: 'GET',
-      url: '/clear',
-      headers: { cookie }
-    })
-    expect(cleared.result.id).toBe(null)
+    const get = await server.inject({ method: 'GET', url: '/known' })
+    expect(get.result.ids).toEqual([])
   })
 
   it('Should write the session server-side into Redis', async () => {
     const server = await buildServer()
     await server.inject({
       method: 'POST',
-      url: '/active',
+      url: '/known',
       payload: { id: 'J-1' }
     })
     expect(await client.dbsize()).toBeGreaterThan(0)

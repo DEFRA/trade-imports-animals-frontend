@@ -43,6 +43,6 @@ describe('GET /confirmation', () => {
 
     const response = await get(journeyRequest(journeyId), stubH())
 
-    expect(response).toEqual({ redirect: hubPath() })
+    expect(response).toEqual({ redirect: hubPath(journeyId) })
   })
 })

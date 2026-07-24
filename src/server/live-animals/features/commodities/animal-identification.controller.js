@@ -355,7 +355,7 @@ const render = (
   const lines = state.collectionView(answers, ['commodityLines'], evaluation)
   return h.view(view, {
     ...kit.base(copy.title, {
-      backLink: hubPath(),
+      backLink: hubPath(journey.journeyId),
       journey
     }),
     copy,
@@ -363,7 +363,10 @@ const render = (
       buildCard(answers, line, forms.get(line.index), errors)
     ),
     hasLines: lines.length > 0,
-    addHref: kit.withChangeContext(request, pagePath('commodities')),
+    addHref: kit.withChangeContext(
+      request,
+      pagePath(request.params.journeyId, 'commodities')
+    ),
     errors,
     errorSummary: summaryOf(errors, cardErrors)
   })
@@ -569,7 +572,12 @@ const post = async (request, h) => {
   }
 
   if (addIndex !== null) {
-    return h.redirect(kit.withChangeContext(request, pagePath(page.slug)))
+    return h.redirect(
+      kit.withChangeContext(
+        request,
+        pagePath(request.params.journeyId, page.slug)
+      )
+    )
   }
   const { scope } = await state.get(request, h)
   return h.redirect(await kit.nextTarget(request, page, scope))
@@ -603,7 +611,12 @@ const postRemove = async (request, h, action) => {
     ['commodityLines', line, 'animalIdentifiers'],
     unit
   )
-  return h.redirect(kit.withChangeContext(request, pagePath(page.slug)))
+  return h.redirect(
+    kit.withChangeContext(
+      request,
+      pagePath(request.params.journeyId, page.slug)
+    )
+  )
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

@@ -16,7 +16,10 @@ const fields = () => compose(dateParts('exitDate', copy.errors.dateInvalid))
 
 const render = (h, journey, values, errors = {}) =>
   h.view(view, {
-    ...kit.base(copy.title, { backLink: hubPath(), journey }),
+    ...kit.base(copy.title, {
+      backLink: hubPath(journey.journeyId),
+      journey
+    }),
     copy,
     values,
     errors,

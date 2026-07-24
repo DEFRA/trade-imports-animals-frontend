@@ -1,7 +1,5 @@
 import { ErrorSummary } from 'govuk-frontend'
 
-import { pagePath } from '../../config.js'
-import { documentsPage } from './page.js'
 import { exceedsMaxFileSize } from './upload-config.js'
 import {
   POLL_ACTION,
@@ -10,7 +8,8 @@ import {
   pollDecision
 } from './scan-poll.js'
 
-const STATUS_ENDPOINT = pagePath(`${documentsPage.slug}/status`)
+const pagePath = () => window.location.pathname
+const STATUS_ENDPOINT = `${pagePath()}/status`
 
 const CLIENT_ERROR_MARKER = 'file-size'
 const ARIA_DESCRIBEDBY = 'aria-describedby'
@@ -56,8 +55,7 @@ const announce = (message) => {
   }
 }
 
-const filePath = (uploadId) =>
-  pagePath(`${documentsPage.slug}/${uploadId}/file`)
+const filePath = (uploadId) => `${pagePath()}/${uploadId}/file`
 
 const actionsCellOf = (statusCell) =>
   statusCell.closest('tr')?.querySelector('[data-view-file-text]')

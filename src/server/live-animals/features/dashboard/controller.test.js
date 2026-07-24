@@ -8,7 +8,6 @@ import {
 } from '../../engine/persistence/records.js'
 import {
   configureSession,
-  JOURNEY_COOKIE,
   KNOWN_JOURNEYS_COOKIE,
   STUB_USER
 } from '../../engine/persistence/session.js'
@@ -16,6 +15,8 @@ import { records as recordsStub } from '../../services/persistence/records/stub.
 import { assembleFulfilments } from '../../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../../bridge/fulfilments.js'
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
+import { createPath, hubPath, pagePath } from '../../config.js'
+import { CYA_SLUG } from '../../shared/kit.js'
 
 import { routes } from './controller.js'
 
@@ -25,10 +26,10 @@ const handlerOf = (method, pathSuffix) =>
   ).handler
 
 const listGet = handlerOf('GET', '/home')
-const resumeGet = handlerOf('GET', '/resume')
-const viewGet = handlerOf('GET', '/view')
 const amendPost = handlerOf('POST', '/amend')
-const startPost = handlerOf('POST', '/start')
+const startPost = routes.find(
+  (route) => route.method === 'POST' && route.path === createPath()
+).handler
 
 const buildRequest = ({ knownJourneyIds = [], journeyId } = {}) => ({
   payload: {},
@@ -95,7 +96,7 @@ describe('dashboard notifications list', () => {
     expect(row.actions).toEqual([
       {
         text: 'Resume',
-        href: expect.stringContaining(`${draft.journeyId}/resume`)
+        href: hubPath(draft.journeyId)
       }
     ])
   })
@@ -113,11 +114,11 @@ describe('dashboard notifications list', () => {
     expect(row.actions).toEqual([
       {
         text: 'View',
-        href: expect.stringContaining(`${submitted.journeyId}/view`)
+        href: pagePath(submitted.journeyId, CYA_SLUG)
       },
       {
         text: 'Amend',
-        postAction: expect.stringContaining(`${submitted.journeyId}/amend`)
+        postAction: pagePath(submitted.journeyId, 'amend')
       }
     ])
   })
@@ -142,49 +143,9 @@ describe('dashboard row actions', () => {
   })
   beforeEach(() => records.clear())
 
-  it('Should resume a known draft — active journey repointed, redirect to the hub', async () => {
-    const draft = await startDraft()
-    const h = buildH()
-
-    await resumeGet(
-      buildRequest({
-        knownJourneyIds: [draft.journeyId],
-        journeyId: draft.journeyId
-      }),
-      h
-    )
-
-    expect(h.captured.redirect).toContain('/hub')
-    expect(h.captured.cookies[JOURNEY_COOKIE]).toBe(draft.journeyId)
-  })
-
-  it('Should bounce a resume for a journey the session does not know back to the dashboard', async () => {
-    const draft = await startDraft()
-    const h = buildH()
-
-    await resumeGet(
-      buildRequest({ knownJourneyIds: [], journeyId: draft.journeyId }),
-      h
-    )
-
-    expect(h.captured.redirect).toContain('/home')
-    expect(h.captured.cookies[JOURNEY_COOKIE]).toBeUndefined()
-  })
-
-  it('Should open the read view for a known submitted journey', async () => {
-    const submitted = await startSubmitted()
-    const h = buildH()
-
-    await viewGet(
-      buildRequest({
-        knownJourneyIds: [submitted.journeyId],
-        journeyId: submitted.journeyId
-      }),
-      h
-    )
-
-    expect(h.captured.redirect).toContain('/notification-view')
-    expect(h.captured.cookies[JOURNEY_COOKIE]).toBe(submitted.journeyId)
+  it('Should expose no resume or view indirection routes', () => {
+    expect(routes.some((route) => route.path.endsWith('/resume'))).toBe(false)
+    expect(routes.some((route) => route.path.endsWith('/view'))).toBe(false)
   })
 
   it('Should amend a known submitted journey — unfrozen, re-entered at the hub, writable again', async () => {
@@ -199,8 +160,7 @@ describe('dashboard row actions', () => {
       h
     )
 
-    expect(h.captured.redirect).toContain('/hub')
-    expect(h.captured.cookies[JOURNEY_COOKIE]).toBe(submitted.journeyId)
+    expect(h.captured.redirect).toBe(hubPath(submitted.journeyId))
     const amended = await records.load({ journeyId: submitted.journeyId })
     expect(amended.status).toBe(IN_PROGRESS)
     await records.replaceFulfilment(
@@ -239,7 +199,7 @@ describe('dashboard row actions', () => {
     const h = buildH()
     await amendPost({ ...request, app: {} }, h)
 
-    expect(h.captured.redirect).toContain('/hub')
+    expect(h.captured.redirect).toBe(hubPath(submitted.journeyId))
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
     ).toBe(IN_PROGRESS)
@@ -278,7 +238,7 @@ describe('dashboard start with an in-flight draft', () => {
 
     await startPost(buildRequest({ knownJourneyIds: [oldDraft.journeyId] }), h)
 
-    const newJourneyId = h.captured.cookies[JOURNEY_COOKIE]
+    const newJourneyId = h.captured.cookies[KNOWN_JOURNEYS_COOKIE].at(-1)
     expect(newJourneyId).not.toBe(oldDraft.journeyId)
     expect(h.captured.cookies[KNOWN_JOURNEYS_COOKIE]).toEqual([
       oldDraft.journeyId,

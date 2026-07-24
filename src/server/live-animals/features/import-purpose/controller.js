@@ -25,7 +25,7 @@ const fields = compose(
 const render = (h, journey, values, errors = {}) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: hubPath(),
+      backLink: hubPath(journey.journeyId),
       journey
     }),
     copy,

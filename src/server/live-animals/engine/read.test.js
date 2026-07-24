@@ -5,7 +5,7 @@ import { configureRecords } from './persistence/records.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { journeyRequest, recordingH } from './test-support.js'
-import { JOURNEY_COOKIE, configureSession } from './persistence/session.js'
+import { configureSession } from './persistence/session.js'
 import {
   countryOfOrigin,
   transporterType
@@ -41,12 +41,12 @@ describe('#get — per-request read view', () => {
     expect(view.scope.has('commercialTransporter')).toBe(true)
   })
 
-  test('Should start a journey and pin the journey cookie when none is active', async () => {
-    const h = recordingH()
-
-    const view = await get(journeyRequest(undefined, { state: {} }), h)
-
-    expect(view.journey.journeyId).toBeTruthy()
-    expect(h.cookies[JOURNEY_COOKIE]).toBe(view.journey.journeyId)
+  test('Should reject an id-less journey request instead of creating a record', async () => {
+    await expect(
+      get(journeyRequest(undefined, { state: {} }), recordingH())
+    ).rejects.toMatchObject({
+      isBoom: true,
+      output: { statusCode: 404 }
+    })
   })
 })

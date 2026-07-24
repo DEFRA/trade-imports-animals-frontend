@@ -23,14 +23,13 @@ Run the prototype:
 npm run prototype
 ```
 
-Then open the hub:
+Then open the dashboard and start a notification:
 
 ```
-http://localhost:3000/prototype-standalone/live-animals/hub
+http://localhost:3000/prototype-standalone/live-animals/home
 ```
 
-A fresh journey is redirected to the import-type filter by the entry guard, then
-lands on the hub.
+The create POST redirects to the journey-scoped import-type filter.
 
 Run the prototype's unit suite:
 

@@ -26,6 +26,14 @@ const BACKEND =
   process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ?? 'http://localhost:8085'
 const PROTO = '/prototype-standalone/live-animals'
 
+const prototypeJourneyUrl = (page, slug = '') => {
+  const match = new URL(page.url()).pathname.match(
+    /\/prototype-standalone\/live-animals\/notifications\/([^/]+)/
+  )
+  if (!match) throw new Error(`No prototype journey id in URL: ${page.url()}`)
+  return `${PROTO}/notifications/${match[1]}${slug ? `/${slug}` : ''}`
+}
+
 const VOLATILE = [
   'referenceNumber',
   'id',
@@ -108,7 +116,7 @@ const drivePrototype = async (page) => {
   await expect(
     page.getByRole('heading', { name: 'Origin of the import' })
   ).toBeVisible()
-  await page.goto(`${PROTO}/hub`)
+  await page.goto(prototypeJourneyUrl(page))
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
   // Origin — France, no region code required, internal reference. The

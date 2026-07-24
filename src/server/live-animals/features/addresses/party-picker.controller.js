@@ -1,4 +1,4 @@
-import { pagePath, TEMPLATES } from '../../config.js'
+import { pagePath, pageRoutePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import * as kit from '../../shared/kit.js'
 import { open } from '../../shared/kit.js'
@@ -41,12 +41,12 @@ const detailLines = (record) =>
     record.address.emailAddress
   ].filter((line) => line)
 
-const resultsHref = (party, { query, page, selectedId }) => {
+const resultsHref = (journeyId, party, { query, page, selectedId }) => {
   const params = new URLSearchParams()
   if (query) params.set('q', query)
   params.set('page', String(page))
   if (selectedId) params.set('selected', selectedId)
-  return `${pagePath(party.slug)}?${params.toString()}`
+  return `${pagePath(journeyId, party.slug)}?${params.toString()}`
 }
 
 const numbersToShow = (page, totalPages) => {
@@ -75,10 +75,18 @@ const itemsWithEllipses = (numbers, page, hrefFor) =>
 const paginationItems = (page, totalPages, hrefFor) =>
   itemsWithEllipses(numbersToShow(page, totalPages), page, hrefFor)
 
-const pagination = (party, { query, page, totalPages, selectedId }) => {
+const pagination = (
+  journeyId,
+  party,
+  { query, page, totalPages, selectedId }
+) => {
   if (totalPages < 2) return null
   const hrefFor = (number) =>
-    resultsHref(party, { query, page: number, selectedId })
+    resultsHref(journeyId, party, {
+      query,
+      page: number,
+      selectedId
+    })
   return {
     previous: page > 1 ? { href: hrefFor(page - 1) } : undefined,
     next: page < totalPages ? { href: hrefFor(page + 1) } : undefined,
@@ -110,7 +118,7 @@ const render = (h, journey, party, { query, page, selectedId, error }) => {
 
   return h.view(view, {
     ...kit.base(party.title, {
-      backLink: pagePath('addresses'),
+      backLink: pagePath(journey.journeyId, 'addresses'),
       journey
     }),
     heading: party.title,
@@ -122,7 +130,10 @@ const render = (h, journey, party, { query, page, selectedId, error }) => {
       page: found.page,
       error,
       selected,
-      createAddressHref: pagePath(`${CREATE_ADDRESS_SLUG}?for=${party.id}`),
+      createAddressHref: pagePath(
+        journey.journeyId,
+        `${CREATE_ADDRESS_SLUG}?for=${party.id}`
+      ),
       resultsCaption: copy.resultsCaption(found.results.length, found.total),
       rows: found.results.map((record, index) => ({
         id: record.id,
@@ -133,7 +144,7 @@ const render = (h, journey, party, { query, page, selectedId, error }) => {
         detailLines: detailLines(record),
         checked: record.id === selectedId
       })),
-      pagination: pagination(party, {
+      pagination: pagination(journey.journeyId, party, {
         query,
         page: found.page,
         totalPages: found.totalPages,
@@ -168,7 +179,7 @@ const commitSelection = async (request, h, party, chosen) => {
   await state.commit(request, h, {
     [party.id]: { name: chosen.name, address: { ...chosen.address } }
   })
-  return h.redirect(pagePath('addresses'))
+  return h.redirect(pagePath(request.params.journeyId, 'addresses'))
 }
 
 const post = (party) => async (request, h) => {
@@ -198,13 +209,13 @@ const post = (party) => async (request, h) => {
 export const routes = PARTIES.flatMap((party) => [
   {
     method: 'GET',
-    path: pagePath(party.slug),
+    path: pageRoutePath(party.slug),
     options: open,
     handler: get(party)
   },
   {
     method: 'POST',
-    path: pagePath(party.slug),
+    path: pageRoutePath(party.slug),
     options: open,
     handler: post(party)
   }

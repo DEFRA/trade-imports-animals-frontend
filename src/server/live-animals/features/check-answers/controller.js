@@ -54,8 +54,8 @@ const packagesApply = (commoditySelection) =>
 
 const withChange = (href) => `${href}?change=1`
 
-const changeHref = (obligationId) =>
-  withChange(pagePath(slugOfPage(pageOfObligation(obligationId))))
+const changeHref = (journeyId, obligationId) =>
+  withChange(pagePath(journeyId, slugOfPage(pageOfObligation(obligationId))))
 
 const valueText = (value) =>
   isBlank(value)
@@ -76,20 +76,30 @@ const escapeHtml = (value) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;')
 
-const changeAction = (obligationId, visuallyHiddenText) => ({
+const changeAction = (journeyId, obligationId, visuallyHiddenText) => ({
   items: [
     {
-      href: changeHref(obligationId),
+      href: changeHref(journeyId, obligationId),
       text: copy.change,
       visuallyHiddenText
     }
   ]
 })
 
-const row = (key, value, obligationId, visuallyHiddenText = null) => ({
+const row = (
+  journeyId,
+  key,
+  value,
+  obligationId,
+  visuallyHiddenText = null
+) => ({
   key: { text: key },
   value: { text: valueText(value) },
-  actions: changeAction(obligationId, visuallyHiddenText ?? key.toLowerCase())
+  actions: changeAction(
+    journeyId,
+    obligationId,
+    visuallyHiddenText ?? key.toLowerCase()
+  )
 })
 
 const addressLines = (address = {}) =>
@@ -112,24 +122,36 @@ const partyLines = (party) => {
   ]
 }
 
-const partyRow = (key, party, obligationId, visuallyHiddenText = null) => {
+const partyRow = (
+  journeyId,
+  key,
+  party,
+  obligationId,
+  visuallyHiddenText = null
+) => {
   const lines = partyLines(party)
   return {
     key: { text: key },
     value: lines ? { html: lines.join('<br>') } : { text: NOT_PROVIDED },
-    actions: changeAction(obligationId, visuallyHiddenText ?? key.toLowerCase())
+    actions: changeAction(
+      journeyId,
+      obligationId,
+      visuallyHiddenText ?? key.toLowerCase()
+    )
   }
 }
 
-const importDetailsCard = (answers, scope) => ({
+const importDetailsCard = (journeyId, answers, scope) => ({
   title: copy.cards.importDetails,
   rows: [
     row(
+      journeyId,
       copy.rows.countryOfOrigin,
       countries.originLabel(answers.countryOfOrigin) ?? '',
       'countryOfOrigin'
     ),
     row(
+      journeyId,
       copy.rows.regionCodeRequired,
       copy.yesNo[answers.regionOfOriginCodeRequirement] ?? '',
       'regionOfOriginCodeRequirement'
@@ -137,6 +159,7 @@ const importDetailsCard = (answers, scope) => ({
     ...(regionCodeApplies(answers, scope)
       ? [
           row(
+            journeyId,
             copy.rows.regionCode,
             answers.regionOfOriginCode,
             'regionOfOriginCode'
@@ -144,6 +167,7 @@ const importDetailsCard = (answers, scope) => ({
         ]
       : []),
     row(
+      journeyId,
       copy.rows.internalReference,
       answers.internalReferenceNumber,
       'internalReferenceNumber'
@@ -151,10 +175,11 @@ const importDetailsCard = (answers, scope) => ({
   ]
 })
 
-const additionalAnimalDetailsCard = (answers, scope) => ({
+const additionalAnimalDetailsCard = (journeyId, answers, scope) => ({
   title: copy.cards.additionalAnimalDetails,
   rows: [
     row(
+      journeyId,
       copy.rows.certifiedFor,
       certification.certificationLabel(answers.animalsCertifiedFor) ?? '',
       'animalsCertifiedFor'
@@ -162,6 +187,7 @@ const additionalAnimalDetailsCard = (answers, scope) => ({
     ...(unweanedApplies(answers)
       ? [
           row(
+            journeyId,
             copy.rows.unweaned,
             copy.yesNo[answers.containsUnweanedAnimals] ?? '',
             'containsUnweanedAnimals'
@@ -169,6 +195,7 @@ const additionalAnimalDetailsCard = (answers, scope) => ({
         ]
       : []),
     row(
+      journeyId,
       copy.rows.reasonForImport,
       importReasonPurpose.reasonLabel(answers.reasonForImport) ?? '',
       'reasonForImport'
@@ -176,6 +203,7 @@ const additionalAnimalDetailsCard = (answers, scope) => ({
     ...(purposeApplies(answers, scope)
       ? [
           row(
+            journeyId,
             copy.rows.purpose,
             importReasonPurpose.purposeLabel(answers.purposeInInternalMarket) ??
               '',
@@ -246,10 +274,10 @@ const unitsForCommodityLine = (answers, evaluation, index) =>
     )
     .map(({ entry: unit }) => unit)
 
-const speciesCardActions = (index, units) => ({
+const speciesCardActions = (journeyId, index, units) => ({
   items: [
     {
-      href: withChange(pagePath(consignmentDetailsPage.slug)),
+      href: withChange(pagePath(journeyId, consignmentDetailsPage.slug)),
       text: copy.change,
       visuallyHiddenText: copy.hidden.commodity(index + 1)
     },
@@ -257,7 +285,7 @@ const speciesCardActions = (index, units) => ({
       ? [
           {
             href: `${withChange(
-              pagePath(animalIdentificationPage.slug)
+              pagePath(journeyId, animalIdentificationPage.slug)
             )}#identification-card-${index}`,
             text: copy.change,
             visuallyHiddenText: copy.hidden.identifiersForCommodity(index + 1)
@@ -280,33 +308,36 @@ const speciesCardRows = (entry) => [
     : [])
 ]
 
-const speciesCards = (answers, evaluation) =>
+const speciesCards = (journeyId, answers, evaluation) =>
   state
     .collectionView(answers, ['commodityLines'], evaluation)
     .map(({ index, entry }) => {
       const units = unitsForCommodityLine(answers, evaluation, index)
       return {
         title: speciesCardTitle(entry),
-        actions: speciesCardActions(index, units),
+        actions: speciesCardActions(journeyId, index, units),
         rows: speciesCardRows(entry),
         identifierTable: identifierTable(units)
       }
     })
 
-const arrivalDetailsCard = (answers, scope) => ({
+const arrivalDetailsCard = (journeyId, answers, scope) => ({
   title: copy.cards.arrivalDetails,
   rows: [
     row(
+      journeyId,
       copy.rows.portOfEntry,
       ports.label(answers.portOfEntry) ?? answers.portOfEntry,
       'portOfEntry'
     ),
     row(
+      journeyId,
       copy.rows.arrivalDate,
       dateText(answers.arrivalDateAtPort),
       'arrivalDateAtPort'
     ),
     row(
+      journeyId,
       copy.rows.meansOfTransport,
       copy.means[answers.meansOfTransport] ?? '',
       'meansOfTransport'
@@ -314,6 +345,7 @@ const arrivalDetailsCard = (answers, scope) => ({
     ...(transitedCountriesApplies(answers, scope)
       ? [
           row(
+            journeyId,
             copy.rows.transitedCountries,
             toArray(answers.transitedCountries)
               .map((code) => countries.originLabel(code) ?? code)
@@ -323,11 +355,13 @@ const arrivalDetailsCard = (answers, scope) => ({
         ]
       : []),
     row(
+      journeyId,
       copy.rows.transportIdentification,
       answers.transportIdentification,
       'transportIdentification'
     ),
     row(
+      journeyId,
       copy.rows.transportDocumentReference,
       answers.transportDocumentReference,
       'transportDocumentReference'
@@ -348,20 +382,21 @@ const activeTransporter = (answers, scope) => {
   return null
 }
 
-const transporterAddressRow = (party, id) => {
+const transporterAddressRow = (journeyId, party, id) => {
   const lines = addressLines(party?.address).map(escapeHtml)
   return {
     key: { text: copy.rows.address },
     value: lines.length ? { html: lines.join('<br>') } : { text: NOT_PROVIDED },
-    actions: changeAction(id, copy.hidden.transporterAddress)
+    actions: changeAction(journeyId, id, copy.hidden.transporterAddress)
   }
 }
 
-const approvalNumberRow = (active) =>
+const approvalNumberRow = (journeyId, active) =>
   isBlank(active.party?.approvalNumber)
     ? []
     : [
         row(
+          journeyId,
           copy.rows.approvalNumber,
           active.party.approvalNumber,
           active.id,
@@ -369,33 +404,36 @@ const approvalNumberRow = (active) =>
         )
       ]
 
-const activeTransporterRows = (active) =>
+const activeTransporterRows = (journeyId, active) =>
   active
     ? [
         row(
+          journeyId,
           copy.rows.name,
           active.party?.name,
           active.id,
           copy.hidden.transporterName
         ),
-        transporterAddressRow(active.party, active.id),
+        transporterAddressRow(journeyId, active.party, active.id),
         row(
+          journeyId,
           copy.rows.country,
           active.party?.address?.country,
           active.id,
           copy.hidden.transporterCountry
         ),
-        ...approvalNumberRow(active)
+        ...approvalNumberRow(journeyId, active)
       ]
     : []
 
-const transportDetailsCard = (answers, scope) => {
+const transportDetailsCard = (journeyId, answers, scope) => {
   const active = activeTransporter(answers, scope)
   return {
     title: copy.cards.transportDetails,
     rows: [
-      ...activeTransporterRows(active),
+      ...activeTransporterRows(journeyId, active),
       row(
+        journeyId,
         copy.rows.type,
         answers.transporterType,
         'transporterType',
@@ -405,14 +443,20 @@ const transportDetailsCard = (answers, scope) => {
   }
 }
 
-const rolesAndAddressesCard = (answers) => ({
+const rolesAndAddressesCard = (journeyId, answers) => ({
   title: copy.cards.rolesAndAddresses,
   rows: [
-    partyRow(copy.rows.placeOfOrigin, answers.placeOfOrigin, 'placeOfOrigin'),
-    partyRow(copy.rows.consignor, answers.consignor, 'consignor'),
-    partyRow(copy.rows.consignee, answers.consignee, 'consignee'),
-    partyRow(copy.rows.importer, answers.importer, 'importer'),
     partyRow(
+      journeyId,
+      copy.rows.placeOfOrigin,
+      answers.placeOfOrigin,
+      'placeOfOrigin'
+    ),
+    partyRow(journeyId, copy.rows.consignor, answers.consignor, 'consignor'),
+    partyRow(journeyId, copy.rows.consignee, answers.consignee, 'consignee'),
+    partyRow(journeyId, copy.rows.importer, answers.importer, 'importer'),
+    partyRow(
+      journeyId,
       copy.rows.placeOfDestination,
       answers.placeOfDestination,
       'placeOfDestination'
@@ -420,6 +464,7 @@ const rolesAndAddressesCard = (answers) => ({
     ...(cphApplies(answers)
       ? [
           row(
+            journeyId,
             copy.rows.cph,
             answers.countyParishHoldingCph,
             'countyParishHoldingCph'
@@ -429,10 +474,11 @@ const rolesAndAddressesCard = (answers) => ({
   ]
 })
 
-const contactAddressCard = (answers) => ({
+const contactAddressCard = (journeyId, answers) => ({
   title: copy.cards.contactAddress,
   rows: [
     partyRow(
+      journeyId,
       copy.rows.address,
       answers.contactAddress,
       'contactAddress',
@@ -441,7 +487,7 @@ const contactAddressCard = (answers) => ({
   ]
 })
 
-const documentsCard = (answers, evaluation) => {
+const documentsCard = (journeyId, answers, evaluation) => {
   const documents = state
     .collectionView(answers, ['documents'], evaluation)
     .map(({ index, entry }) => ({
@@ -471,7 +517,7 @@ const documentsCard = (answers, evaluation) => {
     actions: {
       items: [
         {
-          href: changeHref('documents'),
+          href: changeHref(journeyId, 'documents'),
           text: copy.change,
           visuallyHiddenText: copy.hidden.documents
         }
@@ -481,20 +527,20 @@ const documentsCard = (answers, evaluation) => {
   }
 }
 
-export const buildSections = (answers, scope, evaluation) => {
-  const species = speciesCards(answers, evaluation)
-  const documents = documentsCard(answers, evaluation)
+export const buildSections = (answers, scope, evaluation, journeyId) => {
+  const species = speciesCards(journeyId, answers, evaluation)
+  const documents = documentsCard(journeyId, answers, evaluation)
   return [
     {
       heading: copy.sections.aboutTheConsignment,
       groups: [
         {
           heading: copy.groups.consignmentDetails,
-          cards: [importDetailsCard(answers, scope)]
+          cards: [importDetailsCard(journeyId, answers, scope)]
         },
         {
           heading: copy.groups.commodityDetails,
-          cards: [additionalAnimalDetailsCard(answers, scope)]
+          cards: [additionalAnimalDetailsCard(journeyId, answers, scope)]
         },
         ...(species.length
           ? [{ heading: copy.groups.species, cards: species }]
@@ -507,8 +553,8 @@ export const buildSections = (answers, scope, evaluation) => {
         {
           heading: null,
           cards: [
-            arrivalDetailsCard(answers, scope),
-            transportDetailsCard(answers, scope)
+            arrivalDetailsCard(journeyId, answers, scope),
+            transportDetailsCard(journeyId, answers, scope)
           ]
         }
       ]
@@ -518,7 +564,10 @@ export const buildSections = (answers, scope, evaluation) => {
       groups: [
         {
           heading: null,
-          cards: [rolesAndAddressesCard(answers), contactAddressCard(answers)]
+          cards: [
+            rolesAndAddressesCard(journeyId, answers),
+            contactAddressCard(journeyId, answers)
+          ]
         }
       ]
     },
@@ -540,9 +589,9 @@ const renderCya = (h, journey, answers, scope, evaluation) =>
     copy,
     sharedCopy,
     journeyStrip: journeyStrip(journey),
-    sections: buildSections(answers, scope, evaluation),
-    backLink: hubPath(),
-    breadcrumbs: breadcrumbs(copy.title)
+    sections: buildSections(answers, scope, evaluation, journey.journeyId),
+    backLink: hubPath(journey.journeyId),
+    breadcrumbs: breadcrumbs(journey.journeyId, copy.title)
   })
 
 const get = async (request, h) => {
@@ -552,7 +601,7 @@ const get = async (request, h) => {
 
 const post = async (request, h) => {
   const { scope } = await state.get(request, h)
-  return h.redirect(nextInSection(page.id, scope))
+  return h.redirect(nextInSection(page.id, scope, request.params.journeyId))
 }
 
 export const routes = pageRoutes(page, { get, post })

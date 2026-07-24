@@ -136,7 +136,7 @@ describe('#animalIdentificationController — the single card-per-species surfac
         payload: { action: 'add:0', 'animalIdentifierEarTag-0': 'UK1' }
       })
       expect(result.response).toEqual({
-        redirect: pagePath('commodities/identification')
+        redirect: pagePath(result.journeyId, 'commodities/identification')
       })
       const [unit] = result.after.commodityLines[0].animalIdentifiers
       expect(unit.animalIdentifierEarTag).toBe('UK1')
@@ -194,7 +194,9 @@ describe('#animalIdentificationController — the single card-per-species surfac
         seed: { commodityLines: [cowLine({ numberOfAnimalsQuantity: '2' })] },
         payload: { action: 'finish', 'animalIdentifierEarTag-0': 'UK1' }
       })
-      expect(result.response).toEqual({ redirect: hubPath() })
+      expect(result.response).toEqual({
+        redirect: hubPath(result.journeyId)
+      })
       const [unit] = result.after.commodityLines[0].animalIdentifiers
       expect(unit.animalIdentifierEarTag).toBe('UK1')
       expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
@@ -205,7 +207,9 @@ describe('#animalIdentificationController — the single card-per-species surfac
         seed: { commodityLines: [cowLine()] },
         payload: { action: 'finish' }
       })
-      expect(result.response).toEqual({ redirect: hubPath() })
+      expect(result.response).toEqual({
+        redirect: hubPath(result.journeyId)
+      })
       expect(result.after).toEqual(result.before)
     })
 
@@ -242,7 +246,9 @@ describe('#animalIdentificationController — the single card-per-species surfac
         },
         payload: { action: 'finish', 'animalIdentifierEarTag-0': 'UK2' }
       })
-      expect(result.response).toEqual({ redirect: hubPath() })
+      expect(result.response).toEqual({
+        redirect: hubPath(result.journeyId)
+      })
       const tags = result.after.commodityLines[0].animalIdentifiers.map(
         (unit) => unit.animalIdentifierEarTag
       )
@@ -264,7 +270,7 @@ describe('#animalIdentificationController — the single card-per-species surfac
         payload: { action: 'remove:0:0' }
       })
       expect(result.response).toEqual({
-        redirect: pagePath('commodities/identification')
+        redirect: pagePath(result.journeyId, 'commodities/identification')
       })
       expect(result.after.commodityLines[0].animalIdentifiers).toBeUndefined()
     })
@@ -304,14 +310,14 @@ describe('#animalIdentificationController — the single card-per-species surfac
 
       const forged = await server.inject({
         method: 'POST',
-        url: pagePath('commodities/identification'),
+        url: pagePath('journey-1', 'commodities/identification'),
         payload: { action: 'remove:0:0' }
       })
       expect(forged.statusCode).toBe(403)
 
       const prefetched = await server.inject({
         method: 'GET',
-        url: pagePath('commodities/identification/0/0/remove')
+        url: pagePath('journey-1', 'commodities/identification/0/0/remove')
       })
       expect(prefetched.statusCode).toBe(404)
     })
