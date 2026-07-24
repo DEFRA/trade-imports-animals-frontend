@@ -416,3 +416,15 @@ describe('statusOf — the documents MAX_ENTRIES cap', () => {
     ).toBe(IN_PROGRESS)
   })
 })
+
+describe('statusOf — optional documents', () => {
+  it('Should keep a complete journey ready when no document has been started', () => {
+    const answers = structuredClone(happyPath)
+    delete answers.documents
+    const evaluation = evaluateAnswers(answers)
+    const inScope = makeScopeFromEvaluation(evaluation, answers).inScope
+
+    expect(statusOf(['documents'], answers, inScope, evaluation)).toBe(OPTIONAL)
+    expect(readyForCheckYourAnswers(answers, inScope, evaluation)).toBe(true)
+  })
+})

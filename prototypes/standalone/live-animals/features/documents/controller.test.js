@@ -96,6 +96,39 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(result.after).toEqual(result.before)
   })
 
+  it('Should not upload or persist an otherwise-started document with either mandatory form field blank', async () => {
+    const upload = vi.spyOn(documentUploads, 'upload')
+    const incompletePayloads = [
+      {
+        payload: {
+          action: 'add',
+          file: pdfFile(),
+          'accompanyingDocumentDateOfIssue-day': '12',
+          'accompanyingDocumentDateOfIssue-month': '12',
+          'accompanyingDocumentDateOfIssue-year': '2025'
+        },
+        errorField: 'accompanyingDocumentReference'
+      },
+      {
+        payload: {
+          action: 'add',
+          file: pdfFile(),
+          accompanyingDocumentReference: 'GBHC1234567890'
+        },
+        errorField: 'accompanyingDocumentDateOfIssue-day'
+      }
+    ]
+
+    for (const { payload, errorField } of incompletePayloads) {
+      const result = await driveHandler(post, { payload })
+      expect(result.response.statusCode).toBe(400)
+      expect(result.view.context.errors[errorField]).toBeDefined()
+      expect(result.after).toEqual(result.before)
+    }
+    expect(upload).not.toHaveBeenCalled()
+    upload.mockRestore()
+  })
+
   it('Should append the uploaded document with the type and attachment type derived from the filename, then redirect', async () => {
     const result = await driveHandler(post, {
       payload: { action: 'add', ...validDocument, file: pdfFile('itahc.pdf') }
