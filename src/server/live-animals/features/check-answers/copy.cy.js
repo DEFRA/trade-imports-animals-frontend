@@ -27,6 +27,12 @@ export const copy = {
     OTHER: 'Arall'
   },
   change: 'Newid',
+  cancelAmend: {
+    link: 'Canslo’r diwygiad',
+    successTitle: 'Llwyddiant',
+    successBody:
+      'Mae’r diwygiad wedi’i ganslo ac mae’r fersiwn a gyflwynwyd wedi’i hadfer.'
+  },
   sections: {
     aboutTheConsignment: '1. Am y llwyth',
     movement: '2. Symudiad',

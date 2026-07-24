@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  cancelAmendJourney,
   currentJourney,
   KNOWN_JOURNEYS_COOKIE,
   startJourney
@@ -121,5 +122,35 @@ describe('#currentJourney', () => {
       isBoom: true,
       output: { statusCode: 404 }
     })
+  })
+
+  it('Should cancel amendment only for a session-known journey and thread its owner', async () => {
+    const cancelAmend = vi.fn(async (journeyId, owner) => ({
+      journeyId,
+      owner,
+      status: 'submitted',
+      fulfilment: {}
+    }))
+    configureRecords({ ...recordsStub, cancelAmend })
+    const journeyId = 'GBN-AG-26-ABC123'
+    const request = requestFor(journeyId, [journeyId])
+    request.headers['x-stub-user'] = 'owner-1'
+    request.headers['x-stub-owner-org'] = 'organisation-1'
+
+    const restored = await cancelAmendJourney(request, recordingH(), journeyId)
+
+    expect(cancelAmend).toHaveBeenCalledWith(journeyId, {
+      sub: 'owner-1',
+      organisation: 'organisation-1'
+    })
+    expect(restored.status).toBe('submitted')
+
+    const unknown = await cancelAmendJourney(
+      requestFor('unknown', []),
+      recordingH(),
+      'unknown'
+    )
+    expect(unknown).toBeUndefined()
+    expect(cancelAmend).toHaveBeenCalledTimes(1)
   })
 })

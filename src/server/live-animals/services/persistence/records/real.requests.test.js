@@ -294,11 +294,21 @@ describe('real records adapter — canonical fulfilment boundary', () => {
         ),
         { status: 200 }
       ],
-      [JSON.stringify(canonical({ status: 'AMEND' })), { status: 200 }]
+      [JSON.stringify(canonical({ status: 'AMEND' })), { status: 200 }],
+      [
+        JSON.stringify(
+          canonical({
+            status: 'SUBMITTED',
+            submittedAt: '2026-07-23T10:00:00'
+          })
+        ),
+        { status: 200 }
+      ]
     )
 
     const submitted = await records.finalise(journeyId, owner)
     const amended = await records.amend(journeyId, owner)
+    const restored = await records.cancelAmend(journeyId, owner)
 
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
@@ -309,6 +319,10 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       {
         method: 'POST',
         url: `${fulfilmentsUrl}/${journeyId}/amend`
+      },
+      {
+        method: 'POST',
+        url: `${fulfilmentsUrl}/${journeyId}/cancel-amend`
       }
     ])
     requests.forEach(expectOwnerHeaders)
@@ -316,5 +330,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     expect(submitted.submittedAt).toBe('2026-07-23T10:00:00')
     expect(amended.status).toBe(AMEND)
     expect(amended.submittedAt).toBeNull()
+    expect(restored.status).toBe(SUBMITTED)
+    expect(restored.submittedAt).toBe('2026-07-23T10:00:00')
   })
 })

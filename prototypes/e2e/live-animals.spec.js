@@ -3073,6 +3073,7 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
     await expect(page.locator('.app-journey-strip')).toContainText('Submitted')
     await expect(page.locator('.app-journey-strip')).toContainText(reference)
+    await expect(page.getByRole('link', { name: /^Change/ })).toHaveCount(0)
 
     // Amend transitions the notification back to editable and re-enters the
     // journey at the hub — the strip now surfaces the AMEND status as its own
@@ -3085,7 +3086,43 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(page.locator('.app-journey-strip')).toContainText('Amending')
     await expect(page.locator('.app-journey-strip')).toContainText(reference)
 
-    // The journey really is writable again: change an answer and save.
+    // The journey really is writable again: change an answer and save, then
+    // cancel the amendment from the editable CYA. The confirmation restores
+    // the submitted snapshot and returns to the same CYA in read-only mode.
+    await page
+      .getByRole('link', { name: 'Where is this consignment coming from?' })
+      .click()
+    await page
+      .getByLabel('Your internal reference for this consignment (optional)')
+      .fill('CancelledRef99')
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('link', { name: 'Check and submit' }).click()
+    await expect(page.getByText('CancelledRef99')).toBeVisible()
+    await page.getByRole('link', { name: 'Cancel amendment' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Cancel this amendment?' })
+    ).toBeVisible()
+    await expect(
+      page.getByText(
+        'Your changes since you started amending will be discarded and the submitted version restored.'
+      )
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Yes, cancel amendment' }).click()
+    await expect(
+      page.getByText(
+        'The amendment has been cancelled and the submitted version restored.'
+      )
+    ).toBeVisible()
+    await expect(page.locator('.app-journey-strip')).toContainText('Submitted')
+    await expect(page.getByText('CancelledRef99')).toHaveCount(0)
+    await expect(page.getByText(values.internalReferenceNumber)).toBeVisible()
+    await expect(page.getByRole('link', { name: /^Change/ })).toHaveCount(0)
+
+    // Start a second amendment and keep it this time.
+    await page.goto(`${BASE}/home`)
+    await row
+      .getByRole('button', { name: `Amend notification ${reference}` })
+      .click()
     await page
       .getByRole('link', { name: 'Where is this consignment coming from?' })
       .click()

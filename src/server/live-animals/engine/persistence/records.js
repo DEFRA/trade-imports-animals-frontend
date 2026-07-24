@@ -15,6 +15,7 @@ let impl = {
   replaceFulfilment: unconfigured,
   finalise: unconfigured,
   amend: unconfigured,
+  cancelAmend: unconfigured,
   clear: unconfigured
 }
 
@@ -30,5 +31,6 @@ export const records = {
   replaceFulfilment: (...args) => impl.replaceFulfilment(...args),
   finalise: (...args) => impl.finalise(...args),
   amend: (...args) => impl.amend(...args),
+  cancelAmend: (...args) => impl.cancelAmend(...args),
   clear: (...args) => impl.clear(...args)
 }

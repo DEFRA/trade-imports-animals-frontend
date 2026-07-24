@@ -86,8 +86,11 @@ const changeAction = (journeyId, obligationId, visuallyHiddenText) => ({
   ]
 })
 
+const editableActions = (readOnly, actions) => (readOnly ? {} : { actions })
+
 const row = (
   journeyId,
+  readOnly,
   key,
   value,
   obligationId,
@@ -95,10 +98,13 @@ const row = (
 ) => ({
   key: { text: key },
   value: { text: valueText(value) },
-  actions: changeAction(
-    journeyId,
-    obligationId,
-    visuallyHiddenText ?? key.toLowerCase()
+  ...editableActions(
+    readOnly,
+    changeAction(
+      journeyId,
+      obligationId,
+      visuallyHiddenText ?? key.toLowerCase()
+    )
   )
 })
 
@@ -124,6 +130,7 @@ const partyLines = (party) => {
 
 const partyRow = (
   journeyId,
+  readOnly,
   key,
   party,
   obligationId,
@@ -133,25 +140,30 @@ const partyRow = (
   return {
     key: { text: key },
     value: lines ? { html: lines.join('<br>') } : { text: NOT_PROVIDED },
-    actions: changeAction(
-      journeyId,
-      obligationId,
-      visuallyHiddenText ?? key.toLowerCase()
+    ...editableActions(
+      readOnly,
+      changeAction(
+        journeyId,
+        obligationId,
+        visuallyHiddenText ?? key.toLowerCase()
+      )
     )
   }
 }
 
-const importDetailsCard = (journeyId, answers, scope) => ({
+const importDetailsCard = (journeyId, answers, scope, readOnly) => ({
   title: copy.cards.importDetails,
   rows: [
     row(
       journeyId,
+      readOnly,
       copy.rows.countryOfOrigin,
       countries.originLabel(answers.countryOfOrigin) ?? '',
       'countryOfOrigin'
     ),
     row(
       journeyId,
+      readOnly,
       copy.rows.regionCodeRequired,
       copy.yesNo[answers.regionOfOriginCodeRequirement] ?? '',
       'regionOfOriginCodeRequirement'
@@ -160,6 +172,7 @@ const importDetailsCard = (journeyId, answers, scope) => ({
       ? [
           row(
             journeyId,
+            readOnly,
             copy.rows.regionCode,
             answers.regionOfOriginCode,
             'regionOfOriginCode'
@@ -168,6 +181,7 @@ const importDetailsCard = (journeyId, answers, scope) => ({
       : []),
     row(
       journeyId,
+      readOnly,
       copy.rows.internalReference,
       answers.internalReferenceNumber,
       'internalReferenceNumber'
@@ -175,11 +189,12 @@ const importDetailsCard = (journeyId, answers, scope) => ({
   ]
 })
 
-const additionalAnimalDetailsCard = (journeyId, answers, scope) => ({
+const additionalAnimalDetailsCard = (journeyId, answers, scope, readOnly) => ({
   title: copy.cards.additionalAnimalDetails,
   rows: [
     row(
       journeyId,
+      readOnly,
       copy.rows.certifiedFor,
       certification.certificationLabel(answers.animalsCertifiedFor) ?? '',
       'animalsCertifiedFor'
@@ -188,6 +203,7 @@ const additionalAnimalDetailsCard = (journeyId, answers, scope) => ({
       ? [
           row(
             journeyId,
+            readOnly,
             copy.rows.unweaned,
             copy.yesNo[answers.containsUnweanedAnimals] ?? '',
             'containsUnweanedAnimals'
@@ -196,6 +212,7 @@ const additionalAnimalDetailsCard = (journeyId, answers, scope) => ({
       : []),
     row(
       journeyId,
+      readOnly,
       copy.rows.reasonForImport,
       importReasonPurpose.reasonLabel(answers.reasonForImport) ?? '',
       'reasonForImport'
@@ -204,6 +221,7 @@ const additionalAnimalDetailsCard = (journeyId, answers, scope) => ({
       ? [
           row(
             journeyId,
+            readOnly,
             copy.rows.purpose,
             importReasonPurpose.purposeLabel(answers.purposeInInternalMarket) ??
               '',
@@ -308,36 +326,42 @@ const speciesCardRows = (entry) => [
     : [])
 ]
 
-const speciesCards = (journeyId, answers, evaluation) =>
+const speciesCards = (journeyId, answers, evaluation, readOnly) =>
   state
     .collectionView(answers, ['commodityLines'], evaluation)
     .map(({ index, entry }) => {
       const units = unitsForCommodityLine(answers, evaluation, index)
       return {
         title: speciesCardTitle(entry),
-        actions: speciesCardActions(journeyId, index, units),
+        ...editableActions(
+          readOnly,
+          speciesCardActions(journeyId, index, units)
+        ),
         rows: speciesCardRows(entry),
         identifierTable: identifierTable(units)
       }
     })
 
-const arrivalDetailsCard = (journeyId, answers, scope) => ({
+const arrivalDetailsCard = (journeyId, answers, scope, readOnly) => ({
   title: copy.cards.arrivalDetails,
   rows: [
     row(
       journeyId,
+      readOnly,
       copy.rows.portOfEntry,
       ports.label(answers.portOfEntry) ?? answers.portOfEntry,
       'portOfEntry'
     ),
     row(
       journeyId,
+      readOnly,
       copy.rows.arrivalDate,
       dateText(answers.arrivalDateAtPort),
       'arrivalDateAtPort'
     ),
     row(
       journeyId,
+      readOnly,
       copy.rows.meansOfTransport,
       copy.means[answers.meansOfTransport] ?? '',
       'meansOfTransport'
@@ -346,6 +370,7 @@ const arrivalDetailsCard = (journeyId, answers, scope) => ({
       ? [
           row(
             journeyId,
+            readOnly,
             copy.rows.transitedCountries,
             toArray(answers.transitedCountries)
               .map((code) => countries.originLabel(code) ?? code)
@@ -356,12 +381,14 @@ const arrivalDetailsCard = (journeyId, answers, scope) => ({
       : []),
     row(
       journeyId,
+      readOnly,
       copy.rows.transportIdentification,
       answers.transportIdentification,
       'transportIdentification'
     ),
     row(
       journeyId,
+      readOnly,
       copy.rows.transportDocumentReference,
       answers.transportDocumentReference,
       'transportDocumentReference'
@@ -382,21 +409,25 @@ const activeTransporter = (answers, scope) => {
   return null
 }
 
-const transporterAddressRow = (journeyId, party, id) => {
+const transporterAddressRow = (journeyId, party, id, readOnly) => {
   const lines = addressLines(party?.address).map(escapeHtml)
   return {
     key: { text: copy.rows.address },
     value: lines.length ? { html: lines.join('<br>') } : { text: NOT_PROVIDED },
-    actions: changeAction(journeyId, id, copy.hidden.transporterAddress)
+    ...editableActions(
+      readOnly,
+      changeAction(journeyId, id, copy.hidden.transporterAddress)
+    )
   }
 }
 
-const approvalNumberRow = (journeyId, active) =>
+const approvalNumberRow = (journeyId, active, readOnly) =>
   isBlank(active.party?.approvalNumber)
     ? []
     : [
         row(
           journeyId,
+          readOnly,
           copy.rows.approvalNumber,
           active.party.approvalNumber,
           active.id,
@@ -404,36 +435,39 @@ const approvalNumberRow = (journeyId, active) =>
         )
       ]
 
-const activeTransporterRows = (journeyId, active) =>
+const activeTransporterRows = (journeyId, active, readOnly) =>
   active
     ? [
         row(
           journeyId,
+          readOnly,
           copy.rows.name,
           active.party?.name,
           active.id,
           copy.hidden.transporterName
         ),
-        transporterAddressRow(journeyId, active.party, active.id),
+        transporterAddressRow(journeyId, active.party, active.id, readOnly),
         row(
           journeyId,
+          readOnly,
           copy.rows.country,
           active.party?.address?.country,
           active.id,
           copy.hidden.transporterCountry
         ),
-        ...approvalNumberRow(journeyId, active)
+        ...approvalNumberRow(journeyId, active, readOnly)
       ]
     : []
 
-const transportDetailsCard = (journeyId, answers, scope) => {
+const transportDetailsCard = (journeyId, answers, scope, readOnly) => {
   const active = activeTransporter(answers, scope)
   return {
     title: copy.cards.transportDetails,
     rows: [
-      ...activeTransporterRows(journeyId, active),
+      ...activeTransporterRows(journeyId, active, readOnly),
       row(
         journeyId,
+        readOnly,
         copy.rows.type,
         answers.transporterType,
         'transporterType',
@@ -443,20 +477,40 @@ const transportDetailsCard = (journeyId, answers, scope) => {
   }
 }
 
-const rolesAndAddressesCard = (journeyId, answers) => ({
+const rolesAndAddressesCard = (journeyId, answers, readOnly) => ({
   title: copy.cards.rolesAndAddresses,
   rows: [
     partyRow(
       journeyId,
+      readOnly,
       copy.rows.placeOfOrigin,
       answers.placeOfOrigin,
       'placeOfOrigin'
     ),
-    partyRow(journeyId, copy.rows.consignor, answers.consignor, 'consignor'),
-    partyRow(journeyId, copy.rows.consignee, answers.consignee, 'consignee'),
-    partyRow(journeyId, copy.rows.importer, answers.importer, 'importer'),
     partyRow(
       journeyId,
+      readOnly,
+      copy.rows.consignor,
+      answers.consignor,
+      'consignor'
+    ),
+    partyRow(
+      journeyId,
+      readOnly,
+      copy.rows.consignee,
+      answers.consignee,
+      'consignee'
+    ),
+    partyRow(
+      journeyId,
+      readOnly,
+      copy.rows.importer,
+      answers.importer,
+      'importer'
+    ),
+    partyRow(
+      journeyId,
+      readOnly,
       copy.rows.placeOfDestination,
       answers.placeOfDestination,
       'placeOfDestination'
@@ -465,6 +519,7 @@ const rolesAndAddressesCard = (journeyId, answers) => ({
       ? [
           row(
             journeyId,
+            readOnly,
             copy.rows.cph,
             answers.countyParishHoldingCph,
             'countyParishHoldingCph'
@@ -474,11 +529,12 @@ const rolesAndAddressesCard = (journeyId, answers) => ({
   ]
 })
 
-const contactAddressCard = (journeyId, answers) => ({
+const contactAddressCard = (journeyId, answers, readOnly) => ({
   title: copy.cards.contactAddress,
   rows: [
     partyRow(
       journeyId,
+      readOnly,
       copy.rows.address,
       answers.contactAddress,
       'contactAddress',
@@ -487,7 +543,7 @@ const contactAddressCard = (journeyId, answers) => ({
   ]
 })
 
-const documentsCard = (journeyId, answers, evaluation) => {
+const documentsCard = (journeyId, answers, evaluation, readOnly) => {
   const documents = state
     .collectionView(answers, ['documents'], evaluation)
     .map(({ index, entry }) => ({
@@ -514,7 +570,7 @@ const documentsCard = (journeyId, answers, evaluation) => {
   if (documents.length === 0) return null
   return {
     title: copy.cards.documents,
-    actions: {
+    ...editableActions(readOnly, {
       items: [
         {
           href: changeHref(journeyId, 'documents'),
@@ -522,25 +578,33 @@ const documentsCard = (journeyId, answers, evaluation) => {
           visuallyHiddenText: copy.hidden.documents
         }
       ]
-    },
+    }),
     documents
   }
 }
 
-export const buildSections = (answers, scope, evaluation, journeyId) => {
-  const species = speciesCards(journeyId, answers, evaluation)
-  const documents = documentsCard(journeyId, answers, evaluation)
+export const buildSections = (
+  answers,
+  scope,
+  evaluation,
+  journeyId,
+  readOnly = false
+) => {
+  const species = speciesCards(journeyId, answers, evaluation, readOnly)
+  const documents = documentsCard(journeyId, answers, evaluation, readOnly)
   return [
     {
       heading: copy.sections.aboutTheConsignment,
       groups: [
         {
           heading: copy.groups.consignmentDetails,
-          cards: [importDetailsCard(journeyId, answers, scope)]
+          cards: [importDetailsCard(journeyId, answers, scope, readOnly)]
         },
         {
           heading: copy.groups.commodityDetails,
-          cards: [additionalAnimalDetailsCard(journeyId, answers, scope)]
+          cards: [
+            additionalAnimalDetailsCard(journeyId, answers, scope, readOnly)
+          ]
         },
         ...(species.length
           ? [{ heading: copy.groups.species, cards: species }]
@@ -553,8 +617,8 @@ export const buildSections = (answers, scope, evaluation, journeyId) => {
         {
           heading: null,
           cards: [
-            arrivalDetailsCard(journeyId, answers, scope),
-            transportDetailsCard(journeyId, answers, scope)
+            arrivalDetailsCard(journeyId, answers, scope, readOnly),
+            transportDetailsCard(journeyId, answers, scope, readOnly)
           ]
         }
       ]
@@ -565,8 +629,8 @@ export const buildSections = (answers, scope, evaluation, journeyId) => {
         {
           heading: null,
           cards: [
-            rolesAndAddressesCard(journeyId, answers),
-            contactAddressCard(journeyId, answers)
+            rolesAndAddressesCard(journeyId, answers, readOnly),
+            contactAddressCard(journeyId, answers, readOnly)
           ]
         }
       ]
@@ -582,21 +646,50 @@ export const buildSections = (answers, scope, evaluation, journeyId) => {
   ]
 }
 
-const renderCya = (h, journey, answers, scope, evaluation) =>
+const renderCya = (
+  h,
+  journey,
+  answers,
+  scope,
+  evaluation,
+  readOnly,
+  amendmentCancelled
+) =>
   h.view(view, {
     pageTitle: copy.title,
     heading: copy.title,
     copy,
     sharedCopy,
     journeyStrip: journeyStrip(journey),
-    sections: buildSections(answers, scope, evaluation, journey.journeyId),
+    sections: buildSections(
+      answers,
+      scope,
+      evaluation,
+      journey.journeyId,
+      readOnly
+    ),
+    readOnly,
+    amendmentCancelled,
+    cancelAmendHref:
+      journey.status === state.AMEND
+        ? pagePath(journey.journeyId, 'cancel-amend')
+        : null,
     backLink: hubPath(journey.journeyId),
     breadcrumbs: breadcrumbs(journey.journeyId, copy.title)
   })
 
 const get = async (request, h) => {
   const { journey, answers, scope, evaluation } = await state.get(request, h)
-  return renderCya(h, journey, answers, scope, evaluation)
+  const readOnly = journey.status === state.SUBMITTED
+  return renderCya(
+    h,
+    journey,
+    answers,
+    scope,
+    evaluation,
+    readOnly,
+    readOnly && request.query.cancelled === '1'
+  )
 }
 
 const post = async (request, h) => {

@@ -91,6 +91,7 @@ export const records = {
     const journey = loadWritable(journeyId)
     journey.status = SUBMITTED
     journey.submittedAt = new Date().toISOString()
+    delete journey.submittedSnapshot
     return structuredClone(marshal(journey))
   },
 
@@ -100,8 +101,27 @@ export const records = {
     if (journey.status !== SUBMITTED) {
       throw new Error(`Journey "${journeyId}" is not submitted — cannot amend`)
     }
+    journey.submittedSnapshot = {
+      fulfilment: structuredClone(journey.fulfilment),
+      submittedAt: journey.submittedAt
+    }
     journey.status = AMEND
     journey.submittedAt = null
+    return structuredClone(marshal(journey))
+  },
+
+  async cancelAmend(journeyId, _owner) {
+    const journey = journeys.get(journeyId)
+    if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
+    if (journey.status !== AMEND || journey.submittedSnapshot == null) {
+      throw new Error(
+        `Journey "${journeyId}" has no amendment snapshot — cannot cancel amendment`
+      )
+    }
+    journey.fulfilment = structuredClone(journey.submittedSnapshot.fulfilment)
+    journey.submittedAt = journey.submittedSnapshot.submittedAt
+    journey.status = SUBMITTED
+    delete journey.submittedSnapshot
     return structuredClone(marshal(journey))
   },
 

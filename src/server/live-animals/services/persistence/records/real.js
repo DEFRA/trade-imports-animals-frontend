@@ -245,5 +245,17 @@ export const records = {
     return marshal(await response.json(), owner?.sub ?? null)
   },
 
+  async cancelAmend(journeyId, owner) {
+    const response = await fetch(
+      `${fulfilmentsUrl}/${journeyId}/cancel-amend`,
+      {
+        method: 'POST',
+        headers: headers(owner)
+      }
+    )
+    if (!response.ok) throw failed('cancel amendment', response)
+    return marshal(await response.json(), owner?.sub ?? null)
+  },
+
   async clear() {}
 }

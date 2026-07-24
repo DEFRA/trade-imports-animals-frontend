@@ -3,11 +3,21 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildDispatch } from '../../flow/dispatch.js'
 import { commodityCodeFor } from '../../services/commodities/index.js'
 import { store } from '../../engine/store.js'
-import { configureRecords } from '../../engine/persistence/records.js'
+import {
+  AMEND,
+  configureRecords,
+  DRAFT,
+  records,
+  SUBMITTED
+} from '../../engine/persistence/records.js'
 import { configureSession } from '../../engine/persistence/session.js'
 import { records as recordsStub } from '../../services/persistence/records/stub.js'
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
-import { driveHandler } from '../../engine/test-support.js'
+import {
+  driveHandler,
+  journeyRequest,
+  stubH
+} from '../../engine/test-support.js'
 import { hubPath } from '../../config.js'
 import { dispatchPages } from '../../features/index.js'
 import * as checkAnswers from './controller.js'
@@ -21,6 +31,20 @@ const postHandler = checkAnswers.routes.find(
 
 const sectionsFor = async (seed) =>
   (await driveHandler(getHandler, { seed })).view.context.sections
+
+const viewForStatus = async (status, seed = fullSeed, query = {}) => {
+  const journey = await store.create()
+  await store.seedAnswers(journey.journeyId, seed)
+  if (status === SUBMITTED || status === AMEND) {
+    await store.submit(journey.journeyId)
+  }
+  if (status === AMEND) {
+    await records.amend(journey.journeyId)
+  }
+  const h = stubH()
+  await getHandler(journeyRequest(journey.journeyId, { query }), h)
+  return h.captured.view
+}
 
 const cardsOf = (sections) =>
   sections.flatMap((section) => section.groups.flatMap((group) => group.cards))
@@ -39,6 +63,13 @@ const valueOf = (rows, key) => rowByKey(rows, key)?.value.text
 const htmlOf = (rows, key) => rowByKey(rows, key)?.value.html
 const changeHrefOf = (rows, key) => rowByKey(rows, key)?.actions.items[0].href
 const keysOf = (rows) => rows.map((row) => row.key.text)
+const changeHrefsOf = (sections) =>
+  cardsOf(sections).flatMap((card) => [
+    ...(card.actions?.items ?? []).map((action) => action.href),
+    ...(card.rows ?? []).flatMap((entry) =>
+      (entry.actions?.items ?? []).map((action) => action.href)
+    )
+  ])
 
 const fullSeed = {
   countryOfOrigin: 'FR',
@@ -109,6 +140,50 @@ describe('#buildSections (check-answers GET)', () => {
     buildDispatch(dispatchPages)
   })
   beforeEach(() => store.clear())
+
+  describe('journey lifecycle editability', () => {
+    it('Should omit every Change href for a submitted journey', async () => {
+      const view = await viewForStatus(SUBMITTED)
+
+      expect(view.context.readOnly).toBe(true)
+      expect(changeHrefsOf(view.context.sections)).toEqual([])
+      expect(view.context.cancelAmendHref).toBeNull()
+    })
+
+    it.each([DRAFT, AMEND])(
+      'Should retain Change hrefs for an editable %s journey',
+      async (status) => {
+        const view = await viewForStatus(status)
+        const hrefs = changeHrefsOf(view.context.sections)
+
+        expect(view.context.readOnly).toBe(false)
+        expect(hrefs).not.toHaveLength(0)
+        expect(hrefs).toEqual(
+          expect.arrayContaining([expect.stringMatching(/\/origin\?change=1$/)])
+        )
+      }
+    )
+
+    it('Should expose Cancel amendment only on an amending CYA', async () => {
+      const draft = await viewForStatus(DRAFT)
+      const submitted = await viewForStatus(SUBMITTED)
+      const amend = await viewForStatus(AMEND)
+
+      expect(draft.context.cancelAmendHref).toBeNull()
+      expect(submitted.context.cancelAmendHref).toBeNull()
+      expect(amend.context.cancelAmendHref).toMatch(/\/cancel-amend$/)
+    })
+
+    it('Should show the cancel success indication only on the restored submitted view', async () => {
+      const submitted = await viewForStatus(SUBMITTED, fullSeed, {
+        cancelled: '1'
+      })
+      const draft = await viewForStatus(DRAFT, fullSeed, { cancelled: '1' })
+
+      expect(submitted.context.amendmentCancelled).toBe(true)
+      expect(draft.context.amendmentCancelled).toBe(false)
+    })
+  })
 
   describe('fully-populated notification', () => {
     it('Should render the numbered design sections in order', async () => {

@@ -120,6 +120,32 @@ describe('records durable port', () => {
     expect(resubmitted.submittedAt).toEqual(expect.any(String))
   })
 
+  it('Should cancel an amendment by restoring the submitted snapshot and freezing it again', async () => {
+    const { journeyId } = await records.create({ userId: 'user-A' })
+    await records.replaceFulfilment(journeyId, originFulfilment('FR'))
+    const submitted = await records.finalise(journeyId)
+    await records.amend(journeyId)
+    await records.replaceFulfilment(journeyId, originFulfilment('DE'))
+
+    const restored = await records.cancelAmend(journeyId)
+
+    expect(restored).toMatchObject({
+      status: SUBMITTED,
+      submittedAt: submitted.submittedAt,
+      fulfilment: originFulfilment('FR')
+    })
+    await expect(
+      records.replaceFulfilment(journeyId, originFulfilment('NL'))
+    ).rejects.toThrow(/is submitted — writes blocked/)
+  })
+
+  it('Should reject cancel amendment without an active submitted snapshot', async () => {
+    const { journeyId } = await records.create({ userId: 'user-A' })
+    await expect(records.cancelAmend(journeyId)).rejects.toThrow(
+      /has no amendment snapshot — cannot cancel amendment/
+    )
+  })
+
   it('Should reject amend on a journey that is not submitted', async () => {
     const { journeyId } = await records.create({ userId: 'user-A' })
     await expect(records.amend(journeyId)).rejects.toThrow(

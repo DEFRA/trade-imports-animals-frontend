@@ -23,6 +23,7 @@ import * as transportersSelect from './transport/transporters-select.controller.
 import * as privateTransporterDetails from './transport/private-transporter-details.controller.js'
 import * as contactSelect from './contact/controller.js'
 import * as cya from './check-answers/controller.js'
+import * as cancelAmend from './cancel-amend/controller.js'
 import * as declaration from './declaration/controller.js'
 import * as confirmation from './confirmation/controller.js'
 
@@ -77,6 +78,7 @@ export const allRoutes = [
   ...privateTransporterDetails.routes,
   ...contactSelect.routes,
   ...cya.routes,
+  ...cancelAmend.routes,
   ...declaration.routes,
   ...confirmation.routes
 ]

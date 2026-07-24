@@ -113,3 +113,13 @@ export const amendJourney = async (request, h, journeyId) => {
   memoWrite(request, editable)
   return editable
 }
+
+export const cancelAmendJourney = async (request, _h, journeyId) => {
+  if (!(await isKnownJourney(request, journeyId))) return undefined
+  const restored = await records.cancelAmend(
+    journeyId,
+    await session.owner(request)
+  )
+  memoWrite(request, restored)
+  return restored
+}

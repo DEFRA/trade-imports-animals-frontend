@@ -26,6 +26,12 @@ export const copy = {
     OTHER: 'Other'
   },
   change: 'Change',
+  cancelAmend: {
+    link: 'Cancel amendment',
+    successTitle: 'Success',
+    successBody:
+      'The amendment has been cancelled and the submitted version restored.'
+  },
   sections: {
     aboutTheConsignment: '1. About the consignment',
     movement: '2. Movement',
