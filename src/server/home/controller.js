@@ -8,7 +8,6 @@ import {
   mapPaginatedResponse,
   buildPaginationLinks,
   buildPageResultsRangeLabel,
-  buildHomeListQueryString,
   parseNotificationSort,
   NOTIFICATION_SORT_OPTIONS
 } from '../common/helpers/notification-helper.js'
@@ -37,12 +36,7 @@ function renderEmptySearchResult(h, { page, sort, referenceNumber }) {
     currentPage: page,
     sort,
     sortOptions: NOTIFICATION_SORT_OPTIONS,
-    referenceNumber,
-    listQuerySuffix: buildHomeListQueryString({
-      page,
-      sort,
-      referenceNumber
-    })
+    referenceNumber
   })
 }
 
@@ -91,12 +85,7 @@ export const homeController = {
         currentPage: pagination.page,
         sort,
         sortOptions: NOTIFICATION_SORT_OPTIONS,
-        referenceNumber: referenceNumber ?? '',
-        listQuerySuffix: buildHomeListQueryString({
-          page: pagination.page,
-          sort,
-          referenceNumber
-        })
+        referenceNumber: referenceNumber ?? ''
       })
     } catch (err) {
       if (referenceNumber && err.status === statusCodes.badRequest) {

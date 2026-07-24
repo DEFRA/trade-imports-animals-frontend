@@ -600,7 +600,7 @@ describe('#homeController', () => {
       })
 
       expect(result).toEqual(
-        expect.stringContaining('href="/notification-view/REF-123?page=3"')
+        expect.stringContaining('href="/notification-view/REF-123"')
       )
       expect(result).toEqual(expect.stringContaining('Previous page'))
       expect(result).not.toEqual(expect.stringContaining('Next page'))
