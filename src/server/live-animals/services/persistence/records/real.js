@@ -257,5 +257,26 @@ export const records = {
     return marshal(await response.json(), owner?.sub ?? null)
   },
 
+  async copy(journeyId, owner, idempotencyKey) {
+    const response = await fetch(`${fulfilmentsUrl}/${journeyId}/copy`, {
+      method: 'POST',
+      headers: {
+        ...headers(owner),
+        'Idempotency-Key': idempotencyKey
+      }
+    })
+    if (!response.ok) throw failed('copy fulfilment', response)
+    return marshal(await response.json(), owner?.sub ?? null)
+  },
+
+  async softDelete(journeyId, owner) {
+    const response = await fetch(`${fulfilmentsUrl}/${journeyId}/soft-delete`, {
+      method: 'POST',
+      headers: headers(owner)
+    })
+    if (!response.ok) throw failed('soft-delete fulfilment', response)
+    return marshal(await response.json(), owner?.sub ?? null)
+  },
+
   async clear() {}
 }

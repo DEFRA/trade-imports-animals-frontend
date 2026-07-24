@@ -360,6 +360,54 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
   })
 
+  test('dashboard copy and delete — Copy as new lands in one new draft, then confirmation-gated Delete removes it from the list', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await answerCountryOfOrigin(page)
+    const sourceReference = journeyIdFromPage(page)
+
+    await page.goto(`${BASE}/home`)
+    const sourceRow = page.getByRole('row', {
+      name: new RegExp(sourceReference)
+    })
+    await sourceRow
+      .getByRole('button', {
+        name: `Copy as new notification ${sourceReference}`
+      })
+      .click()
+
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(page.locator('.app-journey-strip')).toContainText('Draft')
+    const copiedReference = journeyIdFromPage(page)
+    expect(copiedReference).not.toBe(sourceReference)
+
+    await page.goto(`${BASE}/home`)
+    const copiedRow = page.getByRole('row', {
+      name: new RegExp(copiedReference)
+    })
+    await expect(copiedRow).toBeVisible()
+    await copiedRow
+      .getByRole('link', { name: `Delete notification ${copiedReference}` })
+      .click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Delete this notification?' })
+    ).toBeVisible()
+    await expect(page.getByText('This cannot be undone.')).toBeVisible()
+    await page.getByRole('button', { name: 'Yes, delete notification' }).click()
+
+    await expect(
+      page.getByText('The notification has been deleted.')
+    ).toBeVisible()
+    await expect(
+      page.getByRole('row', { name: new RegExp(copiedReference) })
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole('row', { name: new RegExp(sourceReference) })
+    ).toBeVisible()
+  })
+
   test('import type — a blank answer blocks Continue, a non-live-animals answer routes to the holding page, live animals opens the run', async ({
     page
   }) => {

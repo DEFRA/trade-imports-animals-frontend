@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { breadcrumbs, hubPath, pagePath, TEMPLATES } from '../../config.js'
 import { pageOfObligation, slugOfPage } from '../../flow/dispatch.js'
 import { nextInSection } from '../../flow/navigation.js'
@@ -653,7 +654,9 @@ const renderCya = (
   scope,
   evaluation,
   readOnly,
-  amendmentCancelled
+  amendmentCancelled,
+  recoverableError = false,
+  copyIdempotencyKey = null
 ) =>
   h.view(view, {
     pageTitle: copy.title,
@@ -670,6 +673,18 @@ const renderCya = (
     ),
     readOnly,
     amendmentCancelled,
+    recoverableError,
+    copyAction:
+      readOnly && copyIdempotencyKey
+        ? {
+            href: pagePath(journey.journeyId, 'copy'),
+            idempotencyKey: copyIdempotencyKey
+          }
+        : null,
+    deleteHref:
+      readOnly && journey.status === state.SUBMITTED
+        ? pagePath(journey.journeyId, 'delete')
+        : null,
     cancelAmendHref:
       journey.status === state.AMEND
         ? pagePath(journey.journeyId, 'cancel-amend')
@@ -678,7 +693,11 @@ const renderCya = (
     breadcrumbs: breadcrumbs(journey.journeyId, copy.title)
   })
 
-const get = async (request, h) => {
+export const renderNotificationView = async (
+  request,
+  h,
+  { recoverableError = false, copyIdempotencyKey = randomUUID() } = {}
+) => {
   const { journey, answers, scope, evaluation } = await state.get(request, h)
   const readOnly = journey.status === state.SUBMITTED
   return renderCya(
@@ -688,9 +707,13 @@ const get = async (request, h) => {
     scope,
     evaluation,
     readOnly,
-    readOnly && request.query.cancelled === '1'
+    readOnly && request.query.cancelled === '1',
+    recoverableError,
+    readOnly ? copyIdempotencyKey : null
   )
 }
+
+const get = async (request, h) => renderNotificationView(request, h)
 
 const post = async (request, h) => {
   const { scope } = await state.get(request, h)

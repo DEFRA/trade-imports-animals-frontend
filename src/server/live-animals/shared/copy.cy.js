@@ -25,6 +25,18 @@ export const copy = {
     title: 'Mae problem',
     body: "Mae'n ddrwg gennym, mae problem gyda'r gwasanaeth. Mae eich atebion ar y dudalen hon wedi'u cadw. Rhowch gynnig arall arni ymhen ychydig funudau."
   },
+  notificationActions: {
+    copy: {
+      text: 'Copïo fel un newydd',
+      successTitle: "Hysbysiad wedi'i gopïo",
+      successBody: 'Mae hysbysiad drafft newydd wedi cael ei greu.'
+    },
+    delete: {
+      text: 'Dileu',
+      successTitle: "Hysbysiad wedi'i ddileu",
+      successBody: "Mae'r hysbysiad wedi cael ei ddileu."
+    }
+  },
   saveActions: {
     saveAndContinue: 'Cadw a pharhau',
     saveAndReturnToHub: "Cadw a dychwelyd i'r hyb",

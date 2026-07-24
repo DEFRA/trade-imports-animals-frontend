@@ -1,8 +1,18 @@
 {% extends "live-animals/shared/layout.njk" %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 
 {% block journeyContent %}
+  {% if deletionSucceeded %}
+    {{ govukNotificationBanner({
+      type: "success",
+      titleText: sharedCopy.notificationActions.delete.successTitle,
+      text: sharedCopy.notificationActions.delete.successBody,
+      role: "alert"
+    }) }}
+  {% endif %}
+
   <h1 class="govuk-heading-xl">{{ copy.title }}</h1>
   <p class="govuk-body">{{ copy.body }}</p>
 
@@ -38,6 +48,10 @@
                 {% if action.postAction %}
                   <form method="post" action="{{ action.postAction }}" class="app-form-inline">
                     <input type="hidden" name="crumb" value="{{ crumb }}" />
+                    {% if action.idempotencyKey %}
+                      <input type="hidden" name="idempotencyKey" value="{{ action.idempotencyKey }}" />
+                      <input type="hidden" name="copyOrigin" value="{{ action.copyOrigin }}" />
+                    {% endif %}
                     <button type="submit" class="govuk-link app-link-button govuk-!-margin-right-2">
                       {{ action.text }}<span class="govuk-visually-hidden"> {{ copy.actionHidden(row.reference) }}</span>
                     </button>

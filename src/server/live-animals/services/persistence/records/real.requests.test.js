@@ -333,4 +333,40 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     expect(restored.status).toBe(SUBMITTED)
     expect(restored.submittedAt).toBe('2026-07-23T10:00:00')
   })
+
+  it('Should copy with owner and idempotency headers, then marshal the new draft', async () => {
+    const copiedJourneyId = 'GBN-AG-26-COPIED'
+    fetchMocker.mockResponse(
+      JSON.stringify(canonical({ id: copiedJourneyId, status: 'DRAFT' })),
+      { status: 201 }
+    )
+
+    const copied = await records.copy(journeyId, owner, 'copy-key-123')
+
+    const [request] = fetchMocker.requests()
+    expect(request.url).toBe(`${fulfilmentsUrl}/${journeyId}/copy`)
+    expect(request.method).toBe('POST')
+    expectOwnerHeaders(request)
+    expect(request.headers.get('Idempotency-Key')).toBe('copy-key-123')
+    expect(copied).toMatchObject({
+      journeyId: copiedJourneyId,
+      userId: owner.sub,
+      status: DRAFT
+    })
+  })
+
+  it('Should soft-delete with owner headers and marshal the deleted journey', async () => {
+    fetchMocker.mockResponse(JSON.stringify(canonical({ status: 'DELETED' })), {
+      status: 200
+    })
+
+    const deleted = await records.softDelete(journeyId, owner)
+
+    const [request] = fetchMocker.requests()
+    expect(request.url).toBe(`${fulfilmentsUrl}/${journeyId}/soft-delete`)
+    expect(request.method).toBe('POST')
+    expectOwnerHeaders(request)
+    expect(request.headers.has('Idempotency-Key')).toBe(false)
+    expect(deleted.status).toBe(DELETED)
+  })
 })

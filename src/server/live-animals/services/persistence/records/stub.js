@@ -1,5 +1,10 @@
 import { randomInt } from 'node:crypto'
-import { AMEND, DRAFT, SUBMITTED } from '../../../engine/persistence/records.js'
+import {
+  AMEND,
+  DELETED,
+  DRAFT,
+  SUBMITTED
+} from '../../../engine/persistence/records.js'
 import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments
@@ -19,6 +24,13 @@ const mintReferenceNumber = () => {
 
 const journeys = new Map()
 const byUser = new Map()
+const copiesByOwnerAndKey = new Map()
+
+const ownerKey = (owner) =>
+  `${owner?.sub ?? ''}\u0000${owner?.organisation ?? ''}`
+
+const sameOwner = (journey, owner) =>
+  ownerKey(journey.owner) === ownerKey(owner)
 
 const marshal = (document) => ({
   journeyId: document.id,
@@ -71,7 +83,7 @@ export const records = {
   async list({ journeyIds = [], owner: _owner } = {}) {
     return journeyIds
       .map((journeyId) => journeys.get(journeyId))
-      .filter(Boolean)
+      .filter((journey) => journey && journey.status !== DELETED)
       .map((journey) => structuredClone(marshal(journey)))
   },
 
@@ -125,8 +137,65 @@ export const records = {
     return structuredClone(marshal(journey))
   },
 
+  async copy(journeyId, owner, idempotencyKey) {
+    const dedupeKey = `${ownerKey(owner)}\u0000${idempotencyKey}`
+    const existingCopyId = copiesByOwnerAndKey.get(dedupeKey)
+    if (existingCopyId) {
+      return structuredClone(marshal(journeys.get(existingCopyId)))
+    }
+
+    const source = journeys.get(journeyId)
+    if (!source || !sameOwner(source, owner)) {
+      throw new Error(`Unknown journey "${journeyId}"`)
+    }
+    if (
+      source.status !== DRAFT &&
+      source.status !== SUBMITTED &&
+      source.status !== AMEND
+    ) {
+      throw new Error(
+        `Journey "${journeyId}" is ${source.status} — cannot copy`
+      )
+    }
+
+    const document = {
+      id: mintReferenceNumber(),
+      userId: owner?.sub ?? source.userId ?? null,
+      owner: owner == null ? null : structuredClone(owner),
+      status: DRAFT,
+      createdAt: new Date().toISOString(),
+      submittedAt: null,
+      fulfilment: structuredClone(source.fulfilment)
+    }
+    journeys.set(document.id, document)
+    if (document.userId != null) byUser.set(document.userId, document.id)
+    copiesByOwnerAndKey.set(dedupeKey, document.id)
+    return structuredClone(marshal(document))
+  },
+
+  async softDelete(journeyId, owner) {
+    const journey = journeys.get(journeyId)
+    if (!journey || !sameOwner(journey, owner)) {
+      throw new Error(`Unknown journey "${journeyId}"`)
+    }
+    if (
+      journey.status !== DRAFT &&
+      journey.status !== SUBMITTED &&
+      journey.status !== AMEND &&
+      journey.status !== DELETED
+    ) {
+      throw new Error(
+        `Journey "${journeyId}" is ${journey.status} — cannot delete`
+      )
+    }
+    journey.status = DELETED
+    journey.submittedAt = null
+    return structuredClone(marshal(journey))
+  },
+
   async clear() {
     journeys.clear()
     byUser.clear()
+    copiesByOwnerAndKey.clear()
   }
 }

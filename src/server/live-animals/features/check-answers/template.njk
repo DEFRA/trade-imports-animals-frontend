@@ -28,6 +28,29 @@
 
   <h1 class="govuk-heading-l">{{ heading }}</h1>
 
+  {% if copyAction or deleteHref %}
+    <div class="govuk-button-group">
+      {% if copyAction %}
+        <form method="post" action="{{ copyAction.href }}" class="app-form-inline">
+          <input type="hidden" name="crumb" value="{{ crumb }}" />
+          <input type="hidden" name="idempotencyKey" value="{{ copyAction.idempotencyKey }}" />
+          <input type="hidden" name="copyOrigin" value="notification-view" />
+          {{ govukButton({
+            text: sharedCopy.notificationActions.copy.text,
+            classes: "govuk-button--secondary"
+          }) }}
+        </form>
+      {% endif %}
+      {% if deleteHref %}
+        {{ govukButton({
+          text: sharedCopy.notificationActions.delete.text,
+          href: deleteHref,
+          classes: "govuk-button--warning"
+        }) }}
+      {% endif %}
+    </div>
+  {% endif %}
+
   {% if cancelAmendHref %}
     <p class="govuk-body">
       <a class="govuk-link" href="{{ cancelAmendHref }}">{{ copy.cancelAmend.link }}</a>

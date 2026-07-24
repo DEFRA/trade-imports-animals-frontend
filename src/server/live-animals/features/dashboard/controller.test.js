@@ -96,12 +96,18 @@ describe('dashboard notifications list', () => {
     })
     expect(row.created).toEqual(expect.any(String))
     expect(row.submitted).toBe('Not submitted')
-    expect(row.actions).toEqual([
-      {
-        text: 'Resume',
-        href: hubPath(draft.journeyId)
-      }
+    expect(row.actions.map((action) => action.text)).toEqual([
+      'Resume',
+      'Copy as new',
+      'Delete'
     ])
+    expect(row.actions[0].href).toBe(hubPath(draft.journeyId))
+    expect(row.actions[1]).toMatchObject({
+      postAction: pagePath(draft.journeyId, 'copy'),
+      copyOrigin: 'dashboard',
+      idempotencyKey: expect.any(String)
+    })
+    expect(row.actions[2].href).toBe(pagePath(draft.journeyId, 'delete'))
   })
 
   it('Should list a submitted row with a Submitted tag, its dates and View + Amend actions', async () => {
@@ -117,16 +123,20 @@ describe('dashboard notifications list', () => {
     })
     expect(row.submitted).toEqual(expect.any(String))
     expect(row.submitted).not.toBe('Not submitted')
-    expect(row.actions).toEqual([
-      {
-        text: 'View',
-        href: pagePath(submitted.journeyId, CYA_SLUG)
-      },
-      {
-        text: 'Amend',
-        postAction: pagePath(submitted.journeyId, 'amend')
-      }
+    expect(row.actions.map((action) => action.text)).toEqual([
+      'View',
+      'Amend',
+      'Copy as new',
+      'Delete'
     ])
+    expect(row.actions[0].href).toBe(pagePath(submitted.journeyId, CYA_SLUG))
+    expect(row.actions[1].postAction).toBe(
+      pagePath(submitted.journeyId, 'amend')
+    )
+    expect(row.actions[2].postAction).toBe(
+      pagePath(submitted.journeyId, 'copy')
+    )
+    expect(row.actions[3].href).toBe(pagePath(submitted.journeyId, 'delete'))
   })
 
   it('Should list ONLY session-known journeys — never the wider store', async () => {
@@ -194,7 +204,15 @@ describe('dashboard row actions', () => {
       classes: 'govuk-tag--yellow'
     })
     expect(row.submitted).toBe('Not submitted')
-    expect(row.actions.map((action) => action.text)).toEqual(['Resume'])
+    expect(row.actions.map((action) => action.text)).toEqual([
+      'Resume',
+      'Copy as new',
+      'Cancel amendment',
+      'Delete'
+    ])
+    expect(row.actions[2].href).toBe(
+      pagePath(submitted.journeyId, 'cancel-amend')
+    )
   })
 
   it('Should treat a repeated amend POST as a plain re-entry, not an error', async () => {
@@ -227,6 +245,37 @@ describe('dashboard row actions', () => {
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
     ).toBe(SUBMITTED)
+  })
+
+  it('Should mint a different copy key for every source row on a render', async () => {
+    const first = await startDraft()
+    const second = await startDraft()
+    const h = buildH()
+
+    await listGet(
+      buildRequest({
+        knownJourneyIds: [first.journeyId, second.journeyId]
+      }),
+      h
+    )
+
+    const keys = h.captured.view.context.notificationRows.map(
+      (row) =>
+        row.actions.find((action) => action.text === 'Copy as new')
+          .idempotencyKey
+    )
+    expect(new Set(keys).size).toBe(2)
+  })
+
+  it('Should expose the delete success banner only after a delete redirect', async () => {
+    const ordinary = buildH()
+    const deleted = buildH()
+
+    await listGet(buildRequest(), ordinary)
+    await listGet({ ...buildRequest(), query: { deleted: '1' } }, deleted)
+
+    expect(ordinary.captured.view.context.deletionSucceeded).toBe(false)
+    expect(deleted.captured.view.context.deletionSucceeded).toBe(true)
   })
 })
 

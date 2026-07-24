@@ -148,6 +148,11 @@ describe('#buildSections (check-answers GET)', () => {
       expect(view.context.readOnly).toBe(true)
       expect(changeHrefsOf(view.context.sections)).toEqual([])
       expect(view.context.cancelAmendHref).toBeNull()
+      expect(view.context.copyAction).toMatchObject({
+        href: expect.stringMatching(/\/copy$/),
+        idempotencyKey: expect.any(String)
+      })
+      expect(view.context.deleteHref).toMatch(/\/delete$/)
     })
 
     it.each([DRAFT, AMEND])(
@@ -157,6 +162,8 @@ describe('#buildSections (check-answers GET)', () => {
         const hrefs = changeHrefsOf(view.context.sections)
 
         expect(view.context.readOnly).toBe(false)
+        expect(view.context.copyAction).toBeNull()
+        expect(view.context.deleteHref).toBeNull()
         expect(hrefs).not.toHaveLength(0)
         expect(hrefs).toEqual(
           expect.arrayContaining([expect.stringMatching(/\/origin\?change=1$/)])

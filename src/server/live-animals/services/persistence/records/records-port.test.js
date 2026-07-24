@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { records } from './stub.js'
-import { AMEND, DRAFT, SUBMITTED } from '../../../engine/persistence/records.js'
+import {
+  AMEND,
+  DELETED,
+  DRAFT,
+  SUBMITTED
+} from '../../../engine/persistence/records.js'
 import { countryOfOrigin } from '../../../model/obligations/obligations.js'
 
 const originFulfilment = (value) => ({ [countryOfOrigin.id]: value })
@@ -181,5 +186,57 @@ describe('records durable port', () => {
     await records.create({ owner })
     expect(await records.list({ journeyIds: [], owner })).toEqual([])
     expect(await records.list()).toEqual([])
+  })
+
+  it('Should copy source content into one new draft per owner and idempotency key', async () => {
+    const owner = { sub: 'user-A', organisation: 'organisation-A' }
+    const source = await records.create({ owner })
+    await records.replaceFulfilment(source.journeyId, originFulfilment('FR'))
+
+    const first = await records.copy(source.journeyId, owner, 'copy-key')
+    const retry = await records.copy(source.journeyId, owner, 'copy-key')
+    const deliberateSecond = await records.copy(
+      source.journeyId,
+      owner,
+      'another-key'
+    )
+
+    expect(first).toMatchObject({
+      status: DRAFT,
+      userId: owner.sub,
+      fulfilment: originFulfilment('FR')
+    })
+    expect(first.journeyId).not.toBe(source.journeyId)
+    expect(retry.journeyId).toBe(first.journeyId)
+    expect(deliberateSecond.journeyId).not.toBe(first.journeyId)
+  })
+
+  it('Should scope copy idempotency to the composite owner', async () => {
+    const ownerA = { sub: 'user-A', organisation: 'organisation-A' }
+    const ownerB = { sub: 'user-B', organisation: 'organisation-B' }
+    const sourceA = await records.create({ owner: ownerA })
+    const sourceB = await records.create({ owner: ownerB })
+
+    const copyA = await records.copy(sourceA.journeyId, ownerA, 'same-key')
+    const copyB = await records.copy(sourceB.journeyId, ownerB, 'same-key')
+
+    expect(copyB.journeyId).not.toBe(copyA.journeyId)
+    await expect(
+      records.copy(sourceA.journeyId, ownerB, 'wrong-owner-key')
+    ).rejects.toThrow(/Unknown journey/)
+  })
+
+  it('Should soft-delete idempotently and exclude the journey from lists', async () => {
+    const owner = { sub: 'user-A', organisation: 'organisation-A' }
+    const journey = await records.create({ owner })
+
+    const deleted = await records.softDelete(journey.journeyId, owner)
+    const retry = await records.softDelete(journey.journeyId, owner)
+
+    expect(deleted.status).toBe(DELETED)
+    expect(retry.status).toBe(DELETED)
+    expect(
+      await records.list({ journeyIds: [journey.journeyId], owner })
+    ).toEqual([])
   })
 })

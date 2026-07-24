@@ -8,11 +8,13 @@ import { hasEnteredThroughFilter } from './run-state.js'
 const IMPORT_TYPE_KEY = 'importType'
 
 const JOURNEY_PREFIX = `${BASE}/notifications/`
+const ACTION_SLUGS = new Set(['amend', 'cancel-amend', 'copy', 'delete'])
 
 export const guardedJourneyPath = (path) => {
   if (!path.startsWith(JOURNEY_PREFIX) || path === createPath()) return false
   const [journeyId, ...slugParts] = path.slice(JOURNEY_PREFIX.length).split('/')
   const slug = slugParts.join('/')
+  if (ACTION_SLUGS.has(slug)) return false
   const isEntrySurface =
     slug === importTypeFilterPage.slug ||
     slug.startsWith(`${importTypeFilterPage.slug}/`)

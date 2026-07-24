@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   cancelAmendJourney,
+  copyJourney,
   currentJourney,
   KNOWN_JOURNEYS_COOKIE,
+  softDeleteJourney,
   startJourney
 } from './journey.js'
 import { store } from './store.js'
@@ -152,5 +154,74 @@ describe('#currentJourney', () => {
     )
     expect(unknown).toBeUndefined()
     expect(cancelAmend).toHaveBeenCalledTimes(1)
+  })
+
+  it('Should copy only a known source, thread its owner and remember the new draft', async () => {
+    const copy = vi.fn(async (_journeyId, owner, _idempotencyKey) => ({
+      journeyId: 'GBN-AG-26-COPIED',
+      userId: owner.sub,
+      status: 'draft',
+      fulfilment: {}
+    }))
+    configureRecords({ ...recordsStub, copy })
+    const sourceId = 'GBN-AG-26-SOURCE'
+    const request = requestFor(sourceId, [sourceId])
+    request.headers['x-stub-user'] = 'owner-1'
+    request.headers['x-stub-owner-org'] = 'organisation-1'
+    const h = recordingH()
+
+    const copied = await copyJourney(request, h, sourceId, 'copy-key-123')
+
+    expect(copy).toHaveBeenCalledWith(
+      sourceId,
+      { sub: 'owner-1', organisation: 'organisation-1' },
+      'copy-key-123'
+    )
+    expect(copied.status).toBe('draft')
+    expect(h.cookies[KNOWN_JOURNEYS_COOKIE]).toEqual([
+      sourceId,
+      copied.journeyId
+    ])
+
+    expect(
+      await copyJourney(
+        requestFor('unknown', []),
+        recordingH(),
+        'unknown',
+        'unused'
+      )
+    ).toBeUndefined()
+    expect(copy).toHaveBeenCalledTimes(1)
+  })
+
+  it('Should soft-delete only a known journey and thread its owner', async () => {
+    const softDelete = vi.fn(async (journeyId, owner) => ({
+      journeyId,
+      owner,
+      status: 'deleted',
+      fulfilment: {}
+    }))
+    configureRecords({ ...recordsStub, softDelete })
+    const journeyId = 'GBN-AG-26-DELETE'
+    const request = requestFor(journeyId, [journeyId])
+    request.headers['x-stub-user'] = 'owner-1'
+    request.headers['x-stub-owner-org'] = 'organisation-1'
+
+    const deleted = await softDeleteJourney(request, recordingH(), journeyId)
+
+    expect(softDelete).toHaveBeenCalledWith(journeyId, {
+      sub: 'owner-1',
+      organisation: 'organisation-1'
+    })
+    expect(deleted.status).toBe('deleted')
+
+    expect(
+      await softDeleteJourney(
+        requestFor('unknown', []),
+        recordingH(),
+        'unknown'
+      )
+    ).toBeUndefined()
+    expect(softDelete).toHaveBeenCalledTimes(1)
   })
 })

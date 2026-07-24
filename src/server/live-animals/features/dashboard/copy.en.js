@@ -17,7 +17,8 @@ export const copy = {
   actions: {
     view: 'View',
     amend: 'Amend',
-    resume: 'Resume'
+    resume: 'Resume',
+    cancelAmend: 'Cancel amendment'
   },
   actionHidden: (reference) => `notification ${reference}`,
   emptyText: 'You have not started any notifications in this session.'

@@ -123,3 +123,17 @@ export const cancelAmendJourney = async (request, _h, journeyId) => {
   memoWrite(request, restored)
   return restored
 }
+
+export const copyJourney = async (request, h, journeyId, idempotencyKey) => {
+  if (!(await isKnownJourney(request, journeyId))) return undefined
+  const owner = await session.owner(request)
+  const copied = await records.copy(journeyId, owner, idempotencyKey)
+  await session.addKnownJourney(request, h, copied.journeyId)
+  memoWrite(request, copied)
+  return copied
+}
+
+export const softDeleteJourney = async (request, _h, journeyId) => {
+  if (!(await isKnownJourney(request, journeyId))) return undefined
+  return records.softDelete(journeyId, await session.owner(request))
+}

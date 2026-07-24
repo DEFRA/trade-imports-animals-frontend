@@ -32,6 +32,18 @@ export const copy = {
     title: 'There is a problem',
     body: 'Sorry, there is a problem with the service. Your answers on this page have been saved. Try again in a few minutes.'
   },
+  notificationActions: {
+    copy: {
+      text: 'Copy as new',
+      successTitle: 'Notification copied',
+      successBody: 'A new draft notification has been created.'
+    },
+    delete: {
+      text: 'Delete',
+      successTitle: 'Notification deleted',
+      successBody: 'The notification has been deleted.'
+    }
+  },
   saveActions: {
     saveAndContinue: 'Save and continue',
     saveAndReturnToHub: 'Save and return to hub',

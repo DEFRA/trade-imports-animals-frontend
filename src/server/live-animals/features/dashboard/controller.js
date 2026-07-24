@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import {
   BASE,
   createPath,
@@ -36,6 +37,16 @@ const dateText = (value) =>
     : null
 
 const rowActions = (journey) => {
+  const copyAction = {
+    text: sharedCopy.notificationActions.copy.text,
+    postAction: pagePath(journey.journeyId, 'copy'),
+    idempotencyKey: randomUUID(),
+    copyOrigin: 'dashboard'
+  }
+  const deleteAction = {
+    text: sharedCopy.notificationActions.delete.text,
+    href: pagePath(journey.journeyId, 'delete')
+  }
   if (journey.status === SUBMITTED) {
     return [
       {
@@ -45,38 +56,69 @@ const rowActions = (journey) => {
       {
         text: copy.actions.amend,
         postAction: pagePath(journey.journeyId, 'amend')
-      }
+      },
+      copyAction,
+      deleteAction
     ]
   }
-  if (journey.status === DRAFT || journey.status === AMEND) {
+  if (journey.status === DRAFT) {
     return [
       {
         text: copy.actions.resume,
         href: hubPath(journey.journeyId)
-      }
+      },
+      copyAction,
+      deleteAction
+    ]
+  }
+  if (journey.status === AMEND) {
+    return [
+      {
+        text: copy.actions.resume,
+        href: hubPath(journey.journeyId)
+      },
+      copyAction,
+      {
+        text: copy.actions.cancelAmend,
+        href: pagePath(journey.journeyId, 'cancel-amend')
+      },
+      deleteAction
     ]
   }
   return []
 }
 
-const toRow = (journey) => ({
+const toRow = (journey, retryCopy = null) => ({
   reference: journey.journeyId,
   status: journeyStrip(journey).status,
   created: dateText(journey.createdAt),
   submitted: dateText(journey.submittedAt) ?? copy.notSubmitted,
-  actions: rowActions(journey)
+  actions: rowActions(journey).map((action) =>
+    retryCopy?.journeyId === journey.journeyId &&
+    action.idempotencyKey !== undefined
+      ? { ...action, idempotencyKey: retryCopy.idempotencyKey }
+      : action
+  )
 })
 
-const listGet = async (request, h) => {
+export const renderDashboard = async (
+  request,
+  h,
+  { recoverableError = false, retryCopy = null } = {}
+) => {
   const journeys = await listKnownJourneys(request)
   return h.view(view, {
     pageTitle: copy.title,
     copy,
     sharedCopy,
     startAction: createPath(),
-    notificationRows: journeys.map(toRow)
+    notificationRows: journeys.map((journey) => toRow(journey, retryCopy)),
+    recoverableError,
+    deletionSucceeded: request.query?.deleted === '1'
   })
 }
+
+const listGet = async (request, h) => renderDashboard(request, h)
 
 const dashboardPath = () => `${BASE}/${page.slug}`
 const backToDashboard = (h) => h.redirect(dashboardPath())

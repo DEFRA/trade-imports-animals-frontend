@@ -16,6 +16,8 @@ let impl = {
   finalise: unconfigured,
   amend: unconfigured,
   cancelAmend: unconfigured,
+  copy: unconfigured,
+  softDelete: unconfigured,
   clear: unconfigured
 }
 
@@ -32,5 +34,7 @@ export const records = {
   finalise: (...args) => impl.finalise(...args),
   amend: (...args) => impl.amend(...args),
   cancelAmend: (...args) => impl.cancelAmend(...args),
+  copy: (...args) => impl.copy(...args),
+  softDelete: (...args) => impl.softDelete(...args),
   clear: (...args) => impl.clear(...args)
 }

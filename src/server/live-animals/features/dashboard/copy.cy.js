@@ -18,7 +18,8 @@ export const copy = {
   actions: {
     view: 'Gweld',
     amend: 'Diwygio',
-    resume: 'Ailddechrau'
+    resume: 'Ailddechrau',
+    cancelAmend: 'Canslo diwygiad'
   },
   actionHidden: (reference) => `hysbysiad ${reference}`,
   emptyText: 'Nid ydych wedi dechrau unrhyw hysbysiadau yn y sesiwn hon.'
