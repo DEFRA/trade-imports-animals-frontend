@@ -29,6 +29,13 @@ export const session = {
     return request?.headers?.[STUB_USER_HEADER] ?? STUB_USER
   },
 
+  async owner(request) {
+    return {
+      sub: request?.headers?.[STUB_USER_HEADER] ?? STUB_USER,
+      organisation: request?.headers?.['x-stub-owner-org'] ?? ''
+    }
+  },
+
   async knownJourneyIds(request) {
     return knownFrom(request)
   },

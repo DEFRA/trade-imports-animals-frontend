@@ -8,6 +8,14 @@ const originFulfilment = (value) => ({ [countryOfOrigin.id]: value })
 describe('records durable port', () => {
   beforeEach(() => records.clear())
 
+  it('Should accept the composite owner and keep carrying its sub as userId', async () => {
+    const journey = await records.create({
+      owner: { sub: 'user-A', organisation: 'organisation-A' }
+    })
+
+    expect(journey).toMatchObject({ userId: 'user-A', status: IN_PROGRESS })
+  })
+
   it('Should mint a record stamped with its user and index it by user', async () => {
     const journey = await records.create({ userId: 'user-A' })
     expect(journey).toMatchObject({ userId: 'user-A', status: IN_PROGRESS })
@@ -125,13 +133,15 @@ describe('records durable port', () => {
     )
   })
 
-  it('Should list exactly the requested journeys in order, skipping unknown ids', async () => {
-    const first = await records.create({ userId: 'user-A' })
-    const second = await records.create({ userId: 'user-A' })
-    await records.create({ userId: 'user-A' })
+  it('Should keep listing session-scoped by requested journey ids, not owner', async () => {
+    const owner = { sub: 'user-A', organisation: 'organisation-A' }
+    const first = await records.create({ owner })
+    const second = await records.create({ owner })
+    await records.create({ owner })
 
     const listed = await records.list({
-      journeyIds: [second.journeyId, 'GBN-AG-26-000000', first.journeyId]
+      journeyIds: [second.journeyId, 'GBN-AG-26-000000', first.journeyId],
+      owner
     })
 
     expect(listed.map((journey) => journey.journeyId)).toEqual([
@@ -141,8 +151,9 @@ describe('records durable port', () => {
   })
 
   it('Should list nothing for an empty id set', async () => {
-    await records.create({ userId: 'user-A' })
-    expect(await records.list({ journeyIds: [] })).toEqual([])
+    const owner = { sub: 'user-A', organisation: 'organisation-A' }
+    await records.create({ owner })
+    expect(await records.list({ journeyIds: [], owner })).toEqual([])
     expect(await records.list()).toEqual([])
   })
 })

@@ -14,10 +14,13 @@ const backendUrl =
   process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ?? 'http://localhost:8085'
 const probeTimeoutMs = 5_000
 
+// Any HTTP response means the backend is up — /notifications now requires owner
+// headers and answers 400 without them (pr-005), which still proves reachability.
+// Only a transport error (connection refused, timeout) means the stack is down.
 const reachable = await fetch(`${backendUrl}/notifications`, {
   signal: AbortSignal.timeout(probeTimeoutMs)
 })
-  .then((response) => response.ok)
+  .then(() => true)
   .catch(() => false)
 
 if (!reachable) {

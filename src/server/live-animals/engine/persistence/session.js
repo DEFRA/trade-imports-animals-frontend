@@ -10,6 +10,7 @@ const unconfigured = () => {
 
 let impl = {
   userId: unconfigured,
+  owner: unconfigured,
   knownJourneyIds: unconfigured,
   addKnownJourney: unconfigured,
   openingRun: unconfigured,
@@ -24,6 +25,7 @@ export const configureSession = (newImpl) => {
 
 export const session = {
   userId: (...args) => impl.userId(...args),
+  owner: (...args) => impl.owner(...args),
   knownJourneyIds: (...args) => impl.knownJourneyIds(...args),
   addKnownJourney: (...args) => impl.addKnownJourney(...args),
   openingRun: (...args) => impl.openingRun(...args),

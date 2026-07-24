@@ -9,7 +9,10 @@ const buildServer = async () => {
   server.auth.scheme('test-session', () => ({
     authenticate(request, h) {
       return h.authenticated({
-        credentials: { sub: request.headers['x-test-auth-sub'] }
+        credentials: {
+          sub: request.headers['x-test-auth-sub'],
+          organisationId: request.headers['x-test-auth-organisation']
+        }
       })
     }
   }))
@@ -92,6 +95,21 @@ const buildServer = async () => {
       path: '/user-id/auth-off',
       handler: async (request) => ({
         userId: await session.userId(request)
+      })
+    },
+    {
+      method: 'GET',
+      path: '/owner/authenticated',
+      options: { auth: 'test-session' },
+      handler: async (request) => ({
+        owner: await session.owner(request)
+      })
+    },
+    {
+      method: 'GET',
+      path: '/owner/auth-off',
+      handler: async (request) => ({
+        owner: await session.owner(request)
       })
     }
   ])
@@ -230,5 +248,53 @@ describe('#session.userId (real, yar)', () => {
     })
 
     expect(response.result.userId).toBe(STUB_USER)
+  })
+})
+
+describe('#session.owner (real, yar)', () => {
+  it('Should read the authenticated Defra ID sub and organisation', async () => {
+    const server = await buildServer()
+    const response = await server.inject({
+      method: 'GET',
+      url: '/owner/authenticated',
+      headers: {
+        'x-test-auth-sub': 'user-99',
+        'x-test-auth-organisation': 'organisation-42'
+      }
+    })
+
+    expect(response.result.owner).toEqual({
+      sub: 'user-99',
+      organisation: 'organisation-42'
+    })
+  })
+
+  it('Should use the Bell profile organisation shape when credentials are not flattened', async () => {
+    await expect(
+      session.owner({
+        auth: {
+          credentials: {
+            sub: 'user-99',
+            profile: { organisationId: 'organisation-42' }
+          }
+        }
+      })
+    ).resolves.toEqual({
+      sub: 'user-99',
+      organisation: 'organisation-42'
+    })
+  })
+
+  it('Should use the auth-off stub user and empty organisation fallback', async () => {
+    const server = await buildServer()
+    const response = await server.inject({
+      method: 'GET',
+      url: '/owner/auth-off'
+    })
+
+    expect(response.result.owner).toEqual({
+      sub: STUB_USER,
+      organisation: ''
+    })
   })
 })

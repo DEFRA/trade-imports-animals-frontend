@@ -25,9 +25,11 @@ const MAX_PROJECTION_ATTEMPTS = 2
 
 const logger = createLogger()
 
-const headers = () => ({
+const headers = (owner) => ({
   'Content-Type': 'application/json',
-  [tracingHeader]: getTraceId() ?? ''
+  [tracingHeader]: getTraceId() ?? '',
+  'X-Owner-Id': owner?.sub ?? '',
+  'X-Owner-Organisation': owner?.organisation ?? ''
 })
 
 const failed = (action, response) => new BackendRequestError(action, response)
@@ -47,9 +49,16 @@ const marshal = (document, userId = null) => {
   }
 }
 
-const resolveStatus = async (journeyId, known) => {
+const marshalListItem = (item) => ({
+  journeyId: item.id,
+  status: mapStatus(item.status),
+  createdAt: item.createdAt ?? null,
+  submittedAt: item.submittedAt ?? null
+})
+
+const resolveStatus = async (journeyId, known, owner) => {
   if (known != null && known.journeyId === journeyId) return known.status
-  const existing = await getFulfilment(journeyId)
+  const existing = await getFulfilment(journeyId, owner)
   if (existing === undefined) {
     throw new Error(`Unknown journey "${journeyId}"`)
   }
@@ -62,31 +71,31 @@ const assertWritable = (journeyId, status) => {
   }
 }
 
-const getFulfilment = async (journeyId) => {
+const getFulfilment = async (journeyId, owner) => {
   const response = await fetch(`${fulfilmentsUrl}/${journeyId}`, {
     method: 'GET',
-    headers: headers()
+    headers: headers(owner)
   })
   if (response.status === HTTP_NOT_FOUND) return undefined
   if (!response.ok) throw failed('get fulfilment', response)
   return response.json()
 }
 
-const put = async (url, body, action) => {
+const put = async (url, body, action, owner) => {
   const response = await fetch(url, {
     method: 'PUT',
-    headers: headers(),
+    headers: headers(owner),
     body: JSON.stringify(body)
   })
   if (!response.ok) throw failed(action, response)
   return response
 }
 
-const putProjection = async ({ journeyId, name, url, body }) => {
+const putProjection = async ({ journeyId, name, url, body, owner }) => {
   let lastError
   for (let attempt = 1; attempt <= MAX_PROJECTION_ATTEMPTS; attempt++) {
     try {
-      await put(url, body, `save ${name} projection`)
+      await put(url, body, `save ${name} projection`, owner)
       return
     } catch (error) {
       lastError = error
@@ -120,38 +129,44 @@ const throwProjectionFailure = (journeyId, failures) => {
 }
 
 export const records = {
-  async create({ userId } = {}) {
+  async create({ userId, owner } = {}) {
     const response = await fetch(fulfilmentsUrl, {
       method: 'POST',
-      headers: headers()
+      headers: headers(owner)
     })
     if (!response.ok) throw failed('create fulfilment', response)
-    return marshal(await response.json(), userId ?? null)
+    return marshal(await response.json(), userId ?? owner?.sub ?? null)
   },
 
-  async load({ journeyId, userId } = {}) {
+  async load({ journeyId, userId, owner } = {}) {
     if (journeyId != null) {
-      const fulfilment = await getFulfilment(journeyId)
+      const fulfilment = await getFulfilment(journeyId, owner)
       return fulfilment === undefined
         ? undefined
-        : marshal(fulfilment, userId ?? null)
+        : marshal(fulfilment, userId ?? owner?.sub ?? null)
     }
     return undefined
   },
 
-  async list({ journeyIds = [] } = {}) {
-    const fulfilments = await Promise.all(journeyIds.map(getFulfilment))
-    return fulfilments
-      .filter((fulfilment) => fulfilment !== undefined)
-      .map((fulfilment) => marshal(fulfilment))
+  async list({ owner, page = 1, sort = 'createdAt,desc' } = {}) {
+    const response = await fetch(
+      `${fulfilmentsUrl}?page=${page}&sort=${sort}`,
+      {
+        method: 'GET',
+        headers: headers(owner)
+      }
+    )
+    if (!response.ok) throw failed('list fulfilments', response)
+    const result = await response.json()
+    return result.items.map(marshalListItem)
   },
 
-  async has(journeyId) {
-    return (await getFulfilment(journeyId)) !== undefined
+  async has(journeyId, owner) {
+    return (await getFulfilment(journeyId, owner)) !== undefined
   },
 
-  async replaceFulfilment(journeyId, fulfilment, { known } = {}) {
-    const status = await resolveStatus(journeyId, known)
+  async replaceFulfilment(journeyId, fulfilment, { known, owner } = {}) {
+    const status = await resolveStatus(journeyId, known, owner)
     assertWritable(journeyId, status)
 
     const snapshot = structuredClone(fulfilment ?? {})
@@ -175,14 +190,15 @@ export const records = {
     const canonicalResponse = await put(
       `${fulfilmentsUrl}/${journeyId}`,
       canonicalDocument,
-      'save fulfilment'
+      'save fulfilment',
+      owner
     )
     const saved = await canonicalResponse.json()
 
     const failures = []
     for (const projection of projections) {
       try {
-        await putProjection({ journeyId, ...projection })
+        await putProjection({ journeyId, owner, ...projection })
       } catch (error) {
         failures.push({ name: projection.name, error })
       }
@@ -191,25 +207,25 @@ export const records = {
       throwProjectionFailure(journeyId, failures)
     }
 
-    return marshal(saved)
+    return marshal(saved, owner?.sub ?? null)
   },
 
-  async finalise(journeyId) {
+  async finalise(journeyId, owner) {
     const response = await fetch(`${fulfilmentsUrl}/${journeyId}/submit`, {
       method: 'POST',
-      headers: headers()
+      headers: headers(owner)
     })
     if (!response.ok) throw failed('submit fulfilment', response)
-    return marshal(await response.json())
+    return marshal(await response.json(), owner?.sub ?? null)
   },
 
-  async amend(journeyId) {
+  async amend(journeyId, owner) {
     const response = await fetch(`${fulfilmentsUrl}/${journeyId}/amend`, {
       method: 'POST',
-      headers: headers()
+      headers: headers(owner)
     })
     if (!response.ok) throw failed('amend fulfilment', response)
-    return marshal(await response.json())
+    return marshal(await response.json(), owner?.sub ?? null)
   },
 
   async clear() {}

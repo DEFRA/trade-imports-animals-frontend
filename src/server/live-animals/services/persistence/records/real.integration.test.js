@@ -21,12 +21,20 @@ const backendBaseUrl =
 const fulfilmentsUrl = `${backendBaseUrl}/fulfilments`
 const notificationsUrl = `${backendBaseUrl}/notifications`
 const proposedNotificationsUrl = `${backendBaseUrl}/proposed-notifications`
+const owner = {
+  sub: 'live-animals-real-integration-user',
+  organisation: 'live-animals-real-integration-organisation'
+}
+const ownerHeaders = {
+  'X-Owner-Id': owner.sub,
+  'X-Owner-Organisation': owner.organisation
+}
 
 const replaceAnswers = (journeyId, answers) =>
-  records.replaceFulfilment(journeyId, assembleFulfilments(answers))
+  records.replaceFulfilment(journeyId, assembleFulfilments(answers), { owner })
 const answersOf = (journey) => projectAnswers(journey.fulfilment)
 const json = async (url) => {
-  const response = await fetch(url)
+  const response = await fetch(url, { headers: ownerHeaders })
   if (!response.ok) {
     throw new Error(`GET ${url} failed: ${response.status}`)
   }
@@ -89,7 +97,9 @@ describe.skipIf(!runsIt('real'))(
   () => {
     beforeAll(async () => {
       try {
-        await fetch(`${fulfilmentsUrl}/GBN-AG-99-ZZZZZZ`)
+        await fetch(`${fulfilmentsUrl}/GBN-AG-99-ZZZZZZ`, {
+          headers: ownerHeaders
+        })
       } catch (cause) {
         throw new Error(
           `Backend not reachable at ${backendBaseUrl} — start the matching stack before running this integration test.`,
@@ -99,23 +109,25 @@ describe.skipIf(!runsIt('real'))(
     })
 
     it('Should mint an empty canonical journey and load it directly', async () => {
-      const created = await records.create()
+      const created = await records.create({ owner })
 
       expect(created.journeyId).toMatch(REF_PATTERN)
       expect(created.status).toBe(IN_PROGRESS)
       expect(created.submittedAt).toBeNull()
       expect(created.fulfilment).toEqual({})
 
-      const loaded = await records.load({ journeyId: created.journeyId })
-      expect(loaded).toEqual({ ...created, userId: null })
+      const loaded = await records.load({ journeyId: created.journeyId, owner })
+      expect(loaded).toEqual(created)
     })
 
     it('Should round-trip canonical fulfilment and store both projections from it', async () => {
-      const { journeyId } = await records.create()
+      const { journeyId } = await records.create({ owner })
       const snapshot = assembleFulfilments(answers)
 
-      const saved = await records.replaceFulfilment(journeyId, snapshot)
-      const loaded = await records.load({ journeyId })
+      const saved = await records.replaceFulfilment(journeyId, snapshot, {
+        owner
+      })
+      const loaded = await records.load({ journeyId, owner })
       const [canonical, current, proposed] = await Promise.all([
         json(`${fulfilmentsUrl}/${journeyId}`),
         json(`${notificationsUrl}/${journeyId}`),
@@ -139,7 +151,7 @@ describe.skipIf(!runsIt('real'))(
     })
 
     it('Should whole-replace the canonical snapshot so removed values stay removed', async () => {
-      const { journeyId } = await records.create()
+      const { journeyId } = await records.create({ owner })
 
       await replaceAnswers(journeyId, {
         countryOfOrigin: 'FR',
@@ -147,22 +159,22 @@ describe.skipIf(!runsIt('real'))(
       })
       await replaceAnswers(journeyId, { countryOfOrigin: 'DE' })
 
-      const loaded = await records.load({ journeyId })
+      const loaded = await records.load({ journeyId, owner })
       expect(answersOf(loaded).countryOfOrigin).toBe('DE')
       expect(answersOf(loaded).internalReferenceNumber).toBeUndefined()
     })
 
     it('Should submit and amend through the canonical lifecycle', async () => {
-      const { journeyId } = await records.create()
+      const { journeyId } = await records.create({ owner })
       await replaceAnswers(journeyId, { countryOfOrigin: 'FR' })
 
-      expect((await records.finalise(journeyId)).status).toBe(SUBMITTED)
-      expect((await records.load({ journeyId })).status).toBe(SUBMITTED)
+      expect((await records.finalise(journeyId, owner)).status).toBe(SUBMITTED)
+      expect((await records.load({ journeyId, owner })).status).toBe(SUBMITTED)
       await expect(
         replaceAnswers(journeyId, { countryOfOrigin: 'DE' })
       ).rejects.toThrow(/is submitted — writes blocked/)
 
-      const amended = await records.amend(journeyId)
+      const amended = await records.amend(journeyId, owner)
       expect(amended.status).toBe(IN_PROGRESS)
       expect(amended.submittedAt).toBeNull()
       await expect(
@@ -172,9 +184,12 @@ describe.skipIf(!runsIt('real'))(
 
     it('Should return undefined and has=false for an unknown exact id', async () => {
       expect(
-        await records.load({ journeyId: 'GBN-AG-99-ZZZZZZ' })
+        await records.load({
+          journeyId: 'GBN-AG-99-ZZZZZZ',
+          owner
+        })
       ).toBeUndefined()
-      expect(await records.has('GBN-AG-99-ZZZZZZ')).toBe(false)
+      expect(await records.has('GBN-AG-99-ZZZZZZ', owner)).toBe(false)
     })
   }
 )

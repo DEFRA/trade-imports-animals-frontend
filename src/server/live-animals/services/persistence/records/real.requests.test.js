@@ -26,6 +26,7 @@ const notificationsUrl = `${backendBaseUrl}/notifications`
 const proposedNotificationsUrl = `${backendBaseUrl}/proposed-notifications`
 const journeyId = 'GBN-AG-26-ABC123'
 const createdAt = '2026-07-23T09:00:00'
+const owner = { sub: 'user-1', organisation: 'organisation-1' }
 
 const canonical = ({
   id = journeyId,
@@ -41,6 +42,10 @@ const canonical = ({
 })
 
 const jsonOf = (request) => request.clone().json()
+const expectOwnerHeaders = (request) => {
+  expect(request.headers.get('X-Owner-Id')).toBe(owner.sub)
+  expect(request.headers.get('X-Owner-Organisation')).toBe(owner.organisation)
+}
 
 describe('real records adapter — canonical fulfilment boundary', () => {
   beforeEach(() => {
@@ -50,11 +55,12 @@ describe('real records adapter — canonical fulfilment boundary', () => {
   it('Should create an empty canonical fulfilment with POST /fulfilments', async () => {
     fetchMocker.mockResponse(JSON.stringify(canonical()))
 
-    const created = await records.create({ userId: 'user-1' })
+    const created = await records.create({ owner })
 
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(fulfilmentsUrl)
     expect(request.method).toBe('POST')
+    expectOwnerHeaders(request)
     expect(await request.clone().text()).toBe('')
     expect(created).toEqual({
       journeyId,
@@ -74,7 +80,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
 
     let surfaced
     try {
-      await records.create()
+      await records.create({ owner })
     } catch (error) {
       surfaced = error
     }
@@ -101,11 +107,12 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     ]
     fetchMocker.mockResponse(JSON.stringify(canonical({ fulfilment: encoded })))
 
-    const loaded = await records.load({ journeyId, userId: 'user-1' })
+    const loaded = await records.load({ journeyId, owner })
 
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(`${fulfilmentsUrl}/${journeyId}`)
     expect(request.method).toBe('GET')
+    expectOwnerHeaders(request)
     expect(loaded.fulfilment).toEqual(decodePersistedFulfilment(encoded))
     expect(loaded.userId).toBe('user-1')
     expect(
@@ -113,6 +120,18 @@ describe('real records adapter — canonical fulfilment boundary', () => {
         .requests()
         .some((entry) => entry.url.startsWith(notificationsUrl))
     ).toBe(false)
+  })
+
+  it('Should return undefined when the owner-scoped fulfilment GET returns 404', async () => {
+    fetchMocker.mockResponse('Not Found', { status: 404 })
+
+    const loaded = await records.load({ journeyId, owner })
+
+    const [request] = fetchMocker.requests()
+    expect(request.url).toBe(`${fulfilmentsUrl}/${journeyId}`)
+    expect(request.method).toBe('GET')
+    expectOwnerHeaders(request)
+    expect(loaded).toBeUndefined()
   })
 
   it('Should derive and PUT all three documents from one fulfilment snapshot, canonical first', async () => {
@@ -135,7 +154,8 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     )
 
     const saved = await records.replaceFulfilment(journeyId, snapshot, {
-      known: { journeyId, status: IN_PROGRESS }
+      known: { journeyId, status: IN_PROGRESS },
+      owner
     })
 
     const requests = fetchMocker.requests()
@@ -144,6 +164,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       { method: 'PUT', url: `${notificationsUrl}/${journeyId}` },
       { method: 'PUT', url: `${proposedNotificationsUrl}/${journeyId}` }
     ])
+    requests.forEach(expectOwnerHeaders)
     expect(await jsonOf(requests[0])).toEqual({
       id: journeyId,
       fulfilment: encoded
@@ -172,7 +193,8 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     )
 
     await records.replaceFulfilment(journeyId, snapshot, {
-      known: { journeyId, status: IN_PROGRESS }
+      known: { journeyId, status: IN_PROGRESS },
+      owner
     })
 
     const requests = fetchMocker.requests()
@@ -182,6 +204,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       `${notificationsUrl}/${journeyId}`,
       `${proposedNotificationsUrl}/${journeyId}`
     ])
+    requests.forEach(expectOwnerHeaders)
     expect(await jsonOf(requests[1])).toEqual(await jsonOf(requests[2]))
   })
 
@@ -198,7 +221,8 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     let surfaced
     try {
       await records.replaceFulfilment(journeyId, snapshot, {
-        known: { journeyId, status: IN_PROGRESS }
+        known: { journeyId, status: IN_PROGRESS },
+        owner
       })
     } catch (error) {
       surfaced = error
@@ -220,6 +244,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       `${notificationsUrl}/${journeyId}`,
       `${proposedNotificationsUrl}/${journeyId}`
     ])
+    requests.forEach(expectOwnerHeaders)
     expect(await jsonOf(requests[0])).toEqual({
       id: journeyId,
       fulfilment: encoded
@@ -240,12 +265,11 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       [JSON.stringify(canonical()), { status: 200 }]
     )
 
-    const submitted = await records.finalise(journeyId)
-    const amended = await records.amend(journeyId)
+    const submitted = await records.finalise(journeyId, owner)
+    const amended = await records.amend(journeyId, owner)
 
-    expect(
-      fetchMocker.requests().map(({ method, url }) => ({ method, url }))
-    ).toEqual([
+    const requests = fetchMocker.requests()
+    expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
       {
         method: 'POST',
         url: `${fulfilmentsUrl}/${journeyId}/submit`
@@ -255,6 +279,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
         url: `${fulfilmentsUrl}/${journeyId}/amend`
       }
     ])
+    requests.forEach(expectOwnerHeaders)
     expect(submitted.status).toBe(SUBMITTED)
     expect(submitted.submittedAt).toBe('2026-07-23T10:00:00')
     expect(amended.status).toBe(IN_PROGRESS)

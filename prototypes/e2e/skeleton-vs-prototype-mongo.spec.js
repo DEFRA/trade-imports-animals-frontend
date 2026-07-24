@@ -379,7 +379,18 @@ const driveSkeleton = async (page) => {
   return url.pathname.split('/').filter(Boolean).pop()
 }
 
-test.describe('skeleton vs prototype — same persisted notification', () => {
+// SKIPPED at pr-005: journey ownership (X-Owner-Id / X-Owner-Organisation, now
+// enforced on the backend) deliberately diverges the promoted prototype from the
+// old src/server skeleton journey. The skeleton's legacy client sends no owner
+// headers, so it can no longer persist against the owner-enforced backend, and
+// this spec's own direct /notifications fetches 400 without them — the old-vs-new
+// equivalence this spec asserted is no longer meaningful. pr-011 formally retires
+// this comparison and replaces its protection with Mapper A payload/contract
+// fixtures + a real backend projection contract test. Mapper A output stays
+// covered meanwhile by the frontend mapper unit tests and the backend
+// NotificationProjectionIT (owner-aware).
+test.describe
+  .skip('skeleton vs prototype — same persisted notification', () => {
   test('both journeys persist an equivalent DRAFT notification', async ({
     page,
     request

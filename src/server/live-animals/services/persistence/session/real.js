@@ -28,6 +28,18 @@ export const session = {
     return request?.auth?.credentials?.sub ?? STUB_USER
   },
 
+  async owner(request) {
+    const credentials = request?.auth?.credentials
+    return {
+      // The fallback supports auth-off real-mode development and parity tests only.
+      sub: credentials?.sub ?? STUB_USER,
+      organisation:
+        credentials?.organisationId ??
+        credentials?.profile?.organisationId ??
+        ''
+    }
+  },
+
   async knownJourneyIds(request) {
     return knownFrom(request)
   },

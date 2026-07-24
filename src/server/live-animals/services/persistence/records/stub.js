@@ -43,10 +43,11 @@ const loadWritable = (journeyId) => {
 }
 
 export const records = {
-  async create({ userId } = {}) {
+  async create({ userId, owner } = {}) {
     const document = {
       id: mintReferenceNumber(),
-      userId: userId ?? null,
+      userId: userId ?? owner?.sub ?? null,
+      owner: owner == null ? null : structuredClone(owner),
       status: IN_PROGRESS,
       createdAt: new Date().toISOString(),
       submittedAt: null,
@@ -57,7 +58,7 @@ export const records = {
     return structuredClone(marshal(document))
   },
 
-  async load({ journeyId, userId } = {}) {
+  async load({ journeyId, userId, owner: _owner } = {}) {
     const resolvedJourneyId =
       journeyId ?? (userId != null ? byUser.get(userId) : undefined)
     if (resolvedJourneyId == null) return undefined
@@ -65,7 +66,7 @@ export const records = {
     return journey ? structuredClone(marshal(journey)) : undefined
   },
 
-  async list({ journeyIds = [] } = {}) {
+  async list({ journeyIds = [], owner: _owner } = {}) {
     return journeyIds
       .map((journeyId) => journeys.get(journeyId))
       .filter(Boolean)
@@ -76,7 +77,7 @@ export const records = {
     return journeys.has(journeyId)
   },
 
-  async replaceFulfilment(journeyId, fulfilment) {
+  async replaceFulfilment(journeyId, fulfilment, { owner: _owner } = {}) {
     const journey = loadWritable(journeyId)
     journey.fulfilment = structuredClone(
       encodeEvaluatorFulfilments(fulfilment ?? {})
@@ -84,14 +85,14 @@ export const records = {
     return structuredClone(marshal(journey))
   },
 
-  async finalise(journeyId) {
+  async finalise(journeyId, _owner) {
     const journey = loadWritable(journeyId)
     journey.status = SUBMITTED
     journey.submittedAt = new Date().toISOString()
     return structuredClone(marshal(journey))
   },
 
-  async amend(journeyId) {
+  async amend(journeyId, _owner) {
     const journey = journeys.get(journeyId)
     if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
     if (journey.status !== SUBMITTED) {

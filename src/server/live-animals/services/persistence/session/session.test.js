@@ -3,12 +3,36 @@ import { session } from './stub.js'
 import {
   KNOWN_JOURNEYS_COOKIE,
   OPENING_RUN_COOKIE,
-  FLOW_ONLY_ANSWERS_COOKIE
+  FLOW_ONLY_ANSWERS_COOKIE,
+  STUB_USER
 } from '../../../engine/persistence/session.js'
 import { recordingH } from '../../../engine/test-support.js'
 
 const requestKnowing = (...journeyIds) => ({
   state: { [KNOWN_JOURNEYS_COOKIE]: journeyIds }
+})
+
+describe('#session.owner', () => {
+  it('Should read the stub owner headers', async () => {
+    await expect(
+      session.owner({
+        headers: {
+          'x-stub-user': 'stub-user-99',
+          'x-stub-owner-org': 'stub-organisation-42'
+        }
+      })
+    ).resolves.toEqual({
+      sub: 'stub-user-99',
+      organisation: 'stub-organisation-42'
+    })
+  })
+
+  it('Should default to the stub user and an empty organisation', async () => {
+    await expect(session.owner({ headers: {} })).resolves.toEqual({
+      sub: STUB_USER,
+      organisation: ''
+    })
+  })
 })
 
 describe('#session.knownJourneyIds', () => {

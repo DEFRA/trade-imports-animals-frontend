@@ -216,6 +216,7 @@ export const submitJourney = async (request, h) => {
       scope: current.scope
     }
   }
-  const submitted = await records.finalise(current.journey.journeyId)
+  const owner = await session.owner(request)
+  const submitted = await records.finalise(current.journey.journeyId, owner)
   return { ok: true, journey: submitted, scope: current.scope }
 }

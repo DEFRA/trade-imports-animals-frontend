@@ -48,7 +48,7 @@ const memoWrite = (request, journey) => {
 
 export const startJourney = async (request, h) => {
   const journey = await records.create({
-    userId: await session.userId(request)
+    owner: await session.owner(request)
   })
   await session.addKnownJourney(request, h, journey.journeyId)
   memoWrite(request, journey)
@@ -63,7 +63,8 @@ export const currentJourney = async (request, h) => {
   const journeyId = request.params?.journeyId
   if (!journeyId) throw Boom.notFound()
   if (!(await isKnownJourney(request, journeyId))) throw Boom.notFound()
-  const loaded = await records.load({ journeyId })
+  const owner = await session.owner(request)
+  const loaded = await records.load({ journeyId, owner })
   if (!loaded) throw Boom.notFound()
   memoWrite(request, loaded)
   return structuredClone(loaded)
@@ -76,8 +77,10 @@ export const replaceJourneyFulfilment = async (
 ) => {
   const cached = memoRead(request)
   const known = cached?.journeyId === journeyId ? cached : undefined
+  const owner = await session.owner(request)
   const saved = await records.replaceFulfilment(journeyId, fulfilment, {
-    known
+    known,
+    owner
   })
   memoWrite(
     request,
@@ -86,18 +89,24 @@ export const replaceJourneyFulfilment = async (
   return known ? { ...known, fulfilment: structuredClone(fulfilment) } : saved
 }
 
-export const listKnownJourneys = async (request) =>
-  records.list({ journeyIds: await session.knownJourneyIds(request) })
+export const listKnownJourneys = async (request) => {
+  const journeyIds = await session.knownJourneyIds(request)
+  const owner = await session.owner(request)
+  return records.list({ journeyIds, owner })
+}
 
 export const isKnownJourney = async (request, journeyId) =>
   (await session.knownJourneyIds(request)).includes(journeyId)
 
 export const amendJourney = async (request, h, journeyId) => {
   if (!(await isKnownJourney(request, journeyId))) return undefined
-  const journey = await records.load({ journeyId })
+  const owner = await session.owner(request)
+  const journey = await records.load({ journeyId, owner })
   if (!journey) return undefined
   const editable =
-    journey.status === SUBMITTED ? await records.amend(journeyId) : journey
+    journey.status === SUBMITTED
+      ? await records.amend(journeyId, owner)
+      : journey
   memoWrite(request, editable)
   return editable
 }
