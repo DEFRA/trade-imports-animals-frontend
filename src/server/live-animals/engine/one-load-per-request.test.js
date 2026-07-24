@@ -31,7 +31,7 @@ const proposedNotificationsUrl = `${backendBaseUrl}/proposed-notifications`
 
 const fulfilmentBody = JSON.stringify({
   id: ref,
-  status: 'IN_PROGRESS',
+  status: 'DRAFT',
   createdAt: '2026-07-23T09:00:00',
   submittedAt: null,
   fulfilment: []
@@ -68,7 +68,7 @@ describe('one load per request — real records adapter GET count', () => {
           .then((body) =>
             JSON.stringify({
               ...JSON.parse(body),
-              status: 'IN_PROGRESS',
+              status: 'DRAFT',
               createdAt: '2026-07-23T09:00:00',
               submittedAt: null
             })

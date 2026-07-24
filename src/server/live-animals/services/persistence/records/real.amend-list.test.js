@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
-import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
+import { AMEND, DRAFT, SUBMITTED } from '../../../engine/persistence/records.js'
 import { records } from './real.js'
 
 const fetchMocker = createFetchMock(vi)
@@ -27,8 +27,8 @@ describe('real records adapter — amend', () => {
     fetchMocker.resetMocks()
   })
 
-  test('Should POST the amend endpoint and marshal a writable in-progress record', async () => {
-    fetchMocker.mockResponse(JSON.stringify(fulfilment('GBN-1', 'IN_PROGRESS')))
+  test('Should POST the amend endpoint and marshal a writable amend record', async () => {
+    fetchMocker.mockResponse(JSON.stringify(fulfilment('GBN-1', 'AMEND')))
 
     const amended = await records.amend('GBN-1', owner)
 
@@ -36,7 +36,7 @@ describe('real records adapter — amend', () => {
     expect(request.url).toBe(`${fulfilmentsUrl}/GBN-1/amend`)
     expect(request.method).toBe('POST')
     expectOwnerHeaders(request)
-    expect(amended.status).toBe(IN_PROGRESS)
+    expect(amended.status).toBe(AMEND)
     expect(amended.submittedAt).toBeNull()
     expect(amended.createdAt).toBe('2026-07-14T09:00:00')
   })
@@ -60,11 +60,12 @@ describe('real records adapter — owner-scoped paged list', () => {
       JSON.stringify({
         page: 1,
         size: 20,
-        totalElements: 2,
+        totalElements: 3,
         totalPages: 1,
         items: [
-          fulfilment('GBN-1', 'IN_PROGRESS'),
-          fulfilment('GBN-2', 'SUBMITTED')
+          fulfilment('GBN-1', 'DRAFT'),
+          fulfilment('GBN-2', 'SUBMITTED'),
+          fulfilment('GBN-3', 'AMEND')
         ]
       })
     )
@@ -81,7 +82,7 @@ describe('real records adapter — owner-scoped paged list', () => {
     expect(listed).toEqual([
       {
         journeyId: 'GBN-1',
-        status: IN_PROGRESS,
+        status: DRAFT,
         createdAt: '2026-07-14T09:00:00',
         submittedAt: null
       },
@@ -90,13 +91,19 @@ describe('real records adapter — owner-scoped paged list', () => {
         status: SUBMITTED,
         createdAt: '2026-07-14T09:00:00',
         submittedAt: '2026-07-14T10:00:00'
+      },
+      {
+        journeyId: 'GBN-3',
+        status: AMEND,
+        createdAt: '2026-07-14T09:00:00',
+        submittedAt: null
       }
     ])
   })
 
   test('Should implement has with an exact-id canonical GET', async () => {
     fetchMocker.mockResponses(
-      [JSON.stringify(fulfilment('GBN-1', 'IN_PROGRESS')), { status: 200 }],
+      [JSON.stringify(fulfilment('GBN-1', 'DRAFT')), { status: 200 }],
       ['Not Found', { status: 404 }]
     )
 

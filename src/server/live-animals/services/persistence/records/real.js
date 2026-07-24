@@ -1,6 +1,11 @@
 import { getTraceId } from '@defra/hapi-tracing'
 import { createLogger } from '../../../../common/helpers/logging/logger.js'
-import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
+import {
+  AMEND,
+  DELETED,
+  DRAFT,
+  SUBMITTED
+} from '../../../engine/persistence/records.js'
 import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments
@@ -19,7 +24,6 @@ const fulfilmentsUrl = `${backendBaseUrl}/fulfilments`
 const notificationsUrl = `${backendBaseUrl}/notifications`
 const proposedNotificationsUrl = `${backendBaseUrl}/proposed-notifications`
 
-const BACKEND_SUBMITTED = 'SUBMITTED'
 const HTTP_NOT_FOUND = 404
 const MAX_PROJECTION_ATTEMPTS = 2
 
@@ -34,8 +38,20 @@ const headers = (owner) => ({
 
 const failed = (action, response) => new BackendRequestError(action, response)
 
-const mapStatus = (backendStatus) =>
-  backendStatus === BACKEND_SUBMITTED ? SUBMITTED : IN_PROGRESS
+const STATUS_BY_BACKEND_STATUS = Object.freeze({
+  DRAFT,
+  SUBMITTED,
+  AMEND,
+  DELETED
+})
+
+export const mapStatus = (backendStatus) => {
+  const status = STATUS_BY_BACKEND_STATUS[backendStatus]
+  if (status === undefined) {
+    throw new Error(`Unknown backend fulfilment status "${backendStatus}"`)
+  }
+  return status
+}
 
 const marshal = (document, userId = null) => {
   const status = mapStatus(document.status)
@@ -66,8 +82,9 @@ const resolveStatus = async (journeyId, known, owner) => {
 }
 
 const assertWritable = (journeyId, status) => {
-  if (status === SUBMITTED) {
-    throw new Error(`Journey "${journeyId}" is submitted — writes blocked`)
+  if (status !== DRAFT && status !== AMEND) {
+    const reason = status === SUBMITTED ? 'submitted' : status
+    throw new Error(`Journey "${journeyId}" is ${reason} — writes blocked`)
   }
 }
 

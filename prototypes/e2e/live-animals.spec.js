@@ -3075,14 +3075,14 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(page.locator('.app-journey-strip')).toContainText(reference)
 
     // Amend transitions the notification back to editable and re-enters the
-    // journey at the hub — the strip shows Draft again (the pinned amending
-    // status; the backend AMEND tag is not surfaced as its own strip status).
+    // journey at the hub — the strip now surfaces the AMEND status as its own
+    // "Amending" tag (pr-007: the full DRAFT/SUBMITTED/AMEND/DELETED vocabulary).
     await page.goto(`${BASE}/home`)
     await row
       .getByRole('button', { name: `Amend notification ${reference}` })
       .click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-    await expect(page.locator('.app-journey-strip')).toContainText('Draft')
+    await expect(page.locator('.app-journey-strip')).toContainText('Amending')
     await expect(page.locator('.app-journey-strip')).toContainText(reference)
 
     // The journey really is writable again: change an answer and save.

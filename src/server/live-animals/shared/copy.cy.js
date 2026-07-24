@@ -32,7 +32,9 @@ export const copy = {
   },
   journeyStrip: {
     draft: 'Drafft',
-    submitted: "Wedi'i gyflwyno"
+    submitted: "Wedi'i gyflwyno",
+    amend: 'Wrthi’n diwygio',
+    deleted: "Wedi'i ddileu"
   }
 }
 

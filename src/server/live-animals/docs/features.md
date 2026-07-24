@@ -426,7 +426,8 @@ Controllers import one barrel: `import * as state from
 | `state.collectionCapAt(answers, path)` | The append cap from the sibling count field       |
 | `state.submitJourney(request, h)`      | Finalise — freeze until an amend                  |
 | `state.makeScope(answers)`             | Rebuild scope from raw answers                    |
-| `state.SUBMITTED`                      | The submitted-status constant                     |
+| `state.DRAFT` / `SUBMITTED`            | Draft and submitted status constants              |
+| `state.AMEND` / `DELETED`              | Amend and terminal deleted status constants       |
 
 Some verbs live outside the barrel on purpose:
 

@@ -1,5 +1,5 @@
 import { randomInt } from 'node:crypto'
-import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
+import { AMEND, DRAFT, SUBMITTED } from '../../../engine/persistence/records.js'
 import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments
@@ -30,8 +30,10 @@ const marshal = (document) => ({
 })
 
 const assertWritable = (journey) => {
-  if (journey.status === SUBMITTED) {
-    throw new Error(`Journey "${journey.id}" is submitted — writes blocked`)
+  if (journey.status !== DRAFT && journey.status !== AMEND) {
+    throw new Error(
+      `Journey "${journey.id}" is ${journey.status} — writes blocked`
+    )
   }
 }
 
@@ -48,7 +50,7 @@ export const records = {
       id: mintReferenceNumber(),
       userId: userId ?? owner?.sub ?? null,
       owner: owner == null ? null : structuredClone(owner),
-      status: IN_PROGRESS,
+      status: DRAFT,
       createdAt: new Date().toISOString(),
       submittedAt: null,
       fulfilment: []
@@ -98,7 +100,7 @@ export const records = {
     if (journey.status !== SUBMITTED) {
       throw new Error(`Journey "${journeyId}" is not submitted — cannot amend`)
     }
-    journey.status = IN_PROGRESS
+    journey.status = AMEND
     journey.submittedAt = null
     return structuredClone(marshal(journey))
   },

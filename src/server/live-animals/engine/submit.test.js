@@ -3,7 +3,7 @@ import { commit, submitJourney } from './index.js'
 import {
   records,
   configureRecords,
-  IN_PROGRESS,
+  DRAFT,
   SUBMITTED
 } from './persistence/records.js'
 import { configureSession } from './persistence/session.js'
@@ -40,13 +40,13 @@ describe('submitJourney — gates on scope readiness, finalises via records', ()
     expect((await records.load({ journeyId })).status).toBe(SUBMITTED)
   })
 
-  it('Should return { ok: false } and leave the journey in-progress when not CYA-ready', async () => {
+  it('Should return { ok: false } and leave the journey in draft when not CYA-ready', async () => {
     configureReadyForCheckYourAnswers(() => false)
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
 
     const result = await submitJourney(buildRequest(), stubH())
 
     expect(result.ok).toBe(false)
-    expect((await records.load({ journeyId })).status).toBe(IN_PROGRESS)
+    expect((await records.load({ journeyId })).status).toBe(DRAFT)
   })
 })

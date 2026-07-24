@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { commit, appendEntryAt, submitJourney } from './write.js'
-import {
-  records,
-  configureRecords,
-  IN_PROGRESS
-} from './persistence/records.js'
+import { records, configureRecords, DRAFT } from './persistence/records.js'
 import { configureSession } from './persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
@@ -67,6 +63,6 @@ describe('#write.js — answer-key guard', () => {
     const result = await submitJourney(buildRequest(), stubH())
 
     expect(result.ok).toBe(true)
-    expect((await records.load({ journeyId })).status).not.toBe(IN_PROGRESS)
+    expect((await records.load({ journeyId })).status).not.toBe(DRAFT)
   })
 })

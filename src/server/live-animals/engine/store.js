@@ -2,7 +2,7 @@ import { records } from './persistence/records.js'
 import { projectAnswers } from '../bridge/fulfilments.js'
 import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 
-export { IN_PROGRESS, SUBMITTED } from './persistence/records.js'
+export { DRAFT, SUBMITTED, AMEND, DELETED } from './persistence/records.js'
 
 const withAnswersProjection = async (journeyPromise) => {
   const journey = await journeyPromise

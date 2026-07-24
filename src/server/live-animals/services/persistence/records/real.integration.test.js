@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { records } from './real.js'
-import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
+import { AMEND, DRAFT, SUBMITTED } from '../../../engine/persistence/records.js'
 import { runsIt } from '../it-mode.js'
 import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../../../bridge/fulfilments.js'
@@ -112,7 +112,7 @@ describe.skipIf(!runsIt('real'))(
       const created = await records.create({ owner })
 
       expect(created.journeyId).toMatch(REF_PATTERN)
-      expect(created.status).toBe(IN_PROGRESS)
+      expect(created.status).toBe(DRAFT)
       expect(created.submittedAt).toBeNull()
       expect(created.fulfilment).toEqual({})
 
@@ -175,11 +175,11 @@ describe.skipIf(!runsIt('real'))(
       ).rejects.toThrow(/is submitted — writes blocked/)
 
       const amended = await records.amend(journeyId, owner)
-      expect(amended.status).toBe(IN_PROGRESS)
+      expect(amended.status).toBe(AMEND)
       expect(amended.submittedAt).toBeNull()
       await expect(
         replaceAnswers(journeyId, { countryOfOrigin: 'DE' })
-      ).resolves.toMatchObject({ status: IN_PROGRESS })
+      ).resolves.toMatchObject({ status: AMEND })
     })
 
     it('Should return undefined and has=false for an unknown exact id', async () => {

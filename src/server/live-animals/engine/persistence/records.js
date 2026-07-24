@@ -1,5 +1,7 @@
-export const IN_PROGRESS = 'in-progress'
+export const DRAFT = 'draft'
 export const SUBMITTED = 'submitted'
+export const AMEND = 'amend'
+export const DELETED = 'deleted'
 
 const unconfigured = () => {
   throw new Error('records not configured — call configureRecords() at boot')

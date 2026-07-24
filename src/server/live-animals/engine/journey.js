@@ -6,7 +6,7 @@ import {
   OPENING_RUN_COOKIE,
   FLOW_ONLY_ANSWERS_COOKIE
 } from './persistence/session.js'
-import { records, SUBMITTED } from './persistence/records.js'
+import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
 
 export { KNOWN_JOURNEYS_COOKIE } from './persistence/session.js'
 
@@ -106,7 +106,10 @@ export const amendJourney = async (request, h, journeyId) => {
   const editable =
     journey.status === SUBMITTED
       ? await records.amend(journeyId, owner)
-      : journey
+      : journey.status === DRAFT || journey.status === AMEND
+        ? journey
+        : undefined
+  if (!editable) return undefined
   memoWrite(request, editable)
   return editable
 }

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { store, IN_PROGRESS, SUBMITTED } from './store.js'
+import { store, DRAFT, SUBMITTED } from './store.js'
 import { configureRecords } from './persistence/records.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
 import {
@@ -17,11 +17,11 @@ describe('store clone/freeze contract', () => {
     expect(Object.isFrozen(store)).toBe(true)
   })
 
-  it('Should mint a fresh in-progress journey with empty canonical fulfilment', async () => {
+  it('Should mint a fresh draft journey with empty canonical fulfilment', async () => {
     const journey = await store.create()
     expect(journey).toMatchObject({
       journeyId: expect.any(String),
-      status: IN_PROGRESS,
+      status: DRAFT,
       submittedAt: null,
       fulfilment: {},
       answers: {}

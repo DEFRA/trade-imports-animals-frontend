@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {
   configureRecords,
   records,
-  IN_PROGRESS,
+  AMEND,
   SUBMITTED
 } from '../../engine/persistence/records.js'
 import {
@@ -90,7 +90,10 @@ describe('dashboard notifications list', () => {
 
     const [row] = h.captured.view.context.notificationRows
     expect(row.reference).toBe(draft.journeyId)
-    expect(row.status.text).toBe('Draft')
+    expect(row.status).toEqual({
+      text: 'Draft',
+      classes: 'govuk-tag--blue'
+    })
     expect(row.created).toEqual(expect.any(String))
     expect(row.submitted).toBe('Not submitted')
     expect(row.actions).toEqual([
@@ -108,7 +111,10 @@ describe('dashboard notifications list', () => {
     await listGet(buildRequest({ knownJourneyIds: [submitted.journeyId] }), h)
 
     const [row] = h.captured.view.context.notificationRows
-    expect(row.status.text).toBe('Submitted')
+    expect(row.status).toEqual({
+      text: 'Submitted',
+      classes: 'govuk-tag--green'
+    })
     expect(row.submitted).toEqual(expect.any(String))
     expect(row.submitted).not.toBe('Not submitted')
     expect(row.actions).toEqual([
@@ -162,14 +168,14 @@ describe('dashboard row actions', () => {
 
     expect(h.captured.redirect).toBe(hubPath(submitted.journeyId))
     const amended = await records.load({ journeyId: submitted.journeyId })
-    expect(amended.status).toBe(IN_PROGRESS)
+    expect(amended.status).toBe(AMEND)
     await records.replaceFulfilment(
       submitted.journeyId,
       assembleFulfilments({ countryOfOrigin: 'FR' })
     )
   })
 
-  it('Should list an amending journey as Draft again', async () => {
+  it('Should list an amending journey with a yellow Amending tag', async () => {
     const submitted = await startSubmitted()
     await amendPost(
       buildRequest({
@@ -183,7 +189,10 @@ describe('dashboard row actions', () => {
     await listGet(buildRequest({ knownJourneyIds: [submitted.journeyId] }), h)
 
     const [row] = h.captured.view.context.notificationRows
-    expect(row.status.text).toBe('Draft')
+    expect(row.status).toEqual({
+      text: 'Amending',
+      classes: 'govuk-tag--yellow'
+    })
     expect(row.submitted).toBe('Not submitted')
     expect(row.actions.map((action) => action.text)).toEqual(['Resume'])
   })
@@ -202,7 +211,7 @@ describe('dashboard row actions', () => {
     expect(h.captured.redirect).toBe(hubPath(submitted.journeyId))
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
-    ).toBe(IN_PROGRESS)
+    ).toBe(AMEND)
   })
 
   it('Should bounce an amend for a journey the session does not know and leave it frozen', async () => {

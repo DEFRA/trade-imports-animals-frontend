@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
-import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
+import {
+  AMEND,
+  DELETED,
+  DRAFT,
+  SUBMITTED
+} from '../../../engine/persistence/records.js'
 import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
 import {
   countryOfOrigin,
@@ -15,7 +20,7 @@ import {
   fulfilmentToNotification
 } from './mapper.js'
 import { isRecoverableBackendError } from './errors.js'
-import { records } from './real.js'
+import { mapStatus, records } from './real.js'
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
@@ -31,7 +36,7 @@ const owner = { sub: 'user-1', organisation: 'organisation-1' }
 const canonical = ({
   id = journeyId,
   fulfilment = [],
-  status = 'IN_PROGRESS',
+  status = 'DRAFT',
   submittedAt = null
 } = {}) => ({
   id,
@@ -52,6 +57,16 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     fetchMocker.resetMocks()
   })
 
+  it('Should map every backend lifecycle status and reject contract drift', () => {
+    expect(mapStatus('DRAFT')).toBe(DRAFT)
+    expect(mapStatus('SUBMITTED')).toBe(SUBMITTED)
+    expect(mapStatus('AMEND')).toBe(AMEND)
+    expect(mapStatus('DELETED')).toBe(DELETED)
+    expect(() => mapStatus('UNKNOWN')).toThrow(
+      /Unknown backend fulfilment status "UNKNOWN"/
+    )
+  })
+
   it('Should create an empty canonical fulfilment with POST /fulfilments', async () => {
     fetchMocker.mockResponse(JSON.stringify(canonical()))
 
@@ -65,7 +80,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     expect(created).toEqual({
       journeyId,
       userId: 'user-1',
-      status: IN_PROGRESS,
+      status: DRAFT,
       createdAt,
       submittedAt: null,
       fulfilment: {}
@@ -154,7 +169,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     )
 
     const saved = await records.replaceFulfilment(journeyId, snapshot, {
-      known: { journeyId, status: IN_PROGRESS },
+      known: { journeyId, status: DRAFT },
       owner
     })
 
@@ -182,6 +197,23 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     expect(saved.fulfilment).toEqual(snapshot)
   })
 
+  it.each([
+    [SUBMITTED, 'submitted'],
+    [DELETED, 'deleted']
+  ])('Should block writes to a %s journey', async (status, label) => {
+    await expect(
+      records.replaceFulfilment(
+        journeyId,
+        {},
+        {
+          known: { journeyId, status },
+          owner
+        }
+      )
+    ).rejects.toThrow(`is ${label} — writes blocked`)
+    expect(fetchMocker.requests()).toEqual([])
+  })
+
   it('Should retry a failed projection with the identical idempotent PUT', async () => {
     const snapshot = { [countryOfOrigin.id]: 'FR' }
     const encoded = encodeEvaluatorFulfilments(snapshot)
@@ -193,7 +225,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     )
 
     await records.replaceFulfilment(journeyId, snapshot, {
-      known: { journeyId, status: IN_PROGRESS },
+      known: { journeyId, status: DRAFT },
       owner
     })
 
@@ -221,7 +253,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     let surfaced
     try {
       await records.replaceFulfilment(journeyId, snapshot, {
-        known: { journeyId, status: IN_PROGRESS },
+        known: { journeyId, status: DRAFT },
         owner
       })
     } catch (error) {
@@ -262,7 +294,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
         ),
         { status: 200 }
       ],
-      [JSON.stringify(canonical()), { status: 200 }]
+      [JSON.stringify(canonical({ status: 'AMEND' })), { status: 200 }]
     )
 
     const submitted = await records.finalise(journeyId, owner)
@@ -282,7 +314,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     requests.forEach(expectOwnerHeaders)
     expect(submitted.status).toBe(SUBMITTED)
     expect(submitted.submittedAt).toBe('2026-07-23T10:00:00')
-    expect(amended.status).toBe(IN_PROGRESS)
+    expect(amended.status).toBe(AMEND)
     expect(amended.submittedAt).toBeNull()
   })
 })

@@ -68,7 +68,7 @@ A record is:
 {
   journeyId: 'GBN-AG-26-ABC123',
   userId: 'user-123',
-  status: 'in-progress',
+  status: 'draft',
   createdAt: '2026-07-23T12:00:00.000Z',
   submittedAt: null,
   fulfilment: {}
@@ -78,10 +78,11 @@ A record is:
 - `fulfilment` is the only repeatedly-writable field — the decoded,
   UUID-keyed evaluator map. `answers`, `evaluation` and `scope` are
   request-local projections, never port DTO fields.
-- `status` is `in-progress` or `submitted`. `finalise` flips it to
-  `submitted` and stamps `submittedAt`; while submitted, every mutating
-  call throws — the freeze. `amend` is the one sanctioned way back to
-  `in-progress`, and a later `finalise` re-freezes.
+- `status` is `draft`, `submitted`, `amend` or `deleted`. `finalise`
+  transitions a draft or amend record to `submitted` and stamps
+  `submittedAt`; while submitted, every mutating call throws — the
+  freeze. `amend` is the one sanctioned transition to `amend`, and a
+  later `finalise` re-freezes. Deleted is terminal.
 - `journeyId` doubles as the user-facing **reference number**
   (`GBN-AG-YY-XXXXXX`, Crockford base32 body).
 
@@ -112,7 +113,7 @@ journey.
 - `list({ journeyIds })` loads exactly the handed references, skipping
   any the store no longer knows. It never lists the wider store.
 - `amend(journeyId)` requires a submitted record, clears `submittedAt`
-  and returns it to `in-progress`. Amending a record that is not
+  and transitions it to `amend`. Amending a record that is not
   submitted throws — the transition is never a freeze bypass.
 - `mintReferenceNumber` generates the id; `clear()` exists for test
   hygiene.

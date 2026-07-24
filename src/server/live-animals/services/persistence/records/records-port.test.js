@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { records } from './stub.js'
-import { IN_PROGRESS, SUBMITTED } from '../../../engine/persistence/records.js'
+import { AMEND, DRAFT, SUBMITTED } from '../../../engine/persistence/records.js'
 import { countryOfOrigin } from '../../../model/obligations/obligations.js'
 
 const originFulfilment = (value) => ({ [countryOfOrigin.id]: value })
@@ -13,12 +13,12 @@ describe('records durable port', () => {
       owner: { sub: 'user-A', organisation: 'organisation-A' }
     })
 
-    expect(journey).toMatchObject({ userId: 'user-A', status: IN_PROGRESS })
+    expect(journey).toMatchObject({ userId: 'user-A', status: DRAFT })
   })
 
   it('Should mint a record stamped with its user and index it by user', async () => {
     const journey = await records.create({ userId: 'user-A' })
-    expect(journey).toMatchObject({ userId: 'user-A', status: IN_PROGRESS })
+    expect(journey).toMatchObject({ userId: 'user-A', status: DRAFT })
     expect((await records.load({ userId: 'user-A' })).journeyId).toBe(
       journey.journeyId
     )
@@ -62,7 +62,7 @@ describe('records durable port', () => {
     expect((await records.load({ journeyId })).fulfilment).toEqual(
       originFulfilment('FR')
     )
-    expect((await records.load({ journeyId })).status).toBe(IN_PROGRESS)
+    expect((await records.load({ journeyId })).status).toBe(DRAFT)
   })
 
   it('Should replace the whole canonical snapshot, not patch it', async () => {
@@ -95,13 +95,13 @@ describe('records durable port', () => {
     expect(submitted.createdAt).toBe(created.createdAt)
   })
 
-  it('Should unfreeze on amend — status back to in-progress, submittedAt cleared, writes permitted', async () => {
+  it('Should unfreeze on amend — status set to amend, submittedAt cleared, writes permitted', async () => {
     const { journeyId } = await records.create({ userId: 'user-A' })
     await records.finalise(journeyId)
 
     const amended = await records.amend(journeyId)
 
-    expect(amended.status).toBe(IN_PROGRESS)
+    expect(amended.status).toBe(AMEND)
     expect(amended.submittedAt).toBeNull()
     await records.replaceFulfilment(journeyId, originFulfilment('DE'))
     expect((await records.load({ journeyId })).fulfilment).toEqual(

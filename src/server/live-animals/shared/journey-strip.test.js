@@ -2,7 +2,13 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../flow/dispatch.js'
 import { store } from '../engine/store.js'
-import { configureRecords } from '../engine/persistence/records.js'
+import {
+  AMEND,
+  DELETED,
+  DRAFT,
+  SUBMITTED,
+  configureRecords
+} from '../engine/persistence/records.js'
 import { configureSession } from '../engine/persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
@@ -35,9 +41,9 @@ describe('journey reference strip', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should map an in-progress journey to a blue Draft tag with the reference', () => {
+  it('Should map a draft journey to a blue Draft tag with the reference', () => {
     expect(
-      journeyStrip({ journeyId: 'GBN-AG-26-ABC123', status: 'in-progress' })
+      journeyStrip({ journeyId: 'GBN-AG-26-ABC123', status: DRAFT })
     ).toEqual({
       reference: 'GBN-AG-26-ABC123',
       status: { text: 'Draft', classes: 'govuk-tag--blue' }
@@ -46,10 +52,28 @@ describe('journey reference strip', () => {
 
   it('Should map a submitted journey to a green Submitted tag', () => {
     expect(
-      journeyStrip({ journeyId: 'GBN-AG-26-ABC123', status: 'submitted' })
+      journeyStrip({ journeyId: 'GBN-AG-26-ABC123', status: SUBMITTED })
     ).toEqual({
       reference: 'GBN-AG-26-ABC123',
       status: { text: 'Submitted', classes: 'govuk-tag--green' }
+    })
+  })
+
+  it('Should map an amend journey to a yellow Amending tag', () => {
+    expect(
+      journeyStrip({ journeyId: 'GBN-AG-26-ABC123', status: AMEND })
+    ).toEqual({
+      reference: 'GBN-AG-26-ABC123',
+      status: { text: 'Amending', classes: 'govuk-tag--yellow' }
+    })
+  })
+
+  it('Should map a deleted journey to a grey Deleted tag', () => {
+    expect(
+      journeyStrip({ journeyId: 'GBN-AG-26-ABC123', status: DELETED })
+    ).toEqual({
+      reference: 'GBN-AG-26-ABC123',
+      status: { text: 'Deleted', classes: 'govuk-tag--grey' }
     })
   })
 

@@ -3,7 +3,7 @@ import { commit, submitJourney } from './index.js'
 import {
   records,
   configureRecords,
-  IN_PROGRESS,
+  DRAFT,
   SUBMITTED
 } from './persistence/records.js'
 import { configureSession } from './persistence/session.js'
@@ -39,13 +39,13 @@ describe('submit is finalise', () => {
     ).rejects.toThrow(/is submitted — writes blocked/)
   })
 
-  it('Should be a no-op when not ready — journey stays in-progress', async () => {
+  it('Should be a no-op when not ready — journey stays in draft', async () => {
     configureReadyForCheckYourAnswers(() => false)
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
 
     const result = await submitJourney(buildRequest(), stubH())
 
     expect(result.ok).toBe(false)
-    expect((await records.load({ journeyId })).status).toBe(IN_PROGRESS)
+    expect((await records.load({ journeyId })).status).toBe(DRAFT)
   })
 })

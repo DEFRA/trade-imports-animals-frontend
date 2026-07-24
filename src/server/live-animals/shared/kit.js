@@ -5,7 +5,7 @@ import {
   pagePath,
   pageRoutePath
 } from '../config.js'
-import { SUBMITTED } from '../engine/index.js'
+import { AMEND, DELETED, DRAFT, SUBMITTED } from '../engine/index.js'
 import { nextInSection } from '../flow/navigation.js'
 import { nextRunTarget } from '../flow/run.js'
 import { inOpeningRun } from '../flow/run-state.js'
@@ -19,10 +19,21 @@ export const routeOptions = {}
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const STRIP_STATUS = {
-  draft: { text: sharedCopy.journeyStrip.draft, classes: 'govuk-tag--blue' },
-  submitted: {
+  [DRAFT]: {
+    text: sharedCopy.journeyStrip.draft,
+    classes: 'govuk-tag--blue'
+  },
+  [SUBMITTED]: {
     text: sharedCopy.journeyStrip.submitted,
     classes: 'govuk-tag--green'
+  },
+  [AMEND]: {
+    text: sharedCopy.journeyStrip.amend,
+    classes: 'govuk-tag--yellow'
+  },
+  [DELETED]: {
+    text: sharedCopy.journeyStrip.deleted,
+    classes: 'govuk-tag--grey'
   }
 }
 
@@ -30,10 +41,7 @@ export const journeyStrip = (journey) =>
   journey
     ? {
         reference: journey.journeyId,
-        status:
-          journey.status === SUBMITTED
-            ? STRIP_STATUS.submitted
-            : STRIP_STATUS.draft
+        status: STRIP_STATUS[journey.status]
       }
     : null
 

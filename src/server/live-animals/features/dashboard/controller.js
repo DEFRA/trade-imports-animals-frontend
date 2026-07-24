@@ -6,7 +6,7 @@ import {
   pageRoutePath,
   TEMPLATES
 } from '../../config.js'
-import { SUBMITTED } from '../../engine/index.js'
+import { AMEND, DRAFT, SUBMITTED } from '../../engine/index.js'
 import {
   amendJourney,
   listKnownJourneys,
@@ -35,24 +35,29 @@ const dateText = (value) =>
       })
     : null
 
-const rowActions = (journey) =>
-  journey.status === SUBMITTED
-    ? [
-        {
-          text: copy.actions.view,
-          href: pagePath(journey.journeyId, CYA_SLUG)
-        },
-        {
-          text: copy.actions.amend,
-          postAction: pagePath(journey.journeyId, 'amend')
-        }
-      ]
-    : [
-        {
-          text: copy.actions.resume,
-          href: hubPath(journey.journeyId)
-        }
-      ]
+const rowActions = (journey) => {
+  if (journey.status === SUBMITTED) {
+    return [
+      {
+        text: copy.actions.view,
+        href: pagePath(journey.journeyId, CYA_SLUG)
+      },
+      {
+        text: copy.actions.amend,
+        postAction: pagePath(journey.journeyId, 'amend')
+      }
+    ]
+  }
+  if (journey.status === DRAFT || journey.status === AMEND) {
+    return [
+      {
+        text: copy.actions.resume,
+        href: hubPath(journey.journeyId)
+      }
+    ]
+  }
+  return []
+}
 
 const toRow = (journey) => ({
   reference: journey.journeyId,
