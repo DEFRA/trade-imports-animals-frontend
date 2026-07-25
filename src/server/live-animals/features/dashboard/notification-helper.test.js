@@ -54,15 +54,13 @@ describe('promoted dashboard notification helpers', () => {
     expect(buildPageResultsRangeLabel(page, 20)).toBe(
       'Showing 21 to 40 of 45 Results'
     )
-    expect(
-      buildPaginationLinks(page, '/live-animals/home', 'createdAt,desc')
-    ).toEqual({
+    expect(buildPaginationLinks(page, '/', 'createdAt,desc')).toEqual({
       previous: {
-        href: '/live-animals/home?sort=createdAt%2Cdesc',
+        href: '/?sort=createdAt%2Cdesc',
         text: undefined
       },
       next: {
-        href: '/live-animals/home?page=3&sort=createdAt%2Cdesc',
+        href: '/?page=3&sort=createdAt%2Cdesc',
         text: undefined
       }
     })

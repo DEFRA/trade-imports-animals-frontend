@@ -126,6 +126,6 @@ describe('copy notification action', () => {
       stubH()
     )
 
-    expect(response.redirect).toMatch(/\/home$/)
+    expect(response.redirect).toBe('/')
   })
 })

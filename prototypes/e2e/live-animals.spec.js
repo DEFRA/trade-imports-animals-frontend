@@ -15,16 +15,14 @@ import { completeAnswerSections } from './live-animals-journey.js'
  * live-animals journey end to end (dashboard -> tasks -> declaration ->
  * submit -> confirmation).
  */
-const BASE = '/prototype-standalone/live-animals'
+const BASE = ''
 const GBN_REFERENCE = /GBN-AG-\d{2}-[0-9A-HJKMNP-TV-Z]{6}/
 
 const dashboardCard = (page, reference) =>
   page.locator('.govuk-summary-card').filter({ hasText: reference })
 
 const journeyIdFromPage = (page) => {
-  const match = new URL(page.url()).pathname.match(
-    /\/prototype-standalone\/live-animals\/notifications\/([^/]+)/
-  )
+  const match = new URL(page.url()).pathname.match(/\/notifications\/([^/]+)/)
   if (!match) throw new Error(`No journey id in URL: ${page.url()}`)
   return match[1]
 }
@@ -48,7 +46,7 @@ const meansOfTransportLabel =
   transportCopy.portOfEntry.means.options[values.meansOfTransport]
 
 const startNotification = async (page) => {
-  await page.goto(`${BASE}/home`)
+  await page.goto('/')
   await page.getByRole('button', { name: 'Start a new notification' }).click()
   // inc-060: Start enters the service filter, and a live-animals answer
   // opens the linear run at origin. These specs drive tasks from the hub,
@@ -175,7 +173,7 @@ const setUploadFile = (page, filename, bytes) =>
   page.getByLabel('Upload a file').setInputFiles({
     name: filename,
     mimeType: 'application/pdf',
-    buffer: bytes ?? Buffer.from('%PDF-1.4 prototype upload')
+    buffer: bytes ?? Buffer.from('%PDF-1.4 test upload')
   })
 
 // There is no type field: `accompanyingDocumentType` on an entry is the
@@ -198,7 +196,7 @@ test.describe('live-animals (page-owned spine)', () => {
   test('dashboard — a fresh session lists nothing; a started notification lists as a Draft whose Resume re-enters it, and a second start keeps it listed', async ({
     page
   }) => {
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     await expect(
       page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
@@ -214,7 +212,7 @@ test.describe('live-animals (page-owned spine)', () => {
     const [reference] = stripText.match(GBN_REFERENCE)
 
     // The draft is listed with its Draft tag, created date and a Resume action.
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     const row = dashboardCard(page, reference)
     await expect(row.getByText('Draft')).toBeVisible()
     await expect(row.getByText('Commodity')).toBeVisible()
@@ -231,7 +229,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(page.locator('.app-journey-strip')).not.toContainText(
       reference
     )
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     await expect(page.locator('.govuk-summary-card')).toHaveCount(2)
     await expect(dashboardCard(page, reference)).toBeVisible()
   })
@@ -243,7 +241,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await answerCountryOfOrigin(page)
     const sourceReference = journeyIdFromPage(page)
 
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     const sourceRow = dashboardCard(page, sourceReference)
     await sourceRow
       .getByRole('button', {
@@ -256,7 +254,7 @@ test.describe('live-animals (page-owned spine)', () => {
     const copiedReference = journeyIdFromPage(page)
     expect(copiedReference).not.toBe(sourceReference)
 
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     const copiedRow = dashboardCard(page, copiedReference)
     await expect(copiedRow).toBeVisible()
     await copiedRow
@@ -281,7 +279,7 @@ test.describe('live-animals (page-owned spine)', () => {
   }) => {
     // The entry filter is the service front door (c-032): Start a new
     // notification lands straight on it (inc-060).
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     await page.getByRole('button', { name: 'Start a new notification' }).click()
     await expect(
       page.getByRole('heading', { name: 'What are you importing?' })
@@ -338,7 +336,7 @@ test.describe('live-animals (page-owned spine)', () => {
     const save = () =>
       page.getByRole('button', { name: 'Save and continue' }).click()
 
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     await page.getByRole('button', { name: 'Start a new notification' }).click()
     await expect(heading('What are you importing?')).toBeVisible()
 
@@ -566,7 +564,7 @@ test.describe('live-animals (page-owned spine)', () => {
     const reference = /GBN-AG-\d{2}-[0-9A-HJKMNP-TV-Z]{6}/
 
     // The dashboard precedes any journey — no strip.
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     await expect(
       page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
@@ -2976,7 +2974,7 @@ test.describe('live-animals (page-owned spine)', () => {
     const [reference] = panelText.match(GBN_REFERENCE)
 
     // The dashboard row has flipped to Submitted with View + Amend actions.
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     const row = dashboardCard(page, reference)
     await expect(row.getByText('Submitted', { exact: true })).toBeVisible()
 
@@ -2994,7 +2992,7 @@ test.describe('live-animals (page-owned spine)', () => {
     // Amend transitions the notification back to editable and re-enters the
     // journey at the hub — the strip now surfaces the AMEND status as its own
     // "Amending" tag (pr-007: the full DRAFT/SUBMITTED/AMEND/DELETED vocabulary).
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     await row
       .getByRole('button', { name: `Amend notification ${reference}` })
       .click()
@@ -3035,7 +3033,7 @@ test.describe('live-animals (page-owned spine)', () => {
     await expect(page.getByRole('link', { name: /^Change/ })).toHaveCount(0)
 
     // Start a second amendment and keep it this time.
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     await row
       .getByRole('button', { name: `Amend notification ${reference}` })
       .click()
@@ -3067,7 +3065,7 @@ test.describe('live-animals (page-owned spine)', () => {
     ).toBeVisible()
 
     // And the row reads Submitted once more.
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     await expect(row.getByText('Submitted', { exact: true })).toBeVisible()
   })
 })

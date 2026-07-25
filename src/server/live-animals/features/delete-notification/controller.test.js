@@ -8,7 +8,7 @@ import {
   vi
 } from 'vitest'
 
-import { BASE, pagePath } from '../../config.js'
+import { pagePath } from '../../config.js'
 import { buildDispatch } from '../../flow/dispatch.js'
 import {
   configureRecords,
@@ -57,7 +57,7 @@ describe('delete notification routes', () => {
     expect(response.context).toMatchObject({
       heading: 'Delete this notification?',
       deleteAction: pagePath(journey.journeyId, 'delete'),
-      noHref: `${BASE}/home`
+      noHref: '/'
     })
     expect(response.context.copy.body).toBe('This cannot be undone.')
   })
@@ -67,7 +67,7 @@ describe('delete notification routes', () => {
 
     const response = await post(journeyRequest(journey.journeyId), stubH())
 
-    expect(response).toEqual({ redirect: `${BASE}/home?deleted=1` })
+    expect(response).toEqual({ redirect: '/?deleted=1' })
     expect((await records.load({ journeyId: journey.journeyId })).status).toBe(
       DELETED
     )
@@ -86,10 +86,10 @@ describe('delete notification routes', () => {
     await records.softDelete(journey.journeyId, owner)
 
     expect(await get(journeyRequest(journey.journeyId), stubH())).toEqual({
-      redirect: `${BASE}/home`
+      redirect: '/'
     })
     expect(await post(journeyRequest(journey.journeyId), stubH())).toEqual({
-      redirect: `${BASE}/home`
+      redirect: '/'
     })
   })
 

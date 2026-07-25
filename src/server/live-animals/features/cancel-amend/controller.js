@@ -1,4 +1,9 @@
-import { BASE, pagePath, pageRoutePath, TEMPLATES } from '../../config.js'
+import {
+  dashboardPath,
+  pagePath,
+  pageRoutePath,
+  TEMPLATES
+} from '../../config.js'
 import * as state from '../../engine/index.js'
 import { cancelAmendJourney } from '../../engine/journey.js'
 import * as kit from '../../shared/kit.js'
@@ -10,14 +15,13 @@ const view = `${TEMPLATES}/features/cancel-amend/template`
 const copy = copyFor({ en, cy })
 
 const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500
-const dashboardPath = `${BASE}/home`
 const cyaPath = (journeyId) => pagePath(journeyId, kit.CYA_SLUG)
 const cancelPath = (journeyId) => pagePath(journeyId, 'cancel-amend')
 
 const nonAmendTarget = (journey) =>
   journey.status === state.SUBMITTED
     ? cyaPath(journey.journeyId)
-    : dashboardPath
+    : dashboardPath()
 
 const render = (h, journey, recoverableError = false) =>
   h.view(view, {
@@ -56,7 +60,7 @@ const post = async (request, h) => {
 
   return restored
     ? h.redirect(`${cyaPath(restored.journeyId)}?cancelled=1`)
-    : h.redirect(dashboardPath)
+    : h.redirect(dashboardPath())
 }
 
 export const routes = [

@@ -11,7 +11,7 @@ import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
 export { KNOWN_JOURNEYS_COOKIE } from './persistence/session.js'
 
 const cookieOptions = Object.freeze({
-  path: BASE,
+  path: BASE || '/',
   ttl: null,
   encoding: 'none',
   isSecure: false,

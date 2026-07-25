@@ -1,6 +1,6 @@
 # Testing and verification
 
-How to run the live-animals prototype's tests, what each layer of the regression net guards, and the rules and gotchas for writing new specs.
+How to run the live-animals service tests, what each layer of the regression net guards, and the rules and gotchas for writing new specs.
 
 All commands run from the frontend repo root (`trade-imports-animals-frontend`).
 
@@ -12,7 +12,7 @@ All commands run from the frontend repo root (`trade-imports-animals-frontend`).
 npm run test:live-animals
 ```
 
-Vitest runs every `*.test.js` under the prototype (`TZ=UTC vitest run
+Vitest runs every `*.test.js` under the service (`TZ=UTC vitest run
 src/server/live-animals --no-coverage`). The suite loads the whole
 module graph and runs the boot guards directly: `obligation-purity.test.js`
 checks model purity, `fulfilment-registry.test.js` checks complete and unique
@@ -26,28 +26,24 @@ server to find out.
 npm run test:prototype
 ```
 
-Playwright, Chromium only, one config (`playwright.config.js` at the repo root) with **two projects** — this one command runs both:
+Playwright, Chromium only, uses `playwright.config.js` at the repo root.
 
-- `prototype` — every prototype journey's demo walk, against a stub-mode server on port 3000. The live-animals net (`prototypes/e2e/live-animals.spec.js`) runs here, alongside the sibling prototype specs in the same folder.
-- `parity` — `skeleton-vs-prototype-mongo.spec.js` only, against a **real**-mode server on port 3001.
+- `prototype` — every journey's demo walk, against a stub-mode server on port 3000. The live-animals net (`prototypes/e2e/live-animals.spec.js`) runs here, alongside the sibling prototype specs in the same folder.
+- `a11y` — the accessibility checks in `prototypes/e2e/a11y.spec.js`.
 
-The parity project drives the production skeleton journey (`src/server`) and this prototype against the same real backend and compares the two persisted notifications field by field — the browser-level proof of [the mapper](persistence.md). It sits in the normal suite on purpose: a persistence break must not hide behind a green demo run.
-
-**The workspace stack must be up.** The real-mode server persists through the backend, Mongo and Redis. Start it with `scripts/stack/run-stack.sh` from the workspace. The `test:prototype*` scripts probe the backend first (`npm run check:workspace-stack`), so a stack-down run fails in a second with an actionable message rather than a web-server timeout.
-
-Each script builds the frontend assets once, then starts both servers. The stub server on 3000 refuses to reuse an existing one — if a dev server is already holding the port, the run fails at startup. Kill the stale server first:
+Each script builds the frontend assets once, then starts the server. The server
+on 3000 refuses to reuse an existing one — if a dev server is already holding
+the port, the run fails at startup. Kill the stale server first:
 
 ```
 lsof -ti:3000 | xargs kill
 ```
 
-The real-mode server on 3001 **is** reused if one is already answering, so a `npm run prototype:real` you keep running on `PORT=3001` is picked up.
-
 To run one project, or filter by title:
 
 ```
 npm run test:prototype:journeys              # demo project only
-npm run test:prototype:parity                # parity project only
+npm run test:a11y                            # accessibility project only
 npm run test:prototype -- -g "live-animals"  # filter by title
 ```
 
@@ -115,18 +111,9 @@ The persistence and reference-data services are proven against their ports:
 
 `prototypes/e2e/live-animals.spec.js` is this journey's browser-level net: a happy-path walk fed from `src/server/live-animals/flow/fixtures/happy-path.json` that grows one leg per increment, plus per-section specs pinning gates, loops and validation in the rendered DOM — import type, the opening linear run, the hub, origin (including the no-JS plain select and the accessible-autocomplete enhancement), the commodities batch search and per-species counts, animal identifiers, the N-of-M identifier cap, import reason and purpose, accompanying documents and upload rejection, addresses and the party picker, the transport rows, CPH number, check-your-answers, change-from-CYA threading, declaration and confirmation, and the dashboard amend flow.
 
-### The persistence-parity oracle
-
-`prototypes/e2e/skeleton-vs-prototype-mongo.spec.js` drives both journeys this
-frontend serves — the production skeleton (`src/server`) and this prototype —
-against the same real backend and compares the current notification projection.
-`skeleton-equivalence.test.js` pins the same claim at unit level. Canonical
-fulfilment remains the prototype's resume source; notification parity proves
-only the downstream Mapper A shape.
-
 ### Sibling prototype specs
 
-The `prototype` project runs every spec in `prototypes/e2e/` except the parity spec, so `npm run test:prototype` also walks the sibling car-insurance prototypes (`journey.js` `JOURNEYS`) and the obligations-model specs under `prototypes/e2e/obligations/`. These exercise the shared engine and page-kit primitives on other journeys; they do not touch the live-animals model. Filter them out with `-g "live-animals"` when you only want this journey.
+The `prototype` project runs every journey spec in `prototypes/e2e/`, so `npm run test:prototype` also walks the sibling car-insurance prototypes (`journey.js` `JOURNEYS`) and the obligations-model specs under `prototypes/e2e/obligations/`. These exercise the shared engine and page-kit primitives on other journeys; they do not touch the live-animals model. Filter them out with `-g "live-animals"` when you only want this journey.
 
 ### Why the specs pin exact DOM
 

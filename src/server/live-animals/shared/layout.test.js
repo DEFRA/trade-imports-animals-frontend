@@ -30,7 +30,9 @@ describe('promoted live-animals signed-in chrome', () => {
   it('Should render cleanly without signed-in chrome when there is no user', () => {
     const html = renderLayout({ isAuthenticated: false })
 
-    expect(html).toContain('Import notification service (standalone)')
+    expect(html).toContain('Import notification service')
+    expect(html).not.toContain('Prototype')
+    expect(html).not.toContain('non-functional prototype')
     expect(html).not.toContain('app-service-header__user')
     expect(html).not.toContain('href="/auth/sign-out"')
     expect(html).not.toContain('Sign out')

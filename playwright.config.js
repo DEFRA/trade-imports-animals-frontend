@@ -7,23 +7,12 @@ import { defineConfig, devices } from '@playwright/test'
  *   - `prototype` — the demo suite. Each test walks a whole prototype journey
  *     end to end against a STUB-mode server and records a video, so after every
  *     iteration there is a fresh playback of each journey.
- *   - `parity` — the cross-journey persistence compare
- *     (`skeleton-vs-prototype-mongo.spec.js`). It needs a REAL-mode server, so
- *     it gets its own one on the next port, persisting through the workspace
- *     stack (backend, Mongo, Redis). It runs as part of the normal suite: a
- *     parity break must not be able to hide behind a green demo run.
- *
- * Both servers are stable pre-built one-shot servers (not the watch-mode dev
+ * The server is a stable pre-built one-shot server (not the watch-mode dev
  * server, which answers before assets are built and can restart under test
- * load). The `test:prototype*` scripts build the assets ONCE before Playwright
- * starts, so the two servers never race each other over the same webpack output.
- *
- * The real-mode server cannot boot without the workspace stack. The scripts
- * probe the backend first (`npm run check:workspace-stack`), so a stack-down run
- * fails in a second with an actionable message rather than a web-server timeout.
+ * load). The `test:prototype*` scripts build the assets once before Playwright
+ * starts.
  */
 const port = Number(process.env.PORT ?? 3000)
-const realPort = port + 1
 
 // Forward the retrofit model flag (MODEL=a|b) to the prototype servers the
 // E2E launches. Unset → default (a), byte-identical to today. MODEL=b boots
@@ -31,7 +20,6 @@ const realPort = port + 1
 // the retrofit end-to-end.
 const modelEnv = process.env.MODEL ? { MODEL: process.env.MODEL } : {}
 
-const parity = '**/skeleton-vs-prototype-mongo.spec.js'
 // The axe accessibility scans are CPU-heavy; running them inside the fully-parallel
 // journey suite (which records video+trace for every test) overloads the machine.
 // They get their own lightweight project (no video/trace), run with capped workers
@@ -55,7 +43,7 @@ export default defineConfig({
   projects: [
     {
       name: 'prototype',
-      testIgnore: [parity, a11y],
+      testIgnore: a11y,
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${port}`,
@@ -70,16 +58,6 @@ export default defineConfig({
         // Retain a video for every run (not just failures) — these are the demo.
         video: 'on',
         trace: 'on'
-      }
-    },
-    {
-      name: 'parity',
-      testMatch: parity,
-      use: {
-        ...devices['Desktop Chrome'],
-        baseURL: `http://localhost:${realPort}`,
-        video: 'retain-on-failure',
-        trace: 'retain-on-failure'
       }
     },
     {
@@ -100,17 +78,6 @@ export default defineConfig({
       env: { PORT: String(port), ...modelEnv },
       timeout: 180_000,
       reuseExistingServer: false
-    },
-    {
-      // Sam keeps a real-mode server up alongside the stack, so reuse one on
-      // this port if it is already answering — UNLESS a MODEL is pinned
-      // (MODEL=b), in which case a fresh server must boot under that model
-      // rather than reuse an ambient default-model one.
-      command: 'npm run prototype:real:start',
-      url: `http://localhost:${realPort}/prototype-standalone/live-animals/home`,
-      env: { PORT: String(realPort), ...modelEnv },
-      timeout: 180_000,
-      reuseExistingServer: !process.env.MODEL
     }
   ]
 })

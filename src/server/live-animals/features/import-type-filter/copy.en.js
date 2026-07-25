@@ -14,7 +14,7 @@ export const copy = {
   notAvailable: {
     title: 'You cannot use this service',
     onlyCovers:
-      'This prototype only covers imports of live animals or germinal products.',
+      'This service currently only supports imports of live animals or germinal products.',
     changeAnswer: 'Go back and change your answer',
     ifImporting: 'if you are importing live animals or germinal products.'
   }

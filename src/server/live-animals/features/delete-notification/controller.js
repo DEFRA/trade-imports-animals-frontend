@@ -1,4 +1,9 @@
-import { BASE, pagePath, pageRoutePath, TEMPLATES } from '../../config.js'
+import {
+  dashboardPath,
+  pagePath,
+  pageRoutePath,
+  TEMPLATES
+} from '../../config.js'
 import * as state from '../../engine/index.js'
 import { softDeleteJourney } from '../../engine/journey.js'
 import * as kit from '../../shared/kit.js'
@@ -10,7 +15,6 @@ const view = `${TEMPLATES}/features/delete-notification/template`
 const copy = copyFor({ en, cy })
 
 const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500
-const dashboardPath = `${BASE}/home`
 const deletePath = (journeyId) => pagePath(journeyId, 'delete')
 const deletable = (journey) =>
   journey.status === state.DRAFT ||
@@ -20,24 +24,24 @@ const deletable = (journey) =>
 const render = (h, journey, recoverableError = false) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: dashboardPath,
+      backLink: dashboardPath(),
       journey,
       recoverableError
     }),
     heading: copy.title,
     copy,
     deleteAction: deletePath(journey.journeyId),
-    noHref: dashboardPath
+    noHref: dashboardPath()
   })
 
 const get = async (request, h) => {
   const { journey } = await state.get(request, h)
-  return deletable(journey) ? render(h, journey) : h.redirect(dashboardPath)
+  return deletable(journey) ? render(h, journey) : h.redirect(dashboardPath())
 }
 
 const post = async (request, h) => {
   const { journey } = await state.get(request, h)
-  if (!deletable(journey)) return h.redirect(dashboardPath)
+  if (!deletable(journey)) return h.redirect(dashboardPath())
 
   let deleted
   const failure = await kit.recoverableSave(
@@ -49,8 +53,8 @@ const post = async (request, h) => {
   if (failure) return failure
 
   return deleted
-    ? h.redirect(`${dashboardPath}?deleted=1`)
-    : h.redirect(dashboardPath)
+    ? h.redirect(`${dashboardPath()}?deleted=1`)
+    : h.redirect(dashboardPath())
 }
 
 export const routes = [

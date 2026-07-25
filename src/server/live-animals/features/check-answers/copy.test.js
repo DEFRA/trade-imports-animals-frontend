@@ -47,7 +47,7 @@ describe('GET check-answers — copy reaches the view', () => {
     expect(context.copy).toBe(copy)
     expect(context.pageTitle).toBe(copy.title)
     expect(context.sharedCopy.layout.serviceName).toBe(
-      'Import notification service (standalone)'
+      'Import notification service'
     )
   })
 })

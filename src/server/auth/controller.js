@@ -3,6 +3,7 @@ import { validateState } from '../../auth/state.js'
 import { verifyToken } from '../../auth/verify-token.js'
 import { getPermissions } from '../../auth/get-permissions.js'
 import { getSafeRedirect } from '../../auth/get-safe-redirect.js'
+import { base } from '../live-animals/shared/kit.js'
 
 export const authController = {
   signin: {
@@ -25,7 +26,10 @@ export const authController = {
           },
           'Bell auth failed for /auth/sign-in-oidc'
         )
-        return h.view('auth/unauthorised')
+        return h.view(
+          'auth/unauthorised',
+          base('Sorry, we are unable to sign you in')
+        )
       }
 
       const { profile, token, refreshToken } = request.auth.credentials

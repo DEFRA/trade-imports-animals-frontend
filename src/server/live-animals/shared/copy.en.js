@@ -1,6 +1,6 @@
 /**
  * Shared chrome copy — the only copy that legitimately lives outside a
- * feature folder: the layout (service name, phase banner, breadcrumbs,
+ * feature folder: the layout (service name, breadcrumbs,
  * back link, error title prefix), error-summary title, save-actions
  * buttons and journey-strip tags. Every view reaches it as `sharedCopy`
  * (via `kit.base`, or passed directly by the controllers that build
@@ -8,16 +8,11 @@
  */
 export const copy = {
   layout: {
-    serviceName: 'Import notification service (standalone)',
+    serviceName: 'Import notification service',
     errorTitlePrefix: 'Error: ',
-    phaseBanner: {
-      tag: 'Prototype',
-      html: 'Obligations v2 spike standalone — a non-functional prototype, not a real service.'
-    },
     back: 'Back',
     breadcrumbs: {
-      prototypes: 'Prototypes',
-      serviceHome: 'Import notifications (standalone)'
+      serviceHome: 'Your notifications'
     },
     footer: {
       privacy: 'Privacy',

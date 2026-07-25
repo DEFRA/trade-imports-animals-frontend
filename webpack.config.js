@@ -23,19 +23,10 @@ export default {
     application: {
       import: ['./javascripts/application.js', './stylesheets/application.scss']
     },
-    commoditySubTotal: {
-      import: './javascripts/commodity-subtotal-autocomplete.js'
-    },
-    accompanyingDocuments: {
-      import: './javascripts/accompanying-documents.js'
-    },
-    notificationView: {
-      import: './javascripts/notification-view.js'
-    },
     selectAutocomplete: {
       import: './javascripts/select-autocomplete.js'
     },
-    liveAnimalsDocuments: {
+    documents: {
       import: '../server/live-animals/features/documents/client.js'
     }
   },

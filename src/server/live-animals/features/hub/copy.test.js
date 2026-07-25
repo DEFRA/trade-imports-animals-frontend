@@ -59,7 +59,7 @@ describe('GET /hub', () => {
     expect(context.copy).toBe(copy)
     expect(context.pageTitle).toBe(copy.title)
     expect(context.sharedCopy.layout.serviceName).toBe(
-      'Import notification service (standalone)'
+      'Import notification service'
     )
     expect(context.groups.map((group) => group.caption)).toEqual(
       Object.values(copy.groups)
@@ -79,10 +79,8 @@ describe('#hubHandler', () => {
     const context = await renderHub()
     expect(context.heading).toBe('Overview')
     expect(context.pageTitle).toBe('Overview')
-    expect(context.backLink).toBe('/prototype-standalone/live-animals/home')
-    expect(context.dashboardHref).toBe(
-      '/prototype-standalone/live-animals/home'
-    )
+    expect(context.backLink).toBe('/')
+    expect(context.dashboardHref).toBe('/')
     expect(context.breadcrumbs).toBe(false)
     expect(context.progressLine).toBeUndefined()
   })

@@ -10,7 +10,7 @@ const SCAN_STATUS_COMPLETE = 'COMPLETE'
 const awaitingRefresh = new Set()
 
 const PLACEHOLDER_TEXT =
-  'Placeholder file - the prototype does not store uploaded bytes.'
+  'Placeholder file - the service does not store uploaded bytes.'
 
 const PLACEHOLDER_STREAM = `BT /F1 12 Tf 20 60 Td (${PLACEHOLDER_TEXT}) Tj ET\n`
 

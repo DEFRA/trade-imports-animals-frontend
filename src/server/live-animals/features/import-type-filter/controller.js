@@ -1,4 +1,9 @@
-import { BASE, pagePath, pageRoutePath, TEMPLATES } from '../../config.js'
+import {
+  dashboardPath,
+  pagePath,
+  pageRoutePath,
+  TEMPLATES
+} from '../../config.js'
 import * as state from '../../engine/index.js'
 import { compose, requiredOneOf, validate } from '../../lib/validate/index.js'
 import { hasCommittedNotificationAnswers } from '../../flow/entry-guard.js'
@@ -34,7 +39,7 @@ const fields = compose(
 const render = (h, journey, values, errors = {}, recoverableError = false) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: `${BASE}/home`,
+      backLink: dashboardPath(),
       journeyId: journey.journeyId,
       recoverableError
     }),

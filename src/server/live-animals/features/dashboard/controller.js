@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import {
-  BASE,
   createPath,
+  dashboardPath,
   hubPath,
   pagePath,
   pageRoutePath,
@@ -18,7 +18,6 @@ import { copyFor } from '../../shared/copy.js'
 import * as commodities from '../../services/commodities/index.js'
 import * as countries from '../../services/countries/index.js'
 import { importTypeFilterPage } from '../import-type-filter/page.js'
-import { dashboardPage as page } from './page.js'
 import { copy as en } from './copy.en.js'
 import { copy as cy } from './copy.cy.js'
 import { copy as sharedEn } from '../../shared/copy.en.js'
@@ -38,8 +37,6 @@ const view = `${TEMPLATES}/features/dashboard/template`
 
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
-
-const dashboardPath = () => `${BASE}/${page.slug}`
 
 const sortOptionText = [
   copy.sort.options.arrivalNewest,
@@ -193,12 +190,6 @@ export const routes = [
     path: dashboardPath(),
     options: routeOptions,
     handler: listGet
-  },
-  {
-    method: 'GET',
-    path: BASE,
-    options: routeOptions,
-    handler: (_request, h) => backToDashboard(h)
   },
   {
     method: 'POST',

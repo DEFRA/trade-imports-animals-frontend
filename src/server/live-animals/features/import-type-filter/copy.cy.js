@@ -15,7 +15,7 @@ export const copy = {
   notAvailable: {
     title: 'Ni allwch ddefnyddio’r gwasanaeth hwn',
     onlyCovers:
-      'Mae’r prototeip hwn ond yn cwmpasu mewnforio anifeiliaid byw neu gynhyrchion cenhedlol.',
+      'Ar hyn o bryd, dim ond mewnforio anifeiliaid byw neu gynhyrchion cenhedlol y mae’r gwasanaeth hwn yn eu cefnogi.',
     changeAnswer: 'Ewch yn ôl a newid eich ateb',
     ifImporting:
       'os ydych chi’n mewnforio anifeiliaid byw neu gynhyrchion cenhedlol.'

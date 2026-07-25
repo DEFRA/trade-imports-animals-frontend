@@ -1,12 +1,10 @@
-import { BASE, hubPath, pageRoutePath } from '../../config.js'
+import { dashboardPath, hubPath, pageRoutePath } from '../../config.js'
 import { copyJourney } from '../../engine/journey.js'
 import * as kit from '../../shared/kit.js'
 import { renderNotificationView } from '../check-answers/controller.js'
 import { renderDashboard } from '../dashboard/controller.js'
 
 const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500
-const dashboardPath = `${BASE}/home`
-
 const recoverCopy = (request, h, idempotencyKey) =>
   request.payload?.copyOrigin === 'notification-view'
     ? renderNotificationView(request, h, {
@@ -42,7 +40,7 @@ const copyPost = async (request, h) => {
 
   return copied
     ? h.redirect(hubPath(copied.journeyId))
-    : h.redirect(dashboardPath)
+    : h.redirect(dashboardPath())
 }
 
 export const routes = [

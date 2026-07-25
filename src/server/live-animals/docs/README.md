@@ -1,4 +1,4 @@
-# Live-animals prototype — documentation index
+# Live-animals service — documentation index
 
 ## What this is
 
@@ -8,7 +8,7 @@ declarative obligation model and a pure derivation engine. Pages own the copy,
 templates and validation; the model declares only what data is owed and when it
 is in scope; the engine derives scope, completeness and status from the answers
 on every read and write. Value options come from the reference-data services, not
-the model. The prototype exercises the full trader journey — consignment details,
+the model. The service covers the full trader journey — consignment details,
 per-species commodity lines, per-animal identifiers, transport, addresses and
 accompanying documents — to nesting depth 2 (an identifier inside a commodity line
 inside the notification).
@@ -17,7 +17,7 @@ inside the notification).
 
 Run everything from the frontend repo root (`trade-imports-animals-frontend`).
 
-Run the prototype:
+Run the local service with the other prototype spikes enabled:
 
 ```
 npm run prototype
@@ -26,20 +26,20 @@ npm run prototype
 Then open the dashboard and start a notification:
 
 ```
-http://localhost:3000/prototype-standalone/live-animals/home
+http://localhost:3000/
 ```
 
 The create POST redirects to the journey-scoped import-type filter.
 
-Run the prototype's unit suite:
+Run the service unit suite:
 
 ```
 npm run test:live-animals
 ```
 
-Run the Playwright E2E suite — the demo journey plus the persistence-parity
-compare against Mongo. Needs the workspace stack up (`scripts/stack/run-stack.sh`);
-see [testing.md](testing.md):
+Run the Playwright E2E suite. It also covers the other prototype spikes and
+needs the workspace stack up (`scripts/stack/run-stack.sh`); see
+[testing.md](testing.md):
 
 ```
 npm run test:prototype

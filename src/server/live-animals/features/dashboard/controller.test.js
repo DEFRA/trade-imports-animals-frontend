@@ -26,7 +26,7 @@ const handlerOf = (method, pathSuffix) =>
     (route) => route.method === method && route.path.endsWith(pathSuffix)
   ).handler
 
-const listGet = handlerOf('GET', '/home')
+const listGet = handlerOf('GET', '/')
 const amendPost = handlerOf('POST', '/amend')
 const startPost = routes.find(
   (route) => route.method === 'POST' && route.path === createPath()
@@ -349,7 +349,7 @@ describe('dashboard row actions', () => {
       h
     )
 
-    expect(h.captured.redirect).toContain('/home')
+    expect(h.captured.redirect).toBe('/')
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
     ).toBe(SUBMITTED)

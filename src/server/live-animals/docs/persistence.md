@@ -50,11 +50,10 @@ reads the user from the Defra ID OIDC credentials
 (`request.auth.credentials.sub`), falling back to the stub user when
 auth is off.
 
-The cookies are path-scoped to `BASE` (see `config.js`), so this
-prototype can never read another prototype's cookie, and parallel
-browser contexts each carry their own journey. `registerJourneyCookie`
-in `engine/journey.js` declares all four cookies (httpOnly, SameSite
-Lax).
+The cookies are path-scoped to `/` because the service is mounted at the root
+(see `config.js`), and parallel browser contexts each carry their own journey.
+`registerJourneyCookie` in `engine/journey.js` declares the journey cookies
+(httpOnly, SameSite Lax).
 
 ### RECORDS (`engine/persistence/records.js`)
 

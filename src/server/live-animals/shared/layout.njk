@@ -2,13 +2,12 @@
 
 {% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 {% from "govuk/components/breadcrumbs/macro.njk" import govukBreadcrumbs %}
-{% from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner %}
 {% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 {% from "govuk/components/service-navigation/macro.njk" import govukServiceNavigation %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "service-header/macro.njk" import appServiceHeader %}
 
-{% set homeUrl = "/prototype-standalone/live-animals" %}
+{% set homeUrl = "/" %}
 
 {% block head %}
   <meta name="csrf-token" content="{{ crumb }}">
@@ -40,14 +39,9 @@
 {% endblock %}
 
 {% block beforeContent %}
-  {{ govukPhaseBanner({
-    tag: { text: sharedCopy.layout.phaseBanner.tag },
-    html: sharedCopy.layout.phaseBanner.html
-  }) }}
   {% if breadcrumbs !== false %}
     {{ govukBreadcrumbs({
       items: breadcrumbs if breadcrumbs else [
-        { text: sharedCopy.layout.breadcrumbs.prototypes, href: "/prototype-standalone" },
         { text: sharedCopy.layout.breadcrumbs.serviceHome, href: homeUrl },
         { text: pageTitle }
       ]

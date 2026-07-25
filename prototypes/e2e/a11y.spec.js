@@ -2,7 +2,6 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
-  BASE,
   addDocument,
   chooseCountryOfOrigin,
   completeAnswerSections,
@@ -48,7 +47,7 @@ test.describe('live-animals accessibility', () => {
   test('entry, filter and representative journey states have no serious or critical violations', async ({
     page
   }) => {
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     await scan(page, 'empty dashboard')
 
     await page.getByRole('button', { name: 'Start a new notification' }).click()
@@ -86,7 +85,7 @@ test.describe('live-animals accessibility', () => {
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await scan(page, 'consignment details')
 
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     await expect(page.locator('.govuk-summary-card')).toHaveCount(1)
     await scan(page, 'dashboard with rows')
   })
@@ -127,7 +126,7 @@ test.describe('live-animals accessibility', () => {
     await page.getByRole('button', { name: 'Continue' }).click()
     await scan(page, 'submission confirmation')
 
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     const submittedCard = dashboardCard(page, submittedReference)
     await submittedCard
       .getByRole('link', {
@@ -136,7 +135,7 @@ test.describe('live-animals accessibility', () => {
       .click()
     await scan(page, 'read-only submitted check your answers')
 
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     await submittedCard
       .getByRole('button', {
         name: `Amend notification ${submittedReference}`
@@ -149,7 +148,7 @@ test.describe('live-animals accessibility', () => {
     await page.getByRole('button', { name: 'Yes, cancel amendment' }).click()
     await startNotification(page)
     const draftReference = journeyIdFromPage(page)
-    await page.goto(`${BASE}/home`)
+    await page.goto('/')
     await dashboardCard(page, draftReference)
       .getByRole('link', {
         name: `Delete notification ${draftReference}`

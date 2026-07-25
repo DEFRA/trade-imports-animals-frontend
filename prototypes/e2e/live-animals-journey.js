@@ -5,12 +5,10 @@ import { COUNTRY_LABELS } from '../../src/server/live-animals/services/countries
 import { PORTS } from '../../src/server/live-animals/services/ports/stub.js'
 import { copy as transportCopy } from '../../src/server/live-animals/features/transport/copy.en.js'
 
-export const BASE = '/prototype-standalone/live-animals'
+export const BASE = ''
 
 export const journeyIdFromPage = (page) => {
-  const match = new URL(page.url()).pathname.match(
-    /\/prototype-standalone\/live-animals\/notifications\/([^/]+)/
-  )
+  const match = new URL(page.url()).pathname.match(/\/notifications\/([^/]+)/)
   if (!match) throw new Error(`No journey id in URL: ${page.url()}`)
   return match[1]
 }
@@ -32,7 +30,7 @@ const meansOfTransportLabel =
   transportCopy.portOfEntry.means.options[values.meansOfTransport]
 
 export const startNotification = async (page) => {
-  await page.goto(`${BASE}/home`)
+  await page.goto('/')
   await page.getByRole('button', { name: 'Start a new notification' }).click()
   await expect(
     page.getByRole('heading', { name: 'What are you importing?' })
@@ -110,7 +108,7 @@ const setUploadFile = (page, filename, bytes) =>
   page.getByLabel('Upload a file').setInputFiles({
     name: filename,
     mimeType: 'application/pdf',
-    buffer: bytes ?? Buffer.from('%PDF-1.4 prototype upload')
+    buffer: bytes ?? Buffer.from('%PDF-1.4 test upload')
   })
 
 export const addDocument = async (page, entry) => {

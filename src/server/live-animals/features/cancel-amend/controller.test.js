@@ -8,7 +8,7 @@ import {
   vi
 } from 'vitest'
 
-import { BASE, pagePath } from '../../config.js'
+import { pagePath } from '../../config.js'
 import { assembleFulfilments } from '../../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../../bridge/fulfilments.js'
 import { buildDispatch } from '../../flow/dispatch.js'
@@ -96,7 +96,7 @@ describe('cancel amendment routes', () => {
     await records.finalise(submitted.journeyId)
 
     expect(await get(journeyRequest(draft.journeyId), stubH())).toEqual({
-      redirect: `${BASE}/home`
+      redirect: '/'
     })
     expect(await post(journeyRequest(submitted.journeyId), stubH())).toEqual({
       redirect: pagePath(submitted.journeyId, 'notification-view')

@@ -14,7 +14,7 @@ import * as ports from './services/ports/index.js'
 
 export const liveAnimals = {
   plugin: {
-    name: 'standalone-live-animals',
+    name: 'live-animals',
     register: async (server) => {
       assertObligationPurity()
       assertFulfilmentBindingCoverage()

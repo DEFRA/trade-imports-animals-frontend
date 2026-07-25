@@ -32,7 +32,7 @@ describe('#copy', () => {
   })
 })
 
-describe('GET /home', () => {
+describe('GET /', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -41,7 +41,7 @@ describe('GET /home', () => {
 
   it('Should supply the feature copy module and the shared chrome copy', async () => {
     const listGet = routes.find(
-      (route) => route.method === 'GET' && route.path.endsWith('/home')
+      (route) => route.method === 'GET' && route.path === '/'
     ).handler
     const h = {
       view: (template, context) => ({ template, context })

@@ -37,13 +37,9 @@ describe('#errors', () => {
     })
 
     expect(result).toEqual(
-      expect.stringContaining(
-        'Page not found | Import notification service (standalone)'
-      )
+      expect.stringContaining('Page not found | Import notification service')
     )
-    expect(result).toEqual(
-      expect.stringContaining('Obligations v2 spike standalone')
-    )
+    expect(result).not.toEqual(expect.stringContaining('Prototype'))
     expect(statusCode).toBe(statusCodes.notFound)
   })
 
@@ -56,7 +52,7 @@ describe('#errors', () => {
     expect(statusCode).toBe(statusCodes.internalServerError)
     expect(result).toEqual(
       expect.stringContaining(
-        'Something went wrong | Import notification service (standalone)'
+        'Something went wrong | Import notification service'
       )
     )
     expect(result).toEqual(expect.stringContaining('>500</h1>'))

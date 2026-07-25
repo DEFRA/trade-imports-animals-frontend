@@ -369,7 +369,7 @@ describe('the opening run', () => {
   describe('deep-link guard', () => {
     it('Should exempt the dashboard, the filter, the holding page and start', () => {
       expect(guardedJourneyPath(BASE)).toBe(false)
-      expect(guardedJourneyPath(`${BASE}/home`)).toBe(false)
+      expect(guardedJourneyPath('/')).toBe(false)
       expect(guardedJourneyPath(pagePath('j-1', 'import-type'))).toBe(false)
       expect(
         guardedJourneyPath(pagePath('j-1', 'import-type/not-available'))

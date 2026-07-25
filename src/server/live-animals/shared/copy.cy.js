@@ -1,16 +1,11 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 export const copy = {
   layout: {
-    serviceName: 'Gwasanaeth hysbysu mewnforio (annibynnol)',
+    serviceName: 'Gwasanaeth hysbysu mewnforio',
     errorTitlePrefix: 'Gwall: ',
-    phaseBanner: {
-      tag: 'Prototeip',
-      html: 'Sbeic rhwymedigaethau v2 annibynnol — prototeip anweithredol, nid gwasanaeth go iawn.'
-    },
     back: 'Yn ôl',
     breadcrumbs: {
-      prototypes: 'Prototeipiau',
-      serviceHome: 'Hysbysiadau mewnforio (annibynnol)'
+      serviceHome: 'Eich hysbysiadau'
     },
     footer: {
       privacy: 'Preifatrwydd',

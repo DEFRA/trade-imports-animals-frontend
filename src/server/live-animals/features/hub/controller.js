@@ -1,4 +1,4 @@
-import { BASE, hubRoutePath, TEMPLATES } from '../../config.js'
+import { dashboardPath, hubRoutePath, TEMPLATES } from '../../config.js'
 import { sections } from '../../flow/flow.js'
 import { rowEntry, rowGatePasses, sectionEntry } from '../../flow/navigation.js'
 import { sectionGatePasses } from '../../flow/gates.js'
@@ -13,7 +13,6 @@ import {
 import { sectionStatus } from '../../flow/section-status.js'
 import { rowStatus, taskRowById } from '../../flow/task-rows.js'
 import { completeOpeningRun } from '../../flow/run-state.js'
-import { dashboardPage } from '../dashboard/page.js'
 import { journeyStrip, routeOptions } from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import { copy as en } from './copy.en.js'
@@ -155,8 +154,8 @@ const handler = async (request, h) => {
     journeyStrip: journeyStrip(journey),
     commodityTotals: buildCommodityTotals(answers, evaluation),
     groups: buildGroups(answers, scope, evaluation, journeyId),
-    dashboardHref: `${BASE}/${dashboardPage.slug}`,
-    backLink: `${BASE}/${dashboardPage.slug}`,
+    dashboardHref: dashboardPath(),
+    backLink: dashboardPath(),
     breadcrumbs: false
   })
 }
