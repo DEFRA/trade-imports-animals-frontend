@@ -5,6 +5,7 @@ import { COUNTRY_LABELS } from '../../src/server/live-animals/services/countries
 import { PORTS } from '../../src/server/live-animals/services/ports/stub.js'
 import { copy as transportCopy } from '../../src/server/live-animals/features/transport/copy.en.js'
 import { copy as documentsCopy } from '../../src/server/live-animals/features/documents/copy.en.js'
+import { completeAnswerSections } from './live-animals-journey.js'
 
 /**
  * Happy-path walk of the live-animals journey. Grows one leg per increment
@@ -191,137 +192,6 @@ const addDocument = async (page, entry) => {
   await page.getByLabel('Year').fill(entry.accompanyingDocumentDateOfIssue.year)
   await setUploadFile(page, entry.filename)
   await page.getByRole('button', { name: 'Save and add another' }).click()
-}
-
-// Walk every answer-gathering section in the real gated order (documents stays
-// optional), leaving the journey on the hub with the review section unlocked
-// (RULE 2 submit-readiness). Uses the fixture's cattle line, which triggers the
-// notification-level unweaned-animals and CPH tail pages.
-const completeAnswerSections = async (page) => {
-  const [line] = values.commodityLines
-  const arrival = values.arrivalDateAtPort
-  const save = () =>
-    page.getByRole('button', { name: 'Save and continue' }).click()
-  const task = (name) => page.getByRole('link', { name }).click()
-
-  // Origin.
-  await task('Where is this consignment coming from?')
-  await chooseCountryOfOrigin(page, FIXTURE_COUNTRY)
-  await page.getByRole('radio', { name: 'Yes' }).check()
-  await page
-    .getByLabel('Region of origin code', { exact: true })
-    .fill(values.regionOfOriginCode)
-  await page
-    .getByLabel('Your internal reference for this consignment (optional)')
-    .fill(values.internalReferenceNumber)
-  await save()
-
-  // Commodities: the batch search creates the fixture's cattle line, the
-  // consolidated details page takes its per-species counts (inc-062), then
-  // the single identification surface takes one identifier unit (inc-063).
-  await task('What are you importing?')
-  await searchAndSelect(page, line.commoditySelection, ['Bos taurus'])
-  await save()
-  await expect(
-    page.getByRole('heading', { name: 'Consignment details' })
-  ).toBeVisible()
-  await page.getByLabel('Number of animals').fill(line.numberOfAnimalsQuantity)
-  await page
-    .getByLabel('Number of packages (optional)')
-    .fill(line.numberOfPackages)
-  await save()
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-  const [unit] = line.animalIdentifiers
-  await task('Animal identification details')
-  await expect(
-    page.getByRole('heading', { name: 'Animal identification details' })
-  ).toBeVisible()
-  await page.getByLabel('Ear tag number').fill(unit.animalIdentifierEarTag)
-  await page.getByRole('button', { name: 'Save and finish' }).click()
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-
-  // About the consignment: internal market walks reason -> purpose -> details.
-  await task('Main reason for importing')
-  await page.getByRole('radio', { name: 'Internal market' }).check()
-  await save()
-  await page.getByRole('radio', { name: 'Breeding' }).check()
-  await save()
-  await expect(
-    page.getByRole('heading', { name: 'Additional animal details' })
-  ).toBeVisible()
-  await page.getByRole('radio', { name: 'Slaughter' }).check()
-  await page
-    .getByRole('group', {
-      name: 'Does the consignment contain any unweaned animals?'
-    })
-    .getByRole('radio', { name: 'No' })
-    .check()
-  await save()
-
-  // Addresses: the five party spokes copy-commit, then the cattle line's CPH
-  // tail page.
-  await task('Roles and addresses')
-  const parties = [
-    ['Consignor or exporter', values.consignor.name],
-    ['Place of destination', values.placeOfDestination.name],
-    ['Place of origin', values.placeOfOrigin.name],
-    ['Consignee', values.consignee.name],
-    ['Importer', values.importer.name]
-  ]
-  for (const [label, name] of parties) {
-    await page
-      .locator('.govuk-summary-list__row', {
-        has: page.getByText(label, { exact: true })
-      })
-      .getByRole('link', { name: 'Add' })
-      .click()
-    await page.getByRole('radio', { name }).check()
-    await save()
-  }
-  await page.getByRole('button', { name: 'Continue' }).click()
-  await expect(
-    page.getByRole('heading', { name: 'County Parish Holding (CPH)' })
-  ).toBeVisible()
-  await page
-    .getByLabel('County Parish Holding (CPH)')
-    .fill(values.countyParishHoldingCph)
-  await save()
-
-  // Transport: the merged arrival-details page takes the date, port, means
-  // and both transport references in one save (inc-065), then transit
-  // countries, transporter type, commercial select.
-  await task('Arrival details')
-  await page.getByLabel('Day').fill(arrival.day)
-  await page.getByLabel('Month').fill(arrival.month)
-  await page.getByLabel('Year').fill(arrival.year)
-  await choosePortOfEntry(page)
-  await page
-    .getByRole('radio', { name: meansOfTransportLabel, exact: true })
-    .check()
-  await page
-    .getByLabel('Transport identification')
-    .fill(values.transportIdentification)
-  await page
-    .getByLabel('Transport document reference')
-    .fill(values.transportDocumentReference)
-  await save()
-  await chooseTransitCountry(page, 'transitedCountries', 'France')
-  await page.getByRole('button', { name: 'Add another country' }).click()
-  await chooseTransitCountry(page, 'transitedCountries-2', 'Belgium')
-  await save()
-  await page
-    .getByRole('radio', { name: values.transporterType, exact: true })
-    .check()
-  await save()
-  await page
-    .getByRole('radio', { name: values.commercialTransporter.name })
-    .check()
-  await save()
-
-  // Contact address.
-  await task('Contact address')
-  await page.getByRole('radio', { name: values.contactAddress.name }).check()
-  await save()
 }
 
 test.describe('live-animals (page-owned spine)', () => {

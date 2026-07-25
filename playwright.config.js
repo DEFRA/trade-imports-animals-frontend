@@ -32,6 +32,11 @@ const realPort = port + 1
 const modelEnv = process.env.MODEL ? { MODEL: process.env.MODEL } : {}
 
 const parity = '**/skeleton-vs-prototype-mongo.spec.js'
+// The axe accessibility scans are CPU-heavy; running them inside the fully-parallel
+// journey suite (which records video+trace for every test) overloads the machine.
+// They get their own lightweight project (no video/trace), run with capped workers
+// via the test:a11y script, and are excluded from the main journey run.
+const a11y = '**/a11y.spec.js'
 
 export default defineConfig({
   testDir: './prototypes/e2e',
@@ -50,7 +55,7 @@ export default defineConfig({
   projects: [
     {
       name: 'prototype',
-      testIgnore: parity,
+      testIgnore: [parity, a11y],
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${port}`,
@@ -74,6 +79,16 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${realPort}`,
         video: 'retain-on-failure',
+        trace: 'retain-on-failure'
+      }
+    },
+    {
+      name: 'a11y',
+      testMatch: a11y,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: `http://localhost:${port}`,
+        video: 'off',
         trace: 'retain-on-failure'
       }
     }

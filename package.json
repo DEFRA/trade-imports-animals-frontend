@@ -20,7 +20,8 @@
     "prototype:serve": "npm run build:frontend && npm run prototype:start",
     "prototype:reset": "node -e \"require('node:fs').writeFileSync('prototypes/shared/data/quotes.json','[]\\n')\"",
     "check:workspace-stack": "node prototypes/e2e/check-workspace-stack.js",
-    "test:prototype": "npm run check:workspace-stack && npm run build:frontend && DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test",
+    "test:prototype": "npm run check:workspace-stack && npm run build:frontend && DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test --project=prototype --project=parity",
+    "test:a11y": "npm run check:workspace-stack && npm run build:frontend && DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test --project=a11y --workers=2",
     "test:prototype:journeys": "npm run check:workspace-stack && npm run build:frontend && DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test --project=prototype",
     "test:prototype:parity": "npm run check:workspace-stack && npm run build:frontend && playwright test --project=parity",
     "test:prototype:demo": "npm run check:workspace-stack && npm run build:frontend && DEMO_SLOWMO=600 DEMO_PACE_MS=1500 playwright test --project=prototype",
@@ -95,6 +96,7 @@
     "undici": "8.5.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
     "@babel/preset-env": "7.29.2",
     "@lhci/cli": "0.15.1",
     "@playwright/test": "1.61.0",
