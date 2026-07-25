@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
 const referenceDataUrl =
-  process.env.REFERENCE_DATA_URL ?? 'http://localhost:8086'
+  process.env.TRADE_IMPORTS_REFERENCE_DATA_URL ?? 'http://localhost:8086'
 const outDir = join(dirname(fileURLToPath(import.meta.url)), 'fixtures')
 
 const targets = [

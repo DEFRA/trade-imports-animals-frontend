@@ -1,5 +1,5 @@
 const referenceDataUrl =
-  process.env.REFERENCE_DATA_URL ?? 'http://localhost:8086'
+  process.env.TRADE_IMPORTS_REFERENCE_DATA_URL ?? 'http://localhost:8086'
 
 export const fetchPortsOfEntry = async () => {
   const response = await fetch(`${referenceDataUrl}/ports-of-entry`, {
