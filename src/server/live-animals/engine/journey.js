@@ -62,10 +62,16 @@ export const currentJourney = async (request, h) => {
   }
   const journeyId = request.params?.journeyId
   if (!journeyId) throw Boom.notFound()
-  if (!(await isKnownJourney(request, journeyId))) throw Boom.notFound()
   const owner = await session.owner(request)
+  // The record store is the ownership authority: it returns the journey only for
+  // its owner. A fresh session (e.g. after a re-sign-in) legitimately owns the
+  // journey but has an empty known-list, so seed it here rather than 404 a journey
+  // the owner can see on their dashboard.
   const loaded = await records.load({ journeyId, owner })
   if (!loaded) throw Boom.notFound()
+  if (!(await isKnownJourney(request, journeyId))) {
+    await session.addKnownJourney(request, h, journeyId)
+  }
   memoWrite(request, loaded)
   return structuredClone(loaded)
 }

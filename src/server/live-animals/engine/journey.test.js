@@ -116,14 +116,17 @@ describe('#currentJourney', () => {
     })
   })
 
-  it('Should 404 an existing journey that the shared session does not know', async () => {
-    const otherJourney = await store.create()
-    await expect(
-      currentJourney(requestFor(otherJourney.journeyId, []), recordingH())
-    ).rejects.toMatchObject({
-      isBoom: true,
-      output: { statusCode: 404 }
-    })
+  it('Should load an owned journey the session does not yet know and record it as known', async () => {
+    const ownedJourney = await store.create()
+    const h = recordingH()
+
+    const loaded = await currentJourney(
+      requestFor(ownedJourney.journeyId, []),
+      h
+    )
+
+    expect(loaded.journeyId).toBe(ownedJourney.journeyId)
+    expect(h.cookies[KNOWN_JOURNEYS_COOKIE]).toContain(ownedJourney.journeyId)
   })
 
   it('Should cancel amendment only for a session-known journey and thread its owner', async () => {
