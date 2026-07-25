@@ -16,8 +16,12 @@ async function getSignOutUrl(_request, _token) {
     '/.well-known/openid-configuration',
     ''
   )
-  const base = `${oidcBaseUrl.origin}${basePath}`
-  return `${base}/signout`
+  const signOutUrl = new URL(`${oidcBaseUrl.origin}${basePath}/signout`)
+  signOutUrl.searchParams.set(
+    'post_logout_redirect_uri',
+    config.get('defraId.signOutRedirectUrl')
+  )
+  return signOutUrl.toString()
 }
 
 export { getSignOutUrl }
