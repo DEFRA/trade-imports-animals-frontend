@@ -6,6 +6,7 @@ import { sessionKeys } from '../constants/session-keys.js'
 const mockLoggerError = vi.fn()
 const mockGetSessionValue = vi.fn()
 const mockSetSessionValue = vi.fn()
+const mockBuildActor = vi.fn()
 
 vi.mock('../helpers/logging/logger.js', () => ({
   createLogger: () => ({
@@ -17,6 +18,10 @@ vi.mock('../helpers/logging/logger.js', () => ({
 vi.mock('../helpers/session-helpers.js', () => ({
   getSessionValue: (...args) => mockGetSessionValue(...args),
   setSessionValue: (...args) => mockSetSessionValue(...args)
+}))
+
+vi.mock('../helpers/actor-helpers.js', () => ({
+  buildActor: (...args) => mockBuildActor(...args)
 }))
 
 vi.mock('../../../config/config.js', () => ({
@@ -35,9 +40,27 @@ vi.mock('../../../config/config.js', () => ({
   }
 }))
 
+const mockActor = {
+  id: 'contact-guid-001',
+  source: 'dynamics-contact',
+  userType: 'B2C',
+  displayName: 'Jane Farmer',
+  organisationId: 'org-001'
+}
+
 describe('#notificationClient', () => {
   const traceId = 'trace-123'
-  const mockRequest = { session: {} }
+  const mockRequest = {
+    session: {},
+    auth: {
+      credentials: {
+        contactId: 'contact-guid-001',
+        sub: 'entra-oid-001',
+        name: 'Jane Farmer',
+        currentRelationshipId: 'org-001'
+      }
+    }
+  }
   let originalFetch
 
   beforeEach(() => {
@@ -46,6 +69,8 @@ describe('#notificationClient', () => {
     mockGetSessionValue.mockClear()
     mockSetSessionValue.mockClear()
     mockLoggerError.mockClear()
+    mockBuildActor.mockClear()
+    mockBuildActor.mockReturnValue(mockActor)
   })
 
   afterEach(() => {
@@ -472,6 +497,9 @@ describe('#notificationClient', () => {
         )
 
         expect(fetch).toHaveBeenCalledTimes(1)
+        expect(mockBuildActor).toHaveBeenCalledWith(
+          mockRequest.auth.credentials
+        )
         expect(fetch).toHaveBeenCalledWith(
           'http://mock-backend/notifications/REF-123/submit',
           {
@@ -479,7 +507,8 @@ describe('#notificationClient', () => {
             headers: {
               'Content-Type': 'application/json',
               'x-trace-id': traceId
-            }
+            },
+            body: JSON.stringify(mockActor)
           }
         )
         expect(result).toEqual(responseBody)
@@ -530,6 +559,9 @@ describe('#notificationClient', () => {
         )
 
         expect(fetch).toHaveBeenCalledTimes(1)
+        expect(mockBuildActor).toHaveBeenCalledWith(
+          mockRequest.auth.credentials
+        )
         expect(fetch).toHaveBeenCalledWith(
           'http://mock-backend/notifications/REF-AMD-1/amend',
           {
@@ -537,7 +569,8 @@ describe('#notificationClient', () => {
             headers: {
               'Content-Type': 'application/json',
               'x-trace-id': traceId
-            }
+            },
+            body: JSON.stringify(mockActor)
           }
         )
         expect(result).toEqual(responseBody)
