@@ -1,6 +1,7 @@
 import { vi } from 'vitest'
 
 import { documentClient } from '../common/clients/document-client.js'
+import { cdpUploaderClient } from '../common/clients/cdp-uploader-client.js'
 import { config } from '../../config/config.js'
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
@@ -129,6 +130,14 @@ describe('#accompanyingDocumentsController', () => {
       uploadId: 'TEST-UPLOAD-ID'
     })
     vi.spyOn(documentClient, 'uploadFile').mockResolvedValue(undefined)
+    // Every GET /accompanying-documents now initiates a cdp-uploader session;
+    // a failure lets the handler 500 rather than silently degrade, so stub a
+    // baseline OK response for tests that don't exercise that path directly.
+    vi.spyOn(cdpUploaderClient, 'initiate').mockResolvedValue({
+      uploadId: 'TEST-CDP-UPLOAD-ID',
+      uploadUrl: 'http://cdp-uploader.test/upload-and-scan/TEST-CDP-UPLOAD-ID',
+      statusUrl: 'http://cdp-uploader.test/status/TEST-CDP-UPLOAD-ID'
+    })
     getSessionValue.mockReset()
     setSessionValue.mockReset()
     // Default: no documents in session
@@ -422,23 +431,16 @@ describe('#accompanyingDocumentsController', () => {
       expect(result).toEqual(expect.stringContaining('Uploading your file'))
     })
 
-    test('renders the wait page (does not match anything) when no correlationId is supplied', async () => {
+    test('redirects straight to /accompanying-documents when no correlationId is supplied (avoids meta-refresh poisoning)', async () => {
       mockNotificationInSession()
-      // A list result that would match if we didn't have the "no corr → no
-      // match" guard.
-      vi.spyOn(documentClient, 'list').mockResolvedValue({
-        items: [
-          {
-            ...asBackendListItem(TEST_DOCUMENTS[0], 'COMPLETE'),
-            correlationId: CORR_OTHER
-          }
-        ]
-      })
+      const listSpy = vi.spyOn(documentClient, 'list')
 
-      const { statusCode, result } = await injectWaitPage({ attempt: '0' })
+      const { statusCode, headers } = await injectWaitPage({ attempt: '0' })
 
-      expect(statusCode).toBe(statusCodes.ok)
-      expect(result).toEqual(expect.stringContaining('Uploading your file'))
+      expect(statusCode).toBe(statusCodes.redirectFound)
+      expect(headers.location).toBe('/accompanying-documents')
+      // Guard triggers before any backend call is made.
+      expect(listSpy).not.toHaveBeenCalled()
     })
   })
 

@@ -21,29 +21,22 @@ const initiateCdpUploaderSession = async (referenceNumber, logger) => {
   // mints its own correlationId). Query-string is URL-safe: correlationId is
   // a UUIDv4 (hex + hyphens, no encoding needed).
   const redirect = `${config.get('cdpUploader.redirectPath')}?corr=${correlationId}`
-  return cdpUploaderClient
-    .initiate({
-      redirect,
-      callback: config.get('cdpUploader.callbackUrl'),
-      s3Bucket: config.get('cdpUploader.documentsBucket'),
-      maxFileSize: config.get('cdpUploader.maxFileSize'),
-      mimeTypes: config.get('cdpUploader.mimeTypes').split(','),
-      metadata: {
-        correlationId,
-        notificationReferenceNumber: referenceNumber
-      }
-    })
-    .then((result) => {
-      logger.info(
-        { uploadId: result?.uploadId, correlationId },
-        'cdp-uploader /initiate ok'
-      )
-      return result
-    })
-    .catch((err) => {
-      logger.warn(`cdp-uploader /initiate failed: ${err.message}`)
-      return null
-    })
+  const result = await cdpUploaderClient.initiate({
+    redirect,
+    callback: config.get('cdpUploader.callbackUrl'),
+    s3Bucket: config.get('cdpUploader.documentsBucket'),
+    maxFileSize: config.get('cdpUploader.maxFileSize'),
+    mimeTypes: config.get('cdpUploader.mimeTypes').split(','),
+    metadata: {
+      correlationId,
+      notificationReferenceNumber: referenceNumber
+    }
+  })
+  logger.info(
+    { uploadId: result?.uploadId, correlationId },
+    'cdp-uploader /initiate ok'
+  )
+  return result
 }
 
 // EUDPA-106 Option 3-with-callbacks: docs list is now sourced from the backend

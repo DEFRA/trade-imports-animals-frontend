@@ -8,12 +8,12 @@
 
   <h2 class="govuk-heading-m">{{ 'Add another document' if documents and documents.length else 'Add a document' }}</h2>
 
-  {# EUDPA-106 fix 2b: form posts direct to /upload-and-scan/<uploadId> so
-     bytes bypass hapi and the sidecar's 10 M cap on /. Falls back to the old
-     same-URL post if the /initiate call in the GET handler failed (spike
-     degradation — recommendation.md covers the follow-up ticket's proper flow). #}
+  {# EUDPA-106: form posts direct to /upload-and-scan/<uploadId> so bytes
+     bypass hapi and the sidecar's 10 M cap on /. The GET handler asserts a
+     live cdp-uploader session before rendering — a failed /initiate 500s
+     rather than degrading to a broken action. #}
   <form method="post" enctype="multipart/form-data" novalidate
-        action="{{ '/upload-and-scan/' + cdpUploaderSession.uploadId if cdpUploaderSession else '' }}"
+        action="/upload-and-scan/{{ cdpUploaderSession.uploadId }}"
         data-max-file-size="{{ maxFileSize }}" data-oversize-error="{{ oversizeFileMessage }}">
     <input type="hidden" name="crumb" value="{{ crumb }}"/>
 

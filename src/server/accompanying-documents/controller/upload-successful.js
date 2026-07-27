@@ -59,6 +59,13 @@ export const uploadSuccessfulHandler = async (request, h) => {
   const referenceNumber = getSessionValue(request, sessionKeys.referenceNumber)
   const traceId = getTraceId() ?? ''
 
+  // Guard: an empty ?corr= would render a wait page whose meta-refresh URL
+  // poisons itself with `correlationId=undefined`. Nothing to wait for, so
+  // fall straight back to the docs list.
+  if (!correlationId) {
+    return h.redirect('/accompanying-documents')
+  }
+
   if (
     await backendHasCorrelationId(
       referenceNumber,
