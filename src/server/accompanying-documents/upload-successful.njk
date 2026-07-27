@@ -4,10 +4,11 @@
 
 {% block head %}
   {{ super() }}
-  {# EUDPA-106 spike: no-JS async polling — the browser re-issues the GET on
-     an interval, and the handler re-checks cdp-uploader status server-side
-     until it flips to ready, then 302s back to /accompanying-documents. #}
-  <meta http-equiv="refresh" content="2;url=/accompanying-documents/upload-successful?attempt={{ nextAttempt }}">
+  {# EUDPA-106 Option 3-with-callbacks: no-JS async poll of the backend list.
+     The browser re-issues the GET on an interval; the handler checks whether
+     the callback has landed by seeing if the notification has any docs. As
+     soon as it does, the handler 302s to /accompanying-documents. #}
+  <meta http-equiv="refresh" content="{{ refreshIntervalSeconds }};url=/accompanying-documents/upload-successful?attempt={{ nextAttempt }}">
 {% endblock %}
 
 {% block content %}
@@ -17,6 +18,8 @@
       <p class="govuk-body">We're scanning your file for viruses. This page will refresh automatically.</p>
       <p class="govuk-body">
         <a href="/accompanying-documents/upload-successful?attempt={{ nextAttempt }}" class="govuk-link">Refresh now</a>
+        or
+        <a href="/accompanying-documents" class="govuk-link">continue without waiting</a>
       </p>
     </div>
   </div>
