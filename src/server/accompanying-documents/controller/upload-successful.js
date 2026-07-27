@@ -20,7 +20,12 @@ import { documentClient } from '../../common/clients/document-client.js'
 // Multi-tab safe: each tab mints its own correlationId in get.js, so Tab 1's
 // callback landing does not cause Tab 2's wait page to redirect prematurely.
 
-const MAX_ATTEMPTS = 5
+// 10 attempts × 2s = 20s ceiling on the wait window — comfortably above the
+// worst-case local mock-scanner + callback round-trip we've observed
+// (~7-10s), so a slow tick doesn't cause a premature give-up. If a callback
+// really is lost, the user still bails out to /accompanying-documents rather
+// than looping forever.
+const MAX_ATTEMPTS = 10
 const REFRESH_INTERVAL_SECONDS = 2
 
 const getAttempt = (request) => {

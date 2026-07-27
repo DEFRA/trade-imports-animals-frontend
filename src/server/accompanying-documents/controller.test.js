@@ -320,6 +320,128 @@ describe('#accompanyingDocumentsController', () => {
     })
   })
 
+  describe('GET /accompanying-documents/upload-successful', () => {
+    const CORR_MINE = 'corr-uuid-for-this-tab'
+    const CORR_OTHER = 'corr-uuid-for-a-different-tab'
+
+    const injectWaitPage = (query = {}) => {
+      const search = new URLSearchParams(query).toString()
+      return server.inject({
+        method: 'GET',
+        url: `/accompanying-documents/upload-successful${search ? `?${search}` : ''}`,
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+    }
+
+    test('redirects to /accompanying-documents when backend list has a matching correlationId', async () => {
+      mockNotificationInSession()
+      vi.spyOn(documentClient, 'list').mockResolvedValue({
+        items: [
+          {
+            ...asBackendListItem(TEST_DOCUMENTS[0], 'COMPLETE'),
+            correlationId: CORR_MINE
+          }
+        ]
+      })
+
+      const { statusCode, headers } = await injectWaitPage({ corr: CORR_MINE })
+
+      expect(statusCode).toBe(statusCodes.redirectFound)
+      expect(headers.location).toBe('/accompanying-documents')
+    })
+
+    test("does not redirect when only other tabs' correlationIds are in the list (multi-tab guard)", async () => {
+      mockNotificationInSession()
+      vi.spyOn(documentClient, 'list').mockResolvedValue({
+        items: [
+          {
+            ...asBackendListItem(TEST_DOCUMENTS[0], 'COMPLETE'),
+            correlationId: CORR_OTHER
+          }
+        ]
+      })
+
+      const { statusCode, result } = await injectWaitPage({
+        corr: CORR_MINE,
+        attempt: '0'
+      })
+
+      // Should render the wait page, not redirect.
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual(expect.stringContaining('Uploading your file'))
+    })
+
+    test('renders a meta-refresh URL that preserves the same correlationId across ticks', async () => {
+      mockNotificationInSession()
+      vi.spyOn(documentClient, 'list').mockResolvedValue({ items: [] })
+
+      const { result } = await injectWaitPage({
+        corr: CORR_MINE,
+        attempt: '2'
+      })
+
+      // meta-refresh preserves ?corr=<same>&attempt=<n+1>
+      expect(result).toEqual(
+        expect.stringContaining(`corr=${CORR_MINE}&amp;attempt=3`)
+      )
+      expect(result).toEqual(
+        expect.stringContaining('meta http-equiv="refresh"')
+      )
+    })
+
+    test('redirects to /accompanying-documents once attempt reaches MAX (give-up on lost callback)', async () => {
+      mockNotificationInSession()
+      // Backend still has no matching doc — the redirect must come from the
+      // attempt cap, not from a match.
+      vi.spyOn(documentClient, 'list').mockResolvedValue({ items: [] })
+
+      const { statusCode, headers } = await injectWaitPage({
+        corr: CORR_MINE,
+        attempt: '10'
+      })
+
+      expect(statusCode).toBe(statusCodes.redirectFound)
+      expect(headers.location).toBe('/accompanying-documents')
+    })
+
+    test('renders the wait page even when the backend list call throws (soft fail, keep polling)', async () => {
+      mockNotificationInSession()
+      vi.spyOn(documentClient, 'list').mockRejectedValue(
+        new Error('backend transiently unavailable')
+      )
+
+      const { statusCode, result } = await injectWaitPage({
+        corr: CORR_MINE,
+        attempt: '1'
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual(expect.stringContaining('Uploading your file'))
+    })
+
+    test('renders the wait page (does not match anything) when no correlationId is supplied', async () => {
+      mockNotificationInSession()
+      // A list result that would match if we didn't have the "no corr → no
+      // match" guard.
+      vi.spyOn(documentClient, 'list').mockResolvedValue({
+        items: [
+          {
+            ...asBackendListItem(TEST_DOCUMENTS[0], 'COMPLETE'),
+            correlationId: CORR_OTHER
+          }
+        ]
+      })
+
+      const { statusCode, result } = await injectWaitPage({ attempt: '0' })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual(expect.stringContaining('Uploading your file'))
+    })
+  })
+
   describe('GET /accompanying-documents/{uploadId}/file', () => {
     beforeEach(() => {
       vi.spyOn(documentClient, 'streamFile').mockReset()
