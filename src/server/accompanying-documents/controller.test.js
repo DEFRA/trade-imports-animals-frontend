@@ -86,6 +86,32 @@ const TEST_DOCUMENTS = [
   }
 ]
 
+// Shapes a flat TEST_DOCUMENTS entry into an AccompanyingDocumentDto as the
+// backend list endpoint returns them — filename lifted into a files[] entry,
+// scanStatus added, other fields kept as-is.
+const asBackendListItem = (flatDoc, scanStatus) => ({
+  uploadId: flatDoc.uploadId,
+  documentType: flatDoc.documentType,
+  documentReference: flatDoc.documentReference,
+  dateOfIssue: flatDoc.dateOfIssue,
+  scanStatus,
+  files: [{ filename: flatDoc.filename }]
+})
+
+const mockDocumentList = (statuses) =>
+  vi.spyOn(documentClient, 'list').mockResolvedValue({
+    items: statuses.map(([flatDoc, scanStatus]) =>
+      asBackendListItem(flatDoc, scanStatus)
+    )
+  })
+
+const mockNotificationInSession = (ref = 'GBN-AG-26-TEST') => {
+  getSessionValue.mockImplementation((_request, key) => {
+    if (key === sessionKeys.referenceNumber) return ref
+    return null
+  })
+}
+
 describe('#accompanyingDocumentsController', () => {
   let server
 
@@ -135,14 +161,12 @@ describe('#accompanyingDocumentsController', () => {
       )
     })
 
-    test('Should show document rows with status tags when documents are in session', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
-      vi.spyOn(documentClient, 'getStatus')
-        .mockResolvedValueOnce({ scanStatus: 'PENDING' })
-        .mockResolvedValueOnce({ scanStatus: 'COMPLETE' })
+    test('Should show document rows with status tags when documents exist for the notification', async () => {
+      mockNotificationInSession()
+      mockDocumentList([
+        [TEST_DOCUMENTS[0], 'PENDING'],
+        [TEST_DOCUMENTS[1], 'COMPLETE']
+      ])
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
@@ -170,13 +194,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should show manual refresh link (not meta-refresh) when any document is PENDING', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return [TEST_DOCUMENTS[0]]
-        return null
-      })
-      vi.spyOn(documentClient, 'getStatus').mockResolvedValueOnce({
-        scanStatus: 'PENDING'
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'PENDING']])
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
@@ -197,13 +216,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should not include meta refresh and show manual refresh link when attempt >= MAX_POLLING_ATTEMPTS', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return [TEST_DOCUMENTS[0]]
-        return null
-      })
-      vi.spyOn(documentClient, 'getStatus').mockResolvedValueOnce({
-        scanStatus: 'PENDING'
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'PENDING']])
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
@@ -222,13 +236,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should still show refresh link (not timed out) when attempt is one below MAX_POLLING_ATTEMPTS boundary', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return [TEST_DOCUMENTS[0]]
-        return null
-      })
-      vi.spyOn(documentClient, 'getStatus').mockResolvedValueOnce({
-        scanStatus: 'PENDING'
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'PENDING']])
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
@@ -250,13 +259,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should show error summary and no Save and continue when a document is REJECTED', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return [TEST_DOCUMENTS[0]]
-        return null
-      })
-      vi.spyOn(documentClient, 'getStatus').mockResolvedValueOnce({
-        scanStatus: 'REJECTED'
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'REJECTED']])
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
@@ -274,13 +278,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should show Save and continue when all documents are COMPLETE', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return [TEST_DOCUMENTS[0]]
-        return null
-      })
-      vi.spyOn(documentClient, 'getStatus').mockResolvedValueOnce({
-        scanStatus: 'COMPLETE'
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
@@ -296,13 +295,11 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should render View file link only for COMPLETE documents', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
-      vi.spyOn(documentClient, 'getStatus')
-        .mockResolvedValueOnce({ scanStatus: 'COMPLETE' })
-        .mockResolvedValueOnce({ scanStatus: 'PENDING' })
+      mockNotificationInSession()
+      mockDocumentList([
+        [TEST_DOCUMENTS[0], 'COMPLETE'],
+        [TEST_DOCUMENTS[1], 'PENDING']
+      ])
 
       const { result, statusCode } = await server.inject({
         method: 'GET',

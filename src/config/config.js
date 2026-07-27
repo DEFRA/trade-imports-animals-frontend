@@ -376,6 +376,12 @@ export const config = convict({
       format: String,
       default: '/accompanying-documents/upload-successful',
       env: 'CDP_UPLOADER_REDIRECT_PATH'
+    },
+    callbackUrl: {
+      doc: 'Absolute URL cdp-uploader POSTs the scan-result callback to (backend)',
+      format: String,
+      default: 'http://localhost:8085/document-uploads/pending/scan-results',
+      env: 'CDP_UPLOADER_CALLBACK_URL'
     }
   }
 })
