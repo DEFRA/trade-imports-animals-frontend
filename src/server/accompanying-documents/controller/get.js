@@ -16,9 +16,14 @@ import { buildPageModel, getAttempt } from './page-model.js'
 // requiring them at /initiate time.
 const initiateCdpUploaderSession = async (referenceNumber, logger) => {
   const correlationId = randomUUID()
+  // Thread the correlationId onto the redirect URL so /upload-successful can
+  // filter the backend list to this specific upload — multi-tab safe (each tab
+  // mints its own correlationId). Query-string is URL-safe: correlationId is
+  // a UUIDv4 (hex + hyphens, no encoding needed).
+  const redirect = `${config.get('cdpUploader.redirectPath')}?corr=${correlationId}`
   return cdpUploaderClient
     .initiate({
-      redirect: config.get('cdpUploader.redirectPath'),
+      redirect,
       callback: config.get('cdpUploader.callbackUrl'),
       s3Bucket: config.get('cdpUploader.documentsBucket'),
       maxFileSize: config.get('cdpUploader.maxFileSize'),

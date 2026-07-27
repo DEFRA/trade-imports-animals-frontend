@@ -8,7 +8,7 @@
      The browser re-issues the GET on an interval; the handler checks whether
      the callback has landed by seeing if the notification has any docs. As
      soon as it does, the handler 302s to /accompanying-documents. #}
-  <meta http-equiv="refresh" content="{{ refreshIntervalSeconds }};url=/accompanying-documents/upload-successful?attempt={{ nextAttempt }}">
+  <meta http-equiv="refresh" content="{{ refreshIntervalSeconds }};url=/accompanying-documents/upload-successful?corr={{ correlationId }}&amp;attempt={{ nextAttempt }}">
 {% endblock %}
 
 {% block content %}
@@ -17,7 +17,7 @@
       <h1 class="govuk-heading-xl">Uploading your file</h1>
       <p class="govuk-body">We're scanning your file for viruses. This page will refresh automatically.</p>
       <p class="govuk-body">
-        <a href="/accompanying-documents/upload-successful?attempt={{ nextAttempt }}" class="govuk-link">Refresh now</a>
+        <a href="/accompanying-documents/upload-successful?corr={{ correlationId }}&amp;attempt={{ nextAttempt }}" class="govuk-link">Refresh now</a>
         or
         <a href="/accompanying-documents" class="govuk-link">continue without waiting</a>
       </p>

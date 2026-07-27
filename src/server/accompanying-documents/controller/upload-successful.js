@@ -11,15 +11,14 @@ import { documentClient } from '../../common/clients/document-client.js'
 // empty and the user has no idea what happened to their upload.
 //
 // So this handler polls the backend list a few times before redirecting: as
-// soon as the notification has any docs, the callback has fired and we
-// redirect; after MAX_ATTEMPTS refreshes we redirect anyway so a slow / lost
-// callback doesn't wedge the user forever.
+// soon as this tab's specific upload appears in the list (identified by the
+// correlationId minted at /initiate time and threaded through the redirect
+// URL), the callback has fired for THIS upload and we redirect; after
+// MAX_ATTEMPTS refreshes we redirect anyway so a slow / lost callback doesn't
+// wedge the user forever.
 //
-// The "has any docs" check works for the spike because test D starts from a
-// notification with no prior docs. For real users mid-flow (who might already
-// have completed docs on the notification), this would need to compare
-// against a pre-upload count or check for a specific correlationId in the
-// backend record. Captured as follow-up in findings.md.
+// Multi-tab safe: each tab mints its own correlationId in get.js, so Tab 1's
+// callback landing does not cause Tab 2's wait page to redirect prematurely.
 
 const MAX_ATTEMPTS = 5
 const REFRESH_INTERVAL_SECONDS = 2
@@ -29,13 +28,20 @@ const getAttempt = (request) => {
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
-const backendHasDocs = async (referenceNumber, traceId, logger) => {
-  if (!referenceNumber) {
+const backendHasCorrelationId = async (
+  referenceNumber,
+  correlationId,
+  traceId,
+  logger
+) => {
+  if (!referenceNumber || !correlationId) {
     return false
   }
   try {
     const response = await documentClient.list(referenceNumber, traceId)
-    return (response.items ?? []).length > 0
+    return (response.items ?? []).some(
+      (item) => item.correlationId === correlationId
+    )
   } catch (err) {
     logger.warn(`upload-successful: backend list failed: ${err.message}`)
     return false
@@ -44,10 +50,18 @@ const backendHasDocs = async (referenceNumber, traceId, logger) => {
 
 export const uploadSuccessfulHandler = async (request, h) => {
   const attempt = getAttempt(request)
+  const correlationId = request.query.corr
   const referenceNumber = getSessionValue(request, sessionKeys.referenceNumber)
   const traceId = getTraceId() ?? ''
 
-  if (await backendHasDocs(referenceNumber, traceId, request.logger)) {
+  if (
+    await backendHasCorrelationId(
+      referenceNumber,
+      correlationId,
+      traceId,
+      request.logger
+    )
+  ) {
     return h.redirect('/accompanying-documents')
   }
 
@@ -58,6 +72,7 @@ export const uploadSuccessfulHandler = async (request, h) => {
   return h.view('accompanying-documents/upload-successful', {
     pageTitle: 'Uploading your file',
     nextAttempt: attempt + 1,
-    refreshIntervalSeconds: REFRESH_INTERVAL_SECONDS
+    refreshIntervalSeconds: REFRESH_INTERVAL_SECONDS,
+    correlationId
   })
 }
