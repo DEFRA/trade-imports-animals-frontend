@@ -7,7 +7,18 @@
   {# EUDPA-106 Option 3-with-callbacks: no-JS async poll of the backend list.
      The browser re-issues the GET on an interval; the handler checks whether
      the callback has landed by seeing if the notification has any docs. As
-     soon as it does, the handler 302s to /accompanying-documents. #}
+     soon as it does, the handler 302s to /accompanying-documents.
+
+     Accessibility trade-off (deferred to EUDPA-296 dashboard rewrite):
+     meta-refresh discards page context every {{ refreshIntervalSeconds }}s,
+     so screen readers re-announce the whole document each tick and any
+     focus/read-position is lost. The two escape hatches below ("Refresh
+     now" and "continue without waiting") satisfy WCAG 2.2.1 Timing
+     Adjustable at Level A/AA, but this page still fails 3.2.5 Change on
+     Request (Level AAA). EUDPA-296 replaces this placeholder with a
+     notification-level status dashboard where the meaningful content per
+     tick makes progressive-enhancement JS polling with an aria-live tag
+     region viable — that is where the a11y pass belongs. #}
   <meta http-equiv="refresh" content="{{ refreshIntervalSeconds }};url=/accompanying-documents/upload-successful?corr={{ correlationId }}&amp;attempt={{ nextAttempt }}">
 {% endblock %}
 
