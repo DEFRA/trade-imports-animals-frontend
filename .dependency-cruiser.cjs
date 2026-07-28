@@ -29,16 +29,19 @@ module.exports = {
       name: 'bridge-no-up',
       comment:
         'bridge/ is a pure synchronous projection over the model. It must not import engine, ' +
-        'flow, features, analysis or shared/kit. The one sanctioned readiness edge ' +
-        '(bridge/readiness-config.js -> flow/section-status.js) is grandfathered in the baseline, ' +
-        'not excepted here.',
+        'flow, features, analysis or shared/kit — EXCEPT features/evaluation.js, the aggregated ' +
+        'feature binding registry that bridge/fulfilment-registry.js reads (features register ' +
+        'their fulfilment bindings; the registry consumes the aggregate). The pathNot sanctions ' +
+        'that one target. The readiness edge (bridge/readiness-config.js -> flow/section-status.js) ' +
+        'stays grandfathered in the baseline — pinned, not blanket-allowed.',
       severity: 'error',
       from: { path: `^${LA}/bridge/` },
       to: {
         path: [
           `^${LA}/(engine|flow|features|analysis)/`,
           `^${LA}/shared/kit\\.js$`
-        ]
+        ],
+        pathNot: `^${LA}/features/evaluation\\.js$`
       }
     },
     {
@@ -56,12 +59,18 @@ module.exports = {
     {
       name: 'flow-no-up',
       comment:
-        'flow/ is static journey topology. It must not import features, analysis or shared/kit. ' +
-        'The 4 known flow->features/*/page.js page-identity edges (flow.js, task-rows.js, run.js, ' +
-        'entry-guard.js) are DEFERRED debt to be grandfathered in a baseline.',
+        'flow/ is static journey topology. It must not import features, analysis or shared/kit — ' +
+        'EXCEPT the features/*/page.js identity leaves, which flow legitimately imports to build ' +
+        'the section / task-row / run / entry topology. That is the intentional "pages are the ' +
+        'spine" design documented in decisions.md: each feature owns its page.js and flow reads ' +
+        'those leaves. The pathNot sanctions exactly that edge — a flow -> features controller or ' +
+        'template still fails.',
       severity: 'error',
       from: { path: `^${LA}/flow/` },
-      to: { path: [`^${LA}/(features|analysis)/`, `^${LA}/shared/kit\\.js$`] }
+      to: {
+        path: [`^${LA}/(features|analysis)/`, `^${LA}/shared/kit\\.js$`],
+        pathNot: `^${LA}/features/[^/]+/page\\.js$`
+      }
     },
     {
       name: 'model-behaviour-bridge-only',
@@ -95,8 +104,9 @@ module.exports = {
       name: 'no-orphans',
       comment:
         'Advisory: modules nothing imports and that import nothing — usually dead code. Excludes ' +
-        'tests, test-support/mocks, fixtures, string-referenced boot/config entries, and the ' +
-        'standalone node entry scripts (dump.js, _capture/) invoked via npm scripts.',
+        'tests, test-support/mocks, fixtures, string-referenced boot/config entries, the ' +
+        'standalone node entry scripts (dump.js, _capture/), and helpers imported only by ' +
+        'excluded test files (copy-leaves.js, it-mode.js) — false-positives, not dead code.',
       severity: 'warn',
       from: {
         path: `^${LA}/`,
@@ -109,7 +119,9 @@ module.exports = {
           `^${LA}/config\\.js$`,
           `^${LA}/routes\\.js$`,
           `^${LA}/dump\\.js$`,
-          `^${LA}/services/_capture/`
+          `^${LA}/services/_capture/`,
+          `^${LA}/shared/copy-leaves\\.js$`,
+          `^${LA}/services/persistence/it-mode\\.js$`
         ]
       },
       to: {}
