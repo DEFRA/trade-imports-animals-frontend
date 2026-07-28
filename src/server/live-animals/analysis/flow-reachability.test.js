@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { buildDispatch, pageOfObligation } from '../flow/dispatch.js'
 import { dispatchPages } from '../features/index.js'
 import { makeScope } from '../engine/index.js'
-import { SYSTEM_POPULATED } from '../flow/obligation-source.js'
+import { SYSTEM_POPULATED } from '../bridge/obligation-source.js'
 import { simulateJourney } from './simulate.js'
 import {
   enumerateScopeStates,

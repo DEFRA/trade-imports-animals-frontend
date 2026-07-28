@@ -1,7 +1,10 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from './flow/dispatch.js'
-import { walkObligations, obligationByName } from './flow/obligation-source.js'
+import {
+  walkObligations,
+  obligationByName
+} from './bridge/obligation-source.js'
 import { store } from './engine/store.js'
 import { configureRecords } from './engine/persistence/records.js'
 import { configureSession } from './engine/persistence/session.js'

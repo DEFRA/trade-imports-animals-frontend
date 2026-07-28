@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { unrecognisedAnswerKeys } from './obligation-source.js'
+import { unrecognisedAnswerKeys } from '../bridge/obligation-source.js'
 
 // The recognition surface: manifest obligation names in their declared
 // positions, flow-only keys and system keys. Anything else is inert to the

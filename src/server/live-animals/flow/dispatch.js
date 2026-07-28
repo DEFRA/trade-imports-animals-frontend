@@ -1,4 +1,7 @@
-import { walkObligations, SYSTEM_POPULATED } from './obligation-source.js'
+import {
+  walkObligations,
+  SYSTEM_POPULATED
+} from '../bridge/obligation-source.js'
 
 let pageOfObligationMap = new Map()
 let collectsByPageMap = new Map()

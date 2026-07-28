@@ -45,7 +45,7 @@ describe('model import boundary', () => {
 
   it('Should catch flow/, engine/ and feature imports', () => {
     const source = [
-      "import { SYSTEM_POPULATED } from '../../flow/obligation-source.js'",
+      "import { SYSTEM_POPULATED } from '../../bridge/obligation-source.js'",
       "import { readiness } from '../../engine/readiness-config.js'"
     ].join('\n')
     expect(() => assertModelImportBoundary(sources(source))).toThrow(

@@ -102,7 +102,7 @@ allow `''`. Leave that out and the field silently becomes save-blocking.
 
 Two obligations must be answered before the journey lets the user move
 past them, not just at submit. They are named in `ENFORCED_AT_CONTINUE`
-(`flow/obligation-source.js`):
+(`bridge/obligation-source.js`):
 
 ```js
 export const ENFORCED_AT_CONTINUE = new Set([

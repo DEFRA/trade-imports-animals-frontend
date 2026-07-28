@@ -150,6 +150,6 @@ export const assertRecognisedAnswerKeys = (answers, context) => {
   throw new Error(
     `Unrecognised answer key(s) ${detail} (${context}). Every stored key ` +
       'must be a manifest obligation name, a flow-only key, a system key ' +
-      'or a declared auxiliary entry key — see flow/obligation-source.js.'
+      'or a declared auxiliary entry key — see bridge/obligation-source.js.'
   )
 }

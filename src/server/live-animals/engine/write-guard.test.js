@@ -8,7 +8,7 @@ import { configureReadyForCheckYourAnswers } from './read.js'
 import { stubH, journeyRequest } from './test-support.js'
 
 // Every key-introducing write asserts the whole resulting answers tree
-// against the recognition surface (flow/obligation-source.js), and
+// against the recognition surface (bridge/obligation-source.js), and
 // submitJourney asserts stored trees the write guards never saw — an
 // unrecognised key is inert to the evaluator yet ships raw at finalise.
 

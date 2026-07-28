@@ -11,7 +11,7 @@ import {
   assertRecognisedAnswerKeys,
   FLOW_ONLY_OBLIGATIONS,
   flowOnlyAnswersFrom
-} from '../flow/obligation-source.js'
+} from '../bridge/obligation-source.js'
 
 const isValidIndex = (index, list) =>
   Number.isInteger(index) && index >= 0 && index < list.length

@@ -1,6 +1,6 @@
 import { isAnswered } from '../../lib/answered.js'
 import { valueAt } from '../../lib/path.js'
-import { MAX_ENTRIES_FROM } from '../../flow/obligation-source.js'
+import { MAX_ENTRIES_FROM } from '../../bridge/obligation-source.js'
 
 /**
  * The collection cardinality link: a collection whose name is declared

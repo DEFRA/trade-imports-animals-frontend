@@ -309,7 +309,7 @@ mid-loop actions must never bounce there early.
 ## 5. Cap the count where the model demands it
 
 Some collections cap their instance count at a sibling field. The declaration
-is data, in [`flow/obligation-source.js`](../flow/obligation-source.js):
+is data, in [`bridge/obligation-source.js`](../bridge/obligation-source.js):
 
 ```js
 export const MAX_ENTRIES_FROM = {

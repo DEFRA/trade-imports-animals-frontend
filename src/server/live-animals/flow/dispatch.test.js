@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { dispatchPages } from '../features/index.js'
 import { makeScope } from '../engine/index.js'
 import { evaluateAnswers } from '../bridge/evaluation.js'
-import * as obligationSource from './obligation-source.js'
+import * as obligationSource from '../bridge/obligation-source.js'
 import { readyForCheckYourAnswers } from './section-status.js'
 import {
   buildDispatch,

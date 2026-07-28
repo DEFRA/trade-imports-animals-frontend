@@ -40,7 +40,7 @@ import {
 } from '../model/obligations/state-queries.js'
 import { isBlankValue } from '../model/obligations/is-blank-value.js'
 import { isAnswered } from '../lib/answered.js'
-import { SYSTEM_POPULATED } from '../flow/obligation-source.js'
+import { SYSTEM_POPULATED } from './obligation-source.js'
 
 export const NA = 'not-applicable'
 export const NOT_STARTED = 'not-started'

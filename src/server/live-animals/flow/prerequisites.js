@@ -1,4 +1,7 @@
-import { walkObligations, ENFORCED_AT_CONTINUE } from './obligation-source.js'
+import {
+  walkObligations,
+  ENFORCED_AT_CONTINUE
+} from '../bridge/obligation-source.js'
 import { allFlowPages } from './flow.js'
 import { pageOfObligation } from './dispatch.js'
 

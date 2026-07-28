@@ -27,7 +27,7 @@ import {
 import { pathKey } from '../lib/path.js'
 import { isAnswered } from '../lib/answered.js'
 import { computeReadyForCheckYourAnswers } from '../engine/readiness-config.js'
-import { FLOW_ONLY_OBLIGATIONS } from '../flow/obligation-source.js'
+import { FLOW_ONLY_OBLIGATIONS } from './obligation-source.js'
 
 // `anyInstanceAnswered` — look up the obligation named `id` and walk the
 // answers tree over its ancestor-group chain, testing each positional instance
@@ -125,7 +125,7 @@ export const rawInScope = (evaluation) => projectInScope(evaluation.obligations)
 // import-type filter (the service entry filter) and the
 // submit-time declaration step. The evaluator omits them, so without this layer
 // their owning pages would be unreachable. Both are unconditional top-level
-// obligations (bare-id pathKeys). Declared in flow/obligation-source.js so
+// obligations (bare-id pathKeys). Declared in bridge/obligation-source.js so
 // the answer-key recognition surface and this projection share one list.
 
 // Project the flow-only obligations onto the FULL scope. Both are unconditional

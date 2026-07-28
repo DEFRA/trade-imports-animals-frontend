@@ -47,7 +47,7 @@ If a gate hard-coded `inScope.has('<key>')` and that string diverged from the mo
 
 The prerequisites clause is what stops every row from being a live link on a blank journey. It is derived, not a hand-authored graph. `flow/prerequisites.js` computes, for any page or section, the `ENFORCED_AT_CONTINUE` obligation ids owned by a **strictly-earlier** flow step, from flow order + the dispatch index + each obligation's own membership of that set. A step is available only once every such prerequisite is answered (`scope.answered`, which is instance-aware — an item-level obligation like `commodityLines[i].commoditySelection` counts as answered once **any** line fills it).
 
-`ENFORCED_AT_CONTINUE` (`flow/obligation-source.js`) is the set `{ countryOfOrigin, commoditySelection }`. So: origin is always open; commodities opens once `countryOfOrigin` is answered; every section after commodities opens once `commoditySelection` is answered. A step never blocks on its **own** continue obligation, only strictly-earlier ones — commodities is not gated by its own `commoditySelection`. An obligation outside `ENFORCED_AT_CONTINUE` is never a prerequisite.
+`ENFORCED_AT_CONTINUE` (`bridge/obligation-source.js`) is the set `{ countryOfOrigin, commoditySelection }`. So: origin is always open; commodities opens once `countryOfOrigin` is answered; every section after commodities opens once `commoditySelection` is answered. A step never blocks on its **own** continue obligation, only strictly-earlier ones — commodities is not gated by its own `commoditySelection`. An obligation outside `ENFORCED_AT_CONTINUE` is never a prerequisite.
 
 Two edges:
 

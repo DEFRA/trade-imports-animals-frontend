@@ -24,7 +24,7 @@
  */
 
 import { pageOfObligation } from '../flow/dispatch.js'
-import { SYSTEM_POPULATED } from '../flow/obligation-source.js'
+import { SYSTEM_POPULATED } from '../bridge/obligation-source.js'
 import { obligations } from '../model/obligations/obligations.js'
 import { makeScope } from '../engine/index.js'
 import { simulateJourney } from './simulate.js'

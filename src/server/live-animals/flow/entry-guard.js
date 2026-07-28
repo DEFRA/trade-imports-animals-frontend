@@ -1,7 +1,10 @@
 import { BASE, createPath, pagePath } from '../config.js'
 import { isAnswered } from '../lib/answered.js'
 import { get } from '../engine/read.js'
-import { obligationByName, SYSTEM_POPULATED } from './obligation-source.js'
+import {
+  obligationByName,
+  SYSTEM_POPULATED
+} from '../bridge/obligation-source.js'
 import { importTypeFilterPage } from '../features/import-type-filter/page.js'
 import { hasEnteredThroughFilter } from './run-state.js'
 
