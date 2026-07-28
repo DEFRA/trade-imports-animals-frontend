@@ -693,11 +693,9 @@ describe('#accompanyingDocumentsController', () => {
       vi.spyOn(documentClient, 'delete').mockResolvedValue(undefined)
     })
 
-    test('Should delete from backend, update session, and redirect when _action is remove-{uploadId}', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+    test('Should delete from backend and redirect when _action is remove-{uploadId} for a doc in the backend list', async () => {
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
 
       const { statusCode, headers } = await server.inject({
         method: 'POST',
@@ -715,18 +713,11 @@ describe('#accompanyingDocumentsController', () => {
         'UPLOAD-1',
         expect.any(String)
       )
-      expect(setSessionValue).toHaveBeenCalledWith(
-        expect.anything(),
-        sessionKeys.documents,
-        [TEST_DOCUMENTS[1]]
-      )
     })
 
-    test('Should return 400 and not call delete when uploadId is not in session', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+    test('Should return 400 and not call delete when uploadId is not in the backend list', async () => {
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
 
       const { statusCode } = await server.inject({
         method: 'POST',
@@ -740,17 +731,53 @@ describe('#accompanyingDocumentsController', () => {
 
       expect(statusCode).toBe(statusCodes.badRequest)
       expect(documentClient.delete).not.toHaveBeenCalled()
-      expect(setSessionValue).not.toHaveBeenCalled()
     })
 
-    test('Should redirect without updating session when backend delete fails', async () => {
+    test('Should return 400 when session has no notification referenceNumber', async () => {
+      getSessionValue.mockReturnValue(null)
+      const listSpy = vi.spyOn(documentClient, 'list')
+
+      const { statusCode } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        payload: { _action: 'remove-UPLOAD-1' }
+      })
+
+      expect(statusCode).toBe(statusCodes.badRequest)
+      expect(listSpy).not.toHaveBeenCalled()
+      expect(documentClient.delete).not.toHaveBeenCalled()
+    })
+
+    test('Should return 400 (fail closed) when the backend list call throws', async () => {
+      mockNotificationInSession()
+      vi.spyOn(documentClient, 'list').mockRejectedValue(
+        new Error('backend transiently unavailable')
+      )
+
+      const { statusCode } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        payload: { _action: 'remove-UPLOAD-1' }
+      })
+
+      expect(statusCode).toBe(statusCodes.badRequest)
+      expect(documentClient.delete).not.toHaveBeenCalled()
+    })
+
+    test('Should still redirect (not 500) when backend delete fails', async () => {
       vi.spyOn(documentClient, 'delete').mockRejectedValue(
         new Error('Backend error')
       )
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
 
       const { statusCode, headers } = await server.inject({
         method: 'POST',
@@ -764,7 +791,6 @@ describe('#accompanyingDocumentsController', () => {
 
       expect(statusCode).toBe(statusCodes.redirectFound)
       expect(headers.location).toBe('/accompanying-documents')
-      expect(setSessionValue).not.toHaveBeenCalled()
     })
   })
 
