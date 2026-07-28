@@ -469,11 +469,9 @@ describe('#accompanyingDocumentsController', () => {
       return { headers: new Headers(headerInit), body: stream }
     }
 
-    test('Should stream file with correct content headers when uploadId is in session', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+    test('Should stream file with correct content headers when uploadId is in the backend list for the session notification', async () => {
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
       const fileContent = 'PDF file content'
       vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
         buildBackendResponse({
@@ -505,11 +503,9 @@ describe('#accompanyingDocumentsController', () => {
       )
     })
 
-    test('Should return 404 and not call backend when uploadId is not in session', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+    test('Should return 404 and not call streamFile when uploadId is not in the backend list', async () => {
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
       vi.spyOn(documentClient, 'streamFile')
 
       const { statusCode } = await server.inject({
@@ -525,8 +521,30 @@ describe('#accompanyingDocumentsController', () => {
       expect(documentClient.streamFile).not.toHaveBeenCalled()
     })
 
-    test('Should return 404 when no documents exist in the session', async () => {
+    test('Should return 404 when session has no notification referenceNumber', async () => {
       getSessionValue.mockReturnValue(null)
+      const listSpy = vi.spyOn(documentClient, 'list')
+      vi.spyOn(documentClient, 'streamFile')
+
+      const { statusCode } = await server.inject({
+        method: 'GET',
+        url: '/accompanying-documents/UPLOAD-1/file',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.notFound)
+      expect(listSpy).not.toHaveBeenCalled()
+      expect(documentClient.streamFile).not.toHaveBeenCalled()
+    })
+
+    test('Should return 404 (fail closed) when the backend list call throws', async () => {
+      mockNotificationInSession()
+      vi.spyOn(documentClient, 'list').mockRejectedValue(
+        new Error('backend transiently unavailable')
+      )
       vi.spyOn(documentClient, 'streamFile')
 
       const { statusCode } = await server.inject({
@@ -565,10 +583,8 @@ describe('#accompanyingDocumentsController', () => {
       'application/msword',
       'application/octet-stream'
     ])('Should serve %s without downgrade', async (mimeType) => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
       vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
         buildBackendResponse({ contentType: mimeType })
       )
@@ -588,10 +604,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should fall back to application/octet-stream for disallowed MIME types', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
       vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
         buildBackendResponse({
           contentType: 'text/html',
@@ -614,10 +628,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should strip MIME type parameters before allow-list check', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
       vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
         buildBackendResponse({ contentType: 'application/pdf; charset=utf-8' })
       )
@@ -636,10 +648,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should fall back to application/octet-stream and attachment when backend returns no content headers', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
       vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
         buildBackendResponse({ contentType: null, contentDisposition: null })
       )
@@ -659,10 +669,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should return 500 when documentClient.streamFile throws', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
       vi.spyOn(documentClient, 'streamFile').mockRejectedValue(
         new Error('Backend error')
       )
