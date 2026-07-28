@@ -165,7 +165,7 @@ Gating pages is only one use of scope. The consumers all read the one
    section's authored gate (`flow/flow.js`). It is true once every answer
    section is fulfilled, not applicable or optional, judged against `inScope`
    (`flow/section-status.js`, the static default held by
-   `engine/readiness-config.js`).
+   `bridge/readiness-config.js`).
 3. **Status** — `statusOf` (`bridge/status.js`), reached through
    `rowStatus` (`flow/task-rows.js`), filters an obligation's instances to
    those in scope; none in scope means Not applicable.

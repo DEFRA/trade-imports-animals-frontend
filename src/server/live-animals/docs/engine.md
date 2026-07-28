@@ -254,7 +254,7 @@ state.
 ### The readiness seam
 
 `readyForCheckYourAnswers` needs the boot-built dispatch index and the flow's
-task-row list. `engine/readiness-config.js` statically defaults to
+task-row list. `bridge/readiness-config.js` statically defaults to
 `flow/section-status.js`'s `readyForCheckYourAnswers`, and
 `bridge/scope.js` reaches it through `computeReadyForCheckYourAnswers`.
 `configureReadyForCheckYourAnswers` remains as a test override; runtime boot

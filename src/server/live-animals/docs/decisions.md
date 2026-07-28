@@ -121,7 +121,7 @@ Two placements follow:
   "which page owns obligation X" without the model knowing pages exist.
 - **`readyForCheckYourAnswers` has a static flow default.** Submit readiness
   needs the dispatch index and task-row list — flow knowledge the model must
-  not import. [`engine/readiness-config.js`](../engine/readiness-config.js)
+  not import. [`bridge/readiness-config.js`](../bridge/readiness-config.js)
   uses `flow/section-status.js`'s roll-up by default and exposes
   `configureReadyForCheckYourAnswers` only as a test override.
 

@@ -1,7 +1,7 @@
 import { currentJourney } from './journey.js'
 import { evaluateAnswers } from '../bridge/evaluation.js'
 import { makeScopeFromEvaluation } from '../bridge/scope.js'
-import { configureReadyForCheckYourAnswers } from './readiness-config.js'
+import { configureReadyForCheckYourAnswers } from '../bridge/readiness-config.js'
 import { assembleRequestView } from './request-view.js'
 import { session } from './persistence/session.js'
 import { flowOnlyAnswersFrom } from '../bridge/obligation-source.js'

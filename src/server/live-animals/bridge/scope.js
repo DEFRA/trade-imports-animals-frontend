@@ -26,7 +26,7 @@ import {
 } from './fulfilments.js'
 import { pathKey } from '../lib/path.js'
 import { isAnswered } from '../lib/answered.js'
-import { computeReadyForCheckYourAnswers } from '../engine/readiness-config.js'
+import { computeReadyForCheckYourAnswers } from './readiness-config.js'
 import { FLOW_ONLY_OBLIGATIONS } from './obligation-source.js'
 
 // `anyInstanceAnswered` — look up the obligation named `id` and walk the
@@ -142,7 +142,7 @@ const projectFlowOnlyScope = (inScope) => {
  *
  * `readyForCheckYourAnswers` comes from the readiness seam
  * (`flow/section-status.js`'s `readyForCheckYourAnswers` by default, reached
- * through `engine/readiness-config.js`), which rolls up the task rows via
+ * through `bridge/readiness-config.js`), which rolls up the task rows via
  * `rowStatus` / `statusOf` — so passing the projected `inScope` yields readiness
  * without this module importing `read.js`.
  *

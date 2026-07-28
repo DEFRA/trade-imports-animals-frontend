@@ -67,7 +67,7 @@ The derived gate refuses to answer until `buildDispatch()` has run. `flow/gates.
 The reason is an ambiguity: `collectsOf(pageId)` legitimately returns `[]` for a known page that collects nothing, and its `?? []` fallback would return the same for every page if the index were simply not built yet. Unbuilt and collects-nothing are indistinguishable from the caller's side. Without the guard, a derived gate consulted before boot would silently gate every page and section out — no error, just an empty journey. So `flow/dispatch.js` tracks `isDispatchBuilt()` and `flow/gates.js` checks it before every derived answer.
 
 Readiness has no corresponding boot requirement:
-`engine/readiness-config.js` statically defaults to the real
+`bridge/readiness-config.js` statically defaults to the real
 `flow/section-status.js` roll-up. `configureReadyForCheckYourAnswers` is a test
 override.
 
@@ -139,7 +139,7 @@ Precedence: **hub exit > change context > run sequence > `nextInSection`**. `kit
 - `readyForCheckYourAnswers(answers, inScope)` (`flow/section-status.js`) — the submit-readiness gate: true once every task row is Fulfilled, Not applicable or Optional. Consulted both by the review section's authored gate and by `submitJourney` in `engine/write.js`.
 
 Flow applies the bridge's `statusOf` to its page groupings. The bounded
-reverse dependency is readiness: `engine/readiness-config.js` imports
+reverse dependency is readiness: `bridge/readiness-config.js` imports
 `flow/section-status.js`'s `readyForCheckYourAnswers` as its static default,
 and `bridge/scope.js` calls that adapter while building scope. The model keeps
 zero `flow/` imports. See [architecture.md](architecture.md) for the dependency

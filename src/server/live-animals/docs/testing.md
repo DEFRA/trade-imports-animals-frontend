@@ -142,7 +142,7 @@ beforeAll(() => {
 ```
 
 Readiness needs no boot setup:
-`engine/readiness-config.js` statically uses
+`bridge/readiness-config.js` statically uses
 `flow/section-status.js`'s `readyForCheckYourAnswers`. Tests can call
 `configureReadyForCheckYourAnswers` when they need to override that result.
 

@@ -29,8 +29,9 @@ module.exports = {
       name: 'bridge-no-up',
       comment:
         'bridge/ is a pure synchronous projection over the model. It must not import engine, ' +
-        'flow, features, analysis or shared/kit. The sanctioned bridge->engine readiness edge ' +
-        '(scope.js -> readiness-config.js) will be grandfathered in a baseline, not excepted here.',
+        'flow, features, analysis or shared/kit. The one sanctioned readiness edge ' +
+        '(bridge/readiness-config.js -> flow/section-status.js) is grandfathered in the baseline, ' +
+        'not excepted here.',
       severity: 'error',
       from: { path: `^${LA}/bridge/` },
       to: {
@@ -44,8 +45,8 @@ module.exports = {
       name: 'engine-no-up',
       comment:
         'engine/ is the stateful async runtime. It must not import flow, features, analysis or ' +
-        'shared/kit. The sanctioned engine->flow readiness edge (readiness-config.js -> ' +
-        'section-status.js) will be grandfathered in a baseline, not excepted here.',
+        'shared/kit. Engine reaches the model only through bridge and has zero up-edge (the ' +
+        'readiness seam now lives in bridge). Kept strict, no exceptions.',
       severity: 'error',
       from: { path: `^${LA}/engine/` },
       to: {
