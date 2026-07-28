@@ -1,0 +1,389 @@
+[
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/bridge/fulfilment-registry.js",
+    "to": "src/server/live-animals/features/evaluation.js",
+    "rule": {
+      "severity": "warn",
+      "name": "bridge-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/bridge/scope.js",
+    "to": "src/server/live-animals/engine/readiness-config.js",
+    "rule": {
+      "severity": "warn",
+      "name": "bridge-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/engine/readiness-config.js",
+    "to": "src/server/live-animals/flow/section-status.js",
+    "rule": {
+      "severity": "warn",
+      "name": "engine-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/entry-guard.js",
+    "to": "src/server/live-animals/features/import-type-filter/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/additional-details/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/addresses/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/check-answers/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/commodities/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/confirmation/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/contact/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/cph-number/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/dashboard/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/declaration/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/destination-country/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/documents/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/exit-date/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/import-purpose/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/import-reason/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/import-type-filter/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/origin/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/port-of-exit/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/flow.js",
+    "to": "src/server/live-animals/features/transport/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/run.js",
+    "to": "src/server/live-animals/features/additional-details/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/run.js",
+    "to": "src/server/live-animals/features/commodities/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/run.js",
+    "to": "src/server/live-animals/features/import-purpose/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/run.js",
+    "to": "src/server/live-animals/features/import-reason/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/run.js",
+    "to": "src/server/live-animals/features/import-type-filter/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/run.js",
+    "to": "src/server/live-animals/features/origin/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/task-rows.js",
+    "to": "src/server/live-animals/features/additional-details/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/task-rows.js",
+    "to": "src/server/live-animals/features/addresses/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/task-rows.js",
+    "to": "src/server/live-animals/features/commodities/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/task-rows.js",
+    "to": "src/server/live-animals/features/contact/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/task-rows.js",
+    "to": "src/server/live-animals/features/cph-number/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/task-rows.js",
+    "to": "src/server/live-animals/features/destination-country/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/task-rows.js",
+    "to": "src/server/live-animals/features/documents/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/task-rows.js",
+    "to": "src/server/live-animals/features/exit-date/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/task-rows.js",
+    "to": "src/server/live-animals/features/import-purpose/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/task-rows.js",
+    "to": "src/server/live-animals/features/import-reason/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/task-rows.js",
+    "to": "src/server/live-animals/features/origin/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/task-rows.js",
+    "to": "src/server/live-animals/features/port-of-exit/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "src/server/live-animals/flow/task-rows.js",
+    "to": "src/server/live-animals/features/transport/page.js",
+    "rule": {
+      "severity": "warn",
+      "name": "flow-no-up"
+    }
+  },
+  {
+    "type": "module",
+    "from": "src/server/live-animals/services/persistence/it-mode.js",
+    "to": "src/server/live-animals/services/persistence/it-mode.js",
+    "rule": {
+      "severity": "warn",
+      "name": "no-orphans"
+    }
+  },
+  {
+    "type": "module",
+    "from": "src/server/live-animals/shared/copy-leaves.js",
+    "to": "src/server/live-animals/shared/copy-leaves.js",
+    "rule": {
+      "severity": "warn",
+      "name": "no-orphans"
+    }
+  }
+]

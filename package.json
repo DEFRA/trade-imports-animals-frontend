@@ -26,7 +26,7 @@
     "lint:js": "eslint .",
     "lint:js:fix": "eslint . --fix",
     "lint:scss": "stylelint \"src/**/*.scss\" --cache --cache-location .cache/stylelint --cache-strategy content --color --ignore-path .gitignore",
-    "lint:arch": "depcruise src/server/live-animals --config .dependency-cruiser.cjs --output-type err-long --cache",
+    "lint:arch": "depcruise src/server/live-animals --config .dependency-cruiser.cjs --ignore-known --output-type err-long --cache",
     "depcruise:baseline": "depcruise src/server/live-animals --config .dependency-cruiser.cjs --output-type baseline > .dependency-cruiser-known-violations.json",
     "depcruise:graph": "depcruise src/server/live-animals --config .dependency-cruiser.cjs --output-type archi | dot -T svg > live-animals-arch.svg",
     "pretest": "npm run build:frontend",
