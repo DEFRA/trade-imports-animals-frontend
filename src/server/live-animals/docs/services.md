@@ -19,6 +19,15 @@ Each service is a folder with a fixed shape:
   exists (`countries`, `ports`, `document-uploads`, and the persistence
   services). It fetches or calls the live system.
 
+For the reference-data services (`countries`, `ports`), `stub.js` does not
+hand-author its list — it seeds from a committed captured fixture. `_capture/capture.js`
+snapshots the live reference-data into `_capture/fixtures/*.json`, and
+`_capture/fixtures.js` loads them; the stubs derive `COUNTRY_LABELS` / `PORTS`
+from that single canonical dataset, so the canned stub data and the captured
+real data cannot drift. The network-boundary tests (`run-mode.test.js`)
+deliberately keep small synthetic payloads instead of the fixture — they assert
+`prime()` _replaces_ the stub, which needs the fetched data to differ from it.
+
 Controllers import `services/<name>/index.js` and nothing deeper, so the data
 source can change behind the interface without touching a page.
 
