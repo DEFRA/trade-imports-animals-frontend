@@ -4,8 +4,9 @@
 //   Layers, low -> high:   model < bridge < engine < flow < (features | analysis | shared/kit)
 //   All production imports must point DOWN.
 //
-// ADVISORY INCREMENT: every rule is severity:'warn' — it reports but does not gate. A later
-// increment promotes the layer rules to 'error' and adds a baseline for the sanctioned edges.
+// HARD GATE: the layer rules are severity:'error' — a new up-edge fails lint (and CI). The
+// sanctioned/deferred edges are grandfathered in .dependency-cruiser-known-violations.json via
+// --ignore-known, which pins both endpoints of each edge. Only no-orphans stays advisory (warn).
 
 const LA = 'src/server/live-animals'
 
@@ -18,7 +19,7 @@ module.exports = {
         'services/<name>/index.js barrel. Subsumes obligation-purity.js ' +
         'assertModelImportBoundary: bans higher layers, lib/shared/config, and (because ' +
         'node_modules/node: nodes stay in the graph via doNotFollow) any npm/node-builtin import.',
-      severity: 'warn',
+      severity: 'error',
       from: { path: `^${LA}/model/` },
       to: {
         pathNot: [`^${LA}/model/`, `^${LA}/services/[^/]+/index\\.js$`]
@@ -30,7 +31,7 @@ module.exports = {
         'bridge/ is a pure synchronous projection over the model. It must not import engine, ' +
         'flow, features, analysis or shared/kit. The sanctioned bridge->engine readiness edge ' +
         '(scope.js -> readiness-config.js) will be grandfathered in a baseline, not excepted here.',
-      severity: 'warn',
+      severity: 'error',
       from: { path: `^${LA}/bridge/` },
       to: {
         path: [
@@ -45,7 +46,7 @@ module.exports = {
         'engine/ is the stateful async runtime. It must not import flow, features, analysis or ' +
         'shared/kit. The sanctioned engine->flow readiness edge (readiness-config.js -> ' +
         'section-status.js) will be grandfathered in a baseline, not excepted here.',
-      severity: 'warn',
+      severity: 'error',
       from: { path: `^${LA}/engine/` },
       to: {
         path: [`^${LA}/(flow|features|analysis)/`, `^${LA}/shared/kit\\.js$`]
@@ -57,7 +58,7 @@ module.exports = {
         'flow/ is static journey topology. It must not import features, analysis or shared/kit. ' +
         'The 4 known flow->features/*/page.js page-identity edges (flow.js, task-rows.js, run.js, ' +
         'entry-guard.js) are DEFERRED debt to be grandfathered in a baseline.',
-      severity: 'warn',
+      severity: 'error',
       from: { path: `^${LA}/flow/` },
       to: { path: [`^${LA}/(features|analysis)/`, `^${LA}/shared/kit\\.js$`] }
     },
@@ -67,7 +68,7 @@ module.exports = {
         'Only bridge/ may import the model BEHAVIOUR surface (evaluator + state-queries). The ' +
         'obligation MANIFEST is shared read-only vocabulary many layers import, so this targets ' +
         'model/obligations/(evaluator|state-queries).js specifically. Clean today (only bridge/*).',
-      severity: 'warn',
+      severity: 'error',
       from: { pathNot: [`^${LA}/bridge/`, `^${LA}/model/`] },
       to: { path: `^${LA}/model/obligations/(evaluator|state-queries)\\.js$` }
     },
@@ -76,7 +77,7 @@ module.exports = {
       comment:
         'engine/persistence/** are PORT definitions that stay abstract by never importing a ' +
         'services/ implementation — routes.js wires the impl in at boot. Keeps the port abstract.',
-      severity: 'warn',
+      severity: 'error',
       from: { path: `^${LA}/engine/persistence/` },
       to: { path: `^${LA}/services/` }
     },
@@ -85,7 +86,7 @@ module.exports = {
       comment:
         'No import cycles under live-animals. The readiness staircase is a straight up-chain, not ' +
         'a cycle. from anchored to live-animals so a cycle elsewhere in the app cannot fail this.',
-      severity: 'warn',
+      severity: 'error',
       from: { path: `^${LA}/` },
       to: { circular: true }
     },
