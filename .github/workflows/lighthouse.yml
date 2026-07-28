@@ -43,7 +43,7 @@ jobs:
       tag: ${{ steps.branch-tag.outputs.sanitised }}
     steps:
       - name: Checkout workspace
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: DEFRA/trade-imports-animals-workspace
           ref: main
@@ -63,7 +63,7 @@ jobs:
         run: ./scripts/stack/run-stack.sh --branch "${{ inputs.branch || github.event.workflow_run.head_branch || github.ref_name }}"
 
       - name: Checkout frontend
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: DEFRA/trade-imports-animals-frontend
           ref: ${{ inputs.branch || github.event.workflow_run.head_branch || github.ref_name }}
