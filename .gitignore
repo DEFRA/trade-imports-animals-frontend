@@ -16,14 +16,7 @@ chromewebdata**
 localhost**
 test-results/
 
-# Prototype JSON datastore — written at runtime
-prototypes/shared/data/quotes.json
-prototypes/standalone/*/lib/data/quotes.json
-
-# Playwright demo suite output (videos + report)
+# Playwright E2E suite output (videos + report)
 playwright-report/
 blob-report/
 .playwright/
-
-# Superseded originals parked during the prototype-spike refactor (throwaway)
-prototypes/standalone/_quarantine/

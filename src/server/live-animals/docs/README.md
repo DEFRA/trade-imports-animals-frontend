@@ -17,10 +17,10 @@ inside the notification).
 
 Run everything from the frontend repo root (`trade-imports-animals-frontend`).
 
-Run the local service with the other prototype spikes enabled:
+Run the local service:
 
 ```
-npm run prototype
+npm run dev
 ```
 
 Then open the dashboard and start a notification:
@@ -37,12 +37,10 @@ Run the service unit suite:
 npm run test:live-animals
 ```
 
-Run the Playwright E2E suite. It also covers the other prototype spikes and
-needs the workspace stack up (`scripts/stack/run-stack.sh`); see
-[testing.md](testing.md):
+Run the promoted journey's Playwright E2E suite; see [testing.md](testing.md):
 
 ```
-npm run test:prototype
+npm run test:e2e
 ```
 
 Inspect the model without a server — print derived scope, wipes, section statuses

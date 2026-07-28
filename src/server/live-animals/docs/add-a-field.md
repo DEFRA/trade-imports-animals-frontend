@@ -257,16 +257,15 @@ follow-ons:
 
 - Make the validator reject blank. Compose `requiredText('exporterReference',
 '...')` with the length check.
-- Teach the shared E2E walk to fill it. The specs in `prototypes/e2e/` walk
-  every journey with the helpers in `prototypes/e2e/journey.js`, and the other
-  journeys do not have your field. Fill it only when present:
+- Teach the E2E walk in `e2e/live-animals-journey.js` to fill it. Fill it only
+  when present:
 
 ```js
 const reference = page.getByLabel('Exporter reference (optional)')
 if (await reference.count()) await reference.fill('EXP-2026-0142')
 ```
 
-Then run `npm run test:prototype` from the frontend repo root.
+Then run `npm run test:e2e` from the frontend repo root.
 
 ## Variation: make the field conditional
 

@@ -23,13 +23,13 @@ server to find out.
 ### E2E suite
 
 ```
-npm run test:prototype
+npm run test:e2e
 ```
 
 Playwright, Chromium only, uses `playwright.config.js` at the repo root.
 
-- `prototype` — every journey's demo walk, against a stub-mode server on port 3000. The live-animals net (`prototypes/e2e/live-animals.spec.js`) runs here, alongside the sibling prototype specs in the same folder.
-- `a11y` — the accessibility checks in `prototypes/e2e/a11y.spec.js`.
+- `journeys` — the promoted live-animals journey against a stub-mode server on port 3000 (`e2e/live-animals.spec.js`).
+- `a11y` — the accessibility checks in `e2e/a11y.spec.js`.
 
 Each script builds the frontend assets once, then starts the server. The server
 on 3000 refuses to reuse an existing one — if a dev server is already holding
@@ -42,9 +42,9 @@ lsof -ti:3000 | xargs kill
 To run one project, or filter by title:
 
 ```
-npm run test:prototype:journeys              # demo project only
-npm run test:a11y                            # accessibility project only
-npm run test:prototype -- -g "live-animals"  # filter by title
+npm run test:e2e                            # journey project only
+npm run test:a11y                           # accessibility project only
+npm run test:e2e -- -g "live-animals"       # filter by title
 ```
 
 The title filter matches this journey's own describe blocks — `live-animals (page-owned spine)` and `live-animals — country of origin without JavaScript`.
@@ -109,11 +109,7 @@ The persistence and reference-data services are proven against their ports:
 
 ### The live-animals E2E spec
 
-`prototypes/e2e/live-animals.spec.js` is this journey's browser-level net: a happy-path walk fed from `src/server/live-animals/flow/fixtures/happy-path.json` that grows one leg per increment, plus per-section specs pinning gates, loops and validation in the rendered DOM — import type, the opening linear run, the hub, origin (including the no-JS plain select and the accessible-autocomplete enhancement), the commodities batch search and per-species counts, animal identifiers, the N-of-M identifier cap, import reason and purpose, accompanying documents and upload rejection, addresses and the party picker, the transport rows, CPH number, check-your-answers, change-from-CYA threading, declaration and confirmation, and the dashboard amend flow.
-
-### Sibling prototype specs
-
-The `prototype` project runs every journey spec in `prototypes/e2e/`, so `npm run test:prototype` also walks the sibling car-insurance prototypes (`journey.js` `JOURNEYS`) and the obligations-model specs under `prototypes/e2e/obligations/`. These exercise the shared engine and page-kit primitives on other journeys; they do not touch the live-animals model. Filter them out with `-g "live-animals"` when you only want this journey.
+`e2e/live-animals.spec.js` is this journey's browser-level net: a happy-path walk fed from `src/server/live-animals/flow/fixtures/happy-path.json` that grows one leg per increment, plus per-section specs pinning gates, loops and validation in the rendered DOM — import type, the opening linear run, the hub, origin (including the no-JS plain select and the accessible-autocomplete enhancement), the commodities batch search and per-species counts, animal identifiers, the N-of-M identifier cap, import reason and purpose, accompanying documents and upload rejection, addresses and the party picker, the transport rows, CPH number, check-your-answers, change-from-CYA threading, declaration and confirmation, and the dashboard amend flow.
 
 ### Why the specs pin exact DOM
 
@@ -214,7 +210,7 @@ The repo's pre-commit hook runs a whole-tree `format:check`, lint and the full u
 npx eslint "src/server/live-animals/**/*.js"
 npx prettier --check "src/server/live-animals/**/*.js"
 npm run test:live-animals
-npm run test:prototype
+npm run test:e2e
 ```
 
 ### Re-lint after formatting

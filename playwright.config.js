@@ -1,24 +1,10 @@
 import { defineConfig, devices } from '@playwright/test'
 
 /**
- * Playwright config for the prototype suites. Two projects, two servers, one
- * command (`npm run test:prototype`):
- *
- *   - `prototype` — the demo suite. Each test walks a whole prototype journey
- *     end to end against a STUB-mode server and records a video, so after every
- *     iteration there is a fresh playback of each journey.
- * The server is a stable pre-built one-shot server (not the watch-mode dev
- * server, which answers before assets are built and can restart under test
- * load). The `test:prototype*` scripts build the assets once before Playwright
- * starts.
+ * Playwright config for the promoted live-animals journey and its accessibility
+ * checks.
  */
 const port = Number(process.env.PORT ?? 3000)
-
-// Forward the retrofit model flag (MODEL=a|b) to the prototype servers the
-// E2E launches. Unset → default (a), byte-identical to today. MODEL=b boots
-// the servers on B's obligation model so the journeys + Mongo parity exercise
-// the retrofit end-to-end.
-const modelEnv = process.env.MODEL ? { MODEL: process.env.MODEL } : {}
 
 // The axe accessibility scans are CPU-heavy; running them inside the fully-parallel
 // journey suite (which records video+trace for every test) overloads the machine.
@@ -27,7 +13,7 @@ const modelEnv = process.env.MODEL ? { MODEL: process.env.MODEL } : {}
 const a11y = '**/a11y.spec.js'
 
 export default defineConfig({
-  testDir: './prototypes/e2e',
+  testDir: './e2e',
   testMatch: '**/*.spec.js',
   // Journeys are independent (each owns its own quote id) and the JSON store is
   // synchronous, so they can run in parallel even though each is slow.
@@ -42,12 +28,12 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'prototype',
+      name: 'journeys',
       testIgnore: a11y,
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${port}`,
-        // Slow each action down so the demo video is watchable. Override with
+        // Slow each action down so the recorded journey is watchable. Override with
         // DEMO_SLOWMO (e.g. DEMO_SLOWMO=0 for a fast run).
         launchOptions: {
           slowMo:
@@ -55,7 +41,7 @@ export default defineConfig({
               ? Number(process.env.DEMO_SLOWMO)
               : 600
         },
-        // Retain a video for every run (not just failures) — these are the demo.
+        // Retain a video for every run, not just failures.
         video: 'on',
         trace: 'on'
       }
@@ -73,9 +59,9 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'npm run prototype:start',
-      url: `http://localhost:${port}/prototype`,
-      env: { PORT: String(port), ...modelEnv },
+      command: 'npm run e2e:start',
+      url: `http://localhost:${port}/health`,
+      env: { PORT: String(port) },
       timeout: 180_000,
       reuseExistingServer: false
     }

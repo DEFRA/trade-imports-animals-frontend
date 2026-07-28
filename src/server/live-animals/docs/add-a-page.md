@@ -154,7 +154,7 @@ controller/template pairs, each with its own narrower `collects` — see
 Create `features/import-reason/template.njk`, copying
 [`features/import-reason/template.njk`](../features/import-reason/template.njk).
 Extend the shared layout, include the shared error summary, and use govuk
-macros. View names resolve from the prototypes Nunjucks root, so the controller
+macros. View names resolve from the server Nunjucks root, so the controller
 references it as
 `live-animals/features/import-reason/template`.
 
@@ -261,7 +261,7 @@ do. The requiredness and scope of a field are model facts — see
 ## The happy-path E2E
 
 The journey's own spec
-([`prototypes/e2e/live-animals.spec.js`](../../../e2e/live-animals.spec.js))
+([`e2e/live-animals.spec.js`](../../../../e2e/live-animals.spec.js))
 walks the full journey by clicking named task links and asserting headings,
 ending on the confirmation panel. The full-walk test completes every hub task,
 so a mandatory new field blocks `readyForCheckYourAnswers` and the final submit
@@ -275,7 +275,7 @@ From the frontend repo root:
 
 ```
 npm run test:live-animals
-npm run test:prototype
+npm run test:e2e
 ```
 
 Both suites must be green, including your new contract case. If the unit suite

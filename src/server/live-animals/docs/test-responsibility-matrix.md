@@ -19,6 +19,6 @@ primary layer's detailed assertions.
 | Cross-browser                | Tests-repo integrated  | Thin end-to-end coverage in the supported browser set                    |
 | Deployed accessibility smoke | Tests-repo integrated  | A small accessibility check against the deployed integrated service      |
 
-“Frontend canned” means the deterministic STUB-mode `prototype` Playwright
+“Frontend canned” means the deterministic STUB-mode `journeys` Playwright
 project in this repository. The tests repo work in pr-012 verifies integrated
 seams; it does not duplicate the detailed canned assertions owned here.
