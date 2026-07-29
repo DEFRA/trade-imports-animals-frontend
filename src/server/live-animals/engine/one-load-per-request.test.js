@@ -7,7 +7,7 @@ import {
   KNOWN_JOURNEYS_COOKIE,
   configureSession
 } from './persistence/session.js'
-import { records as realRecords } from '../services/persistence/records/real.js'
+import { records as realRecords } from '../services/persistence/records/real/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { recordingH } from './test-support.js'
 import { countryOfOrigin } from '../model/obligations/obligations.js'

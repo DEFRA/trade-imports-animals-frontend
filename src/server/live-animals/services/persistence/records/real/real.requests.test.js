@@ -5,22 +5,22 @@ import {
   DELETED,
   DRAFT,
   SUBMITTED
-} from '../../../engine/persistence/records.js'
-import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
+} from '../../../../engine/persistence/records.js'
+import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import {
   countryOfOrigin,
   numberOfAnimals
-} from '../../../model/obligations/obligations.js'
+} from '../../../../model/obligations/obligations.js'
 import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments
-} from './fulfilment-codec/index.js'
+} from '../fulfilment-codec/index.js'
 import {
   answersToTargetNotification,
   fulfilmentToNotification
-} from './mapper.js'
-import { isRecoverableBackendError } from './errors.js'
-import { mapStatus, records } from './real.js'
+} from '../mapper.js'
+import { isRecoverableBackendError } from '../errors.js'
+import { mapStatus, records } from './index.js'
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()

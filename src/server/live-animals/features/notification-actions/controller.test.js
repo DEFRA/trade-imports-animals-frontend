@@ -18,7 +18,7 @@ import {
 } from '../../engine/persistence/session.js'
 import { journeyRequest, stubH } from '../../engine/test-support.js'
 import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
-import { records as realRecords } from '../../services/persistence/records/real.js'
+import { records as realRecords } from '../../services/persistence/records/real/index.js'
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
 import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'

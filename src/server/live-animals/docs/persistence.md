@@ -117,7 +117,7 @@ journey.
 - `mintReferenceNumber` generates the id; `clear()` exists for test
   hygiene.
 
-**Real** (`services/persistence/records/real.js`) is a REST client for
+**Real** (`services/persistence/records/real/index.js`) is a REST client for
 the trade-imports backend, rooted at
 `TRADE_IMPORTS_ANIMALS_BACKEND_URL`. It forwards the CDP trace id on
 every call.

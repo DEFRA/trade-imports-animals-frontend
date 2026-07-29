@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
-import { records } from './real.js'
+import { records } from './index.js'
 
 // S5 hardening — user-scoping leak. The real adapter used to answer
 // load({ userId }) with a global-newest read

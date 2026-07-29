@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
-import { AMEND, DRAFT, SUBMITTED } from '../../../engine/persistence/records.js'
-import { records } from './real.js'
+import {
+  AMEND,
+  DRAFT,
+  SUBMITTED
+} from '../../../../engine/persistence/records.js'
+import { records } from './index.js'
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()

@@ -1,14 +1,18 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import { records } from './real.js'
-import { AMEND, DRAFT, SUBMITTED } from '../../../engine/persistence/records.js'
-import { runsIt } from '../it-mode.js'
-import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
-import { projectAnswers } from '../../../bridge/fulfilments.js'
-import { encodeEvaluatorFulfilments } from './fulfilment-codec/index.js'
+import { records } from './index.js'
+import {
+  AMEND,
+  DRAFT,
+  SUBMITTED
+} from '../../../../engine/persistence/records.js'
+import { runsIt } from '../../it-mode.js'
+import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
+import { projectAnswers } from '../../../../bridge/fulfilments.js'
+import { encodeEvaluatorFulfilments } from '../fulfilment-codec/index.js'
 import {
   answersToTargetNotification,
   fulfilmentToNotification
-} from './mapper.js'
+} from '../mapper.js'
 
 // Gated integration test for the option-e REAL adapter and its three backend
 // resources. The default hermetic run skips it. Run against the matching
