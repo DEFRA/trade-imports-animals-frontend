@@ -119,7 +119,7 @@ const groupInvariantBlocksInstance = (group, instanceId, state) =>
  */
 export const entryComplete = (evaluation, collectionPath, index) => {
   const names = collectionPath.filter((segment) => typeof segment === 'string')
-  const group = obligationByName.get(names[names.length - 1])
+  const group = obligationByName.get(names.at(-1))
   if (!group) return true
   const groupChain = [...ancestorChain(group), group]
   const descriptors = groupChain.map(({ id }) =>

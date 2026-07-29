@@ -88,11 +88,11 @@ export const replaceJourneyFulfilment = async (
     known,
     owner
   })
-  memoWrite(
-    request,
-    known ? { ...known, fulfilment: structuredClone(fulfilment) } : saved
-  )
-  return known ? { ...known, fulfilment: structuredClone(fulfilment) } : saved
+  const next = known
+    ? { ...known, fulfilment: structuredClone(fulfilment) }
+    : saved
+  memoWrite(request, next)
+  return next
 }
 
 export const listKnownJourneys = async (request, { page, sort } = {}) => {
@@ -104,17 +104,18 @@ export const listKnownJourneys = async (request, { page, sort } = {}) => {
 export const isKnownJourney = async (request, journeyId) =>
   (await session.knownJourneyIds(request)).includes(journeyId)
 
+const editableFromStatus = (journey, journeyId, owner) => {
+  if (journey.status === SUBMITTED) return records.amend(journeyId, owner)
+  if (journey.status === DRAFT || journey.status === AMEND) return journey
+  return undefined
+}
+
 export const amendJourney = async (request, h, journeyId) => {
   if (!(await isKnownJourney(request, journeyId))) return undefined
   const owner = await session.owner(request)
   const journey = await records.load({ journeyId, owner })
   if (!journey) return undefined
-  const editable =
-    journey.status === SUBMITTED
-      ? await records.amend(journeyId, owner)
-      : journey.status === DRAFT || journey.status === AMEND
-        ? journey
-        : undefined
+  const editable = await editableFromStatus(journey, journeyId, owner)
   if (!editable) return undefined
   memoWrite(request, editable)
   return editable

@@ -9,12 +9,11 @@ const NOT_PROVIDED = copy.notProvided
 
 export const toArray = (value) => [].concat(value ?? [])
 
-export const valueText = (value) =>
-  isBlank(value)
-    ? NOT_PROVIDED
-    : typeof value === 'number'
-      ? value.toString()
-      : value
+export const valueText = (value) => {
+  if (isBlank(value)) return NOT_PROVIDED
+  if (typeof value === 'number') return value.toString()
+  return value
+}
 
 export const dateText = (value) =>
   isBlank(value) ? NOT_PROVIDED : `${value.day}/${value.month}/${value.year}`

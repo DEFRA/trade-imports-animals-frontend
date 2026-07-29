@@ -3,9 +3,9 @@ import {
   SYSTEM_POPULATED
 } from '../bridge/obligation-source.js'
 
-let pageOfObligationMap = new Map()
-let collectsByPageMap = new Map()
-let slugByPageMap = new Map()
+const pageOfObligationMap = new Map()
+const collectsByPageMap = new Map()
+const slugByPageMap = new Map()
 let dispatchBuilt = false
 
 const ID_UNSAFE = /[.[\]]/
@@ -28,9 +28,9 @@ const ownerOfObligation = (address) => {
 
 const resetDispatchState = () => {
   dispatchBuilt = false
-  pageOfObligationMap = new Map()
-  collectsByPageMap = new Map()
-  slugByPageMap = new Map()
+  pageOfObligationMap.clear()
+  collectsByPageMap.clear()
+  slugByPageMap.clear()
 }
 
 const assertPathSafeIds = () => {

@@ -106,14 +106,6 @@ const sweepEntries = (group, items, path) => {
   )
 }
 
-/**
- * Every key in the answers tree that is not a manifest obligation name in
- * its declared position, a flow-only key, or a system key. Values below leaf
- * keys (addresses, date parts, arrays) are opaque and not swept.
- *
- * @param {object} answers - the nested answer POJO.
- * @returns {Array<{ key: string, path: string }>} empty when fully recognised.
- */
 const unrecognisedKeysFor = (key, value) => {
   if (!topLevelKeys.has(key)) return [{ key, path: '(top level)' }]
   const obligation = byNameMap.get(key)
@@ -122,6 +114,14 @@ const unrecognisedKeysFor = (key, value) => {
     : []
 }
 
+/**
+ * Every key in the answers tree that is not a manifest obligation name in
+ * its declared position, a flow-only key, or a system key. Values below leaf
+ * keys (addresses, date parts, arrays) are opaque and not swept.
+ *
+ * @param {object} answers - the nested answer POJO.
+ * @returns {Array<{ key: string, path: string }>} empty when fully recognised.
+ */
 export const unrecognisedAnswerKeys = (answers) => {
   if (answers === null || typeof answers !== 'object') return []
   return Object.entries(answers).flatMap(([key, value]) =>

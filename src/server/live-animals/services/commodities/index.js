@@ -57,13 +57,6 @@ export const speciesFor = (name) => COMMODITY_SPECIES[name] ?? []
 export const isCommoditySpecies = (name, value) =>
   speciesFor(name).some((option) => option.value === value)
 
-/**
- * Search the commodity reference data by common name, commodity code or
- * species (scientific name). Returns whole commodity groups — matching a
- * species surfaces its commodity with all of that commodity's species.
- * @param {string} query
- * @returns {Array<{name: string, code: string, species: object[]}>}
- */
 const commodityMatchesQuery = (name, normalisedQuery) => {
   const code = COMMODITY_CODES[name] ?? ''
   return (
@@ -81,6 +74,13 @@ const toSearchResult = (name) => ({
   species: speciesFor(name)
 })
 
+/**
+ * Search the commodity reference data by common name, commodity code or
+ * species (scientific name). Returns whole commodity groups — matching a
+ * species surfaces its commodity with all of that commodity's species.
+ * @param {string} query
+ * @returns {Array<{name: string, code: string, species: object[]}>}
+ */
 export const search = (query) => {
   const normalisedQuery = (query ?? '').trim().toLowerCase()
   if (normalisedQuery === '') return []

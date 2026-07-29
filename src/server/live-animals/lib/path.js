@@ -1,13 +1,10 @@
-export const pathKey = (path) =>
-  path.reduce(
-    (key, segment, index) =>
-      typeof segment === 'number'
-        ? `${key}[${segment}]`
-        : index === 0
-          ? segment
-          : `${key}.${segment}`,
-    ''
-  )
+const appendSegment = (key, segment, index) => {
+  if (typeof segment === 'number') return `${key}[${segment}]`
+  if (index === 0) return segment
+  return `${key}.${segment}`
+}
+
+export const pathKey = (path) => path.reduce(appendSegment, '')
 
 export const parsePath = (key) =>
   key
