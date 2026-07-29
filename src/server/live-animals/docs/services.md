@@ -19,6 +19,9 @@ Each service is a folder with a fixed shape:
   exists (`countries`, `ports`, `document-uploads`, and the persistence
   services). It fetches or calls the live system.
 
+`stub.js` and `real.js` may instead be `stub/` and `real/` folders with
+`index.js` barrels when their data warrants splitting.
+
 For the reference-data services (`countries`, `ports`), `stub.js` does not
 hand-author its list — it seeds from a committed captured fixture. `_capture/capture.js`
 snapshots the live reference-data into `_capture/fixtures/*.json`, and

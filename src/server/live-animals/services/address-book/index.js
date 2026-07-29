@@ -6,7 +6,7 @@ import {
   DESTINATION_OPTIONS,
   CONTACT_OPTIONS,
   COMMERCIAL_TRANSPORTER_OPTIONS
-} from './stub.js'
+} from './stub/index.js'
 
 const BY_ROLE = {
   consignor: CONSIGNOR_OPTIONS,
