@@ -282,7 +282,9 @@ describe('#accompanyingDocumentsController', () => {
 
       expect(statusCode).toBe(statusCodes.ok)
       expect(result).toEqual(expect.stringContaining('Virus found'))
-      expect(result).toEqual(expect.stringContaining('contains a virus'))
+      expect(result).toEqual(
+        expect.stringContaining('was rejected during upload')
+      )
       expect(result).toEqual(expect.stringContaining('aria-disabled="true"'))
     })
 

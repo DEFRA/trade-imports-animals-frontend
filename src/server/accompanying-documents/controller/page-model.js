@@ -39,12 +39,17 @@ const computeStatusFlags = (docs, attempt) => {
   }
 }
 
+// EUDPA-106: cdp-uploader marks a scan REJECTED for both virus finds AND
+// pre-scan rejections (over the 50 MB cap, disallowed MIME, etc). We can't
+// distinguish the reason without also plumbing the per-file errorMessage
+// through the backend DTO and the frontend flatten — captured for the
+// follow-up ticket. In the meantime, neutral copy that doesn't lie.
 const buildRejectedErrors = (docs) =>
   docs
     .filter((doc) => doc.scanStatus === 'REJECTED')
     .map((doc) => ({
       href: '#documents-added',
-      text: `${doc.filename} contains a virus. Remove it and try again with a different file.`
+      text: `${doc.filename} was rejected during upload. Remove it and try again with a different file.`
     }))
 
 const decorateDocumentsForView = (docs) =>

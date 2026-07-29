@@ -71,7 +71,7 @@
       ]
     }) }}
 
-    {%- set fileHintHtml %}<p class="govuk-!-font-weight-bold govuk-!-margin-bottom-1">Your file must be:</p><ul class="govuk-list govuk-list--bullet govuk-!-margin-bottom-0"><li>smaller than {{ maxFileSizeLabel }}</li><li>{{ allowedFileTypesHint }}</li><li>ZIP files are not allowed for security reasons</li></ul>{% endset -%}
+    {%- set fileHintHtml %}<p class="govuk-!-font-weight-bold govuk-!-margin-bottom-1">Your file must be:</p><ul class="govuk-list govuk-list--bullet govuk-!-margin-bottom-0"><li>50 MB or less</li><li>{{ allowedFileTypesHint }}</li><li>ZIP files are not allowed for security reasons</li></ul>{% endset -%}
 
     {{ govukFileUpload({
       id: "file",
