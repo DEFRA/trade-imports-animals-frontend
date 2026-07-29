@@ -14,7 +14,7 @@ import { session as sessionStub } from './services/persistence/session/stub.js'
 import { stubH, journeyRequest } from './engine/test-support.js'
 import { buildDispatch } from './flow/dispatch.js'
 import { dispatchPages } from './features/index.js'
-import { projectAnswers } from './bridge/fulfilments.js'
+import { projectAnswers } from './bridge/fulfilments/index.js'
 
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)

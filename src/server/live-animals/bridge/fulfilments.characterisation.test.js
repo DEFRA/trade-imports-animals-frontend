@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from './assemble-fulfilments.js'
-import { projectAnswers } from './fulfilments.js'
+import { projectAnswers } from './fulfilments/index.js'
 import { characterisationCorpus } from './fixtures/characterisation-corpus.js'
 import { createObligationEvaluator } from '../model/obligations/evaluator.js'
 import {

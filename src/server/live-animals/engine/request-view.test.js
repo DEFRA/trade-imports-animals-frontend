@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
-import { projectAnswers } from '../bridge/fulfilments.js'
+import { projectAnswers } from '../bridge/fulfilments/index.js'
 import { characterisationCorpus } from '../bridge/fixtures/characterisation-corpus.js'
 import {
   earTag,

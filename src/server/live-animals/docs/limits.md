@@ -23,7 +23,8 @@ editing a config file. See [obligation-model.md](obligation-model.md).
 
 Controllers use request-local answers in a nested shape while the durable store
 and model use flat fulfilments. Feature-owned bindings assemble the canonical
-map and [bridge/fulfilments.js](../bridge/fulfilments.js) projects it back.
+map and [bridge/fulfilments/index.js](../bridge/fulfilments/index.js) projects it
+back.
 Values pass through unchanged except for the animal count:
 
 - **Parsable animal-count strings become numbers.** The page stores

@@ -1,4 +1,4 @@
-import { projectAnswers } from '../../../../../bridge/fulfilments.js'
+import { projectAnswers } from '../../../../../bridge/fulfilments/index.js'
 import { decodePersistedFulfilment } from '../../fulfilment-codec/index.js'
 
 export const isoFromDateParts = (parts) => {

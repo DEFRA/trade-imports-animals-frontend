@@ -7,7 +7,7 @@ import { records as recordsStub } from '../services/persistence/records/stub/ind
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { purgeFulfilments, wipeSet } from '../bridge/purge.js'
 import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
-import { projectAnswers } from '../bridge/fulfilments.js'
+import { projectAnswers } from '../bridge/fulfilments/index.js'
 import { stubH, journeyRequest } from './test-support.js'
 
 // Every entry mutation now rebuilds and evaluates the canonical snapshot.

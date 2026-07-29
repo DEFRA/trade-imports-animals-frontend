@@ -10,7 +10,7 @@ import {
 
 import { pagePath } from '../../config.js'
 import { assembleFulfilments } from '../../bridge/assemble-fulfilments.js'
-import { projectAnswers } from '../../bridge/fulfilments.js'
+import { projectAnswers } from '../../bridge/fulfilments/index.js'
 import { buildDispatch } from '../../flow/dispatch.js'
 import {
   configureRecords,

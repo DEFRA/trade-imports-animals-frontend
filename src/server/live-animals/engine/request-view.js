@@ -1,4 +1,4 @@
-import { projectAnswers } from '../bridge/fulfilments.js'
+import { projectAnswers } from '../bridge/fulfilments/index.js'
 import { makeScopeFromEvaluation } from '../bridge/scope.js'
 import { evaluateFulfilments } from '../bridge/evaluation.js'
 

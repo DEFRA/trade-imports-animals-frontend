@@ -28,7 +28,7 @@
  */
 
 import { obligations } from '../model/obligations/obligations.js'
-import { ancestorChain, groupObligations } from './fulfilments.js'
+import { ancestorChain, groupObligations } from './fulfilments/index.js'
 import { instanceFulfilmentId } from './fulfilment-id.js'
 import { fulfilmentRegistry } from './fulfilment-registry.js'
 import { groupInvariantErrors } from '../model/obligations/state-queries.js'

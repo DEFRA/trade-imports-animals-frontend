@@ -14,7 +14,7 @@ import {
 } from '../../engine/persistence/session.js'
 import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
 import { assembleFulfilments } from '../../bridge/assemble-fulfilments.js'
-import { projectAnswers } from '../../bridge/fulfilments.js'
+import { projectAnswers } from '../../bridge/fulfilments/index.js'
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
 import { createPath, hubPath, pagePath } from '../../config.js'
 import { CYA_SLUG } from '../../shared/kit.js'

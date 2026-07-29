@@ -66,7 +66,7 @@ between the two.
   when a leaf is missing, duplicated, or bound at the wrong group depth.
 - [`bridge/assemble-fulfilments.js`](../bridge/assemble-fulfilments.js) merges
   the feature contributions into one canonical evaluator map.
-- [`bridge/fulfilments.js`](../bridge/fulfilments.js) projects canonical
+- [`bridge/fulfilments/index.js`](../bridge/fulfilments/index.js) projects canonical
   fulfilment back to nested answers, including composite-key ↔ positional-path
   conversion.
 - [`bridge/evaluation.js`](../bridge/evaluation.js) owns the shared evaluator;

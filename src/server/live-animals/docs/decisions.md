@@ -280,7 +280,7 @@ the evaluator directly. They reach it through the bridge modules under
 - [`fulfilment-bindings.js`](../bridge/fulfilment-bindings.js) and the feature
   `evaluation.js` files own answer-field → UUID mappings;
   [`assemble-fulfilments.js`](../bridge/assemble-fulfilments.js) merges them.
-- [`fulfilments.js`](../bridge/fulfilments.js) projects canonical fulfilment to
+- [`fulfilments/index.js`](../bridge/fulfilments/index.js) projects canonical fulfilment to
   nested request answers.
 - [`scope.js`](../bridge/scope.js) projects each in-scope implication back into
   the answers path grammar.

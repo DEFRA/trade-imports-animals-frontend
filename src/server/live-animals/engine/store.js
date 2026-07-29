@@ -1,5 +1,5 @@
 import { records } from './persistence/records.js'
-import { projectAnswers } from '../bridge/fulfilments.js'
+import { projectAnswers } from '../bridge/fulfilments/index.js'
 import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 
 export { DRAFT, SUBMITTED, AMEND, DELETED } from './persistence/records.js'

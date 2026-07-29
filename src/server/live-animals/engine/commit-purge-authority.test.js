@@ -7,7 +7,7 @@ import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 import { purgeFulfilments, wipeSet } from '../bridge/purge.js'
 import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
-import { projectAnswers } from '../bridge/fulfilments.js'
+import { projectAnswers } from '../bridge/fulfilments/index.js'
 import { stubH, journeyRequest } from './test-support.js'
 
 // commit's wipe authority is the evaluator purge (projected to positional

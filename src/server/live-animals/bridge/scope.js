@@ -23,7 +23,7 @@ import {
   ancestorChain,
   fulfilmentIdToPath,
   groupObligations
-} from './fulfilments.js'
+} from './fulfilments/index.js'
 import { pathKey } from '../lib/path.js'
 import { isAnswered } from '../lib/answered.js'
 import { computeReadyForCheckYourAnswers } from './readiness-config.js'

@@ -20,7 +20,7 @@ import {
   ancestorChain,
   fulfilmentIdToPath,
   groupObligations
-} from './fulfilments.js'
+} from './fulfilments/index.js'
 import { evaluateFulfilments } from './evaluation.js'
 import { pathKey } from '../lib/path.js'
 import { isAnswered } from '../lib/answered.js'
