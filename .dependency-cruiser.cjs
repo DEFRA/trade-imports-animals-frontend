@@ -80,7 +80,9 @@ module.exports = {
         'model/obligations/(evaluator|state-queries).js specifically. Clean today (only bridge/*).',
       severity: 'error',
       from: { pathNot: [`^${LA}/bridge/`, `^${LA}/model/`] },
-      to: { path: `^${LA}/model/obligations/(evaluator|state-queries)\\.js$` }
+      to: {
+        path: `^${LA}/model/obligations/(evaluator(\\.js$|/)|state-queries\\.js$)`
+      }
     },
     {
       name: 'engine-persistence-port-abstract',
