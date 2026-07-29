@@ -15,6 +15,18 @@ import { putProjection } from '../projections/put-projection.js'
 import { assertWritable } from '../write-guards/assert-writable.js'
 import { resolveStatus } from '../write-guards/resolve-status.js'
 
+const saveProjections = async (journeyId, owner, projections) => {
+  const failures = []
+  for (const projection of projections) {
+    try {
+      await putProjection({ journeyId, owner, ...projection })
+    } catch (error) {
+      failures.push({ name: projection.name, error })
+    }
+  }
+  return failures
+}
+
 export const replaceFulfilment = async (
   journeyId,
   fulfilment,
@@ -49,14 +61,7 @@ export const replaceFulfilment = async (
   )
   const saved = await canonicalResponse.json()
 
-  const failures = []
-  for (const projection of projections) {
-    try {
-      await putProjection({ journeyId, owner, ...projection })
-    } catch (error) {
-      failures.push({ name: projection.name, error })
-    }
-  }
+  const failures = await saveProjections(journeyId, owner, projections)
   if (failures.length > 0) {
     throwProjectionFailure(journeyId, failures)
   }
