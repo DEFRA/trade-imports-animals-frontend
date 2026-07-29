@@ -20,7 +20,7 @@ import {
 import { configureSession } from '../../engine/persistence/session.js'
 import { store } from '../../engine/store.js'
 import { journeyRequest, stubH } from '../../engine/test-support.js'
-import { records as recordsStub } from '../../services/persistence/records/stub.js'
+import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
 import { records as realRecords } from '../../services/persistence/records/real.js'
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
 import { dispatchPages } from '../index.js'

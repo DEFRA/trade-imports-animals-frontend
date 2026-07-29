@@ -14,7 +14,7 @@ import {
   FLOW_ONLY_ANSWERS_COOKIE
 } from './persistence/session.js'
 import { configureReadyForCheckYourAnswers, get } from './read.js'
-import { records as recordsStub } from '../services/persistence/records/stub.js'
+import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { recordingH } from './test-support.js'
 import { countryOfOrigin } from '../model/obligations/obligations.js'

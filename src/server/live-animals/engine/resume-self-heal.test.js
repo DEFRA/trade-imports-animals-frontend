@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { get } from './index.js'
 import { records, configureRecords } from './persistence/records.js'
-import { records as recordsStub } from '../services/persistence/records/stub.js'
+import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureSession, STUB_USER } from './persistence/session.js'
 import { configureReadyForCheckYourAnswers } from './read.js'

@@ -12,7 +12,7 @@ import {
   KNOWN_JOURNEYS_COOKIE,
   STUB_USER
 } from '../../engine/persistence/session.js'
-import { records as recordsStub } from '../../services/persistence/records/stub.js'
+import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
 import { assembleFulfilments } from '../../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../../bridge/fulfilments.js'
 import { session as sessionStub } from '../../services/persistence/session/stub.js'

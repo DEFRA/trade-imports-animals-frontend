@@ -8,7 +8,7 @@ import {
   KNOWN_JOURNEYS_COOKIE,
   OPENING_RUN_COOKIE
 } from '../engine/persistence/session.js'
-import { records as recordsStub } from '../services/persistence/records/stub.js'
+import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { postHandlerOf } from '../engine/test-support.js'
 import { dispatchPages } from '../features/index.js'

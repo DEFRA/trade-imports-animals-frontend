@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { startJourney } from './journey.js'
 import { records, configureRecords } from './persistence/records.js'
-import { records as recordsStub } from '../services/persistence/records/stub.js'
+import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import {
   session,

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { store, DRAFT, SUBMITTED } from './store.js'
 import { configureRecords } from './persistence/records.js'
-import { records as recordsStub } from '../services/persistence/records/stub.js'
+import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import {
   countryOfOrigin,
   placeOfOrigin

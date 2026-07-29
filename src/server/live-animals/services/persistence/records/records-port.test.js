@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { records } from './stub.js'
+import { records } from './stub/index.js'
 import {
   AMEND,
   DELETED,

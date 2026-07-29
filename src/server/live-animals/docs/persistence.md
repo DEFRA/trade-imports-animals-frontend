@@ -84,7 +84,7 @@ A record is:
 - `journeyId` doubles as the user-facing **reference number**
   (`GBN-AG-YY-XXXXXX`, Crockford base32 body).
 
-**Stub** (`services/persistence/records/stub.js`) holds records in an
+**Stub** (`services/persistence/records/stub/index.js`) holds records in an
 in-memory `Map`, plus a `byUser` index mapping a user to their active
 journey.
 
