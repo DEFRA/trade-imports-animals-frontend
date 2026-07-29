@@ -6,48 +6,28 @@ updates:
     directory: /
     open-pull-requests-limit: 10
 
-    # Group packages into shared PR
+    # One rolling PR for every patch and minor bump. Majors match no group,
+    # so dependabot raises them individually — which is what we want, since
+    # majors are both the likeliest to break and the ones excluded from
+    # auto-merge. Grouping by update type rather than by package name also
+    # avoids the gaps a pattern list accumulates (scoped names such as
+    # '@vitest/coverage-v8' escaped the old 'vitest-*' pattern).
+    #
+    # govuk-frontend is excluded on purpose. Its minors ship new components,
+    # deprecations and visual changes, and the workspace has a dedicated
+    # CHANGELOG-driven upgrade process for it (the `govuk-upgrade` skill).
+    # Keeping it out of the group means it keeps raising its own PR and stays
+    # outside any auto-merge policy applied to this group.
     groups:
-      build:
+      patch-and-minor:
+        applies-to: version-updates
+        update-types:
+          - 'patch'
+          - 'minor'
         patterns:
-          - '@babel/*'
-          - 'autoprefixer'
-          - 'babel-plugin-module-resolver'
-          - 'babel-loader'
-          - 'babel-plugin-transform-import-meta'
-          - 'tsx'
-          - 'webpack'
-          - 'webpack-*'
-          - 'terser-webpack-plugin'
-
-      lint:
-        patterns:
-          - 'prettier'
-          - 'stylelint'
-          - 'stylelint-*'
-
-      logging:
-        patterns:
-          - '*-pino'
-          - '*-pino-format'
-          - 'pino'
-          - 'pino-*'
-
-      tools:
-        patterns:
-          - 'husky'
-          - 'vitest'
-          - 'vitest-*'
-          - 'nodemon'
-          - 'npm-run-all'
-          - 'lodash'
-          - 'source-map-loader'
-          - 'sass-*'
-          - 'postcss-*'
-
-      types:
-        patterns:
-          - '@types/*'
+          - '*'
+        exclude-patterns:
+          - 'govuk-frontend'
 
     ignore:
       - dependency-name: 'eslint-*'
@@ -68,6 +48,19 @@ updates:
   # Update GitHub Actions
   - package-ecosystem: github-actions
     directory: /
+
+    # Same policy as npm: one rolling PR for patch and minor bumps, majors
+    # raised individually. Action majors are the ones that change inputs or
+    # runtime, so they are the ones worth reading; patch and minor bumps are
+    # otherwise a steady drip of single-line PRs.
+    groups:
+      patch-and-minor:
+        applies-to: version-updates
+        update-types:
+          - 'patch'
+          - 'minor'
+        patterns:
+          - '*'
 
     # Schedule run every day, local time
     schedule:
