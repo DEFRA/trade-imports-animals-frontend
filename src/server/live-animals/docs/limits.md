@@ -106,7 +106,7 @@ uses it: `animalIdentifiers` declares
 capped at that line's declared animal count. The cap resolves per line —
 each `commodityLines[i]` caps its own records, never a sibling's — in
 [engine/evaluate/cardinality.js](../engine/evaluate/cardinality.js), and
-`appendEntryAt` in [engine/write.js](../engine/write.js) rejects an append at
+`appendEntryAt` in [engine/write/index.js](../engine/write/index.js) rejects an append at
 the cap.
 
 The edges of the cap:

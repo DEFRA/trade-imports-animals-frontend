@@ -14,7 +14,7 @@ The code:
   in-scope implications into the pathKey grammar the controllers read.
 - `bridge/purge.js` — `purgeFulfilments`, the canonical write authority.
 - `engine/read.js` — `makeScope`, the read surface.
-- `engine/write.js` — `commit`, `removeEntryAt`, `reconcileEntriesAt`, which
+- `engine/write/index.js` — `commit`, `removeEntryAt`, `reconcileEntriesAt`, which
   apply the purge on every write.
 - `lib/path.js` — path maths and `destroyWiped`.
 
@@ -104,7 +104,7 @@ Three layers enforce it, and no single layer can be bypassed:
 1. **The evaluator derives.** `convergePurge` in
    `model/obligations/evaluator.js` decides what leaves scope and returns the
    post-purge canonical map.
-2. **Write applies.** Every mutation in `engine/write.js` calls
+2. **Write applies.** Every mutation in `engine/write/index.js` calls
    `purgeFulfilments` and persists only `evaluation.fulfilments`. The write
    surface has no `setScope` and no per-obligation `delete`, so a page cannot
    hand-roll a wipe or fake scope.
@@ -161,7 +161,7 @@ Gating pages is only one use of scope. The consumers all read the one
 1. **Wipe** — every mutation persists only the evaluator's converged canonical
    fulfilment.
 2. **Submit-readiness** — `readyForCheckYourAnswers` on the scope object is the
-   submit gate, consulted by `submitJourney` (`engine/write.js`) and the review
+   submit gate, consulted by `submitJourney` (`engine/write/index.js`) and the review
    section's authored gate (`flow/flow.js`). It is true once every answer
    section is fulfilled, not applicable or optional, judged against `inScope`
    (`flow/section-status.js`, the static default held by

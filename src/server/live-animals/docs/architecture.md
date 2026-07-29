@@ -87,7 +87,7 @@ persistence therefore replaces the whole canonical snapshot. See
   Runtime `get` derives one request view from canonical fulfilment; `makeScope`
   is the answers-based convenience used by focused callers and tests.
 - **Write** — `commit`, `appendEntryAt`, `updateEntryAt`, `removeEntryAt`,
-  `reconcileEntriesAt` and `submitJourney` ([`engine/write.js`](../engine/write.js)).
+  `reconcileEntriesAt` and `submitJourney` ([`engine/write/index.js`](../engine/write/index.js)).
 - **Collection views** — `collectionView`, `collectionCapAt`.
 - **Journey lifecycle** — [`engine/journey.js`](../engine/journey.js) owns the
   cookie, load-or-create, and the dashboard verbs (list, select, amend a known
@@ -166,7 +166,7 @@ A **POST**:
 1. The controller validates the payload with `lib/validate/`. On error it
    re-renders with a GDS error summary.
 2. On success it calls `state.commit(request, h, values)`.
-   [`engine/write.js`](../engine/write.js) separates flow-only values, assembles
+   [`engine/write/index.js`](../engine/write/index.js) separates flow-only values, assembles
    the remaining answers through feature-owned bindings, evaluates/purges, and
    whole-replaces the canonical fulfilment through the records port.
 3. The controller asks the flow where to go next (`kit.nextTarget`), which

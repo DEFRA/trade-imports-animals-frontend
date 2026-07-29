@@ -43,7 +43,7 @@ questions only: what data is in scope, and is it satisfied.
   identity, so nothing about how a field looks lives in the model
   (principle 6).
 - The write surface is narrow. There is no `setScope` and no per-key
-  delete anywhere in the stack ([`engine/write.js`](../engine/write.js)),
+  delete anywhere in the stack ([`engine/write/index.js`](../engine/write/index.js)),
   so a page cannot hand-roll or bypass a scope-exit wipe — the wipe is
   correct by construction.
 - Blast radius is low. Controllers own their own GET/POST and call shared
@@ -287,7 +287,7 @@ the evaluator directly. They reach it through the bridge modules under
 - [`status/index.js`](../bridge/status/index.js) — the task and section status
   for the hub.
 - [`purge.js`](../bridge/purge.js) — the set of paths a scope-exit
-  destroys, feeding `engine/write.js`'s `destroyWiped`.
+  destroys, feeding `engine/write/index.js`'s `destroyWiped`.
 - [`collection-complete.js`](../bridge/collection-complete.js) —
   per-instance completeness for a collection row.
 

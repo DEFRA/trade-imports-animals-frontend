@@ -136,7 +136,7 @@ Precedence: **hub exit > change context > run sequence > `nextInSection`**. `kit
 - `rowStatus(row, answers, inScope, evaluation)` — the engine's pure `statusOf`
   applied to the row's parts.
 - `sectionObligationIds(section)` / `sectionStatus(section, answers, inScope)` — the section-shaped equivalents, consumed by the review row, `analysis/simulate.js` and `dump.js`.
-- `readyForCheckYourAnswers(answers, inScope)` (`flow/section-status.js`) — the submit-readiness gate: true once every task row is Fulfilled, Not applicable or Optional. Consulted both by the review section's authored gate and by `submitJourney` in `engine/write.js`.
+- `readyForCheckYourAnswers(answers, inScope)` (`flow/section-status.js`) — the submit-readiness gate: true once every task row is Fulfilled, Not applicable or Optional. Consulted both by the review section's authored gate and by `submitJourney` in `engine/write/index.js`.
 
 Flow applies the bridge's `statusOf` to its page groupings. The bounded
 reverse dependency is readiness: `bridge/readiness-config.js` imports

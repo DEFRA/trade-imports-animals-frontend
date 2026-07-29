@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { commit } from './write.js'
-import { get, configureReadyForCheckYourAnswers } from './read.js'
-import { records, configureRecords } from './persistence/records.js'
+import { commit } from './index.js'
+import { get, configureReadyForCheckYourAnswers } from '../read.js'
+import { records, configureRecords } from '../persistence/records.js'
 import {
   configureSession,
   FLOW_ONLY_ANSWERS_COOKIE
-} from './persistence/session.js'
-import { records as recordsStub } from '../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../services/persistence/session/stub.js'
-import { journeyRequest, recordingH } from './test-support.js'
+} from '../persistence/session.js'
+import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
+import { session as sessionStub } from '../../services/persistence/session/stub.js'
+import { journeyRequest, recordingH } from '../test-support.js'
 
 describe('flow-only answers — session round-trip', () => {
   beforeEach(async () => {

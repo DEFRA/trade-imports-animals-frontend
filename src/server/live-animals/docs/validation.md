@@ -146,11 +146,11 @@ The engine checks completion in two places:
   `sectionStatus`, reports a row or section Fulfilled only when every
   in-scope obligation it covers is satisfied.
 - **Submit.** The declaration page POST calls `state.submitJourney`
-  (`engine/write.js`), which re-checks `scope.readyForCheckYourAnswers`
+  (`engine/write/index.js`), which re-checks `scope.readyForCheckYourAnswers`
   server-side:
 
   ```js
-  // engine/write.js
+  // engine/write/index.js
   if (!scope.readyForCheckYourAnswers) return { ok: false, journey, scope }
   ```
 

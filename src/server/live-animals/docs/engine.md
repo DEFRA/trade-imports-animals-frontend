@@ -239,7 +239,7 @@ the current journey's session-backed flow-only answers into that projection.
 The result is memoised for the request; only fulfilment is durable record
 state.
 
-### The write side — `engine/write.js`
+### The write side — `engine/write/index.js`
 
 - `commit` merges the incoming name-keyed patch into the request projection,
   splits any `FLOW_ONLY_OBLIGATIONS` into the journey-keyed session map, and

@@ -249,7 +249,7 @@ no entry for, so a forged or stale index is rejected rather than acted on.
 
 `appendEntry` / `updateEntry` / `removeEntry` are the top-level convenience
 forms; each delegates to the `…At` form with a single-segment path
-([`engine/write.js`](../engine/write.js)).
+([`engine/write/index.js`](../engine/write/index.js)).
 
 ### The batch split (search page + consolidated details page)
 
@@ -345,7 +345,7 @@ Two guards protect collection writes. Do not remove them.
 lines.length` before touching the store; copy that guard into any new nested
    controller.
 2. **The engine rejects non-integer indices.** `isValidIndex` in
-   [`engine/write.js`](../engine/write.js) uses `Number.isInteger` because
+   [`engine/write/index.js`](../engine/write/index.js) uses `Number.isInteger` because
    `splice(NaN, 1)` coerces to `splice(0, 1)` — a malformed remove URL would
    otherwise destroy the first instance.
 

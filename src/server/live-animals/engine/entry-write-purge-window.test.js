@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { updateEntryAt } from './write.js'
+import { updateEntryAt } from './write/index.js'
 import { makeScope, configureReadyForCheckYourAnswers } from './read.js'
 import { records, configureRecords } from './persistence/records.js'
 import { configureSession } from './persistence/session.js'

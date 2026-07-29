@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { commit, appendEntryAt, submitJourney } from './write.js'
-import { records, configureRecords, DRAFT } from './persistence/records.js'
-import { configureSession } from './persistence/session.js'
-import { records as recordsStub } from '../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../services/persistence/session/stub.js'
-import { configureReadyForCheckYourAnswers } from './read.js'
-import { stubH, journeyRequest } from './test-support.js'
+import { commit, appendEntryAt, submitJourney } from './index.js'
+import { records, configureRecords, DRAFT } from '../persistence/records.js'
+import { configureSession } from '../persistence/session.js'
+import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
+import { session as sessionStub } from '../../services/persistence/session/stub.js'
+import { configureReadyForCheckYourAnswers } from '../read.js'
+import { stubH, journeyRequest } from '../test-support.js'
 
 // Every key-introducing write asserts the whole resulting answers tree
 // against the recognition surface (bridge/obligation-source.js), and

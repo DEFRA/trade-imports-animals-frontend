@@ -11,7 +11,7 @@
  *   for each non-group leaf obligation answered in fIn but absent from fOut,
  *   emit its pathKey via the composite->positional rule.
  *
- * The result feeds `lib/path.js`'s `destroyWiped`, which `engine/write.js`
+ * The result feeds `lib/path.js`'s `destroyWiped`, which `engine/write/index.js`
  * applies over the session/journey/save layer.
  */
 

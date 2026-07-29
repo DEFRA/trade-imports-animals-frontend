@@ -196,7 +196,7 @@ request is tied to a journey document. It memoises the loaded journey on
 
 Durable fulfilments land on every write. `commit` and every collection
 mutation (`appendEntryAt`, `updateEntryAt`, `removeEntryAt`,
-`reconcileEntriesAt` in `engine/write.js`) rebuild the canonical map through
+`reconcileEntriesAt` in `engine/write/index.js`) rebuild the canonical map through
 the feature-owned binding registry, evaluate/purge it, and call
 `replaceJourneyFulfilment` → `records.replaceFulfilment` with
 `evaluation.fulfilments`. The store never holds a name-keyed answers tree (see
