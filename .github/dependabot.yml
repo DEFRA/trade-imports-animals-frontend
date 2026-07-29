@@ -12,6 +12,12 @@ updates:
     # auto-merge. Grouping by update type rather than by package name also
     # avoids the gaps a pattern list accumulates (scoped names such as
     # '@vitest/coverage-v8' escaped the old 'vitest-*' pattern).
+    #
+    # govuk-frontend is excluded on purpose. Its minors ship new components,
+    # deprecations and visual changes, and the workspace has a dedicated
+    # CHANGELOG-driven upgrade process for it (the `govuk-upgrade` skill).
+    # Keeping it out of the group means it keeps raising its own PR and stays
+    # outside any auto-merge policy applied to this group.
     groups:
       patch-and-minor:
         applies-to: version-updates
@@ -20,6 +26,8 @@ updates:
           - 'minor'
         patterns:
           - '*'
+        exclude-patterns:
+          - 'govuk-frontend'
 
     ignore:
       - dependency-name: 'eslint-*'
@@ -40,6 +48,19 @@ updates:
   # Update GitHub Actions
   - package-ecosystem: github-actions
     directory: /
+
+    # Same policy as npm: one rolling PR for patch and minor bumps, majors
+    # raised individually. Action majors are the ones that change inputs or
+    # runtime, so they are the ones worth reading; patch and minor bumps are
+    # otherwise a steady drip of single-line PRs.
+    groups:
+      patch-and-minor:
+        applies-to: version-updates
+        update-types:
+          - 'patch'
+          - 'minor'
+        patterns:
+          - '*'
 
     # Schedule run every day, local time
     schedule:

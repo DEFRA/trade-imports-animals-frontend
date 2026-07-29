@@ -7,7 +7,7 @@
   "type": "module",
   "engines": {
     "node": ">=24",
-    "npm": "11.6.2"
+    "npm": ">=11.6.2"
   },
   "packageManager": "npm@11.6.2",
   "scripts": {
