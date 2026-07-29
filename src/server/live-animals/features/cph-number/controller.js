@@ -48,8 +48,7 @@ const render = (
   h,
   journey,
   values,
-  errors = {},
-  recoverableError = false
+  { errors = {}, recoverableError = false } = {}
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
@@ -84,7 +83,7 @@ const post = async (request, h) => {
       h,
       journey,
       { countyParishHoldingCph: rawCphNumber },
-      errors
+      { errors }
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
@@ -92,9 +91,9 @@ const post = async (request, h) => {
     () => state.commit(request, h, values),
     async () => {
       const { journey } = await state.get(request, h)
-      return render(request, h, journey, values, {}, true).code(
-        HTTP_STATUS_INTERNAL_SERVER_ERROR
-      )
+      return render(request, h, journey, values, {
+        recoverableError: true
+      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
   if (failure) return failure

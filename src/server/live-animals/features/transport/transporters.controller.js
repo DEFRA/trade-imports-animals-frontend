@@ -18,7 +18,12 @@ const fields = compose(
   oneOf('transporterType', transportReference.transporterTypes())
 )
 
-const render = (h, journey, values, errors = {}, recoverableError = false) =>
+const render = (
+  h,
+  journey,
+  values,
+  { errors = {}, recoverableError = false } = {}
+) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
@@ -42,7 +47,7 @@ const post = async (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, values, errors)
+    return render(h, journey, values, { errors })
   }
 
   let committed
@@ -52,7 +57,7 @@ const post = async (request, h) => {
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return render(h, journey, values, {}, true).code(
+      return render(h, journey, values, { recoverableError: true }).code(
         HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
     }

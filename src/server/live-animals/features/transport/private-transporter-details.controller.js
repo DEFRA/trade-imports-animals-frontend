@@ -78,7 +78,12 @@ const countryItems = (selected) => [
   }))
 ]
 
-const render = (h, journey, values, errors = {}, recoverableError = false) =>
+const render = (
+  h,
+  journey,
+  values,
+  { errors = {}, recoverableError = false } = {}
+) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: pagePath(journey.journeyId, 'transporters'),
@@ -151,7 +156,7 @@ const post = async (request, h) => {
   const allErrors = formErrors(payload, values)
   if (Object.keys(allErrors).length > 0) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, values, allErrors)
+    return render(h, journey, values, { errors: allErrors })
   }
 
   let committed
@@ -161,7 +166,7 @@ const post = async (request, h) => {
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return render(h, journey, values, {}, true).code(
+      return render(h, journey, values, { recoverableError: true }).code(
         HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
     }

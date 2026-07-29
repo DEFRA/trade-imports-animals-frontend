@@ -32,7 +32,12 @@ const addressSummary = (address) =>
     .filter((part) => part)
     .join(', ')
 
-const render = (h, journey, values, errors = {}, recoverableError = false) =>
+const render = (
+  h,
+  journey,
+  values,
+  { errors = {}, recoverableError = false } = {}
+) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: pagePath(journey.journeyId, 'transporters'),
@@ -82,7 +87,7 @@ const post = async (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, {}, errors)
+    return render(h, journey, {}, { errors })
   }
 
   const chosen = addressBook.party(
@@ -96,9 +101,12 @@ const post = async (request, h) => {
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return render(h, journey, { selectedName: chosen?.name }, {}, true).code(
-        HTTP_STATUS_INTERNAL_SERVER_ERROR
-      )
+      return render(
+        h,
+        journey,
+        { selectedName: chosen?.name },
+        { recoverableError: true }
+      ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
   if (failure) return failure

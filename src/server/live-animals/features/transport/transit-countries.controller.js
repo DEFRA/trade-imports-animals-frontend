@@ -49,7 +49,12 @@ const transitedCountriesErrors = (selected, adding) => {
   return {}
 }
 
-const render = (h, journey, selected, errors = {}, recoverableError = false) =>
+const render = (
+  h,
+  journey,
+  selected,
+  { errors = {}, recoverableError = false } = {}
+) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
@@ -83,7 +88,9 @@ const post = async (request, h) => {
   )
   if (Object.keys(errors).length > 0) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, selected, errors).code(HTTP_STATUS_BAD_REQUEST)
+    return render(h, journey, selected, { errors }).code(
+      HTTP_STATUS_BAD_REQUEST
+    )
   }
 
   let committed
@@ -95,7 +102,7 @@ const post = async (request, h) => {
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return render(h, journey, selected, {}, true).code(
+      return render(h, journey, selected, { recoverableError: true }).code(
         HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
     }
