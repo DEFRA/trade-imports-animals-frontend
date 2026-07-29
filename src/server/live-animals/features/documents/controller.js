@@ -124,12 +124,18 @@ const postAdd = async (request, h, payload) => {
     uploadId: outcome.uploadId,
     filename
   }
+  return saveAddedDocument(request, h, pageState, savedEntry, bare)
+}
+
+const isAlreadySaved = (pageState, uploadId) =>
+  pageState.documents.some(
+    ({ entry: document }) => document.uploadId === uploadId
+  )
+
+const saveAddedDocument = async (request, h, pageState, savedEntry, bare) => {
   const { failure } = await kit.recoverableSave(
     async () => {
-      const alreadyCanonicallySaved = pageState.documents.some(
-        ({ entry: document }) => document.uploadId === savedEntry.uploadId
-      )
-      if (alreadyCanonicallySaved) {
+      if (isAlreadySaved(pageState, savedEntry.uploadId)) {
         await state.commit(request, h, {
           documents: pageState.answers.documents ?? []
         })
@@ -149,7 +155,6 @@ const postAdd = async (request, h, payload) => {
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
   if (failure) return failure
-
   return h.redirect(
     kit.withChangeContext(
       request,
