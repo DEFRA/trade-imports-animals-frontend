@@ -61,29 +61,31 @@ const buildLineForm = (payload, commodity, index) => {
   }
 }
 
+const capIfAtMax = (answers, index, entry) => {
+  const cap = state.collectionCapAt(answers, [
+    'commodityLines',
+    index,
+    'animalIdentifiers'
+  ])
+  return cap !== null && (entry.animalIdentifiers ?? []).length >= cap
+    ? cap
+    : null
+}
+
 export const buildLineForms = (payload, answers, lines) => {
-  const forms = new Map()
-  const atMaxByIndex = new Map()
-  let errors = {}
-  for (const { index, entry } of lines) {
-    const commodity = entry.commoditySelection
-    const cap = state.collectionCapAt(answers, [
-      'commodityLines',
+  const atMaxByIndex = new Map(
+    lines
+      .map(({ index, entry }) => [index, capIfAtMax(answers, index, entry)])
+      .filter(([, cap]) => cap !== null)
+  )
+  const built = lines
+    .filter(({ index }) => !atMaxByIndex.has(index))
+    .map(({ index, entry }) => ({
       index,
-      'animalIdentifiers'
-    ])
-    if (cap !== null && (entry.animalIdentifiers ?? []).length >= cap) {
-      atMaxByIndex.set(index, cap)
-      continue
-    }
-    const { form, errors: lineErrors } = buildLineForm(
-      payload,
-      commodity,
-      index
-    )
-    forms.set(index, form)
-    errors = { ...errors, ...lineErrors }
-  }
+      ...buildLineForm(payload, entry.commoditySelection, index)
+    }))
+  const forms = new Map(built.map(({ index, form }) => [index, form]))
+  const errors = Object.assign({}, ...built.map((line) => line.errors))
   return { forms, atMaxByIndex, errors }
 }
 
