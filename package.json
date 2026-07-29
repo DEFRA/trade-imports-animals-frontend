@@ -7,9 +7,9 @@
   "type": "module",
   "engines": {
     "node": ">=24",
-    "npm": "11.17.0"
+    "npm": "11.6.2"
   },
-  "packageManager": "npm@11.17.0",
+  "packageManager": "npm@11.6.2",
   "scripts": {
     "build:frontend": "NODE_ENV=production webpack",
     "dev": "AWS_EMF_ENVIRONMENT=Local run-p build:frontend frontend:watch server:watch",
