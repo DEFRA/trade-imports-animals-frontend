@@ -23,6 +23,7 @@ import { documentUploads } from '../../services/document-uploads/index.js'
 import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
+import { MAX_DOCUMENTS } from './contracts/max-documents.js'
 import { documents as manifestDocuments } from '../../model/obligations/obligations.js'
 import {
   FILE_TYPE_MESSAGE,
@@ -354,7 +355,7 @@ describe('documents — real upload leg on the single-page loop', () => {
   })
 
   it('Should refuse an eleventh document with the maximum message and append nothing', async () => {
-    const tenDocuments = Array.from({ length: documents.MAX_DOCUMENTS }, () =>
+    const tenDocuments = Array.from({ length: MAX_DOCUMENTS }, () =>
       storedDocument()
     )
     const result = await driveHandler(post, {
@@ -363,13 +364,13 @@ describe('documents — real upload leg on the single-page loop', () => {
     })
     expect(result.response.statusCode).toBe(400)
     expect(summaryTexts(result)).toContain(
-      `You can add a maximum of ${documents.MAX_DOCUMENTS} documents`
+      `You can add a maximum of ${MAX_DOCUMENTS} documents`
     )
-    expect(result.after.documents).toHaveLength(documents.MAX_DOCUMENTS)
+    expect(result.after.documents).toHaveLength(MAX_DOCUMENTS)
   })
 
   it('Should derive the controller cap from the manifest, not a copied number', () => {
-    expect(documents.MAX_DOCUMENTS).toBe(manifestDocuments.requires.maxEntries)
+    expect(MAX_DOCUMENTS).toBe(manifestDocuments.requires.maxEntries)
   })
 
   it('Should treat a POST without the add action as Continue, appending nothing', async () => {
