@@ -9,7 +9,7 @@ import {
 import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments
-} from '../services/persistence/records/fulfilment-codec.js'
+} from '../services/persistence/records/fulfilment-codec/index.js'
 import { assembleRequestView } from './request-view.js'
 
 const canonicalViewOf = (answers) =>

@@ -9,7 +9,7 @@ import {
 import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments
-} from './fulfilment-codec.js'
+} from './fulfilment-codec/index.js'
 import { BackendRequestError, markRecoverableBackendError } from './errors.js'
 import {
   answersToTargetNotification,

@@ -8,7 +8,7 @@ import {
 import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments
-} from './fulfilment-codec.js'
+} from './fulfilment-codec/index.js'
 import { projectAnswers } from '../../../bridge/fulfilments.js'
 
 const CROCKFORD_BASE32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'

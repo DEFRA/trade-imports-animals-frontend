@@ -89,7 +89,8 @@ in-memory `Map`, plus a `byUser` index mapping a user to their active
 journey.
 
 - At rest it uses `{ id, fulfilment: entry[] }` (plus lifecycle metadata).
-  `fulfilment-codec.js` encodes on replacement and decodes on load.
+  `services/persistence/records/fulfilment-codec/index.js` encodes on
+  replacement and decodes on load.
 - A scalar entry is `{ obligationId, value }`; a grouped entry is
   `{ obligationId, records: [{ fulfilmentId, value }] }`. Empty grouped
   instances have no leaf record from which to infer identity, so they are not

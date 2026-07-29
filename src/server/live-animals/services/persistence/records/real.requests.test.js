@@ -14,7 +14,7 @@ import {
 import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments
-} from './fulfilment-codec.js'
+} from './fulfilment-codec/index.js'
 import {
   answersToTargetNotification,
   fulfilmentToNotification

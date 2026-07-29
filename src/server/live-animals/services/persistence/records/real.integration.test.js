@@ -4,7 +4,7 @@ import { AMEND, DRAFT, SUBMITTED } from '../../../engine/persistence/records.js'
 import { runsIt } from '../it-mode.js'
 import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../../../bridge/fulfilments.js'
-import { encodeEvaluatorFulfilments } from './fulfilment-codec.js'
+import { encodeEvaluatorFulfilments } from './fulfilment-codec/index.js'
 import {
   answersToTargetNotification,
   fulfilmentToNotification

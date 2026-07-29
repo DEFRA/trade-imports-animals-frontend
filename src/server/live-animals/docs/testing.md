@@ -98,7 +98,9 @@ Each page's controller has a spec that drives its real GET/POST handler headless
 
 The persistence and reference-data services are proven against their ports:
 
-- **Records** — `fulfilment-codec.test.js` pins canonical at-rest round trips;
+- **Records** —
+  `services/persistence/records/fulfilment-codec/fulfilment-codec.test.js`
+  pins canonical at-rest round trips;
   `notification-mapper.test.js` pins both forward projections, including Mapper
   A ⊆ Mapper B and commodity/unit/document behaviour;
   `skeleton-equivalence.test.js` pins Mapper A against the production skeleton;

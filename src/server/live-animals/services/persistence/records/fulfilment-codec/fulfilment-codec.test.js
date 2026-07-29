@@ -1,18 +1,18 @@
 import { describe, expect, test } from 'vitest'
-import { characterisationCorpus } from '../../../bridge/fixtures/characterisation-corpus.js'
-import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
-import { createObligationEvaluator } from '../../../model/obligations/evaluator.js'
+import { characterisationCorpus } from '../../../../bridge/fixtures/characterisation-corpus.js'
+import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
+import { createObligationEvaluator } from '../../../../model/obligations/evaluator.js'
 import {
   commodityCode,
   earTag,
   placeOfOrigin,
   reasonForImport,
   transitedCountries
-} from '../../../model/obligations/obligations.js'
+} from '../../../../model/obligations/obligations.js'
 import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments
-} from './fulfilment-codec.js'
+} from './index.js'
 
 const evaluator = createObligationEvaluator()
 
