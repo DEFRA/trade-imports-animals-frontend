@@ -59,7 +59,7 @@
     "blankie": "5.0.0",
     "convict": "^6.2.5",
     "convict-format-with-validator": "6.2.0",
-    "cssnano": "7.1.4",
+    "cssnano": "8.0.2",
     "cssnano-preset-default": "7.0.12",
     "date-fns": "4.4.0",
     "global-agent": "4.1.3",
