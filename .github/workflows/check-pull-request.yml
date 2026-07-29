@@ -26,6 +26,14 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      # Node's bundled npm trails the npm Dependabot regenerates lockfiles with
+      # (dependabot-core npm_and_yarn/Dockerfile, ARG NPM_VERSION), and the two
+      # resolve some transitive trees differently — so `npm ci` rejects every
+      # Dependabot lockfile. Take the version from package.json rather than from
+      # whatever Node happens to bundle, so there is one place to change it.
+      - name: Align npm with the version pinned in package.json
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+
       - name: Install dependencies
         run: npm ci
 
@@ -34,9 +42,6 @@ jobs:
           npm run format:check
           npm run lint
           npm test
-
-      - name: Security audit
-        run: npm run security-audit
 
       - name: Test Docker Image Build
         run: |
@@ -49,3 +54,32 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # Deliberately a separate job from pr-validator. `npm audit` scans the whole
+  # installed tree against a live advisory feed, so a newly published advisory
+  # turns every open PR red regardless of what that PR changed — and advisories
+  # on indirect dependencies often have no upgrade path, needing a hand-written
+  # `overrides` entry on main to clear. Folded into pr-validator, that failure
+  # mode blocks the very PR carrying the fix. Kept separate, the audit stays
+  # visible on every PR without being the check that gates the merge.
+  security-audit:
+    name: Security audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Align npm with the version pinned in package.json
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Security audit
+        run: npm run security-audit
