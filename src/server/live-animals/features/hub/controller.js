@@ -9,7 +9,7 @@ import {
   NA,
   NOT_STARTED,
   OPTIONAL
-} from '../../bridge/status.js'
+} from '../../bridge/status/index.js'
 import { sectionStatus } from '../../flow/section-status.js'
 import { rowStatus, taskRowById } from '../../flow/task-rows.js'
 import { completeOpeningRun } from '../../flow/run-state.js'

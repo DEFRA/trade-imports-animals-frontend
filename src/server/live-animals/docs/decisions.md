@@ -284,7 +284,7 @@ the evaluator directly. They reach it through the bridge modules under
   nested request answers.
 - [`scope.js`](../bridge/scope.js) projects each in-scope implication back into
   the answers path grammar.
-- [`status.js`](../bridge/status.js) — the task and section status
+- [`status/index.js`](../bridge/status/index.js) — the task and section status
   for the hub.
 - [`purge.js`](../bridge/purge.js) — the set of paths a scope-exit
   destroys, feeding `engine/write.js`'s `destroyWiped`.

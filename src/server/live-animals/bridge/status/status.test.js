@@ -1,16 +1,16 @@
 import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import { dispatchPages } from '../features/index.js'
-import { buildDispatch } from '../flow/dispatch.js'
-import { makeScopeFromEvaluation } from './scope.js'
-import { evaluateAnswers } from './evaluation.js'
-import { rowParts, taskRows } from '../flow/task-rows.js'
+import { dispatchPages } from '../../features/index.js'
+import { buildDispatch } from '../../flow/dispatch.js'
+import { makeScopeFromEvaluation } from '../scope.js'
+import { evaluateAnswers } from '../evaluation.js'
+import { rowParts, taskRows } from '../../flow/task-rows.js'
 import {
   readyForCheckYourAnswers,
   sectionObligationIds
-} from '../flow/section-status.js'
-import { answerSections } from '../flow/flow.js'
+} from '../../flow/section-status.js'
+import { answerSections } from '../../flow/flow.js'
 import {
   statusOf,
   NA,
@@ -18,7 +18,7 @@ import {
   IN_PROGRESS,
   FULFILLED,
   OPTIONAL
-} from './status.js'
+} from './index.js'
 
 // The presentation rollup (statusOf), pinned against the manifest. The expected
 // statuses below are stated as literals so a regression fails loudly. The
@@ -27,7 +27,7 @@ import {
 // rollup across representative journey states.
 
 const { values: happyPath } = JSON.parse(
-  readFileSync(new URL('../flow/fixtures/happy-path.json', import.meta.url))
+  readFileSync(new URL('../../flow/fixtures/happy-path.json', import.meta.url))
 )
 
 // Row order is taskRows order; section order is answerSections order.

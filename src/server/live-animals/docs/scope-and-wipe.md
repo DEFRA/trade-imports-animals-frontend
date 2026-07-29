@@ -166,7 +166,7 @@ Gating pages is only one use of scope. The consumers all read the one
    section is fulfilled, not applicable or optional, judged against `inScope`
    (`flow/section-status.js`, the static default held by
    `bridge/readiness-config.js`).
-3. **Status** — `statusOf` (`bridge/status.js`), reached through
+3. **Status** — `statusOf` (`bridge/status/index.js`), reached through
    `rowStatus` (`flow/task-rows.js`), filters an obligation's instances to
    those in scope; none in scope means Not applicable.
 4. **Navigation** — derived gates (`flow/gates.js`) pass when some collected

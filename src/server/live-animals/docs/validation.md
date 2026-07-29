@@ -141,7 +141,7 @@ Joi schema (`model/obligations/obligations.js`):
 
 The engine checks completion in two places:
 
-- **The hub.** `statusOf` (`bridge/status.js`), reached
+- **The hub.** `statusOf` (`bridge/status/index.js`), reached
   through `flow/task-rows.js` `rowStatus` and `flow/section-status.js`
   `sectionStatus`, reports a row or section Fulfilled only when every
   in-scope obligation it covers is satisfied.

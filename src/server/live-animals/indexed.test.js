@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { makeScope } from './engine/index.js'
 import { evaluateAnswers } from './bridge/evaluation.js'
-import { FULFILLED, IN_PROGRESS, OPTIONAL } from './bridge/status.js'
+import { FULFILLED, IN_PROGRESS, OPTIONAL } from './bridge/status/index.js'
 import {
   readyForCheckYourAnswers,
   sectionStatus
