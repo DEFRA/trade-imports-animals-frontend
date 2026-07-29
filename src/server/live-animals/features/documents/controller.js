@@ -93,18 +93,13 @@ const postAdd = async (request, h, payload) => {
   const bare = documentFromPayload(payload)
   const pendingDocumentSave = pendingDocumentSaveFrom(payload)
   if (!pendingDocumentSave && pageState.documents.length >= MAX_DOCUMENTS) {
-    return render(
-      request,
-      h,
-      pageState,
-      bare,
-      {},
-      capacityExceededError()
-    ).code(HTTP_STATUS_BAD_REQUEST)
+    return render(request, h, pageState, bare, {
+      summaryErrors: capacityExceededError()
+    }).code(HTTP_STATUS_BAD_REQUEST)
   }
   const allErrors = documentAddErrors(payload, bare, pendingDocumentSave)
   if (Object.keys(allErrors).length > 0) {
-    return render(request, h, pageState, bare, allErrors).code(
+    return render(request, h, pageState, bare, { errors: allErrors }).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
@@ -119,7 +114,7 @@ const postAdd = async (request, h, payload) => {
     : await uploadOutcome(pageState, entry, payload.file, filename)
   if (outcome.failed) {
     return render(request, h, pageState, bare, {
-      file: UPLOAD_FAILURE_MESSAGE
+      errors: { file: UPLOAD_FAILURE_MESSAGE }
     }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   }
 
@@ -143,11 +138,13 @@ const postAdd = async (request, h, payload) => {
       }
     },
     () =>
-      render(request, h, pageState, bare, {}, [], {
-        recoverableError: true,
-        pendingDocumentSave: {
-          uploadId: savedEntry.uploadId,
-          filename: savedEntry.filename
+      render(request, h, pageState, bare, {
+        extra: {
+          recoverableError: true,
+          pendingDocumentSave: {
+            uploadId: savedEntry.uploadId,
+            filename: savedEntry.filename
+          }
         }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
@@ -177,9 +174,11 @@ const retryProjectionSave = async (
       })
     },
     () =>
-      render(request, h, pageState, EMPTY_FORM, {}, [], {
-        recoverableError: true,
-        pendingDocumentRemoval
+      render(request, h, pageState, EMPTY_FORM, {
+        extra: {
+          recoverableError: true,
+          pendingDocumentRemoval
+        }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
   if (failure) return failure
@@ -224,11 +223,13 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
       await state.removeEntry(request, h, 'documents', retryIndex)
     },
     () =>
-      render(request, h, pageState, EMPTY_FORM, {}, [], {
-        recoverableError: true,
-        pendingDocumentRemoval: {
-          index,
-          uploadId: entry.uploadId
+      render(request, h, pageState, EMPTY_FORM, {
+        extra: {
+          recoverableError: true,
+          pendingDocumentRemoval: {
+            index,
+            uploadId: entry.uploadId
+          }
         }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
@@ -254,14 +255,9 @@ const post = async (request, h) => {
   }
   const pageState = await loadPage(request, h)
   if (!kit.hubExitTarget(request) && isStillSettling(pageState.documents)) {
-    return render(
-      request,
-      h,
-      pageState,
-      EMPTY_FORM,
-      {},
-      settlingSummaryErrors(pageState.documents)
-    )
+    return render(request, h, pageState, EMPTY_FORM, {
+      summaryErrors: settlingSummaryErrors(pageState.documents)
+    })
   }
   return h.redirect(await kit.nextTarget(request, page, pageState.scope))
 }
@@ -275,15 +271,10 @@ export const handleOversizePayload = async (request, h) => {
   const pageState = await loadPage(request, h)
   const crumb =
     request.state?.crumb ?? request.server.plugins.crumb?.generate?.(request, h)
-  return render(
-    request,
-    h,
-    pageState,
-    EMPTY_FORM,
-    { file: OVERSIZE_FILE_MESSAGE },
-    [],
-    { crumb }
-  ).code(HTTP_STATUS_BAD_REQUEST)
+  return render(request, h, pageState, EMPTY_FORM, {
+    errors: { file: OVERSIZE_FILE_MESSAGE },
+    extra: { crumb }
+  }).code(HTTP_STATUS_BAD_REQUEST)
 }
 
 export const routes = [

@@ -21,9 +21,7 @@ export const render = (
   h,
   { journey, documents },
   values,
-  errors = {},
-  summaryErrors = [],
-  extra = {}
+  { errors = {}, summaryErrors = [], extra = {} } = {}
 ) => {
   const attempt = getAttempt(request)
   const anyPending = documents.some(
