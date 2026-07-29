@@ -21,16 +21,8 @@ const recoverCopy = (request, h, idempotencyKey) =>
 
 const copyPost = async (request, h) => {
   const idempotencyKey = request.payload?.idempotencyKey?.trim()
-  let copied
-  const failure = await kit.recoverableSave(
-    async () => {
-      copied = await copyJourney(
-        request,
-        h,
-        request.params.journeyId,
-        idempotencyKey
-      )
-    },
+  const { failure, value: copied } = await kit.recoverableSave(
+    () => copyJourney(request, h, request.params.journeyId, idempotencyKey),
     async () =>
       (await recoverCopy(request, h, idempotencyKey)).code(
         HTTP_STATUS_INTERNAL_SERVER_ERROR

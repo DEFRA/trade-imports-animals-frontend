@@ -49,11 +49,8 @@ const post = async (request, h) => {
     return h.redirect(nonAmendTarget(journey))
   }
 
-  let restored
-  const failure = await kit.recoverableSave(
-    async () => {
-      restored = await cancelAmendJourney(request, h, request.params.journeyId)
-    },
+  const { failure, value: restored } = await kit.recoverableSave(
+    () => cancelAmendJourney(request, h, request.params.journeyId),
     () => render(h, journey, true).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
   if (failure) return failure

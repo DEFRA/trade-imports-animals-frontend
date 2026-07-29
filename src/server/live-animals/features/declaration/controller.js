@@ -64,7 +64,7 @@ const post = async (request, h) => {
   }
 
   let result
-  const failure = await kit.recoverableSave(
+  const { failure } = await kit.recoverableSave(
     async () => {
       await state.commit(request, h, values)
       result = await state.submitJourney(request, h)

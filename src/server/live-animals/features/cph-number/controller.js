@@ -88,11 +88,8 @@ const post = async (request, h) => {
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  let committed
-  const failure = await kit.recoverableSave(
-    async () => {
-      committed = await state.commit(request, h, values)
-    },
+  const { failure, value: committed } = await kit.recoverableSave(
+    () => state.commit(request, h, values),
     async () => {
       const { journey } = await state.get(request, h)
       return render(request, h, journey, values, {}, true).code(

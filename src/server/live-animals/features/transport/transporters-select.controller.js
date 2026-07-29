@@ -1,5 +1,6 @@
 import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
+import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../lib/http-status.js'
 import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
@@ -89,14 +90,14 @@ const post = async (request, h) => {
     payload.commercialTransporter
   )
   let committed
-  const failure = await kit.recoverableSave(
+  const { failure } = await kit.recoverableSave(
     async () => {
       committed = await commitOrSkip(request, h, chosen)
     },
     async () => {
       const { journey } = await state.get(request, h)
       return render(h, journey, { selectedName: chosen?.name }, {}, true).code(
-        500
+        HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
     }
   )

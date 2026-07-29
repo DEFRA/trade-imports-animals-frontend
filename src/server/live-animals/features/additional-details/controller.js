@@ -101,7 +101,7 @@ const post = async (request, h) => {
   }
 
   let committed
-  const failure = await kit.recoverableSave(
+  const { failure } = await kit.recoverableSave(
     async () => {
       committed = await state.commit(request, h, {
         animalsCertifiedFor: values.animalsCertifiedFor,

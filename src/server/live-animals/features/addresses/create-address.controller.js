@@ -153,7 +153,7 @@ const post = async (request, h) => {
   }
 
   const record = addressRecordFrom(values)
-  const failure = await kit.recoverableSave(
+  const { failure } = await kit.recoverableSave(
     async () => {
       await state.commit(request, h, {
         [party.id]: { name: record.name, address: { ...record.address } }

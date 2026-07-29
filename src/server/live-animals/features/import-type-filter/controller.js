@@ -73,11 +73,8 @@ const post = async (request, h) => {
   }
 
   const { answers: before, journey } = await state.get(request, h)
-  let committed
-  const failure = await kit.recoverableSave(
-    async () => {
-      committed = await state.commit(request, h, values)
-    },
+  const { failure, value: committed } = await kit.recoverableSave(
+    () => state.commit(request, h, values),
     () =>
       render(h, journey, values, {}, true).code(
         HTTP_STATUS_INTERNAL_SERVER_ERROR

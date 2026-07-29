@@ -155,7 +155,7 @@ const post = async (request, h) => {
   }
 
   let committed
-  const failure = await kit.recoverableSave(
+  const { failure } = await kit.recoverableSave(
     async () => {
       committed = await commitOrSkip(request, h, values)
     },

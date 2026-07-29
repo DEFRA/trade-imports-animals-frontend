@@ -1,6 +1,9 @@
 import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
-import { HTTP_STATUS_BAD_REQUEST } from '../../lib/http-status.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../lib/http-status.js'
 import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
@@ -72,7 +75,7 @@ const post = async (request, h) => {
 
   const chosen = addressBook.party('contact', payload.contactAddress)
   let committed
-  const failure = await kit.recoverableSave(
+  const { failure } = await kit.recoverableSave(
     async () => {
       committed = chosen
         ? await state.commit(request, h, {
@@ -86,7 +89,7 @@ const post = async (request, h) => {
     async () => {
       const { journey } = await state.get(request, h)
       return render(h, journey, { selectedName: chosen?.name }, {}, true).code(
-        500
+        HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
     }
   )

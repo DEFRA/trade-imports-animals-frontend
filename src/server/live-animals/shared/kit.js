@@ -109,10 +109,10 @@ export const base = (
 
 export const recoverableSave = async (saveThunk, onRecoverableFailure) => {
   try {
-    return await saveThunk()
+    return { value: await saveThunk() }
   } catch (error) {
     if (isRecoverableBackendError(error)) {
-      return onRecoverableFailure()
+      return { failure: await onRecoverableFailure() }
     }
     throw error
   }

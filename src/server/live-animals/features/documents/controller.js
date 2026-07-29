@@ -129,7 +129,7 @@ const postAdd = async (request, h, payload) => {
     uploadId: outcome.uploadId,
     filename
   }
-  const failure = await kit.recoverableSave(
+  const { failure } = await kit.recoverableSave(
     async () => {
       const alreadyCanonicallySaved = pageState.documents.some(
         ({ entry: document }) => document.uploadId === savedEntry.uploadId
@@ -170,7 +170,7 @@ const retryProjectionSave = async (
   pageState,
   pendingDocumentRemoval
 ) => {
-  const failure = await kit.recoverableSave(
+  const { failure } = await kit.recoverableSave(
     async () => {
       await state.commit(request, h, {
         documents: pageState.answers.documents ?? []
@@ -219,7 +219,7 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
       return h.redirect(backToPage)
     }
   }
-  const failure = await kit.recoverableSave(
+  const { failure } = await kit.recoverableSave(
     async () => {
       await state.removeEntry(request, h, 'documents', retryIndex)
     },
