@@ -20,6 +20,14 @@ export const depthOf = (obligation) => {
 export const indicesOf = (fulfilmentId) =>
   segmentsOf(fulfilmentId).map((segment) => Number(segment.match(/\d+$/)?.[0]))
 
+export const compareIndexArrays = (left, right) => {
+  const sharedDepth = Math.min(left.length, right.length)
+  for (let depth = 0; depth < sharedDepth; depth++) {
+    if (left[depth] !== right[depth]) return left[depth] - right[depth]
+  }
+  return left.length - right.length
+}
+
 export const formatFulfilmentId = (groups, indices) =>
   groups.map(({ token }, depth) => `${token}${indices[depth]}`).join('/')
 

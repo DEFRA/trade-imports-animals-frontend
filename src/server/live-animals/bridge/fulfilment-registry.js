@@ -1,5 +1,6 @@
 import { obligations } from '../model/obligations/obligations.js'
 import { featureEvaluationBindings } from '../features/evaluation.js'
+import { ancestorChain } from './fulfilments/index.js'
 
 const PATH_UNSAFE = /[.[\]/*]/
 const TOKEN = /^[A-Za-z][A-Za-z-]*$/
@@ -16,16 +17,6 @@ const assertField = (field, label) => {
   ) {
     fail(`${label} has invalid store field "${String(field)}"`)
   }
-}
-
-const ancestorsOf = (obligation) => {
-  const ancestors = []
-  let current = obligation.within
-  while (current) {
-    ancestors.unshift(current)
-    current = current.within
-  }
-  return ancestors
 }
 
 const pathOf = (binding) =>
@@ -54,7 +45,7 @@ const assertGroupedPath = (binding, groupSet, manifestById) => {
   if (!Array.isArray(binding.groups) || binding.groups.length === 0) {
     fail(`grouped binding "${binding.field}" must declare a collection path`)
   }
-  const expected = ancestorsOf(binding.obligation)
+  const expected = ancestorChain(binding.obligation)
   if (expected.length !== binding.groups.length) {
     fail(
       `binding path "${pathOf(binding)}" has depth ${binding.groups.length}; ` +

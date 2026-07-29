@@ -1,32 +1,20 @@
 import {
+  compareIndexArrays,
   formatFulfilmentId,
   hasIndexedSegments,
   indicesOf,
   segmentsOf
 } from './fulfilment-id.js'
 import { fulfilmentRegistry } from './fulfilment-registry.js'
+import { ancestorChain } from './fulfilments/index.js'
 
-const ancestorsAndSelf = (obligation) => {
-  const chain = [obligation]
-  let current = obligation.within
-  while (current) {
-    chain.unshift(current)
-    current = current.within
-  }
-  return chain
-}
+const ancestorsAndSelf = (obligation) => [
+  ...ancestorChain(obligation),
+  obligation
+]
 
-const compareFulfilmentIds = (left, right) => {
-  const leftIndices = indicesOf(left)
-  const rightIndices = indicesOf(right)
-  const sharedDepth = Math.min(leftIndices.length, rightIndices.length)
-  for (let depth = 0; depth < sharedDepth; depth++) {
-    if (leftIndices[depth] !== rightIndices[depth]) {
-      return leftIndices[depth] - rightIndices[depth]
-    }
-  }
-  return leftIndices.length - rightIndices.length
-}
+const compareFulfilmentIds = (left, right) =>
+  compareIndexArrays(indicesOf(left), indicesOf(right))
 
 const bindingFor = (registry, obligation, kind) => {
   const binding = registry.ownerOf(obligation?.id)?.binding

@@ -1,17 +1,8 @@
 import { obligations } from '../../../model/obligations/obligations.js'
+import { compareIndexArrays } from '../../fulfilment-id.js'
 import { validateFulfilmentId } from '../fulfilment-id-path.js'
 import { ancestorChain, groupObligations } from '../obligation-graph.js'
 import { addCollectionIndices, validateDenseIndices } from './dense-indices.js'
-
-export const compareIndices = (left, right) => {
-  const sharedDepth = Math.min(left.indices.length, right.indices.length)
-  for (let depth = 0; depth < sharedDepth; depth++) {
-    if (left.indices[depth] !== right.indices[depth]) {
-      return left.indices[depth] - right.indices[depth]
-    }
-  }
-  return left.indices.length - right.indices.length
-}
 
 export const recordProjectionOf = (obligation, stored) => {
   const chain = ancestorChain(obligation)
@@ -24,7 +15,7 @@ export const recordProjectionOf = (obligation, stored) => {
         indices: validateFulfilmentId(chain, fulfilmentId, obligation.name),
         value
       }))
-      .sort(compareIndices)
+      .sort((a, b) => compareIndexArrays(a.indices, b.indices))
   }
 }
 

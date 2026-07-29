@@ -31,17 +31,13 @@ import { obligations } from '../model/obligations/obligations.js'
 import { ancestorChain, groupObligations } from './fulfilments/index.js'
 import { instanceFulfilmentId } from './fulfilment-id.js'
 import { fulfilmentRegistry } from './fulfilment-registry.js'
+import { SYSTEM_POPULATED } from './obligation-source.js'
 import { groupInvariantErrors } from '../model/obligations/state-queries.js'
 import { isBlankValue } from '../model/obligations/is-blank-value.js'
 
 const obligationByName = new Map(
   obligations.map((obligation) => [obligation.name, obligation])
 )
-
-const STRUCTURAL_PLACEHOLDERS = new Set([
-  'poApprovedReferenceNumber',
-  'responsiblePersonForLoad'
-])
 
 const isFulfilled = (value) => !isBlankValue(value)
 
@@ -89,7 +85,7 @@ const leafBlocksInstance = (
   implications,
   fulfilments
 ) => {
-  if (STRUCTURAL_PLACEHOLDERS.has(leaf.name)) return false
+  if (SYSTEM_POPULATED.has(leaf.name)) return false
   const implication = implications[leaf.id]
   if (!implication?.inScope) return false
   const stored = fulfilments[leaf.id]
