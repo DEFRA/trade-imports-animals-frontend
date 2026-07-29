@@ -1,10 +1,10 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import { buildDispatch, pageOfObligation } from '../flow/dispatch.js'
-import { dispatchPages } from '../features/index.js'
-import { makeScope } from '../engine/index.js'
-import { SYSTEM_POPULATED } from '../bridge/obligation-source.js'
-import { simulateJourney } from './simulate.js'
+import { SYSTEM_POPULATED } from '../../bridge/obligation-source.js'
+import { makeScope } from '../../engine/index.js'
+import { dispatchPages } from '../../features/index.js'
+import { buildDispatch, pageOfObligation } from '../../flow/dispatch.js'
+import { simulateJourney } from '../simulate.js'
 import {
   enumerateScopeStates,
   proveFlowReachability,
@@ -13,7 +13,7 @@ import {
   REASON_UNREACHABLE_IN_SCOPE,
   seedVariants,
   submitReadySeed
-} from './flow-reachability.js'
+} from './index.js'
 
 // The two FLOW-level checks layered on top of the graph prover: every
 // in-scope obligation has an owning page (`no-owning-page`) and that page is

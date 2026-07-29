@@ -6,7 +6,7 @@ they cannot drift from what the app does.
 
 - [`analysis/simulate.js`](../analysis/simulate.js) — walk a persona through the
   flow and get the ordered page sequence back.
-- [`analysis/flow-reachability.js`](../analysis/flow-reachability.js) — the
+- [`analysis/flow-reachability/index.js`](../analysis/flow-reachability/index.js) — the
   **page-level** prover: every in-scope obligation is presented by a page, and
   that page is reachable in the state that scopes it.
 - [`model/analysis/reachability/`](../model/analysis/reachability/index.js) — the
@@ -80,7 +80,7 @@ also resets the test override seam to that default.
 ## The page-level prover: no owed obligation is a dead end
 
 `proveFlowReachability()` in
-[`analysis/flow-reachability.js`](../analysis/flow-reachability.js) proves the
+[`analysis/flow-reachability/index.js`](../analysis/flow-reachability/index.js) proves the
 property:
 
 > There is no scope state in which an obligation is in scope (owed) but the page

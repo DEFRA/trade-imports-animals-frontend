@@ -41,7 +41,7 @@ Deriving both the gate and the status from one source makes an invariant hold by
 
 > Absent prerequisites, a derived gate passes exactly when the section's status is not Not applicable.
 
-If a gate hard-coded `inScope.has('<key>')` and that string diverged from the model, you would get a ghost Not applicable row on the hub, or a section that could never unlock. `flow/gates.test.js` pins the equivalence exhaustively — it checks it for a derived section's gate across every enumerable scope state (`analysis/flow-reachability.js`), holding prerequisites satisfied so the clause under test is isolated.
+If a gate hard-coded `inScope.has('<key>')` and that string diverged from the model, you would get a ghost Not applicable row on the hub, or a section that could never unlock. `flow/gates.test.js` pins the equivalence exhaustively — it checks it for a derived section's gate across every enumerable scope state (`analysis/flow-reachability/index.js`), holding prerequisites satisfied so the clause under test is isolated.
 
 ### The prerequisites clause — mandate-derived sequencing
 

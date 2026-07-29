@@ -171,7 +171,7 @@ Gating pages is only one use of scope. The consumers all read the one
    those in scope; none in scope means Not applicable.
 4. **Navigation** — derived gates (`flow/gates.js`) pass when some collected
    obligation is in scope; `flow/navigation.js` skips pages whose gate fails.
-5. **The reachability prover** — `analysis/flow-reachability.js` enumerates
+5. **The reachability prover** — `analysis/flow-reachability/index.js` enumerates
    scope states and asserts every in-scope obligation has an owning, reachable
    page.
 
