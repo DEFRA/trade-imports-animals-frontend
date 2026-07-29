@@ -3,4 +3,4 @@
 export {
   fulfilmentToNotification,
   answersToTargetNotification
-} from './notification-mapper.js'
+} from './notification-mapper/index.js'

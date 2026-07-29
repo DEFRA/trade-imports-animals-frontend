@@ -101,8 +101,9 @@ The persistence and reference-data services are proven against their ports:
 - **Records** —
   `services/persistence/records/fulfilment-codec/fulfilment-codec.test.js`
   pins canonical at-rest round trips;
-  `notification-mapper.test.js` pins both forward projections, including Mapper
-  A ⊆ Mapper B and commodity/unit/document behaviour;
+  `notification-mapper/notification-mapper.test.js` pins both forward
+  projections, including Mapper A ⊆ Mapper B and commodity/unit/document
+  behaviour;
   `skeleton-equivalence.test.js` pins Mapper A against the production skeleton;
   `records-port.test.js` and the `real.*` specs pin native stub storage and the
   `/fulfilments` source-of-truth client plus both projection writes.

@@ -169,7 +169,8 @@ identity of every commodity group or every animal identifier. Mapper B adds
 per-group `commodityCode`, full per-species `animalIdentifiers`, typed
 documents, and the other projection fields. This loss never affects resume
 because both shapes are downstream views; the forward directions are pinned by
-`skeleton-equivalence.test.js` and `notification-mapper.test.js`.
+`skeleton-equivalence.test.js` and
+`notification-mapper/notification-mapper.test.js`.
 
 ## journeyId lifecycle
 

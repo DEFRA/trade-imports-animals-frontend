@@ -56,7 +56,7 @@ live behind the `document-uploads` service, linked by `uploadId`.
 
 Two forward mappers translate the same canonical snapshot to backend
 notifications
-([services/persistence/records/notification-mapper.js](../services/persistence/records/notification-mapper.js)).
+([services/persistence/records/notification-mapper/index.js](../services/persistence/records/notification-mapper/index.js)).
 Both run on every real-mode replacement.
 
 **Mapper A** targets the skeleton notification shape, which cannot carry
@@ -81,7 +81,7 @@ truth, so Mapper A's narrower shape cannot lose durable data. See
 The answer/fulfilment bridge does not translate commodity names or codes; page
 answers and gates use the same values. Commodity translation is a
 notification-mapper concern
-([services/persistence/records/notification-mapper.js](../services/persistence/records/notification-mapper.js)).
+([services/persistence/records/notification-mapper/index.js](../services/persistence/records/notification-mapper/index.js)).
 Mapper B writes each complement's `commodityCode` with `commodityCodeFor` and
 also carries its name. Mapper A stores only the first commodity name at the
 notification's top level.

@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'vitest'
-import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
-import { characterisationCorpus } from '../../../bridge/fixtures/characterisation-corpus.js'
+import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
+import { characterisationCorpus } from '../../../../bridge/fixtures/characterisation-corpus.js'
 import {
   answersToTargetNotification,
   fulfilmentToNotification
-} from './notification-mapper.js'
+} from './index.js'
 
 const address = (name, line1) => ({
   name,

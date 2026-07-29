@@ -127,7 +127,7 @@ adapters.
 
 If the field must appear in either backend notification, also add its UUID read
 to the relevant forward projection in
-`services/persistence/records/notification-mapper.js`. Notifications are
+`services/persistence/records/notification-mapper/index.js`. Notifications are
 downstream projections, not the resume source.
 
 ## 4. Wire the controller

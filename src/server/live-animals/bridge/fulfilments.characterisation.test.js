@@ -12,7 +12,7 @@ import {
 import {
   answersToTargetNotification,
   fulfilmentToNotification
-} from '../services/persistence/records/notification-mapper.js'
+} from '../services/persistence/records/notification-mapper/index.js'
 
 const oracles = JSON.parse(
   readFileSync(
