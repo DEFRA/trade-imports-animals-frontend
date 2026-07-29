@@ -2,7 +2,7 @@ import { buildActor } from './actor-helpers.js'
 
 describe('buildActor', () => {
   const baseCredentials = {
-    contactId: 'contact-guid-001',
+    contactId: 2100010101,
     sub: 'entra-oid-001',
     name: 'Jane Farmer',
     currentRelationshipId: 'org-001'
@@ -12,7 +12,7 @@ describe('buildActor', () => {
     const actor = buildActor(baseCredentials)
 
     expect(actor).toEqual({
-      id: 'contact-guid-001',
+      id: '2100010101',
       source: 'dynamics-contact',
       userType: 'B2C',
       displayName: 'Jane Farmer',
@@ -21,7 +21,11 @@ describe('buildActor', () => {
   })
 
   it('builds a B2B actor when contactId is absent', () => {
-    const credentials = { ...baseCredentials, contactId: undefined }
+    const credentials = {
+      ...baseCredentials,
+      contactId: undefined,
+      sub: 'entra-oid-001'
+    }
 
     const actor = buildActor(credentials)
 
