@@ -1,3 +1,17 @@
+// EUDPA-106 (Option 3-with-callbacks) DEAD MODULE — kept for the follow-up
+// implementation ticket to remove. This client-side script implemented:
+//   1. A file-size preflight bound to `data-max-file-size` on the form.
+//   2. Async scan-status polling that fetched `/accompanying-documents/status`
+//      every POLL_INTERVAL ms and updated the DOM in place.
+// Under Option 3-with-callbacks:
+//   - The `data-max-file-size` attribute was removed at fix 1 (step 2), so
+//     the preflight initialiser bails immediately.
+//   - The status route is dead (see status.js) and the docs list is
+//     server-rendered from the backend on each page load, so no polling
+//     occurs.
+// The module is effectively inert but still loaded into the page bundle.
+// See findings.md "Deferred cleanup" for the removal list (includes the
+// backing endpoint and matching test suite).
 import { ErrorSummary } from 'govuk-frontend'
 
 const MAX_ATTEMPTS = 10

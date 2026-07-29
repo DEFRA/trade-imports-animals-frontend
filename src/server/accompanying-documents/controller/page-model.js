@@ -2,9 +2,7 @@ import { documentClient } from '../../common/clients/document-client.js'
 import {
   ALLOWED_FILE_TYPES_HINT,
   MAX_DOCUMENT_REFERENCE_LENGTH,
-  MAX_FILE_SIZE_BYTES,
   MAX_FILE_SIZE_LABEL,
-  OVERSIZE_FILE_MESSAGE,
   DOCUMENT_TYPE_OPTIONS,
   getDocumentTypeLabel
 } from '../document-upload-config.js'
@@ -41,12 +39,17 @@ const computeStatusFlags = (docs, attempt) => {
   }
 }
 
+// EUDPA-106: cdp-uploader marks a scan REJECTED for both virus finds AND
+// pre-scan rejections (over the 50 MB cap, disallowed MIME, etc). We can't
+// distinguish the reason without also plumbing the per-file errorMessage
+// through the backend DTO and the frontend flatten — captured for the
+// follow-up ticket. In the meantime, neutral copy that doesn't lie.
 const buildRejectedErrors = (docs) =>
   docs
     .filter((doc) => doc.scanStatus === 'REJECTED')
     .map((doc) => ({
       href: '#documents-added',
-      text: `${doc.filename} contains a virus. Remove it and try again with a different file.`
+      text: `${doc.filename} was rejected during upload. Remove it and try again with a different file.`
     }))
 
 const decorateDocumentsForView = (docs) =>
@@ -81,9 +84,11 @@ export const buildPageModel = (documentsWithStatus, attempt, extra = {}) => {
     canContinue: !flags.anyPending && !flags.anyRejected,
     allowedFileTypesHint: ALLOWED_FILE_TYPES_HINT,
     maxDocumentReferenceLength: MAX_DOCUMENT_REFERENCE_LENGTH,
-    maxFileSize: MAX_FILE_SIZE_BYTES,
+    // EUDPA-106 fix 1 (Option A): maxFileSize + oversizeFileMessage removed
+    // so the client-side preflight (accompanying-documents.js) bails on empty
+    // data attributes. See workareas/shared/EUDPA-106/findings.md for the full
+    // enforcement chain and the deferred cleanup.
     maxFileSizeLabel: MAX_FILE_SIZE_LABEL,
-    oversizeFileMessage: OVERSIZE_FILE_MESSAGE,
     documentTypeSelectItems: buildDocumentTypeSelectItems(),
     ...extra,
     errorList: errorList.length ? errorList : null

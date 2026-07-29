@@ -13,11 +13,21 @@ const isBoomOversize = (request) =>
   request.response?.isBoom &&
   request.response.output?.statusCode === statusCodes.payloadTooLarge
 
-// Safety net for users whose request bypasses the client-side preflight
-// (no-JS, scripted clients): Hapi rejects an over-size multipart with Boom
-// 413 before the handler runs, so the controller's `loadUploadState` never
-// executes — we re-fetch the session documents here and render the upload
-// page with an inline file-size error instead of returning a bare 413.
+// EUDPA-106 (Option 3-with-callbacks) DEAD CODE — kept for the follow-up
+// implementation ticket to remove alongside the byte-proxy teardown (AC4).
+// The `POST /accompanying-documents` route this hook is attached to is no
+// longer reachable — the form's action was rewired in step 4 to
+// `/upload-and-scan/<uploadId>` (direct to cdp-uploader via the nginx sidecar
+// bypass), so hapi's payload machinery never fires and this onPreResponse
+// hook is never invoked. See findings.md "Deferred cleanup" for the removal
+// list.
+//
+// Original intent (preserved for context): safety net for users whose request
+// bypasses the client-side preflight (no-JS, scripted clients). Hapi rejected
+// an over-size multipart with Boom 413 before the handler ran, so the
+// controller's `loadUploadState` never executed — this hook re-fetched the
+// session documents and re-rendered the upload page with an inline file-size
+// error instead of returning a bare 413.
 const handleOversizePayload = async (request, h) => {
   if (!isBoomOversize(request)) {
     return h.continue
@@ -55,6 +65,11 @@ export const accompanyingDocuments = {
           path: '/accompanying-documents',
           ...accompanyingDocumentsController.get
         },
+        // EUDPA-106 (Option 3-with-callbacks) DEAD ROUTE — kept for the
+        // follow-up ticket to remove. Client-side JS used to poll this for
+        // scan status; under Option 3 the docs list is server-rendered from
+        // the backend on each page load, so no JS polling occurs. See
+        // findings.md "Deferred cleanup".
         {
           method: 'GET',
           path: '/accompanying-documents/status',
@@ -65,9 +80,19 @@ export const accompanyingDocuments = {
         },
         {
           method: 'GET',
+          path: '/accompanying-documents/upload-successful',
+          ...accompanyingDocumentsController.uploadSuccessful
+        },
+        {
+          method: 'GET',
           path: '/accompanying-documents/{uploadId}/file',
           ...accompanyingDocumentsController.download
         },
+        // EUDPA-106 (Option 3-with-callbacks) DEAD ROUTE — the form POSTs
+        // direct to /upload-and-scan/<uploadId> now (see add-document-form.njk).
+        // Nothing routes to this handler. Kept for the follow-up ticket to
+        // remove alongside the whole backend byte-proxy teardown (AC4). See
+        // findings.md "Deferred cleanup".
         {
           method: 'POST',
           path: '/accompanying-documents',

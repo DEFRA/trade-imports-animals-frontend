@@ -1,3 +1,15 @@
+// EUDPA-106 (Option 3-with-callbacks) DEAD MODULE — kept for the follow-up
+// implementation ticket to remove alongside the byte-proxy teardown (AC4).
+// This is the handler for `POST /accompanying-documents` — the browser used
+// to submit the form here, the handler called `documentClient.initiate` +
+// `documentClient.uploadFile` (backend byte-proxy path), and persisted the
+// resulting doc to yar. Under Option 3, the form action was rewired in
+// step 4 to `/upload-and-scan/<uploadId>` (direct to cdp-uploader via the
+// nginx sidecar bypass) and the backend record is created by cdp-uploader's
+// scan-result callback. Nothing routes to this handler; nothing writes to
+// yar['documents']. See findings.md "Deferred cleanup" for the full removal
+// list (payload.js / upload.js / validation.js / views.js all die with this
+// handler).
 import { getTraceId } from '@defra/hapi-tracing'
 import { getSessionValue } from '../../../common/helpers/session-helpers.js'
 import { sessionKeys } from '../../../common/constants/session-keys.js'

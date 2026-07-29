@@ -1,6 +1,7 @@
 import { vi } from 'vitest'
 
 import { documentClient } from '../common/clients/document-client.js'
+import { cdpUploaderClient } from '../common/clients/cdp-uploader-client.js'
 import { config } from '../../config/config.js'
 import { createServer } from '../server.js'
 import { statusCodes } from '../common/constants/status-codes.js'
@@ -86,6 +87,32 @@ const TEST_DOCUMENTS = [
   }
 ]
 
+// Shapes a flat TEST_DOCUMENTS entry into an AccompanyingDocumentDto as the
+// backend list endpoint returns them — filename lifted into a files[] entry,
+// scanStatus added, other fields kept as-is.
+const asBackendListItem = (flatDoc, scanStatus) => ({
+  uploadId: flatDoc.uploadId,
+  documentType: flatDoc.documentType,
+  documentReference: flatDoc.documentReference,
+  dateOfIssue: flatDoc.dateOfIssue,
+  scanStatus,
+  files: [{ filename: flatDoc.filename }]
+})
+
+const mockDocumentList = (statuses) =>
+  vi.spyOn(documentClient, 'list').mockResolvedValue({
+    items: statuses.map(([flatDoc, scanStatus]) =>
+      asBackendListItem(flatDoc, scanStatus)
+    )
+  })
+
+const mockNotificationInSession = (ref = 'GBN-AG-26-TEST') => {
+  getSessionValue.mockImplementation((_request, key) => {
+    if (key === sessionKeys.referenceNumber) return ref
+    return null
+  })
+}
+
 describe('#accompanyingDocumentsController', () => {
   let server
 
@@ -103,6 +130,14 @@ describe('#accompanyingDocumentsController', () => {
       uploadId: 'TEST-UPLOAD-ID'
     })
     vi.spyOn(documentClient, 'uploadFile').mockResolvedValue(undefined)
+    // Every GET /accompanying-documents now initiates a cdp-uploader session;
+    // a failure lets the handler 500 rather than silently degrade, so stub a
+    // baseline OK response for tests that don't exercise that path directly.
+    vi.spyOn(cdpUploaderClient, 'initiate').mockResolvedValue({
+      uploadId: 'TEST-CDP-UPLOAD-ID',
+      uploadUrl: 'http://cdp-uploader.test/upload-and-scan/TEST-CDP-UPLOAD-ID',
+      statusUrl: 'http://cdp-uploader.test/status/TEST-CDP-UPLOAD-ID'
+    })
     getSessionValue.mockReset()
     setSessionValue.mockReset()
     // Default: no documents in session
@@ -135,14 +170,12 @@ describe('#accompanyingDocumentsController', () => {
       )
     })
 
-    test('Should show document rows with status tags when documents are in session', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
-      vi.spyOn(documentClient, 'getStatus')
-        .mockResolvedValueOnce({ scanStatus: 'PENDING' })
-        .mockResolvedValueOnce({ scanStatus: 'COMPLETE' })
+    test('Should show document rows with status tags when documents exist for the notification', async () => {
+      mockNotificationInSession()
+      mockDocumentList([
+        [TEST_DOCUMENTS[0], 'PENDING'],
+        [TEST_DOCUMENTS[1], 'COMPLETE']
+      ])
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
@@ -170,13 +203,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should show manual refresh link (not meta-refresh) when any document is PENDING', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return [TEST_DOCUMENTS[0]]
-        return null
-      })
-      vi.spyOn(documentClient, 'getStatus').mockResolvedValueOnce({
-        scanStatus: 'PENDING'
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'PENDING']])
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
@@ -197,13 +225,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should not include meta refresh and show manual refresh link when attempt >= MAX_POLLING_ATTEMPTS', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return [TEST_DOCUMENTS[0]]
-        return null
-      })
-      vi.spyOn(documentClient, 'getStatus').mockResolvedValueOnce({
-        scanStatus: 'PENDING'
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'PENDING']])
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
@@ -222,13 +245,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should still show refresh link (not timed out) when attempt is one below MAX_POLLING_ATTEMPTS boundary', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return [TEST_DOCUMENTS[0]]
-        return null
-      })
-      vi.spyOn(documentClient, 'getStatus').mockResolvedValueOnce({
-        scanStatus: 'PENDING'
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'PENDING']])
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
@@ -250,13 +268,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should show error summary and no Save and continue when a document is REJECTED', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return [TEST_DOCUMENTS[0]]
-        return null
-      })
-      vi.spyOn(documentClient, 'getStatus').mockResolvedValueOnce({
-        scanStatus: 'REJECTED'
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'REJECTED']])
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
@@ -269,18 +282,15 @@ describe('#accompanyingDocumentsController', () => {
 
       expect(statusCode).toBe(statusCodes.ok)
       expect(result).toEqual(expect.stringContaining('Virus found'))
-      expect(result).toEqual(expect.stringContaining('contains a virus'))
+      expect(result).toEqual(
+        expect.stringContaining('was rejected during upload')
+      )
       expect(result).toEqual(expect.stringContaining('aria-disabled="true"'))
     })
 
     test('Should show Save and continue when all documents are COMPLETE', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return [TEST_DOCUMENTS[0]]
-        return null
-      })
-      vi.spyOn(documentClient, 'getStatus').mockResolvedValueOnce({
-        scanStatus: 'COMPLETE'
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
@@ -296,13 +306,11 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should render View file link only for COMPLETE documents', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
-      vi.spyOn(documentClient, 'getStatus')
-        .mockResolvedValueOnce({ scanStatus: 'COMPLETE' })
-        .mockResolvedValueOnce({ scanStatus: 'PENDING' })
+      mockNotificationInSession()
+      mockDocumentList([
+        [TEST_DOCUMENTS[0], 'COMPLETE'],
+        [TEST_DOCUMENTS[1], 'PENDING']
+      ])
 
       const { result, statusCode } = await server.inject({
         method: 'GET',
@@ -320,6 +328,121 @@ describe('#accompanyingDocumentsController', () => {
       expect(result).not.toEqual(
         expect.stringContaining('/accompanying-documents/UPLOAD-2/file')
       )
+    })
+  })
+
+  describe('GET /accompanying-documents/upload-successful', () => {
+    const CORR_MINE = 'corr-uuid-for-this-tab'
+    const CORR_OTHER = 'corr-uuid-for-a-different-tab'
+
+    const injectWaitPage = (query = {}) => {
+      const search = new URLSearchParams(query).toString()
+      return server.inject({
+        method: 'GET',
+        url: `/accompanying-documents/upload-successful${search ? `?${search}` : ''}`,
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+    }
+
+    test('redirects to /accompanying-documents when backend list has a matching correlationId', async () => {
+      mockNotificationInSession()
+      vi.spyOn(documentClient, 'list').mockResolvedValue({
+        items: [
+          {
+            ...asBackendListItem(TEST_DOCUMENTS[0], 'COMPLETE'),
+            correlationId: CORR_MINE
+          }
+        ]
+      })
+
+      const { statusCode, headers } = await injectWaitPage({ corr: CORR_MINE })
+
+      expect(statusCode).toBe(statusCodes.redirectFound)
+      expect(headers.location).toBe('/accompanying-documents')
+    })
+
+    test("does not redirect when only other tabs' correlationIds are in the list (multi-tab guard)", async () => {
+      mockNotificationInSession()
+      vi.spyOn(documentClient, 'list').mockResolvedValue({
+        items: [
+          {
+            ...asBackendListItem(TEST_DOCUMENTS[0], 'COMPLETE'),
+            correlationId: CORR_OTHER
+          }
+        ]
+      })
+
+      const { statusCode, result } = await injectWaitPage({
+        corr: CORR_MINE,
+        attempt: '0'
+      })
+
+      // Should render the wait page, not redirect.
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual(expect.stringContaining('Uploading your file'))
+    })
+
+    test('renders a meta-refresh URL that preserves the same correlationId across ticks', async () => {
+      mockNotificationInSession()
+      vi.spyOn(documentClient, 'list').mockResolvedValue({ items: [] })
+
+      const { result } = await injectWaitPage({
+        corr: CORR_MINE,
+        attempt: '2'
+      })
+
+      // meta-refresh preserves ?corr=<same>&attempt=<n+1>
+      expect(result).toEqual(
+        expect.stringContaining(`corr=${CORR_MINE}&amp;attempt=3`)
+      )
+      expect(result).toEqual(
+        expect.stringContaining('meta http-equiv="refresh"')
+      )
+    })
+
+    test('redirects to /accompanying-documents once attempt reaches MAX (give-up on lost callback)', async () => {
+      mockNotificationInSession()
+      // Backend still has no matching doc — the redirect must come from the
+      // attempt cap, not from a match.
+      vi.spyOn(documentClient, 'list').mockResolvedValue({ items: [] })
+
+      const { statusCode, headers } = await injectWaitPage({
+        corr: CORR_MINE,
+        attempt: '10'
+      })
+
+      expect(statusCode).toBe(statusCodes.redirectFound)
+      expect(headers.location).toBe('/accompanying-documents')
+    })
+
+    test('renders the wait page even when the backend list call throws (soft fail, keep polling)', async () => {
+      mockNotificationInSession()
+      vi.spyOn(documentClient, 'list').mockRejectedValue(
+        new Error('backend transiently unavailable')
+      )
+
+      const { statusCode, result } = await injectWaitPage({
+        corr: CORR_MINE,
+        attempt: '1'
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(result).toEqual(expect.stringContaining('Uploading your file'))
+    })
+
+    test('redirects straight to /accompanying-documents when no correlationId is supplied (avoids meta-refresh poisoning)', async () => {
+      mockNotificationInSession()
+      const listSpy = vi.spyOn(documentClient, 'list')
+
+      const { statusCode, headers } = await injectWaitPage({ attempt: '0' })
+
+      expect(statusCode).toBe(statusCodes.redirectFound)
+      expect(headers.location).toBe('/accompanying-documents')
+      // Guard triggers before any backend call is made.
+      expect(listSpy).not.toHaveBeenCalled()
     })
   })
 
@@ -348,11 +471,9 @@ describe('#accompanyingDocumentsController', () => {
       return { headers: new Headers(headerInit), body: stream }
     }
 
-    test('Should stream file with correct content headers when uploadId is in session', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+    test('Should stream file with correct content headers when uploadId is in the backend list for the session notification', async () => {
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
       const fileContent = 'PDF file content'
       vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
         buildBackendResponse({
@@ -384,11 +505,9 @@ describe('#accompanyingDocumentsController', () => {
       )
     })
 
-    test('Should return 404 and not call backend when uploadId is not in session', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+    test('Should return 404 and not call streamFile when uploadId is not in the backend list', async () => {
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
       vi.spyOn(documentClient, 'streamFile')
 
       const { statusCode } = await server.inject({
@@ -404,8 +523,30 @@ describe('#accompanyingDocumentsController', () => {
       expect(documentClient.streamFile).not.toHaveBeenCalled()
     })
 
-    test('Should return 404 when no documents exist in the session', async () => {
+    test('Should return 404 when session has no notification referenceNumber', async () => {
       getSessionValue.mockReturnValue(null)
+      const listSpy = vi.spyOn(documentClient, 'list')
+      vi.spyOn(documentClient, 'streamFile')
+
+      const { statusCode } = await server.inject({
+        method: 'GET',
+        url: '/accompanying-documents/UPLOAD-1/file',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        }
+      })
+
+      expect(statusCode).toBe(statusCodes.notFound)
+      expect(listSpy).not.toHaveBeenCalled()
+      expect(documentClient.streamFile).not.toHaveBeenCalled()
+    })
+
+    test('Should return 404 (fail closed) when the backend list call throws', async () => {
+      mockNotificationInSession()
+      vi.spyOn(documentClient, 'list').mockRejectedValue(
+        new Error('backend transiently unavailable')
+      )
       vi.spyOn(documentClient, 'streamFile')
 
       const { statusCode } = await server.inject({
@@ -444,10 +585,8 @@ describe('#accompanyingDocumentsController', () => {
       'application/msword',
       'application/octet-stream'
     ])('Should serve %s without downgrade', async (mimeType) => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
       vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
         buildBackendResponse({ contentType: mimeType })
       )
@@ -467,10 +606,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should fall back to application/octet-stream for disallowed MIME types', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
       vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
         buildBackendResponse({
           contentType: 'text/html',
@@ -493,10 +630,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should strip MIME type parameters before allow-list check', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
       vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
         buildBackendResponse({ contentType: 'application/pdf; charset=utf-8' })
       )
@@ -515,10 +650,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should fall back to application/octet-stream and attachment when backend returns no content headers', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
       vi.spyOn(documentClient, 'streamFile').mockResolvedValue(
         buildBackendResponse({ contentType: null, contentDisposition: null })
       )
@@ -538,10 +671,8 @@ describe('#accompanyingDocumentsController', () => {
     })
 
     test('Should return 500 when documentClient.streamFile throws', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
       vi.spyOn(documentClient, 'streamFile').mockRejectedValue(
         new Error('Backend error')
       )
@@ -564,11 +695,9 @@ describe('#accompanyingDocumentsController', () => {
       vi.spyOn(documentClient, 'delete').mockResolvedValue(undefined)
     })
 
-    test('Should delete from backend, update session, and redirect when _action is remove-{uploadId}', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+    test('Should delete from backend and redirect when _action is remove-{uploadId} for a doc in the backend list', async () => {
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
 
       const { statusCode, headers } = await server.inject({
         method: 'POST',
@@ -586,18 +715,11 @@ describe('#accompanyingDocumentsController', () => {
         'UPLOAD-1',
         expect.any(String)
       )
-      expect(setSessionValue).toHaveBeenCalledWith(
-        expect.anything(),
-        sessionKeys.documents,
-        [TEST_DOCUMENTS[1]]
-      )
     })
 
-    test('Should return 400 and not call delete when uploadId is not in session', async () => {
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+    test('Should return 400 and not call delete when uploadId is not in the backend list', async () => {
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
 
       const { statusCode } = await server.inject({
         method: 'POST',
@@ -611,17 +733,53 @@ describe('#accompanyingDocumentsController', () => {
 
       expect(statusCode).toBe(statusCodes.badRequest)
       expect(documentClient.delete).not.toHaveBeenCalled()
-      expect(setSessionValue).not.toHaveBeenCalled()
     })
 
-    test('Should redirect without updating session when backend delete fails', async () => {
+    test('Should return 400 when session has no notification referenceNumber', async () => {
+      getSessionValue.mockReturnValue(null)
+      const listSpy = vi.spyOn(documentClient, 'list')
+
+      const { statusCode } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        payload: { _action: 'remove-UPLOAD-1' }
+      })
+
+      expect(statusCode).toBe(statusCodes.badRequest)
+      expect(listSpy).not.toHaveBeenCalled()
+      expect(documentClient.delete).not.toHaveBeenCalled()
+    })
+
+    test('Should return 400 (fail closed) when the backend list call throws', async () => {
+      mockNotificationInSession()
+      vi.spyOn(documentClient, 'list').mockRejectedValue(
+        new Error('backend transiently unavailable')
+      )
+
+      const { statusCode } = await server.inject({
+        method: 'POST',
+        url: '/accompanying-documents',
+        auth: {
+          strategy: 'session',
+          credentials: { user: {}, sessionId: 'TEST_SESSION_ID' }
+        },
+        payload: { _action: 'remove-UPLOAD-1' }
+      })
+
+      expect(statusCode).toBe(statusCodes.badRequest)
+      expect(documentClient.delete).not.toHaveBeenCalled()
+    })
+
+    test('Should still redirect (not 500) when backend delete fails', async () => {
       vi.spyOn(documentClient, 'delete').mockRejectedValue(
         new Error('Backend error')
       )
-      getSessionValue.mockImplementation((request, key) => {
-        if (key === sessionKeys.documents) return TEST_DOCUMENTS
-        return null
-      })
+      mockNotificationInSession()
+      mockDocumentList([[TEST_DOCUMENTS[0], 'COMPLETE']])
 
       const { statusCode, headers } = await server.inject({
         method: 'POST',
@@ -635,7 +793,6 @@ describe('#accompanyingDocumentsController', () => {
 
       expect(statusCode).toBe(statusCodes.redirectFound)
       expect(headers.location).toBe('/accompanying-documents')
-      expect(setSessionValue).not.toHaveBeenCalled()
     })
   })
 

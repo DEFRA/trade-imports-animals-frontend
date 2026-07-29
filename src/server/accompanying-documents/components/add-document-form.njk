@@ -8,7 +8,13 @@
 
   <h2 class="govuk-heading-m">{{ 'Add another document' if documents and documents.length else 'Add a document' }}</h2>
 
-  <form method="post" enctype="multipart/form-data" novalidate data-max-file-size="{{ maxFileSize }}" data-oversize-error="{{ oversizeFileMessage }}">
+  {# EUDPA-106: form posts direct to /upload-and-scan/<uploadId> so bytes
+     bypass hapi and the sidecar's 10 M cap on /. The GET handler asserts a
+     live cdp-uploader session before rendering — a failed /initiate 500s
+     rather than degrading to a broken action. #}
+  <form method="post" enctype="multipart/form-data" novalidate
+        action="/upload-and-scan/{{ cdpUploaderSession.uploadId }}"
+        data-max-file-size="{{ maxFileSize }}" data-oversize-error="{{ oversizeFileMessage }}">
     <input type="hidden" name="crumb" value="{{ crumb }}"/>
 
     {{ govukSelect({
@@ -65,7 +71,7 @@
       ]
     }) }}
 
-    {%- set fileHintHtml %}<p class="govuk-!-font-weight-bold govuk-!-margin-bottom-1">Your file must be:</p><ul class="govuk-list govuk-list--bullet govuk-!-margin-bottom-0"><li>smaller than {{ maxFileSizeLabel }}</li><li>{{ allowedFileTypesHint }}</li><li>ZIP files are not allowed for security reasons</li></ul>{% endset -%}
+    {%- set fileHintHtml %}<p class="govuk-!-font-weight-bold govuk-!-margin-bottom-1">Your file must be:</p><ul class="govuk-list govuk-list--bullet govuk-!-margin-bottom-0"><li>50 MB or less</li><li>{{ allowedFileTypesHint }}</li><li>ZIP files are not allowed for security reasons</li></ul>{% endset -%}
 
     {{ govukFileUpload({
       id: "file",

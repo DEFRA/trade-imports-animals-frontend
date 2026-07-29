@@ -10,9 +10,25 @@ import {
   resolveContentDisposition
 } from './content-type.js'
 
-const isOwnedBySession = (request, uploadId) => {
-  const sessionDocuments = getSessionValue(request, sessionKeys.documents) ?? []
-  return sessionDocuments.some((doc) => doc.uploadId === uploadId)
+// EUDPA-106: under the direct-to-uploader flow the docs list is sourced from
+// the backend on every render — yar's sessionKeys.documents is no longer
+// populated. Ownership is now a "does the notification currently in this
+// session own this uploadId?" check, hit against the backend list. Fails
+// closed on any error.
+const isOwnedByNotification = async (request, uploadId, traceId) => {
+  const referenceNumber = getSessionValue(request, sessionKeys.referenceNumber)
+  if (!referenceNumber) {
+    return false
+  }
+  try {
+    const response = await documentClient.list(referenceNumber, traceId)
+    return (response.items ?? []).some((doc) => doc.uploadId === uploadId)
+  } catch (err) {
+    request.logger.warn(
+      `Download ownership check: backend list failed for ${referenceNumber}: ${err.message}`
+    )
+    return false
+  }
 }
 
 const respondWithFile = (h, backendResponse) =>
@@ -37,18 +53,16 @@ export const download = {
   },
   async handler(request, h) {
     const { uploadId } = request.params
+    const traceId = getTraceId() ?? ''
 
-    if (!isOwnedBySession(request, uploadId)) {
+    if (!(await isOwnedByNotification(request, uploadId, traceId))) {
       request.logger.warn(
-        `Download rejected: uploadId=${uploadId} not found in session`
+        `Download rejected: uploadId=${uploadId} not owned by session notification`
       )
       return h.response('Not Found').code(statusCodes.notFound)
     }
 
-    const backendResponse = await documentClient.streamFile(
-      uploadId,
-      getTraceId() ?? ''
-    )
+    const backendResponse = await documentClient.streamFile(uploadId, traceId)
     return respondWithFile(h, backendResponse)
   }
 }

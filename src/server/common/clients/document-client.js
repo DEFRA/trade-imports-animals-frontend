@@ -73,6 +73,21 @@ export const documentClient = {
     return response.json()
   },
 
+  // EUDPA-106 Option 3-with-callbacks: docs list now comes from the backend
+  // rather than a yar-cached session copy. The response is the shape returned
+  // by the backend's DocumentListResponse — { items: [ AccompanyingDocumentDto ] }.
+  async list(notificationRef, traceId) {
+    const response = await request(
+      `/notifications/${notificationRef}/document-uploads`,
+      {
+        method: 'GET',
+        traceId,
+        errorMessage: 'Failed to list document uploads'
+      }
+    )
+    return response.json()
+  },
+
   async streamFile(uploadId, traceId) {
     return request(`/document-uploads/${uploadId}/file`, {
       method: 'GET',
