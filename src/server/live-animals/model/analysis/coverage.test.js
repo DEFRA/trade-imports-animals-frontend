@@ -8,7 +8,7 @@
  *    `gateValue` and a seeding rule in `scaffoldFor`. Skip it and the pin
  *    silently stops proving anything."
  *
- * So every new helper in `obligations/helpers.js` that attaches
+ * So every new helper in `obligations/helpers/index.js` that attaches
  * `.metadata.type` must either be added to the witness-synthesiser
  * dispatch (STRUCTURED) or explicitly listed as opaque-by-design
  * (OPAQUE). Without this coverage gate, someone can add a sixth helper
@@ -26,7 +26,7 @@
  *      dispatched inside `synthesiseWitness` — the registry can't
  *      declare a helper structured while omitting the synth (or vice
  *      versa).
- *   4. Every export of `obligations/helpers.js` that produces a gate
+ *   4. Every export of `obligations/helpers/index.js` that produces a gate
  *      function with `.metadata.type` classifies as one of those two
  *      sets — no unlisted helpers.
  *   5. A synthesised sample of each STRUCTURED helper type actually
@@ -53,7 +53,7 @@ import {
   WITNESS_KIND,
   synthesiseWitness
 } from './reachability/index.js'
-import * as helpers from '../obligations/helpers.js'
+import * as helpers from '../obligations/helpers/index.js'
 
 // ---------------------------------------------------------------------------
 // Sample factories — one per helper. Each factory returns an obligation

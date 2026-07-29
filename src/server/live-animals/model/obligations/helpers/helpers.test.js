@@ -11,8 +11,8 @@ import {
   obligationMetadata,
   present,
   presentGate
-} from './helpers.js'
-import { isRecordMap, readGate } from './helper-internals.js'
+} from './index.js'
+import { isRecordMap, readGate } from '../helper-internals.js'
 
 // Synthetic obligations — plain data. No evaluator, no manifest, no
 // obligationsById construction. This is the entire test surface.

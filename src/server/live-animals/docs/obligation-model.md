@@ -11,7 +11,7 @@ The model has one file at its core:
 - `model/obligations/obligations.js` — the obligation manifest: what the
   journey can owe, and when.
 
-Two supporting files complete the picture: `model/obligations/helpers.js`
+Two supporting files complete the picture: `model/obligations/helpers/index.js`
 (the gate-helper library that builds scope closures) and
 `model/no-display-keys.js` (the boot-time purity check).
 
@@ -115,7 +115,7 @@ type without rendering a control.
 
 Every conditionally-scoped obligation carries an `applyTo` closure. The
 closure is never hand-written — it is built by a pure helper from
-`model/obligations/helpers.js`. Each helper returns the closure and hangs
+`model/obligations/helpers/index.js`. Each helper returns the closure and hangs
 a `.metadata` sidecar off it describing the gate as data. That gives one
 mechanism and one testing story: any obligation's `applyTo` runs as a
 plain function call over a `fulfilments` map, and the same gate is

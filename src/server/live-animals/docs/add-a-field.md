@@ -271,7 +271,7 @@ Then run `npm run test:e2e` from the frontend repo root.
 
 A conditional field is in scope only while another answer holds. It carries an
 `applyTo` scope closure instead of a plain `status`. The closure is built by a
-gate helper from `model/obligations/helpers.js`, which co-declares the closure
+gate helper from `model/obligations/helpers/index.js`, which co-declares the closure
 body, its metadata sidecar and its dependency edge. The reference example is
 `regionCode` in `model/obligations/obligations.js`:
 

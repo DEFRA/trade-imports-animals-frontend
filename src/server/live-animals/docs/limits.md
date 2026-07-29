@@ -9,7 +9,7 @@ honest about being a stub.
 
 The obligation model under `model/` is JavaScript, not serialisable data.
 An obligation's scope is an `applyTo` closure built by a gate helper
-([model/obligations/helpers.js](../model/obligations/helpers.js)). The
+([model/obligations/helpers/index.js](../model/obligations/helpers/index.js)). The
 `.metadata` sidecar on each closure makes the dependency graph inspectable,
 but the decision logic itself is a function, not a rule you can read out as
 JSON.
@@ -91,7 +91,7 @@ notification's top level.
 
 The gate helpers compare a scalar stored value —
 `values.includes(value)` in
-[model/obligations/helpers.js](../model/obligations/helpers.js) — so an
+[model/obligations/helpers/index.js](../model/obligations/helpers/index.js) — so an
 array-valued answer would silently compare as no-match, not throw. The only
 array-valued obligation, `transitedCountries`, gates nothing, so no live gate
 reads an array. A future gate over an array-valued field must first teach the

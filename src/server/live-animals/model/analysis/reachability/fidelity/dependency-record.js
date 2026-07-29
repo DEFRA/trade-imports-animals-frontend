@@ -1,4 +1,4 @@
-import { obligationMetadata } from '../../../obligations/helpers.js'
+import { obligationMetadata } from '../../../obligations/helpers/index.js'
 
 // Prefer the derived-or-declared dependsOn from `obligationMetadata` —
 // meta-first helpers name their gate obligation on `.metadata`, so the

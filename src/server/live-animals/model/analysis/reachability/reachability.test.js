@@ -41,7 +41,7 @@ import {
   matches,
   notInUnionOf,
   presentGate
-} from '../../obligations/helpers.js'
+} from '../../obligations/helpers/index.js'
 
 // ---------------------------------------------------------------------------
 // Helpers — turn an obligation into the `{ id, dependsOn }` record the

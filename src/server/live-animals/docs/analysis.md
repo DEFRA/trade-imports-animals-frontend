@@ -36,7 +36,7 @@ click through:
 
 Each `applyTo` closure is opaque JavaScript, but it carries a structured
 `.metadata` sidecar built by the helper factories in
-[`model/obligations/helpers.js`](../model/obligations/helpers.js). The metadata
+[`model/obligations/helpers/index.js`](../model/obligations/helpers/index.js). The metadata
 declares **which obligation the gate reads** (`dependsOn`) and, for the
 structured helper family, **what value would open it**. That sidecar is what
 turns the closures into analysable data.
@@ -226,7 +226,7 @@ and at least fourteen gates are value-level proved.
 
 ### The coverage gate keeps synthesis honest
 
-Every helper in [`model/obligations/helpers.js`](../model/obligations/helpers.js)
+Every helper in [`model/obligations/helpers/index.js`](../model/obligations/helpers/index.js)
 that attaches a `.metadata.type` must be classified — either as a
 witness-synthesisable helper in `STRUCTURED_HELPER_TYPES`, or as opaque-by-design
 in `OPAQUE_HELPER_TYPES`.

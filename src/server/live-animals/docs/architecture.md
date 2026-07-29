@@ -31,7 +31,7 @@ The model is plain data plus pure functions. It has three parts:
 - **Obligations** — [`model/obligations/obligations.js`](../model/obligations/obligations.js)
   is the manifest: one object per data requirement, each with a UUID `id`, a
   `name`, an optional parent `within` group, a `status` and an optional `applyTo`
-  scope closure built by [`model/obligations/helpers.js`](../model/obligations/helpers.js).
+  scope closure built by [`model/obligations/helpers/index.js`](../model/obligations/helpers/index.js).
   [`model/obligations/evaluator.js`](../model/obligations/evaluator.js) exports
   `createObligationEvaluator`, whose `evaluate(fulfilments)` runs the scope
   fixpoint, purges out-of-scope data and returns

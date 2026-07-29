@@ -140,7 +140,7 @@ replaces the whole snapshot, so removing an earlier item may renumber the rest.
 
 A conditional member is one that carries an `applyTo` closure. The closure
 decides, per instance, whether the field is in scope. You build it with a
-helper from [`model/obligations/helpers.js`](../model/obligations/helpers.js) —
+helper from [`model/obligations/helpers/index.js`](../model/obligations/helpers/index.js) —
 no new syntax on the obligation itself:
 
 ```js

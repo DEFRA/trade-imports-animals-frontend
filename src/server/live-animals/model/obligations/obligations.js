@@ -66,7 +66,7 @@ import {
   equalsGate,
   includesGate,
   notInUnionOf
-} from './helpers.js'
+} from './helpers/index.js'
 import {
   cphCommodities,
   earTagCommodities,

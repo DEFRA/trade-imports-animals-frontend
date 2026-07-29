@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createObligationEvaluator } from './evaluator.js'
-import { allowListed } from './helpers.js'
+import { allowListed } from './helpers/index.js'
 
 // A gate that itself sits at depth >= 2 and projects a deeper obligation must
 // match its records by full path prefix, not by the first path segment. When a
