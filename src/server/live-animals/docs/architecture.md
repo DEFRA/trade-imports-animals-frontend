@@ -41,7 +41,7 @@ The model is plain data plus pure functions. It has three parts:
   holds small pure functions over evaluator output: `effectiveStatus` (the
   per-record mandate) and `groupInvariantErrors` (the five `requires` rule
   shapes). The 5-way status classification lives in the bridge (`status.js`).
-- **Analysis** — [`model/analysis/reachability.js`](../model/analysis/reachability.js)
+- **Analysis** — [`model/analysis/reachability/`](../model/analysis/reachability/index.js)
   proves every obligation's scope gate can fire. See [analysis.md](analysis.md).
 
 The model carries **no display copy** — no `label`, `title`, `hint`, `legend`

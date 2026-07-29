@@ -28,8 +28,8 @@ import {
   proveWithWitnesses,
   synthesiseWitness,
   WITNESS_KIND
-} from './reachability.js'
-import { obligations } from '../obligations/obligations.js'
+} from './index.js'
+import { obligations } from '../../obligations/obligations.js'
 import {
   obligationMetadata,
   allowListed,
@@ -41,7 +41,7 @@ import {
   matches,
   notInUnionOf,
   presentGate
-} from '../obligations/helpers.js'
+} from '../../obligations/helpers.js'
 
 // ---------------------------------------------------------------------------
 // Helpers — turn an obligation into the `{ id, dependsOn }` record the

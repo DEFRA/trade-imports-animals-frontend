@@ -9,7 +9,7 @@ they cannot drift from what the app does.
 - [`analysis/flow-reachability.js`](../analysis/flow-reachability.js) — the
   **page-level** prover: every in-scope obligation is presented by a page, and
   that page is reachable in the state that scopes it.
-- [`model/analysis/reachability.js`](../model/analysis/reachability.js) — the
+- [`model/analysis/reachability/`](../model/analysis/reachability/index.js) — the
   **obligation-dependency** prover: every gated obligation's `dependsOn` graph
   terminates at an always-in-scope seed, and every gate can be opened by a
   synthesised value.
@@ -163,7 +163,7 @@ otherwise the prover will false-fail the step whose prerequisite is unmet. See
 
 ## The obligation-dependency prover: every gate can open
 
-[`model/analysis/reachability.js`](../model/analysis/reachability.js) proves a
+[`model/analysis/reachability/`](../model/analysis/reachability/index.js) proves a
 different property, one level below pages — that the obligation dependency graph
 is sound:
 

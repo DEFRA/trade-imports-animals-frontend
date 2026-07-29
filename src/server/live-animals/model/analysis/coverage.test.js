@@ -52,7 +52,7 @@ import {
   OPAQUE_HELPER_TYPES,
   WITNESS_KIND,
   synthesiseWitness
-} from './reachability.js'
+} from './reachability/index.js'
 import * as helpers from '../obligations/helpers.js'
 
 // ---------------------------------------------------------------------------
@@ -181,7 +181,9 @@ describe('coverage — helper classification sets are exported and disjoint', ()
 
 describe('coverage — synthesiseWitness dispatch matches the declared sets', () => {
   const reachabilitySrc = readFileSync(
-    fileURLToPath(new URL('./reachability.js', import.meta.url)),
+    fileURLToPath(
+      new URL('./reachability/witness/synthesise.js', import.meta.url)
+    ),
     'utf-8'
   )
 

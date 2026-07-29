@@ -260,7 +260,7 @@ appears. A display key added to the model fails plugin registration.
 ### Accepted costs
 
 Model-level analysis
-([`model/analysis/reachability.js`](../model/analysis/reachability.js))
+([`model/analysis/reachability/`](../model/analysis/reachability/index.js))
 can prove scope and completion-readiness but not input validity — judging
 validity would need the controllers' field maps, and exposing those to the
 model would re-couple the seams this principle separates.
