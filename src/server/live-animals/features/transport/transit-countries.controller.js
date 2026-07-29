@@ -1,5 +1,9 @@
 import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../lib/http-status.js'
 import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import * as countries from '../../services/countries/index.js'
@@ -13,8 +17,6 @@ const view = `${TEMPLATES}/features/transport/transit-countries`
 export const MAX_TRANSITED_COUNTRIES = 12
 
 const copy = copyFor({ en, cy }).transitCountries
-
-const HTTP_STATUS_BAD_REQUEST = 400
 
 const countryItems = (selected) => [
   { value: '', text: copy.placeholder },
@@ -93,7 +95,9 @@ const post = async (request, h) => {
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return render(h, journey, selected, {}, true).code(500)
+      return render(h, journey, selected, {}, true).code(
+        HTTP_STATUS_INTERNAL_SERVER_ERROR
+      )
     }
   )
   if (failure) return failure

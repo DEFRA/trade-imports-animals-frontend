@@ -1,6 +1,10 @@
 import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../lib/http-status.js'
+import {
   compose,
   requiredExactDigits,
   validate
@@ -16,8 +20,6 @@ export const meta = { ...page, collects: ['countyParishHoldingCph'] }
 const view = `${TEMPLATES}/features/cph-number/template`
 
 const copy = copyFor({ en, cy })
-
-const HTTP_STATUS_BAD_REQUEST = 400
 
 const asArray = (value) => [].concat(value ?? [])
 
@@ -93,7 +95,9 @@ const post = async (request, h) => {
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return render(request, h, journey, values, {}, true).code(500)
+      return render(request, h, journey, values, {}, true).code(
+        HTTP_STATUS_INTERNAL_SERVER_ERROR
+      )
     }
   )
   if (failure) return failure

@@ -2,6 +2,10 @@ import Joi from 'joi'
 
 import { pagePath, pageRoutePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../lib/http-status.js'
 import * as kit from '../../shared/kit.js'
 import { routeOptions } from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
@@ -40,8 +44,6 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const UPLOAD_FAILURE_MESSAGE = copy.errors.uploadFailed
 
-const HTTP_STATUS_BAD_REQUEST = 400
-const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500
 const HTTP_STATUS_NOT_FOUND = 404
 const HTTP_STATUS_PAYLOAD_TOO_LARGE = 413
 

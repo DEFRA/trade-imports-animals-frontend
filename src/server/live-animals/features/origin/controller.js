@@ -1,6 +1,10 @@
 import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../lib/http-status.js'
+import {
   compose,
   maxText,
   oneOf,
@@ -28,8 +32,6 @@ export const meta = {
 const view = `${TEMPLATES}/features/origin/template`
 
 const copy = copyFor({ en, cy })
-
-const HTTP_STATUS_BAD_REQUEST = 400
 
 const REGION_CODE_MAX_LENGTH = 5
 const INTERNAL_REFERENCE_MAX_LENGTH = 58
@@ -132,7 +134,9 @@ const post = async (request, h) => {
     },
     async () => {
       const { journey, answers } = await state.get(request, h)
-      return render(h, journey, values, {}, answers, true).code(500)
+      return render(h, journey, values, {}, answers, true).code(
+        HTTP_STATUS_INTERNAL_SERVER_ERROR
+      )
     }
   )
   if (failure) return failure

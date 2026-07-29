@@ -1,9 +1,9 @@
 import { pagePath } from '../../../../config.js'
 import * as state from '../../../../engine/index.js'
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../lib/http-status.js'
 import * as kit from '../../../../shared/kit.js'
 import { animalIdentificationPage as page } from '../../page.js'
 
-const HTTP_STATUS_BAD_REQUEST = 400
 const REMOVE_ACTION_PREFIX = 'remove:'
 
 export const isRemoveAction = (action) =>

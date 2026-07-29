@@ -1,5 +1,6 @@
 import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
+import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../lib/http-status.js'
 import { compose, requiredOneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
@@ -67,7 +68,9 @@ const post = async (request, h) => {
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return render(h, journey, values, {}, true).code(500)
+      return render(h, journey, values, {}, true).code(
+        HTTP_STATUS_INTERNAL_SERVER_ERROR
+      )
     }
   )
   if (failure) return failure

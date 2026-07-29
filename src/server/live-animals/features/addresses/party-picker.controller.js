@@ -1,5 +1,9 @@
 import { pagePath, pageRoutePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../lib/http-status.js'
 import * as kit from '../../shared/kit.js'
 import { routeOptions } from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
@@ -18,8 +22,6 @@ const view = `${TEMPLATES}/features/addresses/party-picker`
 
 const copy = copyFor({ en, cy }).picker
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
-
-const HTTP_STATUS_BAD_REQUEST = 400
 
 const render = (
   h,
@@ -73,7 +75,7 @@ const commitSelection = async (request, h, party, chosen, form) => {
         ...form,
         selectedId: chosen.id,
         recoverableError: true
-      }).code(500)
+      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
   if (failure) return failure

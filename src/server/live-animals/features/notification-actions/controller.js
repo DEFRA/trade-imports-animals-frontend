@@ -1,10 +1,10 @@
 import { dashboardPath, hubPath, pageRoutePath } from '../../config.js'
 import { copyJourney } from '../../engine/journey.js'
+import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../lib/http-status.js'
 import * as kit from '../../shared/kit.js'
 import { renderNotificationView } from '../check-answers/controller.js'
 import { renderDashboard } from '../dashboard/controller.js'
 
-const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500
 const recoverCopy = (request, h, idempotencyKey) =>
   request.payload?.copyOrigin === 'notification-view'
     ? renderNotificationView(request, h, {

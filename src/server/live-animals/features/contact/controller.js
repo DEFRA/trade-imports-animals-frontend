@@ -1,5 +1,6 @@
 import { hubPath, pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
+import { HTTP_STATUS_BAD_REQUEST } from '../../lib/http-status.js'
 import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
@@ -14,8 +15,6 @@ export const meta = { ...page, collects: ['contactAddress'] }
 const view = `${TEMPLATES}/features/contact/template`
 
 const copy = copyFor({ en, cy })
-
-const HTTP_STATUS_BAD_REQUEST = 400
 
 const fields = () =>
   compose(

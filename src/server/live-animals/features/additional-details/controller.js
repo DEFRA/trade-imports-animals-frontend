@@ -1,5 +1,9 @@
 import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../lib/http-status.js'
 import { compose, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
@@ -16,8 +20,6 @@ export const meta = {
 const view = `${TEMPLATES}/features/additional-details/template`
 
 const copy = copyFor({ en, cy })
-
-const HTTP_STATUS_BAD_REQUEST = 400
 
 const asArray = (value) => [].concat(value ?? [])
 
@@ -108,7 +110,10 @@ const post = async (request, h) => {
           : {})
       })
     },
-    () => render(h, journey, values, showUnweaned, {}, true).code(500)
+    () =>
+      render(h, journey, values, showUnweaned, {}, true).code(
+        HTTP_STATUS_INTERNAL_SERVER_ERROR
+      )
   )
   if (failure) return failure
 

@@ -1,5 +1,9 @@
 import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../lib/http-status.js'
 import { compose, requiredOneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
@@ -12,9 +16,6 @@ export const meta = { ...page, collects: ['declaration'] }
 const view = `${TEMPLATES}/features/declaration/template`
 
 const copy = copyFor({ en, cy })
-
-const HTTP_STATUS_BAD_REQUEST = 400
-const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500
 
 const fields = compose(
   requiredOneOf('declaration', ['confirmed'], copy.errors.declarationRequired)

@@ -1,5 +1,9 @@
 import { pagePath, pageRoutePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../lib/http-status.js'
 import { compose, maxText, oneOf, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { routeOptions } from '../../shared/kit.js'
@@ -15,8 +19,6 @@ const view = `${TEMPLATES}/features/addresses/create-address`
 export const CREATE_ADDRESS_SLUG = 'addresses/create'
 
 const copy = copyFor({ en, cy }).createAddress
-
-const HTTP_STATUS_BAD_REQUEST = 400
 
 const MANDATORY_MESSAGES = {
   nameOrOrganisationName: copy.errors.nameRequired,
@@ -159,7 +161,9 @@ const post = async (request, h) => {
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return render(h, journey, party, values, {}, true).code(500)
+      return render(h, journey, party, values, {}, true).code(
+        HTTP_STATUS_INTERNAL_SERVER_ERROR
+      )
     }
   )
   if (failure) return failure
