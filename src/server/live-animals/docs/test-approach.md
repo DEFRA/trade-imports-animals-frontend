@@ -28,12 +28,13 @@ is the same specs scoped to the service, no coverage, faster for the inner loop.
 
 ## The two runtime modes
 
-`LIVE_ANIMALS_MODE` (default `stub`) decides what backs the service seam:
+`LIVE_ANIMALS_MODE` (default `real`) decides what backs the service seam:
 
-- **stub** — canned data, no network. Stands the full UI up offline. Every unit
-  test and the E2E run in stub mode.
-- **real** — the live backend + reference-data (deploy config). `prime()` swaps
-  the seeded data at boot.
+- **stub** — canned data, no network. Stands the full UI up offline. The unit
+  suite and the E2E opt into stub via the flag (the vitest config and the
+  Playwright `webServer`).
+- **real** — the live backend + reference-data (deploy config). The default;
+  `prime()` swaps the seeded data at boot.
 
 How each layer gets its data:
 

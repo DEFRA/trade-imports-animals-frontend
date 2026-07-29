@@ -61,7 +61,9 @@ export default defineConfig({
     {
       command: 'npm run e2e:start',
       url: `http://localhost:${port}/health`,
-      env: { PORT: String(port) },
+      // The service default is real mode; the canned journey suite runs against
+      // stub data, so it opts in explicitly here.
+      env: { PORT: String(port), LIVE_ANIMALS_MODE: 'stub' },
       timeout: 180_000,
       reuseExistingServer: false
     }

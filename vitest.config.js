@@ -5,6 +5,10 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     clearMocks: true,
+    // The service default is real mode; the unit suite opts into stub, the same
+    // way the Playwright suite does. Tests that exercise real mode set the flag
+    // themselves and restore it.
+    env: { LIVE_ANIMALS_MODE: 'stub' },
     // Playwright E2E specs are run by Playwright, not vitest.
     exclude: [...configDefaults.exclude, 'e2e/**'],
     coverage: {

@@ -65,9 +65,9 @@ describe('ports client', () => {
   })
 })
 
-describe('countries service — default stub mode', () => {
+describe('countries service — stub mode', () => {
   it('Should serve stub data through the accessors without priming', async () => {
-    delete process.env.LIVE_ANIMALS_MODE
+    process.env.LIVE_ANIMALS_MODE = 'stub'
     const countries = await import('./countries/index.js')
     expect(countries.originLabel('AT')).toBe('Austria')
     expect(countries.originCountries()).toContainEqual({
@@ -77,7 +77,7 @@ describe('countries service — default stub mode', () => {
   })
 
   it('Should treat prime() as a no-op in stub mode (no fetch, stub retained)', async () => {
-    delete process.env.LIVE_ANIMALS_MODE
+    process.env.LIVE_ANIMALS_MODE = 'stub'
     stubFetch(async () => okResponse([{ code: 'ZZ', name: 'Zedland' }]))
     const countries = await import('./countries/index.js')
     await countries.prime()
@@ -105,9 +105,9 @@ describe('countries service — real mode', () => {
   })
 })
 
-describe('ports service — default stub mode', () => {
+describe('ports service — stub mode', () => {
   it('Should serve stub data through list() without priming', async () => {
-    delete process.env.LIVE_ANIMALS_MODE
+    process.env.LIVE_ANIMALS_MODE = 'stub'
     const ports = await import('./ports/index.js')
     expect(ports.list()).toContainEqual({
       code: 'GB ABD',
@@ -125,5 +125,21 @@ describe('ports service — real mode', () => {
     await ports.prime()
 
     expect(ports.list()).toEqual([{ code: 'GB ZZZ', name: 'Zed Port' }])
+  })
+})
+
+describe('mode resolution', () => {
+  it('Should default to real mode when the flag is unset', async () => {
+    delete process.env.LIVE_ANIMALS_MODE
+    const { mode, isRealMode } = await import('./mode.js')
+    expect(mode()).toBe('real')
+    expect(isRealMode()).toBe(true)
+  })
+
+  it('Should select stub mode when the flag is stub', async () => {
+    process.env.LIVE_ANIMALS_MODE = 'stub'
+    const { mode, isRealMode } = await import('./mode.js')
+    expect(mode()).toBe('stub')
+    expect(isRealMode()).toBe(false)
   })
 })

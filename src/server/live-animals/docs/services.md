@@ -33,7 +33,7 @@ source can change behind the interface without touching a page.
 
 ## Run mode
 
-One environment variable, `LIVE_ANIMALS_MODE` (`stub` | `real`, default `stub`),
+One environment variable, `LIVE_ANIMALS_MODE` (`stub` | `real`, default `real`),
 decides what backs the seam. It is read in `services/mode.js`, which exports
 `mode()` and `isRealMode()`. Two wiring patterns sit behind that switch.
 

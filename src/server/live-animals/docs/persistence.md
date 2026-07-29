@@ -3,9 +3,8 @@
 A journey persists through two narrow ports: **SESSION** and **RECORDS**.
 Each port is a thin shim under `engine/persistence/`, and each has two
 interchangeable implementations under `services/persistence/` — a `stub`
-and a `real` one. `services/mode.js` picks between them:
-`LIVE_ANIMALS_MODE=real` selects the real implementations, anything else
-selects the stubs (`isRealMode()`).
+and a `real` one. `services/mode.js` picks between them: real is the default,
+and `LIVE_ANIMALS_MODE=stub` selects the stubs (`isRealMode()`).
 
 The shim carries the shared constants and the vocabulary the rest of the
 engine imports; it holds no logic of its own and throws until wired. The
