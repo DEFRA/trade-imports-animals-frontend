@@ -20,14 +20,11 @@ import {
 } from '../../engine/test-support.js'
 import { hubPath } from '../../config.js'
 import { dispatchPages } from '../../features/index.js'
-import * as checkAnswers from './controller.js'
+import { routes } from './controller.js'
+import { buildSections } from './view-model/index.js'
 
-const getHandler = checkAnswers.routes.find(
-  (route) => route.method === 'GET'
-).handler
-const postHandler = checkAnswers.routes.find(
-  (route) => route.method === 'POST'
-).handler
+const getHandler = routes.find((route) => route.method === 'GET').handler
+const postHandler = routes.find((route) => route.method === 'POST').handler
 
 const sectionsFor = async (seed) =>
   (await driveHandler(getHandler, { seed })).view.context.sections
@@ -133,7 +130,7 @@ const fullSeed = {
   contactAddress: { name: 'Animal and Plant Health Agency' }
 }
 
-describe('#buildSections (check-answers GET)', () => {
+describe(`#${buildSections.name} (check-answers GET)`, () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
