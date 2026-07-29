@@ -27,7 +27,7 @@ export default {
       import: './javascripts/select-autocomplete.js'
     },
     documents: {
-      import: '../server/live-animals/features/documents/client.js'
+      import: '../server/live-animals/features/documents/client/index.js'
     }
   },
   experiments: {
