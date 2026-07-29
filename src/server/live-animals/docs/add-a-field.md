@@ -31,8 +31,9 @@ To add a repeating collection rather than a single field, see
 
 ## 1. Declare the obligation
 
-All obligations live in one manifest, `model/obligations/obligations.js`.
-Add an exported object and include it in the exported `obligations` array:
+Obligation literals live in feature-inspired files under
+`model/obligations/sections/`. Add the exported object to the matching section
+file — for this example, `sections/origin.js`:
 
 ```js
 export const exporterReference = {
@@ -50,7 +51,9 @@ export const exporterReference = {
   section's completeness; a mandatory field holds the section In progress and
   keeps the submit gate closed until it is answered.
 
-Add it to the `obligations` array at the foot of the file:
+Import and re-export it from the barrel,
+`model/obligations/obligations.js`, then add it to that file's `obligations`
+array:
 
 ```js
 export const obligations = [

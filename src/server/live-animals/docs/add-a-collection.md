@@ -25,8 +25,13 @@ Every snippet below traces to one of them.
 ## 1. Declare the group and its members in the manifest
 
 A collection is a **group obligation** plus the member obligations that point
-at it. Both live in
-[`model/obligations/obligations.js`](../model/obligations/obligations.js).
+at it. Put both in the matching file under
+[`model/obligations/sections/`](../model/obligations/sections/) — commodity
+lines belong in `commodities/lines.js`, animal identifiers in
+`commodities/identifiers.js`, and documents in `documents.js`. Import and
+re-export every new obligation from
+[`model/obligations/obligations.js`](../model/obligations/obligations.js), and
+add it to that barrel's `obligations` array.
 
 A group carries an `id` (a UUID used by canonical fulfilment) and a `name` (the
 request-local answers key and DOM field name). It carries no `status` and no
