@@ -1,99 +1,38 @@
 import { pagePath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
-import { compose, integerInRange, validate } from '../../lib/validate/index.js'
+import { validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
-import * as commodities from '../../services/commodities/index.js'
-import {
-  animalIdentificationPage,
-  commoditiesPage,
-  consignmentDetailsPage as page
-} from './page.js'
+import { commoditiesPage, consignmentDetailsPage as page } from './page.js'
 import { lineKey } from './search.controller.js'
 import { copy as en } from './copy.en.js'
 import { copy as cy } from './copy.cy.js'
 import { copy as sharedEn } from '../../shared/copy.en.js'
 import { copy as sharedCy } from '../../shared/copy.cy.js'
+import {
+  animalsField,
+  fieldsFor,
+  packagesApply,
+  packagesField
+} from './consignment-details/fields.js'
+import { linesOf } from './consignment-details/lines.js'
+import {
+  isRemoveAction,
+  postRemove,
+  removeIndexOf
+} from './consignment-details/remove/post-remove.js'
+import { countDropIssues } from './consignment-details/validation/count-drop.js'
+import { buildGroups } from './consignment-details/view-model/groups.js'
+import {
+  payloadValues,
+  storedValues
+} from './consignment-details/view-model/values.js'
 
 export const meta = { ...page, collects: [] }
 const view = `${TEMPLATES}/features/commodities/consignment-details`
 
 const copy = copyFor({ en, cy }).consignmentDetails
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
-
-export const packagesApply = (commoditySelection) =>
-  commodities.packageCountCommodities().includes(commoditySelection)
-
-const animalsField = (index) => `numberOfAnimalsQuantity-${index}`
-const packagesField = (index) => `numberOfPackages-${index}`
-
-const fieldsFor = (lines) =>
-  compose(
-    ...lines.flatMap(({ index, entry }) => [
-      integerInRange(animalsField(index), {
-        min: 1,
-        message: copy.errors.animalsWholeNumber
-      }),
-      ...(packagesApply(entry.commoditySelection)
-        ? [
-            integerInRange(packagesField(index), {
-              min: 1,
-              message: copy.errors.packagesWholeNumber
-            })
-          ]
-        : [])
-    ])
-  )
-
-// One table row + quantity block group per commodity, one species block per
-// line — the design's Consignment details page over the line-per-species
-// store (design 01-14/15).
-const groupLine = ({ index, entry }, values, errors) => ({
-  index,
-  speciesText:
-    commodities.speciesLabel(entry.speciesSelection) ?? entry.speciesSelection,
-  animalsField: animalsField(index),
-  packagesField: packagesField(index),
-  animalsValue: values[animalsField(index)] ?? '',
-  packagesValue: values[packagesField(index)] ?? '',
-  animalsError: errors[animalsField(index)],
-  packagesError: errors[packagesField(index)]
-})
-
-const linesForGroup = (lines, name, values, errors) =>
-  lines
-    .filter(({ entry }) => entry.commoditySelection === name)
-    .map((line) => groupLine(line, values, errors))
-
-const buildGroups = (lines, values, errors) => {
-  const names = [...new Set(lines.map(({ entry }) => entry.commoditySelection))]
-  return names.map((name, index) => ({
-    index,
-    name,
-    code: commodities.commodityCodeFor(name) ?? '',
-    showPackages: packagesApply(name),
-    lines: linesForGroup(lines, name, values, errors)
-  }))
-}
-
-const formValue = (value) =>
-  typeof value === 'number' ? value.toString() : (value ?? '')
-
-const storedValues = (lines) =>
-  Object.fromEntries(
-    lines.flatMap(({ index, entry }) => [
-      [animalsField(index), formValue(entry.numberOfAnimalsQuantity)],
-      [packagesField(index), entry.numberOfPackages ?? '']
-    ])
-  )
-
-const payloadValues = (payload, lines) =>
-  Object.fromEntries(
-    lines.flatMap(({ index }) => [
-      [animalsField(index), (payload[animalsField(index)] ?? '').trim()],
-      [packagesField(index), (payload[packagesField(index)] ?? '').trim()]
-    ])
-  )
 
 const render = (
   request,
@@ -124,32 +63,6 @@ const render = (
     errorSummary: errorSummary ?? kit.errorSummary(errors)
   })
 
-const linesOf = (answers, evaluation) =>
-  state.collectionView(answers, ['commodityLines'], evaluation)
-
-const countDropIssueFor = (request, { index, entry }, values) => {
-  const records = (entry.animalIdentifiers ?? []).length
-  const value = values[animalsField(index)]
-  if (records === 0 || value === '') return []
-  const entered = Number(value)
-  if (!Number.isInteger(entered) || entered >= records) return []
-  const species =
-    commodities.speciesLabel(entry.speciesSelection) ?? entry.speciesSelection
-  return [
-    {
-      field: animalsField(index),
-      text: copy.errors.countDrop(records, species, entered),
-      href: `${kit.withChangeContext(
-        request,
-        pagePath(request.params.journeyId, animalIdentificationPage.slug)
-      )}#identification-card-${index}`
-    }
-  ]
-}
-
-const countDropIssues = (request, lines, values) =>
-  lines.flatMap((line) => countDropIssueFor(request, line, values))
-
 const get = async (request, h) => {
   const { journey, answers, evaluation } = await state.get(request, h)
   const lines = linesOf(answers, evaluation)
@@ -162,7 +75,7 @@ const post = async (request, h) => {
   const payload = request.payload ?? {}
   const action = (payload.action ?? '').toString()
   if (isRemoveAction(action)) {
-    return postRemove(request, h, removeIndexOf(action))
+    return postRemove(request, h, removeIndexOf(action), lineKey)
   }
   const values = payloadValues(payload, lines)
   const { errors } = validate(fieldsFor(lines), payload)
@@ -195,41 +108,6 @@ const post = async (request, h) => {
   }
   const { scope } = await state.get(request, h)
   return h.redirect(await kit.nextTarget(request, page, scope))
-}
-
-const HTTP_STATUS_BAD_REQUEST = 400
-const REMOVE_ACTION_PREFIX = 'remove:'
-
-const isRemoveAction = (action) => action.startsWith(REMOVE_ACTION_PREFIX)
-
-const removeIndexOf = (action) =>
-  Number(action.slice(REMOVE_ACTION_PREFIX.length))
-
-const groupNames = (answers, evaluation) => [
-  ...new Set(
-    linesOf(answers, evaluation).map(({ entry }) => entry.commoditySelection)
-  )
-]
-
-// A removal drops every line of one commodity group, so it submits the page
-// form — the crumb travels with it and no GET can trigger it. The group index
-// keys back to a name in the journey; anything else is refused before any
-// reconcile runs.
-const postRemove = async (request, h, index) => {
-  const { answers, evaluation } = await state.get(request, h)
-  const name = groupNames(answers, evaluation)[index]
-  if (name === undefined) return h.response().code(HTTP_STATUS_BAD_REQUEST)
-
-  const kept = (answers.commodityLines ?? []).filter(
-    (entry) => entry.commoditySelection !== name
-  )
-  await state.reconcileEntriesAt(request, h, ['commodityLines'], lineKey, kept)
-  return h.redirect(
-    kit.withChangeContext(
-      request,
-      pagePath(request.params.journeyId, page.slug)
-    )
-  )
 }
 
 export const routes = kit.pageRoutes(page, { get, post })
