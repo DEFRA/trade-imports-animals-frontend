@@ -30,10 +30,6 @@ const comprehensive = {
   ...happyPath,
   referenceNumber: 'GBN-AG-26-ABC123',
   poApprovedReferenceNumber: 'GBN-AG-26-ABC123',
-  responsiblePersonForLoad: {
-    responsiblePerson: 'Auth User',
-    responsiblePersonEmail: 'auth@example.com'
-  },
   internalReferenceNumber: '',
   destinationCountry: 'IE',
   portOfExit: 'GB DOV',

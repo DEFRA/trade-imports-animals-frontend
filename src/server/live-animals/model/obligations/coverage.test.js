@@ -79,19 +79,13 @@ describe('uniqueness — every obligation has a distinct id and name', () => {
   })
 })
 
-describe('system-populated V4 fields declared but not presented', () => {
-  it('poApprovedReferenceNumber + responsiblePersonForLoad are on the manifest', () => {
-    // These were skipped in an earlier iteration; they're required for
-    // V4 completeness, so if either goes missing this fires.
+describe('system-populated fields declared but not presented', () => {
+  it('poApprovedReferenceNumber is on the manifest', () => {
     const names = obligations.map((o) => o.name)
     expect(names).toContain('poApprovedReferenceNumber')
-    expect(names).toContain('responsiblePersonForLoad')
   })
 
-  it('both obligations are declared always-in-scope + mandatory', () => {
-    // They're system-populated (mint / gov.identity), so scope is
-    // unconditional; the notification can't exist without them.
-    //
+  it('is declared always-in-scope + mandatory', () => {
     // The data-only shape { id, name, status } is the declaration — no
     // `applyTo` closure needed. The
     // evaluator's `field` classifier routes these through the "top-
@@ -101,11 +95,8 @@ describe('system-populated V4 fields declared but not presented', () => {
     // and the observable decision (via the evaluator, not by calling
     // a now-absent closure directly).
     const po = obligations.find((o) => o.name === 'poApprovedReferenceNumber')
-    const rp = obligations.find((o) => o.name === 'responsiblePersonForLoad')
     expect(po).toMatchObject({ status: 'mandatory' })
-    expect(rp).toMatchObject({ status: 'mandatory' })
     expect(po.applyTo).toBeUndefined()
-    expect(rp.applyTo).toBeUndefined()
   })
 })
 

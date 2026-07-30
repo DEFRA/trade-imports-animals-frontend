@@ -121,22 +121,20 @@ The edges of the cap:
   at the consignment-details save with an error naming the species; identifier
   records are never silently deleted to fit the new count.
 
-## Re-entry is by reference and session-scoped, not by identity
+## Re-entry is by reference and session-scoped
 
-The dashboard's authorisation seam is the session's known-journeys list, not
-a per-user owner check on the record ([engine/journey.js](../engine/journey.js)).
-A reference reaches another session only if the session state carrying it
-does. `selectJourney` and `amendJourney` refuse any reference the session does
-not already know — that refusal is the whole access check.
+Records are loaded by reference
+([engine/journey.js](../engine/journey.js)). A successfully loaded reference
+is added to the session's known-journeys list; the dashboard and journey
+actions operate on that list.
 
 Two consequences follow:
 
 - **Multi-draft is per session.** One session can hold several drafts, but a
-  user on a new device starts with an empty dashboard. Cross-device recovery
-  needs a backend owner field, which the service does not have.
-- **The session is not authentication.** Do not treat the session state as an
-  identity check in production. Resume is by reference, never by identity —
-  the main flow only ever loads a journey by its id.
+  new session starts with an empty dashboard.
+- **The session list is presentation and action state.** It determines which
+  rows appear and which reference-based actions are available; it is not a
+  record identity field.
 
 ## The stubs are shaped, not verified integrations
 
@@ -149,11 +147,8 @@ production concerns:
 - The records stub mints and stores canonical fulfilment in memory; the real
   adapter persists the same at-rest shape to `/fulfilments` and writes both
   notification projections.
-- The stub's resume-by-identity affordance (`load({ userId })`) is a
-  demo-only convenience the real adapter does not implement.
-
-The deliverable is the shape of each seam — the port contract — not a
-production-verified integration. See [persistence.md](persistence.md).
+  The deliverable is the shape of each seam — the port contract — not a
+  production-verified integration. See [persistence.md](persistence.md).
 
 ## Ownership at depth is derived, not declared
 

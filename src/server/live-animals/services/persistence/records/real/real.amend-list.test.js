@@ -11,7 +11,6 @@ const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
 
 const fulfilmentsUrl = 'http://localhost:8085/fulfilments'
-const owner = { sub: 'user-1', organisation: '' }
 
 const fulfilment = (id, status) => ({
   id,
@@ -35,7 +34,7 @@ describe('real records adapter — amend', () => {
   test('Should POST the amend endpoint and marshal a writable amend record', async () => {
     fetchMocker.mockResponse(JSON.stringify(fulfilment('GBN-1', 'AMEND')))
 
-    const amended = await records.amend('GBN-1', owner)
+    const amended = await records.amend('GBN-1')
 
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(`${fulfilmentsUrl}/GBN-1/amend`)
@@ -48,18 +47,18 @@ describe('real records adapter — amend', () => {
   test('Should surface a failed amend as an error carrying the response status', async () => {
     fetchMocker.mockResponse('Conflict', { status: 409 })
 
-    await expect(records.amend('GBN-1', owner)).rejects.toThrow(
+    await expect(records.amend('GBN-1')).rejects.toThrow(
       /Failed to amend fulfilment: 409/
     )
   })
 })
 
-describe('real records adapter — owner-scoped paged list', () => {
+describe('real records adapter — paged list', () => {
   beforeEach(() => {
     fetchMocker.resetMocks()
   })
 
-  test('Should issue one owner-scoped paged GET and map the enriched response to dashboard rows', async () => {
+  test('Should issue one paged GET and map the enriched response to dashboard rows', async () => {
     fetchMocker.mockResponse(
       JSON.stringify({
         page: 1,
@@ -76,7 +75,6 @@ describe('real records adapter — owner-scoped paged list', () => {
 
     const listed = await records.list({
       journeyIds: ['session-id-is-ignored-in-real-mode'],
-      owner,
       page: 2,
       sort: 'createdAt,asc'
     })
@@ -136,8 +134,8 @@ describe('real records adapter — owner-scoped paged list', () => {
       ['Not Found', { status: 404 }]
     )
 
-    expect(await records.has('GBN-1', owner)).toBe(true)
-    expect(await records.has('GBN-GONE', owner)).toBe(false)
+    expect(await records.has('GBN-1')).toBe(true)
+    expect(await records.has('GBN-GONE')).toBe(false)
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
       { method: 'GET', url: `${fulfilmentsUrl}/GBN-1` },

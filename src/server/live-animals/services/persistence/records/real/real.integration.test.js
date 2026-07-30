@@ -25,13 +25,9 @@ const backendBaseUrl =
 const fulfilmentsUrl = `${backendBaseUrl}/fulfilments`
 const notificationsUrl = `${backendBaseUrl}/notifications`
 const proposedNotificationsUrl = `${backendBaseUrl}/proposed-notifications`
-const owner = {
-  sub: 'live-animals-real-integration-user',
-  organisation: 'live-animals-real-integration-organisation'
-}
 
 const replaceAnswers = (journeyId, answers) =>
-  records.replaceFulfilment(journeyId, assembleFulfilments(answers), { owner })
+  records.replaceFulfilment(journeyId, assembleFulfilments(answers))
 const answersOf = (journey) => projectAnswers(journey.fulfilment)
 const json = async (url) => {
   const response = await fetch(url)
@@ -107,25 +103,23 @@ describe.skipIf(!runsIt('real'))(
     })
 
     it('Should mint an empty canonical journey and load it directly', async () => {
-      const created = await records.create({ owner })
+      const created = await records.create()
 
       expect(created.journeyId).toMatch(REF_PATTERN)
       expect(created.status).toBe(DRAFT)
       expect(created.submittedAt).toBeNull()
       expect(created.fulfilment).toEqual({})
 
-      const loaded = await records.load({ journeyId: created.journeyId, owner })
+      const loaded = await records.load({ journeyId: created.journeyId })
       expect(loaded).toEqual(created)
     })
 
     it('Should round-trip canonical fulfilment and store both projections from it', async () => {
-      const { journeyId } = await records.create({ owner })
+      const { journeyId } = await records.create()
       const snapshot = assembleFulfilments(answers)
 
-      const saved = await records.replaceFulfilment(journeyId, snapshot, {
-        owner
-      })
-      const loaded = await records.load({ journeyId, owner })
+      const saved = await records.replaceFulfilment(journeyId, snapshot)
+      const loaded = await records.load({ journeyId })
       const [canonical, current, proposed] = await Promise.all([
         json(`${fulfilmentsUrl}/${journeyId}`),
         json(`${notificationsUrl}/${journeyId}`),
@@ -149,7 +143,7 @@ describe.skipIf(!runsIt('real'))(
     })
 
     it('Should whole-replace the canonical snapshot so removed values stay removed', async () => {
-      const { journeyId } = await records.create({ owner })
+      const { journeyId } = await records.create()
 
       await replaceAnswers(journeyId, {
         countryOfOrigin: 'FR',
@@ -157,22 +151,22 @@ describe.skipIf(!runsIt('real'))(
       })
       await replaceAnswers(journeyId, { countryOfOrigin: 'DE' })
 
-      const loaded = await records.load({ journeyId, owner })
+      const loaded = await records.load({ journeyId })
       expect(answersOf(loaded).countryOfOrigin).toBe('DE')
       expect(answersOf(loaded).internalReferenceNumber).toBeUndefined()
     })
 
     it('Should submit and amend through the canonical lifecycle', async () => {
-      const { journeyId } = await records.create({ owner })
+      const { journeyId } = await records.create()
       await replaceAnswers(journeyId, { countryOfOrigin: 'FR' })
 
-      expect((await records.finalise(journeyId, owner)).status).toBe(SUBMITTED)
-      expect((await records.load({ journeyId, owner })).status).toBe(SUBMITTED)
+      expect((await records.finalise(journeyId)).status).toBe(SUBMITTED)
+      expect((await records.load({ journeyId })).status).toBe(SUBMITTED)
       await expect(
         replaceAnswers(journeyId, { countryOfOrigin: 'DE' })
       ).rejects.toThrow(/is submitted — writes blocked/)
 
-      const amended = await records.amend(journeyId, owner)
+      const amended = await records.amend(journeyId)
       expect(amended.status).toBe(AMEND)
       expect(amended.submittedAt).toBeNull()
       await expect(
@@ -182,12 +176,9 @@ describe.skipIf(!runsIt('real'))(
 
     it('Should return undefined and has=false for an unknown exact id', async () => {
       expect(
-        await records.load({
-          journeyId: 'GBN-AG-99-ZZZZZZ',
-          owner
-        })
+        await records.load({ journeyId: 'GBN-AG-99-ZZZZZZ' })
       ).toBeUndefined()
-      expect(await records.has('GBN-AG-99-ZZZZZZ', owner)).toBe(false)
+      expect(await records.has('GBN-AG-99-ZZZZZZ')).toBe(false)
     })
   }
 )

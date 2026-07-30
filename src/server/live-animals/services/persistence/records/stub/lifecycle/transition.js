@@ -5,11 +5,10 @@ import {
   SUBMITTED
 } from '../../../../../engine/persistence/records.js'
 import { journeys } from '../store/state.js'
-import { sameOwner } from '../store/owner.js'
 import { loadWritable } from '../store/writable.js'
 import { marshal } from '../marshal/document.js'
 
-export const finalise = async (journeyId, _owner) => {
+export const finalise = async (journeyId) => {
   const journey = loadWritable(journeyId)
   journey.status = SUBMITTED
   journey.submittedAt = new Date().toISOString()
@@ -17,7 +16,7 @@ export const finalise = async (journeyId, _owner) => {
   return structuredClone(marshal(journey))
 }
 
-export const amend = async (journeyId, _owner) => {
+export const amend = async (journeyId) => {
   const journey = journeys.get(journeyId)
   if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
   if (journey.status !== SUBMITTED) {
@@ -32,7 +31,7 @@ export const amend = async (journeyId, _owner) => {
   return structuredClone(marshal(journey))
 }
 
-export const cancelAmend = async (journeyId, _owner) => {
+export const cancelAmend = async (journeyId) => {
   const journey = journeys.get(journeyId)
   if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
   if (journey.status !== AMEND || journey.submittedSnapshot == null) {
@@ -47,11 +46,9 @@ export const cancelAmend = async (journeyId, _owner) => {
   return structuredClone(marshal(journey))
 }
 
-export const softDelete = async (journeyId, owner) => {
+export const softDelete = async (journeyId) => {
   const journey = journeys.get(journeyId)
-  if (!journey || !sameOwner(journey, owner)) {
-    throw new Error(`Unknown journey "${journeyId}"`)
-  }
+  if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
   if (
     journey.status !== DRAFT &&
     journey.status !== SUBMITTED &&

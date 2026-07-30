@@ -40,13 +40,8 @@
  * layer:
  *   - `poApprovedReferenceNumber` — system-minted at notification
  *     creation time. Format `GBN-AG-YY-XXXXXX` (Crockford base32 body).
- *   - `responsiblePersonForLoad` — consumed from gov.identity on
- *     authentication. Composite (person + telephone + email + org name
- *     + org address + org telephone).
- * Both are listed on the V4 spec so the manifest reflects them. Their
- * value legality is enforced upstream (the system that mints the id;
- * gov.identity for the person); both are on the `KNOWN_UNWIRED`
- * allow-list in `coverage.test.js` with a reason.
+ * Its value legality is enforced by the system that mints the id, and it
+ * is on the `KNOWN_UNWIRED` allow-list in `coverage.test.js` with a reason.
  *
  * MDM-sourced enum values (commodities / species / ports of
  * entry / country of origin / animals-certified-for options) are
@@ -116,10 +111,7 @@ import {
   placeOfDestination,
   placeOfOrigin
 } from './sections/parties.js'
-import {
-  poApprovedReferenceNumber,
-  responsiblePersonForLoad
-} from './sections/system.js'
+import { poApprovedReferenceNumber } from './sections/system.js'
 import {
   commercialTransporter,
   meansOfTransport,
@@ -173,7 +165,6 @@ export {
   reasonForImport,
   regionCode,
   regionCodeRequirement,
-  responsiblePersonForLoad,
   species,
   tattoo,
   transitedCountries,
@@ -190,7 +181,6 @@ export {
 
 export const obligations = [
   poApprovedReferenceNumber,
-  responsiblePersonForLoad,
   countryOfOrigin,
   regionCodeRequirement,
   regionCode,

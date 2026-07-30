@@ -30,7 +30,7 @@ const saveProjections = async (journeyId, projections) => {
 export const replaceFulfilment = async (
   journeyId,
   fulfilment,
-  { known, owner } = {}
+  { known } = {}
 ) => {
   const status = await resolveStatus(journeyId, known)
   assertWritable(journeyId, status)
@@ -65,7 +65,7 @@ export const replaceFulfilment = async (
     throwProjectionFailure(journeyId, failures)
   }
 
-  return marshal(saved, owner?.sub ?? null)
+  return marshal(saved)
 }
 
 export const clear = async () => {}

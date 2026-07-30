@@ -1,3 +1,2 @@
 export const journeys = new Map()
-export const byUser = new Map()
-export const copiesByOwnerAndKey = new Map()
+export const copiesBySourceAndKey = new Map()

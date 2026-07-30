@@ -1,6 +1,4 @@
 import {
-  STUB_USER,
-  STUB_USER_HEADER,
   KNOWN_JOURNEYS_COOKIE,
   OPENING_RUN_COOKIE,
   FLOW_ONLY_ANSWERS_COOKIE
@@ -25,17 +23,6 @@ const openingRunByJourneyFrom = (request) => {
 }
 
 export const session = {
-  async userId(request) {
-    return request?.headers?.[STUB_USER_HEADER] ?? STUB_USER
-  },
-
-  async owner(request) {
-    return {
-      sub: request?.headers?.[STUB_USER_HEADER] ?? STUB_USER,
-      organisation: request?.headers?.['x-stub-owner-org'] ?? ''
-    }
-  },
-
   async knownJourneyIds(request) {
     return knownFrom(request)
   },

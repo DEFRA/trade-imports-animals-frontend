@@ -71,7 +71,6 @@ const mappedAnswers = () => ({
 // animal-identifier unit carrying the five dropped unit identifiers.
 const answersWithGaps = () => ({
   ...mappedAnswers(),
-  responsiblePersonForLoad: { responsiblePerson: 'Auth User' },
   regionOfOriginCode: 'FR-75',
   purposeInInternalMarket: 'Breeding',
   transporterType: 'Commercial',
@@ -262,7 +261,6 @@ describe('Mapper A — current backend notification (as-is)', () => {
   test('Should omit every gap obligation from the notification', () => {
     const notification = currentNotificationFrom(answersWithGaps())
 
-    expect('responsiblePersonForLoad' in notification).toBe(false)
     expect('purpose' in notification).toBe(false)
     expect('declaration' in notification).toBe(false)
     expect('documents' in notification).toBe(false)
@@ -349,10 +347,6 @@ test('Mapper A should use the envelope id as the reference number', () => {
 // carries a single Transporter.
 const allAnswers = () => ({
   referenceNumber: 'GBN-AG-26-ABC123',
-  responsiblePersonForLoad: {
-    responsiblePerson: 'Auth User',
-    responsiblePersonEmail: 'auth@example.com'
-  },
   countryOfOrigin: 'FR',
   regionOfOriginCodeRequirement: 'Yes',
   regionOfOriginCode: 'FR-75',
@@ -444,7 +438,6 @@ describe('Mapper B — proposed target notification (superset, full-fat)', () =>
 
     expect(notification.origin.regionCode).toBe('FR-75')
     expect(notification.purpose).toBe('Breeding')
-    expect(notification.responsiblePersonForLoad).toBeDefined()
     expect(notification).not.toHaveProperty('declaration')
     expect(notification.transport).toMatchObject({
       transporter: {

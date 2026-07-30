@@ -3,7 +3,6 @@ import { createObligationEvaluator } from './evaluator.js'
 import { groupInvariantErrors } from './state-queries.js'
 import {
   poApprovedReferenceNumber,
-  responsiblePersonForLoad,
   countryOfOrigin,
   regionCodeRequirement,
   regionCode,
@@ -1307,26 +1306,25 @@ describe('evaluator — applyTo evaluates on the post-purge view (two-hop cascad
 // ---------------------------------------------------------------------------
 // Trivial `applyTo` drop fidelity.
 //
-// 19 always-in-scope obligations use the data-only shape
+// 18 always-in-scope obligations use the data-only shape
 // `{ id, name, status: '<literal>' }` with no `applyTo` closure and no
 // `dependsOn`. The `within.id` deref guard makes them routable through
 // the evaluator's `field` classifier (evaluator.js buildImplication →
 // the "top-level scalar with intrinsic status" branch returns
 // `{ inScope: true, status: obligation.status }`).
 //
-// The fidelity contract this block pins: for every one of the 19
+// The fidelity contract this block pins: for every one of the 18
 // obligations, `evaluator.evaluate({})` returns EXACTLY the decision
 // object shape `{ inScope: true, status: '<literal>' }`. Any regression
 // here means the classifier didn't route the obligation to the `field`
 // category or the field branch produced a different shape.
 //
-// Expected split: 18 mandatory + 1 optional (`internalReferenceNumber`).
+// Expected split: 17 mandatory + 1 optional (`internalReferenceNumber`).
 // ---------------------------------------------------------------------------
 
-describe('trivial applyTo drop fidelity (19 always-in-scope obligations)', () => {
+describe('trivial applyTo drop fidelity (18 always-in-scope obligations)', () => {
   const trivialAlwaysMandatoryObligations = [
     ['poApprovedReferenceNumber', poApprovedReferenceNumber],
-    ['responsiblePersonForLoad', responsiblePersonForLoad],
     ['countryOfOrigin', countryOfOrigin],
     ['regionCodeRequirement', regionCodeRequirement],
     ['reasonForImport', reasonForImport],
@@ -1358,13 +1356,12 @@ describe('trivial applyTo drop fidelity (19 always-in-scope obligations)', () =>
     expect(result.obligations[internalReferenceNumber.id]).toEqual(optional)
   })
 
-  it('none of the 19 obligations carry an applyTo closure any more (data-only shape)', () => {
+  it('none of the 18 obligations carry an applyTo closure any more (data-only shape)', () => {
     // Load-bearing invariant of the commit — the whole point of Phase
     // 4.5.3 is that these obligations are pure metadata. If someone
     // re-adds an `applyTo: () => (...)` to any of them, this fires.
     const stragglers = [
       poApprovedReferenceNumber,
-      responsiblePersonForLoad,
       countryOfOrigin,
       regionCodeRequirement,
       reasonForImport,
@@ -1386,13 +1383,12 @@ describe('trivial applyTo drop fidelity (19 always-in-scope obligations)', () =>
     expect(stragglers).toEqual([])
   })
 
-  it('none of the 19 obligations carry a dependsOn key any more (derivable from no-applyTo)', () => {
+  it('none of the 18 obligations carry a dependsOn key any more (derivable from no-applyTo)', () => {
     // Same shape guard as above — `dependsOn: []` was redundant with
     // "no gate = no dependencies". A future author reintroducing it
     // without an applyTo would drift the schema.
     const stragglers = [
       poApprovedReferenceNumber,
-      responsiblePersonForLoad,
       countryOfOrigin,
       regionCodeRequirement,
       reasonForImport,

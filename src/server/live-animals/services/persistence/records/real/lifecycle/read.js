@@ -5,12 +5,10 @@ import { headers } from '../http/headers.js'
 import { marshal } from '../marshal/document.js'
 import { marshalListItem } from '../marshal/list-item.js'
 
-export const load = async ({ journeyId, userId, owner } = {}) => {
+export const load = async ({ journeyId } = {}) => {
   if (journeyId != null) {
     const fulfilment = await getFulfilment(journeyId)
-    return fulfilment === undefined
-      ? undefined
-      : marshal(fulfilment, userId ?? owner?.sub ?? null)
+    return fulfilment === undefined ? undefined : marshal(fulfilment)
   }
   return undefined
 }

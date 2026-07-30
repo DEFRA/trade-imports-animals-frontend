@@ -2,21 +2,9 @@ import { describe, expect, it } from 'vitest'
 import Hapi from '@hapi/hapi'
 import yar from '@hapi/yar'
 import { session } from './real.js'
-import { STUB_USER } from '../../../engine/persistence/session.js'
 
 const buildServer = async () => {
   const server = Hapi.server()
-  server.auth.scheme('test-session', () => ({
-    authenticate(request, h) {
-      return h.authenticated({
-        credentials: {
-          sub: request.headers['x-test-auth-sub'],
-          organisationId: request.headers['x-test-auth-organisation']
-        }
-      })
-    }
-  }))
-  server.auth.strategy('test-session', 'test-session')
   await server.register({
     plugin: yar,
     options: {
@@ -80,36 +68,6 @@ const buildServer = async () => {
       path: '/flow/{journeyId}',
       handler: async (request) => ({
         values: await session.flowOnlyAnswers(request, request.params.journeyId)
-      })
-    },
-    {
-      method: 'GET',
-      path: '/user-id/authenticated',
-      options: { auth: 'test-session' },
-      handler: async (request) => ({
-        userId: await session.userId(request)
-      })
-    },
-    {
-      method: 'GET',
-      path: '/user-id/auth-off',
-      handler: async (request) => ({
-        userId: await session.userId(request)
-      })
-    },
-    {
-      method: 'GET',
-      path: '/owner/authenticated',
-      options: { auth: 'test-session' },
-      handler: async (request) => ({
-        owner: await session.owner(request)
-      })
-    },
-    {
-      method: 'GET',
-      path: '/owner/auth-off',
-      handler: async (request) => ({
-        owner: await session.owner(request)
       })
     }
   ])
@@ -225,76 +183,5 @@ describe('#session.flowOnlyAnswers (real, yar)', () => {
     expect(journey1.result.values).toEqual({ importType: 'live-animals' })
     expect(journey2.result.values).toEqual({ declaration: 'confirmed' })
     expect(unknown.result.values).toEqual({})
-  })
-})
-
-describe('#session.userId (real, yar)', () => {
-  it('Should read the authenticated OIDC sub when present', async () => {
-    const server = await buildServer()
-    const response = await server.inject({
-      method: 'GET',
-      url: '/user-id/authenticated',
-      headers: { 'x-test-auth-sub': 'user-99' }
-    })
-
-    expect(response.result.userId).toBe('user-99')
-  })
-
-  it('Should use the stub user only for an auth-off request', async () => {
-    const server = await buildServer()
-    const response = await server.inject({
-      method: 'GET',
-      url: '/user-id/auth-off'
-    })
-
-    expect(response.result.userId).toBe(STUB_USER)
-  })
-})
-
-describe('#session.owner (real, yar)', () => {
-  it('Should read the authenticated Defra ID sub and organisation', async () => {
-    const server = await buildServer()
-    const response = await server.inject({
-      method: 'GET',
-      url: '/owner/authenticated',
-      headers: {
-        'x-test-auth-sub': 'user-99',
-        'x-test-auth-organisation': 'organisation-42'
-      }
-    })
-
-    expect(response.result.owner).toEqual({
-      sub: 'user-99',
-      organisation: 'organisation-42'
-    })
-  })
-
-  it('Should use the Bell profile organisation shape when credentials are not flattened', async () => {
-    await expect(
-      session.owner({
-        auth: {
-          credentials: {
-            sub: 'user-99',
-            profile: { organisationId: 'organisation-42' }
-          }
-        }
-      })
-    ).resolves.toEqual({
-      sub: 'user-99',
-      organisation: 'organisation-42'
-    })
-  })
-
-  it('Should use the auth-off stub user and empty organisation fallback', async () => {
-    const server = await buildServer()
-    const response = await server.inject({
-      method: 'GET',
-      url: '/owner/auth-off'
-    })
-
-    expect(response.result.owner).toEqual({
-      sub: STUB_USER,
-      organisation: ''
-    })
   })
 })

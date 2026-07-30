@@ -17,22 +17,19 @@ map in the stub and the trade-imports backend in real mode.
 
 ### SESSION (`engine/persistence/session.js`)
 
-The SESSION port answers who the user is and which journeys this session
-knows about. The journey being handled comes from the URL, not session
-state. The port also carries presentation state for the pre-hub linear run (the
+The SESSION port records which journeys this session knows about. The journey
+being handled comes from the URL, not session state. The port also carries
+presentation state for the pre-hub linear run (the
 "opening run" — see [flow-and-gates.md](flow-and-gates.md)) and the
 journey-keyed flow-only answers (`importType`, `declaration`) that do not
 belong to the notification.
 
-Its surface: `userId`, `knownJourneyIds` / `addKnownJourney`,
-`openingRun` / `setOpeningRun`, and `flowOnlyAnswers` /
-`setFlowOnlyAnswers`.
+Its surface: `knownJourneyIds` / `addKnownJourney`, `openingRun` /
+`setOpeningRun`, and `flowOnlyAnswers` / `setFlowOnlyAnswers`.
 
 **Stub** (`services/persistence/session/stub.js`) keeps everything in
 cookies:
 
-- `userId` returns the constant `stub-user-0001`. An `x-stub-user`
-  request header overrides it, so a test can play a second user cheaply.
 - `liveAnimalsKnownJourneys` (base64json) carries the
   session's known-journeys list — every reference this session has
   created, resumed or amended. The dashboard lists and acts on only
@@ -44,10 +41,7 @@ cookies:
   session cannot leak the filter or declaration selection.
 
 **Real** (`services/persistence/session/real.js`) keeps the same three
-state values in the server-side session (`request.yar`, backed by Redis), and
-reads the user from the Defra ID OIDC credentials
-(`request.auth.credentials.sub`), falling back to the stub user when
-auth is off.
+state values in the server-side session (`request.yar`, backed by Redis).
 
 The cookies are path-scoped to `/` because the service is mounted at the root
 (see `config.js`), and parallel browser contexts each carry their own journey.
@@ -58,14 +52,14 @@ The cookies are path-scoped to `/` because the service is mounted at the root
 
 The RECORDS port is the durable store: one application document per
 `journeyId`. Its surface: `create`, `load`, `list`, `has`,
-`replaceFulfilment`, `finalise`, `amend`, `clear`.
+`replaceFulfilment`, `finalise`, `amend`, `cancelAmend`, `copy`,
+`softDelete`, `clear`.
 
 A record is:
 
 ```js
 {
   journeyId: 'GBN-AG-26-ABC123',
-  userId: 'user-123',
   status: 'draft',
   createdAt: '2026-07-23T12:00:00.000Z',
   submittedAt: null,
@@ -85,8 +79,7 @@ A record is:
   (`GBN-AG-YY-XXXXXX`, Crockford base32 body).
 
 **Stub** (`services/persistence/records/stub/index.js`) holds records in an
-in-memory `Map`, plus a `byUser` index mapping a user to their active
-journey.
+in-memory `Map`.
 
 - At rest it uses `{ id, fulfilment: entry[] }` (plus lifecycle metadata).
   `services/persistence/records/fulfilment-codec/index.js` encodes on
@@ -107,8 +100,7 @@ journey.
 - `loadWritable` guards every mutating operation: an unknown id throws,
   a submitted record throws. No writer can skip either check.
 - `load({ journeyId })` fetches by id and returns `undefined` for an
-  unknown id. `load({ userId })` is a resume-by-identity affordance
-  (via the `byUser` index) that only the stub offers.
+  unknown id.
 - `list({ journeyIds })` loads exactly the handed references, skipping
   any the store no longer knows. It never lists the wider store.
 - `amend(journeyId)` requires a submitted record, clears `submittedAt`
@@ -126,11 +118,14 @@ every call.
 | ------------------- | ------------------------------------------------------------------ |
 | `create`            | `POST /fulfilments`                                                |
 | `load`              | `GET /fulfilments/{ref}`                                           |
-| `list`              | `GET /fulfilments/{ref}` per handed ref                            |
+| `list`              | `GET /fulfilments?page={page}&sort={sort}`                         |
 | `has`               | `GET /fulfilments/{ref}`                                           |
 | `replaceFulfilment` | `PUT /fulfilments/{ref}`, then both notification projection `PUT`s |
 | `finalise`          | `POST /fulfilments/{ref}/submit`                                   |
 | `amend`             | `POST /fulfilments/{ref}/amend`                                    |
+| `cancelAmend`       | `POST /fulfilments/{ref}/cancel-amend`                             |
+| `copy`              | `POST /fulfilments/{ref}/copy`                                     |
+| `softDelete`        | `POST /fulfilments/{ref}/soft-delete`                              |
 
 - `/fulfilments` is the source of truth. `marshal` maps lifecycle metadata and
   decodes `document.fulfilment` directly; resume never passes through a
@@ -143,8 +138,6 @@ every call.
 - If a projection write still fails after retry, the adapter reports that the
   canonical save succeeded and identifies the failed projection. A later repair
   can safely regenerate it from canonical fulfilment.
-- `load({ userId })` returns `undefined` and issues no read — the real
-  adapter has no resume-by-user path.
 
 ## The notification projections
 
@@ -178,14 +171,14 @@ because both shapes are downstream views; the forward directions are pinned by
 request is tied to a journey document. It memoises the loaded journey on
 `request.app` so a request loads at most once.
 
-- `startJourney` mints a fresh journey (`records.create`, stamped with
-  the user) and appends it to the session's known-journeys list. Every
+- `startJourney` mints a fresh journey (`records.create`) and appends it to
+  the session's known-journeys list. Every
   create POST begins a new journey; earlier journeys stay listed on the
   dashboard.
-- `currentJourney` returns the memoised journey, else loads the one named
-  by `request.params.journeyId` after checking the session-known list.
-  Missing, unknown and stale references are answered with 404; reads
-  never create a journey.
+- `currentJourney` returns the memoised journey, else loads the one named by
+  `request.params.journeyId`. Missing, unknown and stale references are
+  answered with 404; a successfully loaded reference is added to the
+  session-known list. Reads never create a journey.
 - `listKnownJourneys` loads the session's known references through
   `records.list` — the dashboard's data source.
 - `amendJourney` checks the session-known reference and unfreezes a
@@ -230,17 +223,12 @@ Neither port offers a delete-a-key surface. RECORDS accepts only a whole
 canonical fulfilment snapshot. Scope-exit purge stays derived by the evaluator
 and the ports cannot hand-roll a wipe.
 
-## Identity and multi-draft scope
+## Reference and multi-draft scope
 
-The dashboard's authorisation seam is the session's known-journeys list,
-not a per-user owner check on the record. A reference reaches another
-session only if the session state carrying it does. The known-journeys
-list gives one session several drafts, so multi-draft is session-scoped:
-a user on a new device starts with an empty dashboard.
-
-Resume is by reference, not by identity. The main flow only ever loads
-`load({ journeyId })`; the stub's `load({ userId })` resume-by-identity
-is a stub-only demo affordance that the real adapter does not implement.
+Records are loaded and mutated by reference. The session's known-journeys list
+drives the dashboard and gates journey actions such as amend, copy and delete.
+Loading a valid reference directly records it in that list. The list gives one
+session several drafts, so the dashboard starts empty in a new session.
 
 ## Boot wiring
 

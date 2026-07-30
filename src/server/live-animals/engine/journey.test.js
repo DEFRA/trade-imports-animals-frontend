@@ -116,38 +116,29 @@ describe('#currentJourney', () => {
     })
   })
 
-  it('Should load an owned journey the session does not yet know and record it as known', async () => {
-    const ownedJourney = await store.create()
+  it('Should load a referenced journey the session does not yet know and record it as known', async () => {
+    const journey = await store.create()
     const h = recordingH()
 
-    const loaded = await currentJourney(
-      requestFor(ownedJourney.journeyId, []),
-      h
-    )
+    const loaded = await currentJourney(requestFor(journey.journeyId, []), h)
 
-    expect(loaded.journeyId).toBe(ownedJourney.journeyId)
-    expect(h.cookies[KNOWN_JOURNEYS_COOKIE]).toContain(ownedJourney.journeyId)
+    expect(loaded.journeyId).toBe(journey.journeyId)
+    expect(h.cookies[KNOWN_JOURNEYS_COOKIE]).toContain(journey.journeyId)
   })
 
-  it('Should cancel amendment only for a session-known journey and thread its owner', async () => {
-    const cancelAmend = vi.fn(async (journeyId, owner) => ({
+  it('Should cancel amendment only for a session-known journey', async () => {
+    const cancelAmend = vi.fn(async (journeyId) => ({
       journeyId,
-      owner,
       status: 'submitted',
       fulfilment: {}
     }))
     configureRecords({ ...recordsStub, cancelAmend })
     const journeyId = 'GBN-AG-26-ABC123'
     const request = requestFor(journeyId, [journeyId])
-    request.headers['x-stub-user'] = 'owner-1'
-    request.headers['x-stub-owner-org'] = 'organisation-1'
 
     const restored = await cancelAmendJourney(request, recordingH(), journeyId)
 
-    expect(cancelAmend).toHaveBeenCalledWith(journeyId, {
-      sub: 'owner-1',
-      organisation: 'organisation-1'
-    })
+    expect(cancelAmend).toHaveBeenCalledWith(journeyId)
     expect(restored.status).toBe('submitted')
 
     const unknown = await cancelAmendJourney(
@@ -159,27 +150,20 @@ describe('#currentJourney', () => {
     expect(cancelAmend).toHaveBeenCalledTimes(1)
   })
 
-  it('Should copy only a known source, thread its owner and remember the new draft', async () => {
-    const copy = vi.fn(async (_journeyId, owner, _idempotencyKey) => ({
+  it('Should copy only a known source and remember the new draft', async () => {
+    const copy = vi.fn(async (_journeyId, _idempotencyKey) => ({
       journeyId: 'GBN-AG-26-COPIED',
-      userId: owner.sub,
       status: 'draft',
       fulfilment: {}
     }))
     configureRecords({ ...recordsStub, copy })
     const sourceId = 'GBN-AG-26-SOURCE'
     const request = requestFor(sourceId, [sourceId])
-    request.headers['x-stub-user'] = 'owner-1'
-    request.headers['x-stub-owner-org'] = 'organisation-1'
     const h = recordingH()
 
     const copied = await copyJourney(request, h, sourceId, 'copy-key-123')
 
-    expect(copy).toHaveBeenCalledWith(
-      sourceId,
-      { sub: 'owner-1', organisation: 'organisation-1' },
-      'copy-key-123'
-    )
+    expect(copy).toHaveBeenCalledWith(sourceId, 'copy-key-123')
     expect(copied.status).toBe('draft')
     expect(h.cookies[KNOWN_JOURNEYS_COOKIE]).toEqual([
       sourceId,
@@ -197,25 +181,19 @@ describe('#currentJourney', () => {
     expect(copy).toHaveBeenCalledTimes(1)
   })
 
-  it('Should soft-delete only a known journey and thread its owner', async () => {
-    const softDelete = vi.fn(async (journeyId, owner) => ({
+  it('Should soft-delete only a known journey', async () => {
+    const softDelete = vi.fn(async (journeyId) => ({
       journeyId,
-      owner,
       status: 'deleted',
       fulfilment: {}
     }))
     configureRecords({ ...recordsStub, softDelete })
     const journeyId = 'GBN-AG-26-DELETE'
     const request = requestFor(journeyId, [journeyId])
-    request.headers['x-stub-user'] = 'owner-1'
-    request.headers['x-stub-owner-org'] = 'organisation-1'
 
     const deleted = await softDeleteJourney(request, recordingH(), journeyId)
 
-    expect(softDelete).toHaveBeenCalledWith(journeyId, {
-      sub: 'owner-1',
-      organisation: 'organisation-1'
-    })
+    expect(softDelete).toHaveBeenCalledWith(journeyId)
     expect(deleted.status).toBe('deleted')
 
     expect(

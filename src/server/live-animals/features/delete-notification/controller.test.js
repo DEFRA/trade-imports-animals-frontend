@@ -15,10 +15,7 @@ import {
   DELETED,
   records
 } from '../../engine/persistence/records.js'
-import {
-  configureSession,
-  STUB_USER
-} from '../../engine/persistence/session.js'
+import { configureSession } from '../../engine/persistence/session.js'
 import { journeyRequest, stubH } from '../../engine/test-support.js'
 import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
 import { records as realRecords } from '../../services/persistence/records/real/index.js'
@@ -28,7 +25,6 @@ import { routes } from './controller.js'
 
 const get = routes.find((route) => route.method === 'GET').handler
 const post = routes.find((route) => route.method === 'POST').handler
-const owner = { sub: STUB_USER, organisation: '' }
 
 describe('delete notification routes', () => {
   beforeAll(() => {
@@ -47,7 +43,7 @@ describe('delete notification routes', () => {
   })
 
   it('Should render a journey-scoped irreversible confirmation', async () => {
-    const journey = await records.create({ owner })
+    const journey = await records.create()
 
     const response = await get(journeyRequest(journey.journeyId), stubH())
 
@@ -63,7 +59,7 @@ describe('delete notification routes', () => {
   })
 
   it('Should soft-delete and redirect to the dashboard success banner', async () => {
-    const journey = await records.create({ owner })
+    const journey = await records.create()
 
     const response = await post(journeyRequest(journey.journeyId), stubH())
 
@@ -72,18 +68,13 @@ describe('delete notification routes', () => {
       DELETED
     )
     expect(
-      (
-        await records.list({
-          journeyIds: [journey.journeyId],
-          owner
-        })
-      ).rows
+      (await records.list({ journeyIds: [journey.journeyId] })).rows
     ).toEqual([])
   })
 
   it('Should handle an already-deleted journey without another transition', async () => {
-    const journey = await records.create({ owner })
-    await records.softDelete(journey.journeyId, owner)
+    const journey = await records.create()
+    await records.softDelete(journey.journeyId)
 
     expect(await get(journeyRequest(journey.journeyId), stubH())).toEqual({
       redirect: '/'
@@ -106,7 +97,7 @@ describe('delete notification routes', () => {
         statusText: 'Service Unavailable'
       }))
     )
-    const journey = await records.create({ owner })
+    const journey = await records.create()
 
     const response = await post(journeyRequest(journey.journeyId), stubH())
 

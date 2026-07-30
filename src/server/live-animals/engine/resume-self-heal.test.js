@@ -3,7 +3,7 @@ import { get } from './index.js'
 import { records, configureRecords } from './persistence/records.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
-import { configureSession, STUB_USER } from './persistence/session.js'
+import { configureSession } from './persistence/session.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 import { journeyRequest, recordingH } from './test-support.js'
 import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
@@ -17,7 +17,7 @@ describe('re-entry self-heal (nothing derived is stored)', () => {
   })
 
   it('Should re-derive scope on re-entry, excluding a now-out-of-scope obligation', async () => {
-    const { journeyId } = await records.create({ userId: STUB_USER })
+    const { journeyId } = await records.create()
     await records.replaceFulfilment(
       journeyId,
       assembleFulfilments({
@@ -34,7 +34,7 @@ describe('re-entry self-heal (nothing derived is stored)', () => {
   })
 
   it('Should expose only canonical durable fields — nothing derived is persisted', async () => {
-    const { journeyId } = await records.create({ userId: STUB_USER })
+    const { journeyId } = await records.create()
     await records.replaceFulfilment(
       journeyId,
       assembleFulfilments({ countryOfOrigin: 'FR' })
@@ -47,8 +47,7 @@ describe('re-entry self-heal (nothing derived is stored)', () => {
       'fulfilment',
       'journeyId',
       'status',
-      'submittedAt',
-      'userId'
+      'submittedAt'
     ])
     expect(result).toMatchObject({
       fulfilment: result.journey.fulfilment,

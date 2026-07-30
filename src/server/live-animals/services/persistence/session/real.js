@@ -1,5 +1,3 @@
-import { STUB_USER } from '../../../engine/persistence/session.js'
-
 const KNOWN_JOURNEYS = 'liveAnimalsKnownJourneys'
 const OPENING_RUN = 'liveAnimalsOpeningRun'
 const FLOW_ONLY_ANSWERS = 'liveAnimalsFlowOnlyAnswers'
@@ -23,23 +21,6 @@ const openingRunByJourneyFrom = (request) => {
 }
 
 export const session = {
-  async userId(request) {
-    // The fallback supports auth-off real-mode development and parity tests only.
-    return request?.auth?.credentials?.sub ?? STUB_USER
-  },
-
-  async owner(request) {
-    const credentials = request?.auth?.credentials
-    return {
-      // The fallback supports auth-off real-mode development and parity tests only.
-      sub: credentials?.sub ?? STUB_USER,
-      organisation:
-        credentials?.organisationId ??
-        credentials?.profile?.organisationId ??
-        ''
-    }
-  },
-
   async knownJourneyIds(request) {
     return knownFrom(request)
   },

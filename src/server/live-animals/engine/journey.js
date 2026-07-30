@@ -47,9 +47,7 @@ const memoWrite = (request, journey) => {
 }
 
 export const startJourney = async (request, h) => {
-  const journey = await records.create({
-    owner: await session.owner(request)
-  })
+  const journey = await records.create()
   await session.addKnownJourney(request, h, journey.journeyId)
   memoWrite(request, journey)
   return journey
@@ -62,12 +60,7 @@ export const currentJourney = async (request, h) => {
   }
   const journeyId = request.params?.journeyId
   if (!journeyId) throw Boom.notFound()
-  const owner = await session.owner(request)
-  // The record store is the ownership authority: it returns the journey only for
-  // its owner. A fresh session (e.g. after a re-sign-in) legitimately owns the
-  // journey but has an empty known-list, so seed it here rather than 404 a journey
-  // the owner can see on their dashboard.
-  const loaded = await records.load({ journeyId, owner })
+  const loaded = await records.load({ journeyId })
   if (!loaded) throw Boom.notFound()
   if (!(await isKnownJourney(request, journeyId))) {
     await session.addKnownJourney(request, h, journeyId)
@@ -83,10 +76,8 @@ export const replaceJourneyFulfilment = async (
 ) => {
   const cached = memoRead(request)
   const known = cached?.journeyId === journeyId ? cached : undefined
-  const owner = await session.owner(request)
   const saved = await records.replaceFulfilment(journeyId, fulfilment, {
-    known,
-    owner
+    known
   })
   const next = known
     ? { ...known, fulfilment: structuredClone(fulfilment) }
@@ -97,25 +88,23 @@ export const replaceJourneyFulfilment = async (
 
 export const listKnownJourneys = async (request, { page, sort } = {}) => {
   const journeyIds = await session.knownJourneyIds(request)
-  const owner = await session.owner(request)
-  return records.list({ journeyIds, owner, page, sort })
+  return records.list({ journeyIds, page, sort })
 }
 
 export const isKnownJourney = async (request, journeyId) =>
   (await session.knownJourneyIds(request)).includes(journeyId)
 
-const editableFromStatus = (journey, journeyId, owner) => {
-  if (journey.status === SUBMITTED) return records.amend(journeyId, owner)
+const editableFromStatus = (journey, journeyId) => {
+  if (journey.status === SUBMITTED) return records.amend(journeyId)
   if (journey.status === DRAFT || journey.status === AMEND) return journey
   return undefined
 }
 
 export const amendJourney = async (request, h, journeyId) => {
   if (!(await isKnownJourney(request, journeyId))) return undefined
-  const owner = await session.owner(request)
-  const journey = await records.load({ journeyId, owner })
+  const journey = await records.load({ journeyId })
   if (!journey) return undefined
-  const editable = await editableFromStatus(journey, journeyId, owner)
+  const editable = await editableFromStatus(journey, journeyId)
   if (!editable) return undefined
   memoWrite(request, editable)
   return editable
@@ -123,18 +112,14 @@ export const amendJourney = async (request, h, journeyId) => {
 
 export const cancelAmendJourney = async (request, _h, journeyId) => {
   if (!(await isKnownJourney(request, journeyId))) return undefined
-  const restored = await records.cancelAmend(
-    journeyId,
-    await session.owner(request)
-  )
+  const restored = await records.cancelAmend(journeyId)
   memoWrite(request, restored)
   return restored
 }
 
 export const copyJourney = async (request, h, journeyId, idempotencyKey) => {
   if (!(await isKnownJourney(request, journeyId))) return undefined
-  const owner = await session.owner(request)
-  const copied = await records.copy(journeyId, owner, idempotencyKey)
+  const copied = await records.copy(journeyId, idempotencyKey)
   await session.addKnownJourney(request, h, copied.journeyId)
   memoWrite(request, copied)
   return copied
@@ -142,5 +127,5 @@ export const copyJourney = async (request, h, journeyId, idempotencyKey) => {
 
 export const softDeleteJourney = async (request, _h, journeyId) => {
   if (!(await isKnownJourney(request, journeyId))) return undefined
-  return records.softDelete(journeyId, await session.owner(request))
+  return records.softDelete(journeyId)
 }

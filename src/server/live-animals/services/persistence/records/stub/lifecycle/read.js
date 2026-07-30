@@ -1,20 +1,17 @@
 import { DELETED } from '../../../../../engine/persistence/records.js'
-import { byUser, journeys } from '../store/state.js'
+import { journeys } from '../store/state.js'
 import { marshal } from '../marshal/document.js'
 import { marshalListItem } from '../marshal/list-item.js'
 import { LIST_PAGE_SIZE, sortByCreatedAt, validPage } from '../list-query.js'
 
-export const load = async ({ journeyId, userId, owner: _owner } = {}) => {
-  const resolvedJourneyId =
-    journeyId ?? (userId != null ? byUser.get(userId) : undefined)
-  if (resolvedJourneyId == null) return undefined
-  const journey = journeys.get(resolvedJourneyId)
+export const load = async ({ journeyId } = {}) => {
+  if (journeyId == null) return undefined
+  const journey = journeys.get(journeyId)
   return journey ? structuredClone(marshal(journey)) : undefined
 }
 
 export const list = async ({
   journeyIds = [],
-  owner: _owner,
   page = 1,
   sort = 'arrivalDate,desc'
 } = {}) => {

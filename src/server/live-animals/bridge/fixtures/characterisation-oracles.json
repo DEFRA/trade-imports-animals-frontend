@@ -2,10 +2,6 @@
   "comprehensive": {
     "fulfilments": {
       "9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d": "GBN-AG-26-ABC123",
-      "ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e": {
-        "responsiblePerson": "Auth User",
-        "responsiblePersonEmail": "auth@example.com"
-      },
       "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": "FR",
       "b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e": "yes",
       "c23d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f": "FR-75",
@@ -191,10 +187,6 @@
     "evaluation": {
       "fulfilments": {
         "9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d": "GBN-AG-26-ABC123",
-        "ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e": {
-          "responsiblePerson": "Auth User",
-          "responsiblePersonEmail": "auth@example.com"
-        },
         "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": "FR",
         "b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e": "yes",
         "c23d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f": "FR-75",
@@ -340,10 +332,6 @@
       },
       "obligations": {
         "9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d": {
-          "inScope": true,
-          "status": "mandatory"
-        },
-        "ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e": {
           "inScope": true,
           "status": "mandatory"
         },
@@ -742,10 +730,6 @@
     },
     "answersFromFulfilments": {
       "poApprovedReferenceNumber": "GBN-AG-26-ABC123",
-      "responsiblePersonForLoad": {
-        "responsiblePerson": "Auth User",
-        "responsiblePersonEmail": "auth@example.com"
-      },
       "countryOfOrigin": "FR",
       "regionOfOriginCodeRequirement": "yes",
       "regionOfOriginCode": "FR-75",
@@ -1157,10 +1141,6 @@
           }
         ]
       },
-      "responsiblePersonForLoad": {
-        "responsiblePerson": "Auth User",
-        "responsiblePersonEmail": "auth@example.com"
-      },
       "purpose": "breeding",
       "documents": [
         {
@@ -1220,10 +1200,6 @@
       },
       "obligations": {
         "9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d": {
-          "inScope": true,
-          "status": "mandatory"
-        },
-        "ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e": {
           "inScope": true,
           "status": "mandatory"
         },
@@ -1541,10 +1517,6 @@
           "inScope": true,
           "status": "mandatory"
         },
-        "ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e": {
-          "inScope": true,
-          "status": "mandatory"
-        },
         "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": {
           "inScope": true,
           "status": "mandatory"
@@ -1774,10 +1746,6 @@
       },
       "obligations": {
         "9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d": {
-          "inScope": true,
-          "status": "mandatory"
-        },
-        "ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e": {
           "inScope": true,
           "status": "mandatory"
         },
@@ -2167,10 +2135,6 @@
       },
       "obligations": {
         "9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d": {
-          "inScope": true,
-          "status": "mandatory"
-        },
-        "ab0c1d2e-3f4a-4b5c-8d6e-7f8a9b0c1d2e": {
           "inScope": true,
           "status": "mandatory"
         },

@@ -5,7 +5,6 @@ import { targetCommodityFromLines } from './commodity.js'
 import { targetDocumentsFromFulfilment } from './documents.js'
 import { applyPurposeOverlay } from './sections/purpose.js'
 import { applyRegionCodeOverlay } from './sections/region-code.js'
-import { applyResponsiblePersonOverlay } from './sections/responsible-person.js'
 import { applyTransportExtrasOverlay } from './sections/transport-extras.js'
 
 // Mapper B's production entry point: canonical UUID map + envelope id. The
@@ -23,7 +22,6 @@ export const answersToTargetNotification = (
     lines
   )
 
-  applyResponsiblePersonOverlay(notification, reader)
   applyPurposeOverlay(notification, reader)
   applyRegionCodeOverlay(notification, reader)
   applyTransportExtrasOverlay(notification, reader)

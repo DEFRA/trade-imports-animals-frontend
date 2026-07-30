@@ -9,8 +9,7 @@ import {
 } from '../../engine/persistence/records.js'
 import {
   configureSession,
-  KNOWN_JOURNEYS_COOKIE,
-  STUB_USER
+  KNOWN_JOURNEYS_COOKIE
 } from '../../engine/persistence/session.js'
 import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
 import { assembleFulfilments } from '../../bridge/assemble-fulfilments.js'
@@ -66,10 +65,10 @@ const buildH = () => {
   }
 }
 
-const startDraft = async () => records.create({ userId: STUB_USER })
+const startDraft = async () => records.create()
 
 const startSubmitted = async () => {
-  const journey = await records.create({ userId: STUB_USER })
+  const journey = await records.create()
   await records.finalise(journey.journeyId)
   return records.load({ journeyId: journey.journeyId })
 }
@@ -243,12 +242,8 @@ describe('dashboard notifications list', () => {
   })
 
   it('Should keep deleted journeys absent from the list', async () => {
-    const owner = {
-      sub: STUB_USER,
-      organisation: ''
-    }
-    const deleted = await records.create({ owner })
-    await records.softDelete(deleted.journeyId, owner)
+    const deleted = await records.create()
+    await records.softDelete(deleted.journeyId)
     const h = buildH()
 
     await listGet(buildRequest({ knownJourneyIds: [deleted.journeyId] }), h)

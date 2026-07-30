@@ -1,5 +1,3 @@
-export const STUB_USER = 'stub-user-0001'
-export const STUB_USER_HEADER = 'x-stub-user'
 export const KNOWN_JOURNEYS_COOKIE = 'liveAnimalsKnownJourneys'
 export const OPENING_RUN_COOKIE = 'liveAnimalsOpeningRun'
 export const FLOW_ONLY_ANSWERS_COOKIE = 'liveAnimalsFlowOnlyAnswers'
@@ -9,8 +7,6 @@ const unconfigured = () => {
 }
 
 let impl = {
-  userId: unconfigured,
-  owner: unconfigured,
   knownJourneyIds: unconfigured,
   addKnownJourney: unconfigured,
   openingRun: unconfigured,
@@ -24,8 +20,6 @@ export const configureSession = (newImpl) => {
 }
 
 export const session = {
-  userId: (...args) => impl.userId(...args),
-  owner: (...args) => impl.owner(...args),
   knownJourneyIds: (...args) => impl.knownJourneyIds(...args),
   addKnownJourney: (...args) => impl.addKnownJourney(...args),
   openingRun: (...args) => impl.openingRun(...args),

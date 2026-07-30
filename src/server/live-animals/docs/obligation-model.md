@@ -99,11 +99,9 @@ The manifest lays out the V4 data fields:
   `description`) and `permanentAddress`.
 - **`documents`** — a group of four accompanying-document fields.
 
-Two obligations are **system-populated**: `poApprovedReferenceNumber`
-(minted at notification-creation time) and `responsiblePersonForLoad`
-(taken from gov.identity). They are declared for completeness and carry
-`status: 'mandatory'`, but no page presents them and their value
-legality is enforced upstream.
+One obligation is **system-populated**: `poApprovedReferenceNumber`, minted at
+notification-creation time. It carries `status: 'mandatory'`, but no page
+presents it and its value legality is enforced upstream.
 
 `commodityType` is a normal collected obligation within `commodityLines`.
 The commodity search derives the stored type id from each selected species

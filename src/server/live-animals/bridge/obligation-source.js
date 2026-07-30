@@ -23,10 +23,7 @@ const byPathMap = new Map(obligations.map((o) => [templatePathOf(o), o]))
 
 export const obligationByPath = (templatePath) => byPathMap.get(templatePath)
 
-export const SYSTEM_POPULATED = new Set([
-  'poApprovedReferenceNumber',
-  'responsiblePersonForLoad'
-])
+export const SYSTEM_POPULATED = new Set(['poApprovedReferenceNumber'])
 
 export const ENFORCED_AT_CONTINUE = new Set([
   'countryOfOrigin',

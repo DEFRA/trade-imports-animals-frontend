@@ -1,6 +1,5 @@
 // -----------------------------------------------------------------------------
-// Contact address (user-entered variant — gov.identity variant stubbed
-// as pre-filled fulfilment per Q4)
+// Contact address
 // -----------------------------------------------------------------------------
 
 export const contactAddress = {

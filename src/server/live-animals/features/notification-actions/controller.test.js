@@ -13,8 +13,7 @@ import { buildDispatch } from '../../flow/dispatch.js'
 import { configureRecords, records } from '../../engine/persistence/records.js'
 import {
   configureSession,
-  KNOWN_JOURNEYS_COOKIE,
-  STUB_USER
+  KNOWN_JOURNEYS_COOKIE
 } from '../../engine/persistence/session.js'
 import { journeyRequest, stubH } from '../../engine/test-support.js'
 import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
@@ -24,7 +23,6 @@ import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
 
 const copyPost = routes[0].handler
-const owner = { sub: STUB_USER, organisation: '' }
 
 describe('copy notification action', () => {
   beforeAll(() => {
@@ -43,7 +41,7 @@ describe('copy notification action', () => {
   })
 
   it('Should copy into a known new draft and redirect to its journey-scoped hub', async () => {
-    const source = await records.create({ owner })
+    const source = await records.create()
     const h = stubH()
 
     const response = await copyPost(
@@ -66,7 +64,7 @@ describe('copy notification action', () => {
   })
 
   it('Should make a retry redirect stable for the same idempotency key', async () => {
-    const source = await records.create({ owner })
+    const source = await records.create()
     const request = () =>
       journeyRequest(source.journeyId, {
         payload: {
@@ -92,7 +90,7 @@ describe('copy notification action', () => {
         statusText: 'Service Unavailable'
       }))
     )
-    const source = await records.create({ owner })
+    const source = await records.create()
 
     const response = await copyPost(
       journeyRequest(source.journeyId, {

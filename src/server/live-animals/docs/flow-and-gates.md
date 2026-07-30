@@ -79,7 +79,7 @@ override.
 
 1. **Ids are path-safe.** An obligation id becomes both a store key and a segment of a dotted template address, so it must not contain `.`, `[` or `]` (`ID_UNSAFE`). A metacharacter would make addresses ambiguous — `commodityLines.commoditySelection` could not be told from a single stray-dotted id. Boot throws on the first unsafe id.
 2. **No obligation has two owners.** Two pages declaring the same obligation throw at boot. See [one obligation, one page](#one-obligation-one-page) for why.
-3. **Every obligation has one owner.** Coverage walks `walkObligations()` — every non-system obligation at every depth of the tree — and asserts each resolves to an owning page. Only `poApprovedReferenceNumber` and `responsiblePersonForLoad` are exempt through `SYSTEM_POPULATED`. `commodityType` is covered through its `commodityLines` ancestor and stored by the commodity search with the rest of each selected line. A forgotten `collects` is a startup crash, not a silent runtime hole.
+3. **Every obligation has one owner.** Coverage walks `walkObligations()` — every non-system obligation at every depth of the tree — and asserts each resolves to an owning page. Only `poApprovedReferenceNumber` is exempt through `SYSTEM_POPULATED`. `commodityType` is covered through its `commodityLines` ancestor and stored by the commodity search with the rest of each selected line. A forgotten `collects` is a startup crash, not a silent runtime hole.
 
 After a successful build, three lookups are live: `pageOfObligation(id)`, `collectsOf(pageId)` and `slugOfPage(pageId)`.
 
