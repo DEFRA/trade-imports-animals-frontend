@@ -20,9 +20,8 @@
         classes: "govuk-radios--small",
         items: [{
           value: row.id,
-          text: copy.selectRowPrefix + " " + row.name,
-          checked: row.checked,
-          label: { classes: "govuk-visually-hidden" }
+          html: '<span class="govuk-visually-hidden">' + copy.selectRowPrefix + " " + row.name + '</span>',
+          checked: row.checked
         }]
       }) }}
     {% endset %}
