@@ -29,16 +29,12 @@ const owner = {
   sub: 'live-animals-real-integration-user',
   organisation: 'live-animals-real-integration-organisation'
 }
-const ownerHeaders = {
-  'X-Owner-Id': owner.sub,
-  'X-Owner-Organisation': owner.organisation
-}
 
 const replaceAnswers = (journeyId, answers) =>
   records.replaceFulfilment(journeyId, assembleFulfilments(answers), { owner })
 const answersOf = (journey) => projectAnswers(journey.fulfilment)
 const json = async (url) => {
-  const response = await fetch(url, { headers: ownerHeaders })
+  const response = await fetch(url)
   if (!response.ok) {
     throw new Error(`GET ${url} failed: ${response.status}`)
   }
@@ -101,9 +97,7 @@ describe.skipIf(!runsIt('real'))(
   () => {
     beforeAll(async () => {
       try {
-        await fetch(`${fulfilmentsUrl}/GBN-AG-99-ZZZZZZ`, {
-          headers: ownerHeaders
-        })
+        await fetch(`${fulfilmentsUrl}/GBN-AG-99-ZZZZZZ`)
       } catch (cause) {
         throw new Error(
           `Backend not reachable at ${backendBaseUrl} — start the matching stack before running this integration test.`,

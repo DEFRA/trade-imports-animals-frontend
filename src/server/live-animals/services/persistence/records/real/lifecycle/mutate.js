@@ -15,11 +15,11 @@ import { putProjection } from '../projections/put-projection.js'
 import { assertWritable } from '../write-guards/assert-writable.js'
 import { resolveStatus } from '../write-guards/resolve-status.js'
 
-const saveProjections = async (journeyId, owner, projections) => {
+const saveProjections = async (journeyId, projections) => {
   const failures = []
   for (const projection of projections) {
     try {
-      await putProjection({ journeyId, owner, ...projection })
+      await putProjection({ journeyId, ...projection })
     } catch (error) {
       failures.push({ name: projection.name, error })
     }
@@ -32,7 +32,7 @@ export const replaceFulfilment = async (
   fulfilment,
   { known, owner } = {}
 ) => {
-  const status = await resolveStatus(journeyId, known, owner)
+  const status = await resolveStatus(journeyId, known)
   assertWritable(journeyId, status)
 
   const snapshot = structuredClone(fulfilment ?? {})
@@ -56,12 +56,11 @@ export const replaceFulfilment = async (
   const canonicalResponse = await put(
     `${fulfilmentsUrl}/${journeyId}`,
     canonicalDocument,
-    'save fulfilment',
-    owner
+    'save fulfilment'
   )
   const saved = await canonicalResponse.json()
 
-  const failures = await saveProjections(journeyId, owner, projections)
+  const failures = await saveProjections(journeyId, projections)
   if (failures.length > 0) {
     throwProjectionFailure(journeyId, failures)
   }

@@ -2,11 +2,11 @@ import { MAX_PROJECTION_ATTEMPTS } from '../config.js'
 import { put } from '../http/put.js'
 import { logger } from '../logger.js'
 
-export const putProjection = async ({ journeyId, name, url, body, owner }) => {
+export const putProjection = async ({ journeyId, name, url, body }) => {
   let lastError
   for (let attempt = 1; attempt <= MAX_PROJECTION_ATTEMPTS; attempt++) {
     try {
-      await put(url, body, `save ${name} projection`, owner)
+      await put(url, body, `save ${name} projection`)
       return
     } catch (error) {
       lastError = error

@@ -6,7 +6,7 @@ import { marshal } from '../marshal/document.js'
 export const create = async ({ userId, owner } = {}) => {
   const response = await fetch(fulfilmentsUrl, {
     method: 'POST',
-    headers: headers(owner)
+    headers: headers()
   })
   if (!response.ok) throw failed('create fulfilment', response)
   return marshal(await response.json(), userId ?? owner?.sub ?? null)
@@ -16,7 +16,7 @@ export const copy = async (journeyId, owner, idempotencyKey) => {
   const response = await fetch(`${fulfilmentsUrl}/${journeyId}/copy`, {
     method: 'POST',
     headers: {
-      ...headers(owner),
+      ...headers(),
       'Idempotency-Key': idempotencyKey
     }
   })

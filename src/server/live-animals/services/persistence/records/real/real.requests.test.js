@@ -47,10 +47,6 @@ const canonical = ({
 })
 
 const jsonOf = (request) => request.clone().json()
-const expectOwnerHeaders = (request) => {
-  expect(request.headers.get('X-Owner-Id')).toBe(owner.sub)
-  expect(request.headers.get('X-Owner-Organisation')).toBe(owner.organisation)
-}
 
 describe('real records adapter — canonical fulfilment boundary', () => {
   beforeEach(() => {
@@ -75,7 +71,6 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(fulfilmentsUrl)
     expect(request.method).toBe('POST')
-    expectOwnerHeaders(request)
     expect(await request.clone().text()).toBe('')
     expect(created).toEqual({
       journeyId,
@@ -127,7 +122,6 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(`${fulfilmentsUrl}/${journeyId}`)
     expect(request.method).toBe('GET')
-    expectOwnerHeaders(request)
     expect(loaded.fulfilment).toEqual(decodePersistedFulfilment(encoded))
     expect(loaded.userId).toBe('user-1')
     expect(
@@ -145,7 +139,6 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(`${fulfilmentsUrl}/${journeyId}`)
     expect(request.method).toBe('GET')
-    expectOwnerHeaders(request)
     expect(loaded).toBeUndefined()
   })
 
@@ -179,7 +172,6 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       { method: 'PUT', url: `${notificationsUrl}/${journeyId}` },
       { method: 'PUT', url: `${proposedNotificationsUrl}/${journeyId}` }
     ])
-    requests.forEach(expectOwnerHeaders)
     expect(await jsonOf(requests[0])).toEqual({
       id: journeyId,
       fulfilment: encoded
@@ -236,7 +228,6 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       `${notificationsUrl}/${journeyId}`,
       `${proposedNotificationsUrl}/${journeyId}`
     ])
-    requests.forEach(expectOwnerHeaders)
     expect(await jsonOf(requests[1])).toEqual(await jsonOf(requests[2]))
   })
 
@@ -276,7 +267,6 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       `${notificationsUrl}/${journeyId}`,
       `${proposedNotificationsUrl}/${journeyId}`
     ])
-    requests.forEach(expectOwnerHeaders)
     expect(await jsonOf(requests[0])).toEqual({
       id: journeyId,
       fulfilment: encoded
@@ -325,7 +315,6 @@ describe('real records adapter — canonical fulfilment boundary', () => {
         url: `${fulfilmentsUrl}/${journeyId}/cancel-amend`
       }
     ])
-    requests.forEach(expectOwnerHeaders)
     expect(submitted.status).toBe(SUBMITTED)
     expect(submitted.submittedAt).toBe('2026-07-23T10:00:00')
     expect(amended.status).toBe(AMEND)
@@ -346,7 +335,6 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(`${fulfilmentsUrl}/${journeyId}/copy`)
     expect(request.method).toBe('POST')
-    expectOwnerHeaders(request)
     expect(request.headers.get('Idempotency-Key')).toBe('copy-key-123')
     expect(copied).toMatchObject({
       journeyId: copiedJourneyId,
@@ -365,7 +353,6 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(`${fulfilmentsUrl}/${journeyId}/soft-delete`)
     expect(request.method).toBe('POST')
-    expectOwnerHeaders(request)
     expect(request.headers.has('Idempotency-Key')).toBe(false)
     expect(deleted.status).toBe(DELETED)
   })

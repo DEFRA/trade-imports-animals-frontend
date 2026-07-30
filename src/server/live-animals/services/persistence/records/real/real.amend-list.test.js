@@ -13,11 +13,6 @@ fetchMocker.enableMocks()
 const fulfilmentsUrl = 'http://localhost:8085/fulfilments'
 const owner = { sub: 'user-1', organisation: '' }
 
-const expectOwnerHeaders = (request) => {
-  expect(request.headers.get('X-Owner-Id')).toBe(owner.sub)
-  expect(request.headers.get('X-Owner-Organisation')).toBe('')
-}
-
 const fulfilment = (id, status) => ({
   id,
   status,
@@ -45,7 +40,6 @@ describe('real records adapter — amend', () => {
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(`${fulfilmentsUrl}/GBN-1/amend`)
     expect(request.method).toBe('POST')
-    expectOwnerHeaders(request)
     expect(amended.status).toBe(AMEND)
     expect(amended.submittedAt).toBeNull()
     expect(amended.createdAt).toBe('2026-07-14T09:00:00')
@@ -90,7 +84,6 @@ describe('real records adapter — owner-scoped paged list', () => {
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(`${fulfilmentsUrl}?page=2&sort=createdAt,asc`)
     expect(request.method).toBe('GET')
-    expectOwnerHeaders(request)
     expect(listed).toEqual({
       page: 1,
       size: 20,
@@ -150,6 +143,5 @@ describe('real records adapter — owner-scoped paged list', () => {
       { method: 'GET', url: `${fulfilmentsUrl}/GBN-1` },
       { method: 'GET', url: `${fulfilmentsUrl}/GBN-GONE` }
     ])
-    requests.forEach(expectOwnerHeaders)
   })
 })
