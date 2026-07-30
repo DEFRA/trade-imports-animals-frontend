@@ -1,16 +1,21 @@
-import { pagePath, TEMPLATES } from '../../config.js'
-import * as state from '../../engine/index.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../lib/http-status.js'
-import { compose, maxText, oneOf, validate } from '../../lib/validate/index.js'
-import * as kit from '../../shared/kit.js'
-import { copyFor } from '../../shared/copy.js'
-import * as countries from '../../services/countries/index.js'
-import { privateTransporterDetailsPage as page } from './page.js'
-import { copy as en } from './copy/copy.en.js'
-import { copy as cy } from './copy/copy.cy.js'
+import { pagePath, TEMPLATES } from '../../../config.js'
+import * as state from '../../../engine/index.js'
+import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../lib/http-status.js'
+import {
+  compose,
+  maxText,
+  oneOf,
+  validate
+} from '../../../lib/validate/index.js'
+import * as kit from '../../../shared/kit.js'
+import { copyFor } from '../../../shared/copy.js'
+import * as countries from '../../../services/countries/index.js'
+import { privateTransporterDetailsPage as page } from '../page.js'
+import { copy as en } from '../copy/copy.en.js'
+import { copy as cy } from '../copy/copy.cy.js'
 
 export const meta = { ...page, collects: ['privateTransporter'] }
-const view = `${TEMPLATES}/features/transport/private-transporter-details`
+const view = `${TEMPLATES}/features/transport/private-transporter-details/private-transporter-details`
 
 const copy = copyFor({ en, cy }).privateTransporterDetails
 

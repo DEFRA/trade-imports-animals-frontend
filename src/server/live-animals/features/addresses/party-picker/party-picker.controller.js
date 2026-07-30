@@ -1,24 +1,24 @@
-import { pagePath, pageRoutePath, TEMPLATES } from '../../config.js'
-import * as state from '../../engine/index.js'
+import { pagePath, pageRoutePath, TEMPLATES } from '../../../config.js'
+import * as state from '../../../engine/index.js'
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
-} from '../../lib/http-status.js'
-import * as kit from '../../shared/kit.js'
-import { routeOptions } from '../../shared/kit.js'
-import { copyFor } from '../../shared/copy.js'
-import { copy as sharedEn } from '../../shared/copy.en.js'
-import { copy as sharedCy } from '../../shared/copy.cy.js'
-import * as addressBook from '../../services/address-book/index.js'
-import { PARTIES } from './parties.js'
-import { copy as en } from './copy/copy.en.js'
-import { copy as cy } from './copy/copy.cy.js'
-import { isSearchAction, pageNumber } from './party-picker/request-params.js'
-import { chosenPartyFor, committedId } from './party-picker/selection.js'
-import { pickerViewModel } from './party-picker/view-model/index.js'
-import { errorSummary } from './party-picker/view-model/error-summary.js'
+} from '../../../lib/http-status.js'
+import * as kit from '../../../shared/kit.js'
+import { routeOptions } from '../../../shared/kit.js'
+import { copyFor } from '../../../shared/copy.js'
+import { copy as sharedEn } from '../../../shared/copy.en.js'
+import { copy as sharedCy } from '../../../shared/copy.cy.js'
+import * as addressBook from '../../../services/address-book/index.js'
+import { PARTIES } from '../parties.js'
+import { copy as en } from '../copy/copy.en.js'
+import { copy as cy } from '../copy/copy.cy.js'
+import { isSearchAction, pageNumber } from './request-params.js'
+import { chosenPartyFor, committedId } from './selection.js'
+import { pickerViewModel } from './view-model/index.js'
+import { errorSummary } from './view-model/error-summary.js'
 
-const view = `${TEMPLATES}/features/addresses/party-picker`
+const view = `${TEMPLATES}/features/addresses/party-picker/party-picker`
 
 const copy = copyFor({ en, cy }).picker
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })

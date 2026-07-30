@@ -1,31 +1,28 @@
-import { hubPath, pagePath, TEMPLATES } from '../../config.js'
-import * as state from '../../engine/index.js'
-import * as kit from '../../shared/kit.js'
-import { animalIdentificationPage as page } from './page.js'
-import { copyFor } from '../../shared/copy.js'
-import { copy as en } from './copy/copy.en.js'
-import { copy as cy } from './copy/copy.cy.js'
-import { summaryOf } from './animal-identification/card/error-summary.js'
-import { buildCard } from './animal-identification/card/view-model.js'
+import { hubPath, pagePath, TEMPLATES } from '../../../config.js'
+import * as state from '../../../engine/index.js'
+import * as kit from '../../../shared/kit.js'
+import { animalIdentificationPage as page } from '../page.js'
+import { copyFor } from '../../../shared/copy.js'
+import { copy as en } from '../copy/copy.en.js'
+import { copy as cy } from '../copy/copy.cy.js'
+import { summaryOf } from './card/error-summary.js'
+import { buildCard } from './card/view-model.js'
 import {
   buildLineForms,
   capReachedResponse,
   parseAddAction,
   withEmptyFormGuard
-} from './animal-identification/form/forms.js'
-import { appendLineRecords } from './animal-identification/records/append.js'
-import {
-  isRemoveAction,
-  postRemove
-} from './animal-identification/remove/post-remove.js'
+} from './form/forms.js'
+import { appendLineRecords } from './records/append.js'
+import { isRemoveAction, postRemove } from './remove/post-remove.js'
 
 export {
   IDENTIFIER_LABELS,
   animalIdentifierSummary
-} from './animal-identification/identifier/summary.js'
+} from './identifier/summary.js'
 
 export const meta = { ...page, collects: [] }
-const view = `${TEMPLATES}/features/commodities/animal-identification`
+const view = `${TEMPLATES}/features/commodities/animal-identification/animal-identification`
 
 const copy = copyFor({ en, cy }).identification
 

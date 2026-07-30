@@ -9,8 +9,8 @@ import { session as sessionStub } from '../../../services/persistence/session/st
 import { driveHandler } from '../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 
-import * as portOfEntry from '../port-of-entry.controller.js'
-import * as transporters from '../transporters.controller.js'
+import * as portOfEntry from '../port-of-entry/port-of-entry.controller.js'
+import * as transporters from '../transporters/transporters.controller.js'
 import { copy } from './copy.en.js'
 
 const leaves = (node, path = []) =>

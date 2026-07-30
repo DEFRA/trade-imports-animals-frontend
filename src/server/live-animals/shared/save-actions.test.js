@@ -12,8 +12,8 @@ import { dispatchPages } from '../features/index.js'
 import { base, hubExitTarget } from './kit.js'
 
 import * as importPurpose from '../features/import-purpose/controller.js'
-import * as consignmentDetails from '../features/commodities/consignment-details.controller.js'
-import * as animalIdentification from '../features/commodities/animal-identification.controller.js'
+import * as consignmentDetails from '../features/commodities/consignment-details/consignment-details.controller.js'
+import * as animalIdentification from '../features/commodities/animal-identification/animal-identification.controller.js'
 import * as documents from '../features/documents/controller.js'
 import * as cphNumber from '../features/cph-number/controller.js'
 

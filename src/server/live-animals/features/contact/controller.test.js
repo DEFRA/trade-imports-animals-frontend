@@ -16,7 +16,7 @@ import * as addressBook from '../../services/address-book/index.js'
 import { pagePath } from '../../config.js'
 
 import * as contact from './controller.js'
-import * as createAddress from '../addresses/create-address.controller.js'
+import * as createAddress from '../addresses/create-address/create-address.controller.js'
 
 const get = contact.routes.find((route) => route.method === 'GET').handler
 const post = postHandlerOf(contact)

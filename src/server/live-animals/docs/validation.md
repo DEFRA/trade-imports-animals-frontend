@@ -205,7 +205,7 @@ never a formatted string.
 - `kit.readDate(payload, name)` assembles the stored object from the
   three payload parts; `kit.dateField` builds the `govukDateInput`
   view-model, taking the inline error from the day key (see
-  `features/transport/port-of-entry.controller.js`).
+  `features/transport/port-of-entry/port-of-entry.controller.js`).
 
 ## The Joi → GDS wiring
 
@@ -237,7 +237,8 @@ Address values use the same completion rule as every other obligation:
 address fields when deriving status or per-entry collection completeness.
 
 Field completeness is enforced before storage by the page that collects the
-address. `features/addresses/create-address.controller.js` and the animal
+address. `features/addresses/create-address/create-address.controller.js` and
+the animal
 identification controller validate the required nested sub-fields and
 re-render with field errors on a partial submission; only a valid address is
 committed. Option membership and other value rules likewise remain in the

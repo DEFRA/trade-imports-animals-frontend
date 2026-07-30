@@ -9,7 +9,7 @@ import { session as sessionStub } from '../../../services/persistence/session/st
 import { driveHandler } from '../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 
-import * as search from '../search.controller.js'
+import * as search from '../search/search.controller.js'
 import { copy } from './copy.en.js'
 
 const leaves = (node, path = []) =>

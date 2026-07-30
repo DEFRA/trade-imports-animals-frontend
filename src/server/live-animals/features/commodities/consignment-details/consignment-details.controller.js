@@ -1,35 +1,32 @@
-import { pagePath, TEMPLATES } from '../../config.js'
-import * as state from '../../engine/index.js'
-import { validate } from '../../lib/validate/index.js'
-import * as kit from '../../shared/kit.js'
-import { copyFor } from '../../shared/copy.js'
-import { commoditiesPage, consignmentDetailsPage as page } from './page.js'
-import { lineKey } from './search.controller.js'
-import { copy as en } from './copy/copy.en.js'
-import { copy as cy } from './copy/copy.cy.js'
-import { copy as sharedEn } from '../../shared/copy.en.js'
-import { copy as sharedCy } from '../../shared/copy.cy.js'
+import { pagePath, TEMPLATES } from '../../../config.js'
+import * as state from '../../../engine/index.js'
+import { validate } from '../../../lib/validate/index.js'
+import * as kit from '../../../shared/kit.js'
+import { copyFor } from '../../../shared/copy.js'
+import { commoditiesPage, consignmentDetailsPage as page } from '../page.js'
+import { lineKey } from '../search/search.controller.js'
+import { copy as en } from '../copy/copy.en.js'
+import { copy as cy } from '../copy/copy.cy.js'
+import { copy as sharedEn } from '../../../shared/copy.en.js'
+import { copy as sharedCy } from '../../../shared/copy.cy.js'
 import {
   animalsField,
   fieldsFor,
   packagesApply,
   packagesField
-} from './consignment-details/fields.js'
-import { linesOf } from './consignment-details/lines.js'
+} from './fields.js'
+import { linesOf } from './lines.js'
 import {
   isRemoveAction,
   postRemove,
   removeIndexOf
-} from './consignment-details/remove/post-remove.js'
-import { countDropIssues } from './consignment-details/validation/count-drop.js'
-import { buildGroups } from './consignment-details/view-model/groups.js'
-import {
-  payloadValues,
-  storedValues
-} from './consignment-details/view-model/values.js'
+} from './remove/post-remove.js'
+import { countDropIssues } from './validation/count-drop.js'
+import { buildGroups } from './view-model/groups.js'
+import { payloadValues, storedValues } from './view-model/values.js'
 
 export const meta = { ...page, collects: [] }
-const view = `${TEMPLATES}/features/commodities/consignment-details`
+const view = `${TEMPLATES}/features/commodities/consignment-details/consignment-details`
 
 const copy = copyFor({ en, cy }).consignmentDetails
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })

@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { nunjucksConfig } from '../../../../config/nunjucks/nunjucks.js'
-import { copy as addressesCopy } from './copy/copy.en.js'
+import { nunjucksConfig } from '../../../../../config/nunjucks/nunjucks.js'
+import { copy as addressesCopy } from '../copy/copy.en.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
 const pickerCopy = addressesCopy.picker
 
 const renderResults = (rows) =>
   environment.renderString(
-    `{% from "live-animals/features/addresses/_address-picker.njk" import addressPickerResults %}
+    `{% from "live-animals/features/addresses/party-picker/_address-picker.njk" import addressPickerResults %}
      {{ addressPickerResults(picker, copy) }}`,
     {
       picker: {

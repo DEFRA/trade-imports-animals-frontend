@@ -1,23 +1,23 @@
-import { hubPath, TEMPLATES } from '../../config.js'
-import * as state from '../../engine/index.js'
+import { hubPath, TEMPLATES } from '../../../config.js'
+import * as state from '../../../engine/index.js'
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
-} from '../../lib/http-status.js'
+} from '../../../lib/http-status.js'
 import {
   compose,
   dateParts,
   maxText,
   oneOf,
   validate
-} from '../../lib/validate/index.js'
-import * as kit from '../../shared/kit.js'
-import { copyFor } from '../../shared/copy.js'
-import * as ports from '../../services/ports/index.js'
-import * as transportReference from '../../services/transport-reference/index.js'
-import { portOfEntryPage as page } from './page.js'
-import { copy as en } from './copy/copy.en.js'
-import { copy as cy } from './copy/copy.cy.js'
+} from '../../../lib/validate/index.js'
+import * as kit from '../../../shared/kit.js'
+import { copyFor } from '../../../shared/copy.js'
+import * as ports from '../../../services/ports/index.js'
+import * as transportReference from '../../../services/transport-reference/index.js'
+import { portOfEntryPage as page } from '../page.js'
+import { copy as en } from '../copy/copy.en.js'
+import { copy as cy } from '../copy/copy.cy.js'
 
 export const meta = {
   ...page,
@@ -29,7 +29,7 @@ export const meta = {
     'transportDocumentReference'
   ]
 }
-const view = `${TEMPLATES}/features/transport/port-of-entry`
+const view = `${TEMPLATES}/features/transport/port-of-entry/port-of-entry`
 
 const copy = copyFor({ en, cy }).portOfEntry
 

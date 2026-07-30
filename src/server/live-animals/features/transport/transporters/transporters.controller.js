@@ -1,16 +1,16 @@
-import { hubPath, TEMPLATES } from '../../config.js'
-import * as state from '../../engine/index.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../lib/http-status.js'
-import { compose, oneOf, validate } from '../../lib/validate/index.js'
-import * as kit from '../../shared/kit.js'
-import { copyFor } from '../../shared/copy.js'
-import * as transportReference from '../../services/transport-reference/index.js'
-import { transportersPage as page } from './page.js'
-import { copy as en } from './copy/copy.en.js'
-import { copy as cy } from './copy/copy.cy.js'
+import { hubPath, TEMPLATES } from '../../../config.js'
+import * as state from '../../../engine/index.js'
+import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../lib/http-status.js'
+import { compose, oneOf, validate } from '../../../lib/validate/index.js'
+import * as kit from '../../../shared/kit.js'
+import { copyFor } from '../../../shared/copy.js'
+import * as transportReference from '../../../services/transport-reference/index.js'
+import { transportersPage as page } from '../page.js'
+import { copy as en } from '../copy/copy.en.js'
+import { copy as cy } from '../copy/copy.cy.js'
 
 export const meta = { ...page, collects: ['transporterType'] }
-const view = `${TEMPLATES}/features/transport/transporters`
+const view = `${TEMPLATES}/features/transport/transporters/transporters`
 
 const copy = copyFor({ en, cy }).transporters
 

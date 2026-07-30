@@ -1,6 +1,6 @@
 import { isBlank } from '../../../../../../lib/answered.js'
 import { copyFor } from '../../../../../../shared/copy.js'
-import { IDENTIFIER_LABELS } from '../../../../../commodities/animal-identification.controller.js'
+import { IDENTIFIER_LABELS } from '../../../../../commodities/animal-identification/animal-identification.controller.js'
 import { copy as en } from '../../../../copy/copy.en.js'
 import { copy as cy } from '../../../../copy/copy.cy.js'
 

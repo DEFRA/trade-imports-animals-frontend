@@ -11,9 +11,9 @@ import { stubH, journeyRequest, postHandlerOf } from '../engine/test-support.js'
 import { dispatchPages } from '../features/index.js'
 import { exitTarget, withChangeContext } from './kit.js'
 
-import * as commoditiesSearch from '../features/commodities/search.controller.js'
-import * as consignmentDetails from '../features/commodities/consignment-details.controller.js'
-import * as animalIdentification from '../features/commodities/animal-identification.controller.js'
+import * as commoditiesSearch from '../features/commodities/search/search.controller.js'
+import * as consignmentDetails from '../features/commodities/consignment-details/consignment-details.controller.js'
+import * as animalIdentification from '../features/commodities/animal-identification/animal-identification.controller.js'
 import * as documents from '../features/documents/controller.js'
 
 const drive = async (

@@ -1,18 +1,18 @@
-import { hubPath, pagePath, TEMPLATES } from '../../config.js'
-import * as state from '../../engine/index.js'
+import { hubPath, pagePath, TEMPLATES } from '../../../config.js'
+import * as state from '../../../engine/index.js'
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
-} from '../../lib/http-status.js'
-import * as kit from '../../shared/kit.js'
-import { copyFor } from '../../shared/copy.js'
-import * as countries from '../../services/countries/index.js'
-import { transitCountriesPage as page } from './page.js'
-import { copy as en } from './copy/copy.en.js'
-import { copy as cy } from './copy/copy.cy.js'
+} from '../../../lib/http-status.js'
+import * as kit from '../../../shared/kit.js'
+import { copyFor } from '../../../shared/copy.js'
+import * as countries from '../../../services/countries/index.js'
+import { transitCountriesPage as page } from '../page.js'
+import { copy as en } from '../copy/copy.en.js'
+import { copy as cy } from '../copy/copy.cy.js'
 
 export const meta = { ...page, collects: ['transitedCountries'] }
-const view = `${TEMPLATES}/features/transport/transit-countries`
+const view = `${TEMPLATES}/features/transport/transit-countries/transit-countries`
 
 export const MAX_TRANSITED_COUNTRIES = 12
 

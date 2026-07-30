@@ -13,7 +13,7 @@ import {
 } from '../../../services/_capture/fixtures.js'
 import { validatorDefaults } from '../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
-import { MAX_TRANSITED_COUNTRIES } from '../transit-countries.controller.js'
+import { MAX_TRANSITED_COUNTRIES } from '../transit-countries/transit-countries.controller.js'
 
 const openArrival = async (page) => {
   await startNotification(page)

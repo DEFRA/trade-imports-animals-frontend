@@ -1,5 +1,5 @@
 import { pagePath } from '../../../../config.js'
-import { CREATE_ADDRESS_SLUG } from '../../create-address.controller.js'
+import { CREATE_ADDRESS_SLUG } from '../../create-address/create-address.controller.js'
 import { addressText, detailLines } from './address-lines.js'
 import { pagination } from './pagination/index.js'
 

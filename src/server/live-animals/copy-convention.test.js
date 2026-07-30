@@ -16,7 +16,9 @@ const filesOf = (feature, ...segments) =>
   readdirSync(path.join(FEATURES_DIR, feature, ...segments))
 
 const featuresWithTemplates = featureDirs.filter((feature) =>
-  filesOf(feature).some((file) => file.endsWith('.njk'))
+  readdirSync(path.join(FEATURES_DIR, feature), { recursive: true }).some(
+    (file) => String(file).endsWith('.njk')
+  )
 )
 
 describe('copy convention — every feature owns its copy', () => {

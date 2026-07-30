@@ -8,24 +8,24 @@ import {
   vi
 } from 'vitest'
 
-import { buildDispatch } from '../../flow/dispatch.js'
-import { store } from '../../engine/store.js'
-import { configureRecords } from '../../engine/persistence/records.js'
-import { configureSession } from '../../engine/persistence/session.js'
-import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../services/persistence/session/stub.js'
+import { buildDispatch } from '../../../flow/dispatch.js'
+import { store } from '../../../engine/store.js'
+import { configureRecords } from '../../../engine/persistence/records.js'
+import { configureSession } from '../../../engine/persistence/session.js'
+import { records as recordsStub } from '../../../services/persistence/records/stub/index.js'
+import { session as sessionStub } from '../../../services/persistence/session/stub.js'
 import {
   driveHandler,
   postHandlerEndingWith
-} from '../../engine/test-support.js'
-import { dispatchPages } from '../index.js'
-import * as addressBook from '../../services/address-book/index.js'
-import * as countries from '../../services/countries/index.js'
-import { pagePath } from '../../config.js'
+} from '../../../engine/test-support.js'
+import { dispatchPages } from '../../index.js'
+import * as addressBook from '../../../services/address-book/index.js'
+import * as countries from '../../../services/countries/index.js'
+import { pagePath } from '../../../config.js'
 
 import * as createAddress from './create-address.controller.js'
-import * as partyPicker from './party-picker.controller.js'
-import { CONTACT_PARTY, PARTIES, partyOf } from './parties.js'
+import * as partyPicker from '../party-picker/party-picker.controller.js'
+import { CONTACT_PARTY, PARTIES, partyOf } from '../parties.js'
 
 const postCreate = postHandlerEndingWith(createAddress, 'addresses/create')
 const postConsignorSpoke = postHandlerEndingWith(

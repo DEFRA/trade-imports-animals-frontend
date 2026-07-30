@@ -17,7 +17,7 @@ Three live collections show the shape:
   collection also carries a per-instance conditional field and a collection
   floor.
 - The `animalIdentifiers` records inside each commodity line
-  ([`features/commodities/animal-identification.controller.js`](../features/commodities/animal-identification.controller.js))
+  ([`features/commodities/animal-identification/animal-identification.controller.js`](../features/commodities/animal-identification/animal-identification.controller.js))
   — a collection nested one level down, with a per-instance count cap.
 
 Every snippet below traces to one of them.
@@ -257,7 +257,7 @@ forms; each delegates to the `…At` form with a single-segment path
 ### The batch split (search page + consolidated details page)
 
 The commodities collection uses two pages. The SEARCH page
-([`features/commodities/search.controller.js`](../features/commodities/search.controller.js))
+([`features/commodities/search/search.controller.js`](../features/commodities/search/search.controller.js))
 declares the group in `collects` and, on save, reconciles one line per selected
 species in a single write:
 
@@ -274,7 +274,7 @@ await state.reconcileEntriesAt(
 `reconcileEntriesAt` keys existing instances by `keyOf`, keeps a still-selected
 line's data (including its nested identifier records), and drops a deselected
 line with wipe semantics. The CONSOLIDATED DETAILS page
-([`features/commodities/consignment-details.controller.js`](../features/commodities/consignment-details.controller.js))
+([`features/commodities/consignment-details/consignment-details.controller.js`](../features/commodities/consignment-details/consignment-details.controller.js))
 collects nothing (`collects: []`), renders the selected-commodities table with a
 per-commodity Remove and an Add-another link, and edits every line's quantities
 in place with `state.updateEntryAt(request, h, ['commodityLines'], index, …)`.

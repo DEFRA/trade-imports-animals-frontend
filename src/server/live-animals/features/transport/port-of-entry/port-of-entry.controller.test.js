@@ -8,15 +8,15 @@ import {
   vi
 } from 'vitest'
 
-import { buildDispatch } from '../../flow/dispatch.js'
-import { store } from '../../engine/store.js'
-import { configureRecords } from '../../engine/persistence/records.js'
-import { configureSession } from '../../engine/persistence/session.js'
-import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../services/persistence/session/stub.js'
-import { driveHandler, postHandlerOf } from '../../engine/test-support.js'
-import { dispatchPages } from '../index.js'
-import * as ports from '../../services/ports/index.js'
+import { buildDispatch } from '../../../flow/dispatch.js'
+import { store } from '../../../engine/store.js'
+import { configureRecords } from '../../../engine/persistence/records.js'
+import { configureSession } from '../../../engine/persistence/session.js'
+import { records as recordsStub } from '../../../services/persistence/records/stub/index.js'
+import { session as sessionStub } from '../../../services/persistence/session/stub.js'
+import { driveHandler, postHandlerOf } from '../../../engine/test-support.js'
+import { dispatchPages } from '../../index.js'
+import * as ports from '../../../services/ports/index.js'
 
 import * as portOfEntry from './port-of-entry.controller.js'
 

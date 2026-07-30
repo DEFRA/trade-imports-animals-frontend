@@ -1,31 +1,31 @@
-import { hubPath, TEMPLATES } from '../../config.js'
-import * as state from '../../engine/index.js'
-import * as kit from '../../shared/kit.js'
-import { copyFor } from '../../shared/copy.js'
-import { commoditiesPage as page } from './page.js'
-import { copy as en } from './copy/copy.en.js'
-import { copy as cy } from './copy/copy.cy.js'
+import { hubPath, TEMPLATES } from '../../../config.js'
+import * as state from '../../../engine/index.js'
+import * as kit from '../../../shared/kit.js'
+import { copyFor } from '../../../shared/copy.js'
+import { commoditiesPage as page } from '../page.js'
+import { copy as en } from '../copy/copy.en.js'
+import { copy as cy } from '../copy/copy.cy.js'
 import {
   isReRenderAction,
   typeFiltersFromPayload,
   withRemovalApplied
-} from './search/actions/payload.js'
+} from './actions/payload.js'
 import {
   renderSearchOrRemove,
   renderSelectionRequired
-} from './search/actions/render.js'
-import { commitSelection } from './search/actions/commit-selection.js'
+} from './actions/render.js'
+import { commitSelection } from './actions/commit-selection.js'
 import {
   selectedKeysFromPayload,
   storedKeys
-} from './search/selection/selected-keys.js'
-import { resultGroups } from './search/view-model/result-groups.js'
-import { selectedSummary } from './search/view-model/selected-summary.js'
+} from './selection/selected-keys.js'
+import { resultGroups } from './view-model/result-groups.js'
+import { selectedSummary } from './view-model/selected-summary.js'
 
-export { lineKey } from './search/selection/line-key.js'
+export { lineKey } from './selection/line-key.js'
 
 export const meta = { ...page, collects: ['commodityLines'] }
-const view = `${TEMPLATES}/features/commodities/search`
+const view = `${TEMPLATES}/features/commodities/search/search`
 
 const copy = copyFor({ en, cy }).search
 

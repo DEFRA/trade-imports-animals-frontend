@@ -15,13 +15,13 @@ A feature is a self-contained vertical slice. `features/<name>/` holds:
 
 - **controller(s)** — Hapi route handlers that own GET/POST, validation,
   copy and view-models (`controller.js`, or several like
-  `commodities/search.controller.js` +
-  `commodities/consignment-details.controller.js`)
+  `commodities/search/search.controller.js` +
+  `commodities/consignment-details/consignment-details.controller.js`)
 - **`page.js`** — the page identity leaf: `{ id, slug }`, authored once,
   imported by both the controller and `flow/flow.js`. It imports nothing
   (see [section 2](#2-why-pagejs-is-import-free))
 - **template(s)** — the feature's own Nunjucks markup (`template.njk`,
-  or one per page like `transport/port-of-entry.njk`)
+  or one per page like `transport/port-of-entry/port-of-entry.njk`)
 
 A feature owns no obligation definition. The obligation model is a single
 central manifest at `model/obligations/obligations.js`; a controller names the
@@ -147,7 +147,8 @@ not system-populated (at any depth) is collected by no page. A forgotten
 or duplicated `collects` is a startup crash, not a silent runtime break.
 
 Sub-obligations inherit ownership: a collection's items belong to the
-page that collects the collection. `features/commodities/search.controller.js`
+page that collects the collection.
+`features/commodities/search/search.controller.js`
 collects the whole `commodityLines` group with a single id, and every
 field inside a line rides with it. So a page that only edits or reads a
 collection already owned upstream declares `collects: []` — the
@@ -195,14 +196,15 @@ below is one page — its controller, what it collects and what it does.
 - **`origin`** (`features/origin/controller.js`) — collects
   `countryOfOrigin`, `regionOfOriginCodeRequirement`,
   `regionOfOriginCode` and `internalReferenceNumber`.
-- **`commodities/search`** (`features/commodities/search.controller.js`)
+- **`commodities/search`**
+  (`features/commodities/search/search.controller.js`)
   — the commodity picker. Collects `commodityLines` (the whole group).
 - **`commodities/consignment-details`**
-  (`features/commodities/consignment-details.controller.js`) — the
+  (`features/commodities/consignment-details/consignment-details.controller.js`) — the
   commodity-lines loop hub with per-species quantity blocks. Collects
   nothing new (owned by search).
 - **`commodities/animal-identification`**
-  (`features/commodities/animal-identification.controller.js`) — the
+  (`features/commodities/animal-identification/animal-identification.controller.js`) — the
   per-line identifier loop (see [section 7](#7-pages-own-presentation)).
   Collects nothing new.
 - **`import-reason`** (`features/import-reason/controller.js`) —
@@ -216,24 +218,27 @@ below is one page — its controller, what it collects and what it does.
 - **`addresses`** (`features/addresses/controller.js`) — the party
   addresses hub. Collects `consignor`, `placeOfDestination`,
   `placeOfOrigin`, `consignee` and `importer`. Its off-flow sub-pages
-  are `party-picker.controller.js` and `create-address.controller.js`.
+  are `party-picker/party-picker.controller.js` and
+  `create-address/create-address.controller.js`.
 - **`cph-number`** (`features/cph-number/controller.js`) — collects
   `countyParishHoldingCph`.
 - **`transport/port-of-entry`**
-  (`features/transport/port-of-entry.controller.js`) — collects
+  (`features/transport/port-of-entry/port-of-entry.controller.js`) — collects
   `arrivalDateAtPort`, `portOfEntry`, `meansOfTransport`,
   `transportIdentification` and `transportDocumentReference`.
 - **`transport/transit-countries`**
-  (`features/transport/transit-countries.controller.js`) — collects
+  (`features/transport/transit-countries/transit-countries.controller.js`) —
+  collects
   `transitedCountries`; in scope only for a transit reason for import.
 - **`transport/transporters`**
-  (`features/transport/transporters.controller.js`) — collects
+  (`features/transport/transporters/transporters.controller.js`) — collects
   `transporterType`.
 - **`transport/transporters-select`**
-  (`features/transport/transporters-select.controller.js`) — collects
+  (`features/transport/transporters-select/transporters-select.controller.js`) —
+  collects
   `commercialTransporter`.
 - **`transport/private-transporter-details`**
-  (`features/transport/private-transporter-details.controller.js`) —
+  (`features/transport/private-transporter-details/private-transporter-details.controller.js`) —
   collects `privateTransporter`.
 - **`contact`** (`features/contact/controller.js`) — collects
   `contactAddress`.
@@ -278,12 +283,14 @@ re-checks readiness server-side before it will finalise.
 Repeating collections get bespoke manage-lists — there is no uniform
 widget for "a list of things", so each loop hub owns its rows and copy:
 
-- `features/commodities/consignment-details.controller.js` — the
+- `features/commodities/consignment-details/consignment-details.controller.js` —
+  the
   top-level commodity lines: the selected-commodities table with per-row
   Remove, "Add another commodity" back to the search page, and the
   inline per-species quantity blocks, composed from sub-component
   partials (`_selected-commodities-table.njk`, `_species-quantities.njk`).
-- `features/commodities/animal-identification.controller.js` — the
+- `features/commodities/animal-identification/animal-identification.controller.js` —
+  the
   loop-inside-a-loop: per commodity line, a manage-list of animal
   identifier records. It writes to a depth-2 collection path
   (`['commodityLines', index, 'animalIdentifiers']`) via
@@ -307,7 +314,7 @@ those facts into its own rows, action links and empty-state copy.
 
 On an add surface, a valid POST creates and thereby **mints** the
 entries' identities (collection, index).
-`features/commodities/search.controller.js` batch-reconciles one line per
+`features/commodities/search/search.controller.js` batch-reconciles one line per
 selected species (`state.reconcileEntriesAt`) before handing to the
 consolidated details page. The reconcile is desired-state by key: a
 still-selected (commodity, species) pair keeps its existing line untouched —
