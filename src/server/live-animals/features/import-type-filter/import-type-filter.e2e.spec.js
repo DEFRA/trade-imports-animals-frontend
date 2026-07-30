@@ -18,6 +18,20 @@ const continueJourney = (page) =>
 const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
 
+const expectAxeClean = async (page, name) => {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa'])
+    .analyze()
+  const seriousOrCritical = results.violations.filter(({ impact }) =>
+    ['serious', 'critical'].includes(impact)
+  )
+
+  expect(
+    seriousOrCritical,
+    `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
+  ).toEqual([])
+}
+
 test.describe('import-type-filter feature', () => {
   test('renders every import type, feature copy and working dashboard back link', async ({
     page
@@ -72,6 +86,7 @@ test.describe('import-type-filter feature', () => {
     ).toBeVisible()
     await expect(page.getByText(copy.notAvailable.onlyCovers)).toBeVisible()
     await expect(page.getByText(copy.notAvailable.ifImporting)).toBeVisible()
+    await expectAxeClean(page, 'Import type not available')
 
     await page
       .getByRole('link', { name: copy.notAvailable.changeAnswer })
@@ -104,17 +119,6 @@ test.describe('import-type-filter feature', () => {
 
   test('has no serious or critical axe violations', async ({ page }) => {
     await startAtImportType(page)
-
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-
-    expect(
-      seriousOrCritical,
-      `Import type filter has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectAxeClean(page, 'Import type filter')
   })
 })

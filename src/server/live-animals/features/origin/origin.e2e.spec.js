@@ -37,6 +37,20 @@ const isGovukConditionalRevealFalsePositive = (violation) =>
     /govuk-(radios|checkboxes)__input/.test(node.html)
   )
 
+const expectAxeClean = async (page, name) => {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa'])
+    .analyze()
+  const seriousOrCritical = results.violations
+    .filter(({ impact }) => ['serious', 'critical'].includes(impact))
+    .filter((violation) => !isGovukConditionalRevealFalsePositive(violation))
+
+  expect(
+    seriousOrCritical,
+    `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
+  ).toEqual([])
+}
+
 test.describe('origin feature', () => {
   test('renders the captured MDM country options, feature copy and working back link', async ({
     page
@@ -83,6 +97,7 @@ test.describe('origin feature', () => {
 
     await saveAndContinue(page)
     await expect(errorLink(page, copy.errors.countryRequired)).toBeVisible()
+    await expectAxeClean(page, 'Origin validation error')
 
     await chooseCountry(page, france)
     await page.getByRole('radio', { name: copy.regionRequirement.yes }).check()
@@ -136,17 +151,6 @@ test.describe('origin feature', () => {
 
   test('has no serious or critical axe violations', async ({ page }) => {
     await startAtOrigin(page)
-
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations
-      .filter(({ impact }) => ['serious', 'critical'].includes(impact))
-      .filter((violation) => !isGovukConditionalRevealFalsePositive(violation))
-
-    expect(
-      seriousOrCritical,
-      `Origin has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectAxeClean(page, 'Origin')
   })
 })

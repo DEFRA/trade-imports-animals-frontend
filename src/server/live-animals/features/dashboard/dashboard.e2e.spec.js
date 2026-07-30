@@ -22,6 +22,19 @@ const submitNotification = async (page) => {
   await page.getByRole('button', { name: 'Continue' }).click()
 }
 
+const expectAxeClean = async (page, name) => {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa'])
+    .analyze()
+  const seriousOrCritical = results.violations.filter(({ impact }) =>
+    ['serious', 'critical'].includes(impact)
+  )
+  expect(
+    seriousOrCritical,
+    `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
+  ).toEqual([])
+}
+
 test.describe('dashboard feature', () => {
   test('renders the empty list copy, starts at the import-type filter and is axe clean', async ({
     page
@@ -39,16 +52,7 @@ test.describe('dashboard feature', () => {
       'arrivalDate,desc'
     )
 
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-    expect(
-      seriousOrCritical,
-      `Dashboard has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectAxeClean(page, 'Empty dashboard')
 
     await page.getByRole('button', { name: copy.startButton }).click()
     await expect(
@@ -120,6 +124,7 @@ test.describe('dashboard feature', () => {
     await expect(draftCard.getByRole('button', { name: /^Amend/ })).toHaveCount(
       0
     )
+    await expectAxeClean(page, 'Dashboard with notification cards')
 
     submittedCard = cardFor(page, submittedReference)
     await submittedCard

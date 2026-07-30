@@ -14,6 +14,19 @@ import { copy } from './copy/copy.en.js'
 const dashboardCard = (page, reference) =>
   page.locator('.govuk-summary-card', { hasText: reference })
 
+const expectAxeClean = async (page, name) => {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa'])
+    .analyze()
+  const seriousOrCritical = results.violations.filter(({ impact }) =>
+    ['serious', 'critical'].includes(impact)
+  )
+  expect(
+    seriousOrCritical,
+    `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
+  ).toEqual([])
+}
+
 test.describe('cancel-amend feature', () => {
   test('keeps the amendment on No and restores the submitted snapshot on confirmation', async ({
     page
@@ -58,16 +71,7 @@ test.describe('cancel-amend feature', () => {
       /\/notifications\/[^/]+\/notification-view$/
     )
 
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-    expect(
-      seriousOrCritical,
-      `Cancel amendment has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectAxeClean(page, 'Cancel amendment')
 
     await page.getByRole('button', { name: copy.noLink }).click()
     await expect(
@@ -88,5 +92,6 @@ test.describe('cancel-amend feature', () => {
     await expect(page.getByText('DiscardMe99')).toHaveCount(0)
     await expect(page.getByText(values.internalReferenceNumber)).toBeVisible()
     await expect(page.getByRole('link', { name: /^Change/ })).toHaveCount(0)
+    await expectAxeClean(page, 'Read-only submitted check answers')
   })
 })

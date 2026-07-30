@@ -1,16 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
 
 /**
- * Playwright config for the promoted live-animals journey and its accessibility
- * checks.
+ * Playwright config for the live-animals feature coverage and journey smoke.
  */
 const port = Number(process.env.PORT ?? 3000)
-
-// The axe accessibility scans are CPU-heavy; running them inside the fully-parallel
-// journey suite (which records video+trace for every test) overloads the machine.
-// They get their own lightweight project (no video/trace), run with capped workers
-// via the test:a11y script, and are excluded from the main journey run.
-const a11y = '**/a11y.spec.js'
 
 export default defineConfig({
   testDir: './e2e',
@@ -29,7 +22,7 @@ export default defineConfig({
   projects: [
     {
       name: 'journeys',
-      testIgnore: a11y,
+      testMatch: '**/journey-smoke.spec.js',
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${port}`,
@@ -44,16 +37,6 @@ export default defineConfig({
         // Retain a video for every run, not just failures.
         video: 'on',
         trace: 'on'
-      }
-    },
-    {
-      name: 'a11y',
-      testMatch: a11y,
-      use: {
-        ...devices['Desktop Chrome'],
-        baseURL: `http://localhost:${port}`,
-        video: 'off',
-        trace: 'retain-on-failure'
       }
     },
     {
