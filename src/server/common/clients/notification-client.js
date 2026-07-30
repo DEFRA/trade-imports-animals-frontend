@@ -1,5 +1,6 @@
 import { config } from '../../../config/config.js'
 import { createLogger } from '../helpers/logging/logger.js'
+import { buildActor } from '../helpers/actor-helpers.js'
 import { getSessionValue, setSessionValue } from '../helpers/session-helpers.js'
 import { sessionKeys } from '../constants/session-keys.js'
 import { requiresTransitedCountries } from '../helpers/transport-routing.js'
@@ -329,7 +330,8 @@ export const notificationClient = {
   /**
    * Submits a notification, transitioning its status from DRAFT to SUBMITTED
    */
-  async submitNotification(_request, referenceNumber, traceId) {
+  async submitNotification(request, referenceNumber, traceId) {
+    const actor = buildActor(request.auth.credentials)
     const response = await fetch(
       `${tradeImportsAnimalsBackendUrl}/notifications/${referenceNumber}/submit`,
       {
@@ -337,7 +339,8 @@ export const notificationClient = {
         headers: {
           'Content-Type': 'application/json',
           [tracingHeader]: traceId
-        }
+        },
+        body: JSON.stringify(actor)
       }
     )
 
@@ -352,7 +355,8 @@ export const notificationClient = {
     return response.json()
   },
 
-  async amend(_request, referenceNumber, traceId) {
+  async amend(request, referenceNumber, traceId) {
+    const actor = buildActor(request.auth.credentials)
     const response = await fetch(
       `${tradeImportsAnimalsBackendUrl}/notifications/${referenceNumber}/amend`,
       {
@@ -360,7 +364,8 @@ export const notificationClient = {
         headers: {
           'Content-Type': 'application/json',
           [tracingHeader]: traceId
-        }
+        },
+        body: JSON.stringify(actor)
       }
     )
 
