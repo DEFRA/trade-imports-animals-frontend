@@ -32,10 +32,11 @@ export const cancelAmend = async (journeyId) => {
   return marshal(await response.json())
 }
 
-export const softDelete = async (journeyId) => {
+export const softDelete = async (journeyId, actor) => {
   const response = await fetch(`${fulfilmentsUrl}/${journeyId}/soft-delete`, {
     method: 'POST',
-    headers: headers()
+    headers: headers(),
+    body: JSON.stringify(actor)
   })
   if (!response.ok) throw failed('soft-delete fulfilment', response)
   return marshal(await response.json())

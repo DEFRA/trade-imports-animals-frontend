@@ -219,7 +219,7 @@ describe('#currentJourney', () => {
 
     const deleted = await softDeleteJourney(request, recordingH(), journeyId)
 
-    expect(softDelete).toHaveBeenCalledWith(journeyId)
+    expect(softDelete).toHaveBeenCalledWith(journeyId, authenticatedActor)
     expect(deleted.status).toBe('deleted')
 
     expect(

@@ -351,12 +351,13 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       status: 200
     })
 
-    const deleted = await records.softDelete(journeyId)
+    const deleted = await records.softDelete(journeyId, actor)
 
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(`${fulfilmentsUrl}/${journeyId}/soft-delete`)
     expect(request.method).toBe('POST')
     expect(request.headers.has('Idempotency-Key')).toBe(false)
+    expect(await jsonOf(request)).toEqual(actor)
     expect(deleted.status).toBe(DELETED)
   })
 })

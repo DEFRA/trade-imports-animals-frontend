@@ -46,7 +46,7 @@ export const cancelAmend = async (journeyId) => {
   return structuredClone(marshal(journey))
 }
 
-export const softDelete = async (journeyId) => {
+export const softDelete = async (journeyId, _actor) => {
   const journey = journeys.get(journeyId)
   if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
   if (

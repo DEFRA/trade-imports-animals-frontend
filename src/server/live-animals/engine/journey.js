@@ -129,5 +129,6 @@ export const copyJourney = async (request, h, journeyId, idempotencyKey) => {
 
 export const softDeleteJourney = async (request, _h, journeyId) => {
   if (!(await isKnownJourney(request, journeyId))) return undefined
-  return records.softDelete(journeyId)
+  const actor = buildActor(request.auth.credentials)
+  return records.softDelete(journeyId, actor)
 }
