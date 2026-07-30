@@ -3,6 +3,7 @@ import {
   cancelAmendJourney,
   copyJourney,
   currentJourney,
+  amendJourney,
   KNOWN_JOURNEYS_COOKIE,
   softDeleteJourney,
   startJourney
@@ -16,13 +17,21 @@ import {
 import { configureReadyForCheckYourAnswers, get } from './read.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
-import { recordingH } from './test-support.js'
+import {
+  authenticatedActor,
+  authenticatedCredentials,
+  recordingH
+} from './test-support.js'
 import { countryOfOrigin } from '../model/obligations/obligations.js'
 
 const requestFor = (journeyId, knownJourneyIds) => ({
   params: journeyId ? { journeyId } : {},
   state: { [KNOWN_JOURNEYS_COOKIE]: knownJourneyIds },
   headers: {},
+  auth: {
+    isAuthenticated: true,
+    credentials: authenticatedCredentials
+  },
   app: {}
 })
 
@@ -148,6 +157,23 @@ describe('#currentJourney', () => {
     )
     expect(unknown).toBeUndefined()
     expect(cancelAmend).toHaveBeenCalledTimes(1)
+  })
+
+  it('Should amend a submitted journey with the authenticated actor', async () => {
+    const journey = await store.create()
+    await recordsStub.finalise(journey.journeyId)
+    const amend = vi.fn(recordsStub.amend)
+    configureRecords({ ...recordsStub, amend })
+    const request = requestFor(journey.journeyId, [journey.journeyId])
+
+    const editable = await amendJourney(
+      request,
+      recordingH(),
+      journey.journeyId
+    )
+
+    expect(amend).toHaveBeenCalledWith(journey.journeyId, authenticatedActor)
+    expect(editable.status).toBe('amend')
   })
 
   it('Should copy only a known source and remember the new draft', async () => {

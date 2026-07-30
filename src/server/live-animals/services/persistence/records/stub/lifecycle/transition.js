@@ -8,7 +8,7 @@ import { journeys } from '../store/state.js'
 import { loadWritable } from '../store/writable.js'
 import { marshal } from '../marshal/document.js'
 
-export const finalise = async (journeyId) => {
+export const finalise = async (journeyId, _actor) => {
   const journey = loadWritable(journeyId)
   journey.status = SUBMITTED
   journey.submittedAt = new Date().toISOString()
@@ -16,7 +16,7 @@ export const finalise = async (journeyId) => {
   return structuredClone(marshal(journey))
 }
 
-export const amend = async (journeyId) => {
+export const amend = async (journeyId, _actor) => {
   const journey = journeys.get(journeyId)
   if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
   if (journey.status !== SUBMITTED) {

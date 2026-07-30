@@ -31,6 +31,14 @@ const notificationsUrl = `${backendBaseUrl}/notifications`
 const proposedNotificationsUrl = `${backendBaseUrl}/proposed-notifications`
 const journeyId = 'GBN-AG-26-ABC123'
 const createdAt = '2026-07-23T09:00:00'
+const actor = {
+  id: '2100010101',
+  source: 'dynamics-contact',
+  userType: 'B2C',
+  displayName: 'Andrew Farmer',
+  organisationId: '5900001',
+  onBehalfOfOrganisationId: '5900002'
+}
 
 const canonical = ({
   id = journeyId,
@@ -289,8 +297,8 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       ]
     )
 
-    const submitted = await records.finalise(journeyId)
-    const amended = await records.amend(journeyId)
+    const submitted = await records.finalise(journeyId, actor)
+    const amended = await records.amend(journeyId, actor)
     const restored = await records.cancelAmend(journeyId)
 
     const requests = fetchMocker.requests()
@@ -308,6 +316,9 @@ describe('real records adapter — canonical fulfilment boundary', () => {
         url: `${fulfilmentsUrl}/${journeyId}/cancel-amend`
       }
     ])
+    expect(await jsonOf(requests[0])).toEqual(actor)
+    expect(await jsonOf(requests[1])).toEqual(actor)
+    expect(await requests[2].clone().text()).toBe('')
     expect(submitted.status).toBe(SUBMITTED)
     expect(submitted.submittedAt).toBe('2026-07-23T10:00:00')
     expect(amended.status).toBe(AMEND)

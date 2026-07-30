@@ -19,6 +19,7 @@ import { createPath, hubPath, pagePath } from '../../config.js'
 import { CYA_SLUG } from '../../shared/kit.js'
 
 import { routes } from './controller.js'
+import { authenticatedCredentials } from '../../engine/test-support.js'
 
 const handlerOf = (method, pathSuffix) =>
   routes.find(
@@ -41,6 +42,10 @@ const buildRequest = ({
   query,
   state: { [KNOWN_JOURNEYS_COOKIE]: knownJourneyIds },
   headers: {},
+  auth: {
+    isAuthenticated: true,
+    credentials: authenticatedCredentials
+  },
   app: {}
 })
 

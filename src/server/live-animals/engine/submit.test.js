@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { commit, submitJourney } from './index.js'
 import {
   records,
@@ -10,7 +10,7 @@ import { configureSession } from './persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
-import { stubH, journeyRequest } from './test-support.js'
+import { authenticatedActor, stubH, journeyRequest } from './test-support.js'
 
 // submitJourney reads its scope through `makeScope` and gates on that scope's
 // `readyForCheckYourAnswers`. `records.finalise` is the persistence layer.
@@ -29,11 +29,14 @@ describe('submitJourney — gates on scope readiness, finalises via records', ()
   })
 
   it('Should finalise the CYA-ready journey by its journeyId', async () => {
+    const finalise = vi.fn(recordsStub.finalise)
+    configureRecords({ ...recordsStub, finalise })
     configureReadyForCheckYourAnswers(() => true)
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
 
     const result = await submitJourney(buildRequest(), stubH())
 
+    expect(finalise).toHaveBeenCalledWith(journeyId, authenticatedActor)
     expect(result.ok).toBe(true)
     expect(result.journey.journeyId).toBe(journeyId)
     expect(result.journey.status).toBe(SUBMITTED)

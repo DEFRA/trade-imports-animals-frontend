@@ -3,19 +3,21 @@ import { failed } from '../http/failed.js'
 import { headers } from '../http/headers.js'
 import { marshal } from '../marshal/document.js'
 
-export const finalise = async (journeyId) => {
+export const finalise = async (journeyId, actor) => {
   const response = await fetch(`${fulfilmentsUrl}/${journeyId}/submit`, {
     method: 'POST',
-    headers: headers()
+    headers: headers(),
+    body: JSON.stringify(actor)
   })
   if (!response.ok) throw failed('submit fulfilment', response)
   return marshal(await response.json())
 }
 
-export const amend = async (journeyId) => {
+export const amend = async (journeyId, actor) => {
   const response = await fetch(`${fulfilmentsUrl}/${journeyId}/amend`, {
     method: 'POST',
-    headers: headers()
+    headers: headers(),
+    body: JSON.stringify(actor)
   })
   if (!response.ok) throw failed('amend fulfilment', response)
   return marshal(await response.json())

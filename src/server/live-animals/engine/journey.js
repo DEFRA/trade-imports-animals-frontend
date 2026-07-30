@@ -7,6 +7,7 @@ import {
   FLOW_ONLY_ANSWERS_COOKIE
 } from './persistence/session.js'
 import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
+import { buildActor } from '../../common/helpers/actor-helpers.js'
 
 export { KNOWN_JOURNEYS_COOKIE } from './persistence/session.js'
 
@@ -94,8 +95,8 @@ export const listKnownJourneys = async (request, { page, sort } = {}) => {
 export const isKnownJourney = async (request, journeyId) =>
   (await session.knownJourneyIds(request)).includes(journeyId)
 
-const editableFromStatus = (journey, journeyId) => {
-  if (journey.status === SUBMITTED) return records.amend(journeyId)
+const editableFromStatus = (journey, journeyId, actor) => {
+  if (journey.status === SUBMITTED) return records.amend(journeyId, actor)
   if (journey.status === DRAFT || journey.status === AMEND) return journey
   return undefined
 }
@@ -104,7 +105,8 @@ export const amendJourney = async (request, h, journeyId) => {
   if (!(await isKnownJourney(request, journeyId))) return undefined
   const journey = await records.load({ journeyId })
   if (!journey) return undefined
-  const editable = await editableFromStatus(journey, journeyId)
+  const actor = buildActor(request.auth.credentials)
+  const editable = await editableFromStatus(journey, journeyId, actor)
   if (!editable) return undefined
   memoWrite(request, editable)
   return editable

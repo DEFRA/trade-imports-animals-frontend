@@ -1,6 +1,20 @@
 import { store } from './store.js'
 import { KNOWN_JOURNEYS_COOKIE } from './journey.js'
 
+export const authenticatedCredentials = Object.freeze({
+  contactId: 2100010101,
+  name: 'Andrew Farmer',
+  currentRelationshipId: '5900001'
+})
+
+export const authenticatedActor = Object.freeze({
+  id: '2100010101',
+  source: 'dynamics-contact',
+  userType: 'B2C',
+  displayName: 'Andrew Farmer',
+  organisationId: '5900001'
+})
+
 const stubResponse = (payload) => ({
   payload,
   code: (statusCode) => ({ payload, statusCode })
@@ -35,6 +49,10 @@ export const journeyRequest = (journeyId, overrides = {}) => ({
   payload: {},
   query: {},
   headers: {},
+  auth: {
+    isAuthenticated: true,
+    credentials: authenticatedCredentials
+  },
   ...overrides,
   params: { journeyId, ...overrides.params },
   state: {
