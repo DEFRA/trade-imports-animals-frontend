@@ -4,8 +4,8 @@ import {
   consignmentDetailsPage
 } from '../../../../../commodities/page.js'
 import { copyFor } from '../../../../../../shared/copy.js'
-import { copy as en } from '../../../../copy.en.js'
-import { copy as cy } from '../../../../copy.cy.js'
+import { copy as en } from '../../../../copy/copy.en.js'
+import { copy as cy } from '../../../../copy/copy.cy.js'
 import { withChange } from '../../../rows/change-link.js'
 
 const copy = copyFor({ en, cy })

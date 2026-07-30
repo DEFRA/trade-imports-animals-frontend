@@ -1,8 +1,8 @@
 import * as importReasonPurpose from '../../../../../services/import-reason-purpose/index.js'
 import * as certification from '../../../../../services/certification-purposes/index.js'
 import { copyFor } from '../../../../../shared/copy.js'
-import { copy as en } from '../../../copy.en.js'
-import { copy as cy } from '../../../copy.cy.js'
+import { copy as en } from '../../../copy/copy.en.js'
+import { copy as cy } from '../../../copy/copy.cy.js'
 import { purposeApplies, unweanedApplies } from '../../applicability.js'
 import { row } from '../../rows/summary-row.js'
 

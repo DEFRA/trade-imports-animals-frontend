@@ -1,9 +1,9 @@
 import { copyFor } from '../../shared/copy.js'
 import { consignmentContactSelectPage } from '../contact/page.js'
-import { copy as contactEn } from '../contact/copy.en.js'
-import { copy as contactCy } from '../contact/copy.cy.js'
-import { copy as en } from './copy.en.js'
-import { copy as cy } from './copy.cy.js'
+import { copy as contactEn } from '../contact/copy/copy.en.js'
+import { copy as contactCy } from '../contact/copy/copy.cy.js'
+import { copy as en } from './copy/copy.en.js'
+import { copy as cy } from './copy/copy.cy.js'
 
 const partyCopy = copyFor({ en, cy }).parties
 const contactCopy = copyFor({ en: contactEn, cy: contactCy })

@@ -15,8 +15,8 @@ import {
 import { routeOptions } from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import { importTypeFilterPage } from '../import-type-filter/page.js'
-import { copy as en } from './copy.en.js'
-import { copy as cy } from './copy.cy.js'
+import { copy as en } from './copy/copy.en.js'
+import { copy as cy } from './copy/copy.cy.js'
 import { copy as sharedEn } from '../../shared/copy.en.js'
 import { copy as sharedCy } from '../../shared/copy.cy.js'
 import {

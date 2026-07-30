@@ -9,8 +9,8 @@ import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import * as importReasonPurpose from '../../services/import-reason-purpose/index.js'
 import { importPurposePage as page } from './page.js'
-import { copy as en } from './copy.en.js'
-import { copy as cy } from './copy.cy.js'
+import { copy as en } from './copy/copy.en.js'
+import { copy as cy } from './copy/copy.cy.js'
 
 export const meta = { ...page, collects: ['purposeInInternalMarket'] }
 const view = `${TEMPLATES}/features/import-purpose/template`

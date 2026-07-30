@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { nunjucksConfig } from '../../../../config/nunjucks/nunjucks.js'
-import { copy as addressesCopy } from './copy.en.js'
+import { copy as addressesCopy } from './copy/copy.en.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
 const pickerCopy = addressesCopy.picker

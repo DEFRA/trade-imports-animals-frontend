@@ -11,8 +11,8 @@ import * as addressBook from '../../services/address-book/index.js'
 import { CREATE_ADDRESS_SLUG } from '../addresses/create-address.controller.js'
 import { CONTACT_PARTY } from '../addresses/parties.js'
 import { consignmentContactSelectPage as page } from './page.js'
-import { copy as en } from './copy.en.js'
-import { copy as cy } from './copy.cy.js'
+import { copy as en } from './copy/copy.en.js'
+import { copy as cy } from './copy/copy.cy.js'
 
 export const meta = { ...page, collects: ['contactAddress'] }
 const view = `${TEMPLATES}/features/contact/template`

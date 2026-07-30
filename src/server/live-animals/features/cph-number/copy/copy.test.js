@@ -1,15 +1,15 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../flow/dispatch.js'
-import { store } from '../../engine/store.js'
-import { configureRecords } from '../../engine/persistence/records.js'
-import { configureSession } from '../../engine/persistence/session.js'
-import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../services/persistence/session/stub.js'
-import { driveHandler } from '../../engine/test-support.js'
-import { dispatchPages } from '../index.js'
+import { buildDispatch } from '../../../flow/dispatch.js'
+import { store } from '../../../engine/store.js'
+import { configureRecords } from '../../../engine/persistence/records.js'
+import { configureSession } from '../../../engine/persistence/session.js'
+import { records as recordsStub } from '../../../services/persistence/records/stub/index.js'
+import { session as sessionStub } from '../../../services/persistence/session/stub.js'
+import { driveHandler } from '../../../engine/test-support.js'
+import { dispatchPages } from '../../index.js'
 
-import * as declaration from './controller.js'
+import * as cphNumber from '../controller.js'
 import { copy } from './copy.en.js'
 
 const leaves = (node, path = []) =>
@@ -19,7 +19,7 @@ const leaves = (node, path = []) =>
       )
     : [{ path: path.join('.'), value: node }]
 
-describe('declaration copy module', () => {
+describe('cph-number copy module', () => {
   it('Should have a non-empty string at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
       expect(typeof value, `${path} must be a string`).toBe('string')
@@ -30,7 +30,7 @@ describe('declaration copy module', () => {
   })
 })
 
-describe('GET /declaration', () => {
+describe('GET cph-number — copy reaches the view', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -39,14 +39,12 @@ describe('GET /declaration', () => {
   beforeEach(() => store.clear())
 
   it('Should supply the feature copy module and the shared chrome copy', async () => {
-    const get = declaration.routes.find(
-      (route) => route.method === 'GET'
-    ).handler
+    const get = cphNumber.routes.find((route) => route.method === 'GET').handler
     const result = await driveHandler(get)
     expect(result.view.context.copy).toBe(copy)
     expect(result.view.context.pageTitle).toBe(copy.title)
-    expect(result.view.context.sharedCopy.errorSummary.title).toBe(
-      'There is a problem'
+    expect(result.view.context.sharedCopy.saveActions.saveAndContinue).toBe(
+      'Save and continue'
     )
   })
 })

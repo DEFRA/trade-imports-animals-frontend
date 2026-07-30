@@ -1,15 +1,15 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../flow/dispatch.js'
-import { store } from '../../engine/store.js'
-import { configureRecords } from '../../engine/persistence/records.js'
-import { configureSession } from '../../engine/persistence/session.js'
-import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../services/persistence/session/stub.js'
-import { driveHandler } from '../../engine/test-support.js'
-import { dispatchPages } from '../index.js'
+import { buildDispatch } from '../../../flow/dispatch.js'
+import { store } from '../../../engine/store.js'
+import { configureRecords } from '../../../engine/persistence/records.js'
+import { configureSession } from '../../../engine/persistence/session.js'
+import { records as recordsStub } from '../../../services/persistence/records/stub/index.js'
+import { session as sessionStub } from '../../../services/persistence/session/stub.js'
+import { driveHandler } from '../../../engine/test-support.js'
+import { dispatchPages } from '../../index.js'
 
-import * as portOfExit from './controller.js'
+import * as exitDate from '../controller.js'
 import { copy } from './copy.en.js'
 
 const leaves = (node, path = []) =>
@@ -30,7 +30,7 @@ describe('#copy', () => {
   })
 })
 
-describe('GET /port-of-exit', () => {
+describe('GET /exit-date', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -39,15 +39,15 @@ describe('GET /port-of-exit', () => {
   beforeEach(() => store.clear())
 
   it('Should supply the feature copy module and the shared chrome copy', async () => {
-    const get = portOfExit.routes.find(
-      (route) => route.method === 'GET'
-    ).handler
+    const get = exitDate.routes.find((route) => route.method === 'GET').handler
     const result = await driveHandler(get)
     expect(result.view.context.copy).toBe(copy)
     expect(result.view.context.pageTitle).toBe(copy.title)
     expect(result.view.context.sharedCopy.saveActions.saveAndContinue).toBe(
       'Save and continue'
     )
-    expect(result.view.context.portItems[0].text).toBe(copy.port.placeholder)
+    expect(result.view.context.exitDate.fieldset.legend.text).toBe(
+      copy.date.label
+    )
   })
 })

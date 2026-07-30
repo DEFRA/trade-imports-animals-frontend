@@ -12,7 +12,8 @@ const featureDirs = readdirSync(FEATURES_DIR, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)
 
-const filesOf = (feature) => readdirSync(path.join(FEATURES_DIR, feature))
+const filesOf = (feature, ...segments) =>
+  readdirSync(path.join(FEATURES_DIR, feature, ...segments))
 
 const featuresWithTemplates = featureDirs.filter((feature) =>
   filesOf(feature).some((file) => file.endsWith('.njk'))
@@ -24,9 +25,9 @@ describe('copy convention — every feature owns its copy', () => {
   })
 
   it.each(featuresWithTemplates)(
-    'Should give %s a copy.en.js, a copy.cy.js and a copy.test.js',
+    'Should give %s a copy/ folder with copy.en.js, copy.cy.js and copy.test.js',
     (feature) => {
-      const files = filesOf(feature)
+      const files = filesOf(feature, 'copy')
       expect(files, `${feature} must own its copy`).toContain('copy.en.js')
       expect(files, `${feature} must carry its Welsh copy`).toContain(
         'copy.cy.js'
@@ -35,10 +36,22 @@ describe('copy convention — every feature owns its copy', () => {
     }
   )
 
+  it.each(featureDirs)(
+    'Should keep %s free of copy files at the feature root',
+    (feature) => {
+      expect(
+        filesOf(feature).filter((file) =>
+          /^copy\.(en|cy|test)\.js$/.test(file)
+        ),
+        `${feature} must keep its copy files in copy/`
+      ).toEqual([])
+    }
+  )
+
   it.each(featuresWithTemplates)(
     'Should keep every %s copy leaf a non-empty string or copy function',
     async (feature) => {
-      const { copy } = await import(`./features/${feature}/copy.en.js`)
+      const { copy } = await import(`./features/${feature}/copy/copy.en.js`)
       for (const { path: leafPath, value } of leaves(copy)) {
         expect(isCopyLeaf(value), `${feature}: ${leafPath} must be copy`).toBe(
           true

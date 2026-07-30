@@ -1,8 +1,8 @@
 import { compose, dateParts, maxText } from '../../../lib/validate/index.js'
 import * as kit from '../../../shared/kit.js'
 import { copyFor } from '../../../shared/copy.js'
-import { copy as en } from '../copy.en.js'
-import { copy as cy } from '../copy.cy.js'
+import { copy as en } from '../copy/copy.en.js'
+import { copy as cy } from '../copy/copy.cy.js'
 import { UPLOAD_ID_PATTERN } from '../contracts/upload-id.js'
 import { attachmentTypeFor } from '../upload-config.js'
 

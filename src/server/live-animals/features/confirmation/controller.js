@@ -8,8 +8,8 @@ import * as state from '../../engine/index.js'
 import { base, routeOptions } from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import { confirmationPage as page } from './page.js'
-import { copy as en } from './copy.en.js'
-import { copy as cy } from './copy.cy.js'
+import { copy as en } from './copy/copy.en.js'
+import { copy as cy } from './copy/copy.cy.js'
 
 const view = `${TEMPLATES}/features/confirmation/template`
 

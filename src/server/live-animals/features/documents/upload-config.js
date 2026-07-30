@@ -1,4 +1,4 @@
-import { copy as en } from './copy.en.js'
+import { copy as en } from './copy/copy.en.js'
 
 export const ALLOWED_TYPES = [
   { ext: 'pdf', mime: 'application/pdf' },

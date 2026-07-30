@@ -9,8 +9,8 @@ import { cancelAmendJourney } from '../../engine/journey.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../lib/http-status.js'
 import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
-import { copy as en } from './copy.en.js'
-import { copy as cy } from './copy.cy.js'
+import { copy as en } from './copy/copy.en.js'
+import { copy as cy } from './copy/copy.cy.js'
 
 const view = `${TEMPLATES}/features/cancel-amend/template`
 const copy = copyFor({ en, cy })

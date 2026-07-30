@@ -1,6 +1,6 @@
 import { copyFor } from '../../../../../shared/copy.js'
-import { copy as en } from '../../../copy.en.js'
-import { copy as cy } from '../../../copy.cy.js'
+import { copy as en } from '../../../copy/copy.en.js'
+import { copy as cy } from '../../../copy/copy.cy.js'
 import { partyRow } from '../../rows/party-row.js'
 
 const copy = copyFor({ en, cy })

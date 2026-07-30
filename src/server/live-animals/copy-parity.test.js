@@ -13,8 +13,8 @@ import {
   copy as sharedCy,
   validatorDefaults as validatorDefaultsCy
 } from './shared/copy.cy.js'
-import { copy as dashboardEn } from './features/dashboard/copy.en.js'
-import { copy as dashboardCy } from './features/dashboard/copy.cy.js'
+import { copy as dashboardEn } from './features/dashboard/copy/copy.en.js'
+import { copy as dashboardCy } from './features/dashboard/copy/copy.cy.js'
 
 const FEATURES_DIR = fileURLToPath(new URL('./features', import.meta.url))
 
@@ -22,7 +22,10 @@ const featuresWithCopy = readdirSync(FEATURES_DIR, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)
   .filter((feature) =>
-    readdirSync(path.join(FEATURES_DIR, feature)).includes('copy.en.js')
+    readdirSync(path.join(FEATURES_DIR, feature)).includes('copy')
+  )
+  .filter((feature) =>
+    readdirSync(path.join(FEATURES_DIR, feature, 'copy')).includes('copy.en.js')
   )
 
 // String leaves that may legitimately be byte-identical across en and cy
@@ -41,8 +44,8 @@ const kindOf = (value) => (typeof value === 'function' ? 'function' : 'string')
 const modulePairs = async () => {
   const pairs = await Promise.all(
     featuresWithCopy.map(async (feature) => {
-      const { copy: en } = await import(`./features/${feature}/copy.en.js`)
-      const { copy: cy } = await import(`./features/${feature}/copy.cy.js`)
+      const { copy: en } = await import(`./features/${feature}/copy/copy.en.js`)
+      const { copy: cy } = await import(`./features/${feature}/copy/copy.cy.js`)
       return { name: feature, en, cy }
     })
   )

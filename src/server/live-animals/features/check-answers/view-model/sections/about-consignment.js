@@ -1,6 +1,6 @@
 import { copyFor } from '../../../../shared/copy.js'
-import { copy as en } from '../../copy.en.js'
-import { copy as cy } from '../../copy.cy.js'
+import { copy as en } from '../../copy/copy.en.js'
+import { copy as cy } from '../../copy/copy.cy.js'
 import { additionalAnimalDetailsCard } from '../cards/consignment/additional-animal-details.js'
 import { importDetailsCard } from '../cards/consignment/import-details.js'
 import { speciesCards } from '../cards/consignment/species/species-cards.js'

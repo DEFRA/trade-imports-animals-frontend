@@ -5,8 +5,8 @@ import { copyFor } from '../../shared/copy.js'
 import { isCphApplicable } from '../cph-number/controller.js'
 import { addressesPage as page } from './page.js'
 import { PARTIES } from './parties.js'
-import { copy as en } from './copy.en.js'
-import { copy as cy } from './copy.cy.js'
+import { copy as en } from './copy/copy.en.js'
+import { copy as cy } from './copy/copy.cy.js'
 
 export const meta = {
   ...page,

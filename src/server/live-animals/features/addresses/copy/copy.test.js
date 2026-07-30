@@ -1,16 +1,16 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../../flow/dispatch.js'
-import { store } from '../../engine/store.js'
-import { configureRecords } from '../../engine/persistence/records.js'
-import { configureSession } from '../../engine/persistence/session.js'
-import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../services/persistence/session/stub.js'
-import { driveHandler } from '../../engine/test-support.js'
-import { dispatchPages } from '../index.js'
+import { buildDispatch } from '../../../flow/dispatch.js'
+import { store } from '../../../engine/store.js'
+import { configureRecords } from '../../../engine/persistence/records.js'
+import { configureSession } from '../../../engine/persistence/session.js'
+import { records as recordsStub } from '../../../services/persistence/records/stub/index.js'
+import { session as sessionStub } from '../../../services/persistence/session/stub.js'
+import { driveHandler } from '../../../engine/test-support.js'
+import { dispatchPages } from '../../index.js'
 
-import * as addresses from './controller.js'
-import { PARTIES } from './parties.js'
+import * as addresses from '../controller.js'
+import { PARTIES } from '../parties.js'
 import { copy } from './copy.en.js'
 
 const leaves = (node, path = []) =>

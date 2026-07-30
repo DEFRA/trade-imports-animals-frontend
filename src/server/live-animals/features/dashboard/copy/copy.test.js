@@ -1,14 +1,17 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { configureRecords, records } from '../../engine/persistence/records.js'
+import {
+  configureRecords,
+  records
+} from '../../../engine/persistence/records.js'
 import {
   configureSession,
   KNOWN_JOURNEYS_COOKIE
-} from '../../engine/persistence/session.js'
-import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../../services/persistence/session/stub.js'
+} from '../../../engine/persistence/session.js'
+import { records as recordsStub } from '../../../services/persistence/records/stub/index.js'
+import { session as sessionStub } from '../../../services/persistence/session/stub.js'
 
-import { routes } from './controller.js'
+import { routes } from '../controller.js'
 import { copy } from './copy.en.js'
 
 const leaves = (node, path = []) =>

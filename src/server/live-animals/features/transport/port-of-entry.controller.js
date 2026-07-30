@@ -16,8 +16,8 @@ import { copyFor } from '../../shared/copy.js'
 import * as ports from '../../services/ports/index.js'
 import * as transportReference from '../../services/transport-reference/index.js'
 import { portOfEntryPage as page } from './page.js'
-import { copy as en } from './copy.en.js'
-import { copy as cy } from './copy.cy.js'
+import { copy as en } from './copy/copy.en.js'
+import { copy as cy } from './copy/copy.cy.js'
 
 export const meta = {
   ...page,

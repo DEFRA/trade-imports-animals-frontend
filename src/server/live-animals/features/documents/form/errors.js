@@ -1,8 +1,8 @@
 import { isBlank } from '../../../lib/answered.js'
 import { validate } from '../../../lib/validate/index.js'
 import { copyFor } from '../../../shared/copy.js'
-import { copy as en } from '../copy.en.js'
-import { copy as cy } from '../copy.cy.js'
+import { copy as en } from '../copy/copy.en.js'
+import { copy as cy } from '../copy/copy.cy.js'
 import { DOCUMENTS_ADDED_ANCHOR } from '../contracts/documents-added-anchor.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
 import {

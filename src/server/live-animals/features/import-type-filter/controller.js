@@ -13,8 +13,8 @@ import { beginOpeningRun, inOpeningRun } from '../../flow/run-state.js'
 import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import { importTypeFilterPage as page } from './page.js'
-import { copy as en } from './copy.en.js'
-import { copy as cy } from './copy.cy.js'
+import { copy as en } from './copy/copy.en.js'
+import { copy as cy } from './copy/copy.cy.js'
 
 export const meta = { ...page, collects: ['importType'] }
 const view = `${TEMPLATES}/features/import-type-filter/template`

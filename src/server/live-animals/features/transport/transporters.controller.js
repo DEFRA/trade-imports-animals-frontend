@@ -6,8 +6,8 @@ import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import * as transportReference from '../../services/transport-reference/index.js'
 import { transportersPage as page } from './page.js'
-import { copy as en } from './copy.en.js'
-import { copy as cy } from './copy.cy.js'
+import { copy as en } from './copy/copy.en.js'
+import { copy as cy } from './copy/copy.cy.js'
 
 export const meta = { ...page, collects: ['transporterType'] }
 const view = `${TEMPLATES}/features/transport/transporters`
