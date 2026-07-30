@@ -163,6 +163,27 @@ describe('records durable port', () => {
     })
   })
 
+  it('Should list only an exact requested reference', async () => {
+    const first = await records.create()
+    const second = await records.create()
+
+    const matched = await records.list({
+      journeyIds: [first.journeyId, second.journeyId],
+      referenceNumber: second.journeyId
+    })
+    const missing = await records.list({
+      journeyIds: [first.journeyId, second.journeyId],
+      referenceNumber: 'GBN-AG-26-ZZZZZZ'
+    })
+
+    expect(matched.rows.map((journey) => journey.journeyId)).toEqual([
+      second.journeyId
+    ])
+    expect(matched.totalElements).toBe(1)
+    expect(missing.rows).toEqual([])
+    expect(missing.totalElements).toBe(0)
+  })
+
   it('Should list nothing for an empty id set', async () => {
     await records.create()
     expect(await records.list({ journeyIds: [] })).toEqual({

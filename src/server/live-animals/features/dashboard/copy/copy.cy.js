@@ -7,6 +7,12 @@ export const copy = {
     'fer o gwestiynau am y llwyth, yna’n cyflwyno eich hysbysiad.',
   startButton: 'Dechrau hysbysiad newydd',
   notificationsHeading: 'Eich hysbysiadau',
+  search: {
+    heading: 'Hidlo hysbysiadau',
+    label: 'Allweddair neu gyfeirnod',
+    button: 'Chwilio',
+    noResults: 'Ni chanfuwyd unrhyw hysbysiadau'
+  },
   table: {
     reference: 'Cyfeirnod',
     status: 'Statws',

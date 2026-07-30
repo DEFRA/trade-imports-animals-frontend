@@ -6,6 +6,12 @@ export const copy = {
     'about the consignment, then submit your notification.',
   startButton: 'Start a new notification',
   notificationsHeading: 'Your notifications',
+  search: {
+    heading: 'Filter notifications',
+    label: 'Keyword or reference',
+    button: 'Search',
+    noResults: 'No notifications found'
+  },
   table: {
     reference: 'Reference',
     status: 'Status',

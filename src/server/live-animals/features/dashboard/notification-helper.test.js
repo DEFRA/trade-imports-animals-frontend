@@ -22,12 +22,19 @@ describe('promoted dashboard notification helpers', () => {
     expect(normalizePageNumber(1, 0)).toBe(1)
   })
 
-  it('Should build compact page and sort query strings', () => {
+  it('Should build compact page, sort and reference query strings', () => {
     expect(buildHomeListQueryString()).toBe('')
     expect(buildHomeListQueryString({ page: 2 })).toBe('?page=2')
     expect(buildHomeListQueryString({ page: 2, sort: 'createdAt,asc' })).toBe(
       '?page=2&sort=createdAt%2Casc'
     )
+    expect(
+      buildHomeListQueryString({
+        page: 2,
+        sort: 'createdAt,asc',
+        referenceNumber: 'GBN-AG-26-ABC123'
+      })
+    ).toBe('?page=2&sort=createdAt%2Casc&referenceNumber=GBN-AG-26-ABC123')
   })
 
   it('Should format dashboard dates and commodity objects', () => {
@@ -64,5 +71,9 @@ describe('promoted dashboard notification helpers', () => {
         text: undefined
       }
     })
+    expect(
+      buildPaginationLinks(page, '/', 'createdAt,desc', {}, 'GBN-AG-26-ABC123')
+        .next.href
+    ).toBe('/?page=3&sort=createdAt%2Cdesc&referenceNumber=GBN-AG-26-ABC123')
   })
 })

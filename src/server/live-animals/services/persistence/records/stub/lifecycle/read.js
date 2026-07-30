@@ -13,12 +13,14 @@ export const load = async ({ journeyId } = {}) => {
 export const list = async ({
   journeyIds = [],
   page = 1,
-  sort = 'arrivalDate,desc'
+  sort = 'arrivalDate,desc',
+  referenceNumber
 } = {}) => {
   const resolvedPage = validPage(page)
   const rows = journeyIds
     .map((journeyId) => journeys.get(journeyId))
     .filter((journey) => journey && journey.status !== DELETED)
+    .filter((journey) => !referenceNumber || journey.id === referenceNumber)
     .map(marshalListItem)
     .sort(sortByCreatedAt(sort))
   const totalElements = rows.length

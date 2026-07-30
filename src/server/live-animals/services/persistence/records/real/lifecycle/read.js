@@ -13,11 +13,21 @@ export const load = async ({ journeyId } = {}) => {
   return undefined
 }
 
-export const list = async ({ page = 1, sort = 'arrivalDate,desc' } = {}) => {
-  const response = await fetch(`${fulfilmentsUrl}?page=${page}&sort=${sort}`, {
-    method: 'GET',
-    headers: headers()
-  })
+export const list = async ({
+  page = 1,
+  sort = 'arrivalDate,desc',
+  referenceNumber
+} = {}) => {
+  const referenceQuery = referenceNumber
+    ? `&referenceNumber=${encodeURIComponent(referenceNumber)}`
+    : ''
+  const response = await fetch(
+    `${fulfilmentsUrl}?page=${page}&sort=${sort}${referenceQuery}`,
+    {
+      method: 'GET',
+      headers: headers()
+    }
+  )
   if (!response.ok) throw failed('list fulfilments', response)
   const result = await response.json()
   return {

@@ -151,6 +151,48 @@ test.describe('dashboard feature', () => {
     ).toBeVisible()
   })
 
+  test('searches by exact notification reference, preserves sort and clears back to the full list', async ({
+    page
+  }) => {
+    await startNotification(page)
+    const firstReference = journeyIdFromPage(page)
+    await startNotification(page)
+    const secondReference = journeyIdFromPage(page)
+    await page.goto('/')
+
+    await expect(
+      page.getByRole('heading', { name: copy.search.heading })
+    ).toBeVisible()
+    const search = page.getByLabel(copy.search.label)
+    await expect(search).toBeVisible()
+
+    await page.getByLabel(copy.sort.label).selectOption('createdAt,asc')
+    await page.getByRole('button', { name: copy.sort.update }).click()
+    await search.fill(firstReference)
+    await page.getByRole('button', { name: copy.search.button }).click()
+
+    await expect(page.getByLabel(copy.sort.label)).toHaveValue('createdAt,asc')
+    await expect(page).toHaveURL(
+      `/?sort=createdAt%2Casc&referenceNumber=${firstReference}`
+    )
+    await expect(page.locator('.govuk-summary-card')).toHaveCount(1)
+    await expect(cardFor(page, firstReference)).toBeVisible()
+    await expect(cardFor(page, secondReference)).toHaveCount(0)
+
+    await search.fill('GBN-AG-26-ZZZZZZ')
+    await page.getByRole('button', { name: copy.search.button }).click()
+    await expect(page.getByText(copy.search.noResults)).toBeVisible()
+    await expect(page.locator('.govuk-summary-card')).toHaveCount(0)
+
+    await search.clear()
+    await page.getByRole('button', { name: copy.search.button }).click()
+    await expect(page).toHaveURL('/?sort=createdAt%2Casc&referenceNumber=')
+    await expect(page.getByLabel(copy.sort.label)).toHaveValue('createdAt,asc')
+    await expect(page.locator('.govuk-summary-card')).toHaveCount(2)
+    await expect(cardFor(page, firstReference)).toBeVisible()
+    await expect(cardFor(page, secondReference)).toBeVisible()
+  })
+
   test('paginates at the 20-row boundary and preserves the selected sort', async ({
     page
   }) => {

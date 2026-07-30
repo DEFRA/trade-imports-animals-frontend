@@ -33,6 +33,15 @@ describe('#copy', () => {
   it('Should interpolate the hidden action label', () => {
     expect(copy.actionHidden('GBN-1')).toBe('notification GBN-1')
   })
+
+  it('Should use the delivered dashboard search copy', () => {
+    expect(copy.search).toEqual({
+      heading: 'Filter notifications',
+      label: 'Keyword or reference',
+      button: 'Search',
+      noResults: 'No notifications found'
+    })
+  })
 })
 
 describe('GET /', () => {

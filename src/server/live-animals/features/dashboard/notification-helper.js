@@ -54,12 +54,14 @@ export const parseNotificationSort = (sortQuery) =>
 
 export const buildHomeListQueryString = ({
   page = 1,
-  sort = DEFAULT_NOTIFICATION_SORT
+  sort = DEFAULT_NOTIFICATION_SORT,
+  referenceNumber
 } = {}) => {
   const params = new URLSearchParams()
 
   if (page > 1) params.set('page', String(page))
   if (sort && sort !== DEFAULT_NOTIFICATION_SORT) params.set('sort', sort)
+  if (referenceNumber) params.set('referenceNumber', referenceNumber)
 
   const query = params.toString()
   return query ? `?${query}` : ''
@@ -69,7 +71,8 @@ export const buildPaginationLinks = (
   pagination,
   baseUrl,
   sort = DEFAULT_NOTIFICATION_SORT,
-  labels = {}
+  labels = {},
+  referenceNumber
 ) => {
   const { totalPages } = pagination
   const page = normalizePageNumber(pagination.page, totalPages)
@@ -82,7 +85,8 @@ export const buildPaginationLinks = (
         ? {
             href: `${baseUrl}${buildHomeListQueryString({
               page: page - 1,
-              sort
+              sort,
+              referenceNumber
             })}`,
             text: labels.previous
           }
@@ -92,7 +96,8 @@ export const buildPaginationLinks = (
         ? {
             href: `${baseUrl}${buildHomeListQueryString({
               page: page + 1,
-              sort
+              sort,
+              referenceNumber
             })}`,
             text: labels.next
           }

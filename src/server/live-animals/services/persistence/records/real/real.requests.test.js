@@ -360,4 +360,28 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     expect(await jsonOf(request)).toEqual(actor)
     expect(deleted.status).toBe(DELETED)
   })
+
+  it('Should pass an exact reference filter on the fulfilments list request', async () => {
+    fetchMocker.mockResponse(
+      JSON.stringify({
+        page: 1,
+        size: 20,
+        totalElements: 0,
+        totalPages: 0,
+        items: []
+      })
+    )
+
+    await records.list({
+      page: 1,
+      sort: 'createdAt,asc',
+      referenceNumber: journeyId
+    })
+
+    const [request] = fetchMocker.requests()
+    expect(request.url).toBe(
+      `${fulfilmentsUrl}?page=1&sort=createdAt,asc&referenceNumber=${journeyId}`
+    )
+    expect(request.method).toBe('GET')
+  })
 })

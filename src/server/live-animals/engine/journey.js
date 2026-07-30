@@ -87,9 +87,12 @@ export const replaceJourneyFulfilment = async (
   return next
 }
 
-export const listKnownJourneys = async (request, { page, sort } = {}) => {
+export const listKnownJourneys = async (
+  request,
+  { page, sort, referenceNumber } = {}
+) => {
   const journeyIds = await session.knownJourneyIds(request)
-  return records.list({ journeyIds, page, sort })
+  return records.list({ journeyIds, page, sort, referenceNumber })
 }
 
 export const isKnownJourney = async (request, journeyId) =>

@@ -34,6 +34,12 @@ const view = `${TEMPLATES}/features/dashboard/template`
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
+const parseReferenceNumber = (value) => {
+  if (typeof value !== 'string') return undefined
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : undefined
+}
+
 export const renderDashboard = async (
   request,
   h,
@@ -42,9 +48,11 @@ export const renderDashboard = async (
   const queryPage = Number.parseInt(request.query?.page, 10)
   const requestedPage = normalizePageNumber(queryPage)
   const sort = parseNotificationSort(request.query?.sort)
+  const referenceNumber = parseReferenceNumber(request.query?.referenceNumber)
   const listed = await listKnownJourneys(request, {
     page: requestedPage,
-    sort
+    sort,
+    referenceNumber
   })
   const currentPage = normalizePageNumber(listed.page, listed.totalPages)
   const rows = listed.rows.filter((journey) => journey.status !== DELETED)
@@ -65,20 +73,25 @@ export const renderDashboard = async (
     resultsLabel: buildPageResultsRangeLabel(
       pagination,
       rows.length,
-      copy.pagination.results
+      referenceNumber
+        ? { ...copy.pagination.results, none: copy.search.noResults }
+        : copy.pagination.results
     ),
     pagination: buildPaginationLinks(
       pagination,
       dashboardPath(),
       sort,
-      copy.pagination
+      copy.pagination,
+      referenceNumber
     ),
     currentPage,
     sort,
+    referenceNumber: referenceNumber ?? '',
     sortOptions,
     listQuerySuffix: buildHomeListQueryString({
       page: currentPage,
-      sort
+      sort,
+      referenceNumber
     }),
     recoverableError,
     deletionSucceeded: request.query?.deleted === '1',

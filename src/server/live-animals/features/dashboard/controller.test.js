@@ -246,6 +246,53 @@ describe('dashboard notifications list', () => {
     })
   })
 
+  it('Should trim an exact reference search and preserve its sort', async () => {
+    const first = await startDraft()
+    const second = await startDraft()
+    const h = buildH()
+
+    await listGet(
+      buildRequest({
+        knownJourneyIds: [first.journeyId, second.journeyId],
+        query: {
+          sort: 'createdAt,asc',
+          referenceNumber: `  ${second.journeyId}  `
+        }
+      }),
+      h
+    )
+
+    expect(h.captured.view.context).toMatchObject({
+      referenceNumber: second.journeyId,
+      sort: 'createdAt,asc',
+      resultsLabel: 'Showing 1 Result',
+      listQuerySuffix: `?sort=createdAt%2Casc&referenceNumber=${second.journeyId}`
+    })
+    expect(
+      h.captured.view.context.notificationRows.map((row) => row.reference)
+    ).toEqual([second.journeyId])
+  })
+
+  it('Should show the delivered empty-state copy when a reference has no match', async () => {
+    const draft = await startDraft()
+    const h = buildH()
+
+    await listGet(
+      buildRequest({
+        knownJourneyIds: [draft.journeyId],
+        query: { referenceNumber: 'GBN-AG-26-ZZZZZZ' }
+      }),
+      h
+    )
+
+    expect(h.captured.view.context).toMatchObject({
+      notificationRows: [],
+      referenceNumber: 'GBN-AG-26-ZZZZZZ',
+      resultsLabel: 'No notifications found',
+      pagination: null
+    })
+  })
+
   it('Should keep deleted journeys absent from the list', async () => {
     const deleted = await records.create()
     await records.softDelete(deleted.journeyId)
