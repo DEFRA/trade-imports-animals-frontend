@@ -15,6 +15,7 @@ lighthouse-report/
 chromewebdata**
 localhost**
 test-results/
+*.iml
 
 # Playwright E2E suite output (videos + report)
 playwright-report/

@@ -94,9 +94,7 @@ export const unitRecord = {
   name: 'animalIdentifiers',
   within: commodityLine,
   requires: {
-    anyOfIds: [
-      /* the six identifier obligation ids */
-    ],
+    anyOfIds: [/* the six identifier obligation ids */],
     errorCode: 'obligation.unitRecord.identifiersRequired'
   }
 }
