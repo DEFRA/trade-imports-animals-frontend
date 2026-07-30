@@ -20,6 +20,10 @@ describe('buildActor', () => {
     })
   })
 
+  it('returns no actor when authentication is disabled', () => {
+    expect(buildActor(null)).toBeUndefined()
+  })
+
   it('builds a B2B actor when contactId is absent', () => {
     const credentials = {
       ...baseCredentials,

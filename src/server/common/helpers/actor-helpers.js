@@ -1,4 +1,6 @@
 export function buildActor(credentials) {
+  if (!credentials) return undefined
+
   const isB2C = Boolean(credentials.contactId)
   const actor = {
     id: isB2C ? String(credentials.contactId) : credentials.sub,

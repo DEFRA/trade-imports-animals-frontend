@@ -3,7 +3,7 @@ import { expect } from '@playwright/test'
 
 import { COUNTRY_LABELS } from '../src/server/live-animals/services/countries/stub.js'
 import { PORTS } from '../src/server/live-animals/services/ports/stub.js'
-import { copy as transportCopy } from '../src/server/live-animals/features/transport/copy.en.js'
+import { copy as transportCopy } from '../src/server/live-animals/features/transport/copy/copy.en.js'
 
 export const BASE = ''
 

@@ -55,6 +55,17 @@ export default defineConfig({
         video: 'off',
         trace: 'retain-on-failure'
       }
+    },
+    {
+      name: 'features',
+      testDir: './src/server/live-animals/features',
+      testMatch: '**/*.e2e.spec.js',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: `http://localhost:${port}`,
+        video: 'off',
+        trace: 'retain-on-failure'
+      }
     }
   ],
   webServer: [

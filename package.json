@@ -19,6 +19,7 @@
     "check:workspace-stack": "node e2e/check-workspace-stack.js",
     "test:e2e": "npm run build:frontend && DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test --project=journeys",
     "test:a11y": "npm run build:frontend && DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test --project=a11y --workers=2",
+    "test:features": "npm run build:frontend && DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test --project=features",
     "format": "prettier --write \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",
     "format:check": "prettier --check \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",
     "frontend:watch": "NODE_ENV=development webpack --watch",

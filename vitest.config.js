@@ -10,7 +10,11 @@ export default defineConfig({
     // themselves and restore it.
     env: { LIVE_ANIMALS_MODE: 'stub' },
     // Playwright E2E specs are run by Playwright, not vitest.
-    exclude: [...configDefaults.exclude, 'e2e/**'],
+    exclude: [
+      ...configDefaults.exclude,
+      'e2e/**',
+      'src/server/live-animals/features/**/*.e2e.spec.js'
+    ],
     coverage: {
       provider: 'v8',
       reportsDirectory: './coverage',
