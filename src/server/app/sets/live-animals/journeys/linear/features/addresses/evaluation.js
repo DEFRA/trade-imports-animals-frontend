@@ -8,7 +8,7 @@ import {
   importer,
   placeOfDestination,
   placeOfOrigin
-} from '../../../../../../model/obligations/obligations.js'
+} from '../../../../obligations/index.js'
 
 export const evaluationBindings = feature('addresses', [
   scalar({ field: 'placeOfOrigin', obligation: placeOfOrigin }),

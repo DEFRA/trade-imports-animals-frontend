@@ -1,27 +1,27 @@
-import {
-  accompanyingDocumentAttachmentType,
-  accompanyingDocumentDateOfIssue,
-  accompanyingDocumentReference,
-  accompanyingDocumentType,
-  documentFilename,
-  documentUploadId,
-  documents
-} from '../../../../../model/obligations/obligations.js'
+import { obligationSet } from '../../../../../model/obligations/manifest.js'
 import { compact } from '../shared/compact.js'
 
-const documentObligations = [
-  accompanyingDocumentType,
-  accompanyingDocumentAttachmentType,
-  accompanyingDocumentReference,
-  accompanyingDocumentDateOfIssue
-]
-const documentInstanceObligations = [
-  ...documentObligations,
-  documentUploadId,
-  documentFilename
-]
-
 export const targetDocumentsFromFulfilment = (reader) => {
+  const {
+    accompanyingDocumentAttachmentType,
+    accompanyingDocumentDateOfIssue,
+    accompanyingDocumentReference,
+    accompanyingDocumentType,
+    documentFilename,
+    documentUploadId,
+    documents
+  } = obligationSet()
+  const documentObligations = [
+    accompanyingDocumentType,
+    accompanyingDocumentAttachmentType,
+    accompanyingDocumentReference,
+    accompanyingDocumentDateOfIssue
+  ]
+  const documentInstanceObligations = [
+    ...documentObligations,
+    documentUploadId,
+    documentFilename
+  ]
   const recordsByObligation = new Map(
     documentObligations.map((obligation) => [
       obligation,

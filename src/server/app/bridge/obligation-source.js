@@ -1,4 +1,7 @@
-import { obligations } from '../model/obligations/obligations.js'
+import {
+  obligationByName as configuredObligationByName,
+  obligations
+} from '../model/obligations/manifest.js'
 import { groupObligations } from './fulfilments/index.js'
 
 const namesUpTo = (obligation) =>
@@ -7,21 +10,20 @@ const namesUpTo = (obligation) =>
 const templatePathOf = (obligation) => namesUpTo(obligation).join('.')
 
 export function* walkObligations() {
-  for (const obligation of obligations) {
+  for (const obligation of obligations()) {
     yield { templatePath: templatePathOf(obligation), obligation }
   }
 }
 
-const byNameMap = new Map(obligations.map((o) => [o.name, o]))
-
-export const obligationByName = (name) => byNameMap.get(name)
+export const obligationByName = configuredObligationByName
 
 // Resolve an obligation by its dotted name-path — the `within` chain of names,
 // root to leaf, joined by `.` (`commodityLines`,
 // `commodityLines.animalIdentifiers`).
-const byPathMap = new Map(obligations.map((o) => [templatePathOf(o), o]))
-
-export const obligationByPath = (templatePath) => byPathMap.get(templatePath)
+export const obligationByPath = (templatePath) =>
+  obligations().find(
+    (obligation) => templatePathOf(obligation) === templatePath
+  )
 
 export const SYSTEM_POPULATED = new Set(['poApprovedReferenceNumber'])
 
@@ -64,24 +66,25 @@ export const flowOnlyAnswersFrom = (answers) =>
 // journey envelope instead.
 const SYSTEM_ANSWER_KEYS = new Set(['referenceNumber'])
 
-const topLevelKeys = new Set([
-  ...obligations
-    .filter((obligation) => !obligation.within)
-    .map((obligation) => obligation.name),
-  ...FLOW_ONLY_OBLIGATIONS,
-  ...SYSTEM_ANSWER_KEYS
-])
+const topLevelKeys = () =>
+  new Set([
+    ...obligations()
+      .filter((obligation) => !obligation.within)
+      .map((obligation) => obligation.name),
+    ...FLOW_ONLY_OBLIGATIONS,
+    ...SYSTEM_ANSWER_KEYS
+  ])
 
 const memberKeysOf = (group) =>
   new Set([
-    ...obligations
+    ...obligations()
       .filter((obligation) => obligation.within === group)
       .map((obligation) => obligation.name)
   ])
 
 const sweepKey = (memberKeys, entryPath, key, value) => {
   if (!memberKeys.has(key)) return [{ key, path: entryPath }]
-  const member = byNameMap.get(key)
+  const member = obligationByName(key)
   return member && groupObligations.has(member)
     ? sweepEntries(member, value, `${entryPath}.${key}`)
     : []
@@ -104,8 +107,8 @@ const sweepEntries = (group, items, path) => {
 }
 
 const unrecognisedKeysFor = (key, value) => {
-  if (!topLevelKeys.has(key)) return [{ key, path: '(top level)' }]
-  const obligation = byNameMap.get(key)
+  if (!topLevelKeys().has(key)) return [{ key, path: '(top level)' }]
+  const obligation = obligationByName(key)
   return obligation && groupObligations.has(obligation)
     ? sweepEntries(obligation, value, key)
     : []

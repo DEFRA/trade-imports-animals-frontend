@@ -1,5 +1,5 @@
 import { journeyStrip } from '../../../../../../../../shared/kit.js'
-import * as commodities from '../../../../../../../../services/commodities/index.js'
+import * as commodities from '../../../../../../services/commodities/index.js'
 import * as countries from '../../../../../../../../services/countries/index.js'
 import {
   formatCommodity,

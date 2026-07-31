@@ -6,10 +6,9 @@ import { records as recordsStub } from '../services/persistence/records/stub/ind
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 import { stubH, journeyRequest } from './test-support.js'
-import {
-  countryOfOrigin,
-  internalReferenceNumber
-} from '../model/obligations/obligations.js'
+import { obligationSet } from '../model/obligations/manifest.js'
+
+const { countryOfOrigin, internalReferenceNumber } = obligationSet()
 
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)

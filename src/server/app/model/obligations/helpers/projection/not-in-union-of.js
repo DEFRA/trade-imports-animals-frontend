@@ -4,8 +4,8 @@ import { filterAndProject } from './internals/filter-and-project.js'
 /**
  * notInUnionOf — dual of `allowListed`. Obligation is in scope on
  * entries whose `gateObligation` stored value is NOT in the union of
- * the given allowlists. The derived union is computed at helper-
- * invocation time (not on each call) and pinned on `.metadata.values`
+ * the given allowlists. The derived union is computed when the gate runs
+ * and exposed on `.metadata.values`
  * so static analysis (witness synthesiser, browser-side controllers)
  * can inspect "would this value be admitted?" without executing the
  * closure.
@@ -36,12 +36,16 @@ export const notInUnionOf = (
   projectionGroup,
   reasons
 ) => {
-  const derivedUnion = deriveUnion(unionOfAllowlists)
-  const admit = (value) => !derivedUnion.includes(value)
+  const currentUnion = () =>
+    deriveUnion(
+      typeof unionOfAllowlists === 'function'
+        ? unionOfAllowlists()
+        : unionOfAllowlists
+    )
   const fn = (fulfilments, fulfilmentIdsByObligationId) => {
     const decision = filterAndProject(
       fulfilments[gateObligation.id],
-      admit,
+      (value) => !currentUnion().includes(value),
       projectionGroup,
       fulfilmentIdsByObligationId
     )
@@ -50,9 +54,12 @@ export const notInUnionOf = (
   fn.metadata = {
     type: 'notInUnionOf',
     obligation: gateObligation.id,
-    values: derivedUnion,
     projection: projectionGroup?.id ?? null,
     reasons: reasons ?? null
   }
+  Object.defineProperty(fn.metadata, 'values', {
+    enumerable: true,
+    get: currentUnion
+  })
   return fn
 }

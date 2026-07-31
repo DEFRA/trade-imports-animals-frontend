@@ -5,7 +5,7 @@ import {
 import {
   animalsCertifiedFor,
   containsUnweanedAnimals
-} from '../../../../../../model/obligations/obligations.js'
+} from '../../../../obligations/index.js'
 
 export const evaluationBindings = feature('additional-details', [
   scalar({

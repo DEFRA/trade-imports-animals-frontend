@@ -1,4 +1,4 @@
-import { typeTextForId } from '../../../../commodities/index.js'
+import { typeTextForId } from '../commodity-reference.js'
 import { compact } from '../shared/compact.js'
 import { groupLinesByCommodity } from '../shared/lines/group-by-commodity.js'
 import { speciesEntryFromLine } from '../shared/lines/species-entry.js'

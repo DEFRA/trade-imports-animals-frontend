@@ -22,7 +22,9 @@ import {
   authenticatedCredentials,
   recordingH
 } from './test-support.js'
-import { countryOfOrigin } from '../model/obligations/obligations.js'
+import { obligationSet } from '../model/obligations/manifest.js'
+
+const { countryOfOrigin } = obligationSet()
 
 const requestFor = (journeyId, knownJourneyIds) => ({
   params: journeyId ? { journeyId } : {},

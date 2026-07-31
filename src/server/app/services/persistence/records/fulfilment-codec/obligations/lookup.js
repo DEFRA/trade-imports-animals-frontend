@@ -1,9 +1,11 @@
 import {
   groups,
   obligations
-} from '../../../../../model/obligations/obligations.js'
+} from '../../../../../model/obligations/manifest.js'
 
-export const obligationsById = new Map(
-  obligations.map((obligation) => [obligation.id, obligation])
-)
-export const groupIds = new Set(groups.map((group) => group.id))
+export const obligationsById = {
+  get: (id) => obligations().find((obligation) => obligation.id === id)
+}
+export const groupIds = {
+  has: (id) => groups().some((group) => group.id === id)
+}

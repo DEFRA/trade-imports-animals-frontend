@@ -4,11 +4,9 @@ import { assembleFulfilments } from './assemble-fulfilments.js'
 import { projectAnswers } from './fulfilments/index.js'
 import { characterisationCorpus } from './fixtures/characterisation-corpus.js'
 import { createObligationEvaluator } from '../model/obligations/evaluator.js'
-import {
-  earTag,
-  obligations,
-  purposeInInternalMarket
-} from '../model/obligations/obligations.js'
+import { obligationSet } from '../model/obligations/manifest.js'
+
+const { earTag, obligations, purposeInInternalMarket } = obligationSet()
 import {
   answersToTargetNotification,
   fulfilmentToNotification

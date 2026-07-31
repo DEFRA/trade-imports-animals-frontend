@@ -1,4 +1,4 @@
-import { packageCountCommodities } from '../../../../../services/commodities/index.js'
+import { packageCountCommodities } from '../../../services/commodities/index.js'
 import { allowListed } from '../../../../../model/obligations/helpers/index.js'
 
 const numberOfPackagesReason = {
@@ -78,7 +78,7 @@ export const numberOfPackages = {
   name: 'numberOfPackages',
   within: commodityLine,
   status: 'optional',
-  applyTo: allowListed(commodityCode, packageCountCommodities(), null, [
+  applyTo: allowListed(commodityCode, packageCountCommodities, null, [
     numberOfPackagesReason
   ])
 }

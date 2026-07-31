@@ -1,6 +1,6 @@
 import { SYSTEM_POPULATED } from '../../bridge/obligation-source.js'
 import { makeScope } from '../../engine/index.js'
-import { obligations } from '../../model/obligations/obligations.js'
+import { obligations } from '../../model/obligations/manifest.js'
 import { simulateJourney } from '../simulate.js'
 import { enumerateAnswerStates } from './fixtures/enumerate-answer-states.js'
 import { leafName } from './path-key.js'
@@ -50,7 +50,7 @@ export function proveScopeCompleteness({ scopeFor = makeScope } = {}) {
   for (const answers of enumerateAnswerStates()) {
     for (const key of scopeFor(answers).inScope) seen.add(leafName(key))
   }
-  return obligations
+  return obligations()
     .map((obligation) => obligation.name)
     .filter((name) => !SYSTEM_POPULATED.has(name) && !seen.has(name))
 }

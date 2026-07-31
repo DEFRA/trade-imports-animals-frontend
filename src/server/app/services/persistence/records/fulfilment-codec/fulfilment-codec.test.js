@@ -2,13 +2,15 @@ import { describe, expect, test } from 'vitest'
 import { characterisationCorpus } from '../../../../bridge/fixtures/characterisation-corpus.js'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { createObligationEvaluator } from '../../../../model/obligations/evaluator.js'
-import {
+import { obligationSet } from '../../../../model/obligations/manifest.js'
+
+const {
   commodityCode,
   earTag,
   placeOfOrigin,
   reasonForImport,
   transitedCountries
-} from '../../../../model/obligations/obligations.js'
+} = obligationSet()
 import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments

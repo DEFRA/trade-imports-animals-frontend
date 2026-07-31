@@ -16,11 +16,7 @@
  * with no commodity gate never applies here.
  */
 
-import { obligations } from '../model/obligations/obligations.js'
-
-const obligationByName = new Map(
-  obligations.map((obligation) => [obligation.name, obligation])
-)
+import { obligationByName } from '../model/obligations/manifest.js'
 
 /**
  * Whether the named obligation applies to a commodity, judged from the
@@ -31,7 +27,7 @@ const obligationByName = new Map(
  * @returns {boolean}
  */
 export const appliesForCommodity = (obligationName, commodityName) => {
-  const metadata = obligationByName.get(obligationName)?.applyTo?.metadata
+  const metadata = obligationByName(obligationName)?.applyTo?.metadata
   const values = metadata?.values ?? []
   const inList = values.includes(commodityName)
   return metadata?.type === 'notInUnionOf' ? !inList : inList
@@ -45,4 +41,4 @@ export const appliesForCommodity = (obligationName, commodityName) => {
  * @returns {number}
  */
 export const maxDocuments = () =>
-  obligationByName.get('documents').requires.maxEntries
+  obligationByName('documents').requires.maxEntries

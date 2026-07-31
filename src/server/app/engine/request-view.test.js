@@ -2,10 +2,9 @@ import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../bridge/fulfilments/index.js'
 import { characterisationCorpus } from '../bridge/fixtures/characterisation-corpus.js'
-import {
-  earTag,
-  purposeInInternalMarket
-} from '../model/obligations/obligations.js'
+import { obligationSet } from '../model/obligations/manifest.js'
+
+const { earTag, purposeInInternalMarket } = obligationSet()
 import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments

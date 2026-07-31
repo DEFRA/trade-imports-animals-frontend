@@ -1,3 +1,3 @@
-import { maxDocuments } from '../../../../../../../bridge/applicability.js'
+import { documents } from '../../../../../obligations/index.js'
 
-export const MAX_DOCUMENTS = maxDocuments()
+export const MAX_DOCUMENTS = documents.requires.maxEntries

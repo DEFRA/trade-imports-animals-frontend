@@ -29,7 +29,7 @@ import {
   synthesiseWitness,
   WITNESS_KIND
 } from './index.js'
-import { obligations } from '../../obligations/obligations.js'
+import { obligationSet } from '../../obligations/manifest.js'
 import {
   obligationMetadata,
   allowListed,
@@ -42,6 +42,8 @@ import {
   notInUnionOf,
   presentGate
 } from '../../obligations/helpers/index.js'
+
+const { obligations } = obligationSet()
 
 // ---------------------------------------------------------------------------
 // Helpers — turn an obligation into the `{ id, dependsOn }` record the

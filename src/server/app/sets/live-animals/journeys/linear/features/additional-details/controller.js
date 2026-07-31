@@ -12,7 +12,7 @@ import {
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import * as certification from '../../../../../../services/certification-purposes/index.js'
-import * as commodities from '../../../../../../services/commodities/index.js'
+import * as commodities from '../../../../services/commodities/index.js'
 import { additionalDetailsPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'

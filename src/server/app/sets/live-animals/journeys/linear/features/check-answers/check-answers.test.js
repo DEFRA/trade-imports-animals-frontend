@@ -1,7 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
-import { commodityCodeFor } from '../../../../../../services/commodities/index.js'
+import { commodityCodeFor } from '../../../../services/commodities/index.js'
 import { store } from '../../../../../../engine/store.js'
 import {
   AMEND,

@@ -15,7 +15,7 @@
  * applies over the session/journey/save layer.
  */
 
-import { obligations } from '../model/obligations/obligations.js'
+import { obligations } from '../model/obligations/manifest.js'
 import {
   ancestorChain,
   fulfilmentIdToPath,
@@ -67,7 +67,7 @@ const wipedKeysFor = (obligation, fulfilmentsIn, fulfilmentsOut) => {
  */
 export const wipeSet = (fulfilmentsIn, evaluation) => {
   const fulfilmentsOut = evaluation.fulfilments
-  return obligations.flatMap((obligation) =>
+  return obligations().flatMap((obligation) =>
     wipedKeysFor(obligation, fulfilmentsIn, fulfilmentsOut)
   )
 }

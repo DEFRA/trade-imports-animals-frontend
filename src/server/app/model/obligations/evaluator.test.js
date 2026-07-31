@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createObligationEvaluator } from './evaluator.js'
 import { groupInvariantErrors } from './state-queries.js'
-import {
+import { obligationSet } from './manifest.js'
+
+const {
   poApprovedReferenceNumber,
   countryOfOrigin,
   regionCodeRequirement,
@@ -47,7 +49,7 @@ import {
   accompanyingDocumentDateOfIssue,
   documentUploadId,
   documentFilename
-} from './obligations.js'
+} = obligationSet()
 
 let evaluator
 beforeEach(() => {

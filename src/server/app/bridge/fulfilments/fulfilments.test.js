@@ -3,7 +3,9 @@ import { describe, it, expect } from 'vitest'
 import { assembleFulfilments } from '../assemble-fulfilments.js'
 import { projectAnswers } from './index.js'
 import { createObligationEvaluator } from '../../model/obligations/evaluator.js'
-import {
+import { obligationSet } from '../../model/obligations/manifest.js'
+
+const {
   countryOfOrigin,
   regionCode,
   reasonForImport,
@@ -29,7 +31,7 @@ import {
   accompanyingDocumentDateOfIssue,
   documentUploadId,
   documentFilename
-} from '../../model/obligations/obligations.js'
+} = obligationSet()
 
 const happyPath = JSON.parse(
   readFileSync(new URL('../../flow/fixtures/happy-path.json', import.meta.url))

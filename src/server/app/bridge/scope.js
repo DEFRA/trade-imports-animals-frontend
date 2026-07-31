@@ -18,7 +18,7 @@
  * conversion).
  */
 
-import { obligations } from '../model/obligations/obligations.js'
+import { obligationByName, obligations } from '../model/obligations/manifest.js'
 import {
   ancestorChain,
   fulfilmentIdToPath,
@@ -52,7 +52,7 @@ const collectInstanceValues = (answers, chain, name) => {
 }
 
 const anyInstanceAnswered = (answers, id) => {
-  const obligation = obligations.find((candidate) => candidate.name === id)
+  const obligation = obligationByName(id)
   if (!obligation) return false
   return collectInstanceValues(answers, ancestorChain(obligation), id).some(
     isAnswered
@@ -104,7 +104,7 @@ const addProjectedKeys = (inScope, implications, obligation) => {
 
 const projectInScope = (implications) => {
   const inScope = new Set()
-  for (const obligation of obligations) {
+  for (const obligation of obligations()) {
     if (implications[obligation.id]?.inScope) {
       addProjectedKeys(inScope, implications, obligation)
     }

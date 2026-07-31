@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest'
 
-import { obligations } from './obligations/obligations.js'
+import { obligationSet } from './obligations/manifest.js'
 import {
   DISPLAY_KEYS,
   findDisplayKeyOffenders,
   assertNoDisplayKeys
 } from './no-display-keys.js'
+
+const { obligations } = obligationSet()
 
 /**
  * Key-level purity gate for the model.

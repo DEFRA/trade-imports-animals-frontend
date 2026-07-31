@@ -1,4 +1,4 @@
-import * as commodities from '../../../../../../../../services/commodities/index.js'
+import * as commodities from '../../../../../../services/commodities/index.js'
 import { animalsField, packagesApply, packagesField } from '../fields.js'
 
 // One table row + quantity block group per commodity, one species block per

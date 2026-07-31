@@ -1,10 +1,8 @@
-import { obligations } from '../../model/obligations/obligations.js'
+import { groups } from '../../model/obligations/manifest.js'
 
-export const groupObligations = new Set(
-  obligations.filter((obligation) =>
-    obligations.some((other) => other.within === obligation)
-  )
-)
+export const groupObligations = {
+  has: (obligation) => groups().includes(obligation)
+}
 
 // Ancestor groups from root down to immediate parent (excluding self).
 export const ancestorChain = (obligation) => {

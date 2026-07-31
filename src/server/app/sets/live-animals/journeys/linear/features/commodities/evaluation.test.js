@@ -5,7 +5,7 @@ import {
   commodityCode,
   earTag,
   numberOfAnimals
-} from '../../../../../../model/obligations/obligations.js'
+} from '../../../../obligations/index.js'
 
 describe('commodities evaluation bindings', () => {
   it('Should visit each line and nested unit collection once', () => {

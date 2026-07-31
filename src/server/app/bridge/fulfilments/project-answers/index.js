@@ -1,4 +1,4 @@
-import { obligations } from '../../../model/obligations/obligations.js'
+import { obligations } from '../../../model/obligations/manifest.js'
 import { groupObligations } from '../obligation-graph.js'
 import { answersWithRecords, answersWithScalar } from './assemble.js'
 import { projectionsOf } from './projections.js'
@@ -36,7 +36,7 @@ const withObligationAnswer = (
  */
 export const projectAnswers = (fulfilments = {}) => {
   const projections = projectionsOf(fulfilments)
-  return obligations.reduce(
+  return obligations().reduce(
     (answers, obligation) =>
       withObligationAnswer(answers, fulfilments, projections, obligation),
     {}

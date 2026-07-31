@@ -1,4 +1,4 @@
-import { obligations as defaultObligations } from '../obligations.js'
+import { obligations as configuredObligations } from '../manifest.js'
 import { convergePurge } from './converge-purge.js'
 import { enumerateGroupFulfilmentIds } from './enumeration/enumerate-group-fulfilment-ids.js'
 import { buildImplications } from './implications/build.js'
@@ -46,7 +46,7 @@ import { dropUnknownFulfilments } from './purge/drop-unknown-fulfilments.js'
  */
 
 export function createObligationEvaluator({
-  obligations = defaultObligations
+  obligations = configuredObligations()
 } = {}) {
   const obligationsById = buildObligationsById(obligations)
   const obligationChildren = buildObligationChildren(obligations)

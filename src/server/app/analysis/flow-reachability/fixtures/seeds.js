@@ -73,8 +73,8 @@ export const submitReadySeed = {
  * Cow line never scopes the Horse-gated `horseName`, the Cat/Dog-gated
  * `permanentAddress`, the `notInUnionOf` free-text identifiers (Cow sits in
  * the passport∪tattoo∪earTag union) or the four per-document leaves (no
- * `documents` records). Values are the services' real canned data
- * (`services/commodities`, `services/document-types`) — the same vocabulary
+ * `documents` records). Values are the real canned commodity and
+ * document-type reference data — the same vocabulary
  * the pages store.
  *
  * Both provers run every variant × every scope state, so page reachability

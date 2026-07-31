@@ -4,7 +4,7 @@ import {
   passportCommodities,
   permanentAddressCommodities,
   tattooCommodities
-} from '../../../../../services/commodities/index.js'
+} from '../../../services/commodities/index.js'
 import {
   allowListed,
   notInUnionOf
@@ -115,7 +115,7 @@ export const passport = {
   name: 'animalIdentifierPassport',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, passportCommodities(), unitRecord, [
+  applyTo: allowListed(commodityCode, passportCommodities, unitRecord, [
     passportReason
   ])
   // Note: `unitRecord` is a structural projection group (the closure's
@@ -129,7 +129,7 @@ export const tattoo = {
   name: 'animalIdentifierTattoo',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, tattooCommodities(), unitRecord, [
+  applyTo: allowListed(commodityCode, tattooCommodities, unitRecord, [
     tattooReason
   ])
 }
@@ -139,7 +139,7 @@ export const earTag = {
   name: 'animalIdentifierEarTag',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, earTagCommodities(), unitRecord, [
+  applyTo: allowListed(commodityCode, earTagCommodities, unitRecord, [
     earTagReason
   ])
 }
@@ -149,7 +149,7 @@ export const horseName = {
   name: 'horseName',
   within: unitRecord,
   status: 'optional',
-  applyTo: allowListed(commodityCode, horseNameCommodities(), unitRecord, [
+  applyTo: allowListed(commodityCode, horseNameCommodities, unitRecord, [
     horseNameReason
   ])
 }
@@ -164,7 +164,7 @@ export const horseName = {
 // identifier means adding its list to the array here — the derived
 // union widens automatically. Hand-restated four-conjunct complements
 // would silently double-gate on such an addition.
-const SPECIFIC_IDENTIFIER_WHITELISTS = [
+const specificIdentifierWhitelists = () => [
   passportCommodities(),
   tattooCommodities(),
   earTagCommodities(),
@@ -178,7 +178,7 @@ export const identificationDetails = {
   status: 'optional',
   applyTo: notInUnionOf(
     commodityCode,
-    SPECIFIC_IDENTIFIER_WHITELISTS,
+    specificIdentifierWhitelists,
     unitRecord,
     [identificationDetailsReason]
   )
@@ -191,7 +191,7 @@ export const description = {
   status: 'optional',
   applyTo: notInUnionOf(
     commodityCode,
-    SPECIFIC_IDENTIFIER_WHITELISTS,
+    specificIdentifierWhitelists,
     unitRecord,
     [descriptionReason]
   )
@@ -202,10 +202,7 @@ export const permanentAddress = {
   name: 'permanentAddress',
   within: unitRecord,
   status: 'mandatory',
-  applyTo: allowListed(
-    commodityCode,
-    permanentAddressCommodities(),
-    unitRecord,
-    [permanentAddressReason]
-  )
+  applyTo: allowListed(commodityCode, permanentAddressCommodities, unitRecord, [
+    permanentAddressReason
+  ])
 }

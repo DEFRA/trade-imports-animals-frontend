@@ -10,7 +10,7 @@ import {
   documentFilename,
   documents,
   documentUploadId
-} from '../../../../../../model/obligations/obligations.js'
+} from '../../../../obligations/index.js'
 
 const document = {
   field: 'documents',

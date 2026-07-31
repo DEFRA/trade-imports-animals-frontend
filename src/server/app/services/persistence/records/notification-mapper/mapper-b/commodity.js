@@ -1,4 +1,4 @@
-import { commodityCodeFor } from '../../../../commodities/index.js'
+import { commodityCodeFor } from '../commodity-reference.js'
 import {
   baseComplementFromGroup,
   commodityFromLinesA

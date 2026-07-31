@@ -1,7 +1,7 @@
 import { pagePath } from '../../../../../../../../config.js'
 import * as state from '../../../../../../../../engine/index.js'
 import * as kit from '../../../../../../../../shared/kit.js'
-import * as commodities from '../../../../../../../../services/commodities/index.js'
+import * as commodities from '../../../../../../services/commodities/index.js'
 import { consignmentDetailsPage } from '../../page.js'
 import { splitKey } from '../selection/keys.js'
 import { lineKey } from '../selection/line-key.js'

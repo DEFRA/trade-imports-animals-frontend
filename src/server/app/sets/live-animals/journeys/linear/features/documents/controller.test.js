@@ -24,7 +24,7 @@ import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
 import { MAX_DOCUMENTS } from './contracts/max-documents.js'
-import { documents as manifestDocuments } from '../../../../../../model/obligations/obligations.js'
+import { documents as manifestDocuments } from '../../../../obligations/index.js'
 import {
   FILE_TYPE_MESSAGE,
   MAX_FILE_SIZE_BYTES,

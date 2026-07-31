@@ -1,4 +1,4 @@
-import { obligations } from '../../../model/obligations/obligations.js'
+import { obligations } from '../../../model/obligations/manifest.js'
 import { compareIndexArrays } from '../../fulfilment-id.js'
 import { validateFulfilmentId } from '../fulfilment-id-path.js'
 import { ancestorChain, groupObligations } from '../obligation-graph.js'
@@ -23,7 +23,7 @@ export const projectionsOf = (fulfilments) => {
   const projections = new Map()
   const collectionIndices = new Map()
 
-  for (const obligation of obligations) {
+  for (const obligation of obligations()) {
     if (groupObligations.has(obligation)) continue
     const stored = fulfilments?.[obligation.id]
     if (stored === undefined || !obligation.within) continue

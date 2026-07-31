@@ -21,10 +21,11 @@ export const allowListed = (
   projectionGroup,
   reasons
 ) => {
+  const currentValues = () => (typeof values === 'function' ? values() : values)
   const fn = (fulfilments, fulfilmentIdsByObligationId) => {
     const decision = filterAndProject(
       fulfilments[gateObligation.id],
-      (value) => values.includes(value),
+      (value) => currentValues().includes(value),
       projectionGroup,
       fulfilmentIdsByObligationId
     )
@@ -33,9 +34,12 @@ export const allowListed = (
   fn.metadata = {
     type: 'allowListed',
     obligation: gateObligation.id,
-    values,
     projection: projectionGroup?.id ?? null,
     reasons: reasons ?? null
   }
+  Object.defineProperty(fn.metadata, 'values', {
+    enumerable: true,
+    get: currentValues
+  })
   return fn
 }

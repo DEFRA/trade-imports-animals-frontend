@@ -7,7 +7,7 @@ import {
   internalReferenceNumber,
   regionCode,
   regionCodeRequirement
-} from '../../../../../../model/obligations/obligations.js'
+} from '../../../../obligations/index.js'
 
 export const evaluationBindings = feature('origin', [
   scalar({ field: 'countryOfOrigin', obligation: countryOfOrigin }),

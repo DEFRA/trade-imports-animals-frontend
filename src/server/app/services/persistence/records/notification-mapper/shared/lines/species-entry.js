@@ -1,4 +1,4 @@
-import { speciesLabel } from '../../../../../commodities/index.js'
+import { speciesLabel } from '../../commodity-reference.js'
 import { compact } from '../compact.js'
 
 // Species value → display name via the prototype's commodity reference data,

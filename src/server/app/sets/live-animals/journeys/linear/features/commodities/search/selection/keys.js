@@ -1,4 +1,4 @@
-import * as commodities from '../../../../../../../../services/commodities/index.js'
+import * as commodities from '../../../../../../services/commodities/index.js'
 
 export const splitKey = (key) => {
   const separator = key.indexOf('|')

@@ -12,7 +12,7 @@ import {
   transportDocumentReference,
   transportIdentification,
   transporterType
-} from '../../../../../../model/obligations/obligations.js'
+} from '../../../../obligations/index.js'
 
 export const evaluationBindings = feature('transport', [
   scalar({ field: 'transporterType', obligation: transporterType }),

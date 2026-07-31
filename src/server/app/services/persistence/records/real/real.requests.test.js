@@ -7,10 +7,9 @@ import {
   SUBMITTED
 } from '../../../../engine/persistence/records.js'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
-import {
-  countryOfOrigin,
-  numberOfAnimals
-} from '../../../../model/obligations/obligations.js'
+import { obligationSet } from '../../../../model/obligations/manifest.js'
+
+const { countryOfOrigin, numberOfAnimals } = obligationSet()
 import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments

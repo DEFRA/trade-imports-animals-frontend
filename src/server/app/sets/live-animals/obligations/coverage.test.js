@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { obligations } from './obligations.js'
-import { obligationMetadata } from './helpers/index.js'
+import { obligations } from './index.js'
+import { obligationMetadata } from '../../../model/obligations/helpers/index.js'
 
 // Guard against a self-loop or a cycle hanging buildAncestorGroups' `while
 // (cur) cur = cur.within` walk forever. Any real `within` chain in the

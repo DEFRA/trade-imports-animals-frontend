@@ -1,17 +1,18 @@
-import {
-  consignee,
-  consignor,
-  contactAddress,
-  cph,
-  importer,
-  placeOfDestination,
-  placeOfOrigin,
-  reasonForImport
-} from '../../../../../../model/obligations/obligations.js'
+import { obligationSet } from '../../../../../../model/obligations/manifest.js'
 import { compact } from '../../shared/compact.js'
 
-export const directFieldsFromFulfilment = (reader, referenceNumber) =>
-  compact({
+export const directFieldsFromFulfilment = (reader, referenceNumber) => {
+  const {
+    consignee,
+    consignor,
+    contactAddress,
+    cph,
+    importer,
+    placeOfDestination,
+    placeOfOrigin,
+    reasonForImport
+  } = obligationSet()
+  return compact({
     referenceNumber,
     reasonForImport: reader.scalar(reasonForImport),
     placeOfOrigin: reader.scalar(placeOfOrigin),
@@ -22,3 +23,4 @@ export const directFieldsFromFulfilment = (reader, referenceNumber) =>
     consignment: reader.scalar(contactAddress),
     cphNumber: reader.scalar(cph)
   })
+}

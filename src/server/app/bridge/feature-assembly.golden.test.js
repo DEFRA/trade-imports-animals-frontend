@@ -3,7 +3,9 @@ import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from './assemble-fulfilments.js'
 import { feature, scalar } from './fulfilment-bindings.js'
 import { characterisationCorpus } from './fixtures/characterisation-corpus.js'
-import { countryOfOrigin } from '../model/obligations/obligations.js'
+import { obligationSet } from '../model/obligations/manifest.js'
+
+const { countryOfOrigin } = obligationSet()
 
 const oracles = JSON.parse(
   readFileSync(

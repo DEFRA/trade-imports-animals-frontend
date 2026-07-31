@@ -1,5 +1,4 @@
-import { obligations } from '../model/obligations/obligations.js'
-import { featureEvaluationBindings } from '../sets/live-animals/journeys/linear/features/evaluation.js'
+import { obligations } from '../model/obligations/manifest.js'
 import { ancestorChain } from './fulfilments/index.js'
 
 const PATH_UNSAFE = /[.[\]/*]/
@@ -121,7 +120,10 @@ const assertGroupConsistency = (descriptors, binding) => {
   }
 }
 
-export const createFulfilmentRegistry = (features, manifest = obligations) => {
+export const createFulfilmentRegistry = (
+  features,
+  manifest = obligations()
+) => {
   const manifestById = new Map(
     manifest.map((obligation) => [obligation.id, obligation])
   )
@@ -162,9 +164,29 @@ export const createFulfilmentRegistry = (features, manifest = obligations) => {
   })
 }
 
-export const fulfilmentRegistry = createFulfilmentRegistry(
-  featureEvaluationBindings
-)
+let configuredRegistry
 
-export const assertFulfilmentBindingCoverage = () =>
-  createFulfilmentRegistry(featureEvaluationBindings, obligations)
+const currentRegistry = () => {
+  if (!configuredRegistry) {
+    throw new Error('Fulfilment registry has not been configured')
+  }
+  return configuredRegistry
+}
+
+export const configureFulfilmentRegistry = (features) => {
+  configuredRegistry = createFulfilmentRegistry(features)
+}
+
+export const fulfilmentRegistry = Object.freeze({
+  get features() {
+    return currentRegistry().features
+  },
+  get leaves() {
+    return currentRegistry().leaves
+  },
+  ownerOf: (obligationId) => currentRegistry().ownerOf(obligationId),
+  groupDescriptorOf: (obligationId) =>
+    currentRegistry().groupDescriptorOf(obligationId)
+})
+
+export const assertFulfilmentBindingCoverage = () => currentRegistry()

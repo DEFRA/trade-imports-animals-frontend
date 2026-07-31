@@ -27,17 +27,13 @@
  * TOP-LEVEL entry is caught here via its unconditional mandatory field leaves.
  */
 
-import { obligations } from '../model/obligations/obligations.js'
+import { obligationByName, obligations } from '../model/obligations/manifest.js'
 import { ancestorChain, groupObligations } from './fulfilments/index.js'
 import { instanceFulfilmentId } from './fulfilment-id.js'
 import { fulfilmentRegistry } from './fulfilment-registry.js'
 import { SYSTEM_POPULATED } from './obligation-source.js'
 import { groupInvariantErrors } from '../model/obligations/state-queries.js'
 import { isBlankValue } from '../model/obligations/is-blank-value.js'
-
-const obligationByName = new Map(
-  obligations.map((obligation) => [obligation.name, obligation])
-)
 
 const isFulfilled = (value) => !isBlankValue(value)
 
@@ -48,14 +44,14 @@ const belongsToInstance = (fulfilmentId, instanceId) =>
   fulfilmentId === instanceId || fulfilmentId.startsWith(`${instanceId}/`)
 
 const leavesUnder = (group) =>
-  obligations.filter(
+  obligations().filter(
     (o) => !groupObligations.has(o) && ancestorChain(o).includes(group)
   )
 
 // The group itself plus every group nested beneath it — the scope over which
 // per-instance `anyOf` invariants are checked.
 const groupsFrom = (group) =>
-  obligations.filter(
+  obligations().filter(
     (o) =>
       groupObligations.has(o) &&
       (o === group || ancestorChain(o).includes(group))
@@ -119,7 +115,7 @@ const groupInvariantBlocksInstance = (group, instanceId, state) =>
  */
 export const entryComplete = (evaluation, collectionPath, index) => {
   const names = collectionPath.filter((segment) => typeof segment === 'string')
-  const group = obligationByName.get(names.at(-1))
+  const group = obligationByName(names.at(-1))
   if (!group) return true
   const groupChain = [...ancestorChain(group), group]
   const descriptors = groupChain.map(({ id }) =>

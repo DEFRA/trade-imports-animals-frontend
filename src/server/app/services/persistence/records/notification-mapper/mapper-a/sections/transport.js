@@ -1,14 +1,10 @@
-import {
-  arrivalDateAtPort,
-  commercialTransporter,
-  portOfEntry,
-  privateTransporter,
-  transporterType
-} from '../../../../../../model/obligations/obligations.js'
+import { obligationSet } from '../../../../../../model/obligations/manifest.js'
 import { compact, orUndefined } from '../../shared/compact.js'
 import { isoFromDateParts } from '../../shared/iso-date.js'
 
 export const transporterFromFulfilment = (reader) => {
+  const { commercialTransporter, privateTransporter, transporterType } =
+    obligationSet()
   const source =
     reader.scalar(commercialTransporter) ?? reader.scalar(privateTransporter)
   return orUndefined(
@@ -21,11 +17,13 @@ export const transporterFromFulfilment = (reader) => {
   )
 }
 
-export const transportFromFulfilment = (reader) =>
-  orUndefined(
+export const transportFromFulfilment = (reader) => {
+  const { arrivalDateAtPort, portOfEntry } = obligationSet()
+  return orUndefined(
     compact({
       portOfEntry: reader.scalar(portOfEntry),
       arrivalDate: isoFromDateParts(reader.scalar(arrivalDateAtPort)),
       transporter: transporterFromFulfilment(reader)
     })
   )
+}

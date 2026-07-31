@@ -4,8 +4,16 @@ import {
   allRoutes,
   dispatchPages
 } from './sets/live-animals/journeys/linear/features/index.js'
+import { featureEvaluationBindings } from './sets/live-animals/journeys/linear/features/evaluation.js'
+import * as liveAnimalsObligationSet from './sets/live-animals/obligations/index.js'
+import * as commodities from './sets/live-animals/services/commodities/index.js'
 import { assertObligationPurity } from './obligation-purity.js'
-import { assertFulfilmentBindingCoverage } from './bridge/fulfilment-registry.js'
+import {
+  assertFulfilmentBindingCoverage,
+  configureFulfilmentRegistry
+} from './bridge/fulfilment-registry.js'
+import { configureObligationSet } from './model/obligations/manifest.js'
+import { configureCommodityReference } from './services/persistence/records/notification-mapper/commodity-reference.js'
 import { configureRecords } from './engine/persistence/records.js'
 import { records } from './services/persistence/records/index.js'
 import { configureSession } from './engine/persistence/session.js'
@@ -19,6 +27,9 @@ export const liveAnimals = {
   plugin: {
     name: 'live-animals',
     register: async (server) => {
+      configureObligationSet(liveAnimalsObligationSet)
+      configureFulfilmentRegistry(featureEvaluationBindings)
+      configureCommodityReference(commodities)
       assertObligationPurity()
       assertFulfilmentBindingCoverage()
       buildDispatch(dispatchPages)

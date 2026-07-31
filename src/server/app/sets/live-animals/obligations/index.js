@@ -55,14 +55,11 @@
  * mandatory subfields) is out of scope of the obligation model.
  */
 
-import {
-  arrivalDateAtPort,
-  portOfEntry
-} from '../../sets/live-animals/obligations/sections/arrival.js'
+import { arrivalDateAtPort, portOfEntry } from './sections/arrival.js'
 import {
   cph,
   containsUnweanedAnimals
-} from '../../sets/live-animals/obligations/sections/commodities/aggregates.js'
+} from './sections/commodities/aggregates.js'
 import {
   description,
   earTag,
@@ -72,7 +69,7 @@ import {
   permanentAddress,
   tattoo,
   unitRecord
-} from '../../sets/live-animals/obligations/sections/commodities/identifiers.js'
+} from './sections/commodities/identifiers.js'
 import {
   commodityCode,
   commodityLine,
@@ -80,7 +77,7 @@ import {
   numberOfAnimals,
   numberOfPackages,
   species
-} from '../../sets/live-animals/obligations/sections/commodities/lines.js'
+} from './sections/commodities/lines.js'
 import {
   accompanyingDocumentAttachmentType,
   accompanyingDocumentDateOfIssue,
@@ -89,32 +86,32 @@ import {
   documentFilename,
   documents,
   documentUploadId
-} from '../../sets/live-animals/obligations/sections/documents.js'
+} from './sections/documents.js'
 import {
   destinationCountry,
   exitDate,
   portOfExit,
   purposeInInternalMarket,
   reasonForImport
-} from '../../sets/live-animals/obligations/sections/import-reason.js'
+} from './sections/import-reason.js'
 import {
   animalsCertifiedFor,
   contactAddress,
   internalReferenceNumber
-} from '../../sets/live-animals/obligations/sections/misc.js'
+} from './sections/misc.js'
 import {
   countryOfOrigin,
   regionCode,
   regionCodeRequirement
-} from '../../sets/live-animals/obligations/sections/origin.js'
+} from './sections/origin.js'
 import {
   consignee,
   consignor,
   importer,
   placeOfDestination,
   placeOfOrigin
-} from '../../sets/live-animals/obligations/sections/parties.js'
-import { poApprovedReferenceNumber } from '../../sets/live-animals/obligations/sections/system.js'
+} from './sections/parties.js'
+import { poApprovedReferenceNumber } from './sections/system.js'
 import {
   commercialTransporter,
   meansOfTransport,
@@ -123,7 +120,7 @@ import {
   transportDocumentReference,
   transporterType,
   transportIdentification
-} from '../../sets/live-animals/obligations/sections/transport.js'
+} from './sections/transport.js'
 
 export {
   accompanyingDocumentAttachmentType,

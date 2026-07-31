@@ -10,7 +10,9 @@ import {
 import { records as realRecords } from '../services/persistence/records/real/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { recordingH } from './test-support.js'
-import { countryOfOrigin } from '../model/obligations/obligations.js'
+import { obligationSet } from '../model/obligations/manifest.js'
+
+const { countryOfOrigin } = obligationSet()
 
 // Network-boundary perf contract for the REAL records adapter (S5 hardening —
 // "one load per request"). Every currentJourney call — whether from a read

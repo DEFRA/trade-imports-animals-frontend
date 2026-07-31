@@ -6,7 +6,9 @@ import {
   DRAFT,
   SUBMITTED
 } from '../../../engine/persistence/records.js'
-import { countryOfOrigin } from '../../../model/obligations/obligations.js'
+import { obligationSet } from '../../../model/obligations/manifest.js'
+
+const { countryOfOrigin } = obligationSet()
 
 const originFulfilment = (value) => ({ [countryOfOrigin.id]: value })
 

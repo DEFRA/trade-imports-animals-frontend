@@ -1,7 +1,7 @@
 import {
   cphCommodities,
   unweanedCommodities
-} from '../../../../../services/commodities/index.js'
+} from '../../../services/commodities/index.js'
 import { anyAllowListed } from '../../../../../model/obligations/helpers/index.js'
 import { commodityCode } from './lines.js'
 
@@ -20,7 +20,7 @@ export const cph = {
   name: 'countyParishHoldingCph',
   applyTo: anyAllowListed(
     commodityCode,
-    cphCommodities(),
+    cphCommodities,
     { inScope: true, status: 'mandatory', reasons: [cphReason] },
     { inScope: false }
   )
@@ -48,7 +48,7 @@ export const containsUnweanedAnimals = {
   name: 'containsUnweanedAnimals',
   applyTo: anyAllowListed(
     commodityCode,
-    unweanedCommodities(),
+    unweanedCommodities,
     { inScope: true, status: 'mandatory', reasons: [unweanedApplicableReason] },
     { inScope: false }
   )

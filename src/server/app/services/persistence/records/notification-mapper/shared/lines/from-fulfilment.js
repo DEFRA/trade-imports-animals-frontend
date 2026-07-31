@@ -1,39 +1,5 @@
-import {
-  commodityCode,
-  commodityLine,
-  commodityType,
-  description,
-  earTag,
-  horseName,
-  identificationDetails,
-  numberOfAnimals,
-  numberOfPackages,
-  passport,
-  permanentAddress,
-  species,
-  tattoo,
-  unitRecord
-} from '../../../../../../model/obligations/obligations.js'
+import { obligationSet } from '../../../../../../model/obligations/manifest.js'
 import { compact } from '../compact.js'
-
-const identifierObligations = [
-  passport,
-  tattoo,
-  earTag,
-  horseName,
-  identificationDetails,
-  description,
-  permanentAddress
-]
-
-const commodityObligations = [
-  commodityCode,
-  commodityType,
-  species,
-  numberOfAnimals,
-  numberOfPackages,
-  ...identifierObligations
-]
 
 const legacyAnimalCount = (value) =>
   typeof value === 'number' ? String(value) : value
@@ -42,6 +8,39 @@ const legacyAnimalCount = (value) =>
 // and unit identity comes only from exact composite ids; a leaf is joined only
 // when its record map contains that exact id.
 export const commodityLinesFromFulfilment = (reader) => {
+  const {
+    commodityCode,
+    commodityLine,
+    commodityType,
+    description,
+    earTag,
+    horseName,
+    identificationDetails,
+    numberOfAnimals,
+    numberOfPackages,
+    passport,
+    permanentAddress,
+    species,
+    tattoo,
+    unitRecord
+  } = obligationSet()
+  const identifierObligations = [
+    passport,
+    tattoo,
+    earTag,
+    horseName,
+    identificationDetails,
+    description,
+    permanentAddress
+  ]
+  const commodityObligations = [
+    commodityCode,
+    commodityType,
+    species,
+    numberOfAnimals,
+    numberOfPackages,
+    ...identifierObligations
+  ]
   const recordsByObligation = new Map(
     commodityObligations.map((obligation) => [
       obligation,

@@ -6,10 +6,9 @@ import { records as recordsStub } from '../services/persistence/records/stub/ind
 import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { journeyRequest, recordingH } from './test-support.js'
 import { configureSession } from './persistence/session.js'
-import {
-  countryOfOrigin,
-  transporterType
-} from '../model/obligations/obligations.js'
+import { obligationSet } from '../model/obligations/manifest.js'
+
+const { countryOfOrigin, transporterType } = obligationSet()
 
 describe('#get — per-request read view', () => {
   beforeAll(() => {

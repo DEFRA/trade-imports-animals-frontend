@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { feature, grouped, scalar } from './fulfilment-bindings.js'
-import { createFulfilmentRegistry } from './fulfilment-registry.js'
-import { featureEvaluationBindings } from '../sets/live-animals/journeys/linear/features/evaluation.js'
 import {
-  commodityLine,
-  countryOfOrigin,
-  earTag
-} from '../model/obligations/obligations.js'
+  createFulfilmentRegistry,
+  fulfilmentRegistry
+} from './fulfilment-registry.js'
+import { obligationSet } from '../model/obligations/manifest.js'
+
+const featureEvaluationBindings = fulfilmentRegistry.features
+const { commodityLine, countryOfOrigin, earTag } = obligationSet()
 
 describe('#createFulfilmentRegistry', () => {
   it('Should accept the complete feature-owned registry', () => {

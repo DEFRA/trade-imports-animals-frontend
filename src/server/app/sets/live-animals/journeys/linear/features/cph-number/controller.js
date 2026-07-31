@@ -11,7 +11,7 @@ import {
 } from '../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
-import * as commodities from '../../../../../../services/commodities/index.js'
+import * as commodities from '../../../../services/commodities/index.js'
 import { cphNumberPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'

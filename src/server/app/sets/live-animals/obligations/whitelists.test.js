@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest'
-import { createObligationEvaluator } from './evaluator.js'
+import { createObligationEvaluator } from '../../../model/obligations/evaluator.js'
 import {
   obligations as v4Obligations,
   commodityCode,
@@ -25,7 +25,7 @@ import {
   earTag,
   horseName,
   permanentAddress
-} from './obligations.js'
+} from './index.js'
 import {
   cphCommodities,
   earTagCommodities,
@@ -35,7 +35,7 @@ import {
   passportCommodities,
   permanentAddressCommodities,
   tattooCommodities
-} from '../../services/commodities/index.js'
+} from '../services/commodities/index.js'
 
 // Sentinel — a commodity name deliberately not present in any V4
 // allowlist and not a picker name. If a real commodity ever matches,

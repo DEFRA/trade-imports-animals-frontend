@@ -1,4 +1,4 @@
-import * as commodities from '../../../../../../../../../../services/commodities/index.js'
+import * as commodities from '../../../../../../../../services/commodities/index.js'
 
 export const speciesText = (entry) =>
   entry.speciesSelection === undefined

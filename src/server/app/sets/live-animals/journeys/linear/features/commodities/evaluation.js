@@ -17,7 +17,7 @@ import {
   species,
   tattoo,
   unitRecord
-} from '../../../../../../model/obligations/obligations.js'
+} from '../../../../obligations/index.js'
 
 const line = {
   field: 'commodityLines',

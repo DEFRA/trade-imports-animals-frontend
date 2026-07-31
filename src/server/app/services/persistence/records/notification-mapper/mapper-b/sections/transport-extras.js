@@ -1,12 +1,13 @@
-import {
-  meansOfTransport,
-  transitedCountries,
-  transportDocumentReference,
-  transportIdentification
-} from '../../../../../../model/obligations/obligations.js'
+import { obligationSet } from '../../../../../../model/obligations/manifest.js'
 import { compact } from '../../shared/compact.js'
 
 export const applyTransportExtrasOverlay = (notification, reader) => {
+  const {
+    meansOfTransport,
+    transitedCountries,
+    transportDocumentReference,
+    transportIdentification
+  } = obligationSet()
   const transportExtras = compact({
     meansOfTransport: reader.scalar(meansOfTransport),
     transportIdentification: reader.scalar(transportIdentification),

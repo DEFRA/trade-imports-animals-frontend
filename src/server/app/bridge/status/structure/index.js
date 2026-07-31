@@ -1,4 +1,4 @@
-import { obligations, groups } from '../../../model/obligations/obligations.js'
+import { groups, obligations } from '../../../model/obligations/manifest.js'
 import { SYSTEM_POPULATED } from '../../obligation-source.js'
 
 // --- structure: the manifest, projected into the status object shape ------
@@ -13,13 +13,13 @@ import { SYSTEM_POPULATED } from '../../obligation-source.js'
 //                        (the animalIdentifiers floor is a per-unit any-of)
 //   .item              → obligations whose `within` is this group
 
-const isGroup = (obligation) => groups.includes(obligation)
+const isGroup = (obligation) => groups().includes(obligation)
 
 // Collection members for status = the group's `within` obligations MINUS the
 // system-populated placeholders that no page collects — the same exclusion
 // `flow/dispatch.js` applies when indexing pages to obligations.
 const membersOf = (group) =>
-  obligations.filter(
+  obligations().filter(
     (obligation) =>
       obligation.within === group && !SYSTEM_POPULATED.has(obligation.name)
   )
@@ -45,8 +45,7 @@ const toStructural = (obligation) => ({
     : undefined
 })
 
-const structuralByName = new Map(
-  obligations.map((obligation) => [obligation.name, toStructural(obligation)])
-)
-
-export const structuralOf = (name) => structuralByName.get(name)
+export const structuralOf = (name) => {
+  const obligation = obligations().find((candidate) => candidate.name === name)
+  return obligation ? toStructural(obligation) : undefined
+}
