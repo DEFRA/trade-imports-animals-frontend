@@ -179,11 +179,41 @@ request is tied to a journey document. It memoises the loaded journey on
   `request.params.journeyId`. Missing, unknown and stale references are
   answered with 404; a successfully loaded reference is added to the
   session-known list. Reads never create a journey.
-- `listKnownJourneys` loads the session's known references through
-  `records.list` — the dashboard's data source.
+- `listKnownJourneys` passes the session's known references to `records.list`,
+  which is the dashboard's data source. The adapters use that list differently,
+  as described below.
 - `amendJourney` checks the session-known reference and unfreezes a
   submitted journey with `records.amend`. An already-editable journey
   just re-enters, so a repeated POST is not an error.
+
+## Real and stub listing semantics
+
+`listKnownJourneys` always reads the session's known IDs and passes them to
+`records.list`. The two record adapters use that input differently.
+
+**Stub mode** uses the IDs as the dashboard boundary. It looks up only those
+records in the in-memory map, drops unknown and deleted records, then applies
+the reference filter, sort and paging. A new browser session therefore starts
+with an empty stub dashboard, even if the process map contains records made by
+another session.
+
+**Real mode** ignores `journeyIds`. It sends `page`, `sort` and the optional
+`referenceNumber` to `GET /fulfilments`. The dashboard shows the rows and
+paging values returned by the backend. The backend list, not the browser
+session's known-ID set, is the real-mode listing boundary.
+
+The SESSION known-ID list still has work in both modes:
+
+- `startJourney` adds the new backend or stub reference.
+- `currentJourney` loads the ID from the URL and adds it after a successful
+  load when the session does not know it.
+- `copyJourney` adds the new copy's reference.
+- amend, cancel-amend, copy and soft-delete require the source ID to be known
+  to the session before they call the records port.
+
+The current journey always comes from `request.params.journeyId`. SESSION does
+not hold a current pointer. Opening-run and flow-only state are also keyed by
+that journey ID, so two journey URLs in one session do not share those values.
 
 ## Write-through and submit-is-finalise
 

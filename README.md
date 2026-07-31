@@ -179,25 +179,15 @@ trade-imports-animals service including this one) is the workspace stack in
 
 ### Local usage
 
-Start the app locally (on port 3000):
+Start the workspace stack so the configured URLs are available on port 3000.
+Then run:
 
 ```
-npm run dev
+npm run lighthouse
 ```
 
-### Run Lighthouse against a chosen URL:
-
-Run locally (app must already be running):
-
-```
-LH_BASE_URL=http://localhost:3000 npm run lighthouse
-```
-
-In CI against perf:
-
-```
-LH_BASE_URL=https://your-perf-env npm run lighthouse
-```
+The URL list, score floors and contribution steps are in the
+[Lighthouse guide](src/server/live-animals/docs/lighthouse.md).
 
 ### SonarCloud
 
