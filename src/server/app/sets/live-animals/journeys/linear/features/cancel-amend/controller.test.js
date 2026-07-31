@@ -8,7 +8,7 @@ import {
   vi
 } from 'vitest'
 
-import { pagePath } from '../../../../../../config.js'
+import { pagePath } from '../../../../../../shared/paths.js'
 import { assembleFulfilments } from '../../../../../../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../../../../../../bridge/fulfilments/index.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
@@ -17,7 +17,10 @@ import {
   records,
   SUBMITTED
 } from '../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../engine/persistence/session.js'
+import {
+  configureSession,
+  KNOWN_JOURNEYS_COOKIE
+} from '../../../../../../engine/persistence/session.js'
 import { store } from '../../../../../../engine/store.js'
 import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
@@ -115,7 +118,7 @@ describe('cancel amendment routes', () => {
     await expect(
       post(
         journeyRequest('GBN-AG-26-UNKNOWN', {
-          state: { liveAnimalsKnownJourneys: [] }
+          state: { [KNOWN_JOURNEYS_COOKIE]: [] }
         }),
         stubH()
       )

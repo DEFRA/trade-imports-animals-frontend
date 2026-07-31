@@ -1,8 +1,5 @@
-import {
-  dashboardPath,
-  hubRoutePath,
-  TEMPLATES
-} from '../../../../../../config.js'
+import { dashboardPath, hubRoutePath } from '../../../../../../shared/paths.js'
+import { TEMPLATES } from '../../config.js'
 import { sections } from '../../flow/flow.js'
 import {
   rowEntry,

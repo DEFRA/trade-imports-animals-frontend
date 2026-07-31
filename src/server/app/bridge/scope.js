@@ -27,7 +27,7 @@ import {
 import { pathKey } from '../lib/path.js'
 import { isAnswered } from '../lib/answered.js'
 import { computeReadyForCheckYourAnswers } from './readiness-config.js'
-import { FLOW_ONLY_OBLIGATIONS } from './obligation-source.js'
+import { journeyFlowOnlyKeys } from '../flow/journey-flow.js'
 
 // `anyInstanceAnswered` — look up the obligation named `id` and walk the
 // answers tree over its ancestor-group chain, testing each positional instance
@@ -133,7 +133,7 @@ export const rawInScope = (evaluation) => projectInScope(evaluation.obligations)
 // scope regardless of answers. An additive layer only; the raw evaluator scope
 // (`rawInScope`) is untouched.
 const projectFlowOnlyScope = (inScope) => {
-  for (const id of FLOW_ONLY_OBLIGATIONS) inScope.add(id)
+  for (const id of journeyFlowOnlyKeys()) inScope.add(id)
 }
 
 /**

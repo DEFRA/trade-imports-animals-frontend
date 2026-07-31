@@ -1,9 +1,9 @@
 import {
   dashboardPath,
   hubPath,
-  pageRoutePath,
-  TEMPLATES
-} from '../../../../../../config.js'
+  pageRoutePath
+} from '../../../../../../shared/paths.js'
+import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import { base, routeOptions } from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'

@@ -3,9 +3,9 @@ import {
   dashboardPath,
   hubPath,
   pagePath,
-  pageRoutePath,
-  TEMPLATES
-} from '../../../../../../config.js'
+  pageRoutePath
+} from '../../../../../../shared/paths.js'
+import { TEMPLATES } from '../../config.js'
 import { DELETED } from '../../../../../../engine/index.js'
 import {
   amendJourney,

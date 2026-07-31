@@ -1,4 +1,4 @@
-import { pagePath } from '../../../../../../../config.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'

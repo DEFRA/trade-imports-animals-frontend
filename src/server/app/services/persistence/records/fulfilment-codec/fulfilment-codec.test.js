@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { characterisationCorpus } from '../../../../bridge/fixtures/characterisation-corpus.js'
+import { characterisationCorpus } from '../../../../sets/live-animals/journeys/linear/fixtures/characterisation-corpus.js'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { createObligationEvaluator } from '../../../../model/obligations/evaluator.js'
 import { obligationSet } from '../../../../model/obligations/manifest.js'

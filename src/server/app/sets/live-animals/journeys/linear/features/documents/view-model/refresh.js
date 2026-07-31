@@ -1,4 +1,4 @@
-import { pagePath } from '../../../../../../../config.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { documentsPage as page } from '../page.js'
 

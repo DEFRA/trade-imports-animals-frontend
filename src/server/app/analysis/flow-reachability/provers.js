@@ -2,7 +2,6 @@ import { SYSTEM_POPULATED } from '../../bridge/obligation-source.js'
 import { makeScope } from '../../engine/index.js'
 import { obligations } from '../../model/obligations/manifest.js'
 import { simulateJourney } from '../simulate.js'
-import { enumerateAnswerStates } from './fixtures/enumerate-answer-states.js'
 import { leafName } from './path-key.js'
 import { dedupedProblems, problemsForAnswers } from './problems/collect.js'
 
@@ -17,15 +16,17 @@ import { dedupedProblems, problemsForAnswers } from './problems/collect.js'
  * the prover has teeth (the dropped page's in-scope obligations become
  * `owning-page-unreachable-in-scope`).
  *
- * @param {{ scopeFor?: (answers: object) => { inScope: Set<string> },
+ * @param {{ answerStates: object[],
+ *           scopeFor?: (answers: object) => { inScope: Set<string> },
  *           pagesFor?: (answers: object) => string[] }} [deps]
  * @returns {Array<{ obligation: string, pageId?: string, reason: string }>}
  */
 export function proveFlowReachability({
+  answerStates,
   scopeFor = makeScope,
   pagesFor = simulateJourney
-} = {}) {
-  const problems = enumerateAnswerStates().flatMap((answers) =>
+}) {
+  const problems = answerStates.flatMap((answers) =>
     problemsForAnswers(answers, scopeFor, pagesFor)
   )
   return dedupedProblems(problems)
@@ -42,12 +43,13 @@ export function proveFlowReachability({
  *
  * `scopeFor` is injectable so a test can prove the check has teeth.
  *
- * @param {{ scopeFor?: (answers: object) => { inScope: Set<string> } }} [deps]
+ * @param {{ answerStates: object[],
+ *           scopeFor?: (answers: object) => { inScope: Set<string> } }} [deps]
  * @returns {string[]} manifest obligation names never seen in scope.
  */
-export function proveScopeCompleteness({ scopeFor = makeScope } = {}) {
+export function proveScopeCompleteness({ answerStates, scopeFor = makeScope }) {
   const seen = new Set()
-  for (const answers of enumerateAnswerStates()) {
+  for (const answers of answerStates) {
     for (const key of scopeFor(answers).inScope) seen.add(leafName(key))
   }
   return obligations()

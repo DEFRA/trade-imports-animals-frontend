@@ -21,7 +21,7 @@ import {
 import { dispatchPages } from '../../index.js'
 import * as addressBook from '../../../../../../../services/address-book/index.js'
 import * as countries from '../../../../../../../services/countries/index.js'
-import { pagePath } from '../../../../../../../config.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
 
 import * as createAddress from './create-address.controller.js'
 import * as partyPicker from '../party-picker/party-picker.controller.js'

@@ -1,26 +1,26 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../flow/dispatch.js'
-import { store } from '../engine/store.js'
+import { buildDispatch } from '../../../../../flow/dispatch.js'
+import { store } from '../../../../../engine/store.js'
 import {
   AMEND,
   DELETED,
   DRAFT,
   SUBMITTED,
   configureRecords
-} from '../engine/persistence/records.js'
-import { configureSession } from '../engine/persistence/session.js'
-import { records as recordsStub } from '../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../services/persistence/session/stub.js'
-import { stubH, journeyRequest } from '../engine/test-support.js'
-import { dispatchPages } from '../sets/live-animals/journeys/linear/features/index.js'
-import { journeyStrip } from './kit.js'
+} from '../../../../../engine/persistence/records.js'
+import { configureSession } from '../../../../../engine/persistence/session.js'
+import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
+import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
+import { stubH, journeyRequest } from '../../../../../engine/test-support.js'
+import { dispatchPages } from './index.js'
+import { journeyStrip } from '../../../../../shared/kit.js'
 
-import { routes as hubRoutes } from '../sets/live-animals/journeys/linear/features/hub/controller.js'
-import { routes as dashboardRoutes } from '../sets/live-animals/journeys/linear/features/dashboard/controller.js'
-import { routes as filterRoutes } from '../sets/live-animals/journeys/linear/features/import-type-filter/controller.js'
-import { routes as originRoutes } from '../sets/live-animals/journeys/linear/features/origin/controller.js'
-import { routes as importReasonRoutes } from '../sets/live-animals/journeys/linear/features/import-reason/controller.js'
+import { routes as hubRoutes } from './hub/controller.js'
+import { routes as dashboardRoutes } from './dashboard/controller.js'
+import { routes as filterRoutes } from './import-type-filter/controller.js'
+import { routes as originRoutes } from './origin/controller.js'
+import { routes as importReasonRoutes } from './import-reason/controller.js'
 
 const getHandlerOf = (routes) =>
   routes.find((route) => route.method === 'GET').handler

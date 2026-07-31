@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import { hubPath, pagePath } from '../../../../../config.js'
+import { hubPath, pagePath } from '../../../../../shared/paths.js'
 import { dispatchPages } from '../features/index.js'
 import {
   animalIdentificationPage,

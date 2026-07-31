@@ -1,4 +1,4 @@
-import { hubPath, pagePath } from '../../../../../config.js'
+import { hubPath, pagePath } from '../../../../../shared/paths.js'
 import { importTypeFilterPage } from '../features/import-type-filter/page.js'
 import { originPage } from '../features/origin/page.js'
 import {

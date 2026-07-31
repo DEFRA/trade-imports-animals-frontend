@@ -1,4 +1,4 @@
-import { pagePath } from '../../../../../../../../config.js'
+import { pagePath } from '../../../../../../../../shared/paths.js'
 import * as state from '../../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../../../shared/kit.js'

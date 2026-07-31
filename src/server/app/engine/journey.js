@@ -1,5 +1,5 @@
 import Boom from '@hapi/boom'
-import { BASE } from '../config.js'
+import { BASE } from '../shared/paths.js'
 import {
   session,
   KNOWN_JOURNEYS_COOKIE,
@@ -37,7 +37,7 @@ export const registerJourneyCookie = (server) => {
   })
 }
 
-const JOURNEY_MEMO = Symbol('liveAnimalsCurrentJourney')
+const JOURNEY_MEMO = Symbol('currentJourney')
 
 const memoRead = (request) => request?.app?.[JOURNEY_MEMO]
 

@@ -1,9 +1,9 @@
 import {
   dashboardPath,
   pagePath,
-  pageRoutePath,
-  TEMPLATES
-} from '../../../../../../config.js'
+  pageRoutePath
+} from '../../../../../../shared/paths.js'
+import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import { cancelAmendJourney } from '../../../../../../engine/journey.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'

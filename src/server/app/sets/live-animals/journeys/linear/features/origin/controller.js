@@ -1,4 +1,5 @@
-import { hubPath, TEMPLATES } from '../../../../../../config.js'
+import { hubPath } from '../../../../../../shared/paths.js'
+import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
   HTTP_STATUS_BAD_REQUEST,
@@ -15,7 +16,7 @@ import {
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import * as countries from '../../../../../../services/countries/index.js'
-import { hasCommittedNotificationAnswers } from '../../../../../../flow/entry-guard.js'
+import { hasCommittedNotificationAnswers } from '../../flow/entry-guard.js'
 import { originPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'

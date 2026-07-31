@@ -23,8 +23,6 @@
  * the section/page gates over `makeScope`).
  */
 
-export { enumerateScopeStates } from './fixtures/scope-states.js'
-export { seedVariants, submitReadySeed } from './fixtures/seeds.js'
 export {
   REASON_NO_OWNING_PAGE,
   REASON_UNREACHABLE_IN_SCOPE

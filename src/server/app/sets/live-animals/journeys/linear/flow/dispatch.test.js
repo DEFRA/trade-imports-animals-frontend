@@ -1,16 +1,16 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest'
-import { dispatchPages } from '../sets/live-animals/journeys/linear/features/index.js'
-import { makeScope } from '../engine/index.js'
-import { evaluateAnswers } from '../bridge/evaluation.js'
-import * as obligationSource from '../bridge/obligation-source.js'
-import { readyForCheckYourAnswers } from './section-status.js'
+import { dispatchPages } from '../features/index.js'
+import { makeScope } from '../../../../../engine/index.js'
+import { evaluateAnswers } from '../../../../../bridge/evaluation.js'
+import * as obligationSource from '../../../../../bridge/obligation-source.js'
+import { readyForCheckYourAnswers } from '../../../../../flow/section-status.js'
 import {
   buildDispatch,
   collectsOf,
   pageOfObligation,
   slugOfPage
-} from './dispatch.js'
-import { nextInSection, sectionEntry } from './navigation.js'
+} from '../../../../../flow/dispatch.js'
+import { nextInSection, sectionEntry } from '../../../../../flow/navigation.js'
 
 describe('#buildDispatch', () => {
   beforeAll(() => {

@@ -11,7 +11,7 @@ export { configureReadyForCheckYourAnswers }
 export const makeScope = (answers) =>
   makeScopeFromEvaluation(evaluateAnswers(answers), answers)
 
-const REQUEST_VIEW_MEMO = Symbol('liveAnimalsRequestView')
+const REQUEST_VIEW_MEMO = Symbol('requestView')
 
 const memoRead = (request) => request?.app?.[REQUEST_VIEW_MEMO]
 

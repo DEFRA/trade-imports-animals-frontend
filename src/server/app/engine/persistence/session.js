@@ -1,6 +1,6 @@
-export const KNOWN_JOURNEYS_COOKIE = 'liveAnimalsKnownJourneys'
-export const OPENING_RUN_COOKIE = 'liveAnimalsOpeningRun'
-export const FLOW_ONLY_ANSWERS_COOKIE = 'liveAnimalsFlowOnlyAnswers'
+export let KNOWN_JOURNEYS_COOKIE = 'knownJourneys'
+export let OPENING_RUN_COOKIE = 'openingRun'
+export let FLOW_ONLY_ANSWERS_COOKIE = 'flowOnlyAnswers'
 
 const unconfigured = () => {
   throw new Error('session not configured — call configureSession() at boot')
@@ -15,8 +15,13 @@ let impl = {
   setFlowOnlyAnswers: unconfigured
 }
 
-export const configureSession = (newImpl) => {
+export const configureSession = (newImpl, cookieNames) => {
   impl = newImpl
+  if (cookieNames) {
+    KNOWN_JOURNEYS_COOKIE = cookieNames.knownJourneys
+    OPENING_RUN_COOKIE = cookieNames.openingRun
+    FLOW_ONLY_ANSWERS_COOKIE = cookieNames.flowOnlyAnswers
+  }
 }
 
 export const session = {

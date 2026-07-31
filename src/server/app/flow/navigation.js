@@ -1,12 +1,16 @@
-import { hubPath, pagePath } from '../config.js'
+import { hubPath, pagePath } from '../shared/paths.js'
 import { pageGatePasses } from './gates.js'
-import {
-  sectionOfPage,
-  sections
-} from '../sets/live-animals/journeys/linear/flow/flow.js'
+import { journeySections } from './journey-flow.js'
+
+const sectionOfPage = (pageId) =>
+  journeySections().find((section) =>
+    section.pages.some((page) => page.id === pageId)
+  )
 
 export const sectionEntry = (sectionId, scope, journeyId) => {
-  const section = sections.find((candidate) => candidate.id === sectionId)
+  const section = journeySections().find(
+    (candidate) => candidate.id === sectionId
+  )
   const page = section?.pages.find((candidate) =>
     pageGatePasses(candidate, scope)
   )

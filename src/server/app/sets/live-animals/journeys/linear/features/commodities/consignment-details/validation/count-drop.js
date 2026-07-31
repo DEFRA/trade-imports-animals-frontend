@@ -1,4 +1,4 @@
-import { pagePath } from '../../../../../../../../config.js'
+import { pagePath } from '../../../../../../../../shared/paths.js'
 import * as kit from '../../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import * as commodities from '../../../../../../services/commodities/index.js'

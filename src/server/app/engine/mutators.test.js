@@ -10,8 +10,7 @@ import { configureRecords } from './persistence/records.js'
 import { configureSession } from './persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
-import { buildDispatch } from '../flow/dispatch.js'
-import { dispatchPages } from '../sets/live-animals/journeys/linear/features/index.js'
+import { configureReadyForCheckYourAnswers } from './read.js'
 import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 import { purgeFulfilments, wipeSet } from '../bridge/purge.js'
 import { stubH, journeyRequest } from './test-support.js'
@@ -52,7 +51,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureReadyForCheckYourAnswers(() => false)
   })
   beforeEach(async () => {
     await store.clear()

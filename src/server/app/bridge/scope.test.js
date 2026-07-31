@@ -10,7 +10,12 @@ import { evaluateAnswers } from './evaluation.js'
 // controllers consume.
 
 const happyPath = JSON.parse(
-  readFileSync(new URL('../flow/fixtures/happy-path.json', import.meta.url))
+  readFileSync(
+    new URL(
+      '../sets/live-animals/journeys/linear/flow/fixtures/happy-path.json',
+      import.meta.url
+    )
+  )
 ).values
 
 // Pin readiness false through the test override seam.

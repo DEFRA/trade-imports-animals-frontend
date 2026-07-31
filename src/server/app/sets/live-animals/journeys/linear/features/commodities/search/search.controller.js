@@ -1,4 +1,5 @@
-import { hubPath, TEMPLATES } from '../../../../../../../config.js'
+import { hubPath } from '../../../../../../../shared/paths.js'
+import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../../shared/kit.js'

@@ -1,13 +1,12 @@
 import {
   breadcrumbs as buildBreadcrumbs,
   hubPath,
-  LAYOUT,
   pagePath,
   pageRoutePath
-} from '../config.js'
+} from './paths.js'
 import { AMEND, DELETED, DRAFT, SUBMITTED } from '../engine/index.js'
 import { nextInSection } from '../flow/navigation.js'
-import { nextRunTarget } from '../sets/live-animals/journeys/linear/flow/run.js'
+import { journeyLayout, journeyNextRunTarget } from '../flow/journey-flow.js'
 import { inOpeningRun } from '../flow/run-state.js'
 import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
@@ -75,7 +74,7 @@ export const exitTarget = (request, fallback) =>
 
 export const runTarget = async (request, stepId, scope) =>
   (await inOpeningRun(request, request.params.journeyId))
-    ? nextRunTarget(stepId, scope, request.params.journeyId)
+    ? journeyNextRunTarget(stepId, scope, request.params.journeyId)
     : null
 
 export const nextTarget = async (request, page, scope) =>
@@ -96,7 +95,7 @@ export const base = (
 ) => {
   const hasJourney = journeyId != null
   return {
-    layout: LAYOUT,
+    layout: journeyLayout(),
     pageTitle: title,
     breadcrumbs: hasJourney ? buildBreadcrumbs(journeyId, title) : false,
     backLink,

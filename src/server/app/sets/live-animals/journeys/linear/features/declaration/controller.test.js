@@ -8,7 +8,7 @@ import {
   vi
 } from 'vitest'
 
-import { pagePath } from '../../../../../../config.js'
+import { pagePath } from '../../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
 import { configureRecords } from '../../../../../../engine/persistence/records.js'

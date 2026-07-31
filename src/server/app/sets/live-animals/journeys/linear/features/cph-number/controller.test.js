@@ -13,7 +13,7 @@ import {
   stubH
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
-import { hubPath, pagePath } from '../../../../../../config.js'
+import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 
 import * as cphNumber from './controller.js'
 

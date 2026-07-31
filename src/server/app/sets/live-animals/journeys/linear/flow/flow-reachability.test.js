@@ -1,19 +1,24 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import { SYSTEM_POPULATED } from '../../bridge/obligation-source.js'
-import { makeScope } from '../../engine/index.js'
-import { dispatchPages } from '../../sets/live-animals/journeys/linear/features/index.js'
-import { buildDispatch, pageOfObligation } from '../../flow/dispatch.js'
-import { simulateJourney } from '../simulate.js'
+import { SYSTEM_POPULATED } from '../../../../../bridge/obligation-source.js'
+import { makeScope } from '../../../../../engine/index.js'
+import { dispatchPages } from '../features/index.js'
 import {
-  enumerateScopeStates,
+  buildDispatch,
+  pageOfObligation
+} from '../../../../../flow/dispatch.js'
+import { simulateJourney } from '../../../../../analysis/simulate.js'
+import {
   proveFlowReachability,
   proveScopeCompleteness,
   REASON_NO_OWNING_PAGE,
-  REASON_UNREACHABLE_IN_SCOPE,
-  seedVariants,
-  submitReadySeed
-} from './index.js'
+  REASON_UNREACHABLE_IN_SCOPE
+} from '../../../../../analysis/flow-reachability/index.js'
+import { enumerateAnswerStates } from './reachability-fixtures/enumerate-answer-states.js'
+import { enumerateScopeStates } from './reachability-fixtures/scope-states.js'
+import { seedVariants, submitReadySeed } from './reachability-fixtures/seeds.js'
+
+const answerStates = enumerateAnswerStates()
 
 // The two FLOW-level checks layered on top of the graph prover: every
 // in-scope obligation has an owning page (`no-owning-page`) and that page is
@@ -30,14 +35,14 @@ describe('#proveFlowReachability', () => {
   })
 
   it('Should prove no in-scope obligation is ever page-unreachable', () => {
-    expect(proveFlowReachability()).toEqual([])
+    expect(proveFlowReachability({ answerStates })).toEqual([])
   })
 
   it('Should have teeth — reporting dead ends when pages go unreachable', () => {
     // Only origin + commodities survive; every in-scope obligation owned by
     // any other page becomes an owning-page-unreachable-in-scope dead end.
     const pagesFor = () => ['origin', 'commodities']
-    const problems = proveFlowReachability({ pagesFor })
+    const problems = proveFlowReachability({ answerStates, pagesFor })
     expect(problems.length).toBeGreaterThan(0)
     expect(
       problems.every(
@@ -68,7 +73,7 @@ describe('#proveFlowReachability', () => {
     expect(commodityKeys.length).toBeGreaterThan(0)
     const pagesFor = (answers) =>
       simulateJourney(answers).filter((pageId) => pageId !== 'commodities')
-    const deadEnds = proveFlowReachability({ pagesFor })
+    const deadEnds = proveFlowReachability({ answerStates, pagesFor })
       .filter((problem) => problem.reason === REASON_UNREACHABLE_IN_SCOPE)
       .map((problem) => problem.obligation)
     for (const key of commodityKeys) expect(deadEnds).toContain(key)
@@ -78,7 +83,11 @@ describe('#proveFlowReachability', () => {
     // Inject a scope carrying an obligation dispatch never indexed. pageOfObl
     // returns undefined → the no-owning-page branch fires.
     const scopeFor = () => ({ inScope: new Set(['obligationWithNoPage']) })
-    const problems = proveFlowReachability({ scopeFor, pagesFor: () => [] })
+    const problems = proveFlowReachability({
+      answerStates,
+      scopeFor,
+      pagesFor: () => []
+    })
     expect(problems).toEqual([
       { obligation: 'obligationWithNoPage', reason: REASON_NO_OWNING_PAGE }
     ])
@@ -89,14 +98,14 @@ describe('#proveFlowReachability', () => {
     // variants never scope would dodge proveFlowReachability silently — a
     // new model addition whose gate values are missing from the seeds turns
     // this red instead.
-    expect(proveScopeCompleteness()).toEqual([])
+    expect(proveScopeCompleteness({ answerStates })).toEqual([])
   })
 
   it('Should have teeth — reporting obligations no enumerated state scopes', () => {
     // Freeze the scope to a single obligation: everything else in the
     // manifest (bar SYSTEM_POPULATED) must be reported as never-scoped.
     const scopeFor = () => ({ inScope: new Set(['countryOfOrigin']) })
-    const neverScoped = proveScopeCompleteness({ scopeFor })
+    const neverScoped = proveScopeCompleteness({ answerStates, scopeFor })
     expect(neverScoped).not.toContain('countryOfOrigin')
     expect(neverScoped).toContain('horseName')
     expect(neverScoped).toContain('permanentAddress')

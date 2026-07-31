@@ -11,7 +11,7 @@ import { MAX_ENTRIES_FROM } from '../../bridge/obligation-source.js'
  * Returns the cap for the collection instance at `collectionPath`, or `null`
  * when uncapped: no cap declared, the count is unanswered, or the stored value
  * is not a non-negative integer. An unanswered count is deliberately NO cap —
- * the per-species at-least-one floor still bites at submit, so leaving the
+ * the collection's at-least-one floor still applies at submit, so leaving the
  * count blank never lets a journey finish early.
  *
  * @param {object} answers - the nested answer POJO.

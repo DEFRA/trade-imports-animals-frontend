@@ -1,6 +1,7 @@
 import Joi from 'joi'
 
-import { pagePath, pageRoutePath, TEMPLATES } from '../../../../../../config.js'
+import { pagePath, pageRoutePath } from '../../../../../../shared/paths.js'
+import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
   HTTP_STATUS_BAD_REQUEST,

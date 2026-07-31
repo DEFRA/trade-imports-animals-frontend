@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 
 const happyPath = JSON.parse(
-  readFileSync(new URL('../../flow/fixtures/happy-path.json', import.meta.url))
+  readFileSync(new URL('../flow/fixtures/happy-path.json', import.meta.url))
 ).values
 
 const animalAddress = {

@@ -8,7 +8,7 @@ import {
   vi
 } from 'vitest'
 
-import { hubPath } from '../../../../../../config.js'
+import { hubPath } from '../../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import {
   configureRecords,

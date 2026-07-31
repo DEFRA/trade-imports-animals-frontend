@@ -13,7 +13,7 @@ import {
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
-import { pagePath } from '../../../../../../config.js'
+import { pagePath } from '../../../../../../shared/paths.js'
 
 import * as contact from './controller.js'
 import * as createAddress from '../addresses/create-address/create-address.controller.js'

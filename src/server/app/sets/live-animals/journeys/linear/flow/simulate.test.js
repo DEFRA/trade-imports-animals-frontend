@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import { buildDispatch } from '../flow/dispatch.js'
-import { dispatchPages } from '../sets/live-animals/journeys/linear/features/index.js'
-import { simulateJourney } from './simulate.js'
+import { buildDispatch } from '../../../../../flow/dispatch.js'
+import { dispatchPages } from '../features/index.js'
+import { simulateJourney } from '../../../../../analysis/simulate.js'
 
 describe('#simulateJourney', () => {
   beforeAll(() => {

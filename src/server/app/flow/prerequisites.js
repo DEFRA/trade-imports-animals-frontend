@@ -2,11 +2,13 @@ import {
   walkObligations,
   ENFORCED_AT_CONTINUE
 } from '../bridge/obligation-source.js'
-import { allFlowPages } from '../sets/live-animals/journeys/linear/flow/flow.js'
 import { pageOfObligation } from './dispatch.js'
+import { journeySections } from './journey-flow.js'
+
+const allFlowPages = () => journeySections().flatMap((section) => section.pages)
 
 const flowIndexOfPage = (pageId) =>
-  allFlowPages.findIndex((page) => page.id === pageId)
+  allFlowPages().findIndex((page) => page.id === pageId)
 
 const continueObligationOwners = () =>
   [...walkObligations()]

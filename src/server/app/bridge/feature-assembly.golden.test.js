@@ -2,14 +2,17 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from './assemble-fulfilments.js'
 import { feature, scalar } from './fulfilment-bindings.js'
-import { characterisationCorpus } from './fixtures/characterisation-corpus.js'
+import { characterisationCorpus } from '../sets/live-animals/journeys/linear/fixtures/characterisation-corpus.js'
 import { obligationSet } from '../model/obligations/manifest.js'
 
 const { countryOfOrigin } = obligationSet()
 
 const oracles = JSON.parse(
   readFileSync(
-    new URL('./fixtures/characterisation-oracles.json', import.meta.url)
+    new URL(
+      '../sets/live-animals/journeys/linear/fixtures/characterisation-oracles.json',
+      import.meta.url
+    )
   )
 )
 

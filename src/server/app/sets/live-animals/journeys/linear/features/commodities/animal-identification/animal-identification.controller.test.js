@@ -2,7 +2,7 @@ import Crumb from '@hapi/crumb'
 import Hapi from '@hapi/hapi'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { hubPath, pagePath } from '../../../../../../../config.js'
+import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
 import { configureRecords } from '../../../../../../../engine/persistence/records.js'

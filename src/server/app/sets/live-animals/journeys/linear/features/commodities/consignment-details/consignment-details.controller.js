@@ -1,4 +1,5 @@
-import { pagePath, TEMPLATES } from '../../../../../../../config.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
+import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import { validate } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'

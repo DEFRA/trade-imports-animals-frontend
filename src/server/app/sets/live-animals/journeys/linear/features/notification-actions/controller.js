@@ -2,7 +2,7 @@ import {
   dashboardPath,
   hubPath,
   pageRoutePath
-} from '../../../../../../config.js'
+} from '../../../../../../shared/paths.js'
 import { copyJourney } from '../../../../../../engine/journey.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../shared/kit.js'

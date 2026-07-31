@@ -1,20 +1,24 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { hubPath, pagePath } from '../config.js'
-import { buildDispatch } from '../flow/dispatch.js'
-import { store } from '../engine/store.js'
-import { configureRecords } from '../engine/persistence/records.js'
-import { configureSession } from '../engine/persistence/session.js'
-import { records as recordsStub } from '../services/persistence/records/stub/index.js'
-import { session as sessionStub } from '../services/persistence/session/stub.js'
-import { stubH, journeyRequest, postHandlerOf } from '../engine/test-support.js'
-import { dispatchPages } from '../sets/live-animals/journeys/linear/features/index.js'
-import { exitTarget, withChangeContext } from './kit.js'
+import { hubPath, pagePath } from '../../../../../shared/paths.js'
+import { buildDispatch } from '../../../../../flow/dispatch.js'
+import { store } from '../../../../../engine/store.js'
+import { configureRecords } from '../../../../../engine/persistence/records.js'
+import { configureSession } from '../../../../../engine/persistence/session.js'
+import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
+import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
+import {
+  stubH,
+  journeyRequest,
+  postHandlerOf
+} from '../../../../../engine/test-support.js'
+import { dispatchPages } from './index.js'
+import { exitTarget, withChangeContext } from '../../../../../shared/kit.js'
 
-import * as commoditiesSearch from '../sets/live-animals/journeys/linear/features/commodities/search/search.controller.js'
-import * as consignmentDetails from '../sets/live-animals/journeys/linear/features/commodities/consignment-details/consignment-details.controller.js'
-import * as animalIdentification from '../sets/live-animals/journeys/linear/features/commodities/animal-identification/animal-identification.controller.js'
-import * as documents from '../sets/live-animals/journeys/linear/features/documents/controller.js'
+import * as commoditiesSearch from './commodities/search/search.controller.js'
+import * as consignmentDetails from './commodities/consignment-details/consignment-details.controller.js'
+import * as animalIdentification from './commodities/animal-identification/animal-identification.controller.js'
+import * as documents from './documents/controller.js'
 
 const drive = async (
   handler,

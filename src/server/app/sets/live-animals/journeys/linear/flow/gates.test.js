@@ -1,13 +1,13 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import { dispatchPages } from '../sets/live-animals/journeys/linear/features/index.js'
-import { transportersSelectPage } from '../sets/live-animals/journeys/linear/features/transport/page.js'
-import { notificationViewPage } from '../sets/live-animals/journeys/linear/features/check-answers/page.js'
-import { makeScope } from '../engine/index.js'
-import { enumerateScopeStates } from '../analysis/flow-reachability/index.js'
-import { buildDispatch } from './dispatch.js'
-import { sections } from '../sets/live-animals/journeys/linear/flow/flow.js'
-import { pageGatePasses, sectionGatePasses } from './gates.js'
+import { dispatchPages } from '../features/index.js'
+import { transportersSelectPage } from '../features/transport/page.js'
+import { notificationViewPage } from '../features/check-answers/page.js'
+import { makeScope } from '../../../../../engine/index.js'
+import { enumerateScopeStates } from './reachability-fixtures/scope-states.js'
+import { buildDispatch } from '../../../../../flow/dispatch.js'
+import { sections } from './flow.js'
+import { pageGatePasses, sectionGatePasses } from '../../../../../flow/gates.js'
 
 describe('#pageGatePasses / #sectionGatePasses', () => {
   const syntheticGatedSection = {

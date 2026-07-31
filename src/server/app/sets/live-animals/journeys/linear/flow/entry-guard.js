@@ -1,12 +1,12 @@
-import { BASE, createPath, pagePath } from '../config.js'
-import { isAnswered } from '../lib/answered.js'
-import { get } from '../engine/read.js'
+import { BASE, createPath, pagePath } from '../../../../../shared/paths.js'
+import { isAnswered } from '../../../../../lib/answered.js'
+import { get } from '../../../../../engine/read.js'
 import {
   obligationByName,
   SYSTEM_POPULATED
-} from '../bridge/obligation-source.js'
-import { importTypeFilterPage } from '../sets/live-animals/journeys/linear/features/import-type-filter/page.js'
-import { hasEnteredThroughFilter } from './run-state.js'
+} from '../../../../../bridge/obligation-source.js'
+import { importTypeFilterPage } from '../features/import-type-filter/page.js'
+import { hasEnteredThroughFilter } from '../../../../../flow/run-state.js'
 
 const IMPORT_TYPE_KEY = 'importType'
 

@@ -1,4 +1,5 @@
-import { hubPath, pagePath, TEMPLATES } from '../../../../../../config.js'
+import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
   HTTP_STATUS_BAD_REQUEST,

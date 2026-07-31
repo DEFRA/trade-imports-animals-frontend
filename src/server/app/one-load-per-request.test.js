@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
-import { get, commit } from './index.js'
-import { configureRecords } from './persistence/records.js'
-import { configureReadyForCheckYourAnswers } from './read.js'
+import { get, commit } from './engine/index.js'
+import { configureRecords } from './engine/persistence/records.js'
+import { configureReadyForCheckYourAnswers } from './engine/read.js'
 import {
   KNOWN_JOURNEYS_COOKIE,
   configureSession
-} from './persistence/session.js'
-import { records as realRecords } from '../services/persistence/records/real/index.js'
-import { session as sessionStub } from '../services/persistence/session/stub.js'
-import { recordingH } from './test-support.js'
-import { obligationSet } from '../model/obligations/manifest.js'
+} from './engine/persistence/session.js'
+import { records as realRecords } from './services/persistence/records/real/index.js'
+import { session as sessionStub } from './services/persistence/session/stub.js'
+import { recordingH } from './engine/test-support.js'
+import { obligationSet } from './model/obligations/manifest.js'
 
 const { countryOfOrigin } = obligationSet()
 

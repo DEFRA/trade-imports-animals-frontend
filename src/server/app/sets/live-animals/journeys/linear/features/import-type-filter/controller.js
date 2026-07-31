@@ -1,9 +1,9 @@
 import {
   dashboardPath,
   pagePath,
-  pageRoutePath,
-  TEMPLATES
-} from '../../../../../../config.js'
+  pageRoutePath
+} from '../../../../../../shared/paths.js'
+import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
 import {
@@ -11,7 +11,7 @@ import {
   requiredOneOf,
   validate
 } from '../../../../../../lib/validate/index.js'
-import { hasCommittedNotificationAnswers } from '../../../../../../flow/entry-guard.js'
+import { hasCommittedNotificationAnswers } from '../../flow/entry-guard.js'
 import { nextRunTarget } from '../../flow/run.js'
 import {
   beginOpeningRun,

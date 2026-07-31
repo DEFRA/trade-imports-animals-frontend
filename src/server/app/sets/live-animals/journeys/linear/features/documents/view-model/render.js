@@ -1,4 +1,4 @@
-import { hubPath } from '../../../../../../../config.js'
+import { hubPath } from '../../../../../../../shared/paths.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { MAX_POLL_ATTEMPTS, SCAN_STATUS } from '../scan-poll.js'
 import {

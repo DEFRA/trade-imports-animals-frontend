@@ -18,7 +18,7 @@ import {
   journeyRequest,
   stubH
 } from '../../../../../../engine/test-support.js'
-import { hubPath } from '../../../../../../config.js'
+import { hubPath } from '../../../../../../shared/paths.js'
 import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
 import { buildSections } from './view-model/index.js'

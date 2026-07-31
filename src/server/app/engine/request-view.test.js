@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../bridge/fulfilments/index.js'
-import { characterisationCorpus } from '../bridge/fixtures/characterisation-corpus.js'
+import { characterisationCorpus } from '../sets/live-animals/journeys/linear/fixtures/characterisation-corpus.js'
 import { obligationSet } from '../model/obligations/manifest.js'
 
 const { earTag, purposeInInternalMarket } = obligationSet()

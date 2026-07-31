@@ -27,6 +27,8 @@ import { notificationViewPage } from '../features/check-answers/page.js'
 import { declarationPage } from '../features/declaration/page.js'
 import { confirmationPage } from '../features/confirmation/page.js'
 
+export const FLOW_ONLY_KEYS = ['importType', 'declaration']
+
 export const sections = [
   {
     id: 'start',

@@ -61,7 +61,10 @@ export const chooseTodayFromDatePicker = async (page, label) => {
 
 export const { values } = JSON.parse(
   readFileSync(
-    new URL('../src/server/app/flow/fixtures/happy-path.json', import.meta.url),
+    new URL(
+      '../src/server/app/sets/live-animals/journeys/linear/flow/fixtures/happy-path.json',
+      import.meta.url
+    ),
     'utf8'
   )
 )

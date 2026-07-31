@@ -3,6 +3,7 @@ import {
   obligations
 } from '../model/obligations/manifest.js'
 import { groupObligations } from './fulfilments/index.js'
+import { journeyFlowOnlyKeys } from '../flow/journey-flow.js'
 
 const namesUpTo = (obligation) =>
   obligation ? [...namesUpTo(obligation.within), obligation.name] : []
@@ -50,15 +51,17 @@ export const MAX_ENTRIES_FROM = {
 
 // Flow-owned obligations the notification model does not carry: the
 // pre-journey import-type filter and the submit-time declaration step.
-export const FLOW_ONLY_OBLIGATIONS = ['importType', 'declaration']
+export const flowOnlyObligations = () => journeyFlowOnlyKeys()
 
 export const flowOnlyAnswersFrom = (answers) =>
   Object.fromEntries(
-    FLOW_ONLY_OBLIGATIONS.filter(
-      (key) =>
-        Object.prototype.hasOwnProperty.call(answers ?? {}, key) &&
-        answers[key] !== undefined
-    ).map((key) => [key, answers[key]])
+    flowOnlyObligations()
+      .filter(
+        (key) =>
+          Object.prototype.hasOwnProperty.call(answers ?? {}, key) &&
+          answers[key] !== undefined
+      )
+      .map((key) => [key, answers[key]])
   )
 
 // Compatibility key accepted by answer validation but excluded from canonical
@@ -71,7 +74,7 @@ const topLevelKeys = () =>
     ...obligations()
       .filter((obligation) => !obligation.within)
       .map((obligation) => obligation.name),
-    ...FLOW_ONLY_OBLIGATIONS,
+    ...flowOnlyObligations(),
     ...SYSTEM_ANSWER_KEYS
   ])
 

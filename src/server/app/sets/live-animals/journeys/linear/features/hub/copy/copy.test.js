@@ -12,7 +12,7 @@ import {
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import { leaves, isCopyLeaf } from '../../../../../../../shared/copy-leaves.js'
-import { pagePath } from '../../../../../../../config.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
 
 import { routes } from '../controller.js'
 import { copy } from './copy.en.js'

@@ -8,7 +8,7 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import { driveHandler } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
-import { pagePath } from '../../../../../../config.js'
+import { pagePath } from '../../../../../../shared/paths.js'
 
 import * as addresses from './controller.js'
 

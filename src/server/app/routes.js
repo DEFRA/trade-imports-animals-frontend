@@ -1,10 +1,27 @@
 import { buildDispatch } from './flow/dispatch.js'
-import { entryGuardTarget } from './flow/entry-guard.js'
+import {
+  configureJourneyFlow,
+  journeyEntryGuardTarget
+} from './flow/journey-flow.js'
 import {
   allRoutes,
   dispatchPages
 } from './sets/live-animals/journeys/linear/features/index.js'
 import { featureEvaluationBindings } from './sets/live-animals/journeys/linear/features/evaluation.js'
+import {
+  FLOW_ONLY_KEYS,
+  sections
+} from './sets/live-animals/journeys/linear/flow/flow.js'
+import {
+  rowStatus,
+  taskRows
+} from './sets/live-animals/journeys/linear/flow/task-rows.js'
+import { nextRunTarget } from './sets/live-animals/journeys/linear/flow/run.js'
+import { entryGuardTarget } from './sets/live-animals/journeys/linear/flow/entry-guard.js'
+import {
+  LAYOUT,
+  SESSION_COOKIE_NAMES
+} from './sets/live-animals/journeys/linear/config.js'
 import * as liveAnimalsObligationSet from './sets/live-animals/obligations/index.js'
 import * as commodities from './sets/live-animals/services/commodities/index.js'
 import { assertObligationPurity } from './obligation-purity.js'
@@ -30,14 +47,23 @@ export const liveAnimals = {
       configureObligationSet(liveAnimalsObligationSet)
       configureFulfilmentRegistry(featureEvaluationBindings)
       configureCommodityReference(commodities)
+      configureJourneyFlow({
+        sections,
+        taskRows,
+        rowStatus,
+        nextRunTarget,
+        flowOnlyKeys: FLOW_ONLY_KEYS,
+        entryGuardTarget,
+        layout: LAYOUT
+      })
       assertObligationPurity()
       assertFulfilmentBindingCoverage()
       buildDispatch(dispatchPages)
       configureRecords(records)
-      configureSession(session)
+      configureSession(session, SESSION_COOKIE_NAMES)
       registerJourneyCookie(server)
       server.ext('onPreHandler', async (request, h) => {
-        const target = await entryGuardTarget(request, h)
+        const target = await journeyEntryGuardTarget(request, h)
         return target ? h.redirect(target).takeover() : h.continue
       })
       if (isRealMode()) {

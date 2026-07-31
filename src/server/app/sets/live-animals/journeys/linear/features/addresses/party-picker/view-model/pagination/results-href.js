@@ -1,4 +1,4 @@
-import { pagePath } from '../../../../../../../../../config.js'
+import { pagePath } from '../../../../../../../../../shared/paths.js'
 
 export const resultsHref = (journeyId, party, { query, page, selectedId }) => {
   const params = new URLSearchParams()

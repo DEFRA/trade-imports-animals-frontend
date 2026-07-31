@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { hubPath, pagePath } from '../../../../../../../../config.js'
+import { hubPath, pagePath } from '../../../../../../../../shared/paths.js'
 import {
   AMEND,
   DRAFT,

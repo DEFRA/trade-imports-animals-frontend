@@ -2,9 +2,9 @@ import { randomUUID } from 'node:crypto'
 import {
   breadcrumbs,
   hubPath,
-  pagePath,
-  TEMPLATES
-} from '../../../../../../config.js'
+  pagePath
+} from '../../../../../../shared/paths.js'
+import { TEMPLATES } from '../../config.js'
 import { nextInSection } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
 import { journeyStrip, pageRoutes } from '../../../../../../shared/kit.js'

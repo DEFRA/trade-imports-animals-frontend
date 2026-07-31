@@ -8,7 +8,12 @@ import { unrecognisedAnswerKeys } from '../bridge/obligation-source.js'
 // reported, with their path.
 
 const happyPath = JSON.parse(
-  readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
+  readFileSync(
+    new URL(
+      '../sets/live-animals/journeys/linear/flow/fixtures/happy-path.json',
+      import.meta.url
+    )
+  )
 ).values
 
 describe('#unrecognisedAnswerKeys', () => {

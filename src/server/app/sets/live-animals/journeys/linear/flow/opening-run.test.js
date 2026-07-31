@@ -1,6 +1,11 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { BASE, createPath, hubPath, pagePath } from '../../../../../config.js'
+import {
+  BASE,
+  createPath,
+  hubPath,
+  pagePath
+} from '../../../../../shared/paths.js'
 import { store } from '../../../../../engine/store.js'
 import { configureRecords } from '../../../../../engine/persistence/records.js'
 import {
@@ -14,10 +19,7 @@ import { postHandlerOf } from '../../../../../engine/test-support.js'
 import { dispatchPages } from '../features/index.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
 import { RUN_ACTIVE, RUN_COMPLETE } from '../../../../../flow/run-state.js'
-import {
-  entryGuardTarget,
-  guardedJourneyPath
-} from '../../../../../flow/entry-guard.js'
+import { entryGuardTarget, guardedJourneyPath } from './entry-guard.js'
 
 import * as importTypeFilter from '../features/import-type-filter/controller.js'
 import * as origin from '../features/origin/controller.js'

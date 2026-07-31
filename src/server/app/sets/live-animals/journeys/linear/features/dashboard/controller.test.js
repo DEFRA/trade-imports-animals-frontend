@@ -15,7 +15,11 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { assembleFulfilments } from '../../../../../../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../../../../../../bridge/fulfilments/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
-import { createPath, hubPath, pagePath } from '../../../../../../config.js'
+import {
+  createPath,
+  hubPath,
+  pagePath
+} from '../../../../../../shared/paths.js'
 import { CYA_SLUG } from '../../../../../../shared/kit.js'
 
 import { routes } from './controller.js'
