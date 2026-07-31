@@ -20,12 +20,6 @@ const startAtContact = async (page) => {
   await expect(page.getByRole('heading', { name: copy.legend })).toBeVisible()
 }
 
-const saveAndContinue = (page) =>
-  page.locator('form button[type="submit"]').first().click()
-
-const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
-
 const addressSummary = (address) =>
   [
     address.addressLine1,
@@ -37,11 +31,13 @@ const addressSummary = (address) =>
     .join(', ')
 
 test.describe('contact feature', () => {
-  test('renders the address-book contacts, feature copy, add link and working back link', async ({
+  test.beforeEach(async ({ page }) => {
+    await startAtContact(page)
+  })
+
+  test('renders the address-book contacts, feature copy and add link', async ({
     page
   }) => {
-    await startAtContact(page)
-
     const group = page.getByRole('group', { name: copy.legend })
     await expect(group).toContainText(copy.hint)
     const renderedValues = await group
@@ -60,17 +56,11 @@ test.describe('contact feature', () => {
       'href',
       /\/notifications\/[^/]+\/addresses\/create\?for=contactAddress$/
     )
-
-    const hubUrl = page.url().replace(/\/consignment\/contact\/select$/, '')
-    await page.locator('.govuk-back-link').click()
-    await expect(page).toHaveURL(hubUrl)
   })
 
-  test('rejects the controller out-of-list case without committing it', async ({
+  test('contact validation: when the submitted option is invalid, links to and focuses the group without preserving an invalid selection', async ({
     page
   }) => {
-    await startAtContact(page)
-
     await page
       .locator('input[name="contactAddress"]')
       .first()
@@ -78,9 +68,16 @@ test.describe('contact feature', () => {
         input.value = 'not-a-real-contact'
         input.checked = true
       })
-    await saveAndContinue(page)
+    await page.locator('form button[type="submit"]').first().click()
 
-    await expect(errorLink(page, copy.errors.contactRequired)).toBeVisible()
+    const contactError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.contactRequired })
+    await expect(contactError).toBeVisible()
+    await contactError.click()
+    await expect(
+      page.locator('input[name="contactAddress"]').first()
+    ).toBeFocused()
     await expect(
       page.locator('input[name="contactAddress"]:checked')
     ).toHaveCount(0)
@@ -89,12 +86,11 @@ test.describe('contact feature', () => {
   test('copies a valid contact, redirects and persists the selection', async ({
     page
   }) => {
-    await startAtContact(page)
     const contactUrl = page.url()
     const selected = CONTACT_OPTIONS[0]
 
     await page.getByRole('radio', { name: selected.name, exact: true }).check()
-    await saveAndContinue(page)
+    await page.locator('form button[type="submit"]').first().click()
 
     await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
     await page.goto(contactUrl)
@@ -103,9 +99,15 @@ test.describe('contact feature', () => {
     ).toBeChecked()
   })
 
-  test('has no serious or critical axe violations', async ({ page }) => {
-    await startAtContact(page)
+  test('back link returns to the notification hub', async ({ page }) => {
+    const hubUrl = page.url().replace(/\/consignment\/contact\/select$/, '')
 
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(hubUrl)
+  })
+
+  test('has no serious or critical axe violations', async ({ page }) => {
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()

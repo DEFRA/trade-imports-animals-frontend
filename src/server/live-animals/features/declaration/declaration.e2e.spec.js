@@ -21,21 +21,14 @@ const startAtDeclaration = async (page) => {
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
 
-const continueJourney = (page) =>
-  page.locator('form button[type="submit"]').click()
-
-const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
-
-const declarationCheckbox = (page) =>
-  page.getByRole('checkbox', { name: copy.declarationLabel })
-
 test.describe('declaration feature', () => {
-  test('renders every declaration statement, the current date and working back link', async ({
+  test.beforeEach(async ({ page }) => {
+    await startAtDeclaration(page)
+  })
+
+  test('renders every declaration statement and the current date', async ({
     page
   }) => {
-    await startAtDeclaration(page)
-
     await expect(
       page.getByRole('heading', { name: copy.body.contactUk })
     ).toBeVisible()
@@ -50,58 +43,51 @@ test.describe('declaration feature', () => {
     }
     await expect(page.getByText(copy.body.authorised)).toBeVisible()
     await expect(page.getByText(copy.body.legallyAct)).toBeVisible()
-    await expect(declarationCheckbox(page)).toBeVisible()
+    await expect(
+      page.getByRole('checkbox', { name: copy.declarationLabel })
+    ).toBeVisible()
     await expect(
       page.getByText(new RegExp(`^${copy.dateOfDeclaration}`))
     ).toBeVisible()
     await expect(
       page.getByRole('button', { name: copy.continueButton })
     ).toBeVisible()
+  })
 
+  test('declaration validation: when unchecked, links to and focuses the clear checkbox', async ({
+    page
+  }) => {
+    await page.locator('form button[type="submit"]').click()
+
+    const declarationError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.declarationRequired })
+    await expect(declarationError).toBeVisible()
+    await declarationError.click()
+    await expect(
+      page.getByRole('checkbox', { name: copy.declarationLabel })
+    ).toBeFocused()
+    await expect(
+      page.getByRole('checkbox', { name: copy.declarationLabel })
+    ).not.toBeChecked()
+  })
+
+  test('back link returns to check answers', async ({ page }) => {
     const checkAnswersUrl = page
       .url()
       .replace(/\/declaration$/, '/notification-view')
-    await expect(page.locator('.govuk-back-link')).toHaveAttribute(
+    const backLink = page.getByRole('link', { name: 'Back', exact: true })
+    await expect(backLink).toHaveAttribute(
       'href',
       new URL(checkAnswersUrl).pathname
     )
-    await page.locator('.govuk-back-link').click()
+
+    await backLink.click()
+
     await expect(page).toHaveURL(/\/notifications\/[^/]+\/notification-view$/)
   })
 
-  test('shows the required validation rule and leaves the checkbox clear', async ({
-    page
-  }) => {
-    await startAtDeclaration(page)
-
-    await continueJourney(page)
-
-    await expect(errorLink(page, copy.errors.declarationRequired)).toBeVisible()
-    await expect(declarationCheckbox(page)).not.toBeChecked()
-  })
-
-  test('submits a complete notification, redirects to confirmation and keeps the declaration', async ({
-    page
-  }) => {
-    test.slow()
-    await startNotification(page)
-    await completeAnswerSections(page)
-    await page.getByRole('link', { name: 'Check and submit' }).click()
-    await page.getByRole('button', { name: 'Continue' }).click()
-    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
-    const declarationUrl = page.url()
-
-    await declarationCheckbox(page).check()
-    await continueJourney(page)
-
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/confirmation$/)
-    await page.goto(declarationUrl)
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/confirmation$/)
-  })
-
   test('has no serious or critical axe violations', async ({ page }) => {
-    await startAtDeclaration(page)
-
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()
@@ -113,5 +99,30 @@ test.describe('declaration feature', () => {
       seriousOrCritical,
       `Declaration has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
     ).toEqual([])
+  })
+})
+
+test.describe('declaration submission', () => {
+  test.describe.configure({ timeout: 90000 })
+
+  test.beforeEach(async ({ page }) => {
+    await startNotification(page)
+    await completeAnswerSections(page)
+    await page.getByRole('link', { name: 'Check and submit' }).click()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+  })
+
+  test('submits a complete notification, redirects to confirmation and keeps the declaration', async ({
+    page
+  }) => {
+    const declarationUrl = page.url()
+
+    await page.getByRole('checkbox', { name: copy.declarationLabel }).check()
+    await page.locator('form button[type="submit"]').click()
+
+    await expect(page).toHaveURL(/\/notifications\/[^/]+\/confirmation$/)
+    await page.goto(declarationUrl)
+    await expect(page).toHaveURL(/\/notifications\/[^/]+\/confirmation$/)
   })
 })

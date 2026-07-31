@@ -19,18 +19,14 @@ const startAtImportReason = async (page) => {
   await expect(page.getByRole('heading', { name: copy.legend })).toBeVisible()
 }
 
-const saveAndContinue = (page) =>
-  page.locator('form button[type="submit"]').first().click()
-
-const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
-
 test.describe('import-reason feature', () => {
-  test('renders the service-backed reasons, feature copy and working back link', async ({
+  test.beforeEach(async ({ page }) => {
+    await startAtImportReason(page)
+  })
+
+  test('renders the service-backed reasons and feature copy', async ({
     page
   }) => {
-    await startAtImportReason(page)
-
     const group = page.getByRole('group', { name: copy.legend })
     const renderedValues = await group
       .locator('input[name="reasonForImport"]')
@@ -44,17 +40,11 @@ test.describe('import-reason feature', () => {
       ).toBeVisible()
       await expect(group).toContainText(copy.reasonHints[option.value])
     }
-
-    const hubUrl = page.url().replace(/\/import-reason$/, '')
-    await page.locator('.govuk-back-link').click()
-    await expect(page).toHaveURL(hubUrl)
   })
 
-  test('rejects the controller out-of-list case without committing it', async ({
+  test('reason validation: when the submitted option is invalid, links to and focuses the group without preserving an invalid selection', async ({
     page
   }) => {
-    await startAtImportReason(page)
-
     await page
       .locator('input[name="reasonForImport"]')
       .first()
@@ -62,9 +52,16 @@ test.describe('import-reason feature', () => {
         input.value = 'not-a-real-reason'
         input.checked = true
       })
-    await saveAndContinue(page)
+    await page.locator('form button[type="submit"]').first().click()
 
-    await expect(errorLink(page, validatorDefaults.oneOf)).toBeVisible()
+    const reasonError = page
+      .getByRole('alert')
+      .getByRole('link', { name: validatorDefaults.oneOf })
+    await expect(reasonError).toBeVisible()
+    await reasonError.click()
+    await expect(
+      page.locator('input[name="reasonForImport"]').first()
+    ).toBeFocused()
     await expect(
       page.locator('input[name="reasonForImport"]:checked')
     ).toHaveCount(0)
@@ -73,14 +70,13 @@ test.describe('import-reason feature', () => {
   test('saves a valid reason, redirects and persists the answer', async ({
     page
   }) => {
-    await startAtImportReason(page)
     const reasonUrl = page.url()
     const selected = importReasonPurpose
       .reasons()
       .find(({ value }) => value === 'internalMarket')
 
     await page.getByRole('radio', { name: selected.text, exact: true }).check()
-    await saveAndContinue(page)
+    await page.locator('form button[type="submit"]').first().click()
 
     await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
     await page.goto(reasonUrl)
@@ -89,9 +85,15 @@ test.describe('import-reason feature', () => {
     ).toBeChecked()
   })
 
-  test('has no serious or critical axe violations', async ({ page }) => {
-    await startAtImportReason(page)
+  test('back link returns to the notification hub', async ({ page }) => {
+    const hubUrl = page.url().replace(/\/import-reason$/, '')
 
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(hubUrl)
+  })
+
+  test('has no serious or critical axe violations', async ({ page }) => {
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()

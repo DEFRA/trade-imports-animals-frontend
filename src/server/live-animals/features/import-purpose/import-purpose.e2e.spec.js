@@ -28,18 +28,14 @@ const startAtImportPurpose = async (page) => {
   await expect(page.getByRole('heading', { name: copy.legend })).toBeVisible()
 }
 
-const saveAndContinue = (page) =>
-  page.locator('form button[type="submit"]').first().click()
-
-const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
-
 test.describe('import-purpose feature', () => {
-  test('renders the service-backed purposes, feature copy and working back link', async ({
+  test.beforeEach(async ({ page }) => {
+    await startAtImportPurpose(page)
+  })
+
+  test('renders the service-backed purposes and feature copy', async ({
     page
   }) => {
-    await startAtImportPurpose(page)
-
     const group = page.getByRole('group', { name: copy.legend })
     const renderedValues = await group
       .locator('input[name="purposeInInternalMarket"]')
@@ -53,17 +49,11 @@ test.describe('import-purpose feature', () => {
       ).toBeVisible()
       await expect(group).toContainText(copy.purposeHints[option.value])
     }
-
-    const hubUrl = page.url().replace(/\/import-purpose$/, '')
-    await page.locator('.govuk-back-link').click()
-    await expect(page).toHaveURL(hubUrl)
   })
 
-  test('rejects the controller out-of-list case without committing it', async ({
+  test('purpose validation: when the submitted option is invalid, links to and focuses the group without preserving an invalid selection', async ({
     page
   }) => {
-    await startAtImportPurpose(page)
-
     await page
       .locator('input[name="purposeInInternalMarket"]')
       .first()
@@ -71,9 +61,16 @@ test.describe('import-purpose feature', () => {
         input.value = 'not-a-real-purpose'
         input.checked = true
       })
-    await saveAndContinue(page)
+    await page.locator('form button[type="submit"]').first().click()
 
-    await expect(errorLink(page, validatorDefaults.oneOf)).toBeVisible()
+    const purposeError = page
+      .getByRole('alert')
+      .getByRole('link', { name: validatorDefaults.oneOf })
+    await expect(purposeError).toBeVisible()
+    await purposeError.click()
+    await expect(
+      page.locator('input[name="purposeInInternalMarket"]').first()
+    ).toBeFocused()
     await expect(
       page.locator('input[name="purposeInInternalMarket"]:checked')
     ).toHaveCount(0)
@@ -82,14 +79,13 @@ test.describe('import-purpose feature', () => {
   test('saves a valid purpose, redirects and persists the answer', async ({
     page
   }) => {
-    await startAtImportPurpose(page)
     const purposeUrl = page.url()
     const selected = importReasonPurpose
       .purposes()
       .find(({ value }) => value === 'breeding')
 
     await page.getByRole('radio', { name: selected.text, exact: true }).check()
-    await saveAndContinue(page)
+    await page.locator('form button[type="submit"]').first().click()
 
     await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
     await page.goto(purposeUrl)
@@ -98,9 +94,15 @@ test.describe('import-purpose feature', () => {
     ).toBeChecked()
   })
 
-  test('has no serious or critical axe violations', async ({ page }) => {
-    await startAtImportPurpose(page)
+  test('back link returns to the notification hub', async ({ page }) => {
+    const hubUrl = page.url().replace(/\/import-purpose$/, '')
 
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(hubUrl)
+  })
+
+  test('has no serious or critical axe violations', async ({ page }) => {
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()

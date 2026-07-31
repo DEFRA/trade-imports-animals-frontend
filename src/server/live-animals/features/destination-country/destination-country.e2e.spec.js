@@ -22,18 +22,14 @@ const startAtDestinationCountry = async (page) => {
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
 
-const saveAndContinue = (page) =>
-  page.locator('form button[type="submit"]').first().click()
-
-const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
-
 test.describe('destination-country feature', () => {
-  test('renders the captured country options, feature copy and working back link', async ({
+  test.beforeEach(async ({ page }) => {
+    await startAtDestinationCountry(page)
+  })
+
+  test('renders the captured country options and feature copy', async ({
     page
   }) => {
-    await startAtDestinationCountry(page)
-
     await expect(
       page.getByLabel(copy.country.label)
     ).toHaveAccessibleDescription(copy.country.hint)
@@ -50,39 +46,45 @@ test.describe('destination-country feature', () => {
         }))
       )
     expect(renderedCountries).toEqual(countriesOrigin)
-
-    const hubUrl = page.url().replace(/\/destination-country$/, '')
-    await page.locator('.govuk-back-link').click()
-    await expect(page).toHaveURL(hubUrl)
   })
 
-  test('shows the required validation rule', async ({ page }) => {
-    await startAtDestinationCountry(page)
+  test('country validation: when no country is selected, links to and focuses the empty select', async ({
+    page
+  }) => {
+    await page.locator('form button[type="submit"]').first().click()
 
-    await saveAndContinue(page)
-
-    await expect(errorLink(page, copy.errors.countryRequired)).toBeVisible()
+    const countryError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.countryRequired })
+    await expect(countryError).toBeVisible()
+    await countryError.click()
+    await expect(page.getByLabel(copy.country.label)).toBeFocused()
     await expect(page.getByLabel(copy.country.label)).toHaveValue('')
   })
 
   test('saves a valid country, redirects and persists the answer', async ({
     page
   }) => {
-    await startAtDestinationCountry(page)
     const destinationUrl = page.url()
     const france = countriesOrigin.find(({ code }) => code === 'FR')
 
     await page.getByLabel(copy.country.label).selectOption(france.code)
-    await saveAndContinue(page)
+    await page.locator('form button[type="submit"]').first().click()
 
     await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
     await page.goto(destinationUrl)
     await expect(page.getByLabel(copy.country.label)).toHaveValue(france.code)
   })
 
-  test('has no serious or critical axe violations', async ({ page }) => {
-    await startAtDestinationCountry(page)
+  test('back link returns to the notification hub', async ({ page }) => {
+    const hubUrl = page.url().replace(/\/destination-country$/, '')
 
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(hubUrl)
+  })
+
+  test('has no serious or critical axe violations', async ({ page }) => {
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()

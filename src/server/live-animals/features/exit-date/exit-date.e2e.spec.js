@@ -1,7 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
-import { chooseTodayFromDatePicker } from '../../../../../e2e/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 
 const startAtExitDate = async (page) => {
@@ -30,64 +29,111 @@ const startAtExitDate = async (page) => {
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
 
-const saveAndContinue = (page) =>
-  page.locator('form button[type="submit"]').first().click()
-
-const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
-
-const dateInput = (page) => page.getByLabel(copy.date.label)
-
 test.describe('exit-date feature', () => {
-  test('renders the date copy and working back link', async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
     await startAtExitDate(page)
+  })
 
-    await expect(dateInput(page)).toHaveAccessibleDescription(copy.date.hint)
-    await expect(dateInput(page)).toBeVisible()
+  test('renders the MoJ date picker and feature copy', async ({ page }) => {
+    await expect(page.getByLabel(copy.date.label)).toHaveAccessibleDescription(
+      copy.date.hint
+    )
+    await expect(page.getByLabel(copy.date.label)).toBeVisible()
     await expect(
       page.getByRole('button', { name: 'Choose date' })
     ).toBeVisible()
+  })
 
+  test('back link returns to the notification hub', async ({ page }) => {
     const hubUrl = page.url().replace(/\/exit-date$/, '')
-    await page.locator('.govuk-back-link').click()
+
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
     await expect(page).toHaveURL(hubUrl)
   })
 
-  test('rejects partial and unreal directly typed dates while preserving the input', async ({
+  test('date validation: when partially entered, links to and focuses the preserved input', async ({
     page
   }) => {
-    await startAtExitDate(page)
+    await page.getByLabel(copy.date.label).fill('27/')
+    await page.locator('form button[type="submit"]').first().click()
 
-    await dateInput(page).fill('27/')
-    await saveAndContinue(page)
-    await expect(errorLink(page, copy.errors.dateInvalid)).toBeVisible()
-    await expect(dateInput(page)).toHaveValue('27/')
+    const dateError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.dateInvalid })
+    await expect(dateError).toBeVisible()
+    await dateError.click()
+    await expect(page.getByLabel(copy.date.label)).toBeFocused()
+    await expect(page.getByLabel(copy.date.label)).toHaveValue('27/')
+  })
 
-    await dateInput(page).fill('31/2/2026')
-    await saveAndContinue(page)
-    await expect(errorLink(page, copy.errors.dateInvalid)).toBeVisible()
-    await expect(dateInput(page)).toHaveValue('31/2/2026')
+  test('date validation: when not a real date, links to and focuses the preserved input', async ({
+    page
+  }) => {
+    await page.getByLabel(copy.date.label).fill('31/2/2026')
+    await page.locator('form button[type="submit"]').first().click()
+
+    const dateError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.dateInvalid })
+    await expect(dateError).toBeVisible()
+    await dateError.click()
+    await expect(page.getByLabel(copy.date.label)).toBeFocused()
+    await expect(page.getByLabel(copy.date.label)).toHaveValue('31/2/2026')
   })
 
   test('selects a date in the calendar, redirects and persists it', async ({
     page
   }) => {
-    await startAtExitDate(page)
     const exitDateUrl = page.url()
+    const today = await page.evaluate(() => {
+      const date = new Date()
+      const days = [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday'
+      ]
+      const months = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December'
+      ]
+      return {
+        accessibleName: `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`,
+        inputValue: `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`
+      }
+    })
 
-    const selected = await chooseTodayFromDatePicker(page, copy.date.label)
-    await expect(dateInput(page)).toHaveValue(selected)
-    await saveAndContinue(page)
+    await page.getByRole('button', { name: 'Choose date' }).click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: today.accessibleName, exact: true })
+      .click()
+    await expect(page.getByLabel(copy.date.label)).toHaveValue(today.inputValue)
+    await page.locator('form button[type="submit"]').first().click()
 
     await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
     await page.goto(exitDateUrl)
-    await expect(dateInput(page)).toHaveValue(selected)
+    await expect(page.getByLabel(copy.date.label)).toHaveValue(today.inputValue)
   })
 
   test('has no serious or critical axe violations with the picker dialog open', async ({
     page
   }) => {
-    await startAtExitDate(page)
     await page.getByRole('button', { name: 'Choose date' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
 
@@ -108,16 +154,19 @@ test.describe('exit-date feature', () => {
 test.describe('exit-date feature without JavaScript', () => {
   test.use({ javaScriptEnabled: false })
 
+  test.beforeEach(async ({ page }) => {
+    await startAtExitDate(page)
+  })
+
   test('accepts a directly typed dd/mm/yyyy date and persists it', async ({
     page
   }) => {
-    await startAtExitDate(page)
-    await dateInput(page).fill('27/3/2026')
-    await saveAndContinue(page)
+    await page.getByLabel(copy.date.label).fill('27/3/2026')
+    await page.locator('form button[type="submit"]').first().click()
 
     await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
     await page.goto(`${page.url()}/exit-date`)
-    await expect(dateInput(page)).toHaveValue('27/3/2026')
+    await expect(page.getByLabel(copy.date.label)).toHaveValue('27/3/2026')
     await expect(page.getByRole('button', { name: 'Choose date' })).toHaveCount(
       0
     )

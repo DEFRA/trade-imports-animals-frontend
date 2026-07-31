@@ -24,18 +24,14 @@ const startAtPortOfExit = async (page) => {
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
 
-const saveAndContinue = (page) =>
-  page.locator('form button[type="submit"]').first().click()
-
-const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
-
 test.describe('port-of-exit feature', () => {
-  test('renders the captured port options, feature copy and working back link', async ({
+  test.beforeEach(async ({ page }) => {
+    await startAtPortOfExit(page)
+  })
+
+  test('renders the captured port options and feature copy', async ({
     page
   }) => {
-    await startAtPortOfExit(page)
-
     await expect(page.getByLabel(copy.port.label)).toHaveAccessibleDescription(
       copy.port.hint
     )
@@ -57,39 +53,45 @@ test.describe('port-of-exit feature', () => {
         name: `${port.name} (${port.code})`
       }))
     )
-
-    const hubUrl = page.url().replace(/\/port-of-exit$/, '')
-    await page.locator('.govuk-back-link').click()
-    await expect(page).toHaveURL(hubUrl)
   })
 
-  test('shows the required validation rule', async ({ page }) => {
-    await startAtPortOfExit(page)
+  test('port validation: when no port is selected, links to and focuses the empty select', async ({
+    page
+  }) => {
+    await page.locator('form button[type="submit"]').first().click()
 
-    await saveAndContinue(page)
-
-    await expect(errorLink(page, copy.errors.portRequired)).toBeVisible()
+    const portError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.portRequired })
+    await expect(portError).toBeVisible()
+    await portError.click()
+    await expect(page.getByLabel(copy.port.label)).toBeFocused()
     await expect(page.getByLabel(copy.port.label)).toHaveValue('')
   })
 
   test('saves a valid port, redirects and persists the answer', async ({
     page
   }) => {
-    await startAtPortOfExit(page)
     const portUrl = page.url()
     const selected = portsOfEntry.find(({ code }) => code === 'GB ABD')
 
     await page.getByLabel(copy.port.label).selectOption(selected.code)
-    await saveAndContinue(page)
+    await page.locator('form button[type="submit"]').first().click()
 
     await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
     await page.goto(portUrl)
     await expect(page.getByLabel(copy.port.label)).toHaveValue(selected.code)
   })
 
-  test('has no serious or critical axe violations', async ({ page }) => {
-    await startAtPortOfExit(page)
+  test('back link returns to the notification hub', async ({ page }) => {
+    const hubUrl = page.url().replace(/\/port-of-exit$/, '')
 
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(hubUrl)
+  })
+
+  test('has no serious or critical axe violations', async ({ page }) => {
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()

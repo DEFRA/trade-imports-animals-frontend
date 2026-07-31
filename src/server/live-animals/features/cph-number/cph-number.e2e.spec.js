@@ -23,53 +23,80 @@ const startAtCphNumber = async (page) => {
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
 
-const saveAndContinue = (page) =>
-  page.locator('form button[type="submit"]').first().click()
-
-const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
-
 test.describe('cph-number feature', () => {
-  test('renders the CPH copy and working back link', async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
     await startAtCphNumber(page)
+  })
 
+  test('renders the CPH copy', async ({ page }) => {
     await expect(page.getByLabel(copy.cph.label)).toHaveAccessibleDescription(
       copy.cph.hint
     )
+  })
 
+  test('back link returns to the notification hub', async ({ page }) => {
     const hubUrl = page.url().replace(/\/cph-number$/, '')
-    await page.locator('.govuk-back-link').click()
+
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
     await expect(page).toHaveURL(hubUrl)
   })
 
-  test('shows every CPH validation rule and preserves the raw submitted value', async ({
+  test('CPH validation: when empty, links to and focuses the preserved empty input', async ({
     page
   }) => {
-    await startAtCphNumber(page)
     const input = page.getByLabel(copy.cph.label)
 
-    await saveAndContinue(page)
-    await expect(errorLink(page, copy.errors.cphRequired)).toBeVisible()
+    await page.locator('form button[type="submit"]').first().click()
 
+    const requiredError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.cphRequired })
+    await expect(requiredError).toBeVisible()
+    await requiredError.click()
+    await expect(input).toBeFocused()
+    await expect(input).toHaveValue('')
+  })
+
+  test('CPH validation: when not 9 digits, links to and focuses the preserved raw value', async ({
+    page
+  }) => {
+    const input = page.getByLabel(copy.cph.label)
     await input.fill('12/345/678')
-    await saveAndContinue(page)
-    await expect(errorLink(page, copy.errors.cphLength)).toBeVisible()
-    await expect(input).toHaveValue('12/345/678')
+    await page.locator('form button[type="submit"]').first().click()
 
+    const lengthError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.cphLength })
+    await expect(lengthError).toBeVisible()
+    await lengthError.click()
+    await expect(input).toBeFocused()
+    await expect(input).toHaveValue('12/345/678')
+  })
+
+  test('CPH validation: when containing non-digits, links to and focuses the preserved raw value', async ({
+    page
+  }) => {
+    const input = page.getByLabel(copy.cph.label)
     await input.fill('12345678A')
-    await saveAndContinue(page)
-    await expect(errorLink(page, copy.errors.cphDigitsOnly)).toBeVisible()
+    await page.locator('form button[type="submit"]').first().click()
+
+    const digitsError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.cphDigitsOnly })
+    await expect(digitsError).toBeVisible()
+    await digitsError.click()
+    await expect(input).toBeFocused()
     await expect(input).toHaveValue('12345678A')
   })
 
   test('strips slashes, saves a valid CPH number, redirects and persists it', async ({
     page
   }) => {
-    await startAtCphNumber(page)
     const cphUrl = page.url()
 
     await page.getByLabel(copy.cph.label).fill('123/456/789')
-    await saveAndContinue(page)
+    await page.locator('form button[type="submit"]').first().click()
 
     await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
     await page.goto(cphUrl)
@@ -77,8 +104,6 @@ test.describe('cph-number feature', () => {
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
-    await startAtCphNumber(page)
-
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()
