@@ -73,7 +73,13 @@ Then pick the topic you need from the table below.
 | [services.md](services.md)                 | The reference-data (MDM) and persistence services, stub-vs-real selection, and the `LIVE_ANIMALS_MODE` switch                          |
 | [persistence.md](persistence.md)           | The session and records ports, the two notification mappers, and why submit is a status flip                                           |
 | [validation.md](validation.md)             | In-controller field validation via `lib/validate/`, including address field completeness                                               |
+| [add-a-field.md](add-a-field.md)           | The current recipe for model, binding, controller, copy, check-answers, status and tests when adding a field                           |
+| [add-a-page.md](add-a-page.md)             | The current recipe for a feature page, including registration, navigation, recoverable writes and colocated tests                      |
 | [add-a-collection.md](add-a-collection.md) | Numbered steps to add a repeating collection, including a per-entry conditional field                                                  |
+| [cardinality.md](cardinality.md)           | Collection floors, caps, alternatives and exact-count rules, including the value-linked identifier cap                                 |
+| [testing.md](testing.md)                   | Vitest boundaries, the journey and feature Playwright projects, shared helpers and boot guards                                         |
+| [test-ownership.md](test-ownership.md)     | The test boundary between this frontend and the cross-service workspace runner                                                         |
+| [lighthouse.md](lighthouse.md)             | How Lighthouse URLs, score floors, reports, simple findings and the CI workflow are maintained                                         |
 | [analysis.md](analysis.md)                 | The headless simulator and the two reachability provers — interrogate the journey without a browser                                    |
 | [decisions.md](decisions.md)               | Short architecture decision records: context, decision, why it won, and the costs accepted                                             |
 | [limits.md](limits.md)                     | Honest limits: what the model does not do, what it does at a cost, and where growth would start                                        |

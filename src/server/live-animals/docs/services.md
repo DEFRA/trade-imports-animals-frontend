@@ -1,113 +1,100 @@
 # Services
 
-The service layer is the seam between the journey and its backing systems:
-reference-data (MDM) option lists, saved addresses, and document uploads. Each
-backing system gets one folder under `services/<name>/`, and the controllers
-depend only on that folder's interface. The model carries no display copy and no
-value lists.
+The service layer keeps option data, uploads and persistence behind small
+interfaces. Pages import a service's `index.js`. They do not import its real or
+stub adapter.
 
-## Folder-per-service
-
-Each service is a folder with a fixed shape:
-
-- `services/<name>/index.js` — the interface the controllers call.
-- `services/<name>/stub.js` — the built-in reference data: the code→label maps
-  and option arrays that stand in for the real backing system.
-- `services/<name>/client.js` or `real.js` — present only where a real backend
-  exists (`countries`, `ports`, `document-uploads`, and the persistence
-  services). It fetches or calls the live system.
-
-`stub.js` and `real.js` may instead be `stub/` and `real/` folders with
-`index.js` barrels when their data warrants splitting.
-
-For the reference-data services (`countries`, `ports`), `stub.js` does not
-hand-author its list — it seeds from a committed captured fixture. `_capture/capture.js`
-snapshots the live reference-data into `_capture/fixtures/*.json`, and
-`_capture/fixtures.js` loads them; the stubs derive `COUNTRY_LABELS` / `PORTS`
-from that single canonical dataset, so the canned stub data and the captured
-real data cannot drift. The network-boundary tests (`run-mode.test.js`)
-deliberately keep small synthetic payloads instead of the fixture — they assert
-`prime()` _replaces_ the stub, which needs the fetched data to differ from it.
-
-Controllers import `services/<name>/index.js` and nothing deeper, so the data
-source can change behind the interface without touching a page.
+Paths are relative to `src/server/live-animals/`.
 
 ## Run mode
 
-One environment variable, `LIVE_ANIMALS_MODE` (`stub` | `real`, default `real`),
-decides what backs the seam. It is read in `services/mode.js`, which exports
-`mode()` and `isRealMode()`. Two wiring patterns sit behind that switch.
+`services/mode.js` reads `LIVE_ANIMALS_MODE`. The default is `real`. Only the
+exact value `real` makes `isRealMode()` true. Vitest and the local Playwright
+server set `stub`. A local server with no value uses `real`.
 
-**Prime-at-boot** — `countries` and `ports`. The `index.js` holds mutable module
-state seeded from `stub.js`, and exposes an async `prime()`. In real mode
-`prime()` fetches from reference-data (`client.js`) and replaces the seed; in
-stub mode it returns immediately. `routes.js` `register` awaits each `prime()`
-at boot, so the interface stays synchronous for every consumer and a failed
-fetch fails boot loudly. Stub mode never calls the network.
+The services use three backing patterns:
 
-Services with no real backend serve their built-in data in both modes.
+- **Built in** always reads committed stub data.
+- **Selected** exports either a stub or real adapter when the module loads.
+- **Primed** starts with committed data, then replaces it from a real client at
+  plugin registration.
 
-## Commodity applicability lists — `commodities`
+`routes.js` configures the selected persistence ports. In real mode it also
+awaits `countries.prime()` and `ports.prime()` before mounting routes. A failed
+prime fails plugin registration. Stub mode makes no prime request.
 
-The commodity-keyed applicability lists are the V4 commodity lists expressed
-in the stored commodity vocabulary, and the model's gates read them through
-the same accessors the controllers use — one source, so gate and page can
-never disagree. Two list shapes exist in the stub data:
+## Public inventory
 
-- The identifier/CPH/unweaned lists (`PASSPORT_COMMODITIES`,
-  `TATTOO_COMMODITIES`, `EAR_TAG_COMMODITIES`, `HORSE_NAME_COMMODITIES`,
-  `PERMANENT_ADDRESS_COMMODITIES`, `UNWEANED_ANIMAL_COMMODITIES`,
-  `CPH_COMMODITIES`) are each V4 list **intersected with the selectable
-  `COMMODITY_OPTIONS`** — V4 entries with no selectable commodity (Ferrets
-  and Pigs on the tattoo list, for example) are omitted, not dormant.
-- `PACKAGE_COUNT_COMMODITIES` carries the full 54-entry V4 list; entries for
-  commodities outside `COMMODITY_OPTIONS` are unreachable until the commodity
-  vocabulary widens.
+This table follows the exports from each public `index.js`.
 
-When commodities come from real MDM, the intersected lists must widen back to
-their full V4 sets alongside the vocabulary — the intersection is a stub
-narrowing, not a requirement.
+| Service                  | Public exports                                                                                                                                                                                                                                                                                                                                             | Backing               |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `address-book`           | `PAGE_SIZE`, `parties`, `party`, `addParty`, `search`                                                                                                                                                                                                                                                                                                      | Stub in both modes    |
+| `certification-purposes` | `certificationPurposes`, `list`, `certificationLabel`                                                                                                                                                                                                                                                                                                      | Stub in both modes    |
+| `commodities`            | `list`, `commodityCodeFor`, `commodityNameFor`, `typesFor`, `typeIdForSpecies`, `typeTextForId`, `species`, `speciesLabel`, `speciesFor`, `isCommoditySpecies`, `packageCountCommodities`, `passportCommodities`, `tattooCommodities`, `earTagCommodities`, `horseNameCommodities`, `permanentAddressCommodities`, `unweanedCommodities`, `cphCommodities` | Stub in both modes    |
+| `countries`              | `prime`, `originLabel`, `originCountries`, `addressCountries`                                                                                                                                                                                                                                                                                              | Stub, then real prime |
+| `document-types`         | `documentTypes`, `attachmentTypes`                                                                                                                                                                                                                                                                                                                         | Stub in both modes    |
+| `document-uploads`       | `documentUploads` with `upload`, `scanStatus`, `remove`, `streamFile`                                                                                                                                                                                                                                                                                      | Stub or real          |
+| `import-reason-purpose`  | `reasons`, `reasonLabel`, `purposes`, `purposeLabel`                                                                                                                                                                                                                                                                                                       | Stub in both modes    |
+| `persistence/records`    | `records` with `create`, `load`, `list`, `has`, `replaceFulfilment`, `finalise`, `amend`, `cancelAmend`, `copy`, `softDelete`, `clear`                                                                                                                                                                                                                     | Stub or real          |
+| `persistence/session`    | `session` with `knownJourneyIds`, `addKnownJourney`, `openingRun`, `setOpeningRun`, `flowOnlyAnswers`, `setFlowOnlyAnswers`                                                                                                                                                                                                                                | Stub or real          |
+| `ports`                  | `prime`, `list`, `label`                                                                                                                                                                                                                                                                                                                                   | Stub, then real prime |
+| `transport-reference`    | `meansOfTransport`, `overlandMeans`, `transporterTypes`                                                                                                                                                                                                                                                                                                    | Stub in both modes    |
 
-## Saved parties — `address-book`
+`_capture` is support code, not a page-facing service. Its command fetches
+countries and ports into committed JSON fixtures. The country and port stubs
+seed from those fixtures.
 
-The book returns saved parties per consignment role. Each record has a stable id
-and the full Standard Address Block; the commercial-transporter records also
-carry an approval number. A chosen party is saved into the notification by copy,
-so every field is preserved even if the book later changes.
+## Built-in services
 
-`parties(role)` merges the built-in records for that role with created records.
-`search(role, { query, page })` is a free-text match over each record's
-name, address and country and returns one page — `results`, `total`, `page`,
-`totalPages`, `pageSize` — with `PAGE_SIZE` fixed at 5 and an out-of-range page
-falling back to the first. `addParty(role, { name, address })` mints a new record
-with a generated id and appends it to the session's created set. Addressing is a
-self-contained stubbed sub-service: the pages hold no records and no paging
-maths of their own.
+Built-in services return arrays, labels or lookups from committed modules.
+They use the same data in both run modes.
 
-## Document uploads — `document-uploads`
+`commodities` also supplies the allowlists used by model gates. Controllers and
+the model therefore read the same commodity names. Its identifier, CPH and
+unweaned lists contain selectable stub commodities. Its package-count list is
+the full committed list.
 
-The service drives the upload lifecycle on the documents page. A notification
-links documents by `uploadId` reference only; the file bytes never enter the
-notification.
+`address-book` keeps created parties in a module-level `Map`. `parties(role)`
+combines them with the built-in role list. `search()` matches name and address
+text, returns five rows per page and sends an invalid page back to page 1.
+Created parties last only for the life of the process.
 
-**Real mode** (`real.js`) calls the backend at `TRADE_IMPORTS_ANIMALS_BACKEND_URL`:
-`upload` POSTs `/notifications/{journeyId}/document-uploads` to initiate, then
-POSTs the file to `/document-uploads/{uploadId}/file`; `scanStatus` GETs
-`/document-uploads/{uploadId}`; `remove` DELETEs the same; `streamFile` GETs
-`/document-uploads/{uploadId}/file` and hands the response back unread so the
-controller can stream it. Every request carries the tracing header.
+## Primed reference data
 
-**Stub mode** (`stub.js`) cans the lifecycle and discards the file bytes. It
-settles on an explicit refresh signal rather than read counts, because a
-server-side gate or render read would otherwise consume the pending state before
-the user saw it. Every read answers `PENDING` until a read carries `refresh: true`
-— the controller sets it when the GET arrives via the `?attempt=N` refresh link —
-at which point the upload settles by filename: a name containing `virus` settles
-`REJECTED`, one containing `never-scans` stays `PENDING` through every refresh,
-and anything else settles `COMPLETE`. Once settled it stays settled. An unknown
-`uploadId` (for example after a restart) settles straight from the filename, and
-an entry with no `uploadId` is treated as `COMPLETE`. Holding no bytes, its
-`streamFile` serves the same canned one-page PDF for every upload.
+`countries` starts with `COUNTRY_LABELS`. In real mode, `prime()` calls
+`fetchCountries(['GBNAG_SPS_EX'])` and replaces the label map. Its read methods
+stay synchronous after boot.
 
-Both adapters answer `streamFile` with a fetch `Response`, so the controller
-reads `body` and `headers` the same way in either mode.
+`ports` starts with `PORTS`. In real mode, `prime()` calls
+`fetchPortsOfEntry()` and replaces the array. `label(code)` returns
+`Name (CODE)` or `undefined`.
+
+Do not read a primed service into a module-scope validation rule. Build the
+allowed values for each POST so it sees the data loaded at boot.
+
+## Selected uploads
+
+`document-uploads/index.js` chooses one `documentUploads` object when imported.
+
+The real adapter calls `TRADE_IMPORTS_ANIMALS_BACKEND_URL`. It starts an upload
+under the notification, sends the file, reads scan status, deletes an upload
+and streams the stored file. It sends the CDP trace ID on each request.
+
+The stub keeps scan state but no file bytes. A new upload stays `PENDING` until
+a scan read has `refresh: true`. A filename containing `virus` then becomes
+`REJECTED`; one containing `never-scans` stays `PENDING`; other names become
+`COMPLETE`. Downloads return one placeholder PDF.
+
+Both adapters return a fetch `Response` from `streamFile()`.
+
+## Selected persistence
+
+The records barrel selects the in-memory map or the backend REST adapter. Both
+implement the same records object. The real adapter also exports `mapStatus`
+from its deeper real barrel, but pages use the selected object.
+
+The session barrel selects cookie state or `request.yar` state. Both keep known
+journey IDs, opening-run state and flow-only answers. See
+[persistence.md](persistence.md) for the different real and stub listing
+semantics.
