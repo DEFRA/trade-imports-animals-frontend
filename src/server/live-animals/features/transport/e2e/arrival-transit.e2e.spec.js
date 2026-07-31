@@ -26,15 +26,9 @@ const openArrival = async (page) => {
 }
 
 const choosePort = async (page, code = values.portOfEntry) => {
-  const port = portsOfEntry.find((item) => item.code === code)
-  const label = `${port.name} (${port.code})`
-  await page.locator('input#portOfEntry').fill(code)
-  await page.getByRole('option', { name: label, exact: true }).click()
-}
-
-const chooseTransitCountry = async (page, id, name) => {
-  await page.locator(`input#${id}`).fill(name)
-  await page.getByRole('option', { name, exact: true }).click()
+  await page
+    .getByLabel(copy.portOfEntry.port.label, { exact: true })
+    .selectOption(code)
 }
 
 const errorLink = (page, message) =>
@@ -87,7 +81,7 @@ test.describe('arrival details and transit countries', () => {
     ).toHaveAccessibleDescription(copy.portOfEntry.documentReference.hint)
 
     const options = await page
-      .locator('select#portOfEntry-select option')
+      .locator('select#portOfEntry option')
       .evaluateAll((items) =>
         items.slice(2).map((option) => ({
           code: option.value,
@@ -116,7 +110,7 @@ test.describe('arrival details and transit countries', () => {
     await page
       .getByLabel(copy.portOfEntry.documentReference.label)
       .fill('R'.repeat(59))
-    await page.locator('select#portOfEntry-select').evaluate((select) => {
+    await page.locator('select#portOfEntry').evaluate((select) => {
       select.add(new Option('Invalid port', 'INVALID'))
       select.value = 'INVALID'
     })
@@ -186,7 +180,7 @@ test.describe('arrival details and transit countries', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
     ).toHaveValue(arrivalDate)
-    await expect(page.locator('select#portOfEntry-select')).toHaveValue(
+    await expect(page.locator('select#portOfEntry')).toHaveValue(
       values.portOfEntry
     )
     await expect(
@@ -216,18 +210,22 @@ test.describe('arrival details and transit countries', () => {
     ).toBeVisible()
     await expect(page.getByText(copy.transitCountries.excludesUk)).toBeVisible()
     await expect(
-      page.getByText(copy.transitCountries.enterAll.hint)
+      page.getByText(copy.transitCountries.countries.hint)
     ).toBeVisible()
+    const countryCodes = await page
+      .locator('input[name="transitedCountries"]')
+      .evaluateAll((items) => items.map((item) => item.value))
+    expect(countryCodes).toEqual(countriesOrigin.map(({ code }) => code))
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
       errorLink(page, copy.transitCountries.errors.selectAtLeastOne)
     ).toBeVisible()
 
     await page
-      .locator('select#transitedCountries-select')
-      .evaluate((select) => {
-        select.add(new Option('Invalid country', 'INVALID'))
-        select.value = 'INVALID'
+      .getByRole('checkbox', { name: 'France' })
+      .evaluate((checkbox) => {
+        checkbox.value = 'INVALID'
+        checkbox.checked = true
       })
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
@@ -240,10 +238,10 @@ test.describe('arrival details and transit countries', () => {
       .map(({ code }) => code)
     await page.evaluate((codes) => {
       const form = document.querySelector('form')
-      for (const select of form.querySelectorAll(
-        'select[name="transitedCountries"]'
+      for (const checkbox of form.querySelectorAll(
+        'input[name="transitedCountries"]'
       )) {
-        select.removeAttribute('name')
+        checkbox.removeAttribute('name')
       }
       for (const code of codes) {
         const input = document.createElement('input')
@@ -262,23 +260,16 @@ test.describe('arrival details and transit countries', () => {
     ).toBeVisible()
 
     await page.goto(journeyUrl(page, 'transit-countries'))
-    await chooseTransitCountry(page, 'transitedCountries', 'France')
-    await page
-      .getByRole('button', { name: copy.transitCountries.addAnother })
-      .click()
-    await chooseTransitCountry(page, 'transitedCountries-2', 'Belgium')
+    await page.getByRole('checkbox', { name: 'France' }).check()
+    await page.getByRole('checkbox', { name: 'Belgium' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
       page.getByRole('heading', { name: copy.transporters.legend })
     ).toBeVisible()
 
     await page.goto(journeyUrl(page, 'transit-countries'))
-    await expect(page.locator('select#transitedCountries-select')).toHaveValue(
-      'FR'
-    )
-    await expect(
-      page.locator('select#transitedCountries-2-select')
-    ).toHaveValue('BE')
+    await expect(page.getByRole('checkbox', { name: 'France' })).toBeChecked()
+    await expect(page.getByRole('checkbox', { name: 'Belgium' })).toBeChecked()
   })
 
   test('arrival and transit pages have no serious or critical axe violations', async ({

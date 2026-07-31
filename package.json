@@ -92,7 +92,6 @@
     "@lhci/cli": "0.15.1",
     "@playwright/test": "1.61.0",
     "@vitest/coverage-v8": "4.1.10",
-    "accessible-autocomplete": "3.0.1",
     "autoprefixer": "10.5.4",
     "babel-loader": "10.1.1",
     "cheerio": "1.2.0",

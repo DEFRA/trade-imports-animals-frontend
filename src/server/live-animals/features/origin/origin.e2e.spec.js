@@ -20,9 +20,7 @@ const startAtOrigin = async (page) => {
 }
 
 const chooseCountry = async (page, country) => {
-  const combo = page.locator('input#countryOfOrigin')
-  await combo.fill(country.name)
-  await page.getByRole('option', { name: country.name, exact: true }).click()
+  await page.getByLabel(copy.country.label).selectOption(country.code)
 }
 
 const saveAndContinue = (page) =>
@@ -71,7 +69,7 @@ test.describe('origin feature', () => {
       page.getByLabel(copy.internalReference.label)
     ).toHaveAccessibleDescription(copy.internalReference.hint)
 
-    const select = page.locator('select#countryOfOrigin-select')
+    const select = page.locator('select#countryOfOrigin')
     await expect(select.locator('option').first()).toHaveText(
       copy.country.placeholder
     )
@@ -109,7 +107,7 @@ test.describe('origin feature', () => {
     await expect(
       errorLink(page, copy.errors.internalReferenceMaxLength)
     ).toBeVisible()
-    await expect(page.getByLabel(copy.country.label)).toHaveValue(france.name)
+    await expect(page.getByLabel(copy.country.label)).toHaveValue(france.code)
     await expect(
       page.getByRole('radio', { name: copy.regionRequirement.yes })
     ).toBeChecked()
@@ -137,7 +135,7 @@ test.describe('origin feature', () => {
     await expect(page).toHaveURL(/\/notifications\/[^/]+\/commodities$/)
 
     await page.goto(originUrl)
-    await expect(page.getByLabel(copy.country.label)).toHaveValue(france.name)
+    await expect(page.getByLabel(copy.country.label)).toHaveValue(france.code)
     await expect(
       page.getByRole('radio', { name: copy.regionRequirement.yes })
     ).toBeChecked()

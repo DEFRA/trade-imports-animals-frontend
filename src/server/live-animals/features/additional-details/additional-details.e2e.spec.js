@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test'
 import {
   answerCountryOfOrigin,
   journeyUrl,
-  searchAndSelect,
+  selectSpecies,
   startNotification
 } from '../../../../../e2e/live-animals-journey.js'
 import * as certification from '../../services/certification-purposes/index.js'
@@ -18,7 +18,7 @@ const startAtAdditionalDetails = async (page) => {
   await startNotification(page)
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
-  await searchAndSelect(page, 'Cow', ['Bos taurus'])
+  await selectSpecies(page, ['Bos taurus'])
   await saveAndContinue(page)
   await page.getByLabel('Number of animals').fill('1')
   await page.getByLabel('Number of packages (optional)').fill('1')

@@ -23,8 +23,6 @@ export const commodityNameFor = (code) =>
 
 export const typesFor = (name) => COMMODITY_TYPE_DATA[name] ?? []
 
-export const isMultiType = (name) => typesFor(name).length > 1
-
 // The type id whose species list holds this species value — a species belongs
 // to exactly one type, so the line's stored commodityType derives from its
 // species. Single-type commodities collapse to their one type id.
@@ -36,17 +34,6 @@ export const typeIdForSpecies = (name, speciesValue) =>
 export const typeTextForId = (name, id) =>
   typesFor(name).find((type) => type.id === id)?.text
 
-// The select options for a multi-type commodity's type filter.
-export const typeSelectOptions = (name) =>
-  typesFor(name).map((type) => ({ value: type.id, text: type.text }))
-
-// The species offered for one type — the commodity's species narrowed to the
-// type's own value list, keeping the commodity's canonical species order.
-export const speciesForType = (name, id) => {
-  const values = new Set(typesFor(name).find((type) => type.id === id)?.species)
-  return speciesFor(name).filter((option) => values.has(option.value))
-}
-
 export const species = () => SPECIES_OPTIONS
 
 export const speciesLabel = (code) =>
@@ -56,38 +43,6 @@ export const speciesFor = (name) => COMMODITY_SPECIES[name] ?? []
 
 export const isCommoditySpecies = (name, value) =>
   speciesFor(name).some((option) => option.value === value)
-
-const commodityMatchesQuery = (name, normalisedQuery) => {
-  const code = COMMODITY_CODES[name] ?? ''
-  return (
-    name.toLowerCase().includes(normalisedQuery) ||
-    code.toLowerCase().includes(normalisedQuery) ||
-    speciesFor(name).some((option) =>
-      option.text.toLowerCase().includes(normalisedQuery)
-    )
-  )
-}
-
-const toSearchResult = (name) => ({
-  name,
-  code: COMMODITY_CODES[name],
-  species: speciesFor(name)
-})
-
-/**
- * Search the commodity reference data by common name, commodity code or
- * species (scientific name). Returns whole commodity groups — matching a
- * species surfaces its commodity with all of that commodity's species.
- * @param {string} query
- * @returns {Array<{name: string, code: string, species: object[]}>}
- */
-export const search = (query) => {
-  const normalisedQuery = (query ?? '').trim().toLowerCase()
-  if (normalisedQuery === '') return []
-  return COMMODITY_OPTIONS.filter((name) =>
-    commodityMatchesQuery(name, normalisedQuery)
-  ).map(toSearchResult)
-}
 
 export const packageCountCommodities = () => PACKAGE_COUNT_COMMODITIES
 

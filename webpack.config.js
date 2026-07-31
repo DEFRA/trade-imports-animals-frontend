@@ -23,9 +23,6 @@ export default {
     application: {
       import: ['./javascripts/application.js', './stylesheets/application.scss']
     },
-    selectAutocomplete: {
-      import: './javascripts/select-autocomplete.js'
-    },
     documents: {
       import: '../server/live-animals/features/documents/client/index.js'
     }

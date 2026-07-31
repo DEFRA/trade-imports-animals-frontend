@@ -1,6 +1,5 @@
 {% extends "live-animals/shared/layout.njk" %}
-{% from "govuk/components/select/macro.njk" import govukSelect %}
-{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
 {% from "live-animals/shared/save-actions.njk" import saveActions %}
 
 {% block journeyContent %}
@@ -14,42 +13,15 @@
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
 
-    {% for items in countryRows %}
-      {% if loop.first %}
-        {{ govukSelect({
-          id: "transitedCountries",
-          name: "transitedCountries",
-          label: { text: copy.enterAll.label, classes: "govuk-label--s" },
-          hint: { text: copy.enterAll.hint },
-          errorMessage: errors.transitedCountries and { text: errors.transitedCountries },
-          items: items,
-          attributes: { "data-select-autocomplete": "" }
-        }) }}
-      {% else %}
-        {{ govukSelect({
-          id: "transitedCountries-" + loop.index,
-          name: "transitedCountries",
-          label: { text: copy.countryLabel + " " + loop.index, classes: "govuk-visually-hidden" },
-          items: items,
-          attributes: { "data-select-autocomplete": "" }
-        }) }}
-      {% endif %}
-    {% endfor %}
-
-    {% if canAddAnother %}
-      {{ govukButton({
-        text: copy.addAnother,
-        classes: "govuk-button--secondary",
-        name: "addCountry",
-        value: "add"
-      }) }}
-    {% endif %}
+    {{ govukCheckboxes({
+      name: "transitedCountries",
+      classes: "govuk-checkboxes--small",
+      fieldset: { legend: { text: copy.countries.label, classes: "govuk-fieldset__legend--s" } },
+      hint: { text: copy.countries.hint },
+      errorMessage: errors.transitedCountries and { text: errors.transitedCountries },
+      items: countryItems
+    }) }}
 
     {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
-{% endblock %}
-
-{% block bodyEnd %}
-  {{ super() }}
-  <script type="module" src="{{ getAssetPath('selectAutocomplete.js') }}"></script>
 {% endblock %}

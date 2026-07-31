@@ -18,8 +18,7 @@
       label: { text: copy.country.label, classes: "govuk-label--s" },
       value: values.countryOfOrigin,
       errorMessage: errors.countryOfOrigin and { text: errors.countryOfOrigin },
-      items: countryItems,
-      attributes: { "data-select-autocomplete": "" }
+      items: countryItems
     }) }}
 
     {% set regionCodeHtml %}
@@ -56,9 +55,4 @@
 
     {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
-{% endblock %}
-
-{% block bodyEnd %}
-  {{ super() }}
-  <script type="module" src="{{ getAssetPath('selectAutocomplete.js') }}"></script>
 {% endblock %}

@@ -13,6 +13,9 @@ import * as countries from '../../../services/countries/index.js'
 import * as transitCountries from './transit-countries.controller.js'
 import { MAX_TRANSITED_COUNTRIES } from './transit-countries.controller.js'
 
+const get = transitCountries.routes.find(
+  (route) => route.method === 'GET'
+).handler
 const post = postHandlerOf(transitCountries)
 const tooManyCodes = countries
   .originCountries()
@@ -58,20 +61,38 @@ describe('POST transit-countries', () => {
     }
   )
 
-  it('Should commit the selection and return to the page when adding another country', async () => {
+  it('Should deduplicate and commit the checked country codes', async () => {
     const result = await driveHandler(post, {
       seed: { meansOfTransport: 'ROAD_VEHICLE' },
-      payload: { transitedCountries: 'FR', addCountry: 'add' }
+      payload: { transitedCountries: ['FR', 'BE', 'FR'] }
     })
-    expect(result.after.transitedCountries).toEqual(['FR'])
-    expect(result.response.redirect).toContain('transit-countries')
+    expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
+    expect(result.response.redirect).not.toContain('transit-countries')
   })
+})
 
-  it('Should return to the page without an error when adding another country with nothing selected', async () => {
-    const result = await driveHandler(post, {
-      seed: { meansOfTransport: 'ROAD_VEHICLE' },
-      payload: { addCountry: 'add' }
+describe('GET transit-countries', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should render the full country checklist with stored values checked', async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        meansOfTransport: 'ROAD_VEHICLE',
+        transitedCountries: ['FR', 'BE']
+      }
     })
-    expect(result.response.redirect).toContain('transit-countries')
+    const items = result.view.context.countryItems
+    expect(items).toHaveLength(countries.originCountries().length)
+    expect(items.find((item) => item.value === 'FR')).toEqual({
+      value: 'FR',
+      text: 'France',
+      checked: true
+    })
+    expect(items.find((item) => item.value === 'DE').checked).toBe(false)
   })
 })

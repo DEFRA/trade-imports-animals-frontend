@@ -31,10 +31,6 @@ describe('#copy', () => {
     }
   })
 
-  it('Should interpolate selectedCount', () => {
-    expect(copy.search.selectedCount(3)).toBe('3 selected')
-  })
-
   it('Should interpolate countDrop', () => {
     expect(copy.consignmentDetails.errors.countDrop(3, 'Bos taurus', 2)).toBe(
       'You have 3 identifier records for Bos taurus but entered 2 animals. Remove identifier records or keep the higher count.'

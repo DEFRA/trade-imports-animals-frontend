@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 import {
   answerCountryOfOrigin,
   journeyUrl,
-  searchAndSelect,
+  selectSpecies,
   startNotification
 } from '../../../../../../e2e/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
@@ -12,8 +12,7 @@ const openDetails = async (page) => {
   await startNotification(page)
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
-  await searchAndSelect(page, 'Cow', ['Bos taurus'])
-  await searchAndSelect(page, 'Cat', ['Felis catus'])
+  await selectSpecies(page, ['Bos taurus', 'Felis catus'])
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await expect(
     page.getByRole('heading', { name: copy.consignmentDetails.title })
@@ -106,9 +105,9 @@ test.describe('commodity consignment details', () => {
       .getByRole('link', { name: copy.consignmentDetails.addAnother })
       .click()
     await expect(
-      page.getByRole('heading', { name: copy.search.selectedCount(1) })
-    ).toBeVisible()
-    await searchAndSelect(page, 'Dog', ['Canis lupus familiaris'])
+      page.getByRole('checkbox', { name: 'Bos taurus' })
+    ).toBeChecked()
+    await selectSpecies(page, ['Canis lupus familiaris'])
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(page.locator('.govuk-table')).toContainText('Dog')
     await expect(page.locator('#numberOfAnimalsQuantity-0')).toHaveValue('25')

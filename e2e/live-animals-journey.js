@@ -92,26 +92,16 @@ export const startNotification = async (page) => {
 const FIXTURE_COUNTRY = COUNTRY_LABELS[values.countryOfOrigin]
 
 export const chooseCountryOfOrigin = async (page, name = FIXTURE_COUNTRY) => {
-  const combo = page.locator('input#countryOfOrigin')
-  await combo.fill(name)
-  await page.getByRole('option', { name, exact: true }).click()
+  await page.getByLabel('Country of origin').selectOption({ label: name })
 }
 
 const FIXTURE_PORT = PORTS.find((port) => port.code === values.portOfEntry)
 const FIXTURE_PORT_OPTION = `${FIXTURE_PORT.name} (${FIXTURE_PORT.code})`
 
-const choosePortOfEntry = async (page, query = FIXTURE_PORT.name) => {
-  const combo = page.locator('input#portOfEntry')
-  await combo.fill(query)
+const choosePortOfEntry = async (page) => {
   await page
-    .getByRole('option', { name: FIXTURE_PORT_OPTION, exact: true })
-    .click()
-}
-
-const chooseTransitCountry = async (page, comboId, name) => {
-  const combo = page.locator(`input#${comboId}`)
-  await combo.fill(name)
-  await page.getByRole('option', { name, exact: true }).click()
+    .getByLabel('Port of entry', { exact: true })
+    .selectOption({ label: FIXTURE_PORT_OPTION })
 }
 
 export const answerCountryOfOrigin = async (page) => {
@@ -124,12 +114,7 @@ export const answerCountryOfOrigin = async (page) => {
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
-export const SEARCH_LABEL =
-  'Search for a common name, commodity code or scientific name'
-
-export const searchAndSelect = async (page, query, speciesNames) => {
-  await page.getByLabel(SEARCH_LABEL).fill(query)
-  await page.getByRole('button', { name: 'Search', exact: true }).click()
+export const selectSpecies = async (page, speciesNames) => {
   for (const name of speciesNames) {
     await page.getByRole('checkbox', { name }).check()
   }
@@ -138,7 +123,7 @@ export const searchAndSelect = async (page, query, speciesNames) => {
 export const unlockSections = async (page) => {
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
-  await searchAndSelect(page, 'Cat', ['Felis catus'])
+  await selectSpecies(page, ['Felis catus'])
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await expect(
     page.getByRole('heading', { name: 'Consignment details' })
@@ -185,7 +170,7 @@ export const completeAnswerSections = async (page) => {
   await save()
 
   await task('What are you importing?')
-  await searchAndSelect(page, line.commoditySelection, ['Bos taurus'])
+  await selectSpecies(page, ['Bos taurus'])
   await save()
   await expect(
     page.getByRole('heading', { name: 'Consignment details' })
@@ -264,9 +249,8 @@ export const completeAnswerSections = async (page) => {
     .getByLabel('Transport document reference')
     .fill(values.transportDocumentReference)
   await save()
-  await chooseTransitCountry(page, 'transitedCountries', 'France')
-  await page.getByRole('button', { name: 'Add another country' }).click()
-  await chooseTransitCountry(page, 'transitedCountries-2', 'Belgium')
+  await page.getByRole('checkbox', { name: 'France' }).check()
+  await page.getByRole('checkbox', { name: 'Belgium' }).check()
   await save()
   await page
     .getByRole('radio', { name: values.transporterType, exact: true })

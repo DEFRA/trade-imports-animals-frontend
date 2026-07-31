@@ -9,21 +9,6 @@ export const copy = {
   search: {
     title: 'Beth ydych chi’n ei fewnforio?',
     inset: 'Mae angen hysbysiad ar wahân ar gyfer pob tystysgrif iechyd.',
-    search: {
-      label: 'Chwiliwch am enw cyffredin, cod nwyddau neu enw gwyddonol',
-      hint: 'Er enghraifft, Cow, 0102, neu Bos taurus',
-      button: 'Chwilio'
-    },
-    noMatches: 'Nid oes unrhyw nwyddau’n cyfateb i’ch chwiliad.',
-    typeFilter: {
-      label: 'Math o nwydd',
-      hint: 'Hidlo’r rhywogaethau yn ôl math',
-      all: 'Pob math',
-      button: 'Hidlo rhywogaethau'
-    },
-    selectedCount: (count) => `${count} wedi’u dewis`,
-    remove: 'Tynnu',
-    removeAria: (text) => `Tynnu ${text}`,
     help: {
       summary: 'Help gyda chodau nwyddau',
       text: 'Defnyddir codau nwyddau i ddosbarthu nwyddau ar gyfer mewnforio ac allforio.'

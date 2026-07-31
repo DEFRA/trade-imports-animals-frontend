@@ -286,7 +286,7 @@ widget for "a list of things", so each loop hub owns its rows and copy:
 - `features/commodities/consignment-details/consignment-details.controller.js` —
   the
   top-level commodity lines: the selected-commodities table with per-row
-  Remove, "Add another commodity" back to the search page, and the
+  Remove, "Add another commodity" back to the selection page, and the
   inline per-species quantity blocks, composed from sub-component
   partials (`_selected-commodities-table.njk`, `_species-quantities.njk`).
 - `features/commodities/animal-identification/animal-identification.controller.js` —
@@ -320,9 +320,10 @@ consolidated details page. The reconcile is desired-state by key: a
 still-selected (commodity, species) pair keeps its existing line untouched —
 per-line values and nested identifier records included — a newly selected
 pair appends its seed line, and a deselected pair's line is removed, with the
-write's scope-and-wipe pass destroying anything that leaves scope with it. Until that POST the draft selection lives only
-in the payload (hidden `selected`/`shown` inputs across search
-round-trips) — never a half-created entry in the store. A nested add
+write's scope-and-wipe pass destroying anything that leaves scope with it. The
+selection page renders the full eight-pair prototype dataset as grouped
+checkboxes and writes only on Save and continue — never a half-created entry in
+the store. A nested add
 validates its parent index before writing, so the append primitive never
 fabricates a phantom parent.
 
@@ -359,42 +360,13 @@ first appears at the journey's first save; and the confirmation page omits it
 because its panel already carries the reference — rendering both would double
 it.
 
-### Progressive enhancement (client JS)
+### Server-rendered selection controls
 
-A page that wants client-side behaviour layers it OVER a fully working
-server-rendered control — never instead of one. The select-autocomplete
-enhancement is the pattern:
-
-- the template renders the plain govuk control as normal, opting in via
-  a data attribute (`data-select-autocomplete` on the `govukSelect`);
-- the behaviour lives in a webpack entry in the host repo
-  (`src/client/javascripts/select-autocomplete.js`, entry
-  `selectAutocomplete` in `webpack.config.js`) — it mounts
-  `accessible-autocomplete`'s `enhanceSelectElement` over every opted-in
-  select, and its stylesheet is pulled into `application.scss`;
-- the template ships the bundle by overriding the layout's `bodyEnd`
-  block with `{{ super() }}` plus a
-  `getAssetPath('selectAutocomplete.js')` script tag. The webpack entry
-  is load-bearing: without it the script include 404s silently and the
-  enhancement never mounts.
-
-The origin country select and the port-of-entry select both opt in and
-share the one entry and bundle — a second select reuses the data
-attribute and the same `bodyEnd` include, never a second webpack entry.
-With JS off the select submits exactly as before; the enhancement only
-changes the input affordance. The placeholder and the disabled divider
-row carry `value: ''`, which keeps those decorative rows out of the
-suggestion list. What the suggestion list can match is the option TEXT:
-the port options render `Name (CODE)`, which gives the default substring
-source its search-by-name-or-code behaviour for free.
-
-E2E interactions with an enhanced select must target the mounted
-`input#<id>` — it exists only after hydration, so actions auto-wait for
-the mount. A `getByRole('combobox')` query races hydration: a plain
-select's implicit ARIA role is also `combobox`, so the query can resolve
-to the raw select while the bundle is still in flight, and `fill()` on a
-select fails without retrying. Pin the a11y contract on the input
-separately with `toHaveRole` / `toHaveAccessibleName`.
+Country of origin and port of entry are plain server-rendered `govukSelect`
+controls. Transit countries are one `govukCheckboxes` group over the country
+list, and commodity/species selection is a set of grouped
+`govukCheckboxes`. These controls submit their stored codes directly and do
+not depend on client JavaScript.
 
 `shared/kit.js` holds the genuinely uniform mechanical bits: `base`,
 `pageRoutes`, `errorSummary`, `fieldError`, `nextTarget`, `exitTarget`,

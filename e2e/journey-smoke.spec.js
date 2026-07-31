@@ -5,7 +5,7 @@ import {
   chooseCountryOfOrigin,
   completeAnswerSections,
   journeyUrl,
-  searchAndSelect,
+  selectSpecies,
   values
 } from './live-animals-journey.js'
 
@@ -38,7 +38,7 @@ test.describe('live-animals journey glue', () => {
     await save()
     await expect(heading('What are you importing?')).toBeVisible()
 
-    await searchAndSelect(page, 'Cat', ['Felis catus'])
+    await selectSpecies(page, ['Felis catus'])
     await save()
     await expect(heading('Consignment details')).toBeVisible()
 

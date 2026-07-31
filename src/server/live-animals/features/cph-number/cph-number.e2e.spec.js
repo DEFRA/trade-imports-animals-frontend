@@ -15,10 +15,6 @@ const startAtCphNumber = async (page) => {
 
   const commodityUrl = page.url().replace(/\/origin$/, '/commodities')
   await page.goto(commodityUrl)
-  await page
-    .getByLabel('Search for a common name, commodity code or scientific name')
-    .fill('Cow')
-  await page.getByRole('button', { name: 'Search', exact: true }).click()
   await page.getByRole('checkbox', { name: 'Bos taurus' }).check()
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await expect(page).toHaveURL(/\/notifications\/[^/]+\/consignment-details$/)

@@ -11,9 +11,10 @@ import { dispatchPages } from '../../index.js'
 
 import * as search from './search.controller.js'
 
+const get = search.routes.find((route) => route.method === 'GET').handler
 const post = postHandlerOf(search)
 
-describe('POST commodities (batch search-select)', () => {
+describe('commodities grouped checklist', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -21,53 +22,73 @@ describe('POST commodities (batch search-select)', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should re-render an empty selection with its message and create nothing', async () => {
-    const result = await driveHandler(post, { payload: { search: 'cow' } })
-    expect(result.view.context.errors.search).toBe('Select a commodity')
-    expect(result.after).toEqual(result.before)
-  })
-
-  it('Should render grouped results for a search action without saving', async () => {
-    const result = await driveHandler(post, {
-      payload: { action: 'search', search: '0102' }
-    })
-    expect(result.view.context.results).toEqual([
+  it('Should render all eight pairs grouped by commodity in canonical order', async () => {
+    const result = await driveHandler(get)
+    expect(result.view.context.commodityGroups).toEqual([
       {
         legend: 'Cow (0102)',
-        name: 'Cow',
-        multiType: true,
-        typeItems: [
-          { value: '', text: 'All types', selected: true },
-          { value: '16', text: 'Domestic', selected: false },
-          { value: '24', text: 'Game', selected: false }
-        ],
         items: [
           { value: 'Cow|716661', text: 'Bison bison', checked: false },
           { value: 'Cow|1388624', text: 'Bos spp.', checked: false },
           { value: 'Cow|1148346', text: 'Bos taurus', checked: false },
           { value: 'Cow|749313', text: 'Bubalus bubalis', checked: false }
         ]
+      },
+      {
+        legend: 'Horse (0101)',
+        items: [
+          { value: 'Horse|822332', text: 'Equus caballus', checked: false }
+        ]
+      },
+      {
+        legend: 'Cat (01061900)',
+        items: [{ value: 'Cat|923501', text: 'Felis catus', checked: false }]
+      },
+      {
+        legend: 'Dog (01061900)',
+        items: [
+          {
+            value: 'Dog|923502',
+            text: 'Canis lupus familiaris',
+            checked: false
+          }
+        ]
+      },
+      {
+        legend: 'Fish (0301)',
+        items: [{ value: 'Fish|801204', text: 'Salmo salar', checked: false }]
       }
+    ])
+  })
+
+  it('Should mark stored commodity and species pairs checked', async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        commodityLines: [
+          { commoditySelection: 'Cow', speciesSelection: '1148346' },
+          { commoditySelection: 'Cat', speciesSelection: '923501' }
+        ]
+      }
+    })
+    const items = result.view.context.commodityGroups.flatMap(
+      (group) => group.items
+    )
+    expect(
+      items.filter((item) => item.checked).map((item) => item.value)
+    ).toEqual(['Cow|1148346', 'Cat|923501'])
+  })
+
+  it('Should require at least one checked pair and create nothing', async () => {
+    const result = await driveHandler(post, { payload: {} })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.species).toBe('Select a commodity')
+    expect(result.view.context.errorSummary.errorList).toEqual([
+      { text: 'Select a commodity', href: '#species' }
     ])
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should find a commodity by scientific name and mark carried selections checked', async () => {
-    const result = await driveHandler(post, {
-      payload: {
-        action: 'search',
-        search: 'bos taurus',
-        selected: ['Cow|1148346']
-      }
-    })
-    const [group] = result.view.context.results
-    expect(group.legend).toBe('Cow (0102)')
-    expect(
-      group.items.find((item) => item.value === 'Cow|1148346').checked
-    ).toBe(true)
-  })
-
-  it('Should create one line per selected species across commodity codes, in canonical order', async () => {
+  it('Should create one line per checked pair in canonical order', async () => {
     const result = await driveHandler(post, {
       payload: { species: ['Cat|923501', 'Cow|716661', 'Cow|1148346'] }
     })
@@ -97,7 +118,7 @@ describe('POST commodities (batch search-select)', () => {
     expect(result.response.redirect).toContain('consignment-details')
   })
 
-  it("Should preserve a still-selected line's data and drop a deselected one on reselect", async () => {
+  it("Should preserve a checked line's data and remove an unchecked line", async () => {
     const kept = {
       commoditySelection: 'Cow',
       speciesSelection: '1148346',
@@ -116,60 +137,30 @@ describe('POST commodities (batch search-select)', () => {
           }
         ]
       },
-      payload: {
-        // The Cat box was shown and unticked; Cow carried via hidden input.
-        selected: ['Cow|1148346', 'Cat|923501'],
-        shown: ['Cat|923501']
-      }
+      payload: { species: ['Cow|1148346', 'Dog|923502'] }
     })
     expect(result.after.commodityLines).toEqual([
-      { ...kept, numberOfAnimalsQuantity: 25 }
-    ])
-  })
-
-  it('Should treat an unchecked-but-shown species as deselected and a not-shown one as carried', async () => {
-    const result = await driveHandler(post, {
-      payload: {
-        selected: ['Cow|1148346', 'Dog|923502'],
-        shown: ['Cow|1148346', 'Cow|716661'],
-        species: ['Cow|716661']
-      }
-    })
-    expect(
-      result.after.commodityLines.map((line) => line.speciesSelection)
-    ).toEqual(['716661', '923502'])
-  })
-
-  it('Should drop a selection from the summary via its remove action without saving', async () => {
-    const result = await driveHandler(post, {
-      seed: {
-        commodityLines: [
-          { commoditySelection: 'Cow', speciesSelection: '1148346' }
-        ]
-      },
-      payload: {
-        action: 'remove:Cow|1148346',
-        selected: ['Cow|1148346', 'Cat|923501']
-      }
-    })
-    expect(result.view.context.selectedSummary).toEqual([
-      { key: 'Cat|923501', text: 'Cat (01061900) — Felis catus' }
-    ])
-    expect(result.after).toEqual(result.before)
-  })
-
-  it('Should ignore unknown commodity/species pairs in the payload', async () => {
-    const result = await driveHandler(post, {
-      payload: { species: ['Cow|1148346', 'Wolf|999', 'not-a-key'] }
-    })
-    expect(result.after.commodityLines).toEqual([
+      { ...kept, numberOfAnimalsQuantity: 25 },
       {
-        commoditySelection: 'Cow',
-        speciesSelection: '1148346',
-        commodityType: '16',
+        commoditySelection: 'Dog',
+        speciesSelection: '923502',
+        commodityType: '2',
         numberOfPackages: '',
         numberOfAnimalsQuantity: ''
       }
     ])
+  })
+
+  it('Should ignore unknown pairs and deduplicate checked pairs', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        species: ['Cow|1148346', 'Wolf|999', 'Cow|1148346', 'not-a-key']
+      }
+    })
+    expect(
+      result.after.commodityLines.map(
+        (line) => `${line.commoditySelection}|${line.speciesSelection}`
+      )
+    ).toEqual(['Cow|1148346'])
   })
 })

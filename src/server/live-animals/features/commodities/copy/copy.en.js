@@ -4,21 +4,6 @@ export const copy = {
   search: {
     title: 'What are you importing?',
     inset: 'Each health certificate requires a separate notification.',
-    search: {
-      label: 'Search for a common name, commodity code or scientific name',
-      hint: 'For example, Cow, 0102, or Bos taurus',
-      button: 'Search'
-    },
-    noMatches: 'No commodities match your search.',
-    typeFilter: {
-      label: 'Type of commodity',
-      hint: 'Filter the species by type',
-      all: 'All types',
-      button: 'Filter species'
-    },
-    selectedCount: (count) => `${count} selected`,
-    remove: 'Remove',
-    removeAria: (text) => `Remove ${text}`,
     help: {
       summary: 'Help with commodity codes',
       text: 'Commodity codes are used to classify goods for import and export.'

@@ -41,13 +41,10 @@ export const copy = {
     betweenCountries:
       'Gwledydd y bydd y llwyth yn teithio drwyddynt yw’r gwledydd rhwng y wlad tarddiad a’r wlad gyrchfan.',
     excludesUk: 'Nid yw hyn yn cynnwys y Deyrnas Unedig.',
-    enterAll: {
-      label: 'Rhowch bob gwlad',
-      hint: 'Gallwch ychwanegu hyd at 12 gwlad'
+    countries: {
+      label: 'Dewiswch bob gwlad y bydd y llwyth yn teithio drwyddi',
+      hint: 'Dewiswch hyd at 12 gwlad'
     },
-    countryLabel: 'Gwlad',
-    placeholder: 'Dewiswch wlad',
-    addAnother: 'Ychwanegu gwlad arall',
     errors: {
       fromList: 'Dewiswch wledydd o’r rhestr',
       maxCountries: (max) => `Dewiswch hyd at ${max} gwlad`,

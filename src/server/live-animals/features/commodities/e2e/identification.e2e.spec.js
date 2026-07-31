@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 
 import {
   answerCountryOfOrigin,
-  searchAndSelect,
+  selectSpecies,
   startNotification
 } from '../../../../../../e2e/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
@@ -12,8 +12,8 @@ const addLines = async (page, selections, counts = []) => {
   await startNotification(page)
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
-  for (const [query, species] of selections) {
-    await searchAndSelect(page, query, species)
+  for (const [, species] of selections) {
+    await selectSpecies(page, species)
   }
   await page.getByRole('button', { name: 'Save and continue' }).click()
   for (const [index, count] of counts.entries()) {
@@ -266,7 +266,7 @@ test.describe('animal identification', () => {
     await page.getByRole('link', { name: 'What are you importing?' }).click()
     await expectAxeClean(page, 'Commodity search')
 
-    await searchAndSelect(page, 'Fish', ['Salmo salar'])
+    await selectSpecies(page, ['Salmo salar'])
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(
       page.getByRole('heading', { name: copy.consignmentDetails.title })

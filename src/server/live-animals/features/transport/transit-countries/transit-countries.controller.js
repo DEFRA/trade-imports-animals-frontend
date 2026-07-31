@@ -1,4 +1,4 @@
-import { hubPath, pagePath, TEMPLATES } from '../../../config.js'
+import { hubPath, TEMPLATES } from '../../../config.js'
 import * as state from '../../../engine/index.js'
 import {
   HTTP_STATUS_BAD_REQUEST,
@@ -18,23 +18,14 @@ export const MAX_TRANSITED_COUNTRIES = 12
 
 const copy = copyFor({ en, cy }).transitCountries
 
-const countryItems = (selected) => [
-  { value: '', text: copy.placeholder },
-  ...countries.originCountries().map(({ value, text }) => ({
+const countryItems = (selected) =>
+  countries.originCountries().map(({ value, text }) => ({
     value,
     text,
-    selected: value === selected
+    checked: selected.includes(value)
   }))
-]
 
-const selectRows = (selected) => {
-  const rows = selected.map((code) => countryItems(code))
-  return rows.length < MAX_TRANSITED_COUNTRIES
-    ? [...rows, countryItems('')]
-    : rows
-}
-
-const transitedCountriesErrors = (selected, adding) => {
+const transitedCountriesErrors = (selected) => {
   if (selected.some((code) => countries.originLabel(code) === undefined)) {
     return { transitedCountries: copy.errors.fromList }
   }
@@ -43,7 +34,7 @@ const transitedCountriesErrors = (selected, adding) => {
       transitedCountries: copy.errors.maxCountries(MAX_TRANSITED_COUNTRIES)
     }
   }
-  if (!adding && selected.length === 0) {
+  if (selected.length === 0) {
     return { transitedCountries: copy.errors.selectAtLeastOne }
   }
   return {}
@@ -64,8 +55,7 @@ const render = (
     copy,
     errors,
     errorSummary: kit.errorSummary(errors),
-    countryRows: selectRows(selected),
-    canAddAnother: selected.length + 1 < MAX_TRANSITED_COUNTRIES
+    countryItems: countryItems(selected)
   })
 
 const selectedFrom = (payload) => [
@@ -82,10 +72,7 @@ const get = async (request, h) => {
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const selected = selectedFrom(payload)
-  const errors = transitedCountriesErrors(
-    selected,
-    payload.addCountry !== undefined
-  )
+  const errors = transitedCountriesErrors(selected)
   if (Object.keys(errors).length > 0) {
     const { journey } = await state.get(request, h)
     return render(h, journey, selected, { errors }).code(
@@ -109,16 +96,7 @@ const post = async (request, h) => {
   )
   if (failure) return failure
 
-  const { scope } = committed
-  if (payload.addCountry !== undefined) {
-    return h.redirect(
-      kit.withChangeContext(
-        request,
-        pagePath(request.params.journeyId, page.slug)
-      )
-    )
-  }
-  return h.redirect(await kit.nextTarget(request, page, scope))
+  return h.redirect(await kit.nextTarget(request, page, committed.scope))
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

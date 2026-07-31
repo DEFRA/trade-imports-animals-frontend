@@ -22,8 +22,7 @@
       hint: { text: copy.port.hint },
       value: values.portOfEntry,
       errorMessage: errors.portOfEntry and { text: errors.portOfEntry },
-      items: portItems,
-      attributes: { "data-select-autocomplete": "" }
+      items: portItems
     }) }}
 
     {{ govukRadios({
@@ -60,9 +59,4 @@
 
     {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
-{% endblock %}
-
-{% block bodyEnd %}
-  {{ super() }}
-  <script type="module" src="{{ getAssetPath('selectAutocomplete.js') }}"></script>
 {% endblock %}

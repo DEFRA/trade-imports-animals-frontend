@@ -40,13 +40,10 @@ export const copy = {
     betweenCountries:
       'Countries the consignment will travel through are countries between the country of origin and the destination country.',
     excludesUk: 'This does not include the United Kingdom.',
-    enterAll: {
-      label: 'Enter all countries',
-      hint: 'You can add up to 12 countries'
+    countries: {
+      label: 'Select all countries the consignment will travel through',
+      hint: 'Select up to 12 countries'
     },
-    countryLabel: 'Country',
-    placeholder: 'Select a country',
-    addAnother: 'Add another country',
     errors: {
       fromList: 'Select countries from the list',
       maxCountries: (max) => `Select up to ${max} countries`,

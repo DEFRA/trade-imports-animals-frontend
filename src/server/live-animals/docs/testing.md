@@ -112,7 +112,7 @@ The persistence and reference-data services are proven against their ports:
 
 ### The live-animals E2E spec
 
-`e2e/live-animals.spec.js` is this journey's browser-level net: a happy-path walk fed from `src/server/live-animals/flow/fixtures/happy-path.json` that grows one leg per increment, plus per-section specs pinning gates, loops and validation in the rendered DOM — import type, the opening linear run, the hub, origin (including the no-JS plain select and the accessible-autocomplete enhancement), the commodities batch search and per-species counts, animal identifiers, the N-of-M identifier cap, import reason and purpose, accompanying documents and upload rejection, addresses and the party picker, the transport rows, CPH number, check-your-answers, change-from-CYA threading, declaration and confirmation, and the dashboard amend flow.
+`e2e/live-animals.spec.js` is this journey's browser-level net: a happy-path walk fed from `src/server/live-animals/flow/fixtures/happy-path.json` that grows one leg per increment, plus per-section specs pinning gates, loops and validation in the rendered DOM — import type, the opening linear run, the hub, origin and its plain country select, the grouped commodity checklist and per-species counts, animal identifiers, the N-of-M identifier cap, import reason and purpose, accompanying documents and upload rejection, addresses and the party picker, the transport rows and transit-country checklist, CPH number, check-your-answers, change-from-CYA threading, declaration and confirmation, and the dashboard amend flow.
 
 ### Why the specs pin exact DOM
 
