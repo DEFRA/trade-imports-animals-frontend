@@ -12,7 +12,7 @@
   "packageManager": "npm@11.6.2",
   "scripts": {
     "build:frontend": "NODE_ENV=production webpack",
-    "dev": "AWS_EMF_ENVIRONMENT=Local run-p build:frontend frontend:watch server:watch",
+    "dev": "AWS_EMF_ENVIRONMENT=Local run-p frontend:watch server:watch",
     "dev:debug": "AWS_EMF_ENVIRONMENT=Local run-p frontend:watch server:debug",
     "docker:dev": "npm run dev",
     "e2e:start": "AUTH_ENABLED=false NODE_ENV=development node .",
