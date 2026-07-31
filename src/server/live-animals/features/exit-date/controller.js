@@ -1,7 +1,7 @@
 import { hubPath, TEMPLATES } from '../../config.js'
 import * as state from '../../engine/index.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../lib/http-status.js'
-import { compose, dateParts, validate } from '../../lib/validate/index.js'
+import { compose, dateText, validate } from '../../lib/validate/index.js'
 import * as kit from '../../shared/kit.js'
 import { copyFor } from '../../shared/copy.js'
 import { exitDatePage as page } from './page.js'
@@ -13,7 +13,7 @@ const view = `${TEMPLATES}/features/exit-date/template`
 
 const copy = copyFor({ en, cy })
 
-const fields = () => compose(dateParts('exitDate', copy.errors.dateInvalid))
+const fields = () => compose(dateText('exitDate', copy.errors.dateInvalid))
 
 const render = (h, journey, values, errors = {}, recoverableError = false) =>
   h.view(view, {
@@ -30,7 +30,7 @@ const render = (h, journey, values, errors = {}, recoverableError = false) =>
       label: copy.date.label,
       hint: copy.date.hint,
       value: values.exitDate ?? {},
-      error: errors['exitDate-day']
+      error: errors.exitDate
     })
   })
 

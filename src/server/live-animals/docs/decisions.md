@@ -80,7 +80,7 @@ controller; it may never own what renders. The loop primitive
 emits structural facts only — `[{ index, path, entry, complete }]` — with
 no hrefs, labels, copy, row view-models or templates. The shared kit
 ([`shared/kit.js`](../shared/kit.js)) provides only genuinely uniform
-mechanical pieces: error-summary shape, date-input read, route glue. No
+mechanical pieces: error-summary shape, date-picker value parsing, route glue. No
 helper accepts a template name or field schema and renders it.
 
 ### Why

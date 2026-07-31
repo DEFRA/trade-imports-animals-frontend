@@ -107,9 +107,7 @@ const cases = [
     collects: portOfEntry.meta.collects,
     handler: postHandlerOf(portOfEntry),
     payload: {
-      'arrivalDateAtPort-day': '12',
-      'arrivalDateAtPort-month': '12',
-      'arrivalDateAtPort-year': '2026',
+      arrivalDateAtPort: '12/12/2026',
       portOfEntry: 'GB ABD',
       meansOfTransport: 'ROAD_VEHICLE',
       transportIdentification: 'FR-892-LK',
@@ -237,9 +235,7 @@ describe('controller <-> model commit contract', () => {
         action: 'add',
         accompanyingDocumentType: 'ITAHC',
         accompanyingDocumentReference: 'GBHC1234567890',
-        'accompanyingDocumentDateOfIssue-day': '12',
-        'accompanyingDocumentDateOfIssue-month': '12',
-        'accompanyingDocumentDateOfIssue-year': '2025',
+        accompanyingDocumentDateOfIssue: '12/12/2025',
         file: {
           filename: 'itahc-certificate.pdf',
           headers: { 'content-type': 'application/pdf' },

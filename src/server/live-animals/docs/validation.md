@@ -194,17 +194,16 @@ binding does).
 Dates are stored as a `{ day, month, year }` object — never a `Date`,
 never a formatted string.
 
-- The govuk date input posts three fields: `<name>-day`, `<name>-month`,
-  `<name>-year`.
-- `dateParts(name)` (`lib/validate/validators.js`) validates the triple.
-  All three blank passes — dates are optional. A partial or unreal date
-  fails; real-date checking is `isRealDate` in `lib/validate/calendar.js`.
-- The rule is anchored on the day part, so the error lands under the
-  `<name>-day` key and the error-summary link focuses the first box of
-  the date input.
-- `kit.readDate(payload, name)` assembles the stored object from the
-  three payload parts; `kit.dateField` builds the `govukDateInput`
-  view-model, taking the inline error from the day key (see
+- The MoJ date picker progressively enhances one text input, which posts
+  `<name>` in `dd/mm/yyyy` format and remains usable without JavaScript.
+- `dateText(name)` (`lib/validate/validators.js`) validates the single
+  field. Blank passes — dates are optional. An incomplete, wrongly
+  formatted or unreal date fails; real-date checking is `isRealDate` in
+  `lib/validate/calendar.js`.
+- The error lands under `<name>`, so the error-summary link focuses the
+  text input.
+- `kit.readDate(payload, name)` parses the valid text into the stored
+  object; `kit.dateField` builds the MoJ date-picker view-model (see
   `features/transport/port-of-entry/port-of-entry.controller.js`).
 
 ## The Joi → GDS wiring

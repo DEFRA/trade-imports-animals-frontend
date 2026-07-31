@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
+  chooseTodayFromDatePicker,
   journeyUrl,
   startNotification,
   unlockSections,
@@ -69,8 +70,8 @@ test.describe('arrival details and transit countries', () => {
     await openArrival(page)
 
     await expect(
-      page.getByRole('group', { name: copy.portOfEntry.arrivalDate.label })
-    ).toContainText(copy.portOfEntry.arrivalDate.hint)
+      page.getByLabel(copy.portOfEntry.arrivalDate.label)
+    ).toHaveAccessibleDescription(copy.portOfEntry.arrivalDate.hint)
     await expect(page.getByText(copy.portOfEntry.port.hint)).toBeVisible()
     await expect(
       page.getByRole('group', { name: copy.portOfEntry.means.legend })
@@ -108,9 +109,7 @@ test.describe('arrival details and transit countries', () => {
     page
   }) => {
     await openArrival(page)
-    await page.getByLabel('Day').fill('31')
-    await page.getByLabel('Month').fill('2')
-    await page.getByLabel('Year').fill('2026')
+    await page.getByLabel(copy.portOfEntry.arrivalDate.label).fill('31/2/2026')
     await page
       .getByLabel(copy.portOfEntry.identification.label)
       .fill('I'.repeat(59))
@@ -142,7 +141,9 @@ test.describe('arrival details and transit countries', () => {
     await expect(page.locator('#meansOfTransport-error')).toContainText(
       validatorDefaults.oneOf
     )
-    await expect(page.getByLabel('Day')).toHaveValue('31')
+    await expect(
+      page.getByLabel(copy.portOfEntry.arrivalDate.label)
+    ).toHaveValue('31/2/2026')
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
     ).toHaveValue('I'.repeat(59))
@@ -155,10 +156,10 @@ test.describe('arrival details and transit countries', () => {
     page
   }) => {
     await openArrival(page)
-    const arrival = values.arrivalDateAtPort
-    await page.getByLabel('Day').fill(arrival.day)
-    await page.getByLabel('Month').fill(arrival.month)
-    await page.getByLabel('Year').fill(arrival.year)
+    const arrivalDate = await chooseTodayFromDatePicker(
+      page,
+      copy.portOfEntry.arrivalDate.label
+    )
     await choosePort(page)
     await page
       .getByRole('radio', {
@@ -182,7 +183,9 @@ test.describe('arrival details and transit countries', () => {
     await expect(
       page.getByRole('heading', { name: copy.portOfEntry.title })
     ).toBeVisible()
-    await expect(page.getByLabel('Day')).toHaveValue(arrival.day)
+    await expect(
+      page.getByLabel(copy.portOfEntry.arrivalDate.label)
+    ).toHaveValue(arrivalDate)
     await expect(page.locator('select#portOfEntry-select')).toHaveValue(
       values.portOfEntry
     )
@@ -282,7 +285,10 @@ test.describe('arrival details and transit countries', () => {
     page
   }) => {
     await openArrival(page)
-    await expectAxeClean(page, 'Arrival details')
+    await page.getByRole('button', { name: 'Choose date' }).click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await expectAxeClean(page, 'Arrival details with date picker open')
+    await page.getByRole('button', { name: 'Close' }).click()
     await page
       .getByRole('radio', { name: copy.portOfEntry.means.options.ROAD_VEHICLE })
       .check()

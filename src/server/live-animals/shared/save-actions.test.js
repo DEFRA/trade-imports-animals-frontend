@@ -195,9 +195,7 @@ describe('save actions — hub exit semantics', () => {
       payload: {
         action: 'add',
         accompanyingDocumentReference: 'GBHC1234567890',
-        'accompanyingDocumentDateOfIssue-day': '12',
-        'accompanyingDocumentDateOfIssue-month': '12',
-        'accompanyingDocumentDateOfIssue-year': '2025',
+        accompanyingDocumentDateOfIssue: '12/12/2025',
         file: {
           filename: 'itahc-certificate.pdf',
           headers: { 'content-type': 'application/pdf' },

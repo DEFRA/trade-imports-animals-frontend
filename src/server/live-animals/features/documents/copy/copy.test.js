@@ -69,7 +69,7 @@ describe('GET /accompanying-documents', () => {
     expect(result.view.context.sharedCopy.saveActions.saveAndContinue).toBe(
       'Save and continue'
     )
-    expect(result.view.context.dateOfIssue.fieldset.legend.text).toBe(
+    expect(result.view.context.dateOfIssue.label.text).toBe(
       copy.dateOfIssue.label
     )
   })

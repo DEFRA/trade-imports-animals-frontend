@@ -98,6 +98,7 @@ export default {
             options: {
               sassOptions: {
                 loadPaths: [
+                  dirname,
                   path.join(dirname, 'src/client/stylesheets'),
                   path.join(dirname, 'src/server/common/components'),
                   path.join(dirname, 'src/server/common/templates/partials')

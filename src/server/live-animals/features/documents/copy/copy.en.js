@@ -6,7 +6,7 @@ export const copy = {
   },
   dateOfIssue: {
     label: 'Date of issue',
-    hint: 'For example, 12 12 2025'
+    hint: 'For example, 12/12/2025'
   },
   file: {
     label: 'Upload a file',

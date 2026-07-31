@@ -1,6 +1,6 @@
 {% extends "live-animals/shared/layout.njk" %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
-{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "moj/components/date-picker/macro.njk" import mojDatePicker %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "live-animals/shared/save-actions.njk" import saveActions %}
@@ -13,7 +13,7 @@
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
 
-    {{ govukDateInput(arrivalDate) }}
+    {{ mojDatePicker(arrivalDate) }}
 
     {{ govukSelect({
       id: "portOfEntry",

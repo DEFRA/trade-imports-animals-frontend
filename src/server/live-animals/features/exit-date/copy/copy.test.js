@@ -46,8 +46,6 @@ describe('GET /exit-date', () => {
     expect(result.view.context.sharedCopy.saveActions.saveAndContinue).toBe(
       'Save and continue'
     )
-    expect(result.view.context.exitDate.fieldset.legend.text).toBe(
-      copy.date.label
-    )
+    expect(result.view.context.exitDate.label.text).toBe(copy.date.label)
   })
 })

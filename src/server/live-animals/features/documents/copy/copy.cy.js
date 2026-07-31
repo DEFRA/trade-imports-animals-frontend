@@ -7,7 +7,7 @@ export const copy = {
   },
   dateOfIssue: {
     label: 'Dyddiad cyhoeddi',
-    hint: 'Er enghraifft, 12 12 2025'
+    hint: 'Er enghraifft, 12/12/2025'
   },
   file: {
     label: 'Uwchlwytho ffeil',

@@ -66,7 +66,7 @@ describe('GET /port-of-entry', () => {
     expect(result.view.context.portItems[0].text).toBe(
       copy.portOfEntry.port.placeholder
     )
-    expect(result.view.context.arrivalDate.fieldset.legend.text).toBe(
+    expect(result.view.context.arrivalDate.label.text).toBe(
       copy.portOfEntry.arrivalDate.label
     )
   })

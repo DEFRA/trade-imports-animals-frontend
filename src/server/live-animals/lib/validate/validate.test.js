@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   compose,
   dateParts,
+  dateText,
   integerInRange,
   maxText,
   oneOf,
@@ -235,6 +236,25 @@ describe('#dateParts — day/month/year triple, anchored on the day box', () => 
       }).errors
     ).toHaveProperty('dateOfBirth-day')
   })
+})
+
+describe('#dateText — optional dd/mm/yyyy input', () => {
+  const schema = dateText('dateOfBirth')
+
+  it('Should pass a blank value and real dates with one- or two-digit parts', () => {
+    expect(run(schema, { dateOfBirth: '' }).errors).toBeNull()
+    expect(run(schema, { dateOfBirth: '7/3/1985' }).errors).toBeNull()
+    expect(run(schema, { dateOfBirth: '27/03/1985' }).errors).toBeNull()
+  })
+
+  it.each(['27/3', '31/2/2000', '2000-03-27', 'not a date'])(
+    'Should reject %s on the single input',
+    (value) => {
+      expect(run(schema, { dateOfBirth: value }).errors).toEqual({
+        dateOfBirth: 'Enter a valid date'
+      })
+    }
+  )
 })
 
 describe('#compose + the Joi → GDS mapping', () => {

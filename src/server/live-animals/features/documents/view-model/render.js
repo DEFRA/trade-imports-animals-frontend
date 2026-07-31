@@ -59,7 +59,7 @@ export const render = (
       label: copy.dateOfIssue.label,
       hint: copy.dateOfIssue.hint,
       value: values.accompanyingDocumentDateOfIssue ?? {},
-      error: errors['accompanyingDocumentDateOfIssue-day']
+      error: errors.accompanyingDocumentDateOfIssue
     })
   })
 }

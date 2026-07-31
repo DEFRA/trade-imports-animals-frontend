@@ -6,7 +6,7 @@ import {
 } from '../../../lib/http-status.js'
 import {
   compose,
-  dateParts,
+  dateText,
   maxText,
   oneOf,
   validate
@@ -47,7 +47,7 @@ const portItems = (selected) => [
 
 const fields = () =>
   compose(
-    dateParts('arrivalDateAtPort', copy.errors.arrivalDateInvalid),
+    dateText('arrivalDateAtPort', copy.errors.arrivalDateInvalid),
     oneOf(
       'portOfEntry',
       ports.list().map((port) => port.code)
@@ -86,7 +86,7 @@ const render = (
       label: copy.arrivalDate.label,
       hint: copy.arrivalDate.hint,
       value: values.arrivalDateAtPort ?? {},
-      error: errors['arrivalDateAtPort-day']
+      error: errors.arrivalDateAtPort
     })
   })
 

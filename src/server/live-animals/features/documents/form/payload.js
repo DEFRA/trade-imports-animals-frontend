@@ -1,4 +1,4 @@
-import { compose, dateParts, maxText } from '../../../lib/validate/index.js'
+import { compose, dateText, maxText } from '../../../lib/validate/index.js'
 import * as kit from '../../../shared/kit.js'
 import { copyFor } from '../../../shared/copy.js'
 import { copy as en } from '../copy/copy.en.js'
@@ -10,7 +10,7 @@ const copy = copyFor({ en, cy })
 
 export const fields = compose(
   maxText('accompanyingDocumentReference', 58, copy.errors.referenceMaxLength),
-  dateParts('accompanyingDocumentDateOfIssue', copy.errors.dateInvalid)
+  dateText('accompanyingDocumentDateOfIssue', copy.errors.dateInvalid)
 )
 
 export const documentFromPayload = (payload) => ({

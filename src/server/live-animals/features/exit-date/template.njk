@@ -1,5 +1,5 @@
 {% extends "live-animals/shared/layout.njk" %}
-{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "moj/components/date-picker/macro.njk" import mojDatePicker %}
 {% from "live-animals/shared/save-actions.njk" import saveActions %}
 
 {% block journeyContent %}
@@ -10,7 +10,7 @@
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
 
-    {{ govukDateInput(exitDate) }}
+    {{ mojDatePicker(exitDate) }}
 
     {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>

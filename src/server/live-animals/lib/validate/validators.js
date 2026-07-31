@@ -165,3 +165,18 @@ export const dateParts = (name, message = defaults.date) => {
     [yearKey]: Joi.any()
   }).unknown(true)
 }
+
+export const dateText = (name, message = defaults.date) =>
+  single(
+    name,
+    Joi.string()
+      .trim()
+      .allow('')
+      .custom((raw, helpers) => {
+        const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+        return match && isValidCalendarDate(match.slice(1))
+          ? raw
+          : helpers.error('any.invalid')
+      })
+      .messages({ 'any.invalid': message })
+  )

@@ -46,9 +46,7 @@ const pdfFile = (filename = 'itahc-certificate.pdf', size = 8) => ({
 
 const validDocument = {
   accompanyingDocumentReference: 'GBHC1234567890',
-  'accompanyingDocumentDateOfIssue-day': '12',
-  'accompanyingDocumentDateOfIssue-month': '12',
-  'accompanyingDocumentDateOfIssue-year': '2025'
+  accompanyingDocumentDateOfIssue: '12/12/2025'
 }
 
 const storedDocument = (overrides = {}) => ({
@@ -75,15 +73,13 @@ describe('documents — real upload leg on the single-page loop', () => {
       payload: {
         action: 'add',
         file: pdfFile(),
-        'accompanyingDocumentDateOfIssue-day': '31',
-        'accompanyingDocumentDateOfIssue-month': '2',
-        'accompanyingDocumentDateOfIssue-year': '2000'
+        accompanyingDocumentDateOfIssue: '31/2/2000'
       }
     })
     expect(result.response.statusCode).toBe(400)
-    expect(
-      result.view.context.errors['accompanyingDocumentDateOfIssue-day']
-    ).toBe('Enter a real date of issue')
+    expect(result.view.context.errors.accompanyingDocumentDateOfIssue).toBe(
+      'Enter a real date of issue'
+    )
     expect(result.after).toEqual(result.before)
   })
 
@@ -94,9 +90,9 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(result.view.context.errors.accompanyingDocumentReference).toBe(
       'Enter a document reference'
     )
-    expect(
-      result.view.context.errors['accompanyingDocumentDateOfIssue-day']
-    ).toBe('Enter the date of issue')
+    expect(result.view.context.errors.accompanyingDocumentDateOfIssue).toBe(
+      'Enter the date of issue'
+    )
     expect(result.after).toEqual(result.before)
   })
 
@@ -107,9 +103,7 @@ describe('documents — real upload leg on the single-page loop', () => {
         payload: {
           action: 'add',
           file: pdfFile(),
-          'accompanyingDocumentDateOfIssue-day': '12',
-          'accompanyingDocumentDateOfIssue-month': '12',
-          'accompanyingDocumentDateOfIssue-year': '2025'
+          accompanyingDocumentDateOfIssue: '12/12/2025'
         },
         errorField: 'accompanyingDocumentReference'
       },
@@ -119,7 +113,7 @@ describe('documents — real upload leg on the single-page loop', () => {
           file: pdfFile(),
           accompanyingDocumentReference: 'GBHC1234567890'
         },
-        errorField: 'accompanyingDocumentDateOfIssue-day'
+        errorField: 'accompanyingDocumentDateOfIssue'
       }
     ]
 

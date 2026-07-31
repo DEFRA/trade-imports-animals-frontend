@@ -133,25 +133,29 @@ export const pageRoutes = (page, { get, post }) => [
   }
 ]
 
-export const readDate = (payload, name) => ({
-  day: (payload[`${name}-day`] ?? '').trim(),
-  month: (payload[`${name}-month`] ?? '').trim(),
-  year: (payload[`${name}-year`] ?? '').trim()
-})
+export const readDate = (payload, name) => {
+  const raw = String(payload[name] ?? '').trim()
+  if (raw === '') return { day: '', month: '', year: '' }
+  const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+  return match ? { day: match[1], month: match[2], year: match[3] } : raw
+}
+
+const dateInputValue = (value) =>
+  typeof value === 'string'
+    ? value
+    : [value?.day, value?.month, value?.year]
+        .map((part) => String(part ?? '').trim())
+        .filter(Boolean)
+        .join('/')
 
 export const dateField = (name, { label, hint, value = {}, error } = {}) => {
-  const width = (charWidth) =>
-    `govuk-input--width-${charWidth}${error ? ' govuk-input--error' : ''}`
   return {
     id: name,
-    namePrefix: name,
-    fieldset: { legend: { text: label, classes: 'govuk-fieldset__legend--s' } },
+    name,
+    classes: 'govuk-input--width-10',
+    label: { text: label, classes: 'govuk-label--s' },
     hint: hint ? { text: hint } : undefined,
     errorMessage: error ? { text: error } : undefined,
-    items: [
-      { name: 'day', classes: width(2), value: value.day },
-      { name: 'month', classes: width(2), value: value.month },
-      { name: 'year', classes: width(4), value: value.year }
-    ]
+    value: dateInputValue(value)
   }
 }

@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test'
 
 import {
   addDocument,
+  chooseTodayFromDatePicker,
   startNotification,
   unlockSections,
   values
@@ -44,8 +45,8 @@ test.describe('document upload page', () => {
       page.getByLabel(copy.reference.label)
     ).toHaveAccessibleDescription(copy.reference.hint)
     await expect(
-      page.getByRole('group', { name: copy.dateOfIssue.label })
-    ).toContainText(copy.dateOfIssue.hint)
+      page.getByLabel(copy.dateOfIssue.label)
+    ).toHaveAccessibleDescription(copy.dateOfIssue.hint)
     await expect(page.getByLabel(copy.file.label)).toHaveAttribute(
       'accept',
       ACCEPT_ATTRIBUTE
@@ -86,9 +87,7 @@ test.describe('document upload page', () => {
 
     const reference = 'R'.repeat(59)
     await page.getByLabel(copy.reference.label).fill(reference)
-    await page.getByLabel('Day').fill('31')
-    await page.getByLabel('Month').fill('2')
-    await page.getByLabel('Year').fill('2026')
+    await page.getByLabel(copy.dateOfIssue.label).fill('31/2/2026')
     await setUploadFile(
       page,
       'notes.zip',
@@ -105,9 +104,9 @@ test.describe('document upload page', () => {
       await expect(errorLink(page, message)).toBeVisible()
     }
     await expect(page.getByLabel(copy.reference.label)).toHaveValue(reference)
-    await expect(page.getByLabel('Day')).toHaveValue('31')
-    await expect(page.getByLabel('Month')).toHaveValue('2')
-    await expect(page.getByLabel('Year')).toHaveValue('2026')
+    await expect(page.getByLabel(copy.dateOfIssue.label)).toHaveValue(
+      '31/2/2026'
+    )
 
     await setUploadFile(
       page,
@@ -194,6 +193,15 @@ test.describe('document upload page', () => {
     }
 
     await scan('Empty document upload page')
+    await page.getByRole('button', { name: 'Choose date' }).click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await scan('Document date picker dialog')
+    await page.getByRole('button', { name: 'Close' }).click()
+    const selected = await chooseTodayFromDatePicker(
+      page,
+      copy.dateOfIssue.label
+    )
+    await expect(page.getByLabel(copy.dateOfIssue.label)).toHaveValue(selected)
     await addDocument(page, values.documents[0])
     await expect(
       page.locator('.govuk-table__row', {

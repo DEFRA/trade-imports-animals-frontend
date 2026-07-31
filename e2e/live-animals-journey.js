@@ -16,6 +16,49 @@ export const journeyIdFromPage = (page) => {
 export const journeyUrl = (page, slug = '') =>
   `${BASE}/notifications/${journeyIdFromPage(page)}${slug ? `/${slug}` : ''}`
 
+export const chooseTodayFromDatePicker = async (page, label) => {
+  const expected = await page.evaluate(() => {
+    const date = new Date()
+    const days = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday'
+    ]
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ]
+    return {
+      accessibleName: `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`,
+      inputValue: `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`
+    }
+  })
+  const picker = page.locator('.moj-datepicker', {
+    has: page.getByLabel(label)
+  })
+  await picker.getByRole('button', { name: 'Choose date' }).click()
+  const dialog = picker.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+  await dialog
+    .getByRole('button', { name: expected.accessibleName, exact: true })
+    .click()
+  return expected.inputValue
+}
+
 export const { values } = JSON.parse(
   readFileSync(
     new URL(
@@ -115,11 +158,10 @@ export const addDocument = async (page, entry) => {
   await page
     .getByLabel('Document reference')
     .fill(entry.accompanyingDocumentReference)
-  await page.getByLabel('Day').fill(entry.accompanyingDocumentDateOfIssue.day)
+  const issued = entry.accompanyingDocumentDateOfIssue
   await page
-    .getByLabel('Month')
-    .fill(entry.accompanyingDocumentDateOfIssue.month)
-  await page.getByLabel('Year').fill(entry.accompanyingDocumentDateOfIssue.year)
+    .getByLabel('Date of issue')
+    .fill(`${issued.day}/${issued.month}/${issued.year}`)
   await setUploadFile(page, entry.filename)
   await page.getByRole('button', { name: 'Save and add another' }).click()
 }
@@ -208,9 +250,9 @@ export const completeAnswerSections = async (page) => {
   await save()
 
   await task('Arrival details')
-  await page.getByLabel('Day').fill(arrival.day)
-  await page.getByLabel('Month').fill(arrival.month)
-  await page.getByLabel('Year').fill(arrival.year)
+  await page
+    .getByLabel('Arrival date at port of entry')
+    .fill(`${arrival.day}/${arrival.month}/${arrival.year}`)
   await choosePortOfEntry(page)
   await page
     .getByRole('radio', { name: meansOfTransportLabel, exact: true })

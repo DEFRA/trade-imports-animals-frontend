@@ -23,7 +23,7 @@ export const presenceErrors = (entry) => ({
     ? {}
     : { accompanyingDocumentReference: copy.errors.referenceRequired }),
   ...(isBlank(entry.accompanyingDocumentDateOfIssue)
-    ? { 'accompanyingDocumentDateOfIssue-day': copy.errors.dateRequired }
+    ? { accompanyingDocumentDateOfIssue: copy.errors.dateRequired }
     : {})
 })
 
