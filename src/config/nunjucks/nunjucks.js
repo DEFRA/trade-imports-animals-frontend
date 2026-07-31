@@ -12,10 +12,9 @@ const nunjucksEnvironment = nunjucks.configure(
   [
     'node_modules/govuk-frontend/dist/',
     'node_modules/@ministryofjustice/frontend/',
-    path.resolve(dirname, '../../server/common/templates'),
     path.resolve(dirname, '../../server/common/components'),
-    path.resolve(dirname, '../../server'),
-    path.resolve(dirname, '../../server/obligation-based-app/obligation-sets')
+    path.resolve(dirname, '../../server/app'),
+    path.resolve(dirname, '../../server/app/sets')
   ],
   {
     autoescape: true,
@@ -42,7 +41,7 @@ export const nunjucksConfig = {
       environment: nunjucksEnvironment
     },
     relativeTo: path.resolve(dirname, '../..'),
-    path: ['server', 'server/obligation-based-app/obligation-sets'],
+    path: ['server/app', 'server/app/sets'],
     isCached: config.get('isProduction'),
     context
   }

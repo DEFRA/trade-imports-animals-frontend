@@ -67,7 +67,7 @@ describe('#errors', () => {
 describe('#catchAll', () => {
   const mockErrorLogger = vi.fn()
   const mockStack = 'Mock error stack'
-  const errorPage = 'live-animals/shared/error'
+  const errorPage = 'shared/error'
   const mockRequest = (statusCode) => ({
     response: {
       isBoom: true,

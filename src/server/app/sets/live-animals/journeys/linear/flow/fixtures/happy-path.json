@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "values": {
+    "importType": "live-animals",
+    "countryOfOrigin": "FR",
+    "regionOfOriginCodeRequirement": "yes",
+    "regionOfOriginCode": "FR-75",
+    "internalReferenceNumber": "Imports456GB",
+    "commodityLines": [
+      {
+        "commoditySelection": "Cow",
+        "speciesSelection": "1148346",
+        "commodityType": "16",
+        "numberOfPackages": "5",
+        "numberOfAnimalsQuantity": "1",
+        "animalIdentifiers": [
+          {
+            "animalIdentifierEarTag": "UK123456789012"
+          }
+        ]
+      }
+    ],
+    "reasonForImport": "internalMarket",
+    "purposeInInternalMarket": "breeding",
+    "animalsCertifiedFor": "slaughter",
+    "containsUnweanedAnimals": "no",
+    "documents": [
+      {
+        "accompanyingDocumentType": "ITAHC",
+        "accompanyingDocumentAttachmentType": "PDF",
+        "accompanyingDocumentReference": "GBHC1234567890",
+        "accompanyingDocumentDateOfIssue": {
+          "day": "12",
+          "month": "12",
+          "year": "2025"
+        },
+        "filename": "itahc-certificate.pdf"
+      }
+    ],
+    "consignor": {
+      "name": "Astra Rosales",
+      "address": {
+        "addressLine1": "43 East Hague Extension",
+        "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
+        "addressLine3": "Quasoccaecat ut ear, 30055",
+        "country": "Switzerland"
+      }
+    },
+    "placeOfDestination": {
+      "name": "Tech Imports Ltd",
+      "address": {
+        "addressLine1": "643 Main Street",
+        "addressLine2": "Birmingham G1 3AZ",
+        "country": "United Kingdom"
+      }
+    },
+    "placeOfOrigin": {
+      "name": "Origin Farm",
+      "address": {
+        "addressLine1": "1 Farm Lane",
+        "addressLine2": "County Clare",
+        "country": "Ireland"
+      }
+    },
+    "consignee": {
+      "name": "British Livestock Ltd",
+      "address": {
+        "addressLine1": "10 Market Street",
+        "addressLine2": "Leeds LS1 6HB",
+        "country": "United Kingdom"
+      }
+    },
+    "importer": {
+      "name": "Import Co UK",
+      "address": {
+        "addressLine1": "20 Trade Road",
+        "addressLine2": "London EC1A 1BB",
+        "country": "United Kingdom"
+      }
+    },
+    "countyParishHoldingCph": "12/345/6789",
+    "portOfEntry": "GB ABD",
+    "arrivalDateAtPort": {
+      "day": "12",
+      "month": "12",
+      "year": "2026"
+    },
+    "meansOfTransport": "ROAD_VEHICLE",
+    "transportIdentification": "FR-892-LK",
+    "transportDocumentReference": "CMR-2026-884721",
+    "transitedCountries": ["FR", "BE"],
+    "transporterType": "Commercial",
+    "commercialTransporter": {
+      "name": "García Livestock Transport SL",
+      "approvalNumber": "ES-T2-45001294",
+      "address": {
+        "addressLine1": "43 East Hague Extension",
+        "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
+        "addressLine3": "Quasoccaecat ut ear, 30055",
+        "country": "Switzerland"
+      }
+    },
+    "privateTransporter": {
+      "name": "Jean Dupont",
+      "address": {
+        "addressLine1": "12 Rue des Fermes",
+        "addressLine2": "",
+        "townOrCity": "Amiens",
+        "county": "",
+        "postalOrZipCode": "80000",
+        "country": "France",
+        "telephoneNumber": "+33 3 22 55 01 44",
+        "emailAddress": "jean.dupont@example.fr"
+      }
+    },
+    "contactAddress": {
+      "name": "Animal and Plant Health Agency",
+      "address": {
+        "addressLine1": "Woodham Lane",
+        "addressLine2": "New Haw",
+        "addressLine3": "Addlestone, KT15 3NB",
+        "country": "United Kingdom"
+      }
+    },
+    "declaration": "confirmed"
+  }
+}

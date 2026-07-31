@@ -1,0 +1,102 @@
+import { hubPath, TEMPLATES } from '../../../../../../../config.js'
+import * as state from '../../../../../../../engine/index.js'
+import {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR
+} from '../../../../../../../lib/http-status.js'
+import * as kit from '../../../../../../../shared/kit.js'
+import { copyFor } from '../../../../../../../shared/copy.js'
+import * as countries from '../../../../../../../services/countries/index.js'
+import { transitCountriesPage as page } from '../page.js'
+import { copy as en } from '../copy/copy.en.js'
+import { copy as cy } from '../copy/copy.cy.js'
+
+export const meta = { ...page, collects: ['transitedCountries'] }
+const view = `${TEMPLATES}/features/transport/transit-countries/transit-countries`
+
+export const MAX_TRANSITED_COUNTRIES = 12
+
+const copy = copyFor({ en, cy }).transitCountries
+
+const countryItems = (selected) =>
+  countries.originCountries().map(({ value, text }) => ({
+    value,
+    text,
+    checked: selected.includes(value)
+  }))
+
+const transitedCountriesErrors = (selected) => {
+  if (selected.some((code) => countries.originLabel(code) === undefined)) {
+    return { transitedCountries: copy.errors.fromList }
+  }
+  if (selected.length > MAX_TRANSITED_COUNTRIES) {
+    return {
+      transitedCountries: copy.errors.maxCountries(MAX_TRANSITED_COUNTRIES)
+    }
+  }
+  if (selected.length === 0) {
+    return { transitedCountries: copy.errors.selectAtLeastOne }
+  }
+  return {}
+}
+
+const render = (
+  h,
+  journey,
+  selected,
+  { errors = {}, recoverableError = false } = {}
+) =>
+  h.view(view, {
+    ...kit.base(copy.title, {
+      backLink: hubPath(journey.journeyId),
+      journey,
+      recoverableError
+    }),
+    copy,
+    errors,
+    errorSummary: kit.errorSummary(errors),
+    countryItems: countryItems(selected)
+  })
+
+const selectedFrom = (payload) => [
+  ...new Set(
+    [].concat(payload.transitedCountries ?? []).filter((code) => code !== '')
+  )
+]
+
+const get = async (request, h) => {
+  const { journey, answers } = await state.get(request, h)
+  return render(h, journey, [].concat(answers.transitedCountries ?? []))
+}
+
+const post = async (request, h) => {
+  const payload = request.payload ?? {}
+  const selected = selectedFrom(payload)
+  const errors = transitedCountriesErrors(selected)
+  if (Object.keys(errors).length > 0) {
+    const { journey } = await state.get(request, h)
+    return render(h, journey, selected, { errors }).code(
+      HTTP_STATUS_BAD_REQUEST
+    )
+  }
+
+  let committed
+  const { failure } = await kit.recoverableSave(
+    async () => {
+      committed = await state.commit(request, h, {
+        transitedCountries: selected
+      })
+    },
+    async () => {
+      const { journey } = await state.get(request, h)
+      return render(h, journey, selected, { recoverableError: true }).code(
+        HTTP_STATUS_INTERNAL_SERVER_ERROR
+      )
+    }
+  )
+  if (failure) return failure
+
+  return h.redirect(await kit.nextTarget(request, page, committed.scope))
+}
+
+export const routes = kit.pageRoutes(page, { get, post })

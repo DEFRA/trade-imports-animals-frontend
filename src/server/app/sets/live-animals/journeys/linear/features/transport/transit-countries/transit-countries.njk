@@ -1,0 +1,27 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
+  <p class="govuk-body">{{ copy.betweenCountries }}</p>
+  <p class="govuk-body">{{ copy.excludesUk }}</p>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukCheckboxes({
+      name: "transitedCountries",
+      classes: "govuk-checkboxes--small",
+      fieldset: { legend: { text: copy.countries.label, classes: "govuk-fieldset__legend--s" } },
+      hint: { text: copy.countries.hint },
+      errorMessage: errors.transitedCountries and { text: errors.transitedCountries },
+      items: countryItems
+    }) }}
+
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+  </form>
+{% endblock %}

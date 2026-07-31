@@ -25,7 +25,7 @@ export default {
     },
     documents: {
       import:
-        '../server/obligation-based-app/obligation-sets/live-animals/features/documents/client/index.js'
+        '../server/app/sets/live-animals/journeys/linear/features/documents/client/index.js'
     }
   },
   experiments: {
