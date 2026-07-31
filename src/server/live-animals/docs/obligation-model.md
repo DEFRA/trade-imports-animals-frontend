@@ -20,7 +20,7 @@ All file paths in this document are relative to the prototype root
 
 ## What an obligation carries
 
-An obligation is a plain object with at most these keys:
+An obligation is a plain object with these keys:
 
 | Key        | Kind      | Meaning                                                                                                                                                             |
 | ---------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -29,11 +29,10 @@ An obligation is a plain object with at most these keys:
 | `within`   | structure | A direct JS reference to the parent group obligation. Present on every member of a group; absent on notification-level obligations.                                 |
 | `status`   | mandate   | `'mandatory'` or `'optional'`. Present on an obligation that is always in scope. A group carries no `status`; a gated obligation gets it from its gate.             |
 | `applyTo`  | scope     | A closure `(fulfilments, fulfilmentIdsByObligationId) → decision` that decides whether this obligation is in scope, and with what status. Absent = always in scope. |
-| `requires` | mandate   | Group-level invariants: a collection floor (`minEntries`) and/or a per-instance "at least one of" rule (`anyOfIds`). Only meaningful on a group.                    |
+| `requires` | mandate   | Group-level invariants. Only meaningful on a group.                                                                                                                 |
 
-That is the whole vocabulary. There is deliberately no `type`, no copy,
-no widget choice and no page-level validation on an obligation. Those
-live where they are read — in the templates and controllers.
+There is deliberately no `type`, no copy, no widget choice and no page-level
+validation on an obligation.
 
 `id` and `name` split two roles. `id` is the canonical storage key and the
 `name` is the request-local field vocabulary controllers and templates speak.
@@ -71,15 +70,6 @@ declaration, plus two collection exports:
   (name `commodityLines`), `unitRecord` (name `animalIdentifiers`,
   nested inside `commodityLine`) and `documents`.
 
-The manifest also exports the commodity-code whitelists that the gates
-read as plain const arrays — `PACKAGE_COUNT_COMMODITIES`,
-`CPH_REQUIRED_COMMODITIES`, `PASSPORT_COMMODITIES`, `TATTOO_COMMODITIES`,
-`EAR_TAG_COMMODITIES`, `HORSE_NAME_COMMODITIES`,
-`PERMANENT_ADDRESS_COMMODITIES`, `UNWEANED_APPLICABLE_COMMODITIES` and
-`SPECIFIC_IDENTIFIER_WHITELISTS`. Keeping them named and exported means
-a gate declaration stays a one-liner and the same list can be inspected
-by tests.
-
 ### Structure of the manifest
 
 The manifest lays out the V4 data fields:
@@ -97,11 +87,9 @@ The manifest lays out the V4 data fields:
   `commodityLine`. Each unit owns the six identifier obligations
   (`passport`, `tattoo`, `earTag`, `horseName`, `identificationDetails`,
   `description`) and `permanentAddress`.
-- **`documents`** — a group of four accompanying-document fields.
-
-One obligation is **system-populated**: `poApprovedReferenceNumber`, minted at
-notification-creation time. It carries `status: 'mandatory'`, but no page
-presents it and its value legality is enforced upstream.
+  One obligation is **system-populated**: `poApprovedReferenceNumber`, minted at
+  notification-creation time. It carries `status: 'mandatory'`, but no page
+  presents it and its value legality is enforced upstream.
 
 `commodityType` is a normal collected obligation within `commodityLines`.
 The commodity search derives the stored type id from each selected species
@@ -137,9 +125,7 @@ The decision object is `{ inScope, status?, reasons?, records? }`:
 Two decision patterns recur:
 
 - **Status-flip** — both branches are `inScope: true` with different
-  `status`. `regionCode` is mandatory when
-  `regionOfOriginCodeRequirement` is `yes` and drops out of scope
-  otherwise.
+  `status`.
 - **Purge-on-flip** — the false branch is `{ inScope: false }`, so
   leaving scope destroys the stored value. `purposeInInternalMarket`
   (gated on `reasonForImport`) and `commercialTransporter` (gated on
@@ -287,10 +273,9 @@ membership.
 ## No display logic in the model
 
 The model carries no display copy — no `label`, `title`, `titleKey`,
-`hint`, `legend` or `widget` on any obligation. Copy
-lives in the `.njk` templates; option lists come from the reference-data
-services. The model owns identity, cardinality and scope (obligations), and
-status and navigation derivation (engine) — never presentation.
+`hint`, `legend` or `widget` on any obligation. Option lists come from the
+reference-data services. The model owns identity, cardinality and scope, never
+presentation.
 
 This is enforced at boot, not just in tests. `model/no-display-keys.js`
 exports `assertNoDisplayKeys(obligations)`, which walks the live obligation

@@ -98,7 +98,7 @@ A collection's `collects` names only the root (`commodityLines`), not its item f
 
 ## One obligation, one page
 
-Dispatch is deliberately one-to-one. The engine would not care if two pages both wrote the same answer — a value is a value — but the check-your-answers Change link needs a single unambiguous target (`features/check-answers/controller.js` builds hrefs with `pageOfObligation` + `slugOfPage`). So `buildDispatch` throws the moment two pages claim one obligation.
+Dispatch is deliberately one-to-one. The engine would not care if two pages both wrote the same answer — a value is a value — but the check-your-answers Change link needs a single unambiguous target. So `buildDispatch` throws the moment two pages claim one obligation.
 
 When two parts of the journey both have a reason to capture the same answer, the pattern is: **many routes in, one page, one owner, one Change target.** Keep a single page that owns the obligation, and let the other routes link or redirect into it. Nothing in the coverage assertion changes.
 

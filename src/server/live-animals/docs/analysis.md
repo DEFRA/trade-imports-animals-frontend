@@ -28,18 +28,12 @@ click through:
    [scope-and-wipe.md](scope-and-wipe.md)). Nothing derived is stored, and the
    engine touches no request, view or browser API. Any code that holds an
    answers map can ask the same questions the running app asks.
-2. **The scope space is small and finite.** An obligation enters scope through
-   its `applyTo` closure, which reads a handful of top-level answers. The full
-   product of those scope-controlling answers is 24 states — small enough to
-   enumerate rather than sample (see [obligation-model.md](obligation-model.md)
-   and [flow-and-gates.md](flow-and-gates.md)).
-
-Each `applyTo` closure is opaque JavaScript, but it carries a structured
-`.metadata` sidecar built by the helper factories in
-[`model/obligations/helpers/index.js`](../model/obligations/helpers/index.js). The metadata
-declares **which obligation the gate reads** (`dependsOn`) and, for the
-structured helper family, **what value would open it**. That sidecar is what
-turns the closures into analysable data.
+   Each `applyTo` closure is opaque JavaScript, but it carries a structured
+   `.metadata` sidecar built by the helper factories in
+   [`model/obligations/helpers/index.js`](../model/obligations/helpers/index.js). The metadata
+   declares **which obligation the gate reads** (`dependsOn`) and, for the
+   structured helper family, **what value would open it**. That sidecar is what
+   turns the closures into analysable data.
 
 ## The simulator: persona in, page sequence out
 
@@ -72,10 +66,6 @@ runtime behaviour.
 
 One setup requirement: the simulator needs the app's dispatch index, so call
 `buildDispatch(dispatchPages)` first. Derived gates fail loud without it.
-Readiness already has the real `flow/section-status.js` function as its static
-default. The `beforeAll` in
-[`analysis/flow-reachability.test.js`](../analysis/flow-reachability.test.js)
-also resets the test override seam to that default.
 
 ## The page-level prover: no owed obligation is a dead end
 
@@ -102,42 +92,10 @@ It reports two problem kinds:
 An empty problems list means proven. The unit suite pins
 `expect(proveFlowReachability()).toEqual([])`.
 
-### How the state space is covered
-
-Naive enumeration is impossible because collections hold any number of
-instances. The prover stays finite by combining a fixed happy-path base with the
-scope-flag cross-product:
-
-- **`enumerateScopeStates()`** yields the 24 top-level scope states — the
-  cross-product of `regionOfOriginCodeRequirement` × `reasonForImport` ×
-  `meansOfTransport` × `transporterType` (2 × 2 × 2 × 3). These are the answers
-  that move conditional obligations into and out of scope; non-activating
-  answers cannot change scope, so this product is the complete top-level space.
-- **`submitReadySeed`** is a maximal, submit-ready base answer set with one
-  representative commodity line and one animal identifier. It puts almost every
-  obligation in scope. Each of the 24 states is overlaid on top of it, so every
-  step's answer-based prerequisites stay satisfied while the state's own
-  triggering answers win.
-- **`withoutBlanks`** strips empty axes from a state before overlaying. Blank
-  values would knock the always-in-scope `declaration` out of the review gate
-  and false-fail the run; activation is always positive, so no witness needs a
-  blank axis.
-
-For each state the prover reads `inScope` from `makeScope`, reads the reachable
-pages from `simulateJourney`, and checks every in-scope obligation against
-`pageOfObligation`. `makeScope` layers two frontend-only flow obligations
-(`importType`, `declaration`) onto the projected scope so their pages stay
-reachable; the prover skips them via `A_ONLY_FLOW_OBLIGATIONS`, along with the
-`SYSTEM_POPULATED` fields, because none of those is presented by a page. Their
-page reachability is a runtime concern covered by the flow and E2E tests, not a
-model fact.
-
 ### It proves it has teeth
 
 `proveFlowReachability({ scopeFor, pagesFor })` accepts injectable scope and page
-oracles, and
-[`analysis/flow-reachability.test.js`](../analysis/flow-reachability.test.js)
-feeds it a flow with pages dropped. Dropping every page except `origin` and
+oracles. Dropping every page except `origin` and
 `commodities` makes the prover report each in-scope obligation owned by a
 removed page (for example `transporterType`) as
 `owning-page-unreachable-in-scope`. Injecting a scope that carries an

@@ -48,8 +48,7 @@ The model carries **no display copy** — no `label`, `title`, `hint`, `legend`
 or `widget` on any obligation. This is enforced at boot by
 [`model/no-display-keys.js`](../model/no-display-keys.js) (called through
 [`obligation-purity.js`](../obligation-purity.js)): a display key on the model
-fails the boot, not just a test. Copy lives in the `.njk` templates; value
-options come from the services.
+fails the boot, not just a test. Value options come from the services.
 
 ### bridge/ — the seam
 
@@ -89,9 +88,6 @@ persistence therefore replaces the whole canonical snapshot. See
 - **Write** — `commit`, `appendEntryAt`, `updateEntryAt`, `removeEntryAt`,
   `reconcileEntriesAt` and `submitJourney` ([`engine/write/index.js`](../engine/write/index.js)).
 - **Collection views** — `collectionView`, `collectionCapAt`.
-- **Journey lifecycle** — [`engine/journey.js`](../engine/journey.js) owns the
-  cookie, load-or-create, and the dashboard verbs (list, select, amend a known
-  journey), with a per-request memo.
 - **Persistence ports** — [`engine/persistence/records.js`](../engine/persistence/records.js)
   and [`engine/persistence/session.js`](../engine/persistence/session.js) are
   configurable ports, wired at boot to the implementations under
@@ -204,51 +200,3 @@ At plugin registration, [`routes.js`](../routes.js) runs, in order:
 The guards fail loud. So does a gate consulted before `buildDispatch` has run:
 an unbuilt index is indistinguishable from "this page collects nothing" and
 would silently gate every step out, so `gates.js` throws instead.
-
-## Where things live
-
-```
-live-animals/
-  routes.js               the Hapi plugin: boot guards, cookie, routes
-  obligation-purity.js    boot guard delegating to model/no-display-keys.js
-  config.js               shell identity: BASE mount path, template root
-  dump.js                 headless state dump for an editable fixture
-
-  model/                  THE PURE CORE — no frontend imports
-    obligations/          manifest, gate helpers, evaluator, state queries
-    analysis/             reachability prover
-    no-display-keys.js    the purity assertion
-
-  bridge/                 THE SEAM — feature bindings, canonical assembly,
-                          answer/scope/status projection
-
-  engine/                 the state facade pages import (import * as state)
-    index.js              the barrel
-    read.js               get, makeScope (→ bridge scope)
-    write.js              commit + entry verbs + submitJourney
-    journey.js            journey lifecycle, cookie, dashboard verbs
-    evaluate/             collection-view, cardinality (append cap)
-    persistence/          the records + session ports
-
-  flow/                   the page spine + sequencing
-    flow.js               ordered sections → pages
-    dispatch.js           obligation → owning page index, built at boot
-    gates.js              derived-default / authored-override gate seam
-    task-rows.js          hub rows → statusOf
-    section-status.js     sectionStatus, readyForCheckYourAnswers
-    entry-guard.js        deep-link guard (onPreHandler)
-
-  features/               THE PAGE SPINE — one vertical slice per feature
-    index.js              assembles dispatchPages (collects) + allRoutes
-    <feature>/            page/controller/template plus evaluation bindings
-
-  services/               reference-data (MDM) + persistence, stub|real
-  lib/                    path maths, answered-ness, validate/ (validators)
-  shared/                 kit.js (page library), layout + partial templates
-  analysis/               flow-reachability, headless simulator
-```
-
-For the mechanics, follow the guides: [add a page](add-a-page.md),
-[add a field](add-a-field.md) and [add a collection](add-a-collection.md). For
-the model, see [obligation-model.md](obligation-model.md); for the state facade,
-[engine.md](engine.md); for the gates, [flow-and-gates.md](flow-and-gates.md).

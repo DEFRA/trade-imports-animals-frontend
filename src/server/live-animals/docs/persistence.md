@@ -223,13 +223,6 @@ Neither port offers a delete-a-key surface. RECORDS accepts only a whole
 canonical fulfilment snapshot. Scope-exit purge stays derived by the evaluator
 and the ports cannot hand-roll a wipe.
 
-## Reference and multi-draft scope
-
-Records are loaded and mutated by reference. The session's known-journeys list
-drives the dashboard and gates journey actions such as amend, copy and delete.
-Loading a valid reference directly records it in that list. The list gives one
-session several drafts, so the dashboard starts empty in a new session.
-
 ## Boot wiring
 
 `routes.js` `register` wires persistence in order: `configureRecords`

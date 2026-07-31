@@ -8,8 +8,8 @@ start at the [index](README.md).
 The prototype is a Hapi plugin ([`routes.js`](../routes.js) →
 `liveAnimals`) built in three layers plus a seam:
 
-- **model** ([`model/`](../model/)) — identity, scope, value legality and
-  status derivation. Pure, no Hapi, no templates.
+- **model** ([`model/`](../model/)) — identity, scope and status derivation.
+  Pure, no Hapi, no templates.
 - **flow** ([`flow/`](../flow/)) — sections, pages, dispatch and gates.
 - **frontend** ([`features/`](../features/), [`shared/`](../shared/),
   [`engine/`](../engine/), [`services/`](../services/)) — page-owned
@@ -203,11 +203,10 @@ are collected by the collection's loop.
 
 ### Why
 
-The check-your-answers Change link (`pageOfObligation` in
-[`features/check-answers/controller.js`](../features/check-answers/controller.js))
-must send the user to exactly one target; shared ownership has no single
-answer. Derived ownership at depth keeps the boot coverage assertion total
-and unambiguous without every collection enumerating its item ids.
+The check-your-answers Change link must send the user to exactly one target;
+shared ownership has no single answer. Derived ownership at depth keeps the
+boot coverage assertion total and unambiguous without every collection
+enumerating its item ids.
 
 ### Accepted costs
 
@@ -231,8 +230,6 @@ any display key (`label`, `title`, `titleKey`, `hint`, `legend`,
 
 The split of responsibilities:
 
-- **Copy lives in the templates.** Field copy is in the `.njk` files that
-  render each page.
 - **Value options come from the MDM services.** Controllers use the
   reference-data services under [`services/`](../services/) (countries,
   ports, commodities, document types, certification purposes, import
@@ -247,9 +244,7 @@ The same value may legitimately be validated differently in different
 contexts, so validity is not a fact that can be stamped on an obligation.
 What the status roll-up genuinely needs — "what is owed" — stays on the
 definition as `status`, which is deliberately distinct from save-blocking
-validation. Options delegated to MDM means the prototype shows the same
-real option lists as production, from one source, with no duplicated list
-to drift.
+validation.
 
 The rule is enforced at boot, not just in tests.
 [`obligation-purity.js`](../obligation-purity.js) delegates to
@@ -286,8 +281,6 @@ the evaluator directly. They reach it through the bridge modules under
   the answers path grammar.
 - [`status/index.js`](../bridge/status/index.js) — the task and section status
   for the hub.
-- [`purge.js`](../bridge/purge.js) — the set of paths a scope-exit
-  destroys, feeding `engine/write/index.js`'s `destroyWiped`.
 - [`collection-complete.js`](../bridge/collection-complete.js) —
   per-instance completeness for a collection row.
 

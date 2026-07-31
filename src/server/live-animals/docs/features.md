@@ -59,18 +59,6 @@ ES modules resolve that cycle by handing `flow.js` back before it
 finishes evaluating, so `sections` reads `undefined` at boot — a silent
 failure that surfaces as a broken hub, not an error.
 
-There are 15 `page.js` files. A feature with several flow pages exports
-every identity from one leaf: `features/transport/page.js` exports
-`portOfEntryPage`, `transitCountriesPage`, `transportersPage`,
-`transportersSelectPage` and `privateTransporterDetailsPage`;
-`features/commodities/page.js` exports `commoditiesPage`,
-`consignmentDetailsPage` and `animalIdentificationPage`. A feature whose
-sub-pages sit off the main flow exports only its flow page:
-`features/documents/page.js` exports the documents hub alone, and
-`features/addresses/page.js` exports the addresses hub alone — the
-add-a-party sub-pages (`party-picker`, `create-address`) are reached
-from that hub and never listed in `flow.js`.
-
 ## 3. The standard collecting controller
 
 Most collecting pages follow one shape. `features/import-reason/controller.js`
@@ -172,99 +160,13 @@ two lists:
 Adding a page means adding it in both lists (or `allRoutes` only, if it
 collects nothing). Nothing else registers controllers.
 
-## 6. The page catalogue
-
-The journey is grouped into flow sections in `flow/flow.js`. Each row
-below is one page — its controller, what it collects and what it does.
-
-**Shell**
-
-- **`dashboard`** (`features/dashboard/controller.js`) — the service
-  front door and the only re-entry path. Lists the session-known
-  notifications (reference, Draft/Submitted tag, dates) with row
-  actions: Resume on a draft; View and Amend on a submitted one. It
-  drives `startJourney`, `listKnownJourneys`, `selectJourney` and
-  `amendJourney` (see [section 8](#8-state-verbs-a-controller-may-use)).
-  Collects nothing.
-- **`import-type-filter`** (`features/import-type-filter/controller.js`)
-  — the fresh-journey entry filter. Collects `importType`.
-- **`hub`** (`features/hub/controller.js`) — the task-list overview.
-  Collects nothing; has no `page.js`.
-
-**Answer sections**
-
-- **`origin`** (`features/origin/controller.js`) — collects
-  `countryOfOrigin`, `regionOfOriginCodeRequirement`,
-  `regionOfOriginCode` and `internalReferenceNumber`.
-- **`commodities/search`**
-  (`features/commodities/search/search.controller.js`)
-  — the commodity picker. Collects `commodityLines` (the whole group).
-- **`commodities/consignment-details`**
-  (`features/commodities/consignment-details/consignment-details.controller.js`) — the
-  commodity-lines loop hub with per-species quantity blocks. Collects
-  nothing new (owned by search).
-- **`commodities/animal-identification`**
-  (`features/commodities/animal-identification/animal-identification.controller.js`) — the
-  per-line identifier loop (see [section 7](#7-pages-own-presentation)).
-  Collects nothing new.
-- **`import-reason`** (`features/import-reason/controller.js`) —
-  collects `reasonForImport`.
-- **`import-purpose`** (`features/import-purpose/controller.js`) —
-  collects `purposeInInternalMarket`.
-- **`additional-details`** (`features/additional-details/controller.js`)
-  — collects `animalsCertifiedFor` and `containsUnweanedAnimals`.
-- **`documents`** (`features/documents/controller.js`) — the
-  accompanying-documents loop. Collects `documents`.
-- **`addresses`** (`features/addresses/controller.js`) — the party
-  addresses hub. Collects `consignor`, `placeOfDestination`,
-  `placeOfOrigin`, `consignee` and `importer`. Its off-flow sub-pages
-  are `party-picker/party-picker.controller.js` and
-  `create-address/create-address.controller.js`.
-- **`cph-number`** (`features/cph-number/controller.js`) — collects
-  `countyParishHoldingCph`.
-- **`transport/port-of-entry`**
-  (`features/transport/port-of-entry/port-of-entry.controller.js`) — collects
-  `arrivalDateAtPort`, `portOfEntry`, `meansOfTransport`,
-  `transportIdentification` and `transportDocumentReference`.
-- **`transport/transit-countries`**
-  (`features/transport/transit-countries/transit-countries.controller.js`) —
-  collects
-  `transitedCountries`; in scope only for a transit reason for import.
-- **`transport/transporters`**
-  (`features/transport/transporters/transporters.controller.js`) — collects
-  `transporterType`.
-- **`transport/transporters-select`**
-  (`features/transport/transporters-select/transporters-select.controller.js`) —
-  collects
-  `commercialTransporter`.
-- **`transport/private-transporter-details`**
-  (`features/transport/private-transporter-details/private-transporter-details.controller.js`) —
-  collects `privateTransporter`.
-- **`contact`** (`features/contact/controller.js`) — collects
-  `contactAddress`.
-
-**Endings**
-
-- **`check-answers`** (`features/check-answers/controller.js`,
-  page id `notification-view`) — the summary. Collects nothing.
-- **`declaration`** (`features/declaration/controller.js`) — the submit
-  point. Collects `declaration`.
-- **`confirmation`** (`features/confirmation/controller.js`) — the
-  end-of-journey panel. Collects nothing.
-
-## 7. Pages own presentation
+## 6. Pages own presentation
 
 Copy, headings, row composition and templates always live page-side.
 The flow owns sequence and gates; the engine owns state. Three patterns
 recur.
 
 ### The task-list hub
-
-`features/hub/controller.js` owns all group and task-link copy:
-
-- `GROUPS` — the numbered group captions ("1. About the consignment" …
-  "Check and submit") and each row's title and hint, keyed by
-  task-row id.
 
 The hub composes each row from parts it does not own: the row structure
 from `flow/task-rows.js`, status tags from the pure `rowStatus` roll-up
@@ -312,8 +214,6 @@ path sets the depth: `['commodityLines']`, `['documents']`,
 `['commodityLines', index, 'animalIdentifiers']`. The controller turns
 those facts into its own rows, action links and empty-state copy.
 
-On an add surface, a valid POST creates and thereby **mints** the
-entries' identities (collection, index).
 `features/commodities/search/search.controller.js` batch-reconciles one line per
 selected species (`state.reconcileEntriesAt`) before handing to the
 consolidated details page. The reconcile is desired-state by key: a
@@ -329,14 +229,6 @@ fabricates a phantom parent.
 
 ### Endings
 
-- **Check your answers** (`features/check-answers/controller.js`) is
-  bespoke summary composition — the norm here, not a bypass. It owns
-  row order, composed rows (Commodity N, Document N) and the exact
-  "Change <key>" accessible names. Change hrefs are **derived** through
-  the dispatch seam —
-  `pagePath(slugOfPage(pageOfObligation(id)))` — never hardcoded slugs,
-  so a page rename cannot orphan a Change link. Its POST walks on to the
-  declaration; its back link points at the hub.
 - **Declaration** (`features/declaration/controller.js`) is the submit
   point: its POST validates the confirmation checkbox then calls
   `state.submitJourney`, which re-checks submit readiness server-side
@@ -387,38 +279,3 @@ library-not-framework rationale and its guardrails.
 `kit.nextTarget` is worth knowing: a save from a `?change=1` edit returns
 to check-answers; otherwise it goes to the next gate-passing page in the
 section, or back to the hub.
-
-## 8. State verbs a controller may use
-
-Controllers import one barrel: `import * as state from
-'../../engine/index.js'`. Its full surface is:
-
-| Verb                                   | Use                                               |
-| -------------------------------------- | ------------------------------------------------- |
-| `state.get(request, h)`                | Read `{ journey, answers, scope }`                |
-| `state.commit(request, h, patch)`      | Save scalar answers; applies scope wipes          |
-| `state.appendEntry` / `appendEntryAt`  | Add a collection entry (mints its identity)       |
-| `state.updateEntry` / `updateEntryAt`  | Replace a collection entry                        |
-| `state.removeEntry` / `removeEntryAt`  | Remove an entry; applies scope wipes              |
-| `state.reconcileEntriesAt`             | Reconcile a collection to a target set of entries |
-| `state.collectionView(answers, path)`  | Structural facts for a loop, any depth            |
-| `state.collectionCapAt(answers, path)` | The append cap from the sibling count field       |
-| `state.submitJourney(request, h)`      | Finalise — freeze until an amend                  |
-| `state.makeScope(answers)`             | Rebuild scope from raw answers                    |
-| `state.DRAFT` / `SUBMITTED`            | Draft and submitted status constants              |
-| `state.AMEND` / `DELETED`              | Amend and terminal deleted status constants       |
-
-Some verbs live outside the barrel on purpose:
-
-- `startJourney` (`engine/journey.js`) — mints a fresh journey and adds
-  it to the session's known list; only the dashboard uses it
-- `listKnownJourneys` / `selectJourney` / `amendJourney`
-  (`engine/journey.js`) — the dashboard's list and row actions (see
-  [section 6](#6-the-page-catalogue)); no task page touches them
-- `configureReadyForCheckYourAnswers` (`engine/read.js`) — a test override for
-  the static flow readiness default; controllers never touch it
-
-There is deliberately no `setScope` and no per-key delete. Scope is
-always derived from answers, and out-of-scope data is wiped by the
-engine — a page cannot hand-roll either. The engine docs (via the
-[index](README.md)) cover the scope, reconcile and wipe model.

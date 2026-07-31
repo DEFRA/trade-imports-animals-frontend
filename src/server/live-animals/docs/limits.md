@@ -42,7 +42,7 @@ Values pass through unchanged except for the animal count:
 
 ## Accompanying documents are capped at ten
 
-`documents` is an ordinary model collection — the four `accompanyingDocument*`
+`documents` is an ordinary model collection — the `accompanyingDocument*`
 fields sit `within` it — and the manifest pins the V4 cap as a group invariant,
 `requires: { maxEntries: 10 }`
 ([model/obligations/obligations.js](../model/obligations/obligations.js)). The
@@ -97,45 +97,6 @@ array-valued obligation, `transitedCountries`, gates nothing, so no live gate
 reads an array. A future gate over an array-valued field must first teach the
 helpers scalar-or-array membership; do not rely on the raw comparison.
 
-## Identifier records are capped at the declared animal count
-
-A collection may declare `maxEntriesFrom`, a reference to a sibling count
-field, and its entry count is then capped at that field's value. One carrier
-uses it: `animalIdentifiers` declares
-`maxEntriesFrom: numberOfAnimalsQuantity`, so a line's identifier records are
-capped at that line's declared animal count. The cap resolves per line —
-each `commodityLines[i]` caps its own records, never a sibling's — in
-[engine/evaluate/cardinality.js](../engine/evaluate/cardinality.js), and
-`appendEntryAt` in [engine/write/index.js](../engine/write/index.js) rejects an append at
-the cap.
-
-The edges of the cap:
-
-- An **unanswered** count is no cap — the entry form stays open while the
-  count is blank. The per-species at-least-one floor still bites at submit.
-- A **non-integer** stored count is no cap — garbage never blocks a save.
-- The cap is a **maximum only**. It does not force a minimum: one record for
-  a hundred animals still passes, per the spec.
-- A **count drop below the record count blocks, never trims.** Lowering a
-  species' animal count below its existing identifier-record count is rejected
-  at the consignment-details save with an error naming the species; identifier
-  records are never silently deleted to fit the new count.
-
-## Re-entry is by reference and session-scoped
-
-Records are loaded by reference
-([engine/journey.js](../engine/journey.js)). A successfully loaded reference
-is added to the session's known-journeys list; the dashboard and journey
-actions operate on that list.
-
-Two consequences follow:
-
-- **Multi-draft is per session.** One session can hold several drafts, but a
-  new session starts with an empty dashboard.
-- **The session list is presentation and action state.** It determines which
-  rows appear and which reference-based actions are available; it is not a
-  record identity field.
-
 ## The stubs are shaped, not verified integrations
 
 The prototype runs in `stub` or `real` mode
@@ -183,19 +144,3 @@ scope. The author would then have to write an explicit `gate` override,
 bringing back exactly the hand-written restatement the derivation removes. The
 override slot exists for this case. See
 [flow-and-gates.md](flow-and-gates.md).
-
-## The page-owned spine costs file count
-
-Pages are the spine: each is its own controller plus template, sharing plumbing
-through [shared/kit.js](../shared/kit.js). The costs are accepted knowingly:
-
-| Cost             | Reading                                                                                     |
-| ---------------- | ------------------------------------------------------------------------------------------- |
-| File count       | Many small controllers and templates. Each is greppable, but there are a lot of them.       |
-| Duplication risk | Real. The shared kit mitigates it; it does not eliminate it. Similar controllers can drift. |
-| "Add a field"    | Three edits — a model obligation, a controller edit and a template edit.                    |
-
-What the costs buy: bespoke layout on every page, copy beside the markup that
-renders it, and onboarding that is "read the page you are changing" rather
-than "learn one renderer and its config". See
-[kit-library-not-framework.md](kit-library-not-framework.md).

@@ -1,6 +1,5 @@
 /**
- * Whitelist scope tests — closes gap 1 from `docs/testing.md`
- * (mutation 3).
+ * Whitelist scope tests.
  *
  * V4 gates seven commodity-scoped obligations on the commodities
  * service's allowlists, in the stored picker-name vocabulary.

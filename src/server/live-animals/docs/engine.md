@@ -190,9 +190,6 @@ other bridge modules project that state into the shapes controllers consume.
   grouped answer-field → obligation binding. Boot checks complete, unique,
   correctly-pathed UUID ownership; assembly merges the contributions and
   coerces parsable animal counts to numbers.
-- **`fulfilments.js`** — `projectAnswers` renders canonical fulfilment back to
-  nested request answers, with composite-key ↔ positional-path conversion
-  (`ancestorChain`, `fulfilmentIdToPath`).
 - **`evaluation.js`** — owns the shared evaluator used for canonical reads and
   name-keyed request mutations.
 - **`scope.js`** — `makeScopeFromEvaluation(evaluation, answers)` returns
@@ -213,25 +210,12 @@ other bridge modules project that state into the shapes controllers consume.
 - **`collection-complete.js`** — `entryComplete` gives per-instance
   completeness for the collection views.
 
-## The hapi barrel
-
-`engine/index.js` is a pure barrel — it owns no logic and re-exports names
-explicitly (never `export *`) so the facade cannot silently widen. A page
-controller imports it as `import * as state` and sees exactly this:
-
-| Direction      | Names                                                                                                                                        |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Read up        | `get`, `makeScope`                                                                                                                           |
-| Write down     | `commit`, `appendEntry`/`appendEntryAt`, `updateEntry`/`updateEntryAt`, `removeEntry`/`removeEntryAt`, `reconcileEntriesAt`, `submitJourney` |
-| Loop primitive | `collectionView`, `collectionCapAt`                                                                                                          |
-| Constant       | `SUBMITTED`                                                                                                                                  |
-
 Two deliberate absences define the shape. There is **no `setScope` and no
 `delete(otherObligation)`** — scope is always derived and the wipe is always
 applied by the engine, so a page can neither assert scope nor hand-roll a
 wipe.
 
-### The read side — `engine/read.js`
+## The read side — `engine/read.js`
 
 `get(request, h)` loads the current canonical fulfilment and calls
 `assembleRequestView` once to derive `{ evaluation, answers, scope }`, merging
@@ -239,7 +223,7 @@ the current journey's session-backed flow-only answers into that projection.
 The result is memoised for the request; only fulfilment is durable record
 state.
 
-### The write side — `engine/write/index.js`
+## The write side — `engine/write/index.js`
 
 - `commit` merges the incoming name-keyed patch into the request projection,
   splits any `FLOW_ONLY_OBLIGATIONS` into the journey-keyed session map, and
@@ -251,7 +235,7 @@ state.
 - `submitJourney` gates on `scope.readyForCheckYourAnswers`; only when ready
   does it finalise the records port.
 
-### The readiness seam
+## The readiness seam
 
 `readyForCheckYourAnswers` needs the boot-built dispatch index and the flow's
 task-row list. `bridge/readiness-config.js` statically defaults to
@@ -260,7 +244,7 @@ task-row list. `bridge/readiness-config.js` statically defaults to
 `configureReadyForCheckYourAnswers` remains as a test override; runtime boot
 does not configure readiness.
 
-### store.js
+## store.js
 
 `engine/store.js` is a small frozen test facade over the records port (`create`,
 `get`, `has`, `seedAnswers`, `replaceFulfilment`, `submit`, `clear`). It is a test convenience only

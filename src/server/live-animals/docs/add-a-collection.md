@@ -70,14 +70,6 @@ Collection-level facts:
 - **`within`** on a member references the group object by identity (a real
   import). A member with no `applyTo` is always in scope for every instance; a
   member with `applyTo` is scoped per instance (see step 2).
-- **`requires`** on the group sets a floor. `{ minEntries, errorCode }` is a
-  collection floor — `commodityLine` sets `minEntries: 1`, so a consignment
-  with no lines never reaches submit. `{ anyOfIds, errorCode }` is a
-  per-instance "at least one of" floor — the `animalIdentifiers` group requires
-  each record to carry at least one of its six identifier obligations,
-  referenced by literal id. Omit `requires` entirely — as `documents` does — and
-  an empty collection is complete, but every instance that exists must still be
-  complete.
 - Member names are the keys inside each request-local instance object
   (`answers.commodityLines[0].commoditySelection`) and the DOM field names.
   They must be path-safe — no `.`, `[` or `]` — or `buildDispatch` throws at
@@ -86,19 +78,7 @@ Collection-level facts:
 Nesting is the same declaration one level deeper: a group whose `within` points
 at another group. `unitRecord` (name `animalIdentifiers`) sits `within:
 commodityLine`, so its instances live at
-`answers.commodityLines[i].animalIdentifiers[j]`:
-
-```js
-export const unitRecord = {
-  id: '385d6e7f-8091-4eb5-8234-8ef506172940',
-  name: 'animalIdentifiers',
-  within: commodityLine,
-  requires: {
-    anyOfIds: [/* the six identifier obligation ids */],
-    errorCode: 'obligation.unitRecord.identifiersRequired'
-  }
-}
-```
+`answers.commodityLines[i].animalIdentifiers[j]`.
 
 ### Declare the feature-owned grouped bindings
 

@@ -7,41 +7,12 @@ looks like when a user submits a page, run Joi field validators from
 The obligation model records what is owed; a page decides what a
 well-formed answer looks like in its own context. The same value can
 validate differently on different pages, so field validity is never
-stamped on an obligation. The model stores; the page validates shape and
-legality.
+stamped on an obligation.
 
 ## Controller-owned field validation, by design
 
 Each collecting controller composes its own field → validator map from
 the shared library and runs it against its own payload:
-
-```js
-// features/origin/controller.js
-const fields = () =>
-  compose(
-    requiredOneOf(
-      'countryOfOrigin',
-      countries.originCountries().map(({ value }) => value),
-      'Select the country where the animal originates from'
-    ),
-    oneOf('regionOfOriginCodeRequirement', ['yes', 'no']),
-    maxText(
-      'regionOfOriginCode',
-      5,
-      'Region of origin code must be 5 characters or less'
-    ),
-    maxText(
-      'internalReferenceNumber',
-      58,
-      'Internal reference must be 58 characters or less'
-    ),
-    pattern(
-      'internalReferenceNumber',
-      /^[a-zA-Z0-9]*$/,
-      'Internal reference must only contain letters and numbers'
-    )
-  )
-```
 
 When a membership list comes from a service (`countries`, `ports`, the
 address book), the schema is a **function** evaluated per POST —
@@ -58,12 +29,7 @@ value — a shape or a domain — reusable by any page.
 ## The library shape
 
 `lib/validate/index.js` is the single import surface. It re-exports the
-runner from `run.js` and a flat set of small, named Joi factories from
-`validators.js`:
-
-`compose`, `requiredText`, `requiredExactDigits`, `optionalText`,
-`maxText`, `pattern`, `postcode`, `vehicleReg`, `ukPhone`, `oneOf`,
-`requiredOneOf`, `integerInRange` and `dateParts`.
+runner from `run.js` and the named Joi factories from `validators.js`.
 
 - Each factory returns a single-key schema, built by the internal
   `single(name, rule)` helper as `Joi.object({ [name]: rule }).unknown(true)`.

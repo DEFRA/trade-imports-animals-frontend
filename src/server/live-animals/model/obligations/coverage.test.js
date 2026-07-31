@@ -69,10 +69,8 @@ describe('uniqueness — every obligation has a distinct id and name', () => {
 
   it('has no duplicate names in the manifest', () => {
     // Duplicate names silently corrupt every name-keyed downstream: the
-    // dictionary shows the obligation twice; `presentation.js`'s
-    // name-based lookup returns whichever entry matches first;
-    // KNOWN_UNWIRED status becomes ambiguous. Mutation 11 in
-    // docs/testing.md is exactly this.
+    // dictionary shows the obligation twice and a name-based lookup
+    // returns whichever entry matches first.
     expect(duplicatesOf(obligations, (obligation) => obligation.name)).toEqual(
       []
     )
