@@ -5,44 +5,47 @@ entry on the hub.
 
 The code uses three separate terms:
 
-- a **feature group** is a nested folder under `features/` that owns related
+- a **feature group** is a nested folder under `journeys/linear/features/` that owns related
   pages, copy and persistence bindings
-- a **flow section** is an entry in `flow/flow.js`; it controls page order and
+- a **flow section** is an entry in `journeys/linear/flow/flow.js`; it controls page order and
   `nextInSection()`
-- a **task row** is an entry in `flow/task-rows.js`; it is the item shown on the
+- a **task row** is an entry in `journeys/linear/flow/task-rows.js`; it is the item shown on the
   hub and it drives submit readiness
 
 This recipe creates all three. Do not call the hub entry a section in code.
 
 Run every command from the frontend repo root. All other paths in this recipe
 are relative to
-`src/server/obligation-based-app/obligation-sets/live-animals/`.
+`src/server/app/sets/live-animals/`.
 
 ## Read these files first
 
 Transport is the current multi-page feature-group example:
 
-- [`model/obligations/sections/transport.js`](../sets/live-animals/obligations/sections/transport.js)
-- [`features/transport/page.js`](../sets/live-animals/journeys/linear/features/transport/page.js)
-- [`features/transport/evaluation.js`](../sets/live-animals/journeys/linear/features/transport/evaluation.js)
-- [`features/transport/copy/copy.en.js`](../sets/live-animals/journeys/linear/features/transport/copy/copy.en.js)
-- [`features/transport/copy/copy.cy.js`](../sets/live-animals/journeys/linear/features/transport/copy/copy.cy.js)
-- [`features/transport/copy/copy.test.js`](../sets/live-animals/journeys/linear/features/transport/copy/copy.test.js)
-- [`features/transport/port-of-entry/port-of-entry.controller.js`](../sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.controller.js)
-- [`features/transport/port-of-entry/port-of-entry.njk`](../sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.njk)
-- [`features/transport/e2e/arrival-transit.e2e.spec.js`](../sets/live-animals/journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js)
-- [`features/transport/e2e/transporters.e2e.spec.js`](../sets/live-animals/journeys/linear/features/transport/e2e/transporters.e2e.spec.js)
+- [`obligations/sections/transport.js`](../obligations/sections/transport.js)
+- [`journeys/linear/features/transport/page.js`](../journeys/linear/features/transport/page.js)
+- [`journeys/linear/features/transport/evaluation.js`](../journeys/linear/features/transport/evaluation.js)
+- [`journeys/linear/features/transport/copy/copy.en.js`](../journeys/linear/features/transport/copy/copy.en.js)
+- [`journeys/linear/features/transport/copy/copy.cy.js`](../journeys/linear/features/transport/copy/copy.cy.js)
+- [`journeys/linear/features/transport/copy/copy.test.js`](../journeys/linear/features/transport/copy/copy.test.js)
+- [`journeys/linear/features/transport/port-of-entry/port-of-entry.controller.js`](../journeys/linear/features/transport/port-of-entry/port-of-entry.controller.js)
+- [`journeys/linear/features/transport/port-of-entry/port-of-entry.njk`](../journeys/linear/features/transport/port-of-entry/port-of-entry.njk)
+- [`journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js`](../journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js)
+- [`journeys/linear/features/transport/e2e/transporters.e2e.spec.js`](../journeys/linear/features/transport/e2e/transporters.e2e.spec.js)
 
 Trace its registration through:
 
-- [`features/index.js`](../sets/live-animals/journeys/linear/features/index.js)
-- [`features/evaluation.js`](../sets/live-animals/journeys/linear/features/evaluation.js)
-- [`flow/flow.js`](../sets/live-animals/journeys/linear/flow/flow.js)
-- [`flow/task-rows.js`](../sets/live-animals/journeys/linear/flow/task-rows.js)
-- [`features/hub/controller.js`](../sets/live-animals/journeys/linear/features/hub/controller.js)
-- [`features/hub/copy/copy.en.js`](../sets/live-animals/journeys/linear/features/hub/copy/copy.en.js)
-- [`flow/task-rows.test.js`](../sets/live-animals/journeys/linear/flow/task-rows.test.js)
-- [`features/hub/hub.e2e.spec.js`](../sets/live-animals/journeys/linear/features/hub/hub.e2e.spec.js)
+- [`journeys/linear/features/index.js`](../journeys/linear/features/index.js)
+- [`journeys/linear/features/evaluation.js`](../journeys/linear/features/evaluation.js)
+- [`journeys/linear/flow/flow.js`](../journeys/linear/flow/flow.js)
+- [`journeys/linear/flow/task-rows.js`](../journeys/linear/flow/task-rows.js)
+- [`journeys/linear/features/hub/controller.js`](../journeys/linear/features/hub/controller.js)
+- [`journeys/linear/features/hub/copy/copy.en.js`](../journeys/linear/features/hub/copy/copy.en.js)
+- [`journeys/linear/flow/task-rows.test.js`](../journeys/linear/flow/task-rows.test.js)
+- [`journeys/linear/features/hub/hub.e2e.spec.js`](../journeys/linear/features/hub/hub.e2e.spec.js)
+- [`journeys/linear/config.js`](../journeys/linear/config.js)
+- [`src/server/app/flow/journey-flow.js`](../../../flow/journey-flow.js)
+- [`src/server/app/routes.js`](../../../routes.js)
 
 The transport flow section has five pages. The hub does not render that
 section directly. It renders three task rows: arrival details, transit
@@ -64,8 +67,8 @@ later page only edits data owned by an earlier collection page, it uses
 `collects: []`.
 
 Add the obligations to the matching file under
-`model/obligations/sections/`. Re-export them and add them to the array in
-[`model/obligations/obligations.js`](../model/obligations/obligations.js).
+`obligations/sections/`. Re-export them and add them to the array in
+[`obligations/index.js`](../obligations/index.js).
 Use `applyTo` helpers when answers gate later fields or branches.
 
 Keep obligations and domain code copy-free. Do not put titles, labels, hints,
@@ -87,7 +90,7 @@ model errors, then continue.
 Create this shape:
 
 ```text
-features/<group>/
+journeys/linear/features/<group>/
 ├── copy/
 │   ├── copy.cy.js
 │   ├── copy.en.js
@@ -112,11 +115,11 @@ page. Keep the two locale bundles the same shape.
 
 In `evaluation.js`, use `feature('<group>', [...])` and bind every leaf with
 `scalar()` or `grouped()`. Import the bundle in
-[`features/evaluation.js`](../sets/live-animals/journeys/linear/features/evaluation.js) and add it to
+[`journeys/linear/features/evaluation.js`](../journeys/linear/features/evaluation.js) and add it to
 `featureEvaluationBindings`.
 
-Run `npm run test:live-animals`. The fulfilment-registry error should be gone.
-`buildDispatch` now reports each new obligation as collected by no page. Step 3
+Run `npm run test:live-animals`. The fulfilment-registry error should be gone. Tests
+that build dispatch now report each new obligation as collected by no page. Step 3
 satisfies dispatch.
 
 ## 3. Build each page in journey order
@@ -141,16 +144,16 @@ input names, ids and error keys aligned for error-summary focus.
 
 Run `npm run test:live-animals`. At this point copy checks can fail:
 
-- `copy-convention.test.js` requires a complete `copy/` folder for a feature
+- `src/server/app/copy-convention.test.js` requires a complete `copy/` folder for a feature
   with templates
-- `copy-parity.test.js` requires equal English and Welsh bundle shapes
+- `src/server/app/copy-parity.test.js` requires equal English and Welsh bundle shapes
 
 Complete both bundles and the group copy test before continuing.
 
 ## 4. Register every controller and route
 
 Import every controller namespace in
-[`features/index.js`](../sets/live-animals/journeys/linear/features/index.js).
+[`journeys/linear/features/index.js`](../journeys/linear/features/index.js).
 
 - Add every controller `meta` to `dispatchPages`, including pages with
   `collects: []`.
@@ -161,15 +164,16 @@ uncovered obligation, correct the owning page's `collects`. If it reports two
 owners, remove the duplicate claim.
 
 Add one valid POST case per collecting controller to
-[`contract.test.js`](../contract.test.js). Each case supplies a valid payload
+[`src/server/app/contract.test.js`](../../../contract.test.js). Each case supplies a valid payload
 and any scope seed, and must commit exactly its `meta.collects`.
 
 The contract cases are manually listed. A missing new controller does not make
 the test fail. Treat adding each case as required work.
+Run `npm test` to exercise the L1 contract table.
 
 ## 5. Add the flow section
 
-Import every page identity into [`flow/flow.js`](../sets/live-animals/journeys/linear/flow/flow.js). Add one entry
+Import every page identity into [`journeys/linear/flow/flow.js`](../journeys/linear/flow/flow.js). Add one entry
 to `sections`:
 
 ```js
@@ -188,12 +192,12 @@ obligations and earlier continue prerequisites. Add an authored `gate` only for
 a flow fact that those rules cannot express. Add focused navigation and gate
 tests for every conditional page or branch.
 
-Add these pages to [`flow/run.js`](../sets/live-animals/journeys/linear/flow/run.js) only if product behaviour
+Add these pages to [`journeys/linear/flow/run.js`](../journeys/linear/flow/run.js) only if product behaviour
 puts them in the opening run. Update opening-run tests when you do.
 
 ## 6. Add one task row and wire it to the hub
 
-Import the page identities in [`flow/task-rows.js`](../sets/live-animals/journeys/linear/flow/task-rows.js) and
+Import the page identities in [`journeys/linear/flow/task-rows.js`](../journeys/linear/flow/task-rows.js) and
 add one row:
 
 ```js
@@ -211,37 +215,62 @@ both locale bundles too.
 
 Update:
 
-- [`flow/task-rows.test.js`](../sets/live-animals/journeys/linear/flow/task-rows.test.js) for Not yet started, In
+- [`journeys/linear/flow/task-rows.test.js`](../journeys/linear/flow/task-rows.test.js) for Not yet started, In
   progress, Completed, Optional or Not applicable states, row gate and first
   entry page
-- [`features/hub/copy/copy.test.js`](../sets/live-animals/journeys/linear/features/hub/copy/copy.test.js) for
+- [`journeys/linear/features/hub/copy/copy.test.js`](../journeys/linear/features/hub/copy/copy.test.js) for
   group copy, row copy, position, link and status
-- [`features/hub/hub.e2e.spec.js`](../sets/live-animals/journeys/linear/features/hub/hub.e2e.spec.js) for the
+- [`journeys/linear/features/hub/hub.e2e.spec.js`](../journeys/linear/features/hub/hub.e2e.spec.js) for the
   visible task row, lock state, link and completed state
 
 Every task row participates in `readyForCheckYourAnswers`. A mandatory new row
 therefore blocks Check and submit until it is complete. Prove both the blocked
-and complete states in `flow/task-rows.test.js`.
+and complete states in `journeys/linear/flow/task-rows.test.js`.
+
+### Check the journey registration
+
+[`journeys/linear/config.js`](../journeys/linear/config.js) contains the template
+prefix, shared layout name and three session cookie names. A new feature group,
+flow section or task row does not add a config entry.
+
+[`src/server/app/routes.js`](../../../routes.js) already imports the journey's
+`sections`, `taskRows`, `rowStatus`, `nextRunTarget`, `FLOW_ONLY_KEYS`,
+`entryGuardTarget` and `LAYOUT`. It passes them to
+[`configureJourneyFlow()`](../../../flow/journey-flow.js). Because it injects the
+whole exported arrays, adding a section or task row to the existing modules needs no
+new L1 import or configure call.
+
+Registration work for the feature group is therefore limited to:
+
+1. add controllers to `dispatchPages` and `allRoutes`
+2. add its binding bundle to `featureEvaluationBindings`
+3. add page identities to `sections` and `taskRows`
+4. add task-row ids and copy to the hub
+5. add pages to `run.js` only when they belong in the opening run
+
+Change `journeys/linear/config.js` or the `configureJourneyFlow()` call only when
+the journey's template identity, cookie identity or injected policy surface itself
+changes.
 
 ## 7. Add check-answers output
 
 Add a section or cards for the feature under
-[`features/check-answers/view-model/`](../sets/live-animals/journeys/linear/features/check-answers/view-model/index.js).
+[`journeys/linear/features/check-answers/view-model/`](../journeys/linear/features/check-answers/view-model/index.js).
 Add English and Welsh headings, row labels and value labels to the
 check-answers copy bundles.
 
 Pass obligation names to `row()` and `changeAction()` so Change links resolve
 through dispatch. Use `scope` to omit out-of-scope rows. Extend
-[`features/check-answers/check-answers.e2e.spec.js`](../sets/live-animals/journeys/linear/features/check-answers/check-answers.e2e.spec.js)
+[`journeys/linear/features/check-answers/check-answers.e2e.spec.js`](../journeys/linear/features/check-answers/check-answers.e2e.spec.js)
 for every value and Change target.
 
 ## 8. Update downstream persistence when applicable
 
 Feature bindings always write canonical fulfilment. If the backend notification
 has homes for the new values, add them to the matching modules under
-[`services/persistence/records/notification-mapper/`](../services/persistence/records/notification-mapper/index.js)
+[`src/server/app/services/persistence/records/notification-mapper/`](../../../services/persistence/records/notification-mapper/index.js)
 and extend
-[`services/persistence/records/notification-mapper/notification-mapper.test.js`](../services/persistence/records/notification-mapper/notification-mapper.test.js).
+[`src/server/app/services/persistence/records/notification-mapper/notification-mapper.test.js`](../../../services/persistence/records/notification-mapper/notification-mapper.test.js).
 
 Check Mapper A and Mapper B separately. If a backend shape has no field home,
 keep the value out of that projection and add an explicit omission assertion.
@@ -252,11 +281,11 @@ Do not invent fields.
 If any page needs feature JavaScript:
 
 1. Add a client entry module, following
-   [`features/documents/client/index.js`](../sets/live-animals/journeys/linear/features/documents/client/index.js).
+   [`journeys/linear/features/documents/client/index.js`](../journeys/linear/features/documents/client/index.js).
 2. Add a named `entry` in the repo-root `webpack.config.js`.
 3. Load it from the relevant template with `getAssetPath('<entry>.js')`,
    following
-   [`features/documents/template.njk`](../sets/live-animals/journeys/linear/features/documents/template.njk).
+   [`journeys/linear/features/documents/template.njk`](../journeys/linear/features/documents/template.njk).
 
 Without the webpack entry, the HTML works but the bundle URL returns a silent 404.
 
@@ -271,10 +300,10 @@ task-row status, hub rendering, check-answers rows and notification mapping.
 
 ## Playwright feature test
 
-Put the co-located specs in `features/<group>/e2e/`, following
-[`features/transport/e2e/arrival-transit.e2e.spec.js`](../sets/live-animals/journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js)
+Put the co-located specs in `journeys/linear/features/<group>/e2e/`, following
+[`journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js`](../journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js)
 and
-[`features/transport/e2e/transporters.e2e.spec.js`](../sets/live-animals/journeys/linear/features/transport/e2e/transporters.e2e.spec.js).
+[`journeys/linear/features/transport/e2e/transporters.e2e.spec.js`](../journeys/linear/features/transport/e2e/transporters.e2e.spec.js).
 
 Keep tests independent. Each test starts its own notification. Do not create
 page objects. Use raw role, label and visible-copy locators. Use Playwright
@@ -302,7 +331,7 @@ Add axe coverage for every new page in both states:
 - validation error state after the error summary appears
 
 Use the helper pattern in
-[`features/transport/e2e/arrival-transit.e2e.spec.js`](../sets/live-animals/journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js).
+[`journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js`](../journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js).
 Run `AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa'])` and fail on every
 `serious` or `critical` violation. Filter only a proved component false
 positive.

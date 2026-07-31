@@ -1,217 +1,58 @@
-# The validation seam
+# Validation
 
-Validation lives in page controllers. They decide what a well-formed answer
-looks like when a user submits a page, run Joi field validators from
-`lib/validate/` against the POST payload and return GDS field errors.
+Controllers own field validation. Obligations decide whether data is owed; they do
+not define form schemas or messages.
 
-The obligation model records what is owed; a page decides what a
-well-formed answer looks like in its own context. The same value can
-validate differently on different pages, so field validity is never
-stamped on an obligation.
+## Library surface
 
-## Controller-owned field validation, by design
+[`src/server/app/lib/validate/index.js`](../lib/validate/index.js) exports the runner
+and named Joi schema factories. Each field factory accepts unknown sibling keys so
+a controller can compose only the rules it owns.
 
-Each collecting controller composes its own field → validator map from
-the shared library and runs it against its own payload:
+`validate(schema, payload)` returns `{ value, errors }`. `errors` is `null` on
+success or a flat `{ fieldId: message }` map. Validation runs with
+`abortEarly: false`, while only the first message for each field is exposed.
 
-When a membership list comes from a service (`countries`, `ports`, the
-address book), the schema is a **function** evaluated per POST —
-`validate(fields(), payload)` — never a module-level constant. A frozen
-schema would capture the stub list at import time and go stale when
-real-mode boot `prime()` replaces the service cache. A page whose
-options are a fixed literal list (the import-type filter, the
-declaration) can hold its schema as a constant.
+## Controller contract
 
-Nothing in `lib/validate/` knows about obligations, and no obligation
-names a validator. The coupling is loose: a validator is a fact about a
-value — a shape or a domain — reusable by any page.
+A collecting controller:
 
-## The library shape
+1. reads raw payload values
+2. builds any service-backed schema at POST time
+3. validates the payload
+4. renders raw values with status 400 on error
+5. commits the cleaned values on success
 
-`lib/validate/index.js` is the single import surface. It re-exports the
-runner from `run.js` and the named Joi factories from `validators.js`.
+Build service-backed membership rules inside POST so they use reference data primed
+at boot. A module-level schema can freeze an outdated service list.
 
-- Each factory returns a single-key schema, built by the internal
-  `single(name, rule)` helper as `Joi.object({ [name]: rule }).unknown(true)`.
-- `compose(...)` concatenates schemas into one page schema.
-- Because every schema is `unknown(true)`, sibling fields and the CSRF
-  `crumb` pass through untouched. A page validates only the fields it
-  names.
+Normalising validators return cleaned values. Persist `value` from the validation
+result, not the raw payload. The guarantee is pinned by
+[`src/server/app/lib/validate/persists-cleaned-value.test.js`](../lib/validate/persists-cleaned-value.test.js).
 
-## The mandate split: save-blocking vs completion-required
+## GDS error wiring
 
-The journey splits "must not save malformed" from "must be answered to
-finish". They live in different places.
+Keep the field name, input id and error-map key identical.
+[`kit.errorSummary()`](../shared/kit.js) turns the map into links to `#fieldId`, and
+the GOV.UK or MoJ macro renders the matching inline error.
 
-### Save-blocking (hard)
+## Save rules and completion rules
 
-`requiredText`, `requiredExactDigits` and `requiredOneOf` are the
-save-blocking primitives — they carry no `.allow('')`, so a blank value
-fails on submit. They guard the journey's three flow-control points and
-the CPH number:
+A required Joi rule can block a malformed or blank page save. Obligation `status`,
+scope and `requires` rules decide whether the journey is complete. These are
+separate checks: saving an optional blank is allowed, while submit readiness still
+reflects every in-scope mandatory obligation and group invariant.
 
-- `importType` on the import-type filter (`features/import-type-filter`).
-- `countryOfOrigin` on the origin page (`features/origin`).
-- `declaration` on the declaration page (`features/declaration`).
-- `countyParishHoldingCph` on the CPH page (`features/cph-number`) —
-  `requiredExactDigits` blocks blank, wrong-length and non-digit values,
-  checked on the slash-stripped value.
+[`src/server/app/flow/prerequisites.js`](../flow/prerequisites.js) adds the separate
+continue-time gate for configured fields that must be answered before later pages
+open.
 
-Every other validator is optional: it carries `.allow('')`, so a blank
-value saves and only a malformed non-blank value fails. A user can walk
-most of the journey saving blanks.
+## Dates and structured values
 
-Follow the convention when adding a validator: an optional factory must
-allow `''`. Leave that out and the field silently becomes save-blocking.
+The date helpers validate a `dd/mm/yyyy` text value, then
+[`kit.readDate()`](../shared/kit.js) stores `{ day, month, year }`.
+`kit.dateField()` creates the MoJ date-picker view model.
 
-### Enforced-at-continue (a second hard gate on navigation)
-
-Two obligations must be answered before the journey lets the user move
-past them, not just at submit. They are named in `ENFORCED_AT_CONTINUE`
-(`bridge/obligation-source.js`):
-
-```js
-export const ENFORCED_AT_CONTINUE = new Set([
-  'countryOfOrigin',
-  'commoditySelection'
-])
-```
-
-`flow/prerequisites.js` turns that set into per-page and per-section
-prerequisites: `pagePrerequisites(pageId)` lists the enforced-at-continue
-obligations owned by earlier pages. `flow/gates.js` then holds a later
-page or section shut until those answers exist:
-
-```js
-// flow/gates.js
-prerequisitesMet(pagePrerequisites(page.id), scope) &&
-  inScopeReachable(collectsOf(page.id), scope)
-```
-
-`prerequisitesMet` checks `scope.answered(id)` for every prerequisite. So
-a downstream page will not open until the enforced-at-continue answers
-upstream are present. `countryOfOrigin` is enforced both ways — a
-save-blocking `requiredOneOf` on its own page and a continue gate for
-everything after it.
-
-### Completion-required (soft)
-
-Whether an answer is owed to finish lives on the obligation, not in any
-Joi schema (`model/obligations/obligations.js`):
-
-- Each obligation carries `status: 'mandatory' | 'optional'`.
-- A group carries `requires: { minEntries, errorCode }` for a collection
-  floor (`commodityLines` requires `minEntries: 1`) and/or
-  `requires: { anyOfIds, errorCode }` for a per-instance "at least one
-  of" rule (a `unitRecord` requires at least one identifier obligation).
-
-The engine checks completion in two places:
-
-- **The hub.** `statusOf` (`bridge/status/index.js`), reached
-  through `flow/task-rows.js` `rowStatus` and `flow/section-status.js`
-  `sectionStatus`, reports a row or section Fulfilled only when every
-  in-scope obligation it covers is satisfied.
-- **Submit.** The declaration page POST calls `state.submitJourney`
-  (`engine/write/index.js`), which re-checks `scope.readyForCheckYourAnswers`
-  server-side:
-
-  ```js
-  // engine/write/index.js
-  if (!scope.readyForCheckYourAnswers) return { ok: false, journey, scope }
-  ```
-
-  A not-ready submit does not finalise — the controller redirects back
-  to Check your answers. The button is a soft gate, not the real check.
-
-So `status: 'mandatory'` never blocks a save, and a Joi rule never
-decides completion.
-
-## Normalising validators: persist the clean value
-
-Some validators return a changed value, and the contract matters.
-
-**`maxText`** (and every trimming validator) returns the trimmed value.
-A controller must persist the value the validator returns, not the raw
-payload:
-
-```js
-const { value: clean, errors } = validate(fields(), payload)
-if (errors) return render(h, value, errors) // raw value echoed back
-state.commit(request, h, { reference: clean.reference ?? '' })
-```
-
-- **Success path: commit the cleaned string.** Surrounding whitespace the
-  user typed never reaches the store. The guarantee is pinned in
-  `lib/validate/persists-cleaned-value.test.js`.
-- **Error path: echo the raw input.** A value that fails re-renders the
-  user's own text, not a half-cleaned version, and commits nothing.
-
-`cph-number` is the journey's live worked example: it strips slashes from
-the raw input, validates the stripped value and commits it stripped,
-echoing the raw input on failure (`features/cph-number/controller.js`).
-
-**`integerInRange`** checks that the value is a whole number in range but
-returns the trimmed _string_, not a number. The page answer stays a string; a
-feature binding may convert it for canonical fulfilment (the animal-count
-binding does).
-
-## Dates
-
-Dates are stored as a `{ day, month, year }` object — never a `Date`,
-never a formatted string.
-
-- The MoJ date picker progressively enhances one text input, which posts
-  `<name>` in `dd/mm/yyyy` format and remains usable without JavaScript.
-- `dateText(name)` (`lib/validate/validators.js`) validates the single
-  field. Blank passes — dates are optional. An incomplete, wrongly
-  formatted or unreal date fails; real-date checking is `isRealDate` in
-  `lib/validate/calendar.js`.
-- The error lands under `<name>`, so the error-summary link focuses the
-  text input.
-- `kit.readDate(payload, name)` parses the valid text into the stored
-  object; `kit.dateField` builds the MoJ date-picker view-model (see
-  `features/transport/port-of-entry/port-of-entry.controller.js`).
-
-## The Joi → GDS wiring
-
-`validate(schema, payload)` (`lib/validate/run.js`) returns
-`{ value, errors }`:
-
-- `errors` is `null` when the payload is clean.
-- Otherwise it is a flat `{ fieldId: message }` map. Validation runs with
-  `abortEarly: false`, then the first message wins per field — one inline
-  error per input (`toFieldErrors`).
-
-That map is the whole seam. Two consumers turn it into GDS output:
-
-- `kit.errorSummary(errors)` (`shared/kit.js`) builds the error-summary
-  view-model: `{ titleText, errorList: [{ text, href: '#fieldId' }] }`,
-  rendered by `shared/error-summary.njk`. Each link targets the input by
-  id.
-- Each govuk macro, given `errorMessage` and a matching `id`, emits the
-  inline `#fieldId-error` message and wires `aria-describedby` itself.
-
-Field name, input id and error key are the same string, so the summary
-link, the inline message and the input all line up without any mapping
-table.
-
-## Address completeness
-
-Address values use the same completion rule as every other obligation:
-`isBlankValue(value)` must be false. The model does not inspect individual
-address fields when deriving status or per-entry collection completeness.
-
-Field completeness is enforced before storage by the page that collects the
-address. `features/addresses/create-address/create-address.controller.js` and
-the animal
-identification controller validate the required nested sub-fields and
-re-render with field errors on a partial submission; only a valid address is
-committed. Option membership and other value rules likewise remain in the
-collecting controller, using the current reference-data service values.
-
-## Related
-
-- [persistence.md](persistence.md) — what happens to a committed value.
-- [scope-and-wipe.md](scope-and-wipe.md) — how `status` and scope drive
-  section status.
-- [limits.md](limits.md) — limits and edge cases.
+Structured values such as addresses are opaque to model completeness: a non-blank
+object is filled. The collecting controller must validate required subfields before
+it commits the object.

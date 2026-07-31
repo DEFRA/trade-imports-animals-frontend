@@ -8,16 +8,16 @@ including a field that applies to only some instances.
 
 Three live collections show the shape:
 
-- [`features/documents/controller.js`](../sets/live-animals/journeys/linear/features/documents/controller.js) — a top-level collection as a
+- [`journeys/linear/features/documents/controller.js`](../journeys/linear/features/documents/controller.js) — a top-level collection as a
   single-page add-another loop: the entry form and the read-back table sit on
   one page.
-- [`features/commodities/evaluation.js`](../sets/live-animals/journeys/linear/features/commodities/evaluation.js) — a top-level collection
+- [`journeys/linear/features/commodities/evaluation.js`](../journeys/linear/features/commodities/evaluation.js) — a top-level collection
   built as a two-page batch: a search page that reconciles the selection, and a
   consignment-details page that edits every line's quantities in place. This
   collection also carries a per-instance conditional field and a collection
   floor.
 - The `animalIdentifiers` records inside each commodity line
-  ([`features/commodities/animal-identification/animal-identification.controller.js`](../sets/live-animals/journeys/linear/features/commodities/animal-identification/animal-identification.controller.js))
+  ([`journeys/linear/features/commodities/animal-identification/animal-identification.controller.js`](../journeys/linear/features/commodities/animal-identification/animal-identification.controller.js))
   — a collection nested one level down, with a per-instance count cap.
 
 Every snippet below traces to one of them.
@@ -26,11 +26,11 @@ Every snippet below traces to one of them.
 
 A collection is a **group obligation** plus the member obligations that point
 at it. Put both in the matching section module exported by
-[`model/obligations/obligations.js`](../model/obligations/obligations.js) — commodity
+[`obligations/index.js`](../obligations/index.js) — commodity
 lines belong in `commodities/lines.js`, animal identifiers in
 `commodities/identifiers.js`, and documents in `documents.js`. Import and
 re-export every new obligation from
-[`model/obligations/obligations.js`](../model/obligations/obligations.js), and
+[`obligations/index.js`](../obligations/index.js), and
 add it to that barrel's `obligations` array.
 
 A group carries an `id` (a UUID used by canonical fulfilment) and a `name` (the
@@ -73,7 +73,7 @@ Collection-level facts:
 - Member names are the keys inside each request-local instance object
   (`answers.commodityLines[0].commoditySelection`) and the DOM field names.
   They must be path-safe — no `.`, `[` or `]` — or `buildDispatch` throws at
-  boot ([`flow/dispatch.js`](../flow/dispatch.js)).
+  boot ([`src/server/app/flow/dispatch.js`](../../../flow/dispatch.js)).
 
 Nesting is the same declaration one level deeper: a group whose `within` points
 at another group. `unitRecord` (name `animalIdentifiers`) sits `within:
@@ -83,7 +83,7 @@ commodityLine`, so its instances live at
 ### Declare the feature-owned grouped bindings
 
 The collection's feature owns the translation from those page fields to UUID
-fulfilments. In `features/<feature>/evaluation.js`, describe each group with its
+fulfilments. In `journeys/linear/features/<feature>/evaluation.js`, describe each group with its
 page field, stable token and manifest obligation, then bind each leaf:
 
 ```js
@@ -123,7 +123,7 @@ replaces the whole snapshot, so removing an earlier item may renumber the rest.
 
 A conditional member is one that carries an `applyTo` closure. The closure
 decides, per instance, whether the field is in scope. You build it with a
-helper from [`model/obligations/helpers/index.js`](../model/obligations/helpers/index.js) —
+helper from [`src/server/app/model/obligations/helpers/index.js`](../../../model/obligations/helpers/index.js) —
 no new syntax on the obligation itself:
 
 ```js
@@ -160,25 +160,25 @@ the entry template. Scope and wipe stay in the model.
 ## 3. What the engine gives you free
 
 Once the manifest declares the group, you write no scope or wipe code. The
-evaluator ([`model/obligations/evaluator.js`](../model/obligations/evaluator.js))
+evaluator ([`src/server/app/model/obligations/evaluator.js`](../../../model/obligations/evaluator.js))
 evaluates the feature-assembled canonical map, so a two-line journey yields
 `line0` and `line1` as independent instances; the request projection exposes
 them as `commodityLines[0]` and `commodityLines[1]`.
 
 - **Per-instance scope.** Every in-scope field of every instance is projected
   into the controller-facing scope through
-  [`bridge/scope.js`](../bridge/scope.js).
-- **Per-path wipe.** [`bridge/purge.js`](../bridge/purge.js) names
+  [`src/server/app/bridge/scope.js`](../../../bridge/scope.js).
+- **Per-path wipe.** [`src/server/app/bridge/purge.js`](../../../bridge/purge.js) names
   exactly the out-of-scope paths that still hold data; the write layer destroys
   them.
 - **Per-instance completeness.**
-  [`bridge/collection-complete.js`](../bridge/collection-complete.js)
+  [`src/server/app/bridge/collection-complete.js`](../../../bridge/collection-complete.js)
   answers whether one instance is complete; the group is complete when its
   `requires` floor is met and every instance is complete.
 - **Dispatch coverage at depth.** Boot asserts every obligation, at every
   depth, is collected by exactly one page. A member inherits its owning page
   from the nearest ancestor group in the dotted path
-  ([`flow/dispatch.js`](../flow/dispatch.js) `ownerOfObligation`), so a loop
+  ([`src/server/app/flow/dispatch.js`](../../../flow/dispatch.js) `ownerOfObligation`), so a loop
   page declares only the group in `collects` — `['documents']` or
   `['commodityLines']` — and every member rides along.
 
@@ -187,7 +187,7 @@ them as `commodityLines[0]` and `commodityLines[1]`.
 A collection needs a hand-written loop controller. A repeating group has no
 uniform-widget projection, so each loop owns its rows and copy. The controller
 reads facts from the engine barrel
-([`engine/index.js`](../engine/index.js)) and writes through it — it never
+([`src/server/app/engine/index.js`](../../../engine/index.js)) and writes through it — it never
 touches the evaluator directly.
 
 `state.collectionView(answers, collectionPath)` returns facts only:
@@ -196,7 +196,7 @@ controller builds its own rows over those facts.
 
 ### The single-page loop (entry form + read-back on one page)
 
-[`features/documents/controller.js`](../sets/live-animals/journeys/linear/features/documents/controller.js) is
+[`journeys/linear/features/documents/controller.js`](../journeys/linear/features/documents/controller.js) is
 the page the flow knows about. It declares the group it collects and renders
 both the entry form and the read-back table on one page, with a per-row Remove
 link:
@@ -232,12 +232,12 @@ no entry for, so a forged or stale index is rejected rather than acted on.
 
 `appendEntry` / `updateEntry` / `removeEntry` are the top-level convenience
 forms; each delegates to the `…At` form with a single-segment path
-([`engine/write/index.js`](../engine/write/index.js)).
+([`src/server/app/engine/write/index.js`](../../../engine/write/index.js)).
 
 ### The batch split (search page + consolidated details page)
 
 The commodities collection uses two pages. The SEARCH page
-([`features/commodities/search/search.controller.js`](../sets/live-animals/journeys/linear/features/commodities/search/search.controller.js))
+([`journeys/linear/features/commodities/search/search.controller.js`](../journeys/linear/features/commodities/search/search.controller.js))
 declares the group in `collects` and, on save, reconciles one line per selected
 species in a single write:
 
@@ -254,7 +254,7 @@ await state.reconcileEntriesAt(
 `reconcileEntriesAt` keys existing instances by `keyOf`, keeps a still-selected
 line's data (including its nested identifier records), and drops a deselected
 line with wipe semantics. The CONSOLIDATED DETAILS page
-([`features/commodities/consignment-details/consignment-details.controller.js`](../sets/live-animals/journeys/linear/features/commodities/consignment-details/consignment-details.controller.js))
+([`journeys/linear/features/commodities/consignment-details/consignment-details.controller.js`](../journeys/linear/features/commodities/consignment-details/consignment-details.controller.js))
 collects nothing (`collects: []`), renders the selected-commodities table with a
 per-commodity Remove and an Add-another link, and edits every line's quantities
 in place with `state.updateEntryAt(request, h, ['commodityLines'], index, …)`.
@@ -292,7 +292,7 @@ mid-loop actions must never bounce there early.
 ## 5. Cap the count where the model demands it
 
 Some collections cap their instance count at a sibling field. The declaration
-is data, in [`bridge/obligation-source.js`](../bridge/obligation-source.js):
+is data, in [`src/server/app/bridge/obligation-source.js`](../../../bridge/obligation-source.js):
 
 ```js
 export const MAX_ENTRIES_FROM = {
@@ -302,7 +302,7 @@ export const MAX_ENTRIES_FROM = {
 
 Each `animalIdentifiers` collection is capped at its line's
 `numberOfAnimalsQuantity`. The cap is computed by
-[`engine/evaluate/cardinality.js`](../engine/evaluate/cardinality.js):
+[`src/server/app/engine/evaluate/cardinality.js`](../../../engine/evaluate/cardinality.js):
 
 ```js
 export const collectionCapAt = (answers, collectionPath) => { … }
@@ -328,13 +328,13 @@ Two guards protect collection writes. Do not remove them.
 lines.length` before touching the store; copy that guard into any new nested
    controller.
 2. **The engine rejects non-integer indices.** `isValidIndex` in
-   [`engine/write/index.js`](../engine/write/index.js) uses `Number.isInteger` because
+   [`src/server/app/engine/write/pipeline/predicates.js`](../../../engine/write/pipeline/predicates.js) uses `Number.isInteger` because
    `splice(NaN, 1)` coerces to `splice(0, 1)` — a malformed remove URL would
    otherwise destroy the first instance.
 
 ## 7. Extend the contract test
 
-[`contract.test.js`](../contract.test.js) pins that each page commits exactly
+[`src/server/app/contract.test.js`](../../../contract.test.js) pins that each page commits exactly
 what it declares. Add a case shaped like the matching layout:
 
 1. Assert the loop page's declaration — for the single-page loop,

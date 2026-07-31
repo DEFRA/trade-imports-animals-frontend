@@ -1,85 +1,39 @@
-# Live-animals service — documentation index
+# Application platform documentation
 
-## What this is
+`src/server/app/` is the shared notification-journey platform. It evaluates an
+obligation set, manages canonical state, runs journey flow machinery and connects
+abstract persistence ports to service implementations.
 
-This is the live-animals import-notification journey, built as a standalone hapi
-plugin (`routes.js` exports `liveAnimals`). It runs on a page-owned spine over a
-declarative obligation model and a pure derivation engine. Pages own the copy,
-templates and validation; the model declares only what data is owed and when it
-is in scope; the engine derives scope, completeness and status from the answers
-on every read and write. Value options come from the reference-data services, not
-the model. The service covers the full trader journey — consignment details,
-per-species commodity lines, per-animal identifiers, transport, addresses and
-accompanying documents — to nesting depth 2 (an identifier inside a commodity line
-inside the notification).
+The application has four layers:
 
-## Quick start
+1. L1 — `src/server/app/`: composition and registration
+2. L2 — the existing `engine`, `model`, `bridge`, `flow`, `services`, `lib`,
+   `shared` and `analysis` directories under `src/server/app/`: set-agnostic
+   platform code
+3. L3 — `sets/<set>/obligations/`: one set's obligation data
+4. L4 — `sets/<set>/journeys/<style>/`: one journey's pages and topology
 
-Run everything from the frontend repo root (`trade-imports-animals-frontend`).
+[`src/server/app/routes.js`](../routes.js) is the composition point. It selects
+the live-animals set and linear journey, then supplies them to the platform through
+the `configure*` seams.
 
-Run the local service:
+## Platform guides
 
-```
-npm run dev
-```
+- [Architecture](architecture.md)
+- [Architecture decisions](decisions.md)
+- [Engine](engine.md)
+- [Obligation model](obligation-model.md)
+- [Flow machinery and gates](flow-and-gates.md)
+- [Scope and wipe](scope-and-wipe.md)
+- [Collection cardinality](cardinality.md)
+- [Validation](validation.md)
+- [Persistence](persistence.md)
+- [Services](services.md)
+- [Analysis and reachability](analysis.md)
+- [Platform limits](limits.md)
+- [Testing the platform](testing.md)
+- [Cross-repository test ownership](test-ownership.md)
 
-Then open the dashboard and start a notification:
+## Set guides
 
-```
-http://localhost:3000/
-```
-
-The create POST redirects to the journey-scoped import-type filter.
-
-Run the service unit suite:
-
-```
-npm run test:live-animals
-```
-
-Run the journey's Playwright E2E suite:
-
-```
-npm run test:e2e
-```
-
-Run the co-located feature Playwright suite:
-
-```
-PORT=3050 npm run test:features
-```
-
-## Where to start
-
-New here? Read in this order:
-
-1. [architecture.md](architecture.md) — the layers and how they fit together
-2. [obligation-model.md](obligation-model.md) — the declarative model everything runs on
-3. [engine.md](engine.md) — the pure core that derives scope, status and navigation
-
-Then pick the topic you need from the table below.
-
-## All docs
-
-| File                                       | What it covers                                                                                                                         |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| [architecture.md](architecture.md)         | The page-owned spine, the model, bridge, flow and frontend layers, the dependency direction, and how boot wires them                   |
-| [obligation-model.md](obligation-model.md) | Obligations as pure data: identity, `within` groups, `status`, `requires` floors, and the gate-helper families that build `applyTo`    |
-| [engine.md](engine.md)                     | The evaluator's purge/implication pipeline and the derivation barrel pages read for status and navigation                              |
-| [scope-and-wipe.md](scope-and-wipe.md)     | Why answering to take an obligation out of scope purges its data instead of hiding it, and how the bridge derives the wipe set         |
-| [flow-and-gates.md](flow-and-gates.md)     | Sections and pages, the `collects`-driven dispatch index, and derived page/section gates with the one authored review gate             |
-| [features.md](features.md)                 | Anatomy of a feature: page/controller/template trio, `meta` and `collects`, and why the hub, collections and check-answers are bespoke |
-| [services.md](services.md)                 | The reference-data (MDM) and persistence services, stub-vs-real selection, and the `LIVE_ANIMALS_MODE` switch                          |
-| [persistence.md](persistence.md)           | The session and records ports, the two notification mappers, and why submit is a status flip                                           |
-| [validation.md](validation.md)             | In-controller field validation via `lib/validate/`, including address field completeness                                               |
-| [add-a-field.md](add-a-field.md)           | The recipe for model, binding, controller, copy, check-answers, persistence and tests when adding a field                              |
-| [add-a-page.md](add-a-page.md)             | The recipe for a feature page, including registration, navigation, persistence, recoverable writes and co-located tests                |
-| [add-a-section.md](add-a-section.md)       | The recipe for a multi-page feature group, its flow section and its hub task row                                                       |
-| [add-a-collection.md](add-a-collection.md) | Numbered steps to add a repeating collection, including a per-entry conditional field                                                  |
-| [cardinality.md](cardinality.md)           | Collection floors, caps, alternatives and exact-count rules, including the value-linked identifier cap                                 |
-| [testing.md](testing.md)                   | Vitest boundaries, the journey and feature Playwright projects, shared helpers and boot guards                                         |
-| [test-ownership.md](test-ownership.md)     | The test boundary between this frontend and the cross-service workspace runner                                                         |
-| [lighthouse.md](lighthouse.md)             | How Lighthouse URLs, score floors, reports, simple findings and the CI workflow are maintained                                         |
-| [analysis.md](analysis.md)                 | The headless simulator and the two reachability provers — interrogate the journey without a browser                                    |
-| [decisions.md](decisions.md)               | Short architecture decision records: context, decision, why it won, and the costs accepted                                             |
-| [limits.md](limits.md)                     | Honest limits: what the model does not do, what it does at a cost, and where growth would start                                        |
+- [Live-animals set and linear journey](../sets/live-animals/docs/README.md)

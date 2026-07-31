@@ -5,32 +5,32 @@ repeatable group, also follow [add-a-collection.md](add-a-collection.md).
 
 Run every command from the frontend repo root. All other paths in this recipe
 are relative to
-`src/server/obligation-based-app/obligation-sets/live-animals/`.
+`src/server/app/sets/live-animals/`.
 
 ## Read these files first
 
 Use the origin feature as the main example. It has several fields, conditional
 scope, service-backed options, validation, persistence and check-answers rows.
 
-- [`model/obligations/sections/origin.js`](../sets/live-animals/obligations/sections/origin.js)
-- [`features/origin/evaluation.js`](../sets/live-animals/journeys/linear/features/origin/evaluation.js)
-- [`features/origin/controller.js`](../sets/live-animals/journeys/linear/features/origin/controller.js)
-- [`features/origin/template.njk`](../sets/live-animals/journeys/linear/features/origin/template.njk)
-- [`features/origin/copy/copy.en.js`](../sets/live-animals/journeys/linear/features/origin/copy/copy.en.js)
-- [`features/origin/copy/copy.cy.js`](../sets/live-animals/journeys/linear/features/origin/copy/copy.cy.js)
-- [`features/origin/controller.test.js`](../sets/live-animals/journeys/linear/features/origin/controller.test.js)
-- [`features/origin/origin.e2e.spec.js`](../sets/live-animals/journeys/linear/features/origin/origin.e2e.spec.js)
-- [`features/check-answers/view-model/cards/consignment/import-details.js`](../sets/live-animals/journeys/linear/features/check-answers/view-model/cards/consignment/import-details.js)
-- [`services/persistence/records/notification-mapper/mapper-a/sections/origin.js`](../services/persistence/records/notification-mapper/mapper-a/sections/origin.js)
+- [`obligations/sections/origin.js`](../obligations/sections/origin.js)
+- [`journeys/linear/features/origin/evaluation.js`](../journeys/linear/features/origin/evaluation.js)
+- [`journeys/linear/features/origin/controller.js`](../journeys/linear/features/origin/controller.js)
+- [`journeys/linear/features/origin/template.njk`](../journeys/linear/features/origin/template.njk)
+- [`journeys/linear/features/origin/copy/copy.en.js`](../journeys/linear/features/origin/copy/copy.en.js)
+- [`journeys/linear/features/origin/copy/copy.cy.js`](../journeys/linear/features/origin/copy/copy.cy.js)
+- [`journeys/linear/features/origin/controller.test.js`](../journeys/linear/features/origin/controller.test.js)
+- [`journeys/linear/features/origin/origin.e2e.spec.js`](../journeys/linear/features/origin/origin.e2e.spec.js)
+- [`journeys/linear/features/check-answers/view-model/cards/consignment/import-details.js`](../journeys/linear/features/check-answers/view-model/cards/consignment/import-details.js)
+- [`src/server/app/services/persistence/records/notification-mapper/mapper-a/sections/origin.js`](../../../services/persistence/records/notification-mapper/mapper-a/sections/origin.js)
 
-Read [`features/cph-number/controller.js`](../sets/live-animals/journeys/linear/features/cph-number/controller.js)
+Read [`journeys/linear/features/cph-number/controller.js`](../journeys/linear/features/cph-number/controller.js)
 and
-[`features/cph-number/cph-number.e2e.spec.js`](../sets/live-animals/journeys/linear/features/cph-number/cph-number.e2e.spec.js)
+[`journeys/linear/features/cph-number/cph-number.e2e.spec.js`](../journeys/linear/features/cph-number/cph-number.e2e.spec.js)
 when the field normalises input before it saves.
 
 ## 1. Add the obligation and run the focused tests
 
-Add the obligation to the matching file under `model/obligations/sections/`.
+Add the obligation to the matching file under `obligations/sections/`.
 Give it:
 
 - a new UUID `id`
@@ -39,17 +39,17 @@ Give it:
   supplies the status
 
 Use `within` for a collection member. Use a helper from
-[`model/obligations/helpers/index.js`](../model/obligations/helpers/index.js)
+[`src/server/app/model/obligations/helpers/index.js`](../../../model/obligations/helpers/index.js)
 when another answer controls scope or mandate. The helper metadata must name
 its dependency.
 
 Import and export the object in
-[`model/obligations/obligations.js`](../model/obligations/obligations.js), then
+[`obligations/index.js`](../obligations/index.js), then
 add it to the `obligations` array.
 
 Do not put a label, title, hint, legend, option or other display logic in the
 model. Obligations and domain code stay copy-free. Copy belongs to the feature.
-[`obligation-purity.js`](../obligation-purity.js) enforces this at boot.
+[`src/server/app/obligation-purity.js`](../../../obligation-purity.js) enforces this at boot.
 
 Run:
 
@@ -57,10 +57,11 @@ Run:
 npm run test:live-animals
 ```
 
-At this point the fulfilment registry fails because the new leaf has no
-binding. This is expected. Continue to step 2. Model coverage can also report a
-duplicate UUID, duplicate name, invalid `within` chain or missing gate
-dependency. Fix those errors in the obligation declaration.
+The Vitest setup registers the manifest and feature bindings before it runs a test.
+At this point registration fails because the new leaf has no binding. This is
+expected. Continue to step 2. Once registration can finish, the set's model tests
+can also report a duplicate UUID, duplicate name, invalid `within` chain or missing
+gate dependency.
 
 ## 2. Bind the field to canonical persistence
 
@@ -73,12 +74,12 @@ Add the field to the owning feature's `evaluation.js`.
   cleaned page value.
 
 If this is the feature's first binding file, import its `evaluationBindings`
-in [`features/evaluation.js`](../sets/live-animals/journeys/linear/features/evaluation.js) and add it to
+in [`journeys/linear/features/evaluation.js`](../journeys/linear/features/evaluation.js) and add it to
 `featureEvaluationBindings`.
 
-Run `npm run test:live-animals` again. The fulfilment-registry error should be
-gone. The boot-time `buildDispatch` check now reports the new obligation as
-collected by no page. Step 3 satisfies that check.
+Run `npm run test:live-animals` again. The fulfilment-registry error should be gone.
+Tests that build dispatch now report the new obligation as collected by no page.
+Step 3 satisfies that check.
 
 ## 3. Collect, validate and save the field
 
@@ -90,7 +91,7 @@ Keep the controller in this order:
 1. GET calls `state.get()` once and prefills the field from `answers`.
 2. POST reads raw values from `request.payload`.
 3. POST validates with the factories from
-   [`lib/validate/index.js`](../lib/validate/index.js).
+   [`src/server/app/lib/validate/index.js`](../../../lib/validate/index.js).
 4. An invalid POST renders the user's raw values and returns 400.
 5. A valid POST commits the cleaned values with `state.commit()`.
 6. The redirect uses `await kit.nextTarget(request, page, committed.scope)`.
@@ -107,15 +108,18 @@ Wrap the write in `kit.recoverableSave()`. On a marked persistence failure,
 render the same values with `recoverableError: true` and return 500. Let other
 errors throw.
 
-Run `npm run test:live-animals`. `buildDispatch` should now pass. Update the
-existing case for this controller in
-[`contract.test.js`](../contract.test.js): add the field to the valid payload
+Run `npm run test:live-animals`. `buildDispatch` should now pass. Update the existing
+case for this controller in
+[`src/server/app/contract.test.js`](../../../contract.test.js): add the field to the valid payload
 and seed any answer that puts it in scope. The test expects a valid POST to
 commit exactly the committable names in `meta.collects`.
 
 The contract cases are a manual list. A new field on a listed controller often
 makes its case fail. A controller that is not listed is not detected
 automatically, so add a case rather than relying on a red test.
+
+Run `npm test` after updating the case. `npm run test:live-animals` does not run
+this L1 contract test.
 
 ## 4. Add copy and markup
 
@@ -129,10 +133,10 @@ error-summary link target `#<fieldName>` and move focus to the control.
 
 Update the feature's `copy/copy.test.js`. The automatic convention checks are:
 
-- [`copy-convention.test.js`](../copy-convention.test.js), which requires every
+- [`src/server/app/copy-convention.test.js`](../../../copy-convention.test.js), which requires every
   feature with a template to own `copy/copy.en.js`, `copy/copy.cy.js` and
   `copy/copy.test.js`, and requires valid copy leaves
-- [`copy-parity.test.js`](../copy-parity.test.js), which requires English and
+- [`src/server/app/copy-parity.test.js`](../../../copy-parity.test.js), which requires English and
   Welsh bundles to have the same shape
 
 For a field in an existing feature, parity is normally the first copy check to
@@ -142,7 +146,7 @@ copy test.
 ## 5. Add the check-answers row
 
 Add the row to the matching card under
-[`features/check-answers/view-model/cards/`](../sets/live-animals/journeys/linear/features/check-answers/view-model/index.js).
+[`journeys/linear/features/check-answers/view-model/cards/`](../journeys/linear/features/check-answers/view-model/index.js).
 Add its label and any displayed value labels to both check-answers copy
 bundles.
 
@@ -152,7 +156,7 @@ service label function when the stored value is a code. Show a conditional row
 only while the same obligation path is in scope.
 
 Extend
-[`features/check-answers/check-answers.e2e.spec.js`](../sets/live-animals/journeys/linear/features/check-answers/check-answers.e2e.spec.js)
+[`journeys/linear/features/check-answers/check-answers.e2e.spec.js`](../journeys/linear/features/check-answers/check-answers.e2e.spec.js)
 to cover the displayed value and Change link.
 
 ## 6. Update downstream persistence when the backend needs the field
@@ -161,9 +165,9 @@ The feature binding is always required. The notification mappers are required
 only when a backend notification projection has a home for the field.
 
 If it does, update the matching module under
-[`services/persistence/records/notification-mapper/`](../services/persistence/records/notification-mapper/index.js)
+[`src/server/app/services/persistence/records/notification-mapper/`](../../../services/persistence/records/notification-mapper/index.js)
 and extend
-[`services/persistence/records/notification-mapper/notification-mapper.test.js`](../services/persistence/records/notification-mapper/notification-mapper.test.js).
+[`src/server/app/services/persistence/records/notification-mapper/notification-mapper.test.js`](../../../services/persistence/records/notification-mapper/notification-mapper.test.js).
 Both Mapper A and Mapper B read canonical fulfilment. Mapper B layers its extra
 fields over Mapper A, so check both outputs before choosing the edit.
 
@@ -175,10 +179,10 @@ an explicit omission assertion. Do not invent a payload property.
 Prefer server-rendered controls. If the page needs a new client bundle:
 
 1. Put its entry module under the feature, following
-   [`features/documents/client/index.js`](../sets/live-animals/journeys/linear/features/documents/client/index.js).
+   [`journeys/linear/features/documents/client/index.js`](../journeys/linear/features/documents/client/index.js).
 2. Add a named `entry` in the repo-root `webpack.config.js`.
 3. Load that entry from the template with `getAssetPath('<entry>.js')`, following
-   [`features/documents/template.njk`](../sets/live-animals/journeys/linear/features/documents/template.njk).
+   [`journeys/linear/features/documents/template.njk`](../journeys/linear/features/documents/template.njk).
 
 Without the webpack entry, the template still renders but the bundle returns a 404. The failure is easy to miss.
 
@@ -200,11 +204,11 @@ those contracts.
 ## Playwright feature test
 
 Keep the spec with the feature. Extend its existing `*.e2e.spec.js`. For a
-multi-page feature, use `features/<feature>/e2e/<page>.e2e.spec.js` as shown by
-[`features/transport/e2e/arrival-transit.e2e.spec.js`](../sets/live-animals/journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js).
+multi-page feature, use `journeys/linear/features/<feature>/e2e/<page>.e2e.spec.js` as shown by
+[`journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js`](../journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js).
 Small single-page features currently keep the spec at the feature root, as
 shown by
-[`features/origin/origin.e2e.spec.js`](../sets/live-animals/journeys/linear/features/origin/origin.e2e.spec.js).
+[`journeys/linear/features/origin/origin.e2e.spec.js`](../journeys/linear/features/origin/origin.e2e.spec.js).
 
 Keep each test independent. Start a new notification for each test. Do not use
 page objects. Use raw Playwright role, label and visible-copy locators. Use
@@ -231,7 +235,7 @@ Add an axe test for both page states the field changes:
 Use `AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa'])` and fail when any
 violation has `impact` equal to `serious` or `critical`. Use the initial and
 error-state examples in
-[`features/origin/origin.e2e.spec.js`](../sets/live-animals/journeys/linear/features/origin/origin.e2e.spec.js).
+[`journeys/linear/features/origin/origin.e2e.spec.js`](../journeys/linear/features/origin/origin.e2e.spec.js).
 Filter a known component false positive only when the exemplar does and the
 same markup proves it applies.
 
