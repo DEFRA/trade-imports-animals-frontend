@@ -2,7 +2,6 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
-  chooseTodayFromDatePicker,
   journeyUrl,
   startNotification,
   unlockSections,
@@ -57,8 +56,38 @@ const expectAxeClean = async (page, name) => {
   ).toEqual([])
 }
 
+const submit = (page) =>
+  page.getByRole('button', { name: 'Save and continue' }).click()
+
+const fillValidArrival = async (page) => {
+  await page.getByLabel(copy.portOfEntry.arrivalDate.label).fill('03/01/2026')
+  await choosePort(page)
+  await page
+    .getByRole('radio', {
+      name: copy.portOfEntry.means.options[values.meansOfTransport]
+    })
+    .check()
+  await page
+    .getByLabel(copy.portOfEntry.identification.label)
+    .fill(values.transportIdentification)
+  await page
+    .getByLabel(copy.portOfEntry.documentReference.label)
+    .fill(values.transportDocumentReference)
+}
+
+const openTransit = async (page) => {
+  await openArrival(page)
+  await page
+    .getByRole('radio', { name: copy.portOfEntry.means.options.ROAD_VEHICLE })
+    .check()
+  await submit(page)
+  await expect(
+    page.getByRole('heading', { name: copy.transitCountries.title })
+  ).toBeVisible()
+}
+
 test.describe('arrival details and transit countries', () => {
-  test('renders captured port options, all feature copy and a working back link', async ({
+  test('renders captured port options and all feature copy', async ({
     page
   }) => {
     await openArrival(page)
@@ -94,79 +123,136 @@ test.describe('arrival details and transit countries', () => {
         label: `${port.name} (${port.code})`
       }))
     )
+  })
 
+  test('arrival back link returns to the overview', async ({ page }) => {
+    await openArrival(page)
     await page.locator('.govuk-back-link').click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
-  test('shows every arrival controller validation rule and preserves values', async ({
+  test('arrival date validation: impossible date links to and focuses the preserved value', async ({
     page
   }) => {
     await openArrival(page)
+    await fillValidArrival(page)
     await page.getByLabel(copy.portOfEntry.arrivalDate.label).fill('31/2/2026')
-    await page
-      .getByLabel(copy.portOfEntry.identification.label)
-      .fill('I'.repeat(59))
-    await page
-      .getByLabel(copy.portOfEntry.documentReference.label)
-      .fill('R'.repeat(59))
+    await submit(page)
+
+    const link = errorLink(page, copy.portOfEntry.errors.arrivalDateInvalid)
+    await expect(link).toBeVisible()
+    await link.click()
+    await expect(
+      page.getByLabel(copy.portOfEntry.arrivalDate.label)
+    ).toBeFocused()
+    await expect(
+      page.getByLabel(copy.portOfEntry.arrivalDate.label)
+    ).toHaveValue('31/2/2026')
+    await expect(page.locator('#portOfEntry')).toHaveValue(values.portOfEntry)
+  })
+
+  test('port validation: out-of-list value links to and focuses the cleared select while preserving other values', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await fillValidArrival(page)
     await page.locator('select#portOfEntry').evaluate((select) => {
       select.add(new Option('Invalid port', 'INVALID'))
       select.value = 'INVALID'
     })
+    await submit(page)
+
+    const link = errorLink(page, validatorDefaults.oneOf)
+    await expect(link).toBeVisible()
+    await link.click()
+    await expect(page.locator('#portOfEntry')).toBeFocused()
+    await expect(page.locator('#portOfEntry')).toHaveValue('')
+    await expect(
+      page.getByLabel(copy.portOfEntry.identification.label)
+    ).toHaveValue(values.transportIdentification)
+  })
+
+  test('means validation: out-of-list value links to and focuses the cleared group while preserving other values', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await fillValidArrival(page)
     await page
       .getByRole('radio', { name: copy.portOfEntry.means.options.AIRPLANE })
       .evaluate((radio) => {
         radio.value = 'INVALID'
         radio.checked = true
       })
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await submit(page)
 
-    for (const message of [
-      copy.portOfEntry.errors.arrivalDateInvalid,
-      copy.portOfEntry.errors.identificationMaxLength,
-      copy.portOfEntry.errors.documentReferenceMaxLength
-    ]) {
-      await expect(errorLink(page, message)).toBeVisible()
-    }
-    await expect(page.locator('#portOfEntry-error')).toContainText(
-      validatorDefaults.oneOf
-    )
-    await expect(page.locator('#meansOfTransport-error')).toContainText(
-      validatorDefaults.oneOf
-    )
+    const link = errorLink(page, validatorDefaults.oneOf)
+    await expect(link).toBeVisible()
+    await link.click()
     await expect(
-      page.getByLabel(copy.portOfEntry.arrivalDate.label)
-    ).toHaveValue('31/2/2026')
+      page.locator('input[name="meansOfTransport"]').first()
+    ).toBeFocused()
+    await expect(
+      page.locator('input[name="meansOfTransport"]:checked')
+    ).toHaveCount(0)
+    await expect(page.locator('#portOfEntry')).toHaveValue(values.portOfEntry)
+  })
+
+  test('transport identification validation: over 58 characters links to and focuses the preserved value', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await fillValidArrival(page)
+    const invalid = 'I'.repeat(59)
+    await page.getByLabel(copy.portOfEntry.identification.label).fill(invalid)
+    await submit(page)
+
+    const link = errorLink(
+      page,
+      copy.portOfEntry.errors.identificationMaxLength
+    )
+    await expect(link).toBeVisible()
+    await link.click()
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
-    ).toHaveValue('I'.repeat(59))
+    ).toBeFocused()
+    await expect(
+      page.getByLabel(copy.portOfEntry.identification.label)
+    ).toHaveValue(invalid)
+    await expect(page.locator('#portOfEntry')).toHaveValue(values.portOfEntry)
+  })
+
+  test('transport document validation: over 58 characters links to and focuses the preserved value', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await fillValidArrival(page)
+    const invalid = 'R'.repeat(59)
+    await page
+      .getByLabel(copy.portOfEntry.documentReference.label)
+      .fill(invalid)
+    await submit(page)
+
+    const link = errorLink(
+      page,
+      copy.portOfEntry.errors.documentReferenceMaxLength
+    )
+    await expect(link).toBeVisible()
+    await link.click()
     await expect(
       page.getByLabel(copy.portOfEntry.documentReference.label)
-    ).toHaveValue('R'.repeat(59))
+    ).toBeFocused()
+    await expect(
+      page.getByLabel(copy.portOfEntry.documentReference.label)
+    ).toHaveValue(invalid)
+    await expect(page.locator('#portOfEntry')).toHaveValue(values.portOfEntry)
   })
 
   test('saves and persists all arrival fields and routes overland transport to transit countries', async ({
     page
   }) => {
     await openArrival(page)
-    const arrivalDate = await chooseTodayFromDatePicker(
-      page,
-      copy.portOfEntry.arrivalDate.label
-    )
-    await choosePort(page)
-    await page
-      .getByRole('radio', {
-        name: copy.portOfEntry.means.options[values.meansOfTransport]
-      })
-      .check()
-    await page
-      .getByLabel(copy.portOfEntry.identification.label)
-      .fill(values.transportIdentification)
-    await page
-      .getByLabel(copy.portOfEntry.documentReference.label)
-      .fill(values.transportDocumentReference)
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await fillValidArrival(page)
+    await submit(page)
 
     await expect(
       page.getByRole('heading', { name: copy.transitCountries.title })
@@ -179,7 +265,7 @@ test.describe('arrival details and transit countries', () => {
     ).toBeVisible()
     await expect(
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
-    ).toHaveValue(arrivalDate)
+    ).toHaveValue('03/01/2026')
     await expect(page.locator('select#portOfEntry')).toHaveValue(
       values.portOfEntry
     )
@@ -196,14 +282,10 @@ test.describe('arrival details and transit countries', () => {
     ).toHaveValue(values.transportDocumentReference)
   })
 
-  test('validates required, invalid and excessive transit-country selections, then saves and persists', async ({
+  test('transit page renders captured country options and feature copy', async ({
     page
   }) => {
-    await openArrival(page)
-    await page
-      .getByRole('radio', { name: copy.portOfEntry.means.options.ROAD_VEHICLE })
-      .check()
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await openTransit(page)
 
     await expect(
       page.getByText(copy.transitCountries.betweenCountries)
@@ -216,23 +298,52 @@ test.describe('arrival details and transit countries', () => {
       .locator('input[name="transitedCountries"]')
       .evaluateAll((items) => items.map((item) => item.value))
     expect(countryCodes).toEqual(countriesOrigin.map(({ code }) => code))
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      errorLink(page, copy.transitCountries.errors.selectAtLeastOne)
-    ).toBeVisible()
+  })
 
+  test('transit validation: no countries links to and focuses the empty checkbox group', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await submit(page)
+
+    const link = errorLink(page, copy.transitCountries.errors.selectAtLeastOne)
+    await expect(link).toBeVisible()
+    await link.click()
+    await expect(
+      page.locator('input[name="transitedCountries"]').first()
+    ).toBeFocused()
+    await expect(
+      page.locator('input[name="transitedCountries"]:checked')
+    ).toHaveCount(0)
+  })
+
+  test('transit validation: out-of-list country links to and focuses the cleared checkbox group', async ({
+    page
+  }) => {
+    await openTransit(page)
     await page
       .getByRole('checkbox', { name: 'France' })
       .evaluate((checkbox) => {
         checkbox.value = 'INVALID'
         checkbox.checked = true
       })
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      errorLink(page, copy.transitCountries.errors.fromList)
-    ).toBeVisible()
+    await submit(page)
 
-    await page.goto(journeyUrl(page, 'transit-countries'))
+    const link = errorLink(page, copy.transitCountries.errors.fromList)
+    await expect(link).toBeVisible()
+    await link.click()
+    await expect(
+      page.locator('input[name="transitedCountries"]').first()
+    ).toBeFocused()
+    await expect(
+      page.locator('input[name="transitedCountries"]:checked')
+    ).toHaveCount(0)
+  })
+
+  test('transit validation: more than 12 countries links to the focused group and preserves selections', async ({
+    page
+  }) => {
+    await openTransit(page)
     const tooMany = countriesOrigin
       .slice(0, MAX_TRANSITED_COUNTRIES + 1)
       .map(({ code }) => code)
@@ -251,18 +362,27 @@ test.describe('arrival details and transit countries', () => {
         form.appendChild(input)
       }
     }, tooMany)
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      errorLink(
-        page,
-        copy.transitCountries.errors.maxCountries(MAX_TRANSITED_COUNTRIES)
-      )
-    ).toBeVisible()
+    await submit(page)
 
-    await page.goto(journeyUrl(page, 'transit-countries'))
+    const link = errorLink(
+      page,
+      copy.transitCountries.errors.maxCountries(MAX_TRANSITED_COUNTRIES)
+    )
+    await expect(link).toBeVisible()
+    await link.click()
+    await expect(
+      page.locator('input[name="transitedCountries"]').first()
+    ).toBeFocused()
+    await expect(
+      page.locator('input[name="transitedCountries"]:checked')
+    ).toHaveCount(MAX_TRANSITED_COUNTRIES + 1)
+  })
+
+  test('saves and persists selected transit countries', async ({ page }) => {
+    await openTransit(page)
     await page.getByRole('checkbox', { name: 'France' }).check()
     await page.getByRole('checkbox', { name: 'Belgium' }).check()
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await submit(page)
     await expect(
       page.getByRole('heading', { name: copy.transporters.legend })
     ).toBeVisible()
@@ -272,21 +392,19 @@ test.describe('arrival details and transit countries', () => {
     await expect(page.getByRole('checkbox', { name: 'Belgium' })).toBeChecked()
   })
 
-  test('arrival and transit pages have no serious or critical axe violations', async ({
+  test('arrival page with date picker has no serious or critical axe violations', async ({
     page
   }) => {
     await openArrival(page)
     await page.getByRole('button', { name: 'Choose date' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
     await expectAxeClean(page, 'Arrival details with date picker open')
-    await page.getByRole('button', { name: 'Close' }).click()
-    await page
-      .getByRole('radio', { name: copy.portOfEntry.means.options.ROAD_VEHICLE })
-      .check()
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(
-      page.getByRole('heading', { name: copy.transitCountries.title })
-    ).toBeVisible()
+  })
+
+  test('transit page has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await openTransit(page)
     await expectAxeClean(page, 'Transit countries')
   })
 })

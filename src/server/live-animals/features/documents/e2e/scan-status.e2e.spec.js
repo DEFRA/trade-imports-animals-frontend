@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test'
 
 import {
-  addDocument,
   startNotification,
   unlockSections
 } from '../../../../../../e2e/live-animals-journey.js'
@@ -18,12 +17,31 @@ const openDocuments = async (page) => {
 const rowFor = (page, reference) =>
   page.locator('.govuk-table__row', { hasText: reference })
 
+const uploadDocument = async (page, document) => {
+  const issued = document.accompanyingDocumentDateOfIssue
+  await page
+    .getByLabel(copy.reference.label)
+    .fill(document.accompanyingDocumentReference)
+  await page
+    .getByLabel(copy.dateOfIssue.label)
+    .fill(`${issued.day}/${issued.month}/${issued.year}`)
+  await page.getByLabel(copy.file.label).setInputFiles({
+    name: document.filename,
+    mimeType: 'application/pdf',
+    buffer: Buffer.from('%PDF-1.4 scan status test')
+  })
+  await page.getByRole('button', { name: copy.addAnother }).click()
+}
+
 test.describe('document scan-status rendering', () => {
+  test.beforeEach(async ({ page }) => {
+    await openDocuments(page)
+  })
+
   test('blocks continue while checking, then renders Safe and allows the journey to continue', async ({
     page
   }) => {
     test.slow()
-    await openDocuments(page)
     const document = {
       accompanyingDocumentReference: 'SCAN-SAFE-0001',
       accompanyingDocumentDateOfIssue: {
@@ -33,7 +51,7 @@ test.describe('document scan-status rendering', () => {
       },
       filename: 'itahc-scan.pdf'
     }
-    await addDocument(page, document)
+    await uploadDocument(page, document)
     const row = rowFor(page, document.accompanyingDocumentReference)
     const statusCell = row.locator('[data-upload-id]')
     await expect(statusCell).toHaveAttribute(
@@ -62,7 +80,6 @@ test.describe('document scan-status rendering', () => {
     page
   }) => {
     test.slow()
-    await openDocuments(page)
     const document = {
       accompanyingDocumentReference: 'SCAN-VIRUS-0001',
       accompanyingDocumentDateOfIssue: {
@@ -72,7 +89,7 @@ test.describe('document scan-status rendering', () => {
       },
       filename: 'virus-invoice.pdf'
     }
-    await addDocument(page, document)
+    await uploadDocument(page, document)
     const row = rowFor(page, document.accompanyingDocumentReference)
     await expect(row).toContainText(copy.scanTags.checking)
     await expect(row).toContainText(copy.scanTags.virusFound)
@@ -104,7 +121,6 @@ test.describe('document scan-status rendering', () => {
     page
   }) => {
     test.slow()
-    await openDocuments(page)
     const settling = {
       accompanyingDocumentReference: 'POLL-SETTLES-0001',
       accompanyingDocumentDateOfIssue: {
@@ -123,8 +139,8 @@ test.describe('document scan-status rendering', () => {
       },
       filename: 'never-scans-invoice.pdf'
     }
-    await addDocument(page, settling)
-    await addDocument(page, stuck)
+    await uploadDocument(page, settling)
+    await uploadDocument(page, stuck)
 
     const settlingRow = rowFor(page, settling.accompanyingDocumentReference)
     const stuckRow = rowFor(page, stuck.accompanyingDocumentReference)

@@ -29,11 +29,13 @@ const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
 
 test.describe('commodity selection', () => {
-  test('renders all eight pairs in commodity groups with grounded copy and a working back link', async ({
+  test.beforeEach(async ({ page }) => {
+    await openSelection(page)
+  })
+
+  test('renders all eight pairs in commodity groups with grounded copy', async ({
     page
   }) => {
-    await openSelection(page)
-
     await expect(page.getByText(copy.search.inset)).toBeVisible()
     for (const [legend, species] of expectedGroups) {
       const group = page.getByRole('group', { name: legend })
@@ -50,27 +52,29 @@ test.describe('commodity selection', () => {
     await expect(
       page.getByText(copy.search.help.summary, { exact: true })
     ).toBeVisible()
+  })
 
+  test('back link returns to the overview', async ({ page }) => {
     await page.locator('.govuk-back-link').click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
-  test('requires at least one pair and keeps the full checklist available', async ({
+  test('validation: no commodity links to and focuses the first checkbox while keeping the checklist', async ({
     page
   }) => {
-    await openSelection(page)
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
-    await expect(
-      errorLink(page, copy.search.errors.selectCommodity)
-    ).toBeVisible()
+    const link = errorLink(page, copy.search.errors.selectCommodity)
+    await expect(link).toBeVisible()
+    await link.click()
+    await expect(page.getByRole('checkbox').first()).toBeFocused()
+    await expect(page.getByRole('checkbox', { checked: true })).toHaveCount(0)
     await expect(page.getByRole('checkbox')).toHaveCount(8)
   })
 
   test('saves multiple pairs in canonical order and persists checked state', async ({
     page
   }) => {
-    await openSelection(page)
     await selectSpecies(page, ['Felis catus', 'Bos taurus', 'Bison bison'])
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
@@ -96,7 +100,6 @@ test.describe('commodity selection', () => {
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
-    await openSelection(page)
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()
