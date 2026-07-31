@@ -18,8 +18,9 @@ session ports with the helpers in `engine/test-support.js`.
 
 Shared contract tests cover seams that one feature test cannot own:
 
-- `contract.test.js` checks that each controller commits exactly its
-  `meta.collects`
+- `contract.test.js` checks that each controller listed in its manual case
+  table commits exactly its `meta.collects`; add a case for every new
+  collecting controller
 - `copy-parity.test.js` checks English and Welsh copy bundle shape
 - `bridge/fulfilment-registry.test.js` checks binding ownership
 - model coverage tests check IDs, names, gates and reachability
@@ -54,7 +55,7 @@ The project uses Desktop Chrome. It records video and trace for every run.
 Run it with:
 
 ```bash
-npm run test:features
+PORT=3050 npm run test:features
 ```
 
 It finds `*.e2e.spec.js` under `features/`. A small feature keeps the spec next
@@ -80,7 +81,11 @@ Reuse `e2e/live-animals-journey.js`. It provides:
 Use role, label and visible-copy locators. Import feature copy or service
 options when the assertion should track the same public source as the page.
 Give each test its own notification so the fully parallel runner stays
-isolated.
+isolated. Do not use page objects. Use locator assertions and auto-waiting, or
+`expect.poll` for state without a locator. Do not use sleeps.
+
+For every new page, add axe checks for the initial render and the validation
+error state. Fail on serious or critical violations.
 
 ## Boot guards
 

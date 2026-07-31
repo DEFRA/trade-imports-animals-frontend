@@ -43,11 +43,10 @@ Run the journey's Playwright E2E suite:
 npm run test:e2e
 ```
 
-Inspect the model without a server — print derived scope, wipes, section statuses
-and submit readiness for an editable fixture:
+Run the co-located feature Playwright suite:
 
 ```
-npm run dump:live-animals
+PORT=3050 npm run test:features
 ```
 
 ## Where to start
@@ -73,8 +72,9 @@ Then pick the topic you need from the table below.
 | [services.md](services.md)                 | The reference-data (MDM) and persistence services, stub-vs-real selection, and the `LIVE_ANIMALS_MODE` switch                          |
 | [persistence.md](persistence.md)           | The session and records ports, the two notification mappers, and why submit is a status flip                                           |
 | [validation.md](validation.md)             | In-controller field validation via `lib/validate/`, including address field completeness                                               |
-| [add-a-field.md](add-a-field.md)           | The current recipe for model, binding, controller, copy, check-answers, status and tests when adding a field                           |
-| [add-a-page.md](add-a-page.md)             | The current recipe for a feature page, including registration, navigation, recoverable writes and colocated tests                      |
+| [add-a-field.md](add-a-field.md)           | The recipe for model, binding, controller, copy, check-answers, persistence and tests when adding a field                              |
+| [add-a-page.md](add-a-page.md)             | The recipe for a feature page, including registration, navigation, persistence, recoverable writes and co-located tests                |
+| [add-a-section.md](add-a-section.md)       | The recipe for a multi-page feature group, its flow section and its hub task row                                                       |
 | [add-a-collection.md](add-a-collection.md) | Numbered steps to add a repeating collection, including a per-entry conditional field                                                  |
 | [cardinality.md](cardinality.md)           | Collection floors, caps, alternatives and exact-count rules, including the value-linked identifier cap                                 |
 | [testing.md](testing.md)                   | Vitest boundaries, the journey and feature Playwright projects, shared helpers and boot guards                                         |

@@ -40,7 +40,8 @@ The model is plain data plus pure functions. It has three parts:
 - **State queries** — [`model/obligations/state-queries.js`](../model/obligations/state-queries.js)
   holds small pure functions over evaluator output: `effectiveStatus` (the
   per-record mandate) and `groupInvariantErrors` (the five `requires` rule
-  shapes). The 5-way status classification lives in the bridge (`status.js`).
+  shapes). The 5-way status classification lives in the bridge
+  (`bridge/status/index.js`).
 - **Analysis** — [`model/analysis/reachability/`](../model/analysis/reachability/index.js)
   proves every obligation's scope gate can fire. See [analysis.md](analysis.md).
 
@@ -69,7 +70,7 @@ between the two.
   fulfilment back to nested answers, including composite-key ↔ positional-path
   conversion.
 - [`bridge/evaluation.js`](../bridge/evaluation.js) owns the shared evaluator;
-  `scope.js`, `status.js`, `purge.js`, and `collection-complete.js` project one
+  `scope.js`, `status/index.js`, `purge.js`, and `collection-complete.js` project one
   evaluation into the facts the pages consume.
 
 Composite ids describe positions in one snapshot, not stable record identity.
@@ -121,18 +122,20 @@ request projections. There is no `setScope` and no per-key persistence delete.
 
 ### features/ — the pages
 
-Each feature under [`features/`](../features/) is a vertical slice. A page has a
+Each feature registered in [`features/index.js`](../features/index.js) is a
+vertical slice. A page has a
 `page.js` (id and slug), a `controller.js` that exports `meta` (the page plus its
 `collects` list), GET/POST handlers and `routes` (via `kit.pageRoutes`), and a
 `template.njk`. Multi-page features (commodities, transport, addresses) hold
 several controller/template pairs. [`features/index.js`](../features/index.js)
 aggregates `dispatchPages` (the `meta`s that feed `buildDispatch`) and
-`allRoutes`. Validation is in-controller, via [`lib/validate/`](../lib/validate/).
+`allRoutes`. Validation is in-controller, via
+[`lib/validate/index.js`](../lib/validate/index.js).
 See [features.md](features.md) and [validation.md](validation.md).
 
 ### services/ — reference data and persistence
 
-Each service under [`services/`](../services/) supplies option lists from the
+The services selected through [`services/mode.js`](../services/mode.js) supply option lists from the
 reference-data (MDM) services — `countries`, `ports`, `commodities`,
 `document-types`, `certification-purposes`, `import-reason-purpose`,
 `transport-reference` — plus `address-book`, `document-uploads`, and the

@@ -172,7 +172,7 @@ evaluator state is kept between calls; each query stands alone.
 
 The 5-way task and section status (`not-applicable` / `optional` /
 `not-started` / `in-progress` / `fulfilled`) is classified in the bridge —
-`status.js` below — from these queries plus the shared non-blank completeness
+`bridge/status/index.js` below — from these queries plus the shared non-blank completeness
 rule.
 `submitted` is a user-driven event owned by the journey engine, not a derived
 status.
@@ -198,7 +198,7 @@ other bridge modules project that state into the shapes controllers consume.
   id, group-node key, positional leaf) and adds the flow-only obligations the
   obligation model does not carry (`importType`, `declaration`), so their pages
   stay reachable. `readyForCheckYourAnswers` comes from `readiness-config.js`.
-- **`status.js`** — `statusOf(parts, answers, inScope, evaluation)` is the sole
+- **`status/index.js`** — `statusOf(parts, answers, inScope, evaluation)` is the sole
   runtime source of the 5-way task and section status. It projects the manifest
   into a structural registry shape (`toStructural`) and reads completeness from
   the evaluator state — per-record scope from the implication's `records`,

@@ -146,8 +146,8 @@ canonical fulfilment. There is no runtime mapper selector and no reverse mapper:
 
 - **Mapper A** (`fulfilmentToNotification`) reproduces exactly what the
   production skeleton frontend persists and is written to `/notifications`.
-- **Mapper B** (`answersToTargetNotification`, a legacy name for a canonical
-  input) is Mapper A plus the additional durable fields and is written to
+- **Mapper B** (`answersToTargetNotification`) accepts canonical input, adds
+  the additional durable fields to Mapper A and is written to
   `/proposed-notifications`.
 
 The store is line-per-species: a commodity line is one commodity code
@@ -162,8 +162,8 @@ identity of every commodity group or every animal identifier. Mapper B adds
 per-group `commodityCode`, full per-species `animalIdentifiers`, typed
 documents, and the other projection fields. This loss never affects resume
 because both shapes are downstream views; the forward directions are pinned by
-`skeleton-equivalence.test.js` and
-`notification-mapper/notification-mapper.test.js`.
+`services/persistence/records/mapper-a-contract.test.js` and
+`services/persistence/records/notification-mapper/notification-mapper.test.js`.
 
 ## journeyId lifecycle
 

@@ -90,7 +90,7 @@ order:
 
 Controllers own their validation. They compose a field→validator schema
 from `lib/validate/` (`compose`, `oneOf`, `requiredOneOf`, `maxText`,
-`pattern`, `dateParts` and so on) and run `validate(fields, payload)`.
+`pattern`, `dateText` and so on) and run `validate(fields, payload)`.
 The state layer never sees a schema. This page-level validation shapes
 GDS field errors and is separate from the model's value-legality
 predicates (see [validation.md](validation.md)).

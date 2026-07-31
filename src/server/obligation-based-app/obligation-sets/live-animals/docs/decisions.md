@@ -8,13 +8,15 @@ start at the [index](README.md).
 The prototype is a Hapi plugin ([`routes.js`](../routes.js) →
 `liveAnimals`) built in three layers plus a seam:
 
-- **model** ([`model/`](../model/)) — identity, scope and status derivation.
+- **model** ([`model/obligations/obligations.js`](../model/obligations/obligations.js)) — identity, scope and status derivation.
   Pure, no Hapi, no templates.
-- **flow** ([`flow/`](../flow/)) — sections, pages, dispatch and gates.
-- **frontend** ([`features/`](../features/), [`shared/`](../shared/),
-  [`engine/`](../engine/), [`services/`](../services/)) — page-owned
+- **flow** ([`flow/flow.js`](../flow/flow.js)) — sections, pages, dispatch and gates.
+- **frontend** ([`features/index.js`](../features/index.js),
+  [`shared/kit.js`](../shared/kit.js),
+  [`engine/index.js`](../engine/index.js),
+  [`services/mode.js`](../services/mode.js)) — page-owned
   controllers, templates and the session/records/MDM plumbing.
-- **bridge** ([`bridge/`](../bridge/)) — the single door
+- **bridge** ([`bridge/evaluation.js`](../bridge/evaluation.js)) — the single door
   between the model and the frontend.
 
 The layers depend in one direction only: flow and frontend read the
@@ -27,7 +29,8 @@ model's facts downward; the model imports neither.
 ### Principle
 
 Each page is an ordinary Hapi GET/POST pair with its own template, copy,
-validation and view-model, under [`features/<name>/`](../features/). A
+validation and view-model, registered through
+[`features/index.js`](../features/index.js). A
 controller declares what obligations it `collects` on its exported `meta`;
 boot inverts those declarations into a dispatch index
 ([`flow/dispatch.js`](../flow/dispatch.js)). The model stays a thin
@@ -108,9 +111,10 @@ without a framework, at that price.
 Scope, wipe, completeness and status are questions about **data**, and
 they live in the model and its state queries
 ([`model/obligations/state-queries.js`](../model/obligations/state-queries.js)).
-Page sequence,
-gating and the section roll-up are questions about **journey shape**, and
-they live in the flow ([`flow/`](../flow/flow.js)). The flow reads the
+Page sequence, gating and the task-row or section roll-ups are questions about
+**journey shape**. They live in [`flow/flow.js`](../flow/flow.js),
+[`flow/task-rows.js`](../flow/task-rows.js) and
+[`flow/section-status.js`](../flow/section-status.js). The flow reads the
 model's facts downward; the model imports zero flow modules.
 
 Two placements follow:
@@ -131,7 +135,8 @@ One dependency direction keeps the model pure and independently testable,
 and keeps every flow decision a pure read of already-computed facts. The
 section-status roll-up sits in
 [`flow/section-status.js`](../flow/section-status.js) rather than the
-model for the same reason: it needs the section list.
+model for the same reason: submit readiness needs the task-row list and the
+dispatch index.
 
 ### Accepted costs
 
@@ -157,12 +162,10 @@ the `review` section's submit-readiness gate
 ### Why
 
 A hand-written gate that restates `inScope.has('<key>')` couples to the
-model by a raw string. When that string drifts, a section's hub row is
-rendered when it should not exist, or the section stays owed with no hub
-row to reach it and submission deadlocks — submit readiness iterates
-section statuses and ignores gates. Derivation makes "gate passes exactly
-when section status is not Not applicable" true by construction rather than
-by discipline, pinned over every enumerable scope state in
+model by a raw string. When that string drifts, a conditional task row can be
+shown when it should not exist, or a page can become unreachable while its
+obligation remains owed. Derivation ties reachability to the same `collects`
+source used for status. This is pinned over every enumerable scope state in
 [`flow/gates.test.js`](../flow/gates.test.js).
 
 `readyForCheckYourAnswers` is why the gate mechanism cannot be removed
@@ -231,7 +234,8 @@ any display key (`label`, `title`, `titleKey`, `hint`, `legend`,
 The split of responsibilities:
 
 - **Value options come from the MDM services.** Controllers use the
-  reference-data services under [`services/`](../services/) (countries,
+  reference-data services selected through
+  [`services/mode.js`](../services/mode.js) (countries,
   ports, commodities, document types, certification purposes, import
   reasons, transport reference) for both rendered options and membership
   validation.
@@ -269,8 +273,8 @@ model would re-couple the seams this principle separates.
 The durable record and the model use one flat canonical fulfilment map keyed by
 obligation UUID. Controllers and templates use a request-local nested answers
 projection (`answers.commodityLines[0].animalIdentifiers[1]…`) and never touch
-the evaluator directly. They reach it through the bridge modules under
-[`bridge/`](../bridge/):
+the evaluator directly. They reach it through the bridge modules assembled by
+[`bridge/evaluation.js`](../bridge/evaluation.js):
 
 - [`fulfilment-bindings.js`](../bridge/fulfilment-bindings.js) and the feature
   `evaluation.js` files own answer-field → UUID mappings;

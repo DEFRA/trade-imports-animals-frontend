@@ -8,10 +8,10 @@ including a field that applies to only some instances.
 
 Three live collections show the shape:
 
-- [`features/documents/`](../features/documents/) — a top-level collection as a
+- [`features/documents/controller.js`](../features/documents/controller.js) — a top-level collection as a
   single-page add-another loop: the entry form and the read-back table sit on
   one page.
-- [`features/commodities/`](../features/commodities/) — a top-level collection
+- [`features/commodities/evaluation.js`](../features/commodities/evaluation.js) — a top-level collection
   built as a two-page batch: a search page that reconciles the selection, and a
   consignment-details page that edits every line's quantities in place. This
   collection also carries a per-instance conditional field and a collection
@@ -25,8 +25,8 @@ Every snippet below traces to one of them.
 ## 1. Declare the group and its members in the manifest
 
 A collection is a **group obligation** plus the member obligations that point
-at it. Put both in the matching file under
-[`model/obligations/sections/`](../model/obligations/sections/) — commodity
+at it. Put both in the matching section module exported by
+[`model/obligations/obligations.js`](../model/obligations/obligations.js) — commodity
 lines belong in `commodities/lines.js`, animal identifiers in
 `commodities/identifiers.js`, and documents in `documents.js`. Import and
 re-export every new obligation from
