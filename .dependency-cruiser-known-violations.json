@@ -1,8 +1,8 @@
 [
   {
     "type": "dependency",
-    "from": "src/server/live-animals/bridge/readiness-config.js",
-    "to": "src/server/live-animals/flow/section-status.js",
+    "from": "src/server/obligation-based-app/obligation-sets/live-animals/bridge/readiness-config.js",
+    "to": "src/server/obligation-based-app/obligation-sets/live-animals/flow/section-status.js",
     "rule": {
       "severity": "error",
       "name": "bridge-no-up"

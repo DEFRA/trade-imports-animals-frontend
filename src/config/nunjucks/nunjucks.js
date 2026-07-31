@@ -14,7 +14,8 @@ const nunjucksEnvironment = nunjucks.configure(
     'node_modules/@ministryofjustice/frontend/',
     path.resolve(dirname, '../../server/common/templates'),
     path.resolve(dirname, '../../server/common/components'),
-    path.resolve(dirname, '../../server')
+    path.resolve(dirname, '../../server'),
+    path.resolve(dirname, '../../server/obligation-based-app/obligation-sets')
   ],
   {
     autoescape: true,
@@ -41,7 +42,7 @@ export const nunjucksConfig = {
       environment: nunjucksEnvironment
     },
     relativeTo: path.resolve(dirname, '../..'),
-    path: ['server'],
+    path: ['server', 'server/obligation-based-app/obligation-sets'],
     isCached: config.get('isProduction'),
     context
   }

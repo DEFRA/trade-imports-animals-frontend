@@ -4,7 +4,7 @@ import { health } from './health/index.js'
 import { signout } from './signout/index.js'
 import { serveStaticFiles } from './common/helpers/serve-static-files.js'
 import { config } from '../config/config.js'
-import { liveAnimals } from './live-animals/routes.js'
+import { liveAnimals } from './obligation-based-app/obligation-sets/live-animals/routes.js'
 
 export const router = {
   plugin: {

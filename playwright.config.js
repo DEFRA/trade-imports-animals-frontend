@@ -41,7 +41,8 @@ export default defineConfig({
     },
     {
       name: 'features',
-      testDir: './src/server/live-animals/features',
+      testDir:
+        './src/server/obligation-based-app/obligation-sets/live-animals/features',
       testMatch: '**/*.e2e.spec.js',
       use: {
         ...devices['Desktop Chrome'],

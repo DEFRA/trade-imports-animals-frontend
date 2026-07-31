@@ -1,5 +1,5 @@
 import { statusCodes } from '../constants/status-codes.js'
-import { base } from '../../live-animals/shared/kit.js'
+import { base } from '../../obligation-based-app/obligation-sets/live-animals/shared/kit.js'
 
 function statusCodeMessage(statusCode) {
   switch (statusCode) {

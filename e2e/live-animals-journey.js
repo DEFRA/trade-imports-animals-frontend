@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { expect } from '@playwright/test'
 
-import { COUNTRY_LABELS } from '../src/server/live-animals/services/countries/stub.js'
-import { PORTS } from '../src/server/live-animals/services/ports/stub.js'
-import { copy as transportCopy } from '../src/server/live-animals/features/transport/copy/copy.en.js'
+import { COUNTRY_LABELS } from '../src/server/obligation-based-app/obligation-sets/live-animals/services/countries/stub.js'
+import { PORTS } from '../src/server/obligation-based-app/obligation-sets/live-animals/services/ports/stub.js'
+import { copy as transportCopy } from '../src/server/obligation-based-app/obligation-sets/live-animals/features/transport/copy/copy.en.js'
 
 export const BASE = ''
 
@@ -62,7 +62,7 @@ export const chooseTodayFromDatePicker = async (page, label) => {
 export const { values } = JSON.parse(
   readFileSync(
     new URL(
-      '../src/server/live-animals/flow/fixtures/happy-path.json',
+      '../src/server/obligation-based-app/obligation-sets/live-animals/flow/fixtures/happy-path.json',
       import.meta.url
     ),
     'utf8'

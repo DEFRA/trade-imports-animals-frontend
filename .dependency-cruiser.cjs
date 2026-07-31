@@ -1,5 +1,6 @@
 // .dependency-cruiser.cjs
-// Machine-enforced layered architecture for src/server/live-animals.
+// Machine-enforced layered architecture for
+// src/server/obligation-based-app/obligation-sets/live-animals.
 //
 //   Layers, low -> high:   model < bridge < engine < flow < (features | analysis | shared/kit)
 //   All production imports must point DOWN.
@@ -8,7 +9,7 @@
 // sanctioned/deferred edges are grandfathered in .dependency-cruiser-known-violations.json via
 // --ignore-known, which pins both endpoints of each edge. Only no-orphans stays advisory (warn).
 
-const LA = 'src/server/live-animals'
+const LA = 'src/server/obligation-based-app/obligation-sets/live-animals'
 
 module.exports = {
   forbidden: [

@@ -4,7 +4,7 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=DEFRA_trade-imports-animals-frontend&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=DEFRA_trade-imports-animals-frontend)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=DEFRA_trade-imports-animals-frontend&metric=coverage)](https://sonarcloud.io/summary/new_code?id=DEFRA_trade-imports-animals-frontend)
 
-The live-animals import notification journey: a pages-as-spine web journey over a thin declarative obligation model and a central pure engine. Documentation: [live-animals documentation](src/server/live-animals/docs/README.md).
+The live-animals import notification journey: a pages-as-spine web journey over a thin declarative obligation model and a central pure engine. Documentation: [live-animals documentation](src/server/obligation-based-app/obligation-sets/live-animals/docs/README.md).
 
 Run its unit suite from the frontend repo root: `npm run test:live-animals`.
 
@@ -187,7 +187,7 @@ npm run lighthouse
 ```
 
 The URL list, score floors and contribution steps are in the
-[Lighthouse guide](src/server/live-animals/docs/lighthouse.md).
+[Lighthouse guide](src/server/obligation-based-app/obligation-sets/live-animals/docs/lighthouse.md).
 
 ### SonarCloud
 

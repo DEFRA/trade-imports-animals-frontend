@@ -24,7 +24,8 @@ export default {
       import: ['./javascripts/application.js', './stylesheets/application.scss']
     },
     documents: {
-      import: '../server/live-animals/features/documents/client/index.js'
+      import:
+        '../server/obligation-based-app/obligation-sets/live-animals/features/documents/client/index.js'
     }
   },
   experiments: {

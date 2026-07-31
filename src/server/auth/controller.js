@@ -3,7 +3,7 @@ import { validateState } from '../../auth/state.js'
 import { verifyToken } from '../../auth/verify-token.js'
 import { getPermissions } from '../../auth/get-permissions.js'
 import { getSafeRedirect } from '../../auth/get-safe-redirect.js'
-import { base } from '../live-animals/shared/kit.js'
+import { base } from '../obligation-based-app/obligation-sets/live-animals/shared/kit.js'
 
 export const authController = {
   signin: {
