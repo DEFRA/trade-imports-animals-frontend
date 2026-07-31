@@ -1,130 +1,164 @@
-// .dependency-cruiser.cjs
-// Machine-enforced layered architecture for
-// src/server/obligation-based-app/obligation-sets/live-animals.
+// Machine-enforced L1-L4 architecture for src/server/app.
 //
-//   Layers, low -> high:   model < bridge < engine < flow < (features | analysis | shared/kit)
-//   All production imports must point DOWN.
-//
-// HARD GATE: the layer rules are severity:'error' — a new up-edge fails lint (and CI). The
-// sanctioned/deferred edges are grandfathered in .dependency-cruiser-known-violations.json via
-// --ignore-known, which pins both endpoints of each edge. Only no-orphans stays advisory (warn).
+//   L1: app root                         composition and registry
+//   L2: engine/model/bridge/flow/...     generic, set-agnostic platform
+//   L3: sets/<set>/obligations           set-owned data
+//   L4: sets/<set>/journeys/<journey>    journey-owned UI and topology
 
-const LA = 'src/server/obligation-based-app/obligation-sets/live-animals'
+const APP = 'src/server/app'
 
 module.exports = {
   forbidden: [
     {
+      name: 'no-l2-to-sets',
+      comment:
+        'Production L2 is set-agnostic. Tests may compose real set fixtures, but every ' +
+        'production dependency into sets/** is forbidden.',
+      severity: 'error',
+      from: {
+        path: `^${APP}/(engine|model|bridge|flow|services|lib|shared|analysis)/`,
+        pathNot: '\\.test\\.js$'
+      },
+      to: { path: `^${APP}/sets/` }
+    },
+    {
+      name: 'routes-is-the-gateway',
+      comment:
+        'routes.js is the sole L1 composition point allowed to import sets/** from outside a set.',
+      severity: 'error',
+      from: {
+        path: `^${APP}/`,
+        pathNot: [`^${APP}/sets/`, `^${APP}/routes\\.js$`, '\\.test\\.js$']
+      },
+      to: { path: `^${APP}/sets/` }
+    },
+    {
+      name: 'obligations-never-journeys',
+      comment:
+        'L3 obligation data must remain independent of every L4 journey implementation.',
+      severity: 'error',
+      from: { path: `^${APP}/sets/[^/]+/obligations/` },
+      to: { path: `^${APP}/sets/[^/]+/journeys/` }
+    },
+    {
+      name: 'journey-isolation',
+      comment:
+        'A journey may use its own set, but cannot import a sibling journey implementation.',
+      severity: 'error',
+      from: { path: `^${APP}/sets/([^/]+)/journeys/([^/]+)/` },
+      to: {
+        path: `^${APP}/sets/$1/journeys/`,
+        pathNot: `^${APP}/sets/$1/journeys/$2/`
+      }
+    },
+    {
+      name: 'set-isolation',
+      comment:
+        'A set is self-contained and cannot depend on another set; capture groups keep this future-proof.',
+      severity: 'error',
+      from: { path: `^${APP}/sets/([^/]+)/` },
+      to: {
+        path: `^${APP}/sets/`,
+        pathNot: `^${APP}/sets/$1/`
+      }
+    },
+    {
+      name: 'engine-purity',
+      comment:
+        'The engine owns abstract ports; routes.js injects services implementations at boot.',
+      severity: 'error',
+      from: { path: `^${APP}/engine/` },
+      to: { path: `^${APP}/services/` }
+    },
+    {
+      name: 'sets-not-l1',
+      comment:
+        'Sets consume L2 APIs, never L1 composition modules or root filesystem convention tests.',
+      severity: 'error',
+      from: { path: `^${APP}/sets/` },
+      to: {
+        path: [
+          `^${APP}/(routes|obligation-purity)\\.js$`,
+          `^${APP}/(copy-convention|copy-parity)\\.test\\.js$`
+        ]
+      }
+    },
+    {
       name: 'model-import-boundary',
       comment:
-        'model/ is the pure data core. It may resolve ONLY to intra-model paths or a ' +
-        'services/<name>/index.js barrel. Subsumes obligation-purity.js ' +
-        'assertModelImportBoundary: bans higher layers, lib/shared/config, and (because ' +
-        'node_modules/node: nodes stay in the graph via doNotFollow) any npm/node-builtin import.',
+        'The pure model resolves only within model/ or through a services/<name>/index.js barrel.',
       severity: 'error',
-      from: { path: `^${LA}/model/` },
+      from: { path: `^${APP}/model/` },
       to: {
-        pathNot: [`^${LA}/model/`, `^${LA}/services/[^/]+/index\\.js$`]
+        pathNot: [`^${APP}/model/`, `^${APP}/services/[^/]+/index\\.js$`]
       }
     },
     {
       name: 'bridge-no-up',
       comment:
-        'bridge/ is a pure synchronous projection over the model. It must not import engine, ' +
-        'flow, features, analysis or shared/kit — EXCEPT features/evaluation.js, the aggregated ' +
-        'feature binding registry that bridge/fulfilment-registry.js reads (features register ' +
-        'their fulfilment bindings; the registry consumes the aggregate). The pathNot sanctions ' +
-        'that one target. The readiness edge (bridge/readiness-config.js -> flow/section-status.js) ' +
-        'stays grandfathered in the baseline — pinned, not blanket-allowed.',
+        'Bridge is a synchronous projection over model and must not reach up into runtime or flow layers.',
       severity: 'error',
-      from: { path: `^${LA}/bridge/` },
+      from: { path: `^${APP}/bridge/` },
       to: {
-        path: [
-          `^${LA}/(engine|flow|features|analysis)/`,
-          `^${LA}/shared/kit\\.js$`
-        ],
-        pathNot: `^${LA}/features/evaluation\\.js$`
+        path: [`^${APP}/(engine|flow|analysis)/`, `^${APP}/shared/kit\\.js$`]
       }
     },
     {
       name: 'engine-no-up',
       comment:
-        'engine/ is the stateful async runtime. It must not import flow, features, analysis or ' +
-        'shared/kit. Engine reaches the model only through bridge and has zero up-edge (the ' +
-        'readiness seam now lives in bridge). Kept strict, no exceptions.',
+        'Engine is the stateful runtime and cannot depend on flow, analysis, or the journey-facing kit.',
       severity: 'error',
-      from: { path: `^${LA}/engine/` },
+      from: { path: `^${APP}/engine/` },
       to: {
-        path: [`^${LA}/(flow|features|analysis)/`, `^${LA}/shared/kit\\.js$`]
+        path: [`^${APP}/(flow|analysis)/`, `^${APP}/shared/kit\\.js$`]
       }
     },
     {
       name: 'flow-no-up',
       comment:
-        'flow/ is static journey topology. It must not import features, analysis or shared/kit — ' +
-        'EXCEPT the features/*/page.js identity leaves, which flow legitimately imports to build ' +
-        'the section / task-row / run / entry topology. That is the intentional "pages are the ' +
-        'spine" design documented in decisions.md: each feature owns its page.js and flow reads ' +
-        'those leaves. The pathNot sanctions exactly that edge — a flow -> features controller or ' +
-        'template still fails.',
+        'Generic flow algorithms cannot depend on analysis or the journey-facing shared kit.',
       severity: 'error',
-      from: { path: `^${LA}/flow/` },
+      from: { path: `^${APP}/flow/` },
       to: {
-        path: [`^${LA}/(features|analysis)/`, `^${LA}/shared/kit\\.js$`],
-        pathNot: `^${LA}/features/[^/]+/page\\.js$`
+        path: [`^${APP}/analysis/`, `^${APP}/shared/kit\\.js$`]
       }
     },
     {
       name: 'model-behaviour-bridge-only',
       comment:
-        'Only bridge/ may import the model BEHAVIOUR surface (evaluator + state-queries). The ' +
-        'obligation MANIFEST is shared read-only vocabulary many layers import, so this targets ' +
-        'model/obligations/(evaluator|state-queries).js specifically. Clean today (only bridge/*).',
+        'Only model itself and bridge may import evaluator and state-query behaviour surfaces.',
       severity: 'error',
-      from: { pathNot: [`^${LA}/bridge/`, `^${LA}/model/`] },
+      from: {
+        path: `^${APP}/`,
+        pathNot: [`^${APP}/bridge/`, `^${APP}/model/`, '\\.test\\.js$']
+      },
       to: {
-        path: `^${LA}/model/obligations/(evaluator(\\.js$|/)|state-queries\\.js$)`
+        path: `^${APP}/model/obligations/(evaluator(\\.js$|/)|state-queries\\.js$)`
       }
     },
     {
-      name: 'engine-persistence-port-abstract',
-      comment:
-        'engine/persistence/** are PORT definitions that stay abstract by never importing a ' +
-        'services/ implementation — routes.js wires the impl in at boot. Keeps the port abstract.',
-      severity: 'error',
-      from: { path: `^${LA}/engine/persistence/` },
-      to: { path: `^${LA}/services/` }
-    },
-    {
       name: 'no-circular',
-      comment:
-        'No import cycles under live-animals. The readiness staircase is a straight up-chain, not ' +
-        'a cycle. from anchored to live-animals so a cycle elsewhere in the app cannot fail this.',
+      comment: 'Cycles are forbidden throughout the application architecture.',
       severity: 'error',
-      from: { path: `^${LA}/` },
+      from: { path: `^${APP}/` },
       to: { circular: true }
     },
     {
       name: 'no-orphans',
       comment:
-        'Advisory: modules nothing imports and that import nothing — usually dead code. Excludes ' +
-        'tests, test-support/mocks, fixtures, string-referenced boot/config entries, the ' +
-        'standalone node entry scripts (dump.js, _capture/), and helpers imported only by ' +
-        'excluded test files (copy-leaves.js, it-mode.js) — false-positives, not dead code.',
+        'Advisory dead-code signal; excludes entry/config scripts and helpers used only by excluded tests.',
       severity: 'warn',
       from: {
-        path: `^${LA}/`,
+        path: `^${APP}/`,
         orphan: true,
         pathNot: [
           '\\.test\\.js$',
           'test-support\\.js$',
           '__mocks__/',
-          `^${LA}/.*/fixtures/`,
-          `^${LA}/config\\.js$`,
-          `^${LA}/routes\\.js$`,
-          `^${LA}/dump\\.js$`,
-          `^${LA}/services/_capture/`,
-          `^${LA}/shared/copy-leaves\\.js$`,
-          `^${LA}/services/persistence/it-mode\\.js$`
+          `^${APP}/routes\\.js$`,
+          `^${APP}/services/_capture/`,
+          `^${APP}/shared/copy-leaves\\.js$`,
+          `^${APP}/services/persistence/it-mode\\.js$`
         ]
       },
       to: {}
@@ -132,21 +166,13 @@ module.exports = {
   ],
 
   options: {
-    // Keep external packages in the graph as un-followed leaf nodes so model-import-boundary can
-    // flag a model -> npm / model -> node:builtin edge. (Do NOT use includeOnly — it would prune
-    // those nodes and blind the boundary rule.)
+    // Keep packages as un-followed leaves so model-import-boundary sees npm and builtins.
     doNotFollow: { path: 'node_modules' },
 
-    // Test files cross every layer legitimately; test-support/mocks are plumbing; fixtures are
-    // data; .njk are only string paths, invisible to the graph. Exclude all from validation.
+    // Tests may deliberately compose layers. Fixture targets remain in the graph so a
+    // production import into sets/** can never be hidden by the exclusion list.
     exclude: {
-      path: [
-        '\\.test\\.js$',
-        'test-support\\.js$',
-        '__mocks__/',
-        `^${LA}/.*/fixtures/`,
-        '\\.njk$'
-      ]
+      path: ['\\.test\\.js$', 'test-support\\.js$', '__mocks__/', '\\.njk$']
     },
 
     enhancedResolveOptions: {
@@ -156,10 +182,10 @@ module.exports = {
 
     reporterOptions: {
       dot: {
-        collapsePattern: `${LA}/(model|bridge|engine|flow|features|analysis|services|lib|shared)`
+        collapsePattern: `${APP}/(model|bridge|engine|flow|services|lib|shared|analysis|sets)`
       },
       archi: {
-        collapsePattern: `${LA}/(model|bridge|engine|flow|features|analysis|services|lib|shared)`
+        collapsePattern: `${APP}/(model|bridge|engine|flow|services|lib|shared|analysis|sets)`
       }
     },
 
