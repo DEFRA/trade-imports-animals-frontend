@@ -308,23 +308,20 @@ describe('depth-3 assembly, evaluation, cardinality and status', () => {
     ])
   })
 
-  it.fails(
-    'Should enforce the species floor once for every line instance',
-    () => {
-      const evaluation = evaluateAnswers({
-        lines: [line('First', [speciesEntry('GRADED')]), line('Second', [])]
-      })
+  it('Should enforce the species floor once for every line instance', () => {
+    const evaluation = evaluateAnswers({
+      lines: [line('First', [speciesEntry('GRADED')]), line('Second', [])]
+    })
 
-      expect(groupInvariantErrors(species, evaluation)).toEqual([
-        expect.objectContaining({
-          code: 'MIN_ENTRIES',
-          groupName: 'species',
-          instanceId: 'line1',
-          actual: 0
-        })
-      ])
-    }
-  )
+    expect(groupInvariantErrors(species, evaluation)).toEqual([
+      expect.objectContaining({
+        code: 'MIN_ENTRIES',
+        groupName: 'species',
+        instanceId: 'line1',
+        actual: 0
+      })
+    ])
+  })
 
   it('Should leave the optional varieties group uncapped and complete when absent', () => {
     const answers = { lines: [line('First', [speciesEntry('GRADED')])] }
@@ -449,39 +446,33 @@ describe('depth-3 path-addressed store operations', () => {
     })
   })
 
-  it.fails(
-    'Should reject an out-of-range line parent without corrupting persistence',
-    async () => {
-      await store.seedAnswers(journeyId, completeAnswers)
+  it('Should reject an out-of-range line parent without corrupting persistence', async () => {
+    await store.seedAnswers(journeyId, completeAnswers)
 
-      expect(
-        await appendEntryAt(
-          request(),
-          stubH(),
-          varietiesPath(5, 0),
-          variety('Phantom line')
-        )
-      ).toBeNull()
-      expect(await answersNow()).toEqual(completeAnswers)
-    }
-  )
+    expect(
+      await appendEntryAt(
+        request(),
+        stubH(),
+        varietiesPath(5, 0),
+        variety('Phantom line')
+      )
+    ).toBeNull()
+    expect(await answersNow()).toEqual(completeAnswers)
+  })
 
-  it.fails(
-    'Should reject an out-of-range species parent without corrupting persistence',
-    async () => {
-      await store.seedAnswers(journeyId, completeAnswers)
+  it('Should reject an out-of-range species parent without corrupting persistence', async () => {
+    await store.seedAnswers(journeyId, completeAnswers)
 
-      expect(
-        await appendEntryAt(
-          request(),
-          stubH(),
-          varietiesPath(0, 9),
-          variety('Phantom species')
-        )
-      ).toBeNull()
-      expect(await answersNow()).toEqual(completeAnswers)
-    }
-  )
+    expect(
+      await appendEntryAt(
+        request(),
+        stubH(),
+        varietiesPath(0, 9),
+        variety('Phantom species')
+      )
+    ).toBeNull()
+    expect(await answersNow()).toEqual(completeAnswers)
+  })
 })
 
 describe('depth-3 per-instance scope and wipe', () => {
@@ -545,15 +536,12 @@ describe('depth-3 collection-complete rollup', () => {
     expect(view[0].entry).toBe(answers.lines[0].species[0].varieties[0])
   })
 
-  it.fails(
-    'Should roll a missing nested species collection up as an incomplete line',
-    () => {
-      const answers = { lines: [line('First')] }
-      const evaluation = evaluateAnswers(answers)
+  it('Should roll a missing nested species collection up as an incomplete line', () => {
+    const answers = { lines: [line('First')] }
+    const evaluation = evaluateAnswers(answers)
 
-      expect(entryComplete(evaluation, ['lines'], 0)).toBe(false)
-    }
-  )
+    expect(entryComplete(evaluation, ['lines'], 0)).toBe(false)
+  })
 
   it('Should keep a fully empty variety absent from evaluator enumeration but incomplete in the positional view', () => {
     const answers = {

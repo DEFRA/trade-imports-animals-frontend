@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { collectionView } from '../engine/evaluate/collection-view.js'
 import { collectionCapAt } from '../engine/evaluate/cardinality.js'
 import { entryComplete } from './collection-complete.js'
 import { valueAt } from '../lib/path.js'
 import { evaluateAnswers } from './evaluation.js'
+import { configureObligationSet } from '../model/obligations/manifest.js'
+import { configureFulfilmentRegistry } from './fulfilment-registry.js'
+import { feature, grouped } from './fulfilment-bindings.js'
+import { withSetContext } from '../shared/set-context.js'
 
 // Per-instance completeness (entryComplete), pinned against the manifest. The
 // two known structural divergences are pinned here so a regression fails
@@ -156,6 +160,73 @@ describe('#entryComplete', () => {
       ]
     }
     expect(completeFlags(answers, ['documents'])).toEqual([true, true])
+  })
+})
+
+describe('#entryComplete nested collection cardinality', () => {
+  const setId = 'collection-complete-nested-cardinality'
+  const parents = { id: 'parents', name: 'parents' }
+  const parentName = {
+    id: 'parent-name',
+    name: 'parentName',
+    status: 'mandatory',
+    within: parents
+  }
+  const children = {
+    id: 'children',
+    name: 'children',
+    within: parents,
+    requires: {
+      minEntries: 1,
+      errorCode: 'obligation.children.atLeastOne'
+    }
+  }
+  const childName = {
+    id: 'child-name',
+    name: 'childName',
+    status: 'mandatory',
+    within: children
+  }
+  const parentDescriptor = {
+    field: 'parents',
+    token: 'parent',
+    obligation: parents
+  }
+  const childDescriptor = {
+    field: 'children',
+    token: 'child',
+    obligation: children
+  }
+
+  beforeAll(() => {
+    configureObligationSet(setId, {
+      obligations: [parents, parentName, children, childName],
+      groups: [parents, children],
+      policy: { systemPopulated: [] }
+    })
+    configureFulfilmentRegistry(setId, [
+      feature('nested-cardinality', [
+        grouped({
+          field: 'parentName',
+          obligation: parentName,
+          groups: [parentDescriptor]
+        }),
+        grouped({
+          field: 'childName',
+          obligation: childName,
+          groups: [parentDescriptor, childDescriptor]
+        })
+      ])
+    ])
+  })
+
+  it('Should mark a parent incomplete when its required nested collection is empty', () => {
+    expect(
+      withSetContext(setId, () => {
+        const answers = { parents: [{ parentName: 'First', children: [] }] }
+        return entryComplete(evaluateAnswers(answers), ['parents'], 0)
+      })
+    ).toBe(false)
   })
 })
 

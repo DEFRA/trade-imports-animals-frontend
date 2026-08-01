@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   appendEntryAt,
   removeEntryAt,
@@ -155,6 +155,45 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       expect(
         (await answersNow()).commodityLines[0].animalIdentifiers
       ).toBeUndefined()
+    })
+  })
+
+  describe('collection mutations — invalid ancestor indices', () => {
+    it('Should reject either invalid ancestor level before persistence', async () => {
+      const original = {
+        commodityLines: [
+          {
+            commoditySelection: 'Cat',
+            speciesSelection: '923501',
+            animalIdentifiers: [{ animalIdentifierPassport: 'P-1' }]
+          }
+        ]
+      }
+      await store.seedAnswers(journeyId, original)
+      const replaceFulfilment = vi.spyOn(recordsStub, 'replaceFulfilment')
+      const paths = [
+        ['commodityLines', 5, 'animalIdentifiers'],
+        ['commodityLines', 0, 'animalIdentifiers', 9, 'nestedCollection']
+      ]
+
+      try {
+        for (const path of paths) {
+          expect(
+            await appendEntryAt(buildRequest(), stubH(), path, {
+              value: 'phantom'
+            })
+          ).toBeNull()
+          await updateEntryAt(buildRequest(), stubH(), path, 0, {
+            value: 'phantom'
+          })
+          await removeEntryAt(buildRequest(), stubH(), path, 0)
+        }
+
+        expect(replaceFulfilment).not.toHaveBeenCalled()
+        expect(await answersNow()).toEqual(original)
+      } finally {
+        replaceFulfilment.mockRestore()
+      }
     })
   })
 
