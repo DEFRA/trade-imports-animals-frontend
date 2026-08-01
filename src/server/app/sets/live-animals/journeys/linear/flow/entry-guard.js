@@ -3,7 +3,7 @@ import { isAnswered } from '../../../../../lib/answered.js'
 import { get } from '../../../../../engine/read.js'
 import {
   obligationByName,
-  SYSTEM_POPULATED
+  systemPopulated
 } from '../../../../../bridge/obligation-source.js'
 import { importTypeFilterPage } from '../features/import-type-filter/page.js'
 import { hasEnteredThroughFilter } from '../../../../../flow/run-state.js'
@@ -31,7 +31,7 @@ export const guardedJourneyPath = (path) => {
 const userEntered = (key) => {
   if (key === IMPORT_TYPE_KEY) return false
   const obligation = obligationByName(key)
-  return obligation !== undefined && !SYSTEM_POPULATED.has(key)
+  return obligation !== undefined && !systemPopulated().has(key)
 }
 
 export const hasCommittedNotificationAnswers = (answers) =>

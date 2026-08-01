@@ -1,1 +1,1 @@
-export { setKeyed } from '../../shared/set-context.js'
+export { currentSetId, setKeyed } from '../../shared/set-context.js'

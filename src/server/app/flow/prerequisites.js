@@ -1,6 +1,6 @@
 import {
   walkObligations,
-  ENFORCED_AT_CONTINUE
+  enforcedAtContinue
 } from '../bridge/obligation-source.js'
 import { pageOfObligation } from './dispatch.js'
 import { journeySections } from './journey-flow.js'
@@ -12,7 +12,7 @@ const flowIndexOfPage = (pageId) =>
 
 const continueObligationOwners = () =>
   [...walkObligations()]
-    .filter(({ obligation }) => ENFORCED_AT_CONTINUE.has(obligation.name))
+    .filter(({ obligation }) => enforcedAtContinue().has(obligation.name))
     .map(({ templatePath, obligation }) => ({
       id: obligation.name,
       flowIndex: flowIndexOfPage(pageOfObligation(templatePath))

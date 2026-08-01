@@ -1,12 +1,13 @@
 import { isAnswered } from '../../lib/answered.js'
 import { valueAt } from '../../lib/path.js'
-import { MAX_ENTRIES_FROM } from '../../bridge/obligation-source.js'
+import { maxEntriesFrom } from '../../bridge/obligation-source.js'
 
 /**
- * The collection cardinality link: a collection whose name is declared
- * in `MAX_ENTRIES_FROM` has its entry count capped at the value of the named
- * sibling count field in the frame that holds it. `appendEntryAt` rejects an
- * append at the cap.
+ * The collection cardinality link: a collection whose name is declared on the
+ * set manifest's policy.maxEntriesFrom, derived through
+ * bridge/obligation-source.js, has its entry count capped at the value of the
+ * named sibling count field in the frame that holds it. `appendEntryAt` rejects
+ * an append at the cap.
  *
  * Returns the cap for the collection instance at `collectionPath`, or `null`
  * when uncapped: no cap declared, the count is unanswered, or the stored value
@@ -20,7 +21,7 @@ import { MAX_ENTRIES_FROM } from '../../bridge/obligation-source.js'
  */
 export const collectionCapAt = (answers, collectionPath) => {
   const collectionName = collectionPath.at(-1)
-  const countField = MAX_ENTRIES_FROM[collectionName]
+  const countField = maxEntriesFrom()[collectionName]
   if (!countField) return null
   const value = valueAt(answers, [...collectionPath.slice(0, -1), countField])
   if (!isAnswered(value)) return null

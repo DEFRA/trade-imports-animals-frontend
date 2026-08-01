@@ -1,6 +1,6 @@
 import {
   walkObligations,
-  SYSTEM_POPULATED
+  systemPopulated
 } from '../bridge/obligation-source.js'
 import {
   currentSetId,
@@ -88,7 +88,7 @@ const assertFullCoverage = () => {
   const uncovered = [...walkObligations()]
     .filter(
       ({ templatePath, obligation }) =>
-        !SYSTEM_POPULATED.has(obligation.name) &&
+        !systemPopulated().has(obligation.name) &&
         !ownerOfObligation(templatePath)
     )
     .map(({ templatePath }) => templatePath)

@@ -1,4 +1,4 @@
-import { SYSTEM_POPULATED } from '../../../bridge/obligation-source.js'
+import { systemPopulated } from '../../../bridge/obligation-source.js'
 import { pageOfObligation } from '../../../flow/dispatch.js'
 import { journeyFlowOnlyKeys } from '../../../flow/journey-flow.js'
 import { leafName, stripIndices } from '../path-key.js'
@@ -8,11 +8,11 @@ import {
 } from './reasons.js'
 
 // Skip flow-only shims and system-populated fields — neither is presented by
-// a page (`flow/dispatch.js` excludes SYSTEM_POPULATED from its coverage
+// a page (`flow/dispatch.js` excludes `systemPopulated()` from its coverage
 // assertion for the same reason), so they carry no page-reachability concern.
 export const isNotPagePresented = (key) =>
   journeyFlowOnlyKeys().includes(stripIndices(key)) ||
-  SYSTEM_POPULATED.has(leafName(key))
+  systemPopulated().has(leafName(key))
 
 // The problem (if any) an in-scope obligation contributes: none when it's
 // not page-presented, `no-owning-page` when dispatch has no owner, or

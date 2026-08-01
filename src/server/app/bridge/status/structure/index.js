@@ -1,5 +1,5 @@
 import { groups, obligations } from '../../../model/obligations/manifest.js'
-import { SYSTEM_POPULATED } from '../../obligation-source.js'
+import { systemPopulated } from '../../obligation-source.js'
 
 // --- structure: the manifest, projected into the status object shape ------
 //
@@ -21,7 +21,7 @@ const isGroup = (obligation) => groups().includes(obligation)
 const membersOf = (group) =>
   obligations().filter(
     (obligation) =>
-      obligation.within === group && !SYSTEM_POPULATED.has(obligation.name)
+      obligation.within === group && !systemPopulated().has(obligation.name)
   )
 
 // Structural mandatory-when-in-scope fallback: a static `status:

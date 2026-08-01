@@ -292,16 +292,19 @@ mid-loop actions must never bounce there early.
 ## 5. Cap the count where the model demands it
 
 Some collections cap their instance count at a sibling field. The declaration
-is data, in [`src/server/app/bridge/obligation-source.js`](../../../bridge/obligation-source.js):
+is data on the set manifest's `policy.maxEntriesFrom`, in
+[`sets/live-animals/obligations/index.js`](../obligations/index.js):
 
 ```js
-export const MAX_ENTRIES_FROM = {
-  animalIdentifiers: 'numberOfAnimalsQuantity'
+export const policy = {
+  maxEntriesFrom: { animalIdentifiers: 'numberOfAnimalsQuantity' }
 }
 ```
 
 Each `animalIdentifiers` collection is capped at its line's
-`numberOfAnimalsQuantity`. The cap is computed by
+`numberOfAnimalsQuantity`. The declaration is read through
+[`bridge/obligation-source.js`](../../../bridge/obligation-source.js)'s
+`maxEntriesFrom()` accessor. The cap is computed by
 [`src/server/app/engine/evaluate/cardinality.js`](../../../engine/evaluate/cardinality.js):
 
 ```js

@@ -1,4 +1,4 @@
-import { SYSTEM_POPULATED } from '../../bridge/obligation-source.js'
+import { systemPopulated } from '../../bridge/obligation-source.js'
 import { makeScope } from '../../engine/index.js'
 import { obligations } from '../../model/obligations/manifest.js'
 import { simulateJourney } from '../simulate.js'
@@ -39,7 +39,7 @@ export function proveFlowReachability({
  * (a model addition) would dodge `proveFlowReachability` when its
  * gate values are missing from the seeds. Returns the names of every such
  * obligation; `[]` means the enumeration reaches the whole manifest
- * (SYSTEM_POPULATED fields excepted — no page presents them).
+ * (`systemPopulated()` fields excepted — no page presents them).
  *
  * `scopeFor` is injectable so a test can prove the check has teeth.
  *
@@ -54,5 +54,5 @@ export function proveScopeCompleteness({ answerStates, scopeFor = makeScope }) {
   }
   return obligations()
     .map((obligation) => obligation.name)
-    .filter((name) => !SYSTEM_POPULATED.has(name) && !seen.has(name))
+    .filter((name) => !systemPopulated().has(name) && !seen.has(name))
 }

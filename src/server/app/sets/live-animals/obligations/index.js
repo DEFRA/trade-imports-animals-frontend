@@ -236,6 +236,15 @@ export const groups = obligations.filter((obligation) =>
   obligations.some((other) => other.within === obligation)
 )
 
+export const policy = {
+  systemPopulated: ['poApprovedReferenceNumber'],
+  enforcedAtContinue: ['countryOfOrigin', 'commoditySelection'],
+  maxEntriesFrom: {
+    animalIdentifiers: 'numberOfAnimalsQuantity'
+  },
+  systemAnswerKeys: ['referenceNumber']
+}
+
 // -----------------------------------------------------------------------------
 // Container back-refs — populate `member.containers` for every scalar
 // obligation that participates in a `requires.allOrNothingOfIds`
