@@ -50,9 +50,9 @@ const viewCards = async (seed) => {
 
 describe('#animalIdentificationController — the single card-per-species surface', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(() => store.clear())
 

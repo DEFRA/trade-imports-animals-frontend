@@ -43,9 +43,9 @@ const drivePost = async (
 
 describe('save actions — hub exit semantics', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(() => store.clear())
 

@@ -9,7 +9,7 @@ import {
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
-  KNOWN_JOURNEYS_COOKIE
+  knownJourneysCookie
 } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { assembleFulfilments } from '../../../../../../bridge/assemble-fulfilments.js'
@@ -44,7 +44,7 @@ const buildRequest = ({
   payload: {},
   params: journeyId ? { journeyId } : {},
   query,
-  state: { [KNOWN_JOURNEYS_COOKIE]: knownJourneyIds },
+  state: { [knownJourneysCookie()]: knownJourneyIds },
   headers: {},
   auth: {
     isAuthenticated: true,
@@ -84,8 +84,8 @@ const startSubmitted = async () => {
 
 describe('dashboard notifications list', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -313,8 +313,8 @@ describe('dashboard notifications list', () => {
 
 describe('dashboard row actions', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -451,8 +451,8 @@ describe('dashboard row actions', () => {
 
 describe('dashboard start with an in-flight draft', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -466,9 +466,9 @@ describe('dashboard start with an in-flight draft', () => {
 
     await startPost(buildRequest({ knownJourneyIds: [oldDraft.journeyId] }), h)
 
-    const newJourneyId = h.captured.cookies[KNOWN_JOURNEYS_COOKIE].at(-1)
+    const newJourneyId = h.captured.cookies[knownJourneysCookie()].at(-1)
     expect(newJourneyId).not.toBe(oldDraft.journeyId)
-    expect(h.captured.cookies[KNOWN_JOURNEYS_COOKIE]).toEqual([
+    expect(h.captured.cookies[knownJourneysCookie()]).toEqual([
       oldDraft.journeyId,
       newJourneyId
     ])

@@ -1,4 +1,5 @@
 import { obligations } from '../model/obligations/manifest.js'
+import { setKeyed } from '../shared/set-context.js'
 import { ancestorChain } from './fulfilments/index.js'
 
 const PATH_UNSAFE = /[.[\]/*]/
@@ -164,17 +165,18 @@ export const createFulfilmentRegistry = (
   })
 }
 
-let configuredRegistry
+const store = setKeyed('fulfilment registry')
 
 const currentRegistry = () => {
-  if (!configuredRegistry) {
-    throw new Error('Fulfilment registry has not been configured')
+  const configured = store.current()
+  if (!configured.registry) {
+    configured.registry = createFulfilmentRegistry(configured.bindings)
   }
-  return configuredRegistry
+  return configured.registry
 }
 
-export const configureFulfilmentRegistry = (features) => {
-  configuredRegistry = createFulfilmentRegistry(features)
+export const configureFulfilmentRegistry = (setId, bindings) => {
+  store.configure(setId, { bindings, registry: undefined })
 }
 
 export const fulfilmentRegistry = Object.freeze({

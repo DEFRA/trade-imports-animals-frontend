@@ -49,8 +49,8 @@ const identifiersPath = (lineIndex) => [
 
 describe('mutators — storage is positional, purge is evaluator-authoritative', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
     configureReadyForCheckYourAnswers(() => false)
   })
   beforeEach(async () => {

@@ -8,7 +8,7 @@ const { countryOfOrigin, placeOfOrigin } = obligationSet()
 
 describe('store clone/freeze contract', () => {
   beforeEach(() => {
-    configureRecords(recordsStub)
+    configureRecords('live-animals', recordsStub)
     store.clear()
   })
 

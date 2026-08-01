@@ -27,9 +27,9 @@ const post = postHandlerOf(portOfEntry)
 
 describe('POST port-of-entry — port membership', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -45,9 +45,9 @@ describe('POST port-of-entry — port membership', () => {
 
 describe('POST port-of-entry — means of transport on the merged page', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -88,9 +88,9 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
 
 describe('GET port-of-entry — server-rendered select data (no-JS path)', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -114,9 +114,9 @@ describe('POST port-of-entry — port membership follows the primed list', () =>
   const originalMode = process.env.LIVE_ANIMALS_MODE
 
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(() => store.clear())
 

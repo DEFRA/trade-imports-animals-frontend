@@ -28,17 +28,17 @@ const post = routes.find((route) => route.method === 'POST').handler
 
 describe('delete notification routes', () => {
   beforeAll(() => {
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
 
   beforeEach(() => {
-    configureRecords(recordsStub)
+    configureRecords('live-animals', recordsStub)
     records.clear()
   })
 
   afterEach(() => {
-    configureRecords(recordsStub)
+    configureRecords('live-animals', recordsStub)
     vi.unstubAllGlobals()
   })
 
@@ -85,7 +85,7 @@ describe('delete notification routes', () => {
   })
 
   it('Should re-render confirmation at 500 with the recoverable-save banner after a backend failure', async () => {
-    configureRecords({
+    configureRecords('live-animals', {
       ...recordsStub,
       softDelete: realRecords.softDelete
     })

@@ -2,11 +2,26 @@ import {
   walkObligations,
   SYSTEM_POPULATED
 } from '../bridge/obligation-source.js'
+import {
+  currentSetId,
+  setKeyed,
+  withSetContext
+} from '../shared/set-context.js'
 
-const pageOfObligationMap = new Map()
-const collectsByPageMap = new Map()
-const slugByPageMap = new Map()
-let dispatchBuilt = false
+const store = setKeyed('dispatch')
+
+const emptyDispatch = () => ({
+  pageOfObligation: new Map(),
+  collectsByPage: new Map(),
+  slugByPage: new Map(),
+  built: false
+})
+
+const current = () => {
+  const setId = currentSetId()
+  if (!store.has(setId)) store.configure(setId, emptyDispatch())
+  return store.current()
+}
 
 const ID_UNSAFE = /[.[\]]/
 
@@ -16,21 +31,22 @@ const ancestorTemplate = (templatePath) => {
 }
 
 const ownerOfObligation = (address) => {
-  let current = address.replace(/\[\d+\]/g, '')
-  while (current !== null) {
-    if (pageOfObligationMap.has(current)) {
-      return pageOfObligationMap.get(current)
+  let currentPath = address.replace(/\[\d+\]/g, '')
+  while (currentPath !== null) {
+    if (current().pageOfObligation.has(currentPath)) {
+      return current().pageOfObligation.get(currentPath)
     }
-    current = ancestorTemplate(current)
+    currentPath = ancestorTemplate(currentPath)
   }
   return undefined
 }
 
 const resetDispatchState = () => {
-  dispatchBuilt = false
-  pageOfObligationMap.clear()
-  collectsByPageMap.clear()
-  slugByPageMap.clear()
+  const dispatch = current()
+  dispatch.built = false
+  dispatch.pageOfObligation.clear()
+  dispatch.collectsByPage.clear()
+  dispatch.slugByPage.clear()
 }
 
 const assertPathSafeIds = () => {
@@ -45,18 +61,18 @@ const assertPathSafeIds = () => {
 }
 
 const indexPageMetadata = (page) => {
-  collectsByPageMap.set(page.id, page.collects ?? [])
-  slugByPageMap.set(page.id, page.slug)
+  current().collectsByPage.set(page.id, page.collects ?? [])
+  current().slugByPage.set(page.id, page.slug)
 }
 
 const claimObligationOwner = (obligationId, pageId) => {
-  if (pageOfObligationMap.has(obligationId)) {
+  if (current().pageOfObligation.has(obligationId)) {
     throw new Error(
       `Obligation "${obligationId}" is collected by two pages: ` +
-        `"${pageOfObligationMap.get(obligationId)}" and "${pageId}"`
+        `"${current().pageOfObligation.get(obligationId)}" and "${pageId}"`
     )
   }
-  pageOfObligationMap.set(obligationId, pageId)
+  current().pageOfObligation.set(obligationId, pageId)
 }
 
 const indexPages = (pages) => {
@@ -81,19 +97,22 @@ const assertFullCoverage = () => {
   }
 }
 
-export const buildDispatch = (pages) => {
-  resetDispatchState()
-  assertPathSafeIds()
-  indexPages(pages)
-  assertFullCoverage()
-  dispatchBuilt = true
+export const buildDispatch = (setId, pages) => {
+  store.configure(setId, emptyDispatch())
+  withSetContext(setId, () => {
+    resetDispatchState()
+    assertPathSafeIds()
+    indexPages(pages)
+    assertFullCoverage()
+    current().built = true
+  })
 }
 
-export const isDispatchBuilt = () => dispatchBuilt
+export const isDispatchBuilt = () => current().built
 
 export const pageOfObligation = (obligationId) =>
   ownerOfObligation(obligationId)
 
-export const collectsOf = (pageId) => collectsByPageMap.get(pageId) ?? []
+export const collectsOf = (pageId) => current().collectsByPage.get(pageId) ?? []
 
-export const slugOfPage = (pageId) => slugByPageMap.get(pageId)
+export const slugOfPage = (pageId) => current().slugByPage.get(pageId)

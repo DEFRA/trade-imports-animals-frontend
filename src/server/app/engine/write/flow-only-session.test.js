@@ -4,7 +4,7 @@ import { get, configureReadyForCheckYourAnswers } from '../read.js'
 import { records, configureRecords } from '../persistence/records.js'
 import {
   configureSession,
-  FLOW_ONLY_ANSWERS_COOKIE
+  flowOnlyAnswersCookie
 } from '../persistence/session.js'
 import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
@@ -12,8 +12,8 @@ import { journeyRequest, recordingH } from '../test-support.js'
 
 describe('flow-only answers — session round-trip', () => {
   beforeEach(async () => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
     configureReadyForCheckYourAnswers(() => false)
     await records.clear()
   })
@@ -33,7 +33,7 @@ describe('flow-only answers — session round-trip', () => {
 
     const freshRequest = journeyRequest(journey.journeyId, {
       state: {
-        [FLOW_ONLY_ANSWERS_COOKIE]: writeH.cookies[FLOW_ONLY_ANSWERS_COOKIE]
+        [flowOnlyAnswersCookie()]: writeH.cookies[flowOnlyAnswersCookie()]
       }
     })
     const fresh = await get(freshRequest, recordingH())
@@ -45,11 +45,11 @@ describe('flow-only answers — session round-trip', () => {
   it('Should load flow-only session state once when a request reads repeatedly', async () => {
     const journey = await records.create()
     const flowOnlyAnswers = vi.fn(sessionStub.flowOnlyAnswers)
-    configureSession({ ...sessionStub, flowOnlyAnswers })
+    configureSession('live-animals', { ...sessionStub, flowOnlyAnswers })
     const request = journeyRequest(journey.journeyId, {
       app: {},
       state: {
-        [FLOW_ONLY_ANSWERS_COOKIE]: {
+        [flowOnlyAnswersCookie()]: {
           [journey.journeyId]: { importType: 'live-animals' }
         }
       }

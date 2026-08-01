@@ -2,14 +2,14 @@ import Boom from '@hapi/boom'
 import { BASE } from '../shared/paths.js'
 import {
   session,
-  KNOWN_JOURNEYS_COOKIE,
-  OPENING_RUN_COOKIE,
-  FLOW_ONLY_ANSWERS_COOKIE
+  knownJourneysCookie,
+  openingRunCookie,
+  flowOnlyAnswersCookie
 } from './persistence/session.js'
 import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
 import { buildActor } from '../../common/helpers/actor-helpers.js'
 
-export { KNOWN_JOURNEYS_COOKIE } from './persistence/session.js'
+export { knownJourneysCookie } from './persistence/session.js'
 
 const cookieOptions = Object.freeze({
   path: BASE || '/',
@@ -23,15 +23,15 @@ const cookieOptions = Object.freeze({
 })
 
 export const registerJourneyCookie = (server) => {
-  server.state(KNOWN_JOURNEYS_COOKIE, {
+  server.state(knownJourneysCookie(), {
     ...cookieOptions,
     encoding: 'base64json'
   })
-  server.state(OPENING_RUN_COOKIE, {
+  server.state(openingRunCookie(), {
     ...cookieOptions,
     encoding: 'base64json'
   })
-  server.state(FLOW_ONLY_ANSWERS_COOKIE, {
+  server.state(flowOnlyAnswersCookie(), {
     ...cookieOptions,
     encoding: 'base64json'
   })

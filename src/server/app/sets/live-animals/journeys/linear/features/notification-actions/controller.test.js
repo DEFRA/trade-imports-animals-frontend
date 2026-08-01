@@ -16,7 +16,7 @@ import {
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
-  KNOWN_JOURNEYS_COOKIE
+  knownJourneysCookie
 } from '../../../../../../engine/persistence/session.js'
 import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
@@ -29,17 +29,17 @@ const copyPost = routes[0].handler
 
 describe('copy notification action', () => {
   beforeAll(() => {
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
 
   beforeEach(() => {
-    configureRecords(recordsStub)
+    configureRecords('live-animals', recordsStub)
     records.clear()
   })
 
   afterEach(() => {
-    configureRecords(recordsStub)
+    configureRecords('live-animals', recordsStub)
     vi.unstubAllGlobals()
   })
 
@@ -74,7 +74,7 @@ describe('copy notification action', () => {
           idempotencyKey: 'stable-copy-key',
           copyOrigin: 'dashboard'
         },
-        state: { [KNOWN_JOURNEYS_COOKIE]: [source.journeyId] }
+        state: { [knownJourneysCookie()]: [source.journeyId] }
       })
 
     const first = await copyPost(request(), stubH())
@@ -84,7 +84,7 @@ describe('copy notification action', () => {
   })
 
   it('Should re-render the dashboard at 500 with the same key after a recoverable backend failure', async () => {
-    configureRecords({ ...recordsStub, copy: realRecords.copy })
+    configureRecords('live-animals', { ...recordsStub, copy: realRecords.copy })
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({
@@ -124,7 +124,7 @@ describe('copy notification action', () => {
           idempotencyKey: 'unused-key',
           copyOrigin: 'dashboard'
         },
-        state: { [KNOWN_JOURNEYS_COOKIE]: [] }
+        state: { [knownJourneysCookie()]: [] }
       }),
       stubH()
     )

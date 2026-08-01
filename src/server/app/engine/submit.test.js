@@ -22,15 +22,15 @@ const buildRequest = () => journeyRequest(journeyId)
 
 describe('submitJourney — gates on scope readiness, finalises via records', () => {
   beforeEach(async () => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
     await records.clear()
     journeyId = (await records.create()).journeyId
   })
 
   it('Should finalise the CYA-ready journey by its journeyId', async () => {
     const finalise = vi.fn(recordsStub.finalise)
-    configureRecords({ ...recordsStub, finalise })
+    configureRecords('live-animals', { ...recordsStub, finalise })
     configureReadyForCheckYourAnswers(() => true)
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
 

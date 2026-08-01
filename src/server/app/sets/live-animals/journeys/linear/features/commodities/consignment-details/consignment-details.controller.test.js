@@ -45,9 +45,9 @@ const seedLines = () => ({
 
 describe('#consignmentDetailsController — per-species quantities over every line', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(() => store.clear())
 

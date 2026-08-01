@@ -6,7 +6,7 @@ import { pagePath } from '../../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
 import {
-  KNOWN_JOURNEYS_COOKIE,
+  knownJourneysCookie,
   registerJourneyCookie
 } from '../../../../../../engine/journey.js'
 import { configureRecords } from '../../../../../../engine/persistence/records.js'
@@ -62,9 +62,9 @@ const summaryTexts = (result) =>
 
 describe('documents — real upload leg on the single-page loop', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -509,9 +509,9 @@ describe('documents — real upload leg on the single-page loop', () => {
 
 describe('documents — reading an uploaded file back', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -527,7 +527,7 @@ describe('documents — reading an uploaded file back', () => {
   }
 
   const knownCookie = (journeyIds) =>
-    `${KNOWN_JOURNEYS_COOKIE}=${Buffer.from(
+    `${knownJourneysCookie()}=${Buffer.from(
       JSON.stringify(journeyIds)
     ).toString('base64')}`
 

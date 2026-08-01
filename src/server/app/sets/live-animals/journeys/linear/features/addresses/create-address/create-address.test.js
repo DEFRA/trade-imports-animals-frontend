@@ -49,9 +49,9 @@ const validPayload = (overrides = {}) => ({
 
 describe('POST addresses/create — shared Standard Address Block form', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -183,9 +183,9 @@ describe('POST addresses/create — country membership follows the primed list',
   const originalMode = process.env.LIVE_ANIMALS_MODE
 
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(() => store.clear())
 

@@ -1,10 +1,12 @@
+import { setKeyed } from '../shared/set-context.js'
+
 const unconfigured = () => {
   throw new Error(
     'journey flow not configured — call configureJourneyFlow() at boot'
   )
 }
 
-let configured = {
+const defaults = {
   sections: [],
   taskRows: [],
   rowStatus: unconfigured,
@@ -14,16 +16,18 @@ let configured = {
   layout: undefined
 }
 
-export const configureJourneyFlow = (journeyFlow) => {
-  configured = journeyFlow
+const store = setKeyed('journey flow')
+
+export const configureJourneyFlow = (setId, journeyFlow) => {
+  store.configure(setId, { ...defaults, ...journeyFlow })
 }
 
-export const journeySections = () => configured.sections
-export const journeyTaskRows = () => configured.taskRows
-export const journeyRowStatus = (...args) => configured.rowStatus(...args)
+export const journeySections = () => store.current().sections
+export const journeyTaskRows = () => store.current().taskRows
+export const journeyRowStatus = (...args) => store.current().rowStatus(...args)
 export const journeyNextRunTarget = (...args) =>
-  configured.nextRunTarget(...args)
-export const journeyFlowOnlyKeys = () => configured.flowOnlyKeys
+  store.current().nextRunTarget(...args)
+export const journeyFlowOnlyKeys = () => store.current().flowOnlyKeys
 export const journeyEntryGuardTarget = (...args) =>
-  configured.entryGuardTarget(...args)
-export const journeyLayout = () => configured.layout
+  store.current().entryGuardTarget(...args)
+export const journeyLayout = () => store.current().layout

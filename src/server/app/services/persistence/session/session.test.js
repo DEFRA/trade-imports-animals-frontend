@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { session } from './stub.js'
 import {
-  KNOWN_JOURNEYS_COOKIE,
-  OPENING_RUN_COOKIE,
-  FLOW_ONLY_ANSWERS_COOKIE
+  knownJourneysCookie,
+  openingRunCookie,
+  flowOnlyAnswersCookie
 } from '../../../engine/persistence/session.js'
 import { recordingH } from '../../../engine/test-support.js'
 
 const requestKnowing = (...journeyIds) => ({
-  state: { [KNOWN_JOURNEYS_COOKIE]: journeyIds }
+  state: { [knownJourneysCookie()]: journeyIds }
 })
 
 describe('#session.knownJourneyIds', () => {
@@ -19,13 +19,13 @@ describe('#session.knownJourneyIds', () => {
   it('Should append a newly known journey to the cookie list', async () => {
     const h = recordingH()
     await session.addKnownJourney(requestKnowing('journey-1'), h, 'journey-2')
-    expect(h.cookies[KNOWN_JOURNEYS_COOKIE]).toEqual(['journey-1', 'journey-2'])
+    expect(h.cookies[knownJourneysCookie()]).toEqual(['journey-1', 'journey-2'])
   })
 
   it('Should not duplicate an already-known journey', async () => {
     const h = recordingH()
     await session.addKnownJourney(requestKnowing('journey-1'), h, 'journey-1')
-    expect(KNOWN_JOURNEYS_COOKIE in h.cookies).toBe(false)
+    expect(knownJourneysCookie() in h.cookies).toBe(false)
   })
 
   it('Should read the known list back from the request cookie', async () => {
@@ -40,17 +40,17 @@ describe('#session.openingRun', () => {
     const h = recordingH()
     const request = { state: {} }
     await session.setOpeningRun(h, 'journey-1', 'active', request)
-    const stored = h.cookies[OPENING_RUN_COOKIE]
+    const stored = h.cookies[openingRunCookie()]
     expect(stored).toEqual({ 'journey-1': 'active' })
     expect(
       await session.openingRun(
-        { state: { [OPENING_RUN_COOKIE]: stored } },
+        { state: { [openingRunCookie()]: stored } },
         'journey-1'
       )
     ).toBe('active')
     expect(
       await session.openingRun(
-        { state: { [OPENING_RUN_COOKIE]: stored } },
+        { state: { [openingRunCookie()]: stored } },
         'journey-2'
       )
     ).toBeUndefined()
@@ -63,9 +63,9 @@ describe('#session.openingRun', () => {
   it('Should preserve another journey phase while updating the current one', async () => {
     const h = recordingH()
     await session.setOpeningRun(h, 'journey-2', 'complete', {
-      state: { [OPENING_RUN_COOKIE]: { 'journey-1': 'active' } }
+      state: { [openingRunCookie()]: { 'journey-1': 'active' } }
     })
-    expect(h.cookies[OPENING_RUN_COOKIE]).toEqual({
+    expect(h.cookies[openingRunCookie()]).toEqual({
       'journey-1': 'active',
       'journey-2': 'complete'
     })
@@ -84,16 +84,16 @@ describe('#session.flowOnlyAnswers', () => {
       request
     )
 
-    const stored = h.cookies[FLOW_ONLY_ANSWERS_COOKIE]
+    const stored = h.cookies[flowOnlyAnswersCookie()]
     expect(
       await session.flowOnlyAnswers(
-        { state: { [FLOW_ONLY_ANSWERS_COOKIE]: stored } },
+        { state: { [flowOnlyAnswersCookie()]: stored } },
         'journey-1'
       )
     ).toEqual({ importType: 'live-animals' })
     expect(
       await session.flowOnlyAnswers(
-        { state: { [FLOW_ONLY_ANSWERS_COOKIE]: stored } },
+        { state: { [flowOnlyAnswersCookie()]: stored } },
         'journey-2'
       )
     ).toEqual({})
@@ -109,10 +109,10 @@ describe('#session.flowOnlyAnswers', () => {
       h,
       'journey-2',
       { declaration: 'confirmed' },
-      { state: { [FLOW_ONLY_ANSWERS_COOKIE]: existing } }
+      { state: { [flowOnlyAnswersCookie()]: existing } }
     )
 
-    expect(h.cookies[FLOW_ONLY_ANSWERS_COOKIE]).toEqual({
+    expect(h.cookies[flowOnlyAnswersCookie()]).toEqual({
       ...existing,
       'journey-2': { declaration: 'confirmed' }
     })

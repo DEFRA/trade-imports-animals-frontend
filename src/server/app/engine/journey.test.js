@@ -4,7 +4,7 @@ import {
   copyJourney,
   currentJourney,
   amendJourney,
-  KNOWN_JOURNEYS_COOKIE,
+  knownJourneysCookie,
   softDeleteJourney,
   startJourney
 } from './journey.js'
@@ -12,7 +12,7 @@ import { store } from './store.js'
 import { configureRecords } from './persistence/records.js'
 import {
   configureSession,
-  FLOW_ONLY_ANSWERS_COOKIE
+  flowOnlyAnswersCookie
 } from './persistence/session.js'
 import { configureReadyForCheckYourAnswers, get } from './read.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
@@ -28,7 +28,7 @@ const { countryOfOrigin } = obligationSet()
 
 const requestFor = (journeyId, knownJourneyIds) => ({
   params: journeyId ? { journeyId } : {},
-  state: { [KNOWN_JOURNEYS_COOKIE]: knownJourneyIds },
+  state: { [knownJourneysCookie()]: knownJourneyIds },
   headers: {},
   auth: {
     isAuthenticated: true,
@@ -39,8 +39,8 @@ const requestFor = (journeyId, knownJourneyIds) => ({
 
 describe('#currentJourney', () => {
   beforeEach(async () => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
     configureReadyForCheckYourAnswers(() => false)
     await store.clear()
   })
@@ -50,7 +50,7 @@ describe('#currentJourney', () => {
     const journey = await startJourney(requestFor(undefined, []), h)
 
     expect(await store.has(journey.journeyId)).toBe(true)
-    expect(h.cookies[KNOWN_JOURNEYS_COOKIE]).toEqual([journey.journeyId])
+    expect(h.cookies[knownJourneysCookie()]).toEqual([journey.journeyId])
   })
 
   it('Should resolve two URL-selected journeys independently in one shared session', async () => {
@@ -85,8 +85,8 @@ describe('#currentJourney', () => {
     }
     const requestA = requestFor(journeyA.journeyId, known)
     const requestB = requestFor(journeyB.journeyId, known)
-    requestA.state[FLOW_ONLY_ANSWERS_COOKIE] = flowOnly
-    requestB.state[FLOW_ONLY_ANSWERS_COOKIE] = flowOnly
+    requestA.state[flowOnlyAnswersCookie()] = flowOnly
+    requestB.state[flowOnlyAnswersCookie()] = flowOnly
 
     const viewA = await get(requestA, recordingH())
     const viewB = await get(requestB, recordingH())
@@ -134,7 +134,7 @@ describe('#currentJourney', () => {
     const loaded = await currentJourney(requestFor(journey.journeyId, []), h)
 
     expect(loaded.journeyId).toBe(journey.journeyId)
-    expect(h.cookies[KNOWN_JOURNEYS_COOKIE]).toContain(journey.journeyId)
+    expect(h.cookies[knownJourneysCookie()]).toContain(journey.journeyId)
   })
 
   it('Should cancel amendment only for a session-known journey', async () => {
@@ -143,7 +143,7 @@ describe('#currentJourney', () => {
       status: 'submitted',
       fulfilment: {}
     }))
-    configureRecords({ ...recordsStub, cancelAmend })
+    configureRecords('live-animals', { ...recordsStub, cancelAmend })
     const journeyId = 'GBN-AG-26-ABC123'
     const request = requestFor(journeyId, [journeyId])
 
@@ -165,7 +165,7 @@ describe('#currentJourney', () => {
     const journey = await store.create()
     await recordsStub.finalise(journey.journeyId)
     const amend = vi.fn(recordsStub.amend)
-    configureRecords({ ...recordsStub, amend })
+    configureRecords('live-animals', { ...recordsStub, amend })
     const request = requestFor(journey.journeyId, [journey.journeyId])
 
     const editable = await amendJourney(
@@ -184,7 +184,7 @@ describe('#currentJourney', () => {
       status: 'draft',
       fulfilment: {}
     }))
-    configureRecords({ ...recordsStub, copy })
+    configureRecords('live-animals', { ...recordsStub, copy })
     const sourceId = 'GBN-AG-26-SOURCE'
     const request = requestFor(sourceId, [sourceId])
     const h = recordingH()
@@ -193,7 +193,7 @@ describe('#currentJourney', () => {
 
     expect(copy).toHaveBeenCalledWith(sourceId, 'copy-key-123')
     expect(copied.status).toBe('draft')
-    expect(h.cookies[KNOWN_JOURNEYS_COOKIE]).toEqual([
+    expect(h.cookies[knownJourneysCookie()]).toEqual([
       sourceId,
       copied.journeyId
     ])
@@ -215,7 +215,7 @@ describe('#currentJourney', () => {
       status: 'deleted',
       fulfilment: {}
     }))
-    configureRecords({ ...recordsStub, softDelete })
+    configureRecords('live-animals', { ...recordsStub, softDelete })
     const journeyId = 'GBN-AG-26-DELETE'
     const request = requestFor(journeyId, [journeyId])
 

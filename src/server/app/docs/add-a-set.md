@@ -65,6 +65,13 @@ installs a realm-scoped `server.ext('onPreAuth', …)` that enters its own set
 context, so Hapi's routing decides the set. Never resolve a set by parsing the
 URL. (Plan FD-1, FD-14, FD-15.)
 
+Plugin ownership alone does not scope a lifecycle extension: an extension
+registered without options is server-wide. Every set-owned lifecycle
+extension, including `onPreAuth` context entry and the `onPreHandler` entry
+guard, must pass `{ sandbox: 'plugin' }` as the third argument to `server.ext`.
+That makes Hapi store it in the plugin realm and apply it only to routes from
+that realm.
+
 **The mount prefix is not a choice. It is `'/' + setId`.** Every set mounts
 under its own prefix. No set is registered at an empty prefix, and
 `registerSetMount` throws if you pass one.
@@ -231,20 +238,20 @@ plugin whose name is the set id. Reproduce
 load-bearing**: context → mount → config → assertions → dispatch → persistence
 → cookies → guard → priming → routes.
 
-| #   | Call                                                                                                                                            | Notes                                                                                                |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| 0   | `registerSetMount(setId, '/' + setId)`, then `server.ext('onPreAuth', (request, h) => { enterSetContext(setId); return h.continue })`           | Write the mount that way, so the symmetry lives in the code and not in a convention                  |
-| 1   | `configureObligationSet(setId, obligationSet)`                                                                                                  | Namespace import of `sets/<set-id>/obligations/index.js` — carries `obligations`, `groups`, `policy` |
-| 2   | `configureFulfilmentRegistry(setId, featureEvaluationBindings)`                                                                                 | From `features/evaluation.js`                                                                        |
-| 3   | `configureJourneyFlow(setId, { sections, taskRows, rowStatus, nextRunTarget, flowOnlyKeys: FLOW_ONLY_KEYS, entryGuardTarget, layout: LAYOUT })` | From the four `flow/` modules plus `config.js`                                                       |
-| 4   | `assertObligationPurity()`                                                                                                                      | Boot gate; reads the active set context                                                              |
-| 5   | `assertFulfilmentBindingCoverage()`                                                                                                             | Boot gate; reads the active set context                                                              |
-| 6   | `buildDispatch(setId, dispatchPages)`                                                                                                           | From `features/index.js`                                                                             |
-| 7   | `configureRecords(setId, records)`                                                                                                              | The set-owned records impl of step 8                                                                 |
-| 8   | `configureSession(setId, session, SESSION_COOKIE_NAMES)`                                                                                        | L2 session impl, set-owned cookie names                                                              |
-| 9   | `registerJourneyCookie(server, { base: '/' + setId, cookieNames: SESSION_COOKIE_NAMES })`                                                       | Path-scopes the three session cookies to the set's own subtree                                       |
-| 10  | `server.ext('onPreHandler', …)` entry-guard wrapper                                                                                             | Realm-scoped, so it never fires on another set's routes                                              |
-| 11  | `server.route(allRoutes)`                                                                                                                       | Paths are prefix-free; the prefix comes from step 5's registration                                   |
+| #   | Call                                                                                                                                                         | Notes                                                                                                |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| 0   | `registerSetMount(setId, '/' + setId)`, then `server.ext('onPreAuth', (request, h) => { enterSetContext(setId); return h.continue }, { sandbox: 'plugin' })` | Write the mount that way, so the symmetry lives in the code and not in a convention                  |
+| 1   | `configureObligationSet(setId, obligationSet)`                                                                                                               | Namespace import of `sets/<set-id>/obligations/index.js` — carries `obligations`, `groups`, `policy` |
+| 2   | `configureFulfilmentRegistry(setId, featureEvaluationBindings)`                                                                                              | From `features/evaluation.js`                                                                        |
+| 3   | `configureJourneyFlow(setId, { sections, taskRows, rowStatus, nextRunTarget, flowOnlyKeys: FLOW_ONLY_KEYS, entryGuardTarget, layout: LAYOUT })`              | From the four `flow/` modules plus `config.js`                                                       |
+| 4   | `assertObligationPurity()`                                                                                                                                   | Boot gate; reads the active set context                                                              |
+| 5   | `assertFulfilmentBindingCoverage()`                                                                                                                          | Boot gate; reads the active set context                                                              |
+| 6   | `buildDispatch(setId, dispatchPages)`                                                                                                                        | From `features/index.js`                                                                             |
+| 7   | `configureRecords(setId, records)`                                                                                                                           | The set-owned records impl of step 8                                                                 |
+| 8   | `configureSession(setId, session, SESSION_COOKIE_NAMES)`                                                                                                     | L2 session impl, set-owned cookie names                                                              |
+| 9   | `registerJourneyCookie(server, { base: '/' + setId, cookieNames: SESSION_COOKIE_NAMES })`                                                                    | Path-scopes the three session cookies to the set's own subtree                                       |
+| 10  | `server.ext('onPreHandler', …, { sandbox: 'plugin' })` entry-guard wrapper                                                                                   | The sandbox option is mandatory, so it never fires on another set's routes                           |
+| 11  | `server.route(allRoutes)`                                                                                                                                    | Paths are prefix-free; the prefix comes from step 5's registration                                   |
 
 Wrap the whole register body in
 `await withSetContext(setId, async () => { … })`. `assertObligationPurity()`,

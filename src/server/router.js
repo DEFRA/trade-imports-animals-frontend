@@ -17,13 +17,11 @@ export const router = {
 
       // Application specific routes, add your own routes here
       const authEnabled = config.get('auth.enabled')
-      const routes = [liveAnimals]
+      await server.register([liveAnimals])
 
       if (authEnabled) {
-        routes.push(signout)
+        await server.register([signout])
       }
-
-      await server.register(routes)
 
       // Static assets
       await server.register([serveStaticFiles])

@@ -39,9 +39,9 @@ const driveWithQuery = async (handler, { payload = {}, query = {} } = {}) => {
 
 describe('POST cph-number — the 9-digit rule after slash stripping', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -114,9 +114,9 @@ describe('POST cph-number — the 9-digit rule after slash stripping', () => {
 
 describe('cph-number — addresses-hub entry (?return=addresses)', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(() => store.clear())
 

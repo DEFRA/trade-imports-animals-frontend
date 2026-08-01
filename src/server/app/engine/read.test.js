@@ -12,8 +12,8 @@ const { countryOfOrigin, transporterType } = obligationSet()
 
 describe('#get — per-request read view', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
     configureReadyForCheckYourAnswers(() => false)
   })
   afterEach(() => store.clear())

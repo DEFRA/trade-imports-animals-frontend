@@ -29,9 +29,9 @@ const line = (commoditySelection, extra = {}) => ({
 
 const setupJourneyEngine = () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(async () => {
     await store.clear()

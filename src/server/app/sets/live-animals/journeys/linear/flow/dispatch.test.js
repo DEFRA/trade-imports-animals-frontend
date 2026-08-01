@@ -14,11 +14,11 @@ import { nextInSection, sectionEntry } from '../../../../../flow/navigation.js'
 
 describe('#buildDispatch', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch('live-animals', dispatchPages)
   })
 
   it('Should build the dispatch without throwing for every non-system obligation', () => {
-    expect(() => buildDispatch(dispatchPages)).not.toThrow()
+    expect(() => buildDispatch('live-animals', dispatchPages)).not.toThrow()
   })
 
   it('Should resolve pageOfObligation for a top-level obligation', () => {
@@ -53,15 +53,15 @@ describe('#buildDispatch', () => {
         }
       })
     try {
-      expect(() => buildDispatch([{ id: 'x', collects: [] }])).toThrow(
-        /contains a path metacharacter/
-      )
-      expect(() => buildDispatch([{ id: 'x', collects: [] }])).toThrow(
-        /"bad\.id"/
-      )
+      expect(() =>
+        buildDispatch('live-animals', [{ id: 'x', collects: [] }])
+      ).toThrow(/contains a path metacharacter/)
+      expect(() =>
+        buildDispatch('live-animals', [{ id: 'x', collects: [] }])
+      ).toThrow(/"bad\.id"/)
     } finally {
       spy.mockRestore()
-      buildDispatch(dispatchPages)
+      buildDispatch('live-animals', dispatchPages)
     }
   })
 
@@ -71,10 +71,14 @@ describe('#buildDispatch', () => {
       { id: 'b', collects: ['countryOfOrigin'] }
     ]
     try {
-      expect(() => buildDispatch(twoOwners)).toThrow(/collected by two pages/)
-      expect(() => buildDispatch(twoOwners)).toThrow(/"a" and "b"/)
+      expect(() => buildDispatch('live-animals', twoOwners)).toThrow(
+        /collected by two pages/
+      )
+      expect(() => buildDispatch('live-animals', twoOwners)).toThrow(
+        /"a" and "b"/
+      )
     } finally {
-      buildDispatch(dispatchPages)
+      buildDispatch('live-animals', dispatchPages)
     }
   })
 
@@ -95,11 +99,13 @@ describe('#buildDispatch', () => {
     const withoutCommodities = dispatchPages.filter(
       (page) => page.id !== 'commodities'
     )
-    expect(() => buildDispatch(withoutCommodities)).toThrow(
+    expect(() => buildDispatch('live-animals', withoutCommodities)).toThrow(
       /collected by no page/
     )
-    expect(() => buildDispatch(withoutCommodities)).toThrow(/commodityLines/)
-    buildDispatch(dispatchPages)
+    expect(() => buildDispatch('live-animals', withoutCommodities)).toThrow(
+      /commodityLines/
+    )
+    buildDispatch('live-animals', dispatchPages)
   })
 
   it('Should resolve a sub-obligation to its collection owner by template and instance address', () => {

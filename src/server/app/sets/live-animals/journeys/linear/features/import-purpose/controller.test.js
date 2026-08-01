@@ -27,9 +27,9 @@ const post = postHandlerOf(importPurpose)
 
 describe('POST import-purpose — invalid payload', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -45,8 +45,8 @@ describe('POST import-purpose — invalid payload', () => {
 
 describe('POST import-purpose — save failures', () => {
   beforeAll(() => {
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
 
   beforeEach(() => {
@@ -62,13 +62,13 @@ describe('POST import-purpose — save failures', () => {
   })
 
   afterEach(() => {
-    configureRecords(recordsStub)
+    configureRecords('live-animals', recordsStub)
     vi.unstubAllGlobals()
   })
 
   const failingOnControllerCommit = (failure) => {
     let replaceCalls = 0
-    configureRecords({
+    configureRecords('live-animals', {
       ...recordsStub,
       replaceFulfilment: (...args) => {
         replaceCalls += 1

@@ -19,7 +19,7 @@ import {
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
-  KNOWN_JOURNEYS_COOKIE
+  knownJourneysCookie
 } from '../../../../../../engine/persistence/session.js'
 import { store } from '../../../../../../engine/store.js'
 import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
@@ -49,17 +49,17 @@ const startAmend = async () => {
 
 describe('cancel amendment routes', () => {
   beforeAll(() => {
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureSession('live-animals', sessionStub)
+    buildDispatch('live-animals', dispatchPages)
   })
 
   beforeEach(() => {
-    configureRecords(recordsStub)
+    configureRecords('live-animals', recordsStub)
     store.clear()
   })
 
   afterEach(() => {
-    configureRecords(recordsStub)
+    configureRecords('live-animals', recordsStub)
     vi.unstubAllGlobals()
   })
 
@@ -118,7 +118,7 @@ describe('cancel amendment routes', () => {
     await expect(
       post(
         journeyRequest('GBN-AG-26-UNKNOWN', {
-          state: { [KNOWN_JOURNEYS_COOKIE]: [] }
+          state: { [knownJourneysCookie()]: [] }
         }),
         stubH()
       )
@@ -129,7 +129,7 @@ describe('cancel amendment routes', () => {
   })
 
   it('Should re-render confirmation at 500 with the recoverable-save banner after a backend failure', async () => {
-    configureRecords({
+    configureRecords('live-animals', {
       ...recordsStub,
       cancelAmend: realRecords.cancelAmend
     })

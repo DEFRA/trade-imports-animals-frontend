@@ -17,8 +17,8 @@ const buildRequest = () => journeyRequest(journeyId)
 
 describe('#write.js — answer-key guard', () => {
   beforeEach(async () => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
     configureReadyForCheckYourAnswers(() => true)
     await records.clear()
     journeyId = (await records.create()).journeyId

@@ -26,9 +26,9 @@ const pickerFrom = (result) => result.view.context.picker
 const idsOf = (picker) => picker.rows.map((row) => row.id)
 
 const configure = () => {
-  configureRecords(recordsStub)
-  configureSession(sessionStub)
-  buildDispatch(dispatchPages)
+  configureRecords('live-animals', recordsStub)
+  configureSession('live-animals', sessionStub)
+  buildDispatch('live-animals', dispatchPages)
 }
 
 describe('GET /consignors/select', () => {

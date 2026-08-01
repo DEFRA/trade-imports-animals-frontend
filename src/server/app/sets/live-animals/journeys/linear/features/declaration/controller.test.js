@@ -34,9 +34,9 @@ describe('#declaration', () => {
   describe('POST /declaration', () => {
     describe('invalid payload', () => {
       beforeAll(() => {
-        configureRecords(recordsStub)
-        configureSession(sessionStub)
-        buildDispatch(dispatchPages)
+        configureRecords('live-animals', recordsStub)
+        configureSession('live-animals', sessionStub)
+        buildDispatch('live-animals', dispatchPages)
       })
       beforeEach(() => store.clear())
 
@@ -54,9 +54,9 @@ describe('#declaration', () => {
 
     describe('submitted journeys land on the confirmation page', () => {
       beforeAll(() => {
-        configureRecords(recordsStub)
-        configureSession(sessionStub)
-        buildDispatch(dispatchPages)
+        configureRecords('live-animals', recordsStub)
+        configureSession('live-animals', sessionStub)
+        buildDispatch('live-animals', dispatchPages)
       })
       beforeEach(() => store.clear())
 
@@ -100,14 +100,17 @@ describe('#declaration', () => {
 
     describe('recoverable backend failure', () => {
       beforeAll(() => {
-        configureSession(sessionStub)
-        buildDispatch(dispatchPages)
+        configureSession('live-animals', sessionStub)
+        buildDispatch('live-animals', dispatchPages)
       })
 
       beforeEach(() => {
         store.clear()
         configureReadyForCheckYourAnswers(() => true)
-        configureRecords({ ...recordsStub, finalise: realRecords.finalise })
+        configureRecords('live-animals', {
+          ...recordsStub,
+          finalise: realRecords.finalise
+        })
         vi.stubGlobal(
           'fetch',
           vi.fn(async () => ({
@@ -119,7 +122,7 @@ describe('#declaration', () => {
       })
 
       afterEach(() => {
-        configureRecords(recordsStub)
+        configureRecords('live-animals', recordsStub)
         vi.unstubAllGlobals()
       })
 
@@ -142,9 +145,9 @@ describe('#declaration', () => {
 
   describe('GET /declaration', () => {
     beforeAll(() => {
-      configureRecords(recordsStub)
-      configureSession(sessionStub)
-      buildDispatch(dispatchPages)
+      configureRecords('live-animals', recordsStub)
+      configureSession('live-animals', sessionStub)
+      buildDispatch('live-animals', dispatchPages)
     })
     beforeEach(() => store.clear())
 

@@ -54,7 +54,7 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
 
   describe('once the dispatch index is built', () => {
     beforeAll(() => {
-      buildDispatch(dispatchPages)
+      buildDispatch('live-animals', dispatchPages)
     })
 
     it('Should pass the derived transporter-select page gate exactly when the commercial transporter is owed, in every scope state', () => {
@@ -80,7 +80,7 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
 
 describe('#sectionGatePasses — RULE 1: mandate-derived flow sequencing', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch('live-animals', dispatchPages)
   })
 
   const sectionById = (id) => sections.find((section) => section.id === id)
@@ -134,7 +134,7 @@ describe('#sectionGatePasses — RULE 1: mandate-derived flow sequencing', () =>
 
 describe('#sectionGatePasses — RULE 2: review gates on submit-readiness (no deadlock)', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch('live-animals', dispatchPages)
   })
 
   const reviewSection = sections.find((section) => section.id === 'review')

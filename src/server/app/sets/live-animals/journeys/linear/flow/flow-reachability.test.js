@@ -27,7 +27,7 @@ const answerStates = enumerateAnswerStates()
 
 describe('#proveFlowReachability', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch('live-animals', dispatchPages)
   })
 
   it('Should enumerate a small finite scope space', () => {

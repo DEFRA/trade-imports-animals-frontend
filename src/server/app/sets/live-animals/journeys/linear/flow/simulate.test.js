@@ -6,7 +6,7 @@ import { simulateJourney } from '../../../../../analysis/simulate.js'
 
 describe('#simulateJourney', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch('live-animals', dispatchPages)
   })
 
   const prereqs = {

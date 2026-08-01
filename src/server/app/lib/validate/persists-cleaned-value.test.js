@@ -25,8 +25,8 @@ const commitReference = async (request, h) => {
 
 describe('The cleaned value is persisted, not the raw payload', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
     configureReadyForCheckYourAnswers(() => false)
   })
   beforeEach(() => store.clear())
@@ -41,8 +41,8 @@ describe('The cleaned value is persisted, not the raw payload', () => {
 
 describe('An invalid value echoes the raw input and commits nothing', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
     configureReadyForCheckYourAnswers(() => false)
   })
   beforeEach(() => store.clear())

@@ -39,38 +39,60 @@ import { registerJourneyCookie } from './engine/journey.js'
 import { isRealMode } from './services/mode.js'
 import * as countries from './services/countries/index.js'
 import * as ports from './services/ports/index.js'
+import {
+  enterSetContext,
+  registerSetMount,
+  withSetContext
+} from './shared/set-context.js'
+
+const SET_ID = 'live-animals'
 
 export const liveAnimals = {
   plugin: {
     name: 'live-animals',
     register: async (server) => {
-      configureObligationSet(liveAnimalsObligationSet)
-      configureFulfilmentRegistry(featureEvaluationBindings)
-      configureCommodityReference(commodities)
-      configureJourneyFlow({
-        sections,
-        taskRows,
-        rowStatus,
-        nextRunTarget,
-        flowOnlyKeys: FLOW_ONLY_KEYS,
-        entryGuardTarget,
-        layout: LAYOUT
+      registerSetMount(SET_ID, `/${SET_ID}`)
+      await withSetContext(SET_ID, async () => {
+        server.ext(
+          'onPreAuth',
+          (_request, h) => {
+            enterSetContext(SET_ID)
+            return h.continue
+          },
+          { sandbox: 'plugin' }
+        )
+        configureObligationSet(SET_ID, liveAnimalsObligationSet)
+        configureFulfilmentRegistry(SET_ID, featureEvaluationBindings)
+        configureCommodityReference(SET_ID, commodities)
+        configureJourneyFlow(SET_ID, {
+          sections,
+          taskRows,
+          rowStatus,
+          nextRunTarget,
+          flowOnlyKeys: FLOW_ONLY_KEYS,
+          entryGuardTarget,
+          layout: LAYOUT
+        })
+        assertObligationPurity()
+        assertFulfilmentBindingCoverage()
+        buildDispatch(SET_ID, dispatchPages)
+        configureRecords(SET_ID, records)
+        configureSession(SET_ID, session, SESSION_COOKIE_NAMES)
+        registerJourneyCookie(server)
+        server.ext(
+          'onPreHandler',
+          async (request, h) => {
+            const target = await journeyEntryGuardTarget(request, h)
+            return target ? h.redirect(target).takeover() : h.continue
+          },
+          { sandbox: 'plugin' }
+        )
+        if (isRealMode()) {
+          await countries.prime()
+          await ports.prime()
+        }
+        server.route(allRoutes)
       })
-      assertObligationPurity()
-      assertFulfilmentBindingCoverage()
-      buildDispatch(dispatchPages)
-      configureRecords(records)
-      configureSession(session, SESSION_COOKIE_NAMES)
-      registerJourneyCookie(server)
-      server.ext('onPreHandler', async (request, h) => {
-        const target = await journeyEntryGuardTarget(request, h)
-        return target ? h.redirect(target).takeover() : h.continue
-      })
-      if (isRealMode()) {
-        await countries.prime()
-        await ports.prime()
-      }
-      server.route(allRoutes)
     }
   }
 }
