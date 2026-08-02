@@ -1,0 +1,23 @@
+{# Minimum hub from docs/add-a-set.md step 9. #}
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/task-list/macro.njk" import govukTaskList %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-xl">{{ heading }}</h1>
+
+  {% for group in groups %}
+    <h2 class="govuk-heading-m">{{ group.caption }}</h2>
+    {{ govukTaskList({
+      idPrefix: group.id,
+      items: group.items,
+      classes: "app-task-list govuk-!-margin-bottom-8"
+    }) }}
+  {% endfor %}
+
+  <h2 class="govuk-heading-m">{{ copy.captions.checkAndSubmit }}</h2>
+  {{ govukTaskList({
+    idPrefix: "review",
+    items: reviewItems,
+    classes: "app-task-list govuk-!-margin-bottom-8"
+  }) }}
+{% endblock %}

@@ -42,6 +42,7 @@ import * as ports from './services/ports/index.js'
 import {
   enterSetContext,
   registerSetMount,
+  routeWithSetContext,
   withSetContext
 } from './shared/set-context.js'
 
@@ -86,7 +87,9 @@ export const liveAnimals = {
         server.ext(
           'onPreHandler',
           async (request, h) => {
-            const target = await journeyEntryGuardTarget(request, h)
+            const target = await withSetContext(SET_ID, () =>
+              journeyEntryGuardTarget(request, h)
+            )
             return target ? h.redirect(target).takeover() : h.continue
           },
           { sandbox: 'plugin' }
@@ -95,7 +98,9 @@ export const liveAnimals = {
           await countries.prime()
           await ports.prime()
         }
-        server.route(allRoutes)
+        server.route(
+          allRoutes.map((route) => routeWithSetContext(SET_ID, route))
+        )
       })
     }
   }

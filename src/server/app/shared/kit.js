@@ -90,12 +90,13 @@ export const base = (
     backLink,
     journey,
     journeyId = journey?.journeyId,
-    recoverableError = false
+    recoverableError = false,
+    layout
   } = {}
 ) => {
   const hasJourney = journeyId != null
   return {
-    layout: journeyLayout(),
+    layout: layout ?? journeyLayout(),
     pageTitle: title,
     breadcrumbs: hasJourney ? buildBreadcrumbs(journeyId, title) : false,
     backLink,

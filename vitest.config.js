@@ -14,7 +14,7 @@ export default defineConfig({
     exclude: [
       ...configDefaults.exclude,
       'e2e/**',
-      'src/server/app/sets/live-animals/journeys/linear/features/**/*.e2e.spec.js'
+      'src/server/app/sets/*/journeys/linear/features/**/*.e2e.spec.js'
     ],
     coverage: {
       provider: 'v8',

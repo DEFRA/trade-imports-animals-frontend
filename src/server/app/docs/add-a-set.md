@@ -28,8 +28,9 @@ here.
 The live-animals set is the only complete worked example. Read it in this
 order:
 
-- [`../routes.js`](../routes.js) — today's gateway body, the thing step 4
-  reproduces for your set
+- [`../routes-live-animals.js`](../routes-live-animals.js) — the worked gateway
+  body that step 4 reproduces for your set; `routes.js` is now only the gateway
+  export barrel
 - [`../../router.js`](../../router.js) — where gateways are registered and
   where the server-wide routes live
 - [`../sets/live-animals/obligations/index.js`](../sets/live-animals/obligations/index.js)
@@ -71,6 +72,15 @@ extension, including `onPreAuth` context entry and the `onPreHandler` entry
 guard, must pass `{ sandbox: 'plugin' }` as the third argument to `server.ext`.
 That makes Hapi store it in the plugin realm and apply it only to routes from
 that realm.
+
+Authentication and Hapi's payload processing may cross asynchronous boundaries
+after `onPreAuth`. Run the gateway's entry-guard call inside
+`withSetContext(setId, …)`, and pass every route through
+`routeWithSetContext(setId, route)`. That helper wraps both the handler and any
+route-owned lifecycle extension, including an `onPreResponse` that handles a
+payload error before the handler runs. Those boundary wrappers keep every async
+continuation in the owning set without threading set ids through controllers or
+parsing URLs. Server-wide routes remain outside every set context.
 
 **The mount prefix is not a choice. It is `'/' + setId`.** Every set mounts
 under its own prefix. No set is registered at an empty prefix, and
@@ -174,7 +184,9 @@ Obligations carry no display text — no labels, no hints, no titles. Copy lives
 in the feature's `.njk` and `copy/` files.
 
 Add `sets/<set-id>/obligations/sections/` as an empty directory. Section files
-land with the increments that need them.
+land with the increments that need them. Git does not track an empty directory,
+so do not add a placeholder file solely to represent it; the directory enters
+the repository with its first section module.
 
 Add `sets/<set-id>/obligations/coverage.test.js` by transposing the
 live-animals structural suite
@@ -237,8 +249,9 @@ gains one `feature()` binding per feature area as pages land.
 
 Create `routes-<set-id>.js` at the `src/server/app/` root. It exports one Hapi
 plugin whose name is the set id. Reproduce
-[`../routes.js`](../routes.js)'s body call for call. **The order is
-load-bearing**: context → mount → config → assertions → dispatch → persistence
+[`../routes-live-animals.js`](../routes-live-animals.js)'s body call for call,
+omitting only the explicitly optional set-owned seams below. **The order is
+load-bearing**: mount → context → config → assertions → dispatch → persistence
 → cookies → guard → priming → routes.
 
 | #   | Call                                                                                                                                                         | Notes                                                                                                |
@@ -253,8 +266,8 @@ load-bearing**: context → mount → config → assertions → dispatch → per
 | 7   | `configureRecords(setId, records)`                                                                                                                           | The set-owned records impl of step 8                                                                 |
 | 8   | `configureSession(setId, session, SESSION_COOKIE_NAMES)`                                                                                                     | L2 session impl, set-owned cookie names                                                              |
 | 9   | `registerJourneyCookie(server, { base: '/' + setId, cookieNames: SESSION_COOKIE_NAMES })`                                                                    | Path-scopes the three session cookies to the set's own subtree                                       |
-| 10  | `server.ext('onPreHandler', …, { sandbox: 'plugin' })` entry-guard wrapper                                                                                   | The sandbox option is mandatory, so it never fires on another set's routes                           |
-| 11  | `server.route(allRoutes)`                                                                                                                                    | Paths are prefix-free; the prefix comes from step 5's registration                                   |
+| 10  | `server.ext('onPreHandler', …, { sandbox: 'plugin' })` entry-guard wrapper                                                                                   | Sandbox it, and call the injected guard inside `withSetContext(setId, …)`                            |
+| 11  | `server.route(allRoutes.map((route) => routeWithSetContext(setId, route)))`                                                                                  | Keep paths prefix-free; wrap handlers and route lifecycle extensions across Hapi's async boundaries  |
 
 Wrap the whole register body in
 `await withSetContext(setId, async () => { … })`. `assertObligationPurity()`,
@@ -345,6 +358,13 @@ In [`../../../../.dependency-cruiser.cjs`](../../../../.dependency-cruiser.cjs):
 - add the same file to the `sets-not-l1` rule's forbidden-target list, so no set
   can import any `routes-*.js`
 
+These are both required by the completed add-a-set procedure, but a planned
+multi-increment scaffold may split them: the new gateway's `pathNot` entry must
+land with the gateway so architecture lint can pass, while a separately-owned
+convention-harness increment may widen `sets-not-l1` and carry its deliberate
+violation probe. Record that split in the set charter; never silently omit the
+second half or regenerate the known-violations baseline.
+
 Do **not** regenerate `.dependency-cruiser-known-violations.json` to absorb
 anything. The baseline records existing debt; a new file that needs a new
 violation is a design error, not a baseline entry.
@@ -371,6 +391,11 @@ In the frontend repo:
   their stubs in one server process. Add `test:features:<set-id>` and
   `test:features:all` npm scripts — the second runs both projects against one
   server and is the E2E-level co-residency proof.
+- **Vitest discovery boundary.** Keep the co-located Playwright files out of
+  Vitest with one set-generic exclusion:
+  `src/server/app/sets/*/journeys/linear/features/**/*.e2e.spec.js`. A
+  live-animals-only exclusion makes `npm test` execute a new set's Playwright
+  specs with the wrong runner before its Playwright project even exists.
 - **Cloned app-root suites.** Clone the set-composing suites as
   `*.<set-id>.test.js`: [`../contract.test.js`](../contract.test.js),
   [`../routes.test.js`](../routes.test.js),
@@ -388,10 +413,15 @@ In the frontend repo:
   and [`../copy-parity.test.js`](../copy-parity.test.js) walk the filesystem and
   loop over set roots in-file. Add the new root to both, so the set gets copy
   completeness and English/Welsh parity enforcement from its first `.njk`.
-- **A new case in `src/server/app/co-residency.test.js`.** That suite boots one
-  server with every gateway registered and asserts a page from each set. It is
-  the one test that fails for "co-residency broke" and nothing else. Never fold
-  it into another file.
+- **Load-bearing cases in `src/server/app/co-residency.test.js`.** Keep its
+  production `router` composition and any foreign-realm probe. On one booted
+  server, prove: set-specific dashboard content at both mounts; divergent
+  manifest policy through the same accessors; distinct cookie names and mount
+  paths; one set's guard never runs in the other realm; a genuinely interleaved
+  request pair retains both contexts; records modes remain independent; and
+  live-only priming runs once. A two-server comparison is not co-residency
+  evidence. Never register a gateway separately in this test after adding it to
+  `router.js`, because that creates duplicate routes.
 
 **Then cross the repo boundary. A set is not done when its in-repo tests
 pass.** The in-repo `*.e2e.spec.js` suites run against a self-hosted server on
@@ -437,6 +467,12 @@ defaulting to `real`) and `isRealMode()`. Mirror
 [`../engine/persistence/records.js`](../engine/persistence/records.js). Write
 `index.js` (stub or real switch on `mode()`), `real.js`, `stub.js` and
 `mapper/{to-dto.js,from-dto.js}`.
+
+When the first bootable scaffold deliberately lands before its backend
+adapter, the scaffold may contain only `index.js` and `stub.js`: every operation
+in real mode must throw a named follow-up error. Never let missing real mode
+silently select the stub. Add `real.js` and the mapper in the recorded adapter
+increment before real-mode delivery.
 
 The port is eleven operations. Map each one to the set's own backend surface,
 base `/<set-id>/notifications`:
@@ -495,7 +531,9 @@ feature of the same name, file for file:
 - **Hub** — the task list, plus its `GROUPS` export placing each row id under a
   numbered caption, with matching English and Welsh copy.
 - **Entry filter** — the pre-journey page that establishes what kind of
-  notification this is. It is flow-only and collects nothing.
+  notification this is. Its controller meta collects the flow-only key so
+  dispatch owns the page, while the key remains absent from the obligation
+  manifest and persists through the flow-only session store.
 - **Entry-guard policy** — `entryGuardTarget` in `flow/entry-guard.js`,
   redirecting a fresh deep link to the entry filter.
 
@@ -523,7 +561,10 @@ The earlier bar — "the new set is green and the default set is unchanged under
 its own environment" — is retired. It cannot be stated under co-residency,
 because there is no per-set environment and no boot-time set selection.
 
-Take a baseline before you edit anything:
+Take a baseline before you edit anything. For the first scaffold, the new
+set-scoped script does not exist yet, so use the existing set's fast suite (for
+example `npm run test:live-animals`). Once step 7's script exists, later
+increments use:
 
 ```bash
 npm run test:<set-id>

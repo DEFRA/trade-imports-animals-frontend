@@ -1,0 +1,10 @@
+{# Holding surface from docs/add-a-set.md step 9. #}
+{% extends "shared/layout.njk" %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-l">{{ copy.notAvailable.title }}</h1>
+  <p class="govuk-body">{{ copy.notAvailable.body }}</p>
+  <p class="govuk-body">
+    <a class="govuk-link" href="{{ changeAnswerHref }}">{{ copy.notAvailable.changeAnswer }}</a>
+  </p>
+{% endblock %}

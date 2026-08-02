@@ -32,6 +32,7 @@ module.exports = {
           `^${APP}/sets/`,
           `^${APP}/routes\\.js$`,
           `^${APP}/routes-live-animals\\.js$`,
+          `^${APP}/routes-plant-products\\.js$`,
           '\\.test\\.js$'
         ]
       },

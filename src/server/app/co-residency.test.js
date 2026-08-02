@@ -1,19 +1,52 @@
 import path from 'node:path'
 import Hapi from '@hapi/hapi'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { config } from '../../config/config.js'
 import { nunjucksConfig } from '../../config/nunjucks/nunjucks.js'
 import { DEFAULT_SET_BASE, router } from '../router.js'
+import { configureJourneyFlow, journeySections } from './flow/journey-flow.js'
+import { records as engineRecords } from './engine/persistence/records.js'
+import { knownJourneysCookie } from './engine/persistence/session.js'
+import { records as liveAnimalsRecords } from './services/persistence/records/index.js'
+import * as countries from './services/countries/index.js'
+import * as ports from './services/ports/index.js'
 import {
   enforcedAtContinue,
   maxEntriesFrom,
   systemAnswerKeys,
   systemPopulated
 } from './bridge/obligation-source.js'
-import { records as liveAnimalsRecords } from './services/persistence/records/index.js'
 import { SESSION_COOKIE_NAMES } from './sets/live-animals/journeys/linear/config.js'
+import { LAYOUT as LIVE_ANIMALS_LAYOUT } from './sets/live-animals/journeys/linear/config.js'
+import { entryGuardTarget as liveAnimalsEntryGuardTarget } from './sets/live-animals/journeys/linear/flow/entry-guard.js'
 import {
+  FLOW_ONLY_KEYS as LIVE_ANIMALS_FLOW_ONLY_KEYS,
+  sections as liveAnimalsSections
+} from './sets/live-animals/journeys/linear/flow/flow.js'
+import { nextRunTarget as liveAnimalsNextRunTarget } from './sets/live-animals/journeys/linear/flow/run.js'
+import {
+  rowStatus as liveAnimalsRowStatus,
+  taskRows as liveAnimalsTaskRows
+} from './sets/live-animals/journeys/linear/flow/task-rows.js'
+import {
+  LAYOUT as PLANT_PRODUCTS_LAYOUT,
+  SESSION_COOKIE_NAMES as PLANT_PRODUCTS_COOKIE_NAMES
+} from './sets/plant-products/journeys/linear/config.js'
+import { entryGuardTarget as plantProductsEntryGuardTarget } from './sets/plant-products/journeys/linear/flow/entry-guard.js'
+import {
+  FLOW_ONLY_KEYS as PLANT_PRODUCTS_FLOW_ONLY_KEYS,
+  sections as plantProductsSections
+} from './sets/plant-products/journeys/linear/flow/flow.js'
+import { nextRunTarget as plantProductsNextRunTarget } from './sets/plant-products/journeys/linear/flow/run.js'
+import {
+  rowStatus as plantProductsRowStatus,
+  taskRows as plantProductsTaskRows
+} from './sets/plant-products/journeys/linear/flow/task-rows.js'
+import { records as plantProductsRecords } from './sets/plant-products/services/records/index.js'
+import { records as plantProductsStubRecords } from './sets/plant-products/services/records/stub.js'
+import {
+  currentSetBase,
   currentSetId,
   enterSetContext,
   registerSetMount,
@@ -22,6 +55,8 @@ import {
 
 const LIVE_ANIMALS = 'live-animals'
 const LIVE_ANIMALS_BASE = `/${LIVE_ANIMALS}`
+const PLANT_PRODUCTS = 'plant-products'
+const PLANT_PRODUCTS_BASE = `/${PLANT_PRODUCTS}`
 const FOREIGN_REALM = 'foreign-realm'
 const FOREIGN_REALM_BASE = `/${FOREIGN_REALM}`
 const FOREIGN_REALM_RESPONSE = 'foreign realm handler ran'
@@ -66,16 +101,40 @@ const bootServer = async ({ sets }) => {
   return server
 }
 
+const liveAnimalsFlow = (entryGuardTarget = liveAnimalsEntryGuardTarget) => ({
+  sections: liveAnimalsSections,
+  taskRows: liveAnimalsTaskRows,
+  rowStatus: liveAnimalsRowStatus,
+  nextRunTarget: liveAnimalsNextRunTarget,
+  flowOnlyKeys: LIVE_ANIMALS_FLOW_ONLY_KEYS,
+  entryGuardTarget,
+  layout: LIVE_ANIMALS_LAYOUT
+})
+
+const plantProductsFlow = (
+  entryGuardTarget = plantProductsEntryGuardTarget
+) => ({
+  sections: plantProductsSections,
+  taskRows: plantProductsTaskRows,
+  rowStatus: plantProductsRowStatus,
+  nextRunTarget: plantProductsNextRunTarget,
+  flowOnlyKeys: PLANT_PRODUCTS_FLOW_ONLY_KEYS,
+  entryGuardTarget,
+  layout: PLANT_PRODUCTS_LAYOUT
+})
+
 describe('co-residency', () => {
   let server
 
   beforeAll(async () => {
+    vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
     server = await bootServer({
       sets: [foreignRealm]
     })
   })
 
   afterAll(async () => {
+    vi.unstubAllEnvs()
     await server.stop({ timeout: 0 })
   })
 
@@ -105,6 +164,15 @@ describe('co-residency', () => {
     })
   })
 
+  it('reads divergent enforcedAtContinue policy with both manifests loaded', () => {
+    expect(
+      withSetContext(LIVE_ANIMALS, () => [...enforcedAtContinue()])
+    ).toEqual(['countryOfOrigin', 'commoditySelection'])
+    expect(
+      withSetContext(PLANT_PRODUCTS, () => [...enforcedAtContinue()])
+    ).toEqual([])
+  })
+
   it('uses live-animals cookie names and scopes them to its mount', async () => {
     const response = await server.inject({
       method: 'POST',
@@ -123,6 +191,271 @@ describe('co-residency', () => {
     )
     for (const cookieName of Object.values(SESSION_COOKIE_NAMES)) {
       expect(server.states.cookies[cookieName].path).toBe(LIVE_ANIMALS_BASE)
+    }
+  })
+
+  it('serves distinct dashboards for both sets from one booted server', async () => {
+    const liveAnimalsResponse = await server.inject(LIVE_ANIMALS_BASE)
+    const plantProductsResponse = await server.inject(PLANT_PRODUCTS_BASE)
+
+    expect(liveAnimalsResponse.statusCode).toBe(200)
+    expect(liveAnimalsResponse.result).toContain('Import notification service')
+    expect(liveAnimalsResponse.result).toContain('Start a new notification')
+    expect(liveAnimalsResponse.result).not.toContain(
+      'Plants, plant products and other objects'
+    )
+    expect(plantProductsResponse.statusCode).toBe(200)
+    expect(plantProductsResponse.result).toContain('Your import notifications')
+    expect(plantProductsResponse.result).toContain('Create a new notification')
+    expect(plantProductsResponse.result).not.toContain(
+      'Start a new notification'
+    )
+  })
+
+  it('keeps every server-wide route unprefixed with both sets registered', async () => {
+    const root = await server.inject('/')
+    const signout = await server.inject('/signout')
+    const health = await server.inject('/health')
+    const asset = await server.inject(
+      `${config.get('assetPath')}/assets/images/govuk-crest.svg`
+    )
+
+    expect(root.statusCode).toBe(302)
+    expect(root.headers.location).toBe('/live-animals')
+    expect(signout.statusCode).not.toBe(404)
+    expect(health.statusCode).toBe(200)
+    expect(asset.statusCode).toBe(200)
+  })
+
+  it('mounts both production sets symmetrically and never at the root', () => {
+    const productionMounts = [LIVE_ANIMALS, PLANT_PRODUCTS].map((setId) => ({
+      setId,
+      base: withSetContext(setId, currentSetBase)
+    }))
+
+    expect(productionMounts).toEqual([
+      { setId: LIVE_ANIMALS, base: `/${LIVE_ANIMALS}` },
+      { setId: PLANT_PRODUCTS, base: `/${PLANT_PRODUCTS}` }
+    ])
+    expect(productionMounts.every(({ base }) => base !== '')).toBe(true)
+  })
+
+  it('resolves each set own manifest, flow, records and cookie names', async () => {
+    const liveAnimals = await withSetContext(LIVE_ANIMALS, async () => ({
+      enforcedAtContinue: [...enforcedAtContinue()],
+      sectionIds: journeySections().map(({ id }) => id),
+      record: await engineRecords.create(),
+      knownJourneysCookie: knownJourneysCookie()
+    }))
+    const plantProducts = await withSetContext(PLANT_PRODUCTS, async () => ({
+      enforcedAtContinue: [...enforcedAtContinue()],
+      sectionIds: journeySections().map(({ id }) => id),
+      record: await engineRecords.create(),
+      knownJourneysCookie: knownJourneysCookie()
+    }))
+
+    expect(liveAnimals.enforcedAtContinue).toEqual([
+      'countryOfOrigin',
+      'commoditySelection'
+    ])
+    expect(plantProducts.enforcedAtContinue).toEqual([])
+    expect(liveAnimals.sectionIds).toContain('commodities')
+    expect(plantProducts.sectionIds).toEqual(['start', 'review'])
+    expect(liveAnimals.record.journeyId).toMatch(/^GBN-AG-/)
+    expect(plantProducts.record.journeyId).toMatch(/^GBN-PP-/)
+    expect(liveAnimals.knownJourneysCookie).toBe(
+      SESSION_COOKIE_NAMES.knownJourneys
+    )
+    expect(plantProducts.knownJourneysCookie).toBe(
+      PLANT_PRODUCTS_COOKIE_NAMES.knownJourneys
+    )
+  })
+
+  it('keeps both sets cookie names and mount paths independent', async () => {
+    const liveAnimalsResponse = await server.inject({
+      method: 'POST',
+      url: `${LIVE_ANIMALS_BASE}/notifications`
+    })
+    const plantProductsResponse = await server.inject({
+      method: 'POST',
+      url: `${PLANT_PRODUCTS_BASE}/notifications`
+    })
+    const liveAnimalsCookies = liveAnimalsResponse.headers['set-cookie'] ?? []
+    const plantProductsCookies =
+      plantProductsResponse.headers['set-cookie'] ?? []
+
+    expect(liveAnimalsCookies.join(';')).toContain(
+      `${SESSION_COOKIE_NAMES.knownJourneys}=`
+    )
+    expect(liveAnimalsCookies.join(';')).not.toContain('plantProducts')
+    expect(plantProductsCookies.join(';')).toContain(
+      `${PLANT_PRODUCTS_COOKIE_NAMES.knownJourneys}=`
+    )
+    expect(plantProductsCookies.join(';')).not.toContain('liveAnimals')
+    for (const cookieName of Object.values(SESSION_COOKIE_NAMES)) {
+      expect(server.states.cookies[cookieName].path).toBe(LIVE_ANIMALS_BASE)
+    }
+    for (const cookieName of Object.values(PLANT_PRODUCTS_COOKIE_NAMES)) {
+      expect(server.states.cookies[cookieName].path).toBe(PLANT_PRODUCTS_BASE)
+    }
+  })
+
+  it('runs each realm entry guard exactly once and never the other set guard', async () => {
+    const liveAnimalsGuard = vi.fn(liveAnimalsEntryGuardTarget)
+    const plantProductsGuard = vi.fn(plantProductsEntryGuardTarget)
+    configureJourneyFlow(LIVE_ANIMALS, liveAnimalsFlow(liveAnimalsGuard))
+    configureJourneyFlow(PLANT_PRODUCTS, plantProductsFlow(plantProductsGuard))
+
+    try {
+      const plantProductsResponse = await server.inject(PLANT_PRODUCTS_BASE)
+      expect(plantProductsResponse.statusCode).toBe(200)
+      expect(plantProductsGuard).toHaveBeenCalledTimes(1)
+      expect(liveAnimalsGuard).not.toHaveBeenCalled()
+
+      plantProductsGuard.mockClear()
+      const liveAnimalsResponse = await server.inject(LIVE_ANIMALS_BASE)
+      expect(liveAnimalsResponse.statusCode).toBe(200)
+      expect(liveAnimalsGuard).toHaveBeenCalledTimes(1)
+      expect(plantProductsGuard).not.toHaveBeenCalled()
+    } finally {
+      configureJourneyFlow(LIVE_ANIMALS, liveAnimalsFlow())
+      configureJourneyFlow(PLANT_PRODUCTS, plantProductsFlow())
+    }
+  })
+
+  it('retains both set contexts across genuinely interleaved requests', async () => {
+    const originalLiveAnimalsList = liveAnimalsRecords.list
+    const originalPlantProductsList = plantProductsRecords.list
+    const contexts = []
+    const events = []
+    let releaseLiveAnimals
+    let markLiveAnimalsSuspended
+    const liveAnimalsCanResume = new Promise((resolve) => {
+      releaseLiveAnimals = resolve
+    })
+    const liveAnimalsSuspended = new Promise((resolve) => {
+      markLiveAnimalsSuspended = resolve
+    })
+
+    liveAnimalsRecords.list = async (...args) => {
+      contexts.push([
+        'live-animals',
+        'before',
+        currentSetId(),
+        knownJourneysCookie(),
+        [...enforcedAtContinue()]
+      ])
+      events.push('live-animals suspended')
+      markLiveAnimalsSuspended()
+      await liveAnimalsCanResume
+      events.push('live-animals resumed')
+      const result = await originalLiveAnimalsList(...args)
+      contexts.push([
+        'live-animals',
+        'after',
+        currentSetId(),
+        knownJourneysCookie(),
+        [...enforcedAtContinue()]
+      ])
+      return result
+    }
+    plantProductsRecords.list = async (...args) => {
+      contexts.push([
+        'plant-products',
+        'during',
+        currentSetId(),
+        knownJourneysCookie(),
+        [...enforcedAtContinue()]
+      ])
+      return originalPlantProductsList(...args)
+    }
+
+    try {
+      const liveAnimalsRequest = server.inject(LIVE_ANIMALS_BASE)
+      await liveAnimalsSuspended
+
+      events.push('plant-products started')
+      const plantProductsResponse = await server.inject(PLANT_PRODUCTS_BASE)
+      events.push('plant-products finished')
+      expect(plantProductsResponse.statusCode).toBe(200)
+
+      releaseLiveAnimals()
+      const liveAnimalsResponse = await liveAnimalsRequest
+      expect(liveAnimalsResponse.statusCode).toBe(200)
+      expect(events).toEqual([
+        'live-animals suspended',
+        'plant-products started',
+        'plant-products finished',
+        'live-animals resumed'
+      ])
+      expect(contexts).toEqual([
+        [
+          'live-animals',
+          'before',
+          LIVE_ANIMALS,
+          SESSION_COOKIE_NAMES.knownJourneys,
+          ['countryOfOrigin', 'commoditySelection']
+        ],
+        [
+          'plant-products',
+          'during',
+          PLANT_PRODUCTS,
+          PLANT_PRODUCTS_COOKIE_NAMES.knownJourneys,
+          []
+        ],
+        [
+          'live-animals',
+          'after',
+          LIVE_ANIMALS,
+          SESSION_COOKIE_NAMES.knownJourneys,
+          ['countryOfOrigin', 'commoditySelection']
+        ]
+      ])
+    } finally {
+      releaseLiveAnimals()
+      liveAnimalsRecords.list = originalLiveAnimalsList
+      plantProductsRecords.list = originalPlantProductsList
+    }
+  })
+
+  it('honours plant stub and live fake-real modes independently and primes once', async () => {
+    const originalLiveAnimalsList = liveAnimalsRecords.list
+    const fakeRealList = vi.fn(async () => ({
+      rows: [],
+      page: 1,
+      size: 20,
+      totalElements: 0,
+      totalPages: 0
+    }))
+    const countryPrime = vi.spyOn(countries, 'prime').mockResolvedValue()
+    const portPrime = vi.spyOn(ports, 'prime').mockResolvedValue()
+    let modeServer
+
+    vi.stubEnv('LIVE_ANIMALS_MODE', 'real')
+    vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
+    liveAnimalsRecords.list = fakeRealList
+    await plantProductsStubRecords.clear()
+
+    try {
+      modeServer = await bootServer({ sets: [] })
+      const liveAnimalsResponse = await modeServer.inject(LIVE_ANIMALS_BASE)
+      const plantProductsResponse = await modeServer.inject(PLANT_PRODUCTS_BASE)
+
+      expect(liveAnimalsResponse.statusCode).toBe(200)
+      expect(plantProductsResponse.statusCode).toBe(200)
+      expect(plantProductsResponse.result).toContain(
+        'Your import notifications'
+      )
+      expect(fakeRealList).toHaveBeenCalledTimes(1)
+      expect(countryPrime).toHaveBeenCalledTimes(1)
+      expect(portPrime).toHaveBeenCalledTimes(1)
+    } finally {
+      if (modeServer) await modeServer.stop({ timeout: 0 })
+      liveAnimalsRecords.list = originalLiveAnimalsList
+      countryPrime.mockRestore()
+      portPrime.mockRestore()
+      vi.stubEnv('LIVE_ANIMALS_MODE', 'stub')
+      vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
     }
   })
 

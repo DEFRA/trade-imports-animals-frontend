@@ -6,6 +6,7 @@ let currentSetId
 let enterSetContext
 let mountedSetIds
 let registerSetMount
+let routeWithSetContext
 let setKeyed
 let withSetContext
 
@@ -17,6 +18,7 @@ beforeAll(async () => {
     enterSetContext,
     mountedSetIds,
     registerSetMount,
+    routeWithSetContext,
     setKeyed,
     withSetContext
   } = await import('./set-context.js'))
@@ -40,6 +42,27 @@ describe('set context', () => {
     expect(mountedSetIds()).toContain('sole')
     expect(currentSetId()).toBe('sole')
     expect(currentSetBase()).toBe('/sole')
+  })
+
+  it('runs route handlers and lifecycle extensions in their set context', async () => {
+    const observed = []
+    const route = routeWithSetContext('route-set', {
+      method: 'GET',
+      path: '/',
+      options: {
+        ext: {
+          onPreResponse: {
+            method: async () => observed.push(currentSetId())
+          }
+        }
+      },
+      handler: async () => observed.push(currentSetId())
+    })
+
+    await route.handler({}, {})
+    await route.options.ext.onPreResponse.method({}, {})
+
+    expect(observed).toEqual(['route-set', 'route-set'])
   })
 
   it('throws without active context when two sets are mounted', () => {
