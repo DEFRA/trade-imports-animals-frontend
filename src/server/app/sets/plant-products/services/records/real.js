@@ -147,7 +147,7 @@ export const cancelAmend = async (journeyId) =>
   })
 
 export const copy = async (journeyId, idempotencyKey) => {
-  if (idempotencyKey == null || idempotencyKey.trim() === '') {
+  if (idempotencyKey == null || String(idempotencyKey).trim() === '') {
     throw new Error('Idempotency-Key must not be blank')
   }
   const response = await fetch(`${notificationsUrl}/${journeyId}/copies`, {

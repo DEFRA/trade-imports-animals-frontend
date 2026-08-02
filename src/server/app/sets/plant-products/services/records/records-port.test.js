@@ -247,13 +247,27 @@ describe.each(implementations)(
       const repeated = await inPlantProducts(() =>
         records.copy(source.journeyId, 'same-copy-key')
       )
+
+      const afterRepeat = await inPlantProducts(() => records.list())
+
+      expect(repeated.journeyId).toBe(first.journeyId)
+      expect(
+        afterRepeat.rows
+          .filter(({ status }) => status === 'draft')
+          .map(({ journeyId }) => journeyId)
+      ).toEqual([first.journeyId])
+
       const deliberateSecond = await inPlantProducts(() =>
         records.copy(source.journeyId, 'second-copy-key')
       )
 
-      expect(repeated.journeyId).toBe(first.journeyId)
+      const afterSecondKey = await inPlantProducts(() => records.list())
+
       expect(deliberateSecond.journeyId).not.toBe(first.journeyId)
       expect(first).toMatchObject({ status: 'draft', fulfilment: {} })
+      expect(
+        afterSecondKey.rows.filter(({ status }) => status === 'draft')
+      ).toHaveLength(2)
 
       if (name === 'real HTTP adapter') {
         const copyRequests = fetchMocker
@@ -267,6 +281,21 @@ describe.each(implementations)(
         ).toEqual(['same-copy-key', 'same-copy-key', 'second-copy-key'])
       }
     })
+
+    it.each([undefined, null, '', '   '])(
+      'rejects a blank copy key before reading a source or writing a copy (%s)',
+      async (key) => {
+        await expect(
+          inPlantProducts(() => records.copy('GBN-PP-00-000000', key))
+        ).rejects.toThrow('Idempotency-Key must not be blank')
+
+        if (name === 'real HTTP adapter') {
+          expect(fetchMocker.requests()).toEqual([])
+        } else {
+          expect((await inPlantProducts(() => records.list())).rows).toEqual([])
+        }
+      }
+    )
 
     it('matches the shipped global key index across different sources', async () => {
       const firstSource = await inPlantProducts(() => records.create())
@@ -282,6 +311,7 @@ describe.each(implementations)(
       )
 
       expect(repeated.journeyId).toBe(first.journeyId)
+      expect((await inPlantProducts(() => records.list())).rows).toHaveLength(3)
       if (name === 'real HTTP adapter') {
         const copyRequests = fetchMocker
           .requests()

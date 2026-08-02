@@ -503,13 +503,28 @@ before the set ships a Copy button.** The engine port already carries the key â€
    per process. Live-animals does this in
    [`../sets/live-animals/journeys/linear/features/dashboard/view-model/row/actions.js`](../sets/live-animals/journeys/linear/features/dashboard/view-model/row/actions.js)
    and in its check-answers controller.
-2. Carry it in a hidden input named `idempotencyKey`.
-3. Send it as the `Idempotency-Key` request header from `real.js`. The
+2. Carry it in a hidden input named `idempotencyKey`. If a surface renders more
+   than one Copy control, give each an accessible name that identifies its
+   notification reference. The live-animals dashboard template appends its row
+   reference as visually hidden copy. Put that copy in both locale bundles with
+   identical structure, never in obligations or the model.
+3. Read `request.payload?.idempotencyKey?.trim()` in the POST controller and
+   pass it as the fourth argument to
+   `copyJourney(request, h, journeyId, idempotencyKey)`.
+4. Send it as the `Idempotency-Key` request header from `real.js`. The
    live-animals equivalent is
    [`../services/persistence/records/real/lifecycle/create.js`](../services/persistence/records/real/lifecycle/create.js).
-4. Mirror it in `stub.js` with a dedupe key, so the stub has the same
+5. Re-render a recoverable copy failure with the same key. Minting a replacement
+   key at that point can create a second draft after an ambiguous backend 500.
+   The live-animals exemplar is `recoverCopy` in its notification-actions
+   controller.
+6. Build the form action and post-copy redirect with prefix-bearing
+   `pagePath()`, `hubPath()` or `dashboardPath()` links. Never use a route-shape
+   builder, a hand-written `/notifications/â€¦` path or a bare `/`; under
+   symmetric mounts the latter redirects a plant user into live-animals.
+7. Mirror the global key index in `stub.js`, so the stub has the same
    semantics.
-5. Pin it with records-port contract tests against the backend's shipped index
+8. Pin it with records-port contract tests against the backend's shipped index
    semantics. The current plant-products and live-animals backends use a unique
    partial index on `copyIdempotencyKey` alone, so one key identifies one copy
    globally: repeating it against the same or a different source returns the

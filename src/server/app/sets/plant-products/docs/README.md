@@ -61,6 +61,48 @@ The m0 review flow section deliberately has no pages. The hub renders its
 Review and submit entry as unavailable and without a link until pp-038 adds
 the review surfaces.
 
+## Copy idempotency
+
+pp-008 delivered the plant records adapter's copy idempotency support ahead of
+the rendered action, and pp-054 supplied the matching backend header and global
+key index. This closes pp-008's warning that `POST …/copies` could mint two
+drafts when a copy action was submitted twice.
+
+When pp-045 renders a Copy action, it must follow all five rules:
+
+1. Mint a `randomUUID()` per rendered Copy action: once per dashboard row and
+   once per review-page render, never at module or process scope. The
+   live-animals exemplars are `features/dashboard/view-model/row/actions.js`
+   and the defaulted `copyIdempotencyKey` option in
+   `features/check-answers/controller.js`.
+2. Carry that key in a hidden input named exactly `idempotencyKey`, as the
+   live-animals dashboard and check-answers templates do.
+3. In the POST controller, read
+   `request.payload?.idempotencyKey?.trim()` and pass the value as the fourth
+   argument to `copyJourney(request, h, journeyId, idempotencyKey)`. The L2
+   seam in `engine/journey.js` already carries it; no L2 change is needed.
+4. On a recoverable failure, re-render with the same key so a retry returns a
+   copy the backend may already have made. The exemplar is `recoverCopy` in
+   `features/notification-actions/controller.js`.
+5. Build the form action and post-copy redirect as prefix-bearing links with
+   `pagePath()`, `hubPath()` or `dashboardPath()`, never with route-shape
+   builders or a hand-written `/notifications/…` or `/`. Under symmetric
+   mounts, a bare `/` sends a plant user to live-animals. The exemplar is the
+   link-builder use in the live-animals dashboard action and notification
+   actions controller.
+
+Where a surface renders more than one Copy control, each accessible name must
+identify its notification reference. The live-animals dashboard template does
+this with visually hidden row-reference copy. Plant text for that distinction,
+like every user-facing string, belongs in both `copy.en.js` and `copy.cy.js`
+with identical structure, not in obligations or the model.
+
+Both `services/records/real.js` and `services/records/stub.js` reject a missing
+or blank key before a network call or store read. Their dedupe contract follows
+the shipped backend: the key is global, so replaying it against a different
+source returns the first copy. Callers prevent accidental cross-source reuse by
+minting a fresh key for every rendered action.
+
 ## Standing defaults (recorded once — not per-page ACs)
 
 All downstream plant-products pages inherit these defaults:
