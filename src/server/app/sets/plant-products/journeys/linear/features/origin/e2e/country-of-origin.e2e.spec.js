@@ -95,7 +95,7 @@ test.describe('plant-products country of origin', () => {
     ).toBeVisible()
   })
 
-  test('saves the country code, completes the hub row and prefills on revisit', async ({
+  test('saves the country code, continues to origin-of-import and prefills on revisit', async ({
     page
   }) => {
     const countryUrl = page.url()
@@ -103,12 +103,10 @@ test.describe('plant-products country of origin', () => {
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     await expect(page).toHaveURL((url) =>
-      /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
+      /^\/plant-products\/notifications\/[^/]+\/origin-of-import$/.test(
+        url.pathname
+      )
     )
-    const originRow = page.getByRole('listitem').filter({
-      has: page.getByText('Origin of the import', { exact: true })
-    })
-    await expect(originRow).toContainText('Completed')
 
     await page.goto(countryUrl)
     await expect(page.getByLabel(pageCopy.country.label)).toHaveValue('FR')

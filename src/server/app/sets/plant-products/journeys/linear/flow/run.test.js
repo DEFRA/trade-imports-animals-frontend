@@ -13,7 +13,10 @@ import {
 import { importTypePage } from '../features/import-type/page.js'
 import { featureEvaluationBindings } from '../features/evaluation.js'
 import { dispatchPages } from '../features/index.js'
-import { countryOfOriginPage } from '../features/origin/page.js'
+import {
+  countryOfOriginPage,
+  originOfImportPage
+} from '../features/origin/page.js'
 import * as obligationSet from '../../../obligations/index.js'
 import { FLOW_ONLY_KEYS, sections } from './flow.js'
 import { nextRunTarget, RUN_STEPS } from './run.js'
@@ -37,7 +40,7 @@ describe('plant-products opening run', () => {
     buildDispatch(SET_ID, dispatchPages)
   })
 
-  it('routes from import type to country of origin and then falls back to the hub', () => {
+  it('routes through both origin pages before falling back to the hub', () => {
     const targets = withSetContext(SET_ID, () => ({
       afterImportType: nextRunTarget(
         importTypePage.id,
@@ -48,13 +51,22 @@ describe('plant-products opening run', () => {
         countryOfOriginPage.id,
         makeScope({ countryOfOrigin: 'FR' }),
         JOURNEY_ID
+      ),
+      afterOriginOfImport: nextRunTarget(
+        originOfImportPage.id,
+        makeScope({
+          countryOfOrigin: 'FR',
+          countryOfConsignment: 'IE'
+        }),
+        JOURNEY_ID
       )
     }))
 
     expect(targets).toEqual(
       withSetContext(SET_ID, () => ({
         afterImportType: pagePath(JOURNEY_ID, countryOfOriginPage.slug),
-        afterCountry: hubPath(JOURNEY_ID)
+        afterCountry: pagePath(JOURNEY_ID, originOfImportPage.slug),
+        afterOriginOfImport: hubPath(JOURNEY_ID)
       }))
     )
   })
@@ -67,10 +79,11 @@ describe('plant-products opening run', () => {
     ).toBeNull()
   })
 
-  it('contains import type followed by country of origin', () => {
+  it('contains import type followed by both origin pages', () => {
     expect(RUN_STEPS.map(({ id }) => id)).toEqual([
       importTypePage.id,
-      countryOfOriginPage.id
+      countryOfOriginPage.id,
+      originOfImportPage.id
     ])
   })
 })

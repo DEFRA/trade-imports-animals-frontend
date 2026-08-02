@@ -37,4 +37,24 @@ describe('plant-products origin copy', () => {
       expect(leaf.trim().length).toBeGreaterThan(0)
     }
   })
+
+  it('provides every origin-of-import page key', () => {
+    expect(en.originOfImport).toEqual({
+      pageTitle: expect.any(String),
+      caption: expect.any(String),
+      heading: expect.any(String),
+      countryOfConsignment: {
+        label: expect.any(String),
+        placeholder: expect.any(String)
+      },
+      internalReference: {
+        label: expect.any(String),
+        hint: expect.any(String)
+      },
+      errors: {
+        countryOfConsignmentRequired: expect.any(String),
+        internalReferenceMaxLength: expect.any(String)
+      }
+    })
+  })
 })

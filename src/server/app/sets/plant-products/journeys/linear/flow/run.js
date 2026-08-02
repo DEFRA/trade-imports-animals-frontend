@@ -2,14 +2,18 @@
 import { pageGatePasses } from '../../../../../flow/gates.js'
 import { hubPath, pagePath } from '../../../../../shared/paths.js'
 import { importTypePage } from '../features/import-type/page.js'
-import { countryOfOriginPage } from '../features/origin/page.js'
+import {
+  countryOfOriginPage,
+  originOfImportPage
+} from '../features/origin/page.js'
 
 const flowPageTarget = (page) => (scope, journeyId) =>
   pageGatePasses(page, scope) ? pagePath(journeyId, page.slug) : null
 
 export const RUN_STEPS = [
   { id: importTypePage.id, target: flowPageTarget(importTypePage) },
-  { id: countryOfOriginPage.id, target: flowPageTarget(countryOfOriginPage) }
+  { id: countryOfOriginPage.id, target: flowPageTarget(countryOfOriginPage) },
+  { id: originOfImportPage.id, target: flowPageTarget(originOfImportPage) }
 ]
 
 export const nextRunTarget = (stepId, scope, journeyId) => {

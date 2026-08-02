@@ -1,9 +1,14 @@
 // Scaffolded by docs/add-a-set.md step 3.
 import { statusOf } from '../../../../../bridge/status/index.js'
 import { collectsOf } from '../../../../../flow/dispatch.js'
-import { countryOfOriginPage } from '../features/origin/page.js'
+import {
+  countryOfOriginPage,
+  originOfImportPage
+} from '../features/origin/page.js'
 
-export const taskRows = [{ id: 'origin', pages: [countryOfOriginPage] }]
+export const taskRows = [
+  { id: 'origin', pages: [countryOfOriginPage, originOfImportPage] }
+]
 
 export const taskRowById = (id) => taskRows.find((row) => row.id === id)
 

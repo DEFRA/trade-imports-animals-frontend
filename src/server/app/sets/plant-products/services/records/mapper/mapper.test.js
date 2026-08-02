@@ -34,6 +34,30 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     expect(fromDto(toDto(answers))).toEqual(answers)
   })
 
+  it('round-trips the consignment country and internal reference through origin', () => {
+    const answers = {
+      countryOfConsignment: 'IE',
+      internalReference: 'REF-123'
+    }
+
+    expect(toDto(answers)).toEqual({
+      origin: {
+        countryOfConsignmentCode: 'IE',
+        internalReference: 'REF-123'
+      }
+    })
+    expect(fromDto(toDto(answers))).toEqual(answers)
+  })
+
+  it('does not fabricate an absent optional internal reference', () => {
+    const answers = { countryOfConsignment: 'IE' }
+
+    expect(toDto(answers)).toEqual({
+      origin: { countryOfConsignmentCode: 'IE' }
+    })
+    expect(fromDto(toDto(answers))).toEqual(answers)
+  })
+
   it('omits server-set fields from the PUT content DTO', () => {
     const answers = Object.fromEntries(
       SERVER_SET_FIELDS.map((field) => [field, `answer-${field}`])

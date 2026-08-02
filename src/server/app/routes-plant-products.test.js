@@ -63,6 +63,7 @@ describe('plant-products gateway boot proof', () => {
     const importTypeUrl = created.headers.location
     const hubUrl = importTypeUrl.replace(/\/import-type$/, '')
     const countryOfOriginUrl = `${hubUrl}/country-of-origin`
+    const originOfImportUrl = `${hubUrl}/origin-of-import`
 
     expect(created.statusCode).toBe(302)
     expect(importTypeUrl).toMatch(
@@ -108,7 +109,27 @@ describe('plant-products gateway boot proof', () => {
     })
     cookies.absorb(savedOrigin)
     expect(savedOrigin.statusCode).toBe(302)
-    expect(savedOrigin.headers.location).toBe(hubUrl)
+    expect(savedOrigin.headers.location).toBe(originOfImportUrl)
+
+    const originOfImport = await server.inject({
+      url: originOfImportUrl,
+      headers: { cookie: cookies.header() }
+    })
+    expect(originOfImport.statusCode).toBe(200)
+    expect(originOfImport.result).toContain('Country from where consigned')
+
+    const savedImportOrigin = await server.inject({
+      method: 'POST',
+      url: originOfImportUrl,
+      payload: {
+        countryOfConsignment: 'IE',
+        internalReference: 'REF-123'
+      },
+      headers: { cookie: cookies.header() }
+    })
+    cookies.absorb(savedImportOrigin)
+    expect(savedImportOrigin.statusCode).toBe(302)
+    expect(savedImportOrigin.headers.location).toBe(hubUrl)
 
     const hub = await server.inject({
       url: hubUrl,

@@ -58,12 +58,19 @@ describe('plant-products indexed obligations are first-class', () => {
   beforeEach(() => enterSetContext(SET_ID))
 
   // This suite has no URL-shaped values.
-  it('Should enumerate the country-of-origin obligation node', () => {
-    // The first plant obligation arrives in pp-018; deeper path pins land with pp-021.
+  it('Should enumerate every scalar origin obligation node', () => {
     expect([...walkObligations()]).toEqual([
       {
         obligation: plantProductsObligationSet.countryOfOrigin,
         templatePath: 'countryOfOrigin'
+      },
+      {
+        obligation: plantProductsObligationSet.countryOfConsignment,
+        templatePath: 'countryOfConsignment'
+      },
+      {
+        obligation: plantProductsObligationSet.internalReference,
+        templatePath: 'internalReference'
       }
     ])
   })
@@ -72,11 +79,22 @@ describe('plant-products indexed obligations are first-class', () => {
     expect(sections.map(({ id }) => id)).toEqual(['start', 'origin', 'review'])
   })
 
-  it('Should block readiness until country of origin is complete', () => {
+  it('Should block readiness until both mandatory origin countries are complete', () => {
     expect(
       readyForCheckYourAnswers({}, makeScope({}).inScope, evaluateAnswers({}))
     ).toBe(false)
-    const completed = { countryOfOrigin: 'FR' }
+    const originOnly = { countryOfOrigin: 'FR' }
+    expect(
+      readyForCheckYourAnswers(
+        originOnly,
+        makeScope(originOnly).inScope,
+        evaluateAnswers(originOnly)
+      )
+    ).toBe(false)
+    const completed = {
+      countryOfOrigin: 'FR',
+      countryOfConsignment: 'IE'
+    }
     expect(
       readyForCheckYourAnswers(
         completed,

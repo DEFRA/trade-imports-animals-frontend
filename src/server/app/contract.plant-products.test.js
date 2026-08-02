@@ -25,6 +25,7 @@ import { featureEvaluationBindings } from './sets/plant-products/journeys/linear
 import { dispatchPages } from './sets/plant-products/journeys/linear/features/index.js'
 import * as importType from './sets/plant-products/journeys/linear/features/import-type/controller.js'
 import * as countryOfOrigin from './sets/plant-products/journeys/linear/features/origin/country-of-origin/country-of-origin.controller.js'
+import * as originOfImport from './sets/plant-products/journeys/linear/features/origin/origin-of-import/origin-of-import.controller.js'
 import { entryGuardTarget } from './sets/plant-products/journeys/linear/flow/entry-guard.js'
 import {
   FLOW_ONLY_KEYS,
@@ -73,6 +74,13 @@ const cases = [
     collects: countryOfOrigin.meta.collects,
     controller: countryOfOrigin,
     payload: { countryOfOrigin: 'FR' }
+  },
+  {
+    id: originOfImport.meta.id,
+    collects: originOfImport.meta.collects,
+    controller: originOfImport,
+    payload: { countryOfConsignment: 'IE', internalReference: 'REF-123' },
+    seed: { countryOfOrigin: 'FR' }
   }
 ]
 

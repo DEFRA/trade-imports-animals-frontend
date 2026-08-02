@@ -1,7 +1,10 @@
 // Scaffolded by docs/add-a-set.md step 3.
 import { dashboardPage } from '../features/dashboard/page.js'
 import { importTypePage } from '../features/import-type/page.js'
-import { countryOfOriginPage } from '../features/origin/page.js'
+import {
+  countryOfOriginPage,
+  originOfImportPage
+} from '../features/origin/page.js'
 
 export const FLOW_ONLY_KEYS = ['importType', 'declaration']
 
@@ -12,7 +15,7 @@ export const sections = [
   },
   {
     id: 'origin',
-    pages: [countryOfOriginPage]
+    pages: [countryOfOriginPage, originOfImportPage]
   },
   {
     id: 'review',
