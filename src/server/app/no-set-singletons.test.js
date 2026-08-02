@@ -13,6 +13,7 @@ import {
   currentSetId,
   mountedSetIds,
   registerSetMount,
+  routeWithSetContext,
   setKeyed,
   withSetContext
 } from './shared/set-context.js'
@@ -25,6 +26,7 @@ vi.mock('../../auth/get-oidc-config.js', () => ({
 // Empty BY DESIGN. Adding an entry exempts a seam from co-residency, which is
 // a design decision rather than a fix for a failing convention test.
 export const SET_SEAM_ALLOW_LIST = []
+export const SET_LIFECYCLE_ALLOW_LIST = []
 
 const APP_DIR = fileURLToPath(new URL('.', import.meta.url))
 const L2_DIRS = ['model', 'bridge', 'flow', 'engine', 'services']
@@ -53,6 +55,20 @@ const sourceFiles = L2_DIRS.flatMap((directory) => {
 const sources = sourceFiles.map((filename) => ({
   filename: path.relative(APP_DIR, filename),
   source: readFileSync(filename, 'utf8')
+}))
+
+const gatewayBarrelSource = readFileSync(
+  fileURLToPath(new URL('./routes.js', import.meta.url)),
+  'utf8'
+)
+const gatewaySources = [
+  ...gatewayBarrelSource.matchAll(/from '\.\/(?<filename>routes-[a-z-]+\.js)'/g)
+].map(({ groups }) => ({
+  filename: groups.filename,
+  source: readFileSync(
+    fileURLToPath(new URL(`./${groups.filename}`, import.meta.url)),
+    'utf8'
+  )
 }))
 
 const declarationPattern =
@@ -160,6 +176,53 @@ const assertTemporaryRootRedirect = (response) => {
     throw new Error(
       `Server root must remain a server-wide 302; found ${response.statusCode}`
     )
+  }
+}
+
+const contextMappedRoutesPattern =
+  /server\.route\(\s*allRoutes\.map\(\s*\(route\)\s*=>\s*routeWithSetContext\(\s*SET_ID,\s*route\s*\)\s*\)\s*\)/m
+const contextualEntryGuardPattern =
+  /withSetContext\(\s*SET_ID,\s*\(\)\s*=>\s*journeyEntryGuardTarget\(request,\s*h\)\s*\)/m
+
+const assertSetGatewayLifecycleContext = ({ filename, source }) => {
+  if (SET_LIFECYCLE_ALLOW_LIST.includes(filename)) {
+    return
+  }
+  if (!contextMappedRoutesPattern.test(source)) {
+    throw new Error(
+      `${filename}: set routes must be registered through routeWithSetContext(SET_ID, route)`
+    )
+  }
+  if (!contextualEntryGuardPattern.test(source)) {
+    throw new Error(
+      `${filename}: the plugin entry guard must run inside withSetContext(SET_ID, ...)`
+    )
+  }
+}
+
+const routeLifecycleMethods = (route) => {
+  const methods = [{ point: 'handler', method: route.handler }]
+  for (const [point, extension] of Object.entries(route.options?.ext ?? {})) {
+    for (const item of Array.isArray(extension) ? extension : [extension]) {
+      methods.push({
+        point,
+        method: typeof item === 'function' ? item : item.method
+      })
+    }
+  }
+  return methods.filter(({ method }) => typeof method === 'function')
+}
+
+const assertRouteLifecycleContext = async (filename, setId, route) => {
+  for (const { point, method } of routeLifecycleMethods(route)) {
+    const observedSetId = await withSetContext('tripwire-ambient', () =>
+      method({}, {})
+    )
+    if (observedSetId !== setId) {
+      throw new Error(
+        `${filename}: route ${point} must establish set context "${setId}"; found "${observedSetId}"`
+      )
+    }
   }
 }
 
@@ -352,6 +415,88 @@ describe('server-wide routes', () => {
 
     expect(() => assertTemporaryRootRedirect(response)).toThrow(
       'Server root must remain a server-wide 302; found 301'
+    )
+  })
+})
+
+describe('set-owned lifecycle context', () => {
+  it('Should find the set gateways from the route export barrel', () => {
+    expect(gatewaySources.length).toBeGreaterThan(0)
+  })
+
+  it('keeps the set lifecycle allow-list empty', () => {
+    expect(SET_LIFECYCLE_ALLOW_LIST).toEqual([])
+  })
+
+  it('requires every discovered gateway to context-wrap its routes and entry guard', () => {
+    expect(() =>
+      gatewaySources.forEach(assertSetGatewayLifecycleContext)
+    ).not.toThrow()
+  })
+
+  it('requires the route wrapper to context-wrap handlers and route extensions', async () => {
+    const route = routeWithSetContext('fixture-set', {
+      handler: currentSetId,
+      options: {
+        ext: {
+          onPreResponse: { method: currentSetId }
+        }
+      }
+    })
+
+    await expect(
+      assertRouteLifecycleContext('fixture/routes.js', 'fixture-set', route)
+    ).resolves.toBeUndefined()
+  })
+
+  it('rejects a set gateway that registers routes raw', () => {
+    const violation = {
+      filename: 'fixture/routes-raw.js',
+      source: `
+        server.route(allRoutes)
+        withSetContext(SET_ID, () => journeyEntryGuardTarget(request, h))
+      `
+    }
+
+    expect(() => assertSetGatewayLifecycleContext(violation)).toThrow(
+      'fixture/routes-raw.js: set routes must be registered through routeWithSetContext(SET_ID, route)'
+    )
+  })
+
+  it('rejects an unwrapped route-level options.ext method', async () => {
+    const violation = {
+      handler: () => withSetContext('fixture-set', currentSetId),
+      options: {
+        ext: {
+          onPreResponse: { method: currentSetId }
+        }
+      }
+    }
+
+    await expect(
+      assertRouteLifecycleContext(
+        'fixture/unwrapped-route.js',
+        'fixture-set',
+        violation
+      )
+    ).rejects.toThrow(
+      'fixture/unwrapped-route.js: route onPreResponse must establish set context "fixture-set"; found "tripwire-ambient"'
+    )
+  })
+
+  it('rejects an unwrapped plugin entry-guard extension', () => {
+    const violation = {
+      filename: 'fixture/routes-unwrapped-entry-guard.js',
+      source: `
+        server.route(
+          allRoutes.map((route) => routeWithSetContext(SET_ID, route))
+        )
+        const target = await journeyEntryGuardTarget(request, h)
+      `
+    }
+
+    expect(() => assertSetGatewayLifecycleContext(violation)).toThrow(
+      'fixture/routes-unwrapped-entry-guard.js: the plugin entry guard must run inside withSetContext(SET_ID, ...)'
     )
   })
 })

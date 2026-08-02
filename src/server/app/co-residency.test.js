@@ -6,6 +6,7 @@ import { config } from '../../config/config.js'
 import { nunjucksConfig } from '../../config/nunjucks/nunjucks.js'
 import { DEFAULT_SET_BASE, router } from '../router.js'
 import { configureJourneyFlow, journeySections } from './flow/journey-flow.js'
+import { authenticatedCredentials } from './engine/test-support.js'
 import { records as engineRecords } from './engine/persistence/records.js'
 import { knownJourneysCookie } from './engine/persistence/session.js'
 import { records as liveAnimalsRecords } from './services/persistence/records/index.js'
@@ -52,6 +53,11 @@ import {
   registerSetMount,
   withSetContext
 } from './shared/set-context.js'
+import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
+
+vi.mock('../../auth/get-oidc-config.js', () => ({
+  getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
+}))
 
 const LIVE_ANIMALS = 'live-animals'
 const LIVE_ANIMALS_BASE = `/${LIVE_ANIMALS}`
@@ -323,6 +329,44 @@ describe('co-residency', () => {
     }
   })
 
+  // This case proves that each set re-establishes its own context after the
+  // application's real async request pipeline. Resetting the module graph gives
+  // the server a fresh AsyncLocalStorage, so ambient worker context cannot mask
+  // a missing route-owned boundary.
+  it('establishes route context after application async boundaries', async () => {
+    vi.resetModules()
+    const { createServer: createIsolatedServer } = await import('../server.js')
+    const boundaryServer = await createIsolatedServer()
+    await boundaryServer.initialize()
+    const sessionId = 'CO_RESIDENCY_ASYNC_BOUNDARY'
+    const credentials = { ...authenticatedCredentials, sessionId }
+    await boundaryServer.app.cache.set(sessionId, credentials)
+
+    try {
+      const liveAnimalsResponse = await boundaryServer.inject({
+        url: LIVE_ANIMALS_BASE,
+        auth: { strategy: 'session', credentials }
+      })
+      const plantProductsResponse = await boundaryServer.inject({
+        url: PLANT_PRODUCTS_BASE,
+        auth: { strategy: 'session', credentials }
+      })
+
+      expect(liveAnimalsResponse.statusCode).toBe(200)
+      expect(liveAnimalsResponse.result).toContain(
+        'Import notification service'
+      )
+      expect(plantProductsResponse.statusCode).toBe(200)
+      expect(plantProductsResponse.result).toContain(
+        'Your import notifications'
+      )
+    } finally {
+      await boundaryServer.stop({ timeout: 0 })
+    }
+  })
+
+  // This separate pin proves that established request contexts stay isolated
+  // while two set-owned handlers are genuinely interleaved.
   it('retains both set contexts across genuinely interleaved requests', async () => {
     const originalLiveAnimalsList = liveAnimalsRecords.list
     const originalPlantProductsList = plantProductsRecords.list
