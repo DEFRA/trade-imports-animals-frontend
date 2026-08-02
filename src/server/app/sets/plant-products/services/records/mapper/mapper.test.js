@@ -236,4 +236,51 @@ describe('plant-products notification mapper at the m0 boundary', () => {
       commodityLines: []
     })
   })
+
+  it('round-trips every transport field and its container rows', () => {
+    const answers = {
+      borderControlPost: 'CONPNT',
+      inspectionPremises: 'INSPBAR1',
+      meansOfTransport: 'ROAD_VEHICLE',
+      transportIdentification: 'AB12 CDE',
+      transportDocumentReference: 'CMR-123',
+      arrivalDate: '2026-10-31',
+      arrivalTime: '14:50',
+      usesContainers: true,
+      containers: [
+        {
+          containerNumber: 'CONT-1',
+          sealNumber: 'SEAL-1',
+          officialSeal: true
+        },
+        {
+          containerNumber: '',
+          sealNumber: 'SEAL-2',
+          officialSeal: false
+        }
+      ]
+    }
+
+    expect(toDto(answers)).toEqual({ transport: answers })
+    expect(fromDto(toDto(answers))).toEqual(answers)
+  })
+
+  it('round-trips usesContainers No without inventing a containers key', () => {
+    const answers = {
+      borderControlPost: 'GBLHR4PP',
+      meansOfTransport: 'AIRPLANE',
+      transportIdentification: 'BA123',
+      transportDocumentReference: 'AWB-123',
+      arrivalDate: '2026-08-20',
+      arrivalTime: '09:05',
+      usesContainers: false
+    }
+
+    const dto = toDto(answers)
+
+    expect(dto.transport.usesContainers).toBe(false)
+    expect(dto.transport).not.toHaveProperty('containers')
+    expect(fromDto(dto)).toEqual(answers)
+    expect(fromDto(dto)).not.toHaveProperty('containers')
+  })
 })

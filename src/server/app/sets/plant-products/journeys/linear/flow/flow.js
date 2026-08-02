@@ -6,6 +6,7 @@ import {
   originOfImportPage
 } from '../features/origin/page.js'
 import { purposePage } from '../features/purpose/page.js'
+import { transportBeforeBipPage } from '../features/transport/page.js'
 
 export const FLOW_ONLY_KEYS = ['importType', 'declaration']
 
@@ -21,6 +22,10 @@ export const sections = [
   {
     id: 'purpose',
     pages: [purposePage]
+  },
+  {
+    id: 'transport',
+    pages: [transportBeforeBipPage]
   },
   {
     id: 'review',

@@ -27,6 +27,7 @@ import * as importType from './sets/plant-products/journeys/linear/features/impo
 import * as countryOfOrigin from './sets/plant-products/journeys/linear/features/origin/country-of-origin/country-of-origin.controller.js'
 import * as originOfImport from './sets/plant-products/journeys/linear/features/origin/origin-of-import/origin-of-import.controller.js'
 import * as purpose from './sets/plant-products/journeys/linear/features/purpose/controller.js'
+import * as transport from './sets/plant-products/journeys/linear/features/transport/controller.js'
 import { entryGuardTarget } from './sets/plant-products/journeys/linear/flow/entry-guard.js'
 import {
   FLOW_ONLY_KEYS,
@@ -46,10 +47,11 @@ const drive = driveHandler
 let committableKeys = []
 let flowOnlyWrites = []
 
-const committedIds = ({ before, after }) => [
+const committedIds = ({ before, after }, seededCollects = []) => [
   ...committableKeys.filter(
     (id) => isAnswered(after[id]) && !isAnswered(before[id])
   ),
+  ...seededCollects.filter((id) => isAnswered(after[id])),
   ...Object.keys(flowOnlyWrites.at(-1) ?? {})
 ]
 
@@ -61,6 +63,16 @@ const committableCollects = (collects) =>
       (obligation && !obligation.renderOnly && !obligation.system)
     )
   })
+
+const tomorrow = () => {
+  const date = new Date()
+  date.setUTCDate(date.getUTCDate() + 1)
+  return {
+    day: String(date.getUTCDate()),
+    month: String(date.getUTCMonth() + 1),
+    year: String(date.getUTCFullYear())
+  }
+}
 
 // T-5 standing rule: every collecting plant controller adds a valid POST case.
 const cases = [
@@ -88,6 +100,35 @@ const cases = [
     collects: purpose.meta.collects,
     controller: purpose,
     payload: { reasonForImport: 'INTERNAL_MARKET' }
+  },
+  {
+    id: transport.meta.id,
+    collects: transport.meta.collects,
+    controller: transport,
+    payload: {
+      borderControlPost: 'CONPNT',
+      inspectionPremises: 'INSPBAR1',
+      meansOfTransport: 'ROAD_VEHICLE',
+      transportIdentification: 'AB12 CDE',
+      transportDocumentReference: 'CMR-123',
+      'arrivalDate-day': tomorrow().day,
+      'arrivalDate-month': tomorrow().month,
+      'arrivalDate-year': tomorrow().year,
+      'arrivalTime-hour': '14',
+      'arrivalTime-minute': '50',
+      usesContainers: 'true'
+    },
+    seed: {
+      usesContainers: true,
+      containers: [
+        {
+          containerNumber: 'CONT-1',
+          sealNumber: 'SEAL-1',
+          officialSeal: true
+        }
+      ]
+    },
+    seededCollects: ['usesContainers', 'containers']
   }
 ]
 
@@ -133,9 +174,9 @@ describe('plant-products controller <-> model commit contract', () => {
 
   it.each(cases)(
     'Should commit exactly the committable collects for $id',
-    async ({ collects, controller, payload, seed }) => {
+    async ({ collects, controller, payload, seed, seededCollects }) => {
       const result = await drive(postHandlerOf(controller), { payload, seed })
-      expect(new Set(committedIds(result))).toEqual(
+      expect(new Set(committedIds(result, seededCollects))).toEqual(
         new Set(committableCollects(collects))
       )
     }

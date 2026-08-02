@@ -72,7 +72,36 @@ const mapCommodity = (answers) =>
       }
     : {}
 
-const SECTION_MAPPERS = Object.freeze([mapOrigin, mapPurpose, mapCommodity])
+const TRANSPORT_FIELDS = [
+  'borderControlPost',
+  'inspectionPremises',
+  'meansOfTransport',
+  'transportIdentification',
+  'transportDocumentReference',
+  'arrivalDate',
+  'arrivalTime',
+  'usesContainers'
+]
+
+const mapContainer = (entry) =>
+  defined(entry, ['containerNumber', 'sealNumber', 'officialSeal'])
+
+const mapTransport = (answers) => {
+  const transport = {
+    ...defined(answers, TRANSPORT_FIELDS),
+    ...(Array.isArray(answers.containers)
+      ? { containers: answers.containers.map(mapContainer) }
+      : {})
+  }
+  return Object.keys(transport).length > 0 ? { transport } : {}
+}
+
+const SECTION_MAPPERS = Object.freeze([
+  mapOrigin,
+  mapPurpose,
+  mapCommodity,
+  mapTransport
+])
 
 const composeSections = (answers) =>
   SECTION_MAPPERS.reduce(

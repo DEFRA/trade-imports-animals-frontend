@@ -4,19 +4,57 @@ import {
   internalReference
 } from './sections/origin.js'
 import { reasonForImport } from './sections/purpose.js'
+import {
+  arrivalDate,
+  arrivalTime,
+  borderControlPost,
+  containerNumber,
+  containers,
+  inspectionPremises,
+  meansOfTransport,
+  officialSeal,
+  sealNumber,
+  transportDocumentReference,
+  transportIdentification,
+  usesContainers
+} from './sections/transport.js'
 
 export {
   countryOfConsignment,
   countryOfOrigin,
   internalReference,
-  reasonForImport
+  reasonForImport,
+  arrivalDate,
+  arrivalTime,
+  borderControlPost,
+  containerNumber,
+  containers,
+  inspectionPremises,
+  meansOfTransport,
+  officialSeal,
+  sealNumber,
+  transportDocumentReference,
+  transportIdentification,
+  usesContainers
 }
 
 export const obligations = [
   countryOfOrigin,
   countryOfConsignment,
   internalReference,
-  reasonForImport
+  reasonForImport,
+  borderControlPost,
+  inspectionPremises,
+  meansOfTransport,
+  transportIdentification,
+  transportDocumentReference,
+  arrivalDate,
+  arrivalTime,
+  usesContainers,
+  containers,
+  containerNumber,
+  sealNumber,
+  officialSeal
 ]
 
 export const groups = obligations.filter((obligation) =>

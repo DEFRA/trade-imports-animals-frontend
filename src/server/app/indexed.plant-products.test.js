@@ -75,6 +75,54 @@ describe('plant-products indexed obligations are first-class', () => {
       {
         obligation: plantProductsObligationSet.reasonForImport,
         templatePath: 'reasonForImport'
+      },
+      {
+        obligation: plantProductsObligationSet.borderControlPost,
+        templatePath: 'borderControlPost'
+      },
+      {
+        obligation: plantProductsObligationSet.inspectionPremises,
+        templatePath: 'inspectionPremises'
+      },
+      {
+        obligation: plantProductsObligationSet.meansOfTransport,
+        templatePath: 'meansOfTransport'
+      },
+      {
+        obligation: plantProductsObligationSet.transportIdentification,
+        templatePath: 'transportIdentification'
+      },
+      {
+        obligation: plantProductsObligationSet.transportDocumentReference,
+        templatePath: 'transportDocumentReference'
+      },
+      {
+        obligation: plantProductsObligationSet.arrivalDate,
+        templatePath: 'arrivalDate'
+      },
+      {
+        obligation: plantProductsObligationSet.arrivalTime,
+        templatePath: 'arrivalTime'
+      },
+      {
+        obligation: plantProductsObligationSet.usesContainers,
+        templatePath: 'usesContainers'
+      },
+      {
+        obligation: plantProductsObligationSet.containers,
+        templatePath: 'containers'
+      },
+      {
+        obligation: plantProductsObligationSet.containerNumber,
+        templatePath: 'containers.containerNumber'
+      },
+      {
+        obligation: plantProductsObligationSet.sealNumber,
+        templatePath: 'containers.sealNumber'
+      },
+      {
+        obligation: plantProductsObligationSet.officialSeal,
+        templatePath: 'containers.officialSeal'
       }
     ])
   })
@@ -84,6 +132,7 @@ describe('plant-products indexed obligations are first-class', () => {
       'start',
       'origin',
       'purpose',
+      'transport',
       'review'
     ])
   })
@@ -120,6 +169,23 @@ describe('plant-products indexed obligations are first-class', () => {
         completed,
         makeScope(completed).inScope,
         evaluateAnswers(completed)
+      )
+    ).toBe(false)
+    const transportCompleted = {
+      ...completed,
+      borderControlPost: 'GBLHR4PP',
+      meansOfTransport: 'ROAD_VEHICLE',
+      transportIdentification: 'AB12 CDE',
+      transportDocumentReference: 'CMR-123',
+      arrivalDate: '2026-08-20',
+      arrivalTime: '14:50',
+      usesContainers: false
+    }
+    expect(
+      readyForCheckYourAnswers(
+        transportCompleted,
+        makeScope(transportCompleted).inScope,
+        evaluateAnswers(transportCompleted)
       )
     ).toBe(true)
   })

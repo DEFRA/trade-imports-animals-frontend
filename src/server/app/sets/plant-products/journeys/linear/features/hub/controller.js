@@ -27,7 +27,8 @@ import { copy as en } from './copy/copy.en.js'
 
 export const GROUPS = [
   { id: 'origin', rows: ['origin'] },
-  { id: 'purpose', rows: ['purpose'] }
+  { id: 'purpose', rows: ['purpose'] },
+  { id: 'transport', rows: ['transport'] }
 ]
 
 const view = `${TEMPLATES}/features/hub/template`

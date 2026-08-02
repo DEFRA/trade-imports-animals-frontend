@@ -58,7 +58,36 @@ const mapCommodity = (dto) =>
       }
     : {}
 
-const SECTION_MAPPERS = Object.freeze([mapOrigin, mapPurpose, mapCommodity])
+const TRANSPORT_FIELDS = [
+  'borderControlPost',
+  'inspectionPremises',
+  'meansOfTransport',
+  'transportIdentification',
+  'transportDocumentReference',
+  'arrivalDate',
+  'arrivalTime',
+  'usesContainers'
+]
+
+const mapContainer = (entry) =>
+  defined(entry, ['containerNumber', 'sealNumber', 'officialSeal'])
+
+const mapTransport = (dto) => {
+  if (!dto.transport || typeof dto.transport !== 'object') return {}
+  return {
+    ...defined(dto.transport, TRANSPORT_FIELDS),
+    ...(Array.isArray(dto.transport.containers)
+      ? { containers: dto.transport.containers.map(mapContainer) }
+      : {})
+  }
+}
+
+const SECTION_MAPPERS = Object.freeze([
+  mapOrigin,
+  mapPurpose,
+  mapCommodity,
+  mapTransport
+])
 
 const composeSections = (dto) =>
   SECTION_MAPPERS.reduce(

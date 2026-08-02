@@ -14,7 +14,8 @@ export const copy = {
   },
   groups: {
     origin: '1. Tarddiad y mewnforyn',
-    purpose: '2. Diben'
+    purpose: '2. Diben',
+    transport: '5. Cludiant i’r BCP'
   },
   rows: {
     origin: {
@@ -23,6 +24,10 @@ export const copy = {
     purpose: {
       title: 'Diben',
       hint: 'Y prif reswm dros fewnforio’r llwyth'
+    },
+    transport: {
+      title: 'Cludiant i’r BCP',
+      hint: 'Sut bydd y llwyth yn teithio i’r safle rheoli ar y ffin'
     }
   },
   captions: {

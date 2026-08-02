@@ -44,4 +44,12 @@ describe('plant-products hub copy', () => {
       hint: 'The main reason for importing the consignment'
     })
   })
+
+  it('provides the numbered transport group and its row copy', () => {
+    expect(en.groups.transport).toBe('5. Transport to the BCP')
+    expect(en.rows.transport).toEqual({
+      title: 'Transport to the BCP',
+      hint: 'How the consignment will travel to the border control post'
+    })
+  })
 })
