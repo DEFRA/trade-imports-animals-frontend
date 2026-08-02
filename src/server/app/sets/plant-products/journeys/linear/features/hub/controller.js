@@ -28,6 +28,7 @@ import { copy as en } from './copy/copy.en.js'
 export const GROUPS = [
   { id: 'origin', rows: ['origin'] },
   { id: 'purpose', rows: ['purpose'] },
+  { id: 'commodities', rows: ['commodities'] },
   { id: 'transport', rows: ['transport'] }
 ]
 

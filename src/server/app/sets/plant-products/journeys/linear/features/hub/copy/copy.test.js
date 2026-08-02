@@ -45,6 +45,14 @@ describe('plant-products hub copy', () => {
     })
   })
 
+  it('provides the numbered commodity group and its row copy', () => {
+    expect(en.groups.commodities).toBe('3. Commodity')
+    expect(en.rows.commodities).toEqual({
+      title: 'Commodity',
+      hint: 'The commodities, species and quantities you are importing'
+    })
+  })
+
   it('provides the numbered transport group and its row copy', () => {
     expect(en.groups.transport).toBe('5. Transport to the BCP')
     expect(en.rows.transport).toEqual({

@@ -15,6 +15,7 @@ export const copy = {
   groups: {
     origin: '1. Origin of the import',
     purpose: '2. Purpose',
+    commodities: '3. Commodity',
     transport: '5. Transport to the BCP'
   },
   rows: {
@@ -24,6 +25,10 @@ export const copy = {
     purpose: {
       title: 'Purpose',
       hint: 'The main reason for importing the consignment'
+    },
+    commodities: {
+      title: 'Commodity',
+      hint: 'The commodities, species and quantities you are importing'
     },
     transport: {
       title: 'Transport to the BCP',

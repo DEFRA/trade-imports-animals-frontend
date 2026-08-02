@@ -23,6 +23,7 @@ import {
 } from './sets/plant-products/journeys/linear/config.js'
 import { featureEvaluationBindings } from './sets/plant-products/journeys/linear/features/evaluation.js'
 import { dispatchPages } from './sets/plant-products/journeys/linear/features/index.js'
+import * as commodityInputMethod from './sets/plant-products/journeys/linear/features/commodities/commodity-input-method/commodity-input-method.controller.js'
 import * as importType from './sets/plant-products/journeys/linear/features/import-type/controller.js'
 import * as countryOfOrigin from './sets/plant-products/journeys/linear/features/origin/country-of-origin/country-of-origin.controller.js'
 import * as originOfImport from './sets/plant-products/journeys/linear/features/origin/origin-of-import/origin-of-import.controller.js'
@@ -100,6 +101,12 @@ const cases = [
     collects: purpose.meta.collects,
     controller: purpose,
     payload: { reasonForImport: 'INTERNAL_MARKET' }
+  },
+  {
+    id: commodityInputMethod.meta.id,
+    collects: commodityInputMethod.meta.collects,
+    controller: commodityInputMethod,
+    payload: { commodityInputMethod: 'MANUAL' }
   },
   {
     id: transport.meta.id,

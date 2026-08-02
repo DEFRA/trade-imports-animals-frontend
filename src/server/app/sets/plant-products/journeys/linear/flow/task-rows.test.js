@@ -21,6 +21,7 @@ import {
 import * as obligationSet from '../../../obligations/index.js'
 import { featureEvaluationBindings } from '../features/evaluation.js'
 import { dispatchPages } from '../features/index.js'
+import { commodityInputMethodPage } from '../features/commodities/page.js'
 import {
   countryOfOriginPage,
   originOfImportPage
@@ -55,6 +56,10 @@ describe('plant-products task rows', () => {
         pages: [purposePage]
       },
       {
+        id: 'commodities',
+        pages: [commodityInputMethodPage]
+      },
+      {
         id: 'transport',
         pages: [transportBeforeBipPage]
       }
@@ -73,6 +78,15 @@ describe('plant-products task rows', () => {
         )
       )
     ).toBe('/plant-products/notifications/journey-1/about-the-consignment')
+    expect(
+      withSetContext('plant-products', () =>
+        rowEntry(
+          taskRowById('commodities'),
+          makeScope({ countryOfOrigin: 'FR' }),
+          'journey-1'
+        )
+      )
+    ).toBe('/plant-products/notifications/journey-1/commodity-input-method')
   })
 
   it('derives fallback row parts from the page dispatch', () => {
@@ -82,6 +96,11 @@ describe('plant-products task rows', () => {
     expect(
       withSetContext('plant-products', () => rowParts(taskRowById('purpose')))
     ).toEqual(['reasonForImport'])
+    expect(
+      withSetContext('plant-products', () =>
+        rowParts(taskRowById('commodities'))
+      )
+    ).toEqual(['commodityInputMethod'])
     expect(
       withSetContext('plant-products', () => rowParts(taskRowById('transport')))
     ).toEqual([
@@ -111,6 +130,22 @@ describe('plant-products task rows', () => {
 
     expect(statusFor({})).toBe(NOT_STARTED)
     expect(statusFor({ reasonForImport: 'INTERNAL_MARKET' })).toBe(FULFILLED)
+  })
+
+  it('requires an input method to complete the commodities row', () => {
+    const statusFor = (answers) =>
+      withSetContext('plant-products', () => {
+        const { inScope } = makeScope(answers)
+        return rowStatus(
+          taskRowById('commodities'),
+          answers,
+          inScope,
+          evaluateAnswers(answers)
+        )
+      })
+
+    expect(statusFor({})).toBe(NOT_STARTED)
+    expect(statusFor({ commodityInputMethod: 'MANUAL' })).toBe(FULFILLED)
   })
 
   it('requires both countries but not the optional reference to complete the origin row', () => {
@@ -211,20 +246,32 @@ describe('plant-products task rows', () => {
     const earlierRows = {
       countryOfOrigin: 'FR',
       countryOfConsignment: 'IE',
-      reasonForImport: 'INTERNAL_MARKET'
+      reasonForImport: 'INTERNAL_MARKET',
+      commodityInputMethod: 'MANUAL'
+    }
+    const completedTransport = {
+      borderControlPost: 'GBLHR4PP',
+      meansOfTransport: 'ROAD_VEHICLE',
+      transportIdentification: 'AB12 CDE',
+      transportDocumentReference: 'CMR-123',
+      arrivalDate: '2026-08-20',
+      arrivalTime: '14:50',
+      usesContainers: false
     }
 
+    expect(
+      readyFor({
+        countryOfOrigin: 'FR',
+        countryOfConsignment: 'IE',
+        reasonForImport: 'INTERNAL_MARKET',
+        ...completedTransport
+      })
+    ).toBe(false)
     expect(readyFor(earlierRows)).toBe(false)
     expect(
       readyFor({
         ...earlierRows,
-        borderControlPost: 'GBLHR4PP',
-        meansOfTransport: 'ROAD_VEHICLE',
-        transportIdentification: 'AB12 CDE',
-        transportDocumentReference: 'CMR-123',
-        arrivalDate: '2026-08-20',
-        arrivalTime: '14:50',
-        usesContainers: false
+        ...completedTransport
       })
     ).toBe(true)
   })

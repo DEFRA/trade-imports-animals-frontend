@@ -76,6 +76,24 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     )
   })
 
+  it('round-trips commodityInputMethod through commodity.inputMethod', () => {
+    const answers = { commodityInputMethod: 'MANUAL' }
+
+    expect(toDto(answers)).toEqual({
+      commodity: { inputMethod: 'MANUAL' }
+    })
+    expect(fromDto(toDto(answers))).toEqual(answers)
+  })
+
+  it('does not fabricate commodity.inputMethod when it is unanswered', () => {
+    expect(toDto({ commodityLines: [] }).commodity).not.toHaveProperty(
+      'inputMethod'
+    )
+    expect(
+      fromDto({ commodity: { commodityComplement: [] } })
+    ).not.toHaveProperty('commodityInputMethod')
+  })
+
   it('omits server-set fields from the PUT content DTO', () => {
     const answers = Object.fromEntries(
       SERVER_SET_FIELDS.map((field) => [field, `answer-${field}`])

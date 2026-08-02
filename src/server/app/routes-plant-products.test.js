@@ -64,6 +64,7 @@ describe('plant-products gateway boot proof', () => {
     const hubUrl = importTypeUrl.replace(/\/import-type$/, '')
     const countryOfOriginUrl = `${hubUrl}/country-of-origin`
     const originOfImportUrl = `${hubUrl}/origin-of-import`
+    const commodityInputMethodUrl = `${hubUrl}/commodity-input-method`
 
     expect(created.statusCode).toBe(302)
     expect(importTypeUrl).toMatch(
@@ -138,6 +139,17 @@ describe('plant-products gateway boot proof', () => {
     expect(hub.statusCode).toBe(200)
     expect(hub.result).toContain('Review and submit')
     expect(hub.result).toContain('Cannot start yet')
+
+    const commodityInputMethod = await server.inject({
+      url: commodityInputMethodUrl,
+      headers: { cookie: cookies.header() }
+    })
+    expect(commodityInputMethod.statusCode).toBe(200)
+    expect(commodityInputMethod.result).toContain(
+      'How do you want to add your commodity details?'
+    )
+    expect(commodityInputMethod.result).toContain('Manual entry')
+    expect(commodityInputMethod.result).toContain('Upload from a CSV file')
   })
 
   it('leaves the plant commodity-mapper slot absent', () => {

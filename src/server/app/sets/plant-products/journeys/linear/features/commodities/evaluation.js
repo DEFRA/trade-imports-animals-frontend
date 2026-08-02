@@ -1,7 +1,9 @@
 import {
   feature,
-  grouped
+  grouped,
+  scalar
 } from '../../../../../../bridge/fulfilment-bindings.js'
+import { commodityInputMethod } from '../../../../obligations/index.js'
 import {
   commodityLines,
   commoditySelection,
@@ -74,4 +76,8 @@ export const evaluationBindings = feature('commodities', [
   speciesLeaf('speciesId', speciesId),
   varietyLeaf('variety', variety),
   varietyLeaf('varietyClass', varietyClass)
+])
+
+export const inputMethodBindings = feature('commodities', [
+  scalar({ field: 'commodityInputMethod', obligation: commodityInputMethod })
 ])

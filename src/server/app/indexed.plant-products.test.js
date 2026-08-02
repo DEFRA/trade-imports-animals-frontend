@@ -77,6 +77,10 @@ describe('plant-products indexed obligations are first-class', () => {
         templatePath: 'reasonForImport'
       },
       {
+        obligation: plantProductsObligationSet.commodityInputMethod,
+        templatePath: 'commodityInputMethod'
+      },
+      {
         obligation: plantProductsObligationSet.borderControlPost,
         templatePath: 'borderControlPost'
       },
@@ -132,9 +136,21 @@ describe('plant-products indexed obligations are first-class', () => {
       'start',
       'origin',
       'purpose',
+      'commodities',
       'transport',
       'review'
     ])
+  })
+
+  it('Should place commodities after purpose and before transport', () => {
+    const sectionIds = sections.map(({ id }) => id)
+
+    expect(sectionIds.indexOf('purpose')).toBeLessThan(
+      sectionIds.indexOf('commodities')
+    )
+    expect(sectionIds.indexOf('commodities')).toBeLessThan(
+      sectionIds.indexOf('transport')
+    )
   })
 
   it('Should block readiness until mandatory origin and purpose rows are complete', () => {
@@ -173,6 +189,7 @@ describe('plant-products indexed obligations are first-class', () => {
     ).toBe(false)
     const transportCompleted = {
       ...completed,
+      commodityInputMethod: 'MANUAL',
       borderControlPost: 'GBLHR4PP',
       meansOfTransport: 'ROAD_VEHICLE',
       transportIdentification: 'AB12 CDE',

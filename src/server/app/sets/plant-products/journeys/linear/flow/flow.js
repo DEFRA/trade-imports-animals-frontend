@@ -1,5 +1,6 @@
 // Scaffolded by docs/add-a-set.md step 3.
 import { dashboardPage } from '../features/dashboard/page.js'
+import { commodityInputMethodPage } from '../features/commodities/page.js'
 import { importTypePage } from '../features/import-type/page.js'
 import {
   countryOfOriginPage,
@@ -22,6 +23,10 @@ export const sections = [
   {
     id: 'purpose',
     pages: [purposePage]
+  },
+  {
+    id: 'commodities',
+    pages: [commodityInputMethodPage]
   },
   {
     id: 'transport',

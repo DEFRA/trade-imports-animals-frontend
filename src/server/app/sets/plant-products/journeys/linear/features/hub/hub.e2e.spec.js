@@ -39,6 +39,9 @@ test.describe('plant-products hub', () => {
       page.getByRole('heading', { name: copy.groups.purpose })
     ).toBeVisible()
     await expect(
+      page.getByRole('heading', { name: copy.groups.commodities })
+    ).toBeVisible()
+    await expect(
       page.getByRole('heading', { name: copy.groups.transport })
     ).toBeVisible()
     const origin = page.getByRole('listitem').filter({
@@ -71,6 +74,17 @@ test.describe('plant-products hub', () => {
     ).toHaveAttribute(
       'href',
       /^\/plant-products\/notifications\/[^/]+\/about-the-consignment$/
+    )
+    const commodities = page.getByRole('listitem').filter({
+      has: page.getByText(copy.rows.commodities.title, { exact: true })
+    })
+    await expect(commodities).toContainText(copy.rows.commodities.hint)
+    await expect(commodities).toContainText(copy.statuses.notYetStarted)
+    await expect(
+      commodities.getByRole('link', { name: copy.rows.commodities.title })
+    ).toHaveAttribute(
+      'href',
+      /^\/plant-products\/notifications\/[^/]+\/commodity-input-method$/
     )
     const transport = page.getByRole('listitem').filter({
       has: page.getByText(copy.rows.transport.title, { exact: true })

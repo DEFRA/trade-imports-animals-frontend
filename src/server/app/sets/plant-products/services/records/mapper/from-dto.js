@@ -51,12 +51,16 @@ const mapCommodityLine = (entry) => ({
   species: Array.isArray(entry.species) ? entry.species.map(mapSpecies) : []
 })
 
-const mapCommodity = (dto) =>
-  Array.isArray(dto.commodity?.commodityComplement)
+const mapCommodity = (dto) => ({
+  ...(dto.commodity?.inputMethod !== undefined
+    ? { commodityInputMethod: dto.commodity.inputMethod }
+    : {}),
+  ...(Array.isArray(dto.commodity?.commodityComplement)
     ? {
         commodityLines: dto.commodity.commodityComplement.map(mapCommodityLine)
       }
-    : {}
+    : {})
+})
 
 const TRANSPORT_FIELDS = [
   'borderControlPost',

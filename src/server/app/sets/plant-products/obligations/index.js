@@ -1,3 +1,4 @@
+import { commodityInputMethod } from './sections/commodities/input-method.js'
 import {
   countryOfConsignment,
   countryOfOrigin,
@@ -20,6 +21,7 @@ import {
 } from './sections/transport.js'
 
 export {
+  commodityInputMethod,
   countryOfConsignment,
   countryOfOrigin,
   internalReference,
@@ -43,6 +45,7 @@ export const obligations = [
   countryOfConsignment,
   internalReference,
   reasonForImport,
+  commodityInputMethod,
   borderControlPost,
   inspectionPremises,
   meansOfTransport,

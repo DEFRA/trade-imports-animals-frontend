@@ -63,14 +63,19 @@ const mapCommodityLine = (entry) => {
   }
 }
 
-const mapCommodity = (answers) =>
-  Array.isArray(answers.commodityLines)
-    ? {
-        commodity: {
+const mapCommodity = (answers) => {
+  const commodity = {
+    ...(answers.commodityInputMethod !== undefined
+      ? { inputMethod: answers.commodityInputMethod }
+      : {}),
+    ...(Array.isArray(answers.commodityLines)
+      ? {
           commodityComplement: answers.commodityLines.map(mapCommodityLine)
         }
-      }
-    : {}
+      : {})
+  }
+  return Object.keys(commodity).length > 0 ? { commodity } : {}
+}
 
 const TRANSPORT_FIELDS = [
   'borderControlPost',

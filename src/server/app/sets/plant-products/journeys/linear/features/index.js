@@ -1,5 +1,6 @@
 // Scaffolded by docs/add-a-set.md step 3.
 import * as dashboard from './dashboard/controller.js'
+import * as commodityInputMethod from './commodities/commodity-input-method/commodity-input-method.controller.js'
 import * as hub from './hub/controller.js'
 import * as importType from './import-type/controller.js'
 import * as countryOfOrigin from './origin/country-of-origin/country-of-origin.controller.js'
@@ -12,6 +13,7 @@ export const dispatchPages = [
   countryOfOrigin.meta,
   originOfImport.meta,
   purpose.meta,
+  commodityInputMethod.meta,
   transport.meta
 ]
 
@@ -21,6 +23,7 @@ export const allRoutes = [
   ...countryOfOrigin.routes,
   ...originOfImport.routes,
   ...purpose.routes,
+  ...commodityInputMethod.routes,
   ...transport.routes,
   ...hub.routes
 ]
