@@ -520,8 +520,15 @@ before the set ships a Copy button.** The engine port already carries the key �
 status-transition legality, so the self-hosted Playwright ladder needs no
 backend.
 
-`reference/` — one fixture module per vocabulary the set needs. Each exports an
-options array and a label-for-code lookup. Fixture-backed reference data needs
+`reference/` — one pure fixture module per vocabulary the set needs. Transcribe
+codes and names from an existing real canned-data source; never re-derive them
+from memory or add plausible placeholders. Export frozen source data, one or
+more frozen options arrays in the shapes consuming pages need, and a
+label-for-code lookup. Country names and equivalent vocabulary terms are
+reference data, but control labels, hints, headings and pseudo-option display
+labels are bilingual page copy and stay in the consuming feature's copy bundle
+and template. These modules perform no IO, async work or environment reads and
+must not capture set context at module load. Fixture-backed reference data needs
 no priming, which is why the gateway's priming step is absent.
 
 **Mapper omission discipline.** A field with no home in the backend payload
