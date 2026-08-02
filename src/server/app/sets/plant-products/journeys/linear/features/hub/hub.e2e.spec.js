@@ -35,6 +35,9 @@ test.describe('plant-products hub', () => {
     await expect(
       page.getByRole('heading', { name: copy.groups.origin })
     ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: copy.groups.purpose })
+    ).toBeVisible()
     const origin = page.getByRole('listitem').filter({
       has: page.getByText(copy.rows.origin.title, { exact: true })
     })
@@ -44,6 +47,27 @@ test.describe('plant-products hub', () => {
     ).toHaveAttribute(
       'href',
       /^\/plant-products\/notifications\/[^/]+\/country-of-origin$/
+    )
+    const purpose = page.getByRole('listitem').filter({
+      has: page.getByText(copy.rows.purpose.title, { exact: true })
+    })
+    await expect(purpose).toContainText(copy.rows.purpose.hint)
+    await expect(purpose).toContainText(copy.statuses.cannotStartYet)
+    await expect(
+      purpose.getByRole('link', { name: copy.rows.purpose.title })
+    ).toHaveCount(0)
+
+    await origin.getByRole('link', { name: copy.rows.origin.title }).click()
+    await page.getByLabel('Country of origin').selectOption('FR')
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('link', { name: 'Back' }).click()
+
+    await expect(purpose).toContainText(copy.statuses.notYetStarted)
+    await expect(
+      purpose.getByRole('link', { name: copy.rows.purpose.title })
+    ).toHaveAttribute(
+      'href',
+      /^\/plant-products\/notifications\/[^/]+\/about-the-consignment$/
     )
     const review = page.getByRole('listitem').filter({
       has: page.getByText(copy.review.title, { exact: true })

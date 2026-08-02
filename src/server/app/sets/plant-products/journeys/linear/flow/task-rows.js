@@ -5,9 +5,11 @@ import {
   countryOfOriginPage,
   originOfImportPage
 } from '../features/origin/page.js'
+import { purposePage } from '../features/purpose/page.js'
 
 export const taskRows = [
-  { id: 'origin', pages: [countryOfOriginPage, originOfImportPage] }
+  { id: 'origin', pages: [countryOfOriginPage, originOfImportPage] },
+  { id: 'purpose', pages: [purposePage] }
 ]
 
 export const taskRowById = (id) => taskRows.find((row) => row.id === id)

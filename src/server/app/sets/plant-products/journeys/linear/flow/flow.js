@@ -5,6 +5,7 @@ import {
   countryOfOriginPage,
   originOfImportPage
 } from '../features/origin/page.js'
+import { purposePage } from '../features/purpose/page.js'
 
 export const FLOW_ONLY_KEYS = ['importType', 'declaration']
 
@@ -16,6 +17,10 @@ export const sections = [
   {
     id: 'origin',
     pages: [countryOfOriginPage, originOfImportPage]
+  },
+  {
+    id: 'purpose',
+    pages: [purposePage]
   },
   {
     id: 'review',

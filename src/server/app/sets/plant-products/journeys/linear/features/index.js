@@ -4,11 +4,13 @@ import * as hub from './hub/controller.js'
 import * as importType from './import-type/controller.js'
 import * as countryOfOrigin from './origin/country-of-origin/country-of-origin.controller.js'
 import * as originOfImport from './origin/origin-of-import/origin-of-import.controller.js'
+import * as purpose from './purpose/controller.js'
 
 export const dispatchPages = [
   importType.meta,
   countryOfOrigin.meta,
-  originOfImport.meta
+  originOfImport.meta,
+  purpose.meta
 ]
 
 export const allRoutes = [
@@ -16,5 +18,6 @@ export const allRoutes = [
   ...importType.routes,
   ...countryOfOrigin.routes,
   ...originOfImport.routes,
+  ...purpose.routes,
   ...hub.routes
 ]

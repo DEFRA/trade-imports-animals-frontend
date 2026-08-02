@@ -13,11 +13,16 @@ export const copy = {
     hint: 'Check your answers before you submit the notification'
   },
   groups: {
-    origin: '1. Origin of the import'
+    origin: '1. Origin of the import',
+    purpose: '2. Purpose'
   },
   rows: {
     origin: {
       title: 'Origin of the import'
+    },
+    purpose: {
+      title: 'Purpose',
+      hint: 'The main reason for importing the consignment'
     }
   },
   captions: {

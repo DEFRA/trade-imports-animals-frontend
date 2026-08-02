@@ -1,0 +1,27 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukRadios({
+      idPrefix: "reasonForImport",
+      name: "reasonForImport",
+      fieldset: {
+        legend: {
+          html: '<span class="govuk-caption-xl">' ~ copy.caption ~ '</span>' ~ copy.legend,
+          isPageHeading: true,
+          classes: "govuk-fieldset__legend--xl"
+        }
+      },
+      errorMessage: errors.reasonForImport and { text: errors.reasonForImport },
+      items: reasonOptions
+    }) }}
+
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+  </form>
+{% endblock %}

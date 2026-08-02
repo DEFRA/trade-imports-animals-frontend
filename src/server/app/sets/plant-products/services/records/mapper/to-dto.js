@@ -13,7 +13,13 @@ const mapOrigin = (answers) => {
   return Object.keys(origin).length > 0 ? { origin } : {}
 }
 
-const SECTION_MAPPERS = Object.freeze([mapOrigin])
+const mapPurpose = (answers) => ({
+  ...(answers.reasonForImport
+    ? { reasonForImport: answers.reasonForImport }
+    : {})
+})
+
+const SECTION_MAPPERS = Object.freeze([mapOrigin, mapPurpose])
 
 const composeSections = (answers) =>
   SECTION_MAPPERS.reduce(

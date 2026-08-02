@@ -25,6 +25,7 @@ import {
   countryOfOriginPage,
   originOfImportPage
 } from '../features/origin/page.js'
+import { purposePage } from '../features/purpose/page.js'
 import { FLOW_ONLY_KEYS, sections } from './flow.js'
 import { rowParts, rowStatus, taskRowById, taskRows } from './task-rows.js'
 
@@ -47,6 +48,10 @@ describe('plant-products task rows', () => {
       {
         id: 'origin',
         pages: [countryOfOriginPage, originOfImportPage]
+      },
+      {
+        id: 'purpose',
+        pages: [purposePage]
       }
     ])
     expect(
@@ -54,12 +59,40 @@ describe('plant-products task rows', () => {
         rowEntry(taskRowById('origin'), makeScope({}), 'journey-1')
       )
     ).toBe('/plant-products/notifications/journey-1/country-of-origin')
+    expect(
+      withSetContext('plant-products', () =>
+        rowEntry(
+          taskRowById('purpose'),
+          makeScope({ countryOfOrigin: 'FR' }),
+          'journey-1'
+        )
+      )
+    ).toBe('/plant-products/notifications/journey-1/about-the-consignment')
   })
 
   it('derives fallback row parts from the page dispatch', () => {
     expect(
       withSetContext('plant-products', () => rowParts(taskRowById('origin')))
     ).toEqual(['countryOfOrigin', 'countryOfConsignment', 'internalReference'])
+    expect(
+      withSetContext('plant-products', () => rowParts(taskRowById('purpose')))
+    ).toEqual(['reasonForImport'])
+  })
+
+  it('requires a reason for import to complete the purpose row', () => {
+    const statusFor = (answers) =>
+      withSetContext('plant-products', () => {
+        const { inScope } = makeScope(answers)
+        return rowStatus(
+          taskRowById('purpose'),
+          answers,
+          inScope,
+          evaluateAnswers(answers)
+        )
+      })
+
+    expect(statusFor({})).toBe(NOT_STARTED)
+    expect(statusFor({ reasonForImport: 'INTERNAL_MARKET' })).toBe(FULFILLED)
   })
 
   it('requires both countries but not the optional reference to complete the origin row', () => {
@@ -97,6 +130,13 @@ describe('plant-products task rows', () => {
     expect(readyFor({ countryOfOrigin: 'FR' })).toBe(false)
     expect(
       readyFor({ countryOfOrigin: 'FR', countryOfConsignment: 'IE' })
+    ).toBe(false)
+    expect(
+      readyFor({
+        countryOfOrigin: 'FR',
+        countryOfConsignment: 'IE',
+        reasonForImport: 'INTERNAL_MARKET'
+      })
     ).toBe(true)
   })
 })

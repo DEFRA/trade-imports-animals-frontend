@@ -25,7 +25,10 @@ import { rowStatus, taskRowById } from '../../flow/task-rows.js'
 import { copy as cy } from './copy/copy.cy.js'
 import { copy as en } from './copy/copy.en.js'
 
-export const GROUPS = [{ id: 'origin', rows: ['origin'] }]
+export const GROUPS = [
+  { id: 'origin', rows: ['origin'] },
+  { id: 'purpose', rows: ['purpose'] }
+]
 
 const view = `${TEMPLATES}/features/hub/template`
 const copy = copyFor({ en, cy })

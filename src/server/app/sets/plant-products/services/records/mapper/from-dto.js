@@ -10,7 +10,11 @@ const mapOrigin = (dto) => ({
     : {})
 })
 
-const SECTION_MAPPERS = Object.freeze([mapOrigin])
+const mapPurpose = (dto) => ({
+  ...(dto.reasonForImport ? { reasonForImport: dto.reasonForImport } : {})
+})
+
+const SECTION_MAPPERS = Object.freeze([mapOrigin, mapPurpose])
 
 const composeSections = (dto) =>
   SECTION_MAPPERS.reduce(

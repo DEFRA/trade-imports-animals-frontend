@@ -58,7 +58,7 @@ describe('plant-products indexed obligations are first-class', () => {
   beforeEach(() => enterSetContext(SET_ID))
 
   // This suite has no URL-shaped values.
-  it('Should enumerate every scalar origin obligation node', () => {
+  it('Should enumerate every scalar plant-products obligation node', () => {
     expect([...walkObligations()]).toEqual([
       {
         obligation: plantProductsObligationSet.countryOfOrigin,
@@ -71,15 +71,24 @@ describe('plant-products indexed obligations are first-class', () => {
       {
         obligation: plantProductsObligationSet.internalReference,
         templatePath: 'internalReference'
+      },
+      {
+        obligation: plantProductsObligationSet.reasonForImport,
+        templatePath: 'reasonForImport'
       }
     ])
   })
 
-  it('Should place origin between the start and review sections', () => {
-    expect(sections.map(({ id }) => id)).toEqual(['start', 'origin', 'review'])
+  it('Should place purpose after origin and before review', () => {
+    expect(sections.map(({ id }) => id)).toEqual([
+      'start',
+      'origin',
+      'purpose',
+      'review'
+    ])
   })
 
-  it('Should block readiness until both mandatory origin countries are complete', () => {
+  it('Should block readiness until mandatory origin and purpose rows are complete', () => {
     expect(
       readyForCheckYourAnswers({}, makeScope({}).inScope, evaluateAnswers({}))
     ).toBe(false)
@@ -91,9 +100,20 @@ describe('plant-products indexed obligations are first-class', () => {
         evaluateAnswers(originOnly)
       )
     ).toBe(false)
-    const completed = {
+    const originCompleted = {
       countryOfOrigin: 'FR',
       countryOfConsignment: 'IE'
+    }
+    expect(
+      readyForCheckYourAnswers(
+        originCompleted,
+        makeScope(originCompleted).inScope,
+        evaluateAnswers(originCompleted)
+      )
+    ).toBe(false)
+    const completed = {
+      ...originCompleted,
+      reasonForImport: 'INTERNAL_MARKET'
     }
     expect(
       readyForCheckYourAnswers(

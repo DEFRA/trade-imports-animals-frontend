@@ -309,7 +309,12 @@ describe('co-residency', () => {
     ])
     expect(plantProducts.enforcedAtContinue).toEqual(['countryOfOrigin'])
     expect(liveAnimals.sectionIds).toContain('commodities')
-    expect(plantProducts.sectionIds).toEqual(['start', 'origin', 'review'])
+    expect(plantProducts.sectionIds).toEqual([
+      'start',
+      'origin',
+      'purpose',
+      'review'
+    ])
     expect(liveAnimals.record.journeyId).toMatch(/^GBN-AG-/)
     expect(plantProducts.record.journeyId).toMatch(/^GBN-PP-/)
     expect(liveAnimals.knownJourneysCookie).toBe(

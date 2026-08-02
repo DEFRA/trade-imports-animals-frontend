@@ -3,13 +3,20 @@ import {
   countryOfOrigin,
   internalReference
 } from './sections/origin.js'
+import { reasonForImport } from './sections/purpose.js'
 
-export { countryOfConsignment, countryOfOrigin, internalReference }
+export {
+  countryOfConsignment,
+  countryOfOrigin,
+  internalReference,
+  reasonForImport
+}
 
 export const obligations = [
   countryOfOrigin,
   countryOfConsignment,
-  internalReference
+  internalReference,
+  reasonForImport
 ]
 
 export const groups = obligations.filter((obligation) =>

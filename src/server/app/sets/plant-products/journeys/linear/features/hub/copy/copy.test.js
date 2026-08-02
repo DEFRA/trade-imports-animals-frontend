@@ -33,9 +33,15 @@ describe('plant-products hub copy', () => {
   })
 
   it('provides the numbered origin group and its hint-free row', () => {
-    expect(en.groups).toEqual({ origin: '1. Origin of the import' })
-    expect(en.rows).toEqual({
-      origin: { title: 'Origin of the import' }
+    expect(en.groups.origin).toBe('1. Origin of the import')
+    expect(en.rows.origin).toEqual({ title: 'Origin of the import' })
+  })
+
+  it('provides the numbered purpose group and its row copy', () => {
+    expect(en.groups.purpose).toBe('2. Purpose')
+    expect(en.rows.purpose).toEqual({
+      title: 'Purpose',
+      hint: 'The main reason for importing the consignment'
     })
   })
 })

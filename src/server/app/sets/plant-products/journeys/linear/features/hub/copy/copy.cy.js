@@ -13,11 +13,16 @@ export const copy = {
     hint: 'Gwiriwch eich atebion cyn cyflwyno’r hysbysiad'
   },
   groups: {
-    origin: '1. Tarddiad y mewnforyn'
+    origin: '1. Tarddiad y mewnforyn',
+    purpose: '2. Diben'
   },
   rows: {
     origin: {
       title: 'Tarddiad y mewnforyn'
+    },
+    purpose: {
+      title: 'Diben',
+      hint: 'Y prif reswm dros fewnforio’r llwyth'
     }
   },
   captions: {

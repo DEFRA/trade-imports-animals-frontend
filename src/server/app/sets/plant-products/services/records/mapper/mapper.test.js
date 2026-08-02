@@ -58,6 +58,24 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     expect(fromDto(toDto(answers))).toEqual(answers)
   })
 
+  it('round-trips the normalised reason-for-import enum at the DTO top level', () => {
+    const answers = { reasonForImport: 'RE_CONFORMITY_CHECK' }
+
+    expect(toDto(answers)).toEqual({
+      reasonForImport: 'RE_CONFORMITY_CHECK'
+    })
+    expect(fromDto(toDto(answers))).toEqual(answers)
+  })
+
+  it('does not fabricate reasonForImport when it is unanswered', () => {
+    expect(toDto({ countryOfOrigin: 'FR' })).not.toHaveProperty(
+      'reasonForImport'
+    )
+    expect(fromDto({ origin: { countryCode: 'FR' } })).not.toHaveProperty(
+      'reasonForImport'
+    )
+  })
+
   it('omits server-set fields from the PUT content DTO', () => {
     const answers = Object.fromEntries(
       SERVER_SET_FIELDS.map((field) => [field, `answer-${field}`])
