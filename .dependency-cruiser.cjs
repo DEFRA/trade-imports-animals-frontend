@@ -28,7 +28,12 @@ module.exports = {
       severity: 'error',
       from: {
         path: `^${APP}/`,
-        pathNot: [`^${APP}/sets/`, `^${APP}/routes\\.js$`, '\\.test\\.js$']
+        pathNot: [
+          `^${APP}/sets/`,
+          `^${APP}/routes\\.js$`,
+          `^${APP}/routes-live-animals\\.js$`,
+          '\\.test\\.js$'
+        ]
       },
       to: { path: `^${APP}/sets/` }
     },
