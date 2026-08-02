@@ -70,6 +70,8 @@ export const varietyLabelFor = (eppoCode, varietyId) =>
 
 export const classesFor = (eppoCode) => CLASSES_BY_EPPO[eppoCode] ?? []
 
+export const classApplicableSpecies = () => Object.keys(CLASSES_BY_EPPO)
+
 export const classLabelFor = (classCode) => CLASS_LABELS[classCode]
 
 export const hasVarietyAndClass = (eppoCode) =>

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   childrenOf,
+  classApplicableSpecies,
   classLabelFor,
   classesFor,
   commodityCodes,
@@ -97,6 +98,7 @@ describe('plant-products commodity reference data', () => {
     expect(varietiesFor('CIDAC')).toContainEqual({ id: 'NONE', label: 'None' })
     expect(classesFor('CIDAC')).toEqual(['CLASS_I', 'CLASS_II', 'EXTRA_CLASS'])
     expect(classLabelFor('EXTRA_CLASS')).toBe('Extra Class')
+    expect(classApplicableSpecies()).toEqual(['CIDAC'])
   })
 
   it('provides one real multi-variety species with stable IDs', () => {

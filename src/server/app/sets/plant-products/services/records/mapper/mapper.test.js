@@ -124,4 +124,116 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     expect(fromDto()).toEqual({})
     expect(fromDto(null)).toEqual({})
   })
+
+  it('round-trips every modelled commodity leaf through three collection levels', () => {
+    const answers = {
+      commodityLines: [
+        {
+          uniqueComplementId: 'server-line-1',
+          commoditySelection: '08059000',
+          numberOfPackages: 0,
+          packageType: 'BX',
+          quantity: 12.5,
+          quantityType: 'PCS',
+          netWeight: 8.75,
+          controlledAtmosphereContainer: false,
+          finishedOrPropagated: 'FINISHED',
+          intendedForFinalUsers: true,
+          testAndTrial: false,
+          species: [
+            {
+              eppoCode: 'CIDAC',
+              genusAndSpecies: 'Citrus australasica',
+              speciesId: '1364882',
+              varieties: [
+                { variety: 'NONE', varietyClass: 'CLASS_I' },
+                { variety: 'NONE', varietyClass: null }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+
+    expect(fromDto(toDto(answers))).toEqual(answers)
+  })
+
+  it('derives commodityDescription from the selected real fixture code only in the DTO', () => {
+    const answers = {
+      commodityLines: [{ commoditySelection: '06011010', species: [] }]
+    }
+
+    const dto = toDto(answers)
+
+    expect(dto.commodity.commodityComplement[0]).toMatchObject({
+      commodityCode: '06011010',
+      commodityDescription: 'Hyacinths'
+    })
+    expect(fromDto(dto).commodityLines[0]).not.toHaveProperty(
+      'commodityDescription'
+    )
+  })
+
+  it('echoes a server-assigned uniqueComplementId and omits it for a new line', () => {
+    const answers = {
+      commodityLines: [
+        { uniqueComplementId: 'server-line-1', species: [] },
+        { species: [] }
+      ]
+    }
+
+    const dto = toDto(answers)
+
+    expect(dto.commodity.commodityComplement[0].uniqueComplementId).toBe(
+      'server-line-1'
+    )
+    expect(dto.commodity.commodityComplement[1]).not.toHaveProperty(
+      'uniqueComplementId'
+    )
+    expect(fromDto(dto)).toEqual(answers)
+  })
+
+  it('cannot leak transient add-species keys into any DTO level', () => {
+    const transientKey = 'add-species-CIDAC'
+    const dto = toDto({
+      commodityLines: [
+        {
+          commoditySelection: '08059000',
+          [transientKey]: 'draft line value',
+          species: [
+            {
+              eppoCode: 'CIDAC',
+              [transientKey]: 'draft species value',
+              varieties: [
+                {
+                  variety: 'NONE',
+                  [transientKey]: 'draft variety value'
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    })
+
+    expect(JSON.stringify(dto)).not.toContain(transientKey)
+    expect(dto.commodity.commodityComplement[0]).not.toHaveProperty(
+      transientKey
+    )
+    expect(dto.commodity.commodityComplement[0].species[0]).not.toHaveProperty(
+      transientKey
+    )
+    expect(
+      dto.commodity.commodityComplement[0].species[0].varieties[0]
+    ).not.toHaveProperty(transientKey)
+  })
+
+  it('maps an explicitly empty commodity collection to an empty DTO collection', () => {
+    expect(toDto({ commodityLines: [] })).toEqual({
+      commodity: { commodityComplement: [] }
+    })
+    expect(fromDto({ commodity: { commodityComplement: [] } })).toEqual({
+      commodityLines: []
+    })
+  })
 })
