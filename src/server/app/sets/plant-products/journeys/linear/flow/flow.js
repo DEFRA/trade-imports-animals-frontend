@@ -3,7 +3,8 @@ import { dashboardPage } from '../features/dashboard/page.js'
 import {
   commodityBasicDescriptionPage,
   commodityInputMethodPage,
-  commoditySearchPage
+  commoditySearchPage,
+  varietyOfGenusAndSpeciesPage
 } from '../features/commodities/page.js'
 import { importTypePage } from '../features/import-type/page.js'
 import {
@@ -33,7 +34,8 @@ export const sections = [
     pages: [
       commodityInputMethodPage,
       commoditySearchPage,
-      commodityBasicDescriptionPage
+      commodityBasicDescriptionPage,
+      varietyOfGenusAndSpeciesPage
     ]
   },
   {

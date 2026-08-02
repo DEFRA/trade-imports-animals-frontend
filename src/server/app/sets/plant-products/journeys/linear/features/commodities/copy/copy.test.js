@@ -102,6 +102,43 @@ describe('plant-products commodities copy', () => {
           noResults: expect.any(String)
         },
         errors: { selectAtLeastOne: expect.any(String) }
+      },
+      varietyOfGenusAndSpecies: {
+        title: expect.any(String),
+        caption: expect.any(String),
+        heading: expect.any(String),
+        speciesHeading: expect.any(String),
+        repeatedControlContext: expect.any(String),
+        removeContext: expect.any(String),
+        varietyLabel: expect.any(String),
+        varietyPlaceholder: expect.any(String),
+        otherOption: expect.any(String),
+        otherVarietyLabel: expect.any(String),
+        otherVarietyHint: expect.any(String),
+        classLabel: expect.any(String),
+        classPlaceholder: expect.any(String),
+        classOptions: {
+          CLASS_I: expect.any(String),
+          CLASS_II: expect.any(String),
+          EXTRA_CLASS: expect.any(String)
+        },
+        table: {
+          caption: expect.any(String),
+          variety: expect.any(String),
+          class: expect.any(String),
+          remove: expect.any(String)
+        },
+        addAnotherVariety: expect.any(String),
+        addAnotherSpecies: expect.any(String),
+        remove: expect.any(String),
+        errors: {
+          varietyRequired: expect.any(String),
+          classRequired: expect.any(String),
+          atLeastOneVariety: expect.any(String),
+          duplicatePair: expect.any(String),
+          otherVarietyRequired: expect.any(String),
+          otherVarietyLength: expect.any(String)
+        }
       }
     })
     for (const leaf of leaves(en)) {

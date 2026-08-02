@@ -4,7 +4,8 @@ import { collectsOf } from '../../../../../flow/dispatch.js'
 import {
   commodityBasicDescriptionPage,
   commodityInputMethodPage,
-  commoditySearchPage
+  commoditySearchPage,
+  varietyOfGenusAndSpeciesPage
 } from '../features/commodities/page.js'
 import {
   countryOfOriginPage,
@@ -21,7 +22,8 @@ export const taskRows = [
     pages: [
       commodityInputMethodPage,
       commoditySearchPage,
-      commodityBasicDescriptionPage
+      commodityBasicDescriptionPage,
+      varietyOfGenusAndSpeciesPage
     ]
   },
   { id: 'transport', pages: [transportBeforeBipPage] }

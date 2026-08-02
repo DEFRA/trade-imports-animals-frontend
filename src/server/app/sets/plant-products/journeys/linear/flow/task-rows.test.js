@@ -24,7 +24,8 @@ import { dispatchPages } from '../features/index.js'
 import {
   commodityBasicDescriptionPage,
   commodityInputMethodPage,
-  commoditySearchPage
+  commoditySearchPage,
+  varietyOfGenusAndSpeciesPage
 } from '../features/commodities/page.js'
 import {
   countryOfOriginPage,
@@ -64,7 +65,8 @@ describe('plant-products task rows', () => {
         pages: [
           commodityInputMethodPage,
           commoditySearchPage,
-          commodityBasicDescriptionPage
+          commodityBasicDescriptionPage,
+          varietyOfGenusAndSpeciesPage
         ]
       },
       {

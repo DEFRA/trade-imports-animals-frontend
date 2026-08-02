@@ -88,5 +88,46 @@ export const copy = {
     errors: {
       selectAtLeastOne: 'Dewiswch o leiaf un Genws (a Rhywogaeth)'
     }
+  },
+  varietyOfGenusAndSpecies: {
+    title: 'Amrywogaeth a dosbarth y nwydd',
+    caption: 'Disgrifiad o’r nwyddau',
+    heading: 'Amrywogaeth a dosbarth y nwydd',
+    speciesHeading: '{eppoCode} – {genusAndSpecies}',
+    repeatedControlContext:
+      'ar gyfer llinell nwydd {line}, rhywogaeth {species}: {speciesHeading}',
+    removeContext:
+      '{variety}, {className} o linell nwydd {line}, rhywogaeth {species}: {speciesHeading}',
+    varietyLabel: 'Amrywogaeth',
+    varietyPlaceholder: 'Dewiswch amrywogaeth',
+    otherOption: 'Arall',
+    otherVarietyLabel: 'Enw amrywogaeth arall',
+    otherVarietyHint: 'Dim ond os dewisoch Arall',
+    classLabel: 'Dosbarth',
+    classPlaceholder: 'Dewiswch ddosbarth',
+    classOptions: {
+      CLASS_I: 'Dosbarth I',
+      CLASS_II: 'Dosbarth II',
+      EXTRA_CLASS: 'Dosbarth Ychwanegol'
+    },
+    table: {
+      caption: 'Amrywogaethau a dosbarthiadau a ychwanegwyd',
+      variety: 'Amrywogaeth',
+      class: 'Dosbarth',
+      remove: 'Tynnu'
+    },
+    addAnotherVariety: 'Ychwanegu amrywogaeth arall',
+    addAnotherSpecies: 'Ychwanegu Genws (a rhywogaeth) arall',
+    remove: 'Tynnu',
+    errors: {
+      varietyRequired: 'Dewiswch yr amrywogaeth',
+      classRequired: 'Dewiswch y dosbarth',
+      atLeastOneVariety: 'Rhaid ychwanegu o leiaf un amrywogaeth rhywogaeth',
+      duplicatePair:
+        'Rydych eisoes wedi ychwanegu’r amrywogaeth a’r dosbarth hwn ar gyfer y rhywogaeth hon',
+      otherVarietyRequired: 'Rhowch enw’r amrywogaeth arall',
+      otherVarietyLength:
+        'Rhaid i enw’r amrywogaeth arall fod yn 32 nod neu lai'
+    }
   }
 }

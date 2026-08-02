@@ -87,5 +87,45 @@ export const copy = {
     errors: {
       selectAtLeastOne: 'Select at least one Genus (and Species)'
     }
+  },
+  varietyOfGenusAndSpecies: {
+    title: 'Variety and class of commodity',
+    caption: 'Description of the goods',
+    heading: 'Variety and class of commodity',
+    speciesHeading: '{eppoCode} - {genusAndSpecies}',
+    repeatedControlContext:
+      'for commodity line {line}, species {species}: {speciesHeading}',
+    removeContext:
+      '{variety}, {className} from commodity line {line}, species {species}: {speciesHeading}',
+    varietyLabel: 'Variety',
+    varietyPlaceholder: 'Select a variety',
+    otherOption: 'Other',
+    otherVarietyLabel: 'Other variety name',
+    otherVarietyHint: 'Only if you chose Other',
+    classLabel: 'Class',
+    classPlaceholder: 'Select a class',
+    classOptions: {
+      CLASS_I: 'Class I',
+      CLASS_II: 'Class II',
+      EXTRA_CLASS: 'Extra Class'
+    },
+    table: {
+      caption: 'Added varieties and classes',
+      variety: 'Variety',
+      class: 'Class',
+      remove: 'Remove'
+    },
+    addAnotherVariety: 'Add another variety',
+    addAnotherSpecies: 'Add another Genus (and species)',
+    remove: 'Remove',
+    errors: {
+      varietyRequired: 'Select the variety',
+      classRequired: 'Select the class',
+      atLeastOneVariety: 'At least one species variety must be added',
+      duplicatePair:
+        'You have already added this variety and class for this species',
+      otherVarietyRequired: 'Enter the name of the other variety',
+      otherVarietyLength: 'Other variety name must be 32 characters or fewer'
+    }
   }
 }

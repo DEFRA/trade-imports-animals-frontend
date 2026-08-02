@@ -26,6 +26,7 @@ import { dispatchPages } from './sets/plant-products/journeys/linear/features/in
 import * as commodityInputMethod from './sets/plant-products/journeys/linear/features/commodities/commodity-input-method/commodity-input-method.controller.js'
 import * as basicDescription from './sets/plant-products/journeys/linear/features/commodities/basic-description/basic-description.controller.js'
 import * as commoditySearch from './sets/plant-products/journeys/linear/features/commodities/search/search.controller.js'
+import * as varietyOfGenusAndSpecies from './sets/plant-products/journeys/linear/features/commodities/variety-of-genus-and-species/variety-of-genus-and-species.controller.js'
 import * as importType from './sets/plant-products/journeys/linear/features/import-type/controller.js'
 import * as countryOfOrigin from './sets/plant-products/journeys/linear/features/origin/country-of-origin/country-of-origin.controller.js'
 import * as originOfImport from './sets/plant-products/journeys/linear/features/origin/origin-of-import/origin-of-import.controller.js'
@@ -219,5 +220,35 @@ describe('plant-products controller <-> model commit contract', () => {
       genusAndSpecies: 'Lens culinaris',
       speciesId: '1346687'
     })
+  })
+
+  it('Should append exactly the bound variety leaves at depth three without claiming a second collects owner', async () => {
+    expect(varietyOfGenusAndSpecies.meta.collects).toEqual([])
+    const result = await drive(postHandlerOf(varietyOfGenusAndSpecies), {
+      seed: {
+        commodityLines: [
+          {
+            commoditySelection: '08059000',
+            species: [
+              {
+                eppoCode: 'CIDAC',
+                genusAndSpecies: 'Citrus australasica',
+                speciesId: '1364882'
+              }
+            ]
+          }
+        ]
+      },
+      payload: {
+        action: 'add:0:0',
+        'varietySelect-0-0': 'NONE',
+        'otherVariety-0-0': '',
+        'varietyClass-0-0': 'CLASS_I'
+      }
+    })
+
+    expect(result.after.commodityLines[0].species[0].varieties).toEqual([
+      { variety: 'NONE', varietyClass: 'CLASS_I' }
+    ])
   })
 })
