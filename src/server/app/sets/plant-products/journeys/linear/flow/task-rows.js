@@ -5,6 +5,7 @@ import {
   commodityBasicDescriptionPage,
   commodityInputMethodPage,
   commoditySearchPage,
+  commoditySummaryPage,
   varietyOfGenusAndSpeciesPage
 } from '../features/commodities/page.js'
 import {
@@ -23,7 +24,8 @@ export const taskRows = [
       commodityInputMethodPage,
       commoditySearchPage,
       commodityBasicDescriptionPage,
-      varietyOfGenusAndSpeciesPage
+      varietyOfGenusAndSpeciesPage,
+      commoditySummaryPage
     ]
   },
   { id: 'transport', pages: [transportBeforeBipPage] }

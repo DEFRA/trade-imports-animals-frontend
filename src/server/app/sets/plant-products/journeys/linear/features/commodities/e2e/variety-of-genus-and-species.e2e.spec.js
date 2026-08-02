@@ -182,6 +182,12 @@ test.describe('plant-products variety of genus and species', () => {
     await expect(saved).toContainText('None')
 
     await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(page).toHaveURL((url) =>
+      /^\/plant-products\/notifications\/[^/]+\/commodity-summary$/.test(
+        url.pathname
+      )
+    )
+    await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(page).toHaveURL(hubUrl)
     const purposeRow = page.getByRole('listitem').filter({
       has: page.getByText('Purpose', { exact: true })
@@ -419,6 +425,10 @@ test('skips the page when the selected species has no variety-and-class pair', a
     .click()
   await page.getByRole('button', { name: 'Save and continue' }).click()
 
-  await expect(page).toHaveURL(hubUrl)
+  await expect(page).toHaveURL((url) =>
+    /^\/plant-products\/notifications\/[^/]+\/commodity-summary$/.test(
+      url.pathname
+    )
+  )
   await expect(page.getByRole('heading', { name: copy.heading })).toHaveCount(0)
 })

@@ -127,5 +127,24 @@ export const copy = {
       otherVarietyRequired: 'Enter the name of the other variety',
       otherVarietyLength: 'Other variety name must be 32 characters or fewer'
     }
+  },
+  commoditySummary: {
+    caption: 'Description of the goods',
+    heading: 'Commodity',
+    tableCaption: 'Commodity summary table',
+    columns: {
+      commodityCode: 'Commodity code',
+      genusAndSpecies: 'Genus (and Species)',
+      eppoCode: 'EPPO code',
+      variety: 'Variety',
+      class: 'Class',
+      actions: 'Actions'
+    },
+    remove: 'Remove',
+    removeContext:
+      '{genusAndSpecies} from commodity line {line}, species {species}: {commodityCode}',
+    addAnotherSpecies: 'Add another Genus (and Species)',
+    addAnotherCommodity: 'Add another commodity',
+    continue: 'Save and continue'
   }
 }

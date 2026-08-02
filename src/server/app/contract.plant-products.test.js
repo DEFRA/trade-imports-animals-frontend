@@ -27,6 +27,7 @@ import * as commodityInputMethod from './sets/plant-products/journeys/linear/fea
 import * as basicDescription from './sets/plant-products/journeys/linear/features/commodities/basic-description/basic-description.controller.js'
 import * as commoditySearch from './sets/plant-products/journeys/linear/features/commodities/search/search.controller.js'
 import * as varietyOfGenusAndSpecies from './sets/plant-products/journeys/linear/features/commodities/variety-of-genus-and-species/variety-of-genus-and-species.controller.js'
+import * as commoditySummary from './sets/plant-products/journeys/linear/features/commodities/commodity-summary/commodity-summary.controller.js'
 import * as importType from './sets/plant-products/journeys/linear/features/import-type/controller.js'
 import * as countryOfOrigin from './sets/plant-products/journeys/linear/features/origin/country-of-origin/country-of-origin.controller.js'
 import * as originOfImport from './sets/plant-products/journeys/linear/features/origin/origin-of-import/origin-of-import.controller.js'
@@ -250,5 +251,28 @@ describe('plant-products controller <-> model commit contract', () => {
     expect(result.after.commodityLines[0].species[0].varieties).toEqual([
       { variety: 'NONE', varietyClass: 'CLASS_I' }
     ])
+  })
+
+  it('Should remove a species without claiming ownership or committing fulfilment ids', async () => {
+    expect(commoditySummary.meta.collects).toEqual([])
+    const result = await drive(postHandlerOf(commoditySummary), {
+      seed: {
+        commodityLines: [
+          {
+            commoditySelection: '06042090',
+            species: [
+              {
+                eppoCode: 'CXQDA',
+                genusAndSpecies: '+ Crataegomespilus dardarii'
+              },
+              { eppoCode: 'LENCU', genusAndSpecies: 'Lens culinaris' }
+            ]
+          }
+        ]
+      },
+      payload: { action: 'remove:0:0' }
+    })
+
+    expect(committedIds(result)).toEqual([])
   })
 })

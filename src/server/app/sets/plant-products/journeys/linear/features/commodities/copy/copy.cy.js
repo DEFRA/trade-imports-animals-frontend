@@ -129,5 +129,24 @@ export const copy = {
       otherVarietyLength:
         'Rhaid i enw’r amrywogaeth arall fod yn 32 nod neu lai'
     }
+  },
+  commoditySummary: {
+    caption: 'Disgrifiad o’r nwyddau',
+    heading: 'Nwydd',
+    tableCaption: 'Tabl crynodeb nwyddau',
+    columns: {
+      commodityCode: 'Cod nwydd',
+      genusAndSpecies: 'Genws (a Rhywogaeth)',
+      eppoCode: 'Cod EPPO',
+      variety: 'Amrywogaeth',
+      class: 'Dosbarth',
+      actions: 'Camau gweithredu'
+    },
+    remove: 'Tynnu',
+    removeContext:
+      '{genusAndSpecies} o linell nwydd {line}, rhywogaeth {species}: {commodityCode}',
+    addAnotherSpecies: 'Ychwanegu Genws (a Rhywogaeth) arall',
+    addAnotherCommodity: 'Ychwanegu nwydd arall',
+    continue: 'Cadw a pharhau'
   }
 }

@@ -4,6 +4,7 @@ import {
   commodityBasicDescriptionPage,
   commodityInputMethodPage,
   commoditySearchPage,
+  commoditySummaryPage,
   varietyOfGenusAndSpeciesPage
 } from '../features/commodities/page.js'
 import { importTypePage } from '../features/import-type/page.js'
@@ -35,7 +36,8 @@ export const sections = [
       commodityInputMethodPage,
       commoditySearchPage,
       commodityBasicDescriptionPage,
-      varietyOfGenusAndSpeciesPage
+      varietyOfGenusAndSpeciesPage,
+      commoditySummaryPage
     ]
   },
   {

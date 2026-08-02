@@ -17,3 +17,8 @@ export const varietyOfGenusAndSpeciesPage = {
   id: '1d0da8d8-fca0-4afc-934a-43404924963a',
   slug: 'variety-of-genus-and-species'
 }
+
+export const commoditySummaryPage = {
+  id: 'commodity-summary',
+  slug: 'commodity-summary'
+}

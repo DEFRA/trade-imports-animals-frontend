@@ -25,6 +25,7 @@ import {
   commodityBasicDescriptionPage,
   commodityInputMethodPage,
   commoditySearchPage,
+  commoditySummaryPage,
   varietyOfGenusAndSpeciesPage
 } from '../features/commodities/page.js'
 import {
@@ -66,7 +67,8 @@ describe('plant-products task rows', () => {
           commodityInputMethodPage,
           commoditySearchPage,
           commodityBasicDescriptionPage,
-          varietyOfGenusAndSpeciesPage
+          varietyOfGenusAndSpeciesPage,
+          commoditySummaryPage
         ]
       },
       {

@@ -215,6 +215,13 @@ test.describe('plant-products commodity basic description', () => {
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     await expect(page).toHaveURL((url) =>
+      /^\/plant-products\/notifications\/[^/]+\/commodity-summary$/.test(
+        url.pathname
+      )
+    )
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    await expect(page).toHaveURL((url) =>
       /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
     )
     const commodityRow = page.getByRole('listitem').filter({

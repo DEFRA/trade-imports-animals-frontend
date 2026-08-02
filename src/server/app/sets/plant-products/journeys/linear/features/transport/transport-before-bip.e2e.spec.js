@@ -26,6 +26,15 @@ const startAtTransport = async (page) => {
     })
     .click()
   await page.getByRole('button', { name: 'Save and continue' }).click()
+  await expect(page).toHaveURL((url) =>
+    /^\/plant-products\/notifications\/[^/]+\/commodity-summary$/.test(
+      url.pathname
+    )
+  )
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await expect(page).toHaveURL((url) =>
+    /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
+  )
   await page
     .getByRole('link', { name: 'Transport to the BCP', exact: true })
     .click()

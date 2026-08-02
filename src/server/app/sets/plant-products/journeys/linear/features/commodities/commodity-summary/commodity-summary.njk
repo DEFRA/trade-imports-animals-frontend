@@ -1,0 +1,74 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/table/macro.njk" import govukTable %}
+
+{% block journeyContent %}
+  <span class="govuk-caption-xl">{{ copy.caption }}</span>
+  <h1 class="govuk-heading-xl">{{ copy.heading }}</h1>
+
+  <form method="post" action="{{ saveAction }}" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {% for group in groups %}
+      <h2 class="govuk-heading-m">{{ group.commodityDescription }}</h2>
+
+      {% set tableRows = [] %}
+      {% for row in group.rows %}
+        {% set varietyCell %}
+          {% for variety in row.varieties %}<span class="govuk-!-display-block">{{ variety.varietyLabel }}</span>{% endfor %}
+        {% endset %}
+        {% set classCell %}
+          {% for variety in row.varieties %}<span class="govuk-!-display-block">{{ variety.classLabel }}</span>{% endfor %}
+        {% endset %}
+        {% set actionCell %}
+          {% if row.removable %}
+            {{ govukButton({
+              text: copy.remove,
+              classes: "govuk-button--secondary govuk-!-margin-bottom-0",
+              name: "action",
+              value: row.action,
+              attributes: {
+                "aria-label": row.removeAccessibleName,
+                "data-prevent-double-click": "true"
+              }
+            }) }}
+          {% endif %}
+        {% endset %}
+        {% set ignored = tableRows.push([
+          { text: group.commodityCode },
+          { text: row.genusAndSpecies },
+          { text: row.eppoCode },
+          { html: varietyCell },
+          { html: classCell },
+          { html: actionCell, classes: "govuk-!-text-align-right" }
+        ]) %}
+      {% endfor %}
+
+      {{ govukTable({
+        caption: copy.tableCaption,
+        captionClasses: "govuk-visually-hidden",
+        head: [
+          { text: copy.columns.commodityCode },
+          { text: copy.columns.genusAndSpecies },
+          { text: copy.columns.eppoCode },
+          { text: copy.columns.variety },
+          { text: copy.columns.class },
+          { html: '<span class="govuk-visually-hidden">' + copy.columns.actions + '</span>' }
+        ],
+        rows: tableRows
+      }) }}
+
+      <p class="govuk-body">
+        <a class="govuk-link" href="{{ group.addSpeciesHref }}">{{ copy.addAnotherSpecies }}</a>
+      </p>
+    {% endfor %}
+
+    {{ govukButton({
+      text: copy.addAnotherCommodity,
+      href: addCommodityHref,
+      classes: "govuk-button--secondary"
+    }) }}
+
+    {{ govukButton({ text: copy.continue }) }}
+  </form>
+{% endblock %}
