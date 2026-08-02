@@ -75,6 +75,8 @@ that realm.
 **The mount prefix is not a choice. It is `'/' + setId`.** Every set mounts
 under its own prefix. No set is registered at an empty prefix, and
 `registerSetMount` throws if you pass one.
+[`../no-set-singletons.test.js`](../no-set-singletons.test.js) fails the build
+if a set is registered at `''` or at anything other than `'/' + setId`.
 
 Two reasons, and they are the whole argument:
 
@@ -264,6 +266,10 @@ no context to read.
 `configureFulfilmentRegistry`, `configureJourneyFlow`, `buildDispatch`,
 `configureRecords` and `configureSession`. Read accessors keep their existing
 signatures and resolve through `currentSetId()`; you change no read call site.
+[`../no-set-singletons.test.js`](../no-set-singletons.test.js) enforces this for
+every `configure*` set seam with an allow-list that is empty by design. A new
+seam that cannot take `setId` is a co-residency decision to raise, not a test to
+exempt.
 
 Write `registerJourneyCookie(server, { base: '/' + setId, cookieNames })` with
 the derivation visible for the same reason as the mount: one fact per set. Each
