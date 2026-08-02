@@ -390,7 +390,9 @@ In the frontend repo:
   set's mode variable to the shared `webServer` env block so both sets run on
   their stubs in one server process. Add `test:features:<set-id>` and
   `test:features:all` npm scripts — the second runs both projects against one
-  server and is the E2E-level co-residency proof.
+  server and is the E2E-level co-residency proof. The generic Vitest exclusion
+  means a set's co-located `*.e2e.spec.js` files run nowhere until a Playwright
+  project collects that set's feature directory.
 - **Vitest discovery boundary.** Keep the co-located Playwright files out of
   Vitest with one set-generic exclusion:
   `src/server/app/sets/*/journeys/linear/features/**/*.e2e.spec.js`. A
@@ -574,12 +576,17 @@ npm run test:<set-id>
 Then, in order:
 
 ```bash
+npm run test:live-animals
 npm run test:<set-id>
 npm test
 npm run lint
+npm run lint:arch
+npx playwright test --project=features --list
+npx playwright test --project=features-<set-id> --list
+PORT=3050 npm run test:features
 PORT=3050 npm run test:features:<set-id>
-npm run test:features:all
-npm run test:e2e
+PORT=3050 npm run test:features:all
+PORT=3050 npm run test:e2e
 npm run format
 ```
 

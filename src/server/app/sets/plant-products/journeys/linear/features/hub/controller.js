@@ -13,6 +13,8 @@ import { completeOpeningRun } from '../../../../../../flow/run-state.js'
 import { dashboardPath, hubRoutePath } from '../../../../../../shared/paths.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { journeyStrip, routeOptions } from '../../../../../../shared/kit.js'
+import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
+import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import { TEMPLATES } from '../../config.js'
 import { sections } from '../../flow/flow.js'
 import { copy as cy } from './copy/copy.cy.js'
@@ -22,6 +24,7 @@ export const GROUPS = []
 
 const view = `${TEMPLATES}/features/hub/template`
 const copy = copyFor({ en, cy })
+const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const STATUS_TAG = {
   [FULFILLED]: {
@@ -70,6 +73,7 @@ const handler = async (request, h) => {
     pageTitle: copy.title,
     heading: copy.title,
     copy,
+    sharedCopy,
     journeyStrip: journeyStrip(journey),
     groups: GROUPS,
     reviewItems: [buildReviewItem(answers, scope, evaluation, journeyId)],
