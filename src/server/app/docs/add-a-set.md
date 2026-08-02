@@ -480,19 +480,19 @@ increment before real-mode delivery.
 The port is eleven operations. Map each one to the set's own backend surface,
 base `/<set-id>/notifications`:
 
-| Engine port op      | HTTP call                                                                              |
-| ------------------- | -------------------------------------------------------------------------------------- |
-| `create`            | `POST /<set-id>/notifications` — blank reference; 201 body carries the minted ref      |
-| `load`              | `GET /<set-id>/notifications/{ref}`                                                    |
-| `list`              | `GET /<set-id>/notifications?page&sort&referenceNumber` — 1-based page                 |
-| `has`               | `GET …/{ref}` — 200 true, 404 false                                                    |
-| `replaceFulfilment` | `PUT /<set-id>/notifications/{ref}` — whole document, plus any sub-resource projection |
-| `finalise`          | `PUT …/{ref}/status` `{ status: 'SUBMITTED' }`                                         |
-| `amend`             | `PUT …/{ref}/status` `{ status: 'AMEND' }`                                             |
-| `cancelAmend`       | `PUT …/{ref}/status` `{ status: 'SUBMITTED', discardChanges: true }`                   |
-| `copy`              | `POST …/{ref}/copies` with an `Idempotency-Key` header — 201, new draft, new ref       |
-| `softDelete`        | `PUT …/{ref}/status` `{ status: 'DELETED' }` — idempotent                              |
-| `clear`             | Stub-only test hook; the real impl throws                                              |
+| Engine port op      | HTTP call                                                                                                                                                                                                                                                   |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `create`            | `POST /<set-id>/notifications` — blank reference; 201 body carries the minted ref                                                                                                                                                                           |
+| `load`              | `GET /<set-id>/notifications/{ref}`                                                                                                                                                                                                                         |
+| `list`              | `GET /<set-id>/notifications?page&sort&referenceNumber` — 1-based page                                                                                                                                                                                      |
+| `has`               | `GET …/{ref}` — 200 true, 404 false                                                                                                                                                                                                                         |
+| `replaceFulfilment` | `PUT /<set-id>/notifications/{ref}` — whole document, plus any sub-resource projection. If the shipped controller requires the body reference to match the path, add it at this transport boundary after mapping; keep it out of the answers-to-DTO mapper. |
+| `finalise`          | `PUT …/{ref}/status` `{ status: 'SUBMITTED' }`                                                                                                                                                                                                              |
+| `amend`             | `PUT …/{ref}/status` `{ status: 'AMEND' }`                                                                                                                                                                                                                  |
+| `cancelAmend`       | `PUT …/{ref}/status` `{ status: 'SUBMITTED', discardChanges: true }`                                                                                                                                                                                        |
+| `copy`              | `POST …/{ref}/copies` with an `Idempotency-Key` header — 201, new draft, new ref                                                                                                                                                                            |
+| `softDelete`        | `PUT …/{ref}/status` `{ status: 'DELETED' }` — idempotent                                                                                                                                                                                                   |
+| `clear`             | Stub-only test hook; the real impl throws                                                                                                                                                                                                                   |
 
 **The `Idempotency-Key` contract for `copy` is mandatory and must be in place
 before the set ships a Copy button.** The engine port already carries the key —
@@ -509,8 +509,12 @@ before the set ships a Copy button.** The engine port already carries the key �
    [`../services/persistence/records/real/lifecycle/create.js`](../services/persistence/records/real/lifecycle/create.js).
 4. Mirror it in `stub.js` with a dedupe key, so the stub has the same
    semantics.
-5. Pin it with two records-port contract tests: **one new draft per idempotency
-   key**, and **copy idempotency is scoped to the source reference**.
+5. Pin it with records-port contract tests against the backend's shipped index
+   semantics. The current plant-products and live-animals backends use a unique
+   partial index on `copyIdempotencyKey` alone, so one key identifies one copy
+   globally: repeating it against the same or a different source returns the
+   existing copy. Callers avoid accidental cross-source reuse by minting a new
+   UUID per rendered copy action.
 
 `stub.js` is an in-memory store with the same semantics as `real.js`, including
 status-transition legality, so the self-hosted Playwright ladder needs no

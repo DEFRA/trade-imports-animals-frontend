@@ -1,12 +1,26 @@
-// Records-port contract from docs/add-a-set.md step 8.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { records as selectedRecords } from './index.js'
 import { records } from './stub.js'
+
+const REFERENCE_PATTERN = /^GBN-PP-\d{2}-[0-9A-HJ-KM-NP-TV-Z]{6}$/
+const CANNED_CONTENT = {
+  origin: {
+    countryCode: 'BR',
+    internalReference: 'BR-EXPORT-2026-001'
+  }
+}
+
+const createAtStatus = async (status) => {
+  const created = await records.create()
+  if (status === 'submitted' || status === 'amend') {
+    await records.finalise(created.journeyId)
+  }
+  if (status === 'amend') await records.amend(created.journeyId)
+  return created.journeyId
+}
 
 describe('plant-products records stub', () => {
   beforeEach(async () => {
-    vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
     await records.clear()
   })
 
@@ -14,72 +28,174 @@ describe('plant-products records stub', () => {
     vi.unstubAllEnvs()
   })
 
-  it('round-trips a newly created draft', async () => {
-    const created = await records.create()
+  it('mints unique references in the backend GBN-PP format', async () => {
+    const first = await records.create()
+    const second = await records.create()
 
-    expect(created).toMatchObject({
-      journeyId: expect.stringMatching(/^GBN-PP-/),
-      reference: expect.stringMatching(/^GBN-PP-/),
+    expect(first).toEqual({
+      journeyId: expect.stringMatching(REFERENCE_PATTERN),
       status: 'draft',
-      fulfilment: []
+      createdAt: expect.any(String),
+      submittedAt: null,
+      fulfilment: {}
     })
-    expect(await records.load({ journeyId: created.journeyId })).toEqual(
-      created
-    )
-    expect(await records.has(created.journeyId)).toBe(true)
+    expect(second.journeyId).toMatch(REFERENCE_PATTERN)
+    expect(second.journeyId).not.toBe(first.journeyId)
   })
 
-  it('persists the complete fulfilment snapshot', async () => {
-    const created = await records.create()
-    const snapshot = { countryOfOrigin: 'FR', commodityLines: [{ code: '01' }] }
+  it.each([
+    ['finalise', 'submitted'],
+    ['amend', 'draft'],
+    ['cancelAmend', 'draft'],
+    ['replaceFulfilment', 'submitted'],
+    ['copy', 'draft']
+  ])('rejects %s from an illegal %s state', async (operation, status) => {
+    const journeyId = await createAtStatus(status)
+    const args =
+      operation === 'replaceFulfilment'
+        ? [journeyId, CANNED_CONTENT]
+        : operation === 'copy'
+          ? [journeyId, 'draft-copy-key']
+          : [journeyId]
 
-    await records.replaceFulfilment(created.journeyId, snapshot)
-
-    expect(
-      (await records.load({ journeyId: created.journeyId })).fulfilment
-    ).toEqual(snapshot)
+    await expect(records[operation](...args)).rejects.toThrow()
   })
 
-  it('enforces status transitions and restores a cancelled amendment', async () => {
+  it('captures the submitted snapshot and restores it when amendment is cancelled', async () => {
     const created = await records.create()
-    await records.replaceFulfilment(created.journeyId, { version: 'submitted' })
+    await records.replaceFulfilment(created.journeyId, CANNED_CONTENT)
     const submitted = await records.finalise(created.journeyId)
-    expect(submitted.status).toBe('submitted')
+    await records.amend(created.journeyId)
+    await records.replaceFulfilment(created.journeyId, {
+      origin: { countryCode: 'BR', internalReference: 'CANCELLED-AMENDMENT' }
+    })
 
-    await expect(records.finalise(created.journeyId)).rejects.toThrow(
-      'cannot finalise'
-    )
-    const amending = await records.amend(created.journeyId)
-    expect(amending.status).toBe('amend')
-    await records.replaceFulfilment(created.journeyId, { version: 'changed' })
     const restored = await records.cancelAmend(created.journeyId)
-    expect(restored).toMatchObject({
-      status: 'submitted',
-      fulfilment: { version: 'submitted' }
+
+    expect(restored).toEqual({
+      ...submitted,
+      fulfilment: CANNED_CONTENT
     })
   })
 
-  it('hides deleted records from list and clears the store', async () => {
-    const created = await records.create()
-    await records.softDelete(created.journeyId)
-    await records.softDelete(created.journeyId)
+  it('pages, filters by exact reference and hides deleted records', async () => {
+    const created = await Promise.all(
+      Array.from({ length: 27 }, () => records.create())
+    )
+    await records.softDelete(created[1].journeyId)
+
+    const firstPage = await records.list({ page: 1 })
+    const secondPage = await records.list({ page: 2 })
+    const filtered = await records.list({
+      referenceNumber: created[26].journeyId
+    })
+
+    expect(firstPage).toMatchObject({
+      page: 1,
+      size: 25,
+      totalElements: 26,
+      totalPages: 2
+    })
+    expect(firstPage.rows).toHaveLength(25)
+    expect(secondPage.rows).toHaveLength(1)
+    expect(filtered.rows.map(({ journeyId }) => journeyId)).toEqual([
+      created[26].journeyId
+    ])
+    expect(
+      [...firstPage.rows, ...secondPage.rows].map(({ journeyId }) => journeyId)
+    ).not.toContain(created[1].journeyId)
+  })
+
+  it.each([undefined, null, '', '   '])(
+    'rejects a blank copy key before creating a draft (%s)',
+    async (key) => {
+      const source = await records.create()
+      await records.finalise(source.journeyId)
+
+      await expect(records.copy(source.journeyId, key)).rejects.toThrow(
+        'Idempotency-Key must not be blank'
+      )
+      expect((await records.list()).rows).toHaveLength(1)
+    }
+  )
+
+  it('returns one draft when the same source and key are copied twice', async () => {
+    const source = await records.create()
+    await records.finalise(source.journeyId)
+
+    const first = await records.copy(source.journeyId, 'same-copy-key')
+    const repeated = await records.copy(source.journeyId, 'same-copy-key')
+
+    expect(repeated.journeyId).toBe(first.journeyId)
+    expect((await records.list()).rows).toHaveLength(2)
+  })
+
+  it('mints separate drafts for different idempotency keys', async () => {
+    const source = await records.create()
+    await records.finalise(source.journeyId)
+
+    const first = await records.copy(source.journeyId, 'first-copy-key')
+    const second = await records.copy(source.journeyId, 'second-copy-key')
+
+    expect(second.journeyId).not.toBe(first.journeyId)
+    expect((await records.list()).rows).toHaveLength(3)
+  })
+
+  it('matches the backend global key index when a key is reused for another source', async () => {
+    const firstSource = await records.create()
+    const secondSource = await records.create()
+    await records.finalise(firstSource.journeyId)
+    await records.finalise(secondSource.journeyId)
+
+    const first = await records.copy(firstSource.journeyId, 'scoped-key')
+    const repeated = await records.copy(secondSource.journeyId, 'scoped-key')
+
+    expect(repeated.journeyId).toBe(first.journeyId)
+    expect((await records.list()).rows).toHaveLength(3)
+  })
+
+  it('copies fulfilment by value without sharing mutable state', async () => {
+    const source = await records.create()
+    await records.replaceFulfilment(source.journeyId, CANNED_CONTENT)
+    await records.finalise(source.journeyId)
+
+    const copied = await records.copy(source.journeyId, 'content-copy-key')
+    copied.fulfilment.origin.internalReference = 'MUTATED-RETURN-VALUE'
+    await records.replaceFulfilment(copied.journeyId, {
+      origin: { countryCode: 'BR', internalReference: 'COPY-ONLY-CHANGE' }
+    })
 
     expect(
-      await records.list({ journeyIds: [created.journeyId] })
-    ).toMatchObject({ rows: [], totalElements: 0 })
+      (await records.load({ journeyId: source.journeyId })).fulfilment
+    ).toEqual(CANNED_CONTENT)
+  })
+
+  it('clear resets both the record store and the idempotency index', async () => {
+    const firstSource = await records.create()
+    await records.finalise(firstSource.journeyId)
+    const firstCopy = await records.copy(firstSource.journeyId, 'reusable-key')
 
     await records.clear()
-    expect(await records.has(created.journeyId)).toBe(false)
+
+    const secondSource = await records.create()
+    await records.finalise(secondSource.journeyId)
+    const secondCopy = await records.copy(
+      secondSource.journeyId,
+      'reusable-key'
+    )
+
+    expect(await records.has(firstCopy.journeyId)).toBe(false)
+    expect(secondCopy.journeyId).not.toBe(firstCopy.journeyId)
+    expect((await records.list()).rows).toHaveLength(2)
   })
 
-  it('uses the stub only in stub mode and throws for every real-mode op', async () => {
-    expect((await selectedRecords.create()).status).toBe('draft')
+  it('selects real mode at module load when the mode variable is real', async () => {
     vi.stubEnv('PLANT_PRODUCTS_MODE', 'real')
+    vi.resetModules()
+    const { records: selectedRecords } = await import('./index.js')
 
-    for (const operation of Object.values(selectedRecords)) {
-      await expect(operation()).rejects.toThrow(
-        'plant-products real records adapter not implemented — pp-008'
-      )
-    }
+    await expect(selectedRecords.clear()).rejects.toThrow(
+      'records.clear is not supported in real mode'
+    )
   })
 })

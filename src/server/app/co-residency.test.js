@@ -10,6 +10,7 @@ import { authenticatedCredentials } from './engine/test-support.js'
 import { records as engineRecords } from './engine/persistence/records.js'
 import { knownJourneysCookie } from './engine/persistence/session.js'
 import { records as liveAnimalsRecords } from './services/persistence/records/index.js'
+import { speciesLabel } from './services/persistence/records/notification-mapper/commodity-reference.js'
 import * as countries from './services/countries/index.js'
 import * as ports from './services/ports/index.js'
 import {
@@ -275,6 +276,43 @@ describe('co-residency', () => {
     expect(plantProducts.knownJourneysCookie).toBe(
       PLANT_PRODUCTS_COOKIE_NAMES.knownJourneys
     )
+  })
+
+  it('keeps each set records behind its own configured engine seam', async () => {
+    const liveAnimals = await withSetContext(LIVE_ANIMALS, () =>
+      engineRecords.create()
+    )
+    const plantProducts = await withSetContext(PLANT_PRODUCTS, () =>
+      engineRecords.create()
+    )
+
+    const liveAnimalsList = await withSetContext(LIVE_ANIMALS, () =>
+      engineRecords.list({
+        journeyIds: [liveAnimals.journeyId, plantProducts.journeyId]
+      })
+    )
+    const plantProductsList = await withSetContext(PLANT_PRODUCTS, () =>
+      engineRecords.list({
+        journeyIds: [liveAnimals.journeyId, plantProducts.journeyId]
+      })
+    )
+
+    expect(liveAnimals.journeyId).toMatch(/^GBN-AG-/)
+    expect(plantProducts.journeyId).toMatch(
+      /^GBN-PP-\d{2}-[0-9A-HJ-KM-NP-TV-Z]{6}$/
+    )
+    expect(liveAnimalsList.rows.map(({ journeyId }) => journeyId)).toEqual([
+      liveAnimals.journeyId
+    ])
+    expect(plantProductsList.rows.map(({ journeyId }) => journeyId)).toEqual([
+      plantProducts.journeyId
+    ])
+  })
+
+  it('leaves the plant slot of the live-animals commodity mapper absent', () => {
+    expect(() =>
+      withSetContext(PLANT_PRODUCTS, () => speciesLabel('fixture'))
+    ).toThrow('commodity reference not configured for set "plant-products"')
   })
 
   it('keeps both sets cookie names and mount paths independent', async () => {

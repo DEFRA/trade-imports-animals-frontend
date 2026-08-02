@@ -1,4 +1,5 @@
-// In-memory engine-port adapter from docs/add-a-set.md step 8.
+import { randomBytes } from 'node:crypto'
+
 import {
   AMEND,
   DELETED,
@@ -6,14 +7,23 @@ import {
   SUBMITTED
 } from '../../../../engine/persistence/records.js'
 
+const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
+const PAGE_SIZE = 25
 const recordsById = new Map()
-const copiesBySourceAndKey = new Map()
-let sequence = 0
+const copiesByIdempotencyKey = new Map()
 
 const clone = (value) => structuredClone(value)
+
 const mintReference = () => {
-  sequence += 1
-  return `GBN-PP-${String(sequence).padStart(6, '0')}`
+  const year = String(new Date().getFullYear() % 100).padStart(2, '0')
+  let reference
+  do {
+    const suffix = [...randomBytes(6)]
+      .map((value) => CROCKFORD[value % CROCKFORD.length])
+      .join('')
+    reference = `GBN-PP-${year}-${suffix}`
+  } while (recordsById.has(reference))
+  return reference
 }
 
 const read = (journeyId) => {
@@ -22,80 +32,72 @@ const read = (journeyId) => {
   return record
 }
 
-const writable = (journeyId) => {
-  const record = read(journeyId)
+const toJourney = (record) =>
+  clone({
+    journeyId: record.journeyId,
+    status: record.status,
+    createdAt: record.createdAt,
+    submittedAt: record.submittedAt,
+    fulfilment: record.fulfilment
+  })
+
+const assertWritable = (record) => {
   if (record.status !== DRAFT && record.status !== AMEND) {
     throw new Error(
-      `Journey "${journeyId}" is ${record.status} — cannot replace fulfilment`
+      `Journey "${record.journeyId}" is ${record.status} — writes blocked`
     )
   }
-  return record
-}
-
-const toJourney = (record) => ({
-  journeyId: record.journeyId,
-  reference: record.reference,
-  status: record.status,
-  createdAt: record.createdAt,
-  updatedAt: record.updatedAt,
-  submittedAt: record.submittedAt,
-  fulfilment: clone(record.fulfilment)
-})
-
-const touch = (record) => {
-  record.updatedAt = new Date().toISOString()
 }
 
 export const create = async () => {
-  const reference = mintReference()
-  const now = new Date().toISOString()
+  const journeyId = mintReference()
   const record = {
-    journeyId: reference,
-    reference,
+    journeyId,
     status: DRAFT,
-    createdAt: now,
-    updatedAt: now,
+    createdAt: new Date().toISOString(),
     submittedAt: null,
-    fulfilment: []
+    fulfilment: {}
   }
-  recordsById.set(reference, record)
-  return clone(toJourney(record))
+  recordsById.set(journeyId, record)
+  return toJourney(record)
 }
 
 export const load = async ({ journeyId } = {}) => {
   const record = recordsById.get(journeyId)
-  return record ? clone(toJourney(record)) : undefined
+  return record === undefined ? undefined : toJourney(record)
 }
 
-export const list = async ({ journeyIds, page = 1 } = {}) => {
+export const list = async ({ journeyIds, page = 1, referenceNumber } = {}) => {
   const allowed = journeyIds === undefined ? null : new Set(journeyIds)
-  const rows = [...recordsById.values()]
-    .filter(({ journeyId }) => allowed === null || allowed.has(journeyId))
-    .filter(({ status }) => status !== DELETED)
-    .map((record) => ({
+  const reference = referenceNumber?.trim() || undefined
+  const matching = [...recordsById.values()].filter(
+    (record) =>
+      record.status !== DELETED &&
+      (allowed === null || allowed.has(record.journeyId)) &&
+      (reference === undefined || record.journeyId === reference)
+  )
+  const start = (page - 1) * PAGE_SIZE
+  return {
+    rows: matching.slice(start, start + PAGE_SIZE).map((record) => ({
       journeyId: record.journeyId,
-      reference: record.reference,
       status: record.status,
       createdAt: record.createdAt,
-      updatedAt: record.updatedAt,
       submittedAt: record.submittedAt
-    }))
-  return {
-    rows: clone(rows),
+    })),
     page,
-    size: rows.length,
-    totalElements: rows.length,
-    totalPages: rows.length === 0 ? 0 : 1
+    size: PAGE_SIZE,
+    totalElements: matching.length,
+    totalPages: Math.ceil(matching.length / PAGE_SIZE)
   }
 }
 
 export const has = async (journeyId) => recordsById.has(journeyId)
 
 export const replaceFulfilment = async (journeyId, fulfilment) => {
-  const record = writable(journeyId)
-  record.fulfilment = clone(fulfilment ?? [])
-  touch(record)
-  return clone(toJourney(record))
+  const record = read(journeyId)
+  assertWritable(record)
+  record.fulfilment = clone(fulfilment ?? {})
+  return toJourney(record)
 }
 
 export const finalise = async (journeyId) => {
@@ -108,14 +110,13 @@ export const finalise = async (journeyId) => {
   record.status = SUBMITTED
   record.submittedAt = new Date().toISOString()
   delete record.submittedSnapshot
-  touch(record)
-  return clone(toJourney(record))
+  return toJourney(record)
 }
 
 export const amend = async (journeyId) => {
   const record = read(journeyId)
   if (record.status !== SUBMITTED) {
-    throw new Error(`Journey "${journeyId}" is ${record.status} — cannot amend`)
+    throw new Error(`Journey "${journeyId}" is not submitted — cannot amend`)
   }
   record.submittedSnapshot = {
     fulfilment: clone(record.fulfilment),
@@ -123,36 +124,39 @@ export const amend = async (journeyId) => {
   }
   record.status = AMEND
   record.submittedAt = null
-  touch(record)
-  return clone(toJourney(record))
+  return toJourney(record)
 }
 
 export const cancelAmend = async (journeyId) => {
   const record = read(journeyId)
   if (record.status !== AMEND || record.submittedSnapshot === undefined) {
-    throw new Error(`Journey "${journeyId}" cannot cancel amendment`)
+    throw new Error(
+      `Journey "${journeyId}" has no amendment snapshot — cannot cancel amendment`
+    )
   }
   record.fulfilment = clone(record.submittedSnapshot.fulfilment)
   record.submittedAt = record.submittedSnapshot.submittedAt
   record.status = SUBMITTED
   delete record.submittedSnapshot
-  touch(record)
-  return clone(toJourney(record))
+  return toJourney(record)
 }
 
-export const copy = async (journeyId, idempotencyKey = '') => {
-  const source = read(journeyId)
-  if (source.status === DELETED) {
-    throw new Error(`Journey "${journeyId}" is deleted — cannot copy`)
+export const copy = async (journeyId, idempotencyKey) => {
+  if (idempotencyKey == null || idempotencyKey.trim() === '') {
+    throw new Error('Idempotency-Key must not be blank')
   }
-  const dedupeKey = `${journeyId}\u0000${idempotencyKey}`
-  const existing = copiesBySourceAndKey.get(dedupeKey)
-  if (existing) return clone(toJourney(read(existing)))
-  const created = await create()
-  const target = read(created.journeyId)
+  const existing = copiesByIdempotencyKey.get(idempotencyKey)
+  if (existing !== undefined) return toJourney(read(existing))
+
+  const source = read(journeyId)
+  if (source.status !== SUBMITTED && source.status !== AMEND) {
+    throw new Error(`Journey "${journeyId}" is ${source.status} — cannot copy`)
+  }
+  const copied = await create()
+  const target = read(copied.journeyId)
   target.fulfilment = clone(source.fulfilment)
-  copiesBySourceAndKey.set(dedupeKey, target.journeyId)
-  return clone(toJourney(target))
+  copiesByIdempotencyKey.set(idempotencyKey, target.journeyId)
+  return toJourney(target)
 }
 
 export const softDelete = async (journeyId) => {
@@ -164,14 +168,12 @@ export const softDelete = async (journeyId) => {
   }
   record.status = DELETED
   record.submittedAt = null
-  touch(record)
-  return clone(toJourney(record))
+  return toJourney(record)
 }
 
 export const clear = async () => {
   recordsById.clear()
-  copiesBySourceAndKey.clear()
-  sequence = 0
+  copiesByIdempotencyKey.clear()
 }
 
 export const records = {
