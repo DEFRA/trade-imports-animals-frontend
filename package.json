@@ -34,6 +34,7 @@
     "pretest": "npm run build:frontend",
     "test": "TZ=UTC vitest run --coverage --exclude ./tests/**",
     "test:live-animals": "TZ=UTC vitest run src/server/app/sets/live-animals --no-coverage",
+    "test:plant-products": "TZ=UTC vitest run src/server/app/sets/plant-products --no-coverage",
     "capture:live-animals": "node src/server/app/services/_capture/capture.js",
     "lighthouse": "lhci autorun",
     "test:watch": "TZ=UTC vitest",

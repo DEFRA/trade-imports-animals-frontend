@@ -401,10 +401,11 @@ In the frontend repo:
   [`../routes.test.js`](../routes.test.js),
   [`../indexed.test.js`](../indexed.test.js),
   [`../store-ops.test.js`](../store-ops.test.js) and
-  [`../one-load-per-request.test.js`](../one-load-per-request.test.js) if it
-  composes a set. Each clone composes exactly one set, so the sole-set fallback
-  means they need no context plumbing — they read as the originals with the set
-  swapped.
+  [`../one-load-per-request.test.js`](../one-load-per-request.test.js) only if
+  the new set path executes the L2 real-records adapter against the endpoints
+  that suite mocks. Global setup mounts live-animals, so `currentSetId()` does
+  not fall back to the set a clone composes. Each clone must enter its own set
+  context in its hooks, then read as the original with the set swapped.
 - **Empty contract table.** `contract.<set-id>.test.js` lands with the harness
   and zero cases. The table is manual: a controller absent from it does not fail
   the suite, so every later collecting controller must add its own valid-POST

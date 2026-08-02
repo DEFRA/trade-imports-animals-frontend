@@ -16,47 +16,62 @@ import {
 import { copy as dashboardEn } from './sets/live-animals/journeys/linear/features/dashboard/copy/copy.en.js'
 import { copy as dashboardCy } from './sets/live-animals/journeys/linear/features/dashboard/copy/copy.cy.js'
 
-const FEATURES_DIR = fileURLToPath(
-  new URL('./sets/live-animals/journeys/linear/features', import.meta.url)
+const SET_ROOTS = ['live-animals', 'plant-products']
+
+const featuresDirFor = (set) =>
+  fileURLToPath(
+    new URL(`./sets/${set}/journeys/linear/features`, import.meta.url)
+  )
+
+const featuresWithCopyFor = (set) => {
+  const featuresDir = featuresDirFor(set)
+  return readdirSync(featuresDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .filter((feature) =>
+      readdirSync(path.join(featuresDir, feature)).includes('copy')
+    )
+    .filter((feature) =>
+      readdirSync(path.join(featuresDir, feature, 'copy')).includes(
+        'copy.en.js'
+      )
+    )
+}
+
+const featuresWithCopyBySet = new Map(
+  SET_ROOTS.map((set) => [set, featuresWithCopyFor(set)])
 )
 
-const featuresWithCopy = readdirSync(FEATURES_DIR, { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
-  .map((entry) => entry.name)
-  .filter((feature) =>
-    readdirSync(path.join(FEATURES_DIR, feature)).includes('copy')
-  )
-  .filter((feature) =>
-    readdirSync(path.join(FEATURES_DIR, feature, 'copy')).includes('copy.en.js')
-  )
-
 // String leaves that may legitimately be byte-identical across en and cy
-// (proper nouns, codes, reference formats). Keyed `${module}:${path}` —
-// every addition must be justified here.
+// (proper nouns, codes, reference formats). Feature keys are
+// `${set}:${feature}:${path}`; shared keys stay `${module}:${path}`.
+// Every addition must be justified here.
 // - ITAHC is a certificate acronym; both locales display it verbatim.
 // - transporters.guidance.linkHref is a gov.uk URL, identical in both locales.
 const IDENTICAL_ALLOWLIST = new Set([
-  'documents:types.ITAHC',
-  'check-answers:documentTypes.ITAHC',
-  'transport:transporters.guidance.linkHref'
+  'live-animals:documents:types.ITAHC',
+  'live-animals:check-answers:documentTypes.ITAHC',
+  'live-animals:transport:transporters.guidance.linkHref'
 ])
 
 const kindOf = (value) => (typeof value === 'function' ? 'function' : 'string')
 
 const modulePairs = async () => {
-  const pairs = await Promise.all(
-    featuresWithCopy.map(async (feature) => {
-      const { copy: en } = await import(
-        `./sets/live-animals/journeys/linear/features/${feature}/copy/copy.en.js`
-      )
-      const { copy: cy } = await import(
-        `./sets/live-animals/journeys/linear/features/${feature}/copy/copy.cy.js`
-      )
-      return { name: feature, en, cy }
-    })
+  const featurePairs = await Promise.all(
+    SET_ROOTS.flatMap((set) =>
+      featuresWithCopyBySet.get(set).map(async (feature) => {
+        const { copy: en } = await import(
+          `./sets/${set}/journeys/linear/features/${feature}/copy/copy.en.js`
+        )
+        const { copy: cy } = await import(
+          `./sets/${set}/journeys/linear/features/${feature}/copy/copy.cy.js`
+        )
+        return { name: `${set}:${feature}`, en, cy }
+      })
+    )
   )
   return [
-    ...pairs,
+    ...featurePairs,
     { name: 'shared', en: sharedEn, cy: sharedCy },
     {
       name: 'shared.validatorDefaults',
@@ -68,7 +83,12 @@ const modulePairs = async () => {
 
 describe('copy parity — cy mirrors en structurally', () => {
   it('Should find the copy module pairs', () => {
-    expect(featuresWithCopy.length).toBeGreaterThan(0)
+    for (const set of SET_ROOTS) {
+      expect(
+        featuresWithCopyBySet.get(set).length,
+        `${set} must have copy modules`
+      ).toBeGreaterThan(0)
+    }
   })
 
   it('Should give cy the same paths, leaf kinds and function arities as en', async () => {
