@@ -54,10 +54,9 @@ test.describe('contact feature', () => {
     }
     await expect(
       page.getByRole('link', { name: copy.addNewAddress })
-    ).toHaveAttribute('href', (url) =>
-      /^\/live-animals\/notifications\/[^/]+\/addresses\/create\?for=contactAddress$/.test(
-        `${url.pathname}${url.search}`
-      )
+    ).toHaveAttribute(
+      'href',
+      /^\/live-animals\/notifications\/[^/]+\/addresses\/create\?for=contactAddress$/
     )
   })
 

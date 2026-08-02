@@ -217,7 +217,7 @@ test.describe('dashboard feature', () => {
     await expect(page.getByLabel(copy.sort.label)).toHaveValue('createdAt,asc')
     await expect(page.getByLabel(copy.search.label)).toHaveValue(firstReference)
     await expect(page).toHaveURL(
-      `/?sort=createdAt%2Casc&referenceNumber=${firstReference}`
+      `/live-animals?sort=createdAt%2Casc&referenceNumber=${firstReference}`
     )
     await expect(
       page.getByRole('heading', { name: firstReference, exact: true })
@@ -263,7 +263,9 @@ test.describe('dashboard feature', () => {
     await page.getByLabel(copy.search.label).clear()
     await page.getByRole('button', { name: copy.search.button }).click()
 
-    await expect(page).toHaveURL('/?sort=createdAt%2Casc&referenceNumber=')
+    await expect(page).toHaveURL(
+      '/live-animals?sort=createdAt%2Casc&referenceNumber='
+    )
     await expect(page.getByLabel(copy.search.label)).toHaveValue('')
     await expect(page.getByLabel(copy.sort.label)).toHaveValue('createdAt,asc')
     await expect(
@@ -296,7 +298,7 @@ test.describe('dashboard feature', () => {
 
     await page.getByRole('link', { name: copy.pagination.next }).click()
 
-    await expect(page).toHaveURL('/?page=2')
+    await expect(page).toHaveURL('/live-animals?page=2')
     await expect(
       page.getByRole('link', { name: /^Delete notification / })
     ).toHaveCount(1)
@@ -313,7 +315,7 @@ test.describe('dashboard feature', () => {
     await page.getByLabel(copy.sort.label).selectOption('createdAt,asc')
     await page.getByRole('button', { name: copy.sort.update }).click()
 
-    await expect(page).toHaveURL('/?page=2&sort=createdAt%2Casc')
+    await expect(page).toHaveURL('/live-animals?page=2&sort=createdAt%2Casc')
     await expect(page.getByLabel(copy.sort.label)).toHaveValue('createdAt,asc')
     await expect(
       page.getByRole('link', { name: /^Delete notification / })
