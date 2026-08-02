@@ -85,7 +85,7 @@ describe('plant-products gateway boot proof', () => {
     const selected = await server.inject({
       method: 'POST',
       url: importTypeUrl,
-      payload: { importType: 'plant-products' },
+      payload: { importType: 'plants' },
       headers: { cookie: cookies.header() }
     })
     cookies.absorb(selected)

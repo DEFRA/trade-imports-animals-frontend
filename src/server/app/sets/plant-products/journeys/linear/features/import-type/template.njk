@@ -1,4 +1,3 @@
-{# Minimum entry surface from docs/add-a-set.md step 9. #}
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
@@ -10,11 +9,10 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
 
     {{ govukRadios({
-      idPrefix: "importType",
       name: "importType",
       fieldset: {
         legend: {
-          html: '<span class="govuk-caption-l">' ~ copy.caption ~ '</span>' ~ copy.title,
+          html: '<span class="govuk-caption-l">' ~ copy.caption ~ '</span>' ~ copy.legend,
           isPageHeading: true,
           classes: "govuk-fieldset__legend--l"
         }

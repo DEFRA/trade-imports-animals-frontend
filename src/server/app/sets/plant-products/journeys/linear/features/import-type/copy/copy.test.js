@@ -1,4 +1,3 @@
-// Copy contract from docs/add-a-set.md step 7.
 import { describe, expect, it } from 'vitest'
 
 import { copy as cy } from './copy.cy.js'
@@ -12,28 +11,34 @@ const shape = (value) =>
     ])
   )
 
-const leaves = (value) =>
-  Object.values(value).flatMap((child) =>
-    child !== null && typeof child === 'object' ? leaves(child) : [child]
-  )
-
 describe('plant-products import-type copy', () => {
   it('keeps English and Welsh structure-identical', () => {
     expect(shape(cy)).toEqual(shape(en))
   })
 
-  it('provides every required key with non-empty copy', () => {
-    expect(en.importTypes).toHaveProperty('liveAnimals')
-    expect(en.importTypes).toHaveProperty('poao')
-    expect(en.importTypes).toHaveProperty('hrfnao')
-    expect(en.importTypes).toHaveProperty('plantProducts')
-    expect(en.errors).toHaveProperty('importTypeRequired')
-    expect(en.notAvailable).toMatchObject({
-      title: expect.any(String),
-      body: expect.any(String),
-      changeAnswer: expect.any(String)
+  it('pins the trace-confirmed English page copy', () => {
+    expect(en).toEqual({
+      title: 'What are you importing?',
+      caption: 'About the consignment',
+      legend: 'What are you importing?',
+      importTypes: {
+        'live-animals': 'Live animals',
+        poao: 'Products of animal origin, germinal products or animal by-products',
+        hrfnao: 'High risk food and feed of non-animal origin',
+        plants: 'Plants, plant products and other objects'
+      },
+      continueButton: 'Save and continue',
+      errors: {
+        importTypeRequired: 'Select the type of import'
+      },
+      notAvailable: {
+        title: 'You cannot use this service',
+        onlyCovers:
+          'This service currently only supports imports of plants, plant products and other objects.',
+        changeAnswer: 'Go back and change your answer',
+        ifImporting:
+          'if you are importing plants, plant products or other objects.'
+      }
     })
-    expect(leaves(en).every((leaf) => leaf.trim().length > 0)).toBe(true)
-    expect(leaves(cy).every((leaf) => leaf.trim().length > 0)).toBe(true)
   })
 })

@@ -414,7 +414,7 @@ describe('co-residency', () => {
       method: 'POST',
       url: plantProductsEntry,
       headers: { cookie: jar.headerFor(plantProductsEntry) },
-      payload: { importType: 'plant-products' }
+      payload: { importType: 'plants' }
     })
     jar.absorb(plantProductsPost)
 

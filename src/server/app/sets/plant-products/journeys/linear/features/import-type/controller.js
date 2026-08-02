@@ -1,4 +1,3 @@
-// Minimum entry surface from docs/add-a-set.md step 9.
 import * as state from '../../../../../../engine/index.js'
 import {
   beginOpeningRun,
@@ -26,19 +25,16 @@ import { copy as en } from './copy/copy.en.js'
 import { importTypePage as page } from './page.js'
 
 export const meta = { ...page, collects: ['importType'] }
-export const PLANT_PRODUCTS = 'plant-products'
+export const PLANT_PRODUCTS = 'plants'
 export const NOT_AVAILABLE_SLUG = 'import-type/not-available'
 
 const view = `${TEMPLATES}/features/import-type/template`
 const holdingView = `${TEMPLATES}/features/import-type/not-available`
 const copy = copyFor({ en, cy })
 
-const IMPORT_TYPES = [
-  { value: 'live-animals', text: copy.importTypes.liveAnimals },
-  { value: 'poao', text: copy.importTypes.poao },
-  { value: 'hrfnao', text: copy.importTypes.hrfnao },
-  { value: PLANT_PRODUCTS, text: copy.importTypes.plantProducts }
-]
+const IMPORT_TYPES = ['live-animals', 'poao', 'hrfnao', PLANT_PRODUCTS].map(
+  (value) => ({ value, text: copy.importTypes[value] })
+)
 
 const fields = compose(
   requiredOneOf(

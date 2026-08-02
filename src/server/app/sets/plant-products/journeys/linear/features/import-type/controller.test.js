@@ -1,5 +1,5 @@
-// Controller contract from docs/add-a-set.md step 7.
 import Hapi from '@hapi/hapi'
+import { load } from 'cheerio'
 import {
   afterAll,
   afterEach,
@@ -16,6 +16,7 @@ import { plantProducts } from '../../../../../../routes-plant-products.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { SESSION_COOKIE_NAMES } from '../../config.js'
 import * as plantProductsObligationSet from '../../../../obligations/index.js'
+import { toDto } from '../../../../services/records/mapper/to-dto.js'
 import { records } from '../../../../services/records/stub.js'
 import { copy } from './copy/copy.en.js'
 
@@ -34,6 +35,19 @@ const fixtureObligationSet = {
     systemAnswerKeys: ['referenceNumber']
   }
 }
+
+const expectedOptions = [
+  { value: 'live-animals', label: 'Live animals' },
+  {
+    value: 'poao',
+    label: 'Products of animal origin, germinal products or animal by-products'
+  },
+  {
+    value: 'hrfnao',
+    label: 'High risk food and feed of non-animal origin'
+  },
+  { value: 'plants', label: 'Plants, plant products and other objects' }
+]
 
 const journeyIdFrom = (url) => url.split('/')[3]
 
@@ -89,14 +103,46 @@ describe('plant-products import-type controller', () => {
     return { cookies, url: response.headers.location }
   }
 
-  it('prefills GET from the saved flow-only answer', async () => {
-    const { cookies, url } = await newJourney()
-    const post = await server.inject({
+  const postImportType = (url, cookies, importType) =>
+    server.inject({
       method: 'POST',
       url,
-      payload: { importType: 'plant-products' },
+      payload: { importType },
       headers: { cookie: cookies.header() }
     })
+
+  it('renders exactly four enabled, hint-free options with no client-side validation', async () => {
+    const { cookies, url } = await newJourney()
+    const response = await server.inject({
+      url,
+      headers: { cookie: cookies.header() }
+    })
+    const $ = load(response.result)
+    const radios = $('fieldset input[type="radio"]')
+    const renderedOptions = radios
+      .map((_index, radio) => {
+        const input = $(radio)
+        const label = $(`label[for="${input.attr('id')}"]`)
+        return {
+          value: input.attr('value'),
+          label: label.text().trim().replaceAll(/\s+/g, ' ')
+        }
+      })
+      .get()
+
+    expect(response.statusCode).toBe(200)
+    expect(renderedOptions).toEqual(expectedOptions)
+    expect($('fieldset input')).toHaveLength(4)
+    expect(radios.filter('[checked]')).toHaveLength(0)
+    expect(radios.filter('[disabled]')).toHaveLength(0)
+    expect(radios.filter('[required]')).toHaveLength(0)
+    expect($('fieldset .govuk-hint')).toHaveLength(0)
+    expect($('fieldset').text()).not.toMatch(/debt|debtor|overdue/i)
+  })
+
+  it('prefills GET from the saved flow-only answer', async () => {
+    const { cookies, url } = await newJourney()
+    const post = await postImportType(url, cookies, 'plants')
     cookies.absorb(post)
 
     const response = await server.inject({
@@ -105,21 +151,26 @@ describe('plant-products import-type controller', () => {
     })
 
     expect(response.statusCode).toBe(200)
-    expect(response.result).toMatch(/value="plant-products"[^>]*checked/)
+    expect(response.result).toMatch(/value="plants"[^>]*checked/)
   })
 
-  it('returns 400 with raw values and the required error', async () => {
+  it('returns 400 with the canonical error and commits nothing for an empty POST', async () => {
     const { cookies, url } = await newJourney()
-    const response = await server.inject({
-      method: 'POST',
-      url,
-      payload: { importType: '' },
-      headers: { cookie: cookies.header() }
-    })
+    const response = await postImportType(url, cookies, '')
+    const $ = load(response.result)
 
     expect(response.statusCode).toBe(400)
-    expect(response.result).toContain(copy.errors.importTypeRequired)
-    expect(response.result).not.toMatch(/name="importType"[^>]*checked/)
+    expect($('.govuk-error-summary__title').text().trim()).toBe(
+      'There is a problem'
+    )
+    expect($('.govuk-error-summary__list a').text().trim()).toBe(
+      copy.errors.importTypeRequired
+    )
+    expect($('.govuk-error-summary__list a').attr('href')).toBe('#importType')
+    expect($('#importType-error').text()).toContain(
+      copy.errors.importTypeRequired
+    )
+    expect($('input[name="importType"]:checked')).toHaveLength(0)
     expect(response.headers['set-cookie'] ?? []).not.toEqual(
       expect.arrayContaining([
         expect.stringContaining(`${SESSION_COOKIE_NAMES.flowOnlyAnswers}=`)
@@ -127,19 +178,29 @@ describe('plant-products import-type controller', () => {
     )
     await expect(
       records.load({ journeyId: journeyIdFrom(url) })
-    ).resolves.toMatchObject({
-      fulfilment: {}
-    })
+    ).resolves.toMatchObject({ fulfilment: {} })
   })
 
-  it('commits plant-products and redirects through the opening run to the hub', async () => {
+  it('rejects a crafted out-of-list POST through the same server-side 400 path', async () => {
     const { cookies, url } = await newJourney()
-    const response = await server.inject({
-      method: 'POST',
-      url,
-      payload: { importType: 'plant-products' },
-      headers: { cookie: cookies.header() }
-    })
+    const response = await postImportType(url, cookies, 'CHEDPP')
+
+    expect(response.statusCode).toBe(400)
+    expect(response.result).toContain(copy.errors.importTypeRequired)
+    expect(response.headers['set-cookie'] ?? []).not.toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(`${SESSION_COOKIE_NAMES.flowOnlyAnswers}=`)
+      ])
+    )
+    await expect(
+      records.load({ journeyId: journeyIdFrom(url) })
+    ).resolves.toMatchObject({ fulfilment: {} })
+  })
+
+  it('commits plants only to flow state and redirects through the opening run', async () => {
+    const { cookies, url } = await newJourney()
+    const response = await postImportType(url, cookies, 'plants')
+    const stored = await records.load({ journeyId: journeyIdFrom(url) })
 
     expect(response.statusCode).toBe(302)
     expect(response.headers.location).toMatch(
@@ -151,14 +212,16 @@ describe('plant-products import-type controller', () => {
         expect.stringContaining(`${SESSION_COOKIE_NAMES.openingRun}=`)
       ])
     )
-    await expect(
-      records.load({ journeyId: journeyIdFrom(url) })
-    ).resolves.toMatchObject({
-      fulfilment: {}
+    expect({
+      canonicalFulfilment: stored.fulfilment,
+      backendDocument: toDto(stored.fulfilment)
+    }).toEqual({
+      canonicalFulfilment: {},
+      backendDocument: {}
     })
   })
 
-  it('uses normal navigation without restarting the opening run after committed progress', async () => {
+  it('uses normal navigation outside an opening run after committed progress', async () => {
     const { cookies, url } = await newJourney()
     const journeyId = journeyIdFrom(url)
     configureObligationSet('plant-products', fixtureObligationSet)
@@ -167,12 +230,7 @@ describe('plant-products import-type controller', () => {
     })
     const nextTarget = vi.spyOn(kit, 'nextTarget')
 
-    const response = await server.inject({
-      method: 'POST',
-      url,
-      payload: { importType: 'plant-products' },
-      headers: { cookie: cookies.header() }
-    })
+    const response = await postImportType(url, cookies, 'plants')
 
     expect(response.statusCode).toBe(302)
     expect(response.headers.location).toBe(
@@ -189,19 +247,55 @@ describe('plant-products import-type controller', () => {
     })
   })
 
-  it('commits a non-plant selection and redirects to the holding page', async () => {
+  it.each(['live-animals', 'poao', 'hrfnao'])(
+    'commits %s to flow state and redirects to the holding page',
+    async (importType) => {
+      const { cookies, url } = await newJourney()
+      const response = await postImportType(url, cookies, importType)
+      cookies.absorb(response)
+
+      expect(response.statusCode).toBe(302)
+      expect(response.headers.location).toMatch(
+        /^\/plant-products\/notifications\/[^/]+\/import-type\/not-available$/
+      )
+      expect(response.headers['set-cookie'] ?? []).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining(`${SESSION_COOKIE_NAMES.flowOnlyAnswers}=`)
+        ])
+      )
+
+      const revisited = await server.inject({
+        url,
+        headers: { cookie: cookies.header() }
+      })
+      expect(revisited.result).toMatch(
+        new RegExp(`value="${importType}"[^>]*checked`)
+      )
+    }
+  )
+
+  it('renders the holding page with a change-answer link back to import type', async () => {
     const { cookies, url } = await newJourney()
+    const post = await postImportType(url, cookies, 'live-animals')
+    cookies.absorb(post)
+
     const response = await server.inject({
-      method: 'POST',
-      url,
-      payload: { importType: 'poao' },
+      url: post.headers.location,
       headers: { cookie: cookies.header() }
     })
+    const $ = load(response.result)
 
-    expect(response.statusCode).toBe(302)
-    expect(response.headers.location).toMatch(
-      /^\/plant-products\/notifications\/[^/]+\/import-type\/not-available$/
-    )
+    expect(response.statusCode).toBe(200)
+    expect($('h1').text().trim()).toBe(copy.notAvailable.title)
+    expect(response.result).toContain(copy.notAvailable.onlyCovers)
+    expect(response.result).toContain(copy.notAvailable.ifImporting)
+    expect(
+      $('a')
+        .filter((_index, link) =>
+          $(link).text().includes(copy.notAvailable.changeAnswer)
+        )
+        .attr('href')
+    ).toBe(url)
   })
 
   it('renders a recoverable save failure at 500', async () => {
@@ -211,12 +305,7 @@ describe('plant-products import-type controller', () => {
       })
     )
     const { cookies, url } = await newJourney()
-    const response = await server.inject({
-      method: 'POST',
-      url,
-      payload: { importType: 'plant-products' },
-      headers: { cookie: cookies.header() }
-    })
+    const response = await postImportType(url, cookies, 'plants')
 
     expect(response.statusCode).toBe(500)
     expect(response.result).toContain('problem with the service')
@@ -227,12 +316,7 @@ describe('plant-products import-type controller', () => {
       new TypeError('programming failure')
     )
     const { cookies, url } = await newJourney()
-    const response = await server.inject({
-      method: 'POST',
-      url,
-      payload: { importType: 'plant-products' },
-      headers: { cookie: cookies.header() }
-    })
+    const response = await postImportType(url, cookies, 'plants')
 
     expect(response.statusCode).toBe(500)
     expect(response.result).not.toContain('problem with the service')
