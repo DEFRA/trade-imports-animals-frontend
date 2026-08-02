@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { config } from '../../config/config.js'
 import { createServer } from '../server.js'
+import playwrightConfig from '../../../playwright.config.js'
 import { authenticatedCredentials } from './engine/test-support.js'
 import * as gateways from './routes.js'
 import {
@@ -27,8 +28,11 @@ vi.mock('../../auth/get-oidc-config.js', () => ({
 // a design decision rather than a fix for a failing convention test.
 export const SET_SEAM_ALLOW_LIST = []
 export const SET_LIFECYCLE_ALLOW_LIST = []
+export const SET_E2E_RUNNER_ALLOW_LIST = []
 
 const APP_DIR = fileURLToPath(new URL('.', import.meta.url))
+const REPO_DIR = fileURLToPath(new URL('../../..', import.meta.url))
+const SETS_DIR = fileURLToPath(new URL('./sets', import.meta.url))
 const L2_DIRS = ['model', 'bridge', 'flow', 'engine', 'services']
 const KNOWN_SET_SEAMS = [
   'configureObligationSet',
@@ -70,6 +74,54 @@ const gatewaySources = [
     'utf8'
   )
 }))
+
+const discoveredSets = readdirSync(SETS_DIR, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map(({ name: setId }) => {
+    const setDir = path.join(SETS_DIR, setId)
+    const e2eSpecs = readdirSync(setDir, {
+      recursive: true,
+      withFileTypes: true
+    })
+      .filter((entry) => entry.isFile() && entry.name.endsWith('.e2e.spec.js'))
+      .map((entry) => path.join(entry.parentPath, entry.name))
+
+    return { setId, e2eSpecs }
+  })
+
+const playwrightProjects = playwrightConfig.projects.map(
+  ({ name, testDir }) => ({
+    name,
+    testDir: path.resolve(REPO_DIR, testDir ?? playwrightConfig.testDir ?? '.')
+  })
+)
+
+const isWithin = (root, filename) => {
+  const relative = path.relative(root, filename)
+  return (
+    relative === '' ||
+    (relative !== '..' &&
+      !relative.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relative))
+  )
+}
+
+const assertSetE2eSpecsHaveRunner = (sets, projects) => {
+  for (const { setId, e2eSpecs } of sets) {
+    if (e2eSpecs.length === 0 || SET_E2E_RUNNER_ALLOW_LIST.includes(setId)) {
+      continue
+    }
+
+    const coveringProject = projects.find(({ testDir }) =>
+      e2eSpecs.every((spec) => isWithin(testDir, spec))
+    )
+    if (!coveringProject) {
+      throw new Error(
+        `Set "${setId}" has e2e specs but no Playwright project testDir covers them`
+      )
+    }
+  }
+}
 
 const declarationPattern =
   /export\s+(?:const\s+(?<arrowName>[A-Za-z]\w*)\s*=\s*(?:async\s*)?\((?<arrowParameters>[^)]*)\)\s*=>|(?:async\s+)?function\s+(?<functionName>[A-Za-z]\w*)\s*\((?<functionParameters>[^)]*)\))/g
@@ -498,5 +550,51 @@ describe('set-owned lifecycle context', () => {
     expect(() => assertSetGatewayLifecycleContext(violation)).toThrow(
       'fixture/routes-unwrapped-entry-guard.js: the plugin entry guard must run inside withSetContext(SET_ID, ...)'
     )
+  })
+})
+
+describe('set e2e runner coverage', () => {
+  it('Should find the set directories and Playwright projects', () => {
+    expect(discoveredSets.length).toBeGreaterThan(0)
+    expect(playwrightProjects.length).toBeGreaterThan(0)
+  })
+
+  it('keeps the set e2e runner allow-list empty', () => {
+    expect(SET_E2E_RUNNER_ALLOW_LIST).toEqual([])
+  })
+
+  it("requires every set's e2e specs to have a covering Playwright project", () => {
+    expect(() =>
+      assertSetE2eSpecsHaveRunner(discoveredSets, playwrightProjects)
+    ).not.toThrow()
+  })
+
+  it('rejects a set with e2e specs and no covering Playwright project', () => {
+    const violation = [
+      {
+        setId: 'fixture-uncovered',
+        e2eSpecs: [
+          path.join(
+            REPO_DIR,
+            'src/server/app/sets/fixture-uncovered/journeys/linear/features/page/page.e2e.spec.js'
+          )
+        ]
+      }
+    ]
+    const unrelatedProjects = [
+      { name: 'unrelated', testDir: path.join(REPO_DIR, 'e2e') }
+    ]
+
+    expect(() =>
+      assertSetE2eSpecsHaveRunner(violation, unrelatedProjects)
+    ).toThrow(
+      'Set "fixture-uncovered" has e2e specs but no Playwright project testDir covers them'
+    )
+  })
+
+  it('allows a set with no e2e specs to have no Playwright project', () => {
+    const setWithoutSpecs = [{ setId: 'fixture-empty', e2eSpecs: [] }]
+
+    expect(() => assertSetE2eSpecsHaveRunner(setWithoutSpecs, [])).not.toThrow()
   })
 })
