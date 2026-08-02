@@ -1,5 +1,8 @@
-// Scaffolded by docs/add-a-set.md step 2.
-export const obligations = []
+import { countryOfOrigin } from './sections/origin.js'
+
+export { countryOfOrigin }
+
+export const obligations = [countryOfOrigin]
 
 export const groups = obligations.filter((obligation) =>
   obligations.some((other) => other.within === obligation)
@@ -7,7 +10,7 @@ export const groups = obligations.filter((obligation) =>
 
 export const policy = {
   systemPopulated: [],
-  enforcedAtContinue: [],
+  enforcedAtContinue: ['countryOfOrigin'],
   maxEntriesFrom: {},
   systemAnswerKeys: ['referenceNumber']
 }

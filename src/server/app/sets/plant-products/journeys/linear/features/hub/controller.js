@@ -7,7 +7,11 @@ import {
 } from '../../../../../../bridge/status/index.js'
 import * as state from '../../../../../../engine/index.js'
 import { sectionGatePasses } from '../../../../../../flow/gates.js'
-import { sectionEntry } from '../../../../../../flow/navigation.js'
+import {
+  rowEntry,
+  rowGatePasses,
+  sectionEntry
+} from '../../../../../../flow/navigation.js'
 import { sectionStatus } from '../../../../../../flow/section-status.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
 import { dashboardPath, hubRoutePath } from '../../../../../../shared/paths.js'
@@ -17,10 +21,11 @@ import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import { TEMPLATES } from '../../config.js'
 import { sections } from '../../flow/flow.js'
+import { rowStatus, taskRowById } from '../../flow/task-rows.js'
 import { copy as cy } from './copy/copy.cy.js'
 import { copy as en } from './copy/copy.en.js'
 
-export const GROUPS = []
+export const GROUPS = [{ id: 'origin', rows: ['origin'] }]
 
 const view = `${TEMPLATES}/features/hub/template`
 const copy = copyFor({ en, cy })
@@ -44,6 +49,8 @@ const CANNOT_START_STATUS = {
   classes: 'govuk-task-list__status--cannot-start-yet'
 }
 
+const statusTag = (status) => STATUS_TAG[status] ?? STATUS_TAG[NOT_STARTED]
+
 const reviewSection = () => sections.find(({ id }) => id === 'review')
 
 const buildReviewItem = (answers, scope, evaluation, journeyId) => {
@@ -64,6 +71,32 @@ const buildReviewItem = (answers, scope, evaluation, journeyId) => {
   }
 }
 
+const buildRowItem = (id, answers, scope, evaluation, journeyId) => {
+  const { title, hint } = copy.rows[id]
+  const row = taskRowById(id)
+  const status = rowStatus(row, answers, scope.inScope, evaluation)
+  const base = {
+    title: { text: title },
+    ...(hint ? { hint: { text: hint } } : {})
+  }
+  return rowGatePasses(row, scope)
+    ? {
+        ...base,
+        href: rowEntry(row, scope, journeyId),
+        status: statusTag(status)
+      }
+    : { ...base, status: CANNOT_START_STATUS }
+}
+
+const buildGroups = (answers, scope, evaluation, journeyId) =>
+  GROUPS.map((group) => ({
+    id: group.id,
+    caption: copy.groups[group.id],
+    items: group.rows.map((id) =>
+      buildRowItem(id, answers, scope, evaluation, journeyId)
+    )
+  }))
+
 const handler = async (request, h) => {
   const { journeyId } = request.params
   await completeOpeningRun(request, h, journeyId)
@@ -75,7 +108,7 @@ const handler = async (request, h) => {
     copy,
     sharedCopy,
     journeyStrip: journeyStrip(journey),
-    groups: GROUPS,
+    groups: buildGroups(answers, scope, evaluation, journeyId),
     reviewItems: [buildReviewItem(answers, scope, evaluation, journeyId)],
     dashboardHref: dashboardPath(),
     backLink: dashboardPath(),

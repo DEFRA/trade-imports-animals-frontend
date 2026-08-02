@@ -197,14 +197,14 @@ describe('plant-products import-type controller', () => {
     ).resolves.toMatchObject({ fulfilment: {} })
   })
 
-  it('commits plants only to flow state and redirects through the opening run', async () => {
+  it('commits plants only to flow state and redirects to country of origin through the opening run', async () => {
     const { cookies, url } = await newJourney()
     const response = await postImportType(url, cookies, 'plants')
     const stored = await records.load({ journeyId: journeyIdFrom(url) })
 
     expect(response.statusCode).toBe(302)
     expect(response.headers.location).toMatch(
-      /^\/plant-products\/notifications\/[^/]+$/
+      /^\/plant-products\/notifications\/[^/]+\/country-of-origin$/
     )
     expect(response.headers['set-cookie'] ?? []).toEqual(
       expect.arrayContaining([

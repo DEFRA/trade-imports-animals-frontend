@@ -1,2 +1,3 @@
-// Scaffolded by docs/add-a-set.md step 3.
-export const featureEvaluationBindings = Object.freeze([])
+import { evaluationBindings as origin } from './origin/evaluation.js'
+
+export const featureEvaluationBindings = Object.freeze([origin])

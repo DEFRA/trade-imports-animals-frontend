@@ -77,7 +77,7 @@ test.describe('plant-products import type', () => {
     await expect(page).toHaveURL('/plant-products')
   })
 
-  test('saves plants to flow state, lands on the hub and prefills on revisit', async ({
+  test('saves plants to flow state, lands on country of origin and prefills on revisit', async ({
     page
   }) => {
     const importTypeUrl = page.url()
@@ -85,7 +85,9 @@ test.describe('plant-products import type', () => {
     await page.getByRole('button', { name: copy.continueButton }).click()
 
     await expect(page).toHaveURL((url) =>
-      /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
+      /^\/plant-products\/notifications\/[^/]+\/country-of-origin$/.test(
+        url.pathname
+      )
     )
     await page.goto(importTypeUrl)
     await expect(

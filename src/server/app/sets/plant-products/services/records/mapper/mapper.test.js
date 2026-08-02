@@ -25,6 +25,15 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     expect(fromDto(toDto(answers))).toEqual(answers)
   })
 
+  it('round-trips the country-of-origin code through origin.countryCode', () => {
+    const answers = { countryOfOrigin: 'GB-SCT' }
+
+    expect(toDto(answers)).toEqual({
+      origin: { countryCode: 'GB-SCT' }
+    })
+    expect(fromDto(toDto(answers))).toEqual(answers)
+  })
+
   it('omits server-set fields from the PUT content DTO', () => {
     const answers = Object.fromEntries(
       SERVER_SET_FIELDS.map((field) => [field, `answer-${field}`])

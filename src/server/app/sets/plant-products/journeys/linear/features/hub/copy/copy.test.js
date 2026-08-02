@@ -31,4 +31,11 @@ describe('plant-products hub copy', () => {
     })
     expect(en.captions.checkAndSubmit).toEqual(expect.any(String))
   })
+
+  it('provides the numbered origin group and its hint-free row', () => {
+    expect(en.groups).toEqual({ origin: '1. Origin of the import' })
+    expect(en.rows).toEqual({
+      origin: { title: 'Origin of the import' }
+    })
+  })
 })

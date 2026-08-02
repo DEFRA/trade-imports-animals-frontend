@@ -12,6 +12,14 @@ export const copy = {
     title: 'Review and submit',
     hint: 'Check your answers before you submit the notification'
   },
+  groups: {
+    origin: '1. Origin of the import'
+  },
+  rows: {
+    origin: {
+      title: 'Origin of the import'
+    }
+  },
   captions: {
     checkAndSubmit: 'Check and submit'
   }

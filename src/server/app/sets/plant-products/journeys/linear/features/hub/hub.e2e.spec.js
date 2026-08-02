@@ -11,6 +11,12 @@ const startAtHub = async (page) => {
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
   await page.getByRole('button', { name: 'Save and continue' }).click()
+  await expect(page).toHaveURL((url) =>
+    /^\/plant-products\/notifications\/[^/]+\/country-of-origin$/.test(
+      url.pathname
+    )
+  )
+  await page.getByRole('link', { name: 'Back' }).click()
 }
 
 test.describe('plant-products hub', () => {
@@ -26,6 +32,19 @@ test.describe('plant-products hub', () => {
     )
     await expect(page.getByText(/^GBN-PP-/)).toBeVisible()
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: copy.groups.origin })
+    ).toBeVisible()
+    const origin = page.getByRole('listitem').filter({
+      has: page.getByText(copy.rows.origin.title, { exact: true })
+    })
+    await expect(origin).toContainText(copy.statuses.notYetStarted)
+    await expect(
+      origin.getByRole('link', { name: copy.rows.origin.title })
+    ).toHaveAttribute(
+      'href',
+      /^\/plant-products\/notifications\/[^/]+\/country-of-origin$/
+    )
     const review = page.getByRole('listitem').filter({
       has: page.getByText(copy.review.title, { exact: true })
     })

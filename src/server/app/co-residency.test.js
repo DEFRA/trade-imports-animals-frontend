@@ -219,7 +219,7 @@ describe('co-residency', () => {
     ).toEqual(['countryOfOrigin', 'commoditySelection'])
     expect(
       withSetContext(PLANT_PRODUCTS, () => [...enforcedAtContinue()])
-    ).toEqual([])
+    ).toEqual(['countryOfOrigin'])
   })
 
   it('uses live-animals cookie names and scopes them to its mount', async () => {
@@ -307,9 +307,9 @@ describe('co-residency', () => {
       'countryOfOrigin',
       'commoditySelection'
     ])
-    expect(plantProducts.enforcedAtContinue).toEqual([])
+    expect(plantProducts.enforcedAtContinue).toEqual(['countryOfOrigin'])
     expect(liveAnimals.sectionIds).toContain('commodities')
-    expect(plantProducts.sectionIds).toEqual(['start', 'review'])
+    expect(plantProducts.sectionIds).toEqual(['start', 'origin', 'review'])
     expect(liveAnimals.record.journeyId).toMatch(/^GBN-AG-/)
     expect(plantProducts.record.journeyId).toMatch(/^GBN-PP-/)
     expect(liveAnimals.knownJourneysCookie).toBe(
@@ -665,7 +665,7 @@ describe('co-residency', () => {
           'during',
           PLANT_PRODUCTS,
           PLANT_PRODUCTS_COOKIE_NAMES.knownJourneys,
-          []
+          ['countryOfOrigin']
         ],
         [
           'live-animals',

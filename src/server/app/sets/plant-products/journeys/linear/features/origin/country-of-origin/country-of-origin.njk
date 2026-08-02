@@ -1,0 +1,39 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  <span class="govuk-caption-xl">{{ copy.caption }}</span>
+  <h1 class="govuk-heading-xl">{{ copy.title }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    <div class="govuk-form-group{% if errors.countryOfOrigin %} govuk-form-group--error{% endif %}">
+      <label class="govuk-label govuk-label--m" for="countryOfOrigin">
+        {{ copy.country.label }}
+      </label>
+      {% if errors.countryOfOrigin %}
+        <p id="countryOfOrigin-error" class="govuk-error-message">
+          <span class="govuk-visually-hidden">Error:</span> {{ errors.countryOfOrigin }}
+        </p>
+      {% endif %}
+      <select class="govuk-select govuk-!-width-one-half{% if errors.countryOfOrigin %} govuk-select--error{% endif %}" id="countryOfOrigin" name="countryOfOrigin"{% if errors.countryOfOrigin %} aria-describedby="countryOfOrigin-error"{% endif %}>
+        {% for item in countryItems %}
+          {% if item.items %}
+            <optgroup label="{{ item.label }}">
+              {% for option in item.items %}
+                <option value="{{ option.value }}"{% if values.countryOfOrigin == option.value %} selected{% endif %}>{{ option.text }}</option>
+              {% endfor %}
+            </optgroup>
+          {% else %}
+            <option value="{{ item.value }}"{% if values.countryOfOrigin == item.value %} selected{% endif %}>{{ item.text }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </div>
+
+    {{ govukButton({ text: sharedCopy.saveActions.saveAndContinue }) }}
+  </form>
+{% endblock %}

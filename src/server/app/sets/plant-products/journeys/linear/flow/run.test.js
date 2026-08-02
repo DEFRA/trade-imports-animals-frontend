@@ -1,12 +1,23 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
-import { hubPath } from '../../../../../shared/paths.js'
+import { configureFulfilmentRegistry } from '../../../../../bridge/fulfilment-registry.js'
+import { makeScope } from '../../../../../engine/index.js'
+import { buildDispatch } from '../../../../../flow/dispatch.js'
+import { configureJourneyFlow } from '../../../../../flow/journey-flow.js'
+import { configureObligationSet } from '../../../../../model/obligations/manifest.js'
+import { hubPath, pagePath } from '../../../../../shared/paths.js'
 import {
   registerSetMount,
   withSetContext
 } from '../../../../../shared/set-context.js'
 import { importTypePage } from '../features/import-type/page.js'
+import { featureEvaluationBindings } from '../features/evaluation.js'
+import { dispatchPages } from '../features/index.js'
+import { countryOfOriginPage } from '../features/origin/page.js'
+import * as obligationSet from '../../../obligations/index.js'
+import { FLOW_ONLY_KEYS, sections } from './flow.js'
 import { nextRunTarget, RUN_STEPS } from './run.js'
+import { rowStatus, taskRows } from './task-rows.js'
 
 const SET_ID = 'plant-products'
 const JOURNEY_ID = 'GBN-PP-26-ABC123'
@@ -14,12 +25,38 @@ const JOURNEY_ID = 'GBN-PP-26-ABC123'
 registerSetMount(SET_ID, `/${SET_ID}`)
 
 describe('plant-products opening run', () => {
-  it('falls back to the plant hub after the import-type step', () => {
-    const target = withSetContext(SET_ID, () =>
-      nextRunTarget(importTypePage.id, {}, JOURNEY_ID)
-    )
+  beforeAll(() => {
+    configureObligationSet(SET_ID, obligationSet)
+    configureFulfilmentRegistry(SET_ID, featureEvaluationBindings)
+    configureJourneyFlow(SET_ID, {
+      sections,
+      taskRows,
+      rowStatus,
+      flowOnlyKeys: FLOW_ONLY_KEYS
+    })
+    buildDispatch(SET_ID, dispatchPages)
+  })
 
-    expect(target).toBe(withSetContext(SET_ID, () => hubPath(JOURNEY_ID)))
+  it('routes from import type to country of origin and then falls back to the hub', () => {
+    const targets = withSetContext(SET_ID, () => ({
+      afterImportType: nextRunTarget(
+        importTypePage.id,
+        makeScope({}),
+        JOURNEY_ID
+      ),
+      afterCountry: nextRunTarget(
+        countryOfOriginPage.id,
+        makeScope({ countryOfOrigin: 'FR' }),
+        JOURNEY_ID
+      )
+    }))
+
+    expect(targets).toEqual(
+      withSetContext(SET_ID, () => ({
+        afterImportType: pagePath(JOURNEY_ID, countryOfOriginPage.slug),
+        afterCountry: hubPath(JOURNEY_ID)
+      }))
+    )
   })
 
   it('returns null for an unknown step', () => {
@@ -30,8 +67,10 @@ describe('plant-products opening run', () => {
     ).toBeNull()
   })
 
-  it('contains exactly the import-type step at m0', () => {
-    expect(RUN_STEPS).toHaveLength(1)
-    expect(RUN_STEPS[0].id).toBe(importTypePage.id)
+  it('contains import type followed by country of origin', () => {
+    expect(RUN_STEPS.map(({ id }) => id)).toEqual([
+      importTypePage.id,
+      countryOfOriginPage.id
+    ])
   })
 })

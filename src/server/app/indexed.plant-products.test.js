@@ -58,19 +58,31 @@ describe('plant-products indexed obligations are first-class', () => {
   beforeEach(() => enterSetContext(SET_ID))
 
   // This suite has no URL-shaped values.
-  it('Should enumerate zero obligation nodes at m0', () => {
-    // Depth pins land with pp-021, when the first plant obligations arrive.
-    expect([...walkObligations()]).toEqual([])
+  it('Should enumerate the country-of-origin obligation node', () => {
+    // The first plant obligation arrives in pp-018; deeper path pins land with pp-021.
+    expect([...walkObligations()]).toEqual([
+      {
+        obligation: plantProductsObligationSet.countryOfOrigin,
+        templatePath: 'countryOfOrigin'
+      }
+    ])
   })
 
-  it('Should keep the m0 section order at start then review', () => {
-    expect(sections.map(({ id }) => id)).toEqual(['start', 'review'])
+  it('Should place origin between the start and review sections', () => {
+    expect(sections.map(({ id }) => id)).toEqual(['start', 'origin', 'review'])
   })
 
-  it('Should be ready for check your answers with no m0 task rows', () => {
-    // Observed m0 value: every([]) is vacuously true. Re-pin as task rows land.
+  it('Should block readiness until country of origin is complete', () => {
     expect(
       readyForCheckYourAnswers({}, makeScope({}).inScope, evaluateAnswers({}))
+    ).toBe(false)
+    const completed = { countryOfOrigin: 'FR' }
+    expect(
+      readyForCheckYourAnswers(
+        completed,
+        makeScope(completed).inScope,
+        evaluateAnswers(completed)
+      )
     ).toBe(true)
   })
 })

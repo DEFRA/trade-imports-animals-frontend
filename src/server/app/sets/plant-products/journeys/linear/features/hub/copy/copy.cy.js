@@ -12,6 +12,14 @@ export const copy = {
     title: 'Adolygu a chyflwyno',
     hint: 'Gwiriwch eich atebion cyn cyflwyno’r hysbysiad'
   },
+  groups: {
+    origin: '1. Tarddiad y mewnforyn'
+  },
+  rows: {
+    origin: {
+      title: 'Tarddiad y mewnforyn'
+    }
+  },
   captions: {
     checkAndSubmit: 'Gwirio a chyflwyno'
   }

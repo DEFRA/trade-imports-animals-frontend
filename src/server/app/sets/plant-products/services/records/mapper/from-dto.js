@@ -1,4 +1,7 @@
-const SECTION_MAPPERS = Object.freeze([])
+const mapOrigin = (dto) =>
+  dto.origin?.countryCode ? { countryOfOrigin: dto.origin.countryCode } : {}
+
+const SECTION_MAPPERS = Object.freeze([mapOrigin])
 
 const composeSections = (dto) =>
   SECTION_MAPPERS.reduce(
