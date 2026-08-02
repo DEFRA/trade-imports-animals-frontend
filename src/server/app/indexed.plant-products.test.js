@@ -81,6 +81,41 @@ describe('plant-products indexed obligations are first-class', () => {
         templatePath: 'commodityInputMethod'
       },
       {
+        obligation: plantProductsObligationSet.commodityLines,
+        templatePath: 'commodityLines'
+      },
+      ...[
+        'commoditySelection',
+        'numberOfPackages',
+        'packageType',
+        'quantity',
+        'quantityType',
+        'netWeight',
+        'controlledAtmosphereContainer',
+        'finishedOrPropagated',
+        'intendedForFinalUsers',
+        'testAndTrial'
+      ].map((name) => ({
+        obligation: plantProductsObligationSet[name],
+        templatePath: `commodityLines.${name}`
+      })),
+      {
+        obligation: plantProductsObligationSet.species,
+        templatePath: 'commodityLines.species'
+      },
+      ...['eppoCode', 'genusAndSpecies', 'speciesId'].map((name) => ({
+        obligation: plantProductsObligationSet[name],
+        templatePath: `commodityLines.species.${name}`
+      })),
+      {
+        obligation: plantProductsObligationSet.varieties,
+        templatePath: 'commodityLines.species.varieties'
+      },
+      ...['variety', 'varietyClass'].map((name) => ({
+        obligation: plantProductsObligationSet[name],
+        templatePath: `commodityLines.species.varieties.${name}`
+      })),
+      {
         obligation: plantProductsObligationSet.borderControlPost,
         templatePath: 'borderControlPost'
       },
@@ -190,6 +225,22 @@ describe('plant-products indexed obligations are first-class', () => {
     const transportCompleted = {
       ...completed,
       commodityInputMethod: 'MANUAL',
+      commodityLines: [
+        {
+          commoditySelection: '08059000',
+          numberOfPackages: 1,
+          packageType: 'BX',
+          quantity: 1,
+          quantityType: 'PCS',
+          netWeight: 1,
+          species: [
+            {
+              eppoCode: 'CIDAC',
+              genusAndSpecies: 'Citrus australasica'
+            }
+          ]
+        }
+      ],
       borderControlPost: 'GBLHR4PP',
       meansOfTransport: 'ROAD_VEHICLE',
       transportIdentification: 'AB12 CDE',

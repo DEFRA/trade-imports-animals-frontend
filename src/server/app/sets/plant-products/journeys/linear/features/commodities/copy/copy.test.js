@@ -22,7 +22,7 @@ describe('plant-products commodities copy', () => {
     expect(leaves(cy)).not.toEqual(leaves(en))
   })
 
-  it('provides every commodity-input-method key with non-empty copy', () => {
+  it('provides every commodities key with non-empty copy', () => {
     expect(en).toEqual({
       inputMethod: {
         title: expect.any(String),
@@ -33,6 +33,41 @@ describe('plant-products commodities copy', () => {
           CSV: { label: expect.any(String), hint: expect.any(String) }
         },
         errors: { required: expect.any(String) }
+      },
+      commoditySearch: {
+        title: expect.any(String),
+        caption: expect.any(String),
+        heading: expect.any(String),
+        tabs: {
+          codeSearch: expect.any(String),
+          speciesSearch: expect.any(String)
+        },
+        codeSearch: {
+          legend: expect.any(String),
+          label: expect.any(String),
+          hint: expect.any(String),
+          button: expect.any(String),
+          noResults: expect.any(String)
+        },
+        tree: {
+          heading: expect.any(String),
+          allCommodities: expect.any(String),
+          select: expect.any(String)
+        },
+        speciesSearch: {
+          legend: expect.any(String),
+          label: expect.any(String),
+          hint: expect.any(String),
+          button: expect.any(String),
+          add: expect.any(String),
+          noResults: expect.any(String)
+        },
+        errors: {
+          codeRequired: expect.any(String),
+          codeNumeric: expect.any(String),
+          codeDuplicate: expect.any(String),
+          speciesRequired: expect.any(String)
+        }
       }
     })
     for (const leaf of leaves(en)) {

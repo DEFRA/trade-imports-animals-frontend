@@ -17,5 +17,40 @@ export const copy = {
     errors: {
       required: 'Dewiswch sut rydych chi am ychwanegu manylion eich nwydd'
     }
+  },
+  commoditySearch: {
+    title: 'Nwydd',
+    caption: 'Disgrifiad o’r nwyddau',
+    heading: 'Nwydd',
+    tabs: {
+      codeSearch: 'Chwilio yn ôl cod nwydd',
+      speciesSearch: 'Chwilio yn ôl genws a rhywogaeth'
+    },
+    codeSearch: {
+      legend: 'Chwilio am nwyddau',
+      label: 'Rhowch god nwydd',
+      hint: 'Rhowch y cod nwydd 8 neu 10 digid',
+      button: 'Chwilio',
+      noResults: 'Dim canlyniadau'
+    },
+    tree: {
+      heading: 'Dewch o hyd i’r nwydd yn y goeden nwyddau',
+      allCommodities: 'Pob nwydd',
+      select: 'Dewis'
+    },
+    speciesSearch: {
+      legend: 'Chwilio am genws a rhywogaeth y nwydd',
+      label: 'Rhowch genws a rhywogaeth',
+      hint: 'Defnyddiwch yr enw gwyddonol llawn. Bydd hwn yn Lladin, er enghraifft, Prunus dulcis',
+      button: 'Chwilio',
+      add: 'Ychwanegu',
+      noResults: 'Dim canlyniadau'
+    },
+    errors: {
+      codeRequired: 'Rhowch god nwydd',
+      codeNumeric: 'Rhaid i’r cod nwydd fod yn rhif',
+      codeDuplicate: 'Ni allwch ychwanegu’r un cod nwydd ddwywaith',
+      speciesRequired: 'Rhowch genws a rhywogaeth'
+    }
   }
 }

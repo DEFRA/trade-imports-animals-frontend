@@ -38,6 +38,7 @@ import {
 } from '../../../journeys/linear/features/commodities/evaluation.js'
 import { classApplicableSpecies } from '../../../services/commodities/index.js'
 import { obligations as livePlantObligations } from '../../index.js'
+import { commodityInputMethod } from './input-method.js'
 import {
   commodityLines,
   commoditySelection,
@@ -85,7 +86,7 @@ const commodityGroups = commodityObligations.filter((obligation) =>
 )
 
 const fixtureManifest = {
-  obligations: commodityObligations,
+  obligations: [commodityInputMethod, ...commodityObligations],
   groups: commodityGroups,
   policy: {
     systemPopulated: [],
@@ -96,6 +97,11 @@ const fixtureManifest = {
 }
 
 const pages = [
+  {
+    id: 'fixture-input-method-owner',
+    slug: 'fixture-input-method-owner',
+    collects: ['commodityInputMethod']
+  },
   {
     id: 'fixture-commodity-owner',
     slug: 'fixture-commodity-owner',
@@ -200,11 +206,29 @@ describe('real plant-products depth-3 commodity model', () => {
       true
     )
     expect(
-      commodityObligations.some(({ id }) =>
-        livePlantObligations.some((obligation) => obligation.id === id)
+      commodityObligations.every((obligation) =>
+        livePlantObligations.includes(obligation)
       )
-    ).toBe(false)
+    ).toBe(true)
     expect(() => assertNoDisplayKeys(commodityObligations)).not.toThrow()
+    expect(evaluationBindings.bindings.map(({ field }) => field)).toEqual([
+      'commodityInputMethod',
+      'commoditySelection',
+      'numberOfPackages',
+      'packageType',
+      'quantity',
+      'quantityType',
+      'netWeight',
+      'controlledAtmosphereContainer',
+      'finishedOrPropagated',
+      'intendedForFinalUsers',
+      'testAndTrial',
+      'eppoCode',
+      'genusAndSpecies',
+      'speciesId',
+      'variety',
+      'varietyClass'
+    ])
     expect(commodityGroups).toEqual([commodityLines, species, varieties])
     expect(species.within).toBe(commodityLines)
     expect(varieties.within).toBe(species)
@@ -270,7 +294,10 @@ describe('real plant-products depth-3 commodity model', () => {
     )
 
     expect(() =>
-      createFulfilmentRegistry([mismatched], commodityObligations)
+      createFulfilmentRegistry(
+        [mismatched],
+        [commodityInputMethod, ...commodityObligations]
+      )
     ).toThrow(
       'binding path "commodityLines[*].species[*].variety" has depth 2; variety requires depth 3'
     )

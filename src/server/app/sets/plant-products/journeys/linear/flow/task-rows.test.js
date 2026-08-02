@@ -21,7 +21,10 @@ import {
 import * as obligationSet from '../../../obligations/index.js'
 import { featureEvaluationBindings } from '../features/evaluation.js'
 import { dispatchPages } from '../features/index.js'
-import { commodityInputMethodPage } from '../features/commodities/page.js'
+import {
+  commodityInputMethodPage,
+  commoditySearchPage
+} from '../features/commodities/page.js'
 import {
   countryOfOriginPage,
   originOfImportPage
@@ -57,7 +60,7 @@ describe('plant-products task rows', () => {
       },
       {
         id: 'commodities',
-        pages: [commodityInputMethodPage]
+        pages: [commodityInputMethodPage, commoditySearchPage]
       },
       {
         id: 'transport',
@@ -100,7 +103,7 @@ describe('plant-products task rows', () => {
       withSetContext('plant-products', () =>
         rowParts(taskRowById('commodities'))
       )
-    ).toEqual(['commodityInputMethod'])
+    ).toEqual(['commodityInputMethod', 'commodityLines'])
     expect(
       withSetContext('plant-products', () => rowParts(taskRowById('transport')))
     ).toEqual([
@@ -132,7 +135,7 @@ describe('plant-products task rows', () => {
     expect(statusFor({ reasonForImport: 'INTERNAL_MARKET' })).toBe(FULFILLED)
   })
 
-  it('requires an input method to complete the commodities row', () => {
+  it('keeps commodities incomplete until the collection floor and line obligations are complete', () => {
     const statusFor = (answers) =>
       withSetContext('plant-products', () => {
         const { inScope } = makeScope(answers)
@@ -145,7 +148,34 @@ describe('plant-products task rows', () => {
       })
 
     expect(statusFor({})).toBe(NOT_STARTED)
-    expect(statusFor({ commodityInputMethod: 'MANUAL' })).toBe(FULFILLED)
+    expect(statusFor({ commodityInputMethod: 'MANUAL' })).toBe(IN_PROGRESS)
+    expect(
+      statusFor({
+        commodityInputMethod: 'MANUAL',
+        commodityLines: [{ commoditySelection: '08059000' }]
+      })
+    ).toBe(IN_PROGRESS)
+    expect(
+      statusFor({
+        commodityInputMethod: 'MANUAL',
+        commodityLines: [
+          {
+            commoditySelection: '08059000',
+            numberOfPackages: 1,
+            packageType: 'BX',
+            quantity: 1,
+            quantityType: 'PCS',
+            netWeight: 1,
+            species: [
+              {
+                eppoCode: 'CIDAC',
+                genusAndSpecies: 'Citrus australasica'
+              }
+            ]
+          }
+        ]
+      })
+    ).toBe(FULFILLED)
   })
 
   it('requires both countries but not the optional reference to complete the origin row', () => {
@@ -247,7 +277,23 @@ describe('plant-products task rows', () => {
       countryOfOrigin: 'FR',
       countryOfConsignment: 'IE',
       reasonForImport: 'INTERNAL_MARKET',
-      commodityInputMethod: 'MANUAL'
+      commodityInputMethod: 'MANUAL',
+      commodityLines: [
+        {
+          commoditySelection: '08059000',
+          numberOfPackages: 1,
+          packageType: 'BX',
+          quantity: 1,
+          quantityType: 'PCS',
+          netWeight: 1,
+          species: [
+            {
+              eppoCode: 'CIDAC',
+              genusAndSpecies: 'Citrus australasica'
+            }
+          ]
+        }
+      ]
     }
     const completedTransport = {
       borderControlPost: 'GBLHR4PP',

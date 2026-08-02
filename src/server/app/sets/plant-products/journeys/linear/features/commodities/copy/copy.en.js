@@ -16,5 +16,40 @@ export const copy = {
     errors: {
       required: 'Select how you want to add your commodity details'
     }
+  },
+  commoditySearch: {
+    title: 'Commodity',
+    caption: 'Description of the goods',
+    heading: 'Commodity',
+    tabs: {
+      codeSearch: 'Commodity code search',
+      speciesSearch: 'Genus and species search'
+    },
+    codeSearch: {
+      legend: 'Search commodities',
+      label: 'Enter commodity code',
+      hint: 'Enter the 8 or 10 digit commodity code',
+      button: 'Search',
+      noResults: 'No results'
+    },
+    tree: {
+      heading: 'Find the commodity in the commodity tree',
+      allCommodities: 'All commodities',
+      select: 'Select'
+    },
+    speciesSearch: {
+      legend: 'Search genus and species of commodity',
+      label: 'Enter genus and species',
+      hint: 'Use the full scientific name. This will be in Latin, for example, Prunus dulcis',
+      button: 'Search',
+      add: 'Add',
+      noResults: 'No results'
+    },
+    errors: {
+      codeRequired: 'Enter a commodity code',
+      codeNumeric: 'Commodity code must be a number',
+      codeDuplicate: 'You cannot add the same commodity code twice',
+      speciesRequired: 'Enter a genus and species'
+    }
   }
 }

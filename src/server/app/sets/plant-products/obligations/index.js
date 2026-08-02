@@ -1,5 +1,29 @@
 import { commodityInputMethod } from './sections/commodities/input-method.js'
 import {
+  commodityLines,
+  commoditySelection,
+  controlledAtmosphereContainer,
+  finishedOrPropagated,
+  intendedForFinalUsers,
+  netWeight,
+  numberOfPackages,
+  packageType,
+  quantity,
+  quantityType,
+  testAndTrial
+} from './sections/commodities/lines.js'
+import {
+  eppoCode,
+  genusAndSpecies,
+  species,
+  speciesId
+} from './sections/commodities/species.js'
+import {
+  varieties,
+  variety,
+  varietyClass
+} from './sections/commodities/varieties.js'
+import {
   countryOfConsignment,
   countryOfOrigin,
   internalReference
@@ -22,6 +46,24 @@ import {
 
 export {
   commodityInputMethod,
+  commodityLines,
+  commoditySelection,
+  numberOfPackages,
+  packageType,
+  quantity,
+  quantityType,
+  netWeight,
+  controlledAtmosphereContainer,
+  finishedOrPropagated,
+  intendedForFinalUsers,
+  testAndTrial,
+  species,
+  eppoCode,
+  genusAndSpecies,
+  speciesId,
+  varieties,
+  variety,
+  varietyClass,
   countryOfConsignment,
   countryOfOrigin,
   internalReference,
@@ -46,6 +88,24 @@ export const obligations = [
   internalReference,
   reasonForImport,
   commodityInputMethod,
+  commodityLines,
+  commoditySelection,
+  numberOfPackages,
+  packageType,
+  quantity,
+  quantityType,
+  netWeight,
+  controlledAtmosphereContainer,
+  finishedOrPropagated,
+  intendedForFinalUsers,
+  testAndTrial,
+  species,
+  eppoCode,
+  genusAndSpecies,
+  speciesId,
+  varieties,
+  variety,
+  varietyClass,
   borderControlPost,
   inspectionPremises,
   meansOfTransport,
@@ -66,7 +126,7 @@ export const groups = obligations.filter((obligation) =>
 
 export const policy = {
   systemPopulated: [],
-  enforcedAtContinue: ['countryOfOrigin'],
+  enforcedAtContinue: ['countryOfOrigin', 'commoditySelection'],
   maxEntriesFrom: {},
   systemAnswerKeys: ['referenceNumber']
 }

@@ -90,13 +90,10 @@ test.describe('plant-products hub', () => {
       has: page.getByText(copy.rows.transport.title, { exact: true })
     })
     await expect(transport).toContainText(copy.rows.transport.hint)
-    await expect(transport).toContainText(copy.statuses.notYetStarted)
+    await expect(transport).toContainText(copy.statuses.cannotStartYet)
     await expect(
       transport.getByRole('link', { name: copy.rows.transport.title })
-    ).toHaveAttribute(
-      'href',
-      /^\/plant-products\/notifications\/[^/]+\/transport-before-bip$/
-    )
+    ).toHaveCount(0)
     const review = page.getByRole('listitem').filter({
       has: page.getByText(copy.review.title, { exact: true })
     })

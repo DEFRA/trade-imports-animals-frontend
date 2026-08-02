@@ -15,6 +15,11 @@ const startAtTransport = async (page) => {
   await page.getByLabel('Country of origin').selectOption('FR')
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await page.getByRole('link', { name: 'Back', exact: true }).click()
+  await page.getByRole('link', { name: 'Commodity', exact: true }).click()
+  await page.getByRole('radio', { name: 'Manual entry' }).check()
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByLabel('Enter commodity code').fill('06011010')
+  await page.getByRole('button', { name: 'Search', exact: true }).click()
   await page
     .getByRole('link', { name: 'Transport to the BCP', exact: true })
     .click()

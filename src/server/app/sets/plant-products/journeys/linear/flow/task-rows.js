@@ -1,7 +1,10 @@
 // Scaffolded by docs/add-a-set.md step 3.
 import { statusOf } from '../../../../../bridge/status/index.js'
 import { collectsOf } from '../../../../../flow/dispatch.js'
-import { commodityInputMethodPage } from '../features/commodities/page.js'
+import {
+  commodityInputMethodPage,
+  commoditySearchPage
+} from '../features/commodities/page.js'
 import {
   countryOfOriginPage,
   originOfImportPage
@@ -12,7 +15,10 @@ import { transportBeforeBipPage } from '../features/transport/page.js'
 export const taskRows = [
   { id: 'origin', pages: [countryOfOriginPage, originOfImportPage] },
   { id: 'purpose', pages: [purposePage] },
-  { id: 'commodities', pages: [commodityInputMethodPage] },
+  {
+    id: 'commodities',
+    pages: [commodityInputMethodPage, commoditySearchPage]
+  },
   { id: 'transport', pages: [transportBeforeBipPage] }
 ]
 

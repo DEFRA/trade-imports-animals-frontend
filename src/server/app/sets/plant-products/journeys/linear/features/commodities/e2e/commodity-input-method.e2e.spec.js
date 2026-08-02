@@ -84,7 +84,7 @@ test.describe('plant-products commodity input method', () => {
     ).toBeVisible()
   })
 
-  test('saves Manual entry, completes the hub row and persists it on reload', async ({
+  test('saves Manual entry, advances to commodity search and persists it on reload', async ({
     page
   }) => {
     const formUrl = page.url()
@@ -94,12 +94,10 @@ test.describe('plant-products commodity input method', () => {
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     await expect(page).toHaveURL((url) =>
-      /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
+      /^\/plant-products\/notifications\/[^/]+\/commodity-search$/.test(
+        url.pathname
+      )
     )
-    const row = page.getByRole('listitem').filter({
-      has: page.getByText('Commodity', { exact: true })
-    })
-    await expect(row).toContainText('Completed')
 
     await page.goto(formUrl)
     await expect(
@@ -123,7 +121,9 @@ test.describe('plant-products commodity input method', () => {
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     await expect(page).toHaveURL((url) =>
-      /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
+      /^\/plant-products\/notifications\/[^/]+\/commodity-search$/.test(
+        url.pathname
+      )
     )
     await page.goto(formUrl)
     await expect(

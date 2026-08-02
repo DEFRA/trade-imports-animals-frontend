@@ -65,6 +65,7 @@ describe('plant-products gateway boot proof', () => {
     const countryOfOriginUrl = `${hubUrl}/country-of-origin`
     const originOfImportUrl = `${hubUrl}/origin-of-import`
     const commodityInputMethodUrl = `${hubUrl}/commodity-input-method`
+    const commoditySearchUrl = `${hubUrl}/commodity-search`
 
     expect(created.statusCode).toBe(302)
     expect(importTypeUrl).toMatch(
@@ -150,6 +151,24 @@ describe('plant-products gateway boot proof', () => {
     )
     expect(commodityInputMethod.result).toContain('Manual entry')
     expect(commodityInputMethod.result).toContain('Upload from a CSV file')
+
+    const savedInputMethod = await server.inject({
+      method: 'POST',
+      url: commodityInputMethodUrl,
+      payload: { commodityInputMethod: 'MANUAL' },
+      headers: { cookie: cookies.header() }
+    })
+    cookies.absorb(savedInputMethod)
+    expect(savedInputMethod.statusCode).toBe(302)
+    expect(savedInputMethod.headers.location).toBe(commoditySearchUrl)
+
+    const commoditySearch = await server.inject({
+      url: commoditySearchUrl,
+      headers: { cookie: cookies.header() }
+    })
+    expect(commoditySearch.statusCode).toBe(200)
+    expect(commoditySearch.result).toContain('Commodity code search')
+    expect(commoditySearch.result).toContain('Genus and species search')
   })
 
   it('leaves the plant commodity-mapper slot absent', () => {

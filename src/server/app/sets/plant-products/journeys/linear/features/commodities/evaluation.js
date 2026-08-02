@@ -61,6 +61,7 @@ const varietyLeaf = (field, obligation) =>
   })
 
 export const evaluationBindings = feature('commodities', [
+  scalar({ field: 'commodityInputMethod', obligation: commodityInputMethod }),
   lineLeaf('commoditySelection', commoditySelection),
   lineLeaf('numberOfPackages', numberOfPackages),
   lineLeaf('packageType', packageType),
@@ -76,8 +77,4 @@ export const evaluationBindings = feature('commodities', [
   speciesLeaf('speciesId', speciesId),
   varietyLeaf('variety', variety),
   varietyLeaf('varietyClass', varietyClass)
-])
-
-export const inputMethodBindings = feature('commodities', [
-  scalar({ field: 'commodityInputMethod', obligation: commodityInputMethod })
 ])
