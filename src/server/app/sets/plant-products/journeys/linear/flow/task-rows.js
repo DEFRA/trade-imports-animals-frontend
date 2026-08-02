@@ -2,6 +2,7 @@
 import { statusOf } from '../../../../../bridge/status/index.js'
 import { collectsOf } from '../../../../../flow/dispatch.js'
 import {
+  commodityBasicDescriptionPage,
   commodityInputMethodPage,
   commoditySearchPage
 } from '../features/commodities/page.js'
@@ -17,7 +18,11 @@ export const taskRows = [
   { id: 'purpose', pages: [purposePage] },
   {
     id: 'commodities',
-    pages: [commodityInputMethodPage, commoditySearchPage]
+    pages: [
+      commodityInputMethodPage,
+      commoditySearchPage,
+      commodityBasicDescriptionPage
+    ]
   },
   { id: 'transport', pages: [transportBeforeBipPage] }
 ]

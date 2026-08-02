@@ -51,5 +51,41 @@ export const copy = {
       codeDuplicate: 'You cannot add the same commodity code twice',
       speciesRequired: 'Enter a genus and species'
     }
+  },
+  basicDescription: {
+    caption: 'Description of the goods',
+    heading: 'Commodity',
+    commoditySummary: {
+      caption: 'Commodity details',
+      codeHeader: 'Commodity code',
+      descriptionHeader: 'Description'
+    },
+    legend: 'Select Genus (and Species) of commodity',
+    hint: 'You can add multiple Genus (and Species)',
+    added: {
+      caption: 'Added Genus (and Species)',
+      genusHeader: 'Genus (and Species)',
+      eppoHeader: 'EPPO code',
+      removeLabel: 'Remove',
+      removeHidden: 'from commodity'
+    },
+    filter: {
+      legend: 'Filter',
+      genusLabel: 'Genus (and Species)',
+      eppoLabel: 'EPPO code',
+      searchLabel: 'Search',
+      clearLabel: 'Clear'
+    },
+    results: {
+      caption: 'Genus (and Species) search results',
+      genusHeader: 'Genus (and Species)',
+      eppoHeader: 'EPPO code',
+      addLabel: 'Add',
+      addHidden: 'to commodity',
+      noResults: 'No search results'
+    },
+    errors: {
+      selectAtLeastOne: 'Select at least one Genus (and Species)'
+    }
   }
 }

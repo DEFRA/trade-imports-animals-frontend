@@ -52,5 +52,41 @@ export const copy = {
       codeDuplicate: 'Ni allwch ychwanegu’r un cod nwydd ddwywaith',
       speciesRequired: 'Rhowch genws a rhywogaeth'
     }
+  },
+  basicDescription: {
+    caption: 'Disgrifiad o’r nwyddau',
+    heading: 'Nwydd',
+    commoditySummary: {
+      caption: 'Manylion y nwydd',
+      codeHeader: 'Cod nwydd',
+      descriptionHeader: 'Disgrifiad'
+    },
+    legend: 'Dewiswch Genws (a Rhywogaeth) y nwydd',
+    hint: 'Gallwch ychwanegu sawl Genws (a Rhywogaeth)',
+    added: {
+      caption: 'Genws (a Rhywogaeth) a ychwanegwyd',
+      genusHeader: 'Genws (a Rhywogaeth)',
+      eppoHeader: 'Cod EPPO',
+      removeLabel: 'Tynnu',
+      removeHidden: 'o nwydd'
+    },
+    filter: {
+      legend: 'Hidlo',
+      genusLabel: 'Genws (a Rhywogaeth)',
+      eppoLabel: 'Cod EPPO',
+      searchLabel: 'Chwilio',
+      clearLabel: 'Clirio'
+    },
+    results: {
+      caption: 'Canlyniadau chwilio Genws (a Rhywogaeth)',
+      genusHeader: 'Genws (a Rhywogaeth)',
+      eppoHeader: 'Cod EPPO',
+      addLabel: 'Ychwanegu',
+      addHidden: 'at nwydd',
+      noResults: 'Dim canlyniadau chwilio'
+    },
+    errors: {
+      selectAtLeastOne: 'Dewiswch o leiaf un Genws (a Rhywogaeth)'
+    }
   }
 }

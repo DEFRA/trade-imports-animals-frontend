@@ -126,3 +126,19 @@ delivery slices steps 6, 7 and 10 across pp-010 and pp-011; this is recorded in
 the plan rather than hidden by premature harness or Playwright changes here.
 The real adapter is likewise a deliberate pp-008 follow-up, with a loud
 not-implemented implementation in this scaffold.
+
+The commodity basic-description surface records these trace-to-requirements
+deviations:
+
+- The legacy journey varies the species control by commodity data: a plant
+  picker, a machinery checkbox list through the shared non-CHED-PP template,
+  or a hidden block when no species reference data exists. Pass 1 builds the
+  picker only because every pp-014 fixture association is handled by that
+  surface. Re-open the control choice when machinery or no-species commodity
+  codes enter the fixture.
+- One page renders a card for every commodity line, following the nested-loop
+  animal-identification pattern, instead of legacy per-commodity re-entry.
+- The fixture lists do not need pagination. Add and Remove use a fixed
+  `action` control name with the target in its value, Remove remains available
+  for the last species, the conditional Cancel link is omitted, and no species
+  cap is declared. The model's collection floor is enforced on Continue.

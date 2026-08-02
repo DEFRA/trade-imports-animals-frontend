@@ -68,6 +68,40 @@ describe('plant-products commodities copy', () => {
           codeDuplicate: expect.any(String),
           speciesRequired: expect.any(String)
         }
+      },
+      basicDescription: {
+        caption: expect.any(String),
+        heading: expect.any(String),
+        commoditySummary: {
+          caption: expect.any(String),
+          codeHeader: expect.any(String),
+          descriptionHeader: expect.any(String)
+        },
+        legend: expect.any(String),
+        hint: expect.any(String),
+        added: {
+          caption: expect.any(String),
+          genusHeader: expect.any(String),
+          eppoHeader: expect.any(String),
+          removeLabel: expect.any(String),
+          removeHidden: expect.any(String)
+        },
+        filter: {
+          legend: expect.any(String),
+          genusLabel: expect.any(String),
+          eppoLabel: expect.any(String),
+          searchLabel: expect.any(String),
+          clearLabel: expect.any(String)
+        },
+        results: {
+          caption: expect.any(String),
+          genusHeader: expect.any(String),
+          eppoHeader: expect.any(String),
+          addLabel: expect.any(String),
+          addHidden: expect.any(String),
+          noResults: expect.any(String)
+        },
+        errors: { selectAtLeastOne: expect.any(String) }
       }
     })
     for (const leaf of leaves(en)) {

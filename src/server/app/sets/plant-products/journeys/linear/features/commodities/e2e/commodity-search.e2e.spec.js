@@ -119,12 +119,18 @@ test.describe('plant-products commodity search', () => {
     await page.getByLabel(copy.codeSearch.label).fill('06011010')
     await panels(page).code.getByRole('button', { name: 'Search' }).click()
     await expect(page).toHaveURL((url) =>
-      /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
+      /^\/plant-products\/notifications\/[^/]+\/commodity-basic-description$/.test(
+        url.pathname
+      )
     )
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
     const row = page.getByRole('listitem').filter({
       has: page.getByText('Commodity', { exact: true })
     })
     await expect(row).toContainText('In progress')
+    await expect(
+      page.getByRole('link', { name: 'Transport to the BCP', exact: true })
+    ).toBeVisible()
   })
 
   test('rejects a commodity code already persisted on the notification', async ({
@@ -165,7 +171,9 @@ test.describe('plant-products commodity search', () => {
     const row = page.getByRole('row').filter({ hasText: '06011010 Hyacinths' })
     await row.getByRole('button', { name: copy.tree.select }).click()
     await expect(page).toHaveURL((url) =>
-      /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
+      /^\/plant-products\/notifications\/[^/]+\/commodity-basic-description$/.test(
+        url.pathname
+      )
     )
   })
 
@@ -228,8 +236,11 @@ test.describe('plant-products commodity search', () => {
     })
     await result.getByRole('button', { name: copy.speciesSearch.add }).click()
     await expect(page).toHaveURL((url) =>
-      /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
+      /^\/plant-products\/notifications\/[^/]+\/commodity-basic-description$/.test(
+        url.pathname
+      )
     )
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
     const row = page.getByRole('listitem').filter({
       has: page.getByText('Commodity', { exact: true })
     })

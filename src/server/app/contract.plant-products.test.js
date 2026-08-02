@@ -24,6 +24,7 @@ import {
 import { featureEvaluationBindings } from './sets/plant-products/journeys/linear/features/evaluation.js'
 import { dispatchPages } from './sets/plant-products/journeys/linear/features/index.js'
 import * as commodityInputMethod from './sets/plant-products/journeys/linear/features/commodities/commodity-input-method/commodity-input-method.controller.js'
+import * as basicDescription from './sets/plant-products/journeys/linear/features/commodities/basic-description/basic-description.controller.js'
 import * as commoditySearch from './sets/plant-products/journeys/linear/features/commodities/search/search.controller.js'
 import * as importType from './sets/plant-products/journeys/linear/features/import-type/controller.js'
 import * as countryOfOrigin from './sets/plant-products/journeys/linear/features/origin/country-of-origin/country-of-origin.controller.js'
@@ -202,5 +203,21 @@ describe('plant-products controller <-> model commit contract', () => {
       .filter((page) => committableCollects(page.collects ?? []).length > 0)
       .map(({ id }) => id)
     expect(cases.map(({ id }) => id)).toEqual(collectingControllerIds)
+  })
+
+  it('Should append fixture-derived species at depth two without claiming a second collects owner', async () => {
+    expect(basicDescription.meta.collects).toEqual([])
+    const result = await drive(postHandlerOf(basicDescription), {
+      seed: {
+        commodityLines: [{ commoditySelection: '06042090' }]
+      },
+      payload: { action: 'add:0:LENCU' }
+    })
+
+    expect(result.after.commodityLines[0].species[0]).toEqual({
+      eppoCode: 'LENCU',
+      genusAndSpecies: 'Lens culinaris',
+      speciesId: '1346687'
+    })
   })
 })

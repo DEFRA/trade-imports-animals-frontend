@@ -1,6 +1,7 @@
 // Scaffolded by docs/add-a-set.md step 3.
 import * as dashboard from './dashboard/controller.js'
 import * as commodityInputMethod from './commodities/commodity-input-method/commodity-input-method.controller.js'
+import * as commodityBasicDescription from './commodities/basic-description/basic-description.controller.js'
 import * as commoditySearch from './commodities/search/search.controller.js'
 import * as hub from './hub/controller.js'
 import * as importType from './import-type/controller.js'
@@ -16,6 +17,7 @@ export const dispatchPages = [
   purpose.meta,
   commodityInputMethod.meta,
   commoditySearch.meta,
+  commodityBasicDescription.meta,
   transport.meta
 ]
 
@@ -27,6 +29,7 @@ export const allRoutes = [
   ...purpose.routes,
   ...commodityInputMethod.routes,
   ...commoditySearch.routes,
+  ...commodityBasicDescription.routes,
   ...transport.routes,
   ...hub.routes
 ]

@@ -22,6 +22,7 @@ import * as obligationSet from '../../../obligations/index.js'
 import { featureEvaluationBindings } from '../features/evaluation.js'
 import { dispatchPages } from '../features/index.js'
 import {
+  commodityBasicDescriptionPage,
   commodityInputMethodPage,
   commoditySearchPage
 } from '../features/commodities/page.js'
@@ -60,7 +61,11 @@ describe('plant-products task rows', () => {
       },
       {
         id: 'commodities',
-        pages: [commodityInputMethodPage, commoditySearchPage]
+        pages: [
+          commodityInputMethodPage,
+          commoditySearchPage,
+          commodityBasicDescriptionPage
+        ]
       },
       {
         id: 'transport',

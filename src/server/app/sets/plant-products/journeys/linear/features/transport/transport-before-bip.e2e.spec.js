@@ -21,6 +21,12 @@ const startAtTransport = async (page) => {
   await page.getByLabel('Enter commodity code').fill('06011010')
   await page.getByRole('button', { name: 'Search', exact: true }).click()
   await page
+    .getByRole('button', {
+      name: 'Add Albuca bracteata to commodity 06011010'
+    })
+    .click()
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page
     .getByRole('link', { name: 'Transport to the BCP', exact: true })
     .click()
   await expect(page).toHaveURL((url) =>
