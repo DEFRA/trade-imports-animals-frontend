@@ -130,9 +130,10 @@ Use a link builder in a route table and every URL loses its prefix. Use a route
 builder in a template and every link does. Both fail visibly under symmetric
 mounts, which is the point.
 
-`src/server/app/no-set-singletons.test.js` is the tripwire that holds this
-symmetry. It fails the build if any set is registered at an empty prefix or at
-anything other than `'/' + setId`. Read it before you choose a name, not after.
+[`../shared/set-context.test.js`](../shared/set-context.test.js) rejects an
+empty or non-absolute mount, while [`../shared/paths.test.js`](../shared/paths.test.js)
+proves the symmetric live-animals and plant-products URL shapes in one process.
+Read both before you choose a name, not after.
 
 Cite plan §4.3 for the mount scheme and the rejected alternatives, and §4.6 for
 the enumerated migration a mount change costs an existing set.
@@ -280,9 +281,8 @@ Two seams are optional:
 - Reference-data priming — `countries.prime()` and `ports.prime()` are
   live-animals-mode machinery. A fixture-backed set primes nothing.
 
-`src/server/app/no-set-singletons.test.js` is the tripwire for this file too.
-It enforces both rules: every exported `configure*` in L2 takes `setId` as its
-first parameter, and every registered mount is `'/' + setId`. Read it before
+The keyed-seam cases in [`../shared/seam-keying.test.js`](../shared/seam-keying.test.js)
+and the mount/path cases above are the tripwires for this file. Read them before
 you write the gateway, so you meet both rules first time.
 
 ## 5. Register the gateway

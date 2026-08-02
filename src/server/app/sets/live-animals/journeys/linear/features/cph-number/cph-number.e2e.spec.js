@@ -4,20 +4,26 @@ import { expect, test } from '@playwright/test'
 import { copy } from './copy/copy.en.js'
 
 const startAtCphNumber = async (page) => {
-  await page.goto('/')
+  await page.goto('/live-animals')
   await page
-    .locator('form[action="/notifications"]')
+    .locator('form[action="/live-animals/notifications"]')
     .getByRole('button')
     .click()
   await page.locator('input[name="importType"][value="live-animals"]').check()
   await page.locator('form').getByRole('button').click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+  await expect(page).toHaveURL((url) =>
+    /^\/live-animals\/notifications\/[^/]+\/origin$/.test(url.pathname)
+  )
 
   const commodityUrl = page.url().replace(/\/origin$/, '/commodities')
   await page.goto(commodityUrl)
   await page.getByRole('checkbox', { name: 'Bos taurus' }).check()
   await page.getByRole('button', { name: 'Save and continue' }).click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/consignment-details$/)
+  await expect(page).toHaveURL((url) =>
+    /^\/live-animals\/notifications\/[^/]+\/consignment-details$/.test(
+      url.pathname
+    )
+  )
 
   await page.goto(commodityUrl.replace(/\/commodities$/, '/cph-number'))
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
@@ -98,7 +104,9 @@ test.describe('cph-number feature', () => {
     await page.getByLabel(copy.cph.label).fill('123/456/789')
     await page.locator('form button[type="submit"]').first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+$/.test(url.pathname)
+    )
     await page.goto(cphUrl)
     await expect(page.getByLabel(copy.cph.label)).toHaveValue('123456789')
   })

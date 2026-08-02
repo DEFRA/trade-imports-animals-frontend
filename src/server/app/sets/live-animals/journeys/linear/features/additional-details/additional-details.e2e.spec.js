@@ -139,7 +139,9 @@ test.describe('additional-details feature', () => {
       .getByRole('button', { name: 'Save and continue', exact: true })
       .click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+$/.test(url.pathname)
+    )
     await page.goto(detailsUrl)
     await expect(
       page.getByRole('radio', { name: 'Slaughter', exact: true })

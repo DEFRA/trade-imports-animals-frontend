@@ -23,7 +23,7 @@ test.describe('dashboard feature', () => {
   test('renders the empty notification list and default sort', async ({
     page
   }) => {
-    await page.goto('/')
+    await page.goto('/live-animals')
 
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
     await expect(page.getByText(copy.body)).toBeVisible()
@@ -40,20 +40,22 @@ test.describe('dashboard feature', () => {
   test('starts a new notification at the import-type filter', async ({
     page
   }) => {
-    await page.goto('/')
+    await page.goto('/live-animals')
 
     await page.getByRole('button', { name: copy.startButton }).click()
 
     await expect(
       page.getByRole('heading', { name: 'What are you importing?' })
     ).toBeVisible()
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/import-type$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+\/import-type$/.test(url.pathname)
+    )
   })
 
   test('empty dashboard has no serious or critical axe violations', async ({
     page
   }) => {
-    await page.goto('/')
+    await page.goto('/live-animals')
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
@@ -76,7 +78,7 @@ test.describe('dashboard feature', () => {
     await submitNotification(page)
     const reference = journeyIdFromPage(page)
 
-    await page.goto('/')
+    await page.goto('/live-animals')
 
     await expect(
       page.getByRole('heading', { name: reference, exact: true })
@@ -119,7 +121,7 @@ test.describe('dashboard feature', () => {
     await startNotification(page)
     const reference = journeyIdFromPage(page)
 
-    await page.goto('/')
+    await page.goto('/live-animals')
 
     await expect(page.getByText('Draft', { exact: true })).toBeVisible()
     await expect(
@@ -156,7 +158,7 @@ test.describe('dashboard feature', () => {
     await startNotification(page)
     await submitNotification(page)
     const reference = journeyIdFromPage(page)
-    await page.goto('/')
+    await page.goto('/live-animals')
     await page
       .getByRole('button', {
         name: `Amend ${copy.actionHidden(reference)}`
@@ -164,7 +166,7 @@ test.describe('dashboard feature', () => {
       .click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
-    await page.goto('/')
+    await page.goto('/live-animals')
 
     await expect(page.getByText('Amending', { exact: true })).toBeVisible()
     await expect(
@@ -183,7 +185,7 @@ test.describe('dashboard feature', () => {
     page
   }) => {
     await startNotification(page)
-    await page.goto('/')
+    await page.goto('/live-animals')
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
@@ -205,7 +207,7 @@ test.describe('dashboard feature', () => {
     const firstReference = journeyIdFromPage(page)
     await startNotification(page)
     const secondReference = journeyIdFromPage(page)
-    await page.goto('/')
+    await page.goto('/live-animals')
 
     await page.getByLabel(copy.sort.label).selectOption('createdAt,asc')
     await page.getByRole('button', { name: copy.sort.update }).click()
@@ -231,7 +233,7 @@ test.describe('dashboard feature', () => {
     await startNotification(page)
     const existingReference = journeyIdFromPage(page)
     const missingReference = 'GBN-AG-26-ZZZZZZ'
-    await page.goto('/')
+    await page.goto('/live-animals')
 
     await page.getByLabel(copy.search.label).fill(missingReference)
     await page.getByRole('button', { name: copy.search.button }).click()
@@ -252,7 +254,7 @@ test.describe('dashboard feature', () => {
     const firstReference = journeyIdFromPage(page)
     await startNotification(page)
     const secondReference = journeyIdFromPage(page)
-    await page.goto('/')
+    await page.goto('/live-animals')
     await page.getByLabel(copy.sort.label).selectOption('createdAt,asc')
     await page.getByRole('button', { name: copy.sort.update }).click()
     await page.getByLabel(copy.search.label).fill(firstReference)
@@ -276,10 +278,10 @@ test.describe('dashboard feature', () => {
     page
   }) => {
     test.slow()
-    await page.goto('/')
+    await page.goto('/live-animals')
     for (let index = 0; index < 21; index += 1) {
       await page.getByRole('button', { name: copy.startButton }).click()
-      await page.goto('/')
+      await page.goto('/live-animals')
     }
 
     await expect(

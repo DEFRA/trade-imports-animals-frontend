@@ -306,7 +306,16 @@ describe('#animalIdentificationController — the single card-per-species surfac
     it('Should reject a remove POST carrying no CSRF crumb and serve no GET route that removes', async () => {
       const server = Hapi.server()
       await server.register(Crumb)
-      server.route(animalIdentification.routes)
+      await server.register(
+        {
+          plugin: {
+            name: 'prefixed-animal-identification-test-routes',
+            register: (realmServer) =>
+              realmServer.route(animalIdentification.routes)
+          }
+        },
+        { routes: { prefix: '/live-animals' } }
+      )
 
       const forged = await server.inject({
         method: 'POST',

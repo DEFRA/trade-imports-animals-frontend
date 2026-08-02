@@ -16,7 +16,7 @@ import { assembleFulfilments } from '../../../../../../bridge/assemble-fulfilmen
 import { projectAnswers } from '../../../../../../bridge/fulfilments/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
-  createPath,
+  createRoutePath,
   hubPath,
   pagePath
 } from '../../../../../../shared/paths.js'
@@ -33,7 +33,7 @@ const handlerOf = (method, pathSuffix) =>
 const listGet = handlerOf('GET', '/')
 const amendPost = handlerOf('POST', '/amend')
 const startPost = routes.find(
-  (route) => route.method === 'POST' && route.path === createPath()
+  (route) => route.method === 'POST' && route.path === createRoutePath()
 ).handler
 
 const buildRequest = ({
@@ -400,7 +400,7 @@ describe('dashboard row actions', () => {
       h
     )
 
-    expect(h.captured.redirect).toBe('/')
+    expect(h.captured.redirect).toBe('/live-animals')
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
     ).toBe(SUBMITTED)

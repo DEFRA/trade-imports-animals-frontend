@@ -15,7 +15,7 @@ test.describe('notification-actions feature', () => {
     await startNotification(page)
     await answerCountryOfOrigin(page)
     const sourceReference = journeyIdFromPage(page)
-    await page.goto('/')
+    await page.goto('/live-animals')
 
     await page
       .getByRole('button', {
@@ -37,7 +37,7 @@ test.describe('notification-actions feature', () => {
     await startNotification(page)
     await answerCountryOfOrigin(page)
     const sourceReference = journeyIdFromPage(page)
-    await page.goto('/')
+    await page.goto('/live-animals')
 
     await page
       .getByRole('button', {
@@ -59,7 +59,7 @@ test.describe('notification-actions feature', () => {
     await startNotification(page)
     await answerCountryOfOrigin(page)
     const sourceReference = journeyIdFromPage(page)
-    await page.goto('/')
+    await page.goto('/live-animals')
     await page
       .getByRole('button', {
         name: `${sharedCopy.notificationActions.copy.text} ${dashboardCopy.actionHidden(sourceReference)}`
@@ -67,7 +67,7 @@ test.describe('notification-actions feature', () => {
       .click()
     const copiedReference = journeyIdFromPage(page)
 
-    await page.goto('/')
+    await page.goto('/live-animals')
 
     await expect(
       page.getByRole('heading', { name: sourceReference, exact: true })
@@ -83,7 +83,7 @@ test.describe('notification-actions feature', () => {
     await startNotification(page)
     await answerCountryOfOrigin(page)
     const sourceReference = journeyIdFromPage(page)
-    await page.goto('/')
+    await page.goto('/live-animals')
     await page
       .getByRole('button', {
         name: `${sharedCopy.notificationActions.copy.text} ${dashboardCopy.actionHidden(sourceReference)}`

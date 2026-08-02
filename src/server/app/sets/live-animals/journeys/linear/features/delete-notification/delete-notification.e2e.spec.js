@@ -13,7 +13,7 @@ test.describe('delete-notification feature', () => {
   test.beforeEach(async ({ page }) => {
     await startNotification(page)
     const reference = journeyIdFromPage(page)
-    await page.goto('/')
+    await page.goto('/live-animals')
     await page
       .getByRole('link', {
         name: `Delete ${dashboardCopy.actionHidden(reference)}`
@@ -31,10 +31,10 @@ test.describe('delete-notification feature', () => {
     ).toBeVisible()
     await expect(
       page.getByRole('button', { name: copy.noLink })
-    ).toHaveAttribute('href', '/')
+    ).toHaveAttribute('href', '/live-animals')
     await expect(
       page.getByRole('link', { name: 'Back', exact: true })
-    ).toHaveAttribute('href', '/')
+    ).toHaveAttribute('href', '/live-animals')
   })
 
   test('No returns to the dashboard and keeps the notification', async ({
@@ -44,7 +44,7 @@ test.describe('delete-notification feature', () => {
 
     await page.getByRole('button', { name: copy.noLink }).click()
 
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/live-animals')
     await expect(
       page.getByRole('heading', { name: reference, exact: true })
     ).toBeVisible()
@@ -57,7 +57,7 @@ test.describe('delete-notification feature', () => {
 
     await page.getByRole('button', { name: copy.confirmButton }).click()
 
-    await expect(page).toHaveURL('/?deleted=1')
+    await expect(page).toHaveURL('/live-animals?deleted=1')
     await expect(
       page.getByText(sharedCopy.notificationActions.delete.successTitle)
     ).toBeVisible()

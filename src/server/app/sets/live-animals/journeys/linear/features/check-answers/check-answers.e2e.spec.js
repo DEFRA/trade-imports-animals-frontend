@@ -97,7 +97,7 @@ test.describe('check-answers feature', () => {
     })
     await expect(changeLink).toHaveAttribute(
       'href',
-      /\/notifications\/[^/]+\/origin\?change=1$/
+      /^\/live-animals\/notifications\/[^/]+\/origin\?change=1$/
     )
 
     await changeLink.click()
@@ -108,7 +108,11 @@ test.describe('check-answers feature', () => {
       .clear()
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/notification-view$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+\/notification-view$/.test(
+        url.pathname
+      )
+    )
     await expect(
       page
         .getByRole('term')

@@ -1,10 +1,11 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
-  BASE,
   createPath,
+  createRoutePath,
   hubPath,
-  pagePath
+  pagePath,
+  setBase
 } from '../../../../../shared/paths.js'
 import { store } from '../../../../../engine/store.js'
 import { configureRecords } from '../../../../../engine/persistence/records.js'
@@ -362,7 +363,7 @@ describe('the opening run', () => {
   describe('journey entry', () => {
     it('Should send Start a new notification to the entry filter', async () => {
       const startPost = dashboard.routes.find(
-        (route) => route.method === 'POST' && route.path === createPath()
+        (route) => route.method === 'POST' && route.path === createRoutePath()
       ).handler
       const h = captureH()
       await startPost(buildRequest(undefined), h)
@@ -373,8 +374,8 @@ describe('the opening run', () => {
 
   describe('deep-link guard', () => {
     it('Should exempt the dashboard, the filter, the holding page and start', () => {
-      expect(guardedJourneyPath(BASE)).toBe(false)
-      expect(guardedJourneyPath('/')).toBe(false)
+      expect(guardedJourneyPath(setBase())).toBe(false)
+      expect(guardedJourneyPath('/live-animals')).toBe(false)
       expect(guardedJourneyPath(pagePath('j-1', 'import-type'))).toBe(false)
       expect(
         guardedJourneyPath(pagePath('j-1', 'import-type/not-available'))

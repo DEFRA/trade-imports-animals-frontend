@@ -1,6 +1,8 @@
 import {
   createPath,
+  createRoutePath,
   dashboardPath,
+  dashboardRoutePath,
   hubPath,
   pagePath,
   pageRoutePath
@@ -111,7 +113,7 @@ const amendPost = async (request, h) => {
 export const routes = [
   {
     method: 'GET',
-    path: dashboardPath(),
+    path: dashboardRoutePath(),
     options: routeOptions,
     handler: listGet
   },
@@ -123,7 +125,7 @@ export const routes = [
   },
   {
     method: 'POST',
-    path: createPath(),
+    path: createRoutePath(),
     options: routeOptions,
     handler: async (request, h) => {
       const journey = await startJourney(request, h)

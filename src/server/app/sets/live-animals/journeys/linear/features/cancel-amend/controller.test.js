@@ -101,7 +101,7 @@ describe('cancel amendment routes', () => {
     await records.finalise(submitted.journeyId)
 
     expect(await get(journeyRequest(draft.journeyId), stubH())).toEqual({
-      redirect: '/'
+      redirect: '/live-animals'
     })
     expect(await post(journeyRequest(submitted.journeyId), stubH())).toEqual({
       redirect: pagePath(submitted.journeyId, 'notification-view')

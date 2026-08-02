@@ -21,6 +21,7 @@ import {
 } from '../../../../../../engine/test-support.js'
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
 import { dispatchPages } from '../index.js'
+import { SESSION_COOKIE_NAMES } from '../../config.js'
 
 import * as documents from './controller.js'
 import { MAX_DOCUMENTS } from './contracts/max-documents.js'
@@ -37,6 +38,17 @@ const get = documents.routes.find((route) => route.method === 'GET').handler
 const statusRoute = documents.routes.find((route) =>
   route.path.endsWith('/status')
 )
+
+const registerPrefixedDocumentRoutes = (server) =>
+  server.register(
+    {
+      plugin: {
+        name: 'prefixed-documents-test-routes',
+        register: (realmServer) => realmServer.route(documents.routes)
+      }
+    },
+    { routes: { prefix: '/live-animals' } }
+  )
 
 const pdfFile = (filename = 'itahc-certificate.pdf', size = 8) => ({
   filename,
@@ -63,7 +75,7 @@ const summaryTexts = (result) =>
 describe('documents — real upload leg on the single-page loop', () => {
   beforeAll(() => {
     configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
+    configureSession('live-animals', sessionStub, SESSION_COOKIE_NAMES)
     buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(() => store.clear())
@@ -332,7 +344,7 @@ describe('documents — real upload leg on the single-page loop', () => {
   it('Should reject a remove POST carrying no CSRF crumb and serve no GET route that removes', async () => {
     const server = Hapi.server()
     await server.register(Crumb)
-    server.route(documents.routes)
+    await registerPrefixedDocumentRoutes(server)
 
     const forged = await server.inject({
       method: 'POST',
@@ -510,15 +522,18 @@ describe('documents — real upload leg on the single-page loop', () => {
 describe('documents — reading an uploaded file back', () => {
   beforeAll(() => {
     configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
+    configureSession('live-animals', sessionStub, SESSION_COOKIE_NAMES)
     buildDispatch('live-animals', dispatchPages)
   })
   beforeEach(() => store.clear())
 
   const journeyHolding = async (uploadId) => {
     const server = Hapi.server()
-    registerJourneyCookie(server)
-    server.route(documents.routes)
+    registerJourneyCookie(server, {
+      base: '/live-animals',
+      cookieNames: SESSION_COOKIE_NAMES
+    })
+    await registerPrefixedDocumentRoutes(server)
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, {
       documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
@@ -591,8 +606,11 @@ describe('documents — reading an uploaded file back', () => {
 
   it('Should answer 404 for a journey with no documents at all', async () => {
     const server = Hapi.server()
-    registerJourneyCookie(server)
-    server.route(documents.routes)
+    registerJourneyCookie(server, {
+      base: '/live-animals',
+      cookieNames: SESSION_COOKIE_NAMES
+    })
+    await registerPrefixedDocumentRoutes(server)
     const journey = await store.create()
 
     const response = await server.inject({

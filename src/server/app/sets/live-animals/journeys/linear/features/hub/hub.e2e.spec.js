@@ -51,14 +51,14 @@ test.describe('hub feature', () => {
 
     await expect(
       page.getByRole('button', { name: copy.returnToDashboard })
-    ).toHaveAttribute('href', '/')
+    ).toHaveAttribute('href', '/live-animals')
     await expect(
       page.getByRole('link', { name: 'Back', exact: true })
-    ).toHaveAttribute('href', '/')
+    ).toHaveAttribute('href', '/live-animals')
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/live-animals')
   })
 
   test('saved origin marks its task complete and unlocks commodities', async ({
@@ -99,7 +99,10 @@ test.describe('hub feature', () => {
     await expect(review).not.toContainText(copy.statuses.cannotStartYet)
     await expect(
       review.getByRole('link', { name: copy.rows.review.title })
-    ).toHaveAttribute('href', /\/notifications\/[^/]+\/notification-view$/)
+    ).toHaveAttribute(
+      'href',
+      /^\/live-animals\/notifications\/[^/]+\/notification-view$/
+    )
 
     await review.getByRole('link', { name: copy.rows.review.title }).click()
 

@@ -1,37 +1,31 @@
 import Boom from '@hapi/boom'
-import { BASE } from '../shared/paths.js'
-import {
-  session,
-  knownJourneysCookie,
-  openingRunCookie,
-  flowOnlyAnswersCookie
-} from './persistence/session.js'
+import { session } from './persistence/session.js'
 import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
 import { buildActor } from '../../common/helpers/actor-helpers.js'
 
 export { knownJourneysCookie } from './persistence/session.js'
 
-const cookieOptions = Object.freeze({
-  path: BASE || '/',
-  ttl: null,
-  encoding: 'none',
-  isSecure: false,
-  isHttpOnly: true,
-  isSameSite: 'Lax',
-  clearInvalid: true,
-  strictHeader: true
-})
+export const registerJourneyCookie = (server, { base, cookieNames }) => {
+  const cookieOptions = Object.freeze({
+    path: base,
+    ttl: null,
+    encoding: 'none',
+    isSecure: false,
+    isHttpOnly: true,
+    isSameSite: 'Lax',
+    clearInvalid: true,
+    strictHeader: true
+  })
 
-export const registerJourneyCookie = (server) => {
-  server.state(knownJourneysCookie(), {
+  server.state(cookieNames.knownJourneys, {
     ...cookieOptions,
     encoding: 'base64json'
   })
-  server.state(openingRunCookie(), {
+  server.state(cookieNames.openingRun, {
     ...cookieOptions,
     encoding: 'base64json'
   })
-  server.state(flowOnlyAnswersCookie(), {
+  server.state(cookieNames.flowOnlyAnswers, {
     ...cookieOptions,
     encoding: 'base64json'
   })

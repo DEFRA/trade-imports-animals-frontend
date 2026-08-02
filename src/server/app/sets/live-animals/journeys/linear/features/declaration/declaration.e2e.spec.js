@@ -8,14 +8,16 @@ import {
 import { copy } from './copy/copy.en.js'
 
 const startAtDeclaration = async (page) => {
-  await page.goto('/')
+  await page.goto('/live-animals')
   await page
-    .locator('form[action="/notifications"]')
+    .locator('form[action="/live-animals/notifications"]')
     .getByRole('button')
     .click()
   await page.locator('input[name="importType"][value="live-animals"]').check()
   await page.locator('form').getByRole('button').click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+  await expect(page).toHaveURL((url) =>
+    /^\/live-animals\/notifications\/[^/]+\/origin$/.test(url.pathname)
+  )
 
   await page.goto(page.url().replace(/\/origin$/, '/declaration'))
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
@@ -84,7 +86,11 @@ test.describe('declaration feature', () => {
 
     await backLink.click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/notification-view$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+\/notification-view$/.test(
+        url.pathname
+      )
+    )
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
@@ -121,8 +127,12 @@ test.describe('declaration submission', () => {
     await page.getByRole('checkbox', { name: copy.declarationLabel }).check()
     await page.locator('form button[type="submit"]').click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/confirmation$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+\/confirmation$/.test(url.pathname)
+    )
     await page.goto(declarationUrl)
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/confirmation$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+\/confirmation$/.test(url.pathname)
+    )
   })
 })

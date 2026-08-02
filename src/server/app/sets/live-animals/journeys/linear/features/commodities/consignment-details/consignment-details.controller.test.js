@@ -223,7 +223,16 @@ describe('#consignmentDetailsController — per-species quantities over every li
   it('Should reject a remove POST carrying no CSRF crumb and serve no GET route that removes', async () => {
     const server = Hapi.server()
     await server.register(Crumb)
-    server.route(consignmentDetails.routes)
+    await server.register(
+      {
+        plugin: {
+          name: 'prefixed-consignment-details-test-routes',
+          register: (realmServer) =>
+            realmServer.route(consignmentDetails.routes)
+        }
+      },
+      { routes: { prefix: '/live-animals' } }
+    )
 
     const forged = await server.inject({
       method: 'POST',

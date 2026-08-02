@@ -53,7 +53,7 @@ describe('delete notification routes', () => {
     expect(response.context).toMatchObject({
       heading: 'Delete this notification?',
       deleteAction: pagePath(journey.journeyId, 'delete'),
-      noHref: '/'
+      noHref: '/live-animals'
     })
     expect(response.context.copy.body).toBe('This cannot be undone.')
   })
@@ -63,7 +63,7 @@ describe('delete notification routes', () => {
 
     const response = await post(journeyRequest(journey.journeyId), stubH())
 
-    expect(response).toEqual({ redirect: '/?deleted=1' })
+    expect(response).toEqual({ redirect: '/live-animals?deleted=1' })
     expect((await records.load({ journeyId: journey.journeyId })).status).toBe(
       DELETED
     )
@@ -77,10 +77,10 @@ describe('delete notification routes', () => {
     await records.softDelete(journey.journeyId)
 
     expect(await get(journeyRequest(journey.journeyId), stubH())).toEqual({
-      redirect: '/'
+      redirect: '/live-animals'
     })
     expect(await post(journeyRequest(journey.journeyId), stubH())).toEqual({
-      redirect: '/'
+      redirect: '/live-animals'
     })
   })
 

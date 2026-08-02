@@ -129,6 +129,6 @@ describe('copy notification action', () => {
       stubH()
     )
 
-    expect(response.redirect).toBe('/')
+    expect(response.redirect).toBe('/live-animals')
   })
 })

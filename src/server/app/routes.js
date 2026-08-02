@@ -46,12 +46,13 @@ import {
 } from './shared/set-context.js'
 
 const SET_ID = 'live-animals'
+const SET_BASE = `/${SET_ID}`
 
 export const liveAnimals = {
   plugin: {
     name: 'live-animals',
     register: async (server) => {
-      registerSetMount(SET_ID, `/${SET_ID}`)
+      registerSetMount(SET_ID, SET_BASE)
       await withSetContext(SET_ID, async () => {
         server.ext(
           'onPreAuth',
@@ -78,7 +79,10 @@ export const liveAnimals = {
         buildDispatch(SET_ID, dispatchPages)
         configureRecords(SET_ID, records)
         configureSession(SET_ID, session, SESSION_COOKIE_NAMES)
-        registerJourneyCookie(server)
+        registerJourneyCookie(server, {
+          base: SET_BASE,
+          cookieNames: SESSION_COOKIE_NAMES
+        })
         server.ext(
           'onPreHandler',
           async (request, h) => {
