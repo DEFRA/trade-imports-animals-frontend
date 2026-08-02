@@ -11,10 +11,31 @@ import {
 } from 'vitest'
 
 import { nunjucksConfig } from '../../../../../../../../config/nunjucks/nunjucks.js'
+import { configureObligationSet } from '../../../../../../model/obligations/manifest.js'
 import { plantProducts } from '../../../../../../routes-plant-products.js'
 import * as kit from '../../../../../../shared/kit.js'
+import { SESSION_COOKIE_NAMES } from '../../config.js'
+import * as plantProductsObligationSet from '../../../../obligations/index.js'
 import { records } from '../../../../services/records/stub.js'
 import { copy } from './copy/copy.en.js'
+
+const fixtureObligation = {
+  id: '53b27cd5-05b5-40ff-b709-d7444717d71d',
+  name: 'fixtureAnswer',
+  status: 'mandatory'
+}
+const fixtureObligationSet = {
+  obligations: [fixtureObligation],
+  groups: [],
+  policy: {
+    systemPopulated: [],
+    enforcedAtContinue: [],
+    maxEntriesFrom: {},
+    systemAnswerKeys: ['referenceNumber']
+  }
+}
+
+const journeyIdFrom = (url) => url.split('/')[3]
 
 const jar = () => {
   const values = new Map()
@@ -49,6 +70,7 @@ describe('plant-products import-type controller', () => {
 
   afterEach(async () => {
     vi.restoreAllMocks()
+    configureObligationSet('plant-products', plantProductsObligationSet)
     await records.clear()
   })
 
@@ -98,6 +120,16 @@ describe('plant-products import-type controller', () => {
     expect(response.statusCode).toBe(400)
     expect(response.result).toContain(copy.errors.importTypeRequired)
     expect(response.result).not.toMatch(/name="importType"[^>]*checked/)
+    expect(response.headers['set-cookie'] ?? []).not.toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(`${SESSION_COOKIE_NAMES.flowOnlyAnswers}=`)
+      ])
+    )
+    await expect(
+      records.load({ journeyId: journeyIdFrom(url) })
+    ).resolves.toMatchObject({
+      fulfilment: {}
+    })
   })
 
   it('commits plant-products and redirects through the opening run to the hub', async () => {
@@ -113,6 +145,48 @@ describe('plant-products import-type controller', () => {
     expect(response.headers.location).toMatch(
       /^\/plant-products\/notifications\/[^/]+$/
     )
+    expect(response.headers['set-cookie'] ?? []).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(`${SESSION_COOKIE_NAMES.flowOnlyAnswers}=`),
+        expect.stringContaining(`${SESSION_COOKIE_NAMES.openingRun}=`)
+      ])
+    )
+    await expect(
+      records.load({ journeyId: journeyIdFrom(url) })
+    ).resolves.toMatchObject({
+      fulfilment: {}
+    })
+  })
+
+  it('uses normal navigation without restarting the opening run after committed progress', async () => {
+    const { cookies, url } = await newJourney()
+    const journeyId = journeyIdFrom(url)
+    configureObligationSet('plant-products', fixtureObligationSet)
+    await records.replaceFulfilment(journeyId, {
+      [fixtureObligation.id]: 'yes'
+    })
+    const nextTarget = vi.spyOn(kit, 'nextTarget')
+
+    const response = await server.inject({
+      method: 'POST',
+      url,
+      payload: { importType: 'plant-products' },
+      headers: { cookie: cookies.header() }
+    })
+
+    expect(response.statusCode).toBe(302)
+    expect(response.headers.location).toBe(
+      `/plant-products/notifications/${journeyId}`
+    )
+    expect(nextTarget).toHaveBeenCalledTimes(1)
+    expect(response.headers['set-cookie'] ?? []).not.toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(`${SESSION_COOKIE_NAMES.openingRun}=`)
+      ])
+    )
+    await expect(records.load({ journeyId })).resolves.toMatchObject({
+      fulfilment: { [fixtureObligation.id]: 'yes' }
+    })
   })
 
   it('commits a non-plant selection and redirects to the holding page', async () => {

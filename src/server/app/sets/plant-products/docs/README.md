@@ -28,6 +28,11 @@ The mount is always `'/' + setId`, not a choice recorded in a second table.
 Plant journey cookies have plant-prefixed names and path `/plant-products`, so
 they cannot overwrite or expose a live-animals session.
 
+The three names are resolved through `knownJourneysCookie()`,
+`openingRunCookie()` and `flowOnlyAnswersCookie()` inside the active set
+context. The plant entry guard is registered in the plant plugin realm, so it
+cannot run for a live-animals route.
+
 These decisions implement SIBLING-SET-PLAN FD-1, FD-14, FD-15, the R7 reversal
 of FD-16, and FD-18/FD-19. The wider decision record and rejected alternatives
 remain in that plan rather than being duplicated here.
@@ -55,6 +60,22 @@ The longer-term option remains to retire the L2 live-animals mapper into
 The m0 review flow section deliberately has no pages. The hub renders its
 Review and submit entry as unavailable and without a link until pp-038 adds
 the review surfaces.
+
+## Standing defaults (recorded once — not per-page ACs)
+
+All downstream plant-products pages inherit these defaults:
+
+- c-018: validation uses one canonical, single-layer Joi-voice message per
+  field (`Enter the …` or `Select the …`). Backend-style `Add the …` variants
+  are not used.
+- c-004: every error summary uses the GDS title `There is a problem`.
+- c-014: radio and fieldset pages put the H1 inside the legend, with the
+  caption above it.
+- the three plant session cookies are path-scoped to `/plant-products`, and
+  their names are read through the L2 accessors rather than captured module
+  constants.
+- the plant entry guard is realm-scoped and never fires on a live-animals
+  route.
 
 ## Recipe deviations
 

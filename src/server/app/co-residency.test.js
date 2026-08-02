@@ -8,7 +8,11 @@ import { DEFAULT_SET_BASE, router } from '../router.js'
 import { configureJourneyFlow, journeySections } from './flow/journey-flow.js'
 import { authenticatedCredentials } from './engine/test-support.js'
 import { records as engineRecords } from './engine/persistence/records.js'
-import { knownJourneysCookie } from './engine/persistence/session.js'
+import {
+  flowOnlyAnswersCookie,
+  knownJourneysCookie,
+  openingRunCookie
+} from './engine/persistence/session.js'
 import { records as liveAnimalsRecords } from './services/persistence/records/index.js'
 import { speciesLabel } from './services/persistence/records/notification-mapper/commodity-reference.js'
 import * as countries from './services/countries/index.js'
@@ -67,6 +71,44 @@ const PLANT_PRODUCTS_BASE = `/${PLANT_PRODUCTS}`
 const FOREIGN_REALM = 'foreign-realm'
 const FOREIGN_REALM_BASE = `/${FOREIGN_REALM}`
 const FOREIGN_REALM_RESPONSE = 'foreign realm handler ran'
+
+const cookieJar = () => {
+  const cookies = new Map()
+  return {
+    absorb(response) {
+      for (const header of response.headers['set-cookie'] ?? []) {
+        const [pair, ...attributes] = header
+          .split(';')
+          .map((part) => part.trim())
+        const separator = pair.indexOf('=')
+        const name = pair.slice(0, separator)
+        const pathAttribute = attributes.find((attribute) =>
+          attribute.toLowerCase().startsWith('path=')
+        )
+        cookies.set(name, {
+          name,
+          value: pair.slice(separator + 1),
+          path: pathAttribute?.slice('path='.length) ?? '/'
+        })
+      }
+    },
+    headerFor(pathname) {
+      return [...cookies.values()]
+        .filter((cookie) => pathname.startsWith(cookie.path))
+        .map(({ name, value }) => `${name}=${value}`)
+        .join('; ')
+    },
+    namesFor(pathname) {
+      return [...cookies.values()]
+        .filter((cookie) => pathname.startsWith(cookie.path))
+        .map(({ name }) => name)
+        .sort()
+    },
+    values() {
+      return [...cookies.values()]
+    }
+  }
+}
 
 const foreignRealm = {
   plugin: {
@@ -342,6 +384,146 @@ describe('co-residency', () => {
     for (const cookieName of Object.values(PLANT_PRODUCTS_COOKIE_NAMES)) {
       expect(server.states.cookies[cookieName].path).toBe(PLANT_PRODUCTS_BASE)
     }
+  })
+
+  it('keeps all three session cookies and draft visibility independent', async () => {
+    const jar = cookieJar()
+    const liveAnimalsResponse = await server.inject({
+      method: 'POST',
+      url: `${LIVE_ANIMALS_BASE}/notifications`
+    })
+    const plantProductsResponse = await server.inject({
+      method: 'POST',
+      url: `${PLANT_PRODUCTS_BASE}/notifications`
+    })
+    jar.absorb(liveAnimalsResponse)
+    jar.absorb(plantProductsResponse)
+    const liveAnimalsEntry = liveAnimalsResponse.headers.location
+    const plantProductsEntry = plantProductsResponse.headers.location
+    const liveAnimalsJourneyId = liveAnimalsEntry.split('/')[3]
+    const plantProductsJourneyId = plantProductsEntry.split('/')[3]
+
+    const liveAnimalsPost = await server.inject({
+      method: 'POST',
+      url: liveAnimalsEntry,
+      headers: { cookie: jar.headerFor(liveAnimalsEntry) },
+      payload: { importType: 'live-animals' }
+    })
+    jar.absorb(liveAnimalsPost)
+    const plantProductsPost = await server.inject({
+      method: 'POST',
+      url: plantProductsEntry,
+      headers: { cookie: jar.headerFor(plantProductsEntry) },
+      payload: { importType: 'plant-products' }
+    })
+    jar.absorb(plantProductsPost)
+
+    expect(liveAnimalsPost.statusCode).toBe(302)
+    expect(plantProductsPost.statusCode).toBe(302)
+
+    const liveAnimalsCookies = jar
+      .values()
+      .filter(({ name }) => name.startsWith('liveAnimals'))
+    const plantProductsCookies = jar
+      .values()
+      .filter(({ name }) => name.startsWith('plantProducts'))
+
+    expect(liveAnimalsCookies.map(({ name }) => name).sort()).toEqual(
+      Object.values(SESSION_COOKIE_NAMES).sort()
+    )
+    expect(plantProductsCookies.map(({ name }) => name).sort()).toEqual(
+      Object.values(PLANT_PRODUCTS_COOKIE_NAMES).sort()
+    )
+    expect(
+      liveAnimalsCookies.every(({ path }) => path === LIVE_ANIMALS_BASE)
+    ).toBe(true)
+    expect(
+      plantProductsCookies.every(({ path }) => path === PLANT_PRODUCTS_BASE)
+    ).toBe(true)
+    expect(jar.namesFor(LIVE_ANIMALS_BASE)).toEqual(
+      Object.values(SESSION_COOKIE_NAMES).sort()
+    )
+    expect(jar.namesFor(PLANT_PRODUCTS_BASE)).toEqual(
+      Object.values(PLANT_PRODUCTS_COOKIE_NAMES).sort()
+    )
+
+    expect(
+      withSetContext(LIVE_ANIMALS, () => ({
+        knownJourneys: knownJourneysCookie(),
+        openingRun: openingRunCookie(),
+        flowOnlyAnswers: flowOnlyAnswersCookie()
+      }))
+    ).toEqual(SESSION_COOKIE_NAMES)
+    expect(
+      withSetContext(PLANT_PRODUCTS, () => ({
+        knownJourneys: knownJourneysCookie(),
+        openingRun: openingRunCookie(),
+        flowOnlyAnswers: flowOnlyAnswersCookie()
+      }))
+    ).toEqual(PLANT_PRODUCTS_COOKIE_NAMES)
+
+    const liveAnimalsDashboard = await server.inject({
+      url: LIVE_ANIMALS_BASE,
+      headers: { cookie: jar.headerFor(LIVE_ANIMALS_BASE) }
+    })
+    const plantProductsDashboard = await server.inject({
+      url: PLANT_PRODUCTS_BASE,
+      headers: { cookie: jar.headerFor(PLANT_PRODUCTS_BASE) }
+    })
+
+    expect(liveAnimalsDashboard.result).toContain(liveAnimalsJourneyId)
+    expect(liveAnimalsDashboard.result).not.toContain(plantProductsJourneyId)
+    expect(plantProductsDashboard.result).toContain(plantProductsJourneyId)
+    expect(plantProductsDashboard.result).not.toContain(liveAnimalsJourneyId)
+
+    const plantCannotResumeLive = await server.inject({
+      url: `${PLANT_PRODUCTS_BASE}/notifications/${liveAnimalsJourneyId}`,
+      headers: { cookie: jar.headerFor(PLANT_PRODUCTS_BASE) }
+    })
+    const liveCannotResumePlant = await server.inject({
+      url: `${LIVE_ANIMALS_BASE}/notifications/${plantProductsJourneyId}`,
+      headers: { cookie: jar.headerFor(LIVE_ANIMALS_BASE) }
+    })
+
+    expect(plantCannotResumeLive.statusCode).toBe(404)
+    expect(liveCannotResumePlant.statusCode).toBe(404)
+  })
+
+  it('refuses cold deep links in the owning guard realm and never redirects across sets', async () => {
+    const liveAnimalsCreate = await server.inject({
+      method: 'POST',
+      url: `${LIVE_ANIMALS_BASE}/notifications`
+    })
+    const plantProductsCreate = await server.inject({
+      method: 'POST',
+      url: `${PLANT_PRODUCTS_BASE}/notifications`
+    })
+    const liveAnimalsJourneyId =
+      liveAnimalsCreate.headers.location.split('/')[3]
+    const plantProductsJourneyId =
+      plantProductsCreate.headers.location.split('/')[3]
+
+    const liveAnimalsDeepLink = await server.inject({
+      url: `${LIVE_ANIMALS_BASE}/notifications/${liveAnimalsJourneyId}`
+    })
+    const plantProductsDeepLink = await server.inject({
+      url: `${PLANT_PRODUCTS_BASE}/notifications/${plantProductsJourneyId}`
+    })
+
+    expect(liveAnimalsDeepLink.statusCode).toBe(302)
+    expect(liveAnimalsDeepLink.headers.location).toBe(
+      `${LIVE_ANIMALS_BASE}/notifications/${liveAnimalsJourneyId}/import-type`
+    )
+    expect(liveAnimalsDeepLink.headers.location).not.toContain(
+      PLANT_PRODUCTS_BASE
+    )
+    expect(plantProductsDeepLink.statusCode).toBe(302)
+    expect(plantProductsDeepLink.headers.location).toBe(
+      `${PLANT_PRODUCTS_BASE}/notifications/${plantProductsJourneyId}/import-type`
+    )
+    expect(plantProductsDeepLink.headers.location).not.toContain(
+      LIVE_ANIMALS_BASE
+    )
   })
 
   it('runs each realm entry guard exactly once and never the other set guard', async () => {

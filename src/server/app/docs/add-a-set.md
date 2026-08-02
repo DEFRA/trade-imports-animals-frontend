@@ -550,6 +550,13 @@ feature of the same name, file for file:
   manifest and persists through the flow-only session store.
 - **Entry-guard policy** — `entryGuardTarget` in `flow/entry-guard.js`,
   redirecting a fresh deep link to the entry filter.
+- **Opening run and draft resume** — `run.js` starts with the entry filter and
+  walks later gate-passing steps before falling back to the hub. The entry
+  filter commits its flow-only key through the configured session port, starts
+  the opening run only for a fresh journey, and normal navigation resumes once
+  canonical answers exist. Dashboard and hub reads use the same configured
+  records port, so a draft keeps its minted reference when it is listed and
+  re-entered.
 
 Derive the entry guard's journey prefix from a **function**, never a
 module-load constant:
@@ -563,6 +570,20 @@ resolves to the wrong prefix or to nothing. This is the live-animals
 `JOURNEY_PREFIX` bug class, and it fails silently: the guard's `startsWith`
 test and its `slice` length both go wrong together, and the deep-link guard is
 quietly disabled rather than throwing.
+
+`request.path` includes Hapi's mount prefix. Use the value returned by
+`journeyPrefix()` for both the `startsWith` check and the `slice` length, then
+pin the extracted bare journey id. Also exercise the registered guard through
+HTTP: a cold request to a post-entry URL must return a 302 to the set's entry
+filter. A helper-only test that merely says a path is guardable does not prove
+the guard refuses the request.
+
+Do not add another draft or flow-only persistence mechanism. The gateway's
+existing `configureSession(setId, session, SESSION_COOKIE_NAMES)` seam owns the
+known-journey, opening-run and flow-only stores. Register those cookies at the
+set mount path and read their names through the accessors in
+`engine/persistence/session.js`, so two sets can save and resume independently
+in one browser.
 
 ## 10. Verify — the two-sided, co-residency ladder
 

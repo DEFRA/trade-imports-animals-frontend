@@ -39,6 +39,23 @@ test.describe('plant-products import type', () => {
     ).toBeVisible()
   })
 
+  test('refuses a cold prefixed deep link but never intercepts entry surfaces', async ({
+    page
+  }) => {
+    const importTypeUrl = new URL(page.url())
+    const journeyId = importTypeUrl.pathname.split('/')[3]
+    const deepLink = `/plant-products/notifications/${journeyId}`
+
+    const guarded = await page.request.get(deepLink, { maxRedirects: 0 })
+    expect(guarded.status()).toBe(302)
+    expect(guarded.headers().location).toBe(importTypeUrl.pathname)
+
+    await page.goto(importTypeUrl.pathname)
+    await expect(page).toHaveURL(importTypeUrl.pathname)
+    await page.goto('/plant-products')
+    await expect(page).toHaveURL('/plant-products')
+  })
+
   test('saves the plant selection and exits the opening run to the plant hub', async ({
     page
   }) => {
@@ -53,19 +70,84 @@ test.describe('plant-products import type', () => {
     await expect(
       page.getByText('Review and submit', { exact: true })
     ).toBeVisible()
+    await expect(page.getByText(/^GBN-PP-/)).toBeVisible()
+  })
+
+  test('keeps all plant session cookies isolated from live animals', async ({
+    page
+  }) => {
+    await page
+      .getByRole('radio', { name: copy.importTypes.plantProducts })
+      .check()
+    await page.getByRole('button', { name: copy.continueButton }).click()
+    const reference = await page.getByText(/^GBN-PP-/).textContent()
+    const cookies = await page.context().cookies()
+    const plantCookies = cookies.filter(({ name }) =>
+      name.startsWith('plantProducts')
+    )
+
+    expect(
+      plantCookies
+        .map(({ name, path }) => ({ name, path }))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    ).toEqual(
+      [
+        'plantProductsFlowOnlyAnswers',
+        'plantProductsKnownJourneys',
+        'plantProductsOpeningRun'
+      ].map((name) => ({ name, path: '/plant-products' }))
+    )
+    expect(cookies.some(({ name }) => name.startsWith('liveAnimals'))).toBe(
+      false
+    )
+
+    await page.goto('/live-animals')
+    await expect(
+      page.getByRole('heading', { name: 'Import notification service' })
+    ).toBeVisible()
+    await expect(page.getByText(reference)).toHaveCount(0)
+    await page.goto('/')
+    await expect(page).toHaveURL('/live-animals')
+  })
+
+  test('lists and resumes the same draft reference through the set', async ({
+    page
+  }) => {
+    await page
+      .getByRole('radio', { name: copy.importTypes.plantProducts })
+      .check()
+    await page.getByRole('button', { name: copy.continueButton }).click()
+    const hubUrl = page.url()
+    const reference = await page.getByText(/^GBN-PP-/).textContent()
+
+    await page.goto('/plant-products')
+    const draftRow = page.getByRole('row').filter({ hasText: reference })
+    await expect(draftRow).toContainText('draft')
+
+    await page.goto(hubUrl)
+    await expect(page.getByText(reference, { exact: true })).toBeVisible()
   })
 
   test('links the empty-submit error summary to the radio group', async ({
     page
   }) => {
+    const responsePromise = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' && response.url() === page.url()
+    )
     await page.getByRole('button', { name: copy.continueButton }).click()
+    const response = await responsePromise
 
+    expect(response.status()).toBe(400)
     await expect(page.getByRole('alert')).toContainText('There is a problem')
     const link = page
       .getByRole('alert')
       .getByRole('link', { name: copy.errors.importTypeRequired })
     await link.click()
     await expect(page.getByRole('radio').first()).toBeFocused()
+    const heading = page.locator('fieldset legend h1')
+    await expect(heading).toContainText(copy.title)
+    await expect(heading.locator('.govuk-caption-l')).toHaveText(copy.caption)
   })
 
   test('sends a non-plant selection to the holding page', async ({ page }) => {
