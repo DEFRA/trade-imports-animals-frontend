@@ -9,6 +9,7 @@ import { withSetContext } from '../../../../shared/set-context.js'
 import * as plantProductsObligationSet from '../../obligations/index.js'
 import { featureEvaluationBindings } from '../../journeys/linear/features/evaluation.js'
 import { IDEMPOTENCY_KEY_HEADER, notificationsUrl } from './config.js'
+import { toDto } from './mapper/to-dto.js'
 import { records as realRecords } from './real.js'
 import { records as stubRecords } from './stub.js'
 
@@ -28,6 +29,81 @@ const CANNED_REFERENCES = [
   'GBN-PP-26-IDX003',
   'GBN-PP-26-IDX004'
 ]
+const CONTENT_FIELDS = [
+  'origin',
+  'reasonForImport',
+  'commodity',
+  'additionalDetails',
+  'consignor',
+  'consignee',
+  'importer',
+  'destination',
+  'packer',
+  'responsiblePerson',
+  'nominatedContacts',
+  'transport',
+  'goodsMovementServices',
+  'isCuc',
+  'billing',
+  'declaration'
+]
+const STUB_OWNERSHIP = {
+  assignedOrganisationId: 'stub-org',
+  assignedOrganisationName: 'Stubbed organisation'
+}
+const POPULATED_ANSWERS = {
+  countryOfOrigin: 'FR',
+  reasonForImport: 'INTERNAL_MARKET',
+  commodityInputMethod: 'MANUAL',
+  grossVolumeUnit: 'LITRES',
+  borderControlPost: 'CONPNT',
+  inspectionPremises: 'INSPBER1',
+  meansOfTransport: 'ROAD_VEHICLE',
+  transportIdentification: 'TRUCK-082',
+  transportDocumentReference: 'CMR-082',
+  arrivalDate: '2026-08-03',
+  arrivalTime: '14:05',
+  usesContainers: true,
+  containers: [
+    {
+      containerNumber: 'CONT-082',
+      sealNumber: 'SEAL-082',
+      officialSeal: true
+    }
+  ],
+  commonTransitConvention: 'ADD_MRN_NOW',
+  movementReferenceNumber: '24GB123456789AB012',
+  usingGvms: true,
+  responsiblePersonName: 'Isabel Irwin',
+  responsiblePersonEmail: 'isabel@example.com',
+  responsiblePersonTelephone: '+44 7700 900 982',
+  nominatedContacts: [
+    {
+      contactName: 'Contact Eighty Two',
+      contactEmail: 'contact-082@example.com',
+      contactTelephone: '01082',
+      contactIsAgent: true
+    }
+  ],
+  accompanyingDocuments: [
+    {
+      documentType: 'PHYTOSANITARY_CERTIFICATE',
+      documentReference: 'PHYTO-082',
+      issueDate: { day: '3', month: '8', year: '2026' }
+    }
+  ]
+}
+const POPULATED_DTO_SECTION_KEYS = [
+  'origin',
+  'reasonForImport',
+  'commodity',
+  'additionalDetails',
+  'transport',
+  'goodsMovementServices',
+  'responsiblePerson',
+  'nominatedContacts',
+  'importer'
+].sort()
 
 configureObligationSet(SET_ID, plantProductsObligationSet)
 configureFulfilmentRegistry(SET_ID, featureEvaluationBindings)
@@ -38,6 +114,11 @@ const jsonResponse = (body, status = 200) => ({
   body: JSON.stringify(body),
   status
 })
+
+const normaliseContent = (body = {}) =>
+  Object.fromEntries(
+    CONTENT_FIELDS.map((field) => [field, body[field] ?? null])
+  )
 
 const createNetworkBackend = () => {
   const notifications = new Map()
@@ -50,8 +131,12 @@ const createNetworkBackend = () => {
   const saveDraft = (referenceNumber = mint()) => {
     const notification = {
       referenceNumber,
+      chedType: 'CHEDPP',
       status: 'DRAFT',
-      created: CREATED_AT
+      ownership: STUB_OWNERSHIP,
+      ...normaliseContent(),
+      created: CREATED_AT,
+      updated: CREATED_AT
     }
     notifications.set(referenceNumber, notification)
     documentsByReference.set(referenceNumber, [])
@@ -60,6 +145,7 @@ const createNetworkBackend = () => {
 
   const notificationResponse = (notification) => ({
     ...notification,
+    nominatedContacts: notification.nominatedContacts ?? [],
     accompanyingDocuments:
       documentsByReference.get(notification.referenceNumber) ?? []
   })
@@ -88,19 +174,33 @@ const createNetworkBackend = () => {
     }
 
     const [referenceNumber, subresource] = parts
-    const notification = notifications.get(referenceNumber)
     if (request.method === 'GET' && parts.length === 1) {
+      const notification = notifications.get(referenceNumber)
       return notification === undefined
         ? { body: '', status: 404 }
         : jsonResponse(notificationResponse(notification))
     }
     if (request.method === 'PUT' && parts.length === 1) {
-      if (notification === undefined) return { body: '', status: 404 }
       const body = await request.clone().json()
-      const replaced = { ...notification, ...body }
+      if (body.referenceNumber !== referenceNumber) {
+        return { body: '', status: 400 }
+      }
+      let notification = notifications.get(referenceNumber)
+      const created = notification === undefined
+      if (created) {
+        notification = saveDraft(referenceNumber)
+      } else if (!['DRAFT', 'AMEND'].includes(notification.status)) {
+        return { body: '', status: 400 }
+      }
+      const replaced = {
+        ...notification,
+        ...normaliseContent(body),
+        updated: CREATED_AT
+      }
       notifications.set(referenceNumber, replaced)
-      return jsonResponse(replaced)
+      return jsonResponse(replaced, created ? 201 : 200)
     }
+    const notification = notifications.get(referenceNumber)
     if (subresource === 'accompanying-documents') {
       if (notification === undefined) return { body: '', status: 404 }
       const documents = documentsByReference.get(referenceNumber)
@@ -302,6 +402,67 @@ describe.each(implementations)(
       expect(
         inPlantProducts(() => projectAnswers(enteredLoaded.fulfilment))
       ).toEqual(enteredAnswers)
+    })
+
+    it('covers every mapped PUT content section with the populated seed', () => {
+      expect(Object.keys(toDto(POPULATED_ANSWERS)).sort()).toEqual(
+        POPULATED_DTO_SECTION_KEYS
+      )
+    })
+
+    it('preserves populated notification content when finalising', async () => {
+      const created = await inPlantProducts(() => records.create())
+      const fulfilment = inPlantProducts(() =>
+        assembleFulfilments(POPULATED_ANSWERS)
+      )
+
+      await inPlantProducts(() =>
+        records.replaceFulfilment(created.journeyId, fulfilment, {
+          known: created
+        })
+      )
+      await inPlantProducts(() => records.finalise(created.journeyId))
+      const loaded = await inPlantProducts(() =>
+        records.load({ journeyId: created.journeyId })
+      )
+
+      expect(inPlantProducts(() => projectAnswers(loaded.fulfilment))).toEqual(
+        POPULATED_ANSWERS
+      )
+    })
+
+    it('removes every omitted populated section on whole replacement', async () => {
+      const created = await inPlantProducts(() => records.create())
+      const populated = inPlantProducts(() =>
+        assembleFulfilments(POPULATED_ANSWERS)
+      )
+      await inPlantProducts(() =>
+        records.replaceFulfilment(created.journeyId, populated, {
+          known: created
+        })
+      )
+
+      const strictSubset = { countryOfOrigin: 'NL' }
+      await inPlantProducts(() =>
+        records.replaceFulfilment(
+          created.journeyId,
+          assembleFulfilments(strictSubset),
+          { known: created }
+        )
+      )
+      const loaded = await inPlantProducts(() =>
+        records.load({ journeyId: created.journeyId })
+      )
+      const loadedAnswers = inPlantProducts(() =>
+        projectAnswers(loaded.fulfilment)
+      )
+
+      for (const omittedKey of Object.keys(POPULATED_ANSWERS).filter(
+        (key) => !(key in strictSubset)
+      )) {
+        expect(loadedAnswers).not.toHaveProperty(omittedKey)
+      }
+      expect(loadedAnswers).toEqual(strictSubset)
     })
 
     it('submits, amends, cancels and soft-deletes idempotently', async () => {
