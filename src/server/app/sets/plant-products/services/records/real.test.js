@@ -52,6 +52,15 @@ const expectJsonHeaders = (request) => {
   expect(request.headers.has('x-cdp-request-id')).toBe(true)
 }
 
+const captureError = async (operation) => {
+  try {
+    await operation()
+  } catch (error) {
+    return error
+  }
+  throw new Error('Expected operation to fail')
+}
+
 describe('plant-products real records adapter at the HTTP boundary', () => {
   beforeEach(() => {
     fetchMocker.resetMocks()
@@ -66,6 +75,66 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
       'Unknown backend plant-products notification status "UNKNOWN"'
     )
   })
+
+  const backendOperations = {
+    create: () => records.create(),
+    load: () => records.load({ journeyId: SOURCE_REFERENCE }),
+    list: () => records.list(),
+    has: () => records.has(SOURCE_REFERENCE),
+    replaceFulfilment: () =>
+      records.replaceFulfilment(
+        SOURCE_REFERENCE,
+        {},
+        {
+          known: { journeyId: SOURCE_REFERENCE, status: 'draft' }
+        }
+      ),
+    finalise: () => records.finalise(SOURCE_REFERENCE),
+    amend: () => records.amend(SOURCE_REFERENCE),
+    cancelAmend: () => records.cancelAmend(SOURCE_REFERENCE),
+    copy: () => records.copy(SOURCE_REFERENCE, 'same-copy-key'),
+    softDelete: () => records.softDelete(SOURCE_REFERENCE)
+  }
+
+  const nonBackendOperations = {
+    clear: () => records.clear()
+  }
+
+  it('pins every real records operation to an explicit backend-error policy', () => {
+    expect(Object.keys(records).sort()).toEqual(
+      [
+        ...Object.keys(backendOperations),
+        ...Object.keys(nonBackendOperations)
+      ].sort()
+    )
+  })
+
+  it.each(Object.entries(backendOperations))(
+    '%s marks a rejected backend response as recoverable',
+    async (_operation, invoke) => {
+      fetchMocker.mockResponse('Unavailable', {
+        status: 500,
+        statusText: 'Internal Server Error'
+      })
+
+      const surfaced = await captureError(() => inPlantProducts(invoke))
+
+      expect(surfaced).toBeInstanceOf(Error)
+      expect(isRecoverableBackendError(surfaced)).toBe(true)
+    }
+  )
+
+  it.each(Object.entries(backendOperations))(
+    '%s marks a rejected backend fetch as recoverable',
+    async (_operation, invoke) => {
+      fetchMocker.mockRejectOnce(new TypeError('fetch failed'))
+
+      const surfaced = await captureError(() => inPlantProducts(invoke))
+
+      expect(surfaced).toBeInstanceOf(TypeError)
+      expect(isRecoverableBackendError(surfaced)).toBe(true)
+    }
+  )
 
   it('creates a notification with POST and an empty JSON object', async () => {
     fetchMocker.mockResponse(jsonResponse(dto(), 201))
@@ -295,6 +364,149 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
     ])
   })
 
+  it('keeps an unknown journey state error non-recoverable', async () => {
+    fetchMocker.mockResponse('', { status: 404 })
+
+    const surfaced = await captureError(() =>
+      inPlantProducts(() => records.replaceFulfilment(SOURCE_REFERENCE, {}))
+    )
+
+    expect(surfaced).toEqual(new Error(`Unknown journey "${SOURCE_REFERENCE}"`))
+    expect(isRecoverableBackendError(surfaced)).toBe(false)
+    expect(fetchMocker.requests()).toHaveLength(1)
+  })
+
+  it('marks a rejected replaceFulfilment request as recoverable', async () => {
+    fetchMocker.mockRejectOnce(new TypeError('fetch failed'))
+
+    const surfaced = await captureError(() =>
+      inPlantProducts(() =>
+        records.replaceFulfilment(
+          SOURCE_REFERENCE,
+          {},
+          {
+            known: { journeyId: SOURCE_REFERENCE, status: 'draft' }
+          }
+        )
+      )
+    )
+
+    expect(surfaced).toBeInstanceOf(TypeError)
+    expect(isRecoverableBackendError(surfaced)).toBe(true)
+  })
+
+  it('marks a rejected replaceFulfilment listDocuments fetch as recoverable', async () => {
+    fetchMocker.mockResponseOnce(JSON.stringify(dto()), { status: 200 })
+    fetchMocker.mockRejectOnce(new TypeError('fetch failed'))
+
+    const surfaced = await captureError(() =>
+      inPlantProducts(() =>
+        records.replaceFulfilment(
+          SOURCE_REFERENCE,
+          {},
+          {
+            known: { journeyId: SOURCE_REFERENCE, status: 'draft' }
+          }
+        )
+      )
+    )
+
+    expect(surfaced).toBeInstanceOf(TypeError)
+    expect(fetchMocker.requests()).toHaveLength(2)
+    expect(fetchMocker.requests()[1].url).toBe(
+      `${notificationsUrl}/${SOURCE_REFERENCE}/accompanying-documents`
+    )
+    expect(isRecoverableBackendError(surfaced)).toBe(true)
+  })
+
+  it('marks a rejected replaceFulfilment deleteDocument fetch as recoverable', async () => {
+    fetchMocker.mockResponses(
+      [JSON.stringify(dto()), { status: 200 }],
+      [JSON.stringify({ documents: [{ id: 'old-1' }] }), { status: 200 }]
+    )
+    fetchMocker.mockRejectOnce(new TypeError('fetch failed'))
+
+    const surfaced = await captureError(() =>
+      inPlantProducts(() =>
+        records.replaceFulfilment(
+          SOURCE_REFERENCE,
+          {},
+          {
+            known: { journeyId: SOURCE_REFERENCE, status: 'draft' }
+          }
+        )
+      )
+    )
+
+    expect(surfaced).toBeInstanceOf(TypeError)
+    expect(fetchMocker.requests()).toHaveLength(3)
+    expect(fetchMocker.requests()[2].url).toBe(
+      `${notificationsUrl}/${SOURCE_REFERENCE}/accompanying-documents/old-1`
+    )
+    expect(isRecoverableBackendError(surfaced)).toBe(true)
+  })
+
+  it('marks a rejected replaceFulfilment createDocument fetch as recoverable', async () => {
+    const fulfilment = inPlantProducts(() =>
+      assembleFulfilments({
+        accompanyingDocuments: [
+          {
+            documentType: 'AIR_WAYBILL',
+            documentReference: 'AIR-002',
+            issueDate: { day: '27', month: '3', year: '2026' }
+          }
+        ]
+      })
+    )
+    fetchMocker.mockResponses(
+      [JSON.stringify(dto()), { status: 200 }],
+      [JSON.stringify({ documents: [] }), { status: 200 }]
+    )
+    fetchMocker.mockRejectOnce(new TypeError('fetch failed'))
+
+    const surfaced = await captureError(() =>
+      inPlantProducts(() =>
+        records.replaceFulfilment(SOURCE_REFERENCE, fulfilment, {
+          known: { journeyId: SOURCE_REFERENCE, status: 'draft' }
+        })
+      )
+    )
+
+    expect(surfaced).toBeInstanceOf(TypeError)
+    expect(fetchMocker.requests()).toHaveLength(3)
+    expect(fetchMocker.requests()[2].url).toBe(
+      `${notificationsUrl}/${SOURCE_REFERENCE}/accompanying-documents`
+    )
+    expect(isRecoverableBackendError(surfaced)).toBe(true)
+  })
+
+  it('marks a rejected replaceFulfilment reloadNotification fetch as recoverable', async () => {
+    fetchMocker.mockResponses(
+      [JSON.stringify(dto()), { status: 200 }],
+      [JSON.stringify({ documents: [] }), { status: 200 }]
+    )
+    fetchMocker.mockRejectOnce(new TypeError('fetch failed'))
+
+    const surfaced = await captureError(() =>
+      inPlantProducts(() =>
+        records.replaceFulfilment(
+          SOURCE_REFERENCE,
+          {},
+          {
+            known: { journeyId: SOURCE_REFERENCE, status: 'draft' }
+          }
+        )
+      )
+    )
+
+    expect(surfaced).toBeInstanceOf(TypeError)
+    expect(fetchMocker.requests()).toHaveLength(3)
+    expect(fetchMocker.requests()[2].url).toBe(
+      `${notificationsUrl}/${SOURCE_REFERENCE}`
+    )
+    expect(isRecoverableBackendError(surfaced)).toBe(true)
+  })
+
   it('reconciles accompanying documents through the shipped wrapped sub-resource contract', async () => {
     const documents = [
       {
@@ -457,7 +669,7 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
   it.each(['submitted', 'deleted'])(
     'blocks a %s record before issuing a PUT',
     async (status) => {
-      await expect(
+      const surfaced = await captureError(() =>
         inPlantProducts(() =>
           records.replaceFulfilment(
             SOURCE_REFERENCE,
@@ -465,7 +677,12 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
             { known: { journeyId: SOURCE_REFERENCE, status } }
           )
         )
-      ).rejects.toThrow(`is ${status} — writes blocked`)
+      )
+
+      expect(surfaced).toEqual(
+        new Error(`Journey "${SOURCE_REFERENCE}" is ${status} — writes blocked`)
+      )
+      expect(isRecoverableBackendError(surfaced)).toBe(false)
       expect(fetchMocker.requests()).toEqual([])
     }
   )
@@ -672,9 +889,12 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
   it.each([undefined, null, '', '   '])(
     'rejects a blank copy key before any HTTP request (%s)',
     async (key) => {
-      await expect(
+      const surfaced = await captureError(() =>
         inPlantProducts(() => records.copy(SOURCE_REFERENCE, key))
-      ).rejects.toThrow('Idempotency-Key must not be blank')
+      )
+
+      expect(surfaced).toEqual(new Error('Idempotency-Key must not be blank'))
+      expect(isRecoverableBackendError(surfaced)).toBe(false)
       expect(fetchMocker.requests()).toEqual([])
     }
   )
@@ -690,10 +910,22 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
     ).rejects.toThrow('copy notification failed: 409 Conflict')
   })
 
-  it('rejects clear because real records are durable', async () => {
-    await expect(records.clear()).rejects.toThrow(
-      'records.clear is not supported in real mode'
+  it('keeps every non-backend operation request-free and non-recoverable', async () => {
+    const errors = {}
+
+    for (const [operation, invoke] of Object.entries(nonBackendOperations)) {
+      try {
+        await inPlantProducts(invoke)
+      } catch (error) {
+        errors[operation] = error
+      }
+
+      expect(fetchMocker.requests()).toEqual([])
+    }
+
+    expect(errors.clear).toEqual(
+      new Error('records.clear is not supported in real mode')
     )
-    expect(fetchMocker.requests()).toEqual([])
+    expect(isRecoverableBackendError(errors.clear)).toBe(false)
   })
 })

@@ -19,8 +19,8 @@ import {
   dashboardPath,
   dashboardRoutePath
 } from '../../../../../../shared/paths.js'
-import { markRecoverableBackendError } from '../../../../../../services/persistence/records/errors.js'
 import { records as plantRecords } from '../../../../services/records/index.js'
+import { records as recordsReal } from '../../../../services/records/real.js'
 import { records as recordsStub } from '../../../../services/records/stub.js'
 import { copy } from './copy/copy.en.js'
 import { routes } from './controller.js'
@@ -70,6 +70,7 @@ describe('plant-products dashboard controller', () => {
     enterSetContext('plant-products')
     configureRecords('plant-products', plantRecords)
     await recordsStub.clear()
+    vi.restoreAllMocks()
   })
 
   afterAll(async () => {
@@ -263,10 +264,14 @@ describe('plant-products dashboard controller', () => {
     configureRecords('plant-products', {
       ...recordsStub,
       list: async () => emptyList,
-      create: async () => {
-        throw markRecoverableBackendError(new Error('create unavailable'))
-      }
+      create: recordsReal.create
     })
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response('Unavailable', {
+        status: 500,
+        statusText: 'Internal Server Error'
+      })
+    )
 
     const response = await server.inject({
       method: 'POST',

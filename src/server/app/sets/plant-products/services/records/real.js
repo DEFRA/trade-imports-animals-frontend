@@ -26,10 +26,6 @@ const failed = (operation, response) =>
   )
 
 const expectStatus = (operation, response, expected) => {
-  if (!expected.includes(response.status)) throw failed(operation, response)
-}
-
-const expectRecoverableStatus = (operation, response, expected) => {
   if (!expected.includes(response.status)) {
     throw markRecoverableBackendError(failed(operation, response))
   }
@@ -43,7 +39,7 @@ const recoverableFetch = (url, options) => {
 }
 
 const getNotification = async (journeyId, operation) => {
-  const response = await fetch(`${notificationsUrl}/${journeyId}`, {
+  const response = await recoverableFetch(`${notificationsUrl}/${journeyId}`, {
     method: 'GET',
     headers: headers()
   })
@@ -56,7 +52,7 @@ const documentsUrl = (journeyId) =>
   `${notificationsUrl}/${journeyId}/accompanying-documents`
 
 const listDocuments = async (journeyId) => {
-  const response = await fetch(documentsUrl(journeyId), {
+  const response = await recoverableFetch(documentsUrl(journeyId), {
     method: 'GET',
     headers: headers()
   })
@@ -65,15 +61,18 @@ const listDocuments = async (journeyId) => {
 }
 
 const deleteDocument = async (journeyId, documentId) => {
-  const response = await fetch(`${documentsUrl(journeyId)}/${documentId}`, {
-    method: 'DELETE',
-    headers: headers()
-  })
+  const response = await recoverableFetch(
+    `${documentsUrl(journeyId)}/${documentId}`,
+    {
+      method: 'DELETE',
+      headers: headers()
+    }
+  )
   expectStatus('delete accompanying document', response, [204])
 }
 
 const createDocument = async (journeyId, entry) => {
-  const response = await fetch(documentsUrl(journeyId), {
+  const response = await recoverableFetch(documentsUrl(journeyId), {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify(documentToDto(entry))
@@ -82,7 +81,7 @@ const createDocument = async (journeyId, entry) => {
 }
 
 const reloadNotification = async (journeyId) => {
-  const response = await fetch(`${notificationsUrl}/${journeyId}`, {
+  const response = await recoverableFetch(`${notificationsUrl}/${journeyId}`, {
     method: 'GET',
     headers: headers()
   })
@@ -91,7 +90,7 @@ const reloadNotification = async (journeyId) => {
 }
 
 export const create = async (_options) => {
-  const response = await fetch(notificationsUrl, {
+  const response = await recoverableFetch(notificationsUrl, {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify({})
@@ -113,7 +112,7 @@ export const list = async ({
 } = {}) => {
   const query = new URLSearchParams({ page: String(page), sort })
   if (referenceNumber) query.set('referenceNumber', referenceNumber)
-  const response = await fetch(`${notificationsUrl}?${query}`, {
+  const response = await recoverableFetch(`${notificationsUrl}?${query}`, {
     method: 'GET',
     headers: headers()
   })
@@ -129,7 +128,7 @@ export const list = async ({
 }
 
 export const has = async (journeyId) => {
-  const response = await fetch(`${notificationsUrl}/${journeyId}`, {
+  const response = await recoverableFetch(`${notificationsUrl}/${journeyId}`, {
     method: 'GET',
     headers: headers()
   })
@@ -167,7 +166,7 @@ export const replaceFulfilment = async (
   const answers = projectAnswers(structuredClone(fulfilment ?? {}))
   const documents = answers.accompanyingDocuments ?? []
   const body = buildNotificationBody(journeyId, answers)
-  const response = await fetch(`${notificationsUrl}/${journeyId}`, {
+  const response = await recoverableFetch(`${notificationsUrl}/${journeyId}`, {
     method: 'PUT',
     headers: headers(),
     body: JSON.stringify(body)
@@ -184,11 +183,14 @@ export const replaceFulfilment = async (
 }
 
 const transition = async (journeyId, operation, body) => {
-  const response = await fetch(`${notificationsUrl}/${journeyId}/status`, {
-    method: 'PUT',
-    headers: headers(),
-    body: JSON.stringify(body)
-  })
+  const response = await recoverableFetch(
+    `${notificationsUrl}/${journeyId}/status`,
+    {
+      method: 'PUT',
+      headers: headers(),
+      body: JSON.stringify(body)
+    }
+  )
   expectStatus(operation, response, [200])
   return marshal(await response.json())
 }
@@ -201,7 +203,7 @@ export const finalise = async (journeyId) => {
       headers: headers()
     }
   )
-  expectRecoverableStatus('finalise notification', loadResponse, [200])
+  expectStatus('finalise notification', loadResponse, [200])
   const body = {
     ...buildNotificationBody(journeyId, fromDto(await loadResponse.json())),
     declaration: {
@@ -218,7 +220,7 @@ export const finalise = async (journeyId) => {
       body: JSON.stringify(body)
     }
   )
-  expectRecoverableStatus('finalise notification', documentResponse, [200, 201])
+  expectStatus('finalise notification', documentResponse, [200, 201])
 
   const statusResponse = await recoverableFetch(
     `${notificationsUrl}/${journeyId}/status`,
@@ -228,7 +230,7 @@ export const finalise = async (journeyId) => {
       body: JSON.stringify({ status: BACKEND_STATUS.SUBMITTED })
     }
   )
-  expectRecoverableStatus('finalise notification', statusResponse, [200])
+  expectStatus('finalise notification', statusResponse, [200])
   return marshal(await statusResponse.json())
 }
 
@@ -247,10 +249,13 @@ export const copy = async (journeyId, idempotencyKey) => {
   if (idempotencyKey == null || String(idempotencyKey).trim() === '') {
     throw new Error('Idempotency-Key must not be blank')
   }
-  const response = await fetch(`${notificationsUrl}/${journeyId}/copies`, {
-    method: 'POST',
-    headers: headers({ [IDEMPOTENCY_KEY_HEADER]: idempotencyKey })
-  })
+  const response = await recoverableFetch(
+    `${notificationsUrl}/${journeyId}/copies`,
+    {
+      method: 'POST',
+      headers: headers({ [IDEMPOTENCY_KEY_HEADER]: idempotencyKey })
+    }
+  )
   expectStatus('copy notification', response, [201])
   return marshal(await response.json())
 }
