@@ -24,6 +24,7 @@ import { featureEvaluationBindings } from '../features/evaluation.js'
 import { dispatchPages } from '../features/index.js'
 import { commodityAdditionalDetailsPage } from '../features/additional-details/page.js'
 import { accompanyingDocumentsPage } from '../features/documents/page.js'
+import { reviewNotificationPage } from '../features/check-answers/page.js'
 import { contactDetailsPage } from '../features/contact/page.js'
 import { nominatedContactPage } from '../features/nominated-contacts/page.js'
 import { goodsMovementServicesPage } from '../features/goods-movement/page.js'
@@ -212,6 +213,12 @@ describe('plant-products task rows', () => {
         )
       )
     ).toBe('/plant-products/notifications/journey-1/traders-addresses')
+  })
+
+  it('registers review-notification as the review section entry page', () => {
+    expect(sections.find(({ id }) => id === 'review')?.pages).toEqual([
+      reviewNotificationPage
+    ])
   })
 
   it('derives fallback row parts from the page dispatch', () => {

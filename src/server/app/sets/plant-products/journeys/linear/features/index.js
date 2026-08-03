@@ -1,6 +1,7 @@
 // Scaffolded by docs/add-a-set.md step 3.
 import * as additionalDetails from './additional-details/controller.js'
 import * as contact from './contact/controller.js'
+import * as checkAnswers from './check-answers/controller.js'
 import * as dashboard from './dashboard/controller.js'
 import * as documents from './documents/controller.js'
 import * as commodityInputMethod from './commodities/commodity-input-method/commodity-input-method.controller.js'
@@ -41,7 +42,8 @@ export const dispatchPages = [
   documents.meta,
   tradersAddresses.meta,
   consignorCreate.meta,
-  consignorConfirmation.meta
+  consignorConfirmation.meta,
+  checkAnswers.meta
 ]
 
 export const allRoutes = [
@@ -65,5 +67,6 @@ export const allRoutes = [
   ...tradersAddresses.routes,
   ...consignorCreate.routes,
   ...consignorConfirmation.routes,
+  ...checkAnswers.routes,
   ...hub.routes
 ]

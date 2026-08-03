@@ -62,7 +62,7 @@ describe('plant-products hub controller', () => {
     mocks.rowStatuses = {}
     mocks.sectionEntry.mockReset()
     mocks.sectionEntry.mockReturnValue(
-      '/plant-products/notifications/journey-1/notification-view'
+      '/plant-products/notifications/journey-1/review-notification'
     )
   })
 
@@ -90,7 +90,7 @@ describe('plant-products hub controller', () => {
       hint: {
         text: 'Check your answers before you submit the notification'
       },
-      href: '/plant-products/notifications/journey-1/notification-view',
+      href: '/plant-products/notifications/journey-1/review-notification',
       status: {
         tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
       }

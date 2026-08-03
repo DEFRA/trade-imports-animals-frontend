@@ -1,0 +1,43 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{% from "govuk/components/table/macro.njk" import govukTable %}
+{% from "shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-xl">{{ heading }}</h1>
+
+  {% for section in sections %}
+    <section>
+      <h2 class="govuk-heading-m">{{ section.heading }}</h2>
+
+      {% if section.rows.length %}
+        {{ govukSummaryList({ rows: section.rows }) }}
+      {% endif %}
+
+      {% if section.empty %}
+        <p class="govuk-body">{{ section.empty }}</p>
+      {% endif %}
+
+      {% for table in section.tables %}
+        {{ govukTable({
+          caption: table.caption,
+          captionClasses: "govuk-table__caption--s",
+          firstCellIsHeader: table.firstCellIsHeader,
+          head: table.head,
+          rows: table.rows
+        }) }}
+      {% endfor %}
+
+      {% if section.action %}
+        <p class="govuk-body">
+          <a class="govuk-link" href="{{ section.action.href }}">{{ section.action.text }}<span class="govuk-visually-hidden"> {{ section.action.visuallyHiddenText }}</span></a>
+        </p>
+      {% endif %}
+    </section>
+  {% endfor %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    {{ saveActions(hubHref, { text: copy.continue }, sharedCopy.saveActions) }}
+  </form>
+{% endblock %}
