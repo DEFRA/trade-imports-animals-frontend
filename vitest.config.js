@@ -23,6 +23,7 @@ export default defineConfig({
       include: ['src/**/*.js'],
       exclude: [
         ...configDefaults.exclude,
+        '**/*.e2e-helper.js',
         '.public',
         'coverage',
         'postcss.config.js',

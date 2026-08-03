@@ -6,7 +6,7 @@ import {
   journeyUrl,
   startNotification,
   submitDeclaration
-} from '../../../../../../../../../e2e/plant-products-journey.js'
+} from '../journey.e2e-helper.js'
 import { axeViolations } from '../axe.e2e-helper.js'
 import { copy } from './copy/copy.en.js'
 
