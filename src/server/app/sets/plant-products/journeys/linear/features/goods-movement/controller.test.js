@@ -12,8 +12,11 @@ import {
 
 import {
   driveHandler,
-  postHandlerOf
+  journeyRequest,
+  postHandlerOf,
+  stubH
 } from '../../../../../../engine/test-support.js'
+import { store } from '../../../../../../engine/store.js'
 import { plantProducts } from '../../../../../../routes-plant-products.js'
 import * as kit from '../../../../../../shared/kit.js'
 import {
@@ -21,11 +24,13 @@ import {
   withSetContext
 } from '../../../../../../shared/set-context.js'
 import { records } from '../../../../services/records/stub.js'
+import * as contact from '../contact/controller.js'
 import * as goodsMovement from './controller.js'
 import { copy } from './copy/copy.en.js'
 
 const get = goodsMovement.routes.find(({ method }) => method === 'GET').handler
 const post = postHandlerOf(goodsMovement)
+const contactPost = postHandlerOf(contact)
 const drive = (handler, options) =>
   withSetContext('plant-products', () => driveHandler(handler, options))
 
@@ -131,6 +136,37 @@ describe('plant-products goods-movement controller', () => {
       redirect: '/plant-products/notifications/next-target'
     })
     expect(nextTarget).toHaveBeenCalledOnce()
+  })
+
+  it('keeps GVMS Yes after committing a different page', async () => {
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue(
+      '/plant-products/notifications/next-target'
+    )
+    const answers = await withSetContext('plant-products', async () => {
+      const journey = await store.create()
+
+      await post(
+        journeyRequest(journey.journeyId, { payload: validPayload() }),
+        stubH()
+      )
+      await contactPost(
+        journeyRequest(journey.journeyId, {
+          payload: {
+            responsiblePersonName: 'Isabel Irwin',
+            responsiblePersonEmail: 'isabel@example.com',
+            responsiblePersonTelephone: ''
+          }
+        }),
+        stubH()
+      )
+
+      return (await store.get(journey.journeyId)).answers
+    })
+
+    expect(answers).toMatchObject({
+      usingGvms: true,
+      responsiblePersonName: 'Isabel Irwin'
+    })
   })
 
   it('switching away from ADD_MRN_NOW ignores a stale submitted MRN and purges the stored MRN', async () => {
