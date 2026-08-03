@@ -210,7 +210,16 @@ describe('plant-products indexed obligations are first-class', () => {
         'packerAddressLine3',
         'packerCity',
         'packerPostcode',
-        'packerCountry'
+        'packerCountry',
+        'consignorName',
+        'consignorAddressLine1',
+        'consignorAddressLine2',
+        'consignorAddressLine3',
+        'consignorCity',
+        'consignorPostcode',
+        'consignorTelephone',
+        'consignorCountry',
+        'consignorEmail'
       ].map((name) => ({
         obligation: plantProductsObligationSet[name],
         templatePath: name
@@ -339,6 +348,12 @@ describe('plant-products indexed obligations are first-class', () => {
       responsiblePersonName: 'Isabel Irwin',
       responsiblePersonEmail: 'isabel@example.com',
       destinationSameAsConsignee: true,
+      consignorName: 'Orchard Export SAS',
+      consignorAddressLine1: '12 Rue des Vergers',
+      consignorCity: 'Lyon',
+      consignorTelephone: '+33 4 72 00 00 00',
+      consignorCountry: 'FR',
+      consignorEmail: 'exports@example.com',
       accompanyingDocuments: [
         {
           documentType: 'PHYTOSANITARY_CERTIFICATE',

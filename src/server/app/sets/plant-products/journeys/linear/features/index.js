@@ -17,6 +17,8 @@ import * as originOfImport from './origin/origin-of-import/origin-of-import.cont
 import * as purpose from './purpose/controller.js'
 import * as transport from './transport/controller.js'
 import * as tradersAddresses from './traders/traders-addresses/traders-addresses.controller.js'
+import * as consignorCreate from './traders/consignor-create/consignor-create.controller.js'
+import * as consignorConfirmation from './traders/consignor-confirmation/consignor-confirmation.controller.js'
 
 export const dispatchPages = [
   importType.meta,
@@ -34,7 +36,9 @@ export const dispatchPages = [
   goodsMovement.meta,
   contact.meta,
   documents.meta,
-  tradersAddresses.meta
+  tradersAddresses.meta,
+  consignorCreate.meta,
+  consignorConfirmation.meta
 ]
 
 export const allRoutes = [
@@ -55,5 +59,7 @@ export const allRoutes = [
   ...contact.routes,
   ...documents.routes,
   ...tradersAddresses.routes,
+  ...consignorCreate.routes,
+  ...consignorConfirmation.routes,
   ...hub.routes
 ]

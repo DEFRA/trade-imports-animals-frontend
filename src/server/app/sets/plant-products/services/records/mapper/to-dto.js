@@ -144,6 +144,8 @@ const mapResponsiblePerson = (answers) => {
 
 const operatorFromAnswers = (answers, prefix) => {
   const name = answers[`${prefix}Name`]
+  const telephone = answers[`${prefix}Telephone`]
+  const email = answers[`${prefix}Email`]
   const address = {
     ...defined(answers, [
       `${prefix}AddressLine1`,
@@ -164,6 +166,8 @@ const operatorFromAnswers = (answers, prefix) => {
   )
   return {
     ...(name !== undefined ? { name } : {}),
+    ...(telephone !== undefined ? { telephone } : {}),
+    ...(email !== undefined ? { email } : {}),
     ...(Object.keys(mappedAddress).length > 0 ? { address: mappedAddress } : {})
   }
 }
@@ -171,6 +175,8 @@ const operatorFromAnswers = (answers, prefix) => {
 const hasAnsweredPartyField = (operator) =>
   Boolean(
     operator.name ||
+    operator.telephone ||
+    operator.email ||
     Object.values(operator.address ?? {}).some((value) => Boolean(value))
   )
 
@@ -178,6 +184,7 @@ const mapParties = (answers) => {
   const importer = stubOrganisationOperator()
   const enteredDestination = operatorFromAnswers(answers, 'destination')
   const packer = operatorFromAnswers(answers, 'packer')
+  const consignor = operatorFromAnswers(answers, 'consignor')
   return {
     importer,
     ...(answers.destinationSameAsConsignee === true
@@ -185,7 +192,8 @@ const mapParties = (answers) => {
       : answers.destinationSameAsConsignee === false
         ? { destination: enteredDestination }
         : {}),
-    ...(hasAnsweredPartyField(packer) ? { packer } : {})
+    ...(hasAnsweredPartyField(packer) ? { packer } : {}),
+    ...(hasAnsweredPartyField(consignor) ? { consignor } : {})
   }
 }
 

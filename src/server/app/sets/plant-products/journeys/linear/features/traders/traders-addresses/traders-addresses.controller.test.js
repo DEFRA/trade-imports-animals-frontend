@@ -145,6 +145,14 @@ describe('plant-products traders-addresses controller', () => {
     )
   })
 
+  it('renders the persisted consignor name on return from confirmation', async () => {
+    const result = await drive(get, {
+      seed: { consignorName: 'Orchard Export SAS' }
+    })
+
+    expect(result.view.context.consignorName).toBe('Orchard Export SAS')
+  })
+
   it.each([
     {
       name: 'requires the delivery-address radio',

@@ -1,4 +1,63 @@
 export const copy = {
+  consignorCreate: {
+    pageTitle: 'Add consignor or exporter',
+    heading: 'Add consignor or exporter',
+    legend: 'Consignor or exporter',
+    fields: {
+      consignorName: { label: 'Consignor or exporter name' },
+      consignorAddressLine1: { label: 'Address line 1' },
+      consignorAddressLine2: { label: 'Address line 2 (optional)' },
+      consignorAddressLine3: { label: 'Address line 3 (optional)' },
+      consignorCity: { label: 'City or town' },
+      consignorPostcode: { label: 'Postcode or ZIP code (optional)' },
+      consignorTelephone: { label: 'Telephone number' },
+      consignorCountry: {
+        label: 'Country',
+        placeholder: 'Please select your country'
+      },
+      consignorEmail: { label: 'Email address' }
+    },
+    errors: {
+      consignorName: {
+        required: 'Enter a consignor or exporter name',
+        max: 'Consignor or exporter name must be 255 characters or fewer'
+      },
+      consignorAddressLine1: {
+        required: 'Enter an address line 1',
+        max: 'Address line 1 must be 255 characters or fewer'
+      },
+      consignorAddressLine2: {
+        max: 'Address line 2 must be 255 characters or fewer'
+      },
+      consignorAddressLine3: {
+        max: 'Address line 3 must be 255 characters or fewer'
+      },
+      consignorCity: {
+        required: 'Enter a city or town',
+        max: 'City or town must be 58 characters or fewer'
+      },
+      consignorPostcode: {
+        max: 'Postcode or ZIP code must be 32 characters or fewer'
+      },
+      consignorTelephone: {
+        required: 'Enter a telephone number',
+        max: 'Telephone number must be 30 characters or fewer'
+      },
+      consignorCountry: { required: 'Select a country' },
+      consignorEmail: {
+        required: 'Enter an email address',
+        format:
+          'Enter an email address in the correct format, like name@example.com',
+        max: 'Email address must be 255 characters or fewer'
+      }
+    },
+    continueLabel: 'Save and continue'
+  },
+  consignorConfirmation: {
+    pageTitle: 'The consignor or exporter has been created',
+    panelTitle: 'The consignor or exporter has been created',
+    continueLabel: 'Add to notification'
+  },
   tradersAddresses: {
     caption: 'Traders',
     heading: 'Importer, Packer, Delivery address and Consignor',

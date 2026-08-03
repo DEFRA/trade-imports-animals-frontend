@@ -19,7 +19,11 @@ import {
 } from '../features/origin/page.js'
 import { purposePage } from '../features/purpose/page.js'
 import { transportBeforeBipPage } from '../features/transport/page.js'
-import { tradersAddressesPage } from '../features/traders/page.js'
+import {
+  consignorConfirmationPage,
+  consignorCreatePage,
+  tradersAddressesPage
+} from '../features/traders/page.js'
 
 export const FLOW_ONLY_KEYS = ['importType', 'declaration']
 
@@ -69,7 +73,11 @@ export const sections = [
   },
   {
     id: 'traders',
-    pages: [tradersAddressesPage]
+    pages: [
+      tradersAddressesPage,
+      consignorCreatePage,
+      consignorConfirmationPage
+    ]
   },
   {
     id: 'review',

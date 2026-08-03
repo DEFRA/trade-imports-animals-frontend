@@ -557,6 +557,70 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     ).not.toHaveProperty('packer')
   })
 
+  it('round-trips every fully populated consignor field without inventing operatorId', () => {
+    const answers = {
+      consignorName: 'Orchard Export SAS',
+      consignorAddressLine1: '12 Rue des Vergers',
+      consignorAddressLine2: 'Building B',
+      consignorAddressLine3: 'Export Quarter',
+      consignorCity: 'Lyon',
+      consignorPostcode: '69001',
+      consignorTelephone: '+33 4 72 00 00 00',
+      consignorCountry: 'FR',
+      consignorEmail: 'exports@example.com'
+    }
+
+    const dto = toDto(answers)
+
+    expect(dto.consignor).toEqual({
+      name: 'Orchard Export SAS',
+      telephone: '+33 4 72 00 00 00',
+      email: 'exports@example.com',
+      address: {
+        addressLine1: '12 Rue des Vergers',
+        addressLine2: 'Building B',
+        addressLine3: 'Export Quarter',
+        city: 'Lyon',
+        postcode: '69001',
+        country: 'FR'
+      }
+    })
+    expect(dto.consignor).not.toHaveProperty('operatorId')
+    expect(fromDto(dto)).toEqual(answers)
+  })
+
+  it('round-trips a consignor without optional address lines or postcode', () => {
+    const answers = {
+      consignorName: 'Orchard Export SAS',
+      consignorAddressLine1: '12 Rue des Vergers',
+      consignorCity: 'Lyon',
+      consignorTelephone: '+33 4 72 00 00 00',
+      consignorCountry: 'FR',
+      consignorEmail: 'exports@example.com'
+    }
+
+    const dto = toDto(answers)
+
+    expect(dto.consignor.address).toEqual({
+      addressLine1: '12 Rue des Vergers',
+      city: 'Lyon',
+      country: 'FR'
+    })
+    expect(dto.consignor.address).not.toHaveProperty('addressLine2')
+    expect(dto.consignor.address).not.toHaveProperty('addressLine3')
+    expect(dto.consignor.address).not.toHaveProperty('postcode')
+    expect(fromDto(dto)).toEqual(answers)
+  })
+
+  it('does not fabricate consignor answers when the DTO has no consignor', () => {
+    const answers = fromDto(withImporter())
+
+    expect(answers).not.toHaveProperty('consignorName')
+    expect(answers).not.toHaveProperty('consignorAddressLine1')
+    expect(answers).not.toHaveProperty('consignorTelephone')
+    expect(answers).not.toHaveProperty('consignorEmail')
+  })
+
   it('maps one document to the exact metadata-only sub-resource DTO', () => {
     const dto = documentToDto({
       id: 'answer-side-id',

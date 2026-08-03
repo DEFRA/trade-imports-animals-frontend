@@ -152,6 +152,10 @@ const mapOperator = (operator, prefix) => {
   const address = operator.address
   return {
     ...(operator.name != null ? { [`${prefix}Name`]: operator.name } : {}),
+    ...(operator.telephone != null
+      ? { [`${prefix}Telephone`]: operator.telephone }
+      : {}),
+    ...(operator.email != null ? { [`${prefix}Email`]: operator.email } : {}),
     ...(address && typeof address === 'object'
       ? {
           ...(address.addressLine1 != null
@@ -186,7 +190,8 @@ const mapParties = (dto) => {
             ...mapOperator(destination, 'destination')
           }
       : {}),
-    ...mapOperator(dto.packer, 'packer')
+    ...mapOperator(dto.packer, 'packer'),
+    ...mapOperator(dto.consignor, 'consignor')
   }
 }
 

@@ -57,7 +57,9 @@ const deliveryGroup = (page) =>
   page.getByRole('group', { name: pageCopy.delivery.legend, exact: true })
 
 const submit = (page) =>
-  page.getByRole('button', { name: pageCopy.continue, exact: true }).click()
+  page
+    .getByRole('button', { name: 'Save and return to hub', exact: true })
+    .click()
 
 const enteredDestination = {
   destinationName: 'Paris Produce Market',
@@ -214,7 +216,7 @@ test.describe('plant-products traders addresses', () => {
     )
   })
 
-  test('saves same as importer, completes the row and re-derives Yes on reload', async ({
+  test('saves same as importer, leaves the row In progress pending consignor and re-derives Yes on reload', async ({
     page
   }) => {
     const pageUrl = page.url()
@@ -224,7 +226,7 @@ test.describe('plant-products traders addresses', () => {
     await submit(page)
 
     await expect(page).toHaveURL(hubUrl)
-    await expect(rowByTitle(page, 'Traders')).toContainText('Completed')
+    await expect(rowByTitle(page, 'Traders')).toContainText('In progress')
     await page.goto(pageUrl)
     await expect(
       deliveryGroup(page).getByRole('radio', {
@@ -235,7 +237,7 @@ test.describe('plant-products traders addresses', () => {
     await expect(page.locator('#destinationName')).toBeHidden()
   })
 
-  test('saves and reloads every entered destination field', async ({
+  test('saves and reloads every entered destination field while consignor remains incomplete', async ({
     page
   }) => {
     const pageUrl = page.url()
@@ -243,7 +245,7 @@ test.describe('plant-products traders addresses', () => {
     await submit(page)
 
     await expect(page).toHaveURL(hubUrl)
-    await expect(rowByTitle(page, 'Traders')).toContainText('Completed')
+    await expect(rowByTitle(page, 'Traders')).toContainText('In progress')
     await page.goto(pageUrl)
     await expect(
       deliveryGroup(page).getByRole('radio', {
@@ -310,7 +312,7 @@ test.describe('plant-products traders addresses', () => {
     }
   })
 
-  test('packer is optional, round-trips when entered and never changes completion', async ({
+  test('packer is optional, round-trips when entered and never completes the row without a consignor', async ({
     page
   }) => {
     const pageUrl = page.url()
@@ -318,11 +320,11 @@ test.describe('plant-products traders addresses', () => {
       .getByRole('radio', { name: pageCopy.delivery.options.yes, exact: true })
       .check()
     await submit(page)
-    await expect(rowByTitle(page, 'Traders')).toContainText('Completed')
+    await expect(rowByTitle(page, 'Traders')).toContainText('In progress')
     await page.goto(pageUrl)
     await fillFields(page, enteredPacker)
     await submit(page)
-    await expect(rowByTitle(page, 'Traders')).toContainText('Completed')
+    await expect(rowByTitle(page, 'Traders')).toContainText('In progress')
     await page.goto(pageUrl)
     for (const [field, value] of Object.entries(enteredPacker)) {
       await expect(page.locator(`#${field}`)).toHaveValue(value)

@@ -144,3 +144,57 @@ export const packerCountry = {
   name: 'packerCountry',
   status: 'optional'
 }
+
+export const consignorName = {
+  id: '5f465f0d-d940-45ef-bcfc-0d21757c7e0b',
+  name: 'consignorName',
+  status: 'mandatory'
+}
+
+export const consignorAddressLine1 = {
+  id: '8337f7c6-8a22-49b1-8d56-61796be767e6',
+  name: 'consignorAddressLine1',
+  status: 'mandatory'
+}
+
+export const consignorAddressLine2 = {
+  id: '4783fe3e-f645-41b9-8299-6c6cc4d435a1',
+  name: 'consignorAddressLine2',
+  status: 'optional'
+}
+
+export const consignorAddressLine3 = {
+  id: '0cef605f-cf3c-49c1-ad46-d443b6770427',
+  name: 'consignorAddressLine3',
+  status: 'optional'
+}
+
+export const consignorCity = {
+  id: '9e59991d-5d24-4b71-b352-1e049d434ef8',
+  name: 'consignorCity',
+  status: 'mandatory'
+}
+
+export const consignorPostcode = {
+  id: 'a106c038-f9b5-4dff-b987-f55a40106ab0',
+  name: 'consignorPostcode',
+  status: 'optional'
+}
+
+export const consignorTelephone = {
+  id: 'ddbc9a28-eee6-4e78-97e7-114750c8cb0b',
+  name: 'consignorTelephone',
+  status: 'mandatory'
+}
+
+export const consignorCountry = {
+  id: '625e8c93-43fd-4633-ac5b-ee304a1da5b1',
+  name: 'consignorCountry',
+  status: 'mandatory'
+}
+
+export const consignorEmail = {
+  id: '18d8e489-e0dc-4cc7-9f41-d5a20896a452',
+  name: 'consignorEmail',
+  status: 'mandatory'
+}

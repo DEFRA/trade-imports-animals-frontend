@@ -149,7 +149,7 @@
     }) }}
 
     <h2 class="govuk-heading-l">{{ copy.consignor.heading }}</h2>
-    <p class="govuk-body">{{ copy.consignor.notAdded }}</p>
+    <p class="govuk-body">{{ consignorName or copy.consignor.notAdded }}</p>
     <p class="govuk-body">
       <a class="govuk-link" href="{{ consignorHref }}">{{ copy.consignor.addLink }}</a>
     </p>

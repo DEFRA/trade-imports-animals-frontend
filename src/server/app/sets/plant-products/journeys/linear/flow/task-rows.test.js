@@ -39,9 +39,22 @@ import {
 } from '../features/origin/page.js'
 import { purposePage } from '../features/purpose/page.js'
 import { transportBeforeBipPage } from '../features/transport/page.js'
-import { tradersAddressesPage } from '../features/traders/page.js'
+import {
+  consignorConfirmationPage,
+  consignorCreatePage,
+  tradersAddressesPage
+} from '../features/traders/page.js'
 import { FLOW_ONLY_KEYS, sections } from './flow.js'
 import { rowParts, rowStatus, taskRowById, taskRows } from './task-rows.js'
+
+const completeConsignor = {
+  consignorName: 'Orchard Export SAS',
+  consignorAddressLine1: '12 Rue des Vergers',
+  consignorCity: 'Lyon',
+  consignorTelephone: '+33 4 72 00 00 00',
+  consignorCountry: 'FR',
+  consignorEmail: 'exports@example.com'
+}
 
 describe('plant-products task rows', () => {
   beforeAll(() => {
@@ -100,7 +113,11 @@ describe('plant-products task rows', () => {
       },
       {
         id: 'traders',
-        pages: [tradersAddressesPage]
+        pages: [
+          tradersAddressesPage,
+          consignorCreatePage,
+          consignorConfirmationPage
+        ]
       }
     ])
     expect(
@@ -244,11 +261,20 @@ describe('plant-products task rows', () => {
       'packerAddressLine3',
       'packerCity',
       'packerPostcode',
-      'packerCountry'
+      'packerCountry',
+      'consignorName',
+      'consignorAddressLine1',
+      'consignorAddressLine2',
+      'consignorAddressLine3',
+      'consignorCity',
+      'consignorPostcode',
+      'consignorTelephone',
+      'consignorCountry',
+      'consignorEmail'
     ])
   })
 
-  it('moves traders from Not yet started through In progress to Completed while packer stays optional', () => {
+  it('keeps traders In progress without a consignor and completes only with both parties while optional fields stay optional', () => {
     const statusFor = (answers) =>
       withSetContext('plant-products', () => {
         const { inScope } = makeScope(answers)
@@ -262,7 +288,10 @@ describe('plant-products task rows', () => {
 
     expect(statusFor({})).toBe(NOT_STARTED)
     expect(statusFor({ destinationSameAsConsignee: false })).toBe(IN_PROGRESS)
-    expect(statusFor({ destinationSameAsConsignee: true })).toBe(FULFILLED)
+    expect(statusFor({ destinationSameAsConsignee: true })).toBe(IN_PROGRESS)
+    expect(
+      statusFor({ destinationSameAsConsignee: true, ...completeConsignor })
+    ).toBe(FULFILLED)
     expect(
       statusFor({
         destinationSameAsConsignee: false,
@@ -270,12 +299,13 @@ describe('plant-products task rows', () => {
         destinationAddressLine1: '10 Rue des Plantes',
         destinationCity: 'Paris',
         destinationPostcode: '75001',
-        destinationCountry: 'FR'
+        destinationCountry: 'FR',
+        ...completeConsignor
       })
     ).toBe(FULFILLED)
   })
 
-  it('blocks review readiness while traders is incomplete and unblocks on either complete delivery branch', () => {
+  it('blocks review readiness without a consignor and unblocks with complete consignor and delivery answers', () => {
     const readyFor = (answers) =>
       withSetContext('plant-products', () => {
         const { inScope } = makeScope(answers)
@@ -333,6 +363,13 @@ describe('plant-products task rows', () => {
     ).toBe(false)
     expect(
       readyFor({ ...allOtherRows, destinationSameAsConsignee: true })
+    ).toBe(false)
+    expect(
+      readyFor({
+        ...allOtherRows,
+        destinationSameAsConsignee: true,
+        ...completeConsignor
+      })
     ).toBe(true)
     expect(
       readyFor({
@@ -342,7 +379,8 @@ describe('plant-products task rows', () => {
         destinationAddressLine1: '10 Rue des Plantes',
         destinationCity: 'Paris',
         destinationPostcode: '75001',
-        destinationCountry: 'FR'
+        destinationCountry: 'FR',
+        ...completeConsignor
       })
     ).toBe(true)
   })
@@ -453,7 +491,8 @@ describe('plant-products task rows', () => {
       usingGvms: false,
       responsiblePersonName: 'Isabel Irwin',
       responsiblePersonEmail: 'isabel@example.com',
-      destinationSameAsConsignee: true
+      destinationSameAsConsignee: true,
+      ...completeConsignor
     }
 
     expect(readyFor(allEarlierRows)).toBe(false)
@@ -519,7 +558,8 @@ describe('plant-products task rows', () => {
           issueDate: { day: '4', month: '12', year: '2025' }
         }
       ],
-      destinationSameAsConsignee: true
+      destinationSameAsConsignee: true,
+      ...completeConsignor
     }
 
     expect(readyFor(allOtherRows)).toBe(false)
@@ -781,7 +821,8 @@ describe('plant-products task rows', () => {
       usingGvms: false,
       responsiblePersonName: 'Isabel Irwin',
       responsiblePersonEmail: 'isabel@example.com',
-      destinationSameAsConsignee: true
+      destinationSameAsConsignee: true,
+      ...completeConsignor
     }
     const completedTransport = {
       borderControlPost: 'GBLHR4PP',
@@ -859,7 +900,8 @@ describe('plant-products task rows', () => {
       usingGvms: false,
       responsiblePersonName: 'Isabel Irwin',
       responsiblePersonEmail: 'isabel@example.com',
-      destinationSameAsConsignee: true
+      destinationSameAsConsignee: true,
+      ...completeConsignor
     }
 
     const {

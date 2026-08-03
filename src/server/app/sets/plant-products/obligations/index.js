@@ -51,6 +51,15 @@ import {
 } from './sections/documents.js'
 import { reasonForImport } from './sections/purpose.js'
 import {
+  consignorAddressLine1,
+  consignorAddressLine2,
+  consignorAddressLine3,
+  consignorCity,
+  consignorCountry,
+  consignorEmail,
+  consignorName,
+  consignorPostcode,
+  consignorTelephone,
   destinationAddressLine1,
   destinationAddressLine2,
   destinationAddressLine3,
@@ -145,7 +154,16 @@ export {
   packerAddressLine3,
   packerCity,
   packerPostcode,
-  packerCountry
+  packerCountry,
+  consignorName,
+  consignorAddressLine1,
+  consignorAddressLine2,
+  consignorAddressLine3,
+  consignorCity,
+  consignorPostcode,
+  consignorTelephone,
+  consignorCountry,
+  consignorEmail
 }
 
 export const obligations = [
@@ -211,7 +229,16 @@ export const obligations = [
   packerAddressLine3,
   packerCity,
   packerPostcode,
-  packerCountry
+  packerCountry,
+  consignorName,
+  consignorAddressLine1,
+  consignorAddressLine2,
+  consignorAddressLine3,
+  consignorCity,
+  consignorPostcode,
+  consignorTelephone,
+  consignorCountry,
+  consignorEmail
 ]
 
 export const groups = obligations.filter((obligation) =>

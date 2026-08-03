@@ -3,6 +3,15 @@ import {
   scalar
 } from '../../../../../../bridge/fulfilment-bindings.js'
 import {
+  consignorAddressLine1,
+  consignorAddressLine2,
+  consignorAddressLine3,
+  consignorCity,
+  consignorCountry,
+  consignorEmail,
+  consignorName,
+  consignorPostcode,
+  consignorTelephone,
   destinationAddressLine1,
   destinationAddressLine2,
   destinationAddressLine3,
@@ -47,5 +56,14 @@ export const evaluationBindings = feature('traders', [
   scalar({ field: 'packerAddressLine3', obligation: packerAddressLine3 }),
   scalar({ field: 'packerCity', obligation: packerCity }),
   scalar({ field: 'packerPostcode', obligation: packerPostcode }),
-  scalar({ field: 'packerCountry', obligation: packerCountry })
+  scalar({ field: 'packerCountry', obligation: packerCountry }),
+  scalar({ field: 'consignorName', obligation: consignorName }),
+  scalar({ field: 'consignorAddressLine1', obligation: consignorAddressLine1 }),
+  scalar({ field: 'consignorAddressLine2', obligation: consignorAddressLine2 }),
+  scalar({ field: 'consignorAddressLine3', obligation: consignorAddressLine3 }),
+  scalar({ field: 'consignorCity', obligation: consignorCity }),
+  scalar({ field: 'consignorPostcode', obligation: consignorPostcode }),
+  scalar({ field: 'consignorTelephone', obligation: consignorTelephone }),
+  scalar({ field: 'consignorCountry', obligation: consignorCountry }),
+  scalar({ field: 'consignorEmail', obligation: consignorEmail })
 ])

@@ -157,7 +157,7 @@ const render = (
   h,
   journey,
   values,
-  { errors = {}, recoverableError = false } = {}
+  { consignorName = '', errors = {}, recoverableError = false } = {}
 ) => {
   const base = kit.base(copy.heading, {
     backLink: hubPath(journey.journeyId),
@@ -173,13 +173,16 @@ const render = (
     importerRows: importerRows(),
     destinationCountryItems: selectItems(values.destinationCountry),
     packerCountryItems: selectItems(values.packerCountry),
+    consignorName,
     consignorHref: pagePath(journey.journeyId, 'consignor-create')
   })
 }
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, valuesFrom(answers))
+  return render(h, journey, valuesFrom(answers), {
+    consignorName: answers.consignorName
+  })
 }
 
 const fields = (destinationInScope, countryCodes) =>
@@ -267,9 +270,10 @@ const post = async (request, h) => {
   const countryCodes = countryOptions().map(({ value }) => value)
   const errors = validateFields(payload, destinationInScope, countryCodes)
   if (errors) {
-    return render(h, pageState.journey, rawValues, { errors }).code(
-      HTTP_STATUS_BAD_REQUEST
-    )
+    return render(h, pageState.journey, rawValues, {
+      consignorName: pageState.answers.consignorName,
+      errors
+    }).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   const cleaned = cleanedValues(rawValues, destinationInScope)
@@ -280,6 +284,7 @@ const post = async (request, h) => {
     },
     () =>
       render(h, pageState.journey, rawValues, {
+        consignorName: pageState.answers.consignorName,
         recoverableError: true
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )

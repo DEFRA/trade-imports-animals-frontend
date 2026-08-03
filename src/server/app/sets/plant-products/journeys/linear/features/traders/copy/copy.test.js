@@ -36,4 +36,29 @@ describe('plant-products traders copy', () => {
       "importer's address"
     )
   })
+
+  it('provides the complete consignor-create and confirmation English contract', () => {
+    expect(en.consignorCreate).toMatchObject({
+      heading: 'Add consignor or exporter',
+      legend: 'Consignor or exporter',
+      fields: {
+        consignorAddressLine2: { label: 'Address line 2 (optional)' },
+        consignorAddressLine3: { label: 'Address line 3 (optional)' },
+        consignorPostcode: { label: 'Postcode or ZIP code (optional)' },
+        consignorCountry: { placeholder: 'Please select your country' }
+      },
+      errors: {
+        consignorPostcode: {
+          max: 'Postcode or ZIP code must be 32 characters or fewer'
+        },
+        consignorTelephone: { required: 'Enter a telephone number' }
+      },
+      continueLabel: 'Save and continue'
+    })
+    expect(en.consignorConfirmation).toEqual({
+      pageTitle: 'The consignor or exporter has been created',
+      panelTitle: 'The consignor or exporter has been created',
+      continueLabel: 'Add to notification'
+    })
+  })
 })

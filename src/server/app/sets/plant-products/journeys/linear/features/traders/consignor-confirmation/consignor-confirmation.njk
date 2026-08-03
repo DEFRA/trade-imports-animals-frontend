@@ -1,0 +1,15 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/panel/macro.njk" import govukPanel %}
+
+{% block journeyContent %}
+  {{ govukPanel({
+    titleText: copy.panelTitle,
+    headingLevel: 1
+  }) }}
+
+  <form method="post">
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    {{ govukButton({ text: copy.continueLabel, preventDoubleClick: true }) }}
+  </form>
+{% endblock %}

@@ -39,6 +39,7 @@ import * as originOfImport from './sets/plant-products/journeys/linear/features/
 import * as purpose from './sets/plant-products/journeys/linear/features/purpose/controller.js'
 import * as transport from './sets/plant-products/journeys/linear/features/transport/controller.js'
 import * as tradersAddresses from './sets/plant-products/journeys/linear/features/traders/traders-addresses/traders-addresses.controller.js'
+import * as consignorCreate from './sets/plant-products/journeys/linear/features/traders/consignor-create/consignor-create.controller.js'
 import { entryGuardTarget } from './sets/plant-products/journeys/linear/flow/entry-guard.js'
 import {
   FLOW_ONLY_KEYS,
@@ -216,6 +217,22 @@ const cases = [
       packerCity: 'Calais',
       packerPostcode: '62100',
       packerCountry: 'FR'
+    }
+  },
+  {
+    id: consignorCreate.meta.id,
+    collects: consignorCreate.meta.collects,
+    controller: consignorCreate,
+    payload: {
+      consignorName: 'Orchard Export SAS',
+      consignorAddressLine1: '12 Rue des Vergers',
+      consignorAddressLine2: 'Building B',
+      consignorAddressLine3: 'Export Quarter',
+      consignorCity: 'Lyon',
+      consignorPostcode: '69001',
+      consignorTelephone: '+33 4 72 00 00 00',
+      consignorCountry: 'FR',
+      consignorEmail: 'exports@example.com'
     }
   }
 ]
