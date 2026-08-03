@@ -3,6 +3,7 @@ export const copy = {
   continue: 'Continue',
   change: 'Change',
   missingAnswer: 'Add a missing answer',
+  missingAnswerContext: (label) => `for ${label.toLowerCase()}`,
   yesNo: { yes: 'Yes', no: 'No' },
   importTypes: {
     plants: 'Plants, plant products and other objects'
@@ -55,7 +56,9 @@ export const copy = {
       },
       commodity: (number) => `Commodity ${number}`,
       species: (number) => `Species ${number}`,
-      changeCommodity: (number) => `commodity ${number}`
+      changeCommodity: (number) => `commodity ${number}`,
+      intendedForFinalUsersContext: (label, commodity) =>
+        `${label.toLowerCase()} for ${commodity.toLowerCase()}`
     },
     additionalDetails: {
       heading: 'Additional details',

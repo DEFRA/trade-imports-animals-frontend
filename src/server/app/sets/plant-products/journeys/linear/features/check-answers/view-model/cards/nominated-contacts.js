@@ -22,6 +22,7 @@ export const nominatedContactsCard = (journeyId, answers, evaluation) => {
       ? [
           {
             caption: cardCopy.heading,
+            captionClasses: 'govuk-visually-hidden',
             head: Object.values(cardCopy.columns).map((text) => ({ text })),
             rows: contacts.map(({ entry }) => [
               cell(entry.contactName),

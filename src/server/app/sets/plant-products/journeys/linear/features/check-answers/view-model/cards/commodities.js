@@ -35,6 +35,7 @@ const changeCell = (journeyId, lineIndex) => {
 
 const commodityTable = (journeyId, lines) => ({
   caption: cardCopy.tables.commodities,
+  captionClasses: 'govuk-table__caption--s',
   head: [
     header(cardCopy.columns.line),
     header(cardCopy.columns.code),
@@ -65,6 +66,7 @@ const speciesTable = (answers, evaluation, lines) => {
   )
   return {
     caption: cardCopy.tables.species,
+    captionClasses: 'govuk-table__caption--s',
     head: [
       header(cardCopy.columns.line),
       header(cardCopy.columns.species),
@@ -100,6 +102,7 @@ const varietyTable = (answers, evaluation, lines) => {
   return rows.length
     ? {
         caption: cardCopy.tables.varieties,
+        captionClasses: 'govuk-table__caption--s',
         head: [
           header(cardCopy.columns.line),
           header(cardCopy.columns.genusAndSpecies),
@@ -113,6 +116,7 @@ const varietyTable = (answers, evaluation, lines) => {
 
 const measuresTable = (lines) => ({
   caption: cardCopy.tables.measures,
+  captionClasses: 'govuk-table__caption--s',
   head: [
     header(cardCopy.columns.line),
     header(cardCopy.columns.packages),
@@ -140,20 +144,33 @@ const measuresTable = (lines) => ({
   ])
 })
 
-const intendedForFinalUsersRows = (journeyId, scope, lines) =>
-  lines
+export const intendedForFinalUsersRows = (
+  journeyId,
+  scope,
+  lines,
+  localeCopy = copy,
+  changeLinkHref
+) => {
+  const localeCardCopy = localeCopy.cards.commodities
+  return lines
     .filter(({ entry }) => isPlantsForPlanting(entry.commoditySelection))
     .map(({ index, entry }) =>
       row({
-        label: `${cardCopy.columns.intendedForFinalUsers} (${cardCopy.commodity(index + 1).toLowerCase()})`,
-        value: yesNoText(entry.intendedForFinalUsers, copy.yesNo),
+        label: `${localeCardCopy.columns.intendedForFinalUsers} (${localeCardCopy.commodity(index + 1).toLowerCase()})`,
+        value: yesNoText(entry.intendedForFinalUsers, localeCopy.yesNo),
         obligationName: `commodityLines[${index}].intendedForFinalUsers`,
         journeyId,
         scope,
-        visuallyHiddenText: `${cardCopy.columns.intendedForFinalUsers.toLowerCase()} for ${cardCopy.commodity(index + 1).toLowerCase()}`
+        visuallyHiddenText: localeCardCopy.intendedForFinalUsersContext(
+          localeCardCopy.columns.intendedForFinalUsers,
+          localeCardCopy.commodity(index + 1)
+        ),
+        localeCopy,
+        changeLinkHref
       })
     )
     .filter(Boolean)
+}
 
 export const commoditiesCard = (journeyId, answers, scope, evaluation) => {
   const lines = state.collectionView(answers, ['commodityLines'], evaluation)

@@ -4,6 +4,7 @@ export const copy = {
   continue: 'Parhau',
   change: 'Newid',
   missingAnswer: 'Ychwanegu ateb sydd ar goll',
+  missingAnswerContext: (label) => `ar gyfer ${label.toLowerCase()}`,
   yesNo: { yes: 'Iawn', no: 'Na' },
   importTypes: {
     plants: 'Planhigion, cynhyrchion planhigion a gwrthrychau eraill'
@@ -56,7 +57,9 @@ export const copy = {
       },
       commodity: (number) => `Nwydd ${number}`,
       species: (number) => `Rhywogaeth ${number}`,
-      changeCommodity: (number) => `nwydd ${number}`
+      changeCommodity: (number) => `nwydd ${number}`,
+      intendedForFinalUsersContext: (label, commodity) =>
+        `${label.toLowerCase()} ar gyfer ${commodity.toLowerCase()}`
     },
     additionalDetails: {
       heading: 'Manylion ychwanegol',

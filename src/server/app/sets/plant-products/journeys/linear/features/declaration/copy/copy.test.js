@@ -28,9 +28,59 @@ describe('plant-products declaration copy', () => {
     )
   })
 
-  it('pins every legal list and APHA address line', () => {
-    expect(en.terms.items).toHaveLength(6)
-    expect(en.legal.regulations).toHaveLength(4)
-    expect(en.enquiries.aphaAddressLines).toHaveLength(7)
+  it('pins the English declaration intro literally', () => {
+    expect(en.intro).toEqual([
+      'By clicking on the check box at the bottom of the page you are declaring that you have read and understood, accept and agree to the terms and conditions of the declaration.',
+      'Submission of the form will not be allowed until all fields have been completed and the check box has been ticked.'
+    ])
+  })
+
+  it('pins every English declaration term literally', () => {
+    expect(en.terms).toEqual({
+      heading: 'Statement of terms and conditions for applications',
+      aphaDefinition:
+        'For the purposes of the declaration "APHA" refers to the HMI and the PHSI.',
+      items: [
+        'No liability shall attach to the APHA/SASA for any delay in granting or failure to grant a finalised Common Health Entry Document (CHED), nor any delay in inspecting or failure to inspect, delayed or non-delivery of any document.',
+        'The APHA/SASA shall be entitled to rely upon the accuracy of all documentation and information supplied by the operator responsible, for the inspection or for the issuance of a finalised CHED.',
+        'No finalised CHED shall be used issued in respect of any plants, plant products or other objects except those to which it applies.',
+        'Inspections will be carried out and finalised CHEDs will be issued only on the understanding that no liability shall attach to the APHA/SASA in any circumstance in respect of any inspection carried out or the issue of or contents of any CHED and that the APHA/SASA accepts no responsibility for any resulting loss however caused.',
+        'The responsibility for charges incurred in such inspections must be borne by the operator responsible for the consignment. Including payment for official controls, as well as for re-dispatching consignments, quarantine or isolation of consignments, or costs of destruction and disposal where necessary.',
+        'The APHA/SASA will not issue a finalised CHED in respect of plants, plant products or other objects, which in their opinion is incorrect or inaccurate.'
+      ]
+    })
+  })
+
+  it('pins every English regulation literally', () => {
+    expect(en.legal.regulations).toEqual([
+      'Regulation (EU) 2016/2031, (retained EU legislation)"',
+      'Regulation (EU) 2017/625, (retained EU legislation)"',
+      'Regulation (EU) 543/2011, (retained EU legislation)"',
+      'Regulation (EU) 1333/2011, (retained EU legislation)"'
+    ])
+  })
+
+  it('pins every English APHA address line literally', () => {
+    expect(en.enquiries.aphaAddressLines).toEqual([
+      'Animal and Plant Health Agency,',
+      'Foss House',
+      'Kings Pool, 1-2 Peasholme Green,',
+      'York,',
+      'YO1 7PX',
+      'Tel: 0300 1000 313',
+      'Email: phsi-importers@apha.gov.uk'
+    ])
+  })
+
+  it('pins every English external-link label literally', () => {
+    expect([
+      en.englandWales.enforcementPolicyLinkText,
+      en.dataProtection.aphaPrivacyLinkText,
+      en.dataProtection.sasaPrivacyLinkText
+    ]).toEqual([
+      'DEFRA enforcement policy (PDF)',
+      'APHA privacy notice (PDF)',
+      'SASA privacy statement'
+    ])
   })
 })

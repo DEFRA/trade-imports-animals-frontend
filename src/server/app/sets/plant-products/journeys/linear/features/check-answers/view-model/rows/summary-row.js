@@ -13,16 +13,18 @@ export const row = ({
   obligationName,
   journeyId,
   scope,
-  visuallyHiddenText = label
+  visuallyHiddenText = label,
+  localeCopy = copy,
+  changeLinkHref
 }) => {
   if (!scope.has(obligationName)) return null
 
   if (isBlank(value)) {
-    const href = changeHref(obligationName, journeyId)
+    const href = changeLinkHref ?? changeHref(obligationName, journeyId)
     return {
       key: { text: label },
       value: {
-        html: `<a class="govuk-link" href="${escapeHtml(href)}">${escapeHtml(copy.missingAnswer)}<span class="govuk-visually-hidden"> for ${escapeHtml(label.toLowerCase())}</span></a>`
+        html: `<a class="govuk-link" href="${escapeHtml(href)}">${escapeHtml(localeCopy.missingAnswer)}<span class="govuk-visually-hidden"> ${escapeHtml(localeCopy.missingAnswerContext(label))}</span></a>`
       }
     }
   }
@@ -30,7 +32,13 @@ export const row = ({
   return {
     key: { text: label },
     value: { text: valueText(value) },
-    actions: changeAction(obligationName, journeyId, visuallyHiddenText)
+    actions: changeAction(
+      obligationName,
+      journeyId,
+      visuallyHiddenText,
+      localeCopy,
+      changeLinkHref
+    )
   }
 }
 

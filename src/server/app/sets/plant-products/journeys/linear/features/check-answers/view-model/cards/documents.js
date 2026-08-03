@@ -21,6 +21,7 @@ export const documentsCard = (journeyId, answers, evaluation) => {
     tables: [
       {
         caption: cardCopy.heading,
+        captionClasses: 'govuk-visually-hidden',
         head: Object.values(cardCopy.columns).map((text) => ({ text })),
         rows: documents.map(({ entry }) => [
           cell(documentTypeText(entry.documentType)),

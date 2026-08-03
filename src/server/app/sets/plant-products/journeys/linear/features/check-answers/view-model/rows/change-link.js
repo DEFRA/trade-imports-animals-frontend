@@ -17,12 +17,14 @@ export const changeHref = (obligationName, journeyId) =>
 export const changeAction = (
   obligationName,
   journeyId,
-  visuallyHiddenText
+  visuallyHiddenText,
+  localeCopy = copy,
+  changeLinkHref
 ) => ({
   items: [
     {
-      href: changeHref(obligationName, journeyId),
-      text: copy.change,
+      href: changeLinkHref ?? changeHref(obligationName, journeyId),
+      text: localeCopy.change,
       visuallyHiddenText
     }
   ]

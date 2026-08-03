@@ -9,7 +9,10 @@ import { copy as goodsMovementCopy } from '../goods-movement/copy/copy.en.js'
 import { copy as nominatedCopy } from '../nominated-contacts/copy/copy.en.js'
 import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy as tradersCopy } from '../traders/copy/copy.en.js'
+import { copy as cyCopy } from './copy/copy.cy.js'
 import { copy } from './copy/copy.en.js'
+import { intendedForFinalUsersRows } from './view-model/cards/commodities.js'
+import { row } from './view-model/rows/summary-row.js'
 
 const hubUrl = /^\/plant-products\/notifications\/[^/]+$/
 const reviewUrl =
@@ -20,6 +23,48 @@ const commodityCopy = commodityFeatureCopy.commodityBulkDetails
 const searchCopy = commodityFeatureCopy.commoditySearch
 const basicCopy = commodityFeatureCopy.basicDescription
 const summaryCopy = commodityFeatureCopy.commoditySummary
+
+const renderSummaryRow = ({ key, value, actions }) => {
+  const action = actions?.items[0]
+  const actionHtml = action
+    ? `<dd class="govuk-summary-list__actions"><a href="${action.href}">${action.text}<span class="govuk-visually-hidden"> ${action.visuallyHiddenText}</span></a></dd>`
+    : ''
+  return `<div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">${key.text}</dt><dd class="govuk-summary-list__value">${value.html ?? value.text}</dd>${actionHtml}</div>`
+}
+
+const renderSummaryRows = (rows) =>
+  `<dl class="govuk-summary-list">${rows.map(renderSummaryRow).join('')}</dl>`
+
+const welshAccessibleNameRows = () => {
+  const scope = { has: () => true }
+  const changeLinkHref = '/change'
+  const missingAnswer = row({
+    label: cyCopy.cards.aboutConsignment.rows.internalReference,
+    value: undefined,
+    obligationName: 'internalReference',
+    journeyId: 'journey-083',
+    scope,
+    localeCopy: cyCopy,
+    changeLinkHref
+  })
+  const [intendedForFinalUsers] = intendedForFinalUsersRows(
+    'journey-083',
+    scope,
+    [
+      {
+        index: 0,
+        entry: {
+          commoditySelection: '06011010',
+          intendedForFinalUsers: true
+        }
+      }
+    ],
+    cyCopy,
+    changeLinkHref
+  )
+
+  return renderSummaryRows([missingAnswer, intendedForFinalUsers])
+}
 
 const commodityFixtures = {
   '06011010': {
@@ -897,6 +942,36 @@ const tableExpectations = () => {
 }
 
 test.describe('plant-products review notification', () => {
+  test('renders distinct Welsh accessible names with locale-owned connectors', async ({
+    page
+  }) => {
+    await page.setContent(await welshAccessibleNameRows())
+
+    const missingAnswerRow = page
+      .locator('.govuk-summary-list__row')
+      .filter({ has: page.getByText('Cyfeirnod mewnol', { exact: true }) })
+    const intendedForFinalUsersRow = page
+      .locator('.govuk-summary-list__row')
+      .filter({
+        has: page.getByText(
+          'Wedi’i fwriadu ar gyfer defnyddwyr terfynol (nwydd 1)',
+          { exact: true }
+        )
+      })
+    const missingAnswerLink = missingAnswerRow.getByRole('link')
+    const intendedForFinalUsersLink = intendedForFinalUsersRow.getByRole('link')
+
+    await expect(missingAnswerLink).toHaveAccessibleName(
+      'Ychwanegu ateb sydd ar goll ar gyfer cyfeirnod mewnol'
+    )
+    await expect(intendedForFinalUsersLink).toHaveAccessibleName(
+      'Newid wedi’i fwriadu ar gyfer defnyddwyr terfynol ar gyfer nwydd 1'
+    )
+    expect(await missingAnswerLink.ariaSnapshot()).not.toBe(
+      await intendedForFinalUsersLink.ariaSnapshot()
+    )
+  })
+
   test('reads back the fully populated journey, pins collection order and exposes distinct Change names', async ({
     page
   }) => {
@@ -911,6 +986,37 @@ test.describe('plant-products review notification', () => {
     await expectSummaryValues(page, summaryExpectations(date))
     for (const [caption, expectedRows] of Object.entries(tableExpectations())) {
       await expectTableMatrix(page, caption, expectedRows)
+    }
+    for (const caption of Object.values(copy.cards.commodities.tables)) {
+      const commodityCaption = page
+        .getByRole('table', { name: caption, exact: true })
+        .locator('caption')
+      await expect(commodityCaption).toBeVisible()
+      await expect(commodityCaption).toHaveClass(/govuk-table__caption--s/)
+      await expect(commodityCaption).not.toHaveClass(/govuk-visually-hidden/)
+    }
+    for (const caption of [
+      copy.cards.nominatedContacts.heading,
+      copy.cards.documents.heading
+    ]) {
+      const duplicateTable = page.getByRole('table', {
+        name: caption,
+        exact: true
+      })
+      const duplicateCaption = duplicateTable.locator('caption')
+      await expect(duplicateTable).toMatchAriaSnapshot(`
+        - caption: ${caption}
+      `)
+      await expect(duplicateCaption).toHaveClass(/govuk-visually-hidden/)
+      await expect(duplicateCaption).toHaveCSS('position', 'absolute')
+      await expect(duplicateCaption).toHaveCSS('width', '1px')
+      await expect(duplicateCaption).toHaveCSS('height', '1px')
+      await expect(duplicateCaption).toHaveCSS('overflow', 'hidden')
+      await expect(duplicateCaption).toHaveCSS(
+        'clip',
+        'rect(0px, 0px, 0px, 0px)'
+      )
+      await expect(duplicateCaption).not.toHaveClass(/govuk-table__caption--s/)
     }
 
     const manualInputMethodRow = page

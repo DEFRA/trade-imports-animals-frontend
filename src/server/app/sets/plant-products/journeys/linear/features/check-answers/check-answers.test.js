@@ -360,6 +360,31 @@ describe('plant-products check-answers view model', () => {
     ])
   })
 
+  it('hides duplicate card captions and keeps distinct commodity captions visible', () => {
+    const sections = build()
+    const commodities = card(sections, 'Description of the goods')
+
+    expect(
+      commodities.tables.map(({ caption, captionClasses }) => [
+        caption,
+        captionClasses
+      ])
+    ).toEqual([
+      ['Commodities', 'govuk-table__caption--s'],
+      ['Species', 'govuk-table__caption--s'],
+      ['Varieties', 'govuk-table__caption--s'],
+      ['Commodity details', 'govuk-table__caption--s']
+    ])
+    expect(
+      table(card(sections, 'Nominated contacts'), 'Nominated contacts')
+        .captionClasses
+    ).toBe('govuk-visually-hidden')
+    expect(
+      table(card(sections, 'Accompanying documents'), 'Accompanying documents')
+        .captionClasses
+    ).toBe('govuk-visually-hidden')
+  })
+
   it.each([
     ['MANUAL', 'Manual entry'],
     ['CSV', 'Upload from a CSV file']

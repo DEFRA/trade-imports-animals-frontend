@@ -21,7 +21,7 @@
       {% for table in section.tables %}
         {{ govukTable({
           caption: table.caption,
-          captionClasses: "govuk-table__caption--s",
+          captionClasses: table.captionClasses,
           firstCellIsHeader: table.firstCellIsHeader,
           head: table.head,
           rows: table.rows
