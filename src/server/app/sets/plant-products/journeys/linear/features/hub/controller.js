@@ -1,7 +1,7 @@
-// Minimum hub from docs/add-a-set.md step 9.
 import {
   FULFILLED,
   IN_PROGRESS,
+  NA,
   NOT_STARTED,
   OPTIONAL
 } from '../../../../../../bridge/status/index.js'
@@ -30,7 +30,8 @@ export const GROUPS = [
   { id: 'purpose', rows: ['purpose'] },
   { id: 'commodities', rows: ['commodities'] },
   { id: 'additional-details', rows: ['additional-details'] },
-  { id: 'transport', rows: ['transport'] }
+  { id: 'transport', rows: ['transport'] },
+  { id: 'review', rows: ['review'] }
 ]
 
 const view = `${TEMPLATES}/features/hub/template`
@@ -50,57 +51,73 @@ const STATUS_TAG = {
   }
 }
 
+const statusTag = (status) => STATUS_TAG[status] ?? STATUS_TAG[NOT_STARTED]
+
 const CANNOT_START_STATUS = {
   text: copy.statuses.cannotStartYet,
   classes: 'govuk-task-list__status--cannot-start-yet'
 }
 
-const statusTag = (status) => STATUS_TAG[status] ?? STATUS_TAG[NOT_STARTED]
+const reviewSection = () => sections.find((section) => section.id === 'review')
 
-const reviewSection = () => sections.find(({ id }) => id === 'review')
-
-const buildReviewItem = (answers, scope, evaluation, journeyId) => {
+const buildReviewItem = (
+  { title, hint },
+  answers,
+  scope,
+  evaluation,
+  journeyId
+) => {
   const section = reviewSection()
-  const base = {
-    title: { text: copy.review.title },
-    hint: { text: copy.review.hint }
-  }
-  if (section.pages.length === 0 || !sectionGatePasses(section, scope)) {
+  const base = { title: { text: title }, hint: { text: hint } }
+  if (!sectionGatePasses(section, scope)) {
     return { ...base, status: CANNOT_START_STATUS }
   }
   return {
     ...base,
-    href: sectionEntry(section.id, scope, journeyId),
-    status: STATUS_TAG[
+    href: sectionEntry('review', scope, journeyId),
+    status: statusTag(
       sectionStatus(section, answers, scope.inScope, evaluation)
-    ] ?? { tag: { text: copy.statuses.notYetStarted } }
+    )
   }
 }
 
+const isHiddenRow = (row, status) => row.conditional && status === NA
+
+const blockedRowItem = (base) => ({ ...base, status: CANNOT_START_STATUS })
+
+const openRowItem = (base, row, scope, status, journeyId) => ({
+  ...base,
+  href: rowEntry(row, scope, journeyId),
+  status: statusTag(status)
+})
+
 const buildRowItem = (id, answers, scope, evaluation, journeyId) => {
   const { title, hint } = copy.rows[id]
+  if (id === 'review') {
+    return buildReviewItem(
+      { title, hint },
+      answers,
+      scope,
+      evaluation,
+      journeyId
+    )
+  }
   const row = taskRowById(id)
   const status = rowStatus(row, answers, scope.inScope, evaluation)
-  const base = {
-    title: { text: title },
-    ...(hint ? { hint: { text: hint } } : {})
-  }
+  if (isHiddenRow(row, status)) return null
+  const base = { title: { text: title }, hint: { text: hint } }
   return rowGatePasses(row, scope)
-    ? {
-        ...base,
-        href: rowEntry(row, scope, journeyId),
-        status: statusTag(status)
-      }
-    : { ...base, status: CANNOT_START_STATUS }
+    ? openRowItem(base, row, scope, status, journeyId)
+    : blockedRowItem(base)
 }
 
 const buildGroups = (answers, scope, evaluation, journeyId) =>
   GROUPS.map((group) => ({
     id: group.id,
     caption: copy.groups[group.id],
-    items: group.rows.map((id) =>
-      buildRowItem(id, answers, scope, evaluation, journeyId)
-    )
+    items: group.rows
+      .map((id) => buildRowItem(id, answers, scope, evaluation, journeyId))
+      .filter(Boolean)
   }))
 
 const handler = async (request, h) => {
@@ -115,7 +132,6 @@ const handler = async (request, h) => {
     sharedCopy,
     journeyStrip: journeyStrip(journey),
     groups: buildGroups(answers, scope, evaluation, journeyId),
-    reviewItems: [buildReviewItem(answers, scope, evaluation, journeyId)],
     dashboardHref: dashboardPath(),
     backLink: dashboardPath(),
     breadcrumbs: false

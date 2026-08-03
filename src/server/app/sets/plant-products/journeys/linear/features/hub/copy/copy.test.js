@@ -1,4 +1,3 @@
-// Copy contract from docs/add-a-set.md step 7.
 import { describe, expect, it } from 'vitest'
 
 import { copy as cy } from './copy.cy.js'
@@ -20,21 +19,42 @@ describe('plant-products hub copy', () => {
   it('provides the complete task status vocabulary', () => {
     expect(Object.keys(en.statuses)).toEqual([
       'completed',
+      'optional',
       'inProgress',
       'notYetStarted',
-      'optional',
       'cannotStartYet'
     ])
-    expect(en.review).toMatchObject({
-      title: expect.any(String),
-      hint: expect.any(String)
-    })
-    expect(en.captions.checkAndSubmit).toEqual(expect.any(String))
+    expect(en.intro).toEqual(expect.any(String))
+    expect(en.returnToDashboard).toEqual(expect.any(String))
   })
 
-  it('provides the numbered origin group and its hint-free row', () => {
+  it('provides every numbered hub group in canonical order', () => {
+    expect(Object.entries(en.groups)).toEqual([
+      ['origin', '1. Origin of the import'],
+      ['purpose', '2. Purpose'],
+      ['commodities', '3. Commodity'],
+      ['additional-details', '4. Additional details'],
+      ['transport', '5. Transport to the BCP'],
+      ['review', '12. Review and submit']
+    ])
+  })
+
+  it('provides non-empty title and hint copy for every hub row', () => {
+    expect(Object.keys(en.rows)).toEqual(Object.keys(en.groups))
+    for (const row of Object.values(en.rows)) {
+      expect(row.title).toEqual(expect.any(String))
+      expect(row.title).not.toBe('')
+      expect(row.hint).toEqual(expect.any(String))
+      expect(row.hint).not.toBe('')
+    }
+  })
+
+  it('provides the numbered origin group and its row copy', () => {
     expect(en.groups.origin).toBe('1. Origin of the import')
-    expect(en.rows.origin).toEqual({ title: 'Origin of the import' })
+    expect(en.rows.origin).toEqual({
+      title: 'Origin of the import',
+      hint: 'Where the consignment comes from and your internal reference'
+    })
   })
 
   it('provides the numbered purpose group and its row copy', () => {
@@ -66,6 +86,14 @@ describe('plant-products hub copy', () => {
     expect(en.rows.transport).toEqual({
       title: 'Transport to the BCP',
       hint: 'How the consignment will travel to the border control post'
+    })
+  })
+
+  it('provides the canonical review group and its section copy', () => {
+    expect(en.groups.review).toBe('12. Review and submit')
+    expect(en.rows.review).toEqual({
+      title: 'Review and submit',
+      hint: 'Check your answers before you submit the notification'
     })
   })
 })

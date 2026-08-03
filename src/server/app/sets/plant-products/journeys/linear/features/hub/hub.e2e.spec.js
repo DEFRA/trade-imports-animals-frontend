@@ -1,8 +1,9 @@
-// Playwright coverage required by docs/add-a-set.md step 9.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import { copy } from './copy/copy.en.js'
+
+const hubUrl = /^\/plant-products\/notifications\/[^/]+$/
 
 const startAtHub = async (page) => {
   await page.goto('/plant-products')
@@ -16,7 +17,36 @@ const startAtHub = async (page) => {
       url.pathname
     )
   )
-  await page.getByRole('link', { name: 'Back' }).click()
+  await page.getByRole('link', { name: 'Back', exact: true }).click()
+  await expect(page).toHaveURL((url) => hubUrl.test(url.pathname))
+}
+
+const rowFor = (page, { title }) =>
+  page.getByRole('listitem').filter({
+    has: page.getByText(title, { exact: true })
+  })
+
+const expectRow = async (page, rowCopy, status, href) => {
+  const row = rowFor(page, rowCopy)
+  await expect(row).toContainText(rowCopy.hint)
+  await expect(row).toContainText(status)
+  const link = row.getByRole('link', { name: rowCopy.title, exact: true })
+  if (href === null) {
+    await expect(link).toHaveCount(0)
+    return
+  }
+  await expect(link).toHaveAttribute('href', href)
+  await expect(link).toHaveAccessibleName(rowCopy.title)
+}
+
+const saveCountryOfOrigin = async (page) => {
+  await rowFor(page, copy.rows.origin)
+    .getByRole('link', { name: copy.rows.origin.title, exact: true })
+    .click()
+  await page.getByLabel('Country of origin').selectOption('FR')
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('link', { name: 'Back', exact: true }).click()
+  await expect(page).toHaveURL((url) => hubUrl.test(url.pathname))
 }
 
 test.describe('plant-products hub', () => {
@@ -27,115 +57,138 @@ test.describe('plant-products hub', () => {
   test('renders the reference and unavailable Review and submit entry', async ({
     page
   }) => {
-    await expect(page).toHaveURL((url) =>
-      /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
-    )
     await expect(page.getByText(/^GBN-PP-/)).toBeVisible()
-    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
     await expect(
-      page.getByRole('heading', { name: copy.groups.origin })
+      page.getByRole('heading', { level: 1, name: copy.title, exact: true })
     ).toBeVisible()
+    await expect(page.getByText(copy.intro, { exact: true })).toBeVisible()
+
     await expect(
-      page.getByRole('heading', { name: copy.groups.purpose })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('heading', { name: copy.groups.commodities })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('heading', { name: copy.groups['additional-details'] })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('heading', { name: copy.groups.transport })
-    ).toBeVisible()
-    expect(
-      await page
-        .locator('main')
-        .getByRole('heading', { level: 2 })
-        .evaluateAll((headings) =>
-          headings.map(({ textContent }) => textContent)
-        )
-    ).toEqual([
-      copy.groups.origin,
-      copy.groups.purpose,
-      copy.groups.commodities,
-      copy.groups['additional-details'],
-      copy.groups.transport,
-      copy.captions.checkAndSubmit
+      page.locator('main').getByRole('heading', { level: 2 })
+    ).toHaveText(Object.values(copy.groups))
+    await expect(page.locator('.govuk-task-list')).toHaveCount(6)
+    await expect(page.locator('.govuk-task-list__status')).toHaveText([
+      copy.statuses.notYetStarted,
+      copy.statuses.cannotStartYet,
+      copy.statuses.cannotStartYet,
+      copy.statuses.cannotStartYet,
+      copy.statuses.cannotStartYet,
+      copy.statuses.cannotStartYet
     ])
-    const origin = page.getByRole('listitem').filter({
-      has: page.getByText(copy.rows.origin.title, { exact: true })
-    })
-    await expect(origin).toContainText(copy.statuses.notYetStarted)
-    await expect(
-      origin.getByRole('link', { name: copy.rows.origin.title })
-    ).toHaveAttribute(
-      'href',
+
+    await expectRow(
+      page,
+      copy.rows.origin,
+      copy.statuses.notYetStarted,
       /^\/plant-products\/notifications\/[^/]+\/country-of-origin$/
     )
-    const purpose = page.getByRole('listitem').filter({
-      has: page.getByText(copy.rows.purpose.title, { exact: true })
-    })
-    await expect(purpose).toContainText(copy.rows.purpose.hint)
-    await expect(purpose).toContainText(copy.statuses.cannotStartYet)
-    await expect(
-      purpose.getByRole('link', { name: copy.rows.purpose.title })
-    ).toHaveCount(0)
+    await expectRow(page, copy.rows.purpose, copy.statuses.cannotStartYet, null)
+    await expectRow(
+      page,
+      copy.rows.commodities,
+      copy.statuses.cannotStartYet,
+      null
+    )
+    await expectRow(
+      page,
+      copy.rows['additional-details'],
+      copy.statuses.cannotStartYet,
+      null
+    )
+    await expectRow(
+      page,
+      copy.rows.transport,
+      copy.statuses.cannotStartYet,
+      null
+    )
+    await expectRow(page, copy.rows.review, copy.statuses.cannotStartYet, null)
+    await expect(page.getByText('To do', { exact: true })).toHaveCount(0)
+  })
 
-    await origin.getByRole('link', { name: copy.rows.origin.title }).click()
-    await page.getByLabel('Country of origin').selectOption('FR')
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-    await page.getByRole('link', { name: 'Back' }).click()
+  test('preserves every row status and link as a notification becomes partly complete', async ({
+    page
+  }) => {
+    const reference = await page.getByText(/^GBN-PP-/).textContent()
+    await saveCountryOfOrigin(page)
 
-    await expect(purpose).toContainText(copy.statuses.notYetStarted)
-    await expect(
-      purpose.getByRole('link', { name: copy.rows.purpose.title })
-    ).toHaveAttribute(
-      'href',
+    await expect(page.getByText(reference, { exact: true })).toBeVisible()
+    await expect(page.locator('.govuk-task-list__status')).toHaveText([
+      copy.statuses.inProgress,
+      copy.statuses.notYetStarted,
+      copy.statuses.notYetStarted,
+      copy.statuses.cannotStartYet,
+      copy.statuses.cannotStartYet,
+      copy.statuses.cannotStartYet
+    ])
+    await expectRow(
+      page,
+      copy.rows.origin,
+      copy.statuses.inProgress,
+      /^\/plant-products\/notifications\/[^/]+\/country-of-origin$/
+    )
+    await expectRow(
+      page,
+      copy.rows.purpose,
+      copy.statuses.notYetStarted,
       /^\/plant-products\/notifications\/[^/]+\/about-the-consignment$/
     )
-    const commodities = page.getByRole('listitem').filter({
-      has: page.getByText(copy.rows.commodities.title, { exact: true })
-    })
-    await expect(commodities).toContainText(copy.rows.commodities.hint)
-    await expect(commodities).toContainText(copy.statuses.notYetStarted)
-    await expect(
-      commodities.getByRole('link', { name: copy.rows.commodities.title })
-    ).toHaveAttribute(
-      'href',
+    await expectRow(
+      page,
+      copy.rows.commodities,
+      copy.statuses.notYetStarted,
       /^\/plant-products\/notifications\/[^/]+\/commodity-input-method$/
     )
-    const transport = page.getByRole('listitem').filter({
-      has: page.getByText(copy.rows.transport.title, { exact: true })
-    })
-    await expect(transport).toContainText(copy.rows.transport.hint)
-    await expect(transport).toContainText(copy.statuses.cannotStartYet)
-    await expect(
-      transport.getByRole('link', { name: copy.rows.transport.title })
-    ).toHaveCount(0)
-    const additionalDetails = page.getByRole('listitem').filter({
-      has: page.getByText(copy.rows['additional-details'].title, {
-        exact: true
-      })
-    })
-    await expect(additionalDetails).toContainText(
-      copy.rows['additional-details'].hint
+    await expectRow(
+      page,
+      copy.rows['additional-details'],
+      copy.statuses.cannotStartYet,
+      null
     )
-    await expect(additionalDetails).toContainText(copy.statuses.cannotStartYet)
-    await expect(
-      additionalDetails.getByRole('link', {
-        name: copy.rows['additional-details'].title
-      })
-    ).toHaveCount(0)
-    const review = page.getByRole('listitem').filter({
-      has: page.getByText(copy.review.title, { exact: true })
-    })
-    await expect(review).toContainText(copy.statuses.cannotStartYet)
-    await expect(
-      review.getByRole('link', { name: copy.review.title })
-    ).toHaveCount(0)
+    await expectRow(
+      page,
+      copy.rows.transport,
+      copy.statuses.cannotStartYet,
+      null
+    )
+    await expectRow(page, copy.rows.review, copy.statuses.cannotStartYet, null)
+  })
 
-    await commodities
-      .getByRole('link', { name: copy.rows.commodities.title })
+  test('marks a completed purpose green while preserving the stable notification reference', async ({
+    page
+  }) => {
+    const reference = await page.getByText(/^GBN-PP-/).textContent()
+    await saveCountryOfOrigin(page)
+    await rowFor(page, copy.rows.purpose)
+      .getByRole('link', { name: copy.rows.purpose.title, exact: true })
+      .click()
+    await page.getByRole('radio', { name: 'Internal market' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    await expect(page).toHaveURL((url) => hubUrl.test(url.pathname))
+    await expect(page.getByText(reference, { exact: true })).toBeVisible()
+    const purposeStatus = rowFor(page, copy.rows.purpose).locator(
+      '.govuk-task-list__status'
+    )
+    await expect(purposeStatus).toHaveText(copy.statuses.completed)
+    await expect(purposeStatus.locator('.govuk-tag')).toHaveClass(
+      /govuk-tag--green/
+    )
+
+    const savedHubUrl = page.url()
+    await rowFor(page, copy.rows.purpose)
+      .getByRole('link', { name: copy.rows.purpose.title, exact: true })
+      .click()
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+    await expect(page).toHaveURL(savedHubUrl)
+    await expect(page.getByText(reference, { exact: true })).toBeVisible()
+  })
+
+  test('unlocks commodity-dependent rows without changing their computed accessible names', async ({
+    page
+  }) => {
+    await saveCountryOfOrigin(page)
+    await rowFor(page, copy.rows.commodities)
+      .getByRole('link', { name: copy.rows.commodities.title, exact: true })
       .click()
     await page.getByRole('radio', { name: 'Manual entry' }).check()
     await page.getByRole('button', { name: 'Save and continue' }).click()
@@ -143,15 +196,42 @@ test.describe('plant-products hub', () => {
     await page.getByRole('button', { name: 'Search', exact: true }).click()
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
-    await expect(additionalDetails).toContainText(copy.statuses.notYetStarted)
-    await expect(
-      additionalDetails.getByRole('link', {
-        name: copy.rows['additional-details'].title
-      })
-    ).toHaveAttribute(
-      'href',
+    await expect(page.locator('.govuk-task-list__status')).toHaveText([
+      copy.statuses.inProgress,
+      copy.statuses.notYetStarted,
+      copy.statuses.inProgress,
+      copy.statuses.notYetStarted,
+      copy.statuses.notYetStarted,
+      copy.statuses.cannotStartYet
+    ])
+    await expectRow(
+      page,
+      copy.rows['additional-details'],
+      copy.statuses.notYetStarted,
       /^\/plant-products\/notifications\/[^/]+\/commodity-additional-details$/
     )
+    await expectRow(
+      page,
+      copy.rows.transport,
+      copy.statuses.notYetStarted,
+      /^\/plant-products\/notifications\/[^/]+\/transport-before-bip$/
+    )
+  })
+
+  test('uses real dashboard links without duplicating breadcrumbs', async ({
+    page
+  }) => {
+    await expect(
+      page.getByRole('link', { name: 'Back', exact: true })
+    ).toHaveAttribute('href', '/plant-products')
+    await expect(
+      page.getByRole('button', { name: copy.returnToDashboard, exact: true })
+    ).toHaveAttribute('href', '/plant-products')
+    await expect(page.locator('a[href="#"]')).toHaveCount(0)
+    await expect(page.locator('.govuk-breadcrumbs')).toHaveCount(0)
+
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+    await expect(page).toHaveURL('/plant-products')
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
@@ -162,6 +242,9 @@ test.describe('plant-products hub', () => {
       ['serious', 'critical'].includes(impact)
     )
 
-    expect(seriousOrCritical).toEqual([])
+    expect(
+      seriousOrCritical,
+      `Hub has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
+    ).toEqual([])
   })
 })

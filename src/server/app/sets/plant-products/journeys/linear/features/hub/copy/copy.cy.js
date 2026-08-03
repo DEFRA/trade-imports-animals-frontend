@@ -1,27 +1,28 @@
-// Surface copy from docs/add-a-set.md step 9.
+// MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 export const copy = {
   title: 'Trosolwg o’r hysbysiad',
+  intro:
+    'Gellir cwblhau’r adrannau hyn mewn unrhyw drefn. Gallwch gadw eich cynnydd a dychwelyd ar unrhyw adeg.',
+  returnToDashboard: 'Dychwelyd i’r dangosfwrdd',
   statuses: {
     completed: 'Wedi cwblhau',
+    optional: 'Dewisol',
     inProgress: 'Ar y gweill',
     notYetStarted: 'Heb ddechrau eto',
-    optional: 'Dewisol',
     cannotStartYet: 'Methu dechrau eto'
-  },
-  review: {
-    title: 'Adolygu a chyflwyno',
-    hint: 'Gwiriwch eich atebion cyn cyflwyno’r hysbysiad'
   },
   groups: {
     origin: '1. Tarddiad y mewnforyn',
     purpose: '2. Diben',
     commodities: '3. Nwydd',
     'additional-details': '4. Manylion ychwanegol',
-    transport: '5. Cludiant i’r BCP'
+    transport: '5. Cludiant i’r BCP',
+    review: '12. Adolygu a chyflwyno'
   },
   rows: {
     origin: {
-      title: 'Tarddiad y mewnforyn'
+      title: 'Tarddiad y mewnforyn',
+      hint: 'O ble mae’r llwyth yn dod a’ch cyfeirnod mewnol'
     },
     purpose: {
       title: 'Diben',
@@ -38,9 +39,10 @@ export const copy = {
     transport: {
       title: 'Cludiant i’r BCP',
       hint: 'Sut bydd y llwyth yn teithio i’r safle rheoli ar y ffin'
+    },
+    review: {
+      title: 'Adolygu a chyflwyno',
+      hint: 'Gwiriwch eich atebion cyn cyflwyno’r hysbysiad'
     }
-  },
-  captions: {
-    checkAndSubmit: 'Gwirio a chyflwyno'
   }
 }

@@ -1,27 +1,27 @@
-// Surface copy from docs/add-a-set.md step 9.
 export const copy = {
   title: 'Notification overview',
+  intro:
+    'These sections can be completed in any order. You can save your progress and return at any time.',
+  returnToDashboard: 'Return to dashboard',
   statuses: {
     completed: 'Completed',
+    optional: 'Optional',
     inProgress: 'In progress',
     notYetStarted: 'Not yet started',
-    optional: 'Optional',
     cannotStartYet: 'Cannot start yet'
-  },
-  review: {
-    title: 'Review and submit',
-    hint: 'Check your answers before you submit the notification'
   },
   groups: {
     origin: '1. Origin of the import',
     purpose: '2. Purpose',
     commodities: '3. Commodity',
     'additional-details': '4. Additional details',
-    transport: '5. Transport to the BCP'
+    transport: '5. Transport to the BCP',
+    review: '12. Review and submit'
   },
   rows: {
     origin: {
-      title: 'Origin of the import'
+      title: 'Origin of the import',
+      hint: 'Where the consignment comes from and your internal reference'
     },
     purpose: {
       title: 'Purpose',
@@ -38,9 +38,10 @@ export const copy = {
     transport: {
       title: 'Transport to the BCP',
       hint: 'How the consignment will travel to the border control post'
+    },
+    review: {
+      title: 'Review and submit',
+      hint: 'Check your answers before you submit the notification'
     }
-  },
-  captions: {
-    checkAndSubmit: 'Check and submit'
   }
 }
