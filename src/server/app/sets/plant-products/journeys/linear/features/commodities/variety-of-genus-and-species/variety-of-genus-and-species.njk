@@ -64,13 +64,15 @@
           errorMessage: card.otherVarietyError
         }) }}
 
-        {{ govukSelect({
-          id: card.names.varietyClass,
-          name: card.names.varietyClass,
-          label: { text: card.classAccessibleName, classes: "govuk-label--s" },
-          items: card.classItems,
-          errorMessage: card.classError
-        }) }}
+        {% if card.hasClasses %}
+          {{ govukSelect({
+            id: card.names.varietyClass,
+            name: card.names.varietyClass,
+            label: { text: card.classAccessibleName, classes: "govuk-label--s" },
+            items: card.classItems,
+            errorMessage: card.classError
+          }) }}
+        {% endif %}
 
         {{ govukButton({
           text: card.addAccessibleName,

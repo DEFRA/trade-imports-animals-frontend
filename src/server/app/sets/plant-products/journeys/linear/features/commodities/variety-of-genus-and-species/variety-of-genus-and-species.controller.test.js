@@ -21,6 +21,9 @@ import {
   enterSetContext,
   withSetContext
 } from '../../../../../../../shared/set-context.js'
+import { varietiesFor } from '../../../../../services/commodities/index.js'
+import { fromDto } from '../../../../../services/records/mapper/from-dto.js'
+import { toDto } from '../../../../../services/records/mapper/to-dto.js'
 import { records } from '../../../../../services/records/stub.js'
 import { copy as featureCopy } from '../copy/copy.en.js'
 import * as varietyPage from './variety-of-genus-and-species.controller.js'
@@ -40,6 +43,11 @@ const apple = {
   eppoCode: 'MABSD',
   genusAndSpecies: 'Malus domestica',
   speciesId: '1391442'
+}
+const lentil = {
+  eppoCode: 'LENCU',
+  genusAndSpecies: 'Lens culinaris',
+  speciesId: '1346687'
 }
 const variety = (name = 'NONE', varietyClass = 'CLASS_I') => ({
   variety: name,
@@ -87,20 +95,14 @@ describe('plant-products variety-of-genus-and-species controller', () => {
     expect(varietyPage.meta.collects).toEqual([])
   })
 
-  it('gets state once, gates species by both lists and prefills saved rows', async () => {
+  it('gets state once, gates species by varieties and prefills saved rows', async () => {
     const getState = vi.spyOn(state, 'get')
     const result = await drive(get, {
       seed: {
         commodityLines: [
           {
             commoditySelection: '08059000',
-            species: [
-              { ...citrus, varieties: [variety()] },
-              {
-                ...apple,
-                varieties: [{ variety: '03107EFA-9BCD-1089-565E-B28F73994DEC' }]
-              }
-            ]
+            species: [{ ...citrus, varieties: [variety()] }, apple]
           },
           { commoditySelection: '06011010', species: [] }
         ]
@@ -108,7 +110,7 @@ describe('plant-products variety-of-genus-and-species controller', () => {
     })
 
     expect(getState).toHaveBeenCalledOnce()
-    expect(result.view.context.cards).toHaveLength(1)
+    expect(result.view.context.cards).toHaveLength(2)
     expect(result.view.context.cards[0]).toMatchObject({
       lineIndex: 0,
       speciesIndex: 0,
@@ -126,6 +128,12 @@ describe('plant-products variety-of-genus-and-species controller', () => {
       { value: 'NONE', text: 'None', selected: false },
       { value: '__OTHER__', text: copy.otherOption, selected: false }
     ])
+    expect(result.view.context.cards[1]).toMatchObject({
+      lineIndex: 0,
+      speciesIndex: 1,
+      heading: 'MABSD - Malus domestica',
+      hasClasses: false
+    })
     expect(result.view.context.addSpeciesHref).toMatch(
       /^\/plant-products\/notifications\/[^/]+\/commodity-basic-description$/
     )
@@ -184,13 +192,13 @@ describe('plant-products variety-of-genus-and-species controller', () => {
     expect(new Set(removeNames).size).toBe(removeNames.length)
   })
 
-  it('redirects onward when no species has both variety and class data', async () => {
+  it('redirects onward when no species has variety data', async () => {
     const nextTarget = vi
       .spyOn(kit, 'nextTarget')
       .mockResolvedValue('/plant-products/notifications/next-target')
     const result = await drive(get, {
       seed: {
-        commodityLines: [{ commoditySelection: '0808108010', species: [apple] }]
+        commodityLines: [{ commoditySelection: '06042090', species: [lentil] }]
       }
     })
 
@@ -212,6 +220,55 @@ describe('plant-products variety-of-genus-and-species controller', () => {
     expect(result.response.redirect).toMatch(
       /^\/plant-products\/notifications\/[^/]+\/variety-of-genus-and-species$/
     )
+  })
+
+  it('requires a variety but not a class for a no-class species', async () => {
+    const seed = {
+      commodityLines: [{ commoditySelection: '0808108010', species: [apple] }]
+    }
+    const result = await drive(post, {
+      seed,
+      payload: { action: 'add:0:0' }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors).toEqual({
+      'varietySelect-0-0': copy.errors.atLeastOneVariety
+    })
+    expect(result.view.context.errors).not.toHaveProperty('varietyClass-0-0')
+    expect(result.after).toEqual(seed)
+  })
+
+  it('persists and round-trips a no-class variety without a class leaf', async () => {
+    const selectedVariety = varietiesFor(apple.eppoCode)[0].id
+    const result = await drive(post, {
+      seed: {
+        commodityLines: [{ commoditySelection: '0808108010', species: [apple] }]
+      },
+      payload: {
+        action: 'add:0:0',
+        'varietySelect-0-0': selectedVariety
+      }
+    })
+    const saved = result.after.commodityLines[0].species[0].varieties
+    const { nominatedContacts, ...roundTripped } = fromDto(toDto(result.after))
+    const duplicate = await drive(post, {
+      seed: result.after,
+      payload: {
+        action: 'add:0:0',
+        'varietySelect-0-0': selectedVariety
+      }
+    })
+
+    expect(saved).toEqual([{ variety: selectedVariety }])
+    expect(saved[0]).not.toHaveProperty('varietyClass')
+    expect(nominatedContacts).toEqual([])
+    expect(roundTripped).toEqual(result.after)
+    expect(duplicate.response.statusCode).toBe(400)
+    expect(duplicate.view.context.errors).toEqual({
+      'varietySelect-0-0': copy.errors.duplicatePair
+    })
+    expect(duplicate.after).toEqual(result.after)
   })
 
   it('commits cleaned Other text as variety and never persists the sentinel', async () => {

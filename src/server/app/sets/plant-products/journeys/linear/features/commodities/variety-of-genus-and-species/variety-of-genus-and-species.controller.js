@@ -15,7 +15,7 @@ import * as kit from '../../../../../../../shared/kit.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import {
   classesFor,
-  hasVarietyAndClass,
+  hasVarieties,
   varietiesFor,
   varietyLabelFor
 } from '../../../../../services/commodities/index.js'
@@ -75,7 +75,7 @@ const qualifyingSpecies = (pageState) =>
           ['commodityLines', line.index, 'species'],
           pageState.evaluation
         )
-        .filter(({ entry }) => hasVarietyAndClass(entry.eppoCode))
+        .filter(({ entry }) => hasVarieties(entry.eppoCode))
         .map((species) => ({ line, species }))
     )
 
@@ -118,6 +118,7 @@ const buildCard = (pageState, target, forms, errors) => {
   const values = forms[`${lineIndex}:${speciesIndex}`] ?? valuesFrom({}, names)
   const heading = speciesHeading(entry)
   const context = contextFor(lineIndex, speciesIndex, heading)
+  const classValues = classesFor(entry.eppoCode)
   return {
     lineIndex,
     speciesIndex,
@@ -129,6 +130,7 @@ const buildCard = (pageState, target, forms, errors) => {
     varietyAccessibleName: `${copy.varietyLabel} ${context}`,
     otherVarietyAccessibleName: `${copy.otherVarietyLabel} ${context}`,
     classAccessibleName: `${copy.classLabel} ${context}`,
+    hasClasses: classValues.length > 0,
     addAccessibleName: `${copy.addAnotherVariety} ${context}`,
     varietyItems: selectedItems(
       [
@@ -144,7 +146,7 @@ const buildCard = (pageState, target, forms, errors) => {
     classItems: selectedItems(
       [
         { value: '', text: copy.classPlaceholder },
-        ...classesFor(entry.eppoCode).map((value) => ({
+        ...classValues.map((value) => ({
           value,
           text: copy.classOptions[value]
         }))
@@ -222,7 +224,7 @@ const validSpeciesTarget = (answers, lineIndex, speciesIndex) => {
     Number.isInteger(speciesIndex) &&
     speciesIndex >= 0 &&
     speciesIndex < species.length &&
-    hasVarietyAndClass(species[speciesIndex].eppoCode)
+    hasVarieties(species[speciesIndex].eppoCode)
   )
 }
 
@@ -231,14 +233,21 @@ const badRequest = (h) => h.response().code(HTTP_STATUS_BAD_REQUEST)
 const schemaFor = (names, entry) => {
   const varietyValues = varietiesFor(entry.eppoCode).map(({ id }) => id)
   const classValues = classesFor(entry.eppoCode)
-  return compose(
-    requiredOneOf(
-      names.variety,
-      [...varietyValues, OTHER_VARIETY],
-      copy.errors.varietyRequired
-    ),
-    requiredOneOf(names.varietyClass, classValues, copy.errors.classRequired)
+  const varietyRule = requiredOneOf(
+    names.variety,
+    [...varietyValues, OTHER_VARIETY],
+    copy.errors.varietyRequired
   )
+  return classValues.length === 0
+    ? varietyRule
+    : compose(
+        varietyRule,
+        requiredOneOf(
+          names.varietyClass,
+          classValues,
+          copy.errors.classRequired
+        )
+      )
 }
 
 const validateActiveRow = (names, entry, raw, payload) => {
@@ -323,7 +332,9 @@ const validateRow = (pageState, target, payload) => {
       : value[names.variety]
   const entry = {
     variety: committedVariety,
-    varietyClass: value[names.varietyClass]
+    ...(classesFor(target.species.entry.eppoCode).length > 0
+      ? { varietyClass: value[names.varietyClass] }
+      : {})
   }
   const duplicate = rows.some(
     ({ entry: saved }) =>

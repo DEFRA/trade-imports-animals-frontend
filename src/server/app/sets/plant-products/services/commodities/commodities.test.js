@@ -10,7 +10,7 @@ import {
   commodityTree,
   descriptionFor,
   genusAndSpeciesFor,
-  hasVarietyAndClass,
+  hasVarieties,
   isCommodityCode,
   isPlantsForPlanting,
   isSpeciesOf,
@@ -147,10 +147,10 @@ describe('plant-products commodity reference data', () => {
     expect(varietyLabelFor('MABSD', varieties[0].id)).toBe('McIntosh Red')
   })
 
-  it('gates variety and class tables when both lists are available', () => {
-    expect(hasVarietyAndClass('CIDAC')).toBe(true)
-    expect(hasVarietyAndClass('MABSD')).toBe(false)
-    expect(hasVarietyAndClass('UNKNOWN')).toBe(false)
+  it('gates the variety page when varieties are available', () => {
+    expect(hasVarieties('CIDAC')).toBe(true)
+    expect(hasVarieties('MABSD')).toBe(true)
+    expect(hasVarieties('UNKNOWN')).toBe(false)
   })
 
   it('returns empty or undefined values for unknown reference keys', () => {

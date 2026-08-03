@@ -71,6 +71,23 @@ const startAtVarietyPage = async (page) => {
   await expect(page).toHaveURL(varietyUrl)
 }
 
+const startAtNoClassVarietyPage = async (page) => {
+  await startAtCommoditySearch(page)
+  await page.getByRole('tab', { name: searchCopy.tabs.speciesSearch }).click()
+  await page.getByLabel(searchCopy.speciesSearch.label).fill('Malus domestica')
+  await page
+    .locator('#genus-and-species-search')
+    .getByRole('button', { name: searchCopy.speciesSearch.button })
+    .click()
+  await page
+    .getByRole('listitem')
+    .filter({ hasText: 'Malus domestica — 0808108010' })
+    .getByRole('button', { name: searchCopy.speciesSearch.add })
+    .click()
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await expect(page).toHaveURL(varietyUrl)
+}
+
 const choosePair = async (
   page,
   { variety = 'NONE', other = '', varietyClass = 'CLASS_I' } = {}
@@ -400,7 +417,57 @@ test.describe('plant-products variety of genus and species', () => {
   })
 })
 
-test('skips the page when the selected species has no variety-and-class pair', async ({
+test('renders and submits a mandatory variety with no class control when no classes apply', async ({
+  page
+}) => {
+  await startAtNoClassVarietyPage(page)
+
+  const card = page.locator('#varieties-0-0')
+  const variety = card.getByRole('combobox', {
+    name: /^Variety for commodity line 1, species 1:/
+  })
+  await expect(variety).toBeVisible()
+  await expect(card.locator('[name="varietyClass-0-0"]')).toHaveCount(0)
+
+  await card.getByRole('button', { name: /^Add another variety / }).click()
+  await expectLinkedError(
+    page,
+    'varietySelect-0-0',
+    copy.errors.atLeastOneVariety
+  )
+  await expect(page.getByText(copy.errors.classRequired)).toHaveCount(0)
+
+  const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
+  expect(
+    seriousOrCritical,
+    `No-class variety page has serious/critical accessibility violations.\n${JSON.stringify(all, null, 2)}`
+  ).toEqual([])
+
+  const supportedVariety = variety
+    .locator('option:not([value=""]):not([value="__OTHER__"])')
+    .first()
+  await expect(supportedVariety).toBeAttached()
+  const selectedValue = await supportedVariety.getAttribute('value')
+  expect(selectedValue).not.toBeNull()
+  await variety.selectOption(selectedValue)
+  await card.getByRole('button', { name: /^Add another variety / }).click()
+
+  const saved = card.getByRole('table')
+  await expect(saved).toBeVisible()
+  await expect(saved.getByRole('row')).toHaveCount(2)
+  await page.reload()
+  await expect(card.locator('[name="varietyClass-0-0"]')).toHaveCount(0)
+  await expect(saved.getByRole('row')).toHaveCount(2)
+
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await expect(page).toHaveURL((url) =>
+    /^\/plant-products\/notifications\/[^/]+\/commodity-summary$/.test(
+      url.pathname
+    )
+  )
+})
+
+test('skips the page when the selected species has no varieties', async ({
   page
 }) => {
   await startAtCommoditySearch(page)

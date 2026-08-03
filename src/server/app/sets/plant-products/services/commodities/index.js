@@ -77,5 +77,4 @@ export const classApplicableSpecies = () => Object.keys(CLASSES_BY_EPPO)
 
 export const classLabelFor = (classCode) => CLASS_LABELS[classCode]
 
-export const hasVarietyAndClass = (eppoCode) =>
-  varietiesFor(eppoCode).length > 0 && classesFor(eppoCode).length > 0
+export const hasVarieties = (eppoCode) => varietiesFor(eppoCode).length > 0
