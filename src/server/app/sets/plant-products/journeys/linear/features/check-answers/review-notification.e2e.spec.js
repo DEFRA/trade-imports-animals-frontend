@@ -22,10 +22,180 @@ const basicCopy = commodityFeatureCopy.basicDescription
 const summaryCopy = commodityFeatureCopy.commoditySummary
 
 const commodityFixtures = {
-  '06011010': { description: 'Hyacinths', species: 'Albuca bracteata' },
-  '08059000': { description: 'Other', species: 'Citrus australasica' },
-  '06042090': { description: 'Other', species: 'Lens culinaris' }
+  '06011010': {
+    description: 'Hyacinths',
+    species: 'Albuca bracteata',
+    eppoCode: 'ABWBR'
+  },
+  '08059000': {
+    description: 'Other',
+    species: 'Citrus australasica',
+    eppoCode: 'CIDAC'
+  },
+  '06042090': {
+    description: 'Other',
+    species: 'Lens culinaris',
+    eppoCode: 'LENCU'
+  }
 }
+
+const fullJourneyValues = {
+  importType: 'Plants, plant products and other objects',
+  countryOfOrigin: { value: 'FR', text: 'France' },
+  countryOfConsignment: { value: 'DE', text: 'Germany' },
+  internalReference: 'IMPORT-038',
+  reasonForImport: 'Internal market',
+  commodities: {
+    inputMethod: commodityFeatureCopy.inputMethod.options.MANUAL.label,
+    lines: [
+      {
+        code: '06011010',
+        packages: '1',
+        packageType: { value: 'BOX', text: 'Box' },
+        quantity: '11',
+        quantityType: { value: 'PIECES', text: 'Pieces' },
+        netWeight: '2',
+        controlledAtmosphereContainer: false,
+        finishedOrPropagated: {
+          input: 'Finished product for final users',
+          text: 'Finished'
+        },
+        intendedForFinalUsers: true,
+        testAndTrial: false
+      },
+      {
+        code: '08059000',
+        packages: '3',
+        packageType: { value: 'BOX', text: 'Box' },
+        quantity: '22',
+        quantityType: { value: 'PIECES', text: 'Pieces' },
+        netWeight: '4',
+        controlledAtmosphereContainer: false,
+        finishedOrPropagated: '',
+        intendedForFinalUsers: null,
+        testAndTrial: true,
+        variety: { value: 'NONE', text: 'None' },
+        varietyClass: { value: 'CLASS_I', text: 'Class I' }
+      },
+      {
+        code: '06042090',
+        packages: '5',
+        packageType: { value: 'BOX', text: 'Box' },
+        quantity: '33',
+        quantityType: { value: 'PIECES', text: 'Pieces' },
+        netWeight: '6',
+        controlledAtmosphereContainer: false,
+        finishedOrPropagated: '',
+        intendedForFinalUsers: null,
+        testAndTrial: false
+      }
+    ]
+  },
+  additionalDetails: {
+    totalGrossWeight: '20',
+    grossVolume: '8',
+    grossVolumeUnit: { value: 'LITRES', text: 'litres' }
+  },
+  transport: {
+    borderControlPost: { value: 'CONPNT', text: 'Control Point - CONPNT' },
+    inspectionPremises: { value: 'INSPBER1', text: 'Berryplants Ltd' },
+    meansOfTransport: { value: 'ROAD_VEHICLE', text: 'Road vehicle' },
+    identification: 'TRUCK-038',
+    documentReference: 'CMR-038',
+    arrivalTime: { hour: '14', minute: '05', text: '14:05' },
+    usesContainers: true,
+    containers: [
+      { containerNumber: 'CONT-1', sealNumber: 'SEAL-1', officialSeal: false },
+      { containerNumber: 'CONT-2', sealNumber: 'SEAL-2', officialSeal: true },
+      { containerNumber: 'CONT-3', sealNumber: 'SEAL-3', officialSeal: false }
+    ]
+  },
+  goodsMovement: {
+    commonTransitConvention: 'Yes – add MRN now',
+    movementReferenceNumber: '24GB123456789AB012',
+    usingGvms: true
+  },
+  contact: {
+    name: 'Sam Reviewer',
+    email: 'sam@example.com',
+    telephone: '07700 900982'
+  },
+  nominatedContacts: [
+    {
+      name: 'Contact 1',
+      email: 'contact1@example.com',
+      telephone: '07700 900981',
+      agent: false
+    },
+    {
+      name: 'Contact 2',
+      email: 'contact2@example.com',
+      telephone: '07700 900982',
+      agent: true
+    },
+    {
+      name: 'Contact 3',
+      email: 'contact3@example.com',
+      telephone: '07700 900983',
+      agent: false
+    }
+  ],
+  documents: [
+    {
+      type: { value: 'AIR_WAYBILL', text: 'Air waybill' },
+      reference: 'DOC-1',
+      date: '01/07/2026'
+    },
+    {
+      type: {
+        value: 'PHYTOSANITARY_CERTIFICATE',
+        text: 'Phytosanitary certificate'
+      },
+      reference: 'DOC-2',
+      date: '02/07/2026'
+    },
+    {
+      type: { value: 'COMMERCIAL_INVOICE', text: 'Commercial invoice' },
+      reference: 'DOC-3',
+      date: '03/07/2026'
+    }
+  ],
+  traders: {
+    destinationSameAsConsignee: false,
+    destination: {
+      destinationName: 'Destination Depot',
+      destinationAddressLine1: '1 Destination Road',
+      destinationAddressLine2: 'Destination District',
+      destinationAddressLine3: 'Destination Region',
+      destinationCity: 'Dover',
+      destinationPostcode: 'DO1 1AA',
+      destinationCountry: { value: 'NL', text: 'Netherlands' }
+    },
+    packer: {
+      packerName: 'Packing House',
+      packerAddressLine1: '2 Packing Road',
+      packerAddressLine2: 'Packing District',
+      packerAddressLine3: 'Packing Region',
+      packerCity: 'Paris',
+      packerPostcode: '75001',
+      packerCountry: { value: 'FR', text: 'France' }
+    },
+    consignor: {
+      consignorName: 'Orchard Export SAS',
+      consignorAddressLine1: '12 Rue des Vergers',
+      consignorAddressLine2: 'Building B',
+      consignorAddressLine3: 'Export Quarter',
+      consignorCity: 'Lyon',
+      consignorPostcode: '69001',
+      consignorTelephone: '+33 4 72 00 00 00',
+      consignorCountry: { value: 'FR', text: 'France' },
+      consignorEmail: 'exports@example.com'
+    }
+  }
+}
+
+const yesNo = (value) => (value ? copy.yesNo.yes : copy.yesNo.no)
+const displayedValue = (value) => value?.text ?? value
 
 const rowByTitle = (page, title) =>
   page.getByRole('listitem').filter({
@@ -40,15 +210,17 @@ const openHubRow = (page, title) =>
 const createNotification = async (page, { internalReference }) => {
   await page.goto('/plant-products')
   await page.getByRole('button', { name: 'Create a new notification' }).click()
-  await page
-    .getByRole('radio', { name: 'Plants, plant products and other objects' })
-    .check()
+  await page.getByRole('radio', { name: fullJourneyValues.importType }).check()
   await page.getByRole('button', { name: 'Save and continue' }).click()
   const reference = await page.getByText(/^GBN-PP-/).textContent()
 
-  await page.getByLabel('Country of origin').selectOption('FR')
+  await page
+    .getByLabel('Country of origin')
+    .selectOption(fullJourneyValues.countryOfOrigin.value)
   await page.getByRole('button', { name: 'Save and continue' }).click()
-  await page.getByLabel('Country from where consigned').selectOption('DE')
+  await page
+    .getByLabel('Country from where consigned')
+    .selectOption(fullJourneyValues.countryOfConsignment.value)
   if (internalReference) {
     await page
       .getByLabel('Add a reference number for this consignment (optional)')
@@ -61,7 +233,9 @@ const createNotification = async (page, { internalReference }) => {
 
 const completePurpose = async (page) => {
   await openHubRow(page, 'Purpose')
-  await page.getByRole('radio', { name: 'Internal market' }).check()
+  await page
+    .getByRole('radio', { name: fullJourneyValues.reasonForImport })
+    .check()
   await page.getByRole('button', { name: 'Save and continue' }).click()
 }
 
@@ -80,15 +254,18 @@ const addCommodity = async (page, code) => {
     .click()
   await page.getByRole('button', { name: 'Save and continue' }).click()
 
-  if (code === '08059000') {
+  const commodity = fullJourneyValues.commodities.lines.find(
+    (line) => line.code === code
+  )
+  if (commodity.variety) {
     const context =
       'for commodity line 2, species 1: CIDAC - Citrus australasica'
     await page
       .getByLabel(`Variety ${context}`, { exact: true })
-      .selectOption('NONE')
+      .selectOption(commodity.variety.value)
     await page
       .getByLabel(`Class ${context}`, { exact: true })
-      .selectOption('CLASS_I')
+      .selectOption(commodity.varietyClass.value)
     await page
       .getByRole('button', {
         name: `Add another variety ${context}`,
@@ -109,9 +286,13 @@ const fillCommodityLine = async (page, code, values) => {
   await page
     .getByLabel(fieldName('numberOfPackages', code))
     .fill(values.packages)
-  await page.getByLabel(fieldName('packageType', code)).selectOption('BOX')
+  await page
+    .getByLabel(fieldName('packageType', code))
+    .selectOption(values.packageType.value)
   await page.getByLabel(fieldName('quantity', code)).fill(values.quantity)
-  await page.getByLabel(fieldName('quantityType', code)).selectOption('PIECES')
+  await page
+    .getByLabel(fieldName('quantityType', code))
+    .selectOption(values.quantityType.value)
   await page.getByLabel(fieldName('netWeight', code)).fill(values.netWeight)
 
   const controlledGroup = page.getByRole('group', {
@@ -119,7 +300,11 @@ const fillCommodityLine = async (page, code, values) => {
   })
   await controlledGroup
     .getByRole('radio', {
-      name: `${commodityCopy.fields.controlledAtmosphereContainer.options.no} — ${fieldName('controlledAtmosphereContainer', code)}`
+      name: `${
+        values.controlledAtmosphereContainer
+          ? commodityCopy.fields.controlledAtmosphereContainer.options.yes
+          : commodityCopy.fields.controlledAtmosphereContainer.options.no
+      } — ${fieldName('controlledAtmosphereContainer', code)}`
     })
     .check()
 
@@ -128,14 +313,20 @@ const fillCommodityLine = async (page, code, values) => {
       name: fieldName('finishedOrPropagated', code)
     })
     await useGroup
-      .getByLabel(`Finished product for final users for ${code} Hyacinths`)
+      .getByLabel(
+        `${values.finishedOrPropagated.input} for ${code} ${commodityFixtures[code].description}`
+      )
       .check()
     const intendedGroup = page.getByRole('group', {
       name: fieldName('intendedForFinalUsers', code)
     })
     await intendedGroup
       .getByRole('radio', {
-        name: `${commodityCopy.fields.intendedForFinalUsers.options.yes} — ${fieldName('intendedForFinalUsers', code)}`
+        name: `${
+          values.intendedForFinalUsers
+            ? commodityCopy.fields.intendedForFinalUsers.options.yes
+            : commodityCopy.fields.intendedForFinalUsers.options.no
+        } — ${fieldName('intendedForFinalUsers', code)}`
       })
       .check()
   }
@@ -146,12 +337,18 @@ const fillCommodityLine = async (page, code, values) => {
 }
 
 const completeCommodities = async (page, { full }) => {
-  const codes = full ? ['06011010', '08059000', '06042090'] : ['06042090']
+  const lines = full
+    ? fullJourneyValues.commodities.lines
+    : [fullJourneyValues.commodities.lines.at(-1)]
   await openHubRow(page, 'Commodity')
-  await page.getByRole('radio', { name: 'Manual entry' }).check()
+  await page
+    .getByRole('radio', {
+      name: fullJourneyValues.commodities.inputMethod
+    })
+    .check()
   await page.getByRole('button', { name: 'Save and continue' }).click()
 
-  for (const [index, code] of codes.entries()) {
+  for (const [index, { code }] of lines.entries()) {
     if (index > 0) {
       await page
         .getByRole('button', { name: summaryCopy.addAnotherCommodity })
@@ -169,28 +366,22 @@ const completeCommodities = async (page, { full }) => {
     )
   }
   await expect(page).toHaveURL(/\/commodity-bulk-details$/)
-  const values = {
-    '06011010': { packages: '1', quantity: '11', netWeight: '2' },
-    '08059000': {
-      packages: '3',
-      quantity: '22',
-      netWeight: '4',
-      testAndTrial: true
-    },
-    '06042090': { packages: '5', quantity: '33', netWeight: '6' }
-  }
-  for (const code of codes) await fillCommodityLine(page, code, values[code])
+  for (const line of lines) await fillCommodityLine(page, line.code, line)
   await page.getByRole('button', { name: 'Save and continue' }).click()
 }
 
 const completeAdditionalDetails = async (page, { full }) => {
   await openHubRow(page, 'Additional details')
-  await page.getByLabel(additionalCopy.fields.totalGrossWeight.label).fill('20')
+  await page
+    .getByLabel(additionalCopy.fields.totalGrossWeight.label)
+    .fill(fullJourneyValues.additionalDetails.totalGrossWeight)
   if (full) {
-    await page.getByLabel(additionalCopy.fields.grossVolume.label).fill('8')
+    await page
+      .getByLabel(additionalCopy.fields.grossVolume.label)
+      .fill(fullJourneyValues.additionalDetails.grossVolume)
     await page
       .getByLabel(additionalCopy.fields.grossVolumeUnit.label)
-      .selectOption('LITRES')
+      .selectOption(fullJourneyValues.additionalDetails.grossVolumeUnit.value)
   }
   await page.getByRole('button', { name: 'Save and continue' }).click()
 }
@@ -208,40 +399,56 @@ const arrivalDate = () => {
 }
 
 const completeTransport = async (page, { full }) => {
+  const usesContainers = full
+    ? fullJourneyValues.transport.usesContainers
+    : false
   await openHubRow(page, 'Transport to the BCP')
   await page
     .getByLabel(transportCopy.bcp.label)
-    .selectOption(full ? 'CONPNT' : 'GBLHR4PP')
+    .selectOption(
+      full ? fullJourneyValues.transport.borderControlPost.value : 'GBLHR4PP'
+    )
   if (full) {
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(page.getByRole('alert')).toBeVisible()
-    await page.getByLabel(transportCopy.premises.label).selectOption('INSPBER1')
+    await page
+      .getByLabel(transportCopy.premises.label)
+      .selectOption(fullJourneyValues.transport.inspectionPremises.value)
   }
-  await page.getByLabel(transportCopy.means.label).selectOption('ROAD_VEHICLE')
-  await page.getByLabel(transportCopy.identification.label).fill('TRUCK-038')
-  await page.getByLabel(transportCopy.documentReference.label).fill('CMR-038')
+  await page
+    .getByLabel(transportCopy.means.label)
+    .selectOption(fullJourneyValues.transport.meansOfTransport.value)
+  await page
+    .getByLabel(transportCopy.identification.label)
+    .fill(fullJourneyValues.transport.identification)
+  await page
+    .getByLabel(transportCopy.documentReference.label)
+    .fill(fullJourneyValues.transport.documentReference)
   const date = arrivalDate()
   await page.getByLabel(transportCopy.arrivalDate.day).fill(date.day)
   await page.getByLabel(transportCopy.arrivalDate.month).fill(date.month)
   await page.getByLabel(transportCopy.arrivalDate.year).fill(date.year)
-  await page.getByLabel(transportCopy.arrivalTime.hour).fill('14')
-  await page.getByLabel(transportCopy.arrivalTime.minute).fill('05')
+  await page
+    .getByLabel(transportCopy.arrivalTime.hour)
+    .fill(fullJourneyValues.transport.arrivalTime.hour)
+  await page
+    .getByLabel(transportCopy.arrivalTime.minute)
+    .fill(fullJourneyValues.transport.arrivalTime.minute)
   await page
     .getByRole('radio', {
-      name: full
+      name: usesContainers
         ? transportCopy.usesContainers.yes
         : transportCopy.usesContainers.no,
       exact: true
     })
     .check()
 
-  if (full) {
-    for (const [index, values] of [
-      ['CONT-1', 'SEAL-1', false],
-      ['CONT-2', 'SEAL-2', true],
-      ['CONT-3', 'SEAL-3', false]
-    ].entries()) {
-      const [containerNumber, sealNumber, officialSeal] = values
+  if (usesContainers) {
+    for (const [
+      index,
+      values
+    ] of fullJourneyValues.transport.containers.entries()) {
+      const { containerNumber, sealNumber, officialSeal } = values
       await page
         .getByLabel(transportCopy.containers.containerNumber.label)
         .fill(containerNumber)
@@ -265,6 +472,7 @@ const completeTransport = async (page, { full }) => {
 }
 
 const completeGoodsMovement = async (page, { full }) => {
+  const usingGvms = full ? fullJourneyValues.goodsMovement.usingGvms : false
   await openHubRow(page, 'Goods movement services')
   const ctcGroup = page.getByRole('group', {
     name: goodsMovementCopy.ctc.legend,
@@ -273,7 +481,7 @@ const completeGoodsMovement = async (page, { full }) => {
   await ctcGroup
     .getByRole('radio', {
       name: full
-        ? goodsMovementCopy.ctc.options.ADD_MRN_NOW
+        ? fullJourneyValues.goodsMovement.commonTransitConvention
         : goodsMovementCopy.ctc.options.NO,
       exact: true
     })
@@ -281,7 +489,7 @@ const completeGoodsMovement = async (page, { full }) => {
   if (full) {
     await page
       .getByLabel(goodsMovementCopy.mrn.label)
-      .fill('24GB123456789AB012')
+      .fill(fullJourneyValues.goodsMovement.movementReferenceNumber)
   }
   const gvmsGroup = page.getByRole('group', {
     name: goodsMovementCopy.gvms.legend,
@@ -289,7 +497,7 @@ const completeGoodsMovement = async (page, { full }) => {
   })
   await gvmsGroup
     .getByRole('radio', {
-      name: full
+      name: usingGvms
         ? goodsMovementCopy.gvms.options.yes
         : goodsMovementCopy.gvms.options.no,
       exact: true
@@ -302,14 +510,14 @@ const completeContact = async (page, { full }) => {
   await openHubRow(page, 'Contact details')
   await page
     .getByLabel(contactCopy.fields.responsiblePersonName.label)
-    .fill('Sam Reviewer')
+    .fill(fullJourneyValues.contact.name)
   await page
     .getByLabel(contactCopy.fields.responsiblePersonEmail.label)
-    .fill('sam@example.com')
+    .fill(fullJourneyValues.contact.email)
   if (full) {
     await page
       .getByLabel(contactCopy.fields.responsiblePersonTelephone.label)
-      .fill('07700 900982')
+      .fill(fullJourneyValues.contact.telephone)
   }
   await page.getByRole('button', { name: 'Save and continue' }).click()
 }
@@ -317,18 +525,15 @@ const completeContact = async (page, { full }) => {
 const completeNominatedContacts = async (page, { full }) => {
   await openHubRow(page, 'Nominated contacts')
   if (full) {
-    for (const [index, agent] of [false, true, false].entries()) {
-      const number = index + 1
-      await page
-        .getByLabel(nominatedCopy.labels.contactName)
-        .fill(`Contact ${number}`)
+    for (const contact of fullJourneyValues.nominatedContacts) {
+      await page.getByLabel(nominatedCopy.labels.contactName).fill(contact.name)
       await page
         .getByLabel(nominatedCopy.labels.contactEmail)
-        .fill(`contact${number}@example.com`)
+        .fill(contact.email)
       await page
         .getByLabel(nominatedCopy.labels.contactTelephone)
-        .fill(`07700 90098${number}`)
-      if (agent) {
+        .fill(contact.telephone)
+      if (contact.agent) {
         await page.getByLabel(nominatedCopy.labels.contactIsAgent).check()
       }
       await page
@@ -340,7 +545,9 @@ const completeNominatedContacts = async (page, { full }) => {
 }
 
 const addDocument = async (page, { type, reference, date }) => {
-  await page.getByLabel(documentsCopy.labels.documentType).selectOption(type)
+  await page
+    .getByLabel(documentsCopy.labels.documentType)
+    .selectOption(type.value)
   await page.getByLabel(documentsCopy.labels.documentReference).fill(reference)
   await page.getByLabel(documentsCopy.labels.issueDate).fill(date)
   await page
@@ -351,20 +558,8 @@ const addDocument = async (page, { type, reference, date }) => {
 const completeDocuments = async (page, { full }) => {
   await openHubRow(page, 'Accompanying documents')
   const documents = full
-    ? [
-        { type: 'AIR_WAYBILL', reference: 'DOC-1', date: '01/07/2026' },
-        {
-          type: 'PHYTOSANITARY_CERTIFICATE',
-          reference: 'DOC-2',
-          date: '02/07/2026'
-        },
-        {
-          type: 'COMMERCIAL_INVOICE',
-          reference: 'DOC-3',
-          date: '03/07/2026'
-        }
-      ]
-    : [{ type: 'AIR_WAYBILL', reference: 'DOC-1', date: '01/07/2026' }]
+    ? fullJourneyValues.documents
+    : [fullJourneyValues.documents[0]]
   for (const document of documents) await addDocument(page, document)
   await page.getByRole('button', { name: 'Save and continue' }).click()
 }
@@ -372,56 +567,44 @@ const completeDocuments = async (page, { full }) => {
 const fillById = async (page, values) => {
   for (const [field, value] of Object.entries(values)) {
     const control = page.locator(`#${field}`)
-    if (field.endsWith('Country')) await control.selectOption(value)
+    if (field.endsWith('Country')) await control.selectOption(value.value)
     else await control.fill(value)
   }
 }
 
 const completeTraders = async (page, { full }) => {
+  const destinationSameAsConsignee = full
+    ? fullJourneyValues.traders.destinationSameAsConsignee
+    : true
   await openHubRow(page, 'Traders')
   await page
     .getByRole('radio', {
-      name: full
-        ? tradersCopy.tradersAddresses.delivery.options.no
-        : tradersCopy.tradersAddresses.delivery.options.yes,
+      name: destinationSameAsConsignee
+        ? tradersCopy.tradersAddresses.delivery.options.yes
+        : tradersCopy.tradersAddresses.delivery.options.no,
       exact: true
     })
     .check()
   if (full) {
     await fillById(page, {
-      destinationName: 'Destination Depot',
-      destinationAddressLine1: '1 Destination Road',
-      destinationAddressLine2: 'Destination District',
-      destinationAddressLine3: 'Destination Region',
-      destinationCity: 'Dover',
-      destinationPostcode: 'DO1 1AA',
-      destinationCountry: 'NL',
-      packerName: 'Packing House',
-      packerAddressLine1: '2 Packing Road',
-      packerAddressLine2: 'Packing District',
-      packerAddressLine3: 'Packing Region',
-      packerCity: 'Paris',
-      packerPostcode: '75001',
-      packerCountry: 'FR'
+      ...fullJourneyValues.traders.destination,
+      ...fullJourneyValues.traders.packer
     })
   }
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
 
-  const consignor = {
-    consignorName: 'Orchard Export SAS',
-    consignorAddressLine1: '12 Rue des Vergers',
-    consignorAddressLine2: full ? 'Building B' : '',
-    consignorAddressLine3: full ? 'Export Quarter' : '',
-    consignorCity: 'Lyon',
-    consignorPostcode: full ? '69001' : '',
-    consignorTelephone: '+33 4 72 00 00 00',
-    consignorCountry: 'FR',
-    consignorEmail: 'exports@example.com'
-  }
+  const consignor = full
+    ? fullJourneyValues.traders.consignor
+    : {
+        ...fullJourneyValues.traders.consignor,
+        consignorAddressLine2: '',
+        consignorAddressLine3: '',
+        consignorPostcode: ''
+      }
   for (const [field, value] of Object.entries(consignor)) {
     const label = tradersCopy.consignorCreate.fields[field].label
     const control = page.getByLabel(label, { exact: true })
-    if (field === 'consignorCountry') await control.selectOption(value)
+    if (field === 'consignorCountry') await control.selectOption(value.value)
     else await control.fill(value)
   }
   await page
@@ -443,7 +626,7 @@ const completeTraders = async (page, { full }) => {
 
 const completeJourney = async (page, { full }) => {
   const reference = await createNotification(page, {
-    internalReference: full ? 'IMPORT-038' : ''
+    internalReference: full ? fullJourneyValues.internalReference : ''
   })
   await completePurpose(page)
   await completeCommodities(page, { full })
@@ -460,11 +643,6 @@ const completeJourney = async (page, { full }) => {
   return { reference, date }
 }
 
-const cardFor = (page, heading) =>
-  page.locator('section').filter({
-    has: page.getByRole('heading', { level: 2, name: heading, exact: true })
-  })
-
 const expectAxeClean = async (page, state) => {
   const { all, seriousOrCritical } = await axeViolations(page)
   expect(
@@ -473,19 +651,250 @@ const expectAxeClean = async (page, state) => {
   ).toEqual([])
 }
 
-const expectCardValues = async (page, heading, values) => {
-  const section = cardFor(page, heading)
-  for (const value of values) await expect(section).toContainText(value)
-  return section
-}
+const cardFor = (page, heading) =>
+  page.locator('section').filter({
+    has: page.getByRole('heading', { level: 2, name: heading, exact: true })
+  })
 
-const summaryValueByKey = (page, key) =>
-  page
+const summaryValueByKey = (page, key, scope = page) =>
+  scope
     .locator('.govuk-summary-list__row')
     .filter({
-      has: page.locator('.govuk-summary-list__key', { hasText: key })
+      has: page.locator('.govuk-summary-list__key', {
+        hasText: new RegExp(
+          `^\\s*${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`
+        )
+      })
     })
     .locator('.govuk-summary-list__value')
+
+const expectSummaryValues = async (page, cards) => {
+  for (const [heading, values] of cards) {
+    const card = cardFor(page, heading)
+    for (const [key, value] of values) {
+      await expect(
+        summaryValueByKey(page, key, card),
+        `Summary value for "${key}" in "${heading}"`
+      ).toHaveText(value)
+    }
+  }
+}
+
+const expectTableMatrix = async (page, caption, expectedRows) => {
+  const rows = page
+    .getByRole('table', { name: caption, exact: true })
+    .locator('tbody tr')
+  await expect(rows, `${caption} row count`).toHaveCount(expectedRows.length)
+  for (const [index, expectedCells] of expectedRows.entries()) {
+    await expect(
+      rows.nth(index).locator('td'),
+      `${caption} row ${index + 1}`
+    ).toHaveText(expectedCells)
+  }
+}
+
+const totalOf = (field) =>
+  String(
+    fullJourneyValues.commodities.lines.reduce(
+      (total, line) => total + Number(line[field]),
+      0
+    )
+  )
+
+const summaryExpectations = (date) => {
+  const { cards } = copy
+  const { transport, goodsMovement, contact, traders } = fullJourneyValues
+  const [firstCommodityLine] = fullJourneyValues.commodities.lines
+  const traderRows = cards.traders.rows
+  const traderFieldRows = (fields) =>
+    Object.entries(fields).map(([field, value]) => [
+      traderRows[field],
+      displayedValue(value)
+    ])
+
+  return [
+    [
+      cards.aboutConsignment.heading,
+      [
+        [cards.aboutConsignment.rows.importType, fullJourneyValues.importType],
+        [
+          cards.aboutConsignment.rows.countryOfOrigin,
+          fullJourneyValues.countryOfOrigin.text
+        ],
+        [
+          cards.aboutConsignment.rows.countryOfConsignment,
+          fullJourneyValues.countryOfConsignment.text
+        ],
+        [
+          cards.aboutConsignment.rows.internalReference,
+          fullJourneyValues.internalReference
+        ],
+        [
+          cards.aboutConsignment.rows.reasonForImport,
+          fullJourneyValues.reasonForImport
+        ]
+      ]
+    ],
+    [
+      cards.commodities.heading,
+      [
+        [
+          commodityFeatureCopy.inputMethod.heading,
+          fullJourneyValues.commodities.inputMethod
+        ],
+        [
+          `${cards.commodities.columns.intendedForFinalUsers} (commodity 1)`,
+          yesNo(firstCommodityLine.intendedForFinalUsers)
+        ]
+      ]
+    ],
+    [
+      cards.additionalDetails.heading,
+      [
+        [
+          cards.additionalDetails.rows.totalGrossWeight,
+          fullJourneyValues.additionalDetails.totalGrossWeight
+        ],
+        [
+          cards.additionalDetails.rows.grossVolume,
+          fullJourneyValues.additionalDetails.grossVolume
+        ],
+        [
+          cards.additionalDetails.rows.grossVolumeUnit,
+          fullJourneyValues.additionalDetails.grossVolumeUnit.text
+        ],
+        [cards.additionalDetails.rows.totalNetWeight, totalOf('netWeight')],
+        [cards.additionalDetails.rows.totalPackages, totalOf('packages')]
+      ]
+    ],
+    [
+      cards.transport.heading,
+      [
+        [
+          cards.transport.rows.borderControlPost,
+          transport.borderControlPost.text
+        ],
+        [
+          cards.transport.rows.inspectionPremises,
+          transport.inspectionPremises.text
+        ],
+        [
+          cards.transport.rows.meansOfTransport,
+          transport.meansOfTransport.text
+        ],
+        [
+          cards.transport.rows.transportIdentification,
+          transport.identification
+        ],
+        [
+          cards.transport.rows.transportDocumentReference,
+          transport.documentReference
+        ],
+        [
+          cards.transport.rows.arrivalDate,
+          `${date.day}/${date.month}/${date.year}`
+        ],
+        [cards.transport.rows.arrivalTime, transport.arrivalTime.text],
+        [cards.transport.rows.usesContainers, yesNo(transport.usesContainers)],
+        ...transport.containers.flatMap((container, index) => {
+          const number = index + 1
+          return [
+            [
+              cards.transport.rows.containerNumber(number),
+              container.containerNumber
+            ],
+            [cards.transport.rows.sealNumber(number), container.sealNumber],
+            [
+              cards.transport.rows.officialSeal(number),
+              yesNo(container.officialSeal)
+            ]
+          ]
+        })
+      ]
+    ],
+    [
+      cards.goodsMovement.heading,
+      [
+        [
+          cards.goodsMovement.rows.commonTransitConvention,
+          goodsMovement.commonTransitConvention
+        ],
+        [
+          cards.goodsMovement.rows.movementReferenceNumber,
+          goodsMovement.movementReferenceNumber
+        ],
+        [cards.goodsMovement.rows.usingGvms, yesNo(goodsMovement.usingGvms)]
+      ]
+    ],
+    [
+      cards.contact.heading,
+      [
+        [cards.contact.rows.name, contact.name],
+        [cards.contact.rows.email, contact.email],
+        [cards.contact.rows.telephone, contact.telephone]
+      ]
+    ],
+    [
+      cards.traders.heading,
+      [
+        [
+          traderRows.importer,
+          'Stubbed organisation, KAINOS SOFTWARE LTD, BELFAST, BT7 1NT, Northern Ireland'
+        ],
+        [traderRows.deliveryAddress, yesNo(traders.destinationSameAsConsignee)],
+        ...traderFieldRows(traders.destination),
+        ...traderFieldRows(traders.consignor),
+        ...traderFieldRows(traders.packer)
+      ]
+    ]
+  ]
+}
+
+const tableExpectations = () => {
+  const lines = fullJourneyValues.commodities.lines
+  return {
+    [copy.cards.commodities.tables.commodities]: lines.map((line, index) => [
+      `Commodity ${index + 1}`,
+      line.code,
+      commodityFixtures[line.code].description,
+      `Change commodity ${index + 1}`
+    ]),
+    [copy.cards.commodities.tables.species]: lines.map((line, index) => [
+      `Commodity ${index + 1}`,
+      'Species 1',
+      `${commodityFixtures[line.code].species}, ${commodityFixtures[line.code].eppoCode}`
+    ]),
+    [copy.cards.commodities.tables.varieties]: lines
+      .filter((line) => line.variety)
+      .map((line, index) => [
+        `Commodity ${lines.indexOf(line) + 1}`,
+        `${commodityFixtures[line.code].species}, ${commodityFixtures[line.code].eppoCode}`,
+        line.variety.text,
+        line.varietyClass.text
+      ]),
+    [copy.cards.commodities.tables.measures]: lines.map((line, index) => [
+      `Commodity ${index + 1}`,
+      line.packages,
+      line.packageType.text,
+      line.quantity,
+      line.quantityType.text,
+      line.netWeight,
+      yesNo(line.controlledAtmosphereContainer),
+      displayedValue(line.finishedOrPropagated),
+      yesNo(line.testAndTrial)
+    ]),
+    [copy.cards.nominatedContacts.heading]:
+      fullJourneyValues.nominatedContacts.map((contact) => [
+        contact.name,
+        contact.email,
+        contact.telephone,
+        yesNo(contact.agent)
+      ]),
+    [copy.cards.documents.heading]: fullJourneyValues.documents.map(
+      (document) => [document.type.text, document.reference, document.date]
+    )
+  }
+}
 
 test.describe('plant-products review notification', () => {
   test('reads back the fully populated journey, pins collection order and exposes distinct Change names', async ({
@@ -499,113 +908,10 @@ test.describe('plant-products review notification', () => {
     ).toHaveClass(/govuk-heading-xl/)
     await expect(page.getByText(reference, { exact: true })).toBeVisible()
 
-    await expectCardValues(page, 'About the consignment', [
-      'Plants, plant products and other objects',
-      'France',
-      'Germany',
-      'IMPORT-038',
-      'Internal market'
-    ])
-    await expectCardValues(page, 'Description of the goods', [
-      '06011010',
-      'Hyacinths',
-      '08059000',
-      '06042090',
-      'Albuca bracteata, ABWBR',
-      'Citrus australasica, CIDAC',
-      'Lens culinaris, LENCU',
-      'None',
-      'Class I',
-      'Intended for final users'
-    ])
-    await expectCardValues(page, 'Additional details', [
-      'Total gross weight',
-      '20',
-      'Gross volume',
-      '8',
-      'litres',
-      'Total net weight',
-      '12',
-      'Total packages',
-      '9'
-    ])
-    await expectCardValues(page, 'Transport to the Border Control Post', [
-      'Control Point - CONPNT',
-      'Berryplants Ltd',
-      'Road vehicle',
-      'TRUCK-038',
-      'CMR-038',
-      `${date.day}/${date.month}/${date.year}`,
-      '14:05',
-      'CONT-1',
-      'SEAL-1',
-      'CONT-2',
-      'SEAL-2',
-      'CONT-3',
-      'SEAL-3'
-    ])
-    await expectCardValues(page, 'Goods movement services', [
-      'Yes – add MRN now',
-      '24GB123456789AB012',
-      'Yes'
-    ])
-    await expectCardValues(page, 'Contact details', [
-      'Sam Reviewer',
-      'sam@example.com',
-      '07700 900982'
-    ])
-    await expectCardValues(page, 'Traders', [
-      'Destination Depot',
-      '1 Destination Road',
-      'Destination District',
-      'Destination Region',
-      'Dover',
-      'DO1 1AA',
-      'Netherlands',
-      'Packing House',
-      'Orchard Export SAS',
-      '12 Rue des Vergers',
-      'Building B',
-      'Export Quarter',
-      'Lyon',
-      '69001',
-      '+33 4 72 00 00 00',
-      'France',
-      'exports@example.com'
-    ])
-    await expect(
-      summaryValueByKey(page, copy.cards.traders.rows.destinationCountry)
-    ).toHaveText('Netherlands')
-    await expect(
-      summaryValueByKey(page, copy.cards.traders.rows.packerCountry)
-    ).toHaveText('France')
-
-    const commodityRows = page
-      .getByRole('table', { name: 'Commodities' })
-      .locator('tbody tr')
-    await expect(commodityRows.nth(1)).toContainText('08059000')
-    await expect(commodityRows.nth(1)).toContainText('Other')
-    const speciesRows = page
-      .getByRole('table', { name: 'Species' })
-      .locator('tbody tr')
-    await expect(speciesRows.nth(1)).toContainText('Citrus australasica, CIDAC')
-    await expect(
-      page
-        .getByRole('table', { name: 'Nominated contacts' })
-        .locator('tbody tr')
-        .nth(1)
-        .locator('td')
-    ).toHaveText(['Contact 2', 'contact2@example.com', '07700 900982', 'Yes'])
-    await expect(
-      page
-        .getByRole('table', { name: 'Accompanying documents' })
-        .locator('tbody tr')
-        .nth(1)
-        .locator('td')
-    ).toHaveText(['Phytosanitary certificate', 'DOC-2', '02/07/2026'])
-    await expect(
-      page.getByRole('term').filter({ hasText: 'Container 2 number' })
-    ).toBeVisible()
+    await expectSummaryValues(page, summaryExpectations(date))
+    for (const [caption, expectedRows] of Object.entries(tableExpectations())) {
+      await expectTableMatrix(page, caption, expectedRows)
+    }
 
     const manualInputMethodRow = page
       .locator('.govuk-summary-list__row')
