@@ -53,6 +53,14 @@ describe('plant-products hub copy', () => {
     })
   })
 
+  it('provides the numbered additional-details group and its row copy', () => {
+    expect(en.groups['additional-details']).toBe('4. Additional details')
+    expect(en.rows['additional-details']).toEqual({
+      title: 'Additional details',
+      hint: 'Total gross weight and volume of the consignment'
+    })
+  })
+
   it('provides the numbered transport group and its row copy', () => {
     expect(en.groups.transport).toBe('5. Transport to the BCP')
     expect(en.rows.transport).toEqual({

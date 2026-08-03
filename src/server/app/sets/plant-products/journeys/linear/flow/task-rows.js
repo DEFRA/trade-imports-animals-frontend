@@ -1,6 +1,7 @@
 // Scaffolded by docs/add-a-set.md step 3.
 import { statusOf } from '../../../../../bridge/status/index.js'
 import { collectsOf } from '../../../../../flow/dispatch.js'
+import { commodityAdditionalDetailsPage } from '../features/additional-details/page.js'
 import {
   commodityBasicDescriptionPage,
   commodityBulkDetailsPage,
@@ -29,6 +30,10 @@ export const taskRows = [
       commoditySummaryPage,
       commodityBulkDetailsPage
     ]
+  },
+  {
+    id: 'additional-details',
+    pages: [commodityAdditionalDetailsPage]
   },
   { id: 'transport', pages: [transportBeforeBipPage] }
 ]

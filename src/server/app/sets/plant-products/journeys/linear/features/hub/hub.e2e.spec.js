@@ -42,8 +42,26 @@ test.describe('plant-products hub', () => {
       page.getByRole('heading', { name: copy.groups.commodities })
     ).toBeVisible()
     await expect(
+      page.getByRole('heading', { name: copy.groups['additional-details'] })
+    ).toBeVisible()
+    await expect(
       page.getByRole('heading', { name: copy.groups.transport })
     ).toBeVisible()
+    expect(
+      await page
+        .locator('main')
+        .getByRole('heading', { level: 2 })
+        .evaluateAll((headings) =>
+          headings.map(({ textContent }) => textContent)
+        )
+    ).toEqual([
+      copy.groups.origin,
+      copy.groups.purpose,
+      copy.groups.commodities,
+      copy.groups['additional-details'],
+      copy.groups.transport,
+      copy.captions.checkAndSubmit
+    ])
     const origin = page.getByRole('listitem').filter({
       has: page.getByText(copy.rows.origin.title, { exact: true })
     })
@@ -94,6 +112,20 @@ test.describe('plant-products hub', () => {
     await expect(
       transport.getByRole('link', { name: copy.rows.transport.title })
     ).toHaveCount(0)
+    const additionalDetails = page.getByRole('listitem').filter({
+      has: page.getByText(copy.rows['additional-details'].title, {
+        exact: true
+      })
+    })
+    await expect(additionalDetails).toContainText(
+      copy.rows['additional-details'].hint
+    )
+    await expect(additionalDetails).toContainText(copy.statuses.cannotStartYet)
+    await expect(
+      additionalDetails.getByRole('link', {
+        name: copy.rows['additional-details'].title
+      })
+    ).toHaveCount(0)
     const review = page.getByRole('listitem').filter({
       has: page.getByText(copy.review.title, { exact: true })
     })
@@ -101,6 +133,25 @@ test.describe('plant-products hub', () => {
     await expect(
       review.getByRole('link', { name: copy.review.title })
     ).toHaveCount(0)
+
+    await commodities
+      .getByRole('link', { name: copy.rows.commodities.title })
+      .click()
+    await page.getByRole('radio', { name: 'Manual entry' }).check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByLabel('Enter commodity code').fill('06011010')
+    await page.getByRole('button', { name: 'Search', exact: true }).click()
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(additionalDetails).toContainText(copy.statuses.notYetStarted)
+    await expect(
+      additionalDetails.getByRole('link', {
+        name: copy.rows['additional-details'].title
+      })
+    ).toHaveAttribute(
+      'href',
+      /^\/plant-products\/notifications\/[^/]+\/commodity-additional-details$/
+    )
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {

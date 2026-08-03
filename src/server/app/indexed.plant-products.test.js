@@ -115,6 +115,10 @@ describe('plant-products indexed obligations are first-class', () => {
         obligation: plantProductsObligationSet[name],
         templatePath: `commodityLines.species.varieties.${name}`
       })),
+      ...['totalGrossWeight', 'grossVolume', 'grossVolumeUnit'].map((name) => ({
+        obligation: plantProductsObligationSet[name],
+        templatePath: name
+      })),
       {
         obligation: plantProductsObligationSet.borderControlPost,
         templatePath: 'borderControlPost'
@@ -172,6 +176,7 @@ describe('plant-products indexed obligations are first-class', () => {
       'origin',
       'purpose',
       'commodities',
+      'additional-details',
       'transport',
       'review'
     ])
@@ -184,6 +189,9 @@ describe('plant-products indexed obligations are first-class', () => {
       sectionIds.indexOf('commodities')
     )
     expect(sectionIds.indexOf('commodities')).toBeLessThan(
+      sectionIds.indexOf('additional-details')
+    )
+    expect(sectionIds.indexOf('additional-details')).toBeLessThan(
       sectionIds.indexOf('transport')
     )
   })
@@ -241,6 +249,7 @@ describe('plant-products indexed obligations are first-class', () => {
           ]
         }
       ],
+      totalGrossWeight: '2',
       borderControlPost: 'GBLHR4PP',
       meansOfTransport: 'ROAD_VEHICLE',
       transportIdentification: 'AB12 CDE',

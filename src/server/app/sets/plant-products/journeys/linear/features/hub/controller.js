@@ -29,6 +29,7 @@ export const GROUPS = [
   { id: 'origin', rows: ['origin'] },
   { id: 'purpose', rows: ['purpose'] },
   { id: 'commodities', rows: ['commodities'] },
+  { id: 'additional-details', rows: ['additional-details'] },
   { id: 'transport', rows: ['transport'] }
 ]
 

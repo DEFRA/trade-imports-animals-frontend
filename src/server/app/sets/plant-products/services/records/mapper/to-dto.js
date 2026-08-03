@@ -77,6 +77,17 @@ const mapCommodity = (answers) => {
   return Object.keys(commodity).length > 0 ? { commodity } : {}
 }
 
+const ADDITIONAL_DETAILS_FIELDS = [
+  'totalGrossWeight',
+  'grossVolume',
+  'grossVolumeUnit'
+]
+
+const mapAdditionalDetails = (answers) => {
+  const additionalDetails = defined(answers, ADDITIONAL_DETAILS_FIELDS)
+  return Object.keys(additionalDetails).length > 0 ? { additionalDetails } : {}
+}
+
 const TRANSPORT_FIELDS = [
   'borderControlPost',
   'inspectionPremises',
@@ -105,6 +116,7 @@ const SECTION_MAPPERS = Object.freeze([
   mapOrigin,
   mapPurpose,
   mapCommodity,
+  mapAdditionalDetails,
   mapTransport
 ])
 

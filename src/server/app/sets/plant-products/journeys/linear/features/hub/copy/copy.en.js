@@ -16,6 +16,7 @@ export const copy = {
     origin: '1. Origin of the import',
     purpose: '2. Purpose',
     commodities: '3. Commodity',
+    'additional-details': '4. Additional details',
     transport: '5. Transport to the BCP'
   },
   rows: {
@@ -29,6 +30,10 @@ export const copy = {
     commodities: {
       title: 'Commodity',
       hint: 'The commodities, species and quantities you are importing'
+    },
+    'additional-details': {
+      title: 'Additional details',
+      hint: 'Total gross weight and volume of the consignment'
     },
     transport: {
       title: 'Transport to the BCP',

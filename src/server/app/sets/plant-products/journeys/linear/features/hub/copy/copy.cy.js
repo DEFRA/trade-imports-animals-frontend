@@ -16,6 +16,7 @@ export const copy = {
     origin: '1. Tarddiad y mewnforyn',
     purpose: '2. Diben',
     commodities: '3. Nwydd',
+    'additional-details': '4. Manylion ychwanegol',
     transport: '5. Cludiant i’r BCP'
   },
   rows: {
@@ -29,6 +30,10 @@ export const copy = {
     commodities: {
       title: 'Nwydd',
       hint: 'Y nwyddau, y rhywogaethau a’r meintiau rydych yn eu mewnforio'
+    },
+    'additional-details': {
+      title: 'Manylion ychwanegol',
+      hint: 'Cyfanswm pwysau gros a chyfaint y llwyth'
     },
     transport: {
       title: 'Cludiant i’r BCP',

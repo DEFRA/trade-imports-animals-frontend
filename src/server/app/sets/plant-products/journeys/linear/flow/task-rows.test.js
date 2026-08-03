@@ -21,6 +21,7 @@ import {
 import * as obligationSet from '../../../obligations/index.js'
 import { featureEvaluationBindings } from '../features/evaluation.js'
 import { dispatchPages } from '../features/index.js'
+import { commodityAdditionalDetailsPage } from '../features/additional-details/page.js'
 import {
   commodityBasicDescriptionPage,
   commodityBulkDetailsPage,
@@ -74,6 +75,10 @@ describe('plant-products task rows', () => {
         ]
       },
       {
+        id: 'additional-details',
+        pages: [commodityAdditionalDetailsPage]
+      },
+      {
         id: 'transport',
         pages: [transportBeforeBipPage]
       }
@@ -101,6 +106,20 @@ describe('plant-products task rows', () => {
         )
       )
     ).toBe('/plant-products/notifications/journey-1/commodity-input-method')
+    expect(
+      withSetContext('plant-products', () =>
+        rowEntry(
+          taskRowById('additional-details'),
+          makeScope({
+            countryOfOrigin: 'FR',
+            commodityLines: [{ commoditySelection: '08059000' }]
+          }),
+          'journey-1'
+        )
+      )
+    ).toBe(
+      '/plant-products/notifications/journey-1/commodity-additional-details'
+    )
   })
 
   it('derives fallback row parts from the page dispatch', () => {
@@ -128,6 +147,35 @@ describe('plant-products task rows', () => {
       'usesContainers',
       'containers'
     ])
+    expect(
+      withSetContext('plant-products', () =>
+        rowParts(taskRowById('additional-details'))
+      )
+    ).toEqual(['totalGrossWeight', 'grossVolume', 'grossVolumeUnit'])
+  })
+
+  it('moves additional details from Not yet started through In progress to Completed', () => {
+    const statusFor = (answers) =>
+      withSetContext('plant-products', () => {
+        const { inScope } = makeScope(answers)
+        return rowStatus(
+          taskRowById('additional-details'),
+          answers,
+          inScope,
+          evaluateAnswers(answers)
+        )
+      })
+
+    expect(statusFor({})).toBe(NOT_STARTED)
+    expect(statusFor({ grossVolume: '5' })).toBe(IN_PROGRESS)
+    expect(statusFor({ totalGrossWeight: '12' })).toBe(FULFILLED)
+    expect(
+      statusFor({
+        totalGrossWeight: '12',
+        grossVolume: '5',
+        grossVolumeUnit: 'LITRES'
+      })
+    ).toBe(FULFILLED)
   })
 
   it('requires a reason for import to complete the purpose row', () => {
@@ -304,7 +352,8 @@ describe('plant-products task rows', () => {
             }
           ]
         }
-      ]
+      ],
+      totalGrossWeight: '2'
     }
     const completedTransport = {
       borderControlPost: 'GBLHR4PP',
@@ -331,5 +380,50 @@ describe('plant-products task rows', () => {
         ...completedTransport
       })
     ).toBe(true)
+  })
+
+  it('blocks readiness while additional details is incomplete and unblocks it when complete', () => {
+    const readyFor = (answers) =>
+      withSetContext('plant-products', () => {
+        const { inScope } = makeScope(answers)
+        return readyForCheckYourAnswers(
+          answers,
+          inScope,
+          evaluateAnswers(answers)
+        )
+      })
+    const allOtherRows = {
+      countryOfOrigin: 'FR',
+      countryOfConsignment: 'IE',
+      reasonForImport: 'INTERNAL_MARKET',
+      commodityInputMethod: 'MANUAL',
+      commodityLines: [
+        {
+          commoditySelection: '08059000',
+          numberOfPackages: 1,
+          packageType: 'BX',
+          quantity: 1,
+          quantityType: 'PCS',
+          netWeight: 1,
+          species: [
+            {
+              eppoCode: 'CIDAC',
+              genusAndSpecies: 'Citrus australasica'
+            }
+          ]
+        }
+      ],
+      borderControlPost: 'GBLHR4PP',
+      meansOfTransport: 'ROAD_VEHICLE',
+      transportIdentification: 'AB12 CDE',
+      transportDocumentReference: 'CMR-123',
+      arrivalDate: '2026-08-20',
+      arrivalTime: '14:50',
+      usesContainers: false
+    }
+
+    expect(readyFor(allOtherRows)).toBe(false)
+    expect(readyFor({ ...allOtherRows, grossVolume: '5' })).toBe(false)
+    expect(readyFor({ ...allOtherRows, totalGrossWeight: '2' })).toBe(true)
   })
 })

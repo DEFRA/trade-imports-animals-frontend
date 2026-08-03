@@ -1,3 +1,8 @@
+import {
+  grossVolume,
+  grossVolumeUnit,
+  totalGrossWeight
+} from './sections/additional-details.js'
 import { commodityInputMethod } from './sections/commodities/input-method.js'
 import {
   commodityLines,
@@ -45,6 +50,9 @@ import {
 } from './sections/transport.js'
 
 export {
+  totalGrossWeight,
+  grossVolume,
+  grossVolumeUnit,
   commodityInputMethod,
   commodityLines,
   commoditySelection,
@@ -106,6 +114,9 @@ export const obligations = [
   varieties,
   variety,
   varietyClass,
+  totalGrossWeight,
+  grossVolume,
+  grossVolumeUnit,
   borderControlPost,
   inspectionPremises,
   meansOfTransport,

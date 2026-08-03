@@ -255,6 +255,37 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     })
   })
 
+  it('round-trips all three additional-details fields without derived totals', () => {
+    const answers = {
+      totalGrossWeight: '12.5',
+      grossVolume: '5',
+      grossVolumeUnit: 'LITRES'
+    }
+
+    const dto = toDto(answers)
+
+    expect(dto).toEqual({ additionalDetails: answers })
+    expect(fromDto(dto)).toEqual(answers)
+    expect(JSON.stringify(dto)).not.toMatch(/netWeightTotal|packagesTotal/)
+  })
+
+  it('round-trips weight alone without fabricating optional volume fields', () => {
+    const answers = { totalGrossWeight: '12.5' }
+
+    const dto = toDto(answers)
+
+    expect(dto).toEqual({ additionalDetails: answers })
+    expect(dto.additionalDetails).not.toHaveProperty('grossVolume')
+    expect(dto.additionalDetails).not.toHaveProperty('grossVolumeUnit')
+    expect(fromDto(dto)).toEqual(answers)
+  })
+
+  it('does not fabricate an additional-details section when nothing is answered', () => {
+    expect(toDto({})).not.toHaveProperty('additionalDetails')
+    expect(fromDto({})).not.toHaveProperty('totalGrossWeight')
+    expect(fromDto({ additionalDetails: {} })).toEqual({})
+  })
+
   it('round-trips every transport field and its container rows', () => {
     const answers = {
       borderControlPost: 'CONPNT',

@@ -62,6 +62,17 @@ const mapCommodity = (dto) => ({
     : {})
 })
 
+const ADDITIONAL_DETAILS_FIELDS = [
+  'totalGrossWeight',
+  'grossVolume',
+  'grossVolumeUnit'
+]
+
+const mapAdditionalDetails = (dto) =>
+  dto.additionalDetails && typeof dto.additionalDetails === 'object'
+    ? defined(dto.additionalDetails, ADDITIONAL_DETAILS_FIELDS)
+    : {}
+
 const TRANSPORT_FIELDS = [
   'borderControlPost',
   'inspectionPremises',
@@ -90,6 +101,7 @@ const SECTION_MAPPERS = Object.freeze([
   mapOrigin,
   mapPurpose,
   mapCommodity,
+  mapAdditionalDetails,
   mapTransport
 ])
 

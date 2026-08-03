@@ -1,0 +1,64 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  <span class="govuk-caption-xl">{{ copy.caption }}</span>
+  <h1 class="govuk-heading-xl">{{ copy.heading }}</h1>
+
+  <h2 class="govuk-heading-m">{{ copy.totals.heading }}</h2>
+  {{ govukSummaryList({
+    rows: [
+      {
+        key: { text: copy.totals.netWeightLabel },
+        value: { text: netWeightTotal }
+      },
+      {
+        key: { text: copy.totals.packagesLabel },
+        value: { text: packagesTotal }
+      }
+    ]
+  }) }}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukInput({
+      id: "totalGrossWeight",
+      name: "totalGrossWeight",
+      label: { text: copy.fields.totalGrossWeight.label, classes: "govuk-label--s" },
+      classes: "govuk-!-width-one-half",
+      inputmode: "numeric",
+      value: values.totalGrossWeight,
+      errorMessage: errors.totalGrossWeight and { text: errors.totalGrossWeight }
+    }) }}
+
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-two-thirds">
+        {{ govukInput({
+          id: "grossVolume",
+          name: "grossVolume",
+          label: { text: copy.fields.grossVolume.label, classes: "govuk-label--s" },
+          inputmode: "numeric",
+          value: values.grossVolume,
+          errorMessage: errors.grossVolume and { text: errors.grossVolume }
+        }) }}
+      </div>
+      <div class="govuk-grid-column-one-third">
+        {{ govukSelect({
+          id: "grossVolumeUnit",
+          name: "grossVolumeUnit",
+          label: { text: copy.fields.grossVolumeUnit.label, classes: "govuk-label--s" },
+          errorMessage: errors.grossVolumeUnit and { text: errors.grossVolumeUnit },
+          items: grossVolumeUnitItems
+        }) }}
+      </div>
+    </div>
+
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+  </form>
+{% endblock %}

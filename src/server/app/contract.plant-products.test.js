@@ -23,6 +23,7 @@ import {
 } from './sets/plant-products/journeys/linear/config.js'
 import { featureEvaluationBindings } from './sets/plant-products/journeys/linear/features/evaluation.js'
 import { dispatchPages } from './sets/plant-products/journeys/linear/features/index.js'
+import * as additionalDetails from './sets/plant-products/journeys/linear/features/additional-details/controller.js'
 import * as commodityInputMethod from './sets/plant-products/journeys/linear/features/commodities/commodity-input-method/commodity-input-method.controller.js'
 import * as basicDescription from './sets/plant-products/journeys/linear/features/commodities/basic-description/basic-description.controller.js'
 import * as commoditySearch from './sets/plant-products/journeys/linear/features/commodities/search/search.controller.js'
@@ -119,6 +120,17 @@ const cases = [
     controller: commoditySearch,
     payload: { action: 'search-code', commoditySearchCode: '06011010' },
     seed: { commodityInputMethod: 'MANUAL' }
+  },
+  {
+    id: additionalDetails.meta.id,
+    collects: additionalDetails.meta.collects,
+    controller: additionalDetails,
+    payload: {
+      totalGrossWeight: '12',
+      grossVolume: '5',
+      grossVolumeUnit: 'LITRES'
+    },
+    seed: { commodityLines: [{ netWeight: '1' }] }
   },
   {
     id: transport.meta.id,

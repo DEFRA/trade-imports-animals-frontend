@@ -1,4 +1,5 @@
 // Scaffolded by docs/add-a-set.md step 3.
+import { commodityAdditionalDetailsPage } from '../features/additional-details/page.js'
 import { dashboardPage } from '../features/dashboard/page.js'
 import {
   commodityBasicDescriptionPage,
@@ -41,6 +42,10 @@ export const sections = [
       commoditySummaryPage,
       commodityBulkDetailsPage
     ]
+  },
+  {
+    id: 'additional-details',
+    pages: [commodityAdditionalDetailsPage]
   },
   {
     id: 'transport',
