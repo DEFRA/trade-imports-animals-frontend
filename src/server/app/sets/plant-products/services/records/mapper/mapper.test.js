@@ -389,6 +389,58 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     )
   })
 
+  it('round-trips all three responsible-person contact fields', () => {
+    const answers = {
+      responsiblePersonName: 'Isabel Irwin',
+      responsiblePersonEmail: 'isabel@example.com',
+      responsiblePersonTelephone: '+44 7700 900 982'
+    }
+
+    expect(toDto(answers)).toEqual({
+      responsiblePerson: {
+        name: 'Isabel Irwin',
+        email: 'isabel@example.com',
+        telephone: '+44 7700 900 982'
+      }
+    })
+    expect(fromDto(toDto(answers))).toEqual(answers)
+  })
+
+  it('round-trips name and email without null-stuffing telephone or emitting isAgent', () => {
+    const answers = {
+      responsiblePersonName: 'Isabel Irwin',
+      responsiblePersonEmail: 'isabel@example.com'
+    }
+
+    const dto = toDto(answers)
+
+    expect(dto).toEqual({
+      responsiblePerson: {
+        name: 'Isabel Irwin',
+        email: 'isabel@example.com'
+      }
+    })
+    expect(dto.responsiblePerson).not.toHaveProperty('telephone')
+    expect(dto.responsiblePerson).not.toHaveProperty('isAgent')
+    expect(fromDto(dto)).toEqual(answers)
+  })
+
+  it('omits an unanswered responsible person and drops absent or null DTO fields', () => {
+    expect(toDto({})).not.toHaveProperty('responsiblePerson')
+    expect(fromDto({})).not.toHaveProperty('responsiblePersonName')
+    expect(fromDto({ responsiblePerson: {} })).toEqual({})
+    expect(
+      fromDto({
+        responsiblePerson: {
+          name: 'Isabel Irwin',
+          email: null,
+          telephone: null,
+          isAgent: true
+        }
+      })
+    ).toEqual({ responsiblePersonName: 'Isabel Irwin' })
+  })
+
   it('maps one document to the exact metadata-only sub-resource DTO', () => {
     const dto = documentToDto({
       id: 'answer-side-id',

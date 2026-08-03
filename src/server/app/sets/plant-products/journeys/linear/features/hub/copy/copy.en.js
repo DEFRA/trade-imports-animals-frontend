@@ -17,6 +17,7 @@ export const copy = {
     'additional-details': '4. Additional details',
     transport: '5. Transport to the BCP',
     'goods-movement': '6. Goods movement services',
+    contact: '7. Contact details',
     documents: '9. Accompanying documents',
     review: '12. Review and submit'
   },
@@ -44,6 +45,10 @@ export const copy = {
     goodsMovement: {
       title: 'Goods movement services',
       hint: 'Common Transit Convention, Movement Reference Number and GVMS'
+    },
+    contact: {
+      title: 'Contact details',
+      hint: 'Details we can use if your consignment is chosen for inspection'
     },
     documents: {
       title: 'Accompanying documents',

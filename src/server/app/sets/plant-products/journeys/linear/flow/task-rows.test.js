@@ -23,6 +23,7 @@ import { featureEvaluationBindings } from '../features/evaluation.js'
 import { dispatchPages } from '../features/index.js'
 import { commodityAdditionalDetailsPage } from '../features/additional-details/page.js'
 import { accompanyingDocumentsPage } from '../features/documents/page.js'
+import { contactDetailsPage } from '../features/contact/page.js'
 import { goodsMovementServicesPage } from '../features/goods-movement/page.js'
 import {
   commodityBasicDescriptionPage,
@@ -89,6 +90,10 @@ describe('plant-products task rows', () => {
         pages: [goodsMovementServicesPage]
       },
       {
+        id: 'contact',
+        pages: [contactDetailsPage]
+      },
+      {
         id: 'documents',
         pages: [accompanyingDocumentsPage]
       }
@@ -130,6 +135,18 @@ describe('plant-products task rows', () => {
     ).toBe(
       '/plant-products/notifications/journey-1/commodity-additional-details'
     )
+    expect(
+      withSetContext('plant-products', () =>
+        rowEntry(
+          taskRowById('contact'),
+          makeScope({
+            countryOfOrigin: 'FR',
+            commodityLines: [{ commoditySelection: '08059000' }]
+          }),
+          'journey-1'
+        )
+      )
+    ).toBe('/plant-products/notifications/journey-1/contact-details')
     expect(
       withSetContext('plant-products', () =>
         rowEntry(
@@ -186,6 +203,40 @@ describe('plant-products task rows', () => {
       'movementReferenceNumber',
       'usingGvms'
     ])
+    expect(
+      withSetContext('plant-products', () => rowParts(taskRowById('contact')))
+    ).toEqual([
+      'responsiblePersonName',
+      'responsiblePersonEmail',
+      'responsiblePersonTelephone'
+    ])
+  })
+
+  it('moves contact from Not yet started to Completed with either contact method', () => {
+    const statusFor = (answers) =>
+      withSetContext('plant-products', () => {
+        const { inScope } = makeScope(answers)
+        return rowStatus(
+          taskRowById('contact'),
+          answers,
+          inScope,
+          evaluateAnswers(answers)
+        )
+      })
+
+    expect(statusFor({})).toBe(NOT_STARTED)
+    expect(
+      statusFor({
+        responsiblePersonName: 'Isabel Irwin',
+        responsiblePersonEmail: 'isabel@example.com'
+      })
+    ).toBe(FULFILLED)
+    expect(
+      statusFor({
+        responsiblePersonName: 'Isabel Irwin',
+        responsiblePersonTelephone: '+44 7700 900 982'
+      })
+    ).toBe(FULFILLED)
   })
 
   it('keeps documents incomplete until one complete entry satisfies the collection floor', () => {
@@ -264,7 +315,9 @@ describe('plant-products task rows', () => {
       arrivalTime: '14:50',
       usesContainers: false,
       commonTransitConvention: 'NO',
-      usingGvms: false
+      usingGvms: false,
+      responsiblePersonName: 'Isabel Irwin',
+      responsiblePersonEmail: 'isabel@example.com'
     }
 
     expect(readyFor(allEarlierRows)).toBe(false)
@@ -278,6 +331,66 @@ describe('plant-products task rows', () => {
             issueDate: { day: '4', month: '12', year: '2025' }
           }
         ]
+      })
+    ).toBe(true)
+  })
+
+  it('blocks readiness while contact is incomplete and unblocks it after a valid contact save', () => {
+    const readyFor = (answers) =>
+      withSetContext('plant-products', () => {
+        const { inScope } = makeScope(answers)
+        return readyForCheckYourAnswers(
+          answers,
+          inScope,
+          evaluateAnswers(answers)
+        )
+      })
+    const allOtherRows = {
+      countryOfOrigin: 'FR',
+      countryOfConsignment: 'IE',
+      reasonForImport: 'INTERNAL_MARKET',
+      commodityInputMethod: 'MANUAL',
+      commodityLines: [
+        {
+          commoditySelection: '08059000',
+          numberOfPackages: 1,
+          packageType: 'BX',
+          quantity: 1,
+          quantityType: 'PCS',
+          netWeight: 1,
+          species: [
+            {
+              eppoCode: 'CIDAC',
+              genusAndSpecies: 'Citrus australasica'
+            }
+          ]
+        }
+      ],
+      totalGrossWeight: '2',
+      borderControlPost: 'GBLHR4PP',
+      meansOfTransport: 'ROAD_VEHICLE',
+      transportIdentification: 'AB12 CDE',
+      transportDocumentReference: 'CMR-123',
+      arrivalDate: '2026-08-20',
+      arrivalTime: '14:50',
+      usesContainers: false,
+      commonTransitConvention: 'NO',
+      usingGvms: false,
+      accompanyingDocuments: [
+        {
+          documentType: 'PHYTOSANITARY_CERTIFICATE',
+          documentReference: 'PHYTO-001',
+          issueDate: { day: '4', month: '12', year: '2025' }
+        }
+      ]
+    }
+
+    expect(readyFor(allOtherRows)).toBe(false)
+    expect(
+      readyFor({
+        ...allOtherRows,
+        responsiblePersonName: 'Isabel Irwin',
+        responsiblePersonTelephone: '+44 7700 900 982'
       })
     ).toBe(true)
   })
@@ -528,7 +641,9 @@ describe('plant-products task rows', () => {
         }
       ],
       commonTransitConvention: 'NO',
-      usingGvms: false
+      usingGvms: false,
+      responsiblePersonName: 'Isabel Irwin',
+      responsiblePersonEmail: 'isabel@example.com'
     }
     const completedTransport = {
       borderControlPost: 'GBLHR4PP',
@@ -603,7 +718,9 @@ describe('plant-products task rows', () => {
         }
       ],
       commonTransitConvention: 'NO',
-      usingGvms: false
+      usingGvms: false,
+      responsiblePersonName: 'Isabel Irwin',
+      responsiblePersonEmail: 'isabel@example.com'
     }
 
     const {

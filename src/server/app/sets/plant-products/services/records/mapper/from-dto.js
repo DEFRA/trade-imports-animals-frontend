@@ -110,6 +110,18 @@ const mapGoodsMovementServices = (dto) => {
   }
 }
 
+const mapResponsiblePerson = (dto) => {
+  const source = dto.responsiblePerson
+  if (!source || typeof source !== 'object') return {}
+  return {
+    ...(source.name != null ? { responsiblePersonName: source.name } : {}),
+    ...(source.email != null ? { responsiblePersonEmail: source.email } : {}),
+    ...(source.telephone != null
+      ? { responsiblePersonTelephone: source.telephone }
+      : {})
+  }
+}
+
 const dateFromIso = (value) => {
   const [year = '', month = '', day = ''] = String(value ?? '').split('-')
   return {
@@ -140,6 +152,7 @@ const SECTION_MAPPERS = Object.freeze([
   mapAdditionalDetails,
   mapTransport,
   mapGoodsMovementServices,
+  mapResponsiblePerson,
   mapDocuments
 ])
 

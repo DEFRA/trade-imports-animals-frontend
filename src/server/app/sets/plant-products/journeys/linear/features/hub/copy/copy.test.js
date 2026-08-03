@@ -36,6 +36,7 @@ describe('plant-products hub copy', () => {
       ['additional-details', '4. Additional details'],
       ['transport', '5. Transport to the BCP'],
       ['goods-movement', '6. Goods movement services'],
+      ['contact', '7. Contact details'],
       ['documents', '9. Accompanying documents'],
       ['review', '12. Review and submit']
     ])
@@ -49,6 +50,7 @@ describe('plant-products hub copy', () => {
       'additional-details',
       'transport',
       'goodsMovement',
+      'contact',
       'documents',
       'review'
     ])
@@ -113,6 +115,14 @@ describe('plant-products hub copy', () => {
     expect(en.rows.goodsMovement).toEqual({
       title: 'Goods movement services',
       hint: 'Common Transit Convention, Movement Reference Number and GVMS'
+    })
+  })
+
+  it('provides the numbered contact group and its row copy', () => {
+    expect(en.groups.contact).toBe('7. Contact details')
+    expect(en.rows.contact).toEqual({
+      title: 'Contact details',
+      hint: 'Details we can use if your consignment is chosen for inspection'
     })
   })
 

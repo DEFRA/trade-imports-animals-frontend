@@ -26,6 +26,7 @@ import { dispatchPages } from './sets/plant-products/journeys/linear/features/in
 import * as additionalDetails from './sets/plant-products/journeys/linear/features/additional-details/controller.js'
 import * as documents from './sets/plant-products/journeys/linear/features/documents/controller.js'
 import * as commodityInputMethod from './sets/plant-products/journeys/linear/features/commodities/commodity-input-method/commodity-input-method.controller.js'
+import * as contact from './sets/plant-products/journeys/linear/features/contact/controller.js'
 import * as basicDescription from './sets/plant-products/journeys/linear/features/commodities/basic-description/basic-description.controller.js'
 import * as commoditySearch from './sets/plant-products/journeys/linear/features/commodities/search/search.controller.js'
 import * as varietyOfGenusAndSpecies from './sets/plant-products/journeys/linear/features/commodities/variety-of-genus-and-species/variety-of-genus-and-species.controller.js'
@@ -171,6 +172,16 @@ const cases = [
       commonTransitConvention: 'ADD_MRN_NOW',
       movementReferenceNumber: '24GB123456789AB012',
       usingGvms: 'no'
+    }
+  },
+  {
+    id: contact.meta.id,
+    collects: contact.meta.collects,
+    controller: contact,
+    payload: {
+      responsiblePersonName: 'Isabel Irwin',
+      responsiblePersonEmail: 'isabel@example.com',
+      responsiblePersonTelephone: '0123456789'
     }
   },
   {

@@ -1,0 +1,56 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/fieldset/macro.njk" import govukFieldset %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {% call govukFieldset({
+      legend: {
+        text: copy.legend,
+        isPageHeading: true,
+        classes: "govuk-fieldset__legend--l"
+      }
+    }) %}
+      <p class="govuk-body">{{ copy.intro1 }}</p>
+      <p class="govuk-body">{{ copy.intro2 }}</p>
+
+      {{ govukInput({
+        id: "responsiblePersonName",
+        name: "responsiblePersonName",
+        label: { text: copy.fields.responsiblePersonName.label },
+        autocomplete: "name",
+        classes: "govuk-!-width-two-thirds",
+        value: values.responsiblePersonName,
+        errorMessage: errors.responsiblePersonName and { text: errors.responsiblePersonName }
+      }) }}
+
+      {{ govukInput({
+        id: "responsiblePersonEmail",
+        name: "responsiblePersonEmail",
+        label: { text: copy.fields.responsiblePersonEmail.label },
+        type: "email",
+        autocomplete: "email",
+        spellcheck: false,
+        value: values.responsiblePersonEmail,
+        errorMessage: errors.responsiblePersonEmail and { text: errors.responsiblePersonEmail }
+      }) }}
+
+      {{ govukInput({
+        id: "responsiblePersonTelephone",
+        name: "responsiblePersonTelephone",
+        label: { text: copy.fields.responsiblePersonTelephone.label },
+        type: "tel",
+        autocomplete: "tel",
+        value: values.responsiblePersonTelephone,
+        errorMessage: errors.responsiblePersonTelephone and { text: errors.responsiblePersonTelephone }
+      }) }}
+    {% endcall %}
+
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+  </form>
+{% endblock %}

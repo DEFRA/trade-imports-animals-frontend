@@ -115,6 +115,14 @@ describe('plant-products indexed obligations are first-class', () => {
         obligation: plantProductsObligationSet[name],
         templatePath: `commodityLines.species.varieties.${name}`
       })),
+      ...[
+        'responsiblePersonName',
+        'responsiblePersonEmail',
+        'responsiblePersonTelephone'
+      ].map((name) => ({
+        obligation: plantProductsObligationSet[name],
+        templatePath: name
+      })),
       ...['totalGrossWeight', 'grossVolume', 'grossVolumeUnit'].map((name) => ({
         obligation: plantProductsObligationSet[name],
         templatePath: name
@@ -199,6 +207,7 @@ describe('plant-products indexed obligations are first-class', () => {
       'additional-details',
       'transport',
       'goods-movement',
+      'contact',
       'documents',
       'review'
     ])
@@ -220,6 +229,9 @@ describe('plant-products indexed obligations are first-class', () => {
       sectionIds.indexOf('goods-movement')
     )
     expect(sectionIds.indexOf('goods-movement')).toBeLessThan(
+      sectionIds.indexOf('contact')
+    )
+    expect(sectionIds.indexOf('contact')).toBeLessThan(
       sectionIds.indexOf('documents')
     )
   })
@@ -297,6 +309,8 @@ describe('plant-products indexed obligations are first-class', () => {
       ...transportCompleted,
       commonTransitConvention: 'NO',
       usingGvms: false,
+      responsiblePersonName: 'Isabel Irwin',
+      responsiblePersonEmail: 'isabel@example.com',
       accompanyingDocuments: [
         {
           documentType: 'PHYTOSANITARY_CERTIFICATE',

@@ -18,6 +18,7 @@ export const copy = {
     'additional-details': '4. Manylion ychwanegol',
     transport: '5. Cludiant i’r BCP',
     'goods-movement': '6. Gwasanaethau symud nwyddau',
+    contact: '7. Manylion cyswllt',
     documents: '9. Dogfennau cysylltiedig',
     review: '12. Adolygu a chyflwyno'
   },
@@ -45,6 +46,10 @@ export const copy = {
     goodsMovement: {
       title: 'Gwasanaethau symud nwyddau',
       hint: 'Y Confensiwn Cludo Cyffredin, Cyfeirnod Symud a GVMS'
+    },
+    contact: {
+      title: 'Manylion cyswllt',
+      hint: 'Manylion y gallwn eu defnyddio os caiff eich llwyth ei ddewis i’w archwilio'
     },
     documents: {
       title: 'Dogfennau cysylltiedig',

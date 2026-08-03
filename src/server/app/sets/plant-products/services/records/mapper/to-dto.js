@@ -126,13 +126,29 @@ const mapGoodsMovementServices = (answers) => {
     : {}
 }
 
+const mapResponsiblePerson = (answers) => {
+  const responsiblePerson = {
+    ...(answers.responsiblePersonName !== undefined
+      ? { name: answers.responsiblePersonName }
+      : {}),
+    ...(answers.responsiblePersonEmail !== undefined
+      ? { email: answers.responsiblePersonEmail }
+      : {}),
+    ...(answers.responsiblePersonTelephone !== undefined
+      ? { telephone: answers.responsiblePersonTelephone }
+      : {})
+  }
+  return Object.keys(responsiblePerson).length > 0 ? { responsiblePerson } : {}
+}
+
 const SECTION_MAPPERS = Object.freeze([
   mapOrigin,
   mapPurpose,
   mapCommodity,
   mapAdditionalDetails,
   mapTransport,
-  mapGoodsMovementServices
+  mapGoodsMovementServices,
+  mapResponsiblePerson
 ])
 
 const composeSections = (answers) =>
