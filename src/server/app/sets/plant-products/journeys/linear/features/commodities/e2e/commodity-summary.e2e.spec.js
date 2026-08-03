@@ -369,12 +369,18 @@ test.describe('plant-products commodity summary', () => {
     await expect(summaryTable(page, 1)).toContainText('Citrus australasica')
   })
 
-  test('save and continue leaves data unchanged and preserves the hub row states', async ({
+  test('save and continue advances to bulk details and preserves the hub row states', async ({
     page
   }) => {
     await startAtSummary(page, [lens])
     await page.getByRole('button', { name: copy.continue }).click()
 
+    await expect(page).toHaveURL((url) =>
+      /^\/plant-products\/notifications\/[^/]+\/commodity-bulk-details$/.test(
+        url.pathname
+      )
+    )
+    await page.getByRole('link', { name: 'Cancel and return to hub' }).click()
     await expect(page).toHaveURL(hubUrl)
     await expect(rowByTitle(page, 'Purpose')).toContainText('Not yet started')
     await expect(rowByTitle(page, 'Commodity')).toContainText('In progress')

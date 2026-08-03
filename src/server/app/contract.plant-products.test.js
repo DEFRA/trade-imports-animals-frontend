@@ -28,6 +28,7 @@ import * as basicDescription from './sets/plant-products/journeys/linear/feature
 import * as commoditySearch from './sets/plant-products/journeys/linear/features/commodities/search/search.controller.js'
 import * as varietyOfGenusAndSpecies from './sets/plant-products/journeys/linear/features/commodities/variety-of-genus-and-species/variety-of-genus-and-species.controller.js'
 import * as commoditySummary from './sets/plant-products/journeys/linear/features/commodities/commodity-summary/commodity-summary.controller.js'
+import * as commodityBulkDetails from './sets/plant-products/journeys/linear/features/commodities/commodity-bulk-details/commodity-bulk-details.controller.js'
 import * as importType from './sets/plant-products/journeys/linear/features/import-type/controller.js'
 import * as countryOfOrigin from './sets/plant-products/journeys/linear/features/origin/country-of-origin/country-of-origin.controller.js'
 import * as originOfImport from './sets/plant-products/journeys/linear/features/origin/origin-of-import/origin-of-import.controller.js'
@@ -274,5 +275,60 @@ describe('plant-products controller <-> model commit contract', () => {
     })
 
     expect(committedIds(result)).toEqual([])
+  })
+
+  it('Should edit all nine measure leaves in place without claiming a second collects owner', async () => {
+    expect(commodityBulkDetails.meta.collects).toEqual([])
+    const result = await drive(postHandlerOf(commodityBulkDetails), {
+      seed: {
+        commodityInputMethod: 'MANUAL',
+        commodityLines: [
+          {
+            commoditySelection: '06011010',
+            species: [
+              {
+                eppoCode: 'ABWBR',
+                genusAndSpecies: 'Albuca bracteata',
+                speciesId: '1325967'
+              }
+            ]
+          }
+        ]
+      },
+      payload: {
+        'numberOfPackages-0': '12',
+        'packageType-0': 'BOX',
+        'quantity-0': '20.5',
+        'quantityType-0': 'PIECES',
+        'netWeight-0': '17.125',
+        'controlledAtmosphereContainer-0': 'true',
+        'finishedOrPropagated-0': 'PROPAGATED',
+        'intendedForFinalUsers-0': 'false',
+        'testAndTrial-0': 'true'
+      }
+    })
+
+    expect(committedIds(result)).toEqual([])
+    expect(result.after.commodityLines).toEqual([
+      {
+        commoditySelection: '06011010',
+        species: [
+          {
+            eppoCode: 'ABWBR',
+            genusAndSpecies: 'Albuca bracteata',
+            speciesId: '1325967'
+          }
+        ],
+        numberOfPackages: 12,
+        packageType: 'BOX',
+        quantity: 20.5,
+        quantityType: 'PIECES',
+        netWeight: 17.125,
+        controlledAtmosphereContainer: true,
+        testAndTrial: true,
+        intendedForFinalUsers: false,
+        finishedOrPropagated: 'PROPAGATED'
+      }
+    ])
   })
 })

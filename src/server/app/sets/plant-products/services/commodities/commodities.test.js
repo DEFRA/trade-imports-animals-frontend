@@ -11,6 +11,7 @@ import {
   genusAndSpeciesFor,
   hasVarietyAndClass,
   isCommodityCode,
+  isPlantsForPlanting,
   isSpeciesOf,
   searchSpecies,
   speciesFor,
@@ -62,6 +63,12 @@ describe('plant-products commodity reference data', () => {
       '0603197090',
       '06042090'
     ])
+  })
+
+  it('identifies only fixture commodities that are plants for planting', () => {
+    expect(isPlantsForPlanting('06011010')).toBe(true)
+    expect(isPlantsForPlanting('06042090')).toBe(false)
+    expect(isPlantsForPlanting('FORGED')).toBe(false)
   })
 
   it('returns plant and machinery species by commodity code', () => {

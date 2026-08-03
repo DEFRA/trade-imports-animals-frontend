@@ -157,6 +157,70 @@ describe('plant-products commodities copy', () => {
         addAnotherSpecies: expect.any(String),
         addAnotherCommodity: expect.any(String),
         continue: expect.any(String)
+      },
+      commodityBulkDetails: {
+        title: expect.any(String),
+        caption: expect.any(String),
+        heading: expect.any(String),
+        controlContext: expect.any(String),
+        optionContext: expect.any(String),
+        bulk: {
+          heading: expect.any(String),
+          selectLines: expect.any(String),
+          selectAll: expect.any(String),
+          apply: expect.any(String),
+          clear: expect.any(String)
+        },
+        fields: {
+          numberOfPackages: { label: expect.any(String) },
+          packageType: {
+            label: expect.any(String),
+            placeholder: expect.any(String)
+          },
+          quantity: { label: expect.any(String) },
+          quantityType: {
+            label: expect.any(String),
+            placeholder: expect.any(String)
+          },
+          netWeight: { label: expect.any(String) },
+          controlledAtmosphereContainer: {
+            legend: expect.any(String),
+            options: { yes: expect.any(String), no: expect.any(String) }
+          },
+          finishedOrPropagated: {
+            legend: expect.any(String),
+            options: {
+              finished: expect.any(String),
+              propagated: expect.any(String)
+            }
+          },
+          intendedForFinalUsers: {
+            legend: expect.any(String),
+            options: { yes: expect.any(String), no: expect.any(String) }
+          },
+          testAndTrial: { label: expect.any(String) }
+        },
+        totals: {
+          lineHeading: expect.any(String),
+          consignmentHeading: expect.any(String),
+          packages: expect.any(String),
+          netWeight: expect.any(String)
+        },
+        errors: {
+          selectLine: expect.any(String),
+          fillOneField: expect.any(String),
+          numberOfPackagesRequired: expect.any(String),
+          numberOfPackagesWhole: expect.any(String),
+          packageTypeRequired: expect.any(String),
+          quantityRequired: expect.any(String),
+          quantityFormat: expect.any(String),
+          quantityTypeRequired: expect.any(String),
+          netWeightRequired: expect.any(String),
+          netWeightMin: expect.any(String),
+          netWeightDecimals: expect.any(String),
+          netWeightDigits: expect.any(String),
+          finishedOrPropagatedRequired: expect.any(String)
+        }
       }
     })
     for (const leaf of leaves(en)) {

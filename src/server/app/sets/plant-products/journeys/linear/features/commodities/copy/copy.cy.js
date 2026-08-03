@@ -148,5 +148,74 @@ export const copy = {
     addAnotherSpecies: 'Ychwanegu Genws (a Rhywogaeth) arall',
     addAnotherCommodity: 'Ychwanegu nwydd arall',
     continue: 'Cadw a pharhau'
+  },
+  commodityBulkDetails: {
+    title: 'Manylion y nwydd',
+    caption: 'Disgrifiad o’r nwyddau',
+    heading: 'Manylion y nwydd',
+    controlContext: '{label} ar gyfer {commodity}',
+    optionContext: '{option} — {legend} ar gyfer {commodity}',
+    bulk: {
+      heading: 'Cymhwyso i bob llinell nwydd',
+      selectLines: 'Dewiswch linellau nwyddau',
+      selectAll: 'Dewis pob un',
+      apply: 'Cymhwyso',
+      clear: 'Clirio'
+    },
+    fields: {
+      numberOfPackages: { label: 'Nifer y pecynnau' },
+      packageType: {
+        label: 'Math o becyn',
+        placeholder: 'Dewiswch y math o becyn'
+      },
+      quantity: { label: 'Swm' },
+      quantityType: {
+        label: 'Math o swm',
+        placeholder: 'Dewiswch y math o swm'
+      },
+      netWeight: { label: 'Pwysau net (kg)' },
+      controlledAtmosphereContainer: {
+        legend: 'Cynhwysydd awyrgylch rheoledig',
+        options: { yes: 'Iawn', no: 'Na' }
+      },
+      finishedOrPropagated: {
+        legend: 'Sut bydd y nwydd yn cael ei ddefnyddio?',
+        options: {
+          finished: 'Cynnyrch gorffenedig ar gyfer defnyddwyr terfynol',
+          propagated: 'I’w dyfu ymlaen neu ei luosogi'
+        }
+      },
+      intendedForFinalUsers: {
+        legend: 'A yw’r nwydd ar gyfer defnyddwyr terfynol?',
+        options: { yes: 'Iawn', no: 'Na' }
+      },
+      testAndTrial: { label: 'Ar gyfer profi a threialu' }
+    },
+    totals: {
+      lineHeading: 'Cyfansymiau llinell nwydd',
+      consignmentHeading: 'Cyfansymiau’r llwyth',
+      packages: 'Cyfanswm y pecynnau',
+      netWeight: 'Cyfanswm y pwysau net (kg)'
+    },
+    errors: {
+      selectLine:
+        'Dewiswch o leiaf un llinell nwydd i gymhwyso newidiadau iddi',
+      fillOneField:
+        'Llenwch o leiaf un maes i ddiweddaru’r llinellau nwyddau a ddewiswyd',
+      numberOfPackagesRequired: 'Rhowch nifer y pecynnau',
+      numberOfPackagesWhole: 'Rhaid i nifer y pecynnau fod yn rhif cyfan',
+      packageTypeRequired: 'Dewiswch y math o becyn',
+      quantityRequired: 'Rhowch y swm',
+      quantityFormat:
+        'Ni all symiau fod â mwy na 3 lle degol, na bod yn fwy nag 16 digid gan gynnwys degolion',
+      quantityTypeRequired: 'Dewiswch y math o swm',
+      netWeightRequired: 'Rhowch y pwysau net mewn cilogramau',
+      netWeightMin: 'Rhaid i’r pwysau net fod yn 0.001 neu fwy',
+      netWeightDecimals: 'Ni all y pwysau net fod â mwy na 3 lle degol',
+      netWeightDigits:
+        'Ni all y pwysau net fod â mwy nag 16 digid, gan gynnwys degolion',
+      finishedOrPropagatedRequired:
+        'Dewiswch a yw’r nwydd ar gyfer defnyddwyr terfynol neu luosogi'
+    }
   }
 }

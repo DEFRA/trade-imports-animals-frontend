@@ -1,7 +1,13 @@
-const freezeTreeNode = ({ code, description, children }) =>
+const freezeTreeNode = ({
+  code,
+  description,
+  children,
+  plantsForPlanting = false
+}) =>
   Object.freeze({
     code,
     description,
+    ...(plantsForPlanting ? { plantsForPlanting } : {}),
     ...(children
       ? { children: Object.freeze(children.map(freezeTreeNode)) }
       : {})
@@ -28,7 +34,11 @@ export const COMMODITY_TREE = Object.freeze(
       description:
         'LIVE TREES AND OTHER PLANTS; BULBS, ROOTS AND THE LIKE; CUT FLOWERS AND ORNAMENTAL FOLIAGE',
       children: [
-        { code: '06011010', description: 'Hyacinths' },
+        {
+          code: '06011010',
+          description: 'Hyacinths',
+          plantsForPlanting: true
+        },
         { code: '0603197090', description: 'Other' },
         { code: '06042090', description: 'Other' }
       ]

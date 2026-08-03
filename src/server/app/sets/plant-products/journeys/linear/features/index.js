@@ -5,6 +5,7 @@ import * as commodityBasicDescription from './commodities/basic-description/basi
 import * as commoditySearch from './commodities/search/search.controller.js'
 import * as varietyOfGenusAndSpecies from './commodities/variety-of-genus-and-species/variety-of-genus-and-species.controller.js'
 import * as commoditySummary from './commodities/commodity-summary/commodity-summary.controller.js'
+import * as commodityBulkDetails from './commodities/commodity-bulk-details/commodity-bulk-details.controller.js'
 import * as hub from './hub/controller.js'
 import * as importType from './import-type/controller.js'
 import * as countryOfOrigin from './origin/country-of-origin/country-of-origin.controller.js'
@@ -22,6 +23,7 @@ export const dispatchPages = [
   commodityBasicDescription.meta,
   varietyOfGenusAndSpecies.meta,
   commoditySummary.meta,
+  commodityBulkDetails.meta,
   transport.meta
 ]
 
@@ -36,6 +38,7 @@ export const allRoutes = [
   ...commodityBasicDescription.routes,
   ...varietyOfGenusAndSpecies.routes,
   ...commoditySummary.routes,
+  ...commodityBulkDetails.routes,
   ...transport.routes,
   ...hub.routes
 ]

@@ -208,7 +208,7 @@ test.describe('plant-products commodity basic description', () => {
     ).toBeVisible()
   })
 
-  test('continues to the hub and leaves the incomplete commodity row in progress', async ({
+  test('continues to bulk details and leaves the incomplete commodity row in progress', async ({
     page
   }) => {
     await addSpecies(page, 'Lens culinaris')
@@ -221,6 +221,12 @@ test.describe('plant-products commodity basic description', () => {
     )
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
+    await expect(page).toHaveURL((url) =>
+      /^\/plant-products\/notifications\/[^/]+\/commodity-bulk-details$/.test(
+        url.pathname
+      )
+    )
+    await page.getByRole('link', { name: 'Cancel and return to hub' }).click()
     await expect(page).toHaveURL((url) =>
       /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
     )

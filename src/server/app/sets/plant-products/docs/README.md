@@ -142,3 +142,7 @@ deviations:
   `action` control name with the target in its value, Remove remains available
   for the last species, the conditional Cancel link is omitted, and no species
   cap is declared. The model's collection floor is enforced on Continue.
+- The `plantsForPlanting` fixture flag identifies commodities that require the
+  finished-or-propagated control. It is set only on 06011010 Hyacinths because
+  CN heading 0601 covers bulbs and roots for planting; 0603197090 and 06042090
+  fall under headings 0603 (cut flowers) and 0604 (foliage), respectively.

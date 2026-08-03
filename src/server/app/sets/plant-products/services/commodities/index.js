@@ -39,6 +39,9 @@ export const isCommodityCode = (code) => COMMODITY_CODES.includes(code)
 export const descriptionFor = (code) =>
   LEAF_NODES.find((node) => node.code === code)?.description
 
+export const isPlantsForPlanting = (code) =>
+  LEAF_NODES.find((node) => node.code === code)?.plantsForPlanting === true
+
 export const speciesFor = (code) => SPECIES_BY_CODE[code] ?? []
 
 export const genusAndSpeciesFor = (eppoCode) =>

@@ -23,6 +23,7 @@ import { featureEvaluationBindings } from '../features/evaluation.js'
 import { dispatchPages } from '../features/index.js'
 import {
   commodityBasicDescriptionPage,
+  commodityBulkDetailsPage,
   commodityInputMethodPage,
   commoditySearchPage,
   commoditySummaryPage,
@@ -68,7 +69,8 @@ describe('plant-products task rows', () => {
           commoditySearchPage,
           commodityBasicDescriptionPage,
           varietyOfGenusAndSpeciesPage,
-          commoditySummaryPage
+          commoditySummaryPage,
+          commodityBulkDetailsPage
         ]
       },
       {

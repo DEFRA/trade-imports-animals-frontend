@@ -33,6 +33,27 @@ const startAtTransport = async (page) => {
   )
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await expect(page).toHaveURL((url) =>
+    /^\/plant-products\/notifications\/[^/]+\/commodity-bulk-details$/.test(
+      url.pathname
+    )
+  )
+  await page.getByLabel('Number of packages for 06011010 Hyacinths').fill('1')
+  await page
+    .getByLabel('Type of package for 06011010 Hyacinths')
+    .selectOption('BOX')
+  await page.getByLabel('Quantity for 06011010 Hyacinths').fill('1')
+  await page
+    .getByLabel('Quantity type for 06011010 Hyacinths')
+    .selectOption('BULBS')
+  await page.getByLabel('Net weight (kg) for 06011010 Hyacinths').fill('1')
+  await page
+    .getByRole('group', {
+      name: 'How will the commodity be used? for 06011010 Hyacinths'
+    })
+    .getByLabel('Finished product for final users for 06011010 Hyacinths')
+    .check()
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await expect(page).toHaveURL((url) =>
     /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
   )
   await page

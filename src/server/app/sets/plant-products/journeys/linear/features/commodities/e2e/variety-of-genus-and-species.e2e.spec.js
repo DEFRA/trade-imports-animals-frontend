@@ -171,7 +171,7 @@ test.describe('plant-products variety of genus and species', () => {
     )
   })
 
-  test('adds a pair, reloads it and saves to the unchanged hub states', async ({
+  test('adds a pair, reloads it and advances through bulk details to unchanged hub states', async ({
     page
   }) => {
     await addPair(page)
@@ -188,6 +188,12 @@ test.describe('plant-products variety of genus and species', () => {
       )
     )
     await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(page).toHaveURL((url) =>
+      /^\/plant-products\/notifications\/[^/]+\/commodity-bulk-details$/.test(
+        url.pathname
+      )
+    )
+    await page.getByRole('link', { name: 'Cancel and return to hub' }).click()
     await expect(page).toHaveURL(hubUrl)
     const purposeRow = page.getByRole('listitem').filter({
       has: page.getByText('Purpose', { exact: true })

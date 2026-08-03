@@ -146,5 +146,73 @@ export const copy = {
     addAnotherSpecies: 'Add another Genus (and Species)',
     addAnotherCommodity: 'Add another commodity',
     continue: 'Save and continue'
+  },
+  commodityBulkDetails: {
+    title: 'Commodity details',
+    caption: 'Description of the goods',
+    heading: 'Commodity details',
+    controlContext: '{label} for {commodity}',
+    optionContext: '{option} — {legend} for {commodity}',
+    bulk: {
+      heading: 'Apply to all commodity lines',
+      selectLines: 'Select commodity lines',
+      selectAll: 'Select all',
+      apply: 'Apply',
+      clear: 'Clear'
+    },
+    fields: {
+      numberOfPackages: { label: 'Number of packages' },
+      packageType: {
+        label: 'Type of package',
+        placeholder: 'Select the type of package'
+      },
+      quantity: { label: 'Quantity' },
+      quantityType: {
+        label: 'Quantity type',
+        placeholder: 'Select the quantity type'
+      },
+      netWeight: { label: 'Net weight (kg)' },
+      controlledAtmosphereContainer: {
+        legend: 'Controlled atmosphere container',
+        options: { yes: 'Yes', no: 'No' }
+      },
+      finishedOrPropagated: {
+        legend: 'How will the commodity be used?',
+        options: {
+          finished: 'Finished product for final users',
+          propagated: 'To be grown on or propagated'
+        }
+      },
+      intendedForFinalUsers: {
+        legend: 'Is the commodity intended for final users?',
+        options: { yes: 'Yes', no: 'No' }
+      },
+      testAndTrial: { label: 'For test and trial' }
+    },
+    totals: {
+      lineHeading: 'Commodity line totals',
+      consignmentHeading: 'Consignment totals',
+      packages: 'Total packages',
+      netWeight: 'Total net weight (kg)'
+    },
+    errors: {
+      selectLine: 'Select at least one commodity line to apply changes to',
+      fillOneField:
+        'Fill in at least one field to update the selected commodity lines',
+      numberOfPackagesRequired: 'Enter the number of packages',
+      numberOfPackagesWhole: 'Number of packages must be a whole number',
+      packageTypeRequired: 'Select the type of package',
+      quantityRequired: 'Enter the quantity',
+      quantityFormat:
+        'Quantities cannot have more than 3 decimals, or be larger than 16 digits including decimals',
+      quantityTypeRequired: 'Select the quantity type',
+      netWeightRequired: 'Enter the net weight in kilograms',
+      netWeightMin: 'Net weight must be 0.001 or more',
+      netWeightDecimals: 'Net weight cannot have more than 3 decimals',
+      netWeightDigits:
+        'Net weight cannot have more than 16 digits, including decimals',
+      finishedOrPropagatedRequired:
+        'Select whether the commodity is intended for final users or propagating'
+    }
   }
 }

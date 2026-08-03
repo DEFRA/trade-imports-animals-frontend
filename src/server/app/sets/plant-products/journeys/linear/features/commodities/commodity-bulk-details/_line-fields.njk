@@ -1,0 +1,105 @@
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+
+{% macro lineFields(line, copy) %}
+  {{ govukInput({
+    id: line.fields.numberOfPackages,
+    name: line.fields.numberOfPackages,
+    label: { text: line.labels.numberOfPackages },
+    classes: "govuk-input--width-5",
+    inputmode: "numeric",
+    value: line.values.numberOfPackages,
+    errorMessage: line.errors.numberOfPackages and { text: line.errors.numberOfPackages }
+  }) }}
+
+  {{ govukSelect({
+    id: line.fields.packageType,
+    name: line.fields.packageType,
+    label: { text: line.labels.packageType },
+    items: line.packageTypeItems,
+    errorMessage: line.errors.packageType and { text: line.errors.packageType }
+  }) }}
+
+  {{ govukInput({
+    id: line.fields.quantity,
+    name: line.fields.quantity,
+    label: { text: line.labels.quantity },
+    classes: "govuk-input--width-10",
+    inputmode: "decimal",
+    value: line.values.quantity,
+    errorMessage: line.errors.quantity and { text: line.errors.quantity }
+  }) }}
+
+  {{ govukSelect({
+    id: line.fields.quantityType,
+    name: line.fields.quantityType,
+    label: { text: line.labels.quantityType },
+    items: line.quantityTypeItems,
+    errorMessage: line.errors.quantityType and { text: line.errors.quantityType }
+  }) }}
+
+  {{ govukInput({
+    id: line.fields.netWeight,
+    name: line.fields.netWeight,
+    label: { text: line.labels.netWeight },
+    classes: "govuk-input--width-10",
+    inputmode: "decimal",
+    value: line.values.netWeight,
+    errorMessage: line.errors.netWeight and { text: line.errors.netWeight }
+  }) }}
+
+  {{ govukRadios({
+    idPrefix: line.fields.controlledAtmosphereContainer,
+    name: line.fields.controlledAtmosphereContainer,
+    fieldset: { legend: { text: line.labels.controlledAtmosphereContainer } },
+    errorMessage: line.errors.controlledAtmosphereContainer and { text: line.errors.controlledAtmosphereContainer },
+    items: [
+      { value: "true", text: line.optionLabels.controlledAtmosphereContainer.yes, checked: line.values.controlledAtmosphereContainer === "true" },
+      { value: "false", text: line.optionLabels.controlledAtmosphereContainer.no, checked: line.values.controlledAtmosphereContainer === "false" }
+    ]
+  }) }}
+
+  {% if line.showFinishedOrPropagated %}
+    {{ govukRadios({
+      idPrefix: line.fields.finishedOrPropagated,
+      name: line.fields.finishedOrPropagated,
+      fieldset: { legend: { text: line.labels.finishedOrPropagated } },
+      errorMessage: line.errors.finishedOrPropagated and { text: line.errors.finishedOrPropagated },
+      items: [
+        { value: "FINISHED", text: line.optionLabels.finishedOrPropagated.finished, checked: line.values.finishedOrPropagated === "FINISHED" },
+        { value: "PROPAGATED", text: line.optionLabels.finishedOrPropagated.propagated, checked: line.values.finishedOrPropagated === "PROPAGATED" }
+      ]
+    }) }}
+  {% endif %}
+
+  {{ govukRadios({
+    idPrefix: line.fields.intendedForFinalUsers,
+    name: line.fields.intendedForFinalUsers,
+    fieldset: { legend: { text: line.labels.intendedForFinalUsers } },
+    errorMessage: line.errors.intendedForFinalUsers and { text: line.errors.intendedForFinalUsers },
+    items: [
+      { value: "true", text: line.optionLabels.intendedForFinalUsers.yes, checked: line.values.intendedForFinalUsers === "true" },
+      { value: "false", text: line.optionLabels.intendedForFinalUsers.no, checked: line.values.intendedForFinalUsers === "false" }
+    ]
+  }) }}
+
+  {{ govukCheckboxes({
+    idPrefix: line.fields.testAndTrial,
+    name: line.fields.testAndTrial,
+    errorMessage: line.errors.testAndTrial and { text: line.errors.testAndTrial },
+    items: [{
+      value: "true",
+      text: line.labels.testAndTrial,
+      checked: line.values.testAndTrial === "true"
+    }]
+  }) }}
+
+  <h3 class="govuk-heading-s">{{ copy.totals.lineHeading }}</h3>
+  {{ govukSummaryList({ rows: [
+    { key: { text: copy.totals.packages }, value: { text: line.totals.packages } },
+    { key: { text: copy.totals.netWeight }, value: { text: line.totals.netWeight } }
+  ] }) }}
+{% endmacro %}

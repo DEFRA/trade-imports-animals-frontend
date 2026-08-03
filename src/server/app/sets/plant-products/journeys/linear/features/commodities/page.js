@@ -22,3 +22,8 @@ export const commoditySummaryPage = {
   id: 'commodity-summary',
   slug: 'commodity-summary'
 }
+
+export const commodityBulkDetailsPage = {
+  id: 'commodity-bulk-details',
+  slug: 'commodity-bulk-details'
+}

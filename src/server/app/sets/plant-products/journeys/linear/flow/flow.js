@@ -2,6 +2,7 @@
 import { dashboardPage } from '../features/dashboard/page.js'
 import {
   commodityBasicDescriptionPage,
+  commodityBulkDetailsPage,
   commodityInputMethodPage,
   commoditySearchPage,
   commoditySummaryPage,
@@ -37,7 +38,8 @@ export const sections = [
       commoditySearchPage,
       commodityBasicDescriptionPage,
       varietyOfGenusAndSpeciesPage,
-      commoditySummaryPage
+      commoditySummaryPage,
+      commodityBulkDetailsPage
     ]
   },
   {
