@@ -92,6 +92,23 @@ describe('plant-products commodity reference data', () => {
     const species = speciesFor('0808108010')
 
     expect(species).toBe(SPECIES_BY_CODE['0808108010'])
+    expect(species).toEqual([
+      {
+        eppoCode: 'MABAN',
+        genusAndSpecies: 'Malus angustifolia',
+        speciesId: '1319830'
+      },
+      {
+        eppoCode: 'MABSD',
+        genusAndSpecies: 'Malus domestica',
+        speciesId: '1391442'
+      },
+      {
+        eppoCode: 'MABZU',
+        genusAndSpecies: 'Malus x zumi',
+        speciesId: '1327015'
+      }
+    ])
     expect(species).toHaveLength(3)
     expect(new Set(species.map(({ eppoCode }) => eppoCode)).size).toBe(3)
     expect(species.map(({ eppoCode }) => eppoCode)).toEqual([
