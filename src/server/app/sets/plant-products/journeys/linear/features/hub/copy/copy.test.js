@@ -37,6 +37,7 @@ describe('plant-products hub copy', () => {
       ['transport', '5. Transport to the BCP'],
       ['goods-movement', '6. Goods movement services'],
       ['contact', '7. Contact details'],
+      ['nominated-contacts', '8. Nominated contacts'],
       ['documents', '9. Accompanying documents'],
       ['traders', '10. Traders'],
       ['review', '12. Review and submit']
@@ -52,6 +53,7 @@ describe('plant-products hub copy', () => {
       'transport',
       'goodsMovement',
       'contact',
+      'nominatedContacts',
       'documents',
       'traders',
       'review'
@@ -133,6 +135,14 @@ describe('plant-products hub copy', () => {
     expect(en.rows.contact).toEqual({
       title: 'Contact details',
       hint: 'Details we can use if your consignment is chosen for inspection'
+    })
+  })
+
+  it('provides the numbered optional nominated-contacts group and its row copy', () => {
+    expect(en.groups['nominated-contacts']).toBe('8. Nominated contacts')
+    expect(en.rows.nominatedContacts).toEqual({
+      title: 'Nominated contacts',
+      hint: 'Add people who can be notified if your consignment is chosen for inspection'
     })
   })
 

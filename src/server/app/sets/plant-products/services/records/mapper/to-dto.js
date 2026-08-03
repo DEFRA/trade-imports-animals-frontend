@@ -142,6 +142,25 @@ const mapResponsiblePerson = (answers) => {
   return Object.keys(responsiblePerson).length > 0 ? { responsiblePerson } : {}
 }
 
+const mapNominatedContact = (entry) => ({
+  ...(entry.contactName !== undefined ? { name: entry.contactName } : {}),
+  ...(entry.contactEmail !== undefined ? { email: entry.contactEmail } : {}),
+  ...(entry.contactTelephone !== undefined
+    ? { telephone: entry.contactTelephone }
+    : {}),
+  ...(entry.contactIsAgent !== undefined
+    ? { isAgent: entry.contactIsAgent }
+    : {})
+})
+
+const mapNominatedContacts = (answers) =>
+  Array.isArray(answers.nominatedContacts) &&
+  answers.nominatedContacts.length > 0
+    ? {
+        nominatedContacts: answers.nominatedContacts.map(mapNominatedContact)
+      }
+    : {}
+
 const operatorFromAnswers = (answers, prefix) => {
   const name = answers[`${prefix}Name`]
   const telephone = answers[`${prefix}Telephone`]
@@ -205,6 +224,7 @@ const SECTION_MAPPERS = Object.freeze([
   mapTransport,
   mapGoodsMovementServices,
   mapResponsiblePerson,
+  mapNominatedContacts,
   mapParties
 ])
 

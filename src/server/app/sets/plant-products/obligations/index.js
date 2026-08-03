@@ -29,6 +29,11 @@ import {
   varietyClass
 } from './sections/commodities/varieties.js'
 import {
+  contactEmail,
+  contactIsAgent,
+  contactName,
+  contactTelephone,
+  nominatedContacts,
   responsiblePersonEmail,
   responsiblePersonName,
   responsiblePersonTelephone
@@ -121,6 +126,11 @@ export {
   responsiblePersonName,
   responsiblePersonEmail,
   responsiblePersonTelephone,
+  nominatedContacts,
+  contactName,
+  contactEmail,
+  contactTelephone,
+  contactIsAgent,
   countryOfConsignment,
   countryOfOrigin,
   internalReference,
@@ -193,6 +203,11 @@ export const obligations = [
   responsiblePersonName,
   responsiblePersonEmail,
   responsiblePersonTelephone,
+  nominatedContacts,
+  contactName,
+  contactEmail,
+  contactTelephone,
+  contactIsAgent,
   totalGrossWeight,
   grossVolume,
   grossVolumeUnit,

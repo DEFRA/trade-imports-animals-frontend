@@ -124,6 +124,19 @@ const mapResponsiblePerson = (dto) => {
   }
 }
 
+const mapNominatedContact = (entry) => ({
+  ...(entry.name != null ? { contactName: entry.name } : {}),
+  ...(entry.email != null ? { contactEmail: entry.email } : {}),
+  ...(entry.telephone != null ? { contactTelephone: entry.telephone } : {}),
+  ...(entry.isAgent != null ? { contactIsAgent: entry.isAgent } : {})
+})
+
+const mapNominatedContacts = (dto) => ({
+  nominatedContacts: Array.isArray(dto.nominatedContacts)
+    ? dto.nominatedContacts.map(mapNominatedContact)
+    : []
+})
+
 const dateFromIso = (value) => {
   const [year = '', month = '', day = ''] = String(value ?? '').split('-')
   return {
@@ -203,6 +216,7 @@ const SECTION_MAPPERS = Object.freeze([
   mapTransport,
   mapGoodsMovementServices,
   mapResponsiblePerson,
+  mapNominatedContacts,
   mapDocuments,
   mapParties
 ])

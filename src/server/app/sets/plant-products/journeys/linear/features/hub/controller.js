@@ -33,6 +33,7 @@ export const GROUPS = [
   { id: 'transport', rows: ['transport'] },
   { id: 'goods-movement', rows: ['goods-movement'] },
   { id: 'contact', rows: ['contact'] },
+  { id: 'nominated-contacts', rows: ['nominated-contacts'] },
   { id: 'documents', rows: ['documents'] },
   { id: 'traders', rows: ['traders'] },
   { id: 'review', rows: ['review'] }
@@ -87,7 +88,12 @@ const buildReviewItem = (
 
 const isHiddenRow = (row, status) => row.conditional && status === NA
 
-const rowCopyKey = (id) => (id === 'goods-movement' ? 'goodsMovement' : id)
+const ROW_COPY_KEYS = {
+  'goods-movement': 'goodsMovement',
+  'nominated-contacts': 'nominatedContacts'
+}
+
+const rowCopyKey = (id) => ROW_COPY_KEYS[id] ?? id
 
 const blockedRowItem = (base) => ({ ...base, status: CANNOT_START_STATUS })
 

@@ -12,6 +12,7 @@ import * as commodityBulkDetails from './commodities/commodity-bulk-details/comm
 import * as hub from './hub/controller.js'
 import * as importType from './import-type/controller.js'
 import * as goodsMovement from './goods-movement/controller.js'
+import * as nominatedContacts from './nominated-contacts/controller.js'
 import * as countryOfOrigin from './origin/country-of-origin/country-of-origin.controller.js'
 import * as originOfImport from './origin/origin-of-import/origin-of-import.controller.js'
 import * as purpose from './purpose/controller.js'
@@ -35,6 +36,7 @@ export const dispatchPages = [
   transport.meta,
   goodsMovement.meta,
   contact.meta,
+  nominatedContacts.meta,
   documents.meta,
   tradersAddresses.meta,
   consignorCreate.meta,
@@ -57,6 +59,7 @@ export const allRoutes = [
   ...transport.routes,
   ...goodsMovement.routes,
   ...contact.routes,
+  ...nominatedContacts.routes,
   ...documents.routes,
   ...tradersAddresses.routes,
   ...consignorCreate.routes,

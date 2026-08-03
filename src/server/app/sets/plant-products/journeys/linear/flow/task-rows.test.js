@@ -6,7 +6,8 @@ import { configureFulfilmentRegistry } from '../../../../../bridge/fulfilment-re
 import {
   FULFILLED,
   IN_PROGRESS,
-  NOT_STARTED
+  NOT_STARTED,
+  OPTIONAL
 } from '../../../../../bridge/status/index.js'
 import { makeScope } from '../../../../../engine/index.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
@@ -24,6 +25,7 @@ import { dispatchPages } from '../features/index.js'
 import { commodityAdditionalDetailsPage } from '../features/additional-details/page.js'
 import { accompanyingDocumentsPage } from '../features/documents/page.js'
 import { contactDetailsPage } from '../features/contact/page.js'
+import { nominatedContactPage } from '../features/nominated-contacts/page.js'
 import { goodsMovementServicesPage } from '../features/goods-movement/page.js'
 import {
   commodityBasicDescriptionPage,
@@ -46,6 +48,7 @@ import {
 } from '../features/traders/page.js'
 import { FLOW_ONLY_KEYS, sections } from './flow.js'
 import { rowParts, rowStatus, taskRowById, taskRows } from './task-rows.js'
+import { nominatedContacts as nominatedContactsObligation } from '../../../obligations/index.js'
 
 const completeConsignor = {
   consignorName: 'Orchard Export SAS',
@@ -106,6 +109,10 @@ describe('plant-products task rows', () => {
       {
         id: 'contact',
         pages: [contactDetailsPage]
+      },
+      {
+        id: 'nominated-contacts',
+        pages: [nominatedContactPage]
       },
       {
         id: 'documents',
@@ -169,6 +176,18 @@ describe('plant-products task rows', () => {
         )
       )
     ).toBe('/plant-products/notifications/journey-1/contact-details')
+    expect(
+      withSetContext('plant-products', () =>
+        rowEntry(
+          taskRowById('nominated-contacts'),
+          makeScope({
+            countryOfOrigin: 'FR',
+            commodityLines: [{ commoditySelection: '08059000' }]
+          }),
+          'journey-1'
+        )
+      )
+    ).toBe('/plant-products/notifications/journey-1/nominated-contact')
     expect(
       withSetContext('plant-products', () =>
         rowEntry(
@@ -244,6 +263,11 @@ describe('plant-products task rows', () => {
       'responsiblePersonEmail',
       'responsiblePersonTelephone'
     ])
+    expect(
+      withSetContext('plant-products', () =>
+        rowParts(taskRowById('nominated-contacts'))
+      )
+    ).toEqual(['nominatedContacts'])
     expect(
       withSetContext('plant-products', () => rowParts(taskRowById('traders')))
     ).toEqual([
@@ -412,6 +436,47 @@ describe('plant-products task rows', () => {
     ).toBe(FULFILLED)
   })
 
+  it('keeps zero nominated contacts Optional and completes with several independent contacts', () => {
+    const statusFor = (answers) =>
+      withSetContext('plant-products', () => {
+        const { inScope } = makeScope(answers)
+        return rowStatus(
+          taskRowById('nominated-contacts'),
+          answers,
+          inScope,
+          evaluateAnswers(answers)
+        )
+      })
+
+    expect(nominatedContactsObligation.requires).toEqual({ maxEntries: 5 })
+    expect(statusFor({})).toBe(OPTIONAL)
+    expect(statusFor({ nominatedContacts: [] })).toBe(OPTIONAL)
+    expect(
+      statusFor({
+        nominatedContacts: [
+          { contactTelephone: '+44 7700 900 982' },
+          { contactName: 'Blair Broker', contactEmail: 'blair@example.com' }
+        ]
+      })
+    ).toBe(IN_PROGRESS)
+    expect(
+      statusFor({
+        nominatedContacts: [
+          {
+            contactName: 'Alex Inspector',
+            contactEmail: 'alex@example.com',
+            contactIsAgent: false
+          },
+          {
+            contactName: 'Blair Broker',
+            contactTelephone: '+44 7700 900 982',
+            contactIsAgent: true
+          }
+        ]
+      })
+    ).toBe(FULFILLED)
+  })
+
   it('keeps documents incomplete until one complete entry satisfies the collection floor', () => {
     const statusFor = (answers) =>
       withSetContext('plant-products', () => {
@@ -499,6 +564,41 @@ describe('plant-products task rows', () => {
     expect(
       readyFor({
         ...allEarlierRows,
+        accompanyingDocuments: [
+          {
+            documentType: 'PHYTOSANITARY_CERTIFICATE',
+            documentReference: 'PHYTO-001',
+            issueDate: { day: '4', month: '12', year: '2025' }
+          }
+        ]
+      })
+    ).toBe(true)
+    expect(
+      readyFor({
+        ...allEarlierRows,
+        nominatedContacts: [],
+        accompanyingDocuments: [
+          {
+            documentType: 'PHYTOSANITARY_CERTIFICATE',
+            documentReference: 'PHYTO-001',
+            issueDate: { day: '4', month: '12', year: '2025' }
+          }
+        ]
+      })
+    ).toBe(true)
+    expect(
+      readyFor({
+        ...allEarlierRows,
+        nominatedContacts: [
+          {
+            contactName: 'Alex Inspector',
+            contactEmail: 'alex@example.com'
+          },
+          {
+            contactName: 'Blair Broker',
+            contactTelephone: '+44 7700 900 982'
+          }
+        ],
         accompanyingDocuments: [
           {
             documentType: 'PHYTOSANITARY_CERTIFICATE',

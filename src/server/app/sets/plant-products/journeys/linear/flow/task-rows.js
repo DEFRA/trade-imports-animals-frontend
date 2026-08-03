@@ -19,6 +19,7 @@ import { goodsMovementServicesPage } from '../features/goods-movement/page.js'
 import { transportBeforeBipPage } from '../features/transport/page.js'
 import { accompanyingDocumentsPage } from '../features/documents/page.js'
 import { contactDetailsPage } from '../features/contact/page.js'
+import { nominatedContactPage } from '../features/nominated-contacts/page.js'
 import {
   consignorConfirmationPage,
   consignorCreatePage,
@@ -46,6 +47,7 @@ export const taskRows = [
   { id: 'transport', pages: [transportBeforeBipPage] },
   { id: 'goods-movement', pages: [goodsMovementServicesPage] },
   { id: 'contact', pages: [contactDetailsPage] },
+  { id: 'nominated-contacts', pages: [nominatedContactPage] },
   { id: 'documents', pages: [accompanyingDocumentsPage] },
   {
     id: 'traders',

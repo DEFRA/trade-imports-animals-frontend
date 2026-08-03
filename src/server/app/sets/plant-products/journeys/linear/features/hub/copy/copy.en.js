@@ -18,6 +18,7 @@ export const copy = {
     transport: '5. Transport to the BCP',
     'goods-movement': '6. Goods movement services',
     contact: '7. Contact details',
+    'nominated-contacts': '8. Nominated contacts',
     documents: '9. Accompanying documents',
     traders: '10. Traders',
     review: '12. Review and submit'
@@ -50,6 +51,10 @@ export const copy = {
     contact: {
       title: 'Contact details',
       hint: 'Details we can use if your consignment is chosen for inspection'
+    },
+    nominatedContacts: {
+      title: 'Nominated contacts',
+      hint: 'Add people who can be notified if your consignment is chosen for inspection'
     },
     documents: {
       title: 'Accompanying documents',

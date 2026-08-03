@@ -13,6 +13,7 @@ import { importTypePage } from '../features/import-type/page.js'
 import { goodsMovementServicesPage } from '../features/goods-movement/page.js'
 import { accompanyingDocumentsPage } from '../features/documents/page.js'
 import { contactDetailsPage } from '../features/contact/page.js'
+import { nominatedContactPage } from '../features/nominated-contacts/page.js'
 import {
   countryOfOriginPage,
   originOfImportPage
@@ -66,6 +67,10 @@ export const sections = [
   {
     id: 'contact',
     pages: [contactDetailsPage]
+  },
+  {
+    id: 'nominated-contacts',
+    pages: [nominatedContactPage]
   },
   {
     id: 'documents',

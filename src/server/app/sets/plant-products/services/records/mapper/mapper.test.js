@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { fromDto } from './from-dto.js'
+import { fromDto as mapFromDto } from './from-dto.js'
 import { documentToDto, toDto } from './to-dto.js'
 import { stubOrganisationOperator } from '../../stub-org.js'
 
@@ -8,6 +8,12 @@ const withImporter = (dto = {}) => ({
   ...dto,
   importer: stubOrganisationOperator()
 })
+
+const fromDto = (dto) => {
+  const { nominatedContacts, ...answers } = mapFromDto(dto)
+  expect(nominatedContacts).toEqual([])
+  return answers
+}
 
 const SERVER_SET_FIELDS = [
   'referenceNumber',
@@ -470,6 +476,49 @@ describe('plant-products notification mapper at the m0 boundary', () => {
         }
       })
     ).toEqual({ responsiblePersonName: 'Isabel Irwin' })
+  })
+
+  it('round-trips two nominated contacts with independent optional fields and agent values', () => {
+    const answers = {
+      nominatedContacts: [
+        {
+          contactName: 'Alex Inspector',
+          contactEmail: 'alex@example.com',
+          contactIsAgent: false
+        },
+        {
+          contactName: 'Blair Broker',
+          contactTelephone: '+44 7700 900 982',
+          contactIsAgent: true
+        }
+      ]
+    }
+
+    const dto = toDto(answers)
+
+    expect(dto.nominatedContacts).toEqual([
+      {
+        name: 'Alex Inspector',
+        email: 'alex@example.com',
+        isAgent: false
+      },
+      {
+        name: 'Blair Broker',
+        telephone: '+44 7700 900 982',
+        isAgent: true
+      }
+    ])
+    expect(mapFromDto(dto)).toEqual(answers)
+  })
+
+  it('omits an empty nominated-contact list on write and rehydrates absent or empty lists to an empty array', () => {
+    expect(toDto({ nominatedContacts: [] })).not.toHaveProperty(
+      'nominatedContacts'
+    )
+    expect(mapFromDto({})).toEqual({ nominatedContacts: [] })
+    expect(mapFromDto({ nominatedContacts: [] })).toEqual({
+      nominatedContacts: []
+    })
   })
 
   it('projects same-as Yes as an importer copy and re-derives Yes when destination deeply equals importer', () => {

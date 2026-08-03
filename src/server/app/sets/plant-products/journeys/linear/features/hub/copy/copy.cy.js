@@ -19,6 +19,7 @@ export const copy = {
     transport: '5. Cludiant i’r BCP',
     'goods-movement': '6. Gwasanaethau symud nwyddau',
     contact: '7. Manylion cyswllt',
+    'nominated-contacts': '8. Cysylltiadau enwebedig',
     documents: '9. Dogfennau cysylltiedig',
     traders: '10. Masnachwyr',
     review: '12. Adolygu a chyflwyno'
@@ -51,6 +52,10 @@ export const copy = {
     contact: {
       title: 'Manylion cyswllt',
       hint: 'Manylion y gallwn eu defnyddio os caiff eich llwyth ei ddewis i’w archwilio'
+    },
+    nominatedContacts: {
+      title: 'Cysylltiadau enwebedig',
+      hint: 'Ychwanegwch bobl y gellir eu hysbysu os caiff eich llwyth ei ddewis i’w archwilio'
     },
     documents: {
       title: 'Dogfennau cysylltiedig',

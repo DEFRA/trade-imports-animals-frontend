@@ -1,0 +1,110 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/fieldset/macro.njk" import govukFieldset %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  <span class="govuk-caption-xl">{{ copy.caption }}</span>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {% call govukFieldset({
+      legend: {
+        text: copy.title,
+        isPageHeading: true,
+        classes: "govuk-fieldset__legend--xl"
+      },
+      describedBy: "nominated-contacts-hint"
+    }) %}
+      <div id="nominated-contacts-hint" class="govuk-hint">{{ copy.hint }}</div>
+      {% if rows.length %}
+        <table class="govuk-table">
+          <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+              <th scope="col" class="govuk-table__header">{{ copy.table.headers.contactName }}</th>
+              <th scope="col" class="govuk-table__header">{{ copy.table.headers.contactEmail }}</th>
+              <th scope="col" class="govuk-table__header">{{ copy.table.headers.contactTelephone }}</th>
+              <th scope="col" class="govuk-table__header"><span class="govuk-visually-hidden">{{ copy.table.removeHidden }}</span></th>
+            </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+            {% for row in rows %}
+              <tr class="govuk-table__row">
+                <td class="govuk-table__cell">{{ row.contactName }}</td>
+                <td class="govuk-table__cell">{{ row.contactEmail }}</td>
+                <td class="govuk-table__cell">{{ row.contactTelephone }}</td>
+                <td class="govuk-table__cell">
+                  <button type="submit"
+                          class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
+                          name="action"
+                          value="remove:{{ row.index }}">
+                    {{ copy.buttons.remove }}<span class="govuk-visually-hidden"> contact {{ row.number }}</span>
+                  </button>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+
+      {% if atMax %}
+        <p class="govuk-body">{{ copy.maxReached }}</p>
+      {% else %}
+        {{ govukInput({
+          id: "contactName",
+          name: "contactName",
+          label: { text: copy.labels.contactName },
+          autocomplete: "name",
+          classes: "govuk-!-width-two-thirds",
+          value: values.contactName,
+          errorMessage: errors.contactName and { text: errors.contactName }
+        }) }}
+
+        {{ govukInput({
+          id: "contactEmail",
+          name: "contactEmail",
+          label: { text: copy.labels.contactEmail },
+          type: "email",
+          autocomplete: "email",
+          spellcheck: false,
+          value: values.contactEmail,
+          errorMessage: errors.contactEmail and { text: errors.contactEmail }
+        }) }}
+
+        {{ govukInput({
+          id: "contactTelephone",
+          name: "contactTelephone",
+          label: { text: copy.labels.contactTelephone },
+          type: "tel",
+          autocomplete: "tel",
+          value: values.contactTelephone,
+          errorMessage: errors.contactTelephone and { text: errors.contactTelephone }
+        }) }}
+
+        {{ govukCheckboxes({
+          idPrefix: "contactIsAgent",
+          name: "contactIsAgent",
+          items: [{
+            value: "true",
+            text: copy.labels.contactIsAgent,
+            checked: values.contactIsAgent
+          }]
+        }) }}
+
+        {{ govukButton({
+          text: copy.buttons.addAnother,
+          classes: "govuk-button--secondary",
+          name: "action",
+          value: "add"
+        }) }}
+      {% endif %}
+    {% endcall %}
+
+    {{ saveActions(hubHref, { text: sharedCopy.saveActions.saveAndContinue, name: "action", value: "continue" }, sharedCopy.saveActions) }}
+  </form>
+{% endblock %}

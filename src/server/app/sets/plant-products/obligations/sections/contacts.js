@@ -15,3 +15,37 @@ export const responsiblePersonTelephone = {
   name: 'responsiblePersonTelephone',
   status: 'optional'
 }
+
+export const nominatedContacts = {
+  id: '0e680da8-2c58-41cc-884c-88a1231a396b',
+  name: 'nominatedContacts',
+  requires: { maxEntries: 5 }
+}
+
+export const contactName = {
+  id: 'aeaef2c3-bb4e-4760-b6dd-22e8441b190a',
+  name: 'contactName',
+  within: nominatedContacts,
+  status: 'mandatory'
+}
+
+export const contactEmail = {
+  id: '66da4529-7715-49d4-9dd9-d496ff5fefc2',
+  name: 'contactEmail',
+  within: nominatedContacts,
+  status: 'optional'
+}
+
+export const contactTelephone = {
+  id: 'f35dd9fe-e9f0-4316-aa37-4557bfcda6fd',
+  name: 'contactTelephone',
+  within: nominatedContacts,
+  status: 'optional'
+}
+
+export const contactIsAgent = {
+  id: '30530b37-df70-4e31-9a54-1d29b836285d',
+  name: 'contactIsAgent',
+  within: nominatedContacts,
+  status: 'optional'
+}

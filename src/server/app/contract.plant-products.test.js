@@ -27,6 +27,7 @@ import * as additionalDetails from './sets/plant-products/journeys/linear/featur
 import * as documents from './sets/plant-products/journeys/linear/features/documents/controller.js'
 import * as commodityInputMethod from './sets/plant-products/journeys/linear/features/commodities/commodity-input-method/commodity-input-method.controller.js'
 import * as contact from './sets/plant-products/journeys/linear/features/contact/controller.js'
+import * as nominatedContacts from './sets/plant-products/journeys/linear/features/nominated-contacts/controller.js'
 import * as basicDescription from './sets/plant-products/journeys/linear/features/commodities/basic-description/basic-description.controller.js'
 import * as commoditySearch from './sets/plant-products/journeys/linear/features/commodities/search/search.controller.js'
 import * as varietyOfGenusAndSpecies from './sets/plant-products/journeys/linear/features/commodities/variety-of-genus-and-species/variety-of-genus-and-species.controller.js'
@@ -184,6 +185,18 @@ const cases = [
       responsiblePersonName: 'Isabel Irwin',
       responsiblePersonEmail: 'isabel@example.com',
       responsiblePersonTelephone: '0123456789'
+    }
+  },
+  {
+    id: nominatedContacts.meta.id,
+    collects: nominatedContacts.meta.collects,
+    controller: nominatedContacts,
+    payload: {
+      action: 'add',
+      contactName: 'Alex Inspector',
+      contactEmail: 'alex@example.com',
+      contactTelephone: '',
+      contactIsAgent: 'true'
     }
   },
   {

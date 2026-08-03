@@ -123,6 +123,19 @@ describe('plant-products indexed obligations are first-class', () => {
         obligation: plantProductsObligationSet[name],
         templatePath: name
       })),
+      {
+        obligation: plantProductsObligationSet.nominatedContacts,
+        templatePath: 'nominatedContacts'
+      },
+      ...[
+        'contactName',
+        'contactEmail',
+        'contactTelephone',
+        'contactIsAgent'
+      ].map((name) => ({
+        obligation: plantProductsObligationSet[name],
+        templatePath: `nominatedContacts.${name}`
+      })),
       ...['totalGrossWeight', 'grossVolume', 'grossVolumeUnit'].map((name) => ({
         obligation: plantProductsObligationSet[name],
         templatePath: name
@@ -237,6 +250,7 @@ describe('plant-products indexed obligations are first-class', () => {
       'transport',
       'goods-movement',
       'contact',
+      'nominated-contacts',
       'documents',
       'traders',
       'review'
