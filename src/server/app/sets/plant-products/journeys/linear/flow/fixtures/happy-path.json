@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "values": {
+    "importType": "plants",
+    "countryOfOrigin": "FR",
+    "countryOfConsignment": "DE",
+    "internalReference": "IMPORT-041",
+    "reasonForImport": "INTERNAL_MARKET",
+    "commodityInputMethod": "MANUAL",
+    "commodityLines": [
+      {
+        "commoditySelection": "0808108090",
+        "numberOfPackages": 3,
+        "packageType": "BOX",
+        "quantity": 22,
+        "quantityType": "PIECES",
+        "netWeight": 4,
+        "controlledAtmosphereContainer": false,
+        "intendedForFinalUsers": true,
+        "testAndTrial": true,
+        "species": [
+          {
+            "eppoCode": "MABSD",
+            "genusAndSpecies": "Malus domestica",
+            "speciesId": "1391442",
+            "varieties": [
+              {
+                "variety": "03107EFA-9BCD-1089-565E-B28F73994DEC",
+                "varietyClass": "CLASS_I"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "totalGrossWeight": 10,
+    "grossVolume": 8,
+    "grossVolumeUnit": "LITRES",
+    "borderControlPost": "CONPNT",
+    "inspectionPremises": "INSPBER1",
+    "meansOfTransport": "ROAD_VEHICLE",
+    "transportIdentification": "TRUCK-041",
+    "transportDocumentReference": "CMR-041",
+    "arrivalDate": "2026-08-20",
+    "arrivalTime": "14:05",
+    "usesContainers": true,
+    "containers": [
+      {
+        "containerNumber": "CONT-041",
+        "sealNumber": "SEAL-041",
+        "officialSeal": true
+      }
+    ],
+    "commonTransitConvention": "NO",
+    "usingGvms": false,
+    "responsiblePersonName": "Sam Reviewer",
+    "responsiblePersonEmail": "sam@example.com",
+    "responsiblePersonTelephone": "07700 900982",
+    "accompanyingDocuments": [
+      {
+        "documentType": "PHYTOSANITARY_CERTIFICATE",
+        "documentReference": "PHYTO-041",
+        "issueDate": {
+          "day": "4",
+          "month": "8",
+          "year": "2026"
+        }
+      }
+    ],
+    "destinationSameAsConsignee": true,
+    "consignorName": "Orchard Export SAS",
+    "consignorAddressLine1": "12 Rue des Vergers",
+    "consignorCity": "Lyon",
+    "consignorTelephone": "+33 4 72 00 00 00",
+    "consignorCountry": "FR",
+    "consignorEmail": "exports@example.com"
+  }
+}

@@ -1,4 +1,5 @@
 // Test scaffold from docs/add-a-set.md step 7.
+import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { evaluateAnswers } from '../../../../../bridge/evaluation.js'
@@ -52,6 +53,12 @@ import {
 import { FLOW_ONLY_KEYS, sections } from './flow.js'
 import { rowParts, rowStatus, taskRowById, taskRows } from './task-rows.js'
 import { nominatedContacts as nominatedContactsObligation } from '../../../obligations/index.js'
+import { packageTypeOptions } from '../../../services/reference/package-types.js'
+import { quantityTypeOptions } from '../../../services/reference/quantity-types.js'
+
+const { values: happyPath } = JSON.parse(
+  readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
+)
 
 const completeConsignor = {
   consignorName: 'Orchard Export SAS',
@@ -61,6 +68,29 @@ const completeConsignor = {
   consignorCountry: 'FR',
   consignorEmail: 'exports@example.com'
 }
+
+const withoutAnswers = (answers, ...keys) =>
+  Object.fromEntries(
+    Object.entries(answers).filter(([name]) => !keys.includes(name))
+  )
+
+const consignorKeys = Object.keys(completeConsignor)
+const transportKeys = [
+  'borderControlPost',
+  'inspectionPremises',
+  'meansOfTransport',
+  'transportIdentification',
+  'transportDocumentReference',
+  'arrivalDate',
+  'arrivalTime',
+  'usesContainers',
+  'containers'
+]
+const additionalDetailsKeys = [
+  'totalGrossWeight',
+  'grossVolume',
+  'grossVolumeUnit'
+]
 
 describe('plant-products task rows', () => {
   beforeAll(() => {
@@ -225,6 +255,52 @@ describe('plant-products task rows', () => {
     ])
   })
 
+  it('marks every mandatory row complete from the canonical happy-path fixture', () => {
+    const { evaluation, inScope, statuses } = withSetContext(
+      'plant-products',
+      () => {
+        const evaluation = evaluateAnswers(happyPath)
+        const { inScope } = makeScope(happyPath)
+        return {
+          evaluation,
+          inScope,
+          statuses: Object.fromEntries(
+            taskRows.map((row) => [
+              row.id,
+              rowStatus(row, happyPath, inScope, evaluation)
+            ])
+          )
+        }
+      }
+    )
+
+    expect(statuses).toEqual({
+      origin: FULFILLED,
+      purpose: FULFILLED,
+      commodities: FULFILLED,
+      'additional-details': FULFILLED,
+      transport: FULFILLED,
+      'goods-movement': FULFILLED,
+      contact: FULFILLED,
+      'nominated-contacts': OPTIONAL,
+      documents: FULFILLED,
+      traders: FULFILLED
+    })
+    expect(
+      withSetContext('plant-products', () =>
+        readyForCheckYourAnswers(happyPath, inScope, evaluation)
+      )
+    ).toBe(true)
+
+    const [commodityLine] = happyPath.commodityLines
+    expect(packageTypeOptions.map(({ value }) => value)).toContain(
+      commodityLine.packageType
+    )
+    expect(quantityTypeOptions.map(({ value }) => value)).toContain(
+      commodityLine.quantityType
+    )
+  })
+
   it('derives fallback row parts from the page dispatch', () => {
     expect(
       withSetContext('plant-products', () => rowParts(taskRowById('origin')))
@@ -350,47 +426,11 @@ describe('plant-products task rows', () => {
           evaluateAnswers(answers)
         )
       })
-    const allOtherRows = {
-      countryOfOrigin: 'FR',
-      countryOfConsignment: 'IE',
-      reasonForImport: 'INTERNAL_MARKET',
-      commodityInputMethod: 'MANUAL',
-      commodityLines: [
-        {
-          commoditySelection: '08059000',
-          numberOfPackages: 1,
-          packageType: 'BOX',
-          quantity: 1,
-          quantityType: 'PIECES',
-          netWeight: 1,
-          species: [
-            {
-              eppoCode: 'CIDAC',
-              genusAndSpecies: 'Citrus australasica'
-            }
-          ]
-        }
-      ],
-      totalGrossWeight: '2',
-      borderControlPost: 'GBLHR4PP',
-      meansOfTransport: 'ROAD_VEHICLE',
-      transportIdentification: 'AB12 CDE',
-      transportDocumentReference: 'CMR-123',
-      arrivalDate: '2026-08-20',
-      arrivalTime: '14:50',
-      usesContainers: false,
-      commonTransitConvention: 'NO',
-      usingGvms: false,
-      responsiblePersonName: 'Isabel Irwin',
-      responsiblePersonEmail: 'isabel@example.com',
-      accompanyingDocuments: [
-        {
-          documentType: 'PHYTOSANITARY_CERTIFICATE',
-          documentReference: 'PHYTO-001',
-          issueDate: { day: '4', month: '12', year: '2025' }
-        }
-      ]
-    }
+    const allOtherRows = withoutAnswers(
+      happyPath,
+      'destinationSameAsConsignee',
+      ...consignorKeys
+    )
 
     expect(readyFor(allOtherRows)).toBe(false)
     expect(
@@ -534,67 +574,20 @@ describe('plant-products task rows', () => {
           evaluateAnswers(answers)
         )
       })
-    const allEarlierRows = {
-      countryOfOrigin: 'FR',
-      countryOfConsignment: 'IE',
-      reasonForImport: 'INTERNAL_MARKET',
-      commodityInputMethod: 'MANUAL',
-      commodityLines: [
-        {
-          commoditySelection: '08059000',
-          numberOfPackages: 1,
-          packageType: 'BOX',
-          quantity: 1,
-          quantityType: 'PIECES',
-          netWeight: 1,
-          species: [
-            {
-              eppoCode: 'CIDAC',
-              genusAndSpecies: 'Citrus australasica'
-            }
-          ]
-        }
-      ],
-      totalGrossWeight: '2',
-      borderControlPost: 'GBLHR4PP',
-      meansOfTransport: 'ROAD_VEHICLE',
-      transportIdentification: 'AB12 CDE',
-      transportDocumentReference: 'CMR-123',
-      arrivalDate: '2026-08-20',
-      arrivalTime: '14:50',
-      usesContainers: false,
-      commonTransitConvention: 'NO',
-      usingGvms: false,
-      responsiblePersonName: 'Isabel Irwin',
-      responsiblePersonEmail: 'isabel@example.com',
-      destinationSameAsConsignee: true,
-      ...completeConsignor
-    }
+    const allEarlierRows = withoutAnswers(happyPath, 'accompanyingDocuments')
 
     expect(readyFor(allEarlierRows)).toBe(false)
     expect(
       readyFor({
         ...allEarlierRows,
-        accompanyingDocuments: [
-          {
-            documentType: 'PHYTOSANITARY_CERTIFICATE',
-            documentReference: 'PHYTO-001',
-            issueDate: { day: '4', month: '12', year: '2025' }
-          }
-        ]
+        accompanyingDocuments: happyPath.accompanyingDocuments
       })
     ).toBe(true)
     expect(
       readyFor({
         ...allEarlierRows,
         nominatedContacts: [],
-        accompanyingDocuments: [
-          {
-            documentType: 'PHYTOSANITARY_CERTIFICATE',
-            documentReference: 'PHYTO-001',
-            issueDate: { day: '4', month: '12', year: '2025' }
-          }
-        ]
+        accompanyingDocuments: happyPath.accompanyingDocuments
       })
     ).toBe(true)
     expect(
@@ -610,13 +603,7 @@ describe('plant-products task rows', () => {
             contactTelephone: '+44 7700 900 982'
           }
         ],
-        accompanyingDocuments: [
-          {
-            documentType: 'PHYTOSANITARY_CERTIFICATE',
-            documentReference: 'PHYTO-001',
-            issueDate: { day: '4', month: '12', year: '2025' }
-          }
-        ]
+        accompanyingDocuments: happyPath.accompanyingDocuments
       })
     ).toBe(true)
   })
@@ -631,47 +618,12 @@ describe('plant-products task rows', () => {
           evaluateAnswers(answers)
         )
       })
-    const allOtherRows = {
-      countryOfOrigin: 'FR',
-      countryOfConsignment: 'IE',
-      reasonForImport: 'INTERNAL_MARKET',
-      commodityInputMethod: 'MANUAL',
-      commodityLines: [
-        {
-          commoditySelection: '08059000',
-          numberOfPackages: 1,
-          packageType: 'BOX',
-          quantity: 1,
-          quantityType: 'PIECES',
-          netWeight: 1,
-          species: [
-            {
-              eppoCode: 'CIDAC',
-              genusAndSpecies: 'Citrus australasica'
-            }
-          ]
-        }
-      ],
-      totalGrossWeight: '2',
-      borderControlPost: 'GBLHR4PP',
-      meansOfTransport: 'ROAD_VEHICLE',
-      transportIdentification: 'AB12 CDE',
-      transportDocumentReference: 'CMR-123',
-      arrivalDate: '2026-08-20',
-      arrivalTime: '14:50',
-      usesContainers: false,
-      commonTransitConvention: 'NO',
-      usingGvms: false,
-      accompanyingDocuments: [
-        {
-          documentType: 'PHYTOSANITARY_CERTIFICATE',
-          documentReference: 'PHYTO-001',
-          issueDate: { day: '4', month: '12', year: '2025' }
-        }
-      ],
-      destinationSameAsConsignee: true,
-      ...completeConsignor
-    }
+    const allOtherRows = withoutAnswers(
+      happyPath,
+      'responsiblePersonName',
+      'responsiblePersonEmail',
+      'responsiblePersonTelephone'
+    )
 
     expect(readyFor(allOtherRows)).toBe(false)
     expect(
@@ -899,51 +851,10 @@ describe('plant-products task rows', () => {
           evaluateAnswers(answers)
         )
       })
-    const earlierRows = {
-      countryOfOrigin: 'FR',
-      countryOfConsignment: 'IE',
-      reasonForImport: 'INTERNAL_MARKET',
-      commodityInputMethod: 'MANUAL',
-      commodityLines: [
-        {
-          commoditySelection: '08059000',
-          numberOfPackages: 1,
-          packageType: 'BOX',
-          quantity: 1,
-          quantityType: 'PIECES',
-          netWeight: 1,
-          species: [
-            {
-              eppoCode: 'CIDAC',
-              genusAndSpecies: 'Citrus australasica'
-            }
-          ]
-        }
-      ],
-      totalGrossWeight: '2',
-      accompanyingDocuments: [
-        {
-          documentType: 'PHYTOSANITARY_CERTIFICATE',
-          documentReference: 'PHYTO-001',
-          issueDate: { day: '4', month: '12', year: '2025' }
-        }
-      ],
-      commonTransitConvention: 'NO',
-      usingGvms: false,
-      responsiblePersonName: 'Isabel Irwin',
-      responsiblePersonEmail: 'isabel@example.com',
-      destinationSameAsConsignee: true,
-      ...completeConsignor
-    }
-    const completedTransport = {
-      borderControlPost: 'GBLHR4PP',
-      meansOfTransport: 'ROAD_VEHICLE',
-      transportIdentification: 'AB12 CDE',
-      transportDocumentReference: 'CMR-123',
-      arrivalDate: '2026-08-20',
-      arrivalTime: '14:50',
-      usesContainers: false
-    }
+    const earlierRows = withoutAnswers(happyPath, ...transportKeys)
+    const completedTransport = Object.fromEntries(
+      Object.entries(happyPath).filter(([name]) => transportKeys.includes(name))
+    )
 
     expect(
       readyFor({
@@ -972,48 +883,7 @@ describe('plant-products task rows', () => {
           evaluateAnswers(answers)
         )
       })
-    const allOtherRows = {
-      countryOfOrigin: 'FR',
-      countryOfConsignment: 'IE',
-      reasonForImport: 'INTERNAL_MARKET',
-      commodityInputMethod: 'MANUAL',
-      commodityLines: [
-        {
-          commoditySelection: '08059000',
-          numberOfPackages: 1,
-          packageType: 'BOX',
-          quantity: 1,
-          quantityType: 'PIECES',
-          netWeight: 1,
-          species: [
-            {
-              eppoCode: 'CIDAC',
-              genusAndSpecies: 'Citrus australasica'
-            }
-          ]
-        }
-      ],
-      borderControlPost: 'GBLHR4PP',
-      meansOfTransport: 'ROAD_VEHICLE',
-      transportIdentification: 'AB12 CDE',
-      transportDocumentReference: 'CMR-123',
-      arrivalDate: '2026-08-20',
-      arrivalTime: '14:50',
-      usesContainers: false,
-      accompanyingDocuments: [
-        {
-          documentType: 'PHYTOSANITARY_CERTIFICATE',
-          documentReference: 'PHYTO-001',
-          issueDate: { day: '4', month: '12', year: '2025' }
-        }
-      ],
-      commonTransitConvention: 'NO',
-      usingGvms: false,
-      responsiblePersonName: 'Isabel Irwin',
-      responsiblePersonEmail: 'isabel@example.com',
-      destinationSameAsConsignee: true,
-      ...completeConsignor
-    }
+    const allOtherRows = withoutAnswers(happyPath, ...additionalDetailsKeys)
 
     const {
       commonTransitConvention: _commonTransitConvention,
@@ -1021,17 +891,17 @@ describe('plant-products task rows', () => {
       ...withoutGoodsMovement
     } = allOtherRows
     expect(readyFor(allOtherRows)).toBe(false)
-    expect(readyFor({ ...allOtherRows, grossVolume: '5' })).toBe(false)
-    expect(readyFor({ ...withoutGoodsMovement, totalGrossWeight: '2' })).toBe(
+    expect(readyFor({ ...allOtherRows, grossVolume: 5 })).toBe(false)
+    expect(readyFor({ ...withoutGoodsMovement, totalGrossWeight: 10 })).toBe(
       false
     )
     expect(
       readyFor({
         ...withoutGoodsMovement,
-        totalGrossWeight: '2',
+        totalGrossWeight: 10,
         commonTransitConvention: 'NO'
       })
     ).toBe(false)
-    expect(readyFor({ ...allOtherRows, totalGrossWeight: '2' })).toBe(true)
+    expect(readyFor({ ...allOtherRows, totalGrossWeight: 10 })).toBe(true)
   })
 })

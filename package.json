@@ -18,6 +18,8 @@
     "e2e:start": "AUTH_ENABLED=false NODE_ENV=development node .",
     "check:workspace-stack": "node e2e/check-workspace-stack.js",
     "test:e2e": "npm run build:frontend && DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test --project=journeys",
+    "test:e2e:plant-products": "npm run build:frontend && PLANT_PRODUCTS_MODE=stub DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test --project=journeys-plant-products",
+    "test:e2e:all": "npm run build:frontend && DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test --project=journeys --project=journeys-plant-products",
     "test:features": "npm run build:frontend && DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test --project=features",
     "test:features:plant-products": "npm run build:frontend && PLANT_PRODUCTS_MODE=stub DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test --project=features-plant-products",
     "test:features:all": "npm run build:frontend && DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test --project=features --project=features-plant-products",
