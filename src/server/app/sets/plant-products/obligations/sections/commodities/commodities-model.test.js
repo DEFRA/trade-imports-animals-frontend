@@ -124,9 +124,9 @@ const speciesEntry = (code, genus, varietiesEntries = [], id = undefined) => ({
 const lineEntry = (selection, speciesEntries = []) => ({
   commoditySelection: selection,
   numberOfPackages: 2,
-  packageType: 'BX',
+  packageType: 'BOX',
   quantity: 12,
-  quantityType: 'PCS',
+  quantityType: 'PIECES',
   netWeight: 8.5,
   controlledAtmosphereContainer: false,
   finishedOrPropagated: 'FINISHED',

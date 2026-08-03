@@ -190,11 +190,11 @@ describe('plant-products notification mapper at the m0 boundary', () => {
       commodityLines: [
         {
           uniqueComplementId: 'server-line-1',
-          commoditySelection: '08059000',
+          commoditySelection: '0808108090',
           numberOfPackages: 0,
-          packageType: 'BX',
+          packageType: 'BOX',
           quantity: 12.5,
-          quantityType: 'PCS',
+          quantityType: 'PIECES',
           netWeight: 8.75,
           controlledAtmosphereContainer: false,
           finishedOrPropagated: 'FINISHED',
@@ -202,12 +202,18 @@ describe('plant-products notification mapper at the m0 boundary', () => {
           testAndTrial: false,
           species: [
             {
-              eppoCode: 'CIDAC',
-              genusAndSpecies: 'Citrus australasica',
-              speciesId: '1364882',
+              eppoCode: 'MABSD',
+              genusAndSpecies: 'Malus domestica',
+              speciesId: '1391442',
               varieties: [
-                { variety: 'NONE', varietyClass: 'CLASS_I' },
-                { variety: 'NONE', varietyClass: null }
+                {
+                  variety: '03107EFA-9BCD-1089-565E-B28F73994DEC',
+                  varietyClass: 'CLASS_I'
+                },
+                {
+                  variety: '03107EFA-9BCD-1089-565E-B28F73994DEC',
+                  varietyClass: null
+                }
               ]
             }
           ]
@@ -266,7 +272,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
               [transientKey]: 'draft species value',
               varieties: [
                 {
-                  variety: 'NONE',
+                  variety: 'C5E27C5A-D13B-E9F5-B4B0-7234A7941208',
                   [transientKey]: 'draft variety value'
                 }
               ]

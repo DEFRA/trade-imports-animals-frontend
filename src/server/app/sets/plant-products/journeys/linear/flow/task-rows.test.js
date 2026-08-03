@@ -359,9 +359,9 @@ describe('plant-products task rows', () => {
         {
           commoditySelection: '08059000',
           numberOfPackages: 1,
-          packageType: 'BX',
+          packageType: 'BOX',
           quantity: 1,
-          quantityType: 'PCS',
+          quantityType: 'PIECES',
           netWeight: 1,
           species: [
             {
@@ -543,9 +543,9 @@ describe('plant-products task rows', () => {
         {
           commoditySelection: '08059000',
           numberOfPackages: 1,
-          packageType: 'BX',
+          packageType: 'BOX',
           quantity: 1,
-          quantityType: 'PCS',
+          quantityType: 'PIECES',
           netWeight: 1,
           species: [
             {
@@ -640,9 +640,9 @@ describe('plant-products task rows', () => {
         {
           commoditySelection: '08059000',
           numberOfPackages: 1,
-          packageType: 'BX',
+          packageType: 'BOX',
           quantity: 1,
-          quantityType: 'PCS',
+          quantityType: 'PIECES',
           netWeight: 1,
           species: [
             {
@@ -750,9 +750,9 @@ describe('plant-products task rows', () => {
           {
             commoditySelection: '08059000',
             numberOfPackages: 1,
-            packageType: 'BX',
+            packageType: 'BOX',
             quantity: 1,
-            quantityType: 'PCS',
+            quantityType: 'PIECES',
             netWeight: 1,
             species: [
               {
@@ -908,9 +908,9 @@ describe('plant-products task rows', () => {
         {
           commoditySelection: '08059000',
           numberOfPackages: 1,
-          packageType: 'BX',
+          packageType: 'BOX',
           quantity: 1,
-          quantityType: 'PCS',
+          quantityType: 'PIECES',
           netWeight: 1,
           species: [
             {
@@ -981,9 +981,9 @@ describe('plant-products task rows', () => {
         {
           commoditySelection: '08059000',
           numberOfPackages: 1,
-          packageType: 'BX',
+          packageType: 'BOX',
           quantity: 1,
-          quantityType: 'PCS',
+          quantityType: 'PIECES',
           netWeight: 1,
           species: [
             {
