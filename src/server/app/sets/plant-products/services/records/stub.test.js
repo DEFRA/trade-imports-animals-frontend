@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
+import { configureFulfilmentRegistry } from '../../../../bridge/fulfilment-registry.js'
+import { configureObligationSet } from '../../../../model/obligations/manifest.js'
+import {
+  enterSetContext,
+  withSetContext
+} from '../../../../shared/set-context.js'
+import { featureEvaluationBindings } from '../../journeys/linear/features/evaluation.js'
+import * as plantProductsObligationSet from '../../obligations/index.js'
 import { records } from './stub.js'
 
 const REFERENCE_PATTERN = /^GBN-PP-\d{2}-[0-9A-HJ-KM-NP-TV-Z]{6}$/
@@ -21,6 +30,9 @@ const createAtStatus = async (status) => {
 
 describe('plant-products records stub', () => {
   beforeEach(async () => {
+    enterSetContext('plant-products')
+    configureObligationSet('plant-products', plantProductsObligationSet)
+    configureFulfilmentRegistry('plant-products', featureEvaluationBindings)
     await records.clear()
   })
 
@@ -105,6 +117,42 @@ describe('plant-products records stub', () => {
       [...firstPage.rows, ...secondPage.rows].map(({ journeyId }) => journeyId)
     ).not.toContain(created[1].journeyId)
   })
+
+  it('projects dashboard facts and applies the supported sort tokens', () =>
+    withSetContext('plant-products', async () => {
+      const first = await records.create()
+      const second = await records.create()
+      await records.replaceFulfilment(
+        first.journeyId,
+        assembleFulfilments({
+          countryOfOrigin: 'IE',
+          arrivalDate: '2026-03-07'
+        })
+      )
+      await records.replaceFulfilment(
+        second.journeyId,
+        assembleFulfilments({
+          countryOfOrigin: 'FR',
+          arrivalDate: '2026-03-08'
+        })
+      )
+
+      const descending = await records.list({ sort: 'arrivalDate,desc' })
+      const ascending = await records.list({ sort: 'arrivalDate,asc' })
+
+      expect(descending.rows.map(({ journeyId }) => journeyId)).toEqual([
+        second.journeyId,
+        first.journeyId
+      ])
+      expect(ascending.rows.map(({ journeyId }) => journeyId)).toEqual([
+        first.journeyId,
+        second.journeyId
+      ])
+      expect(descending.rows[1]).toMatchObject({
+        originCountryCode: 'IE',
+        arrivalDate: '2026-03-07'
+      })
+    }))
 
   it.each([undefined, null, '', '   '])(
     'rejects a blank copy key before creating a draft (%s)',

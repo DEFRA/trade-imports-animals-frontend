@@ -300,12 +300,12 @@ describe('plant-products import-type controller', () => {
   })
 
   it('renders a recoverable save failure at 500', async () => {
+    const { cookies, url } = await newJourney()
     vi.spyOn(kit, 'recoverableSave').mockImplementationOnce(
       async (_save, onRecoverableFailure) => ({
         failure: await onRecoverableFailure()
       })
     )
-    const { cookies, url } = await newJourney()
     const response = await postImportType(url, cookies, 'plants')
 
     expect(response.statusCode).toBe(500)
@@ -313,10 +313,10 @@ describe('plant-products import-type controller', () => {
   })
 
   it('lets unexpected save errors reach the server catch-all', async () => {
+    const { cookies, url } = await newJourney()
     vi.spyOn(kit, 'recoverableSave').mockRejectedValueOnce(
       new TypeError('programming failure')
     )
-    const { cookies, url } = await newJourney()
     const response = await postImportType(url, cookies, 'plants')
 
     expect(response.statusCode).toBe(500)

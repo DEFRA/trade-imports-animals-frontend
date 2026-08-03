@@ -22,6 +22,8 @@ export const marshalListItem = (dto) => {
     status,
     createdAt: dto.created ?? null,
     submittedAt:
-      status === SUBMITTED ? (dto.declaration?.declaredAt ?? null) : null
+      status === SUBMITTED ? (dto.declaration?.declaredAt ?? null) : null,
+    originCountryCode: dto.origin?.countryCode ?? null,
+    arrivalDate: dto.transport?.arrivalDate ?? null
   }
 }

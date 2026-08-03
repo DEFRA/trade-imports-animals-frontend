@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
 const expectedOptions = Object.entries(copy.importTypes).map(
@@ -140,7 +141,7 @@ test.describe('plant-products import type', () => {
 
     await page.goto('/plant-products')
     const draftRow = page.getByRole('row').filter({ hasText: reference })
-    await expect(draftRow).toContainText('draft')
+    await expect(draftRow).toContainText(dashboardCopy.statuses.draft)
 
     await page.goto(hubUrl)
     await expect(page.getByText(reference, { exact: true })).toBeVisible()

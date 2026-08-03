@@ -157,10 +157,14 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
     fetchMocker.mockResponse(
       jsonResponse({
         content: [
-          dto({
-            status: 'SUBMITTED',
-            declaration: { declaredAt: DECLARED_AT }
-          })
+          {
+            ...dto({
+              status: 'SUBMITTED',
+              declaration: { declaredAt: DECLARED_AT }
+            }),
+            origin: { countryCode: 'IE' },
+            transport: { arrivalDate: '2026-03-07' }
+          }
         ],
         page: 2,
         pageSize: 25,
@@ -193,7 +197,9 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
           journeyId: SOURCE_REFERENCE,
           status: 'submitted',
           createdAt: CREATED_AT,
-          submittedAt: DECLARED_AT
+          submittedAt: DECLARED_AT,
+          originCountryCode: 'IE',
+          arrivalDate: '2026-03-07'
         }
       ],
       page: 2,

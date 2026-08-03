@@ -22,6 +22,7 @@ import * as consignorCreate from './traders/consignor-create/consignor-create.co
 import * as consignorConfirmation from './traders/consignor-confirmation/consignor-confirmation.controller.js'
 
 export const dispatchPages = [
+  dashboard.meta,
   importType.meta,
   countryOfOrigin.meta,
   originOfImport.meta,

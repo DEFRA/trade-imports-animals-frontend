@@ -6,6 +6,7 @@ import {
   DRAFT,
   SUBMITTED
 } from '../../../../engine/persistence/records.js'
+import { projectAnswers } from '../../../../bridge/fulfilments/index.js'
 
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
 const PAGE_SIZE = 25
@@ -41,6 +42,36 @@ const toJourney = (record) =>
     fulfilment: record.fulfilment
   })
 
+const dashboardFacts = (record) => {
+  const answers = projectAnswers(record.fulfilment)
+  return {
+    originCountryCode: answers.countryOfOrigin ?? null,
+    arrivalDate: answers.arrivalDate ?? null
+  }
+}
+
+const toListItem = (record) => ({
+  journeyId: record.journeyId,
+  status: record.status,
+  createdAt: record.createdAt,
+  submittedAt: record.submittedAt,
+  ...dashboardFacts(record)
+})
+
+const valueForSort = (record, field) =>
+  field === 'arrivalDate' ? record.arrivalDate : record.createdAt
+
+const sortListItems = (rows, sort = 'arrivalDate,desc') => {
+  const [field, direction] = sort.split(',')
+  const multiplier = direction === 'asc' ? 1 : -1
+  return rows.sort((first, second) => {
+    const firstValue = valueForSort(first, field) ?? ''
+    const secondValue = valueForSort(second, field) ?? ''
+    const compared = firstValue.localeCompare(secondValue) * multiplier
+    return compared || second.createdAt.localeCompare(first.createdAt)
+  })
+}
+
 const assertWritable = (record) => {
   if (record.status !== DRAFT && record.status !== AMEND) {
     throw new Error(
@@ -67,23 +98,28 @@ export const load = async ({ journeyId } = {}) => {
   return record === undefined ? undefined : toJourney(record)
 }
 
-export const list = async ({ journeyIds, page = 1, referenceNumber } = {}) => {
+export const list = async ({
+  journeyIds,
+  page = 1,
+  sort = 'arrivalDate,desc',
+  referenceNumber
+} = {}) => {
   const allowed = journeyIds === undefined ? null : new Set(journeyIds)
   const reference = referenceNumber?.trim() || undefined
-  const matching = [...recordsById.values()].filter(
-    (record) =>
-      record.status !== DELETED &&
-      (allowed === null || allowed.has(record.journeyId)) &&
-      (reference === undefined || record.journeyId === reference)
+  const matching = sortListItems(
+    [...recordsById.values()]
+      .filter(
+        (record) =>
+          record.status !== DELETED &&
+          (allowed === null || allowed.has(record.journeyId)) &&
+          (reference === undefined || record.journeyId === reference)
+      )
+      .map(toListItem),
+    sort
   )
   const start = (page - 1) * PAGE_SIZE
   return {
-    rows: matching.slice(start, start + PAGE_SIZE).map((record) => ({
-      journeyId: record.journeyId,
-      status: record.status,
-      createdAt: record.createdAt,
-      submittedAt: record.submittedAt
-    })),
+    rows: matching.slice(start, start + PAGE_SIZE),
     page,
     size: PAGE_SIZE,
     totalElements: matching.length,
