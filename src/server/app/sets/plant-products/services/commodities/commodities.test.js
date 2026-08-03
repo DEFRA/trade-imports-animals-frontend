@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { SPECIES_BY_CODE } from './fixture.js'
 import {
   childrenOf,
-  classApplicableSpecies,
+  classApplicableCommodities,
   classLabelFor,
   classesFor,
   commodityCodes,
@@ -47,6 +47,7 @@ describe('plant-products commodity reference data', () => {
       '0713500010',
       '08059000',
       '0808108010',
+      '0808108090',
       '09103000',
       '10083000',
       '14019000',
@@ -118,6 +119,19 @@ describe('plant-products commodity reference data', () => {
     ])
   })
 
+  it('provides the real MABSD species for the added apple commodity', () => {
+    const species = speciesFor('0808108090')
+
+    expect(species).toBe(SPECIES_BY_CODE['0808108090'])
+    expect(species).toEqual([
+      {
+        eppoCode: 'MABSD',
+        genusAndSpecies: 'Malus domestica',
+        speciesId: '1391442'
+      }
+    ])
+  })
+
   it('searches genus and EPPO code as one combined filter', () => {
     expect(searchSpecies({ genus: 'citrus' })).toContainEqual({
       commodityCode: '08059000',
@@ -132,35 +146,62 @@ describe('plant-products commodity reference data', () => {
     expect(searchSpecies({ genus: 'malus', eppoCode: 'CIDAC' })).toEqual([])
   })
 
-  it('provides CIDAC variety and class reference data', () => {
-    expect(varietiesFor('CIDAC')).toContainEqual({ id: 'NONE', label: 'None' })
-    expect(classesFor('CIDAC')).toEqual(['CLASS_I', 'CLASS_II', 'EXTRA_CLASS'])
+  it('provides corrected commodity-scoped CIDAC variety data without classes', () => {
+    expect(varietiesFor('08059000', 'CIDAC')).toEqual([
+      {
+        id: 'C5E27C5A-D13B-E9F5-B4B0-7234A7941208',
+        label: 'None'
+      }
+    ])
+    expect(classesFor('08059000')).toEqual([])
     expect(classLabelFor('EXTRA_CLASS')).toBe('Extra Class')
-    expect(classApplicableSpecies()).toEqual(['CIDAC'])
   })
 
-  it('provides one real multi-variety species with stable IDs', () => {
-    const varieties = varietiesFor('MABSD')
+  it('provides the curated MABSD varieties and classes only for their commodity', () => {
+    const varieties = varietiesFor('0808108090', 'MABSD')
 
-    expect(varieties.length).toBeGreaterThan(1)
+    expect(varieties).toEqual([
+      {
+        id: '03107EFA-9BCD-1089-565E-B28F73994DEC',
+        label: 'McIntosh Red'
+      },
+      {
+        id: '035ECF9F-7B6C-078D-60D5-D2947C23A366',
+        label: 'Spartan'
+      },
+      {
+        id: '0C245190-A316-5B88-F38E-360FBBFB208F',
+        label: 'Royal Gala'
+      }
+    ])
     expect(varieties.every(({ id, label }) => id !== label)).toBe(true)
-    expect(varietyLabelFor('MABSD', varieties[0].id)).toBe('McIntosh Red')
+    expect(varietyLabelFor('0808108090', 'MABSD', varieties[0].id)).toBe(
+      'McIntosh Red'
+    )
+    expect(classesFor('0808108090')).toEqual([
+      'CLASS_I',
+      'CLASS_II',
+      'EXTRA_CLASS'
+    ])
+    expect(classApplicableCommodities()).toEqual(['0808108090'])
+    expect(varietiesFor('0808108010', 'MABSD')).toEqual([])
   })
 
   it('gates the variety page when varieties are available', () => {
-    expect(hasVarieties('CIDAC')).toBe(true)
-    expect(hasVarieties('MABSD')).toBe(true)
-    expect(hasVarieties('UNKNOWN')).toBe(false)
+    expect(hasVarieties('08059000', 'CIDAC')).toBe(true)
+    expect(hasVarieties('0808108090', 'MABSD')).toBe(true)
+    expect(hasVarieties('0808108010', 'MABSD')).toBe(false)
+    expect(hasVarieties('UNKNOWN', 'UNKNOWN')).toBe(false)
   })
 
   it('returns empty or undefined values for unknown reference keys', () => {
     expect(childrenOf('UNKNOWN')).toEqual([])
     expect(speciesFor('UNKNOWN')).toEqual([])
-    expect(varietiesFor('UNKNOWN')).toEqual([])
+    expect(varietiesFor('UNKNOWN', 'UNKNOWN')).toEqual([])
     expect(classesFor('UNKNOWN')).toEqual([])
     expect(descriptionFor('UNKNOWN')).toBeUndefined()
     expect(genusAndSpeciesFor('UNKNOWN')).toBeUndefined()
-    expect(varietyLabelFor('UNKNOWN', 'UNKNOWN')).toBeUndefined()
+    expect(varietyLabelFor('UNKNOWN', 'UNKNOWN', 'UNKNOWN')).toBeUndefined()
     expect(classLabelFor('UNKNOWN')).toBeUndefined()
     expect(isCommodityCode('UNKNOWN')).toBe(false)
     expect(isSpeciesOf('UNKNOWN', 'UNKNOWN')).toBe(false)

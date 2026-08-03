@@ -6,7 +6,8 @@ import { copy as featureCopy } from '../copy/copy.en.js'
 const copy = featureCopy.varietyOfGenusAndSpecies
 const searchCopy = featureCopy.commoditySearch
 const basicCopy = featureCopy.basicDescription
-const heading = 'CIDAC - Citrus australasica'
+const heading = 'MABSD - Malus domestica'
+const appleVarietyId = '03107EFA-9BCD-1089-565E-B28F73994DEC'
 const context = `for commodity line 1, species 1: ${heading}`
 const fields = {
   variety: `Variety ${context}`,
@@ -52,14 +53,14 @@ const startAtCommoditySearch = async (page) => {
 const startAtVarietyPage = async (page) => {
   await startAtCommoditySearch(page)
   await page.getByRole('tab', { name: searchCopy.tabs.speciesSearch }).click()
-  await page.getByLabel(searchCopy.speciesSearch.label).fill('Citrus')
+  await page.getByLabel(searchCopy.speciesSearch.label).fill('Malus domestica')
   await page
     .locator('#genus-and-species-search')
     .getByRole('button', { name: searchCopy.speciesSearch.button })
     .click()
   await page
     .getByRole('listitem')
-    .filter({ hasText: 'Citrus australasica — 08059000' })
+    .filter({ hasText: 'Malus domestica — 0808108090' })
     .getByRole('button', { name: searchCopy.speciesSearch.add })
     .click()
   await expect(page).toHaveURL((url) =>
@@ -74,14 +75,14 @@ const startAtVarietyPage = async (page) => {
 const startAtNoClassVarietyPage = async (page) => {
   await startAtCommoditySearch(page)
   await page.getByRole('tab', { name: searchCopy.tabs.speciesSearch }).click()
-  await page.getByLabel(searchCopy.speciesSearch.label).fill('Malus domestica')
+  await page.getByLabel(searchCopy.speciesSearch.label).fill('Citrus')
   await page
     .locator('#genus-and-species-search')
     .getByRole('button', { name: searchCopy.speciesSearch.button })
     .click()
   await page
     .getByRole('listitem')
-    .filter({ hasText: 'Malus domestica — 0808108010' })
+    .filter({ hasText: 'Citrus australasica — 08059000' })
     .getByRole('button', { name: searchCopy.speciesSearch.add })
     .click()
   await page.getByRole('button', { name: 'Save and continue' }).click()
@@ -90,7 +91,7 @@ const startAtNoClassVarietyPage = async (page) => {
 
 const choosePair = async (
   page,
-  { variety = 'NONE', other = '', varietyClass = 'CLASS_I' } = {}
+  { variety = appleVarietyId, other = '', varietyClass = 'CLASS_I' } = {}
 ) => {
   await page.getByLabel(fields.variety, { exact: true }).selectOption(variety)
   if (other) {
@@ -146,7 +147,9 @@ test.describe('plant-products variety of genus and species', () => {
     await expect(variety).toHaveAccessibleName(fields.variety)
     await expect(variety.locator('option')).toHaveText([
       copy.varietyPlaceholder,
-      'None',
+      'McIntosh Red',
+      'Spartan',
+      'Royal Gala',
       copy.otherOption
     ])
     await expect(other).toBeVisible()
@@ -181,10 +184,10 @@ test.describe('plant-products variety of genus and species', () => {
   }) => {
     await addPair(page)
     const saved = table(page)
-    await expect(saved).toContainText('None')
+    await expect(saved).toContainText('McIntosh Red')
     await expect(saved).toContainText(copy.classOptions.CLASS_I)
     await page.reload()
-    await expect(saved).toContainText('None')
+    await expect(saved).toContainText('McIntosh Red')
 
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(page).toHaveURL((url) =>
@@ -240,7 +243,7 @@ test.describe('plant-products variety of genus and species', () => {
 
     const buttons = table(page).getByRole('button')
     const expected = [
-      `Remove None, Class I from commodity line 1, species 1: ${heading}`,
+      `Remove McIntosh Red, Class I from commodity line 1, species 1: ${heading}`,
       `Remove Tahiti Lime, Class II from commodity line 1, species 1: ${heading}`
     ]
     await expect(buttons).toHaveCount(2)
@@ -265,10 +268,10 @@ test.describe('plant-products variety of genus and species', () => {
 
     await table(page)
       .getByRole('button', {
-        name: `Remove None, Class I from commodity line 1, species 1: ${heading}`
+        name: `Remove McIntosh Red, Class I from commodity line 1, species 1: ${heading}`
       })
       .click()
-    await expect(table(page)).not.toContainText('None')
+    await expect(table(page)).not.toContainText('McIntosh Red')
     await expect(table(page)).toContainText('Tahiti Lime')
     await expect(table(page)).toContainText(copy.classOptions.CLASS_II)
   })
@@ -280,21 +283,21 @@ test.describe('plant-products variety of genus and species', () => {
     await page.getByRole('link', { name: copy.addAnotherSpecies }).click()
 
     const addedSpecies = page.getByRole('table', {
-      name: `${basicCopy.added.caption} 08059000`
+      name: `${basicCopy.added.caption} 0808108090`
     })
     await addedSpecies
       .getByRole('button', {
-        name: `${basicCopy.added.removeLabel} Citrus australasica ${basicCopy.added.removeHidden} 08059000`
+        name: `${basicCopy.added.removeLabel} Malus domestica ${basicCopy.added.removeHidden} 0808108090`
       })
       .click()
     await expect(addedSpecies).toHaveCount(0)
 
     const results = page.getByRole('table', {
-      name: `${basicCopy.results.caption} 08059000`
+      name: `${basicCopy.results.caption} 0808108090`
     })
     await results
       .getByRole('button', {
-        name: `${basicCopy.results.addLabel} Citrus australasica ${basicCopy.results.addHidden} 08059000`
+        name: `${basicCopy.results.addLabel} Malus domestica ${basicCopy.results.addHidden} 0808108090`
       })
       .click()
     await page.getByRole('button', { name: 'Save and continue' }).click()
@@ -321,12 +324,14 @@ test.describe('plant-products variety of genus and species', () => {
   test('links and focuses the class-required error while preserving variety', async ({
     page
   }) => {
-    await page.getByLabel(fields.variety, { exact: true }).selectOption('NONE')
+    await page
+      .getByLabel(fields.variety, { exact: true })
+      .selectOption(appleVarietyId)
     await page.getByRole('button', { name: addName, exact: true }).click()
 
     await expectLinkedError(page, 'varietyClass-0-0', copy.errors.classRequired)
     await expect(page.getByLabel(fields.variety, { exact: true })).toHaveValue(
-      'NONE'
+      appleVarietyId
     )
   })
 
@@ -471,17 +476,17 @@ test('skips the page when the selected species has no varieties', async ({
   page
 }) => {
   await startAtCommoditySearch(page)
-  await page.getByLabel(searchCopy.codeSearch.label).fill('06042090')
+  await page.getByLabel(searchCopy.codeSearch.label).fill('0808108010')
   await page
     .locator('#commodity-code-search')
     .getByRole('button', { name: searchCopy.codeSearch.button })
     .click()
   const results = page.getByRole('table', {
-    name: `${basicCopy.results.caption} 06042090`
+    name: `${basicCopy.results.caption} 0808108010`
   })
   await results
     .getByRole('button', {
-      name: `${basicCopy.results.addLabel} Lens culinaris ${basicCopy.results.addHidden} 06042090`
+      name: `${basicCopy.results.addLabel} Malus domestica ${basicCopy.results.addHidden} 0808108010`
     })
     .click()
   await page.getByRole('button', { name: 'Save and continue' }).click()

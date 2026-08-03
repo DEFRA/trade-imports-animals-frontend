@@ -1,11 +1,11 @@
 import { allowListed } from '../../../../../model/obligations/helpers/index.js'
-import { classApplicableSpecies } from '../../../services/commodities/index.js'
-import { eppoCode, species } from './species.js'
+import { classApplicableCommodities } from '../../../services/commodities/index.js'
+import { commoditySelection } from './lines.js'
+import { species } from './species.js'
 
 const varietyClassReason = {
-  code: 'obligation.varietyClass.applicable.becauseClassApplicableSpecies',
-  explanation:
-    'varietyClass applies to varieties whose species supports a class'
+  code: 'obligation.varietyClass.applicable.becauseClassApplicableCommodity',
+  explanation: 'varietyClass applies to varieties whose commodity has classes'
 }
 
 export const varieties = {
@@ -26,7 +26,10 @@ export const varietyClass = {
   name: 'varietyClass',
   within: varieties,
   status: 'optional',
-  applyTo: allowListed(eppoCode, classApplicableSpecies, varieties, [
-    varietyClassReason
-  ])
+  applyTo: allowListed(
+    commoditySelection,
+    classApplicableCommodities,
+    varieties,
+    [varietyClassReason]
+  )
 }

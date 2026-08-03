@@ -1,9 +1,9 @@
 import {
-  CLASSES_BY_EPPO,
+  CLASSES_BY_COMMODITY,
   CLASS_LABELS,
   COMMODITY_TREE,
   SPECIES_BY_CODE,
-  VARIETIES_BY_EPPO
+  VARIETIES_BY_COMMODITY
 } from './fixture.js'
 
 const descendantsOf = (nodes) =>
@@ -66,15 +66,20 @@ export const searchSpecies = ({ genus, eppoCode } = {}) => {
   )
 }
 
-export const varietiesFor = (eppoCode) => VARIETIES_BY_EPPO[eppoCode] ?? []
+export const varietiesFor = (commodityCode, eppoCode) =>
+  VARIETIES_BY_COMMODITY[commodityCode]?.[eppoCode] ?? []
 
-export const varietyLabelFor = (eppoCode, varietyId) =>
-  varietiesFor(eppoCode).find(({ id }) => id === varietyId)?.label
+export const varietyLabelFor = (commodityCode, eppoCode, varietyId) =>
+  varietiesFor(commodityCode, eppoCode).find(({ id }) => id === varietyId)
+    ?.label
 
-export const classesFor = (eppoCode) => CLASSES_BY_EPPO[eppoCode] ?? []
+export const classesFor = (commodityCode) =>
+  CLASSES_BY_COMMODITY[commodityCode] ?? []
 
-export const classApplicableSpecies = () => Object.keys(CLASSES_BY_EPPO)
+export const classApplicableCommodities = () =>
+  Object.keys(CLASSES_BY_COMMODITY)
 
 export const classLabelFor = (classCode) => CLASS_LABELS[classCode]
 
-export const hasVarieties = (eppoCode) => varietiesFor(eppoCode).length > 0
+export const hasVarieties = (commodityCode, eppoCode) =>
+  varietiesFor(commodityCode, eppoCode).length > 0

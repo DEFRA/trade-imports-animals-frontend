@@ -49,21 +49,23 @@ const lentil = {
   genusAndSpecies: 'Lens culinaris',
   speciesId: '1346687'
 }
-const variety = (name = 'NONE', varietyClass = 'CLASS_I') => ({
+const citrusVarietyId = 'C5E27C5A-D13B-E9F5-B4B0-7234A7941208'
+const appleVarietyId = '03107EFA-9BCD-1089-565E-B28F73994DEC'
+const variety = (name = appleVarietyId, varietyClass = 'CLASS_I') => ({
   variety: name,
   varietyClass
 })
 const qualifiedSeed = (extra = {}) => ({
   commodityLines: [
     {
-      commoditySelection: '08059000',
-      species: [{ ...citrus, ...extra }]
+      commoditySelection: '0808108090',
+      species: [{ ...apple, ...extra }]
     }
   ]
 })
 const validAdd = {
   action: 'add:0:0',
-  'varietySelect-0-0': 'NONE',
+  'varietySelect-0-0': appleVarietyId,
   'otherVariety-0-0': '',
   'varietyClass-0-0': 'CLASS_I'
 }
@@ -102,9 +104,12 @@ describe('plant-products variety-of-genus-and-species controller', () => {
         commodityLines: [
           {
             commoditySelection: '08059000',
-            species: [{ ...citrus, varieties: [variety()] }, apple]
+            species: [{ ...citrus, varieties: [{ variety: citrusVarietyId }] }]
           },
-          { commoditySelection: '06011010', species: [] }
+          {
+            commoditySelection: '0808108090',
+            species: [{ ...apple, varieties: [variety()] }]
+          }
         ]
       }
     })
@@ -115,24 +120,32 @@ describe('plant-products variety-of-genus-and-species controller', () => {
       lineIndex: 0,
       speciesIndex: 0,
       heading: 'CIDAC - Citrus australasica',
+      hasClasses: false,
       rows: [
         {
           variety: 'None',
-          class: 'Class I',
+          class: '',
           action: 'remove:0:0:0'
         }
       ]
     })
     expect(result.view.context.cards[0].varietyItems).toEqual([
       { value: '', text: copy.varietyPlaceholder, selected: true },
-      { value: 'NONE', text: 'None', selected: false },
+      { value: citrusVarietyId, text: 'None', selected: false },
       { value: '__OTHER__', text: copy.otherOption, selected: false }
     ])
     expect(result.view.context.cards[1]).toMatchObject({
-      lineIndex: 0,
-      speciesIndex: 1,
+      lineIndex: 1,
+      speciesIndex: 0,
       heading: 'MABSD - Malus domestica',
-      hasClasses: false
+      hasClasses: true,
+      rows: [
+        {
+          variety: 'McIntosh Red',
+          class: 'Class I',
+          action: 'remove:1:0:0'
+        }
+      ]
     })
     expect(result.view.context.addSpeciesHref).toMatch(
       /^\/plant-products\/notifications\/[^/]+\/commodity-basic-description$/
@@ -144,18 +157,18 @@ describe('plant-products variety-of-genus-and-species controller', () => {
       seed: {
         commodityLines: [
           {
-            commoditySelection: '08059000',
+            commoditySelection: '0808108090',
             species: [
               {
-                ...citrus,
+                ...apple,
                 varieties: [variety(), variety('Tahiti', 'CLASS_II')]
               },
-              { ...citrus, varieties: [variety()] }
+              { ...apple, varieties: [variety()] }
             ]
           },
           {
-            commoditySelection: '08059000',
-            species: [{ ...citrus, varieties: [variety()] }]
+            commoditySelection: '0808108090',
+            species: [{ ...apple, varieties: [variety()] }]
           }
         ]
       }
@@ -166,9 +179,9 @@ describe('plant-products variety-of-genus-and-species controller', () => {
       ({ varietyAccessibleName }) => varietyAccessibleName
     )
     expect(varietyNames).toEqual([
-      'Variety for commodity line 1, species 1: CIDAC - Citrus australasica',
-      'Variety for commodity line 1, species 2: CIDAC - Citrus australasica',
-      'Variety for commodity line 2, species 1: CIDAC - Citrus australasica'
+      'Variety for commodity line 1, species 1: MABSD - Malus domestica',
+      'Variety for commodity line 1, species 2: MABSD - Malus domestica',
+      'Variety for commodity line 2, species 1: MABSD - Malus domestica'
     ])
     expect(new Set(varietyNames).size).toBe(varietyNames.length)
     for (const key of [
@@ -184,10 +197,10 @@ describe('plant-products variety-of-genus-and-species controller', () => {
       rows.map(({ accessibleName }) => accessibleName)
     )
     expect(removeNames).toEqual([
-      'Remove None, Class I from commodity line 1, species 1: CIDAC - Citrus australasica',
-      'Remove Tahiti, Class II from commodity line 1, species 1: CIDAC - Citrus australasica',
-      'Remove None, Class I from commodity line 1, species 2: CIDAC - Citrus australasica',
-      'Remove None, Class I from commodity line 2, species 1: CIDAC - Citrus australasica'
+      'Remove McIntosh Red, Class I from commodity line 1, species 1: MABSD - Malus domestica',
+      'Remove Tahiti, Class II from commodity line 1, species 1: MABSD - Malus domestica',
+      'Remove McIntosh Red, Class I from commodity line 1, species 2: MABSD - Malus domestica',
+      'Remove McIntosh Red, Class I from commodity line 2, species 1: MABSD - Malus domestica'
     ])
     expect(new Set(removeNames).size).toBe(removeNames.length)
   })
@@ -224,7 +237,7 @@ describe('plant-products variety-of-genus-and-species controller', () => {
 
   it('requires a variety but not a class for a no-class species', async () => {
     const seed = {
-      commodityLines: [{ commoditySelection: '0808108010', species: [apple] }]
+      commodityLines: [{ commoditySelection: '08059000', species: [citrus] }]
     }
     const result = await drive(post, {
       seed,
@@ -240,10 +253,10 @@ describe('plant-products variety-of-genus-and-species controller', () => {
   })
 
   it('persists and round-trips a no-class variety without a class leaf', async () => {
-    const selectedVariety = varietiesFor(apple.eppoCode)[0].id
+    const selectedVariety = varietiesFor('08059000', citrus.eppoCode)[0].id
     const result = await drive(post, {
       seed: {
-        commodityLines: [{ commoditySelection: '0808108010', species: [apple] }]
+        commodityLines: [{ commoditySelection: '08059000', species: [citrus] }]
       },
       payload: {
         action: 'add:0:0',
@@ -297,7 +310,7 @@ describe('plant-products variety-of-genus-and-species controller', () => {
     ],
     [
       'class required',
-      { 'varietySelect-0-0': 'NONE' },
+      { 'varietySelect-0-0': appleVarietyId },
       'varietyClass-0-0',
       copy.errors.classRequired
     ],
@@ -396,15 +409,15 @@ describe('plant-products variety-of-genus-and-species controller', () => {
       seed: {
         commodityLines: [
           {
-            commoditySelection: '08059000',
+            commoditySelection: '0808108090',
             species: [
-              { ...citrus, varieties: [variety(), firstSpeciesSibling] },
-              { ...citrus, varieties: [secondSpeciesSibling] }
+              { ...apple, varieties: [variety(), firstSpeciesSibling] },
+              { ...apple, varieties: [secondSpeciesSibling] }
             ]
           },
           {
-            commoditySelection: '08059000',
-            species: [{ ...citrus, varieties: [lineSibling] }]
+            commoditySelection: '0808108090',
+            species: [{ ...apple, varieties: [lineSibling] }]
           }
         ]
       },
@@ -430,13 +443,13 @@ describe('plant-products variety-of-genus-and-species controller', () => {
       seed: {
         commodityLines: [
           {
-            commoditySelection: '08059000',
-            species: [citrus, citrus]
+            commoditySelection: '0808108090',
+            species: [apple, apple]
           }
         ]
       },
       payload: {
-        'varietySelect-0-0': 'NONE',
+        'varietySelect-0-0': appleVarietyId,
         'varietyClass-0-0': 'CLASS_I',
         'varietySelect-0-1': '__OTHER__',
         'otherVariety-0-1': 'Tahiti',

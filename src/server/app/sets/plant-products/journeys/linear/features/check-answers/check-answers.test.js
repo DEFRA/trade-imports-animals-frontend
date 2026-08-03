@@ -21,15 +21,21 @@ const species = {
     eppoCode: 'CIDAC',
     genusAndSpecies: 'Citrus australasica',
     speciesId: '1364882',
-    varieties: [{ variety: 'NONE', varietyClass: 'CLASS_I' }]
+    varieties: [{ variety: 'C5E27C5A-D13B-E9F5-B4B0-7234A7941208' }]
   },
   apple: {
     eppoCode: 'MABSD',
     genusAndSpecies: 'Malus domestica',
     speciesId: '1391442',
     varieties: [
-      { variety: '03107EFA-9BCD-1089-565E-B28F73994DEC' },
-      { variety: '035ECF9F-7B6C-078D-60D5-D2947C23A366' }
+      {
+        variety: '03107EFA-9BCD-1089-565E-B28F73994DEC',
+        varietyClass: 'CLASS_I'
+      },
+      {
+        variety: '035ECF9F-7B6C-078D-60D5-D2947C23A366',
+        varietyClass: 'CLASS_II'
+      }
     ]
   }
 }
@@ -59,7 +65,7 @@ const fullAnswers = {
   commodityLines: [
     line('06011010', species.albuca, { numberOfPackages: 1, netWeight: 2 }),
     line('08059000', species.citrus, { numberOfPackages: 3, netWeight: 4 }),
-    line('0808108010', species.apple, {
+    line('0808108090', species.apple, {
       numberOfPackages: 5,
       netWeight: 6
     })
@@ -446,7 +452,7 @@ describe('plant-products check-answers view model', () => {
     expect(commodityRows.map((entry) => entry[1])).toEqual([
       '06011010',
       '08059000',
-      '0808108010'
+      '0808108090'
     ])
     expect(commodityRows[1][2]).toBe('Other')
     expect(commodityRows[1][3]).toContain(
@@ -460,7 +466,7 @@ describe('plant-products check-answers view model', () => {
     expect(speciesRows[1][0]).toBe('Commodity 2')
   })
 
-  it('renders the middle variety by identity and order across real associations', () => {
+  it('renders commodity-scoped varieties and classes by identity and order', () => {
     const varieties = table(
       card(build(), 'Description of the goods'),
       'Varieties'
@@ -475,6 +481,12 @@ describe('plant-products check-answers view model', () => {
       'Commodity 3',
       'Malus domestica, MABSD',
       'McIntosh Red',
+      'Class I'
+    ])
+    expect(varieties[0]).toEqual([
+      'Commodity 2',
+      'Citrus australasica, CIDAC',
+      'None',
       ''
     ])
   })

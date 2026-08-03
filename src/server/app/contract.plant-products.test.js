@@ -336,12 +336,12 @@ describe('plant-products controller <-> model commit contract', () => {
       seed: {
         commodityLines: [
           {
-            commoditySelection: '08059000',
+            commoditySelection: '0808108090',
             species: [
               {
-                eppoCode: 'CIDAC',
-                genusAndSpecies: 'Citrus australasica',
-                speciesId: '1364882'
+                eppoCode: 'MABSD',
+                genusAndSpecies: 'Malus domestica',
+                speciesId: '1391442'
               }
             ]
           }
@@ -349,14 +349,17 @@ describe('plant-products controller <-> model commit contract', () => {
       },
       payload: {
         action: 'add:0:0',
-        'varietySelect-0-0': 'NONE',
+        'varietySelect-0-0': '03107EFA-9BCD-1089-565E-B28F73994DEC',
         'otherVariety-0-0': '',
         'varietyClass-0-0': 'CLASS_I'
       }
     })
 
     expect(result.after.commodityLines[0].species[0].varieties).toEqual([
-      { variety: 'NONE', varietyClass: 'CLASS_I' }
+      {
+        variety: '03107EFA-9BCD-1089-565E-B28F73994DEC',
+        varietyClass: 'CLASS_I'
+      }
     ])
   })
 

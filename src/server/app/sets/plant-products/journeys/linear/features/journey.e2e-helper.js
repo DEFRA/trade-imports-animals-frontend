@@ -23,6 +23,11 @@ export const commodityFixtures = {
     species: 'Citrus australasica',
     eppoCode: 'CIDAC'
   },
+  '0808108090': {
+    description: 'Other',
+    species: 'Malus domestica',
+    eppoCode: 'MABSD'
+  },
   '06042090': {
     description: 'Other',
     species: 'Lens culinaris',
@@ -122,7 +127,7 @@ export const fullJourneyValues = {
         testAndTrial: false
       },
       {
-        code: '08059000',
+        code: '0808108090',
         packages: '3',
         packageType: { value: 'BOX', text: 'Box' },
         quantity: '22',
@@ -132,7 +137,10 @@ export const fullJourneyValues = {
         finishedOrPropagated: '',
         intendedForFinalUsers: null,
         testAndTrial: true,
-        variety: { value: 'NONE', text: 'None' },
+        variety: {
+          value: '03107EFA-9BCD-1089-565E-B28F73994DEC',
+          text: 'McIntosh Red'
+        },
         varietyClass: { value: 'CLASS_I', text: 'Class I' }
       },
       {
@@ -355,8 +363,7 @@ const addCommodity = async (page, code, values) => {
 
   const commodity = values.commodities.lines.find((line) => line.code === code)
   if (commodity.variety) {
-    const context =
-      'for commodity line 2, species 1: CIDAC - Citrus australasica'
+    const context = 'for commodity line 2, species 1: MABSD - Malus domestica'
     await page
       .getByLabel(`Variety ${context}`, { exact: true })
       .selectOption(commodity.variety.value)

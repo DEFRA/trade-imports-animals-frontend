@@ -77,7 +77,7 @@ const speciesTable = (answers, evaluation, lines) => {
 }
 
 const varietyTable = (answers, evaluation, lines) => {
-  const rows = lines.flatMap(({ index: lineIndex }) =>
+  const rows = lines.flatMap(({ index: lineIndex, entry: line }) =>
     state
       .collectionView(
         answers,
@@ -94,7 +94,13 @@ const varietyTable = (answers, evaluation, lines) => {
           .map(({ entry }) => [
             cell(cardCopy.commodity(lineIndex + 1)),
             cell(`${species.genusAndSpecies}, ${species.eppoCode}`),
-            cell(varietyText(species.eppoCode, entry.variety)),
+            cell(
+              varietyText(
+                line.commoditySelection,
+                species.eppoCode,
+                entry.variety
+              )
+            ),
             cell(classText(entry.varietyClass))
           ])
       )

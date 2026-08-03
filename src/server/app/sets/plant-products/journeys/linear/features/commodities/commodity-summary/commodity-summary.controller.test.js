@@ -39,14 +39,20 @@ const lens = {
   genusAndSpecies: 'Lens culinaris',
   speciesId: '1346687'
 }
-const citrus = {
-  eppoCode: 'CIDAC',
-  genusAndSpecies: 'Citrus australasica',
-  speciesId: '1364882'
+const apple = {
+  eppoCode: 'MABSD',
+  genusAndSpecies: 'Malus domestica',
+  speciesId: '1391442'
 }
-const citrusVarieties = [
-  { variety: 'NONE', varietyClass: 'CLASS_I' },
-  { variety: 'NONE', varietyClass: 'CLASS_II' }
+const appleVarieties = [
+  {
+    variety: '03107EFA-9BCD-1089-565E-B28F73994DEC',
+    varietyClass: 'CLASS_I'
+  },
+  {
+    variety: '035ECF9F-7B6C-078D-60D5-D2947C23A366',
+    varietyClass: 'CLASS_II'
+  }
 ]
 const multiLineSeed = () => ({
   commodityLines: [
@@ -55,8 +61,8 @@ const multiLineSeed = () => ({
       species: [crataegomespilus, lens]
     },
     {
-      commoditySelection: '08059000',
-      species: [{ ...citrus, varieties: citrusVarieties }]
+      commoditySelection: '0808108090',
+      species: [{ ...apple, varieties: appleVarieties }]
     }
   ]
 })
@@ -119,16 +125,16 @@ describe('plant-products commodity-summary controller', () => {
       },
       {
         lineIndex: 1,
-        commodityCode: '08059000',
+        commodityCode: '0808108090',
         commodityDescription: 'Other',
         rows: [
           {
             speciesIndex: 0,
-            genusAndSpecies: 'Citrus australasica',
-            eppoCode: 'CIDAC',
+            genusAndSpecies: 'Malus domestica',
+            eppoCode: 'MABSD',
             varieties: [
-              { varietyLabel: 'None', classLabel: 'Class I' },
-              { varietyLabel: 'None', classLabel: 'Class II' }
+              { varietyLabel: 'McIntosh Red', classLabel: 'Class I' },
+              { varietyLabel: 'Spartan', classLabel: 'Class II' }
             ],
             removable: false,
             action: 'remove:1:0'
@@ -193,10 +199,10 @@ describe('plant-products commodity-summary controller', () => {
       rows: [
         {
           speciesIndex: 0,
-          genusAndSpecies: 'Citrus australasica',
+          genusAndSpecies: 'Malus domestica',
           varieties: [
-            { varietyLabel: 'None', classLabel: 'Class I' },
-            { varietyLabel: 'None', classLabel: 'Class II' }
+            { varietyLabel: 'McIntosh Red', classLabel: 'Class I' },
+            { varietyLabel: 'Spartan', classLabel: 'Class II' }
           ]
         }
       ]

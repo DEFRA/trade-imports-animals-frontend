@@ -36,7 +36,7 @@ import {
   speciesGroup,
   varietyGroup
 } from '../../../journeys/linear/features/commodities/evaluation.js'
-import { classApplicableSpecies } from '../../../services/commodities/index.js'
+import { classApplicableCommodities } from '../../../services/commodities/index.js'
 import { obligations as livePlantObligations } from '../../index.js'
 import { commodityInputMethod } from './input-method.js'
 import {
@@ -135,14 +135,14 @@ const lineEntry = (selection, speciesEntries = []) => ({
   species: speciesEntries
 })
 
-const citrus = (varietyEntries = [varietyEntry('NONE')]) =>
+const citrus = (varietyEntries = [{ variety: 'citrus-variety' }]) =>
   speciesEntry('CIDAC', 'Citrus australasica', varietyEntries, '1364882')
 
-const apple = (varietyEntries = [{ variety: 'apple-variety' }]) =>
+const apple = (varietyEntries = [varietyEntry('apple-variety')]) =>
   speciesEntry('MABSD', 'Malus domestica', varietyEntries, '1391442')
 
 const completeAnswers = {
-  commodityLines: [lineEntry('08059000', [citrus()])]
+  commodityLines: [lineEntry('0808108090', [apple()])]
 }
 
 const varietiesPath = (lineIndex, speciesIndex) => [
@@ -239,12 +239,12 @@ describe('real plant-products depth-3 commodity model', () => {
     expect(varietyLeaves.every((leaf) => leaf.within === varieties)).toBe(true)
     expect(varietyClass.applyTo.metadata).toMatchObject({
       type: 'allowListed',
-      obligation: eppoCode.id,
+      obligation: commoditySelection.id,
       projection: varieties.id
     })
     const firstLazyList = varietyClass.applyTo.metadata.values
     const secondLazyList = varietyClass.applyTo.metadata.values
-    expect(firstLazyList).toEqual(classApplicableSpecies())
+    expect(firstLazyList).toEqual(classApplicableCommodities())
     expect(secondLazyList).toEqual(firstLazyList)
     expect(secondLazyList).not.toBe(firstLazyList)
     expect(fulfilmentRegistry.groupDescriptorOf(commodityLines.id)).toEqual(
@@ -308,11 +308,11 @@ describe('real depth-3 path-addressed writes', () => {
   it('appends, updates and removes a variety with snapshot-local renumbering', async () => {
     await store.seedAnswers(journeyId, {
       commodityLines: [
-        lineEntry('08059000', [
-          citrus([varietyEntry('first'), varietyEntry('second')]),
-          apple([{ variety: 'apple-sibling' }])
+        lineEntry('0808108090', [
+          apple([varietyEntry('first'), varietyEntry('second')]),
+          apple([varietyEntry('apple-sibling')])
         ]),
-        lineEntry('08059000', [citrus([varietyEntry('line-sibling')])])
+        lineEntry('0808108090', [apple([varietyEntry('line-sibling')])])
       ]
     })
 
@@ -339,7 +339,7 @@ describe('real depth-3 path-addressed writes', () => {
       varietyEntry('third')
     ])
     expect(answers.commodityLines[0].species[1].varieties).toEqual([
-      { variety: 'apple-sibling' }
+      varietyEntry('apple-sibling')
     ])
     expect(answers.commodityLines[1].species[0].varieties).toEqual([
       varietyEntry('line-sibling')
@@ -394,12 +394,13 @@ describe('real depth-3 scope, completeness and dispatch', () => {
     const answers = {
       commodityLines: [
         lineEntry('08059000', [citrus([varietyEntry('first')])]),
-        lineEntry('08059000', [citrus([varietyEntry('sibling')])])
+        lineEntry('0808108090', [apple([varietyEntry('sibling')])])
       ]
     }
     const changed = structuredClone(answers)
-    changed.commodityLines[0].species[0].eppoCode = 'MABSD'
-    changed.commodityLines[0].species[0].genusAndSpecies = 'Malus domestica'
+    changed.commodityLines[0] = lineEntry('0808108010', [
+      apple([varietyEntry('first')])
+    ])
     const evaluation = evaluateAnswers(changed)
 
     expect(wipeSet(assembleFulfilments(changed), evaluation)).toEqual([
@@ -422,13 +423,13 @@ describe('real depth-3 scope, completeness and dispatch', () => {
   })
 
   it('rolls species floors and optional or incomplete varieties into line completeness', () => {
-    const noSpecies = { commodityLines: [lineEntry('08059000')] }
+    const noSpecies = { commodityLines: [lineEntry('0808108090')] }
     const noVarieties = {
-      commodityLines: [lineEntry('08059000', [citrus([])])]
+      commodityLines: [lineEntry('0808108090', [apple([])])]
     }
     const incompleteVariety = {
       commodityLines: [
-        lineEntry('08059000', [citrus([{ varietyClass: 'CLASS_I' }])])
+        lineEntry('0808108090', [apple([{ varietyClass: 'CLASS_I' }])])
       ]
     }
 

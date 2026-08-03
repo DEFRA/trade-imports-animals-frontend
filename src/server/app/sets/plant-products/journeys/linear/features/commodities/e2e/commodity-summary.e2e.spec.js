@@ -9,6 +9,7 @@ const searchCopy = featureCopy.commoditySearch
 const commodityCode = '06042090'
 const crataegomespilus = '+ Crataegomespilus dardarii'
 const lens = 'Lens culinaris'
+const appleVarietyId = '03107EFA-9BCD-1089-565E-B28F73994DEC'
 const summaryUrl = (url) =>
   /^\/plant-products\/notifications\/[^/]+\/commodity-summary$/.test(
     url.pathname
@@ -76,33 +77,33 @@ const startAtSummary = async (page, species) => {
   await expect(page).toHaveURL(summaryUrl)
 }
 
-const startAtCitrusSummary = async (page) => {
+const startAtAppleSummary = async (page) => {
   await startAtCommoditySearch(page)
   await page.getByRole('tab', { name: searchCopy.tabs.speciesSearch }).click()
-  await page.getByLabel(searchCopy.speciesSearch.label).fill('Citrus')
+  await page.getByLabel(searchCopy.speciesSearch.label).fill('Malus domestica')
   await page
     .locator('#genus-and-species-search')
     .getByRole('button', { name: searchCopy.speciesSearch.button })
     .click()
   await page
     .getByRole('listitem')
-    .filter({ hasText: 'Citrus australasica — 08059000' })
+    .filter({ hasText: 'Malus domestica — 0808108090' })
     .getByRole('button', { name: searchCopy.speciesSearch.add })
     .click()
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await page
     .getByLabel(
-      'Variety for commodity line 1, species 1: CIDAC - Citrus australasica'
+      'Variety for commodity line 1, species 1: MABSD - Malus domestica'
     )
-    .selectOption('NONE')
+    .selectOption(appleVarietyId)
   await page
     .getByLabel(
-      'Class for commodity line 1, species 1: CIDAC - Citrus australasica'
+      'Class for commodity line 1, species 1: MABSD - Malus domestica'
     )
     .selectOption('CLASS_I')
   await page
     .getByRole('button', {
-      name: 'Add another variety for commodity line 1, species 1: CIDAC - Citrus australasica'
+      name: 'Add another variety for commodity line 1, species 1: MABSD - Malus domestica'
     })
     .click()
   await page.getByRole('button', { name: 'Save and continue' }).click()
@@ -177,15 +178,15 @@ test.describe('plant-products commodity summary', () => {
   test('resolves stored variety and class fixture ids to labels', async ({
     page
   }) => {
-    await startAtCitrusSummary(page)
+    await startAtAppleSummary(page)
 
     expect(
       await normalisedCellText(summaryTable(page).locator('tbody tr'))
     ).toEqual([
-      '08059000',
-      'Citrus australasica',
-      'CIDAC',
-      'None',
+      '0808108090',
+      'Malus domestica',
+      'MABSD',
+      'McIntosh Red',
       'Class I',
       ''
     ])
@@ -329,23 +330,23 @@ test.describe('plant-products commodity summary', () => {
         url.pathname
       )
     )
-    await searchForCode(page, '08059000')
-    await addSpecies(page, '08059000', 'Citrus australasica')
+    await searchForCode(page, '0808108090')
+    await addSpecies(page, '0808108090', 'Malus domestica')
     await expect(speciesTable(page, commodityCode, 'added')).toContainText(lens)
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await page
       .getByLabel(
-        'Variety for commodity line 2, species 1: CIDAC - Citrus australasica'
+        'Variety for commodity line 2, species 1: MABSD - Malus domestica'
       )
-      .selectOption('NONE')
+      .selectOption(appleVarietyId)
     await page
       .getByLabel(
-        'Class for commodity line 2, species 1: CIDAC - Citrus australasica'
+        'Class for commodity line 2, species 1: MABSD - Malus domestica'
       )
       .selectOption('CLASS_I')
     await page
       .getByRole('button', {
-        name: 'Add another variety for commodity line 2, species 1: CIDAC - Citrus australasica'
+        name: 'Add another variety for commodity line 2, species 1: MABSD - Malus domestica'
       })
       .click()
     await page.getByRole('button', { name: 'Save and continue' }).click()
@@ -354,7 +355,7 @@ test.describe('plant-products commodity summary', () => {
       page.getByRole('table', { name: copy.tableCaption })
     ).toHaveCount(2)
     await expect(summaryTable(page, 0)).toContainText(lens)
-    await expect(summaryTable(page, 1)).toContainText('Citrus australasica')
+    await expect(summaryTable(page, 1)).toContainText('Malus domestica')
   })
 
   test('save and continue advances to bulk details and preserves the hub row states', async ({

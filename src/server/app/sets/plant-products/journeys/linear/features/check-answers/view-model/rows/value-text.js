@@ -32,8 +32,8 @@ export const packageTypeText = (value) => labelFor(packageTypeLabel, value)
 export const purposeText = (value) => labelFor(purposeLabel, value)
 export const quantityTypeText = (value) => labelFor(quantityTypeLabel, value)
 export const transportText = (value) => labelFor(meansOfTransportLabel, value)
-export const varietyText = (eppoCode, value) =>
-  varietyLabelFor(eppoCode, value) ?? value ?? ''
+export const varietyText = (commodityCode, eppoCode, value) =>
+  varietyLabelFor(commodityCode, eppoCode, value) ?? value ?? ''
 export const classText = (value) => classLabelFor(value) ?? value ?? ''
 
 export const yesNoText = (value, copy) =>

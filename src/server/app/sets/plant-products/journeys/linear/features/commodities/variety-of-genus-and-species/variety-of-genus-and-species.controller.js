@@ -75,14 +75,23 @@ const qualifyingSpecies = (pageState) =>
           ['commodityLines', line.index, 'species'],
           pageState.evaluation
         )
-        .filter(({ entry }) => hasVarieties(entry.eppoCode))
+        .filter(({ entry }) =>
+          hasVarieties(line.entry.commoditySelection, entry.eppoCode)
+        )
         .map((species) => ({ line, species }))
     )
 
 const selectedItems = (items, selected) =>
   items.map((item) => ({ ...item, selected: item.value === selected }))
 
-const savedRows = (pageState, lineIndex, speciesIndex, entry, context) =>
+const savedRows = (
+  pageState,
+  lineIndex,
+  speciesIndex,
+  commodityCode,
+  entry,
+  context
+) =>
   state
     .collectionView(
       pageState.answers,
@@ -91,7 +100,8 @@ const savedRows = (pageState, lineIndex, speciesIndex, entry, context) =>
     )
     .map(({ index, entry: saved }) => {
       const varietyText =
-        varietyLabelFor(entry.eppoCode, saved.variety) ?? saved.variety
+        varietyLabelFor(commodityCode, entry.eppoCode, saved.variety) ??
+        saved.variety
       const classText =
         copy.classOptions[saved.varietyClass] ?? saved.varietyClass ?? ''
       return {
@@ -113,12 +123,13 @@ const savedRows = (pageState, lineIndex, speciesIndex, entry, context) =>
 const buildCard = (pageState, target, forms, errors) => {
   const lineIndex = target.line.index
   const speciesIndex = target.species.index
+  const commodityCode = target.line.entry.commoditySelection
   const entry = target.species.entry
   const names = fieldNames(lineIndex, speciesIndex)
   const values = forms[`${lineIndex}:${speciesIndex}`] ?? valuesFrom({}, names)
   const heading = speciesHeading(entry)
   const context = contextFor(lineIndex, speciesIndex, heading)
-  const classValues = classesFor(entry.eppoCode)
+  const classValues = classesFor(commodityCode)
   return {
     lineIndex,
     speciesIndex,
@@ -135,7 +146,7 @@ const buildCard = (pageState, target, forms, errors) => {
     varietyItems: selectedItems(
       [
         { value: '', text: copy.varietyPlaceholder },
-        ...varietiesFor(entry.eppoCode).map(({ id, label }) => ({
+        ...varietiesFor(commodityCode, entry.eppoCode).map(({ id, label }) => ({
           value: id,
           text: label
         })),
@@ -156,7 +167,14 @@ const buildCard = (pageState, target, forms, errors) => {
     varietyError: kit.fieldError(errors, names.variety),
     otherVarietyError: kit.fieldError(errors, names.otherVariety),
     classError: kit.fieldError(errors, names.varietyClass),
-    rows: savedRows(pageState, lineIndex, speciesIndex, entry, context)
+    rows: savedRows(
+      pageState,
+      lineIndex,
+      speciesIndex,
+      commodityCode,
+      entry,
+      context
+    )
   }
 }
 
@@ -224,15 +242,20 @@ const validSpeciesTarget = (answers, lineIndex, speciesIndex) => {
     Number.isInteger(speciesIndex) &&
     speciesIndex >= 0 &&
     speciesIndex < species.length &&
-    hasVarieties(species[speciesIndex].eppoCode)
+    hasVarieties(
+      lines[lineIndex].commoditySelection,
+      species[speciesIndex].eppoCode
+    )
   )
 }
 
 const badRequest = (h) => h.response().code(HTTP_STATUS_BAD_REQUEST)
 
-const schemaFor = (names, entry) => {
-  const varietyValues = varietiesFor(entry.eppoCode).map(({ id }) => id)
-  const classValues = classesFor(entry.eppoCode)
+const schemaFor = (names, commodityCode, entry) => {
+  const varietyValues = varietiesFor(commodityCode, entry.eppoCode).map(
+    ({ id }) => id
+  )
+  const classValues = classesFor(commodityCode)
   const varietyRule = requiredOneOf(
     names.variety,
     [...varietyValues, OTHER_VARIETY],
@@ -250,8 +273,8 @@ const schemaFor = (names, entry) => {
       )
 }
 
-const validateActiveRow = (names, entry, raw, payload) => {
-  const base = validate(schemaFor(names, entry), payload)
+const validateActiveRow = (names, commodityCode, entry, raw, payload) => {
+  const base = validate(schemaFor(names, commodityCode, entry), payload)
   if (raw.variety.trim() !== OTHER_VARIETY) return base
 
   const required = validate(
@@ -318,6 +341,7 @@ const validateRow = (pageState, target, payload) => {
   }
   const { value, errors } = validateActiveRow(
     names,
+    target.line.entry.commoditySelection,
     target.species.entry,
     raw,
     projectedPayload
@@ -332,7 +356,7 @@ const validateRow = (pageState, target, payload) => {
       : value[names.variety]
   const entry = {
     variety: committedVariety,
-    ...(classesFor(target.species.entry.eppoCode).length > 0
+    ...(classesFor(target.line.entry.commoditySelection).length > 0
       ? { varietyClass: value[names.varietyClass] }
       : {})
   }

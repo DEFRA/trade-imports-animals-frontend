@@ -146,12 +146,34 @@ deviations:
   finished-or-propagated control. It is set only on 06011010 Hyacinths because
   CN heading 0601 covers bulbs and roots for planting; 0603197090 and 06042090
   fall under headings 0603 (cut flowers) and 0604 (foliage), respectively.
-- The 0808108010 Cider apples fixture species are MABAN (_Malus angustifolia_,
-  1319830), MABSD (_Malus domestica_, 1391442) and MABZU (_Malus x zumi_,
-  1327015), in that order. In the IPAFFS commodity-code microservice at revision
-  `c445e7cd234ae0041c4061992509d70e1f602a3e`, `species.csv` maps those EPPO codes
-  to species records and `certification_nomenclature.csv` associates all three
-  species with nomenclature ID `0713E424-5B5C-18D6-FB63-A949B70C1477`. These
-  files are under `service/src/test/resources/integration/data/`: they are the
-  owning service's integration-test dataset, not its production reference data,
-  but are real IPAFFS-shaped data and the best source available locally.
+- pp-086 corrects pp-014's fixture provenance record: the claim that every
+  fixture value had stated provenance did not hold for CIDAC's class data or
+  its invented variety id `NONE`. At IPAFFS commodity-code microservice
+  revision `c445e7cd234ae0041c4061992509d70e1f602a3e`,
+  `commodity_class.csv` keys classes by commodity and has no EPPO column, while
+  `commodity_eppo_variety.csv` keys varieties by commodity and EPPO. The fixture
+  now uses those same shapes. Commodity 08059000 has no class rows; its CIDAC
+  `None` variety now carries the source UUID
+  `C5E27C5A-D13B-E9F5-B4B0-7234A7941208`. Commodity 0808108090 has the three
+  source display classes Class I, Class II and Extra Class, transcribed to the
+  existing fixture codes `CLASS_I`, `CLASS_II` and `EXTRA_CLASS`, respectively.
+- pp-077's 0808108010 Cider apples species correction remains valid: MABAN
+  (_Malus angustifolia_, 1319830), MABSD (_Malus domestica_, 1391442) and MABZU
+  (_Malus x zumi_, 1327015) remain in that order. `species.csv` maps those EPPO
+  codes to species records and `certification_nomenclature.csv` associates all
+  three with nomenclature ID `0713E424-5B5C-18D6-FB63-A949B70C1477`. What was
+  wrong beside the pp-077 species data was the variety association:
+  `commodity_eppo_variety.csv` has zero rows for 0808108010, so it now has no
+  varieties. The McIntosh Red and Spartan UUIDs belong to MABSD under 0808108090.
+- The added 0808108090 Other fixture entry includes MABSD and a deliberately
+  curated three-row subset of its 66 source varieties. It preserves McIntosh
+  Red and Spartan and adds Royal Gala: the first three 0808108090/MABSD rows in
+  `commodity_eppo_variety.csv` source order. The commodity-plus-EPPO key is
+  load-bearing: eight EPPO codes occur under multiple commodities, and MABSD's
+  Fuji label has UUID `35ED54BA-894D-5D2B-A4E0-9F61A2838A58` under 0808108090
+  but `9B0C4724-5355-CE8B-71A8-2209BC73E38B` under 0808108020.
+- All pp-014, pp-077 and pp-086 provenance above comes from files under
+  `service/src/test/resources/integration/data/`. This is the owning service's
+  integration-test dataset, not production reference data: it is strong local
+  evidence, not proof, and must be rechecked if production reference data
+  becomes available.

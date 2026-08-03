@@ -53,7 +53,8 @@ export const COMMODITY_TREE = Object.freeze(
       description: 'EDIBLE FRUIT AND NUTS; PEEL OF CITRUS FRUIT OR MELONS',
       children: [
         { code: '08059000', description: 'Other' },
-        { code: '0808108010', description: 'Cider apples' }
+        { code: '0808108010', description: 'Cider apples' },
+        { code: '0808108090', description: 'Other' }
       ]
     },
     {
@@ -167,6 +168,13 @@ export const SPECIES_BY_CODE = freezeRecordOfArrays({
       speciesId: '1327015'
     }
   ],
+  '0808108090': [
+    {
+      eppoCode: 'MABSD',
+      genusAndSpecies: 'Malus domestica',
+      speciesId: '1391442'
+    }
+  ],
   '09103000': [
     {
       eppoCode: 'CURLO',
@@ -204,22 +212,35 @@ export const SPECIES_BY_CODE = freezeRecordOfArrays({
   ]
 })
 
-export const VARIETIES_BY_EPPO = freezeRecordOfArrays({
-  CIDAC: [{ id: 'NONE', label: 'None' }],
-  MABSD: [
-    {
-      id: '03107EFA-9BCD-1089-565E-B28F73994DEC',
-      label: 'McIntosh Red'
-    },
-    {
-      id: '035ECF9F-7B6C-078D-60D5-D2947C23A366',
-      label: 'Spartan'
-    }
-  ]
+export const VARIETIES_BY_COMMODITY = Object.freeze({
+  '08059000': freezeRecordOfArrays({
+    CIDAC: [
+      {
+        id: 'C5E27C5A-D13B-E9F5-B4B0-7234A7941208',
+        label: 'None'
+      }
+    ]
+  }),
+  '0808108090': freezeRecordOfArrays({
+    MABSD: [
+      {
+        id: '03107EFA-9BCD-1089-565E-B28F73994DEC',
+        label: 'McIntosh Red'
+      },
+      {
+        id: '035ECF9F-7B6C-078D-60D5-D2947C23A366',
+        label: 'Spartan'
+      },
+      {
+        id: '0C245190-A316-5B88-F38E-360FBBFB208F',
+        label: 'Royal Gala'
+      }
+    ]
+  })
 })
 
-export const CLASSES_BY_EPPO = freezeRecordOfArrays({
-  CIDAC: ['CLASS_I', 'CLASS_II', 'EXTRA_CLASS']
+export const CLASSES_BY_COMMODITY = freezeRecordOfArrays({
+  '0808108090': ['CLASS_I', 'CLASS_II', 'EXTRA_CLASS']
 })
 
 export const CLASS_LABELS = Object.freeze({

@@ -1,31 +1,55 @@
 import * as commodities from '../../../../../../services/commodities/index.js'
 import * as state from '../../../../../../../../engine/index.js'
 
-const varietyRow = (eppoCode, entry) => ({
+const varietyRow = (commodityCode, eppoCode, entry) => ({
   varietyLabel:
-    commodities.varietyLabelFor(eppoCode, entry.variety) ?? entry.variety ?? '',
+    commodities.varietyLabelFor(commodityCode, eppoCode, entry.variety) ??
+    entry.variety ??
+    '',
   classLabel:
     commodities.classLabelFor(entry.varietyClass) ?? entry.varietyClass ?? ''
 })
 
-const varietiesForSpecies = (answers, evaluation, lineIndex, species) =>
+const varietiesForSpecies = (
+  answers,
+  evaluation,
+  lineIndex,
+  commodityCode,
+  species
+) =>
   state
     .collectionView(
       answers,
       ['commodityLines', lineIndex, 'species', species.index, 'varieties'],
       evaluation
     )
-    .map(({ entry }) => varietyRow(species.entry.eppoCode, entry))
+    .map(({ entry }) =>
+      varietyRow(commodityCode, species.entry.eppoCode, entry)
+    )
 
-const speciesRow = (answers, evaluation, lineIndex, species, removable) => ({
+const speciesRow = (
+  answers,
+  evaluation,
+  lineIndex,
+  commodityCode,
+  species,
+  removable
+) => ({
   speciesIndex: species.index,
   genusAndSpecies: species.entry.genusAndSpecies ?? '',
   eppoCode: species.entry.eppoCode ?? '',
-  varieties: varietiesForSpecies(answers, evaluation, lineIndex, species),
+  varieties: varietiesForSpecies(
+    answers,
+    evaluation,
+    lineIndex,
+    commodityCode,
+    species
+  ),
   removable
 })
 
 const rowsForLine = (answers, evaluation, line) => {
+  const commodityCode = line.entry.commoditySelection ?? ''
   const species = state.collectionView(
     answers,
     ['commodityLines', line.index, 'species'],
@@ -33,7 +57,7 @@ const rowsForLine = (answers, evaluation, line) => {
   )
   const removable = species.length > 1
   return species.map((entry) =>
-    speciesRow(answers, evaluation, line.index, entry, removable)
+    speciesRow(answers, evaluation, line.index, commodityCode, entry, removable)
   )
 }
 
