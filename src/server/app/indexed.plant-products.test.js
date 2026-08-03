@@ -194,7 +194,27 @@ describe('plant-products indexed obligations are first-class', () => {
       {
         obligation: plantProductsObligationSet.usingGvms,
         templatePath: 'usingGvms'
-      }
+      },
+      ...[
+        'destinationSameAsConsignee',
+        'destinationName',
+        'destinationAddressLine1',
+        'destinationAddressLine2',
+        'destinationAddressLine3',
+        'destinationCity',
+        'destinationPostcode',
+        'destinationCountry',
+        'packerName',
+        'packerAddressLine1',
+        'packerAddressLine2',
+        'packerAddressLine3',
+        'packerCity',
+        'packerPostcode',
+        'packerCountry'
+      ].map((name) => ({
+        obligation: plantProductsObligationSet[name],
+        templatePath: name
+      }))
     ])
   })
 
@@ -209,6 +229,7 @@ describe('plant-products indexed obligations are first-class', () => {
       'goods-movement',
       'contact',
       'documents',
+      'traders',
       'review'
     ])
   })
@@ -233,6 +254,12 @@ describe('plant-products indexed obligations are first-class', () => {
     )
     expect(sectionIds.indexOf('contact')).toBeLessThan(
       sectionIds.indexOf('documents')
+    )
+    expect(sectionIds.indexOf('documents')).toBeLessThan(
+      sectionIds.indexOf('traders')
+    )
+    expect(sectionIds.indexOf('traders')).toBeLessThan(
+      sectionIds.indexOf('review')
     )
   })
 
@@ -311,6 +338,7 @@ describe('plant-products indexed obligations are first-class', () => {
       usingGvms: false,
       responsiblePersonName: 'Isabel Irwin',
       responsiblePersonEmail: 'isabel@example.com',
+      destinationSameAsConsignee: true,
       accompanyingDocuments: [
         {
           documentType: 'PHYTOSANITARY_CERTIFICATE',

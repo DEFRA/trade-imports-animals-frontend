@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from 'node:util'
+
 const defined = (source, fields) =>
   Object.fromEntries(
     fields
@@ -145,6 +147,49 @@ const mapDocuments = (dto) =>
       }
     : {}
 
+const mapOperator = (operator, prefix) => {
+  if (!operator || typeof operator !== 'object') return {}
+  const address = operator.address
+  return {
+    ...(operator.name != null ? { [`${prefix}Name`]: operator.name } : {}),
+    ...(address && typeof address === 'object'
+      ? {
+          ...(address.addressLine1 != null
+            ? { [`${prefix}AddressLine1`]: address.addressLine1 }
+            : {}),
+          ...(address.addressLine2 != null
+            ? { [`${prefix}AddressLine2`]: address.addressLine2 }
+            : {}),
+          ...(address.addressLine3 != null
+            ? { [`${prefix}AddressLine3`]: address.addressLine3 }
+            : {}),
+          ...(address.city != null ? { [`${prefix}City`]: address.city } : {}),
+          ...(address.postcode != null
+            ? { [`${prefix}Postcode`]: address.postcode }
+            : {}),
+          ...(address.country != null
+            ? { [`${prefix}Country`]: address.country }
+            : {})
+        }
+      : {})
+  }
+}
+
+const mapParties = (dto) => {
+  const destination = dto.destination
+  return {
+    ...(destination && typeof destination === 'object'
+      ? isDeepStrictEqual(destination, dto.importer)
+        ? { destinationSameAsConsignee: true }
+        : {
+            destinationSameAsConsignee: false,
+            ...mapOperator(destination, 'destination')
+          }
+      : {}),
+    ...mapOperator(dto.packer, 'packer')
+  }
+}
+
 const SECTION_MAPPERS = Object.freeze([
   mapOrigin,
   mapPurpose,
@@ -153,7 +198,8 @@ const SECTION_MAPPERS = Object.freeze([
   mapTransport,
   mapGoodsMovementServices,
   mapResponsiblePerson,
-  mapDocuments
+  mapDocuments,
+  mapParties
 ])
 
 const composeSections = (dto) =>

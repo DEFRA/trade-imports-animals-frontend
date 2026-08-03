@@ -11,6 +11,7 @@ import { featureEvaluationBindings } from '../../journeys/linear/features/evalua
 import { IDEMPOTENCY_KEY_HEADER, notificationsUrl } from './config.js'
 import { records } from './real.js'
 import { mapStatus } from './status.js'
+import { stubOrganisationOperator } from '../stub-org.js'
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
@@ -243,7 +244,8 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
     expect(request.method).toBe('PUT')
     expectJsonHeaders(request)
     expect(await bodyOf(request)).toEqual({
-      referenceNumber: SOURCE_REFERENCE
+      referenceNumber: SOURCE_REFERENCE,
+      importer: stubOrganisationOperator()
     })
     expect(saved).toMatchObject({
       journeyId: SOURCE_REFERENCE,

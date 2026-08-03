@@ -6,6 +6,7 @@ import { evaluationBindings as goodsMovement } from './goods-movement/evaluation
 import { evaluationBindings as origin } from './origin/evaluation.js'
 import { evaluationBindings as purpose } from './purpose/evaluation.js'
 import { evaluationBindings as transport } from './transport/evaluation.js'
+import { evaluationBindings as traders } from './traders/evaluation.js'
 
 export const featureEvaluationBindings = Object.freeze([
   origin,
@@ -15,5 +16,6 @@ export const featureEvaluationBindings = Object.freeze([
   transport,
   goodsMovement,
   contact,
-  documents
+  documents,
+  traders
 ])

@@ -38,6 +38,7 @@ describe('plant-products hub copy', () => {
       ['goods-movement', '6. Goods movement services'],
       ['contact', '7. Contact details'],
       ['documents', '9. Accompanying documents'],
+      ['traders', '10. Traders'],
       ['review', '12. Review and submit']
     ])
   })
@@ -52,6 +53,7 @@ describe('plant-products hub copy', () => {
       'goodsMovement',
       'contact',
       'documents',
+      'traders',
       'review'
     ])
     for (const row of Object.values(en.rows)) {
@@ -107,6 +109,14 @@ describe('plant-products hub copy', () => {
     expect(en.rows.documents).toEqual({
       title: 'Accompanying documents',
       hint: 'Add at least one document, including the phytosanitary certificate'
+    })
+  })
+
+  it('provides the numbered traders group and its mandatory row copy', () => {
+    expect(en.groups.traders).toBe('10. Traders')
+    expect(en.rows.traders).toEqual({
+      title: 'Traders',
+      hint: 'Importer, delivery address, packer and consignor details'
     })
   })
 

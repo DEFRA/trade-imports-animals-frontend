@@ -265,6 +265,47 @@ describe.each(implementations)(
       })
     })
 
+    it('round-trips both derived destination branches through replace and draft resume', async () => {
+      const created = await inPlantProducts(() => records.create())
+      const sameAsImporter = inPlantProducts(() =>
+        assembleFulfilments({ destinationSameAsConsignee: true })
+      )
+
+      await inPlantProducts(() =>
+        records.replaceFulfilment(created.journeyId, sameAsImporter, {
+          known: created
+        })
+      )
+      const sameLoaded = await inPlantProducts(() =>
+        records.load({ journeyId: created.journeyId })
+      )
+      expect(
+        inPlantProducts(() => projectAnswers(sameLoaded.fulfilment))
+      ).toEqual({ destinationSameAsConsignee: true })
+
+      const enteredAnswers = {
+        destinationSameAsConsignee: false,
+        destinationName: 'Paris Produce Market',
+        destinationAddressLine1: '10 Rue des Plantes',
+        destinationCity: 'Paris',
+        destinationPostcode: '75001',
+        destinationCountry: 'FR',
+        packerName: 'Packing SARL'
+      }
+      const entered = inPlantProducts(() => assembleFulfilments(enteredAnswers))
+      await inPlantProducts(() =>
+        records.replaceFulfilment(created.journeyId, entered, {
+          known: created
+        })
+      )
+      const enteredLoaded = await inPlantProducts(() =>
+        records.load({ journeyId: created.journeyId })
+      )
+      expect(
+        inPlantProducts(() => projectAnswers(enteredLoaded.fulfilment))
+      ).toEqual(enteredAnswers)
+    })
+
     it('submits, amends, cancels and soft-deletes idempotently', async () => {
       const created = await inPlantProducts(() => records.create())
       const submitted = await inPlantProducts(() =>

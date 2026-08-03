@@ -34,6 +34,7 @@ export const GROUPS = [
   { id: 'goods-movement', rows: ['goods-movement'] },
   { id: 'contact', rows: ['contact'] },
   { id: 'documents', rows: ['documents'] },
+  { id: 'traders', rows: ['traders'] },
   { id: 'review', rows: ['review'] }
 ]
 

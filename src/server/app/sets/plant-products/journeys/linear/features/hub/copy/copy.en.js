@@ -19,6 +19,7 @@ export const copy = {
     'goods-movement': '6. Goods movement services',
     contact: '7. Contact details',
     documents: '9. Accompanying documents',
+    traders: '10. Traders',
     review: '12. Review and submit'
   },
   rows: {
@@ -53,6 +54,10 @@ export const copy = {
     documents: {
       title: 'Accompanying documents',
       hint: 'Add at least one document, including the phytosanitary certificate'
+    },
+    traders: {
+      title: 'Traders',
+      hint: 'Importer, delivery address, packer and consignor details'
     },
     review: {
       title: 'Review and submit',

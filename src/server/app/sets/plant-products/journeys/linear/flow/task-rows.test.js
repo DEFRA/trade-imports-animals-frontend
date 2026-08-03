@@ -39,6 +39,7 @@ import {
 } from '../features/origin/page.js'
 import { purposePage } from '../features/purpose/page.js'
 import { transportBeforeBipPage } from '../features/transport/page.js'
+import { tradersAddressesPage } from '../features/traders/page.js'
 import { FLOW_ONLY_KEYS, sections } from './flow.js'
 import { rowParts, rowStatus, taskRowById, taskRows } from './task-rows.js'
 
@@ -96,6 +97,10 @@ describe('plant-products task rows', () => {
       {
         id: 'documents',
         pages: [accompanyingDocumentsPage]
+      },
+      {
+        id: 'traders',
+        pages: [tradersAddressesPage]
       }
     ])
     expect(
@@ -159,6 +164,18 @@ describe('plant-products task rows', () => {
         )
       )
     ).toBe('/plant-products/notifications/journey-1/accompanying-documents')
+    expect(
+      withSetContext('plant-products', () =>
+        rowEntry(
+          taskRowById('traders'),
+          makeScope({
+            countryOfOrigin: 'FR',
+            commodityLines: [{ commoditySelection: '08059000' }]
+          }),
+          'journey-1'
+        )
+      )
+    ).toBe('/plant-products/notifications/journey-1/traders-addresses')
   })
 
   it('derives fallback row parts from the page dispatch', () => {
@@ -210,6 +227,124 @@ describe('plant-products task rows', () => {
       'responsiblePersonEmail',
       'responsiblePersonTelephone'
     ])
+    expect(
+      withSetContext('plant-products', () => rowParts(taskRowById('traders')))
+    ).toEqual([
+      'destinationSameAsConsignee',
+      'destinationName',
+      'destinationAddressLine1',
+      'destinationAddressLine2',
+      'destinationAddressLine3',
+      'destinationCity',
+      'destinationPostcode',
+      'destinationCountry',
+      'packerName',
+      'packerAddressLine1',
+      'packerAddressLine2',
+      'packerAddressLine3',
+      'packerCity',
+      'packerPostcode',
+      'packerCountry'
+    ])
+  })
+
+  it('moves traders from Not yet started through In progress to Completed while packer stays optional', () => {
+    const statusFor = (answers) =>
+      withSetContext('plant-products', () => {
+        const { inScope } = makeScope(answers)
+        return rowStatus(
+          taskRowById('traders'),
+          answers,
+          inScope,
+          evaluateAnswers(answers)
+        )
+      })
+
+    expect(statusFor({})).toBe(NOT_STARTED)
+    expect(statusFor({ destinationSameAsConsignee: false })).toBe(IN_PROGRESS)
+    expect(statusFor({ destinationSameAsConsignee: true })).toBe(FULFILLED)
+    expect(
+      statusFor({
+        destinationSameAsConsignee: false,
+        destinationName: 'Paris Produce Market',
+        destinationAddressLine1: '10 Rue des Plantes',
+        destinationCity: 'Paris',
+        destinationPostcode: '75001',
+        destinationCountry: 'FR'
+      })
+    ).toBe(FULFILLED)
+  })
+
+  it('blocks review readiness while traders is incomplete and unblocks on either complete delivery branch', () => {
+    const readyFor = (answers) =>
+      withSetContext('plant-products', () => {
+        const { inScope } = makeScope(answers)
+        return readyForCheckYourAnswers(
+          answers,
+          inScope,
+          evaluateAnswers(answers)
+        )
+      })
+    const allOtherRows = {
+      countryOfOrigin: 'FR',
+      countryOfConsignment: 'IE',
+      reasonForImport: 'INTERNAL_MARKET',
+      commodityInputMethod: 'MANUAL',
+      commodityLines: [
+        {
+          commoditySelection: '08059000',
+          numberOfPackages: 1,
+          packageType: 'BX',
+          quantity: 1,
+          quantityType: 'PCS',
+          netWeight: 1,
+          species: [
+            {
+              eppoCode: 'CIDAC',
+              genusAndSpecies: 'Citrus australasica'
+            }
+          ]
+        }
+      ],
+      totalGrossWeight: '2',
+      borderControlPost: 'GBLHR4PP',
+      meansOfTransport: 'ROAD_VEHICLE',
+      transportIdentification: 'AB12 CDE',
+      transportDocumentReference: 'CMR-123',
+      arrivalDate: '2026-08-20',
+      arrivalTime: '14:50',
+      usesContainers: false,
+      commonTransitConvention: 'NO',
+      usingGvms: false,
+      responsiblePersonName: 'Isabel Irwin',
+      responsiblePersonEmail: 'isabel@example.com',
+      accompanyingDocuments: [
+        {
+          documentType: 'PHYTOSANITARY_CERTIFICATE',
+          documentReference: 'PHYTO-001',
+          issueDate: { day: '4', month: '12', year: '2025' }
+        }
+      ]
+    }
+
+    expect(readyFor(allOtherRows)).toBe(false)
+    expect(
+      readyFor({ ...allOtherRows, destinationSameAsConsignee: false })
+    ).toBe(false)
+    expect(
+      readyFor({ ...allOtherRows, destinationSameAsConsignee: true })
+    ).toBe(true)
+    expect(
+      readyFor({
+        ...allOtherRows,
+        destinationSameAsConsignee: false,
+        destinationName: 'Paris Produce Market',
+        destinationAddressLine1: '10 Rue des Plantes',
+        destinationCity: 'Paris',
+        destinationPostcode: '75001',
+        destinationCountry: 'FR'
+      })
+    ).toBe(true)
   })
 
   it('moves contact from Not yet started to Completed with either contact method', () => {
@@ -317,7 +452,8 @@ describe('plant-products task rows', () => {
       commonTransitConvention: 'NO',
       usingGvms: false,
       responsiblePersonName: 'Isabel Irwin',
-      responsiblePersonEmail: 'isabel@example.com'
+      responsiblePersonEmail: 'isabel@example.com',
+      destinationSameAsConsignee: true
     }
 
     expect(readyFor(allEarlierRows)).toBe(false)
@@ -382,7 +518,8 @@ describe('plant-products task rows', () => {
           documentReference: 'PHYTO-001',
           issueDate: { day: '4', month: '12', year: '2025' }
         }
-      ]
+      ],
+      destinationSameAsConsignee: true
     }
 
     expect(readyFor(allOtherRows)).toBe(false)
@@ -643,7 +780,8 @@ describe('plant-products task rows', () => {
       commonTransitConvention: 'NO',
       usingGvms: false,
       responsiblePersonName: 'Isabel Irwin',
-      responsiblePersonEmail: 'isabel@example.com'
+      responsiblePersonEmail: 'isabel@example.com',
+      destinationSameAsConsignee: true
     }
     const completedTransport = {
       borderControlPost: 'GBLHR4PP',
@@ -720,7 +858,8 @@ describe('plant-products task rows', () => {
       commonTransitConvention: 'NO',
       usingGvms: false,
       responsiblePersonName: 'Isabel Irwin',
-      responsiblePersonEmail: 'isabel@example.com'
+      responsiblePersonEmail: 'isabel@example.com',
+      destinationSameAsConsignee: true
     }
 
     const {

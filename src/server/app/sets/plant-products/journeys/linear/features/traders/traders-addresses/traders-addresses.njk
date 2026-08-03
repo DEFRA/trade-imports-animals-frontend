@@ -1,0 +1,159 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{% from "shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  <span class="govuk-caption-xl">{{ copy.caption }}</span>
+  <h1 class="govuk-heading-xl">{{ copy.heading }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    <h2 class="govuk-heading-l">{{ copy.importer.heading }}</h2>
+    {{ govukSummaryList({ rows: importerRows }) }}
+
+    <h2 class="govuk-heading-l">{{ copy.packer.heading }}</h2>
+    {{ govukInput({
+      id: "packerName",
+      name: "packerName",
+      label: { text: copy.packer.fields.name },
+      value: values.packerName,
+      errorMessage: errors.packerName and { text: errors.packerName }
+    }) }}
+    {{ govukInput({
+      id: "packerAddressLine1",
+      name: "packerAddressLine1",
+      label: { text: copy.packer.fields.addressLine1 },
+      value: values.packerAddressLine1,
+      errorMessage: errors.packerAddressLine1 and { text: errors.packerAddressLine1 }
+    }) }}
+    {{ govukInput({
+      id: "packerAddressLine2",
+      name: "packerAddressLine2",
+      label: { text: copy.packer.fields.addressLine2 },
+      value: values.packerAddressLine2,
+      errorMessage: errors.packerAddressLine2 and { text: errors.packerAddressLine2 }
+    }) }}
+    {{ govukInput({
+      id: "packerAddressLine3",
+      name: "packerAddressLine3",
+      label: { text: copy.packer.fields.addressLine3 },
+      value: values.packerAddressLine3,
+      errorMessage: errors.packerAddressLine3 and { text: errors.packerAddressLine3 }
+    }) }}
+    {{ govukInput({
+      id: "packerCity",
+      name: "packerCity",
+      label: { text: copy.packer.fields.city },
+      value: values.packerCity,
+      errorMessage: errors.packerCity and { text: errors.packerCity }
+    }) }}
+    {{ govukInput({
+      id: "packerPostcode",
+      name: "packerPostcode",
+      label: { text: copy.packer.fields.postcode },
+      classes: "govuk-input--width-10",
+      value: values.packerPostcode,
+      errorMessage: errors.packerPostcode and { text: errors.packerPostcode }
+    }) }}
+    {{ govukSelect({
+      id: "packerCountry",
+      name: "packerCountry",
+      label: { text: copy.packer.fields.country },
+      items: packerCountryItems,
+      errorMessage: errors.packerCountry and { text: errors.packerCountry }
+    }) }}
+
+    <h2 class="govuk-heading-l">{{ copy.delivery.heading }}</h2>
+    {% set destinationHtml %}
+      {{ govukInput({
+        id: "destinationName",
+        name: "destinationName",
+        label: { text: copy.delivery.fields.name },
+        value: values.destinationName,
+        errorMessage: errors.destinationName and { text: errors.destinationName }
+      }) }}
+      {{ govukInput({
+        id: "destinationAddressLine1",
+        name: "destinationAddressLine1",
+        label: { text: copy.delivery.fields.addressLine1 },
+        value: values.destinationAddressLine1,
+        errorMessage: errors.destinationAddressLine1 and { text: errors.destinationAddressLine1 }
+      }) }}
+      {{ govukInput({
+        id: "destinationAddressLine2",
+        name: "destinationAddressLine2",
+        label: { text: copy.delivery.fields.addressLine2 },
+        value: values.destinationAddressLine2,
+        errorMessage: errors.destinationAddressLine2 and { text: errors.destinationAddressLine2 }
+      }) }}
+      {{ govukInput({
+        id: "destinationAddressLine3",
+        name: "destinationAddressLine3",
+        label: { text: copy.delivery.fields.addressLine3 },
+        value: values.destinationAddressLine3,
+        errorMessage: errors.destinationAddressLine3 and { text: errors.destinationAddressLine3 }
+      }) }}
+      {{ govukInput({
+        id: "destinationCity",
+        name: "destinationCity",
+        label: { text: copy.delivery.fields.city },
+        value: values.destinationCity,
+        errorMessage: errors.destinationCity and { text: errors.destinationCity }
+      }) }}
+      {{ govukInput({
+        id: "destinationPostcode",
+        name: "destinationPostcode",
+        label: { text: copy.delivery.fields.postcode },
+        classes: "govuk-input--width-10",
+        value: values.destinationPostcode,
+        errorMessage: errors.destinationPostcode and { text: errors.destinationPostcode }
+      }) }}
+      {{ govukSelect({
+        id: "destinationCountry",
+        name: "destinationCountry",
+        label: { text: copy.delivery.fields.country },
+        items: destinationCountryItems,
+        errorMessage: errors.destinationCountry and { text: errors.destinationCountry }
+      }) }}
+    {% endset %}
+
+    {{ govukRadios({
+      idPrefix: "destinationSameAsConsignee",
+      name: "destinationSameAsConsignee",
+      fieldset: {
+        legend: {
+          text: copy.delivery.legend,
+          classes: "govuk-fieldset__legend--m"
+        }
+      },
+      errorMessage: errors.destinationSameAsConsignee and { text: errors.destinationSameAsConsignee },
+      items: [
+        {
+          value: "true",
+          text: copy.delivery.options.yes,
+          checked: values.destinationSameAsConsignee == "true"
+        },
+        {
+          value: "false",
+          text: copy.delivery.options.no,
+          checked: values.destinationSameAsConsignee == "false",
+          conditional: { html: destinationHtml }
+        }
+      ]
+    }) }}
+
+    <h2 class="govuk-heading-l">{{ copy.consignor.heading }}</h2>
+    <p class="govuk-body">{{ copy.consignor.notAdded }}</p>
+    <p class="govuk-body">
+      <a class="govuk-link" href="{{ consignorHref }}">{{ copy.consignor.addLink }}</a>
+    </p>
+
+    {{ saveActions(hubHref, { text: copy.continue }, sharedCopy.saveActions) }}
+  </form>
+{% endblock %}

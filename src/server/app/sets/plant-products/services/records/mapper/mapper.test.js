@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest'
 
 import { fromDto } from './from-dto.js'
 import { documentToDto, toDto } from './to-dto.js'
+import { stubOrganisationOperator } from '../../stub-org.js'
+
+const withImporter = (dto = {}) => ({
+  ...dto,
+  importer: stubOrganisationOperator()
+})
 
 const SERVER_SET_FIELDS = [
   'referenceNumber',
@@ -16,7 +22,10 @@ const SERVER_SET_FIELDS = [
 
 describe('plant-products notification mapper at the m0 boundary', () => {
   it('maps the empty m0 answers tree to an empty DTO', () => {
-    expect(toDto({})).toEqual({})
+    const { importer, ...answerOwnedDto } = toDto({})
+
+    expect(importer).toEqual(stubOrganisationOperator())
+    expect(answerOwnedDto).toEqual({})
   })
 
   it('round-trips the m0 answers tree', () => {
@@ -28,9 +37,11 @@ describe('plant-products notification mapper at the m0 boundary', () => {
   it('round-trips the country-of-origin code through origin.countryCode', () => {
     const answers = { countryOfOrigin: 'GB-SCT' }
 
-    expect(toDto(answers)).toEqual({
-      origin: { countryCode: 'GB-SCT' }
-    })
+    expect(toDto(answers)).toEqual(
+      withImporter({
+        origin: { countryCode: 'GB-SCT' }
+      })
+    )
     expect(fromDto(toDto(answers))).toEqual(answers)
   })
 
@@ -40,30 +51,36 @@ describe('plant-products notification mapper at the m0 boundary', () => {
       internalReference: 'REF-123'
     }
 
-    expect(toDto(answers)).toEqual({
-      origin: {
-        countryOfConsignmentCode: 'IE',
-        internalReference: 'REF-123'
-      }
-    })
+    expect(toDto(answers)).toEqual(
+      withImporter({
+        origin: {
+          countryOfConsignmentCode: 'IE',
+          internalReference: 'REF-123'
+        }
+      })
+    )
     expect(fromDto(toDto(answers))).toEqual(answers)
   })
 
   it('does not fabricate an absent optional internal reference', () => {
     const answers = { countryOfConsignment: 'IE' }
 
-    expect(toDto(answers)).toEqual({
-      origin: { countryOfConsignmentCode: 'IE' }
-    })
+    expect(toDto(answers)).toEqual(
+      withImporter({
+        origin: { countryOfConsignmentCode: 'IE' }
+      })
+    )
     expect(fromDto(toDto(answers))).toEqual(answers)
   })
 
   it('round-trips the normalised reason-for-import enum at the DTO top level', () => {
     const answers = { reasonForImport: 'RE_CONFORMITY_CHECK' }
 
-    expect(toDto(answers)).toEqual({
-      reasonForImport: 'RE_CONFORMITY_CHECK'
-    })
+    expect(toDto(answers)).toEqual(
+      withImporter({
+        reasonForImport: 'RE_CONFORMITY_CHECK'
+      })
+    )
     expect(fromDto(toDto(answers))).toEqual(answers)
   })
 
@@ -79,9 +96,11 @@ describe('plant-products notification mapper at the m0 boundary', () => {
   it('round-trips commodityInputMethod through commodity.inputMethod', () => {
     const answers = { commodityInputMethod: 'MANUAL' }
 
-    expect(toDto(answers)).toEqual({
-      commodity: { inputMethod: 'MANUAL' }
-    })
+    expect(toDto(answers)).toEqual(
+      withImporter({
+        commodity: { inputMethod: 'MANUAL' }
+      })
+    )
     expect(fromDto(toDto(answers))).toEqual(answers)
   })
 
@@ -113,7 +132,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
         declaration: { agreed: true },
         accompanyingDocuments: [{ documentReference: 'PHYTO-COPY-001' }]
       })
-    ).toEqual({})
+    ).toEqual(withImporter())
   })
 
   it('drops server-set and unknown response fields while folding embedded documents', () => {
@@ -255,9 +274,11 @@ describe('plant-products notification mapper at the m0 boundary', () => {
   })
 
   it('maps an explicitly empty commodity collection to an empty DTO collection', () => {
-    expect(toDto({ commodityLines: [] })).toEqual({
-      commodity: { commodityComplement: [] }
-    })
+    expect(toDto({ commodityLines: [] })).toEqual(
+      withImporter({
+        commodity: { commodityComplement: [] }
+      })
+    )
     expect(fromDto({ commodity: { commodityComplement: [] } })).toEqual({
       commodityLines: []
     })
@@ -272,7 +293,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
 
     const dto = toDto(answers)
 
-    expect(dto).toEqual({ additionalDetails: answers })
+    expect(dto).toEqual(withImporter({ additionalDetails: answers }))
     expect(fromDto(dto)).toEqual(answers)
     expect(JSON.stringify(dto)).not.toMatch(/netWeightTotal|packagesTotal/)
   })
@@ -282,7 +303,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
 
     const dto = toDto(answers)
 
-    expect(dto).toEqual({ additionalDetails: answers })
+    expect(dto).toEqual(withImporter({ additionalDetails: answers }))
     expect(dto.additionalDetails).not.toHaveProperty('grossVolume')
     expect(dto.additionalDetails).not.toHaveProperty('grossVolumeUnit')
     expect(fromDto(dto)).toEqual(answers)
@@ -318,7 +339,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
       ]
     }
 
-    expect(toDto(answers)).toEqual({ transport: answers })
+    expect(toDto(answers)).toEqual(withImporter({ transport: answers }))
     expect(fromDto(toDto(answers))).toEqual(answers)
   })
 
@@ -348,7 +369,9 @@ describe('plant-products notification mapper at the m0 boundary', () => {
       usingGvms: true
     }
 
-    expect(toDto(answers)).toEqual({ goodsMovementServices: answers })
+    expect(toDto(answers)).toEqual(
+      withImporter({ goodsMovementServices: answers })
+    )
     expect(fromDto(toDto(answers))).toEqual(answers)
   })
 
@@ -359,12 +382,14 @@ describe('plant-products notification mapper at the m0 boundary', () => {
       usingGvms: false
     })
 
-    expect(dto).toEqual({
-      goodsMovementServices: {
-        commonTransitConvention: 'NO',
-        usingGvms: false
-      }
-    })
+    expect(dto).toEqual(
+      withImporter({
+        goodsMovementServices: {
+          commonTransitConvention: 'NO',
+          usingGvms: false
+        }
+      })
+    )
     expect(dto.goodsMovementServices).not.toHaveProperty(
       'movementReferenceNumber'
     )
@@ -378,9 +403,11 @@ describe('plant-products notification mapper at the m0 boundary', () => {
   })
 
   it('keeps usingGvms boolean in both DTO directions without inventing false', () => {
-    expect(toDto({ usingGvms: false })).toEqual({
-      goodsMovementServices: { usingGvms: false }
-    })
+    expect(toDto({ usingGvms: false })).toEqual(
+      withImporter({
+        goodsMovementServices: { usingGvms: false }
+      })
+    )
     expect(fromDto({ goodsMovementServices: { usingGvms: true } })).toEqual({
       usingGvms: true
     })
@@ -396,13 +423,15 @@ describe('plant-products notification mapper at the m0 boundary', () => {
       responsiblePersonTelephone: '+44 7700 900 982'
     }
 
-    expect(toDto(answers)).toEqual({
-      responsiblePerson: {
-        name: 'Isabel Irwin',
-        email: 'isabel@example.com',
-        telephone: '+44 7700 900 982'
-      }
-    })
+    expect(toDto(answers)).toEqual(
+      withImporter({
+        responsiblePerson: {
+          name: 'Isabel Irwin',
+          email: 'isabel@example.com',
+          telephone: '+44 7700 900 982'
+        }
+      })
+    )
     expect(fromDto(toDto(answers))).toEqual(answers)
   })
 
@@ -414,12 +443,14 @@ describe('plant-products notification mapper at the m0 boundary', () => {
 
     const dto = toDto(answers)
 
-    expect(dto).toEqual({
-      responsiblePerson: {
-        name: 'Isabel Irwin',
-        email: 'isabel@example.com'
-      }
-    })
+    expect(dto).toEqual(
+      withImporter({
+        responsiblePerson: {
+          name: 'Isabel Irwin',
+          email: 'isabel@example.com'
+        }
+      })
+    )
     expect(dto.responsiblePerson).not.toHaveProperty('telephone')
     expect(dto.responsiblePerson).not.toHaveProperty('isAgent')
     expect(fromDto(dto)).toEqual(answers)
@@ -439,6 +470,91 @@ describe('plant-products notification mapper at the m0 boundary', () => {
         }
       })
     ).toEqual({ responsiblePersonName: 'Isabel Irwin' })
+  })
+
+  it('projects same-as Yes as an importer copy and re-derives Yes when destination deeply equals importer', () => {
+    const dto = toDto({ destinationSameAsConsignee: true })
+
+    expect(dto.importer).toEqual(stubOrganisationOperator())
+    expect(dto.destination).toEqual(dto.importer)
+    expect(dto.destination).not.toBe(dto.importer)
+    expect(dto).not.toHaveProperty('destinationSameAsConsignee')
+    expect(fromDto(dto)).toEqual({ destinationSameAsConsignee: true })
+  })
+
+  it('round-trips an entered destination and re-derives No when destination differs from importer', () => {
+    const answers = {
+      destinationSameAsConsignee: false,
+      destinationName: 'Paris Produce Market',
+      destinationAddressLine1: '10 Rue des Plantes',
+      destinationAddressLine2: 'Building 2',
+      destinationAddressLine3: 'Wholesale Quarter',
+      destinationCity: 'Paris',
+      destinationPostcode: '75001',
+      destinationCountry: 'FR'
+    }
+
+    const dto = toDto(answers)
+
+    expect(dto.destination).toEqual({
+      name: 'Paris Produce Market',
+      address: {
+        addressLine1: '10 Rue des Plantes',
+        addressLine2: 'Building 2',
+        addressLine3: 'Wholesale Quarter',
+        city: 'Paris',
+        postcode: '75001',
+        country: 'FR'
+      }
+    })
+    expect(dto).not.toHaveProperty('destinationSameAsConsignee')
+    expect(dto.destination).not.toHaveProperty('email')
+    expect(dto.destination).not.toHaveProperty('telephone')
+    expect(fromDto(dto)).toEqual(answers)
+  })
+
+  it('keeps the radio unanswered when no destination exists', () => {
+    const dto = toDto({})
+
+    expect(dto).not.toHaveProperty('destination')
+    expect(dto).not.toHaveProperty('destinationSameAsConsignee')
+    expect(fromDto(dto)).not.toHaveProperty('destinationSameAsConsignee')
+  })
+
+  it('round-trips a partial optional packer and omits an entirely empty packer', () => {
+    const answers = {
+      packerName: 'Packing SARL',
+      packerAddressLine1: '20 Rue du Colis',
+      packerCity: 'Calais',
+      packerPostcode: '62100',
+      packerCountry: 'FR'
+    }
+
+    const dto = toDto(answers)
+
+    expect(dto.packer).toEqual({
+      name: 'Packing SARL',
+      address: {
+        addressLine1: '20 Rue du Colis',
+        city: 'Calais',
+        postcode: '62100',
+        country: 'FR'
+      }
+    })
+    expect(dto.packer).not.toHaveProperty('email')
+    expect(dto.packer).not.toHaveProperty('telephone')
+    expect(fromDto(dto)).toEqual(answers)
+    expect(
+      toDto({
+        packerName: '',
+        packerAddressLine1: '',
+        packerAddressLine2: '',
+        packerAddressLine3: '',
+        packerCity: '',
+        packerPostcode: '',
+        packerCountry: ''
+      })
+    ).not.toHaveProperty('packer')
   })
 
   it('maps one document to the exact metadata-only sub-resource DTO', () => {

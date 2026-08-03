@@ -38,6 +38,7 @@ import * as countryOfOrigin from './sets/plant-products/journeys/linear/features
 import * as originOfImport from './sets/plant-products/journeys/linear/features/origin/origin-of-import/origin-of-import.controller.js'
 import * as purpose from './sets/plant-products/journeys/linear/features/purpose/controller.js'
 import * as transport from './sets/plant-products/journeys/linear/features/transport/controller.js'
+import * as tradersAddresses from './sets/plant-products/journeys/linear/features/traders/traders-addresses/traders-addresses.controller.js'
 import { entryGuardTarget } from './sets/plant-products/journeys/linear/flow/entry-guard.js'
 import {
   FLOW_ONLY_KEYS,
@@ -193,6 +194,28 @@ const cases = [
       documentType: 'PHYTOSANITARY_CERTIFICATE',
       documentReference: 'PHYTO-001',
       issueDate: '4/12/2025'
+    }
+  },
+  {
+    id: tradersAddresses.meta.id,
+    collects: tradersAddresses.meta.collects,
+    controller: tradersAddresses,
+    payload: {
+      destinationSameAsConsignee: 'false',
+      destinationName: 'Paris Produce Market',
+      destinationAddressLine1: '10 Rue des Plantes',
+      destinationAddressLine2: 'Building 2',
+      destinationAddressLine3: 'Wholesale Quarter',
+      destinationCity: 'Paris',
+      destinationPostcode: '75001',
+      destinationCountry: 'FR',
+      packerName: 'Packing SARL',
+      packerAddressLine1: '20 Rue du Colis',
+      packerAddressLine2: 'Unit 4',
+      packerAddressLine3: 'Industrial Quarter',
+      packerCity: 'Calais',
+      packerPostcode: '62100',
+      packerCountry: 'FR'
     }
   }
 ]

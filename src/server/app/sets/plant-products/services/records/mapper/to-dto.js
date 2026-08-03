@@ -1,4 +1,5 @@
 import { descriptionFor } from '../../commodities/index.js'
+import { stubOrganisationOperator } from '../../stub-org.js'
 
 const defined = (source, fields) =>
   Object.fromEntries(
@@ -141,6 +142,53 @@ const mapResponsiblePerson = (answers) => {
   return Object.keys(responsiblePerson).length > 0 ? { responsiblePerson } : {}
 }
 
+const operatorFromAnswers = (answers, prefix) => {
+  const name = answers[`${prefix}Name`]
+  const address = {
+    ...defined(answers, [
+      `${prefix}AddressLine1`,
+      `${prefix}AddressLine2`,
+      `${prefix}AddressLine3`,
+      `${prefix}City`,
+      `${prefix}Postcode`,
+      `${prefix}Country`
+    ])
+  }
+  const mappedAddress = Object.fromEntries(
+    Object.entries(address).map(([field, value]) => [
+      field
+        .slice(prefix.length)
+        .replace(/^./, (letter) => letter.toLowerCase()),
+      value
+    ])
+  )
+  return {
+    ...(name !== undefined ? { name } : {}),
+    ...(Object.keys(mappedAddress).length > 0 ? { address: mappedAddress } : {})
+  }
+}
+
+const hasAnsweredPartyField = (operator) =>
+  Boolean(
+    operator.name ||
+    Object.values(operator.address ?? {}).some((value) => Boolean(value))
+  )
+
+const mapParties = (answers) => {
+  const importer = stubOrganisationOperator()
+  const enteredDestination = operatorFromAnswers(answers, 'destination')
+  const packer = operatorFromAnswers(answers, 'packer')
+  return {
+    importer,
+    ...(answers.destinationSameAsConsignee === true
+      ? { destination: structuredClone(importer) }
+      : answers.destinationSameAsConsignee === false
+        ? { destination: enteredDestination }
+        : {}),
+    ...(hasAnsweredPartyField(packer) ? { packer } : {})
+  }
+}
+
 const SECTION_MAPPERS = Object.freeze([
   mapOrigin,
   mapPurpose,
@@ -148,7 +196,8 @@ const SECTION_MAPPERS = Object.freeze([
   mapAdditionalDetails,
   mapTransport,
   mapGoodsMovementServices,
-  mapResponsiblePerson
+  mapResponsiblePerson,
+  mapParties
 ])
 
 const composeSections = (answers) =>

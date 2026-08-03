@@ -51,6 +51,23 @@ import {
 } from './sections/documents.js'
 import { reasonForImport } from './sections/purpose.js'
 import {
+  destinationAddressLine1,
+  destinationAddressLine2,
+  destinationAddressLine3,
+  destinationCity,
+  destinationCountry,
+  destinationName,
+  destinationPostcode,
+  destinationSameAsConsignee,
+  packerAddressLine1,
+  packerAddressLine2,
+  packerAddressLine3,
+  packerCity,
+  packerCountry,
+  packerName,
+  packerPostcode
+} from './sections/parties.js'
+import {
   arrivalDate,
   arrivalTime,
   borderControlPost,
@@ -113,7 +130,22 @@ export {
   usesContainers,
   commonTransitConvention,
   movementReferenceNumber,
-  usingGvms
+  usingGvms,
+  destinationSameAsConsignee,
+  destinationName,
+  destinationAddressLine1,
+  destinationAddressLine2,
+  destinationAddressLine3,
+  destinationCity,
+  destinationPostcode,
+  destinationCountry,
+  packerName,
+  packerAddressLine1,
+  packerAddressLine2,
+  packerAddressLine3,
+  packerCity,
+  packerPostcode,
+  packerCountry
 }
 
 export const obligations = [
@@ -164,7 +196,22 @@ export const obligations = [
   officialSeal,
   commonTransitConvention,
   movementReferenceNumber,
-  usingGvms
+  usingGvms,
+  destinationSameAsConsignee,
+  destinationName,
+  destinationAddressLine1,
+  destinationAddressLine2,
+  destinationAddressLine3,
+  destinationCity,
+  destinationPostcode,
+  destinationCountry,
+  packerName,
+  packerAddressLine1,
+  packerAddressLine2,
+  packerAddressLine3,
+  packerCity,
+  packerPostcode,
+  packerCountry
 ]
 
 export const groups = obligations.filter((obligation) =>

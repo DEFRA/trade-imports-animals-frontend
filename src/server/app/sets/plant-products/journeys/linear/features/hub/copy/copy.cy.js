@@ -20,6 +20,7 @@ export const copy = {
     'goods-movement': '6. Gwasanaethau symud nwyddau',
     contact: '7. Manylion cyswllt',
     documents: '9. Dogfennau cysylltiedig',
+    traders: '10. Masnachwyr',
     review: '12. Adolygu a chyflwyno'
   },
   rows: {
@@ -54,6 +55,10 @@ export const copy = {
     documents: {
       title: 'Dogfennau cysylltiedig',
       hint: 'Ychwanegwch o leiaf un ddogfen, gan gynnwys y dystysgrif ffytoiechydol'
+    },
+    traders: {
+      title: 'Masnachwyr',
+      hint: 'Manylion y mewnforiwr, y cyfeiriad danfon, y paciwr a’r traddodwr'
     },
     review: {
       title: 'Adolygu a chyflwyno',
