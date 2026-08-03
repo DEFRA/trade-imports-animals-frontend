@@ -20,7 +20,7 @@ const { countryOfOrigin } = obligationSet()
 // backend with a fresh GET /fulfilments/{ref}, and each save re-fetched the same
 // record to guard the write. This pins the collapsed behaviour: within one HTTP
 // request the real adapter issues at most one canonical GET, followed by the
-// canonical and the current-notification projection PUTs.
+// canonical PUT and the notification projection POST.
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
@@ -75,8 +75,17 @@ describe('one load per request — real records adapter GET count', () => {
             })
           )
       }
-      if (req.method === 'PUT' && req.url === `${notificationsUrl}/${ref}`) {
-        return ''
+      if (req.method === 'POST' && req.url === notificationsUrl) {
+        return req
+          .clone()
+          .text()
+          .then((body) =>
+            JSON.stringify({
+              referenceNumber: ref,
+              status: 'DRAFT',
+              ...(body ? JSON.parse(body) : {})
+            })
+          )
       }
       return { status: 404, body: 'Not Found' }
     })
@@ -85,7 +94,7 @@ describe('one load per request — real records adapter GET count', () => {
     configureReadyForCheckYourAnswers(() => false)
   })
 
-  test('Should issue exactly one GET for a read-then-write request, plus the two PUTs', async () => {
+  test('Should issue exactly one GET for a read-then-write request, plus canonical PUT and notification POST', async () => {
     const request = buildRequest()
 
     const before = await get(request, recordingH())
@@ -94,7 +103,7 @@ describe('one load per request — real records adapter GET count', () => {
     expect(before.fulfilment).toEqual({})
     expect(getsFor(fulfilmentUrl)).toHaveLength(1)
     expect(requestsTo('PUT', fulfilmentUrl)).toHaveLength(1)
-    expect(requestsTo('PUT', `${notificationsUrl}/${ref}`)).toHaveLength(1)
+    expect(requestsTo('POST', notificationsUrl)).toHaveLength(1)
   })
 
   test('Should serve a post-write read from the request without a stale value or extra GET', async () => {

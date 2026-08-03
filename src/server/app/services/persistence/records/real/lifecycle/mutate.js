@@ -36,8 +36,12 @@ export const replaceFulfilment = async (
   const projections = [
     {
       name: 'current notification',
-      url: `${notificationsUrl}/${journeyId}`,
-      body: fulfilmentToNotification(snapshot, journeyId)
+      url: notificationsUrl,
+      method: 'POST',
+      body: {
+        referenceNumber: journeyId,
+        ...fulfilmentToNotification(snapshot, journeyId)
+      }
     }
   ]
 

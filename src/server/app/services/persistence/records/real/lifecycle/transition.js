@@ -1,43 +1,81 @@
-import { fulfilmentsUrl } from '../config.js'
+import { fulfilmentsUrl, notificationsUrl } from '../config.js'
 import { failed } from '../http/failed.js'
 import { headers } from '../http/headers.js'
 import { marshal } from '../marshal/document.js'
 
-export const finalise = async (journeyId, actor) => {
-  const response = await fetch(`${fulfilmentsUrl}/${journeyId}/submit`, {
+// Every lifecycle transition dual-writes: one call to the canonical fulfilment
+// endpoint, one to the notification endpoint. The fulfilment side's response is
+// returned to the caller (canonical is the source of truth for rehydration).
+// The notification side is fired in parallel so its outbox event lands via
+// main's existing NotificationService path.
+const postAggregate = async (url, action, body) => {
+  const response = await fetch(url, {
     method: 'POST',
     headers: headers(),
-    body: JSON.stringify(actor)
+    body: body === undefined ? undefined : JSON.stringify(body)
   })
-  if (!response.ok) throw failed('submit fulfilment', response)
-  return marshal(await response.json())
+  if (!response.ok) throw failed(action, response)
+  return response
+}
+
+export const finalise = async (journeyId, actor) => {
+  const [fulfilmentResponse] = await Promise.all([
+    postAggregate(
+      `${fulfilmentsUrl}/${journeyId}/submit`,
+      'submit fulfilment',
+      actor
+    ),
+    postAggregate(
+      `${notificationsUrl}/${journeyId}/submit`,
+      'submit notification',
+      actor
+    )
+  ])
+  return marshal(await fulfilmentResponse.json())
 }
 
 export const amend = async (journeyId, actor) => {
-  const response = await fetch(`${fulfilmentsUrl}/${journeyId}/amend`, {
-    method: 'POST',
-    headers: headers(),
-    body: JSON.stringify(actor)
-  })
-  if (!response.ok) throw failed('amend fulfilment', response)
-  return marshal(await response.json())
+  const [fulfilmentResponse] = await Promise.all([
+    postAggregate(
+      `${fulfilmentsUrl}/${journeyId}/amend`,
+      'amend fulfilment',
+      actor
+    ),
+    postAggregate(
+      `${notificationsUrl}/${journeyId}/amend`,
+      'amend notification',
+      actor
+    )
+  ])
+  return marshal(await fulfilmentResponse.json())
 }
 
 export const cancelAmend = async (journeyId) => {
-  const response = await fetch(`${fulfilmentsUrl}/${journeyId}/cancel-amend`, {
-    method: 'POST',
-    headers: headers()
-  })
-  if (!response.ok) throw failed('cancel amendment', response)
-  return marshal(await response.json())
+  const [fulfilmentResponse] = await Promise.all([
+    postAggregate(
+      `${fulfilmentsUrl}/${journeyId}/cancel-amend`,
+      'cancel fulfilment amendment'
+    ),
+    postAggregate(
+      `${notificationsUrl}/${journeyId}/cancel-amend`,
+      'cancel notification amendment'
+    )
+  ])
+  return marshal(await fulfilmentResponse.json())
 }
 
-export const softDelete = async (journeyId, actor) => {
-  const response = await fetch(`${fulfilmentsUrl}/${journeyId}/soft-delete`, {
-    method: 'POST',
-    headers: headers(),
-    body: JSON.stringify(actor)
-  })
-  if (!response.ok) throw failed('soft-delete fulfilment', response)
-  return marshal(await response.json())
+// Neither fulfilment nor notification soft-delete accepts an actor body;
+// keep the signature for callers that pass one but do not forward it.
+export const softDelete = async (journeyId) => {
+  const [fulfilmentResponse] = await Promise.all([
+    postAggregate(
+      `${fulfilmentsUrl}/${journeyId}/soft-delete`,
+      'soft-delete fulfilment'
+    ),
+    postAggregate(
+      `${notificationsUrl}/${journeyId}/soft-delete`,
+      'soft-delete notification'
+    )
+  ])
+  return marshal(await fulfilmentResponse.json())
 }
