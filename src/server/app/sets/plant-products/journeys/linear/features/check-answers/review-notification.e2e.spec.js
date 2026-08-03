@@ -315,6 +315,100 @@ const tableExpectations = () => {
 }
 
 test.describe('plant-products review notification', () => {
+  test('full journey profile keeps a middle entry and distinct identifiers in every collection', () => {
+    const collections = [
+      {
+        name: 'commodity lines',
+        entries: fullJourneyValues.commodities.lines,
+        identifier: (line) => line.code
+      },
+      {
+        name: 'containers',
+        entries: fullJourneyValues.transport.containers,
+        identifier: (container) => container.containerNumber
+      },
+      {
+        name: 'nominated contacts',
+        entries: fullJourneyValues.nominatedContacts,
+        identifier: (contact) => contact.email
+      },
+      {
+        name: 'documents',
+        entries: fullJourneyValues.documents,
+        identifier: (document) => document.reference
+      }
+    ]
+
+    // Three is the minimum that provides a middle entry: pp-026's index-0
+    // removal bug passed 360 unit tests and 108 of 109 browser tests without one.
+    for (const { name, entries, identifier } of collections) {
+      expect(
+        entries.length,
+        `${name} must retain at least three entries`
+      ).toBeGreaterThanOrEqual(3)
+
+      const identifiers = entries.map(identifier)
+      expect(
+        new Set(identifiers).size,
+        `${name} identifiers must be distinct`
+      ).toBe(entries.length)
+    }
+
+    const minimumDistinctValues = [
+      {
+        name: 'documents[].type.value',
+        values: fullJourneyValues.documents.map(
+          (document) => document.type.value
+        ),
+        minimum: 3
+      },
+      {
+        name: 'commodities.lines[].intendedForFinalUsers',
+        values: fullJourneyValues.commodities.lines.map(
+          (line) => line.intendedForFinalUsers
+        ),
+        minimum: 2
+      }
+    ]
+
+    for (const { name, values, minimum } of minimumDistinctValues) {
+      expect(
+        new Set(values).size,
+        `${name} must retain at least ${minimum} distinct values`
+      ).toBeGreaterThanOrEqual(minimum)
+    }
+
+    const booleanVariations = [
+      {
+        name: 'transport.containers[].officialSeal',
+        values: fullJourneyValues.transport.containers.map(
+          (container) => container.officialSeal
+        )
+      },
+      {
+        name: 'nominatedContacts[].agent',
+        values: fullJourneyValues.nominatedContacts.map(
+          (contact) => contact.agent
+        )
+      },
+      {
+        name: 'commodities.lines[].testAndTrial',
+        values: fullJourneyValues.commodities.lines.map(
+          (line) => line.testAndTrial
+        )
+      }
+    ]
+
+    // controlledAtmosphereContainer is false on every full-profile line, so
+    // its true branch remains unexercised and is deliberately excluded here.
+    for (const { name, values } of booleanVariations) {
+      expect(
+        values.includes(true) && values.includes(false),
+        `${name} must include both true and false`
+      ).toBe(true)
+    }
+  })
+
   test('renders distinct Welsh accessible names with locale-owned connectors', async ({
     page
   }) => {
