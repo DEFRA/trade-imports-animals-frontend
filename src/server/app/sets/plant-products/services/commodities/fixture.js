@@ -152,9 +152,19 @@ export const SPECIES_BY_CODE = freezeRecordOfArrays({
   ],
   '0808108010': [
     {
+      eppoCode: 'MABAN',
+      genusAndSpecies: 'Malus angustifolia',
+      speciesId: '1319830'
+    },
+    {
       eppoCode: 'MABSD',
       genusAndSpecies: 'Malus domestica',
       speciesId: '1391442'
+    },
+    {
+      eppoCode: 'MABZU',
+      genusAndSpecies: 'Malus x zumi',
+      speciesId: '1327015'
     }
   ],
   '09103000': [

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { SPECIES_BY_CODE } from './fixture.js'
 import {
   childrenOf,
   classApplicableSpecies,
@@ -85,6 +86,19 @@ describe('plant-products commodity reference data', () => {
       }
     ])
     expect(isSpeciesOf('08059000', 'CIDAC')).toBe(true)
+  })
+
+  it('provides three distinct cider-apple species in stable source order', () => {
+    const species = speciesFor('0808108010')
+
+    expect(species).toBe(SPECIES_BY_CODE['0808108010'])
+    expect(species).toHaveLength(3)
+    expect(new Set(species.map(({ eppoCode }) => eppoCode)).size).toBe(3)
+    expect(species.map(({ eppoCode }) => eppoCode)).toEqual([
+      'MABAN',
+      'MABSD',
+      'MABZU'
+    ])
   })
 
   it('searches genus and EPPO code as one combined filter', () => {

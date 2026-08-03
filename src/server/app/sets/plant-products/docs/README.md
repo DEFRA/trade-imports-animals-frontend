@@ -146,3 +146,12 @@ deviations:
   finished-or-propagated control. It is set only on 06011010 Hyacinths because
   CN heading 0601 covers bulbs and roots for planting; 0603197090 and 06042090
   fall under headings 0603 (cut flowers) and 0604 (foliage), respectively.
+- The 0808108010 Cider apples fixture species are MABAN (_Malus angustifolia_,
+  1319830), MABSD (_Malus domestica_, 1391442) and MABZU (_Malus x zumi_,
+  1327015), in that order. In the IPAFFS commodity-code microservice at revision
+  `c445e7cd234ae0041c4061992509d70e1f602a3e`, `species.csv` maps those EPPO codes
+  to species records and `certification_nomenclature.csv` associates all three
+  species with nomenclature ID `0713E424-5B5C-18D6-FB63-A949B70C1477`. These
+  files are under `service/src/test/resources/integration/data/`: they are the
+  owning service's integration-test dataset, not its production reference data,
+  but are real IPAFFS-shaped data and the best source available locally.
