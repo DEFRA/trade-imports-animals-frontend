@@ -10,6 +10,7 @@ import * as commoditySummary from './commodities/commodity-summary/commodity-sum
 import * as commodityBulkDetails from './commodities/commodity-bulk-details/commodity-bulk-details.controller.js'
 import * as hub from './hub/controller.js'
 import * as importType from './import-type/controller.js'
+import * as goodsMovement from './goods-movement/controller.js'
 import * as countryOfOrigin from './origin/country-of-origin/country-of-origin.controller.js'
 import * as originOfImport from './origin/origin-of-import/origin-of-import.controller.js'
 import * as purpose from './purpose/controller.js'
@@ -28,6 +29,7 @@ export const dispatchPages = [
   commodityBulkDetails.meta,
   additionalDetails.meta,
   transport.meta,
+  goodsMovement.meta,
   documents.meta
 ]
 
@@ -45,6 +47,7 @@ export const allRoutes = [
   ...commodityBulkDetails.routes,
   ...additionalDetails.routes,
   ...transport.routes,
+  ...goodsMovement.routes,
   ...documents.routes,
   ...hub.routes
 ]

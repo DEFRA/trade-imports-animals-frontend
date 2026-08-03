@@ -35,13 +35,23 @@ describe('plant-products hub copy', () => {
       ['commodities', '3. Commodity'],
       ['additional-details', '4. Additional details'],
       ['transport', '5. Transport to the BCP'],
+      ['goods-movement', '6. Goods movement services'],
       ['documents', '9. Accompanying documents'],
       ['review', '12. Review and submit']
     ])
   })
 
   it('provides non-empty title and hint copy for every hub row', () => {
-    expect(Object.keys(en.rows)).toEqual(Object.keys(en.groups))
+    expect(Object.keys(en.rows)).toEqual([
+      'origin',
+      'purpose',
+      'commodities',
+      'additional-details',
+      'transport',
+      'goodsMovement',
+      'documents',
+      'review'
+    ])
     for (const row of Object.values(en.rows)) {
       expect(row.title).toEqual(expect.any(String))
       expect(row.title).not.toBe('')
@@ -95,6 +105,14 @@ describe('plant-products hub copy', () => {
     expect(en.rows.documents).toEqual({
       title: 'Accompanying documents',
       hint: 'Add at least one document, including the phytosanitary certificate'
+    })
+  })
+
+  it('provides the numbered goods-movement group and its row copy', () => {
+    expect(en.groups['goods-movement']).toBe('6. Goods movement services')
+    expect(en.rows.goodsMovement).toEqual({
+      title: 'Goods movement services',
+      hint: 'Common Transit Convention, Movement Reference Number and GVMS'
     })
   })
 

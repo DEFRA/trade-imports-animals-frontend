@@ -341,6 +341,54 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     expect(fromDto(dto)).not.toHaveProperty('containers')
   })
 
+  it('round-trips ADD_MRN_NOW, its MRN and a boolean GVMS answer', () => {
+    const answers = {
+      commonTransitConvention: 'ADD_MRN_NOW',
+      movementReferenceNumber: '24GB123456789AB012',
+      usingGvms: true
+    }
+
+    expect(toDto(answers)).toEqual({ goodsMovementServices: answers })
+    expect(fromDto(toDto(answers))).toEqual(answers)
+  })
+
+  it('omits a stale MRN from the DTO when the CTC branch is NO', () => {
+    const dto = toDto({
+      commonTransitConvention: 'NO',
+      movementReferenceNumber: '24GB123456789AB012',
+      usingGvms: false
+    })
+
+    expect(dto).toEqual({
+      goodsMovementServices: {
+        commonTransitConvention: 'NO',
+        usingGvms: false
+      }
+    })
+    expect(dto.goodsMovementServices).not.toHaveProperty(
+      'movementReferenceNumber'
+    )
+    expect(fromDto(dto)).not.toHaveProperty('movementReferenceNumber')
+  })
+
+  it('does not fabricate the goods-movement section when nothing is answered', () => {
+    expect(toDto({})).not.toHaveProperty('goodsMovementServices')
+    expect(fromDto({})).not.toHaveProperty('commonTransitConvention')
+    expect(fromDto({ goodsMovementServices: {} })).toEqual({})
+  })
+
+  it('keeps usingGvms boolean in both DTO directions without inventing false', () => {
+    expect(toDto({ usingGvms: false })).toEqual({
+      goodsMovementServices: { usingGvms: false }
+    })
+    expect(fromDto({ goodsMovementServices: { usingGvms: true } })).toEqual({
+      usingGvms: true
+    })
+    expect(fromDto({ goodsMovementServices: {} })).not.toHaveProperty(
+      'usingGvms'
+    )
+  })
+
   it('maps one document to the exact metadata-only sub-resource DTO', () => {
     const dto = documentToDto({
       id: 'answer-side-id',

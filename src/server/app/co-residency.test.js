@@ -319,6 +319,7 @@ describe('co-residency', () => {
       'commodities',
       'additional-details',
       'transport',
+      'goods-movement',
       'documents',
       'review'
     ])

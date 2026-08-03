@@ -112,12 +112,27 @@ const mapTransport = (answers) => {
   return Object.keys(transport).length > 0 ? { transport } : {}
 }
 
+const mapGoodsMovementServices = (answers) => {
+  const goodsMovementServices = {
+    ...defined(answers, ['commonTransitConvention']),
+    ...(answers.commonTransitConvention === 'ADD_MRN_NOW' &&
+    answers.movementReferenceNumber !== undefined
+      ? { movementReferenceNumber: answers.movementReferenceNumber }
+      : {}),
+    ...defined(answers, ['usingGvms'])
+  }
+  return Object.keys(goodsMovementServices).length > 0
+    ? { goodsMovementServices }
+    : {}
+}
+
 const SECTION_MAPPERS = Object.freeze([
   mapOrigin,
   mapPurpose,
   mapCommodity,
   mapAdditionalDetails,
-  mapTransport
+  mapTransport,
+  mapGoodsMovementServices
 ])
 
 const composeSections = (answers) =>

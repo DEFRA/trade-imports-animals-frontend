@@ -66,9 +66,10 @@ test.describe('plant-products hub', () => {
     await expect(
       page.locator('main').getByRole('heading', { level: 2 })
     ).toHaveText(Object.values(copy.groups))
-    await expect(page.locator('.govuk-task-list')).toHaveCount(7)
+    await expect(page.locator('.govuk-task-list')).toHaveCount(8)
     await expect(page.locator('.govuk-task-list__status')).toHaveText([
       copy.statuses.notYetStarted,
+      copy.statuses.cannotStartYet,
       copy.statuses.cannotStartYet,
       copy.statuses.cannotStartYet,
       copy.statuses.cannotStartYet,
@@ -104,6 +105,12 @@ test.describe('plant-products hub', () => {
     )
     await expectRow(
       page,
+      copy.rows.goodsMovement,
+      copy.statuses.cannotStartYet,
+      null
+    )
+    await expectRow(
+      page,
       copy.rows.documents,
       copy.statuses.cannotStartYet,
       null
@@ -123,6 +130,7 @@ test.describe('plant-products hub', () => {
       copy.statuses.inProgress,
       copy.statuses.notYetStarted,
       copy.statuses.notYetStarted,
+      copy.statuses.cannotStartYet,
       copy.statuses.cannotStartYet,
       copy.statuses.cannotStartYet,
       copy.statuses.cannotStartYet,
@@ -155,6 +163,12 @@ test.describe('plant-products hub', () => {
     await expectRow(
       page,
       copy.rows.transport,
+      copy.statuses.cannotStartYet,
+      null
+    )
+    await expectRow(
+      page,
+      copy.rows.goodsMovement,
       copy.statuses.cannotStartYet,
       null
     )
@@ -217,6 +231,7 @@ test.describe('plant-products hub', () => {
       copy.statuses.notYetStarted,
       copy.statuses.notYetStarted,
       copy.statuses.notYetStarted,
+      copy.statuses.notYetStarted,
       copy.statuses.cannotStartYet
     ])
     await expectRow(
@@ -230,6 +245,12 @@ test.describe('plant-products hub', () => {
       copy.rows.transport,
       copy.statuses.notYetStarted,
       /^\/plant-products\/notifications\/[^/]+\/transport-before-bip$/
+    )
+    await expectRow(
+      page,
+      copy.rows.goodsMovement,
+      copy.statuses.notYetStarted,
+      /^\/plant-products\/notifications\/[^/]+\/goods-movement-services$/
     )
     await expectRow(
       page,

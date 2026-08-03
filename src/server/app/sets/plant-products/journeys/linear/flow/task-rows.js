@@ -15,6 +15,7 @@ import {
   originOfImportPage
 } from '../features/origin/page.js'
 import { purposePage } from '../features/purpose/page.js'
+import { goodsMovementServicesPage } from '../features/goods-movement/page.js'
 import { transportBeforeBipPage } from '../features/transport/page.js'
 import { accompanyingDocumentsPage } from '../features/documents/page.js'
 
@@ -37,6 +38,7 @@ export const taskRows = [
     pages: [commodityAdditionalDetailsPage]
   },
   { id: 'transport', pages: [transportBeforeBipPage] },
+  { id: 'goods-movement', pages: [goodsMovementServicesPage] },
   { id: 'documents', pages: [accompanyingDocumentsPage] }
 ]
 

@@ -17,6 +17,7 @@ export const copy = {
     commodities: '3. Nwydd',
     'additional-details': '4. Manylion ychwanegol',
     transport: '5. Cludiant i’r BCP',
+    'goods-movement': '6. Gwasanaethau symud nwyddau',
     documents: '9. Dogfennau cysylltiedig',
     review: '12. Adolygu a chyflwyno'
   },
@@ -40,6 +41,10 @@ export const copy = {
     transport: {
       title: 'Cludiant i’r BCP',
       hint: 'Sut bydd y llwyth yn teithio i’r safle rheoli ar y ffin'
+    },
+    goodsMovement: {
+      title: 'Gwasanaethau symud nwyddau',
+      hint: 'Y Confensiwn Cludo Cyffredin, Cyfeirnod Symud a GVMS'
     },
     documents: {
       title: 'Dogfennau cysylltiedig',

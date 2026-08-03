@@ -31,6 +31,7 @@ export const GROUPS = [
   { id: 'commodities', rows: ['commodities'] },
   { id: 'additional-details', rows: ['additional-details'] },
   { id: 'transport', rows: ['transport'] },
+  { id: 'goods-movement', rows: ['goods-movement'] },
   { id: 'documents', rows: ['documents'] },
   { id: 'review', rows: ['review'] }
 ]
@@ -84,6 +85,8 @@ const buildReviewItem = (
 
 const isHiddenRow = (row, status) => row.conditional && status === NA
 
+const rowCopyKey = (id) => (id === 'goods-movement' ? 'goodsMovement' : id)
+
 const blockedRowItem = (base) => ({ ...base, status: CANNOT_START_STATUS })
 
 const openRowItem = (base, row, scope, status, journeyId) => ({
@@ -93,7 +96,7 @@ const openRowItem = (base, row, scope, status, journeyId) => ({
 })
 
 const buildRowItem = (id, answers, scope, evaluation, journeyId) => {
-  const { title, hint } = copy.rows[id]
+  const { title, hint } = copy.rows[rowCopyKey(id)]
   if (id === 'review') {
     return buildReviewItem(
       { title, hint },

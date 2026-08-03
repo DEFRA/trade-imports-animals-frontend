@@ -10,6 +10,7 @@ import {
   varietyOfGenusAndSpeciesPage
 } from '../features/commodities/page.js'
 import { importTypePage } from '../features/import-type/page.js'
+import { goodsMovementServicesPage } from '../features/goods-movement/page.js'
 import { accompanyingDocumentsPage } from '../features/documents/page.js'
 import {
   countryOfOriginPage,
@@ -51,6 +52,10 @@ export const sections = [
   {
     id: 'transport',
     pages: [transportBeforeBipPage]
+  },
+  {
+    id: 'goods-movement',
+    pages: [goodsMovementServicesPage]
   },
   {
     id: 'documents',

@@ -97,6 +97,19 @@ const mapTransport = (dto) => {
   }
 }
 
+const mapGoodsMovementServices = (dto) => {
+  const source = dto.goodsMovementServices
+  if (!source || typeof source !== 'object') return {}
+  return {
+    ...defined(source, ['commonTransitConvention']),
+    ...(source.commonTransitConvention === 'ADD_MRN_NOW' &&
+    source.movementReferenceNumber !== undefined
+      ? { movementReferenceNumber: source.movementReferenceNumber }
+      : {}),
+    ...defined(source, ['usingGvms'])
+  }
+}
+
 const dateFromIso = (value) => {
   const [year = '', month = '', day = ''] = String(value ?? '').split('-')
   return {
@@ -126,6 +139,7 @@ const SECTION_MAPPERS = Object.freeze([
   mapCommodity,
   mapAdditionalDetails,
   mapTransport,
+  mapGoodsMovementServices,
   mapDocuments
 ])
 

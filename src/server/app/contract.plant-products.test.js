@@ -32,6 +32,7 @@ import * as varietyOfGenusAndSpecies from './sets/plant-products/journeys/linear
 import * as commoditySummary from './sets/plant-products/journeys/linear/features/commodities/commodity-summary/commodity-summary.controller.js'
 import * as commodityBulkDetails from './sets/plant-products/journeys/linear/features/commodities/commodity-bulk-details/commodity-bulk-details.controller.js'
 import * as importType from './sets/plant-products/journeys/linear/features/import-type/controller.js'
+import * as goodsMovement from './sets/plant-products/journeys/linear/features/goods-movement/controller.js'
 import * as countryOfOrigin from './sets/plant-products/journeys/linear/features/origin/country-of-origin/country-of-origin.controller.js'
 import * as originOfImport from './sets/plant-products/journeys/linear/features/origin/origin-of-import/origin-of-import.controller.js'
 import * as purpose from './sets/plant-products/journeys/linear/features/purpose/controller.js'
@@ -161,6 +162,16 @@ const cases = [
       ]
     },
     seededCollects: ['usesContainers', 'containers']
+  },
+  {
+    id: goodsMovement.meta.id,
+    collects: goodsMovement.meta.collects,
+    controller: goodsMovement,
+    payload: {
+      commonTransitConvention: 'ADD_MRN_NOW',
+      movementReferenceNumber: '24GB123456789AB012',
+      usingGvms: 'no'
+    }
   },
   {
     id: documents.meta.id,

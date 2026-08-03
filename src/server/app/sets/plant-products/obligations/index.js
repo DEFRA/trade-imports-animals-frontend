@@ -34,6 +34,11 @@ import {
   internalReference
 } from './sections/origin.js'
 import {
+  commonTransitConvention,
+  movementReferenceNumber,
+  usingGvms
+} from './sections/goods-movement.js'
+import {
   accompanyingDocuments,
   documentReference,
   documentType,
@@ -97,7 +102,10 @@ export {
   sealNumber,
   transportDocumentReference,
   transportIdentification,
-  usesContainers
+  usesContainers,
+  commonTransitConvention,
+  movementReferenceNumber,
+  usingGvms
 }
 
 export const obligations = [
@@ -142,7 +150,10 @@ export const obligations = [
   containers,
   containerNumber,
   sealNumber,
-  officialSeal
+  officialSeal,
+  commonTransitConvention,
+  movementReferenceNumber,
+  usingGvms
 ]
 
 export const groups = obligations.filter((obligation) =>

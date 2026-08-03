@@ -23,6 +23,7 @@ import { featureEvaluationBindings } from '../features/evaluation.js'
 import { dispatchPages } from '../features/index.js'
 import { commodityAdditionalDetailsPage } from '../features/additional-details/page.js'
 import { accompanyingDocumentsPage } from '../features/documents/page.js'
+import { goodsMovementServicesPage } from '../features/goods-movement/page.js'
 import {
   commodityBasicDescriptionPage,
   commodityBulkDetailsPage,
@@ -82,6 +83,10 @@ describe('plant-products task rows', () => {
       {
         id: 'transport',
         pages: [transportBeforeBipPage]
+      },
+      {
+        id: 'goods-movement',
+        pages: [goodsMovementServicesPage]
       },
       {
         id: 'documents',
@@ -172,6 +177,15 @@ describe('plant-products task rows', () => {
     expect(
       withSetContext('plant-products', () => rowParts(taskRowById('documents')))
     ).toEqual(['accompanyingDocuments'])
+    expect(
+      withSetContext('plant-products', () =>
+        rowParts(taskRowById('goods-movement'))
+      )
+    ).toEqual([
+      'commonTransitConvention',
+      'movementReferenceNumber',
+      'usingGvms'
+    ])
   })
 
   it('keeps documents incomplete until one complete entry satisfies the collection floor', () => {
@@ -248,7 +262,9 @@ describe('plant-products task rows', () => {
       transportDocumentReference: 'CMR-123',
       arrivalDate: '2026-08-20',
       arrivalTime: '14:50',
-      usesContainers: false
+      usesContainers: false,
+      commonTransitConvention: 'NO',
+      usingGvms: false
     }
 
     expect(readyFor(allEarlierRows)).toBe(false)
@@ -434,6 +450,44 @@ describe('plant-products task rows', () => {
     expect(statusFor({ ...complete, usesContainers: true })).toBe(FULFILLED)
   })
 
+  it('moves goods movement from Not yet started through In progress to Completed on both CTC branches', () => {
+    const statusFor = (answers) =>
+      withSetContext('plant-products', () => {
+        const { inScope } = makeScope(answers)
+        return rowStatus(
+          taskRowById('goods-movement'),
+          answers,
+          inScope,
+          evaluateAnswers(answers)
+        )
+      })
+
+    expect(statusFor({})).toBe(NOT_STARTED)
+    expect(statusFor({ commonTransitConvention: 'NO' })).toBe(IN_PROGRESS)
+    expect(statusFor({ commonTransitConvention: 'NO', usingGvms: false })).toBe(
+      FULFILLED
+    )
+    expect(
+      statusFor({
+        commonTransitConvention: 'ADD_MRN_NOW',
+        movementReferenceNumber: '24GB123456789AB012',
+        usingGvms: true
+      })
+    ).toBe(FULFILLED)
+    expect(
+      withSetContext('plant-products', () =>
+        rowEntry(
+          taskRowById('goods-movement'),
+          makeScope({
+            countryOfOrigin: 'FR',
+            commodityLines: [{ commoditySelection: '08059000' }]
+          }),
+          'journey-1'
+        )
+      )
+    ).toBe('/plant-products/notifications/journey-1/goods-movement-services')
+  })
+
   it('blocks readiness while transport is incomplete and unblocks it when complete', () => {
     const readyFor = (answers) =>
       withSetContext('plant-products', () => {
@@ -472,7 +526,9 @@ describe('plant-products task rows', () => {
           documentReference: 'PHYTO-001',
           issueDate: { day: '4', month: '12', year: '2025' }
         }
-      ]
+      ],
+      commonTransitConvention: 'NO',
+      usingGvms: false
     }
     const completedTransport = {
       borderControlPost: 'GBLHR4PP',
@@ -545,11 +601,28 @@ describe('plant-products task rows', () => {
           documentReference: 'PHYTO-001',
           issueDate: { day: '4', month: '12', year: '2025' }
         }
-      ]
+      ],
+      commonTransitConvention: 'NO',
+      usingGvms: false
     }
 
+    const {
+      commonTransitConvention: _commonTransitConvention,
+      usingGvms: _usingGvms,
+      ...withoutGoodsMovement
+    } = allOtherRows
     expect(readyFor(allOtherRows)).toBe(false)
     expect(readyFor({ ...allOtherRows, grossVolume: '5' })).toBe(false)
+    expect(readyFor({ ...withoutGoodsMovement, totalGrossWeight: '2' })).toBe(
+      false
+    )
+    expect(
+      readyFor({
+        ...withoutGoodsMovement,
+        totalGrossWeight: '2',
+        commonTransitConvention: 'NO'
+      })
+    ).toBe(false)
     expect(readyFor({ ...allOtherRows, totalGrossWeight: '2' })).toBe(true)
   })
 })

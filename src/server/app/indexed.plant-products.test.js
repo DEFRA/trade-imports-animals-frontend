@@ -174,6 +174,18 @@ describe('plant-products indexed obligations are first-class', () => {
       {
         obligation: plantProductsObligationSet.officialSeal,
         templatePath: 'containers.officialSeal'
+      },
+      {
+        obligation: plantProductsObligationSet.commonTransitConvention,
+        templatePath: 'commonTransitConvention'
+      },
+      {
+        obligation: plantProductsObligationSet.movementReferenceNumber,
+        templatePath: 'movementReferenceNumber'
+      },
+      {
+        obligation: plantProductsObligationSet.usingGvms,
+        templatePath: 'usingGvms'
       }
     ])
   })
@@ -186,6 +198,7 @@ describe('plant-products indexed obligations are first-class', () => {
       'commodities',
       'additional-details',
       'transport',
+      'goods-movement',
       'documents',
       'review'
     ])
@@ -204,6 +217,9 @@ describe('plant-products indexed obligations are first-class', () => {
       sectionIds.indexOf('transport')
     )
     expect(sectionIds.indexOf('transport')).toBeLessThan(
+      sectionIds.indexOf('goods-movement')
+    )
+    expect(sectionIds.indexOf('goods-movement')).toBeLessThan(
       sectionIds.indexOf('documents')
     )
   })
@@ -279,6 +295,8 @@ describe('plant-products indexed obligations are first-class', () => {
     ).toBe(false)
     const allCompleted = {
       ...transportCompleted,
+      commonTransitConvention: 'NO',
+      usingGvms: false,
       accompanyingDocuments: [
         {
           documentType: 'PHYTOSANITARY_CERTIFICATE',
