@@ -15,6 +15,7 @@ import { accompanyingDocumentsPage } from '../features/documents/page.js'
 import { contactDetailsPage } from '../features/contact/page.js'
 import { reviewNotificationPage } from '../features/check-answers/page.js'
 import { declarationPage } from '../features/declaration/page.js'
+import { confirmationPage } from '../features/confirmation/page.js'
 import { nominatedContactPage } from '../features/nominated-contacts/page.js'
 import {
   countryOfOriginPage,
@@ -89,7 +90,7 @@ export const sections = [
   {
     id: 'review',
     gate: (scope) => scope.readyForCheckYourAnswers,
-    pages: [reviewNotificationPage, declarationPage]
+    pages: [reviewNotificationPage, declarationPage, confirmationPage]
   }
 ]
 

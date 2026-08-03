@@ -13,6 +13,7 @@ import * as kit from '../../../../../../shared/kit.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import { reviewNotificationPage } from '../check-answers/page.js'
+import { confirmationPage } from '../confirmation/page.js'
 import { copy as cy } from './copy/copy.cy.js'
 import { copy as en } from './copy/copy.en.js'
 import { declarationPage as page } from './page.js'
@@ -21,7 +22,6 @@ export const meta = { ...page, collects: ['declaration'] }
 
 const view = `${TEMPLATES}/features/declaration/template`
 const copy = copyFor({ en, cy })
-const CONFIRMATION_SLUG = 'confirmation'
 
 const fields = compose(
   requiredOneOf('declaration', ['confirmed'], copy.errors.declarationRequired)
@@ -48,7 +48,8 @@ const render = (h, journey, values, errors = {}, recoverableError = false) =>
     errorSummary: kit.errorSummary(errors)
   })
 
-const confirmationPath = (journeyId) => pagePath(journeyId, CONFIRMATION_SLUG)
+const confirmationPath = (journeyId) =>
+  pagePath(journeyId, confirmationPage.slug)
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)

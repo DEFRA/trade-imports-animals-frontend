@@ -25,6 +25,7 @@ import { dispatchPages } from '../features/index.js'
 import { commodityAdditionalDetailsPage } from '../features/additional-details/page.js'
 import { accompanyingDocumentsPage } from '../features/documents/page.js'
 import { reviewNotificationPage } from '../features/check-answers/page.js'
+import { confirmationPage } from '../features/confirmation/page.js'
 import { declarationPage } from '../features/declaration/page.js'
 import { contactDetailsPage } from '../features/contact/page.js'
 import { nominatedContactPage } from '../features/nominated-contacts/page.js'
@@ -219,7 +220,8 @@ describe('plant-products task rows', () => {
   it('registers review-notification as the review section entry page', () => {
     expect(sections.find(({ id }) => id === 'review')?.pages).toEqual([
       reviewNotificationPage,
-      declarationPage
+      declarationPage,
+      confirmationPage
     ])
   })
 
