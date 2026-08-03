@@ -55,7 +55,7 @@ const fullAnswers = {
   countryOfConsignment: 'DE',
   internalReference: 'IMPORT-038',
   reasonForImport: 'INTERNAL_MARKET',
-  commodityInputMethod: 'manual',
+  commodityInputMethod: 'MANUAL',
   commodityLines: [
     line('06011010', species.albuca, { numberOfPackages: 1, netWeight: 2 }),
     line('08059000', species.citrus, { numberOfPackages: 3, netWeight: 4 }),
@@ -230,7 +230,7 @@ describe('plant-products check-answers view model', () => {
 
     expect(missing.value.html).toContain('Add a missing answer')
     expect(missing.value.html).toContain(
-      '/plant-products/notifications/journey-038/origin-of-import'
+      '/plant-products/notifications/journey-038/origin-of-import?change=1'
     )
     expect(missing.actions).toBeUndefined()
   })
@@ -315,6 +315,26 @@ describe('plant-products check-answers view model', () => {
     )
   })
 
+  it('renders a missing-answer link for an unanswered same-as-consignee answer', () => {
+    const traders = card(
+      build({ ...fullAnswers, destinationSameAsConsignee: undefined }),
+      'Traders'
+    )
+    const deliveryAddress = row(traders, 'Delivery address')
+
+    expect(deliveryAddress.value.html).toContain('Add a missing answer')
+    expect(deliveryAddress.value.html).toContain(
+      '/plant-products/notifications/journey-038/traders-addresses?change=1'
+    )
+  })
+
+  it('renders No for an explicit false same-as-consignee answer', () => {
+    const traders = card(build(), 'Traders')
+
+    expect(row(traders, 'Delivery address').value.text).toBe('No')
+    expect(row(traders, 'Delivery address').value.html).toBeUndefined()
+  })
+
   it('omits variety rows when none are captured', () => {
     const answers = {
       ...fullAnswers,
@@ -335,9 +355,32 @@ describe('plant-products check-answers view model', () => {
   it('renders intended-for-final-users only for the applicable commodity group', () => {
     const rows = card(build(), 'Description of the goods').rows
     expect(rows.map(({ key }) => key.text)).toEqual([
+      'How do you want to add your commodity details?',
       'Intended for final users (commodity 1)'
     ])
   })
+
+  it.each([
+    ['MANUAL', 'Manual entry'],
+    ['CSV', 'Upload from a CSV file']
+  ])(
+    'renders the %s commodity input method with its Change action',
+    (method, text) => {
+      const commodities = card(
+        build({ ...fullAnswers, commodityInputMethod: method }),
+        'Description of the goods'
+      )
+      const inputMethod = row(
+        commodities,
+        'How do you want to add your commodity details?'
+      )
+
+      expect(inputMethod.value.text).toBe(text)
+      expect(inputMethod.actions.items[0].href).toBe(
+        '/plant-products/notifications/journey-038/commodity-input-method?change=1'
+      )
+    }
+  )
 
   it('omits unanswered packer rows and keeps answered packer rows', () => {
     const absent = Object.fromEntries(
@@ -381,6 +424,9 @@ describe('plant-products check-answers view model', () => {
       '0808108010'
     ])
     expect(commodityRows[1][2]).toBe('Other')
+    expect(commodityRows[1][3]).toContain(
+      '/plant-products/notifications/journey-038/commodity-search?change=1'
+    )
     expect(speciesRows.map((entry) => entry[2])).toEqual([
       'Albuca bracteata, ABWBR',
       'Citrus australasica, CIDAC',
@@ -453,12 +499,12 @@ describe('plant-products check-answers view model', () => {
       row(card(sections, 'About the consignment'), 'Country of origin').actions
         .items[0]
     ).toEqual({
-      href: '/plant-products/notifications/journey-038/country-of-origin',
+      href: '/plant-products/notifications/journey-038/country-of-origin?change=1',
       text: 'Change',
       visuallyHiddenText: 'Country of origin'
     })
     expect(card(sections, 'Nominated contacts').action.href).toBe(
-      '/plant-products/notifications/journey-038/nominated-contact'
+      '/plant-products/notifications/journey-038/nominated-contact?change=1'
     )
   })
 })

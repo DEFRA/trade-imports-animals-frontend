@@ -6,7 +6,11 @@ import {
 } from './paths.js'
 import { AMEND, DELETED, DRAFT, SUBMITTED } from '../engine/index.js'
 import { nextInSection } from '../flow/navigation.js'
-import { journeyLayout, journeyNextRunTarget } from '../flow/journey-flow.js'
+import {
+  journeyCyaSlug,
+  journeyLayout,
+  journeyNextRunTarget
+} from '../flow/journey-flow.js'
 import { inOpeningRun } from '../flow/run-state.js'
 import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
@@ -69,7 +73,7 @@ export const withChangeContext = (request, href) =>
 export const exitTarget = (request, fallback) =>
   hubExitTarget(request) ??
   (changeContext(request)
-    ? pagePath(request.params.journeyId, CYA_SLUG)
+    ? pagePath(request.params.journeyId, journeyCyaSlug() ?? CYA_SLUG)
     : fallback)
 
 export const runTarget = async (request, stepId, scope) =>

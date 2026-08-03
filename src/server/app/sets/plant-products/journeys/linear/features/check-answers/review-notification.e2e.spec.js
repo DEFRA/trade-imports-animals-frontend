@@ -607,6 +607,21 @@ test.describe('plant-products review notification', () => {
       page.getByRole('term').filter({ hasText: 'Container 2 number' })
     ).toBeVisible()
 
+    const manualInputMethodRow = page
+      .locator('.govuk-summary-list__row')
+      .filter({
+        has: page.getByText(
+          commodityFeatureCopy.inputMethod.options.MANUAL.label,
+          { exact: true }
+        )
+      })
+    await expect(
+      manualInputMethodRow.getByRole('link', {
+        name: `Change ${commodityFeatureCopy.inputMethod.heading}`,
+        exact: true
+      })
+    ).toBeVisible()
+
     const changeLinks = page.getByRole('link', { name: /^Change / })
     const names = await changeLinks.evaluateAll((links) =>
       links.map((link) => (link.textContent ?? '').trim().replace(/\s+/g, ' '))
@@ -614,12 +629,9 @@ test.describe('plant-products review notification', () => {
     expect(names.length).toBeGreaterThan(30)
     for (const name of names) expect(name).toMatch(/^Change .+/)
     expect(new Set(names).size).toBe(names.length)
-
-    const reviewAddress = page.url()
-    await page.getByRole('link', { name: 'Change Country of origin' }).click()
-    await expect(page).toHaveURL(/\/country-of-origin$/)
-    await page.goBack()
-    await expect(page).toHaveURL(reviewAddress)
+    await expect(
+      page.getByRole('link', { name: 'Change', exact: true })
+    ).toHaveCount(0)
 
     await expectAxeClean(page, 'fully populated state')
     await page.getByRole('button', { name: 'Continue', exact: true }).click()
@@ -627,6 +639,27 @@ test.describe('plant-products review notification', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: 'Declaration', exact: true })
     ).toBeVisible()
+  })
+
+  test('saving an edited country of origin returns to the review page with the new value', async ({
+    page
+  }) => {
+    test.slow()
+    await completeJourney(page, { full: true })
+
+    await page.getByRole('link', { name: 'Change Country of origin' }).click()
+    await expect(page).toHaveURL((url) => {
+      return (
+        url.pathname.endsWith('/country-of-origin') &&
+        url.searchParams.get('change') === '1'
+      )
+    })
+    await page.getByLabel('Country of origin').selectOption('NL')
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(page).toHaveURL((url) => reviewUrl.test(url.pathname))
+    await expect(
+      summaryValueByKey(page, copy.cards.aboutConsignment.rows.countryOfOrigin)
+    ).toHaveText('Netherlands')
   })
 
   test('omits every out-of-scope row, shows the empty state and passes axe with missing answers', async ({

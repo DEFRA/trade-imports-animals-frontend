@@ -23,6 +23,7 @@ import {
   allRoutes,
   dispatchPages
 } from './sets/plant-products/journeys/linear/features/index.js'
+import { reviewNotificationPage } from './sets/plant-products/journeys/linear/features/check-answers/page.js'
 import { entryGuardTarget } from './sets/plant-products/journeys/linear/flow/entry-guard.js'
 import {
   FLOW_ONLY_KEYS,
@@ -68,7 +69,8 @@ export const plantProducts = {
           nextRunTarget,
           flowOnlyKeys: FLOW_ONLY_KEYS,
           entryGuardTarget,
-          layout: LAYOUT
+          layout: LAYOUT,
+          cyaSlug: reviewNotificationPage.slug
         })
         assertObligationPurity()
         assertFulfilmentBindingCoverage()

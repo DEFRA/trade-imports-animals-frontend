@@ -13,7 +13,8 @@ const defaults = {
   nextRunTarget: unconfigured,
   flowOnlyKeys: [],
   entryGuardTarget: unconfigured,
-  layout: undefined
+  layout: undefined,
+  cyaSlug: undefined
 }
 
 const store = setKeyed('journey flow')
@@ -31,3 +32,4 @@ export const journeyFlowOnlyKeys = () => store.current().flowOnlyKeys
 export const journeyEntryGuardTarget = (...args) =>
   store.current().entryGuardTarget(...args)
 export const journeyLayout = () => store.current().layout
+export const journeyCyaSlug = () => store.current().cyaSlug

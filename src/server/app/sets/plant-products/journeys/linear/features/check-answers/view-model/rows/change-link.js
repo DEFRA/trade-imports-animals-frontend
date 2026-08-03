@@ -9,8 +9,10 @@ import { copy as en } from '../../copy/copy.en.js'
 
 const copy = copyFor({ en, cy })
 
+export const withChange = (href) => `${href}?change=1`
+
 export const changeHref = (obligationName, journeyId) =>
-  pagePath(journeyId, slugOfPage(pageOfObligation(obligationName)))
+  withChange(pagePath(journeyId, slugOfPage(pageOfObligation(obligationName))))
 
 export const changeAction = (
   obligationName,

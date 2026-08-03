@@ -6,6 +6,8 @@ import {
 } from '../../../../../../services/commodities/index.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { copy as en } from '../../copy/copy.en.js'
+import { copy as commodityCy } from '../../../commodities/copy/copy.cy.js'
+import { copy as commodityEn } from '../../../commodities/copy/copy.en.js'
 import { changeHref } from '../rows/change-link.js'
 import { row } from '../rows/summary-row.js'
 import {
@@ -18,6 +20,7 @@ import {
 } from '../rows/value-text.js'
 
 const copy = copyFor({ en, cy })
+const commodityCopy = copyFor({ en: commodityEn, cy: commodityCy })
 const cardCopy = copy.cards.commodities
 const cell = (text) => ({ text: String(text ?? '') })
 const header = (text) => ({ text })
@@ -158,7 +161,18 @@ export const commoditiesCard = (journeyId, answers, scope, evaluation) => {
 
   return {
     heading: cardCopy.heading,
-    rows: intendedForFinalUsersRows(journeyId, scope, lines),
+    rows: [
+      row({
+        label: commodityCopy.inputMethod.heading,
+        value:
+          commodityCopy.inputMethod.options[answers.commodityInputMethod]
+            ?.label,
+        obligationName: 'commodityInputMethod',
+        journeyId,
+        scope
+      }),
+      ...intendedForFinalUsersRows(journeyId, scope, lines)
+    ].filter(Boolean),
     tables: [
       commodityTable(journeyId, lines),
       speciesTable(answers, evaluation, lines),

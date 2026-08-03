@@ -83,7 +83,7 @@ const consignorRows = (journeyId, answers, scope) =>
     .filter(Boolean)
 
 export const tradersCard = (journeyId, answers, scope) => {
-  const sameAsImporter = answers.destinationSameAsConsignee === true
+  const sameAsImporter = answers.destinationSameAsConsignee
   return {
     heading: cardCopy.heading,
     rows: [
@@ -95,7 +95,7 @@ export const tradersCard = (journeyId, answers, scope) => {
         journeyId,
         scope
       }),
-      ...(sameAsImporter
+      ...(sameAsImporter === true
         ? [
             readOnlyRow(
               cardCopy.sameAsConsignee,
