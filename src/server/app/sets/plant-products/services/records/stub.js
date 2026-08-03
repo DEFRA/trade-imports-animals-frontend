@@ -129,6 +129,8 @@ export const list = async ({
 
 export const has = async (journeyId) => recordsById.has(journeyId)
 
+export const declarationFor = (journeyId) => clone(read(journeyId).declaration)
+
 export const replaceFulfilment = async (journeyId, fulfilment) => {
   const record = read(journeyId)
   assertWritable(record)
@@ -143,8 +145,12 @@ export const finalise = async (journeyId) => {
       `Journey "${journeyId}" is ${record.status} — cannot finalise`
     )
   }
+  record.declaration = {
+    agreed: true,
+    declaredAt: new Date().toISOString()
+  }
   record.status = SUBMITTED
-  record.submittedAt = new Date().toISOString()
+  record.submittedAt = record.declaration.declaredAt
   delete record.submittedSnapshot
   return toJourney(record)
 }

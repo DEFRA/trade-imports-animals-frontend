@@ -10,7 +10,10 @@ import * as plantProductsObligationSet from '../../obligations/index.js'
 import { featureEvaluationBindings } from '../../journeys/linear/features/evaluation.js'
 import { IDEMPOTENCY_KEY_HEADER, notificationsUrl } from './config.js'
 import { records as realRecords } from './real.js'
-import { records as stubRecords } from './stub.js'
+import {
+  declarationFor as stubDeclarationFor,
+  records as stubRecords
+} from './stub.js'
 
 // The real implementation is exercised through a stateful network-boundary
 // mock. Production dedupe is enforced by the backend's unique partial index;
@@ -21,7 +24,6 @@ fetchMocker.enableMocks()
 
 const SET_ID = 'plant-products'
 const CREATED_AT = '2026-08-01T10:00:00'
-const DECLARED_AT = '2026-08-01T12:00:00'
 const CANNED_REFERENCES = [
   'GBN-PP-26-ABC001',
   'GBN-PP-26-IDX001',
@@ -137,7 +139,6 @@ const createNetworkBackend = () => {
         notification.status = 'SUBMITTED'
       } else if (status === 'SUBMITTED') {
         notification.status = 'SUBMITTED'
-        notification.declaration = { declaredAt: DECLARED_AT }
         delete notification.submittedSnapshot
       } else if (status === 'DELETED') {
         notification.status = 'DELETED'
@@ -164,6 +165,9 @@ const createNetworkBackend = () => {
   }
 
   return {
+    declarationFor(referenceNumber) {
+      return structuredClone(notifications.get(referenceNumber)?.declaration)
+    },
     reset() {
       notifications.clear()
       documentsByReference.clear()
@@ -182,6 +186,7 @@ const implementations = [
   {
     name: 'stub',
     records: stubRecords,
+    declarationFor: stubDeclarationFor,
     reset: async () => {
       fetchMocker.resetMocks()
       await stubRecords.clear()
@@ -190,13 +195,14 @@ const implementations = [
   {
     name: 'real HTTP adapter',
     records: realRecords,
+    declarationFor: (journeyId) => networkBackend.declarationFor(journeyId),
     reset: async () => networkBackend.reset()
   }
 ]
 
 describe.each(implementations)(
   'plant-products records engine port — $name',
-  ({ name, records, reset }) => {
+  ({ name, records, declarationFor, reset }) => {
     beforeEach(reset)
 
     it('creates a draft journey in the engine record shape', async () => {
@@ -329,6 +335,34 @@ describe.each(implementations)(
       expect(restored).toMatchObject({ status: 'submitted', fulfilment: {} })
       expect(deleted.status).toBe('deleted')
       expect(repeatedDelete.status).toBe('deleted')
+    })
+
+    it('keeps finalise, load and list on the same submitted declaration instant', async () => {
+      const created = await inPlantProducts(() => records.create())
+      const finalised = await inPlantProducts(() =>
+        records.finalise(created.journeyId)
+      )
+      const loaded = await inPlantProducts(() =>
+        records.load({ journeyId: created.journeyId })
+      )
+      const listed = await inPlantProducts(() => records.list())
+      const listedRecord = listed.rows.find(
+        ({ journeyId }) => journeyId === created.journeyId
+      )
+      const declaration = declarationFor(created.journeyId)
+
+      expect(finalised.submittedAt).toEqual(expect.any(String))
+      expect(declaration).toEqual({
+        agreed: true,
+        declaredAt: finalised.submittedAt
+      })
+      const expected = {
+        status: 'submitted',
+        submittedAt: finalised.submittedAt
+      }
+      for (const record of [finalised, loaded, listedRecord]) {
+        expect(record).toMatchObject(expected)
+      }
     })
 
     it('rejects replacement after submission', async () => {

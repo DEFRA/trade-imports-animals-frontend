@@ -14,6 +14,7 @@ import { copy } from './copy/copy.en.js'
 const hubUrl = /^\/plant-products\/notifications\/[^/]+$/
 const reviewUrl =
   /^\/plant-products\/notifications\/[^/]+\/review-notification$/
+const declarationUrl = /^\/plant-products\/notifications\/[^/]+\/declaration$/
 
 const commodityCopy = commodityFeatureCopy.commodityBulkDetails
 const searchCopy = commodityFeatureCopy.commoditySearch
@@ -622,7 +623,10 @@ test.describe('plant-products review notification', () => {
 
     await expectAxeClean(page, 'fully populated state')
     await page.getByRole('button', { name: 'Continue', exact: true }).click()
-    await expect(page).toHaveURL((url) => hubUrl.test(url.pathname))
+    await expect(page).toHaveURL((url) => declarationUrl.test(url.pathname))
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Declaration', exact: true })
+    ).toBeVisible()
   })
 
   test('omits every out-of-scope row, shows the empty state and passes axe with missing answers', async ({

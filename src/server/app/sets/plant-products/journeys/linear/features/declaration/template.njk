@@ -1,0 +1,81 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
+  {% for paragraph in copy.intro %}
+    <p class="govuk-body">{{ paragraph }}</p>
+  {% endfor %}
+
+  <h2 class="govuk-heading-m">{{ copy.englandWales.heading }}</h2>
+  <p class="govuk-body">{{ copy.englandWales.apha }}</p>
+  <p class="govuk-body">{{ copy.englandWales.defra }}</p>
+  <p class="govuk-body">{{ copy.englandWales.policyStatementLabel }}</p>
+  <p class="govuk-body">
+    {{ copy.englandWales.inspectorates }}
+    <a class="govuk-link" href="https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/470454/defra-enforcement-policy-statement-2015.pdf" rel="noopener noreferrer" target="_blank">{{ copy.englandWales.enforcementPolicyLinkText }}</a>.
+  </p>
+
+  <h2 class="govuk-heading-m">{{ copy.scotland.heading }}</h2>
+  <p class="govuk-body">{{ copy.scotland.controls }}</p>
+  <p class="govuk-body">{{ copy.scotland.division }}</p>
+
+  <h2 class="govuk-heading-m">{{ copy.terms.heading }}</h2>
+  <p class="govuk-body">{{ copy.terms.aphaDefinition }}</p>
+  <ol class="govuk-list govuk-list--number">
+    {% for item in copy.terms.items %}
+      <li>{{ item }}</li>
+    {% endfor %}
+  </ol>
+
+  <h2 class="govuk-heading-m">{{ copy.enquiries.heading }}</h2>
+  <p class="govuk-body">{{ copy.enquiries.aphaLabel }}</p>
+  <p class="govuk-body">
+    {% for line in copy.enquiries.aphaAddressLines %}
+      {{ line }}{% if not loop.last %}<br />{% endif %}
+    {% endfor %}
+  </p>
+  <p class="govuk-body">{{ copy.enquiries.sasaLabel }}</p>
+  <p class="govuk-body">{{ copy.enquiries.sasaEmail }}</p>
+
+  <h2 class="govuk-heading-m">{{ copy.dataProtection.heading }}</h2>
+  <p class="govuk-body">
+    {{ copy.dataProtection.body }}
+    <a class="govuk-link" href="https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/897608/apha-privacy-notice.pdf" rel="noopener noreferrer" target="_blank">{{ copy.dataProtection.aphaPrivacyLinkText }}</a>
+    {{ copy.dataProtection.linkSeparator }}
+    <a class="govuk-link" href="https://www.sasa.gov.uk/content/privacy" rel="noopener noreferrer" target="_blank">{{ copy.dataProtection.sasaPrivacyLinkText }}</a>.
+  </p>
+
+  <h2 class="govuk-heading-m">{{ copy.legal.heading }}</h2>
+  <p class="govuk-body">{{ copy.legal.request }}</p>
+  <ul class="govuk-list govuk-list--bullet">
+    {% for regulation in copy.legal.regulations %}
+      <li>{{ regulation }}</li>
+    {% endfor %}
+  </ul>
+  <p class="govuk-body">{{ copy.legal.generalConditions }}</p>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukCheckboxes({
+      name: "declaration",
+      errorMessage: errors.declaration and { text: errors.declaration },
+      items: [
+        {
+          value: "confirmed",
+          text: copy.declarationLabel,
+          checked: values.declaration == "confirmed"
+        }
+      ]
+    }) }}
+
+    <p class="govuk-body">{{ copy.dateOfDeclaration }} {{ submissionDate }}</p>
+
+    {{ govukButton({ text: copy.submitButton }) }}
+  </form>
+{% endblock %}

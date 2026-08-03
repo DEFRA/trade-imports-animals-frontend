@@ -25,6 +25,7 @@ import { featureEvaluationBindings } from './sets/plant-products/journeys/linear
 import { dispatchPages } from './sets/plant-products/journeys/linear/features/index.js'
 import * as additionalDetails from './sets/plant-products/journeys/linear/features/additional-details/controller.js'
 import * as documents from './sets/plant-products/journeys/linear/features/documents/controller.js'
+import * as declaration from './sets/plant-products/journeys/linear/features/declaration/controller.js'
 import * as commodityInputMethod from './sets/plant-products/journeys/linear/features/commodities/commodity-input-method/commodity-input-method.controller.js'
 import * as contact from './sets/plant-products/journeys/linear/features/contact/controller.js'
 import * as nominatedContacts from './sets/plant-products/journeys/linear/features/nominated-contacts/controller.js'
@@ -247,6 +248,12 @@ const cases = [
       consignorCountry: 'FR',
       consignorEmail: 'exports@example.com'
     }
+  },
+  {
+    id: declaration.meta.id,
+    collects: declaration.meta.collects,
+    controller: declaration,
+    payload: { declaration: 'confirmed' }
   }
 ]
 

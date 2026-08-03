@@ -21,6 +21,7 @@ const SOURCE_REFERENCE = 'GBN-PP-26-ABC001'
 const COPY_REFERENCE = 'GBN-PP-26-IDX001'
 const CREATED_AT = '2026-08-01T10:00:00'
 const DECLARED_AT = '2026-08-01T12:00:00'
+const FINALISE_DECLARED_AT = '2026-08-01T12:00:00.000Z'
 
 configureObligationSet(SET_ID, plantProductsObligationSet)
 configureFulfilmentRegistry(SET_ID, featureEvaluationBindings)
@@ -468,8 +469,93 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
     }
   )
 
+  it('finalises by replacing the declaration before changing status', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(FINALISE_DECLARED_AT))
+    fetchMocker.mockResponses(
+      [
+        JSON.stringify({
+          ...dto(),
+          origin: { countryCode: 'FR' },
+          updated: '2026-08-01T11:00:00',
+          submittedBaseline: { status: 'DRAFT' }
+        }),
+        { status: 200 }
+      ],
+      [JSON.stringify(dto()), { status: 200 }],
+      [
+        JSON.stringify(
+          dto({
+            status: 'SUBMITTED',
+            declaration: {
+              agreed: true,
+              declaredAt: FINALISE_DECLARED_AT
+            }
+          })
+        ),
+        { status: 200 }
+      ]
+    )
+
+    try {
+      const finalised = await inPlantProducts(() =>
+        records.finalise(SOURCE_REFERENCE)
+      )
+
+      const requests = fetchMocker.requests()
+      expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
+        { method: 'GET', url: `${notificationsUrl}/${SOURCE_REFERENCE}` },
+        { method: 'PUT', url: `${notificationsUrl}/${SOURCE_REFERENCE}` },
+        {
+          method: 'PUT',
+          url: `${notificationsUrl}/${SOURCE_REFERENCE}/status`
+        }
+      ])
+      const documentBody = await bodyOf(requests[1])
+      expect(documentBody).toMatchObject({
+        referenceNumber: SOURCE_REFERENCE,
+        origin: { countryCode: 'FR' },
+        declaration: { agreed: true, declaredAt: FINALISE_DECLARED_AT }
+      })
+      for (const field of [
+        'status',
+        'chedType',
+        'ownership',
+        'created',
+        'updated',
+        'expireAt',
+        'submittedBaseline'
+      ]) {
+        expect(documentBody).not.toHaveProperty(field)
+      }
+      expect(await bodyOf(requests[2])).toEqual({ status: 'SUBMITTED' })
+      expect(finalised).toMatchObject({
+        status: 'submitted',
+        submittedAt: FINALISE_DECLARED_AT
+      })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('does not submit when the declaration document replacement fails', async () => {
+    fetchMocker.mockResponses(
+      [JSON.stringify(dto()), { status: 200 }],
+      ['Unprocessable', { status: 422, statusText: 'Unprocessable Entity' }]
+    )
+
+    await expect(
+      inPlantProducts(() => records.finalise(SOURCE_REFERENCE))
+    ).rejects.toThrow('finalise notification failed: 422 Unprocessable Entity')
+    expect(
+      fetchMocker.requests().map(({ method, url }) => ({ method, url }))
+    ).toEqual([
+      { method: 'GET', url: `${notificationsUrl}/${SOURCE_REFERENCE}` },
+      { method: 'PUT', url: `${notificationsUrl}/${SOURCE_REFERENCE}` }
+    ])
+  })
+
   it.each([
-    ['finalise', 'SUBMITTED', { status: 'SUBMITTED' }],
     ['amend', 'AMEND', { status: 'AMEND' }],
     ['cancelAmend', 'SUBMITTED', { status: 'SUBMITTED', discardChanges: true }],
     ['softDelete', 'DELETED', { status: 'DELETED' }]

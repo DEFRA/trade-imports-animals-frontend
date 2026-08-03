@@ -2,6 +2,7 @@ import { getTraceId } from '@defra/hapi-tracing'
 
 import { projectAnswers } from '../../../../bridge/fulfilments/index.js'
 import { AMEND, DRAFT } from '../../../../engine/persistence/records.js'
+import { markRecoverableBackendError } from '../../../../services/persistence/records/errors.js'
 import {
   HTTP_NOT_FOUND,
   IDEMPOTENCY_KEY_HEADER,
@@ -9,6 +10,7 @@ import {
   tracingHeader
 } from './config.js'
 import { marshal, marshalListItem } from './marshal.js'
+import { fromDto } from './mapper/from-dto.js'
 import { documentToDto, toDto } from './mapper/to-dto.js'
 import { BACKEND_STATUS, mapStatus } from './status.js'
 
@@ -25,6 +27,12 @@ const failed = (operation, response) =>
 
 const expectStatus = (operation, response, expected) => {
   if (!expected.includes(response.status)) throw failed(operation, response)
+}
+
+const expectRecoverableStatus = (operation, response, expected) => {
+  if (!expected.includes(response.status)) {
+    throw markRecoverableBackendError(failed(operation, response))
+  }
 }
 
 const getNotification = async (journeyId, operation) => {
@@ -136,6 +144,12 @@ const assertWritable = (journeyId, status) => {
   }
 }
 
+const buildNotificationBody = (journeyId, answers) => ({
+  ...toDto(answers),
+  // The shipped Java replace endpoint rejects an absent body reference.
+  referenceNumber: journeyId
+})
+
 export const replaceFulfilment = async (
   journeyId,
   fulfilment,
@@ -145,11 +159,7 @@ export const replaceFulfilment = async (
   assertWritable(journeyId, status)
   const answers = projectAnswers(structuredClone(fulfilment ?? {}))
   const documents = answers.accompanyingDocuments ?? []
-  const body = {
-    ...toDto(answers),
-    // The shipped Java replace endpoint rejects an absent body reference.
-    referenceNumber: journeyId
-  }
+  const body = buildNotificationBody(journeyId, answers)
   const response = await fetch(`${notificationsUrl}/${journeyId}`, {
     method: 'PUT',
     headers: headers(),
@@ -176,10 +186,39 @@ const transition = async (journeyId, operation, body) => {
   return marshal(await response.json())
 }
 
-export const finalise = async (journeyId) =>
-  transition(journeyId, 'finalise notification', {
-    status: BACKEND_STATUS.SUBMITTED
+export const finalise = async (journeyId) => {
+  const loadResponse = await fetch(`${notificationsUrl}/${journeyId}`, {
+    method: 'GET',
+    headers: headers()
   })
+  expectRecoverableStatus('finalise notification', loadResponse, [200])
+  const body = buildNotificationBody(
+    journeyId,
+    fromDto(await loadResponse.json())
+  )
+  body.declaration = {
+    agreed: true,
+    declaredAt: new Date().toISOString()
+  }
+
+  const documentResponse = await fetch(`${notificationsUrl}/${journeyId}`, {
+    method: 'PUT',
+    headers: headers(),
+    body: JSON.stringify(body)
+  })
+  expectRecoverableStatus('finalise notification', documentResponse, [200, 201])
+
+  const statusResponse = await fetch(
+    `${notificationsUrl}/${journeyId}/status`,
+    {
+      method: 'PUT',
+      headers: headers(),
+      body: JSON.stringify({ status: BACKEND_STATUS.SUBMITTED })
+    }
+  )
+  expectRecoverableStatus('finalise notification', statusResponse, [200])
+  return marshal(await statusResponse.json())
+}
 
 export const amend = async (journeyId) =>
   transition(journeyId, 'amend notification', {

@@ -141,6 +141,15 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     ).toEqual(withImporter())
   })
 
+  it('never maps declaration in either DTO direction', () => {
+    expect(toDto({ declaration: 'confirmed' })).not.toHaveProperty(
+      'declaration'
+    )
+    expect(
+      fromDto({ declaration: { agreed: true, declaredAt: '2026-08-03' } })
+    ).not.toHaveProperty('declaration')
+  })
+
   it('drops server-set and unknown response fields while folding embedded documents', () => {
     const dto = {
       referenceNumber: 'GBN-PP-26-ABC001',
