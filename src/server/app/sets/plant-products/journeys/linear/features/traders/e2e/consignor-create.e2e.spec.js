@@ -1,6 +1,6 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+import { axeViolations } from '../../axe.e2e-helper.js'
 import {
   countryOptions,
   ukSubdivisionOptions
@@ -152,15 +152,10 @@ const expectAccessibleNames = async (page) => {
 }
 
 const expectAxeClean = async (page, state) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  const seriousOrCritical = results.violations.filter(({ impact }) =>
-    ['serious', 'critical'].includes(impact)
-  )
+  const { all, seriousOrCritical } = await axeViolations(page)
   expect(
     seriousOrCritical,
-    `Consignor create ${state} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
+    `Consignor create ${state} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(all, null, 2)}`
   ).toEqual([])
 }
 

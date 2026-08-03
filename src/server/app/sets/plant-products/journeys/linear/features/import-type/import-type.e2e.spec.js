@@ -1,6 +1,6 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+import { axeViolations as seriousOrCriticalViolations } from '../axe.e2e-helper.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
@@ -13,15 +13,6 @@ const startAtImportType = async (page) => {
   await page.getByRole('button', { name: 'Create a new notification' }).click()
   await expect(page).toHaveURL((url) =>
     /^\/plant-products\/notifications\/[^/]+\/import-type$/.test(url.pathname)
-  )
-}
-
-const seriousOrCriticalViolations = async (page) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  return results.violations.filter(({ impact }) =>
-    ['serious', 'critical'].includes(impact)
   )
 }
 
@@ -206,13 +197,21 @@ test.describe('plant-products import type', () => {
   test('has no serious or critical axe violations on initial render', async ({
     page
   }) => {
-    expect(await seriousOrCriticalViolations(page)).toEqual([])
+    const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
+    expect(
+      seriousOrCritical,
+      `Import type has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(all, null, 2)}`
+    ).toEqual([])
   })
 
   test('has no serious or critical axe violations in the validation error state', async ({
     page
   }) => {
     await page.getByRole('button', { name: copy.continueButton }).click()
-    expect(await seriousOrCriticalViolations(page)).toEqual([])
+    const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
+    expect(
+      seriousOrCritical,
+      `Import type error state has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(all, null, 2)}`
+    ).toEqual([])
   })
 })

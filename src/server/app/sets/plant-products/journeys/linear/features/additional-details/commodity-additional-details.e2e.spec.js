@@ -1,6 +1,6 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+import { axeViolations as seriousOrCriticalViolations } from '../axe.e2e-helper.js'
 import { grossVolumeUnitOptions } from '../../../../services/reference/gross-volume-units.js'
 import { copy } from './copy/copy.en.js'
 
@@ -88,18 +88,6 @@ const expectLinkedError = async (page, field, message) => {
   await link.click()
   await expect(page.locator(`#${field}`)).toBeFocused()
   await expect(page.locator(`#${field}-error`)).toContainText(message)
-}
-
-const seriousOrCriticalViolations = async (page) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  return {
-    all: results.violations,
-    seriousOrCritical: results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-  }
 }
 
 test.describe('plant-products commodity additional details', () => {

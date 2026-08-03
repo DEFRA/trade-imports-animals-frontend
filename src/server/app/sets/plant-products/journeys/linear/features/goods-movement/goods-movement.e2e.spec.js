@@ -1,6 +1,6 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+import { axeViolations } from '../axe.e2e-helper.js'
 import { copy } from './copy/copy.en.js'
 
 const hubUrl = (url) =>
@@ -94,34 +94,14 @@ const expectLinkedError = async (page, field, message) => {
 }
 
 const expectNoSeriousOrCriticalViolations = async (page, state) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  const seriousOrCritical = results.violations.filter(
-    ({ id, impact, nodes }) => {
-      // GOV.UK Frontend's stock conditional-radio script adds aria-expanded
-      // to the controlling radio. axe 4.12 rejects that exact generated node.
-      const stockConditionalRadioFalsePositive =
-        id === 'aria-allowed-attr' &&
-        nodes.every(
-          ({ html, target }) =>
-            html.includes('class="govuk-radios__input"') &&
-            html.includes(
-              'aria-controls="conditional-commonTransitConvention"'
-            ) &&
-            target.length === 1 &&
-            target[0] === '#commonTransitConvention'
-        )
-      return (
-        ['serious', 'critical'].includes(impact) &&
-        !stockConditionalRadioFalsePositive
-      )
-    }
-  )
+  const { all, seriousOrCritical } = await axeViolations(page, {
+    ariaControls: 'conditional-commonTransitConvention',
+    target: '#commonTransitConvention'
+  })
 
   expect(
     seriousOrCritical,
-    `Goods movement ${state} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
+    `Goods movement ${state} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(all, null, 2)}`
   ).toEqual([])
 }
 

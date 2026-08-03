@@ -1,6 +1,6 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+import { axeViolations as seriousOrCriticalViolations } from '../../axe.e2e-helper.js'
 import { copy as featureCopy } from '../copy/copy.en.js'
 
 const copy = featureCopy.commoditySearch
@@ -29,18 +29,6 @@ const panels = (page) => ({
   code: page.locator('#commodity-code-search'),
   species: page.locator('#genus-and-species-search')
 })
-
-const seriousOrCriticalViolations = async (page) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  return {
-    all: results.violations,
-    seriousOrCritical: results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-  }
-}
 
 const expectLinkedError = async (page, field, message) => {
   const alert = page.getByRole('alert')

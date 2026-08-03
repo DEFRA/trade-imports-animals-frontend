@@ -1,6 +1,6 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+import { axeViolations as seriousOrCriticalViolations } from '../../axe.e2e-helper.js'
 import { copy as featureCopy } from '../copy/copy.en.js'
 
 const copy = featureCopy.commoditySummary
@@ -123,18 +123,6 @@ const removeNames = async (table) =>
     .evaluateAll((buttons) =>
       buttons.map((button) => button.getAttribute('aria-label'))
     )
-
-const seriousOrCriticalViolations = async (page) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  return {
-    all: results.violations,
-    seriousOrCritical: results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-  }
-}
 
 const expectNoSeriousOrCriticalViolations = async (page, state) => {
   const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)

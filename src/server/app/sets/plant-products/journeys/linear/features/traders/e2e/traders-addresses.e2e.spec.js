@@ -1,6 +1,6 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+import { axeViolations } from '../../axe.e2e-helper.js'
 import { copy } from '../copy/copy.en.js'
 
 const pageCopy = copy.tradersAddresses
@@ -106,32 +106,14 @@ const expectLinkedError = async (page, field, message) => {
 }
 
 const expectAxeClean = async (page, state) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  const seriousOrCritical = results.violations.filter(
-    ({ id, impact, nodes }) => {
-      const stockConditionalRadioFalsePositive =
-        id === 'aria-allowed-attr' &&
-        nodes.every(
-          ({ html, target }) =>
-            html.includes('class="govuk-radios__input"') &&
-            html.includes(
-              'aria-controls="conditional-destinationSameAsConsignee-2"'
-            ) &&
-            target.length === 1 &&
-            target[0] === '#destinationSameAsConsignee-2'
-        )
-      return (
-        ['serious', 'critical'].includes(impact) &&
-        !stockConditionalRadioFalsePositive
-      )
-    }
-  )
+  const { all, seriousOrCritical } = await axeViolations(page, {
+    ariaControls: 'conditional-destinationSameAsConsignee-2',
+    target: '#destinationSameAsConsignee-2'
+  })
 
   expect(
     seriousOrCritical,
-    `Traders addresses ${state} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
+    `Traders addresses ${state} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(all, null, 2)}`
   ).toEqual([])
 }
 

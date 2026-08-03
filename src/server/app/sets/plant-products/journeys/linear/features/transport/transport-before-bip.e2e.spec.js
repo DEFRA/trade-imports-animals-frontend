@@ -1,6 +1,6 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+import { axeViolations as seriousOrCriticalViolations } from '../axe.e2e-helper.js'
 import { list as listBcps } from '../../../../services/reference/bcps.js'
 import { meansOfTransportOptions } from '../../../../services/reference/transport-options.js'
 import { copy } from './copy/copy.en.js'
@@ -125,30 +125,9 @@ const expectErrorFocus = async (page, message, id) => {
   await expect(page.locator(`#${id}`)).toBeFocused()
 }
 
-const seriousOrCriticalViolations = async (page) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  return {
-    all: results.violations,
-    seriousOrCritical: results.violations.filter(({ id, impact, nodes }) => {
-      // GOV.UK Frontend's stock conditional-radio script adds aria-expanded
-      // to the controlling radio. axe 4.12 rejects that exact generated node.
-      const stockConditionalRadioFalsePositive =
-        id === 'aria-allowed-attr' &&
-        nodes.every(
-          ({ html, target }) =>
-            html.includes('class="govuk-radios__input"') &&
-            html.includes('aria-controls="conditional-usesContainers"') &&
-            target.length === 1 &&
-            target[0] === '#usesContainers'
-        )
-      return (
-        ['serious', 'critical'].includes(impact) &&
-        !stockConditionalRadioFalsePositive
-      )
-    })
-  }
+const permittedConditionalRadio = {
+  ariaControls: 'conditional-usesContainers',
+  target: '#usesContainers'
 }
 
 test.describe('plant-products transport before BCP', () => {
@@ -535,7 +514,10 @@ test.describe('plant-products transport before BCP', () => {
   test('initial page has no serious or critical axe violations', async ({
     page
   }) => {
-    const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
+    const { all, seriousOrCritical } = await seriousOrCriticalViolations(
+      page,
+      permittedConditionalRadio
+    )
     expect(
       seriousOrCritical,
       `Transport initial state has serious/critical accessibility violations.\n${JSON.stringify(all, null, 2)}`
@@ -550,7 +532,10 @@ test.describe('plant-products transport before BCP', () => {
       .check()
     await page.getByRole('button', { name: copy.containers.add }).click()
     await expect(page.getByRole('alert')).toBeVisible()
-    const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
+    const { all, seriousOrCritical } = await seriousOrCriticalViolations(
+      page,
+      permittedConditionalRadio
+    )
     expect(
       seriousOrCritical,
       `Transport error/reveal state has serious/critical accessibility violations.\n${JSON.stringify(all, null, 2)}`

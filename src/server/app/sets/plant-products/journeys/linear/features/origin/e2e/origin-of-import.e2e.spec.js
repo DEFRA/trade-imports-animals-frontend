@@ -1,6 +1,6 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+import { axeViolations as seriousOrCriticalViolations } from '../../axe.e2e-helper.js'
 import { COUNTRIES } from '../../../../../services/reference/countries.js'
 import { copy } from '../copy/copy.en.js'
 
@@ -20,18 +20,6 @@ const startAtOriginOfImport = async (page) => {
       url.pathname
     )
   )
-}
-
-const seriousOrCriticalViolations = async (page) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  return {
-    all: results.violations,
-    seriousOrCritical: results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-  }
 }
 
 test.describe('plant-products origin of import', () => {

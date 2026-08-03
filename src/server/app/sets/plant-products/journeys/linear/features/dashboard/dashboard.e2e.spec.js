@@ -1,6 +1,6 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+import { axeViolations } from '../axe.e2e-helper.js'
 import { copy } from './copy/copy.en.js'
 
 const referenceFromUrl = (page) =>
@@ -98,15 +98,10 @@ const expectErrorFocus = async (page, message, id) => {
 }
 
 const expectNoSeriousOrCriticalViolations = async (page) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  const seriousOrCritical = results.violations.filter(({ impact }) =>
-    ['serious', 'critical'].includes(impact)
-  )
+  const { all, seriousOrCritical } = await axeViolations(page)
   expect(
     seriousOrCritical,
-    `Serious/critical accessibility violations:\n${JSON.stringify(results.violations, null, 2)}`
+    `Serious/critical accessibility violations:\n${JSON.stringify(all, null, 2)}`
   ).toEqual([])
 }
 
