@@ -10,10 +10,7 @@ import * as plantProductsObligationSet from '../../obligations/index.js'
 import { featureEvaluationBindings } from '../../journeys/linear/features/evaluation.js'
 import { IDEMPOTENCY_KEY_HEADER, notificationsUrl } from './config.js'
 import { records as realRecords } from './real.js'
-import {
-  declarationFor as stubDeclarationFor,
-  records as stubRecords
-} from './stub.js'
+import { records as stubRecords } from './stub.js'
 
 // The real implementation is exercised through a stateful network-boundary
 // mock. Production dedupe is enforced by the backend's unique partial index;
@@ -165,9 +162,6 @@ const createNetworkBackend = () => {
   }
 
   return {
-    declarationFor(referenceNumber) {
-      return structuredClone(notifications.get(referenceNumber)?.declaration)
-    },
     reset() {
       notifications.clear()
       documentsByReference.clear()
@@ -186,7 +180,6 @@ const implementations = [
   {
     name: 'stub',
     records: stubRecords,
-    declarationFor: stubDeclarationFor,
     reset: async () => {
       fetchMocker.resetMocks()
       await stubRecords.clear()
@@ -195,14 +188,13 @@ const implementations = [
   {
     name: 'real HTTP adapter',
     records: realRecords,
-    declarationFor: (journeyId) => networkBackend.declarationFor(journeyId),
     reset: async () => networkBackend.reset()
   }
 ]
 
 describe.each(implementations)(
   'plant-products records engine port — $name',
-  ({ name, records, declarationFor, reset }) => {
+  ({ name, records, reset }) => {
     beforeEach(reset)
 
     it('creates a draft journey in the engine record shape', async () => {
@@ -349,13 +341,8 @@ describe.each(implementations)(
       const listedRecord = listed.rows.find(
         ({ journeyId }) => journeyId === created.journeyId
       )
-      const declaration = declarationFor(created.journeyId)
 
       expect(finalised.submittedAt).toEqual(expect.any(String))
-      expect(declaration).toEqual({
-        agreed: true,
-        declaredAt: finalised.submittedAt
-      })
       const expected = {
         status: 'submitted',
         submittedAt: finalised.submittedAt

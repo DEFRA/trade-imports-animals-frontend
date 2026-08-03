@@ -129,8 +129,6 @@ export const list = async ({
 
 export const has = async (journeyId) => recordsById.has(journeyId)
 
-export const declarationFor = (journeyId) => clone(read(journeyId).declaration)
-
 export const replaceFulfilment = async (journeyId, fulfilment) => {
   const record = read(journeyId)
   assertWritable(record)

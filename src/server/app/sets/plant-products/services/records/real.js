@@ -35,6 +35,13 @@ const expectRecoverableStatus = (operation, response, expected) => {
   }
 }
 
+const recoverableFetch = (url, options) => {
+  const request = new Request(url, options)
+  return fetch(request).catch((error) => {
+    throw markRecoverableBackendError(error)
+  })
+}
+
 const getNotification = async (journeyId, operation) => {
   const response = await fetch(`${notificationsUrl}/${journeyId}`, {
     method: 'GET',
@@ -187,28 +194,33 @@ const transition = async (journeyId, operation, body) => {
 }
 
 export const finalise = async (journeyId) => {
-  const loadResponse = await fetch(`${notificationsUrl}/${journeyId}`, {
-    method: 'GET',
-    headers: headers()
-  })
-  expectRecoverableStatus('finalise notification', loadResponse, [200])
-  const body = buildNotificationBody(
-    journeyId,
-    fromDto(await loadResponse.json())
+  const loadResponse = await recoverableFetch(
+    `${notificationsUrl}/${journeyId}`,
+    {
+      method: 'GET',
+      headers: headers()
+    }
   )
-  body.declaration = {
-    agreed: true,
-    declaredAt: new Date().toISOString()
+  expectRecoverableStatus('finalise notification', loadResponse, [200])
+  const body = {
+    ...buildNotificationBody(journeyId, fromDto(await loadResponse.json())),
+    declaration: {
+      agreed: true,
+      declaredAt: new Date().toISOString()
+    }
   }
 
-  const documentResponse = await fetch(`${notificationsUrl}/${journeyId}`, {
-    method: 'PUT',
-    headers: headers(),
-    body: JSON.stringify(body)
-  })
+  const documentResponse = await recoverableFetch(
+    `${notificationsUrl}/${journeyId}`,
+    {
+      method: 'PUT',
+      headers: headers(),
+      body: JSON.stringify(body)
+    }
+  )
   expectRecoverableStatus('finalise notification', documentResponse, [200, 201])
 
-  const statusResponse = await fetch(
+  const statusResponse = await recoverableFetch(
     `${notificationsUrl}/${journeyId}/status`,
     {
       method: 'PUT',

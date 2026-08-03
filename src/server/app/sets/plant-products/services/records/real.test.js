@@ -5,6 +5,7 @@ import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { configureFulfilmentRegistry } from '../../../../bridge/fulfilment-registry.js'
 import { projectAnswers } from '../../../../bridge/fulfilments/index.js'
 import { configureObligationSet } from '../../../../model/obligations/manifest.js'
+import { isRecoverableBackendError } from '../../../../services/persistence/records/errors.js'
 import { withSetContext } from '../../../../shared/set-context.js'
 import * as plantProductsObligationSet from '../../obligations/index.js'
 import { featureEvaluationBindings } from '../../journeys/linear/features/evaluation.js'
@@ -512,22 +513,12 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
         }
       ])
       const documentBody = await bodyOf(requests[1])
-      expect(documentBody).toMatchObject({
+      expect(documentBody).toEqual({
         referenceNumber: SOURCE_REFERENCE,
         origin: { countryCode: 'FR' },
+        importer: stubOrganisationOperator(),
         declaration: { agreed: true, declaredAt: FINALISE_DECLARED_AT }
       })
-      for (const field of [
-        'status',
-        'chedType',
-        'ownership',
-        'created',
-        'updated',
-        'expireAt',
-        'submittedBaseline'
-      ]) {
-        expect(documentBody).not.toHaveProperty(field)
-      }
       expect(await bodyOf(requests[2])).toEqual({ status: 'SUBMITTED' })
       expect(finalised).toMatchObject({
         status: 'submitted',
@@ -553,6 +544,70 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
       { method: 'GET', url: `${notificationsUrl}/${SOURCE_REFERENCE}` },
       { method: 'PUT', url: `${notificationsUrl}/${SOURCE_REFERENCE}` }
     ])
+  })
+
+  it.each([
+    ['load GET', []],
+    ['declaration PUT', [[JSON.stringify(dto()), { status: 200 }]]],
+    [
+      'status PUT',
+      [
+        [JSON.stringify(dto()), { status: 200 }],
+        [JSON.stringify(dto()), { status: 200 }]
+      ]
+    ]
+  ])(
+    'marks a rejected finalise %s as recoverable',
+    async (_stage, responses) => {
+      fetchMocker.mockResponses(...responses)
+      fetchMocker.mockRejectOnce(new TypeError('fetch failed'))
+
+      let surfaced
+      try {
+        await inPlantProducts(() => records.finalise(SOURCE_REFERENCE))
+      } catch (error) {
+        surfaced = error
+      }
+
+      expect(surfaced).toBeInstanceOf(TypeError)
+      expect(isRecoverableBackendError(surfaced)).toBe(true)
+    }
+  )
+
+  it('does not mark a finalise JSON parse failure as recoverable', async () => {
+    fetchMocker.mockResponse('not JSON', { status: 200 })
+
+    let surfaced
+    try {
+      await inPlantProducts(() => records.finalise(SOURCE_REFERENCE))
+    } catch (error) {
+      surfaced = error
+    }
+
+    expect(surfaced).toBeInstanceOf(SyntaxError)
+    expect(isRecoverableBackendError(surfaced)).toBe(false)
+  })
+
+  it('does not mark a finalise request-construction failure as recoverable', async () => {
+    const requestError = new TypeError('invalid request configuration')
+    const requestSpy = vi
+      .spyOn(globalThis, 'Request')
+      .mockImplementation(function InvalidRequest() {
+        throw requestError
+      })
+
+    let surfaced
+    try {
+      await inPlantProducts(() => records.finalise(SOURCE_REFERENCE))
+    } catch (error) {
+      surfaced = error
+    } finally {
+      requestSpy.mockRestore()
+    }
+
+    expect(surfaced).toBe(requestError)
+    expect(isRecoverableBackendError(surfaced)).toBe(false)
+    expect(fetchMocker).not.toHaveBeenCalled()
   })
 
   it.each([

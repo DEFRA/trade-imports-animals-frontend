@@ -192,20 +192,22 @@ describe('plant-products declaration controller', () => {
     expect(result.view.context.values).toEqual({ declaration: 'confirmed' })
   })
 
-  it('does not hide an unexpected finalise failure', async () => {
+  it('re-renders the checked value after a rejected finalise fetch', async () => {
     configureRecords('plant-products', {
       ...recordsStub,
       finalise: realRecords.finalise
     })
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => {
-        throw new TypeError('network contract broke')
-      })
+      vi.fn(() => Promise.reject(new TypeError('fetch failed')))
     )
 
-    await expect(
-      drive(post, { payload: { declaration: 'confirmed' } })
-    ).rejects.toThrow('network contract broke')
+    const result = await drive(post, {
+      payload: { declaration: 'confirmed', crumb: 'test-crumb' }
+    })
+
+    expect(result.response.statusCode).toBe(500)
+    expect(result.view.context.recoverableError).toBe(true)
+    expect(result.view.context.values).toEqual({ declaration: 'confirmed' })
   })
 })
