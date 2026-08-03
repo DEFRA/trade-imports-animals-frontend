@@ -20,7 +20,7 @@ const { countryOfOrigin } = obligationSet()
 // backend with a fresh GET /fulfilments/{ref}, and each save re-fetched the same
 // record to guard the write. This pins the collapsed behaviour: within one HTTP
 // request the real adapter issues at most one canonical GET, followed by the
-// canonical and two projection PUTs.
+// canonical and the current-notification projection PUTs.
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
@@ -29,7 +29,6 @@ const backendBaseUrl = 'http://localhost:8085'
 const ref = 'GBN-AG-01-ABC123'
 const fulfilmentUrl = `${backendBaseUrl}/fulfilments/${ref}`
 const notificationsUrl = `${backendBaseUrl}/notifications`
-const proposedNotificationsUrl = `${backendBaseUrl}/proposed-notifications`
 
 const fulfilmentBody = JSON.stringify({
   id: ref,
@@ -76,11 +75,7 @@ describe('one load per request — real records adapter GET count', () => {
             })
           )
       }
-      if (
-        req.method === 'PUT' &&
-        (req.url === `${notificationsUrl}/${ref}` ||
-          req.url === `${proposedNotificationsUrl}/${ref}`)
-      ) {
+      if (req.method === 'PUT' && req.url === `${notificationsUrl}/${ref}`) {
         return ''
       }
       return { status: 404, body: 'Not Found' }
@@ -90,7 +85,7 @@ describe('one load per request — real records adapter GET count', () => {
     configureReadyForCheckYourAnswers(() => false)
   })
 
-  test('Should issue exactly one GET for a read-then-write request, plus the three PUTs', async () => {
+  test('Should issue exactly one GET for a read-then-write request, plus the two PUTs', async () => {
     const request = buildRequest()
 
     const before = await get(request, recordingH())
@@ -100,9 +95,6 @@ describe('one load per request — real records adapter GET count', () => {
     expect(getsFor(fulfilmentUrl)).toHaveLength(1)
     expect(requestsTo('PUT', fulfilmentUrl)).toHaveLength(1)
     expect(requestsTo('PUT', `${notificationsUrl}/${ref}`)).toHaveLength(1)
-    expect(
-      requestsTo('PUT', `${proposedNotificationsUrl}/${ref}`)
-    ).toHaveLength(1)
   })
 
   test('Should serve a post-write read from the request without a stale value or extra GET', async () => {

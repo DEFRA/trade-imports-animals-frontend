@@ -9,12 +9,9 @@ import { runsIt } from '../../it-mode.js'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../../../../bridge/fulfilments/index.js'
 import { encodeEvaluatorFulfilments } from '../fulfilment-codec/index.js'
-import {
-  answersToTargetNotification,
-  fulfilmentToNotification
-} from '../mapper.js'
+import { fulfilmentToNotification } from '../mapper.js'
 
-// Gated integration test for the option-e REAL adapter and its three backend
+// Gated integration test for the option-e REAL adapter and its two backend
 // resources. The default hermetic run skips it. Run against the matching
 // backend worktree with:
 //
@@ -24,7 +21,6 @@ const backendBaseUrl =
   process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ?? 'http://localhost:8085'
 const fulfilmentsUrl = `${backendBaseUrl}/fulfilments`
 const notificationsUrl = `${backendBaseUrl}/notifications`
-const proposedNotificationsUrl = `${backendBaseUrl}/proposed-notifications`
 
 const replaceAnswers = (journeyId, answers) =>
   records.replaceFulfilment(journeyId, assembleFulfilments(answers))
@@ -114,16 +110,15 @@ describe.skipIf(!runsIt('real'))(
       expect(loaded).toEqual(created)
     })
 
-    it('Should round-trip canonical fulfilment and store both projections from it', async () => {
+    it('Should round-trip canonical fulfilment and store the current-notification projection from it', async () => {
       const { journeyId } = await records.create()
       const snapshot = assembleFulfilments(answers)
 
       const saved = await records.replaceFulfilment(journeyId, snapshot)
       const loaded = await records.load({ journeyId })
-      const [canonical, current, proposed] = await Promise.all([
+      const [canonical, current] = await Promise.all([
         json(`${fulfilmentsUrl}/${journeyId}`),
-        json(`${notificationsUrl}/${journeyId}`),
-        json(`${proposedNotificationsUrl}/${journeyId}`)
+        json(`${notificationsUrl}/${journeyId}`)
       ])
 
       expect(saved.fulfilment).toEqual(snapshot)
@@ -135,7 +130,6 @@ describe.skipIf(!runsIt('real'))(
       expect(current).toMatchObject(
         fulfilmentToNotification(snapshot, journeyId)
       )
-      expect(proposed).toEqual(answersToTargetNotification(snapshot, journeyId))
       expect(answersOf(loaded).documents).toEqual(answers.documents)
       expect(answersOf(loaded).commodityLines[0].animalIdentifiers).toEqual(
         answers.commodityLines[0].animalIdentifiers

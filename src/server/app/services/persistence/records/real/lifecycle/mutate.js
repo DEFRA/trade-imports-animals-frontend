@@ -1,13 +1,6 @@
 import { encodeEvaluatorFulfilments } from '../../fulfilment-codec/index.js'
-import {
-  answersToTargetNotification,
-  fulfilmentToNotification
-} from '../../mapper.js'
-import {
-  fulfilmentsUrl,
-  notificationsUrl,
-  proposedNotificationsUrl
-} from '../config.js'
+import { fulfilmentToNotification } from '../../mapper.js'
+import { fulfilmentsUrl, notificationsUrl } from '../config.js'
 import { put } from '../http/put.js'
 import { marshal } from '../marshal/document.js'
 import { throwProjectionFailure } from '../projections/failure.js'
@@ -45,11 +38,6 @@ export const replaceFulfilment = async (
       name: 'current notification',
       url: `${notificationsUrl}/${journeyId}`,
       body: fulfilmentToNotification(snapshot, journeyId)
-    },
-    {
-      name: 'proposed notification',
-      url: `${proposedNotificationsUrl}/${journeyId}`,
-      body: answersToTargetNotification(snapshot, journeyId)
     }
   ]
 

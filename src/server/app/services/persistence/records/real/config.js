@@ -4,7 +4,6 @@ export const tracingHeader = process.env.TRACING_HEADER ?? 'x-cdp-request-id'
 
 export const fulfilmentsUrl = `${backendBaseUrl}/fulfilments`
 export const notificationsUrl = `${backendBaseUrl}/notifications`
-export const proposedNotificationsUrl = `${backendBaseUrl}/proposed-notifications`
 
 export const HTTP_NOT_FOUND = 404
 export const MAX_PROJECTION_ATTEMPTS = 2

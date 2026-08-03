@@ -1003,167 +1003,6 @@
           }
         ]
       }
-    },
-    "mapperB": {
-      "referenceNumber": "GBN-AG-26-ABC123",
-      "reasonForImport": "internalMarket",
-      "placeOfOrigin": {
-        "name": "Origin Farm",
-        "address": {
-          "addressLine1": "1 Farm Lane",
-          "addressLine2": "County Clare",
-          "country": "Ireland"
-        }
-      },
-      "consignor": {
-        "name": "Astra Rosales",
-        "address": {
-          "addressLine1": "43 East Hague Extension",
-          "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
-          "addressLine3": "Quasoccaecat ut ear, 30055",
-          "country": "Switzerland"
-        }
-      },
-      "consignee": {
-        "name": "British Livestock Ltd",
-        "address": {
-          "addressLine1": "10 Market Street",
-          "addressLine2": "Leeds LS1 6HB",
-          "country": "United Kingdom"
-        }
-      },
-      "importer": {
-        "name": "Import Co UK",
-        "address": {
-          "addressLine1": "20 Trade Road",
-          "addressLine2": "London EC1A 1BB",
-          "country": "United Kingdom"
-        }
-      },
-      "destination": {
-        "name": "Tech Imports Ltd",
-        "address": {
-          "addressLine1": "643 Main Street",
-          "addressLine2": "Birmingham G1 3AZ",
-          "country": "United Kingdom"
-        }
-      },
-      "consignment": {
-        "name": "Animal and Plant Health Agency",
-        "address": {
-          "addressLine1": "Woodham Lane",
-          "addressLine2": "New Haw",
-          "addressLine3": "Addlestone, KT15 3NB",
-          "country": "United Kingdom"
-        }
-      },
-      "cphNumber": "12/345/6789",
-      "origin": {
-        "countryCode": "FR",
-        "requiresRegionCode": "yes",
-        "internalReference": "",
-        "regionCode": "FR-75"
-      },
-      "additionalDetails": {
-        "certifiedFor": "slaughter",
-        "unweanedAnimals": "no"
-      },
-      "transport": {
-        "portOfEntry": "GB ABD",
-        "arrivalDate": "2026-12-12",
-        "transporter": {
-          "name": "García Livestock Transport SL",
-          "address": {
-            "addressLine1": "43 East Hague Extension",
-            "addressLine2": "Delectus sitodio p. Laborum Odio tempor",
-            "addressLine3": "Quasoccaecat ut ear, 30055",
-            "country": "Switzerland"
-          },
-          "approvalNumber": "ES-T2-45001294",
-          "type": "Commercial"
-        },
-        "meansOfTransport": "ROAD_VEHICLE",
-        "transportIdentification": "FR-892-LK",
-        "transportDocumentReference": "CMR-2026-884721",
-        "transitedCountries": ["FR", "BE"]
-      },
-      "commodity": {
-        "name": "Cow",
-        "commodityComplement": [
-          {
-            "commodityCode": "0102",
-            "name": "Cow",
-            "typeOfCommodity": "Domestic",
-            "totalNoOfAnimals": 3,
-            "totalNoOfPackages": 2,
-            "species": [
-              {
-                "value": "1148346",
-                "text": "Bos taurus",
-                "noOfAnimals": "2",
-                "noOfPackages": "1",
-                "earTag": "UK123456789012",
-                "passport": "UK123456789",
-                "animalIdentifiers": [
-                  {
-                    "passport": "UK123456789",
-                    "tattoo": "AB1234",
-                    "earTag": "UK123456789012"
-                  },
-                  {
-                    "horseName": "Silver",
-                    "identificationDetails": "Microchip 900123",
-                    "description": "Brown with a white blaze",
-                    "permanentAddress": {
-                      "name": "Owner",
-                      "address": {
-                        "addressLine1": "8 Stable Close",
-                        "addressLine2": "Little Pasture",
-                        "country": "United Kingdom"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "value": "716661",
-                "text": "Bison bison",
-                "noOfAnimals": "1",
-                "noOfPackages": "1",
-                "earTag": "UK000000000001",
-                "animalIdentifiers": [
-                  {
-                    "earTag": "UK000000000001"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      "purpose": "breeding",
-      "documents": [
-        {
-          "documentType": "ITAHC",
-          "attachmentType": "PDF",
-          "reference": "GBHC1234567890",
-          "dateOfIssue": {
-            "day": "12",
-            "month": "12",
-            "year": "2025"
-          }
-        },
-        {
-          "documentType": "AIR_WAYBILL",
-          "attachmentType": "PNG",
-          "reference": "AWB-42",
-          "dateOfIssue": {
-            "day": "1",
-            "month": "11",
-            "year": "2025"
-          }
-        }
-      ]
     }
   },
   "partially-filled-record": {
@@ -1487,25 +1326,6 @@
         "name": "Cow",
         "commodityComplement": [{}]
       }
-    },
-    "mapperB": {
-      "origin": {
-        "countryCode": ""
-      },
-      "commodity": {
-        "name": "Cow",
-        "commodityComplement": [
-          {
-            "commodityCode": "0102",
-            "name": "Cow"
-          }
-        ]
-      },
-      "documents": [
-        {
-          "documentType": "ITAHC"
-        }
-      ]
     }
   },
   "completely-empty-started-record": {
@@ -1695,8 +1515,7 @@
       }
     },
     "answersFromFulfilments": {},
-    "mapperA": {},
-    "mapperB": {}
+    "mapperA": {}
   },
   "gate-open": {
     "fulfilments": {
@@ -2062,36 +1881,6 @@
           }
         ]
       }
-    },
-    "mapperB": {
-      "reasonForImport": "internalMarket",
-      "commodity": {
-        "name": "Cow",
-        "commodityComplement": [
-          {
-            "commodityCode": "0102",
-            "name": "Cow",
-            "typeOfCommodity": "Domestic",
-            "totalNoOfAnimals": 1,
-            "totalNoOfPackages": 1,
-            "species": [
-              {
-                "value": "1148346",
-                "text": "Bos taurus",
-                "noOfAnimals": "1",
-                "noOfPackages": "1",
-                "earTag": "UK123456789012",
-                "animalIdentifiers": [
-                  {
-                    "earTag": "UK123456789012"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      "purpose": "breeding"
     }
   },
   "gate-flipped": {
@@ -2391,35 +2180,6 @@
           }
         ]
       }
-    },
-    "mapperB": {
-      "reasonForImport": "transit",
-      "commodity": {
-        "name": "Fish",
-        "commodityComplement": [
-          {
-            "commodityCode": "0301",
-            "name": "Fish",
-            "totalNoOfAnimals": 1,
-            "totalNoOfPackages": 1,
-            "species": [
-              {
-                "value": "801204",
-                "text": "Salmo salar",
-                "noOfAnimals": "1",
-                "noOfPackages": "1",
-                "earTag": "UK123456789012",
-                "animalIdentifiers": [
-                  {
-                    "earTag": "UK123456789012"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      "purpose": "breeding"
     }
   }
 }

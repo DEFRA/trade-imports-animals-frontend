@@ -14,10 +14,7 @@ import {
   decodePersistedFulfilment,
   encodeEvaluatorFulfilments
 } from '../fulfilment-codec/index.js'
-import {
-  answersToTargetNotification,
-  fulfilmentToNotification
-} from '../mapper.js'
+import { fulfilmentToNotification } from '../mapper.js'
 import { isRecoverableBackendError } from '../errors.js'
 import { mapStatus, records } from './index.js'
 
@@ -27,7 +24,6 @@ fetchMocker.enableMocks()
 const backendBaseUrl = 'http://localhost:8085'
 const fulfilmentsUrl = `${backendBaseUrl}/fulfilments`
 const notificationsUrl = `${backendBaseUrl}/notifications`
-const proposedNotificationsUrl = `${backendBaseUrl}/proposed-notifications`
 const journeyId = 'GBN-AG-26-ABC123'
 const createdAt = '2026-07-23T09:00:00'
 const actor = {
@@ -146,7 +142,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     expect(loaded).toBeUndefined()
   })
 
-  it('Should derive and PUT all three documents from one fulfilment snapshot, canonical first', async () => {
+  it('Should derive and PUT canonical then current-notification from one fulfilment snapshot', async () => {
     const snapshot = assembleFulfilments({
       countryOfOrigin: 'FR',
       commodityLines: [
@@ -161,7 +157,6 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     const encoded = encodeEvaluatorFulfilments(snapshot)
     fetchMocker.mockResponses(
       [JSON.stringify(canonical({ fulfilment: encoded })), { status: 200 }],
-      ['', { status: 200 }],
       ['', { status: 200 }]
     )
 
@@ -172,8 +167,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
       { method: 'PUT', url: `${fulfilmentsUrl}/${journeyId}` },
-      { method: 'PUT', url: `${notificationsUrl}/${journeyId}` },
-      { method: 'PUT', url: `${proposedNotificationsUrl}/${journeyId}` }
+      { method: 'PUT', url: `${notificationsUrl}/${journeyId}` }
     ])
     expect(await jsonOf(requests[0])).toEqual({
       id: journeyId,
@@ -181,9 +175,6 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     })
     expect(await jsonOf(requests[1])).toEqual(
       fulfilmentToNotification(snapshot, journeyId)
-    )
-    expect(await jsonOf(requests[2])).toEqual(
-      answersToTargetNotification(snapshot, journeyId)
     )
     expect(
       (await jsonOf(requests[1])).commodity.commodityComplement[0].species[0]
@@ -214,7 +205,6 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     fetchMocker.mockResponses(
       [JSON.stringify(canonical({ fulfilment: encoded })), { status: 200 }],
       ['Unavailable', { status: 503 }],
-      ['', { status: 200 }],
       ['', { status: 200 }]
     )
 
@@ -226,20 +216,18 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     expect(requests.map(({ url }) => url)).toEqual([
       `${fulfilmentsUrl}/${journeyId}`,
       `${notificationsUrl}/${journeyId}`,
-      `${notificationsUrl}/${journeyId}`,
-      `${proposedNotificationsUrl}/${journeyId}`
+      `${notificationsUrl}/${journeyId}`
     ])
     expect(await jsonOf(requests[1])).toEqual(await jsonOf(requests[2]))
   })
 
-  it('Should surface persistent projection failure after canonical success and still attempt the other projection', async () => {
+  it('Should surface persistent projection failure after canonical success', async () => {
     const snapshot = { [countryOfOrigin.id]: 'FR' }
     const encoded = encodeEvaluatorFulfilments(snapshot)
     fetchMocker.mockResponses(
       [JSON.stringify(canonical({ fulfilment: encoded })), { status: 200 }],
       ['Unavailable', { status: 503 }],
-      ['Unavailable', { status: 503 }],
-      ['', { status: 200 }]
+      ['Unavailable', { status: 503 }]
     )
 
     let surfaced
@@ -264,8 +252,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     expect(requests.map(({ url }) => url)).toEqual([
       `${fulfilmentsUrl}/${journeyId}`,
       `${notificationsUrl}/${journeyId}`,
-      `${notificationsUrl}/${journeyId}`,
-      `${proposedNotificationsUrl}/${journeyId}`
+      `${notificationsUrl}/${journeyId}`
     ])
     expect(await jsonOf(requests[0])).toEqual({
       id: journeyId,

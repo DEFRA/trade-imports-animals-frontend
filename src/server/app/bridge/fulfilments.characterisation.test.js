@@ -7,10 +7,7 @@ import { createObligationEvaluator } from '../model/obligations/evaluator.js'
 import { obligationSet } from '../model/obligations/manifest.js'
 
 const { earTag, obligations, purposeInInternalMarket } = obligationSet()
-import {
-  answersToTargetNotification,
-  fulfilmentToNotification
-} from '../services/persistence/records/notification-mapper/index.js'
+import { fulfilmentToNotification } from '../services/persistence/records/notification-mapper/index.js'
 
 const oracles = JSON.parse(
   readFileSync(
@@ -43,9 +40,6 @@ describe('increment 0 golden boundary characterisation', () => {
       expect(
         fulfilmentToNotification(fulfilments, answers.referenceNumber)
       ).toEqual(oracle.mapperA)
-      expect(
-        answersToTargetNotification(fulfilments, answers.referenceNumber)
-      ).toEqual(oracle.mapperB)
     }
   )
 
