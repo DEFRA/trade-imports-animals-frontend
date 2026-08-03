@@ -17,6 +17,7 @@ export const copy = {
     commodities: '3. Nwydd',
     'additional-details': '4. Manylion ychwanegol',
     transport: '5. Cludiant i’r BCP',
+    documents: '9. Dogfennau cysylltiedig',
     review: '12. Adolygu a chyflwyno'
   },
   rows: {
@@ -39,6 +40,10 @@ export const copy = {
     transport: {
       title: 'Cludiant i’r BCP',
       hint: 'Sut bydd y llwyth yn teithio i’r safle rheoli ar y ffin'
+    },
+    documents: {
+      title: 'Dogfennau cysylltiedig',
+      hint: 'Ychwanegwch o leiaf un ddogfen, gan gynnwys y dystysgrif ffytoiechydol'
     },
     review: {
       title: 'Adolygu a chyflwyno',

@@ -35,6 +35,7 @@ describe('plant-products hub copy', () => {
       ['commodities', '3. Commodity'],
       ['additional-details', '4. Additional details'],
       ['transport', '5. Transport to the BCP'],
+      ['documents', '9. Accompanying documents'],
       ['review', '12. Review and submit']
     ])
   })
@@ -86,6 +87,14 @@ describe('plant-products hub copy', () => {
     expect(en.rows.transport).toEqual({
       title: 'Transport to the BCP',
       hint: 'How the consignment will travel to the border control post'
+    })
+  })
+
+  it('provides the numbered documents group and its mandatory row copy', () => {
+    expect(en.groups.documents).toBe('9. Accompanying documents')
+    expect(en.rows.documents).toEqual({
+      title: 'Accompanying documents',
+      hint: 'Add at least one document, including the phytosanitary certificate'
     })
   })
 

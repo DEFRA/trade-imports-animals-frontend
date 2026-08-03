@@ -9,7 +9,7 @@ import {
   tracingHeader
 } from './config.js'
 import { marshal, marshalListItem } from './marshal.js'
-import { toDto } from './mapper/to-dto.js'
+import { documentToDto, toDto } from './mapper/to-dto.js'
 import { BACKEND_STATUS, mapStatus } from './status.js'
 
 const headers = (additional = {}) => ({
@@ -34,6 +34,44 @@ const getNotification = async (journeyId, operation) => {
   })
   if (response.status === HTTP_NOT_FOUND) return undefined
   expectStatus(operation, response, [200])
+  return response.json()
+}
+
+const documentsUrl = (journeyId) =>
+  `${notificationsUrl}/${journeyId}/accompanying-documents`
+
+const listDocuments = async (journeyId) => {
+  const response = await fetch(documentsUrl(journeyId), {
+    method: 'GET',
+    headers: headers()
+  })
+  expectStatus('list accompanying documents', response, [200])
+  return (await response.json()).documents
+}
+
+const deleteDocument = async (journeyId, documentId) => {
+  const response = await fetch(`${documentsUrl(journeyId)}/${documentId}`, {
+    method: 'DELETE',
+    headers: headers()
+  })
+  expectStatus('delete accompanying document', response, [204])
+}
+
+const createDocument = async (journeyId, entry) => {
+  const response = await fetch(documentsUrl(journeyId), {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify(documentToDto(entry))
+  })
+  expectStatus('create accompanying document', response, [201])
+}
+
+const reloadNotification = async (journeyId) => {
+  const response = await fetch(`${notificationsUrl}/${journeyId}`, {
+    method: 'GET',
+    headers: headers()
+  })
+  expectStatus('reload notification', response, [200])
   return response.json()
 }
 
@@ -106,6 +144,7 @@ export const replaceFulfilment = async (
   const status = await resolveStatus(journeyId, known)
   assertWritable(journeyId, status)
   const answers = projectAnswers(structuredClone(fulfilment ?? {}))
+  const documents = answers.accompanyingDocuments ?? []
   const body = {
     ...toDto(answers),
     // The shipped Java replace endpoint rejects an absent body reference.
@@ -117,7 +156,14 @@ export const replaceFulfilment = async (
     body: JSON.stringify(body)
   })
   expectStatus('replace notification', response, [200, 201])
-  return marshal(await response.json())
+  const existingDocuments = await listDocuments(journeyId)
+  for (const document of existingDocuments) {
+    await deleteDocument(journeyId, document.id)
+  }
+  for (const document of documents) {
+    await createDocument(journeyId, document)
+  }
+  return marshal(await reloadNotification(journeyId))
 }
 
 const transition = async (journeyId, operation, body) => {

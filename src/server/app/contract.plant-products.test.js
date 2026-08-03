@@ -24,6 +24,7 @@ import {
 import { featureEvaluationBindings } from './sets/plant-products/journeys/linear/features/evaluation.js'
 import { dispatchPages } from './sets/plant-products/journeys/linear/features/index.js'
 import * as additionalDetails from './sets/plant-products/journeys/linear/features/additional-details/controller.js'
+import * as documents from './sets/plant-products/journeys/linear/features/documents/controller.js'
 import * as commodityInputMethod from './sets/plant-products/journeys/linear/features/commodities/commodity-input-method/commodity-input-method.controller.js'
 import * as basicDescription from './sets/plant-products/journeys/linear/features/commodities/basic-description/basic-description.controller.js'
 import * as commoditySearch from './sets/plant-products/journeys/linear/features/commodities/search/search.controller.js'
@@ -160,6 +161,17 @@ const cases = [
       ]
     },
     seededCollects: ['usesContainers', 'containers']
+  },
+  {
+    id: documents.meta.id,
+    collects: documents.meta.collects,
+    controller: documents,
+    payload: {
+      action: 'add',
+      documentType: 'PHYTOSANITARY_CERTIFICATE',
+      documentReference: 'PHYTO-001',
+      issueDate: '4/12/2025'
+    }
   }
 ]
 

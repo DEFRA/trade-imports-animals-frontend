@@ -16,6 +16,7 @@ import {
 } from '../features/origin/page.js'
 import { purposePage } from '../features/purpose/page.js'
 import { transportBeforeBipPage } from '../features/transport/page.js'
+import { accompanyingDocumentsPage } from '../features/documents/page.js'
 
 export const taskRows = [
   { id: 'origin', pages: [countryOfOriginPage, originOfImportPage] },
@@ -35,7 +36,8 @@ export const taskRows = [
     id: 'additional-details',
     pages: [commodityAdditionalDetailsPage]
   },
-  { id: 'transport', pages: [transportBeforeBipPage] }
+  { id: 'transport', pages: [transportBeforeBipPage] },
+  { id: 'documents', pages: [accompanyingDocumentsPage] }
 ]
 
 export const taskRowById = (id) => taskRows.find((row) => row.id === id)

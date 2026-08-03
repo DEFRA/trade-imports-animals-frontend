@@ -31,6 +31,7 @@ export const GROUPS = [
   { id: 'commodities', rows: ['commodities'] },
   { id: 'additional-details', rows: ['additional-details'] },
   { id: 'transport', rows: ['transport'] },
+  { id: 'documents', rows: ['documents'] },
   { id: 'review', rows: ['review'] }
 ]
 

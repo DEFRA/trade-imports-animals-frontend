@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { fromDto } from './from-dto.js'
-import { toDto } from './to-dto.js'
+import { documentToDto, toDto } from './to-dto.js'
 
 const SERVER_SET_FIELDS = [
   'referenceNumber',
@@ -106,7 +106,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     }
   })
 
-  it('does not invent homes for flow-only or accompanying-document answers', () => {
+  it('does not put flow-only or accompanying-document answers in the notification DTO', () => {
     expect(
       toDto({
         importType: 'plant-products',
@@ -116,7 +116,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     ).toEqual({})
   })
 
-  it('drops server-set and unknown response fields and ignores embedded documents', () => {
+  it('drops server-set and unknown response fields while folding embedded documents', () => {
     const dto = {
       referenceNumber: 'GBN-PP-26-ABC001',
       status: 'DRAFT',
@@ -135,7 +135,15 @@ describe('plant-products notification mapper at the m0 boundary', () => {
       ]
     }
 
-    expect(fromDto(dto)).toEqual({})
+    expect(fromDto(dto)).toEqual({
+      accompanyingDocuments: [
+        {
+          documentType: 'PHYTOSANITARY_CERTIFICATE',
+          documentReference: 'PHYTO-COPY-001',
+          issueDate: { day: '', month: '', year: '' }
+        }
+      ]
+    })
   })
 
   it('treats null and absent DTOs as an empty answers tree', () => {
@@ -331,5 +339,82 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     expect(dto.transport).not.toHaveProperty('containers')
     expect(fromDto(dto)).toEqual(answers)
     expect(fromDto(dto)).not.toHaveProperty('containers')
+  })
+
+  it('maps one document to the exact metadata-only sub-resource DTO', () => {
+    const dto = documentToDto({
+      id: 'answer-side-id',
+      notificationReferenceNumber: 'GBN-PP-26-ABC001',
+      documentType: 'PHYTOSANITARY_CERTIFICATE',
+      documentReference: 'PHYTO-001',
+      issueDate: { day: '4', month: '12', year: '2025' },
+      files: [{ fileId: 'must-not-leak' }]
+    })
+
+    expect(dto).toEqual({
+      documentType: 'PHYTOSANITARY_CERTIFICATE',
+      documentReference: 'PHYTO-001',
+      issueDate: '2025-12-04'
+    })
+    expect(dto).not.toHaveProperty('id')
+    expect(dto).not.toHaveProperty('notificationReferenceNumber')
+    expect(dto).not.toHaveProperty('files')
+  })
+
+  it('folds two embedded documents into ordered answer entries and drops server metadata', () => {
+    const answers = fromDto({
+      accompanyingDocuments: [
+        {
+          id: 'server-doc-1',
+          documentType: 'PHYTOSANITARY_CERTIFICATE',
+          documentReference: 'PHYTO-001',
+          issueDate: '2025-12-04',
+          files: [{ fileId: 'file-1' }]
+        },
+        {
+          id: 'server-doc-2',
+          documentType: 'AIR_WAYBILL',
+          documentReference: 'AIR-002',
+          issueDate: '2026-03-27',
+          files: []
+        }
+      ]
+    })
+
+    expect(answers).toEqual({
+      accompanyingDocuments: [
+        {
+          documentType: 'PHYTOSANITARY_CERTIFICATE',
+          documentReference: 'PHYTO-001',
+          issueDate: { day: '4', month: '12', year: '2025' }
+        },
+        {
+          documentType: 'AIR_WAYBILL',
+          documentReference: 'AIR-002',
+          issueDate: { day: '27', month: '3', year: '2026' }
+        }
+      ]
+    })
+    expect(JSON.stringify(answers)).not.toMatch(/server-doc|file-1/)
+  })
+
+  it('round-trips one document entry through the sub-resource projection', () => {
+    const entry = {
+      documentType: 'PHYTOSANITARY_CERTIFICATE',
+      documentReference: 'PHYTO-001',
+      issueDate: { day: '4', month: '12', year: '2025' }
+    }
+
+    expect(
+      fromDto({ accompanyingDocuments: [documentToDto(entry)] })
+        .accompanyingDocuments[0]
+    ).toEqual(entry)
+  })
+
+  it('omits the documents key for absent and empty embedded arrays', () => {
+    expect(fromDto({})).not.toHaveProperty('accompanyingDocuments')
+    expect(fromDto({ accompanyingDocuments: [] })).not.toHaveProperty(
+      'accompanyingDocuments'
+    )
   })
 })

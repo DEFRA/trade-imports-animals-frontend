@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
 
+import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { configureFulfilmentRegistry } from '../../../../bridge/fulfilment-registry.js'
+import { projectAnswers } from '../../../../bridge/fulfilments/index.js'
 import { configureObligationSet } from '../../../../model/obligations/manifest.js'
 import { withSetContext } from '../../../../shared/set-context.js'
 import * as plantProductsObligationSet from '../../obligations/index.js'
@@ -40,8 +42,10 @@ const jsonResponse = (body, status = 200) => ({
 
 const createNetworkBackend = () => {
   const notifications = new Map()
+  const documentsByReference = new Map()
   const copiesByKey = new Map()
   let nextReference = 0
+  let nextDocumentId = 1
 
   const mint = () => CANNED_REFERENCES[nextReference++]
   const saveDraft = (referenceNumber = mint()) => {
@@ -51,8 +55,15 @@ const createNetworkBackend = () => {
       created: CREATED_AT
     }
     notifications.set(referenceNumber, notification)
+    documentsByReference.set(referenceNumber, [])
     return notification
   }
+
+  const notificationResponse = (notification) => ({
+    ...notification,
+    accompanyingDocuments:
+      documentsByReference.get(notification.referenceNumber) ?? []
+  })
 
   const responseFor = async (request) => {
     const url = new URL(request.url)
@@ -82,7 +93,7 @@ const createNetworkBackend = () => {
     if (request.method === 'GET' && parts.length === 1) {
       return notification === undefined
         ? { body: '', status: 404 }
-        : jsonResponse(notification)
+        : jsonResponse(notificationResponse(notification))
     }
     if (request.method === 'PUT' && parts.length === 1) {
       if (notification === undefined) return { body: '', status: 404 }
@@ -90,6 +101,29 @@ const createNetworkBackend = () => {
       const replaced = { ...notification, ...body }
       notifications.set(referenceNumber, replaced)
       return jsonResponse(replaced)
+    }
+    if (subresource === 'accompanying-documents') {
+      if (notification === undefined) return { body: '', status: 404 }
+      const documents = documentsByReference.get(referenceNumber)
+      if (request.method === 'GET' && parts.length === 2) {
+        return jsonResponse({ documents })
+      }
+      if (request.method === 'POST' && parts.length === 2) {
+        const body = await request.clone().json()
+        const created = {
+          id: `document-${nextDocumentId++}`,
+          ...body,
+          files: body.files ?? []
+        }
+        documents.push(created)
+        return jsonResponse(created, 201)
+      }
+      if (request.method === 'DELETE' && parts.length === 3) {
+        const documentIndex = documents.findIndex(({ id }) => id === parts[2])
+        if (documentIndex === -1) return { body: '', status: 404 }
+        documents.splice(documentIndex, 1)
+        return { status: 204 }
+      }
     }
     if (request.method === 'PUT' && subresource === 'status') {
       if (notification === undefined) return { body: '', status: 404 }
@@ -132,8 +166,10 @@ const createNetworkBackend = () => {
   return {
     reset() {
       notifications.clear()
+      documentsByReference.clear()
       copiesByKey.clear()
       nextReference = 0
+      nextDocumentId = 1
       fetchMocker.resetMocks()
       fetchMocker.mockResponse(responseFor)
     }
@@ -195,6 +231,38 @@ describe.each(implementations)(
       await expect(
         inPlantProducts(() => records.has('GBN-PP-00-000000'))
       ).resolves.toBe(false)
+    })
+
+    it('round-trips two accompanying documents through replace and load', async () => {
+      const created = await inPlantProducts(() => records.create())
+      const documents = [
+        {
+          documentType: 'PHYTOSANITARY_CERTIFICATE',
+          documentReference: 'PHYTO-001',
+          issueDate: { day: '4', month: '12', year: '2025' }
+        },
+        {
+          documentType: 'AIR_WAYBILL',
+          documentReference: 'AIR-002',
+          issueDate: { day: '27', month: '3', year: '2026' }
+        }
+      ]
+      const fulfilment = inPlantProducts(() =>
+        assembleFulfilments({ accompanyingDocuments: documents })
+      )
+
+      await inPlantProducts(() =>
+        records.replaceFulfilment(created.journeyId, fulfilment, {
+          known: created
+        })
+      )
+      const loaded = await inPlantProducts(() =>
+        records.load({ journeyId: created.journeyId })
+      )
+
+      expect(inPlantProducts(() => projectAnswers(loaded.fulfilment))).toEqual({
+        accompanyingDocuments: documents
+      })
     })
 
     it('submits, amends, cancels and soft-deletes idempotently', async () => {

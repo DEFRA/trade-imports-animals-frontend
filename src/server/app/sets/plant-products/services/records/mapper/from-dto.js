@@ -97,12 +97,36 @@ const mapTransport = (dto) => {
   }
 }
 
+const dateFromIso = (value) => {
+  const [year = '', month = '', day = ''] = String(value ?? '').split('-')
+  return {
+    day: day ? String(Number(day)) : '',
+    month: month ? String(Number(month)) : '',
+    year
+  }
+}
+
+const mapDocument = (entry) => ({
+  documentType: entry.documentType,
+  documentReference: entry.documentReference,
+  issueDate: dateFromIso(entry.issueDate)
+})
+
+const mapDocuments = (dto) =>
+  Array.isArray(dto.accompanyingDocuments) &&
+  dto.accompanyingDocuments.length > 0
+    ? {
+        accompanyingDocuments: dto.accompanyingDocuments.map(mapDocument)
+      }
+    : {}
+
 const SECTION_MAPPERS = Object.freeze([
   mapOrigin,
   mapPurpose,
   mapCommodity,
   mapAdditionalDetails,
-  mapTransport
+  mapTransport,
+  mapDocuments
 ])
 
 const composeSections = (dto) =>

@@ -22,6 +22,7 @@ import * as obligationSet from '../../../obligations/index.js'
 import { featureEvaluationBindings } from '../features/evaluation.js'
 import { dispatchPages } from '../features/index.js'
 import { commodityAdditionalDetailsPage } from '../features/additional-details/page.js'
+import { accompanyingDocumentsPage } from '../features/documents/page.js'
 import {
   commodityBasicDescriptionPage,
   commodityBulkDetailsPage,
@@ -81,6 +82,10 @@ describe('plant-products task rows', () => {
       {
         id: 'transport',
         pages: [transportBeforeBipPage]
+      },
+      {
+        id: 'documents',
+        pages: [accompanyingDocumentsPage]
       }
     ])
     expect(
@@ -120,6 +125,18 @@ describe('plant-products task rows', () => {
     ).toBe(
       '/plant-products/notifications/journey-1/commodity-additional-details'
     )
+    expect(
+      withSetContext('plant-products', () =>
+        rowEntry(
+          taskRowById('documents'),
+          makeScope({
+            countryOfOrigin: 'FR',
+            commodityLines: [{ commoditySelection: '08059000' }]
+          }),
+          'journey-1'
+        )
+      )
+    ).toBe('/plant-products/notifications/journey-1/accompanying-documents')
   })
 
   it('derives fallback row parts from the page dispatch', () => {
@@ -152,6 +169,101 @@ describe('plant-products task rows', () => {
         rowParts(taskRowById('additional-details'))
       )
     ).toEqual(['totalGrossWeight', 'grossVolume', 'grossVolumeUnit'])
+    expect(
+      withSetContext('plant-products', () => rowParts(taskRowById('documents')))
+    ).toEqual(['accompanyingDocuments'])
+  })
+
+  it('keeps documents incomplete until one complete entry satisfies the collection floor', () => {
+    const statusFor = (answers) =>
+      withSetContext('plant-products', () => {
+        const { inScope } = makeScope(answers)
+        return rowStatus(
+          taskRowById('documents'),
+          answers,
+          inScope,
+          evaluateAnswers(answers)
+        )
+      })
+
+    expect(statusFor({})).toBe(NOT_STARTED)
+    expect(
+      statusFor({
+        accompanyingDocuments: [
+          {
+            documentType: 'PHYTOSANITARY_CERTIFICATE',
+            documentReference: 'PHYTO-001'
+          }
+        ]
+      })
+    ).toBe(IN_PROGRESS)
+    expect(
+      statusFor({
+        accompanyingDocuments: [
+          {
+            documentType: 'PHYTOSANITARY_CERTIFICATE',
+            documentReference: 'PHYTO-001',
+            issueDate: { day: '4', month: '12', year: '2025' }
+          }
+        ]
+      })
+    ).toBe(FULFILLED)
+  })
+
+  it('blocks readiness at the documents floor and unblocks it with one complete document', () => {
+    const readyFor = (answers) =>
+      withSetContext('plant-products', () => {
+        const { inScope } = makeScope(answers)
+        return readyForCheckYourAnswers(
+          answers,
+          inScope,
+          evaluateAnswers(answers)
+        )
+      })
+    const allEarlierRows = {
+      countryOfOrigin: 'FR',
+      countryOfConsignment: 'IE',
+      reasonForImport: 'INTERNAL_MARKET',
+      commodityInputMethod: 'MANUAL',
+      commodityLines: [
+        {
+          commoditySelection: '08059000',
+          numberOfPackages: 1,
+          packageType: 'BX',
+          quantity: 1,
+          quantityType: 'PCS',
+          netWeight: 1,
+          species: [
+            {
+              eppoCode: 'CIDAC',
+              genusAndSpecies: 'Citrus australasica'
+            }
+          ]
+        }
+      ],
+      totalGrossWeight: '2',
+      borderControlPost: 'GBLHR4PP',
+      meansOfTransport: 'ROAD_VEHICLE',
+      transportIdentification: 'AB12 CDE',
+      transportDocumentReference: 'CMR-123',
+      arrivalDate: '2026-08-20',
+      arrivalTime: '14:50',
+      usesContainers: false
+    }
+
+    expect(readyFor(allEarlierRows)).toBe(false)
+    expect(
+      readyFor({
+        ...allEarlierRows,
+        accompanyingDocuments: [
+          {
+            documentType: 'PHYTOSANITARY_CERTIFICATE',
+            documentReference: 'PHYTO-001',
+            issueDate: { day: '4', month: '12', year: '2025' }
+          }
+        ]
+      })
+    ).toBe(true)
   })
 
   it('moves additional details from Not yet started through In progress to Completed', () => {
@@ -353,7 +465,14 @@ describe('plant-products task rows', () => {
           ]
         }
       ],
-      totalGrossWeight: '2'
+      totalGrossWeight: '2',
+      accompanyingDocuments: [
+        {
+          documentType: 'PHYTOSANITARY_CERTIFICATE',
+          documentReference: 'PHYTO-001',
+          issueDate: { day: '4', month: '12', year: '2025' }
+        }
+      ]
     }
     const completedTransport = {
       borderControlPost: 'GBLHR4PP',
@@ -419,7 +538,14 @@ describe('plant-products task rows', () => {
       transportDocumentReference: 'CMR-123',
       arrivalDate: '2026-08-20',
       arrivalTime: '14:50',
-      usesContainers: false
+      usesContainers: false,
+      accompanyingDocuments: [
+        {
+          documentType: 'PHYTOSANITARY_CERTIFICATE',
+          documentReference: 'PHYTO-001',
+          issueDate: { day: '4', month: '12', year: '2025' }
+        }
+      ]
     }
 
     expect(readyFor(allOtherRows)).toBe(false)

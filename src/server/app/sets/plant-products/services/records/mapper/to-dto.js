@@ -127,3 +127,11 @@ const composeSections = (answers) =>
   )
 
 export const toDto = (answers = {}) => composeSections(answers ?? {})
+
+const padded = (value) => String(value ?? '').padStart(2, '0')
+
+export const documentToDto = (entry = {}) => ({
+  documentType: entry.documentType,
+  documentReference: entry.documentReference,
+  issueDate: `${entry.issueDate?.year}-${padded(entry.issueDate?.month)}-${padded(entry.issueDate?.day)}`
+})

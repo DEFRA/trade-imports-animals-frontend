@@ -120,6 +120,14 @@ describe('plant-products indexed obligations are first-class', () => {
         templatePath: name
       })),
       {
+        obligation: plantProductsObligationSet.accompanyingDocuments,
+        templatePath: 'accompanyingDocuments'
+      },
+      ...['documentType', 'documentReference', 'issueDate'].map((name) => ({
+        obligation: plantProductsObligationSet[name],
+        templatePath: `accompanyingDocuments.${name}`
+      })),
+      {
         obligation: plantProductsObligationSet.borderControlPost,
         templatePath: 'borderControlPost'
       },
@@ -178,6 +186,7 @@ describe('plant-products indexed obligations are first-class', () => {
       'commodities',
       'additional-details',
       'transport',
+      'documents',
       'review'
     ])
   })
@@ -193,6 +202,9 @@ describe('plant-products indexed obligations are first-class', () => {
     )
     expect(sectionIds.indexOf('additional-details')).toBeLessThan(
       sectionIds.indexOf('transport')
+    )
+    expect(sectionIds.indexOf('transport')).toBeLessThan(
+      sectionIds.indexOf('documents')
     )
   })
 
@@ -263,6 +275,23 @@ describe('plant-products indexed obligations are first-class', () => {
         transportCompleted,
         makeScope(transportCompleted).inScope,
         evaluateAnswers(transportCompleted)
+      )
+    ).toBe(false)
+    const allCompleted = {
+      ...transportCompleted,
+      accompanyingDocuments: [
+        {
+          documentType: 'PHYTOSANITARY_CERTIFICATE',
+          documentReference: 'PHYTO-001',
+          issueDate: { day: '4', month: '12', year: '2025' }
+        }
+      ]
+    }
+    expect(
+      readyForCheckYourAnswers(
+        allCompleted,
+        makeScope(allCompleted).inScope,
+        evaluateAnswers(allCompleted)
       )
     ).toBe(true)
   })

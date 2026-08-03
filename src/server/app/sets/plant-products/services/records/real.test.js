@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
 
+import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { configureFulfilmentRegistry } from '../../../../bridge/fulfilment-registry.js'
+import { projectAnswers } from '../../../../bridge/fulfilments/index.js'
 import { configureObligationSet } from '../../../../model/obligations/manifest.js'
 import { withSetContext } from '../../../../shared/set-context.js'
 import * as plantProductsObligationSet from '../../obligations/index.js'
@@ -105,6 +107,37 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
     })
   })
 
+  it('loads embedded accompanying documents into the answers projection', async () => {
+    fetchMocker.mockResponse(
+      jsonResponse({
+        ...dto(),
+        accompanyingDocuments: [
+          {
+            id: 'server-doc-1',
+            documentType: 'PHYTOSANITARY_CERTIFICATE',
+            documentReference: 'PHYTO-001',
+            issueDate: '2025-12-04',
+            files: []
+          }
+        ]
+      })
+    )
+
+    const loaded = await inPlantProducts(() =>
+      records.load({ journeyId: SOURCE_REFERENCE })
+    )
+
+    expect(inPlantProducts(() => projectAnswers(loaded.fulfilment))).toEqual({
+      accompanyingDocuments: [
+        {
+          documentType: 'PHYTOSANITARY_CERTIFICATE',
+          documentReference: 'PHYTO-001',
+          issueDate: { day: '4', month: '12', year: '2025' }
+        }
+      ]
+    })
+  })
+
   it('maps load 404 to undefined without hiding other failures', async () => {
     fetchMocker.mockResponses(
       ['', { status: 404 }],
@@ -191,7 +224,11 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
   })
 
   it('replaces a known writable notification with the path-matching body reference', async () => {
-    fetchMocker.mockResponse(jsonResponse(dto()))
+    fetchMocker.mockResponses(
+      [JSON.stringify(dto()), { status: 200 }],
+      [JSON.stringify({ documents: [] }), { status: 200 }],
+      [JSON.stringify(dto()), { status: 200 }]
+    )
 
     const saved = await inPlantProducts(() =>
       records.replaceFulfilment(
@@ -213,11 +250,23 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
       status: 'draft',
       fulfilment: {}
     })
+    expect(
+      fetchMocker.requests().map(({ method, url }) => ({ method, url }))
+    ).toEqual([
+      { method: 'PUT', url: `${notificationsUrl}/${SOURCE_REFERENCE}` },
+      {
+        method: 'GET',
+        url: `${notificationsUrl}/${SOURCE_REFERENCE}/accompanying-documents`
+      },
+      { method: 'GET', url: `${notificationsUrl}/${SOURCE_REFERENCE}` }
+    ])
   })
 
   it('resolves write status with GET when no known record is supplied', async () => {
     fetchMocker.mockResponses(
       [JSON.stringify(dto({ status: 'AMEND' })), { status: 200 }],
+      [JSON.stringify(dto({ status: 'AMEND' })), { status: 200 }],
+      [JSON.stringify({ documents: [] }), { status: 200 }],
       [JSON.stringify(dto({ status: 'AMEND' })), { status: 200 }]
     )
 
@@ -227,8 +276,172 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
       fetchMocker.requests().map(({ method, url }) => ({ method, url }))
     ).toEqual([
       { method: 'GET', url: `${notificationsUrl}/${SOURCE_REFERENCE}` },
-      { method: 'PUT', url: `${notificationsUrl}/${SOURCE_REFERENCE}` }
+      { method: 'PUT', url: `${notificationsUrl}/${SOURCE_REFERENCE}` },
+      {
+        method: 'GET',
+        url: `${notificationsUrl}/${SOURCE_REFERENCE}/accompanying-documents`
+      },
+      { method: 'GET', url: `${notificationsUrl}/${SOURCE_REFERENCE}` }
     ])
+  })
+
+  it('reconciles accompanying documents through the shipped wrapped sub-resource contract', async () => {
+    const documents = [
+      {
+        documentType: 'PHYTOSANITARY_CERTIFICATE',
+        documentReference: 'PHYTO-001',
+        issueDate: { day: '4', month: '12', year: '2025' }
+      },
+      {
+        documentType: 'AIR_WAYBILL',
+        documentReference: 'AIR-002',
+        issueDate: { day: '27', month: '3', year: '2026' }
+      }
+    ]
+    const fulfilment = inPlantProducts(() =>
+      assembleFulfilments({ accompanyingDocuments: documents })
+    )
+    fetchMocker.mockResponses(
+      [JSON.stringify(dto()), { status: 200 }],
+      [
+        JSON.stringify({ documents: [{ id: 'old-1' }, { id: 'old-2' }] }),
+        { status: 200 }
+      ],
+      [null, { status: 204 }],
+      [null, { status: 204 }],
+      [JSON.stringify({ id: 'new-1' }), { status: 201 }],
+      [JSON.stringify({ id: 'new-2' }), { status: 201 }],
+      [
+        JSON.stringify({
+          ...dto(),
+          accompanyingDocuments: documents.map((entry, index) => ({
+            id: `new-${index + 1}`,
+            documentType: entry.documentType,
+            documentReference: entry.documentReference,
+            issueDate: `${entry.issueDate.year}-${String(entry.issueDate.month).padStart(2, '0')}-${String(entry.issueDate.day).padStart(2, '0')}`,
+            files: []
+          }))
+        }),
+        { status: 200 }
+      ]
+    )
+
+    const saved = await inPlantProducts(() =>
+      records.replaceFulfilment(SOURCE_REFERENCE, fulfilment, {
+        known: { journeyId: SOURCE_REFERENCE, status: 'draft' }
+      })
+    )
+
+    const requests = fetchMocker.requests()
+    const documentUrl = `${notificationsUrl}/${SOURCE_REFERENCE}/accompanying-documents`
+    expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
+      { method: 'PUT', url: `${notificationsUrl}/${SOURCE_REFERENCE}` },
+      { method: 'GET', url: documentUrl },
+      { method: 'DELETE', url: `${documentUrl}/old-1` },
+      { method: 'DELETE', url: `${documentUrl}/old-2` },
+      { method: 'POST', url: documentUrl },
+      { method: 'POST', url: documentUrl },
+      { method: 'GET', url: `${notificationsUrl}/${SOURCE_REFERENCE}` }
+    ])
+    expect(await bodyOf(requests[0])).not.toHaveProperty(
+      'accompanyingDocuments'
+    )
+    expect(await bodyOf(requests[4])).toEqual({
+      documentType: 'PHYTOSANITARY_CERTIFICATE',
+      documentReference: 'PHYTO-001',
+      issueDate: '2025-12-04'
+    })
+    expect(await bodyOf(requests[5])).toEqual({
+      documentType: 'AIR_WAYBILL',
+      documentReference: 'AIR-002',
+      issueDate: '2026-03-27'
+    })
+    expect(inPlantProducts(() => projectAnswers(saved.fulfilment))).toEqual({
+      accompanyingDocuments: documents
+    })
+  })
+
+  it('clears pre-existing sub-resource documents when the answers contain none', async () => {
+    fetchMocker.mockResponses(
+      [JSON.stringify(dto()), { status: 200 }],
+      [JSON.stringify({ documents: [{ id: 'old-1' }] }), { status: 200 }],
+      [null, { status: 204 }],
+      [JSON.stringify(dto()), { status: 200 }]
+    )
+
+    await inPlantProducts(() =>
+      records.replaceFulfilment(
+        SOURCE_REFERENCE,
+        {},
+        {
+          known: { journeyId: SOURCE_REFERENCE, status: 'draft' }
+        }
+      )
+    )
+
+    expect(
+      fetchMocker.requests().map(({ method, url }) => ({ method, url }))
+    ).toEqual([
+      { method: 'PUT', url: `${notificationsUrl}/${SOURCE_REFERENCE}` },
+      {
+        method: 'GET',
+        url: `${notificationsUrl}/${SOURCE_REFERENCE}/accompanying-documents`
+      },
+      {
+        method: 'DELETE',
+        url: `${notificationsUrl}/${SOURCE_REFERENCE}/accompanying-documents/old-1`
+      },
+      { method: 'GET', url: `${notificationsUrl}/${SOURCE_REFERENCE}` }
+    ])
+  })
+
+  it('names a rejected document DELETE at the network boundary', async () => {
+    fetchMocker.mockResponses(
+      [JSON.stringify(dto()), { status: 200 }],
+      [JSON.stringify({ documents: [{ id: 'old-1' }] }), { status: 200 }],
+      ['Conflict', { status: 409, statusText: 'Conflict' }]
+    )
+
+    await expect(
+      inPlantProducts(() =>
+        records.replaceFulfilment(
+          SOURCE_REFERENCE,
+          {},
+          {
+            known: { journeyId: SOURCE_REFERENCE, status: 'draft' }
+          }
+        )
+      )
+    ).rejects.toThrow('delete accompanying document failed: 409 Conflict')
+  })
+
+  it('names a rejected document POST at the network boundary', async () => {
+    const fulfilment = inPlantProducts(() =>
+      assembleFulfilments({
+        accompanyingDocuments: [
+          {
+            documentType: 'AIR_WAYBILL',
+            documentReference: 'AIR-002',
+            issueDate: { day: '27', month: '3', year: '2026' }
+          }
+        ]
+      })
+    )
+    fetchMocker.mockResponses(
+      [JSON.stringify(dto()), { status: 200 }],
+      [JSON.stringify({ documents: [] }), { status: 200 }],
+      ['Unprocessable', { status: 422, statusText: 'Unprocessable Entity' }]
+    )
+
+    await expect(
+      inPlantProducts(() =>
+        records.replaceFulfilment(SOURCE_REFERENCE, fulfilment, {
+          known: { journeyId: SOURCE_REFERENCE, status: 'draft' }
+        })
+      )
+    ).rejects.toThrow(
+      'create accompanying document failed: 422 Unprocessable Entity'
+    )
   })
 
   it.each(['submitted', 'deleted'])(

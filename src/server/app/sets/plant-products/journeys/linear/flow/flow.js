@@ -10,6 +10,7 @@ import {
   varietyOfGenusAndSpeciesPage
 } from '../features/commodities/page.js'
 import { importTypePage } from '../features/import-type/page.js'
+import { accompanyingDocumentsPage } from '../features/documents/page.js'
 import {
   countryOfOriginPage,
   originOfImportPage
@@ -50,6 +51,10 @@ export const sections = [
   {
     id: 'transport',
     pages: [transportBeforeBipPage]
+  },
+  {
+    id: 'documents',
+    pages: [accompanyingDocumentsPage]
   },
   {
     id: 'review',

@@ -33,6 +33,12 @@ import {
   countryOfOrigin,
   internalReference
 } from './sections/origin.js'
+import {
+  accompanyingDocuments,
+  documentReference,
+  documentType,
+  issueDate
+} from './sections/documents.js'
 import { reasonForImport } from './sections/purpose.js'
 import {
   arrivalDate,
@@ -53,6 +59,10 @@ export {
   totalGrossWeight,
   grossVolume,
   grossVolumeUnit,
+  accompanyingDocuments,
+  documentType,
+  documentReference,
+  issueDate,
   commodityInputMethod,
   commodityLines,
   commoditySelection,
@@ -117,6 +127,10 @@ export const obligations = [
   totalGrossWeight,
   grossVolume,
   grossVolumeUnit,
+  accompanyingDocuments,
+  documentType,
+  documentReference,
+  issueDate,
   borderControlPost,
   inspectionPremises,
   meansOfTransport,

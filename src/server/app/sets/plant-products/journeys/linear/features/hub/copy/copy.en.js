@@ -16,6 +16,7 @@ export const copy = {
     commodities: '3. Commodity',
     'additional-details': '4. Additional details',
     transport: '5. Transport to the BCP',
+    documents: '9. Accompanying documents',
     review: '12. Review and submit'
   },
   rows: {
@@ -38,6 +39,10 @@ export const copy = {
     transport: {
       title: 'Transport to the BCP',
       hint: 'How the consignment will travel to the border control post'
+    },
+    documents: {
+      title: 'Accompanying documents',
+      hint: 'Add at least one document, including the phytosanitary certificate'
     },
     review: {
       title: 'Review and submit',

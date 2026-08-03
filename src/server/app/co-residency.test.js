@@ -319,6 +319,7 @@ describe('co-residency', () => {
       'commodities',
       'additional-details',
       'transport',
+      'documents',
       'review'
     ])
     expect(liveAnimals.record.journeyId).toMatch(/^GBN-AG-/)

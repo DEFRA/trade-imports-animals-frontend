@@ -1,6 +1,7 @@
 // Scaffolded by docs/add-a-set.md step 3.
 import * as additionalDetails from './additional-details/controller.js'
 import * as dashboard from './dashboard/controller.js'
+import * as documents from './documents/controller.js'
 import * as commodityInputMethod from './commodities/commodity-input-method/commodity-input-method.controller.js'
 import * as commodityBasicDescription from './commodities/basic-description/basic-description.controller.js'
 import * as commoditySearch from './commodities/search/search.controller.js'
@@ -26,7 +27,8 @@ export const dispatchPages = [
   commoditySummary.meta,
   commodityBulkDetails.meta,
   additionalDetails.meta,
-  transport.meta
+  transport.meta,
+  documents.meta
 ]
 
 export const allRoutes = [
@@ -43,5 +45,6 @@ export const allRoutes = [
   ...commodityBulkDetails.routes,
   ...additionalDetails.routes,
   ...transport.routes,
+  ...documents.routes,
   ...hub.routes
 ]
