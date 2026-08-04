@@ -25,7 +25,7 @@ import {
   countryOptions,
   ukSubdivisionOptions
 } from '../../../../../services/reference/countries.js'
-import { stubOrganisationOperator } from '../../../../../services/stub-org.js'
+import { placeholderOrganisationOperator } from '../../../../../services/placeholder-org.js'
 import {
   destinationAddressLine1,
   destinationAddressLine2,
@@ -134,14 +134,14 @@ describe('plant-products traders-addresses controller', () => {
     expect(result.view.context.importerRows).toEqual([
       {
         key: { text: pageCopy.importer.rows.name },
-        value: { text: stubOrganisationOperator().name }
+        value: { text: placeholderOrganisationOperator().name }
       },
       expect.objectContaining({
         key: { text: pageCopy.importer.rows.address }
       }),
       {
         key: { text: pageCopy.importer.rows.country },
-        value: { text: 'Northern Ireland' }
+        value: { text: 'England' }
       }
     ])
     expect(result.view.context.consignorHref).toMatch(

@@ -15,7 +15,7 @@ import { featureEvaluationBindings } from '../../journeys/linear/features/evalua
 import { IDEMPOTENCY_KEY_HEADER, notificationsUrl } from './config.js'
 import { records } from './real.js'
 import { mapStatus } from './status.js'
-import { stubOrganisationOperator } from '../stub-org.js'
+import { placeholderOrganisationOperator } from '../placeholder-org.js'
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
@@ -325,7 +325,7 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
     expectJsonHeaders(request)
     expect(await bodyOf(request)).toEqual({
       referenceNumber: SOURCE_REFERENCE,
-      importer: stubOrganisationOperator()
+      importer: placeholderOrganisationOperator()
     })
     expect(saved).toMatchObject({
       journeyId: SOURCE_REFERENCE,
@@ -736,7 +736,7 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
       expect(documentBody).toEqual({
         referenceNumber: SOURCE_REFERENCE,
         origin: { countryCode: 'FR' },
-        importer: stubOrganisationOperator(),
+        importer: placeholderOrganisationOperator(),
         declaration: { agreed: true, declaredAt: FINALISE_DECLARED_AT }
       })
       expect(await bodyOf(requests[2])).toEqual({ status: 'SUBMITTED' })

@@ -362,7 +362,7 @@ describe('plant-products check-answers view model', () => {
     )
     expect(row(same, 'Delivery address name')).toBeUndefined()
     expect(row(same, "Same as the importer's address").value.text).toContain(
-      'Stubbed organisation'
+      'KING CHARLES III'
     )
   })
 

@@ -18,7 +18,7 @@ import { SESSION_COOKIE_NAMES } from '../../config.js'
 import * as plantProductsObligationSet from '../../../../obligations/index.js'
 import { toDto } from '../../../../services/records/mapper/to-dto.js'
 import { records } from '../../../../services/records/stub.js'
-import { stubOrganisationOperator } from '../../../../services/stub-org.js'
+import { placeholderOrganisationOperator } from '../../../../services/placeholder-org.js'
 import { copy } from './copy/copy.en.js'
 
 const fixtureObligation = {
@@ -218,7 +218,7 @@ describe('plant-products import-type controller', () => {
       backendDocument: toDto(stored.fulfilment)
     }).toEqual({
       canonicalFulfilment: {},
-      backendDocument: { importer: stubOrganisationOperator() }
+      backendDocument: { importer: placeholderOrganisationOperator() }
     })
   })
 

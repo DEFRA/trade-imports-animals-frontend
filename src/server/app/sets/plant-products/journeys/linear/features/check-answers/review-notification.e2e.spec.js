@@ -256,10 +256,7 @@ const summaryExpectations = (date) => {
     [
       cards.traders.heading,
       [
-        [
-          traderRows.importer,
-          'Stubbed organisation, KAINOS SOFTWARE LTD, BELFAST, BT7 1NT, Northern Ireland'
-        ],
+        [traderRows.importer, 'KING CHARLES III, BUCKINGHAM PALACE, England'],
         [traderRows.deliveryAddress, yesNo(traders.destinationSameAsConsignee)],
         ...traderFieldRows(traders.destination),
         ...traderFieldRows(traders.consignor),

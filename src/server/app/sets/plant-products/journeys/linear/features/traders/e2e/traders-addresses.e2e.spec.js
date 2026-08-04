@@ -166,7 +166,7 @@ test.describe('plant-products traders addresses', () => {
     ])
     const importer = page.locator('.govuk-summary-list')
     await expect(importer).toHaveCount(1)
-    await expect(importer).toContainText('Stubbed organisation')
+    await expect(importer).toContainText('KING CHARLES III')
     await expect(importer.locator('.govuk-summary-list__actions')).toHaveCount(
       0
     )

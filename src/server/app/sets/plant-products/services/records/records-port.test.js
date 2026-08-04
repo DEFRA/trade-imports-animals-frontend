@@ -49,7 +49,7 @@ const CONTENT_FIELDS = [
 ]
 const STUB_OWNERSHIP = {
   assignedOrganisationId: 'stub-org',
-  assignedOrganisationName: 'Stubbed organisation'
+  assignedOrganisationName: 'KING CHARLES III'
 }
 const POPULATED_ANSWERS = {
   countryOfOrigin: 'FR',

@@ -14,7 +14,7 @@ import {
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
-import { stubOrganisationOperator } from '../../../../../services/stub-org.js'
+import { placeholderOrganisationOperator } from '../../../../../services/placeholder-org.js'
 import {
   countryLabel,
   countryOptions,
@@ -140,7 +140,7 @@ const selectItems = (selected) => {
 }
 
 const importerRows = () => {
-  const importer = stubOrganisationOperator()
+  const importer = placeholderOrganisationOperator()
   const address = importer.address
   return [
     {

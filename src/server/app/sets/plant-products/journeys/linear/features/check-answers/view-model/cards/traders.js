@@ -1,6 +1,6 @@
 import { isBlank } from '../../../../../../../../lib/answered.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
-import { stubOrganisationOperator } from '../../../../../../services/stub-org.js'
+import { placeholderOrganisationOperator } from '../../../../../../services/placeholder-org.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { readOnlyRow, row } from '../rows/summary-row.js'
@@ -10,7 +10,7 @@ const copy = copyFor({ en, cy })
 const cardCopy = copy.cards.traders
 
 const importerText = () => {
-  const importer = stubOrganisationOperator()
+  const importer = placeholderOrganisationOperator()
   return [
     importer.name,
     importer.address.addressLine1,

@@ -1,5 +1,5 @@
 import { descriptionFor } from '../../commodities/index.js'
-import { stubOrganisationOperator } from '../../stub-org.js'
+import { placeholderOrganisationOperator } from '../../placeholder-org.js'
 import { canonicalMeasurementNumber } from '../measurement-number.js'
 
 const defined = (source, fields) =>
@@ -208,7 +208,7 @@ const hasAnsweredPartyField = (operator) =>
   )
 
 const mapParties = (answers) => {
-  const importer = stubOrganisationOperator()
+  const importer = placeholderOrganisationOperator()
   const enteredDestination = operatorFromAnswers(answers, 'destination')
   const packer = operatorFromAnswers(answers, 'packer')
   const consignor = operatorFromAnswers(answers, 'consignor')

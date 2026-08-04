@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import { fromDto as mapFromDto } from './from-dto.js'
 import { documentToDto, toDto } from './to-dto.js'
-import { stubOrganisationOperator } from '../../stub-org.js'
+import { placeholderOrganisationOperator } from '../../placeholder-org.js'
 
 const withImporter = (dto = {}) => ({
   ...dto,
-  importer: stubOrganisationOperator()
+  importer: placeholderOrganisationOperator()
 })
 
 const fromDto = (dto) => {
@@ -30,7 +30,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
   it('maps the empty m0 answers tree to an empty DTO', () => {
     const { importer, ...answerOwnedDto } = toDto({})
 
-    expect(importer).toEqual(stubOrganisationOperator())
+    expect(importer).toEqual(placeholderOrganisationOperator())
     expect(answerOwnedDto).toEqual({})
   })
 
@@ -593,10 +593,17 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     })
   })
 
-  it('projects same-as Yes as an importer copy and re-derives Yes when destination deeply equals importer', () => {
+  it('writes the unmistakable placeholder as the importer', () => {
+    expect(toDto({}).importer).toEqual({
+      name: 'KING CHARLES III',
+      address: { addressLine1: 'BUCKINGHAM PALACE', country: 'GB-ENG' }
+    })
+  })
+
+  it('writes the same importer placeholder to destination when same-as is Yes', () => {
     const dto = toDto({ destinationSameAsConsignee: true })
 
-    expect(dto.importer).toEqual(stubOrganisationOperator())
+    expect(dto.importer).toEqual(placeholderOrganisationOperator())
     expect(dto.destination).toEqual(dto.importer)
     expect(dto.destination).not.toBe(dto.importer)
     expect(dto).not.toHaveProperty('destinationSameAsConsignee')
