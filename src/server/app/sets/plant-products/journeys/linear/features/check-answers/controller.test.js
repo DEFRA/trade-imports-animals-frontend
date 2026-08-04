@@ -64,19 +64,32 @@ describe('plant-products check-answers controller', () => {
     expect(result.view.context.breadcrumbs).toBeDefined()
   })
 
-  it('GET derives readOnly from DRAFT and SUBMITTED journey status', async () => {
+  it('GET only renders Copy for SUBMITTED and mints a fresh key per render', async () => {
     const draft = await drive(get, {
       seed: { importType: 'plants', internalReference: 'READ-ONLY-097' }
     })
     expect(draft.view.context.readOnly).toBe(false)
+    expect(draft.view.context.copyAction).toBeNull()
 
     await records.finalise(draft.journeyId)
-    const h = stubH()
+    const firstH = stubH()
     await withSetContext('plant-products', () =>
-      get(journeyRequest(draft.journeyId), h)
+      get(journeyRequest(draft.journeyId), firstH)
+    )
+    const secondH = stubH()
+    await withSetContext('plant-products', () =>
+      get(journeyRequest(draft.journeyId), secondH)
     )
 
-    expect(h.captured.view.context.readOnly).toBe(true)
+    const firstAction = firstH.captured.view.context.copyAction
+    const secondAction = secondH.captured.view.context.copyAction
+
+    expect(firstH.captured.view.context.readOnly).toBe(true)
+    expect(firstAction.href).toMatch(
+      /^\/plant-products\/notifications\/[^/]+\/copy$/
+    )
+    expect(firstAction.idempotencyKey).toEqual(expect.any(String))
+    expect(secondAction.idempotencyKey).not.toBe(firstAction.idempotencyKey)
   })
 
   it('POST redirects through nextInSection and commits nothing', async () => {

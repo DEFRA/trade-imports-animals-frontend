@@ -134,9 +134,20 @@
             <td class="govuk-table__cell">{{ row.submitted }}</td>
             <td class="govuk-table__cell">
               {% for action in row.actions %}
-                <a class="govuk-link" href="{{ action.href }}">
-                  {{ action.text }} <span class="govuk-visually-hidden">{{ action.hiddenText }}</span>
-                </a>
+                {% if action.postAction %}
+                  <form method="post" action="{{ action.postAction }}{{ listQuerySuffix }}" class="app-form-inline">
+                    <input type="hidden" name="crumb" value="{{ crumb }}" />
+                    <input type="hidden" name="idempotencyKey" value="{{ action.idempotencyKey }}" />
+                    <input type="hidden" name="copyOrigin" value="{{ action.copyOrigin }}" />
+                    <button type="submit" class="govuk-link app-link-button">
+                      {{ action.text }} <span class="govuk-visually-hidden">{{ action.hiddenText }}</span>
+                    </button>
+                  </form>
+                {% else %}
+                  <a class="govuk-link" href="{{ action.href }}">
+                    {{ action.text }} <span class="govuk-visually-hidden">{{ action.hiddenText }}</span>
+                  </a>
+                {% endif %}
               {% endfor %}
             </td>
           </tr>

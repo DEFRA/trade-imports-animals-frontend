@@ -9,9 +9,24 @@ import {
 } from '../../../../shared/set-context.js'
 import { featureEvaluationBindings } from '../../journeys/linear/features/evaluation.js'
 import * as plantProductsObligationSet from '../../obligations/index.js'
+import {
+  accompanyingDocuments,
+  documentReference,
+  documentType,
+  issueDate
+} from '../../obligations/sections/documents.js'
 import { records } from './stub.js'
 
 const REFERENCE_PATTERN = /^GBN-PP-\d{2}-[0-9A-HJ-KM-NP-TV-Z]{6}$/
+const DOCUMENT_LEAF_OBLIGATION_IDS = [
+  documentType.id,
+  documentReference.id,
+  issueDate.id
+]
+const DOCUMENT_OBLIGATION_IDS = [
+  accompanyingDocuments.id,
+  ...DOCUMENT_LEAF_OBLIGATION_IDS
+]
 const CANNED_CONTENT = {
   origin: {
     countryCode: 'BR',
@@ -217,6 +232,39 @@ describe('plant-products records stub', () => {
       (await records.load({ journeyId: source.journeyId })).fulfilment
     ).toEqual(CANNED_CONTENT)
   })
+
+  it('copies notification content without accompanying documents', () =>
+    withSetContext('plant-products', async () => {
+      const source = await records.create()
+      await records.replaceFulfilment(
+        source.journeyId,
+        assembleFulfilments({
+          countryOfOrigin: 'BR',
+          accompanyingDocuments: [
+            {
+              documentType: 'PHYTOSANITARY_CERTIFICATE',
+              documentReference: 'PHYTO-DOCUMENTLESS-045',
+              issueDate: { day: '4', month: '8', year: '2026' }
+            }
+          ]
+        })
+      )
+      const submitted = await records.finalise(source.journeyId)
+
+      const copied = await records.copy(
+        source.journeyId,
+        'documentless-copy-key'
+      )
+
+      expect(Object.keys(submitted.fulfilment)).toEqual(
+        expect.arrayContaining(DOCUMENT_LEAF_OBLIGATION_IDS)
+      )
+      expect(
+        DOCUMENT_OBLIGATION_IDS.filter((id) =>
+          Object.hasOwn(copied.fulfilment, id)
+        )
+      ).toEqual([])
+    }))
 
   it('clear resets both the record store and the idempotency index', async () => {
     const firstSource = await records.create()

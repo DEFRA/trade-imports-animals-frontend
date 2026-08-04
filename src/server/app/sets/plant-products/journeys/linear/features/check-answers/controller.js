@@ -1,10 +1,16 @@
+import { randomUUID } from 'node:crypto'
+
 import * as state from '../../../../../../engine/index.js'
 import { nextInSection } from '../../../../../../flow/navigation.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
 import { journeyStrip, pageRoutes } from '../../../../../../shared/kit.js'
-import { breadcrumbs, hubPath } from '../../../../../../shared/paths.js'
+import {
+  breadcrumbs,
+  hubPath,
+  pagePath
+} from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import { copy as cy } from './copy/copy.cy.js'
 import { copy as en } from './copy/copy.en.js'
@@ -17,7 +23,11 @@ const view = `${TEMPLATES}/features/check-answers/template`
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
-const get = async (request, h) => {
+export const renderNotificationView = async (
+  request,
+  h,
+  { recoverableError = false, copyIdempotencyKey = randomUUID() } = {}
+) => {
   const { journey, answers, scope, evaluation } = await state.get(request, h)
   const readOnly = journey.status === state.SUBMITTED
 
@@ -35,11 +45,21 @@ const get = async (request, h) => {
       readOnly
     ),
     readOnly,
+    recoverableError,
+    copyAction:
+      readOnly && copyIdempotencyKey
+        ? {
+            href: pagePath(journey.journeyId, 'copy'),
+            idempotencyKey: copyIdempotencyKey
+          }
+        : null,
     backLink: hubPath(journey.journeyId),
     hubHref: hubPath(journey.journeyId),
     breadcrumbs: breadcrumbs(journey.journeyId, copy.title)
   })
 }
+
+const get = async (request, h) => renderNotificationView(request, h)
 
 const post = async (request, h) => {
   const { scope } = await state.get(request, h)

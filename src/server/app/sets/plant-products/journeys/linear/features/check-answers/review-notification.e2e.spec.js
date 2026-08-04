@@ -560,7 +560,9 @@ test.describe('plant-products review notification', () => {
     await expect(
       page.getByRole('button', { name: copy.continue, exact: true })
     ).toHaveCount(0)
-    await expect(page.locator('main form[method="post"]')).toHaveCount(0)
+    const postForms = page.locator('main form[method="post"]')
+    await expect(postForms).toHaveCount(1)
+    await expect(postForms).toHaveAttribute('action', /\/copy$/)
   })
 
   test('saving an edited country of origin returns to the review page with the new value', async ({

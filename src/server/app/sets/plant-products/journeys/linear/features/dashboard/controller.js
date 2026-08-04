@@ -76,7 +76,7 @@ const filterRows = (rows, values, dateRange) =>
 export const renderDashboard = async (
   request,
   h,
-  { recoverableError = false } = {}
+  { recoverableError = false, retryCopy = null } = {}
 ) => {
   const values = filterValues(request.query)
   const errors = validateFilters(request.query, copy.errors)
@@ -119,7 +119,7 @@ export const renderDashboard = async (
     startAction: createPath(),
     listAction: dashboardPath(),
     clearAction: dashboardPath(),
-    notificationRows: rows.map(toRow),
+    notificationRows: rows.map((journey) => toRow(journey, retryCopy)),
     resultsLabel: buildPageResultsRangeLabel(
       paginationEnvelope,
       rows.length,

@@ -7,11 +7,23 @@ import {
   SUBMITTED
 } from '../../../../engine/persistence/records.js'
 import { projectAnswers } from '../../../../bridge/fulfilments/index.js'
+import {
+  accompanyingDocuments,
+  documentReference,
+  documentType,
+  issueDate
+} from '../../obligations/sections/documents.js'
 
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
 const PAGE_SIZE = 25
 const recordsById = new Map()
 const copiesByIdempotencyKey = new Map()
+const DOCUMENT_OBLIGATION_IDS = [
+  accompanyingDocuments,
+  documentType,
+  documentReference,
+  issueDate
+].map(({ id }) => id)
 
 const clone = (value) => structuredClone(value)
 
@@ -195,6 +207,7 @@ export const copy = async (journeyId, idempotencyKey) => {
   const copied = await create()
   const target = read(copied.journeyId)
   target.fulfilment = clone(source.fulfilment)
+  for (const id of DOCUMENT_OBLIGATION_IDS) delete target.fulfilment[id]
   copiesByIdempotencyKey.set(idempotencyKey, target.journeyId)
   return toJourney(target)
 }
