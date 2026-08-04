@@ -12,8 +12,11 @@ import {
 
 import {
   driveHandler,
-  postHandlerOf
+  journeyRequest,
+  postHandlerOf,
+  stubH
 } from '../../../../../../engine/test-support.js'
+import { projectAnswers } from '../../../../../../bridge/fulfilments/index.js'
 import { plantProducts } from '../../../../../../routes-plant-products.js'
 import * as kit from '../../../../../../shared/kit.js'
 import {
@@ -21,6 +24,7 @@ import {
   withSetContext
 } from '../../../../../../shared/set-context.js'
 import { records } from '../../../../services/records/stub.js'
+import { arrivalDate, arrivalTime } from '../../../../obligations/index.js'
 import * as transport from './controller.js'
 import { copy } from './copy/copy.en.js'
 
@@ -386,6 +390,41 @@ describe('plant-products transport controller', () => {
       containerNumber: '',
       sealNumber: '',
       officialSeal: false
+    })
+  })
+
+  it('adds the first container while preserving absent arrival values', async () => {
+    const { response, after } = await withSetContext(
+      'plant-products',
+      async () => {
+        const journey = await records.create()
+        await records.replaceFulfilment(journey.journeyId, {
+          [arrivalDate.id]: null,
+          [arrivalTime.id]: null
+        })
+        const response = await post(
+          journeyRequest(journey.journeyId, {
+            payload: validPayload({
+              usesContainers: 'true',
+              action: 'add-container',
+              containerNumber: 'CONT-1',
+              sealNumber: 'SEAL-1',
+              officialSeal: 'true'
+            })
+          }),
+          stubH()
+        )
+        const stored = await records.load({ journeyId: journey.journeyId })
+        return { response, after: projectAnswers(stored.fulfilment) }
+      }
+    )
+
+    expect(response.statusCode).toBe(200)
+    expect(after).toEqual({
+      arrivalDate: null,
+      arrivalTime: null,
+      usesContainers: true,
+      containers: [container]
     })
   })
 
