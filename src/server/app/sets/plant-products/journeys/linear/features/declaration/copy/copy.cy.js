@@ -18,7 +18,7 @@ export const copy = {
   scotland: {
     heading: 'Ar gyfer yr Alban',
     controls:
-      "Ar gyfer planhigion, cynhyrchion planhigion a gwrthrychau eraill sy'n dod i mewn i'r Alban neu sydd wedi'u bwriadu ar gyfer Pwynt Rheoli sydd wedi'i gofrestru yn yr Alban byddant yn destun gweithdrefnau gwirio rheolaethau gan SASA.",
+      "Planhigion, cynhyrchion planhigion a gwrthrychau eraill sy'n dod i mewn i'r Alban neu sydd wedi'u bwriadu ar gyfer Pwynt Rheoli sydd wedi'i gofrestru yn yr Alban byddant yn destun gweithdrefnau gwirio rheolaethau gan SASA.",
     division: 'Mae SASA yn Is-adran o Lywodraeth yr Alban.'
   },
   terms: {
@@ -28,7 +28,7 @@ export const copy = {
     items: [
       "Ni fydd unrhyw atebolrwydd yn perthyn i APHA/SASA am unrhyw oedi wrth roi neu fethiant i roi Dogfen Mynediad Iechyd Gyffredin (CHED) derfynol, nac unrhyw oedi wrth arolygu neu fethiant i arolygu, na chyflwyno unrhyw ddogfen yn hwyr neu beidio â'i chyflwyno.",
       'Bydd gan APHA/SASA hawl i ddibynnu ar gywirdeb yr holl ddogfennaeth a gwybodaeth a ddarperir gan y gweithredwr cyfrifol, ar gyfer yr arolygiad neu ar gyfer cyhoeddi CHED derfynol.',
-      "Ni chaiff unrhyw CHED derfynol ei defnyddio ei chyhoeddi mewn perthynas ag unrhyw blanhigion, cynhyrchion planhigion neu wrthrychau eraill ac eithrio'r rhai y mae'n berthnasol iddynt.",
+      "Ni chaiff unrhyw CHED derfynol ei defnyddio mewn perthynas ag unrhyw blanhigion, cynhyrchion planhigion neu wrthrychau eraill ac eithrio'r rhai y mae'n berthnasol iddynt.",
       "Bydd arolygiadau'n cael eu cynnal a bydd CHEDau terfynol yn cael eu cyhoeddi dim ond ar y ddealltwriaeth na fydd unrhyw atebolrwydd yn perthyn i APHA/SASA mewn unrhyw amgylchiadau mewn perthynas ag unrhyw arolygiad a gynhelir neu gyhoeddi neu gynnwys unrhyw CHED ac nad yw APHA/SASA yn derbyn unrhyw gyfrifoldeb am unrhyw golled sy'n deillio o hynny sut bynnag y'i hachosir.",
       "Rhaid i'r gweithredwr sy'n gyfrifol am y llwyth ysgwyddo'r cyfrifoldeb am daliadau a godir mewn arolygiadau o'r fath. Gan gynnwys talu am reolaethau swyddogol, yn ogystal ag ail-anfon llwythi, cwarantin neu ynysu llwythi, neu gostau dinistrio a gwaredu lle bo angen.",
       "Ni fydd APHA/SASA yn cyhoeddi CHED derfynol mewn perthynas â phlanhigion, cynhyrchion planhigion neu wrthrychau eraill sydd, yn eu barn nhw, yn anghywir neu'n wallus."
@@ -59,12 +59,12 @@ export const copy = {
   legal: {
     heading: 'Datganiadau Cyfreithiol',
     request:
-      '"Rwyf/Rydym drwy hyn yn gofyn i APHA/SASA drefnu archwilio’r llwyth(i) o blanhigion, cynhyrchion planhigion a gwrthrychau eraill a restrir uchod ac ar gyfer cyhoeddi CHEDau terfynol fel y rhagnodir gan:',
+      'Rwyf/Rydym drwy hyn yn gofyn i APHA/SASA drefnu archwilio’r llwyth(i) o blanhigion, cynhyrchion planhigion a gwrthrychau eraill a restrir uchod ac ar gyfer cyhoeddi CHEDau terfynol fel y rhagnodir gan:',
     regulations: [
-      'Y cyfeiriad cyfreithiol: Regulation (EU) 2016/2031, (retained EU legislation)"',
-      'Y cyfeiriad cyfreithiol: Regulation (EU) 2017/625, (retained EU legislation)"',
-      'Y cyfeiriad cyfreithiol: Regulation (EU) 543/2011, (retained EU legislation)"',
-      'Y cyfeiriad cyfreithiol: Regulation (EU) 1333/2011, (retained EU legislation)"'
+      'Y cyfeiriad cyfreithiol: Regulation (EU) 2016/2031, (retained EU legislation)',
+      'Y cyfeiriad cyfreithiol: Regulation (EU) 2017/625, (retained EU legislation)',
+      'Y cyfeiriad cyfreithiol: Regulation (EU) 543/2011, (retained EU legislation)',
+      'Y cyfeiriad cyfreithiol: Regulation (EU) 1333/2011, (retained EU legislation)'
     ],
     generalConditions:
       "Rwyf/Rydym wedi darllen ac yn derbyn yr amodau cyffredinol sy'n ymwneud ag archwilio llwythi i'w mewnforio."

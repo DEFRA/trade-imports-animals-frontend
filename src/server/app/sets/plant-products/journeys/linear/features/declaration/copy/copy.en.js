@@ -17,7 +17,7 @@ export const copy = {
   scotland: {
     heading: 'For Scotland',
     controls:
-      'For plants, plant products and other objects entering into Scotland or destined for a Control Point registered in Scotland will be subject to control verification procedures by SASA.',
+      'Plants, plant products and other objects entering into Scotland or destined for a Control Point registered in Scotland will be subject to control verification procedures by SASA.',
     division: 'SASA is a Division of the Scottish Government.'
   },
   terms: {
@@ -27,7 +27,7 @@ export const copy = {
     items: [
       'No liability shall attach to the APHA/SASA for any delay in granting or failure to grant a finalised Common Health Entry Document (CHED), nor any delay in inspecting or failure to inspect, delayed or non-delivery of any document.',
       'The APHA/SASA shall be entitled to rely upon the accuracy of all documentation and information supplied by the operator responsible, for the inspection or for the issuance of a finalised CHED.',
-      'No finalised CHED shall be used issued in respect of any plants, plant products or other objects except those to which it applies.',
+      'No finalised CHED shall be used in respect of any plants, plant products or other objects except those to which it applies.',
       'Inspections will be carried out and finalised CHEDs will be issued only on the understanding that no liability shall attach to the APHA/SASA in any circumstance in respect of any inspection carried out or the issue of or contents of any CHED and that the APHA/SASA accepts no responsibility for any resulting loss however caused.',
       'The responsibility for charges incurred in such inspections must be borne by the operator responsible for the consignment. Including payment for official controls, as well as for re-dispatching consignments, quarantine or isolation of consignments, or costs of destruction and disposal where necessary.',
       'The APHA/SASA will not issue a finalised CHED in respect of plants, plant products or other objects, which in their opinion is incorrect or inaccurate.'
@@ -58,12 +58,12 @@ export const copy = {
   legal: {
     heading: 'Legal Declarations',
     request:
-      '"I/We hereby request APHA/SASA to arrange for the examination of the consignment(s) of plants, plant products and other objects listed above and for the issue of finalised CHEDs as prescribed by:',
+      'I/We hereby request APHA/SASA to arrange for the examination of the consignment(s) of plants, plant products and other objects listed above and for the issue of finalised CHEDs as prescribed by:',
     regulations: [
-      'Regulation (EU) 2016/2031, (retained EU legislation)"',
-      'Regulation (EU) 2017/625, (retained EU legislation)"',
-      'Regulation (EU) 543/2011, (retained EU legislation)"',
-      'Regulation (EU) 1333/2011, (retained EU legislation)"'
+      'Regulation (EU) 2016/2031, (retained EU legislation)',
+      'Regulation (EU) 2017/625, (retained EU legislation)',
+      'Regulation (EU) 543/2011, (retained EU legislation)',
+      'Regulation (EU) 1333/2011, (retained EU legislation)'
     ],
     generalConditions:
       'I/We have read and accept the general conditions relating to the examination of consignments for import.'
