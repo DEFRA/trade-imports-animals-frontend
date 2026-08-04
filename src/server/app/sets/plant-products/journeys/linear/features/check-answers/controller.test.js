@@ -30,6 +30,18 @@ const post = postHandlerOf(checkAnswers)
 const drive = (handler, options) =>
   withSetContext('plant-products', () => driveHandler(handler, options))
 
+const viewForStatus = (status, query = {}) =>
+  withSetContext('plant-products', async () => {
+    const journey = await records.create()
+    if (status === 'submitted' || status === 'amend') {
+      await records.finalise(journey.journeyId)
+    }
+    if (status === 'amend') await records.amend(journey.journeyId)
+    const h = stubH()
+    await get(journeyRequest(journey.journeyId, { query }), h)
+    return h.captured.view
+  })
+
 describe('plant-products check-answers controller', () => {
   let server
 
@@ -112,5 +124,28 @@ describe('plant-products check-answers controller', () => {
       expect.any(Object),
       expect.any(String)
     )
+  })
+
+  it('GET exposes Cancel amendment only for an AMEND notification', async () => {
+    const draft = await viewForStatus('draft')
+    const submitted = await viewForStatus('submitted')
+    const amend = await viewForStatus('amend')
+
+    expect(draft.context.cancelAmendHref).toBeNull()
+    expect(submitted.context.cancelAmendHref).toBeNull()
+    expect(amend.context.cancelAmendHref).toMatch(
+      /^\/plant-products\/notifications\/[^/]+\/cancel-amend$/
+    )
+    expect(amend.context.readOnly).toBe(false)
+  })
+
+  it('GET shows the cancellation banner only for cancelled=1 on SUBMITTED', async () => {
+    const submitted = await viewForStatus('submitted', { cancelled: '1' })
+    const submittedWithoutQuery = await viewForStatus('submitted')
+    const draft = await viewForStatus('draft', { cancelled: '1' })
+
+    expect(submitted.context.amendmentCancelled).toBe(true)
+    expect(submittedWithoutQuery.context.amendmentCancelled).toBe(false)
+    expect(draft.context.amendmentCancelled).toBe(false)
   })
 })

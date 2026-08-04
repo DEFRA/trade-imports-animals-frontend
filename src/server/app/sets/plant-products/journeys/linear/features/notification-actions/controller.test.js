@@ -257,7 +257,7 @@ describe('plant-products copy notification action', () => {
     const sourceRow = $('main tbody tr').filter((_index, row) =>
       $(row).text().includes(source.journeyId)
     )
-    const copyForm = sourceRow.find('form[method="post"]')
+    const copyForm = sourceRow.find('form[method="post"][action*="/copy"]')
     const action = copyForm.attr('action')
     const originalKey = copyForm
       .find('input[name="idempotencyKey"]')

@@ -14,6 +14,8 @@ import {
 import { TEMPLATES } from '../../config.js'
 import { copy as cy } from './copy/copy.cy.js'
 import { copy as en } from './copy/copy.en.js'
+import { copy as cancelAmendCy } from '../cancel-amend/copy/copy.cy.js'
+import { copy as cancelAmendEn } from '../cancel-amend/copy/copy.en.js'
 import { reviewNotificationPage as page } from './page.js'
 import { buildSections } from './view-model/index.js'
 
@@ -22,6 +24,10 @@ export const meta = { ...page, collects: [] }
 const view = `${TEMPLATES}/features/check-answers/template`
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
+const cancelAmendCopy = copyFor({
+  en: cancelAmendEn,
+  cy: cancelAmendCy
+})
 
 export const renderNotificationView = async (
   request,
@@ -36,6 +42,7 @@ export const renderNotificationView = async (
     heading: copy.title,
     copy,
     sharedCopy,
+    cancelAmendCopy,
     journeyStrip: journeyStrip(journey),
     sections: buildSections(
       answers,
@@ -56,6 +63,11 @@ export const renderNotificationView = async (
     deleteHref: readOnly
       ? `${pagePath(journey.journeyId, 'delete')}?source=notification-view`
       : null,
+    cancelAmendHref:
+      journey.status === state.AMEND
+        ? pagePath(journey.journeyId, 'cancel-amend')
+        : null,
+    amendmentCancelled: readOnly && request.query.cancelled === '1',
     backLink: hubPath(journey.journeyId),
     hubHref: hubPath(journey.journeyId),
     breadcrumbs: breadcrumbs(journey.journeyId, copy.title)

@@ -20,6 +20,10 @@ export const copy = {
   },
   actions: {
     continue: 'Continue',
+    view: 'View',
+    amend: 'Amend',
+    resume: 'Resume',
+    cancelAmend: 'Cancel amendment',
     forNotification: (reference) => `notification ${reference}`
   },
   filters: {

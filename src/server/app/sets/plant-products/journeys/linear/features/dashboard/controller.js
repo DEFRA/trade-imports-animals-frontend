@@ -1,5 +1,6 @@
 import { DELETED } from '../../../../../../engine/index.js'
 import {
+  amendJourney,
   listKnownJourneys,
   startJourney
 } from '../../../../../../engine/journey.js'
@@ -16,7 +17,9 @@ import {
   createRoutePath,
   dashboardPath,
   dashboardRoutePath,
-  pagePath
+  hubPath,
+  pagePath,
+  pageRoutePath
 } from '../../../../../../shared/paths.js'
 import {
   countryOptions,
@@ -170,12 +173,25 @@ const createNotification = async (request, h) => {
   return failure ?? h.redirect(pagePath(journey.journeyId, importTypePage.slug))
 }
 
+const amendNotification = async (request, h) => {
+  const journey = await amendJourney(request, h, request.params.journeyId)
+  return journey
+    ? h.redirect(hubPath(journey.journeyId))
+    : h.redirect(dashboardPath())
+}
+
 export const routes = [
   {
     method: 'GET',
     path: dashboardRoutePath(),
     options: kit.routeOptions,
     handler: renderDashboard
+  },
+  {
+    method: 'POST',
+    path: pageRoutePath('amend'),
+    options: kit.routeOptions,
+    handler: amendNotification
   },
   {
     method: 'POST',

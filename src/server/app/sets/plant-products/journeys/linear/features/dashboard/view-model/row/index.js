@@ -38,21 +38,46 @@ const deleteAction = (journey, reference) => ({
   href: pagePath(journey.journeyId, 'delete')
 })
 
+const linkAction = (journey, reference, text, destination) => ({
+  text,
+  hiddenText: copy.actions.forNotification(reference),
+  href: destination(journey.journeyId)
+})
+
+const postAction = (journey, reference, text, slug) => ({
+  text,
+  hiddenText: copy.actions.forNotification(reference),
+  postAction: pagePath(journey.journeyId, slug)
+})
+
 export const toRow = (journey = {}, retryCopy = null) => {
   const reference = referenceOf(journey)
-  const canContinue = journey.status === DRAFT || journey.status === AMEND
   const canCopy = journey.status === SUBMITTED || journey.status === AMEND
   const canDelete = [DRAFT, SUBMITTED, AMEND].includes(journey.status)
   const actions = []
 
-  if (canContinue) {
-    actions.push({
-      text: copy.actions.continue,
-      hiddenText: copy.actions.forNotification(reference),
-      href: hubPath(journey.journeyId)
-    })
+  if (journey.status === DRAFT) {
+    actions.push(linkAction(journey, reference, copy.actions.continue, hubPath))
+  }
+  if (journey.status === SUBMITTED) {
+    actions.push(
+      linkAction(journey, reference, copy.actions.view, (journeyId) =>
+        pagePath(journeyId, 'review-notification')
+      ),
+      postAction(journey, reference, copy.actions.amend, 'amend')
+    )
+  }
+  if (journey.status === AMEND) {
+    actions.push(linkAction(journey, reference, copy.actions.resume, hubPath))
   }
   if (canCopy) actions.push(copyAction(journey, reference, retryCopy))
+  if (journey.status === AMEND) {
+    actions.push(
+      linkAction(journey, reference, copy.actions.cancelAmend, (journeyId) =>
+        pagePath(journeyId, 'cancel-amend')
+      )
+    )
+  }
   if (canDelete) actions.push(deleteAction(journey, reference))
 
   return {

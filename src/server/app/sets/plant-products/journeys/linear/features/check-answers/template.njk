@@ -2,9 +2,19 @@
 {% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
 {% from "govuk/components/table/macro.njk" import govukTable %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 {% from "shared/save-actions.njk" import saveActions %}
 
 {% block journeyContent %}
+  {% if amendmentCancelled %}
+    {{ govukNotificationBanner({
+      type: "success",
+      titleText: cancelAmendCopy.successTitle,
+      text: cancelAmendCopy.successBody,
+      role: "alert"
+    }) }}
+  {% endif %}
+
   <h1 class="govuk-heading-xl">{{ heading }}</h1>
 
   {% if readOnly and (copyAction or deleteHref) %}
@@ -28,6 +38,12 @@
         }) }}
       {% endif %}
     </div>
+  {% endif %}
+
+  {% if cancelAmendHref %}
+    <p class="govuk-body">
+      <a class="govuk-link" href="{{ cancelAmendHref }}">{{ cancelAmendCopy.link }}</a>
+    </p>
   {% endif %}
 
   {% for section in sections %}

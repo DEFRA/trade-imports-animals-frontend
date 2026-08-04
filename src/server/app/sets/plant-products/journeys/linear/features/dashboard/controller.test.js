@@ -12,12 +12,17 @@ import {
 import { nunjucksConfig } from '../../../../../../../../config/nunjucks/nunjucks.js'
 import { configureRecords } from '../../../../../../engine/persistence/records.js'
 import { plantProducts } from '../../../../../../routes-plant-products.js'
-import { enterSetContext } from '../../../../../../shared/set-context.js'
+import {
+  enterSetContext,
+  withSetContext
+} from '../../../../../../shared/set-context.js'
 import {
   createPath,
   createRoutePath,
   dashboardPath,
-  dashboardRoutePath
+  dashboardRoutePath,
+  hubPath,
+  pageRoutePath
 } from '../../../../../../shared/paths.js'
 import { records as plantRecords } from '../../../../services/records/index.js'
 import { records as recordsReal } from '../../../../services/records/real.js'
@@ -83,9 +88,14 @@ describe('plant-products dashboard controller', () => {
     enterSetContext('plant-products')
     expect(routes.map(({ path }) => path)).toEqual([
       dashboardRoutePath(),
+      pageRoutePath('amend'),
       createRoutePath()
     ])
-    expect(routes.map(({ path }) => path)).toEqual(['/', '/notifications'])
+    expect(routes.map(({ path }) => path)).toEqual([
+      '/',
+      '/notifications/{journeyId}/amend',
+      '/notifications'
+    ])
     expect(dashboardPath()).toBe('/plant-products')
     expect(createPath()).toBe('/plant-products/notifications')
 
@@ -279,6 +289,34 @@ describe('plant-products dashboard controller', () => {
     )
   })
 
+  it('POST amend transitions a submitted notification and redirects to its plant hub', async () => {
+    const created = await server.inject({
+      method: 'POST',
+      url: '/plant-products/notifications'
+    })
+    const journeyId = created.headers.location.split('/')[3]
+    const cookie = (created.headers['set-cookie'] ?? [])
+      .map((value) => value.split(';')[0])
+      .join('; ')
+    await withSetContext('plant-products', () =>
+      recordsStub.finalise(journeyId)
+    )
+
+    const amended = await server.inject({
+      method: 'POST',
+      url: `/plant-products/notifications/${journeyId}/amend`,
+      headers: { cookie }
+    })
+
+    expect(amended.statusCode).toBe(302)
+    expect(amended.headers.location).toBe(
+      withSetContext('plant-products', () => hubPath(journeyId))
+    )
+    await expect(
+      withSetContext('plant-products', () => recordsStub.load({ journeyId }))
+    ).resolves.toMatchObject({ status: 'amend' })
+  })
+
   it('re-renders the dashboard at 500 for a recoverable create failure', async () => {
     configureRecords('plant-products', {
       ...recordsStub,
@@ -312,7 +350,8 @@ describe('plant-products dashboard controller', () => {
       }
     })
 
-    await expect(routes[1].handler({ query: {}, app: {} }, {})).rejects.toThrow(
+    const create = routes.find(({ path }) => path === createRoutePath())
+    await expect(create.handler({ query: {}, app: {} }, {})).rejects.toThrow(
       'programming failure'
     )
   })

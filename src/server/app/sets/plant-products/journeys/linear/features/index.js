@@ -2,6 +2,7 @@
 import * as additionalDetails from './additional-details/controller.js'
 import * as contact from './contact/controller.js'
 import * as checkAnswers from './check-answers/controller.js'
+import * as cancelAmend from './cancel-amend/controller.js'
 import * as dashboard from './dashboard/controller.js'
 import * as documents from './documents/controller.js'
 import * as declaration from './declaration/controller.js'
@@ -73,6 +74,7 @@ export const allRoutes = [
   ...consignorCreate.routes,
   ...consignorConfirmation.routes,
   ...checkAnswers.routes,
+  ...cancelAmend.routes,
   ...notificationActions.routes,
   ...deleteNotification.routes,
   ...declaration.routes,

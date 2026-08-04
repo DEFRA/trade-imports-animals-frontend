@@ -21,6 +21,10 @@ export const copy = {
   },
   actions: {
     continue: 'Parhau',
+    view: 'Gweld',
+    amend: 'Diwygio',
+    resume: 'Ailddechrau',
+    cancelAmend: 'Canslo diwygiad',
     forNotification: (reference) => `hysbysiad ${reference}`
   },
   filters: {
