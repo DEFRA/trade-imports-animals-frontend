@@ -36,8 +36,10 @@
     </section>
   {% endfor %}
 
-  <form method="post" novalidate>
-    <input type="hidden" name="crumb" value="{{ crumb }}" />
-    {{ saveActions(hubHref, { text: copy.continue }, sharedCopy.saveActions) }}
-  </form>
+  {% if not readOnly %}
+    <form method="post" novalidate>
+      <input type="hidden" name="crumb" value="{{ crumb }}" />
+      {{ saveActions(hubHref, { text: copy.continue }, sharedCopy.saveActions) }}
+    </form>
+  {% endif %}
 {% endblock %}

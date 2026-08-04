@@ -24,8 +24,15 @@ const importerText = () => {
     .join(', ')
 }
 
-const editableRow = (journeyId, answers, scope, label, obligationName, value) =>
-  row({ label, value, obligationName, journeyId, scope })
+const editableRow = (
+  journeyId,
+  answers,
+  scope,
+  label,
+  obligationName,
+  value,
+  readOnly
+) => row({ label, value, obligationName, journeyId, scope, readOnly })
 
 const fields = (prefix) => [
   `${prefix}Name`,
@@ -42,7 +49,7 @@ const rowsForFields = (
   journeyId,
   answers,
   scope,
-  { answeredOnly = false } = {}
+  { answeredOnly = false, readOnly = false } = {}
 ) =>
   fields(prefix)
     .filter((name) => !answeredOnly || !isBlank(answers[name]))
@@ -53,12 +60,13 @@ const rowsForFields = (
         scope,
         cardCopy.rows[name],
         name,
-        name.endsWith('Country') ? countryText(answers[name]) : answers[name]
+        name.endsWith('Country') ? countryText(answers[name]) : answers[name],
+        readOnly
       )
     )
     .filter(Boolean)
 
-const consignorRows = (journeyId, answers, scope) =>
+const consignorRows = (journeyId, answers, scope, readOnly = false) =>
   [
     'consignorName',
     'consignorAddressLine1',
@@ -77,12 +85,15 @@ const consignorRows = (journeyId, answers, scope) =>
         scope,
         cardCopy.rows[name],
         name,
-        name === 'consignorCountry' ? countryText(answers[name]) : answers[name]
+        name === 'consignorCountry'
+          ? countryText(answers[name])
+          : answers[name],
+        readOnly
       )
     )
     .filter(Boolean)
 
-export const tradersCard = (journeyId, answers, scope) => {
+export const tradersCard = (journeyId, answers, scope, readOnly = false) => {
   const sameAsImporter = answers.destinationSameAsConsignee
   return {
     heading: cardCopy.heading,
@@ -93,7 +104,8 @@ export const tradersCard = (journeyId, answers, scope) => {
         value: yesNoText(sameAsImporter, copy.yesNo),
         obligationName: 'destinationSameAsConsignee',
         journeyId,
-        scope
+        scope,
+        readOnly
       }),
       ...(sameAsImporter === true
         ? [
@@ -102,10 +114,13 @@ export const tradersCard = (journeyId, answers, scope) => {
               `${importerText()} (${cardCopy.sameAsConsignee})`
             )
           ]
-        : rowsForFields('destination', journeyId, answers, scope)),
-      ...consignorRows(journeyId, answers, scope),
+        : rowsForFields('destination', journeyId, answers, scope, {
+            readOnly
+          })),
+      ...consignorRows(journeyId, answers, scope, readOnly),
       ...rowsForFields('packer', journeyId, answers, scope, {
-        answeredOnly: true
+        answeredOnly: true,
+        readOnly
       })
     ].filter(Boolean),
     tables: []

@@ -3,6 +3,7 @@ export const copy = {
   title: 'Adolygu eich hysbysiad',
   continue: 'Parhau',
   change: 'Newid',
+  notProvided: 'Heb ei ddarparu',
   missingAnswer: 'Ychwanegu ateb sydd ar goll',
   missingAnswerContext: (label) => `ar gyfer ${label.toLowerCase()}`,
   yesNo: { yes: 'Iawn', no: 'Na' },

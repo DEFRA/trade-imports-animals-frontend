@@ -33,20 +33,20 @@ const changeCell = (journeyId, lineIndex) => {
   }
 }
 
-const commodityTable = (journeyId, lines) => ({
+const commodityTable = (journeyId, lines, readOnly = false) => ({
   caption: cardCopy.tables.commodities,
   captionClasses: 'govuk-table__caption--s',
   head: [
     header(cardCopy.columns.line),
     header(cardCopy.columns.code),
     header(cardCopy.columns.description),
-    header(cardCopy.columns.action)
+    ...(readOnly ? [] : [header(cardCopy.columns.action)])
   ],
   rows: lines.map(({ index, entry }) => [
     cell(cardCopy.commodity(index + 1)),
     cell(entry.commoditySelection),
     cell(descriptionFor(entry.commoditySelection)),
-    changeCell(journeyId, index)
+    ...(readOnly ? [] : [changeCell(journeyId, index)])
   ])
 })
 
@@ -155,7 +155,8 @@ export const intendedForFinalUsersRows = (
   scope,
   lines,
   localeCopy = copy,
-  changeLinkHref
+  changeLinkHref,
+  readOnly = false
 ) => {
   const localeCardCopy = localeCopy.cards.commodities
   return lines
@@ -172,13 +173,20 @@ export const intendedForFinalUsersRows = (
           localeCardCopy.commodity(index + 1)
         ),
         localeCopy,
-        changeLinkHref
+        changeLinkHref,
+        readOnly
       })
     )
     .filter(Boolean)
 }
 
-export const commoditiesCard = (journeyId, answers, scope, evaluation) => {
+export const commoditiesCard = (
+  journeyId,
+  answers,
+  scope,
+  evaluation,
+  readOnly = false
+) => {
   const lines = state.collectionView(answers, ['commodityLines'], evaluation)
   const varieties = varietyTable(answers, evaluation, lines)
 
@@ -192,12 +200,20 @@ export const commoditiesCard = (journeyId, answers, scope, evaluation) => {
             ?.label,
         obligationName: 'commodityInputMethod',
         journeyId,
-        scope
+        scope,
+        readOnly
       }),
-      ...intendedForFinalUsersRows(journeyId, scope, lines)
+      ...intendedForFinalUsersRows(
+        journeyId,
+        scope,
+        lines,
+        copy,
+        undefined,
+        readOnly
+      )
     ].filter(Boolean),
     tables: [
-      commodityTable(journeyId, lines),
+      commodityTable(journeyId, lines, readOnly),
       speciesTable(answers, evaluation, lines),
       ...(varieties ? [varieties] : []),
       measuresTable(lines)

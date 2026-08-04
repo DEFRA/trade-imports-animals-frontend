@@ -172,6 +172,36 @@ const row = (section, key) =>
 const table = (section, caption) =>
   section.tables.find((candidate) => candidate.caption === caption)
 const texts = (tableRow) => tableRow.map((cell) => cell.text ?? cell.html)
+const hrefIn = (html) => html?.match(/href="([^"]+)"/)?.[1]
+const collectAffordances = (sections) =>
+  sections.flatMap((section) => [
+    ...(section.rows ?? []).flatMap((entry) => [
+      ...(entry.actions?.items ?? []).map(({ href }) => href),
+      ...(hrefIn(entry.value?.html) ? [hrefIn(entry.value.html)] : [])
+    ]),
+    ...(section.action?.href ? [section.action.href] : []),
+    ...(section.tables ?? []).flatMap((sectionTable) => [
+      ...sectionTable.head
+        .filter(({ text }) => text === 'Action')
+        .map(({ text }) => `column:${text}`),
+      ...sectionTable.rows.flatMap((tableRow) =>
+        tableRow.flatMap((tableCell) =>
+          hrefIn(tableCell.html) ? [hrefIn(tableCell.html)] : []
+        )
+      )
+    ])
+  ])
+
+const buildForMode = (answers, readOnly) =>
+  withSetContext('plant-products', () =>
+    buildSections(
+      answers,
+      makeScope(answers),
+      evaluateAnswers(answers),
+      'journey-038',
+      readOnly
+    )
+  )
 
 describe('plant-products check-answers view model', () => {
   let server
@@ -543,5 +573,32 @@ describe('plant-products check-answers view model', () => {
     expect(card(sections, 'Nominated contacts').action.href).toBe(
       '/plant-products/notifications/journey-038/nominated-contact?change=1'
     )
+  })
+
+  it('suppresses every edit-affordance family in readOnly and preserves editable identities and count', () => {
+    const answers = { ...fullAnswers, internalReference: undefined }
+    const editable = buildForMode(answers, false)
+    const readOnly = buildForMode(answers, true)
+    const editableAffordances = collectAffordances(editable)
+    const readOnlyAffordances = collectAffordances(readOnly)
+
+    expect(editableAffordances).toHaveLength(62)
+    expect(editableAffordances).toEqual(
+      expect.arrayContaining([
+        '/plant-products/notifications/journey-038/country-of-origin?change=1',
+        '/plant-products/notifications/journey-038/origin-of-import?change=1',
+        '/plant-products/notifications/journey-038/nominated-contact?change=1',
+        '/plant-products/notifications/journey-038/accompanying-documents?change=1',
+        '/plant-products/notifications/journey-038/commodity-search?change=1',
+        'column:Action'
+      ])
+    )
+    expect(readOnlyAffordances).toEqual([])
+    expect(
+      row(card(readOnly, 'About the consignment'), 'Internal reference')
+    ).toEqual({
+      key: { text: 'Internal reference' },
+      value: { text: 'Not provided' }
+    })
   })
 })

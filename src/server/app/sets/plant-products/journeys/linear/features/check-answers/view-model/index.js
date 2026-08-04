@@ -8,14 +8,20 @@ import { nominatedContactsCard } from './cards/nominated-contacts.js'
 import { tradersCard } from './cards/traders.js'
 import { transportCard } from './cards/transport.js'
 
-export const buildSections = (answers, scope, evaluation, journeyId) => [
-  aboutConsignmentCard(journeyId, answers, scope),
-  commoditiesCard(journeyId, answers, scope, evaluation),
-  additionalDetailsCard(journeyId, answers, scope),
-  transportCard(journeyId, answers, scope, evaluation),
-  goodsMovementCard(journeyId, answers, scope),
-  contactCard(journeyId, answers, scope),
-  nominatedContactsCard(journeyId, answers, evaluation),
-  documentsCard(journeyId, answers, evaluation),
-  tradersCard(journeyId, answers, scope)
+export const buildSections = (
+  answers,
+  scope,
+  evaluation,
+  journeyId,
+  readOnly = false
+) => [
+  aboutConsignmentCard(journeyId, answers, scope, readOnly),
+  commoditiesCard(journeyId, answers, scope, evaluation, readOnly),
+  additionalDetailsCard(journeyId, answers, scope, readOnly),
+  transportCard(journeyId, answers, scope, evaluation, readOnly),
+  goodsMovementCard(journeyId, answers, scope, readOnly),
+  contactCard(journeyId, answers, scope, readOnly),
+  nominatedContactsCard(journeyId, answers, evaluation, readOnly),
+  documentsCard(journeyId, answers, evaluation, readOnly),
+  tradersCard(journeyId, answers, scope, readOnly)
 ]

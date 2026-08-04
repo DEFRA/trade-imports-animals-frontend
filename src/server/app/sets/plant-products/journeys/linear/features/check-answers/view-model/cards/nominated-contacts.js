@@ -9,7 +9,12 @@ const copy = copyFor({ en, cy })
 const cardCopy = copy.cards.nominatedContacts
 const cell = (text) => ({ text: String(text ?? '') })
 
-export const nominatedContactsCard = (journeyId, answers, evaluation) => {
+export const nominatedContactsCard = (
+  journeyId,
+  answers,
+  evaluation,
+  readOnly = false
+) => {
   const contacts = state.collectionView(
     answers,
     ['nominatedContacts'],
@@ -34,10 +39,14 @@ export const nominatedContactsCard = (journeyId, answers, evaluation) => {
         ]
       : [],
     empty: contacts.length ? null : cardCopy.empty,
-    action: {
-      href: changeHref('nominatedContacts', journeyId),
-      text: copy.change,
-      visuallyHiddenText: cardCopy.change
-    }
+    ...(readOnly
+      ? {}
+      : {
+          action: {
+            href: changeHref('nominatedContacts', journeyId),
+            text: copy.change,
+            visuallyHiddenText: cardCopy.change
+          }
+        })
   }
 }

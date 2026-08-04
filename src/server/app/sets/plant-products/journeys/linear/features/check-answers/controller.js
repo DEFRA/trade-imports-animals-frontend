@@ -19,6 +19,7 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const get = async (request, h) => {
   const { journey, answers, scope, evaluation } = await state.get(request, h)
+  const readOnly = journey.status === state.SUBMITTED
 
   return h.view(view, {
     pageTitle: copy.title,
@@ -26,7 +27,14 @@ const get = async (request, h) => {
     copy,
     sharedCopy,
     journeyStrip: journeyStrip(journey),
-    sections: buildSections(answers, scope, evaluation, journey.journeyId),
+    sections: buildSections(
+      answers,
+      scope,
+      evaluation,
+      journey.journeyId,
+      readOnly
+    ),
+    readOnly,
     backLink: hubPath(journey.journeyId),
     hubHref: hubPath(journey.journeyId),
     breadcrumbs: breadcrumbs(journey.journeyId, copy.title)

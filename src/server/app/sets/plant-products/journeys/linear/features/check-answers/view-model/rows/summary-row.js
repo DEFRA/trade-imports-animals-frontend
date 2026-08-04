@@ -2,7 +2,7 @@ import { isBlank } from '../../../../../../../../lib/answered.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { copy as en } from '../../copy/copy.en.js'
-import { changeAction, changeHref } from './change-link.js'
+import { changeAction, changeHref, editableActions } from './change-link.js'
 import { escapeHtml, valueText } from './value-text.js'
 
 const copy = copyFor({ en, cy })
@@ -15,11 +15,18 @@ export const row = ({
   scope,
   visuallyHiddenText = label,
   localeCopy = copy,
-  changeLinkHref
+  changeLinkHref,
+  readOnly = false
 }) => {
   if (!scope.has(obligationName)) return null
 
   if (isBlank(value)) {
+    if (readOnly) {
+      return {
+        key: { text: label },
+        value: { text: localeCopy.notProvided }
+      }
+    }
     const href = changeLinkHref ?? changeHref(obligationName, journeyId)
     return {
       key: { text: label },
@@ -32,12 +39,15 @@ export const row = ({
   return {
     key: { text: label },
     value: { text: valueText(value) },
-    actions: changeAction(
-      obligationName,
-      journeyId,
-      visuallyHiddenText,
-      localeCopy,
-      changeLinkHref
+    ...editableActions(
+      readOnly,
+      changeAction(
+        obligationName,
+        journeyId,
+        visuallyHiddenText,
+        localeCopy,
+        changeLinkHref
+      )
     )
   }
 }

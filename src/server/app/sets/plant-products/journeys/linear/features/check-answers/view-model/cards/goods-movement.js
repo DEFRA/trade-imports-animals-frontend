@@ -7,7 +7,12 @@ import { yesNoText } from '../rows/value-text.js'
 const copy = copyFor({ en, cy })
 const cardCopy = copy.cards.goodsMovement
 
-export const goodsMovementCard = (journeyId, answers, scope) => ({
+export const goodsMovementCard = (
+  journeyId,
+  answers,
+  scope,
+  readOnly = false
+) => ({
   heading: cardCopy.heading,
   rows: [
     row({
@@ -17,21 +22,24 @@ export const goodsMovementCard = (journeyId, answers, scope) => ({
         answers.commonTransitConvention,
       obligationName: 'commonTransitConvention',
       journeyId,
-      scope
+      scope,
+      readOnly
     }),
     row({
       label: cardCopy.rows.movementReferenceNumber,
       value: answers.movementReferenceNumber,
       obligationName: 'movementReferenceNumber',
       journeyId,
-      scope
+      scope,
+      readOnly
     }),
     row({
       label: cardCopy.rows.usingGvms,
       value: yesNoText(answers.usingGvms, copy.yesNo),
       obligationName: 'usingGvms',
       journeyId,
-      scope
+      scope,
+      readOnly
     })
   ].filter(Boolean),
   tables: []

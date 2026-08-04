@@ -7,7 +7,12 @@ import { countryText, purposeText } from '../rows/value-text.js'
 const copy = copyFor({ en, cy })
 const cardCopy = copy.cards.aboutConsignment
 
-export const aboutConsignmentCard = (journeyId, answers, scope) => ({
+export const aboutConsignmentCard = (
+  journeyId,
+  answers,
+  scope,
+  readOnly = false
+) => ({
   heading: cardCopy.heading,
   rows: [
     readOnlyRow(
@@ -19,28 +24,32 @@ export const aboutConsignmentCard = (journeyId, answers, scope) => ({
       value: countryText(answers.countryOfOrigin),
       obligationName: 'countryOfOrigin',
       journeyId,
-      scope
+      scope,
+      readOnly
     }),
     row({
       label: cardCopy.rows.countryOfConsignment,
       value: countryText(answers.countryOfConsignment),
       obligationName: 'countryOfConsignment',
       journeyId,
-      scope
+      scope,
+      readOnly
     }),
     row({
       label: cardCopy.rows.internalReference,
       value: answers.internalReference,
       obligationName: 'internalReference',
       journeyId,
-      scope
+      scope,
+      readOnly
     }),
     row({
       label: cardCopy.rows.reasonForImport,
       value: purposeText(answers.reasonForImport),
       obligationName: 'reasonForImport',
       journeyId,
-      scope
+      scope,
+      readOnly
     })
   ].filter(Boolean),
   tables: []

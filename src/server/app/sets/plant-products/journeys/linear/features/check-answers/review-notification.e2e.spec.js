@@ -4,7 +4,8 @@ import { axeViolations } from '../axe.e2e-helper.js'
 import {
   commodityFixtures,
   completeJourney,
-  fullJourneyValues
+  fullJourneyValues,
+  submitDeclaration
 } from '../journey.e2e-helper.js'
 import { copy as commodityFeatureCopy } from '../commodities/copy/copy.en.js'
 import { copy as cyCopy } from './copy/copy.cy.js'
@@ -520,6 +521,46 @@ test.describe('plant-products review notification', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: 'Declaration', exact: true })
     ).toBeVisible()
+  })
+
+  test('SUBMITTED review renders answers with no edit affordance or resubmission form', async ({
+    page
+  }) => {
+    test.slow()
+    await completeJourney(page, { profile: 'full' })
+    const submittedReviewUrl = page.url()
+
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+    await submitDeclaration(page)
+    await page.goto(submittedReviewUrl)
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: copy.title, exact: true })
+    ).toBeVisible()
+    await expect(
+      summaryValueByKey(
+        page,
+        copy.cards.aboutConsignment.rows.internalReference
+      )
+    ).toHaveText(fullJourneyValues.internalReference)
+    await expect(
+      page.getByRole('cell', {
+        name: fullJourneyValues.commodities.lines[0].code,
+        exact: true
+      })
+    ).toBeVisible()
+
+    await expect(page.locator('a[href*="change=1"]')).toHaveCount(0)
+    await expect(
+      page.getByRole('columnheader', {
+        name: copy.cards.commodities.columns.action,
+        exact: true
+      })
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole('button', { name: copy.continue, exact: true })
+    ).toHaveCount(0)
+    await expect(page.locator('main form[method="post"]')).toHaveCount(0)
   })
 
   test('saving an edited country of origin returns to the review page with the new value', async ({

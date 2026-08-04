@@ -13,7 +13,12 @@ const sum = (lines, field) =>
     0
   )
 
-export const additionalDetailsCard = (journeyId, answers, scope) => ({
+export const additionalDetailsCard = (
+  journeyId,
+  answers,
+  scope,
+  readOnly = false
+) => ({
   heading: cardCopy.heading,
   rows: [
     row({
@@ -21,21 +26,24 @@ export const additionalDetailsCard = (journeyId, answers, scope) => ({
       value: answers.totalGrossWeight,
       obligationName: 'totalGrossWeight',
       journeyId,
-      scope
+      scope,
+      readOnly
     }),
     row({
       label: cardCopy.rows.grossVolume,
       value: answers.grossVolume,
       obligationName: 'grossVolume',
       journeyId,
-      scope
+      scope,
+      readOnly
     }),
     row({
       label: cardCopy.rows.grossVolumeUnit,
       value: grossVolumeUnitText(answers.grossVolumeUnit),
       obligationName: 'grossVolumeUnit',
       journeyId,
-      scope
+      scope,
+      readOnly
     }),
     readOnlyRow(
       cardCopy.rows.totalNetWeight,

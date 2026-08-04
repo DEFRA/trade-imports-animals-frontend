@@ -2,6 +2,7 @@ export const copy = {
   title: 'Review your notification',
   continue: 'Continue',
   change: 'Change',
+  notProvided: 'Not provided',
   missingAnswer: 'Add a missing answer',
   missingAnswerContext: (label) => `for ${label.toLowerCase()}`,
   yesNo: { yes: 'Yes', no: 'No' },

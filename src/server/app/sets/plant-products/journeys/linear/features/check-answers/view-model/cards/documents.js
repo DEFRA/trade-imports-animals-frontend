@@ -9,7 +9,12 @@ const copy = copyFor({ en, cy })
 const cardCopy = copy.cards.documents
 const cell = (text) => ({ text: String(text ?? '') })
 
-export const documentsCard = (journeyId, answers, evaluation) => {
+export const documentsCard = (
+  journeyId,
+  answers,
+  evaluation,
+  readOnly = false
+) => {
   const documents = state.collectionView(
     answers,
     ['accompanyingDocuments'],
@@ -30,10 +35,14 @@ export const documentsCard = (journeyId, answers, evaluation) => {
         ])
       }
     ],
-    action: {
-      href: changeHref('accompanyingDocuments', journeyId),
-      text: copy.change,
-      visuallyHiddenText: cardCopy.change
-    }
+    ...(readOnly
+      ? {}
+      : {
+          action: {
+            href: changeHref('accompanyingDocuments', journeyId),
+            text: copy.change,
+            visuallyHiddenText: cardCopy.change
+          }
+        })
   }
 }

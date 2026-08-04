@@ -15,7 +15,13 @@ import {
 const copy = copyFor({ en, cy })
 const cardCopy = copy.cards.transport
 
-const containerRows = (journeyId, answers, scope, evaluation) => {
+const containerRows = (
+  journeyId,
+  answers,
+  scope,
+  evaluation,
+  readOnly = false
+) => {
   if (answers.usesContainers !== true) return []
   return state
     .collectionView(answers, ['containers'], evaluation)
@@ -27,27 +33,36 @@ const containerRows = (journeyId, answers, scope, evaluation) => {
           value: entry.containerNumber,
           obligationName: `containers[${index}].containerNumber`,
           journeyId,
-          scope
+          scope,
+          readOnly
         }),
         row({
           label: cardCopy.rows.sealNumber(number),
           value: entry.sealNumber,
           obligationName: `containers[${index}].sealNumber`,
           journeyId,
-          scope
+          scope,
+          readOnly
         }),
         row({
           label: cardCopy.rows.officialSeal(number),
           value: yesNoText(entry.officialSeal, copy.yesNo),
           obligationName: `containers[${index}].officialSeal`,
           journeyId,
-          scope
+          scope,
+          readOnly
         })
       ].filter(Boolean)
     })
 }
 
-export const transportCard = (journeyId, answers, scope, evaluation) => ({
+export const transportCard = (
+  journeyId,
+  answers,
+  scope,
+  evaluation,
+  readOnly = false
+) => ({
   heading: cardCopy.heading,
   rows: [
     row({
@@ -55,58 +70,66 @@ export const transportCard = (journeyId, answers, scope, evaluation) => ({
       value: bcpText(answers.borderControlPost),
       obligationName: 'borderControlPost',
       journeyId,
-      scope
+      scope,
+      readOnly
     }),
     row({
       label: cardCopy.rows.inspectionPremises,
       value: controlPointText(answers.inspectionPremises),
       obligationName: 'inspectionPremises',
       journeyId,
-      scope
+      scope,
+      readOnly
     }),
     row({
       label: cardCopy.rows.meansOfTransport,
       value: transportText(answers.meansOfTransport),
       obligationName: 'meansOfTransport',
       journeyId,
-      scope
+      scope,
+      readOnly
     }),
     row({
       label: cardCopy.rows.transportIdentification,
       value: answers.transportIdentification,
       obligationName: 'transportIdentification',
       journeyId,
-      scope
+      scope,
+      readOnly
     }),
     row({
       label: cardCopy.rows.transportDocumentReference,
       value: answers.transportDocumentReference,
       obligationName: 'transportDocumentReference',
       journeyId,
-      scope
+      scope,
+      readOnly
     }),
     row({
       label: cardCopy.rows.arrivalDate,
       value: dateText(answers.arrivalDate),
       obligationName: 'arrivalDate',
       journeyId,
-      scope
+      scope,
+      readOnly
     }),
     row({
       label: cardCopy.rows.arrivalTime,
       value: timeText(answers.arrivalTime),
       obligationName: 'arrivalTime',
       journeyId,
-      scope
+      scope,
+      readOnly
     }),
     row({
       label: cardCopy.rows.usesContainers,
       value: yesNoText(answers.usesContainers, copy.yesNo),
       obligationName: 'usesContainers',
       journeyId,
-      scope
+      scope,
+      readOnly
     }),
-    ...containerRows(journeyId, answers, scope, evaluation)
+    ...containerRows(journeyId, answers, scope, evaluation, readOnly)
   ].filter(Boolean),
   tables: []
 })

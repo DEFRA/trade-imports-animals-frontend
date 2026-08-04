@@ -11,7 +11,9 @@ import {
 
 import {
   driveHandler,
-  postHandlerOf
+  journeyRequest,
+  postHandlerOf,
+  stubH
 } from '../../../../../../engine/test-support.js'
 import * as navigation from '../../../../../../flow/navigation.js'
 import { plantProducts } from '../../../../../../routes-plant-products.js'
@@ -60,6 +62,21 @@ describe('plant-products check-answers controller', () => {
       /^\/plant-products\/notifications\/[^/]+$/
     )
     expect(result.view.context.breadcrumbs).toBeDefined()
+  })
+
+  it('GET derives readOnly from DRAFT and SUBMITTED journey status', async () => {
+    const draft = await drive(get, {
+      seed: { importType: 'plants', internalReference: 'READ-ONLY-097' }
+    })
+    expect(draft.view.context.readOnly).toBe(false)
+
+    await records.finalise(draft.journeyId)
+    const h = stubH()
+    await withSetContext('plant-products', () =>
+      get(journeyRequest(draft.journeyId), h)
+    )
+
+    expect(h.captured.view.context.readOnly).toBe(true)
   })
 
   it('POST redirects through nextInSection and commits nothing', async () => {

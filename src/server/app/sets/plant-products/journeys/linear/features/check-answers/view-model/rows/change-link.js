@@ -29,3 +29,6 @@ export const changeAction = (
     }
   ]
 })
+
+export const editableActions = (readOnly, actions) =>
+  readOnly ? {} : { actions }
