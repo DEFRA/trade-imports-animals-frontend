@@ -4,7 +4,7 @@ import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { configureFulfilmentRegistry } from '../../../../bridge/fulfilment-registry.js'
 import { configureObligationSet } from '../../../../model/obligations/manifest.js'
 import {
-  enterSetContext,
+  registerSetMount,
   withSetContext
 } from '../../../../shared/set-context.js'
 import { featureEvaluationBindings } from '../../journeys/linear/features/evaluation.js'
@@ -33,6 +33,10 @@ const CANNED_CONTENT = {
     internalReference: 'BR-EXPORT-2026-001'
   }
 }
+const inPlantProducts = (operation) =>
+  withSetContext('plant-products', operation)
+
+registerSetMount('plant-products', '/plant-products')
 
 const createAtStatus = async (status) => {
   const created = await records.create()
@@ -45,10 +49,9 @@ const createAtStatus = async (status) => {
 
 describe('plant-products records stub', () => {
   beforeEach(async () => {
-    enterSetContext('plant-products')
     configureObligationSet('plant-products', plantProductsObligationSet)
     configureFulfilmentRegistry('plant-products', featureEvaluationBindings)
-    await records.clear()
+    await inPlantProducts(() => records.clear())
   })
 
   afterEach(() => {
@@ -105,33 +108,36 @@ describe('plant-products records stub', () => {
     })
   })
 
-  it('pages, filters by exact reference and hides deleted records', async () => {
-    const created = await Promise.all(
-      Array.from({ length: 27 }, () => records.create())
-    )
-    await records.softDelete(created[1].journeyId)
+  it('pages, filters by exact reference and hides deleted records', () =>
+    inPlantProducts(async () => {
+      const created = await Promise.all(
+        Array.from({ length: 27 }, () => records.create())
+      )
+      await records.softDelete(created[1].journeyId)
 
-    const firstPage = await records.list({ page: 1 })
-    const secondPage = await records.list({ page: 2 })
-    const filtered = await records.list({
-      referenceNumber: created[26].journeyId
-    })
+      const firstPage = await records.list({ page: 1 })
+      const secondPage = await records.list({ page: 2 })
+      const filtered = await records.list({
+        referenceNumber: created[26].journeyId
+      })
 
-    expect(firstPage).toMatchObject({
-      page: 1,
-      size: 25,
-      totalElements: 26,
-      totalPages: 2
-    })
-    expect(firstPage.rows).toHaveLength(25)
-    expect(secondPage.rows).toHaveLength(1)
-    expect(filtered.rows.map(({ journeyId }) => journeyId)).toEqual([
-      created[26].journeyId
-    ])
-    expect(
-      [...firstPage.rows, ...secondPage.rows].map(({ journeyId }) => journeyId)
-    ).not.toContain(created[1].journeyId)
-  })
+      expect(firstPage).toMatchObject({
+        page: 1,
+        size: 25,
+        totalElements: 26,
+        totalPages: 2
+      })
+      expect(firstPage.rows).toHaveLength(25)
+      expect(secondPage.rows).toHaveLength(1)
+      expect(filtered.rows.map(({ journeyId }) => journeyId)).toEqual([
+        created[26].journeyId
+      ])
+      expect(
+        [...firstPage.rows, ...secondPage.rows].map(
+          ({ journeyId }) => journeyId
+        )
+      ).not.toContain(created[1].journeyId)
+    }))
 
   it('projects dashboard facts and applies the supported sort tokens', () =>
     withSetContext('plant-products', async () => {
@@ -171,51 +177,55 @@ describe('plant-products records stub', () => {
 
   it.each([undefined, null, '', '   '])(
     'rejects a blank copy key before creating a draft (%s)',
-    async (key) => {
+    (key) =>
+      inPlantProducts(async () => {
+        const source = await records.create()
+        await records.finalise(source.journeyId)
+
+        await expect(records.copy(source.journeyId, key)).rejects.toThrow(
+          'Idempotency-Key must not be blank'
+        )
+        expect((await records.list()).rows).toHaveLength(1)
+      })
+  )
+
+  it('returns one draft when the same source and key are copied twice', () =>
+    inPlantProducts(async () => {
       const source = await records.create()
       await records.finalise(source.journeyId)
 
-      await expect(records.copy(source.journeyId, key)).rejects.toThrow(
-        'Idempotency-Key must not be blank'
-      )
-      expect((await records.list()).rows).toHaveLength(1)
-    }
-  )
+      const first = await records.copy(source.journeyId, 'same-copy-key')
+      const repeated = await records.copy(source.journeyId, 'same-copy-key')
 
-  it('returns one draft when the same source and key are copied twice', async () => {
-    const source = await records.create()
-    await records.finalise(source.journeyId)
+      expect(repeated.journeyId).toBe(first.journeyId)
+      expect((await records.list()).rows).toHaveLength(2)
+    }))
 
-    const first = await records.copy(source.journeyId, 'same-copy-key')
-    const repeated = await records.copy(source.journeyId, 'same-copy-key')
+  it('mints separate drafts for different idempotency keys', () =>
+    inPlantProducts(async () => {
+      const source = await records.create()
+      await records.finalise(source.journeyId)
 
-    expect(repeated.journeyId).toBe(first.journeyId)
-    expect((await records.list()).rows).toHaveLength(2)
-  })
+      const first = await records.copy(source.journeyId, 'first-copy-key')
+      const second = await records.copy(source.journeyId, 'second-copy-key')
 
-  it('mints separate drafts for different idempotency keys', async () => {
-    const source = await records.create()
-    await records.finalise(source.journeyId)
+      expect(second.journeyId).not.toBe(first.journeyId)
+      expect((await records.list()).rows).toHaveLength(3)
+    }))
 
-    const first = await records.copy(source.journeyId, 'first-copy-key')
-    const second = await records.copy(source.journeyId, 'second-copy-key')
+  it('matches the backend global key index when a key is reused for another source', () =>
+    inPlantProducts(async () => {
+      const firstSource = await records.create()
+      const secondSource = await records.create()
+      await records.finalise(firstSource.journeyId)
+      await records.finalise(secondSource.journeyId)
 
-    expect(second.journeyId).not.toBe(first.journeyId)
-    expect((await records.list()).rows).toHaveLength(3)
-  })
+      const first = await records.copy(firstSource.journeyId, 'scoped-key')
+      const repeated = await records.copy(secondSource.journeyId, 'scoped-key')
 
-  it('matches the backend global key index when a key is reused for another source', async () => {
-    const firstSource = await records.create()
-    const secondSource = await records.create()
-    await records.finalise(firstSource.journeyId)
-    await records.finalise(secondSource.journeyId)
-
-    const first = await records.copy(firstSource.journeyId, 'scoped-key')
-    const repeated = await records.copy(secondSource.journeyId, 'scoped-key')
-
-    expect(repeated.journeyId).toBe(first.journeyId)
-    expect((await records.list()).rows).toHaveLength(3)
-  })
+      expect(repeated.journeyId).toBe(first.journeyId)
+      expect((await records.list()).rows).toHaveLength(3)
+    }))
 
   it('copies fulfilment by value without sharing mutable state', async () => {
     const source = await records.create()
@@ -266,24 +276,28 @@ describe('plant-products records stub', () => {
       ).toEqual([])
     }))
 
-  it('clear resets both the record store and the idempotency index', async () => {
-    const firstSource = await records.create()
-    await records.finalise(firstSource.journeyId)
-    const firstCopy = await records.copy(firstSource.journeyId, 'reusable-key')
+  it('clear resets both the record store and the idempotency index', () =>
+    inPlantProducts(async () => {
+      const firstSource = await records.create()
+      await records.finalise(firstSource.journeyId)
+      const firstCopy = await records.copy(
+        firstSource.journeyId,
+        'reusable-key'
+      )
 
-    await records.clear()
+      await records.clear()
 
-    const secondSource = await records.create()
-    await records.finalise(secondSource.journeyId)
-    const secondCopy = await records.copy(
-      secondSource.journeyId,
-      'reusable-key'
-    )
+      const secondSource = await records.create()
+      await records.finalise(secondSource.journeyId)
+      const secondCopy = await records.copy(
+        secondSource.journeyId,
+        'reusable-key'
+      )
 
-    expect(await records.has(firstCopy.journeyId)).toBe(false)
-    expect(secondCopy.journeyId).not.toBe(firstCopy.journeyId)
-    expect((await records.list()).rows).toHaveLength(2)
-  })
+      expect(await records.has(firstCopy.journeyId)).toBe(false)
+      expect(secondCopy.journeyId).not.toBe(firstCopy.journeyId)
+      expect((await records.list()).rows).toHaveLength(2)
+    }))
 
   it('selects real mode at module load when the mode variable is real', async () => {
     vi.stubEnv('PLANT_PRODUCTS_MODE', 'real')
