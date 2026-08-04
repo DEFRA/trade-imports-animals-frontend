@@ -383,14 +383,14 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     expect(deleted.status).toBe(DELETED)
   })
 
-  it('Should pass an exact reference filter on the fulfilments list request', async () => {
+  it('Should pass an exact reference filter on the notifications list request', async () => {
     fetchMocker.mockResponse(
       JSON.stringify({
         page: 1,
         size: 20,
         totalElements: 0,
         totalPages: 0,
-        items: []
+        content: []
       })
     )
 
@@ -402,7 +402,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
 
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(
-      `${notificationFulfilmentsUrl}?page=1&sort=createdAt,asc&referenceNumber=${journeyId}`
+      `${notificationsUrl}?page=1&sort=createdAt,asc&referenceNumber=${journeyId}`
     )
     expect(request.method).toBe('GET')
   })

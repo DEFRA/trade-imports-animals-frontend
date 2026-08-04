@@ -12,18 +12,25 @@ fetchMocker.enableMocks()
 
 const notificationFulfilmentsUrl =
   'http://localhost:8085/notification-fulfilments'
+const notificationsUrl = 'http://localhost:8085/notifications'
+
+const notification = (referenceNumber, status) => ({
+  referenceNumber,
+  status,
+  created: '2026-07-14T09:00:00',
+  updated: '2026-07-14T09:00:00',
+  commodity: { name: 'Cow' },
+  origin: { countryCode: 'FR' },
+  transport: { arrivalDate: '2026-07-20' },
+  consignor: { name: 'Consignor Ltd' },
+  consignee: { name: 'Consignee Ltd' }
+})
 
 const notificationFulfilments = (id, status) => ({
   id,
   status,
   createdAt: '2026-07-14T09:00:00',
   submittedAt: status === 'SUBMITTED' ? '2026-07-14T10:00:00' : null,
-  reference: id,
-  commodityDisplay: { name: 'Cow' },
-  originCountryCode: 'FR',
-  arrivalDate: '2026-07-20',
-  consignorName: 'Consignor Ltd',
-  consigneeName: 'Consignee Ltd',
   fulfilments: []
 })
 
@@ -61,17 +68,17 @@ describe('real records adapter — paged list', () => {
     fetchMocker.resetMocks()
   })
 
-  test('Should issue one paged GET and map the enriched response to dashboard rows', async () => {
+  test('Should GET /notifications and map main-shape entries to dashboard rows', async () => {
     fetchMocker.mockResponse(
       JSON.stringify({
         page: 1,
         size: 20,
         totalElements: 3,
         totalPages: 1,
-        items: [
-          notificationFulfilments('GBN-1', 'DRAFT'),
-          notificationFulfilments('GBN-2', 'SUBMITTED'),
-          notificationFulfilments('GBN-3', 'AMEND')
+        content: [
+          notification('GBN-1', 'DRAFT'),
+          notification('GBN-2', 'SUBMITTED'),
+          notification('GBN-3', 'AMEND')
         ]
       })
     )
@@ -83,9 +90,7 @@ describe('real records adapter — paged list', () => {
     })
 
     const [request] = fetchMocker.requests()
-    expect(request.url).toBe(
-      `${notificationFulfilmentsUrl}?page=2&sort=createdAt,asc`
-    )
+    expect(request.url).toBe(`${notificationsUrl}?page=2&sort=createdAt,asc`)
     expect(request.method).toBe('GET')
     expect(listed).toEqual({
       page: 1,
@@ -109,7 +114,7 @@ describe('real records adapter — paged list', () => {
           journeyId: 'GBN-2',
           status: SUBMITTED,
           createdAt: '2026-07-14T09:00:00',
-          submittedAt: '2026-07-14T10:00:00',
+          submittedAt: null,
           reference: 'GBN-2',
           commodity: { name: 'Cow' },
           originCountryCode: 'FR',
