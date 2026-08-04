@@ -1,3 +1,8 @@
+import { readFileSync, readdirSync } from 'node:fs'
+import { join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { Linter } from 'eslint'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -8,6 +13,57 @@ import {
   countryOptions,
   ukSubdivisionOptions
 } from './countries.js'
+
+const featureRoot = fileURLToPath(
+  new URL('../../journeys/linear/features/', import.meta.url)
+)
+const countriesModulePattern = /\/services\/reference\/countries\.js$/u
+
+const controllerFilesBelow = (directory) =>
+  readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(directory, entry.name)
+    if (entry.isDirectory()) return controllerFilesBelow(path)
+    return entry.isFile() &&
+      (entry.name === 'controller.js' || entry.name.endsWith('.controller.js'))
+      ? [path]
+      : []
+  })
+
+const inspectCountryHelpers = (source) => {
+  const imports = []
+  const calls = new Set()
+  const inspectionRule = {
+    create: () => ({
+      ImportDeclaration(node) {
+        if (!countriesModulePattern.test(node.source.value)) return
+
+        for (const specifier of node.specifiers) {
+          if (specifier.type !== 'ImportSpecifier') continue
+          imports.push({
+            imported: specifier.imported.name,
+            local: specifier.local.name
+          })
+        }
+      },
+      CallExpression(node) {
+        if (node.callee.type === 'Identifier') calls.add(node.callee.name)
+      }
+    })
+  }
+  const messages = new Linter({ configType: 'flat' }).verify(source, [
+    {
+      languageOptions: { ecmaVersion: 'latest', sourceType: 'module' },
+      plugins: { countryPin: { rules: { inspect: inspectionRule } } },
+      rules: { 'countryPin/inspect': 'error' }
+    }
+  ])
+
+  if (messages.length > 0) {
+    throw new Error(messages.map(({ message }) => message).join('\n'))
+  }
+
+  return { calls, imports }
+}
 
 describe('plant-products country reference data', () => {
   it('contains 253 valid entries with unique codes', () => {
@@ -85,6 +141,42 @@ describe('plant-products country reference data', () => {
       { value: 'GB-WLS', text: 'Wales' },
       { value: 'GB-NIR', text: 'Northern Ireland' }
     ])
+  })
+
+  it('pins every plant country-options controller to both option helpers', () => {
+    const consumers = controllerFilesBelow(featureRoot)
+      .map((path) => ({
+        path,
+        ...inspectCountryHelpers(readFileSync(path, 'utf8'))
+      }))
+      .filter(({ imports }) =>
+        imports.some(({ imported }) => imported === 'countryOptions')
+      )
+
+    expect(
+      consumers.map(({ path }) => relative(featureRoot, path)).sort()
+    ).toEqual([
+      'dashboard/controller.js',
+      'origin/country-of-origin/country-of-origin.controller.js',
+      'origin/origin-of-import/origin-of-import.controller.js',
+      'traders/consignor-create/consignor-create.controller.js',
+      'traders/traders-addresses/traders-addresses.controller.js'
+    ])
+
+    for (const { calls, imports, path } of consumers) {
+      const controller = relative(featureRoot, path)
+      expect(imports, controller).toContainEqual({
+        imported: 'ukSubdivisionOptions',
+        local: 'ukSubdivisionOptions'
+      })
+      expect(calls.has('ukSubdivisionOptions'), controller).toBe(true)
+    }
+
+    // Exemption: this syntax-only pin cannot discover selectors which do not
+    // import countryOptions from the countries module, resolve re-exports or
+    // aliases through other modules, distinguish a shadowed call-site binding,
+    // or prove that either helper call feeds rendered markup; controller tests
+    // remain responsible for behaviour.
   })
 
   it('defines the dashboard region filter codes without display labels', () => {

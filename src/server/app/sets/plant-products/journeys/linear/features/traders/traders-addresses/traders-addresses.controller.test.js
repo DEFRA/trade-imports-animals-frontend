@@ -21,6 +21,10 @@ import {
   withSetContext
 } from '../../../../../../../shared/set-context.js'
 import { records } from '../../../../../services/records/stub.js'
+import {
+  countryOptions,
+  ukSubdivisionOptions
+} from '../../../../../services/reference/countries.js'
 import { stubOrganisationOperator } from '../../../../../services/stub-org.js'
 import {
   destinationAddressLine1,
@@ -153,6 +157,47 @@ describe('plant-products traders-addresses controller', () => {
     expect(result.view.context.consignorName).toBe('Orchard Export SAS')
   })
 
+  it('offers and accepts UK subdivisions from the same country vocabulary', async () => {
+    const offered = await drive(get, {})
+    const expectedCodes = [...ukSubdivisionOptions(), ...countryOptions()].map(
+      ({ value }) => value
+    )
+
+    for (const items of [
+      offered.view.context.destinationCountryItems,
+      offered.view.context.packerCountryItems
+    ]) {
+      expect(
+        items
+          .filter(({ disabled, value }) => !disabled && value)
+          .map(({ value }) => value)
+      ).toEqual(expectedCodes)
+      expect(items).toContainEqual({
+        value: '',
+        text: '──────────',
+        disabled: true
+      })
+    }
+
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue(
+      '/plant-products/notifications/next-target'
+    )
+    const accepted = await drive(post, {
+      payload: validEnteredPayload({
+        destinationCountry: 'GB-ENG',
+        packerCountry: 'GB-SCT'
+      })
+    })
+
+    expect(accepted.after).toMatchObject({
+      destinationCountry: 'GB-ENG',
+      packerCountry: 'GB-SCT'
+    })
+    expect(accepted.response).toEqual({
+      redirect: '/plant-products/notifications/next-target'
+    })
+  })
+
   it.each([
     {
       name: 'requires the delivery-address radio',
@@ -191,8 +236,8 @@ describe('plant-products traders-addresses controller', () => {
       message: pageCopy.errors.destinationCountry
     },
     {
-      name: 'rejects a delivery country outside the fixture',
-      overrides: { destinationCountry: 'ZZ' },
+      name: 'rejects a genuinely forged delivery country through the canonical error',
+      overrides: { destinationCountry: 'XX-FORGED' },
       field: 'destinationCountry',
       message: pageCopy.errors.destinationCountry
     }

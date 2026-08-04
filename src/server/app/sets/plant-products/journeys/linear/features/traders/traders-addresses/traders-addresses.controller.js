@@ -17,7 +17,8 @@ import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { stubOrganisationOperator } from '../../../../../services/stub-org.js'
 import {
   countryLabel,
-  countryOptions
+  countryOptions,
+  ukSubdivisionOptions
 } from '../../../../../services/reference/countries.js'
 import { TEMPLATES } from '../../../config.js'
 import { copy as cy } from '../copy/copy.cy.js'
@@ -47,6 +48,15 @@ export const meta = {
 
 const view = `${TEMPLATES}/features/traders/traders-addresses/traders-addresses`
 const copy = copyFor({ en, cy }).tradersAddresses
+const UK_SUBDIVISION_OPTIONS = ukSubdivisionOptions()
+const ADDRESS_COUNTRY_OPTIONS = Object.freeze([
+  ...UK_SUBDIVISION_OPTIONS,
+  ...countryOptions()
+])
+const ADDRESS_COUNTRY_CODES = Object.freeze(
+  ADDRESS_COUNTRY_OPTIONS.map(({ value }) => value)
+)
+const COUNTRY_LIST_DIVIDER = '──────────'
 
 const destinationFields = [
   'destinationName',
@@ -112,17 +122,22 @@ const rawValuesFrom = (payload) => ({
   )
 })
 
-const selectItems = (selected) => [
-  {
-    value: '',
-    text: copy.countryPlaceholder,
-    selected: selected === ''
-  },
-  ...countryOptions().map((option) => ({
+const selectItems = (selected) => {
+  const selectableItems = ADDRESS_COUNTRY_OPTIONS.map((option) => ({
     ...option,
     selected: option.value === selected
   }))
-]
+  return [
+    {
+      value: '',
+      text: copy.countryPlaceholder,
+      selected: selected === ''
+    },
+    ...selectableItems.slice(0, UK_SUBDIVISION_OPTIONS.length),
+    { value: '', text: COUNTRY_LIST_DIVIDER, disabled: true },
+    ...selectableItems.slice(UK_SUBDIVISION_OPTIONS.length)
+  ]
+}
 
 const importerRows = () => {
   const importer = stubOrganisationOperator()
@@ -267,8 +282,11 @@ const post = async (request, h) => {
     destinationSameAsConsignee: proposedAnswer
   })
   const destinationInScope = proposedScope.has('destinationName')
-  const countryCodes = countryOptions().map(({ value }) => value)
-  const errors = validateFields(payload, destinationInScope, countryCodes)
+  const errors = validateFields(
+    payload,
+    destinationInScope,
+    ADDRESS_COUNTRY_CODES
+  )
   if (errors) {
     return render(h, pageState.journey, rawValues, {
       consignorName: pageState.answers.consignorName,
