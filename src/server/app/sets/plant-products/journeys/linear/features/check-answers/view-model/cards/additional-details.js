@@ -1,4 +1,5 @@
 import { copyFor } from '../../../../../../../../shared/copy.js'
+import { measurementText } from '../../../additional-details/measurement-format.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { readOnlyRow, row } from '../rows/summary-row.js'
@@ -23,7 +24,7 @@ export const additionalDetailsCard = (
   rows: [
     row({
       label: cardCopy.rows.totalGrossWeight,
-      value: answers.totalGrossWeight,
+      value: measurementText(answers.totalGrossWeight),
       obligationName: 'totalGrossWeight',
       journeyId,
       scope,
@@ -31,7 +32,7 @@ export const additionalDetailsCard = (
     }),
     row({
       label: cardCopy.rows.grossVolume,
-      value: answers.grossVolume,
+      value: measurementText(answers.grossVolume),
       obligationName: 'grossVolume',
       journeyId,
       scope,

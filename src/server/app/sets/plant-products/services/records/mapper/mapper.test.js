@@ -313,8 +313,8 @@ describe('plant-products notification mapper at the m0 boundary', () => {
 
   it('round-trips all three additional-details fields without derived totals', () => {
     const answers = {
-      totalGrossWeight: '12.5',
-      grossVolume: '5',
+      totalGrossWeight: 12.5,
+      grossVolume: 5,
       grossVolumeUnit: 'LITRES'
     }
 
@@ -326,7 +326,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
   })
 
   it('round-trips weight alone without fabricating optional volume fields', () => {
-    const answers = { totalGrossWeight: '12.5' }
+    const answers = { totalGrossWeight: 12.5 }
 
     const dto = toDto(answers)
 
@@ -334,6 +334,57 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     expect(dto.additionalDetails).not.toHaveProperty('grossVolume')
     expect(dto.additionalDetails).not.toHaveProperty('grossVolumeUnit')
     expect(fromDto(dto)).toEqual(answers)
+  })
+
+  it('normalises legacy numeric strings to canonical numbers in both DTO directions', () => {
+    expect(
+      toDto({ totalGrossWeight: '2.50', grossVolume: '-8.00' })
+        .additionalDetails
+    ).toEqual({ totalGrossWeight: 2.5, grossVolume: -8 })
+    expect(
+      fromDto({
+        additionalDetails: { totalGrossWeight: '2.50', grossVolume: '-8.00' }
+      })
+    ).toEqual({ totalGrossWeight: 2.5, grossVolume: -8 })
+  })
+
+  it.each([
+    ['whitespace', ' '],
+    ['exponent notation', '1e3'],
+    ['hex notation', '0x10'],
+    ['positive infinity', 'Infinity'],
+    ['not-a-number', 'NaN'],
+    ['over-precision decimal', '0.1234567890123456789']
+  ])(
+    'leaves legacy %s strings untouched in both DTO directions',
+    (_name, value) => {
+      expect(toDto({ grossVolume: value }).additionalDetails.grossVolume).toBe(
+        value
+      )
+      expect(
+        fromDto({ additionalDetails: { grossVolume: value } }).grossVolume
+      ).toBe(value)
+    }
+  )
+
+  it('normalises the lossless legacy precision boundary in both DTO directions', () => {
+    const value = '0.12345678901234568'
+    const numeric = 0.12345678901234568
+
+    expect(toDto({ grossVolume: value }).additionalDetails.grossVolume).toBe(
+      numeric
+    )
+    expect(
+      fromDto({ additionalDetails: { grossVolume: value } }).grossVolume
+    ).toBe(numeric)
+  })
+
+  it('does not turn nullable backend measurements into zero', () => {
+    expect(
+      fromDto({
+        additionalDetails: { totalGrossWeight: 12, grossVolume: null }
+      })
+    ).toEqual({ totalGrossWeight: 12, grossVolume: null })
   })
 
   it('does not fabricate an additional-details section when nothing is answered', () => {

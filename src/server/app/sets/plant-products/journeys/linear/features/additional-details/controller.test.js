@@ -63,11 +63,11 @@ describe('plant-products additional-details controller', () => {
     await server.stop({ timeout: 0 })
   })
 
-  it('prefills all three fields and derives both totals from two commodity lines', async () => {
+  it('prefills persisted measurements with at least two decimal places and derives both totals', async () => {
     const result = await drive(get, {
       seed: {
-        totalGrossWeight: '12.5',
-        grossVolume: '8',
+        totalGrossWeight: 12.5,
+        grossVolume: 8,
         grossVolumeUnit: 'METRES_CUBED',
         commodityLines: [
           { netWeight: '1', numberOfPackages: '2' },
@@ -77,8 +77,8 @@ describe('plant-products additional-details controller', () => {
     })
 
     expect(result.view.context.values).toEqual({
-      totalGrossWeight: '12.5',
-      grossVolume: '8',
+      totalGrossWeight: '12.50',
+      grossVolume: '8.00',
       grossVolumeUnit: 'METRES_CUBED'
     })
     expect(result.view.context.netWeightTotal).toBe(11)
@@ -174,7 +174,7 @@ describe('plant-products additional-details controller', () => {
     expect(result.after).toEqual(seed)
   })
 
-  it('commits cleaned strings and redirects through nextTarget', async () => {
+  it('commits cleaned measurements as numbers and redirects through nextTarget', async () => {
     const nextTarget = vi
       .spyOn(kit, 'nextTarget')
       .mockResolvedValue('/plant-products/notifications/next-target')
@@ -187,8 +187,8 @@ describe('plant-products additional-details controller', () => {
     })
 
     expect(result.after).toEqual({
-      totalGrossWeight: '12.5',
-      grossVolume: '8',
+      totalGrossWeight: 12.5,
+      grossVolume: 8,
       grossVolumeUnit: 'METRES_CUBED'
     })
     expect(result.response).toEqual({
@@ -197,20 +197,64 @@ describe('plant-products additional-details controller', () => {
     expect(nextTarget).toHaveBeenCalledOnce()
   })
 
+  it('accepts lossless Number boundaries without imposing a magnitude or scale cap', async () => {
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue(
+      '/plant-products/notifications/next-target'
+    )
+    const result = await drive(post, {
+      payload: validPayload({
+        totalGrossWeight: '9007199254740994',
+        grossVolume: '0.12345678901234568'
+      })
+    })
+
+    expect(result.after).toEqual({
+      totalGrossWeight: 9007199254740994,
+      grossVolume: 0.12345678901234568,
+      grossVolumeUnit: 'LITRES'
+    })
+  })
+
+  it.each([
+    {
+      name: 'total gross weight',
+      field: 'totalGrossWeight',
+      value: '9007199254740993.12345',
+      message: copy.errors.totalGrossWeightNumber
+    },
+    {
+      name: 'gross volume',
+      field: 'grossVolume',
+      value: '0.1234567890123456789',
+      message: copy.errors.grossVolumeNumber
+    }
+  ])(
+    'rejects the first precision-losing $name value before commit',
+    async ({ field, value, message }) => {
+      const payload = validPayload({ [field]: value })
+      const result = await drive(post, { payload })
+
+      expect(result.response.statusCode).toBe(400)
+      expect(result.view.context.errors[field]).toBe(message)
+      expect(result.view.context.values).toEqual(payload)
+      expect(result.after).toEqual({})
+    }
+  )
+
   it('clearing gross volume takes its unit out of scope and purges the stored unit', async () => {
     vi.spyOn(kit, 'nextTarget').mockResolvedValue(
       '/plant-products/notifications/next-target'
     )
     const result = await drive(post, {
       seed: {
-        totalGrossWeight: '12',
-        grossVolume: '5',
+        totalGrossWeight: 12,
+        grossVolume: 5,
         grossVolumeUnit: 'LITRES'
       },
       payload: validPayload({ grossVolume: '', grossVolumeUnit: '' })
     })
 
-    expect(result.after).toEqual({ totalGrossWeight: '12' })
+    expect(result.after).toEqual({ totalGrossWeight: 12 })
     expect(result.after).not.toHaveProperty('grossVolume')
     expect(result.after).not.toHaveProperty('grossVolumeUnit')
   })

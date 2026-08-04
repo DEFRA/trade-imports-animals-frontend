@@ -158,8 +158,8 @@ export const fullJourneyValues = {
     ]
   },
   additionalDetails: {
-    totalGrossWeight: '20',
-    grossVolume: '8',
+    totalGrossWeight: '20.00',
+    grossVolume: '8.00',
     grossVolumeUnit: { value: 'LITRES', text: 'litres' }
   },
   transport: {

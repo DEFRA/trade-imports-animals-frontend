@@ -1,5 +1,6 @@
 import { descriptionFor } from '../../commodities/index.js'
 import { stubOrganisationOperator } from '../../stub-org.js'
+import { canonicalMeasurementNumber } from '../measurement-number.js'
 
 const defined = (source, fields) =>
   Object.fromEntries(
@@ -85,7 +86,14 @@ const ADDITIONAL_DETAILS_FIELDS = [
 ]
 
 const mapAdditionalDetails = (answers) => {
-  const additionalDetails = defined(answers, ADDITIONAL_DETAILS_FIELDS)
+  const additionalDetails = Object.fromEntries(
+    Object.entries(defined(answers, ADDITIONAL_DETAILS_FIELDS)).map(
+      ([field, value]) => [
+        field,
+        field === 'grossVolumeUnit' ? value : canonicalMeasurementNumber(value)
+      ]
+    )
+  )
   return Object.keys(additionalDetails).length > 0 ? { additionalDetails } : {}
 }
 

@@ -55,6 +55,8 @@ const POPULATED_ANSWERS = {
   countryOfOrigin: 'FR',
   reasonForImport: 'INTERNAL_MARKET',
   commodityInputMethod: 'MANUAL',
+  totalGrossWeight: 12.5,
+  grossVolume: 8,
   grossVolumeUnit: 'LITRES',
   borderControlPost: 'CONPNT',
   inspectionPremises: 'INSPBER1',

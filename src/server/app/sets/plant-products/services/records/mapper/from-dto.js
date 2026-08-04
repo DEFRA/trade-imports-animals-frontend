@@ -1,5 +1,7 @@
 import { isDeepStrictEqual } from 'node:util'
 
+import { canonicalMeasurementNumber } from '../measurement-number.js'
+
 const defined = (source, fields) =>
   Object.fromEntries(
     fields
@@ -72,7 +74,16 @@ const ADDITIONAL_DETAILS_FIELDS = [
 
 const mapAdditionalDetails = (dto) =>
   dto.additionalDetails && typeof dto.additionalDetails === 'object'
-    ? defined(dto.additionalDetails, ADDITIONAL_DETAILS_FIELDS)
+    ? Object.fromEntries(
+        Object.entries(
+          defined(dto.additionalDetails, ADDITIONAL_DETAILS_FIELDS)
+        ).map(([field, value]) => [
+          field,
+          field === 'grossVolumeUnit'
+            ? value
+            : canonicalMeasurementNumber(value)
+        ])
+      )
     : {}
 
 const TRANSPORT_FIELDS = [

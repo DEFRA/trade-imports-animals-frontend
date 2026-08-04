@@ -70,8 +70,8 @@ const fullAnswers = {
       netWeight: 6
     })
   ],
-  totalGrossWeight: '20',
-  grossVolume: '12',
+  totalGrossWeight: 20,
+  grossVolume: 12,
   grossVolumeUnit: 'METRES_CUBED',
   borderControlPost: 'CONPNT',
   inspectionPremises: 'INSPBER1',
@@ -255,6 +255,21 @@ describe('plant-products check-answers view model', () => {
 
     expect(row(transport, 'Estimated arrival date').value.text).toBe('3/8/2026')
     expect(row(transport, 'Estimated arrival time').value.text).toBe('14:05')
+  })
+
+  it('formats weight and volume with at least two decimal places on check answers and review', () => {
+    for (const readOnly of [false, true]) {
+      const additional = card(
+        buildForMode(
+          { ...fullAnswers, totalGrossWeight: 2.5, grossVolume: 8 },
+          readOnly
+        ),
+        'Additional details'
+      )
+
+      expect(row(additional, 'Total gross weight').value.text).toBe('2.50')
+      expect(row(additional, 'Gross volume').value.text).toBe('8.00')
+    }
   })
 
   it('renders a missing-answer link for an unanswered in-scope obligation', () => {

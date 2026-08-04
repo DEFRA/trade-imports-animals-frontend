@@ -144,8 +144,8 @@ test.describe('plant-products commodity additional details', () => {
     await startAtAdditionalDetails(page)
     const url = page.url()
     await fillValues(page, {
-      totalGrossWeight: '2.5',
-      grossVolume: '8',
+      totalGrossWeight: '2.50',
+      grossVolume: '8.00',
       grossVolumeUnit: 'METRES_CUBED'
     })
     await page.getByRole('button', { name: 'Save and continue' }).click()
@@ -155,8 +155,8 @@ test.describe('plant-products commodity additional details', () => {
       'Completed'
     )
     await page.goto(url)
-    await expect(controls(page).totalGrossWeight).toHaveValue('2.5')
-    await expect(controls(page).grossVolume).toHaveValue('8')
+    await expect(controls(page).totalGrossWeight).toHaveValue('2.50')
+    await expect(controls(page).grossVolume).toHaveValue('8.00')
     await expect(controls(page).grossVolumeUnit).toHaveValue('METRES_CUBED')
   })
 

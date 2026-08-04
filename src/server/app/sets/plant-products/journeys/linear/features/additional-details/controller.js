@@ -10,9 +10,14 @@ import { copyFor } from '../../../../../../shared/copy.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { hubPath } from '../../../../../../shared/paths.js'
 import { grossVolumeUnitOptions } from '../../../../services/reference/gross-volume-units.js'
+import {
+  CLEAN_DECIMAL,
+  isLosslessMeasurementNumber
+} from '../../../../services/records/measurement-number.js'
 import { TEMPLATES } from '../../config.js'
 import { copy as cy } from './copy/copy.cy.js'
 import { copy as en } from './copy/copy.en.js'
+import { measurementInput } from './measurement-format.js'
 import { commodityAdditionalDetailsPage as page } from './page.js'
 
 export const meta = {
@@ -22,8 +27,6 @@ export const meta = {
 
 const view = `${TEMPLATES}/features/additional-details/template`
 const copy = copyFor({ en, cy })
-const NUMERIC = /^-?(?:\d+(?:\.\d*)?|\.\d+)$/
-
 const trimmed = (value) => String(value ?? '').trim()
 
 const totalGrossWeightRule = (netWeightTotal) =>
@@ -31,7 +34,11 @@ const totalGrossWeightRule = (netWeightTotal) =>
     .custom((raw, helpers) => {
       const value = trimmed(raw)
       if (!value) return helpers.error('weight.required')
-      if (!NUMERIC.test(value) || !Number.isFinite(Number(value))) {
+      if (
+        !CLEAN_DECIMAL.test(value) ||
+        !Number.isFinite(Number(value)) ||
+        !isLosslessMeasurementNumber(value)
+      ) {
         return helpers.error('weight.number')
       }
       const decimalPlaces = value.split('.')[1]?.length ?? 0
@@ -54,7 +61,12 @@ const grossVolumeRule = () =>
       const value = trimmed(raw)
       const unit = trimmed(helpers.state.ancestors[0]?.grossVolumeUnit)
       if (!value && unit) return helpers.error('volume.requiredWithUnit')
-      if (value && (!NUMERIC.test(value) || !Number.isFinite(Number(value)))) {
+      if (
+        value &&
+        (!CLEAN_DECIMAL.test(value) ||
+          !Number.isFinite(Number(value)) ||
+          !isLosslessMeasurementNumber(value))
+      ) {
         return helpers.error('volume.number')
       }
       return value
@@ -87,8 +99,8 @@ const fields = (netWeightTotal, unitCodes) =>
   }).unknown(true)
 
 const valuesFrom = (source) => ({
-  totalGrossWeight: source.totalGrossWeight ?? '',
-  grossVolume: source.grossVolume ?? '',
+  totalGrossWeight: measurementInput(source.totalGrossWeight),
+  grossVolume: measurementInput(source.grossVolume),
   grossVolumeUnit: source.grossVolumeUnit ?? ''
 })
 
@@ -159,8 +171,8 @@ const post = async (request, h) => {
   }
 
   const cleaned = {
-    totalGrossWeight: value.totalGrossWeight,
-    grossVolume: value.grossVolume || undefined,
+    totalGrossWeight: Number(value.totalGrossWeight),
+    grossVolume: value.grossVolume ? Number(value.grossVolume) : undefined,
     ...(value.grossVolume ? { grossVolumeUnit: value.grossVolumeUnit } : {})
   }
   let committed
