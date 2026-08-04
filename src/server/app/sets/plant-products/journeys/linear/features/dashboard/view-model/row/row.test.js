@@ -35,12 +35,17 @@ describe('plant-products dashboard row view model', () => {
     })
   })
 
-  it('draft has one Continue-to-hub action', () => {
+  it('draft has Continue-to-hub and Delete actions', () => {
     expect(toRow(journey({ status: 'draft' })).actions).toEqual([
       {
         text: copy.actions.continue,
         hiddenText: 'notification GBN-PP-26-ABC123',
         href: hubPath('GBN-PP-26-ABC123')
+      },
+      {
+        text: sharedCopy.notificationActions.delete.text,
+        hiddenText: 'notification GBN-PP-26-ABC123',
+        href: pagePath('GBN-PP-26-ABC123', 'delete')
       }
     ])
   })

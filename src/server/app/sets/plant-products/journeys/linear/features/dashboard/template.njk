@@ -2,11 +2,21 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/date-input/macro.njk" import govukDateInput %}
 {% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 {% from "govuk/components/pagination/macro.njk" import govukPagination %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
 
 {% block journeyContent %}
+  {% if deletionSucceeded %}
+    {{ govukNotificationBanner({
+      type: "success",
+      titleText: sharedCopy.notificationActions.delete.successTitle,
+      text: sharedCopy.notificationActions.delete.successBody,
+      role: "alert"
+    }) }}
+  {% endif %}
+
   {% include "shared/error-summary.njk" %}
 
   <h1 class="govuk-heading-xl">{{ copy.heading }}</h1>

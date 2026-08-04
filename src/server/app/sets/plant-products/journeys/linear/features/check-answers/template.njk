@@ -7,16 +7,27 @@
 {% block journeyContent %}
   <h1 class="govuk-heading-xl">{{ heading }}</h1>
 
-  {% if readOnly and copyAction %}
-    <form method="post" action="{{ copyAction.href }}" class="app-form-inline">
-      <input type="hidden" name="crumb" value="{{ crumb }}" />
-      <input type="hidden" name="idempotencyKey" value="{{ copyAction.idempotencyKey }}" />
-      <input type="hidden" name="copyOrigin" value="notification-view" />
-      {{ govukButton({
-        text: sharedCopy.notificationActions.copy.text,
-        classes: "govuk-button--secondary"
-      }) }}
-    </form>
+  {% if readOnly and (copyAction or deleteHref) %}
+    <div class="govuk-button-group">
+      {% if copyAction %}
+        <form method="post" action="{{ copyAction.href }}" class="app-form-inline">
+          <input type="hidden" name="crumb" value="{{ crumb }}" />
+          <input type="hidden" name="idempotencyKey" value="{{ copyAction.idempotencyKey }}" />
+          <input type="hidden" name="copyOrigin" value="notification-view" />
+          {{ govukButton({
+            text: sharedCopy.notificationActions.copy.text,
+            classes: "govuk-button--secondary"
+          }) }}
+        </form>
+      {% endif %}
+      {% if deleteHref %}
+        {{ govukButton({
+          text: sharedCopy.notificationActions.delete.text,
+          href: deleteHref,
+          classes: "govuk-button--warning"
+        }) }}
+      {% endif %}
+    </div>
   {% endif %}
 
   {% for section in sections %}

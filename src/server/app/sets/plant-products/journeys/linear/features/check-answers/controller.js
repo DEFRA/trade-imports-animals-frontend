@@ -53,6 +53,9 @@ export const renderNotificationView = async (
             idempotencyKey: copyIdempotencyKey
           }
         : null,
+    deleteHref: readOnly
+      ? `${pagePath(journey.journeyId, 'delete')}?source=notification-view`
+      : null,
     backLink: hubPath(journey.journeyId),
     hubHref: hubPath(journey.journeyId),
     breadcrumbs: breadcrumbs(journey.journeyId, copy.title)

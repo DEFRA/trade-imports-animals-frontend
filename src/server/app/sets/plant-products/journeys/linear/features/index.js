@@ -6,6 +6,7 @@ import * as dashboard from './dashboard/controller.js'
 import * as documents from './documents/controller.js'
 import * as declaration from './declaration/controller.js'
 import * as confirmation from './confirmation/controller.js'
+import * as deleteNotification from './delete-notification/controller.js'
 import * as notificationActions from './notification-actions/controller.js'
 import * as commodityInputMethod from './commodities/commodity-input-method/commodity-input-method.controller.js'
 import * as commodityBasicDescription from './commodities/basic-description/basic-description.controller.js'
@@ -73,6 +74,7 @@ export const allRoutes = [
   ...consignorConfirmation.routes,
   ...checkAnswers.routes,
   ...notificationActions.routes,
+  ...deleteNotification.routes,
   ...declaration.routes,
   ...confirmation.routes,
   ...hub.routes

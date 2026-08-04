@@ -32,10 +32,17 @@ const copyAction = (journey, reference, retryCopy) => ({
   copyOrigin: 'dashboard'
 })
 
+const deleteAction = (journey, reference) => ({
+  text: sharedCopy.notificationActions.delete.text,
+  hiddenText: copy.actions.forNotification(reference),
+  href: pagePath(journey.journeyId, 'delete')
+})
+
 export const toRow = (journey = {}, retryCopy = null) => {
   const reference = referenceOf(journey)
   const canContinue = journey.status === DRAFT || journey.status === AMEND
   const canCopy = journey.status === SUBMITTED || journey.status === AMEND
+  const canDelete = [DRAFT, SUBMITTED, AMEND].includes(journey.status)
   const actions = []
 
   if (canContinue) {
@@ -46,6 +53,7 @@ export const toRow = (journey = {}, retryCopy = null) => {
     })
   }
   if (canCopy) actions.push(copyAction(journey, reference, retryCopy))
+  if (canDelete) actions.push(deleteAction(journey, reference))
 
   return {
     reference,

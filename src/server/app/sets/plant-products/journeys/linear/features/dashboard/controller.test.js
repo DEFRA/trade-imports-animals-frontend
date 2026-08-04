@@ -23,6 +23,7 @@ import { records as plantRecords } from '../../../../services/records/index.js'
 import { records as recordsReal } from '../../../../services/records/real.js'
 import { records as recordsStub } from '../../../../services/records/stub.js'
 import { copy } from './copy/copy.en.js'
+import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { routes } from './controller.js'
 
 const emptyList = {
@@ -140,6 +141,24 @@ describe('plant-products dashboard controller', () => {
 
     expect(response.result).not.toContain('DELETED-ROW')
     expect(response.result).toContain(copy.search.noResults)
+  })
+
+  it('shows the deletion banner only when deleted=1 is present', async () => {
+    const ordinary = await server.inject('/plant-products')
+    const deleted = await server.inject('/plant-products?deleted=1')
+
+    expect(ordinary.result).not.toContain(
+      sharedCopy.notificationActions.delete.successTitle
+    )
+    expect(ordinary.result).not.toContain(
+      sharedCopy.notificationActions.delete.successBody
+    )
+    expect(deleted.result).toContain(
+      sharedCopy.notificationActions.delete.successTitle
+    )
+    expect(deleted.result).toContain(
+      sharedCopy.notificationActions.delete.successBody
+    )
   })
 
   it('trims reference search for records.list and echoes it into the input', async () => {

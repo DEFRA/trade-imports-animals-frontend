@@ -70,6 +70,7 @@ describe('plant-products check-answers controller', () => {
     })
     expect(draft.view.context.readOnly).toBe(false)
     expect(draft.view.context.copyAction).toBeNull()
+    expect(draft.view.context.deleteHref).toBeNull()
 
     await records.finalise(draft.journeyId)
     const firstH = stubH()
@@ -90,6 +91,9 @@ describe('plant-products check-answers controller', () => {
     )
     expect(firstAction.idempotencyKey).toEqual(expect.any(String))
     expect(secondAction.idempotencyKey).not.toBe(firstAction.idempotencyKey)
+    expect(firstH.captured.view.context.deleteHref).toMatch(
+      /^\/plant-products\/notifications\/[^/]+\/delete\?source=notification-view$/
+    )
   })
 
   it('POST redirects through nextInSection and commits nothing', async () => {

@@ -8,6 +8,8 @@ import {
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../lib/http-status.js'
 import { copyFor } from '../../../../../../shared/copy.js'
+import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
+import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
 import * as kit from '../../../../../../shared/kit.js'
 import {
   createPath,
@@ -46,6 +48,7 @@ export const meta = { ...page, collects: [] }
 
 const view = `${TEMPLATES}/features/dashboard/template`
 const copy = copyFor({ en, cy })
+const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const parseReferenceNumber = (value) => {
   if (typeof value !== 'string') return undefined
@@ -116,6 +119,7 @@ export const renderDashboard = async (
   const response = h.view(view, {
     ...kit.base(copy.title, { recoverableError }),
     copy,
+    sharedCopy,
     startAction: createPath(),
     listAction: dashboardPath(),
     clearAction: dashboardPath(),
@@ -148,7 +152,8 @@ export const renderDashboard = async (
     listQuerySuffix: buildListQueryString({
       ...listQuery,
       page: currentPage
-    })
+    }),
+    deletionSucceeded: request.query?.deleted === '1'
   })
 
   return errors ? response.code(HTTP_STATUS_BAD_REQUEST) : response
