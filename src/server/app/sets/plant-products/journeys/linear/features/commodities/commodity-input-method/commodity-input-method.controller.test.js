@@ -57,7 +57,7 @@ describe('plant-products commodity-input-method controller', () => {
     await server.stop({ timeout: 0 })
   })
 
-  it('renders GET with neither input method selected when unanswered', async () => {
+  it('renders exactly one input method option when unanswered', async () => {
     const result = await drive(get)
 
     expect(result.view.context.values).toEqual({ commodityInputMethod: '' })
@@ -68,26 +68,40 @@ describe('plant-products commodity-input-method controller', () => {
         hint: { text: copy.options.MANUAL.hint },
         label: { classes: 'govuk-!-font-weight-bold' },
         checked: false
-      },
+      }
+    ])
+  })
+
+  it('retains a saved CSV value without rendering it as an option', async () => {
+    const result = await drive(get, {
+      seed: { commodityInputMethod: 'CSV' }
+    })
+
+    expect(result.view.context.values).toEqual({ commodityInputMethod: 'CSV' })
+    expect(result.view.context.inputMethodOptions).toEqual([
       {
-        value: 'CSV',
-        text: copy.options.CSV.label,
-        hint: { text: copy.options.CSV.hint },
+        value: 'MANUAL',
+        text: copy.options.MANUAL.label,
+        hint: { text: copy.options.MANUAL.hint },
         label: { classes: 'govuk-!-font-weight-bold' },
         checked: false
       }
     ])
   })
 
-  it('prefills GET from the saved input method', async () => {
-    const result = await drive(get, {
-      seed: { commodityInputMethod: 'CSV' }
+  it('rejects a forged CSV submission through the canonical 400 path', async () => {
+    const result = await drive(post, {
+      payload: { commodityInputMethod: 'CSV' }
     })
 
-    expect(result.view.context.values).toEqual({ commodityInputMethod: 'CSV' })
-    expect(
-      result.view.context.inputMethodOptions.map(({ checked }) => checked)
-    ).toEqual([false, true])
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors).toEqual({
+      commodityInputMethod: copy.errors.required
+    })
+    expect(result.view.context.values).toEqual({
+      commodityInputMethod: 'CSV'
+    })
+    expect(result.after).toEqual({})
   })
 
   it('returns 400 with the canonical error and commits nothing for an empty POST', async () => {
@@ -121,23 +135,20 @@ describe('plant-products commodity-input-method controller', () => {
     }
   )
 
-  it.each(['MANUAL', 'CSV'])(
-    'commits %s and redirects through nextTarget',
-    async (inputMethod) => {
-      const nextTarget = vi
-        .spyOn(kit, 'nextTarget')
-        .mockResolvedValue('/plant-products/notifications/next-target')
-      const result = await drive(post, {
-        payload: { commodityInputMethod: inputMethod }
-      })
+  it('commits MANUAL and redirects through nextTarget', async () => {
+    const nextTarget = vi
+      .spyOn(kit, 'nextTarget')
+      .mockResolvedValue('/plant-products/notifications/next-target')
+    const result = await drive(post, {
+      payload: { commodityInputMethod: 'MANUAL' }
+    })
 
-      expect(result.after).toEqual({ commodityInputMethod: inputMethod })
-      expect(result.response).toEqual({
-        redirect: '/plant-products/notifications/next-target'
-      })
-      expect(nextTarget).toHaveBeenCalledOnce()
-    }
-  )
+    expect(result.after).toEqual({ commodityInputMethod: 'MANUAL' })
+    expect(result.response).toEqual({
+      redirect: '/plant-products/notifications/next-target'
+    })
+    expect(nextTarget).toHaveBeenCalledOnce()
+  })
 
   it('renders the submitted value and recoverable error at 500', async () => {
     vi.spyOn(kit, 'recoverableSave').mockImplementationOnce(
@@ -146,11 +157,13 @@ describe('plant-products commodity-input-method controller', () => {
       })
     )
     const result = await drive(post, {
-      payload: { commodityInputMethod: 'CSV' }
+      payload: { commodityInputMethod: 'MANUAL' }
     })
 
     expect(result.response.statusCode).toBe(500)
-    expect(result.view.context.values).toEqual({ commodityInputMethod: 'CSV' })
+    expect(result.view.context.values).toEqual({
+      commodityInputMethod: 'MANUAL'
+    })
     expect(result.view.context.recoverableError).toBe(true)
     expect(result.after).toEqual({})
   })

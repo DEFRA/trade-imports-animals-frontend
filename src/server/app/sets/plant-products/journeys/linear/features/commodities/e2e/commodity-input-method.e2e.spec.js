@@ -33,7 +33,7 @@ test.describe('plant-products commodity input method', () => {
     await startAtCommodityInputMethod(page)
   })
 
-  test('renders the canonical question, caption, bold radio labels and hints with an accessible group name', async ({
+  test('renders the canonical question and exactly one input method option', async ({
     page
   }) => {
     await expect(page.getByText(copy.caption, { exact: true })).toBeVisible()
@@ -46,15 +46,15 @@ test.describe('plant-products commodity input method', () => {
     await expect(group).toHaveAccessibleName(`${copy.caption} ${copy.heading}`)
 
     const radios = group.locator('input[name="commodityInputMethod"]')
-    await expect(radios).toHaveCount(2)
+    await expect(radios).toHaveCount(1)
     expect(
       await radios.evaluateAll((inputs) => inputs.map(({ value }) => value))
-    ).toEqual(['MANUAL', 'CSV'])
+    ).toEqual(['MANUAL'])
     await expect(
       group.locator('input[name="commodityInputMethod"]:checked')
     ).toHaveCount(0)
 
-    for (const value of ['MANUAL', 'CSV']) {
+    for (const value of ['MANUAL']) {
       const option = copy.options[value]
       const radio = group.locator(
         `input[name="commodityInputMethod"][value="${value}"]`
@@ -97,29 +97,6 @@ test.describe('plant-products commodity input method', () => {
     await expect(
       page.locator('input[name="commodityInputMethod"]:checked')
     ).toHaveValue('MANUAL')
-  })
-
-  test('saves and persists the CSV input method through the same route', async ({
-    page
-  }) => {
-    const formUrl = page.url()
-    await page
-      .getByRole('radio', { name: copy.options.CSV.label, exact: true })
-      .check()
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-
-    await expect(page).toHaveURL((url) =>
-      /^\/plant-products\/notifications\/[^/]+\/commodity-search$/.test(
-        url.pathname
-      )
-    )
-    await page.goto(formUrl)
-    await expect(
-      page.getByRole('radio', { name: copy.options.CSV.label, exact: true })
-    ).toBeChecked()
-    await expect(
-      page.locator('input[name="commodityInputMethod"]:checked')
-    ).toHaveValue('CSV')
   })
 
   test('shows the canonical linked errors, focuses the first radio and commits nothing', async ({

@@ -20,7 +20,7 @@ export const meta = { ...page, collects: ['commodityInputMethod'] }
 
 const view = `${TEMPLATES}/features/commodities/commodity-input-method/commodity-input-method`
 const copy = copyFor({ en, cy }).inputMethod
-const INPUT_METHODS = ['MANUAL', 'CSV']
+const INPUT_METHODS = ['MANUAL']
 
 const fields = () =>
   compose(

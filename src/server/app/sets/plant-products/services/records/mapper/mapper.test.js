@@ -110,6 +110,12 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     expect(fromDto(toDto(answers))).toEqual(answers)
   })
 
+  it('passes an unrecognised commodity.inputMethod through unchanged', () => {
+    expect(
+      fromDto({ commodity: { inputMethod: 'FUTURE_INPUT_METHOD' } })
+    ).toEqual({ commodityInputMethod: 'FUTURE_INPUT_METHOD' })
+  })
+
   it('does not fabricate commodity.inputMethod when it is unanswered', () => {
     expect(toDto({ commodityLines: [] }).commodity).not.toHaveProperty(
       'inputMethod'

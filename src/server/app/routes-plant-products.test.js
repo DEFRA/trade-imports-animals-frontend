@@ -150,7 +150,7 @@ describe('plant-products gateway boot proof', () => {
       'How do you want to add your commodity details?'
     )
     expect(commodityInputMethod.result).toContain('Manual entry')
-    expect(commodityInputMethod.result).toContain('Upload from a CSV file')
+    expect(commodityInputMethod.result).not.toContain('Upload from a CSV file')
 
     const savedInputMethod = await server.inject({
       method: 'POST',
