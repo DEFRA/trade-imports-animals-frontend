@@ -184,6 +184,45 @@ describe('plant-products copy notification action', () => {
     expect(response.context.copyAction.idempotencyKey).toBe('review-retry-key')
   })
 
+  it('renders an actionable key-reuse error at 422 with a fresh key', async () => {
+    const source = await createSubmitted()
+    configureRecords('plant-products', {
+      ...recordsStub,
+      copy: realRecords.copy
+    })
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response('Unprocessable Entity', {
+        status: 422,
+        statusText: 'Unprocessable Entity'
+      })
+    )
+
+    const response = await inPlantProducts(() =>
+      copyPost(
+        journeyRequest(source.journeyId, {
+          payload: {
+            idempotencyKey: 'rejected-copy-key',
+            copyOrigin: 'notification-view'
+          }
+        }),
+        stubH()
+      )
+    )
+
+    expect(response.statusCode).toBe(422)
+    expect(response.context.copyIdempotencyError).toBe(true)
+    expect(response.context.recoverableError).toBe(false)
+    expect(response.context.sharedCopy.copyIdempotencyError.body).toContain(
+      'Try copying it again'
+    )
+    expect(response.context.copyAction.idempotencyKey).not.toBe(
+      'rejected-copy-key'
+    )
+    expect(response.context.copyAction.idempotencyKey).toMatch(
+      /^[0-9a-f-]{36}$/
+    )
+  })
+
   it('re-renders the originating dashboard row at 500 with its original key', async () => {
     const source = await createSubmitted()
     configureRecords('plant-products', {

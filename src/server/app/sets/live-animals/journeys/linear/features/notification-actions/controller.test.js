@@ -83,7 +83,7 @@ describe('copy notification action', () => {
     expect(retry.redirect).toBe(first.redirect)
   })
 
-  it('Should re-render the dashboard at 500 with the same key after a recoverable backend failure', async () => {
+  it('Should distinguish a recoverable failure from an actionable key-reuse error', async () => {
     configureRecords('live-animals', { ...recordsStub, copy: realRecords.copy })
     vi.stubGlobal(
       'fetch',
@@ -115,6 +115,37 @@ describe('copy notification action', () => {
         (action) => action.text === 'Copy as new'
       ).idempotencyKey
     ).toBe('retry-this-key')
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: false,
+        status: 422,
+        statusText: 'Unprocessable Entity'
+      }))
+    )
+    const keyReuseResponse = await copyPost(
+      journeyRequest(source.journeyId, {
+        payload: {
+          idempotencyKey: 'rejected-copy-key',
+          copyOrigin: 'dashboard'
+        }
+      }),
+      stubH()
+    )
+
+    const retryAction =
+      keyReuseResponse.context.notificationRows[0].actions.find(
+        (action) => action.text === 'Copy as new'
+      )
+    expect(keyReuseResponse.statusCode).toBe(422)
+    expect(keyReuseResponse.context.copyIdempotencyError).toBe(true)
+    expect(keyReuseResponse.context.recoverableError).toBe(false)
+    expect(
+      keyReuseResponse.context.sharedCopy.copyIdempotencyError.body
+    ).toContain('Try copying it again')
+    expect(retryAction.idempotencyKey).not.toBe('rejected-copy-key')
+    expect(retryAction.idempotencyKey).toMatch(/^[0-9a-f-]{36}$/)
   })
 
   it('Should redirect an unknown source to the dashboard without copying', async () => {

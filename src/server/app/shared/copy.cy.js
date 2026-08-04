@@ -20,6 +20,10 @@ export const copy = {
     title: 'Mae problem',
     body: "Mae'n ddrwg gennym, mae problem gyda'r gwasanaeth. Mae eich atebion ar y dudalen hon wedi'u cadw. Rhowch gynnig arall arni ymhen ychydig funudau."
   },
+  copyIdempotencyError: {
+    title: 'Hysbysiad heb ei gopïo',
+    body: "Ni chafodd yr hysbysiad hwn ei gopïo oherwydd bod y cais copi eisoes wedi'i ddefnyddio ar gyfer hysbysiad arall. Ceisiwch ei gopïo eto. Bydd cais copi newydd yn cael ei ddefnyddio."
+  },
   notificationActions: {
     copy: {
       text: 'Copïo fel un newydd',

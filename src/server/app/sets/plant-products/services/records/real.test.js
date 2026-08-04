@@ -5,7 +5,10 @@ import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { configureFulfilmentRegistry } from '../../../../bridge/fulfilment-registry.js'
 import { projectAnswers } from '../../../../bridge/fulfilments/index.js'
 import { configureObligationSet } from '../../../../model/obligations/manifest.js'
-import { isRecoverableBackendError } from '../../../../services/persistence/records/errors.js'
+import {
+  isIdempotencyKeyReuseError,
+  isRecoverableBackendError
+} from '../../../../services/persistence/records/errors.js'
 import { withSetContext } from '../../../../shared/set-context.js'
 import * as plantProductsObligationSet from '../../obligations/index.js'
 import { featureEvaluationBindings } from '../../journeys/linear/features/evaluation.js'
@@ -884,6 +887,23 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
       status: 'draft',
       fulfilment: {}
     })
+  })
+
+  it('classifies a copy 422 as key reuse rather than recoverable', async () => {
+    fetchMocker.mockResponse('Unprocessable Entity', {
+      status: 422,
+      statusText: 'Unprocessable Entity'
+    })
+
+    const surfaced = await captureError(() =>
+      inPlantProducts(() => records.copy(SOURCE_REFERENCE, 'reused-copy-key'))
+    )
+
+    expect(surfaced.message).toBe(
+      'copy notification failed: 422 Unprocessable Entity'
+    )
+    expect(isIdempotencyKeyReuseError(surfaced)).toBe(true)
+    expect(isRecoverableBackendError(surfaced)).toBe(false)
   })
 
   it.each([undefined, null, '', '   '])(

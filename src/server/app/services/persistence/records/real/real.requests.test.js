@@ -18,7 +18,10 @@ import {
   answersToTargetNotification,
   fulfilmentToNotification
 } from '../mapper.js'
-import { isRecoverableBackendError } from '../errors.js'
+import {
+  isIdempotencyKeyReuseError,
+  isRecoverableBackendError
+} from '../errors.js'
 import { mapStatus, records } from './index.js'
 
 const fetchMocker = createFetchMock(vi)
@@ -343,6 +346,24 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       journeyId: copiedJourneyId,
       status: DRAFT
     })
+  })
+
+  it('Should classify a copy 422 as key reuse rather than recoverable', async () => {
+    fetchMocker.mockResponse('Unprocessable Entity', {
+      status: 422,
+      statusText: 'Unprocessable Entity'
+    })
+
+    let surfaced
+    try {
+      await records.copy(journeyId, 'reused-copy-key')
+    } catch (error) {
+      surfaced = error
+    }
+
+    expect(surfaced).toMatchObject({ status: 422 })
+    expect(isIdempotencyKeyReuseError(surfaced)).toBe(true)
+    expect(isRecoverableBackendError(surfaced)).toBe(false)
   })
 
   it('Should soft-delete and marshal the deleted journey', async () => {

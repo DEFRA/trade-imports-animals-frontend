@@ -82,7 +82,11 @@ const filterRows = (rows, values, dateRange) =>
 export const renderDashboard = async (
   request,
   h,
-  { recoverableError = false, retryCopy = null } = {}
+  {
+    recoverableError = false,
+    copyIdempotencyError = false,
+    retryCopy = null
+  } = {}
 ) => {
   const values = filterValues(request.query)
   const errors = validateFilters(request.query, copy.errors)
@@ -120,7 +124,7 @@ export const renderDashboard = async (
   }
 
   const response = h.view(view, {
-    ...kit.base(copy.title, { recoverableError }),
+    ...kit.base(copy.title, { recoverableError, copyIdempotencyError }),
     copy,
     sharedCopy,
     startAction: createPath(),

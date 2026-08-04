@@ -2,7 +2,10 @@ import { getTraceId } from '@defra/hapi-tracing'
 
 import { projectAnswers } from '../../../../bridge/fulfilments/index.js'
 import { AMEND, DRAFT } from '../../../../engine/persistence/records.js'
-import { markRecoverableBackendError } from '../../../../services/persistence/records/errors.js'
+import {
+  markIdempotencyKeyReuseError,
+  markRecoverableBackendError
+} from '../../../../services/persistence/records/errors.js'
 import {
   HTTP_NOT_FOUND,
   IDEMPOTENCY_KEY_HEADER,
@@ -256,6 +259,9 @@ export const copy = async (journeyId, idempotencyKey) => {
       headers: headers({ [IDEMPOTENCY_KEY_HEADER]: idempotencyKey })
     }
   )
+  if (response.status === 422) {
+    throw markIdempotencyKeyReuseError(failed('copy notification', response))
+  }
   expectStatus('copy notification', response, [201])
   return marshal(await response.json())
 }

@@ -1,4 +1,5 @@
 import { fulfilmentsUrl } from '../config.js'
+import { markIdempotencyKeyReuseError } from '../../errors.js'
 import { failed } from '../http/failed.js'
 import { headers } from '../http/headers.js'
 import { marshal } from '../marshal/document.js'
@@ -20,6 +21,9 @@ export const copy = async (journeyId, idempotencyKey) => {
       'Idempotency-Key': idempotencyKey
     }
   })
-  if (!response.ok) throw failed('copy fulfilment', response)
+  if (!response.ok) {
+    const error = failed('copy fulfilment', response)
+    throw response.status === 422 ? markIdempotencyKeyReuseError(error) : error
+  }
   return marshal(await response.json())
 }

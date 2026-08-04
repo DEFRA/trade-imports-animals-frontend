@@ -30,6 +30,7 @@ const renderCya = (
   readOnly,
   amendmentCancelled,
   recoverableError = false,
+  copyIdempotencyError = false,
   copyIdempotencyKey = null
 ) =>
   h.view(view, {
@@ -48,6 +49,7 @@ const renderCya = (
     readOnly,
     amendmentCancelled,
     recoverableError,
+    copyIdempotencyError,
     copyAction:
       readOnly && copyIdempotencyKey
         ? {
@@ -70,7 +72,11 @@ const renderCya = (
 export const renderNotificationView = async (
   request,
   h,
-  { recoverableError = false, copyIdempotencyKey = randomUUID() } = {}
+  {
+    recoverableError = false,
+    copyIdempotencyError = false,
+    copyIdempotencyKey = randomUUID()
+  } = {}
 ) => {
   const { journey, answers, scope, evaluation } = await state.get(request, h)
   const readOnly = journey.status === state.SUBMITTED
@@ -83,6 +89,7 @@ export const renderNotificationView = async (
     readOnly,
     readOnly && request.query.cancelled === '1',
     recoverableError,
+    copyIdempotencyError,
     readOnly ? copyIdempotencyKey : null
   )
 }
