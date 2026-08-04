@@ -24,6 +24,7 @@ import * as originOfImport from './origin/origin-of-import/origin-of-import.cont
 import * as purpose from './purpose/controller.js'
 import * as transport from './transport/controller.js'
 import * as tradersAddresses from './traders/traders-addresses/traders-addresses.controller.js'
+import * as consignorPicker from './traders/consignor-picker/consignor-picker.controller.js'
 import * as consignorCreate from './traders/consignor-create/consignor-create.controller.js'
 import * as consignorConfirmation from './traders/consignor-confirmation/consignor-confirmation.controller.js'
 
@@ -46,6 +47,7 @@ export const dispatchPages = [
   nominatedContacts.meta,
   documents.meta,
   tradersAddresses.meta,
+  consignorPicker.meta,
   consignorCreate.meta,
   consignorConfirmation.meta,
   checkAnswers.meta,
@@ -71,6 +73,7 @@ export const allRoutes = [
   ...nominatedContacts.routes,
   ...documents.routes,
   ...tradersAddresses.routes,
+  ...consignorPicker.routes,
   ...consignorCreate.routes,
   ...consignorConfirmation.routes,
   ...checkAnswers.routes,

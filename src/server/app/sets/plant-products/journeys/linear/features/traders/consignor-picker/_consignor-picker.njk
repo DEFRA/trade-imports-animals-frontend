@@ -1,0 +1,92 @@
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/table/macro.njk" import govukTable %}
+{% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
+
+{# Results table with a radio per row. The whole picker is one form and the
+   only submit is Save and continue, so the page works with no client
+   JavaScript at all. #}
+{% macro consignorPickerResults(picker, copy) %}
+  {% set rows = [] %}
+  {% for row in picker.rows %}
+    {% set selectLabel %}<span class="govuk-visually-hidden">{{ copy.selectRowPrefix }} {{ row.name }}</span>{% endset %}
+    {% set selectCell %}
+      {{ govukRadios({
+        idPrefix: row.idPrefix,
+        name: "party",
+        classes: "govuk-radios--small",
+        items: [{
+          value: row.id,
+          html: selectLabel,
+          checked: row.checked
+        }]
+      }) }}
+    {% endset %}
+    {% set detailsCell %}
+      <details class="govuk-details">
+        <summary class="govuk-details__summary">
+          <span class="govuk-details__summary-text">{{ copy.viewDetails }}<span class="govuk-visually-hidden"> {{ copy.viewDetailsFor }} {{ row.name }}</span></span>
+        </summary>
+        <div class="govuk-details__text">
+          <ul class="govuk-list">
+            {% for line in row.detailLines %}
+              <li>{{ line }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </details>
+    {% endset %}
+    {% set ignored = rows.push([
+      { html: selectCell },
+      { text: row.name },
+      { text: row.addressText },
+      { text: row.country },
+      { html: detailsCell }
+    ]) %}
+  {% endfor %}
+
+  {{ govukTable({
+    caption: picker.resultsCaption,
+    captionClasses: "govuk-table__caption--s",
+    head: [
+      { html: '<span class="govuk-visually-hidden">' + copy.table.selectHidden + '</span>' },
+      { text: copy.table.name },
+      { text: copy.table.address },
+      { text: copy.table.country },
+      { html: '<span class="govuk-visually-hidden">' + copy.table.actionsHidden + '</span>' }
+    ],
+    rows: rows
+  }) }}
+{% endmacro %}
+
+{% macro consignorPicker(picker, crumb, copy) %}
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {% if picker.selected %}
+      {{ govukInsetText({ text: copy.selectedPrefix + " " + picker.selected.name }) }}
+    {% endif %}
+
+    {% if picker.error %}
+      <p id="party-error" class="govuk-error-message">
+        <span class="govuk-visually-hidden">{{ copy.errorPrefix }}</span> {{ picker.error }}
+      </p>
+    {% endif %}
+
+    {% if picker.rows.length %}
+      {{ consignorPickerResults(picker, copy) }}
+    {% else %}
+      <p class="govuk-body">{{ copy.noSaved }}</p>
+    {% endif %}
+
+    <div class="govuk-button-group">
+      {{ govukButton({ text: copy.saveAndContinue }) }}
+      {{ govukButton({
+        text: copy.addNew,
+        classes: "govuk-button--secondary",
+        attributes: { id: "add-consignor" },
+        href: picker.createConsignorHref
+      }) }}
+    </div>
+  </form>
+{% endmacro %}

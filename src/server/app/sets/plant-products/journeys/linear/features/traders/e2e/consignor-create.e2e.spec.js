@@ -20,6 +20,10 @@ const tradersUrl = (url) =>
   /^\/plant-products\/notifications\/[^/]+\/traders-addresses$/.test(
     url.pathname
   )
+const pickerUrl = (url) =>
+  /^\/plant-products\/notifications\/[^/]+\/consignor-select$/.test(
+    url.pathname
+  )
 const hubUrl = (url) =>
   /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
 
@@ -27,6 +31,13 @@ const rowByTitle = (page, title) =>
   page.getByRole('listitem').filter({
     has: page.getByText(title, { exact: true })
   })
+
+const openCreateFromPicker = async (page) => {
+  await page
+    .getByRole('button', { name: copy.consignorPicker.addNew, exact: true })
+    .click()
+  await expect(page).toHaveURL(createUrl)
+}
 
 const startAtConsignorCreate = async (page) => {
   await page.goto('/plant-products')
@@ -63,7 +74,8 @@ const startAtConsignorCreate = async (page) => {
       exact: true
     })
     .click()
-  await expect(page).toHaveURL(createUrl)
+  await expect(page).toHaveURL(pickerUrl)
+  await openCreateFromPicker(page)
 
   return { notificationUrl, pageUrl: page.url() }
 }
@@ -336,7 +348,10 @@ test.describe('plant-products consignor create', () => {
     ).toHaveCount(0)
     await expect(
       page.getByRole('link', { name: 'Back', exact: true })
-    ).toHaveAttribute('href', /^\/plant-products\/notifications\/[^/]+$/)
+    ).toHaveAttribute(
+      'href',
+      /^\/plant-products\/notifications\/[^/]+\/consignor-select$/
+    )
   })
 
   test('persists the consignor, confirms it, renders its name and completes the traders row only after addresses are saved', async ({
@@ -348,6 +363,13 @@ test.describe('plant-products consignor create', () => {
     await page
       .getByRole('button', {
         name: copy.consignorConfirmation.continueLabel,
+        exact: true
+      })
+      .click()
+    await expect(page).toHaveURL(pickerUrl)
+    await page
+      .getByRole('button', {
+        name: copy.consignorPicker.saveAndContinue,
         exact: true
       })
       .click()
@@ -376,7 +398,7 @@ test.describe('plant-products consignor create', () => {
     await fillValues(page)
     await submit(page)
     await expect(page).toHaveURL(confirmationUrl)
-    await page.goto(pageUrl)
+    await page.goto(`${pageUrl}?change=1`)
 
     const fields = controls(page)
     for (const [field, value] of Object.entries(enteredValues)) {
@@ -387,8 +409,11 @@ test.describe('plant-products consignor create', () => {
   test('abandoning the form persists no half-written consignor', async ({
     page
   }) => {
+    const notificationUrl = page.url().replace(/\/consignor-create$/, '')
     await fillValues(page)
     await page.getByRole('link', { name: 'Back', exact: true }).click()
+    await expect(page).toHaveURL(pickerUrl)
+    await page.goto(notificationUrl)
     await expect(page).toHaveURL(hubUrl)
     await expect(rowByTitle(page, 'Traders')).toContainText('Not yet started')
     await rowByTitle(page, 'Traders')
@@ -400,6 +425,7 @@ test.describe('plant-products consignor create', () => {
         exact: true
       })
       .click()
+    await openCreateFromPicker(page)
 
     for (const control of Object.values(controls(page))) {
       await expect(control).toHaveValue('')

@@ -11,10 +11,15 @@ const shape = (value) =>
     ])
   )
 
-const leaves = (value) =>
-  Object.values(value).flatMap((child) =>
-    child !== null && typeof child === 'object' ? leaves(child) : [child]
+const leaves = (value, path = []) =>
+  Object.entries(value).flatMap(([key, child]) =>
+    child !== null && typeof child === 'object'
+      ? leaves(child, [...path, key])
+      : [{ path: [...path, key].join('.'), value: child }]
   )
+
+const resolveCopyString = (value) =>
+  typeof value === 'function' ? value(1, 2) : value
 
 describe('plant-products traders copy', () => {
   it('keeps English and Welsh structure-identical', () => {
@@ -23,9 +28,12 @@ describe('plant-products traders copy', () => {
 
   it('provides non-empty copy at every leaf in both locales', () => {
     for (const bundle of [en, cy]) {
-      for (const value of leaves(bundle)) {
-        expect(value).toEqual(expect.any(String))
-        expect(value.trim()).not.toBe('')
+      for (const { path, value } of leaves(bundle)) {
+        const text = resolveCopyString(value)
+        expect(text, `${path} must resolve to a string`).toEqual(
+          expect.any(String)
+        )
+        expect(text.trim(), `${path} must not be empty`).not.toBe('')
       }
     }
   })
@@ -60,5 +68,56 @@ describe('plant-products traders copy', () => {
       panelTitle: 'The consignor or exporter has been created',
       continueLabel: 'Add to notification'
     })
+  })
+
+  it('provides the complete consignor-picker English contract', () => {
+    const { resultsCaption, ...fixed } = en.consignorPicker
+
+    expect(fixed).toEqual({
+      pageTitle: 'Consignor or exporter',
+      caption: 'Traders',
+      description:
+        'Select the consignor or exporter for this notification, or add a new one.',
+      noSaved: 'You have not saved any consignors or exporters yet.',
+      table: {
+        selectHidden: 'Select',
+        name: 'Name',
+        address: 'Address',
+        country: 'Country',
+        actionsHidden: 'Actions'
+      },
+      selectRowPrefix: 'Select',
+      viewDetails: 'View details',
+      viewDetailsFor: 'for',
+      selectedPrefix: 'Selected consignor or exporter:',
+      errorPrefix: 'Error:',
+      saveAndContinue: 'Save and continue',
+      addNew: 'Add a consignor or exporter',
+      errors: { required: 'Select a consignor or exporter from the list' }
+    })
+    expect(resultsCaption(5, 12)).toBe(
+      'Showing 5 of 12 consignors or exporters'
+    )
+  })
+
+  it('gives the picker button and the traders-addresses entry link the same wording', () => {
+    expect(en.consignorPicker.addNew).toBe(
+      en.tradersAddresses.consignor.addLink
+    )
+    expect(cy.consignorPicker.addNew).toBe(
+      cy.tradersAddresses.consignor.addLink
+    )
+  })
+
+  it('keeps both interpolations in the Welsh results caption', () => {
+    expect(cy.consignorPicker.resultsCaption(5, 12)).toContain('5')
+    expect(cy.consignorPicker.resultsCaption(5, 12)).toContain('12')
+  })
+
+  it('carries no search or no-matches copy yet', () => {
+    for (const bundle of [en, cy]) {
+      expect(bundle.consignorPicker).not.toHaveProperty('search')
+      expect(bundle.consignorPicker).not.toHaveProperty('noMatches')
+    }
   })
 })

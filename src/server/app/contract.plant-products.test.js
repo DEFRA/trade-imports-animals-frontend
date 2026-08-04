@@ -42,6 +42,7 @@ import * as purpose from './sets/plant-products/journeys/linear/features/purpose
 import * as transport from './sets/plant-products/journeys/linear/features/transport/controller.js'
 import * as tradersAddresses from './sets/plant-products/journeys/linear/features/traders/traders-addresses/traders-addresses.controller.js'
 import * as consignorCreate from './sets/plant-products/journeys/linear/features/traders/consignor-create/consignor-create.controller.js'
+import * as consignorPicker from './sets/plant-products/journeys/linear/features/traders/consignor-picker/consignor-picker.controller.js'
 import { entryGuardTarget } from './sets/plant-products/journeys/linear/flow/entry-guard.js'
 import {
   FLOW_ONLY_KEYS,
@@ -57,7 +58,19 @@ import { records as recordsStub } from './sets/plant-products/services/records/s
 import { session as sessionStub } from './services/persistence/session/stub.js'
 
 const SET_ID = 'plant-products'
-const drive = driveHandler
+
+const sessionYar = () => {
+  const values = new Map()
+  return {
+    get: (key) => values.get(key),
+    set: (key, value) => values.set(key, value)
+  }
+}
+
+const drive = (handler, options) => {
+  const yar = sessionYar()
+  return driveHandler((request, h) => handler({ ...request, yar }, h), options)
+}
 let committableKeys = []
 let flowOnlyWrites = []
 
@@ -439,5 +452,27 @@ describe('plant-products controller <-> model commit contract', () => {
         finishedOrPropagated: 'PROPAGATED'
       }
     ])
+  })
+
+  it('Should write the nine consignor leaves without claiming a second collects owner', async () => {
+    expect(consignorPicker.meta.collects).toEqual([])
+    const result = await drive(postHandlerOf(consignorPicker), {
+      payload: { party: 'example-consignor-01' }
+    })
+
+    expect(result.after).toEqual({
+      consignorName: 'Example Consignor 01 (sample data)',
+      consignorAddressLine1: '1 Example Street',
+      consignorAddressLine2: 'Example Business Park',
+      consignorAddressLine3: 'Example District',
+      consignorCity: 'Example City',
+      consignorPostcode: 'ZZ99 01',
+      consignorTelephone: '01632 960001',
+      consignorCountry: 'FR',
+      consignorEmail: 'consignor01@example.com'
+    })
+    expect(Object.keys(result.after).sort()).toEqual(
+      [...consignorCreate.meta.collects].sort()
+    )
   })
 })

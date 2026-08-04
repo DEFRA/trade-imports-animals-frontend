@@ -23,7 +23,7 @@ import {
 import { TEMPLATES } from '../../../config.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { copy as en } from '../copy/copy.en.js'
-import { tradersAddressesPage as page } from '../page.js'
+import { consignorPickerPage, tradersAddressesPage as page } from '../page.js'
 
 export const meta = {
   ...page,
@@ -189,7 +189,7 @@ const render = (
     destinationCountryItems: selectItems(values.destinationCountry),
     packerCountryItems: selectItems(values.packerCountry),
     consignorName,
-    consignorHref: pagePath(journey.journeyId, 'consignor-create')
+    consignorHref: pagePath(journey.journeyId, consignorPickerPage.slug)
   })
 }
 

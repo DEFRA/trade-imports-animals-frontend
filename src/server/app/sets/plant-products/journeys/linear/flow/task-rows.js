@@ -23,6 +23,7 @@ import { nominatedContactPage } from '../features/nominated-contacts/page.js'
 import {
   consignorConfirmationPage,
   consignorCreatePage,
+  consignorPickerPage,
   tradersAddressesPage
 } from '../features/traders/page.js'
 
@@ -53,6 +54,7 @@ export const taskRows = [
     id: 'traders',
     pages: [
       tradersAddressesPage,
+      consignorPickerPage,
       consignorCreatePage,
       consignorConfirmationPage
     ]

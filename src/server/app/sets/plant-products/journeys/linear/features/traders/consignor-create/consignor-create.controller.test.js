@@ -22,6 +22,8 @@ import {
   withSetContext
 } from '../../../../../../../shared/set-context.js'
 import * as obligations from '../../../../../obligations/index.js'
+import * as addressBook from '../../../../../services/address-book/index.js'
+import { readSelection } from '../../../../../services/address-book/session-store.js'
 import { records } from '../../../../../services/records/stub.js'
 import { toDto } from '../../../../../services/records/mapper/to-dto.js'
 import { evaluationBindings } from '../evaluation.js'
@@ -33,8 +35,18 @@ const get = consignorCreate.routes.find(
   ({ method }) => method === 'GET'
 ).handler
 const post = postHandlerOf(consignorCreate)
-const drive = (handler, options) =>
-  withSetContext('plant-products', () => driveHandler(handler, options))
+const sessionYar = () => {
+  const values = new Map()
+  return {
+    get: (key) => values.get(key),
+    set: (key, value) => values.set(key, value)
+  }
+}
+
+const drive = (handler, options, yar = sessionYar()) =>
+  withSetContext('plant-products', () =>
+    driveHandler((request, h) => handler({ ...request, yar }, h), options)
+  )
 
 const validPayload = (overrides = {}) => ({
   consignorName: '  Orchard Export SAS  ',
@@ -110,8 +122,21 @@ describe('plant-products consignor-create controller', () => {
     }
   })
 
-  it('prefills all nine values from one state read', async () => {
+  it('opens blank when the user is adding rather than editing', async () => {
     const result = await drive(get, { seed: cleanedAnswers })
+
+    expect(result.view.context.values).toEqual(
+      Object.fromEntries(
+        Object.keys(cleanedAnswers).map((field) => [field, ''])
+      )
+    )
+  })
+
+  it('prefills all nine values from one state read on a change-link arrival', async () => {
+    const result = await drive(get, {
+      seed: cleanedAnswers,
+      query: { change: '1' }
+    })
 
     expect(result.view.context.values).toEqual(cleanedAnswers)
     expect(result.view.context.countryItems).toEqual(
@@ -120,6 +145,14 @@ describe('plant-products consignor-create controller', () => {
         expect.objectContaining({ value: 'GB-ENG', text: 'England' }),
         expect.objectContaining({ text: '──────────', disabled: true })
       ])
+    )
+  })
+
+  it('back-links to the consignor picker', async () => {
+    const result = await drive(get, {})
+
+    expect(result.view.context.backLink).toMatch(
+      /^\/plant-products\/notifications\/[^/]+\/consignor-select$/
     )
   })
 
@@ -277,6 +310,45 @@ describe('plant-products consignor-create controller', () => {
     ]) {
       expect(result.after).not.toHaveProperty(field)
     }
+  })
+
+  it('saves the new consignor into this session’s address book and selects it', async () => {
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue('/next')
+    const yar = sessionYar()
+    const result = await drive(post, { payload: validPayload() }, yar)
+    const saved = await addressBook.list({ yar })
+
+    expect(saved.at(-1)).toEqual({
+      id: 'created-consignor-1',
+      name: 'Orchard Export SAS',
+      telephone: '+33 4 72 00 00 00',
+      email: 'exports@example.com',
+      address: {
+        addressLine1: '12 Rue des Vergers',
+        addressLine2: 'Building B',
+        addressLine3: 'Export Quarter',
+        city: 'Lyon',
+        postcode: '69001',
+        country: 'FR'
+      }
+    })
+    expect(readSelection({ yar }, result.journeyId)).toBe('created-consignor-1')
+  })
+
+  it('does not append a second address-book record when an edit is saved', async () => {
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue('/next')
+    const yar = sessionYar()
+    await drive(post, { payload: validPayload() }, yar)
+    await drive(
+      post,
+      {
+        payload: validPayload({ consignorCity: 'Marseille' }),
+        query: { change: '1' }
+      },
+      yar
+    )
+
+    await expect(addressBook.list({ yar })).resolves.toHaveLength(13)
   })
 
   it('renders raw values and a recoverable error at 500', async () => {

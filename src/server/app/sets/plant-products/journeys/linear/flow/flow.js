@@ -26,6 +26,7 @@ import { transportBeforeBipPage } from '../features/transport/page.js'
 import {
   consignorConfirmationPage,
   consignorCreatePage,
+  consignorPickerPage,
   tradersAddressesPage
 } from '../features/traders/page.js'
 
@@ -83,6 +84,7 @@ export const sections = [
     id: 'traders',
     pages: [
       tradersAddressesPage,
+      consignorPickerPage,
       consignorCreatePage,
       consignorConfirmationPage
     ]

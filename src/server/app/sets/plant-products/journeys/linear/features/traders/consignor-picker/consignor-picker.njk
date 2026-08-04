@@ -1,0 +1,12 @@
+{% extends "shared/layout.njk" %}
+{% from "plant-products/journeys/linear/features/traders/consignor-picker/_consignor-picker.njk" import consignorPicker %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  <span class="govuk-caption-l">{{ copy.caption }}</span>
+  <h1 class="govuk-heading-l">{{ copy.pageTitle }}</h1>
+  <p class="govuk-body">{{ copy.description }}</p>
+
+  {{ consignorPicker(picker, crumb, copy) }}
+{% endblock %}

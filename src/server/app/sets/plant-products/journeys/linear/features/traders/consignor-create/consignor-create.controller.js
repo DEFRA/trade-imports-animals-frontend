@@ -12,7 +12,9 @@ import {
 } from '../../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as kit from '../../../../../../../shared/kit.js'
-import { hubPath } from '../../../../../../../shared/paths.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
+import * as addressBook from '../../../../../services/address-book/index.js'
+import { writeSelection } from '../../../../../services/address-book/session-store.js'
 import {
   COUNTRIES,
   countryOptions,
@@ -21,7 +23,7 @@ import {
 import { TEMPLATES } from '../../../config.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { copy as en } from '../copy/copy.en.js'
-import { consignorCreatePage as page } from '../page.js'
+import { consignorCreatePage as page, consignorPickerPage } from '../page.js'
 
 export const meta = {
   ...page,
@@ -111,7 +113,7 @@ const render = (
 ) =>
   h.view(view, {
     ...kit.base(copy.pageTitle, {
-      backLink: hubPath(journey.journeyId),
+      backLink: pagePath(journey.journeyId, consignorPickerPage.slug),
       journey,
       recoverableError
     }),
@@ -122,9 +124,16 @@ const render = (
     countryItems: countryItems(values.consignorCountry)
   })
 
+// Arriving from the picker's 'Add a consignor or exporter' means adding, so the
+// form opens blank. Only a check-answers Change link, which carries the change
+// marker, prefills what is already on the notification.
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, valuesFrom(answers))
+  return render(
+    h,
+    journey,
+    kit.changeContext(request) ? valuesFrom(answers) : valuesFrom({})
+  )
 }
 
 const optionalValue = (value) => value || undefined
@@ -141,6 +150,20 @@ const cleanedValues = (values) => ({
   consignorEmail: values.consignorEmail.trim()
 })
 
+const addressBookRecord = (values) => ({
+  name: values.consignorName,
+  telephone: values.consignorTelephone,
+  email: values.consignorEmail,
+  address: {
+    addressLine1: values.consignorAddressLine1,
+    addressLine2: values.consignorAddressLine2 ?? '',
+    addressLine3: values.consignorAddressLine3 ?? '',
+    city: values.consignorCity,
+    postcode: values.consignorPostcode ?? '',
+    country: values.consignorCountry
+  }
+})
+
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const pageState = await state.get(request, h)
@@ -154,9 +177,10 @@ const post = async (request, h) => {
   }
 
   let committed
+  const cleaned = cleanedValues(rawValues)
   const { failure } = await kit.recoverableSave(
     async () => {
-      committed = await state.commit(request, h, cleanedValues(rawValues))
+      committed = await state.commit(request, h, cleaned)
     },
     () =>
       render(h, pageState.journey, rawValues, {
@@ -164,6 +188,11 @@ const post = async (request, h) => {
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
   if (failure) return failure
+
+  if (!kit.changeContext(request)) {
+    const saved = await addressBook.add(request, addressBookRecord(cleaned))
+    writeSelection(request, pageState.journey.journeyId, saved.id)
+  }
 
   return h.redirect(await kit.nextTarget(request, page, committed.scope))
 }

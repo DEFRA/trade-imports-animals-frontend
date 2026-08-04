@@ -7,7 +7,7 @@ import { copy as cy } from '../copy/copy.cy.js'
 import { copy as en } from '../copy/copy.en.js'
 import {
   consignorConfirmationPage as page,
-  tradersAddressesPage
+  consignorPickerPage
 } from '../page.js'
 
 export const meta = { ...page, collects: [] }
@@ -26,7 +26,7 @@ const get = async (request, h) => {
 const post = (request, h) => {
   const target =
     kit.hubExitTarget(request) ??
-    pagePath(request.params.journeyId, tradersAddressesPage.slug)
+    pagePath(request.params.journeyId, consignorPickerPage.slug)
   return h.redirect(kit.withChangeContext(request, target))
 }
 

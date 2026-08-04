@@ -13,7 +13,7 @@ import {
 import { makeScope } from '../../../../../engine/index.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
 import { configureJourneyFlow } from '../../../../../flow/journey-flow.js'
-import { rowEntry } from '../../../../../flow/navigation.js'
+import { nextInSection, rowEntry } from '../../../../../flow/navigation.js'
 import { readyForCheckYourAnswers } from '../../../../../flow/section-status.js'
 import { configureObligationSet } from '../../../../../model/obligations/manifest.js'
 import {
@@ -48,6 +48,7 @@ import { transportBeforeBipPage } from '../features/transport/page.js'
 import {
   consignorConfirmationPage,
   consignorCreatePage,
+  consignorPickerPage,
   tradersAddressesPage
 } from '../features/traders/page.js'
 import { FLOW_ONLY_KEYS, sections } from './flow.js'
@@ -59,6 +60,33 @@ import { quantityTypeOptions } from '../../../services/reference/quantity-types.
 const { values: happyPath } = JSON.parse(
   readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
 )
+
+const TRADERS_ROW_PARTS = [
+  'destinationSameAsConsignee',
+  'destinationName',
+  'destinationAddressLine1',
+  'destinationAddressLine2',
+  'destinationAddressLine3',
+  'destinationCity',
+  'destinationPostcode',
+  'destinationCountry',
+  'packerName',
+  'packerAddressLine1',
+  'packerAddressLine2',
+  'packerAddressLine3',
+  'packerCity',
+  'packerPostcode',
+  'packerCountry',
+  'consignorName',
+  'consignorAddressLine1',
+  'consignorAddressLine2',
+  'consignorAddressLine3',
+  'consignorCity',
+  'consignorPostcode',
+  'consignorTelephone',
+  'consignorCountry',
+  'consignorEmail'
+]
 
 const completeConsignor = {
   consignorName: 'Orchard Export SAS',
@@ -155,6 +183,7 @@ describe('plant-products task rows', () => {
         id: 'traders',
         pages: [
           tradersAddressesPage,
+          consignorPickerPage,
           consignorCreatePage,
           consignorConfirmationPage
         ]
@@ -357,32 +386,49 @@ describe('plant-products task rows', () => {
     ).toEqual(['nominatedContacts'])
     expect(
       withSetContext('plant-products', () => rowParts(taskRowById('traders')))
-    ).toEqual([
-      'destinationSameAsConsignee',
-      'destinationName',
-      'destinationAddressLine1',
-      'destinationAddressLine2',
-      'destinationAddressLine3',
-      'destinationCity',
-      'destinationPostcode',
-      'destinationCountry',
-      'packerName',
-      'packerAddressLine1',
-      'packerAddressLine2',
-      'packerAddressLine3',
-      'packerCity',
-      'packerPostcode',
-      'packerCountry',
-      'consignorName',
-      'consignorAddressLine1',
-      'consignorAddressLine2',
-      'consignorAddressLine3',
-      'consignorCity',
-      'consignorPostcode',
-      'consignorTelephone',
-      'consignorCountry',
-      'consignorEmail'
+    ).toEqual(TRADERS_ROW_PARTS)
+  })
+
+  it('sends traders-addresses on to the consignor picker', () => {
+    expect(
+      withSetContext('plant-products', () =>
+        nextInSection(
+          tradersAddressesPage.id,
+          makeScope({
+            countryOfOrigin: 'FR',
+            commodityLines: [{ commoditySelection: '08059000' }],
+            destinationSameAsConsignee: true
+          }),
+          'journey-1'
+        )
+      )
+    ).toBe('/plant-products/notifications/journey-1/consignor-select')
+    expect(sections.find(({ id }) => id === 'traders')?.pages).toEqual([
+      tradersAddressesPage,
+      consignorPickerPage,
+      consignorCreatePage,
+      consignorConfirmationPage
     ])
+  })
+
+  it('leaves the traders row parts and entry page untouched by the consignor picker insertion', () => {
+    const traders = taskRowById('traders')
+
+    expect(withSetContext('plant-products', () => rowParts(traders))).toEqual(
+      TRADERS_ROW_PARTS
+    )
+    expect(
+      withSetContext('plant-products', () =>
+        rowEntry(
+          traders,
+          makeScope({
+            countryOfOrigin: 'FR',
+            commodityLines: [{ commoditySelection: '08059000' }]
+          }),
+          'journey-1'
+        )
+      )
+    ).toBe('/plant-products/notifications/journey-1/traders-addresses')
   })
 
   it('keeps traders In progress without a consignor and completes only with both parties while optional fields stay optional', () => {

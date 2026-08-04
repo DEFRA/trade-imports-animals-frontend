@@ -54,6 +54,30 @@ export const copy = {
     },
     continueLabel: 'Cadw a pharhau'
   },
+  consignorPicker: {
+    pageTitle: 'Traddodwr neu allforiwr',
+    caption: 'Masnachwyr',
+    description:
+      'Dewiswch y traddodwr neu’r allforiwr ar gyfer yr hysbysiad hwn, neu ychwanegwch un newydd.',
+    noSaved: 'Nid ydych wedi cadw unrhyw draddodwyr nac allforwyr eto.',
+    resultsCaption: (shown, total) =>
+      `Yn dangos ${shown} o ${total} traddodwr neu allforiwr`,
+    table: {
+      selectHidden: 'Dewis',
+      name: 'Enw',
+      address: 'Cyfeiriad',
+      country: 'Gwlad',
+      actionsHidden: 'Camau gweithredu'
+    },
+    selectRowPrefix: 'Dewis',
+    viewDetails: 'Gweld y manylion',
+    viewDetailsFor: 'ar gyfer',
+    selectedPrefix: 'Traddodwr neu allforiwr a ddewiswyd:',
+    errorPrefix: 'Gwall:',
+    saveAndContinue: 'Cadw a pharhau',
+    addNew: 'Ychwanegu traddodwr neu allforiwr',
+    errors: { required: 'Dewiswch draddodwr neu allforiwr o’r rhestr' }
+  },
   consignorConfirmation: {
     pageTitle: 'Mae’r traddodwr neu’r allforiwr wedi cael ei greu',
     panelTitle: 'Mae’r traddodwr neu’r allforiwr wedi cael ei greu',

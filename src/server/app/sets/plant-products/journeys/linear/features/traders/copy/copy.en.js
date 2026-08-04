@@ -53,6 +53,30 @@ export const copy = {
     },
     continueLabel: 'Save and continue'
   },
+  consignorPicker: {
+    pageTitle: 'Consignor or exporter',
+    caption: 'Traders',
+    description:
+      'Select the consignor or exporter for this notification, or add a new one.',
+    noSaved: 'You have not saved any consignors or exporters yet.',
+    resultsCaption: (shown, total) =>
+      `Showing ${shown} of ${total} consignors or exporters`,
+    table: {
+      selectHidden: 'Select',
+      name: 'Name',
+      address: 'Address',
+      country: 'Country',
+      actionsHidden: 'Actions'
+    },
+    selectRowPrefix: 'Select',
+    viewDetails: 'View details',
+    viewDetailsFor: 'for',
+    selectedPrefix: 'Selected consignor or exporter:',
+    errorPrefix: 'Error:',
+    saveAndContinue: 'Save and continue',
+    addNew: 'Add a consignor or exporter',
+    errors: { required: 'Select a consignor or exporter from the list' }
+  },
   consignorConfirmation: {
     pageTitle: 'The consignor or exporter has been created',
     panelTitle: 'The consignor or exporter has been created',

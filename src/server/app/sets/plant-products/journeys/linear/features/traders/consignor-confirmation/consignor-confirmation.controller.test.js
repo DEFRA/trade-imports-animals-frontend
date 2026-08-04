@@ -80,13 +80,13 @@ describe('plant-products consignor-confirmation controller', () => {
     )
   })
 
-  it('returns to traders-addresses without changing the exact persisted consignor DTO', async () => {
+  it('returns to the consignor picker without changing the exact persisted consignor DTO', async () => {
     const commit = vi.spyOn(state, 'commit')
     const result = await drive(post, { seed: consignorAnswers })
     const stored = await records.load({ journeyId: result.journeyId })
 
     expect(result.response).toEqual({
-      redirect: `/plant-products/notifications/${result.journeyId}/traders-addresses`
+      redirect: `/plant-products/notifications/${result.journeyId}/consignor-select`
     })
     expect(result.after).toEqual(consignorAnswers)
     expect(commit).not.toHaveBeenCalled()

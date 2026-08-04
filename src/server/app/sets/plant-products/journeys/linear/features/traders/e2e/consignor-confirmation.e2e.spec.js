@@ -4,12 +4,14 @@ import { axeViolations } from '../../axe.e2e-helper.js'
 import { copy } from '../copy/copy.en.js'
 
 const confirmationCopy = copy.consignorConfirmation
+const pickerCopy = copy.consignorPicker
+const consignorName = 'Orchard Export SAS'
 const confirmationUrl = (url) =>
   /^\/plant-products\/notifications\/[^/]+\/consignor-confirmation$/.test(
     url.pathname
   )
-const tradersUrl = (url) =>
-  /^\/plant-products\/notifications\/[^/]+\/traders-addresses$/.test(
+const pickerUrl = (url) =>
+  /^\/plant-products\/notifications\/[^/]+\/consignor-select$/.test(
     url.pathname
   )
 
@@ -53,10 +55,13 @@ const startAtConfirmation = async (page) => {
     })
     .click()
   await page
+    .getByRole('button', { name: pickerCopy.addNew, exact: true })
+    .click()
+  await page
     .getByLabel(copy.consignorCreate.fields.consignorName.label, {
       exact: true
     })
-    .fill('Orchard Export SAS')
+    .fill(consignorName)
   await page
     .getByLabel(copy.consignorCreate.fields.consignorAddressLine1.label, {
       exact: true
@@ -130,7 +135,7 @@ test.describe('plant-products consignor confirmation', () => {
     ).toHaveCount(0)
   })
 
-  test('adds the already-persisted consignor to the notification without another write', async ({
+  test('returns the already-persisted consignor to the picker, present and pre-selected', async ({
     page
   }) => {
     await page
@@ -140,10 +145,13 @@ test.describe('plant-products consignor confirmation', () => {
       })
       .click()
 
-    await expect(page).toHaveURL(tradersUrl)
+    await expect(page).toHaveURL(pickerUrl)
     await expect(
-      page.getByText('Orchard Export SAS', { exact: true })
-    ).toBeVisible()
+      page.getByRole('radio', {
+        name: `${pickerCopy.selectRowPrefix} ${consignorName}`,
+        exact: true
+      })
+    ).toBeChecked()
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {

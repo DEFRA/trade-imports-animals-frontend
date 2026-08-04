@@ -670,6 +670,12 @@ const completeTraders = async (page, values) => {
   }
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
 
+  await page
+    .getByRole('button', {
+      name: tradersCopy.consignorPicker.addNew,
+      exact: true
+    })
+    .click()
   for (const [field, value] of Object.entries(traders.consignor)) {
     const label = tradersCopy.consignorCreate.fields[field].label
     const control = page.getByLabel(label, { exact: true })
@@ -685,6 +691,12 @@ const completeTraders = async (page, values) => {
   await page
     .getByRole('button', {
       name: tradersCopy.consignorConfirmation.continueLabel,
+      exact: true
+    })
+    .click()
+  await page
+    .getByRole('button', {
+      name: tradersCopy.consignorPicker.saveAndContinue,
       exact: true
     })
     .click()

@@ -145,7 +145,7 @@ describe('plant-products traders-addresses controller', () => {
       }
     ])
     expect(result.view.context.consignorHref).toMatch(
-      /^\/plant-products\/notifications\/[^/]+\/consignor-create$/
+      /^\/plant-products\/notifications\/[^/]+\/consignor-select$/
     )
   })
 

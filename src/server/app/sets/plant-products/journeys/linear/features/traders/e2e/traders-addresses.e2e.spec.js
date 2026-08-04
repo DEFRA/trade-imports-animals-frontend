@@ -194,7 +194,7 @@ test.describe('plant-products traders addresses', () => {
     await expect(consignorLink).toHaveAccessibleName(pageCopy.consignor.addLink)
     await expect(consignorLink).toHaveAttribute(
       'href',
-      /^\/plant-products\/notifications\/[^/]+\/consignor-create$/
+      /^\/plant-products\/notifications\/[^/]+\/consignor-select$/
     )
   })
 
