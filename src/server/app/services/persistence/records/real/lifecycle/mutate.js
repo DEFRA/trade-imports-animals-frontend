@@ -1,6 +1,6 @@
 import { encodeEvaluatorFulfilments } from '../../fulfilment-codec/index.js'
 import { fulfilmentToNotification } from '../../mapper.js'
-import { fulfilmentsUrl, notificationsUrl } from '../config.js'
+import { notificationFulfilmentsUrl, notificationsUrl } from '../config.js'
 import { put } from '../http/put.js'
 import { marshal } from '../marshal/document.js'
 import { throwProjectionFailure } from '../projections/failure.js'
@@ -31,7 +31,7 @@ export const replaceFulfilment = async (
   const snapshot = structuredClone(fulfilment ?? {})
   const canonicalDocument = {
     id: journeyId,
-    fulfilment: encodeEvaluatorFulfilments(snapshot)
+    fulfilments: encodeEvaluatorFulfilments(snapshot)
   }
   const projections = [
     {
@@ -46,9 +46,9 @@ export const replaceFulfilment = async (
   ]
 
   const canonicalResponse = await put(
-    `${fulfilmentsUrl}/${journeyId}`,
+    `${notificationFulfilmentsUrl}/${journeyId}`,
     canonicalDocument,
-    'save fulfilment'
+    'save notification-fulfilments'
   )
   const saved = await canonicalResponse.json()
 

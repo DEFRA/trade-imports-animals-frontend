@@ -17,7 +17,7 @@ const { countryOfOrigin } = obligationSet()
 // Network-boundary perf contract for the REAL records adapter (S5 hardening —
 // "one load per request"). Every currentJourney call — whether from a read
 // (state.get) or from a write helper re-deriving the journey — used to hit the
-// backend with a fresh GET /fulfilments/{ref}, and each save re-fetched the same
+// backend with a fresh GET /notification-fulfilments/{ref}, and each save re-fetched the same
 // record to guard the write. This pins the collapsed behaviour: within one HTTP
 // request the real adapter issues at most one canonical GET, followed by the
 // canonical PUT and the notification projection POST.
@@ -27,7 +27,7 @@ fetchMocker.enableMocks()
 
 const backendBaseUrl = 'http://localhost:8085'
 const ref = 'GBN-AG-01-ABC123'
-const fulfilmentUrl = `${backendBaseUrl}/fulfilments/${ref}`
+const fulfilmentUrl = `${backendBaseUrl}/notification-fulfilments/${ref}`
 const notificationsUrl = `${backendBaseUrl}/notifications`
 
 const fulfilmentBody = JSON.stringify({
@@ -35,7 +35,7 @@ const fulfilmentBody = JSON.stringify({
   status: 'DRAFT',
   createdAt: '2026-07-23T09:00:00',
   submittedAt: null,
-  fulfilment: []
+  fulfilments: []
 })
 
 const buildRequest = () => ({

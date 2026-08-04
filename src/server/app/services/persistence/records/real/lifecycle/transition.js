@@ -1,4 +1,4 @@
-import { fulfilmentsUrl, notificationsUrl } from '../config.js'
+import { notificationFulfilmentsUrl, notificationsUrl } from '../config.js'
 import { failed } from '../http/failed.js'
 import { headers } from '../http/headers.js'
 import { marshal } from '../marshal/document.js'
@@ -21,8 +21,8 @@ const postAggregate = async (url, action, body) => {
 export const finalise = async (journeyId, actor) => {
   const [fulfilmentResponse] = await Promise.all([
     postAggregate(
-      `${fulfilmentsUrl}/${journeyId}/submit`,
-      'submit fulfilment',
+      `${notificationFulfilmentsUrl}/${journeyId}/submit`,
+      'submit notification-fulfilments',
       actor
     ),
     postAggregate(
@@ -37,8 +37,8 @@ export const finalise = async (journeyId, actor) => {
 export const amend = async (journeyId, actor) => {
   const [fulfilmentResponse] = await Promise.all([
     postAggregate(
-      `${fulfilmentsUrl}/${journeyId}/amend`,
-      'amend fulfilment',
+      `${notificationFulfilmentsUrl}/${journeyId}/amend`,
+      'amend notification-fulfilments',
       actor
     ),
     postAggregate(
@@ -53,8 +53,8 @@ export const amend = async (journeyId, actor) => {
 export const cancelAmend = async (journeyId) => {
   const [fulfilmentResponse] = await Promise.all([
     postAggregate(
-      `${fulfilmentsUrl}/${journeyId}/cancel-amend`,
-      'cancel fulfilment amendment'
+      `${notificationFulfilmentsUrl}/${journeyId}/cancel-amend`,
+      'cancel notification-fulfilments amendment'
     ),
     postAggregate(
       `${notificationsUrl}/${journeyId}/cancel-amend`,
@@ -69,8 +69,8 @@ export const cancelAmend = async (journeyId) => {
 export const softDelete = async (journeyId) => {
   const [fulfilmentResponse] = await Promise.all([
     postAggregate(
-      `${fulfilmentsUrl}/${journeyId}/soft-delete`,
-      'soft-delete fulfilment'
+      `${notificationFulfilmentsUrl}/${journeyId}/soft-delete`,
+      'soft-delete notification-fulfilments'
     ),
     postAggregate(
       `${notificationsUrl}/${journeyId}/soft-delete`,

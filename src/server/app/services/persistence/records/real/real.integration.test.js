@@ -19,7 +19,7 @@ import { fulfilmentToNotification } from '../mapper.js'
 
 const backendBaseUrl =
   process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ?? 'http://localhost:8085'
-const fulfilmentsUrl = `${backendBaseUrl}/fulfilments`
+const notificationFulfilmentsUrl = `${backendBaseUrl}/notification-fulfilments`
 const notificationsUrl = `${backendBaseUrl}/notifications`
 
 const replaceAnswers = (journeyId, answers) =>
@@ -89,7 +89,7 @@ describe.skipIf(!runsIt('real'))(
   () => {
     beforeAll(async () => {
       try {
-        await fetch(`${fulfilmentsUrl}/GBN-AG-99-ZZZZZZ`)
+        await fetch(`${notificationFulfilmentsUrl}/GBN-AG-99-ZZZZZZ`)
       } catch (cause) {
         throw new Error(
           `Backend not reachable at ${backendBaseUrl} — start the matching stack before running this integration test.`,
@@ -117,7 +117,7 @@ describe.skipIf(!runsIt('real'))(
       const saved = await records.replaceFulfilment(journeyId, snapshot)
       const loaded = await records.load({ journeyId })
       const [canonical, current] = await Promise.all([
-        json(`${fulfilmentsUrl}/${journeyId}`),
+        json(`${notificationFulfilmentsUrl}/${journeyId}`),
         json(`${notificationsUrl}/${journeyId}`)
       ])
 
@@ -125,7 +125,7 @@ describe.skipIf(!runsIt('real'))(
       expect(loaded.fulfilment).toEqual(snapshot)
       expect(canonical).toMatchObject({
         id: journeyId,
-        fulfilment: encodeEvaluatorFulfilments(snapshot)
+        fulfilments: encodeEvaluatorFulfilments(snapshot)
       })
       expect(current).toMatchObject(
         fulfilmentToNotification(snapshot, journeyId)

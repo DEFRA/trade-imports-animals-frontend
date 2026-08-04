@@ -9,6 +9,9 @@ export const marshal = (document) => {
     status,
     createdAt: document.createdAt ?? null,
     submittedAt: status === SUBMITTED ? (document.submittedAt ?? null) : null,
-    fulfilment: decodePersistedFulfilment(document.fulfilment)
+    // Engine-facing key stays as `fulfilment` (a UUID-keyed map);
+    // wire read uses the renamed `fulfilments` list. See follow-up ticket for
+    // the engine-facing rename.
+    fulfilment: decodePersistedFulfilment(document.fulfilments)
   }
 }

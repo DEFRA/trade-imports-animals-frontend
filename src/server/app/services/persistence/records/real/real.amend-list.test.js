@@ -10,9 +10,10 @@ import { records } from './index.js'
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
 
-const fulfilmentsUrl = 'http://localhost:8085/fulfilments'
+const notificationFulfilmentsUrl =
+  'http://localhost:8085/notification-fulfilments'
 
-const fulfilment = (id, status) => ({
+const notificationFulfilments = (id, status) => ({
   id,
   status,
   createdAt: '2026-07-14T09:00:00',
@@ -23,7 +24,7 @@ const fulfilment = (id, status) => ({
   arrivalDate: '2026-07-20',
   consignorName: 'Consignor Ltd',
   consigneeName: 'Consignee Ltd',
-  fulfilment: []
+  fulfilments: []
 })
 
 describe('real records adapter — amend', () => {
@@ -32,12 +33,14 @@ describe('real records adapter — amend', () => {
   })
 
   test('Should POST the amend endpoint and marshal a writable amend record', async () => {
-    fetchMocker.mockResponse(JSON.stringify(fulfilment('GBN-1', 'AMEND')))
+    fetchMocker.mockResponse(
+      JSON.stringify(notificationFulfilments('GBN-1', 'AMEND'))
+    )
 
     const amended = await records.amend('GBN-1')
 
     const [request] = fetchMocker.requests()
-    expect(request.url).toBe(`${fulfilmentsUrl}/GBN-1/amend`)
+    expect(request.url).toBe(`${notificationFulfilmentsUrl}/GBN-1/amend`)
     expect(request.method).toBe('POST')
     expect(amended.status).toBe(AMEND)
     expect(amended.submittedAt).toBeNull()
@@ -48,7 +51,7 @@ describe('real records adapter — amend', () => {
     fetchMocker.mockResponse('Conflict', { status: 409 })
 
     await expect(records.amend('GBN-1')).rejects.toThrow(
-      /Failed to amend fulfilment: 409/
+      /Failed to amend notification-fulfilments: 409/
     )
   })
 })
@@ -66,9 +69,9 @@ describe('real records adapter — paged list', () => {
         totalElements: 3,
         totalPages: 1,
         items: [
-          fulfilment('GBN-1', 'DRAFT'),
-          fulfilment('GBN-2', 'SUBMITTED'),
-          fulfilment('GBN-3', 'AMEND')
+          notificationFulfilments('GBN-1', 'DRAFT'),
+          notificationFulfilments('GBN-2', 'SUBMITTED'),
+          notificationFulfilments('GBN-3', 'AMEND')
         ]
       })
     )
@@ -80,7 +83,9 @@ describe('real records adapter — paged list', () => {
     })
 
     const [request] = fetchMocker.requests()
-    expect(request.url).toBe(`${fulfilmentsUrl}?page=2&sort=createdAt,asc`)
+    expect(request.url).toBe(
+      `${notificationFulfilmentsUrl}?page=2&sort=createdAt,asc`
+    )
     expect(request.method).toBe('GET')
     expect(listed).toEqual({
       page: 1,
@@ -130,7 +135,10 @@ describe('real records adapter — paged list', () => {
 
   test('Should implement has with an exact-id canonical GET', async () => {
     fetchMocker.mockResponses(
-      [JSON.stringify(fulfilment('GBN-1', 'DRAFT')), { status: 200 }],
+      [
+        JSON.stringify(notificationFulfilments('GBN-1', 'DRAFT')),
+        { status: 200 }
+      ],
       ['Not Found', { status: 404 }]
     )
 
@@ -138,8 +146,8 @@ describe('real records adapter — paged list', () => {
     expect(await records.has('GBN-GONE')).toBe(false)
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
-      { method: 'GET', url: `${fulfilmentsUrl}/GBN-1` },
-      { method: 'GET', url: `${fulfilmentsUrl}/GBN-GONE` }
+      { method: 'GET', url: `${notificationFulfilmentsUrl}/GBN-1` },
+      { method: 'GET', url: `${notificationFulfilmentsUrl}/GBN-GONE` }
     ])
   })
 })

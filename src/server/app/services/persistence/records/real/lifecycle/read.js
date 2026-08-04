@@ -1,4 +1,4 @@
-import { fulfilmentsUrl } from '../config.js'
+import { notificationFulfilmentsUrl } from '../config.js'
 import { failed } from '../http/failed.js'
 import { getFulfilment } from '../http/get-fulfilment.js'
 import { headers } from '../http/headers.js'
@@ -22,7 +22,7 @@ export const list = async ({
     ? `&referenceNumber=${encodeURIComponent(referenceNumber)}`
     : ''
   const response = await fetch(
-    `${fulfilmentsUrl}?page=${page}&sort=${sort}${referenceQuery}`,
+    `${notificationFulfilmentsUrl}?page=${page}&sort=${sort}${referenceQuery}`,
     {
       method: 'GET',
       headers: headers()
