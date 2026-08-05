@@ -1,27 +1,32 @@
+// The URL list is derived from the app's own registered routes and written by
+// `npm run lighthouse:targets`, which also seeds the notification those URLs
+// point at. Run `npm run lighthouse`, never `lhci autorun` on its own.
+const { readFileSync } = require('node:fs')
+const { join } = require('node:path')
+
+const TARGETS_FILE = join(__dirname, '.lighthouse', 'targets.json')
+
+const collectUrls = () => {
+  let targets
+  try {
+    targets = JSON.parse(readFileSync(TARGETS_FILE, 'utf8'))
+  } catch (cause) {
+    throw new Error(
+      'No Lighthouse targets found — run `npm run lighthouse` so the setup ' +
+        'step can seed a notification and derive the URL list',
+      { cause }
+    )
+  }
+  if (!Array.isArray(targets.urls) || targets.urls.length === 0) {
+    throw new Error(`Lighthouse targets file ${TARGETS_FILE} lists no URLs`)
+  }
+  return targets.urls
+}
+
 module.exports = {
   ci: {
     collect: {
-      url: [
-        'http://localhost:3000/',
-        'http://localhost:3000/about',
-        'http://localhost:3000/accompanying-documents',
-        'http://localhost:3000/additional-details',
-        'http://localhost:3000/addresses',
-        'http://localhost:3000/commodities',
-        'http://localhost:3000/commodities/details',
-        'http://localhost:3000/commodities/identification',
-        'http://localhost:3000/commodities/select',
-        'http://localhost:3000/consignment/contact/select',
-        'http://localhost:3000/consignors/select',
-        'http://localhost:3000/cph-number',
-        'http://localhost:3000/declaration',
-        'http://localhost:3000/destinations/select',
-        'http://localhost:3000/import-reason',
-        'http://localhost:3000/origin',
-        'http://localhost:3000/port-of-entry',
-        'http://localhost:3000/transporters',
-        'http://localhost:3000/transporters/select'
-      ],
+      url: collectUrls(),
       puppeteerScript: './tests/lighthouse/auth-setup.cjs',
       puppeteerLaunchOptions: {
         args: ['--no-sandbox', '--disable-gpu']
