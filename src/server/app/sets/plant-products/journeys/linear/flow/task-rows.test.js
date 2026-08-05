@@ -57,6 +57,16 @@ import { nominatedContacts as nominatedContactsObligation } from '../../../oblig
 import { packageTypeOptions } from '../../../services/reference/package-types.js'
 import { quantityTypeOptions } from '../../../services/reference/quantity-types.js'
 
+const SET_ID = 'plant-products'
+const SET_BASE = '/plant-products'
+
+const ADDITIONAL_DETAILS_ID = 'additional-details'
+const GOODS_MOVEMENT_ID = 'goods-movement'
+const NOMINATED_CONTACTS_ID = 'nominated-contacts'
+const RESPONSIBLE_PERSON_NAME = 'Isabel Irwin'
+const RESPONSIBLE_PERSON_TELEPHONE = '+44 7700 900 982'
+const BROKER_CONTACT_NAME = 'Blair Broker'
+
 const { values: happyPath } = JSON.parse(
   readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
 )
@@ -122,16 +132,16 @@ const additionalDetailsKeys = [
 
 describe('plant-products task rows', () => {
   beforeAll(() => {
-    registerSetMount('plant-products', '/plant-products')
-    configureObligationSet('plant-products', obligationSet)
-    configureFulfilmentRegistry('plant-products', featureEvaluationBindings)
-    configureJourneyFlow('plant-products', {
+    registerSetMount(SET_ID, SET_BASE)
+    configureObligationSet(SET_ID, obligationSet)
+    configureFulfilmentRegistry(SET_ID, featureEvaluationBindings)
+    configureJourneyFlow(SET_ID, {
       sections,
       taskRows,
       rowStatus,
       flowOnlyKeys: FLOW_ONLY_KEYS
     })
-    buildDispatch('plant-products', dispatchPages)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   it('registers origin as the first row and enters country-of-origin', () => {
@@ -156,7 +166,7 @@ describe('plant-products task rows', () => {
         ]
       },
       {
-        id: 'additional-details',
+        id: ADDITIONAL_DETAILS_ID,
         pages: [commodityAdditionalDetailsPage]
       },
       {
@@ -164,7 +174,7 @@ describe('plant-products task rows', () => {
         pages: [transportBeforeBipPage]
       },
       {
-        id: 'goods-movement',
+        id: GOODS_MOVEMENT_ID,
         pages: [goodsMovementServicesPage]
       },
       {
@@ -172,7 +182,7 @@ describe('plant-products task rows', () => {
         pages: [contactDetailsPage]
       },
       {
-        id: 'nominated-contacts',
+        id: NOMINATED_CONTACTS_ID,
         pages: [nominatedContactPage]
       },
       {
@@ -190,12 +200,12 @@ describe('plant-products task rows', () => {
       }
     ])
     expect(
-      withSetContext('plant-products', () =>
+      withSetContext(SET_ID, () =>
         rowEntry(taskRowById('origin'), makeScope({}), 'journey-1')
       )
     ).toBe('/plant-products/notifications/journey-1/country-of-origin')
     expect(
-      withSetContext('plant-products', () =>
+      withSetContext(SET_ID, () =>
         rowEntry(
           taskRowById('purpose'),
           makeScope({ countryOfOrigin: 'FR' }),
@@ -204,7 +214,7 @@ describe('plant-products task rows', () => {
       )
     ).toBe('/plant-products/notifications/journey-1/about-the-consignment')
     expect(
-      withSetContext('plant-products', () =>
+      withSetContext(SET_ID, () =>
         rowEntry(
           taskRowById('commodities'),
           makeScope({ countryOfOrigin: 'FR' }),
@@ -213,9 +223,9 @@ describe('plant-products task rows', () => {
       )
     ).toBe('/plant-products/notifications/journey-1/commodity-input-method')
     expect(
-      withSetContext('plant-products', () =>
+      withSetContext(SET_ID, () =>
         rowEntry(
-          taskRowById('additional-details'),
+          taskRowById(ADDITIONAL_DETAILS_ID),
           makeScope({
             countryOfOrigin: 'FR',
             commodityLines: [{ commoditySelection: '08059000' }]
@@ -227,7 +237,7 @@ describe('plant-products task rows', () => {
       '/plant-products/notifications/journey-1/commodity-additional-details'
     )
     expect(
-      withSetContext('plant-products', () =>
+      withSetContext(SET_ID, () =>
         rowEntry(
           taskRowById('contact'),
           makeScope({
@@ -239,9 +249,9 @@ describe('plant-products task rows', () => {
       )
     ).toBe('/plant-products/notifications/journey-1/contact-details')
     expect(
-      withSetContext('plant-products', () =>
+      withSetContext(SET_ID, () =>
         rowEntry(
-          taskRowById('nominated-contacts'),
+          taskRowById(NOMINATED_CONTACTS_ID),
           makeScope({
             countryOfOrigin: 'FR',
             commodityLines: [{ commoditySelection: '08059000' }]
@@ -251,7 +261,7 @@ describe('plant-products task rows', () => {
       )
     ).toBe('/plant-products/notifications/journey-1/nominated-contact')
     expect(
-      withSetContext('plant-products', () =>
+      withSetContext(SET_ID, () =>
         rowEntry(
           taskRowById('documents'),
           makeScope({
@@ -263,7 +273,7 @@ describe('plant-products task rows', () => {
       )
     ).toBe('/plant-products/notifications/journey-1/accompanying-documents')
     expect(
-      withSetContext('plant-products', () =>
+      withSetContext(SET_ID, () =>
         rowEntry(
           taskRowById('traders'),
           makeScope({
@@ -285,38 +295,35 @@ describe('plant-products task rows', () => {
   })
 
   it('marks every mandatory row complete from the canonical happy-path fixture', () => {
-    const { evaluation, inScope, statuses } = withSetContext(
-      'plant-products',
-      () => {
-        const evaluation = evaluateAnswers(happyPath)
-        const { inScope } = makeScope(happyPath)
-        return {
-          evaluation,
-          inScope,
-          statuses: Object.fromEntries(
-            taskRows.map((row) => [
-              row.id,
-              rowStatus(row, happyPath, inScope, evaluation)
-            ])
-          )
-        }
+    const { evaluation, inScope, statuses } = withSetContext(SET_ID, () => {
+      const evaluation = evaluateAnswers(happyPath)
+      const { inScope } = makeScope(happyPath)
+      return {
+        evaluation,
+        inScope,
+        statuses: Object.fromEntries(
+          taskRows.map((row) => [
+            row.id,
+            rowStatus(row, happyPath, inScope, evaluation)
+          ])
+        )
       }
-    )
+    })
 
     expect(statuses).toEqual({
       origin: FULFILLED,
       purpose: FULFILLED,
       commodities: FULFILLED,
-      'additional-details': FULFILLED,
+      [ADDITIONAL_DETAILS_ID]: FULFILLED,
       transport: FULFILLED,
-      'goods-movement': FULFILLED,
+      [GOODS_MOVEMENT_ID]: FULFILLED,
       contact: FULFILLED,
-      'nominated-contacts': OPTIONAL,
+      [NOMINATED_CONTACTS_ID]: OPTIONAL,
       documents: FULFILLED,
       traders: FULFILLED
     })
     expect(
-      withSetContext('plant-products', () =>
+      withSetContext(SET_ID, () =>
         readyForCheckYourAnswers(happyPath, inScope, evaluation)
       )
     ).toBe(true)
@@ -332,18 +339,16 @@ describe('plant-products task rows', () => {
 
   it('derives fallback row parts from the page dispatch', () => {
     expect(
-      withSetContext('plant-products', () => rowParts(taskRowById('origin')))
+      withSetContext(SET_ID, () => rowParts(taskRowById('origin')))
     ).toEqual(['countryOfOrigin', 'countryOfConsignment', 'internalReference'])
     expect(
-      withSetContext('plant-products', () => rowParts(taskRowById('purpose')))
+      withSetContext(SET_ID, () => rowParts(taskRowById('purpose')))
     ).toEqual(['reasonForImport'])
     expect(
-      withSetContext('plant-products', () =>
-        rowParts(taskRowById('commodities'))
-      )
+      withSetContext(SET_ID, () => rowParts(taskRowById('commodities')))
     ).toEqual(['commodityInputMethod', 'commodityLines'])
     expect(
-      withSetContext('plant-products', () => rowParts(taskRowById('transport')))
+      withSetContext(SET_ID, () => rowParts(taskRowById('transport')))
     ).toEqual([
       'borderControlPost',
       'inspectionPremises',
@@ -356,42 +361,36 @@ describe('plant-products task rows', () => {
       'containers'
     ])
     expect(
-      withSetContext('plant-products', () =>
-        rowParts(taskRowById('additional-details'))
-      )
+      withSetContext(SET_ID, () => rowParts(taskRowById(ADDITIONAL_DETAILS_ID)))
     ).toEqual(['totalGrossWeight', 'grossVolume', 'grossVolumeUnit'])
     expect(
-      withSetContext('plant-products', () => rowParts(taskRowById('documents')))
+      withSetContext(SET_ID, () => rowParts(taskRowById('documents')))
     ).toEqual(['accompanyingDocuments'])
     expect(
-      withSetContext('plant-products', () =>
-        rowParts(taskRowById('goods-movement'))
-      )
+      withSetContext(SET_ID, () => rowParts(taskRowById(GOODS_MOVEMENT_ID)))
     ).toEqual([
       'commonTransitConvention',
       'movementReferenceNumber',
       'usingGvms'
     ])
     expect(
-      withSetContext('plant-products', () => rowParts(taskRowById('contact')))
+      withSetContext(SET_ID, () => rowParts(taskRowById('contact')))
     ).toEqual([
       'responsiblePersonName',
       'responsiblePersonEmail',
       'responsiblePersonTelephone'
     ])
     expect(
-      withSetContext('plant-products', () =>
-        rowParts(taskRowById('nominated-contacts'))
-      )
+      withSetContext(SET_ID, () => rowParts(taskRowById(NOMINATED_CONTACTS_ID)))
     ).toEqual(['nominatedContacts'])
     expect(
-      withSetContext('plant-products', () => rowParts(taskRowById('traders')))
+      withSetContext(SET_ID, () => rowParts(taskRowById('traders')))
     ).toEqual(TRADERS_ROW_PARTS)
   })
 
   it('sends traders-addresses on to the consignor picker', () => {
     expect(
-      withSetContext('plant-products', () =>
+      withSetContext(SET_ID, () =>
         nextInSection(
           tradersAddressesPage.id,
           makeScope({
@@ -414,11 +413,11 @@ describe('plant-products task rows', () => {
   it('leaves the traders row parts and entry page untouched by the consignor picker insertion', () => {
     const traders = taskRowById('traders')
 
-    expect(withSetContext('plant-products', () => rowParts(traders))).toEqual(
+    expect(withSetContext(SET_ID, () => rowParts(traders))).toEqual(
       TRADERS_ROW_PARTS
     )
     expect(
-      withSetContext('plant-products', () =>
+      withSetContext(SET_ID, () =>
         rowEntry(
           traders,
           makeScope({
@@ -433,7 +432,7 @@ describe('plant-products task rows', () => {
 
   it('keeps traders In progress without a consignor and completes only with both parties while optional fields stay optional', () => {
     const statusFor = (answers) =>
-      withSetContext('plant-products', () => {
+      withSetContext(SET_ID, () => {
         const { inScope } = makeScope(answers)
         return rowStatus(
           taskRowById('traders'),
@@ -464,7 +463,7 @@ describe('plant-products task rows', () => {
 
   it('blocks review readiness without a consignor and unblocks with complete consignor and delivery answers', () => {
     const readyFor = (answers) =>
-      withSetContext('plant-products', () => {
+      withSetContext(SET_ID, () => {
         const { inScope } = makeScope(answers)
         return readyForCheckYourAnswers(
           answers,
@@ -508,7 +507,7 @@ describe('plant-products task rows', () => {
 
   it('moves contact from Not yet started to Completed with either contact method', () => {
     const statusFor = (answers) =>
-      withSetContext('plant-products', () => {
+      withSetContext(SET_ID, () => {
         const { inScope } = makeScope(answers)
         return rowStatus(
           taskRowById('contact'),
@@ -521,24 +520,24 @@ describe('plant-products task rows', () => {
     expect(statusFor({})).toBe(NOT_STARTED)
     expect(
       statusFor({
-        responsiblePersonName: 'Isabel Irwin',
+        responsiblePersonName: RESPONSIBLE_PERSON_NAME,
         responsiblePersonEmail: 'isabel@example.com'
       })
     ).toBe(FULFILLED)
     expect(
       statusFor({
-        responsiblePersonName: 'Isabel Irwin',
-        responsiblePersonTelephone: '+44 7700 900 982'
+        responsiblePersonName: RESPONSIBLE_PERSON_NAME,
+        responsiblePersonTelephone: RESPONSIBLE_PERSON_TELEPHONE
       })
     ).toBe(FULFILLED)
   })
 
   it('keeps zero nominated contacts Optional and completes with several independent contacts', () => {
     const statusFor = (answers) =>
-      withSetContext('plant-products', () => {
+      withSetContext(SET_ID, () => {
         const { inScope } = makeScope(answers)
         return rowStatus(
-          taskRowById('nominated-contacts'),
+          taskRowById(NOMINATED_CONTACTS_ID),
           answers,
           inScope,
           evaluateAnswers(answers)
@@ -551,8 +550,11 @@ describe('plant-products task rows', () => {
     expect(
       statusFor({
         nominatedContacts: [
-          { contactTelephone: '+44 7700 900 982' },
-          { contactName: 'Blair Broker', contactEmail: 'blair@example.com' }
+          { contactTelephone: RESPONSIBLE_PERSON_TELEPHONE },
+          {
+            contactName: BROKER_CONTACT_NAME,
+            contactEmail: 'blair@example.com'
+          }
         ]
       })
     ).toBe(IN_PROGRESS)
@@ -565,8 +567,8 @@ describe('plant-products task rows', () => {
             contactIsAgent: false
           },
           {
-            contactName: 'Blair Broker',
-            contactTelephone: '+44 7700 900 982',
+            contactName: BROKER_CONTACT_NAME,
+            contactTelephone: RESPONSIBLE_PERSON_TELEPHONE,
             contactIsAgent: true
           }
         ]
@@ -576,7 +578,7 @@ describe('plant-products task rows', () => {
 
   it('keeps documents incomplete until one complete entry satisfies the collection floor', () => {
     const statusFor = (answers) =>
-      withSetContext('plant-products', () => {
+      withSetContext(SET_ID, () => {
         const { inScope } = makeScope(answers)
         return rowStatus(
           taskRowById('documents'),
@@ -612,7 +614,7 @@ describe('plant-products task rows', () => {
 
   it('blocks readiness at the documents floor and unblocks it with one complete document', () => {
     const readyFor = (answers) =>
-      withSetContext('plant-products', () => {
+      withSetContext(SET_ID, () => {
         const { inScope } = makeScope(answers)
         return readyForCheckYourAnswers(
           answers,
@@ -645,8 +647,8 @@ describe('plant-products task rows', () => {
             contactEmail: 'alex@example.com'
           },
           {
-            contactName: 'Blair Broker',
-            contactTelephone: '+44 7700 900 982'
+            contactName: BROKER_CONTACT_NAME,
+            contactTelephone: RESPONSIBLE_PERSON_TELEPHONE
           }
         ],
         accompanyingDocuments: happyPath.accompanyingDocuments
@@ -656,7 +658,7 @@ describe('plant-products task rows', () => {
 
   it('blocks readiness while contact is incomplete and unblocks it after a valid contact save', () => {
     const readyFor = (answers) =>
-      withSetContext('plant-products', () => {
+      withSetContext(SET_ID, () => {
         const { inScope } = makeScope(answers)
         return readyForCheckYourAnswers(
           answers,
@@ -675,18 +677,18 @@ describe('plant-products task rows', () => {
     expect(
       readyFor({
         ...allOtherRows,
-        responsiblePersonName: 'Isabel Irwin',
-        responsiblePersonTelephone: '+44 7700 900 982'
+        responsiblePersonName: RESPONSIBLE_PERSON_NAME,
+        responsiblePersonTelephone: RESPONSIBLE_PERSON_TELEPHONE
       })
     ).toBe(true)
   })
 
   it('moves additional details from Not yet started through In progress to Completed', () => {
     const statusFor = (answers) =>
-      withSetContext('plant-products', () => {
+      withSetContext(SET_ID, () => {
         const { inScope } = makeScope(answers)
         return rowStatus(
-          taskRowById('additional-details'),
+          taskRowById(ADDITIONAL_DETAILS_ID),
           answers,
           inScope,
           evaluateAnswers(answers)
@@ -707,7 +709,7 @@ describe('plant-products task rows', () => {
 
   it('requires a reason for import to complete the purpose row', () => {
     const statusFor = (answers) =>
-      withSetContext('plant-products', () => {
+      withSetContext(SET_ID, () => {
         const { inScope } = makeScope(answers)
         return rowStatus(
           taskRowById('purpose'),
@@ -723,7 +725,7 @@ describe('plant-products task rows', () => {
 
   it('keeps commodities incomplete until the collection floor and line obligations are complete', () => {
     const statusFor = (answers) =>
-      withSetContext('plant-products', () => {
+      withSetContext(SET_ID, () => {
         const { inScope } = makeScope(answers)
         return rowStatus(
           taskRowById('commodities'),
@@ -766,7 +768,7 @@ describe('plant-products task rows', () => {
 
   it('requires both countries but not the optional reference to complete the origin row', () => {
     const statusFor = (answers) =>
-      withSetContext('plant-products', () => {
+      withSetContext(SET_ID, () => {
         const { inScope } = makeScope(answers)
         return rowStatus(
           taskRowById('origin'),
@@ -786,7 +788,7 @@ describe('plant-products task rows', () => {
 
   it('blocks readiness until the mandatory origin row is complete', () => {
     const readyFor = (answers) =>
-      withSetContext('plant-products', () => {
+      withSetContext(SET_ID, () => {
         const { inScope } = makeScope(answers)
         return readyForCheckYourAnswers(
           answers,
@@ -811,7 +813,7 @@ describe('plant-products task rows', () => {
 
   it('moves the transport row from Not yet started through In progress to Completed', () => {
     const statusFor = (answers) =>
-      withSetContext('plant-products', () => {
+      withSetContext(SET_ID, () => {
         const { inScope } = makeScope(answers)
         return rowStatus(
           taskRowById('transport'),
@@ -851,10 +853,10 @@ describe('plant-products task rows', () => {
 
   it('moves goods movement from Not yet started through In progress to Completed on both CTC branches', () => {
     const statusFor = (answers) =>
-      withSetContext('plant-products', () => {
+      withSetContext(SET_ID, () => {
         const { inScope } = makeScope(answers)
         return rowStatus(
-          taskRowById('goods-movement'),
+          taskRowById(GOODS_MOVEMENT_ID),
           answers,
           inScope,
           evaluateAnswers(answers)
@@ -874,9 +876,9 @@ describe('plant-products task rows', () => {
       })
     ).toBe(FULFILLED)
     expect(
-      withSetContext('plant-products', () =>
+      withSetContext(SET_ID, () =>
         rowEntry(
-          taskRowById('goods-movement'),
+          taskRowById(GOODS_MOVEMENT_ID),
           makeScope({
             countryOfOrigin: 'FR',
             commodityLines: [{ commoditySelection: '08059000' }]
@@ -889,7 +891,7 @@ describe('plant-products task rows', () => {
 
   it('blocks readiness while transport is incomplete and unblocks it when complete', () => {
     const readyFor = (answers) =>
-      withSetContext('plant-products', () => {
+      withSetContext(SET_ID, () => {
         const { inScope } = makeScope(answers)
         return readyForCheckYourAnswers(
           answers,
@@ -921,7 +923,7 @@ describe('plant-products task rows', () => {
 
   it('blocks readiness while additional details is incomplete and unblocks it when complete', () => {
     const readyFor = (answers) =>
-      withSetContext('plant-products', () => {
+      withSetContext(SET_ID, () => {
         const { inScope } = makeScope(answers)
         return readyForCheckYourAnswers(
           answers,

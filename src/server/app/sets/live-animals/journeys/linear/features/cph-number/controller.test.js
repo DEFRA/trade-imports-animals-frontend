@@ -17,6 +17,8 @@ import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 
 import * as cphNumber from './controller.js'
 
+const SET_ID = 'live-animals'
+
 const postCph = postHandlerOf(cphNumber)
 const getCph = cphNumber.routes.find((route) => route.method === 'GET').handler
 
@@ -41,9 +43,9 @@ const driveWithQuery = async (handler, { payload = {}, query = {} } = {}) => {
 
 describe('POST cph-number — the 9-digit rule after slash stripping', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -116,9 +118,9 @@ describe('POST cph-number — the 9-digit rule after slash stripping', () => {
 
 describe('cph-number — addresses-hub entry (?return=addresses)', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

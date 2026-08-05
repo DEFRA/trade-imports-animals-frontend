@@ -10,12 +10,14 @@ import { records as recordsStub } from '../../services/persistence/records/stub/
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
 import { journeyRequest, recordingH } from '../test-support.js'
 
-const IMPORT_TYPE_LIVE_ANIMALS = 'live-animals'
+const SET_ID = 'live-animals'
+
+const IMPORT_TYPE_LIVE_ANIMALS = SET_ID
 
 describe('flow-only answers — session round-trip', () => {
   beforeEach(async () => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
     configureReadyForCheckYourAnswers(() => false)
     await records.clear()
   })
@@ -47,7 +49,7 @@ describe('flow-only answers — session round-trip', () => {
   it('Should load flow-only session state once when a request reads repeatedly', async () => {
     const journey = await records.create()
     const flowOnlyAnswers = vi.fn(sessionStub.flowOnlyAnswers)
-    configureSession('live-animals', { ...sessionStub, flowOnlyAnswers })
+    configureSession(SET_ID, { ...sessionStub, flowOnlyAnswers })
     const request = journeyRequest(journey.journeyId, {
       app: {},
       state: {

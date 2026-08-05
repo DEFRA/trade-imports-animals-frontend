@@ -23,13 +23,15 @@ import { dispatchPages } from '../index.js'
 
 import * as importPurpose from './controller.js'
 
+const SET_ID = 'live-animals'
+
 const post = postHandlerOf(importPurpose)
 
 describe('POST import-purpose — invalid payload', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -45,8 +47,8 @@ describe('POST import-purpose — invalid payload', () => {
 
 describe('POST import-purpose — save failures', () => {
   beforeAll(() => {
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   beforeEach(() => {
@@ -62,13 +64,13 @@ describe('POST import-purpose — save failures', () => {
   })
 
   afterEach(() => {
-    configureRecords('live-animals', recordsStub)
+    configureRecords(SET_ID, recordsStub)
     vi.unstubAllGlobals()
   })
 
   const failingOnControllerCommit = (failure) => {
     let replaceCalls = 0
-    configureRecords('live-animals', {
+    configureRecords(SET_ID, {
       ...recordsStub,
       replaceFulfilment: (...args) => {
         replaceCalls += 1

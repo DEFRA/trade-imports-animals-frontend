@@ -18,6 +18,8 @@ import { pagePath } from '../../../../../../shared/paths.js'
 import * as contact from './controller.js'
 import * as createAddress from '../addresses/create-address/create-address.controller.js'
 
+const SET_ID = 'live-animals'
+
 const get = contact.routes.find((route) => route.method === 'GET').handler
 const post = postHandlerOf(contact)
 const postCreate = postHandlerEndingWith(createAddress, 'addresses/create')
@@ -39,9 +41,9 @@ const contactPayload = {
 
 describe('GET contact — select or create an address', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -87,9 +89,9 @@ describe('GET contact — select or create an address', () => {
 
 describe('POST contact — invalid payload', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

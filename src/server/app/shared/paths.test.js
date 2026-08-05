@@ -3,12 +3,14 @@ import { describe, expect, it } from 'vitest'
 import * as paths from './paths.js'
 import { registerSetMount, withSetContext } from './set-context.js'
 
-registerSetMount('live-animals', '/live-animals')
+const SET_ID = 'live-animals'
+
+registerSetMount(SET_ID, '/live-animals')
 registerSetMount('plant-products', '/plant-products')
 
 describe('set-aware paths', () => {
   it.each([
-    ['live-animals', '/live-animals'],
+    [SET_ID, '/live-animals'],
     ['plant-products', '/plant-products']
   ])('builds links for %s in the same process', (setId, base) => {
     withSetContext(setId, () => {
@@ -24,7 +26,7 @@ describe('set-aware paths', () => {
     })
   })
 
-  it.each(['live-animals', 'plant-products'])(
+  it.each([SET_ID, 'plant-products'])(
     'keeps route shapes prefix-free under %s',
     (setId) => {
       withSetContext(setId, () => {

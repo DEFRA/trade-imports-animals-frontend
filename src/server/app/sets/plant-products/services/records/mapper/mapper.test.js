@@ -4,6 +4,17 @@ import { fromDto as mapFromDto } from './from-dto.js'
 import { documentToDto, toDto } from './to-dto.js'
 import { placeholderOrganisationOperator } from '../../placeholder-org.js'
 
+const PHYTO_COPY_REFERENCE = 'PHYTO-COPY-001'
+const SERVER_LINE_1_ID = 'server-line-1'
+const ISSUE_DATE = '2025-12-04'
+const RESPONSIBLE_PERSON_NAME = 'Isabel Irwin'
+const RESPONSIBLE_PERSON_EMAIL = 'isabel@example.com'
+const RESPONSIBLE_PERSON_TELEPHONE = '+44 7700 900 982'
+const CONSIGNOR_NAME = 'Orchard Export SAS'
+const CONSIGNOR_ADDRESS_LINE_1 = '12 Rue des Vergers'
+const CONSIGNOR_TELEPHONE = '+33 4 72 00 00 00'
+const CONSIGNOR_EMAIL = 'exports@example.com'
+
 const withImporter = (dto = {}) => ({
   ...dto,
   importer: placeholderOrganisationOperator()
@@ -142,7 +153,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
       toDto({
         importType: 'plant-products',
         declaration: { agreed: true },
-        accompanyingDocuments: [{ documentReference: 'PHYTO-COPY-001' }]
+        accompanyingDocuments: [{ documentReference: PHYTO_COPY_REFERENCE }]
       })
     ).toEqual(withImporter())
   })
@@ -170,7 +181,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
       accompanyingDocuments: [
         {
           documentType: 'PHYTOSANITARY_CERTIFICATE',
-          documentReference: 'PHYTO-COPY-001'
+          documentReference: PHYTO_COPY_REFERENCE
         }
       ]
     }
@@ -179,7 +190,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
       accompanyingDocuments: [
         {
           documentType: 'PHYTOSANITARY_CERTIFICATE',
-          documentReference: 'PHYTO-COPY-001',
+          documentReference: PHYTO_COPY_REFERENCE,
           issueDate: { day: '', month: '', year: '' }
         }
       ]
@@ -195,7 +206,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     const answers = {
       commodityLines: [
         {
-          uniqueComplementId: 'server-line-1',
+          uniqueComplementId: SERVER_LINE_1_ID,
           commoditySelection: '0808108090',
           numberOfPackages: 0,
           packageType: 'BOX',
@@ -249,7 +260,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
   it('echoes a server-assigned uniqueComplementId and omits it for a new line', () => {
     const answers = {
       commodityLines: [
-        { uniqueComplementId: 'server-line-1', species: [] },
+        { uniqueComplementId: SERVER_LINE_1_ID, species: [] },
         { species: [] }
       ]
     }
@@ -257,7 +268,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     const dto = toDto(answers)
 
     expect(dto.commodity.commodityComplement[0].uniqueComplementId).toBe(
-      'server-line-1'
+      SERVER_LINE_1_ID
     )
     expect(dto.commodity.commodityComplement[1]).not.toHaveProperty(
       'uniqueComplementId'
@@ -496,17 +507,17 @@ describe('plant-products notification mapper at the m0 boundary', () => {
 
   it('round-trips all three responsible-person contact fields', () => {
     const answers = {
-      responsiblePersonName: 'Isabel Irwin',
-      responsiblePersonEmail: 'isabel@example.com',
-      responsiblePersonTelephone: '+44 7700 900 982'
+      responsiblePersonName: RESPONSIBLE_PERSON_NAME,
+      responsiblePersonEmail: RESPONSIBLE_PERSON_EMAIL,
+      responsiblePersonTelephone: RESPONSIBLE_PERSON_TELEPHONE
     }
 
     expect(toDto(answers)).toEqual(
       withImporter({
         responsiblePerson: {
-          name: 'Isabel Irwin',
-          email: 'isabel@example.com',
-          telephone: '+44 7700 900 982'
+          name: RESPONSIBLE_PERSON_NAME,
+          email: RESPONSIBLE_PERSON_EMAIL,
+          telephone: RESPONSIBLE_PERSON_TELEPHONE
         }
       })
     )
@@ -515,8 +526,8 @@ describe('plant-products notification mapper at the m0 boundary', () => {
 
   it('round-trips name and email without null-stuffing telephone or emitting isAgent', () => {
     const answers = {
-      responsiblePersonName: 'Isabel Irwin',
-      responsiblePersonEmail: 'isabel@example.com'
+      responsiblePersonName: RESPONSIBLE_PERSON_NAME,
+      responsiblePersonEmail: RESPONSIBLE_PERSON_EMAIL
     }
 
     const dto = toDto(answers)
@@ -524,8 +535,8 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     expect(dto).toEqual(
       withImporter({
         responsiblePerson: {
-          name: 'Isabel Irwin',
-          email: 'isabel@example.com'
+          name: RESPONSIBLE_PERSON_NAME,
+          email: RESPONSIBLE_PERSON_EMAIL
         }
       })
     )
@@ -541,13 +552,13 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     expect(
       fromDto({
         responsiblePerson: {
-          name: 'Isabel Irwin',
+          name: RESPONSIBLE_PERSON_NAME,
           email: null,
           telephone: null,
           isAgent: true
         }
       })
-    ).toEqual({ responsiblePersonName: 'Isabel Irwin' })
+    ).toEqual({ responsiblePersonName: RESPONSIBLE_PERSON_NAME })
   })
 
   it('round-trips two nominated contacts with independent optional fields and agent values', () => {
@@ -560,7 +571,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
         },
         {
           contactName: 'Blair Broker',
-          contactTelephone: '+44 7700 900 982',
+          contactTelephone: RESPONSIBLE_PERSON_TELEPHONE,
           contactIsAgent: true
         }
       ]
@@ -576,7 +587,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
       },
       {
         name: 'Blair Broker',
-        telephone: '+44 7700 900 982',
+        telephone: RESPONSIBLE_PERSON_TELEPHONE,
         isAgent: true
       }
     ])
@@ -687,25 +698,25 @@ describe('plant-products notification mapper at the m0 boundary', () => {
 
   it('round-trips every fully populated consignor field without inventing operatorId', () => {
     const answers = {
-      consignorName: 'Orchard Export SAS',
-      consignorAddressLine1: '12 Rue des Vergers',
+      consignorName: CONSIGNOR_NAME,
+      consignorAddressLine1: CONSIGNOR_ADDRESS_LINE_1,
       consignorAddressLine2: 'Building B',
       consignorAddressLine3: 'Export Quarter',
       consignorCity: 'Lyon',
       consignorPostcode: '69001',
-      consignorTelephone: '+33 4 72 00 00 00',
+      consignorTelephone: CONSIGNOR_TELEPHONE,
       consignorCountry: 'FR',
-      consignorEmail: 'exports@example.com'
+      consignorEmail: CONSIGNOR_EMAIL
     }
 
     const dto = toDto(answers)
 
     expect(dto.consignor).toEqual({
-      name: 'Orchard Export SAS',
-      telephone: '+33 4 72 00 00 00',
-      email: 'exports@example.com',
+      name: CONSIGNOR_NAME,
+      telephone: CONSIGNOR_TELEPHONE,
+      email: CONSIGNOR_EMAIL,
       address: {
-        addressLine1: '12 Rue des Vergers',
+        addressLine1: CONSIGNOR_ADDRESS_LINE_1,
         addressLine2: 'Building B',
         addressLine3: 'Export Quarter',
         city: 'Lyon',
@@ -719,18 +730,18 @@ describe('plant-products notification mapper at the m0 boundary', () => {
 
   it('round-trips a consignor without optional address lines or postcode', () => {
     const answers = {
-      consignorName: 'Orchard Export SAS',
-      consignorAddressLine1: '12 Rue des Vergers',
+      consignorName: CONSIGNOR_NAME,
+      consignorAddressLine1: CONSIGNOR_ADDRESS_LINE_1,
       consignorCity: 'Lyon',
-      consignorTelephone: '+33 4 72 00 00 00',
+      consignorTelephone: CONSIGNOR_TELEPHONE,
       consignorCountry: 'FR',
-      consignorEmail: 'exports@example.com'
+      consignorEmail: CONSIGNOR_EMAIL
     }
 
     const dto = toDto(answers)
 
     expect(dto.consignor.address).toEqual({
-      addressLine1: '12 Rue des Vergers',
+      addressLine1: CONSIGNOR_ADDRESS_LINE_1,
       city: 'Lyon',
       country: 'FR'
     })
@@ -767,7 +778,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     expect(dto).toEqual({
       documentType: 'PHYTOSANITARY_CERTIFICATE',
       documentReference: 'PHYTO-001',
-      issueDate: '2025-12-04',
+      issueDate: ISSUE_DATE,
       files: [{ fileId: 'upload-abc-123', filename: 'phyto.pdf' }]
     })
     expect(dto).not.toHaveProperty('id')
@@ -801,7 +812,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
 
     const [entry] = fromDto({
       accompanyingDocuments: [
-        { ...metadata, issueDate: '2025-12-04', files: [{ fileId: 'file-1' }] }
+        { ...metadata, issueDate: ISSUE_DATE, files: [{ fileId: 'file-1' }] }
       ]
     }).accompanyingDocuments
 
@@ -845,7 +856,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
           id: 'server-doc-1',
           documentType: 'PHYTOSANITARY_CERTIFICATE',
           documentReference: 'PHYTO-001',
-          issueDate: '2025-12-04',
+          issueDate: ISSUE_DATE,
           files: [{ fileId: 'file-1', filename: 'phyto.pdf' }]
         },
         {

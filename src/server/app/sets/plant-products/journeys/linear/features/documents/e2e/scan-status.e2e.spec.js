@@ -11,6 +11,15 @@ import {
   startAtDocuments
 } from '../documents.e2e-helper.js'
 
+const SAVE_AND_CONTINUE = 'Save and continue'
+const PHYTO_STUCK = 'PHYTO-STUCK'
+const PHYTO_CLEAN = 'PHYTO-CLEAN'
+const PHYTO_INFECTED = 'PHYTO-INFECTED'
+const PHYTO_POLLED = 'PHYTO-POLLED'
+const PHYTO_POLLED_VIRUS = 'PHYTO-POLLED-VIRUS'
+const PHYTO_SETTLED = 'PHYTO-SETTLED'
+const PHYTO_OFFLINE = 'PHYTO-OFFLINE'
+
 const announcer = (page) => page.locator('#js-scan-status-announcer')
 
 const viewFileLink = (row, reference) =>
@@ -23,7 +32,7 @@ const viewFileLink = (row, reference) =>
 // it with the server's rendering.
 const addStuckRow = (page) =>
   addDocument(page, {
-    reference: 'PHYTO-STUCK',
+    reference: PHYTO_STUCK,
     file: pdfFile('never-scans.pdf')
   })
 
@@ -36,22 +45,20 @@ test.describe('plant-products document scan lifecycle', () => {
     page
   }) => {
     await addDocument(page, {
-      reference: 'PHYTO-CLEAN',
+      reference: PHYTO_CLEAN,
       file: pdfFile('phyto.pdf')
     })
-    await expect(rowFor(page, 'PHYTO-CLEAN')).toContainText(
-      copy.status.checking
-    )
+    await expect(rowFor(page, PHYTO_CLEAN)).toContainText(copy.status.checking)
 
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page).toHaveURL((url) => documentsUrl.test(url.pathname))
     await expect(page.getByRole('alert')).toContainText(
       copy.errors.cannotContinue
     )
 
-    await settleScan(page, 'PHYTO-CLEAN', copy.status.safe)
+    await settleScan(page, PHYTO_CLEAN, copy.status.safe)
 
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page).not.toHaveURL((url) => documentsUrl.test(url.pathname))
   })
 
@@ -60,17 +67,17 @@ test.describe('plant-products document scan lifecycle', () => {
   }) => {
     const filename = 'virus.pdf'
     await addDocument(page, {
-      reference: 'PHYTO-INFECTED',
+      reference: PHYTO_INFECTED,
       file: pdfFile(filename)
     })
-    await settleScan(page, 'PHYTO-INFECTED', copy.status.virus)
+    await settleScan(page, PHYTO_INFECTED, copy.status.virus)
 
     const alert = page.getByRole('alert')
     await expect(alert).toContainText(copy.errors.virus(filename))
     await alert.getByRole('link', { name: copy.errors.virus(filename) }).click()
     await expect(page.locator('#documents-added')).toBeFocused()
 
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page).toHaveURL((url) => documentsUrl.test(url.pathname))
 
     await page
@@ -78,9 +85,9 @@ test.describe('plant-products document scan lifecycle', () => {
         name: `${copy.actions.remove} Phytosanitary certificate PHYTO-INFECTED`
       })
       .click()
-    await expect(rowFor(page, 'PHYTO-INFECTED')).toHaveCount(0)
+    await expect(rowFor(page, PHYTO_INFECTED)).toHaveCount(0)
 
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page).not.toHaveURL((url) => documentsUrl.test(url.pathname))
   })
 
@@ -103,13 +110,13 @@ test.describe('plant-products document scan lifecycle', () => {
   }) => {
     test.slow()
     await addDocument(page, {
-      reference: 'PHYTO-POLLED',
+      reference: PHYTO_POLLED,
       file: pdfFile('phyto.pdf')
     })
     await addStuckRow(page)
 
-    const settling = rowFor(page, 'PHYTO-POLLED')
-    const stuck = rowFor(page, 'PHYTO-STUCK')
+    const settling = rowFor(page, PHYTO_POLLED)
+    const stuck = rowFor(page, PHYTO_STUCK)
     await expect(settling).toContainText(copy.status.checking)
 
     const remove = settling.getByRole('button', {
@@ -123,7 +130,7 @@ test.describe('plant-products document scan lifecycle', () => {
     ).toBeHidden()
 
     await expect(stuck).toContainText(copy.status.checking)
-    await expect(viewFileLink(settling, 'PHYTO-POLLED')).toBeVisible()
+    await expect(viewFileLink(settling, PHYTO_POLLED)).toBeVisible()
     await expect(announcer(page)).toHaveText(copy.announcements.safe)
   })
 
@@ -132,16 +139,16 @@ test.describe('plant-products document scan lifecycle', () => {
   }) => {
     test.slow()
     await addDocument(page, {
-      reference: 'PHYTO-POLLED-VIRUS',
+      reference: PHYTO_POLLED_VIRUS,
       file: pdfFile('virus.pdf')
     })
     await addStuckRow(page)
 
-    const rejected = rowFor(page, 'PHYTO-POLLED-VIRUS')
+    const rejected = rowFor(page, PHYTO_POLLED_VIRUS)
     await expect(rejected).toContainText(copy.status.checking)
 
     await expect(rejected).toContainText(copy.status.virus)
-    await expect(viewFileLink(rejected, 'PHYTO-POLLED-VIRUS')).toHaveCount(0)
+    await expect(viewFileLink(rejected, PHYTO_POLLED_VIRUS)).toHaveCount(0)
     await expect(announcer(page)).toHaveText(copy.announcements.virus)
     await expect(
       page.getByRole('button', {
@@ -155,18 +162,18 @@ test.describe('plant-products document scan lifecycle', () => {
   }) => {
     test.slow()
     await addDocument(page, {
-      reference: 'PHYTO-SETTLED',
+      reference: PHYTO_SETTLED,
       file: pdfFile('phyto.pdf')
     })
-    await expect(rowFor(page, 'PHYTO-SETTLED')).toContainText(
+    await expect(rowFor(page, PHYTO_SETTLED)).toContainText(
       copy.status.checking
     )
 
     await page.waitForURL(/[?&]attempt=1(&|$)/)
     await expect(page).toHaveURL((url) => documentsUrl.test(url.pathname))
-    await expect(rowFor(page, 'PHYTO-SETTLED')).toContainText(copy.status.safe)
+    await expect(rowFor(page, PHYTO_SETTLED)).toContainText(copy.status.safe)
 
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page).not.toHaveURL((url) => documentsUrl.test(url.pathname))
   })
 
@@ -179,7 +186,7 @@ test.describe('plant-products document scan lifecycle', () => {
     test.slow()
     await addStuckRow(page)
 
-    const stuck = rowFor(page, 'PHYTO-STUCK')
+    const stuck = rowFor(page, PHYTO_STUCK)
     await expect(stuck).toContainText(copy.status.checking)
     const refresh = page.getByRole('link', { name: copy.actions.refresh })
     await expect(refresh).toBeHidden()
@@ -192,9 +199,7 @@ test.describe('plant-products document scan lifecycle', () => {
 
     await refresh.click()
     await expect(page).toHaveURL(/[?&]attempt=/)
-    await expect(rowFor(page, 'PHYTO-STUCK')).toContainText(
-      copy.status.checking
-    )
+    await expect(rowFor(page, PHYTO_STUCK)).toContainText(copy.status.checking)
   })
 
   test('polls from a trailing-slash URL the server still serves', async ({
@@ -230,15 +235,15 @@ test.describe('plant-products document scan lifecycle', () => {
   }) => {
     const reads = await countStatusReads(page, (route) => route.abort())
     await addDocument(page, {
-      reference: 'PHYTO-OFFLINE',
+      reference: PHYTO_OFFLINE,
       file: pdfFile('phyto.pdf')
     })
 
     await expect.poll(reads, { timeout: 20_000 }).toBeGreaterThanOrEqual(2)
-    await expect(rowFor(page, 'PHYTO-OFFLINE')).toContainText(
+    await expect(rowFor(page, PHYTO_OFFLINE)).toContainText(
       copy.status.checking
     )
-    await expect(rowFor(page, 'PHYTO-OFFLINE')).not.toContainText(
+    await expect(rowFor(page, PHYTO_OFFLINE)).not.toContainText(
       copy.status.safe
     )
     await expect(page).toHaveURL((url) => !url.search.includes('attempt='))

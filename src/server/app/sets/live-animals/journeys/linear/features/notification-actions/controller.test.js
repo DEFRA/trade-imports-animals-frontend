@@ -25,21 +25,23 @@ import { session as sessionStub } from '../../../../../../services/persistence/s
 import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
 
+const SET_ID = 'live-animals'
+
 const copyPost = routes[0].handler
 
 describe('copy notification action', () => {
   beforeAll(() => {
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   beforeEach(() => {
-    configureRecords('live-animals', recordsStub)
+    configureRecords(SET_ID, recordsStub)
     records.clear()
   })
 
   afterEach(() => {
-    configureRecords('live-animals', recordsStub)
+    configureRecords(SET_ID, recordsStub)
     vi.unstubAllGlobals()
   })
 
@@ -84,7 +86,7 @@ describe('copy notification action', () => {
   })
 
   it('Should distinguish a recoverable failure from an actionable key-reuse error', async () => {
-    configureRecords('live-animals', { ...recordsStub, copy: realRecords.copy })
+    configureRecords(SET_ID, { ...recordsStub, copy: realRecords.copy })
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({

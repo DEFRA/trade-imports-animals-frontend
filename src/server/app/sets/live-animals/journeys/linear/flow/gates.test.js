@@ -9,6 +9,8 @@ import { buildDispatch } from '../../../../../flow/dispatch.js'
 import { sections } from './flow.js'
 import { pageGatePasses, sectionGatePasses } from '../../../../../flow/gates.js'
 
+const SET_ID = 'live-animals'
+
 const unitedKingdom = 'United Kingdom'
 
 describe('#pageGatePasses / #sectionGatePasses', () => {
@@ -56,7 +58,7 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
 
   describe('once the dispatch index is built', () => {
     beforeAll(() => {
-      buildDispatch('live-animals', dispatchPages)
+      buildDispatch(SET_ID, dispatchPages)
     })
 
     it('Should pass the derived transporter-select page gate exactly when the commercial transporter is owed, in every scope state', () => {
@@ -82,7 +84,7 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
 
 describe('#sectionGatePasses — RULE 1: mandate-derived flow sequencing', () => {
   beforeAll(() => {
-    buildDispatch('live-animals', dispatchPages)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   const sectionById = (id) => sections.find((section) => section.id === id)
@@ -136,7 +138,7 @@ describe('#sectionGatePasses — RULE 1: mandate-derived flow sequencing', () =>
 
 describe('#sectionGatePasses — RULE 2: review gates on submit-readiness (no deadlock)', () => {
   beforeAll(() => {
-    buildDispatch('live-animals', dispatchPages)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   const reviewSection = sections.find((section) => section.id === 'review')

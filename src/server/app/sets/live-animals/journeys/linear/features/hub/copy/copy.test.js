@@ -17,6 +17,8 @@ import { pagePath } from '../../../../../../../shared/paths.js'
 import { routes } from '../controller.js'
 import { copy } from './copy.en.js'
 
+const SET_ID = 'live-animals'
+
 const hubHandler = routes.find((route) => route.method === 'GET').handler
 
 const renderHub = async (seed = {}) => {
@@ -54,9 +56,9 @@ describe('#copy', () => {
 
 describe('GET /hub', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -79,9 +81,9 @@ describe('GET /hub', () => {
 
 describe('#hubHandler', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

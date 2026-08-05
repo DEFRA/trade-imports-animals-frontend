@@ -14,6 +14,8 @@ import { dispatchPages } from '../../index.js'
 
 import * as search from './search.controller.js'
 
+const SET_ID = 'live-animals'
+
 const get = search.routes.find((route) => route.method === 'GET').handler
 const post = postHandlerOf(search)
 
@@ -22,9 +24,9 @@ const CAT_FELIS_CATUS_KEY = 'Cat|923501'
 
 describe('commodities grouped checklist', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

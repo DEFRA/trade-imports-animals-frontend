@@ -27,6 +27,8 @@ import * as createAddress from './create-address.controller.js'
 import * as partyPicker from '../party-picker/party-picker.controller.js'
 import { CONTACT_PARTY, PARTIES, partyOf } from '../parties.js'
 
+const SET_ID = 'live-animals'
+
 const postCreate = postHandlerEndingWith(createAddress, 'addresses/create')
 const postConsignorSpoke = postHandlerEndingWith(
   partyPicker,
@@ -57,9 +59,9 @@ const validPayload = (overrides = {}) => ({
 
 describe('POST addresses/create — shared Standard Address Block form', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -191,9 +193,9 @@ describe('POST addresses/create — country membership follows the primed list',
   const originalMode = process.env.LIVE_ANIMALS_MODE
 
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

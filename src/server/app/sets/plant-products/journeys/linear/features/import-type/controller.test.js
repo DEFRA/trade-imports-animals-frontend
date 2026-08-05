@@ -21,6 +21,8 @@ import { records } from '../../../../services/records/stub.js'
 import { placeholderOrganisationOperator } from '../../../../services/placeholder-org.js'
 import { copy } from './copy/copy.en.js'
 
+const SET_ID = 'live-animals'
+
 const fixtureObligation = {
   id: '53b27cd5-05b5-40ff-b709-d7444717d71d',
   name: 'fixtureAnswer',
@@ -38,7 +40,7 @@ const fixtureObligationSet = {
 }
 
 const expectedOptions = [
-  { value: 'live-animals', label: 'Live animals' },
+  { value: SET_ID, label: 'Live animals' },
   {
     value: 'poao',
     label: 'Products of animal origin, germinal products or animal by-products'
@@ -248,7 +250,7 @@ describe('plant-products import-type controller', () => {
     })
   })
 
-  it.each(['live-animals', 'poao', 'hrfnao'])(
+  it.each([SET_ID, 'poao', 'hrfnao'])(
     'commits %s to flow state and redirects to the holding page',
     async (importType) => {
       const { cookies, url } = await newJourney()
@@ -277,7 +279,7 @@ describe('plant-products import-type controller', () => {
 
   it('renders the holding page with a change-answer link back to import type', async () => {
     const { cookies, url } = await newJourney()
-    const post = await postImportType(url, cookies, 'live-animals')
+    const post = await postImportType(url, cookies, SET_ID)
     cookies.absorb(post)
 
     const response = await server.inject({

@@ -10,6 +10,8 @@ import { configureReadyForCheckYourAnswers } from '../../engine/read.js'
 import * as state from '../../engine/index.js'
 import { compose, maxText, validate } from './index.js'
 
+const SET_ID = 'live-animals'
+
 const fields = compose(maxText('transportDocumentReference', 58))
 
 const commitReference = async (request, h) => {
@@ -27,8 +29,8 @@ const commitReference = async (request, h) => {
 
 describe('The cleaned value is persisted, not the raw payload', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
     configureReadyForCheckYourAnswers(() => false)
   })
   beforeEach(() => store.clear())
@@ -43,8 +45,8 @@ describe('The cleaned value is persisted, not the raw payload', () => {
 
 describe('An invalid value echoes the raw input and commits nothing', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
     configureReadyForCheckYourAnswers(() => false)
   })
   beforeEach(() => store.clear())

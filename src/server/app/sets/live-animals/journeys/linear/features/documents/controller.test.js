@@ -33,6 +33,8 @@ import {
   OVERSIZE_FILE_MESSAGE
 } from './upload-config.js'
 
+const SET_ID = 'live-animals'
+
 const post = postHandlerOf(documents)
 const get = documents.routes.find((route) => route.method === 'GET').handler
 const statusRoute = documents.routes.find((route) =>
@@ -76,9 +78,9 @@ const summaryTexts = (result) =>
   (result.view.context.errorSummary?.errorList ?? []).map((item) => item.text)
 
 const configureEngine = () => {
-  configureRecords('live-animals', recordsStub)
-  configureSession('live-animals', sessionStub, SESSION_COOKIE_NAMES)
-  buildDispatch('live-animals', dispatchPages)
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub, SESSION_COOKIE_NAMES)
+  buildDispatch(SET_ID, dispatchPages)
 }
 
 describe('documents — real upload leg on the single-page loop', () => {

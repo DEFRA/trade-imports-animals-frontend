@@ -14,13 +14,15 @@ import { dispatchPages } from '../index.js'
 
 import * as additionalDetails from './controller.js'
 
+const SET_ID = 'live-animals'
+
 const post = postHandlerOf(additionalDetails)
 
 describe('POST additional-details — invalid payload', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

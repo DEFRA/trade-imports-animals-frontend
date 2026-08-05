@@ -19,6 +19,8 @@ import { dispatchPages } from '../../index.js'
 
 import * as animalIdentification from './animal-identification.controller.js'
 
+const SET_ID = 'live-animals'
+
 const post = postHandlerOf(animalIdentification)
 const getHandler = animalIdentification.routes.find(
   (route) => route.method === 'GET'
@@ -57,9 +59,9 @@ const SUITE =
 
 const setupIdentificationEngine = () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 }

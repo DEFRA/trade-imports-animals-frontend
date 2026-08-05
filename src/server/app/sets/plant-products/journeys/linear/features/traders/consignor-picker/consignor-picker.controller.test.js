@@ -27,6 +27,20 @@ import { toDto } from '../../../../../services/records/mapper/to-dto.js'
 import { copy } from '../copy/copy.en.js'
 import * as consignorPicker from './consignor-picker.controller.js'
 
+const SET_ID = 'plant-products'
+
+const CONSIGNOR_01_ID = 'example-consignor-01'
+const CONSIGNOR_03_ID = 'example-consignor-03'
+const CONSIGNOR_07_ID = 'example-consignor-07'
+const CONSIGNOR_12_ID = 'example-consignor-12'
+const NOTIFICATION_CONSIGNOR_ID = 'notification-consignor'
+const CONSIGNOR_01_NAME = 'Example Consignor 01 (sample data)'
+const CONSIGNOR_01_TELEPHONE = '01632 960001'
+const CONSIGNOR_01_EMAIL = 'consignor01@example.com'
+const EXAMPLE_ADDRESS_LINE_1 = '1 Example Street'
+const EXAMPLE_ADDRESS_LINE_2 = 'Example Business Park'
+const EXAMPLE_CITY = 'Example City'
+
 const pageCopy = copy.consignorPicker
 const get = consignorPicker.routes.find(
   ({ method }) => method === 'GET'
@@ -41,7 +55,7 @@ const sessionYar = () => {
 }
 
 const drive = (handler, options, yar = sessionYar()) =>
-  withSetContext('plant-products', () =>
+  withSetContext(SET_ID, () =>
     driveHandler((request, h) => handler({ ...request, yar }, h), options)
   )
 
@@ -58,15 +72,15 @@ const consignorAnswers = {
 }
 
 const firstCannedAnswers = {
-  consignorName: 'Example Consignor 01 (sample data)',
-  consignorAddressLine1: '1 Example Street',
-  consignorAddressLine2: 'Example Business Park',
+  consignorName: CONSIGNOR_01_NAME,
+  consignorAddressLine1: EXAMPLE_ADDRESS_LINE_1,
+  consignorAddressLine2: EXAMPLE_ADDRESS_LINE_2,
   consignorAddressLine3: 'Example District',
-  consignorCity: 'Example City',
+  consignorCity: EXAMPLE_CITY,
   consignorPostcode: 'ZZ99 01',
-  consignorTelephone: '01632 960001',
+  consignorTelephone: CONSIGNOR_01_TELEPHONE,
   consignorCountry: 'FR',
-  consignorEmail: 'consignor01@example.com'
+  consignorEmail: CONSIGNOR_01_EMAIL
 }
 
 const pickerFrom = (result) => result.view.context.picker
@@ -83,7 +97,7 @@ describe('plant-products consignor-picker controller', () => {
   })
 
   beforeEach(async () => {
-    enterSetContext('plant-products')
+    enterSetContext(SET_ID)
     await records.clear()
   })
 
@@ -115,9 +129,9 @@ describe('plant-products consignor-picker controller', () => {
       )
       expect(picker.selected).toBeUndefined()
       expect(picker.rows[0]).toMatchObject({
-        id: 'example-consignor-01',
+        id: CONSIGNOR_01_ID,
         idPrefix: 'party',
-        name: 'Example Consignor 01 (sample data)',
+        name: CONSIGNOR_01_NAME,
         country: 'France'
       })
       expect(picker.resultsCaption).toBe(pageCopy.resultsCaption(5, 12))
@@ -131,30 +145,30 @@ describe('plant-products consignor-picker controller', () => {
     const picker = pickerFrom(await drive(get, { seed: consignorAnswers }))
 
     expect(picker.rows[0]).toMatchObject({
-      id: 'notification-consignor',
+      id: NOTIFICATION_CONSIGNOR_ID,
       name: 'Orchard Export SAS',
       checked: true
     })
-    expect(picker.selected.id).toBe('notification-consignor')
+    expect(picker.selected.id).toBe(NOTIFICATION_CONSIGNOR_ID)
   })
 
   it('pre-checks the row named by the selected query parameter', async () => {
     const picker = pickerFrom(
-      await drive(get, { query: { selected: 'example-consignor-03' } })
+      await drive(get, { query: { selected: CONSIGNOR_03_ID } })
     )
 
-    expect(picker.selected.id).toBe('example-consignor-03')
+    expect(picker.selected.id).toBe(CONSIGNOR_03_ID)
     expect(
       picker.rows.filter(({ checked }) => checked).map(({ id }) => id)
-    ).toEqual(['example-consignor-03'])
+    ).toEqual([CONSIGNOR_03_ID])
   })
 
   it('names a selection made on another page even though no row here is checked', async () => {
     const picker = pickerFrom(
-      await drive(get, { query: { selected: 'example-consignor-07' } })
+      await drive(get, { query: { selected: CONSIGNOR_07_ID } })
     )
 
-    expect(picker.selected.id).toBe('example-consignor-07')
+    expect(picker.selected.id).toBe(CONSIGNOR_07_ID)
     expect(picker.rows.filter(({ checked }) => checked)).toEqual([])
   })
 
@@ -188,12 +202,12 @@ describe('plant-products consignor-picker controller', () => {
 
   it('commits exactly the nine flat consignor leaves and returns to traders-addresses', async () => {
     const result = await drive(post, {
-      payload: { party: 'example-consignor-01' }
+      payload: { party: CONSIGNOR_01_ID }
     })
 
     expect(result.after).toEqual(firstCannedAnswers)
-    expect(result.after.consignorTelephone).toBe('01632 960001')
-    expect(result.after.consignorEmail).toBe('consignor01@example.com')
+    expect(result.after.consignorTelephone).toBe(CONSIGNOR_01_TELEPHONE)
+    expect(result.after.consignorEmail).toBe(CONSIGNOR_01_EMAIL)
     expect(result.after.consignorCountry).toBe('FR')
     for (const banned of [
       'consignor',
@@ -211,22 +225,22 @@ describe('plant-products consignor-picker controller', () => {
 
   it('persists the picked consignor into the same DTO shape the form writes', async () => {
     const result = await drive(post, {
-      payload: { party: 'example-consignor-01' }
+      payload: { party: CONSIGNOR_01_ID }
     })
     const stored = await records.load({ journeyId: result.journeyId })
-    const dto = withSetContext('plant-products', () =>
+    const dto = withSetContext(SET_ID, () =>
       toDto(projectAnswers(stored.fulfilment))
     )
 
     expect(dto.consignor).toEqual({
-      name: 'Example Consignor 01 (sample data)',
-      telephone: '01632 960001',
-      email: 'consignor01@example.com',
+      name: CONSIGNOR_01_NAME,
+      telephone: CONSIGNOR_01_TELEPHONE,
+      email: CONSIGNOR_01_EMAIL,
       address: {
-        addressLine1: '1 Example Street',
-        addressLine2: 'Example Business Park',
+        addressLine1: EXAMPLE_ADDRESS_LINE_1,
+        addressLine2: EXAMPLE_ADDRESS_LINE_2,
         addressLine3: 'Example District',
-        city: 'Example City',
+        city: EXAMPLE_CITY,
         postcode: 'ZZ99 01',
         country: 'FR'
       }
@@ -238,13 +252,13 @@ describe('plant-products consignor-picker controller', () => {
     const result = await drive(post, {
       seed: {
         consignorName: 'Half Entered Ltd',
-        consignorAddressLine1: '1 Example Street',
-        consignorCity: 'Example City',
+        consignorAddressLine1: EXAMPLE_ADDRESS_LINE_1,
+        consignorCity: EXAMPLE_CITY,
         consignorTelephone: '01632 960111',
         consignorCountry: 'FR',
         consignorEmail: 'half@example.com'
       },
-      payload: { party: 'notification-consignor' }
+      payload: { party: NOTIFICATION_CONSIGNOR_ID }
     })
 
     for (const optional of [
@@ -260,11 +274,11 @@ describe('plant-products consignor-picker controller', () => {
     const result = await drive(post, {
       seed: {
         consignorName: 'No Contact Ltd',
-        consignorAddressLine1: '1 Example Street',
-        consignorCity: 'Example City',
+        consignorAddressLine1: EXAMPLE_ADDRESS_LINE_1,
+        consignorCity: EXAMPLE_CITY,
         consignorCountry: 'FR'
       },
-      payload: { party: 'notification-consignor' }
+      payload: { party: NOTIFICATION_CONSIGNOR_ID }
     })
 
     expect(result.after.consignorTelephone).not.toBe('')
@@ -273,7 +287,7 @@ describe('plant-products consignor-picker controller', () => {
 
   it('lets a hub exit win over the traders-addresses return', async () => {
     const result = await drive(post, {
-      payload: { party: 'example-consignor-01', exit: 'hub' }
+      payload: { party: CONSIGNOR_01_ID, exit: 'hub' }
     })
 
     expect(result.response).toEqual({
@@ -301,12 +315,12 @@ describe('plant-products consignor-picker controller', () => {
       })
     )
     const result = await drive(post, {
-      payload: { party: 'example-consignor-01' }
+      payload: { party: CONSIGNOR_01_ID }
     })
 
     expect(result.response.statusCode).toBe(500)
     expect(result.view.context.recoverableError).toBe(true)
-    expect(pickerFrom(result).selected.id).toBe('example-consignor-01')
+    expect(pickerFrom(result).selected.id).toBe(CONSIGNOR_01_ID)
     expect(result.after).toEqual({})
   })
 
@@ -316,7 +330,7 @@ describe('plant-products consignor-picker controller', () => {
     expect(picker.page).toBe(3)
     expect(picker.rows.map(({ id }) => id)).toEqual([
       'example-consignor-11',
-      'example-consignor-12'
+      CONSIGNOR_12_ID
     ])
     expect(picker.rows[0].idPrefix).toBe('party')
     expect(picker.rows[1].idPrefix).toBe('party-12')
@@ -328,7 +342,7 @@ describe('plant-products consignor-picker controller', () => {
     const picker = pickerFrom(await drive(get, { query: { page: '99' } }))
 
     expect(picker.page).toBe(1)
-    expect(picker.rows[0].id).toBe('example-consignor-01')
+    expect(picker.rows[0].id).toBe(CONSIGNOR_01_ID)
   })
 
   it('renders three pages of the canned catalogue and marks the current one', async () => {
@@ -344,13 +358,13 @@ describe('plant-products consignor-picker controller', () => {
 
   it('carries an active search into every pagination link on a GET', async () => {
     const picker = pickerFrom(
-      await drive(get, { query: { q: 'Example Business Park', page: '2' } })
+      await drive(get, { query: { q: EXAMPLE_ADDRESS_LINE_2, page: '2' } })
     )
 
-    expect(picker.query).toBe('Example Business Park')
+    expect(picker.query).toBe(EXAMPLE_ADDRESS_LINE_2)
     expect(picker.rows.map(({ id }) => id)).toEqual([
       'example-consignor-06',
-      'example-consignor-07',
+      CONSIGNOR_07_ID,
       'example-consignor-08',
       'example-consignor-09',
       'example-consignor-10'
@@ -377,7 +391,7 @@ describe('plant-products consignor-picker controller', () => {
     const picker = pickerFrom(result)
 
     expect(picker.query).toBe('GB-SCT')
-    expect(picker.rows.map(({ id }) => id)).toEqual(['example-consignor-12'])
+    expect(picker.rows.map(({ id }) => id)).toEqual([CONSIGNOR_12_ID])
     expect(picker.resultsCaption).toBe(pageCopy.resultsCaption(1, 1))
     expect(picker.pagination).toBeNull()
     expect(result.after).toEqual({})
@@ -401,18 +415,18 @@ describe('plant-products consignor-picker controller', () => {
       payload: {
         action: 'search',
         q: 'GB-SCT',
-        selected: 'example-consignor-01'
+        selected: CONSIGNOR_01_ID
       }
     })
 
-    expect(pickerFrom(result).selected.id).toBe('example-consignor-01')
+    expect(pickerFrom(result).selected.id).toBe(CONSIGNOR_01_ID)
     expect(pickerFrom(result).page).toBe(1)
     expect(result.after).toEqual({})
   })
 
   it('commits a record chosen on another page than the one posted from', async () => {
     const result = await drive(post, {
-      payload: { page: '1', selected: 'example-consignor-12' }
+      payload: { page: '1', selected: CONSIGNOR_12_ID }
     })
 
     expect(result.after.consignorName).toBe(
@@ -426,16 +440,16 @@ describe('plant-products consignor-picker controller', () => {
 
   it('keeps the query and the page on the no-selection 400', async () => {
     const result = await drive(post, {
-      payload: { q: 'Example Business Park', page: '2' }
+      payload: { q: EXAMPLE_ADDRESS_LINE_2, page: '2' }
     })
     const picker = pickerFrom(result)
 
     expect(result.response.statusCode).toBe(400)
-    expect(picker.query).toBe('Example Business Park')
+    expect(picker.query).toBe(EXAMPLE_ADDRESS_LINE_2)
     expect(picker.page).toBe(2)
     expect(picker.rows.map(({ id }) => id)).toEqual([
       'example-consignor-06',
-      'example-consignor-07',
+      CONSIGNOR_07_ID,
       'example-consignor-08',
       'example-consignor-09',
       'example-consignor-10'
@@ -458,7 +472,7 @@ describe('plant-products consignor-picker controller', () => {
     )
 
     await expect(
-      drive(post, { payload: { party: 'example-consignor-01' } })
+      drive(post, { payload: { party: CONSIGNOR_01_ID } })
     ).rejects.toThrow('programming failure')
   })
 })

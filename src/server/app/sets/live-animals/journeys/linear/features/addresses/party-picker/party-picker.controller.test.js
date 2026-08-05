@@ -14,6 +14,8 @@ import { pagePath } from '../../../../../../../shared/paths.js'
 import * as partyPicker from './party-picker.controller.js'
 import { PARTIES } from '../parties.js'
 
+const SET_ID = 'live-animals'
+
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
 const DANISH_MEAT_EXPORT_ID = 'danish-meat-export'
 const IBERIAN_SWINE_ID = 'iberian-swine'
@@ -32,9 +34,9 @@ const pickerFrom = (result) => result.view.context.picker
 const idsOf = (picker) => picker.rows.map((row) => row.id)
 
 const configure = () => {
-  configureRecords('live-animals', recordsStub)
-  configureSession('live-animals', sessionStub)
-  buildDispatch('live-animals', dispatchPages)
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  buildDispatch(SET_ID, dispatchPages)
 }
 
 describe('GET /consignors/select', () => {

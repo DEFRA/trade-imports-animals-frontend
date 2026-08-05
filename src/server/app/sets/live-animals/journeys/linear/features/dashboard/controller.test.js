@@ -25,6 +25,8 @@ import { CYA_SLUG } from '../../../../../../shared/kit.js'
 import { routes } from './controller.js'
 import { authenticatedCredentials } from '../../../../../../engine/test-support.js'
 
+const SET_ID = 'live-animals'
+
 const COPY_AS_NEW_ACTION = 'Copy as new'
 const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
 
@@ -87,8 +89,8 @@ const startSubmitted = async () => {
 
 describe('dashboard notifications list', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -316,8 +318,8 @@ describe('dashboard notifications list', () => {
 
 describe('dashboard row actions', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -454,8 +456,8 @@ describe('dashboard row actions', () => {
 
 describe('dashboard start with an in-flight draft', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
   })
   beforeEach(() => records.clear())
 

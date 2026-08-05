@@ -10,6 +10,20 @@ import {
 } from '../../../../../../shared/set-context.js'
 import { buildSections } from './view-model/index.js'
 
+const SET_ID = 'plant-products'
+
+const ABOUT_THE_CONSIGNMENT = 'About the consignment'
+const DESCRIPTION_OF_THE_GOODS = 'Description of the goods'
+const ADDITIONAL_DETAILS = 'Additional details'
+const TRANSPORT_TO_THE_BCP = 'Transport to the Border Control Post'
+const GOODS_MOVEMENT_SERVICES = 'Goods movement services'
+const NOMINATED_CONTACTS = 'Nominated contacts'
+const ACCOMPANYING_DOCUMENTS = 'Accompanying documents'
+const INTERNAL_REFERENCE = 'Internal reference'
+const DELIVERY_ADDRESS = 'Delivery address'
+const CONTACT_TWO = 'Contact Two'
+const TABLE_CAPTION_CLASS = 'govuk-table__caption--s'
+
 const species = {
   albuca: {
     eppoCode: 'ABWBR',
@@ -100,7 +114,7 @@ const fullAnswers = {
       contactIsAgent: false
     },
     {
-      contactName: 'Contact Two',
+      contactName: CONTACT_TWO,
       contactEmail: 'two@example.com',
       contactTelephone: '01002',
       contactIsAgent: true
@@ -156,7 +170,7 @@ const fullAnswers = {
 }
 
 const build = (answers = fullAnswers) =>
-  withSetContext('plant-products', () =>
+  withSetContext(SET_ID, () =>
     buildSections(
       answers,
       makeScope(answers),
@@ -193,7 +207,7 @@ const collectAffordances = (sections) =>
   ])
 
 const buildForMode = (answers, readOnly) =>
-  withSetContext('plant-products', () =>
+  withSetContext(SET_ID, () =>
     buildSections(
       answers,
       makeScope(answers),
@@ -211,21 +225,21 @@ describe('plant-products check-answers view model', () => {
     await server.register(plantProducts, {
       routes: { prefix: '/plant-products' }
     })
-    enterSetContext('plant-products')
+    enterSetContext(SET_ID)
   })
 
   afterAll(async () => server.stop({ timeout: 0 }))
 
   it('builds the nine cards in hub-spoke order', () => {
     expect(build().map(({ heading }) => heading)).toEqual([
-      'About the consignment',
-      'Description of the goods',
-      'Additional details',
-      'Transport to the Border Control Post',
-      'Goods movement services',
+      ABOUT_THE_CONSIGNMENT,
+      DESCRIPTION_OF_THE_GOODS,
+      ADDITIONAL_DETAILS,
+      TRANSPORT_TO_THE_BCP,
+      GOODS_MOVEMENT_SERVICES,
       'Contact details',
-      'Nominated contacts',
-      'Accompanying documents',
+      NOMINATED_CONTACTS,
+      ACCOMPANYING_DOCUMENTS,
       'Traders'
     ])
   })
@@ -233,25 +247,20 @@ describe('plant-products check-answers view model', () => {
   it('resolves coded values only through shipped reference services', () => {
     const sections = build()
     expect(
-      row(card(sections, 'About the consignment'), 'Country of origin').value
-        .text
+      row(card(sections, ABOUT_THE_CONSIGNMENT), 'Country of origin').value.text
     ).toBe('France')
     expect(
-      row(
-        card(sections, 'Transport to the Border Control Post'),
-        'Border Control Post'
-      ).value.text
+      row(card(sections, TRANSPORT_TO_THE_BCP), 'Border Control Post').value
+        .text
     ).toBe('Control Point - CONPNT')
     expect(
-      row(
-        card(sections, 'Transport to the Border Control Post'),
-        'Inspection premises'
-      ).value.text
+      row(card(sections, TRANSPORT_TO_THE_BCP), 'Inspection premises').value
+        .text
     ).toBe('Berryplants Ltd')
   })
 
   it('formats the ISO arrival date and HH:mm time persisted by transport', () => {
-    const transport = card(build(), 'Transport to the Border Control Post')
+    const transport = card(build(), TRANSPORT_TO_THE_BCP)
 
     expect(row(transport, 'Estimated arrival date').value.text).toBe('3/8/2026')
     expect(row(transport, 'Estimated arrival time').value.text).toBe('14:05')
@@ -264,7 +273,7 @@ describe('plant-products check-answers view model', () => {
           { ...fullAnswers, totalGrossWeight: 2.5, grossVolume: 8 },
           readOnly
         ),
-        'Additional details'
+        ADDITIONAL_DETAILS
       )
 
       expect(row(additional, 'Total gross weight').value.text).toBe('2.50')
@@ -275,8 +284,8 @@ describe('plant-products check-answers view model', () => {
   it('renders a missing-answer link for an unanswered in-scope obligation', () => {
     const sections = build({ ...fullAnswers, internalReference: undefined })
     const missing = row(
-      card(sections, 'About the consignment'),
-      'Internal reference'
+      card(sections, ABOUT_THE_CONSIGNMENT),
+      INTERNAL_REFERENCE
     )
 
     expect(missing.value.html).toContain('Add a missing answer')
@@ -296,13 +305,13 @@ describe('plant-products check-answers view model', () => {
 
     expect(
       row(
-        card(hidden, 'Goods movement services'),
+        card(hidden, GOODS_MOVEMENT_SERVICES),
         'Movement Reference Number (MRN)'
       )
     ).toBeUndefined()
     expect(
       row(
-        card(visible, 'Goods movement services'),
+        card(visible, GOODS_MOVEMENT_SERVICES),
         'Movement Reference Number (MRN)'
       ).value.text
     ).toBe('24GB123456789AB012')
@@ -310,7 +319,7 @@ describe('plant-products check-answers view model', () => {
 
   it('omits orphaned container rows when usesContainers is false', () => {
     const sections = build({ ...fullAnswers, usesContainers: false })
-    const transport = card(sections, 'Transport to the Border Control Post')
+    const transport = card(sections, TRANSPORT_TO_THE_BCP)
 
     expect(transport.rows.map(({ key }) => key.text)).not.toContain(
       'Container 2 number'
@@ -321,7 +330,7 @@ describe('plant-products check-answers view model', () => {
   })
 
   it('renders the middle container by identity and order when containers are used', () => {
-    const transport = card(build(), 'Transport to the Border Control Post')
+    const transport = card(build(), TRANSPORT_TO_THE_BCP)
     const containerNumbers = transport.rows.filter(({ key }) =>
       /^Container \d+ number$/.test(key.text)
     )
@@ -343,10 +352,10 @@ describe('plant-products check-answers view model', () => {
     const visible = build()
 
     expect(
-      row(card(hidden, 'Additional details'), 'Gross volume unit')
+      row(card(hidden, ADDITIONAL_DETAILS), 'Gross volume unit')
     ).toBeUndefined()
     expect(
-      row(card(visible, 'Additional details'), 'Gross volume unit').value.text
+      row(card(visible, ADDITIONAL_DETAILS), 'Gross volume unit').value.text
     ).toBe('metres cubed')
   })
 
@@ -371,7 +380,7 @@ describe('plant-products check-answers view model', () => {
       build({ ...fullAnswers, destinationSameAsConsignee: undefined }),
       'Traders'
     )
-    const deliveryAddress = row(traders, 'Delivery address')
+    const deliveryAddress = row(traders, DELIVERY_ADDRESS)
 
     expect(deliveryAddress.value.html).toContain('Add a missing answer')
     expect(deliveryAddress.value.html).toContain(
@@ -382,8 +391,8 @@ describe('plant-products check-answers view model', () => {
   it('renders No for an explicit false same-as-consignee answer', () => {
     const traders = card(build(), 'Traders')
 
-    expect(row(traders, 'Delivery address').value.text).toBe('No')
-    expect(row(traders, 'Delivery address').value.html).toBeUndefined()
+    expect(row(traders, DELIVERY_ADDRESS).value.text).toBe('No')
+    expect(row(traders, DELIVERY_ADDRESS).value.html).toBeUndefined()
   })
 
   it('omits variety rows when none are captured', () => {
@@ -399,12 +408,12 @@ describe('plant-products check-answers view model', () => {
     }
 
     expect(
-      table(card(build(answers), 'Description of the goods'), 'Varieties')
+      table(card(build(answers), DESCRIPTION_OF_THE_GOODS), 'Varieties')
     ).toBeUndefined()
   })
 
   it('renders intended-for-final-users only for the applicable commodity group', () => {
-    const rows = card(build(), 'Description of the goods').rows
+    const rows = card(build(), DESCRIPTION_OF_THE_GOODS).rows
     expect(rows.map(({ key }) => key.text)).toEqual([
       'How do you want to add your commodity details?',
       'Intended for final users (commodity 1)'
@@ -413,7 +422,7 @@ describe('plant-products check-answers view model', () => {
 
   it('hides duplicate card captions and keeps distinct commodity captions visible', () => {
     const sections = build()
-    const commodities = card(sections, 'Description of the goods')
+    const commodities = card(sections, DESCRIPTION_OF_THE_GOODS)
 
     expect(
       commodities.tables.map(({ caption, captionClasses }) => [
@@ -421,17 +430,17 @@ describe('plant-products check-answers view model', () => {
         captionClasses
       ])
     ).toEqual([
-      ['Commodities', 'govuk-table__caption--s'],
-      ['Species', 'govuk-table__caption--s'],
-      ['Varieties', 'govuk-table__caption--s'],
-      ['Commodity details', 'govuk-table__caption--s']
+      ['Commodities', TABLE_CAPTION_CLASS],
+      ['Species', TABLE_CAPTION_CLASS],
+      ['Varieties', TABLE_CAPTION_CLASS],
+      ['Commodity details', TABLE_CAPTION_CLASS]
     ])
     expect(
-      table(card(sections, 'Nominated contacts'), 'Nominated contacts')
+      table(card(sections, NOMINATED_CONTACTS), NOMINATED_CONTACTS)
         .captionClasses
     ).toBe('govuk-visually-hidden')
     expect(
-      table(card(sections, 'Accompanying documents'), 'Accompanying documents')
+      table(card(sections, ACCOMPANYING_DOCUMENTS), ACCOMPANYING_DOCUMENTS)
         .captionClasses
     ).toBe('govuk-visually-hidden')
   })
@@ -444,7 +453,7 @@ describe('plant-products check-answers view model', () => {
     (method, text) => {
       const commodities = card(
         build({ ...fullAnswers, commodityInputMethod: method }),
-        'Description of the goods'
+        DESCRIPTION_OF_THE_GOODS
       )
       const inputMethod = row(
         commodities,
@@ -474,7 +483,7 @@ describe('plant-products check-answers view model', () => {
 
   it('derives rollups without mutating or persisting them and gives them no Change action', () => {
     const before = structuredClone(fullAnswers)
-    const additional = card(build(), 'Additional details')
+    const additional = card(build(), ADDITIONAL_DETAILS)
 
     expect(row(additional, 'Total net weight')).toEqual({
       key: { text: 'Total net weight' },
@@ -490,7 +499,7 @@ describe('plant-products check-answers view model', () => {
   })
 
   it('renders the middle commodity and species by identity and order', () => {
-    const commodities = card(build(), 'Description of the goods')
+    const commodities = card(build(), DESCRIPTION_OF_THE_GOODS)
     const commodityRows = table(commodities, 'Commodities').rows.map(texts)
     const speciesRows = table(commodities, 'Species').rows.map(texts)
 
@@ -513,7 +522,7 @@ describe('plant-products check-answers view model', () => {
 
   it('renders commodity-scoped varieties and classes by identity and order', () => {
     const varieties = table(
-      card(build(), 'Description of the goods'),
+      card(build(), DESCRIPTION_OF_THE_GOODS),
       'Varieties'
     ).rows.map(texts)
 
@@ -539,21 +548,21 @@ describe('plant-products check-answers view model', () => {
   it('renders middle nominated-contact and document entries by identity and order', () => {
     const sections = build()
     const contacts = table(
-      card(sections, 'Nominated contacts'),
-      'Nominated contacts'
+      card(sections, NOMINATED_CONTACTS),
+      NOMINATED_CONTACTS
     ).rows.map(texts)
     const documents = table(
-      card(sections, 'Accompanying documents'),
-      'Accompanying documents'
+      card(sections, ACCOMPANYING_DOCUMENTS),
+      ACCOMPANYING_DOCUMENTS
     ).rows.map(texts)
 
     expect(contacts.map((entry) => entry[0])).toEqual([
       'Contact One',
-      'Contact Two',
+      CONTACT_TWO,
       'Contact Three'
     ])
     expect(contacts[1]).toEqual([
-      'Contact Two',
+      CONTACT_TWO,
       'two@example.com',
       '01002',
       'Yes'
@@ -569,7 +578,7 @@ describe('plant-products check-answers view model', () => {
   it('uses an explicit nominated-contact empty state instead of an empty table', () => {
     const contacts = card(
       build({ ...fullAnswers, nominatedContacts: [] }),
-      'Nominated contacts'
+      NOMINATED_CONTACTS
     )
     expect(contacts.empty).toBe('No nominated contacts added')
     expect(contacts.tables).toEqual([])
@@ -578,14 +587,14 @@ describe('plant-products check-answers view model', () => {
   it('resolves every editable Change action to its owning page', () => {
     const sections = build()
     expect(
-      row(card(sections, 'About the consignment'), 'Country of origin').actions
+      row(card(sections, ABOUT_THE_CONSIGNMENT), 'Country of origin').actions
         .items[0]
     ).toEqual({
       href: '/plant-products/notifications/journey-038/country-of-origin?change=1',
       text: 'Change',
       visuallyHiddenText: 'Country of origin'
     })
-    expect(card(sections, 'Nominated contacts').action.href).toBe(
+    expect(card(sections, NOMINATED_CONTACTS).action.href).toBe(
       '/plant-products/notifications/journey-038/nominated-contact?change=1'
     )
   })
@@ -610,9 +619,9 @@ describe('plant-products check-answers view model', () => {
     )
     expect(readOnlyAffordances).toEqual([])
     expect(
-      row(card(readOnly, 'About the consignment'), 'Internal reference')
+      row(card(readOnly, ABOUT_THE_CONSIGNMENT), INTERNAL_REFERENCE)
     ).toEqual({
-      key: { text: 'Internal reference' },
+      key: { text: INTERNAL_REFERENCE },
       value: { text: 'Not provided' }
     })
   })

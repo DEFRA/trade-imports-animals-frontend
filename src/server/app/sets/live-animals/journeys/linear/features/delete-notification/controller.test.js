@@ -23,22 +23,24 @@ import { session as sessionStub } from '../../../../../../services/persistence/s
 import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
 
+const SET_ID = 'live-animals'
+
 const get = routes.find((route) => route.method === 'GET').handler
 const post = routes.find((route) => route.method === 'POST').handler
 
 describe('delete notification routes', () => {
   beforeAll(() => {
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   beforeEach(() => {
-    configureRecords('live-animals', recordsStub)
+    configureRecords(SET_ID, recordsStub)
     records.clear()
   })
 
   afterEach(() => {
-    configureRecords('live-animals', recordsStub)
+    configureRecords(SET_ID, recordsStub)
     vi.unstubAllGlobals()
   })
 
@@ -85,7 +87,7 @@ describe('delete notification routes', () => {
   })
 
   it('Should re-render confirmation at 500 with the recoverable-save banner after a backend failure', async () => {
-    configureRecords('live-animals', {
+    configureRecords(SET_ID, {
       ...recordsStub,
       softDelete: realRecords.softDelete
     })

@@ -31,7 +31,9 @@ import * as additionalDetails from '../features/additional-details/controller.js
 import * as hub from '../features/hub/controller.js'
 import * as dashboard from '../features/dashboard/controller.js'
 
-const LIVE_ANIMALS_IMPORT_TYPE = 'live-animals'
+const SET_ID = 'live-animals'
+
+const LIVE_ANIMALS_IMPORT_TYPE = SET_ID
 const IMPORT_TYPE_SLUG = 'import-type'
 
 const captureH = () => {
@@ -339,9 +341,9 @@ const deepLinkGuardTests = () => {
 
 describe('the opening run', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

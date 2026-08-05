@@ -18,6 +18,8 @@ import {
 } from '../upload-config.js'
 import { copy } from './copy.en.js'
 
+const SET_ID = 'live-animals'
+
 const leaves = (node, path = []) =>
   typeof node === 'object' && node !== null
     ? Object.entries(node).flatMap(([key, value]) =>
@@ -55,9 +57,9 @@ describe('#copy', () => {
 
 describe('GET /accompanying-documents', () => {
   beforeAll(() => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
-    buildDispatch('live-animals', dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

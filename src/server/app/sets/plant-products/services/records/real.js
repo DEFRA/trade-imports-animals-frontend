@@ -7,7 +7,11 @@ import {
   markRecoverableBackendError
 } from '../../../../services/persistence/records/errors.js'
 import {
+  HTTP_CREATED,
+  HTTP_NO_CONTENT,
   HTTP_NOT_FOUND,
+  HTTP_OK,
+  HTTP_UNPROCESSABLE_ENTITY,
   IDEMPOTENCY_KEY_HEADER,
   notificationsUrl,
   tracingHeader
@@ -23,10 +27,12 @@ const headers = (additional = {}) => ({
   ...additional
 })
 
-const failed = (operation, response) =>
-  new Error(
-    `${operation} failed: ${response.status}${response.statusText ? ` ${response.statusText}` : ''}`
-  )
+const FINALISE_NOTIFICATION = 'finalise notification'
+
+const failed = (operation, response) => {
+  const statusText = response.statusText ? ` ${response.statusText}` : ''
+  return new Error(`${operation} failed: ${response.status}${statusText}`)
+}
 
 const expectStatus = (operation, response, expected) => {
   if (!expected.includes(response.status)) {
@@ -49,7 +55,7 @@ const getNotification = async (journeyId, operation) => {
   if (response.status === HTTP_NOT_FOUND) {
     return undefined
   }
-  expectStatus(operation, response, [200])
+  expectStatus(operation, response, [HTTP_OK])
   return response.json()
 }
 
@@ -61,7 +67,7 @@ const listDocuments = async (journeyId) => {
     method: 'GET',
     headers: headers()
   })
-  expectStatus('list accompanying documents', response, [200])
+  expectStatus('list accompanying documents', response, [HTTP_OK])
   return (await response.json()).documents
 }
 
@@ -73,7 +79,7 @@ const deleteDocument = async (journeyId, documentId) => {
       headers: headers()
     }
   )
-  expectStatus('delete accompanying document', response, [204])
+  expectStatus('delete accompanying document', response, [HTTP_NO_CONTENT])
 }
 
 const createDocument = async (journeyId, entry) => {
@@ -82,7 +88,7 @@ const createDocument = async (journeyId, entry) => {
     headers: headers(),
     body: JSON.stringify(documentToDto(entry))
   })
-  expectStatus('create accompanying document', response, [201])
+  expectStatus('create accompanying document', response, [HTTP_CREATED])
 }
 
 const reloadNotification = async (journeyId) => {
@@ -90,7 +96,7 @@ const reloadNotification = async (journeyId) => {
     method: 'GET',
     headers: headers()
   })
-  expectStatus('reload notification', response, [200])
+  expectStatus('reload notification', response, [HTTP_OK])
   return response.json()
 }
 
@@ -100,7 +106,7 @@ export const create = async (_options) => {
     headers: headers(),
     body: JSON.stringify({})
   })
-  expectStatus('create notification', response, [201])
+  expectStatus('create notification', response, [HTTP_CREATED])
   return marshal(await response.json())
 }
 
@@ -125,7 +131,7 @@ export const list = async ({
     method: 'GET',
     headers: headers()
   })
-  expectStatus('list notifications', response, [200])
+  expectStatus('list notifications', response, [HTTP_OK])
   const result = await response.json()
   return {
     rows: result.content.map(marshalListItem),
@@ -144,7 +150,7 @@ export const has = async (journeyId) => {
   if (response.status === HTTP_NOT_FOUND) {
     return false
   }
-  expectStatus('check notification', response, [200])
+  expectStatus('check notification', response, [HTTP_OK])
   return true
 }
 
@@ -186,7 +192,7 @@ export const replaceFulfilment = async (
     headers: headers(),
     body: JSON.stringify(body)
   })
-  expectStatus('replace notification', response, [200, 201])
+  expectStatus('replace notification', response, [HTTP_OK, HTTP_CREATED])
   const existingDocuments = await listDocuments(journeyId)
   for (const document of existingDocuments) {
     await deleteDocument(journeyId, document.id)
@@ -206,7 +212,7 @@ const transition = async (journeyId, operation, body) => {
       body: JSON.stringify(body)
     }
   )
-  expectStatus(operation, response, [200])
+  expectStatus(operation, response, [HTTP_OK])
   return marshal(await response.json())
 }
 
@@ -218,7 +224,7 @@ export const finalise = async (journeyId) => {
       headers: headers()
     }
   )
-  expectStatus('finalise notification', loadResponse, [200])
+  expectStatus(FINALISE_NOTIFICATION, loadResponse, [HTTP_OK])
   const body = {
     ...buildNotificationBody(journeyId, fromDto(await loadResponse.json())),
     declaration: {
@@ -235,7 +241,7 @@ export const finalise = async (journeyId) => {
       body: JSON.stringify(body)
     }
   )
-  expectStatus('finalise notification', documentResponse, [200, 201])
+  expectStatus(FINALISE_NOTIFICATION, documentResponse, [HTTP_OK, HTTP_CREATED])
 
   const statusResponse = await recoverableFetch(
     `${notificationsUrl}/${journeyId}/status`,
@@ -245,7 +251,7 @@ export const finalise = async (journeyId) => {
       body: JSON.stringify({ status: BACKEND_STATUS.SUBMITTED })
     }
   )
-  expectStatus('finalise notification', statusResponse, [200])
+  expectStatus(FINALISE_NOTIFICATION, statusResponse, [HTTP_OK])
   return marshal(await statusResponse.json())
 }
 
@@ -271,10 +277,10 @@ export const copy = async (journeyId, idempotencyKey) => {
       headers: headers({ [IDEMPOTENCY_KEY_HEADER]: idempotencyKey })
     }
   )
-  if (response.status === 422) {
+  if (response.status === HTTP_UNPROCESSABLE_ENTITY) {
     throw markIdempotencyKeyReuseError(failed('copy notification', response))
   }
-  expectStatus('copy notification', response, [201])
+  expectStatus('copy notification', response, [HTTP_CREATED])
   return marshal(await response.json())
 }
 
