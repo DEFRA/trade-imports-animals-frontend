@@ -59,6 +59,12 @@ export const copy = {
     description:
       'Select the consignor or exporter for this notification, or add a new one.',
     noSaved: 'You have not saved any consignors or exporters yet.',
+    noMatches: 'No consignors or exporters match your search.',
+    search: {
+      label: 'Search',
+      hint: 'Name, address or country',
+      button: 'Search'
+    },
     resultsCaption: (shown, total) =>
       `Showing ${shown} of ${total} consignors or exporters`,
     table: {

@@ -79,6 +79,12 @@ describe('plant-products traders copy', () => {
       description:
         'Select the consignor or exporter for this notification, or add a new one.',
       noSaved: 'You have not saved any consignors or exporters yet.',
+      noMatches: 'No consignors or exporters match your search.',
+      search: {
+        label: 'Search',
+        hint: 'Name, address or country',
+        button: 'Search'
+      },
       table: {
         selectHidden: 'Select',
         name: 'Name',
@@ -114,10 +120,20 @@ describe('plant-products traders copy', () => {
     expect(cy.consignorPicker.resultsCaption(5, 12)).toContain('12')
   })
 
-  it('carries no search or no-matches copy yet', () => {
+  it('translates the search and no-matches copy and keeps it distinct from the nothing-saved line', () => {
+    for (const [english, welsh] of [
+      [en.consignorPicker.search.label, cy.consignorPicker.search.label],
+      [en.consignorPicker.search.hint, cy.consignorPicker.search.hint],
+      [en.consignorPicker.search.button, cy.consignorPicker.search.button],
+      [en.consignorPicker.noMatches, cy.consignorPicker.noMatches]
+    ]) {
+      expect(welsh).not.toBe(english)
+    }
+
     for (const bundle of [en, cy]) {
-      expect(bundle.consignorPicker).not.toHaveProperty('search')
-      expect(bundle.consignorPicker).not.toHaveProperty('noMatches')
+      expect(bundle.consignorPicker.noMatches).not.toBe(
+        bundle.consignorPicker.noSaved
+      )
     }
   })
 })

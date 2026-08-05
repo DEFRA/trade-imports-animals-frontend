@@ -1,11 +1,14 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/pagination/macro.njk" import govukPagination %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/table/macro.njk" import govukTable %}
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
 
-{# Results table with a radio per row. The whole picker is one form and the
-   only submit is Save and continue, so the page works with no client
-   JavaScript at all. #}
+{# Search + paginated results table with a radio per row. The whole picker is
+   one form: Search and Save and continue are both submits, told apart by their
+   `action` value. Paging is a plain link, so the selection travels in the
+   link's query string and in a hidden field — no client JavaScript anywhere. #}
 {% macro consignorPickerResults(picker, copy) %}
   {% set rows = [] %}
   {% for row in picker.rows %}
@@ -57,11 +60,35 @@
     ],
     rows: rows
   }) }}
+
+  {% if picker.pagination %}
+    {{ govukPagination(picker.pagination) }}
+  {% endif %}
 {% endmacro %}
 
 {% macro consignorPicker(picker, crumb, copy) %}
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <input type="hidden" name="page" value="{{ picker.page }}" />
+    {% if picker.selected %}
+      <input type="hidden" name="selected" value="{{ picker.selected.id }}" />
+    {% endif %}
+
+    {{ govukInput({
+      id: "q",
+      name: "q",
+      classes: "govuk-!-width-two-thirds",
+      label: { text: copy.search.label, classes: "govuk-label--s" },
+      hint: { text: copy.search.hint },
+      value: picker.query
+    }) }}
+
+    {{ govukButton({
+      text: copy.search.button,
+      classes: "govuk-button--secondary",
+      name: "action",
+      value: "search"
+    }) }}
 
     {% if picker.selected %}
       {{ govukInsetText({ text: copy.selectedPrefix + " " + picker.selected.name }) }}
@@ -76,11 +103,11 @@
     {% if picker.rows.length %}
       {{ consignorPickerResults(picker, copy) }}
     {% else %}
-      <p class="govuk-body">{{ copy.noSaved }}</p>
+      <p class="govuk-body">{{ copy.noMatches if picker.query else copy.noSaved }}</p>
     {% endif %}
 
     <div class="govuk-button-group">
-      {{ govukButton({ text: copy.saveAndContinue }) }}
+      {{ govukButton({ text: copy.saveAndContinue, name: "action", value: "save" }) }}
       {{ govukButton({
         text: copy.addNew,
         classes: "govuk-button--secondary",

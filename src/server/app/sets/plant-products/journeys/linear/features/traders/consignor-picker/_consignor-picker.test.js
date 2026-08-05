@@ -18,6 +18,9 @@ const render = (picker) =>
           picker.rows.length,
           picker.rows.length
         ),
+        query: '',
+        page: 1,
+        pagination: null,
         ...picker
       },
       crumb: 'crumb-token',
@@ -132,13 +135,90 @@ describe('consignorPicker macro', () => {
     expect(html).toContain('id="add-consignor"')
   })
 
-  it('adds no search input, no pagination and no client script', () => {
+  it('keeps the search box and offers the no-matches line when a query leaves no rows', () => {
+    const html = render({ rows: [], query: 'no such trader' })
+
+    expect(html).toContain('No consignors or exporters match your search.')
+    expect(html).not.toContain(
+      'You have not saved any consignors or exporters yet.'
+    )
+    expect(html).toContain('id="q"')
+    expect(html).toContain('name="q"')
+    expect(html).toContain('value="search"')
+  })
+
+  it('puts the search and both submits in the one form with no client script', () => {
+    const html = render({ rows: [row()], page: 2 })
+
+    expect(occurrences(html, /<form\b/g)).toBe(1)
+    expect(html).toContain('id="q"')
+    expect(html).toContain('name="q"')
+    expect(occurrences(html, /name="action"/g)).toBe(2)
+    expect(html).toContain('value="search"')
+    expect(html).toContain('value="save"')
+    expect(html).toContain('<input type="hidden" name="page" value="2"')
+    expect(html).not.toContain('<script')
+  })
+
+  it('carries the current search term back into the input', () => {
+    const html = render({ rows: [row()], query: 'orchard' })
+
+    expect(html).toContain('value="orchard"')
+    expect(html).toContain('Name, address or country')
+  })
+
+  // The hidden field is what survives a paging link, so the record chosen on
+  // one page is still the record saved from another.
+  it('carries the selection in a hidden field only when there is one', () => {
+    const withSelection = render({
+      rows: [row({ checked: true })],
+      selected: { id: 'example-consignor-01', name: 'Example Consignor 01' }
+    })
+
+    expect(withSelection).toContain(
+      '<input type="hidden" name="selected" value="example-consignor-01"'
+    )
+    expect(render({ rows: [row()] })).not.toContain('name="selected"')
+  })
+
+  it('omits the pagination component when there are not enough pages for it', () => {
     const html = render({ rows: [row()] })
 
-    expect(html).not.toContain('name="q"')
-    expect(html).not.toContain('name="page"')
-    expect(html).not.toContain('name="selected"')
     expect(html).not.toContain('govuk-pagination')
-    expect(html).not.toContain('<script')
+  })
+
+  it('renders every pagination link with the query, the page and the selection', () => {
+    const hrefFor = (number) =>
+      `/plant-products/notifications/j-1/consignor-select?q=example&page=${number}&selected=example-consignor-01`
+    const html = render({
+      rows: [row()],
+      query: 'example',
+      page: 2,
+      selected: { id: 'example-consignor-01', name: 'Example Consignor 01' },
+      pagination: {
+        previous: { href: hrefFor(1) },
+        next: { href: hrefFor(3) },
+        items: [
+          { number: 1, href: hrefFor(1), current: false },
+          { number: 2, href: hrefFor(2), current: true },
+          { number: 3, href: hrefFor(3), current: false }
+        ]
+      }
+    })
+
+    const escaped = (href) => href.replaceAll('&', '&amp;')
+
+    expect(html).toContain('govuk-pagination')
+    for (const number of [1, 2, 3]) {
+      expect(html).toContain(`href="${escaped(hrefFor(number))}"`)
+    }
+    // Previous, next and the three numbers — every one of the five carries the
+    // query and the selection.
+    expect(
+      occurrences(
+        html,
+        /q=example&amp;page=\d&amp;selected=example-consignor-01/g
+      )
+    ).toBe(5)
   })
 })

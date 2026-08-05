@@ -60,6 +60,13 @@ export const copy = {
     description:
       'Dewiswch y traddodwr neu’r allforiwr ar gyfer yr hysbysiad hwn, neu ychwanegwch un newydd.',
     noSaved: 'Nid ydych wedi cadw unrhyw draddodwyr nac allforwyr eto.',
+    noMatches:
+      'Nid oes unrhyw draddodwyr nac allforwyr yn cyfateb i’ch chwiliad.',
+    search: {
+      label: 'Chwilio',
+      hint: 'Enw, cyfeiriad neu wlad',
+      button: 'Chwilio'
+    },
     resultsCaption: (shown, total) =>
       `Yn dangos ${shown} o ${total} traddodwr neu allforiwr`,
     table: {

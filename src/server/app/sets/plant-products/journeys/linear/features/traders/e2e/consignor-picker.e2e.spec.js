@@ -88,6 +88,24 @@ const saveAndContinue = (page) =>
 const addConsignor = (page) =>
   page.getByRole('button', { name: pageCopy.addNew, exact: true }).click()
 
+const paginationNav = (page) =>
+  page.getByRole('navigation', { name: 'Pagination', exact: true })
+
+const goToPage = (page, number) =>
+  paginationNav(page)
+    .getByRole('link', { name: `Page ${number}` })
+    .click()
+
+const searchFor = async (page, term) => {
+  await page.getByLabel(pageCopy.search.label, { exact: true }).fill(term)
+  await page
+    .getByRole('button', { name: pageCopy.search.button, exact: true })
+    .click()
+}
+
+const captionFor = (page, shown, total) =>
+  page.getByText(pageCopy.resultsCaption(shown, total), { exact: true })
+
 const enteredValues = {
   consignorName: 'Orchard Export SAS',
   consignorAddressLine1: '12 Rue des Vergers',
@@ -123,7 +141,7 @@ test.describe('plant-products consignor picker', () => {
     await startAtPicker(page)
   })
 
-  test('opens from traders-addresses and lists every canned consignor as a selectable row', async ({
+  test('opens from traders-addresses and lists the first page of five canned consignors as selectable rows', async ({
     page
   }) => {
     await expect(
@@ -136,10 +154,11 @@ test.describe('plant-products consignor picker', () => {
     await expect(
       page.getByText(pageCopy.description, { exact: true })
     ).toBeVisible()
-    await expect(page.getByRole('radio')).toHaveCount(CANNED_CONSIGNORS.length)
-    for (const record of CANNED_CONSIGNORS) {
+    await expect(page.getByRole('radio')).toHaveCount(5)
+    for (const record of CANNED_CONSIGNORS.slice(0, 5)) {
       await expect(radioFor(page, record.name)).not.toBeChecked()
     }
+    await expect(captionFor(page, 5, CANNED_CONSIGNORS.length)).toBeVisible()
     await expect(
       page.getByRole('cell', { name: 'France', exact: true }).first()
     ).toBeVisible()
@@ -263,6 +282,66 @@ test.describe('plant-products consignor picker', () => {
     ).toBeVisible()
   })
 
+  test('searching narrows the table to the matching records and reports the count', async ({
+    page
+  }) => {
+    await searchFor(page, 'GB-')
+
+    await expect(page.getByRole('radio')).toHaveCount(2)
+    for (const record of CANNED_CONSIGNORS.slice(10)) {
+      await expect(radioFor(page, record.name)).toBeVisible()
+    }
+    await expect(radioFor(page, firstCanned.name)).toHaveCount(0)
+    await expect(captionFor(page, 2, 2)).toBeVisible()
+    await expect(paginationNav(page)).toHaveCount(0)
+    await expectAxeClean(page, 'search results')
+  })
+
+  test('a search that matches nothing replaces the table with the no-matches line', async ({
+    page
+  }) => {
+    await searchFor(page, 'no such trader')
+
+    await expect(
+      page.getByText(pageCopy.noMatches, { exact: true })
+    ).toBeVisible()
+    await expect(page.getByText(pageCopy.noSaved, { exact: true })).toHaveCount(
+      0
+    )
+    await expect(page.getByRole('table')).toHaveCount(0)
+    await expect(page.getByRole('radio')).toHaveCount(0)
+    await expectAxeClean(page, 'no matches')
+  })
+
+  test('pages through the twelve canned records five at a time', async ({
+    page
+  }) => {
+    await expect(
+      paginationNav(page).getByRole('link', { name: /^Page \d+$/ })
+    ).toHaveCount(3)
+    await expect(
+      paginationNav(page).getByRole('link', { name: 'Page 1' })
+    ).toHaveAttribute('aria-current', 'page')
+
+    await goToPage(page, 2)
+    await expect(captionFor(page, 5, CANNED_CONSIGNORS.length)).toBeVisible()
+    for (const record of CANNED_CONSIGNORS.slice(5, 10)) {
+      await expect(radioFor(page, record.name)).toBeVisible()
+    }
+    await expect(
+      paginationNav(page).getByRole('link', { name: 'Page 2' })
+    ).toHaveAttribute('aria-current', 'page')
+
+    await goToPage(page, 3)
+    await expect(captionFor(page, 2, CANNED_CONSIGNORS.length)).toBeVisible()
+    for (const record of CANNED_CONSIGNORS.slice(10)) {
+      await expect(radioFor(page, record.name)).toBeVisible()
+    }
+    await expect(
+      paginationNav(page).getByRole('link', { name: 'Next page' })
+    ).toHaveCount(0)
+  })
+
   test('initial and error renders have no serious or critical axe violations', async ({
     page
   }) => {
@@ -285,5 +364,35 @@ test.describe('plant-products consignor picker without client JavaScript', () =>
     await expect(
       page.getByText(firstCanned.name, { exact: true })
     ).toBeVisible()
+  })
+
+  // With no client JavaScript a checked radio cannot reach a link's href, so
+  // the choice reaches the server on the search submit; from there the hidden
+  // field and every pagination link are what carry it across the pages.
+  test('saves the record chosen on page 2 from a page-1 render it does not appear on', async ({
+    page
+  }) => {
+    const offPage = CANNED_CONSIGNORS[6]
+    await startAtPicker(page)
+
+    await goToPage(page, 2)
+    await radioFor(page, offPage.name).check()
+    await searchFor(page, '')
+
+    const selectedInset = page.getByText(
+      `${pageCopy.selectedPrefix} ${offPage.name}`,
+      { exact: true }
+    )
+    await expect(selectedInset).toBeVisible()
+    await expect(radioFor(page, offPage.name)).toHaveCount(0)
+
+    await goToPage(page, 3)
+    await goToPage(page, 1)
+    await expect(selectedInset).toBeVisible()
+    await expect(radioFor(page, offPage.name)).toHaveCount(0)
+
+    await saveAndContinue(page)
+    await expect(page).toHaveURL(tradersUrl)
+    await expect(page.getByText(offPage.name, { exact: true })).toBeVisible()
   })
 })

@@ -54,3 +54,10 @@ export const candidates = async (request, answers) => {
 
   return onNotification ? [onNotification, ...rest] : rest
 }
+
+// The consignor already on the notification is offered alongside the book, so
+// it has to be paged with the book rather than bolted onto a page the book has
+// already sliced. Paging still belongs to the address book: this hands it the
+// combined list and its own rules do the rest.
+export const searchCandidates = async (request, answers, options) =>
+  addressBook.searchRecords(await candidates(request, answers), options)

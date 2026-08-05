@@ -13,7 +13,8 @@ import { TEMPLATES } from '../../../config.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { copy as en } from '../copy/copy.en.js'
 import { consignorPickerPage as page, tradersAddressesPage } from '../page.js'
-import { candidates } from './candidates.js'
+import { candidates, searchCandidates } from './candidates.js'
+import { isSearchAction, pageNumber } from './request-params.js'
 import { chosenFor, selectedId } from './selection.js'
 import { errorSummary } from './view-model/error-summary.js'
 import { pickerViewModel } from './view-model/index.js'
@@ -42,47 +43,84 @@ const consignorAnswers = (chosen) => ({
   consignorEmail: optionalValue(chosen.email)
 })
 
-const render = (
+const render = async (
   h,
-  journey,
-  records,
-  { selectedId: selected, error, recoverableError = false } = {}
-) =>
-  h.view(view, {
+  { request, journey, answers },
+  {
+    query = '',
+    currentPage = 1,
+    selectedId: selected,
+    error,
+    recoverableError = false
+  } = {}
+) => {
+  const found = await searchCandidates(request, answers, {
+    query,
+    page: currentPage
+  })
+
+  return h.view(view, {
     ...kit.base(copy.pageTitle, {
       backLink: pagePath(journey.journeyId, tradersAddressesPage.slug),
       journey,
       recoverableError
     }),
     copy,
-    errorSummary: errorSummary(error, records.length > 0, sharedCopy),
+    errorSummary: errorSummary(error, found.results.length > 0, sharedCopy),
     picker: pickerViewModel(
       journey,
-      { records, selectedId: selected, error },
+      {
+        found,
+        query,
+        selectedId: selected,
+        // Resolved against the unpaged list so a record picked on another page
+        // still names itself and still travels in the hidden field.
+        selected: await chosenFor(request, answers, selected),
+        error
+      },
       copy
     )
   })
+}
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const records = await candidates(request, answers)
 
-  return render(h, journey, records, {
-    selectedId: selectedId(request, journey.journeyId, answers, records)
-  })
+  return render(
+    h,
+    { request, journey, answers },
+    {
+      query: request.query.q ?? '',
+      currentPage: pageNumber(request.query.page),
+      selectedId: selectedId(request, journey.journeyId, answers, records)
+    }
+  )
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
+  const query = payload.q ?? ''
   const postedId = payload.party || payload.selected || ''
   const { journey, answers } = await state.get(request, h)
+  const context = { request, journey, answers }
+
+  // Search and Save are the same form; only the button's action tells them
+  // apart. A search commits nothing and returns to the first page of results.
+  if (isSearchAction(payload)) {
+    return render(h, context, { query, currentPage: 1, selectedId: postedId })
+  }
+
   const chosen = await chosenFor(request, answers, postedId)
 
   if (!chosen) {
-    const records = await candidates(request, answers)
-    return render(h, journey, records, {
+    const rendered = await render(h, context, {
+      query,
+      currentPage: pageNumber(payload.page),
+      selectedId: '',
       error: copy.errors.required
-    }).code(HTTP_STATUS_BAD_REQUEST)
+    })
+    return rendered.code(HTTP_STATUS_BAD_REQUEST)
   }
 
   const { failure } = await kit.recoverableSave(
@@ -90,11 +128,13 @@ const post = async (request, h) => {
       await state.commit(request, h, consignorAnswers(chosen))
     },
     async () => {
-      const records = await candidates(request, answers)
-      return render(h, journey, records, {
+      const rendered = await render(h, context, {
+        query,
+        currentPage: pageNumber(payload.page),
         selectedId: chosen.id,
         recoverableError: true
-      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+      })
+      return rendered.code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
   if (failure) return failure

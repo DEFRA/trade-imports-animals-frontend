@@ -104,14 +104,14 @@ describe('plant-products consignor-picker controller', () => {
     { name: 'PLANT_PRODUCTS_MODE unset', mode: undefined },
     { name: 'PLANT_PRODUCTS_MODE=stub', mode: 'stub' }
   ])(
-    'renders twelve unchecked rows on a new notification with $name',
+    'renders the first page of five unchecked rows on a new notification with $name',
     async ({ mode }) => {
       vi.stubEnv('PLANT_PRODUCTS_MODE', mode)
       const picker = pickerFrom(await drive(get))
 
-      expect(picker.rows).toHaveLength(12)
+      expect(picker.rows).toHaveLength(5)
       expect(picker.rows.map(({ checked }) => checked)).toEqual(
-        Array(12).fill(false)
+        Array(5).fill(false)
       )
       expect(picker.selected).toBeUndefined()
       expect(picker.rows[0]).toMatchObject({
@@ -120,7 +120,7 @@ describe('plant-products consignor-picker controller', () => {
         name: 'Example Consignor 01 (sample data)',
         country: 'France'
       })
-      expect(picker.resultsCaption).toBe(pageCopy.resultsCaption(12, 12))
+      expect(picker.resultsCaption).toBe(pageCopy.resultsCaption(5, 12))
       expect(picker.createConsignorHref).toMatch(
         /^\/plant-products\/notifications\/[^/]+\/consignor-create$/
       )
@@ -140,13 +140,22 @@ describe('plant-products consignor-picker controller', () => {
 
   it('pre-checks the row named by the selected query parameter', async () => {
     const picker = pickerFrom(
+      await drive(get, { query: { selected: 'example-consignor-03' } })
+    )
+
+    expect(picker.selected.id).toBe('example-consignor-03')
+    expect(
+      picker.rows.filter(({ checked }) => checked).map(({ id }) => id)
+    ).toEqual(['example-consignor-03'])
+  })
+
+  it('names a selection made on another page even though no row here is checked', async () => {
+    const picker = pickerFrom(
       await drive(get, { query: { selected: 'example-consignor-07' } })
     )
 
     expect(picker.selected.id).toBe('example-consignor-07')
-    expect(
-      picker.rows.filter(({ checked }) => checked).map(({ id }) => id)
-    ).toEqual(['example-consignor-07'])
+    expect(picker.rows.filter(({ checked }) => checked)).toEqual([])
   })
 
   it('back-links to traders-addresses', async () => {
@@ -299,6 +308,148 @@ describe('plant-products consignor-picker controller', () => {
     expect(result.view.context.recoverableError).toBe(true)
     expect(pickerFrom(result).selected.id).toBe('example-consignor-01')
     expect(result.after).toEqual({})
+  })
+
+  it('renders the tail of the list for page three and offers no next link', async () => {
+    const picker = pickerFrom(await drive(get, { query: { page: '3' } }))
+
+    expect(picker.page).toBe(3)
+    expect(picker.rows.map(({ id }) => id)).toEqual([
+      'example-consignor-11',
+      'example-consignor-12'
+    ])
+    expect(picker.rows[0].idPrefix).toBe('party')
+    expect(picker.rows[1].idPrefix).toBe('party-12')
+    expect(picker.pagination.next).toBeUndefined()
+    expect(picker.pagination.previous.href).toContain('page=2')
+  })
+
+  it('falls back to page one for a page beyond the end', async () => {
+    const picker = pickerFrom(await drive(get, { query: { page: '99' } }))
+
+    expect(picker.page).toBe(1)
+    expect(picker.rows[0].id).toBe('example-consignor-01')
+  })
+
+  it('renders three pages of the canned catalogue and marks the current one', async () => {
+    const picker = pickerFrom(await drive(get, { query: { page: '2' } }))
+
+    expect(picker.pagination.items.map(({ number }) => number)).toEqual([
+      1, 2, 3
+    ])
+    expect(
+      picker.pagination.items.filter(({ current }) => current)
+    ).toHaveLength(1)
+  })
+
+  it('carries an active search into every pagination link on a GET', async () => {
+    const picker = pickerFrom(
+      await drive(get, { query: { q: 'Example Business Park', page: '2' } })
+    )
+
+    expect(picker.query).toBe('Example Business Park')
+    expect(picker.rows.map(({ id }) => id)).toEqual([
+      'example-consignor-06',
+      'example-consignor-07',
+      'example-consignor-08',
+      'example-consignor-09',
+      'example-consignor-10'
+    ])
+
+    const hrefs = [
+      picker.pagination.previous.href,
+      picker.pagination.next.href,
+      ...picker.pagination.items
+        .filter(({ href }) => href)
+        .map(({ href }) => href)
+    ]
+
+    for (const href of hrefs) {
+      expect(href).toContain('q=Example+Business+Park')
+      expect(href).toContain('page=')
+    }
+  })
+
+  it('filters the rows on a search POST and commits nothing', async () => {
+    const result = await drive(post, {
+      payload: { action: 'search', q: 'GB-SCT' }
+    })
+    const picker = pickerFrom(result)
+
+    expect(picker.query).toBe('GB-SCT')
+    expect(picker.rows.map(({ id }) => id)).toEqual(['example-consignor-12'])
+    expect(picker.resultsCaption).toBe(pageCopy.resultsCaption(1, 1))
+    expect(picker.pagination).toBeNull()
+    expect(result.after).toEqual({})
+    expect(result.response.statusCode).toBe(200)
+  })
+
+  it('re-renders a search that matches nothing without a table or a commit', async () => {
+    const result = await drive(post, {
+      payload: { action: 'search', q: 'no such trader' }
+    })
+
+    expect(pickerFrom(result).rows).toEqual([])
+    expect(pickerFrom(result).resultsCaption).toBe(
+      pageCopy.resultsCaption(0, 0)
+    )
+    expect(result.after).toEqual({})
+  })
+
+  it('carries the incoming selection through a search that excludes it', async () => {
+    const result = await drive(post, {
+      payload: {
+        action: 'search',
+        q: 'GB-SCT',
+        selected: 'example-consignor-01'
+      }
+    })
+
+    expect(pickerFrom(result).selected.id).toBe('example-consignor-01')
+    expect(pickerFrom(result).page).toBe(1)
+    expect(result.after).toEqual({})
+  })
+
+  it('commits a record chosen on another page than the one posted from', async () => {
+    const result = await drive(post, {
+      payload: { page: '1', selected: 'example-consignor-12' }
+    })
+
+    expect(result.after.consignorName).toBe(
+      'Example Consignor 12 (sample data)'
+    )
+    expect(result.after.consignorCountry).toBe('GB-SCT')
+    expect(result.response).toEqual({
+      redirect: `/plant-products/notifications/${result.journeyId}/traders-addresses`
+    })
+  })
+
+  it('keeps the query and the page on the no-selection 400', async () => {
+    const result = await drive(post, {
+      payload: { q: 'Example Business Park', page: '2' }
+    })
+    const picker = pickerFrom(result)
+
+    expect(result.response.statusCode).toBe(400)
+    expect(picker.query).toBe('Example Business Park')
+    expect(picker.page).toBe(2)
+    expect(picker.rows.map(({ id }) => id)).toEqual([
+      'example-consignor-06',
+      'example-consignor-07',
+      'example-consignor-08',
+      'example-consignor-09',
+      'example-consignor-10'
+    ])
+    expect(result.after).toEqual({})
+  })
+
+  it('anchors the summary at the search input when the query leaves no rows', async () => {
+    const result = await drive(post, { payload: { q: 'no such trader' } })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errorSummary.errorList).toEqual([
+      { text: pageCopy.errors.required, href: '#q' }
+    ])
   })
 
   it('allows unexpected persistence errors to throw', async () => {

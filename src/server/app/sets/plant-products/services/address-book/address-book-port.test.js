@@ -95,6 +95,51 @@ describe.each(subjects)(
       ).resolves.toBeUndefined()
     })
 
+    it('pages the whole book from the request it was given', async () => {
+      const first = sessionRequest()
+      const second = sessionRequest()
+      await inPlantProducts(() =>
+        addressBook.add(first, newConsignor('Paged Session Only'))
+      )
+
+      const forFirst = await inPlantProducts(() =>
+        addressBook.search(first, { query: '', page: 1 })
+      )
+      const forSecond = await inPlantProducts(() =>
+        addressBook.search(second, { query: '', page: 1 })
+      )
+
+      expect(Object.keys(forFirst).sort()).toEqual([
+        'page',
+        'pageSize',
+        'results',
+        'total',
+        'totalPages'
+      ])
+      expect(forFirst.total).toBe(13)
+      expect(forSecond.total).toBe(12)
+      await expect(
+        inPlantProducts(() =>
+          addressBook.search(second, { query: 'Paged Session Only' })
+        )
+      ).resolves.toMatchObject({ total: 0, results: [] })
+    })
+
+    it('filters on any part of a record and pages what is left', async () => {
+      const request = sessionRequest()
+
+      const byCountryCode = await inPlantProducts(() =>
+        addressBook.search(request, { query: 'gb-sct' })
+      )
+      const wholeBook = await inPlantProducts(() =>
+        addressBook.search(request, { page: 3 })
+      )
+
+      expect(byCountryCode).toMatchObject({ total: 1, totalPages: 1 })
+      expect(wholeBook).toMatchObject({ page: 3, totalPages: 3, total: 12 })
+      expect(wholeBook.results).toHaveLength(2)
+    })
+
     it('lists records in the plant shape with a telephone and email on each', async () => {
       const request = sessionRequest()
       await inPlantProducts(() =>
