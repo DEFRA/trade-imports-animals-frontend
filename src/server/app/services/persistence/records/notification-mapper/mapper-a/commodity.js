@@ -26,7 +26,9 @@ export const baseComplementFromGroup = (group) => {
 }
 
 export const commodityFromLinesA = (lines) => {
-  if (!Array.isArray(lines) || lines.length === 0) return undefined
+  if (!Array.isArray(lines) || lines.length === 0) {
+    return undefined
+  }
   return {
     name: lines[0].commoditySelection,
     commodityComplement: groupLinesByCommodity(lines).map(

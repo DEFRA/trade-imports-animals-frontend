@@ -21,9 +21,13 @@ import { MAX_ENTRIES_FROM } from '../../bridge/obligation-source.js'
 export const collectionCapAt = (answers, collectionPath) => {
   const collectionName = collectionPath.at(-1)
   const countField = MAX_ENTRIES_FROM[collectionName]
-  if (!countField) return null
+  if (!countField) {
+    return null
+  }
   const value = valueAt(answers, [...collectionPath.slice(0, -1), countField])
-  if (!isAnswered(value)) return null
+  if (!isAnswered(value)) {
+    return null
+  }
   const count = Number(value)
   return Number.isInteger(count) && count >= 0 ? count : null
 }

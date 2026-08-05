@@ -24,12 +24,20 @@ import {
 // sub-collections recurse over all members.
 const collectionSatisfied = (collection, parentRecId, memberFilter, state) => {
   const obligation = obligationFor(collection.id)
-  if (!obligation) return true
+  if (!obligation) {
+    return true
+  }
   const records = childRecords(obligation, parentRecId, state)
-  if (records.length === 0) return emptyCollectionSatisfiesFloor(collection)
+  if (records.length === 0) {
+    return emptyCollectionSatisfiesFloor(collection)
+  }
   const invariantErrors = groupInvariantErrors(obligation, state)
-  if (collectionCapExceeded(invariantErrors)) return false
-  if (parentCountInvariantViolated(invariantErrors, parentRecId)) return false
+  if (collectionCapExceeded(invariantErrors)) {
+    return false
+  }
+  if (parentCountInvariantViolated(invariantErrors, parentRecId)) {
+    return false
+  }
   return records.every((rec) =>
     entrySatisfied(
       collection,
@@ -52,8 +60,12 @@ const memberSatisfied = (member, recId, state) => {
   if (isCollection(member)) {
     return collectionSatisfied(member, recId, null, state)
   }
-  if (!leafInScopeForRecord(member.id, recId, state)) return true
-  if (!leafMandatoryForRecord(member.id, recId, state)) return true
+  if (!leafInScopeForRecord(member.id, recId, state)) {
+    return true
+  }
+  if (!leafMandatoryForRecord(member.id, recId, state)) {
+    return true
+  }
   return leafFulfilledForRecord(member.id, recId, state)
 }
 

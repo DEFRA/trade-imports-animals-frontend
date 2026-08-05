@@ -5,7 +5,9 @@ import { viewWithFlowOnlyAnswers } from './view.js'
 import { hasKeys } from './predicates.js'
 
 export const persistFlowOnlyPatch = async (request, h, view, patch) => {
-  if (!hasKeys(patch)) return view
+  if (!hasKeys(patch)) {
+    return view
+  }
   const flowOnlyAnswers = await session.setFlowOnlyAnswers(
     h,
     view.journey.journeyId,

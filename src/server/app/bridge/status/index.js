@@ -54,7 +54,9 @@ export {
 // No required parts: OPTIONAL if untouched, else FULFILLED/IN_PROGRESS by
 // whether every in-scope part is satisfied.
 const optionalOrProgressStatus = (inScopeParts, started, answers, state) => {
-  if (!started) return OPTIONAL
+  if (!started) {
+    return OPTIONAL
+  }
   const allSatisfied = inScopeParts.every((part) =>
     partSatisfied(part, answers, state)
   )
@@ -67,7 +69,9 @@ const requiredPartsStatus = (required, started, answers, state) => {
   const requiredSatisfied = required.every((part) =>
     partSatisfied(part, answers, state)
   )
-  if (requiredSatisfied) return FULFILLED
+  if (requiredSatisfied) {
+    return FULFILLED
+  }
   return started ? IN_PROGRESS : NOT_STARTED
 }
 
@@ -82,7 +86,9 @@ const requiredPartsStatus = (required, started, answers, state) => {
  */
 export const statusOf = (parts, answers, inScope, evaluation) => {
   const inScopeParts = parts.filter((part) => inScope.has(partKey(part)))
-  if (inScopeParts.length === 0) return NA
+  if (inScopeParts.length === 0) {
+    return NA
+  }
 
   const required = inScopeParts.filter((part) => partRequired(part, evaluation))
   const started = inScopeParts.some((part) => partStarted(part, answers))

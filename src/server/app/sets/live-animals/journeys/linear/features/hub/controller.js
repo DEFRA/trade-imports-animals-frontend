@@ -113,7 +113,9 @@ const buildRowItem = (id, answers, scope, evaluation, journeyId) => {
   }
   const row = taskRowById(id)
   const status = rowStatus(row, answers, scope.inScope, evaluation)
-  if (isHiddenRow(row, status)) return null
+  if (isHiddenRow(row, status)) {
+    return null
+  }
   const base = { title: { text: title }, hint: { text: hint } }
   return rowGatePasses(row, scope)
     ? openRowItem(base, row, scope, status, journeyId)
@@ -139,7 +141,9 @@ const sumOverLines = (lines, field) =>
 
 const buildCommodityTotals = (answers, evaluation) => {
   const lines = state.collectionView(answers, ['commodityLines'], evaluation)
-  if (lines.length === 0) return null
+  if (lines.length === 0) {
+    return null
+  }
   return {
     animals: sumOverLines(lines, 'numberOfAnimalsQuantity'),
     packages: sumOverLines(lines, 'numberOfPackages')

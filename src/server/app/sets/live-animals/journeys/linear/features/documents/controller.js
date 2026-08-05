@@ -155,7 +155,9 @@ const saveAddedDocument = async (request, h, pageState, savedEntry, bare) => {
         }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
   return h.redirect(
     kit.withChangeContext(
       request,
@@ -187,7 +189,9 @@ const retryProjectionSave = async (
         }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
   return h.redirect(
     kit.withChangeContext(
       request,
@@ -211,7 +215,9 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
   }
 
   const entry = documentAt(pageState.answers, pageState.evaluation, retryIndex)
-  if (!entry) return h.response().code(HTTP_STATUS_BAD_REQUEST)
+  if (!entry) {
+    return h.response().code(HTTP_STATUS_BAD_REQUEST)
+  }
 
   const backToPage = kit.withChangeContext(
     request,
@@ -239,7 +245,9 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
         }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   return h.redirect(backToPage)
 }
@@ -255,7 +263,9 @@ const post = async (request, h) => {
       retryUploadId: payload.retryRemoveUploadId
     })
   }
-  if (action === 'add') return postAdd(request, h, payload)
+  if (action === 'add') {
+    return postAdd(request, h, payload)
+  }
   if (isRemoveAction(action)) {
     return postRemove(request, h, removeIndexOf(action))
   }
@@ -273,7 +283,9 @@ const isOversizeBoom = (request) =>
   request.response.output?.statusCode === HTTP_STATUS_PAYLOAD_TOO_LARGE
 
 export const handleOversizePayload = async (request, h) => {
-  if (!isOversizeBoom(request)) return h.continue
+  if (!isOversizeBoom(request)) {
+    return h.continue
+  }
   const pageState = await loadPage(request, h)
   const crumb =
     request.state?.crumb ?? request.server.plugins.crumb?.generate?.(request, h)

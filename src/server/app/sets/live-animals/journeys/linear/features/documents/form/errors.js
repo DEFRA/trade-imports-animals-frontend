@@ -28,7 +28,9 @@ export const presenceErrors = (entry) => ({
 })
 
 export const fileErrors = (file) => {
-  if (!file?.payload?.length) return { file: copy.errors.fileRequired }
+  if (!file?.payload?.length) {
+    return { file: copy.errors.fileRequired }
+  }
   if (exceedsMaxFileSize(file.payload.length)) {
     return { file: OVERSIZE_FILE_MESSAGE }
   }

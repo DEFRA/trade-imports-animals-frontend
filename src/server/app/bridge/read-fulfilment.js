@@ -69,16 +69,22 @@ export const readFulfilment = (
     for (const obligation of descendants) {
       assertDescendant(group, obligation)
       for (const fulfilmentId of Object.keys(records(obligation))) {
-        if (!hasIndexedSegments(fulfilmentId)) continue
+        if (!hasIndexedSegments(fulfilmentId)) {
+          continue
+        }
         const segments = segmentsOf(fulfilmentId)
-        if (segments.length < groupChain.length) continue
+        if (segments.length < groupChain.length) {
+          continue
+        }
 
         const id = formatFulfilmentId(
           descriptors,
           indicesOf(fulfilmentId).slice(0, groupChain.length)
         )
         const exactPrefix = segments.slice(0, groupChain.length).join('/')
-        if (id !== exactPrefix) continue
+        if (id !== exactPrefix) {
+          continue
+        }
         if (parentId !== undefined && !id.startsWith(`${parentId}/`)) {
           continue
         }

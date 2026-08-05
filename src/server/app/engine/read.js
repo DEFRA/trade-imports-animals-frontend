@@ -16,7 +16,9 @@ const REQUEST_VIEW_MEMO = Symbol('requestView')
 const memoRead = (request) => request?.app?.[REQUEST_VIEW_MEMO]
 
 export const memoRequestView = (request, view) => {
-  if (request?.app) request.app[REQUEST_VIEW_MEMO] = view
+  if (request?.app) {
+    request.app[REQUEST_VIEW_MEMO] = view
+  }
 }
 
 const readViewOf = async (request, journey) => {
@@ -40,7 +42,9 @@ const readViewOf = async (request, journey) => {
 
 export const get = async (request, h) => {
   const cached = memoRead(request)
-  if (cached) return cached
+  if (cached) {
+    return cached
+  }
   const view = await readViewOf(request, await currentJourney(request, h))
   memoRequestView(request, view)
   return view

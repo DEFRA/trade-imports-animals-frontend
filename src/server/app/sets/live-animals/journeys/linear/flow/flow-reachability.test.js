@@ -76,7 +76,9 @@ describe('#proveFlowReachability', () => {
     const deadEnds = proveFlowReachability({ answerStates, pagesFor })
       .filter((problem) => problem.reason === REASON_UNREACHABLE_IN_SCOPE)
       .map((problem) => problem.obligation)
-    for (const key of commodityKeys) expect(deadEnds).toContain(key)
+    for (const key of commodityKeys) {
+      expect(deadEnds).toContain(key)
+    }
   })
 
   it('Should report no-owning-page when an in-scope obligation has no page', () => {

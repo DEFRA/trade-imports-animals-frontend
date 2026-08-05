@@ -117,7 +117,9 @@ export const integerInRange = (name, { min, max, message } = {}) =>
       .trim()
       .allow('')
       .custom((raw, helpers) => {
-        if (!/^-?\d+$/.test(raw)) return helpers.error('number.base')
+        if (!/^-?\d+$/.test(raw)) {
+          return helpers.error('number.base')
+        }
         const parsed = Number(raw)
         if ((min != null && parsed < min) || (max != null && parsed > max)) {
           return helpers.error('number.range')
@@ -133,8 +135,12 @@ export const integerInRange = (name, { min, max, message } = {}) =>
 // A date field's fill state: none of the three parts entered, some but not
 // all, or all three.
 const classifyDateFill = (filledCount, totalCount) => {
-  if (filledCount === 0) return 'empty'
-  if (filledCount < totalCount) return 'partial'
+  if (filledCount === 0) {
+    return 'empty'
+  }
+  if (filledCount < totalCount) {
+    return 'partial'
+  }
   return 'complete'
 }
 
@@ -156,8 +162,12 @@ export const dateParts = (name, message = defaults.date) => {
         )
         const filled = parts.filter((part) => part !== '')
         const fill = classifyDateFill(filled.length, parts.length)
-        if (fill === 'empty') return day
-        if (fill === 'partial') return helpers.error('any.invalid')
+        if (fill === 'empty') {
+          return day
+        }
+        if (fill === 'partial') {
+          return helpers.error('any.invalid')
+        }
         return isValidCalendarDate(parts) ? day : helpers.error('any.invalid')
       })
       .messages({ 'any.invalid': message }),

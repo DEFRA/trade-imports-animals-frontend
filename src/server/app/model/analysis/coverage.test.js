@@ -264,7 +264,9 @@ describe('coverage — every helper export classifies as STRUCTURED or OPAQUE', 
 
     const unclassified = []
     for (const [name] of helperExports) {
-      if (NON_GATE_HELPERS.has(name)) continue
+      if (NON_GATE_HELPERS.has(name)) {
+        continue
+      }
 
       const sample = SAMPLE_OBLIGATIONS[name]
       if (!sample) {

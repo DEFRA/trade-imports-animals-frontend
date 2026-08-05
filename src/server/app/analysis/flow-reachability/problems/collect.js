@@ -17,7 +17,9 @@ export const dedupedProblems = (problems) => {
   const seen = new Map()
   for (const problem of problems) {
     const key = dedupeKeyFor(problem)
-    if (!seen.has(key)) seen.set(key, problem)
+    if (!seen.has(key)) {
+      seen.set(key, problem)
+    }
   }
   return [...seen.values()]
 }

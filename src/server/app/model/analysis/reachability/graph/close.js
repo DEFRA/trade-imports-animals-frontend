@@ -9,8 +9,12 @@ export const closeReachableSet = (records, structurallyBad) => {
   while (changed) {
     changed = false
     for (const rec of records) {
-      if (reachable.has(rec.id)) continue
-      if (structurallyBad.has(rec.id)) continue
+      if (reachable.has(rec.id)) {
+        continue
+      }
+      if (structurallyBad.has(rec.id)) {
+        continue
+      }
       if (isSeedObligation(rec)) {
         reachable.add(rec.id)
         changed = true

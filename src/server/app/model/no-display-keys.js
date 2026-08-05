@@ -49,8 +49,12 @@ const entriesOf = (value, path) =>
   Object.entries(value).map(([key, child]) => [key, `${path}.${key}`, child])
 
 const walk = (value, path, banned, seen, offenders) => {
-  if (!isWalkable(value)) return
-  if (seen.has(value)) return
+  if (!isWalkable(value)) {
+    return
+  }
+  if (seen.has(value)) {
+    return
+  }
   seen.add(value)
 
   if (Array.isArray(value)) {
@@ -68,7 +72,9 @@ const walk = (value, path, banned, seen, offenders) => {
   }
 
   for (const [key, childPath, child] of entriesOf(value, path)) {
-    if (banned.has(key)) offenders.push(childPath)
+    if (banned.has(key)) {
+      offenders.push(childPath)
+    }
     walk(child, childPath, banned, seen, offenders)
   }
 }

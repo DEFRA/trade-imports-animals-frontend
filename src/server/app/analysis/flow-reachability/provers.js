@@ -50,7 +50,9 @@ export function proveFlowReachability({
 export function proveScopeCompleteness({ answerStates, scopeFor = makeScope }) {
   const seen = new Set()
   for (const answers of answerStates) {
-    for (const key of scopeFor(answers).inScope) seen.add(leafName(key))
+    for (const key of scopeFor(answers).inScope) {
+      seen.add(leafName(key))
+    }
   }
   return obligations()
     .map((obligation) => obligation.name)

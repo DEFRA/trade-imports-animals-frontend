@@ -1,6 +1,10 @@
 const appendSegment = (key, segment, index) => {
-  if (typeof segment === 'number') return `${key}[${segment}]`
-  if (index === 0) return segment
+  if (typeof segment === 'number') {
+    return `${key}[${segment}]`
+  }
+  if (index === 0) {
+    return segment
+  }
   return `${key}.${segment}`
 }
 
@@ -19,7 +23,9 @@ export const valueAt = (answers, path) =>
   )
 
 export const setAt = (answers, path, value) => {
-  if (path.length === 0) return value
+  if (path.length === 0) {
+    return value
+  }
   const [head, ...rest] = path
   const clone = Array.isArray(answers) ? [...answers] : { ...(answers ?? {}) }
   const child = answers?.[head] ?? (typeof rest[0] === 'number' ? [] : {})
@@ -28,13 +34,20 @@ export const setAt = (answers, path, value) => {
 }
 
 export const deleteAt = (answers, path) => {
-  if (path.length === 0) return
+  if (path.length === 0) {
+    return
+  }
   const parent =
     path.length === 1 ? answers : valueAt(answers, path.slice(0, -1))
-  if (parent == null) return
+  if (parent == null) {
+    return
+  }
   const leaf = path[path.length - 1]
-  if (Array.isArray(parent) && typeof leaf === 'number') parent.splice(leaf, 1)
-  else delete parent[leaf]
+  if (Array.isArray(parent) && typeof leaf === 'number') {
+    parent.splice(leaf, 1)
+  } else {
+    delete parent[leaf]
+  }
 }
 
 export const isStrictPathPrefix = (prefix, path) =>
@@ -44,7 +57,9 @@ export const isStrictPathPrefix = (prefix, path) =>
 const firstDivergingIndex = (pathA, pathB) => {
   const shared = Math.min(pathA.length, pathB.length)
   for (let index = 0; index < shared; index++) {
-    if (pathA[index] !== pathB[index]) return index
+    if (pathA[index] !== pathB[index]) {
+      return index
+    }
   }
   return -1
 }

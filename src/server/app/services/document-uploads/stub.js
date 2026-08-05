@@ -28,7 +28,9 @@ const PLACEHOLDER_PDF = [
 ].join('\n')
 
 const settledStatus = (filename = '') => {
-  if (NEVER_SCANS_FILENAME.test(filename)) return SCAN_STATUS_PENDING
+  if (NEVER_SCANS_FILENAME.test(filename)) {
+    return SCAN_STATUS_PENDING
+  }
   return REJECTED_FILENAME.test(filename)
     ? SCAN_STATUS_REJECTED
     : SCAN_STATUS_COMPLETE
@@ -42,8 +44,12 @@ export const documentUploads = {
   },
 
   scanStatus: async ({ uploadId, filename, refresh }) => {
-    if (!awaitingRefresh.has(uploadId)) return settledStatus(filename)
-    if (!refresh) return SCAN_STATUS_PENDING
+    if (!awaitingRefresh.has(uploadId)) {
+      return settledStatus(filename)
+    }
+    if (!refresh) {
+      return SCAN_STATUS_PENDING
+    }
     awaitingRefresh.delete(uploadId)
     return settledStatus(filename)
   },

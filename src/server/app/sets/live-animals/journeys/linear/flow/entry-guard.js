@@ -14,10 +14,14 @@ const JOURNEY_PREFIX = `${BASE}/notifications/`
 const ACTION_SLUGS = new Set(['amend', 'cancel-amend', 'copy', 'delete'])
 
 export const guardedJourneyPath = (path) => {
-  if (!path.startsWith(JOURNEY_PREFIX) || path === createPath()) return false
+  if (!path.startsWith(JOURNEY_PREFIX) || path === createPath()) {
+    return false
+  }
   const [journeyId, ...slugParts] = path.slice(JOURNEY_PREFIX.length).split('/')
   const slug = slugParts.join('/')
-  if (ACTION_SLUGS.has(slug)) return false
+  if (ACTION_SLUGS.has(slug)) {
+    return false
+  }
   const isEntrySurface =
     slug === importTypeFilterPage.slug ||
     slug.startsWith(`${importTypeFilterPage.slug}/`)
@@ -29,7 +33,9 @@ export const guardedJourneyPath = (path) => {
  * `importType` is flow-only session state, not canonical fulfilment. System
  * populated obligations do not represent user progress either. */
 const userEntered = (key) => {
-  if (key === IMPORT_TYPE_KEY) return false
+  if (key === IMPORT_TYPE_KEY) {
+    return false
+  }
   const obligation = obligationByName(key)
   return obligation !== undefined && !SYSTEM_POPULATED.has(key)
 }
@@ -42,9 +48,15 @@ export const hasCommittedNotificationAnswers = (answers) =>
 /** Deep-link guard: a fresh journey asking for a post-filter page is sent
  * to the entry filter (see docs/flow-and-gates.md, "The opening run"). */
 export const entryGuardTarget = async (request, h) => {
-  if (!guardedJourneyPath(request.path)) return null
+  if (!guardedJourneyPath(request.path)) {
+    return null
+  }
   const { journey, answers } = await get(request, h)
-  if (await hasEnteredThroughFilter(request, journey.journeyId)) return null
-  if (hasCommittedNotificationAnswers(answers)) return null
+  if (await hasEnteredThroughFilter(request, journey.journeyId)) {
+    return null
+  }
+  if (hasCommittedNotificationAnswers(answers)) {
+    return null
+  }
   return pagePath(request.params.journeyId, importTypeFilterPage.slug)
 }

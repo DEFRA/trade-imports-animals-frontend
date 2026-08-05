@@ -74,8 +74,11 @@ const fillCatRecord = async (page, address = validCatAddress) => {
   await page.locator('#animalIdentifierPassport-0').fill('UK123456789')
   for (const [field, value] of Object.entries(address)) {
     const control = page.locator(`#${field}-0`)
-    if (field === 'country') await control.selectOption(value)
-    else await control.fill(value)
+    if (field === 'country') {
+      await control.selectOption(value)
+    } else {
+      await control.fill(value)
+    }
   }
 }
 

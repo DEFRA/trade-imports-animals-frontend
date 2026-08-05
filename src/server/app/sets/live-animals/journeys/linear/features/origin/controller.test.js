@@ -130,8 +130,11 @@ describe('POST /origin — country membership follows the primed list', () => {
 
   afterAll(() => {
     vi.unstubAllGlobals()
-    if (originalMode === undefined) delete process.env.LIVE_ANIMALS_MODE
-    else process.env.LIVE_ANIMALS_MODE = originalMode
+    if (originalMode === undefined) {
+      delete process.env.LIVE_ANIMALS_MODE
+    } else {
+      process.env.LIVE_ANIMALS_MODE = originalMode
+    }
   })
 
   it('Should validate against the list as primed at POST time, not as imported', async () => {

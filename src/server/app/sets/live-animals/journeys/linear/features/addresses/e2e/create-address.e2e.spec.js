@@ -43,8 +43,11 @@ const validAddress = {
 const fillAddress = async (page, values = validAddress) => {
   for (const [field, value] of Object.entries(values)) {
     const control = page.locator(`#${field}`)
-    if (field === 'country') await control.selectOption(value)
-    else await control.fill(value)
+    if (field === 'country') {
+      await control.selectOption(value)
+    } else {
+      await control.fill(value)
+    }
   }
 }
 
@@ -136,8 +139,11 @@ test.describe('create address', () => {
       page
     }) => {
       await fillAddress(page)
-      if (field === 'country') await page.locator('#country').selectOption('')
-      else await page.locator(`#${field}`).fill('')
+      if (field === 'country') {
+        await page.locator('#country').selectOption('')
+      } else {
+        await page.locator(`#${field}`).fill('')
+      }
       await submit(page)
 
       const link = errorLink(page, copy.createAddress.errors[error])

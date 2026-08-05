@@ -31,8 +31,12 @@ const decisionForPassingKeys = (
   projectionGroup,
   fulfilmentIdsByObligationId
 ) => {
-  if (passingKeys.length === 0) return { inScope: false }
-  if (!projectionGroup) return { inScope: true, records: passingKeys }
+  if (passingKeys.length === 0) {
+    return { inScope: false }
+  }
+  if (!projectionGroup) {
+    return { inScope: true, records: passingKeys }
+  }
   const records = projectedRecords(
     projectionGroup,
     passingKeys,

@@ -30,7 +30,9 @@ const formHoldsData = (showAddress, values, addressValues) =>
   (showAddress && addressRecordProvided(addressValues))
 
 const addressErrorsFor = (showAddress, addressValues, index, payload) => {
-  if (!showAddress) return {}
+  if (!showAddress) {
+    return {}
+  }
   const { errors: addrFormatErrors } = addressRecordProvided(addressValues)
     ? validate(addressChecksFor(index), payload)
     : { errors: null }
@@ -103,7 +105,9 @@ export const capReachedResponse = (
   addIndex,
   atMaxByIndex
 ) => {
-  if (addIndex === null || !atMaxByIndex.has(addIndex)) return null
+  if (addIndex === null || !atMaxByIndex.has(addIndex)) {
+    return null
+  }
   return render(request, h, journey, answers, evaluation, {
     forms,
     cardErrors: [
@@ -119,7 +123,9 @@ export const capReachedResponse = (
 // never append an empty record — name the gap instead.
 export const withEmptyFormGuard = (errors, forms, addIndex) => {
   const anyData = [...forms.values()].some((form) => form.holdsData)
-  if (addIndex === null || anyData || !forms.has(addIndex)) return errors
+  if (addIndex === null || anyData || !forms.has(addIndex)) {
+    return errors
+  }
   const { commodity } = forms.get(addIndex)
   const [first] = scopedFields(commodity)
   return {

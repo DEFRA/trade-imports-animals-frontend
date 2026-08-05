@@ -23,7 +23,9 @@ export const indicesOf = (fulfilmentId) =>
 export const compareIndexArrays = (left, right) => {
   const sharedDepth = Math.min(left.length, right.length)
   for (let depth = 0; depth < sharedDepth; depth++) {
-    if (left[depth] !== right[depth]) return left[depth] - right[depth]
+    if (left[depth] !== right[depth]) {
+      return left[depth] - right[depth]
+    }
   }
   return left.length - right.length
 }

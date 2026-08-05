@@ -38,7 +38,9 @@ const unitLeaf = (field, obligation) =>
   grouped({ field, obligation, groups: [line, unit] })
 
 const toNumberWhenParses = (value) => {
-  if (typeof value !== 'string' || value.trim() === '') return value
+  if (typeof value !== 'string' || value.trim() === '') {
+    return value
+  }
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : value
 }

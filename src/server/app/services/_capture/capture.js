@@ -24,7 +24,9 @@ const optionalTag = (target) =>
 
 const reportFetchFailure = (target, message) => {
   console.log(`${target.name}: ${message}`)
-  if (!target.optional) process.exitCode = 1
+  if (!target.optional) {
+    process.exitCode = 1
+  }
 }
 
 const fetchTarget = async (target) => {
@@ -60,6 +62,8 @@ await mkdir(outDir, { recursive: true })
 
 for (const target of targets) {
   const response = await fetchTarget(target)
-  if (!response) continue
+  if (!response) {
+    continue
+  }
   await writeFixture(target, response)
 }

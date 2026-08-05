@@ -18,7 +18,9 @@ export const finalise = async (journeyId, _actor) => {
 
 export const amend = async (journeyId, _actor) => {
   const journey = journeys.get(journeyId)
-  if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
+  if (!journey) {
+    throw new Error(`Unknown journey "${journeyId}"`)
+  }
   if (journey.status !== SUBMITTED) {
     throw new Error(`Journey "${journeyId}" is not submitted — cannot amend`)
   }
@@ -33,7 +35,9 @@ export const amend = async (journeyId, _actor) => {
 
 export const cancelAmend = async (journeyId) => {
   const journey = journeys.get(journeyId)
-  if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
+  if (!journey) {
+    throw new Error(`Unknown journey "${journeyId}"`)
+  }
   if (journey.status !== AMEND || journey.submittedSnapshot == null) {
     throw new Error(
       `Journey "${journeyId}" has no amendment snapshot — cannot cancel amendment`
@@ -48,7 +52,9 @@ export const cancelAmend = async (journeyId) => {
 
 export const softDelete = async (journeyId, _actor) => {
   const journey = journeys.get(journeyId)
-  if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
+  if (!journey) {
+    throw new Error(`Unknown journey "${journeyId}"`)
+  }
   if (
     journey.status !== DRAFT &&
     journey.status !== SUBMITTED &&

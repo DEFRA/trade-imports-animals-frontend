@@ -2,7 +2,9 @@ import { documentUploads } from '../../../../../../../services/document-uploads/
 import { SCAN_STATUS } from '../scan-poll.js'
 
 export const scanStatusOf = async (entry, refresh) => {
-  if (!entry.uploadId) return SCAN_STATUS.COMPLETE
+  if (!entry.uploadId) {
+    return SCAN_STATUS.COMPLETE
+  }
   try {
     return await documentUploads.scanStatus({
       uploadId: entry.uploadId,

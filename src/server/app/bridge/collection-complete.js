@@ -62,8 +62,12 @@ const groupsFrom = (group) =>
 // an empty entry has no leaf storage, so the evaluator never sees the
 // instance, but the entry still shows and its mandatory fields are unfilled.
 const emptyEntryBlocks = (leaf, group, instanceId, stored) => {
-  if (leaf.within !== group || leaf.applyTo) return false
-  if ((leaf.status ?? 'mandatory') !== 'mandatory') return false
+  if (leaf.within !== group || leaf.applyTo) {
+    return false
+  }
+  if ((leaf.status ?? 'mandatory') !== 'mandatory') {
+    return false
+  }
   return !isFulfilled(stored?.[instanceId])
 }
 
@@ -81,9 +85,13 @@ const leafBlocksInstance = (
   implications,
   fulfilments
 ) => {
-  if (SYSTEM_POPULATED.has(leaf.name)) return false
+  if (SYSTEM_POPULATED.has(leaf.name)) {
+    return false
+  }
   const implication = implications[leaf.id]
-  if (!implication?.inScope) return false
+  if (!implication?.inScope) {
+    return false
+  }
   const stored = fulfilments[leaf.id]
   const belonging = (implication.records ?? []).filter((record) =>
     belongsToInstance(record.fulfilmentId, instanceId)
@@ -116,7 +124,9 @@ const groupInvariantBlocksInstance = (group, instanceId, state) =>
 export const entryComplete = (evaluation, collectionPath, index) => {
   const names = collectionPath.filter((segment) => typeof segment === 'string')
   const group = obligationByName(names.at(-1))
-  if (!group) return true
+  if (!group) {
+    return true
+  }
   const groupChain = [...ancestorChain(group), group]
   const descriptors = groupChain.map(({ id }) =>
     fulfilmentRegistry.groupDescriptorOf(id)
@@ -127,7 +137,9 @@ export const entryComplete = (evaluation, collectionPath, index) => {
   const blockedByLeaf = leavesUnder(group).some((leaf) =>
     leafBlocksInstance(leaf, group, instanceId, implications, fulfilments)
   )
-  if (blockedByLeaf) return false
+  if (blockedByLeaf) {
+    return false
+  }
 
   const state = { obligations: implications, fulfilments }
   return !groupInvariantBlocksInstance(group, instanceId, state)

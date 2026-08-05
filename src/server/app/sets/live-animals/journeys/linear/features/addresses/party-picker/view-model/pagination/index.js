@@ -6,7 +6,9 @@ export const pagination = (
   party,
   { query, page, totalPages, selectedId }
 ) => {
-  if (totalPages < 2) return null
+  if (totalPages < 2) {
+    return null
+  }
   const hrefFor = (number) =>
     resultsHref(journeyId, party, {
       query,

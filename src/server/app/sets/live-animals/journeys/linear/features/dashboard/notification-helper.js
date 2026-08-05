@@ -12,14 +12,18 @@ export const NOTIFICATION_SORT_OPTIONS = [
 ]
 
 export const formatDisplayDate = (value) => {
-  if (!value) return ''
+  if (!value) {
+    return ''
+  }
 
   const date = typeof value === 'string' ? parseISO(value) : value
   return isValid(date) ? format(date, LIST_DATE_FORMAT) : ''
 }
 
 export const formatCommodity = (commodity, nameForCode = () => undefined) => {
-  if (!commodity) return ''
+  if (!commodity) {
+    return ''
+  }
 
   if (typeof commodity === 'string') {
     return nameForCode(commodity) ?? commodity
@@ -43,7 +47,9 @@ export const normalizePageNumber = (
   page,
   totalPages = Number.MAX_SAFE_INTEGER
 ) => {
-  if (!Number.isInteger(page) || page < 1 || totalPages <= 0) return 1
+  if (!Number.isInteger(page) || page < 1 || totalPages <= 0) {
+    return 1
+  }
   return Math.min(page, totalPages)
 }
 
@@ -59,9 +65,15 @@ export const buildHomeListQueryString = ({
 } = {}) => {
   const params = new URLSearchParams()
 
-  if (page > 1) params.set('page', String(page))
-  if (sort && sort !== DEFAULT_NOTIFICATION_SORT) params.set('sort', sort)
-  if (referenceNumber) params.set('referenceNumber', referenceNumber)
+  if (page > 1) {
+    params.set('page', String(page))
+  }
+  if (sort && sort !== DEFAULT_NOTIFICATION_SORT) {
+    params.set('sort', sort)
+  }
+  if (referenceNumber) {
+    params.set('referenceNumber', referenceNumber)
+  }
 
   const query = params.toString()
   return query ? `?${query}` : ''
@@ -77,7 +89,9 @@ export const buildPaginationLinks = (
   const { totalPages } = pagination
   const page = normalizePageNumber(pagination.page, totalPages)
 
-  if (totalPages <= 1) return null
+  if (totalPages <= 1) {
+    return null
+  }
 
   return {
     previous:
@@ -128,8 +142,12 @@ export const buildPageResultsRangeLabel = (
   labels = {}
 ) => {
   const range = buildPageResultsRange(pagination, itemCount)
-  if (range.total === 0) return labels.none ?? 'No Results'
-  if (range.total === 1) return labels.one ?? 'Showing 1 Results'
+  if (range.total === 0) {
+    return labels.none ?? 'No Results'
+  }
+  if (range.total === 1) {
+    return labels.one ?? 'Showing 1 Results'
+  }
   if (range.start === range.end) {
     return labels.oneOf
       ? labels.oneOf(range.start, range.total)

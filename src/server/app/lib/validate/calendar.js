@@ -4,9 +4,15 @@
  * @param {number} day
  */
 export const isRealDate = (year, month, day) => {
-  if (![year, month, day].every(Number.isInteger)) return false
-  if (month < 1 || month > 12) return false
-  if (day < 1) return false
+  if (![year, month, day].every(Number.isInteger)) {
+    return false
+  }
+  if (month < 1 || month > 12) {
+    return false
+  }
+  if (day < 1) {
+    return false
+  }
   const date = new Date(Date.UTC(year, month - 1, day))
   return (
     date.getUTCFullYear() === year &&

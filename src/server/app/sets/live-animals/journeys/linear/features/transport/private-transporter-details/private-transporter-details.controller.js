@@ -68,7 +68,9 @@ const recordProvided = (values) =>
   FIELD_ORDER.some((field) => values[field] !== '')
 
 const missingMandatoryErrors = (values) => {
-  if (!recordProvided(values)) return {}
+  if (!recordProvided(values)) {
+    return {}
+  }
   return Object.fromEntries(
     Object.entries(MANDATORY_MESSAGES).filter(([field]) => values[field] === '')
   )
@@ -177,7 +179,9 @@ const post = async (request, h) => {
       )
     }
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   const { scope } = committed
   return h.redirect(await kit.nextTarget(request, page, scope))

@@ -5,7 +5,9 @@ import { marshalListItem } from '../marshal/list-item.js'
 import { LIST_PAGE_SIZE, sortByCreatedAt, validPage } from '../list-query.js'
 
 export const load = async ({ journeyId } = {}) => {
-  if (journeyId == null) return undefined
+  if (journeyId == null) {
+    return undefined
+  }
   const journey = journeys.get(journeyId)
   return journey ? structuredClone(marshal(journey)) : undefined
 }

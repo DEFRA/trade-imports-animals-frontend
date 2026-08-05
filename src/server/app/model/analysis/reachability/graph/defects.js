@@ -15,7 +15,9 @@ export const findStructuralDefects = (records, byId) => {
       continue
     }
     for (const depId of rec.dependsOn) {
-      if (depId === rec.id) continue // self-loop is not a dangling id
+      if (depId === rec.id) {
+        continue
+      } // self-loop is not a dangling id
       if (!byId.has(depId)) {
         errors.push({
           obligationId: rec.id,

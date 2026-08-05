@@ -33,8 +33,12 @@ const counterOf = (species, records, cap) =>
     : copy.counter(species, records + 1, cap)
 
 const maxReachedTextFor = (cap, species, units, overBy, atMax) => {
-  if (overBy > 0) return copy.overCount(cap, species, units, overBy)
-  if (atMax) return copy.allEntered(cap, species)
+  if (overBy > 0) {
+    return copy.overCount(cap, species, units, overBy)
+  }
+  if (atMax) {
+    return copy.allEntered(cap, species)
+  }
   return null
 }
 

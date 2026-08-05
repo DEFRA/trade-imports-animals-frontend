@@ -245,10 +245,14 @@ export const groups = obligations.filter((obligation) =>
 // imports rebuild the same list.
 // -----------------------------------------------------------------------------
 for (const container of obligations) {
-  if (!container?.requires?.allOrNothingOfIds) continue
+  if (!container?.requires?.allOrNothingOfIds) {
+    continue
+  }
   for (const memberId of container.requires.allOrNothingOfIds) {
     const member = obligations.find((candidate) => candidate.id === memberId)
-    if (!member) continue
+    if (!member) {
+      continue
+    }
     const existing = member.containers ?? []
     if (
       existing.some(

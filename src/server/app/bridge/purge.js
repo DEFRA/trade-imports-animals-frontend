@@ -49,9 +49,13 @@ const wipedRecordKeys = (obligation, chain, inVal, fulfilmentsOut) => {
 }
 
 const wipedKeysFor = (obligation, fulfilmentsIn, fulfilmentsOut) => {
-  if (groupObligations.has(obligation)) return []
+  if (groupObligations.has(obligation)) {
+    return []
+  }
   const inVal = fulfilmentsIn[obligation.id]
-  if (inVal === undefined) return []
+  if (inVal === undefined) {
+    return []
+  }
   const chain = ancestorChain(obligation)
   return chain.length === 0
     ? wipedScalarKey(obligation, inVal, fulfilmentsOut)

@@ -21,7 +21,9 @@ export const putProjection = async ({
         headers: headers(),
         body: JSON.stringify(body)
       })
-      if (!response.ok) throw failed(`save ${name} projection`, response)
+      if (!response.ok) {
+        throw failed(`save ${name} projection`, response)
+      }
       return
     } catch (error) {
       lastError = error

@@ -64,7 +64,9 @@ const post = async (request, h) => {
   const { journey, answers, evaluation } = await state.get(request, h)
   const payload = request.payload ?? {}
   const action = (payload.action ?? '').toString()
-  if (isRemoveAction(action)) return postRemove(request, h, action)
+  if (isRemoveAction(action)) {
+    return postRemove(request, h, action)
+  }
   const addIndex = parseAddAction(action)
   const lines = state.collectionView(answers, ['commodityLines'], evaluation)
 
@@ -85,7 +87,9 @@ const post = async (request, h) => {
     addIndex,
     atMaxByIndex
   )
-  if (capReached) return capReached
+  if (capReached) {
+    return capReached
+  }
 
   const errors = withEmptyFormGuard(formErrors, forms, addIndex)
 

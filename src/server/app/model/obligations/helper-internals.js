@@ -49,7 +49,9 @@ export const isRecordMap = (value) =>
  */
 export const readGate = (fulfilments, gateId) => {
   const stored = fulfilments[gateId]
-  if (stored === undefined) return { present: false, candidates: [] }
+  if (stored === undefined) {
+    return { present: false, candidates: [] }
+  }
   if (isRecordMap(stored)) {
     return { present: true, candidates: Object.values(stored) }
   }

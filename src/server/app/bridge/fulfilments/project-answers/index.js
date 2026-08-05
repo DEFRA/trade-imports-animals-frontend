@@ -9,9 +9,13 @@ const withObligationAnswer = (
   projections,
   obligation
 ) => {
-  if (groupObligations.has(obligation)) return answers
+  if (groupObligations.has(obligation)) {
+    return answers
+  }
   const stored = fulfilments?.[obligation.id]
-  if (stored === undefined) return answers
+  if (stored === undefined) {
+    return answers
+  }
   if (!obligation.within) {
     return answersWithScalar(answers, obligation.name, stored)
   }

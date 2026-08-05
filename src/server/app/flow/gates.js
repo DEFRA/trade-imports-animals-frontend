@@ -3,7 +3,9 @@ import { sectionObligationIds } from './section-status.js'
 import { pagePrerequisites, sectionPrerequisites } from './prerequisites.js'
 
 const assertDispatchBuilt = () => {
-  if (isDispatchBuilt()) return
+  if (isDispatchBuilt()) {
+    return
+  }
   throw new Error(
     'Derived gate consulted before the dispatch index exists — call ' +
       'buildDispatch() at boot first (an empty index would silently gate ' +
@@ -19,7 +21,9 @@ const inScopeReachable = (obligationIds, scope) =>
   obligationIds.some((id) => scope.inScope.has(id))
 
 export const pageGatePasses = (page, scope) => {
-  if (page.gate) return page.gate(scope)
+  if (page.gate) {
+    return page.gate(scope)
+  }
   assertDispatchBuilt()
   return (
     prerequisitesMet(pagePrerequisites(page.id), scope) &&
@@ -28,7 +32,9 @@ export const pageGatePasses = (page, scope) => {
 }
 
 export const sectionGatePasses = (section, scope) => {
-  if (section.gate) return section.gate(scope)
+  if (section.gate) {
+    return section.gate(scope)
+  }
   assertDispatchBuilt()
   return (
     prerequisitesMet(sectionPrerequisites(section), scope) &&

@@ -60,9 +60,13 @@ export const currentJourney = async (request, h) => {
     return structuredClone(cached)
   }
   const journeyId = request.params?.journeyId
-  if (!journeyId) throw Boom.notFound()
+  if (!journeyId) {
+    throw Boom.notFound()
+  }
   const loaded = await records.load({ journeyId })
-  if (!loaded) throw Boom.notFound()
+  if (!loaded) {
+    throw Boom.notFound()
+  }
   if (!(await isKnownJourney(request, journeyId))) {
     await session.addKnownJourney(request, h, journeyId)
   }
@@ -99,31 +103,45 @@ export const isKnownJourney = async (request, journeyId) =>
   (await session.knownJourneyIds(request)).includes(journeyId)
 
 const editableFromStatus = (journey, journeyId, actor) => {
-  if (journey.status === SUBMITTED) return records.amend(journeyId, actor)
-  if (journey.status === DRAFT || journey.status === AMEND) return journey
+  if (journey.status === SUBMITTED) {
+    return records.amend(journeyId, actor)
+  }
+  if (journey.status === DRAFT || journey.status === AMEND) {
+    return journey
+  }
   return undefined
 }
 
 export const amendJourney = async (request, h, journeyId) => {
-  if (!(await isKnownJourney(request, journeyId))) return undefined
+  if (!(await isKnownJourney(request, journeyId))) {
+    return undefined
+  }
   const journey = await records.load({ journeyId })
-  if (!journey) return undefined
+  if (!journey) {
+    return undefined
+  }
   const actor = buildActor(request.auth.credentials)
   const editable = await editableFromStatus(journey, journeyId, actor)
-  if (!editable) return undefined
+  if (!editable) {
+    return undefined
+  }
   memoWrite(request, editable)
   return editable
 }
 
 export const cancelAmendJourney = async (request, _h, journeyId) => {
-  if (!(await isKnownJourney(request, journeyId))) return undefined
+  if (!(await isKnownJourney(request, journeyId))) {
+    return undefined
+  }
   const restored = await records.cancelAmend(journeyId)
   memoWrite(request, restored)
   return restored
 }
 
 export const copyJourney = async (request, h, journeyId, idempotencyKey) => {
-  if (!(await isKnownJourney(request, journeyId))) return undefined
+  if (!(await isKnownJourney(request, journeyId))) {
+    return undefined
+  }
   const copied = await records.copy(journeyId, idempotencyKey)
   await session.addKnownJourney(request, h, copied.journeyId)
   memoWrite(request, copied)
@@ -131,7 +149,9 @@ export const copyJourney = async (request, h, journeyId, idempotencyKey) => {
 }
 
 export const softDeleteJourney = async (request, _h, journeyId) => {
-  if (!(await isKnownJourney(request, journeyId))) return undefined
+  if (!(await isKnownJourney(request, journeyId))) {
+    return undefined
+  }
   const actor = buildActor(request.auth.credentials)
   return records.softDelete(journeyId, actor)
 }

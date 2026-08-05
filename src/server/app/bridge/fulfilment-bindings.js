@@ -60,7 +60,9 @@ const groupedTree = (bindings) => {
 
 const addGroupedValue = (contribution, binding, fulfilmentId, source) => {
   const value = source?.[binding.field]
-  if (value === undefined) return
+  if (value === undefined) {
+    return
+  }
   const records = contribution[binding.obligation.id] ?? {}
   records[fulfilmentId] = binding.convert(value)
   contribution[binding.obligation.id] = records
@@ -68,7 +70,9 @@ const addGroupedValue = (contribution, binding, fulfilmentId, source) => {
 
 const walkGroup = (contribution, node, source, parentGroups, parentIndices) => {
   const items = source?.[node.group.field]
-  if (!Array.isArray(items)) return
+  if (!Array.isArray(items)) {
+    return
+  }
   const groups = [...parentGroups, node.group]
   items.forEach((item, index) => {
     const indices = [...parentIndices, index]

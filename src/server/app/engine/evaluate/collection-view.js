@@ -17,6 +17,8 @@ export const collectionView = (answers, collectionPath, evaluation) => {
 }
 
 const completeAt = (obligation, evaluation, collectionPath, index) => {
-  if (!obligation) return true
+  if (!obligation) {
+    return true
+  }
   return entryComplete(evaluation, collectionPath, index)
 }

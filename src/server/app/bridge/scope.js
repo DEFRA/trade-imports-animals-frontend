@@ -44,8 +44,12 @@ const collectInstanceValues = (answers, chain, name) => {
     }
     const [group, ...rest] = remainingGroups
     const items = node?.[group.name]
-    if (!Array.isArray(items)) return
-    for (const item of items) visit(item, rest)
+    if (!Array.isArray(items)) {
+      return
+    }
+    for (const item of items) {
+      visit(item, rest)
+    }
   }
   visit(answers, chain)
   return values
@@ -53,7 +57,9 @@ const collectInstanceValues = (answers, chain, name) => {
 
 const anyInstanceAnswered = (answers, id) => {
   const obligation = obligationByName(id)
-  if (!obligation) return false
+  if (!obligation) {
+    return false
+  }
   return collectInstanceValues(answers, ancestorChain(obligation), id).some(
     isAnswered
   )
@@ -92,7 +98,9 @@ const addProjectedKeys = (inScope, implications, obligation) => {
   const chain = ancestorChain(obligation)
 
   if (groupObligations.has(obligation)) {
-    if (chain.length === 0) return groupNodeKey(inScope, name)
+    if (chain.length === 0) {
+      return groupNodeKey(inScope, name)
+    }
     return groupInstanceKeys(inScope, implications, obligation, chain, name)
   }
 
@@ -133,7 +141,9 @@ export const rawInScope = (evaluation) => projectInScope(evaluation.obligations)
 // scope regardless of answers. An additive layer only; the raw evaluator scope
 // (`rawInScope`) is untouched.
 const projectFlowOnlyScope = (inScope) => {
-  for (const id of journeyFlowOnlyKeys()) inScope.add(id)
+  for (const id of journeyFlowOnlyKeys()) {
+    inScope.add(id)
+  }
 }
 
 /**

@@ -5,7 +5,9 @@ import { witnessFulfilments } from './witness-fulfilments.js'
 export const confirmWitnessOpensGate = (obligation, witness) => {
   const { fulfilments, fulfilmentIds } = witnessFulfilments(obligation, witness)
   const decision = obligation.applyTo(fulfilments, fulfilmentIds)
-  if (decision && decision.inScope === true) return { opened: true }
+  if (decision && decision.inScope === true) {
+    return { opened: true }
+  }
   return {
     opened: false,
     error: {

@@ -12,9 +12,13 @@ const copy = copyFor({ en, cy }).consignmentDetails
 export const countDropIssueFor = (request, { index, entry }, values) => {
   const records = (entry.animalIdentifiers ?? []).length
   const value = values[animalsField(index)]
-  if (records === 0 || value === '') return []
+  if (records === 0 || value === '') {
+    return []
+  }
   const entered = Number(value)
-  if (!Number.isInteger(entered) || entered >= records) return []
+  if (!Number.isInteger(entered) || entered >= records) {
+    return []
+  }
   const species =
     commodities.speciesLabel(entry.speciesSelection) ?? entry.speciesSelection
   return [

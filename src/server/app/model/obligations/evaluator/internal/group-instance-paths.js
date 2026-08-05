@@ -7,7 +7,9 @@ const splitPath = (key) => key.split(PATH_DELIMITER)
 // The instance-path prefixes one descendant's stored keyed-record
 // contributes to its group's instance-id set.
 const instancePathPrefixesFromRecord = (stored, prefixLen) => {
-  if (!isKeyedRecord(stored)) return []
+  if (!isKeyedRecord(stored)) {
+    return []
+  }
   return Object.keys(stored)
     .map((key) => splitPath(key))
     .filter((segments) => segments.length >= prefixLen)

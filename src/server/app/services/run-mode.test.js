@@ -19,8 +19,11 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals()
-  if (originalMode === undefined) delete process.env.LIVE_ANIMALS_MODE
-  else process.env.LIVE_ANIMALS_MODE = originalMode
+  if (originalMode === undefined) {
+    delete process.env.LIVE_ANIMALS_MODE
+  } else {
+    process.env.LIVE_ANIMALS_MODE = originalMode
+  }
 })
 
 describe('countries client', () => {

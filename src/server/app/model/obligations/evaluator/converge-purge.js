@@ -54,7 +54,9 @@ export function convergePurge(recognisedFulfilments, context) {
       obligationApplicabilityDecisions,
       obligationAncestorGroups
     )
-    for (const obligation of obligations) isInScope(obligation)
+    for (const obligation of obligations) {
+      isInScope(obligation)
+    }
 
     const next = purgeStorage(view, {
       obligationsById,

@@ -48,7 +48,9 @@ export const CYA_SLUG = 'notification-view'
 
 export const errorSummary = (fieldErrors) => {
   const entries = Object.entries(fieldErrors ?? {})
-  if (entries.length === 0) return null
+  if (entries.length === 0) {
+    return null
+  }
   return {
     titleText: sharedCopy.errorSummary.title,
     errorList: entries.map(([field, text]) => ({ text, href: `#${field}` }))
@@ -134,7 +136,9 @@ export const pageRoutes = (page, { get, post }) => [
 
 export const readDate = (payload, name) => {
   const raw = String(payload[name] ?? '').trim()
-  if (raw === '') return { day: '', month: '', year: '' }
+  if (raw === '') {
+    return { day: '', month: '', year: '' }
+  }
   const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
   return match ? { day: match[1], month: match[2], year: match[3] } : raw
 }

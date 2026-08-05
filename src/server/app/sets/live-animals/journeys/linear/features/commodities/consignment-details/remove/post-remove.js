@@ -26,7 +26,9 @@ export const groupNames = (answers, evaluation) => [
 export const postRemove = async (request, h, index, lineKey) => {
   const { answers, evaluation } = await state.get(request, h)
   const name = groupNames(answers, evaluation)[index]
-  if (name === undefined) return h.response().code(HTTP_STATUS_BAD_REQUEST)
+  if (name === undefined) {
+    return h.response().code(HTTP_STATUS_BAD_REQUEST)
+  }
 
   const kept = (answers.commodityLines ?? []).filter(
     (entry) => entry.commoditySelection !== name

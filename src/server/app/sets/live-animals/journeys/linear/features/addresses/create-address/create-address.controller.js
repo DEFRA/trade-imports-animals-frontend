@@ -172,7 +172,9 @@ const post = async (request, h) => {
       )
     }
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   addressBook.addParty(party.role, record)
   return h.redirect(pagePath(request.params.journeyId, party.returnSlug))

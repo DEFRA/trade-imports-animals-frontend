@@ -97,7 +97,9 @@ const post = async (request, h) => {
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   const { scope } = committed
   return h.redirect(

@@ -39,6 +39,8 @@ export const copy = async (journeyId, idempotencyKey) => {
       }
     }
   )
-  if (!response.ok) throw failed('copy notification-fulfilments', response)
+  if (!response.ok) {
+    throw failed('copy notification-fulfilments', response)
+  }
   return marshal(await response.json())
 }

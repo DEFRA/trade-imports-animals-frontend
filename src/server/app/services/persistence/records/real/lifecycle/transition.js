@@ -14,7 +14,9 @@ const postAggregate = async (url, action, body) => {
     headers: headers(),
     body: body === undefined ? undefined : JSON.stringify(body)
   })
-  if (!response.ok) throw failed(action, response)
+  if (!response.ok) {
+    throw failed(action, response)
+  }
   return response
 }
 

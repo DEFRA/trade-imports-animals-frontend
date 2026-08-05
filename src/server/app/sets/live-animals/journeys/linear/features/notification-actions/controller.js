@@ -32,7 +32,9 @@ const copyPost = async (request, h) => {
         HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   return copied
     ? h.redirect(hubPath(copied.journeyId))

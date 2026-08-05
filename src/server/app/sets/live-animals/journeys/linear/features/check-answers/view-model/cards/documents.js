@@ -32,7 +32,9 @@ export const documentsCard = (journeyId, answers, evaluation, readOnly) => {
         )
       ]
     }))
-  if (documents.length === 0) return null
+  if (documents.length === 0) {
+    return null
+  }
   return {
     title: copy.cards.documents,
     ...editableActions(readOnly, {

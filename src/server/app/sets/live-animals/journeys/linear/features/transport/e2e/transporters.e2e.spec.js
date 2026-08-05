@@ -86,8 +86,11 @@ const fillPrivateTransporter = async (
 ) => {
   for (const [field, value] of Object.entries(transporter)) {
     const control = page.locator(`#${field}`)
-    if (field === 'country') await control.selectOption(value)
-    else await control.fill(value)
+    if (field === 'country') {
+      await control.selectOption(value)
+    } else {
+      await control.fill(value)
+    }
   }
 }
 
@@ -316,8 +319,11 @@ test.describe('transporter pages', () => {
     }) => {
       await openPrivate(page)
       await fillPrivateTransporter(page)
-      if (field === 'country') await page.locator('#country').selectOption('')
-      else await page.locator(`#${field}`).fill('')
+      if (field === 'country') {
+        await page.locator('#country').selectOption('')
+      } else {
+        await page.locator(`#${field}`).fill('')
+      }
       await submit(page)
 
       const link = errorLink(page, copy.privateTransporterDetails.errors[error])
@@ -390,8 +396,11 @@ test.describe('transporter pages', () => {
     }
     for (const [field, value] of Object.entries(fields)) {
       const control = page.locator(`#${field}`)
-      if (field === 'country') await control.selectOption(value)
-      else await control.fill(value)
+      if (field === 'country') {
+        await control.selectOption(value)
+      } else {
+        await control.fill(value)
+      }
     }
     await submit(page)
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()

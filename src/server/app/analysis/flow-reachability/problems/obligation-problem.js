@@ -18,9 +18,13 @@ export const isNotPagePresented = (key) =>
 // not page-presented, `no-owning-page` when dispatch has no owner, or
 // `owning-page-unreachable-in-scope` when the owning page isn't reachable.
 export const obligationProblem = (key, reachablePages) => {
-  if (isNotPagePresented(key)) return undefined
+  if (isNotPagePresented(key)) {
+    return undefined
+  }
   const pageId = pageOfObligation(key)
-  if (!pageId) return { obligation: key, reason: REASON_NO_OWNING_PAGE }
+  if (!pageId) {
+    return { obligation: key, reason: REASON_NO_OWNING_PAGE }
+  }
   return reachablePages.has(pageId)
     ? undefined
     : { obligation: key, pageId, reason: REASON_UNREACHABLE_IN_SCOPE }

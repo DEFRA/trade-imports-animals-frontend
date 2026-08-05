@@ -18,7 +18,9 @@ export const partKey = (part) => (isFacet(part) ? part.collection : part)
 // keep the structural answer.
 const scalarRequired = (part, state) => {
   const structural = structuralOf(part)
-  if (structural?.collection) return isRequiredObligation(structural)
+  if (structural?.collection) {
+    return isRequiredObligation(structural)
+  }
   const obligation = obligationFor(part)
   if (obligation && state) {
     return effectiveStatus(obligation, null, state) === 'mandatory'
@@ -35,7 +37,9 @@ export const partRequired = (part, state) =>
   isFacet(part) ? facetRequired(part) : scalarRequired(part, state)
 
 export const partStarted = (part, answers) => {
-  if (!isFacet(part)) return isAnswered(answers[part])
+  if (!isFacet(part)) {
+    return isAnswered(answers[part])
+  }
   const members = facetMembers(part)
   return []
     .concat(answers[part.collection] ?? [])

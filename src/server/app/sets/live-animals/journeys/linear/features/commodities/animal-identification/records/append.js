@@ -39,7 +39,9 @@ const recordCapFailure = async (request, h, index) => {
 export const appendLineRecords = async (request, h, forms) => {
   const cardErrors = []
   for (const [index, form] of forms) {
-    if (!form.holdsData) continue
+    if (!form.holdsData) {
+      continue
+    }
     const appended = await state.appendEntryAt(
       request,
       h,

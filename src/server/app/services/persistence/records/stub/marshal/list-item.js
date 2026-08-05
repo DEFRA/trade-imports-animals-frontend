@@ -3,7 +3,9 @@ import { decodePersistedFulfilment } from '../../fulfilment-codec/index.js'
 
 export const isoFromDateParts = (parts) => {
   const { day, month, year } = parts ?? {}
-  if (day == null || month == null || year == null) return null
+  if (day == null || month == null || year == null) {
+    return null
+  }
   return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 

@@ -40,7 +40,9 @@ const initiate = async ({
       })
     }
   )
-  if (!response.ok) throw failed('initiate document upload', response)
+  if (!response.ok) {
+    throw failed('initiate document upload', response)
+  }
   return response.json()
 }
 
@@ -59,7 +61,9 @@ const uploadFile = async (uploadId, { filename, contentType, bytes }) => {
       body: formData
     }
   )
-  if (!response.ok) throw failed('upload document file', response)
+  if (!response.ok) {
+    throw failed('upload document file', response)
+  }
 }
 
 export const documentUploads = {
@@ -74,7 +78,9 @@ export const documentUploads = {
       `${backendBaseUrl}/document-uploads/${uploadId}`,
       { method: 'GET', headers: traceHeaders() }
     )
-    if (!response.ok) throw failed('get document upload status', response)
+    if (!response.ok) {
+      throw failed('get document upload status', response)
+    }
     const { scanStatus } = await response.json()
     return scanStatus
   },
@@ -84,7 +90,9 @@ export const documentUploads = {
       `${backendBaseUrl}/document-uploads/${uploadId}`,
       { method: 'DELETE', headers: traceHeaders() }
     )
-    if (!response.ok) throw failed('delete document upload', response)
+    if (!response.ok) {
+      throw failed('delete document upload', response)
+    }
   },
 
   streamFile: async (uploadId) => {
@@ -92,7 +100,9 @@ export const documentUploads = {
       `${backendBaseUrl}/document-uploads/${uploadId}/file`,
       { method: 'GET', headers: traceHeaders() }
     )
-    if (!response.ok) throw failed('stream document file', response)
+    if (!response.ok) {
+      throw failed('stream document file', response)
+    }
     return response
   }
 }

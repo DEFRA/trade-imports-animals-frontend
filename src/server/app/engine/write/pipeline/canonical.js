@@ -16,7 +16,9 @@ export const replaceFromNameKeyedMutation = async (
   { assertKeys = true } = {}
 ) => {
   const { canonical } = splitPatch(answers)
-  if (assertKeys) assertRecognisedAnswerKeys(canonical, context)
+  if (assertKeys) {
+    assertRecognisedAnswerKeys(canonical, context)
+  }
 
   const evaluation = purgeFulfilments(assembleFulfilments(canonical))
   const savedJourney = await replaceJourneyFulfilment(
@@ -43,7 +45,9 @@ export const currentViewAfterCanonicalPatch = async (
   canonical,
   context
 ) => {
-  if (!hasKeys(canonical)) return current
+  if (!hasKeys(canonical)) {
+    return current
+  }
   return replaceFromNameKeyedMutation(
     request,
     current.journey,

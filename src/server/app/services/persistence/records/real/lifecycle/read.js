@@ -34,7 +34,9 @@ export const list = async ({
       headers: headers()
     }
   )
-  if (!response.ok) throw failed('list notifications', response)
+  if (!response.ok) {
+    throw failed('list notifications', response)
+  }
   const result = await response.json()
   return {
     rows: result.content.map(marshalListItem),

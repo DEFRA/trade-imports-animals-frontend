@@ -15,8 +15,12 @@ const hasRecordEntries = (stored) => Object.keys(stored).length > 0
 export const present = (obligation) => {
   return (fulfilments) => {
     const stored = fulfilments[obligation.id]
-    if (isNullish(stored)) return false
-    if (isRecordMap(stored)) return hasRecordEntries(stored)
+    if (isNullish(stored)) {
+      return false
+    }
+    if (isRecordMap(stored)) {
+      return hasRecordEntries(stored)
+    }
     return true
   }
 }

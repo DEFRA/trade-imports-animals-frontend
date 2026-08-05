@@ -20,7 +20,9 @@ export function enumerateGroupFulfilmentIds(obligations, context) {
 
   const fulfilmentIdsByObligationId = new Map()
   for (const obligation of obligations) {
-    if (obligationsByCategory.get(obligation.id) !== 'group') continue
+    if (obligationsByCategory.get(obligation.id) !== 'group') {
+      continue
+    }
     if (!isInScope(obligation)) {
       fulfilmentIdsByObligationId.set(obligation.id, new Set())
       continue
