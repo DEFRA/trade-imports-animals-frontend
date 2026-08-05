@@ -168,35 +168,42 @@ const formatPrivateValidations = [
   ]
 ]
 
+const expectTransporterGuidance = async (page) => {
+  await expect(
+    page.getByText(copy.transporters.guidance.authorisationLead)
+  ).toBeVisible()
+  for (const condition of copy.transporters.guidance.authorisationConditions) {
+    await expect(page.getByText(condition)).toBeVisible()
+  }
+  const guidance = page.getByRole('link', {
+    name: copy.transporters.guidance.linkText
+  })
+  await expect(guidance).toHaveAttribute(
+    'href',
+    copy.transporters.guidance.linkHref
+  )
+  await expect(guidance).toHaveAttribute('target', '_blank')
+  await expect(
+    page.getByText(copy.transporters.guidance.daeraValid)
+  ).toBeVisible()
+  await expect(
+    page.getByText(copy.transporters.guidance.euNotValid)
+  ).toBeVisible()
+}
+
+const expectBranchOptions = async (page) => {
+  for (const option of Object.values(copy.transporters.options)) {
+    await expect(page.getByRole('radio', { name: option.text })).toBeVisible()
+    await expect(page.getByText(option.hint)).toBeVisible()
+  }
+}
+
 test.describe('transporter type page', () => {
   test('renders transporter guidance and branch options', async ({ page }) => {
     await openTransporterType(page)
 
-    await expect(
-      page.getByText(copy.transporters.guidance.authorisationLead)
-    ).toBeVisible()
-    for (const condition of copy.transporters.guidance
-      .authorisationConditions) {
-      await expect(page.getByText(condition)).toBeVisible()
-    }
-    const guidance = page.getByRole('link', {
-      name: copy.transporters.guidance.linkText
-    })
-    await expect(guidance).toHaveAttribute(
-      'href',
-      copy.transporters.guidance.linkHref
-    )
-    await expect(guidance).toHaveAttribute('target', '_blank')
-    await expect(
-      page.getByText(copy.transporters.guidance.daeraValid)
-    ).toBeVisible()
-    await expect(
-      page.getByText(copy.transporters.guidance.euNotValid)
-    ).toBeVisible()
-    for (const option of Object.values(copy.transporters.options)) {
-      await expect(page.getByRole('radio', { name: option.text })).toBeVisible()
-      await expect(page.getByText(option.hint)).toBeVisible()
-    }
+    await expectTransporterGuidance(page)
+    await expectBranchOptions(page)
   })
 
   test('transporter type validation: out-of-list value links to and focuses the cleared group', async ({
