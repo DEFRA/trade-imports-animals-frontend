@@ -7,7 +7,21 @@ const SCAN_STATUS_PENDING = 'PENDING'
 const SCAN_STATUS_REJECTED = 'REJECTED'
 const SCAN_STATUS_COMPLETE = 'COMPLETE'
 
-const awaitingRefresh = new Set()
+const uploads = new Map()
+
+const notFound = (uploadId) => {
+  const error = new Error(`Unknown document upload: ${uploadId}`)
+  error.status = 404
+  return error
+}
+
+const uploadOrThrow = (uploadId) => {
+  const upload = uploads.get(uploadId)
+  if (!upload) {
+    throw notFound(uploadId)
+  }
+  return upload
+}
 
 const PLACEHOLDER_TEXT =
   'Placeholder file - the service does not store uploaded bytes.'
@@ -37,34 +51,45 @@ const settledStatus = (filename = '') => {
 }
 
 export const documentUploads = {
-  upload: async () => {
+  upload: async ({ journeyId, filename } = {}) => {
     const uploadId = randomUUID()
-    awaitingRefresh.add(uploadId)
+    uploads.set(uploadId, { journeyId, filename, settled: false })
     return uploadId
   },
 
+  // An id this stub never issued is a not-found, exactly as the backend
+  // answers it — a forged or foreign id must never look like a settled scan.
   scanStatus: async ({ uploadId, filename, refresh }) => {
-    if (!awaitingRefresh.has(uploadId)) {
-      return settledStatus(filename)
+    const upload = uploadOrThrow(uploadId)
+    const knownFilename = upload.filename ?? filename
+    if (upload.settled) {
+      return settledStatus(knownFilename)
     }
     if (!refresh) {
       return SCAN_STATUS_PENDING
     }
-    awaitingRefresh.delete(uploadId)
-    return settledStatus(filename)
+    const status = settledStatus(knownFilename)
+    if (status !== SCAN_STATUS_PENDING) {
+      upload.settled = true
+    }
+    return status
   },
 
+  ownerOf: async (uploadId) => uploadOrThrow(uploadId).journeyId,
+
   remove: async (uploadId) => {
-    awaitingRefresh.delete(uploadId)
+    uploads.delete(uploadId)
   },
 
   // The stub keeps no bytes — an upload here is only a scan lifecycle — so
   // every download serves the same canned one-page PDF.
-  streamFile: async () =>
-    new Response(PLACEHOLDER_PDF, {
+  streamFile: async (uploadId) => {
+    uploadOrThrow(uploadId)
+    return new Response(PLACEHOLDER_PDF, {
       headers: {
         'content-type': 'application/pdf',
         'content-disposition': 'inline; filename="placeholder.pdf"'
       }
     })
+  }
 }

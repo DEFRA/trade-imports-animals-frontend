@@ -7,14 +7,16 @@ import { copy } from './copy/copy.en.js'
 const CONTACT_ADDRESS_INPUT = 'input[name="contactAddress"]'
 
 const startAtContact = async (page) => {
-  await page.goto('/')
+  await page.goto('/live-animals')
   await page
-    .locator('form[action="/notifications"]')
+    .locator('form[action="/live-animals/notifications"]')
     .getByRole('button')
     .click()
   await page.locator('input[name="importType"][value="live-animals"]').check()
   await page.locator('form').getByRole('button').click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+  await expect(page).toHaveURL((url) =>
+    /^\/live-animals\/notifications\/[^/]+\/origin$/.test(url.pathname)
+  )
 
   await page.goto(
     page.url().replace(/\/origin$/, '/consignment/contact/select')
@@ -56,7 +58,7 @@ test.describe('contact feature', () => {
       page.getByRole('link', { name: copy.addNewAddress })
     ).toHaveAttribute(
       'href',
-      /\/notifications\/[^/]+\/addresses\/create\?for=contactAddress$/
+      /^\/live-animals\/notifications\/[^/]+\/addresses\/create\?for=contactAddress$/
     )
   })
 
@@ -92,7 +94,9 @@ test.describe('contact feature', () => {
     await page.getByRole('radio', { name: selected.name, exact: true }).check()
     await page.locator('form button[type="submit"]').first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+$/.test(url.pathname)
+    )
     await page.goto(contactUrl)
     await expect(
       page.getByRole('radio', { name: selected.name, exact: true })

@@ -1,0 +1,59 @@
+import { copyFor } from '../../../../../../../../shared/copy.js'
+import { measurementText } from '../../../additional-details/measurement-format.js'
+import { copy as cy } from '../../copy/copy.cy.js'
+import { copy as en } from '../../copy/copy.en.js'
+import { readOnlyRow, row } from '../rows/summary-row.js'
+import { grossVolumeUnitText } from '../rows/value-text.js'
+
+const copy = copyFor({ en, cy })
+const cardCopy = copy.cards.additionalDetails
+
+const sum = (lines, field) =>
+  (Array.isArray(lines) ? lines : []).reduce(
+    (total, line) => total + Number(line?.[field] ?? 0),
+    0
+  )
+
+export const additionalDetailsCard = (
+  journeyId,
+  answers,
+  scope,
+  readOnly = false
+) => ({
+  heading: cardCopy.heading,
+  rows: [
+    row({
+      label: cardCopy.rows.totalGrossWeight,
+      value: measurementText(answers.totalGrossWeight),
+      obligationName: 'totalGrossWeight',
+      journeyId,
+      scope,
+      readOnly
+    }),
+    row({
+      label: cardCopy.rows.grossVolume,
+      value: measurementText(answers.grossVolume),
+      obligationName: 'grossVolume',
+      journeyId,
+      scope,
+      readOnly
+    }),
+    row({
+      label: cardCopy.rows.grossVolumeUnit,
+      value: grossVolumeUnitText(answers.grossVolumeUnit),
+      obligationName: 'grossVolumeUnit',
+      journeyId,
+      scope,
+      readOnly
+    }),
+    readOnlyRow(
+      cardCopy.rows.totalNetWeight,
+      sum(answers.commodityLines, 'netWeight')
+    ),
+    readOnlyRow(
+      cardCopy.rows.totalPackages,
+      sum(answers.commodityLines, 'numberOfPackages')
+    )
+  ].filter(Boolean),
+  tables: []
+})

@@ -1,6 +1,7 @@
 import {
   obligationByName as configuredObligationByName,
-  obligations
+  obligations,
+  policy
 } from '../model/obligations/manifest.js'
 import { groupObligations } from './fulfilments/index.js'
 import { journeyFlowOnlyKeys } from '../flow/journey-flow.js'
@@ -20,27 +21,24 @@ export const obligationByName = configuredObligationByName
 
 // Resolve an obligation by its dotted name-path — the `within` chain of names,
 // root to leaf, joined by `.` (`commodityLines`,
-// `commodityLines.animalIdentifiers`).
+// `commodityLines.nestedCollection`).
 export const obligationByPath = (templatePath) =>
   obligations().find(
     (obligation) => templatePathOf(obligation) === templatePath
   )
 
-export const SYSTEM_POPULATED = new Set(['poApprovedReferenceNumber'])
+export const systemPopulated = () => new Set(policy().systemPopulated ?? [])
 
-export const ENFORCED_AT_CONTINUE = new Set([
-  'countryOfOrigin',
-  'commoditySelection'
-])
+export const enforcedAtContinue = () =>
+  new Set(policy().enforcedAtContinue ?? [])
 
 // Collection admission-control cap: a collection's entry count is
 // capped at the value of a sibling count field in the frame that holds it.
 // Enforcement lives on the write path (engine/evaluate/cardinality.js
-// `collectionCapAt`, appendEntryAt rejects at the cap); only
-// the declaration lives here. Keyed by collection name → sibling count field.
-export const MAX_ENTRIES_FROM = {
-  animalIdentifiers: 'numberOfAnimalsQuantity'
-}
+// `collectionCapAt`, appendEntryAt rejects at the cap). The declaration lives
+// on the set manifest's policy.maxEntriesFrom, keyed by collection name →
+// sibling count field.
+export const maxEntriesFrom = () => policy().maxEntriesFrom ?? {}
 
 // ---------------------------------------------------------------------------
 // Answer-key recognition — the single source of truth for which keys may
@@ -65,7 +63,7 @@ export const flowOnlyAnswersFrom = (answers) =>
 // Compatibility key accepted by answer validation but excluded from canonical
 // assembly. Runtime notification projections take the reference from the
 // journey envelope instead.
-const SYSTEM_ANSWER_KEYS = new Set(['referenceNumber'])
+export const systemAnswerKeys = () => new Set(policy().systemAnswerKeys ?? [])
 
 const topLevelKeys = () =>
   new Set([
@@ -73,7 +71,7 @@ const topLevelKeys = () =>
       .filter((obligation) => !obligation.within)
       .map((obligation) => obligation.name),
     ...flowOnlyObligations(),
-    ...SYSTEM_ANSWER_KEYS
+    ...systemAnswerKeys()
   ])
 
 const memberKeysOf = (group) =>

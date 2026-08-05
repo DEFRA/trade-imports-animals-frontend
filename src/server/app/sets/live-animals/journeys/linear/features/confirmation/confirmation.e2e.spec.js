@@ -83,7 +83,9 @@ test.describe('submitted confirmation feature', () => {
       .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
       .check()
     await page.getByRole('button', { name: 'Continue' }).click()
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/confirmation$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+\/confirmation$/.test(url.pathname)
+    )
   })
 
   test('renders the notification reference, all feature copy and no back link', async ({
@@ -102,11 +104,11 @@ test.describe('submitted confirmation feature', () => {
     const dashboardLink = page.getByRole('link', {
       name: copy.viewOrAmend.dashboardLink
     })
-    await expect(dashboardLink).toHaveAttribute('href', '/')
+    await expect(dashboardLink).toHaveAttribute('href', '/live-animals')
 
     await dashboardLink.click()
 
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/live-animals')
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {

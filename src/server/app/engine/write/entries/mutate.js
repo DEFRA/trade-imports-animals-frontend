@@ -4,8 +4,33 @@ import { collectionCapAt } from '../../evaluate/cardinality.js'
 import { isValidIndex } from '../pipeline/predicates.js'
 import { replaceFromNameKeyedMutation } from '../pipeline/canonical.js'
 
+const entryAtIsObject = (list, segment) => {
+  if (!isValidIndex(segment, list)) {
+    return false
+  }
+  const parent = list[segment]
+  return parent !== null && typeof parent === 'object'
+}
+
+const validCollectionParents = (answers, collectionPath) => {
+  let current = answers
+  for (const segment of collectionPath.slice(0, -1)) {
+    const traversable = Array.isArray(current)
+      ? entryAtIsObject(current, segment)
+      : typeof segment !== 'number'
+    if (!traversable) {
+      return false
+    }
+    current = current?.[segment]
+  }
+  return true
+}
+
 export const appendEntryAt = async (request, h, collectionPath, entry) => {
   const current = await get(request, h)
+  if (!validCollectionParents(current.answers, collectionPath)) {
+    return null
+  }
   const list = valueAt(current.answers, collectionPath) ?? []
   const cap = collectionCapAt(current.answers, collectionPath)
   if (cap !== null && list.length >= cap) {
@@ -30,6 +55,9 @@ export const updateEntryAt = async (
   entry
 ) => {
   const current = await get(request, h)
+  if (!validCollectionParents(current.answers, collectionPath)) {
+    return
+  }
   const list = valueAt(current.answers, collectionPath) ?? []
   if (!isValidIndex(index, list)) {
     return
@@ -50,6 +78,9 @@ export const updateEntryAt = async (
 
 export const removeEntryAt = async (request, h, collectionPath, index) => {
   const current = await get(request, h)
+  if (!validCollectionParents(current.answers, collectionPath)) {
+    return
+  }
   const list = valueAt(current.answers, collectionPath) ?? []
   if (!isValidIndex(index, list)) {
     return

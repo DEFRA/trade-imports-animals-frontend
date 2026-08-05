@@ -5,6 +5,7 @@ import { documentUploads } from './stub.js'
 const CLEAN_FILENAME = 'invoice.pdf'
 const VIRUS_FILENAME = 'virus-notes.pdf'
 const NEVER_SCANS_FILENAME = 'never-scans.pdf'
+const JOURNEY_ID = 'GBN-PP-26-0001'
 
 describe('#documentUploads', () => {
   describe('#scanStatus', () => {
@@ -74,19 +75,56 @@ describe('#documentUploads', () => {
       ).toBe('PENDING')
     })
 
-    it('Should settle an unknown uploadId straight from its filename', async () => {
+    it('Should settle on the recorded filename, not a caller-supplied one', async () => {
+      const uploadId = await documentUploads.upload({
+        journeyId: JOURNEY_ID,
+        filename: VIRUS_FILENAME
+      })
+
       expect(
         await documentUploads.scanStatus({
-          uploadId: 'unknown',
-          filename: CLEAN_FILENAME
-        })
-      ).toBe('COMPLETE')
-      expect(
-        await documentUploads.scanStatus({
-          uploadId: 'unknown',
-          filename: VIRUS_FILENAME
+          uploadId,
+          filename: 'clean.pdf',
+          refresh: true
         })
       ).toBe('REJECTED')
+    })
+
+    it('Should settle on the recorded filename when the caller supplies none', async () => {
+      const uploadId = await documentUploads.upload({
+        journeyId: JOURNEY_ID,
+        filename: VIRUS_FILENAME
+      })
+
+      expect(
+        await documentUploads.scanStatus({ uploadId, refresh: true })
+      ).toBe('REJECTED')
+    })
+
+    it('Should reject an uploadId it never issued rather than settling it', async () => {
+      await expect(
+        documentUploads.scanStatus({
+          uploadId: 'forged-id',
+          filename: 'invoice.pdf'
+        })
+      ).rejects.toMatchObject({ status: 404 })
+    })
+  })
+
+  describe('#ownerOf', () => {
+    it('Should report the journey an upload was recorded against', async () => {
+      const uploadId = await documentUploads.upload({
+        journeyId: JOURNEY_ID,
+        filename: 'phyto.pdf'
+      })
+
+      expect(await documentUploads.ownerOf(uploadId)).toBe(JOURNEY_ID)
+    })
+
+    it('Should reject an uploadId it never issued', async () => {
+      await expect(documentUploads.ownerOf('forged-id')).rejects.toMatchObject({
+        status: 404
+      })
     })
   })
 
@@ -99,6 +137,12 @@ describe('#documentUploads', () => {
   })
 
   describe('#streamFile', () => {
+    it('Should reject an uploadId it never issued', async () => {
+      await expect(
+        documentUploads.streamFile('forged-id')
+      ).rejects.toMatchObject({ status: 404 })
+    })
+
     it('Should serve a canned placeholder PDF, as the stub keeps no uploaded bytes', async () => {
       const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
 
@@ -115,14 +159,15 @@ describe('#documentUploads', () => {
   })
 
   describe('#remove', () => {
-    it('Should settle a removed uploadId from its filename, not the lifecycle', async () => {
+    it('Should forget a removed uploadId so it reads as not found', async () => {
       const uploadId = await documentUploads.upload({
         filename: CLEAN_FILENAME
       })
       await documentUploads.remove(uploadId)
-      expect(
-        await documentUploads.scanStatus({ uploadId, filename: CLEAN_FILENAME })
-      ).toBe('COMPLETE')
+
+      await expect(
+        documentUploads.scanStatus({ uploadId, filename: CLEAN_FILENAME })
+      ).rejects.toMatchObject({ status: 404 })
     })
   })
 })

@@ -37,38 +37,57 @@ export function effectiveStatus(obligation, path, state) {
 }
 
 // Each `checkXxx` below implements one `requires` rule shape from
-// `groupInvariantErrors`'s doc comment. Single-error rules return the
-// error object or `null`; multi-error rules (one error per instance)
-// return an array. `groupInvariantErrors` composes and flattens them.
+// `groupInvariantErrors`'s doc comment. Cardinality and per-instance rules
+// return arrays; singleton rules return an error object or `null`.
+// `groupInvariantErrors` composes and flattens them.
 
-const checkMinEntries = (group, records) => {
-  const { minEntries, errorCode } = group.requires
-  if (typeof minEntries !== 'number' || records.length >= minEntries) {
-    return null
+const cardinalityScopes = (group, records, state) => {
+  if (!group.within) {
+    return [{ records }]
   }
-  return {
-    code: 'MIN_ENTRIES',
-    groupId: group.id,
-    groupName: group.name,
-    errorCode,
-    minEntries,
-    actual: records.length
-  }
+  const parents = state.obligations?.[group.within.id]?.records ?? []
+  return parents.map(({ fulfilmentId: instanceId }) => ({
+    instanceId,
+    records: records.filter((record) =>
+      record.fulfilmentId.startsWith(`${instanceId}/`)
+    )
+  }))
 }
 
-const checkMaxEntries = (group, records) => {
+const checkMinEntries = (group, records, state) => {
+  const { minEntries, errorCode } = group.requires
+  if (typeof minEntries !== 'number') {
+    return []
+  }
+  return cardinalityScopes(group, records, state)
+    .filter((scope) => scope.records.length < minEntries)
+    .map(({ instanceId, records: scopedRecords }) => ({
+      code: 'MIN_ENTRIES',
+      groupId: group.id,
+      groupName: group.name,
+      errorCode,
+      minEntries,
+      actual: scopedRecords.length,
+      ...(instanceId === undefined ? {} : { instanceId })
+    }))
+}
+
+const checkMaxEntries = (group, records, state) => {
   const { maxEntries, errorCode } = group.requires
-  if (typeof maxEntries !== 'number' || records.length <= maxEntries) {
-    return null
+  if (typeof maxEntries !== 'number') {
+    return []
   }
-  return {
-    code: 'MAX_ENTRIES',
-    groupId: group.id,
-    groupName: group.name,
-    errorCode: group.requires.maxEntriesErrorCode ?? errorCode,
-    maxEntries,
-    actual: records.length
-  }
+  return cardinalityScopes(group, records, state)
+    .filter((scope) => scope.records.length > maxEntries)
+    .map(({ instanceId, records: scopedRecords }) => ({
+      code: 'MAX_ENTRIES',
+      groupId: group.id,
+      groupName: group.name,
+      errorCode: group.requires.maxEntriesErrorCode ?? errorCode,
+      maxEntries,
+      actual: scopedRecords.length,
+      ...(instanceId === undefined ? {} : { instanceId })
+    }))
 }
 
 const checkAnyOfIds = (group, records, state) => {
@@ -167,10 +186,12 @@ const checkRecordCountEquals = (group, records, state) => {
  * One entry per unsatisfied invariant on the group. A group may carry
  * any combination of five `requires` rule shapes:
  *
- *   - `minEntries` — collection floor. ONE `MIN_ENTRIES` error when
- *     `records.length` is below it.
- *   - `maxEntries` — collection cap. ONE `MAX_ENTRIES` error when
- *     `records.length` exceeds it.
+ *   - `minEntries` — collection floor. ONE `MIN_ENTRIES` error when a
+ *     top-level collection is below it, or one per immediate parent
+ *     instance whose nested collection is below it.
+ *   - `maxEntries` — collection cap. ONE `MAX_ENTRIES` error when a
+ *     top-level collection exceeds it, or one per immediate parent
+ *     instance whose nested collection exceeds it.
  *   - `anyOfIds` — per-instance rule. One error per in-scope instance
  *     where NONE of the required leaves has a non-blank fulfilment;
  *     vacuously satisfied when no leaf is in scope for the instance.
@@ -194,8 +215,8 @@ export function groupInvariantErrors(group, state) {
   }
   const records = groupImpl.records ?? []
   return [
-    checkMinEntries(group, records),
-    checkMaxEntries(group, records),
+    ...checkMinEntries(group, records, state),
+    ...checkMaxEntries(group, records, state),
     ...checkAnyOfIds(group, records, state),
     checkAllOrNothingOfIds(group, state),
     ...checkRecordCountEquals(group, records, state)

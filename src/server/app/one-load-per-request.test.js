@@ -4,7 +4,7 @@ import { get, commit } from './engine/index.js'
 import { configureRecords } from './engine/persistence/records.js'
 import { configureReadyForCheckYourAnswers } from './engine/read.js'
 import {
-  SESSION_COOKIES,
+  knownJourneysCookie,
   configureSession
 } from './engine/persistence/session.js'
 import { records as realRecords } from './services/persistence/records/real/index.js'
@@ -40,7 +40,7 @@ const fulfilmentBody = JSON.stringify({
 
 const buildRequest = () => ({
   params: { journeyId: ref },
-  state: { [SESSION_COOKIES.knownJourneys]: [ref] },
+  state: { [knownJourneysCookie()]: [ref] },
   app: {},
   headers: {}
 })
@@ -89,8 +89,8 @@ describe('one load per request — real records adapter GET count', () => {
       }
       return { status: 404, body: 'Not Found' }
     })
-    configureRecords(realRecords)
-    configureSession(sessionStub)
+    configureRecords('live-animals', realRecords)
+    configureSession('live-animals', sessionStub)
     configureReadyForCheckYourAnswers(() => false)
   })
 

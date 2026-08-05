@@ -1,0 +1,109 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/fieldset/macro.njk" import govukFieldset %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-xl">{{ copy.heading }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukInput({
+      id: "consignorName",
+      name: "consignorName",
+      classes: "govuk-!-width-one-half",
+      label: { text: copy.fields.consignorName.label, classes: "govuk-label--m" },
+      value: values.consignorName,
+      autocomplete: "organization",
+      errorMessage: errors.consignorName and { text: errors.consignorName }
+    }) }}
+
+    {% set consignorHtml %}
+      {{ govukInput({
+        id: "consignorAddressLine1",
+        name: "consignorAddressLine1",
+        classes: "govuk-!-width-one-half",
+        label: { text: copy.fields.consignorAddressLine1.label },
+        value: values.consignorAddressLine1,
+        autocomplete: "address-line1",
+        errorMessage: errors.consignorAddressLine1 and { text: errors.consignorAddressLine1 }
+      }) }}
+      {{ govukInput({
+        id: "consignorAddressLine2",
+        name: "consignorAddressLine2",
+        classes: "govuk-!-width-one-half",
+        label: { text: copy.fields.consignorAddressLine2.label },
+        value: values.consignorAddressLine2,
+        autocomplete: "address-line2",
+        errorMessage: errors.consignorAddressLine2 and { text: errors.consignorAddressLine2 }
+      }) }}
+      {{ govukInput({
+        id: "consignorAddressLine3",
+        name: "consignorAddressLine3",
+        classes: "govuk-!-width-one-half",
+        label: { text: copy.fields.consignorAddressLine3.label },
+        value: values.consignorAddressLine3,
+        autocomplete: "address-line3",
+        errorMessage: errors.consignorAddressLine3 and { text: errors.consignorAddressLine3 }
+      }) }}
+      {{ govukInput({
+        id: "consignorCity",
+        name: "consignorCity",
+        classes: "govuk-!-width-one-half",
+        label: { text: copy.fields.consignorCity.label },
+        value: values.consignorCity,
+        autocomplete: "address-level2",
+        errorMessage: errors.consignorCity and { text: errors.consignorCity }
+      }) }}
+      {{ govukInput({
+        id: "consignorPostcode",
+        name: "consignorPostcode",
+        classes: "govuk-!-width-one-half",
+        label: { text: copy.fields.consignorPostcode.label },
+        value: values.consignorPostcode,
+        autocomplete: "postal-code",
+        errorMessage: errors.consignorPostcode and { text: errors.consignorPostcode }
+      }) }}
+      {{ govukInput({
+        id: "consignorTelephone",
+        name: "consignorTelephone",
+        type: "tel",
+        classes: "govuk-!-width-one-half",
+        label: { text: copy.fields.consignorTelephone.label },
+        value: values.consignorTelephone,
+        autocomplete: "tel",
+        errorMessage: errors.consignorTelephone and { text: errors.consignorTelephone }
+      }) }}
+      {{ govukSelect({
+        id: "consignorCountry",
+        name: "consignorCountry",
+        classes: "govuk-!-width-one-half",
+        label: { text: copy.fields.consignorCountry.label },
+        items: countryItems,
+        errorMessage: errors.consignorCountry and { text: errors.consignorCountry }
+      }) }}
+      {{ govukInput({
+        id: "consignorEmail",
+        name: "consignorEmail",
+        type: "email",
+        classes: "govuk-!-width-one-half",
+        label: { text: copy.fields.consignorEmail.label },
+        value: values.consignorEmail,
+        autocomplete: "email",
+        spellcheck: false,
+        errorMessage: errors.consignorEmail and { text: errors.consignorEmail }
+      }) }}
+    {% endset %}
+
+    {{ govukFieldset({
+      legend: { text: copy.legend, classes: "govuk-fieldset__legend--m" },
+      html: consignorHtml
+    }) }}
+
+    {{ govukButton({ text: copy.continueLabel, preventDoubleClick: true }) }}
+  </form>
+{% endblock %}

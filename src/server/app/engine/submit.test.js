@@ -12,6 +12,8 @@ import { session as sessionStub } from '../services/persistence/session/stub.js'
 import { configureReadyForCheckYourAnswers } from './read.js'
 import { authenticatedActor, stubH, journeyRequest } from './test-support.js'
 
+const SET_ID = 'live-animals'
+
 // submitJourney reads its scope through `makeScope` and gates on that scope's
 // `readyForCheckYourAnswers`. `records.finalise` is the persistence layer.
 // These tests confirm submit finalises the journey by its journeyId when
@@ -22,15 +24,15 @@ const buildRequest = () => journeyRequest(journeyId)
 
 describe('submitJourney — gates on scope readiness, finalises via records', () => {
   beforeEach(async () => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
     await records.clear()
     journeyId = (await records.create()).journeyId
   })
 
   it('Should finalise the CYA-ready journey by its journeyId', async () => {
     const finalise = vi.fn(recordsStub.finalise)
-    configureRecords({ ...recordsStub, finalise })
+    configureRecords(SET_ID, { ...recordsStub, finalise })
     configureReadyForCheckYourAnswers(() => true)
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
 

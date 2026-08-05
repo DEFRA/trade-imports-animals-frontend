@@ -23,6 +23,8 @@ import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
 import { buildSections } from './view-model/index.js'
 
+const SET_ID = 'live-animals'
+
 const getHandler = routes.find((route) => route.method === 'GET').handler
 const postHandler = routes.find((route) => route.method === 'POST').handler
 
@@ -147,9 +149,9 @@ const SUITE = `#${buildSections.name} (check-answers GET)`
 
 const setupCheckAnswersEngine = () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 }

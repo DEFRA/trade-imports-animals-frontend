@@ -4,7 +4,8 @@ import {
   Checkboxes,
   ErrorSummary,
   Radios,
-  SkipLink
+  SkipLink,
+  Tabs
 } from 'govuk-frontend'
 import { DatePicker } from '@ministryofjustice/frontend'
 
@@ -13,4 +14,5 @@ createAll(Checkboxes)
 createAll(ErrorSummary)
 createAll(Radios)
 createAll(SkipLink)
+createAll(Tabs)
 createAll(DatePicker)

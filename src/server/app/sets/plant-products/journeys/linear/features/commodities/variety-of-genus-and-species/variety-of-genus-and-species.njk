@@ -1,0 +1,92 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  <span class="govuk-caption-xl">{{ copy.caption }}</span>
+  <h1 class="govuk-heading-xl">{{ copy.heading }}</h1>
+
+  <form method="post" action="{{ saveAction }}" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {% for card in cards %}
+      <section id="{{ card.anchor }}" class="govuk-!-margin-bottom-7" aria-labelledby="{{ card.anchor }}-heading">
+        <h2 id="{{ card.anchor }}-heading" class="govuk-heading-m">{{ card.heading }}</h2>
+
+        {% if card.rows | length %}
+          <table class="govuk-table">
+            <caption class="govuk-table__caption govuk-visually-hidden">{{ copy.table.caption }} {{ card.context }}</caption>
+            <thead class="govuk-table__head">
+              <tr class="govuk-table__row">
+                <th scope="col" class="govuk-table__header">{{ copy.table.variety }}</th>
+                <th scope="col" class="govuk-table__header">{{ copy.table.class }}</th>
+                <th scope="col" class="govuk-table__header"><span class="govuk-visually-hidden">{{ copy.table.remove }}</span></th>
+              </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+              {% for row in card.rows %}
+                <tr class="govuk-table__row">
+                  <td class="govuk-table__cell">{{ row.variety }}</td>
+                  <td class="govuk-table__cell">{{ row.class }}</td>
+                  <td class="govuk-table__cell">
+                    {{ govukButton({
+                      text: row.accessibleName,
+                      classes: "govuk-button--secondary govuk-!-margin-bottom-0",
+                      name: "action",
+                      value: row.action,
+                      attributes: { "data-prevent-double-click": "true" }
+                    }) }}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
+
+        {{ govukSelect({
+          id: card.names.variety,
+          name: card.names.variety,
+          label: { text: card.varietyAccessibleName, classes: "govuk-label--s" },
+          items: card.varietyItems,
+          errorMessage: card.varietyError
+        }) }}
+
+        {{ govukInput({
+          id: card.names.otherVariety,
+          name: card.names.otherVariety,
+          label: { text: card.otherVarietyAccessibleName, classes: "govuk-label--s" },
+          hint: { text: copy.otherVarietyHint },
+          value: card.values.otherVariety,
+          errorMessage: card.otherVarietyError
+        }) }}
+
+        {% if card.hasClasses %}
+          {{ govukSelect({
+            id: card.names.varietyClass,
+            name: card.names.varietyClass,
+            label: { text: card.classAccessibleName, classes: "govuk-label--s" },
+            items: card.classItems,
+            errorMessage: card.classError
+          }) }}
+        {% endif %}
+
+        {{ govukButton({
+          text: card.addAccessibleName,
+          classes: "govuk-button--secondary",
+          name: "action",
+          value: "add:" ~ card.lineIndex ~ ":" ~ card.speciesIndex
+        }) }}
+      </section>
+    {% endfor %}
+
+    <p class="govuk-body">
+      <a class="govuk-link" href="{{ addSpeciesHref }}">{{ copy.addAnotherSpecies }}</a>
+    </p>
+
+    {{ saveActions(hubHref, null, sharedCopy.saveActions) }}
+  </form>
+{% endblock %}

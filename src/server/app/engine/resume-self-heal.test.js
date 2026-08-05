@@ -10,8 +10,8 @@ import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 
 describe('re-entry self-heal (nothing derived is stored)', () => {
   beforeEach(async () => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
     await records.clear()
     configureReadyForCheckYourAnswers(() => false)
   })

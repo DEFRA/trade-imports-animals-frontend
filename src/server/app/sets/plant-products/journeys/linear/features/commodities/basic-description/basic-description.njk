@@ -1,0 +1,154 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  <span class="govuk-caption-xl">{{ copy.caption }}</span>
+  <h1 class="govuk-heading-xl">{{ copy.heading }}</h1>
+
+  {% for card in cards %}
+    <section class="govuk-summary-card govuk-!-margin-bottom-6" aria-labelledby="{{ card.titleId }}">
+      <div class="govuk-summary-card__title-wrapper">
+        <h2 class="govuk-summary-card__title" id="{{ card.titleId }}">{{ copy.heading }} {{ card.commodity.code }}</h2>
+      </div>
+      <div class="govuk-summary-card__content">
+        <table class="govuk-table">
+          <caption class="govuk-table__caption govuk-visually-hidden">{{ copy.commoditySummary.caption }} {{ card.commodity.code }}</caption>
+          <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+              <th scope="col" class="govuk-table__header">{{ copy.commoditySummary.codeHeader }}</th>
+              <th scope="col" class="govuk-table__header">{{ copy.commoditySummary.descriptionHeader }}</th>
+            </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+            <tr class="govuk-table__row">
+              <td class="govuk-table__cell">{{ card.commodity.code }}</td>
+              <td class="govuk-table__cell">{{ card.commodity.description }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {% if card.added | length %}
+          <table class="govuk-table">
+            <caption class="govuk-table__caption govuk-visually-hidden">{{ copy.added.caption }} {{ card.commodity.code }}</caption>
+            <thead class="govuk-table__head">
+              <tr class="govuk-table__row">
+                <th scope="col" class="govuk-table__header">{{ copy.added.genusHeader }}</th>
+                <th scope="col" class="govuk-table__header">{{ copy.added.eppoHeader }}</th>
+                <th scope="col" class="govuk-table__header"><span class="govuk-visually-hidden">{{ copy.added.removeLabel }}</span></th>
+              </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+              {% for species in card.added %}
+                <tr class="govuk-table__row">
+                  <td class="govuk-table__cell">{{ species.genusAndSpecies }}</td>
+                  <td class="govuk-table__cell">{{ species.eppoCode }}</td>
+                  <td class="govuk-table__cell">
+                    <form method="post" action="{{ card.postAction }}">
+                      <input type="hidden" name="crumb" value="{{ crumb }}" />
+                      {{ govukButton({
+                        text: copy.added.removeLabel,
+                        classes: "govuk-button--secondary govuk-!-margin-bottom-0",
+                        name: "action",
+                        value: "remove:" ~ card.index ~ ":" ~ species.speciesIndex,
+                        attributes: {
+                          "aria-label": copy.added.removeLabel ~ " " ~ species.genusAndSpecies ~ " " ~ copy.added.removeHidden ~ " " ~ card.commodity.code,
+                          "data-prevent-double-click": "true"
+                        }
+                      }) }}
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
+
+        <fieldset id="{{ card.anchor }}" class="govuk-fieldset" tabindex="-1" aria-describedby="{{ card.anchor }}-hint{% if card.error %} {{ card.anchor }}-error{% endif %}">
+          <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">{{ copy.legend }}</legend>
+          <div id="{{ card.anchor }}-hint" class="govuk-hint">{{ copy.hint }}</div>
+          {% if card.error %}
+            <p id="{{ card.anchor }}-error" class="govuk-error-message"><span class="govuk-visually-hidden">{{ sharedCopy.layout.errorTitlePrefix }}</span>{{ card.error }}</p>
+          {% endif %}
+
+          <form method="get" action="{{ card.filterAction }}" class="govuk-!-margin-bottom-4">
+            <input type="hidden" name="line" value="{{ card.index }}" />
+            {% if changeContext %}<input type="hidden" name="change" value="1" />{% endif %}
+            <fieldset class="govuk-fieldset">
+              <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">{{ copy.filter.legend }}</legend>
+              <div class="govuk-grid-row">
+                <div class="govuk-grid-column-one-half">
+                  {{ govukInput({
+                    id: "genus-" ~ card.index,
+                    name: "genus",
+                    label: { text: copy.filter.genusLabel },
+                    value: card.filters.genus
+                  }) }}
+                </div>
+                <div class="govuk-grid-column-one-quarter">
+                  {{ govukInput({
+                    id: "eppoCode-" ~ card.index,
+                    name: "eppoCode",
+                    classes: "govuk-input--width-10",
+                    label: { text: copy.filter.eppoLabel },
+                    value: card.filters.eppoCode
+                  }) }}
+                </div>
+              </div>
+              <div class="govuk-button-group">
+                {{ govukButton({ text: copy.filter.searchLabel }) }}
+                <a class="govuk-link" href="{{ card.clearHref }}">{{ copy.filter.clearLabel }}<span class="govuk-visually-hidden"> {{ card.commodity.code }}</span></a>
+              </div>
+            </fieldset>
+          </form>
+
+          <table class="govuk-table">
+            <caption class="govuk-table__caption govuk-visually-hidden">{{ copy.results.caption }} {{ card.commodity.code }}</caption>
+            <thead class="govuk-table__head">
+              <tr class="govuk-table__row">
+                <th scope="col" class="govuk-table__header">{{ copy.results.genusHeader }}</th>
+                <th scope="col" class="govuk-table__header">{{ copy.results.eppoHeader }}</th>
+                <th scope="col" class="govuk-table__header"><span class="govuk-visually-hidden">{{ copy.results.addLabel }}</span></th>
+              </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+              {% for species in card.candidates %}
+                <tr class="govuk-table__row">
+                  <td class="govuk-table__cell">{{ species.genusAndSpecies }}</td>
+                  <td class="govuk-table__cell">{{ species.eppoCode }}</td>
+                  <td class="govuk-table__cell">
+                    <form method="post" action="{{ card.postAction }}">
+                      <input type="hidden" name="crumb" value="{{ crumb }}" />
+                      {{ govukButton({
+                        text: copy.results.addLabel,
+                        classes: "govuk-button--secondary govuk-!-margin-bottom-0",
+                        name: "action",
+                        value: "add:" ~ card.index ~ ":" ~ species.eppoCode,
+                        attributes: {
+                          "aria-label": copy.results.addLabel ~ " " ~ species.genusAndSpecies ~ " " ~ copy.results.addHidden ~ " " ~ card.commodity.code,
+                          "data-prevent-double-click": "true"
+                        }
+                      }) }}
+                    </form>
+                  </td>
+                </tr>
+              {% else %}
+                <tr class="govuk-table__row">
+                  <td class="govuk-table__cell" colspan="3">{{ copy.results.noResults }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </fieldset>
+      </div>
+    </section>
+  {% endfor %}
+
+  <form method="post" action="{{ saveAction }}" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    {{ saveActions(hubHref, null, sharedCopy.saveActions) }}
+  </form>
+{% endblock %}

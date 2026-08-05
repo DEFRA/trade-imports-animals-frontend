@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import { SYSTEM_POPULATED } from '../../../../../bridge/obligation-source.js'
+import { systemPopulated } from '../../../../../bridge/obligation-source.js'
 import { makeScope } from '../../../../../engine/index.js'
 import { dispatchPages } from '../features/index.js'
 import {
@@ -27,7 +27,7 @@ const answerStates = enumerateAnswerStates()
 
 describe('#proveFlowReachability', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch('live-animals', dispatchPages)
   })
 
   it('Should enumerate a small finite scope space', () => {
@@ -63,7 +63,7 @@ describe('#proveFlowReachability', () => {
     const commodityKeys = [...makeScope(submitReadySeed).inScope].filter(
       (key) =>
         pageOfObligation(key) === 'commodities' &&
-        !SYSTEM_POPULATED.has(
+        !systemPopulated().has(
           key
             .replace(/\[\d+\]/g, '')
             .split('.')
@@ -105,7 +105,7 @@ describe('#proveFlowReachability', () => {
 
   it('Should have teeth — reporting obligations no enumerated state scopes', () => {
     // Freeze the scope to a single obligation: everything else in the
-    // manifest (bar SYSTEM_POPULATED) must be reported as never-scoped.
+    // manifest (bar `systemPopulated()`) must be reported as never-scoped.
     const scopeFor = () => ({ inScope: new Set(['countryOfOrigin']) })
     const neverScoped = proveScopeCompleteness({ answerStates, scopeFor })
     expect(neverScoped).not.toContain('countryOfOrigin')

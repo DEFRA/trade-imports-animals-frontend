@@ -23,15 +23,17 @@ import * as ports from '../../../../../../../services/ports/index.js'
 
 import * as portOfEntry from './port-of-entry.controller.js'
 
+const SET_ID = 'live-animals'
+
 const post = postHandlerOf(portOfEntry)
 
 const oneOfError = 'Select a valid option'
 
 describe('POST port-of-entry — port membership', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -47,9 +49,9 @@ describe('POST port-of-entry — port membership', () => {
 
 describe('POST port-of-entry — means of transport on the merged page', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -88,9 +90,9 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
 
 describe('GET port-of-entry — server-rendered select data (no-JS path)', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -114,9 +116,9 @@ describe('POST port-of-entry — port membership follows the primed list', () =>
   const originalMode = process.env.LIVE_ANIMALS_MODE
 
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

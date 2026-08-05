@@ -55,7 +55,13 @@
 {% block content %}
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
-      {% if recoverableError %}
+      {% if copyIdempotencyError %}
+        {{ govukNotificationBanner({
+          titleText: sharedCopy.copyIdempotencyError.title,
+          text: sharedCopy.copyIdempotencyError.body,
+          role: "alert"
+        }) }}
+      {% elif recoverableError %}
         {{ govukNotificationBanner({
           titleText: sharedCopy.recoverableError.title,
           text: sharedCopy.recoverableError.body,

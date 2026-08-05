@@ -16,11 +16,13 @@ import {
 import { nextRunTarget } from '../src/server/app/sets/live-animals/journeys/linear/flow/run.js'
 import { entryGuardTarget } from '../src/server/app/sets/live-animals/journeys/linear/flow/entry-guard.js'
 import { LAYOUT } from '../src/server/app/sets/live-animals/journeys/linear/config.js'
+import { registerSetMount } from '../src/server/app/shared/set-context.js'
 
-configureObligationSet(liveAnimalsObligationSet)
-configureFulfilmentRegistry(featureEvaluationBindings)
-configureCommodityReference(commodities)
-configureJourneyFlow({
+registerSetMount('live-animals', '/live-animals')
+configureObligationSet('live-animals', liveAnimalsObligationSet)
+configureFulfilmentRegistry('live-animals', featureEvaluationBindings)
+configureCommodityReference('live-animals', commodities)
+configureJourneyFlow('live-animals', {
   sections,
   taskRows,
   rowStatus,

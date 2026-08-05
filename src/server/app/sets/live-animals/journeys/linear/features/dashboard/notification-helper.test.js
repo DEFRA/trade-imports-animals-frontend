@@ -65,17 +65,26 @@ describe('promoted dashboard notification helpers', () => {
     expect(buildPageResultsRangeLabel(page, 20)).toBe(
       'Showing 21 to 40 of 45 Results'
     )
-    expect(buildPaginationLinks(page, '/', 'createdAt,desc')).toEqual({
+    expect(
+      buildPaginationLinks(page, '/live-animals', 'createdAt,desc')
+    ).toEqual({
       previous: {
-        href: '/?sort=createdAt%2Cdesc'
+        href: '/live-animals?sort=createdAt%2Cdesc'
       },
       next: {
-        href: '/?page=3&sort=createdAt%2Cdesc'
+        href: '/live-animals?page=3&sort=createdAt%2Cdesc'
       }
     })
     expect(
-      buildPaginationLinks(page, '/', 'createdAt,desc', {}, 'GBN-AG-26-ABC123')
-        .next.href
-    ).toBe('/?page=3&sort=createdAt%2Cdesc&referenceNumber=GBN-AG-26-ABC123')
+      buildPaginationLinks(
+        page,
+        '/live-animals',
+        'createdAt,desc',
+        {},
+        'GBN-AG-26-ABC123'
+      ).next.href
+    ).toBe(
+      '/live-animals?page=3&sort=createdAt%2Cdesc&referenceNumber=GBN-AG-26-ABC123'
+    )
   })
 })

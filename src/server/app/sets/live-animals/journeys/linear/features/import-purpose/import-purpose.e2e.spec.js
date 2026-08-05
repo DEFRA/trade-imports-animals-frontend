@@ -9,14 +9,16 @@ const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
 const PURPOSE_INPUT_SELECTOR = 'input[name="purposeInInternalMarket"]'
 
 const startAtImportPurpose = async (page) => {
-  await page.goto('/')
+  await page.goto('/live-animals')
   await page
-    .locator('form[action="/notifications"]')
+    .locator('form[action="/live-animals/notifications"]')
     .getByRole('button')
     .click()
   await page.locator('input[name="importType"][value="live-animals"]').check()
   await page.locator('form').getByRole('button').click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+  await expect(page).toHaveURL((url) =>
+    /^\/live-animals\/notifications\/[^/]+\/origin$/.test(url.pathname)
+  )
 
   await page.goto(page.url().replace(/\/origin$/, '/import-reason'))
   await page
@@ -24,9 +26,10 @@ const startAtImportPurpose = async (page) => {
     .check()
   await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
   await page.goto(
-    page
-      .url()
-      .replace(/\/notifications\/([^/]+)$/, '/notifications/$1/import-purpose')
+    new URL(page.url()).pathname.replace(
+      /^\/live-animals\/notifications\/([^/]+)$/,
+      '/live-animals/notifications/$1/import-purpose'
+    )
   )
   await expect(page.getByRole('heading', { name: copy.legend })).toBeVisible()
 }
@@ -102,7 +105,9 @@ test.describe('import-purpose feature', () => {
     await page.getByRole('radio', { name: selected.text, exact: true }).check()
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+$/.test(url.pathname)
+    )
     await page.goto(purposeUrl)
     await expect(
       page.getByRole('radio', { name: selected.text, exact: true })

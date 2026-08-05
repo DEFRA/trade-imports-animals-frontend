@@ -16,6 +16,8 @@ import { leaves, isCopyLeaf } from '../../../../../../../shared/copy-leaves.js'
 import { routes } from '../controller.js'
 import { copy } from './copy.en.js'
 
+const SET_ID = 'live-animals'
+
 describe('#copy', () => {
   it('Should have a non-empty string or copy function at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
@@ -35,9 +37,9 @@ describe('#copy', () => {
 
 describe('GET check-answers — copy reaches the view', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

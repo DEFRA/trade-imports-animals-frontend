@@ -7,14 +7,16 @@ const SUBMIT_BUTTON = 'form button[type="submit"]'
 const CHOOSE_DATE_LABEL = 'Choose date'
 
 const startAtExitDate = async (page) => {
-  await page.goto('/')
+  await page.goto('/live-animals')
   await page
-    .locator('form[action="/notifications"]')
+    .locator('form[action="/live-animals/notifications"]')
     .getByRole('button')
     .click()
   await page.locator('input[name="importType"][value="live-animals"]').check()
   await page.locator('form').getByRole('button').click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+  await expect(page).toHaveURL((url) =>
+    /^\/live-animals\/notifications\/[^/]+\/origin$/.test(url.pathname)
+  )
 
   const reasonUrl = page.url().replace(/\/origin$/, '/import-reason')
   await page.goto(reasonUrl)
@@ -28,7 +30,9 @@ const startAtExitDate = async (page) => {
   await page.getByLabel('Port of exit').selectOption('GB ABD')
   await page.locator(SUBMIT_BUTTON).first().click()
   await page.goto(portUrl.replace(/\/port-of-exit$/, '/exit-date'))
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/exit-date$/)
+  await expect(page).toHaveURL((url) =>
+    /^\/live-animals\/notifications\/[^/]+\/exit-date$/.test(url.pathname)
+  )
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
 
@@ -138,7 +142,9 @@ test.describe('exit-date date picker', () => {
     await expect(page.getByLabel(copy.date.label)).toHaveValue(today.inputValue)
     await page.locator(SUBMIT_BUTTON).first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+$/.test(url.pathname)
+    )
     await page.goto(exitDateUrl)
     await expect(page.getByLabel(copy.date.label)).toHaveValue(today.inputValue)
   })
@@ -176,7 +182,9 @@ test.describe('exit-date feature without JavaScript', () => {
     await page.getByLabel(copy.date.label).fill('27/3/2026')
     await page.locator(SUBMIT_BUTTON).first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+$/.test(url.pathname)
+    )
     await page.goto(`${page.url()}/exit-date`)
     await expect(page.getByLabel(copy.date.label)).toHaveValue('27/3/2026')
     await expect(

@@ -1,0 +1,151 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/breadcrumbs/macro.njk" import govukBreadcrumbs %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
+{% from "govuk/components/tabs/macro.njk" import govukTabs %}
+{% from "govuk/components/tag/macro.njk" import govukTag %}
+
+{% macro codePanel() %}
+  <form method="post" action="{{ formAction }}" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    <fieldset class="govuk-fieldset">
+      <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">{{ copy.codeSearch.legend }}</legend>
+      {{ govukInput({
+        id: "commoditySearchCode",
+        name: "commoditySearchCode",
+        classes: "govuk-input--width-10",
+        inputmode: "numeric",
+        label: { text: copy.codeSearch.label },
+        hint: { text: copy.codeSearch.hint },
+        errorMessage: errors.commoditySearchCode and { text: errors.commoditySearchCode },
+        value: values.commoditySearchCode
+      }) }}
+      {{ govukButton({
+        text: copy.codeSearch.button,
+        name: "action",
+        value: "search-code",
+        attributes: { "data-prevent-double-click": "true" }
+      }) }}
+    </fieldset>
+
+    {% if codeNoResults %}
+      <p class="govuk-body">{{ copy.codeSearch.noResults }}</p>
+    {% endif %}
+
+    <h2 class="govuk-heading-m">{{ copy.tree.heading }}</h2>
+    {% if tree.crumbs | length > 1 %}
+      {{ govukBreadcrumbs({
+        items: tree.crumbs
+      }) }}
+    {% endif %}
+    <table class="govuk-table">
+      <tbody class="govuk-table__body">
+        {% for row in tree.rows %}
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell">
+              {% if row.isLeaf %}
+                <span>{{ row.code }} {{ row.description }}</span>
+              {% else %}
+                <a class="govuk-link" href="{{ row.href }}">{{ row.code }} {{ row.description }}</a>
+              {% endif %}
+            </td>
+            <td class="govuk-table__cell govuk-table__cell--numeric">
+              {% if row.isLeaf %}
+                {{ govukButton({
+                  text: copy.tree.select,
+                  name: "select-code",
+                  value: row.code,
+                  classes: "govuk-button--secondary",
+                  attributes: { "data-prevent-double-click": "true" }
+                }) }}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </form>
+{% endmacro %}
+
+{% macro speciesPanel() %}
+  <form method="post" action="{{ speciesFormAction }}" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    <fieldset class="govuk-fieldset">
+      <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">{{ copy.speciesSearch.legend }}</legend>
+      {{ govukInput({
+        id: "speciesSearchTerm",
+        name: "speciesSearchTerm",
+        label: { text: copy.speciesSearch.label },
+        hint: { text: copy.speciesSearch.hint },
+        errorMessage: errors.speciesSearchTerm and { text: errors.speciesSearchTerm },
+        value: values.speciesSearchTerm
+      }) }}
+      {{ govukButton({
+        text: copy.speciesSearch.button,
+        name: "action",
+        value: "search-species",
+        attributes: { "data-prevent-double-click": "true" }
+      }) }}
+    </fieldset>
+
+    {% if speciesSearched and speciesResults | length == 0 %}
+      <p class="govuk-body">{{ copy.speciesSearch.noResults }}</p>
+    {% endif %}
+    {% if speciesResults | length %}
+      <ul class="govuk-list">
+        {% for result in speciesResults %}
+          <li class="govuk-!-margin-bottom-4">
+            <span class="govuk-body">{{ result.genusAndSpecies }} — {{ result.commodityCode }}</span>
+            {{ govukButton({
+              text: copy.speciesSearch.add,
+              name: "add-species-" + result.speciesId,
+              value: result.commodityCode,
+              classes: "govuk-button--secondary govuk-!-margin-left-2",
+              attributes: { "data-prevent-double-click": "true" }
+            }) }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </form>
+{% endmacro %}
+
+{% block content %}
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-full">
+      {% if recoverableError %}
+        {{ govukNotificationBanner({
+          titleText: sharedCopy.recoverableError.title,
+          text: sharedCopy.recoverableError.body,
+          role: "alert"
+        }) }}
+      {% endif %}
+      {% if journeyStrip %}
+        <div class="app-journey-strip govuk-!-margin-bottom-4">
+          {{ govukTag({ text: journeyStrip.status.text, classes: journeyStrip.status.classes }) }}
+          <span class="govuk-body govuk-!-font-weight-bold">{{ journeyStrip.reference }}</span>
+        </div>
+      {% endif %}
+      {% include "shared/error-summary.njk" %}
+      <span class="govuk-caption-xl">{{ copy.caption }}</span>
+      <h1 class="govuk-heading-xl">{{ copy.heading }}</h1>
+      {{ govukTabs({
+        items: [
+          {
+            id: "commodity-code-search",
+            label: copy.tabs.codeSearch,
+            panel: { html: codePanel() }
+          },
+          {
+            id: "genus-and-species-search",
+            label: copy.tabs.speciesSearch,
+            panel: { html: speciesPanel() }
+          }
+        ]
+      }) }}
+    </div>
+  </div>
+{% endblock %}

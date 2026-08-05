@@ -137,6 +137,74 @@ describe('context and cache', () => {
   })
 })
 
+describe('#context session lookup', () => {
+  // Mirrors @hapi/catbox client.js:105-111 — a non-string key is rejected, it does
+  // not quietly miss. Without this the assertions below would pass either way.
+  const cacheRejectingInvalidKeys = (entries) => ({
+    get: async (key) => {
+      if (typeof key !== 'string') {
+        throw new Error('Invalid key')
+      }
+      return entries[key] ?? null
+    }
+  })
+
+  const requestWithCredentials = (credentials, entries = {}) => ({
+    path: '/',
+    auth: { isAuthenticated: true, credentials },
+    server: { app: { cache: cacheRejectingInvalidKeys(entries) } }
+  })
+
+  beforeEach(() => {
+    vi.resetModules()
+    mockReadFileSync.mockReset()
+    mockReadFileSync.mockReturnValue('{}')
+    mockLoggerError.mockReset()
+  })
+
+  test('reads the session id from Bell credentials, where it sits under profile', async () => {
+    const { context } = await import('./context.js')
+
+    const result = await context(
+      requestWithCredentials(
+        { profile: { sessionId: 'S' }, token: 't' },
+        { S: { displayName: 'A B', email: 'a@b' } }
+      )
+    )
+
+    expect(result.userSession).toEqual({
+      isAuthenticated: true,
+      displayName: 'A B',
+      email: 'a@b'
+    })
+  })
+
+  test('still reads the session id from session credentials, where it sits at the top level', async () => {
+    const { context } = await import('./context.js')
+
+    const result = await context(
+      requestWithCredentials(
+        { sessionId: 'S', email: 'a@b' },
+        { S: { displayName: 'A B', email: 'a@b' } }
+      )
+    )
+
+    expect(result.userSession).toEqual({
+      isAuthenticated: true,
+      displayName: 'A B',
+      email: 'a@b'
+    })
+  })
+
+  test('renders as signed out when an authenticated request carries no session id', async () => {
+    const { context } = await import('./context.js')
+
+    const result = await context(requestWithCredentials({ profile: {} }))
+
+    expect(result.userSession).toEqual({ isAuthenticated: false })
+  })
+})
+
 describe('When auth.enabled is set to false', () => {
   beforeEach(() => {
     vi.resetModules()

@@ -1,16 +1,18 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
-  BASE,
   createPath,
+  createRoutePath,
   hubPath,
-  pagePath
+  pagePath,
+  setBase
 } from '../../../../../shared/paths.js'
 import { store } from '../../../../../engine/store.js'
 import { configureRecords } from '../../../../../engine/persistence/records.js'
 import {
   configureSession,
-  SESSION_COOKIES
+  knownJourneysCookie,
+  openingRunCookie
 } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
@@ -29,7 +31,9 @@ import * as additionalDetails from '../features/additional-details/controller.js
 import * as hub from '../features/hub/controller.js'
 import * as dashboard from '../features/dashboard/controller.js'
 
-const LIVE_ANIMALS_IMPORT_TYPE = 'live-animals'
+const SET_ID = 'live-animals'
+
+const LIVE_ANIMALS_IMPORT_TYPE = SET_ID
 const IMPORT_TYPE_SLUG = 'import-type'
 
 const captureH = () => {
@@ -59,8 +63,8 @@ const buildRequest = (journeyId, { record, ...overrides } = {}) => ({
   query: {},
   headers: {},
   state: {
-    ...(journeyId ? { [SESSION_COOKIES.knownJourneys]: [journeyId] } : {}),
-    ...(record ? { [SESSION_COOKIES.openingRun]: record } : {})
+    ...(journeyId ? { [knownJourneysCookie()]: [journeyId] } : {}),
+    ...(record ? { [openingRunCookie()]: record } : {})
   },
   ...overrides
 })
@@ -95,9 +99,7 @@ const entryFilterOpensTheRun = () => {
       payload: { importType: LIVE_ANIMALS_IMPORT_TYPE }
     })
     expect(h.captured.redirect).toBe(pagePath(journeyId, 'origin'))
-    expect(h.captured.cookies[SESSION_COOKIES.openingRun]).toEqual(
-      active(journeyId)
-    )
+    expect(h.captured.cookies[openingRunCookie()]).toEqual(active(journeyId))
   })
 
   it('Should NOT begin the run for a journey with committed answers — the filter keeps its normal exit', async () => {
@@ -106,7 +108,7 @@ const entryFilterOpensTheRun = () => {
       seed: { countryOfOrigin: 'FR' }
     })
     expect(h.captured.redirect).toBe(hubPath(journeyId))
-    expect(SESSION_COOKIES.openingRun in h.captured.cookies).toBe(false)
+    expect(openingRunCookie() in h.captured.cookies).toBe(false)
   })
 
   it('Should still open the run when the only committed answer is an earlier filter answer (a corrected non-live-animals pick)', async () => {
@@ -115,9 +117,7 @@ const entryFilterOpensTheRun = () => {
       seed: { importType: 'poao' }
     })
     expect(h.captured.redirect).toBe(pagePath(journeyId, 'origin'))
-    expect(h.captured.cookies[SESSION_COOKIES.openingRun]).toEqual(
-      active(journeyId)
-    )
+    expect(h.captured.cookies[openingRunCookie()]).toEqual(active(journeyId))
   })
 
   it('Should keep a run underway when the filter is re-submitted mid-run', async () => {
@@ -134,7 +134,7 @@ const entryFilterOpensTheRun = () => {
       h
     )
     expect(h.captured.redirect).toBe(pagePath(journey.journeyId, 'origin'))
-    expect(h.captured.cookies[SESSION_COOKIES.openingRun]).toEqual(
+    expect(h.captured.cookies[openingRunCookie()]).toEqual(
       active(journey.journeyId)
     )
   })
@@ -146,7 +146,7 @@ const entryFilterOpensTheRun = () => {
     expect(h.captured.redirect).toBe(
       pagePath(journeyId, 'import-type/not-available')
     )
-    expect(SESSION_COOKIES.openingRun in h.captured.cookies).toBe(false)
+    expect(openingRunCookie() in h.captured.cookies).toBe(false)
   })
 }
 
@@ -250,8 +250,8 @@ const saveAndContinueFollowsTheRunSequence = () => {
 
 const deepLinkGuardTests = () => {
   it('Should exempt the dashboard, the filter, the holding page and start', () => {
-    expect(guardedJourneyPath(BASE)).toBe(false)
-    expect(guardedJourneyPath('/')).toBe(false)
+    expect(guardedJourneyPath(setBase())).toBe(false)
+    expect(guardedJourneyPath('/live-animals')).toBe(false)
     expect(guardedJourneyPath(pagePath('j-1', IMPORT_TYPE_SLUG))).toBe(false)
     expect(
       guardedJourneyPath(pagePath('j-1', 'import-type/not-available'))
@@ -341,9 +341,9 @@ const deepLinkGuardTests = () => {
 
 describe('the opening run', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -406,7 +406,7 @@ describe('the opening run', () => {
         }),
         h
       )
-      expect(h.captured.cookies[SESSION_COOKIES.openingRun]).toEqual({
+      expect(h.captured.cookies[openingRunCookie()]).toEqual({
         [journey.journeyId]: RUN_COMPLETE
       })
     })
@@ -420,7 +420,7 @@ describe('the opening run', () => {
         }),
         h
       )
-      expect(SESSION_COOKIES.openingRun in h.captured.cookies).toBe(false)
+      expect(openingRunCookie() in h.captured.cookies).toBe(false)
     })
 
     it('Should fall back to the section flow once the run is complete (change=1 and plain saves unaffected)', async () => {
@@ -461,11 +461,11 @@ describe('the opening run', () => {
   describe('journey entry', () => {
     it('Should send Start a new notification to the entry filter', async () => {
       const startPost = dashboard.routes.find(
-        (route) => route.method === 'POST' && route.path === createPath()
+        (route) => route.method === 'POST' && route.path === createRoutePath()
       ).handler
       const h = captureH()
       await startPost(buildRequest(undefined), h)
-      const journeyId = h.captured.cookies[SESSION_COOKIES.knownJourneys][0]
+      const journeyId = h.captured.cookies[knownJourneysCookie()][0]
       expect(h.captured.redirect).toBe(pagePath(journeyId, IMPORT_TYPE_SLUG))
     })
   })

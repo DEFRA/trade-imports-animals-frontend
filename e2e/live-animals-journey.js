@@ -5,10 +5,12 @@ import { COUNTRY_LABELS } from '../src/server/app/services/countries/stub.js'
 import { PORTS } from '../src/server/app/services/ports/stub.js'
 import { copy as transportCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js'
 
-export const BASE = ''
+export const BASE = '/live-animals'
 
 export const journeyIdFromPage = (page) => {
-  const match = new URL(page.url()).pathname.match(/\/notifications\/([^/]+)/)
+  const match = new URL(page.url()).pathname.match(
+    /^\/live-animals\/notifications\/([^/]+)/
+  )
   if (!match) throw new Error(`No journey id in URL: ${page.url()}`)
   return match[1]
 }
@@ -73,7 +75,7 @@ const meansOfTransportLabel =
   transportCopy.portOfEntry.means.options[values.meansOfTransport]
 
 export const startNotification = async (page) => {
-  await page.goto('/')
+  await page.goto('/live-animals')
   await page.getByRole('button', { name: 'Start a new notification' }).click()
   await expect(
     page.getByRole('heading', { name: 'What are you importing?' })

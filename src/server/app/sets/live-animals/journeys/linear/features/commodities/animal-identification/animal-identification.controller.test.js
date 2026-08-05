@@ -19,6 +19,8 @@ import { dispatchPages } from '../../index.js'
 
 import * as animalIdentification from './animal-identification.controller.js'
 
+const SET_ID = 'live-animals'
+
 const post = postHandlerOf(animalIdentification)
 const getHandler = animalIdentification.routes.find(
   (route) => route.method === 'GET'
@@ -57,9 +59,9 @@ const SUITE =
 
 const setupIdentificationEngine = () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 }
@@ -320,7 +322,16 @@ describe(`${SUITE} — Remove`, () => {
   it('Should reject a remove POST carrying no CSRF crumb and serve no GET route that removes', async () => {
     const server = Hapi.server()
     await server.register(Crumb)
-    server.route(animalIdentification.routes)
+    await server.register(
+      {
+        plugin: {
+          name: 'prefixed-animal-identification-test-routes',
+          register: (realmServer) =>
+            realmServer.route(animalIdentification.routes)
+        }
+      },
+      { routes: { prefix: '/live-animals' } }
+    )
 
     const forged = await server.inject({
       method: 'POST',

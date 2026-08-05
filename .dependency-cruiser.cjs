@@ -28,7 +28,13 @@ module.exports = {
       severity: 'error',
       from: {
         path: `^${APP}/`,
-        pathNot: [`^${APP}/sets/`, `^${APP}/routes\\.js$`, '\\.test\\.js$']
+        pathNot: [
+          `^${APP}/sets/`,
+          `^${APP}/routes\\.js$`,
+          `^${APP}/routes-live-animals\\.js$`,
+          `^${APP}/routes-plant-products\\.js$`,
+          '\\.test\\.js$'
+        ]
       },
       to: { path: `^${APP}/sets/` }
     },
@@ -78,7 +84,7 @@ module.exports = {
       from: { path: `^${APP}/sets/` },
       to: {
         path: [
-          `^${APP}/(routes|obligation-purity)\\.js$`,
+          `^${APP}/(routes|routes-live-animals|routes-plant-products|obligation-purity)\\.js$`,
           `^${APP}/(copy-convention|copy-parity)\\.test\\.js$`
         ]
       }

@@ -1,0 +1,218 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/fieldset/macro.njk" import govukFieldset %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  <span class="govuk-caption-xl">{{ copy.caption }}</span>
+  <h1 class="govuk-heading-xl">{{ copy.heading }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukSelect({
+      id: "borderControlPost",
+      name: "borderControlPost",
+      label: { text: copy.bcp.label, classes: "govuk-label--s" },
+      errorMessage: errors.borderControlPost and { text: errors.borderControlPost },
+      items: bcpItems
+    }) }}
+
+    {% if showPremises %}
+      {{ govukSelect({
+        id: "inspectionPremises",
+        name: "inspectionPremises",
+        label: { text: copy.premises.label, classes: "govuk-label--s" },
+        errorMessage: errors.inspectionPremises and { text: errors.inspectionPremises },
+        items: premisesItems
+      }) }}
+    {% endif %}
+
+    <h2 class="govuk-heading-m">{{ copy.means.heading }}</h2>
+    {{ govukSelect({
+      id: "meansOfTransport",
+      name: "meansOfTransport",
+      label: { text: copy.means.label, classes: "govuk-label--s" },
+      errorMessage: errors.meansOfTransport and { text: errors.meansOfTransport },
+      items: meansItems
+    }) }}
+
+    {{ govukInput({
+      id: "transportIdentification",
+      name: "transportIdentification",
+      label: { text: copy.identification.label, classes: "govuk-label--s" },
+      hint: { text: copy.identification.hint },
+      classes: "govuk-input--width-20",
+      value: values.transportIdentification,
+      errorMessage: errors.transportIdentification and { text: errors.transportIdentification }
+    }) }}
+
+    {% set containersHtml %}
+      {% if rows.length %}
+        <table class="govuk-table">
+          <caption class="govuk-table__caption govuk-visually-hidden">{{ copy.containers.tableCaption }}</caption>
+          <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+              <th scope="col" class="govuk-table__header">{{ copy.containers.table.containerNumber }}</th>
+              <th scope="col" class="govuk-table__header">{{ copy.containers.table.sealNumber }}</th>
+              <th scope="col" class="govuk-table__header">{{ copy.containers.table.officialSeal }}</th>
+              <th scope="col" class="govuk-table__header">{{ copy.containers.table.actions }}</th>
+            </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+            {% for row in rows %}
+              <tr class="govuk-table__row">
+                <td class="govuk-table__cell">{{ row.containerNumber }}</td>
+                <td class="govuk-table__cell">{{ row.sealNumber }}</td>
+                <td class="govuk-table__cell">{{ row.officialSeal }}</td>
+                <td class="govuk-table__cell">
+                  {{ govukButton({
+                    text: copy.containers.remove,
+                    classes: "govuk-button--secondary govuk-!-margin-bottom-0",
+                    name: "action",
+                    value: "remove-container:" ~ row.index
+                  }) }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+
+      {{ govukInput({
+        id: "containerNumber",
+        name: "containerNumber",
+        label: { text: copy.containers.containerNumber.label, classes: "govuk-label--s" },
+        hint: { text: copy.containers.containerNumber.hint },
+        classes: "govuk-input--width-20",
+        value: entry.containerNumber,
+        errorMessage: errors.containerNumber and { text: errors.containerNumber }
+      }) }}
+
+      {{ govukInput({
+        id: "sealNumber",
+        name: "sealNumber",
+        label: { text: copy.containers.sealNumber.label, classes: "govuk-label--s" },
+        hint: { text: copy.containers.sealNumber.hint },
+        classes: "govuk-input--width-20",
+        value: entry.sealNumber,
+        errorMessage: errors.sealNumber and { text: errors.sealNumber }
+      }) }}
+
+      {{ govukCheckboxes({
+        idPrefix: "officialSeal",
+        name: "officialSeal",
+        items: [{
+          value: "true",
+          text: copy.containers.officialSeal.label,
+          hint: { text: copy.containers.officialSeal.hint },
+          checked: entry.officialSeal
+        }]
+      }) }}
+
+      {{ govukButton({
+        text: copy.containers.add,
+        classes: "govuk-button--secondary",
+        name: "action",
+        value: "add-container"
+      }) }}
+    {% endset %}
+
+    {{ govukRadios({
+      idPrefix: "usesContainers",
+      name: "usesContainers",
+      fieldset: {
+        legend: {
+          text: copy.usesContainers.legend,
+          classes: "govuk-fieldset__legend--m"
+        }
+      },
+      hint: { text: copy.usesContainers.hint },
+      errorMessage: errors.usesContainers and { text: errors.usesContainers },
+      items: [
+        {
+          value: "true",
+          text: copy.usesContainers.yes,
+          checked: values.usesContainers === true,
+          conditional: { html: containersHtml }
+        },
+        {
+          value: "false",
+          text: copy.usesContainers.no,
+          checked: values.usesContainers === false
+        }
+      ]
+    }) }}
+
+    {{ govukInput({
+      id: "transportDocumentReference",
+      name: "transportDocumentReference",
+      label: { text: copy.documentReference.label, classes: "govuk-label--s" },
+      hint: { text: copy.documentReference.hint },
+      classes: "govuk-input--width-20",
+      value: values.transportDocumentReference,
+      errorMessage: errors.transportDocumentReference and { text: errors.transportDocumentReference }
+    }) }}
+
+    <h2 class="govuk-heading-m">{{ copy.arrivalDate.heading }}</h2>
+    {{ govukDateInput({
+      id: "arrivalDate",
+      namePrefix: "arrivalDate",
+      fieldset: {
+        legend: {
+          text: copy.arrivalDate.legend,
+          classes: "govuk-fieldset__legend--s"
+        }
+      },
+      hint: { text: copy.arrivalDate.hint },
+      errorMessage: errors["arrivalDate-day"] and { text: errors["arrivalDate-day"] },
+      items: [
+        { name: "day", classes: "govuk-input--width-2", value: values.arrivalDate.day, label: copy.arrivalDate.day },
+        { name: "month", classes: "govuk-input--width-2", value: values.arrivalDate.month, label: copy.arrivalDate.month },
+        { name: "year", classes: "govuk-input--width-4", value: values.arrivalDate.year, label: copy.arrivalDate.year }
+      ]
+    }) }}
+
+    {% call govukFieldset({
+      legend: {
+        text: copy.arrivalTime.legend,
+        classes: "govuk-fieldset__legend--m"
+      },
+      describedBy: "arrivalTime-hint"
+    }) %}
+      <div id="arrivalTime-hint" class="govuk-hint">{{ copy.arrivalTime.hint }}</div>
+      <div class="govuk-date-input">
+        <div class="govuk-date-input__item">
+          {{ govukInput({
+            id: "arrivalTime-hour",
+            name: "arrivalTime-hour",
+            label: { text: copy.arrivalTime.hour },
+            classes: "govuk-input--width-2",
+            inputmode: "numeric",
+            value: values.arrivalTime.hour,
+            errorMessage: errors["arrivalTime-hour"] and { text: errors["arrivalTime-hour"] }
+          }) }}
+        </div>
+        <div class="govuk-date-input__item">
+          {{ govukInput({
+            id: "arrivalTime-minute",
+            name: "arrivalTime-minute",
+            label: { text: copy.arrivalTime.minute },
+            classes: "govuk-input--width-2",
+            inputmode: "numeric",
+            value: values.arrivalTime.minute
+          }) }}
+        </div>
+      </div>
+    {% endcall %}
+
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+  </form>
+{% endblock %}

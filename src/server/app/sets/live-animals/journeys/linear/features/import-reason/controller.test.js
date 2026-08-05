@@ -14,13 +14,15 @@ import { dispatchPages } from '../index.js'
 
 import * as importReason from './controller.js'
 
+const SET_ID = 'live-animals'
+
 const post = postHandlerOf(importReason)
 
 describe('POST import-reason — invalid payload', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

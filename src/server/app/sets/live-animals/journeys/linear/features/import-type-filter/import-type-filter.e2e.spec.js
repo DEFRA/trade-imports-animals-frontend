@@ -7,9 +7,9 @@ const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
 const POAO_RADIO_SELECTOR = 'input[name="importType"][value="poao"]'
 
 const startAtImportType = async (page) => {
-  await page.goto('/')
+  await page.goto('/live-animals')
   await page
-    .locator('form[action="/notifications"]')
+    .locator('form[action="/live-animals/notifications"]')
     .getByRole('button')
     .click()
   await expect(page.getByRole('heading', { name: copy.legend })).toBeVisible()
@@ -60,7 +60,7 @@ test.describe('import-type-filter feature', () => {
   test('back link returns to the dashboard', async ({ page }) => {
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/live-animals')
   })
 
   test('import type validation: when no option is selected, links to and focuses the empty group', async ({
@@ -87,7 +87,9 @@ test.describe('import-type-filter feature', () => {
     await page.locator('input[name="importType"][value="live-animals"]').check()
     await page.locator(SUBMIT_BUTTON_SELECTOR).click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+\/origin$/.test(url.pathname)
+    )
     await page.goto(importTypeUrl)
     await expect(
       page.locator('input[name="importType"][value="live-animals"]')
@@ -109,8 +111,10 @@ test.describe('import-type-filter not-available page', () => {
   }) => {
     await saveUnsupportedType(page)
 
-    await expect(page).toHaveURL(
-      /\/notifications\/[^/]+\/import-type\/not-available$/
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+\/import-type\/not-available$/.test(
+        url.pathname
+      )
     )
     await expect(
       page.getByRole('heading', { name: copy.notAvailable.title })
@@ -127,7 +131,9 @@ test.describe('import-type-filter not-available page', () => {
       .getByRole('link', { name: copy.notAvailable.changeAnswer })
       .click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/import-type$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+\/import-type$/.test(url.pathname)
+    )
     await expect(page.locator(POAO_RADIO_SELECTOR)).toBeChecked()
   })
 
@@ -138,7 +144,9 @@ test.describe('import-type-filter not-available page', () => {
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/import-type$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+\/import-type$/.test(url.pathname)
+    )
   })
 
   test('not-available page has no serious or critical axe violations', async ({

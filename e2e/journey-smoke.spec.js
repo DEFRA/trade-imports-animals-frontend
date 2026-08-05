@@ -10,6 +10,13 @@ import {
 } from './live-animals-journey.js'
 
 test.describe('live-animals journey glue', () => {
+  test('the post-auth root fallback lands on the default set', async ({
+    page
+  }) => {
+    await page.goto('./')
+    await expect(page).toHaveURL('/live-animals')
+  })
+
   test('entry guards and the page-owned opening spine carry a fresh notification to the hub', async ({
     page
   }) => {
@@ -17,14 +24,20 @@ test.describe('live-animals journey glue', () => {
     const save = () =>
       page.getByRole('button', { name: 'Save and continue' }).click()
 
-    await page.goto('/')
+    await page.goto('/live-animals')
     await page.getByRole('button', { name: 'Start a new notification' }).click()
     await expect(heading('What are you importing?')).toBeVisible()
 
     // Until the service filter is passed, journey deep links return to it.
     await page.goto(journeyUrl(page, 'origin'))
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+\/import-type$/.test(url.pathname)
+    )
     await expect(heading('What are you importing?')).toBeVisible()
     await page.goto(journeyUrl(page))
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+\/import-type$/.test(url.pathname)
+    )
     await expect(heading('What are you importing?')).toBeVisible()
 
     await page
@@ -66,6 +79,9 @@ test.describe('live-animals journey glue', () => {
     // Completing the opening run ends run mode, so later task saves return to
     // the ordinary hub resting state.
     await page.goto(journeyUrl(page, 'origin'))
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+\/origin$/.test(url.pathname)
+    )
     await expect(heading('Origin of the import')).toBeVisible()
     await save()
     await expect(heading('Overview')).toBeVisible()
@@ -75,13 +91,16 @@ test.describe('live-animals journey glue', () => {
     page
   }) => {
     test.slow()
-    await page.goto('/')
+    await page.goto('/live-animals')
     await page.getByRole('button', { name: 'Start a new notification' }).click()
     await page
       .getByRole('radio', { name: 'Live animals or germinal products' })
       .check()
     await page.getByRole('button', { name: 'Continue' }).click()
     await page.goto(journeyUrl(page))
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+$/.test(url.pathname)
+    )
     await completeAnswerSections(page)
 
     const [document] = values.documents

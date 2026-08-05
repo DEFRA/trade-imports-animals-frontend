@@ -15,8 +15,8 @@ const buildRequest = () => journeyRequest(journeyId)
 
 describe('#commit', () => {
   beforeEach(async () => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
     await records.clear()
     configureReadyForCheckYourAnswers(() => false)
     journeyId = (await records.create()).journeyId

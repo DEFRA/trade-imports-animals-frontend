@@ -24,7 +24,7 @@ const submitNotification = async (page) => {
 }
 
 const amendAndOpenCancel = async (page, reference) => {
-  await page.goto('/')
+  await page.goto('/live-animals')
   await page
     .getByRole('button', { name: `Amend notification ${reference}` })
     .click()
@@ -73,7 +73,10 @@ test.describe('cancel-amend feature', () => {
     await expect(page.getByRole('button', { name: copy.noLink })).toBeVisible()
     await expect(
       page.getByRole('link', { name: 'Back', exact: true })
-    ).toHaveAttribute('href', /\/notifications\/[^/]+\/notification-view$/)
+    ).toHaveAttribute(
+      'href',
+      /^\/live-animals\/notifications\/[^/]+\/notification-view$/
+    )
   })
 
   test('No keeps the amendment and its changed value', async ({ page }) => {

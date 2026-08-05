@@ -8,7 +8,7 @@ const TRANSPORTERS_SELECT_PAGE = 'transporters-select'
 
 describe('#simulateJourney', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch('live-animals', dispatchPages)
   })
 
   const prereqs = {

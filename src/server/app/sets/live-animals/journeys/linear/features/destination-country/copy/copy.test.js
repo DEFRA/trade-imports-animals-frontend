@@ -12,6 +12,8 @@ import { dispatchPages } from '../../index.js'
 import * as destinationCountry from '../controller.js'
 import { copy } from './copy.en.js'
 
+const SET_ID = 'live-animals'
+
 const leaves = (node, path = []) =>
   typeof node === 'object' && node !== null
     ? Object.entries(node).flatMap(([key, value]) =>
@@ -32,9 +34,9 @@ describe('destination-country copy module', () => {
 
 describe('GET destination-country — copy reaches the view', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

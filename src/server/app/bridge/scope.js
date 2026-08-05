@@ -32,7 +32,7 @@ import { journeyFlowOnlyKeys } from '../flow/journey-flow.js'
 // `anyInstanceAnswered` — look up the obligation named `id` and walk the
 // answers tree over its ancestor-group chain, testing each positional instance
 // with `isAnswered`. The manifest does not carry importType / declaration, but
-// `answered()` is only ever consulted for `ENFORCED_AT_CONTINUE` prerequisites
+// `answered()` is only ever consulted for `enforcedAtContinue()` prerequisites
 // (`countryOfOrigin`, `commoditySelection`, flow/gates.js), which it does — so
 // the check is exact.
 const collectInstanceValues = (answers, chain, name) => {

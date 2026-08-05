@@ -12,6 +12,8 @@ import { dispatchPages } from '../../index.js'
 import * as search from '../search/search.controller.js'
 import { copy } from './copy.en.js'
 
+const SET_ID = 'live-animals'
+
 const BOS_TAURUS = 'Bos taurus'
 
 const leaves = (node, path = []) =>
@@ -63,9 +65,9 @@ describe('#copy', () => {
 
 describe('GET commodities search — copy reaches the view', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

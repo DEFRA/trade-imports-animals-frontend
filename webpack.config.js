@@ -26,6 +26,12 @@ export default {
     documents: {
       import:
         '../server/app/sets/live-animals/journeys/linear/features/documents/client/index.js'
+    },
+    // A set owns its own bundle: sharing one entry would ship live-animals
+    // behaviour into plant-products the first time either side changed.
+    'plant-products-documents': {
+      import:
+        '../server/app/sets/plant-products/journeys/linear/features/documents/client/index.js'
     }
   },
   experiments: {

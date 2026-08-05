@@ -6,7 +6,7 @@ import {
 } from '../../../../../../../engine/persistence/records.js'
 import {
   configureSession,
-  SESSION_COOKIES
+  knownJourneysCookie
 } from '../../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
@@ -46,8 +46,8 @@ describe('#copy', () => {
 
 describe('GET /', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -63,7 +63,7 @@ describe('GET /', () => {
         payload: {},
         params: {},
         query: {},
-        state: { [SESSION_COOKIES.knownJourneys]: [] },
+        state: { [knownJourneysCookie()]: [] },
         headers: {},
         app: {}
       },

@@ -1,0 +1,485 @@
+// R7: paths POSTed by this harness are route shapes, so they stay prefix-free
+// and Hapi supplies the mount. Any asserted emitted link or redirect target is
+// different: it must carry /plant-products. The empty m0 table has neither.
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { configureFulfilmentRegistry } from './bridge/fulfilment-registry.js'
+import {
+  obligationByName,
+  walkObligations
+} from './bridge/obligation-source.js'
+import { configureRecords } from './engine/persistence/records.js'
+import { configureSession } from './engine/persistence/session.js'
+import { store } from './engine/store.js'
+import { driveHandler, postHandlerOf } from './engine/test-support.js'
+import { buildDispatch } from './flow/dispatch.js'
+import { configureJourneyFlow } from './flow/journey-flow.js'
+import { isAnswered } from './lib/answered.js'
+import { configureObligationSet } from './model/obligations/manifest.js'
+import { enterSetContext } from './shared/set-context.js'
+import {
+  LAYOUT,
+  SESSION_COOKIE_NAMES
+} from './sets/plant-products/journeys/linear/config.js'
+import { featureEvaluationBindings } from './sets/plant-products/journeys/linear/features/evaluation.js'
+import { dispatchPages } from './sets/plant-products/journeys/linear/features/index.js'
+import * as additionalDetails from './sets/plant-products/journeys/linear/features/additional-details/controller.js'
+import * as documents from './sets/plant-products/journeys/linear/features/documents/controller.js'
+import * as declaration from './sets/plant-products/journeys/linear/features/declaration/controller.js'
+import * as commodityInputMethod from './sets/plant-products/journeys/linear/features/commodities/commodity-input-method/commodity-input-method.controller.js'
+import * as contact from './sets/plant-products/journeys/linear/features/contact/controller.js'
+import * as nominatedContacts from './sets/plant-products/journeys/linear/features/nominated-contacts/controller.js'
+import * as basicDescription from './sets/plant-products/journeys/linear/features/commodities/basic-description/basic-description.controller.js'
+import * as commoditySearch from './sets/plant-products/journeys/linear/features/commodities/search/search.controller.js'
+import * as varietyOfGenusAndSpecies from './sets/plant-products/journeys/linear/features/commodities/variety-of-genus-and-species/variety-of-genus-and-species.controller.js'
+import * as commoditySummary from './sets/plant-products/journeys/linear/features/commodities/commodity-summary/commodity-summary.controller.js'
+import * as commodityBulkDetails from './sets/plant-products/journeys/linear/features/commodities/commodity-bulk-details/commodity-bulk-details.controller.js'
+import * as importType from './sets/plant-products/journeys/linear/features/import-type/controller.js'
+import * as goodsMovement from './sets/plant-products/journeys/linear/features/goods-movement/controller.js'
+import * as countryOfOrigin from './sets/plant-products/journeys/linear/features/origin/country-of-origin/country-of-origin.controller.js'
+import * as originOfImport from './sets/plant-products/journeys/linear/features/origin/origin-of-import/origin-of-import.controller.js'
+import * as purpose from './sets/plant-products/journeys/linear/features/purpose/controller.js'
+import * as transport from './sets/plant-products/journeys/linear/features/transport/controller.js'
+import * as tradersAddresses from './sets/plant-products/journeys/linear/features/traders/traders-addresses/traders-addresses.controller.js'
+import * as consignorCreate from './sets/plant-products/journeys/linear/features/traders/consignor-create/consignor-create.controller.js'
+import * as consignorPicker from './sets/plant-products/journeys/linear/features/traders/consignor-picker/consignor-picker.controller.js'
+import { entryGuardTarget } from './sets/plant-products/journeys/linear/flow/entry-guard.js'
+import {
+  FLOW_ONLY_KEYS,
+  sections
+} from './sets/plant-products/journeys/linear/flow/flow.js'
+import { nextRunTarget } from './sets/plant-products/journeys/linear/flow/run.js'
+import {
+  rowStatus,
+  taskRows
+} from './sets/plant-products/journeys/linear/flow/task-rows.js'
+import * as plantProductsObligationSet from './sets/plant-products/obligations/index.js'
+import { records as recordsStub } from './sets/plant-products/services/records/stub.js'
+import { session as sessionStub } from './services/persistence/session/stub.js'
+
+const SET_ID = 'plant-products'
+
+const sessionYar = () => {
+  const values = new Map()
+  return {
+    get: (key) => values.get(key),
+    set: (key, value) => values.set(key, value)
+  }
+}
+
+const drive = (handler, options) => {
+  const yar = sessionYar()
+  return driveHandler((request, h) => handler({ ...request, yar }, h), options)
+}
+let committableKeys = []
+let flowOnlyWrites = []
+
+const committedIds = ({ before, after }, seededCollects = []) => [
+  ...committableKeys.filter(
+    (id) => isAnswered(after[id]) && !isAnswered(before[id])
+  ),
+  ...seededCollects.filter((id) => isAnswered(after[id])),
+  ...Object.keys(flowOnlyWrites.at(-1) ?? {})
+]
+
+const committableCollects = (collects) =>
+  collects.filter((id) => {
+    const obligation = obligationByName(id)
+    return (
+      FLOW_ONLY_KEYS.includes(id) ||
+      (obligation && !obligation.renderOnly && !obligation.system)
+    )
+  })
+
+const tomorrow = () => {
+  const date = new Date()
+  date.setUTCDate(date.getUTCDate() + 1)
+  return {
+    day: String(date.getUTCDate()),
+    month: String(date.getUTCMonth() + 1),
+    year: String(date.getUTCFullYear())
+  }
+}
+
+// T-5 standing rule: every collecting plant controller adds a valid POST case.
+const cases = [
+  {
+    id: importType.meta.id,
+    collects: importType.meta.collects,
+    controller: importType,
+    payload: { importType: 'plants' }
+  },
+  {
+    id: countryOfOrigin.meta.id,
+    collects: countryOfOrigin.meta.collects,
+    controller: countryOfOrigin,
+    payload: { countryOfOrigin: 'FR' }
+  },
+  {
+    id: originOfImport.meta.id,
+    collects: originOfImport.meta.collects,
+    controller: originOfImport,
+    payload: { countryOfConsignment: 'IE', internalReference: 'REF-123' },
+    seed: { countryOfOrigin: 'FR' }
+  },
+  {
+    id: purpose.meta.id,
+    collects: purpose.meta.collects,
+    controller: purpose,
+    payload: { reasonForImport: 'INTERNAL_MARKET' }
+  },
+  {
+    id: commodityInputMethod.meta.id,
+    collects: commodityInputMethod.meta.collects,
+    controller: commodityInputMethod,
+    payload: { commodityInputMethod: 'MANUAL' }
+  },
+  {
+    id: commoditySearch.meta.id,
+    collects: commoditySearch.meta.collects,
+    controller: commoditySearch,
+    payload: { action: 'search-code', commoditySearchCode: '06011010' },
+    seed: { commodityInputMethod: 'MANUAL' }
+  },
+  {
+    id: additionalDetails.meta.id,
+    collects: additionalDetails.meta.collects,
+    controller: additionalDetails,
+    payload: {
+      totalGrossWeight: '12',
+      grossVolume: '5',
+      grossVolumeUnit: 'LITRES'
+    },
+    seed: { commodityLines: [{ netWeight: '1' }] }
+  },
+  {
+    id: transport.meta.id,
+    collects: transport.meta.collects,
+    controller: transport,
+    payload: {
+      borderControlPost: 'CONPNT',
+      inspectionPremises: 'INSPBAR1',
+      meansOfTransport: 'ROAD_VEHICLE',
+      transportIdentification: 'AB12 CDE',
+      transportDocumentReference: 'CMR-123',
+      'arrivalDate-day': tomorrow().day,
+      'arrivalDate-month': tomorrow().month,
+      'arrivalDate-year': tomorrow().year,
+      'arrivalTime-hour': '14',
+      'arrivalTime-minute': '50',
+      usesContainers: 'true'
+    },
+    seed: {
+      usesContainers: true,
+      containers: [
+        {
+          containerNumber: 'CONT-1',
+          sealNumber: 'SEAL-1',
+          officialSeal: true
+        }
+      ]
+    },
+    seededCollects: ['usesContainers', 'containers']
+  },
+  {
+    id: goodsMovement.meta.id,
+    collects: goodsMovement.meta.collects,
+    controller: goodsMovement,
+    payload: {
+      commonTransitConvention: 'ADD_MRN_NOW',
+      movementReferenceNumber: '24GB123456789AB012',
+      usingGvms: 'no'
+    }
+  },
+  {
+    id: contact.meta.id,
+    collects: contact.meta.collects,
+    controller: contact,
+    payload: {
+      responsiblePersonName: 'Isabel Irwin',
+      responsiblePersonEmail: 'isabel@example.com',
+      responsiblePersonTelephone: '0123456789'
+    }
+  },
+  {
+    id: nominatedContacts.meta.id,
+    collects: nominatedContacts.meta.collects,
+    controller: nominatedContacts,
+    payload: {
+      action: 'add',
+      contactName: 'Alex Inspector',
+      contactEmail: 'alex@example.com',
+      contactTelephone: '',
+      contactIsAgent: 'true'
+    }
+  },
+  {
+    id: documents.meta.id,
+    collects: documents.meta.collects,
+    controller: documents,
+    payload: {
+      action: 'add',
+      documentType: 'PHYTOSANITARY_CERTIFICATE',
+      documentReference: 'PHYTO-001',
+      issueDate: '4/12/2025',
+      // The upload leaves are members of the group, so an add that carries a
+      // file must still commit only the declared group root.
+      file: {
+        filename: 'phyto.pdf',
+        headers: { 'content-type': 'application/pdf' },
+        payload: { length: 2048 }
+      }
+    }
+  },
+  {
+    id: tradersAddresses.meta.id,
+    collects: tradersAddresses.meta.collects,
+    controller: tradersAddresses,
+    payload: {
+      destinationSameAsConsignee: 'false',
+      destinationName: 'Paris Produce Market',
+      destinationAddressLine1: '10 Rue des Plantes',
+      destinationAddressLine2: 'Building 2',
+      destinationAddressLine3: 'Wholesale Quarter',
+      destinationCity: 'Paris',
+      destinationPostcode: '75001',
+      destinationCountry: 'FR',
+      packerName: 'Packing SARL',
+      packerAddressLine1: '20 Rue du Colis',
+      packerAddressLine2: 'Unit 4',
+      packerAddressLine3: 'Industrial Quarter',
+      packerCity: 'Calais',
+      packerPostcode: '62100',
+      packerCountry: 'FR'
+    }
+  },
+  {
+    id: consignorCreate.meta.id,
+    collects: consignorCreate.meta.collects,
+    controller: consignorCreate,
+    payload: {
+      consignorName: 'Orchard Export SAS',
+      consignorAddressLine1: '12 Rue des Vergers',
+      consignorAddressLine2: 'Building B',
+      consignorAddressLine3: 'Export Quarter',
+      consignorCity: 'Lyon',
+      consignorPostcode: '69001',
+      consignorTelephone: '+33 4 72 00 00 00',
+      consignorCountry: 'FR',
+      consignorEmail: 'exports@example.com'
+    }
+  },
+  {
+    id: declaration.meta.id,
+    collects: declaration.meta.collects,
+    controller: declaration,
+    payload: { declaration: 'confirmed' }
+  }
+]
+
+describe('plant-products controller <-> model commit contract', () => {
+  beforeAll(() => {
+    // The global setup mounts live-animals. Enter plant here so set-keyed reads
+    // cannot silently resolve that setup fixture instead of this composed set.
+    enterSetContext(SET_ID)
+    configureObligationSet(SET_ID, plantProductsObligationSet)
+    configureFulfilmentRegistry(SET_ID, featureEvaluationBindings)
+    configureJourneyFlow(SET_ID, {
+      sections,
+      taskRows,
+      rowStatus,
+      nextRunTarget,
+      flowOnlyKeys: FLOW_ONLY_KEYS,
+      entryGuardTarget,
+      layout: LAYOUT
+    })
+    buildDispatch(SET_ID, dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(
+      SET_ID,
+      {
+        ...sessionStub,
+        setFlowOnlyAnswers: vi.fn(async (...args) => {
+          const values = await sessionStub.setFlowOnlyAnswers(...args)
+          flowOnlyWrites.push(values)
+          return values
+        })
+      },
+      SESSION_COOKIE_NAMES
+    )
+    committableKeys = [...walkObligations()].map((node) => node.obligation.name)
+  })
+
+  beforeEach(async () => {
+    // Vitest may resume each test from its own async context.
+    enterSetContext(SET_ID)
+    await store.clear()
+    flowOnlyWrites = []
+  })
+
+  it.each(cases)(
+    'Should commit exactly the committable collects for $id',
+    async ({ collects, controller, payload, seed, seededCollects }) => {
+      const result = await drive(postHandlerOf(controller), { payload, seed })
+      expect(new Set(committedIds(result, seededCollects))).toEqual(
+        new Set(committableCollects(collects))
+      )
+    }
+  )
+
+  it('Should carry a contract case for every collecting plant controller', () => {
+    const collectingControllerIds = dispatchPages
+      .filter((page) => committableCollects(page.collects ?? []).length > 0)
+      .map(({ id }) => id)
+    expect(cases.map(({ id }) => id)).toEqual(collectingControllerIds)
+  })
+
+  it('Should append fixture-derived species at depth two without claiming a second collects owner', async () => {
+    expect(basicDescription.meta.collects).toEqual([])
+    const result = await drive(postHandlerOf(basicDescription), {
+      seed: {
+        commodityLines: [{ commoditySelection: '06042090' }]
+      },
+      payload: { action: 'add:0:LENCU' }
+    })
+
+    expect(result.after.commodityLines[0].species[0]).toEqual({
+      eppoCode: 'LENCU',
+      genusAndSpecies: 'Lens culinaris',
+      speciesId: '1346687'
+    })
+  })
+
+  it('Should append exactly the bound variety leaves at depth three without claiming a second collects owner', async () => {
+    expect(varietyOfGenusAndSpecies.meta.collects).toEqual([])
+    const result = await drive(postHandlerOf(varietyOfGenusAndSpecies), {
+      seed: {
+        commodityLines: [
+          {
+            commoditySelection: '0808108090',
+            species: [
+              {
+                eppoCode: 'MABSD',
+                genusAndSpecies: 'Malus domestica',
+                speciesId: '1391442'
+              }
+            ]
+          }
+        ]
+      },
+      payload: {
+        action: 'add:0:0',
+        'varietySelect-0-0': '03107EFA-9BCD-1089-565E-B28F73994DEC',
+        'otherVariety-0-0': '',
+        'varietyClass-0-0': 'CLASS_I'
+      }
+    })
+
+    expect(result.after.commodityLines[0].species[0].varieties).toEqual([
+      {
+        variety: '03107EFA-9BCD-1089-565E-B28F73994DEC',
+        varietyClass: 'CLASS_I'
+      }
+    ])
+  })
+
+  it('Should remove a species without claiming ownership or committing fulfilment ids', async () => {
+    expect(commoditySummary.meta.collects).toEqual([])
+    const result = await drive(postHandlerOf(commoditySummary), {
+      seed: {
+        commodityLines: [
+          {
+            commoditySelection: '06042090',
+            species: [
+              {
+                eppoCode: 'CXQDA',
+                genusAndSpecies: '+ Crataegomespilus dardarii'
+              },
+              { eppoCode: 'LENCU', genusAndSpecies: 'Lens culinaris' }
+            ]
+          }
+        ]
+      },
+      payload: { action: 'remove:0:0' }
+    })
+
+    expect(committedIds(result)).toEqual([])
+  })
+
+  it('Should edit all nine measure leaves in place without claiming a second collects owner', async () => {
+    expect(commodityBulkDetails.meta.collects).toEqual([])
+    const result = await drive(postHandlerOf(commodityBulkDetails), {
+      seed: {
+        commodityInputMethod: 'MANUAL',
+        commodityLines: [
+          {
+            commoditySelection: '06011010',
+            species: [
+              {
+                eppoCode: 'ABWBR',
+                genusAndSpecies: 'Albuca bracteata',
+                speciesId: '1325967'
+              }
+            ]
+          }
+        ]
+      },
+      payload: {
+        'numberOfPackages-0': '12',
+        'packageType-0': 'BOX',
+        'quantity-0': '20.5',
+        'quantityType-0': 'PIECES',
+        'netWeight-0': '17.125',
+        'controlledAtmosphereContainer-0': 'true',
+        'finishedOrPropagated-0': 'PROPAGATED',
+        'intendedForFinalUsers-0': 'false',
+        'testAndTrial-0': 'true'
+      }
+    })
+
+    expect(committedIds(result)).toEqual([])
+    expect(result.after.commodityLines).toEqual([
+      {
+        commoditySelection: '06011010',
+        species: [
+          {
+            eppoCode: 'ABWBR',
+            genusAndSpecies: 'Albuca bracteata',
+            speciesId: '1325967'
+          }
+        ],
+        numberOfPackages: 12,
+        packageType: 'BOX',
+        quantity: 20.5,
+        quantityType: 'PIECES',
+        netWeight: 17.125,
+        controlledAtmosphereContainer: true,
+        testAndTrial: true,
+        intendedForFinalUsers: false,
+        finishedOrPropagated: 'PROPAGATED'
+      }
+    ])
+  })
+
+  it('Should write the nine consignor leaves without claiming a second collects owner', async () => {
+    expect(consignorPicker.meta.collects).toEqual([])
+    const result = await drive(postHandlerOf(consignorPicker), {
+      payload: { party: 'example-consignor-01' }
+    })
+
+    expect(result.after).toEqual({
+      consignorName: 'Example Consignor 01 (sample data)',
+      consignorAddressLine1: '1 Example Street',
+      consignorAddressLine2: 'Example Business Park',
+      consignorAddressLine3: 'Example District',
+      consignorCity: 'Example City',
+      consignorPostcode: 'ZZ99 01',
+      consignorTelephone: '01632 960001',
+      consignorCountry: 'FR',
+      consignorEmail: 'consignor01@example.com'
+    })
+    expect(Object.keys(result.after).sort()).toEqual(
+      [...consignorCreate.meta.collects].sort()
+    )
+  })
+})

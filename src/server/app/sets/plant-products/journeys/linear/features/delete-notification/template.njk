@@ -1,0 +1,23 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-xl">{{ heading }}</h1>
+  <p class="govuk-body">{{ copy.body }}</p>
+
+  <form method="post" action="{{ deleteAction }}" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <div class="govuk-button-group">
+      {{ govukButton({
+        text: copy.confirmButton,
+        classes: "govuk-button--warning",
+        preventDoubleClick: true
+      }) }}
+      {{ govukButton({
+        text: copy.noLink,
+        href: noHref,
+        classes: "govuk-button--secondary"
+      }) }}
+    </div>
+  </form>
+{% endblock %}

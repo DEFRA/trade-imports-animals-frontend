@@ -27,6 +27,8 @@ import { dispatchPages } from '../index.js'
 
 import * as declaration from './controller.js'
 
+const SET_ID = 'live-animals'
+
 const post = postHandlerOf(declaration)
 const get = declaration.routes.find((route) => route.method === 'GET').handler
 
@@ -34,9 +36,9 @@ describe('#declaration', () => {
   describe('POST /declaration', () => {
     describe('invalid payload', () => {
       beforeAll(() => {
-        configureRecords(recordsStub)
-        configureSession(sessionStub)
-        buildDispatch(dispatchPages)
+        configureRecords(SET_ID, recordsStub)
+        configureSession(SET_ID, sessionStub)
+        buildDispatch(SET_ID, dispatchPages)
       })
       beforeEach(() => store.clear())
 
@@ -54,9 +56,9 @@ describe('#declaration', () => {
 
     describe('submitted journeys land on the confirmation page', () => {
       beforeAll(() => {
-        configureRecords(recordsStub)
-        configureSession(sessionStub)
-        buildDispatch(dispatchPages)
+        configureRecords(SET_ID, recordsStub)
+        configureSession(SET_ID, sessionStub)
+        buildDispatch(SET_ID, dispatchPages)
       })
       beforeEach(() => store.clear())
 
@@ -100,14 +102,17 @@ describe('#declaration', () => {
 
     describe('recoverable backend failure', () => {
       beforeAll(() => {
-        configureSession(sessionStub)
-        buildDispatch(dispatchPages)
+        configureSession(SET_ID, sessionStub)
+        buildDispatch(SET_ID, dispatchPages)
       })
 
       beforeEach(() => {
         store.clear()
         configureReadyForCheckYourAnswers(() => true)
-        configureRecords({ ...recordsStub, finalise: realRecords.finalise })
+        configureRecords(SET_ID, {
+          ...recordsStub,
+          finalise: realRecords.finalise
+        })
         vi.stubGlobal(
           'fetch',
           vi.fn(async () => ({
@@ -119,7 +124,7 @@ describe('#declaration', () => {
       })
 
       afterEach(() => {
-        configureRecords(recordsStub)
+        configureRecords(SET_ID, recordsStub)
         vi.unstubAllGlobals()
       })
 
@@ -142,9 +147,9 @@ describe('#declaration', () => {
 
   describe('GET /declaration', () => {
     beforeAll(() => {
-      configureRecords(recordsStub)
-      configureSession(sessionStub)
-      buildDispatch(dispatchPages)
+      configureRecords(SET_ID, recordsStub)
+      configureSession(SET_ID, sessionStub)
+      buildDispatch(SET_ID, dispatchPages)
     })
     beforeEach(() => store.clear())
 

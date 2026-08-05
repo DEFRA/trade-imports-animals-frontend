@@ -4,13 +4,16 @@ import {
   copyJourney,
   currentJourney,
   amendJourney,
-  SESSION_COOKIES,
+  knownJourneysCookie,
   softDeleteJourney,
   startJourney
 } from './journey.js'
 import { store } from './store.js'
 import { configureRecords } from './persistence/records.js'
-import { configureSession } from './persistence/session.js'
+import {
+  configureSession,
+  flowOnlyAnswersCookie
+} from './persistence/session.js'
 import { configureReadyForCheckYourAnswers, get } from './read.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
@@ -21,11 +24,14 @@ import {
 } from './test-support.js'
 import { obligationSet } from '../model/obligations/manifest.js'
 
+const SET_ID = 'live-animals'
+const IMPORT_TYPE_LIVE_ANIMALS = 'live-animals'
+
 const { countryOfOrigin } = obligationSet()
 
 const requestFor = (journeyId, knownJourneyIds) => ({
   params: journeyId ? { journeyId } : {},
-  state: { [SESSION_COOKIES.knownJourneys]: knownJourneyIds },
+  state: { [knownJourneysCookie()]: knownJourneyIds },
   headers: {},
   auth: {
     isAuthenticated: true,
@@ -36,8 +42,8 @@ const requestFor = (journeyId, knownJourneyIds) => ({
 
 describe('#currentJourney', () => {
   beforeEach(async () => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
     configureReadyForCheckYourAnswers(() => false)
     await store.clear()
   })
@@ -47,9 +53,7 @@ describe('#currentJourney', () => {
     const journey = await startJourney(requestFor(undefined, []), h)
 
     expect(await store.has(journey.journeyId)).toBe(true)
-    expect(h.cookies[SESSION_COOKIES.knownJourneys]).toEqual([
-      journey.journeyId
-    ])
+    expect(h.cookies[knownJourneysCookie()]).toEqual([journey.journeyId])
   })
 
   it('Should resolve two URL-selected journeys independently in one shared session', async () => {
@@ -79,20 +83,20 @@ describe('#currentJourney', () => {
     await store.seedAnswers(journeyB.journeyId, { countryOfOrigin: 'DE' })
     const known = [journeyA.journeyId, journeyB.journeyId]
     const flowOnly = {
-      [journeyA.journeyId]: { importType: 'live-animals' },
+      [journeyA.journeyId]: { importType: IMPORT_TYPE_LIVE_ANIMALS },
       [journeyB.journeyId]: { importType: 'poao' }
     }
     const requestA = requestFor(journeyA.journeyId, known)
     const requestB = requestFor(journeyB.journeyId, known)
-    requestA.state[SESSION_COOKIES.flowOnlyAnswers] = flowOnly
-    requestB.state[SESSION_COOKIES.flowOnlyAnswers] = flowOnly
+    requestA.state[flowOnlyAnswersCookie()] = flowOnly
+    requestB.state[flowOnlyAnswersCookie()] = flowOnly
 
     const viewA = await get(requestA, recordingH())
     const viewB = await get(requestB, recordingH())
 
     expect(viewA.answers).toMatchObject({
       countryOfOrigin: 'FR',
-      importType: 'live-animals'
+      importType: IMPORT_TYPE_LIVE_ANIMALS
     })
     expect(viewB.answers).toMatchObject({
       countryOfOrigin: 'DE',
@@ -133,9 +137,7 @@ describe('#currentJourney', () => {
     const loaded = await currentJourney(requestFor(journey.journeyId, []), h)
 
     expect(loaded.journeyId).toBe(journey.journeyId)
-    expect(h.cookies[SESSION_COOKIES.knownJourneys]).toContain(
-      journey.journeyId
-    )
+    expect(h.cookies[knownJourneysCookie()]).toContain(journey.journeyId)
   })
 
   it('Should cancel amendment only for a session-known journey', async () => {
@@ -144,7 +146,7 @@ describe('#currentJourney', () => {
       status: 'submitted',
       fulfilment: {}
     }))
-    configureRecords({ ...recordsStub, cancelAmend })
+    configureRecords(SET_ID, { ...recordsStub, cancelAmend })
     const journeyId = 'GBN-AG-26-ABC123'
     const request = requestFor(journeyId, [journeyId])
 
@@ -166,7 +168,7 @@ describe('#currentJourney', () => {
     const journey = await store.create()
     await recordsStub.finalise(journey.journeyId)
     const amend = vi.fn(recordsStub.amend)
-    configureRecords({ ...recordsStub, amend })
+    configureRecords(SET_ID, { ...recordsStub, amend })
     const request = requestFor(journey.journeyId, [journey.journeyId])
 
     const editable = await amendJourney(
@@ -185,7 +187,7 @@ describe('#currentJourney', () => {
       status: 'draft',
       fulfilment: {}
     }))
-    configureRecords({ ...recordsStub, copy })
+    configureRecords(SET_ID, { ...recordsStub, copy })
     const sourceId = 'GBN-AG-26-SOURCE'
     const request = requestFor(sourceId, [sourceId])
     const h = recordingH()
@@ -194,7 +196,7 @@ describe('#currentJourney', () => {
 
     expect(copy).toHaveBeenCalledWith(sourceId, 'copy-key-123')
     expect(copied.status).toBe('draft')
-    expect(h.cookies[SESSION_COOKIES.knownJourneys]).toEqual([
+    expect(h.cookies[knownJourneysCookie()]).toEqual([
       sourceId,
       copied.journeyId
     ])
@@ -216,7 +218,7 @@ describe('#currentJourney', () => {
       status: 'deleted',
       fulfilment: {}
     }))
-    configureRecords({ ...recordsStub, softDelete })
+    configureRecords(SET_ID, { ...recordsStub, softDelete })
     const journeyId = 'GBN-AG-26-DELETE'
     const request = requestFor(journeyId, [journeyId])
 

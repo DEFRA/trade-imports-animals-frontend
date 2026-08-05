@@ -12,13 +12,15 @@ import { dispatchPages } from '../index.js'
 
 import * as confirmation from './controller.js'
 
+const SET_ID = 'live-animals'
+
 const get = confirmation.routes.find((route) => route.method === 'GET').handler
 
 describe('GET /confirmation', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

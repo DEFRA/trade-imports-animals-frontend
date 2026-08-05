@@ -20,9 +20,10 @@ Status and submit-readiness calculations consume those errors.
 ## Value-linked append caps
 
 [`src/server/app/engine/evaluate/cardinality.js`](../engine/evaluate/cardinality.js)
-implements `collectionCapAt(answers, collectionPath)`. The declaration map in
-[`src/server/app/bridge/obligation-source.js`](../bridge/obligation-source.js)
-links a collection name to a sibling count field.
+implements `collectionCapAt(answers, collectionPath)`. The map is declared on
+the set manifest's `policy.maxEntriesFrom` and derived through
+[`src/server/app/bridge/obligation-source.js`](../bridge/obligation-source.js)'s
+`maxEntriesFrom()` accessor. It links a collection name to a sibling count field.
 
 The function returns a non-negative integer cap, or `null` when the collection has
 no declared link, the count is blank or the value is not a non-negative integer.

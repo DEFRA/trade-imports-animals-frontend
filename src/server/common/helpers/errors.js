@@ -32,7 +32,7 @@ export function catchAll(request, h) {
 
   return h
     .view('shared/error', {
-      ...base(errorMessage),
+      ...base(errorMessage, { layout: 'shared/layout.njk' }),
       heading: statusCode,
       message: errorMessage
     })

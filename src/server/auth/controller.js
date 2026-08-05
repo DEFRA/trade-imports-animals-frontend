@@ -27,8 +27,10 @@ export const authController = {
           'Bell auth failed for /auth/sign-in-oidc'
         )
         return h.view(
-          'auth/unauthorised',
-          base('Sorry, we are unable to sign you in')
+          'shared/unauthorised',
+          base('Sorry, we are unable to sign you in', {
+            layout: 'shared/layout.njk'
+          })
         )
       }
 

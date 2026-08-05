@@ -1,8 +1,10 @@
 import { notificationFulfilmentsUrl, notificationsUrl } from '../config.js'
+import { markIdempotencyKeyReuseError } from '../../errors.js'
 import { failed } from '../http/failed.js'
 import { headers } from '../http/headers.js'
 import { put } from '../http/put.js'
 import { marshal } from '../marshal/document.js'
+import { HTTP_STATUS_UNPROCESSABLE_ENTITY } from '../../../../../lib/http-status.js'
 
 // Notification mints the reference number (main's saveOriginOfImport), then the
 // notification-fulfilments aggregate is bootstrapped at that same ref via
@@ -40,7 +42,10 @@ export const copy = async (journeyId, idempotencyKey) => {
     }
   )
   if (!response.ok) {
-    throw failed('copy notification-fulfilments', response)
+    const error = failed('copy notification-fulfilments', response)
+    throw response.status === HTTP_STATUS_UNPROCESSABLE_ENTITY
+      ? markIdempotencyKeyReuseError(error)
+      : error
   }
   return marshal(await response.json())
 }

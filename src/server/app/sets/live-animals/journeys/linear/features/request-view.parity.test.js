@@ -38,6 +38,8 @@ import * as documents from './documents/controller.js'
 import * as hub from './hub/controller.js'
 import * as checkAnswers from './check-answers/controller.js'
 
+const SET_ID = 'live-animals'
+
 const getHandlerOf = (feature) =>
   feature.routes.find((route) => route.method === 'GET').handler
 
@@ -134,9 +136,9 @@ const expectContextParity = async (feature, answers = parityFixture) => {
 
 describe('canonical request-view controller parity', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

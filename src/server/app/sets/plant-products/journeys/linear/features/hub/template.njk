@@ -1,0 +1,23 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/task-list/macro.njk" import govukTaskList %}
+
+{% block journeyContent %}
+  <h1 class="govuk-heading-xl">{{ heading }}</h1>
+  <p class="govuk-body">{{ copy.intro }}</p>
+
+  {% for group in groups %}
+    <h2 class="govuk-heading-m">{{ group.caption }}</h2>
+    {{ govukTaskList({
+      idPrefix: group.id,
+      items: group.items,
+      classes: "app-task-list govuk-!-margin-bottom-8"
+    }) }}
+  {% endfor %}
+
+  {{ govukButton({
+    text: copy.returnToDashboard,
+    href: dashboardHref,
+    classes: "govuk-button--secondary"
+  }) }}
+{% endblock %}

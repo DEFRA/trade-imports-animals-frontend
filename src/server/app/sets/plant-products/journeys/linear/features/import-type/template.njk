@@ -1,0 +1,26 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {{ govukRadios({
+      name: "importType",
+      fieldset: {
+        legend: {
+          html: '<span class="govuk-caption-l">' ~ copy.caption ~ '</span>' ~ copy.legend,
+          isPageHeading: true,
+          classes: "govuk-fieldset__legend--l"
+        }
+      },
+      errorMessage: errors.importType and { text: errors.importType },
+      items: importTypeOptions
+    }) }}
+
+    {{ govukButton({ text: copy.continueButton }) }}
+  </form>
+{% endblock %}

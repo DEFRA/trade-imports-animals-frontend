@@ -41,7 +41,7 @@ const unlocked = {
 }
 
 beforeAll(() => {
-  buildDispatch(dispatchPages)
+  buildDispatch('live-animals', dispatchPages)
 })
 
 describe('#rowStatus — one status per hub task row', () => {

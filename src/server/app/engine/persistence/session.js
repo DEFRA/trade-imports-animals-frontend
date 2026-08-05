@@ -1,34 +1,53 @@
-export const SESSION_COOKIES = {
+import { currentSetId, setKeyed } from '../../shared/set-context.js'
+
+const DEFAULT_COOKIE_NAMES = Object.freeze({
   knownJourneys: 'knownJourneys',
   openingRun: 'openingRun',
   flowOnlyAnswers: 'flowOnlyAnswers'
-}
+})
 
 const unconfigured = () => {
   throw new Error('session not configured — call configureSession() at boot')
 }
 
-let impl = {
+const unconfiguredImpl = Object.freeze({
   knownJourneyIds: unconfigured,
   addKnownJourney: unconfigured,
   openingRun: unconfigured,
   setOpeningRun: unconfigured,
   flowOnlyAnswers: unconfigured,
   setFlowOnlyAnswers: unconfigured
+})
+
+const store = setKeyed('session')
+
+const current = () => {
+  const setId = currentSetId()
+  if (!store.has(setId)) {
+    store.configure(setId, {
+      impl: unconfiguredImpl,
+      cookieNames: DEFAULT_COOKIE_NAMES
+    })
+  }
+  return store.current()
 }
 
-export const configureSession = (newImpl, cookieNames) => {
-  impl = newImpl
-  if (cookieNames) {
-    Object.assign(SESSION_COOKIES, cookieNames)
-  }
+export const configureSession = (setId, impl, cookieNames) => {
+  store.configure(setId, {
+    impl,
+    cookieNames: { ...DEFAULT_COOKIE_NAMES, ...cookieNames }
+  })
 }
+
+export const knownJourneysCookie = () => current().cookieNames.knownJourneys
+export const openingRunCookie = () => current().cookieNames.openingRun
+export const flowOnlyAnswersCookie = () => current().cookieNames.flowOnlyAnswers
 
 export const session = {
-  knownJourneyIds: async (...args) => impl.knownJourneyIds(...args),
-  addKnownJourney: async (...args) => impl.addKnownJourney(...args),
-  openingRun: async (...args) => impl.openingRun(...args),
-  setOpeningRun: async (...args) => impl.setOpeningRun(...args),
-  flowOnlyAnswers: async (...args) => impl.flowOnlyAnswers(...args),
-  setFlowOnlyAnswers: async (...args) => impl.setFlowOnlyAnswers(...args)
+  knownJourneyIds: (...args) => current().impl.knownJourneyIds(...args),
+  addKnownJourney: (...args) => current().impl.addKnownJourney(...args),
+  openingRun: (...args) => current().impl.openingRun(...args),
+  setOpeningRun: (...args) => current().impl.setOpeningRun(...args),
+  flowOnlyAnswers: (...args) => current().impl.flowOnlyAnswers(...args),
+  setFlowOnlyAnswers: (...args) => current().impl.setFlowOnlyAnswers(...args)
 }

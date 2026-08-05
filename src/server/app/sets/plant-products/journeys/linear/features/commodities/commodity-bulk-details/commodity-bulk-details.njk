@@ -1,0 +1,107 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
+{% from "govuk/components/fieldset/macro.njk" import govukFieldset %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{% from "shared/save-actions.njk" import saveActions %}
+{% from "plant-products/journeys/linear/features/commodities/commodity-bulk-details/_line-fields.njk" import lineFields %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  <span class="govuk-caption-xl">{{ copy.caption }}</span>
+  <h1 class="govuk-heading-xl">{{ copy.heading }}</h1>
+
+  <form method="post" action="{{ saveAction }}" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    <h2 class="govuk-heading-l">{{ copy.bulk.heading }}</h2>
+    {% set selectedItems = [{ value: "all", text: copy.bulk.selectAll }] %}
+    {% for line in lines %}
+      {% set ignored = selectedItems.push({ value: line.index, text: line.context }) %}
+    {% endfor %}
+    {{ govukCheckboxes({
+      idPrefix: "selectedLines",
+      name: "selectedLines",
+      fieldset: { legend: { text: copy.bulk.selectLines, classes: "govuk-fieldset__legend--m" } },
+      errorMessage: errors.selectedLines and { text: errors.selectedLines },
+      items: selectedItems
+    }) }}
+
+    {{ govukInput({
+      id: bulk.fields.numberOfPackages,
+      name: bulk.fields.numberOfPackages,
+      label: { text: copy.fields.numberOfPackages.label },
+      classes: "govuk-input--width-5",
+      inputmode: "numeric",
+      value: bulk.values[bulk.fields.numberOfPackages],
+      errorMessage: bulk.errors.numberOfPackages and { text: bulk.errors.numberOfPackages }
+    }) }}
+    {{ govukSelect({
+      id: bulk.fields.packageType,
+      name: bulk.fields.packageType,
+      label: { text: copy.fields.packageType.label },
+      items: bulk.packageTypeItems,
+      errorMessage: bulk.errors.packageType and { text: bulk.errors.packageType }
+    }) }}
+    {{ govukInput({
+      id: bulk.fields.quantity,
+      name: bulk.fields.quantity,
+      label: { text: copy.fields.quantity.label },
+      classes: "govuk-input--width-10",
+      inputmode: "decimal",
+      value: bulk.values[bulk.fields.quantity],
+      errorMessage: bulk.errors.quantity and { text: bulk.errors.quantity }
+    }) }}
+    {{ govukSelect({
+      id: bulk.fields.quantityType,
+      name: bulk.fields.quantityType,
+      label: { text: copy.fields.quantityType.label },
+      items: bulk.quantityTypeItems,
+      errorMessage: bulk.errors.quantityType and { text: bulk.errors.quantityType }
+    }) }}
+    {{ govukInput({
+      id: bulk.fields.netWeight,
+      name: bulk.fields.netWeight,
+      label: { text: copy.fields.netWeight.label },
+      classes: "govuk-input--width-10",
+      inputmode: "decimal",
+      value: bulk.values[bulk.fields.netWeight],
+      errorMessage: bulk.errors.netWeight and { text: bulk.errors.netWeight }
+    }) }}
+    {{ govukRadios({
+      idPrefix: bulk.fields.controlledAtmosphereContainer,
+      name: bulk.fields.controlledAtmosphereContainer,
+      fieldset: { legend: { text: copy.fields.controlledAtmosphereContainer.legend } },
+      errorMessage: bulk.errors.controlledAtmosphereContainer and { text: bulk.errors.controlledAtmosphereContainer },
+      items: [
+        { value: "true", text: copy.fields.controlledAtmosphereContainer.options.yes, checked: bulk.values[bulk.fields.controlledAtmosphereContainer] === "true" },
+        { value: "false", text: copy.fields.controlledAtmosphereContainer.options.no, checked: bulk.values[bulk.fields.controlledAtmosphereContainer] === "false" }
+      ]
+    }) }}
+
+    <div class="govuk-button-group">
+      {{ govukButton({ text: copy.bulk.apply, name: "action", value: "apply" }) }}
+      {{ govukButton({ text: copy.bulk.clear, classes: "govuk-button--secondary", name: "action", value: "clear" }) }}
+    </div>
+
+    {% for line in lines %}
+      {% call govukFieldset({
+        legend: { text: line.context, classes: "govuk-fieldset__legend--l" }
+      }) %}
+        {{ lineFields(line, copy) }}
+      {% endcall %}
+    {% endfor %}
+
+    <h2 class="govuk-heading-m">{{ copy.totals.consignmentHeading }}</h2>
+    {{ govukSummaryList({ rows: [
+      { key: { text: copy.totals.packages }, value: { text: totals.packages } },
+      { key: { text: copy.totals.netWeight }, value: { text: totals.netWeight } }
+    ] }) }}
+
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+  </form>
+{% endblock %}

@@ -1,8 +1,12 @@
 import { getTraceId } from '@defra/hapi-tracing'
+import { createLogger } from '../../../common/helpers/logging/logger.js'
+
+const logger = createLogger()
 
 const backendBaseUrl =
   process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ?? 'http://localhost:8085'
 const tracingHeader = process.env.TRACING_HEADER ?? 'x-cdp-request-id'
+const HTTP_STATUS_NOT_FOUND = 404
 
 const failed = (action, response) => {
   const error = new Error(
@@ -66,34 +70,66 @@ const uploadFile = async (uploadId, { filename, contentType, bytes }) => {
   }
 }
 
+const deleteUpload = async (uploadId) => {
+  const response = await fetch(
+    `${backendBaseUrl}/document-uploads/${uploadId}`,
+    {
+      method: 'DELETE',
+      headers: traceHeaders()
+    }
+  )
+  if (response.status === HTTP_STATUS_NOT_FOUND) {
+    return
+  }
+  if (!response.ok) {
+    throw failed('delete document upload', response)
+  }
+}
+
+// A failed file leg leaves an initiated session with nothing in it. Deleting it
+// is best-effort: a cleanup failure must never replace the error the user needs.
+const discardUpload = async (uploadId) => {
+  try {
+    await deleteUpload(uploadId)
+  } catch (err) {
+    logger.warn(
+      { err, uploadId },
+      'Failed to discard orphaned document upload session'
+    )
+  }
+}
+
+const readSession = async (uploadId) => {
+  const response = await fetch(
+    `${backendBaseUrl}/document-uploads/${uploadId}`,
+    { method: 'GET', headers: traceHeaders() }
+  )
+  if (!response.ok) {
+    throw failed('get document upload status', response)
+  }
+  return response.json()
+}
+
 export const documentUploads = {
   upload: async (details) => {
     const { uploadId } = await initiate(details)
-    await uploadFile(uploadId, details)
+    try {
+      await uploadFile(uploadId, details)
+    } catch (error) {
+      await discardUpload(uploadId)
+      throw error
+    }
     return uploadId
   },
 
-  scanStatus: async ({ uploadId }) => {
-    const response = await fetch(
-      `${backendBaseUrl}/document-uploads/${uploadId}`,
-      { method: 'GET', headers: traceHeaders() }
-    )
-    if (!response.ok) {
-      throw failed('get document upload status', response)
-    }
-    const { scanStatus } = await response.json()
-    return scanStatus
-  },
+  scanStatus: async ({ uploadId }) => (await readSession(uploadId)).scanStatus,
 
-  remove: async (uploadId) => {
-    const response = await fetch(
-      `${backendBaseUrl}/document-uploads/${uploadId}`,
-      { method: 'DELETE', headers: traceHeaders() }
-    )
-    if (!response.ok) {
-      throw failed('delete document upload', response)
-    }
-  },
+  // The notification a session belongs to, read from the same session the scan
+  // status comes from — a retry can prove ownership without a second endpoint.
+  ownerOf: async (uploadId) =>
+    (await readSession(uploadId)).notificationReferenceNumber,
+
+  remove: deleteUpload,
 
   streamFile: async (uploadId) => {
     const response = await fetch(

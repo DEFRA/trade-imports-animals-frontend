@@ -34,6 +34,10 @@ the `configure*` seams.
 - [Testing the platform](testing.md)
 - [Cross-repository test ownership](test-ownership.md)
 
+## Platform recipes
+
+- [Add a set](add-a-set.md)
+
 ## Set guides
 
 - [Live-animals set and linear journey](../sets/live-animals/docs/README.md)

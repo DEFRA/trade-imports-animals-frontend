@@ -153,7 +153,9 @@ test.describe('additional-details feature — persistence and accessibility', ()
       .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
       .click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+$/.test(url.pathname)
+    )
     await page.goto(detailsUrl)
     await expect(
       page.getByRole('radio', { name: 'Slaughter', exact: true })

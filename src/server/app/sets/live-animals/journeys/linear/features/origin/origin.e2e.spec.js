@@ -11,15 +11,17 @@ const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
 const INTERNAL_REFERENCE_MAX_LENGTH = 58
 
 const startAtOrigin = async (page) => {
-  await page.goto('/')
+  await page.goto('/live-animals')
   await page
-    .locator('form[action="/notifications"]')
+    .locator('form[action="/live-animals/notifications"]')
     .getByRole('button')
     .click()
   await page.locator('input[name="importType"][value="live-animals"]').check()
   await page.locator('form').getByRole('button').click()
 
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+  await expect(page).toHaveURL((url) =>
+    /^\/live-animals\/notifications\/[^/]+\/origin$/.test(url.pathname)
+  )
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
 
@@ -91,7 +93,9 @@ test.describe('origin feature', () => {
     await page.getByLabel(copy.internalReference.label).fill('Imports456_GB')
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/commodities$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+\/commodities$/.test(url.pathname)
+    )
 
     await page.goto(originUrl)
     await expect(page.getByLabel(copy.country.label)).toHaveValue(france.code)

@@ -26,7 +26,7 @@ const lineSeed = {
 
 describe('#nextRunTarget — the opening run sequence', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch('live-animals', dispatchPages)
   })
 
   it('Should send the entry filter to origin on a blank journey', () => {

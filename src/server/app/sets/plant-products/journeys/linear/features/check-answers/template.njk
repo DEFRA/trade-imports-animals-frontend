@@ -1,0 +1,85 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+{% from "govuk/components/table/macro.njk" import govukTable %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
+{% from "shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% if amendmentCancelled %}
+    {{ govukNotificationBanner({
+      type: "success",
+      titleText: cancelAmendCopy.successTitle,
+      text: cancelAmendCopy.successBody,
+      role: "alert"
+    }) }}
+  {% endif %}
+
+  <h1 class="govuk-heading-xl">{{ heading }}</h1>
+
+  {% if readOnly and (copyAction or deleteHref) %}
+    <div class="govuk-button-group">
+      {% if copyAction %}
+        <form method="post" action="{{ copyAction.href }}" class="app-form-inline">
+          <input type="hidden" name="crumb" value="{{ crumb }}" />
+          <input type="hidden" name="idempotencyKey" value="{{ copyAction.idempotencyKey }}" />
+          <input type="hidden" name="copyOrigin" value="notification-view" />
+          {{ govukButton({
+            text: sharedCopy.notificationActions.copy.text,
+            classes: "govuk-button--secondary"
+          }) }}
+        </form>
+      {% endif %}
+      {% if deleteHref %}
+        {{ govukButton({
+          text: sharedCopy.notificationActions.delete.text,
+          href: deleteHref,
+          classes: "govuk-button--warning"
+        }) }}
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if cancelAmendHref %}
+    <p class="govuk-body">
+      <a class="govuk-link" href="{{ cancelAmendHref }}">{{ cancelAmendCopy.link }}</a>
+    </p>
+  {% endif %}
+
+  {% for section in sections %}
+    <section>
+      <h2 class="govuk-heading-m">{{ section.heading }}</h2>
+
+      {% if section.rows.length %}
+        {{ govukSummaryList({ rows: section.rows }) }}
+      {% endif %}
+
+      {% if section.empty %}
+        <p class="govuk-body">{{ section.empty }}</p>
+      {% endif %}
+
+      {% for table in section.tables %}
+        {{ govukTable({
+          caption: table.caption,
+          captionClasses: table.captionClasses,
+          firstCellIsHeader: table.firstCellIsHeader,
+          head: table.head,
+          rows: table.rows
+        }) }}
+      {% endfor %}
+
+      {% if section.action %}
+        <p class="govuk-body">
+          <a class="govuk-link" href="{{ section.action.href }}">{{ section.action.text }}<span class="govuk-visually-hidden"> {{ section.action.visuallyHiddenText }}</span></a>
+        </p>
+      {% endif %}
+    </section>
+  {% endfor %}
+
+  {% if not readOnly %}
+    <form method="post" novalidate>
+      <input type="hidden" name="crumb" value="{{ crumb }}" />
+      {{ saveActions(hubHref, { text: copy.continue }, sharedCopy.saveActions) }}
+    </form>
+  {% endif %}
+{% endblock %}

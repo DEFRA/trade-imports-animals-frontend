@@ -1,5 +1,5 @@
 import { store } from './store.js'
-import { SESSION_COOKIES } from './journey.js'
+import { knownJourneysCookie } from './journey.js'
 
 export const authenticatedCredentials = Object.freeze({
   contactId: 2100010101,
@@ -56,7 +56,7 @@ export const journeyRequest = (journeyId, overrides = {}) => ({
   ...overrides,
   params: { journeyId, ...overrides.params },
   state: {
-    [SESSION_COOKIES.knownJourneys]: [journeyId],
+    [knownJourneysCookie()]: [journeyId],
     ...overrides.state
   }
 })
@@ -79,9 +79,9 @@ export const recordingH = () => {
 
 export const driveHandler = async (
   handler,
-  { payload = {}, seed = {}, params = {}, query = {} } = {}
+  { payload = {}, seed = {}, params = {}, query = {}, journeyId } = {}
 ) => {
-  const journey = await store.create()
+  const journey = journeyId ? { journeyId } : await store.create()
   await store.seedAnswers(journey.journeyId, seed)
   const h = stubH()
   const response = await handler(

@@ -7,14 +7,16 @@ import { copy } from './copy/copy.en.js'
 const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
 
 const startAtPortOfExit = async (page) => {
-  await page.goto('/')
+  await page.goto('/live-animals')
   await page
-    .locator('form[action="/notifications"]')
+    .locator('form[action="/live-animals/notifications"]')
     .getByRole('button')
     .click()
   await page.locator('input[name="importType"][value="live-animals"]').check()
   await page.locator('form').getByRole('button').click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+  await expect(page).toHaveURL((url) =>
+    /^\/live-animals\/notifications\/[^/]+\/origin$/.test(url.pathname)
+  )
 
   const reasonUrl = page.url().replace(/\/origin$/, '/import-reason')
   await page.goto(reasonUrl)
@@ -80,7 +82,9 @@ test.describe('port-of-exit feature', () => {
     await page.getByLabel(copy.port.label).selectOption(selected.code)
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    await expect(page).toHaveURL((url) =>
+      /^\/live-animals\/notifications\/[^/]+$/.test(url.pathname)
+    )
     await page.goto(portUrl)
     await expect(page.getByLabel(copy.port.label)).toHaveValue(selected.code)
   })

@@ -22,6 +22,8 @@ import { routes as filterRoutes } from './import-type-filter/controller.js'
 import { routes as originRoutes } from './origin/controller.js'
 import { routes as importReasonRoutes } from './import-reason/controller.js'
 
+const SET_ID = 'live-animals'
+
 const JOURNEY_REFERENCE = 'GBN-AG-26-ABC123'
 const DRAFT_TAG = { text: 'Draft', classes: 'govuk-tag--blue' }
 
@@ -40,9 +42,9 @@ const renderWith = async (handler, seed) => {
 
 describe('journey reference strip', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

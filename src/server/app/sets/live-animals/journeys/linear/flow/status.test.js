@@ -223,7 +223,7 @@ const cases = {
 
 describe('statusOf — the presentation rollup', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch('live-animals', dispatchPages)
   })
 
   describe.each(Object.entries(cases))(

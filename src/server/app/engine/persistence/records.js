@@ -1,40 +1,26 @@
+import { setKeyed } from '../../shared/set-context.js'
+
 export const DRAFT = 'draft'
 export const SUBMITTED = 'submitted'
 export const AMEND = 'amend'
 export const DELETED = 'deleted'
 
-const unconfigured = () => {
-  throw new Error('records not configured — call configureRecords() at boot')
-}
+const store = setKeyed('records')
 
-let impl = {
-  create: unconfigured,
-  load: unconfigured,
-  list: unconfigured,
-  has: unconfigured,
-  replaceFulfilment: unconfigured,
-  finalise: unconfigured,
-  amend: unconfigured,
-  cancelAmend: unconfigured,
-  copy: unconfigured,
-  softDelete: unconfigured,
-  clear: unconfigured
-}
-
-export const configureRecords = (newImpl) => {
-  impl = newImpl
+export const configureRecords = (setId, impl) => {
+  store.configure(setId, impl)
 }
 
 export const records = {
-  create: async (...args) => impl.create(...args),
-  load: async (...args) => impl.load(...args),
-  list: async (...args) => impl.list(...args),
-  has: async (...args) => impl.has(...args),
-  replaceFulfilment: async (...args) => impl.replaceFulfilment(...args),
-  finalise: async (...args) => impl.finalise(...args),
-  amend: async (...args) => impl.amend(...args),
-  cancelAmend: async (...args) => impl.cancelAmend(...args),
-  copy: async (...args) => impl.copy(...args),
-  softDelete: async (...args) => impl.softDelete(...args),
-  clear: async (...args) => impl.clear(...args)
+  create: (...args) => store.current().create(...args),
+  load: (...args) => store.current().load(...args),
+  list: (...args) => store.current().list(...args),
+  has: (...args) => store.current().has(...args),
+  replaceFulfilment: (...args) => store.current().replaceFulfilment(...args),
+  finalise: (...args) => store.current().finalise(...args),
+  amend: (...args) => store.current().amend(...args),
+  cancelAmend: (...args) => store.current().cancelAmend(...args),
+  copy: (...args) => store.current().copy(...args),
+  softDelete: (...args) => store.current().softDelete(...args),
+  clear: (...args) => store.current().clear(...args)
 }

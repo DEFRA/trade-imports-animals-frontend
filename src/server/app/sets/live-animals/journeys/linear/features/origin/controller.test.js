@@ -23,6 +23,8 @@ import * as countries from '../../../../../../services/countries/index.js'
 
 import * as origin from './controller.js'
 
+const SET_ID = 'live-animals'
+
 const post = postHandlerOf(origin)
 
 const COUNTRY_REQUIRED_MESSAGE =
@@ -30,9 +32,9 @@ const COUNTRY_REQUIRED_MESSAGE =
 
 describe('POST /origin — invalid payload', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -83,9 +85,9 @@ describe('POST /origin — invalid payload', () => {
 
 describe('POST /origin — valid internal reference', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -105,9 +107,9 @@ describe('POST /origin — valid internal reference', () => {
 
 describe('GET /origin — server-rendered select data (no-JS path)', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -125,9 +127,9 @@ describe('POST /origin — country membership follows the primed list', () => {
   const originalMode = process.env.LIVE_ANIMALS_MODE
 
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

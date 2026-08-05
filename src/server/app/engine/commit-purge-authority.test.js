@@ -42,8 +42,8 @@ const wipeOf = (answers) => {
 
 describe('#commit — evaluator-authoritative purge', () => {
   beforeEach(async () => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
     await records.clear()
     configureReadyForCheckYourAnswers(() => false)
     journeyId = (await records.create()).journeyId

@@ -1,0 +1,155 @@
+import Hapi from '@hapi/hapi'
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest'
+
+import {
+  driveHandler,
+  journeyRequest,
+  postHandlerOf,
+  stubH
+} from '../../../../../../engine/test-support.js'
+import * as navigation from '../../../../../../flow/navigation.js'
+import { plantProducts } from '../../../../../../routes-plant-products.js'
+import {
+  enterSetContext,
+  withSetContext
+} from '../../../../../../shared/set-context.js'
+import { records } from '../../../../services/records/stub.js'
+import * as checkAnswers from './controller.js'
+import { copy } from './copy/copy.en.js'
+
+const SET_ID = 'plant-products'
+
+const get = checkAnswers.routes.find(({ method }) => method === 'GET').handler
+const post = postHandlerOf(checkAnswers)
+const drive = (handler, options) =>
+  withSetContext(SET_ID, () => driveHandler(handler, options))
+
+const viewForStatus = (status, query = {}) =>
+  withSetContext(SET_ID, async () => {
+    const journey = await records.create()
+    if (status === 'submitted' || status === 'amend') {
+      await records.finalise(journey.journeyId)
+    }
+    if (status === 'amend') {
+      await records.amend(journey.journeyId)
+    }
+    const h = stubH()
+    await get(journeyRequest(journey.journeyId, { query }), h)
+    return h.captured.view
+  })
+
+describe('plant-products check-answers controller', () => {
+  let server
+
+  beforeAll(async () => {
+    server = Hapi.server()
+    await server.register(plantProducts, {
+      routes: { prefix: '/plant-products' }
+    })
+  })
+
+  beforeEach(async () => {
+    enterSetContext(SET_ID)
+    await records.clear()
+  })
+
+  afterAll(async () => server.stop({ timeout: 0 }))
+
+  it('GET renders sections, the dynamic journey strip and the hub back link', async () => {
+    const result = await drive(get, {
+      seed: { importType: 'plants', internalReference: 'GET-038' }
+    })
+
+    expect(result.view.view).toBe(
+      'plant-products/journeys/linear/features/check-answers/template'
+    )
+    expect(result.view.context.pageTitle).toBe(copy.title)
+    expect(result.view.context.sections).toHaveLength(9)
+    expect(result.view.context.journeyStrip.reference).toMatch(/^GBN-PP-/)
+    expect(result.view.context.backLink).toMatch(
+      /^\/plant-products\/notifications\/[^/]+$/
+    )
+    expect(result.view.context.breadcrumbs).toBeDefined()
+  })
+
+  it('GET only renders Copy for SUBMITTED and mints a fresh key per render', async () => {
+    const draft = await drive(get, {
+      seed: { importType: 'plants', internalReference: 'READ-ONLY-097' }
+    })
+    expect(draft.view.context.readOnly).toBe(false)
+    expect(draft.view.context.copyAction).toBeNull()
+    expect(draft.view.context.deleteHref).toBeNull()
+
+    await records.finalise(draft.journeyId)
+    const firstH = stubH()
+    await withSetContext(SET_ID, () =>
+      get(journeyRequest(draft.journeyId), firstH)
+    )
+    const secondH = stubH()
+    await withSetContext(SET_ID, () =>
+      get(journeyRequest(draft.journeyId), secondH)
+    )
+
+    const firstAction = firstH.captured.view.context.copyAction
+    const secondAction = secondH.captured.view.context.copyAction
+
+    expect(firstH.captured.view.context.readOnly).toBe(true)
+    expect(firstAction.href).toMatch(
+      /^\/plant-products\/notifications\/[^/]+\/copy$/
+    )
+    expect(firstAction.idempotencyKey).toEqual(expect.any(String))
+    expect(secondAction.idempotencyKey).not.toBe(firstAction.idempotencyKey)
+    expect(firstH.captured.view.context.deleteHref).toMatch(
+      /^\/plant-products\/notifications\/[^/]+\/delete\?source=notification-view$/
+    )
+  })
+
+  it('POST redirects through nextInSection and commits nothing', async () => {
+    const next = vi
+      .spyOn(navigation, 'nextInSection')
+      .mockReturnValue('/plant-products/notifications/journey-038/next')
+    const seed = { internalReference: 'UNCHANGED-038' }
+    const result = await drive(post, { seed })
+
+    expect(result.response.redirect).toBe(
+      '/plant-products/notifications/journey-038/next'
+    )
+    expect(result.after).toEqual(seed)
+    expect(next).toHaveBeenCalledWith(
+      'review-notification',
+      expect.any(Object),
+      expect.any(String)
+    )
+  })
+
+  it('GET exposes Cancel amendment only for an AMEND notification', async () => {
+    const draft = await viewForStatus('draft')
+    const submitted = await viewForStatus('submitted')
+    const amend = await viewForStatus('amend')
+
+    expect(draft.context.cancelAmendHref).toBeNull()
+    expect(submitted.context.cancelAmendHref).toBeNull()
+    expect(amend.context.cancelAmendHref).toMatch(
+      /^\/plant-products\/notifications\/[^/]+\/cancel-amend$/
+    )
+    expect(amend.context.readOnly).toBe(false)
+  })
+
+  it('GET shows the cancellation banner only for cancelled=1 on SUBMITTED', async () => {
+    const submitted = await viewForStatus('submitted', { cancelled: '1' })
+    const submittedWithoutQuery = await viewForStatus('submitted')
+    const draft = await viewForStatus('draft', { cancelled: '1' })
+
+    expect(submitted.context.amendmentCancelled).toBe(true)
+    expect(submittedWithoutQuery.context.amendmentCancelled).toBe(false)
+    expect(draft.context.amendmentCancelled).toBe(false)
+  })
+})

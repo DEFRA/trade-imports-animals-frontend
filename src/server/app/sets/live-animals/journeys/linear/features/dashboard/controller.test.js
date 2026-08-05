@@ -9,14 +9,14 @@ import {
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
-  SESSION_COOKIES
+  knownJourneysCookie
 } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { assembleFulfilments } from '../../../../../../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../../../../../../bridge/fulfilments/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
-  createPath,
+  createRoutePath,
   hubPath,
   pagePath
 } from '../../../../../../shared/paths.js'
@@ -24,6 +24,8 @@ import { CYA_SLUG } from '../../../../../../shared/kit.js'
 
 import { routes } from './controller.js'
 import { authenticatedCredentials } from '../../../../../../engine/test-support.js'
+
+const SET_ID = 'live-animals'
 
 const COPY_AS_NEW_ACTION = 'Copy as new'
 const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
@@ -36,7 +38,7 @@ const handlerOf = (method, pathSuffix) =>
 const listGet = handlerOf('GET', '/')
 const amendPost = handlerOf('POST', '/amend')
 const startPost = routes.find(
-  (route) => route.method === 'POST' && route.path === createPath()
+  (route) => route.method === 'POST' && route.path === createRoutePath()
 ).handler
 
 const buildRequest = ({
@@ -47,7 +49,7 @@ const buildRequest = ({
   payload: {},
   params: journeyId ? { journeyId } : {},
   query,
-  state: { [SESSION_COOKIES.knownJourneys]: knownJourneyIds },
+  state: { [knownJourneysCookie()]: knownJourneyIds },
   headers: {},
   auth: {
     isAuthenticated: true,
@@ -87,8 +89,8 @@ const startSubmitted = async () => {
 
 describe('dashboard notifications list', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -316,8 +318,8 @@ describe('dashboard notifications list', () => {
 
 describe('dashboard row actions', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -403,7 +405,7 @@ describe('dashboard row actions', () => {
       h
     )
 
-    expect(h.captured.redirect).toBe('/')
+    expect(h.captured.redirect).toBe('/live-animals')
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
     ).toBe(SUBMITTED)
@@ -454,8 +456,8 @@ describe('dashboard row actions', () => {
 
 describe('dashboard start with an in-flight draft', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -469,10 +471,9 @@ describe('dashboard start with an in-flight draft', () => {
 
     await startPost(buildRequest({ knownJourneyIds: [oldDraft.journeyId] }), h)
 
-    const newJourneyId =
-      h.captured.cookies[SESSION_COOKIES.knownJourneys].at(-1)
+    const newJourneyId = h.captured.cookies[knownJourneysCookie()].at(-1)
     expect(newJourneyId).not.toBe(oldDraft.journeyId)
-    expect(h.captured.cookies[SESSION_COOKIES.knownJourneys]).toEqual([
+    expect(h.captured.cookies[knownJourneysCookie()]).toEqual([
       oldDraft.journeyId,
       newJourneyId
     ])

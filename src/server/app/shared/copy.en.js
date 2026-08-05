@@ -27,6 +27,10 @@ export const copy = {
     title: 'There is a problem',
     body: 'Sorry, there is a problem with the service. Your answers on this page have been saved. Try again in a few minutes.'
   },
+  copyIdempotencyError: {
+    title: 'Notification not copied',
+    body: 'This notification was not copied because the copy request had already been used for another notification. Try copying it again. A new copy request will be used.'
+  },
   notificationActions: {
     copy: {
       text: 'Copy as new',

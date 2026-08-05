@@ -27,7 +27,7 @@ const completeDocument = {
 
 describe('indexed obligations are first-class', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch('live-animals', dispatchPages)
   })
 
   it('Should enumerate sub-obligations at every depth via walkObligations', () => {

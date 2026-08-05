@@ -283,3 +283,121 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
     expect(errors.some((e) => e.instanceId === 'line1')).toBe(true)
   })
 })
+
+describe('groupInvariantErrors — nested collection cardinality', () => {
+  const parentGroup = { id: 'parent-group', name: 'parentGroup' }
+  const nestedGroup = {
+    id: 'nested-group',
+    name: 'nestedGroup',
+    within: parentGroup,
+    requires: {
+      minEntries: 1,
+      maxEntries: 1,
+      errorCode: 'obligation.nestedGroup.atLeastOne',
+      maxEntriesErrorCode: 'obligation.nestedGroup.atMostOne'
+    }
+  }
+
+  it('counts minEntries separately for each immediate parent instance', () => {
+    const st = state({
+      obligations: impls([
+        {
+          obligation: parentGroup,
+          impl: {
+            inScope: true,
+            records: [{ fulfilmentId: 'parent0' }, { fulfilmentId: 'parent1' }]
+          }
+        },
+        {
+          obligation: nestedGroup,
+          impl: {
+            inScope: true,
+            records: [{ fulfilmentId: 'parent0/nested0' }]
+          }
+        }
+      ])
+    })
+
+    expect(groupInvariantErrors(nestedGroup, st)).toEqual([
+      {
+        code: 'MIN_ENTRIES',
+        groupId: nestedGroup.id,
+        groupName: 'nestedGroup',
+        errorCode: 'obligation.nestedGroup.atLeastOne',
+        minEntries: 1,
+        actual: 0,
+        instanceId: 'parent1'
+      }
+    ])
+  })
+
+  it('counts maxEntries separately for each immediate parent instance', () => {
+    const st = state({
+      obligations: impls([
+        {
+          obligation: parentGroup,
+          impl: {
+            inScope: true,
+            records: [{ fulfilmentId: 'parent0' }, { fulfilmentId: 'parent1' }]
+          }
+        },
+        {
+          obligation: nestedGroup,
+          impl: {
+            inScope: true,
+            records: [
+              { fulfilmentId: 'parent0/nested0' },
+              { fulfilmentId: 'parent0/nested1' },
+              { fulfilmentId: 'parent1/nested0' }
+            ]
+          }
+        }
+      ])
+    })
+
+    expect(groupInvariantErrors(nestedGroup, st)).toEqual([
+      {
+        code: 'MAX_ENTRIES',
+        groupId: nestedGroup.id,
+        groupName: 'nestedGroup',
+        errorCode: 'obligation.nestedGroup.atMostOne',
+        maxEntries: 1,
+        actual: 2,
+        instanceId: 'parent0'
+      }
+    ])
+  })
+
+  it('keeps the top-level maxEntries error shape collection-scoped', () => {
+    const topLevelGroup = {
+      id: 'top-level-group',
+      name: 'topLevelGroup',
+      requires: {
+        maxEntries: 1,
+        errorCode: 'obligation.topLevelGroup.atMostOne'
+      }
+    }
+    const st = state({
+      obligations: impls([
+        {
+          obligation: topLevelGroup,
+          impl: {
+            inScope: true,
+            records: [{ fulfilmentId: 'top0' }, { fulfilmentId: 'top1' }]
+          }
+        }
+      ])
+    })
+
+    expect(groupInvariantErrors(topLevelGroup, st)).toEqual([
+      {
+        code: 'MAX_ENTRIES',
+        groupId: topLevelGroup.id,
+        groupName: 'topLevelGroup',
+        errorCode: 'obligation.topLevelGroup.atMostOne',
+        maxEntries: 1,
+        actual: 2
+      }
+    ])
+  })
+})

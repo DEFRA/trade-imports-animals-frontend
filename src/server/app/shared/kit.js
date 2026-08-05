@@ -6,12 +6,19 @@ import {
 } from './paths.js'
 import { AMEND, DELETED, DRAFT, SUBMITTED } from '../engine/index.js'
 import { nextInSection } from '../flow/navigation.js'
-import { journeyLayout, journeyNextRunTarget } from '../flow/journey-flow.js'
+import {
+  journeyCyaSlug,
+  journeyLayout,
+  journeyNextRunTarget
+} from '../flow/journey-flow.js'
 import { inOpeningRun } from '../flow/run-state.js'
 import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
-import { isRecoverableBackendError } from '../services/persistence/records/errors.js'
+import {
+  isIdempotencyKeyReuseError,
+  isRecoverableBackendError
+} from '../services/persistence/records/errors.js'
 
 export const routeOptions = {}
 
@@ -71,7 +78,7 @@ export const withChangeContext = (request, href) =>
 export const exitTarget = (request, fallback) =>
   hubExitTarget(request) ??
   (changeContext(request)
-    ? pagePath(request.params.journeyId, CYA_SLUG)
+    ? pagePath(request.params.journeyId, journeyCyaSlug() ?? CYA_SLUG)
     : fallback)
 
 export const runTarget = async (request, stepId, scope) =>
@@ -92,26 +99,36 @@ export const base = (
     backLink,
     journey,
     journeyId = journey?.journeyId,
-    recoverableError = false
+    recoverableError = false,
+    copyIdempotencyError = false,
+    layout
   } = {}
 ) => {
   const hasJourney = journeyId != null
   return {
-    layout: journeyLayout(),
+    layout: layout ?? journeyLayout(),
     pageTitle: title,
     breadcrumbs: hasJourney ? buildBreadcrumbs(journeyId, title) : false,
     backLink,
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
     journeyStrip: journeyStrip(journey),
     sharedCopy,
-    recoverableError
+    recoverableError,
+    copyIdempotencyError
   }
 }
 
-export const recoverableSave = async (saveThunk, onRecoverableFailure) => {
+export const recoverableSave = async (
+  saveThunk,
+  onRecoverableFailure,
+  onIdempotencyKeyReuse
+) => {
   try {
     return { value: await saveThunk() }
   } catch (error) {
+    if (isIdempotencyKeyReuseError(error) && onIdempotencyKeyReuse) {
+      return { failure: await onIdempotencyKeyReuse() }
+    }
     if (isRecoverableBackendError(error)) {
       return { failure: await onRecoverableFailure() }
     }

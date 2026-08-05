@@ -16,6 +16,8 @@ import { buildDispatch } from './flow/dispatch.js'
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
 import { projectAnswers } from './bridge/fulfilments/index.js'
 
+const SET_ID = 'live-animals'
+
 const GOATS_COMMODITY_SELECTION = '010420 - Goats'
 
 let journeyId
@@ -42,9 +44,9 @@ const address = { name: 'Owner', address: { addressLine1: '1 Farm Lane' } }
 
 const setupJourneyEngine = () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(async () => {
     await store.clear()

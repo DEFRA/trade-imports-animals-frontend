@@ -13,6 +13,8 @@ import { dispatchPages } from '../../index.js'
 import * as importPurpose from '../controller.js'
 import { copy } from './copy.en.js'
 
+const SET_ID = 'live-animals'
+
 const isPlainObject = (node) => typeof node === 'object' && node !== null
 
 const leaves = (node, path = []) =>
@@ -41,9 +43,9 @@ describe('#copy', () => {
 
 describe('GET /import-purpose', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

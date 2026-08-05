@@ -17,6 +17,8 @@ import { pagePath } from '../../../../../../../shared/paths.js'
 import { routes } from '../controller.js'
 import { copy } from './copy.en.js'
 
+const SET_ID = 'live-animals'
+
 const hubHandler = routes.find((route) => route.method === 'GET').handler
 
 const renderHub = async (seed = {}) => {
@@ -54,9 +56,9 @@ describe('#copy', () => {
 
 describe('GET /hub', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -79,9 +81,9 @@ describe('GET /hub', () => {
 
 describe('#hubHandler', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -89,8 +91,8 @@ describe('#hubHandler', () => {
     const context = await renderHub()
     expect(context.heading).toBe('Overview')
     expect(context.pageTitle).toBe('Overview')
-    expect(context.backLink).toBe('/')
-    expect(context.dashboardHref).toBe('/')
+    expect(context.backLink).toBe('/live-animals')
+    expect(context.dashboardHref).toBe('/live-animals')
     expect(context.breadcrumbs).toBe(false)
     expect(context.progressLine).toBeUndefined()
   })

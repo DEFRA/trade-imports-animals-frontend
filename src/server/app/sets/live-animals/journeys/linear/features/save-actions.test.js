@@ -21,6 +21,8 @@ import * as animalIdentification from './commodities/animal-identification/anima
 import * as documents from './documents/controller.js'
 import * as cphNumber from './cph-number/controller.js'
 
+const SET_ID = 'live-animals'
+
 const drivePost = async (
   handler,
   { payload = {}, query = {}, seed = {}, params = {} } = {}
@@ -43,9 +45,9 @@ const drivePost = async (
 
 describe('save actions — hub exit semantics', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

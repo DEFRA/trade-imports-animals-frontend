@@ -40,8 +40,35 @@ export default defineConfig({
       }
     },
     {
+      name: 'journeys-plant-products',
+      testMatch: '**/plant-products-journey-smoke.spec.js',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: `http://localhost:${port}`,
+        launchOptions: {
+          slowMo:
+            process.env.DEMO_SLOWMO !== undefined
+              ? Number(process.env.DEMO_SLOWMO)
+              : 600
+        },
+        video: 'on',
+        trace: 'on'
+      }
+    },
+    {
       name: 'features',
       testDir: './src/server/app/sets/live-animals/journeys/linear/features',
+      testMatch: '**/*.e2e.spec.js',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: `http://localhost:${port}`,
+        video: 'off',
+        trace: 'retain-on-failure'
+      }
+    },
+    {
+      name: 'features-plant-products',
+      testDir: './src/server/app/sets/plant-products/journeys/linear/features',
       testMatch: '**/*.e2e.spec.js',
       use: {
         ...devices['Desktop Chrome'],
@@ -57,7 +84,11 @@ export default defineConfig({
       url: `http://localhost:${port}/health`,
       // The service default is real mode; the canned journey suite runs against
       // stub data, so it opts in explicitly here.
-      env: { PORT: String(port), LIVE_ANIMALS_MODE: 'stub' },
+      env: {
+        PORT: String(port),
+        LIVE_ANIMALS_MODE: 'stub',
+        PLANT_PRODUCTS_MODE: 'stub'
+      },
       timeout: 180_000,
       reuseExistingServer: false
     }

@@ -1,6 +1,8 @@
 import {
   createPath,
+  createRoutePath,
   dashboardPath,
+  dashboardRoutePath,
   hubPath,
   pagePath,
   pageRoutePath
@@ -45,7 +47,11 @@ const parseReferenceNumber = (value) => {
 export const renderDashboard = async (
   request,
   h,
-  { recoverableError = false, retryCopy = null } = {}
+  {
+    recoverableError = false,
+    copyIdempotencyError = false,
+    retryCopy = null
+  } = {}
 ) => {
   const queryPage = Number.parseInt(request.query?.page, 10)
   const requestedPage = normalizePageNumber(queryPage)
@@ -96,6 +102,7 @@ export const renderDashboard = async (
       referenceNumber
     }),
     recoverableError,
+    copyIdempotencyError,
     deletionSucceeded: request.query?.deleted === '1',
     copySucceeded: request.query?.copied === '1'
   })
@@ -113,7 +120,7 @@ const amendPost = async (request, h) => {
 export const routes = [
   {
     method: 'GET',
-    path: dashboardPath(),
+    path: dashboardRoutePath(),
     options: routeOptions,
     handler: listGet
   },
@@ -125,7 +132,7 @@ export const routes = [
   },
   {
     method: 'POST',
-    path: createPath(),
+    path: createRoutePath(),
     options: routeOptions,
     handler: async (request, h) => {
       const journey = await startJourney(request, h)

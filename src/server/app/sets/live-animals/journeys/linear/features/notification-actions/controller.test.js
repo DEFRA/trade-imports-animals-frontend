@@ -16,7 +16,7 @@ import {
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
-  SESSION_COOKIES
+  knownJourneysCookie
 } from '../../../../../../engine/persistence/session.js'
 import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
@@ -25,21 +25,23 @@ import { session as sessionStub } from '../../../../../../services/persistence/s
 import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
 
+const SET_ID = 'live-animals'
+
 const copyPost = routes[0].handler
 
 describe('copy notification action', () => {
   beforeAll(() => {
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   beforeEach(() => {
-    configureRecords(recordsStub)
+    configureRecords(SET_ID, recordsStub)
     records.clear()
   })
 
   afterEach(() => {
-    configureRecords(recordsStub)
+    configureRecords(SET_ID, recordsStub)
     vi.unstubAllGlobals()
   })
 
@@ -74,7 +76,7 @@ describe('copy notification action', () => {
           idempotencyKey: 'stable-copy-key',
           copyOrigin: 'dashboard'
         },
-        state: { [SESSION_COOKIES.knownJourneys]: [source.journeyId] }
+        state: { [knownJourneysCookie()]: [source.journeyId] }
       })
 
     const first = await copyPost(request(), stubH())
@@ -83,8 +85,8 @@ describe('copy notification action', () => {
     expect(retry.redirect).toBe(first.redirect)
   })
 
-  it('Should re-render the dashboard at 500 with the same key after a recoverable backend failure', async () => {
-    configureRecords({ ...recordsStub, copy: realRecords.copy })
+  it('Should distinguish a recoverable failure from an actionable key-reuse error', async () => {
+    configureRecords(SET_ID, { ...recordsStub, copy: realRecords.copy })
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({
@@ -115,6 +117,37 @@ describe('copy notification action', () => {
         (action) => action.text === 'Copy as new'
       ).idempotencyKey
     ).toBe('retry-this-key')
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: false,
+        status: 422,
+        statusText: 'Unprocessable Entity'
+      }))
+    )
+    const keyReuseResponse = await copyPost(
+      journeyRequest(source.journeyId, {
+        payload: {
+          idempotencyKey: 'rejected-copy-key',
+          copyOrigin: 'dashboard'
+        }
+      }),
+      stubH()
+    )
+
+    const retryAction =
+      keyReuseResponse.context.notificationRows[0].actions.find(
+        (action) => action.text === 'Copy as new'
+      )
+    expect(keyReuseResponse.statusCode).toBe(422)
+    expect(keyReuseResponse.context.copyIdempotencyError).toBe(true)
+    expect(keyReuseResponse.context.recoverableError).toBe(false)
+    expect(
+      keyReuseResponse.context.sharedCopy.copyIdempotencyError.body
+    ).toContain('Try copying it again')
+    expect(retryAction.idempotencyKey).not.toBe('rejected-copy-key')
+    expect(retryAction.idempotencyKey).toMatch(/^[0-9a-f-]{36}$/)
   })
 
   it('Should redirect an unknown source to the dashboard without copying', async () => {
@@ -124,11 +157,11 @@ describe('copy notification action', () => {
           idempotencyKey: 'unused-key',
           copyOrigin: 'dashboard'
         },
-        state: { [SESSION_COOKIES.knownJourneys]: [] }
+        state: { [knownJourneysCookie()]: [] }
       }),
       stubH()
     )
 
-    expect(response.redirect).toBe('/')
+    expect(response.redirect).toBe('/live-animals')
   })
 })

@@ -19,6 +19,8 @@ import { dispatchPages } from '../../index.js'
 
 import * as consignmentDetails from './consignment-details.controller.js'
 
+const SET_ID = 'live-animals'
+
 const post = postHandlerOf(consignmentDetails)
 
 const seedLines = () => ({
@@ -45,9 +47,9 @@ const seedLines = () => ({
 
 describe('#consignmentDetailsController — per-species quantities over every line', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -223,7 +225,16 @@ describe('#consignmentDetailsController — per-species quantities over every li
   it('Should reject a remove POST carrying no CSRF crumb and serve no GET route that removes', async () => {
     const server = Hapi.server()
     await server.register(Crumb)
-    server.route(consignmentDetails.routes)
+    await server.register(
+      {
+        plugin: {
+          name: 'prefixed-consignment-details-test-routes',
+          register: (realmServer) =>
+            realmServer.route(consignmentDetails.routes)
+        }
+      },
+      { routes: { prefix: '/live-animals' } }
+    )
 
     const forged = await server.inject({
       method: 'POST',

@@ -1,20 +1,24 @@
-import { SESSION_COOKIES } from '../../../engine/persistence/session.js'
+import {
+  knownJourneysCookie,
+  openingRunCookie,
+  flowOnlyAnswersCookie
+} from '../../../engine/persistence/session.js'
 
 const isObject = (value) =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
 
 const knownFrom = (request) => {
-  const known = request?.state?.[SESSION_COOKIES.knownJourneys]
+  const known = request?.state?.[knownJourneysCookie()]
   return Array.isArray(known) ? known : []
 }
 
 const flowOnlyByJourneyFrom = (request) => {
-  const stored = request?.state?.[SESSION_COOKIES.flowOnlyAnswers]
+  const stored = request?.state?.[flowOnlyAnswersCookie()]
   return isObject(stored) ? stored : {}
 }
 
 const openingRunByJourneyFrom = (request) => {
-  const stored = request?.state?.[SESSION_COOKIES.openingRun]
+  const stored = request?.state?.[openingRunCookie()]
   return isObject(stored) ? stored : {}
 }
 
@@ -28,7 +32,7 @@ export const session = {
     if (known.includes(journeyId)) {
       return
     }
-    toolkit.state(SESSION_COOKIES.knownJourneys, [...known, journeyId])
+    toolkit.state(knownJourneysCookie(), [...known, journeyId])
   },
 
   async openingRun(request, journeyId) {
@@ -37,7 +41,7 @@ export const session = {
 
   async setOpeningRun(toolkit, journeyId, phase, request) {
     const byJourney = openingRunByJourneyFrom(request ?? toolkit?.request)
-    toolkit.state(SESSION_COOKIES.openingRun, {
+    toolkit.state(openingRunCookie(), {
       ...byJourney,
       [journeyId]: phase
     })
@@ -54,7 +58,7 @@ export const session = {
       ...byJourney,
       [journeyId]: structuredClone(values ?? {})
     }
-    toolkit.state(SESSION_COOKIES.flowOnlyAnswers, next)
+    toolkit.state(flowOnlyAnswersCookie(), next)
     return structuredClone(next[journeyId])
   }
 }

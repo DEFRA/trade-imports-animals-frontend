@@ -38,6 +38,9 @@ import * as privateTransporterDetails from './sets/live-animals/journeys/linear/
 import * as contactSelect from './sets/live-animals/journeys/linear/features/contact/controller.js'
 import * as declaration from './sets/live-animals/journeys/linear/features/declaration/controller.js'
 
+const SET_ID = 'live-animals'
+const IMPORT_TYPE_LIVE_ANIMALS = 'live-animals'
+
 const drive = driveHandler
 
 const obligationNames = [...walkObligations()].map(
@@ -62,7 +65,7 @@ const cases = [
     id: 'import-type-filter',
     collects: importTypeFilter.meta.collects,
     handler: postHandlerOf(importTypeFilter),
-    payload: { importType: 'live-animals' }
+    payload: { importType: IMPORT_TYPE_LIVE_ANIMALS }
   },
   {
     id: 'origin',
@@ -167,9 +170,9 @@ const cases = [
 
 describe('controller <-> model commit contract', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

@@ -20,6 +20,8 @@ import * as consignmentDetails from './commodities/consignment-details/consignme
 import * as animalIdentification from './commodities/animal-identification/animal-identification.controller.js'
 import * as documents from './documents/controller.js'
 
+const SET_ID = 'live-animals'
+
 const drive = async (
   handler,
   { payload = {}, query = {}, seed = {}, params = {} } = {}
@@ -56,9 +58,9 @@ const lineSeed = {
 }
 
 const configure = () => {
-  configureRecords(recordsStub)
-  configureSession(sessionStub)
-  buildDispatch(dispatchPages)
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  buildDispatch(SET_ID, dispatchPages)
 }
 
 describe('change context — kit contracts', () => {

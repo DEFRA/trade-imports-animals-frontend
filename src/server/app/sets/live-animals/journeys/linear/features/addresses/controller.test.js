@@ -12,6 +12,8 @@ import { pagePath } from '../../../../../../shared/paths.js'
 
 import * as addresses from './controller.js'
 
+const SET_ID = 'live-animals'
+
 const getAddresses = addresses.routes.find(
   (route) => route.method === 'GET'
 ).handler
@@ -24,9 +26,9 @@ const cphRowOf = (rows) =>
 
 describe('GET addresses — conditional CPH hub row', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

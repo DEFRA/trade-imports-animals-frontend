@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   appendEntryAt,
   removeEntryAt,
@@ -49,17 +49,19 @@ const identifiersPath = (lineIndex) => [
   'animalIdentifiers'
 ]
 
-describe('mutators — storage is positional, purge is evaluator-authoritative', () => {
+const setupMutatorEngine = () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords('live-animals', recordsStub)
+    configureSession('live-animals', sessionStub)
     configureReadyForCheckYourAnswers(() => false)
   })
   beforeEach(async () => {
     await store.clear()
     journeyId = (await store.create()).journeyId
   })
+}
 
+const positionalStorageCases = () => {
   describe('#appendEntryAt — mints the next index, stores positionally', () => {
     it('Should append a commodity line and persist it in positional order', async () => {
       const first = await appendEntryAt(
@@ -114,7 +116,9 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       ).toEqual([GOATS_COMMODITY])
     })
   })
+}
 
+const capAndInvalidPathCases = () => {
   describe('#appendEntryAt cap — `maxEntriesFrom` fires', () => {
     const cappedLine = () => ({
       commoditySelection: 'Cat',
@@ -160,6 +164,47 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
     })
   })
 
+  describe('collection mutations — invalid ancestor indices', () => {
+    it('Should reject either invalid ancestor level before persistence', async () => {
+      const original = {
+        commodityLines: [
+          {
+            commoditySelection: 'Cat',
+            speciesSelection: '923501',
+            animalIdentifiers: [{ animalIdentifierPassport: 'P-1' }]
+          }
+        ]
+      }
+      await store.seedAnswers(journeyId, original)
+      const replaceFulfilment = vi.spyOn(recordsStub, 'replaceFulfilment')
+      const paths = [
+        ['commodityLines', 5, 'animalIdentifiers'],
+        ['commodityLines', 0, 'animalIdentifiers', 9, 'nestedCollection']
+      ]
+
+      try {
+        for (const path of paths) {
+          expect(
+            await appendEntryAt(buildRequest(), stubH(), path, {
+              value: 'phantom'
+            })
+          ).toBeNull()
+          await updateEntryAt(buildRequest(), stubH(), path, 0, {
+            value: 'phantom'
+          })
+          await removeEntryAt(buildRequest(), stubH(), path, 0)
+        }
+
+        expect(replaceFulfilment).not.toHaveBeenCalled()
+        expect(await answersNow()).toEqual(original)
+      } finally {
+        replaceFulfilment.mockRestore()
+      }
+    })
+  })
+}
+
+const evaluatorAuthoritativePurgeCases = () => {
   describe('#removeEntryAt — the purge is evaluator-authoritative', () => {
     it('Should let the evaluator purge a now-orphaned notification-level answer when the last triggering line is removed', async () => {
       // containsUnweanedAnimals is gated (frame:anyItem) on an unweaned-
@@ -243,4 +288,11 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       expect('containsUnweanedAnimals' in answers).toBe(false)
     })
   })
+}
+
+describe('mutators — storage is positional, purge is evaluator-authoritative', () => {
+  setupMutatorEngine()
+  positionalStorageCases()
+  capAndInvalidPathCases()
+  evaluatorAuthoritativePurgeCases()
 })

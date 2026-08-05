@@ -31,7 +31,7 @@ import { obligationByName, obligations } from '../model/obligations/manifest.js'
 import { ancestorChain, groupObligations } from './fulfilments/index.js'
 import { instanceFulfilmentId } from './fulfilment-id.js'
 import { fulfilmentRegistry } from './fulfilment-registry.js'
-import { SYSTEM_POPULATED } from './obligation-source.js'
+import { systemPopulated } from './obligation-source.js'
 import { groupInvariantErrors } from '../model/obligations/state-queries.js'
 import { isBlankValue } from '../model/obligations/is-blank-value.js'
 
@@ -49,7 +49,7 @@ const leavesUnder = (group) =>
   )
 
 // The group itself plus every group nested beneath it — the scope over which
-// per-instance `anyOf` invariants are checked.
+// per-instance invariants are checked.
 const groupsFrom = (group) =>
   obligations().filter(
     (o) =>
@@ -85,7 +85,7 @@ const leafBlocksInstance = (
   implications,
   fulfilments
 ) => {
-  if (SYSTEM_POPULATED.has(leaf.name)) {
+  if (systemPopulated().has(leaf.name)) {
     return false
   }
   const implication = implications[leaf.id]
@@ -101,14 +101,19 @@ const leafBlocksInstance = (
     : belongingRecordBlocks(belonging, stored)
 }
 
+const relevantInstanceError = (group, error) =>
+  error.code === 'MIN_ENTRIES' ||
+  error.code === 'MAX_ENTRIES' ||
+  (group.requires?.anyOfIds && error.code === group.requires.errorCode)
+
 const groupInvariantBlocksInstance = (group, instanceId, state) =>
-  groupsFrom(group).some(
-    (nested) =>
-      nested.requires?.anyOfIds &&
-      groupInvariantErrors(nested, state).some(
-        (error) =>
-          error.instanceId && belongsToInstance(error.instanceId, instanceId)
-      )
+  groupsFrom(group).some((nested) =>
+    groupInvariantErrors(nested, state).some(
+      (error) =>
+        relevantInstanceError(nested, error) &&
+        error.instanceId &&
+        belongsToInstance(error.instanceId, instanceId)
+    )
   )
 
 /**

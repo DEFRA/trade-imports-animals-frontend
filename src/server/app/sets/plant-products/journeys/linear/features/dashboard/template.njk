@@ -1,0 +1,174 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
+{% from "govuk/components/pagination/macro.njk" import govukPagination %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/tag/macro.njk" import govukTag %}
+
+{% block journeyContent %}
+  {% if deletionSucceeded %}
+    {{ govukNotificationBanner({
+      type: "success",
+      titleText: sharedCopy.notificationActions.delete.successTitle,
+      text: sharedCopy.notificationActions.delete.successBody,
+      role: "alert"
+    }) }}
+  {% endif %}
+
+  {% include "shared/error-summary.njk" %}
+
+  <h1 class="govuk-heading-xl">{{ copy.heading }}</h1>
+
+  <form method="post" action="{{ startAction }}" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    {{ govukButton({ text: copy.createButton, isStartButton: true }) }}
+  </form>
+
+  <h2 class="govuk-heading-m">{{ copy.filters.heading }}</h2>
+  <form method="get" action="{{ listAction }}" novalidate>
+    {% if sort %}
+      <input type="hidden" name="sort" value="{{ sort }}" />
+    {% endif %}
+
+    {{ govukInput({
+      id: "referenceNumber",
+      name: "referenceNumber",
+      label: { text: copy.filters.keywords.label, classes: "govuk-label--s" },
+      hint: { text: copy.filters.keywords.hint },
+      value: values.referenceNumber,
+      errorMessage: errors.referenceNumber and { text: errors.referenceNumber }
+    }) }}
+
+    {{ govukSelect({
+      id: "status",
+      name: "status",
+      label: { text: copy.filters.status.label, classes: "govuk-label--s" },
+      value: values.status,
+      items: statusOptions
+    }) }}
+
+    <div class="govuk-form-group">
+      <label class="govuk-label govuk-label--s" for="countryOfOrigin">{{ copy.filters.country.label }}</label>
+      <select class="govuk-select" id="countryOfOrigin" name="countryOfOrigin">
+        <option value=""{% if not values.countryOfOrigin %} selected{% endif %}>{{ copy.filters.country.all }}</option>
+        {% for group in countryGroups %}
+          <optgroup label="{{ group.label }}">
+            {% for item in group.items %}
+              <option value="{{ item.value }}"{% if item.value == values.countryOfOrigin %} selected{% endif %}>{{ item.text }}</option>
+            {% endfor %}
+          </optgroup>
+        {% endfor %}
+      </select>
+    </div>
+
+    {{ govukDateInput({
+      id: "startDate",
+      namePrefix: "startDate",
+      fieldset: {
+        legend: { text: copy.filters.startDate.label, classes: "govuk-fieldset__legend--s" }
+      },
+      hint: { text: copy.filters.date.hint },
+      errorMessage: errors["startDate-day"] and { text: errors["startDate-day"] },
+      items: [
+        { name: "day", classes: "govuk-input--width-2", value: values.startDate.day, label: copy.filters.date.day },
+        { name: "month", classes: "govuk-input--width-2", value: values.startDate.month, label: copy.filters.date.month },
+        { name: "year", classes: "govuk-input--width-4", value: values.startDate.year, label: copy.filters.date.year }
+      ]
+    }) }}
+
+    {{ govukDateInput({
+      id: "endDate",
+      namePrefix: "endDate",
+      fieldset: {
+        legend: { text: copy.filters.endDate.label, classes: "govuk-fieldset__legend--s" }
+      },
+      hint: { text: copy.filters.date.hint },
+      errorMessage: errors["endDate-day"] and { text: errors["endDate-day"] },
+      items: [
+        { name: "day", classes: "govuk-input--width-2", value: values.endDate.day, label: copy.filters.date.day },
+        { name: "month", classes: "govuk-input--width-2", value: values.endDate.month, label: copy.filters.date.month },
+        { name: "year", classes: "govuk-input--width-4", value: values.endDate.year, label: copy.filters.date.year }
+      ]
+    }) }}
+
+    {{ govukButton({ text: copy.filters.search }) }}
+    <a class="govuk-link govuk-!-margin-left-3" href="{{ clearAction }}">{{ copy.filters.clear }}</a>
+  </form>
+
+  <div class="govuk-!-margin-top-6">
+    <p class="govuk-body govuk-!-font-weight-bold">{{ resultsLabel }}</p>
+
+    <form method="get" action="{{ listAction }}">
+      {% if currentPage > 1 %}<input type="hidden" name="page" value="{{ currentPage }}" />{% endif %}
+      {% if values.referenceNumber %}<input type="hidden" name="referenceNumber" value="{{ values.referenceNumber }}" />{% endif %}
+      {% if values.status %}<input type="hidden" name="status" value="{{ values.status }}" />{% endif %}
+      {% if values.countryOfOrigin %}<input type="hidden" name="countryOfOrigin" value="{{ values.countryOfOrigin }}" />{% endif %}
+      {% for part in ["day", "month", "year"] %}
+        {% if values.startDate[part] %}<input type="hidden" name="startDate-{{ part }}" value="{{ values.startDate[part] }}" />{% endif %}
+        {% if values.endDate[part] %}<input type="hidden" name="endDate-{{ part }}" value="{{ values.endDate[part] }}" />{% endif %}
+      {% endfor %}
+      {{ govukSelect({
+        id: "sort",
+        name: "sort",
+        label: { text: copy.sort.label, classes: "govuk-label--s" },
+        value: sort,
+        items: sortOptions
+      }) }}
+      {{ govukButton({ text: copy.sort.apply, classes: "govuk-button--secondary" }) }}
+    </form>
+  </div>
+
+  {% if notificationRows.length %}
+    <table class="govuk-table">
+      <thead class="govuk-table__head">
+        <tr class="govuk-table__row">
+          <th class="govuk-table__header" scope="col">{{ copy.table.headings.reference }}</th>
+          <th class="govuk-table__header" scope="col">{{ copy.table.headings.status }}</th>
+          <th class="govuk-table__header" scope="col">{{ copy.table.headings.origin }}</th>
+          <th class="govuk-table__header" scope="col">{{ copy.table.headings.arrival }}</th>
+          <th class="govuk-table__header" scope="col">{{ copy.table.headings.created }}</th>
+          <th class="govuk-table__header" scope="col">{{ copy.table.headings.submitted }}</th>
+          <th class="govuk-table__header" scope="col">{{ copy.table.headings.actions }}</th>
+        </tr>
+      </thead>
+      <tbody class="govuk-table__body">
+        {% for row in notificationRows %}
+          <tr class="govuk-table__row">
+            <th class="govuk-table__header" scope="row">{{ row.reference }}</th>
+            <td class="govuk-table__cell">{{ govukTag({ text: row.status.label, classes: row.status.tagClass }) }}</td>
+            <td class="govuk-table__cell">{{ row.origin }}</td>
+            <td class="govuk-table__cell">{{ row.arrival }}</td>
+            <td class="govuk-table__cell">{{ row.created }}</td>
+            <td class="govuk-table__cell">{{ row.submitted }}</td>
+            <td class="govuk-table__cell">
+              {% for action in row.actions %}
+                {% if action.postAction %}
+                  <form method="post" action="{{ action.postAction }}{{ listQuerySuffix }}" class="app-form-inline">
+                    <input type="hidden" name="crumb" value="{{ crumb }}" />
+                    <input type="hidden" name="idempotencyKey" value="{{ action.idempotencyKey }}" />
+                    <input type="hidden" name="copyOrigin" value="{{ action.copyOrigin }}" />
+                    <button type="submit" class="govuk-link app-link-button">
+                      {{ action.text }} <span class="govuk-visually-hidden">{{ action.hiddenText }}</span>
+                    </button>
+                  </form>
+                {% else %}
+                  <a class="govuk-link" href="{{ action.href }}">
+                    {{ action.text }} <span class="govuk-visually-hidden">{{ action.hiddenText }}</span>
+                  </a>
+                {% endif %}
+              {% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="govuk-body">{{ copy.search.noResults }}</p>
+  {% endif %}
+
+  {% if pagination %}
+    {{ govukPagination(pagination) }}
+  {% endif %}
+{% endblock %}

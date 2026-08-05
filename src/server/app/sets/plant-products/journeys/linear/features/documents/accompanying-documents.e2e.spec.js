@@ -1,0 +1,613 @@
+import { expect, test } from '@playwright/test'
+
+import { axeViolations as seriousOrCriticalViolations } from '../axe.e2e-helper.js'
+import { documentTypeOptions } from '../../../../services/reference/document-types.js'
+import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
+import { MAX_DOCUMENTS } from './contracts/max-documents.js'
+import { copy as welshCopy } from './copy/copy.cy.js'
+import { copy } from './copy/copy.en.js'
+import {
+  addDocument,
+  pdfFile,
+  rowFor,
+  settleScan,
+  startAtDocuments
+} from './documents.e2e-helper.js'
+import {
+  ACCEPT_ATTRIBUTE,
+  ALLOWED_FILE_TYPES_HINT,
+  FILE_TYPE_MESSAGE,
+  MAX_FILE_SIZE_BYTES,
+  MAX_FILE_SIZE_LABEL,
+  OVERSIZE_FILE_MESSAGE
+} from './upload-config.js'
+
+const hubUrl = /^\/plant-products\/notifications\/[^/]+$/
+
+const PHYTO_TYPE_LABEL = 'Phytosanitary certificate'
+const RAW_REFERENCE = 'RAW-REFERENCE'
+const PHYTO_SAFE = 'PHYTO-SAFE'
+const PHYTO_VIRUS = 'PHYTO-VIRUS'
+const ERROR_SUMMARY_SELECTOR = '.govuk-error-summary'
+const ERROR_SUMMARY_TITLE_SELECTOR = '.govuk-error-summary__title'
+const FILE_ERROR_SELECTOR = '#file-error'
+
+const documentHubRow = (page) =>
+  page.getByRole('listitem').filter({
+    has: page.getByText('Accompanying documents', { exact: true })
+  })
+
+const oversizeFile = () => ({
+  name: 'big.pdf',
+  mimeType: 'application/pdf',
+  buffer: Buffer.alloc(MAX_FILE_SIZE_BYTES + 1)
+})
+
+const fillDocumentMetadata = async (page, reference) => {
+  await page
+    .getByLabel(copy.labels.documentType)
+    .selectOption('PHYTOSANITARY_CERTIFICATE')
+  await page.getByLabel(copy.labels.documentReference).fill(reference)
+  await page.getByLabel(copy.labels.issueDate).fill('4/12/2025')
+}
+
+const addDocumentButton = (page) =>
+  page.getByRole('button', { name: copy.actions.addDocument })
+
+// The enhancement exists to stop the bytes travelling, so the proof is the
+// absence of the request itself. An unchanged page would stay green even if
+// the interception were removed; a captured POST url would not. Any upload
+// call this page could make travels inside that same POST.
+const NO_SUBMIT_WINDOW_MS = 2000
+
+const postedUrlWhile = async (page, action) => {
+  const posted = page
+    .waitForRequest((request) => request.method() === 'POST', {
+      timeout: NO_SUBMIT_WINDOW_MS
+    })
+    .then(
+      (request) => request.url(),
+      () => null
+    )
+  await action()
+  return posted
+}
+
+const expectLinkedError = async (page, field, message) => {
+  const alert = page.getByRole('alert')
+  await expect(alert).toContainText('There is a problem')
+  const summaryLink = alert.getByRole('link', { name: message })
+  await expect(summaryLink).toHaveAttribute('href', `#${field}`)
+  await summaryLink.click()
+  await expect(page.locator(`#${field}`)).toBeFocused()
+}
+
+const entryFormTests = () => {
+  test('renders the warning, visible labels and the complete shipped type list', async ({
+    page
+  }) => {
+    await expect(page.getByText(copy.caption, { exact: true })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { level: 1, name: copy.heading })
+    ).toBeVisible()
+    await expect(
+      page.getByText(copy.insetWarning, { exact: true })
+    ).toBeVisible()
+    await expect(page.getByLabel(copy.labels.documentType)).toBeVisible()
+    await expect(page.getByLabel(copy.labels.documentReference)).toBeVisible()
+    await expect(page.getByLabel(copy.labels.issueDate)).toBeVisible()
+    await expect(
+      page.getByLabel(copy.labels.documentType).locator('option')
+    ).toHaveText([
+      copy.placeholderOption,
+      ...documentTypeOptions.map(({ text }) => text)
+    ])
+  })
+
+  test('adds a document and flips the mandatory hub row to Completed', async ({
+    page
+  }) => {
+    await addDocument(page)
+    const row = rowFor(page, 'PHYTO-001')
+    await expect(row).toContainText(PHYTO_TYPE_LABEL)
+    await expect(row).toContainText('4/12/2025')
+    await expect(
+      row.getByRole('button', {
+        name: 'Remove Phytosanitary certificate PHYTO-001'
+      })
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: 'Save and return to hub' }).click()
+    await expect(page).toHaveURL((url) => hubUrl.test(url.pathname))
+    await expect(documentHubRow(page)).toContainText('Completed')
+  })
+
+  test('persists a saved document across a full page reload', async ({
+    page
+  }) => {
+    await addDocument(page)
+    await page.reload()
+
+    await expect(rowFor(page, 'PHYTO-001')).toContainText(PHYTO_TYPE_LABEL)
+    await expect(page.getByLabel(copy.labels.documentReference)).toHaveValue('')
+  })
+
+  test('offers an optional file input with a visible label, accept list and hint', async ({
+    page
+  }) => {
+    const fileInput = page.getByLabel(copy.labels.file)
+
+    await expect(fileInput).toBeVisible()
+    await expect(fileInput).toHaveAttribute('accept', ACCEPT_ATTRIBUTE)
+    await expect(
+      page.getByText(
+        copy.hints.file(ALLOWED_FILE_TYPES_HINT, MAX_FILE_SIZE_LABEL),
+        { exact: true }
+      )
+    ).toBeVisible()
+  })
+
+  test('keeps an uploaded file bound to its document across a full reload', async ({
+    page
+  }) => {
+    await addDocument(page, { file: pdfFile() })
+    await page.reload()
+
+    const row = rowFor(page, 'PHYTO-001')
+    await expect(row).toContainText(PHYTO_TYPE_LABEL)
+    await expect(row).toContainText(copy.status.checking)
+    await expect(row).not.toContainText(copy.status.noFile)
+  })
+
+  test('refuses an eleventh document with the capacity message', async ({
+    page
+  }) => {
+    const references = Array.from(
+      { length: MAX_DOCUMENTS },
+      (_, index) => `PHYTO-${index}`
+    )
+    for (const reference of references) {
+      await addDocument(page, { reference })
+    }
+
+    await addDocument(page, { reference: 'PHYTO-ELEVENTH' })
+
+    await expect(page.getByRole('alert')).toContainText(
+      copy.errors.maxDocuments(MAX_DOCUMENTS)
+    )
+    await expect(rowFor(page, 'PHYTO-ELEVENTH')).toHaveCount(0)
+  })
+}
+
+const metadataValidationTests = () => {
+  for (const testCase of [
+    {
+      name: 'missing document type',
+      field: 'documentType',
+      message: copy.errors.documentTypeRequired,
+      type: '',
+      reference: RAW_REFERENCE,
+      date: '4/12/2025',
+      raw: ''
+    },
+    {
+      name: 'forged document type',
+      field: 'documentType',
+      message: copy.errors.documentTypeRequired,
+      type: 'FORGED_TYPE',
+      reference: RAW_REFERENCE,
+      date: '4/12/2025',
+      raw: 'FORGED_TYPE'
+    },
+    {
+      name: 'missing reference',
+      field: 'documentReference',
+      message: copy.errors.referenceRequired,
+      type: 'AIR_WAYBILL',
+      reference: '',
+      date: '4/12/2025',
+      raw: ''
+    },
+    {
+      name: 'reference over 100 characters',
+      field: 'documentReference',
+      message: copy.errors.referenceMaxLength,
+      type: 'AIR_WAYBILL',
+      reference: 'x'.repeat(101),
+      date: '4/12/2025',
+      raw: 'x'.repeat(101)
+    },
+    {
+      name: 'missing issue date',
+      field: 'issueDate',
+      message: copy.errors.dateRequired,
+      type: 'AIR_WAYBILL',
+      reference: RAW_REFERENCE,
+      date: '',
+      raw: ''
+    },
+    {
+      name: 'impossible issue date',
+      field: 'issueDate',
+      message: copy.errors.dateInvalid,
+      type: 'AIR_WAYBILL',
+      reference: RAW_REFERENCE,
+      date: '31/2/2025',
+      raw: '31/2/2025'
+    }
+  ]) {
+    test(`links, focuses and preserves the ${testCase.name} error`, async ({
+      page
+    }) => {
+      if (
+        testCase.field === 'documentType' &&
+        testCase.type === 'FORGED_TYPE'
+      ) {
+        await page.locator('#documentType').evaluate((select) => {
+          select.append(new Option('Forged', 'FORGED_TYPE'))
+        })
+      }
+      await page
+        .getByLabel(copy.labels.documentType)
+        .selectOption(testCase.type)
+      await page
+        .getByLabel(copy.labels.documentReference)
+        .fill(testCase.reference)
+      await page.getByLabel(copy.labels.issueDate).fill(testCase.date)
+      await page.getByRole('button', { name: copy.actions.addDocument }).click()
+
+      await expectLinkedError(page, testCase.field, testCase.message)
+      await expect(page.locator(`#${testCase.field}`)).toHaveValue(testCase.raw)
+      await expect(page.getByLabel(copy.labels.documentReference)).toHaveValue(
+        testCase.reference
+      )
+    })
+  }
+
+  test('adds another document and removes the middle row by its computed name', async ({
+    page
+  }) => {
+    await addDocument(page)
+    await addDocument(page, {
+      type: 'AIR_WAYBILL',
+      reference: 'AIR-002',
+      date: '5/12/2025'
+    })
+    await addDocument(page, {
+      type: 'COMMERCIAL_INVOICE',
+      reference: 'INVOICE-003',
+      date: '6/12/2025'
+    })
+
+    await expect(page.getByRole('table').getByRole('row')).toHaveCount(4)
+    await page
+      .getByRole('button', { name: 'Remove Air waybill AIR-002' })
+      .click()
+    await expect(rowFor(page, 'AIR-002')).toHaveCount(0)
+    await expect(rowFor(page, 'PHYTO-001')).toBeVisible()
+    await expect(rowFor(page, 'INVOICE-003')).toBeVisible()
+  })
+
+  test('removing the last document returns the mandatory hub row to Not yet started', async ({
+    page
+  }) => {
+    await addDocument(page)
+    await page
+      .getByRole('button', {
+        name: 'Remove Phytosanitary certificate PHYTO-001'
+      })
+      .click()
+    await page.getByRole('button', { name: 'Save and return to hub' }).click()
+
+    await expect(documentHubRow(page)).toContainText('Not yet started')
+  })
+
+  test('continues with zero documents because the floor blocks readiness, not navigation', async ({
+    page
+  }) => {
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+
+    await expect(page).toHaveURL((url) => hubUrl.test(url.pathname))
+    await expect(documentHubRow(page)).toContainText('Not yet started')
+  })
+}
+
+const viewFileAndAxeTests = () => {
+  test('offers View file once a scan is safe and downloads the file behind it', async ({
+    page
+  }) => {
+    await addDocument(page, {
+      reference: PHYTO_SAFE,
+      file: pdfFile('phyto.pdf')
+    })
+    const row = rowFor(page, PHYTO_SAFE)
+    const viewFile = row.getByRole('link', {
+      name: `${copy.actions.viewFile} Phytosanitary certificate PHYTO-SAFE`
+    })
+    await expect(viewFile).toHaveCount(0)
+
+    await settleScan(page, PHYTO_SAFE, copy.status.safe)
+    await expect(viewFile).toBeVisible()
+
+    const download = await page.request.get(await viewFile.getAttribute('href'))
+
+    expect(download.status()).toBe(200)
+    expect(download.headers()['content-type']).toContain('application/pdf')
+    expect(download.headers()['x-content-type-options']).toBe('nosniff')
+  })
+
+  test('offers no View file for a checking row or an infected one', async ({
+    page
+  }) => {
+    await addDocument(page, {
+      reference: 'PHYTO-PENDING',
+      file: pdfFile('never-scans.pdf')
+    })
+    await addDocument(page, {
+      reference: PHYTO_VIRUS,
+      file: pdfFile('virus.pdf')
+    })
+    await settleScan(page, PHYTO_VIRUS, copy.status.virus)
+
+    for (const reference of ['PHYTO-PENDING', PHYTO_VIRUS]) {
+      const row = rowFor(page, reference)
+      await expect(
+        row.getByRole('link', { name: copy.actions.viewFile })
+      ).toHaveCount(0)
+      await expect(
+        row.getByRole('button', { name: copy.actions.remove })
+      ).toBeVisible()
+    }
+  })
+
+  test('a page offering a downloadable row has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await addDocument(page, {
+      reference: PHYTO_SAFE,
+      file: pdfFile('phyto.pdf')
+    })
+    await settleScan(page, PHYTO_SAFE, copy.status.safe)
+
+    const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
+    expect(
+      seriousOrCritical,
+      `Accompanying documents download row has serious/critical accessibility violations.\n${JSON.stringify(all, null, 2)}`
+    ).toEqual([])
+  })
+
+  test('initial page has no serious or critical axe violations', async ({
+    page
+  }) => {
+    const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
+    expect(
+      seriousOrCritical,
+      `Accompanying documents has serious/critical accessibility violations.\n${JSON.stringify(all, null, 2)}`
+    ).toEqual([])
+  })
+
+  test('validation-error page has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await page.getByRole('button', { name: copy.actions.addDocument }).click()
+    await expect(page.getByRole('alert')).toBeVisible()
+    const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
+    expect(
+      seriousOrCritical,
+      `Accompanying documents error has serious/critical accessibility violations.\n${JSON.stringify(all, null, 2)}`
+    ).toEqual([])
+  })
+
+  test('file-error page links to the file input and has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await addDocument(page, {
+      file: {
+        name: 'notes.zip',
+        mimeType: 'application/zip',
+        buffer: Buffer.from('not an allowed document')
+      }
+    })
+
+    await expectLinkedError(page, 'file', FILE_TYPE_MESSAGE)
+    const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
+    expect(
+      seriousOrCritical,
+      `Accompanying documents file error has serious/critical accessibility violations.\n${JSON.stringify(all, null, 2)}`
+    ).toEqual([])
+  })
+}
+
+const clientOversizeRefusalTests = () => {
+  test('refuses an over-limit file in the browser without sending a single byte', async ({
+    page
+  }) => {
+    test.slow()
+    await fillDocumentMetadata(page, 'PHYTO-BIG')
+    await page.getByLabel(copy.labels.file).setInputFiles(oversizeFile())
+
+    const posted = await postedUrlWhile(page, () =>
+      addDocumentButton(page).click()
+    )
+
+    expect(posted).toBeNull()
+    await expect(page.locator(ERROR_SUMMARY_SELECTOR)).toHaveCount(1)
+    await expect(
+      page.locator(ERROR_SUMMARY_SELECTOR).getByRole('link', {
+        name: OVERSIZE_FILE_MESSAGE
+      })
+    ).toHaveAttribute('href', '#file')
+    await expect(page.locator(ERROR_SUMMARY_TITLE_SELECTOR)).toBeFocused()
+    await expect(page.locator(ERROR_SUMMARY_TITLE_SELECTOR)).toHaveText(
+      sharedCopy.errorSummary.title
+    )
+    await expect(page.locator(FILE_ERROR_SELECTOR)).toContainText(
+      OVERSIZE_FILE_MESSAGE
+    )
+    await expect(page.getByLabel(copy.labels.file)).toHaveAttribute(
+      'aria-describedby',
+      'file-hint file-error'
+    )
+    await expect(page.getByLabel(copy.labels.documentType)).toHaveValue(
+      'PHYTOSANITARY_CERTIFICATE'
+    )
+    await expect(page.getByLabel(copy.labels.documentReference)).toHaveValue(
+      'PHYTO-BIG'
+    )
+    await expect(page.getByLabel(copy.labels.issueDate)).toHaveValue(
+      '4/12/2025'
+    )
+  })
+
+  test('renders the server-supplied message, so Welsh needs no client change', async ({
+    page
+  }) => {
+    test.slow()
+    const welshOversize = welshCopy.errors.oversize(MAX_FILE_SIZE_LABEL)
+    await page.locator('form[data-max-file-size]').evaluate((form, message) => {
+      form.dataset.oversizeError = message
+    }, welshOversize)
+
+    await fillDocumentMetadata(page, 'PHYTO-BIG')
+    await page.getByLabel(copy.labels.file).setInputFiles(oversizeFile())
+    const posted = await postedUrlWhile(page, () =>
+      addDocumentButton(page).click()
+    )
+
+    expect(posted).toBeNull()
+    await expect(page.locator(FILE_ERROR_SELECTOR)).toContainText(welshOversize)
+    await expect(page.locator(FILE_ERROR_SELECTOR)).not.toContainText(
+      OVERSIZE_FILE_MESSAGE
+    )
+    await expect(
+      page
+        .locator(ERROR_SUMMARY_SELECTOR)
+        .getByRole('link', { name: welshOversize })
+    ).toHaveCount(1)
+  })
+
+  test('lets an ordinary submit and a fileless submit through untouched', async ({
+    page
+  }) => {
+    await fillDocumentMetadata(page, 'PHYTO-NOFILE')
+
+    const posted = await postedUrlWhile(page, () =>
+      addDocumentButton(page).click()
+    )
+
+    expect(posted).not.toBeNull()
+    await expect(rowFor(page, 'PHYTO-NOFILE')).toContainText(copy.status.noFile)
+  })
+}
+
+const clientErrorSummaryTests = () => {
+  test('appends to a server-rendered summary rather than adding a second one', async ({
+    page
+  }) => {
+    test.slow()
+    await addDocumentButton(page).click()
+    await expect(page.getByRole('alert')).toContainText(
+      copy.errors.documentTypeRequired
+    )
+
+    await fillDocumentMetadata(page, 'PHYTO-BIG')
+    await page.getByLabel(copy.labels.file).setInputFiles(oversizeFile())
+    const posted = await postedUrlWhile(page, () =>
+      addDocumentButton(page).click()
+    )
+
+    expect(posted).toBeNull()
+    const summary = page.locator(ERROR_SUMMARY_SELECTOR)
+    await expect(summary).toHaveCount(1)
+    await expect(summary).toContainText(copy.errors.documentTypeRequired)
+    await expect(
+      summary.getByRole('link', { name: OVERSIZE_FILE_MESSAGE })
+    ).toHaveCount(1)
+    await expect(page.locator(ERROR_SUMMARY_TITLE_SELECTOR)).toBeFocused()
+  })
+
+  test('replaces a server-rendered file error rather than leaving a stale one', async ({
+    page
+  }) => {
+    test.slow()
+    await addDocument(page, {
+      reference: 'PHYTO-BIG',
+      file: {
+        name: 'notes.zip',
+        mimeType: 'application/zip',
+        buffer: Buffer.from('not an allowed document')
+      }
+    })
+    await expect(page.locator(FILE_ERROR_SELECTOR)).toContainText(
+      FILE_TYPE_MESSAGE
+    )
+
+    await page.getByLabel(copy.labels.file).setInputFiles(oversizeFile())
+    const posted = await postedUrlWhile(page, () =>
+      addDocumentButton(page).click()
+    )
+
+    expect(posted).toBeNull()
+    await expect(page.locator(FILE_ERROR_SELECTOR)).toHaveCount(1)
+    await expect(page.locator(FILE_ERROR_SELECTOR)).toContainText(
+      OVERSIZE_FILE_MESSAGE
+    )
+    await expect(page.locator(FILE_ERROR_SELECTOR)).not.toContainText(
+      FILE_TYPE_MESSAGE
+    )
+    await expect(page.locator(ERROR_SUMMARY_SELECTOR)).toHaveCount(1)
+    await expect(page.getByLabel(copy.labels.file)).toHaveAttribute(
+      'aria-describedby',
+      'file-hint file-error'
+    )
+  })
+
+  test('replaces the client error on resubmit and lets a valid file through', async ({
+    page
+  }) => {
+    test.slow()
+    await fillDocumentMetadata(page, 'PHYTO-BIG')
+    await page.getByLabel(copy.labels.file).setInputFiles(oversizeFile())
+    await addDocumentButton(page).click()
+    await expect(page.locator(FILE_ERROR_SELECTOR)).toBeVisible()
+
+    await addDocumentButton(page).click()
+    await expect(
+      page.locator('li[data-client-error="file-size-summary"]')
+    ).toHaveCount(1)
+    await expect(page.locator(FILE_ERROR_SELECTOR)).toHaveCount(1)
+
+    await page.getByLabel(copy.labels.file).setInputFiles(pdfFile())
+    await addDocumentButton(page).click()
+
+    await expect(rowFor(page, 'PHYTO-BIG')).toContainText(PHYTO_TYPE_LABEL)
+  })
+
+  test('client-rendered oversize error has no serious or critical axe violations', async ({
+    page
+  }) => {
+    test.slow()
+    await fillDocumentMetadata(page, 'PHYTO-BIG')
+    await page.getByLabel(copy.labels.file).setInputFiles(oversizeFile())
+    await addDocumentButton(page).click()
+    await expect(page.locator(FILE_ERROR_SELECTOR)).toBeVisible()
+
+    const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
+    expect(
+      seriousOrCritical,
+      `Accompanying documents client oversize error has serious/critical accessibility violations.\n${JSON.stringify(all, null, 2)}`
+    ).toEqual([])
+  })
+}
+
+test.describe('plant-products accompanying documents', () => {
+  test.beforeEach(async ({ page }) => {
+    await startAtDocuments(page)
+  })
+
+  entryFormTests()
+  metadataValidationTests()
+  viewFileAndAxeTests()
+  clientOversizeRefusalTests()
+  clientErrorSummaryTests()
+})

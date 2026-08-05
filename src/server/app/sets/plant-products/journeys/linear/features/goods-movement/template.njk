@@ -1,0 +1,107 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/details/macro.njk" import govukDetails %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "shared/save-actions.njk" import saveActions %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  <span class="govuk-caption-xl">{{ copy.caption }}</span>
+  <h1 class="govuk-heading-xl">{{ copy.title }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+
+    {% set movementReferenceNumberHtml %}
+      {{ govukInput({
+        id: "movementReferenceNumber",
+        name: "movementReferenceNumber",
+        label: { text: copy.mrn.label, classes: "govuk-label--s" },
+        hint: { text: copy.mrn.hint },
+        classes: "govuk-!-width-two-thirds",
+        value: values.movementReferenceNumber,
+        errorMessage: errors.movementReferenceNumber and { text: errors.movementReferenceNumber }
+      }) }}
+    {% endset %}
+
+    {{ govukRadios({
+      idPrefix: "commonTransitConvention",
+      name: "commonTransitConvention",
+      fieldset: {
+        legend: { text: copy.ctc.legend, classes: "govuk-fieldset__legend--m" }
+      },
+      hint: { text: copy.ctc.hint },
+      errorMessage: errors.commonTransitConvention and { text: errors.commonTransitConvention },
+      items: [
+        {
+          value: "ADD_MRN_NOW",
+          text: copy.ctc.options.ADD_MRN_NOW,
+          checked: values.commonTransitConvention == "ADD_MRN_NOW",
+          conditional: { html: movementReferenceNumberHtml }
+        },
+        {
+          value: "ADD_MRN_LATER",
+          text: copy.ctc.options.ADD_MRN_LATER,
+          checked: values.commonTransitConvention == "ADD_MRN_LATER"
+        },
+        {
+          value: "NO",
+          text: copy.ctc.options.NO,
+          checked: values.commonTransitConvention == "NO"
+        }
+      ]
+    }) }}
+
+    {% set ctcDetailsHtml %}
+      <p class="govuk-body">{{ copy.ctcDetails.intro }}</p>
+      <ul class="govuk-list govuk-list--bullet">
+        {% for item in copy.ctcDetails.bullets %}<li>{{ item }}</li>{% endfor %}
+      </ul>
+      <p class="govuk-body">{{ copy.ctcDetails.benefits }}</p>
+      <p class="govuk-body">{{ copy.ctcDetails.stepsIntro }}</p>
+      <ol class="govuk-list govuk-list--number">
+        {% for item in copy.ctcDetails.steps %}<li>{{ item }}</li>{% endfor %}
+      </ol>
+      <p class="govuk-body">
+        <a class="govuk-link" href="https://www.gov.uk/government/collections/using-common-or-union-transit-to-move-goods-into-through-and-out-of-the-uk" target="_blank" rel="noopener">{{ copy.ctcDetails.linkText }}</a>
+      </p>
+    {% endset %}
+    {{ govukDetails({
+      summaryText: copy.ctcDetails.summary,
+      html: ctcDetailsHtml,
+      classes: "govuk-!-margin-top-4"
+    }) }}
+
+    {{ govukRadios({
+      idPrefix: "usingGvms",
+      name: "usingGvms",
+      fieldset: {
+        legend: { text: copy.gvms.legend, classes: "govuk-fieldset__legend--m" }
+      },
+      errorMessage: errors.usingGvms and { text: errors.usingGvms },
+      items: [
+        { value: "yes", text: copy.gvms.options.yes, checked: values.usingGvms == "yes" },
+        { value: "no", text: copy.gvms.options.no, checked: values.usingGvms == "no" }
+      ]
+    }) }}
+
+    {% set gvmsDetailsHtml %}
+      <p class="govuk-body">{{ copy.gvmsDetails.paragraphs.intro }}</p>
+      <p class="govuk-body">{{ copy.gvmsDetails.paragraphs.stepsIntro }}</p>
+      <ol class="govuk-list govuk-list--number">
+        <li><a class="govuk-link" href="https://www.gov.uk/guidance/list-of-ports-using-the-goods-vehicle-movement-service" target="_blank" rel="noopener">{{ copy.gvmsDetails.links.portsList }}</a></li>
+        <li><a class="govuk-link" href="https://www.gov.uk/guidance/register-for-the-goods-vehicle-movement-service" target="_blank" rel="noopener">{{ copy.gvmsDetails.links.register }}</a></li>
+        <li><a class="govuk-link" href="https://www.gov.uk/guidance/get-a-goods-movement-reference" target="_blank" rel="noopener">{{ copy.gvmsDetails.links.gmr }}</a></li>
+      </ol>
+      <p class="govuk-body">{{ copy.gvmsDetails.paragraphs.gmr }}</p>
+      <p class="govuk-body">{{ copy.gvmsDetails.paragraphs.driver }}</p>
+    {% endset %}
+    {{ govukDetails({
+      summaryText: copy.gvmsDetails.summary,
+      html: gvmsDetailsHtml
+    }) }}
+
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+  </form>
+{% endblock %}
