@@ -75,7 +75,7 @@ export const render = (
       value: values.issueDate,
       error: errors.issueDate
     }),
-    rows: documentRows(documents),
+    rows: documentRows(documents, journey.journeyId),
     canRefresh,
     timedOut: anyChecking && attempt >= MAX_POLL_ATTEMPTS,
     refreshHref: refreshHref(request, attempt + 1),

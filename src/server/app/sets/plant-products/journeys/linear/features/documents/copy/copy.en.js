@@ -37,6 +37,7 @@ export const copy = {
   actions: {
     addDocument: 'Add document',
     remove: 'Remove',
+    viewFile: 'View file',
     refresh: 'Refresh virus scan status'
   },
   refreshTimeout:

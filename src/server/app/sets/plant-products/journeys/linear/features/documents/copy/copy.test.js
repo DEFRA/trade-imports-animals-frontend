@@ -83,6 +83,16 @@ describe('plant-products accompanying-documents copy', () => {
     expect(en.actions.refresh).toBe('Refresh virus scan status')
   })
 
+  it('names every row action, in both languages', () => {
+    expect(en.actions).toEqual({
+      addDocument: 'Add document',
+      remove: 'Remove',
+      viewFile: 'View file',
+      refresh: 'Refresh virus scan status'
+    })
+    expect(cy.actions.viewFile).toBe('Gweld y ffeil')
+  })
+
   it('describes the file as optional in its label and hint', () => {
     expect(en.labels.file).toBe('Upload a file (optional)')
     expect(en.hints.file('PDF or PNG', '10 MB')).toBe(

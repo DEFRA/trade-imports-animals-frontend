@@ -1,3 +1,4 @@
+import * as state from '../../../../../../../engine/index.js'
 import { documentUploads } from '../../../../../services/document-uploads/index.js'
 
 // The upload id becomes a path segment, so it is constrained before it reaches
@@ -18,3 +19,11 @@ export const isOwnedByJourney = async (uploadId, journeyId) => {
     return false
   }
 }
+
+// Reading a file back is answered from the CURRENT journey's own rows: an id
+// this journey does not hold is simply absent, so a well-formed id belonging to
+// another journey in the same session finds nothing.
+export const ownedDocument = (answers, evaluation, uploadId) =>
+  state
+    .collectionView(answers, ['accompanyingDocuments'], evaluation)
+    .find(({ entry }) => entry.uploadId === uploadId)

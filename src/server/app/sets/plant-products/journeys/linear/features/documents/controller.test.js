@@ -10,6 +10,7 @@ import {
   vi
 } from 'vitest'
 
+import { nunjucksConfig } from '../../../../../../../../config/nunjucks/nunjucks.js'
 import * as state from '../../../../../../engine/index.js'
 import { store } from '../../../../../../engine/store.js'
 import {
@@ -106,6 +107,8 @@ const phytoRow = (status) => ({
   documentReference: 'PHYTO-001',
   issueDate: '4/12/2025',
   status,
+  viewFileHref: null,
+  viewFileHidden: 'Phytosanitary certificate PHYTO-001',
   removeAction: 'remove:0',
   removeHidden: 'Phytosanitary certificate PHYTO-001'
 })
@@ -177,6 +180,8 @@ describe('plant-products accompanying-documents controller', () => {
         documentReference: 'PHYTO-001',
         issueDate: '4/12/2025',
         status: { text: 'Checking', classes: 'govuk-tag--blue', tag: true },
+        viewFileHref: null,
+        viewFileHidden: 'Phytosanitary certificate PHYTO-001',
         removeAction: 'remove:0',
         removeHidden: 'Phytosanitary certificate PHYTO-001'
       },
@@ -185,6 +190,8 @@ describe('plant-products accompanying-documents controller', () => {
         documentReference: 'AIR-002',
         issueDate: '4/12/2025',
         status: { text: 'No file', tag: false },
+        viewFileHref: null,
+        viewFileHidden: 'Air waybill AIR-002',
         removeAction: 'remove:1',
         removeHidden: 'Air waybill AIR-002'
       }
@@ -204,6 +211,46 @@ describe('plant-products accompanying-documents controller', () => {
       tag: true
     })
     expect(result.view.context.refreshHref).toMatch(/attempt=2$/)
+  })
+
+  it('offers a View file href only once the scan has settled clean', async () => {
+    const uploaded = await seededDocument('PHYTO-001')
+    const seed = { accompanyingDocuments: [uploaded.entry] }
+
+    const checking = await drive(get, { seed })
+    expect(checking.view.context.rows[0].viewFileHref).toBeNull()
+
+    await settleScan(uploaded.uploadId, 'phyto.pdf')
+    const safe = await drive(get, { seed })
+
+    expect(safe.view.context.rows[0].viewFileHref).toBe(
+      `/plant-products/notifications/${safe.journeyId}/accompanying-documents/${uploaded.uploadId}/file`
+    )
+    expect(safe.view.context.rows[0].viewFileHidden).toBe(
+      'Phytosanitary certificate PHYTO-001'
+    )
+  })
+
+  it.each([
+    { name: 'an infected file', filename: 'virus.pdf' },
+    { name: 'a file that never settles', filename: 'never-scans.pdf' }
+  ])('offers no View file href for $name', async ({ filename }) => {
+    const uploaded = await seededDocument('PHYTO-001', filename)
+    await settleScan(uploaded.uploadId, filename)
+
+    const result = await drive(get, {
+      seed: { accompanyingDocuments: [uploaded.entry] }
+    })
+
+    expect(result.view.context.rows[0].viewFileHref).toBeNull()
+  })
+
+  it('offers no View file href for a row that never reached an upload', async () => {
+    const result = await drive(get, {
+      seed: { accompanyingDocuments: [document('AIR-002', 'AIR_WAYBILL')] }
+    })
+
+    expect(result.view.context.rows[0].viewFileHref).toBeNull()
   })
 
   it('falls closed to checking when the scan status cannot be read', async () => {
@@ -732,5 +779,148 @@ describe('plant-products accompanying-documents controller', () => {
     await expect(drive(post, { payload: validPayload() })).rejects.toThrow(
       'programming failure'
     )
+  })
+})
+
+describe('plant-products accompanying-documents file download', () => {
+  let server
+
+  beforeAll(async () => {
+    server = Hapi.server()
+    await server.register(nunjucksConfig)
+    await server.register(plantProducts, {
+      routes: { prefix: '/plant-products' }
+    })
+    await server.initialize()
+  })
+
+  beforeEach(async () => {
+    enterSetContext('plant-products')
+    await records.clear()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  afterAll(async () => {
+    await server.stop({ timeout: 0 })
+  })
+
+  const journeyHolding = (...documents) =>
+    withSetContext('plant-products', async () => {
+      const { journeyId } = await store.create()
+      await store.seedAnswers(journeyId, {
+        accompanyingDocuments: documents
+      })
+      return journeyId
+    })
+
+  const readFile = (journeyId, uploadId) =>
+    server.inject(
+      `/plant-products/notifications/${journeyId}/accompanying-documents/${uploadId}/file`
+    )
+
+  const settledDocument = async (reference, filename = 'phyto.pdf') => {
+    const uploaded = await seededDocument(reference, filename)
+    await settleScan(uploaded.uploadId, filename)
+    return uploaded
+  }
+
+  it('streams a clean owned file with its content type, disposition and nosniff', async () => {
+    const uploaded = await settledDocument('PHYTO-001')
+    const journeyId = await journeyHolding(uploaded.entry)
+
+    const response = await readFile(journeyId, uploaded.uploadId)
+
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['content-type']).toMatch(/^application\/pdf/)
+    expect(response.headers['content-disposition']).toBe(
+      'inline; filename="placeholder.pdf"'
+    )
+    expect(response.headers['x-content-type-options']).toBe('nosniff')
+    expect(response.payload.startsWith('%PDF-')).toBe(true)
+  })
+
+  it('serves a type outside the upload allow-list as octet-stream', async () => {
+    const uploaded = await settledDocument('PHYTO-001')
+    const journeyId = await journeyHolding(uploaded.entry)
+    vi.spyOn(documentUploads, 'streamFile').mockResolvedValue(
+      new Response('<script>alert(1)</script>', {
+        headers: { 'content-type': 'text/html' }
+      })
+    )
+
+    const response = await readFile(journeyId, uploaded.uploadId)
+
+    expect(response.headers['content-type']).toMatch(
+      /^application\/octet-stream/
+    )
+    expect(response.headers['content-disposition']).toBe('attachment')
+    expect(response.headers['x-content-type-options']).toBe('nosniff')
+  })
+
+  it('answers 404 while the scan is still checking', async () => {
+    const uploaded = await seededDocument('PHYTO-001')
+    const journeyId = await journeyHolding(uploaded.entry)
+
+    const response = await readFile(journeyId, uploaded.uploadId)
+
+    expect(response.statusCode).toBe(404)
+  })
+
+  it('answers 404 for a file the scan rejected', async () => {
+    const uploaded = await settledDocument('PHYTO-INFECTED', 'virus.pdf')
+    const journeyId = await journeyHolding(uploaded.entry)
+
+    const response = await readFile(journeyId, uploaded.uploadId)
+
+    expect(response.statusCode).toBe(404)
+  })
+
+  it('answers 404 when the journey holds only fileless rows', async () => {
+    const uploaded = await settledDocument('PHYTO-001')
+    const journeyId = await journeyHolding(document('AIR-002', 'AIR_WAYBILL'))
+
+    const response = await readFile(journeyId, uploaded.uploadId)
+
+    expect(response.statusCode).toBe(404)
+  })
+
+  it.each([
+    { name: 'a space', encoded: 'up_1234%20', decoded: 'up_1234 ' },
+    { name: 'a dot segment', encoded: 'up.1234', decoded: 'up.1234' }
+  ])(
+    'answers 404 for an id containing $name without asking the upload service',
+    async ({ encoded, decoded }) => {
+      const journeyId = await journeyHolding(
+        document('PHYTO-001', 'PHYTOSANITARY_CERTIFICATE', {
+          uploadId: decoded,
+          filename: 'phyto.pdf'
+        })
+      )
+      const scanStatus = vi.spyOn(documentUploads, 'scanStatus')
+      const streamFile = vi.spyOn(documentUploads, 'streamFile')
+
+      const response = await readFile(journeyId, encoded)
+
+      expect(response.statusCode).toBe(404)
+      expect(scanStatus).not.toHaveBeenCalled()
+      expect(streamFile).not.toHaveBeenCalled()
+    }
+  )
+
+  it('never exposes one journey’s file through another journey in the same session', async () => {
+    const uploaded = await settledDocument('PHYTO-001')
+    const neighbourUpload = await settledDocument('PHYTO-002')
+    const holder = await journeyHolding(uploaded.entry)
+    const neighbour = await journeyHolding(neighbourUpload.entry)
+
+    await expect(readFile(holder, uploaded.uploadId)).resolves.toMatchObject({
+      statusCode: 200
+    })
+    const response = await readFile(neighbour, uploaded.uploadId)
+
+    expect(response.statusCode).toBe(404)
   })
 })

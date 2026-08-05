@@ -11,7 +11,11 @@ import { documentUploads } from '../../../../services/document-uploads/index.js'
 import { TEMPLATES } from '../../config.js'
 import { DOCUMENTS_ADDED_ANCHOR } from './contracts/documents-added-anchor.js'
 import { isRemoveAction, removeIndexOf } from './contracts/remove-action.js'
-import { isOwnedByJourney } from './contracts/upload-id.js'
+import {
+  isOwnedByJourney,
+  isSafeUploadId,
+  ownedDocument
+} from './contracts/upload-id.js'
 import { copy as cy } from './copy/copy.cy.js'
 import { copy as en } from './copy/copy.en.js'
 import {
@@ -27,9 +31,11 @@ import {
   rawDocumentFrom
 } from './form/payload.js'
 import { loadPage } from './handlers/load-page.js'
+import { fileResponse } from './handlers/reads/download.js'
 import { uploadDocumentFile } from './handlers/writes/upload.js'
 import { accompanyingDocumentsPage as page } from './page.js'
-import { isStillSettling } from './scan/status.js'
+import { SCAN_STATUS } from './scan-poll.js'
+import { isStillSettling, scanStatusOf } from './scan/status.js'
 import { settlingSummaryErrors } from './scan/summary-errors.js'
 import { MAX_PAYLOAD_BYTES, OVERSIZE_FILE_MESSAGE } from './upload-config.js'
 import { render as renderView } from './view-model/render.js'
@@ -40,6 +46,7 @@ const view = `${TEMPLATES}/features/documents/template`
 const copy = copyFor({ en, cy })
 
 const HTTP_STATUS_PAYLOAD_TOO_LARGE = 413
+const HTTP_STATUS_NOT_FOUND = 404
 
 const render = (request, h, pageState, values = EMPTY_FORM, options) =>
   renderView(view, request, h, pageState, values, options)
@@ -53,6 +60,25 @@ const redirectToPage = (request, h) =>
   )
 
 const get = async (request, h) => render(request, h, await loadPage(request, h))
+
+const notFound = (h) => h.response().code(HTTP_STATUS_NOT_FOUND)
+
+// Every refusal is a 404, never a 403 — a 403 would confirm that the upload id
+// somebody guessed exists. The guards run shape, then ownership, then scan
+// verdict, so a malformed id never reaches the upload service at all.
+const getFile = async (request, h) => {
+  const { uploadId } = request.params
+  if (!isSafeUploadId(uploadId)) return notFound(h)
+
+  const { answers, evaluation } = await state.get(request, h)
+  const document = ownedDocument(answers, evaluation, uploadId)
+  if (!document) return notFound(h)
+
+  const scanStatus = await scanStatusOf(document.entry)
+  if (scanStatus !== SCAN_STATUS.COMPLETE) return notFound(h)
+
+  return fileResponse(h, await documentUploads.streamFile(uploadId))
+}
 
 // A retry may only reuse an upload the backend agrees belongs to this journey —
 // the hidden field itself proves nothing.
@@ -243,5 +269,11 @@ export const routes = [
       }
     },
     handler: post
+  },
+  {
+    method: 'GET',
+    path: pageRoutePath(`${page.slug}/{uploadId}/file`),
+    options: routeOptions,
+    handler: getFile
   }
 ]

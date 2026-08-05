@@ -38,6 +38,7 @@ export const copy = {
   actions: {
     addDocument: 'Ychwanegu dogfen',
     remove: 'Tynnu',
+    viewFile: 'Gweld y ffeil',
     refresh: 'Adnewyddu statws sgan firws'
   },
   refreshTimeout:

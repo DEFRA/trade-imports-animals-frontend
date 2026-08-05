@@ -8,6 +8,7 @@ import {
   addDocument,
   pdfFile,
   rowFor,
+  settleScan,
   startAtDocuments
 } from './documents.e2e-helper.js'
 import {
@@ -264,6 +265,69 @@ test.describe('plant-products accompanying documents', () => {
 
     await expect(page).toHaveURL((url) => hubUrl.test(url.pathname))
     await expect(documentHubRow(page)).toContainText('Not yet started')
+  })
+
+  test('offers View file once a scan is safe and downloads the file behind it', async ({
+    page
+  }) => {
+    await addDocument(page, {
+      reference: 'PHYTO-SAFE',
+      file: pdfFile('phyto.pdf')
+    })
+    const row = rowFor(page, 'PHYTO-SAFE')
+    const viewFile = row.getByRole('link', {
+      name: `${copy.actions.viewFile} Phytosanitary certificate PHYTO-SAFE`
+    })
+    await expect(viewFile).toHaveCount(0)
+
+    await settleScan(page, 'PHYTO-SAFE', copy.status.safe)
+    await expect(viewFile).toBeVisible()
+
+    const download = await page.request.get(await viewFile.getAttribute('href'))
+
+    expect(download.status()).toBe(200)
+    expect(download.headers()['content-type']).toContain('application/pdf')
+    expect(download.headers()['x-content-type-options']).toBe('nosniff')
+  })
+
+  test('offers no View file for a checking row or an infected one', async ({
+    page
+  }) => {
+    await addDocument(page, {
+      reference: 'PHYTO-PENDING',
+      file: pdfFile('never-scans.pdf')
+    })
+    await addDocument(page, {
+      reference: 'PHYTO-VIRUS',
+      file: pdfFile('virus.pdf')
+    })
+    await settleScan(page, 'PHYTO-VIRUS', copy.status.virus)
+
+    for (const reference of ['PHYTO-PENDING', 'PHYTO-VIRUS']) {
+      const row = rowFor(page, reference)
+      await expect(
+        row.getByRole('link', { name: copy.actions.viewFile })
+      ).toHaveCount(0)
+      await expect(
+        row.getByRole('button', { name: copy.actions.remove })
+      ).toBeVisible()
+    }
+  })
+
+  test('a page offering a downloadable row has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await addDocument(page, {
+      reference: 'PHYTO-SAFE',
+      file: pdfFile('phyto.pdf')
+    })
+    await settleScan(page, 'PHYTO-SAFE', copy.status.safe)
+
+    const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
+    expect(
+      seriousOrCritical,
+      `Accompanying documents download row has serious/critical accessibility violations.\n${JSON.stringify(all, null, 2)}`
+    ).toEqual([])
   })
 
   test('initial page has no serious or critical axe violations', async ({
