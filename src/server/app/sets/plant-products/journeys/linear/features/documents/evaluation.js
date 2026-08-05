@@ -6,7 +6,9 @@ import {
   accompanyingDocuments,
   documentReference,
   documentType,
-  issueDate
+  filename,
+  issueDate,
+  uploadId
 } from '../../../../obligations/index.js'
 
 const document = {
@@ -21,5 +23,7 @@ const documentLeaf = (field, obligation) =>
 export const evaluationBindings = feature('documents', [
   documentLeaf('documentType', documentType),
   documentLeaf('documentReference', documentReference),
-  documentLeaf('issueDate', issueDate)
+  documentLeaf('issueDate', issueDate),
+  documentLeaf('uploadId', uploadId),
+  documentLeaf('filename', filename)
 ])

@@ -144,7 +144,13 @@ describe('plant-products indexed obligations are first-class', () => {
         obligation: plantProductsObligationSet.accompanyingDocuments,
         templatePath: 'accompanyingDocuments'
       },
-      ...['documentType', 'documentReference', 'issueDate'].map((name) => ({
+      ...[
+        'documentType',
+        'documentReference',
+        'issueDate',
+        'uploadId',
+        'filename'
+      ].map((name) => ({
         obligation: plantProductsObligationSet[name],
         templatePath: `accompanyingDocuments.${name}`
       })),

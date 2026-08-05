@@ -157,10 +157,22 @@ const dateFromIso = (value) => {
   }
 }
 
+// The plant document carries at most one file, and the server-assigned document
+// id is dropped, so upload identity has to travel back inside files[].
+const mapDocumentFile = (entry) => {
+  const [file] = Array.isArray(entry.files) ? entry.files : []
+  if (!file?.fileId) return {}
+  return {
+    uploadId: file.fileId,
+    ...(file.filename != null ? { filename: file.filename } : {})
+  }
+}
+
 const mapDocument = (entry) => ({
   documentType: entry.documentType,
   documentReference: entry.documentReference,
-  issueDate: dateFromIso(entry.issueDate)
+  issueDate: dateFromIso(entry.issueDate),
+  ...mapDocumentFile(entry)
 })
 
 const mapDocuments = (dto) =>

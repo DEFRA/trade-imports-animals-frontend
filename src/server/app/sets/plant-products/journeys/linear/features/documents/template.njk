@@ -1,8 +1,10 @@
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/file-upload/macro.njk" import govukFileUpload %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
+{% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "shared/save-actions.njk" import saveActions %}
 
 {% block journeyContent %}
@@ -13,40 +15,63 @@
 
   {{ govukInsetText({ text: copy.insetWarning }) }}
 
-  <form method="post" novalidate>
+  <form method="post" enctype="multipart/form-data" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
+    {% if pendingUpload %}
+      <input type="hidden" name="retryUploadId" value="{{ pendingUpload.uploadId }}" />
+      <input type="hidden" name="retryFilename" value="{{ pendingUpload.filename }}" />
+    {% endif %}
 
     {% if rows.length %}
-      <table class="govuk-table">
-        <caption class="govuk-table__caption govuk-visually-hidden">{{ copy.table.caption }}</caption>
-        <thead class="govuk-table__head">
-          <tr class="govuk-table__row">
-            <th scope="col" class="govuk-table__header">{{ copy.table.headings.documentType }}</th>
-            <th scope="col" class="govuk-table__header">{{ copy.table.headings.documentReference }}</th>
-            <th scope="col" class="govuk-table__header">{{ copy.table.headings.issueDate }}</th>
-            <th scope="col" class="govuk-table__header"><span class="govuk-visually-hidden">{{ copy.actions.remove }}</span></th>
-          </tr>
-        </thead>
-        <tbody class="govuk-table__body">
-          {% for row in rows %}
+      <div id="documents-added" tabindex="-1">
+        <table class="govuk-table">
+          <caption class="govuk-table__caption govuk-visually-hidden">{{ copy.table.caption }}</caption>
+          <thead class="govuk-table__head">
             <tr class="govuk-table__row">
-              <td class="govuk-table__cell">{{ row.documentType }}</td>
-              <td class="govuk-table__cell">{{ row.documentReference }}</td>
-              <td class="govuk-table__cell">{{ row.issueDate }}</td>
-              <td class="govuk-table__cell">
-                <button type="submit"
-                        class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
-                        name="action"
-                        value="remove:{{ row.index }}"
-                        data-module="govuk-button">
-                  {{ copy.actions.remove }}
-                  <span class="govuk-visually-hidden"> {{ row.documentType }} {{ row.documentReference }}</span>
-                </button>
-              </td>
+              <th scope="col" class="govuk-table__header">{{ copy.table.headings.documentType }}</th>
+              <th scope="col" class="govuk-table__header">{{ copy.table.headings.documentReference }}</th>
+              <th scope="col" class="govuk-table__header">{{ copy.table.headings.issueDate }}</th>
+              <th scope="col" class="govuk-table__header">{{ copy.table.headings.status }}</th>
+              <th scope="col" class="govuk-table__header"><span class="govuk-visually-hidden">{{ copy.table.headings.actions }}</span></th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </thead>
+          <tbody class="govuk-table__body">
+            {% for row in rows %}
+              <tr class="govuk-table__row">
+                <td class="govuk-table__cell">{{ row.documentType }}</td>
+                <td class="govuk-table__cell">{{ row.documentReference }}</td>
+                <td class="govuk-table__cell">{{ row.issueDate }}</td>
+                <td class="govuk-table__cell">
+                  {% if row.status.tag %}
+                    {{ govukTag({ text: row.status.text, classes: row.status.classes }) }}
+                  {% else %}
+                    <span class="govuk-hint">{{ row.status.text }}</span>
+                  {% endif %}
+                </td>
+                <td class="govuk-table__cell">
+                  <button type="submit"
+                          class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
+                          name="action"
+                          value="{{ row.removeAction }}"
+                          data-module="govuk-button">
+                    {{ copy.actions.remove }}
+                    <span class="govuk-visually-hidden"> {{ row.removeHidden }}</span>
+                  </button>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if canRefresh %}
+        <p class="govuk-body">
+          <a href="{{ refreshHref }}" class="govuk-link">{{ copy.actions.refresh }}</a>
+        </p>
+      {% endif %}
+      {% if timedOut %}
+        <p class="govuk-hint">{{ copy.refreshTimeout }}</p>
+      {% endif %}
     {% endif %}
 
     {{ govukSelect({
@@ -67,6 +92,15 @@
     }) }}
 
     {{ govukInput(issueDate) }}
+
+    {{ govukFileUpload({
+      id: "file",
+      name: "file",
+      label: { text: copy.labels.file, classes: "govuk-label--s" },
+      hint: { text: fileHint },
+      attributes: { accept: acceptAttribute },
+      errorMessage: errors.file and { text: errors.file }
+    }) }}
 
     {{ govukButton({
       text: copy.actions.addDocument,

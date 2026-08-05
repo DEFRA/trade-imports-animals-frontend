@@ -3,7 +3,9 @@ export const accompanyingDocuments = {
   name: 'accompanyingDocuments',
   requires: {
     minEntries: 1,
-    errorCode: 'obligation.accompanyingDocuments.required'
+    errorCode: 'obligation.accompanyingDocuments.required',
+    maxEntries: 10,
+    maxEntriesErrorCode: 'obligation.accompanyingDocuments.tooMany'
   }
 }
 
@@ -26,4 +28,18 @@ export const issueDate = {
   name: 'issueDate',
   within: accompanyingDocuments,
   status: 'mandatory'
+}
+
+export const uploadId = {
+  id: '0aefa5b0-b64f-4a3f-9e36-1ec80cf9e053',
+  name: 'uploadId',
+  within: accompanyingDocuments,
+  status: 'optional'
+}
+
+export const filename = {
+  id: 'a000ea46-218f-47a3-b5fc-5f95e03a0fc1',
+  name: 'filename',
+  within: accompanyingDocuments,
+  status: 'optional'
 }

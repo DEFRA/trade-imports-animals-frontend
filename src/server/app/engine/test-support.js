@@ -79,9 +79,9 @@ export const recordingH = () => {
 
 export const driveHandler = async (
   handler,
-  { payload = {}, seed = {}, params = {}, query = {} } = {}
+  { payload = {}, seed = {}, params = {}, query = {}, journeyId } = {}
 ) => {
-  const journey = await store.create()
+  const journey = journeyId ? { journeyId } : await store.create()
   await store.seedAnswers(journey.journeyId, seed)
   const h = stubH()
   const response = await handler(

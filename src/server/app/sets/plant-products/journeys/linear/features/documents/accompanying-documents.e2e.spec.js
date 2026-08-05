@@ -2,48 +2,22 @@ import { expect, test } from '@playwright/test'
 
 import { axeViolations as seriousOrCriticalViolations } from '../axe.e2e-helper.js'
 import { documentTypeOptions } from '../../../../services/reference/document-types.js'
+import { MAX_DOCUMENTS } from './contracts/max-documents.js'
 import { copy } from './copy/copy.en.js'
+import {
+  addDocument,
+  pdfFile,
+  rowFor,
+  startAtDocuments
+} from './documents.e2e-helper.js'
+import {
+  ACCEPT_ATTRIBUTE,
+  ALLOWED_FILE_TYPES_HINT,
+  FILE_TYPE_MESSAGE,
+  MAX_FILE_SIZE_LABEL
+} from './upload-config.js'
 
 const hubUrl = /^\/plant-products\/notifications\/[^/]+$/
-const documentsUrl =
-  /^\/plant-products\/notifications\/[^/]+\/accompanying-documents$/
-
-const startAtDocuments = async (page) => {
-  await page.goto('/plant-products')
-  await page.getByRole('button', { name: 'Create a new notification' }).click()
-  await page
-    .getByRole('radio', { name: 'Plants, plant products and other objects' })
-    .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
-  await page.getByLabel('Country of origin').selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
-  await page.getByRole('link', { name: 'Back', exact: true }).click()
-  await page.getByRole('link', { name: 'Commodity', exact: true }).click()
-  await page.getByRole('radio', { name: 'Manual entry' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
-  await page.getByLabel('Enter commodity code').fill('06011010')
-  await page.getByRole('button', { name: 'Search', exact: true }).click()
-  const match = page.url().match(/(\/plant-products\/notifications\/[^/]+)/)
-  await page.goto(`${match[1]}/accompanying-documents`)
-  await expect(page).toHaveURL((url) => documentsUrl.test(url.pathname))
-}
-
-const addDocument = async (
-  page,
-  {
-    type = 'PHYTOSANITARY_CERTIFICATE',
-    reference = 'PHYTO-001',
-    date = '4/12/2025'
-  } = {}
-) => {
-  await page.getByLabel(copy.labels.documentType).selectOption(type)
-  await page.getByLabel(copy.labels.documentReference).fill(reference)
-  await page.getByLabel(copy.labels.issueDate).fill(date)
-  await page.getByRole('button', { name: copy.actions.addDocument }).click()
-}
-
-const rowFor = (page, reference) =>
-  page.getByRole('row').filter({ hasText: reference })
 
 const documentHubRow = (page) =>
   page.getByRole('listitem').filter({
@@ -113,6 +87,52 @@ test.describe('plant-products accompanying documents', () => {
       'Phytosanitary certificate'
     )
     await expect(page.getByLabel(copy.labels.documentReference)).toHaveValue('')
+  })
+
+  test('offers an optional file input with a visible label, accept list and hint', async ({
+    page
+  }) => {
+    const fileInput = page.getByLabel(copy.labels.file)
+
+    await expect(fileInput).toBeVisible()
+    await expect(fileInput).toHaveAttribute('accept', ACCEPT_ATTRIBUTE)
+    await expect(
+      page.getByText(
+        copy.hints.file(ALLOWED_FILE_TYPES_HINT, MAX_FILE_SIZE_LABEL),
+        { exact: true }
+      )
+    ).toBeVisible()
+  })
+
+  test('keeps an uploaded file bound to its document across a full reload', async ({
+    page
+  }) => {
+    await addDocument(page, { file: pdfFile() })
+    await page.reload()
+
+    const row = rowFor(page, 'PHYTO-001')
+    await expect(row).toContainText('Phytosanitary certificate')
+    await expect(row).toContainText(copy.status.checking)
+    await expect(row).not.toContainText(copy.status.noFile)
+  })
+
+  test('refuses an eleventh document with the capacity message', async ({
+    page
+  }) => {
+    const references = Array.from(
+      { length: MAX_DOCUMENTS },
+      (_, index) => `PHYTO-${index}`
+    )
+    for (const reference of references) {
+      await addDocument(page, { reference })
+    }
+
+    await addDocument(page, { reference: 'PHYTO-ELEVENTH' })
+
+    await expect(page.getByRole('alert')).toContainText(
+      copy.errors.maxDocuments(MAX_DOCUMENTS)
+    )
+    await expect(rowFor(page, 'PHYTO-ELEVENTH')).toHaveCount(0)
   })
 
   for (const testCase of [
@@ -265,6 +285,25 @@ test.describe('plant-products accompanying documents', () => {
     expect(
       seriousOrCritical,
       `Accompanying documents error has serious/critical accessibility violations.\n${JSON.stringify(all, null, 2)}`
+    ).toEqual([])
+  })
+
+  test('file-error page links to the file input and has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await addDocument(page, {
+      file: {
+        name: 'notes.zip',
+        mimeType: 'application/zip',
+        buffer: Buffer.from('not an allowed document')
+      }
+    })
+
+    await expectLinkedError(page, 'file', FILE_TYPE_MESSAGE)
+    const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
+    expect(
+      seriousOrCritical,
+      `Accompanying documents file error has serious/critical accessibility violations.\n${JSON.stringify(all, null, 2)}`
     ).toEqual([])
   })
 })

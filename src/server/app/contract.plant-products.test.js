@@ -221,7 +221,14 @@ const cases = [
       action: 'add',
       documentType: 'PHYTOSANITARY_CERTIFICATE',
       documentReference: 'PHYTO-001',
-      issueDate: '4/12/2025'
+      issueDate: '4/12/2025',
+      // The upload leaves are members of the group, so an add that carries a
+      // file must still commit only the declared group root.
+      file: {
+        filename: 'phyto.pdf',
+        headers: { 'content-type': 'application/pdf' },
+        payload: { length: 2048 }
+      }
     }
   },
   {

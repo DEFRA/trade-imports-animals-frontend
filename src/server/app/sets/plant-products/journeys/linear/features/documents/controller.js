@@ -1,137 +1,48 @@
 import * as state from '../../../../../../engine/index.js'
-import { isBlank } from '../../../../../../lib/answered.js'
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../lib/http-status.js'
-import {
-  compose,
-  dateText,
-  maxText,
-  requiredOneOf,
-  validate
-} from '../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import * as kit from '../../../../../../shared/kit.js'
-import { hubPath, pagePath } from '../../../../../../shared/paths.js'
-import {
-  documentTypeLabel,
-  documentTypeOptions
-} from '../../../../services/reference/document-types.js'
+import { routeOptions } from '../../../../../../shared/kit.js'
+import { pagePath, pageRoutePath } from '../../../../../../shared/paths.js'
+import { documentUploads } from '../../../../services/document-uploads/index.js'
 import { TEMPLATES } from '../../config.js'
+import { DOCUMENTS_ADDED_ANCHOR } from './contracts/documents-added-anchor.js'
+import { isRemoveAction, removeIndexOf } from './contracts/remove-action.js'
+import { isOwnedByJourney } from './contracts/upload-id.js'
 import { copy as cy } from './copy/copy.cy.js'
 import { copy as en } from './copy/copy.en.js'
+import {
+  capacityExceededError,
+  documentAddErrors,
+  hasFilePart,
+  isAtCapacity
+} from './form/errors.js'
+import {
+  EMPTY_FORM,
+  claimedUploadFrom,
+  documentFromPayload,
+  rawDocumentFrom
+} from './form/payload.js'
+import { loadPage } from './handlers/load-page.js'
+import { uploadDocumentFile } from './handlers/writes/upload.js'
 import { accompanyingDocumentsPage as page } from './page.js'
+import { isStillSettling } from './scan/status.js'
+import { settlingSummaryErrors } from './scan/summary-errors.js'
+import { MAX_PAYLOAD_BYTES, OVERSIZE_FILE_MESSAGE } from './upload-config.js'
+import { render as renderView } from './view-model/render.js'
 
 export const meta = { ...page, collects: ['accompanyingDocuments'] }
 
 const view = `${TEMPLATES}/features/documents/template`
 const copy = copyFor({ en, cy })
 
-const emptyEntry = () => ({
-  documentType: '',
-  documentReference: '',
-  issueDate: ''
-})
+const HTTP_STATUS_PAYLOAD_TOO_LARGE = 413
 
-const rawEntryFrom = (payload) => ({
-  documentType: payload.documentType ?? '',
-  documentReference: payload.documentReference ?? '',
-  issueDate: payload.issueDate ?? ''
-})
-
-const entryFrom = (payload) => ({
-  documentType: String(payload.documentType ?? '').trim(),
-  documentReference: String(payload.documentReference ?? '').trim(),
-  issueDate: kit.readDate(payload, 'issueDate')
-})
-
-const documentFields = (documentTypeCodes) =>
-  compose(
-    requiredOneOf(
-      'documentType',
-      documentTypeCodes,
-      copy.errors.documentTypeRequired
-    ),
-    maxText('documentReference', 100, copy.errors.referenceMaxLength),
-    dateText('issueDate', copy.errors.dateInvalid)
-  )
-
-const presenceErrors = (entry) => ({
-  ...(entry.documentReference
-    ? {}
-    : { documentReference: copy.errors.referenceRequired }),
-  ...(isBlank(entry.issueDate) ? { issueDate: copy.errors.dateRequired } : {})
-})
-
-const displayDate = (value) =>
-  [value?.day, value?.month, value?.year]
-    .map((part) => String(part ?? ''))
-    .join('/')
-
-const rowsFrom = ({ answers, evaluation }) =>
-  state
-    .collectionView(answers, ['accompanyingDocuments'], evaluation)
-    .map(({ index, entry }) => ({
-      index,
-      documentType:
-        documentTypeLabel(entry.documentType) ?? entry.documentType ?? '',
-      documentReference: entry.documentReference ?? '',
-      issueDate: displayDate(entry.issueDate)
-    }))
-
-const selectItems = (selected) => [
-  {
-    value: '',
-    text: copy.placeholderOption,
-    selected: selected === ''
-  },
-  ...documentTypeOptions.map((option) => ({
-    ...option,
-    selected: option.value === selected
-  })),
-  ...(selected && !documentTypeOptions.some(({ value }) => value === selected)
-    ? [{ value: selected, text: selected, selected: true, disabled: true }]
-    : [])
-]
-
-const render = (
-  request,
-  h,
-  pageState,
-  values = emptyEntry(),
-  { errors = {}, recoverableError = false } = {}
-) => {
-  const base = kit.base(copy.pageTitle, {
-    backLink: kit.withChangeContext(
-      request,
-      hubPath(pageState.journey.journeyId)
-    ),
-    journey: pageState.journey,
-    recoverableError
-  })
-  return h.view(view, {
-    ...base,
-    hubHref: kit.withChangeContext(request, base.hubHref),
-    copy,
-    values,
-    errors,
-    errorSummary: kit.errorSummary(errors),
-    documentTypeItems: selectItems(values.documentType),
-    issueDate: kit.dateField('issueDate', {
-      label: copy.labels.issueDate,
-      hint: copy.hints.issueDate,
-      value: values.issueDate,
-      error: errors.issueDate
-    }),
-    rows: rowsFrom(pageState)
-  })
-}
-
-const get = async (request, h) => {
-  const pageState = await state.get(request, h)
-  return render(request, h, pageState)
-}
+const render = (request, h, pageState, values = EMPTY_FORM, options) =>
+  renderView(view, request, h, pageState, values, options)
 
 const redirectToPage = (request, h) =>
   h.redirect(
@@ -141,74 +52,196 @@ const redirectToPage = (request, h) =>
     )
   )
 
-const postAdd = async (request, h, payload) => {
-  const pageState = await state.get(request, h)
-  const rawEntry = rawEntryFrom(payload)
-  const entry = entryFrom(payload)
-  const documentTypeCodes = documentTypeOptions.map(({ value }) => value)
-  const { errors: fieldErrors = {} } = validate(
-    documentFields(documentTypeCodes),
-    payload
+const get = async (request, h) => render(request, h, await loadPage(request, h))
+
+// A retry may only reuse an upload the backend agrees belongs to this journey —
+// the hidden field itself proves nothing.
+const verifiedRetry = async (payload, journey) => {
+  const claimed = claimedUploadFrom(payload)
+  // A retry field that fails the shape or filename guards is still a claim, so
+  // it is refused rather than degrading into an ordinary fileless Add.
+  if (!claimed) return { claimed: Boolean(payload.retryUploadId), retry: null }
+  const owned = await isOwnedByJourney(claimed.uploadId, journey.journeyId)
+  return { claimed, retry: owned ? claimed : null }
+}
+
+const isAlreadySaved = (documents, uploadId) =>
+  documents.some(({ entry }) => entry.uploadId === uploadId)
+
+const uploadOutcome = async (journey, entry, file) => {
+  try {
+    return {
+      upload: {
+        uploadId: await uploadDocumentFile(journey, entry, file),
+        filename: file.filename
+      }
+    }
+  } catch {
+    return { failed: true }
+  }
+}
+
+const saveDocument = async (request, h, pageState, raw, savedEntry, upload) => {
+  const { failure } = await kit.recoverableSave(
+    () => state.appendEntry(request, h, 'accompanyingDocuments', savedEntry),
+    () =>
+      render(request, h, pageState, raw, {
+        recoverableError: true,
+        pendingUpload: upload
+      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
-  const errors = { ...fieldErrors, ...presenceErrors(entry) }
+  return failure ?? redirectToPage(request, h)
+}
+
+const postAdd = async (request, h, payload) => {
+  const pageState = await loadPage(request, h)
+  const raw = rawDocumentFrom(payload)
+  const entry = documentFromPayload(payload)
+  const { claimed, retry } = await verifiedRetry(payload, pageState.journey)
+
+  if (claimed && !retry) {
+    return render(request, h, pageState, raw, {
+      errors: { file: copy.errors.uploadFailed }
+    }).code(HTTP_STATUS_BAD_REQUEST)
+  }
+
+  const alreadyLanded =
+    Boolean(retry) && isAlreadySaved(pageState.documents, retry.uploadId)
+
+  if (!alreadyLanded && isAtCapacity(pageState.documents)) {
+    return render(request, h, pageState, raw, {
+      summaryErrors: capacityExceededError()
+    }).code(HTTP_STATUS_BAD_REQUEST)
+  }
+
+  // The row already landed — the failure the user saw came back after the
+  // write, so resubmitting must not append a second copy of it.
+  if (alreadyLanded) return redirectToPage(request, h)
+
+  const errors = documentAddErrors(payload, entry, retry)
   if (Object.keys(errors).length > 0) {
-    return render(request, h, pageState, rawEntry, { errors }).code(
+    return render(request, h, pageState, raw, { errors }).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
 
-  const { failure } = await kit.recoverableSave(
-    () =>
-      state.appendEntry(request, h, 'accompanyingDocuments', {
-        documentType: entry.documentType,
-        documentReference: entry.documentReference,
-        issueDate: entry.issueDate
-      }),
-    () =>
-      render(request, h, pageState, rawEntry, {
-        recoverableError: true
+  let upload = retry
+  if (!upload && hasFilePart(payload.file)) {
+    const outcome = await uploadOutcome(pageState.journey, entry, payload.file)
+    if (outcome.failed) {
+      return render(request, h, pageState, raw, {
+        errors: { file: copy.errors.uploadFailed }
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    }
+    upload = outcome.upload
+  }
+
+  return saveDocument(
+    request,
+    h,
+    pageState,
+    raw,
+    {
+      documentType: entry.documentType,
+      documentReference: entry.documentReference,
+      issueDate: entry.issueDate,
+      ...(upload
+        ? { uploadId: upload.uploadId, filename: upload.filename }
+        : {})
+    },
+    upload
   )
-  if (failure) return failure
-
-  return redirectToPage(request, h)
-}
-
-const removeIndexOf = (action) => {
-  const match = String(action).match(/^remove:(0|[1-9]\d*)$/)
-  return match ? Number(match[1]) : null
 }
 
 const postRemove = async (request, h, action) => {
-  const pageState = await state.get(request, h)
+  const pageState = await loadPage(request, h)
   const index = removeIndexOf(action)
   const document =
     index === null
       ? undefined
-      : state
-          .collectionView(
-            pageState.answers,
-            ['accompanyingDocuments'],
-            pageState.evaluation
-          )
-          .find((entry) => entry.index === index)
+      : pageState.documents.find((item) => item.index === index)
   if (!document) return h.response().code(HTTP_STATUS_BAD_REQUEST)
 
-  await state.removeEntry(request, h, 'accompanyingDocuments', index)
-  return redirectToPage(request, h)
+  if (document.entry.uploadId) {
+    try {
+      await documentUploads.remove(document.entry.uploadId)
+    } catch {
+      return render(request, h, pageState, EMPTY_FORM, {
+        summaryErrors: [
+          { text: copy.errors.removeFailed, href: DOCUMENTS_ADDED_ANCHOR }
+        ]
+      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    }
+  }
+
+  const { failure } = await kit.recoverableSave(
+    () => state.removeEntry(request, h, 'accompanyingDocuments', index),
+    () =>
+      render(request, h, pageState, EMPTY_FORM, {
+        summaryErrors: [
+          { text: copy.errors.removeFailed, href: DOCUMENTS_ADDED_ANCHOR }
+        ]
+      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+  )
+  return failure ?? redirectToPage(request, h)
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const action = String(payload.action ?? '')
   if (action === 'add') return postAdd(request, h, payload)
-  if (action.startsWith('remove:')) return postRemove(request, h, action)
+  if (isRemoveAction(action)) return postRemove(request, h, action)
 
-  const pageState = await state.get(request, h)
+  const pageState = await loadPage(request, h)
   const hubTarget = kit.hubExitTarget(request)
+  if (!hubTarget && isStillSettling(pageState.documents)) {
+    return render(request, h, pageState, EMPTY_FORM, {
+      summaryErrors: settlingSummaryErrors(pageState.documents)
+    })
+  }
   return h.redirect(
     hubTarget ?? (await kit.nextTarget(request, page, pageState.scope))
   )
 }
 
-export const routes = kit.pageRoutes(page, { get, post })
+const isOversizeBoom = (request) =>
+  request.response?.isBoom &&
+  request.response.output?.statusCode === HTTP_STATUS_PAYLOAD_TOO_LARGE
+
+// A route-level payload rejection never reaches the handler, so it is rewritten
+// into the ordinary linked-error re-render rather than a bare 413.
+export const handleOversizePayload = async (request, h) => {
+  if (!isOversizeBoom(request)) return h.continue
+  const pageState = await loadPage(request, h)
+  const crumb =
+    request.state?.crumb ?? request.server.plugins.crumb?.generate?.(request, h)
+  return render(request, h, pageState, EMPTY_FORM, {
+    errors: { file: OVERSIZE_FILE_MESSAGE },
+    crumb
+  }).code(HTTP_STATUS_BAD_REQUEST)
+}
+
+export const routes = [
+  {
+    method: 'GET',
+    path: pageRoutePath(page.slug),
+    options: routeOptions,
+    handler: get
+  },
+  {
+    method: 'POST',
+    path: pageRoutePath(page.slug),
+    options: {
+      ...routeOptions,
+      payload: {
+        maxBytes: MAX_PAYLOAD_BYTES,
+        parse: true,
+        multipart: { output: 'annotated' }
+      },
+      ext: {
+        onPreResponse: { method: handleOversizePayload }
+      }
+    },
+    handler: post
+  }
+]

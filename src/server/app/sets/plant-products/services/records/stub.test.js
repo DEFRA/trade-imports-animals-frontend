@@ -13,7 +13,9 @@ import {
   accompanyingDocuments,
   documentReference,
   documentType,
-  issueDate
+  filename,
+  issueDate,
+  uploadId
 } from '../../obligations/sections/documents.js'
 import { records } from './stub.js'
 
@@ -21,7 +23,9 @@ const REFERENCE_PATTERN = /^GBN-PP-\d{2}-[0-9A-HJ-KM-NP-TV-Z]{6}$/
 const DOCUMENT_LEAF_OBLIGATION_IDS = [
   documentType.id,
   documentReference.id,
-  issueDate.id
+  issueDate.id,
+  uploadId.id,
+  filename.id
 ]
 const DOCUMENT_OBLIGATION_IDS = [
   accompanyingDocuments.id,
@@ -254,7 +258,9 @@ describe('plant-products records stub', () => {
             {
               documentType: 'PHYTOSANITARY_CERTIFICATE',
               documentReference: 'PHYTO-DOCUMENTLESS-045',
-              issueDate: { day: '4', month: '8', year: '2026' }
+              issueDate: { day: '4', month: '8', year: '2026' },
+              uploadId: 'upload-abc-123',
+              filename: 'phyto.pdf'
             }
           ]
         })

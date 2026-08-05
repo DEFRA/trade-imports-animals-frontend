@@ -365,6 +365,40 @@ describe.each(implementations)(
       })
     })
 
+    it('round-trips a document with an uploaded file alongside one without', async () => {
+      const created = await inPlantProducts(() => records.create())
+      const documents = [
+        {
+          documentType: 'PHYTOSANITARY_CERTIFICATE',
+          documentReference: 'PHYTO-001',
+          issueDate: { day: '4', month: '12', year: '2025' },
+          uploadId: 'upload-abc-123',
+          filename: 'phyto.pdf'
+        },
+        {
+          documentType: 'AIR_WAYBILL',
+          documentReference: 'AIR-002',
+          issueDate: { day: '27', month: '3', year: '2026' }
+        }
+      ]
+      const fulfilment = inPlantProducts(() =>
+        assembleFulfilments({ accompanyingDocuments: documents })
+      )
+
+      await inPlantProducts(() =>
+        records.replaceFulfilment(created.journeyId, fulfilment, {
+          known: created
+        })
+      )
+      const loaded = await inPlantProducts(() =>
+        records.load({ journeyId: created.journeyId })
+      )
+
+      expect(inPlantProducts(() => projectAnswers(loaded.fulfilment))).toEqual({
+        accompanyingDocuments: documents
+      })
+    })
+
     it('round-trips both derived destination branches through replace and draft resume', async () => {
       const created = await inPlantProducts(() => records.create())
       const sameAsImporter = inPlantProducts(() =>

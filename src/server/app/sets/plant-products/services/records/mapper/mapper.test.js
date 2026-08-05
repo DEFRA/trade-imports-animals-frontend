@@ -749,24 +749,93 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     expect(answers).not.toHaveProperty('consignorEmail')
   })
 
-  it('maps one document to the exact metadata-only sub-resource DTO', () => {
-    const dto = documentToDto({
-      id: 'answer-side-id',
-      notificationReferenceNumber: 'GBN-PP-26-ABC001',
+  it('round-trips an uploaded document file through the sub-resource DTO', () => {
+    const entry = {
       documentType: 'PHYTOSANITARY_CERTIFICATE',
       documentReference: 'PHYTO-001',
       issueDate: { day: '4', month: '12', year: '2025' },
-      files: [{ fileId: 'must-not-leak' }]
+      uploadId: 'upload-abc-123',
+      filename: 'phyto.pdf'
+    }
+
+    const dto = documentToDto({
+      ...entry,
+      id: 'answer-side-id',
+      notificationReferenceNumber: 'GBN-PP-26-ABC001'
     })
 
     expect(dto).toEqual({
       documentType: 'PHYTOSANITARY_CERTIFICATE',
       documentReference: 'PHYTO-001',
-      issueDate: '2025-12-04'
+      issueDate: '2025-12-04',
+      files: [{ fileId: 'upload-abc-123', filename: 'phyto.pdf' }]
     })
     expect(dto).not.toHaveProperty('id')
     expect(dto).not.toHaveProperty('notificationReferenceNumber')
-    expect(dto).not.toHaveProperty('files')
+    expect(
+      fromDto({ accompanyingDocuments: [dto] }).accompanyingDocuments[0]
+    ).toEqual(entry)
+  })
+
+  it('emits an empty files array for a metadata-only document', () => {
+    const entry = {
+      documentType: 'AIR_WAYBILL',
+      documentReference: 'AIR-002',
+      issueDate: { day: '27', month: '3', year: '2026' }
+    }
+
+    const dto = documentToDto(entry)
+
+    expect(dto.files).toEqual([])
+    expect(
+      fromDto({ accompanyingDocuments: [dto] }).accompanyingDocuments[0]
+    ).toEqual(entry)
+  })
+
+  it('carries a fileId with no filename back without inventing a filename key', () => {
+    const metadata = {
+      documentType: 'PHYTOSANITARY_CERTIFICATE',
+      documentReference: 'PHYTO-001',
+      issueDate: { day: '4', month: '12', year: '2025' }
+    }
+
+    const [entry] = fromDto({
+      accompanyingDocuments: [
+        { ...metadata, issueDate: '2025-12-04', files: [{ fileId: 'file-1' }] }
+      ]
+    }).accompanyingDocuments
+
+    expect(entry.uploadId).toBe('file-1')
+    expect(entry).not.toHaveProperty('filename')
+    expect(
+      fromDto({
+        accompanyingDocuments: [
+          documentToDto({ ...metadata, uploadId: 'file-1' })
+        ]
+      }).accompanyingDocuments[0]
+    ).toEqual(entry)
+  })
+
+  it.each([
+    { name: 'files absent', files: undefined },
+    { name: 'files empty', files: [] },
+    { name: 'files first element has no fileId', files: [{}] },
+    { name: 'files is not an array', files: 'nonsense' },
+    { name: 'files first element is null', files: [null] }
+  ])('omits upload identity without throwing when $name', ({ files }) => {
+    const [entry] = fromDto({
+      accompanyingDocuments: [
+        {
+          documentType: 'AIR_WAYBILL',
+          documentReference: 'AIR-002',
+          issueDate: '2026-03-27',
+          files
+        }
+      ]
+    }).accompanyingDocuments
+
+    expect(entry).not.toHaveProperty('uploadId')
+    expect(entry).not.toHaveProperty('filename')
   })
 
   it('folds two embedded documents into ordered answer entries and drops server metadata', () => {
@@ -777,7 +846,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
           documentType: 'PHYTOSANITARY_CERTIFICATE',
           documentReference: 'PHYTO-001',
           issueDate: '2025-12-04',
-          files: [{ fileId: 'file-1' }]
+          files: [{ fileId: 'file-1', filename: 'phyto.pdf' }]
         },
         {
           id: 'server-doc-2',
@@ -794,7 +863,9 @@ describe('plant-products notification mapper at the m0 boundary', () => {
         {
           documentType: 'PHYTOSANITARY_CERTIFICATE',
           documentReference: 'PHYTO-001',
-          issueDate: { day: '4', month: '12', year: '2025' }
+          issueDate: { day: '4', month: '12', year: '2025' },
+          uploadId: 'file-1',
+          filename: 'phyto.pdf'
         },
         {
           documentType: 'AIR_WAYBILL',
@@ -803,7 +874,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
         }
       ]
     })
-    expect(JSON.stringify(answers)).not.toMatch(/server-doc|file-1/)
+    expect(JSON.stringify(answers)).not.toMatch(/server-doc/)
   })
 
   it('round-trips one document entry through the sub-resource projection', () => {

@@ -246,8 +246,12 @@ export const toDto = (answers = {}) => composeSections(answers ?? {})
 
 const padded = (value) => String(value ?? '').padStart(2, '0')
 
+const documentFiles = (entry) =>
+  entry.uploadId ? [{ fileId: entry.uploadId, filename: entry.filename }] : []
+
 export const documentToDto = (entry = {}) => ({
   documentType: entry.documentType,
   documentReference: entry.documentReference,
-  issueDate: `${entry.issueDate?.year}-${padded(entry.issueDate?.month)}-${padded(entry.issueDate?.day)}`
+  issueDate: `${entry.issueDate?.year}-${padded(entry.issueDate?.month)}-${padded(entry.issueDate?.day)}`,
+  files: documentFiles(entry)
 })

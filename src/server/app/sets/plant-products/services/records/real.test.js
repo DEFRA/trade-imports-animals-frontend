@@ -515,7 +515,9 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
       {
         documentType: 'PHYTOSANITARY_CERTIFICATE',
         documentReference: 'PHYTO-001',
-        issueDate: { day: '4', month: '12', year: '2025' }
+        issueDate: { day: '4', month: '12', year: '2025' },
+        uploadId: 'upload-abc-123',
+        filename: 'phyto.pdf'
       },
       {
         documentType: 'AIR_WAYBILL',
@@ -544,7 +546,9 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
             documentType: entry.documentType,
             documentReference: entry.documentReference,
             issueDate: `${entry.issueDate.year}-${String(entry.issueDate.month).padStart(2, '0')}-${String(entry.issueDate.day).padStart(2, '0')}`,
-            files: []
+            files: entry.uploadId
+              ? [{ fileId: entry.uploadId, filename: entry.filename }]
+              : []
           }))
         }),
         { status: 200 }
@@ -574,12 +578,14 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
     expect(await bodyOf(requests[4])).toEqual({
       documentType: 'PHYTOSANITARY_CERTIFICATE',
       documentReference: 'PHYTO-001',
-      issueDate: '2025-12-04'
+      issueDate: '2025-12-04',
+      files: [{ fileId: 'upload-abc-123', filename: 'phyto.pdf' }]
     })
     expect(await bodyOf(requests[5])).toEqual({
       documentType: 'AIR_WAYBILL',
       documentReference: 'AIR-002',
-      issueDate: '2026-03-27'
+      issueDate: '2026-03-27',
+      files: []
     })
     expect(inPlantProducts(() => projectAnswers(saved.fulfilment))).toEqual({
       accompanyingDocuments: documents

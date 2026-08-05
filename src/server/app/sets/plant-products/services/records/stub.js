@@ -11,7 +11,9 @@ import {
   accompanyingDocuments,
   documentReference,
   documentType,
-  issueDate
+  filename,
+  issueDate,
+  uploadId
 } from '../../obligations/sections/documents.js'
 
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
@@ -22,7 +24,9 @@ const DOCUMENT_OBLIGATION_IDS = [
   accompanyingDocuments,
   documentType,
   documentReference,
-  issueDate
+  issueDate,
+  uploadId,
+  filename
 ].map(({ id }) => id)
 
 const clone = (value) => structuredClone(value)

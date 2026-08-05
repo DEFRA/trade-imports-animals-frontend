@@ -52,7 +52,9 @@ import {
   accompanyingDocuments,
   documentReference,
   documentType,
-  issueDate
+  filename,
+  issueDate,
+  uploadId
 } from './sections/documents.js'
 import { reasonForImport } from './sections/purpose.js'
 import {
@@ -104,6 +106,8 @@ export {
   documentType,
   documentReference,
   issueDate,
+  uploadId,
+  filename,
   commodityInputMethod,
   commodityLines,
   commoditySelection,
@@ -215,6 +219,8 @@ export const obligations = [
   documentType,
   documentReference,
   issueDate,
+  uploadId,
+  filename,
   borderControlPost,
   inspectionPremises,
   meansOfTransport,

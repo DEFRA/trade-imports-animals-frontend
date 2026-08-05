@@ -60,6 +60,79 @@ describe('#documentUploads', () => {
       )
       expect(fetchMocker.mock.calls).toHaveLength(1)
     })
+
+    it('Should issue no compensating delete when the whole upload succeeds', async () => {
+      fetchMocker.mockResponses(JSON.stringify({ uploadId: 'up-1' }), [
+        '',
+        { status: 202 }
+      ])
+
+      await documentUploads.upload(uploadDetails)
+
+      expect(fetchMocker.mock.calls).toHaveLength(2)
+      expect(
+        fetchMocker.mock.calls.some(
+          ([, options]) => options.method === 'DELETE'
+        )
+      ).toBe(false)
+    })
+
+    it('Should delete the initiated session and rethrow the original error when the file leg fails', async () => {
+      fetchMocker.mockResponses(
+        JSON.stringify({ uploadId: 'up-1' }),
+        ['Gateway Timeout', { status: 504 }],
+        ['', { status: 204 }]
+      )
+
+      await expect(documentUploads.upload(uploadDetails)).rejects.toMatchObject(
+        {
+          status: 504
+        }
+      )
+
+      const [deleteUrl, deleteOptions] = fetchMocker.mock.calls[2]
+      expect(deleteUrl).toBe(`${BACKEND_URL}/document-uploads/up-1`)
+      expect(deleteOptions.method).toBe('DELETE')
+    })
+
+    it('Should still surface the original failure when the compensating delete also fails', async () => {
+      fetchMocker.mockResponses(
+        JSON.stringify({ uploadId: 'up-1' }),
+        ['Gateway Timeout', { status: 504 }],
+        ['Server Error', { status: 500 }]
+      )
+
+      await expect(documentUploads.upload(uploadDetails)).rejects.toMatchObject(
+        {
+          status: 504
+        }
+      )
+      expect(fetchMocker.mock.calls).toHaveLength(3)
+    })
+  })
+
+  describe('#ownerOf', () => {
+    it('Should read the owning notification reference from the upload session', async () => {
+      fetchMocker.mockResponse(
+        JSON.stringify({
+          scanStatus: 'PENDING',
+          notificationReferenceNumber: 'GBN-PP-26-0001'
+        })
+      )
+
+      expect(await documentUploads.ownerOf('up-1')).toBe('GBN-PP-26-0001')
+      const [url, options] = fetchMocker.mock.calls[0]
+      expect(url).toBe(`${BACKEND_URL}/document-uploads/up-1`)
+      expect(options.method).toBe('GET')
+    })
+
+    it('Should throw with the response status when the session is unknown', async () => {
+      fetchMocker.mockResponse(() => ({ status: 404, body: 'Not Found' }))
+
+      await expect(documentUploads.ownerOf('up-2')).rejects.toMatchObject({
+        status: 404
+      })
+    })
   })
 
   describe('#scanStatus', () => {
@@ -69,9 +142,9 @@ describe('#documentUploads', () => {
       expect(await documentUploads.scanStatus({ uploadId: 'up-1' })).toBe(
         'COMPLETE'
       )
-      expect(fetchMocker.mock.calls[0][0]).toBe(
-        `${BACKEND_URL}/document-uploads/up-1`
-      )
+      const [url, options] = fetchMocker.mock.calls[0]
+      expect(url).toBe(`${BACKEND_URL}/document-uploads/up-1`)
+      expect(options.method).toBe('GET')
     })
   })
 
@@ -86,11 +159,17 @@ describe('#documentUploads', () => {
       expect(options.method).toBe('DELETE')
     })
 
-    it('Should throw with the response status when remove fails', async () => {
+    it('Should resolve when the session is already gone so a re-issued remove is idempotent', async () => {
       fetchMocker.mockResponse(() => ({ status: 404, body: 'Not Found' }))
 
+      await expect(documentUploads.remove('up-2')).resolves.toBeUndefined()
+    })
+
+    it('Should throw with the response status when remove fails', async () => {
+      fetchMocker.mockResponse(() => ({ status: 500, body: 'Server Error' }))
+
       await expect(documentUploads.remove('up-2')).rejects.toMatchObject({
-        status: 404
+        status: 500
       })
     })
   })
