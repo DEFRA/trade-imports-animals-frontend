@@ -17,6 +17,9 @@ import * as search from './search.controller.js'
 const get = search.routes.find((route) => route.method === 'GET').handler
 const post = postHandlerOf(search)
 
+const COW_BOS_TAURUS_KEY = 'Cow|1148346'
+const CAT_FELIS_CATUS_KEY = 'Cat|923501'
+
 describe('commodities grouped checklist', () => {
   beforeAll(() => {
     configureRecords('live-animals', recordsStub)
@@ -33,7 +36,7 @@ describe('commodities grouped checklist', () => {
         items: [
           { value: 'Cow|716661', text: 'Bison bison', checked: false },
           { value: 'Cow|1388624', text: 'Bos spp.', checked: false },
-          { value: 'Cow|1148346', text: 'Bos taurus', checked: false },
+          { value: COW_BOS_TAURUS_KEY, text: 'Bos taurus', checked: false },
           { value: 'Cow|749313', text: 'Bubalus bubalis', checked: false }
         ]
       },
@@ -45,7 +48,9 @@ describe('commodities grouped checklist', () => {
       },
       {
         legend: 'Cat (01061900)',
-        items: [{ value: 'Cat|923501', text: 'Felis catus', checked: false }]
+        items: [
+          { value: CAT_FELIS_CATUS_KEY, text: 'Felis catus', checked: false }
+        ]
       },
       {
         legend: 'Dog (01061900)',
@@ -78,7 +83,7 @@ describe('commodities grouped checklist', () => {
     )
     expect(
       items.filter((item) => item.checked).map((item) => item.value)
-    ).toEqual(['Cow|1148346', 'Cat|923501'])
+    ).toEqual([COW_BOS_TAURUS_KEY, CAT_FELIS_CATUS_KEY])
   })
 
   it('Should require at least one checked pair and create nothing', async () => {
@@ -93,7 +98,9 @@ describe('commodities grouped checklist', () => {
 
   it('Should create one line per checked pair in canonical order', async () => {
     const result = await driveHandler(post, {
-      payload: { species: ['Cat|923501', 'Cow|716661', 'Cow|1148346'] }
+      payload: {
+        species: [CAT_FELIS_CATUS_KEY, 'Cow|716661', COW_BOS_TAURUS_KEY]
+      }
     })
     expect(result.after.commodityLines).toEqual([
       {
@@ -140,7 +147,7 @@ describe('commodities grouped checklist', () => {
           }
         ]
       },
-      payload: { species: ['Cow|1148346', 'Dog|923502'] }
+      payload: { species: [COW_BOS_TAURUS_KEY, 'Dog|923502'] }
     })
     expect(result.after.commodityLines).toEqual([
       { ...kept, numberOfAnimalsQuantity: 25 },
@@ -157,13 +164,18 @@ describe('commodities grouped checklist', () => {
   it('Should ignore unknown pairs and deduplicate checked pairs', async () => {
     const result = await driveHandler(post, {
       payload: {
-        species: ['Cow|1148346', 'Wolf|999', 'Cow|1148346', 'not-a-key']
+        species: [
+          COW_BOS_TAURUS_KEY,
+          'Wolf|999',
+          COW_BOS_TAURUS_KEY,
+          'not-a-key'
+        ]
       }
     })
     expect(
       result.after.commodityLines.map(
         (line) => `${line.commoditySelection}|${line.speciesSelection}`
       )
-    ).toEqual(['Cow|1148346'])
+    ).toEqual([COW_BOS_TAURUS_KEY])
   })
 })

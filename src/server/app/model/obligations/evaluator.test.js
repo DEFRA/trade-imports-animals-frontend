@@ -60,6 +60,9 @@ const mandatory = { inScope: true, status: 'mandatory' }
 const optional = { inScope: true, status: 'optional' }
 const outOfScope = { inScope: false }
 
+const outOfScopeWhenNoCommodityLinesTitle =
+  'is out of scope when no commodity lines exist'
+
 const regionCodeRequiredReason = {
   code: 'obligation.regionCode.mandatory.becauseRegionCodeRequired',
   explanation: 'regionCode is mandatory when regionCodeRequirement is yes'
@@ -529,7 +532,7 @@ describe('V4 — commodity line field records (round-trip)', () => {
 // ---------------------------------------------------------------------------
 
 describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
-  it('is out of scope when no commodity lines exist', () => {
+  it(outOfScopeWhenNoCommodityLinesTitle, () => {
     const result = evaluator.evaluate({})
     expect(result.obligations[numberOfPackages.id]).toEqual(outOfScope)
   })
@@ -631,7 +634,7 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
 // ---------------------------------------------------------------------------
 
 describe('V4 — cph (notification-level, reads commodityCode storage)', () => {
-  it('is out of scope when no commodity lines exist', () => {
+  it(outOfScopeWhenNoCommodityLinesTitle, () => {
     const result = evaluator.evaluate({})
     expect(result.obligations[cph.id]).toEqual(outOfScope)
   })
@@ -750,7 +753,7 @@ describe('V4 — unit record group semantics', () => {
 // ---------------------------------------------------------------------------
 
 describe('V4 — passport (gatedBy allowListed(commodityCode, passport list))', () => {
-  it('is out of scope when no commodity lines exist', () => {
+  it(outOfScopeWhenNoCommodityLinesTitle, () => {
     expect(evaluator.evaluate({}).obligations[passport.id]).toEqual({
       inScope: false
     })

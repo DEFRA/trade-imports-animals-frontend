@@ -6,9 +6,13 @@ export const isRemoveAction = (action) =>
   action.startsWith(REMOVE_ACTION_PREFIX)
 
 export const indicesOf = (action) => {
-  if (!isRemoveAction(action)) return null
+  if (!isRemoveAction(action)) {
+    return null
+  }
   const parts = action.slice(REMOVE_ACTION_PREFIX.length).split(':')
-  if (parts.length !== 2 || parts.some((part) => part === '')) return null
+  if (parts.length !== 2 || parts.some((part) => part === '')) {
+    return null
+  }
   return parts.map(Number)
 }
 
@@ -33,7 +37,9 @@ export const validRemoveTarget = (answers, lineIndex, speciesIndex) => {
 
 export const postRemove = async (request, h, answers, target) => {
   const [lineIndex, speciesIndex] = target ?? []
-  if (!validRemoveTarget(answers, lineIndex, speciesIndex)) return null
+  if (!validRemoveTarget(answers, lineIndex, speciesIndex)) {
+    return null
+  }
 
   await state.removeEntryAt(
     request,

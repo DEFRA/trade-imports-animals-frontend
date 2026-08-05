@@ -7,9 +7,13 @@ import {
 const pathTo = (nodes, code, ancestors = []) => {
   for (const node of nodes) {
     const path = [...ancestors, node]
-    if (node.code === code) return path
+    if (node.code === code) {
+      return path
+    }
     const nested = pathTo(node.children ?? [], code, path)
-    if (nested) return nested
+    if (nested) {
+      return nested
+    }
   }
   return null
 }

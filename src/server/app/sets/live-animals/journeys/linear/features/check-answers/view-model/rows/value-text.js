@@ -7,11 +7,15 @@ const copy = copyFor({ en, cy })
 
 const NOT_PROVIDED = copy.notProvided
 
-export const toArray = (value) => [].concat(value ?? [])
+export const toArray = (value) => [value ?? []].flat()
 
 export const valueText = (value) => {
-  if (isBlank(value)) return NOT_PROVIDED
-  if (typeof value === 'number') return value.toString()
+  if (isBlank(value)) {
+    return NOT_PROVIDED
+  }
+  if (typeof value === 'number') {
+    return value.toString()
+  }
   return value
 }
 

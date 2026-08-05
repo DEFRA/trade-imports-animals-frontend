@@ -36,7 +36,9 @@ const viewForStatus = (status, query = {}) =>
     if (status === 'submitted' || status === 'amend') {
       await records.finalise(journey.journeyId)
     }
-    if (status === 'amend') await records.amend(journey.journeyId)
+    if (status === 'amend') {
+      await records.amend(journey.journeyId)
+    }
     const h = stubH()
     await get(journeyRequest(journey.journeyId, { query }), h)
     return h.captured.view

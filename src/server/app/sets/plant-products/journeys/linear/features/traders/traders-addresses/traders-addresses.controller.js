@@ -233,7 +233,9 @@ const validateFields = (payload, destinationInScope, countryCodes) => {
   ]
   const errors = results.reduce((combined, result) => {
     for (const [field, message] of Object.entries(result.errors ?? {})) {
-      if (combined[field] === undefined) combined[field] = message
+      if (combined[field] === undefined) {
+        combined[field] = message
+      }
     }
     return combined
   }, {})
@@ -306,7 +308,9 @@ const post = async (request, h) => {
         recoverableError: true
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   return h.redirect(await kit.nextTarget(request, page, committed.scope))
 }

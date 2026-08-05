@@ -75,8 +75,8 @@ const post = async (request, h) => {
   const values = { importType: payload.importType ?? '' }
   const { errors } = validate(fields, payload)
   if (errors) {
-    const { journey } = await state.get(request, h)
-    return render(h, journey, values, errors)
+    const { journey: invalidSubmissionJourney } = await state.get(request, h)
+    return render(h, invalidSubmissionJourney, values, errors)
   }
 
   const { answers: before, journey } = await state.get(request, h)
@@ -87,7 +87,9 @@ const post = async (request, h) => {
         HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   const { scope } = committed
   if (values.importType !== LIVE_ANIMALS) {

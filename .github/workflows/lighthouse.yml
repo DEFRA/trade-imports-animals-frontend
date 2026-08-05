@@ -158,7 +158,11 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./lighthouse-report
           destination_dir: lighthouse/${{ needs.lighthouse-test.outputs.tag }}
-          keep_files: true
+          # Each run emits a complete report set under stable, route-derived
+          # names, so replacing the directory keeps it to the latest run and
+          # clears the journey-id-named reports older runs left behind. Scoped
+          # to this branch tag, so the e2e/ reports are untouched.
+          keep_files: false
 
       - name: Output report URL
         id: report-url

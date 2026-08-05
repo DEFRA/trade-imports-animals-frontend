@@ -83,7 +83,9 @@ const post = async (request, h) => {
         HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   if (!result.ok) {
     return h.redirect(pagePath(journey.journeyId, reviewNotificationPage.slug))

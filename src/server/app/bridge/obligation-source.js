@@ -55,9 +55,7 @@ export const flowOnlyAnswersFrom = (answers) =>
   Object.fromEntries(
     flowOnlyObligations()
       .filter(
-        (key) =>
-          Object.prototype.hasOwnProperty.call(answers ?? {}, key) &&
-          answers[key] !== undefined
+        (key) => Object.hasOwn(answers ?? {}, key) && answers[key] !== undefined
       )
       .map((key) => [key, answers[key]])
   )
@@ -77,14 +75,16 @@ const topLevelKeys = () =>
   ])
 
 const memberKeysOf = (group) =>
-  new Set([
-    ...obligations()
+  new Set(
+    obligations()
       .filter((obligation) => obligation.within === group)
       .map((obligation) => obligation.name)
-  ])
+  )
 
 const sweepKey = (memberKeys, entryPath, key, value) => {
-  if (!memberKeys.has(key)) return [{ key, path: entryPath }]
+  if (!memberKeys.has(key)) {
+    return [{ key, path: entryPath }]
+  }
   const member = obligationByName(key)
   return member && groupObligations.has(member)
     ? sweepEntries(member, value, `${entryPath}.${key}`)
@@ -92,7 +92,9 @@ const sweepKey = (memberKeys, entryPath, key, value) => {
 }
 
 const sweepEntry = (memberKeys, path, entry, index) => {
-  if (entry === null || typeof entry !== 'object') return []
+  if (entry === null || typeof entry !== 'object') {
+    return []
+  }
   const entryPath = `${path}[${index}]`
   return Object.entries(entry).flatMap(([key, value]) =>
     sweepKey(memberKeys, entryPath, key, value)
@@ -100,7 +102,9 @@ const sweepEntry = (memberKeys, path, entry, index) => {
 }
 
 const sweepEntries = (group, items, path) => {
-  if (!Array.isArray(items)) return []
+  if (!Array.isArray(items)) {
+    return []
+  }
   const memberKeys = memberKeysOf(group)
   return items.flatMap((entry, index) =>
     sweepEntry(memberKeys, path, entry, index)
@@ -108,7 +112,9 @@ const sweepEntries = (group, items, path) => {
 }
 
 const unrecognisedKeysFor = (key, value) => {
-  if (!topLevelKeys().has(key)) return [{ key, path: '(top level)' }]
+  if (!topLevelKeys().has(key)) {
+    return [{ key, path: '(top level)' }]
+  }
   const obligation = obligationByName(key)
   return obligation && groupObligations.has(obligation)
     ? sweepEntries(obligation, value, key)
@@ -124,7 +130,9 @@ const unrecognisedKeysFor = (key, value) => {
  * @returns {Array<{ key: string, path: string }>} empty when fully recognised.
  */
 export const unrecognisedAnswerKeys = (answers) => {
-  if (answers === null || typeof answers !== 'object') return []
+  if (answers === null || typeof answers !== 'object') {
+    return []
+  }
   return Object.entries(answers).flatMap(([key, value]) =>
     unrecognisedKeysFor(key, value)
   )
@@ -139,7 +147,9 @@ export const unrecognisedAnswerKeys = (answers) => {
  */
 export const assertRecognisedAnswerKeys = (answers, context) => {
   const problems = unrecognisedAnswerKeys(answers)
-  if (problems.length === 0) return
+  if (problems.length === 0) {
+    return
+  }
   const detail = problems
     .map(({ key, path }) => `"${key}" at ${path}`)
     .join(', ')

@@ -7,7 +7,9 @@ const groupImplication = (obligation, own, fulfilmentIdsByObligationId) => {
     ...(fulfilmentIdsByObligationId.get(obligation.id) ?? [])
   ]
   const impl = { inScope: true }
-  if (own?.reasons) impl.reasons = own.reasons
+  if (own?.reasons) {
+    impl.reasons = own.reasons
+  }
   impl.records = fulfilmentIds.map((fulfilmentId) => ({ fulfilmentId }))
   return impl
 }
@@ -40,7 +42,9 @@ const fieldImplication = (obligation, fulfilmentIdsByObligationId) => {
 // Storage tracks which ones have VALUES.
 const derivedLeafImplication = (obligation, own) => {
   const impl = { inScope: true }
-  if (own?.reasons) impl.reasons = own.reasons
+  if (own?.reasons) {
+    impl.reasons = own.reasons
+  }
   const fulfilmentIds = own?.records ?? []
   impl.records = fulfilmentIds.map((fulfilmentId) => ({
     fulfilmentId,
@@ -52,7 +56,9 @@ const derivedLeafImplication = (obligation, own) => {
 // Record presence via own storage keys.
 const userLeafImplication = (obligation, own, amendedFulfilments) => {
   const impl = { inScope: true }
-  if (own?.reasons) impl.reasons = own.reasons
+  if (own?.reasons) {
+    impl.reasons = own.reasons
+  }
   const fulfilment = amendedFulfilments[obligation.id]
   const fulfilmentIds = isKeyedRecord(fulfilment) ? Object.keys(fulfilment) : []
   impl.records = fulfilmentIds.map((fulfilmentId) => ({
@@ -75,7 +81,9 @@ export function buildImplication(obligation, context) {
     amendedFulfilments
   } = context
 
-  if (!isInScope(obligation)) return { inScope: false }
+  if (!isInScope(obligation)) {
+    return { inScope: false }
+  }
 
   const category = obligationsByCategory.get(obligation.id)
   const own = obligationApplicabilityDecisions.get(obligation.id)

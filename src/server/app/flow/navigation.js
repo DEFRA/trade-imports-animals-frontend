@@ -26,7 +26,9 @@ export const rowGatePasses = (row, scope) => pageGatePasses(row.pages[0], scope)
 
 export const nextInSection = (pageId, scope, journeyId) => {
   const section = sectionOfPage(pageId)
-  if (!section) return hubPath(journeyId)
+  if (!section) {
+    return hubPath(journeyId)
+  }
   const index = section.pages.findIndex((page) => page.id === pageId)
   const next = section.pages
     .slice(index + 1)

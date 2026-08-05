@@ -7,7 +7,9 @@ import { identifierColumns } from './identifier-columns.js'
 const copy = copyFor({ en, cy })
 
 export const identifierTable = (units) => {
-  if (units.length === 0) return null
+  if (units.length === 0) {
+    return null
+  }
   const columns = identifierColumns(units)
   return {
     head: [

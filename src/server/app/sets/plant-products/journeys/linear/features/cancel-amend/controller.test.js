@@ -40,7 +40,9 @@ const createAtStatus = async (status) =>
     if (status === 'submitted' || status === 'amend') {
       await recordsStub.finalise(journey.journeyId)
     }
-    if (status === 'amend') await recordsStub.amend(journey.journeyId)
+    if (status === 'amend') {
+      await recordsStub.amend(journey.journeyId)
+    }
     return journey
   })
 

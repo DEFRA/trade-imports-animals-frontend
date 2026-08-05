@@ -151,7 +151,9 @@ const fillLine = async (page, code, values) => {
       )
       .check()
   }
-  if (values.testAndTrial) await controls.testAndTrial.check()
+  if (values.testAndTrial) {
+    await controls.testAndTrial.check()
+  }
 }
 
 const expectLine = async (page, code, values) => {

@@ -76,7 +76,9 @@ const validateFields = (payload, countryCodes) => {
   )
   const errors = results.reduce((combined, result) => {
     for (const [field, message] of Object.entries(result.errors ?? {})) {
-      if (combined[field] === undefined) combined[field] = message
+      if (combined[field] === undefined) {
+        combined[field] = message
+      }
     }
     return combined
   }, {})
@@ -187,7 +189,9 @@ const post = async (request, h) => {
         recoverableError: true
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   if (!kit.changeContext(request)) {
     const saved = await addressBook.add(request, addressBookRecord(cleaned))

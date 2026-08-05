@@ -204,7 +204,9 @@ const createNetworkBackend = () => {
     }
     const notification = notifications.get(referenceNumber)
     if (subresource === 'accompanying-documents') {
-      if (notification === undefined) return { body: '', status: 404 }
+      if (notification === undefined) {
+        return { body: '', status: 404 }
+      }
       const documents = documentsByReference.get(referenceNumber)
       if (request.method === 'GET' && parts.length === 2) {
         return jsonResponse({ documents })
@@ -221,13 +223,17 @@ const createNetworkBackend = () => {
       }
       if (request.method === 'DELETE' && parts.length === 3) {
         const documentIndex = documents.findIndex(({ id }) => id === parts[2])
-        if (documentIndex === -1) return { body: '', status: 404 }
+        if (documentIndex === -1) {
+          return { body: '', status: 404 }
+        }
         documents.splice(documentIndex, 1)
         return { status: 204 }
       }
     }
     if (request.method === 'PUT' && subresource === 'status') {
-      if (notification === undefined) return { body: '', status: 404 }
+      if (notification === undefined) {
+        return { body: '', status: 404 }
+      }
       const { status, discardChanges } = await request.clone().json()
       if (status === 'AMEND') {
         notification.submittedSnapshot = structuredClone(notification)

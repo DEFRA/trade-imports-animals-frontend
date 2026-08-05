@@ -33,7 +33,14 @@ describe('isBlankValue', () => {
         postcode: ''
       })
     ).toBe(true)
-    expect(isBlankValue({ name: null, addressLine1: undefined })).toBe(true)
+    expect(
+      isBlankValue(
+        Object.fromEntries([
+          ['name', null],
+          ['addressLine1', undefined]
+        ])
+      )
+    ).toBe(true)
     expect(
       isBlankValue({
         address: {

@@ -41,8 +41,12 @@ const purgedFulfilmentFor = (
       obligationApplicabilityDecisions
     )
   }
-  if (category === 'single') return { keep: true, value: fulfilment }
-  if (isKeyedRecord(fulfilment)) return purgedKeyedRecord(fulfilment)
+  if (category === 'single') {
+    return { keep: true, value: fulfilment }
+  }
+  if (isKeyedRecord(fulfilment)) {
+    return purgedKeyedRecord(fulfilment)
+  }
   return { keep: true, value: fulfilment }
 }
 
@@ -65,7 +69,9 @@ export function purgeStorage(recognisedFulfilments, context) {
     recognisedFulfilments
   )) {
     const obligation = obligationsById.get(obligationId)
-    if (!isInScope(obligation)) continue
+    if (!isInScope(obligation)) {
+      continue
+    }
 
     const category = obligationsByCategory.get(obligation.id)
     const purged = purgedFulfilmentFor(

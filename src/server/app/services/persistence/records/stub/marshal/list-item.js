@@ -1,10 +1,16 @@
 import { projectAnswers } from '../../../../../bridge/fulfilments/index.js'
 import { decodePersistedFulfilment } from '../../fulfilment-codec/index.js'
 
+const YEAR_DIGITS = 4
+const MONTH_DIGITS = 2
+const DAY_DIGITS = 2
+
 export const isoFromDateParts = (parts) => {
   const { day, month, year } = parts ?? {}
-  if (day == null || month == null || year == null) return null
-  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  if (day == null || month == null || year == null) {
+    return null
+  }
+  return `${String(year).padStart(YEAR_DIGITS, '0')}-${String(month).padStart(MONTH_DIGITS, '0')}-${String(day).padStart(DAY_DIGITS, '0')}`
 }
 
 export const marshalListItem = (document) => {

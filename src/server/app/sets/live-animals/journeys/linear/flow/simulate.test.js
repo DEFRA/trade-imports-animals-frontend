@@ -4,6 +4,8 @@ import { buildDispatch } from '../../../../../flow/dispatch.js'
 import { dispatchPages } from '../features/index.js'
 import { simulateJourney } from '../../../../../analysis/simulate.js'
 
+const TRANSPORTERS_SELECT_PAGE = 'transporters-select'
+
 describe('#simulateJourney', () => {
   beforeAll(() => {
     buildDispatch('live-animals', dispatchPages)
@@ -18,7 +20,7 @@ describe('#simulateJourney', () => {
     const pages = simulateJourney(prereqs)
     expect(pages).toContain('port-of-entry')
     expect(pages).toContain('transporters')
-    expect(pages).not.toContain('transporters-select')
+    expect(pages).not.toContain(TRANSPORTERS_SELECT_PAGE)
     expect(pages).not.toContain('private-transporter-details')
     expect(pages.indexOf('port-of-entry')).toBeLessThan(
       pages.indexOf('transporters')
@@ -33,10 +35,10 @@ describe('#simulateJourney', () => {
       ...prereqs,
       transporterType: 'Commercial'
     })
-    expect(pages).toContain('transporters-select')
+    expect(pages).toContain(TRANSPORTERS_SELECT_PAGE)
     expect(pages).not.toContain('private-transporter-details')
     expect(pages.indexOf('transporters')).toBeLessThan(
-      pages.indexOf('transporters-select')
+      pages.indexOf(TRANSPORTERS_SELECT_PAGE)
     )
   })
 })

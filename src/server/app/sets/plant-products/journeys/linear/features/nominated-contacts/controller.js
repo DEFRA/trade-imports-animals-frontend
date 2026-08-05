@@ -52,7 +52,9 @@ const validateContactFields = (payload) => {
   const results = contactFields().map((rule) => validate(rule, payload))
   const errors = results.reduce((combined, result) => {
     for (const [field, message] of Object.entries(result.errors ?? {})) {
-      if (combined[field] === undefined) combined[field] = message
+      if (combined[field] === undefined) {
+        combined[field] = message
+      }
     }
     return combined
   }, {})
@@ -123,7 +125,9 @@ const contactFrom = (values, payload) => ({
 const postAdd = async (request, h, payload) => {
   const pageState = await state.get(request, h)
   const savedCount = rowsFrom(pageState).length
-  if (savedCount >= MAX_CONTACTS) return redirectToPage(request, h)
+  if (savedCount >= MAX_CONTACTS) {
+    return redirectToPage(request, h)
+  }
 
   const rawEntry = rawEntryFrom(payload)
   const values = {
@@ -153,7 +157,9 @@ const postAdd = async (request, h, payload) => {
         recoverableError: true
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   return redirectToPage(request, h)
 }
@@ -176,7 +182,9 @@ const postRemove = async (request, h, action) => {
             pageState.evaluation
           )
           .find((entry) => entry.index === index)
-  if (!contact) return h.response().code(HTTP_STATUS_BAD_REQUEST)
+  if (!contact) {
+    return h.response().code(HTTP_STATUS_BAD_REQUEST)
+  }
 
   const { failure } = await kit.recoverableSave(
     () => state.removeEntry(request, h, 'nominatedContacts', index),
@@ -185,7 +193,9 @@ const postRemove = async (request, h, action) => {
         recoverableError: true
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   return redirectToPage(request, h)
 }
@@ -193,8 +203,12 @@ const postRemove = async (request, h, action) => {
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const action = String(payload.action ?? '')
-  if (action === 'add') return postAdd(request, h, payload)
-  if (action.startsWith('remove:')) return postRemove(request, h, action)
+  if (action === 'add') {
+    return postAdd(request, h, payload)
+  }
+  if (action.startsWith('remove:')) {
+    return postRemove(request, h, action)
+  }
 
   const pageState = await state.get(request, h)
   const hubTarget = kit.hubExitTarget(request)

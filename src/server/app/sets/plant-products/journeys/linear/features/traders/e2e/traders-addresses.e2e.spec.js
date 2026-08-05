@@ -84,8 +84,11 @@ const enteredPacker = {
 const fillFields = async (page, fields) => {
   for (const [field, value] of Object.entries(fields)) {
     const control = page.locator(`#${field}`)
-    if (field.endsWith('Country')) await control.selectOption(value)
-    else await control.fill(value)
+    if (field.endsWith('Country')) {
+      await control.selectOption(value)
+    } else {
+      await control.fill(value)
+    }
   }
 }
 

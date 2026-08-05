@@ -64,7 +64,9 @@ const dateSchema = () => {
           String(source['arrivalDate-year'] ?? '').trim()
         ]
         const filled = parts.filter(Boolean).length
-        if (filled === 0) return helpers.error('date.required')
+        if (filled === 0) {
+          return helpers.error('date.required')
+        }
         if (filled !== 3 || !parts.every((part) => /^\d+$/.test(part))) {
           return helpers.error('date.real')
         }
@@ -105,7 +107,9 @@ const timeSchema = () =>
           String(source['arrivalTime-minute'] ?? '').trim()
         ]
         const filled = parts.filter(Boolean).length
-        if (filled === 0) return helpers.error('time.required')
+        if (filled === 0) {
+          return helpers.error('time.required')
+        }
         if (
           filled !== 2 ||
           !parts.every((part) => /^\d{1,2}$/.test(part)) ||
@@ -183,8 +187,12 @@ const containerFields = () =>
       .custom((raw, helpers) => {
         const value = String(raw ?? '').trim()
         const seal = String(helpers.state.ancestors[0]?.sealNumber ?? '').trim()
-        if (!value && !seal) return helpers.error('container.oneOf')
-        if (value.length > 32) return helpers.error('container.max')
+        if (!value && !seal) {
+          return helpers.error('container.oneOf')
+        }
+        if (value.length > 32) {
+          return helpers.error('container.max')
+        }
         return value
       })
       .messages({
@@ -372,7 +380,9 @@ const postAddContainer = async (request, h, payload) => {
         recoverableError: true
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   const updated = await state.get(request, h)
   return render(request, h, updated, values)
@@ -391,7 +401,9 @@ const postRemoveContainer = async (request, h, payload, action) => {
         .collectionView(pageState.answers, ['containers'], pageState.evaluation)
         .find((candidate) => candidate.index === index)
     : undefined
-  if (!record) return h.response().code(HTTP_STATUS_BAD_REQUEST)
+  if (!record) {
+    return h.response().code(HTTP_STATUS_BAD_REQUEST)
+  }
 
   const { failure } = await kit.recoverableSave(
     () => state.removeEntry(request, h, 'containers', index),
@@ -400,7 +412,9 @@ const postRemoveContainer = async (request, h, payload, action) => {
         recoverableError: true
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   const updated = await state.get(request, h)
   return render(request, h, updated, valuesFromPayload(payload))
@@ -449,7 +463,9 @@ const postSave = async (request, h, payload) => {
         recoverableError: true
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   return h.redirect(await kit.nextTarget(request, page, committed.scope))
 }

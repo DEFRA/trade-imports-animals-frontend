@@ -31,7 +31,8 @@ export const encodeEvaluatorFulfilments = (map) => {
       if (form === 'records') {
         return recordsEntry(obligationId, stored, obligation)
       }
-    } else if (unknownStoredAsRecords(stored)) {
+    }
+    if (!obligation && unknownStoredAsRecords(stored)) {
       return recordsEntry(obligationId, stored)
     }
 

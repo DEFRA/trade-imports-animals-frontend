@@ -1,6 +1,3 @@
-// Both downstream projections are produced from every canonical fulfilment
-// snapshot. Neither is a persistence-mode selector.
-export {
-  fulfilmentToNotification,
-  answersToTargetNotification
-} from './notification-mapper/index.js'
+// The downstream notification projection is produced from every canonical
+// fulfilment snapshot.
+export { fulfilmentToNotification } from './notification-mapper/index.js'

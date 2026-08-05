@@ -91,14 +91,20 @@ const notFound = (h) => h.response().code(HTTP_STATUS_NOT_FOUND)
 // verdict, so a malformed id never reaches the upload service at all.
 const getFile = async (request, h) => {
   const { uploadId } = request.params
-  if (!isSafeUploadId(uploadId)) return notFound(h)
+  if (!isSafeUploadId(uploadId)) {
+    return notFound(h)
+  }
 
   const { answers, evaluation } = await state.get(request, h)
   const document = ownedDocument(answers, evaluation, uploadId)
-  if (!document) return notFound(h)
+  if (!document) {
+    return notFound(h)
+  }
 
   const scanStatus = await scanStatusOf(document.entry)
-  if (scanStatus !== SCAN_STATUS.COMPLETE) return notFound(h)
+  if (scanStatus !== SCAN_STATUS.COMPLETE) {
+    return notFound(h)
+  }
 
   return fileResponse(h, await documentUploads.streamFile(uploadId))
 }
@@ -109,7 +115,9 @@ const verifiedRetry = async (payload, journey) => {
   const claimed = claimedUploadFrom(payload)
   // A retry field that fails the shape or filename guards is still a claim, so
   // it is refused rather than degrading into an ordinary fileless Add.
-  if (!claimed) return { claimed: Boolean(payload.retryUploadId), retry: null }
+  if (!claimed) {
+    return { claimed: Boolean(payload.retryUploadId), retry: null }
+  }
   const owned = await isOwnedByJourney(claimed.uploadId, journey.journeyId)
   return { claimed, retry: owned ? claimed : null }
 }
@@ -165,7 +173,9 @@ const postAdd = async (request, h, payload) => {
 
   // The row already landed — the failure the user saw came back after the
   // write, so resubmitting must not append a second copy of it.
-  if (alreadyLanded) return redirectToPage(request, h)
+  if (alreadyLanded) {
+    return redirectToPage(request, h)
+  }
 
   const errors = documentAddErrors(payload, entry, retry)
   if (Object.keys(errors).length > 0) {
@@ -209,7 +219,9 @@ const postRemove = async (request, h, action) => {
     index === null
       ? undefined
       : pageState.documents.find((item) => item.index === index)
-  if (!document) return h.response().code(HTTP_STATUS_BAD_REQUEST)
+  if (!document) {
+    return h.response().code(HTTP_STATUS_BAD_REQUEST)
+  }
 
   if (document.entry.uploadId) {
     try {
@@ -238,8 +250,12 @@ const postRemove = async (request, h, action) => {
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const action = String(payload.action ?? '')
-  if (action === 'add') return postAdd(request, h, payload)
-  if (isRemoveAction(action)) return postRemove(request, h, action)
+  if (action === 'add') {
+    return postAdd(request, h, payload)
+  }
+  if (isRemoveAction(action)) {
+    return postRemove(request, h, action)
+  }
 
   const pageState = await loadPage(request, h)
   const hubTarget = kit.hubExitTarget(request)
@@ -260,7 +276,9 @@ const isOversizeBoom = (request) =>
 // A route-level payload rejection never reaches the handler, so it is rewritten
 // into the ordinary linked-error re-render rather than a bare 413.
 export const handleOversizePayload = async (request, h) => {
-  if (!isOversizeBoom(request)) return h.continue
+  if (!isOversizeBoom(request)) {
+    return h.continue
+  }
   const pageState = await loadPage(request, h)
   const crumb =
     request.state?.crumb ?? request.server.plugins.crumb?.generate?.(request, h)

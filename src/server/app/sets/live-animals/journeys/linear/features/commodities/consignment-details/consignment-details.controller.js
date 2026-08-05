@@ -77,7 +77,9 @@ const post = async (request, h) => {
   }
   const values = payloadValues(payload, lines)
   const { errors } = validate(fieldsFor(lines), payload)
-  if (errors) return render(request, h, journey, lines, values, errors)
+  if (errors) {
+    return render(request, h, journey, lines, values, errors)
+  }
 
   const issues = countDropIssues(request, lines, values)
   if (issues.length > 0) {

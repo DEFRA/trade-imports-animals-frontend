@@ -22,7 +22,7 @@ const view = `${TEMPLATES}/features/cph-number/template`
 
 const copy = copyFor({ en, cy })
 
-const asArray = (value) => [].concat(value ?? [])
+const asArray = (value) => [value ?? []].flat()
 
 export const isCphApplicable = (answers) =>
   asArray(answers.commodityLines).some((line) =>
@@ -74,7 +74,7 @@ const post = async (request, h) => {
   const payload = request.payload ?? {}
   const rawCphNumber = payload.countyParishHoldingCph ?? ''
   const values = {
-    countyParishHoldingCph: rawCphNumber.replace(/\//g, '')
+    countyParishHoldingCph: rawCphNumber.replaceAll('/', '')
   }
   const { errors } = validate(fields, values)
   if (errors) {
@@ -97,7 +97,9 @@ const post = async (request, h) => {
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   const { scope } = committed
   return h.redirect(

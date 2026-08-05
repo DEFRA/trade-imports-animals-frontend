@@ -3,7 +3,9 @@ import { fail } from '../fail.js'
 
 export const validateCurrentForm = (obligationId, form) => {
   const obligation = obligationsById.get(obligationId)
-  if (!obligation) return
+  if (!obligation) {
+    return
+  }
 
   if (groupIds.has(obligationId)) {
     fail(`structural group ${obligationId} cannot carry a fulfilment`)

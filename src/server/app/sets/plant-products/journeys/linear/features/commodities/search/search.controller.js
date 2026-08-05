@@ -160,7 +160,9 @@ const saveLine = async (
         recoverableError: true
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   return h.redirect(await kit.nextTarget(request, page, committed.scope))
 }

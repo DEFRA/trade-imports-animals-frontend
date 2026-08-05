@@ -65,12 +65,7 @@ describe('save actions — hub exit semantics', () => {
     expect(
       hubExitTarget({ payload: {}, params: { journeyId: 'journey-1' } })
     ).toBeNull()
-    expect(
-      hubExitTarget({
-        payload: undefined,
-        params: { journeyId: 'journey-1' }
-      })
-    ).toBeNull()
+    expect(hubExitTarget({ params: { journeyId: 'journey-1' } })).toBeNull()
   })
 
   // purposeInInternalMarket is activated by reasonForImport=internalMarket,

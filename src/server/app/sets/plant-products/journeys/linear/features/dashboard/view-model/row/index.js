@@ -70,7 +70,9 @@ export const toRow = (journey = {}, retryCopy = null) => {
   if (journey.status === AMEND) {
     actions.push(linkAction(journey, reference, copy.actions.resume, hubPath))
   }
-  if (canCopy) actions.push(copyAction(journey, reference, retryCopy))
+  if (canCopy) {
+    actions.push(copyAction(journey, reference, retryCopy))
+  }
   if (journey.status === AMEND) {
     actions.push(
       linkAction(journey, reference, copy.actions.cancelAmend, (journeyId) =>
@@ -78,7 +80,9 @@ export const toRow = (journey = {}, retryCopy = null) => {
       )
     )
   }
-  if (canDelete) actions.push(deleteAction(journey, reference))
+  if (canDelete) {
+    actions.push(deleteAction(journey, reference))
+  }
 
   return {
     reference,

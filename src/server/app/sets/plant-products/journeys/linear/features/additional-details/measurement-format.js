@@ -5,7 +5,9 @@ const formatter = new Intl.NumberFormat('en-GB', {
 })
 
 export const measurementText = (value) => {
-  if (value === undefined || value === null || value === '') return ''
+  if (value === undefined || value === null || value === '') {
+    return ''
+  }
   return typeof value === 'number' && Number.isFinite(value)
     ? formatter.format(value)
     : String(value)

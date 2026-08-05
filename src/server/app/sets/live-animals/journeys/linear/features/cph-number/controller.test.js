@@ -20,6 +20,8 @@ import * as cphNumber from './controller.js'
 const postCph = postHandlerOf(cphNumber)
 const getCph = cphNumber.routes.find((route) => route.method === 'GET').handler
 
+const VALID_CPH_WITH_SLASHES = '12/345/6789'
+
 const seed = () => ({ commodityLines: [{ commoditySelection: 'Cow' }] })
 
 const driveWithQuery = async (handler, { payload = {}, query = {} } = {}) => {
@@ -57,7 +59,7 @@ describe('POST cph-number — the 9-digit rule after slash stripping', () => {
   it('Should validate the stripped value, not the raw value, and commit it stripped', async () => {
     const result = await driveHandler(postCph, {
       seed: seed(),
-      payload: { countyParishHoldingCph: '12/345/6789' }
+      payload: { countyParishHoldingCph: VALID_CPH_WITH_SLASHES }
     })
     expect(result.view).toBeUndefined()
     expect(result.after.countyParishHoldingCph).toBe('123456789')
@@ -139,7 +141,7 @@ describe('cph-number — addresses-hub entry (?return=addresses)', () => {
   describe('POST /cph-number', () => {
     it('Should save and return to the addresses hub when entered from its CPH row', async () => {
       const result = await driveWithQuery(postCph, {
-        payload: { countyParishHoldingCph: '12/345/6789' },
+        payload: { countyParishHoldingCph: VALID_CPH_WITH_SLASHES },
         query: { return: 'addresses' }
       })
       expect(result.response).toEqual({
@@ -149,7 +151,7 @@ describe('cph-number — addresses-hub entry (?return=addresses)', () => {
 
     it('Should keep the sequential exit to the main hub when entered without return context', async () => {
       const result = await driveWithQuery(postCph, {
-        payload: { countyParishHoldingCph: '12/345/6789' }
+        payload: { countyParishHoldingCph: VALID_CPH_WITH_SLASHES }
       })
       expect(result.response).toEqual({
         redirect: hubPath(result.journeyId)

@@ -9,12 +9,19 @@ import {
 } from '../../../../../../../../../../e2e/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
 
+const BOS_TAURUS = 'Bos taurus'
+const SAVE_AND_CONTINUE = 'Save and continue'
+const FIRST_ANIMALS_QUANTITY_FIELD = 'numberOfAnimalsQuantity-0'
+const FIRST_ANIMALS_QUANTITY_INPUT = `#${FIRST_ANIMALS_QUANTITY_FIELD}`
+const GOVUK_TABLE = '.govuk-table'
+const CONSIGNMENT_DETAILS_PATH = 'consignment-details'
+
 const openDetails = async (page) => {
   await startNotification(page)
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
-  await selectSpecies(page, ['Bos taurus', 'Felis catus'])
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await selectSpecies(page, [BOS_TAURUS, 'Felis catus'])
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(
     page.getByRole('heading', { name: copy.consignmentDetails.title })
   ).toBeVisible()
@@ -22,7 +29,7 @@ const openDetails = async (page) => {
 
 const validQuantities = ['25', '5', '2', '1']
 const quantityFields = [
-  ['number of animals for Bos taurus', 'numberOfAnimalsQuantity-0', '2.5'],
+  ['number of animals for Bos taurus', FIRST_ANIMALS_QUANTITY_FIELD, '2.5'],
   ['number of packages for Bos taurus', 'numberOfPackages-0', 'boxes'],
   ['number of animals for Felis catus', 'numberOfAnimalsQuantity-1', '0'],
   ['number of packages for Felis catus', 'numberOfPackages-1', '-1']
@@ -30,7 +37,7 @@ const quantityFields = [
 
 const fillValidQuantities = async (page) => {
   for (const [index, field] of [
-    'numberOfAnimalsQuantity-0',
+    FIRST_ANIMALS_QUANTITY_FIELD,
     'numberOfPackages-0',
     'numberOfAnimalsQuantity-1',
     'numberOfPackages-1'
@@ -44,7 +51,7 @@ const errorFor = (field) =>
     ? copy.consignmentDetails.errors.animalsWholeNumber
     : copy.consignmentDetails.errors.packagesWholeNumber
 
-test.describe('commodity consignment details', () => {
+test.describe('commodity consignment details — rendering and validation', () => {
   test.beforeEach(async ({ page }) => {
     await openDetails(page)
   })
@@ -52,7 +59,7 @@ test.describe('commodity consignment details', () => {
   test('renders grouped species quantities and collection table', async ({
     page
   }) => {
-    const table = page.locator('.govuk-table')
+    const table = page.locator(GOVUK_TABLE)
     await expect(table).toContainText(copy.consignmentDetails.table.caption)
     await expect(table).toContainText(
       copy.consignmentDetails.table.commodityCode
@@ -61,14 +68,12 @@ test.describe('commodity consignment details', () => {
     await expect(table).toContainText('0102')
     await expect(table).toContainText('Cat')
     await expect(table).toContainText('01061900')
-    await expect(
-      page.getByRole('heading', { name: 'Bos taurus' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: BOS_TAURUS })).toBeVisible()
     await expect(
       page.getByRole('heading', { name: 'Felis catus' })
     ).toBeVisible()
     await expect(
-      page.locator('#numberOfAnimalsQuantity-0')
+      page.locator(FIRST_ANIMALS_QUANTITY_INPUT)
     ).toHaveAccessibleDescription(copy.consignmentDetails.animals.hint)
     await expect(
       page.locator('#numberOfPackages-0')
@@ -88,7 +93,7 @@ test.describe('commodity consignment details', () => {
     }) => {
       await fillValidQuantities(page)
       await page.locator(`#${field}`).fill(invalid)
-      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
       const link = page
         .getByRole('alert')
@@ -97,19 +102,25 @@ test.describe('commodity consignment details', () => {
       await link.click()
       await expect(page.locator(`#${field}`)).toBeFocused()
       await expect(page.locator(`#${field}`)).toHaveValue(invalid)
-      await expect(page.locator('#numberOfAnimalsQuantity-0')).toHaveValue(
-        field === 'numberOfAnimalsQuantity-0' ? invalid : validQuantities[0]
+      await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue(
+        field === FIRST_ANIMALS_QUANTITY_FIELD ? invalid : validQuantities[0]
       )
     })
   }
+})
+
+test.describe('commodity consignment details — persistence and accessibility', () => {
+  test.beforeEach(async ({ page }) => {
+    await openDetails(page)
+  })
 
   test('saves and persists per-species counts', async ({ page }) => {
     await fillValidQuantities(page)
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
-    await page.goto(journeyUrl(page, 'consignment-details'))
-    await expect(page.locator('#numberOfAnimalsQuantity-0')).toHaveValue('25')
+    await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
+    await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
     await expect(page.locator('#numberOfPackages-0')).toHaveValue('5')
     await expect(page.locator('#numberOfAnimalsQuantity-1')).toHaveValue('2')
     await expect(page.locator('#numberOfPackages-1')).toHaveValue('1')
@@ -119,30 +130,28 @@ test.describe('commodity consignment details', () => {
     page
   }) => {
     await fillValidQuantities(page)
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-    await page.goto(journeyUrl(page, 'consignment-details'))
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
     await page.getByRole('button', { name: 'Remove Cat' }).click()
 
-    await expect(page.locator('.govuk-table')).not.toContainText('Cat')
-    await expect(page.locator('#numberOfAnimalsQuantity-0')).toHaveValue('25')
+    await expect(page.locator(GOVUK_TABLE)).not.toContainText('Cat')
+    await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
   })
 
   test('adds another commodity while preserving an existing quantity', async ({
     page
   }) => {
     await fillValidQuantities(page)
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-    await page.goto(journeyUrl(page, 'consignment-details'))
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
     await page
       .getByRole('link', { name: copy.consignmentDetails.addAnother })
       .click()
-    await expect(
-      page.getByRole('checkbox', { name: 'Bos taurus' })
-    ).toBeChecked()
+    await expect(page.getByRole('checkbox', { name: BOS_TAURUS })).toBeChecked()
     await selectSpecies(page, ['Canis lupus familiaris'])
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(page.locator('.govuk-table')).toContainText('Dog')
-    await expect(page.locator('#numberOfAnimalsQuantity-0')).toHaveValue('25')
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await expect(page.locator(GOVUK_TABLE)).toContainText('Dog')
+    await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
     await expect(page.locator('#numberOfAnimalsQuantity-1')).toHaveValue('2')
     await expect(page.locator('#numberOfAnimalsQuantity-2')).toHaveValue('')
   })

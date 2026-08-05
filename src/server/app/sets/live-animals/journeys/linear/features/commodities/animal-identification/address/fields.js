@@ -95,7 +95,9 @@ export const addressRecordProvided = (values) =>
   ADDRESS_FIELD_ORDER.some((field) => values[field] !== '')
 
 export const missingAddressErrors = (values, index) => {
-  if (!addressRecordProvided(values)) return {}
+  if (!addressRecordProvided(values)) {
+    return {}
+  }
   return Object.fromEntries(
     Object.entries(ADDRESS_MANDATORY_MESSAGES)
       .filter(([field]) => values[field] === '')

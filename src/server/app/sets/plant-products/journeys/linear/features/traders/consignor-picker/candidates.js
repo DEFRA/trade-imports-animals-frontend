@@ -8,7 +8,9 @@ const trimmed = (value) => String(value ?? '').trim()
 // back off the notification so the consignor already on it stays pickable.
 const notificationConsignor = (answers) => {
   const name = trimmed(answers?.consignorName)
-  if (name === '') return undefined
+  if (name === '') {
+    return undefined
+  }
 
   return {
     id: NOTIFICATION_CONSIGNOR_ID,

@@ -12,7 +12,9 @@ export const isSafeUploadId = (uploadId) =>
 // field can be planted into the submitted state before it is read back. Only
 // the backend knows which notification a session belongs to.
 export const isOwnedByJourney = async (uploadId, journeyId) => {
-  if (!isSafeUploadId(uploadId)) return false
+  if (!isSafeUploadId(uploadId)) {
+    return false
+  }
   try {
     return (await documentUploads.ownerOf(uploadId)) === journeyId
   } catch {

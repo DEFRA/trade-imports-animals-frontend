@@ -18,7 +18,9 @@ export const row = ({
   changeLinkHref,
   readOnly = false
 }) => {
-  if (!scope.has(obligationName)) return null
+  if (!scope.has(obligationName)) {
+    return null
+  }
 
   if (isBlank(value)) {
     if (readOnly) {

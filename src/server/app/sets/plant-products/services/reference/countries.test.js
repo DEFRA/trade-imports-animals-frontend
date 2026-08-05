@@ -22,7 +22,9 @@ const countriesModulePattern = /\/services\/reference\/countries\.js$/u
 const controllerFilesBelow = (directory) =>
   readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const path = join(directory, entry.name)
-    if (entry.isDirectory()) return controllerFilesBelow(path)
+    if (entry.isDirectory()) {
+      return controllerFilesBelow(path)
+    }
     return entry.isFile() &&
       (entry.name === 'controller.js' || entry.name.endsWith('.controller.js'))
       ? [path]
@@ -35,10 +37,14 @@ const inspectCountryHelpers = (source) => {
   const inspectionRule = {
     create: () => ({
       ImportDeclaration(node) {
-        if (!countriesModulePattern.test(node.source.value)) return
+        if (!countriesModulePattern.test(node.source.value)) {
+          return
+        }
 
         for (const specifier of node.specifiers) {
-          if (specifier.type !== 'ImportSpecifier') continue
+          if (specifier.type !== 'ImportSpecifier') {
+            continue
+          }
           imports.push({
             imported: specifier.imported.name,
             local: specifier.local.name
@@ -46,7 +52,9 @@ const inspectCountryHelpers = (source) => {
         }
       },
       CallExpression(node) {
-        if (node.callee.type === 'Identifier') calls.add(node.callee.name)
+        if (node.callee.type === 'Identifier') {
+          calls.add(node.callee.name)
+        }
       }
     })
   }

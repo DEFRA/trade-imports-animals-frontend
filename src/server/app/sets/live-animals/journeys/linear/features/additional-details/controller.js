@@ -26,7 +26,7 @@ const view = `${TEMPLATES}/features/additional-details/template`
 
 const copy = copyFor({ en, cy })
 
-const asArray = (value) => [].concat(value ?? [])
+const asArray = (value) => [value ?? []].flat()
 
 export const unweanedApplies = (answers) =>
   asArray(answers.commodityLines).some((line) =>
@@ -120,7 +120,9 @@ const post = async (request, h) => {
         HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   return h.redirect(await kit.nextTarget(request, page, committed.scope))
 }

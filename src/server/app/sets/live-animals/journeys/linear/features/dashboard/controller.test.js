@@ -25,6 +25,9 @@ import { CYA_SLUG } from '../../../../../../shared/kit.js'
 import { routes } from './controller.js'
 import { authenticatedCredentials } from '../../../../../../engine/test-support.js'
 
+const COPY_AS_NEW_ACTION = 'Copy as new'
+const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
+
 const handlerOf = (method, pathSuffix) =>
   routes.find(
     (route) => route.method === method && route.path.endsWith(pathSuffix)
@@ -111,7 +114,7 @@ describe('dashboard notifications list', () => {
     expect(row.submitted).toBe('')
     expect(row.actions.map((action) => action.text)).toEqual([
       'Resume',
-      'Copy as new',
+      COPY_AS_NEW_ACTION,
       'Delete'
     ])
     expect(row.actions[0].href).toBe(hubPath(draft.journeyId))
@@ -139,7 +142,7 @@ describe('dashboard notifications list', () => {
     expect(row.actions.map((action) => action.text)).toEqual([
       'View',
       'Amend',
-      'Copy as new',
+      COPY_AS_NEW_ACTION,
       'Delete'
     ])
     expect(row.actions[0].href).toBe(pagePath(submitted.journeyId, CYA_SLUG))
@@ -219,14 +222,14 @@ describe('dashboard notifications list', () => {
     await listGet(
       buildRequest({
         knownJourneyIds,
-        query: { sort: 'createdAt,asc' }
+        query: { sort: CREATED_AT_ASCENDING_SORT }
       }),
       firstPage
     )
     await listGet(
       buildRequest({
         knownJourneyIds,
-        query: { page: '2', sort: 'createdAt,asc' }
+        query: { page: '2', sort: CREATED_AT_ASCENDING_SORT }
       }),
       secondPage
     )
@@ -259,7 +262,7 @@ describe('dashboard notifications list', () => {
       buildRequest({
         knownJourneyIds: [first.journeyId, second.journeyId],
         query: {
-          sort: 'createdAt,asc',
+          sort: CREATED_AT_ASCENDING_SORT,
           referenceNumber: `  ${second.journeyId}  `
         }
       }),
@@ -268,7 +271,7 @@ describe('dashboard notifications list', () => {
 
     expect(h.captured.view.context).toMatchObject({
       referenceNumber: second.journeyId,
-      sort: 'createdAt,asc',
+      sort: CREATED_AT_ASCENDING_SORT,
       resultsLabel: 'Showing 1 Result',
       listQuerySuffix: `?sort=createdAt%2Casc&referenceNumber=${second.journeyId}`
     })
@@ -365,7 +368,7 @@ describe('dashboard row actions', () => {
     expect(row.submitted).toBe('')
     expect(row.actions.map((action) => action.text)).toEqual([
       'Resume',
-      'Copy as new',
+      COPY_AS_NEW_ACTION,
       'Cancel amendment',
       'Delete'
     ])
@@ -420,7 +423,7 @@ describe('dashboard row actions', () => {
 
     const keys = h.captured.view.context.notificationRows.map(
       (row) =>
-        row.actions.find((action) => action.text === 'Copy as new')
+        row.actions.find((action) => action.text === COPY_AS_NEW_ACTION)
           .idempotencyKey
     )
     expect(new Set(keys).size).toBe(2)

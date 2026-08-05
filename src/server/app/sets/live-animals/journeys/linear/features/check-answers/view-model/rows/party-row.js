@@ -20,7 +20,9 @@ export const addressLines = (address = {}) =>
   ].filter((part) => !isBlank(part))
 
 export const partyLines = (party) => {
-  if (isBlank(party?.name)) return null
+  if (isBlank(party?.name)) {
+    return null
+  }
   return [
     `<strong>${escapeHtml(party.name)}</strong>`,
     ...[...addressLines(party.address), party.address?.country]

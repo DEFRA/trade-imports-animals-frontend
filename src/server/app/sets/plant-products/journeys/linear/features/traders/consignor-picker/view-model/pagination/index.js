@@ -5,7 +5,9 @@ export const pagination = (
   journeyId,
   { query, page, totalPages, selectedId }
 ) => {
-  if (totalPages < 2) return null
+  if (totalPages < 2) {
+    return null
+  }
 
   const hrefFor = (number) =>
     resultsHref(journeyId, { query, page: number, selectedId })

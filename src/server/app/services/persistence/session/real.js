@@ -29,7 +29,9 @@ export const session = {
 
   async addKnownJourney(request, h, journeyId) {
     const known = knownFrom(request)
-    if (known.includes(journeyId)) return
+    if (known.includes(journeyId)) {
+      return
+    }
     h.request.yar.set(knownJourneysCookie(), [...known, journeyId])
   },
 

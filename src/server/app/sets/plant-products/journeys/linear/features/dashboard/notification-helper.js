@@ -22,7 +22,9 @@ export const normalizePageNumber = (
   page,
   totalPages = Number.MAX_SAFE_INTEGER
 ) => {
-  if (!Number.isInteger(page) || page < 1 || totalPages <= 0) return 1
+  if (!Number.isInteger(page) || page < 1 || totalPages <= 0) {
+    return 1
+  }
   return Math.min(page, totalPages)
 }
 
@@ -34,7 +36,9 @@ export const parseNotificationSort = (sortQuery) =>
 const appendDateParts = (params, name, value = {}) => {
   for (const part of ['day', 'month', 'year']) {
     const partValue = String(value[part] ?? '').trim()
-    if (partValue) params.set(`${name}-${part}`, partValue)
+    if (partValue) {
+      params.set(`${name}-${part}`, partValue)
+    }
   }
 }
 
@@ -49,11 +53,21 @@ export const buildListQueryString = ({
 } = {}) => {
   const params = new URLSearchParams()
 
-  if (page > 1) params.set('page', String(page))
-  if (sort && sort !== DEFAULT_NOTIFICATION_SORT) params.set('sort', sort)
-  if (referenceNumber) params.set('referenceNumber', referenceNumber)
-  if (status) params.set('status', status)
-  if (countryOfOrigin) params.set('countryOfOrigin', countryOfOrigin)
+  if (page > 1) {
+    params.set('page', String(page))
+  }
+  if (sort && sort !== DEFAULT_NOTIFICATION_SORT) {
+    params.set('sort', sort)
+  }
+  if (referenceNumber) {
+    params.set('referenceNumber', referenceNumber)
+  }
+  if (status) {
+    params.set('status', status)
+  }
+  if (countryOfOrigin) {
+    params.set('countryOfOrigin', countryOfOrigin)
+  }
   appendDateParts(params, 'startDate', startDate)
   appendDateParts(params, 'endDate', endDate)
 
@@ -68,7 +82,9 @@ export const buildPaginationLinks = (
   labels = {}
 ) => {
   const page = normalizePageNumber(pagination.page, pagination.totalPages)
-  if (pagination.totalPages <= 1) return null
+  if (pagination.totalPages <= 1) {
+    return null
+  }
 
   const link = (targetPage) => ({
     href: `${baseUrl}${buildListQueryString({ ...query, page: targetPage })}`
@@ -89,8 +105,12 @@ export const buildPageResultsRangeLabel = (
   itemCount,
   labels = {}
 ) => {
-  if (itemCount === 0) return labels.none ?? '0 results'
-  if (totalElements === 1) return labels.single ?? '1 result'
+  if (itemCount === 0) {
+    return labels.none ?? '0 results'
+  }
+  if (totalElements === 1) {
+    return labels.single ?? '1 result'
+  }
 
   const start = (page - 1) * (size ?? itemCount) + 1
   const end = Math.min(start + itemCount - 1, totalElements)
@@ -100,7 +120,9 @@ export const buildPageResultsRangeLabel = (
 }
 
 export const formatDisplayDate = (value) => {
-  if (!value) return ''
+  if (!value) {
+    return ''
+  }
   const date = typeof value === 'string' ? parseISO(value) : value
   return isValid(date) ? format(date, LIST_DATE_FORMAT) : ''
 }
@@ -113,7 +135,9 @@ const rawDateParts = (query, name) => ({
 
 const dateIso = ({ day, month, year }) => {
   const parts = [day, month, year].map((part) => String(part).trim())
-  if (parts.some((part) => part === '')) return null
+  if (parts.some((part) => part === '')) {
+    return null
+  }
   const iso = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`
   return isValid(parseISO(iso)) ? iso : null
 }
@@ -142,7 +166,9 @@ export const validateFilters = (query = {}, messages = {}) => {
   const { start, end } = parseDateRangeQuery(query)
 
   if (!errors['startDate-day'] && !errors['endDate-day'] && start && end) {
-    if (start > end) errors['startDate-day'] = messages.startBeforeEnd
+    if (start > end) {
+      errors['startDate-day'] = messages.startBeforeEnd
+    }
   }
 
   return Object.keys(errors).length > 0 ? errors : null

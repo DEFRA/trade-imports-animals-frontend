@@ -12,6 +12,8 @@ import { dispatchPages } from '../../index.js'
 import * as search from '../search/search.controller.js'
 import { copy } from './copy.en.js'
 
+const BOS_TAURUS = 'Bos taurus'
+
 const leaves = (node, path = []) =>
   typeof node === 'object' && node !== null
     ? Object.entries(node).flatMap(([key, value]) =>
@@ -32,22 +34,22 @@ describe('#copy', () => {
   })
 
   it('Should interpolate countDrop', () => {
-    expect(copy.consignmentDetails.errors.countDrop(3, 'Bos taurus', 2)).toBe(
+    expect(copy.consignmentDetails.errors.countDrop(3, BOS_TAURUS, 2)).toBe(
       'You have 3 identifier records for Bos taurus but entered 2 animals. Remove identifier records or keep the higher count.'
     )
     expect(
-      copy.consignmentDetails.errors.countDrop(1, 'Bos taurus', 1)
+      copy.consignmentDetails.errors.countDrop(1, BOS_TAURUS, 1)
     ).toContain('1 identifier record for')
   })
 
   it('Should interpolate counter', () => {
-    expect(copy.identification.counter('Bos taurus', 2, 2)).toBe(
+    expect(copy.identification.counter(BOS_TAURUS, 2, 2)).toBe(
       'Enter details for Bos taurus 2 of 2'
     )
   })
 
   it('Should interpolate overCount', () => {
-    expect(copy.identification.overCount(1, 'Bos taurus', 2, 1)).toBe(
+    expect(copy.identification.overCount(1, BOS_TAURUS, 2, 1)).toBe(
       'This commodity line lists 1 Bos taurus animals but you have entered details for 2. Remove 1 to continue.'
     )
   })

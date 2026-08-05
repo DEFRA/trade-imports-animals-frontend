@@ -56,9 +56,13 @@ describe('plant-products obligation structural integrity', () => {
   it('resolves every gated obligation dependency to a manifest id', () => {
     const ids = new Set(obligations.map(({ id }) => id))
     const problems = obligations.flatMap((obligation) => {
-      if (typeof obligation.applyTo !== 'function') return []
+      if (typeof obligation.applyTo !== 'function') {
+        return []
+      }
       const dependsOn = obligationMetadata(obligation).dependsOn
-      if (!Array.isArray(dependsOn)) return [`${obligation.name}: missing`]
+      if (!Array.isArray(dependsOn)) {
+        return [`${obligation.name}: missing`]
+      }
       return dependsOn
         .filter((id) => !ids.has(id))
         .map((id) => `${obligation.name}: ${id}`)

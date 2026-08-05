@@ -19,18 +19,18 @@ export function enumerateGroupFulfilmentIds(obligations, context) {
   } = context
 
   const fulfilmentIdsByObligationId = new Map()
-  for (const obligation of obligations) {
-    if (obligationsByCategory.get(obligation.id) !== 'group') continue
-    if (!isInScope(obligation)) {
-      fulfilmentIdsByObligationId.set(obligation.id, new Set())
-      continue
-    }
-    const ids = groupInstancePaths(
-      obligation,
-      obligationAncestorGroups,
-      obligationDescendants,
-      (desc) => amendedFulfilments[desc.id]
-    )
+  const groupObligations = obligations.filter(
+    (obligation) => obligationsByCategory.get(obligation.id) === 'group'
+  )
+  for (const obligation of groupObligations) {
+    const ids = isInScope(obligation)
+      ? groupInstancePaths(
+          obligation,
+          obligationAncestorGroups,
+          obligationDescendants,
+          (desc) => amendedFulfilments[desc.id]
+        )
+      : new Set()
     fulfilmentIdsByObligationId.set(obligation.id, ids)
   }
   return fulfilmentIdsByObligationId

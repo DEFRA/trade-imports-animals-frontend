@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path'
 const referenceDataUrl =
   process.env.TRADE_IMPORTS_REFERENCE_DATA_URL ?? 'http://localhost:8086'
 const outDir = join(dirname(fileURLToPath(import.meta.url)), 'fixtures')
+const JSON_INDENT_SPACES = 2
 
 const targets = [
   { name: 'countries', url: `${referenceDataUrl}/countries` },
@@ -24,7 +25,9 @@ const optionalTag = (target) =>
 
 const reportFetchFailure = (target, message) => {
   console.log(`${target.name}: ${message}`)
-  if (!target.optional) process.exitCode = 1
+  if (!target.optional) {
+    process.exitCode = 1
+  }
 }
 
 const fetchTarget = async (target) => {
@@ -47,7 +50,7 @@ const fetchTarget = async (target) => {
 const writeFixture = async (target, response) => {
   const body = await response.json()
   const file = join(outDir, `${target.name}.json`)
-  await writeFile(file, `${JSON.stringify(body, null, 2)}\n`)
+  await writeFile(file, `${JSON.stringify(body, null, JSON_INDENT_SPACES)}\n`)
 
   const count = Array.isArray(body) ? body.length : Object.keys(body).length
   const sample = Array.isArray(body) ? JSON.stringify(body[0]) : ''
@@ -60,6 +63,8 @@ await mkdir(outDir, { recursive: true })
 
 for (const target of targets) {
   const response = await fetchTarget(target)
-  if (!response) continue
+  if (!response) {
+    continue
+  }
   await writeFixture(target, response)
 }

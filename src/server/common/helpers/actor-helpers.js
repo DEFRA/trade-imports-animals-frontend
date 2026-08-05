@@ -1,5 +1,7 @@
 export function buildActor(credentials) {
-  if (!credentials) return undefined
+  if (!credentials) {
+    return undefined
+  }
 
   const isB2C = Boolean(credentials.contactId)
   const actor = {

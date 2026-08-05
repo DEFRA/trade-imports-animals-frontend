@@ -29,6 +29,8 @@ import { session as sessionStub } from '../../../../../../services/persistence/s
 import { dispatchPages } from '../index.js'
 import * as cancelAmend from './controller.js'
 
+const NOTIFICATION_VIEW_SLUG = 'notification-view'
+
 const get = cancelAmend.routes.find((route) => route.method === 'GET').handler
 const post = cancelAmend.routes.find((route) => route.method === 'POST').handler
 
@@ -75,7 +77,7 @@ describe('cancel amendment routes', () => {
     expect(response.context).toMatchObject({
       heading: 'Cancel this amendment?',
       cancelAction: pagePath(journeyId, 'cancel-amend'),
-      noHref: pagePath(journeyId, 'notification-view')
+      noHref: pagePath(journeyId, NOTIFICATION_VIEW_SLUG)
     })
     expect(response.context.copy.body).toContain('submitted version restored')
   })
@@ -86,7 +88,7 @@ describe('cancel amendment routes', () => {
     const response = await post(journeyRequest(journeyId), stubH())
 
     expect(response).toEqual({
-      redirect: `${pagePath(journeyId, 'notification-view')}?cancelled=1`
+      redirect: `${pagePath(journeyId, NOTIFICATION_VIEW_SLUG)}?cancelled=1`
     })
     const restored = await records.load({ journeyId })
     expect(restored.status).toBe(SUBMITTED)
@@ -104,7 +106,7 @@ describe('cancel amendment routes', () => {
       redirect: '/live-animals'
     })
     expect(await post(journeyRequest(submitted.journeyId), stubH())).toEqual({
-      redirect: pagePath(submitted.journeyId, 'notification-view')
+      redirect: pagePath(submitted.journeyId, NOTIFICATION_VIEW_SLUG)
     })
     expect((await records.load({ journeyId: draft.journeyId })).status).toBe(
       'draft'

@@ -7,6 +7,18 @@ import {
 } from '../../../../../../../../../../e2e/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
 
+const NAME_FIELD = '#nameOrOrganisationName'
+const INVALID_COUNTRY = 'Invalid country'
+
+const NAME_MAX_LENGTH = 255
+const ADDRESS_LINE_MAX_LENGTH = 255
+const TOWN_OR_CITY_MAX_LENGTH = 100
+const COUNTY_MAX_LENGTH = 100
+const POSTAL_OR_ZIP_MAX_LENGTH = 12
+const TELEPHONE_MAX_LENGTH = 20
+const EMAIL_MAX_LENGTH = 254
+const EMAIL_DOMAIN = '@example.com'
+
 const rowFor = (page, title) =>
   page.locator('.govuk-summary-list__row', {
     has: page.getByText(title, { exact: true })
@@ -43,13 +55,24 @@ const validAddress = {
 const fillAddress = async (page, values = validAddress) => {
   for (const [field, value] of Object.entries(values)) {
     const control = page.locator(`#${field}`)
-    if (field === 'country') await control.selectOption(value)
-    else await control.fill(value)
+    if (field === 'country') {
+      await control.selectOption(value)
+    } else {
+      await control.fill(value)
+    }
   }
 }
 
 const submit = (page) =>
   page.getByRole('button', { name: copy.createAddress.saveAndContinue }).click()
+
+const expectErrorFocusOn = async (page, error, field, expectedValue) => {
+  const link = errorLink(page, copy.createAddress.errors[error])
+  await expect(link).toBeVisible()
+  await link.click()
+  await expect(page.locator(`#${field}`)).toBeFocused()
+  await expect(page.locator(`#${field}`)).toHaveValue(expectedValue)
+}
 
 const requiredValidations = [
   ['name or organisation name', 'nameOrOrganisationName', 'nameRequired'],
@@ -65,44 +88,49 @@ const formatValidations = [
   [
     'name or organisation name over 255 characters',
     'nameOrOrganisationName',
-    'N'.repeat(256),
+    'N'.repeat(NAME_MAX_LENGTH + 1),
     'nameMaxLength'
   ],
   [
     'address line 1 over 255 characters',
     'addressLine1',
-    'A'.repeat(256),
+    'A'.repeat(ADDRESS_LINE_MAX_LENGTH + 1),
     'addressLine1MaxLength'
   ],
   [
     'address line 2 over 255 characters',
     'addressLine2',
-    'B'.repeat(256),
+    'B'.repeat(ADDRESS_LINE_MAX_LENGTH + 1),
     'addressLine2MaxLength'
   ],
   [
     'town or city over 100 characters',
     'townOrCity',
-    'T'.repeat(101),
+    'T'.repeat(TOWN_OR_CITY_MAX_LENGTH + 1),
     'townOrCityMaxLength'
   ],
-  ['county over 100 characters', 'county', 'C'.repeat(101), 'countyMaxLength'],
+  [
+    'county over 100 characters',
+    'county',
+    'C'.repeat(COUNTY_MAX_LENGTH + 1),
+    'countyMaxLength'
+  ],
   [
     'postal or zip code over 12 characters',
     'postalOrZipCode',
-    'P'.repeat(13),
+    'P'.repeat(POSTAL_OR_ZIP_MAX_LENGTH + 1),
     'postalOrZipCodeMaxLength'
   ],
   [
     'telephone number over 20 characters',
     'telephoneNumber',
-    '1'.repeat(21),
+    '1'.repeat(TELEPHONE_MAX_LENGTH + 1),
     'telephoneMaxLength'
   ],
   [
     'email address over 254 characters',
     'emailAddress',
-    `${'e'.repeat(243)}@example.com`,
+    `${'e'.repeat(EMAIL_MAX_LENGTH - EMAIL_DOMAIN.length + 1)}${EMAIL_DOMAIN}`,
     'emailMaxLength'
   ]
 ]
@@ -129,68 +157,6 @@ test.describe('create address', () => {
     await expect(
       page.getByRole('heading', { name: copy.parties.consignor.title })
     ).toBeVisible()
-  })
-
-  for (const [name, field, error] of requiredValidations) {
-    test(`validation: empty ${name} links to and focuses the preserved field`, async ({
-      page
-    }) => {
-      await fillAddress(page)
-      if (field === 'country') await page.locator('#country').selectOption('')
-      else await page.locator(`#${field}`).fill('')
-      await submit(page)
-
-      const link = errorLink(page, copy.createAddress.errors[error])
-      await expect(link).toBeVisible()
-      await link.click()
-      await expect(page.locator(`#${field}`)).toBeFocused()
-      await expect(page.locator(`#${field}`)).toHaveValue('')
-      await expect(page.locator('#nameOrOrganisationName')).toHaveValue(
-        field === 'nameOrOrganisationName'
-          ? ''
-          : validAddress.nameOrOrganisationName
-      )
-    })
-  }
-
-  for (const [name, field, value, error] of formatValidations) {
-    test(`validation: ${name} links to and focuses the preserved value`, async ({
-      page
-    }) => {
-      await fillAddress(page, { ...validAddress, [field]: value })
-      await submit(page)
-
-      const link = errorLink(page, copy.createAddress.errors[error])
-      await expect(link).toBeVisible()
-      await link.click()
-      await expect(page.locator(`#${field}`)).toBeFocused()
-      await expect(page.locator(`#${field}`)).toHaveValue(value)
-      await expect(page.locator('#nameOrOrganisationName')).toHaveValue(
-        field === 'nameOrOrganisationName'
-          ? value
-          : validAddress.nameOrOrganisationName
-      )
-    })
-  }
-
-  test('validation: an out-of-list country links to and focuses the cleared select while preserving other values', async ({
-    page
-  }) => {
-    await fillAddress(page)
-    await page.locator('#country').evaluate((select) => {
-      select.add(new Option('Invalid country', 'Invalid country'))
-      select.value = 'Invalid country'
-    })
-    await submit(page)
-
-    const link = errorLink(page, copy.createAddress.errors.countryFromList)
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.locator('#country')).toBeFocused()
-    await expect(page.locator('#country')).toHaveValue('')
-    await expect(page.locator('#nameOrOrganisationName')).toHaveValue(
-      validAddress.nameOrOrganisationName
-    )
   })
 
   test('adds the address to the launching party and offers it on return', async ({
@@ -227,5 +193,64 @@ test.describe('create address', () => {
       seriousOrCritical,
       `Create address has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
     ).toEqual([])
+  })
+})
+
+test.describe('create address validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await openCreateAddress(page)
+  })
+
+  for (const [name, field, error] of requiredValidations) {
+    test(`validation: empty ${name} links to and focuses the preserved field`, async ({
+      page
+    }) => {
+      await fillAddress(page)
+      if (field === 'country') {
+        await page.locator('#country').selectOption('')
+      } else {
+        await page.locator(`#${field}`).fill('')
+      }
+      await submit(page)
+
+      await expectErrorFocusOn(page, error, field, '')
+      await expect(page.locator(NAME_FIELD)).toHaveValue(
+        field === 'nameOrOrganisationName'
+          ? ''
+          : validAddress.nameOrOrganisationName
+      )
+    })
+  }
+
+  for (const [name, field, value, error] of formatValidations) {
+    test(`validation: ${name} links to and focuses the preserved value`, async ({
+      page
+    }) => {
+      await fillAddress(page, { ...validAddress, [field]: value })
+      await submit(page)
+
+      await expectErrorFocusOn(page, error, field, value)
+      await expect(page.locator(NAME_FIELD)).toHaveValue(
+        field === 'nameOrOrganisationName'
+          ? value
+          : validAddress.nameOrOrganisationName
+      )
+    })
+  }
+
+  test('validation: an out-of-list country links to and focuses the cleared select while preserving other values', async ({
+    page
+  }) => {
+    await fillAddress(page)
+    await page.locator('#country').evaluate((select, invalidCountry) => {
+      select.add(new Option(invalidCountry, invalidCountry))
+      select.value = invalidCountry
+    }, INVALID_COUNTRY)
+    await submit(page)
+
+    await expectErrorFocusOn(page, 'countryFromList', 'country', '')
+    await expect(page.locator(NAME_FIELD)).toHaveValue(
+      validAddress.nameOrOrganisationName
+    )
   })
 })

@@ -12,6 +12,8 @@ const { countryOfOrigin } = obligationSet()
 
 const originFulfilment = (value) => ({ [countryOfOrigin.id]: value })
 
+const UNKNOWN_JOURNEY_ID = 'GBN-AG-26-000000'
+
 describe('records durable port', () => {
   beforeEach(() => records.clear())
 
@@ -139,7 +141,7 @@ describe('records durable port', () => {
   })
 
   it('Should reject amend on an unknown journey', async () => {
-    await expect(records.amend('GBN-AG-26-000000')).rejects.toThrow(
+    await expect(records.amend(UNKNOWN_JOURNEY_ID)).rejects.toThrow(
       /Unknown journey/
     )
   })
@@ -150,7 +152,7 @@ describe('records durable port', () => {
     await records.create()
 
     const listed = await records.list({
-      journeyIds: [second.journeyId, 'GBN-AG-26-000000', first.journeyId]
+      journeyIds: [second.journeyId, UNKNOWN_JOURNEY_ID, first.journeyId]
     })
 
     expect(listed.rows.map((journey) => journey.journeyId)).toEqual([
@@ -230,7 +232,7 @@ describe('records durable port', () => {
 
     expect(copyB.journeyId).not.toBe(copyA.journeyId)
     await expect(
-      records.copy('GBN-AG-26-000000', 'unknown-source-key')
+      records.copy(UNKNOWN_JOURNEY_ID, 'unknown-source-key')
     ).rejects.toThrow(/Unknown journey/)
   })
 

@@ -52,7 +52,9 @@ const copyPost = async (request, h) => {
         })
       ).code(HTTP_STATUS_UNPROCESSABLE_ENTITY)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   return copied
     ? h.redirect(hubPath(copied.journeyId))

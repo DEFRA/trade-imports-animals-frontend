@@ -71,13 +71,18 @@ const optionalNumberOfPackages = (name) =>
 
 const quantityRule = (name, { required }) => {
   let rule = Joi.string().trim()
-  if (required) rule = rule.required()
-  else rule = rule.allow('')
+  if (required) {
+    rule = rule.required()
+  } else {
+    rule = rule.allow('')
+  }
   return single(
     name,
     rule
       .custom((raw, helpers) => {
-        if (!required && raw === '') return raw
+        if (!required && raw === '') {
+          return raw
+        }
         if (!/^\d+(?:\.\d{1,3})?$/.test(raw)) {
           return helpers.error('number.format')
         }
@@ -96,18 +101,25 @@ const quantityRule = (name, { required }) => {
 
 const netWeightRule = (name, { required }) => {
   let rule = Joi.string().trim()
-  if (required) rule = rule.required()
-  else rule = rule.allow('')
+  if (required) {
+    rule = rule.required()
+  } else {
+    rule = rule.allow('')
+  }
   return single(
     name,
     rule
       .custom((raw, helpers) => {
-        if (!required && raw === '') return raw
+        if (!required && raw === '') {
+          return raw
+        }
         if (!/^\d+(?:\.\d+)?$/.test(raw) || Number(raw) < 0.001) {
           return helpers.error('number.min')
         }
         const decimals = raw.split('.')[1] ?? ''
-        if (decimals.length > 3) return helpers.error('number.decimals')
+        if (decimals.length > 3) {
+          return helpers.error('number.decimals')
+        }
         if (raw.replace('.', '').length > 16) {
           return helpers.error('number.digits')
         }

@@ -1,10 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
-import { characterisationCorpus } from '../../../../sets/live-animals/journeys/linear/fixtures/characterisation-corpus.js'
-import {
-  answersToTargetNotification,
-  fulfilmentToNotification
-} from './index.js'
+import { fulfilmentToNotification } from './index.js'
 
 const address = (name, line1) => ({
   name,
@@ -12,15 +8,12 @@ const address = (name, line1) => ({
 })
 
 const referenceNumber = 'GBN-AG-26-ABC123'
+const ORIGIN_FARM_LINE1 = '1 Farm Lane'
+const BOS_TAURUS = 'Bos taurus'
 const currentNotificationFrom = (answers) =>
   fulfilmentToNotification(
     assembleFulfilments(answers),
     answers.referenceNumber ?? referenceNumber
-  )
-const targetNotificationFrom = (answers) =>
-  answersToTargetNotification(
-    assembleFulfilments(answers),
-    answers.referenceNumber
   )
 
 // Answers carrying only the obligations Mapper A maps to the current backend
@@ -35,7 +28,7 @@ const mappedAnswers = () => ({
   animalsCertifiedFor: 'Further keeping',
   containsUnweanedAnimals: 'No',
   reasonForImport: 'Internal market',
-  placeOfOrigin: address('Origin Farm', '1 Farm Lane'),
+  placeOfOrigin: address('Origin Farm', ORIGIN_FARM_LINE1),
   consignor: address('Consignor Ltd', '2 Depot Road'),
   consignee: address('Consignee Ltd', '3 Dock Street'),
   importer: address('Importer Ltd', '4 Port Way'),
@@ -103,7 +96,7 @@ const answersWithGaps = () => ({
           horseName: 'Dobbin',
           animalIdentifierIdentificationDetails: 'Hive mark HM-2026-004',
           animalIdentifierDescription: 'Brown cow',
-          permanentAddress: address('Owner', '1 Farm Lane')
+          permanentAddress: address('Owner', ORIGIN_FARM_LINE1)
         }
       ]
     }
@@ -153,7 +146,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
           species: [
             {
               value: '1148346',
-              text: 'Bos taurus',
+              text: BOS_TAURUS,
               noOfAnimals: '25',
               noOfPackages: '5',
               earTag: 'UK123456789012',
@@ -218,7 +211,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     })
     expect(notification.reasonForImport).toBe('Internal market')
     expect(notification.placeOfOrigin).toEqual(
-      address('Origin Farm', '1 Farm Lane')
+      address('Origin Farm', ORIGIN_FARM_LINE1)
     )
     expect(notification.consignor).toEqual(
       address('Consignor Ltd', '2 Depot Road')
@@ -244,7 +237,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     })
     expect(notification.commodity.commodityComplement[0].species[0]).toEqual({
       value: '1148346',
-      text: 'Bos taurus',
+      text: BOS_TAURUS,
       noOfAnimals: '25',
       noOfPackages: '5',
       earTag: 'UK123456789012',
@@ -286,7 +279,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
 
     expect(species).toEqual({
       value: '1148346',
-      text: 'Bos taurus',
+      text: BOS_TAURUS,
       noOfAnimals: '25',
       noOfPackages: '5',
       earTag: 'UK123456789012',
@@ -336,229 +329,4 @@ test('Mapper A should use the envelope id as the reference number', () => {
   )
 
   expect(actual).toEqual({ referenceNumber: 'JOURNEY-ID' })
-})
-
-// A fixture exercising every captured obligation: multi-commodity per-species
-// lines, multiple animal-identifier units per line using every identifier
-// type, region code, purpose, all transport fields and a typed documents
-// collection. Only the commercial transporter is present — transporterType
-// gates commercial and private mutually exclusively (activatedBy +
-// wipeOnExit), so exactly one is ever in scope, and the target notification
-// carries a single Transporter.
-const allAnswers = () => ({
-  referenceNumber: 'GBN-AG-26-ABC123',
-  countryOfOrigin: 'FR',
-  regionOfOriginCodeRequirement: 'Yes',
-  regionOfOriginCode: 'FR-75',
-  internalReferenceNumber: 'Imports456GB',
-  animalsCertifiedFor: 'Further keeping',
-  containsUnweanedAnimals: 'No',
-  reasonForImport: 'Internal market',
-  purposeInInternalMarket: 'Breeding',
-  placeOfOrigin: address('Origin Farm', '1 Farm Lane'),
-  consignor: address('Consignor Ltd', '2 Depot Road'),
-  consignee: address('Consignee Ltd', '3 Dock Street'),
-  importer: address('Importer Ltd', '4 Port Way'),
-  placeOfDestination: address('Destination Farm', '5 Field Lane'),
-  contactAddress: address('Contact Person', '6 High Street'),
-  transporterType: 'Commercial',
-  commercialTransporter: {
-    name: 'Transporter Co',
-    approvalNumber: 'UK/NEWCA/T1/00090953',
-    address: { addressLine1: '7 Route One' }
-  },
-  countyParishHoldingCph: '12/345/6789',
-  portOfEntry: 'GB ABD',
-  arrivalDateAtPort: { day: 12, month: 12, year: 2026 },
-  meansOfTransport: 'ROAD_VEHICLE',
-  transportIdentification: 'FR-892-LK',
-  transportDocumentReference: 'CMR-2026-884721',
-  transitedCountries: ['France', 'Belgium'],
-  declaration: ['confirmed'],
-  commodityLines: [
-    {
-      commoditySelection: 'Cow',
-      speciesSelection: '1148346',
-      commodityType: '16',
-      numberOfPackages: '5',
-      numberOfAnimalsQuantity: '25',
-      animalIdentifiers: [
-        {
-          animalIdentifierEarTag: 'UK123456789012',
-          animalIdentifierPassport: 'UK123456789'
-        },
-        {
-          animalIdentifierTattoo: 'AB1234',
-          animalIdentifierDescription: 'Brown cow'
-        }
-      ]
-    },
-    {
-      commoditySelection: 'Cow',
-      speciesSelection: '716661',
-      commodityType: '16',
-      numberOfPackages: '2',
-      numberOfAnimalsQuantity: '10',
-      animalIdentifiers: [{ animalIdentifierEarTag: 'UK000000000001' }]
-    },
-    {
-      commoditySelection: 'Cat',
-      speciesSelection: '923501',
-      commodityType: '2',
-      numberOfAnimalsQuantity: '2',
-      animalIdentifiers: [
-        {
-          animalIdentifierPassport: 'UK-CAT-1',
-          animalIdentifierIdentificationDetails: 'Microchip 900123',
-          horseName: 'Not applicable',
-          permanentAddress: address('Owner', '1 Farm Lane')
-        }
-      ]
-    }
-  ],
-  documents: [
-    {
-      accompanyingDocumentType: 'ITAHC',
-      accompanyingDocumentAttachmentType: 'PDF',
-      accompanyingDocumentReference: 'GBHC1234567890',
-      accompanyingDocumentDateOfIssue: '2025-12-12'
-    },
-    {
-      accompanyingDocumentType: 'AIR_WAYBILL',
-      accompanyingDocumentAttachmentType: 'PNG',
-      accompanyingDocumentReference: 'AWB-42',
-      accompanyingDocumentDateOfIssue: '2025-11-01'
-    }
-  ]
-})
-
-describe('Mapper B — proposed target notification (superset, full-fat)', () => {
-  test('Should give every gap obligation a typed home in the target notification', () => {
-    const notification = targetNotificationFrom(allAnswers())
-
-    expect(notification.origin.regionCode).toBe('FR-75')
-    expect(notification.purpose).toBe('Breeding')
-    expect(notification).not.toHaveProperty('declaration')
-    expect(notification.transport).toMatchObject({
-      transporter: {
-        name: 'Transporter Co',
-        approvalNumber: 'UK/NEWCA/T1/00090953',
-        address: { addressLine1: '7 Route One' },
-        type: 'Commercial'
-      },
-      meansOfTransport: 'ROAD_VEHICLE',
-      transportIdentification: 'FR-892-LK',
-      transportDocumentReference: 'CMR-2026-884721',
-      transitedCountries: ['France', 'Belgium']
-    })
-    expect(notification.documents).toHaveLength(2)
-    expect(notification.documents[0]).toEqual({
-      documentType: 'ITAHC',
-      attachmentType: 'PDF',
-      reference: 'GBHC1234567890',
-      dateOfIssue: '2025-12-12'
-    })
-  })
-
-  test('Should keep upload id and filename out of typed document entries', () => {
-    const { answers } = characterisationCorpus.find(
-      ({ name }) => name === 'comprehensive'
-    )
-    const notification = targetNotificationFrom(answers)
-
-    expect(notification.documents).toHaveLength(2)
-    for (const document of notification.documents) {
-      expect(document).not.toHaveProperty('uploadId')
-      expect(document).not.toHaveProperty('filename')
-    }
-  })
-
-  test('Should retain an upload-only document record without projecting its upload metadata', () => {
-    const notification = targetNotificationFrom({
-      documents: [
-        {
-          uploadId: 'upload-only',
-          filename: 'upload-only.pdf'
-        }
-      ]
-    })
-
-    expect(notification.documents).toEqual([{}])
-  })
-
-  test('Should keep every group commodity identity and the full per-species identifier records', () => {
-    const notification = targetNotificationFrom(allAnswers())
-    const complements = notification.commodity.commodityComplement
-
-    expect(complements).toHaveLength(2)
-    expect(complements[0].commodityCode).toBe('0102')
-    expect(complements[0].name).toBe('Cow')
-    expect(complements[1].commodityCode).toBe('01061900')
-    expect(complements[1].name).toBe('Cat')
-    expect(complements[0].species[0].animalIdentifiers).toEqual([
-      { earTag: 'UK123456789012', passport: 'UK123456789' },
-      { tattoo: 'AB1234', description: 'Brown cow' }
-    ])
-    expect(complements[0].species[1].animalIdentifiers).toEqual([
-      { earTag: 'UK000000000001' }
-    ])
-    expect(complements[1].species[0].animalIdentifiers).toEqual([
-      {
-        passport: 'UK-CAT-1',
-        identificationDetails: 'Microchip 900123',
-        horseName: 'Not applicable',
-        permanentAddress: address('Owner', '1 Farm Lane')
-      }
-    ])
-  })
-
-  test('Should carry the storable species fields Mapper A does (counts + earTag/passport)', () => {
-    const notification = targetNotificationFrom(mappedAnswers())
-    expect(notification.commodity.commodityComplement[0].species[0]).toEqual({
-      value: '1148346',
-      text: 'Bos taurus',
-      noOfAnimals: '25',
-      noOfPackages: '5',
-      earTag: 'UK123456789012',
-      passport: 'UK123456789',
-      animalIdentifiers: [{ earTag: 'UK123456789012', passport: 'UK123456789' }]
-    })
-  })
-
-  test('Should be a superset of Mapper A — B contains every field A produces, plus extras', () => {
-    const answers = allAnswers()
-    const fulfilment = assembleFulfilments(answers)
-    const mapperANotification = fulfilmentToNotification(
-      fulfilment,
-      answers.referenceNumber
-    )
-    const mapperBNotification = answersToTargetNotification(
-      fulfilment,
-      answers.referenceNumber
-    )
-
-    expect(mapperBNotification).toMatchObject(mapperANotification)
-    // ...plus the extras A has no home for.
-    expect(mapperBNotification.purpose).toBe('Breeding')
-    expect(mapperBNotification.documents).toBeDefined()
-    expect(
-      mapperBNotification.commodity.commodityComplement[0].commodityCode
-    ).toBeDefined()
-  })
-
-  test('Should collapse a private transporter into the single Transporter', () => {
-    const answers = {
-      transporterType: 'Private',
-      privateTransporter: {
-        name: 'Jane Private',
-        address: { addressLine1: '9 Private Road' }
-      }
-    }
-    const notification = targetNotificationFrom(answers)
-    expect(notification.transport.transporter).toEqual({
-      name: 'Jane Private',
-      address: { addressLine1: '9 Private Road' },
-      type: 'Private'
-    })
-  })
 })

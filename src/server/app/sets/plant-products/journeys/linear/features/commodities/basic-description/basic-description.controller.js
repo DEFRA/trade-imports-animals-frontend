@@ -26,9 +26,13 @@ const normaliseFilter = (value) =>
     .toLowerCase()
 
 const actionTarget = (action, prefix) => {
-  if (!action.startsWith(prefix)) return null
+  if (!action.startsWith(prefix)) {
+    return null
+  }
   const parts = action.slice(prefix.length).split(':')
-  if (parts.length !== 2 || parts.some((part) => part === '')) return null
+  if (parts.length !== 2 || parts.some((part) => part === '')) {
+    return null
+  }
   return { index: Number(parts[0]), value: parts[1] }
 }
 
@@ -157,14 +161,18 @@ const redirectToPage = (request, h) =>
   )
 
 const postAdd = async (request, h, pageState, lines, target) => {
-  if (!target || !validLine(lines, target.index)) return badRequest(h)
+  if (!target || !validLine(lines, target.index)) {
+    return badRequest(h)
+  }
   const line = lines[target.index]
   const candidates = speciesFor(line.entry.commoditySelection)
   const species = candidates.find(({ eppoCode }) => eppoCode === target.value)
   const alreadyAdded = (line.entry.species ?? []).some(
     ({ eppoCode }) => eppoCode === target.value
   )
-  if (!species || alreadyAdded) return badRequest(h)
+  if (!species || alreadyAdded) {
+    return badRequest(h)
+  }
 
   const { failure, value: appended } = await recoverableMutation(
     request,
@@ -182,8 +190,12 @@ const postAdd = async (request, h, pageState, lines, target) => {
         }
       )
   )
-  if (failure) return failure
-  if (!Number.isInteger(appended)) return badRequest(h)
+  if (failure) {
+    return failure
+  }
+  if (!Number.isInteger(appended)) {
+    return badRequest(h)
+  }
   return redirectToPage(request, h)
 }
 
@@ -201,7 +213,9 @@ const postRemove = async (request, h, pageState, lines, target) => {
     ['commodityLines', target.index, 'species'],
     pageState.evaluation
   )
-  if (speciesIndex < 0 || speciesIndex >= added.length) return badRequest(h)
+  if (speciesIndex < 0 || speciesIndex >= added.length) {
+    return badRequest(h)
+  }
 
   const { failure } = await recoverableMutation(request, h, pageState, () =>
     state.removeEntryAt(
@@ -211,7 +225,9 @@ const postRemove = async (request, h, pageState, lines, target) => {
       speciesIndex
     )
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
   return redirectToPage(request, h)
 }
 

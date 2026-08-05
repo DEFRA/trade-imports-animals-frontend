@@ -5,6 +5,10 @@ import { groupInvariantErrors } from './state-queries.js'
 // Synthetic obligations — the queries can be exercised in isolation,
 // without the parent obligations manifest or evaluator.
 
+const line1Unit1Path = 'line1/unit1'
+const line1Unit2Path = 'line1/unit2'
+const commodityLineFloorErrorCode = 'obligation.commodityLine.atLeastOne'
+
 // Convenience: build a state as the ObligationEvaluator would.
 function state({ fulfilments = {}, obligations = {} } = {}) {
   return { fulfilments, obligations }
@@ -40,7 +44,7 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
       obligations: impls([
         {
           obligation: unitRecord,
-          impl: { inScope: true, records: [{ fulfilmentId: 'line1/unit1' }] }
+          impl: { inScope: true, records: [{ fulfilmentId: line1Unit1Path }] }
         }
       ])
     })
@@ -61,7 +65,7 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
       obligations: impls([
         {
           obligation: unitRecord,
-          impl: { inScope: true, records: [{ fulfilmentId: 'line1/unit1' }] }
+          impl: { inScope: true, records: [{ fulfilmentId: line1Unit1Path }] }
         },
         { obligation: passport, impl: { inScope: false } },
         { obligation: earTag, impl: { inScope: false } }
@@ -80,8 +84,8 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
           impl: {
             inScope: true,
             records: [
-              { fulfilmentId: 'line1/unit1' },
-              { fulfilmentId: 'line1/unit2' }
+              { fulfilmentId: line1Unit1Path },
+              { fulfilmentId: line1Unit2Path }
             ]
           }
         },
@@ -90,8 +94,8 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
           impl: {
             inScope: true,
             records: [
-              { fulfilmentId: 'line1/unit1', status: 'optional' },
-              { fulfilmentId: 'line1/unit2', status: 'optional' }
+              { fulfilmentId: line1Unit1Path, status: 'optional' },
+              { fulfilmentId: line1Unit2Path, status: 'optional' }
             ]
           }
         },
@@ -100,8 +104,8 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
           impl: {
             inScope: true,
             records: [
-              { fulfilmentId: 'line1/unit1', status: 'optional' },
-              { fulfilmentId: 'line1/unit2', status: 'optional' }
+              { fulfilmentId: line1Unit1Path, status: 'optional' },
+              { fulfilmentId: line1Unit2Path, status: 'optional' }
             ]
           }
         }
@@ -113,31 +117,31 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
       code: 'obligation.unitRecord.identifiersRequired',
       groupId: unitRecord.id,
       groupName: 'unitRecord',
-      instanceId: 'line1/unit1'
+      instanceId: line1Unit1Path
     })
-    expect(errors[1].instanceId).toBe('line1/unit2')
+    expect(errors[1].instanceId).toBe(line1Unit2Path)
   })
 
   it('no error when at least one required leaf is filled', () => {
     const st = state({
-      fulfilments: { [passport.id]: { 'line1/unit1': 'PP-001' } },
+      fulfilments: { [passport.id]: { [line1Unit1Path]: 'PP-001' } },
       obligations: impls([
         {
           obligation: unitRecord,
-          impl: { inScope: true, records: [{ fulfilmentId: 'line1/unit1' }] }
+          impl: { inScope: true, records: [{ fulfilmentId: line1Unit1Path }] }
         },
         {
           obligation: passport,
           impl: {
             inScope: true,
-            records: [{ fulfilmentId: 'line1/unit1', status: 'optional' }]
+            records: [{ fulfilmentId: line1Unit1Path, status: 'optional' }]
           }
         },
         {
           obligation: earTag,
           impl: {
             inScope: true,
-            records: [{ fulfilmentId: 'line1/unit1', status: 'optional' }]
+            records: [{ fulfilmentId: line1Unit1Path, status: 'optional' }]
           }
         }
       ])
@@ -151,19 +155,24 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
     const st = state({
       fulfilments: {
         [passport.id]: {
-          'line1/unit1': { name: '', addressLine1: '', town: '', postcode: '' }
+          [line1Unit1Path]: {
+            name: '',
+            addressLine1: '',
+            town: '',
+            postcode: ''
+          }
         }
       },
       obligations: impls([
         {
           obligation: unitRecord,
-          impl: { inScope: true, records: [{ fulfilmentId: 'line1/unit1' }] }
+          impl: { inScope: true, records: [{ fulfilmentId: line1Unit1Path }] }
         },
         {
           obligation: passport,
           impl: {
             inScope: true,
-            records: [{ fulfilmentId: 'line1/unit1', status: 'optional' }]
+            records: [{ fulfilmentId: line1Unit1Path, status: 'optional' }]
           }
         }
       ])
@@ -186,7 +195,7 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
     ...commodityLineGroup,
     requires: {
       minEntries: 1,
-      errorCode: 'obligation.commodityLine.atLeastOne'
+      errorCode: commodityLineFloorErrorCode
     }
   }
 
@@ -204,7 +213,7 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
         code: 'MIN_ENTRIES',
         groupId: commodityLineGroup.id,
         groupName: 'commodityLine',
-        errorCode: 'obligation.commodityLine.atLeastOne',
+        errorCode: commodityLineFloorErrorCode,
         minEntries: 1,
         actual: 0
       }
@@ -250,7 +259,7 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
       requires: {
         minEntries: 2,
         anyOfIds: [leafObl.id],
-        errorCode: 'obligation.commodityLine.atLeastOne'
+        errorCode: commodityLineFloorErrorCode
       }
     }
     const st = state({

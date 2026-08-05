@@ -79,7 +79,9 @@ const commitSelection = async (request, h, party, chosen, form) => {
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   return h.redirect(pagePath(request.params.journeyId, 'addresses'))
 }

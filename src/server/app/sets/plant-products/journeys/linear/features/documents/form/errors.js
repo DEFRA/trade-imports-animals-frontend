@@ -28,11 +28,15 @@ export const hasFilePart = (file) =>
   Boolean(file?.filename) || Boolean(file?.payload?.length)
 
 export const fileErrors = (file) => {
-  if (!hasFilePart(file)) return {}
+  if (!hasFilePart(file)) {
+    return {}
+  }
   if (!isAllowedFilename(file.filename ?? '')) {
     return { file: FILE_TYPE_MESSAGE }
   }
-  if (!file.payload?.length) return { file: copy.errors.fileEmpty }
+  if (!file.payload?.length) {
+    return { file: copy.errors.fileEmpty }
+  }
   if (exceedsMaxFileSize(file.payload.length)) {
     return { file: OVERSIZE_FILE_MESSAGE }
   }

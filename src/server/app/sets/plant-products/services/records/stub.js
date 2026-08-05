@@ -45,7 +45,9 @@ const mintReference = () => {
 
 const read = (journeyId) => {
   const record = recordsById.get(journeyId)
-  if (!record) throw new Error(`Unknown journey "${journeyId}"`)
+  if (!record) {
+    throw new Error(`Unknown journey "${journeyId}"`)
+  }
   return record
 }
 
@@ -202,7 +204,9 @@ export const copy = async (journeyId, idempotencyKey) => {
     throw new Error('Idempotency-Key must not be blank')
   }
   const existing = copiesByIdempotencyKey.get(idempotencyKey)
-  if (existing !== undefined) return toJourney(read(existing))
+  if (existing !== undefined) {
+    return toJourney(read(existing))
+  }
 
   const source = read(journeyId)
   if (source.status !== SUBMITTED && source.status !== AMEND) {
@@ -211,7 +215,9 @@ export const copy = async (journeyId, idempotencyKey) => {
   const copied = await create()
   const target = read(copied.journeyId)
   target.fulfilment = clone(source.fulfilment)
-  for (const id of DOCUMENT_OBLIGATION_IDS) delete target.fulfilment[id]
+  for (const id of DOCUMENT_OBLIGATION_IDS) {
+    delete target.fulfilment[id]
+  }
   copiesByIdempotencyKey.set(idempotencyKey, target.journeyId)
   return toJourney(target)
 }

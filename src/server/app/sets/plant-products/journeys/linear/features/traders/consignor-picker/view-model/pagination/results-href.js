@@ -5,8 +5,12 @@ import { consignorPickerPage } from '../../../page.js'
 // active set context rather than being written into the link.
 export const resultsHref = (journeyId, { query, page, selectedId }) => {
   const params = new URLSearchParams()
-  if (query) params.set('q', query)
+  if (query) {
+    params.set('q', query)
+  }
   params.set('page', String(page))
-  if (selectedId) params.set('selected', selectedId)
+  if (selectedId) {
+    params.set('selected', selectedId)
+  }
   return `${pagePath(journeyId, consignorPickerPage.slug)}?${params.toString()}`
 }

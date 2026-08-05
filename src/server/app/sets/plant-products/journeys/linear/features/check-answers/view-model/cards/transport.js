@@ -22,7 +22,9 @@ const containerRows = (
   evaluation,
   readOnly = false
 ) => {
-  if (answers.usesContainers !== true) return []
+  if (answers.usesContainers !== true) {
+    return []
+  }
   return state
     .collectionView(answers, ['containers'], evaluation)
     .flatMap(({ index, entry }) => {

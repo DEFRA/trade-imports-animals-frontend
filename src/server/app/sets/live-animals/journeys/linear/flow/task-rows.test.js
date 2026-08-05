@@ -306,7 +306,7 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
 
   it.each(Object.entries({ ...submittable, ...notSubmittable }))(
     'Should agree with the retired section roll-up for %s',
-    (label, answers) => {
+    (_label, answers) => {
       const { inScope } = makeScope(answers)
       const evaluation = evaluateAnswers(answers)
       expect(readyForCheckYourAnswers(answers, inScope, evaluation)).toBe(
@@ -317,7 +317,7 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
 
   it.each(Object.entries(submittable))(
     'Should hold %s submittable',
-    (label, answers) => {
+    (_label, answers) => {
       const { inScope } = makeScope(answers)
       expect(
         readyForCheckYourAnswers(answers, inScope, evaluateAnswers(answers))
@@ -327,7 +327,7 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
 
   it.each(Object.entries(notSubmittable))(
     'Should hold %s not submittable',
-    (label, answers) => {
+    (_label, answers) => {
       const { inScope } = makeScope(answers)
       expect(
         readyForCheckYourAnswers(answers, inScope, evaluateAnswers(answers))

@@ -9,7 +9,9 @@ import { recordMap } from './records.js'
 export const leafInScopeForRecord = (name, recId, state) => {
   const obligation = obligationFor(name)
   const impl = obligation && state.obligations?.[obligation.id]
-  if (!impl?.inScope) return false
+  if (!impl?.inScope) {
+    return false
+  }
   return (impl.records ?? []).some((r) => r.fulfilmentId === recId)
 }
 

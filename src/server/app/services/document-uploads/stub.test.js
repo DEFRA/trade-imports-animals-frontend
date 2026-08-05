@@ -2,70 +2,74 @@ import { describe, expect, it } from 'vitest'
 
 import { documentUploads } from './stub.js'
 
+const CLEAN_FILENAME = 'invoice.pdf'
+const VIRUS_FILENAME = 'virus-notes.pdf'
+const NEVER_SCANS_FILENAME = 'never-scans.pdf'
+
 describe('#documentUploads', () => {
   describe('#scanStatus', () => {
     it('Should answer PENDING on every read after upload until a refresh read settles it', async () => {
       const uploadId = await documentUploads.upload({
-        filename: 'invoice.pdf'
+        filename: CLEAN_FILENAME
       })
       expect(
-        await documentUploads.scanStatus({ uploadId, filename: 'invoice.pdf' })
+        await documentUploads.scanStatus({ uploadId, filename: CLEAN_FILENAME })
       ).toBe('PENDING')
       expect(
-        await documentUploads.scanStatus({ uploadId, filename: 'invoice.pdf' })
+        await documentUploads.scanStatus({ uploadId, filename: CLEAN_FILENAME })
       ).toBe('PENDING')
       expect(
         await documentUploads.scanStatus({
           uploadId,
-          filename: 'invoice.pdf',
+          filename: CLEAN_FILENAME,
           refresh: true
         })
       ).toBe('COMPLETE')
       expect(
-        await documentUploads.scanStatus({ uploadId, filename: 'invoice.pdf' })
+        await documentUploads.scanStatus({ uploadId, filename: CLEAN_FILENAME })
       ).toBe('COMPLETE')
     })
 
     it('Should settle a filename containing "virus" as REJECTED on the refresh read, and stay REJECTED', async () => {
       const uploadId = await documentUploads.upload({
-        filename: 'virus-notes.pdf'
+        filename: VIRUS_FILENAME
       })
       expect(
         await documentUploads.scanStatus({
           uploadId,
-          filename: 'virus-notes.pdf'
+          filename: VIRUS_FILENAME
         })
       ).toBe('PENDING')
       expect(
         await documentUploads.scanStatus({
           uploadId,
-          filename: 'virus-notes.pdf',
+          filename: VIRUS_FILENAME,
           refresh: true
         })
       ).toBe('REJECTED')
       expect(
         await documentUploads.scanStatus({
           uploadId,
-          filename: 'virus-notes.pdf'
+          filename: VIRUS_FILENAME
         })
       ).toBe('REJECTED')
     })
 
     it('Should keep a filename containing "never-scans" PENDING even through refresh reads', async () => {
       const uploadId = await documentUploads.upload({
-        filename: 'never-scans.pdf'
+        filename: NEVER_SCANS_FILENAME
       })
       expect(
         await documentUploads.scanStatus({
           uploadId,
-          filename: 'never-scans.pdf',
+          filename: NEVER_SCANS_FILENAME,
           refresh: true
         })
       ).toBe('PENDING')
       expect(
         await documentUploads.scanStatus({
           uploadId,
-          filename: 'never-scans.pdf'
+          filename: NEVER_SCANS_FILENAME
         })
       ).toBe('PENDING')
     })
@@ -156,12 +160,12 @@ describe('#documentUploads', () => {
   describe('#remove', () => {
     it('Should forget a removed uploadId so it reads as not found', async () => {
       const uploadId = await documentUploads.upload({
-        filename: 'invoice.pdf'
+        filename: CLEAN_FILENAME
       })
       await documentUploads.remove(uploadId)
 
       await expect(
-        documentUploads.scanStatus({ uploadId, filename: 'invoice.pdf' })
+        documentUploads.scanStatus({ uploadId, filename: CLEAN_FILENAME })
       ).rejects.toMatchObject({ status: 404 })
     })
   })

@@ -12,7 +12,9 @@ const NOT_PROVIDED = copy.notProvided
 // both the commodity and the species so same-commodity cards stay distinct.
 export const speciesCardTitle = (entry) => {
   const name = (entry.commoditySelection ?? '').trim()
-  if (!name) return NOT_PROVIDED
+  if (!name) {
+    return NOT_PROVIDED
+  }
   const code = commodities.commodityCodeFor(name)
   const commodity = code ? `${name} (${code})` : name
   const species = speciesText(entry)

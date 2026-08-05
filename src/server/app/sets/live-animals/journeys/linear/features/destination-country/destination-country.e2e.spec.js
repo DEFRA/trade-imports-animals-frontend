@@ -4,6 +4,8 @@ import { expect, test } from '@playwright/test'
 import { countriesOrigin } from '../../../../../../services/_capture/fixtures.js'
 import { copy } from './copy/copy.en.js'
 
+const SUBMIT_BUTTON = 'form button[type="submit"]'
+
 const startAtDestinationCountry = async (page) => {
   await page.goto('/live-animals')
   await page
@@ -19,7 +21,7 @@ const startAtDestinationCountry = async (page) => {
   const reasonUrl = page.url().replace(/\/origin$/, '/import-reason')
   await page.goto(reasonUrl)
   await page.locator('input[name="reasonForImport"][value="transit"]').check()
-  await page.locator('form button[type="submit"]').first().click()
+  await page.locator(SUBMIT_BUTTON).first().click()
   await page.goto(reasonUrl.replace(/\/import-reason$/, '/destination-country'))
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
@@ -53,7 +55,7 @@ test.describe('destination-country feature', () => {
   test('country validation: when no country is selected, links to and focuses the empty select', async ({
     page
   }) => {
-    await page.locator('form button[type="submit"]').first().click()
+    await page.locator(SUBMIT_BUTTON).first().click()
 
     const countryError = page
       .getByRole('alert')
@@ -71,7 +73,7 @@ test.describe('destination-country feature', () => {
     const france = countriesOrigin.find(({ code }) => code === 'FR')
 
     await page.getByLabel(copy.country.label).selectOption(france.code)
-    await page.locator('form button[type="submit"]').first().click()
+    await page.locator(SUBMIT_BUTTON).first().click()
 
     await expect(page).toHaveURL((url) =>
       /^\/live-animals\/notifications\/[^/]+$/.test(url.pathname)

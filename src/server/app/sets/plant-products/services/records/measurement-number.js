@@ -7,7 +7,9 @@ const decimalIdentity = (value) => {
     DECIMAL_VALUE.exec(value) ?? []
   const digits = `${integer}${fraction}`
   const firstSignificant = digits.search(/[1-9]/)
-  if (firstSignificant === -1) return '0'
+  if (firstSignificant === -1) {
+    return '0'
+  }
 
   const significant = digits.slice(firstSignificant).replace(/0+$/, '')
   const power = integer.length + Number(exponent) - firstSignificant - 1
@@ -15,7 +17,9 @@ const decimalIdentity = (value) => {
 }
 
 export const isLosslessMeasurementNumber = (value) => {
-  if (typeof value !== 'string' || !CLEAN_DECIMAL.test(value)) return false
+  if (typeof value !== 'string' || !CLEAN_DECIMAL.test(value)) {
+    return false
+  }
   const numeric = Number(value)
   return (
     Number.isFinite(numeric) &&

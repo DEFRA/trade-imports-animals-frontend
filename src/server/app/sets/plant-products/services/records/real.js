@@ -46,7 +46,9 @@ const getNotification = async (journeyId, operation) => {
     method: 'GET',
     headers: headers()
   })
-  if (response.status === HTTP_NOT_FOUND) return undefined
+  if (response.status === HTTP_NOT_FOUND) {
+    return undefined
+  }
   expectStatus(operation, response, [200])
   return response.json()
 }
@@ -103,7 +105,9 @@ export const create = async (_options) => {
 }
 
 export const load = async ({ journeyId } = {}) => {
-  if (journeyId == null) return undefined
+  if (journeyId == null) {
+    return undefined
+  }
   const dto = await getNotification(journeyId, 'load notification')
   return dto === undefined ? undefined : marshal(dto)
 }
@@ -114,7 +118,9 @@ export const list = async ({
   referenceNumber
 } = {}) => {
   const query = new URLSearchParams({ page: String(page), sort })
-  if (referenceNumber) query.set('referenceNumber', referenceNumber)
+  if (referenceNumber) {
+    query.set('referenceNumber', referenceNumber)
+  }
   const response = await recoverableFetch(`${notificationsUrl}?${query}`, {
     method: 'GET',
     headers: headers()
@@ -135,15 +141,21 @@ export const has = async (journeyId) => {
     method: 'GET',
     headers: headers()
   })
-  if (response.status === HTTP_NOT_FOUND) return false
+  if (response.status === HTTP_NOT_FOUND) {
+    return false
+  }
   expectStatus('check notification', response, [200])
   return true
 }
 
 const resolveStatus = async (journeyId, known) => {
-  if (known !== undefined) return known.status
+  if (known !== undefined) {
+    return known.status
+  }
   const dto = await getNotification(journeyId, 'load notification for write')
-  if (dto === undefined) throw new Error(`Unknown journey "${journeyId}"`)
+  if (dto === undefined) {
+    throw new Error(`Unknown journey "${journeyId}"`)
+  }
   return mapStatus(dto.status)
 }
 

@@ -14,13 +14,19 @@ import { pagePath } from '../../../../../../../shared/paths.js'
 import * as partyPicker from './party-picker.controller.js'
 import { PARTIES } from '../parties.js'
 
+const CONSIGNOR_SELECT_SLUG = 'consignors/select'
+const DANISH_MEAT_EXPORT_ID = 'danish-meat-export'
+const IBERIAN_SWINE_ID = 'iberian-swine'
+const IBERIAN_SWINE_NAME = 'Iberian Swine SA'
+const SELECT_A_CONSIGNOR_ERROR = 'Select a consignor from the list'
+
 const handlerFor = (method, slug) =>
   partyPicker.routes.find(
     (route) => route.method === method && route.path.endsWith(slug)
   ).handler
 
-const getConsignor = handlerFor('GET', 'consignors/select')
-const postConsignor = handlerFor('POST', 'consignors/select')
+const getConsignor = handlerFor('GET', CONSIGNOR_SELECT_SLUG)
+const postConsignor = handlerFor('POST', CONSIGNOR_SELECT_SLUG)
 
 const pickerFrom = (result) => result.view.context.picker
 const idsOf = (picker) => picker.rows.map((row) => row.id)
@@ -44,7 +50,7 @@ describe('GET /consignors/select', () => {
       'astra-rosales',
       'eurostore-services',
       'laiterie-du-nord',
-      'danish-meat-export',
+      DANISH_MEAT_EXPORT_ID,
       'portuguese-livestock'
     ])
     expect(picker.rows[0]).toMatchObject({
@@ -73,18 +79,18 @@ describe('GET /consignors/select', () => {
 
   it('Should render a later page, carrying the search and the selection into every pagination link', async () => {
     const result = await driveHandler(getConsignor, {
-      query: { page: '3', selected: 'iberian-swine' }
+      query: { page: '3', selected: IBERIAN_SWINE_ID }
     })
     const picker = pickerFrom(result)
 
     expect(picker.page).toBe(3)
     expect(idsOf(picker)).toContain('irish-beef-traders')
-    expect(picker.selected.name).toBe('Iberian Swine SA')
+    expect(picker.selected.name).toBe(IBERIAN_SWINE_NAME)
     expect(picker.pagination.next.href).toBe(
-      `${pagePath(result.journeyId, 'consignors/select')}?page=4&selected=iberian-swine`
+      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=4&selected=iberian-swine`
     )
     expect(picker.pagination.items[0].href).toBe(
-      `${pagePath(result.journeyId, 'consignors/select')}?page=1&selected=iberian-swine`
+      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=1&selected=iberian-swine`
     )
   })
 
@@ -94,7 +100,7 @@ describe('GET /consignors/select', () => {
     )
 
     expect(picker.resultsCaption).toBe('Showing 2 of 2 addresses')
-    expect(idsOf(picker)).toEqual(['danish-meat-export', 'jutland-swine'])
+    expect(idsOf(picker)).toEqual([DANISH_MEAT_EXPORT_ID, 'jutland-swine'])
     expect(picker.pagination).toBeNull()
   })
 
@@ -129,32 +135,32 @@ describe('POST /consignors/select', () => {
 
     expect(result.response.statusCode).toBe(200)
     expect(picker.page).toBe(1)
-    expect(idsOf(picker)).toEqual(['danish-meat-export'])
+    expect(idsOf(picker)).toEqual([DANISH_MEAT_EXPORT_ID])
     expect(result.after.consignor).toBeUndefined()
   })
 
   it('Should carry a row ticked before the search across the round trip, still selected but off the results', async () => {
     const picker = pickerFrom(
       await driveHandler(postConsignor, {
-        payload: { action: 'search', q: 'denmark', party: 'iberian-swine' }
+        payload: { action: 'search', q: 'denmark', party: IBERIAN_SWINE_ID }
       })
     )
 
-    expect(picker.selected.id).toBe('iberian-swine')
-    expect(idsOf(picker)).not.toContain('iberian-swine')
+    expect(picker.selected.id).toBe(IBERIAN_SWINE_ID)
+    expect(idsOf(picker)).not.toContain(IBERIAN_SWINE_ID)
     expect(picker.rows.every((row) => row.checked === false)).toBe(true)
   })
 
   it('Should copy the row ticked on a later page onto the party and return to the addresses hub', async () => {
     const result = await driveHandler(postConsignor, {
-      payload: { action: 'save', page: '3', party: 'iberian-swine' }
+      payload: { action: 'save', page: '3', party: IBERIAN_SWINE_ID }
     })
 
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, 'addresses')
     })
     expect(result.after.consignor).toEqual({
-      name: 'Iberian Swine SA',
+      name: IBERIAN_SWINE_NAME,
       address: {
         addressLine1: 'Calle Gran Via 31',
         townOrCity: 'Madrid',
@@ -166,11 +172,11 @@ describe('POST /consignors/select', () => {
 
   it('Should save the selection made on an earlier page when the page on screen has no row ticked', async () => {
     const result = await driveHandler(postConsignor, {
-      payload: { action: 'save', page: '6', selected: 'iberian-swine' }
+      payload: { action: 'save', page: '6', selected: IBERIAN_SWINE_ID }
     })
 
     expect(result.view).toBeUndefined()
-    expect(result.after.consignor.name).toBe('Iberian Swine SA')
+    expect(result.after.consignor.name).toBe(IBERIAN_SWINE_NAME)
   })
 
   it('Should let a row ticked on the page on screen beat the selection carried from an earlier one', async () => {
@@ -178,7 +184,7 @@ describe('POST /consignors/select', () => {
       payload: {
         action: 'save',
         page: '3',
-        selected: 'iberian-swine',
+        selected: IBERIAN_SWINE_ID,
         party: 'irish-beef-traders'
       }
     })
@@ -192,11 +198,9 @@ describe('POST /consignors/select', () => {
     })
 
     expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.picker.error).toBe(
-      'Select a consignor from the list'
-    )
+    expect(result.view.context.picker.error).toBe(SELECT_A_CONSIGNOR_ERROR)
     expect(result.view.context.errorSummary.errorList).toEqual([
-      { text: 'Select a consignor from the list', href: '#party' }
+      { text: SELECT_A_CONSIGNOR_ERROR, href: '#party' }
     ])
     expect(result.view.context.picker.page).toBe(2)
     expect(result.after.consignor).toBeUndefined()
@@ -216,9 +220,7 @@ describe('POST /consignors/select', () => {
       payload: { action: 'save', party: 'tech-imports' }
     })
 
-    expect(result.view.context.picker.error).toBe(
-      'Select a consignor from the list'
-    )
+    expect(result.view.context.picker.error).toBe(SELECT_A_CONSIGNOR_ERROR)
     expect(result.after.consignor).toBeUndefined()
   })
 })

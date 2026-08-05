@@ -16,7 +16,9 @@ const commitReference = async (request, h) => {
   const payload = request.payload ?? {}
   const raw = payload.transportDocumentReference ?? ''
   const { value: clean, errors } = validate(fields, payload)
-  if (errors) return h.view('reference', { value: raw, errors })
+  if (errors) {
+    return h.view('reference', { value: raw, errors })
+  }
   await state.commit(request, h, {
     transportDocumentReference: clean.transportDocumentReference ?? ''
   })

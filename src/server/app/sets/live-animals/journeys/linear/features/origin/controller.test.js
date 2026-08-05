@@ -25,6 +25,9 @@ import * as origin from './controller.js'
 
 const post = postHandlerOf(origin)
 
+const COUNTRY_REQUIRED_MESSAGE =
+  'Select the country where the animal originates from'
+
 describe('POST /origin — invalid payload', () => {
   beforeAll(() => {
     configureRecords('live-animals', recordsStub)
@@ -42,7 +45,7 @@ describe('POST /origin — invalid payload', () => {
         internalReferenceNumber: 'Imports456GB'
       },
       field: 'countryOfOrigin',
-      message: 'Select the country where the animal originates from'
+      message: COUNTRY_REQUIRED_MESSAGE
     },
     {
       name: 'countryOfOrigin outside the countries list',
@@ -52,7 +55,7 @@ describe('POST /origin — invalid payload', () => {
         internalReferenceNumber: 'Imports456GB'
       },
       field: 'countryOfOrigin',
-      message: 'Select the country where the animal originates from'
+      message: COUNTRY_REQUIRED_MESSAGE
     },
     {
       name: 'invalid-character internalReferenceNumber',
@@ -130,8 +133,11 @@ describe('POST /origin — country membership follows the primed list', () => {
 
   afterAll(() => {
     vi.unstubAllGlobals()
-    if (originalMode === undefined) delete process.env.LIVE_ANIMALS_MODE
-    else process.env.LIVE_ANIMALS_MODE = originalMode
+    if (originalMode === undefined) {
+      delete process.env.LIVE_ANIMALS_MODE
+    } else {
+      process.env.LIVE_ANIMALS_MODE = originalMode
+    }
   })
 
   it('Should validate against the list as primed at POST time, not as imported', async () => {
@@ -163,7 +169,7 @@ describe('POST /origin — country membership follows the primed list', () => {
       }
     })
     expect(rejected.view.context.errors.countryOfOrigin).toBe(
-      'Select the country where the animal originates from'
+      COUNTRY_REQUIRED_MESSAGE
     )
   })
 })

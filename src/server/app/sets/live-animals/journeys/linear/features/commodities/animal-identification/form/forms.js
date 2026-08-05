@@ -30,13 +30,15 @@ const formHoldsData = (showAddress, values, addressValues) =>
   (showAddress && addressRecordProvided(addressValues))
 
 const addressErrorsFor = (showAddress, addressValues, index, payload) => {
-  if (!showAddress) return {}
+  if (!showAddress) {
+    return {}
+  }
   const { errors: addrFormatErrors } = addressRecordProvided(addressValues)
     ? validate(addressChecksFor(index), payload)
     : { errors: null }
   return {
     ...missingAddressErrors(addressValues, index),
-    ...(addrFormatErrors ?? {})
+    ...addrFormatErrors
   }
 }
 
@@ -51,7 +53,7 @@ const buildLineForm = (payload, commodity, index) => {
     payload
   )
   const errors = {
-    ...(idErrors ?? {}),
+    ...idErrors,
     ...addressErrorsFor(showAddress, addressValues, index, payload)
   }
 
@@ -92,7 +94,7 @@ export const buildLineForms = (payload, answers, lines) => {
 // "Save and add another" pressed against a card already at its cap — a
 // stale form racing the engine-enforced cardinality link. Surface the
 // rejection; never save silently.
-export const capReachedResponse = (
+export const capReachedResponse = ({
   render,
   request,
   h,
@@ -102,8 +104,10 @@ export const capReachedResponse = (
   forms,
   addIndex,
   atMaxByIndex
-) => {
-  if (addIndex === null || !atMaxByIndex.has(addIndex)) return null
+}) => {
+  if (addIndex === null || !atMaxByIndex.has(addIndex)) {
+    return null
+  }
   return render(request, h, journey, answers, evaluation, {
     forms,
     cardErrors: [
@@ -119,7 +123,9 @@ export const capReachedResponse = (
 // never append an empty record — name the gap instead.
 export const withEmptyFormGuard = (errors, forms, addIndex) => {
   const anyData = [...forms.values()].some((form) => form.holdsData)
-  if (addIndex === null || anyData || !forms.has(addIndex)) return errors
+  if (addIndex === null || anyData || !forms.has(addIndex)) {
+    return errors
+  }
   const { commodity } = forms.get(addIndex)
   const [first] = scopedFields(commodity)
   return {

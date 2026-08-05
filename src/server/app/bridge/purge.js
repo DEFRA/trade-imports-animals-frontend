@@ -21,7 +21,6 @@ import {
   fulfilmentIdToPath,
   groupObligations
 } from './fulfilments/index.js'
-import { evaluateFulfilments } from './evaluation.js'
 import { pathKey } from '../lib/path.js'
 import { isAnswered } from '../lib/answered.js'
 
@@ -29,7 +28,7 @@ import { isAnswered } from '../lib/answered.js'
  * Evaluate a canonical fulfilment map and return the converged post-purge
  * evaluator state. This is the durable write-path authority.
  */
-export const purgeFulfilments = evaluateFulfilments
+export { evaluateFulfilments as purgeFulfilments } from './evaluation.js'
 
 const wipedScalarKey = (obligation, inVal, fulfilmentsOut) =>
   isAnswered(inVal) && fulfilmentsOut[obligation.id] === undefined
@@ -49,9 +48,13 @@ const wipedRecordKeys = (obligation, chain, inVal, fulfilmentsOut) => {
 }
 
 const wipedKeysFor = (obligation, fulfilmentsIn, fulfilmentsOut) => {
-  if (groupObligations.has(obligation)) return []
+  if (groupObligations.has(obligation)) {
+    return []
+  }
   const inVal = fulfilmentsIn[obligation.id]
-  if (inVal === undefined) return []
+  if (inVal === undefined) {
+    return []
+  }
   const chain = ancestorChain(obligation)
   return chain.length === 0
     ? wipedScalarKey(obligation, inVal, fulfilmentsOut)

@@ -18,6 +18,8 @@ const { values: completeJourneyAnswers } = JSON.parse(
 // backend shape has no documents field, so its exact absence is part of this
 // payload contract; mapper-a-enum-contract.test.js separately pins all 14
 // accepted document types and all 16 certifiedFor values.
+const UNITED_KINGDOM = 'United Kingdom'
+
 describe('Mapper A PUT /notifications contract', () => {
   test('emits the exact backend payload from a complete canonical fulfilment', () => {
     const fulfilment = assembleFulfilments(completeJourneyAnswers)
@@ -47,7 +49,7 @@ describe('Mapper A PUT /notifications contract', () => {
         address: {
           addressLine1: '10 Market Street',
           addressLine2: 'Leeds LS1 6HB',
-          country: 'United Kingdom'
+          country: UNITED_KINGDOM
         }
       },
       importer: {
@@ -55,7 +57,7 @@ describe('Mapper A PUT /notifications contract', () => {
         address: {
           addressLine1: '20 Trade Road',
           addressLine2: 'London EC1A 1BB',
-          country: 'United Kingdom'
+          country: UNITED_KINGDOM
         }
       },
       destination: {
@@ -63,7 +65,7 @@ describe('Mapper A PUT /notifications contract', () => {
         address: {
           addressLine1: '643 Main Street',
           addressLine2: 'Birmingham G1 3AZ',
-          country: 'United Kingdom'
+          country: UNITED_KINGDOM
         }
       },
       consignment: {
@@ -72,7 +74,7 @@ describe('Mapper A PUT /notifications contract', () => {
           addressLine1: 'Woodham Lane',
           addressLine2: 'New Haw',
           addressLine3: 'Addlestone, KT15 3NB',
-          country: 'United Kingdom'
+          country: UNITED_KINGDOM
         }
       },
       cphNumber: '12/345/6789',

@@ -21,7 +21,9 @@ export const evaluationBindings = feature('goods-movement', [
     field: 'usingGvms',
     obligation: usingGvms,
     convert: (value) => {
-      if (typeof value === 'boolean') return value
+      if (typeof value === 'boolean') {
+        return value
+      }
       return value === 'yes'
     }
   })

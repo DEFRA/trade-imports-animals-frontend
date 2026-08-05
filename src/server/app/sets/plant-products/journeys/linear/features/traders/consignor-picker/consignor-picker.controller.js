@@ -137,7 +137,9 @@ const post = async (request, h) => {
       return rendered.code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   writeSelection(request, journey.journeyId, chosen.id)
 

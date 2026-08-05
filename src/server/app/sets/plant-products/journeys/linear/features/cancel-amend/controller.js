@@ -54,7 +54,9 @@ const post = async (request, h) => {
     () => cancelAmendJourney(request, h, request.params.journeyId),
     () => render(h, journey, true).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   return restored
     ? h.redirect(`${cyaPath(restored.journeyId)}?cancelled=1`)

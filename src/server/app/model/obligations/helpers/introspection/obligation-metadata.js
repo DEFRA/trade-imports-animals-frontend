@@ -65,25 +65,30 @@ export const obligationMetadata = (obligation) => {
  * @returns {string[] | undefined} — the derived dependsOn list, or
  *   `undefined` when the metadata alone can't answer.
  */
+const SINGLE_GATE_TYPES = new Set([
+  'allowListed',
+  'anyAllowListed',
+  'notInUnionOf',
+  'matches',
+  'equalsGate',
+  'presentGate',
+  'includesGate'
+])
+
 const deriveDependsOn = (gateMeta) => {
-  switch (gateMeta?.type) {
-    case 'allowListed':
-    case 'anyAllowListed':
-    case 'notInUnionOf':
-    case 'matches':
-    case 'equalsGate':
-    case 'presentGate':
-    case 'includesGate':
-      return typeof gateMeta.obligation === 'string'
-        ? [gateMeta.obligation]
-        : undefined
-    case 'branchedGate':
-      return typeof gateMeta.predicateMeta?.obligationId === 'string'
-        ? [gateMeta.predicateMeta.obligationId]
-        : undefined
-    case 'alwaysInScope':
-      return []
-    default:
-      return undefined
+  const type = gateMeta?.type
+  if (SINGLE_GATE_TYPES.has(type)) {
+    return typeof gateMeta.obligation === 'string'
+      ? [gateMeta.obligation]
+      : undefined
   }
+  if (type === 'branchedGate') {
+    return typeof gateMeta.predicateMeta?.obligationId === 'string'
+      ? [gateMeta.predicateMeta.obligationId]
+      : undefined
+  }
+  if (type === 'alwaysInScope') {
+    return []
+  }
+  return undefined
 }

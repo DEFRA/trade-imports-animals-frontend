@@ -25,6 +25,8 @@ import * as portOfEntry from './port-of-entry.controller.js'
 
 const post = postHandlerOf(portOfEntry)
 
+const oneOfError = 'Select a valid option'
+
 describe('POST port-of-entry — port membership', () => {
   beforeAll(() => {
     configureRecords('live-animals', recordsStub)
@@ -38,7 +40,7 @@ describe('POST port-of-entry — port membership', () => {
       payload: { portOfEntry: 'XX NOPE' }
     })
     expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.portOfEntry).toBe('Select a valid option')
+    expect(result.view.context.errors.portOfEntry).toBe(oneOfError)
     expect(result.after).toEqual(result.before)
   })
 })
@@ -56,9 +58,7 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
       payload: { meansOfTransport: 'Hovercraft' }
     })
     expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.meansOfTransport).toBe(
-      'Select a valid option'
-    )
+    expect(result.view.context.errors.meansOfTransport).toBe(oneOfError)
     expect(result.after).toEqual(result.before)
   })
 
@@ -122,8 +122,11 @@ describe('POST port-of-entry — port membership follows the primed list', () =>
 
   afterAll(() => {
     vi.unstubAllGlobals()
-    if (originalMode === undefined) delete process.env.LIVE_ANIMALS_MODE
-    else process.env.LIVE_ANIMALS_MODE = originalMode
+    if (originalMode === undefined) {
+      delete process.env.LIVE_ANIMALS_MODE
+    } else {
+      process.env.LIVE_ANIMALS_MODE = originalMode
+    }
   })
 
   it('Should validate against the list as primed at POST time, not as imported', async () => {
@@ -146,8 +149,6 @@ describe('POST port-of-entry — port membership follows the primed list', () =>
     const rejected = await driveHandler(post, {
       payload: { portOfEntry: 'GB ABD' }
     })
-    expect(rejected.view.context.errors.portOfEntry).toBe(
-      'Select a valid option'
-    )
+    expect(rejected.view.context.errors.portOfEntry).toBe(oneOfError)
   })
 })

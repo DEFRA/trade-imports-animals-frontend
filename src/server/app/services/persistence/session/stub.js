@@ -29,7 +29,9 @@ export const session = {
 
   async addKnownJourney(request, toolkit, journeyId) {
     const known = knownFrom(request)
-    if (known.includes(journeyId)) return
+    if (known.includes(journeyId)) {
+      return
+    }
     toolkit.state(knownJourneysCookie(), [...known, journeyId])
   },
 

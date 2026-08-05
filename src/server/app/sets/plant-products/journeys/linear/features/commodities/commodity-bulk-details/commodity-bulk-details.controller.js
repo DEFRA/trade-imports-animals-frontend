@@ -99,7 +99,9 @@ const selectedValues = (payload) => {
 
 const selectedIndices = (payload, lines) => {
   const selected = selectedValues(payload)
-  if (selected.includes('all')) return lines.map(({ index }) => index)
+  if (selected.includes('all')) {
+    return lines.map(({ index }) => index)
+  }
   return selected.map(Number)
 }
 
@@ -137,7 +139,9 @@ const postApply = async (request, h, pageState, lines, payload) => {
   const filled = filledBulkFields(bulk)
   const { errors: formatErrors } = validateBulk(payload)
   const errors = { ...(formatErrors ?? {}) }
-  if (selected.length === 0) errors.selectedLines = copy.errors.selectLine
+  if (selected.length === 0) {
+    errors.selectedLines = copy.errors.selectLine
+  }
   if (filled.length === 0) {
     errors[bulkField('numberOfPackages')] = copy.errors.fillOneField
   }
@@ -180,7 +184,9 @@ const postApply = async (request, h, pageState, lines, payload) => {
         }
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
   return h.redirect(
     kit.withChangeContext(
       request,
@@ -210,7 +216,9 @@ const cleanEntry = ({ entry, index }, values) => {
     'controlledAtmosphereContainer',
     'intendedForFinalUsers'
   ]) {
-    if (valueFor(name) !== '') cleaned[name] = cleanScalar(name, valueFor(name))
+    if (valueFor(name) !== '') {
+      cleaned[name] = cleanScalar(name, valueFor(name))
+    }
   }
   if (isPlantsForPlanting(entry.commoditySelection)) {
     cleaned.finishedOrPropagated = valueFor('finishedOrPropagated')
@@ -219,7 +227,9 @@ const cleanEntry = ({ entry, index }, values) => {
 }
 
 const postContinue = async (request, h, pageState, lines, payload) => {
-  if (hasForgedLineIndex(payload, lines)) return badRequest(h)
+  if (hasForgedLineIndex(payload, lines)) {
+    return badRequest(h)
+  }
   const values = payloadValues(payload, lines)
   const { errors } = validateLines(lines, payload)
   if (errors) {
@@ -232,7 +242,9 @@ const postContinue = async (request, h, pageState, lines, payload) => {
       errors
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
-  if (lines.some(({ index }) => !validIndex(lines, index))) return badRequest(h)
+  if (lines.some(({ index }) => !validIndex(lines, index))) {
+    return badRequest(h)
+  }
 
   let committed
   const { failure } = await kit.recoverableSave(
@@ -261,7 +273,9 @@ const postContinue = async (request, h, pageState, lines, payload) => {
         }
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   const hubTarget = kit.hubExitTarget(request)
   return h.redirect(
@@ -273,7 +287,9 @@ const post = async (request, h) => {
   const pageState = await state.get(request, h)
   const lines = linesOf(pageState)
   const payload = request.payload ?? {}
-  if (hasForgedLineIndex(payload, lines)) return badRequest(h)
+  if (hasForgedLineIndex(payload, lines)) {
+    return badRequest(h)
+  }
   if (payload.action === 'apply') {
     return postApply(request, h, pageState, lines, payload)
   }

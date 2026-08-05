@@ -11,7 +11,9 @@ export const assertWritable = (journey) => {
 
 export const loadWritable = (journeyId) => {
   const journey = journeys.get(journeyId)
-  if (!journey) throw new Error(`Unknown journey "${journeyId}"`)
+  if (!journey) {
+    throw new Error(`Unknown journey "${journeyId}"`)
+  }
   assertWritable(journey)
   return journey
 }

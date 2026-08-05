@@ -1,5 +1,7 @@
 import { fromRow } from './from-row.js'
 
+const UNITED_KINGDOM = 'United Kingdom'
+
 export const IMPORTER_OPTIONS = [
   {
     id: 'import-co-uk',
@@ -7,7 +9,7 @@ export const IMPORTER_OPTIONS = [
     address: {
       addressLine1: '20 Trade Road',
       addressLine2: 'London EC1A 1BB',
-      country: 'United Kingdom'
+      country: UNITED_KINGDOM
     }
   },
   {
@@ -16,7 +18,7 @@ export const IMPORTER_OPTIONS = [
     address: {
       addressLine1: '5 Port Way',
       addressLine2: 'Dover CT16 3AQ',
-      country: 'United Kingdom'
+      country: UNITED_KINGDOM
     }
   },
   {
@@ -25,7 +27,7 @@ export const IMPORTER_OPTIONS = [
     address: {
       addressLine1: '12 Glen Road',
       addressLine2: 'Inverness IV1 1JN',
-      country: 'United Kingdom'
+      country: UNITED_KINGDOM
     }
   },
   ...[

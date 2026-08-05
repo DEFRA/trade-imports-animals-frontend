@@ -23,7 +23,9 @@ export const selectedId = (request, journeyId, answers, records = []) => {
 }
 
 export const chosenFor = async (request, answers, postedId) => {
-  if (!postedId) return undefined
+  if (!postedId) {
+    return undefined
+  }
   const pickable = await candidates(request, answers)
   return pickable.find((record) => record.id === postedId)
 }

@@ -41,8 +41,12 @@ const lastAttempt = (attempt) => attempt + 1 >= MAX_POLL_ATTEMPTS
 /** What to do after read number `attempt` (zero-indexed) returned `documents` —
  * null when the read failed or the response was unusable. */
 export const pollDecision = ({ attempt, documents }) => {
-  if (hasSettled(documents)) return { action: POLL_ACTION.settled }
-  if (lastAttempt(attempt)) return { action: POLL_ACTION.giveUp }
+  if (hasSettled(documents)) {
+    return { action: POLL_ACTION.settled }
+  }
+  if (lastAttempt(attempt)) {
+    return { action: POLL_ACTION.giveUp }
+  }
   return {
     action: POLL_ACTION.retry,
     attempt: attempt + 1,

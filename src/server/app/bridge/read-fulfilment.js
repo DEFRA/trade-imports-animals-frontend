@@ -34,6 +34,27 @@ const assertDescendant = (group, obligation) => {
   }
 }
 
+const instanceIdOf = (fulfilmentId, groupChain, descriptors, parentId) => {
+  if (!hasIndexedSegments(fulfilmentId)) {
+    return undefined
+  }
+  const segments = segmentsOf(fulfilmentId)
+  if (segments.length < groupChain.length) {
+    return undefined
+  }
+  const id = formatFulfilmentId(
+    descriptors,
+    indicesOf(fulfilmentId).slice(0, groupChain.length)
+  )
+  if (id !== segments.slice(0, groupChain.length).join('/')) {
+    return undefined
+  }
+  if (parentId !== undefined && !id.startsWith(`${parentId}/`)) {
+    return undefined
+  }
+  return id
+}
+
 /**
  * Read a canonical UUID-keyed fulfilment map through feature-owned bindings.
  * Callers identify values with imported obligation objects; answer names are
@@ -61,7 +82,7 @@ export const readFulfilment = (
     const descriptors = groupChain.map(({ id }) =>
       registry.groupDescriptorOf(id)
     )
-    if (descriptors.some((descriptor) => descriptor === undefined)) {
+    if (descriptors.includes(undefined)) {
       throw new TypeError(`Cannot enumerate unbound group ${group.name}`)
     }
 
@@ -69,20 +90,10 @@ export const readFulfilment = (
     for (const obligation of descendants) {
       assertDescendant(group, obligation)
       for (const fulfilmentId of Object.keys(records(obligation))) {
-        if (!hasIndexedSegments(fulfilmentId)) continue
-        const segments = segmentsOf(fulfilmentId)
-        if (segments.length < groupChain.length) continue
-
-        const id = formatFulfilmentId(
-          descriptors,
-          indicesOf(fulfilmentId).slice(0, groupChain.length)
-        )
-        const exactPrefix = segments.slice(0, groupChain.length).join('/')
-        if (id !== exactPrefix) continue
-        if (parentId !== undefined && !id.startsWith(`${parentId}/`)) {
-          continue
+        const id = instanceIdOf(fulfilmentId, groupChain, descriptors, parentId)
+        if (id !== undefined) {
+          ids.add(id)
         }
-        ids.add(id)
       }
     }
     return [...ids].sort(compareFulfilmentIds)

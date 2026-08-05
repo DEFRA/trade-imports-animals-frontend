@@ -19,13 +19,17 @@ import {
 } from '../../../../obligations/index.js'
 
 const toIsoDate = (value) => {
-  if (value === null || typeof value === 'string') return value
+  if (value === null || typeof value === 'string') {
+    return value
+  }
   const { day, month, year } = value
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
 const toTime = (value) => {
-  if (value === null || typeof value === 'string') return value
+  if (value === null || typeof value === 'string') {
+    return value
+  }
   const { hour, minute } = value
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
 }

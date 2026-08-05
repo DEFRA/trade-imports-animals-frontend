@@ -5,7 +5,9 @@ import { isRealMode } from '../mode.js'
 let ports = [...PORTS]
 
 export const prime = async () => {
-  if (!isRealMode()) return
+  if (!isRealMode()) {
+    return
+  }
   ports = await fetchPortsOfEntry()
 }
 

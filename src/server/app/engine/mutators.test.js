@@ -34,6 +34,8 @@ const wipeOf = (answers) => {
   return wipeSet(fulfilments, purgeFulfilments(fulfilments))
 }
 
+const GOATS_COMMODITY = '010420 - Goats'
+
 const line = (commoditySelection, extra = {}) => ({
   commoditySelection,
   speciesSelection: '1148346',
@@ -71,12 +73,12 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
         buildRequest(),
         stubH(),
         ['commodityLines'],
-        { commoditySelection: '010420 - Goats' }
+        { commoditySelection: GOATS_COMMODITY }
       )
       expect(second).toBe(1)
       expect((await answersNow()).commodityLines).toEqual([
         { commoditySelection: 'Cow' },
-        { commoditySelection: '010420 - Goats' }
+        { commoditySelection: GOATS_COMMODITY }
       ])
     })
   })
@@ -84,7 +86,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
   describe('#updateEntryAt — edits in place, siblings intact', () => {
     it('Should edit a line in place', async () => {
       await store.seedAnswers(journeyId, {
-        commodityLines: [line('Cow'), line('010420 - Goats')]
+        commodityLines: [line('Cow'), line(GOATS_COMMODITY)]
       })
       await updateEntryAt(
         buildRequest(),
@@ -95,21 +97,21 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       )
       const lines = (await answersNow()).commodityLines
       expect(lines[0].commoditySelection).toBe('Horse')
-      expect(lines[1].commoditySelection).toBe('010420 - Goats')
+      expect(lines[1].commoditySelection).toBe(GOATS_COMMODITY)
     })
   })
 
   describe('#removeEntryAt — splices positionally, siblings intact', () => {
     it('Should remove a line by index', async () => {
       await store.seedAnswers(journeyId, {
-        commodityLines: [line('Cow'), line('010420 - Goats')]
+        commodityLines: [line('Cow'), line(GOATS_COMMODITY)]
       })
       await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
       expect(
         (await answersNow()).commodityLines.map(
           (entry) => entry.commoditySelection
         )
-      ).toEqual(['010420 - Goats'])
+      ).toEqual([GOATS_COMMODITY])
     })
   })
 
@@ -131,7 +133,7 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
         identifiersPath(0),
         { animalIdentifierPassport: 'UK-3' }
       )
-      expect(rejected).toBe(null)
+      expect(rejected).toBeNull()
       expect(
         (await answersNow()).commodityLines[0].animalIdentifiers
       ).toHaveLength(2)

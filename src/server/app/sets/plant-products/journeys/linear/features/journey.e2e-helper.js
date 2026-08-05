@@ -469,7 +469,9 @@ const completeCommodities = async (page, values, { allowSummaryBypass }) => {
     )
   }
   await expect(page).toHaveURL(/\/commodity-bulk-details$/)
-  for (const line of lines) await fillCommodityLine(page, line.code, line)
+  for (const line of lines) {
+    await fillCommodityLine(page, line.code, line)
+  }
   await saveAndContinue(page)
 }
 
@@ -553,8 +555,11 @@ const completeTransport = async (page, values) => {
     const officialSealControl = page.getByLabel(
       transportCopy.containers.officialSeal.label
     )
-    if (officialSeal) await officialSealControl.check()
-    else await officialSealControl.uncheck()
+    if (officialSeal) {
+      await officialSealControl.check()
+    } else {
+      await officialSealControl.uncheck()
+    }
     await page
       .getByRole('button', { name: transportCopy.containers.add })
       .click()
@@ -639,15 +644,20 @@ const addDocument = async (page, { type, reference, date }) => {
 
 const completeDocuments = async (page, values) => {
   await openHubRow(page, 'Accompanying documents')
-  for (const document of values.documents) await addDocument(page, document)
+  for (const document of values.documents) {
+    await addDocument(page, document)
+  }
   await saveAndContinue(page)
 }
 
 const fillById = async (page, values) => {
   for (const [field, value] of Object.entries(values)) {
     const control = page.locator(`#${field}`)
-    if (field.endsWith('Country')) await control.selectOption(value.value)
-    else await control.fill(value)
+    if (field.endsWith('Country')) {
+      await control.selectOption(value.value)
+    } else {
+      await control.fill(value)
+    }
   }
 }
 
@@ -679,8 +689,11 @@ const completeTraders = async (page, values) => {
   for (const [field, value] of Object.entries(traders.consignor)) {
     const label = tradersCopy.consignorCreate.fields[field].label
     const control = page.getByLabel(label, { exact: true })
-    if (field === 'consignorCountry') await control.selectOption(value.value)
-    else await control.fill(value)
+    if (field === 'consignorCountry') {
+      await control.selectOption(value.value)
+    } else {
+      await control.fill(value)
+    }
   }
   await page
     .getByRole('button', {
@@ -723,7 +736,9 @@ export const completeAnswerSections = async (
   const date = await completeTransport(page, values)
   await completeGoodsMovement(page, values)
   await completeContact(page, values)
-  if (includeNominatedContacts) await completeNominatedContacts(page, values)
+  if (includeNominatedContacts) {
+    await completeNominatedContacts(page, values)
+  }
   await completeDocuments(page, values)
   await completeTraders(page, values)
   await expect(page).toHaveURL((url) => hubUrl.test(url.pathname))

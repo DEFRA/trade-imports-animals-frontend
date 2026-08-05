@@ -33,7 +33,9 @@ const totalGrossWeightRule = (netWeightTotal) =>
   Joi.any()
     .custom((raw, helpers) => {
       const value = trimmed(raw)
-      if (!value) return helpers.error('weight.required')
+      if (!value) {
+        return helpers.error('weight.required')
+      }
       if (
         !CLEAN_DECIMAL.test(value) ||
         !Number.isFinite(Number(value)) ||
@@ -42,7 +44,9 @@ const totalGrossWeightRule = (netWeightTotal) =>
         return helpers.error('weight.number')
       }
       const decimalPlaces = value.split('.')[1]?.length ?? 0
-      if (decimalPlaces > 5) return helpers.error('weight.decimalPlaces')
+      if (decimalPlaces > 5) {
+        return helpers.error('weight.decimalPlaces')
+      }
       if (Number(value) <= netWeightTotal) {
         return helpers.error('weight.greaterThanNet')
       }
@@ -60,7 +64,9 @@ const grossVolumeRule = () =>
     .custom((raw, helpers) => {
       const value = trimmed(raw)
       const unit = trimmed(helpers.state.ancestors[0]?.grossVolumeUnit)
-      if (!value && unit) return helpers.error('volume.requiredWithUnit')
+      if (!value && unit) {
+        return helpers.error('volume.requiredWithUnit')
+      }
       if (
         value &&
         (!CLEAN_DECIMAL.test(value) ||
@@ -185,7 +191,9 @@ const post = async (request, h) => {
         HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   return h.redirect(await kit.nextTarget(request, page, committed.scope))
 }

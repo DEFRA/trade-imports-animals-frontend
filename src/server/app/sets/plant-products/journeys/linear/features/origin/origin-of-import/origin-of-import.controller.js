@@ -108,7 +108,9 @@ const post = async (request, h) => {
       )
     }
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   return h.redirect(await kit.nextTarget(request, page, committed.scope))
 }

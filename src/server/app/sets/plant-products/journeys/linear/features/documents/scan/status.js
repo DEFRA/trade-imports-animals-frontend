@@ -8,7 +8,9 @@ const unreadable = (attempt) =>
   attempt >= MAX_POLL_ATTEMPTS ? SCAN_STATUS.UNAVAILABLE : SCAN_STATUS.PENDING
 
 export const scanStatusOf = async (entry, { refresh, attempt = 0 } = {}) => {
-  if (!entry.uploadId) return SCAN_STATUS.NO_FILE
+  if (!entry.uploadId) {
+    return SCAN_STATUS.NO_FILE
+  }
   try {
     return await documentUploads.scanStatus({
       uploadId: entry.uploadId,

@@ -123,8 +123,11 @@ const fillCreateForm = async (page) => {
     const control = page.getByLabel(createCopy.fields[field].label, {
       exact: true
     })
-    if (field === 'consignorCountry') await control.selectOption(value)
-    else await control.fill(value)
+    if (field === 'consignorCountry') {
+      await control.selectOption(value)
+    } else {
+      await control.fill(value)
+    }
   }
 }
 

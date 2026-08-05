@@ -101,7 +101,9 @@ const mapContainer = (entry) =>
   defined(entry, ['containerNumber', 'sealNumber', 'officialSeal'])
 
 const mapTransport = (dto) => {
-  if (!dto.transport || typeof dto.transport !== 'object') return {}
+  if (!dto.transport || typeof dto.transport !== 'object') {
+    return {}
+  }
   return {
     ...defined(dto.transport, TRANSPORT_FIELDS),
     ...(Array.isArray(dto.transport.containers)
@@ -112,7 +114,9 @@ const mapTransport = (dto) => {
 
 const mapGoodsMovementServices = (dto) => {
   const source = dto.goodsMovementServices
-  if (!source || typeof source !== 'object') return {}
+  if (!source || typeof source !== 'object') {
+    return {}
+  }
   return {
     ...defined(source, ['commonTransitConvention']),
     ...(source.commonTransitConvention === 'ADD_MRN_NOW' &&
@@ -125,7 +129,9 @@ const mapGoodsMovementServices = (dto) => {
 
 const mapResponsiblePerson = (dto) => {
   const source = dto.responsiblePerson
-  if (!source || typeof source !== 'object') return {}
+  if (!source || typeof source !== 'object') {
+    return {}
+  }
   return {
     ...(source.name != null ? { responsiblePersonName: source.name } : {}),
     ...(source.email != null ? { responsiblePersonEmail: source.email } : {}),
@@ -161,7 +167,9 @@ const dateFromIso = (value) => {
 // id is dropped, so upload identity has to travel back inside files[].
 const mapDocumentFile = (entry) => {
   const [file] = Array.isArray(entry.files) ? entry.files : []
-  if (!file?.fileId) return {}
+  if (!file?.fileId) {
+    return {}
+  }
   return {
     uploadId: file.fileId,
     ...(file.filename != null ? { filename: file.filename } : {})
@@ -184,7 +192,9 @@ const mapDocuments = (dto) =>
     : {}
 
 const mapOperator = (operator, prefix) => {
-  if (!operator || typeof operator !== 'object') return {}
+  if (!operator || typeof operator !== 'object') {
+    return {}
+  }
   const address = operator.address
   return {
     ...(operator.name != null ? { [`${prefix}Name`]: operator.name } : {}),

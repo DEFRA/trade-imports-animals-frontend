@@ -730,7 +730,9 @@ describe('co-residency', () => {
       expect(countryPrime).toHaveBeenCalledTimes(1)
       expect(portPrime).toHaveBeenCalledTimes(1)
     } finally {
-      if (modeServer) await modeServer.stop({ timeout: 0 })
+      if (modeServer) {
+        await modeServer.stop({ timeout: 0 })
+      }
       liveAnimalsRecords.list = originalLiveAnimalsList
       countryPrime.mockRestore()
       portPrime.mockRestore()

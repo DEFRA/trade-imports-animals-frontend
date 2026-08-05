@@ -4,13 +4,25 @@ import { isKeyedRecord } from './is-keyed-record.js'
 const keyedRecordsEqual = (recordA, recordB) => {
   const recordKeysA = Object.keys(recordA)
   const recordKeysB = Object.keys(recordB)
-  if (recordKeysA.length !== recordKeysB.length) return false
+  if (recordKeysA.length !== recordKeysB.length) {
+    return false
+  }
   for (const recordKey of recordKeysA) {
-    if (!Object.hasOwn(recordB, recordKey)) return false
-    if (recordA[recordKey] !== recordB[recordKey]) return false
+    if (!Object.hasOwn(recordB, recordKey)) {
+      return false
+    }
+    if (recordA[recordKey] !== recordB[recordKey]) {
+      return false
+    }
   }
   return true
 }
+
+const viewValuesEqual = (valueA, valueB) =>
+  valueA === valueB ||
+  (isKeyedRecord(valueA) &&
+    isKeyedRecord(valueB) &&
+    keyedRecordsEqual(valueA, valueB))
 
 // Structural equality between two fulfilment views (obligation-id → value).
 // Used by the purge fixpoint to detect convergence. Values are compared by
@@ -20,20 +32,21 @@ const keyedRecordsEqual = (recordA, recordB) => {
 // produces a new object even when its contents are identical, which we
 // resolve by deep-comparing the keyed-record case).
 export function viewsEqual(viewA, viewB) {
-  if (viewA === viewB) return true
+  if (viewA === viewB) {
+    return true
+  }
   const keysA = Object.keys(viewA)
   const keysB = Object.keys(viewB)
-  if (keysA.length !== keysB.length) return false
+  if (keysA.length !== keysB.length) {
+    return false
+  }
   for (const key of keysA) {
-    if (!Object.hasOwn(viewB, key)) return false
-    const valueA = viewA[key]
-    const valueB = viewB[key]
-    if (valueA === valueB) continue
-    if (isKeyedRecord(valueA) && isKeyedRecord(valueB)) {
-      if (keyedRecordsEqual(valueA, valueB)) continue
+    if (!Object.hasOwn(viewB, key)) {
       return false
     }
-    return false
+    if (!viewValuesEqual(viewA[key], viewB[key])) {
+      return false
+    }
   }
   return true
 }

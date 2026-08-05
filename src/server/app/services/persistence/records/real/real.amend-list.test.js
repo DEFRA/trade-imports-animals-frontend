@@ -10,20 +10,33 @@ import { records } from './index.js'
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
 
-const fulfilmentsUrl = 'http://localhost:8085/fulfilments'
+const notificationFulfilmentsUrl =
+  'http://localhost:8085/notification-fulfilments'
+const notificationsUrl = 'http://localhost:8085/notifications'
 
-const fulfilment = (id, status) => ({
+const RECORD_CREATED_AT = '2026-07-14T09:00:00'
+const RECORD_ARRIVAL_DATE = '2026-07-20'
+const CONSIGNOR_NAME = 'Consignor Ltd'
+const CONSIGNEE_NAME = 'Consignee Ltd'
+
+const notification = (referenceNumber, status) => ({
+  referenceNumber,
+  status,
+  created: RECORD_CREATED_AT,
+  updated: RECORD_CREATED_AT,
+  commodity: { name: 'Cow' },
+  origin: { countryCode: 'FR' },
+  transport: { arrivalDate: RECORD_ARRIVAL_DATE },
+  consignor: { name: CONSIGNOR_NAME },
+  consignee: { name: CONSIGNEE_NAME }
+})
+
+const notificationFulfilments = (id, status) => ({
   id,
   status,
-  createdAt: '2026-07-14T09:00:00',
+  createdAt: RECORD_CREATED_AT,
   submittedAt: status === 'SUBMITTED' ? '2026-07-14T10:00:00' : null,
-  reference: id,
-  commodityDisplay: { name: 'Cow' },
-  originCountryCode: 'FR',
-  arrivalDate: '2026-07-20',
-  consignorName: 'Consignor Ltd',
-  consigneeName: 'Consignee Ltd',
-  fulfilment: []
+  fulfilments: []
 })
 
 describe('real records adapter — amend', () => {
@@ -32,23 +45,25 @@ describe('real records adapter — amend', () => {
   })
 
   test('Should POST the amend endpoint and marshal a writable amend record', async () => {
-    fetchMocker.mockResponse(JSON.stringify(fulfilment('GBN-1', 'AMEND')))
+    fetchMocker.mockResponse(
+      JSON.stringify(notificationFulfilments('GBN-1', 'AMEND'))
+    )
 
     const amended = await records.amend('GBN-1')
 
     const [request] = fetchMocker.requests()
-    expect(request.url).toBe(`${fulfilmentsUrl}/GBN-1/amend`)
+    expect(request.url).toBe(`${notificationFulfilmentsUrl}/GBN-1/amend`)
     expect(request.method).toBe('POST')
     expect(amended.status).toBe(AMEND)
     expect(amended.submittedAt).toBeNull()
-    expect(amended.createdAt).toBe('2026-07-14T09:00:00')
+    expect(amended.createdAt).toBe(RECORD_CREATED_AT)
   })
 
   test('Should surface a failed amend as an error carrying the response status', async () => {
     fetchMocker.mockResponse('Conflict', { status: 409 })
 
     await expect(records.amend('GBN-1')).rejects.toThrow(
-      /Failed to amend fulfilment: 409/
+      /Failed to amend notification-fulfilments: 409/
     )
   })
 })
@@ -58,17 +73,17 @@ describe('real records adapter — paged list', () => {
     fetchMocker.resetMocks()
   })
 
-  test('Should issue one paged GET and map the enriched response to dashboard rows', async () => {
+  test('Should GET /notifications and map main-shape entries to dashboard rows', async () => {
     fetchMocker.mockResponse(
       JSON.stringify({
         page: 1,
         size: 20,
         totalElements: 3,
         totalPages: 1,
-        items: [
-          fulfilment('GBN-1', 'DRAFT'),
-          fulfilment('GBN-2', 'SUBMITTED'),
-          fulfilment('GBN-3', 'AMEND')
+        content: [
+          notification('GBN-1', 'DRAFT'),
+          notification('GBN-2', 'SUBMITTED'),
+          notification('GBN-3', 'AMEND')
         ]
       })
     )
@@ -80,7 +95,7 @@ describe('real records adapter — paged list', () => {
     })
 
     const [request] = fetchMocker.requests()
-    expect(request.url).toBe(`${fulfilmentsUrl}?page=2&sort=createdAt,asc`)
+    expect(request.url).toBe(`${notificationsUrl}?page=2&sort=createdAt,asc`)
     expect(request.method).toBe('GET')
     expect(listed).toEqual({
       page: 1,
@@ -91,38 +106,38 @@ describe('real records adapter — paged list', () => {
         {
           journeyId: 'GBN-1',
           status: DRAFT,
-          createdAt: '2026-07-14T09:00:00',
+          createdAt: RECORD_CREATED_AT,
           submittedAt: null,
           reference: 'GBN-1',
           commodity: { name: 'Cow' },
           originCountryCode: 'FR',
-          arrivalDate: '2026-07-20',
-          consignorName: 'Consignor Ltd',
-          consigneeName: 'Consignee Ltd'
+          arrivalDate: RECORD_ARRIVAL_DATE,
+          consignorName: CONSIGNOR_NAME,
+          consigneeName: CONSIGNEE_NAME
         },
         {
           journeyId: 'GBN-2',
           status: SUBMITTED,
-          createdAt: '2026-07-14T09:00:00',
-          submittedAt: '2026-07-14T10:00:00',
+          createdAt: RECORD_CREATED_AT,
+          submittedAt: null,
           reference: 'GBN-2',
           commodity: { name: 'Cow' },
           originCountryCode: 'FR',
-          arrivalDate: '2026-07-20',
-          consignorName: 'Consignor Ltd',
-          consigneeName: 'Consignee Ltd'
+          arrivalDate: RECORD_ARRIVAL_DATE,
+          consignorName: CONSIGNOR_NAME,
+          consigneeName: CONSIGNEE_NAME
         },
         {
           journeyId: 'GBN-3',
           status: AMEND,
-          createdAt: '2026-07-14T09:00:00',
+          createdAt: RECORD_CREATED_AT,
           submittedAt: null,
           reference: 'GBN-3',
           commodity: { name: 'Cow' },
           originCountryCode: 'FR',
-          arrivalDate: '2026-07-20',
-          consignorName: 'Consignor Ltd',
-          consigneeName: 'Consignee Ltd'
+          arrivalDate: RECORD_ARRIVAL_DATE,
+          consignorName: CONSIGNOR_NAME,
+          consigneeName: CONSIGNEE_NAME
         }
       ]
     })
@@ -130,7 +145,10 @@ describe('real records adapter — paged list', () => {
 
   test('Should implement has with an exact-id canonical GET', async () => {
     fetchMocker.mockResponses(
-      [JSON.stringify(fulfilment('GBN-1', 'DRAFT')), { status: 200 }],
+      [
+        JSON.stringify(notificationFulfilments('GBN-1', 'DRAFT')),
+        { status: 200 }
+      ],
       ['Not Found', { status: 404 }]
     )
 
@@ -138,8 +156,8 @@ describe('real records adapter — paged list', () => {
     expect(await records.has('GBN-GONE')).toBe(false)
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
-      { method: 'GET', url: `${fulfilmentsUrl}/GBN-1` },
-      { method: 'GET', url: `${fulfilmentsUrl}/GBN-GONE` }
+      { method: 'GET', url: `${notificationFulfilmentsUrl}/GBN-1` },
+      { method: 'GET', url: `${notificationFulfilmentsUrl}/GBN-GONE` }
     ])
   })
 })

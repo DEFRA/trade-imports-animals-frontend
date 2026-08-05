@@ -13,16 +13,16 @@ import { scanCopyJson } from './fragments/status.js'
 import { getAttempt, refreshHref } from './refresh.js'
 import { documentRows } from './rows.js'
 
-export const render = (
+export const render = ({
   view,
   copy,
   sharedCopy,
   request,
   h,
-  { journey, documents },
+  pageState: { journey, documents },
   values,
-  { errors = {}, summaryErrors = [], extra = {} } = {}
-) => {
+  options: { errors = {}, summaryErrors = [], extra = {} } = {}
+}) => {
   const attempt = getAttempt(request)
   const anyPending = documents.some(
     (item) => item.scanStatus === SCAN_STATUS.PENDING

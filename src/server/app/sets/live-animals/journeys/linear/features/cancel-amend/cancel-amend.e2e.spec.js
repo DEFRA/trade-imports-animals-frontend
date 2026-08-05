@@ -11,34 +11,55 @@ import {
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
+const submitNotification = async (page) => {
+  await startNotification(page)
+  await completeAnswerSections(page)
+  await page.getByRole('link', { name: 'Check and submit' }).click()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page
+    .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
+    .check()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  return journeyIdFromPage(page)
+}
+
+const amendAndOpenCancel = async (page, reference) => {
+  await page.goto('/live-animals')
+  await page
+    .getByRole('button', { name: `Amend notification ${reference}` })
+    .click()
+  await page
+    .getByRole('link', { name: 'Where is this consignment coming from?' })
+    .click()
+  await chooseCountryOfOrigin(page, 'France')
+  await page
+    .getByLabel('Your internal reference for this consignment (optional)')
+    .fill('DiscardMe99')
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('link', { name: 'Check and submit' }).click()
+  await page
+    .getByRole('link', { name: checkAnswersCopy.cancelAmend.link })
+    .click()
+}
+
+const expectAxeClean = async (page, name) => {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa'])
+    .analyze()
+  const seriousOrCritical = results.violations.filter(({ impact }) =>
+    ['serious', 'critical'].includes(impact)
+  )
+
+  expect(
+    seriousOrCritical,
+    `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
+  ).toEqual([])
+}
+
 test.describe('cancel-amend feature', () => {
   test.beforeEach(async ({ page }) => {
-    await startNotification(page)
-    await completeAnswerSections(page)
-    await page.getByRole('link', { name: 'Check and submit' }).click()
-    await page.getByRole('button', { name: 'Continue' }).click()
-    await page
-      .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
-      .check()
-    await page.getByRole('button', { name: 'Continue' }).click()
-    const reference = journeyIdFromPage(page)
-
-    await page.goto('/live-animals')
-    await page
-      .getByRole('button', { name: `Amend notification ${reference}` })
-      .click()
-    await page
-      .getByRole('link', { name: 'Where is this consignment coming from?' })
-      .click()
-    await chooseCountryOfOrigin(page, 'France')
-    await page
-      .getByLabel('Your internal reference for this consignment (optional)')
-      .fill('DiscardMe99')
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-    await page.getByRole('link', { name: 'Check and submit' }).click()
-    await page
-      .getByRole('link', { name: checkAnswersCopy.cancelAmend.link })
-      .click()
+    const reference = await submitNotification(page)
+    await amendAndOpenCancel(page, reference)
   })
 
   test('renders confirmation copy, actions and review back link', async ({
@@ -90,17 +111,7 @@ test.describe('cancel-amend feature', () => {
   test('confirmation page has no serious or critical axe violations', async ({
     page
   }) => {
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-
-    expect(
-      seriousOrCritical,
-      `Cancel amendment has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectAxeClean(page, 'Cancel amendment')
   })
 
   test('restored submitted review has no serious or critical axe violations', async ({
@@ -109,16 +120,6 @@ test.describe('cancel-amend feature', () => {
     await page.getByRole('button', { name: copy.confirmButton }).click()
     await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
 
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-
-    expect(
-      seriousOrCritical,
-      `Read-only submitted check answers has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectAxeClean(page, 'Read-only submitted check answers')
   })
 })

@@ -98,7 +98,7 @@ describe('#nextRunTarget — the opening run sequence', () => {
   })
 
   it('Should return null for a page outside the run — transport is hub-only, never a run step', () => {
-    expect(next('documents', lineSeed)).toBe(null)
-    expect(next(portOfEntryPage.id, lineSeed)).toBe(null)
+    expect(next('documents', lineSeed)).toBeNull()
+    expect(next(portOfEntryPage.id, lineSeed)).toBeNull()
   })
 })

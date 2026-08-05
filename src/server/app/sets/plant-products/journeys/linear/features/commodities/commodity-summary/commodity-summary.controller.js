@@ -102,7 +102,9 @@ const postRemoveAction = async (request, h, pageState, action) => {
         HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
   if (value === null) {
     return render(request, h, pageState).code(HTTP_STATUS_BAD_REQUEST)
   }

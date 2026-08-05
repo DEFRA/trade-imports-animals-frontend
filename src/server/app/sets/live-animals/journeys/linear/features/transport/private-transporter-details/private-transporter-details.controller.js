@@ -68,7 +68,9 @@ const recordProvided = (values) =>
   FIELD_ORDER.some((field) => values[field] !== '')
 
 const missingMandatoryErrors = (values) => {
-  if (!recordProvided(values)) return {}
+  if (!recordProvided(values)) {
+    return {}
+  }
   return Object.fromEntries(
     Object.entries(MANDATORY_MESSAGES).filter(([field]) => values[field] === '')
   )
@@ -126,7 +128,7 @@ const trimmedValues = (payload) =>
 
 const formErrors = (payload, values) => {
   const { errors } = validate(fields, payload)
-  const merged = { ...missingMandatoryErrors(values), ...(errors ?? {}) }
+  const merged = { ...missingMandatoryErrors(values), ...errors }
   return Object.fromEntries(
     FIELD_ORDER.filter((field) => merged[field]).map((field) => [
       field,
@@ -177,7 +179,9 @@ const post = async (request, h) => {
       )
     }
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   const { scope } = committed
   return h.redirect(await kit.nextTarget(request, page, scope))

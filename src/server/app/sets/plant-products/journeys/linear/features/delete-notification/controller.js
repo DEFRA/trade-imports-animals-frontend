@@ -60,14 +60,18 @@ const get = async (request, h) => {
 
 const post = async (request, h) => {
   const { journey } = await state.get(request, h)
-  if (!deletable(journey)) return h.redirect(dashboardPath())
+  if (!deletable(journey)) {
+    return h.redirect(dashboardPath())
+  }
 
   const { failure, value: deleted } = await kit.recoverableSave(
     () => softDeleteJourney(request, h, request.params.journeyId),
     () =>
       render(request, h, journey, true).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   return deleted
     ? h.redirect(`${dashboardPath()}?deleted=1`)

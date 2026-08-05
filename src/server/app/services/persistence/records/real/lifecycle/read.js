@@ -1,4 +1,4 @@
-import { fulfilmentsUrl } from '../config.js'
+import { notificationsUrl } from '../config.js'
 import { failed } from '../http/failed.js'
 import { getFulfilment } from '../http/get-fulfilment.js'
 import { headers } from '../http/headers.js'
@@ -13,6 +13,12 @@ export const load = async ({ journeyId } = {}) => {
   return undefined
 }
 
+// Dashboard list source. The notification-fulfilments aggregate carries the
+// obligation-entry payload for rehydration, but every display field the
+// dashboard renders (commodity, origin, arrival date, party names) lives on
+// the notification side — so we list from /notifications directly and skip
+// the aggregation join. Follow-up ticket captures the option to relocate
+// fulfilment persistence entirely.
 export const list = async ({
   page = 1,
   sort = 'arrivalDate,desc',
@@ -22,16 +28,18 @@ export const list = async ({
     ? `&referenceNumber=${encodeURIComponent(referenceNumber)}`
     : ''
   const response = await fetch(
-    `${fulfilmentsUrl}?page=${page}&sort=${sort}${referenceQuery}`,
+    `${notificationsUrl}?page=${page}&sort=${sort}${referenceQuery}`,
     {
       method: 'GET',
       headers: headers()
     }
   )
-  if (!response.ok) throw failed('list fulfilments', response)
+  if (!response.ok) {
+    throw failed('list notifications', response)
+  }
   const result = await response.json()
   return {
-    rows: result.items.map(marshalListItem),
+    rows: result.content.map(marshalListItem),
     page: result.page,
     size: result.size,
     totalElements: result.totalElements,

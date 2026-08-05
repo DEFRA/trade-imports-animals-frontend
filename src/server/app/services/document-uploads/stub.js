@@ -17,7 +17,9 @@ const notFound = (uploadId) => {
 
 const uploadOrThrow = (uploadId) => {
   const upload = uploads.get(uploadId)
-  if (!upload) throw notFound(uploadId)
+  if (!upload) {
+    throw notFound(uploadId)
+  }
   return upload
 }
 
@@ -40,7 +42,9 @@ const PLACEHOLDER_PDF = [
 ].join('\n')
 
 const settledStatus = (filename = '') => {
-  if (NEVER_SCANS_FILENAME.test(filename)) return SCAN_STATUS_PENDING
+  if (NEVER_SCANS_FILENAME.test(filename)) {
+    return SCAN_STATUS_PENDING
+  }
   return REJECTED_FILENAME.test(filename)
     ? SCAN_STATUS_REJECTED
     : SCAN_STATUS_COMPLETE
@@ -58,10 +62,16 @@ export const documentUploads = {
   scanStatus: async ({ uploadId, filename, refresh }) => {
     const upload = uploadOrThrow(uploadId)
     const knownFilename = upload.filename ?? filename
-    if (upload.settled) return settledStatus(knownFilename)
-    if (!refresh) return SCAN_STATUS_PENDING
+    if (upload.settled) {
+      return settledStatus(knownFilename)
+    }
+    if (!refresh) {
+      return SCAN_STATUS_PENDING
+    }
     const status = settledStatus(knownFilename)
-    if (status !== SCAN_STATUS_PENDING) upload.settled = true
+    if (status !== SCAN_STATUS_PENDING) {
+      upload.settled = true
+    }
     return status
   },
 

@@ -1,3 +1,1 @@
-import { portsOfEntry } from '../_capture/fixtures.js'
-
-export const PORTS = portsOfEntry
+export { portsOfEntry as PORTS } from '../_capture/fixtures.js'

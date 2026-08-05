@@ -33,17 +33,25 @@ const postConsignorSpoke = postHandlerEndingWith(
   'consignors/select'
 )
 
+const CREATED_FARM_NAME = 'Created Farm Ltd'
+const CREATED_ADDRESS_LINE_1 = '99 New Lane'
+const CREATED_COUNTRY = 'United Kingdom'
+const CREATED_TELEPHONE_NUMBER = '01228 555 0101'
+const CREATED_EMAIL_ADDRESS = 'farm@example.co.uk'
+const SECOND_CREATED_NAME = 'Second Created Ltd'
+const CREATED_CONTACT_NAME = 'Created Contact Ltd'
+
 const validPayload = (overrides = {}) => ({
   for: 'consignor',
-  nameOrOrganisationName: 'Created Farm Ltd',
-  addressLine1: '99 New Lane',
+  nameOrOrganisationName: CREATED_FARM_NAME,
+  addressLine1: CREATED_ADDRESS_LINE_1,
   addressLine2: '',
   townOrCity: 'Carlisle',
   county: '',
   postalOrZipCode: 'CA1 1AA',
-  country: 'United Kingdom',
-  telephoneNumber: '01228 555 0101',
-  emailAddress: 'farm@example.co.uk',
+  country: CREATED_COUNTRY,
+  telephoneNumber: CREATED_TELEPHONE_NUMBER,
+  emailAddress: CREATED_EMAIL_ADDRESS,
   ...overrides
 })
 
@@ -62,42 +70,42 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
       redirect: pagePath(result.journeyId, 'addresses')
     })
     expect(result.after.consignor).toEqual({
-      name: 'Created Farm Ltd',
+      name: CREATED_FARM_NAME,
       address: {
-        addressLine1: '99 New Lane',
+        addressLine1: CREATED_ADDRESS_LINE_1,
         addressLine2: '',
         townOrCity: 'Carlisle',
         county: '',
         postalOrZipCode: 'CA1 1AA',
-        country: 'United Kingdom',
-        telephoneNumber: '01228 555 0101',
-        emailAddress: 'farm@example.co.uk'
+        country: CREATED_COUNTRY,
+        telephoneNumber: CREATED_TELEPHONE_NUMBER,
+        emailAddress: CREATED_EMAIL_ADDRESS
       }
     })
 
     const consignorNames = addressBook
       .parties('consignor')
       .map((option) => option.name)
-    expect(consignorNames).toContain('Created Farm Ltd')
+    expect(consignorNames).toContain(CREATED_FARM_NAME)
     const importerNames = addressBook
       .parties('importer')
       .map((option) => option.name)
-    expect(importerNames).not.toContain('Created Farm Ltd')
+    expect(importerNames).not.toContain(CREATED_FARM_NAME)
   })
 
   it('Should offer the created address in the launching spoke, where selecting it commits the same copy', async () => {
     await driveHandler(postCreate, {
-      payload: validPayload({ nameOrOrganisationName: 'Second Created Ltd' })
+      payload: validPayload({ nameOrOrganisationName: SECOND_CREATED_NAME })
     })
     const created = addressBook
       .parties('consignor')
-      .find((option) => option.name === 'Second Created Ltd')
+      .find((option) => option.name === SECOND_CREATED_NAME)
 
     const result = await driveHandler(postConsignorSpoke, {
       payload: { action: 'save', party: created.id }
     })
     expect(result.view).toBeUndefined()
-    expect(result.after.consignor.name).toBe('Second Created Ltd')
+    expect(result.after.consignor.name).toBe(SECOND_CREATED_NAME)
     expect(result.after.consignor.address.townOrCity).toBe('Carlisle')
   })
 
@@ -109,7 +117,7 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
     const result = await driveHandler(postCreate, {
       payload: validPayload({
         for: 'contactAddress',
-        nameOrOrganisationName: 'Created Contact Ltd'
+        nameOrOrganisationName: CREATED_CONTACT_NAME
       })
     })
 
@@ -117,22 +125,22 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
       redirect: pagePath(result.journeyId, 'consignment/contact/select')
     })
     expect(result.after.contactAddress).toEqual({
-      name: 'Created Contact Ltd',
+      name: CREATED_CONTACT_NAME,
       address: {
-        addressLine1: '99 New Lane',
+        addressLine1: CREATED_ADDRESS_LINE_1,
         addressLine2: '',
         townOrCity: 'Carlisle',
         county: '',
         postalOrZipCode: 'CA1 1AA',
-        country: 'United Kingdom',
-        telephoneNumber: '01228 555 0101',
-        emailAddress: 'farm@example.co.uk'
+        country: CREATED_COUNTRY,
+        telephoneNumber: CREATED_TELEPHONE_NUMBER,
+        emailAddress: CREATED_EMAIL_ADDRESS
       }
     })
     expect(
       addressBook
         .parties('contact')
-        .some((option) => option.name === 'Created Contact Ltd')
+        .some((option) => option.name === CREATED_CONTACT_NAME)
     ).toBe(true)
   })
 
@@ -191,8 +199,11 @@ describe('POST addresses/create — country membership follows the primed list',
 
   afterEach(() => {
     vi.unstubAllGlobals()
-    if (originalMode === undefined) delete process.env.LIVE_ANIMALS_MODE
-    else process.env.LIVE_ANIMALS_MODE = originalMode
+    if (originalMode === undefined) {
+      delete process.env.LIVE_ANIMALS_MODE
+    } else {
+      process.env.LIVE_ANIMALS_MODE = originalMode
+    }
   })
 
   it('Should validate against the list as primed at POST time, not as imported', async () => {

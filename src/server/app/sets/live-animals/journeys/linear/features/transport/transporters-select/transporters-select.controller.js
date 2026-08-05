@@ -34,7 +34,7 @@ const addressSummary = (address) =>
     address.addressLine3,
     address.country
   ]
-    .filter((part) => part)
+    .filter(Boolean)
     .join(', ')
 
 const render = (
@@ -114,7 +114,9 @@ const post = async (request, h) => {
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   const { scope } = committed
   return h.redirect(await kit.nextTarget(request, page, scope))

@@ -53,6 +53,9 @@ const { obligations } = obligationSet()
 
 const record = (id, dependsOn) => ({ id, dependsOn })
 
+const ROOT_UNREACHABLE_ID = 'root-unreachable'
+const SELF_LOOP_ID = 'acc-doc-type'
+
 // A record's dependsOn is:
 //   - the metadata dependsOn when the obligation has an applyTo (the
 //     coverage assertion pins this to a string[]).
@@ -128,8 +131,8 @@ describe('#proveReachability — unreachable detection', () => {
     // A depends on something that's not itself always-in-scope: if the
     // pre-requisite is not reachable, neither is A.
     const result = proveReachability([
-      record('root-unreachable', ['nowhere']),
-      record('downstream', ['root-unreachable']),
+      record(ROOT_UNREACHABLE_ID, ['nowhere']),
+      record('downstream', [ROOT_UNREACHABLE_ID]),
       // But 'nowhere' is not in the manifest — that's an error, not a
       // reachability answer. See separate test below for the error path.
       // Here we add a proper always-in-scope seed so it's obvious the
@@ -138,7 +141,7 @@ describe('#proveReachability — unreachable detection', () => {
     ])
     expect(result.reachable).toContain('seed')
     expect(result.errors.map((e) => e.obligationId)).toContain(
-      'root-unreachable'
+      ROOT_UNREACHABLE_ID
     )
   })
 })
@@ -180,10 +183,10 @@ describe('#proveReachability — self-loop handling', () => {
     // Two things this test pins:
     //   (a) it does NOT crash / stack-overflow (visited-tracking).
     //   (b) the classification is deterministic + treats as reachable.
-    const result = proveReachability([record('acc-doc-type', ['acc-doc-type'])])
+    const result = proveReachability([record(SELF_LOOP_ID, [SELF_LOOP_ID])])
     expect(result.errors).toEqual([])
-    expect(result.reachable).toContain('acc-doc-type')
-    expect(result.unreachable).not.toContain('acc-doc-type')
+    expect(result.reachable).toContain(SELF_LOOP_ID)
+    expect(result.unreachable).not.toContain(SELF_LOOP_ID)
   })
 
   it('Should have zero unreachable and no errors for the full manifest', () => {
@@ -224,10 +227,10 @@ describe('#proveReachability — defensive against dangling ids', () => {
 // closure and return `inScope: true` — that's the fidelity assertion.
 // ---------------------------------------------------------------------------
 
-describe('#synthesiseWitness — per-helper metadata inversion', () => {
-  const codeObl = { id: 'code-obl' }
-  const boolObl = { id: 'bool-obl' }
+const codeObl = { id: 'code-obl' }
+const boolObl = { id: 'bool-obl' }
 
+describe('#synthesiseWitness — per-helper metadata inversion', () => {
   it('Should return the first allowlist entry as witness for allowListed', () => {
     const gate = allowListed(codeObl, ['a', 'b', 'c'])
     const obl = { id: 'gated', applyTo: gate }
@@ -397,14 +400,16 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
     })
     expect(witness).toEqual({ kind: WITNESS_KIND.TRIVIAL })
   })
+})
 
-  // -------------------------------------------------------------------------
-  // Meta-first gate helpers. Each is a structured helper whose
-  // `.metadata` fully describes the gate, so witness synth reads directly
-  // and the fidelity round-trip must open the real closure. This block
-  // only pins the witness-synth contract.
-  // -------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Meta-first gate helpers. Each is a structured helper whose
+// `.metadata` fully describes the gate, so witness synth reads directly
+// and the fidelity round-trip must open the real closure. This block
+// only pins the witness-synth contract.
+// ---------------------------------------------------------------------------
 
+describe('#synthesiseWitness — meta-first gate helpers', () => {
   it('Should synthesise a witness that opens the real closure for equalsGate (purge-on-flip)', () => {
     const gate = equalsGate(
       boolObl,

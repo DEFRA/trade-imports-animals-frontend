@@ -44,7 +44,9 @@ const validateFields = (payload) => {
   const results = fieldRules().map((rule) => validate(rule, payload))
   const errors = results.reduce((combined, result) => {
     for (const [field, message] of Object.entries(result.errors ?? {})) {
-      if (combined[field] === undefined) combined[field] = message
+      if (combined[field] === undefined) {
+        combined[field] = message
+      }
     }
     return combined
   }, {})
@@ -118,7 +120,9 @@ const post = async (request, h) => {
       )
     }
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   return h.redirect(await kit.nextTarget(request, page, committed.scope))
 }

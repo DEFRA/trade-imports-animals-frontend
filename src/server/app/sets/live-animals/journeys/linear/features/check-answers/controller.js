@@ -24,14 +24,16 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 const renderCya = (
   h,
   journey,
-  answers,
-  scope,
-  evaluation,
-  readOnly,
-  amendmentCancelled,
-  recoverableError = false,
-  copyIdempotencyError = false,
-  copyIdempotencyKey = null
+  {
+    answers,
+    scope,
+    evaluation,
+    readOnly,
+    amendmentCancelled,
+    recoverableError = false,
+    copyIdempotencyError = false,
+    copyIdempotencyKey = null
+  }
 ) =>
   h.view(view, {
     pageTitle: copy.title,
@@ -80,18 +82,16 @@ export const renderNotificationView = async (
 ) => {
   const { journey, answers, scope, evaluation } = await state.get(request, h)
   const readOnly = journey.status === state.SUBMITTED
-  return renderCya(
-    h,
-    journey,
+  return renderCya(h, journey, {
     answers,
     scope,
     evaluation,
     readOnly,
-    readOnly && request.query.cancelled === '1',
+    amendmentCancelled: readOnly && request.query.cancelled === '1',
     recoverableError,
     copyIdempotencyError,
-    readOnly ? copyIdempotencyKey : null
-  )
+    copyIdempotencyKey: readOnly ? copyIdempotencyKey : null
+  })
 }
 
 const get = async (request, h) => renderNotificationView(request, h)

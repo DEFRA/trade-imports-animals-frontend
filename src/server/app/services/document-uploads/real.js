@@ -44,7 +44,9 @@ const initiate = async ({
       })
     }
   )
-  if (!response.ok) throw failed('initiate document upload', response)
+  if (!response.ok) {
+    throw failed('initiate document upload', response)
+  }
   return response.json()
 }
 
@@ -63,7 +65,9 @@ const uploadFile = async (uploadId, { filename, contentType, bytes }) => {
       body: formData
     }
   )
-  if (!response.ok) throw failed('upload document file', response)
+  if (!response.ok) {
+    throw failed('upload document file', response)
+  }
 }
 
 const deleteUpload = async (uploadId) => {
@@ -74,8 +78,12 @@ const deleteUpload = async (uploadId) => {
       headers: traceHeaders()
     }
   )
-  if (response.status === HTTP_STATUS_NOT_FOUND) return
-  if (!response.ok) throw failed('delete document upload', response)
+  if (response.status === HTTP_STATUS_NOT_FOUND) {
+    return
+  }
+  if (!response.ok) {
+    throw failed('delete document upload', response)
+  }
 }
 
 // A failed file leg leaves an initiated session with nothing in it. Deleting it
@@ -96,7 +104,9 @@ const readSession = async (uploadId) => {
     `${backendBaseUrl}/document-uploads/${uploadId}`,
     { method: 'GET', headers: traceHeaders() }
   )
-  if (!response.ok) throw failed('get document upload status', response)
+  if (!response.ok) {
+    throw failed('get document upload status', response)
+  }
   return response.json()
 }
 
@@ -126,7 +136,9 @@ export const documentUploads = {
       `${backendBaseUrl}/document-uploads/${uploadId}/file`,
       { method: 'GET', headers: traceHeaders() }
     )
-    if (!response.ok) throw failed('stream document file', response)
+    if (!response.ok) {
+      throw failed('stream document file', response)
+    }
     return response
   }
 }

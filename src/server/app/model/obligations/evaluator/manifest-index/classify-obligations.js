@@ -17,9 +17,15 @@ const categoryOf = (obligation, obligationChildren) => {
       ? 'derived-leaf'
       : 'user-leaf'
   }
-  if (obligation.applyTo && obligation.within) return 'derived-leaf'
-  if (obligation.status !== undefined && !obligation.applyTo) return 'field'
-  if (obligationChildren.has(obligation.id)) return 'group'
+  if (obligation.applyTo && obligation.within) {
+    return 'derived-leaf'
+  }
+  if (obligation.status !== undefined && !obligation.applyTo) {
+    return 'field'
+  }
+  if (obligationChildren.has(obligation.id)) {
+    return 'group'
+  }
   return 'single'
 }
 

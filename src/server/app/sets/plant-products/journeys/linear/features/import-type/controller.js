@@ -87,7 +87,9 @@ const post = async (request, h) => {
         HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   if (values.importType !== PLANT_PRODUCTS) {
     return h.redirect(pagePath(journey.journeyId, NOT_AVAILABLE_SLUG))

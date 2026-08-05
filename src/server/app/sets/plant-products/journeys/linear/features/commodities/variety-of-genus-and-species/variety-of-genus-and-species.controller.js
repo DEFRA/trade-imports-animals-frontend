@@ -222,9 +222,13 @@ const get = async (request, h) => {
 }
 
 const parseTarget = (action, prefix, size) => {
-  if (!action.startsWith(prefix)) return null
+  if (!action.startsWith(prefix)) {
+    return null
+  }
   const parts = action.slice(prefix.length).split(':')
-  if (parts.length !== size || parts.some((part) => part === '')) return null
+  if (parts.length !== size || parts.some((part) => part === '')) {
+    return null
+  }
   return parts.map(Number)
 }
 
@@ -275,7 +279,9 @@ const schemaFor = (names, commodityCode, entry) => {
 
 const validateActiveRow = (names, commodityCode, entry, raw, payload) => {
   const base = validate(schemaFor(names, commodityCode, entry), payload)
-  if (raw.variety.trim() !== OTHER_VARIETY) return base
+  if (raw.variety.trim() !== OTHER_VARIETY) {
+    return base
+  }
 
   const required = validate(
     requiredText(names.otherVariety, copy.errors.otherVarietyRequired),
@@ -418,7 +424,9 @@ const postAdd = async (request, h, pageState, action) => {
     ({ line, species }) =>
       line.index === targetParts[0] && species.index === targetParts[1]
   )
-  if (!target) return badRequest(h)
+  if (!target) {
+    return badRequest(h)
+  }
   const result = validateRow(pageState, target, request.payload)
   const viewState = formsAndErrors([{ target, result }])
   if (result.errors) {
@@ -434,8 +442,12 @@ const postAdd = async (request, h, pageState, action) => {
     viewState,
     () => state.appendEntryAt(request, h, result.path, result.entry)
   )
-  if (failure) return failure
-  if (!Number.isInteger(appended)) return badRequest(h)
+  if (failure) {
+    return failure
+  }
+  if (!Number.isInteger(appended)) {
+    return badRequest(h)
+  }
   return redirectToPage(request, h)
 }
 
@@ -462,7 +474,9 @@ const postRemove = async (request, h, pageState, action) => {
   const { failure } = await recoverableMutation(request, h, pageState, {}, () =>
     state.removeEntryAt(request, h, path, varietyIndex)
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
   return redirectToPage(request, h)
 }
 
@@ -503,7 +517,9 @@ const postContinue = async (request, h, pageState) => {
         }
       }
     )
-    if (failure) return failure
+    if (failure) {
+      return failure
+    }
   }
 
   const current = await state.get(request, h)

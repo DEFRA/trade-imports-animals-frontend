@@ -27,7 +27,9 @@ export const copy = async (journeyId, idempotencyKey) => {
   }
 
   const source = journeys.get(journeyId)
-  if (!source) throw new Error(`Unknown journey "${journeyId}"`)
+  if (!source) {
+    throw new Error(`Unknown journey "${journeyId}"`)
+  }
   if (
     source.status !== DRAFT &&
     source.status !== SUBMITTED &&

@@ -506,7 +506,9 @@ test.describe('plant-products review notification', () => {
       links.map((link) => (link.textContent ?? '').trim().replace(/\s+/g, ' '))
     )
     expect(names.length).toBeGreaterThan(30)
-    for (const name of names) expect(name).toMatch(/^Change .+/)
+    for (const name of names) {
+      expect(name).toMatch(/^Change .+/)
+    }
     expect(new Set(names).size).toBe(names.length)
     await expect(
       page.getByRole('link', { name: 'Change', exact: true })

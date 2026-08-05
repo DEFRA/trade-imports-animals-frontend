@@ -48,17 +48,51 @@ const FIELD_ORDER = [
   'emailAddress'
 ]
 
+const NAME_OR_ADDRESS_LINE_MAX_LENGTH = 255
+const TOWN_OR_COUNTY_MAX_LENGTH = 100
+const POSTAL_OR_ZIP_CODE_MAX_LENGTH = 12
+const TELEPHONE_NUMBER_MAX_LENGTH = 20
+const EMAIL_ADDRESS_MAX_LENGTH = 254
+
 const fields = () =>
   compose(
-    maxText('nameOrOrganisationName', 255, copy.errors.nameMaxLength),
-    maxText('addressLine1', 255, copy.errors.addressLine1MaxLength),
-    maxText('addressLine2', 255, copy.errors.addressLine2MaxLength),
-    maxText('townOrCity', 100, copy.errors.townOrCityMaxLength),
-    maxText('county', 100, copy.errors.countyMaxLength),
-    maxText('postalOrZipCode', 12, copy.errors.postalOrZipCodeMaxLength),
+    maxText(
+      'nameOrOrganisationName',
+      NAME_OR_ADDRESS_LINE_MAX_LENGTH,
+      copy.errors.nameMaxLength
+    ),
+    maxText(
+      'addressLine1',
+      NAME_OR_ADDRESS_LINE_MAX_LENGTH,
+      copy.errors.addressLine1MaxLength
+    ),
+    maxText(
+      'addressLine2',
+      NAME_OR_ADDRESS_LINE_MAX_LENGTH,
+      copy.errors.addressLine2MaxLength
+    ),
+    maxText(
+      'townOrCity',
+      TOWN_OR_COUNTY_MAX_LENGTH,
+      copy.errors.townOrCityMaxLength
+    ),
+    maxText('county', TOWN_OR_COUNTY_MAX_LENGTH, copy.errors.countyMaxLength),
+    maxText(
+      'postalOrZipCode',
+      POSTAL_OR_ZIP_CODE_MAX_LENGTH,
+      copy.errors.postalOrZipCodeMaxLength
+    ),
     oneOf('country', countries.addressCountries(), copy.errors.countryFromList),
-    maxText('telephoneNumber', 20, copy.errors.telephoneMaxLength),
-    maxText('emailAddress', 254, copy.errors.emailMaxLength)
+    maxText(
+      'telephoneNumber',
+      TELEPHONE_NUMBER_MAX_LENGTH,
+      copy.errors.telephoneMaxLength
+    ),
+    maxText(
+      'emailAddress',
+      EMAIL_ADDRESS_MAX_LENGTH,
+      copy.errors.emailMaxLength
+    )
   )
 
 const missingMandatoryErrors = (values) =>
@@ -119,7 +153,7 @@ const trimmedValues = (payload) =>
 
 const fieldErrors = (payload, values) => {
   const { errors } = validate(fields(), payload)
-  const merged = { ...missingMandatoryErrors(values), ...(errors ?? {}) }
+  const merged = { ...missingMandatoryErrors(values), ...errors }
   return Object.fromEntries(
     FIELD_ORDER.filter((field) => merged[field]).map((field) => [
       field,
@@ -172,7 +206,9 @@ const post = async (request, h) => {
       )
     }
   )
-  if (failure) return failure
+  if (failure) {
+    return failure
+  }
 
   addressBook.addParty(party.role, record)
   return h.redirect(pagePath(request.params.journeyId, party.returnSlug))

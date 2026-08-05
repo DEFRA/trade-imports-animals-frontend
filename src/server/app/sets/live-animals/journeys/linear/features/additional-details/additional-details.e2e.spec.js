@@ -11,24 +11,26 @@ import * as certification from '../../../../../../services/certification-purpose
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
+const SAVE_AND_CONTINUE = 'Save and continue'
+
 const startAtAdditionalDetails = async (page) => {
   await startNotification(page)
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
   await selectSpecies(page, ['Bos taurus'])
   await page
-    .getByRole('button', { name: 'Save and continue', exact: true })
+    .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
     .click()
   await page.getByLabel('Number of animals').fill('1')
   await page.getByLabel('Number of packages (optional)').fill('1')
   await page
-    .getByRole('button', { name: 'Save and continue', exact: true })
+    .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
     .click()
   await page.goto(journeyUrl(page, 'additional-details'))
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
 
-test.describe('additional-details feature', () => {
+test.describe('additional-details feature — rendering', () => {
   test.beforeEach(async ({ page }) => {
     await startAtAdditionalDetails(page)
   })
@@ -67,6 +69,12 @@ test.describe('additional-details feature', () => {
 
     await expect(page).toHaveURL(hubUrl)
   })
+})
+
+test.describe('additional-details feature — validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await startAtAdditionalDetails(page)
+  })
 
   test('certification validation: invalid option links to and focuses the group while preserving the valid unweaned answer', async ({
     page
@@ -83,7 +91,7 @@ test.describe('additional-details feature', () => {
       })
 
     await page
-      .getByRole('button', { name: 'Save and continue', exact: true })
+      .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
       .click()
 
     const certificationError = page
@@ -115,7 +123,7 @@ test.describe('additional-details feature', () => {
       })
 
     await page
-      .getByRole('button', { name: 'Save and continue', exact: true })
+      .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
       .click()
 
     const unweanedError = page
@@ -129,6 +137,12 @@ test.describe('additional-details feature', () => {
       certified.getByRole('radio', { name: 'Slaughter', exact: true })
     ).toBeChecked()
   })
+})
+
+test.describe('additional-details feature — persistence and accessibility', () => {
+  test.beforeEach(async ({ page }) => {
+    await startAtAdditionalDetails(page)
+  })
 
   test('saves both answers, redirects and persists them', async ({ page }) => {
     const detailsUrl = page.url()
@@ -136,7 +150,7 @@ test.describe('additional-details feature', () => {
     await page.getByRole('radio', { name: 'Slaughter', exact: true }).check()
     await page.getByRole('radio', { name: copy.unweaned.no }).check()
     await page
-      .getByRole('button', { name: 'Save and continue', exact: true })
+      .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
       .click()
 
     await expect(page).toHaveURL((url) =>

@@ -10,6 +10,8 @@ import { records as recordsStub } from '../../services/persistence/records/stub/
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
 import { journeyRequest, recordingH } from '../test-support.js'
 
+const IMPORT_TYPE_LIVE_ANIMALS = 'live-animals'
+
 describe('flow-only answers — session round-trip', () => {
   beforeEach(async () => {
     configureRecords('live-animals', recordsStub)
@@ -23,7 +25,7 @@ describe('flow-only answers — session round-trip', () => {
     const writeH = recordingH()
 
     await commit(journeyRequest(journey.journeyId), writeH, {
-      importType: 'live-animals',
+      importType: IMPORT_TYPE_LIVE_ANIMALS,
       declaration: 'confirmed'
     })
 
@@ -38,7 +40,7 @@ describe('flow-only answers — session round-trip', () => {
     })
     const fresh = await get(freshRequest, recordingH())
 
-    expect(fresh.answers.importType).toBe('live-animals')
+    expect(fresh.answers.importType).toBe(IMPORT_TYPE_LIVE_ANIMALS)
     expect(fresh.answers.declaration).toBe('confirmed')
   })
 
@@ -50,7 +52,7 @@ describe('flow-only answers — session round-trip', () => {
       app: {},
       state: {
         [flowOnlyAnswersCookie()]: {
-          [journey.journeyId]: { importType: 'live-animals' }
+          [journey.journeyId]: { importType: IMPORT_TYPE_LIVE_ANIMALS }
         }
       }
     })

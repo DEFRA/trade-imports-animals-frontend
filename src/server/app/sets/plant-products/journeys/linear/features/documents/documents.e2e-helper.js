@@ -41,7 +41,9 @@ export const addDocument = async (
   await page.getByLabel(copy.labels.documentType).selectOption(type)
   await page.getByLabel(copy.labels.documentReference).fill(reference)
   await page.getByLabel(copy.labels.issueDate).fill(date)
-  if (file) await page.getByLabel(copy.labels.file).setInputFiles(file)
+  if (file) {
+    await page.getByLabel(copy.labels.file).setInputFiles(file)
+  }
   await page.getByRole('button', { name: copy.actions.addDocument }).click()
 }
 
@@ -52,7 +54,9 @@ export const settleScan = async (page, reference, expectedStatus) => {
   await expect
     .poll(async () => {
       const refresh = page.getByRole('link', { name: copy.actions.refresh })
-      if (await refresh.isVisible()) await refresh.click()
+      if (await refresh.isVisible()) {
+        await refresh.click()
+      }
       return rowFor(page, reference).innerText()
     })
     .toContain(expectedStatus)

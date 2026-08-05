@@ -19,7 +19,9 @@ const emptyDispatch = () => ({
 
 const current = () => {
   const setId = currentSetId()
-  if (!store.has(setId)) store.configure(setId, emptyDispatch())
+  if (!store.has(setId)) {
+    store.configure(setId, emptyDispatch())
+  }
   return store.current()
 }
 

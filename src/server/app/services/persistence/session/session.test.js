@@ -7,6 +7,8 @@ import {
 } from '../../../engine/persistence/session.js'
 import { recordingH } from '../../../engine/test-support.js'
 
+const IMPORT_TYPE_LIVE_ANIMALS = 'live-animals'
+
 const requestKnowing = (...journeyIds) => ({
   state: { [knownJourneysCookie()]: journeyIds }
 })
@@ -80,7 +82,7 @@ describe('#session.flowOnlyAnswers', () => {
     await session.setFlowOnlyAnswers(
       h,
       'journey-1',
-      { importType: 'live-animals' },
+      { importType: IMPORT_TYPE_LIVE_ANIMALS },
       request
     )
 
@@ -90,7 +92,7 @@ describe('#session.flowOnlyAnswers', () => {
         { state: { [flowOnlyAnswersCookie()]: stored } },
         'journey-1'
       )
-    ).toEqual({ importType: 'live-animals' })
+    ).toEqual({ importType: IMPORT_TYPE_LIVE_ANIMALS })
     expect(
       await session.flowOnlyAnswers(
         { state: { [flowOnlyAnswersCookie()]: stored } },
@@ -101,7 +103,7 @@ describe('#session.flowOnlyAnswers', () => {
 
   it('Should preserve another journey while updating the current one', async () => {
     const existing = {
-      'journey-1': { importType: 'live-animals' }
+      'journey-1': { importType: IMPORT_TYPE_LIVE_ANIMALS }
     }
     const h = recordingH()
 

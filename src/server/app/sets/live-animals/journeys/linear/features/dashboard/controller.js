@@ -37,7 +37,9 @@ const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const parseReferenceNumber = (value) => {
-  if (typeof value !== 'string') return undefined
+  if (typeof value !== 'string') {
+    return undefined
+  }
   const trimmed = value.trim()
   return trimmed.length > 0 ? trimmed : undefined
 }
