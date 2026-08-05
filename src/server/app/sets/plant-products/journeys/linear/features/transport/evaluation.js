@@ -18,12 +18,16 @@ import {
   usesContainers
 } from '../../../../obligations/index.js'
 
+const TWO_DIGIT_WIDTH = 2
+
+const twoDigits = (value) => String(value).padStart(TWO_DIGIT_WIDTH, '0')
+
 const toIsoDate = (value) => {
   if (value === null || typeof value === 'string') {
     return value
   }
   const { day, month, year } = value
-  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  return `${year}-${twoDigits(month)}-${twoDigits(day)}`
 }
 
 const toTime = (value) => {
@@ -31,7 +35,7 @@ const toTime = (value) => {
     return value
   }
   const { hour, minute } = value
-  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+  return `${twoDigits(hour)}:${twoDigits(minute)}`
 }
 
 const container = {

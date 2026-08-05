@@ -45,21 +45,49 @@ const copy = copyFor({ en, cy }).consignorCreate
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const COUNTRY_LIST_DIVIDER = '──────────'
 
+// Standard Address Block field lengths.
+const MAX_NAME_LENGTH = 255
+const MAX_ADDRESS_LINE_LENGTH = 255
+const MAX_CITY_LENGTH = 58
+const MAX_POSTCODE_LENGTH = 32
+const MAX_TELEPHONE_LENGTH = 30
+const MAX_EMAIL_LENGTH = 255
+
 const fieldRules = (countryCodes) => [
   requiredText('consignorName', copy.errors.consignorName.required),
-  maxText('consignorName', 255, copy.errors.consignorName.max),
+  maxText('consignorName', MAX_NAME_LENGTH, copy.errors.consignorName.max),
   requiredText(
     'consignorAddressLine1',
     copy.errors.consignorAddressLine1.required
   ),
-  maxText('consignorAddressLine1', 255, copy.errors.consignorAddressLine1.max),
-  maxText('consignorAddressLine2', 255, copy.errors.consignorAddressLine2.max),
-  maxText('consignorAddressLine3', 255, copy.errors.consignorAddressLine3.max),
+  maxText(
+    'consignorAddressLine1',
+    MAX_ADDRESS_LINE_LENGTH,
+    copy.errors.consignorAddressLine1.max
+  ),
+  maxText(
+    'consignorAddressLine2',
+    MAX_ADDRESS_LINE_LENGTH,
+    copy.errors.consignorAddressLine2.max
+  ),
+  maxText(
+    'consignorAddressLine3',
+    MAX_ADDRESS_LINE_LENGTH,
+    copy.errors.consignorAddressLine3.max
+  ),
   requiredText('consignorCity', copy.errors.consignorCity.required),
-  maxText('consignorCity', 58, copy.errors.consignorCity.max),
-  maxText('consignorPostcode', 32, copy.errors.consignorPostcode.max),
+  maxText('consignorCity', MAX_CITY_LENGTH, copy.errors.consignorCity.max),
+  maxText(
+    'consignorPostcode',
+    MAX_POSTCODE_LENGTH,
+    copy.errors.consignorPostcode.max
+  ),
   requiredText('consignorTelephone', copy.errors.consignorTelephone.required),
-  maxText('consignorTelephone', 30, copy.errors.consignorTelephone.max),
+  maxText(
+    'consignorTelephone',
+    MAX_TELEPHONE_LENGTH,
+    copy.errors.consignorTelephone.max
+  ),
   requiredOneOf(
     'consignorCountry',
     countryCodes,
@@ -67,7 +95,7 @@ const fieldRules = (countryCodes) => [
   ),
   requiredText('consignorEmail', copy.errors.consignorEmail.required),
   pattern('consignorEmail', EMAIL, copy.errors.consignorEmail.format),
-  maxText('consignorEmail', 255, copy.errors.consignorEmail.max)
+  maxText('consignorEmail', MAX_EMAIL_LENGTH, copy.errors.consignorEmail.max)
 ]
 
 const validateFields = (payload, countryCodes) => {

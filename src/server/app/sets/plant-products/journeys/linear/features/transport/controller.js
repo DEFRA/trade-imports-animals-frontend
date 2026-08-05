@@ -47,12 +47,24 @@ const copy = copyFor({ en, cy })
 const DATE_ERROR_KEY = 'arrivalDate-day'
 const TIME_ERROR_KEY = 'arrivalTime-hour'
 
+const ARRIVAL_WINDOW_DAYS = 90
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000
+const DATE_PART_COUNT = 3
+const TIME_PART_COUNT = 2
+const MAX_HOUR = 23
+const MAX_MINUTE = 59
+
+const MAX_TRANSPORT_IDENTIFICATION_LENGTH = 50
+const MAX_DOCUMENT_REFERENCE_LENGTH = 32
+const MAX_CONTAINER_NUMBER_LENGTH = 32
+const MAX_SEAL_NUMBER_LENGTH = 100
+
 const startOfUtcDay = (date = new Date()) =>
   Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
 
 const dateSchema = () => {
   const today = startOfUtcDay()
-  const lastAllowed = today + 90 * 24 * 60 * 60 * 1000
+  const lastAllowed = today + ARRIVAL_WINDOW_DAYS * MILLISECONDS_PER_DAY
   return Joi.object({
     [DATE_ERROR_KEY]: Joi.any()
       .required()
@@ -67,7 +79,10 @@ const dateSchema = () => {
         if (filled === 0) {
           return helpers.error('date.required')
         }
-        if (filled !== 3 || !parts.every((part) => /^\d+$/.test(part))) {
+        if (
+          filled !== DATE_PART_COUNT ||
+          !parts.every((part) => /^\d+$/.test(part))
+        ) {
           return helpers.error('date.real')
         }
         const [parsedDay, parsedMonth, parsedYear] = parts.map(Number)
@@ -111,10 +126,10 @@ const timeSchema = () =>
           return helpers.error('time.required')
         }
         if (
-          filled !== 2 ||
+          filled !== TIME_PART_COUNT ||
           !parts.every((part) => /^\d{1,2}$/.test(part)) ||
-          Number(parts[0]) > 23 ||
-          Number(parts[1]) > 59
+          Number(parts[0]) > MAX_HOUR ||
+          Number(parts[1]) > MAX_MINUTE
         ) {
           return helpers.error('time.invalid')
         }
@@ -161,13 +176,13 @@ const pageFields = (postedBcp) => {
     ),
     requiredTextWithMax(
       'transportIdentification',
-      50,
+      MAX_TRANSPORT_IDENTIFICATION_LENGTH,
       copy.errors.identificationRequired,
       copy.errors.identificationMaxLength
     ),
     requiredTextWithMax(
       'transportDocumentReference',
-      32,
+      MAX_DOCUMENT_REFERENCE_LENGTH,
       copy.errors.documentReferenceRequired,
       copy.errors.documentReferenceMaxLength
     ),
@@ -190,7 +205,7 @@ const containerFields = () =>
         if (!value && !seal) {
           return helpers.error('container.oneOf')
         }
-        if (value.length > 32) {
+        if (value.length > MAX_CONTAINER_NUMBER_LENGTH) {
           return helpers.error('container.max')
         }
         return value
@@ -202,7 +217,9 @@ const containerFields = () =>
     sealNumber: Joi.any()
       .custom((raw, helpers) => {
         const value = String(raw ?? '').trim()
-        return value.length > 100 ? helpers.error('seal.max') : value
+        return value.length > MAX_SEAL_NUMBER_LENGTH
+          ? helpers.error('seal.max')
+          : value
       })
       .messages({ 'seal.max': copy.errors.sealNumberMaxLength })
   }).unknown(true)
