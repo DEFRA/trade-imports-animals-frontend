@@ -11,6 +11,7 @@ import {
   ALLOWED_FILE_TYPES_HINT,
   MAX_FILE_SIZE_LABEL
 } from '../upload-config.js'
+import { scanCopyJson } from './fragments/status.js'
 import { refreshHref } from './refresh.js'
 import { documentRows } from './rows.js'
 
@@ -79,6 +80,7 @@ export const render = (
     canRefresh,
     timedOut: anyChecking && attempt >= MAX_POLL_ATTEMPTS,
     refreshHref: refreshHref(request, attempt + 1),
+    scanCopyJson,
     acceptAttribute: ACCEPT_ATTRIBUTE,
     fileHint: copy.hints.file(ALLOWED_FILE_TYPES_HINT, MAX_FILE_SIZE_LABEL)
   })

@@ -35,7 +35,7 @@ import { fileResponse } from './handlers/reads/download.js'
 import { uploadDocumentFile } from './handlers/writes/upload.js'
 import { accompanyingDocumentsPage as page } from './page.js'
 import { SCAN_STATUS } from './scan-poll.js'
-import { isStillSettling, scanStatusOf } from './scan/status.js'
+import { isStillSettling, scanStatusOf, withScanStatus } from './scan/status.js'
 import { settlingSummaryErrors } from './scan/summary-errors.js'
 import { MAX_PAYLOAD_BYTES, OVERSIZE_FILE_MESSAGE } from './upload-config.js'
 import { render as renderView } from './view-model/render.js'
@@ -60,6 +60,29 @@ const redirectToPage = (request, h) =>
   )
 
 const get = async (request, h) => render(request, h, await loadPage(request, h))
+
+// The JSON the client bundle polls. It carries an id and a verdict and nothing
+// else — no filename, no backend metadata, no bytes — and it is read from the
+// CURRENT journey's own rows, so an upload this journey does not hold is simply
+// absent. A fileless row has no scan to report.
+const scannedUploads = (documents) =>
+  documents
+    .filter(({ entry }) => entry.uploadId)
+    .map(({ entry, scanStatus }) => ({
+      uploadId: entry.uploadId,
+      scanStatus
+    }))
+
+// A poll is the scripted equivalent of the refresh link, so it asks the upload
+// service for a fresh status.
+const getStatus = async (request, h) => {
+  const { answers, evaluation } = await state.get(request, h)
+  const documents = await withScanStatus(
+    state.collectionView(answers, ['accompanyingDocuments'], evaluation),
+    { refresh: true }
+  )
+  return h.response({ documents: scannedUploads(documents) })
+}
 
 const notFound = (h) => h.response().code(HTTP_STATUS_NOT_FOUND)
 
@@ -269,6 +292,12 @@ export const routes = [
       }
     },
     handler: post
+  },
+  {
+    method: 'GET',
+    path: pageRoutePath(`${page.slug}/status`),
+    options: routeOptions,
+    handler: getStatus
   },
   {
     method: 'GET',

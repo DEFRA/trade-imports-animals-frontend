@@ -29,6 +29,15 @@ test.describe('plant-products accompanying documents without JavaScript', () => 
 
     const row = rowFor(page, 'PHYTO-001')
     await expect(row).toContainText(copy.status.checking)
+    await expect(
+      page.getByRole('link', { name: copy.actions.refresh })
+    ).toBeVisible()
+    // The announcer ships on every render; with no script to fill it, it must
+    // be an empty, silent element rather than anything the user meets.
+    await expect(page.locator('#js-scan-status-announcer')).toBeEmpty()
+    const timeoutHint = page.locator('#js-timeout-message')
+    await expect(timeoutHint).toHaveCount(1)
+    await expect(timeoutHint).toBeHidden()
 
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(page.getByRole('alert')).toContainText(
@@ -123,5 +132,40 @@ test.describe('plant-products accompanying documents without JavaScript', () => 
     await expect(
       page.getByRole('button', { name: copy.actions.addDocument })
     ).toBeVisible()
+  })
+})
+
+// A shipped bundle that fails to load is the realistic failure, not a user who
+// turned JavaScript off. The manual path has to survive both.
+test.describe('plant-products accompanying documents when the bundle fails to load', () => {
+  test.use({ javaScriptEnabled: true })
+
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/javascripts/plant-products-documents*', (route) =>
+      route.abort()
+    )
+    await startAtDocuments(page)
+  })
+
+  test('keeps the manual refresh link usable all the way through', async ({
+    page
+  }) => {
+    await addDocument(page, { file: pdfFile() })
+
+    const row = rowFor(page, 'PHYTO-001')
+    await expect(row).toContainText(copy.status.checking)
+
+    const refresh = page.getByRole('link', { name: copy.actions.refresh })
+    await expect(refresh).toBeVisible()
+    await refresh.click()
+    await expect(row).toContainText(copy.status.safe)
+    await expect(
+      row.getByRole('link', {
+        name: `${copy.actions.viewFile} Phytosanitary certificate PHYTO-001`
+      })
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await expect(page).not.toHaveURL((url) => documentsUrl.test(url.pathname))
   })
 })

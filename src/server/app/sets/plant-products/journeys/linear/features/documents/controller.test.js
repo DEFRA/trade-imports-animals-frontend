@@ -102,11 +102,13 @@ const journeyOwningUpload = async (filename = 'phyto.pdf') => {
   return { journeyId, uploadId }
 }
 
-const phytoRow = (status) => ({
+const phytoRow = (status, { uploadId, scanStatus }) => ({
   documentType: 'Phytosanitary certificate',
   documentReference: 'PHYTO-001',
   issueDate: '4/12/2025',
   status,
+  uploadId,
+  scanStatus,
   viewFileHref: null,
   viewFileHidden: 'Phytosanitary certificate PHYTO-001',
   removeAction: 'remove:0',
@@ -163,6 +165,34 @@ describe('plant-products accompanying-documents controller', () => {
     )
   })
 
+  it('supplies the localised presentation the browser applies to a settled row', async () => {
+    const result = await drive(get)
+
+    expect(JSON.parse(result.view.context.scanCopyJson)).toEqual({
+      PENDING: { text: copy.status.checking, classes: 'govuk-tag--blue' },
+      COMPLETE: {
+        text: copy.status.safe,
+        classes: 'govuk-tag--green',
+        announcement: copy.announcements.safe
+      },
+      REJECTED: {
+        text: copy.status.virus,
+        classes: 'govuk-tag--red',
+        announcement: copy.announcements.virus
+      },
+      UNAVAILABLE: {
+        text: copy.status.unavailable,
+        classes: 'govuk-tag--grey',
+        announcement: copy.announcements.unavailable
+      },
+      UNKNOWN: {
+        text: copy.status.unavailable,
+        classes: 'govuk-tag--grey',
+        announcement: copy.announcements.unavailable
+      }
+    })
+  })
+
   it('shows a fresh upload as checking and a fileless row as an absence', async () => {
     const uploaded = await seededDocument('PHYTO-001')
     const result = await drive(get, {
@@ -180,6 +210,8 @@ describe('plant-products accompanying-documents controller', () => {
         documentReference: 'PHYTO-001',
         issueDate: '4/12/2025',
         status: { text: 'Checking', classes: 'govuk-tag--blue', tag: true },
+        uploadId: uploaded.uploadId,
+        scanStatus: 'PENDING',
         viewFileHref: null,
         viewFileHidden: 'Phytosanitary certificate PHYTO-001',
         removeAction: 'remove:0',
@@ -190,6 +222,8 @@ describe('plant-products accompanying-documents controller', () => {
         documentReference: 'AIR-002',
         issueDate: '4/12/2025',
         status: { text: 'No file', tag: false },
+        uploadId: null,
+        scanStatus: 'NO_FILE',
         viewFileHref: null,
         viewFileHidden: 'Air waybill AIR-002',
         removeAction: 'remove:1',
@@ -264,7 +298,10 @@ describe('plant-products accompanying-documents controller', () => {
     })
 
     expect(result.view.context.rows).toEqual([
-      phytoRow({ text: 'Checking', classes: 'govuk-tag--blue', tag: true })
+      phytoRow(
+        { text: 'Checking', classes: 'govuk-tag--blue', tag: true },
+        { uploadId: uploaded.uploadId, scanStatus: 'PENDING' }
+      )
     ])
   })
 
@@ -280,11 +317,14 @@ describe('plant-products accompanying-documents controller', () => {
     })
 
     expect(result.view.context.rows).toEqual([
-      phytoRow({
-        text: 'Status unavailable',
-        classes: 'govuk-tag--grey',
-        tag: true
-      })
+      phytoRow(
+        {
+          text: 'Status unavailable',
+          classes: 'govuk-tag--grey',
+          tag: true
+        },
+        { uploadId: uploaded.uploadId, scanStatus: 'UNAVAILABLE' }
+      )
     ])
     expect(result.view.context.canRefresh).toBe(true)
     expect(result.view.context.refreshHref).toMatch(/attempt=11$/)
@@ -922,5 +962,117 @@ describe('plant-products accompanying-documents file download', () => {
     const response = await readFile(neighbour, uploaded.uploadId)
 
     expect(response.statusCode).toBe(404)
+  })
+})
+
+describe('plant-products accompanying-documents scan status feed', () => {
+  let server
+
+  beforeAll(async () => {
+    server = Hapi.server()
+    await server.register(nunjucksConfig)
+    await server.register(plantProducts, {
+      routes: { prefix: '/plant-products' }
+    })
+    await server.initialize()
+  })
+
+  beforeEach(async () => {
+    enterSetContext('plant-products')
+    await records.clear()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  afterAll(async () => {
+    await server.stop({ timeout: 0 })
+  })
+
+  // The journey needs one committed answer of its own or the entry guard sends
+  // it back to the start before any handler runs.
+  const journeyHolding = (...documents) =>
+    withSetContext('plant-products', async () => {
+      const { journeyId } = await store.create()
+      await store.seedAnswers(journeyId, {
+        countryOfOrigin: 'FR',
+        accompanyingDocuments: documents
+      })
+      return journeyId
+    })
+
+  const readStatus = async (journeyId) => {
+    const response = await server.inject(
+      `/plant-products/notifications/${journeyId}/accompanying-documents/status`
+    )
+    return { response, body: JSON.parse(response.payload) }
+  }
+
+  it('reports each of this journey’s uploads as an id and a verdict, and nothing else', async () => {
+    const uploaded = await seededDocument('PHYTO-001')
+    const journeyId = await journeyHolding(uploaded.entry)
+
+    const { response, body } = await readStatus(journeyId)
+
+    expect(response.statusCode).toBe(200)
+    expect(body).toEqual({
+      documents: [{ uploadId: uploaded.uploadId, scanStatus: 'COMPLETE' }]
+    })
+  })
+
+  it('asks the upload service for a fresh verdict so a poll settles a checking row', async () => {
+    const uploaded = await seededDocument('PHYTO-INFECTED', 'virus.pdf')
+    const journeyId = await journeyHolding(uploaded.entry)
+
+    const { body } = await readStatus(journeyId)
+
+    expect(body.documents).toEqual([
+      { uploadId: uploaded.uploadId, scanStatus: 'REJECTED' }
+    ])
+  })
+
+  it('answers an empty collection for a journey holding no documents', async () => {
+    const journeyId = await journeyHolding()
+
+    const { response, body } = await readStatus(journeyId)
+
+    expect(response.statusCode).toBe(200)
+    expect(body).toEqual({ documents: [] })
+  })
+
+  it('omits a fileless row, which has no scan to report', async () => {
+    const journeyId = await journeyHolding(document('AIR-002', 'AIR_WAYBILL'))
+
+    const { body } = await readStatus(journeyId)
+
+    expect(body).toEqual({ documents: [] })
+  })
+
+  it('never reports an upload belonging to another journey in the same session', async () => {
+    const held = await seededDocument('PHYTO-001')
+    const neighbourUpload = await seededDocument('PHYTO-002')
+    await journeyHolding(neighbourUpload.entry)
+    const journeyId = await journeyHolding(held.entry)
+
+    const { body } = await readStatus(journeyId)
+
+    expect(body.documents.map(({ uploadId }) => uploadId)).toEqual([
+      held.uploadId
+    ])
+  })
+
+  it('falls closed to checking rather than settling when the verdict cannot be read', async () => {
+    const uploaded = await seededDocument('PHYTO-001')
+    const journeyId = await journeyHolding(uploaded.entry)
+    vi.spyOn(documentUploads, 'scanStatus').mockRejectedValue(
+      new Error('backend down')
+    )
+
+    const { body } = await readStatus(journeyId)
+
+    expect(body.documents).toEqual([
+      { uploadId: uploaded.uploadId, scanStatus: 'PENDING' }
+    ])
   })
 })

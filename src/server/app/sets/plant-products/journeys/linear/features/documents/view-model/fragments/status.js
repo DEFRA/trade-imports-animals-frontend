@@ -37,3 +37,34 @@ export const SCAN_STATUS_TAGS = {
 
 export const statusState = (scanStatus) =>
   SCAN_STATUS_TAGS[scanStatus] ?? UNAVAILABLE_STATE
+
+const clientState = ({ text, classes }, announcement) => ({
+  text,
+  classes,
+  ...(announcement ? { announcement } : {})
+})
+
+// An unrecognised status is presented exactly as an unavailable one — the
+// fallback is deliberate, so it is named once rather than written twice.
+const unavailableClientState = clientState(
+  UNAVAILABLE_STATE,
+  copy.announcements.unavailable
+)
+
+// The presentation the browser applies to a row it updates itself. It is
+// serialised from the copy bundles so no user-facing English or Welsh is ever
+// assembled in client JavaScript. A checking row carries no announcement — a
+// scan that has not settled is not news.
+export const scanCopyJson = JSON.stringify({
+  [SCAN_STATUS.PENDING]: clientState(SCAN_STATUS_TAGS[SCAN_STATUS.PENDING]),
+  [SCAN_STATUS.COMPLETE]: clientState(
+    SCAN_STATUS_TAGS[SCAN_STATUS.COMPLETE],
+    copy.announcements.safe
+  ),
+  [SCAN_STATUS.REJECTED]: clientState(
+    SCAN_STATUS_TAGS[SCAN_STATUS.REJECTED],
+    copy.announcements.virus
+  ),
+  [SCAN_STATUS.UNAVAILABLE]: unavailableClientState,
+  UNKNOWN: unavailableClientState
+})

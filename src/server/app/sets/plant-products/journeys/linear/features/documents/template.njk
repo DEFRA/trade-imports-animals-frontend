@@ -41,14 +41,17 @@
                 <td class="govuk-table__cell">{{ row.documentType }}</td>
                 <td class="govuk-table__cell">{{ row.documentReference }}</td>
                 <td class="govuk-table__cell">{{ row.issueDate }}</td>
-                <td class="govuk-table__cell">
+                <td class="govuk-table__cell"
+                    {% if row.uploadId %}data-upload-id="{{ row.uploadId }}" data-scan-status="{{ row.scanStatus }}"{% endif %}>
                   {% if row.status.tag %}
                     {{ govukTag({ text: row.status.text, classes: row.status.classes }) }}
                   {% else %}
                     <span class="govuk-hint">{{ row.status.text }}</span>
                   {% endif %}
                 </td>
-                <td class="govuk-table__cell">
+                <td class="govuk-table__cell"
+                    data-view-file-text="{{ copy.actions.viewFile }}"
+                    data-view-file-hidden="{{ row.viewFileHidden }}">
                   {% if row.viewFileHref %}
                     <a class="govuk-link govuk-!-margin-right-3" href="{{ row.viewFileHref }}">
                       {{ copy.actions.viewFile }}
@@ -71,12 +74,10 @@
       </div>
 
       {% if canRefresh %}
-        <p class="govuk-body">
+        <p id="js-refresh-fallback" class="govuk-body">
           <a href="{{ refreshHref }}" class="govuk-link">{{ copy.actions.refresh }}</a>
         </p>
-      {% endif %}
-      {% if timedOut %}
-        <p class="govuk-hint">{{ copy.refreshTimeout }}</p>
+        <p id="js-timeout-message" class="govuk-hint" {% if not timedOut %}hidden{% endif %}>{{ copy.refreshTimeout }}</p>
       {% endif %}
     {% endif %}
 
@@ -117,4 +118,16 @@
 
     {{ saveActions(hubHref, { text: sharedCopy.saveActions.saveAndContinue, name: "action", value: "continue" }, sharedCopy.saveActions) }}
   </form>
+
+  <div id="js-scan-status-announcer"
+       class="govuk-visually-hidden"
+       aria-live="polite"
+       aria-atomic="true"
+       data-settled-href="{{ refreshHref }}"
+       data-scan-copy="{{ scanCopyJson }}"></div>
+{% endblock %}
+
+{% block bodyEnd %}
+  {{ super() }}
+  <script type="module" src="{{ getAssetPath('plant-products-documents.js') }}"></script>
 {% endblock %}

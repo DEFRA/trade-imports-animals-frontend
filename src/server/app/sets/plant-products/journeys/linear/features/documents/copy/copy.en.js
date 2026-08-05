@@ -34,6 +34,11 @@ export const copy = {
     unavailable: 'Status unavailable',
     noFile: 'No file'
   },
+  announcements: {
+    safe: 'File check complete. The file is safe.',
+    virus: 'File check complete. The file contains a virus.',
+    unavailable: 'The file check status is unavailable.'
+  },
   actions: {
     addDocument: 'Add document',
     remove: 'Remove',

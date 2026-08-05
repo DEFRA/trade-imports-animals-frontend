@@ -31,6 +31,10 @@ const documentRow = ({ index, entry, scanStatus }, journeyId) => {
     documentReference,
     issueDate: dateText(entry.issueDate),
     status: statusState(scanStatus),
+    // The hooks a polling browser needs to find this row and tell whether its
+    // verdict has moved. A row with no file has nothing to poll for.
+    uploadId: entry.uploadId ?? null,
+    scanStatus,
     viewFileHref: viewFileHref(entry, scanStatus, journeyId),
     viewFileHidden: rowContext,
     removeAction: removeActionValue(index),

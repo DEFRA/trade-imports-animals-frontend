@@ -35,6 +35,11 @@ export const copy = {
     unavailable: 'Statws ddim ar gael',
     noFile: 'Dim ffeil'
   },
+  announcements: {
+    safe: 'Mae gwiriad y ffeil wedi’i gwblhau. Mae’r ffeil yn ddiogel.',
+    virus: 'Mae gwiriad y ffeil wedi’i gwblhau. Mae’r ffeil yn cynnwys firws.',
+    unavailable: 'Nid yw statws gwiriad y ffeil ar gael.'
+  },
   actions: {
     addDocument: 'Ychwanegu dogfen',
     remove: 'Tynnu',
