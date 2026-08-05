@@ -10,11 +10,17 @@ import {
 import { validatorDefaults } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 
+const addressLine1Input = '#addressLine1'
+const invalidCountry = 'Invalid country'
+
+const submit = (page) =>
+  page.getByRole('button', { name: 'Save and continue' }).click()
+
 const openTransporterType = async (page) => {
   await startNotification(page)
   await unlockSections(page)
   await page.getByRole('link', { name: copy.portOfEntry.title }).click()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await submit(page)
   await expect(
     page.getByRole('heading', { name: copy.transporters.legend })
   ).toBeVisible()
@@ -25,7 +31,7 @@ const openCommercial = async (page) => {
   await page
     .getByRole('radio', { name: copy.transporters.options.Commercial.text })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await submit(page)
   await expect(
     page.getByRole('heading', { name: copy.transportersSelect.title })
   ).toBeVisible()
@@ -36,7 +42,7 @@ const openPrivate = async (page) => {
   await page
     .getByRole('radio', { name: copy.transporters.options.Private.text })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await submit(page)
   await expect(
     page.getByRole('heading', { name: copy.privateTransporterDetails.title })
   ).toBeVisible()
@@ -94,9 +100,6 @@ const fillPrivateTransporter = async (
   }
 }
 
-const submit = (page) =>
-  page.getByRole('button', { name: 'Save and continue' }).click()
-
 const requiredPrivateValidations = [
   ['name or organisation name', 'nameOrOrganisationName', 'nameRequired'],
   ['address line 1', 'addressLine1', 'addressLine1Required'],
@@ -107,53 +110,65 @@ const requiredPrivateValidations = [
   ['email address', 'emailAddress', 'emailRequired']
 ]
 
+const MAX_NAME_OR_ADDRESS_LINE_LENGTH = 255
+const MAX_TOWN_OR_COUNTY_LENGTH = 100
+const MAX_POSTAL_OR_ZIP_CODE_LENGTH = 12
+const MAX_TELEPHONE_LENGTH = 20
+const MAX_EMAIL_LENGTH = 254
+const exampleEmailDomain = '@example.com'
+
 const formatPrivateValidations = [
   [
     'name or organisation name over 255 characters',
     'nameOrOrganisationName',
-    'N'.repeat(256),
+    'N'.repeat(MAX_NAME_OR_ADDRESS_LINE_LENGTH + 1),
     'nameMaxLength'
   ],
   [
     'address line 1 over 255 characters',
     'addressLine1',
-    'A'.repeat(256),
+    'A'.repeat(MAX_NAME_OR_ADDRESS_LINE_LENGTH + 1),
     'addressLine1MaxLength'
   ],
   [
     'address line 2 over 255 characters',
     'addressLine2',
-    'B'.repeat(256),
+    'B'.repeat(MAX_NAME_OR_ADDRESS_LINE_LENGTH + 1),
     'addressLine2MaxLength'
   ],
   [
     'town or city over 100 characters',
     'townOrCity',
-    'T'.repeat(101),
+    'T'.repeat(MAX_TOWN_OR_COUNTY_LENGTH + 1),
     'townOrCityMaxLength'
   ],
-  ['county over 100 characters', 'county', 'C'.repeat(101), 'countyMaxLength'],
+  [
+    'county over 100 characters',
+    'county',
+    'C'.repeat(MAX_TOWN_OR_COUNTY_LENGTH + 1),
+    'countyMaxLength'
+  ],
   [
     'postal or zip code over 12 characters',
     'postalOrZipCode',
-    'P'.repeat(13),
+    'P'.repeat(MAX_POSTAL_OR_ZIP_CODE_LENGTH + 1),
     'postalOrZipCodeMaxLength'
   ],
   [
     'telephone number over 20 characters',
     'telephoneNumber',
-    '1'.repeat(21),
+    '1'.repeat(MAX_TELEPHONE_LENGTH + 1),
     'telephoneMaxLength'
   ],
   [
     'email address over 254 characters',
     'emailAddress',
-    `${'e'.repeat(243)}@example.com`,
+    `${'e'.repeat(MAX_EMAIL_LENGTH + 1 - exampleEmailDomain.length)}${exampleEmailDomain}`,
     'emailMaxLength'
   ]
 ]
 
-test.describe('transporter pages', () => {
+test.describe('transporter type page', () => {
   test('renders transporter guidance and branch options', async ({ page }) => {
     await openTransporterType(page)
 
@@ -238,7 +253,9 @@ test.describe('transporter pages', () => {
       page.getByRole('heading', { name: copy.transportersSelect.title })
     ).toBeVisible()
   })
+})
 
+test.describe('commercial transporter page', () => {
   test('commercial transporter page renders address and approval details', async ({
     page
   }) => {
@@ -291,7 +308,9 @@ test.describe('transporter pages', () => {
     await page.goto(journeyUrl(page, 'transporters/select'))
     await expect(page.getByRole('radio', { name: selected.name })).toBeChecked()
   })
+})
 
+test.describe('private transporter rendering and optionality', () => {
   test('private transporter page renders all address fields and explanatory copy', async ({
     page
   }) => {
@@ -312,7 +331,9 @@ test.describe('transporter pages', () => {
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
+})
 
+test.describe('private transporter required validations', () => {
   for (const [name, field, error] of requiredPrivateValidations) {
     test(`private transporter validation: empty ${name} links to and focuses the preserved field`, async ({
       page
@@ -331,12 +352,14 @@ test.describe('transporter pages', () => {
       await link.click()
       await expect(page.locator(`#${field}`)).toBeFocused()
       await expect(page.locator(`#${field}`)).toHaveValue('')
-      await expect(page.locator('#addressLine1')).toHaveValue(
+      await expect(page.locator(addressLine1Input)).toHaveValue(
         field === 'addressLine1' ? '' : validPrivateTransporter.addressLine1
       )
     })
   }
+})
 
+test.describe('private transporter format validations', () => {
   for (const [name, field, invalid, error] of formatPrivateValidations) {
     test(`private transporter validation: ${name} links to and focuses the preserved value`, async ({
       page
@@ -353,7 +376,7 @@ test.describe('transporter pages', () => {
       await link.click()
       await expect(page.locator(`#${field}`)).toBeFocused()
       await expect(page.locator(`#${field}`)).toHaveValue(invalid)
-      await expect(page.locator('#addressLine1')).toHaveValue(
+      await expect(page.locator(addressLine1Input)).toHaveValue(
         field === 'addressLine1'
           ? invalid
           : validPrivateTransporter.addressLine1
@@ -366,10 +389,10 @@ test.describe('transporter pages', () => {
   }) => {
     await openPrivate(page)
     await fillPrivateTransporter(page)
-    await page.locator('#country').evaluate((select) => {
-      select.add(new Option('Invalid country', 'Invalid country'))
-      select.value = 'Invalid country'
-    })
+    await page.locator('#country').evaluate((select, outOfList) => {
+      select.add(new Option(outOfList, outOfList))
+      select.value = outOfList
+    }, invalidCountry)
     await submit(page)
 
     const link = errorLink(
@@ -380,11 +403,13 @@ test.describe('transporter pages', () => {
     await link.click()
     await expect(page.locator('#country')).toBeFocused()
     await expect(page.locator('#country')).toHaveValue('')
-    await expect(page.locator('#addressLine1')).toHaveValue(
+    await expect(page.locator(addressLine1Input)).toHaveValue(
       validPrivateTransporter.addressLine1
     )
   })
+})
 
+test.describe('private transporter persistence', () => {
   test('saves and persists a complete private transporter record', async ({
     page
   }) => {
@@ -418,7 +443,9 @@ test.describe('transporter pages', () => {
       page.getByLabel(copy.privateTransporterDetails.fields.emailAddress)
     ).toHaveValue(transporter.address.emailAddress)
   })
+})
 
+test.describe('transporter pages accessibility', () => {
   test('transporter type page has no serious or critical axe violations', async ({
     page
   }) => {

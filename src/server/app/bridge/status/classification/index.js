@@ -41,7 +41,7 @@ export const partStarted = (part, answers) => {
     return isAnswered(answers[part])
   }
   const members = facetMembers(part)
-  return []
-    .concat(answers[part.collection] ?? [])
+  return [answers[part.collection] ?? []]
+    .flat()
     .some((entry) => members.some((member) => isAnswered(entry?.[member.id])))
 }

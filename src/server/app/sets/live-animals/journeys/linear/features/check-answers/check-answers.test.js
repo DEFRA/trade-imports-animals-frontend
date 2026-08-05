@@ -68,6 +68,19 @@ const changeHrefsOf = (sections) =>
     )
   ])
 
+const NOT_PROVIDED = 'Not provided'
+const ADDRESS_LINE_1 = '43 East Hague Extension'
+const COW_CARD_TITLE = 'Cow (0102) — Bos taurus'
+const ROLES_AND_ADDRESSES_CARD = 'Roles and addresses'
+const COUNTRY_OF_ORIGIN_KEY = 'Country of origin'
+const PURPOSE_IN_MARKET_KEY = 'Purpose in the market'
+const REGION_CODE_KEY = 'Region of origin code'
+const UNWEANED_KEY = 'Includes unweaned animals'
+const CPH_KEY = 'County Parish Holding number (CPH)'
+const TRANSITED_COUNTRIES_KEY =
+  'Countries that the consignment will travel through'
+const PACKAGES_KEY = 'Number of packages'
+
 const fullSeed = {
   countryOfOrigin: 'FR',
   regionOfOriginCodeRequirement: 'yes',
@@ -103,7 +116,7 @@ const fullSeed = {
   consignor: {
     name: 'Astra Rosales',
     address: {
-      addressLine1: '43 East Hague Extension',
+      addressLine1: ADDRESS_LINE_1,
       townOrCity: 'Delectus',
       country: 'Switzerland'
     }
@@ -123,398 +136,387 @@ const fullSeed = {
     name: 'García Livestock Transport SL',
     approvalNumber: 'ES-T2-45001294',
     address: {
-      addressLine1: '43 East Hague Extension',
+      addressLine1: ADDRESS_LINE_1,
       country: 'Switzerland'
     }
   },
   contactAddress: { name: 'Animal and Plant Health Agency' }
 }
 
-describe(`#${buildSections.name} (check-answers GET)`, () => {
+const SUITE = `#${buildSections.name} (check-answers GET)`
+
+const setupCheckAnswersEngine = () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
     buildDispatch(dispatchPages)
   })
   beforeEach(() => store.clear())
+}
 
-  describe('journey lifecycle editability', () => {
-    it('Should omit every Change href for a submitted journey', async () => {
-      const view = await viewForStatus(SUBMITTED)
+describe(`${SUITE} — journey lifecycle editability`, () => {
+  setupCheckAnswersEngine()
 
-      expect(view.context.readOnly).toBe(true)
-      expect(changeHrefsOf(view.context.sections)).toEqual([])
-      expect(view.context.cancelAmendHref).toBeNull()
-      expect(view.context.copyAction).toMatchObject({
-        href: expect.stringMatching(/\/copy$/),
-        idempotencyKey: expect.any(String)
-      })
-      expect(view.context.deleteHref).toMatch(/\/delete$/)
+  it('Should omit every Change href for a submitted journey', async () => {
+    const view = await viewForStatus(SUBMITTED)
+
+    expect(view.context.readOnly).toBe(true)
+    expect(changeHrefsOf(view.context.sections)).toEqual([])
+    expect(view.context.cancelAmendHref).toBeNull()
+    expect(view.context.copyAction).toMatchObject({
+      href: expect.stringMatching(/\/copy$/),
+      idempotencyKey: expect.any(String)
     })
+    expect(view.context.deleteHref).toMatch(/\/delete$/)
+  })
 
-    it.each([DRAFT, AMEND])(
-      'Should retain Change hrefs for an editable %s journey',
-      async (status) => {
-        const view = await viewForStatus(status)
-        const hrefs = changeHrefsOf(view.context.sections)
+  it.each([DRAFT, AMEND])(
+    'Should retain Change hrefs for an editable %s journey',
+    async (status) => {
+      const view = await viewForStatus(status)
+      const hrefs = changeHrefsOf(view.context.sections)
 
-        expect(view.context.readOnly).toBe(false)
-        expect(view.context.copyAction).toBeNull()
-        expect(view.context.deleteHref).toBeNull()
-        expect(hrefs).not.toHaveLength(0)
-        expect(hrefs).toEqual(
-          expect.arrayContaining([expect.stringMatching(/\/origin\?change=1$/)])
-        )
-      }
+      expect(view.context.readOnly).toBe(false)
+      expect(view.context.copyAction).toBeNull()
+      expect(view.context.deleteHref).toBeNull()
+      expect(hrefs).not.toHaveLength(0)
+      expect(hrefs).toEqual(
+        expect.arrayContaining([expect.stringMatching(/\/origin\?change=1$/)])
+      )
+    }
+  )
+
+  it('Should expose Cancel amendment only on an amending CYA', async () => {
+    const draft = await viewForStatus(DRAFT)
+    const submitted = await viewForStatus(SUBMITTED)
+    const amend = await viewForStatus(AMEND)
+
+    expect(draft.context.cancelAmendHref).toBeNull()
+    expect(submitted.context.cancelAmendHref).toBeNull()
+    expect(amend.context.cancelAmendHref).toMatch(/\/cancel-amend$/)
+  })
+
+  it('Should show the cancel success indication only on the restored submitted view', async () => {
+    const submitted = await viewForStatus(SUBMITTED, fullSeed, {
+      cancelled: '1'
+    })
+    const draft = await viewForStatus(DRAFT, fullSeed, { cancelled: '1' })
+
+    expect(submitted.context.amendmentCancelled).toBe(true)
+    expect(draft.context.amendmentCancelled).toBe(false)
+  })
+})
+
+describe(`${SUITE} — fully-populated notification`, () => {
+  setupCheckAnswersEngine()
+
+  it('Should render the numbered design sections in order', async () => {
+    const sections = await sectionsFor(fullSeed)
+    expect(sections.map((section) => section.heading)).toEqual([
+      '1. About the consignment',
+      '2. Movement',
+      '3. Addresses',
+      '4. Documents'
+    ])
+  })
+
+  it('Should resolve service-backed labels for coded answers', async () => {
+    const rows = rowsOf(await sectionsFor(fullSeed))
+    expect(valueOf(rows, COUNTRY_OF_ORIGIN_KEY)).toBe('France')
+    expect(valueOf(rows, 'Reason for import')).toBe('Internal market')
+    expect(valueOf(rows, PURPOSE_IN_MARKET_KEY)).toBe('Breeding')
+    expect(valueOf(rows, 'Certified for')).toBe('Slaughter')
+  })
+
+  it('Should map yes/no coded answers to Yes/No labels', async () => {
+    const rows = rowsOf(await sectionsFor(fullSeed))
+    expect(valueOf(rows, 'Region of origin code required')).toBe('Yes')
+    expect(valueOf(rows, UNWEANED_KEY)).toBe('No')
+  })
+
+  it('Should map the means-of-transport enum to its display label', async () => {
+    const rows = rowsOf(await sectionsFor(fullSeed))
+    expect(valueOf(rows, 'Means of transport')).toBe('Road Vehicle')
+  })
+
+  it('Should include the region-of-origin-code row when the requirement is yes', async () => {
+    const rows = rowsOf(await sectionsFor(fullSeed))
+    expect(valueOf(rows, REGION_CODE_KEY)).toBe('FR-75')
+  })
+
+  it('Should include the unweaned row when a line is an unweaned-eligible commodity', async () => {
+    expect(keysOf(rowsOf(await sectionsFor(fullSeed)))).toContain(UNWEANED_KEY)
+  })
+
+  it('Should include the CPH row in the roles-and-addresses card when a line is a CPH-eligible commodity', async () => {
+    const card = cardByTitle(
+      await sectionsFor(fullSeed),
+      ROLES_AND_ADDRESSES_CARD
     )
-
-    it('Should expose Cancel amendment only on an amending CYA', async () => {
-      const draft = await viewForStatus(DRAFT)
-      const submitted = await viewForStatus(SUBMITTED)
-      const amend = await viewForStatus(AMEND)
-
-      expect(draft.context.cancelAmendHref).toBeNull()
-      expect(submitted.context.cancelAmendHref).toBeNull()
-      expect(amend.context.cancelAmendHref).toMatch(/\/cancel-amend$/)
-    })
-
-    it('Should show the cancel success indication only on the restored submitted view', async () => {
-      const submitted = await viewForStatus(SUBMITTED, fullSeed, {
-        cancelled: '1'
-      })
-      const draft = await viewForStatus(DRAFT, fullSeed, { cancelled: '1' })
-
-      expect(submitted.context.amendmentCancelled).toBe(true)
-      expect(draft.context.amendmentCancelled).toBe(false)
-    })
+    expect(valueOf(card.rows, CPH_KEY)).toBe('123456789')
   })
 
-  describe('fully-populated notification', () => {
-    it('Should render the numbered design sections in order', async () => {
-      const sections = await sectionsFor(fullSeed)
-      expect(sections.map((section) => section.heading)).toEqual([
-        '1. About the consignment',
-        '2. Movement',
-        '3. Addresses',
-        '4. Documents'
-      ])
-    })
-
-    it('Should resolve service-backed labels for coded answers', async () => {
-      const rows = rowsOf(await sectionsFor(fullSeed))
-      expect(valueOf(rows, 'Country of origin')).toBe('France')
-      expect(valueOf(rows, 'Reason for import')).toBe('Internal market')
-      expect(valueOf(rows, 'Purpose in the market')).toBe('Breeding')
-      expect(valueOf(rows, 'Certified for')).toBe('Slaughter')
-    })
-
-    it('Should map yes/no coded answers to Yes/No labels', async () => {
-      const rows = rowsOf(await sectionsFor(fullSeed))
-      expect(valueOf(rows, 'Region of origin code required')).toBe('Yes')
-      expect(valueOf(rows, 'Includes unweaned animals')).toBe('No')
-    })
-
-    it('Should map the means-of-transport enum to its display label', async () => {
-      const rows = rowsOf(await sectionsFor(fullSeed))
-      expect(valueOf(rows, 'Means of transport')).toBe('Road Vehicle')
-    })
-
-    it('Should include the region-of-origin-code row when the requirement is yes', async () => {
-      const rows = rowsOf(await sectionsFor(fullSeed))
-      expect(valueOf(rows, 'Region of origin code')).toBe('FR-75')
-    })
-
-    it('Should include the unweaned row when a line is an unweaned-eligible commodity', async () => {
-      expect(keysOf(rowsOf(await sectionsFor(fullSeed)))).toContain(
-        'Includes unweaned animals'
-      )
-    })
-
-    it('Should include the CPH row in the roles-and-addresses card when a line is a CPH-eligible commodity', async () => {
-      const card = cardByTitle(
-        await sectionsFor(fullSeed),
-        'Roles and addresses'
-      )
-      expect(valueOf(card.rows, 'County Parish Holding number (CPH)')).toBe(
-        '123456789'
-      )
-    })
-
-    it('Should include the transited-countries row for an overland means of transport, labelling each code', async () => {
-      const rows = rowsOf(await sectionsFor(fullSeed))
-      expect(
-        valueOf(rows, 'Countries that the consignment will travel through')
-      ).toBe('France, Belgium')
-    })
-
-    it('Should expand the commercial transporter in the transport-details card when the type is commercial', async () => {
-      const card = cardByTitle(await sectionsFor(fullSeed), 'Transport details')
-      expect(valueOf(card.rows, 'Name')).toBe('García Livestock Transport SL')
-      expect(htmlOf(card.rows, 'Address')).toBe('43 East Hague Extension')
-      expect(valueOf(card.rows, 'Country')).toBe('Switzerland')
-      expect(valueOf(card.rows, 'Approval number')).toBe('ES-T2-45001294')
-      expect(valueOf(card.rows, 'Type')).toBe('Commercial')
-    })
-
-    it('Should render one species card per commodity line with the design rows', async () => {
-      const card = cardByTitle(
-        await sectionsFor(fullSeed),
-        'Cow (0102) — Bos taurus'
-      )
-      expect(valueOf(card.rows, 'Commodity code')).toBe('0102')
-      expect(valueOf(card.rows, 'Common name')).toBe('Cow')
-      expect(valueOf(card.rows, 'Species')).toBe('Bos taurus')
-      expect(valueOf(card.rows, 'Number of animals')).toBe('25')
-      expect(valueOf(card.rows, 'Number of packages')).toBe('5')
-    })
-
-    it('Should render a read-only identifier table inside the species card', async () => {
-      const card = cardByTitle(
-        await sectionsFor(fullSeed),
-        'Cow (0102) — Bos taurus'
-      )
-      expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
-        'Animal',
-        'Passport'
-      ])
-      expect(card.identifierTable.rows).toEqual([
-        [{ text: 'Animal 1' }, { text: 'UK123456789' }]
-      ])
-    })
-
-    it('Should render a document group with the design rows inside the uploaded-documents card', async () => {
-      const card = cardByTitle(
-        await sectionsFor(fullSeed),
-        'Uploaded documents'
-      )
-      expect(card.documents).toHaveLength(1)
-      const [document] = card.documents
-      expect(document.heading).toBe('Document 1')
-      expect(valueOf(document.rows, 'Document reference')).toBe(
-        'GBHC1234567890'
-      )
-      expect(valueOf(document.rows, 'Document type')).toBe(
-        'Veterinary health certificate'
-      )
-      expect(valueOf(document.rows, 'Date of issue')).toBe('12/12/2025')
-      expect(valueOf(document.rows, 'Attachment type')).toBe('PDF')
-    })
-
-    it('Should format the arrival date as day/month/year', async () => {
-      expect(
-        valueOf(
-          rowsOf(await sectionsFor(fullSeed)),
-          'Arrival date at port of entry'
-        )
-      ).toBe('12/12/2026')
-    })
-
-    it('Should expand party rows to the stored name plus address lines', async () => {
-      const card = cardByTitle(
-        await sectionsFor(fullSeed),
-        'Roles and addresses'
-      )
-      expect(htmlOf(card.rows, 'Consignor')).toBe(
-        '<strong>Astra Rosales</strong><br>43 East Hague Extension<br>Delectus<br>Switzerland'
-      )
-      expect(htmlOf(card.rows, 'Place of destination')).toBe(
-        '<strong>Tech Imports Ltd</strong>'
-      )
-      const contact = cardByTitle(
-        await sectionsFor(fullSeed),
-        'Contact address for this consignment'
-      )
-      expect(htmlOf(contact.rows, 'Address')).toBe(
-        '<strong>Animal and Plant Health Agency</strong>'
-      )
-    })
-
-    it('Should point each Change link at the owning page slug with a change flag', async () => {
-      const rows = rowsOf(await sectionsFor(fullSeed))
-      expect(changeHrefOf(rows, 'Country of origin')).toMatch(
-        /\/origin\?change=1$/
-      )
-      expect(changeHrefOf(rows, 'Purpose in the market')).toMatch(
-        /\/import-purpose\?change=1$/
-      )
-      expect(
-        changeHrefOf(rows, 'Countries that the consignment will travel through')
-      ).toMatch(/\/transit-countries\?change=1$/)
-      expect(changeHrefOf(rows, 'Name')).toMatch(
-        /\/transporters\/select\?change=1$/
-      )
-    })
-
-    it('Should point the species-card Change actions at the commodities pages with a change flag', async () => {
-      const card = cardByTitle(
-        await sectionsFor(fullSeed),
-        'Cow (0102) — Bos taurus'
-      )
-      const [commodityAction, identifiersAction] = card.actions.items
-      expect(commodityAction.href).toMatch(/\/consignment-details\?change=1$/)
-      expect(identifiersAction.href).toMatch(
-        /\/commodities\/identification\?change=1#identification-card-0$/
-      )
-    })
-
-    it('Should point the uploaded-documents card Change action at the documents page with a change flag', async () => {
-      const card = cardByTitle(
-        await sectionsFor(fullSeed),
-        'Uploaded documents'
-      )
-      expect(card.actions.items[0].href).toMatch(
-        /\/accompanying-documents\?change=1$/
-      )
-    })
+  it('Should include the transited-countries row for an overland means of transport, labelling each code', async () => {
+    const rows = rowsOf(await sectionsFor(fullSeed))
+    expect(valueOf(rows, TRANSITED_COUNTRIES_KEY)).toBe('France, Belgium')
   })
 
-  describe('gated-off answers and blanks', () => {
-    const gatedOffSeed = {
-      regionOfOriginCodeRequirement: 'no',
-      reasonForImport: 'transit',
-      commodityLines: [{ commoditySelection: 'Fish' }],
-      meansOfTransport: 'AIRPLANE',
-      transporterType: 'Private',
-      privateTransporter: { name: 'Jean Dupont' }
-    }
-
-    it('Should keep the region-of-origin-code row when the requirement is no', async () => {
-      expect(keysOf(rowsOf(await sectionsFor(gatedOffSeed)))).toContain(
-        'Region of origin code'
-      )
-    })
-
-    it('Should retain a stored region-of-origin code across a requirement flip to no', async () => {
-      const rows = rowsOf(
-        await sectionsFor({ ...gatedOffSeed, regionOfOriginCode: 'FR-75' })
-      )
-      expect(valueOf(rows, 'Region of origin code')).toBe('FR-75')
-    })
-
-    it('Should omit the internal-market purpose row when the reason is not internalMarket', async () => {
-      expect(keysOf(rowsOf(await sectionsFor(gatedOffSeed)))).not.toContain(
-        'Purpose in the market'
-      )
-    })
-
-    it('Should omit the unweaned and CPH rows when no line is an eligible commodity', async () => {
-      const keys = keysOf(rowsOf(await sectionsFor(gatedOffSeed)))
-      expect(keys).not.toContain('Includes unweaned animals')
-      expect(keys).not.toContain('County Parish Holding number (CPH)')
-    })
-
-    it('Should omit the packages row when the commodity is off the package-count list', async () => {
-      const card = cardByTitle(await sectionsFor(gatedOffSeed), 'Fish (0301)')
-      expect(keysOf(card.rows)).not.toContain('Number of packages')
-    })
-
-    it('Should omit the transited-countries row for a non-overland means of transport', async () => {
-      expect(keysOf(rowsOf(await sectionsFor(gatedOffSeed)))).not.toContain(
-        'Countries that the consignment will travel through'
-      )
-    })
-
-    it('Should expand the private transporter and omit the approval-number row when the type is private', async () => {
-      const card = cardByTitle(
-        await sectionsFor(gatedOffSeed),
-        'Transport details'
-      )
-      expect(valueOf(card.rows, 'Name')).toBe('Jean Dupont')
-      expect(valueOf(card.rows, 'Type')).toBe('Private')
-      expect(keysOf(card.rows)).not.toContain('Approval number')
-    })
-
-    it('Should omit the identifier table and documents section when neither holds an entry', async () => {
-      const sections = await sectionsFor(gatedOffSeed)
-      expect(cardByTitle(sections, 'Fish (0301)').identifierTable).toBeNull()
-      expect(sections.map((section) => section.heading)).not.toContain(
-        '4. Documents'
-      )
-    })
-
-    it('Should render Not provided for a blank plain answer', async () => {
-      const rows = rowsOf(await sectionsFor(gatedOffSeed))
-      expect(valueOf(rows, 'Internal reference number')).toBe('Not provided')
-      expect(valueOf(rows, 'Port of entry')).toBe('Not provided')
-    })
-
-    it('Should render Not provided when a coded answer has no matching label', async () => {
-      expect(
-        valueOf(rowsOf(await sectionsFor(gatedOffSeed)), 'Country of origin')
-      ).toBe('Not provided')
-    })
-
-    it('Should render Not provided for a blank date', async () => {
-      expect(
-        valueOf(
-          rowsOf(await sectionsFor(gatedOffSeed)),
-          'Arrival date at port of entry'
-        )
-      ).toBe('Not provided')
-    })
-
-    it('Should render Not provided for an unset party', async () => {
-      const card = cardByTitle(
-        await sectionsFor(gatedOffSeed),
-        'Roles and addresses'
-      )
-      expect(valueOf(card.rows, 'Consignor')).toBe('Not provided')
-    })
+  it('Should expand the commercial transporter in the transport-details card when the type is commercial', async () => {
+    const card = cardByTitle(await sectionsFor(fullSeed), 'Transport details')
+    expect(valueOf(card.rows, 'Name')).toBe('García Livestock Transport SL')
+    expect(htmlOf(card.rows, 'Address')).toBe(ADDRESS_LINE_1)
+    expect(valueOf(card.rows, 'Country')).toBe('Switzerland')
+    expect(valueOf(card.rows, 'Approval number')).toBe('ES-T2-45001294')
+    expect(valueOf(card.rows, 'Type')).toBe('Commercial')
   })
 
-  // The CYA commodity gates (packages / unweaned / CPH) read the obligation
-  // `.metadata.values` (CN codes), normalising the stored commodity name to a
-  // code. This matrix pins the gate outcome per selectable species
-  // (Cow/Horse/Cat/Dog/Fish).
-  describe('commodity-gate render matrix — model metadata per selectable species', () => {
-    const gatesFor = async (commodity) => {
-      const sections = await sectionsFor({
-        commodityLines: [{ commoditySelection: commodity }]
-      })
-      const allKeys = keysOf(rowsOf(sections))
-      const speciesCard = cardByTitle(
-        sections,
-        `${commodity} (${commodityCodeFor(commodity)})`
+  it('Should render one species card per commodity line with the design rows', async () => {
+    const card = cardByTitle(await sectionsFor(fullSeed), COW_CARD_TITLE)
+    expect(valueOf(card.rows, 'Commodity code')).toBe('0102')
+    expect(valueOf(card.rows, 'Common name')).toBe('Cow')
+    expect(valueOf(card.rows, 'Species')).toBe('Bos taurus')
+    expect(valueOf(card.rows, 'Number of animals')).toBe('25')
+    expect(valueOf(card.rows, PACKAGES_KEY)).toBe('5')
+  })
+
+  it('Should render a read-only identifier table inside the species card', async () => {
+    const card = cardByTitle(await sectionsFor(fullSeed), COW_CARD_TITLE)
+    expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
+      'Animal',
+      'Passport'
+    ])
+    expect(card.identifierTable.rows).toEqual([
+      [{ text: 'Animal 1' }, { text: 'UK123456789' }]
+    ])
+  })
+
+  it('Should render a document group with the design rows inside the uploaded-documents card', async () => {
+    const card = cardByTitle(await sectionsFor(fullSeed), 'Uploaded documents')
+    expect(card.documents).toHaveLength(1)
+    const [document] = card.documents
+    expect(document.heading).toBe('Document 1')
+    expect(valueOf(document.rows, 'Document reference')).toBe('GBHC1234567890')
+    expect(valueOf(document.rows, 'Document type')).toBe(
+      'Veterinary health certificate'
+    )
+    expect(valueOf(document.rows, 'Date of issue')).toBe('12/12/2025')
+    expect(valueOf(document.rows, 'Attachment type')).toBe('PDF')
+  })
+
+  it('Should format the arrival date as day/month/year', async () => {
+    expect(
+      valueOf(
+        rowsOf(await sectionsFor(fullSeed)),
+        'Arrival date at port of entry'
       )
-      return {
-        packages: keysOf(speciesCard.rows).includes('Number of packages'),
-        unweaned: allKeys.includes('Includes unweaned animals'),
-        cph: allKeys.includes('County Parish Holding number (CPH)')
-      }
-    }
+    ).toBe('12/12/2026')
+  })
 
-    const MATRIX = [
-      { commodity: 'Cow', packages: true, unweaned: true, cph: true },
-      { commodity: 'Horse', packages: true, unweaned: true, cph: false },
-      { commodity: 'Cat', packages: true, unweaned: false, cph: false },
-      { commodity: 'Dog', packages: true, unweaned: false, cph: false },
-      { commodity: 'Fish', packages: false, unweaned: false, cph: false }
-    ]
-
-    it.each(MATRIX)(
-      'Should gate packages/unweaned/CPH for $commodity',
-      async ({ commodity, packages, unweaned, cph }) => {
-        expect(await gatesFor(commodity)).toEqual({ packages, unweaned, cph })
-      }
+  it('Should expand party rows to the stored name plus address lines', async () => {
+    const card = cardByTitle(
+      await sectionsFor(fullSeed),
+      ROLES_AND_ADDRESSES_CARD
+    )
+    expect(htmlOf(card.rows, 'Consignor')).toBe(
+      '<strong>Astra Rosales</strong><br>43 East Hague Extension<br>Delectus<br>Switzerland'
+    )
+    expect(htmlOf(card.rows, 'Place of destination')).toBe(
+      '<strong>Tech Imports Ltd</strong>'
+    )
+    const contact = cardByTitle(
+      await sectionsFor(fullSeed),
+      'Contact address for this consignment'
+    )
+    expect(htmlOf(contact.rows, 'Address')).toBe(
+      '<strong>Animal and Plant Health Agency</strong>'
     )
   })
 
-  describe('POST navigation', () => {
-    it('Should redirect to the hub when the next review page is not yet reachable', async () => {
-      const { journeyId, response } = await driveHandler(postHandler, {
-        seed: {}
-      })
-      expect(response.redirect).toBe(hubPath(journeyId))
-    })
+  it('Should point each Change link at the owning page slug with a change flag', async () => {
+    const rows = rowsOf(await sectionsFor(fullSeed))
+    expect(changeHrefOf(rows, COUNTRY_OF_ORIGIN_KEY)).toMatch(
+      /\/origin\?change=1$/
+    )
+    expect(changeHrefOf(rows, PURPOSE_IN_MARKET_KEY)).toMatch(
+      /\/import-purpose\?change=1$/
+    )
+    expect(changeHrefOf(rows, TRANSITED_COUNTRIES_KEY)).toMatch(
+      /\/transit-countries\?change=1$/
+    )
+    expect(changeHrefOf(rows, 'Name')).toMatch(
+      /\/transporters\/select\?change=1$/
+    )
+  })
 
-    it('Should redirect to the declaration once its prerequisites are answered', async () => {
-      const { response } = await driveHandler(postHandler, {
-        seed: {
-          countryOfOrigin: 'FR',
-          commodityLines: [{ commoditySelection: 'Cow' }]
-        }
-      })
-      expect(response.redirect).toMatch(/\/declaration$/)
+  it('Should point the species-card Change actions at the commodities pages with a change flag', async () => {
+    const card = cardByTitle(await sectionsFor(fullSeed), COW_CARD_TITLE)
+    const [commodityAction, identifiersAction] = card.actions.items
+    expect(commodityAction.href).toMatch(/\/consignment-details\?change=1$/)
+    expect(identifiersAction.href).toMatch(
+      /\/commodities\/identification\?change=1#identification-card-0$/
+    )
+  })
+
+  it('Should point the uploaded-documents card Change action at the documents page with a change flag', async () => {
+    const card = cardByTitle(await sectionsFor(fullSeed), 'Uploaded documents')
+    expect(card.actions.items[0].href).toMatch(
+      /\/accompanying-documents\?change=1$/
+    )
+  })
+})
+
+describe(`${SUITE} — gated-off answers and blanks`, () => {
+  setupCheckAnswersEngine()
+
+  const gatedOffSeed = {
+    regionOfOriginCodeRequirement: 'no',
+    reasonForImport: 'transit',
+    commodityLines: [{ commoditySelection: 'Fish' }],
+    meansOfTransport: 'AIRPLANE',
+    transporterType: 'Private',
+    privateTransporter: { name: 'Jean Dupont' }
+  }
+
+  it('Should keep the region-of-origin-code row when the requirement is no', async () => {
+    expect(keysOf(rowsOf(await sectionsFor(gatedOffSeed)))).toContain(
+      REGION_CODE_KEY
+    )
+  })
+
+  it('Should retain a stored region-of-origin code across a requirement flip to no', async () => {
+    const rows = rowsOf(
+      await sectionsFor({ ...gatedOffSeed, regionOfOriginCode: 'FR-75' })
+    )
+    expect(valueOf(rows, REGION_CODE_KEY)).toBe('FR-75')
+  })
+
+  it('Should omit the internal-market purpose row when the reason is not internalMarket', async () => {
+    expect(keysOf(rowsOf(await sectionsFor(gatedOffSeed)))).not.toContain(
+      PURPOSE_IN_MARKET_KEY
+    )
+  })
+
+  it('Should omit the unweaned and CPH rows when no line is an eligible commodity', async () => {
+    const keys = keysOf(rowsOf(await sectionsFor(gatedOffSeed)))
+    expect(keys).not.toContain(UNWEANED_KEY)
+    expect(keys).not.toContain(CPH_KEY)
+  })
+
+  it('Should omit the packages row when the commodity is off the package-count list', async () => {
+    const card = cardByTitle(await sectionsFor(gatedOffSeed), 'Fish (0301)')
+    expect(keysOf(card.rows)).not.toContain(PACKAGES_KEY)
+  })
+
+  it('Should omit the transited-countries row for a non-overland means of transport', async () => {
+    expect(keysOf(rowsOf(await sectionsFor(gatedOffSeed)))).not.toContain(
+      TRANSITED_COUNTRIES_KEY
+    )
+  })
+
+  it('Should expand the private transporter and omit the approval-number row when the type is private', async () => {
+    const card = cardByTitle(
+      await sectionsFor(gatedOffSeed),
+      'Transport details'
+    )
+    expect(valueOf(card.rows, 'Name')).toBe('Jean Dupont')
+    expect(valueOf(card.rows, 'Type')).toBe('Private')
+    expect(keysOf(card.rows)).not.toContain('Approval number')
+  })
+
+  it('Should omit the identifier table and documents section when neither holds an entry', async () => {
+    const sections = await sectionsFor(gatedOffSeed)
+    expect(cardByTitle(sections, 'Fish (0301)').identifierTable).toBeNull()
+    expect(sections.map((section) => section.heading)).not.toContain(
+      '4. Documents'
+    )
+  })
+
+  it('Should render Not provided for a blank plain answer', async () => {
+    const rows = rowsOf(await sectionsFor(gatedOffSeed))
+    expect(valueOf(rows, 'Internal reference number')).toBe(NOT_PROVIDED)
+    expect(valueOf(rows, 'Port of entry')).toBe(NOT_PROVIDED)
+  })
+
+  it('Should render Not provided when a coded answer has no matching label', async () => {
+    expect(
+      valueOf(rowsOf(await sectionsFor(gatedOffSeed)), COUNTRY_OF_ORIGIN_KEY)
+    ).toBe(NOT_PROVIDED)
+  })
+
+  it('Should render Not provided for a blank date', async () => {
+    expect(
+      valueOf(
+        rowsOf(await sectionsFor(gatedOffSeed)),
+        'Arrival date at port of entry'
+      )
+    ).toBe(NOT_PROVIDED)
+  })
+
+  it('Should render Not provided for an unset party', async () => {
+    const card = cardByTitle(
+      await sectionsFor(gatedOffSeed),
+      ROLES_AND_ADDRESSES_CARD
+    )
+    expect(valueOf(card.rows, 'Consignor')).toBe(NOT_PROVIDED)
+  })
+})
+
+// The CYA commodity gates (packages / unweaned / CPH) read the obligation
+// `.metadata.values` (CN codes), normalising the stored commodity name to a
+// code. This matrix pins the gate outcome per selectable species
+// (Cow/Horse/Cat/Dog/Fish).
+describe(`${SUITE} — commodity-gate render matrix — model metadata per selectable species`, () => {
+  setupCheckAnswersEngine()
+
+  const gatesFor = async (commodity) => {
+    const sections = await sectionsFor({
+      commodityLines: [{ commoditySelection: commodity }]
     })
+    const allKeys = keysOf(rowsOf(sections))
+    const speciesCard = cardByTitle(
+      sections,
+      `${commodity} (${commodityCodeFor(commodity)})`
+    )
+    return {
+      packages: keysOf(speciesCard.rows).includes(PACKAGES_KEY),
+      unweaned: allKeys.includes(UNWEANED_KEY),
+      cph: allKeys.includes(CPH_KEY)
+    }
+  }
+
+  const MATRIX = [
+    { commodity: 'Cow', packages: true, unweaned: true, cph: true },
+    { commodity: 'Horse', packages: true, unweaned: true, cph: false },
+    { commodity: 'Cat', packages: true, unweaned: false, cph: false },
+    { commodity: 'Dog', packages: true, unweaned: false, cph: false },
+    { commodity: 'Fish', packages: false, unweaned: false, cph: false }
+  ]
+
+  it.each(MATRIX)(
+    'Should gate packages/unweaned/CPH for $commodity',
+    async ({ commodity, packages, unweaned, cph }) => {
+      expect(await gatesFor(commodity)).toEqual({ packages, unweaned, cph })
+    }
+  )
+})
+
+describe(`${SUITE} — POST navigation`, () => {
+  setupCheckAnswersEngine()
+
+  it('Should redirect to the hub when the next review page is not yet reachable', async () => {
+    const { journeyId, response } = await driveHandler(postHandler, {
+      seed: {}
+    })
+    expect(response.redirect).toBe(hubPath(journeyId))
+  })
+
+  it('Should redirect to the declaration once its prerequisites are answered', async () => {
+    const { response } = await driveHandler(postHandler, {
+      seed: {
+        countryOfOrigin: 'FR',
+        commodityLines: [{ commoditySelection: 'Cow' }]
+      }
+    })
+    expect(response.redirect).toMatch(/\/declaration$/)
   })
 })

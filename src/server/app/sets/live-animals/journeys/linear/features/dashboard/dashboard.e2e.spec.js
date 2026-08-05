@@ -9,6 +9,10 @@ import {
 } from '../../../../../../../../../e2e/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 
+const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
+const PAGE_SIZE = 20
+const SEEDED_NOTIFICATIONS = PAGE_SIZE + 1
+
 const submitNotification = async (page) => {
   await completeAnswerSections(page)
   await page.getByRole('link', { name: 'Check and submit' }).click()
@@ -19,7 +23,33 @@ const submitNotification = async (page) => {
   await page.getByRole('button', { name: 'Continue' }).click()
 }
 
-test.describe('dashboard feature', () => {
+const actionFor = (page, role, action, reference) =>
+  page.getByRole(role, { name: `${action} ${copy.actionHidden(reference)}` })
+
+const startTwoNotifications = async (page) => {
+  await startNotification(page)
+  const firstReference = journeyIdFromPage(page)
+  await startNotification(page)
+  const secondReference = journeyIdFromPage(page)
+  await page.goto('/')
+  return { firstReference, secondReference }
+}
+
+const expectNoSeriousOrCriticalViolations = async (page, subject) => {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa'])
+    .analyze()
+  const seriousOrCritical = results.violations.filter(({ impact }) =>
+    ['serious', 'critical'].includes(impact)
+  )
+
+  expect(
+    seriousOrCritical,
+    `${subject} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
+  ).toEqual([])
+}
+
+test.describe('dashboard feature — empty state and start', () => {
   test('renders the empty notification list and default sort', async ({
     page
   }) => {
@@ -49,25 +79,9 @@ test.describe('dashboard feature', () => {
     ).toBeVisible()
     await expect(page).toHaveURL(/\/notifications\/[^/]+\/import-type$/)
   })
+})
 
-  test('empty dashboard has no serious or critical axe violations', async ({
-    page
-  }) => {
-    await page.goto('/')
-
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-
-    expect(
-      seriousOrCritical,
-      `Empty dashboard has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
-  })
-
+test.describe('dashboard feature — notification rows and actions', () => {
   test('submitted notification renders its row data and actions', async ({
     page
   }) => {
@@ -91,26 +105,12 @@ test.describe('dashboard feature', () => {
       page.getByText(values.consignee.name, { exact: true })
     ).toBeVisible()
     await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
+    await expect(actionFor(page, 'link', 'View', reference)).toBeVisible()
+    await expect(actionFor(page, 'button', 'Amend', reference)).toBeVisible()
     await expect(
-      page.getByRole('link', {
-        name: `View ${copy.actionHidden(reference)}`
-      })
+      actionFor(page, 'button', 'Copy as new', reference)
     ).toBeVisible()
-    await expect(
-      page.getByRole('button', {
-        name: `Amend ${copy.actionHidden(reference)}`
-      })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('button', {
-        name: `Copy as new ${copy.actionHidden(reference)}`
-      })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('link', {
-        name: `Delete ${copy.actionHidden(reference)}`
-      })
-    ).toBeVisible()
+    await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
   })
 
   test('draft notification renders only its available actions', async ({
@@ -122,31 +122,13 @@ test.describe('dashboard feature', () => {
     await page.goto('/')
 
     await expect(page.getByText('Draft', { exact: true })).toBeVisible()
+    await expect(actionFor(page, 'link', 'Resume', reference)).toBeVisible()
     await expect(
-      page.getByRole('link', {
-        name: `Resume ${copy.actionHidden(reference)}`
-      })
+      actionFor(page, 'button', 'Copy as new', reference)
     ).toBeVisible()
-    await expect(
-      page.getByRole('button', {
-        name: `Copy as new ${copy.actionHidden(reference)}`
-      })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('link', {
-        name: `Delete ${copy.actionHidden(reference)}`
-      })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('link', {
-        name: `View ${copy.actionHidden(reference)}`
-      })
-    ).toHaveCount(0)
-    await expect(
-      page.getByRole('button', {
-        name: `Amend ${copy.actionHidden(reference)}`
-      })
-    ).toHaveCount(0)
+    await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
+    await expect(actionFor(page, 'link', 'View', reference)).toHaveCount(0)
+    await expect(actionFor(page, 'button', 'Amend', reference)).toHaveCount(0)
   })
 
   test('amending notification renders resume and cancel-amend actions', async ({
@@ -157,62 +139,36 @@ test.describe('dashboard feature', () => {
     await submitNotification(page)
     const reference = journeyIdFromPage(page)
     await page.goto('/')
-    await page
-      .getByRole('button', {
-        name: `Amend ${copy.actionHidden(reference)}`
-      })
-      .click()
+    await actionFor(page, 'button', 'Amend', reference).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
     await page.goto('/')
 
     await expect(page.getByText('Amending', { exact: true })).toBeVisible()
+    await expect(actionFor(page, 'link', 'Resume', reference)).toBeVisible()
     await expect(
-      page.getByRole('link', {
-        name: `Resume ${copy.actionHidden(reference)}`
-      })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('link', {
-        name: `Cancel amendment ${copy.actionHidden(reference)}`
-      })
+      actionFor(page, 'link', 'Cancel amendment', reference)
     ).toBeVisible()
   })
+})
 
-  test('dashboard with a notification card has no serious or critical axe violations', async ({
-    page
-  }) => {
-    await startNotification(page)
-    await page.goto('/')
-
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-
-    expect(
-      seriousOrCritical,
-      `Dashboard with notification cards has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
-  })
-
+test.describe('dashboard feature — reference search', () => {
   test('reference search finds an exact notification and preserves sort', async ({
     page
   }) => {
-    await startNotification(page)
-    const firstReference = journeyIdFromPage(page)
-    await startNotification(page)
-    const secondReference = journeyIdFromPage(page)
-    await page.goto('/')
+    const { firstReference, secondReference } =
+      await startTwoNotifications(page)
 
-    await page.getByLabel(copy.sort.label).selectOption('createdAt,asc')
+    await page
+      .getByLabel(copy.sort.label)
+      .selectOption(CREATED_AT_ASCENDING_SORT)
     await page.getByRole('button', { name: copy.sort.update }).click()
     await page.getByLabel(copy.search.label).fill(firstReference)
     await page.getByRole('button', { name: copy.search.button }).click()
 
-    await expect(page.getByLabel(copy.sort.label)).toHaveValue('createdAt,asc')
+    await expect(page.getByLabel(copy.sort.label)).toHaveValue(
+      CREATED_AT_ASCENDING_SORT
+    )
     await expect(page.getByLabel(copy.search.label)).toHaveValue(firstReference)
     await expect(page).toHaveURL(
       `/?sort=createdAt%2Casc&referenceNumber=${firstReference}`
@@ -248,12 +204,11 @@ test.describe('dashboard feature', () => {
   test('empty reference search clears the filter and restores the full list', async ({
     page
   }) => {
-    await startNotification(page)
-    const firstReference = journeyIdFromPage(page)
-    await startNotification(page)
-    const secondReference = journeyIdFromPage(page)
-    await page.goto('/')
-    await page.getByLabel(copy.sort.label).selectOption('createdAt,asc')
+    const { firstReference, secondReference } =
+      await startTwoNotifications(page)
+    await page
+      .getByLabel(copy.sort.label)
+      .selectOption(CREATED_AT_ASCENDING_SORT)
     await page.getByRole('button', { name: copy.sort.update }).click()
     await page.getByLabel(copy.search.label).fill(firstReference)
     await page.getByRole('button', { name: copy.search.button }).click()
@@ -263,7 +218,9 @@ test.describe('dashboard feature', () => {
 
     await expect(page).toHaveURL('/?sort=createdAt%2Casc&referenceNumber=')
     await expect(page.getByLabel(copy.search.label)).toHaveValue('')
-    await expect(page.getByLabel(copy.sort.label)).toHaveValue('createdAt,asc')
+    await expect(page.getByLabel(copy.sort.label)).toHaveValue(
+      CREATED_AT_ASCENDING_SORT
+    )
     await expect(
       page.getByRole('heading', { name: firstReference, exact: true })
     ).toBeVisible()
@@ -271,22 +228,26 @@ test.describe('dashboard feature', () => {
       page.getByRole('heading', { name: secondReference, exact: true })
     ).toBeVisible()
   })
+})
 
+test.describe('dashboard feature — pagination', () => {
   test('paginates at the 20-row boundary and preserves the selected sort', async ({
     page
   }) => {
     test.slow()
     await page.goto('/')
-    for (let index = 0; index < 21; index += 1) {
+    for (let index = 0; index < SEEDED_NOTIFICATIONS; index += 1) {
       await page.getByRole('button', { name: copy.startButton }).click()
       await page.goto('/')
     }
 
     await expect(
       page.getByRole('link', { name: /^Delete notification / })
-    ).toHaveCount(20)
+    ).toHaveCount(PAGE_SIZE)
     await expect(
-      page.getByText(copy.pagination.results.many(1, 20, 21))
+      page.getByText(
+        copy.pagination.results.many(1, PAGE_SIZE, SEEDED_NOTIFICATIONS)
+      )
     ).toBeVisible()
     await expect(
       page.getByRole('link', { name: copy.pagination.previous })
@@ -299,7 +260,12 @@ test.describe('dashboard feature', () => {
       page.getByRole('link', { name: /^Delete notification / })
     ).toHaveCount(1)
     await expect(
-      page.getByText(copy.pagination.results.oneOf(21, 21))
+      page.getByText(
+        copy.pagination.results.oneOf(
+          SEEDED_NOTIFICATIONS,
+          SEEDED_NOTIFICATIONS
+        )
+      )
     ).toBeVisible()
     await expect(
       page.getByRole('link', { name: copy.pagination.next })
@@ -308,13 +274,39 @@ test.describe('dashboard feature', () => {
       page.getByRole('link', { name: copy.pagination.previous })
     ).toBeVisible()
 
-    await page.getByLabel(copy.sort.label).selectOption('createdAt,asc')
+    await page
+      .getByLabel(copy.sort.label)
+      .selectOption(CREATED_AT_ASCENDING_SORT)
     await page.getByRole('button', { name: copy.sort.update }).click()
 
     await expect(page).toHaveURL('/?page=2&sort=createdAt%2Casc')
-    await expect(page.getByLabel(copy.sort.label)).toHaveValue('createdAt,asc')
+    await expect(page.getByLabel(copy.sort.label)).toHaveValue(
+      CREATED_AT_ASCENDING_SORT
+    )
     await expect(
       page.getByRole('link', { name: /^Delete notification / })
     ).toHaveCount(1)
+  })
+})
+
+test.describe('dashboard feature — accessibility', () => {
+  test('empty dashboard has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await page.goto('/')
+
+    await expectNoSeriousOrCriticalViolations(page, 'Empty dashboard')
+  })
+
+  test('dashboard with a notification card has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page.goto('/')
+
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Dashboard with notification cards'
+    )
   })
 })

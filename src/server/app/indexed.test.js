@@ -16,6 +16,8 @@ const commoditiesSection = sections.find(
 )
 const documentsSection = sections.find((section) => section.id === 'documents')
 
+const UNITED_KINGDOM = 'United Kingdom'
+
 const completeDocument = {
   accompanyingDocumentType: 'HEALTH_CERTIFICATE',
   accompanyingDocumentAttachmentType: 'upload',
@@ -77,7 +79,7 @@ describe('indexed obligations are first-class', () => {
       },
       placeOfDestination: {
         name: 'Tech Imports Ltd',
-        address: { addressLine1: '643 Main Street', country: 'United Kingdom' }
+        address: { addressLine1: '643 Main Street', country: UNITED_KINGDOM }
       },
       placeOfOrigin: {
         name: 'Origin Farm',
@@ -87,14 +89,14 @@ describe('indexed obligations are first-class', () => {
         name: 'British Livestock Ltd',
         address: {
           addressLine1: '10 Market Street',
-          country: 'United Kingdom'
+          country: UNITED_KINGDOM
         }
       },
       importer: {
         name: 'Import Co UK',
         address: {
           addressLine1: '20 Trade Road',
-          country: 'United Kingdom'
+          country: UNITED_KINGDOM
         }
       },
       portOfEntry: 'GB ABD',
@@ -113,7 +115,7 @@ describe('indexed obligations are first-class', () => {
       },
       contactAddress: {
         name: 'Animal and Plant Health Agency',
-        address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
+        address: { addressLine1: 'Woodham Lane', country: UNITED_KINGDOM }
       },
       declaration: 'confirmed'
     }

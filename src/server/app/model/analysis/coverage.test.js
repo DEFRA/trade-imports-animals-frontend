@@ -250,47 +250,38 @@ describe('coverage — every helper export classifies as STRUCTURED or OPAQUE', 
     ([, exp]) => typeof exp === 'function'
   )
 
-  it('Should classify every helper export whose gate carries .metadata.type', () => {
-    // For each helper export, try to produce a gate. If the helper
-    // isn't in `SAMPLE_OBLIGATIONS`, we can't probe it — but we CAN
-    // fail the test with a clear message: "helper X has no sample; add
-    // it to SAMPLE_OBLIGATIONS + one of the classification sets".
-    //
-    // Excluded from the probe by design: `present` (returns a raw
-    // predicate closure — no gate metadata), `obligationMetadata` (a
-    // pure accessor — no gate produced). Anything else without a
-    // sample must be added.
-    const NON_GATE_HELPERS = new Set(['present', 'obligationMetadata'])
+  // For each helper export, try to produce a gate. If the helper
+  // isn't in `SAMPLE_OBLIGATIONS`, we can't probe it — but we CAN
+  // fail the test with a clear message: "helper X has no sample; add
+  // it to SAMPLE_OBLIGATIONS + one of the classification sets".
+  //
+  // Excluded from the probe by design: `present` (returns a raw
+  // predicate closure — no gate metadata), `obligationMetadata` (a
+  // pure accessor — no gate produced). Anything else without a
+  // sample must be added.
+  const NON_GATE_HELPERS = new Set(['present', 'obligationMetadata'])
 
-    const unclassified = []
-    for (const [name] of helperExports) {
-      if (NON_GATE_HELPERS.has(name)) {
-        continue
-      }
-
-      const sample = SAMPLE_OBLIGATIONS[name]
-      if (!sample) {
-        unclassified.push(
-          `helper '${name}' — no sample in SAMPLE_OBLIGATIONS; add one and register the helper type in STRUCTURED_HELPER_TYPES or OPAQUE_HELPER_TYPES`
-        )
-        continue
-      }
-      const type = sample.applyTo?.metadata?.type
-      if (!type) {
-        unclassified.push(
-          `helper '${name}' — sample.applyTo.metadata.type missing; helper must attach a metadata.type or be added to NON_GATE_HELPERS`
-        )
-        continue
-      }
-      if (
-        !STRUCTURED_HELPER_TYPES.has(type) &&
-        !OPAQUE_HELPER_TYPES.has(type)
-      ) {
-        unclassified.push(
-          `helper '${name}' — metadata.type '${type}' is not in STRUCTURED_HELPER_TYPES or OPAQUE_HELPER_TYPES; add it (with a comment) to one of the sets in analysis/reachability.js`
-        )
-      }
+  const classificationProblemFor = (name) => {
+    const sample = SAMPLE_OBLIGATIONS[name]
+    if (!sample) {
+      return `helper '${name}' — no sample in SAMPLE_OBLIGATIONS; add one and register the helper type in STRUCTURED_HELPER_TYPES or OPAQUE_HELPER_TYPES`
     }
+    const type = sample.applyTo?.metadata?.type
+    if (!type) {
+      return `helper '${name}' — sample.applyTo.metadata.type missing; helper must attach a metadata.type or be added to NON_GATE_HELPERS`
+    }
+    if (!STRUCTURED_HELPER_TYPES.has(type) && !OPAQUE_HELPER_TYPES.has(type)) {
+      return `helper '${name}' — metadata.type '${type}' is not in STRUCTURED_HELPER_TYPES or OPAQUE_HELPER_TYPES; add it (with a comment) to one of the sets in analysis/reachability.js`
+    }
+    return null
+  }
+
+  it('Should classify every helper export whose gate carries .metadata.type', () => {
+    const unclassified = helperExports
+      .map(([name]) => name)
+      .filter((name) => !NON_GATE_HELPERS.has(name))
+      .map(classificationProblemFor)
+      .filter((problem) => problem !== null)
     expect(unclassified).toEqual([])
   })
 })

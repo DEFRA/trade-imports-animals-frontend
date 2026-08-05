@@ -4,7 +4,7 @@ import { get, commit } from './engine/index.js'
 import { configureRecords } from './engine/persistence/records.js'
 import { configureReadyForCheckYourAnswers } from './engine/read.js'
 import {
-  KNOWN_JOURNEYS_COOKIE,
+  SESSION_COOKIES,
   configureSession
 } from './engine/persistence/session.js'
 import { records as realRecords } from './services/persistence/records/real/index.js'
@@ -40,7 +40,7 @@ const fulfilmentBody = JSON.stringify({
 
 const buildRequest = () => ({
   params: { journeyId: ref },
-  state: { [KNOWN_JOURNEYS_COOKIE]: [ref] },
+  state: { [SESSION_COOKIES.knownJourneys]: [ref] },
   app: {},
   headers: {}
 })

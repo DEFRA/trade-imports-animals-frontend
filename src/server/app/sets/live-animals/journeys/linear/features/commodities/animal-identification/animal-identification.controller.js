@@ -76,7 +76,7 @@ const post = async (request, h) => {
     errors: formErrors
   } = buildLineForms(payload, answers, lines)
 
-  const capReached = capReachedResponse(
+  const capReached = capReachedResponse({
     render,
     request,
     h,
@@ -86,7 +86,7 @@ const post = async (request, h) => {
     forms,
     addIndex,
     atMaxByIndex
-  )
+  })
   if (capReached) {
     return capReached
   }

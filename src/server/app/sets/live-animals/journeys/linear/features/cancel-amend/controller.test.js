@@ -19,7 +19,7 @@ import {
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
-  KNOWN_JOURNEYS_COOKIE
+  SESSION_COOKIES
 } from '../../../../../../engine/persistence/session.js'
 import { store } from '../../../../../../engine/store.js'
 import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
@@ -28,6 +28,8 @@ import { records as realRecords } from '../../../../../../services/persistence/r
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import { dispatchPages } from '../index.js'
 import * as cancelAmend from './controller.js'
+
+const NOTIFICATION_VIEW_SLUG = 'notification-view'
 
 const get = cancelAmend.routes.find((route) => route.method === 'GET').handler
 const post = cancelAmend.routes.find((route) => route.method === 'POST').handler
@@ -75,7 +77,7 @@ describe('cancel amendment routes', () => {
     expect(response.context).toMatchObject({
       heading: 'Cancel this amendment?',
       cancelAction: pagePath(journeyId, 'cancel-amend'),
-      noHref: pagePath(journeyId, 'notification-view')
+      noHref: pagePath(journeyId, NOTIFICATION_VIEW_SLUG)
     })
     expect(response.context.copy.body).toContain('submitted version restored')
   })
@@ -86,7 +88,7 @@ describe('cancel amendment routes', () => {
     const response = await post(journeyRequest(journeyId), stubH())
 
     expect(response).toEqual({
-      redirect: `${pagePath(journeyId, 'notification-view')}?cancelled=1`
+      redirect: `${pagePath(journeyId, NOTIFICATION_VIEW_SLUG)}?cancelled=1`
     })
     const restored = await records.load({ journeyId })
     expect(restored.status).toBe(SUBMITTED)
@@ -104,7 +106,7 @@ describe('cancel amendment routes', () => {
       redirect: '/'
     })
     expect(await post(journeyRequest(submitted.journeyId), stubH())).toEqual({
-      redirect: pagePath(submitted.journeyId, 'notification-view')
+      redirect: pagePath(submitted.journeyId, NOTIFICATION_VIEW_SLUG)
     })
     expect((await records.load({ journeyId: draft.journeyId })).status).toBe(
       'draft'
@@ -118,7 +120,7 @@ describe('cancel amendment routes', () => {
     await expect(
       post(
         journeyRequest('GBN-AG-26-UNKNOWN', {
-          state: { [KNOWN_JOURNEYS_COOKIE]: [] }
+          state: { [SESSION_COOKIES.knownJourneys]: [] }
         }),
         stubH()
       )

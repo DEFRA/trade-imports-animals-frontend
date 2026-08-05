@@ -48,8 +48,8 @@ const UPLOAD_FAILURE_MESSAGE = copy.errors.uploadFailed
 const HTTP_STATUS_NOT_FOUND = 404
 const HTTP_STATUS_PAYLOAD_TOO_LARGE = 413
 
-const render = (request, h, ...args) =>
-  renderView(view, copy, sharedCopy, request, h, ...args)
+const render = (request, h, pageState, values, options) =>
+  renderView({ view, copy, sharedCopy, request, h, pageState, values, options })
 
 const get = async (request, h) => {
   const pageState = await loadPage(request, h)

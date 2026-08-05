@@ -7,7 +7,7 @@ import { base } from '../app/shared/kit.js'
 
 export const authController = {
   signin: {
-    handler: async function (request, h) {
+    handler: async function (_request, h) {
       return h.redirect('/')
     }
   },

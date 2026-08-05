@@ -7,7 +7,7 @@ const copy = copyFor({ en, cy })
 
 const NOT_PROVIDED = copy.notProvided
 
-export const toArray = (value) => [].concat(value ?? [])
+export const toArray = (value) => [value ?? []].flat()
 
 export const valueText = (value) => {
   if (isBlank(value)) {

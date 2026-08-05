@@ -38,7 +38,7 @@ const addressErrorsFor = (showAddress, addressValues, index, payload) => {
     : { errors: null }
   return {
     ...missingAddressErrors(addressValues, index),
-    ...(addrFormatErrors ?? {})
+    ...addrFormatErrors
   }
 }
 
@@ -53,7 +53,7 @@ const buildLineForm = (payload, commodity, index) => {
     payload
   )
   const errors = {
-    ...(idErrors ?? {}),
+    ...idErrors,
     ...addressErrorsFor(showAddress, addressValues, index, payload)
   }
 
@@ -94,7 +94,7 @@ export const buildLineForms = (payload, answers, lines) => {
 // "Save and add another" pressed against a card already at its cap — a
 // stale form racing the engine-enforced cardinality link. Surface the
 // rejection; never save silently.
-export const capReachedResponse = (
+export const capReachedResponse = ({
   render,
   request,
   h,
@@ -104,7 +104,7 @@ export const capReachedResponse = (
   forms,
   addIndex,
   atMaxByIndex
-) => {
+}) => {
   if (addIndex === null || !atMaxByIndex.has(addIndex)) {
     return null
   }

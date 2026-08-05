@@ -4,6 +4,8 @@ import { expect, test } from '@playwright/test'
 import { CONTACT_OPTIONS } from '../../../../../../services/address-book/stub/index.js'
 import { copy } from './copy/copy.en.js'
 
+const CONTACT_ADDRESS_INPUT = 'input[name="contactAddress"]'
+
 const startAtContact = async (page) => {
   await page.goto('/')
   await page
@@ -27,7 +29,7 @@ const addressSummary = (address) =>
     address.addressLine3,
     address.country
   ]
-    .filter((part) => part)
+    .filter(Boolean)
     .join(', ')
 
 test.describe('contact feature', () => {
@@ -41,7 +43,7 @@ test.describe('contact feature', () => {
     const group = page.getByRole('group', { name: copy.legend })
     await expect(group).toContainText(copy.hint)
     const renderedValues = await group
-      .locator('input[name="contactAddress"]')
+      .locator(CONTACT_ADDRESS_INPUT)
       .evaluateAll((inputs) => inputs.map((input) => input.value))
     expect(renderedValues).toEqual(CONTACT_OPTIONS.map(({ id }) => id))
     for (const option of CONTACT_OPTIONS) {
@@ -62,7 +64,7 @@ test.describe('contact feature', () => {
     page
   }) => {
     await page
-      .locator('input[name="contactAddress"]')
+      .locator(CONTACT_ADDRESS_INPUT)
       .first()
       .evaluate((input) => {
         input.value = 'not-a-real-contact'
@@ -75,12 +77,10 @@ test.describe('contact feature', () => {
       .getByRole('link', { name: copy.errors.contactRequired })
     await expect(contactError).toBeVisible()
     await contactError.click()
-    await expect(
-      page.locator('input[name="contactAddress"]').first()
-    ).toBeFocused()
-    await expect(
-      page.locator('input[name="contactAddress"]:checked')
-    ).toHaveCount(0)
+    await expect(page.locator(CONTACT_ADDRESS_INPUT).first()).toBeFocused()
+    await expect(page.locator(`${CONTACT_ADDRESS_INPUT}:checked`)).toHaveCount(
+      0
+    )
   })
 
   test('copies a valid contact, redirects and persists the selection', async ({
@@ -97,6 +97,12 @@ test.describe('contact feature', () => {
     await expect(
       page.getByRole('radio', { name: selected.name, exact: true })
     ).toBeChecked()
+  })
+})
+
+test.describe('contact feature — navigation and accessibility', () => {
+  test.beforeEach(async ({ page }) => {
+    await startAtContact(page)
   })
 
   test('back link returns to the notification hub', async ({ page }) => {

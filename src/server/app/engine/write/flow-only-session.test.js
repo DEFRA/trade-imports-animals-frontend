@@ -2,13 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { commit } from './index.js'
 import { get, configureReadyForCheckYourAnswers } from '../read.js'
 import { records, configureRecords } from '../persistence/records.js'
-import {
-  configureSession,
-  FLOW_ONLY_ANSWERS_COOKIE
-} from '../persistence/session.js'
+import { configureSession, SESSION_COOKIES } from '../persistence/session.js'
 import { records as recordsStub } from '../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
 import { journeyRequest, recordingH } from '../test-support.js'
+
+const IMPORT_TYPE_LIVE_ANIMALS = 'live-animals'
 
 describe('flow-only answers — session round-trip', () => {
   beforeEach(async () => {
@@ -23,7 +22,7 @@ describe('flow-only answers — session round-trip', () => {
     const writeH = recordingH()
 
     await commit(journeyRequest(journey.journeyId), writeH, {
-      importType: 'live-animals',
+      importType: IMPORT_TYPE_LIVE_ANIMALS,
       declaration: 'confirmed'
     })
 
@@ -33,12 +32,13 @@ describe('flow-only answers — session round-trip', () => {
 
     const freshRequest = journeyRequest(journey.journeyId, {
       state: {
-        [FLOW_ONLY_ANSWERS_COOKIE]: writeH.cookies[FLOW_ONLY_ANSWERS_COOKIE]
+        [SESSION_COOKIES.flowOnlyAnswers]:
+          writeH.cookies[SESSION_COOKIES.flowOnlyAnswers]
       }
     })
     const fresh = await get(freshRequest, recordingH())
 
-    expect(fresh.answers.importType).toBe('live-animals')
+    expect(fresh.answers.importType).toBe(IMPORT_TYPE_LIVE_ANIMALS)
     expect(fresh.answers.declaration).toBe('confirmed')
   })
 
@@ -49,8 +49,8 @@ describe('flow-only answers — session round-trip', () => {
     const request = journeyRequest(journey.journeyId, {
       app: {},
       state: {
-        [FLOW_ONLY_ANSWERS_COOKIE]: {
-          [journey.journeyId]: { importType: 'live-animals' }
+        [SESSION_COOKIES.flowOnlyAnswers]: {
+          [journey.journeyId]: { importType: IMPORT_TYPE_LIVE_ANIMALS }
         }
       }
     })

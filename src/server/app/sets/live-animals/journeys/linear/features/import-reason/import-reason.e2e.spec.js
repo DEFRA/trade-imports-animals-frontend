@@ -5,6 +5,22 @@ import * as importReasonPurpose from '../../../../../../services/import-reason-p
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
+const REASON_INPUT_SELECTOR = 'input[name="reasonForImport"]'
+
+const expectNoSeriousOrCriticalAxeViolations = async (page) => {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa'])
+    .analyze()
+  const seriousOrCritical = results.violations.filter(({ impact }) =>
+    ['serious', 'critical'].includes(impact)
+  )
+
+  expect(
+    seriousOrCritical,
+    `Import reason has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
+  ).toEqual([])
+}
+
 const startAtImportReason = async (page) => {
   await page.goto('/')
   await page
@@ -29,7 +45,7 @@ test.describe('import-reason feature', () => {
   }) => {
     const group = page.getByRole('group', { name: copy.legend })
     const renderedValues = await group
-      .locator('input[name="reasonForImport"]')
+      .locator(REASON_INPUT_SELECTOR)
       .evaluateAll((inputs) => inputs.map((input) => input.value))
     expect(renderedValues).toEqual(
       importReasonPurpose.reasons().map(({ value }) => value)
@@ -46,7 +62,7 @@ test.describe('import-reason feature', () => {
     page
   }) => {
     await page
-      .locator('input[name="reasonForImport"]')
+      .locator(REASON_INPUT_SELECTOR)
       .first()
       .evaluate((input) => {
         input.value = 'not-a-real-reason'
@@ -59,12 +75,10 @@ test.describe('import-reason feature', () => {
       .getByRole('link', { name: validatorDefaults.oneOf })
     await expect(reasonError).toBeVisible()
     await reasonError.click()
-    await expect(
-      page.locator('input[name="reasonForImport"]').first()
-    ).toBeFocused()
-    await expect(
-      page.locator('input[name="reasonForImport"]:checked')
-    ).toHaveCount(0)
+    await expect(page.locator(REASON_INPUT_SELECTOR).first()).toBeFocused()
+    await expect(page.locator(`${REASON_INPUT_SELECTOR}:checked`)).toHaveCount(
+      0
+    )
   })
 
   test('saves a valid reason, redirects and persists the answer', async ({
@@ -94,16 +108,6 @@ test.describe('import-reason feature', () => {
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-
-    expect(
-      seriousOrCritical,
-      `Import reason has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectNoSeriousOrCriticalAxeViolations(page)
   })
 })

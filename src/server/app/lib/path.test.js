@@ -89,6 +89,8 @@ describe('#pathKey / #valueAt / #setAt / #deleteAt', () => {
   })
 })
 
+const FIRST_COMMODITY_LINE_KEY = 'commodityLines[0]'
+
 describe('#wipeOrder — sibling-safe deletion order', () => {
   const applyWipes = (answers, keys) => {
     destroyWiped(answers, keys)
@@ -98,7 +100,7 @@ describe('#wipeOrder — sibling-safe deletion order', () => {
   it('Should destroy both siblings when two array indices are wiped', () => {
     expect(
       applyWipes({ commodityLines: [{ id: 'a' }, { id: 'b' }] }, [
-        'commodityLines[0]',
+        FIRST_COMMODITY_LINE_KEY,
         'commodityLines[1]'
       ]).commodityLines
     ).toEqual([])
@@ -107,7 +109,7 @@ describe('#wipeOrder — sibling-safe deletion order', () => {
   it('Should destroy every sibling when a whole array is wiped index-by-index', () => {
     expect(
       applyWipes({ commodityLines: [{ id: 'a' }, { id: 'b' }, { id: 'c' }] }, [
-        'commodityLines[0]',
+        FIRST_COMMODITY_LINE_KEY,
         'commodityLines[1]',
         'commodityLines[2]'
       ]).commodityLines
@@ -116,7 +118,7 @@ describe('#wipeOrder — sibling-safe deletion order', () => {
 
   it('Should delete a nested field before its container entry is spliced away', () => {
     const answers = { commodityLines: [{ x: '1' }, { x: '2' }] }
-    applyWipes(answers, ['commodityLines[0]', 'commodityLines[0].x'])
+    applyWipes(answers, [FIRST_COMMODITY_LINE_KEY, 'commodityLines[0].x'])
     expect(answers.commodityLines).toEqual([{ x: '2' }])
   })
 
@@ -129,7 +131,7 @@ describe('#wipeOrder — sibling-safe deletion order', () => {
       countryOfOrigin: 'FR'
     }
     destroyWiped(answers, [
-      'commodityLines[0]',
+      FIRST_COMMODITY_LINE_KEY,
       'commodityLines[1].numberOfAnimalsQuantity'
     ])
     expect(answers).toEqual({

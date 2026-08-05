@@ -1,12 +1,11 @@
 import { currentJourney } from './journey.js'
 import { evaluateAnswers } from '../bridge/evaluation.js'
 import { makeScopeFromEvaluation } from '../bridge/scope.js'
-import { configureReadyForCheckYourAnswers } from '../bridge/readiness-config.js'
 import { assembleRequestView } from './request-view.js'
 import { session } from './persistence/session.js'
 import { flowOnlyAnswersFrom } from '../bridge/obligation-source.js'
 
-export { configureReadyForCheckYourAnswers }
+export { configureReadyForCheckYourAnswers } from '../bridge/readiness-config.js'
 
 export const makeScope = (answers) =>
   makeScopeFromEvaluation(evaluateAnswers(answers), answers)

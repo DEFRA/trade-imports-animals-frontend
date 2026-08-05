@@ -5,6 +5,9 @@ import * as importReasonPurpose from '../../../../../../services/import-reason-p
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
+const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
+const PURPOSE_INPUT_SELECTOR = 'input[name="purposeInInternalMarket"]'
+
 const startAtImportPurpose = async (page) => {
   await page.goto('/')
   await page
@@ -19,13 +22,27 @@ const startAtImportPurpose = async (page) => {
   await page
     .locator('input[name="reasonForImport"][value="internalMarket"]')
     .check()
-  await page.locator('form button[type="submit"]').first().click()
+  await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
   await page.goto(
     page
       .url()
       .replace(/\/notifications\/([^/]+)$/, '/notifications/$1/import-purpose')
   )
   await expect(page.getByRole('heading', { name: copy.legend })).toBeVisible()
+}
+
+const expectNoSeriousOrCriticalAxeViolations = async (page) => {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa'])
+    .analyze()
+  const seriousOrCritical = results.violations.filter(({ impact }) =>
+    ['serious', 'critical'].includes(impact)
+  )
+
+  expect(
+    seriousOrCritical,
+    `Import purpose has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
+  ).toEqual([])
 }
 
 test.describe('import-purpose feature', () => {
@@ -38,7 +55,7 @@ test.describe('import-purpose feature', () => {
   }) => {
     const group = page.getByRole('group', { name: copy.legend })
     const renderedValues = await group
-      .locator('input[name="purposeInInternalMarket"]')
+      .locator(PURPOSE_INPUT_SELECTOR)
       .evaluateAll((inputs) => inputs.map((input) => input.value))
     expect(renderedValues).toEqual(
       importReasonPurpose.purposes().map(({ value }) => value)
@@ -55,25 +72,23 @@ test.describe('import-purpose feature', () => {
     page
   }) => {
     await page
-      .locator('input[name="purposeInInternalMarket"]')
+      .locator(PURPOSE_INPUT_SELECTOR)
       .first()
       .evaluate((input) => {
         input.value = 'not-a-real-purpose'
         input.checked = true
       })
-    await page.locator('form button[type="submit"]').first().click()
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
     const purposeError = page
       .getByRole('alert')
       .getByRole('link', { name: validatorDefaults.oneOf })
     await expect(purposeError).toBeVisible()
     await purposeError.click()
-    await expect(
-      page.locator('input[name="purposeInInternalMarket"]').first()
-    ).toBeFocused()
-    await expect(
-      page.locator('input[name="purposeInInternalMarket"]:checked')
-    ).toHaveCount(0)
+    await expect(page.locator(PURPOSE_INPUT_SELECTOR).first()).toBeFocused()
+    await expect(page.locator(`${PURPOSE_INPUT_SELECTOR}:checked`)).toHaveCount(
+      0
+    )
   })
 
   test('saves a valid purpose, redirects and persists the answer', async ({
@@ -85,7 +100,7 @@ test.describe('import-purpose feature', () => {
       .find(({ value }) => value === 'breeding')
 
     await page.getByRole('radio', { name: selected.text, exact: true }).check()
-    await page.locator('form button[type="submit"]').first().click()
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
     await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
     await page.goto(purposeUrl)
@@ -103,16 +118,6 @@ test.describe('import-purpose feature', () => {
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-
-    expect(
-      seriousOrCritical,
-      `Import purpose has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectNoSeriousOrCriticalAxeViolations(page)
   })
 })

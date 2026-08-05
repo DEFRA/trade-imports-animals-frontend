@@ -61,13 +61,13 @@ const render = (
 
 const selectedFrom = (payload) => [
   ...new Set(
-    [].concat(payload.transitedCountries ?? []).filter((code) => code !== '')
+    [payload.transitedCountries ?? []].flat().filter((code) => code !== '')
   )
 ]
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, [].concat(answers.transitedCountries ?? []))
+  return render(h, journey, [answers.transitedCountries ?? []].flat())
 }
 
 const post = async (request, h) => {

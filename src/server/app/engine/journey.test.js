@@ -4,16 +4,13 @@ import {
   copyJourney,
   currentJourney,
   amendJourney,
-  KNOWN_JOURNEYS_COOKIE,
+  SESSION_COOKIES,
   softDeleteJourney,
   startJourney
 } from './journey.js'
 import { store } from './store.js'
 import { configureRecords } from './persistence/records.js'
-import {
-  configureSession,
-  FLOW_ONLY_ANSWERS_COOKIE
-} from './persistence/session.js'
+import { configureSession } from './persistence/session.js'
 import { configureReadyForCheckYourAnswers, get } from './read.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../services/persistence/session/stub.js'
@@ -28,7 +25,7 @@ const { countryOfOrigin } = obligationSet()
 
 const requestFor = (journeyId, knownJourneyIds) => ({
   params: journeyId ? { journeyId } : {},
-  state: { [KNOWN_JOURNEYS_COOKIE]: knownJourneyIds },
+  state: { [SESSION_COOKIES.knownJourneys]: knownJourneyIds },
   headers: {},
   auth: {
     isAuthenticated: true,
@@ -50,7 +47,9 @@ describe('#currentJourney', () => {
     const journey = await startJourney(requestFor(undefined, []), h)
 
     expect(await store.has(journey.journeyId)).toBe(true)
-    expect(h.cookies[KNOWN_JOURNEYS_COOKIE]).toEqual([journey.journeyId])
+    expect(h.cookies[SESSION_COOKIES.knownJourneys]).toEqual([
+      journey.journeyId
+    ])
   })
 
   it('Should resolve two URL-selected journeys independently in one shared session', async () => {
@@ -85,8 +84,8 @@ describe('#currentJourney', () => {
     }
     const requestA = requestFor(journeyA.journeyId, known)
     const requestB = requestFor(journeyB.journeyId, known)
-    requestA.state[FLOW_ONLY_ANSWERS_COOKIE] = flowOnly
-    requestB.state[FLOW_ONLY_ANSWERS_COOKIE] = flowOnly
+    requestA.state[SESSION_COOKIES.flowOnlyAnswers] = flowOnly
+    requestB.state[SESSION_COOKIES.flowOnlyAnswers] = flowOnly
 
     const viewA = await get(requestA, recordingH())
     const viewB = await get(requestB, recordingH())
@@ -134,7 +133,9 @@ describe('#currentJourney', () => {
     const loaded = await currentJourney(requestFor(journey.journeyId, []), h)
 
     expect(loaded.journeyId).toBe(journey.journeyId)
-    expect(h.cookies[KNOWN_JOURNEYS_COOKIE]).toContain(journey.journeyId)
+    expect(h.cookies[SESSION_COOKIES.knownJourneys]).toContain(
+      journey.journeyId
+    )
   })
 
   it('Should cancel amendment only for a session-known journey', async () => {
@@ -193,7 +194,7 @@ describe('#currentJourney', () => {
 
     expect(copy).toHaveBeenCalledWith(sourceId, 'copy-key-123')
     expect(copied.status).toBe('draft')
-    expect(h.cookies[KNOWN_JOURNEYS_COOKIE]).toEqual([
+    expect(h.cookies[SESSION_COOKIES.knownJourneys]).toEqual([
       sourceId,
       copied.journeyId
     ])

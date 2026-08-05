@@ -1,3 +1,5 @@
+const UNITED_KINGDOM = 'United Kingdom'
+
 /**
  * A maximal happy-path answer set that puts (almost) every obligation in
  * scope, overlaid per state with the scope-flag cross-product above.
@@ -29,7 +31,7 @@ export const submitReadySeed = {
   },
   placeOfDestination: {
     name: 'Tech Imports Ltd',
-    address: { addressLine1: '643 Main Street', country: 'United Kingdom' }
+    address: { addressLine1: '643 Main Street', country: UNITED_KINGDOM }
   },
   placeOfOrigin: {
     name: 'Origin Farm',
@@ -39,12 +41,12 @@ export const submitReadySeed = {
     name: 'British Livestock Ltd',
     address: {
       addressLine1: '10 Market Street',
-      country: 'United Kingdom'
+      country: UNITED_KINGDOM
     }
   },
   importer: {
     name: 'Import Co UK',
-    address: { addressLine1: '20 Trade Road', country: 'United Kingdom' }
+    address: { addressLine1: '20 Trade Road', country: UNITED_KINGDOM }
   },
   portOfEntry: 'GB ABD',
   arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
@@ -62,7 +64,7 @@ export const submitReadySeed = {
   },
   contactAddress: {
     name: 'Animal and Plant Health Agency',
-    address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
+    address: { addressLine1: 'Woodham Lane', country: UNITED_KINGDOM }
   },
   declaration: 'confirmed'
 }

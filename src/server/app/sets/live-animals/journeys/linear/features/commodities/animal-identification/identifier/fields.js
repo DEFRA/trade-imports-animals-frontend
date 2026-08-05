@@ -16,6 +16,8 @@ const FALLBACK_FIELDS = toFields(copy.fallbackFields)
 
 const IDENTIFIER_MAX_MESSAGES = copy.errors.identifierMax
 
+const IDENTIFIER_MAX_LENGTH = 58
+
 const scopedTypeFields = (commodity) =>
   TYPE_FIELDS.filter((field) => appliesForCommodity(field.id, commodity))
 
@@ -33,7 +35,11 @@ export const permanentAddressApplies = (commodity) =>
 export const identifierChecksFor = (commodity, index) =>
   compose(
     ...scopedFields(commodity).map((field) =>
-      maxText(fieldName(field.id, index), 58, IDENTIFIER_MAX_MESSAGES[field.id])
+      maxText(
+        fieldName(field.id, index),
+        IDENTIFIER_MAX_LENGTH,
+        IDENTIFIER_MAX_MESSAGES[field.id]
+      )
     )
   )
 

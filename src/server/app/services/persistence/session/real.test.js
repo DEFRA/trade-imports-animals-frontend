@@ -144,7 +144,7 @@ describe('#session.openingRun (real, yar)', () => {
   it('Should report no opening run for a fresh session', async () => {
     const server = await buildServer()
     const get = await server.inject({ method: 'GET', url: '/run/J-1' })
-    expect(get.result.phase).toBe(null)
+    expect(get.result.phase).toBeNull()
   })
 })
 

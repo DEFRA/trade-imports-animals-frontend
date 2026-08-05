@@ -12,6 +12,76 @@ import {
 } from '../../../../../flow/dispatch.js'
 import { nextInSection, sectionEntry } from '../../../../../flow/navigation.js'
 
+const unitedKingdom = 'United Kingdom'
+
+const completeAnswers = {
+  countryOfOrigin: 'FR',
+  regionOfOriginCodeRequirement: 'no',
+  reasonForImport: 'internalMarket',
+  purposeInInternalMarket: 'breeding',
+  animalsCertifiedFor: 'slaughter',
+  containsUnweanedAnimals: 'no',
+  countyParishHoldingCph: '12/345/6789',
+  commodityLines: [
+    {
+      commoditySelection: 'Cow',
+      commodityType: '16',
+      speciesSelection: ['1148346'],
+      numberOfPackages: '5',
+      numberOfAnimalsQuantity: '1',
+      animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
+    }
+  ],
+  consignor: {
+    name: 'Astra Rosales',
+    address: {
+      addressLine1: '43 East Hague Extension',
+      country: 'Switzerland'
+    }
+  },
+  placeOfDestination: {
+    name: 'Tech Imports Ltd',
+    address: { addressLine1: '643 Main Street', country: unitedKingdom }
+  },
+  placeOfOrigin: {
+    name: 'Origin Farm',
+    address: { addressLine1: '1 Farm Lane', country: 'Ireland' }
+  },
+  consignee: {
+    name: 'British Livestock Ltd',
+    address: {
+      addressLine1: '10 Market Street',
+      country: unitedKingdom
+    }
+  },
+  importer: {
+    name: 'Import Co UK',
+    address: {
+      addressLine1: '20 Trade Road',
+      country: unitedKingdom
+    }
+  },
+  portOfEntry: 'GB ABD',
+  arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
+  meansOfTransport: 'AIRPLANE',
+  transportIdentification: 'FR-892-LK',
+  transportDocumentReference: 'CMR-2026-884721',
+  transporterType: 'Commercial',
+  commercialTransporter: {
+    name: 'García Livestock Transport SL',
+    address: {
+      addressLine1: '43 East Hague Extension',
+      country: 'Switzerland'
+    },
+    approvalNumber: 'ES-T2-45001294'
+  },
+  contactAddress: {
+    name: 'Animal and Plant Health Agency',
+    address: { addressLine1: 'Woodham Lane', country: unitedKingdom }
+  },
+  declaration: 'confirmed'
+}
+
 describe('#buildDispatch', () => {
   beforeAll(() => {
     buildDispatch(dispatchPages)
@@ -145,76 +215,13 @@ describe('#buildDispatch', () => {
   })
 
   it('Should report ready-to-submit only once every section is complete', () => {
-    const complete = {
-      countryOfOrigin: 'FR',
-      regionOfOriginCodeRequirement: 'no',
-      reasonForImport: 'internalMarket',
-      purposeInInternalMarket: 'breeding',
-      animalsCertifiedFor: 'slaughter',
-      containsUnweanedAnimals: 'no',
-      countyParishHoldingCph: '12/345/6789',
-      commodityLines: [
-        {
-          commoditySelection: 'Cow',
-          commodityType: '16',
-          speciesSelection: ['1148346'],
-          numberOfPackages: '5',
-          numberOfAnimalsQuantity: '1',
-          animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
-        }
-      ],
-      consignor: {
-        name: 'Astra Rosales',
-        address: {
-          addressLine1: '43 East Hague Extension',
-          country: 'Switzerland'
-        }
-      },
-      placeOfDestination: {
-        name: 'Tech Imports Ltd',
-        address: { addressLine1: '643 Main Street', country: 'United Kingdom' }
-      },
-      placeOfOrigin: {
-        name: 'Origin Farm',
-        address: { addressLine1: '1 Farm Lane', country: 'Ireland' }
-      },
-      consignee: {
-        name: 'British Livestock Ltd',
-        address: {
-          addressLine1: '10 Market Street',
-          country: 'United Kingdom'
-        }
-      },
-      importer: {
-        name: 'Import Co UK',
-        address: {
-          addressLine1: '20 Trade Road',
-          country: 'United Kingdom'
-        }
-      },
-      portOfEntry: 'GB ABD',
-      arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
-      meansOfTransport: 'AIRPLANE',
-      transportIdentification: 'FR-892-LK',
-      transportDocumentReference: 'CMR-2026-884721',
-      transporterType: 'Commercial',
-      commercialTransporter: {
-        name: 'García Livestock Transport SL',
-        address: {
-          addressLine1: '43 East Hague Extension',
-          country: 'Switzerland'
-        },
-        approvalNumber: 'ES-T2-45001294'
-      },
-      contactAddress: {
-        name: 'Animal and Plant Health Agency',
-        address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
-      },
-      declaration: 'confirmed'
-    }
-    const { inScope } = makeScope(complete)
+    const { inScope } = makeScope(completeAnswers)
     expect(
-      readyForCheckYourAnswers(complete, inScope, evaluateAnswers(complete))
+      readyForCheckYourAnswers(
+        completeAnswers,
+        inScope,
+        evaluateAnswers(completeAnswers)
+      )
     ).toBe(true)
 
     const incomplete = {

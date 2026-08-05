@@ -7,8 +7,8 @@ const requireConfiguredSet = () => {
   return configuredSet
 }
 
-export const configureObligationSet = (obligationSet) => {
-  configuredSet = obligationSet
+export const configureObligationSet = (nextObligationSet) => {
+  configuredSet = nextObligationSet
 }
 
 export const obligationSet = () => requireConfiguredSet()

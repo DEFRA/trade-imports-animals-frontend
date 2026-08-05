@@ -25,6 +25,24 @@ const duplicatesOf = (items, keyFn) => {
     .map(([key, count]) => `${key} (×${count})`)
 }
 
+const withinChainProblem = (obligation) => {
+  const seen = new Set()
+  let cur = obligation.within
+  let depth = 0
+  while (cur) {
+    if (seen.has(cur.id)) {
+      return `${obligation.name} → cycle at ${cur.name}`
+    }
+    seen.add(cur.id)
+    cur = cur.within
+    depth += 1
+    if (depth > MAX_WITHIN_CHAIN_DEPTH) {
+      return `${obligation.name} → chain deeper than ${MAX_WITHIN_CHAIN_DEPTH} (likely cycle)`
+    }
+  }
+  return null
+}
+
 describe('structural integrity — no cycles in `within` references', () => {
   it('every obligation has a within-chain that terminates in null', () => {
     // Without this, a self-loop or a cycle in the manifest hangs the
@@ -33,27 +51,9 @@ describe('structural integrity — no cycles in `within` references', () => {
     // regressions by walking each chain with a max-depth bound and a
     // seen-set. Any cycle fails deterministically before the evaluator
     // is ever built.
-    const problems = []
-    for (const o of obligations) {
-      const seen = new Set()
-      let cur = o.within
-      let depth = 0
-      while (cur) {
-        if (seen.has(cur.id)) {
-          problems.push(`${o.name} → cycle at ${cur.name}`)
-          break
-        }
-        seen.add(cur.id)
-        cur = cur.within
-        depth += 1
-        if (depth > MAX_WITHIN_CHAIN_DEPTH) {
-          problems.push(
-            `${o.name} → chain deeper than ${MAX_WITHIN_CHAIN_DEPTH} (likely cycle)`
-          )
-          break
-        }
-      }
-    }
+    const problems = obligations
+      .map(withinChainProblem)
+      .filter((problem) => problem !== null)
     expect(problems).toEqual([])
   })
 })

@@ -1,7 +1,7 @@
 import { assembleFeature } from './fulfilment-bindings.js'
 import { fulfilmentRegistry } from './fulfilment-registry.js'
 
-const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value, key)
+const hasOwn = (value, key) => Object.hasOwn(value, key)
 
 export const assembleFulfilments = (
   answers = {},

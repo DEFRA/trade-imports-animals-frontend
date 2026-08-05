@@ -139,8 +139,8 @@ export const readDate = (payload, name) => {
   if (raw === '') {
     return { day: '', month: '', year: '' }
   }
-  const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
-  return match ? { day: match[1], month: match[2], year: match[3] } : raw
+  const match = /^(?<day>\d{1,2})\/(?<month>\d{1,2})\/(?<year>\d{4})$/.exec(raw)
+  return match ? { ...match.groups } : raw
 }
 
 const dateInputValue = (value) =>

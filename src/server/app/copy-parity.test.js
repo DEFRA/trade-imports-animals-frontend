@@ -115,10 +115,10 @@ describe('copy parity — cy mirrors en structurally', () => {
         leaves(cy).map((leaf) => [leaf.path, leaf.value])
       )
       for (const { path: leafPath, value: enValue } of leaves(en)) {
-        if (typeof enValue !== 'string') {
-          continue
-        }
-        if (IDENTICAL_ALLOWLIST.has(`${name}:${leafPath}`)) {
+        if (
+          typeof enValue !== 'string' ||
+          IDENTICAL_ALLOWLIST.has(`${name}:${leafPath}`)
+        ) {
           continue
         }
         expect(

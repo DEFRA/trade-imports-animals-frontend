@@ -16,6 +16,8 @@ import { buildDispatch } from './flow/dispatch.js'
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
 import { projectAnswers } from './bridge/fulfilments/index.js'
 
+const GOATS_COMMODITY_SELECTION = '010420 - Goats'
+
 let journeyId
 const buildRequest = () => journeyRequest(journeyId)
 const answersNow = async () => (await store.get(journeyId)).answers
@@ -26,6 +28,17 @@ const line = (commoditySelection, extra = {}) => ({
   numberOfAnimalsQuantity: 25,
   ...extra
 })
+
+const identifiersPath = (lineIndex) => [
+  'commodityLines',
+  lineIndex,
+  'animalIdentifiers'
+]
+const catsLine = (units = []) => ({
+  commoditySelection: 'Cat',
+  animalIdentifiers: units
+})
+const address = { name: 'Owner', address: { addressLine1: '1 Farm Lane' } }
 
 const setupJourneyEngine = () => {
   beforeAll(() => {
@@ -54,18 +67,18 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
       buildRequest(),
       stubH(),
       ['commodityLines'],
-      { commoditySelection: '010420 - Goats' }
+      { commoditySelection: GOATS_COMMODITY_SELECTION }
     )
     expect(second).toBe(1)
     expect((await answersNow()).commodityLines).toEqual([
       { commoditySelection: 'Cow' },
-      { commoditySelection: '010420 - Goats' }
+      { commoditySelection: GOATS_COMMODITY_SELECTION }
     ])
   })
 
   it('Should edit a commodity line in place, leaving siblings intact', async () => {
     await store.seedAnswers(journeyId, {
-      commodityLines: [line('Cow'), line('010420 - Goats')]
+      commodityLines: [line('Cow'), line(GOATS_COMMODITY_SELECTION)]
     })
     await updateEntryAt(
       buildRequest(),
@@ -78,25 +91,25 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
       'Horse'
     )
     expect((await answersNow()).commodityLines[1].commoditySelection).toBe(
-      '010420 - Goats'
+      GOATS_COMMODITY_SELECTION
     )
   })
 
   it('Should remove a commodity line in place, leaving siblings intact', async () => {
     await store.seedAnswers(journeyId, {
-      commodityLines: [line('Cow'), line('010420 - Goats')]
+      commodityLines: [line('Cow'), line(GOATS_COMMODITY_SELECTION)]
     })
     await removeEntryAt(buildRequest(), stubH(), ['commodityLines'], 0)
     expect(
       (await answersNow()).commodityLines.map(
         (entry) => entry.commoditySelection
       )
-    ).toEqual(['010420 - Goats'])
+    ).toEqual([GOATS_COMMODITY_SELECTION])
   })
 
   it('Should ignore a non-integer index on remove (a malformed URL must not destroy instance 0)', async () => {
     await store.seedAnswers(journeyId, {
-      commodityLines: [line('Cow'), line('010420 - Goats')]
+      commodityLines: [line('Cow'), line(GOATS_COMMODITY_SELECTION)]
     })
     await removeEntryAt(
       buildRequest(),
@@ -108,7 +121,7 @@ describe('path-addressed store ops at depth-1 (commodityLines — live carrier)'
       (await answersNow()).commodityLines.map(
         (entry) => entry.commoditySelection
       )
-    ).toEqual(['Cow', '010420 - Goats'])
+    ).toEqual(['Cow', GOATS_COMMODITY_SELECTION])
   })
 
   it('Should ignore an out-of-range index on remove', async () => {
@@ -272,20 +285,7 @@ describe('batch reconcile (reconcileEntriesAt — the species-grain create)', ()
   })
 })
 
-describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifiers)', () => {
-  setupJourneyEngine()
-
-  const identifiersPath = (lineIndex) => [
-    'commodityLines',
-    lineIndex,
-    'animalIdentifiers'
-  ]
-  const catsLine = (units = []) => ({
-    commoditySelection: 'Cat',
-    animalIdentifiers: units
-  })
-  const address = { name: 'Owner', address: { addressLine1: '1 Farm Lane' } }
-
+const unitRecordCrudTests = () => {
   it('Should append a unit into a specific line, minting the nested index and persisting it', async () => {
     await store.seedAnswers(journeyId, {
       commodityLines: [catsLine(), catsLine()]
@@ -379,7 +379,9 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
         .animalIdentifierPassport
     ).toBe('UK-1')
   })
+}
 
+const cardinalityCapTests = () => {
   it('Should reject an append at the cardinality cap — records never exceed the sibling animal count', async () => {
     await store.seedAnswers(journeyId, {
       commodityLines: [
@@ -399,7 +401,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
       identifiersPath(0),
       { animalIdentifierPassport: 'UK-3' }
     )
-    expect(rejected).toBe(null)
+    expect(rejected).toBeNull()
     expect(
       (await answersNow()).commodityLines[0].animalIdentifiers
     ).toHaveLength(2)
@@ -484,7 +486,7 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
       await appendEntryAt(buildRequest(), stubH(), identifiersPath(0), {
         animalIdentifierPassport: 'UK-X'
       })
-    ).toBe(null)
+    ).toBeNull()
     expect(
       await appendEntryAt(buildRequest(), stubH(), identifiersPath(1), {
         animalIdentifierPassport: 'UK-3'
@@ -504,6 +506,13 @@ describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifie
     )
     expect(index).toBe(1)
   })
+}
+
+describe('path-addressed store ops at depth-2 (commodityLines[i].animalIdentifiers)', () => {
+  setupJourneyEngine()
+
+  unitRecordCrudTests()
+  cardinalityCapTests()
 
   it('Should destroy a nested permanentAddress at its exact depth-2 path when the enclosing commodity leaves the gate', async () => {
     await store.seedAnswers(journeyId, {

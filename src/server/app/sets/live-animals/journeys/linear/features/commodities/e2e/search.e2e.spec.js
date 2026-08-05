@@ -8,10 +8,16 @@ import {
 } from '../../../../../../../../../../e2e/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
 
+const BISON_BISON = 'Bison bison'
+const BOS_TAURUS = 'Bos taurus'
+const FELIS_CATUS = 'Felis catus'
+
+const canonicalSelectionOrder = [BISON_BISON, BOS_TAURUS, FELIS_CATUS]
+
 const expectedGroups = [
-  ['Cow (0102)', ['Bison bison', 'Bos spp.', 'Bos taurus', 'Bubalus bubalis']],
+  ['Cow (0102)', [BISON_BISON, 'Bos spp.', BOS_TAURUS, 'Bubalus bubalis']],
   ['Horse (0101)', ['Equus caballus']],
-  ['Cat (01061900)', ['Felis catus']],
+  ['Cat (01061900)', [FELIS_CATUS]],
   ['Dog (01061900)', ['Canis lupus familiaris']],
   ['Fish (0301)', ['Salmo salar']]
 ]
@@ -75,7 +81,7 @@ test.describe('commodity selection', () => {
   test('saves multiple pairs in canonical order and persists checked state', async ({
     page
   }) => {
-    await selectSpecies(page, ['Felis catus', 'Bos taurus', 'Bison bison'])
+    await selectSpecies(page, [FELIS_CATUS, BOS_TAURUS, BISON_BISON])
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     await expect(
@@ -84,14 +90,10 @@ test.describe('commodity selection', () => {
     const speciesHeadings = await page
       .locator('h3.govuk-heading-s')
       .allTextContents()
-    expect(speciesHeadings).toEqual([
-      'Bison bison',
-      'Bos taurus',
-      'Felis catus'
-    ])
+    expect(speciesHeadings).toEqual(canonicalSelectionOrder)
 
     await page.locator('.govuk-back-link').click()
-    for (const name of ['Bison bison', 'Bos taurus', 'Felis catus']) {
+    for (const name of canonicalSelectionOrder) {
       await expect(page.getByRole('checkbox', { name })).toBeChecked()
     }
     await expect(

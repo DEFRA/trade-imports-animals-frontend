@@ -6,7 +6,7 @@ import { pagePath } from '../../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
 import {
-  KNOWN_JOURNEYS_COOKIE,
+  SESSION_COOKIES,
   registerJourneyCookie
 } from '../../../../../../engine/journey.js'
 import { configureRecords } from '../../../../../../engine/persistence/records.js'
@@ -44,9 +44,12 @@ const pdfFile = (filename = 'itahc-certificate.pdf', size = 8) => ({
   payload: Buffer.alloc(size, 1)
 })
 
+const DATE_OF_ISSUE_TEXT = '12/12/2025'
+const VIRUS_NOTES_FILENAME = 'virus-notes.pdf'
+
 const validDocument = {
   accompanyingDocumentReference: 'GBHC1234567890',
-  accompanyingDocumentDateOfIssue: '12/12/2025'
+  accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT
 }
 
 const storedDocument = (overrides = {}) => ({
@@ -60,12 +63,14 @@ const storedDocument = (overrides = {}) => ({
 const summaryTexts = (result) =>
   (result.view.context.errorSummary?.errorList ?? []).map((item) => item.text)
 
+const configureEngine = () => {
+  configureRecords(recordsStub)
+  configureSession(sessionStub)
+  buildDispatch(dispatchPages)
+}
+
 describe('documents — real upload leg on the single-page loop', () => {
-  beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
-  })
+  beforeAll(configureEngine)
   beforeEach(() => store.clear())
 
   it('Should re-render an unreal date of issue with its message and append nothing', async () => {
@@ -103,7 +108,7 @@ describe('documents — real upload leg on the single-page loop', () => {
         payload: {
           action: 'add',
           file: pdfFile(),
-          accompanyingDocumentDateOfIssue: '12/12/2025'
+          accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT
         },
         errorField: 'accompanyingDocumentReference'
       },
@@ -203,6 +208,11 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(response.statusCode).toBe(400)
     expect(h.captured.view.context.errors.file).toBe(OVERSIZE_FILE_MESSAGE)
   })
+})
+
+describe('documents — listing, scanning and removing', () => {
+  beforeAll(configureEngine)
+  beforeEach(() => store.clear())
 
   it('Should list added documents with a scan-status tag and a per-row remove submit button, not a link', async () => {
     const result = await driveHandler(get, {
@@ -211,7 +221,7 @@ describe('documents — real upload leg on the single-page loop', () => {
     const [row] = result.view.context.rows
     expect(row[0].text).toBe('GBHC1234567890')
     expect(row[1].text).toBe('Veterinary health certificate')
-    expect(row[2].text).toBe('12/12/2025')
+    expect(row[2].text).toBe(DATE_OF_ISSUE_TEXT)
     expect(row[3].html).toContain('Safe')
     expect(row[4].html).toContain('<button type="submit"')
     expect(row[4].html).toContain('name="action" value="remove:0"')
@@ -259,15 +269,15 @@ describe('documents — real upload leg on the single-page loop', () => {
 
   it('Should block Continue while a REJECTED document remains, naming the file', async () => {
     const uploadId = await documentUploads.upload({
-      filename: 'virus-notes.pdf'
+      filename: VIRUS_NOTES_FILENAME
     })
     await documentUploads.scanStatus({
       uploadId,
-      filename: 'virus-notes.pdf',
+      filename: VIRUS_NOTES_FILENAME,
       refresh: true
     })
     const seed = {
-      documents: [storedDocument({ uploadId, filename: 'virus-notes.pdf' })]
+      documents: [storedDocument({ uploadId, filename: VIRUS_NOTES_FILENAME })]
     }
     const result = await driveHandler(post, {
       seed,
@@ -374,6 +384,11 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(result.response.redirect).toBeDefined()
     expect(result.after).toEqual(result.before)
   })
+})
+
+describe('documents — scan-status poll and view context', () => {
+  beforeAll(configureEngine)
+  beforeEach(() => store.clear())
 
   it('Should serve the scan statuses the client polls, keyed by upload id', async () => {
     const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
@@ -470,9 +485,11 @@ describe('documents — real upload leg on the single-page loop', () => {
     await driveHandler(statusRoute.handler, { seed })
 
     const settled = await driveHandler(get, { seed })
-    expect(settled.view.context.rows[0][4].html).toContain(
-      `href="${pagePath(settled.journeyId, `accompanying-documents/${uploadId}/file`)}"`
+    const fileHref = pagePath(
+      settled.journeyId,
+      `accompanying-documents/${uploadId}/file`
     )
+    expect(settled.view.context.rows[0][4].html).toContain(`href="${fileHref}"`)
     expect(settled.view.context.rows[0][4].html).toContain('Remove')
   })
 
@@ -508,11 +525,7 @@ describe('documents — real upload leg on the single-page loop', () => {
 })
 
 describe('documents — reading an uploaded file back', () => {
-  beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
-  })
+  beforeAll(configureEngine)
   beforeEach(() => store.clear())
 
   const journeyHolding = async (uploadId) => {
@@ -527,7 +540,7 @@ describe('documents — reading an uploaded file back', () => {
   }
 
   const knownCookie = (journeyIds) =>
-    `${KNOWN_JOURNEYS_COOKIE}=${Buffer.from(
+    `${SESSION_COOKIES.knownJourneys}=${Buffer.from(
       JSON.stringify(journeyIds)
     ).toString('base64')}`
 

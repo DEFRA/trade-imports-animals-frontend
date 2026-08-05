@@ -12,6 +12,9 @@ const defaults = copyFor({ en, cy })
 const POSTCODE = /^[A-Za-z]{1,2}\d[A-Za-z\d]?\s*\d[A-Za-z]{2}$/
 const VEHICLE_REG = /^[A-Za-z]{2}\d{2}\s?[A-Za-z]{3}$/
 const PHONE_ALLOWED = /^[0-9+()\-.,;\s]+$/
+const UK_PHONE_MIN_DIGITS = 7
+const UK_PHONE_MAX_DIGITS = 15
+const INVALID_ERROR_CODE = 'any.invalid'
 
 const single = (name, rule) => Joi.object({ [name]: rule }).unknown(true)
 
@@ -79,12 +82,18 @@ export const ukPhone = (name, message = defaults.ukPhone) =>
       .pattern(PHONE_ALLOWED)
       .custom((raw, helpers) => {
         const digits = raw.replace(/\D/g, '')
-        if (digits.length < 7 || digits.length > 15) {
-          return helpers.error('any.invalid')
+        if (
+          digits.length < UK_PHONE_MIN_DIGITS ||
+          digits.length > UK_PHONE_MAX_DIGITS
+        ) {
+          return helpers.error(INVALID_ERROR_CODE)
         }
         return raw
       })
-      .messages({ 'string.pattern.base': message, 'any.invalid': message })
+      .messages({
+        'string.pattern.base': message,
+        [INVALID_ERROR_CODE]: message
+      })
   )
 
 export const requiredOneOf = (name, values, message) =>
@@ -166,11 +175,13 @@ export const dateParts = (name, message = defaults.date) => {
           return day
         }
         if (fill === 'partial') {
-          return helpers.error('any.invalid')
+          return helpers.error(INVALID_ERROR_CODE)
         }
-        return isValidCalendarDate(parts) ? day : helpers.error('any.invalid')
+        return isValidCalendarDate(parts)
+          ? day
+          : helpers.error(INVALID_ERROR_CODE)
       })
-      .messages({ 'any.invalid': message }),
+      .messages({ [INVALID_ERROR_CODE]: message }),
     [monthKey]: Joi.any(),
     [yearKey]: Joi.any()
   }).unknown(true)
@@ -186,7 +197,7 @@ export const dateText = (name, message = defaults.date) =>
         const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
         return match && isValidCalendarDate(match.slice(1))
           ? raw
-          : helpers.error('any.invalid')
+          : helpers.error(INVALID_ERROR_CODE)
       })
-      .messages({ 'any.invalid': message })
+      .messages({ [INVALID_ERROR_CODE]: message })
   )

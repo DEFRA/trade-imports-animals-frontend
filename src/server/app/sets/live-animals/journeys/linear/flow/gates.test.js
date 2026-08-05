@@ -9,6 +9,8 @@ import { buildDispatch } from '../../../../../flow/dispatch.js'
 import { sections } from './flow.js'
 import { pageGatePasses, sectionGatePasses } from '../../../../../flow/gates.js'
 
+const unitedKingdom = 'United Kingdom'
+
 describe('#pageGatePasses / #sectionGatePasses', () => {
   const syntheticGatedSection = {
     id: 'synthetic',
@@ -166,7 +168,7 @@ describe('#sectionGatePasses — RULE 2: review gates on submit-readiness (no de
     },
     placeOfDestination: {
       name: 'Tech Imports Ltd',
-      address: { addressLine1: '643 Main Street', country: 'United Kingdom' }
+      address: { addressLine1: '643 Main Street', country: unitedKingdom }
     },
     placeOfOrigin: {
       name: 'Origin Farm',
@@ -176,12 +178,12 @@ describe('#sectionGatePasses — RULE 2: review gates on submit-readiness (no de
       name: 'British Livestock Ltd',
       address: {
         addressLine1: '10 Market Street',
-        country: 'United Kingdom'
+        country: unitedKingdom
       }
     },
     importer: {
       name: 'Import Co UK',
-      address: { addressLine1: '20 Trade Road', country: 'United Kingdom' }
+      address: { addressLine1: '20 Trade Road', country: unitedKingdom }
     },
     portOfEntry: 'GB ABD',
     arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
@@ -199,7 +201,7 @@ describe('#sectionGatePasses — RULE 2: review gates on submit-readiness (no de
     },
     contactAddress: {
       name: 'Animal and Plant Health Agency',
-      address: { addressLine1: 'Woodham Lane', country: 'United Kingdom' }
+      address: { addressLine1: 'Woodham Lane', country: unitedKingdom }
     }
   }
 

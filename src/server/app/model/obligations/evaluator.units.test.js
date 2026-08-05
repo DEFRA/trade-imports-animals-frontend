@@ -20,12 +20,15 @@ import {
 // Naming convention: two-letter ids for readability at assertion sites
 // ('g1' = group 1, 'f1' = field 1, etc.). Real obligations use UUIDs.
 
+const emptyManifestGivesEmptyMapTitle = 'empty manifest → empty Map'
+const derivedLeafCategory = 'derived-leaf'
+
 // ---------------------------------------------------------------------------
 // Construction-phase builders
 // ---------------------------------------------------------------------------
 
 describe('buildObligationsById', () => {
-  it('empty manifest → empty Map', () => {
+  it(emptyManifestGivesEmptyMapTitle, () => {
     const result = buildObligationsById([])
     expect(result.size).toBe(0)
   })
@@ -47,7 +50,7 @@ describe('buildObligationsById', () => {
 })
 
 describe('buildObligationChildren', () => {
-  it('empty manifest → empty Map', () => {
+  it(emptyManifestGivesEmptyMapTitle, () => {
     expect(buildObligationChildren([]).size).toBe(0)
   })
 
@@ -105,7 +108,7 @@ describe('classifyObligations', () => {
       applyTo: () => ({})
     }
     const result = classifyObligations([obligation], noChildren)
-    expect(result.get('o')).toBe('derived-leaf')
+    expect(result.get('o')).toBe(derivedLeafCategory)
   })
 
   it('user indexed leaf → "user-leaf"', () => {
@@ -129,7 +132,7 @@ describe('classifyObligations', () => {
 })
 
 describe('buildAncestorGroups', () => {
-  it('empty manifest → empty Map', () => {
+  it(emptyManifestGivesEmptyMapTitle, () => {
     expect(buildAncestorGroups([]).size).toBe(0)
   })
 
@@ -156,7 +159,7 @@ describe('buildAncestorGroups', () => {
 })
 
 describe('buildDescendants', () => {
-  it('empty manifest → empty Map', () => {
+  it(emptyManifestGivesEmptyMapTitle, () => {
     expect(buildDescendants([], new Map()).size).toBe(0)
   })
 
@@ -385,7 +388,7 @@ describe('purgeStorage', () => {
       { o: { turbo: '800', alloys: '200', stale: '999' } },
       {
         obligationsById: new Map([['o', obligation]]),
-        obligationsByCategory: new Map([['o', 'derived-leaf']]),
+        obligationsByCategory: new Map([['o', derivedLeafCategory]]),
         obligationApplicabilityDecisions: new Map([
           ['o', { records: ['turbo', 'alloys'] }]
         ]),
@@ -401,7 +404,7 @@ describe('purgeStorage', () => {
       { o: { turbo: '800' } },
       {
         obligationsById: new Map([['o', obligation]]),
-        obligationsByCategory: new Map([['o', 'derived-leaf']]),
+        obligationsByCategory: new Map([['o', derivedLeafCategory]]),
         obligationApplicabilityDecisions: new Map([['o', { records: [] }]]),
         isInScope: alwaysInScope
       }
@@ -457,7 +460,7 @@ describe('purgeStorage', () => {
 describe('enumerateGroupFulfilmentIds', () => {
   const alwaysInScope = () => true
 
-  it('empty manifest → empty Map', () => {
+  it(emptyManifestGivesEmptyMapTitle, () => {
     const result = enumerateGroupFulfilmentIds([], {
       obligationsByCategory: new Map(),
       obligationAncestorGroups: new Map(),
@@ -723,7 +726,7 @@ describe('buildImplication', () => {
     const obligation = { id: 'o', status: 'mandatory' }
     const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
-      obligationsByCategory: new Map([['o', 'derived-leaf']]),
+      obligationsByCategory: new Map([['o', derivedLeafCategory]]),
       obligationApplicabilityDecisions: new Map([
         [
           'o',

@@ -10,8 +10,7 @@ let configured = {
   rowStatus: unconfigured,
   nextRunTarget: unconfigured,
   flowOnlyKeys: [],
-  entryGuardTarget: unconfigured,
-  layout: undefined
+  entryGuardTarget: unconfigured
 }
 
 export const configureJourneyFlow = (journeyFlow) => {
@@ -24,6 +23,6 @@ export const journeyRowStatus = (...args) => configured.rowStatus(...args)
 export const journeyNextRunTarget = (...args) =>
   configured.nextRunTarget(...args)
 export const journeyFlowOnlyKeys = () => configured.flowOnlyKeys
-export const journeyEntryGuardTarget = (...args) =>
+export const journeyEntryGuardTarget = async (...args) =>
   configured.entryGuardTarget(...args)
 export const journeyLayout = () => configured.layout

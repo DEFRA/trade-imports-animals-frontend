@@ -18,6 +18,12 @@ const keyedRecordsEqual = (recordA, recordB) => {
   return true
 }
 
+const viewValuesEqual = (valueA, valueB) =>
+  valueA === valueB ||
+  (isKeyedRecord(valueA) &&
+    isKeyedRecord(valueB) &&
+    keyedRecordsEqual(valueA, valueB))
+
 // Structural equality between two fulfilment views (obligation-id → value).
 // Used by the purge fixpoint to detect convergence. Values are compared by
 // reference at the top level (purge only ever drops keys or filters
@@ -38,18 +44,9 @@ export function viewsEqual(viewA, viewB) {
     if (!Object.hasOwn(viewB, key)) {
       return false
     }
-    const valueA = viewA[key]
-    const valueB = viewB[key]
-    if (valueA === valueB) {
-      continue
-    }
-    if (isKeyedRecord(valueA) && isKeyedRecord(valueB)) {
-      if (keyedRecordsEqual(valueA, valueB)) {
-        continue
-      }
+    if (!viewValuesEqual(viewA[key], viewB[key])) {
       return false
     }
-    return false
   }
   return true
 }

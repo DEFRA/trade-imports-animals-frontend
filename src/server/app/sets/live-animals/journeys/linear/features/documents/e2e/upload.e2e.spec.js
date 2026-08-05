@@ -8,6 +8,7 @@ import {
 } from '../../../../../../../../../../e2e/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
+import { REFERENCE_MAX_LENGTH } from '../form/payload.js'
 import {
   ACCEPT_ATTRIBUTE,
   ALLOWED_FILE_TYPES_HINT,
@@ -16,6 +17,9 @@ import {
   MAX_FILE_SIZE_LABEL,
   OVERSIZE_FILE_MESSAGE
 } from '../upload-config.js'
+
+const HTTP_OK = 200
+const DATE_OF_ISSUE_TEXT = '03/01/2026'
 
 const openDocuments = async (page) => {
   await startNotification(page)
@@ -27,6 +31,9 @@ const openDocuments = async (page) => {
 const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
 
+const rowFor = (page, reference) =>
+  page.locator('.govuk-table__row', { hasText: reference })
+
 const setUploadFile = (page, filename, bytes, mimeType = 'application/pdf') =>
   page.getByLabel(copy.file.label).setInputFiles({
     name: filename,
@@ -36,7 +43,7 @@ const setUploadFile = (page, filename, bytes, mimeType = 'application/pdf') =>
 
 const validDocument = {
   accompanyingDocumentReference: 'ITAHC-2026-0001',
-  accompanyingDocumentDateOfIssue: '03/01/2026',
+  accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT,
   filename: 'itahc-upload.pdf'
 }
 
@@ -50,12 +57,43 @@ const fillDocument = async (page, document = validDocument) => {
   await setUploadFile(page, document.filename)
 }
 
+const fillMetadataOnly = async (page) => {
+  await page
+    .getByLabel(copy.reference.label)
+    .fill(validDocument.accompanyingDocumentReference)
+  await page
+    .getByLabel(copy.dateOfIssue.label)
+    .fill(validDocument.accompanyingDocumentDateOfIssue)
+}
+
 const submitAdd = (page) =>
   page.getByRole('button', { name: copy.addAnother }).click()
 
 const uploadDocument = async (page, document = validDocument) => {
   await fillDocument(page, document)
   await submitAdd(page)
+}
+
+const expectPreservedMetadata = async (page) => {
+  await expect(page.getByLabel(copy.reference.label)).toHaveValue(
+    validDocument.accompanyingDocumentReference
+  )
+  await expect(page.getByLabel(copy.dateOfIssue.label)).toHaveValue(
+    validDocument.accompanyingDocumentDateOfIssue
+  )
+}
+
+const expectNoSeriousAxeViolations = async (page, name) => {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa'])
+    .analyze()
+  const seriousOrCritical = results.violations.filter(({ impact }) =>
+    ['serious', 'critical'].includes(impact)
+  )
+  expect(
+    seriousOrCritical,
+    `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
+  ).toEqual([])
 }
 
 test.describe('document upload page', () => {
@@ -96,6 +134,12 @@ test.describe('document upload page', () => {
     await page.locator('.govuk-back-link').click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
+})
+
+test.describe('document upload reference validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await openDocuments(page)
+  })
 
   test('reference validation: empty value links to and focuses the preserved field', async ({
     page
@@ -119,7 +163,7 @@ test.describe('document upload page', () => {
   test('reference validation: over 58 characters links to and focuses the preserved value', async ({
     page
   }) => {
-    const reference = 'R'.repeat(59)
+    const reference = 'R'.repeat(REFERENCE_MAX_LENGTH + 1)
     await fillDocument(page, {
       ...validDocument,
       accompanyingDocumentReference: reference
@@ -134,6 +178,12 @@ test.describe('document upload page', () => {
     await expect(page.getByLabel(copy.dateOfIssue.label)).toHaveValue(
       validDocument.accompanyingDocumentDateOfIssue
     )
+  })
+})
+
+test.describe('document upload date validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await openDocuments(page)
   })
 
   test('date validation: empty value links to and focuses the preserved field', async ({
@@ -175,39 +225,30 @@ test.describe('document upload page', () => {
       validDocument.accompanyingDocumentReference
     )
   })
+})
+
+test.describe('document upload file validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await openDocuments(page)
+  })
 
   test('file validation: no file links to and focuses the upload while preserving metadata', async ({
     page
   }) => {
-    await page
-      .getByLabel(copy.reference.label)
-      .fill(validDocument.accompanyingDocumentReference)
-    await page
-      .getByLabel(copy.dateOfIssue.label)
-      .fill(validDocument.accompanyingDocumentDateOfIssue)
+    await fillMetadataOnly(page)
     await submitAdd(page)
 
     const link = errorLink(page, copy.errors.fileRequired)
     await expect(link).toBeVisible()
     await link.click()
     await expect(page.getByLabel(copy.file.label)).toBeFocused()
-    await expect(page.getByLabel(copy.reference.label)).toHaveValue(
-      validDocument.accompanyingDocumentReference
-    )
-    await expect(page.getByLabel(copy.dateOfIssue.label)).toHaveValue(
-      validDocument.accompanyingDocumentDateOfIssue
-    )
+    await expectPreservedMetadata(page)
   })
 
   test('file validation: unsupported type links to and focuses the upload while preserving metadata', async ({
     page
   }) => {
-    await page
-      .getByLabel(copy.reference.label)
-      .fill(validDocument.accompanyingDocumentReference)
-    await page
-      .getByLabel(copy.dateOfIssue.label)
-      .fill(validDocument.accompanyingDocumentDateOfIssue)
+    await fillMetadataOnly(page)
     await setUploadFile(
       page,
       'notes.zip',
@@ -220,24 +261,20 @@ test.describe('document upload page', () => {
     await expect(link).toBeVisible()
     await link.click()
     await expect(page.getByLabel(copy.file.label)).toBeFocused()
-    await expect(page.getByLabel(copy.reference.label)).toHaveValue(
-      validDocument.accompanyingDocumentReference
-    )
-    await expect(page.getByLabel(copy.dateOfIssue.label)).toHaveValue(
-      validDocument.accompanyingDocumentDateOfIssue
-    )
+    await expectPreservedMetadata(page)
+  })
+})
+
+test.describe('document upload oversize validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await openDocuments(page)
   })
 
   test('file validation: client-side oversize error focuses the summary and retains metadata', async ({
     page
   }) => {
     test.slow()
-    await page
-      .getByLabel(copy.reference.label)
-      .fill(validDocument.accompanyingDocumentReference)
-    await page
-      .getByLabel(copy.dateOfIssue.label)
-      .fill(validDocument.accompanyingDocumentDateOfIssue)
+    await fillMetadataOnly(page)
     await setUploadFile(
       page,
       'oversize.pdf',
@@ -253,12 +290,7 @@ test.describe('document upload page', () => {
       'aria-describedby',
       /file-error/
     )
-    await expect(page.getByLabel(copy.reference.label)).toHaveValue(
-      validDocument.accompanyingDocumentReference
-    )
-    await expect(page.getByLabel(copy.dateOfIssue.label)).toHaveValue(
-      validDocument.accompanyingDocumentDateOfIssue
-    )
+    await expectPreservedMetadata(page)
   })
 
   test('file validation: server rejects an oversize multipart payload', async ({
@@ -281,6 +313,12 @@ test.describe('document upload page', () => {
     await expect(page.getByLabel(copy.file.label)).toBeFocused()
     await expect(page.getByText(copy.empty)).toBeVisible()
   })
+})
+
+test.describe('document upload saved rows', () => {
+  test.beforeEach(async ({ page }) => {
+    await openDocuments(page)
+  })
 
   test('uploads through the configured stub and renders the saved row', async ({
     page
@@ -294,9 +332,7 @@ test.describe('document upload page', () => {
       filename: document.filename
     })
 
-    const row = page.locator('.govuk-table__row', {
-      hasText: document.accompanyingDocumentReference
-    })
+    const row = rowFor(page, document.accompanyingDocumentReference)
     await expect(row).toContainText(
       copy.types[document.accompanyingDocumentType]
     )
@@ -313,9 +349,7 @@ test.describe('document upload page', () => {
   }) => {
     test.slow()
     await uploadDocument(page)
-    const row = page.locator('.govuk-table__row', {
-      hasText: validDocument.accompanyingDocumentReference
-    })
+    const row = rowFor(page, validDocument.accompanyingDocumentReference)
     await expect(row).toContainText(copy.scanTags.safe)
     const viewFile = row.getByRole('link', {
       name: `${copy.viewFile} ${copy.viewFileHidden(1)}`
@@ -324,7 +358,7 @@ test.describe('document upload page', () => {
     const response = await page.request.get(
       new URL(href, page.url()).toString()
     )
-    expect(response.status()).toBe(200)
+    expect(response.status()).toBe(HTTP_OK)
     expect(response.headers()['content-type']).toContain('application/pdf')
     expect(response.headers()['x-content-type-options']).toBe('nosniff')
     expect((await response.text()).startsWith('%PDF-')).toBe(true)
@@ -335,9 +369,7 @@ test.describe('document upload page', () => {
   }) => {
     test.slow()
     await uploadDocument(page)
-    const row = page.locator('.govuk-table__row', {
-      hasText: validDocument.accompanyingDocumentReference
-    })
+    const row = rowFor(page, validDocument.accompanyingDocumentReference)
     await row
       .getByRole('button', {
         name: `${copy.remove} ${copy.removeHidden(1)}`,
@@ -347,6 +379,12 @@ test.describe('document upload page', () => {
     await expect(row).toHaveCount(0)
     await expect(page.getByText(copy.empty)).toBeVisible()
   })
+})
+
+test.describe('document upload capacity and accessibility', () => {
+  test.beforeEach(async ({ page }) => {
+    await openDocuments(page)
+  })
 
   test('rejects another upload after the maximum document capacity is reached', async ({
     page
@@ -355,13 +393,13 @@ test.describe('document upload page', () => {
     for (let index = 1; index <= MAX_DOCUMENTS; index++) {
       await uploadDocument(page, {
         accompanyingDocumentReference: `ITAHC-CAPACITY-${index}`,
-        accompanyingDocumentDateOfIssue: '03/01/2026',
+        accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT,
         filename: `itahc-capacity-${index}.pdf`
       })
     }
     await fillDocument(page, {
       accompanyingDocumentReference: 'ITAHC-ONE-TOO-MANY',
-      accompanyingDocumentDateOfIssue: '03/01/2026',
+      accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT,
       filename: 'itahc-one-too-many.pdf'
     })
     await submitAdd(page)
@@ -379,41 +417,15 @@ test.describe('document upload page', () => {
   test('empty upload state has no serious or critical axe violations', async ({
     page
   }) => {
-    const scan = async (name) => {
-      const results = await new AxeBuilder({ page })
-        .withTags(['wcag2a', 'wcag2aa'])
-        .analyze()
-      const seriousOrCritical = results.violations.filter(({ impact }) =>
-        ['serious', 'critical'].includes(impact)
-      )
-      expect(
-        seriousOrCritical,
-        `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-      ).toEqual([])
-    }
-
-    await scan('Empty document upload page')
+    await expectNoSeriousAxeViolations(page, 'Empty document upload page')
   })
 
   test('document date picker has no serious or critical axe violations', async ({
     page
   }) => {
-    const scan = async (name) => {
-      const results = await new AxeBuilder({ page })
-        .withTags(['wcag2a', 'wcag2aa'])
-        .analyze()
-      const seriousOrCritical = results.violations.filter(({ impact }) =>
-        ['serious', 'critical'].includes(impact)
-      )
-      expect(
-        seriousOrCritical,
-        `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-      ).toEqual([])
-    }
-
     await page.getByRole('button', { name: 'Choose date' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
-    await scan('Document date picker dialog')
+    await expectNoSeriousAxeViolations(page, 'Document date picker dialog')
   })
 
   test('populated upload state has no serious or critical axe violations', async ({
@@ -422,19 +434,8 @@ test.describe('document upload page', () => {
     test.slow()
     await uploadDocument(page)
     await expect(
-      page.locator('.govuk-table__row', {
-        hasText: validDocument.accompanyingDocumentReference
-      })
+      rowFor(page, validDocument.accompanyingDocumentReference)
     ).toContainText(copy.scanTags.safe)
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-    expect(
-      seriousOrCritical,
-      `Populated document upload page has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectNoSeriousAxeViolations(page, 'Populated document upload page')
   })
 })

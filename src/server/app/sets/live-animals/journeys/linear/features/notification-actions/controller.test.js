@@ -16,7 +16,7 @@ import {
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
-  KNOWN_JOURNEYS_COOKIE
+  SESSION_COOKIES
 } from '../../../../../../engine/persistence/session.js'
 import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
@@ -74,7 +74,7 @@ describe('copy notification action', () => {
           idempotencyKey: 'stable-copy-key',
           copyOrigin: 'dashboard'
         },
-        state: { [KNOWN_JOURNEYS_COOKIE]: [source.journeyId] }
+        state: { [SESSION_COOKIES.knownJourneys]: [source.journeyId] }
       })
 
     const first = await copyPost(request(), stubH())
@@ -124,7 +124,7 @@ describe('copy notification action', () => {
           idempotencyKey: 'unused-key',
           copyOrigin: 'dashboard'
         },
-        state: { [KNOWN_JOURNEYS_COOKIE]: [] }
+        state: { [SESSION_COOKIES.knownJourneys]: [] }
       }),
       stubH()
     )

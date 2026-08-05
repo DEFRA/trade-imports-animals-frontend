@@ -22,6 +22,9 @@ import { routes as filterRoutes } from './import-type-filter/controller.js'
 import { routes as originRoutes } from './origin/controller.js'
 import { routes as importReasonRoutes } from './import-reason/controller.js'
 
+const JOURNEY_REFERENCE = 'GBN-AG-26-ABC123'
+const DRAFT_TAG = { text: 'Draft', classes: 'govuk-tag--blue' }
+
 const getHandlerOf = (routes) =>
   routes.find((route) => route.method === 'GET').handler
 
@@ -45,36 +48,36 @@ describe('journey reference strip', () => {
 
   it('Should map a draft journey to a blue Draft tag with the reference', () => {
     expect(
-      journeyStrip({ journeyId: 'GBN-AG-26-ABC123', status: DRAFT })
+      journeyStrip({ journeyId: JOURNEY_REFERENCE, status: DRAFT })
     ).toEqual({
-      reference: 'GBN-AG-26-ABC123',
-      status: { text: 'Draft', classes: 'govuk-tag--blue' }
+      reference: JOURNEY_REFERENCE,
+      status: DRAFT_TAG
     })
   })
 
   it('Should map a submitted journey to a green Submitted tag', () => {
     expect(
-      journeyStrip({ journeyId: 'GBN-AG-26-ABC123', status: SUBMITTED })
+      journeyStrip({ journeyId: JOURNEY_REFERENCE, status: SUBMITTED })
     ).toEqual({
-      reference: 'GBN-AG-26-ABC123',
+      reference: JOURNEY_REFERENCE,
       status: { text: 'Submitted', classes: 'govuk-tag--green' }
     })
   })
 
   it('Should map an amend journey to a yellow Amending tag', () => {
     expect(
-      journeyStrip({ journeyId: 'GBN-AG-26-ABC123', status: AMEND })
+      journeyStrip({ journeyId: JOURNEY_REFERENCE, status: AMEND })
     ).toEqual({
-      reference: 'GBN-AG-26-ABC123',
+      reference: JOURNEY_REFERENCE,
       status: { text: 'Amending', classes: 'govuk-tag--yellow' }
     })
   })
 
   it('Should map a deleted journey to a grey Deleted tag', () => {
     expect(
-      journeyStrip({ journeyId: 'GBN-AG-26-ABC123', status: DELETED })
+      journeyStrip({ journeyId: JOURNEY_REFERENCE, status: DELETED })
     ).toEqual({
-      reference: 'GBN-AG-26-ABC123',
+      reference: JOURNEY_REFERENCE,
       status: { text: 'Deleted', classes: 'govuk-tag--grey' }
     })
   })
@@ -87,7 +90,7 @@ describe('journey reference strip', () => {
     const { journey, context } = await renderWith(getHandlerOf(hubRoutes))
     expect(context.journeyStrip).toEqual({
       reference: journey.journeyId,
-      status: { text: 'Draft', classes: 'govuk-tag--blue' }
+      status: DRAFT_TAG
     })
   })
 
@@ -97,7 +100,7 @@ describe('journey reference strip', () => {
     )
     expect(context.journeyStrip).toEqual({
       reference: journey.journeyId,
-      status: { text: 'Draft', classes: 'govuk-tag--blue' }
+      status: DRAFT_TAG
     })
   })
 
@@ -132,7 +135,7 @@ describe('journey reference strip', () => {
     })
     expect(context.journeyStrip).toEqual({
       reference: journey.journeyId,
-      status: { text: 'Draft', classes: 'govuk-tag--blue' }
+      status: DRAFT_TAG
     })
   })
 })

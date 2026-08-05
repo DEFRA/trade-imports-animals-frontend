@@ -12,8 +12,14 @@ import { attachmentTypeFor } from '../upload-config.js'
 
 const copy = copyFor({ en, cy })
 
+export const REFERENCE_MAX_LENGTH = 58
+
 export const fields = compose(
-  maxText('accompanyingDocumentReference', 58, copy.errors.referenceMaxLength),
+  maxText(
+    'accompanyingDocumentReference',
+    REFERENCE_MAX_LENGTH,
+    copy.errors.referenceMaxLength
+  ),
   dateText('accompanyingDocumentDateOfIssue', copy.errors.dateInvalid)
 )
 

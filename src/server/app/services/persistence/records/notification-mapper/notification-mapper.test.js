@@ -8,6 +8,8 @@ const address = (name, line1) => ({
 })
 
 const referenceNumber = 'GBN-AG-26-ABC123'
+const ORIGIN_FARM_LINE1 = '1 Farm Lane'
+const BOS_TAURUS = 'Bos taurus'
 const currentNotificationFrom = (answers) =>
   fulfilmentToNotification(
     assembleFulfilments(answers),
@@ -26,7 +28,7 @@ const mappedAnswers = () => ({
   animalsCertifiedFor: 'Further keeping',
   containsUnweanedAnimals: 'No',
   reasonForImport: 'Internal market',
-  placeOfOrigin: address('Origin Farm', '1 Farm Lane'),
+  placeOfOrigin: address('Origin Farm', ORIGIN_FARM_LINE1),
   consignor: address('Consignor Ltd', '2 Depot Road'),
   consignee: address('Consignee Ltd', '3 Dock Street'),
   importer: address('Importer Ltd', '4 Port Way'),
@@ -94,7 +96,7 @@ const answersWithGaps = () => ({
           horseName: 'Dobbin',
           animalIdentifierIdentificationDetails: 'Hive mark HM-2026-004',
           animalIdentifierDescription: 'Brown cow',
-          permanentAddress: address('Owner', '1 Farm Lane')
+          permanentAddress: address('Owner', ORIGIN_FARM_LINE1)
         }
       ]
     }
@@ -144,7 +146,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
           species: [
             {
               value: '1148346',
-              text: 'Bos taurus',
+              text: BOS_TAURUS,
               noOfAnimals: '25',
               noOfPackages: '5',
               earTag: 'UK123456789012',
@@ -209,7 +211,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     })
     expect(notification.reasonForImport).toBe('Internal market')
     expect(notification.placeOfOrigin).toEqual(
-      address('Origin Farm', '1 Farm Lane')
+      address('Origin Farm', ORIGIN_FARM_LINE1)
     )
     expect(notification.consignor).toEqual(
       address('Consignor Ltd', '2 Depot Road')
@@ -235,7 +237,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     })
     expect(notification.commodity.commodityComplement[0].species[0]).toEqual({
       value: '1148346',
-      text: 'Bos taurus',
+      text: BOS_TAURUS,
       noOfAnimals: '25',
       noOfPackages: '5',
       earTag: 'UK123456789012',
@@ -277,7 +279,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
 
     expect(species).toEqual({
       value: '1148346',
-      text: 'Bos taurus',
+      text: BOS_TAURUS,
       noOfAnimals: '25',
       noOfPackages: '5',
       earTag: 'UK123456789012',

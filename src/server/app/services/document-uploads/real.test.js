@@ -7,17 +7,18 @@ const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
 
 const BACKEND_URL = 'http://localhost:8085'
+const PDF_CONTENT_TYPE = 'application/pdf'
 
 const uploadDetails = {
   journeyId: 'GBN-1',
   filename: 'invoice.pdf',
-  contentType: 'application/pdf',
+  contentType: PDF_CONTENT_TYPE,
   bytes: Buffer.from('pdf-bytes'),
   documentType: 'ITAHC',
   documentReference: 'GBHC1234567890',
   dateOfIssue: '2025-12-12',
   maxFileSize: 10000000,
-  mimeTypes: ['application/pdf']
+  mimeTypes: [PDF_CONTENT_TYPE]
 }
 
 describe('#documentUploads', () => {
@@ -40,14 +41,14 @@ describe('#documentUploads', () => {
         documentReference: 'GBHC1234567890',
         dateOfIssue: '2025-12-12',
         maxFileSize: 10000000,
-        mimeTypes: ['application/pdf']
+        mimeTypes: [PDF_CONTENT_TYPE]
       })
       const [fileUrl, fileOptions] = fetchMocker.mock.calls[1]
       expect(fileUrl).toBe(`${BACKEND_URL}/document-uploads/up-1/file`)
       expect(fileOptions.body).toBeInstanceOf(FormData)
       const file = fileOptions.body.get('file')
       expect(file.name).toBe('invoice.pdf')
-      expect(file.type).toBe('application/pdf')
+      expect(file.type).toBe(PDF_CONTENT_TYPE)
     })
 
     it('Should throw with the response status when initiate fails, without posting the file', async () => {
@@ -99,7 +100,7 @@ describe('#documentUploads', () => {
     it('Should GET the file leg and hand back the streamed body and headers', async () => {
       fetchMocker.mockResponse('%PDF-1.4 stored bytes', {
         headers: {
-          'content-type': 'application/pdf',
+          'content-type': PDF_CONTENT_TYPE,
           'content-disposition': 'inline; filename="itahc.pdf"'
         }
       })
@@ -109,7 +110,7 @@ describe('#documentUploads', () => {
       const [url, options] = fetchMocker.mock.calls[0]
       expect(url).toBe(`${BACKEND_URL}/document-uploads/up-1/file`)
       expect(options.method).toBe('GET')
-      expect(response.headers.get('content-type')).toBe('application/pdf')
+      expect(response.headers.get('content-type')).toBe(PDF_CONTENT_TYPE)
       expect(response.headers.get('content-disposition')).toBe(
         'inline; filename="itahc.pdf"'
       )

@@ -26,6 +26,7 @@ const notificationFulfilmentsUrl = `${backendBaseUrl}/notification-fulfilments`
 const notificationsUrl = `${backendBaseUrl}/notifications`
 const journeyId = 'GBN-AG-26-ABC123'
 const createdAt = '2026-07-23T09:00:00'
+const submittedTimestamp = '2026-07-23T10:00:00'
 const actor = {
   id: '2100010101',
   source: 'dynamics-contact',
@@ -157,6 +158,12 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     expect(request.method).toBe('GET')
     expect(loaded).toBeUndefined()
   })
+})
+
+describe('real records adapter — fulfilment writes', () => {
+  beforeEach(() => {
+    fetchMocker.resetMocks()
+  })
 
   it('Should PUT canonical then POST the notification projection with ref-in-body', async () => {
     const snapshot = assembleFulfilments({
@@ -276,6 +283,12 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       fulfilments: encoded
     })
   })
+})
+
+describe('real records adapter — lifecycle and list', () => {
+  beforeEach(() => {
+    fetchMocker.resetMocks()
+  })
 
   it('Should dual-post every lifecycle transition to fulfilment and notification', async () => {
     fetchMocker.mockResponses(
@@ -284,7 +297,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
         JSON.stringify(
           canonical({
             status: 'SUBMITTED',
-            submittedAt: '2026-07-23T10:00:00'
+            submittedAt: submittedTimestamp
           })
         ),
         { status: 200 }
@@ -298,7 +311,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
         JSON.stringify(
           canonical({
             status: 'SUBMITTED',
-            submittedAt: '2026-07-23T10:00:00'
+            submittedAt: submittedTimestamp
           })
         ),
         { status: 200 }
@@ -335,11 +348,11 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     expect(await requests[4].clone().text()).toBe('')
     expect(await requests[5].clone().text()).toBe('')
     expect(submitted.status).toBe(SUBMITTED)
-    expect(submitted.submittedAt).toBe('2026-07-23T10:00:00')
+    expect(submitted.submittedAt).toBe(submittedTimestamp)
     expect(amended.status).toBe(AMEND)
     expect(amended.submittedAt).toBeNull()
     expect(restored.status).toBe(SUBMITTED)
-    expect(restored.submittedAt).toBe('2026-07-23T10:00:00')
+    expect(restored.submittedAt).toBe(submittedTimestamp)
   })
 
   it('Should copy with an idempotency header, then marshal the new draft', async () => {

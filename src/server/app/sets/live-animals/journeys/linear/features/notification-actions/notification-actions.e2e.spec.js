@@ -10,18 +10,26 @@ import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy as hubCopy } from '../hub/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 
+const createAnsweredNotification = async (page) => {
+  await startNotification(page)
+  await answerCountryOfOrigin(page)
+  const sourceReference = journeyIdFromPage(page)
+  await page.goto('/')
+  return sourceReference
+}
+
+const copyNotification = (page, sourceReference) =>
+  page
+    .getByRole('button', {
+      name: `${sharedCopy.notificationActions.copy.text} ${dashboardCopy.actionHidden(sourceReference)}`
+    })
+    .click()
+
 test.describe('notification-actions feature', () => {
   test('copy creates a separate draft notification', async ({ page }) => {
-    await startNotification(page)
-    await answerCountryOfOrigin(page)
-    const sourceReference = journeyIdFromPage(page)
-    await page.goto('/')
+    const sourceReference = await createAnsweredNotification(page)
 
-    await page
-      .getByRole('button', {
-        name: `${sharedCopy.notificationActions.copy.text} ${dashboardCopy.actionHidden(sourceReference)}`
-      })
-      .click()
+    await copyNotification(page, sourceReference)
 
     await expect(
       page.getByRole('heading', { name: hubCopy.title })
@@ -34,16 +42,9 @@ test.describe('notification-actions feature', () => {
   test('copy preserves the source answers in the new draft', async ({
     page
   }) => {
-    await startNotification(page)
-    await answerCountryOfOrigin(page)
-    const sourceReference = journeyIdFromPage(page)
-    await page.goto('/')
+    const sourceReference = await createAnsweredNotification(page)
 
-    await page
-      .getByRole('button', {
-        name: `${sharedCopy.notificationActions.copy.text} ${dashboardCopy.actionHidden(sourceReference)}`
-      })
-      .click()
+    await copyNotification(page, sourceReference)
 
     const origin = page.getByRole('listitem').filter({
       has: page.getByText(hubCopy.rows.origin.title, { exact: true })
@@ -56,15 +57,8 @@ test.describe('notification-actions feature', () => {
   test('copy leaves both source and copied notifications on the dashboard', async ({
     page
   }) => {
-    await startNotification(page)
-    await answerCountryOfOrigin(page)
-    const sourceReference = journeyIdFromPage(page)
-    await page.goto('/')
-    await page
-      .getByRole('button', {
-        name: `${sharedCopy.notificationActions.copy.text} ${dashboardCopy.actionHidden(sourceReference)}`
-      })
-      .click()
+    const sourceReference = await createAnsweredNotification(page)
+    await copyNotification(page, sourceReference)
     const copiedReference = journeyIdFromPage(page)
 
     await page.goto('/')
@@ -80,15 +74,8 @@ test.describe('notification-actions feature', () => {
   test('copied notification hub has no serious or critical axe violations', async ({
     page
   }) => {
-    await startNotification(page)
-    await answerCountryOfOrigin(page)
-    const sourceReference = journeyIdFromPage(page)
-    await page.goto('/')
-    await page
-      .getByRole('button', {
-        name: `${sharedCopy.notificationActions.copy.text} ${dashboardCopy.actionHidden(sourceReference)}`
-      })
-      .click()
+    const sourceReference = await createAnsweredNotification(page)
+    await copyNotification(page, sourceReference)
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])

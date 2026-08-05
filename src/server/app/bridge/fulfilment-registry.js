@@ -18,10 +18,13 @@ const assertField = (field, label) => {
   }
 }
 
+const groupedPathOf = (binding) =>
+  binding.groups.map(({ field }) => `${field}[*]`).join('.')
+
 const pathOf = (binding) =>
   binding.kind === 'scalar'
     ? binding.field
-    : `${binding.groups.map(({ field }) => `${field}[*]`).join('.')}.${binding.field}`
+    : `${groupedPathOf(binding)}.${binding.field}`
 
 const assertManifestObligation = (binding, manifestById) => {
   const obligation = binding?.obligation

@@ -6,7 +6,7 @@ import {
 } from '../../../../../../../engine/persistence/records.js'
 import {
   configureSession,
-  KNOWN_JOURNEYS_COOKIE
+  SESSION_COOKIES
 } from '../../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
@@ -63,7 +63,7 @@ describe('GET /', () => {
         payload: {},
         params: {},
         query: {},
-        state: { [KNOWN_JOURNEYS_COOKIE]: [] },
+        state: { [SESSION_COOKIES.knownJourneys]: [] },
         headers: {},
         app: {}
       },

@@ -71,7 +71,7 @@ const emptyEntryBlocks = (leaf, group, instanceId, stored) => {
   return !isFulfilled(stored?.[instanceId])
 }
 
-const belongingRecordBlocks = (leaf, belonging, stored) =>
+const belongingRecordBlocks = (belonging, stored) =>
   belonging.some(
     (record) =>
       (record.status ?? 'mandatory') === 'mandatory' &&
@@ -98,7 +98,7 @@ const leafBlocksInstance = (
   )
   return belonging.length === 0
     ? emptyEntryBlocks(leaf, group, instanceId, stored)
-    : belongingRecordBlocks(leaf, belonging, stored)
+    : belongingRecordBlocks(belonging, stored)
 }
 
 const groupInvariantBlocksInstance = (group, instanceId, state) =>

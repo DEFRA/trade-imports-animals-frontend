@@ -18,8 +18,13 @@ import {
 
 const run = (schema, payload) => validate(schema, payload)
 
+const FULL_NAME_REQUIRED_MESSAGE = 'Enter your full name'
+const CPH_REQUIRED_MESSAGE = 'Enter a CPH number'
+const CPH_LENGTH_MESSAGE = 'CPH number must be exactly 9 digits'
+const COMMODITY_REQUIRED_MESSAGE = 'Select a commodity'
+
 describe('#requiredText — the sole save-blocking primitive', () => {
-  const schema = requiredText('fullName', 'Enter your full name')
+  const schema = requiredText('fullName', FULL_NAME_REQUIRED_MESSAGE)
 
   it('Should pass a non-blank value', () => {
     expect(run(schema, { fullName: 'Alex Driver' }).errors).toBeNull()
@@ -27,21 +32,21 @@ describe('#requiredText — the sole save-blocking primitive', () => {
 
   it('Should block a missing value with the given message on the field', () => {
     expect(run(schema, {}).errors).toEqual({
-      fullName: 'Enter your full name'
+      fullName: FULL_NAME_REQUIRED_MESSAGE
     })
   })
 
   it('Should block a whitespace-only value (trimmed to empty)', () => {
     expect(run(schema, { fullName: '   ' }).errors).toEqual({
-      fullName: 'Enter your full name'
+      fullName: FULL_NAME_REQUIRED_MESSAGE
     })
   })
 })
 
 describe('#requiredExactDigits — save-blocking fixed-length digit string', () => {
   const schema = requiredExactDigits('cph', 9, {
-    required: 'Enter a CPH number',
-    length: 'CPH number must be exactly 9 digits',
+    required: CPH_REQUIRED_MESSAGE,
+    length: CPH_LENGTH_MESSAGE,
     digitsOnly: 'CPH number must only contain numbers'
   })
 
@@ -51,19 +56,19 @@ describe('#requiredExactDigits — save-blocking fixed-length digit string', () 
 
   it('Should block blank and missing values with the required message', () => {
     expect(run(schema, { cph: '' }).errors).toEqual({
-      cph: 'Enter a CPH number'
+      cph: CPH_REQUIRED_MESSAGE
     })
     expect(run(schema, {}).errors).toEqual({
-      cph: 'Enter a CPH number'
+      cph: CPH_REQUIRED_MESSAGE
     })
   })
 
   it('Should reject too-short and too-long values with the length message', () => {
     expect(run(schema, { cph: '12345678' }).errors).toEqual({
-      cph: 'CPH number must be exactly 9 digits'
+      cph: CPH_LENGTH_MESSAGE
     })
     expect(run(schema, { cph: '1234567890' }).errors).toEqual({
-      cph: 'CPH number must be exactly 9 digits'
+      cph: CPH_LENGTH_MESSAGE
     })
   })
 
@@ -144,7 +149,7 @@ describe('#requiredOneOf — save-blocking value domain', () => {
   const schema = requiredOneOf(
     'commoditySelection',
     ['Cow', 'Fish'],
-    'Select a commodity'
+    COMMODITY_REQUIRED_MESSAGE
   )
 
   it('Should accept a value in the domain', () => {
@@ -153,16 +158,16 @@ describe('#requiredOneOf — save-blocking value domain', () => {
 
   it('Should block blank and missing values — unlike composing requiredText with oneOf', () => {
     expect(run(schema, { commoditySelection: '' }).errors).toEqual({
-      commoditySelection: 'Select a commodity'
+      commoditySelection: COMMODITY_REQUIRED_MESSAGE
     })
     expect(run(schema, {}).errors).toEqual({
-      commoditySelection: 'Select a commodity'
+      commoditySelection: COMMODITY_REQUIRED_MESSAGE
     })
   })
 
   it('Should reject a value outside the domain', () => {
     expect(run(schema, { commoditySelection: 'gold-plated' }).errors).toEqual({
-      commoditySelection: 'Select a commodity'
+      commoditySelection: COMMODITY_REQUIRED_MESSAGE
     })
   })
 })
@@ -259,7 +264,7 @@ describe('#dateText — optional dd/mm/yyyy input', () => {
 
 describe('#compose + the Joi → GDS mapping', () => {
   const schema = compose(
-    requiredText('fullName', 'Enter your full name'),
+    requiredText('fullName', FULL_NAME_REQUIRED_MESSAGE),
     postcode('postcode')
   )
 
@@ -273,7 +278,7 @@ describe('#compose + the Joi → GDS mapping', () => {
   it('Should collect one message per failing field (abortEarly: false)', () => {
     const { errors } = run(schema, { fullName: '', postcode: 'NOPE' })
     expect(errors).toEqual({
-      fullName: 'Enter your full name',
+      fullName: FULL_NAME_REQUIRED_MESSAGE,
       postcode: 'Enter a valid postcode'
     })
   })

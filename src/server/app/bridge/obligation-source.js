@@ -57,9 +57,7 @@ export const flowOnlyAnswersFrom = (answers) =>
   Object.fromEntries(
     flowOnlyObligations()
       .filter(
-        (key) =>
-          Object.prototype.hasOwnProperty.call(answers ?? {}, key) &&
-          answers[key] !== undefined
+        (key) => Object.hasOwn(answers ?? {}, key) && answers[key] !== undefined
       )
       .map((key) => [key, answers[key]])
   )
@@ -79,11 +77,11 @@ const topLevelKeys = () =>
   ])
 
 const memberKeysOf = (group) =>
-  new Set([
-    ...obligations()
+  new Set(
+    obligations()
       .filter((obligation) => obligation.within === group)
       .map((obligation) => obligation.name)
-  ])
+  )
 
 const sweepKey = (memberKeys, entryPath, key, value) => {
   if (!memberKeys.has(key)) {

@@ -3,6 +3,8 @@ import { expect, test } from '@playwright/test'
 
 import { copy } from './copy/copy.en.js'
 
+const SUBMIT_BUTTON = 'form button[type="submit"]'
+
 const startAtCphNumber = async (page) => {
   await page.goto('/')
   await page
@@ -42,61 +44,13 @@ test.describe('cph-number feature', () => {
     await expect(page).toHaveURL(hubUrl)
   })
 
-  test('CPH validation: when empty, links to and focuses the preserved empty input', async ({
-    page
-  }) => {
-    const input = page.getByLabel(copy.cph.label)
-
-    await page.locator('form button[type="submit"]').first().click()
-
-    const requiredError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.cphRequired })
-    await expect(requiredError).toBeVisible()
-    await requiredError.click()
-    await expect(input).toBeFocused()
-    await expect(input).toHaveValue('')
-  })
-
-  test('CPH validation: when not 9 digits, links to and focuses the preserved raw value', async ({
-    page
-  }) => {
-    const input = page.getByLabel(copy.cph.label)
-    await input.fill('12/345/678')
-    await page.locator('form button[type="submit"]').first().click()
-
-    const lengthError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.cphLength })
-    await expect(lengthError).toBeVisible()
-    await lengthError.click()
-    await expect(input).toBeFocused()
-    await expect(input).toHaveValue('12/345/678')
-  })
-
-  test('CPH validation: when containing non-digits, links to and focuses the preserved raw value', async ({
-    page
-  }) => {
-    const input = page.getByLabel(copy.cph.label)
-    await input.fill('12345678A')
-    await page.locator('form button[type="submit"]').first().click()
-
-    const digitsError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.cphDigitsOnly })
-    await expect(digitsError).toBeVisible()
-    await digitsError.click()
-    await expect(input).toBeFocused()
-    await expect(input).toHaveValue('12345678A')
-  })
-
   test('strips slashes, saves a valid CPH number, redirects and persists it', async ({
     page
   }) => {
     const cphUrl = page.url()
 
     await page.getByLabel(copy.cph.label).fill('123/456/789')
-    await page.locator('form button[type="submit"]').first().click()
+    await page.locator(SUBMIT_BUTTON).first().click()
 
     await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
     await page.goto(cphUrl)
@@ -115,5 +69,59 @@ test.describe('cph-number feature', () => {
       seriousOrCritical,
       `CPH number has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
     ).toEqual([])
+  })
+})
+
+test.describe('cph-number validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await startAtCphNumber(page)
+  })
+
+  test('CPH validation: when empty, links to and focuses the preserved empty input', async ({
+    page
+  }) => {
+    const input = page.getByLabel(copy.cph.label)
+
+    await page.locator(SUBMIT_BUTTON).first().click()
+
+    const requiredError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.cphRequired })
+    await expect(requiredError).toBeVisible()
+    await requiredError.click()
+    await expect(input).toBeFocused()
+    await expect(input).toHaveValue('')
+  })
+
+  test('CPH validation: when not 9 digits, links to and focuses the preserved raw value', async ({
+    page
+  }) => {
+    const input = page.getByLabel(copy.cph.label)
+    await input.fill('12/345/678')
+    await page.locator(SUBMIT_BUTTON).first().click()
+
+    const lengthError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.cphLength })
+    await expect(lengthError).toBeVisible()
+    await lengthError.click()
+    await expect(input).toBeFocused()
+    await expect(input).toHaveValue('12/345/678')
+  })
+
+  test('CPH validation: when containing non-digits, links to and focuses the preserved raw value', async ({
+    page
+  }) => {
+    const input = page.getByLabel(copy.cph.label)
+    await input.fill('12345678A')
+    await page.locator(SUBMIT_BUTTON).first().click()
+
+    const digitsError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.cphDigitsOnly })
+    await expect(digitsError).toBeVisible()
+    await digitsError.click()
+    await expect(input).toBeFocused()
+    await expect(input).toHaveValue('12345678A')
   })
 })

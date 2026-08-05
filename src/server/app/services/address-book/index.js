@@ -46,7 +46,7 @@ export const addParty = (role, { name, address }) => {
 
 const haystack = (record) =>
   [record.name, ...Object.values(record.address ?? {})]
-    .filter((part) => part)
+    .filter(Boolean)
     .join(' ')
     .toLowerCase()
 

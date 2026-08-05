@@ -20,6 +20,11 @@ const codeObl = { id: 'code-obl' }
 const boolObl = { id: 'bool-obl' }
 const groupObl = { id: 'group-obl' }
 
+const line1Unit1Path = 'line1/unit1'
+const line1Unit2Path = 'line1/unit2'
+
+const undefinedValueEntry = (key) => Object.fromEntries([[key, undefined]])
+
 // ---------------------------------------------------------------------------
 // allowListed
 // ---------------------------------------------------------------------------
@@ -44,12 +49,12 @@ describe('allowListed', () => {
     const gate = allowListed(codeObl, ['a'], groupObl)
     const fulfilments = { [codeObl.id]: { line1: 'a', line2: 'x' } }
     const ids = new Map([
-      [groupObl.id, ['line1/unit1', 'line1/unit2', 'line2/unit1']]
+      [groupObl.id, [line1Unit1Path, line1Unit2Path, 'line2/unit1']]
     ])
     const decision = gate(fulfilments, ids)
     expect(decision).toEqual({
       inScope: true,
-      records: ['line1/unit1', 'line1/unit2']
+      records: [line1Unit1Path, line1Unit2Path]
     })
   })
 
@@ -134,12 +139,12 @@ describe('notInUnionOf', () => {
     )
     const fulfilments = { [codeObl.id]: { line1: 'z', line2: 'a' } }
     const ids = new Map([
-      [groupObl.id, ['line1/unit1', 'line1/unit2', 'line2/unit1']]
+      [groupObl.id, [line1Unit1Path, line1Unit2Path, 'line2/unit1']]
     ])
     const decision = gate(fulfilments, ids)
     expect(decision).toEqual({
       inScope: true,
-      records: ['line1/unit1', 'line1/unit2']
+      records: [line1Unit1Path, line1Unit2Path]
     })
   })
 
@@ -311,7 +316,7 @@ describe('present', () => {
 
   it('Should return false when nothing is stored', () => {
     expect(present(boolObl)({})).toBe(false)
-    expect(present(boolObl)({ [boolObl.id]: undefined })).toBe(false)
+    expect(present(boolObl)(undefinedValueEntry(boolObl.id))).toBe(false)
     expect(present(boolObl)({ [boolObl.id]: null })).toBe(false)
   })
 
@@ -482,7 +487,7 @@ describe('presentGate', () => {
   it('Should return whenFalse when the gate is undefined / null', () => {
     const gate = presentGate(boolObl, whenTrue, whenFalse)
     expect(gate({})).toEqual(whenFalse)
-    expect(gate({ [boolObl.id]: undefined })).toEqual(whenFalse)
+    expect(gate(undefinedValueEntry(boolObl.id))).toEqual(whenFalse)
     expect(gate({ [boolObl.id]: null })).toEqual(whenFalse)
   })
 
@@ -642,7 +647,7 @@ describe('readGate', () => {
 
   it('Should return { present: false, candidates: [] } for undefined stored value', () => {
     // Explicitly-stored-as-undefined is treated the same as missing.
-    expect(readGate({ [gateId]: undefined }, gateId)).toEqual({
+    expect(readGate(undefinedValueEntry(gateId), gateId)).toEqual({
       present: false,
       candidates: []
     })

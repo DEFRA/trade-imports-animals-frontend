@@ -6,13 +6,13 @@ export const anyLineApplies = (answers, name) =>
     appliesForCommodity(name, line?.commoditySelection)
   )
 
-export const regionCodeApplies = (answers, scope) =>
+export const regionCodeApplies = (_answers, scope) =>
   scope.has('regionOfOriginCode')
 
-export const purposeApplies = (answers, scope) =>
+export const purposeApplies = (_answers, scope) =>
   scope.has('purposeInInternalMarket')
 
-export const transitedCountriesApplies = (answers, scope) =>
+export const transitedCountriesApplies = (_answers, scope) =>
   scope.has('transitedCountries')
 
 export const unweanedApplies = (answers) =>

@@ -14,18 +14,15 @@ export const findStructuralDefects = (records, byId) => {
       structurallyBad.add(rec.id)
       continue
     }
-    for (const depId of rec.dependsOn) {
-      if (depId === rec.id) {
-        continue
-      } // self-loop is not a dangling id
-      if (!byId.has(depId)) {
-        errors.push({
-          obligationId: rec.id,
-          reason: `dependsOn references unknown obligation id '${depId}'`
-        })
-        structurallyBad.add(rec.id)
-        break // one error per obligation is enough
-      }
+    const danglingDepId = rec.dependsOn.find(
+      (depId) => depId !== rec.id && !byId.has(depId)
+    )
+    if (danglingDepId !== undefined) {
+      errors.push({
+        obligationId: rec.id,
+        reason: `dependsOn references unknown obligation id '${danglingDepId}'`
+      })
+      structurallyBad.add(rec.id)
     }
   }
   return { errors, structurallyBad }

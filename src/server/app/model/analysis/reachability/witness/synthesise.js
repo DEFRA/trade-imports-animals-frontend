@@ -29,6 +29,10 @@ export const synthesiseWitness = (obligation) => {
     return { kind: WITNESS_KIND.TRIVIAL }
   }
 
+  return synthesiseFromMetadata(meta)
+}
+
+function synthesiseFromMetadata(meta) {
   switch (meta.type) {
     case 'allowListed':
       // metadata.values IS the allowlist — first entry is a witness.

@@ -9,6 +9,55 @@ import {
 } from '../../../../../../../../../e2e/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 
+const expectPanelCopy = async (page) => {
+  const reference = journeyIdFromPage(page)
+  await expect(
+    page.getByRole('heading', { name: copy.panel.title })
+  ).toBeVisible()
+  await expect(page.getByText(copy.panel.referencePrefix)).toBeVisible()
+  await expect(page.getByText(reference, { exact: true })).toBeVisible()
+  await expect(
+    page.getByText(new RegExp(`^${copy.dateOfDeclaration}`))
+  ).toBeVisible()
+}
+
+const expectTransportingCopy = async (page) => {
+  await expect(
+    page.getByRole('heading', { name: copy.transporting.heading })
+  ).toBeVisible()
+  await expect(page.getByText(copy.transporting.direct)).toBeVisible()
+  await expect(page.getByText(copy.transporting.inspection)).toBeVisible()
+  await expect(page.getByText(copy.transporting.stay)).toBeVisible()
+  for (const item of copy.transporting.stayItems) {
+    await expect(page.getByText(item, { exact: true })).toBeVisible()
+  }
+}
+
+const expectViewOrAmendCopy = async (page) => {
+  await expect(
+    page.getByRole('heading', { name: copy.viewOrAmend.heading })
+  ).toBeVisible()
+  await expect(page.getByText(copy.viewOrAmend.body)).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: copy.viewOrAmend.dashboardLink })
+  ).toBeVisible()
+}
+
+const expectHelpCopy = async (page) => {
+  await expect(
+    page.getByRole('heading', { name: copy.help.heading })
+  ).toBeVisible()
+  await expect(page.getByText(copy.help.technicalHelp)).toBeVisible()
+  await expect(page.getByText(copy.help.telephone)).toBeVisible()
+  await expect(page.getByText(copy.help.openingHours)).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: copy.help.customsLink })
+  ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: copy.help.callCharges })
+  ).toBeVisible()
+}
+
 test.describe('confirmation feature', () => {
   test('redirects an unsubmitted notification back to its hub', async ({
     page
@@ -40,46 +89,10 @@ test.describe('submitted confirmation feature', () => {
   test('renders the notification reference, all feature copy and no back link', async ({
     page
   }) => {
-    const reference = journeyIdFromPage(page)
-    await expect(
-      page.getByRole('heading', { name: copy.panel.title })
-    ).toBeVisible()
-    await expect(page.getByText(copy.panel.referencePrefix)).toBeVisible()
-    await expect(page.getByText(reference, { exact: true })).toBeVisible()
-    await expect(
-      page.getByText(new RegExp(`^${copy.dateOfDeclaration}`))
-    ).toBeVisible()
-
-    await expect(
-      page.getByRole('heading', { name: copy.transporting.heading })
-    ).toBeVisible()
-    await expect(page.getByText(copy.transporting.direct)).toBeVisible()
-    await expect(page.getByText(copy.transporting.inspection)).toBeVisible()
-    await expect(page.getByText(copy.transporting.stay)).toBeVisible()
-    for (const item of copy.transporting.stayItems) {
-      await expect(page.getByText(item, { exact: true })).toBeVisible()
-    }
-
-    await expect(
-      page.getByRole('heading', { name: copy.viewOrAmend.heading })
-    ).toBeVisible()
-    await expect(page.getByText(copy.viewOrAmend.body)).toBeVisible()
-    await expect(
-      page.getByRole('link', { name: copy.viewOrAmend.dashboardLink })
-    ).toBeVisible()
-
-    await expect(
-      page.getByRole('heading', { name: copy.help.heading })
-    ).toBeVisible()
-    await expect(page.getByText(copy.help.technicalHelp)).toBeVisible()
-    await expect(page.getByText(copy.help.telephone)).toBeVisible()
-    await expect(page.getByText(copy.help.openingHours)).toBeVisible()
-    await expect(
-      page.getByRole('link', { name: copy.help.customsLink })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('link', { name: copy.help.callCharges })
-    ).toBeVisible()
+    await expectPanelCopy(page)
+    await expectTransportingCopy(page)
+    await expectViewOrAmendCopy(page)
+    await expectHelpCopy(page)
     await expect(
       page.getByRole('link', { name: 'Back', exact: true })
     ).toHaveCount(0)

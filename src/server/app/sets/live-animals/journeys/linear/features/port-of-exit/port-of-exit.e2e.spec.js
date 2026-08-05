@@ -4,6 +4,8 @@ import { expect, test } from '@playwright/test'
 import { portsOfEntry } from '../../../../../../services/_capture/fixtures.js'
 import { copy } from './copy/copy.en.js'
 
+const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
+
 const startAtPortOfExit = async (page) => {
   await page.goto('/')
   await page
@@ -19,7 +21,7 @@ const startAtPortOfExit = async (page) => {
   await page
     .locator('input[name="reasonForImport"][value="temporaryAdmissionHorses"]')
     .check()
-  await page.locator('form button[type="submit"]').first().click()
+  await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
   await page.goto(reasonUrl.replace(/\/import-reason$/, '/port-of-exit'))
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
@@ -58,7 +60,7 @@ test.describe('port-of-exit feature', () => {
   test('port validation: when no port is selected, links to and focuses the empty select', async ({
     page
   }) => {
-    await page.locator('form button[type="submit"]').first().click()
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
     const portError = page
       .getByRole('alert')
@@ -76,7 +78,7 @@ test.describe('port-of-exit feature', () => {
     const selected = portsOfEntry.find(({ code }) => code === 'GB ABD')
 
     await page.getByLabel(copy.port.label).selectOption(selected.code)
-    await page.locator('form button[type="submit"]').first().click()
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
     await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
     await page.goto(portUrl)

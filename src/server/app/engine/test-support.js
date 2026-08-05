@@ -1,5 +1,5 @@
 import { store } from './store.js'
-import { KNOWN_JOURNEYS_COOKIE } from './journey.js'
+import { SESSION_COOKIES } from './journey.js'
 
 export const authenticatedCredentials = Object.freeze({
   contactId: 2100010101,
@@ -56,7 +56,7 @@ export const journeyRequest = (journeyId, overrides = {}) => ({
   ...overrides,
   params: { journeyId, ...overrides.params },
   state: {
-    [KNOWN_JOURNEYS_COOKIE]: [journeyId],
+    [SESSION_COOKIES.knownJourneys]: [journeyId],
     ...overrides.state
   }
 })

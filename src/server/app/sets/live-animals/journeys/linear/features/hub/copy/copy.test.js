@@ -37,6 +37,13 @@ const unlockedSeed = {
   commodityLines: [{ commoditySelection: 'Cat' }]
 }
 
+const ORIGIN_ROW_TITLE = 'Where is this consignment coming from?'
+const COMMODITIES_ROW_TITLE = 'What are you importing?'
+const TRANSIT_ROW_TITLE = 'Transit countries'
+const NOT_YET_STARTED_STATUS = {
+  tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
+}
+
 describe('#copy', () => {
   test('Should have a non-empty string or copy function at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
@@ -105,11 +112,7 @@ describe('#hubHandler', () => {
     expect(
       groups.map((group) => group.items.map((item) => item.title.text))
     ).toEqual([
-      [
-        'Where is this consignment coming from?',
-        'What are you importing?',
-        'Main reason for importing'
-      ],
+      [ORIGIN_ROW_TITLE, COMMODITIES_ROW_TITLE, 'Main reason for importing'],
       ['Additional commodity details', 'Animal identification details'],
       ['Arrival details', 'Transporter'],
       ['Roles and addresses', 'Contact address'],
@@ -120,14 +123,9 @@ describe('#hubHandler', () => {
 
   it('Should render the always-open origin row as a blue "Not yet started" tag with a link', async () => {
     const context = await renderHub()
-    const originRow = rowByTitle(
-      context,
-      'Where is this consignment coming from?'
-    )
+    const originRow = rowByTitle(context, ORIGIN_ROW_TITLE)
     expect(originRow.href).toBe(pagePath(context.journeyId, 'origin'))
-    expect(originRow.status).toEqual({
-      tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
-    })
+    expect(originRow.status).toEqual(NOT_YET_STARTED_STATUS)
   })
 
   it('Should render a completed row as a green "Completed" tag', async () => {
@@ -136,7 +134,7 @@ describe('#hubHandler', () => {
         countryOfOrigin: 'FR',
         regionOfOriginCodeRequirement: 'no'
       }),
-      'Where is this consignment coming from?'
+      ORIGIN_ROW_TITLE
     )
     expect(originRow.status).toEqual({
       tag: { text: 'Completed', classes: 'govuk-tag--green' }
@@ -144,10 +142,7 @@ describe('#hubHandler', () => {
   })
 
   it('Should render a gated row as "Cannot start yet" text with NO link', async () => {
-    const commoditiesRow = rowByTitle(
-      await renderHub(),
-      'What are you importing?'
-    )
+    const commoditiesRow = rowByTitle(await renderHub(), COMMODITIES_ROW_TITLE)
     expect(commoditiesRow.href).toBeUndefined()
     expect(commoditiesRow.status).toEqual({
       text: 'Cannot start yet',
@@ -168,16 +163,14 @@ describe('#hubHandler', () => {
         }
       ]
     })
-    expect(rowByTitle(context, 'What are you importing?').status).toEqual({
+    expect(rowByTitle(context, COMMODITIES_ROW_TITLE).status).toEqual({
       tag: { text: 'Completed', classes: 'govuk-tag--green' }
     })
     const identificationRow = rowByTitle(
       context,
       'Animal identification details'
     )
-    expect(identificationRow.status).toEqual({
-      tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
-    })
+    expect(identificationRow.status).toEqual(NOT_YET_STARTED_STATUS)
     expect(identificationRow.href).toBe(
       pagePath(context.journeyId, 'commodities/identification')
     )
@@ -185,25 +178,23 @@ describe('#hubHandler', () => {
 
   it('Should show the conditional transit row only for an overland means of transport', async () => {
     const withoutMeans = await renderHub(unlockedSeed)
-    expect(rowByTitle(withoutMeans, 'Transit countries')).toBeUndefined()
+    expect(rowByTitle(withoutMeans, TRANSIT_ROW_TITLE)).toBeUndefined()
 
     const byAir = await renderHub({
       ...unlockedSeed,
       meansOfTransport: 'AIRPLANE'
     })
-    expect(rowByTitle(byAir, 'Transit countries')).toBeUndefined()
+    expect(rowByTitle(byAir, TRANSIT_ROW_TITLE)).toBeUndefined()
 
     const byRoad = await renderHub({
       ...unlockedSeed,
       meansOfTransport: 'ROAD_VEHICLE'
     })
-    const transitRow = rowByTitle(byRoad, 'Transit countries')
+    const transitRow = rowByTitle(byRoad, TRANSIT_ROW_TITLE)
     expect(transitRow.href).toBe(
       pagePath(byRoad.journeyId, 'transit-countries')
     )
-    expect(transitRow.status).toEqual({
-      tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
-    })
+    expect(transitRow.status).toEqual(NOT_YET_STARTED_STATUS)
   })
 
   it('Should render the optional documents row as an Optional status', async () => {

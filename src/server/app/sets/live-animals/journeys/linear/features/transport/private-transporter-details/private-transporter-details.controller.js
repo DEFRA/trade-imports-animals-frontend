@@ -128,7 +128,7 @@ const trimmedValues = (payload) =>
 
 const formErrors = (payload, values) => {
   const { errors } = validate(fields, payload)
-  const merged = { ...missingMandatoryErrors(values), ...(errors ?? {}) }
+  const merged = { ...missingMandatoryErrors(values), ...errors }
   return Object.fromEntries(
     FIELD_ORDER.filter((field) => merged[field]).map((field) => [
       field,

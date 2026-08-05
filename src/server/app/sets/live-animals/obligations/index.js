@@ -244,27 +244,31 @@ export const groups = obligations.filter((obligation) =>
 // notification-level scalar invariant block. Idempotent — repeated
 // imports rebuild the same list.
 // -----------------------------------------------------------------------------
+const attachContainerBackRef = (member, container) => {
+  if (!member) {
+    return
+  }
+  const existing = member.containers ?? []
+  if (
+    existing.some((existingContainer) => existingContainer.id === container.id)
+  ) {
+    return
+  }
+  // Deliberate exception to the no-in-place-mutation style rule: the
+  // back-ref must land on the SAME obligation object instance already
+  // referenced elsewhere in the manifest (`within` etc.), so a
+  // copy-and-replace here would silently break that shared identity.
+  member.containers = existing.concat(container)
+}
+
 for (const container of obligations) {
   if (!container?.requires?.allOrNothingOfIds) {
     continue
   }
   for (const memberId of container.requires.allOrNothingOfIds) {
-    const member = obligations.find((candidate) => candidate.id === memberId)
-    if (!member) {
-      continue
-    }
-    const existing = member.containers ?? []
-    if (
-      existing.some(
-        (existingContainer) => existingContainer.id === container.id
-      )
-    ) {
-      continue
-    }
-    // Deliberate exception to the no-in-place-mutation style rule: the
-    // back-ref must land on the SAME obligation object instance already
-    // referenced elsewhere in the manifest (`within` etc.), so a
-    // copy-and-replace here would silently break that shared identity.
-    member.containers = existing.concat(container)
+    attachContainerBackRef(
+      obligations.find((candidate) => candidate.id === memberId),
+      container
+    )
   }
 }

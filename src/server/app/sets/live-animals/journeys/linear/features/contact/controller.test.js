@@ -22,9 +22,11 @@ const get = contact.routes.find((route) => route.method === 'GET').handler
 const post = postHandlerOf(contact)
 const postCreate = postHandlerEndingWith(createAddress, 'addresses/create')
 
+const ROUND_TRIP_CONTACT_NAME = 'Round-trip Contact Ltd'
+
 const contactPayload = {
   for: 'contactAddress',
-  nameOrOrganisationName: 'Round-trip Contact Ltd',
+  nameOrOrganisationName: ROUND_TRIP_CONTACT_NAME,
   addressLine1: '12 Contact Street',
   addressLine2: '',
   townOrCity: 'Bristol',
@@ -70,7 +72,7 @@ describe('GET contact — select or create an address', () => {
     )
 
     expect(option).toMatchObject({
-      text: 'Round-trip Contact Ltd',
+      text: ROUND_TRIP_CONTACT_NAME,
       checked: true
     })
 
@@ -78,7 +80,7 @@ describe('GET contact — select or create an address', () => {
       payload: { contactAddress: created.id }
     })
     expect(postResult.view).toBeUndefined()
-    expect(postResult.after.contactAddress.name).toBe('Round-trip Contact Ltd')
+    expect(postResult.after.contactAddress.name).toBe(ROUND_TRIP_CONTACT_NAME)
     expect(postResult.after.contactAddress.address.townOrCity).toBe('Bristol')
   })
 })

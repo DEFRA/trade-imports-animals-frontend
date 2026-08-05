@@ -9,7 +9,7 @@ const ADDRESS_PARTS = [
 
 export const addressText = (address) =>
   ADDRESS_PARTS.map((part) => address[part])
-    .filter((part) => part)
+    .filter(Boolean)
     .join(', ')
 
 export const detailLines = (record) =>
@@ -19,4 +19,4 @@ export const detailLines = (record) =>
     record.address.country,
     record.address.telephoneNumber,
     record.address.emailAddress
-  ].filter((line) => line)
+  ].filter(Boolean)

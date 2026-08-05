@@ -26,7 +26,7 @@ const view = `${TEMPLATES}/features/additional-details/template`
 
 const copy = copyFor({ en, cy })
 
-const asArray = (value) => [].concat(value ?? [])
+const asArray = (value) => [value ?? []].flat()
 
 export const unweanedApplies = (answers) =>
   asArray(answers.commodityLines).some((line) =>

@@ -1,5 +1,4 @@
-export const hasOwn = (value, key) =>
-  Object.prototype.hasOwnProperty.call(value, key)
+export const hasOwn = (value, key) => Object.hasOwn(value, key)
 
 export const isObject = (value) =>
   value !== null && typeof value === 'object' && !Array.isArray(value)

@@ -14,22 +14,27 @@ const notificationFulfilmentsUrl =
   'http://localhost:8085/notification-fulfilments'
 const notificationsUrl = 'http://localhost:8085/notifications'
 
+const RECORD_CREATED_AT = '2026-07-14T09:00:00'
+const RECORD_ARRIVAL_DATE = '2026-07-20'
+const CONSIGNOR_NAME = 'Consignor Ltd'
+const CONSIGNEE_NAME = 'Consignee Ltd'
+
 const notification = (referenceNumber, status) => ({
   referenceNumber,
   status,
-  created: '2026-07-14T09:00:00',
-  updated: '2026-07-14T09:00:00',
+  created: RECORD_CREATED_AT,
+  updated: RECORD_CREATED_AT,
   commodity: { name: 'Cow' },
   origin: { countryCode: 'FR' },
-  transport: { arrivalDate: '2026-07-20' },
-  consignor: { name: 'Consignor Ltd' },
-  consignee: { name: 'Consignee Ltd' }
+  transport: { arrivalDate: RECORD_ARRIVAL_DATE },
+  consignor: { name: CONSIGNOR_NAME },
+  consignee: { name: CONSIGNEE_NAME }
 })
 
 const notificationFulfilments = (id, status) => ({
   id,
   status,
-  createdAt: '2026-07-14T09:00:00',
+  createdAt: RECORD_CREATED_AT,
   submittedAt: status === 'SUBMITTED' ? '2026-07-14T10:00:00' : null,
   fulfilments: []
 })
@@ -51,7 +56,7 @@ describe('real records adapter — amend', () => {
     expect(request.method).toBe('POST')
     expect(amended.status).toBe(AMEND)
     expect(amended.submittedAt).toBeNull()
-    expect(amended.createdAt).toBe('2026-07-14T09:00:00')
+    expect(amended.createdAt).toBe(RECORD_CREATED_AT)
   })
 
   test('Should surface a failed amend as an error carrying the response status', async () => {
@@ -101,38 +106,38 @@ describe('real records adapter — paged list', () => {
         {
           journeyId: 'GBN-1',
           status: DRAFT,
-          createdAt: '2026-07-14T09:00:00',
+          createdAt: RECORD_CREATED_AT,
           submittedAt: null,
           reference: 'GBN-1',
           commodity: { name: 'Cow' },
           originCountryCode: 'FR',
-          arrivalDate: '2026-07-20',
-          consignorName: 'Consignor Ltd',
-          consigneeName: 'Consignee Ltd'
+          arrivalDate: RECORD_ARRIVAL_DATE,
+          consignorName: CONSIGNOR_NAME,
+          consigneeName: CONSIGNEE_NAME
         },
         {
           journeyId: 'GBN-2',
           status: SUBMITTED,
-          createdAt: '2026-07-14T09:00:00',
+          createdAt: RECORD_CREATED_AT,
           submittedAt: null,
           reference: 'GBN-2',
           commodity: { name: 'Cow' },
           originCountryCode: 'FR',
-          arrivalDate: '2026-07-20',
-          consignorName: 'Consignor Ltd',
-          consigneeName: 'Consignee Ltd'
+          arrivalDate: RECORD_ARRIVAL_DATE,
+          consignorName: CONSIGNOR_NAME,
+          consigneeName: CONSIGNEE_NAME
         },
         {
           journeyId: 'GBN-3',
           status: AMEND,
-          createdAt: '2026-07-14T09:00:00',
+          createdAt: RECORD_CREATED_AT,
           submittedAt: null,
           reference: 'GBN-3',
           commodity: { name: 'Cow' },
           originCountryCode: 'FR',
-          arrivalDate: '2026-07-20',
-          consignorName: 'Consignor Ltd',
-          consigneeName: 'Consignee Ltd'
+          arrivalDate: RECORD_ARRIVAL_DATE,
+          consignorName: CONSIGNOR_NAME,
+          consigneeName: CONSIGNEE_NAME
         }
       ]
     })

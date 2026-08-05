@@ -20,6 +20,14 @@ export const formatDisplayDate = (value) => {
   return isValid(date) ? format(date, LIST_DATE_FORMAT) : ''
 }
 
+const commodityDisplayValue = (commodity) =>
+  commodity.name ??
+  commodity.displayName ??
+  commodity.text ??
+  commodity.commodityCode ??
+  commodity.code ??
+  commodity.value
+
 export const formatCommodity = (commodity, nameForCode = () => undefined) => {
   if (!commodity) {
     return ''
@@ -29,13 +37,7 @@ export const formatCommodity = (commodity, nameForCode = () => undefined) => {
     return nameForCode(commodity) ?? commodity
   }
 
-  const displayValue =
-    commodity.name ??
-    commodity.displayName ??
-    commodity.text ??
-    commodity.commodityCode ??
-    commodity.code ??
-    commodity.value
+  const displayValue = commodityDisplayValue(commodity)
 
   return displayValue ? (nameForCode(displayValue) ?? String(displayValue)) : ''
 }
@@ -82,10 +84,12 @@ export const buildHomeListQueryString = ({
 export const buildPaginationLinks = (
   pagination,
   baseUrl,
-  sort = DEFAULT_NOTIFICATION_SORT,
-  labels = {},
+  sort,
+  labels,
   referenceNumber
 ) => {
+  const sortOrDefault = sort ?? DEFAULT_NOTIFICATION_SORT
+  const linkLabels = labels ?? {}
   const { totalPages } = pagination
   const page = normalizePageNumber(pagination.page, totalPages)
 
@@ -99,10 +103,10 @@ export const buildPaginationLinks = (
         ? {
             href: `${baseUrl}${buildHomeListQueryString({
               page: page - 1,
-              sort,
+              sort: sortOrDefault,
               referenceNumber
             })}`,
-            text: labels.previous
+            text: linkLabels.previous
           }
         : undefined,
     next:
@@ -110,10 +114,10 @@ export const buildPaginationLinks = (
         ? {
             href: `${baseUrl}${buildHomeListQueryString({
               page: page + 1,
-              sort,
+              sort: sortOrDefault,
               referenceNumber
             })}`,
-            text: labels.next
+            text: linkLabels.next
           }
         : undefined
   }

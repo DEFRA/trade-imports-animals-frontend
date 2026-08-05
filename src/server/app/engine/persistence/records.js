@@ -26,15 +26,15 @@ export const configureRecords = (newImpl) => {
 }
 
 export const records = {
-  create: (...args) => impl.create(...args),
-  load: (...args) => impl.load(...args),
-  list: (...args) => impl.list(...args),
-  has: (...args) => impl.has(...args),
-  replaceFulfilment: (...args) => impl.replaceFulfilment(...args),
-  finalise: (...args) => impl.finalise(...args),
-  amend: (...args) => impl.amend(...args),
-  cancelAmend: (...args) => impl.cancelAmend(...args),
-  copy: (...args) => impl.copy(...args),
-  softDelete: (...args) => impl.softDelete(...args),
-  clear: (...args) => impl.clear(...args)
+  create: async (...args) => impl.create(...args),
+  load: async (...args) => impl.load(...args),
+  list: async (...args) => impl.list(...args),
+  has: async (...args) => impl.has(...args),
+  replaceFulfilment: async (...args) => impl.replaceFulfilment(...args),
+  finalise: async (...args) => impl.finalise(...args),
+  amend: async (...args) => impl.amend(...args),
+  cancelAmend: async (...args) => impl.cancelAmend(...args),
+  copy: async (...args) => impl.copy(...args),
+  softDelete: async (...args) => impl.softDelete(...args),
+  clear: async (...args) => impl.clear(...args)
 }

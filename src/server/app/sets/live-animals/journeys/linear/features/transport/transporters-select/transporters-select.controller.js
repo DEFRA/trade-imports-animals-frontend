@@ -34,7 +34,7 @@ const addressSummary = (address) =>
     address.addressLine3,
     address.country
   ]
-    .filter((part) => part)
+    .filter(Boolean)
     .join(', ')
 
 const render = (

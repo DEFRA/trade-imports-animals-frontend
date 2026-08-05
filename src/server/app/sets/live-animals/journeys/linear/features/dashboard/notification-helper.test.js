@@ -9,9 +9,13 @@ import {
   parseNotificationSort
 } from './notification-helper.js'
 
+const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
+
 describe('promoted dashboard notification helpers', () => {
   it('Should validate the deployed sort vocabulary and default invalid values', () => {
-    expect(parseNotificationSort('createdAt,asc')).toBe('createdAt,asc')
+    expect(parseNotificationSort(CREATED_AT_ASCENDING_SORT)).toBe(
+      CREATED_AT_ASCENDING_SORT
+    )
     expect(parseNotificationSort('reference,desc')).toBe('arrivalDate,desc')
   })
 
@@ -25,13 +29,13 @@ describe('promoted dashboard notification helpers', () => {
   it('Should build compact page, sort and reference query strings', () => {
     expect(buildHomeListQueryString()).toBe('')
     expect(buildHomeListQueryString({ page: 2 })).toBe('?page=2')
-    expect(buildHomeListQueryString({ page: 2, sort: 'createdAt,asc' })).toBe(
-      '?page=2&sort=createdAt%2Casc'
-    )
+    expect(
+      buildHomeListQueryString({ page: 2, sort: CREATED_AT_ASCENDING_SORT })
+    ).toBe('?page=2&sort=createdAt%2Casc')
     expect(
       buildHomeListQueryString({
         page: 2,
-        sort: 'createdAt,asc',
+        sort: CREATED_AT_ASCENDING_SORT,
         referenceNumber: 'GBN-AG-26-ABC123'
       })
     ).toBe('?page=2&sort=createdAt%2Casc&referenceNumber=GBN-AG-26-ABC123')
@@ -63,12 +67,10 @@ describe('promoted dashboard notification helpers', () => {
     )
     expect(buildPaginationLinks(page, '/', 'createdAt,desc')).toEqual({
       previous: {
-        href: '/?sort=createdAt%2Cdesc',
-        text: undefined
+        href: '/?sort=createdAt%2Cdesc'
       },
       next: {
-        href: '/?page=3&sort=createdAt%2Cdesc',
-        text: undefined
+        href: '/?page=3&sort=createdAt%2Cdesc'
       }
     })
     expect(

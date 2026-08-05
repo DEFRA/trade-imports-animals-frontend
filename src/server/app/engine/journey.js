@@ -1,15 +1,10 @@
 import Boom from '@hapi/boom'
 import { BASE } from '../shared/paths.js'
-import {
-  session,
-  KNOWN_JOURNEYS_COOKIE,
-  OPENING_RUN_COOKIE,
-  FLOW_ONLY_ANSWERS_COOKIE
-} from './persistence/session.js'
+import { session, SESSION_COOKIES } from './persistence/session.js'
 import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
 import { buildActor } from '../../common/helpers/actor-helpers.js'
 
-export { KNOWN_JOURNEYS_COOKIE } from './persistence/session.js'
+export { SESSION_COOKIES } from './persistence/session.js'
 
 const cookieOptions = Object.freeze({
   path: BASE || '/',
@@ -23,15 +18,15 @@ const cookieOptions = Object.freeze({
 })
 
 export const registerJourneyCookie = (server) => {
-  server.state(KNOWN_JOURNEYS_COOKIE, {
+  server.state(SESSION_COOKIES.knownJourneys, {
     ...cookieOptions,
     encoding: 'base64json'
   })
-  server.state(OPENING_RUN_COOKIE, {
+  server.state(SESSION_COOKIES.openingRun, {
     ...cookieOptions,
     encoding: 'base64json'
   })
-  server.state(FLOW_ONLY_ANSWERS_COOKIE, {
+  server.state(SESSION_COOKIES.flowOnlyAnswers, {
     ...cookieOptions,
     encoding: 'base64json'
   })
@@ -102,7 +97,7 @@ export const listKnownJourneys = async (
 export const isKnownJourney = async (request, journeyId) =>
   (await session.knownJourneyIds(request)).includes(journeyId)
 
-const editableFromStatus = (journey, journeyId, actor) => {
+const editableFromStatus = async (journey, journeyId, actor) => {
   if (journey.status === SUBMITTED) {
     return records.amend(journeyId, actor)
   }
@@ -112,7 +107,7 @@ const editableFromStatus = (journey, journeyId, actor) => {
   return undefined
 }
 
-export const amendJourney = async (request, h, journeyId) => {
+export const amendJourney = async (request, _h, journeyId) => {
   if (!(await isKnownJourney(request, journeyId))) {
     return undefined
   }

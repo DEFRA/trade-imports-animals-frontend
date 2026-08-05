@@ -17,6 +17,17 @@ const openDocuments = async (page) => {
 const rowFor = (page, reference) =>
   page.locator('.govuk-table__row', { hasText: reference })
 
+const errorSummaryLink = (page, name) =>
+  page.locator('.govuk-error-summary').getByRole('link', { name })
+
+const DATE_OF_ISSUE = { day: '3', month: '1', year: '2026' }
+
+const documentNamed = (reference, filename) => ({
+  accompanyingDocumentReference: reference,
+  accompanyingDocumentDateOfIssue: DATE_OF_ISSUE,
+  filename
+})
+
 const uploadDocument = async (page, document) => {
   const issued = document.accompanyingDocumentDateOfIssue
   await page
@@ -42,15 +53,7 @@ test.describe('document scan-status rendering', () => {
     page
   }) => {
     test.slow()
-    const document = {
-      accompanyingDocumentReference: 'SCAN-SAFE-0001',
-      accompanyingDocumentDateOfIssue: {
-        day: '3',
-        month: '1',
-        year: '2026'
-      },
-      filename: 'itahc-scan.pdf'
-    }
+    const document = documentNamed('SCAN-SAFE-0001', 'itahc-scan.pdf')
     await uploadDocument(page, document)
     const row = rowFor(page, document.accompanyingDocumentReference)
     const statusCell = row.locator('[data-upload-id]')
@@ -62,9 +65,7 @@ test.describe('document scan-status rendering', () => {
 
     await page.getByRole('button', { name: copy.continueButton }).click()
     await expect(
-      page.locator('.govuk-error-summary').getByRole('link', {
-        name: copy.errors.cannotContinue
-      })
+      errorSummaryLink(page, copy.errors.cannotContinue)
     ).toBeVisible()
 
     await expect(row).toContainText(copy.scanTags.safe)
@@ -80,31 +81,19 @@ test.describe('document scan-status rendering', () => {
     page
   }) => {
     test.slow()
-    const document = {
-      accompanyingDocumentReference: 'SCAN-VIRUS-0001',
-      accompanyingDocumentDateOfIssue: {
-        day: '3',
-        month: '1',
-        year: '2026'
-      },
-      filename: 'virus-invoice.pdf'
-    }
+    const document = documentNamed('SCAN-VIRUS-0001', 'virus-invoice.pdf')
     await uploadDocument(page, document)
     const row = rowFor(page, document.accompanyingDocumentReference)
     await expect(row).toContainText(copy.scanTags.checking)
     await expect(row).toContainText(copy.scanTags.virusFound)
     await expect(
-      page.locator('.govuk-error-summary').getByRole('link', {
-        name: copy.errors.virusFound(document.filename)
-      })
+      errorSummaryLink(page, copy.errors.virusFound(document.filename))
     ).toBeVisible()
     await expect(row.getByRole('link', { name: copy.viewFile })).toHaveCount(0)
 
     await page.getByRole('button', { name: copy.continueButton }).click()
     await expect(
-      page.locator('.govuk-error-summary').getByRole('link', {
-        name: copy.errors.virusFound(document.filename)
-      })
+      errorSummaryLink(page, copy.errors.virusFound(document.filename))
     ).toBeVisible()
     await row
       .getByRole('button', {
@@ -116,29 +105,19 @@ test.describe('document scan-status rendering', () => {
     await page.getByRole('button', { name: copy.continueButton }).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
+})
+
+test.describe('document scan-status polling', () => {
+  test.beforeEach(async ({ page }) => {
+    await openDocuments(page)
+  })
 
   test('updates one settled row in place, announces it and leaves a still-pending row alone', async ({
     page
   }) => {
     test.slow()
-    const settling = {
-      accompanyingDocumentReference: 'POLL-SETTLES-0001',
-      accompanyingDocumentDateOfIssue: {
-        day: '3',
-        month: '1',
-        year: '2026'
-      },
-      filename: 'itahc-poll.pdf'
-    }
-    const stuck = {
-      accompanyingDocumentReference: 'POLL-STUCK-0002',
-      accompanyingDocumentDateOfIssue: {
-        day: '3',
-        month: '1',
-        year: '2026'
-      },
-      filename: 'never-scans-invoice.pdf'
-    }
+    const settling = documentNamed('POLL-SETTLES-0001', 'itahc-poll.pdf')
+    const stuck = documentNamed('POLL-STUCK-0002', 'never-scans-invoice.pdf')
     await uploadDocument(page, settling)
     await uploadDocument(page, stuck)
 

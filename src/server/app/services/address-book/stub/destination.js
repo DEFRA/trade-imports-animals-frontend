@@ -1,5 +1,7 @@
 import { fromRow } from './from-row.js'
 
+const UNITED_KINGDOM = 'United Kingdom'
+
 export const DESTINATION_OPTIONS = [
   {
     id: 'tech-imports',
@@ -7,7 +9,7 @@ export const DESTINATION_OPTIONS = [
     address: {
       addressLine1: '643 Main Street',
       addressLine2: 'Birmingham G1 3AZ',
-      country: 'United Kingdom'
+      country: UNITED_KINGDOM
     }
   },
   {
@@ -16,7 +18,7 @@ export const DESTINATION_OPTIONS = [
     address: {
       addressLine1: '446 Church Lane',
       addressLine2: 'Manchester S1 2JE',
-      country: 'United Kingdom'
+      country: UNITED_KINGDOM
     }
   },
   {
@@ -25,7 +27,7 @@ export const DESTINATION_OPTIONS = [
     address: {
       addressLine1: '945 Main Street',
       addressLine2: 'London LS1 5AB',
-      country: 'United Kingdom'
+      country: UNITED_KINGDOM
     }
   },
   ...[

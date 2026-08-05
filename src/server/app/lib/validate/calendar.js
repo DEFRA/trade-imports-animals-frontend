@@ -1,3 +1,5 @@
+const MONTHS_IN_YEAR = 12
+
 /**
  * @param {number} year
  * @param {number} month - 1-based (1 = January).
@@ -7,7 +9,7 @@ export const isRealDate = (year, month, day) => {
   if (![year, month, day].every(Number.isInteger)) {
     return false
   }
-  if (month < 1 || month > 12) {
+  if (month < 1 || month > MONTHS_IN_YEAR) {
     return false
   }
   if (day < 1) {

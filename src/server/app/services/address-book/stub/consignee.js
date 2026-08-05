@@ -1,5 +1,7 @@
 import { fromRow } from './from-row.js'
 
+const UNITED_KINGDOM = 'United Kingdom'
+
 export const CONSIGNEE_OPTIONS = [
   {
     id: 'british-livestock',
@@ -7,7 +9,7 @@ export const CONSIGNEE_OPTIONS = [
     address: {
       addressLine1: '10 Market Street',
       addressLine2: 'Leeds LS1 6HB',
-      country: 'United Kingdom'
+      country: UNITED_KINGDOM
     }
   },
   {
@@ -16,7 +18,7 @@ export const CONSIGNEE_OPTIONS = [
     address: {
       addressLine1: '22 Barn Road',
       addressLine2: 'York YO1 8AB',
-      country: 'United Kingdom'
+      country: UNITED_KINGDOM
     }
   },
   {
@@ -25,7 +27,7 @@ export const CONSIGNEE_OPTIONS = [
     address: {
       addressLine1: '88 Grain Wharf',
       addressLine2: 'Bristol BS1 4RQ',
-      country: 'United Kingdom'
+      country: UNITED_KINGDOM
     }
   },
   ...[

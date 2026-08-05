@@ -12,7 +12,7 @@ export const pathKey = (path) => path.reduce(appendSegment, '')
 
 export const parsePath = (key) =>
   key
-    .split(/\.|\[|\]/)
+    .split(/[.[\]]/)
     .filter((segment) => segment !== '')
     .map((segment) => (/^\d+$/.test(segment) ? Number(segment) : segment))
 
@@ -27,7 +27,7 @@ export const setAt = (answers, path, value) => {
     return value
   }
   const [head, ...rest] = path
-  const clone = Array.isArray(answers) ? [...answers] : { ...(answers ?? {}) }
+  const clone = Array.isArray(answers) ? [...answers] : { ...answers }
   const child = answers?.[head] ?? (typeof rest[0] === 'number' ? [] : {})
   clone[head] = rest.length ? setAt(child, rest, value) : value
   return clone
