@@ -49,6 +49,7 @@ export const copy = {
   refreshTimeout:
     'Mae rhai ffeiliau’n dal i gael eu gwirio. Adnewyddwch eto mewn eiliad.',
   errors: {
+    hiddenPrefix: 'Gwall:',
     documentTypeRequired: 'Dewiswch fath o ddogfen',
     referenceRequired: 'Rhowch gyfeirnod',
     referenceMaxLength: 'Rhaid i gyfeirnod y ddogfen fod yn 100 nod neu lai',

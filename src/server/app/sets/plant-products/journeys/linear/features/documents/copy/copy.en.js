@@ -48,6 +48,7 @@ export const copy = {
   refreshTimeout:
     'Some files are still being checked. Refresh again in a moment.',
   errors: {
+    hiddenPrefix: 'Error:',
     documentTypeRequired: 'Select a document type',
     referenceRequired: 'Enter a reference',
     referenceMaxLength: 'Document reference must be 100 characters or fewer',

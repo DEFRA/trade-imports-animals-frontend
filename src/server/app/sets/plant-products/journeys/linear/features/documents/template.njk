@@ -8,14 +8,20 @@
 {% from "shared/save-actions.njk" import saveActions %}
 
 {% block journeyContent %}
-  {% include "shared/error-summary.njk" %}
+  <div id="js-error-summary-container"
+       data-error-summary-title="{{ sharedCopy.errorSummary.title }}"
+       data-error-prefix="{{ copy.errors.hiddenPrefix }}">
+    {% include "shared/error-summary.njk" %}
+  </div>
 
   <span class="govuk-caption-xl">{{ copy.caption }}</span>
   <h1 class="govuk-heading-xl">{{ copy.heading }}</h1>
 
   {{ govukInsetText({ text: copy.insetWarning }) }}
 
-  <form method="post" enctype="multipart/form-data" novalidate>
+  <form method="post" enctype="multipart/form-data" novalidate
+        data-max-file-size="{{ maxFileSize }}"
+        data-oversize-error="{{ oversizeFileMessage }}">
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     {% if pendingUpload %}
       <input type="hidden" name="retryUploadId" value="{{ pendingUpload.uploadId }}" />

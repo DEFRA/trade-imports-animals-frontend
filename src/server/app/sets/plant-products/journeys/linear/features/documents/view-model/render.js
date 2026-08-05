@@ -9,6 +9,7 @@ import { rejectedErrors } from '../scan/summary-errors.js'
 import {
   ACCEPT_ATTRIBUTE,
   ALLOWED_FILE_TYPES_HINT,
+  MAX_FILE_SIZE_BYTES,
   MAX_FILE_SIZE_LABEL
 } from '../upload-config.js'
 import { scanCopyJson } from './fragments/status.js'
@@ -82,6 +83,11 @@ export const render = (
     refreshHref: refreshHref(request, attempt + 1),
     scanCopyJson,
     acceptAttribute: ACCEPT_ATTRIBUTE,
-    fileHint: copy.hints.file(ALLOWED_FILE_TYPES_HINT, MAX_FILE_SIZE_LABEL)
+    fileHint: copy.hints.file(ALLOWED_FILE_TYPES_HINT, MAX_FILE_SIZE_LABEL),
+    // The client refuses an oversize file before the bytes travel; it reads
+    // both the limit and the sentence from here, so the message is composed
+    // through the copy seam and never in JavaScript.
+    maxFileSize: MAX_FILE_SIZE_BYTES,
+    oversizeFileMessage: copy.errors.oversize(MAX_FILE_SIZE_LABEL)
   })
 }

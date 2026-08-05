@@ -71,9 +71,21 @@ test.describe('plant-products accompanying documents without JavaScript', () => 
     await expect(page).not.toHaveURL((url) => documentsUrl.test(url.pathname))
   })
 
-  test('rejects a file over the size limit with a linked error', async ({
+  test('rejects a file over the size limit with a linked error, the client enhancement inert', async ({
     page
   }) => {
+    // The client-side refusal ships on this very page. With no script to run
+    // it, the server rule alone has to produce the rejection — it stays the
+    // authoritative one, and this is the guard that says so.
+    await expect(page.locator('form[data-max-file-size]')).toHaveAttribute(
+      'data-max-file-size',
+      String(MAX_FILE_SIZE_BYTES)
+    )
+    await expect(page.locator('form[data-max-file-size]')).toHaveAttribute(
+      'data-oversize-error',
+      OVERSIZE_FILE_MESSAGE
+    )
+
     await page
       .getByLabel(copy.labels.documentType)
       .selectOption('PHYTOSANITARY_CERTIFICATE')
@@ -97,6 +109,8 @@ test.describe('plant-products accompanying documents without JavaScript', () => 
       .getByRole('alert')
       .getByRole('link', { name: OVERSIZE_FILE_MESSAGE })
     await expect(summaryLink).toHaveAttribute('href', '#file')
+    await expect(page.locator('.govuk-error-summary')).toHaveCount(1)
+    await expect(page.locator('[data-client-error]')).toHaveCount(0)
     await expect(page.getByLabel(copy.labels.documentReference)).toHaveValue(
       'PHYTO-BIG'
     )

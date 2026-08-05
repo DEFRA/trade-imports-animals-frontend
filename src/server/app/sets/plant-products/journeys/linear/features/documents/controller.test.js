@@ -156,12 +156,16 @@ describe('plant-products accompanying-documents controller', () => {
     )
   })
 
-  it('offers the file input with the accept attribute and an optional-file hint', async () => {
+  it('offers the file input with the accept attribute, an optional-file hint and the client size limit', async () => {
     const result = await drive(get)
 
     expect(result.view.context.acceptAttribute).toBe(ACCEPT_ATTRIBUTE)
     expect(result.view.context.fileHint).toBe(
       copy.hints.file(ALLOWED_FILE_TYPES_HINT, MAX_FILE_SIZE_LABEL)
+    )
+    expect(result.view.context.maxFileSize).toBe(MAX_FILE_SIZE_BYTES)
+    expect(result.view.context.oversizeFileMessage).toBe(
+      copy.errors.oversize(MAX_FILE_SIZE_LABEL)
     )
   })
 
