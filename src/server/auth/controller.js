@@ -3,10 +3,11 @@ import { validateState } from '../../auth/state.js'
 import { verifyToken } from '../../auth/verify-token.js'
 import { getPermissions } from '../../auth/get-permissions.js'
 import { getSafeRedirect } from '../../auth/get-safe-redirect.js'
+import { base } from '../app/shared/kit.js'
 
 export const authController = {
   signin: {
-    handler: async function (request, h) {
+    handler: async function (_request, h) {
       return h.redirect('/')
     }
   },
@@ -25,7 +26,10 @@ export const authController = {
           },
           'Bell auth failed for /auth/sign-in-oidc'
         )
-        return h.view('auth/unauthorised')
+        return h.view(
+          'auth/unauthorised',
+          base('Sorry, we are unable to sign you in')
+        )
       }
 
       const { profile, token, refreshToken } = request.auth.credentials
@@ -68,6 +72,14 @@ export const authController = {
       if (!request.auth.isAuthenticated) {
         return h.redirect('/')
       }
+      // Drop the session locally at sign-out initiation rather than relying on
+      // the OIDC provider redirecting back to /auth/sign-out-oidc. The provider
+      // round-trip is not guaranteed (Entra/CDP-WAF reject an id_token_hint that
+      // exceeds the querystring limit), so the local session must be cleared here.
+      if (request.auth.credentials?.sessionId) {
+        await request.server.app.cache.drop(request.auth.credentials.sessionId)
+      }
+      request.cookieAuth.clear()
       const signOutUrl = await getSignOutUrl(
         request,
         request.auth.credentials.token
@@ -96,7 +108,10 @@ export const authController = {
         )
       }
 
-      return h.redirect(await getSignOutUrl(request, null))
+      // Already signed out: land back in the app rather than bouncing to the
+      // provider again, which would loop when the provider honours
+      // post_logout_redirect_uri without an id_token_hint.
+      return h.redirect('/')
     }
   },
   organisation: {

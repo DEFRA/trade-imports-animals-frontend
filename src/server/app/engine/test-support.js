@@ -1,0 +1,107 @@
+import { store } from './store.js'
+import { SESSION_COOKIES } from './journey.js'
+
+export const authenticatedCredentials = Object.freeze({
+  contactId: 2100010101,
+  name: 'Andrew Farmer',
+  currentRelationshipId: '5900001'
+})
+
+export const authenticatedActor = Object.freeze({
+  id: '2100010101',
+  source: 'dynamics-contact',
+  userType: 'B2C',
+  displayName: 'Andrew Farmer',
+  organisationId: '5900001'
+})
+
+const stubResponse = (payload) => ({
+  payload,
+  code: (statusCode) => ({ payload, statusCode })
+})
+
+const stubView = (captured) => (view, context) => {
+  const rendered = {
+    view,
+    context,
+    statusCode: 200,
+    code(statusCode) {
+      this.statusCode = statusCode
+      return this
+    }
+  }
+  captured.view = rendered
+  return rendered
+}
+
+export const stubH = () => {
+  const captured = {}
+  return {
+    view: stubView(captured),
+    redirect: (to) => ({ redirect: to }),
+    response: stubResponse,
+    state: () => {},
+    captured
+  }
+}
+
+export const journeyRequest = (journeyId, overrides = {}) => ({
+  payload: {},
+  query: {},
+  headers: {},
+  auth: {
+    isAuthenticated: true,
+    credentials: authenticatedCredentials
+  },
+  ...overrides,
+  params: { journeyId, ...overrides.params },
+  state: {
+    [SESSION_COOKIES.knownJourneys]: [journeyId],
+    ...overrides.state
+  }
+})
+
+export const recordingH = () => {
+  const cookies = {}
+  const calls = []
+  return {
+    state: (name, value) => {
+      calls.push([name, value])
+      cookies[name] = value
+    },
+    unstate: (name) => {
+      delete cookies[name]
+    },
+    cookies,
+    calls
+  }
+}
+
+export const driveHandler = async (
+  handler,
+  { payload = {}, seed = {}, params = {}, query = {} } = {}
+) => {
+  const journey = await store.create()
+  await store.seedAnswers(journey.journeyId, seed)
+  const h = stubH()
+  const response = await handler(
+    journeyRequest(journey.journeyId, { payload, params, query }),
+    h
+  )
+  const after = (await store.get(journey.journeyId)).answers
+  return {
+    journeyId: journey.journeyId,
+    before: seed,
+    after,
+    response,
+    view: h.captured.view
+  }
+}
+
+export const postHandlerOf = (featureModule) =>
+  featureModule.routes.find((route) => route.method === 'POST').handler
+
+export const postHandlerEndingWith = (featureModule, pathSuffix) =>
+  featureModule.routes.find(
+    (route) => route.method === 'POST' && route.path.endsWith(pathSuffix)
+  ).handler

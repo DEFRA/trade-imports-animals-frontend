@@ -1,0 +1,14 @@
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% macro saveActions(hubHref, primary, copy) %}
+  <div class="govuk-button-group">
+    {{ govukButton(primary or { text: copy.saveAndContinue }) }}
+    {{ govukButton({
+      text: copy.saveAndReturnToHub,
+      classes: "govuk-button--secondary",
+      name: "exit",
+      value: "hub"
+    }) }}
+    <a class="govuk-link" href="{{ hubHref }}">{{ copy.cancelAndReturnToHub }}</a>
+  </div>
+{% endmacro %}

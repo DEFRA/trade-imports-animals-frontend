@@ -1,10 +1,13 @@
 import { buildActor } from './actor-helpers.js'
 
+const entraOid = 'entra-oid-001'
+const userDisplayName = 'Jane Farmer'
+
 describe('buildActor', () => {
   const baseCredentials = {
     contactId: 2100010101,
-    sub: 'entra-oid-001',
-    name: 'Jane Farmer',
+    sub: entraOid,
+    name: userDisplayName,
     currentRelationshipId: 'org-001'
   }
 
@@ -15,25 +18,29 @@ describe('buildActor', () => {
       id: '2100010101',
       source: 'dynamics-contact',
       userType: 'B2C',
-      displayName: 'Jane Farmer',
+      displayName: userDisplayName,
       organisationId: 'org-001'
     })
   })
 
+  it('returns no actor when authentication is disabled', () => {
+    expect(buildActor(null)).toBeUndefined()
+  })
+
   it('builds a B2B actor when contactId is absent', () => {
     const credentials = {
-      ...baseCredentials,
-      contactId: undefined,
-      sub: 'entra-oid-001'
+      sub: entraOid,
+      name: userDisplayName,
+      currentRelationshipId: 'org-001'
     }
 
     const actor = buildActor(credentials)
 
     expect(actor).toEqual({
-      id: 'entra-oid-001',
+      id: entraOid,
       source: 'entra-oid',
       userType: 'B2B',
-      displayName: 'Jane Farmer',
+      displayName: userDisplayName,
       organisationId: 'org-001'
     })
   })

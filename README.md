@@ -4,7 +4,9 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=DEFRA_trade-imports-animals-frontend&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=DEFRA_trade-imports-animals-frontend)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=DEFRA_trade-imports-animals-frontend&metric=coverage)](https://sonarcloud.io/summary/new_code?id=DEFRA_trade-imports-animals-frontend)
 
-Core delivery platform Node.js Frontend Template.
+The live-animals import notification journey runs on a shared obligation and journey platform. See the [platform documentation](src/server/app/docs/README.md) and the [live-animals set and journey documentation](src/server/app/sets/live-animals/docs/README.md).
+
+Run its unit suite from the frontend repo root: `npm run test:live-animals`.
 
 - [Requirements](#requirements)
   - [Node.js](#nodejs)
@@ -15,26 +17,18 @@ Core delivery platform Node.js Frontend Template.
   - [Development](#development)
   - [Production](#production)
   - [Npm scripts](#npm-scripts)
-  - [Update dependencies](#update-dependencies)
-  - [Formatting](#formatting)
-    - [Windows prettier issue](#windows-prettier-issue)
 - [Auth](#authentication-trade-imports-defra-id-stub)
 - [Docker](#docker)
   - [Development image](#development-image)
   - [Production image](#production-image)
   - [Local stack](#local-stack)
-  - [Dependabot](#dependabot)
-  - [SonarCloud](#sonarcloud)
 - [Lighthouse performance testing](#lighthouse)
+- [SonarCloud](#sonarcloud)
 - [Licence](#licence)
-  - [About the licence](#about-the-licence)
 
 ## Requirements
 
 ### Node.js
-
-Please install [Node.js](http://nodejs.org/) `>= v22` and [npm](https://nodejs.org/) `>= v9`. You will find it
-easier to use the Node Version Manager [nvm](https://github.com/creationix/nvm)
 
 To use the correct version of Node.js for this application, via nvm:
 
@@ -58,9 +52,6 @@ instance of the service and it will not persist between restarts.
 Redis is an in-memory key-value store. Every instance of a service has access to the same Redis key-value store similar
 to how services might have a database (or MongoDB). All frontend services are given access to a namespaced prefixed that
 matches the service name. e.g. `my-service` will have access to everything in Redis that is prefixed with `my-service`.
-
-If your service does not require a session cache to be shared between instances or if you don't require Redis, you can
-disable setting `SESSION_CACHE_ENGINE=false` or changing the default value in `src/config/index.js`.
 
 ## Proxy
 
@@ -117,27 +108,6 @@ To view them in your command line run:
 
 ```bash
 npm run
-```
-
-### Update dependencies
-
-To update dependencies use [npm-check-updates](https://github.com/raineorshine/npm-check-updates):
-
-> The following script is a good start. Check out all the options on
-> the [npm-check-updates](https://github.com/raineorshine/npm-check-updates)
-
-```bash
-ncu --interactive --format group
-```
-
-### Formatting
-
-#### Windows prettier issue
-
-If you are having issues with formatting of line breaks on Windows update your global git config by running:
-
-```bash
-git config --global core.autocrlf false
 ```
 
 ## AUTHENTICATION (trade-imports-defra-id-stub)
@@ -207,141 +177,17 @@ trade-imports-animals service including this one) is the workspace stack in
 
 ## Lighthouse
 
-### Lighthouse performance testing
-
-This project uses [Lighthouse](https://github.com/GoogleChrome/lighthouse) to run performance and best‑practices checks against the /origin page.
-
 ### Local usage
 
-Start the app locally (on port 3000):
+Start the workspace stack so the configured URLs are available on port 3000.
+Then run:
 
 ```
-npm run dev
+npm run lighthouse
 ```
 
-### Run Lighthouse against a chosen URL:
-
-Run locally (app must already be running):
-
-```
-LH_BASE_URL=http://localhost:3000 npm run lighthouse
-```
-
-In CI against perf:
-
-```
-LH_BASE_URL=https://your-perf-env npm run lighthouse
-```
-
-### How to add new Lighthouse tests
-
-For a new page, say /example:
-
-1. Create tests/lighthouse/example.config.js:
-
-   ```
-   export const exampleLighthouseConfig = {
-     path: '/example',
-     variants: [
-      {
-        preset: 'mobile',
-        thresholds: { performance: 0.6, accessibility: 0.7, bestPractices: 0.7 }
-      },
-      {
-        preset: 'desktop',
-        thresholds: { performance: 0.7, accessibility: 0.7, bestPractices: 0.8 }
-      }
-     ]
-   }
-   ```
-
-   2. Import and register it in tests/lighthouse/index.mjs:
-      ```
-      import { exampleLighthouseConfig } from './example.config.js'
-      // ...
-      const pageConfigs = [
-       ...
-       exampleLighthouseConfig
-      ]
-      ```
-
-   ```
-
-   ```
-
-- Each new “test” is just a small config file plus a line in the main runner.
-
-### Dependabot
-
-The dependabot configuration lives at `.github/dependabot.yml`
-**This has been enabled for this repo.**
-
-Three things work together to keep the dependabot backlog small enough to stay
-on top of. The other services in this estate should copy all three.
-
-#### Grouped patch and minor updates
-
-The npm ecosystem has one `patch-and-minor` group matching `*`, so every patch
-and minor bump arrives as a single rolling PR. Majors match no group, so
-dependabot raises them individually — they are both the likeliest to break and
-the ones a human should read. Grouping by update type rather than by package
-name also avoids the gaps a pattern list accumulates: scoped names such as
-`@vitest/coverage-v8` escaped the old `vitest-*` pattern and were raised
-one by one.
-
-`govuk-frontend` is excluded from the group. Its minors ship new components,
-deprecations and visual changes, and there is a dedicated CHANGELOG-driven
-upgrade process for it in the workspace repo, so it keeps raising its own PR.
-
-The github-actions ecosystem is grouped the same way.
-
-#### Pinned npm version
-
-`package.json` pins npm twice, for two different readers:
-
-- `packageManager` (`npm@11.6.2`) is the **single source of truth**. CI reads
-  it; change it here.
-- `engines.npm` (`>=11.6.2`) is a floor for local development only. Deliberately
-  a range, not an exact version, so it does not silently drift out of step with
-  `packageManager`.
-
-Different npm versions resolve some transitive trees differently, and `npm ci`
-then rejects a lockfile generated by the other one. Every place that installs
-therefore aligns npm to `packageManager` first rather than inheriting whatever
-npm the surrounding Node happens to bundle:
-
-```bash
-npm install --global "$(node scripts/npm-version.js)"
-```
-
-`scripts/npm-version.js` reads `packageManager`, checks it names npm at a
-concrete version and strips any Corepack `+sha512...` integrity suffix, then
-prints the spec. Reading the field directly would be shorter but fails open: a
-suffixed value is not a valid install spec, and a missing one yields the string
-`undefined`, which is a real package on the registry — so the install would
-succeed and the job would carry on with the wrong npm. The helper exits
-non-zero instead.
-
-That step runs in `check-pull-request.yml` (both jobs), `publish.yml`,
-`publish-hotfix.yml`, `lighthouse.yml` and in both install stages of the
-`Dockerfile`. If you add a new workflow or stage that runs `npm ci`, add the
-step there too — otherwise a `.nvmrc` or `PARENT_VERSION` bump reintroduces the
-mismatch in that one place.
-
-Note dependabot itself picks its npm from the lockfile version and does not read
-`packageManager`, so confirm a live dependabot PR installs cleanly before
-relying on this to keep dependabot PRs green.
-
-#### Security audit as its own job
-
-`npm audit` runs in a `security-audit` job that is deliberately separate from
-`pr-validator`. The audit scans the whole installed tree against a live advisory
-feed, so a newly published advisory turns every open PR red regardless of what
-that PR changed — and advisories on indirect dependencies often have no upgrade
-path, needing a hand-written `overrides` entry on main to clear. Folded into
-`pr-validator`, that failure mode blocks the very PR carrying the fix. Kept
-separate, the audit stays visible on every PR without being the check that gates
-the merge.
+The URL list, score floors and contribution steps are in the
+[Lighthouse guide](src/server/app/sets/live-animals/docs/lighthouse.md).
 
 ### SonarCloud
 
@@ -356,11 +202,3 @@ THIS INFORMATION IS LICENSED UNDER THE CONDITIONS OF THE OPEN GOVERNMENT LICENCE
 The following attribution statement MUST be cited in your products and applications when using this information.
 
 > Contains public sector information licensed under the Open Government license v3
-
-### About the licence
-
-The Open Government Licence (OGL) was developed by the Controller of Her Majesty's Stationery Office (HMSO) to enable
-information providers in the public sector to license the use and re-use of their information under a common open
-licence.
-
-It is designed to encourage use and re-use of information freely and flexibly, with only a few conditions.

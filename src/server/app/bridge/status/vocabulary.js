@@ -1,0 +1,5 @@
+export const NA = 'not-applicable'
+export const NOT_STARTED = 'not-started'
+export const IN_PROGRESS = 'in-progress'
+export const FULFILLED = 'fulfilled'
+export const OPTIONAL = 'optional'

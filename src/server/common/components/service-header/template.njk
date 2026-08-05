@@ -18,7 +18,7 @@
           <span class="app-service-header__user-name">{{ userSession.displayName }}</span>
         </span>
         <span class="app-service-header__separator" aria-hidden="true">|</span>
-        <a href="/signout" class="govuk-link govuk-link--no-visited-state app-service-header__link">Sign out</a>
+        <a href="/auth/sign-out" class="govuk-link govuk-link--no-visited-state app-service-header__link">Sign out</a>
       {% else %}
         {% if authEnabled %}
           <a href="/auth/sign-in-oidc" class="govuk-link govuk-link--no-visited-state app-service-header__link">Sign in</a>

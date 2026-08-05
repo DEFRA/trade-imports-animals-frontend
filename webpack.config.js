@@ -23,14 +23,9 @@ export default {
     application: {
       import: ['./javascripts/application.js', './stylesheets/application.scss']
     },
-    commoditySubTotal: {
-      import: './javascripts/commodity-subtotal-autocomplete.js'
-    },
-    accompanyingDocuments: {
-      import: './javascripts/accompanying-documents.js'
-    },
-    notificationView: {
-      import: './javascripts/notification-view.js'
+    documents: {
+      import:
+        '../server/app/sets/live-animals/journeys/linear/features/documents/client/index.js'
     }
   },
   experiments: {
@@ -101,6 +96,7 @@ export default {
             options: {
               sassOptions: {
                 loadPaths: [
+                  dirname,
                   path.join(dirname, 'src/client/stylesheets'),
                   path.join(dirname, 'src/server/common/components'),
                   path.join(dirname, 'src/server/common/templates/partials')

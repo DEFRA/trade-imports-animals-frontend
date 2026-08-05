@@ -1,0 +1,146 @@
+/**
+ * Per-instance completeness -> collectionView's `complete`.
+ *
+ * collectionView reads positional storage for a collection's entries; this
+ * module supplies the per-entry `complete` flag. entries / index / path stay
+ * positional, so an empty or partial entry is never lost; only its completeness
+ * comes from the evaluator.
+ *
+ * Instance identity is positional (the array index). `instanceFulfilmentId`
+ * maps a positional entry to its composite fulfilmentId prefix with the segment
+ * machinery, exactly as scope.js / purge.js convert composite <-> positional.
+ *
+ * `entryComplete` reproduces the FULFILLED verdict scoped to one
+ * instance: the instance is complete iff the evaluator finds no unsatisfied
+ * mandatory concern beneath it — a mandatory leaf record left unfulfilled
+ * (`effectiveStatus` semantics: a record's `status`, defaulting to mandatory),
+ * or an unmet per-instance group invariant (`groupInvariantErrors`, the
+ * `requires.anyOf` at-least-one rule).
+ *
+ * Structural placeholder obligations (the two system fields) are declared in
+ * the manifest but no page collects them, so they must not mark an instance
+ * incomplete.
+ *
+ * Known structural divergence: instances are inferred from leaf composite
+ * prefixes, so a fully-EMPTY nested instance (a unit with no stored leaf)
+ * vanishes on round-trip and its unmet `anyOf` cannot be flagged. A fully-empty
+ * TOP-LEVEL entry is caught here via its unconditional mandatory field leaves.
+ */
+
+import { obligationByName, obligations } from '../model/obligations/manifest.js'
+import { ancestorChain, groupObligations } from './fulfilments/index.js'
+import { instanceFulfilmentId } from './fulfilment-id.js'
+import { fulfilmentRegistry } from './fulfilment-registry.js'
+import { SYSTEM_POPULATED } from './obligation-source.js'
+import { groupInvariantErrors } from '../model/obligations/state-queries.js'
+import { isBlankValue } from '../model/obligations/is-blank-value.js'
+
+const isFulfilled = (value) => !isBlankValue(value)
+
+// A leaf record's fulfilmentId belongs to instance P iff it IS P (a direct
+// leaf of the instance's own group) or sits beneath it (`P/...`, a nested
+// group's leaf) — the same positional-prefix rule the evaluator uses.
+const belongsToInstance = (fulfilmentId, instanceId) =>
+  fulfilmentId === instanceId || fulfilmentId.startsWith(`${instanceId}/`)
+
+const leavesUnder = (group) =>
+  obligations().filter(
+    (o) => !groupObligations.has(o) && ancestorChain(o).includes(group)
+  )
+
+// The group itself plus every group nested beneath it — the scope over which
+// per-instance `anyOf` invariants are checked.
+const groupsFrom = (group) =>
+  obligations().filter(
+    (o) =>
+      groupObligations.has(o) &&
+      (o === group || ancestorChain(o).includes(group))
+  )
+
+// An unconditional mandatory field leaf directly under this group is a
+// concern for the instance even when the evaluator enumerated no record —
+// an empty entry has no leaf storage, so the evaluator never sees the
+// instance, but the entry still shows and its mandatory fields are unfilled.
+const emptyEntryBlocks = (leaf, group, instanceId, stored) => {
+  if (leaf.within !== group || leaf.applyTo) {
+    return false
+  }
+  if ((leaf.status ?? 'mandatory') !== 'mandatory') {
+    return false
+  }
+  return !isFulfilled(stored?.[instanceId])
+}
+
+const belongingRecordBlocks = (belonging, stored) =>
+  belonging.some(
+    (record) =>
+      (record.status ?? 'mandatory') === 'mandatory' &&
+      !isFulfilled(stored?.[record.fulfilmentId])
+  )
+
+const leafBlocksInstance = (
+  leaf,
+  group,
+  instanceId,
+  implications,
+  fulfilments
+) => {
+  if (SYSTEM_POPULATED.has(leaf.name)) {
+    return false
+  }
+  const implication = implications[leaf.id]
+  if (!implication?.inScope) {
+    return false
+  }
+  const stored = fulfilments[leaf.id]
+  const belonging = (implication.records ?? []).filter((record) =>
+    belongsToInstance(record.fulfilmentId, instanceId)
+  )
+  return belonging.length === 0
+    ? emptyEntryBlocks(leaf, group, instanceId, stored)
+    : belongingRecordBlocks(belonging, stored)
+}
+
+const groupInvariantBlocksInstance = (group, instanceId, state) =>
+  groupsFrom(group).some(
+    (nested) =>
+      nested.requires?.anyOfIds &&
+      groupInvariantErrors(nested, state).some(
+        (error) =>
+          error.instanceId && belongsToInstance(error.instanceId, instanceId)
+      )
+  )
+
+/**
+ * Per-instance completeness for the collection entry at `collectionPath[index]`.
+ * True iff the evaluator finds no unsatisfied mandatory concern anywhere
+ * beneath the instance.
+ *
+ * @param {object} evaluation - the request-level evaluator result.
+ * @param {Array<string|number>} collectionPath - a collection path.
+ * @param {number} index - positional entry index within that collection.
+ * @returns {boolean}
+ */
+export const entryComplete = (evaluation, collectionPath, index) => {
+  const names = collectionPath.filter((segment) => typeof segment === 'string')
+  const group = obligationByName(names.at(-1))
+  if (!group) {
+    return true
+  }
+  const groupChain = [...ancestorChain(group), group]
+  const descriptors = groupChain.map(({ id }) =>
+    fulfilmentRegistry.groupDescriptorOf(id)
+  )
+  const instanceId = instanceFulfilmentId(collectionPath, index, descriptors)
+  const { obligations: implications, fulfilments } = evaluation
+
+  const blockedByLeaf = leavesUnder(group).some((leaf) =>
+    leafBlocksInstance(leaf, group, instanceId, implications, fulfilments)
+  )
+  if (blockedByLeaf) {
+    return false
+  }
+
+  const state = { obligations: implications, fulfilments }
+  return !groupInvariantBlocksInstance(group, instanceId, state)
+}

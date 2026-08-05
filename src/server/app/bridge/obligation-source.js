@@ -1,0 +1,163 @@
+import {
+  obligationByName as configuredObligationByName,
+  obligations
+} from '../model/obligations/manifest.js'
+import { groupObligations } from './fulfilments/index.js'
+import { journeyFlowOnlyKeys } from '../flow/journey-flow.js'
+
+const namesUpTo = (obligation) =>
+  obligation ? [...namesUpTo(obligation.within), obligation.name] : []
+
+const templatePathOf = (obligation) => namesUpTo(obligation).join('.')
+
+export function* walkObligations() {
+  for (const obligation of obligations()) {
+    yield { templatePath: templatePathOf(obligation), obligation }
+  }
+}
+
+export const obligationByName = configuredObligationByName
+
+// Resolve an obligation by its dotted name-path — the `within` chain of names,
+// root to leaf, joined by `.` (`commodityLines`,
+// `commodityLines.animalIdentifiers`).
+export const obligationByPath = (templatePath) =>
+  obligations().find(
+    (obligation) => templatePathOf(obligation) === templatePath
+  )
+
+export const SYSTEM_POPULATED = new Set(['poApprovedReferenceNumber'])
+
+export const ENFORCED_AT_CONTINUE = new Set([
+  'countryOfOrigin',
+  'commoditySelection'
+])
+
+// Collection admission-control cap: a collection's entry count is
+// capped at the value of a sibling count field in the frame that holds it.
+// Enforcement lives on the write path (engine/evaluate/cardinality.js
+// `collectionCapAt`, appendEntryAt rejects at the cap); only
+// the declaration lives here. Keyed by collection name → sibling count field.
+export const MAX_ENTRIES_FROM = {
+  animalIdentifiers: 'numberOfAnimalsQuantity'
+}
+
+// ---------------------------------------------------------------------------
+// Answer-key recognition — the single source of truth for which keys may
+// appear in a stored answers tree. A key outside this surface is inert to
+// the evaluator (never in scope, never wiped) yet ships raw at finalise, so
+// the engine's write paths and submitJourney reject it loudly instead.
+// ---------------------------------------------------------------------------
+
+// Flow-owned obligations the notification model does not carry: the
+// pre-journey import-type filter and the submit-time declaration step.
+export const flowOnlyObligations = () => journeyFlowOnlyKeys()
+
+export const flowOnlyAnswersFrom = (answers) =>
+  Object.fromEntries(
+    flowOnlyObligations()
+      .filter(
+        (key) => Object.hasOwn(answers ?? {}, key) && answers[key] !== undefined
+      )
+      .map((key) => [key, answers[key]])
+  )
+
+// Compatibility key accepted by answer validation but excluded from canonical
+// assembly. Runtime notification projections take the reference from the
+// journey envelope instead.
+const SYSTEM_ANSWER_KEYS = new Set(['referenceNumber'])
+
+const topLevelKeys = () =>
+  new Set([
+    ...obligations()
+      .filter((obligation) => !obligation.within)
+      .map((obligation) => obligation.name),
+    ...flowOnlyObligations(),
+    ...SYSTEM_ANSWER_KEYS
+  ])
+
+const memberKeysOf = (group) =>
+  new Set(
+    obligations()
+      .filter((obligation) => obligation.within === group)
+      .map((obligation) => obligation.name)
+  )
+
+const sweepKey = (memberKeys, entryPath, key, value) => {
+  if (!memberKeys.has(key)) {
+    return [{ key, path: entryPath }]
+  }
+  const member = obligationByName(key)
+  return member && groupObligations.has(member)
+    ? sweepEntries(member, value, `${entryPath}.${key}`)
+    : []
+}
+
+const sweepEntry = (memberKeys, path, entry, index) => {
+  if (entry === null || typeof entry !== 'object') {
+    return []
+  }
+  const entryPath = `${path}[${index}]`
+  return Object.entries(entry).flatMap(([key, value]) =>
+    sweepKey(memberKeys, entryPath, key, value)
+  )
+}
+
+const sweepEntries = (group, items, path) => {
+  if (!Array.isArray(items)) {
+    return []
+  }
+  const memberKeys = memberKeysOf(group)
+  return items.flatMap((entry, index) =>
+    sweepEntry(memberKeys, path, entry, index)
+  )
+}
+
+const unrecognisedKeysFor = (key, value) => {
+  if (!topLevelKeys().has(key)) {
+    return [{ key, path: '(top level)' }]
+  }
+  const obligation = obligationByName(key)
+  return obligation && groupObligations.has(obligation)
+    ? sweepEntries(obligation, value, key)
+    : []
+}
+
+/**
+ * Every key in the answers tree that is not a manifest obligation name in
+ * its declared position, a flow-only key, or a system key. Values below leaf
+ * keys (addresses, date parts, arrays) are opaque and not swept.
+ *
+ * @param {object} answers - the nested answer POJO.
+ * @returns {Array<{ key: string, path: string }>} empty when fully recognised.
+ */
+export const unrecognisedAnswerKeys = (answers) => {
+  if (answers === null || typeof answers !== 'object') {
+    return []
+  }
+  return Object.entries(answers).flatMap(([key, value]) =>
+    unrecognisedKeysFor(key, value)
+  )
+}
+
+/**
+ * Throw when the answers tree carries any unrecognised key — an inert key
+ * would otherwise persist silently and ship at finalise.
+ *
+ * @param {object} answers - the nested answer POJO to check.
+ * @param {string} context - the call-site label folded into the thrown error message.
+ */
+export const assertRecognisedAnswerKeys = (answers, context) => {
+  const problems = unrecognisedAnswerKeys(answers)
+  if (problems.length === 0) {
+    return
+  }
+  const detail = problems
+    .map(({ key, path }) => `"${key}" at ${path}`)
+    .join(', ')
+  throw new Error(
+    `Unrecognised answer key(s) ${detail} (${context}). Every stored key ` +
+      'must be a manifest obligation name, a flow-only key, a system key ' +
+      'or a declared auxiliary entry key — see bridge/obligation-source.js.'
+  )
+}

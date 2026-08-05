@@ -1,0 +1,147 @@
+/**
+ * Coverage test.
+ */
+
+import { describe, it, expect } from 'vitest'
+import { obligations } from './index.js'
+import { obligationMetadata } from '../../../model/obligations/helpers/index.js'
+
+// Guard against a self-loop or a cycle hanging buildAncestorGroups' `while
+// (cur) cur = cur.within` walk forever. Any real `within` chain in the
+// manifest is a handful of levels deep — 100 is a generous ceiling that
+// only a genuine cycle could reach.
+const MAX_WITHIN_CHAIN_DEPTH = 100
+
+// Shared by the id/name uniqueness checks below — counts occurrences of
+// `keyFn(item)` across `items` and reports every key seen more than once.
+const duplicatesOf = (items, keyFn) => {
+  const counts = new Map()
+  for (const item of items) {
+    const key = keyFn(item)
+    counts.set(key, (counts.get(key) ?? 0) + 1)
+  }
+  return [...counts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([key, count]) => `${key} (×${count})`)
+}
+
+const withinChainProblem = (obligation) => {
+  const seen = new Set()
+  let cur = obligation.within
+  let depth = 0
+  while (cur) {
+    if (seen.has(cur.id)) {
+      return `${obligation.name} → cycle at ${cur.name}`
+    }
+    seen.add(cur.id)
+    cur = cur.within
+    depth += 1
+    if (depth > MAX_WITHIN_CHAIN_DEPTH) {
+      return `${obligation.name} → chain deeper than ${MAX_WITHIN_CHAIN_DEPTH} (likely cycle)`
+    }
+  }
+  return null
+}
+
+describe('structural integrity — no cycles in `within` references', () => {
+  it('every obligation has a within-chain that terminates in null', () => {
+    // Without this, a self-loop or a cycle in the manifest hangs the
+    // whole evaluator: buildAncestorGroups walks `while (cur) cur =
+    // cur.within` and never terminates. The test guards against
+    // regressions by walking each chain with a max-depth bound and a
+    // seen-set. Any cycle fails deterministically before the evaluator
+    // is ever built.
+    const problems = obligations
+      .map(withinChainProblem)
+      .filter((problem) => problem !== null)
+    expect(problems).toEqual([])
+  })
+})
+
+describe('uniqueness — every obligation has a distinct id and name', () => {
+  it('has no duplicate ids in the manifest', () => {
+    // Duplicate ids collide in every id-keyed structure the evaluator
+    // builds (obligationsById, obligationChildren, etc.); one wins and
+    // the loser is silently invisible. A rename or copy-paste that
+    // reuses the same id must fail immediately.
+    expect(duplicatesOf(obligations, (obligation) => obligation.id)).toEqual([])
+  })
+
+  it('has no duplicate names in the manifest', () => {
+    // Duplicate names silently corrupt every name-keyed downstream: the
+    // dictionary shows the obligation twice and a name-based lookup
+    // returns whichever entry matches first.
+    expect(duplicatesOf(obligations, (obligation) => obligation.name)).toEqual(
+      []
+    )
+  })
+})
+
+describe('system-populated fields declared but not presented', () => {
+  it('poApprovedReferenceNumber is on the manifest', () => {
+    const names = obligations.map((o) => o.name)
+    expect(names).toContain('poApprovedReferenceNumber')
+  })
+
+  it('is declared always-in-scope + mandatory', () => {
+    // The data-only shape { id, name, status } is the declaration — no
+    // `applyTo` closure needed. The
+    // evaluator's `field` classifier routes these through the "top-
+    // level scalar with intrinsic status" branch and returns
+    // `{ inScope: true, status: obligation.status }`. We pin both the
+    // author-side declaration (`status: 'mandatory'`, no `applyTo`)
+    // and the observable decision (via the evaluator, not by calling
+    // a now-absent closure directly).
+    const po = obligations.find((o) => o.name === 'poApprovedReferenceNumber')
+    expect(po).toMatchObject({ status: 'mandatory' })
+    expect(po.applyTo).toBeUndefined()
+  })
+})
+
+// -----------------------------------------------------------------------------
+// dependsOn coverage.
+//
+// Every obligation that carries an `applyTo` closure must resolve to a
+// `dependsOn: string[]` listing the ids of the obligations whose stored
+// values the closure reads. `dependsOn: []` is the honest annotation
+// for unconditional / always-in-scope closures (no reads).
+//
+// Rationale: closures are opaque to the reachability prover; without a
+// declared dependency graph the prover goes vacuously green because
+// `gateValue` cannot invert an opaque closure body. Making `dependsOn`
+// a declared field alongside the closure recovers the statically-
+// recoverable graph without giving up the imperative-JS gate surface.
+//
+// Meta-first helpers name their gate obligation on
+// `.metadata.obligation`, so `dependsOn` becomes DERIVABLE for those
+// sites. The assertion accepts either:
+//   (a) an explicit `dependsOn: string[]` on the obligation, OR
+//   (b) a helper metadata whose type is one that `obligationMetadata`
+//       can derive from (`equalsGate`, `presentGate`, `includesGate`,
+//       `allowListed`, `anyAllowListed`, `notInUnionOf`, `matches`,
+//       `alwaysInScope`, and the annotated shape of `branchedGate`).
+// `obligationMetadata` returns a resolved `dependsOn` in both cases;
+// the assertion checks that resolution succeeds (i.e. the resolved
+// value is a `string[]`). A `branchedGate` used as an escape hatch
+// without either an explicit `dependsOn` or a `predicateMeta` still
+// fires this test — that's the intended defence.
+//
+// Structural obligations (`commodityLine`, `unitRecord`) carry no
+// `applyTo` and are excluded from the check.
+// -----------------------------------------------------------------------------
+
+describe('coverage — every gated obligation carries (or derives) dependsOn', () => {
+  it('every obligation with an applyTo resolves to a dependsOn array', () => {
+    const missing = obligations
+      .filter((o) => typeof o.applyTo === 'function')
+      .filter((o) => {
+        // `obligationMetadata` prefers explicit `dependsOn` but falls
+        // back to deriving from the helper metadata. Either path must
+        // terminate in an array.
+        const meta = obligationMetadata(o)
+        return !Array.isArray(meta.dependsOn)
+      })
+      .map((o) => o.name)
+    expect(missing).toEqual([])
+  })
+})

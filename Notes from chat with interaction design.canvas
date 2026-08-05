@@ -1,0 +1,23 @@
+{
+	"nodes":[
+		{"id":"8e255ddf5d448593","type":"text","text":"Minimal journey is select \"type\" e.g. animals, or plants","x":-445,"y":-520,"width":285,"height":140},
+		{"id":"de1ad9db87aadcfd","type":"text","text":"Multiple pages in a \"task\" (linear journey in a task)\n\n\nSub tasks within tasks as well\n","x":220,"y":-107,"width":180,"height":147},
+		{"id":"6b0ca39150288a88","type":"text","text":"Back(Navigate?) button implementation \n\n- Back as in journey\n- Back as in to hub\n- Back as in to Check Your Answers","x":-445,"y":-360,"width":250,"height":208},
+		{"id":"4842c61451fac765","type":"text","text":"Delete conditional data on change of determining condition.\n\nE.g delete crash records when saying you didnt have any claims","x":-445,"y":0,"width":250,"height":200},
+		{"id":"bef610268f7a3edf","type":"text","text":"Current design is linear followed by task list","x":-445,"y":221,"width":250,"height":121},
+		{"id":"284bb420c80a3980","type":"text","text":"JavaScript in Browser?","x":220,"y":-520,"width":250,"height":60},
+		{"id":"5e0f7bdeca287249","type":"text","text":"*Some* questions are mandatory at the point of display - can't Save and Continue without entering a valid value","x":-137,"y":-520,"width":250,"height":140},
+		{"id":"a56eac23d8b96d09","type":"text","text":"More than one page / question can lead to the same end field.\n\nDoes this mean one obligation, two implementations?\n\nOr logical OR on obligations","x":185,"y":-420,"width":250,"height":290},
+		{"id":"033c8fcef856f6be","type":"text","text":"What to do about conditional data after a rule change?\n\nMight be constrained by the \"delete conditional data\" steer","x":-137,"y":-240,"width":250,"height":207},
+		{"id":"63e331f7f158d9be","type":"text","text":"Multiple Journeys - and one journey might navigate to another (How about multiple drivers on our car insurance)","x":185,"y":221,"width":250,"height":147},
+		{"id":"b713cb2309b97f96","type":"text","text":"Field level values persisted on page. ","x":-160,"y":182,"width":335,"height":160},
+		{"id":"095ef6643e946074","type":"text","text":"Partial page completion is supported, even if a field is required for the overall outcome","x":-160,"y":0,"width":250,"height":140},
+		{"id":"b12ad9292595dfa7","type":"text","text":"Questions can be in scope but optional - e.g. bring your own label/reference number","x":175,"y":70,"width":250,"height":134},
+		{"id":"16adb0691a7dc5ad","type":"text","text":"Task list where some pages navigate to the next task, rather than back to task list","x":470,"y":-410,"width":250,"height":154},
+		{"id":"fec33721d2bb4547","type":"text","text":"Navigation can be determined by state of journey ","x":470,"y":-298,"width":250,"height":117},
+		{"id":"c5d8653af2b12e4f","type":"text","text":"What determines it being linear vs task list?","x":470,"y":-188,"width":250,"height":104},
+		{"id":"ace88d47381ca7ea","type":"text","text":"Configuration can affect obligations - e.g. versioning, feature flags, A/B testing, statute change","x":470,"y":-65,"width":250,"height":130},
+		{"id":"6312a260f3e82712","x":470,"y":118,"width":250,"height":206,"type":"text","text":"Save by copy, by reference, or both?\n\nE.g. address example"}
+	],
+	"edges":[]
+}

@@ -3,8 +3,6 @@ import { vi } from 'vitest'
 import { createServer } from '../server.js'
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
 
-vi.mock('../common/clients/notification-client.js')
-
 vi.mock('../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
 }))

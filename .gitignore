@@ -12,7 +12,13 @@ tsconfig.tsbuildinfo
 .env
 lighthouse-report/
 .lighthouseci/
+.lighthouse/
 chromewebdata**
 localhost**
 test-results/
 *.iml
+
+# Playwright E2E suite output (videos + report)
+playwright-report/
+blob-report/
+.playwright/
