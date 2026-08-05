@@ -24,6 +24,7 @@ import { records } from '../../../../services/records/stub.js'
 import * as additionalDetails from './controller.js'
 import { copy } from './copy/copy.en.js'
 
+const NEXT_TARGET_PATH = '/plant-products/notifications/next-target'
 const get = additionalDetails.routes.find(
   ({ method }) => method === 'GET'
 ).handler
@@ -38,31 +39,7 @@ const validPayload = (overrides = {}) => ({
   ...overrides
 })
 
-describe('plant-products additional-details controller', () => {
-  let server
-
-  beforeAll(async () => {
-    vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
-    server = Hapi.server()
-    await server.register(plantProducts, {
-      routes: { prefix: '/plant-products' }
-    })
-  })
-
-  beforeEach(async () => {
-    enterSetContext('plant-products')
-    await records.clear()
-  })
-
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  afterAll(async () => {
-    vi.unstubAllEnvs()
-    await server.stop({ timeout: 0 })
-  })
-
+const renderingAndValidationTests = () => {
   it('prefills persisted measurements with at least two decimal places and derives both totals', async () => {
     const result = await drive(get, {
       seed: {
@@ -173,11 +150,13 @@ describe('plant-products additional-details controller', () => {
     expect(result.view.context.values).toEqual(payload)
     expect(result.after).toEqual(seed)
   })
+}
 
+const commitAndFailureTests = () => {
   it('commits cleaned measurements as numbers and redirects through nextTarget', async () => {
     const nextTarget = vi
       .spyOn(kit, 'nextTarget')
-      .mockResolvedValue('/plant-products/notifications/next-target')
+      .mockResolvedValue(NEXT_TARGET_PATH)
     const result = await drive(post, {
       payload: validPayload({
         totalGrossWeight: ' 12.5 ',
@@ -192,15 +171,13 @@ describe('plant-products additional-details controller', () => {
       grossVolumeUnit: 'METRES_CUBED'
     })
     expect(result.response).toEqual({
-      redirect: '/plant-products/notifications/next-target'
+      redirect: NEXT_TARGET_PATH
     })
     expect(nextTarget).toHaveBeenCalledOnce()
   })
 
   it('accepts lossless Number boundaries without imposing a magnitude or scale cap', async () => {
-    vi.spyOn(kit, 'nextTarget').mockResolvedValue(
-      '/plant-products/notifications/next-target'
-    )
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue(NEXT_TARGET_PATH)
     const result = await drive(post, {
       payload: validPayload({
         totalGrossWeight: '9007199254740994',
@@ -242,9 +219,7 @@ describe('plant-products additional-details controller', () => {
   )
 
   it('clearing gross volume takes its unit out of scope and purges the stored unit', async () => {
-    vi.spyOn(kit, 'nextTarget').mockResolvedValue(
-      '/plant-products/notifications/next-target'
-    )
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue(NEXT_TARGET_PATH)
     const result = await drive(post, {
       seed: {
         totalGrossWeight: 12,
@@ -283,4 +258,33 @@ describe('plant-products additional-details controller', () => {
       'programming failure'
     )
   })
+}
+
+describe('plant-products additional-details controller', () => {
+  let server
+
+  beforeAll(async () => {
+    vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
+    server = Hapi.server()
+    await server.register(plantProducts, {
+      routes: { prefix: '/plant-products' }
+    })
+  })
+
+  beforeEach(async () => {
+    enterSetContext('plant-products')
+    await records.clear()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  afterAll(async () => {
+    vi.unstubAllEnvs()
+    await server.stop({ timeout: 0 })
+  })
+
+  renderingAndValidationTests()
+  commitAndFailureTests()
 })

@@ -28,10 +28,14 @@ import { arrivalDate, arrivalTime } from '../../../../obligations/index.js'
 import * as transport from './controller.js'
 import { copy } from './copy/copy.en.js'
 
+const SET_ID = 'plant-products'
+const SUITE = 'plant-products transport controller'
+const ADD_CONTAINER = 'add-container'
+
 const get = transport.routes.find(({ method }) => method === 'GET').handler
 const post = postHandlerOf(transport)
 const drive = (handler, options) =>
-  withSetContext('plant-products', () => driveHandler(handler, options))
+  withSetContext(SET_ID, () => driveHandler(handler, options))
 
 const utcDay = (offset = 0) => {
   const now = new Date()
@@ -70,7 +74,7 @@ const container = {
   officialSeal: true
 }
 
-describe('plant-products transport controller', () => {
+const setupTransportServer = () => {
   let server
 
   beforeAll(async () => {
@@ -82,7 +86,7 @@ describe('plant-products transport controller', () => {
   })
 
   beforeEach(async () => {
-    enterSetContext('plant-products')
+    enterSetContext(SET_ID)
     await records.clear()
   })
 
@@ -94,6 +98,10 @@ describe('plant-products transport controller', () => {
     vi.unstubAllEnvs()
     await server.stop({ timeout: 0 })
   })
+}
+
+describe(`${SUITE} — prefill, border control post and premises`, () => {
+  setupTransportServer()
 
   it('prefills every field, BCP-filtered premises and collection rows on GET', async () => {
     const result = await drive(get, {
@@ -183,6 +191,10 @@ describe('plant-products transport controller', () => {
     expect(result.view.context.values.inspectionPremises).toBe('INSPBAR1')
     expect(result.after).toEqual({})
   })
+})
+
+describe(`${SUITE} — means of transport, identification and arrival`, () => {
+  setupTransportServer()
 
   it('requires a means of transport from the fixture', async () => {
     const result = await drive(post, {
@@ -314,6 +326,10 @@ describe('plant-products transport controller', () => {
     expect(result.view.context.errors['arrivalTime-hour']).toBe(message)
     expect(result.after).toEqual({})
   })
+})
+
+describe(`${SUITE} — container rows`, () => {
+  setupTransportServer()
 
   it('requires an explicit usesContainers answer', async () => {
     const result = await drive(post, {
@@ -352,7 +368,7 @@ describe('plant-products transport controller', () => {
       const result = await drive(post, {
         payload: validPayload({
           usesContainers: 'true',
-          action: 'add-container',
+          action: ADD_CONTAINER,
           ...row
         })
       })
@@ -367,7 +383,7 @@ describe('plant-products transport controller', () => {
     const result = await drive(post, {
       payload: validPayload({
         usesContainers: 'true',
-        action: 'add-container',
+        action: ADD_CONTAINER,
         containerNumber: '  CONT-1  ',
         sealNumber: '  SEAL-1  ',
         officialSeal: 'true'
@@ -394,30 +410,30 @@ describe('plant-products transport controller', () => {
   })
 
   it('adds the first container while preserving absent arrival values', async () => {
-    const { response, after } = await withSetContext(
-      'plant-products',
-      async () => {
-        const journey = await records.create()
-        await records.replaceFulfilment(journey.journeyId, {
-          [arrivalDate.id]: null,
-          [arrivalTime.id]: null
-        })
-        const response = await post(
-          journeyRequest(journey.journeyId, {
-            payload: validPayload({
-              usesContainers: 'true',
-              action: 'add-container',
-              containerNumber: 'CONT-1',
-              sealNumber: 'SEAL-1',
-              officialSeal: 'true'
-            })
-          }),
-          stubH()
-        )
-        const stored = await records.load({ journeyId: journey.journeyId })
-        return { response, after: projectAnswers(stored.fulfilment) }
+    const { response, after } = await withSetContext(SET_ID, async () => {
+      const journey = await records.create()
+      await records.replaceFulfilment(journey.journeyId, {
+        [arrivalDate.id]: null,
+        [arrivalTime.id]: null
+      })
+      const addResponse = await post(
+        journeyRequest(journey.journeyId, {
+          payload: validPayload({
+            usesContainers: 'true',
+            action: ADD_CONTAINER,
+            containerNumber: 'CONT-1',
+            sealNumber: 'SEAL-1',
+            officialSeal: 'true'
+          })
+        }),
+        stubH()
+      )
+      const stored = await records.load({ journeyId: journey.journeyId })
+      return {
+        response: addResponse,
+        after: projectAnswers(stored.fulfilment)
       }
-    )
+    })
 
     expect(response.statusCode).toBe(200)
     expect(after).toEqual({
@@ -491,6 +507,10 @@ describe('plant-products transport controller', () => {
     expect(result.after.borderControlPost).toBe('GBLHR4PP')
     expect(result.after).not.toHaveProperty('inspectionPremises')
   })
+})
+
+describe(`${SUITE} — commit and persistence failures`, () => {
+  setupTransportServer()
 
   it('commits cleaned values including ISO date and HH:mm time', async () => {
     const nextTarget = vi

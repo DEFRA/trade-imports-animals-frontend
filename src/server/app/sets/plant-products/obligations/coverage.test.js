@@ -19,27 +19,30 @@ const duplicatesOf = (items, keyFn) => {
     .map(([key, count]) => `${key} (×${count})`)
 }
 
+const withinChainProblem = (obligation) => {
+  const seen = new Set()
+  let current = obligation.within
+  let depth = 0
+  while (current) {
+    if (seen.has(current.id)) {
+      return `${obligation.name} → cycle at ${current.name}`
+    }
+    seen.add(current.id)
+    current = current.within
+    depth += 1
+    if (depth > MAX_WITHIN_CHAIN_DEPTH) {
+      return `${obligation.name} → chain exceeds safe depth`
+    }
+  }
+  return null
+}
+
 describe('plant-products obligation structural integrity', () => {
   it('terminates every within-chain', () => {
-    const problems = []
-    for (const obligation of obligations) {
-      const seen = new Set()
-      let current = obligation.within
-      let depth = 0
-      while (current) {
-        if (seen.has(current.id)) {
-          problems.push(`${obligation.name} → cycle at ${current.name}`)
-          break
-        }
-        seen.add(current.id)
-        current = current.within
-        depth += 1
-        if (depth > MAX_WITHIN_CHAIN_DEPTH) {
-          problems.push(`${obligation.name} → chain exceeds safe depth`)
-          break
-        }
-      }
-    }
+    const problems = obligations
+      .map((obligation) => withinChainProblem(obligation))
+      .filter((problem) => problem !== null)
+
     expect(problems).toEqual([])
   })
 

@@ -5,7 +5,7 @@ import { isSearchAction, pageNumber } from './request-params.js'
 describe('consignor picker request params', () => {
   it.each([
     { name: 'a numeric string', value: '3', expected: 3 },
-    { name: 'a missing value', value: undefined, expected: 1 },
+    { name: 'a missing value', expected: 1 },
     { name: 'an empty string', value: '', expected: 1 },
     { name: 'a non-numeric string', value: 'abc', expected: 1 }
   ])('reads $name as $expected', ({ value, expected }) => {

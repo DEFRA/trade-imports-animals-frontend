@@ -2,6 +2,14 @@ export const CLEAN_DECIMAL = /^-?(?:\d+(?:\.\d*)?|\.\d+)$/
 
 const DECIMAL_VALUE = /^(-?)(\d*)(?:\.(\d*))?(?:e([+-]?\d+))?$/i
 
+const withoutTrailingZeros = (digits) => {
+  let end = digits.length
+  while (end > 0 && digits[end - 1] === '0') {
+    end -= 1
+  }
+  return digits.slice(0, end)
+}
+
 const decimalIdentity = (value) => {
   const [, sign, integer, fraction = '', exponent = '0'] =
     DECIMAL_VALUE.exec(value) ?? []
@@ -11,7 +19,7 @@ const decimalIdentity = (value) => {
     return '0'
   }
 
-  const significant = digits.slice(firstSignificant).replace(/0+$/, '')
+  const significant = withoutTrailingZeros(digits.slice(firstSignificant))
   const power = integer.length + Number(exponent) - firstSignificant - 1
   return `${sign}${significant}e${power}`
 }

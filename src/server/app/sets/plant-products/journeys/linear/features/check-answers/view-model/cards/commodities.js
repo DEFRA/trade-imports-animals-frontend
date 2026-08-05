@@ -19,6 +19,8 @@ import {
   yesNoText
 } from '../rows/value-text.js'
 
+const TABLE_CAPTION_CLASSES = 'govuk-table__caption--s'
+
 const copy = copyFor({ en, cy })
 const commodityCopy = copyFor({ en: commodityEn, cy: commodityCy })
 const cardCopy = copy.cards.commodities
@@ -35,7 +37,7 @@ const changeCell = (journeyId, lineIndex) => {
 
 const commodityTable = (journeyId, lines, readOnly = false) => ({
   caption: cardCopy.tables.commodities,
-  captionClasses: 'govuk-table__caption--s',
+  captionClasses: TABLE_CAPTION_CLASSES,
   head: [
     header(cardCopy.columns.line),
     header(cardCopy.columns.code),
@@ -66,7 +68,7 @@ const speciesTable = (answers, evaluation, lines) => {
   )
   return {
     caption: cardCopy.tables.species,
-    captionClasses: 'govuk-table__caption--s',
+    captionClasses: TABLE_CAPTION_CLASSES,
     head: [
       header(cardCopy.columns.line),
       header(cardCopy.columns.species),
@@ -108,7 +110,7 @@ const varietyTable = (answers, evaluation, lines) => {
   return rows.length
     ? {
         caption: cardCopy.tables.varieties,
-        captionClasses: 'govuk-table__caption--s',
+        captionClasses: TABLE_CAPTION_CLASSES,
         head: [
           header(cardCopy.columns.line),
           header(cardCopy.columns.genusAndSpecies),
@@ -122,7 +124,7 @@ const varietyTable = (answers, evaluation, lines) => {
 
 const measuresTable = (lines) => ({
   caption: cardCopy.tables.measures,
-  captionClasses: 'govuk-table__caption--s',
+  captionClasses: TABLE_CAPTION_CLASSES,
   head: [
     header(cardCopy.columns.line),
     header(cardCopy.columns.packages),
@@ -155,7 +157,7 @@ export const intendedForFinalUsersRows = (
   scope,
   lines,
   localeCopy = copy,
-  changeLinkHref,
+  changeLinkHref = null,
   readOnly = false
 ) => {
   const localeCardCopy = localeCopy.cards.commodities

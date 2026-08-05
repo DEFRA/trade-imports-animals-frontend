@@ -15,6 +15,8 @@ import {
   OVERSIZE_FILE_MESSAGE
 } from '../upload-config.js'
 
+const SAVE_AND_CONTINUE = 'Save and continue'
+
 test.use({ javaScriptEnabled: false })
 
 test.describe('plant-products accompanying documents without JavaScript', () => {
@@ -39,14 +41,14 @@ test.describe('plant-products accompanying documents without JavaScript', () => 
     await expect(timeoutHint).toHaveCount(1)
     await expect(timeoutHint).toBeHidden()
 
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page.getByRole('alert')).toContainText(
       copy.errors.cannotContinue
     )
 
     await settleScan(page, 'PHYTO-001', copy.status.safe)
 
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page).not.toHaveURL((url) => documentsUrl.test(url.pathname))
 
     await page.goBack()
@@ -67,7 +69,7 @@ test.describe('plant-products accompanying documents without JavaScript', () => 
     await expect(row).toContainText(copy.status.noFile)
     await expect(row).not.toContainText(copy.status.safe)
 
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page).not.toHaveURL((url) => documentsUrl.test(url.pathname))
   })
 
@@ -179,7 +181,7 @@ test.describe('plant-products accompanying documents when the bundle fails to lo
       })
     ).toBeVisible()
 
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page).not.toHaveURL((url) => documentsUrl.test(url.pathname))
   })
 })

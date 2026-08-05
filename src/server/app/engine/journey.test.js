@@ -24,6 +24,9 @@ import {
 } from './test-support.js'
 import { obligationSet } from '../model/obligations/manifest.js'
 
+const SET_ID = 'live-animals'
+const IMPORT_TYPE_LIVE_ANIMALS = 'live-animals'
+
 const { countryOfOrigin } = obligationSet()
 
 const requestFor = (journeyId, knownJourneyIds) => ({
@@ -39,8 +42,8 @@ const requestFor = (journeyId, knownJourneyIds) => ({
 
 describe('#currentJourney', () => {
   beforeEach(async () => {
-    configureRecords('live-animals', recordsStub)
-    configureSession('live-animals', sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
     configureReadyForCheckYourAnswers(() => false)
     await store.clear()
   })
@@ -80,7 +83,7 @@ describe('#currentJourney', () => {
     await store.seedAnswers(journeyB.journeyId, { countryOfOrigin: 'DE' })
     const known = [journeyA.journeyId, journeyB.journeyId]
     const flowOnly = {
-      [journeyA.journeyId]: { importType: 'live-animals' },
+      [journeyA.journeyId]: { importType: IMPORT_TYPE_LIVE_ANIMALS },
       [journeyB.journeyId]: { importType: 'poao' }
     }
     const requestA = requestFor(journeyA.journeyId, known)
@@ -93,7 +96,7 @@ describe('#currentJourney', () => {
 
     expect(viewA.answers).toMatchObject({
       countryOfOrigin: 'FR',
-      importType: 'live-animals'
+      importType: IMPORT_TYPE_LIVE_ANIMALS
     })
     expect(viewB.answers).toMatchObject({
       countryOfOrigin: 'DE',
@@ -143,7 +146,7 @@ describe('#currentJourney', () => {
       status: 'submitted',
       fulfilment: {}
     }))
-    configureRecords('live-animals', { ...recordsStub, cancelAmend })
+    configureRecords(SET_ID, { ...recordsStub, cancelAmend })
     const journeyId = 'GBN-AG-26-ABC123'
     const request = requestFor(journeyId, [journeyId])
 
@@ -165,7 +168,7 @@ describe('#currentJourney', () => {
     const journey = await store.create()
     await recordsStub.finalise(journey.journeyId)
     const amend = vi.fn(recordsStub.amend)
-    configureRecords('live-animals', { ...recordsStub, amend })
+    configureRecords(SET_ID, { ...recordsStub, amend })
     const request = requestFor(journey.journeyId, [journey.journeyId])
 
     const editable = await amendJourney(
@@ -184,7 +187,7 @@ describe('#currentJourney', () => {
       status: 'draft',
       fulfilment: {}
     }))
-    configureRecords('live-animals', { ...recordsStub, copy })
+    configureRecords(SET_ID, { ...recordsStub, copy })
     const sourceId = 'GBN-AG-26-SOURCE'
     const request = requestFor(sourceId, [sourceId])
     const h = recordingH()
@@ -215,7 +218,7 @@ describe('#currentJourney', () => {
       status: 'deleted',
       fulfilment: {}
     }))
-    configureRecords('live-animals', { ...recordsStub, softDelete })
+    configureRecords(SET_ID, { ...recordsStub, softDelete })
     const journeyId = 'GBN-AG-26-DELETE'
     const request = requestFor(journeyId, [journeyId])
 

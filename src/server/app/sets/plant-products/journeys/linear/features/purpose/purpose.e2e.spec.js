@@ -4,20 +4,23 @@ import { axeViolations as seriousOrCriticalViolations } from '../axe.e2e-helper.
 import { purposeOptions } from '../../../../services/reference/purposes.js'
 import { copy } from './copy/copy.en.js'
 
+const SAVE_AND_CONTINUE = 'Save and continue'
+const RADIO_ITEM_CLASS = 'govuk-radios__item'
+
 const startAtPurpose = async (page) => {
   await page.goto('/plant-products')
   await page.getByRole('button', { name: 'Create a new notification' }).click()
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page).toHaveURL((url) =>
     /^\/plant-products\/notifications\/[^/]+\/country-of-origin$/.test(
       url.pathname
     )
   )
   await page.getByLabel('Country of origin').selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByRole('link', { name: 'Back' }).click()
   await page.getByRole('link', { name: 'Purpose', exact: true }).click()
   await expect(page).toHaveURL((url) =>
@@ -85,11 +88,7 @@ test.describe('plant-products purpose', () => {
       await group
         .locator('.govuk-radios__item')
         .evaluateAll((items) => items.map(({ className }) => className))
-    ).toEqual([
-      'govuk-radios__item',
-      'govuk-radios__item',
-      'govuk-radios__item'
-    ])
+    ).toEqual([RADIO_ITEM_CLASS, RADIO_ITEM_CLASS, RADIO_ITEM_CLASS])
     expect(
       await group
         .locator('label')
@@ -108,7 +107,7 @@ test.describe('plant-products purpose', () => {
     await page
       .getByRole('radio', { name: purposeOptions[0].text, exact: true })
       .check()
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(page).toHaveURL((url) =>
       /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
@@ -129,7 +128,7 @@ test.describe('plant-products purpose', () => {
   test('rejects an empty reason, focuses the first radio and commits nothing', async ({
     page
   }) => {
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(page.getByRole('alert')).toContainText('There is a problem')
     const summaryLink = page
@@ -176,7 +175,7 @@ test.describe('plant-products purpose', () => {
   test('error page has no serious or critical axe violations', async ({
     page
   }) => {
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page.getByRole('alert')).toBeVisible()
     const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
 

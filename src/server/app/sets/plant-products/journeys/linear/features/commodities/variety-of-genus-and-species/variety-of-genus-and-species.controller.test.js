@@ -29,6 +29,7 @@ import { copy as featureCopy } from '../copy/copy.en.js'
 import * as varietyPage from './variety-of-genus-and-species.controller.js'
 
 const copy = featureCopy.varietyOfGenusAndSpecies
+const NEXT_TARGET_PATH = '/plant-products/notifications/next-target'
 const get = varietyPage.routes.find(({ method }) => method === 'GET').handler
 const post = postHandlerOf(varietyPage)
 const drive = (handler, options) =>
@@ -70,29 +71,7 @@ const validAdd = {
   'varietyClass-0-0': 'CLASS_I'
 }
 
-describe('plant-products variety-of-genus-and-species controller', () => {
-  let server
-
-  beforeAll(async () => {
-    vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
-    server = Hapi.server()
-    await server.register(plantProducts, {
-      routes: { prefix: '/plant-products' }
-    })
-  })
-
-  beforeEach(async () => {
-    enterSetContext('plant-products')
-    await records.clear()
-  })
-
-  afterEach(() => vi.restoreAllMocks())
-
-  afterAll(async () => {
-    vi.unstubAllEnvs()
-    await server.stop({ timeout: 0 })
-  })
-
+const viewTests = () => {
   it('declares no collection ownership', () => {
     expect(varietyPage.meta.collects).toEqual([])
   })
@@ -208,19 +187,19 @@ describe('plant-products variety-of-genus-and-species controller', () => {
   it('redirects onward when no species has variety data', async () => {
     const nextTarget = vi
       .spyOn(kit, 'nextTarget')
-      .mockResolvedValue('/plant-products/notifications/next-target')
+      .mockResolvedValue(NEXT_TARGET_PATH)
     const result = await drive(get, {
       seed: {
         commodityLines: [{ commoditySelection: '06042090', species: [lentil] }]
       }
     })
 
-    expect(result.response.redirect).toBe(
-      '/plant-products/notifications/next-target'
-    )
+    expect(result.response.redirect).toBe(NEXT_TARGET_PATH)
     expect(nextTarget).toHaveBeenCalledOnce()
   })
+}
 
+const addVarietyTests = () => {
   it('appends exactly variety and class at depth three', async () => {
     const result = await drive(post, {
       seed: qualifiedSeed(),
@@ -300,7 +279,9 @@ describe('plant-products variety-of-genus-and-species controller', () => {
     ])
     expect(JSON.stringify(result.after)).not.toContain('__OTHER__')
   })
+}
 
+const validationTests = () => {
   it.each([
     [
       'variety required',
@@ -400,7 +381,9 @@ describe('plant-products variety-of-genus-and-species controller', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.after).toEqual(seed)
   })
+}
 
+const removeAndContinueTests = () => {
   it('removes only the addressed variety and preserves every sibling level', async () => {
     const firstSpeciesSibling = variety('Tahiti', 'CLASS_II')
     const secondSpeciesSibling = variety('Species sibling', 'EXTRA_CLASS')
@@ -438,7 +421,7 @@ describe('plant-products variety-of-genus-and-species controller', () => {
   it('save and continue commits independent part-filled species rows then advances', async () => {
     const nextTarget = vi
       .spyOn(kit, 'nextTarget')
-      .mockResolvedValue('/plant-products/notifications/next-target')
+      .mockResolvedValue(NEXT_TARGET_PATH)
     const result = await drive(post, {
       seed: {
         commodityLines: [
@@ -463,9 +446,7 @@ describe('plant-products variety-of-genus-and-species controller', () => {
     expect(result.after.commodityLines[0].species[1].varieties).toEqual([
       variety('Tahiti', 'CLASS_II')
     ])
-    expect(result.response.redirect).toBe(
-      '/plant-products/notifications/next-target'
-    )
+    expect(result.response.redirect).toBe(NEXT_TARGET_PATH)
     expect(nextTarget).toHaveBeenCalledOnce()
   })
 
@@ -505,4 +486,33 @@ describe('plant-products variety-of-genus-and-species controller', () => {
       drive(post, { seed: qualifiedSeed(), payload: validAdd })
     ).rejects.toThrow('programming failure')
   })
+}
+
+describe('plant-products variety-of-genus-and-species controller', () => {
+  let server
+
+  beforeAll(async () => {
+    vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
+    server = Hapi.server()
+    await server.register(plantProducts, {
+      routes: { prefix: '/plant-products' }
+    })
+  })
+
+  beforeEach(async () => {
+    enterSetContext('plant-products')
+    await records.clear()
+  })
+
+  afterEach(() => vi.restoreAllMocks())
+
+  afterAll(async () => {
+    vi.unstubAllEnvs()
+    await server.stop({ timeout: 0 })
+  })
+
+  viewTests()
+  addVarietyTests()
+  validationTests()
+  removeAndContinueTests()
 })

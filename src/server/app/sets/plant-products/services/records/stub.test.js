@@ -19,6 +19,7 @@ import {
 } from '../../obligations/sections/documents.js'
 import { records } from './stub.js'
 
+const SET_ID = 'plant-products'
 const REFERENCE_PATTERN = /^GBN-PP-\d{2}-[0-9A-HJ-KM-NP-TV-Z]{6}$/
 const DOCUMENT_LEAF_OBLIGATION_IDS = [
   documentType.id,
@@ -37,10 +38,9 @@ const CANNED_CONTENT = {
     internalReference: 'BR-EXPORT-2026-001'
   }
 }
-const inPlantProducts = (operation) =>
-  withSetContext('plant-products', operation)
+const inPlantProducts = (operation) => withSetContext(SET_ID, operation)
 
-registerSetMount('plant-products', '/plant-products')
+registerSetMount(SET_ID, '/plant-products')
 
 const createAtStatus = async (status) => {
   const created = await records.create()
@@ -53,17 +53,7 @@ const createAtStatus = async (status) => {
   return created.journeyId
 }
 
-describe('plant-products records stub', () => {
-  beforeEach(async () => {
-    configureObligationSet('plant-products', plantProductsObligationSet)
-    configureFulfilmentRegistry('plant-products', featureEvaluationBindings)
-    await inPlantProducts(() => records.clear())
-  })
-
-  afterEach(() => {
-    vi.unstubAllEnvs()
-  })
-
+const lifecycleTests = () => {
   it('mints unique references in the backend GBN-PP format', async () => {
     const first = await records.create()
     const second = await records.create()
@@ -146,7 +136,7 @@ describe('plant-products records stub', () => {
     }))
 
   it('projects dashboard facts and applies the supported sort tokens', () =>
-    withSetContext('plant-products', async () => {
+    withSetContext(SET_ID, async () => {
       const first = await records.create()
       const second = await records.create()
       await records.replaceFulfilment(
@@ -180,7 +170,9 @@ describe('plant-products records stub', () => {
         arrivalDate: '2026-03-07'
       })
     }))
+}
 
+const copyTests = () => {
   it.each([undefined, null, '', '   '])(
     'rejects a blank copy key before creating a draft (%s)',
     (key) =>
@@ -250,7 +242,7 @@ describe('plant-products records stub', () => {
   })
 
   it('copies notification content without accompanying documents', () =>
-    withSetContext('plant-products', async () => {
+    withSetContext(SET_ID, async () => {
       const source = await records.create()
       await records.replaceFulfilment(
         source.journeyId,
@@ -306,7 +298,9 @@ describe('plant-products records stub', () => {
       expect(secondCopy.journeyId).not.toBe(firstCopy.journeyId)
       expect((await records.list()).rows).toHaveLength(2)
     }))
+}
 
+const modeSelectionTests = () => {
   it('selects real mode at module load when the mode variable is real', async () => {
     vi.stubEnv('PLANT_PRODUCTS_MODE', 'real')
     vi.resetModules()
@@ -316,4 +310,20 @@ describe('plant-products records stub', () => {
       'records.clear is not supported in real mode'
     )
   })
+}
+
+describe('plant-products records stub', () => {
+  beforeEach(async () => {
+    configureObligationSet(SET_ID, plantProductsObligationSet)
+    configureFulfilmentRegistry(SET_ID, featureEvaluationBindings)
+    await inPlantProducts(() => records.clear())
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  lifecycleTests()
+  copyTests()
+  modeSelectionTests()
 })

@@ -28,10 +28,11 @@ import { toRow } from '../dashboard/view-model/row/index.js'
 import { routes } from './controller.js'
 import { copy } from './copy/copy.en.js'
 
+const SET_ID = 'plant-products'
+const DASHBOARD_PATH = '/plant-products'
 const get = routes.find(({ method }) => method === 'GET').handler
 const post = routes.find(({ method }) => method === 'POST').handler
-const inPlantProducts = (operation) =>
-  withSetContext('plant-products', operation)
+const inPlantProducts = (operation) => withSetContext(SET_ID, operation)
 
 const createAtStatus = async (status) => {
   const journey = await inPlantProducts(() => recordsStub.create())
@@ -50,20 +51,20 @@ describe('plant-products delete notification routes', () => {
   beforeAll(async () => {
     server = Hapi.server()
     await server.register(plantProducts, {
-      routes: { prefix: '/plant-products' }
+      routes: { prefix: DASHBOARD_PATH }
     })
   })
 
   beforeEach(async () => {
     await inPlantProducts(async () => {
-      configureRecords('plant-products', recordsStub)
+      configureRecords(SET_ID, recordsStub)
       await recordsStub.clear()
     })
   })
 
   afterEach(async () => {
     await inPlantProducts(async () => {
-      configureRecords('plant-products', recordsStub)
+      configureRecords(SET_ID, recordsStub)
       await recordsStub.clear()
     })
     vi.restoreAllMocks()
@@ -104,8 +105,8 @@ describe('plant-products delete notification routes', () => {
         deleteAction: expect.stringMatching(
           /^\/plant-products\/notifications\/[^/]+\/delete$/
         ),
-        noHref: '/plant-products',
-        backLink: '/plant-products',
+        noHref: DASHBOARD_PATH,
+        backLink: DASHBOARD_PATH,
         journeyStrip: { reference: journey.journeyId }
       })
       expect(deleteAction.href).toMatch(
@@ -183,7 +184,7 @@ describe('plant-products delete notification routes', () => {
   it('POST re-renders confirmation at 500 after a recoverable backend failure', async () => {
     const journey = await createAtStatus('draft')
     await inPlantProducts(() =>
-      configureRecords('plant-products', {
+      configureRecords(SET_ID, {
         ...recordsStub,
         softDelete: realRecords.softDelete
       })

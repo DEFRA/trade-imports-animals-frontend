@@ -34,6 +34,7 @@ import {
 } from './upload-config.js'
 
 const SET_ID = 'live-animals'
+const SET_BASE = '/live-animals'
 
 const post = postHandlerOf(documents)
 const get = documents.routes.find((route) => route.method === 'GET').handler
@@ -49,7 +50,7 @@ const registerPrefixedDocumentRoutes = (server) =>
         register: (realmServer) => realmServer.route(documents.routes)
       }
     },
-    { routes: { prefix: '/live-animals' } }
+    { routes: { prefix: SET_BASE } }
   )
 
 const pdfFile = (filename = 'itahc-certificate.pdf', size = 8) => ({
@@ -545,7 +546,7 @@ describe('documents — reading an uploaded file back', () => {
   const journeyHolding = async (uploadId) => {
     const server = Hapi.server()
     registerJourneyCookie(server, {
-      base: '/live-animals',
+      base: SET_BASE,
       cookieNames: SESSION_COOKIE_NAMES
     })
     await registerPrefixedDocumentRoutes(server)
@@ -622,7 +623,7 @@ describe('documents — reading an uploaded file back', () => {
   it('Should answer 404 for a journey with no documents at all', async () => {
     const server = Hapi.server()
     registerJourneyCookie(server, {
-      base: '/live-animals',
+      base: SET_BASE,
       cookieNames: SESSION_COOKIE_NAMES
     })
     await registerPrefixedDocumentRoutes(server)

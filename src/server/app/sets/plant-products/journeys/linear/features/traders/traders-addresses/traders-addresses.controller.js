@@ -58,6 +58,9 @@ const ADDRESS_COUNTRY_CODES = Object.freeze(
 )
 const COUNTRY_LIST_DIVIDER = '──────────'
 
+// Standard Address Block field length.
+const MAX_TEXT_FIELD_LENGTH = 255
+
 const destinationFields = [
   'destinationName',
   'destinationAddressLine1',
@@ -229,7 +232,9 @@ const fields = (destinationInScope, countryCodes) =>
 const validateFields = (payload, destinationInScope, countryCodes) => {
   const results = [
     validate(fields(destinationInScope, countryCodes), payload),
-    ...textFields.map((field) => validate(maxText(field, 255), payload))
+    ...textFields.map((field) =>
+      validate(maxText(field, MAX_TEXT_FIELD_LENGTH), payload)
+    )
   ]
   const errors = results.reduce((combined, result) => {
     for (const [field, message] of Object.entries(result.errors ?? {})) {

@@ -24,6 +24,8 @@ export const meta = { ...page, collects: ['commodityLines'] }
 const view = `${TEMPLATES}/features/commodities/search/search`
 const copy = copyFor({ en, cy }).commoditySearch
 
+const ADD_SPECIES_PREFIX = 'add-species-'
+
 const valuesFrom = (source = {}) => ({
   commoditySearchCode: String(source.commoditySearchCode ?? ''),
   speciesSearchTerm: String(source.speciesSearchTerm ?? '')
@@ -167,69 +169,74 @@ const saveLine = async (
   return h.redirect(await kit.nextTarget(request, page, committed.scope))
 }
 
-const post = async (request, h) => {
-  const payload = request.payload ?? {}
-  const values = valuesFrom(payload)
-  const parentCode = request.query.parent
-  const { journey, answers } = await state.get(request, h)
-  const addSpeciesName = Object.keys(payload).find((name) =>
-    name.startsWith('add-species-')
+const speciesSearchError = (h, journey, { parentCode, values, message }) =>
+  render(h, journey, {
+    parentCode,
+    values,
+    errors: { speciesSearchTerm: message },
+    results: speciesResults(values.speciesSearchTerm),
+    speciesSearched: true
+  }).code(HTTP_STATUS_BAD_REQUEST)
+
+const postAddSpecies = async (
+  request,
+  h,
+  { journey, answers, parentCode, values, payload, addSpeciesName }
+) => {
+  const speciesId = addSpeciesName.slice(ADD_SPECIES_PREFIX.length)
+  const commodityCode = String(payload[addSpeciesName] ?? '')
+  const match = searchSpecies({ genus: '' }).find(
+    (candidate) =>
+      candidate.speciesId === speciesId &&
+      candidate.commodityCode === commodityCode
   )
+  if (!match) {
+    return speciesSearchError(h, journey, {
+      parentCode,
+      values,
+      message: copy.speciesSearch.noResults
+    })
+  }
+  if (isDuplicateCode(answers.commodityLines, match.commodityCode)) {
+    return speciesSearchError(h, journey, {
+      parentCode,
+      values,
+      message: copy.errors.codeDuplicate
+    })
+  }
+  return saveLine(request, h, {
+    journey,
+    answers,
+    parentCode,
+    values,
+    entry: { commoditySelection: match.commodityCode },
+    speciesEntry: {
+      eppoCode: match.eppoCode,
+      genusAndSpecies: match.genusAndSpecies
+    }
+  })
+}
 
-  if (addSpeciesName) {
-    const speciesId = addSpeciesName.slice('add-species-'.length)
-    const commodityCode = String(payload[addSpeciesName] ?? '')
-    const match = searchSpecies({ genus: '' }).find(
-      (candidate) =>
-        candidate.speciesId === speciesId &&
-        candidate.commodityCode === commodityCode
+const postSearchSpecies = (h, { journey, parentCode, values, payload }) => {
+  const { value, errors } = validate(speciesFields(), payload)
+  if (errors) {
+    return render(h, journey, { parentCode, values, errors }).code(
+      HTTP_STATUS_BAD_REQUEST
     )
-    if (!match) {
-      return render(h, journey, {
-        parentCode,
-        values,
-        errors: { speciesSearchTerm: copy.speciesSearch.noResults },
-        results: speciesResults(values.speciesSearchTerm),
-        speciesSearched: true
-      }).code(HTTP_STATUS_BAD_REQUEST)
-    }
-    if (isDuplicateCode(answers.commodityLines, match.commodityCode)) {
-      return render(h, journey, {
-        parentCode,
-        values,
-        errors: { speciesSearchTerm: copy.errors.codeDuplicate },
-        results: speciesResults(values.speciesSearchTerm),
-        speciesSearched: true
-      }).code(HTTP_STATUS_BAD_REQUEST)
-    }
-    return saveLine(request, h, {
-      journey,
-      answers,
-      parentCode,
-      values,
-      entry: { commoditySelection: match.commodityCode },
-      speciesEntry: {
-        eppoCode: match.eppoCode,
-        genusAndSpecies: match.genusAndSpecies
-      }
-    })
   }
+  return render(h, journey, {
+    parentCode,
+    values,
+    results: speciesResults(value.speciesSearchTerm),
+    speciesSearched: true
+  })
+}
 
-  if (payload.action === 'search-species') {
-    const { value, errors } = validate(speciesFields(), payload)
-    if (errors) {
-      return render(h, journey, { parentCode, values, errors }).code(
-        HTTP_STATUS_BAD_REQUEST
-      )
-    }
-    return render(h, journey, {
-      parentCode,
-      values,
-      results: speciesResults(value.speciesSearchTerm),
-      speciesSearched: true
-    })
-  }
-
+const postCommodityCode = async (
+  request,
+  h,
+  { journey, answers, parentCode, values, payload }
+) => {
   const rawCode =
     payload.action === 'search-code'
       ? values.commoditySearchCode
@@ -266,6 +273,25 @@ const post = async (request, h) => {
     values: codeValues,
     entry: { commoditySelection: code }
   })
+}
+
+const post = async (request, h) => {
+  const payload = request.payload ?? {}
+  const values = valuesFrom(payload)
+  const parentCode = request.query.parent
+  const { journey, answers } = await state.get(request, h)
+  const context = { journey, answers, parentCode, values, payload }
+  const addSpeciesName = Object.keys(payload).find((name) =>
+    name.startsWith(ADD_SPECIES_PREFIX)
+  )
+
+  if (addSpeciesName) {
+    return postAddSpecies(request, h, { ...context, addSpeciesName })
+  }
+  if (payload.action === 'search-species') {
+    return postSearchSpecies(h, context)
+  }
+  return postCommodityCode(request, h, context)
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

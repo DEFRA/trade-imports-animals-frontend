@@ -72,48 +72,27 @@ const jar = () => {
   }
 }
 
-describe('plant-products import-type controller', () => {
-  let server
+let server
 
-  beforeAll(async () => {
-    vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
-    server = Hapi.server()
-    await server.register(nunjucksConfig)
-    await server.register(plantProducts, {
-      routes: { prefix: '/plant-products' }
-    })
-    await server.initialize()
+const newJourney = async (cookies = jar()) => {
+  const response = await server.inject({
+    method: 'POST',
+    url: '/plant-products/notifications',
+    headers: { cookie: cookies.header() }
+  })
+  cookies.absorb(response)
+  return { cookies, url: response.headers.location }
+}
+
+const postImportType = (url, cookies, importType) =>
+  server.inject({
+    method: 'POST',
+    url,
+    payload: { importType },
+    headers: { cookie: cookies.header() }
   })
 
-  afterEach(async () => {
-    vi.restoreAllMocks()
-    configureObligationSet('plant-products', plantProductsObligationSet)
-    await records.clear()
-  })
-
-  afterAll(async () => {
-    vi.unstubAllEnvs()
-    await server.stop({ timeout: 0 })
-  })
-
-  const newJourney = async (cookies = jar()) => {
-    const response = await server.inject({
-      method: 'POST',
-      url: '/plant-products/notifications',
-      headers: { cookie: cookies.header() }
-    })
-    cookies.absorb(response)
-    return { cookies, url: response.headers.location }
-  }
-
-  const postImportType = (url, cookies, importType) =>
-    server.inject({
-      method: 'POST',
-      url,
-      payload: { importType },
-      headers: { cookie: cookies.header() }
-    })
-
+const renderingTests = () => {
   it('renders exactly four enabled, hint-free options with no client-side validation', async () => {
     const { cookies, url } = await newJourney()
     const response = await server.inject({
@@ -156,7 +135,9 @@ describe('plant-products import-type controller', () => {
     expect(response.statusCode).toBe(200)
     expect(response.result).toMatch(/value="plants"[^>]*checked/)
   })
+}
 
+const validationTests = () => {
   it('returns 400 with the canonical error and commits nothing for an empty POST', async () => {
     const { cookies, url } = await newJourney()
     const response = await postImportType(url, cookies, '')
@@ -199,7 +180,9 @@ describe('plant-products import-type controller', () => {
       records.load({ journeyId: journeyIdFrom(url) })
     ).resolves.toMatchObject({ fulfilment: {} })
   })
+}
 
+const commitTests = () => {
   it('commits plants only to flow state and redirects to country of origin through the opening run', async () => {
     const { cookies, url } = await newJourney()
     const response = await postImportType(url, cookies, 'plants')
@@ -276,7 +259,9 @@ describe('plant-products import-type controller', () => {
       )
     }
   )
+}
 
+const holdingAndFailureTests = () => {
   it('renders the holding page with a change-answer link back to import type', async () => {
     const { cookies, url } = await newJourney()
     const post = await postImportType(url, cookies, SET_ID)
@@ -324,4 +309,32 @@ describe('plant-products import-type controller', () => {
     expect(response.statusCode).toBe(500)
     expect(response.result).not.toContain('problem with the service')
   })
+}
+
+describe('plant-products import-type controller', () => {
+  beforeAll(async () => {
+    vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
+    server = Hapi.server()
+    await server.register(nunjucksConfig)
+    await server.register(plantProducts, {
+      routes: { prefix: '/plant-products' }
+    })
+    await server.initialize()
+  })
+
+  afterEach(async () => {
+    vi.restoreAllMocks()
+    configureObligationSet('plant-products', plantProductsObligationSet)
+    await records.clear()
+  })
+
+  afterAll(async () => {
+    vi.unstubAllEnvs()
+    await server.stop({ timeout: 0 })
+  })
+
+  renderingTests()
+  validationTests()
+  commitTests()
+  holdingAndFailureTests()
 })

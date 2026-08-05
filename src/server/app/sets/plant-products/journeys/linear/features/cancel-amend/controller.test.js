@@ -29,10 +29,10 @@ import { records as recordsStub } from '../../../../services/records/stub.js'
 import { routes } from './controller.js'
 import { copy } from './copy/copy.en.js'
 
+const SET_ID = 'plant-products'
 const get = routes.find(({ method }) => method === 'GET').handler
 const post = routes.find(({ method }) => method === 'POST').handler
-const inPlantProducts = (operation) =>
-  withSetContext('plant-products', operation)
+const inPlantProducts = (operation) => withSetContext(SET_ID, operation)
 
 const createAtStatus = async (status) =>
   inPlantProducts(async () => {
@@ -74,14 +74,14 @@ describe('plant-products cancel amendment routes', () => {
 
   beforeEach(async () => {
     await inPlantProducts(async () => {
-      configureRecords('plant-products', recordsStub)
+      configureRecords(SET_ID, recordsStub)
       await recordsStub.clear()
     })
   })
 
   afterEach(async () => {
     await inPlantProducts(async () => {
-      configureRecords('plant-products', recordsStub)
+      configureRecords(SET_ID, recordsStub)
       await recordsStub.clear()
     })
     vi.restoreAllMocks()
@@ -187,7 +187,7 @@ describe('plant-products cancel amendment routes', () => {
   it('POST re-renders confirmation at 500 after a recoverable backend failure', async () => {
     const journeyId = await startEditedAmendment()
     await inPlantProducts(() =>
-      configureRecords('plant-products', {
+      configureRecords(SET_ID, {
         ...recordsStub,
         cancelAmend: realRecords.cancelAmend
       })

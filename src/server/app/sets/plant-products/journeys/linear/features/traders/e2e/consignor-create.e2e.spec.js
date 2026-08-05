@@ -7,6 +7,9 @@ import {
 } from '../../../../../services/reference/countries.js'
 import { copy } from '../copy/copy.en.js'
 
+const SAVE_AND_CONTINUE = 'Save and continue'
+const SUITE = 'plant-products consignor create'
+
 const pageCopy = copy.consignorCreate
 const createUrl = (url) =>
   /^\/plant-products\/notifications\/[^/]+\/consignor-create$/.test(
@@ -45,15 +48,15 @@ const startAtConsignorCreate = async (page) => {
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Country of origin').selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByRole('link', { name: 'Back', exact: true }).click()
   await rowByTitle(page, 'Commodity')
     .getByRole('link', { name: 'Commodity', exact: true })
     .click()
   await page.getByRole('radio', { name: 'Manual entry' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Enter commodity code').fill('06011010')
   await page.getByRole('button', { name: 'Search', exact: true }).click()
   await page
@@ -61,7 +64,7 @@ const startAtConsignorCreate = async (page) => {
       name: 'Add Albuca bracteata to commodity 06011010'
     })
     .click()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
   const notificationUrl = page.url().replace(/\/commodity-summary$/, '')
   await page.goto(notificationUrl)
@@ -264,10 +267,14 @@ const validationCases = [
   }
 ]
 
-test.describe('plant-products consignor create', () => {
+const openConsignorCreateBeforeEach = () => {
   test.beforeEach(async ({ page }) => {
     await startAtConsignorCreate(page)
   })
+}
+
+test.describe(`${SUITE} — the form and its saved values`, () => {
+  openConsignorCreateBeforeEach()
 
   test('renders the required field hierarchy, accessible controls and complete fixture option order', async ({
     page
@@ -405,6 +412,10 @@ test.describe('plant-products consignor create', () => {
       await expect(fields[field]).toHaveValue(value)
     }
   })
+})
+
+test.describe(`${SUITE} — validation and accessibility`, () => {
+  openConsignorCreateBeforeEach()
 
   test('abandoning the form persists no half-written consignor', async ({
     page

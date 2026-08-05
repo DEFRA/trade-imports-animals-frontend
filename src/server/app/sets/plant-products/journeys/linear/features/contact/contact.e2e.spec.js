@@ -3,6 +3,11 @@ import { expect, test } from '@playwright/test'
 import { axeViolations } from '../axe.e2e-helper.js'
 import { copy } from './copy/copy.en.js'
 
+const SAVE_AND_CONTINUE = 'Save and continue'
+const CONTACT_DETAILS = 'Contact details'
+const CONTACT_NAME = 'Isabel Irwin'
+const CONTACT_EMAIL = 'isabel@example.com'
+
 const hubUrl = (url) =>
   /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
 const contactUrl = (url) =>
@@ -19,13 +24,13 @@ const startAtContact = async (page) => {
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Country of origin').selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByRole('link', { name: 'Back', exact: true }).click()
   await page.getByRole('link', { name: 'Commodity', exact: true }).click()
   await page.getByRole('radio', { name: 'Manual entry' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Enter commodity code').fill('06011010')
   await page.getByRole('button', { name: 'Search', exact: true }).click()
   await page
@@ -37,9 +42,9 @@ const startAtContact = async (page) => {
   await page.getByRole('link', { name: 'Back', exact: true }).click()
   await expect(page).toHaveURL(hubUrl)
   const notificationUrl = page.url()
-  const row = rowByTitle(page, 'Contact details')
+  const row = rowByTitle(page, CONTACT_DETAILS)
   await expect(row).toContainText('Not yet started')
-  await row.getByRole('link', { name: 'Contact details' }).click()
+  await row.getByRole('link', { name: CONTACT_DETAILS }).click()
   await expect(page).toHaveURL(contactUrl)
 
   return { notificationUrl, pageUrl: page.url() }
@@ -59,7 +64,7 @@ const controls = (page) => ({
 
 const fillValues = async (
   page,
-  { name = 'Isabel Irwin', email = 'isabel@example.com', telephone = '' } = {}
+  { name = CONTACT_NAME, email = CONTACT_EMAIL, telephone = '' } = {}
 ) => {
   const fields = controls(page)
   await fields.name.fill(name)
@@ -68,7 +73,7 @@ const fillValues = async (
 }
 
 const submit = (page) =>
-  page.getByRole('button', { name: 'Save and continue' }).click()
+  page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
 const expectLinkedError = async (page, field, message) => {
   const alert = page.getByRole('alert')
@@ -137,7 +142,7 @@ test.describe('plant-products contact details', () => {
     await expect(page.getByText('Agent', { exact: true })).toHaveCount(0)
 
     await expect(
-      page.getByRole('button', { name: 'Save and continue', exact: true })
+      page.getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
     ).toHaveCount(1)
     await expect(
       page.getByRole('button', { name: 'Save and return to hub', exact: true })
@@ -152,23 +157,23 @@ test.describe('plant-products contact details', () => {
   }) => {
     const pageUrl = page.url()
     await fillValues(page, {
-      name: 'Isabel Irwin',
-      email: 'isabel@example.com'
+      name: CONTACT_NAME,
+      email: CONTACT_EMAIL
     })
     await submit(page)
 
     await expect(page).toHaveURL(hubUrl)
-    await expect(rowByTitle(page, 'Contact details')).toContainText('Completed')
+    await expect(rowByTitle(page, CONTACT_DETAILS)).toContainText('Completed')
     await page.goto(pageUrl)
-    await expect(controls(page).name).toHaveValue('Isabel Irwin')
-    await expect(controls(page).email).toHaveValue('isabel@example.com')
+    await expect(controls(page).name).toHaveValue(CONTACT_NAME)
+    await expect(controls(page).email).toHaveValue(CONTACT_EMAIL)
     await expect(controls(page).telephone).toHaveValue('')
   })
 
   test('saves and reloads name with telephone only', async ({ page }) => {
     const pageUrl = page.url()
     await fillValues(page, {
-      name: 'Isabel Irwin',
+      name: CONTACT_NAME,
       email: '',
       telephone: '+44 7700 900 982'
     })
@@ -176,7 +181,7 @@ test.describe('plant-products contact details', () => {
 
     await expect(page).toHaveURL(hubUrl)
     await page.goto(pageUrl)
-    await expect(controls(page).name).toHaveValue('Isabel Irwin')
+    await expect(controls(page).name).toHaveValue(CONTACT_NAME)
     await expect(controls(page).email).toHaveValue('')
     await expect(controls(page).telephone).toHaveValue('+44 7700 900 982')
   })

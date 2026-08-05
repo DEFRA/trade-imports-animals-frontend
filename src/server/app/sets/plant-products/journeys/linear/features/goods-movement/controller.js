@@ -27,12 +27,13 @@ const view = `${TEMPLATES}/features/goods-movement/template`
 const copy = copyFor({ en, cy })
 const CTC_VALUES = ['ADD_MRN_NOW', 'ADD_MRN_LATER', 'NO']
 const MRN = /^\d{2}[A-Za-z0-9]{16}$/
+const MRN_LENGTH = 18
 
 const movementReferenceNumberField = Joi.object({
   movementReferenceNumber: Joi.string()
     .trim()
     .required()
-    .length(18)
+    .length(MRN_LENGTH)
     .pattern(MRN)
     .messages({
       'string.empty': copy.errors.movementReferenceNumberInvalid,

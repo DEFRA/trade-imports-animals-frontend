@@ -5,6 +5,7 @@ import { documentUploads } from './stub.js'
 const CLEAN_FILENAME = 'invoice.pdf'
 const VIRUS_FILENAME = 'virus-notes.pdf'
 const NEVER_SCANS_FILENAME = 'never-scans.pdf'
+const JOURNEY_ID = 'GBN-PP-26-0001'
 
 describe('#documentUploads', () => {
   describe('#scanStatus', () => {
@@ -76,8 +77,8 @@ describe('#documentUploads', () => {
 
     it('Should settle on the recorded filename, not a caller-supplied one', async () => {
       const uploadId = await documentUploads.upload({
-        journeyId: 'GBN-PP-26-0001',
-        filename: 'virus-notes.pdf'
+        journeyId: JOURNEY_ID,
+        filename: VIRUS_FILENAME
       })
 
       expect(
@@ -91,8 +92,8 @@ describe('#documentUploads', () => {
 
     it('Should settle on the recorded filename when the caller supplies none', async () => {
       const uploadId = await documentUploads.upload({
-        journeyId: 'GBN-PP-26-0001',
-        filename: 'virus-notes.pdf'
+        journeyId: JOURNEY_ID,
+        filename: VIRUS_FILENAME
       })
 
       expect(
@@ -113,11 +114,11 @@ describe('#documentUploads', () => {
   describe('#ownerOf', () => {
     it('Should report the journey an upload was recorded against', async () => {
       const uploadId = await documentUploads.upload({
-        journeyId: 'GBN-PP-26-0001',
+        journeyId: JOURNEY_ID,
         filename: 'phyto.pdf'
       })
 
-      expect(await documentUploads.ownerOf(uploadId)).toBe('GBN-PP-26-0001')
+      expect(await documentUploads.ownerOf(uploadId)).toBe(JOURNEY_ID)
     })
 
     it('Should reject an uploadId it never issued', async () => {

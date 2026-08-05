@@ -6,6 +6,9 @@ import { copy as tradersCopy } from '../copy/copy.en.js'
 const environment = nunjucksConfig.options.compileOptions.environment
 const pickerCopy = tradersCopy.consignorPicker
 
+const CONSIGNOR_01_ID = 'example-consignor-01'
+const CONSIGNOR_01_NAME = 'Example Consignor 01 (sample data)'
+
 const render = (picker) =>
   environment.renderString(
     `{% from "plant-products/journeys/linear/features/traders/consignor-picker/_consignor-picker.njk" import consignorPicker %}
@@ -29,12 +32,12 @@ const render = (picker) =>
   )
 
 const row = (overrides = {}) => ({
-  id: 'example-consignor-01',
+  id: CONSIGNOR_01_ID,
   idPrefix: 'party',
-  name: 'Example Consignor 01 (sample data)',
+  name: CONSIGNOR_01_NAME,
   addressText: '1 Example Street, Example City, ZZ99 01',
   country: 'France',
-  detailLines: ['Example Consignor 01 (sample data)', 'France'],
+  detailLines: [CONSIGNOR_01_NAME, 'France'],
   checked: false,
   ...overrides
 })
@@ -113,8 +116,8 @@ describe('consignorPicker macro', () => {
     const html = render({
       rows: [row({ checked: true })],
       selected: {
-        id: 'example-consignor-01',
-        name: 'Example Consignor 01 (sample data)'
+        id: CONSIGNOR_01_ID,
+        name: CONSIGNOR_01_NAME
       }
     })
 
@@ -172,7 +175,7 @@ describe('consignorPicker macro', () => {
   it('carries the selection in a hidden field only when there is one', () => {
     const withSelection = render({
       rows: [row({ checked: true })],
-      selected: { id: 'example-consignor-01', name: 'Example Consignor 01' }
+      selected: { id: CONSIGNOR_01_ID, name: 'Example Consignor 01' }
     })
 
     expect(withSelection).toContain(
@@ -194,7 +197,7 @@ describe('consignorPicker macro', () => {
       rows: [row()],
       query: 'example',
       page: 2,
-      selected: { id: 'example-consignor-01', name: 'Example Consignor 01' },
+      selected: { id: CONSIGNOR_01_ID, name: 'Example Consignor 01' },
       pagination: {
         previous: { href: hrefFor(1) },
         next: { href: hrefFor(3) },

@@ -26,7 +26,6 @@ const importerText = () => {
 
 const editableRow = (
   journeyId,
-  answers,
   scope,
   label,
   obligationName,
@@ -56,7 +55,6 @@ const rowsForFields = (
     .map((name) =>
       editableRow(
         journeyId,
-        answers,
         scope,
         cardCopy.rows[name],
         name,
@@ -81,7 +79,6 @@ const consignorRows = (journeyId, answers, scope, readOnly = false) =>
     .map((name) =>
       editableRow(
         journeyId,
-        answers,
         scope,
         cardCopy.rows[name],
         name,

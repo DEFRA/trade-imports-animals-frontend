@@ -42,7 +42,7 @@ export const meta = {
 
 const view = `${TEMPLATES}/features/traders/consignor-create/consignor-create`
 const copy = copyFor({ en, cy }).consignorCreate
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@.]+$/
 const COUNTRY_LIST_DIVIDER = '──────────'
 
 // Standard Address Block field lengths.

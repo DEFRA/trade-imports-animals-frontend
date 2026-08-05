@@ -11,8 +11,12 @@ import { toRow } from './index.js'
 
 registerSetMount('plant-products', '/plant-products')
 
+const JOURNEY_ID = 'GBN-PP-26-ABC123'
+const NOTIFICATION_HIDDEN_TEXT = `notification ${JOURNEY_ID}`
+const RETRY_KEY = 'same-retry-key'
+
 const journey = (overrides = {}) => ({
-  journeyId: 'GBN-PP-26-ABC123',
+  journeyId: JOURNEY_ID,
   status: 'draft',
   originCountryCode: 'IE',
   arrivalDate: '2026-03-07',
@@ -67,13 +71,13 @@ describe('plant-products dashboard row view model', () => {
     expect(actions).toEqual([
       {
         text: copy.actions.continue,
-        hiddenText: 'notification GBN-PP-26-ABC123',
-        href: inPlantProducts(() => hubPath('GBN-PP-26-ABC123'))
+        hiddenText: NOTIFICATION_HIDDEN_TEXT,
+        href: inPlantProducts(() => hubPath(JOURNEY_ID))
       },
       {
         text: sharedCopy.notificationActions.delete.text,
-        hiddenText: 'notification GBN-PP-26-ABC123',
-        href: inPlantProducts(() => pagePath('GBN-PP-26-ABC123', 'delete'))
+        hiddenText: NOTIFICATION_HIDDEN_TEXT,
+        href: inPlantProducts(() => pagePath(JOURNEY_ID, 'delete'))
       }
     ])
   })
@@ -94,8 +98,8 @@ describe('plant-products dashboard row view model', () => {
       expectPlantProductsActionPaths(second.actions)
       expect(firstCopy).toEqual({
         text: sharedCopy.notificationActions.copy.text,
-        hiddenText: 'notification GBN-PP-26-ABC123',
-        postAction: inPlantProducts(() => pagePath('GBN-PP-26-ABC123', 'copy')),
+        hiddenText: NOTIFICATION_HIDDEN_TEXT,
+        postAction: inPlantProducts(() => pagePath(JOURNEY_ID, 'copy')),
         idempotencyKey: expect.any(String),
         copyOrigin: 'dashboard'
       })
@@ -112,27 +116,25 @@ describe('plant-products dashboard row view model', () => {
     expect(actions).toEqual([
       {
         text: copy.actions.view,
-        hiddenText: 'notification GBN-PP-26-ABC123',
-        href: inPlantProducts(() =>
-          pagePath('GBN-PP-26-ABC123', 'review-notification')
-        )
+        hiddenText: NOTIFICATION_HIDDEN_TEXT,
+        href: inPlantProducts(() => pagePath(JOURNEY_ID, 'review-notification'))
       },
       {
         text: copy.actions.amend,
-        hiddenText: 'notification GBN-PP-26-ABC123',
-        postAction: inPlantProducts(() => pagePath('GBN-PP-26-ABC123', 'amend'))
+        hiddenText: NOTIFICATION_HIDDEN_TEXT,
+        postAction: inPlantProducts(() => pagePath(JOURNEY_ID, 'amend'))
       },
       {
         text: sharedCopy.notificationActions.copy.text,
-        hiddenText: 'notification GBN-PP-26-ABC123',
-        postAction: inPlantProducts(() => pagePath('GBN-PP-26-ABC123', 'copy')),
+        hiddenText: NOTIFICATION_HIDDEN_TEXT,
+        postAction: inPlantProducts(() => pagePath(JOURNEY_ID, 'copy')),
         idempotencyKey: expect.any(String),
         copyOrigin: 'dashboard'
       },
       {
         text: sharedCopy.notificationActions.delete.text,
-        hiddenText: 'notification GBN-PP-26-ABC123',
-        href: inPlantProducts(() => pagePath('GBN-PP-26-ABC123', 'delete'))
+        hiddenText: NOTIFICATION_HIDDEN_TEXT,
+        href: inPlantProducts(() => pagePath(JOURNEY_ID, 'delete'))
       }
     ])
   })
@@ -146,35 +148,33 @@ describe('plant-products dashboard row view model', () => {
     expect(actions).toEqual([
       {
         text: copy.actions.resume,
-        hiddenText: 'notification GBN-PP-26-ABC123',
-        href: inPlantProducts(() => hubPath('GBN-PP-26-ABC123'))
+        hiddenText: NOTIFICATION_HIDDEN_TEXT,
+        href: inPlantProducts(() => hubPath(JOURNEY_ID))
       },
       {
         text: sharedCopy.notificationActions.copy.text,
-        hiddenText: 'notification GBN-PP-26-ABC123',
-        postAction: inPlantProducts(() => pagePath('GBN-PP-26-ABC123', 'copy')),
+        hiddenText: NOTIFICATION_HIDDEN_TEXT,
+        postAction: inPlantProducts(() => pagePath(JOURNEY_ID, 'copy')),
         idempotencyKey: expect.any(String),
         copyOrigin: 'dashboard'
       },
       {
         text: copy.actions.cancelAmend,
-        hiddenText: 'notification GBN-PP-26-ABC123',
-        href: inPlantProducts(() =>
-          pagePath('GBN-PP-26-ABC123', 'cancel-amend')
-        )
+        hiddenText: NOTIFICATION_HIDDEN_TEXT,
+        href: inPlantProducts(() => pagePath(JOURNEY_ID, 'cancel-amend'))
       },
       {
         text: sharedCopy.notificationActions.delete.text,
-        hiddenText: 'notification GBN-PP-26-ABC123',
-        href: inPlantProducts(() => pagePath('GBN-PP-26-ABC123', 'delete'))
+        hiddenText: NOTIFICATION_HIDDEN_TEXT,
+        href: inPlantProducts(() => pagePath(JOURNEY_ID, 'delete'))
       }
     ])
   })
 
   it('reuses the recoverable retry key only for its matching row', () => {
     const retryCopy = {
-      journeyId: 'GBN-PP-26-ABC123',
-      idempotencyKey: 'same-retry-key'
+      journeyId: JOURNEY_ID,
+      idempotencyKey: RETRY_KEY
     }
     const matching = inPlantProducts(() =>
       toRow(journey({ status: 'submitted' }), retryCopy)
@@ -194,8 +194,8 @@ describe('plant-products dashboard row view model', () => {
 
     expectPlantProductsActionPaths(matching.actions)
     expectPlantProductsActionPaths(other.actions)
-    expect(matchingCopy.idempotencyKey).toBe('same-retry-key')
-    expect(otherCopy.idempotencyKey).not.toBe('same-retry-key')
+    expect(matchingCopy.idempotencyKey).toBe(RETRY_KEY)
+    expect(otherCopy.idempotencyKey).not.toBe(RETRY_KEY)
   })
 
   it('unknown and missing facts degrade to blanks without throwing', () => {

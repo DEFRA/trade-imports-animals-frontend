@@ -14,6 +14,8 @@ import { isAllowedFilename } from '../upload-config.js'
 
 const copy = copyFor({ en, cy })
 
+const MAX_DOCUMENT_REFERENCE_LENGTH = 100
+
 export const DOCUMENT_TYPE_CODES = documentTypeOptions.map(({ value }) => value)
 
 export const fields = compose(
@@ -22,7 +24,11 @@ export const fields = compose(
     DOCUMENT_TYPE_CODES,
     copy.errors.documentTypeRequired
   ),
-  maxText('documentReference', 100, copy.errors.referenceMaxLength),
+  maxText(
+    'documentReference',
+    MAX_DOCUMENT_REFERENCE_LENGTH,
+    copy.errors.referenceMaxLength
+  ),
   dateText('issueDate', copy.errors.dateInvalid)
 )
 

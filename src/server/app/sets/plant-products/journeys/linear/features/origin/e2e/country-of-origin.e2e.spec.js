@@ -4,6 +4,7 @@ import { axeViolations as seriousOrCriticalViolations } from '../../axe.e2e-help
 import { COUNTRIES } from '../../../../../services/reference/countries.js'
 import { copy } from '../copy/copy.en.js'
 
+const SAVE_AND_CONTINUE = 'Save and continue'
 const pageCopy = copy.countryOfOrigin
 
 const startAtCountryOfOrigin = async (page) => {
@@ -12,7 +13,7 @@ const startAtCountryOfOrigin = async (page) => {
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page).toHaveURL((url) =>
     /^\/plant-products\/notifications\/[^/]+\/country-of-origin$/.test(
       url.pathname
@@ -64,7 +65,7 @@ test.describe('plant-products country of origin', () => {
     ).toEqual(['GB-ENG', 'GB-SCT', 'GB-WLS', 'GB-NIR'])
     await expect(page.locator('form').getByRole('button')).toHaveCount(1)
     await expect(
-      page.getByRole('button', { name: 'Save and continue' })
+      page.getByRole('button', { name: SAVE_AND_CONTINUE })
     ).toBeVisible()
     await expect(page.getByRole('link', { name: 'Back' })).toHaveAttribute(
       'href',
@@ -88,7 +89,7 @@ test.describe('plant-products country of origin', () => {
   }) => {
     const countryUrl = page.url()
     await page.getByLabel(pageCopy.country.label).selectOption('FR')
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(page).toHaveURL((url) =>
       /^\/plant-products\/notifications\/[^/]+\/origin-of-import$/.test(
@@ -103,7 +104,7 @@ test.describe('plant-products country of origin', () => {
   test('rejects an empty country and focuses the select from the summary link', async ({
     page
   }) => {
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(page.getByRole('alert')).toContainText('There is a problem')
     const summaryLink = page
@@ -132,7 +133,7 @@ test.describe('plant-products country of origin', () => {
   test('error page has no serious or critical axe violations', async ({
     page
   }) => {
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page.getByRole('alert')).toBeVisible()
     const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
 

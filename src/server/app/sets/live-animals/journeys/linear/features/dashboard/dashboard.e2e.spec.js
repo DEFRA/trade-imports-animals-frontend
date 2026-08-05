@@ -9,6 +9,7 @@ import {
 } from '../../../../../../../../../e2e/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 
+const DASHBOARD_PATH = '/live-animals'
 const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
 const PAGE_SIZE = 20
 const SEEDED_NOTIFICATIONS = PAGE_SIZE + 1
@@ -31,7 +32,7 @@ const startTwoNotifications = async (page) => {
   const firstReference = journeyIdFromPage(page)
   await startNotification(page)
   const secondReference = journeyIdFromPage(page)
-  await page.goto('/live-animals')
+  await page.goto(DASHBOARD_PATH)
   return { firstReference, secondReference }
 }
 
@@ -53,7 +54,7 @@ test.describe('dashboard feature — empty state and start', () => {
   test('renders the empty notification list and default sort', async ({
     page
   }) => {
-    await page.goto('/live-animals')
+    await page.goto(DASHBOARD_PATH)
 
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
     await expect(page.getByText(copy.body)).toBeVisible()
@@ -70,7 +71,7 @@ test.describe('dashboard feature — empty state and start', () => {
   test('starts a new notification at the import-type filter', async ({
     page
   }) => {
-    await page.goto('/live-animals')
+    await page.goto(DASHBOARD_PATH)
 
     await page.getByRole('button', { name: copy.startButton }).click()
 
@@ -92,7 +93,7 @@ test.describe('dashboard feature — notification rows and actions', () => {
     await submitNotification(page)
     const reference = journeyIdFromPage(page)
 
-    await page.goto('/live-animals')
+    await page.goto(DASHBOARD_PATH)
 
     await expect(
       page.getByRole('heading', { name: reference, exact: true })
@@ -121,7 +122,7 @@ test.describe('dashboard feature — notification rows and actions', () => {
     await startNotification(page)
     const reference = journeyIdFromPage(page)
 
-    await page.goto('/live-animals')
+    await page.goto(DASHBOARD_PATH)
 
     await expect(page.getByText('Draft', { exact: true })).toBeVisible()
     await expect(actionFor(page, 'link', 'Resume', reference)).toBeVisible()
@@ -140,11 +141,11 @@ test.describe('dashboard feature — notification rows and actions', () => {
     await startNotification(page)
     await submitNotification(page)
     const reference = journeyIdFromPage(page)
-    await page.goto('/live-animals')
+    await page.goto(DASHBOARD_PATH)
     await actionFor(page, 'button', 'Amend', reference).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
-    await page.goto('/live-animals')
+    await page.goto(DASHBOARD_PATH)
 
     await expect(page.getByText('Amending', { exact: true })).toBeVisible()
     await expect(actionFor(page, 'link', 'Resume', reference)).toBeVisible()
@@ -189,7 +190,7 @@ test.describe('dashboard feature — reference search', () => {
     await startNotification(page)
     const existingReference = journeyIdFromPage(page)
     const missingReference = 'GBN-AG-26-ZZZZZZ'
-    await page.goto('/live-animals')
+    await page.goto(DASHBOARD_PATH)
 
     await page.getByLabel(copy.search.label).fill(missingReference)
     await page.getByRole('button', { name: copy.search.button }).click()
@@ -239,10 +240,10 @@ test.describe('dashboard feature — pagination', () => {
     page
   }) => {
     test.slow()
-    await page.goto('/live-animals')
+    await page.goto(DASHBOARD_PATH)
     for (let index = 0; index < SEEDED_NOTIFICATIONS; index += 1) {
       await page.getByRole('button', { name: copy.startButton }).click()
-      await page.goto('/live-animals')
+      await page.goto(DASHBOARD_PATH)
     }
 
     await expect(
@@ -297,7 +298,7 @@ test.describe('dashboard feature — accessibility', () => {
   test('empty dashboard has no serious or critical axe violations', async ({
     page
   }) => {
-    await page.goto('/live-animals')
+    await page.goto(DASHBOARD_PATH)
 
     await expectNoSeriousOrCriticalViolations(page, 'Empty dashboard')
   })
@@ -306,7 +307,7 @@ test.describe('dashboard feature — accessibility', () => {
     page
   }) => {
     await startNotification(page)
-    await page.goto('/live-animals')
+    await page.goto(DASHBOARD_PATH)
 
     await expectNoSeriousOrCriticalViolations(
       page,

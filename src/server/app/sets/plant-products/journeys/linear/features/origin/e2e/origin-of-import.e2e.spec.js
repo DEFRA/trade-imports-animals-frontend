@@ -4,6 +4,7 @@ import { axeViolations as seriousOrCriticalViolations } from '../../axe.e2e-help
 import { COUNTRIES } from '../../../../../services/reference/countries.js'
 import { copy } from '../copy/copy.en.js'
 
+const SAVE_AND_CONTINUE = 'Save and continue'
 const pageCopy = copy.originOfImport
 
 const startAtOriginOfImport = async (page) => {
@@ -12,9 +13,9 @@ const startAtOriginOfImport = async (page) => {
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel(copy.countryOfOrigin.country.label).selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page).toHaveURL((url) =>
     /^\/plant-products\/notifications\/[^/]+\/origin-of-import$/.test(
       url.pathname
@@ -82,8 +83,8 @@ test.describe('plant-products origin of import', () => {
       page.getByText('Customs reference number', { exact: true })
     ).toHaveCount(0)
     await expect(
-      page.getByRole('button', { name: 'Save and continue' })
-    ).toHaveAccessibleName('Save and continue')
+      page.getByRole('button', { name: SAVE_AND_CONTINUE })
+    ).toHaveAccessibleName(SAVE_AND_CONTINUE)
     await expect(
       page.getByRole('button', { name: 'Save and return to hub' })
     ).toHaveAccessibleName('Save and return to hub')
@@ -104,7 +105,7 @@ test.describe('plant-products origin of import', () => {
       .getByLabel(pageCopy.countryOfConsignment.label)
       .selectOption('IE')
     await page.getByLabel(pageCopy.internalReference.label).fill('REF-123')
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(page).toHaveURL((url) =>
       /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
@@ -122,7 +123,7 @@ test.describe('plant-products origin of import', () => {
     page
   }) => {
     await page.getByLabel(pageCopy.internalReference.label).fill('RAW-REF')
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(page.getByRole('alert')).toContainText('There is a problem')
     const summaryLink = page.getByRole('alert').getByRole('link', {
@@ -152,7 +153,7 @@ test.describe('plant-products origin of import', () => {
       .evaluate((input) => {
         input.value = 'R'.repeat(31)
       })
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     const summaryLink = page
       .getByRole('alert')
@@ -173,7 +174,7 @@ test.describe('plant-products origin of import', () => {
     await page
       .getByLabel(pageCopy.countryOfConsignment.label)
       .selectOption('IE')
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(page).toHaveURL((url) =>
       /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
@@ -189,11 +190,11 @@ test.describe('plant-products origin of import', () => {
     })
     await expect(originRow).toContainText('In progress')
     await originRow.getByRole('link', { name: pageCopy.heading }).click()
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await page
       .getByLabel(pageCopy.countryOfConsignment.label)
       .selectOption('IE')
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(originRow).toContainText('Completed')
   })
@@ -212,7 +213,7 @@ test.describe('plant-products origin of import', () => {
   test('error page has no serious or critical axe violations', async ({
     page
   }) => {
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page.getByRole('alert')).toBeVisible()
     const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
 

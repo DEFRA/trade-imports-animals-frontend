@@ -4,6 +4,8 @@ import { axeViolations } from '../../axe.e2e-helper.js'
 import { CANNED_CONSIGNORS } from '../../../../../services/address-book/canned-consignors.js'
 import { copy } from '../copy/copy.en.js'
 
+const SAVE_AND_CONTINUE = 'Save and continue'
+
 const pageCopy = copy.consignorPicker
 const createCopy = copy.consignorCreate
 const pickerUrl = (url) =>
@@ -36,15 +38,15 @@ const startAtPicker = async (page) => {
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Country of origin').selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByRole('link', { name: 'Back', exact: true }).click()
   await rowByTitle(page, 'Commodity')
     .getByRole('link', { name: 'Commodity', exact: true })
     .click()
   await page.getByRole('radio', { name: 'Manual entry' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Enter commodity code').fill('06011010')
   // Without client JavaScript both search groups render, so scope the submit.
   await page
@@ -56,7 +58,7 @@ const startAtPicker = async (page) => {
       name: 'Add Albuca bracteata to commodity 06011010'
     })
     .click()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
   const notificationUrl = page.url().replace(/\/commodity-summary$/, '')
   await page.goto(notificationUrl)

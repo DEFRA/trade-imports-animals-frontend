@@ -27,6 +27,7 @@ import { toDto } from '../../../../../services/records/mapper/to-dto.js'
 import { copy } from '../copy/copy.en.js'
 import * as consignorPicker from './consignor-picker.controller.js'
 
+const SUITE = 'plant-products consignor-picker controller'
 const SET_ID = 'plant-products'
 
 const CONSIGNOR_01_ID = 'example-consignor-01'
@@ -85,7 +86,7 @@ const firstCannedAnswers = {
 
 const pickerFrom = (result) => result.view.context.picker
 
-describe('plant-products consignor-picker controller', () => {
+const setupConsignorPickerSuite = () => {
   let server
 
   beforeAll(async () => {
@@ -109,13 +110,17 @@ describe('plant-products consignor-picker controller', () => {
     vi.unstubAllEnvs()
     await server.stop({ timeout: 0 })
   })
+}
+
+describe(`${SUITE} — the list as rendered`, () => {
+  setupConsignorPickerSuite()
 
   it('claims no obligation of its own', () => {
     expect(consignorPicker.meta.collects).toEqual([])
   })
 
   it.each([
-    { name: 'PLANT_PRODUCTS_MODE unset', mode: undefined },
+    { name: 'PLANT_PRODUCTS_MODE unset' },
     { name: 'PLANT_PRODUCTS_MODE=stub', mode: 'stub' }
   ])(
     'renders the first page of five unchecked rows on a new notification with $name',
@@ -179,6 +184,10 @@ describe('plant-products consignor-picker controller', () => {
       /^\/plant-products\/notifications\/[^/]+\/traders-addresses$/
     )
   })
+})
+
+describe(`${SUITE} — choosing and committing a consignor`, () => {
+  setupConsignorPickerSuite()
 
   it('rejects a POST with nothing selected at 400 and links the summary to the radio group', async () => {
     const result = await drive(post, { payload: {} })
@@ -324,6 +333,20 @@ describe('plant-products consignor-picker controller', () => {
     expect(result.after).toEqual({})
   })
 
+  it('allows unexpected persistence errors to throw', async () => {
+    vi.spyOn(kit, 'recoverableSave').mockRejectedValueOnce(
+      new TypeError('programming failure')
+    )
+
+    await expect(
+      drive(post, { payload: { party: CONSIGNOR_01_ID } })
+    ).rejects.toThrow('programming failure')
+  })
+})
+
+describe(`${SUITE} — paging and search`, () => {
+  setupConsignorPickerSuite()
+
   it('renders the tail of the list for page three and offers no next link', async () => {
     const picker = pickerFrom(await drive(get, { query: { page: '3' } }))
 
@@ -464,15 +487,5 @@ describe('plant-products consignor-picker controller', () => {
     expect(result.view.context.errorSummary.errorList).toEqual([
       { text: pageCopy.errors.required, href: '#q' }
     ])
-  })
-
-  it('allows unexpected persistence errors to throw', async () => {
-    vi.spyOn(kit, 'recoverableSave').mockRejectedValueOnce(
-      new TypeError('programming failure')
-    )
-
-    await expect(
-      drive(post, { payload: { party: CONSIGNOR_01_ID } })
-    ).rejects.toThrow('programming failure')
   })
 })

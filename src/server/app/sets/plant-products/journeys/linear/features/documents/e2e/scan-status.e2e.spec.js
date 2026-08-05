@@ -36,11 +36,19 @@ const addStuckRow = (page) =>
     file: pdfFile('never-scans.pdf')
   })
 
-test.describe('plant-products document scan lifecycle', () => {
-  test.beforeEach(async ({ page }) => {
-    await startAtDocuments(page)
+// A read that fails is not evidence that a scan finished. hasSettled() is
+// vacuously true for an empty list, so a reader that answered [] instead of
+// null would reload the page every three seconds with the scan still running.
+const countStatusReads = async (page, handler) => {
+  let reads = 0
+  await page.route('**/accompanying-documents/status', (route) => {
+    reads += 1
+    return handler(route)
   })
+  return () => reads
+}
 
+const scanVerdictTests = () => {
   test('blocks continue while a scan is pending and releases it once clean', async ({
     page
   }) => {
@@ -104,7 +112,9 @@ test.describe('plant-products document scan lifecycle', () => {
       page.getByRole('link', { name: copy.actions.refresh })
     ).toHaveCount(0)
   })
+}
 
+const inPlaceSettlementTests = () => {
   test('settles one checking row in place, announces it and leaves the other checking', async ({
     page
   }) => {
@@ -217,19 +227,9 @@ test.describe('plant-products document scan lifecycle', () => {
     await expect(settling).toContainText(copy.status.checking)
     await expect(settling).toContainText(copy.status.safe)
   })
+}
 
-  // A read that fails is not evidence that a scan finished. hasSettled() is
-  // vacuously true for an empty list, so a reader that answered [] instead of
-  // null would reload the page every three seconds with the scan still running.
-  const countStatusReads = async (page, handler) => {
-    let reads = 0
-    await page.route('**/accompanying-documents/status', (route) => {
-      reads += 1
-      return handler(route)
-    })
-    return () => reads
-  }
-
+const pollResilienceTests = () => {
   test('retries a refused status read and never settles the row on it', async ({
     page
   }) => {
@@ -314,4 +314,14 @@ test.describe('plant-products document scan lifecycle', () => {
     ).toEqual([])
     await expect(announcer(page)).not.toBeFocused()
   })
+}
+
+test.describe('plant-products document scan lifecycle', () => {
+  test.beforeEach(async ({ page }) => {
+    await startAtDocuments(page)
+  })
+
+  scanVerdictTests()
+  inPlaceSettlementTests()
+  pollResilienceTests()
 })

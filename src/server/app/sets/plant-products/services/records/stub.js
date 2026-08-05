@@ -18,6 +18,9 @@ import {
 
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
 const PAGE_SIZE = 25
+const YEAR_OF_CENTURY = 100
+const TWO_DIGIT_WIDTH = 2
+const REFERENCE_SUFFIX_BYTES = 6
 const recordsById = new Map()
 const copiesByIdempotencyKey = new Map()
 const DOCUMENT_OBLIGATION_IDS = [
@@ -32,10 +35,13 @@ const DOCUMENT_OBLIGATION_IDS = [
 const clone = (value) => structuredClone(value)
 
 const mintReference = () => {
-  const year = String(new Date().getFullYear() % 100).padStart(2, '0')
+  const year = String(new Date().getFullYear() % YEAR_OF_CENTURY).padStart(
+    TWO_DIGIT_WIDTH,
+    '0'
+  )
   let reference
   do {
-    const suffix = [...randomBytes(6)]
+    const suffix = [...randomBytes(REFERENCE_SUFFIX_BYTES)]
       .map((value) => CROCKFORD[value % CROCKFORD.length])
       .join('')
     reference = `GBN-PP-${year}-${suffix}`

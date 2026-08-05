@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const selectionUnder = async ({ plantMode, liveMode }) => {
+const selectionUnder = async ({ plantMode, liveMode } = {}) => {
   vi.stubEnv('PLANT_PRODUCTS_MODE', plantMode)
   vi.stubEnv('LIVE_ANIMALS_MODE', liveMode)
   vi.resetModules()
@@ -41,10 +41,7 @@ describe('plant-products document uploads adapter selection', () => {
   })
 
   it('defaults to the real adapter when neither mode is set', async () => {
-    const { selected, real } = await selectionUnder({
-      plantMode: undefined,
-      liveMode: undefined
-    })
+    const { selected, real } = await selectionUnder()
 
     expect(selected).toBe(real)
   })

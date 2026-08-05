@@ -8,6 +8,8 @@ import {
 } from '../../../../../../../../../e2e/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 
+const DASHBOARD_PATH = '/live-animals'
+
 const taskRow = (page, title) =>
   page.getByRole('listitem').filter({
     has: page.getByText(title, { exact: true })
@@ -50,14 +52,14 @@ test.describe('hub feature', () => {
 
     await expect(
       page.getByRole('button', { name: copy.returnToDashboard })
-    ).toHaveAttribute('href', '/live-animals')
+    ).toHaveAttribute('href', DASHBOARD_PATH)
     await expect(
       page.getByRole('link', { name: 'Back', exact: true })
-    ).toHaveAttribute('href', '/live-animals')
+    ).toHaveAttribute('href', DASHBOARD_PATH)
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
-    await expect(page).toHaveURL('/live-animals')
+    await expect(page).toHaveURL(DASHBOARD_PATH)
   })
 
   test('saved origin marks its task complete and unlocks commodities', async ({

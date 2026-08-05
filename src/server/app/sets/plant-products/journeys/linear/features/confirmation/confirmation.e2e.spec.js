@@ -10,6 +10,7 @@ import {
 import { axeViolations } from '../axe.e2e-helper.js'
 import { copy } from './copy/copy.en.js'
 
+const DASHBOARD_PATH = '/plant-products'
 const confirmationUrl = /^\/plant-products\/notifications\/[^/]+\/confirmation$/
 
 const expectSubmittedConfirmation = async (page) => {
@@ -95,7 +96,7 @@ test.describe('submitted plant-products confirmation', () => {
     ).toBeVisible()
     await expect(
       page.getByRole('button', { name: copy.createLink, exact: true })
-    ).toHaveAttribute('href', '/plant-products')
+    ).toHaveAttribute('href', DASHBOARD_PATH)
     await expect(page.getByRole('link', { name: 'Back' })).toHaveCount(0)
     await expect(page.locator('main form')).toHaveCount(0)
     await expect(
@@ -116,11 +117,11 @@ test.describe('submitted plant-products confirmation', () => {
       name: copy.viewOrAmend.dashboardLink,
       exact: true
     })
-    await expect(dashboardLink).toHaveAttribute('href', '/plant-products')
+    await expect(dashboardLink).toHaveAttribute('href', DASHBOARD_PATH)
 
     await dashboardLink.click()
 
-    await expect(page).toHaveURL('/plant-products')
+    await expect(page).toHaveURL(DASHBOARD_PATH)
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {

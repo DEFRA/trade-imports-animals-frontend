@@ -69,12 +69,10 @@ describe('promoted dashboard notification helpers', () => {
       buildPaginationLinks(page, '/live-animals', 'createdAt,desc')
     ).toEqual({
       previous: {
-        href: '/live-animals?sort=createdAt%2Cdesc',
-        text: undefined
+        href: '/live-animals?sort=createdAt%2Cdesc'
       },
       next: {
-        href: '/live-animals?page=3&sort=createdAt%2Cdesc',
-        text: undefined
+        href: '/live-animals?page=3&sort=createdAt%2Cdesc'
       }
     })
     expect(

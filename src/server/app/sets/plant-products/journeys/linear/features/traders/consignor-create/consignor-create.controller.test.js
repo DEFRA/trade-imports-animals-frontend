@@ -30,6 +30,15 @@ import { evaluationBindings } from '../evaluation.js'
 import { copy } from '../copy/copy.en.js'
 import * as consignorCreate from './consignor-create.controller.js'
 
+const SUITE = 'plant-products consignor-create controller'
+const SET_ID = 'plant-products'
+const CONSIGNOR_NAME = 'Orchard Export SAS'
+const CONSIGNOR_ADDRESS_LINE_1 = '12 Rue des Vergers'
+const CONSIGNOR_ADDRESS_LINE_2 = 'Building B'
+const CONSIGNOR_ADDRESS_LINE_3 = 'Export Quarter'
+const CONSIGNOR_TELEPHONE = '+33 4 72 00 00 00'
+const CONSIGNOR_EMAIL = 'exports@example.com'
+
 const pageCopy = copy.consignorCreate
 const get = consignorCreate.routes.find(
   ({ method }) => method === 'GET'
@@ -44,7 +53,7 @@ const sessionYar = () => {
 }
 
 const drive = (handler, options, yar = sessionYar()) =>
-  withSetContext('plant-products', () =>
+  withSetContext(SET_ID, () =>
     driveHandler((request, h) => handler({ ...request, yar }, h), options)
   )
 
@@ -62,32 +71,32 @@ const validPayload = (overrides = {}) => ({
 })
 
 const cleanedAnswers = {
-  consignorName: 'Orchard Export SAS',
-  consignorAddressLine1: '12 Rue des Vergers',
-  consignorAddressLine2: 'Building B',
-  consignorAddressLine3: 'Export Quarter',
+  consignorName: CONSIGNOR_NAME,
+  consignorAddressLine1: CONSIGNOR_ADDRESS_LINE_1,
+  consignorAddressLine2: CONSIGNOR_ADDRESS_LINE_2,
+  consignorAddressLine3: CONSIGNOR_ADDRESS_LINE_3,
   consignorCity: 'Lyon',
   consignorPostcode: '69001',
-  consignorTelephone: '+33 4 72 00 00 00',
+  consignorTelephone: CONSIGNOR_TELEPHONE,
   consignorCountry: 'FR',
-  consignorEmail: 'exports@example.com'
+  consignorEmail: CONSIGNOR_EMAIL
 }
 
 const expectedConsignorDto = {
-  name: 'Orchard Export SAS',
-  telephone: '+33 4 72 00 00 00',
-  email: 'exports@example.com',
+  name: CONSIGNOR_NAME,
+  telephone: CONSIGNOR_TELEPHONE,
+  email: CONSIGNOR_EMAIL,
   address: {
-    addressLine1: '12 Rue des Vergers',
-    addressLine2: 'Building B',
-    addressLine3: 'Export Quarter',
+    addressLine1: CONSIGNOR_ADDRESS_LINE_1,
+    addressLine2: CONSIGNOR_ADDRESS_LINE_2,
+    addressLine3: CONSIGNOR_ADDRESS_LINE_3,
     city: 'Lyon',
     postcode: '69001',
     country: 'FR'
   }
 }
 
-describe('plant-products consignor-create controller', () => {
+const setupConsignorCreateSuite = () => {
   let server
 
   beforeAll(async () => {
@@ -99,7 +108,7 @@ describe('plant-products consignor-create controller', () => {
   })
 
   beforeEach(async () => {
-    enterSetContext('plant-products')
+    enterSetContext(SET_ID)
     await records.clear()
   })
 
@@ -111,6 +120,10 @@ describe('plant-products consignor-create controller', () => {
     vi.unstubAllEnvs()
     await server.stop({ timeout: 0 })
   })
+}
+
+describe(`${SUITE} — obligations and the form as rendered`, () => {
+  setupConsignorCreateSuite()
 
   it('binds all nine fields to the manifest exports by object identity in the one traders bundle', () => {
     expect(evaluationBindings.name).toBe('traders')
@@ -163,6 +176,10 @@ describe('plant-products consignor-create controller', () => {
     expect(result.after).toEqual({})
     expect(toDto(stored.fulfilment)).not.toHaveProperty('consignor')
   })
+})
+
+describe(`${SUITE} — field validation`, () => {
+  setupConsignorCreateSuite()
 
   it.each([
     {
@@ -273,6 +290,10 @@ describe('plant-products consignor-create controller', () => {
       expect(result.after).toEqual({})
     }
   )
+})
+
+describe(`${SUITE} — saving a valid consignor`, () => {
+  setupConsignorCreateSuite()
 
   it('commits exactly nine cleaned values and persists the exact DTO before confirmation', async () => {
     const nextTarget = vi
@@ -280,7 +301,7 @@ describe('plant-products consignor-create controller', () => {
       .mockResolvedValue('/plant-products/notifications/consignor-confirmation')
     const result = await drive(post, { payload: validPayload() })
     const stored = await records.load({ journeyId: result.journeyId })
-    const dto = withSetContext('plant-products', () =>
+    const dto = withSetContext(SET_ID, () =>
       toDto(projectAnswers(stored.fulfilment))
     )
 
@@ -320,17 +341,7 @@ describe('plant-products consignor-create controller', () => {
 
     expect(saved.at(-1)).toEqual({
       id: 'created-consignor-1',
-      name: 'Orchard Export SAS',
-      telephone: '+33 4 72 00 00 00',
-      email: 'exports@example.com',
-      address: {
-        addressLine1: '12 Rue des Vergers',
-        addressLine2: 'Building B',
-        addressLine3: 'Export Quarter',
-        city: 'Lyon',
-        postcode: '69001',
-        country: 'FR'
-      }
+      ...expectedConsignorDto
     })
     expect(readSelection({ yar }, result.journeyId)).toBe('created-consignor-1')
   })
@@ -350,6 +361,10 @@ describe('plant-products consignor-create controller', () => {
 
     await expect(addressBook.list({ yar })).resolves.toHaveLength(13)
   })
+})
+
+describe(`${SUITE} — persistence failures`, () => {
+  setupConsignorCreateSuite()
 
   it('renders raw values and a recoverable error at 500', async () => {
     vi.spyOn(kit, 'recoverableSave').mockImplementationOnce(

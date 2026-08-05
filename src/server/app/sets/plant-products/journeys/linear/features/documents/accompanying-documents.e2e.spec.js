@@ -24,6 +24,14 @@ import {
 
 const hubUrl = /^\/plant-products\/notifications\/[^/]+$/
 
+const PHYTO_TYPE_LABEL = 'Phytosanitary certificate'
+const RAW_REFERENCE = 'RAW-REFERENCE'
+const PHYTO_SAFE = 'PHYTO-SAFE'
+const PHYTO_VIRUS = 'PHYTO-VIRUS'
+const ERROR_SUMMARY_SELECTOR = '.govuk-error-summary'
+const ERROR_SUMMARY_TITLE_SELECTOR = '.govuk-error-summary__title'
+const FILE_ERROR_SELECTOR = '#file-error'
+
 const documentHubRow = (page) =>
   page.getByRole('listitem').filter({
     has: page.getByText('Accompanying documents', { exact: true })
@@ -74,11 +82,7 @@ const expectLinkedError = async (page, field, message) => {
   await expect(page.locator(`#${field}`)).toBeFocused()
 }
 
-test.describe('plant-products accompanying documents', () => {
-  test.beforeEach(async ({ page }) => {
-    await startAtDocuments(page)
-  })
-
+const entryFormTests = () => {
   test('renders the warning, visible labels and the complete shipped type list', async ({
     page
   }) => {
@@ -105,7 +109,7 @@ test.describe('plant-products accompanying documents', () => {
   }) => {
     await addDocument(page)
     const row = rowFor(page, 'PHYTO-001')
-    await expect(row).toContainText('Phytosanitary certificate')
+    await expect(row).toContainText(PHYTO_TYPE_LABEL)
     await expect(row).toContainText('4/12/2025')
     await expect(
       row.getByRole('button', {
@@ -124,9 +128,7 @@ test.describe('plant-products accompanying documents', () => {
     await addDocument(page)
     await page.reload()
 
-    await expect(rowFor(page, 'PHYTO-001')).toContainText(
-      'Phytosanitary certificate'
-    )
+    await expect(rowFor(page, 'PHYTO-001')).toContainText(PHYTO_TYPE_LABEL)
     await expect(page.getByLabel(copy.labels.documentReference)).toHaveValue('')
   })
 
@@ -152,7 +154,7 @@ test.describe('plant-products accompanying documents', () => {
     await page.reload()
 
     const row = rowFor(page, 'PHYTO-001')
-    await expect(row).toContainText('Phytosanitary certificate')
+    await expect(row).toContainText(PHYTO_TYPE_LABEL)
     await expect(row).toContainText(copy.status.checking)
     await expect(row).not.toContainText(copy.status.noFile)
   })
@@ -175,14 +177,16 @@ test.describe('plant-products accompanying documents', () => {
     )
     await expect(rowFor(page, 'PHYTO-ELEVENTH')).toHaveCount(0)
   })
+}
 
+const metadataValidationTests = () => {
   for (const testCase of [
     {
       name: 'missing document type',
       field: 'documentType',
       message: copy.errors.documentTypeRequired,
       type: '',
-      reference: 'RAW-REFERENCE',
+      reference: RAW_REFERENCE,
       date: '4/12/2025',
       raw: ''
     },
@@ -191,7 +195,7 @@ test.describe('plant-products accompanying documents', () => {
       field: 'documentType',
       message: copy.errors.documentTypeRequired,
       type: 'FORGED_TYPE',
-      reference: 'RAW-REFERENCE',
+      reference: RAW_REFERENCE,
       date: '4/12/2025',
       raw: 'FORGED_TYPE'
     },
@@ -218,7 +222,7 @@ test.describe('plant-products accompanying documents', () => {
       field: 'issueDate',
       message: copy.errors.dateRequired,
       type: 'AIR_WAYBILL',
-      reference: 'RAW-REFERENCE',
+      reference: RAW_REFERENCE,
       date: '',
       raw: ''
     },
@@ -227,7 +231,7 @@ test.describe('plant-products accompanying documents', () => {
       field: 'issueDate',
       message: copy.errors.dateInvalid,
       type: 'AIR_WAYBILL',
-      reference: 'RAW-REFERENCE',
+      reference: RAW_REFERENCE,
       date: '31/2/2025',
       raw: '31/2/2025'
     }
@@ -306,21 +310,23 @@ test.describe('plant-products accompanying documents', () => {
     await expect(page).toHaveURL((url) => hubUrl.test(url.pathname))
     await expect(documentHubRow(page)).toContainText('Not yet started')
   })
+}
 
+const viewFileAndAxeTests = () => {
   test('offers View file once a scan is safe and downloads the file behind it', async ({
     page
   }) => {
     await addDocument(page, {
-      reference: 'PHYTO-SAFE',
+      reference: PHYTO_SAFE,
       file: pdfFile('phyto.pdf')
     })
-    const row = rowFor(page, 'PHYTO-SAFE')
+    const row = rowFor(page, PHYTO_SAFE)
     const viewFile = row.getByRole('link', {
       name: `${copy.actions.viewFile} Phytosanitary certificate PHYTO-SAFE`
     })
     await expect(viewFile).toHaveCount(0)
 
-    await settleScan(page, 'PHYTO-SAFE', copy.status.safe)
+    await settleScan(page, PHYTO_SAFE, copy.status.safe)
     await expect(viewFile).toBeVisible()
 
     const download = await page.request.get(await viewFile.getAttribute('href'))
@@ -338,12 +344,12 @@ test.describe('plant-products accompanying documents', () => {
       file: pdfFile('never-scans.pdf')
     })
     await addDocument(page, {
-      reference: 'PHYTO-VIRUS',
+      reference: PHYTO_VIRUS,
       file: pdfFile('virus.pdf')
     })
-    await settleScan(page, 'PHYTO-VIRUS', copy.status.virus)
+    await settleScan(page, PHYTO_VIRUS, copy.status.virus)
 
-    for (const reference of ['PHYTO-PENDING', 'PHYTO-VIRUS']) {
+    for (const reference of ['PHYTO-PENDING', PHYTO_VIRUS]) {
       const row = rowFor(page, reference)
       await expect(
         row.getByRole('link', { name: copy.actions.viewFile })
@@ -358,10 +364,10 @@ test.describe('plant-products accompanying documents', () => {
     page
   }) => {
     await addDocument(page, {
-      reference: 'PHYTO-SAFE',
+      reference: PHYTO_SAFE,
       file: pdfFile('phyto.pdf')
     })
-    await settleScan(page, 'PHYTO-SAFE', copy.status.safe)
+    await settleScan(page, PHYTO_SAFE, copy.status.safe)
 
     const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
     expect(
@@ -410,7 +416,9 @@ test.describe('plant-products accompanying documents', () => {
       `Accompanying documents file error has serious/critical accessibility violations.\n${JSON.stringify(all, null, 2)}`
     ).toEqual([])
   })
+}
 
+const clientOversizeRefusalTests = () => {
   test('refuses an over-limit file in the browser without sending a single byte', async ({
     page
   }) => {
@@ -423,17 +431,17 @@ test.describe('plant-products accompanying documents', () => {
     )
 
     expect(posted).toBeNull()
-    await expect(page.locator('.govuk-error-summary')).toHaveCount(1)
+    await expect(page.locator(ERROR_SUMMARY_SELECTOR)).toHaveCount(1)
     await expect(
-      page.locator('.govuk-error-summary').getByRole('link', {
+      page.locator(ERROR_SUMMARY_SELECTOR).getByRole('link', {
         name: OVERSIZE_FILE_MESSAGE
       })
     ).toHaveAttribute('href', '#file')
-    await expect(page.locator('.govuk-error-summary__title')).toBeFocused()
-    await expect(page.locator('.govuk-error-summary__title')).toHaveText(
+    await expect(page.locator(ERROR_SUMMARY_TITLE_SELECTOR)).toBeFocused()
+    await expect(page.locator(ERROR_SUMMARY_TITLE_SELECTOR)).toHaveText(
       sharedCopy.errorSummary.title
     )
-    await expect(page.locator('#file-error')).toContainText(
+    await expect(page.locator(FILE_ERROR_SELECTOR)).toContainText(
       OVERSIZE_FILE_MESSAGE
     )
     await expect(page.getByLabel(copy.labels.file)).toHaveAttribute(
@@ -467,13 +475,13 @@ test.describe('plant-products accompanying documents', () => {
     )
 
     expect(posted).toBeNull()
-    await expect(page.locator('#file-error')).toContainText(welshOversize)
-    await expect(page.locator('#file-error')).not.toContainText(
+    await expect(page.locator(FILE_ERROR_SELECTOR)).toContainText(welshOversize)
+    await expect(page.locator(FILE_ERROR_SELECTOR)).not.toContainText(
       OVERSIZE_FILE_MESSAGE
     )
     await expect(
       page
-        .locator('.govuk-error-summary')
+        .locator(ERROR_SUMMARY_SELECTOR)
         .getByRole('link', { name: welshOversize })
     ).toHaveCount(1)
   })
@@ -490,7 +498,9 @@ test.describe('plant-products accompanying documents', () => {
     expect(posted).not.toBeNull()
     await expect(rowFor(page, 'PHYTO-NOFILE')).toContainText(copy.status.noFile)
   })
+}
 
+const clientErrorSummaryTests = () => {
   test('appends to a server-rendered summary rather than adding a second one', async ({
     page
   }) => {
@@ -507,13 +517,13 @@ test.describe('plant-products accompanying documents', () => {
     )
 
     expect(posted).toBeNull()
-    const summary = page.locator('.govuk-error-summary')
+    const summary = page.locator(ERROR_SUMMARY_SELECTOR)
     await expect(summary).toHaveCount(1)
     await expect(summary).toContainText(copy.errors.documentTypeRequired)
     await expect(
       summary.getByRole('link', { name: OVERSIZE_FILE_MESSAGE })
     ).toHaveCount(1)
-    await expect(page.locator('.govuk-error-summary__title')).toBeFocused()
+    await expect(page.locator(ERROR_SUMMARY_TITLE_SELECTOR)).toBeFocused()
   })
 
   test('replaces a server-rendered file error rather than leaving a stale one', async ({
@@ -528,7 +538,9 @@ test.describe('plant-products accompanying documents', () => {
         buffer: Buffer.from('not an allowed document')
       }
     })
-    await expect(page.locator('#file-error')).toContainText(FILE_TYPE_MESSAGE)
+    await expect(page.locator(FILE_ERROR_SELECTOR)).toContainText(
+      FILE_TYPE_MESSAGE
+    )
 
     await page.getByLabel(copy.labels.file).setInputFiles(oversizeFile())
     const posted = await postedUrlWhile(page, () =>
@@ -536,14 +548,14 @@ test.describe('plant-products accompanying documents', () => {
     )
 
     expect(posted).toBeNull()
-    await expect(page.locator('#file-error')).toHaveCount(1)
-    await expect(page.locator('#file-error')).toContainText(
+    await expect(page.locator(FILE_ERROR_SELECTOR)).toHaveCount(1)
+    await expect(page.locator(FILE_ERROR_SELECTOR)).toContainText(
       OVERSIZE_FILE_MESSAGE
     )
-    await expect(page.locator('#file-error')).not.toContainText(
+    await expect(page.locator(FILE_ERROR_SELECTOR)).not.toContainText(
       FILE_TYPE_MESSAGE
     )
-    await expect(page.locator('.govuk-error-summary')).toHaveCount(1)
+    await expect(page.locator(ERROR_SUMMARY_SELECTOR)).toHaveCount(1)
     await expect(page.getByLabel(copy.labels.file)).toHaveAttribute(
       'aria-describedby',
       'file-hint file-error'
@@ -557,20 +569,18 @@ test.describe('plant-products accompanying documents', () => {
     await fillDocumentMetadata(page, 'PHYTO-BIG')
     await page.getByLabel(copy.labels.file).setInputFiles(oversizeFile())
     await addDocumentButton(page).click()
-    await expect(page.locator('#file-error')).toBeVisible()
+    await expect(page.locator(FILE_ERROR_SELECTOR)).toBeVisible()
 
     await addDocumentButton(page).click()
     await expect(
       page.locator('li[data-client-error="file-size-summary"]')
     ).toHaveCount(1)
-    await expect(page.locator('#file-error')).toHaveCount(1)
+    await expect(page.locator(FILE_ERROR_SELECTOR)).toHaveCount(1)
 
     await page.getByLabel(copy.labels.file).setInputFiles(pdfFile())
     await addDocumentButton(page).click()
 
-    await expect(rowFor(page, 'PHYTO-BIG')).toContainText(
-      'Phytosanitary certificate'
-    )
+    await expect(rowFor(page, 'PHYTO-BIG')).toContainText(PHYTO_TYPE_LABEL)
   })
 
   test('client-rendered oversize error has no serious or critical axe violations', async ({
@@ -580,7 +590,7 @@ test.describe('plant-products accompanying documents', () => {
     await fillDocumentMetadata(page, 'PHYTO-BIG')
     await page.getByLabel(copy.labels.file).setInputFiles(oversizeFile())
     await addDocumentButton(page).click()
-    await expect(page.locator('#file-error')).toBeVisible()
+    await expect(page.locator(FILE_ERROR_SELECTOR)).toBeVisible()
 
     const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
     expect(
@@ -588,4 +598,16 @@ test.describe('plant-products accompanying documents', () => {
       `Accompanying documents client oversize error has serious/critical accessibility violations.\n${JSON.stringify(all, null, 2)}`
     ).toEqual([])
   })
+}
+
+test.describe('plant-products accompanying documents', () => {
+  test.beforeEach(async ({ page }) => {
+    await startAtDocuments(page)
+  })
+
+  entryFormTests()
+  metadataValidationTests()
+  viewFileAndAxeTests()
+  clientOversizeRefusalTests()
+  clientErrorSummaryTests()
 })

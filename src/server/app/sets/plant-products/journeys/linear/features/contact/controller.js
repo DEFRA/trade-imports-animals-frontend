@@ -28,16 +28,23 @@ export const meta = {
 
 const view = `${TEMPLATES}/features/contact/template`
 const copy = copyFor({ en, cy })
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@.]+$/
 const TELEPHONE = /^\+?[\d\s]+$/
+const MAX_NAME_LENGTH = 32
+const MAX_EMAIL_LENGTH = 255
+const MAX_TELEPHONE_LENGTH = 30
 
 const fieldRules = () => [
   requiredText('responsiblePersonName', copy.errors.nameRequired),
-  maxText('responsiblePersonName', 32, copy.errors.nameMax),
+  maxText('responsiblePersonName', MAX_NAME_LENGTH, copy.errors.nameMax),
   pattern('responsiblePersonEmail', EMAIL, copy.errors.emailFormat),
-  maxText('responsiblePersonEmail', 255, copy.errors.emailMax),
+  maxText('responsiblePersonEmail', MAX_EMAIL_LENGTH, copy.errors.emailMax),
   pattern('responsiblePersonTelephone', TELEPHONE, copy.errors.telephoneFormat),
-  maxText('responsiblePersonTelephone', 30, copy.errors.telephoneMax)
+  maxText(
+    'responsiblePersonTelephone',
+    MAX_TELEPHONE_LENGTH,
+    copy.errors.telephoneMax
+  )
 ]
 
 const validateFields = (payload) => {

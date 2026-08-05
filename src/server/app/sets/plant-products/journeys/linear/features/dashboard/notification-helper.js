@@ -8,6 +8,9 @@ import {
 } from '../../../../../../lib/validate/index.js'
 
 const LIST_DATE_FORMAT = 'd MMMM yyyy'
+const DATE_PART_DIGITS = 2
+const ISO_DATE_LENGTH = 10
+const MAX_KEYWORDS_LENGTH = 255
 
 export const DEFAULT_NOTIFICATION_SORT = 'arrivalDate,desc'
 
@@ -101,10 +104,11 @@ export const buildPaginationLinks = (
 }
 
 export const buildPageResultsRangeLabel = (
-  { page = 1, size, totalElements = 0 } = {},
+  pagination,
   itemCount,
   labels = {}
 ) => {
+  const { page = 1, size, totalElements = 0 } = pagination ?? {}
   if (itemCount === 0) {
     return labels.none ?? '0 results'
   }
@@ -138,7 +142,8 @@ const dateIso = ({ day, month, year }) => {
   if (parts.some((part) => part === '')) {
     return null
   }
-  const iso = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`
+  const [trimmedDay, trimmedMonth, trimmedYear] = parts
+  const iso = `${trimmedYear}-${trimmedMonth.padStart(DATE_PART_DIGITS, '0')}-${trimmedDay.padStart(DATE_PART_DIGITS, '0')}`
   return isValid(parseISO(iso)) ? iso : null
 }
 
@@ -157,7 +162,7 @@ export const filterValues = (query = {}) => ({
 
 export const validateFilters = (query = {}, messages = {}) => {
   const fields = compose(
-    maxText('referenceNumber', 255, messages.keywordsMax),
+    maxText('referenceNumber', MAX_KEYWORDS_LENGTH, messages.keywordsMax),
     dateParts('startDate', messages.startDateReal),
     dateParts('endDate', messages.endDateReal)
   )
@@ -185,7 +190,7 @@ export const applyCountryFilter = (rows, countryCode) =>
 export const applyArrivalRangeFilter = (rows, { start, end } = {}) =>
   start || end
     ? rows.filter((row) => {
-        const arrival = String(row.arrivalDate ?? '').slice(0, 10)
+        const arrival = String(row.arrivalDate ?? '').slice(0, ISO_DATE_LENGTH)
         return (
           arrival !== '' &&
           (!start || arrival >= start) &&

@@ -71,6 +71,10 @@ const PLANT_PRODUCTS_BASE = `/${PLANT_PRODUCTS}`
 const FOREIGN_REALM = 'foreign-realm'
 const FOREIGN_REALM_BASE = `/${FOREIGN_REALM}`
 const FOREIGN_REALM_RESPONSE = 'foreign realm handler ran'
+const IMPORT_TYPE_LIVE_ANIMALS = 'live-animals'
+const SERVICE_HEADING = 'Import notification service'
+const START_NEW_NOTIFICATION = 'Start a new notification'
+const PLANT_PRODUCTS_DASHBOARD_HEADING = 'Your import notifications'
 
 const cookieJar = () => {
   const cookies = new Map()
@@ -172,9 +176,9 @@ const plantProductsFlow = (
   layout: PLANT_PRODUCTS_LAYOUT
 })
 
-describe('co-residency', () => {
-  let server
+let server
 
+const bootAndTeardown = () => {
   beforeAll(async () => {
     vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
     server = await bootServer({
@@ -186,13 +190,15 @@ describe('co-residency', () => {
     vi.unstubAllEnvs()
     await server.stop({ timeout: 0 })
   })
+}
 
+const setMountingCases = () => {
   it('serves the live-animals dashboard from its mounted gateway', async () => {
     const response = await server.inject(LIVE_ANIMALS_BASE)
 
     expect(response.statusCode).toBe(200)
-    expect(response.result).toContain('Import notification service')
-    expect(response.result).toContain('Start a new notification')
+    expect(response.result).toContain(SERVICE_HEADING)
+    expect(response.result).toContain(START_NEW_NOTIFICATION)
   })
 
   it('resolves the live-animals manifest policy through all four accessors', () => {
@@ -248,17 +254,17 @@ describe('co-residency', () => {
     const plantProductsResponse = await server.inject(PLANT_PRODUCTS_BASE)
 
     expect(liveAnimalsResponse.statusCode).toBe(200)
-    expect(liveAnimalsResponse.result).toContain('Import notification service')
-    expect(liveAnimalsResponse.result).toContain('Start a new notification')
+    expect(liveAnimalsResponse.result).toContain(SERVICE_HEADING)
+    expect(liveAnimalsResponse.result).toContain(START_NEW_NOTIFICATION)
     expect(liveAnimalsResponse.result).not.toContain(
       'Plants, plant products and other objects'
     )
     expect(plantProductsResponse.statusCode).toBe(200)
-    expect(plantProductsResponse.result).toContain('Your import notifications')
-    expect(plantProductsResponse.result).toContain('Create a new notification')
-    expect(plantProductsResponse.result).not.toContain(
-      'Start a new notification'
+    expect(plantProductsResponse.result).toContain(
+      PLANT_PRODUCTS_DASHBOARD_HEADING
     )
+    expect(plantProductsResponse.result).toContain('Create a new notification')
+    expect(plantProductsResponse.result).not.toContain(START_NEW_NOTIFICATION)
   })
 
   it('keeps every server-wide route unprefixed with both sets registered', async () => {
@@ -288,7 +294,9 @@ describe('co-residency', () => {
     ])
     expect(productionMounts.every(({ base }) => base !== '')).toBe(true)
   })
+}
 
+const perSetSeamCases = () => {
   it('resolves each set own manifest, flow, records and cookie names', async () => {
     const liveAnimals = await withSetContext(LIVE_ANIMALS, async () => ({
       enforcedAtContinue: [...enforcedAtContinue()],
@@ -401,7 +409,9 @@ describe('co-residency', () => {
       expect(server.states.cookies[cookieName].path).toBe(PLANT_PRODUCTS_BASE)
     }
   })
+}
 
+const sessionCookieIsolationCases = () => {
   it('keeps all three session cookies and draft visibility independent', async () => {
     const jar = cookieJar()
     const liveAnimalsResponse = await server.inject({
@@ -423,7 +433,7 @@ describe('co-residency', () => {
       method: 'POST',
       url: liveAnimalsEntry,
       headers: { cookie: jar.headerFor(liveAnimalsEntry) },
-      payload: { importType: 'live-animals' }
+      payload: { importType: IMPORT_TYPE_LIVE_ANIMALS }
     })
     jar.absorb(liveAnimalsPost)
     const plantProductsPost = await server.inject({
@@ -451,10 +461,14 @@ describe('co-residency', () => {
       Object.values(PLANT_PRODUCTS_COOKIE_NAMES).sort()
     )
     expect(
-      liveAnimalsCookies.every(({ path }) => path === LIVE_ANIMALS_BASE)
+      liveAnimalsCookies.every(
+        ({ path: cookiePath }) => cookiePath === LIVE_ANIMALS_BASE
+      )
     ).toBe(true)
     expect(
-      plantProductsCookies.every(({ path }) => path === PLANT_PRODUCTS_BASE)
+      plantProductsCookies.every(
+        ({ path: cookiePath }) => cookiePath === PLANT_PRODUCTS_BASE
+      )
     ).toBe(true)
     expect(jar.namesFor(LIVE_ANIMALS_BASE)).toEqual(
       Object.values(SESSION_COOKIE_NAMES).sort()
@@ -504,7 +518,9 @@ describe('co-residency', () => {
     expect(plantCannotResumeLive.statusCode).toBe(404)
     expect(liveCannotResumePlant.statusCode).toBe(404)
   })
+}
 
+const crossSetGuardCases = () => {
   it('refuses cold deep links in the owning guard realm and never redirects across sets', async () => {
     const liveAnimalsCreate = await server.inject({
       method: 'POST',
@@ -564,7 +580,9 @@ describe('co-residency', () => {
       configureJourneyFlow(PLANT_PRODUCTS, plantProductsFlow())
     }
   })
+}
 
+const asyncBoundaryCases = () => {
   // This case proves that each set re-establishes its own context after the
   // application's real async request pipeline. Resetting the module graph gives
   // the server a fresh AsyncLocalStorage, so ambient worker context cannot mask
@@ -589,18 +607,18 @@ describe('co-residency', () => {
       })
 
       expect(liveAnimalsResponse.statusCode).toBe(200)
-      expect(liveAnimalsResponse.result).toContain(
-        'Import notification service'
-      )
+      expect(liveAnimalsResponse.result).toContain(SERVICE_HEADING)
       expect(plantProductsResponse.statusCode).toBe(200)
       expect(plantProductsResponse.result).toContain(
-        'Your import notifications'
+        PLANT_PRODUCTS_DASHBOARD_HEADING
       )
     } finally {
       await boundaryServer.stop({ timeout: 0 })
     }
   })
+}
 
+const interleavedContextCases = () => {
   // This separate pin proves that established request contexts stay isolated
   // while two set-owned handlers are genuinely interleaved.
   it('retains both set contexts across genuinely interleaved requests', async () => {
@@ -619,7 +637,7 @@ describe('co-residency', () => {
 
     liveAnimalsRecords.list = async (...args) => {
       contexts.push([
-        'live-animals',
+        LIVE_ANIMALS,
         'before',
         currentSetId(),
         knownJourneysCookie(),
@@ -631,7 +649,7 @@ describe('co-residency', () => {
       events.push('live-animals resumed')
       const result = await originalLiveAnimalsList(...args)
       contexts.push([
-        'live-animals',
+        LIVE_ANIMALS,
         'after',
         currentSetId(),
         knownJourneysCookie(),
@@ -641,7 +659,7 @@ describe('co-residency', () => {
     }
     plantProductsRecords.list = async (...args) => {
       contexts.push([
-        'plant-products',
+        PLANT_PRODUCTS,
         'during',
         currentSetId(),
         knownJourneysCookie(),
@@ -670,21 +688,21 @@ describe('co-residency', () => {
       ])
       expect(contexts).toEqual([
         [
-          'live-animals',
+          LIVE_ANIMALS,
           'before',
           LIVE_ANIMALS,
           SESSION_COOKIE_NAMES.knownJourneys,
           ['countryOfOrigin', 'commoditySelection']
         ],
         [
-          'plant-products',
+          PLANT_PRODUCTS,
           'during',
           PLANT_PRODUCTS,
           PLANT_PRODUCTS_COOKIE_NAMES.knownJourneys,
           ['countryOfOrigin', 'commoditySelection']
         ],
         [
-          'live-animals',
+          LIVE_ANIMALS,
           'after',
           LIVE_ANIMALS,
           SESSION_COOKIE_NAMES.knownJourneys,
@@ -697,7 +715,9 @@ describe('co-residency', () => {
       plantProductsRecords.list = originalPlantProductsList
     }
   })
+}
 
+const runtimeModeCases = () => {
   it('honours plant stub and live fake-real modes independently and primes once', async () => {
     const originalLiveAnimalsList = liveAnimalsRecords.list
     const fakeRealList = vi.fn(async () => ({
@@ -724,7 +744,7 @@ describe('co-residency', () => {
       expect(liveAnimalsResponse.statusCode).toBe(200)
       expect(plantProductsResponse.statusCode).toBe(200)
       expect(plantProductsResponse.result).toContain(
-        'Your import notifications'
+        PLANT_PRODUCTS_DASHBOARD_HEADING
       )
       expect(fakeRealList).toHaveBeenCalledTimes(1)
       expect(countryPrime).toHaveBeenCalledTimes(1)
@@ -740,7 +760,9 @@ describe('co-residency', () => {
       vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
     }
   })
+}
 
+const serverWideRouteCases = () => {
   it('redirects the unowned root temporarily to the named default set', async () => {
     const response = await server.inject('/')
 
@@ -777,7 +799,9 @@ describe('co-residency', () => {
       setId: FOREIGN_REALM
     })
   })
+}
 
+const foreignRealmInterleavingCases = () => {
   it('retains live-animals context across genuinely interleaved requests', async () => {
     const originalList = liveAnimalsRecords.list
     const events = []
@@ -792,13 +816,13 @@ describe('co-residency', () => {
     })
 
     liveAnimalsRecords.list = async (...args) => {
-      contexts.push(['live-animals', 'before', currentSetId()])
+      contexts.push([LIVE_ANIMALS, 'before', currentSetId()])
       events.push('first suspended')
       markFirstSuspended()
       await firstCanResume
       events.push('first resumed')
       const result = await originalList(...args)
-      contexts.push(['live-animals', 'after', currentSetId()])
+      contexts.push([LIVE_ANIMALS, 'after', currentSetId()])
       return result
     }
 
@@ -826,12 +850,25 @@ describe('co-residency', () => {
         'first resumed'
       ])
       expect(contexts).toEqual([
-        ['live-animals', 'before', LIVE_ANIMALS],
-        ['live-animals', 'after', LIVE_ANIMALS]
+        [LIVE_ANIMALS, 'before', LIVE_ANIMALS],
+        [LIVE_ANIMALS, 'after', LIVE_ANIMALS]
       ])
     } finally {
       releaseFirst()
       liveAnimalsRecords.list = originalList
     }
   })
+}
+
+describe('co-residency', () => {
+  bootAndTeardown()
+  setMountingCases()
+  perSetSeamCases()
+  sessionCookieIsolationCases()
+  crossSetGuardCases()
+  asyncBoundaryCases()
+  interleavedContextCases()
+  runtimeModeCases()
+  serverWideRouteCases()
+  foreignRealmInterleavingCases()
 })

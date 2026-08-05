@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { documentUploads } from '../../../../../services/document-uploads/index.js'
 import { isOwnedByJourney, isSafeUploadId } from './upload-id.js'
 
+const JOURNEY_ID = 'GBN-PP-26-ABC001'
+
 describe('plant-products documents upload id guards', () => {
   it.each([
     'upload-abc-123',
@@ -27,13 +29,11 @@ describe('plant-products documents upload id guards', () => {
 
   it('confirms ownership when the upload service names this journey', async () => {
     const uploadId = await documentUploads.upload({
-      journeyId: 'GBN-PP-26-ABC001',
+      journeyId: JOURNEY_ID,
       filename: 'phyto.pdf'
     })
 
-    await expect(isOwnedByJourney(uploadId, 'GBN-PP-26-ABC001')).resolves.toBe(
-      true
-    )
+    await expect(isOwnedByJourney(uploadId, JOURNEY_ID)).resolves.toBe(true)
   })
 
   it('refuses an upload that belongs to another journey', async () => {
@@ -42,23 +42,21 @@ describe('plant-products documents upload id guards', () => {
       filename: 'phyto.pdf'
     })
 
-    await expect(isOwnedByJourney(uploadId, 'GBN-PP-26-ABC001')).resolves.toBe(
-      false
-    )
+    await expect(isOwnedByJourney(uploadId, JOURNEY_ID)).resolves.toBe(false)
   })
 
   it('refuses an id the upload service never issued', async () => {
     await expect(
-      isOwnedByJourney('upload-never-issued', 'GBN-PP-26-ABC001')
+      isOwnedByJourney('upload-never-issued', JOURNEY_ID)
     ).resolves.toBe(false)
   })
 
   it('refuses an unsafe id without asking the upload service at all', async () => {
     const ownerOf = vi.spyOn(documentUploads, 'ownerOf')
 
-    await expect(
-      isOwnedByJourney('../secrets', 'GBN-PP-26-ABC001')
-    ).resolves.toBe(false)
+    await expect(isOwnedByJourney('../secrets', JOURNEY_ID)).resolves.toBe(
+      false
+    )
     expect(ownerOf).not.toHaveBeenCalled()
     ownerOf.mockRestore()
   })

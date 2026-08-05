@@ -4,14 +4,15 @@ import * as paths from './paths.js'
 import { registerSetMount, withSetContext } from './set-context.js'
 
 const SET_ID = 'live-animals'
+const PLANT_PRODUCTS_SET_ID = 'plant-products'
 
 registerSetMount(SET_ID, '/live-animals')
-registerSetMount('plant-products', '/plant-products')
+registerSetMount(PLANT_PRODUCTS_SET_ID, '/plant-products')
 
 describe('set-aware paths', () => {
   it.each([
     [SET_ID, '/live-animals'],
-    ['plant-products', '/plant-products']
+    [PLANT_PRODUCTS_SET_ID, '/plant-products']
   ])('builds links for %s in the same process', (setId, base) => {
     withSetContext(setId, () => {
       expect(paths.setBase()).toBe(base)
@@ -26,7 +27,7 @@ describe('set-aware paths', () => {
     })
   })
 
-  it.each([SET_ID, 'plant-products'])(
+  it.each([SET_ID, PLANT_PRODUCTS_SET_ID])(
     'keeps route shapes prefix-free under %s',
     (setId) => {
       withSetContext(setId, () => {

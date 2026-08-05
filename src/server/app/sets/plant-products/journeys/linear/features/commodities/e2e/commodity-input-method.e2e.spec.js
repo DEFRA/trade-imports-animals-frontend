@@ -4,6 +4,7 @@ import { axeViolations as seriousOrCriticalViolations } from '../../axe.e2e-help
 import { copy as featureCopy } from '../copy/copy.en.js'
 
 const copy = featureCopy.inputMethod
+const SAVE_AND_CONTINUE = 'Save and continue'
 
 const startAtCommodityInputMethod = async (page) => {
   await page.goto('/plant-products')
@@ -11,14 +12,14 @@ const startAtCommodityInputMethod = async (page) => {
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page).toHaveURL((url) =>
     /^\/plant-products\/notifications\/[^/]+\/country-of-origin$/.test(
       url.pathname
     )
   )
   await page.getByLabel('Country of origin').selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByRole('link', { name: 'Back' }).click()
   await page.getByRole('link', { name: 'Commodity', exact: true }).click()
   await expect(page).toHaveURL((url) =>
@@ -68,7 +69,7 @@ test.describe('plant-products commodity input method', () => {
       )
     }
     await expect(
-      page.getByRole('button', { name: 'Save and continue' })
+      page.getByRole('button', { name: SAVE_AND_CONTINUE })
     ).toBeVisible()
   })
 
@@ -79,7 +80,7 @@ test.describe('plant-products commodity input method', () => {
     await page
       .getByRole('radio', { name: copy.options.MANUAL.label, exact: true })
       .check()
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(page).toHaveURL((url) =>
       /^\/plant-products\/notifications\/[^/]+\/commodity-search$/.test(
@@ -102,7 +103,7 @@ test.describe('plant-products commodity input method', () => {
   test('shows the canonical linked errors, focuses the first radio and commits nothing', async ({
     page
   }) => {
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     const alert = page.getByRole('alert')
     await expect(alert).toContainText('There is a problem')
@@ -141,7 +142,7 @@ test.describe('plant-products commodity input method', () => {
   test('error page has no serious or critical axe violations', async ({
     page
   }) => {
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page.getByRole('alert')).toBeVisible()
     const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
 

@@ -9,6 +9,7 @@ const copy = featureCopy.commodityBulkDetails
 const basicCopy = featureCopy.basicDescription
 const searchCopy = featureCopy.commoditySearch
 const summaryCopy = featureCopy.commoditySummary
+const SAVE_AND_CONTINUE = 'Save and continue'
 
 const commodities = {
   '06042090': { description: 'Other', species: 'Lens culinaris' },
@@ -34,15 +35,15 @@ const startAtCommoditySearch = async (page) => {
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Country of origin').selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByRole('link', { name: 'Back' }).click()
   await rowByTitle(page, 'Commodity')
     .getByRole('link', { name: 'Commodity' })
     .click()
   await page.getByRole('radio', { name: 'Manual entry' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 }
 
 const speciesTable = (page, code) =>
@@ -67,14 +68,14 @@ const addLine = async (page, code) => {
 const startAtBulkDetails = async (page, codes = ['06042090']) => {
   await startAtCommoditySearch(page)
   await addLine(page, codes[0])
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
   for (const code of codes.slice(1)) {
     await page
       .getByRole('button', { name: summaryCopy.addAnotherCommodity })
       .click()
     await addLine(page, code)
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   }
 
   await page.getByRole('button', { name: summaryCopy.continue }).click()
@@ -226,7 +227,7 @@ const expectNoSeriousOrCriticalViolations = async (page, state) => {
   ).toEqual([])
 }
 
-test.describe('plant-products commodity bulk details', () => {
+const lineAndBulkApplyTests = () => {
   test('renders one H1, fixture options and distinct real labels for every repeated control', async ({
     page
   }) => {
@@ -294,7 +295,7 @@ test.describe('plant-products commodity bulk details', () => {
     const detailsUrl = page.url()
     await fillLine(page, '06042090', lineZero)
     await fillLine(page, '06011010', lineOne)
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(page).toHaveURL(hubUrl)
     await expect(rowByTitle(page, 'Purpose')).toContainText('Not yet started')
@@ -308,7 +309,7 @@ test.describe('plant-products commodity bulk details', () => {
 
     const changedLineOne = { ...lineOne, numberOfPackages: '44' }
     await lineControls(page, '06011010').numberOfPackages.fill('44')
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page).toHaveURL(hubUrl)
     await page.goto(detailsUrl)
     await expectLine(page, '06042090', lineZero)
@@ -322,7 +323,7 @@ test.describe('plant-products commodity bulk details', () => {
     const detailsUrl = page.url()
     await fillLine(page, '06042090', lineZero)
     await fillLine(page, '06011010', lineOne)
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await page.goto(detailsUrl)
 
     await page.getByLabel(contextFor('06011010'), { exact: true }).check()
@@ -385,7 +386,9 @@ test.describe('plant-products commodity bulk details', () => {
       page.getByLabel(copy.fields.numberOfPackages.label, { exact: true })
     ).toBeFocused()
   })
+}
 
+const validationTests = () => {
   const validationCases = [
     {
       name: 'number of packages required',
@@ -461,7 +464,7 @@ test.describe('plant-products commodity bulk details', () => {
       } else {
         await control.fill(validationCase.value)
       }
-      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
       const message = copy.errors[validationCase.error]
       const link = page.getByRole('alert').getByRole('link', { name: message })
@@ -498,7 +501,7 @@ test.describe('plant-products commodity bulk details', () => {
         finishedOrPropagatedOptionName('PROPAGATED', '06011010')
       )
     ).toHaveValue('PROPAGATED')
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     const link = page.getByRole('alert').getByRole('link', {
       name: copy.errors.finishedOrPropagatedRequired
@@ -511,7 +514,9 @@ test.describe('plant-products commodity bulk details', () => {
         .first()
     ).toBeFocused()
   })
+}
 
+const accessibilityTests = () => {
   test('initial page has no serious or critical axe violations', async ({
     page
   }) => {
@@ -523,8 +528,14 @@ test.describe('plant-products commodity bulk details', () => {
     page
   }) => {
     await startAtBulkDetails(page)
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page.getByRole('alert')).toBeVisible()
     await expectNoSeriousOrCriticalViolations(page, 'validation-error state')
   })
+}
+
+test.describe('plant-products commodity bulk details', () => {
+  lineAndBulkApplyTests()
+  validationTests()
+  accessibilityTests()
 })

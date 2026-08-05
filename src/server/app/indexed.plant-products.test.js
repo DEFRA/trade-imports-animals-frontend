@@ -32,8 +32,10 @@ import { records as recordsStub } from './sets/plant-products/services/records/s
 import { session as sessionStub } from './services/persistence/session/stub.js'
 
 const SET_ID = 'plant-products'
+const ADDITIONAL_DETAILS_SECTION_ID = 'additional-details'
+const GOODS_MOVEMENT_SECTION_ID = 'goods-movement'
 
-describe('plant-products indexed obligations are first-class', () => {
+const setupPlantProductsSet = () => {
   beforeAll(() => {
     // The global setup mounts live-animals. Enter plant here so set-keyed reads
     // cannot silently resolve that setup fixture instead of this composed set.
@@ -56,7 +58,9 @@ describe('plant-products indexed obligations are first-class', () => {
 
   // Vitest may resume each test from its own async context.
   beforeEach(() => enterSetContext(SET_ID))
+}
 
+const obligationEnumerationCases = () => {
   // This suite has no URL-shaped values.
   it('Should enumerate every scalar plant-products obligation node', () => {
     expect([...walkObligations()]).toEqual([
@@ -245,16 +249,18 @@ describe('plant-products indexed obligations are first-class', () => {
       }))
     ])
   })
+}
 
+const sectionOrderCases = () => {
   it('Should place purpose after origin and before review', () => {
     expect(sections.map(({ id }) => id)).toEqual([
       'start',
       'origin',
       'purpose',
       'commodities',
-      'additional-details',
+      ADDITIONAL_DETAILS_SECTION_ID,
       'transport',
-      'goods-movement',
+      GOODS_MOVEMENT_SECTION_ID,
       'contact',
       'nominated-contacts',
       'documents',
@@ -270,15 +276,15 @@ describe('plant-products indexed obligations are first-class', () => {
       sectionIds.indexOf('commodities')
     )
     expect(sectionIds.indexOf('commodities')).toBeLessThan(
-      sectionIds.indexOf('additional-details')
+      sectionIds.indexOf(ADDITIONAL_DETAILS_SECTION_ID)
     )
-    expect(sectionIds.indexOf('additional-details')).toBeLessThan(
+    expect(sectionIds.indexOf(ADDITIONAL_DETAILS_SECTION_ID)).toBeLessThan(
       sectionIds.indexOf('transport')
     )
     expect(sectionIds.indexOf('transport')).toBeLessThan(
-      sectionIds.indexOf('goods-movement')
+      sectionIds.indexOf(GOODS_MOVEMENT_SECTION_ID)
     )
-    expect(sectionIds.indexOf('goods-movement')).toBeLessThan(
+    expect(sectionIds.indexOf(GOODS_MOVEMENT_SECTION_ID)).toBeLessThan(
       sectionIds.indexOf('contact')
     )
     expect(sectionIds.indexOf('contact')).toBeLessThan(
@@ -291,7 +297,9 @@ describe('plant-products indexed obligations are first-class', () => {
       sectionIds.indexOf('review')
     )
   })
+}
 
+const readinessCases = () => {
   it('Should block readiness until mandatory origin and purpose rows are complete', () => {
     expect(
       readyForCheckYourAnswers({}, makeScope({}).inScope, evaluateAnswers({}))
@@ -390,4 +398,11 @@ describe('plant-products indexed obligations are first-class', () => {
       )
     ).toBe(true)
   })
+}
+
+describe('plant-products indexed obligations are first-class', () => {
+  setupPlantProductsSet()
+  obligationEnumerationCases()
+  sectionOrderCases()
+  readinessCases()
 })

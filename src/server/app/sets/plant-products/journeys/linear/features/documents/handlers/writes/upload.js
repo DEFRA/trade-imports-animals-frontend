@@ -1,10 +1,13 @@
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from '../../upload-config.js'
 
+const YEAR_DIGITS = 4
+const MONTH_DAY_DIGITS = 2
+
 const pad = (value, length) => String(value ?? '').padStart(length, '0')
 
 export const isoDate = ({ day, month, year } = {}) =>
-  `${pad(year, 4)}-${pad(month, 2)}-${pad(day, 2)}`
+  `${pad(year, YEAR_DIGITS)}-${pad(month, MONTH_DAY_DIGITS)}-${pad(day, MONTH_DAY_DIGITS)}`
 
 export const uploadDetails = (journey, entry, file) => ({
   journeyId: journey.journeyId,

@@ -15,9 +15,10 @@ import { copy as en } from './copy/copy.en.js'
 
 const view = `${TEMPLATES}/features/cancel-amend/template`
 const copy = copyFor({ en, cy })
+const CANCEL_AMEND_SLUG = 'cancel-amend'
 
 const cyaPath = (journeyId) => pagePath(journeyId, journeyCyaSlug())
-const cancelPath = (journeyId) => pagePath(journeyId, 'cancel-amend')
+const cancelPath = (journeyId) => pagePath(journeyId, CANCEL_AMEND_SLUG)
 
 const nonAmendTarget = (journey) =>
   journey.status === state.SUBMITTED
@@ -66,13 +67,13 @@ const post = async (request, h) => {
 export const routes = [
   {
     method: 'GET',
-    path: pageRoutePath('cancel-amend'),
+    path: pageRoutePath(CANCEL_AMEND_SLUG),
     options: kit.routeOptions,
     handler: get
   },
   {
     method: 'POST',
-    path: pageRoutePath('cancel-amend'),
+    path: pageRoutePath(CANCEL_AMEND_SLUG),
     options: kit.routeOptions,
     handler: post
   }

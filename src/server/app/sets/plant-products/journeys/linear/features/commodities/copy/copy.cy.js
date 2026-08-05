@@ -1,8 +1,12 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
+const DESCRIPTION_OF_THE_GOODS = 'Disgrifiad o’r nwyddau'
+const COMMODITY_DETAILS = 'Manylion y nwydd'
+const GENUS_AND_SPECIES = 'Genws (a Rhywogaeth)'
+
 export const copy = {
   inputMethod: {
     title: 'Sut ydych chi am ychwanegu manylion eich nwydd?',
-    caption: 'Disgrifiad o’r nwyddau',
+    caption: DESCRIPTION_OF_THE_GOODS,
     heading: 'Sut ydych chi am ychwanegu manylion eich nwydd?',
     options: {
       MANUAL: {
@@ -20,7 +24,7 @@ export const copy = {
   },
   commoditySearch: {
     title: 'Nwydd',
-    caption: 'Disgrifiad o’r nwyddau',
+    caption: DESCRIPTION_OF_THE_GOODS,
     heading: 'Nwydd',
     tabs: {
       codeSearch: 'Chwilio yn ôl cod nwydd',
@@ -54,10 +58,10 @@ export const copy = {
     }
   },
   basicDescription: {
-    caption: 'Disgrifiad o’r nwyddau',
+    caption: DESCRIPTION_OF_THE_GOODS,
     heading: 'Nwydd',
     commoditySummary: {
-      caption: 'Manylion y nwydd',
+      caption: COMMODITY_DETAILS,
       codeHeader: 'Cod nwydd',
       descriptionHeader: 'Disgrifiad'
     },
@@ -65,21 +69,21 @@ export const copy = {
     hint: 'Gallwch ychwanegu sawl Genws (a Rhywogaeth)',
     added: {
       caption: 'Genws (a Rhywogaeth) a ychwanegwyd',
-      genusHeader: 'Genws (a Rhywogaeth)',
+      genusHeader: GENUS_AND_SPECIES,
       eppoHeader: 'Cod EPPO',
       removeLabel: 'Tynnu',
       removeHidden: 'o nwydd'
     },
     filter: {
       legend: 'Hidlo',
-      genusLabel: 'Genws (a Rhywogaeth)',
+      genusLabel: GENUS_AND_SPECIES,
       eppoLabel: 'Cod EPPO',
       searchLabel: 'Chwilio',
       clearLabel: 'Clirio'
     },
     results: {
       caption: 'Canlyniadau chwilio Genws (a Rhywogaeth)',
-      genusHeader: 'Genws (a Rhywogaeth)',
+      genusHeader: GENUS_AND_SPECIES,
       eppoHeader: 'Cod EPPO',
       addLabel: 'Ychwanegu',
       addHidden: 'at nwydd',
@@ -91,7 +95,7 @@ export const copy = {
   },
   varietyOfGenusAndSpecies: {
     title: 'Amrywogaeth a dosbarth y nwydd',
-    caption: 'Disgrifiad o’r nwyddau',
+    caption: DESCRIPTION_OF_THE_GOODS,
     heading: 'Amrywogaeth a dosbarth y nwydd',
     speciesHeading: '{eppoCode} – {genusAndSpecies}',
     repeatedControlContext:
@@ -131,12 +135,12 @@ export const copy = {
     }
   },
   commoditySummary: {
-    caption: 'Disgrifiad o’r nwyddau',
+    caption: DESCRIPTION_OF_THE_GOODS,
     heading: 'Nwydd',
     tableCaption: 'Tabl crynodeb nwyddau',
     columns: {
       commodityCode: 'Cod nwydd',
-      genusAndSpecies: 'Genws (a Rhywogaeth)',
+      genusAndSpecies: GENUS_AND_SPECIES,
       eppoCode: 'Cod EPPO',
       variety: 'Amrywogaeth',
       class: 'Dosbarth',
@@ -150,9 +154,9 @@ export const copy = {
     continue: 'Cadw a pharhau'
   },
   commodityBulkDetails: {
-    title: 'Manylion y nwydd',
-    caption: 'Disgrifiad o’r nwyddau',
-    heading: 'Manylion y nwydd',
+    title: COMMODITY_DETAILS,
+    caption: DESCRIPTION_OF_THE_GOODS,
+    heading: COMMODITY_DETAILS,
     controlContext: '{label} ar gyfer {commodity}',
     optionContext: '{option} — {legend} ar gyfer {commodity}',
     bulk: {

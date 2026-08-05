@@ -33,6 +33,8 @@ const view = `${TEMPLATES}/features/commodities/variety-of-genus-and-species/var
 const copy = copyFor({ en, cy }).varietyOfGenusAndSpecies
 const OTHER_VARIETY = '__OTHER__'
 const OTHER_VARIETY_MAX_LENGTH = 32
+const ADD_TARGET_PART_COUNT = 2
+const REMOVE_TARGET_PART_COUNT = 3
 
 const interpolate = (template, values) =>
   Object.entries(values).reduce(
@@ -413,7 +415,7 @@ const redirectToPage = (request, h) =>
   )
 
 const postAdd = async (request, h, pageState, action) => {
-  const targetParts = parseTarget(action, 'add:', 2)
+  const targetParts = parseTarget(action, 'add:', ADD_TARGET_PART_COUNT)
   if (
     !targetParts ||
     !validSpeciesTarget(pageState.answers, targetParts[0], targetParts[1])
@@ -452,7 +454,7 @@ const postAdd = async (request, h, pageState, action) => {
 }
 
 const postRemove = async (request, h, pageState, action) => {
-  const target = parseTarget(action, 'remove:', 3)
+  const target = parseTarget(action, 'remove:', REMOVE_TARGET_PART_COUNT)
   if (!target || !validSpeciesTarget(pageState.answers, target[0], target[1])) {
     return badRequest(h)
   }

@@ -29,9 +29,17 @@ const post = postHandlerOf(contact)
 const drive = (handler, options) =>
   withSetContext('plant-products', () => driveHandler(handler, options))
 
+const CONTACT_NAME = 'Isabel Irwin'
+const CONTACT_EMAIL = 'isabel@example.com'
+const CONTACT_TELEPHONE = '+44 7700 900 982'
+const UNTRIMMED_CONTACT_NAME = `  ${CONTACT_NAME}  `
+const UNTRIMMED_CONTACT_EMAIL = ` ${CONTACT_EMAIL} `
+const UNTRIMMED_CONTACT_TELEPHONE = ` ${CONTACT_TELEPHONE} `
+const NEXT_TARGET_PATH = '/plant-products/notifications/next-target'
+
 const validPayload = (overrides = {}) => ({
-  responsiblePersonName: 'Isabel Irwin',
-  responsiblePersonEmail: 'isabel@example.com',
+  responsiblePersonName: CONTACT_NAME,
+  responsiblePersonEmail: CONTACT_EMAIL,
   responsiblePersonTelephone: '',
   ...overrides
 })
@@ -64,16 +72,16 @@ describe('plant-products contact controller', () => {
   it('prefills all three responsible-person fields', async () => {
     const result = await drive(get, {
       seed: {
-        responsiblePersonName: 'Isabel Irwin',
-        responsiblePersonEmail: 'isabel@example.com',
-        responsiblePersonTelephone: '+44 7700 900 982'
+        responsiblePersonName: CONTACT_NAME,
+        responsiblePersonEmail: CONTACT_EMAIL,
+        responsiblePersonTelephone: CONTACT_TELEPHONE
       }
     })
 
     expect(result.view.context.values).toEqual({
-      responsiblePersonName: 'Isabel Irwin',
-      responsiblePersonEmail: 'isabel@example.com',
-      responsiblePersonTelephone: '+44 7700 900 982'
+      responsiblePersonName: CONTACT_NAME,
+      responsiblePersonEmail: CONTACT_EMAIL,
+      responsiblePersonTelephone: CONTACT_TELEPHONE
     })
   })
 
@@ -149,7 +157,7 @@ describe('plant-products contact controller', () => {
 
   it('preserves every raw value on an error and does not commit', async () => {
     const payload = {
-      responsiblePersonName: '  Isabel Irwin  ',
+      responsiblePersonName: UNTRIMMED_CONTACT_NAME,
       responsiblePersonEmail: ' raw-email ',
       responsiblePersonTelephone: ' 07700 900 982 '
     }
@@ -163,39 +171,37 @@ describe('plant-products contact controller', () => {
   it('commits trimmed name and email without an empty telephone and redirects', async () => {
     const nextTarget = vi
       .spyOn(kit, 'nextTarget')
-      .mockResolvedValue('/plant-products/notifications/next-target')
+      .mockResolvedValue(NEXT_TARGET_PATH)
     const result = await drive(post, {
       payload: validPayload({
-        responsiblePersonName: '  Isabel Irwin  ',
-        responsiblePersonEmail: ' isabel@example.com '
+        responsiblePersonName: UNTRIMMED_CONTACT_NAME,
+        responsiblePersonEmail: UNTRIMMED_CONTACT_EMAIL
       })
     })
 
     expect(result.after).toEqual({
-      responsiblePersonName: 'Isabel Irwin',
-      responsiblePersonEmail: 'isabel@example.com'
+      responsiblePersonName: CONTACT_NAME,
+      responsiblePersonEmail: CONTACT_EMAIL
     })
     expect(result.after).not.toHaveProperty('responsiblePersonTelephone')
     expect(result.response).toEqual({
-      redirect: '/plant-products/notifications/next-target'
+      redirect: NEXT_TARGET_PATH
     })
     expect(nextTarget).toHaveBeenCalledOnce()
   })
 
   it('commits trimmed name and telephone without an empty email', async () => {
-    vi.spyOn(kit, 'nextTarget').mockResolvedValue(
-      '/plant-products/notifications/next-target'
-    )
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue(NEXT_TARGET_PATH)
     const result = await drive(post, {
       payload: validPayload({
         responsiblePersonEmail: '',
-        responsiblePersonTelephone: ' +44 7700 900 982 '
+        responsiblePersonTelephone: UNTRIMMED_CONTACT_TELEPHONE
       })
     })
 
     expect(result.after).toEqual({
-      responsiblePersonName: 'Isabel Irwin',
-      responsiblePersonTelephone: '+44 7700 900 982'
+      responsiblePersonName: CONTACT_NAME,
+      responsiblePersonTelephone: CONTACT_TELEPHONE
     })
     expect(result.after).not.toHaveProperty('responsiblePersonEmail')
   })
@@ -207,7 +213,7 @@ describe('plant-products contact controller', () => {
       })
     )
     const payload = validPayload({
-      responsiblePersonName: '  Isabel Irwin  '
+      responsiblePersonName: UNTRIMMED_CONTACT_NAME
     })
     const result = await drive(post, { payload })
 

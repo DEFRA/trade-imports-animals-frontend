@@ -48,7 +48,7 @@ const copy = copyFor({ en, cy })
 const HTTP_STATUS_PAYLOAD_TOO_LARGE = 413
 const HTTP_STATUS_NOT_FOUND = 404
 
-const render = (request, h, pageState, values = EMPTY_FORM, options) =>
+const render = (request, h, pageState, values = EMPTY_FORM, options = {}) =>
   renderView(view, request, h, pageState, values, options)
 
 const redirectToPage = (request, h) =>
@@ -138,6 +138,23 @@ const uploadOutcome = async (journey, entry, file) => {
   }
 }
 
+// A verified retry reuses the upload it names; anything else with a file part
+// travels to the upload service once.
+const resolvedUpload = async (journey, entry, file, retry) => {
+  if (retry || !hasFilePart(file)) {
+    return { upload: retry }
+  }
+  const outcome = await uploadOutcome(journey, entry, file)
+  return outcome.failed ? { failed: true } : { upload: outcome.upload }
+}
+
+const savedEntryFrom = (entry, upload) => ({
+  documentType: entry.documentType,
+  documentReference: entry.documentReference,
+  issueDate: entry.issueDate,
+  ...(upload ? { uploadId: upload.uploadId, filename: upload.filename } : {})
+})
+
 const saveDocument = async (request, h, pageState, raw, savedEntry, upload) => {
   const { failure } = await kit.recoverableSave(
     () => state.appendEntry(request, h, 'accompanyingDocuments', savedEntry),
@@ -184,15 +201,16 @@ const postAdd = async (request, h, payload) => {
     )
   }
 
-  let upload = retry
-  if (!upload && hasFilePart(payload.file)) {
-    const outcome = await uploadOutcome(pageState.journey, entry, payload.file)
-    if (outcome.failed) {
-      return render(request, h, pageState, raw, {
-        errors: { file: copy.errors.uploadFailed }
-      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    }
-    upload = outcome.upload
+  const { upload, failed } = await resolvedUpload(
+    pageState.journey,
+    entry,
+    payload.file,
+    retry
+  )
+  if (failed) {
+    return render(request, h, pageState, raw, {
+      errors: { file: copy.errors.uploadFailed }
+    }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   }
 
   return saveDocument(
@@ -200,14 +218,7 @@ const postAdd = async (request, h, payload) => {
     h,
     pageState,
     raw,
-    {
-      documentType: entry.documentType,
-      documentReference: entry.documentReference,
-      issueDate: entry.issueDate,
-      ...(upload
-        ? { uploadId: upload.uploadId, filename: upload.filename }
-        : {})
-    },
+    savedEntryFrom(entry, upload),
     upload
   )
 }

@@ -3,6 +3,9 @@ import { expect, test } from '@playwright/test'
 import { axeViolations } from '../../axe.e2e-helper.js'
 import { copy } from '../copy/copy.en.js'
 
+const SAVE_AND_CONTINUE = 'Save and continue'
+const IN_PROGRESS = 'In progress'
+
 const pageCopy = copy.tradersAddresses
 const hubUrl = (url) =>
   /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
@@ -22,15 +25,15 @@ const startAtTraders = async (page) => {
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Country of origin').selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByRole('link', { name: 'Back', exact: true }).click()
   await rowByTitle(page, 'Commodity')
     .getByRole('link', { name: 'Commodity', exact: true })
     .click()
   await page.getByRole('radio', { name: 'Manual entry' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Enter commodity code').fill('06011010')
   await page.getByRole('button', { name: 'Search', exact: true }).click()
   await page
@@ -38,7 +41,7 @@ const startAtTraders = async (page) => {
       name: 'Add Albuca bracteata to commodity 06011010'
     })
     .click()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page).toHaveURL((url) =>
     /\/commodity-summary$/.test(url.pathname)
   )
@@ -211,7 +214,7 @@ test.describe('plant-products traders addresses', () => {
     await submit(page)
 
     await expect(page).toHaveURL(hubUrl)
-    await expect(rowByTitle(page, 'Traders')).toContainText('In progress')
+    await expect(rowByTitle(page, 'Traders')).toContainText(IN_PROGRESS)
     await page.goto(pageUrl)
     await expect(
       deliveryGroup(page).getByRole('radio', {
@@ -230,7 +233,7 @@ test.describe('plant-products traders addresses', () => {
     await submit(page)
 
     await expect(page).toHaveURL(hubUrl)
-    await expect(rowByTitle(page, 'Traders')).toContainText('In progress')
+    await expect(rowByTitle(page, 'Traders')).toContainText(IN_PROGRESS)
     await page.goto(pageUrl)
     await expect(
       deliveryGroup(page).getByRole('radio', {
@@ -305,11 +308,11 @@ test.describe('plant-products traders addresses', () => {
       .getByRole('radio', { name: pageCopy.delivery.options.yes, exact: true })
       .check()
     await submit(page)
-    await expect(rowByTitle(page, 'Traders')).toContainText('In progress')
+    await expect(rowByTitle(page, 'Traders')).toContainText(IN_PROGRESS)
     await page.goto(pageUrl)
     await fillFields(page, enteredPacker)
     await submit(page)
-    await expect(rowByTitle(page, 'Traders')).toContainText('In progress')
+    await expect(rowByTitle(page, 'Traders')).toContainText(IN_PROGRESS)
     await page.goto(pageUrl)
     for (const [field, value] of Object.entries(enteredPacker)) {
       await expect(page.locator(`#${field}`)).toHaveValue(value)

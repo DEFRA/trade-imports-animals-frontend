@@ -1,7 +1,11 @@
+const DESCRIPTION_OF_THE_GOODS = 'Description of the goods'
+const COMMODITY_DETAILS = 'Commodity details'
+const GENUS_AND_SPECIES = 'Genus (and Species)'
+
 export const copy = {
   inputMethod: {
     title: 'How do you want to add your commodity details?',
-    caption: 'Description of the goods',
+    caption: DESCRIPTION_OF_THE_GOODS,
     heading: 'How do you want to add your commodity details?',
     options: {
       MANUAL: {
@@ -19,7 +23,7 @@ export const copy = {
   },
   commoditySearch: {
     title: 'Commodity',
-    caption: 'Description of the goods',
+    caption: DESCRIPTION_OF_THE_GOODS,
     heading: 'Commodity',
     tabs: {
       codeSearch: 'Commodity code search',
@@ -53,10 +57,10 @@ export const copy = {
     }
   },
   basicDescription: {
-    caption: 'Description of the goods',
+    caption: DESCRIPTION_OF_THE_GOODS,
     heading: 'Commodity',
     commoditySummary: {
-      caption: 'Commodity details',
+      caption: COMMODITY_DETAILS,
       codeHeader: 'Commodity code',
       descriptionHeader: 'Description'
     },
@@ -64,21 +68,21 @@ export const copy = {
     hint: 'You can add multiple Genus (and Species)',
     added: {
       caption: 'Added Genus (and Species)',
-      genusHeader: 'Genus (and Species)',
+      genusHeader: GENUS_AND_SPECIES,
       eppoHeader: 'EPPO code',
       removeLabel: 'Remove',
       removeHidden: 'from commodity'
     },
     filter: {
       legend: 'Filter',
-      genusLabel: 'Genus (and Species)',
+      genusLabel: GENUS_AND_SPECIES,
       eppoLabel: 'EPPO code',
       searchLabel: 'Search',
       clearLabel: 'Clear'
     },
     results: {
       caption: 'Genus (and Species) search results',
-      genusHeader: 'Genus (and Species)',
+      genusHeader: GENUS_AND_SPECIES,
       eppoHeader: 'EPPO code',
       addLabel: 'Add',
       addHidden: 'to commodity',
@@ -90,7 +94,7 @@ export const copy = {
   },
   varietyOfGenusAndSpecies: {
     title: 'Variety and class of commodity',
-    caption: 'Description of the goods',
+    caption: DESCRIPTION_OF_THE_GOODS,
     heading: 'Variety and class of commodity',
     speciesHeading: '{eppoCode} - {genusAndSpecies}',
     repeatedControlContext:
@@ -129,12 +133,12 @@ export const copy = {
     }
   },
   commoditySummary: {
-    caption: 'Description of the goods',
+    caption: DESCRIPTION_OF_THE_GOODS,
     heading: 'Commodity',
     tableCaption: 'Commodity summary table',
     columns: {
       commodityCode: 'Commodity code',
-      genusAndSpecies: 'Genus (and Species)',
+      genusAndSpecies: GENUS_AND_SPECIES,
       eppoCode: 'EPPO code',
       variety: 'Variety',
       class: 'Class',
@@ -148,9 +152,9 @@ export const copy = {
     continue: 'Save and continue'
   },
   commodityBulkDetails: {
-    title: 'Commodity details',
-    caption: 'Description of the goods',
-    heading: 'Commodity details',
+    title: COMMODITY_DETAILS,
+    caption: DESCRIPTION_OF_THE_GOODS,
+    heading: COMMODITY_DETAILS,
     controlContext: '{label} for {commodity}',
     optionContext: '{option} — {legend} for {commodity}',
     bulk: {

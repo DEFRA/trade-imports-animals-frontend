@@ -48,30 +48,9 @@ const lens = {
   genusAndSpecies: 'Lens culinaris',
   speciesId: '1346687'
 }
+const ADD_LENS_TO_LINE_ZERO = 'add:0:LENCU'
 
-describe('plant-products commodity-basic-description controller', () => {
-  let server
-
-  beforeAll(async () => {
-    vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
-    server = Hapi.server()
-    await server.register(plantProducts, {
-      routes: { prefix: '/plant-products' }
-    })
-  })
-
-  beforeEach(async () => {
-    enterSetContext('plant-products')
-    await records.clear()
-  })
-
-  afterEach(() => vi.restoreAllMocks())
-
-  afterAll(async () => {
-    vi.unstubAllEnvs()
-    await server.stop({ timeout: 0 })
-  })
-
+const cardsViewTests = () => {
   it('gets state once and renders one fixture-backed card per commodity line', async () => {
     const getState = vi.spyOn(state, 'get')
     const result = await drive(get, {
@@ -133,12 +112,14 @@ describe('plant-products commodity-basic-description controller', () => {
     expect(result.view.context.cards[0].error).toBeUndefined()
     expect(result.view.context.errorSummary).toBeNull()
   })
+}
 
+const addSpeciesTests = () => {
   it('appends exactly fixture-derived species fields at depth two', async () => {
     const result = await drive(post, {
       seed: { commodityLines: [{ commoditySelection: '06042090' }] },
       payload: {
-        action: 'add:0:LENCU',
+        action: ADD_LENS_TO_LINE_ZERO,
         genusAndSpecies: 'forged client value',
         speciesId: 'forged-client-id'
       }
@@ -173,13 +154,15 @@ describe('plant-products commodity-basic-description controller', () => {
     }
     const result = await drive(post, {
       seed,
-      payload: { action: 'add:0:LENCU' }
+      payload: { action: ADD_LENS_TO_LINE_ZERO }
     })
 
     expect(result.response.statusCode).toBe(400)
     expect(result.after).toEqual(seed)
   })
+}
 
+const removeSpeciesTests = () => {
   it('removes only the addressed species entry', async () => {
     const result = await drive(post, {
       seed: {
@@ -227,7 +210,9 @@ describe('plant-products commodity-basic-description controller', () => {
 
     expect(result.after.commodityLines[0].species).toBeUndefined()
   })
+}
 
+const continueTests = () => {
   it('returns 400 with one linked error per empty species collection and preserves state', async () => {
     const seed = {
       commodityLines: [
@@ -290,7 +275,7 @@ describe('plant-products commodity-basic-description controller', () => {
     const seed = { commodityLines: [{ commoditySelection: '06042090' }] }
     const result = await drive(post, {
       seed,
-      payload: { action: 'add:0:LENCU' }
+      payload: { action: ADD_LENS_TO_LINE_ZERO }
     })
 
     expect(result.response.statusCode).toBe(500)
@@ -306,8 +291,37 @@ describe('plant-products commodity-basic-description controller', () => {
     await expect(
       drive(post, {
         seed: { commodityLines: [{ commoditySelection: '06042090' }] },
-        payload: { action: 'add:0:LENCU' }
+        payload: { action: ADD_LENS_TO_LINE_ZERO }
       })
     ).rejects.toThrow('programming failure')
   })
+}
+
+describe('plant-products commodity-basic-description controller', () => {
+  let server
+
+  beforeAll(async () => {
+    vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
+    server = Hapi.server()
+    await server.register(plantProducts, {
+      routes: { prefix: '/plant-products' }
+    })
+  })
+
+  beforeEach(async () => {
+    enterSetContext('plant-products')
+    await records.clear()
+  })
+
+  afterEach(() => vi.restoreAllMocks())
+
+  afterAll(async () => {
+    vi.unstubAllEnvs()
+    await server.stop({ timeout: 0 })
+  })
+
+  cardsViewTests()
+  addSpeciesTests()
+  removeSpeciesTests()
+  continueTests()
 })

@@ -12,6 +12,8 @@ import { copy as tradersCopy } from './traders/copy/copy.en.js'
 
 export const BASE = '/plant-products'
 
+const REVIEW_AND_SUBMIT = 'Review and submit'
+
 export const commodityFixtures = {
   '06011010': {
     description: 'Hyacinths',
@@ -283,8 +285,10 @@ export const journeyIdFromPage = (page) => {
   return match[1]
 }
 
-export const journeyUrl = (page, slug = '') =>
-  `${BASE}/notifications/${journeyIdFromPage(page)}${slug ? `/${slug}` : ''}`
+export const journeyUrl = (page, slug = '') => {
+  const suffix = slug ? `/${slug}` : ''
+  return `${BASE}/notifications/${journeyIdFromPage(page)}${suffix}`
+}
 
 const hubUrl = /^\/plant-products\/notifications\/[^/]+$/
 const reviewUrl =
@@ -544,8 +548,8 @@ const completeTransport = async (page, values) => {
     })
     .check()
 
-  for (const [index, values] of transport.containers.entries()) {
-    const { containerNumber, sealNumber, officialSeal } = values
+  for (const [index, container] of transport.containers.entries()) {
+    const { containerNumber, sealNumber, officialSeal } = container
     await page
       .getByLabel(transportCopy.containers.containerNumber.label)
       .fill(containerNumber)
@@ -743,8 +747,8 @@ export const completeAnswerSections = async (
   await completeTraders(page, values)
   await expect(page).toHaveURL((url) => hubUrl.test(url.pathname))
   await expect(
-    rowByTitle(page, 'Review and submit').getByRole('link', {
-      name: 'Review and submit',
+    rowByTitle(page, REVIEW_AND_SUBMIT).getByRole('link', {
+      name: REVIEW_AND_SUBMIT,
       exact: true
     })
   ).toBeVisible()
@@ -758,13 +762,13 @@ export const completeJourney = async (page, { profile = 'minimal' } = {}) => {
     allowCommoditySummaryBypass: true,
     includeNominatedContacts: true
   })
-  await openHubRow(page, 'Review and submit')
+  await openHubRow(page, REVIEW_AND_SUBMIT)
   await expect(page).toHaveURL((url) => reviewUrl.test(url.pathname))
   return { reference, date }
 }
 
 export const submitDeclaration = async (page) => {
-  await openHubRow(page, 'Review and submit')
+  await openHubRow(page, REVIEW_AND_SUBMIT)
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
   await expect(
     page.getByRole('heading', {

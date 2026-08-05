@@ -31,10 +31,17 @@ const post = postHandlerOf(nominatedContacts)
 const drive = (handler, options) =>
   withSetContext('plant-products', () => driveHandler(handler, options))
 
+const SUITE = 'plant-products nominated-contacts controller'
+const ALEX_INSPECTOR = 'Alex Inspector'
+const ALEX_EMAIL = 'alex@example.com'
+const BLAIR_BROKER = 'Blair Broker'
+const UNTRIMMED_ALEX_INSPECTOR = ` ${ALEX_INSPECTOR} `
+const UNTRIMMED_ALEX_EMAIL = ` ${ALEX_EMAIL} `
+
 const validPayload = (overrides = {}) => ({
   action: 'add',
-  contactName: 'Alex Inspector',
-  contactEmail: 'alex@example.com',
+  contactName: ALEX_INSPECTOR,
+  contactEmail: ALEX_EMAIL,
   contactTelephone: '',
   ...overrides
 })
@@ -46,7 +53,7 @@ const contact = (name, overrides = {}) => ({
   ...overrides
 })
 
-describe('plant-products nominated-contacts controller', () => {
+const setupNominatedContactsServer = () => {
   let server
 
   beforeAll(async () => {
@@ -70,6 +77,10 @@ describe('plant-products nominated-contacts controller', () => {
     vi.unstubAllEnvs()
     await server.stop({ timeout: 0 })
   })
+}
+
+describe(`${SUITE} — rendering saved contacts`, () => {
+  setupNominatedContactsServer()
 
   it('renders an empty entry form with zero saved rows and no phantom contact', async () => {
     const result = await drive(get)
@@ -85,12 +96,12 @@ describe('plant-products nominated-contacts controller', () => {
   })
 
   it('renders every saved contact with its own values and position', async () => {
-    const first = contact('Alex Inspector')
-    const second = contact('Blair Broker', {
-      contactEmail: undefined,
+    const first = contact(ALEX_INSPECTOR)
+    const second = {
+      contactName: BLAIR_BROKER,
       contactTelephone: '+44 7700 900 982',
       contactIsAgent: true
-    })
+    }
     const result = await drive(get, {
       seed: { nominatedContacts: [first, second] }
     })
@@ -99,25 +110,29 @@ describe('plant-products nominated-contacts controller', () => {
       {
         index: 0,
         number: 1,
-        contactName: 'Alex Inspector',
+        contactName: ALEX_INSPECTOR,
         contactEmail: 'alex.inspector@example.com',
         contactTelephone: ''
       },
       {
         index: 1,
         number: 2,
-        contactName: 'Blair Broker',
+        contactName: BLAIR_BROKER,
         contactEmail: '',
         contactTelephone: '+44 7700 900 982'
       }
     ])
   })
+})
+
+describe(`${SUITE} — adding a contact`, () => {
+  setupNominatedContactsServer()
 
   it('appends exactly one cleaned contact and redirects to a fresh form', async () => {
     const result = await drive(post, {
       payload: validPayload({
-        contactName: ' Alex Inspector ',
-        contactEmail: ' alex@example.com ',
+        contactName: UNTRIMMED_ALEX_INSPECTOR,
+        contactEmail: UNTRIMMED_ALEX_EMAIL,
         contactIsAgent: 'true'
       })
     })
@@ -125,8 +140,8 @@ describe('plant-products nominated-contacts controller', () => {
     expect(result.after).toEqual({
       nominatedContacts: [
         {
-          contactName: 'Alex Inspector',
-          contactEmail: 'alex@example.com',
+          contactName: ALEX_INSPECTOR,
+          contactEmail: ALEX_EMAIL,
           contactIsAgent: true
         }
       ]
@@ -207,10 +222,14 @@ describe('plant-products nominated-contacts controller', () => {
       expect(result.after).toEqual({})
     }
   )
+})
+
+describe(`${SUITE} — removing a contact and the maximum`, () => {
+  setupNominatedContactsServer()
 
   it('removes the middle contact and preserves the exact survivors in order', async () => {
-    const first = contact('Alex Inspector')
-    const middle = contact('Blair Broker')
+    const first = contact(ALEX_INSPECTOR)
+    const middle = contact(BLAIR_BROKER)
     const last = contact('Casey Coordinator')
     const result = await drive(post, {
       seed: { nominatedContacts: [first, middle, last] },
@@ -226,7 +245,7 @@ describe('plant-products nominated-contacts controller', () => {
   it.each(['remove:3', 'remove:1.5', 'remove:not-a-number'])(
     'refuses the forged or stale index %s without touching the store',
     async (action) => {
-      const seed = { nominatedContacts: [contact('Alex Inspector')] }
+      const seed = { nominatedContacts: [contact(ALEX_INSPECTOR)] }
       const result = await drive(post, { seed, payload: { action } })
 
       expect(result.response.statusCode).toBe(400)
@@ -253,6 +272,10 @@ describe('plant-products nominated-contacts controller', () => {
       /^\/plant-products\/notifications\/[^/]+\/nominated-contact$/
     )
   })
+})
+
+describe(`${SUITE} — continuing and persistence failures`, () => {
+  setupNominatedContactsServer()
 
   it('continues with zero contacts without validating or writing', async () => {
     const nextTarget = vi
@@ -286,11 +309,13 @@ describe('plant-products nominated-contacts controller', () => {
         failure: await onRecoverableFailure()
       })
     )
-    const payload = validPayload({ contactName: ' Alex Inspector ' })
+    const payload = validPayload({ contactName: UNTRIMMED_ALEX_INSPECTOR })
     const result = await drive(post, { payload })
 
     expect(result.response.statusCode).toBe(500)
-    expect(result.view.context.values.contactName).toBe(' Alex Inspector ')
+    expect(result.view.context.values.contactName).toBe(
+      UNTRIMMED_ALEX_INSPECTOR
+    )
     expect(result.view.context.recoverableError).toBe(true)
     expect(result.after).toEqual({})
   })
@@ -301,7 +326,7 @@ describe('plant-products nominated-contacts controller', () => {
         failure: await onRecoverableFailure()
       })
     )
-    const seed = { nominatedContacts: [contact('Alex Inspector')] }
+    const seed = { nominatedContacts: [contact(ALEX_INSPECTOR)] }
     const result = await drive(post, {
       seed,
       payload: { action: 'remove:0' }

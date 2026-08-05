@@ -4,18 +4,21 @@ import { collectionCapAt } from '../../evaluate/cardinality.js'
 import { isValidIndex } from '../pipeline/predicates.js'
 import { replaceFromNameKeyedMutation } from '../pipeline/canonical.js'
 
+const entryAtIsObject = (list, segment) => {
+  if (!isValidIndex(segment, list)) {
+    return false
+  }
+  const parent = list[segment]
+  return parent !== null && typeof parent === 'object'
+}
+
 const validCollectionParents = (answers, collectionPath) => {
   let current = answers
   for (const segment of collectionPath.slice(0, -1)) {
-    if (Array.isArray(current)) {
-      if (!isValidIndex(segment, current)) {
-        return false
-      }
-      const parent = current[segment]
-      if (parent === null || typeof parent !== 'object') {
-        return false
-      }
-    } else if (typeof segment === 'number') {
+    const traversable = Array.isArray(current)
+      ? entryAtIsObject(current, segment)
+      : typeof segment !== 'number'
+    if (!traversable) {
       return false
     }
     current = current?.[segment]

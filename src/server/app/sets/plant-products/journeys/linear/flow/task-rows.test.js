@@ -130,20 +130,13 @@ const additionalDetailsKeys = [
   'grossVolumeUnit'
 ]
 
-describe('plant-products task rows', () => {
-  beforeAll(() => {
-    registerSetMount(SET_ID, SET_BASE)
-    configureObligationSet(SET_ID, obligationSet)
-    configureFulfilmentRegistry(SET_ID, featureEvaluationBindings)
-    configureJourneyFlow(SET_ID, {
-      sections,
-      taskRows,
-      rowStatus,
-      flowOnlyKeys: FLOW_ONLY_KEYS
-    })
-    buildDispatch(SET_ID, dispatchPages)
+const readyFor = (answers) =>
+  withSetContext(SET_ID, () => {
+    const { inScope } = makeScope(answers)
+    return readyForCheckYourAnswers(answers, inScope, evaluateAnswers(answers))
   })
 
+const registrationTests = () => {
   it('registers origin as the first row and enters country-of-origin', () => {
     expect(taskRows).toEqual([
       {
@@ -293,18 +286,20 @@ describe('plant-products task rows', () => {
       confirmationPage
     ])
   })
+}
 
+const rowPartsTests = () => {
   it('marks every mandatory row complete from the canonical happy-path fixture', () => {
     const { evaluation, inScope, statuses } = withSetContext(SET_ID, () => {
-      const evaluation = evaluateAnswers(happyPath)
-      const { inScope } = makeScope(happyPath)
+      const happyEvaluation = evaluateAnswers(happyPath)
+      const { inScope: happyInScope } = makeScope(happyPath)
       return {
-        evaluation,
-        inScope,
+        evaluation: happyEvaluation,
+        inScope: happyInScope,
         statuses: Object.fromEntries(
           taskRows.map((row) => [
             row.id,
-            rowStatus(row, happyPath, inScope, evaluation)
+            rowStatus(row, happyPath, happyInScope, happyEvaluation)
           ])
         )
       }
@@ -460,17 +455,10 @@ describe('plant-products task rows', () => {
       })
     ).toBe(FULFILLED)
   })
+}
 
+const partyReadinessTests = () => {
   it('blocks review readiness without a consignor and unblocks with complete consignor and delivery answers', () => {
-    const readyFor = (answers) =>
-      withSetContext(SET_ID, () => {
-        const { inScope } = makeScope(answers)
-        return readyForCheckYourAnswers(
-          answers,
-          inScope,
-          evaluateAnswers(answers)
-        )
-      })
     const allOtherRows = withoutAnswers(
       happyPath,
       'destinationSameAsConsignee',
@@ -575,7 +563,9 @@ describe('plant-products task rows', () => {
       })
     ).toBe(FULFILLED)
   })
+}
 
+const documentsReadinessTests = () => {
   it('keeps documents incomplete until one complete entry satisfies the collection floor', () => {
     const statusFor = (answers) =>
       withSetContext(SET_ID, () => {
@@ -613,15 +603,6 @@ describe('plant-products task rows', () => {
   })
 
   it('blocks readiness at the documents floor and unblocks it with one complete document', () => {
-    const readyFor = (answers) =>
-      withSetContext(SET_ID, () => {
-        const { inScope } = makeScope(answers)
-        return readyForCheckYourAnswers(
-          answers,
-          inScope,
-          evaluateAnswers(answers)
-        )
-      })
     const allEarlierRows = withoutAnswers(happyPath, 'accompanyingDocuments')
 
     expect(readyFor(allEarlierRows)).toBe(false)
@@ -657,15 +638,6 @@ describe('plant-products task rows', () => {
   })
 
   it('blocks readiness while contact is incomplete and unblocks it after a valid contact save', () => {
-    const readyFor = (answers) =>
-      withSetContext(SET_ID, () => {
-        const { inScope } = makeScope(answers)
-        return readyForCheckYourAnswers(
-          answers,
-          inScope,
-          evaluateAnswers(answers)
-        )
-      })
     const allOtherRows = withoutAnswers(
       happyPath,
       'responsiblePersonName',
@@ -682,7 +654,9 @@ describe('plant-products task rows', () => {
       })
     ).toBe(true)
   })
+}
 
+const sectionCompletionTests = () => {
   it('moves additional details from Not yet started through In progress to Completed', () => {
     const statusFor = (answers) =>
       withSetContext(SET_ID, () => {
@@ -787,16 +761,6 @@ describe('plant-products task rows', () => {
   })
 
   it('blocks readiness until the mandatory origin row is complete', () => {
-    const readyFor = (answers) =>
-      withSetContext(SET_ID, () => {
-        const { inScope } = makeScope(answers)
-        return readyForCheckYourAnswers(
-          answers,
-          inScope,
-          evaluateAnswers(answers)
-        )
-      })
-
     expect(readyFor({})).toBe(false)
     expect(readyFor({ countryOfOrigin: 'FR' })).toBe(false)
     expect(
@@ -810,7 +774,9 @@ describe('plant-products task rows', () => {
       })
     ).toBe(false)
   })
+}
 
+const transportReadinessTests = () => {
   it('moves the transport row from Not yet started through In progress to Completed', () => {
     const statusFor = (answers) =>
       withSetContext(SET_ID, () => {
@@ -890,15 +856,6 @@ describe('plant-products task rows', () => {
   })
 
   it('blocks readiness while transport is incomplete and unblocks it when complete', () => {
-    const readyFor = (answers) =>
-      withSetContext(SET_ID, () => {
-        const { inScope } = makeScope(answers)
-        return readyForCheckYourAnswers(
-          answers,
-          inScope,
-          evaluateAnswers(answers)
-        )
-      })
     const earlierRows = withoutAnswers(happyPath, ...transportKeys)
     const completedTransport = Object.fromEntries(
       Object.entries(happyPath).filter(([name]) => transportKeys.includes(name))
@@ -922,15 +879,6 @@ describe('plant-products task rows', () => {
   })
 
   it('blocks readiness while additional details is incomplete and unblocks it when complete', () => {
-    const readyFor = (answers) =>
-      withSetContext(SET_ID, () => {
-        const { inScope } = makeScope(answers)
-        return readyForCheckYourAnswers(
-          answers,
-          inScope,
-          evaluateAnswers(answers)
-        )
-      })
     const allOtherRows = withoutAnswers(happyPath, ...additionalDetailsKeys)
 
     const {
@@ -952,4 +900,26 @@ describe('plant-products task rows', () => {
     ).toBe(false)
     expect(readyFor({ ...allOtherRows, totalGrossWeight: 10 })).toBe(true)
   })
+}
+
+describe('plant-products task rows', () => {
+  beforeAll(() => {
+    registerSetMount(SET_ID, SET_BASE)
+    configureObligationSet(SET_ID, obligationSet)
+    configureFulfilmentRegistry(SET_ID, featureEvaluationBindings)
+    configureJourneyFlow(SET_ID, {
+      sections,
+      taskRows,
+      rowStatus,
+      flowOnlyKeys: FLOW_ONLY_KEYS
+    })
+    buildDispatch(SET_ID, dispatchPages)
+  })
+
+  registrationTests()
+  rowPartsTests()
+  partyReadinessTests()
+  documentsReadinessTests()
+  sectionCompletionTests()
+  transportReadinessTests()
 })

@@ -12,7 +12,7 @@ const SET_DIR = fileURLToPath(new URL('../..', import.meta.url))
 const LIVE_ADDRESS_BOOK_DIR = path.join(APP_DIR, 'services', 'address-book')
 
 const SPECIFIER_PATTERN =
-  /(?:from|import|include|extends)\s*\(?\s*['"](?<specifier>[^'"]+)['"]/g
+  /(?:from|import|include|extends)\s*(?:\(\s*)?['"](?<specifier>[^'"]+)['"]/g
 
 const setFiles = readdirSync(SET_DIR, { recursive: true, withFileTypes: true })
   .filter(

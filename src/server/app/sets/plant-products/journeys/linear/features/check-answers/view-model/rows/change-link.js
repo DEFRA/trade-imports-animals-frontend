@@ -19,7 +19,7 @@ export const changeAction = (
   journeyId,
   visuallyHiddenText,
   localeCopy = copy,
-  changeLinkHref
+  changeLinkHref = null
 ) => ({
   items: [
     {

@@ -32,13 +32,16 @@ const newConsignor = {
 // PLANT_PRODUCTS_MODE unset is the default (services/mode.js resolves it to
 // 'real') and it is what the workspace stack runs, so an empty picker there is
 // the failure this table exists to catch.
+const liveModeSuffix = (liveMode) =>
+  liveMode ? ` with LIVE_ANIMALS_MODE=${liveMode}` : ''
+
 const modeCases = [
-  { name: 'PLANT_PRODUCTS_MODE unset', plantMode: undefined },
+  { name: 'PLANT_PRODUCTS_MODE unset' },
   { name: 'PLANT_PRODUCTS_MODE=real', plantMode: 'real' },
   { name: 'PLANT_PRODUCTS_MODE=stub', plantMode: 'stub' }
 ].flatMap((plantCase) =>
   [undefined, 'real'].map((liveMode) => ({
-    name: `${plantCase.name}${liveMode ? ` with LIVE_ANIMALS_MODE=${liveMode}` : ''}`,
+    name: `${plantCase.name}${liveModeSuffix(liveMode)}`,
     plantMode: plantCase.plantMode,
     liveMode
   }))

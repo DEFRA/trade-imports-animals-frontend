@@ -2,6 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { add, find, list, search, PAGE_SIZE } from './stub.js'
 
+const FIRST_CONSIGNOR_ID = 'example-consignor-01'
+const SEVENTH_CONSIGNOR_ID = 'example-consignor-07'
+const LAST_CONSIGNOR_ID = 'example-consignor-12'
+
 const sessionRequest = () => {
   const values = new Map()
   return {
@@ -36,7 +40,7 @@ describe('plant-products address-book stub', () => {
 
     expect(records).toHaveLength(12)
     expect(records.map(({ id }) => id)).toEqual(
-      expect.arrayContaining(['example-consignor-01', 'example-consignor-12'])
+      expect.arrayContaining([FIRST_CONSIGNOR_ID, LAST_CONSIGNOR_ID])
     )
   })
 
@@ -104,7 +108,7 @@ describe('plant-products address-book search', () => {
       pageSize: 5
     })
     expect(found.results.map(({ id }) => id)).toEqual([
-      'example-consignor-01',
+      FIRST_CONSIGNOR_ID,
       'example-consignor-02',
       'example-consignor-03',
       'example-consignor-04',
@@ -121,7 +125,7 @@ describe('plant-products address-book search', () => {
       )
     ).resolves.toEqual([
       'example-consignor-06',
-      'example-consignor-07',
+      SEVENTH_CONSIGNOR_ID,
       'example-consignor-08',
       'example-consignor-09',
       'example-consignor-10'
@@ -130,7 +134,7 @@ describe('plant-products address-book search', () => {
       search(request, { page: 3 }).then((found) =>
         found.results.map(({ id }) => id)
       )
-    ).resolves.toEqual(['example-consignor-11', 'example-consignor-12'])
+    ).resolves.toEqual(['example-consignor-11', LAST_CONSIGNOR_ID])
   })
 
   it.each([99, 0, -1])(
@@ -140,7 +144,7 @@ describe('plant-products address-book search', () => {
 
       expect(found.page).toBe(1)
       expect(found.results).toHaveLength(PAGE_SIZE)
-      expect(found.results[0].id).toBe('example-consignor-01')
+      expect(found.results[0].id).toBe(FIRST_CONSIGNOR_ID)
     }
   )
 
@@ -150,7 +154,7 @@ describe('plant-products address-book search', () => {
     })
 
     expect(found).toMatchObject({ total: 1, totalPages: 1 })
-    expect(found.results.map(({ id }) => id)).toEqual(['example-consignor-07'])
+    expect(found.results.map(({ id }) => id)).toEqual([SEVENTH_CONSIGNOR_ID])
   })
 
   it('matches an address line and a country code, not only the name', async () => {
@@ -160,10 +164,10 @@ describe('plant-products address-book search', () => {
     const byCountryCode = await search(sessionRequest(), { query: 'GB-SCT' })
 
     expect(byAddressLine.results.map(({ id }) => id)).toEqual([
-      'example-consignor-07'
+      SEVENTH_CONSIGNOR_ID
     ])
     expect(byCountryCode.results.map(({ id }) => id)).toEqual([
-      'example-consignor-12'
+      LAST_CONSIGNOR_ID
     ])
   })
 

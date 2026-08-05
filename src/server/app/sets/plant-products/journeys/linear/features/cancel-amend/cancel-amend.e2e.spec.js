@@ -11,6 +11,8 @@ import {
 import { copy as originCopy } from '../origin/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
+const AMENDED_REFERENCE = 'DISCARD-PP-101'
+
 const actionName = (text, reference) =>
   `${text} ${dashboardCopy.actions.forNotification(reference)}`
 
@@ -82,12 +84,12 @@ test.describe('plant-products cancel-amend feature', () => {
       .click()
     await page
       .getByLabel(originCopy.originOfImport.internalReference.label)
-      .fill('DISCARD-PP-101')
+      .fill(AMENDED_REFERENCE)
     await page
       .getByRole('button', { name: 'Save and continue', exact: true })
       .click()
     await expect(
-      page.getByText('DISCARD-PP-101', { exact: true })
+      page.getByText(AMENDED_REFERENCE, { exact: true })
     ).toBeVisible()
 
     await page.getByRole('link', { name: copy.link, exact: true }).click()
@@ -108,7 +110,7 @@ test.describe('plant-products cancel-amend feature', () => {
 
     await page.getByRole('button', { name: copy.noLink, exact: true }).click()
     await expect(
-      page.getByText('DISCARD-PP-101', { exact: true })
+      page.getByText(AMENDED_REFERENCE, { exact: true })
     ).toBeVisible()
     await page.getByRole('link', { name: copy.link, exact: true }).click()
     await page
@@ -127,9 +129,9 @@ test.describe('plant-products cancel-amend feature', () => {
     await expect(
       page.getByText(sharedCopy.journeyStrip.submitted, { exact: true })
     ).toBeVisible()
-    await expect(page.getByText('DISCARD-PP-101', { exact: true })).toHaveCount(
-      0
-    )
+    await expect(
+      page.getByText(AMENDED_REFERENCE, { exact: true })
+    ).toHaveCount(0)
     await expect(
       page.getByText(fullJourneyValues.internalReference, { exact: true })
     ).toBeVisible()

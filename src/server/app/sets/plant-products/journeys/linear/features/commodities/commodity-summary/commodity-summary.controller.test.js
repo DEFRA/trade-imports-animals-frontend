@@ -29,6 +29,10 @@ const post = postHandlerOf(summaryPage)
 const drive = (handler, options) =>
   withSetContext('plant-products', () => driveHandler(handler, options))
 
+const LENS_CULINARIS = 'Lens culinaris'
+const MALUS_DOMESTICA = 'Malus domestica'
+const REMOVE_FIRST_SPECIES = 'remove:0:0'
+
 const crataegomespilus = {
   eppoCode: 'CXQDA',
   genusAndSpecies: '+ Crataegomespilus dardarii',
@@ -36,12 +40,12 @@ const crataegomespilus = {
 }
 const lens = {
   eppoCode: 'LENCU',
-  genusAndSpecies: 'Lens culinaris',
+  genusAndSpecies: LENS_CULINARIS,
   speciesId: '1346687'
 }
 const apple = {
   eppoCode: 'MABSD',
-  genusAndSpecies: 'Malus domestica',
+  genusAndSpecies: MALUS_DOMESTICA,
   speciesId: '1391442'
 }
 const appleVarieties = [
@@ -67,29 +71,7 @@ const multiLineSeed = () => ({
   ]
 })
 
-describe('plant-products commodity-summary controller', () => {
-  let server
-
-  beforeAll(async () => {
-    vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
-    server = Hapi.server()
-    await server.register(plantProducts, {
-      routes: { prefix: '/plant-products' }
-    })
-  })
-
-  beforeEach(async () => {
-    enterSetContext('plant-products')
-    await records.clear()
-  })
-
-  afterEach(() => vi.restoreAllMocks())
-
-  afterAll(async () => {
-    vi.unstubAllEnvs()
-    await server.stop({ timeout: 0 })
-  })
-
+const viewTests = () => {
   it('declares no collection ownership', () => {
     expect(summaryPage.meta.collects).toEqual([])
   })
@@ -111,11 +93,11 @@ describe('plant-products commodity-summary controller', () => {
             eppoCode: 'CXQDA',
             varieties: [],
             removable: true,
-            action: 'remove:0:0'
+            action: REMOVE_FIRST_SPECIES
           },
           {
             speciesIndex: 1,
-            genusAndSpecies: 'Lens culinaris',
+            genusAndSpecies: LENS_CULINARIS,
             eppoCode: 'LENCU',
             varieties: [],
             removable: true,
@@ -130,7 +112,7 @@ describe('plant-products commodity-summary controller', () => {
         rows: [
           {
             speciesIndex: 0,
-            genusAndSpecies: 'Malus domestica',
+            genusAndSpecies: MALUS_DOMESTICA,
             eppoCode: 'MABSD',
             varieties: [
               { varietyLabel: 'McIntosh Red', classLabel: 'Class I' },
@@ -167,12 +149,14 @@ describe('plant-products commodity-summary controller', () => {
     ])
     expect(new Set(removeNames).size).toBe(removeNames.length)
   })
+}
 
+const removalTests = () => {
   it('removes only the addressed species, preserves all sibling levels and renumbers rows', async () => {
     const seed = multiLineSeed()
     const removed = await drive(post, {
       seed,
-      payload: { action: 'remove:0:0' }
+      payload: { action: REMOVE_FIRST_SPECIES }
     })
 
     expect(removed.after.commodityLines[0]).toEqual({
@@ -188,10 +172,10 @@ describe('plant-products commodity-summary controller', () => {
     expect(rerendered.view.context.groups[0].rows).toMatchObject([
       {
         speciesIndex: 0,
-        genusAndSpecies: 'Lens culinaris',
+        genusAndSpecies: LENS_CULINARIS,
         varieties: [],
         removable: false,
-        action: 'remove:0:0'
+        action: REMOVE_FIRST_SPECIES
       }
     ])
     expect(rerendered.view.context.groups[1]).toMatchObject({
@@ -199,7 +183,7 @@ describe('plant-products commodity-summary controller', () => {
       rows: [
         {
           speciesIndex: 0,
-          genusAndSpecies: 'Malus domestica',
+          genusAndSpecies: MALUS_DOMESTICA,
           varieties: [
             { varietyLabel: 'McIntosh Red', classLabel: 'Class I' },
             { varietyLabel: 'Spartan', classLabel: 'Class II' }
@@ -236,14 +220,16 @@ describe('plant-products commodity-summary controller', () => {
     }
     const result = await drive(post, {
       seed,
-      payload: { action: 'remove:0:0' }
+      payload: { action: REMOVE_FIRST_SPECIES }
     })
 
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.groups[0].rows[0].removable).toBe(false)
     expect(result.after).toEqual(seed)
   })
+}
 
+const continueTests = () => {
   it('continues without writing and uses the exact next target', async () => {
     const nextTarget = vi
       .spyOn(kit, 'nextTarget')
@@ -279,7 +265,7 @@ describe('plant-products commodity-summary controller', () => {
     const seed = multiLineSeed()
     const result = await drive(post, {
       seed,
-      payload: { action: 'remove:0:0' }
+      payload: { action: REMOVE_FIRST_SPECIES }
     })
 
     expect(result.response.statusCode).toBe(500)
@@ -295,8 +281,36 @@ describe('plant-products commodity-summary controller', () => {
     await expect(
       drive(post, {
         seed: multiLineSeed(),
-        payload: { action: 'remove:0:0' }
+        payload: { action: REMOVE_FIRST_SPECIES }
       })
     ).rejects.toThrow('programming failure')
   })
+}
+
+describe('plant-products commodity-summary controller', () => {
+  let server
+
+  beforeAll(async () => {
+    vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
+    server = Hapi.server()
+    await server.register(plantProducts, {
+      routes: { prefix: '/plant-products' }
+    })
+  })
+
+  beforeEach(async () => {
+    enterSetContext('plant-products')
+    await records.clear()
+  })
+
+  afterEach(() => vi.restoreAllMocks())
+
+  afterAll(async () => {
+    vi.unstubAllEnvs()
+    await server.stop({ timeout: 0 })
+  })
+
+  viewTests()
+  removalTests()
+  continueTests()
 })

@@ -31,9 +31,11 @@ import { records as realRecords } from '../../../../services/records/real.js'
 import { records as recordsStub } from '../../../../services/records/stub.js'
 import { routes } from './controller.js'
 
+const SET_ID = 'plant-products'
+const NOTIFICATION_VIEW_ORIGIN = 'notification-view'
+const SERVICE_UNAVAILABLE_TEXT = 'Service Unavailable'
 const copyPost = routes[0].handler
-const inPlantProducts = (operation) =>
-  withSetContext('plant-products', operation)
+const inPlantProducts = (operation) => withSetContext(SET_ID, operation)
 
 const createSubmitted = async (fulfilment = {}) => {
   const source = await recordsStub.create()
@@ -42,32 +44,9 @@ const createSubmitted = async (fulfilment = {}) => {
   return source
 }
 
-describe('plant-products copy notification action', () => {
-  let server
+let server
 
-  beforeAll(async () => {
-    server = Hapi.server()
-    await server.register(nunjucksConfig)
-    await server.register(plantProducts, {
-      routes: { prefix: '/plant-products' }
-    })
-    await server.initialize()
-  })
-
-  beforeEach(async () => {
-    enterSetContext('plant-products')
-    configureRecords('plant-products', recordsStub)
-    await recordsStub.clear()
-  })
-
-  afterEach(() => {
-    enterSetContext('plant-products')
-    configureRecords('plant-products', recordsStub)
-    vi.restoreAllMocks()
-  })
-
-  afterAll(async () => server.stop({ timeout: 0 }))
-
+const copyTests = () => {
   it('registers the prefix-free copy POST route', () => {
     expect(routes).toHaveLength(1)
     expect(routes[0]).toMatchObject({
@@ -99,7 +78,7 @@ describe('plant-products copy notification action', () => {
         journeyRequest(source.journeyId, {
           payload: {
             idempotencyKey: '  copy-key-045  ',
-            copyOrigin: 'notification-view'
+            copyOrigin: NOTIFICATION_VIEW_ORIGIN
           }
         }),
         h
@@ -133,7 +112,7 @@ describe('plant-products copy notification action', () => {
         status: 'draft',
         fulfilment: {}
       }))
-      configureRecords('plant-products', { ...recordsStub, copy })
+      configureRecords(SET_ID, { ...recordsStub, copy })
 
       await inPlantProducts(() =>
         copyPost(
@@ -150,17 +129,19 @@ describe('plant-products copy notification action', () => {
       expect(copy).toHaveBeenCalledWith(source.journeyId, expected)
     }
   )
+}
 
+const recoveryTests = () => {
   it('re-renders the review page at 500 with its original key', async () => {
     const source = await createSubmitted()
-    configureRecords('plant-products', {
+    configureRecords(SET_ID, {
       ...recordsStub,
       copy: realRecords.copy
     })
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       new Response('Unavailable', {
         status: 503,
-        statusText: 'Service Unavailable'
+        statusText: SERVICE_UNAVAILABLE_TEXT
       })
     )
 
@@ -169,7 +150,7 @@ describe('plant-products copy notification action', () => {
         journeyRequest(source.journeyId, {
           payload: {
             idempotencyKey: 'review-retry-key',
-            copyOrigin: 'notification-view'
+            copyOrigin: NOTIFICATION_VIEW_ORIGIN
           }
         }),
         stubH()
@@ -186,7 +167,7 @@ describe('plant-products copy notification action', () => {
 
   it('renders an actionable key-reuse error at 422 with a fresh key', async () => {
     const source = await createSubmitted()
-    configureRecords('plant-products', {
+    configureRecords(SET_ID, {
       ...recordsStub,
       copy: realRecords.copy
     })
@@ -202,7 +183,7 @@ describe('plant-products copy notification action', () => {
         journeyRequest(source.journeyId, {
           payload: {
             idempotencyKey: 'rejected-copy-key',
-            copyOrigin: 'notification-view'
+            copyOrigin: NOTIFICATION_VIEW_ORIGIN
           }
         }),
         stubH()
@@ -225,14 +206,14 @@ describe('plant-products copy notification action', () => {
 
   it('re-renders the originating dashboard row at 500 with its original key', async () => {
     const source = await createSubmitted()
-    configureRecords('plant-products', {
+    configureRecords(SET_ID, {
       ...recordsStub,
       copy: realRecords.copy
     })
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       new Response('Unavailable', {
         status: 503,
-        statusText: 'Service Unavailable'
+        statusText: SERVICE_UNAVAILABLE_TEXT
       })
     )
 
@@ -261,7 +242,9 @@ describe('plant-products copy notification action', () => {
     expect(response.context.recoverableError).toBe(true)
     expect(copyAction.idempotencyKey).toBe('dashboard-retry-key')
   })
+}
 
+const dashboardSourceTests = () => {
   it('re-renders a filtered dashboard source row with its original key', async () => {
     const source = await createSubmitted()
     const other = await createSubmitted()
@@ -269,7 +252,7 @@ describe('plant-products copy notification action', () => {
       journeyId: source.journeyId
     })
     const otherJourney = await recordsStub.load({ journeyId: other.journeyId })
-    configureRecords('plant-products', {
+    configureRecords(SET_ID, {
       ...recordsStub,
       list: async ({ referenceNumber }) => ({
         rows: [
@@ -285,7 +268,7 @@ describe('plant-products copy notification action', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       new Response('Unavailable', {
         status: 503,
-        statusText: 'Service Unavailable'
+        statusText: SERVICE_UNAVAILABLE_TEXT
       })
     )
 
@@ -329,7 +312,7 @@ describe('plant-products copy notification action', () => {
 
   it('redirects an org-visible but session-unknown source to the plant dashboard without copying', async () => {
     const copy = vi.fn()
-    configureRecords('plant-products', { ...recordsStub, copy })
+    configureRecords(SET_ID, { ...recordsStub, copy })
 
     const response = await inPlantProducts(() =>
       copyPost(
@@ -348,4 +331,33 @@ describe('plant-products copy notification action', () => {
     expect(response.redirect).toMatch(/^\/plant-products$/)
     expect(copy).not.toHaveBeenCalled()
   })
+}
+
+describe('plant-products copy notification action', () => {
+  beforeAll(async () => {
+    server = Hapi.server()
+    await server.register(nunjucksConfig)
+    await server.register(plantProducts, {
+      routes: { prefix: '/plant-products' }
+    })
+    await server.initialize()
+  })
+
+  beforeEach(async () => {
+    enterSetContext(SET_ID)
+    configureRecords(SET_ID, recordsStub)
+    await recordsStub.clear()
+  })
+
+  afterEach(() => {
+    enterSetContext(SET_ID)
+    configureRecords(SET_ID, recordsStub)
+    vi.restoreAllMocks()
+  })
+
+  afterAll(async () => server.stop({ timeout: 0 }))
+
+  copyTests()
+  recoveryTests()
+  dashboardSourceTests()
 })

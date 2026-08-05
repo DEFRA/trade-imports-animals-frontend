@@ -48,7 +48,7 @@ const DATE_ERROR_KEY = 'arrivalDate-day'
 const TIME_ERROR_KEY = 'arrivalTime-hour'
 
 const ARRIVAL_WINDOW_DAYS = 90
-const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000
+const MILLISECONDS_PER_DAY = 86_400_000
 const DATE_PART_COUNT = 3
 const TIME_PART_COUNT = 2
 const MAX_HOUR = 23
@@ -62,6 +62,27 @@ const MAX_SEAL_NUMBER_LENGTH = 100
 const startOfUtcDay = (date = new Date()) =>
   Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
 
+const arrivalDatePartsOf = (day, source) => [
+  String(day ?? '').trim(),
+  String(source['arrivalDate-month'] ?? '').trim(),
+  String(source['arrivalDate-year'] ?? '').trim()
+]
+
+const isEmptyDateEntry = (parts) => parts.every((part) => part === '')
+
+const isCompleteNumericDate = (parts) =>
+  parts.filter(Boolean).length === DATE_PART_COUNT &&
+  parts.every((part) => /^\d+$/.test(part))
+
+const isRealCalendarDate = ([day, month, year], candidate) => {
+  const real = new Date(candidate)
+  return (
+    real.getUTCFullYear() === year &&
+    real.getUTCMonth() === month - 1 &&
+    real.getUTCDate() === day
+  )
+}
+
 const dateSchema = () => {
   const today = startOfUtcDay()
   const lastAllowed = today + ARRIVAL_WINDOW_DAYS * MILLISECONDS_PER_DAY
@@ -69,29 +90,17 @@ const dateSchema = () => {
     [DATE_ERROR_KEY]: Joi.any()
       .required()
       .custom((day, helpers) => {
-        const source = helpers.state.ancestors[0] ?? {}
-        const parts = [
-          String(day ?? '').trim(),
-          String(source['arrivalDate-month'] ?? '').trim(),
-          String(source['arrivalDate-year'] ?? '').trim()
-        ]
-        const filled = parts.filter(Boolean).length
-        if (filled === 0) {
+        const parts = arrivalDatePartsOf(day, helpers.state.ancestors[0] ?? {})
+        if (isEmptyDateEntry(parts)) {
           return helpers.error('date.required')
         }
-        if (
-          filled !== DATE_PART_COUNT ||
-          !parts.every((part) => /^\d+$/.test(part))
-        ) {
+        if (!isCompleteNumericDate(parts)) {
           return helpers.error('date.real')
         }
         const [parsedDay, parsedMonth, parsedYear] = parts.map(Number)
         const candidate = Date.UTC(parsedYear, parsedMonth - 1, parsedDay)
-        const real = new Date(candidate)
         if (
-          real.getUTCFullYear() !== parsedYear ||
-          real.getUTCMonth() !== parsedMonth - 1 ||
-          real.getUTCDate() !== parsedDay
+          !isRealCalendarDate([parsedDay, parsedMonth, parsedYear], candidate)
         ) {
           return helpers.error('date.real')
         }
@@ -260,21 +269,25 @@ const valuesFromAnswers = (answers) => ({
   usesContainers: answers.usesContainers
 })
 
+const arrivalDateFromPayload = (payload) => ({
+  day: payload['arrivalDate-day'] ?? '',
+  month: payload['arrivalDate-month'] ?? '',
+  year: payload['arrivalDate-year'] ?? ''
+})
+
+const arrivalTimeFromPayload = (payload) => ({
+  hour: payload['arrivalTime-hour'] ?? '',
+  minute: payload['arrivalTime-minute'] ?? ''
+})
+
 const valuesFromPayload = (payload) => ({
   borderControlPost: payload.borderControlPost ?? '',
   inspectionPremises: payload.inspectionPremises ?? '',
   meansOfTransport: payload.meansOfTransport ?? '',
   transportIdentification: payload.transportIdentification ?? '',
   transportDocumentReference: payload.transportDocumentReference ?? '',
-  arrivalDate: {
-    day: payload['arrivalDate-day'] ?? '',
-    month: payload['arrivalDate-month'] ?? '',
-    year: payload['arrivalDate-year'] ?? ''
-  },
-  arrivalTime: {
-    hour: payload['arrivalTime-hour'] ?? '',
-    minute: payload['arrivalTime-minute'] ?? ''
-  },
+  arrivalDate: arrivalDateFromPayload(payload),
+  arrivalTime: arrivalTimeFromPayload(payload),
   usesContainers:
     payload.usesContainers === 'true'
       ? true

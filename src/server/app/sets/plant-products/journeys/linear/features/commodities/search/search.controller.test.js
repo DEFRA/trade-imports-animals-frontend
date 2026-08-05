@@ -26,6 +26,7 @@ import { copy as featureCopy } from '../copy/copy.en.js'
 import * as search from './search.controller.js'
 
 const copy = featureCopy.commoditySearch
+const SEARCH_CODE_ACTION = 'search-code'
 const get = search.routes.find(({ method }) => method === 'GET').handler
 const post = postHandlerOf(search)
 const drive = (handler, options) =>
@@ -95,7 +96,7 @@ describe('plant-products commodity-search controller', () => {
     'rejects code %j with canonical %s copy and preserves it',
     async (raw, key) => {
       const result = await drive(post, {
-        payload: { action: 'search-code', commoditySearchCode: raw }
+        payload: { action: SEARCH_CODE_ACTION, commoditySearchCode: raw }
       })
 
       expect(result.response.statusCode).toBe(400)
@@ -111,7 +112,7 @@ describe('plant-products commodity-search controller', () => {
     const seed = { commodityLines: [{ commoditySelection: '06011010' }] }
     const result = await drive(post, {
       seed,
-      payload: { action: 'search-code', commoditySearchCode: '06011010' }
+      payload: { action: SEARCH_CODE_ACTION, commoditySearchCode: '06011010' }
     })
 
     expect(result.response.statusCode).toBe(400)
@@ -126,7 +127,7 @@ describe('plant-products commodity-search controller', () => {
       .spyOn(kit, 'nextTarget')
       .mockResolvedValue('/plant-products/notifications/next-target')
     const result = await drive(post, {
-      payload: { action: 'search-code', commoditySearchCode: '06011010' }
+      payload: { action: SEARCH_CODE_ACTION, commoditySearchCode: '06011010' }
     })
 
     expect(result.after.commodityLines).toEqual([
@@ -150,7 +151,7 @@ describe('plant-products commodity-search controller', () => {
 
   it('renders an explicit no-results state at 200 with the raw code', async () => {
     const result = await drive(post, {
-      payload: { action: 'search-code', commoditySearchCode: '99999999' }
+      payload: { action: SEARCH_CODE_ACTION, commoditySearchCode: '99999999' }
     })
 
     expect(result.response.statusCode).toBe(200)
@@ -240,7 +241,7 @@ describe('plant-products commodity-search controller', () => {
       })
     )
     const result = await drive(post, {
-      payload: { action: 'search-code', commoditySearchCode: '06011010' }
+      payload: { action: SEARCH_CODE_ACTION, commoditySearchCode: '06011010' }
     })
 
     expect(result.response.statusCode).toBe(500)
@@ -256,7 +257,7 @@ describe('plant-products commodity-search controller', () => {
 
     await expect(
       drive(post, {
-        payload: { action: 'search-code', commoditySearchCode: '06011010' }
+        payload: { action: SEARCH_CODE_ACTION, commoditySearchCode: '06011010' }
       })
     ).rejects.toThrow('programming failure')
   })

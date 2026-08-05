@@ -5,19 +5,24 @@ import { list as listBcps } from '../../../../services/reference/bcps.js'
 import { meansOfTransportOptions } from '../../../../services/reference/transport-options.js'
 import { copy } from './copy/copy.en.js'
 
+const SUITE = 'plant-products transport before BCP'
+const SAVE_AND_CONTINUE = 'Save and continue'
+const TRANSPORT_TO_THE_BCP = 'Transport to the BCP'
+const ARRIVAL_DATE_DAY_ID = 'arrivalDate-day'
+
 const startAtTransport = async (page) => {
   await page.goto('/plant-products')
   await page.getByRole('button', { name: 'Create a new notification' }).click()
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Country of origin').selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByRole('link', { name: 'Back', exact: true }).click()
   await page.getByRole('link', { name: 'Commodity', exact: true }).click()
   await page.getByRole('radio', { name: 'Manual entry' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Enter commodity code').fill('06011010')
   await page.getByRole('button', { name: 'Search', exact: true }).click()
   await page
@@ -25,13 +30,13 @@ const startAtTransport = async (page) => {
       name: 'Add Albuca bracteata to commodity 06011010'
     })
     .click()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page).toHaveURL((url) =>
     /^\/plant-products\/notifications\/[^/]+\/commodity-summary$/.test(
       url.pathname
     )
   )
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page).toHaveURL((url) =>
     /^\/plant-products\/notifications\/[^/]+\/commodity-bulk-details$/.test(
       url.pathname
@@ -52,12 +57,12 @@ const startAtTransport = async (page) => {
     })
     .getByLabel('Finished product for final users for 06011010 Hyacinths')
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page).toHaveURL((url) =>
     /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
   )
   await page
-    .getByRole('link', { name: 'Transport to the BCP', exact: true })
+    .getByRole('link', { name: TRANSPORT_TO_THE_BCP, exact: true })
     .click()
   await expect(page).toHaveURL((url) =>
     /^\/plant-products\/notifications\/[^/]+\/transport-before-bip$/.test(
@@ -114,7 +119,7 @@ const fillValid = async (
 }
 
 const submit = (page) =>
-  page.getByRole('button', { name: 'Save and continue' }).click()
+  page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
 const expectErrorFocus = async (page, message, id) => {
   const alert = page.getByRole('alert')
@@ -130,10 +135,14 @@ const permittedConditionalRadio = {
   target: '#usesContainers'
 }
 
-test.describe('plant-products transport before BCP', () => {
+const startEachAtTransport = () => {
   test.beforeEach(async ({ page }) => {
     await startAtTransport(page)
   })
+}
+
+test.describe(`${SUITE} — rendering and saving`, () => {
+  startEachAtTransport()
 
   test('renders fixture-backed controls with correct names, unanswered radios and associated hints', async ({
     page
@@ -191,7 +200,7 @@ test.describe('plant-products transport before BCP', () => {
       /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
     )
     const row = page.getByRole('listitem').filter({
-      has: page.getByText('Transport to the BCP', { exact: true })
+      has: page.getByText(TRANSPORT_TO_THE_BCP, { exact: true })
     })
     await expect(row).toContainText('Completed')
 
@@ -216,6 +225,10 @@ test.describe('plant-products transport before BCP', () => {
       page.getByLabel(copy.arrivalTime.minute, { exact: true })
     ).toHaveValue('50')
   })
+})
+
+test.describe(`${SUITE} — premises filtering and container rows`, () => {
+  startEachAtTransport()
 
   test('filters premises by POSTed BCP and wipes a stale answer after the BCP changes', async ({
     page
@@ -231,7 +244,7 @@ test.describe('plant-products transport before BCP', () => {
     await fillValid(page, { bcp: 'CONPNT', premises: 'INSPBAR1' })
     await submit(page)
     await page
-      .getByRole('link', { name: 'Transport to the BCP', exact: true })
+      .getByRole('link', { name: TRANSPORT_TO_THE_BCP, exact: true })
       .click()
     await expect(page.getByLabel(copy.premises.label)).toHaveValue('INSPBAR1')
 
@@ -239,7 +252,7 @@ test.describe('plant-products transport before BCP', () => {
     await page.getByLabel(copy.bcp.label).selectOption('GBLHR4PP')
     await submit(page)
     await page
-      .getByRole('link', { name: 'Transport to the BCP', exact: true })
+      .getByRole('link', { name: TRANSPORT_TO_THE_BCP, exact: true })
       .click()
     await expect(page.getByLabel(copy.premises.label)).toHaveCount(0)
   })
@@ -280,7 +293,7 @@ test.describe('plant-products transport before BCP', () => {
       .check()
     await submit(page)
     await page
-      .getByRole('link', { name: 'Transport to the BCP', exact: true })
+      .getByRole('link', { name: TRANSPORT_TO_THE_BCP, exact: true })
       .click()
     await expect(
       page.getByRole('radio', { name: copy.usesContainers.no, exact: true })
@@ -301,6 +314,10 @@ test.describe('plant-products transport before BCP', () => {
       'containerNumber'
     )
   })
+})
+
+test.describe(`${SUITE} — field validation`, () => {
+  startEachAtTransport()
 
   for (const [name, label, value, message, id] of [
     [
@@ -376,7 +393,7 @@ test.describe('plant-products transport before BCP', () => {
         await page.getByLabel(copy.arrivalDate.year, { exact: true }).fill('')
       },
       copy.errors.arrivalDateRequired,
-      'arrivalDate-day'
+      ARRIVAL_DATE_DAY_ID
     ],
     [
       'unreal date',
@@ -388,7 +405,7 @@ test.describe('plant-products transport before BCP', () => {
           .fill('2026')
       },
       copy.errors.arrivalDateReal,
-      'arrivalDate-day'
+      ARRIVAL_DATE_DAY_ID
     ],
     [
       'missing time',
@@ -446,6 +463,10 @@ test.describe('plant-products transport before BCP', () => {
       page.locator('input[name="usesContainers"]:checked')
     ).toHaveCount(0)
   })
+})
+
+test.describe(`${SUITE} — arrival-date window, back link and accessibility`, () => {
+  startEachAtTransport()
 
   for (const [name, offset] of [
     ['yesterday', -1],
@@ -470,7 +491,7 @@ test.describe('plant-products transport before BCP', () => {
       await expectErrorFocus(
         page,
         copy.errors.arrivalDateWindow,
-        'arrivalDate-day'
+        ARRIVAL_DATE_DAY_ID
       )
     })
   }

@@ -1,14 +1,20 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
+const ADD_CONSIGNOR_OR_EXPORTER = 'Ychwanegu traddodwr neu allforiwr'
+const CONSIGNOR_OR_EXPORTER = 'Traddodwr neu allforiwr'
+const ADDRESS_LINE_1_LABEL = 'Llinell gyfeiriad 1'
+const ADDRESS_LINE_2_LABEL = 'Llinell gyfeiriad 2 (dewisol)'
+const ADDRESS_LINE_3_LABEL = 'Llinell gyfeiriad 3 (dewisol)'
+
 export const copy = {
   consignorCreate: {
-    pageTitle: 'Ychwanegu traddodwr neu allforiwr',
-    heading: 'Ychwanegu traddodwr neu allforiwr',
-    legend: 'Traddodwr neu allforiwr',
+    pageTitle: ADD_CONSIGNOR_OR_EXPORTER,
+    heading: ADD_CONSIGNOR_OR_EXPORTER,
+    legend: CONSIGNOR_OR_EXPORTER,
     fields: {
       consignorName: { label: 'Enw’r traddodwr neu’r allforiwr' },
-      consignorAddressLine1: { label: 'Llinell gyfeiriad 1' },
-      consignorAddressLine2: { label: 'Llinell gyfeiriad 2 (dewisol)' },
-      consignorAddressLine3: { label: 'Llinell gyfeiriad 3 (dewisol)' },
+      consignorAddressLine1: { label: ADDRESS_LINE_1_LABEL },
+      consignorAddressLine2: { label: ADDRESS_LINE_2_LABEL },
+      consignorAddressLine3: { label: ADDRESS_LINE_3_LABEL },
       consignorCity: { label: 'Dinas neu dref' },
       consignorPostcode: { label: 'Cod post neu god ZIP (dewisol)' },
       consignorTelephone: { label: 'Rhif ffôn' },
@@ -55,7 +61,7 @@ export const copy = {
     continueLabel: 'Cadw a pharhau'
   },
   consignorPicker: {
-    pageTitle: 'Traddodwr neu allforiwr',
+    pageTitle: CONSIGNOR_OR_EXPORTER,
     caption: 'Masnachwyr',
     description:
       'Dewiswch y traddodwr neu’r allforiwr ar gyfer yr hysbysiad hwn, neu ychwanegwch un newydd.',
@@ -82,7 +88,7 @@ export const copy = {
     selectedPrefix: 'Traddodwr neu allforiwr a ddewiswyd:',
     errorPrefix: 'Gwall:',
     saveAndContinue: 'Cadw a pharhau',
-    addNew: 'Ychwanegu traddodwr neu allforiwr',
+    addNew: ADD_CONSIGNOR_OR_EXPORTER,
     errors: { required: 'Dewiswch draddodwr neu allforiwr o’r rhestr' }
   },
   consignorConfirmation: {
@@ -105,9 +111,9 @@ export const copy = {
       heading: 'Paciwr (dewisol)',
       fields: {
         name: 'Enw',
-        addressLine1: 'Llinell gyfeiriad 1',
-        addressLine2: 'Llinell gyfeiriad 2 (dewisol)',
-        addressLine3: 'Llinell gyfeiriad 3 (dewisol)',
+        addressLine1: ADDRESS_LINE_1_LABEL,
+        addressLine2: ADDRESS_LINE_2_LABEL,
+        addressLine3: ADDRESS_LINE_3_LABEL,
         city: 'Tref neu ddinas',
         postcode: 'Cod post neu god ZIP',
         country: 'Gwlad'
@@ -122,18 +128,18 @@ export const copy = {
       },
       fields: {
         name: 'Enw’r cyfeiriad danfon',
-        addressLine1: 'Llinell gyfeiriad 1',
-        addressLine2: 'Llinell gyfeiriad 2 (dewisol)',
-        addressLine3: 'Llinell gyfeiriad 3 (dewisol)',
+        addressLine1: ADDRESS_LINE_1_LABEL,
+        addressLine2: ADDRESS_LINE_2_LABEL,
+        addressLine3: ADDRESS_LINE_3_LABEL,
         city: 'Tref neu ddinas',
         postcode: 'Cod post neu god ZIP',
         country: 'Gwlad'
       }
     },
     consignor: {
-      heading: 'Traddodwr neu allforiwr',
+      heading: CONSIGNOR_OR_EXPORTER,
       notAdded: 'Heb ei ychwanegu eto',
-      addLink: 'Ychwanegu traddodwr neu allforiwr'
+      addLink: ADD_CONSIGNOR_OR_EXPORTER
     },
     countryPlaceholder: 'Dewiswch wlad',
     continue: 'Parhau',

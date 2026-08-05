@@ -244,7 +244,8 @@ const composeSections = (answers) =>
 
 export const toDto = (answers = {}) => composeSections(answers ?? {})
 
-const padded = (value) => String(value ?? '').padStart(2, '0')
+const TWO_DIGIT_WIDTH = 2
+const padded = (value) => String(value ?? '').padStart(TWO_DIGIT_WIDTH, '0')
 
 const documentFiles = (entry) =>
   entry.uploadId ? [{ fileId: entry.uploadId, filename: entry.filename }] : []

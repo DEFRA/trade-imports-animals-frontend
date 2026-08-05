@@ -4,6 +4,9 @@ import { axeViolations as seriousOrCriticalViolations } from '../axe.e2e-helper.
 import { grossVolumeUnitOptions } from '../../../../services/reference/gross-volume-units.js'
 import { copy } from './copy/copy.en.js'
 
+const SAVE_AND_CONTINUE = 'Save and continue'
+const ADDITIONAL_DETAILS = 'Additional details'
+
 const hubUrl = (url) =>
   /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
 const detailsUrl = (url) =>
@@ -22,13 +25,13 @@ const startAtAdditionalDetails = async (page) => {
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Country of origin').selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByRole('link', { name: 'Back', exact: true }).click()
   await page.getByRole('link', { name: 'Commodity', exact: true }).click()
   await page.getByRole('radio', { name: 'Manual entry' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Enter commodity code').fill('06011010')
   await page.getByRole('button', { name: 'Search', exact: true }).click()
   await page
@@ -36,8 +39,8 @@ const startAtAdditionalDetails = async (page) => {
       name: 'Add Albuca bracteata to commodity 06011010'
     })
     .click()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Number of packages for 06011010 Hyacinths').fill('2')
   await page
     .getByLabel('Type of package for 06011010 Hyacinths')
@@ -53,12 +56,12 @@ const startAtAdditionalDetails = async (page) => {
     })
     .getByLabel('Finished product for final users for 06011010 Hyacinths')
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page).toHaveURL(hubUrl)
 
-  const row = rowByTitle(page, 'Additional details')
+  const row = rowByTitle(page, ADDITIONAL_DETAILS)
   await expect(row).toContainText('Not yet started')
-  await row.getByRole('link', { name: 'Additional details' }).click()
+  await row.getByRole('link', { name: ADDITIONAL_DETAILS }).click()
   await expect(page).toHaveURL(detailsUrl)
 }
 
@@ -148,10 +151,10 @@ test.describe('plant-products commodity additional details', () => {
       grossVolume: '8.00',
       grossVolumeUnit: 'METRES_CUBED'
     })
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(page).toHaveURL(hubUrl)
-    await expect(rowByTitle(page, 'Additional details')).toContainText(
+    await expect(rowByTitle(page, ADDITIONAL_DETAILS)).toContainText(
       'Completed'
     )
     await page.goto(url)
@@ -217,7 +220,7 @@ test.describe('plant-products commodity additional details', () => {
         ...testCase.values
       }
       await fillValues(page, values)
-      await page.getByRole('button', { name: 'Save and continue' }).click()
+      await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
       await expectLinkedError(page, testCase.field, testCase.message)
       await expect(controls(page).totalGrossWeight).toHaveValue(
@@ -236,12 +239,12 @@ test.describe('plant-products commodity additional details', () => {
     await startAtAdditionalDetails(page)
     const url = page.url()
     await fillValues(page)
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await page.goto(url)
 
     await controls(page).grossVolume.fill('')
     await controls(page).grossVolumeUnit.selectOption('')
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await page.goto(url)
 
     await expect(controls(page).grossVolume).toHaveValue('')
@@ -265,7 +268,7 @@ test.describe('plant-products commodity additional details', () => {
   }) => {
     await startAtAdditionalDetails(page)
     await fillValues(page, { totalGrossWeight: '' })
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page.getByRole('alert')).toBeVisible()
     const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
 

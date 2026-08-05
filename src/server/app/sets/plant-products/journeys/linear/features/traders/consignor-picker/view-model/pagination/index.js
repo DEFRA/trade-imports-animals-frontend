@@ -1,11 +1,13 @@
 import { paginationItems } from './page-numbers.js'
 import { resultsHref } from './results-href.js'
 
+const MIN_PAGES_TO_SHOW_PAGINATION = 2
+
 export const pagination = (
   journeyId,
   { query, page, totalPages, selectedId }
 ) => {
-  if (totalPages < 2) {
+  if (totalPages < MIN_PAGES_TO_SHOW_PAGINATION) {
     return null
   }
 

@@ -40,6 +40,7 @@ import { rawInScope } from './scope.js'
 import { FULFILLED, IN_PROGRESS, statusOf } from './status/index.js'
 
 const setId = 'live-animals'
+const DEPTH_THREE_PAGE_ID = 'depth-three-page'
 
 const lines = {
   id: '0ec201f3-7d40-4f35-aef7-a0fa27754d86',
@@ -156,7 +157,7 @@ const bindings = feature('depth-three-fixture', [
 ])
 
 const pages = [
-  { id: 'depth-three-page', slug: 'depth-three', collects: ['lines'] }
+  { id: DEPTH_THREE_PAGE_ID, slug: 'depth-three', collects: ['lines'] }
 ]
 
 const variety = (name, grade = 'Class I') => ({
@@ -246,16 +247,16 @@ describe('depth-3 grouped-binding registration', () => {
 describe('depth-3 dispatch coverage inheritance', () => {
   it('Should inherit every nested owner from the nearest registered ancestor', () => {
     expect(pageOfObligation('lines.species.speciesCode')).toBe(
-      'depth-three-page'
+      DEPTH_THREE_PAGE_ID
     )
     expect(pageOfObligation('lines.species.varieties.varietyName')).toBe(
-      'depth-three-page'
+      DEPTH_THREE_PAGE_ID
     )
     expect(
       pageOfObligation('lines[0].species[1].varieties[2].varietyGrade')
-    ).toBe('depth-three-page')
-    expect(slugOfPage('depth-three-page')).toBe('depth-three')
-    expect(collectsOf('depth-three-page')).toEqual(['lines'])
+    ).toBe(DEPTH_THREE_PAGE_ID)
+    expect(slugOfPage(DEPTH_THREE_PAGE_ID)).toBe('depth-three')
+    expect(collectsOf(DEPTH_THREE_PAGE_ID)).toEqual(['lines'])
   })
 
   it('Should reject a path metacharacter in a nested obligation name', () => {

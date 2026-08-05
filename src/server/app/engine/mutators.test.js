@@ -49,7 +49,7 @@ const identifiersPath = (lineIndex) => [
   'animalIdentifiers'
 ]
 
-describe('mutators — storage is positional, purge is evaluator-authoritative', () => {
+const setupMutatorEngine = () => {
   beforeAll(() => {
     configureRecords('live-animals', recordsStub)
     configureSession('live-animals', sessionStub)
@@ -59,7 +59,9 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
     await store.clear()
     journeyId = (await store.create()).journeyId
   })
+}
 
+const positionalStorageCases = () => {
   describe('#appendEntryAt — mints the next index, stores positionally', () => {
     it('Should append a commodity line and persist it in positional order', async () => {
       const first = await appendEntryAt(
@@ -114,7 +116,9 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       ).toEqual([GOATS_COMMODITY])
     })
   })
+}
 
+const capAndInvalidPathCases = () => {
   describe('#appendEntryAt cap — `maxEntriesFrom` fires', () => {
     const cappedLine = () => ({
       commoditySelection: 'Cat',
@@ -198,7 +202,9 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       }
     })
   })
+}
 
+const evaluatorAuthoritativePurgeCases = () => {
   describe('#removeEntryAt — the purge is evaluator-authoritative', () => {
     it('Should let the evaluator purge a now-orphaned notification-level answer when the last triggering line is removed', async () => {
       // containsUnweanedAnimals is gated (frame:anyItem) on an unweaned-
@@ -282,4 +288,11 @@ describe('mutators — storage is positional, purge is evaluator-authoritative',
       expect('containsUnweanedAnimals' in answers).toBe(false)
     })
   })
+}
+
+describe('mutators — storage is positional, purge is evaluator-authoritative', () => {
+  setupMutatorEngine()
+  positionalStorageCases()
+  capAndInvalidPathCases()
+  evaluatorAuthoritativePurgeCases()
 })

@@ -1,13 +1,18 @@
+const CONSIGNOR_OR_EXPORTER = 'Consignor or exporter'
+const ADDRESS_LINE_1_LABEL = 'Address line 1'
+const ADDRESS_LINE_2_LABEL = 'Address line 2 (optional)'
+const ADDRESS_LINE_3_LABEL = 'Address line 3 (optional)'
+
 export const copy = {
   consignorCreate: {
     pageTitle: 'Add consignor or exporter',
     heading: 'Add consignor or exporter',
-    legend: 'Consignor or exporter',
+    legend: CONSIGNOR_OR_EXPORTER,
     fields: {
       consignorName: { label: 'Consignor or exporter name' },
-      consignorAddressLine1: { label: 'Address line 1' },
-      consignorAddressLine2: { label: 'Address line 2 (optional)' },
-      consignorAddressLine3: { label: 'Address line 3 (optional)' },
+      consignorAddressLine1: { label: ADDRESS_LINE_1_LABEL },
+      consignorAddressLine2: { label: ADDRESS_LINE_2_LABEL },
+      consignorAddressLine3: { label: ADDRESS_LINE_3_LABEL },
       consignorCity: { label: 'City or town' },
       consignorPostcode: { label: 'Postcode or ZIP code (optional)' },
       consignorTelephone: { label: 'Telephone number' },
@@ -54,7 +59,7 @@ export const copy = {
     continueLabel: 'Save and continue'
   },
   consignorPicker: {
-    pageTitle: 'Consignor or exporter',
+    pageTitle: CONSIGNOR_OR_EXPORTER,
     caption: 'Traders',
     description:
       'Select the consignor or exporter for this notification, or add a new one.',
@@ -103,9 +108,9 @@ export const copy = {
       heading: 'Packer (optional)',
       fields: {
         name: 'Name',
-        addressLine1: 'Address line 1',
-        addressLine2: 'Address line 2 (optional)',
-        addressLine3: 'Address line 3 (optional)',
+        addressLine1: ADDRESS_LINE_1_LABEL,
+        addressLine2: ADDRESS_LINE_2_LABEL,
+        addressLine3: ADDRESS_LINE_3_LABEL,
         city: 'Town or city',
         postcode: 'Postcode or ZIP code',
         country: 'Country'
@@ -120,16 +125,16 @@ export const copy = {
       },
       fields: {
         name: 'Delivery address name',
-        addressLine1: 'Address line 1',
-        addressLine2: 'Address line 2 (optional)',
-        addressLine3: 'Address line 3 (optional)',
+        addressLine1: ADDRESS_LINE_1_LABEL,
+        addressLine2: ADDRESS_LINE_2_LABEL,
+        addressLine3: ADDRESS_LINE_3_LABEL,
         city: 'Town or city',
         postcode: 'Postcode or ZIP code',
         country: 'Country'
       }
     },
     consignor: {
-      heading: 'Consignor or exporter',
+      heading: CONSIGNOR_OR_EXPORTER,
       notAdded: 'Not yet added',
       addLink: 'Add a consignor or exporter'
     },

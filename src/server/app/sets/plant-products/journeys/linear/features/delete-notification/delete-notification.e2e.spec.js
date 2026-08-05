@@ -10,6 +10,8 @@ import {
 } from '../journey.e2e-helper.js'
 import { copy } from './copy/copy.en.js'
 
+const DASHBOARD_PATH = '/plant-products'
+
 const expectAxeClean = async (page) => {
   const { all, seriousOrCritical } = await axeViolations(page)
   expect(
@@ -23,7 +25,7 @@ test.describe('plant-products delete-notification feature', () => {
     page
   }) => {
     const reference = await startNotification(page)
-    await page.goto('/plant-products')
+    await page.goto(DASHBOARD_PATH)
     const row = page.getByRole('row', { name: new RegExp(reference) })
     const deleteLink = row.getByRole('link', {
       name: `${sharedCopy.notificationActions.delete.text} ${dashboardCopy.actions.forNotification(reference)}`,
@@ -43,12 +45,12 @@ test.describe('plant-products delete-notification feature', () => {
     await expect(page.getByText(reference, { exact: true })).toBeVisible()
     await expect(
       page.getByRole('button', { name: copy.noLink, exact: true })
-    ).toHaveAttribute('href', '/plant-products')
+    ).toHaveAttribute('href', DASHBOARD_PATH)
     await expectAxeClean(page)
 
     await page.getByRole('button', { name: copy.noLink, exact: true }).click()
 
-    await expect(page).toHaveURL('/plant-products')
+    await expect(page).toHaveURL(DASHBOARD_PATH)
     await expect(
       page.getByRole('row', { name: new RegExp(reference) })
     ).toBeVisible()

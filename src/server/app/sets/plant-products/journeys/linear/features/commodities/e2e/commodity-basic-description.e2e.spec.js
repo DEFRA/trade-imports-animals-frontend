@@ -5,6 +5,9 @@ import { copy as featureCopy } from '../copy/copy.en.js'
 
 const copy = featureCopy.basicDescription
 const commodityCode = '06042090'
+const SAVE_AND_CONTINUE = 'Save and continue'
+const LENS_CULINARIS = 'Lens culinaris'
+const CRATAEGOMESPILUS_DARDARII = '+ Crataegomespilus dardarii'
 
 const startAtBasicDescription = async (page) => {
   await page.goto('/plant-products')
@@ -12,13 +15,13 @@ const startAtBasicDescription = async (page) => {
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Country of origin').selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByRole('link', { name: 'Back' }).click()
   await page.getByRole('link', { name: 'Commodity', exact: true }).click()
   await page.getByRole('radio', { name: 'Manual entry' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Enter commodity code').fill(commodityCode)
   await page
     .locator('#commodity-code-search')
@@ -77,10 +80,8 @@ test.describe('plant-products commodity basic description', () => {
     await expect(card.getByText(copy.hint, { exact: true })).toBeVisible()
     await expect(card.getByLabel(copy.filter.genusLabel)).toBeVisible()
     await expect(card.getByLabel(copy.filter.eppoLabel)).toBeVisible()
-    await expect(resultsTable(page)).toContainText(
-      '+ Crataegomespilus dardarii'
-    )
-    await expect(resultsTable(page)).toContainText('Lens culinaris')
+    await expect(resultsTable(page)).toContainText(CRATAEGOMESPILUS_DARDARII)
+    await expect(resultsTable(page)).toContainText(LENS_CULINARIS)
     await expect(resultsTable(page).getByText('CXQDA')).toBeVisible()
     await expect(resultsTable(page).getByText('LENCU')).toBeVisible()
   })
@@ -93,16 +94,14 @@ test.describe('plant-products commodity basic description', () => {
       .getByRole('button', { name: copy.filter.searchLabel, exact: true })
       .click()
 
-    await expect(resultsTable(page)).toContainText('Lens culinaris')
+    await expect(resultsTable(page)).toContainText(LENS_CULINARIS)
     await expect(resultsTable(page)).not.toContainText(
-      '+ Crataegomespilus dardarii'
+      CRATAEGOMESPILUS_DARDARII
     )
     await page
       .getByRole('link', { name: `${copy.filter.clearLabel} ${commodityCode}` })
       .click()
-    await expect(resultsTable(page)).toContainText(
-      '+ Crataegomespilus dardarii'
-    )
+    await expect(resultsTable(page)).toContainText(CRATAEGOMESPILUS_DARDARII)
   })
 
   test('renders no search results inside the headed table without an error summary', async ({
@@ -127,21 +126,21 @@ test.describe('plant-products commodity basic description', () => {
   test('adds fixture-derived species, survives reload and excludes the duplicate candidate', async ({
     page
   }) => {
-    await addSpecies(page, 'Lens culinaris')
+    await addSpecies(page, LENS_CULINARIS)
 
-    await expect(addedTable(page)).toContainText('Lens culinaris')
+    await expect(addedTable(page)).toContainText(LENS_CULINARIS)
     await expect(addedTable(page)).toContainText('LENCU')
-    await expect(resultsTable(page)).not.toContainText('Lens culinaris')
+    await expect(resultsTable(page)).not.toContainText(LENS_CULINARIS)
     await page.reload()
-    await expect(addedTable(page)).toContainText('Lens culinaris')
-    await expect(resultsTable(page)).not.toContainText('Lens culinaris')
+    await expect(addedTable(page)).toContainText(LENS_CULINARIS)
+    await expect(resultsTable(page)).not.toContainText(LENS_CULINARIS)
   })
 
   test('gives every repeated Remove control a distinct line-identifying accessible name', async ({
     page
   }) => {
-    await addSpecies(page, 'Lens culinaris')
-    await addSpecies(page, '+ Crataegomespilus dardarii')
+    await addSpecies(page, LENS_CULINARIS)
+    await addSpecies(page, CRATAEGOMESPILUS_DARDARII)
 
     const removeButtons = addedTable(page).getByRole('button')
     await expect(removeButtons).toHaveCount(2)
@@ -164,7 +163,7 @@ test.describe('plant-products commodity basic description', () => {
   test('removes the last species and returns it to the candidate list', async ({
     page
   }) => {
-    await addSpecies(page, 'Lens culinaris')
+    await addSpecies(page, LENS_CULINARIS)
     await addedTable(page)
       .getByRole('button', {
         name: `${copy.added.removeLabel} Lens culinaris ${copy.added.removeHidden} ${commodityCode}`
@@ -172,13 +171,13 @@ test.describe('plant-products commodity basic description', () => {
       .click()
 
     await expect(addedTable(page)).toHaveCount(0)
-    await expect(resultsTable(page)).toContainText('Lens culinaris')
+    await expect(resultsTable(page)).toContainText(LENS_CULINARIS)
   })
 
   test('links and focuses the zero-species error while preserving the commodity line', async ({
     page
   }) => {
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     const alert = page.getByRole('alert')
     await expect(alert).toContainText('There is a problem')
@@ -199,15 +198,15 @@ test.describe('plant-products commodity basic description', () => {
   test('continues to bulk details and leaves the incomplete commodity row in progress', async ({
     page
   }) => {
-    await addSpecies(page, 'Lens culinaris')
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await addSpecies(page, LENS_CULINARIS)
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(page).toHaveURL((url) =>
       /^\/plant-products\/notifications\/[^/]+\/commodity-summary$/.test(
         url.pathname
       )
     )
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(page).toHaveURL((url) =>
       /^\/plant-products\/notifications\/[^/]+\/commodity-bulk-details$/.test(
@@ -228,14 +227,14 @@ test.describe('plant-products commodity basic description', () => {
     page
   }) => {
     await expectNoSeriousOrCriticalViolations(page, 'before add')
-    await addSpecies(page, 'Lens culinaris')
+    await addSpecies(page, LENS_CULINARIS)
     await expectNoSeriousOrCriticalViolations(page, 'after add')
     await addedTable(page)
       .getByRole('button', {
         name: `${copy.added.removeLabel} Lens culinaris ${copy.added.removeHidden} ${commodityCode}`
       })
       .click()
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page.getByRole('alert')).toBeVisible()
     await expectNoSeriousOrCriticalViolations(page, 'with validation error')
   })

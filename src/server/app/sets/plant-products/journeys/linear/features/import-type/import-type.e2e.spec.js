@@ -4,12 +4,14 @@ import { axeViolations as seriousOrCriticalViolations } from '../axe.e2e-helper.
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
+const DASHBOARD_PATH = '/plant-products'
+
 const expectedOptions = Object.entries(copy.importTypes).map(
   ([value, label]) => ({ value, label })
 )
 
 const startAtImportType = async (page) => {
-  await page.goto('/plant-products')
+  await page.goto(DASHBOARD_PATH)
   await page.getByRole('button', { name: 'Create a new notification' }).click()
   await expect(page).toHaveURL((url) =>
     /^\/plant-products\/notifications\/[^/]+\/import-type$/.test(url.pathname)
@@ -48,7 +50,7 @@ test.describe('plant-products import type', () => {
     await expect(group).not.toContainText(/debt|debtor|overdue/i)
     await expect(page.getByRole('link', { name: 'Back' })).toHaveAttribute(
       'href',
-      '/plant-products'
+      DASHBOARD_PATH
     )
   })
 
@@ -65,8 +67,8 @@ test.describe('plant-products import type', () => {
 
     await page.goto(importTypeUrl.pathname)
     await expect(page).toHaveURL(importTypeUrl.pathname)
-    await page.goto('/plant-products')
-    await expect(page).toHaveURL('/plant-products')
+    await page.goto(DASHBOARD_PATH)
+    await expect(page).toHaveURL(DASHBOARD_PATH)
   })
 
   test('saves plants to flow state, lands on country of origin and prefills on revisit', async ({
@@ -107,7 +109,7 @@ test.describe('plant-products import type', () => {
         'plantProductsFlowOnlyAnswers',
         'plantProductsKnownJourneys',
         'plantProductsOpeningRun'
-      ].map((name) => ({ name, path: '/plant-products' }))
+      ].map((name) => ({ name, path: DASHBOARD_PATH }))
     )
     expect(cookies.some(({ name }) => name.startsWith('liveAnimals'))).toBe(
       false
@@ -130,7 +132,7 @@ test.describe('plant-products import type', () => {
     const hubUrl = page.url()
     const reference = await page.getByText(/^GBN-PP-/).textContent()
 
-    await page.goto('/plant-products')
+    await page.goto(DASHBOARD_PATH)
     const draftRow = page.getByRole('row').filter({ hasText: reference })
     await expect(draftRow).toContainText(dashboardCopy.statuses.draft)
 

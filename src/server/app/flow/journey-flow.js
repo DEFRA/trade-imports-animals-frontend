@@ -12,9 +12,7 @@ const defaults = {
   rowStatus: unconfigured,
   nextRunTarget: unconfigured,
   flowOnlyKeys: [],
-  entryGuardTarget: unconfigured,
-  layout: undefined,
-  cyaSlug: undefined
+  entryGuardTarget: unconfigured
 }
 
 const store = setKeyed('journey flow')

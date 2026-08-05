@@ -179,7 +179,7 @@ const currentRegistry = () => {
 }
 
 export const configureFulfilmentRegistry = (setId, bindings) => {
-  store.configure(setId, { bindings, registry: undefined })
+  store.configure(setId, { bindings })
 }
 
 export const fulfilmentRegistry = Object.freeze({

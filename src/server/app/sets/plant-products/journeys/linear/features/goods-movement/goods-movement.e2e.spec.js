@@ -3,6 +3,9 @@ import { expect, test } from '@playwright/test'
 import { axeViolations } from '../axe.e2e-helper.js'
 import { copy } from './copy/copy.en.js'
 
+const SAVE_AND_CONTINUE = 'Save and continue'
+const GOODS_MOVEMENT_ROW = 'Goods movement services'
+
 const hubUrl = (url) =>
   /^\/plant-products\/notifications\/[^/]+$/.test(url.pathname)
 const goodsMovementUrl = (url) =>
@@ -21,13 +24,13 @@ const startAtGoodsMovement = async (page) => {
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Country of origin').selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByRole('link', { name: 'Back', exact: true }).click()
   await page.getByRole('link', { name: 'Commodity', exact: true }).click()
   await page.getByRole('radio', { name: 'Manual entry' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Enter commodity code').fill('06011010')
   await page.getByRole('button', { name: 'Search', exact: true }).click()
   await page
@@ -35,7 +38,7 @@ const startAtGoodsMovement = async (page) => {
       name: 'Add Albuca bracteata to commodity 06011010'
     })
     .click()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page).toHaveURL((url) =>
     /^\/plant-products\/notifications\/[^/]+\/commodity-summary$/.test(
       url.pathname
@@ -44,11 +47,9 @@ const startAtGoodsMovement = async (page) => {
 
   const notificationUrl = page.url().replace(/\/commodity-summary$/, '')
   await page.goto(notificationUrl)
-  const row = rowByTitle(page, 'Goods movement services')
+  const row = rowByTitle(page, GOODS_MOVEMENT_ROW)
   await expect(row).toContainText('Not yet started')
-  await row
-    .getByRole('link', { name: 'Goods movement services', exact: true })
-    .click()
+  await row.getByRole('link', { name: GOODS_MOVEMENT_ROW, exact: true }).click()
   await expect(page).toHaveURL(goodsMovementUrl)
 
   return { notificationUrl, pageUrl: page.url() }
@@ -60,7 +61,7 @@ const gvmsGroup = (page) =>
   page.getByRole('group', { name: copy.gvms.legend, exact: true })
 const mrnInput = (page) => page.getByLabel(copy.mrn.label, { exact: true })
 const submit = (page) =>
-  page.getByRole('button', { name: 'Save and continue' }).click()
+  page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
 const fillNo = async (page) => {
   await ctcGroup(page)
@@ -105,11 +106,7 @@ const expectNoSeriousOrCriticalViolations = async (page, state) => {
   ).toEqual([])
 }
 
-test.describe('plant-products goods movement services', () => {
-  test.beforeEach(async ({ page }) => {
-    await startAtGoodsMovement(page)
-  })
-
+const renderingTests = () => {
   test('renders the traced headings, accessibly named controls, wired hint and outbound links', async ({
     page
   }) => {
@@ -177,7 +174,7 @@ test.describe('plant-products goods movement services', () => {
     }
 
     await expect(
-      page.getByRole('button', { name: 'Save and continue', exact: true })
+      page.getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
     ).toHaveCount(1)
     await expect(
       page.getByRole('button', { name: 'Save and return to hub', exact: true })
@@ -205,7 +202,9 @@ test.describe('plant-products goods movement services', () => {
       .check()
     await expect(mrnInput(page)).toBeHidden()
   })
+}
 
+const persistenceTests = () => {
   test('saves No and No, completes the hub row and reloads both answers', async ({
     page
   }) => {
@@ -214,7 +213,7 @@ test.describe('plant-products goods movement services', () => {
     await submit(page)
 
     await expect(page).toHaveURL(hubUrl)
-    await expect(rowByTitle(page, 'Goods movement services')).toContainText(
+    await expect(rowByTitle(page, GOODS_MOVEMENT_ROW)).toContainText(
       'Completed'
     )
     await page.goto(pageUrl)
@@ -275,7 +274,9 @@ test.describe('plant-products goods movement services', () => {
     await expect(mrnInput(page)).toBeHidden()
     await expect(mrnInput(page)).toHaveValue('')
   })
+}
 
+const validationTests = () => {
   test('empty submit shows both radio errors and each summary link focuses its first radio', async ({
     page
   }) => {
@@ -343,7 +344,9 @@ test.describe('plant-products goods movement services', () => {
     await back.click()
     await expect(page).toHaveURL(hubUrl)
   })
+}
 
+const accessibilityTests = () => {
   test('initial state has computed accessible names and no serious or critical axe violations', async ({
     page
   }) => {
@@ -376,4 +379,15 @@ test.describe('plant-products goods movement services', () => {
     await expect(mrnInput(page)).toHaveAccessibleName(copy.mrn.label)
     await expectNoSeriousOrCriticalViolations(page, 'validation state')
   })
+}
+
+test.describe('plant-products goods movement services', () => {
+  test.beforeEach(async ({ page }) => {
+    await startAtGoodsMovement(page)
+  })
+
+  renderingTests()
+  persistenceTests()
+  validationTests()
+  accessibilityTests()
 })

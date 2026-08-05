@@ -12,6 +12,8 @@ import {
   isAllowedFilename
 } from './upload-config.js'
 
+const JPEG_MIME = 'image/jpeg'
+
 // Verbatim from the backend default at
 // repos/trade-imports-animals-backend/src/main/resources/application.yml
 // (cdp.uploader.mime-types → CDP_UPLOADER_MIME_TYPES). Widening the frontend
@@ -20,7 +22,7 @@ const BACKEND_CDP_UPLOADER_MIME_TYPES = [
   'application/pdf',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'image/jpeg',
+  JPEG_MIME,
   'image/png',
   'application/vnd.ms-excel',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -60,8 +62,8 @@ describe('plant-products documents upload config', () => {
         ext: 'docx',
         mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       },
-      { ext: 'jpeg', mime: 'image/jpeg' },
-      { ext: 'jpg', mime: 'image/jpeg' },
+      { ext: 'jpeg', mime: JPEG_MIME },
+      { ext: 'jpg', mime: JPEG_MIME },
       { ext: 'png', mime: 'image/png' },
       { ext: 'xls', mime: 'application/vnd.ms-excel' },
       {

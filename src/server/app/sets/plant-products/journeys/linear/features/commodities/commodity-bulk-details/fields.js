@@ -15,6 +15,10 @@ import { copy as en } from '../copy/copy.en.js'
 
 const copy = copyFor({ en, cy }).commodityBulkDetails
 
+const MAX_SIGNIFICANT_DIGITS = 16
+const MIN_NET_WEIGHT_KG = 0.001
+const MAX_NET_WEIGHT_DECIMALS = 3
+
 export const LINE_FIELDS = [
   'numberOfPackages',
   'packageType',
@@ -86,7 +90,10 @@ const quantityRule = (name, { required }) => {
         if (!/^\d+(?:\.\d{1,3})?$/.test(raw)) {
           return helpers.error('number.format')
         }
-        if (raw.replace('.', '').length > 16 || Number(raw) <= 0) {
+        if (
+          raw.replace('.', '').length > MAX_SIGNIFICANT_DIGITS ||
+          Number(raw) <= 0
+        ) {
           return helpers.error('number.format')
         }
         return raw
@@ -113,14 +120,14 @@ const netWeightRule = (name, { required }) => {
         if (!required && raw === '') {
           return raw
         }
-        if (!/^\d+(?:\.\d+)?$/.test(raw) || Number(raw) < 0.001) {
+        if (!/^\d+(?:\.\d+)?$/.test(raw) || Number(raw) < MIN_NET_WEIGHT_KG) {
           return helpers.error('number.min')
         }
         const decimals = raw.split('.')[1] ?? ''
-        if (decimals.length > 3) {
+        if (decimals.length > MAX_NET_WEIGHT_DECIMALS) {
           return helpers.error('number.decimals')
         }
-        if (raw.replace('.', '').length > 16) {
+        if (raw.replace('.', '').length > MAX_SIGNIFICANT_DIGITS) {
           return helpers.error('number.digits')
         }
         return raw

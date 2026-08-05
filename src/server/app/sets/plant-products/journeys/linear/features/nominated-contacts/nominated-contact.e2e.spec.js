@@ -3,6 +3,14 @@ import { expect, test } from '@playwright/test'
 import { axeViolations as seriousOrCriticalViolations } from '../axe.e2e-helper.js'
 import { copy } from './copy/copy.en.js'
 
+const SUITE = 'plant-products nominated contacts'
+const SAVE_AND_CONTINUE = 'Save and continue'
+const ALEX_INSPECTOR = 'Alex Inspector'
+const ALEX_EMAIL = 'alex@example.com'
+const BLAIR_BROKER = 'Blair Broker'
+const REMOVE_FIRST_CONTACT = 'Remove contact 1'
+const REMOVE_SECOND_CONTACT = 'Remove contact 2'
+
 const hubUrl = /^\/plant-products\/notifications\/[^/]+$/
 const nominatedContactsUrl =
   /^\/plant-products\/notifications\/[^/]+\/nominated-contact$/
@@ -13,13 +21,13 @@ const startAtNominatedContacts = async (page) => {
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Country of origin').selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByRole('link', { name: 'Back', exact: true }).click()
   await page.getByRole('link', { name: 'Commodity', exact: true }).click()
   await page.getByRole('radio', { name: 'Manual entry' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Enter commodity code').fill('06011010')
   await page.getByRole('button', { name: 'Search', exact: true }).click()
   const match = page.url().match(/(\/plant-products\/notifications\/[^/]+)/)
@@ -30,8 +38,8 @@ const startAtNominatedContacts = async (page) => {
 const addContact = async (
   page,
   {
-    name = 'Alex Inspector',
-    email = 'alex@example.com',
+    name = ALEX_INSPECTOR,
+    email = ALEX_EMAIL,
     telephone = '',
     isAgent = false
   } = {}
@@ -63,10 +71,14 @@ const expectLinkedError = async (page, field, message) => {
   await expect(page.locator(`#${field}`)).toBeFocused()
 }
 
-test.describe('plant-products nominated contacts', () => {
+const startEachAtNominatedContacts = () => {
   test.beforeEach(async ({ page }) => {
     await startAtNominatedContacts(page)
   })
+}
+
+test.describe(`${SUITE} — entry form, saved rows and removal`, () => {
+  startEachAtNominatedContacts()
 
   test('renders the optional entry form with real labels and zero saved rows', async ({
     page
@@ -91,31 +103,31 @@ test.describe('plant-products nominated contacts', () => {
   }) => {
     await addContact(page, { isAgent: true })
     await addContact(page, {
-      name: 'Blair Broker',
+      name: BLAIR_BROKER,
       email: '',
       telephone: '+44 7700 900 982'
     })
     await page.reload()
 
-    const first = rowFor(page, 'Alex Inspector')
-    const second = rowFor(page, 'Blair Broker')
+    const first = rowFor(page, ALEX_INSPECTOR)
+    const second = rowFor(page, BLAIR_BROKER)
     await expect(first.getByRole('cell')).toHaveText([
-      'Alex Inspector',
-      'alex@example.com',
+      ALEX_INSPECTOR,
+      ALEX_EMAIL,
       '',
-      'Remove contact 1'
+      REMOVE_FIRST_CONTACT
     ])
     await expect(second.getByRole('cell')).toHaveText([
-      'Blair Broker',
+      BLAIR_BROKER,
       '',
       '+44 7700 900 982',
-      'Remove contact 2'
+      REMOVE_SECOND_CONTACT
     ])
     await expect(
-      page.getByRole('button', { name: 'Remove contact 1', exact: true })
+      page.getByRole('button', { name: REMOVE_FIRST_CONTACT, exact: true })
     ).toBeVisible()
     await expect(
-      page.getByRole('button', { name: 'Remove contact 2', exact: true })
+      page.getByRole('button', { name: REMOVE_SECOND_CONTACT, exact: true })
     ).toBeVisible()
 
     await page.getByRole('button', { name: 'Save and return to hub' }).click()
@@ -128,7 +140,7 @@ test.describe('plant-products nominated contacts', () => {
   }) => {
     await addContact(page)
     await addContact(page, {
-      name: 'Blair Broker',
+      name: BLAIR_BROKER,
       email: 'blair@example.com'
     })
     await addContact(page, {
@@ -153,32 +165,36 @@ test.describe('plant-products nominated contacts', () => {
       buttons.map((button) => button.innerText.replace(/\s+/g, ' ').trim())
     )
     expect(names).toEqual([
-      'Remove contact 1',
-      'Remove contact 2',
+      REMOVE_FIRST_CONTACT,
+      REMOVE_SECOND_CONTACT,
       'Remove contact 3'
     ])
     expect(new Set(names).size).toBe(3)
 
     await page
-      .getByRole('button', { name: 'Remove contact 2', exact: true })
+      .getByRole('button', { name: REMOVE_SECOND_CONTACT, exact: true })
       .click()
 
     const savedRows = page.locator('tbody').getByRole('row')
     await expect(savedRows).toHaveCount(2)
     await expect(savedRows.nth(0).getByRole('cell')).toHaveText([
-      'Alex Inspector',
-      'alex@example.com',
+      ALEX_INSPECTOR,
+      ALEX_EMAIL,
       '',
-      'Remove contact 1'
+      REMOVE_FIRST_CONTACT
     ])
     await expect(savedRows.nth(1).getByRole('cell')).toHaveText([
       'Casey Coordinator',
       '',
       '+44 7700 900 983',
-      'Remove contact 2'
+      REMOVE_SECOND_CONTACT
     ])
-    await expect(rowFor(page, 'Blair Broker')).toHaveCount(0)
+    await expect(rowFor(page, BLAIR_BROKER)).toHaveCount(0)
   })
+})
+
+test.describe(`${SUITE} — validation`, () => {
+  startEachAtNominatedContacts()
 
   for (const testCase of [
     {
@@ -256,11 +272,15 @@ test.describe('plant-products nominated contacts', () => {
       await expect(page.getByLabel(copy.labels.contactIsAgent)).toBeChecked()
     })
   }
+})
+
+test.describe(`${SUITE} — hub exit, maximum and accessibility`, () => {
+  startEachAtNominatedContacts()
 
   test('continues with zero contacts and leaves the hub row Optional', async ({
     page
   }) => {
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(page).toHaveURL((url) => hubUrl.test(url.pathname))
     await expect(contactHubRow(page)).toContainText('Optional')

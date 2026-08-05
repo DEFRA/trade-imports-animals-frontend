@@ -26,6 +26,9 @@ const COPY_REFERENCE = 'GBN-PP-26-IDX001'
 const CREATED_AT = '2026-08-01T10:00:00'
 const DECLARED_AT = '2026-08-01T12:00:00'
 const FINALISE_DECLARED_AT = '2026-08-01T12:00:00.000Z'
+const COPY_IDEMPOTENCY_KEY = 'same-copy-key'
+const NETWORK_FAILURE_MESSAGE = 'fetch failed'
+const UNPROCESSABLE_ENTITY_REASON = 'Unprocessable Entity'
 
 configureObligationSet(SET_ID, plantProductsObligationSet)
 configureFulfilmentRegistry(SET_ID, featureEvaluationBindings)
@@ -64,11 +67,31 @@ const captureError = async (operation) => {
   throw new Error('Expected operation to fail')
 }
 
-describe('plant-products real records adapter at the HTTP boundary', () => {
-  beforeEach(() => {
-    fetchMocker.resetMocks()
-  })
+const backendOperations = {
+  create: () => records.create(),
+  load: () => records.load({ journeyId: SOURCE_REFERENCE }),
+  list: () => records.list(),
+  has: () => records.has(SOURCE_REFERENCE),
+  replaceFulfilment: () =>
+    records.replaceFulfilment(
+      SOURCE_REFERENCE,
+      {},
+      {
+        known: { journeyId: SOURCE_REFERENCE, status: 'draft' }
+      }
+    ),
+  finalise: () => records.finalise(SOURCE_REFERENCE),
+  amend: () => records.amend(SOURCE_REFERENCE),
+  cancelAmend: () => records.cancelAmend(SOURCE_REFERENCE),
+  copy: () => records.copy(SOURCE_REFERENCE, COPY_IDEMPOTENCY_KEY),
+  softDelete: () => records.softDelete(SOURCE_REFERENCE)
+}
 
+const nonBackendOperations = {
+  clear: () => records.clear()
+}
+
+const errorPolicyTests = () => {
   it('maps every shipped backend status and rejects contract drift', () => {
     expect(mapStatus('DRAFT')).toBe('draft')
     expect(mapStatus('SUBMITTED')).toBe('submitted')
@@ -78,30 +101,6 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
       'Unknown backend plant-products notification status "UNKNOWN"'
     )
   })
-
-  const backendOperations = {
-    create: () => records.create(),
-    load: () => records.load({ journeyId: SOURCE_REFERENCE }),
-    list: () => records.list(),
-    has: () => records.has(SOURCE_REFERENCE),
-    replaceFulfilment: () =>
-      records.replaceFulfilment(
-        SOURCE_REFERENCE,
-        {},
-        {
-          known: { journeyId: SOURCE_REFERENCE, status: 'draft' }
-        }
-      ),
-    finalise: () => records.finalise(SOURCE_REFERENCE),
-    amend: () => records.amend(SOURCE_REFERENCE),
-    cancelAmend: () => records.cancelAmend(SOURCE_REFERENCE),
-    copy: () => records.copy(SOURCE_REFERENCE, 'same-copy-key'),
-    softDelete: () => records.softDelete(SOURCE_REFERENCE)
-  }
-
-  const nonBackendOperations = {
-    clear: () => records.clear()
-  }
 
   it('pins every real records operation to an explicit backend-error policy', () => {
     expect(Object.keys(records).sort()).toEqual(
@@ -130,7 +129,7 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
   it.each(Object.entries(backendOperations))(
     '%s marks a rejected backend fetch as recoverable',
     async (_operation, invoke) => {
-      fetchMocker.mockRejectOnce(new TypeError('fetch failed'))
+      fetchMocker.mockRejectOnce(new TypeError(NETWORK_FAILURE_MESSAGE))
 
       const surfaced = await captureError(() => inPlantProducts(invoke))
 
@@ -138,7 +137,9 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
       expect(isRecoverableBackendError(surfaced)).toBe(true)
     }
   )
+}
 
+const readTests = () => {
   it('creates a notification with POST and an empty JSON object', async () => {
     fetchMocker.mockResponse(jsonResponse(dto(), 201))
 
@@ -303,7 +304,9 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
       { method: 'GET', url: `${notificationsUrl}/GBN-PP-00-000000` }
     ])
   })
+}
 
+const writeTests = () => {
   it('replaces a known writable notification with the path-matching body reference', async () => {
     fetchMocker.mockResponses(
       [JSON.stringify(dto()), { status: 200 }],
@@ -380,7 +383,7 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
   })
 
   it('marks a rejected replaceFulfilment request as recoverable', async () => {
-    fetchMocker.mockRejectOnce(new TypeError('fetch failed'))
+    fetchMocker.mockRejectOnce(new TypeError(NETWORK_FAILURE_MESSAGE))
 
     const surfaced = await captureError(() =>
       inPlantProducts(() =>
@@ -397,10 +400,12 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
     expect(surfaced).toBeInstanceOf(TypeError)
     expect(isRecoverableBackendError(surfaced)).toBe(true)
   })
+}
 
+const writeFailureTests = () => {
   it('marks a rejected replaceFulfilment listDocuments fetch as recoverable', async () => {
     fetchMocker.mockResponseOnce(JSON.stringify(dto()), { status: 200 })
-    fetchMocker.mockRejectOnce(new TypeError('fetch failed'))
+    fetchMocker.mockRejectOnce(new TypeError(NETWORK_FAILURE_MESSAGE))
 
     const surfaced = await captureError(() =>
       inPlantProducts(() =>
@@ -427,7 +432,7 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
       [JSON.stringify(dto()), { status: 200 }],
       [JSON.stringify({ documents: [{ id: 'old-1' }] }), { status: 200 }]
     )
-    fetchMocker.mockRejectOnce(new TypeError('fetch failed'))
+    fetchMocker.mockRejectOnce(new TypeError(NETWORK_FAILURE_MESSAGE))
 
     const surfaced = await captureError(() =>
       inPlantProducts(() =>
@@ -465,7 +470,7 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
       [JSON.stringify(dto()), { status: 200 }],
       [JSON.stringify({ documents: [] }), { status: 200 }]
     )
-    fetchMocker.mockRejectOnce(new TypeError('fetch failed'))
+    fetchMocker.mockRejectOnce(new TypeError(NETWORK_FAILURE_MESSAGE))
 
     const surfaced = await captureError(() =>
       inPlantProducts(() =>
@@ -488,7 +493,7 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
       [JSON.stringify(dto()), { status: 200 }],
       [JSON.stringify({ documents: [] }), { status: 200 }]
     )
-    fetchMocker.mockRejectOnce(new TypeError('fetch failed'))
+    fetchMocker.mockRejectOnce(new TypeError(NETWORK_FAILURE_MESSAGE))
 
     const surfaced = await captureError(() =>
       inPlantProducts(() =>
@@ -509,7 +514,9 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
     )
     expect(isRecoverableBackendError(surfaced)).toBe(true)
   })
+}
 
+const documentReconciliationTests = () => {
   it('reconciles accompanying documents through the shipped wrapped sub-resource contract', async () => {
     const documents = [
       {
@@ -625,7 +632,9 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
       { method: 'GET', url: `${notificationsUrl}/${SOURCE_REFERENCE}` }
     ])
   })
+}
 
+const documentFailureTests = () => {
   it('names a rejected document DELETE at the network boundary', async () => {
     fetchMocker.mockResponses(
       [JSON.stringify(dto()), { status: 200 }],
@@ -661,7 +670,10 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
     fetchMocker.mockResponses(
       [JSON.stringify(dto()), { status: 200 }],
       [JSON.stringify({ documents: [] }), { status: 200 }],
-      ['Unprocessable', { status: 422, statusText: 'Unprocessable Entity' }]
+      [
+        'Unprocessable',
+        { status: 422, statusText: UNPROCESSABLE_ENTITY_REASON }
+      ]
     )
 
     await expect(
@@ -695,7 +707,9 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
       expect(fetchMocker.requests()).toEqual([])
     }
   )
+}
 
+const finaliseTests = () => {
   it('finalises by replacing the declaration before changing status', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(FINALISE_DECLARED_AT))
@@ -758,7 +772,10 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
   it('does not submit when the declaration document replacement fails', async () => {
     fetchMocker.mockResponses(
       [JSON.stringify(dto()), { status: 200 }],
-      ['Unprocessable', { status: 422, statusText: 'Unprocessable Entity' }]
+      [
+        'Unprocessable',
+        { status: 422, statusText: UNPROCESSABLE_ENTITY_REASON }
+      ]
     )
 
     await expect(
@@ -786,7 +803,7 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
     'marks a rejected finalise %s as recoverable',
     async (_stage, responses) => {
       fetchMocker.mockResponses(...responses)
-      fetchMocker.mockRejectOnce(new TypeError('fetch failed'))
+      fetchMocker.mockRejectOnce(new TypeError(NETWORK_FAILURE_MESSAGE))
 
       let surfaced
       try {
@@ -835,7 +852,9 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
     expect(isRecoverableBackendError(surfaced)).toBe(false)
     expect(fetchMocker).not.toHaveBeenCalled()
   })
+}
 
+const transitionAndCopyTests = () => {
   it.each([
     ['amend', 'AMEND', { status: 'AMEND' }],
     ['cancelAmend', 'SUBMITTED', { status: 'SUBMITTED', discardChanges: true }],
@@ -872,10 +891,10 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
     })
 
     const first = await inPlantProducts(() =>
-      records.copy(SOURCE_REFERENCE, 'same-copy-key')
+      records.copy(SOURCE_REFERENCE, COPY_IDEMPOTENCY_KEY)
     )
     const repeated = await inPlantProducts(() =>
-      records.copy(SOURCE_REFERENCE, 'same-copy-key')
+      records.copy(SOURCE_REFERENCE, COPY_IDEMPOTENCY_KEY)
     )
 
     const requests = fetchMocker.requests()
@@ -884,7 +903,9 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
       expect(request.url).toBe(`${notificationsUrl}/${SOURCE_REFERENCE}/copies`)
       expect(request.method).toBe('POST')
       expectJsonHeaders(request)
-      expect(request.headers.get(IDEMPOTENCY_KEY_HEADER)).toBe('same-copy-key')
+      expect(request.headers.get(IDEMPOTENCY_KEY_HEADER)).toBe(
+        COPY_IDEMPOTENCY_KEY
+      )
       expect(await request.clone().text()).toBe('')
     }
     expect(repeated).toEqual(first)
@@ -896,9 +917,9 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
   })
 
   it('classifies a copy 422 as key reuse rather than recoverable', async () => {
-    fetchMocker.mockResponse('Unprocessable Entity', {
+    fetchMocker.mockResponse(UNPROCESSABLE_ENTITY_REASON, {
       status: 422,
-      statusText: 'Unprocessable Entity'
+      statusText: UNPROCESSABLE_ENTITY_REASON
     })
 
     const surfaced = await captureError(() =>
@@ -954,4 +975,19 @@ describe('plant-products real records adapter at the HTTP boundary', () => {
     )
     expect(isRecoverableBackendError(errors.clear)).toBe(false)
   })
+}
+
+describe('plant-products real records adapter at the HTTP boundary', () => {
+  beforeEach(() => {
+    fetchMocker.resetMocks()
+  })
+
+  errorPolicyTests()
+  readTests()
+  writeTests()
+  writeFailureTests()
+  documentReconciliationTests()
+  documentFailureTests()
+  finaliseTests()
+  transitionAndCopyTests()
 })

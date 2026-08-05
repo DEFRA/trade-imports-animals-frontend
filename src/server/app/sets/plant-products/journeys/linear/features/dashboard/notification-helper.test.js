@@ -16,6 +16,8 @@ import {
   validateFilters
 } from './notification-helper.js'
 
+const ARRIVAL_DATE_ISO = '2026-03-07'
+
 const messages = {
   keywordsMax: 'keywords max',
   startDateReal: 'start real',
@@ -112,7 +114,7 @@ describe('dashboard notification helpers', () => {
   })
 
   it('formats one GDS long date and degrades invalid values to blank', () => {
-    expect(formatDisplayDate('2026-03-07')).toBe('7 March 2026')
+    expect(formatDisplayDate(ARRIVAL_DATE_ISO)).toBe('7 March 2026')
     expect(formatDisplayDate('not-a-date')).toBe('')
     expect(formatDisplayDate()).toBe('')
   })
@@ -124,7 +126,7 @@ describe('dashboard notification helpers', () => {
         'startDate-month': '3',
         'startDate-year': '2026'
       })
-    ).toEqual({ start: '2026-03-07', end: null })
+    ).toEqual({ start: ARRIVAL_DATE_ISO, end: null })
   })
 
   it.each([
@@ -142,14 +144,14 @@ describe('dashboard notification helpers', () => {
 
   it('applies inclusive arrival range bounds and rejects missing arrivals', () => {
     const rows = [
-      { arrivalDate: '2026-03-07' },
+      { arrivalDate: ARRIVAL_DATE_ISO },
       { arrivalDate: '2026-03-08T12:00:00Z' },
       { arrivalDate: '2026-03-09' },
       { arrivalDate: null }
     ]
     expect(
       applyArrivalRangeFilter(rows, {
-        start: '2026-03-07',
+        start: ARRIVAL_DATE_ISO,
         end: '2026-03-09'
       })
     ).toEqual(rows.slice(0, 3))

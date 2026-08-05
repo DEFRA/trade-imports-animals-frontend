@@ -13,6 +13,9 @@ import { copy } from './copy/copy.en.js'
 import { intendedForFinalUsersRows } from './view-model/cards/commodities.js'
 import { row } from './view-model/rows/summary-row.js'
 
+const SUITE = 'plant-products review notification'
+const SUMMARY_LIST_ROW = '.govuk-summary-list__row'
+
 const reviewUrl =
   /^\/plant-products\/notifications\/[^/]+\/review-notification$/
 const declarationUrl = /^\/plant-products\/notifications\/[^/]+\/declaration$/
@@ -33,7 +36,6 @@ const welshAccessibleNameRows = () => {
   const changeLinkHref = '/change'
   const missingAnswer = row({
     label: cyCopy.cards.aboutConsignment.rows.internalReference,
-    value: undefined,
     obligationName: 'internalReference',
     journeyId: 'journey-083',
     scope,
@@ -77,7 +79,7 @@ const cardFor = (page, heading) =>
 
 const summaryValueByKey = (page, key, scope = page) =>
   scope
-    .locator('.govuk-summary-list__row')
+    .locator(SUMMARY_LIST_ROW)
     .filter({
       has: page.locator('.govuk-summary-list__key', {
         hasText: new RegExp(
@@ -282,7 +284,7 @@ const tableExpectations = () => {
     ]),
     [copy.cards.commodities.tables.varieties]: lines
       .filter((line) => line.variety)
-      .map((line, index) => [
+      .map((line) => [
         `Commodity ${lines.indexOf(line) + 1}`,
         `${commodityFixtures[line.code].species}, ${commodityFixtures[line.code].eppoCode}`,
         line.variety.text,
@@ -312,7 +314,7 @@ const tableExpectations = () => {
   }
 }
 
-test.describe('plant-products review notification', () => {
+test.describe(`${SUITE} — journey fixture profile`, () => {
   test('full journey profile keeps a middle entry and distinct identifiers in every collection', () => {
     const collections = [
       {
@@ -406,23 +408,23 @@ test.describe('plant-products review notification', () => {
       ).toBe(true)
     }
   })
+})
 
+test.describe(`${SUITE} — Welsh accessible names`, () => {
   test('renders distinct Welsh accessible names with locale-owned connectors', async ({
     page
   }) => {
     await page.setContent(await welshAccessibleNameRows())
 
     const missingAnswerRow = page
-      .locator('.govuk-summary-list__row')
+      .locator(SUMMARY_LIST_ROW)
       .filter({ has: page.getByText('Cyfeirnod mewnol', { exact: true }) })
-    const intendedForFinalUsersRow = page
-      .locator('.govuk-summary-list__row')
-      .filter({
-        has: page.getByText(
-          'Wedi’i fwriadu ar gyfer defnyddwyr terfynol (nwydd 1)',
-          { exact: true }
-        )
-      })
+    const intendedForFinalUsersRow = page.locator(SUMMARY_LIST_ROW).filter({
+      has: page.getByText(
+        'Wedi’i fwriadu ar gyfer defnyddwyr terfynol (nwydd 1)',
+        { exact: true }
+      )
+    })
     const missingAnswerLink = missingAnswerRow.getByRole('link')
     const intendedForFinalUsersLink = intendedForFinalUsersRow.getByRole('link')
 
@@ -436,7 +438,9 @@ test.describe('plant-products review notification', () => {
       await intendedForFinalUsersLink.ariaSnapshot()
     )
   })
+})
 
+test.describe(`${SUITE} — populated review page`, () => {
   test('reads back the fully populated journey, pins collection order and exposes distinct Change names', async ({
     page
   }) => {
@@ -486,14 +490,12 @@ test.describe('plant-products review notification', () => {
       await expect(duplicateCaption).not.toHaveClass(/govuk-table__caption--s/)
     }
 
-    const manualInputMethodRow = page
-      .locator('.govuk-summary-list__row')
-      .filter({
-        has: page.getByText(
-          commodityFeatureCopy.inputMethod.options.MANUAL.label,
-          { exact: true }
-        )
-      })
+    const manualInputMethodRow = page.locator(SUMMARY_LIST_ROW).filter({
+      has: page.getByText(
+        commodityFeatureCopy.inputMethod.options.MANUAL.label,
+        { exact: true }
+      )
+    })
     await expect(
       manualInputMethodRow.getByRole('link', {
         name: `Change ${commodityFeatureCopy.inputMethod.heading}`,
@@ -563,7 +565,9 @@ test.describe('plant-products review notification', () => {
     await expect(postForms).toHaveCount(1)
     await expect(postForms).toHaveAttribute('action', /\/copy$/)
   })
+})
 
+test.describe(`${SUITE} — editing and missing answers`, () => {
   test('saving an edited country of origin returns to the review page with the new value', async ({
     page
   }) => {

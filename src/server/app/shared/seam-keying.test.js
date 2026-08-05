@@ -1,6 +1,8 @@
 import Hapi from '@hapi/hapi'
 import { describe, expect, it, vi } from 'vitest'
 
+const NO_AMBIENT_SET_CONTEXT = null
+
 describe('per-set seam keying', () => {
   it('holds different values for two set ids in every seam', async () => {
     vi.resetModules()
@@ -111,7 +113,7 @@ describe('live-animals extension sandboxing', () => {
     const context = await import('./set-context.js')
     const { configureJourneyFlow } = await import('../flow/journey-flow.js')
     const otherEntryGuard = vi.fn(() => null)
-    let contextBeforeOtherExtension
+    let contextBeforeOtherExtension = NO_AMBIENT_SET_CONTEXT
 
     await server.register(liveAnimals)
     await server.register(
@@ -129,7 +131,7 @@ describe('live-animals extension sandboxing', () => {
                 try {
                   contextBeforeOtherExtension = context.currentSetId()
                 } catch {
-                  contextBeforeOtherExtension = undefined
+                  contextBeforeOtherExtension = NO_AMBIENT_SET_CONTEXT
                 }
                 context.enterSetContext('other-set')
                 return h.continue
@@ -153,7 +155,7 @@ describe('live-animals extension sandboxing', () => {
 
     expect(response.statusCode).toBe(200)
     expect(response.result).toBe('other-set')
-    expect(contextBeforeOtherExtension).toBeUndefined()
+    expect(contextBeforeOtherExtension).toBe(NO_AMBIENT_SET_CONTEXT)
     expect(otherEntryGuard).not.toHaveBeenCalled()
     vi.resetModules()
   })

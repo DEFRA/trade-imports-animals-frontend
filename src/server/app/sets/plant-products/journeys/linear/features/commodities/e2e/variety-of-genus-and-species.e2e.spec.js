@@ -15,6 +15,11 @@ const fields = {
   class: `Class ${context}`
 }
 const addName = `Add another variety ${context}`
+const SAVE_AND_CONTINUE = 'Save and continue'
+const NOT_YET_STARTED = 'Not yet started'
+const MCINTOSH_RED = 'McIntosh Red'
+const TAHITI_LIME = 'Tahiti Lime'
+const VARIETY_SELECT_FIELD = 'varietySelect-0-0'
 const hasPath = (pattern) => (url) => pattern.test(url.pathname)
 const varietyUrl = hasPath(
   /^\/plant-products\/notifications\/[^/]+\/variety-of-genus-and-species$/
@@ -27,9 +32,9 @@ const startAtCommoditySearch = async (page) => {
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Country of origin').selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByRole('link', { name: 'Back' }).click()
 
   const purposeRow = page.getByRole('listitem').filter({
@@ -41,13 +46,13 @@ const startAtCommoditySearch = async (page) => {
   const transportRow = page.getByRole('listitem').filter({
     has: page.getByText('Transport to the BCP', { exact: true })
   })
-  await expect(purposeRow).toContainText('Not yet started')
-  await expect(commodityRow).toContainText('Not yet started')
+  await expect(purposeRow).toContainText(NOT_YET_STARTED)
+  await expect(commodityRow).toContainText(NOT_YET_STARTED)
   await expect(transportRow).toContainText('Cannot start yet')
 
   await commodityRow.getByRole('link', { name: 'Commodity' }).click()
   await page.getByRole('radio', { name: 'Manual entry' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 }
 
 const startAtVarietyPage = async (page) => {
@@ -68,7 +73,7 @@ const startAtVarietyPage = async (page) => {
       url.pathname
     )
   )
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page).toHaveURL(varietyUrl)
 }
 
@@ -85,7 +90,7 @@ const startAtNoClassVarietyPage = async (page) => {
     .filter({ hasText: 'Citrus australasica — 08059000' })
     .getByRole('button', { name: searchCopy.speciesSearch.add })
     .click()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page).toHaveURL(varietyUrl)
 }
 
@@ -124,11 +129,7 @@ const expectLinkedError = async (page, field, message) => {
   )
 }
 
-test.describe('plant-products variety of genus and species', () => {
-  test.beforeEach(async ({ page }) => {
-    await startAtVarietyPage(page)
-  })
-
+const renderingAndPersistenceTests = () => {
   test('renders fixture options, real contextual labels and the add-species link', async ({
     page
   }) => {
@@ -147,7 +148,7 @@ test.describe('plant-products variety of genus and species', () => {
     await expect(variety).toHaveAccessibleName(fields.variety)
     await expect(variety.locator('option')).toHaveText([
       copy.varietyPlaceholder,
-      'McIntosh Red',
+      MCINTOSH_RED,
       'Spartan',
       'Royal Gala',
       copy.otherOption
@@ -184,18 +185,18 @@ test.describe('plant-products variety of genus and species', () => {
   }) => {
     await addPair(page)
     const saved = table(page)
-    await expect(saved).toContainText('McIntosh Red')
+    await expect(saved).toContainText(MCINTOSH_RED)
     await expect(saved).toContainText(copy.classOptions.CLASS_I)
     await page.reload()
-    await expect(saved).toContainText('McIntosh Red')
+    await expect(saved).toContainText(MCINTOSH_RED)
 
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page).toHaveURL((url) =>
       /^\/plant-products\/notifications\/[^/]+\/commodity-summary$/.test(
         url.pathname
       )
     )
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page).toHaveURL((url) =>
       /^\/plant-products\/notifications\/[^/]+\/commodity-bulk-details$/.test(
         url.pathname
@@ -212,32 +213,34 @@ test.describe('plant-products variety of genus and species', () => {
     const transportRow = page.getByRole('listitem').filter({
       has: page.getByText('Transport to the BCP', { exact: true })
     })
-    await expect(purposeRow).toContainText('Not yet started')
+    await expect(purposeRow).toContainText(NOT_YET_STARTED)
     await expect(commodityRow).toContainText('In progress')
-    await expect(transportRow).toContainText('Not yet started')
+    await expect(transportRow).toContainText(NOT_YET_STARTED)
   })
 
   test('round-trips Other as its cleaned free text', async ({ page }) => {
     await addPair(page, {
       variety: '__OTHER__',
-      other: 'Tahiti Lime',
+      other: TAHITI_LIME,
       varietyClass: 'CLASS_II'
     })
 
-    await expect(table(page)).toContainText('Tahiti Lime')
+    await expect(table(page)).toContainText(TAHITI_LIME)
     await expect(table(page)).toContainText(copy.classOptions.CLASS_II)
     await page.reload()
-    await expect(table(page)).toContainText('Tahiti Lime')
+    await expect(table(page)).toContainText(TAHITI_LIME)
     await expect(page.getByText('__OTHER__')).toHaveCount(0)
   })
+}
 
+const removalTests = () => {
   test('pins every repeated Remove name and proves the set is distinct', async ({
     page
   }) => {
     await addPair(page)
     await addPair(page, {
       variety: '__OTHER__',
-      other: 'Tahiti Lime',
+      other: TAHITI_LIME,
       varietyClass: 'CLASS_II'
     })
 
@@ -262,7 +265,7 @@ test.describe('plant-products variety of genus and species', () => {
     await addPair(page)
     await addPair(page, {
       variety: '__OTHER__',
-      other: 'Tahiti Lime',
+      other: TAHITI_LIME,
       varietyClass: 'CLASS_II'
     })
 
@@ -271,8 +274,8 @@ test.describe('plant-products variety of genus and species', () => {
         name: `Remove McIntosh Red, Class I from commodity line 1, species 1: ${heading}`
       })
       .click()
-    await expect(table(page)).not.toContainText('McIntosh Red')
-    await expect(table(page)).toContainText('Tahiti Lime')
+    await expect(table(page)).not.toContainText(MCINTOSH_RED)
+    await expect(table(page)).toContainText(TAHITI_LIME)
     await expect(table(page)).toContainText(copy.classOptions.CLASS_II)
   })
 
@@ -300,11 +303,13 @@ test.describe('plant-products variety of genus and species', () => {
         name: `${basicCopy.results.addLabel} Malus domestica ${basicCopy.results.addHidden} 0808108090`
       })
       .click()
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page).toHaveURL(varietyUrl)
     await expect(table(page)).toHaveCount(0)
   })
+}
 
+const validationTests = () => {
   test('links and focuses the variety-required error while preserving class', async ({
     page
   }) => {
@@ -313,7 +318,7 @@ test.describe('plant-products variety of genus and species', () => {
 
     await expectLinkedError(
       page,
-      'varietySelect-0-0',
+      VARIETY_SELECT_FIELD,
       copy.errors.varietyRequired
     )
     await expect(page.getByLabel(fields.class, { exact: true })).toHaveValue(
@@ -336,10 +341,10 @@ test.describe('plant-products variety of genus and species', () => {
   })
 
   test('links and focuses the at-least-one error', async ({ page }) => {
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expectLinkedError(
       page,
-      'varietySelect-0-0',
+      VARIETY_SELECT_FIELD,
       copy.errors.atLeastOneVariety
     )
   })
@@ -350,7 +355,7 @@ test.describe('plant-products variety of genus and species', () => {
     await page.getByRole('button', { name: addName, exact: true }).click()
     await expectLinkedError(
       page,
-      'varietySelect-0-0',
+      VARIETY_SELECT_FIELD,
       copy.errors.duplicatePair
     )
     await expect(table(page).getByRole('row')).toHaveCount(2)
@@ -398,7 +403,9 @@ test.describe('plant-products variety of genus and species', () => {
       raw
     )
   })
+}
 
+const accessibilityTests = () => {
   test('has no serious or critical axe violations on initial render', async ({
     page
   }) => {
@@ -412,7 +419,7 @@ test.describe('plant-products variety of genus and species', () => {
   test('has no serious or critical axe violations on the error state', async ({
     page
   }) => {
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page.getByRole('alert')).toBeVisible()
     const { all, seriousOrCritical } = await seriousOrCriticalViolations(page)
     expect(
@@ -420,6 +427,17 @@ test.describe('plant-products variety of genus and species', () => {
       `Variety page error has serious/critical accessibility violations.\n${JSON.stringify(all, null, 2)}`
     ).toEqual([])
   })
+}
+
+test.describe('plant-products variety of genus and species', () => {
+  test.beforeEach(async ({ page }) => {
+    await startAtVarietyPage(page)
+  })
+
+  renderingAndPersistenceTests()
+  removalTests()
+  validationTests()
+  accessibilityTests()
 })
 
 test('renders and submits a mandatory variety with no class control when no classes apply', async ({
@@ -437,7 +455,7 @@ test('renders and submits a mandatory variety with no class control when no clas
   await card.getByRole('button', { name: /^Add another variety / }).click()
   await expectLinkedError(
     page,
-    'varietySelect-0-0',
+    VARIETY_SELECT_FIELD,
     copy.errors.atLeastOneVariety
   )
   await expect(page.getByText(copy.errors.classRequired)).toHaveCount(0)
@@ -464,7 +482,7 @@ test('renders and submits a mandatory variety with no class control when no clas
   await expect(card.locator('[name="varietyClass-0-0"]')).toHaveCount(0)
   await expect(saved.getByRole('row')).toHaveCount(2)
 
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page).toHaveURL((url) =>
     /^\/plant-products\/notifications\/[^/]+\/commodity-summary$/.test(
       url.pathname
@@ -489,7 +507,7 @@ test('skips the page when the selected species has no varieties', async ({
       name: `${basicCopy.results.addLabel} Malus domestica ${basicCopy.results.addHidden} 0808108010`
     })
     .click()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
   await expect(page).toHaveURL((url) =>
     /^\/plant-products\/notifications\/[^/]+\/commodity-summary$/.test(

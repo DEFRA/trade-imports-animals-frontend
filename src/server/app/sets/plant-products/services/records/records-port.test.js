@@ -21,6 +21,8 @@ const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
 
 const SET_ID = 'plant-products'
+const REAL_ADAPTER_NAME = 'real HTTP adapter'
+const COPY_IDEMPOTENCY_KEY = 'same-copy-key'
 const CREATED_AT = '2026-08-01T10:00:00'
 const CANNED_REFERENCES = [
   'GBN-PP-26-ABC001',
@@ -117,6 +119,10 @@ const jsonResponse = (body, status = 200) => ({
   status
 })
 
+const notFound = () => ({ body: '', status: 404 })
+
+const badRequest = () => ({ body: '', status: 400 })
+
 const normaliseContent = (body = {}) =>
   Object.fromEntries(
     CONTENT_FIELDS.map((field) => [field, body[field] ?? null])
@@ -152,121 +158,177 @@ const createNetworkBackend = () => {
       documentsByReference.get(notification.referenceNumber) ?? []
   })
 
-  const responseFor = async (request) => {
+  const listResponse = (url) => {
+    const content = [...notifications.values()].filter(
+      ({ status }) => status !== 'DELETED'
+    )
+    return jsonResponse({
+      content,
+      page: Number(url.searchParams.get('page') ?? 1),
+      pageSize: 25,
+      totalElements: content.length,
+      totalPages: content.length === 0 ? 0 : 1
+    })
+  }
+
+  const collectionResponse = (request, url) => {
+    if (request.method === 'POST') {
+      return jsonResponse(saveDraft(), 201)
+    }
+    if (request.method === 'GET') {
+      return listResponse(url)
+    }
+    return notFound()
+  }
+
+  const loadResponse = (referenceNumber) => {
+    const notification = notifications.get(referenceNumber)
+    return notification === undefined
+      ? notFound()
+      : jsonResponse(notificationResponse(notification))
+  }
+
+  const replaceResponse = async (request, referenceNumber) => {
+    const body = await request.clone().json()
+    if (body.referenceNumber !== referenceNumber) {
+      return badRequest()
+    }
+    const existing = notifications.get(referenceNumber)
+    const created = existing === undefined
+    if (!created && !['DRAFT', 'AMEND'].includes(existing.status)) {
+      return badRequest()
+    }
+    const notification = created ? saveDraft(referenceNumber) : existing
+    const replaced = {
+      ...notification,
+      ...normaliseContent(body),
+      updated: CREATED_AT
+    }
+    notifications.set(referenceNumber, replaced)
+    return jsonResponse(replaced, created ? 201 : 200)
+  }
+
+  const notificationResponseFor = (request, referenceNumber) => {
+    if (request.method === 'GET') {
+      return loadResponse(referenceNumber)
+    }
+    if (request.method === 'PUT') {
+      return replaceResponse(request, referenceNumber)
+    }
+    return notFound()
+  }
+
+  const addDocumentResponse = async (request, documents) => {
+    const body = await request.clone().json()
+    const created = {
+      id: `document-${nextDocumentId++}`,
+      ...body,
+      files: body.files ?? []
+    }
+    documents.push(created)
+    return jsonResponse(created, 201)
+  }
+
+  const removeDocumentResponse = (documents, documentId) => {
+    const documentIndex = documents.findIndex(({ id }) => id === documentId)
+    if (documentIndex === -1) {
+      return notFound()
+    }
+    documents.splice(documentIndex, 1)
+    return { status: 204 }
+  }
+
+  const documentsResponse = (request, parts) => {
+    const [referenceNumber] = parts
+    if (!notifications.has(referenceNumber)) {
+      return notFound()
+    }
+    const documents = documentsByReference.get(referenceNumber)
+    if (request.method === 'GET' && parts.length === 2) {
+      return jsonResponse({ documents })
+    }
+    if (request.method === 'POST' && parts.length === 2) {
+      return addDocumentResponse(request, documents)
+    }
+    if (request.method === 'DELETE' && parts.length === 3) {
+      return removeDocumentResponse(documents, parts[2])
+    }
+    return notFound()
+  }
+
+  const applyStatusTransition = (notification, status, discardChanges) => {
+    if (status === 'AMEND') {
+      notification.submittedSnapshot = structuredClone(notification)
+      notification.status = 'AMEND'
+      return
+    }
+    if (status === 'SUBMITTED') {
+      if (discardChanges) {
+        Object.assign(notification, notification.submittedSnapshot)
+      }
+      delete notification.submittedSnapshot
+      notification.status = 'SUBMITTED'
+      return
+    }
+    if (status === 'DELETED') {
+      notification.status = 'DELETED'
+    }
+  }
+
+  const statusTransitionResponse = async (request, referenceNumber) => {
+    const notification = notifications.get(referenceNumber)
+    if (notification === undefined) {
+      return notFound()
+    }
+    const { status, discardChanges } = await request.clone().json()
+    applyStatusTransition(notification, status, discardChanges)
+    return jsonResponse(notification)
+  }
+
+  const copyResponse = (request, referenceNumber) => {
+    const key = request.headers.get(IDEMPOTENCY_KEY_HEADER)
+    const existingReference = copiesByKey.get(key)
+    if (existingReference !== undefined) {
+      return jsonResponse(notifications.get(existingReference), 201)
+    }
+    const notification = notifications.get(referenceNumber)
+    if (notification === undefined) {
+      return notFound()
+    }
+    if (!['SUBMITTED', 'AMEND'].includes(notification.status)) {
+      return badRequest()
+    }
+    const copied = saveDraft()
+    copiesByKey.set(key, copied.referenceNumber)
+    return jsonResponse(copied, 201)
+  }
+
+  const routeResponse = (request, url, parts) => {
+    const [referenceNumber, subresource] = parts
+    if (parts.length === 0) {
+      return collectionResponse(request, url)
+    }
+    if (parts.length === 1) {
+      return notificationResponseFor(request, referenceNumber)
+    }
+    if (subresource === 'accompanying-documents') {
+      return documentsResponse(request, parts)
+    }
+    if (subresource === 'status' && request.method === 'PUT') {
+      return statusTransitionResponse(request, referenceNumber)
+    }
+    if (subresource === 'copies' && request.method === 'POST') {
+      return copyResponse(request, referenceNumber)
+    }
+    return notFound()
+  }
+
+  const responseFor = (request) => {
     const url = new URL(request.url)
     const relativePath = url.pathname.slice(
       new URL(notificationsUrl).pathname.length
     )
-    const parts = relativePath.split('/').filter(Boolean)
-
-    if (parts.length === 0 && request.method === 'POST') {
-      return jsonResponse(saveDraft(), 201)
-    }
-    if (parts.length === 0 && request.method === 'GET') {
-      const content = [...notifications.values()].filter(
-        ({ status }) => status !== 'DELETED'
-      )
-      return jsonResponse({
-        content,
-        page: Number(url.searchParams.get('page') ?? 1),
-        pageSize: 25,
-        totalElements: content.length,
-        totalPages: content.length === 0 ? 0 : 1
-      })
-    }
-
-    const [referenceNumber, subresource] = parts
-    if (request.method === 'GET' && parts.length === 1) {
-      const notification = notifications.get(referenceNumber)
-      return notification === undefined
-        ? { body: '', status: 404 }
-        : jsonResponse(notificationResponse(notification))
-    }
-    if (request.method === 'PUT' && parts.length === 1) {
-      const body = await request.clone().json()
-      if (body.referenceNumber !== referenceNumber) {
-        return { body: '', status: 400 }
-      }
-      let notification = notifications.get(referenceNumber)
-      const created = notification === undefined
-      if (created) {
-        notification = saveDraft(referenceNumber)
-      } else if (!['DRAFT', 'AMEND'].includes(notification.status)) {
-        return { body: '', status: 400 }
-      }
-      const replaced = {
-        ...notification,
-        ...normaliseContent(body),
-        updated: CREATED_AT
-      }
-      notifications.set(referenceNumber, replaced)
-      return jsonResponse(replaced, created ? 201 : 200)
-    }
-    const notification = notifications.get(referenceNumber)
-    if (subresource === 'accompanying-documents') {
-      if (notification === undefined) {
-        return { body: '', status: 404 }
-      }
-      const documents = documentsByReference.get(referenceNumber)
-      if (request.method === 'GET' && parts.length === 2) {
-        return jsonResponse({ documents })
-      }
-      if (request.method === 'POST' && parts.length === 2) {
-        const body = await request.clone().json()
-        const created = {
-          id: `document-${nextDocumentId++}`,
-          ...body,
-          files: body.files ?? []
-        }
-        documents.push(created)
-        return jsonResponse(created, 201)
-      }
-      if (request.method === 'DELETE' && parts.length === 3) {
-        const documentIndex = documents.findIndex(({ id }) => id === parts[2])
-        if (documentIndex === -1) {
-          return { body: '', status: 404 }
-        }
-        documents.splice(documentIndex, 1)
-        return { status: 204 }
-      }
-    }
-    if (request.method === 'PUT' && subresource === 'status') {
-      if (notification === undefined) {
-        return { body: '', status: 404 }
-      }
-      const { status, discardChanges } = await request.clone().json()
-      if (status === 'AMEND') {
-        notification.submittedSnapshot = structuredClone(notification)
-        notification.status = 'AMEND'
-      } else if (status === 'SUBMITTED' && discardChanges) {
-        Object.assign(notification, notification.submittedSnapshot)
-        delete notification.submittedSnapshot
-        notification.status = 'SUBMITTED'
-      } else if (status === 'SUBMITTED') {
-        notification.status = 'SUBMITTED'
-        delete notification.submittedSnapshot
-      } else if (status === 'DELETED') {
-        notification.status = 'DELETED'
-      }
-      return jsonResponse(notification)
-    }
-    if (request.method === 'POST' && subresource === 'copies') {
-      const key = request.headers.get(IDEMPOTENCY_KEY_HEADER)
-      const existingReference = copiesByKey.get(key)
-      if (existingReference !== undefined) {
-        return jsonResponse(notifications.get(existingReference), 201)
-      }
-      if (
-        notification === undefined ||
-        !['SUBMITTED', 'AMEND'].includes(notification.status)
-      ) {
-        return { body: '', status: notification === undefined ? 404 : 400 }
-      }
-      const copied = saveDraft()
-      copiesByKey.set(key, copied.referenceNumber)
-      return jsonResponse(copied, 201)
-    }
-    return { body: '', status: 404 }
+    return routeResponse(request, url, relativePath.split('/').filter(Boolean))
   }
 
   return {
@@ -294,366 +356,379 @@ const implementations = [
     }
   },
   {
-    name: 'real HTTP adapter',
+    name: REAL_ADAPTER_NAME,
     records: realRecords,
     reset: async () => networkBackend.reset()
   }
 ]
+
+const recordShapeTests = (records) => {
+  it('creates a draft journey in the engine record shape', async () => {
+    const created = await inPlantProducts(() => records.create())
+
+    expect(created).toEqual({
+      journeyId: expect.stringMatching(
+        /^GBN-PP-\d{2}-[0-9A-HJ-KM-NP-TV-Z]{6}$/
+      ),
+      status: 'draft',
+      createdAt: expect.any(String),
+      submittedAt: null,
+      fulfilment: {}
+    })
+  })
+
+  it('loads a whole-replaced m0 fulfilment and reports presence', async () => {
+    const created = await inPlantProducts(() => records.create())
+    await inPlantProducts(() =>
+      records.replaceFulfilment(created.journeyId, {}, { known: created })
+    )
+
+    await expect(
+      inPlantProducts(() => records.load({ journeyId: created.journeyId }))
+    ).resolves.toMatchObject({
+      journeyId: created.journeyId,
+      fulfilment: {}
+    })
+    await expect(
+      inPlantProducts(() => records.has(created.journeyId))
+    ).resolves.toBe(true)
+    await expect(
+      inPlantProducts(() => records.has('GBN-PP-00-000000'))
+    ).resolves.toBe(false)
+  })
+}
+
+const contentRoundTripTests = (records) => {
+  it('round-trips two accompanying documents through replace and load', async () => {
+    const created = await inPlantProducts(() => records.create())
+    const documents = [
+      {
+        documentType: 'PHYTOSANITARY_CERTIFICATE',
+        documentReference: 'PHYTO-001',
+        issueDate: { day: '4', month: '12', year: '2025' }
+      },
+      {
+        documentType: 'AIR_WAYBILL',
+        documentReference: 'AIR-002',
+        issueDate: { day: '27', month: '3', year: '2026' }
+      }
+    ]
+    const fulfilment = inPlantProducts(() =>
+      assembleFulfilments({ accompanyingDocuments: documents })
+    )
+
+    await inPlantProducts(() =>
+      records.replaceFulfilment(created.journeyId, fulfilment, {
+        known: created
+      })
+    )
+    const loaded = await inPlantProducts(() =>
+      records.load({ journeyId: created.journeyId })
+    )
+
+    expect(inPlantProducts(() => projectAnswers(loaded.fulfilment))).toEqual({
+      accompanyingDocuments: documents
+    })
+  })
+
+  it('round-trips a document with an uploaded file alongside one without', async () => {
+    const created = await inPlantProducts(() => records.create())
+    const documents = [
+      {
+        documentType: 'PHYTOSANITARY_CERTIFICATE',
+        documentReference: 'PHYTO-001',
+        issueDate: { day: '4', month: '12', year: '2025' },
+        uploadId: 'upload-abc-123',
+        filename: 'phyto.pdf'
+      },
+      {
+        documentType: 'AIR_WAYBILL',
+        documentReference: 'AIR-002',
+        issueDate: { day: '27', month: '3', year: '2026' }
+      }
+    ]
+    const fulfilment = inPlantProducts(() =>
+      assembleFulfilments({ accompanyingDocuments: documents })
+    )
+
+    await inPlantProducts(() =>
+      records.replaceFulfilment(created.journeyId, fulfilment, {
+        known: created
+      })
+    )
+    const loaded = await inPlantProducts(() =>
+      records.load({ journeyId: created.journeyId })
+    )
+
+    expect(inPlantProducts(() => projectAnswers(loaded.fulfilment))).toEqual({
+      accompanyingDocuments: documents
+    })
+  })
+
+  it('round-trips both derived destination branches through replace and draft resume', async () => {
+    const created = await inPlantProducts(() => records.create())
+    const sameAsImporter = inPlantProducts(() =>
+      assembleFulfilments({ destinationSameAsConsignee: true })
+    )
+
+    await inPlantProducts(() =>
+      records.replaceFulfilment(created.journeyId, sameAsImporter, {
+        known: created
+      })
+    )
+    const sameLoaded = await inPlantProducts(() =>
+      records.load({ journeyId: created.journeyId })
+    )
+    expect(
+      inPlantProducts(() => projectAnswers(sameLoaded.fulfilment))
+    ).toEqual({ destinationSameAsConsignee: true })
+
+    const enteredAnswers = {
+      destinationSameAsConsignee: false,
+      destinationName: 'Paris Produce Market',
+      destinationAddressLine1: '10 Rue des Plantes',
+      destinationCity: 'Paris',
+      destinationPostcode: '75001',
+      destinationCountry: 'FR',
+      packerName: 'Packing SARL'
+    }
+    const entered = inPlantProducts(() => assembleFulfilments(enteredAnswers))
+    await inPlantProducts(() =>
+      records.replaceFulfilment(created.journeyId, entered, {
+        known: created
+      })
+    )
+    const enteredLoaded = await inPlantProducts(() =>
+      records.load({ journeyId: created.journeyId })
+    )
+    expect(
+      inPlantProducts(() => projectAnswers(enteredLoaded.fulfilment))
+    ).toEqual(enteredAnswers)
+  })
+
+  it('covers every mapped PUT content section with the populated seed', () => {
+    expect(Object.keys(toDto(POPULATED_ANSWERS)).sort()).toEqual(
+      POPULATED_DTO_SECTION_KEYS
+    )
+  })
+
+  it('preserves populated notification content when finalising', async () => {
+    const created = await inPlantProducts(() => records.create())
+    const fulfilment = inPlantProducts(() =>
+      assembleFulfilments(POPULATED_ANSWERS)
+    )
+
+    await inPlantProducts(() =>
+      records.replaceFulfilment(created.journeyId, fulfilment, {
+        known: created
+      })
+    )
+    await inPlantProducts(() => records.finalise(created.journeyId))
+    const loaded = await inPlantProducts(() =>
+      records.load({ journeyId: created.journeyId })
+    )
+
+    expect(inPlantProducts(() => projectAnswers(loaded.fulfilment))).toEqual(
+      POPULATED_ANSWERS
+    )
+  })
+
+  it('removes every omitted populated section on whole replacement', async () => {
+    const created = await inPlantProducts(() => records.create())
+    const populated = inPlantProducts(() =>
+      assembleFulfilments(POPULATED_ANSWERS)
+    )
+    await inPlantProducts(() =>
+      records.replaceFulfilment(created.journeyId, populated, {
+        known: created
+      })
+    )
+
+    const strictSubset = { countryOfOrigin: 'NL' }
+    await inPlantProducts(() =>
+      records.replaceFulfilment(
+        created.journeyId,
+        assembleFulfilments(strictSubset),
+        { known: created }
+      )
+    )
+    const loaded = await inPlantProducts(() =>
+      records.load({ journeyId: created.journeyId })
+    )
+    const loadedAnswers = inPlantProducts(() =>
+      projectAnswers(loaded.fulfilment)
+    )
+
+    for (const omittedKey of Object.keys(POPULATED_ANSWERS).filter(
+      (key) => !(key in strictSubset)
+    )) {
+      expect(loadedAnswers).not.toHaveProperty(omittedKey)
+    }
+    expect(loadedAnswers).toEqual(strictSubset)
+  })
+}
+
+const lifecycleTests = (records) => {
+  it('submits, amends, cancels and soft-deletes idempotently', async () => {
+    const created = await inPlantProducts(() => records.create())
+    const submitted = await inPlantProducts(() =>
+      records.finalise(created.journeyId)
+    )
+    const amending = await inPlantProducts(() =>
+      records.amend(created.journeyId)
+    )
+    const restored = await inPlantProducts(() =>
+      records.cancelAmend(created.journeyId)
+    )
+    const deleted = await inPlantProducts(() =>
+      records.softDelete(created.journeyId)
+    )
+    const repeatedDelete = await inPlantProducts(() =>
+      records.softDelete(created.journeyId)
+    )
+
+    expect(submitted.status).toBe('submitted')
+    expect(amending.status).toBe('amend')
+    expect(restored).toMatchObject({ status: 'submitted', fulfilment: {} })
+    expect(deleted.status).toBe('deleted')
+    expect(repeatedDelete.status).toBe('deleted')
+  })
+
+  it('keeps finalise, load and list on the same submitted declaration instant', async () => {
+    const created = await inPlantProducts(() => records.create())
+    const finalised = await inPlantProducts(() =>
+      records.finalise(created.journeyId)
+    )
+    const loaded = await inPlantProducts(() =>
+      records.load({ journeyId: created.journeyId })
+    )
+    const listed = await inPlantProducts(() => records.list())
+    const listedRecord = listed.rows.find(
+      ({ journeyId }) => journeyId === created.journeyId
+    )
+
+    expect(finalised.submittedAt).toEqual(expect.any(String))
+    const expected = {
+      status: 'submitted',
+      submittedAt: finalised.submittedAt
+    }
+    for (const record of [finalised, loaded, listedRecord]) {
+      expect(record).toMatchObject(expected)
+    }
+  })
+
+  it('rejects replacement after submission', async () => {
+    const created = await inPlantProducts(() => records.create())
+    await inPlantProducts(() => records.finalise(created.journeyId))
+
+    await expect(
+      inPlantProducts(() =>
+        records.replaceFulfilment(
+          created.journeyId,
+          {},
+          { known: { ...created, status: 'submitted' } }
+        )
+      )
+    ).rejects.toThrow('is submitted — writes blocked')
+  })
+}
+
+const copyTests = (records, name) => {
+  it('returns one new draft per idempotency key', async () => {
+    const source = await inPlantProducts(() => records.create())
+    await inPlantProducts(() => records.finalise(source.journeyId))
+
+    const first = await inPlantProducts(() =>
+      records.copy(source.journeyId, COPY_IDEMPOTENCY_KEY)
+    )
+    const repeated = await inPlantProducts(() =>
+      records.copy(source.journeyId, COPY_IDEMPOTENCY_KEY)
+    )
+
+    const afterRepeat = await inPlantProducts(() => records.list())
+
+    expect(repeated.journeyId).toBe(first.journeyId)
+    expect(
+      afterRepeat.rows
+        .filter(({ status }) => status === 'draft')
+        .map(({ journeyId }) => journeyId)
+    ).toEqual([first.journeyId])
+
+    const deliberateSecond = await inPlantProducts(() =>
+      records.copy(source.journeyId, 'second-copy-key')
+    )
+
+    const afterSecondKey = await inPlantProducts(() => records.list())
+
+    expect(deliberateSecond.journeyId).not.toBe(first.journeyId)
+    expect(first).toMatchObject({ status: 'draft', fulfilment: {} })
+    expect(
+      afterSecondKey.rows.filter(({ status }) => status === 'draft')
+    ).toHaveLength(2)
+
+    if (name === REAL_ADAPTER_NAME) {
+      const copyRequests = fetchMocker
+        .requests()
+        .filter(({ url }) => url.endsWith('/copies'))
+      expect(copyRequests).toHaveLength(3)
+      expect(
+        copyRequests.map((request) =>
+          request.headers.get(IDEMPOTENCY_KEY_HEADER)
+        )
+      ).toEqual([COPY_IDEMPOTENCY_KEY, COPY_IDEMPOTENCY_KEY, 'second-copy-key'])
+    }
+  })
+
+  it.each([undefined, null, '', '   '])(
+    'rejects a blank copy key before reading a source or writing a copy (%s)',
+    async (key) => {
+      await expect(
+        inPlantProducts(() => records.copy('GBN-PP-00-000000', key))
+      ).rejects.toThrow('Idempotency-Key must not be blank')
+
+      if (name === REAL_ADAPTER_NAME) {
+        expect(fetchMocker.requests()).toEqual([])
+      } else {
+        expect((await inPlantProducts(() => records.list())).rows).toEqual([])
+      }
+    }
+  )
+
+  it('matches the shipped global key index across different sources', async () => {
+    const firstSource = await inPlantProducts(() => records.create())
+    const secondSource = await inPlantProducts(() => records.create())
+    await inPlantProducts(() => records.finalise(firstSource.journeyId))
+    await inPlantProducts(() => records.finalise(secondSource.journeyId))
+
+    const first = await inPlantProducts(() =>
+      records.copy(firstSource.journeyId, 'globally-unique-key')
+    )
+    const repeated = await inPlantProducts(() =>
+      records.copy(secondSource.journeyId, 'globally-unique-key')
+    )
+
+    expect(repeated.journeyId).toBe(first.journeyId)
+    expect((await inPlantProducts(() => records.list())).rows).toHaveLength(3)
+    if (name === REAL_ADAPTER_NAME) {
+      const copyRequests = fetchMocker
+        .requests()
+        .filter(({ url }) => url.endsWith('/copies'))
+      expect(copyRequests.map(({ url }) => url)).toEqual([
+        `${notificationsUrl}/${firstSource.journeyId}/copies`,
+        `${notificationsUrl}/${secondSource.journeyId}/copies`
+      ])
+    }
+  })
+}
 
 describe.each(implementations)(
   'plant-products records engine port — $name',
   ({ name, records, reset }) => {
     beforeEach(reset)
 
-    it('creates a draft journey in the engine record shape', async () => {
-      const created = await inPlantProducts(() => records.create())
-
-      expect(created).toEqual({
-        journeyId: expect.stringMatching(
-          /^GBN-PP-\d{2}-[0-9A-HJ-KM-NP-TV-Z]{6}$/
-        ),
-        status: 'draft',
-        createdAt: expect.any(String),
-        submittedAt: null,
-        fulfilment: {}
-      })
-    })
-
-    it('loads a whole-replaced m0 fulfilment and reports presence', async () => {
-      const created = await inPlantProducts(() => records.create())
-      await inPlantProducts(() =>
-        records.replaceFulfilment(created.journeyId, {}, { known: created })
-      )
-
-      await expect(
-        inPlantProducts(() => records.load({ journeyId: created.journeyId }))
-      ).resolves.toMatchObject({
-        journeyId: created.journeyId,
-        fulfilment: {}
-      })
-      await expect(
-        inPlantProducts(() => records.has(created.journeyId))
-      ).resolves.toBe(true)
-      await expect(
-        inPlantProducts(() => records.has('GBN-PP-00-000000'))
-      ).resolves.toBe(false)
-    })
-
-    it('round-trips two accompanying documents through replace and load', async () => {
-      const created = await inPlantProducts(() => records.create())
-      const documents = [
-        {
-          documentType: 'PHYTOSANITARY_CERTIFICATE',
-          documentReference: 'PHYTO-001',
-          issueDate: { day: '4', month: '12', year: '2025' }
-        },
-        {
-          documentType: 'AIR_WAYBILL',
-          documentReference: 'AIR-002',
-          issueDate: { day: '27', month: '3', year: '2026' }
-        }
-      ]
-      const fulfilment = inPlantProducts(() =>
-        assembleFulfilments({ accompanyingDocuments: documents })
-      )
-
-      await inPlantProducts(() =>
-        records.replaceFulfilment(created.journeyId, fulfilment, {
-          known: created
-        })
-      )
-      const loaded = await inPlantProducts(() =>
-        records.load({ journeyId: created.journeyId })
-      )
-
-      expect(inPlantProducts(() => projectAnswers(loaded.fulfilment))).toEqual({
-        accompanyingDocuments: documents
-      })
-    })
-
-    it('round-trips a document with an uploaded file alongside one without', async () => {
-      const created = await inPlantProducts(() => records.create())
-      const documents = [
-        {
-          documentType: 'PHYTOSANITARY_CERTIFICATE',
-          documentReference: 'PHYTO-001',
-          issueDate: { day: '4', month: '12', year: '2025' },
-          uploadId: 'upload-abc-123',
-          filename: 'phyto.pdf'
-        },
-        {
-          documentType: 'AIR_WAYBILL',
-          documentReference: 'AIR-002',
-          issueDate: { day: '27', month: '3', year: '2026' }
-        }
-      ]
-      const fulfilment = inPlantProducts(() =>
-        assembleFulfilments({ accompanyingDocuments: documents })
-      )
-
-      await inPlantProducts(() =>
-        records.replaceFulfilment(created.journeyId, fulfilment, {
-          known: created
-        })
-      )
-      const loaded = await inPlantProducts(() =>
-        records.load({ journeyId: created.journeyId })
-      )
-
-      expect(inPlantProducts(() => projectAnswers(loaded.fulfilment))).toEqual({
-        accompanyingDocuments: documents
-      })
-    })
-
-    it('round-trips both derived destination branches through replace and draft resume', async () => {
-      const created = await inPlantProducts(() => records.create())
-      const sameAsImporter = inPlantProducts(() =>
-        assembleFulfilments({ destinationSameAsConsignee: true })
-      )
-
-      await inPlantProducts(() =>
-        records.replaceFulfilment(created.journeyId, sameAsImporter, {
-          known: created
-        })
-      )
-      const sameLoaded = await inPlantProducts(() =>
-        records.load({ journeyId: created.journeyId })
-      )
-      expect(
-        inPlantProducts(() => projectAnswers(sameLoaded.fulfilment))
-      ).toEqual({ destinationSameAsConsignee: true })
-
-      const enteredAnswers = {
-        destinationSameAsConsignee: false,
-        destinationName: 'Paris Produce Market',
-        destinationAddressLine1: '10 Rue des Plantes',
-        destinationCity: 'Paris',
-        destinationPostcode: '75001',
-        destinationCountry: 'FR',
-        packerName: 'Packing SARL'
-      }
-      const entered = inPlantProducts(() => assembleFulfilments(enteredAnswers))
-      await inPlantProducts(() =>
-        records.replaceFulfilment(created.journeyId, entered, {
-          known: created
-        })
-      )
-      const enteredLoaded = await inPlantProducts(() =>
-        records.load({ journeyId: created.journeyId })
-      )
-      expect(
-        inPlantProducts(() => projectAnswers(enteredLoaded.fulfilment))
-      ).toEqual(enteredAnswers)
-    })
-
-    it('covers every mapped PUT content section with the populated seed', () => {
-      expect(Object.keys(toDto(POPULATED_ANSWERS)).sort()).toEqual(
-        POPULATED_DTO_SECTION_KEYS
-      )
-    })
-
-    it('preserves populated notification content when finalising', async () => {
-      const created = await inPlantProducts(() => records.create())
-      const fulfilment = inPlantProducts(() =>
-        assembleFulfilments(POPULATED_ANSWERS)
-      )
-
-      await inPlantProducts(() =>
-        records.replaceFulfilment(created.journeyId, fulfilment, {
-          known: created
-        })
-      )
-      await inPlantProducts(() => records.finalise(created.journeyId))
-      const loaded = await inPlantProducts(() =>
-        records.load({ journeyId: created.journeyId })
-      )
-
-      expect(inPlantProducts(() => projectAnswers(loaded.fulfilment))).toEqual(
-        POPULATED_ANSWERS
-      )
-    })
-
-    it('removes every omitted populated section on whole replacement', async () => {
-      const created = await inPlantProducts(() => records.create())
-      const populated = inPlantProducts(() =>
-        assembleFulfilments(POPULATED_ANSWERS)
-      )
-      await inPlantProducts(() =>
-        records.replaceFulfilment(created.journeyId, populated, {
-          known: created
-        })
-      )
-
-      const strictSubset = { countryOfOrigin: 'NL' }
-      await inPlantProducts(() =>
-        records.replaceFulfilment(
-          created.journeyId,
-          assembleFulfilments(strictSubset),
-          { known: created }
-        )
-      )
-      const loaded = await inPlantProducts(() =>
-        records.load({ journeyId: created.journeyId })
-      )
-      const loadedAnswers = inPlantProducts(() =>
-        projectAnswers(loaded.fulfilment)
-      )
-
-      for (const omittedKey of Object.keys(POPULATED_ANSWERS).filter(
-        (key) => !(key in strictSubset)
-      )) {
-        expect(loadedAnswers).not.toHaveProperty(omittedKey)
-      }
-      expect(loadedAnswers).toEqual(strictSubset)
-    })
-
-    it('submits, amends, cancels and soft-deletes idempotently', async () => {
-      const created = await inPlantProducts(() => records.create())
-      const submitted = await inPlantProducts(() =>
-        records.finalise(created.journeyId)
-      )
-      const amending = await inPlantProducts(() =>
-        records.amend(created.journeyId)
-      )
-      const restored = await inPlantProducts(() =>
-        records.cancelAmend(created.journeyId)
-      )
-      const deleted = await inPlantProducts(() =>
-        records.softDelete(created.journeyId)
-      )
-      const repeatedDelete = await inPlantProducts(() =>
-        records.softDelete(created.journeyId)
-      )
-
-      expect(submitted.status).toBe('submitted')
-      expect(amending.status).toBe('amend')
-      expect(restored).toMatchObject({ status: 'submitted', fulfilment: {} })
-      expect(deleted.status).toBe('deleted')
-      expect(repeatedDelete.status).toBe('deleted')
-    })
-
-    it('keeps finalise, load and list on the same submitted declaration instant', async () => {
-      const created = await inPlantProducts(() => records.create())
-      const finalised = await inPlantProducts(() =>
-        records.finalise(created.journeyId)
-      )
-      const loaded = await inPlantProducts(() =>
-        records.load({ journeyId: created.journeyId })
-      )
-      const listed = await inPlantProducts(() => records.list())
-      const listedRecord = listed.rows.find(
-        ({ journeyId }) => journeyId === created.journeyId
-      )
-
-      expect(finalised.submittedAt).toEqual(expect.any(String))
-      const expected = {
-        status: 'submitted',
-        submittedAt: finalised.submittedAt
-      }
-      for (const record of [finalised, loaded, listedRecord]) {
-        expect(record).toMatchObject(expected)
-      }
-    })
-
-    it('rejects replacement after submission', async () => {
-      const created = await inPlantProducts(() => records.create())
-      await inPlantProducts(() => records.finalise(created.journeyId))
-
-      await expect(
-        inPlantProducts(() =>
-          records.replaceFulfilment(
-            created.journeyId,
-            {},
-            { known: { ...created, status: 'submitted' } }
-          )
-        )
-      ).rejects.toThrow('is submitted — writes blocked')
-    })
-
-    it('returns one new draft per idempotency key', async () => {
-      const source = await inPlantProducts(() => records.create())
-      await inPlantProducts(() => records.finalise(source.journeyId))
-
-      const first = await inPlantProducts(() =>
-        records.copy(source.journeyId, 'same-copy-key')
-      )
-      const repeated = await inPlantProducts(() =>
-        records.copy(source.journeyId, 'same-copy-key')
-      )
-
-      const afterRepeat = await inPlantProducts(() => records.list())
-
-      expect(repeated.journeyId).toBe(first.journeyId)
-      expect(
-        afterRepeat.rows
-          .filter(({ status }) => status === 'draft')
-          .map(({ journeyId }) => journeyId)
-      ).toEqual([first.journeyId])
-
-      const deliberateSecond = await inPlantProducts(() =>
-        records.copy(source.journeyId, 'second-copy-key')
-      )
-
-      const afterSecondKey = await inPlantProducts(() => records.list())
-
-      expect(deliberateSecond.journeyId).not.toBe(first.journeyId)
-      expect(first).toMatchObject({ status: 'draft', fulfilment: {} })
-      expect(
-        afterSecondKey.rows.filter(({ status }) => status === 'draft')
-      ).toHaveLength(2)
-
-      if (name === 'real HTTP adapter') {
-        const copyRequests = fetchMocker
-          .requests()
-          .filter(({ url }) => url.endsWith('/copies'))
-        expect(copyRequests).toHaveLength(3)
-        expect(
-          copyRequests.map((request) =>
-            request.headers.get(IDEMPOTENCY_KEY_HEADER)
-          )
-        ).toEqual(['same-copy-key', 'same-copy-key', 'second-copy-key'])
-      }
-    })
-
-    it.each([undefined, null, '', '   '])(
-      'rejects a blank copy key before reading a source or writing a copy (%s)',
-      async (key) => {
-        await expect(
-          inPlantProducts(() => records.copy('GBN-PP-00-000000', key))
-        ).rejects.toThrow('Idempotency-Key must not be blank')
-
-        if (name === 'real HTTP adapter') {
-          expect(fetchMocker.requests()).toEqual([])
-        } else {
-          expect((await inPlantProducts(() => records.list())).rows).toEqual([])
-        }
-      }
-    )
-
-    it('matches the shipped global key index across different sources', async () => {
-      const firstSource = await inPlantProducts(() => records.create())
-      const secondSource = await inPlantProducts(() => records.create())
-      await inPlantProducts(() => records.finalise(firstSource.journeyId))
-      await inPlantProducts(() => records.finalise(secondSource.journeyId))
-
-      const first = await inPlantProducts(() =>
-        records.copy(firstSource.journeyId, 'globally-unique-key')
-      )
-      const repeated = await inPlantProducts(() =>
-        records.copy(secondSource.journeyId, 'globally-unique-key')
-      )
-
-      expect(repeated.journeyId).toBe(first.journeyId)
-      expect((await inPlantProducts(() => records.list())).rows).toHaveLength(3)
-      if (name === 'real HTTP adapter') {
-        const copyRequests = fetchMocker
-          .requests()
-          .filter(({ url }) => url.endsWith('/copies'))
-        expect(copyRequests.map(({ url }) => url)).toEqual([
-          `${notificationsUrl}/${firstSource.journeyId}/copies`,
-          `${notificationsUrl}/${secondSource.journeyId}/copies`
-        ])
-      }
-    })
+    recordShapeTests(records)
+    contentRoundTripTests(records)
+    lifecycleTests(records)
+    copyTests(records, name)
   }
 )

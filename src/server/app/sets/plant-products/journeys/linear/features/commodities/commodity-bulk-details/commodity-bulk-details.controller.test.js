@@ -26,6 +26,7 @@ import { copy as featureCopy } from '../copy/copy.en.js'
 import * as commodityBulkDetails from './commodity-bulk-details.controller.js'
 
 const copy = featureCopy.commodityBulkDetails
+const NET_WEIGHT_LINE_ZERO = 'netWeight-0'
 const get = commodityBulkDetails.routes.find(
   ({ method }) => method === 'GET'
 ).handler
@@ -85,29 +86,7 @@ const payloadFor = (lines) =>
     ])
   )
 
-describe('plant-products commodity-bulk-details controller', () => {
-  let server
-
-  beforeAll(async () => {
-    vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
-    server = Hapi.server()
-    await server.register(plantProducts, {
-      routes: { prefix: '/plant-products' }
-    })
-  })
-
-  beforeEach(async () => {
-    enterSetContext('plant-products')
-    await records.clear()
-  })
-
-  afterEach(() => vi.restoreAllMocks())
-
-  afterAll(async () => {
-    vi.unstubAllEnvs()
-    await server.stop({ timeout: 0 })
-  })
-
+const viewTests = () => {
   it('gets state once and prefills every fixture-backed line control and total', async () => {
     const getState = vi.spyOn(state, 'get')
     const seed = {
@@ -143,7 +122,9 @@ describe('plant-products commodity-bulk-details controller', () => {
       netWeight: 60.5
     })
   })
+}
 
+const bulkApplyTests = () => {
   it('applies only filled values to a non-zero selected line and preserves every sibling cell', async () => {
     const seed = {
       commodityLines: [
@@ -237,7 +218,9 @@ describe('plant-products commodity-bulk-details controller', () => {
       numberOfPackages: 8
     })
   })
+}
 
+const bulkValidationTests = () => {
   it.each([
     ['negative', '-1'],
     ['non-integer', '0.5'],
@@ -340,7 +323,9 @@ describe('plant-products commodity-bulk-details controller', () => {
     })
     expect(result.after).toEqual(seed)
   })
+}
 
+const lineValidationTests = () => {
   it.each([
     [
       'number of packages required',
@@ -358,12 +343,17 @@ describe('plant-products commodity-bulk-details controller', () => {
     ['quantity required', 'quantity-0', '', 'quantityRequired'],
     ['quantity format', 'quantity-0', '1.2345', 'quantityFormat'],
     ['quantity type required', 'quantityType-0', '', 'quantityTypeRequired'],
-    ['net weight required', 'netWeight-0', '', 'netWeightRequired'],
-    ['net weight minimum', 'netWeight-0', '0', 'netWeightMin'],
-    ['net weight decimals', 'netWeight-0', '1.2345', 'netWeightDecimals'],
+    ['net weight required', NET_WEIGHT_LINE_ZERO, '', 'netWeightRequired'],
+    ['net weight minimum', NET_WEIGHT_LINE_ZERO, '0', 'netWeightMin'],
+    [
+      'net weight decimals',
+      NET_WEIGHT_LINE_ZERO,
+      '1.2345',
+      'netWeightDecimals'
+    ],
     [
       'net weight digits',
-      'netWeight-0',
+      NET_WEIGHT_LINE_ZERO,
       '12345678901234.567',
       'netWeightDigits'
     ]
@@ -399,7 +389,9 @@ describe('plant-products commodity-bulk-details controller', () => {
     expect(result.view.context.lines[1].showFinishedOrPropagated).toBe(true)
     expect(result.after).toEqual(seed)
   })
+}
 
+const lineSaveTests = () => {
   it('saves cleaned values on the non-zero line and preserves all other lines cell by cell', async () => {
     const seed = {
       commodityLines: [line('06042090'), line('06011010'), line('08059000')]
@@ -515,4 +507,34 @@ describe('plant-products commodity-bulk-details controller', () => {
       drive(post, { seed, payload: payloadFor(seed.commodityLines) })
     ).rejects.toThrow('programming failure')
   })
+}
+
+describe('plant-products commodity-bulk-details controller', () => {
+  let server
+
+  beforeAll(async () => {
+    vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
+    server = Hapi.server()
+    await server.register(plantProducts, {
+      routes: { prefix: '/plant-products' }
+    })
+  })
+
+  beforeEach(async () => {
+    enterSetContext('plant-products')
+    await records.clear()
+  })
+
+  afterEach(() => vi.restoreAllMocks())
+
+  afterAll(async () => {
+    vi.unstubAllEnvs()
+    await server.stop({ timeout: 0 })
+  })
+
+  viewTests()
+  bulkApplyTests()
+  bulkValidationTests()
+  lineValidationTests()
+  lineSaveTests()
 })

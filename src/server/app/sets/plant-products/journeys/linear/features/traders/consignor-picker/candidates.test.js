@@ -31,6 +31,8 @@ const consignorAnswers = {
 
 const [firstCanned] = CANNED_CONSIGNORS
 
+const CONSIGNOR_12_ID = 'example-consignor-12'
+
 const answersMatching = (record) => ({
   consignorName: record.name,
   consignorAddressLine1: record.address.addressLine1,
@@ -49,7 +51,7 @@ describe('consignor picker candidates', () => {
   })
 
   it.each([
-    { name: 'PLANT_PRODUCTS_MODE unset', mode: undefined },
+    { name: 'PLANT_PRODUCTS_MODE unset' },
     { name: 'PLANT_PRODUCTS_MODE=real', mode: 'real' },
     { name: 'PLANT_PRODUCTS_MODE=stub', mode: 'stub' }
   ])(
@@ -145,7 +147,7 @@ describe('consignor picker paged candidates', () => {
   })
 
   it.each([
-    { name: 'PLANT_PRODUCTS_MODE unset', mode: undefined },
+    { name: 'PLANT_PRODUCTS_MODE unset' },
     { name: 'PLANT_PRODUCTS_MODE=real', mode: 'real' },
     { name: 'PLANT_PRODUCTS_MODE=stub', mode: 'stub' }
   ])(
@@ -178,7 +180,7 @@ describe('consignor picker paged candidates', () => {
     expect(found.results.map(({ id }) => id)).toEqual([
       'example-consignor-10',
       'example-consignor-11',
-      'example-consignor-12'
+      CONSIGNOR_12_ID
     ])
   })
 
@@ -212,9 +214,9 @@ describe('consignor picker paged candidates', () => {
     const onPageOne = found.results.map(({ id }) => id)
 
     expect(pickable).toHaveLength(13)
-    expect(onPageOne).not.toContain('example-consignor-12')
-    expect(
-      pickable.find(({ id }) => id === 'example-consignor-12')
-    ).toMatchObject({ name: 'Example Consignor 12 (sample data)' })
+    expect(onPageOne).not.toContain(CONSIGNOR_12_ID)
+    expect(pickable.find(({ id }) => id === CONSIGNOR_12_ID)).toMatchObject({
+      name: 'Example Consignor 12 (sample data)'
+    })
   })
 })

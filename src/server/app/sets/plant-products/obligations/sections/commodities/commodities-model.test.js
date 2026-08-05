@@ -55,6 +55,9 @@ import {
 import { eppoCode, genusAndSpecies, species, speciesId } from './species.js'
 import { varieties, variety, varietyClass } from './varieties.js'
 
+const FIXTURE_COMMODITY_OWNER = 'fixture-commodity-owner'
+const EDITED_VARIETY_ID = 'first-edited'
+
 // Vitest's global setup mounts only this id; configuring the isolated fixture
 // under it preserves the sole-mounted-set fallback used by pp-012's harness.
 const setId = 'live-animals'
@@ -103,8 +106,8 @@ const pages = [
     collects: ['commodityInputMethod']
   },
   {
-    id: 'fixture-commodity-owner',
-    slug: 'fixture-commodity-owner',
+    id: FIXTURE_COMMODITY_OWNER,
+    slug: FIXTURE_COMMODITY_OWNER,
     collects: ['commodityLines']
   }
 ]
@@ -329,13 +332,13 @@ describe('real depth-3 path-addressed writes', () => {
       stubH(),
       varietiesPath(0, 0),
       0,
-      varietyEntry('first-edited')
+      varietyEntry(EDITED_VARIETY_ID)
     )
     await removeEntryAt(request(), stubH(), varietiesPath(0, 0), 1)
 
     const answers = await answersNow()
     expect(answers.commodityLines[0].species[0].varieties).toEqual([
-      varietyEntry('first-edited'),
+      varietyEntry(EDITED_VARIETY_ID),
       varietyEntry('third')
     ])
     expect(answers.commodityLines[0].species[1].varieties).toEqual([
@@ -345,7 +348,7 @@ describe('real depth-3 path-addressed writes', () => {
       varietyEntry('line-sibling')
     ])
     expect(assembleFulfilments(answers)[variety.id]).toMatchObject({
-      'line0/species0/variety0': 'first-edited',
+      'line0/species0/variety0': EDITED_VARIETY_ID,
       'line0/species0/variety1': 'third'
     })
   })
@@ -462,8 +465,8 @@ describe('real depth-3 scope, completeness and dispatch', () => {
     ]
 
     expect(paths.map((path) => pageOfObligation(path))).toEqual(
-      paths.map(() => 'fixture-commodity-owner')
+      paths.map(() => FIXTURE_COMMODITY_OWNER)
     )
-    expect(collectsOf('fixture-commodity-owner')).toEqual(['commodityLines'])
+    expect(collectsOf(FIXTURE_COMMODITY_OWNER)).toEqual(['commodityLines'])
   })
 })

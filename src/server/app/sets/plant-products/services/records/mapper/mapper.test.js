@@ -37,7 +37,7 @@ const SERVER_SET_FIELDS = [
   'submittedBaseline'
 ]
 
-describe('plant-products notification mapper at the m0 boundary', () => {
+const coreMappingTests = () => {
   it('maps the empty m0 answers tree to an empty DTO', () => {
     const { importer, ...answerOwnedDto } = toDto({})
 
@@ -201,7 +201,9 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     expect(fromDto()).toEqual({})
     expect(fromDto(null)).toEqual({})
   })
+}
 
+const commodityTests = () => {
   it('round-trips every modelled commodity leaf through three collection levels', () => {
     const answers = {
       commodityLines: [
@@ -321,7 +323,9 @@ describe('plant-products notification mapper at the m0 boundary', () => {
       commodityLines: []
     })
   })
+}
 
+const additionalDetailsTests = () => {
   it('round-trips all three additional-details fields without derived totals', () => {
     const answers = {
       totalGrossWeight: 12.5,
@@ -403,7 +407,9 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     expect(fromDto({})).not.toHaveProperty('totalGrossWeight')
     expect(fromDto({ additionalDetails: {} })).toEqual({})
   })
+}
 
+const transportAndMovementTests = () => {
   it('round-trips every transport field and its container rows', () => {
     const answers = {
       borderControlPost: 'CONPNT',
@@ -504,7 +510,9 @@ describe('plant-products notification mapper at the m0 boundary', () => {
       'usingGvms'
     )
   })
+}
 
+const contactTests = () => {
   it('round-trips all three responsible-person contact fields', () => {
     const answers = {
       responsiblePersonName: RESPONSIBLE_PERSON_NAME,
@@ -603,7 +611,9 @@ describe('plant-products notification mapper at the m0 boundary', () => {
       nominatedContacts: []
     })
   })
+}
 
+const partyAddressTests = () => {
   it('writes the unmistakable placeholder as the importer', () => {
     expect(toDto({}).importer).toEqual({
       name: 'KING CHARLES III',
@@ -759,7 +769,9 @@ describe('plant-products notification mapper at the m0 boundary', () => {
     expect(answers).not.toHaveProperty('consignorTelephone')
     expect(answers).not.toHaveProperty('consignorEmail')
   })
+}
 
+const accompanyingDocumentTests = () => {
   it('round-trips an uploaded document file through the sub-resource DTO', () => {
     const entry = {
       documentType: 'PHYTOSANITARY_CERTIFICATE',
@@ -828,7 +840,7 @@ describe('plant-products notification mapper at the m0 boundary', () => {
   })
 
   it.each([
-    { name: 'files absent', files: undefined },
+    { name: 'files absent' },
     { name: 'files empty', files: [] },
     { name: 'files first element has no fileId', files: [{}] },
     { name: 'files is not an array', files: 'nonsense' },
@@ -907,4 +919,14 @@ describe('plant-products notification mapper at the m0 boundary', () => {
       'accompanyingDocuments'
     )
   })
+}
+
+describe('plant-products notification mapper at the m0 boundary', () => {
+  coreMappingTests()
+  commodityTests()
+  additionalDetailsTests()
+  transportAndMovementTests()
+  contactTests()
+  partyAddressTests()
+  accompanyingDocumentTests()
 })

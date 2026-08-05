@@ -4,6 +4,8 @@ import { axeViolations as seriousOrCriticalViolations } from '../../axe.e2e-help
 import { copy as featureCopy } from '../copy/copy.en.js'
 
 const copy = featureCopy.commoditySearch
+const SAVE_AND_CONTINUE = 'Save and continue'
+const CITRUS_AUSTRALASICA_RESULT = 'Citrus australasica — 08059000'
 
 const startAtCommoditySearch = async (page) => {
   await page.goto('/plant-products')
@@ -11,13 +13,13 @@ const startAtCommoditySearch = async (page) => {
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Country of origin').selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByRole('link', { name: 'Back' }).click()
   await page.getByRole('link', { name: 'Commodity', exact: true }).click()
   await page.getByRole('radio', { name: 'Manual entry' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page).toHaveURL((url) =>
     /^\/plant-products\/notifications\/[^/]+\/commodity-search$/.test(
       url.pathname
@@ -42,11 +44,7 @@ const expectLinkedError = async (page, field, message) => {
   )
 }
 
-test.describe('plant-products commodity search', () => {
-  test.beforeEach(async ({ page }) => {
-    await startAtCommoditySearch(page)
-  })
-
+const codeSearchTests = () => {
   test('renders both named tab panels, wired hints and fixture tree without duplicate landmark names', async ({
     page
   }) => {
@@ -200,7 +198,9 @@ test.describe('plant-products commodity search', () => {
     await expect(page.getByRole('alert')).toHaveCount(0)
     await expect(page.getByLabel(copy.codeSearch.label)).toHaveValue('99999999')
   })
+}
 
+const speciesSearchTests = () => {
   test('links and focuses the empty genus-and-species error', async ({
     page
   }) => {
@@ -220,7 +220,7 @@ test.describe('plant-products commodity search', () => {
     await page.getByLabel(copy.speciesSearch.label).fill('Citrus')
     await panels(page).species.getByRole('button', { name: 'Search' }).click()
     const result = page.getByRole('listitem').filter({
-      hasText: 'Citrus australasica — 08059000'
+      hasText: CITRUS_AUSTRALASICA_RESULT
     })
     await result.getByRole('button', { name: copy.speciesSearch.add }).click()
     await expect(page).toHaveURL((url) =>
@@ -244,7 +244,7 @@ test.describe('plant-products commodity search', () => {
     await panels(page).species.getByRole('button', { name: 'Search' }).click()
     await page
       .getByRole('listitem')
-      .filter({ hasText: 'Citrus australasica — 08059000' })
+      .filter({ hasText: CITRUS_AUSTRALASICA_RESULT })
       .getByRole('button', { name: copy.speciesSearch.add })
       .click()
 
@@ -254,7 +254,7 @@ test.describe('plant-products commodity search', () => {
     await panels(page).species.getByRole('button', { name: 'Search' }).click()
     await page
       .getByRole('listitem')
-      .filter({ hasText: 'Citrus australasica — 08059000' })
+      .filter({ hasText: CITRUS_AUSTRALASICA_RESULT })
       .getByRole('button', { name: copy.speciesSearch.add })
       .click()
     await expectLinkedError(
@@ -263,7 +263,9 @@ test.describe('plant-products commodity search', () => {
       copy.errors.codeDuplicate
     )
   })
+}
 
+const accessibilityTests = () => {
   test('initial page has no serious or critical axe violations', async ({
     page
   }) => {
@@ -285,4 +287,14 @@ test.describe('plant-products commodity search', () => {
       `Commodity search error has serious/critical accessibility violations.\n${JSON.stringify(all, null, 2)}`
     ).toEqual([])
   })
+}
+
+test.describe('plant-products commodity search', () => {
+  test.beforeEach(async ({ page }) => {
+    await startAtCommoditySearch(page)
+  })
+
+  codeSearchTests()
+  speciesSearchTests()
+  accessibilityTests()
 })

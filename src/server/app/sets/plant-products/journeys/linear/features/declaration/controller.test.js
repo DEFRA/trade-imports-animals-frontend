@@ -29,10 +29,10 @@ import { records as recordsStub } from '../../../../services/records/stub.js'
 import * as declaration from './controller.js'
 import { copy } from './copy/copy.en.js'
 
+const SET_ID = 'plant-products'
 const get = declaration.routes.find(({ method }) => method === 'GET').handler
 const post = postHandlerOf(declaration)
-const inPlantProducts = (operation) =>
-  withSetContext('plant-products', operation)
+const inPlantProducts = (operation) => withSetContext(SET_ID, operation)
 const drive = (handler, options) =>
   inPlantProducts(() => driveHandler(handler, options))
 
@@ -47,14 +47,14 @@ describe('plant-products declaration controller', () => {
   })
 
   beforeEach(async () => {
-    enterSetContext('plant-products')
-    configureRecords('plant-products', recordsStub)
+    enterSetContext(SET_ID)
+    configureRecords(SET_ID, recordsStub)
     configureReadyForCheckYourAnswers(() => true)
     await inPlantProducts(() => store.clear())
   })
 
   afterEach(() => {
-    configureRecords('plant-products', recordsStub)
+    configureRecords(SET_ID, recordsStub)
     vi.unstubAllGlobals()
   })
 
@@ -170,7 +170,7 @@ describe('plant-products declaration controller', () => {
   })
 
   it('re-renders the checked value after a recoverable finalise failure', async () => {
-    configureRecords('plant-products', {
+    configureRecords(SET_ID, {
       ...recordsStub,
       finalise: realRecords.finalise
     })
@@ -193,7 +193,7 @@ describe('plant-products declaration controller', () => {
   })
 
   it('re-renders the checked value after a rejected finalise fetch', async () => {
-    configureRecords('plant-products', {
+    configureRecords(SET_ID, {
       ...recordsStub,
       finalise: realRecords.finalise
     })

@@ -12,9 +12,9 @@ import {
 import { records as recordsStub } from '../../../../services/records/stub.js'
 import * as confirmation from './controller.js'
 
+const SET_ID = 'plant-products'
 const get = confirmation.routes.find(({ method }) => method === 'GET').handler
-const inPlantProducts = (operation) =>
-  withSetContext('plant-products', operation)
+const inPlantProducts = (operation) => withSetContext(SET_ID, operation)
 
 describe('plant-products confirmation controller', () => {
   let server
@@ -27,8 +27,8 @@ describe('plant-products confirmation controller', () => {
   })
 
   beforeEach(async () => {
-    enterSetContext('plant-products')
-    configureRecords('plant-products', recordsStub)
+    enterSetContext(SET_ID)
+    configureRecords(SET_ID, recordsStub)
     await inPlantProducts(() => store.clear())
   })
 

@@ -28,11 +28,13 @@ import * as contact from '../contact/controller.js'
 import * as goodsMovement from './controller.js'
 import { copy } from './copy/copy.en.js'
 
+const SET_ID = 'plant-products'
+const NEXT_TARGET_PATH = '/plant-products/notifications/next-target'
 const get = goodsMovement.routes.find(({ method }) => method === 'GET').handler
 const post = postHandlerOf(goodsMovement)
 const contactPost = postHandlerOf(contact)
 const drive = (handler, options) =>
-  withSetContext('plant-products', () => driveHandler(handler, options))
+  withSetContext(SET_ID, () => driveHandler(handler, options))
 
 const validPayload = (overrides = {}) => ({
   commonTransitConvention: 'ADD_MRN_NOW',
@@ -53,7 +55,7 @@ describe('plant-products goods-movement controller', () => {
   })
 
   beforeEach(async () => {
-    enterSetContext('plant-products')
+    enterSetContext(SET_ID)
     await records.clear()
   })
 
@@ -118,7 +120,7 @@ describe('plant-products goods-movement controller', () => {
   it('trims a valid MRN, converts GVMS to boolean and redirects through nextTarget', async () => {
     const nextTarget = vi
       .spyOn(kit, 'nextTarget')
-      .mockResolvedValue('/plant-products/notifications/next-target')
+      .mockResolvedValue(NEXT_TARGET_PATH)
     const result = await drive(post, {
       payload: validPayload({
         commonTransitConvention: ' ADD_MRN_NOW ',
@@ -133,16 +135,14 @@ describe('plant-products goods-movement controller', () => {
       usingGvms: true
     })
     expect(result.response).toEqual({
-      redirect: '/plant-products/notifications/next-target'
+      redirect: NEXT_TARGET_PATH
     })
     expect(nextTarget).toHaveBeenCalledOnce()
   })
 
   it('keeps GVMS Yes after committing a different page', async () => {
-    vi.spyOn(kit, 'nextTarget').mockResolvedValue(
-      '/plant-products/notifications/next-target'
-    )
-    const answers = await withSetContext('plant-products', async () => {
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue(NEXT_TARGET_PATH)
+    const answers = await withSetContext(SET_ID, async () => {
       const journey = await store.create()
 
       await post(
@@ -170,9 +170,7 @@ describe('plant-products goods-movement controller', () => {
   })
 
   it('switching away from ADD_MRN_NOW ignores a stale submitted MRN and purges the stored MRN', async () => {
-    vi.spyOn(kit, 'nextTarget').mockResolvedValue(
-      '/plant-products/notifications/next-target'
-    )
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue(NEXT_TARGET_PATH)
     const result = await drive(post, {
       seed: {
         commonTransitConvention: 'ADD_MRN_NOW',

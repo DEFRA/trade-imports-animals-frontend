@@ -39,25 +39,35 @@ import {
 import * as tradersAddresses from './traders-addresses.controller.js'
 import { copy } from '../copy/copy.en.js'
 
+const SUITE = 'plant-products traders-addresses controller'
+const SET_ID = 'plant-products'
+const NEXT_TARGET_PATH = '/plant-products/notifications/next-target'
+const DESTINATION_NAME = 'Paris Produce Market'
+const DESTINATION_ADDRESS_LINE_1 = '10 Rue des Plantes'
+const DESTINATION_ADDRESS_LINE_2 = 'Building 2'
+const DESTINATION_ADDRESS_LINE_3 = 'Wholesale Quarter'
+const PACKER_NAME = 'Packing SARL'
+const PACKER_ADDRESS_LINE_1 = '20 Rue du Colis'
+
 const pageCopy = copy.tradersAddresses
 const get = tradersAddresses.routes.find(
   ({ method }) => method === 'GET'
 ).handler
 const post = postHandlerOf(tradersAddresses)
 const drive = (handler, options) =>
-  withSetContext('plant-products', () => driveHandler(handler, options))
+  withSetContext(SET_ID, () => driveHandler(handler, options))
 
 const validEnteredPayload = (overrides = {}) => ({
   destinationSameAsConsignee: 'false',
-  destinationName: 'Paris Produce Market',
-  destinationAddressLine1: '10 Rue des Plantes',
-  destinationAddressLine2: 'Building 2',
-  destinationAddressLine3: 'Wholesale Quarter',
+  destinationName: DESTINATION_NAME,
+  destinationAddressLine1: DESTINATION_ADDRESS_LINE_1,
+  destinationAddressLine2: DESTINATION_ADDRESS_LINE_2,
+  destinationAddressLine3: DESTINATION_ADDRESS_LINE_3,
   destinationCity: 'Paris',
   destinationPostcode: '75001',
   destinationCountry: 'FR',
-  packerName: 'Packing SARL',
-  packerAddressLine1: '20 Rue du Colis',
+  packerName: PACKER_NAME,
+  packerAddressLine1: PACKER_ADDRESS_LINE_1,
   packerAddressLine2: 'Unit 4',
   packerAddressLine3: '',
   packerCity: 'Calais',
@@ -66,7 +76,7 @@ const validEnteredPayload = (overrides = {}) => ({
   ...overrides
 })
 
-describe('plant-products traders-addresses controller', () => {
+const setupTradersAddressesSuite = () => {
   let server
 
   beforeAll(async () => {
@@ -78,7 +88,7 @@ describe('plant-products traders-addresses controller', () => {
   })
 
   beforeEach(async () => {
-    enterSetContext('plant-products')
+    enterSetContext(SET_ID)
     await records.clear()
   })
 
@@ -90,6 +100,10 @@ describe('plant-products traders-addresses controller', () => {
     vi.unstubAllEnvs()
     await server.stop({ timeout: 0 })
   })
+}
+
+describe(`${SUITE} — obligations and the form as rendered`, () => {
+  setupTradersAddressesSuite()
 
   it('gates every destination leaf through the manifest radio object identity', () => {
     for (const obligation of [
@@ -113,15 +127,15 @@ describe('plant-products traders-addresses controller', () => {
     const result = await drive(get, {
       seed: {
         destinationSameAsConsignee: false,
-        destinationName: 'Paris Produce Market',
-        destinationAddressLine1: '10 Rue des Plantes',
-        destinationAddressLine2: 'Building 2',
-        destinationAddressLine3: 'Wholesale Quarter',
+        destinationName: DESTINATION_NAME,
+        destinationAddressLine1: DESTINATION_ADDRESS_LINE_1,
+        destinationAddressLine2: DESTINATION_ADDRESS_LINE_2,
+        destinationAddressLine3: DESTINATION_ADDRESS_LINE_3,
         destinationCity: 'Paris',
         destinationPostcode: '75001',
         destinationCountry: 'FR',
-        packerName: 'Packing SARL',
-        packerAddressLine1: '20 Rue du Colis',
+        packerName: PACKER_NAME,
+        packerAddressLine1: PACKER_ADDRESS_LINE_1,
         packerAddressLine2: 'Unit 4',
         packerAddressLine3: '',
         packerCity: 'Calais',
@@ -179,9 +193,7 @@ describe('plant-products traders-addresses controller', () => {
       })
     }
 
-    vi.spyOn(kit, 'nextTarget').mockResolvedValue(
-      '/plant-products/notifications/next-target'
-    )
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue(NEXT_TARGET_PATH)
     const accepted = await drive(post, {
       payload: validEnteredPayload({
         destinationCountry: 'GB-ENG',
@@ -193,10 +205,12 @@ describe('plant-products traders-addresses controller', () => {
       destinationCountry: 'GB-ENG',
       packerCountry: 'GB-SCT'
     })
-    expect(accepted.response).toEqual({
-      redirect: '/plant-products/notifications/next-target'
-    })
+    expect(accepted.response).toEqual({ redirect: NEXT_TARGET_PATH })
   })
+})
+
+describe(`${SUITE} — field validation`, () => {
+  setupTradersAddressesSuite()
 
   it.each([
     {
@@ -253,44 +267,44 @@ describe('plant-products traders-addresses controller', () => {
       expect(result.after).toEqual({})
     }
   )
+})
+
+describe(`${SUITE} — saving`, () => {
+  setupTradersAddressesSuite()
 
   it('commits cleaned entered destination and packer values and redirects', async () => {
     const nextTarget = vi
       .spyOn(kit, 'nextTarget')
-      .mockResolvedValue('/plant-products/notifications/next-target')
+      .mockResolvedValue(NEXT_TARGET_PATH)
     const result = await drive(post, {
       payload: validEnteredPayload({
-        destinationName: '  Paris Produce Market  ',
-        packerName: '  Packing SARL  '
+        destinationName: `  ${DESTINATION_NAME}  `,
+        packerName: `  ${PACKER_NAME}  `
       })
     })
 
     expect(result.after).toEqual({
       destinationSameAsConsignee: false,
-      destinationName: 'Paris Produce Market',
-      destinationAddressLine1: '10 Rue des Plantes',
-      destinationAddressLine2: 'Building 2',
-      destinationAddressLine3: 'Wholesale Quarter',
+      destinationName: DESTINATION_NAME,
+      destinationAddressLine1: DESTINATION_ADDRESS_LINE_1,
+      destinationAddressLine2: DESTINATION_ADDRESS_LINE_2,
+      destinationAddressLine3: DESTINATION_ADDRESS_LINE_3,
       destinationCity: 'Paris',
       destinationPostcode: '75001',
       destinationCountry: 'FR',
-      packerName: 'Packing SARL',
-      packerAddressLine1: '20 Rue du Colis',
+      packerName: PACKER_NAME,
+      packerAddressLine1: PACKER_ADDRESS_LINE_1,
       packerAddressLine2: 'Unit 4',
       packerCity: 'Calais',
       packerPostcode: '62100',
       packerCountry: 'FR'
     })
-    expect(result.response).toEqual({
-      redirect: '/plant-products/notifications/next-target'
-    })
+    expect(result.response).toEqual({ redirect: NEXT_TARGET_PATH })
     expect(nextTarget).toHaveBeenCalledOnce()
   })
 
   it('saves with all packer fields empty and does not create packer answers', async () => {
-    vi.spyOn(kit, 'nextTarget').mockResolvedValue(
-      '/plant-products/notifications/next-target'
-    )
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue(NEXT_TARGET_PATH)
     const result = await drive(post, {
       payload: validEnteredPayload({
         packerName: '',
@@ -305,68 +319,67 @@ describe('plant-products traders-addresses controller', () => {
 
     expect(result.after).toMatchObject({
       destinationSameAsConsignee: false,
-      destinationName: 'Paris Produce Market'
+      destinationName: DESTINATION_NAME
     })
-    for (const field of tradersAddresses.meta.collects.filter((field) =>
-      field.startsWith('packer')
+    for (const field of tradersAddresses.meta.collects.filter((collected) =>
+      collected.startsWith('packer')
     )) {
       expect(result.after).not.toHaveProperty(field)
     }
   })
 
   it('never commits submitted destination leaves when Yes is selected', async () => {
-    vi.spyOn(kit, 'nextTarget').mockResolvedValue(
-      '/plant-products/notifications/next-target'
-    )
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue(NEXT_TARGET_PATH)
     const result = await drive(post, {
       payload: validEnteredPayload({ destinationSameAsConsignee: 'true' })
     })
 
     expect(result.after.destinationSameAsConsignee).toBe(true)
     for (const field of tradersAddresses.meta.collects.filter(
-      (field) =>
-        field.startsWith('destination') &&
-        field !== 'destinationSameAsConsignee'
+      (collected) =>
+        collected.startsWith('destination') &&
+        collected !== 'destinationSameAsConsignee'
     )) {
       expect(result.after).not.toHaveProperty(field)
     }
   })
 
   it('purges every gated destination leaf on No to Yes and keeps them empty after Yes to No', async () => {
-    vi.spyOn(kit, 'nextTarget').mockResolvedValue(
-      '/plant-products/notifications/next-target'
-    )
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue(NEXT_TARGET_PATH)
     const destinationAnswers = {
       destinationSameAsConsignee: false,
-      destinationName: 'Paris Produce Market',
-      destinationAddressLine1: '10 Rue des Plantes',
-      destinationAddressLine2: 'Building 2',
-      destinationAddressLine3: 'Wholesale Quarter',
+      destinationName: DESTINATION_NAME,
+      destinationAddressLine1: DESTINATION_ADDRESS_LINE_1,
+      destinationAddressLine2: DESTINATION_ADDRESS_LINE_2,
+      destinationAddressLine3: DESTINATION_ADDRESS_LINE_3,
       destinationCity: 'Paris',
       destinationPostcode: '75001',
       destinationCountry: 'FR'
     }
+    const gatedLeaves = Object.keys(destinationAnswers).filter(
+      (answered) => answered !== 'destinationSameAsConsignee'
+    )
     const yes = await drive(post, {
       seed: destinationAnswers,
       payload: validEnteredPayload({ destinationSameAsConsignee: 'true' })
     })
 
     expect(yes.after).toMatchObject({ destinationSameAsConsignee: true })
-    for (const field of Object.keys(destinationAnswers).filter(
-      (field) => field !== 'destinationSameAsConsignee'
-    )) {
+    for (const field of gatedLeaves) {
       expect(yes.after).not.toHaveProperty(field)
     }
 
     const reopened = await drive(get, {
       seed: { destinationSameAsConsignee: false }
     })
-    for (const field of Object.keys(destinationAnswers).filter(
-      (field) => field !== 'destinationSameAsConsignee'
-    )) {
+    for (const field of gatedLeaves) {
       expect(reopened.view.context.values[field]).toBe('')
     }
   })
+})
+
+describe(`${SUITE} — persistence failures`, () => {
+  setupTradersAddressesSuite()
 
   it('renders raw values and a recoverable error at 500', async () => {
     vi.spyOn(kit, 'recoverableSave').mockImplementationOnce(
@@ -375,7 +388,7 @@ describe('plant-products traders-addresses controller', () => {
       })
     )
     const payload = validEnteredPayload({
-      destinationName: '  Paris Produce Market  '
+      destinationName: `  ${DESTINATION_NAME}  `
     })
     const result = await drive(post, { payload })
 

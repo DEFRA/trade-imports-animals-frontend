@@ -22,8 +22,11 @@ export const meta = { ...page, collects: ['nominatedContacts'] }
 const view = `${TEMPLATES}/features/nominated-contacts/template`
 const copy = copyFor({ en, cy })
 const MAX_CONTACTS = 5
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@.]+$/
 const TELEPHONE = /^\+?[\d\s]+$/
+const MAX_CONTACT_NAME_LENGTH = 32
+const MAX_CONTACT_EMAIL_LENGTH = 255
+const MAX_CONTACT_TELEPHONE_LENGTH = 30
 
 const emptyEntry = () => ({
   contactName: '',
@@ -41,11 +44,19 @@ const rawEntryFrom = (payload) => ({
 
 const contactFields = () => [
   requiredText('contactName', copy.errors.contactNameRequired),
-  maxText('contactName', 32, copy.errors.contactNameMax),
+  maxText('contactName', MAX_CONTACT_NAME_LENGTH, copy.errors.contactNameMax),
   pattern('contactEmail', EMAIL, copy.errors.contactEmailFormat),
-  maxText('contactEmail', 255, copy.errors.contactEmailMax),
+  maxText(
+    'contactEmail',
+    MAX_CONTACT_EMAIL_LENGTH,
+    copy.errors.contactEmailMax
+  ),
   pattern('contactTelephone', TELEPHONE, copy.errors.contactTelephoneFormat),
-  maxText('contactTelephone', 30, copy.errors.contactTelephoneMax)
+  maxText(
+    'contactTelephone',
+    MAX_CONTACT_TELEPHONE_LENGTH,
+    copy.errors.contactTelephoneMax
+  )
 ]
 
 const validateContactFields = (payload) => {

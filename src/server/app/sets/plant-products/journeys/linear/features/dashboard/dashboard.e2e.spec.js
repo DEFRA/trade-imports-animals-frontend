@@ -3,11 +3,16 @@ import { expect, test } from '@playwright/test'
 import { axeViolations } from '../axe.e2e-helper.js'
 import { copy } from './copy/copy.en.js'
 
+const DASHBOARD_URL = '/plant-products'
+const LIVE_ANIMALS_URL = '/live-animals'
+const SAVE_AND_CONTINUE = 'Save and continue'
+const COUNTRY_OPTGROUP = '#countryOfOrigin optgroup'
+
 const referenceFromUrl = (page) =>
   new URL(page.url()).pathname.split('/').at(-2)
 
 const startDraft = async (page) => {
-  await page.goto('/plant-products')
+  await page.goto(DASHBOARD_URL)
   const createRequest = page.waitForRequest(
     (request) =>
       request.method() === 'POST' &&
@@ -29,15 +34,15 @@ const enterPlantImport = async (page) => {
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   return reference
 }
 
 const createWithOrigin = async (page, countryCode) => {
   const reference = await enterPlantImport(page)
   await page.getByLabel('Country of origin').selectOption(countryCode)
-  await page.getByRole('button', { name: 'Save and continue' }).click()
-  await page.goto('/plant-products')
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+  await page.goto(DASHBOARD_URL)
   return reference
 }
 
@@ -54,7 +59,7 @@ const dateAt = (offset) => {
 const createWithOriginAndArrival = async (page, countryCode, arrivalOffset) => {
   const reference = await enterPlantImport(page)
   await page.getByLabel('Country of origin').selectOption(countryCode)
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.goto(
     `/plant-products/notifications/${reference}/transport-before-bip`
   )
@@ -83,8 +88,8 @@ const createWithOriginAndArrival = async (page, countryCode, arrivalOffset) => {
       exact: true
     })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
-  await page.goto('/plant-products')
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+  await page.goto(DASHBOARD_URL)
   return { reference, arrival }
 }
 
@@ -105,13 +110,13 @@ const expectNoSeriousOrCriticalViolations = async (page) => {
   ).toEqual([])
 }
 
-test.describe('plant-products dashboard', () => {
+const dashboardShellTests = () => {
   test('serves both set dashboards and keeps the unowned root redirect', async ({
     page
   }) => {
-    await page.goto('/plant-products')
+    await page.goto(DASHBOARD_URL)
 
-    await expect(page).toHaveURL('/plant-products')
+    await expect(page).toHaveURL(DASHBOARD_URL)
     await expect(
       page.getByRole('heading', { name: copy.heading })
     ).toBeVisible()
@@ -122,35 +127,37 @@ test.describe('plant-products dashboard', () => {
     await expect(page.getByLabel(copy.filters.status.label)).toBeVisible()
     await expect(page.getByLabel(copy.filters.country.label)).toBeVisible()
     await expect(page.getByText(copy.search.noResults)).toBeVisible()
-    await expect(page.locator('#countryOfOrigin optgroup')).toHaveCount(2)
-    await expect(
-      page.locator('#countryOfOrigin optgroup').first()
-    ).toHaveAttribute('label', copy.filters.country.groups.uk)
-    await expect(
-      page.locator('#countryOfOrigin optgroup').last()
-    ).toHaveAttribute('label', copy.filters.country.groups.countries)
+    await expect(page.locator(COUNTRY_OPTGROUP)).toHaveCount(2)
+    await expect(page.locator(COUNTRY_OPTGROUP).first()).toHaveAttribute(
+      'label',
+      copy.filters.country.groups.uk
+    )
+    await expect(page.locator(COUNTRY_OPTGROUP).last()).toHaveAttribute(
+      'label',
+      copy.filters.country.groups.countries
+    )
     await expect(
       page.getByLabel(copy.filters.country.label).getByRole('option', {
         name: 'Republic of Ireland'
       })
     ).toHaveAttribute('value', 'IE')
 
-    await page.goto('/live-animals')
-    await expect(page).toHaveURL('/live-animals')
+    await page.goto(LIVE_ANIMALS_URL)
+    await expect(page).toHaveURL(LIVE_ANIMALS_URL)
     await expect(
       page.getByRole('heading', { name: 'Import notification service' })
     ).toBeVisible()
 
     const root = await page.request.get('/', { maxRedirects: 0 })
     expect(root.status()).toBe(302)
-    expect(root.headers().location).toBe('/live-animals')
+    expect(root.headers().location).toBe(LIVE_ANIMALS_URL)
   })
 
   test('creates a plant journey at the plant import-type page', async ({
     page
   }) => {
     const reference = await startDraft(page)
-    await page.goto('/plant-products')
+    await page.goto(DASHBOARD_URL)
 
     const row = page.getByRole('row', { name: new RegExp(reference) })
     await expect(row).toContainText(copy.statuses.draft)
@@ -168,13 +175,13 @@ test.describe('plant-products dashboard', () => {
   }) => {
     const firstReference = await startDraft(page)
     const secondReference = await startDraft(page)
-    await page.goto('/plant-products')
+    await page.goto(DASHBOARD_URL)
 
     await page.getByLabel(copy.filters.keywords.label).fill(firstReference)
     await page.getByRole('button', { name: copy.filters.search }).click()
     await expect(page).toHaveURL(
       (url) =>
-        url.pathname === '/plant-products' &&
+        url.pathname === DASHBOARD_URL &&
         url.searchParams.get('referenceNumber') === firstReference
     )
     await expect(
@@ -190,7 +197,7 @@ test.describe('plant-products dashboard', () => {
     await expect(page.getByText(copy.search.noResults)).toBeVisible()
 
     await page.getByRole('link', { name: copy.filters.clear }).click()
-    await expect(page).toHaveURL('/plant-products')
+    await expect(page).toHaveURL(DASHBOARD_URL)
     await expect(
       page.getByRole('row', { name: new RegExp(firstReference) })
     ).toBeVisible()
@@ -198,13 +205,15 @@ test.describe('plant-products dashboard', () => {
       page.getByRole('row', { name: new RegExp(secondReference) })
     ).toBeVisible()
   })
+}
 
+const dashboardFilterTests = () => {
   test('status and country filters narrow rows and combine', async ({
     page
   }) => {
     const irelandReference = await createWithOrigin(page, 'IE')
     const franceReference = await createWithOrigin(page, 'FR')
-    await page.goto('/plant-products')
+    await page.goto(DASHBOARD_URL)
 
     await page.getByLabel(copy.filters.status.label).selectOption('draft')
     await page.getByLabel(copy.filters.country.label).selectOption('IE')
@@ -212,7 +221,7 @@ test.describe('plant-products dashboard', () => {
 
     await expect(page).toHaveURL(
       (url) =>
-        url.pathname === '/plant-products' &&
+        url.pathname === DASHBOARD_URL &&
         url.searchParams.get('status') === 'draft' &&
         url.searchParams.get('countryOfOrigin') === 'IE'
     )
@@ -227,7 +236,7 @@ test.describe('plant-products dashboard', () => {
   test('arrival range filters use inclusive bounds', async ({ page }) => {
     const matching = await createWithOriginAndArrival(page, 'IE', 1)
     const later = await createWithOriginAndArrival(page, 'FR', 3)
-    await page.goto('/plant-products')
+    await page.goto(DASHBOARD_URL)
 
     const start = page.getByRole('group', {
       name: copy.filters.startDate.label
@@ -261,14 +270,14 @@ test.describe('plant-products dashboard', () => {
     for (let index = 0; index < 26; index += 1) {
       await startDraft(page)
     }
-    await page.goto('/plant-products')
+    await page.goto(DASHBOARD_URL)
     await page.getByLabel(copy.filters.status.label).selectOption('draft')
     await page.getByRole('button', { name: copy.filters.search }).click()
 
     await page.getByRole('link', { name: copy.pagination.next }).click()
     await expect(page).toHaveURL(
       (url) =>
-        url.pathname === '/plant-products' &&
+        url.pathname === DASHBOARD_URL &&
         url.searchParams.get('page') === '2' &&
         url.searchParams.get('status') === 'draft'
     )
@@ -276,17 +285,19 @@ test.describe('plant-products dashboard', () => {
     await page.getByRole('button', { name: copy.sort.apply }).click()
     await expect(page).toHaveURL(
       (url) =>
-        url.pathname === '/plant-products' &&
+        url.pathname === DASHBOARD_URL &&
         url.searchParams.get('page') === '2' &&
         url.searchParams.get('status') === 'draft' &&
         url.searchParams.get('sort') === 'createdAt,asc'
     )
   })
+}
 
+const dashboardValidationAndAxeTests = () => {
   test('canonical validation messages preserve raw values and focus controls', async ({
     page
   }) => {
-    await page.goto('/plant-products')
+    await page.goto(DASHBOARD_URL)
 
     const keywords = 'x'.repeat(256)
     await page.getByLabel(copy.filters.keywords.label).fill(keywords)
@@ -322,7 +333,7 @@ test.describe('plant-products dashboard', () => {
   test('has no serious or critical axe violations', async ({ page }) => {
     const firstReference = await startDraft(page)
     const secondReference = await startDraft(page)
-    await page.goto('/plant-products')
+    await page.goto(DASHBOARD_URL)
 
     for (const heading of Object.values(copy.table.headings)) {
       await expect(
@@ -341,10 +352,16 @@ test.describe('plant-products dashboard', () => {
   })
 
   test('validation error state passes axe', async ({ page }) => {
-    await page.goto('/plant-products')
+    await page.goto(DASHBOARD_URL)
     await page.getByLabel(copy.filters.keywords.label).fill('x'.repeat(256))
     await page.getByRole('button', { name: copy.filters.search }).click()
     await expect(page.getByRole('alert')).toContainText(copy.errors.keywordsMax)
     await expectNoSeriousOrCriticalViolations(page)
   })
+}
+
+test.describe('plant-products dashboard', () => {
+  dashboardShellTests()
+  dashboardFilterTests()
+  dashboardValidationAndAxeTests()
 })

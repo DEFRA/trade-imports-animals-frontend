@@ -25,13 +25,15 @@ import { records } from '../../../../services/records/stub.js'
 import * as checkAnswers from './controller.js'
 import { copy } from './copy/copy.en.js'
 
+const SET_ID = 'plant-products'
+
 const get = checkAnswers.routes.find(({ method }) => method === 'GET').handler
 const post = postHandlerOf(checkAnswers)
 const drive = (handler, options) =>
-  withSetContext('plant-products', () => driveHandler(handler, options))
+  withSetContext(SET_ID, () => driveHandler(handler, options))
 
 const viewForStatus = (status, query = {}) =>
-  withSetContext('plant-products', async () => {
+  withSetContext(SET_ID, async () => {
     const journey = await records.create()
     if (status === 'submitted' || status === 'amend') {
       await records.finalise(journey.journeyId)
@@ -55,7 +57,7 @@ describe('plant-products check-answers controller', () => {
   })
 
   beforeEach(async () => {
-    enterSetContext('plant-products')
+    enterSetContext(SET_ID)
     await records.clear()
   })
 
@@ -88,11 +90,11 @@ describe('plant-products check-answers controller', () => {
 
     await records.finalise(draft.journeyId)
     const firstH = stubH()
-    await withSetContext('plant-products', () =>
+    await withSetContext(SET_ID, () =>
       get(journeyRequest(draft.journeyId), firstH)
     )
     const secondH = stubH()
-    await withSetContext('plant-products', () =>
+    await withSetContext(SET_ID, () =>
       get(journeyRequest(draft.journeyId), secondH)
     )
 

@@ -38,10 +38,18 @@ import {
   MAX_FILE_SIZE_LABEL
 } from './upload-config.js'
 
+const SET_ID = 'plant-products'
+const ROUTE_PREFIX = '/plant-products'
+const NEXT_TARGET_URL = `${ROUTE_PREFIX}/notifications/next-target`
+const PHYTO_ROW_HIDDEN_TEXT = 'Phytosanitary certificate PHYTO-001'
+const TAG_BLUE = 'govuk-tag--blue'
+const TAG_GREY = 'govuk-tag--grey'
+const BACKEND_DOWN_MESSAGE = 'backend down'
+
 const get = documents.routes.find(({ method }) => method === 'GET').handler
 const post = postHandlerOf(documents)
 const drive = (handler, options) =>
-  withSetContext('plant-products', () => driveHandler(handler, options))
+  withSetContext(SET_ID, () => driveHandler(handler, options))
 
 const filePart = ({
   filename = 'phyto.pdf',
@@ -95,9 +103,7 @@ const seededDocument = async (reference, filename = 'phyto.pdf') => {
 // The retry path only honours an upload the backend agrees belongs to this
 // journey, so the journey has to exist before the upload is created against it.
 const journeyOwningUpload = async (filename = 'phyto.pdf') => {
-  const { journeyId } = await withSetContext('plant-products', () =>
-    store.create()
-  )
+  const { journeyId } = await withSetContext(SET_ID, () => store.create())
   const uploadId = await documentUploads.upload({ journeyId, filename })
   return { journeyId, uploadId }
 }
@@ -110,26 +116,26 @@ const phytoRow = (status, { uploadId, scanStatus }) => ({
   uploadId,
   scanStatus,
   viewFileHref: null,
-  viewFileHidden: 'Phytosanitary certificate PHYTO-001',
+  viewFileHidden: PHYTO_ROW_HIDDEN_TEXT,
   removeAction: 'remove:0',
-  removeHidden: 'Phytosanitary certificate PHYTO-001'
+  removeHidden: PHYTO_ROW_HIDDEN_TEXT
 })
 
 const summaryTexts = (result) =>
   (result.view.context.errorSummary?.errorList ?? []).map(({ text }) => text)
 
-describe('plant-products accompanying-documents controller', () => {
+const setupDocumentsSuite = () => {
   let server
 
   beforeAll(async () => {
     server = Hapi.server()
     await server.register(plantProducts, {
-      routes: { prefix: '/plant-products' }
+      routes: { prefix: ROUTE_PREFIX }
     })
   })
 
   beforeEach(async () => {
-    enterSetContext('plant-products')
+    enterSetContext(SET_ID)
     await records.clear()
   })
 
@@ -140,7 +146,9 @@ describe('plant-products accompanying-documents controller', () => {
   afterAll(async () => {
     await server.stop({ timeout: 0 })
   })
+}
 
+const renderFormTests = () => {
   it('renders a blank entry form with the shipped 16 document types', async () => {
     const result = await drive(get)
 
@@ -173,7 +181,7 @@ describe('plant-products accompanying-documents controller', () => {
     const result = await drive(get)
 
     expect(JSON.parse(result.view.context.scanCopyJson)).toEqual({
-      PENDING: { text: copy.status.checking, classes: 'govuk-tag--blue' },
+      PENDING: { text: copy.status.checking, classes: TAG_BLUE },
       COMPLETE: {
         text: copy.status.safe,
         classes: 'govuk-tag--green',
@@ -186,12 +194,12 @@ describe('plant-products accompanying-documents controller', () => {
       },
       UNAVAILABLE: {
         text: copy.status.unavailable,
-        classes: 'govuk-tag--grey',
+        classes: TAG_GREY,
         announcement: copy.announcements.unavailable
       },
       UNKNOWN: {
         text: copy.status.unavailable,
-        classes: 'govuk-tag--grey',
+        classes: TAG_GREY,
         announcement: copy.announcements.unavailable
       }
     })
@@ -213,13 +221,13 @@ describe('plant-products accompanying-documents controller', () => {
         documentType: 'Phytosanitary certificate',
         documentReference: 'PHYTO-001',
         issueDate: '4/12/2025',
-        status: { text: 'Checking', classes: 'govuk-tag--blue', tag: true },
+        status: { text: 'Checking', classes: TAG_BLUE, tag: true },
         uploadId: uploaded.uploadId,
         scanStatus: 'PENDING',
         viewFileHref: null,
-        viewFileHidden: 'Phytosanitary certificate PHYTO-001',
+        viewFileHidden: PHYTO_ROW_HIDDEN_TEXT,
         removeAction: 'remove:0',
-        removeHidden: 'Phytosanitary certificate PHYTO-001'
+        removeHidden: PHYTO_ROW_HIDDEN_TEXT
       },
       {
         documentType: 'Air waybill',
@@ -250,7 +258,9 @@ describe('plant-products accompanying-documents controller', () => {
     })
     expect(result.view.context.refreshHref).toMatch(/attempt=2$/)
   })
+}
 
+const viewFileHrefTests = () => {
   it('offers a View file href only once the scan has settled clean', async () => {
     const uploaded = await seededDocument('PHYTO-001')
     const seed = { accompanyingDocuments: [uploaded.entry] }
@@ -264,9 +274,7 @@ describe('plant-products accompanying-documents controller', () => {
     expect(safe.view.context.rows[0].viewFileHref).toBe(
       `/plant-products/notifications/${safe.journeyId}/accompanying-documents/${uploaded.uploadId}/file`
     )
-    expect(safe.view.context.rows[0].viewFileHidden).toBe(
-      'Phytosanitary certificate PHYTO-001'
-    )
+    expect(safe.view.context.rows[0].viewFileHidden).toBe(PHYTO_ROW_HIDDEN_TEXT)
   })
 
   it.each([
@@ -294,7 +302,7 @@ describe('plant-products accompanying-documents controller', () => {
   it('falls closed to checking when the scan status cannot be read', async () => {
     const uploaded = await seededDocument('PHYTO-001')
     vi.spyOn(documentUploads, 'scanStatus').mockRejectedValue(
-      new Error('backend down')
+      new Error(BACKEND_DOWN_MESSAGE)
     )
 
     const result = await drive(get, {
@@ -303,7 +311,7 @@ describe('plant-products accompanying-documents controller', () => {
 
     expect(result.view.context.rows).toEqual([
       phytoRow(
-        { text: 'Checking', classes: 'govuk-tag--blue', tag: true },
+        { text: 'Checking', classes: TAG_BLUE, tag: true },
         { uploadId: uploaded.uploadId, scanStatus: 'PENDING' }
       )
     ])
@@ -312,7 +320,7 @@ describe('plant-products accompanying-documents controller', () => {
   it('offers a recoverable status-unavailable row past the attempt ceiling', async () => {
     const uploaded = await seededDocument('PHYTO-001')
     vi.spyOn(documentUploads, 'scanStatus').mockRejectedValue(
-      new Error('backend down')
+      new Error(BACKEND_DOWN_MESSAGE)
     )
 
     const result = await drive(get, {
@@ -324,7 +332,7 @@ describe('plant-products accompanying-documents controller', () => {
       phytoRow(
         {
           text: 'Status unavailable',
-          classes: 'govuk-tag--grey',
+          classes: TAG_GREY,
           tag: true
         },
         { uploadId: uploaded.uploadId, scanStatus: 'UNAVAILABLE' }
@@ -333,7 +341,9 @@ describe('plant-products accompanying-documents controller', () => {
     expect(result.view.context.canRefresh).toBe(true)
     expect(result.view.context.refreshHref).toMatch(/attempt=11$/)
   })
+}
 
+const addDocumentTests = () => {
   it('appends the cleaned metadata without a file and redirects to a fresh form', async () => {
     const result = await drive(post, {
       payload: validPayload({
@@ -466,7 +476,9 @@ describe('plant-products accompanying-documents controller', () => {
       UPLOAD_ID_PATTERN
     )
   })
+}
 
+const oversizeAndRetryTests = () => {
   it('rewrites a route-level payload rejection into a linked 400, never a bare 413', async () => {
     const oversizeRejection = (request, h) =>
       documents.handleOversizePayload(
@@ -616,7 +628,9 @@ describe('plant-products accompanying-documents controller', () => {
       expect(result.after).toEqual({})
     }
   )
+}
 
+const removeDocumentTests = () => {
   it('removes the middle document so renumbered indices cannot hide the target', async () => {
     const first = document('PHYTO-001')
     const middle = document('AIR-002', 'AIR_WAYBILL')
@@ -707,7 +721,9 @@ describe('plant-products accompanying-documents controller', () => {
     )
     expect(result.after.accompanyingDocuments).toHaveLength(MAX_DOCUMENTS)
   })
+}
 
+const continueAndPersistenceTests = () => {
   it('blocks continue while a file is still being checked', async () => {
     const uploaded = await seededDocument('PHYTO-001')
 
@@ -739,9 +755,7 @@ describe('plant-products accompanying-documents controller', () => {
   it('allows continue once the scan is clean', async () => {
     const uploaded = await seededDocument('PHYTO-001')
     await settleScan(uploaded.uploadId, 'phyto.pdf')
-    vi.spyOn(kit, 'nextTarget').mockResolvedValue(
-      '/plant-products/notifications/next-target'
-    )
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue(NEXT_TARGET_URL)
 
     const result = await drive(post, {
       seed: { accompanyingDocuments: [uploaded.entry] },
@@ -749,14 +763,12 @@ describe('plant-products accompanying-documents controller', () => {
     })
 
     expect(result.response).toEqual({
-      redirect: '/plant-products/notifications/next-target'
+      redirect: NEXT_TARGET_URL
     })
   })
 
   it('allows continue when the only incomplete rows have no file at all', async () => {
-    vi.spyOn(kit, 'nextTarget').mockResolvedValue(
-      '/plant-products/notifications/next-target'
-    )
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue(NEXT_TARGET_URL)
 
     const result = await drive(post, {
       seed: { accompanyingDocuments: [document('PHYTO-001')] },
@@ -764,19 +776,17 @@ describe('plant-products accompanying-documents controller', () => {
     })
 
     expect(result.response).toEqual({
-      redirect: '/plant-products/notifications/next-target'
+      redirect: NEXT_TARGET_URL
     })
   })
 
   it('continues without validating or writing and honours nextTarget', async () => {
-    vi.spyOn(kit, 'nextTarget').mockResolvedValue(
-      '/plant-products/notifications/next-target'
-    )
+    vi.spyOn(kit, 'nextTarget').mockResolvedValue(NEXT_TARGET_URL)
     const result = await drive(post, { payload: { action: 'continue' } })
 
     expect(result.after).toEqual({})
     expect(result.response).toEqual({
-      redirect: '/plant-products/notifications/next-target'
+      redirect: NEXT_TARGET_URL
     })
   })
 
@@ -824,6 +834,16 @@ describe('plant-products accompanying-documents controller', () => {
       'programming failure'
     )
   })
+}
+
+describe('plant-products accompanying-documents controller', () => {
+  setupDocumentsSuite()
+  renderFormTests()
+  viewFileHrefTests()
+  addDocumentTests()
+  oversizeAndRetryTests()
+  removeDocumentTests()
+  continueAndPersistenceTests()
 })
 
 describe('plant-products accompanying-documents file download', () => {
@@ -833,13 +853,13 @@ describe('plant-products accompanying-documents file download', () => {
     server = Hapi.server()
     await server.register(nunjucksConfig)
     await server.register(plantProducts, {
-      routes: { prefix: '/plant-products' }
+      routes: { prefix: ROUTE_PREFIX }
     })
     await server.initialize()
   })
 
   beforeEach(async () => {
-    enterSetContext('plant-products')
+    enterSetContext(SET_ID)
     await records.clear()
   })
 
@@ -851,11 +871,11 @@ describe('plant-products accompanying-documents file download', () => {
     await server.stop({ timeout: 0 })
   })
 
-  const journeyHolding = (...documents) =>
-    withSetContext('plant-products', async () => {
+  const journeyHolding = (...entries) =>
+    withSetContext(SET_ID, async () => {
       const { journeyId } = await store.create()
       await store.seedAnswers(journeyId, {
-        accompanyingDocuments: documents
+        accompanyingDocuments: entries
       })
       return journeyId
     })
@@ -976,13 +996,13 @@ describe('plant-products accompanying-documents scan status feed', () => {
     server = Hapi.server()
     await server.register(nunjucksConfig)
     await server.register(plantProducts, {
-      routes: { prefix: '/plant-products' }
+      routes: { prefix: ROUTE_PREFIX }
     })
     await server.initialize()
   })
 
   beforeEach(async () => {
-    enterSetContext('plant-products')
+    enterSetContext(SET_ID)
     await records.clear()
   })
 
@@ -996,12 +1016,12 @@ describe('plant-products accompanying-documents scan status feed', () => {
 
   // The journey needs one committed answer of its own or the entry guard sends
   // it back to the start before any handler runs.
-  const journeyHolding = (...documents) =>
-    withSetContext('plant-products', async () => {
+  const journeyHolding = (...entries) =>
+    withSetContext(SET_ID, async () => {
       const { journeyId } = await store.create()
       await store.seedAnswers(journeyId, {
         countryOfOrigin: 'FR',
-        accompanyingDocuments: documents
+        accompanyingDocuments: entries
       })
       return journeyId
     })
@@ -1070,7 +1090,7 @@ describe('plant-products accompanying-documents scan status feed', () => {
     const uploaded = await seededDocument('PHYTO-001')
     const journeyId = await journeyHolding(uploaded.entry)
     vi.spyOn(documentUploads, 'scanStatus').mockRejectedValue(
-      new Error('backend down')
+      new Error(BACKEND_DOWN_MESSAGE)
     )
 
     const { body } = await readStatus(journeyId)

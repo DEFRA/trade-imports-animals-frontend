@@ -10,6 +10,9 @@ const commodityCode = '06042090'
 const crataegomespilus = '+ Crataegomespilus dardarii'
 const lens = 'Lens culinaris'
 const appleVarietyId = '03107EFA-9BCD-1089-565E-B28F73994DEC'
+const SAVE_AND_CONTINUE = 'Save and continue'
+const NOT_YET_STARTED = 'Not yet started'
+const MALUS_DOMESTICA = 'Malus domestica'
 const summaryUrl = (url) =>
   /^\/plant-products\/notifications\/[^/]+\/commodity-summary$/.test(
     url.pathname
@@ -28,13 +31,13 @@ const startAtCommoditySearch = async (page) => {
   await page
     .getByRole('radio', { name: 'Plants, plant products and other objects' })
     .check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByLabel('Country of origin').selectOption('FR')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page.getByRole('link', { name: 'Back' }).click()
 
-  await expect(rowByTitle(page, 'Purpose')).toContainText('Not yet started')
-  await expect(rowByTitle(page, 'Commodity')).toContainText('Not yet started')
+  await expect(rowByTitle(page, 'Purpose')).toContainText(NOT_YET_STARTED)
+  await expect(rowByTitle(page, 'Commodity')).toContainText(NOT_YET_STARTED)
   await expect(rowByTitle(page, 'Transport to the BCP')).toContainText(
     'Cannot start yet'
   )
@@ -43,7 +46,7 @@ const startAtCommoditySearch = async (page) => {
     .getByRole('link', { name: 'Commodity' })
     .click()
   await page.getByRole('radio', { name: 'Manual entry' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 }
 
 const searchForCode = async (page, code) => {
@@ -73,14 +76,14 @@ const startAtSummary = async (page, species) => {
   for (const genusAndSpecies of species) {
     await addSpecies(page, commodityCode, genusAndSpecies)
   }
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page).toHaveURL(summaryUrl)
 }
 
 const startAtAppleSummary = async (page) => {
   await startAtCommoditySearch(page)
   await page.getByRole('tab', { name: searchCopy.tabs.speciesSearch }).click()
-  await page.getByLabel(searchCopy.speciesSearch.label).fill('Malus domestica')
+  await page.getByLabel(searchCopy.speciesSearch.label).fill(MALUS_DOMESTICA)
   await page
     .locator('#genus-and-species-search')
     .getByRole('button', { name: searchCopy.speciesSearch.button })
@@ -90,7 +93,7 @@ const startAtAppleSummary = async (page) => {
     .filter({ hasText: 'Malus domestica — 0808108090' })
     .getByRole('button', { name: searchCopy.speciesSearch.add })
     .click()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await page
     .getByLabel(
       'Variety for commodity line 1, species 1: MABSD - Malus domestica'
@@ -106,7 +109,7 @@ const startAtAppleSummary = async (page) => {
       name: 'Add another variety for commodity line 1, species 1: MABSD - Malus domestica'
     })
     .click()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page).toHaveURL(summaryUrl)
 }
 
@@ -133,7 +136,7 @@ const expectNoSeriousOrCriticalViolations = async (page, state) => {
   ).toEqual([])
 }
 
-test.describe('plant-products commodity summary', () => {
+const renderingTests = () => {
   test('renders the exact toolbox table and blank variety and class cells', async ({
     page
   }) => {
@@ -184,14 +187,16 @@ test.describe('plant-products commodity summary', () => {
       await normalisedCellText(summaryTable(page).locator('tbody tr'))
     ).toEqual([
       '0808108090',
-      'Malus domestica',
+      MALUS_DOMESTICA,
       'MABSD',
       'McIntosh Red',
       'Class I',
       ''
     ])
   })
+}
 
+const removalTests = () => {
   test('pins distinct names, removes one species, persists it and exposes renumbered indices', async ({
     page
   }) => {
@@ -221,7 +226,7 @@ test.describe('plant-products commodity summary', () => {
       .getByRole('link', { name: copy.addAnotherSpecies, exact: true })
       .click()
     await addSpecies(page, commodityCode, crataegomespilus)
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page).toHaveURL(summaryUrl)
 
     const expectedAfter = [
@@ -306,7 +311,9 @@ test.describe('plant-products commodity summary', () => {
     await expect(summaryTable(page).locator('tbody tr')).toHaveCount(1)
     await expect(summaryTable(page).getByRole('button')).toHaveCount(0)
   })
+}
 
+const navigationTests = () => {
   test('routes both add-another controls to real pages and preserves entered lines', async ({
     page
   }) => {
@@ -331,9 +338,9 @@ test.describe('plant-products commodity summary', () => {
       )
     )
     await searchForCode(page, '0808108090')
-    await addSpecies(page, '0808108090', 'Malus domestica')
+    await addSpecies(page, '0808108090', MALUS_DOMESTICA)
     await expect(speciesTable(page, commodityCode, 'added')).toContainText(lens)
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await page
       .getByLabel(
         'Variety for commodity line 2, species 1: MABSD - Malus domestica'
@@ -349,13 +356,13 @@ test.describe('plant-products commodity summary', () => {
         name: 'Add another variety for commodity line 2, species 1: MABSD - Malus domestica'
       })
       .click()
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page).toHaveURL(summaryUrl)
     await expect(
       page.getByRole('table', { name: copy.tableCaption })
     ).toHaveCount(2)
     await expect(summaryTable(page, 0)).toContainText(lens)
-    await expect(summaryTable(page, 1)).toContainText('Malus domestica')
+    await expect(summaryTable(page, 1)).toContainText(MALUS_DOMESTICA)
   })
 
   test('save and continue advances to bulk details and preserves the hub row states', async ({
@@ -371,10 +378,10 @@ test.describe('plant-products commodity summary', () => {
     )
     await page.getByRole('link', { name: 'Cancel and return to hub' }).click()
     await expect(page).toHaveURL(hubUrl)
-    await expect(rowByTitle(page, 'Purpose')).toContainText('Not yet started')
+    await expect(rowByTitle(page, 'Purpose')).toContainText(NOT_YET_STARTED)
     await expect(rowByTitle(page, 'Commodity')).toContainText('In progress')
     await expect(rowByTitle(page, 'Transport to the BCP')).toContainText(
-      'Not yet started'
+      NOT_YET_STARTED
     )
     await rowByTitle(page, 'Commodity')
       .getByRole('link', { name: 'Commodity' })
@@ -387,7 +394,9 @@ test.describe('plant-products commodity summary', () => {
     await page.goBack()
     await expect(rowByTitle(page, 'Commodity')).toContainText('In progress')
   })
+}
 
+const accessibilityTests = () => {
   test('has no serious or critical axe violations in multi-row and single-row states', async ({
     page
   }) => {
@@ -402,4 +411,11 @@ test.describe('plant-products commodity summary', () => {
     await expect(summaryTable(page).getByRole('button')).toHaveCount(0)
     await expectNoSeriousOrCriticalViolations(page, 'single-row state')
   })
+}
+
+test.describe('plant-products commodity summary', () => {
+  renderingTests()
+  removalTests()
+  navigationTests()
+  accessibilityTests()
 })

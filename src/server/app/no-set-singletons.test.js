@@ -24,6 +24,10 @@ vi.mock('../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
 }))
 
+const TRIPWIRE_FIRST_SET_ID = 'tripwire-first'
+const TRIPWIRE_SECOND_SET_ID = 'tripwire-second'
+const FIXTURE_SET_ID = 'fixture-set'
+
 // Empty BY DESIGN. Adding an entry exempts a seam from co-residency, which is
 // a design decision rather than a fix for a failing convention test.
 export const SET_SEAM_ALLOW_LIST = []
@@ -173,7 +177,7 @@ const assertNoModuleSetCapture = ({ filename, source }) => {
 }
 
 const assertAccessorFollowsContext = (read) => {
-  for (const setId of ['tripwire-first', 'tripwire-second']) {
+  for (const setId of [TRIPWIRE_FIRST_SET_ID, TRIPWIRE_SECOND_SET_ID]) {
     const value = withSetContext(setId, read)
     if (value !== setId) {
       throw new Error(
@@ -310,18 +314,18 @@ describe('set configuration seams', () => {
 
   it('resolves the shared keyed accessor through the current set context', () => {
     const store = setKeyed('tripwire seam')
-    store.configure('tripwire-first', 'tripwire-first')
-    store.configure('tripwire-second', 'tripwire-second')
+    store.configure(TRIPWIRE_FIRST_SET_ID, TRIPWIRE_FIRST_SET_ID)
+    store.configure(TRIPWIRE_SECOND_SET_ID, TRIPWIRE_SECOND_SET_ID)
 
     expect(() => assertAccessorFollowsContext(store.current)).not.toThrow()
   })
 
   it('rejects a read accessor captured when the first set boots', () => {
     const values = new Map([
-      ['tripwire-first', 'tripwire-first'],
-      ['tripwire-second', 'tripwire-second']
+      [TRIPWIRE_FIRST_SET_ID, TRIPWIRE_FIRST_SET_ID],
+      [TRIPWIRE_SECOND_SET_ID, TRIPWIRE_SECOND_SET_ID]
     ])
-    const capturedSetId = withSetContext('tripwire-first', currentSetId)
+    const capturedSetId = withSetContext(TRIPWIRE_FIRST_SET_ID, currentSetId)
     const capturedAccessor = () => values.get(capturedSetId)
 
     expect(() => assertAccessorFollowsContext(capturedAccessor)).toThrow(
@@ -487,7 +491,7 @@ describe('set-owned lifecycle context', () => {
   })
 
   it('requires the route wrapper to context-wrap handlers and route extensions', async () => {
-    const route = routeWithSetContext('fixture-set', {
+    const route = routeWithSetContext(FIXTURE_SET_ID, {
       handler: currentSetId,
       options: {
         ext: {
@@ -497,7 +501,7 @@ describe('set-owned lifecycle context', () => {
     })
 
     await expect(
-      assertRouteLifecycleContext('fixture/routes.js', 'fixture-set', route)
+      assertRouteLifecycleContext('fixture/routes.js', FIXTURE_SET_ID, route)
     ).resolves.toBeUndefined()
   })
 
@@ -517,7 +521,7 @@ describe('set-owned lifecycle context', () => {
 
   it('rejects an unwrapped route-level options.ext method', async () => {
     const violation = {
-      handler: () => withSetContext('fixture-set', currentSetId),
+      handler: () => withSetContext(FIXTURE_SET_ID, currentSetId),
       options: {
         ext: {
           onPreResponse: { method: currentSetId }
@@ -528,7 +532,7 @@ describe('set-owned lifecycle context', () => {
     await expect(
       assertRouteLifecycleContext(
         'fixture/unwrapped-route.js',
-        'fixture-set',
+        FIXTURE_SET_ID,
         violation
       )
     ).rejects.toThrow(

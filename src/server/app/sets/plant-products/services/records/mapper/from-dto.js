@@ -191,37 +191,30 @@ const mapDocuments = (dto) =>
       }
     : {}
 
+const prefixedEntry = (prefix, suffix, value) =>
+  value == null ? {} : { [`${prefix}${suffix}`]: value }
+
+const mapOperatorAddress = (address, prefix) =>
+  address && typeof address === 'object'
+    ? {
+        ...prefixedEntry(prefix, 'AddressLine1', address.addressLine1),
+        ...prefixedEntry(prefix, 'AddressLine2', address.addressLine2),
+        ...prefixedEntry(prefix, 'AddressLine3', address.addressLine3),
+        ...prefixedEntry(prefix, 'City', address.city),
+        ...prefixedEntry(prefix, 'Postcode', address.postcode),
+        ...prefixedEntry(prefix, 'Country', address.country)
+      }
+    : {}
+
 const mapOperator = (operator, prefix) => {
   if (!operator || typeof operator !== 'object') {
     return {}
   }
-  const address = operator.address
   return {
-    ...(operator.name != null ? { [`${prefix}Name`]: operator.name } : {}),
-    ...(operator.telephone != null
-      ? { [`${prefix}Telephone`]: operator.telephone }
-      : {}),
-    ...(operator.email != null ? { [`${prefix}Email`]: operator.email } : {}),
-    ...(address && typeof address === 'object'
-      ? {
-          ...(address.addressLine1 != null
-            ? { [`${prefix}AddressLine1`]: address.addressLine1 }
-            : {}),
-          ...(address.addressLine2 != null
-            ? { [`${prefix}AddressLine2`]: address.addressLine2 }
-            : {}),
-          ...(address.addressLine3 != null
-            ? { [`${prefix}AddressLine3`]: address.addressLine3 }
-            : {}),
-          ...(address.city != null ? { [`${prefix}City`]: address.city } : {}),
-          ...(address.postcode != null
-            ? { [`${prefix}Postcode`]: address.postcode }
-            : {}),
-          ...(address.country != null
-            ? { [`${prefix}Country`]: address.country }
-            : {})
-        }
-      : {})
+    ...prefixedEntry(prefix, 'Name', operator.name),
+    ...prefixedEntry(prefix, 'Telephone', operator.telephone),
+    ...prefixedEntry(prefix, 'Email', operator.email),
+    ...mapOperatorAddress(operator.address, prefix)
   }
 }
 

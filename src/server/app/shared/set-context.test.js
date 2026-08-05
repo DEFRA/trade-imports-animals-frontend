@@ -1,6 +1,11 @@
 import Hapi from '@hapi/hapi'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
+const SLOW_SET_ID = 'slow'
+const FAST_SET_ID = 'fast'
+const SLOW_VALUE = 'slow-value'
+const FAST_VALUE = 'fast-value'
+
 let currentSetBase
 let currentSetId
 let enterSetContext
@@ -107,25 +112,25 @@ describe('set context', () => {
       releaseFirst = resolve
     })
     const store = setKeyed('interleaved seam')
-    store.configure('slow', 'slow-value')
-    store.configure('fast', 'fast-value')
+    store.configure(SLOW_SET_ID, SLOW_VALUE)
+    store.configure(FAST_SET_ID, FAST_VALUE)
 
     const slow = (async () => {
-      enterSetContext('slow')
+      enterSetContext(SLOW_SET_ID)
       await firstCanResume
       return [currentSetId(), store.current()]
     })()
 
     const fast = (async () => {
-      enterSetContext('fast')
+      enterSetContext(FAST_SET_ID)
       await Promise.resolve()
       releaseFirst()
       return [currentSetId(), store.current()]
     })()
 
     await expect(Promise.all([slow, fast])).resolves.toEqual([
-      ['slow', 'slow-value'],
-      ['fast', 'fast-value']
+      [SLOW_SET_ID, SLOW_VALUE],
+      [FAST_SET_ID, FAST_VALUE]
     ])
   })
 })
@@ -165,8 +170,8 @@ describe('plugin-sandboxed set lifecycle extensions', () => {
   it('keeps set context across genuinely interleaved requests', async () => {
     const server = Hapi.server()
     const store = setKeyed('request seam')
-    store.configure('slow', 'slow-value')
-    store.configure('fast', 'fast-value')
+    store.configure(SLOW_SET_ID, SLOW_VALUE)
+    store.configure(FAST_SET_ID, FAST_VALUE)
     let releaseSlow
     let markSlowStarted
     const slowCanResume = new Promise((resolve) => {
@@ -193,7 +198,7 @@ describe('plugin-sandboxed set lifecycle extensions', () => {
     })
 
     await server.register(
-      plugin('slow', async () => {
+      plugin(SLOW_SET_ID, async () => {
         markSlowStarted()
         await slowCanResume
         return [currentSetId(), store.current()]
@@ -201,7 +206,7 @@ describe('plugin-sandboxed set lifecycle extensions', () => {
       { routes: { prefix: '/slow' } }
     )
     await server.register(
-      plugin('fast', async () => {
+      plugin(FAST_SET_ID, async () => {
         await slowStarted
         releaseSlow()
         return [currentSetId(), store.current()]
@@ -214,7 +219,7 @@ describe('plugin-sandboxed set lifecycle extensions', () => {
       server.inject('/fast')
     ])
 
-    expect(slow.result).toEqual(['slow', 'slow-value'])
-    expect(fast.result).toEqual(['fast', 'fast-value'])
+    expect(slow.result).toEqual([SLOW_SET_ID, SLOW_VALUE])
+    expect(fast.result).toEqual([FAST_SET_ID, FAST_VALUE])
   })
 })

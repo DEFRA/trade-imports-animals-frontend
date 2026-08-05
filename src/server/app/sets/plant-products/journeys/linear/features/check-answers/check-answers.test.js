@@ -11,6 +11,7 @@ import {
 import { buildSections } from './view-model/index.js'
 
 const SET_ID = 'plant-products'
+const SUITE = 'plant-products check-answers view model'
 
 const ABOUT_THE_CONSIGNMENT = 'About the consignment'
 const DESCRIPTION_OF_THE_GOODS = 'Description of the goods'
@@ -22,6 +23,7 @@ const ACCOMPANYING_DOCUMENTS = 'Accompanying documents'
 const INTERNAL_REFERENCE = 'Internal reference'
 const DELIVERY_ADDRESS = 'Delivery address'
 const CONTACT_TWO = 'Contact Two'
+const COUNTRY_OF_ORIGIN = 'Country of origin'
 const TABLE_CAPTION_CLASS = 'govuk-table__caption--s'
 
 const species = {
@@ -169,6 +171,11 @@ const fullAnswers = {
   consignorEmail: 'exports@example.com'
 }
 
+const withoutAnswer = (answers, obligationName) =>
+  Object.fromEntries(
+    Object.entries(answers).filter(([key]) => key !== obligationName)
+  )
+
 const build = (answers = fullAnswers) =>
   withSetContext(SET_ID, () =>
     buildSections(
@@ -217,7 +224,7 @@ const buildForMode = (answers, readOnly) =>
     )
   )
 
-describe('plant-products check-answers view model', () => {
+const setupCheckAnswersServer = () => {
   let server
 
   beforeAll(async () => {
@@ -229,6 +236,10 @@ describe('plant-products check-answers view model', () => {
   })
 
   afterAll(async () => server.stop({ timeout: 0 }))
+}
+
+describe(`${SUITE} — card order and coded values`, () => {
+  setupCheckAnswersServer()
 
   it('builds the nine cards in hub-spoke order', () => {
     expect(build().map(({ heading }) => heading)).toEqual([
@@ -247,7 +258,7 @@ describe('plant-products check-answers view model', () => {
   it('resolves coded values only through shipped reference services', () => {
     const sections = build()
     expect(
-      row(card(sections, ABOUT_THE_CONSIGNMENT), 'Country of origin').value.text
+      row(card(sections, ABOUT_THE_CONSIGNMENT), COUNTRY_OF_ORIGIN).value.text
     ).toBe('France')
     expect(
       row(card(sections, TRANSPORT_TO_THE_BCP), 'Border Control Post').value
@@ -282,7 +293,7 @@ describe('plant-products check-answers view model', () => {
   })
 
   it('renders a missing-answer link for an unanswered in-scope obligation', () => {
-    const sections = build({ ...fullAnswers, internalReference: undefined })
+    const sections = build(withoutAnswer(fullAnswers, 'internalReference'))
     const missing = row(
       card(sections, ABOUT_THE_CONSIGNMENT),
       INTERNAL_REFERENCE
@@ -294,6 +305,10 @@ describe('plant-products check-answers view model', () => {
     )
     expect(missing.actions).toBeUndefined()
   })
+})
+
+describe(`${SUITE} — scope-driven and conditional rows`, () => {
+  setupCheckAnswersServer()
 
   it('omits the MRN when CTC is not ADD_MRN_NOW and renders it when applicable', () => {
     const hidden = build({
@@ -345,8 +360,7 @@ describe('plant-products check-answers view model', () => {
 
   it('omits gross-volume unit without gross volume and renders it with volume', () => {
     const hidden = build({
-      ...fullAnswers,
-      grossVolume: undefined,
+      ...withoutAnswer(fullAnswers, 'grossVolume'),
       grossVolumeUnit: 'METRES_CUBED'
     })
     const visible = build()
@@ -377,7 +391,7 @@ describe('plant-products check-answers view model', () => {
 
   it('renders a missing-answer link for an unanswered same-as-consignee answer', () => {
     const traders = card(
-      build({ ...fullAnswers, destinationSameAsConsignee: undefined }),
+      build(withoutAnswer(fullAnswers, 'destinationSameAsConsignee')),
       'Traders'
     )
     const deliveryAddress = row(traders, DELIVERY_ADDRESS)
@@ -394,6 +408,10 @@ describe('plant-products check-answers view model', () => {
     expect(row(traders, DELIVERY_ADDRESS).value.text).toBe('No')
     expect(row(traders, DELIVERY_ADDRESS).value.html).toBeUndefined()
   })
+})
+
+describe(`${SUITE} — commodity rows, tables and captions`, () => {
+  setupCheckAnswersServer()
 
   it('omits variety rows when none are captured', () => {
     const answers = {
@@ -480,6 +498,10 @@ describe('plant-products check-answers view model', () => {
       'Packing House'
     )
   })
+})
+
+describe(`${SUITE} — rollups, collection order and edit affordances`, () => {
+  setupCheckAnswersServer()
 
   it('derives rollups without mutating or persisting them and gives them no Change action', () => {
     const before = structuredClone(fullAnswers)
@@ -587,12 +609,12 @@ describe('plant-products check-answers view model', () => {
   it('resolves every editable Change action to its owning page', () => {
     const sections = build()
     expect(
-      row(card(sections, ABOUT_THE_CONSIGNMENT), 'Country of origin').actions
+      row(card(sections, ABOUT_THE_CONSIGNMENT), COUNTRY_OF_ORIGIN).actions
         .items[0]
     ).toEqual({
       href: '/plant-products/notifications/journey-038/country-of-origin?change=1',
       text: 'Change',
-      visuallyHiddenText: 'Country of origin'
+      visuallyHiddenText: COUNTRY_OF_ORIGIN
     })
     expect(card(sections, NOMINATED_CONTACTS).action.href).toBe(
       '/plant-products/notifications/journey-038/nominated-contact?change=1'
@@ -600,7 +622,7 @@ describe('plant-products check-answers view model', () => {
   })
 
   it('suppresses every edit-affordance family in readOnly and preserves editable identities and count', () => {
-    const answers = { ...fullAnswers, internalReference: undefined }
+    const answers = withoutAnswer(fullAnswers, 'internalReference')
     const editable = buildForMode(answers, false)
     const readOnly = buildForMode(answers, true)
     const editableAffordances = collectAffordances(editable)

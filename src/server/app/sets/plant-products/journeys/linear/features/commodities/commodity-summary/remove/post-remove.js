@@ -2,6 +2,8 @@ import * as state from '../../../../../../../../engine/index.js'
 
 export const REMOVE_ACTION_PREFIX = 'remove:'
 
+const REMOVE_TARGET_PART_COUNT = 2
+
 export const isRemoveAction = (action) =>
   action.startsWith(REMOVE_ACTION_PREFIX)
 
@@ -10,7 +12,10 @@ export const indicesOf = (action) => {
     return null
   }
   const parts = action.slice(REMOVE_ACTION_PREFIX.length).split(':')
-  if (parts.length !== 2 || parts.some((part) => part === '')) {
+  if (
+    parts.length !== REMOVE_TARGET_PART_COUNT ||
+    parts.some((part) => part === '')
+  ) {
     return null
   }
   return parts.map(Number)

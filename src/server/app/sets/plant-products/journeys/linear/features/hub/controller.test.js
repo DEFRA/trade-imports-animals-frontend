@@ -39,7 +39,6 @@ import { routes } from './controller.js'
 
 const renderHub = async (readyForCheckYourAnswers) => {
   mocks.get.mockResolvedValue({
-    journey: undefined,
     answers: {},
     scope: {
       readyForCheckYourAnswers,

@@ -17,9 +17,12 @@ const COUNTRY_CODES = Object.freeze([
   'GB-SCT'
 ])
 
+const TWO_DIGIT_WIDTH = 2
+const twoDigits = (value) => String(value).padStart(TWO_DIGIT_WIDTH, '0')
+
 const cannedConsignor = (country, index) => {
   const ordinal = index + 1
-  const padded = String(ordinal).padStart(2, '0')
+  const padded = twoDigits(ordinal)
   return Object.freeze({
     id: `example-consignor-${padded}`,
     name: `Example Consignor ${padded} (sample data)`,

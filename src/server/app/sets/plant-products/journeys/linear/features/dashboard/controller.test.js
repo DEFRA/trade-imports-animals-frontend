@@ -31,6 +31,12 @@ import { copy } from './copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { routes } from './controller.js'
 
+const SET_ID = 'plant-products'
+const DASHBOARD_URL = '/plant-products'
+const CREATE_URL = `${DASHBOARD_URL}/notifications`
+
+let server
+
 const emptyList = {
   rows: [],
   page: 1,
@@ -58,23 +64,21 @@ const listEnvelope = (rows, overrides = {}) => ({
   ...overrides
 })
 
-describe('plant-products dashboard controller', () => {
-  let server
-
+const setupDashboardServer = () => {
   beforeAll(async () => {
     vi.stubEnv('PLANT_PRODUCTS_MODE', 'stub')
-    enterSetContext('plant-products')
+    enterSetContext(SET_ID)
     server = Hapi.server()
     await server.register(nunjucksConfig)
     await server.register(plantProducts, {
-      routes: { prefix: '/plant-products' }
+      routes: { prefix: DASHBOARD_URL }
     })
     await server.initialize()
   })
 
   afterEach(async () => {
-    enterSetContext('plant-products')
-    configureRecords('plant-products', plantRecords)
+    enterSetContext(SET_ID)
+    configureRecords(SET_ID, plantRecords)
     await recordsStub.clear()
     vi.restoreAllMocks()
   })
@@ -83,9 +87,11 @@ describe('plant-products dashboard controller', () => {
     vi.unstubAllEnvs()
     await server.stop({ timeout: 0 })
   })
+}
 
+const routeAndRenderTests = () => {
   it('registers prefix-free route shapes and renders prefix-bearing actions', async () => {
-    enterSetContext('plant-products')
+    enterSetContext(SET_ID)
     expect(routes.map(({ path }) => path)).toEqual([
       dashboardRoutePath(),
       pageRoutePath('amend'),
@@ -96,10 +102,10 @@ describe('plant-products dashboard controller', () => {
       '/notifications/{journeyId}/amend',
       '/notifications'
     ])
-    expect(dashboardPath()).toBe('/plant-products')
-    expect(createPath()).toBe('/plant-products/notifications')
+    expect(dashboardPath()).toBe(DASHBOARD_URL)
+    expect(createPath()).toBe(CREATE_URL)
 
-    const response = await server.inject('/plant-products')
+    const response = await server.inject(DASHBOARD_URL)
     expect(response.statusCode).toBe(200)
     expect(response.result).toContain('action="/plant-products"')
     expect(response.result).toContain('action="/plant-products/notifications"')
@@ -116,7 +122,7 @@ describe('plant-products dashboard controller', () => {
       arrivalDate: '2026-03-07'
     })
     let received
-    configureRecords('plant-products', {
+    configureRecords(SET_ID, {
       ...recordsStub,
       list: async (options) => {
         received = options
@@ -124,13 +130,13 @@ describe('plant-products dashboard controller', () => {
       }
     })
 
-    const response = await server.inject('/plant-products')
+    const response = await server.inject(DASHBOARD_URL)
 
     expect(received).toMatchObject({
       page: 1,
-      sort: 'arrivalDate,desc',
-      referenceNumber: undefined
+      sort: 'arrivalDate,desc'
     })
+    expect(received.referenceNumber).toBeUndefined()
     expect(response.result.indexOf(newest.journeyId)).toBeLessThan(
       response.result.indexOf(older.journeyId)
     )
@@ -139,7 +145,7 @@ describe('plant-products dashboard controller', () => {
   })
 
   it('defensively removes deleted rows', async () => {
-    configureRecords('plant-products', {
+    configureRecords(SET_ID, {
       ...recordsStub,
       list: async () =>
         listEnvelope([
@@ -147,14 +153,14 @@ describe('plant-products dashboard controller', () => {
         ])
     })
 
-    const response = await server.inject('/plant-products')
+    const response = await server.inject(DASHBOARD_URL)
 
     expect(response.result).not.toContain('DELETED-ROW')
     expect(response.result).toContain(copy.search.noResults)
   })
 
   it('shows the deletion banner only when deleted=1 is present', async () => {
-    const ordinary = await server.inject('/plant-products')
+    const ordinary = await server.inject(DASHBOARD_URL)
     const deleted = await server.inject('/plant-products?deleted=1')
 
     expect(ordinary.result).not.toContain(
@@ -170,10 +176,12 @@ describe('plant-products dashboard controller', () => {
       sharedCopy.notificationActions.delete.successBody
     )
   })
+}
 
+const searchAndFilterTests = () => {
   it('trims reference search for records.list and echoes it into the input', async () => {
     let received
-    configureRecords('plant-products', {
+    configureRecords(SET_ID, {
       ...recordsStub,
       list: async (options) => {
         received = options
@@ -200,7 +208,7 @@ describe('plant-products dashboard controller', () => {
   })
 
   it('combines status, country and inclusive arrival filters over the listed page only', async () => {
-    configureRecords('plant-products', {
+    configureRecords(SET_ID, {
       ...recordsStub,
       list: async () =>
         listEnvelope([
@@ -222,7 +230,7 @@ describe('plant-products dashboard controller', () => {
   })
 
   it('pins the current-page-only filter limitation while preserving filters in pagination', async () => {
-    configureRecords('plant-products', {
+    configureRecords(SET_ID, {
       ...recordsStub,
       list: async () =>
         listEnvelope([listedRow()], {
@@ -276,11 +284,13 @@ describe('plant-products dashboard controller', () => {
       expect(response.result).toContain(`value="${raw}"`)
     }
   )
+}
 
+const createAmendAndFailureTests = () => {
   it('creates a journey and redirects to its plant import-type page', async () => {
     const response = await server.inject({
       method: 'POST',
-      url: '/plant-products/notifications'
+      url: CREATE_URL
     })
 
     expect(response.statusCode).toBe(302)
@@ -292,15 +302,13 @@ describe('plant-products dashboard controller', () => {
   it('POST amend transitions a submitted notification and redirects to its plant hub', async () => {
     const created = await server.inject({
       method: 'POST',
-      url: '/plant-products/notifications'
+      url: CREATE_URL
     })
     const journeyId = created.headers.location.split('/')[3]
     const cookie = (created.headers['set-cookie'] ?? [])
       .map((value) => value.split(';')[0])
       .join('; ')
-    await withSetContext('plant-products', () =>
-      recordsStub.finalise(journeyId)
-    )
+    await withSetContext(SET_ID, () => recordsStub.finalise(journeyId))
 
     const amended = await server.inject({
       method: 'POST',
@@ -310,15 +318,15 @@ describe('plant-products dashboard controller', () => {
 
     expect(amended.statusCode).toBe(302)
     expect(amended.headers.location).toBe(
-      withSetContext('plant-products', () => hubPath(journeyId))
+      withSetContext(SET_ID, () => hubPath(journeyId))
     )
     await expect(
-      withSetContext('plant-products', () => recordsStub.load({ journeyId }))
+      withSetContext(SET_ID, () => recordsStub.load({ journeyId }))
     ).resolves.toMatchObject({ status: 'amend' })
   })
 
   it('re-renders the dashboard at 500 for a recoverable create failure', async () => {
-    configureRecords('plant-products', {
+    configureRecords(SET_ID, {
       ...recordsStub,
       list: async () => emptyList,
       create: recordsReal.create
@@ -332,7 +340,7 @@ describe('plant-products dashboard controller', () => {
 
     const response = await server.inject({
       method: 'POST',
-      url: '/plant-products/notifications'
+      url: CREATE_URL
     })
 
     expect(response.statusCode).toBe(500)
@@ -343,7 +351,7 @@ describe('plant-products dashboard controller', () => {
   })
 
   it('does not swallow an unexpected create error', async () => {
-    configureRecords('plant-products', {
+    configureRecords(SET_ID, {
       ...recordsStub,
       create: async () => {
         throw new TypeError('programming failure')
@@ -357,7 +365,7 @@ describe('plant-products dashboard controller', () => {
   })
 
   it('surfaces records list and create failures', async () => {
-    configureRecords('plant-products', {
+    configureRecords(SET_ID, {
       ...recordsStub,
       list: async () => {
         throw new Error('list failed')
@@ -367,13 +375,20 @@ describe('plant-products dashboard controller', () => {
       }
     })
 
-    const listResponse = await server.inject('/plant-products')
+    const listResponse = await server.inject(DASHBOARD_URL)
     const createResponse = await server.inject({
       method: 'POST',
-      url: '/plant-products/notifications'
+      url: CREATE_URL
     })
 
     expect(listResponse.statusCode).toBe(500)
     expect(createResponse.statusCode).toBe(500)
   })
+}
+
+describe('plant-products dashboard controller', () => {
+  setupDashboardServer()
+  routeAndRenderTests()
+  searchAndFilterTests()
+  createAmendAndFailureTests()
 })

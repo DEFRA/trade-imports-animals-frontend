@@ -25,12 +25,14 @@ import { records } from '../../../../../services/records/stub.js'
 import { toDto } from '../../../../../services/records/mapper/to-dto.js'
 import * as consignorConfirmation from './consignor-confirmation.controller.js'
 
+const SET_ID = 'plant-products'
+
 const get = consignorConfirmation.routes.find(
   ({ method }) => method === 'GET'
 ).handler
 const post = postHandlerOf(consignorConfirmation)
 const drive = (handler, options) =>
-  withSetContext('plant-products', () => driveHandler(handler, options))
+  withSetContext(SET_ID, () => driveHandler(handler, options))
 
 const consignorAnswers = {
   consignorName: 'Orchard Export SAS',
@@ -56,7 +58,7 @@ describe('plant-products consignor-confirmation controller', () => {
   })
 
   beforeEach(async () => {
-    enterSetContext('plant-products')
+    enterSetContext(SET_ID)
     await records.clear()
   })
 
@@ -90,7 +92,7 @@ describe('plant-products consignor-confirmation controller', () => {
     })
     expect(result.after).toEqual(consignorAnswers)
     expect(commit).not.toHaveBeenCalled()
-    const dto = withSetContext('plant-products', () =>
+    const dto = withSetContext(SET_ID, () =>
       toDto(projectAnswers(stored.fulfilment))
     )
 

@@ -20,6 +20,8 @@ export const meta = { ...page, collects: [] }
 const view = `${TEMPLATES}/features/commodities/basic-description/basic-description`
 const copy = copyFor({ en, cy }).basicDescription
 
+const ACTION_TARGET_PART_COUNT = 2
+
 const normaliseFilter = (value) =>
   String(value ?? '')
     .trim()
@@ -30,7 +32,10 @@ const actionTarget = (action, prefix) => {
     return null
   }
   const parts = action.slice(prefix.length).split(':')
-  if (parts.length !== 2 || parts.some((part) => part === '')) {
+  if (
+    parts.length !== ACTION_TARGET_PART_COUNT ||
+    parts.some((part) => part === '')
+  ) {
     return null
   }
   return { index: Number(parts[0]), value: parts[1] }

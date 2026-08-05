@@ -27,6 +27,7 @@ export const meta = {
 
 const view = `${TEMPLATES}/features/additional-details/template`
 const copy = copyFor({ en, cy })
+const MAX_WEIGHT_DECIMAL_PLACES = 5
 const trimmed = (value) => String(value ?? '').trim()
 
 const totalGrossWeightRule = (netWeightTotal) =>
@@ -44,7 +45,7 @@ const totalGrossWeightRule = (netWeightTotal) =>
         return helpers.error('weight.number')
       }
       const decimalPlaces = value.split('.')[1]?.length ?? 0
-      if (decimalPlaces > 5) {
+      if (decimalPlaces > MAX_WEIGHT_DECIMAL_PLACES) {
         return helpers.error('weight.decimalPlaces')
       }
       if (Number(value) <= netWeightTotal) {
