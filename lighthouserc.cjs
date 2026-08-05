@@ -1,6 +1,8 @@
 // The URL list is derived from the app's own registered routes and written by
-// `npm run lighthouse:targets`, which also seeds the notification those URLs
-// point at. Run `npm run lighthouse`, never `lhci autorun` on its own.
+// `npm run lighthouse:targets`, which also seeds the notifications those URLs
+// point at. Run `npm run lighthouse`, never `lhci autorun` on its own: the
+// filename pattern below only has to be unique per URL, because the run step
+// renames each report to the page's own stable name once LHCI has finished.
 const { readFileSync } = require('node:fs')
 const { join } = require('node:path')
 

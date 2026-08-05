@@ -5,20 +5,16 @@ import process from 'node:process'
 import puppeteer from 'puppeteer'
 
 import signIn from '../../tests/lighthouse/auth-setup.cjs'
-import { auditUrls } from './audit-targets.js'
+import { auditUrls, reportNames, TARGETS_FILE } from './audit-targets.js'
 import { createJourneyClient } from './journey-client.js'
 import {
   createNotification,
   fillNotification,
+  SEED_SHAPES,
   submitNotification
 } from './seed-notification.js'
 
 const HTTP_OK = 200
-
-export const TARGETS_FILE = new URL(
-  '../../.lighthouse/targets.json',
-  import.meta.url
-)
 
 const origin = process.env.LIGHTHOUSE_BASE_URL ?? 'http://localhost:3000'
 
@@ -39,14 +35,16 @@ const signedInCookies = async () => {
 
 const seedNotifications = async (cookies) => {
   const client = createJourneyClient(origin, cookies)
-  const draftJourneyId = await createNotification(client)
-  await fillNotification(client, draftJourneyId)
-
-  const submittedJourneyId = await createNotification(client)
-  await fillNotification(client, submittedJourneyId)
-  await submitNotification(client, submittedJourneyId)
-
-  return { draftJourneyId, submittedJourneyId }
+  const journeyIds = {}
+  for (const [name, shape] of Object.entries(SEED_SHAPES)) {
+    const journeyId = await createNotification(client)
+    await fillNotification(client, journeyId, shape)
+    if (shape.submit) {
+      await submitNotification(client, journeyId)
+    }
+    journeyIds[name] = journeyId
+  }
+  return journeyIds
 }
 
 /** A page whose prerequisites are unmet redirects to the hub, so every URL is
@@ -78,9 +76,11 @@ const write = (payload) => {
 const journeyIds = await seedNotifications(await signedInCookies())
 const urls = auditUrls(origin, journeyIds)
 await assertUrlsRenderTheirOwnPage(urls, await signedInCookies())
-write({ origin, ...journeyIds, urls })
+write({ origin, journeyIds, urls, reports: reportNames(urls, journeyIds) })
 
+const seeded = Object.entries(journeyIds)
+  .map(([name, journeyId]) => `${name} ${journeyId}`)
+  .join(', ')
 process.stdout.write(
-  `Lighthouse will audit ${urls.length} URLs on ${origin} ` +
-    `(draft ${journeyIds.draftJourneyId}, submitted ${journeyIds.submittedJourneyId})\n`
+  `Lighthouse will audit ${urls.length} URLs on ${origin} (${seeded})\n`
 )

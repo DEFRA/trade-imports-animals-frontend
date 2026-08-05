@@ -4,15 +4,22 @@ import { allRoutes } from '../../src/server/app/sets/live-animals/journeys/linea
 import {
   assertTargetsAreCurrent,
   auditPaths,
+  auditUrls,
+  FILLED_BY,
   QUERY,
-  SKIPPED,
-  SUBMITTED_ONLY
+  reportName,
+  reportNames,
+  SKIPPED
 } from './audit-targets.js'
 
 const journeyIds = {
-  draftJourneyId: 'GBN-AG-26-DRAFT1',
-  submittedJourneyId: 'GBN-AG-26-SUBMIT'
+  draft: 'GBN-AG-26-DRAFT1',
+  submitted: 'GBN-AG-26-SUBMIT',
+  transit: 'GBN-AG-26-TRANS1',
+  temporaryAdmission: 'GBN-AG-26-TEMPA1'
 }
+
+const ORIGIN = 'http://localhost:3000'
 
 const getPaths = allRoutes
   .filter(({ method }) => method === 'GET')
@@ -26,20 +33,28 @@ describe('#auditPaths', () => {
     expect(paths.some((path) => path.includes('{'))).toBe(false)
   })
 
-  it('Should point the submitted-only routes at the submitted notification and the rest at the draft', () => {
+  it('Should point each route at the notification that answers it and the rest at the draft', () => {
     const paths = auditPaths(journeyIds)
 
+    expect(paths.filter((path) => path.includes(journeyIds.submitted))).toEqual(
+      [`/notifications/${journeyIds.submitted}/confirmation`]
+    )
+    expect(paths.filter((path) => path.includes(journeyIds.transit))).toEqual([
+      `/notifications/${journeyIds.transit}/destination-country`,
+      `/notifications/${journeyIds.transit}/port-of-exit`,
+      `/notifications/${journeyIds.transit}/transporters/private`
+    ])
     expect(
-      paths.filter((path) => path.includes(journeyIds.submittedJourneyId))
-    ).toEqual([`/notifications/${journeyIds.submittedJourneyId}/confirmation`])
+      paths.filter((path) => path.includes(journeyIds.temporaryAdmission))
+    ).toEqual([`/notifications/${journeyIds.temporaryAdmission}/exit-date`])
     expect(
-      paths.filter((path) => path.includes(journeyIds.draftJourneyId))
-    ).toHaveLength(paths.length - 2)
+      paths.filter((path) => path.includes(journeyIds.draft))
+    ).toHaveLength(paths.length - FILLED_BY.size - 1)
   })
 
   it('Should carry the query string a route needs before it will render', () => {
     expect(auditPaths(journeyIds)).toContain(
-      `/notifications/${journeyIds.draftJourneyId}/addresses/create${QUERY.get(
+      `/notifications/${journeyIds.draft}/addresses/create${QUERY.get(
         '/notifications/{journeyId}/addresses/create'
       )}`
     )
@@ -52,7 +67,15 @@ describe('#auditPaths', () => {
     ]
 
     expect(auditPaths(journeyIds, routes)).toContain(
-      `/notifications/${journeyIds.draftJourneyId}/brand-new`
+      `/notifications/${journeyIds.draft}/brand-new`
+    )
+  })
+
+  it('Should refuse to audit a route whose notification shape was never seeded', () => {
+    const unseeded = { ...journeyIds, transit: undefined }
+
+    expect(() => auditPaths(unseeded)).toThrow(
+      /audits .* on the "transit" notification, which the setup step did not seed/
     )
   })
 })
@@ -71,12 +94,12 @@ describe('#assertTargetsAreCurrent', () => {
     )
   })
 
-  it('Should reject a submitted-only entry naming a route the app no longer serves', () => {
-    const [submittedOnly] = SUBMITTED_ONLY
-    const routes = allRoutes.filter(({ path }) => path !== submittedOnly)
+  it('Should reject a filled-by entry naming a route the app no longer serves', () => {
+    const [filledElsewhere] = FILLED_BY.keys()
+    const routes = allRoutes.filter(({ path }) => path !== filledElsewhere)
 
     expect(() => assertTargetsAreCurrent(routes)).toThrow(
-      /submitted-only list names .*, which the app no longer serves/
+      /filled-by list names .*, which the app no longer serves/
     )
   })
 
@@ -88,6 +111,63 @@ describe('#assertTargetsAreCurrent', () => {
 
     expect(() => assertTargetsAreCurrent(routes)).toThrow(
       /cannot build a URL for \/notifications\/\{journeyId}\/things\/\{thingId}/
+    )
+  })
+})
+
+describe('#reportName', () => {
+  it('Should name a report after its route, without the seeded journey id', () => {
+    expect(
+      reportName(
+        `${ORIGIN}/notifications/${journeyIds.draft}/commodities/identification`,
+        journeyIds
+      )
+    ).toBe('notifications_commodities_identification')
+  })
+
+  it('Should name the report for the service start page', () => {
+    expect(reportName(`${ORIGIN}/`, journeyIds)).toBe('home')
+  })
+
+  it('Should drop the query string a route needs to render', () => {
+    expect(
+      reportName(
+        `${ORIGIN}/notifications/${journeyIds.draft}/addresses/create?for=placeOfOrigin`,
+        journeyIds
+      )
+    ).toBe('notifications_addresses_create')
+  })
+})
+
+describe('#reportNames', () => {
+  it('Should give a page the same report name however the notifications are seeded', () => {
+    const other = Object.fromEntries(
+      Object.keys(journeyIds).map((shape) => [shape, `GBN-AG-26-${shape}`])
+    )
+
+    expect(Object.values(reportNames(auditUrls(ORIGIN, other), other))).toEqual(
+      Object.values(reportNames(auditUrls(ORIGIN, journeyIds), journeyIds))
+    )
+  })
+
+  it('Should name every audited URL without leaking a journey id', () => {
+    const urls = auditUrls(ORIGIN, journeyIds)
+    const names = reportNames(urls, journeyIds)
+
+    expect(Object.keys(names)).toEqual(urls)
+    expect(Object.values(names).filter((name) => name.includes('GBN'))).toEqual(
+      []
+    )
+  })
+
+  it('Should refuse two routes that would overwrite each other', () => {
+    const urls = [
+      `${ORIGIN}/notifications/${journeyIds.draft}/origin`,
+      `${ORIGIN}/notifications/${journeyIds.transit}/origin`
+    ]
+
+    expect(() => reportNames(urls, journeyIds)).toThrow(
+      /would write both .* to notifications_origin\.report\.html/
     )
   })
 })

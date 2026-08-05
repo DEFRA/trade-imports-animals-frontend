@@ -18,6 +18,7 @@ export const { values } = JSON.parse(
 const [firstLine] = values.commodityLines
 const [firstUnit] = firstLine.animalIdentifiers
 const arrival = values.arrivalDateAtPort
+const { privateTransporter } = values
 
 const ukDate = ({ day, month, year }) => `${day}/${month}/${year}`
 
@@ -31,7 +32,19 @@ const firstOption = (name) => (page) => {
   return { [name]: value }
 }
 
-export const SEED_STEPS = [
+/** The same idea for a dropdown, skipping the placeholder and the divider. */
+const firstListedOption = (name) => (page) => {
+  const value = page
+    .$(`select[name="${name}"] option[value]:not([value=""])`)
+    .first()
+    .attr('value')
+  if (!value) {
+    throw new Error(`No "${name}" option on ${page.heading || 'the page'}`)
+  }
+  return { [name]: value }
+}
+
+const BEFORE_REASON = [
   { slug: 'import-type', fields: { importType: values.importType } },
   {
     slug: 'origin',
@@ -52,15 +65,10 @@ export const SEED_STEPS = [
       'numberOfAnimalsQuantity-0': firstLine.numberOfAnimalsQuantity,
       'numberOfPackages-0': firstLine.numberOfPackages
     }
-  },
-  {
-    slug: 'import-reason',
-    fields: { reasonForImport: values.reasonForImport }
-  },
-  {
-    slug: 'import-purpose',
-    fields: { purposeInInternalMarket: values.purposeInInternalMarket }
-  },
+  }
+]
+
+const AFTER_REASON = [
   {
     slug: 'commodities/identification',
     fields: {
@@ -98,16 +106,112 @@ export const SEED_STEPS = [
   {
     slug: 'transit-countries',
     fields: { transitedCountries: values.transitedCountries }
-  },
-  { slug: 'transporters', fields: { transporterType: values.transporterType } },
-  {
-    slug: 'transporters/select',
-    fields: firstOption('commercialTransporter')
-  },
-  {
-    slug: 'consignment/contact/select',
-    fields: firstOption('contactAddress')
   }
+]
+
+const CONTACT_STEP = {
+  slug: 'consignment/contact/select',
+  fields: firstOption('contactAddress')
+}
+
+/** The steps each reason for import brings into scope. A page whose obligation
+ * is out of scope still renders, so a shape that never answers it is a page
+ * Lighthouse audits blank. */
+const REASON_STEPS = new Map([
+  [
+    'internalMarket',
+    [
+      {
+        slug: 'import-purpose',
+        fields: { purposeInInternalMarket: values.purposeInInternalMarket }
+      }
+    ]
+  ],
+  [
+    'transit',
+    [
+      {
+        slug: 'destination-country',
+        fields: firstListedOption('destinationCountry')
+      },
+      { slug: 'port-of-exit', fields: firstListedOption('portOfExit') }
+    ]
+  ],
+  [
+    'temporaryAdmissionHorses',
+    [
+      { slug: 'port-of-exit', fields: firstListedOption('portOfExit') },
+      { slug: 'exit-date', fields: { exitDate: ukDate(arrival) } }
+    ]
+  ]
+])
+
+const TRANSPORTER_STEPS = new Map([
+  [
+    'Commercial',
+    [
+      {
+        slug: 'transporters/select',
+        fields: firstOption('commercialTransporter')
+      }
+    ]
+  ],
+  [
+    'Private',
+    [
+      {
+        slug: 'transporters/private',
+        fields: {
+          nameOrOrganisationName: privateTransporter.name,
+          addressLine1: privateTransporter.address.addressLine1,
+          addressLine2: privateTransporter.address.addressLine2,
+          townOrCity: privateTransporter.address.townOrCity,
+          county: privateTransporter.address.county,
+          postalOrZipCode: privateTransporter.address.postalOrZipCode,
+          country: privateTransporter.address.country,
+          telephoneNumber: privateTransporter.address.telephoneNumber,
+          emailAddress: privateTransporter.address.emailAddress
+        }
+      }
+    ]
+  ]
+])
+
+/** The notification shapes the audit needs, keyed by the name the URL list
+ * refers to them by. Every conditional page is answered on one of them. */
+export const SEED_SHAPES = {
+  draft: {
+    reasonForImport: values.reasonForImport,
+    transporterType: values.transporterType
+  },
+  submitted: {
+    reasonForImport: values.reasonForImport,
+    transporterType: values.transporterType,
+    submit: true
+  },
+  transit: { reasonForImport: 'transit', transporterType: 'Private' },
+  temporaryAdmission: {
+    reasonForImport: 'temporaryAdmissionHorses',
+    transporterType: values.transporterType
+  }
+}
+
+const stepsIn = (steps, key, label) => {
+  const scoped = steps.get(key)
+  if (!scoped) {
+    throw new Error(`The seed has no steps for ${label} "${key}"`)
+  }
+  return scoped
+}
+
+export const seedSteps = ({ reasonForImport, transporterType }) => [
+  ...BEFORE_REASON,
+  { slug: 'import-reason', fields: { reasonForImport } },
+  ...stepsIn(REASON_STEPS, reasonForImport, 'reason for import'),
+  ...AFTER_REASON,
+  { slug: 'transporters', fields: { transporterType } },
+  ...stepsIn(TRANSPORTER_STEPS, transporterType, 'transporter type'),
+  CONTACT_STEP
 ]
 
 const fieldsFor = (step, page) =>
@@ -125,8 +229,8 @@ export const createNotification = async (client) => {
   return journeyId
 }
 
-export const fillNotification = async (client, journeyId) => {
-  for (const step of SEED_STEPS) {
+export const fillNotification = async (client, journeyId, shape) => {
+  for (const step of seedSteps(shape)) {
     const path = `/notifications/${journeyId}/${step.slug}`
     const page = await client.document(path)
     if (page.status !== HTTP_OK) {

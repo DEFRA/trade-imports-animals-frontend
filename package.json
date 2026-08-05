@@ -37,7 +37,7 @@
     "capture:live-animals": "node src/server/app/services/_capture/capture.js",
     "lighthouse": "run-s lighthouse:targets lighthouse:run",
     "lighthouse:targets": "node scripts/lighthouse/seed-audit-targets.js",
-    "lighthouse:run": "lhci autorun",
+    "lighthouse:run": "node scripts/lighthouse/run-audit.js",
     "test:watch": "TZ=UTC vitest",
     "security-audit": "npm audit --audit-level=high",
     "server:watch": "nodemon --inspect=0.0.0.0 --ext js,json,njk --legacy-watch ./src",
