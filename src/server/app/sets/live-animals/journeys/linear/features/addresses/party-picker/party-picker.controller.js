@@ -12,6 +12,7 @@ import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../../shared/copy.cy.js'
 import * as addressBook from '../../../../../../../services/address-book/index.js'
 import { PARTIES } from '../parties.js'
+import { organisationIdOf } from '../resolve-parties.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { isSearchAction, pageNumber } from './request-params.js'
@@ -24,15 +25,17 @@ const view = `${TEMPLATES}/features/addresses/party-picker/party-picker`
 const copy = copyFor({ en, cy }).picker
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
-const render = (
+const render = async (
   h,
+  orgId,
   journey,
   party,
   { query, page, selectedId, error, recoverableError = false }
 ) => {
-  const found = addressBook.search(party.role, { query, page })
+  // One book for every role — addresses have no type (D3).
+  const found = await addressBook.search(orgId, { query, page })
   const selected = selectedId
-    ? addressBook.party(party.role, selectedId)
+    ? await addressBook.party(orgId, selectedId)
     : undefined
 
   return h.view(view, {
@@ -56,7 +59,7 @@ const render = (
 
 const get = (party) => async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, party, {
+  return render(h, organisationIdOf(request), journey, party, {
     query: request.query.q ?? '',
     page: pageNumber(request.query.page),
     selectedId: request.query.selected ?? committedId(answers, party)
@@ -66,17 +69,22 @@ const get = (party) => async (request, h) => {
 const commitSelection = async (request, h, party, chosen, form) => {
   const { failure } = await kit.recoverableSave(
     async () => {
+      // The reference, not a copy (AC3). Display details are resolved on read;
+      // storing them here would be re-persisted by the next commit anywhere in
+      // the journey, and the reference would grow a stale copy beside it.
       await state.commit(request, h, {
-        [party.id]: { name: chosen.name, address: { ...chosen.address } }
+        [party.id]: { addressId: chosen.id }
       })
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return render(h, journey, party, {
-        ...form,
-        selectedId: chosen.id,
-        recoverableError: true
-      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+      return (
+        await render(h, organisationIdOf(request), journey, party, {
+          ...form,
+          selectedId: chosen.id,
+          recoverableError: true
+        })
+      ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
   if (failure) {
@@ -90,21 +98,24 @@ const post = (party) => async (request, h) => {
   const payload = request.payload ?? {}
   const query = payload.q ?? ''
   const selectedId = payload.party || payload.selected || ''
+  const orgId = organisationIdOf(request)
 
   if (isSearchAction(payload)) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, party, { query, page: 1, selectedId })
+    return render(h, orgId, journey, party, { query, page: 1, selectedId })
   }
 
-  const chosen = chosenPartyFor(party, selectedId)
-  if (!chosen) {
+  const chosen = await chosenPartyFor(orgId, selectedId)
+  if (!chosen || chosen.deleted) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, party, {
-      query,
-      page: pageNumber(payload.page),
-      selectedId: '',
-      error: party.error
-    }).code(HTTP_STATUS_BAD_REQUEST)
+    return (
+      await render(h, orgId, journey, party, {
+        query,
+        page: pageNumber(payload.page),
+        selectedId: '',
+        error: party.error
+      })
+    ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   return commitSelection(request, h, party, chosen, {

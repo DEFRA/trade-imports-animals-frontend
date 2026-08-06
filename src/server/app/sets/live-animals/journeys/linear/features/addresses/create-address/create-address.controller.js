@@ -17,6 +17,7 @@ import { copyFor } from '../../../../../../../shared/copy.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 import * as addressBook from '../../../../../../../services/address-book/index.js'
 import { partyOf } from '../parties.js'
+import { organisationIdOf } from '../resolve-parties.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
@@ -195,8 +196,15 @@ const post = async (request, h) => {
   const record = addressRecordFrom(values)
   const { failure } = await kit.recoverableSave(
     async () => {
+      // Save to the address book FIRST — the id it returns is what the journey
+      // commits. Committing before the write would reference a record that does
+      // not exist if the write then failed.
+      const saved = await addressBook.addParty(
+        organisationIdOf(request),
+        record
+      )
       await state.commit(request, h, {
-        [party.id]: { name: record.name, address: { ...record.address } }
+        [party.id]: { addressId: saved.id }
       })
     },
     async () => {
@@ -210,7 +218,6 @@ const post = async (request, h) => {
     return failure
   }
 
-  addressBook.addParty(party.role, record)
   return h.redirect(pagePath(request.params.journeyId, party.returnSlug))
 }
 

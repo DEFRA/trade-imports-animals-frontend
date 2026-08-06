@@ -63,50 +63,43 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should copy the created address into the launching party and add it to that role of the address book only', async () => {
+  it('Should save the created address to the book and reference it from the launching party', async () => {
     const result = await driveHandler(postCreate, { payload: validPayload() })
 
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, 'addresses')
     })
-    expect(result.after.consignor).toEqual({
-      name: CREATED_FARM_NAME,
-      address: {
-        addressLine1: CREATED_ADDRESS_LINE_1,
-        addressLine2: '',
-        townOrCity: 'Carlisle',
-        county: '',
-        postalOrZipCode: 'CA1 1AA',
-        country: CREATED_COUNTRY,
-        telephoneNumber: CREATED_TELEPHONE_NUMBER,
-        emailAddress: CREATED_EMAIL_ADDRESS
-      }
-    })
+    expect(Object.keys(result.after.consignor)).toEqual(['addressId'])
 
-    const consignorNames = addressBook
-      .parties('consignor')
-      .map((option) => option.name)
-    expect(consignorNames).toContain(CREATED_FARM_NAME)
-    const importerNames = addressBook
-      .parties('importer')
-      .map((option) => option.name)
-    expect(importerNames).not.toContain(CREATED_FARM_NAME)
+    const saved = await addressBook.party(
+      undefined,
+      result.after.consignor.addressId
+    )
+    expect(saved.name).toBe(CREATED_FARM_NAME)
+    expect(saved.address).toMatchObject({
+      addressLine1: CREATED_ADDRESS_LINE_1,
+      townOrCity: 'Carlisle',
+      postalOrZipCode: 'CA1 1AA',
+      country: CREATED_COUNTRY,
+      telephoneNumber: CREATED_TELEPHONE_NUMBER,
+      emailAddress: CREATED_EMAIL_ADDRESS
+    })
   })
 
-  it('Should offer the created address in the launching spoke, where selecting it commits the same copy', async () => {
-    await driveHandler(postCreate, {
+  it('Should offer the created address to every spoke — the book has no roles (D3)', async () => {
+    const created = await driveHandler(postCreate, {
       payload: validPayload({ nameOrOrganisationName: SECOND_CREATED_NAME })
     })
-    const created = addressBook
-      .parties('consignor')
-      .find((option) => option.name === SECOND_CREATED_NAME)
+    const { addressId } = created.after.consignor
 
     const result = await driveHandler(postConsignorSpoke, {
-      payload: { action: 'save', party: created.id }
+      payload: { action: 'save', party: addressId }
     })
     expect(result.view).toBeUndefined()
-    expect(result.after.consignor.name).toBe(SECOND_CREATED_NAME)
-    expect(result.after.consignor.address.townOrCity).toBe('Carlisle')
+    expect(result.after.consignor).toEqual({ addressId })
+
+    const offered = await addressBook.all(undefined)
+    expect(offered.map((record) => record.name)).toContain(SECOND_CREATED_NAME)
   })
 
   it('Should resolve contact separately from the five hub spokes, copy its new address and return to the contact page', async () => {
@@ -124,24 +117,13 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, 'consignment/contact/select')
     })
-    expect(result.after.contactAddress).toEqual({
-      name: CREATED_CONTACT_NAME,
-      address: {
-        addressLine1: CREATED_ADDRESS_LINE_1,
-        addressLine2: '',
-        townOrCity: 'Carlisle',
-        county: '',
-        postalOrZipCode: 'CA1 1AA',
-        country: CREATED_COUNTRY,
-        telephoneNumber: CREATED_TELEPHONE_NUMBER,
-        emailAddress: CREATED_EMAIL_ADDRESS
-      }
-    })
-    expect(
-      addressBook
-        .parties('contact')
-        .some((option) => option.name === CREATED_CONTACT_NAME)
-    ).toBe(true)
+    expect(Object.keys(result.after.contactAddress)).toEqual(['addressId'])
+
+    const saved = await addressBook.party(
+      undefined,
+      result.after.contactAddress.addressId
+    )
+    expect(saved.name).toBe(CREATED_CONTACT_NAME)
   })
 
   it('Should reject a blank submit with an error per mandatory field and commit nothing', async () => {
@@ -174,7 +156,7 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
   })
 
   it('Should redirect to the addresses landing page without saving when the launching party is unknown', async () => {
-    const before = addressBook.parties('consignor').length
+    const before = (await addressBook.all(undefined)).length
     const result = await driveHandler(postCreate, {
       payload: validPayload({ for: 'somewhereElse' })
     })
@@ -183,7 +165,7 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
       redirect: pagePath(result.journeyId, 'addresses')
     })
     expect(result.after).toEqual({})
-    expect(addressBook.parties('consignor')).toHaveLength(before)
+    expect(await addressBook.all(undefined)).toHaveLength(before)
   })
 })
 
@@ -208,11 +190,17 @@ describe('POST addresses/create — country membership follows the primed list',
 
   it('Should validate against the list as primed at POST time, not as imported', async () => {
     process.env.LIVE_ANIMALS_MODE = 'real'
+    // Real mode puts two services behind fetch: reference-data for the country
+    // list, and the address book for the write-through.
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({
+      vi.fn(async (url) => ({
         ok: true,
-        json: async () => [{ code: 'ZZ', name: 'Zedland' }]
+        status: 200,
+        json: async () =>
+          String(url).includes('/organisation/')
+            ? { id: 'created-zz', name: CREATED_FARM_NAME, countryCode: 'ZZ' }
+            : [{ code: 'ZZ', name: 'Zedland' }]
       }))
     )
     await countries.prime()
@@ -221,7 +209,7 @@ describe('POST addresses/create — country membership follows the primed list',
       payload: validPayload({ country: 'Zedland' })
     })
     expect(accepted.view).toBeUndefined()
-    expect(accepted.after.consignor.address.country).toBe('Zedland')
+    expect(accepted.after.consignor).toEqual({ addressId: 'created-zz' })
 
     const rejected = await driveHandler(postCreate, {
       payload: validPayload({ country: 'France' })

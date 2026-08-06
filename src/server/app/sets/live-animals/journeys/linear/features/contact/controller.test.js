@@ -60,15 +60,13 @@ describe('GET contact — select or create an address', () => {
     const createdResult = await driveHandler(postCreate, {
       payload: contactPayload
     })
-    const created = addressBook
-      .parties('contact')
-      .find((option) => option.name === contactPayload.nameOrOrganisationName)
+    const { addressId } = createdResult.after.contactAddress
 
     const getResult = await driveHandler(get, {
       seed: createdResult.after
     })
     const option = getResult.view.context.contactOptions.find(
-      (candidate) => candidate.value === created.id
+      (candidate) => candidate.value === addressId
     )
 
     expect(option).toMatchObject({
@@ -77,11 +75,14 @@ describe('GET contact — select or create an address', () => {
     })
 
     const postResult = await driveHandler(post, {
-      payload: { contactAddress: created.id }
+      payload: { contactAddress: addressId }
     })
     expect(postResult.view).toBeUndefined()
-    expect(postResult.after.contactAddress.name).toBe(ROUND_TRIP_CONTACT_NAME)
-    expect(postResult.after.contactAddress.address.townOrCity).toBe('Bristol')
+    expect(postResult.after.contactAddress).toEqual({ addressId })
+
+    const saved = await addressBook.party(undefined, addressId)
+    expect(saved.name).toBe(ROUND_TRIP_CONTACT_NAME)
+    expect(saved.address.townOrCity).toBe('Bristol')
   })
 })
 

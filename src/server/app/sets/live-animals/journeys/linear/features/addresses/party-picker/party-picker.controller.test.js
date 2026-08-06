@@ -8,16 +8,15 @@ import { records as recordsStub } from '../../../../../../../services/persistenc
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import { driveHandler } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
-import * as addressBook from '../../../../../../../services/address-book/index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 
 import * as partyPicker from './party-picker.controller.js'
 import { PARTIES } from '../parties.js'
 
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
-const DANISH_MEAT_EXPORT_ID = 'danish-meat-export'
-const IBERIAN_SWINE_ID = 'iberian-swine'
-const IBERIAN_SWINE_NAME = 'Iberian Swine SA'
+const NORDVIK_ID = 'nordvik-seafood'
+const ALPINE_DAIRY_ID = 'alpine-dairy'
+const COPENHAGEN_ID = 'copenhagen-provisions'
 const SELECT_A_CONSIGNOR_ERROR = 'Select a consignor from the list'
 
 const handlerFor = (method, slug) =>
@@ -45,20 +44,20 @@ describe('GET /consignors/select', () => {
     const picker = pickerFrom(await driveHandler(getConsignor))
 
     expect(picker.page).toBe(1)
-    expect(picker.resultsCaption).toBe('Showing 5 of 40 addresses')
+    expect(picker.resultsCaption).toBe('Showing 5 of 12 addresses')
     expect(idsOf(picker)).toEqual([
       'astra-rosales',
       'eurostore-services',
       'laiterie-du-nord',
-      DANISH_MEAT_EXPORT_ID,
-      'portuguese-livestock'
+      NORDVIK_ID,
+      'pyrenean-livestock'
     ])
     expect(picker.rows[0]).toMatchObject({
       name: 'Astra Rosales',
       country: 'Switzerland',
       checked: false
     })
-    expect(picker.pagination.items.at(-1).number).toBe(8)
+    expect(picker.pagination.items.at(-1).number).toBe(3)
     expect(picker.pagination.previous).toBeUndefined()
     expect(picker.selected).toBeUndefined()
   })
@@ -67,30 +66,32 @@ describe('GET /consignors/select', () => {
     const picker = pickerFrom(await driveHandler(getConsignor))
     const row = picker.rows[3]
 
-    expect(row.addressText).toBe('Vesterbrogade 12, Copenhagen, 1620')
+    expect(row.addressText).toBe('Havnegata 8, Ålesund, 6002')
     expect(row.detailLines).toEqual([
-      'Danish Meat Export ApS',
-      'Vesterbrogade 12',
-      'Copenhagen',
-      '1620',
-      'Denmark'
+      'Nordvik Seafood AS',
+      'Havnegata 8',
+      'Ålesund',
+      '6002',
+      'Norway',
+      '01632 960000',
+      'nordvik-seafood@example.com'
     ])
   })
 
   it('Should render a later page, carrying the search and the selection into every pagination link', async () => {
     const result = await driveHandler(getConsignor, {
-      query: { page: '3', selected: IBERIAN_SWINE_ID }
+      query: { page: '2', selected: COPENHAGEN_ID }
     })
     const picker = pickerFrom(result)
 
-    expect(picker.page).toBe(3)
-    expect(idsOf(picker)).toContain('irish-beef-traders')
-    expect(picker.selected.name).toBe(IBERIAN_SWINE_NAME)
+    expect(picker.page).toBe(2)
+    expect(idsOf(picker)).toContain(ALPINE_DAIRY_ID)
+    expect(picker.selected.name).toBe('Copenhagen Provisions ApS')
     expect(picker.pagination.next.href).toBe(
-      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=4&selected=iberian-swine`
+      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=3&selected=${COPENHAGEN_ID}`
     )
     expect(picker.pagination.items[0].href).toBe(
-      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=1&selected=iberian-swine`
+      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=1&selected=${COPENHAGEN_ID}`
     )
   })
 
@@ -99,26 +100,21 @@ describe('GET /consignors/select', () => {
       await driveHandler(getConsignor, { query: { q: 'denmark' } })
     )
 
-    expect(picker.resultsCaption).toBe('Showing 2 of 2 addresses')
-    expect(idsOf(picker)).toEqual([DANISH_MEAT_EXPORT_ID, 'jutland-swine'])
+    expect(picker.resultsCaption).toBe('Showing 1 of 1 addresses')
+    expect(idsOf(picker)).toEqual([COPENHAGEN_ID])
     expect(picker.pagination).toBeNull()
   })
 
-  it('Should pre-check the row the committed answer was copied from', async () => {
+  it('Should pre-check the row the committed reference points at', async () => {
     const picker = pickerFrom(
       await driveHandler(getConsignor, {
-        seed: {
-          consignor: {
-            name: 'Bavarian Cattle GmbH',
-            address: { addressLine1: 'Maximilianstrasse 8' }
-          }
-        },
+        seed: { consignor: { addressId: ALPINE_DAIRY_ID } },
         query: { page: '2' }
       })
     )
 
-    const row = picker.rows.find((each) => each.id === 'bavarian-cattle')
-    expect(picker.selected.id).toBe('bavarian-cattle')
+    const row = picker.rows.find((each) => each.id === ALPINE_DAIRY_ID)
+    expect(picker.selected.id).toBe(ALPINE_DAIRY_ID)
     expect(row.checked).toBe(true)
   })
 })
@@ -135,61 +131,63 @@ describe('POST /consignors/select', () => {
 
     expect(result.response.statusCode).toBe(200)
     expect(picker.page).toBe(1)
-    expect(idsOf(picker)).toEqual([DANISH_MEAT_EXPORT_ID])
+    expect(idsOf(picker)).toEqual([COPENHAGEN_ID])
     expect(result.after.consignor).toBeUndefined()
   })
 
   it('Should carry a row ticked before the search across the round trip, still selected but off the results', async () => {
     const picker = pickerFrom(
       await driveHandler(postConsignor, {
-        payload: { action: 'search', q: 'denmark', party: IBERIAN_SWINE_ID }
+        payload: { action: 'search', q: 'denmark', party: NORDVIK_ID }
       })
     )
 
-    expect(picker.selected.id).toBe(IBERIAN_SWINE_ID)
-    expect(idsOf(picker)).not.toContain(IBERIAN_SWINE_ID)
+    expect(picker.selected.id).toBe(NORDVIK_ID)
+    expect(idsOf(picker)).not.toContain(NORDVIK_ID)
     expect(picker.rows.every((row) => row.checked === false)).toBe(true)
   })
 
-  it('Should copy the row ticked on a later page onto the party and return to the addresses hub', async () => {
+  it('Should reference the row ticked on a later page and return to the addresses hub', async () => {
     const result = await driveHandler(postConsignor, {
-      payload: { action: 'save', page: '3', party: IBERIAN_SWINE_ID }
+      payload: { action: 'save', page: '2', party: ALPINE_DAIRY_ID }
     })
 
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, 'addresses')
     })
-    expect(result.after.consignor).toEqual({
-      name: IBERIAN_SWINE_NAME,
-      address: {
-        addressLine1: 'Calle Gran Via 31',
-        townOrCity: 'Madrid',
-        postalOrZipCode: '28013',
-        country: 'Spain'
-      }
+    expect(result.after.consignor).toEqual({ addressId: ALPINE_DAIRY_ID })
+  })
+
+  it('Should store the id and nothing else — no copy of the address travels with it', async () => {
+    const result = await driveHandler(postConsignor, {
+      payload: { action: 'save', party: ALPINE_DAIRY_ID }
     })
+
+    expect(Object.keys(result.after.consignor)).toEqual(['addressId'])
+    expect(result.after.consignor.name).toBeUndefined()
+    expect(result.after.consignor.address).toBeUndefined()
   })
 
   it('Should save the selection made on an earlier page when the page on screen has no row ticked', async () => {
     const result = await driveHandler(postConsignor, {
-      payload: { action: 'save', page: '6', selected: IBERIAN_SWINE_ID }
+      payload: { action: 'save', page: '3', selected: NORDVIK_ID }
     })
 
     expect(result.view).toBeUndefined()
-    expect(result.after.consignor.name).toBe(IBERIAN_SWINE_NAME)
+    expect(result.after.consignor).toEqual({ addressId: NORDVIK_ID })
   })
 
   it('Should let a row ticked on the page on screen beat the selection carried from an earlier one', async () => {
     const result = await driveHandler(postConsignor, {
       payload: {
         action: 'save',
-        page: '3',
-        selected: IBERIAN_SWINE_ID,
-        party: 'irish-beef-traders'
+        page: '2',
+        selected: NORDVIK_ID,
+        party: ALPINE_DAIRY_ID
       }
     })
 
-    expect(result.after.consignor.name).toBe('Irish Beef Traders Ltd')
+    expect(result.after.consignor).toEqual({ addressId: ALPINE_DAIRY_ID })
   })
 
   it('Should reject a save with nothing selected, anchoring the error on the first row', async () => {
@@ -215,9 +213,9 @@ describe('POST /consignors/select', () => {
     expect(result.view.context.picker.rows).toEqual([])
   })
 
-  it('Should refuse an id that belongs to another role of the book', async () => {
+  it('Should refuse an id that is not in the organisation book', async () => {
     const result = await driveHandler(postConsignor, {
-      payload: { action: 'save', party: 'tech-imports' }
+      payload: { action: 'save', party: 'not-in-this-book' }
     })
 
     expect(result.view.context.picker.error).toBe(SELECT_A_CONSIGNOR_ERROR)
@@ -229,21 +227,29 @@ describe('The five spokes share the one picker', () => {
   beforeAll(configure)
   beforeEach(() => store.clear())
 
-  it('Should serve every party from its own role of the book, committing to its own obligation', async () => {
+  it('Should serve every party from the one untyped book, committing to its own obligation', async () => {
     for (const party of PARTIES) {
       store.clear()
-      const record = addressBook.parties(party.role).at(-1)
       const result = await driveHandler(handlerFor('POST', party.slug), {
-        payload: { action: 'save', party: record.id }
+        payload: { action: 'save', party: COPENHAGEN_ID }
       })
 
-      expect(result.after[party.id]).toEqual({
-        name: record.name,
-        address: record.address
-      })
+      expect(result.after[party.id]).toEqual({ addressId: COPENHAGEN_ID })
       expect(result.response).toEqual({
         redirect: pagePath(result.journeyId, 'addresses')
       })
+    }
+  })
+
+  it('Should offer the same records whichever spoke is being filled (D3)', async () => {
+    const seen = []
+    for (const party of PARTIES) {
+      const result = await driveHandler(handlerFor('GET', party.slug))
+      seen.push(idsOf(result.view.context.picker))
+    }
+
+    for (const ids of seen) {
+      expect(ids).toEqual(seen[0])
     }
   })
 

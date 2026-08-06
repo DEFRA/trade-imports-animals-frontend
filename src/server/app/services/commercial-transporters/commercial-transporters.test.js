@@ -38,7 +38,17 @@ describe('#party', () => {
 })
 
 describe('separation from the address book', () => {
-  test('Should not be reachable through the address book', () => {
-    expect(addressBook.parties('commercialTransporter')).toEqual([])
+  test('Should not be reachable through the address book', async () => {
+    process.env.LIVE_ANIMALS_MODE = 'stub'
+    const book = await addressBook.all('5900001')
+
+    const transporterIds = commercialTransporters
+      .parties()
+      .map((record) => record.id)
+
+    expect(book.some((record) => transporterIds.includes(record.id))).toBe(
+      false
+    )
+    expect(book.some((record) => record.approvalNumber)).toBe(false)
   })
 })

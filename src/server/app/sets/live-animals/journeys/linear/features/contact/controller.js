@@ -15,6 +15,7 @@ import { copyFor } from '../../../../../../shared/copy.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import { CREATE_ADDRESS_SLUG } from '../addresses/create-address/create-address.controller.js'
 import { CONTACT_PARTY } from '../addresses/parties.js'
+import { organisationIdOf } from '../addresses/resolve-parties.js'
 import { consignmentContactSelectPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
@@ -24,11 +25,11 @@ const view = `${TEMPLATES}/features/contact/template`
 
 const copy = copyFor({ en, cy })
 
-const fields = () =>
+const fields = (options) =>
   compose(
     oneOf(
       'contactAddress',
-      addressBook.parties('contact').map((option) => option.id),
+      options.map((option) => option.id),
       copy.errors.contactRequired
     )
   )
@@ -43,7 +44,14 @@ const addressSummary = (address) =>
     .filter(Boolean)
     .join(', ')
 
-const render = (h, journey, values, errors = {}, recoverableError = false) =>
+const render = (
+  h,
+  journey,
+  values,
+  options,
+  errors = {},
+  recoverableError = false
+) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
@@ -57,45 +65,53 @@ const render = (h, journey, values, errors = {}, recoverableError = false) =>
       journey.journeyId,
       `${CREATE_ADDRESS_SLUG}?for=${CONTACT_PARTY.id}`
     ),
-    contactOptions: addressBook.parties('contact').map((option) => ({
+    contactOptions: options.map((option) => ({
       value: option.id,
       text: option.name,
       hint: { text: addressSummary(option.address) },
-      checked: option.name === values.selectedName
+      checked: option.id === values.selectedId
     }))
   })
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, { selectedName: answers.contactAddress?.name })
+  const orgId = organisationIdOf(request)
+  return render(h, journey, { selectedId: answers.contactAddress?.addressId }, [
+    ...(await addressBook.all(orgId))
+  ])
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
-  const { errors } = validate(fields(), payload)
+  const orgId = organisationIdOf(request)
+  const options = await addressBook.all(orgId)
+  const { errors } = validate(fields(options), payload)
   if (errors) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, {}, errors).code(HTTP_STATUS_BAD_REQUEST)
+    return render(h, journey, {}, options, errors).code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  const chosen = addressBook.party('contact', payload.contactAddress)
+  const chosen = await addressBook.party(orgId, payload.contactAddress)
   let committed
   const { failure } = await kit.recoverableSave(
     async () => {
+      // The reference, not a copy (AC3).
       committed = chosen
         ? await state.commit(request, h, {
-            contactAddress: {
-              name: chosen.name,
-              address: { ...chosen.address }
-            }
+            contactAddress: { addressId: chosen.id }
           })
         : await state.get(request, h)
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return render(h, journey, { selectedName: chosen?.name }, {}, true).code(
-        HTTP_STATUS_INTERNAL_SERVER_ERROR
-      )
+      return render(
+        h,
+        journey,
+        { selectedId: chosen?.id },
+        options,
+        {},
+        true
+      ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
   if (failure) {
