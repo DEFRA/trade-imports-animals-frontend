@@ -100,7 +100,7 @@
     "cheerio": "1.2.0",
     "clean-webpack-plugin": "4.0.0",
     "copy-webpack-plugin": "14.0.0",
-    "dependency-cruiser": "16.10.4",
+    "dependency-cruiser": "18.1.1",
     "eslint": "9.39.2",
     "eslint-plugin-sonarjs": "4.2.0",
     "husky": "9.1.7",
