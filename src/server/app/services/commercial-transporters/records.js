@@ -1,3 +1,9 @@
+/** The fixed commercial-transporter list.
+ *
+ * Not address-book data. A transporter carries an `approvalNumber` and the
+ * address book has no field for one (EUDPA-294, D13 scopes that ticket to the
+ * consignment party), so this list stays local until a ticket extends the
+ * address-book contract to represent transporters. */
 export const COMMERCIAL_TRANSPORTER_OPTIONS = [
   {
     id: 'garcia-livestock-transport',

@@ -4,18 +4,18 @@ import {
   IMPORTER_OPTIONS,
   PLACE_OF_ORIGIN_OPTIONS,
   DESTINATION_OPTIONS,
-  CONTACT_OPTIONS,
-  COMMERCIAL_TRANSPORTER_OPTIONS
+  CONTACT_OPTIONS
 } from './stub/index.js'
 
+// Commercial transporters are NOT address-book records — they live in
+// services/commercial-transporters/. See that module for why.
 const BY_ROLE = {
   consignor: CONSIGNOR_OPTIONS,
   consignee: CONSIGNEE_OPTIONS,
   importer: IMPORTER_OPTIONS,
   placeOfOrigin: PLACE_OF_ORIGIN_OPTIONS,
   destination: DESTINATION_OPTIONS,
-  contact: CONTACT_OPTIONS,
-  commercialTransporter: COMMERCIAL_TRANSPORTER_OPTIONS
+  contact: CONTACT_OPTIONS
 }
 
 const created = new Map()
