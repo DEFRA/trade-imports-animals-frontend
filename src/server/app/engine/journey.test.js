@@ -250,14 +250,19 @@ describe('#currentJourney', () => {
     )
   })
 
-  it('Should send no organisation when the request is unauthenticated', async () => {
-    // Never a guess. The backend rejects the read rather than serving it.
+  it('Should list nothing, and read nothing, when the request is unauthenticated', async () => {
+    // The dashboard is the page a visitor signs in FROM, so it has to render
+    // before there is a session. No organisation means no journeys — and no
+    // call, because the backend would rightly reject one.
     const list = vi.fn(async () => ({ rows: [], page: 1, totalPages: 0 }))
     configureRecords({ ...recordsStub, list })
 
-    await listKnownJourneys({ state: {}, headers: {}, app: {} }, {})
+    const listed = await listKnownJourneys(
+      { state: {}, headers: {}, app: {} },
+      {}
+    )
 
-    const [options] = list.mock.calls[0]
-    expect(options.organisationId).toBeUndefined()
+    expect(listed.rows).toEqual([])
+    expect(list).not.toHaveBeenCalled()
   })
 })

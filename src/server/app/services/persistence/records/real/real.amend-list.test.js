@@ -91,7 +91,8 @@ describe('real records adapter — paged list', () => {
     const listed = await records.list({
       journeyIds: ['session-id-is-ignored-in-real-mode'],
       page: 2,
-      sort: 'createdAt,asc'
+      sort: 'createdAt,asc',
+      organisationId: '5900002'
     })
 
     const [request] = fetchMocker.requests()

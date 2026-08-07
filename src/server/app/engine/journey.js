@@ -95,12 +95,22 @@ export const listKnownJourneys = async (
   // The backend resolves each row's referenced parties against the address
   // book, which scopes on the organisation and has no authentication of its
   // own — so the read carries the reader's session organisation with it.
+  const organisationId = organisationIdOf(request)
+
+  // The dashboard is reachable before sign-in — it is the page a visitor lands
+  // on to sign in from. Without a session there is no organisation, and so no
+  // journeys to show: answer empty here rather than attempt a read the backend
+  // must reject for want of an organisation it was never given.
+  if (!organisationId) {
+    return { rows: [], page: 1, size: 0, totalElements: 0, totalPages: 0 }
+  }
+
   return records.list({
     journeyIds,
     page,
     sort,
     referenceNumber,
-    organisationId: organisationIdOf(request)
+    organisationId
   })
 }
 

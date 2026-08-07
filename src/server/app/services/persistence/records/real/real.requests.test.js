@@ -410,7 +410,8 @@ describe('real records adapter — lifecycle and list', () => {
     await records.list({
       page: 1,
       sort: 'createdAt,asc',
-      referenceNumber: journeyId
+      referenceNumber: journeyId,
+      organisationId: '5900002'
     })
 
     const [request] = fetchMocker.requests()
@@ -437,23 +438,14 @@ describe('real records adapter — lifecycle and list', () => {
     expect(request.headers.get('Trade-Imports-Organisation-Id')).toBe('5900002')
   })
 
-  it('Should send an empty organisation rather than omit it, when there is no session', async () => {
-    // The backend rejects a read with no organisation. Sending the header empty
-    // keeps that rejection at the backend rather than letting a header-less
-    // request look like a different kind of call.
-    fetchMocker.mockResponse(
-      JSON.stringify({
-        page: 1,
-        size: 20,
-        totalElements: 0,
-        totalPages: 0,
-        content: []
-      })
+  it('Should refuse to read at all when the session carries no organisation', async () => {
+    // Not a blank header — the backend rejects those, so the caller would get an
+    // opaque 400 from a request that should never have left. Fail here, naming
+    // the cause, and make no call.
+    await expect(records.list({ page: 1 })).rejects.toThrow(
+      /without an organisation/
     )
 
-    await records.list({ page: 1 })
-
-    const [request] = fetchMocker.requests()
-    expect(request.headers.get('Trade-Imports-Organisation-Id')).toBe('')
+    expect(fetchMocker.requests()).toHaveLength(0)
   })
 })

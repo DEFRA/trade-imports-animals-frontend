@@ -12,7 +12,18 @@ const addressBookUrl =
  * differently. */
 export const API_PAGE_SIZE = 25
 
+/** The organisation is part of the path, so a missing one does not fail — it
+ * asks for an organisation literally named "undefined", which the address book
+ * answers truthfully with an empty book. That reads as "this organisation has
+ * saved no addresses", or on a resolve as "this address was deleted", when what
+ * actually happened is that nobody was signed in. Refuse instead: a read with
+ * no organisation is a bug in the caller, and it should say so. */
 const addressesUrl = (orgId, addressId) => {
+  if (!orgId) {
+    throw new Error(
+      'Cannot reach the address book without an organisation: the signed-in session carries none'
+    )
+  }
   const base = `${addressBookUrl}/organisation/${encodeURIComponent(orgId)}/addresses`
   return addressId ? `${base}/${encodeURIComponent(addressId)}` : base
 }

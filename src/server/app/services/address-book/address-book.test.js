@@ -211,6 +211,31 @@ describe('mapping the wire onto the journey', () => {
   })
 })
 
+describe('without an organisation', () => {
+  test('Should refuse to read, rather than ask for an organisation named "undefined"', async () => {
+    // The organisation sits in the path, so a missing one is not an error the
+    // address book can see — it answers for an organisation of that literal
+    // name, and an empty book comes back. A search then looks like "you have
+    // saved nothing" and a resolve like "that address was deleted", when in
+    // truth nobody was signed in. Fail here instead, and say why.
+    realMode()
+    stubFetch(async () => okResponse(operator('record-7')))
+
+    const { search, party, addParty } = await addressBook()
+
+    await expect(search(undefined, {})).rejects.toThrow(
+      /without an organisation/
+    )
+    await expect(party(undefined, 'record-7')).rejects.toThrow(
+      /without an organisation/
+    )
+    await expect(addParty(undefined, { name: 'X' })).rejects.toThrow(
+      /without an organisation/
+    )
+    expect(globalThis.fetch).not.toHaveBeenCalled()
+  })
+})
+
 describe('#party', () => {
   test('Should resolve a record by its id', async () => {
     realMode()
