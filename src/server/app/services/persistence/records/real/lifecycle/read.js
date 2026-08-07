@@ -1,7 +1,7 @@
 import { notificationsUrl } from '../config.js'
 import { failed } from '../http/failed.js'
 import { getFulfilment } from '../http/get-fulfilment.js'
-import { headers } from '../http/headers.js'
+import { organisationHeaders } from '../http/headers.js'
 import { marshal } from '../marshal/document.js'
 import { marshalListItem } from '../marshal/list-item.js'
 
@@ -22,7 +22,8 @@ export const load = async ({ journeyId } = {}) => {
 export const list = async ({
   page = 1,
   sort = 'arrivalDate,desc',
-  referenceNumber
+  referenceNumber,
+  organisationId
 } = {}) => {
   const referenceQuery = referenceNumber
     ? `&referenceNumber=${encodeURIComponent(referenceNumber)}`
@@ -31,7 +32,7 @@ export const list = async ({
     `${notificationsUrl}?page=${page}&sort=${sort}${referenceQuery}`,
     {
       method: 'GET',
-      headers: headers()
+      headers: organisationHeaders(organisationId)
     }
   )
   if (!response.ok) {

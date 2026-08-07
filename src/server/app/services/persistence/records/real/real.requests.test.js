@@ -419,4 +419,41 @@ describe('real records adapter — lifecycle and list', () => {
     )
     expect(request.method).toBe('GET')
   })
+
+  it("Should send the reader's organisation on the notifications list request", async () => {
+    fetchMocker.mockResponse(
+      JSON.stringify({
+        page: 1,
+        size: 20,
+        totalElements: 0,
+        totalPages: 0,
+        content: []
+      })
+    )
+
+    await records.list({ page: 1, organisationId: '5900002' })
+
+    const [request] = fetchMocker.requests()
+    expect(request.headers.get('Trade-Imports-Organisation-Id')).toBe('5900002')
+  })
+
+  it('Should send an empty organisation rather than omit it, when there is no session', async () => {
+    // The backend rejects a read with no organisation. Sending the header empty
+    // keeps that rejection at the backend rather than letting a header-less
+    // request look like a different kind of call.
+    fetchMocker.mockResponse(
+      JSON.stringify({
+        page: 1,
+        size: 20,
+        totalElements: 0,
+        totalPages: 0,
+        content: []
+      })
+    )
+
+    await records.list({ page: 1 })
+
+    const [request] = fetchMocker.requests()
+    expect(request.headers.get('Trade-Imports-Organisation-Id')).toBe('')
+  })
 })

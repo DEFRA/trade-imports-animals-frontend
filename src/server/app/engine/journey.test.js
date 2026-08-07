@@ -4,6 +4,7 @@ import {
   copyJourney,
   currentJourney,
   amendJourney,
+  listKnownJourneys,
   SESSION_COOKIES,
   softDeleteJourney,
   startJourney
@@ -233,5 +234,30 @@ describe('#currentJourney', () => {
       )
     ).toBeUndefined()
     expect(softDelete).toHaveBeenCalledTimes(1)
+  })
+
+  it("Should send the session's organisation with the dashboard list read", async () => {
+    // The backend resolves each row's referenced parties against the address
+    // book, which scopes on the organisation — so the read has to say which.
+    const list = vi.fn(async () => ({ rows: [], page: 1, totalPages: 0 }))
+    configureRecords({ ...recordsStub, list })
+    const journeyId = 'GBN-AG-26-LIST01'
+
+    await listKnownJourneys(requestFor(journeyId, [journeyId]), { page: 2 })
+
+    expect(list).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 2, organisationId: '5900001' })
+    )
+  })
+
+  it('Should send no organisation when the request is unauthenticated', async () => {
+    // Never a guess. The backend rejects the read rather than serving it.
+    const list = vi.fn(async () => ({ rows: [], page: 1, totalPages: 0 }))
+    configureRecords({ ...recordsStub, list })
+
+    await listKnownJourneys({ state: {}, headers: {}, app: {} }, {})
+
+    const [options] = list.mock.calls[0]
+    expect(options.organisationId).toBeUndefined()
   })
 })

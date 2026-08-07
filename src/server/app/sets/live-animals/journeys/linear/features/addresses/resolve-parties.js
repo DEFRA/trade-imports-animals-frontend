@@ -1,18 +1,12 @@
 import * as addressBook from '../../../../../../services/address-book/index.js'
+import { organisationIdOf } from '../../../../../../../common/helpers/organisation-id.js'
 import { PARTIES, CONTACT_PARTY } from './parties.js'
 
 const RESOLVED = Symbol('resolvedParties')
 
 const PARTY_IDS = [...PARTIES.map((party) => party.id), CONTACT_PARTY.id]
 
-/** The organisation whose address book this request reads.
- *
- * Always the signed-in session's organisation, forwarded as-is — never a value
- * from a payload or a stored record. The address book runs no authentication of
- * its own and treats this as the authenticated organisation, so anything else
- * would be asserting an identity rather than passing one on. */
-export const organisationIdOf = (request) =>
-  request?.auth?.credentials?.organisationId
+export { organisationIdOf }
 
 /** A party answer is either a REFERENCE to an address-book record or an inline
  * address entered directly (AC5). A reference resolves to the record's current

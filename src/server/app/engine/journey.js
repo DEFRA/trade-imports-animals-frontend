@@ -3,6 +3,7 @@ import { BASE } from '../shared/paths.js'
 import { session, SESSION_COOKIES } from './persistence/session.js'
 import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
 import { buildActor } from '../../common/helpers/actor-helpers.js'
+import { organisationIdOf } from '../../common/helpers/organisation-id.js'
 
 export { SESSION_COOKIES } from './persistence/session.js'
 
@@ -91,7 +92,16 @@ export const listKnownJourneys = async (
   { page, sort, referenceNumber } = {}
 ) => {
   const journeyIds = await session.knownJourneyIds(request)
-  return records.list({ journeyIds, page, sort, referenceNumber })
+  // The backend resolves each row's referenced parties against the address
+  // book, which scopes on the organisation and has no authentication of its
+  // own — so the read carries the reader's session organisation with it.
+  return records.list({
+    journeyIds,
+    page,
+    sort,
+    referenceNumber,
+    organisationId: organisationIdOf(request)
+  })
 }
 
 export const isKnownJourney = async (request, journeyId) =>
