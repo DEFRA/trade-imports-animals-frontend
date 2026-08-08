@@ -1,0 +1,245 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/accompanying-documents-file-types.spec.ts >> Accompanying documents - supported file types >> accepts safe-file-100kb.jpg and completes virus scan
+- Location: tests/e2e/features/accompanying-documents-file-types.spec.ts:27:5
+
+# Error details
+
+```
+Error: expect(locator).toHaveText(expected) failed
+
+Locator: locator('[data-testid="document-card"][data-upload-id]').filter({ hasText: 'safe-file-100kb.jpg' }).locator('.govuk-tag')
+Expected pattern: /Checking|Safe/
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toHaveText" with timeout 5000ms
+  - waiting for locator('[data-testid="document-card"][data-upload-id]').filter({ hasText: 'safe-file-100kb.jpg' }).locator('.govuk-tag')
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- banner:
+  - link "GOV.UK":
+    - /url: https://www.gov.uk/
+    - img "GOV.UK"
+  - region "Service information":
+    - link "Animals":
+      - /url: /
+    - navigation "Menu":
+      - list:
+        - listitem:
+          - link "Home":
+            - /url: /
+        - listitem:
+          - link "About":
+            - /url: /about
+- text: test.user11@defra.gov.uk
+- link "Sign out":
+  - /url: /signout
+- main:
+  - link "Back":
+    - /url: /additional-details
+  - paragraph: GBN-AG-26-QTSHRG
+  - heading "Accompanying documents" [level=1]
+  - paragraph: Where an ITAHC applies, you need to upload it for this notification. If you do not have it when you submit, you must add it to your notification once you receive it. You can also return to your notification later to upload any other documents you still need.
+  - paragraph: "If you already have documents, you can add them below. For example:"
+  - list:
+    - listitem: ITAHC
+    - listitem: import licences or authorisations
+    - listitem: commercial documents or invoices
+  - group: Check which additional documents you may need to upload
+  - heading "Documents added" [level=2]
+  - heading "upload" [level=3]
+  - term: Document type
+  - definition: Intra-Trade Animal Health Certificate (ITAHC)
+  - term: Document reference
+  - definition: REFJPG
+  - term: Date of issue
+  - definition: 27 January 2026
+  - term: Status
+  - definition:
+    - strong: Checking
+  - form "Remove document upload":
+    - button "Remove upload"
+  - heading "Add another document" [level=2]
+  - text: Document type
+  - combobox "Document type":
+    - option "Select document type" [selected]
+    - option "Intra-Trade Animal Health Certificate (ITAHC)"
+    - option "Veterinary health certificate"
+  - text: Document reference
+  - textbox "Document reference"
+  - group "Date of issue":
+    - text: Date of issue For example, 27 3 2024 Day
+    - textbox "Day"
+    - text: Month
+    - textbox "Month"
+    - text: Year
+    - textbox "Year"
+  - text: Attachment
+  - paragraph: "Your file must be:"
+  - list:
+    - listitem: smaller than 10 MB
+    - listitem: PDF, DOC, DOCX, JPEG, PNG, XLS or XLSX
+    - listitem: ZIP files are not allowed for security reasons
+  - button "Attachment"
+  - button "Add attachment"
+  - button "Save and continue" [disabled]
+  - text: You cannot continue until all documents have been scanned or removed
+- contentinfo:
+  - heading "Support links" [level=2]
+  - list:
+    - listitem:
+      - link "Privacy":
+        - /url: https://www.gov.uk/help/privacy-notice
+    - listitem:
+      - link "Cookies":
+        - /url: https://www.gov.uk/help/cookies
+    - listitem:
+      - link "Accessibility statement":
+        - /url: https://www.gov.uk/help/accessibility-statement
+  - text: All content is available under the
+  - link "Open Government Licence v3.0":
+    - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+  - text: ", except where otherwise stated"
+  - link "© Crown copyright":
+    - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1   | import path from 'path';
+  2   | import { test, expect } from '@fixtures';
+  3   | import { fileUploadPaths, fileUploadNames } from '@resources/file-upload/paths';
+  4   | import { fileUploadTimeouts } from '@config/file-upload-timeouts';
+  5   | import { writeSyntheticFile } from '@utils/synthetic-file-writer';
+  6   | 
+  7   | const safeFileUploadCases = [
+  8   |   { fileKey: 'safeFile19kbDoc', documentReference: 'REFDOC' },
+  9   |   { fileKey: 'safeFile10kbDocx', documentReference: 'REFDOCX' },
+  10  |   { fileKey: 'safeFile25kbXls', documentReference: 'REFXLS' },
+  11  |   { fileKey: 'safeFile50kbXlsx', documentReference: 'REFXLSX' },
+  12  |   { fileKey: 'safeFile1kbPdf', documentReference: 'REFPDF' },
+  13  |   { fileKey: 'safeFile100kbJpg', documentReference: 'REFJPG' },
+  14  |   { fileKey: 'safeFile500kbJpeg', documentReference: 'REFJPEG' },
+  15  | ] as const satisfies ReadonlyArray<{
+  16  |   fileKey: keyof typeof fileUploadPaths;
+  17  |   documentReference: string;
+  18  | }>;
+  19  | 
+  20  | test.describe('Accompanying documents - supported file types', () => {
+  21  |   test.beforeEach(async ({ apiJourney, pages }) => {
+  22  |     const created = await apiJourney.createUpToPage('accompanyingDocuments');
+  23  |     await apiJourney.resumeInUi(created.referenceNumber, pages.accompanyingDocuments);
+  24  |   });
+  25  | 
+  26  |   for (const { fileKey, documentReference } of safeFileUploadCases) {
+  27  |     test(`accepts ${fileUploadNames[fileKey]} and completes virus scan`, async ({ pages }) => {
+  28  |       await pages.accompanyingDocuments.fillTextFields({ documentReference });
+  29  |       await pages.accompanyingDocuments.inputFileUpload.setInputFiles(fileUploadPaths[fileKey]);
+  30  |       await pages.accompanyingDocuments.btnAddAttachment.click();
+  31  | 
+  32  |       await expect(pages.page).toHaveURL(pages.accompanyingDocuments.expectedUrl);
+  33  |       await expect(pages.accompanyingDocuments.documentsList).toBeVisible({
+  34  |         timeout: fileUploadTimeouts.documentsListVisible,
+  35  |       });
+> 36  |       await expect(pages.accompanyingDocuments.getStatusTag(fileUploadNames[fileKey])).toHaveText(/Checking|Safe/);
+      |                                                                                        ^ Error: expect(locator).toHaveText(expected) failed
+  37  |       await expect(pages.accompanyingDocuments.getStatusTag(fileUploadNames[fileKey])).toHaveText('Safe', {
+  38  |         timeout: fileUploadTimeouts.virusScanComplete,
+  39  |       });
+  40  |     });
+  41  |   }
+  42  | 
+  43  |   test('accepts a .pdf file when the filename contains multiple dots and completes virus scan', async ({ pages }, testInfo) => {
+  44  |     const file = await writeSyntheticFile(path.join(testInfo.outputDir, 'file-upload'), 'hello.world.pdf', {
+  45  |       kb: 1,
+  46  |     });
+  47  | 
+  48  |     await pages.accompanyingDocuments.fillTextFields({ documentReference: 'REFDOTPDF' });
+  49  |     await pages.accompanyingDocuments.inputFileUpload.setInputFiles(file.filePath);
+  50  |     await pages.accompanyingDocuments.btnAddAttachment.click();
+  51  | 
+  52  |     await expect(pages.page).toHaveURL(pages.accompanyingDocuments.expectedUrl);
+  53  |     await expect(pages.accompanyingDocuments.documentsList).toBeVisible({
+  54  |       timeout: fileUploadTimeouts.documentsListVisible,
+  55  |     });
+  56  |     await expect(pages.accompanyingDocuments.getStatusTag(file.fileName)).toHaveText(/Checking|Safe/);
+  57  |     await expect(pages.accompanyingDocuments.getStatusTag(file.fileName)).toHaveText('Safe', {
+  58  |       timeout: fileUploadTimeouts.virusScanComplete,
+  59  |     });
+  60  |   });
+  61  | 
+  62  |   test('accepts a .doc file when the filename contains spaces and allowed special characters', async ({ pages }, testInfo) => {
+  63  |     const file = await writeSyntheticFile(path.join(testInfo.outputDir, 'file-upload'), 'hello world__test-(v1)+copy.doc', {
+  64  |       kb: 1,
+  65  |     });
+  66  | 
+  67  |     await pages.accompanyingDocuments.fillTextFields({ documentReference: 'REFDOCSPECIAL' });
+  68  |     await pages.accompanyingDocuments.inputFileUpload.setInputFiles(file.filePath);
+  69  |     await pages.accompanyingDocuments.btnAddAttachment.click();
+  70  | 
+  71  |     await expect(pages.page).toHaveURL(pages.accompanyingDocuments.expectedUrl);
+  72  |     await expect(pages.accompanyingDocuments.documentsList).toBeVisible({
+  73  |       timeout: fileUploadTimeouts.documentsListVisible,
+  74  |     });
+  75  |     await expect(pages.accompanyingDocuments.getStatusTag(file.fileName)).toHaveText(/Checking|Safe/);
+  76  |     await expect(pages.accompanyingDocuments.getStatusTag(file.fileName)).toHaveText('Safe', {
+  77  |       timeout: fileUploadTimeouts.virusScanComplete,
+  78  |     });
+  79  |   });
+  80  | });
+  81  | 
+  82  | test.describe('Accompanying documents - restricted file types', () => {
+  83  |   test.beforeEach(async ({ apiJourney, pages }) => {
+  84  |     const created = await apiJourney.createUpToPage('accompanyingDocuments');
+  85  |     await apiJourney.resumeInUi(created.referenceNumber, pages.accompanyingDocuments);
+  86  |   });
+  87  | 
+  88  |   test(`rejects ${fileUploadNames.restrictedFile10bTxt} as an unsupported file type`, async ({ pages }) => {
+  89  |     await pages.accompanyingDocuments.fillTextFields({ documentReference: 'REFTXT' });
+  90  |     await pages.accompanyingDocuments.inputFileUpload.setInputFiles(fileUploadPaths.restrictedFile10bTxt);
+  91  |     await pages.accompanyingDocuments.btnAddAttachment.click();
+  92  | 
+  93  |     await expect(pages.page).toHaveURL(pages.accompanyingDocuments.expectedUrl);
+  94  |     await expect(pages.accompanyingDocuments.documentsList).not.toBeVisible();
+  95  |     await expect(pages.accompanyingDocuments.errorFile).toContainText('The selected file must be a PDF, DOC, DOCX, JPEG, PNG or XLS');
+  96  |     const errorSummaryItems = await pages.accompanyingDocuments.errorSummaryItems.allTextContents();
+  97  |     expect(errorSummaryItems).toContain('The selected file must be a PDF, DOC, DOCX, JPEG, PNG or XLS');
+  98  | 
+  99  |     await expect(pages.accompanyingDocuments.btnContinueWithoutDocuments).toBeVisible();
+  100 |     await expect(pages.accompanyingDocuments.btnSaveAndContinue).toHaveCount(0);
+  101 |   });
+  102 | 
+  103 |   test('rejects a .zip file as an unsupported file type', async ({ pages }, testInfo) => {
+  104 |     const file = await writeSyntheticFile(path.join(testInfo.outputDir, 'file-upload'), 'restricted-synthetic.zip', {
+  105 |       kb: 1,
+  106 |     });
+  107 | 
+  108 |     await pages.accompanyingDocuments.fillTextFields({ documentReference: 'REFZIP' });
+  109 |     await pages.accompanyingDocuments.inputFileUpload.setInputFiles(file.filePath);
+  110 |     await pages.accompanyingDocuments.btnAddAttachment.click();
+  111 | 
+  112 |     await expect(pages.page).toHaveURL(pages.accompanyingDocuments.expectedUrl);
+  113 |     await expect(pages.accompanyingDocuments.documentsList).not.toBeVisible();
+  114 |     await expect(pages.accompanyingDocuments.errorFile).toContainText('The selected file must be a PDF, DOC, DOCX, JPEG, PNG or XLS');
+  115 |     const errorSummaryItems = await pages.accompanyingDocuments.errorSummaryItems.allTextContents();
+  116 |     expect(errorSummaryItems).toContain('The selected file must be a PDF, DOC, DOCX, JPEG, PNG or XLS');
+  117 | 
+  118 |     await expect(pages.accompanyingDocuments.btnContinueWithoutDocuments).toBeVisible();
+  119 |     await expect(pages.accompanyingDocuments.btnSaveAndContinue).toHaveCount(0);
+  120 |   });
+  121 | });
+  122 | 
+```

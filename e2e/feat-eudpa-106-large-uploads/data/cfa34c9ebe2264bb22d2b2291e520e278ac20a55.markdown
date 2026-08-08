@@ -1,0 +1,214 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/accompanying-documents-file-types.spec.ts >> Accompanying documents - supported file types >> accepts a .pdf file when the filename contains multiple dots and completes virus scan
+- Location: tests/e2e/features/accompanying-documents-file-types.spec.ts:43:3
+
+# Error details
+
+```
+Test timeout of 30000ms exceeded while running "beforeEach" hook.
+```
+
+```
+Error: locator.waitFor: Test timeout of 30000ms exceeded.
+Call log:
+  - waiting for getByRole('heading', { name: 'Accompanying documents', level: 1 }) to be visible
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - generic [ref=e23]:
+        - link "Animals" [ref=e25] [cursor=pointer]:
+          - /url: /
+        - navigation "Menu" [ref=e26]:
+          - list [ref=e27]:
+            - listitem [ref=e28]:
+              - link "Home" [ref=e29] [cursor=pointer]:
+                - /url: /
+            - listitem [ref=e30]:
+              - link "About" [ref=e31] [cursor=pointer]:
+                - /url: /about
+  - generic [ref=e32]:
+    - generic [ref=e35]:
+      - generic [ref=e36]:
+        - img [ref=e37]
+        - generic [ref=e40]: test.user11@defra.gov.uk
+      - generic [ref=e41]: "|"
+      - link "Sign out" [ref=e42] [cursor=pointer]:
+        - /url: /signout
+    - main [ref=e43]:
+      - generic [ref=e45]:
+        - heading "500" [level=1] [ref=e47]
+        - paragraph [ref=e48]: Something went wrong
+  - contentinfo [ref=e49]:
+    - generic [ref=e62]:
+      - generic [ref=e63]:
+        - heading "Support links" [level=2] [ref=e64]
+        - list [ref=e65]:
+          - listitem [ref=e66]:
+            - link "Privacy" [ref=e67] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e68]:
+            - link "Cookies" [ref=e69] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e70]:
+            - link "Accessibility statement" [ref=e71] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e72]
+        - generic [ref=e74]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e75] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e77] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  284 | function buildNotificationBeforePage(
+  285 |   stopBeforePage: JourneyPage | undefined,
+  286 |   options: JourneyOptions,
+  287 |   overrides?: NotificationOverrides,
+  288 | ): Notification {
+  289 |   const merged: Options = { ...defaultJourneyOptions, ...options };
+  290 |   const draft: Notification = {};
+  291 |   for (const page of journeyPages) {
+  292 |     if (page === stopBeforePage) break;
+  293 |     pageContributions[page](draft, merged);
+  294 |   }
+  295 |   return overrides ? deepMerge(draft, overrides) : draft;
+  296 | }
+  297 | 
+  298 | const TRANSITION_RETRY_ATTEMPTS = 3;
+  299 | const TRANSITION_RETRY_DELAY_MS = 500;
+  300 | 
+  301 | function delay(ms: number): Promise<void> {
+  302 |   return new Promise((resolve) => setTimeout(resolve, ms));
+  303 | }
+  304 | 
+  305 | /**
+  306 |  * Submit/amend write an outbox event inside a Mongo transaction under a
+  307 |  * ShedLock, so concurrent transitions can 500 transiently ("please try
+  308 |  * again"); retry the way a UI user would.
+  309 |  */
+  310 | async function retryTransientTransitionErrors<T>(action: () => Promise<T>): Promise<T> {
+  311 |   for (let attempt = 1; attempt < TRANSITION_RETRY_ATTEMPTS; attempt += 1) {
+  312 |     try {
+  313 |       return await action();
+  314 |     } catch (error) {
+  315 |       if (!(error instanceof RestClientError) || error.status !== 500) {
+  316 |         throw error;
+  317 |       }
+  318 |       await delay(TRANSITION_RETRY_DELAY_MS * attempt);
+  319 |     }
+  320 |   }
+  321 |   return action();
+  322 | }
+  323 | 
+  324 | /**
+  325 |  * Seeds notification state through the backend API instead of driving the UI
+  326 |  * wizard page by page — `createUpToPage(page)` pairs with
+  327 |  * `resumeInUi(ref, pages.<page>)` to land on that page unanswered.
+  328 |  *
+  329 |  * One instance creates at most one notification per test; `save()` enforces
+  330 |  * this, and the reference is recorded on `journeyContext.referenceNumber` —
+  331 |  * mirroring `Journey`, that's the default way to read it back, not the
+  332 |  * returned `Notification`. For bulk/throwaway seeding, use
+  333 |  * `seedNotifications` instead.
+  334 |  */
+  335 | export class ApiJourney {
+  336 |   constructor(
+  337 |     private readonly pages: PageObjects,
+  338 |     private readonly api: NotificationApiClient,
+  339 |     private readonly journeyContext: JourneyContext,
+  340 |   ) {}
+  341 | 
+  342 |   private async save(draft: Notification): Promise<Notification> {
+  343 |     if (this.journeyContext.referenceNumber !== undefined) {
+  344 |       throw new Error(
+  345 |         'ApiJourney already created a notification for this journeyContext (at most one create*() call per instance, ' +
+  346 |           'mirroring Journey). For bulk/throwaway seeding, use seedNotifications() instead.',
+  347 |       );
+  348 |     }
+  349 |     const notification = await this.api.saveNotification(draft);
+  350 |     this.journeyContext.referenceNumber = notification.referenceNumber;
+  351 |     return notification;
+  352 |   }
+  353 | 
+  354 |   async createUpToPage(page: JourneyPage, options: JourneyOptions = {}, overrides?: NotificationOverrides): Promise<Notification> {
+  355 |     return this.save(buildNotificationBeforePage(page, options, overrides));
+  356 |   }
+  357 | 
+  358 |   /** Complete DRAFT: every journey page's fields populated. */
+  359 |   async createFullNotification(options: JourneyOptions = {}, overrides?: NotificationOverrides): Promise<Notification> {
+  360 |     return this.save(buildNotificationBeforePage(undefined, options, overrides));
+  361 |   }
+  362 | 
+  363 |   async createSubmittedNotification(options: JourneyOptions = {}, overrides?: NotificationOverrides): Promise<Notification> {
+  364 |     const draft = await this.createFullNotification(options, overrides);
+  365 |     return retryTransientTransitionErrors(() => this.api.submitNotification(draft.referenceNumber));
+  366 |   }
+  367 | 
+  368 |   async createAmendNotification(options: JourneyOptions = {}, overrides?: NotificationOverrides): Promise<Notification> {
+  369 |     const submitted = await this.createSubmittedNotification(options, overrides);
+  370 |     return retryTransientTransitionErrors(() => this.api.amendNotification(submitted.referenceNumber));
+  371 |   }
+  372 | 
+  373 |   /**
+  374 |    * Opens an API-seeded notification in the frontend and lands on any wizard
+  375 |    * page — not just the one after where seeding stopped. Viewing the
+  376 |    * notification hydrates the browser session from the full backend
+  377 |    * document (see the frontend's notification-client.js `get()`), so every
+  378 |    * wizard page's session-derived fields are populated regardless of how far
+  379 |    * the seed got.
+  380 |    */
+  381 |   async resumeInUi<T extends { expectedUrl: string; heading: Locator }>(referenceNumber: string, targetPage: T): Promise<T> {
+  382 |     await this.pages.notificationView.open(referenceNumber);
+  383 |     await this.pages.notificationView.navigateToFrontend(targetPage.expectedUrl);
+> 384 |     await targetPage.heading.waitFor();
+      |                              ^ Error: locator.waitFor: Test timeout of 30000ms exceeded.
+  385 |     return targetPage;
+  386 |   }
+  387 | }
+  388 | 
+  389 | /**
+  390 |  * Seeds `count` throwaway DRAFT notifications for list-population scenarios
+  391 |  * with no single notification under test — bypasses `apiJourney`/
+  392 |  * `journeyContext` and owns its own request context, so it also works from
+  393 |  * `test.beforeAll`.
+  394 |  */
+  395 | export async function seedNotifications(
+  396 |   count: number,
+  397 |   options: JourneyOptions = {},
+  398 |   overrides?: NotificationOverrides,
+  399 | ): Promise<Notification[]> {
+  400 |   const requestContext = await request.newContext();
+  401 |   const api = new NotificationApiClient(requestContext);
+  402 |   try {
+  403 |     return await Promise.all(
+  404 |       Array.from({ length: count }, () => api.saveNotification(buildNotificationBeforePage(undefined, options, overrides))),
+  405 |     );
+  406 |   } finally {
+  407 |     await requestContext.dispose();
+  408 |   }
+  409 | }
+  410 | 
+```

@@ -1,0 +1,308 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/pages/accompanying-documents.spec.ts >> Accompanying documents >> shows document row with checking/safe status immediately after upload
+- Location: tests/e2e/pages/accompanying-documents.spec.ts:75:3
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: locator('[data-testid="document-card"][data-upload-id]').filter({ hasText: 'safe-file-250b.png' }).locator('.govuk-tag')
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" with timeout 5000ms
+  - waiting for locator('[data-testid="document-card"][data-upload-id]').filter({ hasText: 'safe-file-250b.png' }).locator('.govuk-tag')
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- banner:
+  - link "GOV.UK":
+    - /url: https://www.gov.uk/
+    - img "GOV.UK"
+  - region "Service information":
+    - link "Animals":
+      - /url: /
+    - navigation "Menu":
+      - list:
+        - listitem:
+          - link "Home":
+            - /url: /
+        - listitem:
+          - link "About":
+            - /url: /about
+- text: test.user11@defra.gov.uk
+- link "Sign out":
+  - /url: /signout
+- main:
+  - link "Back":
+    - /url: /additional-details
+  - paragraph: GBN-AG-26-Y7R5FT
+  - heading "Accompanying documents" [level=1]
+  - paragraph: Where an ITAHC applies, you need to upload it for this notification. If you do not have it when you submit, you must add it to your notification once you receive it. You can also return to your notification later to upload any other documents you still need.
+  - paragraph: "If you already have documents, you can add them below. For example:"
+  - list:
+    - listitem: ITAHC
+    - listitem: import licences or authorisations
+    - listitem: commercial documents or invoices
+  - group: Check which additional documents you may need to upload
+  - heading "Documents added" [level=2]
+  - heading "upload" [level=3]
+  - term: Document type
+  - definition: Intra-Trade Animal Health Certificate (ITAHC)
+  - term: Document reference
+  - definition: ITAHC001
+  - term: Date of issue
+  - definition: 27 January 2026
+  - term: Status
+  - definition:
+    - strong: Checking
+  - form "Remove document upload":
+    - button "Remove upload"
+  - heading "Add another document" [level=2]
+  - text: Document type
+  - combobox "Document type":
+    - option "Select document type" [selected]
+    - option "Intra-Trade Animal Health Certificate (ITAHC)"
+    - option "Veterinary health certificate"
+  - text: Document reference
+  - textbox "Document reference"
+  - group "Date of issue":
+    - text: Date of issue For example, 27 3 2024 Day
+    - textbox "Day"
+    - text: Month
+    - textbox "Month"
+    - text: Year
+    - textbox "Year"
+  - text: Attachment
+  - paragraph: "Your file must be:"
+  - list:
+    - listitem: smaller than 10 MB
+    - listitem: PDF, DOC, DOCX, JPEG, PNG, XLS or XLSX
+    - listitem: ZIP files are not allowed for security reasons
+  - button "Attachment"
+  - button "Add attachment"
+  - button "Save and continue" [disabled]
+  - text: You cannot continue until all documents have been scanned or removed
+- contentinfo:
+  - heading "Support links" [level=2]
+  - list:
+    - listitem:
+      - link "Privacy":
+        - /url: https://www.gov.uk/help/privacy-notice
+    - listitem:
+      - link "Cookies":
+        - /url: https://www.gov.uk/help/cookies
+    - listitem:
+      - link "Accessibility statement":
+        - /url: https://www.gov.uk/help/accessibility-statement
+  - text: All content is available under the
+  - link "Open Government Licence v3.0":
+    - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+  - text: ", except where otherwise stated"
+  - link "© Crown copyright":
+    - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1   | import path from 'path';
+  2   | import { test, expect } from '@fixtures';
+  3   | import type { PageObjects } from '@page-objects';
+  4   | import { writeEicarPdfFile } from '@utils/eicar-file-writer';
+  5   | import { yesNoValues } from '@domain/constants/yes-no-values';
+  6   | import { documentTypes } from '@domain/constants/document-types';
+  7   | import { fileUploadPaths, fileUploadNames } from '@resources/file-upload/paths';
+  8   | import { camelCaseToSentenceCase } from '@utils/string-utils';
+  9   | import { fileUploadTimeouts } from '@config/file-upload-timeouts';
+  10  | 
+  11  | async function fillValidAddAttachmentForm(pages: PageObjects): Promise<void> {
+  12  |   await pages.accompanyingDocuments.fillTextFields();
+  13  |   await pages.accompanyingDocuments.inputFileUpload.setInputFiles(fileUploadPaths.safeFile250bPng);
+  14  | }
+  15  | 
+  16  | test.describe('Accompanying documents', () => {
+  17  |   test.beforeEach(async ({ apiJourney, pages }) => {
+  18  |     const created = await apiJourney.createUpToPage('accompanyingDocuments');
+  19  |     await apiJourney.resumeInUi(created.referenceNumber, pages.accompanyingDocuments);
+  20  |   });
+  21  | 
+  22  |   test('shows system-generated reference number', async ({ journeyContext, pages }) => {
+  23  |     const referenceNumber = await pages.accompanyingDocuments.referenceNumber.textContent();
+  24  |     expect(referenceNumber).toMatch(/^GBN-AG-\d{2}-[0-9A-Z]{6}$/);
+  25  |     expect(journeyContext.referenceNumber).toBe(referenceNumber);
+  26  |   });
+  27  | 
+  28  |   test('can navigate back to additional details', async ({ pages }) => {
+  29  |     await pages.accompanyingDocuments.linkBack.click();
+  30  |     await expect(pages.page).toHaveURL(pages.additionalDetails.expectedUrl);
+  31  |     await expect(pages.additionalDetails.heading).toBeVisible();
+  32  | 
+  33  |     await test.step('previously entered additional details are retained', async () => {
+  34  |       await expect(pages.additionalDetails.radioApprovedBodies).toBeChecked();
+  35  |       await expect(pages.additionalDetails.radioContainsUnweanedAnimals(yesNoValues.no)).toBeChecked();
+  36  |     });
+  37  |   });
+  38  | 
+  39  |   test('shows required form fields', async ({ pages }) => {
+  40  |     await expect(pages.accompanyingDocuments.heading).toBeVisible();
+  41  |     await expect.soft(pages.accompanyingDocuments.dropdownDocumentType).toBeVisible();
+  42  |     await expect.soft(pages.accompanyingDocuments.inputDocumentReference).toBeVisible();
+  43  |     await expect.soft(pages.accompanyingDocuments.inputIssueDateDay).toBeVisible();
+  44  |     await expect.soft(pages.accompanyingDocuments.inputIssueDateMonth).toBeVisible();
+  45  |     await expect.soft(pages.accompanyingDocuments.inputIssueDateYear).toBeVisible();
+  46  |     await expect.soft(pages.accompanyingDocuments.inputFileUpload).toBeVisible();
+  47  |     await expect.soft(pages.accompanyingDocuments.btnAddAttachment).toBeVisible();
+  48  |     await expect.soft(pages.accompanyingDocuments.btnContinueWithoutDocuments).toBeVisible();
+  49  |     // Save and continue is not shown until a safe document is uploaded.
+  50  |     await expect.soft(pages.accompanyingDocuments.btnSaveAndContinue).toHaveCount(0);
+  51  |   });
+  52  | 
+  53  |   test('shows expected document type options', async ({ pages }) => {
+  54  |     const options = pages.accompanyingDocuments.dropdownDocumentType.locator('option');
+  55  |     const keys = Object.keys(documentTypes) as (keyof typeof documentTypes)[];
+  56  |     const documentTypeLabelOverrides: Partial<Record<keyof typeof documentTypes, string>> = {
+  57  |       itahc: 'Intra-Trade Animal Health Certificate (ITAHC)',
+  58  |     };
+  59  |     const expectedDocumentTypes = keys.map((key) => ({
+  60  |       value: documentTypes[key],
+  61  |       label: documentTypeLabelOverrides[key] ?? camelCaseToSentenceCase(key),
+  62  |     }));
+  63  | 
+  64  |     await expect(options).toHaveCount(2 + expectedDocumentTypes.length);
+  65  |     await expect(options.nth(0)).toHaveText('Select document type');
+  66  |     await expect(options.nth(1)).toHaveText(/^─+$/);
+  67  | 
+  68  |     for (const [index, { value, label }] of expectedDocumentTypes.entries()) {
+  69  |       const option = options.nth(index + 2);
+  70  |       await expect(option).toHaveText(label);
+  71  |       await expect(option).toHaveAttribute('value', value);
+  72  |     }
+  73  |   });
+  74  | 
+  75  |   test('shows document row with checking/safe status immediately after upload', async ({ pages }) => {
+  76  |     await pages.accompanyingDocuments.fillTextFields();
+  77  |     await pages.accompanyingDocuments.inputFileUpload.setInputFiles(fileUploadPaths.safeFile250bPng);
+  78  |     await pages.accompanyingDocuments.btnAddAttachment.click();
+  79  | 
+  80  |     await expect(pages.page).toHaveURL(pages.accompanyingDocuments.expectedUrl);
+  81  |     await expect(pages.accompanyingDocuments.documentsList).toBeVisible({ timeout: fileUploadTimeouts.documentsListVisible });
+  82  | 
+  83  |     const statusTag = pages.accompanyingDocuments.getStatusTag(fileUploadNames.safeFile250bPng);
+  84  |     // Scan may still be in progress, or already complete — accept either status.
+> 85  |     await expect(statusTag).toBeVisible();
+      |                             ^ Error: expect(locator).toBeVisible() failed
+  86  |     await expect(statusTag).toHaveText(/Checking|Safe/);
+  87  |   });
+  88  | 
+  89  |   test('shows safe status and enables save and continue once scan completes', async ({ pages }) => {
+  90  |     await pages.accompanyingDocuments.fillTextFields();
+  91  |     await pages.accompanyingDocuments.inputFileUpload.setInputFiles(fileUploadPaths.safeFile250bPng);
+  92  |     await pages.accompanyingDocuments.btnAddAttachment.click();
+  93  | 
+  94  |     await expect(pages.page).toHaveURL(pages.accompanyingDocuments.expectedUrl);
+  95  |     await expect(pages.accompanyingDocuments.btnSaveAndContinue).toBeDisabled(); // Race condition?
+  96  |     await expect(pages.accompanyingDocuments.btnContinueWithoutDocuments).toHaveCount(0);
+  97  |     const statusTag = pages.accompanyingDocuments.getStatusTag(fileUploadNames.safeFile250bPng);
+  98  |     // Page polls every 3s while the scan is pending; timeout waits for Safe.
+  99  |     await expect(statusTag).toHaveText('Safe', { timeout: fileUploadTimeouts.virusScanComplete });
+  100 |     await expect(pages.accompanyingDocuments.btnSaveAndContinue).toBeEnabled();
+  101 |     await expect(pages.accompanyingDocuments.btnContinueWithoutDocuments).toHaveCount(0);
+  102 |   });
+  103 | 
+  104 |   test('shows virus found status, error summary, and disabled continue button when file is infected', async ({ pages }, testInfo) => {
+  105 |     await pages.accompanyingDocuments.fillTextFields();
+  106 |     const eicarFile = await writeEicarPdfFile(path.join(testInfo.outputDir, 'file-upload'));
+  107 |     await pages.accompanyingDocuments.inputFileUpload.setInputFiles(eicarFile.filePath);
+  108 |     await pages.accompanyingDocuments.btnAddAttachment.click();
+  109 | 
+  110 |     await expect(pages.page).toHaveURL(pages.accompanyingDocuments.expectedUrl);
+  111 |     await expect(pages.accompanyingDocuments.btnSaveAndContinue).toBeDisabled(); // Race condition?
+  112 |     await expect(pages.accompanyingDocuments.btnContinueWithoutDocuments).toHaveCount(0);
+  113 |     const statusTag = pages.accompanyingDocuments.getStatusTag(eicarFile.fileName);
+  114 |     // Page polls every 3s while the scan is pending; timeout waits for Virus found.
+  115 |     await expect(statusTag).toHaveText('Virus found', { timeout: fileUploadTimeouts.virusScanComplete });
+  116 |     await expect(pages.accompanyingDocuments.btnSaveAndContinue).toBeDisabled();
+  117 |     await expect(pages.accompanyingDocuments.btnContinueWithoutDocuments).toHaveCount(0);
+  118 |     const summaryItems = await pages.accompanyingDocuments.errorSummaryItems.allTextContents();
+  119 |     expect(summaryItems).toContain(`${eicarFile.fileName} contains a virus. Remove it and try again with a different file.`);
+  120 |   });
+  121 | 
+  122 |   test('can upload multiple documents and see all in the list', async ({ pages }) => {
+  123 |     const uploadCount = 10;
+  124 | 
+  125 |     for (let i = 1; i <= uploadCount; i++) {
+  126 |       const documentReference = `REF0${String(i).padStart(2, '0')}`;
+  127 |       await test.step(`upload document ${documentReference}`, async () => {
+  128 |         await pages.accompanyingDocuments.fillTextFields({ documentReference });
+  129 |         await pages.accompanyingDocuments.inputFileUpload.setInputFiles(fileUploadPaths.safeFile250bPng);
+  130 |         await pages.accompanyingDocuments.btnAddAttachment.click();
+  131 |         await expect(pages.accompanyingDocuments.documentsList).toBeVisible({ timeout: fileUploadTimeouts.documentsListVisible });
+  132 |       });
+  133 |     }
+  134 | 
+  135 |     await test.step('documents list shows all uploads', async () => {
+  136 |       await expect(pages.accompanyingDocuments.documentRows).toHaveCount(uploadCount);
+  137 |       await expect(pages.accompanyingDocuments.btnSaveAndContinue).toBeEnabled({
+  138 |         timeout: fileUploadTimeouts.virusScanComplete,
+  139 |       });
+  140 |     });
+  141 | 
+  142 |     await test.step('cannot upload more documents', async () => {
+  143 |       await pages.accompanyingDocuments.fillTextFields({ documentReference: 'REF011' });
+  144 |       await pages.accompanyingDocuments.inputFileUpload.setInputFiles(fileUploadPaths.safeFile250bPng);
+  145 |       await pages.accompanyingDocuments.btnAddAttachment.click();
+  146 |       // The over-cap response re-renders the same URL, so allTextContents
+  147 |       // alone doesn't auto-wait — anchor the assertion to a Locator first.
+  148 |       await expect(pages.accompanyingDocuments.errorSummaryItems).toHaveCount(1);
+  149 |       await expect(pages.accompanyingDocuments.errorSummaryItems.first()).toHaveText('You can add a maximum of 10 documents');
+  150 |     });
+  151 |   });
+  152 | 
+  153 |   test('can remove a document from the list and restore continue without documents button', async ({ pages }) => {
+  154 |     await pages.accompanyingDocuments.fillTextFields();
+  155 |     await pages.accompanyingDocuments.inputFileUpload.setInputFiles(fileUploadPaths.safeFile250bPng);
+  156 |     await pages.accompanyingDocuments.btnAddAttachment.click();
+  157 | 
+  158 |     await expect(pages.accompanyingDocuments.documentsList).toBeVisible({ timeout: fileUploadTimeouts.documentsListVisible });
+  159 |     await pages.accompanyingDocuments.getBtnRemove(fileUploadNames.safeFile250bPng).click();
+  160 | 
+  161 |     await expect(pages.page).toHaveURL(pages.accompanyingDocuments.expectedUrl);
+  162 |     await expect(pages.accompanyingDocuments.documentsList).not.toBeVisible();
+  163 |     await expect(pages.accompanyingDocuments.btnContinueWithoutDocuments).toBeVisible();
+  164 |   });
+  165 | 
+  166 |   test('continues to addresses without documents', async ({ pages }) => {
+  167 |     await pages.accompanyingDocuments.btnContinueWithoutDocuments.click();
+  168 |     await expect(pages.page).toHaveURL(pages.addresses.expectedUrl);
+  169 |     await expect(pages.addresses.heading).toBeVisible();
+  170 |   });
+  171 | 
+  172 |   test('continues to addresses after saving with documents', async ({ pages }) => {
+  173 |     await fillValidAddAttachmentForm(pages);
+  174 |     await pages.accompanyingDocuments.btnAddAttachment.click();
+  175 |     await expect(pages.accompanyingDocuments.btnSaveAndContinue).toBeEnabled({ timeout: fileUploadTimeouts.virusScanComplete });
+  176 |     await pages.accompanyingDocuments.btnSaveAndContinue.click();
+  177 |     await expect(pages.page).toHaveURL(pages.addresses.expectedUrl);
+  178 |     await expect(pages.addresses.heading).toBeVisible();
+  179 |   });
+  180 | 
+  181 |   test.describe('Input validation', { tag: '@validation' }, () => {
+  182 |     test('shows error when invalid document type is submitted', async ({ pages }) => {
+  183 |       await fillValidAddAttachmentForm(pages);
+  184 |       // Set an invalid document type via the DOM; the dropdown has no such option.
+  185 |       await expect(pages.accompanyingDocuments.dropdownDocumentType).toBeAttached();
+```

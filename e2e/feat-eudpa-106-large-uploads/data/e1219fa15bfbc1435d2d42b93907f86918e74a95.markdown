@@ -1,0 +1,191 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/accompanying-documents-file-size-limit.spec.ts >> Accompanying documents - file size limit >> accepts a file at the 10 MB cap and completes virus scan
+- Location: tests/e2e/features/accompanying-documents-file-size-limit.spec.ts:17:3
+
+# Error details
+
+```
+Error: expect(locator).toHaveText(expected) failed
+
+Locator: locator('[data-testid="document-card"][data-upload-id]').filter({ hasText: 'at-cap.pdf' }).locator('.govuk-tag')
+Expected pattern: /Checking|Safe/
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toHaveText" with timeout 5000ms
+  - waiting for locator('[data-testid="document-card"][data-upload-id]').filter({ hasText: 'at-cap.pdf' }).locator('.govuk-tag')
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- banner:
+  - link "GOV.UK":
+    - /url: https://www.gov.uk/
+    - img "GOV.UK"
+  - region "Service information":
+    - link "Animals":
+      - /url: /
+    - navigation "Menu":
+      - list:
+        - listitem:
+          - link "Home":
+            - /url: /
+        - listitem:
+          - link "About":
+            - /url: /about
+- text: test.user11@defra.gov.uk
+- link "Sign out":
+  - /url: /signout
+- main:
+  - link "Back":
+    - /url: /additional-details
+  - paragraph: GBN-AG-26-YFWTD0
+  - heading "Accompanying documents" [level=1]
+  - paragraph: Where an ITAHC applies, you need to upload it for this notification. If you do not have it when you submit, you must add it to your notification once you receive it. You can also return to your notification later to upload any other documents you still need.
+  - paragraph: "If you already have documents, you can add them below. For example:"
+  - list:
+    - listitem: ITAHC
+    - listitem: import licences or authorisations
+    - listitem: commercial documents or invoices
+  - group: Check which additional documents you may need to upload
+  - heading "Documents added" [level=2]
+  - heading "upload" [level=3]
+  - term: Document type
+  - definition: Intra-Trade Animal Health Certificate (ITAHC)
+  - term: Document reference
+  - definition: ATCAP01
+  - term: Date of issue
+  - definition: 27 January 2026
+  - term: Status
+  - definition:
+    - strong: Checking
+  - form "Remove document upload":
+    - button "Remove upload"
+  - heading "Add another document" [level=2]
+  - text: Document type
+  - combobox "Document type":
+    - option "Select document type" [selected]
+    - option "Intra-Trade Animal Health Certificate (ITAHC)"
+    - option "Veterinary health certificate"
+  - text: Document reference
+  - textbox "Document reference"
+  - group "Date of issue":
+    - text: Date of issue For example, 27 3 2024 Day
+    - textbox "Day"
+    - text: Month
+    - textbox "Month"
+    - text: Year
+    - textbox "Year"
+  - text: Attachment
+  - paragraph: "Your file must be:"
+  - list:
+    - listitem: smaller than 10 MB
+    - listitem: PDF, DOC, DOCX, JPEG, PNG, XLS or XLSX
+    - listitem: ZIP files are not allowed for security reasons
+  - button "Attachment"
+  - button "Add attachment"
+  - button "Save and continue" [disabled]
+  - text: You cannot continue until all documents have been scanned or removed
+- contentinfo:
+  - heading "Support links" [level=2]
+  - list:
+    - listitem:
+      - link "Privacy":
+        - /url: https://www.gov.uk/help/privacy-notice
+    - listitem:
+      - link "Cookies":
+        - /url: https://www.gov.uk/help/cookies
+    - listitem:
+      - link "Accessibility statement":
+        - /url: https://www.gov.uk/help/accessibility-statement
+  - text: All content is available under the
+  - link "Open Government Licence v3.0":
+    - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+  - text: ", except where otherwise stated"
+  - link "© Crown copyright":
+    - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import path from 'path';
+  2  | import { test, expect } from '@fixtures';
+  3  | import { TEN_MB_BYTES, OVERSIZE_FILE_MESSAGE } from '@resources/file-upload/constants';
+  4  | import { skipIfComposeEnvironment } from '@utils/playwright/environment';
+  5  | import { writeSyntheticFile } from '@utils/synthetic-file-writer';
+  6  | import { fileUploadTimeouts } from '@config/file-upload-timeouts';
+  7  | 
+  8  | // Above the 10 MiB CDP nginx ingress cap, to prove the client preflight blocks a raw 413.
+  9  | const ELEVEN_MIB_BYTES = 11 * 1024 * 1024;
+  10 | 
+  11 | test.describe('Accompanying documents - file size limit', () => {
+  12 |   test.beforeEach(async ({ apiJourney, pages }) => {
+  13 |     const created = await apiJourney.createUpToPage('accompanyingDocuments');
+  14 |     await apiJourney.resumeInUi(created.referenceNumber, pages.accompanyingDocuments);
+  15 |   });
+  16 | 
+  17 |   test('accepts a file at the 10 MB cap and completes virus scan', { tag: '@slow' }, async ({ pages }, testInfo) => {
+  18 |     test.slow();
+  19 | 
+  20 |     const file = await writeSyntheticFile(path.join(testInfo.outputDir, 'file-upload'), 'at-cap.pdf', {
+  21 |       bytes: TEN_MB_BYTES,
+  22 |     });
+  23 | 
+  24 |     await pages.accompanyingDocuments.fillTextFields({ documentReference: 'ATCAP01' });
+  25 |     await pages.accompanyingDocuments.inputFileUpload.setInputFiles(file.filePath);
+  26 |     await pages.accompanyingDocuments.btnAddAttachment.click();
+  27 | 
+  28 |     await expect(pages.accompanyingDocuments.documentsList).toBeVisible({
+  29 |       timeout: fileUploadTimeouts.documentsListVisible,
+  30 |     });
+> 31 |     await expect(pages.accompanyingDocuments.getStatusTag(file.fileName)).toHaveText(/Checking|Safe/);
+     |                                                                           ^ Error: expect(locator).toHaveText(expected) failed
+  32 |     await expect(pages.accompanyingDocuments.getStatusTag(file.fileName)).toHaveText('Safe', {
+  33 |       timeout: fileUploadTimeouts.virusScanComplete * 2,
+  34 |     });
+  35 |   });
+  36 | 
+  37 |   test('rejects a file one byte over the 10 MB cap with an inline error and no navigation', async ({ pages }, testInfo) => {
+  38 |     const file = await writeSyntheticFile(path.join(testInfo.outputDir, 'file-upload'), 'one-byte-over.pdf', {
+  39 |       bytes: TEN_MB_BYTES + 1,
+  40 |     });
+  41 | 
+  42 |     await pages.accompanyingDocuments.fillTextFields({ documentReference: 'OVER10MB01' });
+  43 |     await pages.accompanyingDocuments.inputFileUpload.setInputFiles(file.filePath);
+  44 |     await pages.accompanyingDocuments.btnAddAttachment.click();
+  45 | 
+  46 |     await expect(pages.page).toHaveURL(pages.accompanyingDocuments.expectedUrl);
+  47 |     await expect(pages.accompanyingDocuments.documentsList).not.toBeVisible();
+  48 |     await expect(pages.accompanyingDocuments.errorFile).toContainText(OVERSIZE_FILE_MESSAGE);
+  49 |     await expect(pages.accompanyingDocuments.errorSummaryItems.filter({ hasText: OVERSIZE_FILE_MESSAGE })).toHaveCount(1);
+  50 |   });
+  51 | 
+  52 |   test('keeps the user on the upload page (not a raw nginx 413) when file exceeds the CDP infra cap', async ({ pages }, testInfo) => {
+  53 |     skipIfComposeEnvironment('CDP-only regression: Compose stack has no nginx ingress in front of the frontend pod.');
+  54 | 
+  55 |     const file = await writeSyntheticFile(path.join(testInfo.outputDir, 'file-upload'), 'over-nginx.pdf', {
+  56 |       bytes: ELEVEN_MIB_BYTES,
+  57 |     });
+  58 | 
+  59 |     await pages.accompanyingDocuments.fillTextFields({ documentReference: 'OVERNGINX01' });
+  60 |     await pages.accompanyingDocuments.inputFileUpload.setInputFiles(file.filePath);
+  61 |     await pages.accompanyingDocuments.btnAddAttachment.click();
+  62 | 
+  63 |     await expect(pages.page).toHaveURL(pages.accompanyingDocuments.expectedUrl);
+  64 |     await expect(pages.page).not.toHaveTitle(/413 Request Entity Too Large/);
+  65 |     await expect(pages.accompanyingDocuments.errorFile).toContainText(OVERSIZE_FILE_MESSAGE);
+  66 |   });
+  67 | });
+  68 | 
+```

@@ -1,0 +1,228 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/accompanying-documents-no-js.spec.ts >> Accompanying documents - without JavaScript >> shows manual refresh link instead of polling when virus scan is pending
+- Location: tests/e2e/features/accompanying-documents-no-js.spec.ts:17:3
+
+# Error details
+
+```
+Error: expect(locator).toHaveText(expected) failed
+
+Locator: locator('[data-testid="document-card"][data-upload-id]').filter({ hasText: 'safe-file-250b.png' }).locator('.govuk-tag')
+Expected pattern: /Checking|Safe/
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toHaveText" with timeout 5000ms
+  - waiting for locator('[data-testid="document-card"][data-upload-id]').filter({ hasText: 'safe-file-250b.png' }).locator('.govuk-tag')
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- banner:
+  - link "GOV.UK":
+    - /url: https://www.gov.uk/
+    - img "GOV.UK"
+  - region "Service information":
+    - link "Animals":
+      - /url: /
+    - navigation "Menu":
+      - list:
+        - listitem:
+          - link "Home":
+            - /url: /
+        - listitem:
+          - link "About":
+            - /url: /about
+- text: test.user11@defra.gov.uk
+- link "Sign out":
+  - /url: /signout
+- main:
+  - link "Back":
+    - /url: /additional-details
+  - paragraph: GBN-AG-26-KMC8KM
+  - heading "Accompanying documents" [level=1]
+  - paragraph: Where an ITAHC applies, you need to upload it for this notification. If you do not have it when you submit, you must add it to your notification once you receive it. You can also return to your notification later to upload any other documents you still need.
+  - paragraph: "If you already have documents, you can add them below. For example:"
+  - list:
+    - listitem: ITAHC
+    - listitem: import licences or authorisations
+    - listitem: commercial documents or invoices
+  - group: Check which additional documents you may need to upload
+  - heading "Documents added" [level=2]
+  - heading "upload" [level=3]
+  - term: Document type
+  - definition: Intra-Trade Animal Health Certificate (ITAHC)
+  - term: Document reference
+  - definition: ITAHC001
+  - term: Date of issue
+  - definition: 27 January 2026
+  - term: Status
+  - definition:
+    - strong: Checking
+  - form "Remove document upload":
+    - button "Remove upload"
+  - paragraph:
+    - link "Refresh virus scan status":
+      - /url: "?attempt=1"
+  - heading "Add another document" [level=2]
+  - text: Document type
+  - combobox "Document type":
+    - option "Select document type" [selected]
+    - option "Intra-Trade Animal Health Certificate (ITAHC)"
+    - option "Veterinary health certificate"
+  - text: Document reference
+  - textbox "Document reference"
+  - group "Date of issue":
+    - text: Date of issue For example, 27 3 2024 Day
+    - textbox "Day"
+    - text: Month
+    - textbox "Month"
+    - text: Year
+    - textbox "Year"
+  - text: Attachment
+  - paragraph: "Your file must be:"
+  - list:
+    - listitem: smaller than 10 MB
+    - listitem: PDF, DOC, DOCX, JPEG, PNG, XLS or XLSX
+    - listitem: ZIP files are not allowed for security reasons
+  - button "Attachment"
+  - button "Add attachment"
+  - button "Save and continue" [disabled]
+  - text: You cannot continue until all documents have been scanned or removed
+- contentinfo:
+  - heading "Support links" [level=2]
+  - list:
+    - listitem:
+      - link "Privacy":
+        - /url: https://www.gov.uk/help/privacy-notice
+    - listitem:
+      - link "Cookies":
+        - /url: https://www.gov.uk/help/cookies
+    - listitem:
+      - link "Accessibility statement":
+        - /url: https://www.gov.uk/help/accessibility-statement
+  - text: All content is available under the
+  - link "Open Government Licence v3.0":
+    - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+  - text: ", except where otherwise stated"
+  - link "© Crown copyright":
+    - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1   | import path from 'path';
+  2   | import { test, expect } from '@fixtures';
+  3   | import { TEN_MB_BYTES, ABOVE_PAYLOAD_CAP_BYTES, OVERSIZE_FILE_MESSAGE } from '@resources/file-upload/constants';
+  4   | import { fileUploadPaths, fileUploadNames } from '@resources/file-upload/paths';
+  5   | import { fileUploadTimeouts } from '@config/file-upload-timeouts';
+  6   | import { timeouts } from '@config/timeouts';
+  7   | import { writeSyntheticFile } from '@utils/synthetic-file-writer';
+  8   | 
+  9   | test.describe('Accompanying documents - without JavaScript', { tag: '@no-js' }, () => {
+  10  |   test.use({ javaScriptEnabled: false });
+  11  | 
+  12  |   test.beforeEach(async ({ apiJourney, pages }) => {
+  13  |     const created = await apiJourney.createUpToPage('accompanyingDocuments');
+  14  |     await apiJourney.resumeInUi(created.referenceNumber, pages.accompanyingDocuments);
+  15  |   });
+  16  | 
+  17  |   test('shows manual refresh link instead of polling when virus scan is pending', async ({ pages }) => {
+  18  |     await test.step('upload a document', async () => {
+  19  |       await pages.accompanyingDocuments.fillTextFields();
+  20  |       await pages.accompanyingDocuments.inputFileUpload.setInputFiles(fileUploadPaths.safeFile250bPng);
+  21  |       await pages.accompanyingDocuments.btnAddAttachment.click();
+  22  |       await expect(pages.accompanyingDocuments.documentsList).toBeVisible({
+  23  |         timeout: fileUploadTimeouts.documentsListVisible,
+  24  |       });
+  25  |     });
+  26  | 
+  27  |     await test.step('manually refresh until scan is complete', async () => {
+  28  |       const statusTag = pages.accompanyingDocuments.getStatusTag(fileUploadNames.safeFile250bPng);
+  29  |       const refreshLink = pages.accompanyingDocuments.linkRefreshVirusScanStatus;
+  30  | 
+> 31  |       await expect(statusTag).toHaveText(/Checking|Safe/);
+      |                               ^ Error: expect(locator).toHaveText(expected) failed
+  32  | 
+  33  |       // Without JavaScript, the refresh link is shown on the page while the scan is still running.
+  34  |       // With JavaScript, the link is hidden on load and the page polls automatically while the scan is still running — here we click the link to reload the page instead.
+  35  |       await expect
+  36  |         .poll(
+  37  |           async () => {
+  38  |             const status = (await statusTag.innerText()).trim();
+  39  |             if (status !== 'Safe' && (await refreshLink.isVisible())) {
+  40  |               await refreshLink.click({ timeout: timeouts.short });
+  41  |               await pages.page.waitForLoadState('load');
+  42  |             }
+  43  |             return (await statusTag.innerText()).trim();
+  44  |           },
+  45  |           { timeout: fileUploadTimeouts.virusScanComplete, intervals: [timeouts.short] },
+  46  |         )
+  47  |         .toBe('Safe');
+  48  |     });
+  49  | 
+  50  |     await test.step('refresh link is not shown once scan is complete', async () => {
+  51  |       await expect(pages.accompanyingDocuments.linkRefreshVirusScanStatus).toHaveCount(0);
+  52  |     });
+  53  |   });
+  54  | 
+  55  |   // Without JavaScript there is no client-side preflight, so the oversize file reaches the
+  56  |   // server — this exercises the payload-length validation in the route handler, which the
+  57  |   // JS-enabled size-limit tests never hit. The file is one byte over the 10 MB file cap but
+  58  |   // (with its multipart envelope) still inside the route payload cap's 1024-byte headroom,
+  59  |   // so the request parses and the controller renders the inline error.
+  60  |   test('rejects a file one byte over the 10 MB cap with a server-rendered inline error', async ({ pages }, testInfo) => {
+  61  |     const file = await writeSyntheticFile(path.join(testInfo.outputDir, 'file-upload'), 'one-byte-over-no-js.pdf', {
+  62  |       bytes: TEN_MB_BYTES + 1,
+  63  |     });
+  64  | 
+  65  |     await pages.accompanyingDocuments.fillTextFields({ documentReference: 'OVER10MBNOJS01' });
+  66  |     await pages.accompanyingDocuments.inputFileUpload.setInputFiles(file.filePath);
+  67  |     await pages.accompanyingDocuments.btnAddAttachment.click();
+  68  | 
+  69  |     await expect(pages.page).toHaveURL(pages.accompanyingDocuments.expectedUrl);
+  70  |     await expect(pages.accompanyingDocuments.documentsList).not.toBeVisible();
+  71  |     await expect(pages.accompanyingDocuments.errorFile).toContainText(OVERSIZE_FILE_MESSAGE);
+  72  |     await expect(pages.accompanyingDocuments.errorSummaryItems.filter({ hasText: OVERSIZE_FILE_MESSAGE })).toHaveCount(1);
+  73  |   });
+  74  | 
+  75  |   // A payload above the route cap is rejected by Hapi with Boom 413 before the handler runs;
+  76  |   // the route's onPreResponse ext re-renders the upload page with the inline error and a
+  77  |   // valid crumb (the 413 fires before crumb's onPostAuth, so the ext must supply one itself).
+  78  |   test('rejects a file above the route payload cap by re-rendering the page with an inline error', async ({ pages }, testInfo) => {
+  79  |     const file = await writeSyntheticFile(path.join(testInfo.outputDir, 'file-upload'), 'above-payload-cap-no-js.pdf', {
+  80  |       bytes: ABOVE_PAYLOAD_CAP_BYTES,
+  81  |     });
+  82  | 
+  83  |     await pages.accompanyingDocuments.fillTextFields({ documentReference: 'OVERPAYLOADNOJS01' });
+  84  |     await pages.accompanyingDocuments.inputFileUpload.setInputFiles(file.filePath);
+  85  |     await pages.accompanyingDocuments.btnAddAttachment.click();
+  86  | 
+  87  |     await expect(pages.page).toHaveURL(pages.accompanyingDocuments.expectedUrl);
+  88  |     await expect(pages.accompanyingDocuments.documentsList).not.toBeVisible();
+  89  |     await expect(pages.accompanyingDocuments.errorFile).toContainText(OVERSIZE_FILE_MESSAGE);
+  90  |     await expect(pages.accompanyingDocuments.errorSummaryItems.filter({ hasText: OVERSIZE_FILE_MESSAGE })).toHaveCount(1);
+  91  | 
+  92  |     await test.step('re-rendered form carries a usable crumb — a follow-up upload succeeds', async () => {
+  93  |       await pages.accompanyingDocuments.fillTextFields({ documentReference: 'OVERPAYLOADNOJS02' });
+  94  |       await pages.accompanyingDocuments.inputFileUpload.setInputFiles(fileUploadPaths.safeFile250bPng);
+  95  |       await pages.accompanyingDocuments.btnAddAttachment.click();
+  96  |       await expect(pages.accompanyingDocuments.documentsList).toBeVisible({
+  97  |         timeout: fileUploadTimeouts.documentsListVisible,
+  98  |       });
+  99  |     });
+  100 |   });
+  101 | });
+  102 | 
+```

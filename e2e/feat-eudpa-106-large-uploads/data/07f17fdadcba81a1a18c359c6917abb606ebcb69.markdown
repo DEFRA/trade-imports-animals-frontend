@@ -1,0 +1,288 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/journeys/notification-draft.spec.ts >> Notification draft >> saves notification as a draft and lands on the declaration page
+- Location: tests/e2e/journeys/notification-draft.spec.ts:8:3
+
+# Error details
+
+```
+Test timeout of 30000ms exceeded.
+```
+
+```
+Error: locator.waitFor: Test timeout of 30000ms exceeded.
+Call log:
+  - waiting for getByRole('heading', { name: 'Accompanying documents', level: 1 }) to be visible
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - generic [ref=e23]:
+        - link "Animals" [ref=e25] [cursor=pointer]:
+          - /url: /
+        - navigation "Menu" [ref=e26]:
+          - list [ref=e27]:
+            - listitem [ref=e28]:
+              - link "Home" [ref=e29] [cursor=pointer]:
+                - /url: /
+            - listitem [ref=e30]:
+              - link "About" [ref=e31] [cursor=pointer]:
+                - /url: /about
+  - generic [ref=e32]:
+    - generic [ref=e35]:
+      - generic [ref=e36]:
+        - img [ref=e37]
+        - generic [ref=e40]: test.user11@defra.gov.uk
+      - generic [ref=e41]: "|"
+      - link "Sign out" [ref=e42] [cursor=pointer]:
+        - /url: /signout
+    - main [ref=e43]:
+      - generic [ref=e45]:
+        - heading "500" [level=1] [ref=e47]
+        - paragraph [ref=e48]: Something went wrong
+  - contentinfo [ref=e49]:
+    - generic [ref=e62]:
+      - generic [ref=e63]:
+        - heading "Support links" [level=2] [ref=e64]
+        - list [ref=e65]:
+          - listitem [ref=e66]:
+            - link "Privacy" [ref=e67] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e68]:
+            - link "Cookies" [ref=e69] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e70]:
+            - link "Accessibility statement" [ref=e71] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e72]
+        - generic [ref=e74]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e75] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e77] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  113 |     await this.pages.speciesSelection.btnSaveAndContinue.click();
+  114 |     await this.pages.importReason.heading.waitFor();
+  115 |   }
+  116 | 
+  117 |   async toImportReason(options: JourneyOptions = {}): Promise<void> {
+  118 |     await this.toSpeciesSelection(options);
+  119 |     await this.fillSpeciesSelection(options);
+  120 |     await this.saveSpeciesSelection();
+  121 |   }
+  122 | 
+  123 |   async fillImportReason(options: JourneyOptions = {}): Promise<void> {
+  124 |     const { importReason } = { ...defaultJourneyOptions, ...options };
+  125 |     if (importReason === importReasons.internalMarket) {
+  126 |       await this.pages.importReason.radioInternalMarket.click();
+  127 |     } else if (importReason === importReasons.reEntry) {
+  128 |       await this.pages.importReason.radioReEntry.click();
+  129 |     }
+  130 |   }
+  131 | 
+  132 |   async saveImportReason(): Promise<void> {
+  133 |     await this.pages.importReason.btnSaveAndContinue.click();
+  134 |     await this.pages.commodityDetails.heading.waitFor();
+  135 |   }
+  136 | 
+  137 |   async toCommodityDetails(options: JourneyOptions = {}): Promise<void> {
+  138 |     await this.toImportReason(options);
+  139 |     await this.fillImportReason(options);
+  140 |     await this.saveImportReason();
+  141 |   }
+  142 | 
+  143 |   async fillCommodityDetails(options: JourneyOptions = {}): Promise<void> {
+  144 |     const { commodityType, species, noOfAnimals, noOfPackages } = { ...defaultJourneyOptions, ...options };
+  145 |     const speciesList = Array.isArray(species) ? species : [species];
+  146 |     const animalList = Array.isArray(noOfAnimals) ? noOfAnimals : [noOfAnimals];
+  147 |     const packageList = Array.isArray(noOfPackages) ? noOfPackages : [noOfPackages];
+  148 | 
+  149 |     if (animalList.length !== speciesList.length || packageList.length !== speciesList.length) {
+  150 |       throw new Error(
+  151 |         `Mismatched quantities: species=${speciesList.length}, noOfAnimals=${animalList.length}, noOfPackages=${packageList.length}`,
+  152 |       );
+  153 |     }
+  154 | 
+  155 |     for (let i = 0; i < speciesList.length; i += 1) {
+  156 |       const label = `${speciesList[i]}, ${commodityType}`;
+  157 |       await this.pages.commodityDetails.inputNoOfAnimals(label).fill(animalList[i].toString());
+  158 |       await this.pages.commodityDetails.inputNoOfPackages(label).fill(packageList[i].toString());
+  159 |     }
+  160 |   }
+  161 | 
+  162 |   async saveCommodityDetails(): Promise<void> {
+  163 |     await this.pages.commodityDetails.btnSaveAndContinue.click();
+  164 |     await this.pages.animalIdentification.heading.waitFor();
+  165 |   }
+  166 | 
+  167 |   async toAnimalIdentification(options: JourneyOptions = {}): Promise<void> {
+  168 |     await this.toCommodityDetails(options);
+  169 |     await this.fillCommodityDetails(options);
+  170 |     await this.saveCommodityDetails();
+  171 |   }
+  172 | 
+  173 |   async fillAnimalIdentification(options: JourneyOptions = {}): Promise<void> {
+  174 |     const { species } = { ...defaultJourneyOptions, ...options };
+  175 |     const speciesList = Array.isArray(species) ? species : [species];
+  176 | 
+  177 |     // Currently limited to one animal identifier per species
+  178 |     for (let i = 0; i < speciesList.length; i += 1) {
+  179 |       const digits = String(i + 1).padStart(12, '0');
+  180 |       await this.pages.animalIdentification.inputEarTag(i).fill(`${EAR_TAG_PREFIX}${digits}`);
+  181 |       await this.pages.animalIdentification.inputPassport(i).fill(`${PASSPORT_PREFIX}${digits.slice(-6)}`);
+  182 |     }
+  183 |   }
+  184 | 
+  185 |   async saveAnimalIdentification(): Promise<void> {
+  186 |     await this.pages.animalIdentification.btnSaveAndContinue.click();
+  187 |     await this.pages.additionalDetails.heading.waitFor();
+  188 |   }
+  189 | 
+  190 |   async toAdditionalDetails(options: JourneyOptions = {}): Promise<void> {
+  191 |     await this.toAnimalIdentification(options);
+  192 |     await this.fillAnimalIdentification(options);
+  193 |     await this.saveAnimalIdentification();
+  194 |   }
+  195 | 
+  196 |   async fillAdditionalDetails(options: JourneyOptions = {}): Promise<void> {
+  197 |     const { certificationPurpose, unweanedAnimals } = { ...defaultJourneyOptions, ...options };
+  198 |     if (certificationPurpose === certificationPurposes.approvedBodies) {
+  199 |       await this.pages.additionalDetails.radioApprovedBodies.click();
+  200 |     } else if (certificationPurpose === certificationPurposes.breedingAndOrProduction) {
+  201 |       await this.pages.additionalDetails.radioBreedingAndOrProduction.click();
+  202 |     } else if (certificationPurpose === certificationPurposes.slaughter) {
+  203 |       await this.pages.additionalDetails.radioSlaughter.click();
+  204 |     }
+  205 | 
+  206 |     if (unweanedAnimals !== undefined) {
+  207 |       await this.pages.additionalDetails.radioContainsUnweanedAnimals(unweanedAnimals).click();
+  208 |     }
+  209 |   }
+  210 | 
+  211 |   async saveAdditionalDetails(): Promise<void> {
+  212 |     await this.pages.additionalDetails.btnSaveAndContinue.click();
+> 213 |     await this.pages.accompanyingDocuments.heading.waitFor();
+      |                                                    ^ Error: locator.waitFor: Test timeout of 30000ms exceeded.
+  214 |   }
+  215 | 
+  216 |   async toAccompanyingDocuments(options: JourneyOptions = {}): Promise<void> {
+  217 |     await this.toAdditionalDetails(options);
+  218 |     await this.fillAdditionalDetails(options);
+  219 |     await this.saveAdditionalDetails();
+  220 |   }
+  221 | 
+  222 |   async fillAccompanyingDocuments(options: JourneyOptions = {}): Promise<void> {
+  223 |     const { accompanyingDocuments } = { ...defaultJourneyOptions, ...options };
+  224 |     for (const document of this.toDocumentList(accompanyingDocuments)) {
+  225 |       await this.pages.accompanyingDocuments.fillTextFields({
+  226 |         documentType: document.documentType,
+  227 |         documentReference: document.documentReference,
+  228 |         issueDate: document.issueDate,
+  229 |       });
+  230 |       await this.pages.accompanyingDocuments.inputFileUpload.setInputFiles(document.filePath);
+  231 |       await this.pages.accompanyingDocuments.btnAddAttachment.click();
+  232 |     }
+  233 |   }
+  234 | 
+  235 |   async saveAccompanyingDocuments(options: JourneyOptions = {}): Promise<void> {
+  236 |     const { accompanyingDocuments } = { ...defaultJourneyOptions, ...options };
+  237 |     if (this.toDocumentList(accompanyingDocuments).length === 0) {
+  238 |       await this.pages.accompanyingDocuments.btnContinueWithoutDocuments.click();
+  239 |     } else {
+  240 |       await this.pages.accompanyingDocuments.btnSaveAndContinue.click({ timeout: fileUploadTimeouts.virusScanComplete });
+  241 |     }
+  242 |     await this.pages.addresses.heading.waitFor();
+  243 |   }
+  244 | 
+  245 |   private toDocumentList(accompanyingDocuments: Required<JourneyOptions>['accompanyingDocuments']): AccompanyingDocument[] {
+  246 |     if (!accompanyingDocuments) return [];
+  247 |     return Array.isArray(accompanyingDocuments) ? accompanyingDocuments : [accompanyingDocuments];
+  248 |   }
+  249 | 
+  250 |   async toAddresses(options: JourneyOptions = {}): Promise<void> {
+  251 |     await this.toAccompanyingDocuments(options);
+  252 |     await this.fillAccompanyingDocuments(options);
+  253 |     await this.saveAccompanyingDocuments(options);
+  254 |   }
+  255 | 
+  256 |   async openPlaceOfOrigin(): Promise<void> {
+  257 |     await this.pages.addresses.linkAddPlaceOfOrigin.click();
+  258 |     await this.pages.placeOfOriginSelection.heading.waitFor();
+  259 |   }
+  260 | 
+  261 |   async fillPlaceOfOrigin(): Promise<void> {
+  262 |     await this.pages.placeOfOriginSelection.radioPlaceOfOrigin(PLACE_OF_ORIGIN_NAME).click();
+  263 |   }
+  264 | 
+  265 |   async savePlaceOfOrigin(): Promise<void> {
+  266 |     await this.pages.placeOfOriginSelection.btnSaveAndContinue.click();
+  267 |     await this.pages.addresses.heading.waitFor();
+  268 |   }
+  269 | 
+  270 |   async openConsignor(): Promise<void> {
+  271 |     await this.pages.addresses.linkAddConsignorOrExporter.click();
+  272 |     await this.pages.consignorSelection.heading.waitFor();
+  273 |   }
+  274 | 
+  275 |   async fillConsignor(): Promise<void> {
+  276 |     await this.pages.consignorSelection.radioConsignorOrExporter(CONSIGNOR_NAME).click();
+  277 |   }
+  278 | 
+  279 |   async saveConsignor(): Promise<void> {
+  280 |     await this.pages.consignorSelection.btnSaveAndContinue.click();
+  281 |     await this.pages.addresses.heading.waitFor();
+  282 |   }
+  283 | 
+  284 |   async openConsignee(): Promise<void> {
+  285 |     await this.pages.addresses.linkAddConsignee.click();
+  286 |     await this.pages.consigneeSelection.heading.waitFor();
+  287 |   }
+  288 | 
+  289 |   async fillConsignee(): Promise<void> {
+  290 |     await this.pages.consigneeSelection.radioConsignee(CONSIGNEE_NAME).click();
+  291 |   }
+  292 | 
+  293 |   async saveConsignee(): Promise<void> {
+  294 |     await this.pages.consigneeSelection.btnSaveAndContinue.click();
+  295 |     await this.pages.addresses.heading.waitFor();
+  296 |   }
+  297 | 
+  298 |   async openImporter(): Promise<void> {
+  299 |     await this.pages.addresses.linkAddImporter.click();
+  300 |     await this.pages.importerSelection.heading.waitFor();
+  301 |   }
+  302 | 
+  303 |   async fillImporter(): Promise<void> {
+  304 |     await this.pages.importerSelection.radioImporter(IMPORTER_NAME).click();
+  305 |   }
+  306 | 
+  307 |   async saveImporter(): Promise<void> {
+  308 |     await this.pages.importerSelection.btnSaveAndContinue.click();
+  309 |     await this.pages.addresses.heading.waitFor();
+  310 |   }
+  311 | 
+  312 |   async openPlaceOfDestination(): Promise<void> {
+  313 |     await this.pages.addresses.linkAddPlaceOfDestination.click();
+```

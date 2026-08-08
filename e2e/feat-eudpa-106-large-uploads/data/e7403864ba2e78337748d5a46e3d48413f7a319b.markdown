@@ -1,0 +1,143 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/pages/additional-details.spec.ts >> Additional details >> continues to accompanying documents after saving additional details
+- Location: tests/e2e/pages/additional-details.spec.ts:59:3
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: getByRole('heading', { name: 'Accompanying documents', level: 1 })
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" with timeout 5000ms
+  - waiting for getByRole('heading', { name: 'Accompanying documents', level: 1 })
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- banner:
+  - link "GOV.UK":
+    - /url: https://www.gov.uk/
+    - img "GOV.UK"
+  - region "Service information":
+    - link "Animals":
+      - /url: /
+    - navigation "Menu":
+      - list:
+        - listitem:
+          - link "Home":
+            - /url: /
+        - listitem:
+          - link "About":
+            - /url: /about
+- text: test.user11@defra.gov.uk
+- link "Sign out":
+  - /url: /signout
+- main:
+  - heading "500" [level=1]
+  - paragraph: Something went wrong
+- contentinfo:
+  - heading "Support links" [level=2]
+  - list:
+    - listitem:
+      - link "Privacy":
+        - /url: https://www.gov.uk/help/privacy-notice
+    - listitem:
+      - link "Cookies":
+        - /url: https://www.gov.uk/help/cookies
+    - listitem:
+      - link "Accessibility statement":
+        - /url: https://www.gov.uk/help/accessibility-statement
+  - text: All content is available under the
+  - link "Open Government Licence v3.0":
+    - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+  - text: ", except where otherwise stated"
+  - link "© Crown copyright":
+    - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | import { EAR_TAG_PREFIX, PASSPORT_PREFIX } from '@domain/constants/journey-options';
+  3  | import { yesNoValues } from '@domain/constants/yes-no-values';
+  4  | 
+  5  | test.describe('Additional details', () => {
+  6  |   test.beforeEach(async ({ apiJourney, pages }) => {
+  7  |     const created = await apiJourney.createUpToPage('additionalDetails');
+  8  |     await apiJourney.resumeInUi(created.referenceNumber, pages.additionalDetails);
+  9  |   });
+  10 | 
+  11 |   test('shows system-generated reference number', async ({ journeyContext, pages }) => {
+  12 |     const referenceNumber = await pages.additionalDetails.referenceNumber.textContent();
+  13 |     expect(referenceNumber).toMatch(/^GBN-AG-\d{2}-[0-9A-Z]{6}$/);
+  14 |     expect(journeyContext.referenceNumber).toBe(referenceNumber);
+  15 |   });
+  16 | 
+  17 |   test('can navigate back to animal identification', async ({ pages }) => {
+  18 |     await pages.commodityDetails.linkBack.click();
+  19 |     await expect(pages.page).toHaveURL(pages.animalIdentification.expectedUrl);
+  20 |     await expect(pages.animalIdentification.heading).toBeVisible();
+  21 | 
+  22 |     await test.step('previously entered animal identifiers are retained', async () => {
+  23 |       await expect(pages.animalIdentification.inputEarTag(0)).toHaveValue(new RegExp(`^${EAR_TAG_PREFIX}`));
+  24 |       await expect(pages.animalIdentification.inputPassport(0)).toHaveValue(new RegExp(`^${PASSPORT_PREFIX}`));
+  25 |       await expect(pages.animalIdentification.inputEarTag(1)).toHaveValue(new RegExp(`^${EAR_TAG_PREFIX}`));
+  26 |       await expect(pages.animalIdentification.inputPassport(1)).toHaveValue(new RegExp(`^${PASSPORT_PREFIX}`));
+  27 |     });
+  28 |   });
+  29 | 
+  30 |   test('shows default values on first load', async ({ pages }) => {
+  31 |     await expect(pages.additionalDetails.radioApprovedBodies).not.toBeChecked();
+  32 |     await expect(pages.additionalDetails.radioBreedingAndOrProduction).not.toBeChecked();
+  33 |     await expect(pages.additionalDetails.radioSlaughter).not.toBeChecked();
+  34 |     await expect(pages.additionalDetails.radioContainsUnweanedAnimals(yesNoValues.yes)).not.toBeChecked();
+  35 |     await expect(pages.additionalDetails.radioContainsUnweanedAnimals(yesNoValues.no)).toBeChecked();
+  36 |   });
+  37 | 
+  38 |   test('can select only one animals certified for option', async ({ pages }) => {
+  39 |     await pages.additionalDetails.radioApprovedBodies.click();
+  40 |     await expect(pages.additionalDetails.radioApprovedBodies).toBeChecked();
+  41 |     await expect(pages.additionalDetails.radioBreedingAndOrProduction).not.toBeChecked();
+  42 |     await expect(pages.additionalDetails.radioSlaughter).not.toBeChecked();
+  43 |     await pages.additionalDetails.radioBreedingAndOrProduction.click();
+  44 |     await expect(pages.additionalDetails.radioApprovedBodies).not.toBeChecked();
+  45 |     await expect(pages.additionalDetails.radioBreedingAndOrProduction).toBeChecked();
+  46 |     await expect(pages.additionalDetails.radioSlaughter).not.toBeChecked();
+  47 |     await pages.additionalDetails.radioSlaughter.click();
+  48 |     await expect(pages.additionalDetails.radioApprovedBodies).not.toBeChecked();
+  49 |     await expect(pages.additionalDetails.radioBreedingAndOrProduction).not.toBeChecked();
+  50 |     await expect(pages.additionalDetails.radioSlaughter).toBeChecked();
+  51 |   });
+  52 | 
+  53 |   test('allows changing contains unweaned animals from "No" to "Yes"', async ({ pages }) => {
+  54 |     await pages.additionalDetails.radioContainsUnweanedAnimals(yesNoValues.yes).click();
+  55 |     await expect(pages.additionalDetails.radioContainsUnweanedAnimals(yesNoValues.yes)).toBeChecked();
+  56 |     await expect(pages.additionalDetails.radioContainsUnweanedAnimals(yesNoValues.no)).not.toBeChecked();
+  57 |   });
+  58 | 
+  59 |   test('continues to accompanying documents after saving additional details', async ({ pages }) => {
+  60 |     await pages.additionalDetails.radioApprovedBodies.click();
+  61 |     await pages.additionalDetails.radioContainsUnweanedAnimals(yesNoValues.yes).click();
+  62 |     await pages.additionalDetails.btnSaveAndContinue.click();
+  63 |     await expect(pages.page).toHaveURL(pages.accompanyingDocuments.expectedUrl);
+> 64 |     await expect(pages.accompanyingDocuments.heading).toBeVisible();
+     |                                                       ^ Error: expect(locator).toBeVisible() failed
+  65 |   });
+  66 | });
+  67 | 
+```
