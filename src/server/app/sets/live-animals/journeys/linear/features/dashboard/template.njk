@@ -15,15 +15,6 @@
     }) }}
   {% endif %}
 
-  {% if copySucceeded %}
-    {{ govukNotificationBanner({
-      type: "success",
-      titleText: sharedCopy.notificationActions.copy.successTitle,
-      text: sharedCopy.notificationActions.copy.successBody,
-      role: "alert"
-    }) }}
-  {% endif %}
-
   {% if actionUnavailable %}
     {{ govukNotificationBanner({
       titleText: sharedCopy.notificationActions.unavailable[actionUnavailable].title,

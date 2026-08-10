@@ -476,17 +476,6 @@ describe('dashboard row actions', () => {
     expect(ordinary.captured.view.context.deletionSucceeded).toBe(false)
     expect(deleted.captured.view.context.deletionSucceeded).toBe(true)
   })
-
-  it('Should expose the copy success banner only after a copy redirect', async () => {
-    const ordinary = buildH()
-    const copied = buildH()
-
-    await listGet(buildRequest(), ordinary)
-    await listGet(buildRequest({ query: { copied: '1' } }), copied)
-
-    expect(ordinary.captured.view.context.copySucceeded).toBe(false)
-    expect(copied.captured.view.context.copySucceeded).toBe(true)
-  })
 })
 
 describe('dashboard start with an in-flight draft', () => {

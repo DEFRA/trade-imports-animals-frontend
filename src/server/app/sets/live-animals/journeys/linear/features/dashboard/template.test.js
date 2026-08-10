@@ -30,7 +30,6 @@ const renderDashboard = (actionUnavailable) =>
       listQuerySuffix: '',
       recoverableError: false,
       deletionSucceeded: false,
-      copySucceeded: false,
       actionUnavailable,
       breadcrumbs: false,
       userSession: { isAuthenticated: false },

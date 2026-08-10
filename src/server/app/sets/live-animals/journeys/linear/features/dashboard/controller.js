@@ -102,7 +102,6 @@ export const renderDashboard = async (
     }),
     recoverableError,
     deletionSucceeded: request.query?.deleted === '1',
-    copySucceeded: request.query?.copied === '1',
     actionUnavailable: parseActionUnavailable(request.query?.actionUnavailable)
   })
 }

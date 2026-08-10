@@ -22,9 +22,7 @@ export const copy = {
   },
   notificationActions: {
     copy: {
-      text: 'Copïo fel un newydd',
-      successTitle: "Hysbysiad wedi'i gopïo",
-      successBody: 'Mae hysbysiad drafft newydd wedi cael ei greu.'
+      text: 'Copïo fel un newydd'
     },
     delete: {
       text: 'Dileu',
