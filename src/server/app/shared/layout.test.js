@@ -37,4 +37,11 @@ describe('promoted live-animals signed-in chrome', () => {
     expect(html).not.toContain('href="/auth/sign-out"')
     expect(html).not.toContain('Sign out')
   })
+
+  it('Should render journey content at full container width', () => {
+    const html = renderLayout({ isAuthenticated: true })
+
+    expect(html).toContain('govuk-grid-column-full')
+    expect(html).not.toContain('govuk-grid-column-two-thirds')
+  })
 })

@@ -7,6 +7,10 @@ import {
   journeyUrl,
   startNotification
 } from '../../../../../../../../../e2e/live-animals-journey.js'
+import {
+  captureAc6Screenshot,
+  expectNoHorizontalOverflow
+} from '../../../../../../../../../e2e/live-animals-layout.js'
 import { copy } from './copy/copy.en.js'
 
 const expectPanelCopy = async (page) => {
@@ -96,6 +100,9 @@ test.describe('submitted confirmation feature', () => {
     await expect(
       page.getByRole('link', { name: 'Back', exact: true })
     ).toHaveCount(0)
+
+    await expectNoHorizontalOverflow(page)
+    await captureAc6Screenshot(page, 'confirmation-prose')
   })
 
   test('dashboard link returns to the dashboard', async ({ page }) => {

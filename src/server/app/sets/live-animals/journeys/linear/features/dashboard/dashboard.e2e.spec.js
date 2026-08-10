@@ -7,12 +7,23 @@ import {
   startNotification,
   values
 } from '../../../../../../../../../e2e/live-animals-journey.js'
+import {
+  captureAc6Screenshot,
+  expectNoHorizontalOverflow,
+  logLayoutMetric,
+  measureHorizontalOverflow
+} from '../../../../../../../../../e2e/live-animals-layout.js'
 import { copy } from './copy/copy.en.js'
 
 const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
 const COPY_AS_NEW = 'Copy as new'
 const PAGE_SIZE = 20
 const SEEDED_NOTIFICATIONS = PAGE_SIZE + 1
+const SUMMARY_CARD = '.govuk-summary-card'
+const SUMMARY_CARD_ACTIONS = '.govuk-summary-card__actions'
+const SUMMARY_CARD_ACTION = '.govuk-summary-card__action'
+const SINGLE_LINE_TOLERANCE = 10
+const DESKTOP_BREAKPOINT_WIDTH = 769
 
 const submitNotification = async (page) => {
   await completeAnswerSections(page)
@@ -22,6 +33,36 @@ const submitNotification = async (page) => {
     .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
     .check()
   await page.getByRole('button', { name: 'Continue' }).click()
+}
+
+const stageSubmittedNotification = async (page) => {
+  await startNotification(page)
+  await submitNotification(page)
+  const reference = journeyIdFromPage(page)
+  await page.goto('/')
+  return reference
+}
+
+const cardFor = (page, reference) =>
+  page.locator(SUMMARY_CARD).filter({ hasText: reference })
+
+const actionsGeometry = async (card) => {
+  const actionsBox = await card.locator(SUMMARY_CARD_ACTIONS).boundingBox()
+  const actions = await card.locator(SUMMARY_CARD_ACTION).all()
+  const actionBoxes = await Promise.all(
+    actions.map((action) => action.boundingBox())
+  )
+  const tops = actionBoxes.map(({ y }) => y)
+  return {
+    listHeight: actionsBox.height,
+    actionHeight: actionBoxes[0].height,
+    topSpread: Math.max(...tops) - Math.min(...tops)
+  }
+}
+
+const mainColumnWidth = async (page) => {
+  const box = await page.locator('.notification-list__main').boundingBox()
+  return box.width
 }
 
 const actionFor = (page, role, action, reference) =>
@@ -87,11 +128,7 @@ test.describe('dashboard feature — notification rows and actions', () => {
     page
   }) => {
     test.slow()
-    await startNotification(page)
-    await submitNotification(page)
-    const reference = journeyIdFromPage(page)
-
-    await page.goto('/')
+    const reference = await stageSubmittedNotification(page)
 
     await expect(
       page.getByRole('heading', { name: reference, exact: true })
@@ -112,6 +149,53 @@ test.describe('dashboard feature — notification rows and actions', () => {
       actionFor(page, 'button', COPY_AS_NEW, reference)
     ).toBeVisible()
     await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
+  })
+
+  test('submitted notification card actions do not wrap', async ({ page }) => {
+    test.slow()
+    const reference = await stageSubmittedNotification(page)
+    const card = cardFor(page, reference)
+    await expect(card.locator(SUMMARY_CARD_ACTION)).toHaveCount(4)
+
+    const { listHeight, actionHeight, topSpread } = await actionsGeometry(card)
+
+    logLayoutMetric('submitted card actions list height', listHeight)
+    logLayoutMetric('submitted card single action height', actionHeight)
+    logLayoutMetric('submitted card action top spread', topSpread)
+
+    expect(listHeight).toBeLessThanOrEqual(actionHeight + SINGLE_LINE_TOLERANCE)
+  })
+
+  test('dashboard does not overflow horizontally at desktop', async ({
+    page
+  }) => {
+    test.slow()
+    const reference = await stageSubmittedNotification(page)
+    await expect(
+      page.getByRole('heading', { name: reference, exact: true })
+    ).toBeVisible()
+
+    await expectNoHorizontalOverflow(page)
+    logLayoutMetric(
+      'notification-list__main width at 1280px',
+      await mainColumnWidth(page)
+    )
+    await captureAc6Screenshot(page, 'dashboard-submitted')
+
+    await page.setViewportSize({
+      width: DESKTOP_BREAKPOINT_WIDTH,
+      height: 900
+    })
+    const breakpointOverflow = await measureHorizontalOverflow(page)
+
+    logLayoutMetric(
+      `notification-list__main width at ${DESKTOP_BREAKPOINT_WIDTH}px`,
+      await mainColumnWidth(page)
+    )
+    logLayoutMetric(
+      `horizontal overflow at ${DESKTOP_BREAKPOINT_WIDTH}px`,
+      JSON.stringify(breakpointOverflow)
+    )
   })
 
   test('draft notification renders only its available actions', async ({
@@ -154,10 +238,7 @@ test.describe('dashboard feature — notification rows and actions', () => {
     page
   }) => {
     test.slow()
-    await startNotification(page)
-    await submitNotification(page)
-    const reference = journeyIdFromPage(page)
-    await page.goto('/')
+    const reference = await stageSubmittedNotification(page)
     await actionFor(page, 'button', 'Amend', reference).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
@@ -168,6 +249,16 @@ test.describe('dashboard feature — notification rows and actions', () => {
     await expect(
       actionFor(page, 'link', 'Cancel amendment', reference)
     ).toBeVisible()
+
+    const { listHeight, actionHeight } = await actionsGeometry(
+      cardFor(page, reference)
+    )
+    logLayoutMetric('amending card actions list height', listHeight)
+    logLayoutMetric('amending card single action height', actionHeight)
+    logLayoutMetric(
+      'amending card available width',
+      await mainColumnWidth(page)
+    )
   })
 })
 
