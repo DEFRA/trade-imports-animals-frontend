@@ -72,16 +72,19 @@ describe('delete notification routes', () => {
     ).toEqual([])
   })
 
-  it('Should handle an already-deleted journey without another transition', async () => {
+  it('Should report an unavailable delete for an already-deleted journey on both GET and POST', async () => {
     const journey = await records.create()
     await records.softDelete(journey.journeyId)
 
     expect(await get(journeyRequest(journey.journeyId), stubH())).toEqual({
-      redirect: '/'
+      redirect: '/?actionUnavailable=delete'
     })
     expect(await post(journeyRequest(journey.journeyId), stubH())).toEqual({
-      redirect: '/'
+      redirect: '/?actionUnavailable=delete'
     })
+    expect((await records.load({ journeyId: journey.journeyId })).status).toBe(
+      DELETED
+    )
   })
 
   it('Should re-render confirmation at 500 with the recoverable-save banner after a backend failure', async () => {

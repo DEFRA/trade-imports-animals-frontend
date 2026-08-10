@@ -23,7 +23,7 @@ const cancelPath = (journeyId) => pagePath(journeyId, CANCEL_AMEND_SLUG)
 const nonAmendTarget = (journey) =>
   journey.status === state.SUBMITTED
     ? cyaPath(journey.journeyId)
-    : dashboardPath()
+    : `${dashboardPath()}?actionUnavailable=cancelAmend`
 
 const render = (h, journey, recoverableError = false) =>
   h.view(view, {
@@ -59,9 +59,7 @@ const post = async (request, h) => {
     return failure
   }
 
-  return restored
-    ? h.redirect(`${cyaPath(restored.journeyId)}?cancelled=1`)
-    : h.redirect(dashboardPath())
+  return h.redirect(`${cyaPath(restored.journeyId)}?cancelled=1`)
 }
 
 export const routes = [

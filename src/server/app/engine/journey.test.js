@@ -138,28 +138,19 @@ describe('#currentJourney', () => {
     )
   })
 
-  it('Should cancel amendment only for a session-known journey', async () => {
-    const cancelAmend = vi.fn(async (journeyId) => ({
-      journeyId,
-      status: 'submitted',
-      fulfilment: {}
-    }))
-    configureRecords({ ...recordsStub, cancelAmend })
-    const journeyId = 'GBN-AG-26-ABC123'
-    const request = requestFor(journeyId, [journeyId])
+  it('Should cancel an amendment for a journey this session never opened', async () => {
+    const journey = await store.create()
+    await recordsStub.finalise(journey.journeyId)
+    await recordsStub.amend(journey.journeyId)
 
-    const restored = await cancelAmendJourney(request, recordingH(), journeyId)
-
-    expect(cancelAmend).toHaveBeenCalledWith(journeyId)
-    expect(restored.status).toBe('submitted')
-
-    const unknown = await cancelAmendJourney(
-      requestFor('unknown', []),
+    const restored = await cancelAmendJourney(
+      requestFor(journey.journeyId, []),
       recordingH(),
-      'unknown'
+      journey.journeyId
     )
-    expect(unknown).toBeUndefined()
-    expect(cancelAmend).toHaveBeenCalledTimes(1)
+
+    expect(restored.status).toBe('submitted')
+    expect((await store.get(journey.journeyId)).status).toBe('submitted')
   })
 
   it('Should amend a submitted journey with the authenticated actor', async () => {
@@ -179,59 +170,94 @@ describe('#currentJourney', () => {
     expect(editable.status).toBe('amend')
   })
 
-  it('Should copy only a known source and remember the new draft', async () => {
-    const copy = vi.fn(async (_journeyId, _idempotencyKey) => ({
-      journeyId: 'GBN-AG-26-COPIED',
-      status: 'draft',
-      fulfilment: {}
-    }))
-    configureRecords({ ...recordsStub, copy })
-    const sourceId = 'GBN-AG-26-SOURCE'
-    const request = requestFor(sourceId, [sourceId])
+  it('Should amend a submitted journey this session never opened', async () => {
+    const journey = await store.create()
+    await recordsStub.finalise(journey.journeyId)
+
+    const editable = await amendJourney(
+      requestFor(journey.journeyId, []),
+      recordingH(),
+      journey.journeyId
+    )
+
+    expect(editable.status).toBe('amend')
+    expect((await store.get(journey.journeyId)).status).toBe('amend')
+  })
+
+  it('Should refuse to amend a record that no longer exists', async () => {
+    const missingId = 'GBN-AG-26-GONE01'
+
+    expect(
+      await amendJourney(requestFor(missingId, []), recordingH(), missingId)
+    ).toBeUndefined()
+  })
+
+  it('Should refuse to amend a deleted record', async () => {
+    const journey = await store.create()
+    await recordsStub.softDelete(journey.journeyId)
+
+    expect(
+      await amendJourney(
+        requestFor(journey.journeyId, []),
+        recordingH(),
+        journey.journeyId
+      )
+    ).toBeUndefined()
+  })
+
+  it('Should copy a source this session never opened and remember the copy', async () => {
+    const source = await store.create()
     const h = recordingH()
 
-    const copied = await copyJourney(request, h, sourceId, 'copy-key-123')
+    const copied = await copyJourney(
+      requestFor(source.journeyId, []),
+      h,
+      source.journeyId,
+      'copy-key-123'
+    )
 
-    expect(copy).toHaveBeenCalledWith(sourceId, 'copy-key-123')
-    expect(copied.status).toBe('draft')
-    expect(h.cookies[SESSION_COOKIES.knownJourneys]).toEqual([
-      sourceId,
-      copied.journeyId
-    ])
+    expect(copied.journeyId).not.toBe(source.journeyId)
+    expect((await store.get(copied.journeyId)).status).toBe('draft')
+    expect(h.cookies[SESSION_COOKIES.knownJourneys]).toEqual([copied.journeyId])
+  })
+
+  it('Should refuse to copy a source that no longer exists', async () => {
+    const missingId = 'GBN-AG-26-GONE02'
 
     expect(
       await copyJourney(
-        requestFor('unknown', []),
+        requestFor(missingId, []),
         recordingH(),
-        'unknown',
-        'unused'
+        missingId,
+        'unused-key'
       )
     ).toBeUndefined()
-    expect(copy).toHaveBeenCalledTimes(1)
   })
 
-  it('Should soft-delete only a known journey', async () => {
-    const softDelete = vi.fn(async (journeyId) => ({
-      journeyId,
-      status: 'deleted',
-      fulfilment: {}
-    }))
-    configureRecords({ ...recordsStub, softDelete })
-    const journeyId = 'GBN-AG-26-DELETE'
-    const request = requestFor(journeyId, [journeyId])
-
-    const deleted = await softDeleteJourney(request, recordingH(), journeyId)
-
-    expect(softDelete).toHaveBeenCalledWith(journeyId, authenticatedActor)
-    expect(deleted.status).toBe('deleted')
+  it('Should refuse to copy a deleted source', async () => {
+    const source = await store.create()
+    await recordsStub.softDelete(source.journeyId)
 
     expect(
-      await softDeleteJourney(
-        requestFor('unknown', []),
+      await copyJourney(
+        requestFor(source.journeyId, []),
         recordingH(),
-        'unknown'
+        source.journeyId,
+        'unused-key'
       )
     ).toBeUndefined()
-    expect(softDelete).toHaveBeenCalledTimes(1)
+  })
+
+  it('Should soft-delete a journey this session never opened', async () => {
+    const journey = await store.create()
+
+    const deleted = await softDeleteJourney(
+      requestFor(journey.journeyId, []),
+      recordingH(),
+      journey.journeyId
+    )
+
+    expect(deleted.status).toBe('deleted')
+    expect((await store.get(journey.journeyId)).status).toBe('deleted')
   })
 })

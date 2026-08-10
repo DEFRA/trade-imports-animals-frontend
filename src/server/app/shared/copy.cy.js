@@ -22,14 +22,27 @@ export const copy = {
   },
   notificationActions: {
     copy: {
-      text: 'Copïo fel un newydd',
-      successTitle: "Hysbysiad wedi'i gopïo",
-      successBody: 'Mae hysbysiad drafft newydd wedi cael ei greu.'
+      text: 'Copïo fel un newydd'
     },
     delete: {
       text: 'Dileu',
       successTitle: "Hysbysiad wedi'i ddileu",
       successBody: "Mae'r hysbysiad wedi cael ei ddileu."
+    },
+    unavailable: {
+      body: "Efallai ei fod wedi cael ei ddileu neu ei newid ers i'r rhestr gael ei llwytho. Adnewyddwch y rhestr a rhowch gynnig arall arni.",
+      amend: {
+        title: 'Ni allwch ddiwygio’r hysbysiad hwn'
+      },
+      copy: {
+        title: 'Ni allwch gopïo’r hysbysiad hwn'
+      },
+      delete: {
+        title: 'Ni allwch ddileu’r hysbysiad hwn'
+      },
+      cancelAmend: {
+        title: 'Ni allwch ganslo’r diwygiad hwn'
+      }
     }
   },
   saveActions: {

@@ -38,7 +38,7 @@ const copyPost = async (request, h) => {
 
   return copied
     ? h.redirect(hubPath(copied.journeyId))
-    : h.redirect(dashboardPath())
+    : h.redirect(`${dashboardPath()}?actionUnavailable=copy`)
 }
 
 export const routes = [

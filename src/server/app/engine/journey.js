@@ -62,9 +62,7 @@ export const currentJourney = async (request, h) => {
   if (!loaded) {
     throw Boom.notFound()
   }
-  if (!(await isKnownJourney(request, journeyId))) {
-    await session.addKnownJourney(request, h, journeyId)
-  }
+  await session.addKnownJourney(request, h, journeyId)
   memoWrite(request, loaded)
   return structuredClone(loaded)
 }
@@ -94,8 +92,7 @@ export const listKnownJourneys = async (
   return records.list({ journeyIds, page, sort, referenceNumber })
 }
 
-export const isKnownJourney = async (request, journeyId) =>
-  (await session.knownJourneyIds(request)).includes(journeyId)
+const COPYABLE_STATUSES = Object.freeze([DRAFT, SUBMITTED, AMEND])
 
 const editableFromStatus = async (journey, journeyId, actor) => {
   if (journey.status === SUBMITTED) {
@@ -108,9 +105,6 @@ const editableFromStatus = async (journey, journeyId, actor) => {
 }
 
 export const amendJourney = async (request, _h, journeyId) => {
-  if (!(await isKnownJourney(request, journeyId))) {
-    return undefined
-  }
   const journey = await records.load({ journeyId })
   if (!journey) {
     return undefined
@@ -125,16 +119,14 @@ export const amendJourney = async (request, _h, journeyId) => {
 }
 
 export const cancelAmendJourney = async (request, _h, journeyId) => {
-  if (!(await isKnownJourney(request, journeyId))) {
-    return undefined
-  }
   const restored = await records.cancelAmend(journeyId)
   memoWrite(request, restored)
   return restored
 }
 
 export const copyJourney = async (request, h, journeyId, idempotencyKey) => {
-  if (!(await isKnownJourney(request, journeyId))) {
+  const source = await records.load({ journeyId })
+  if (!source || !COPYABLE_STATUSES.includes(source.status)) {
     return undefined
   }
   const copied = await records.copy(journeyId, idempotencyKey)
@@ -144,9 +136,6 @@ export const copyJourney = async (request, h, journeyId, idempotencyKey) => {
 }
 
 export const softDeleteJourney = async (request, _h, journeyId) => {
-  if (!(await isKnownJourney(request, journeyId))) {
-    return undefined
-  }
   const actor = buildActor(request.auth.credentials)
   return records.softDelete(journeyId, actor)
 }
