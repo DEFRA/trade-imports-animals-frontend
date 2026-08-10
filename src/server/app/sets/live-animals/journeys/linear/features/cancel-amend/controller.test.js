@@ -97,26 +97,36 @@ describe('cancel amendment routes', () => {
     )
   })
 
-  it('Should redirect non-AMEND journeys without attempting the transition', async () => {
+  it('Should report an unavailable cancel-amend for a DRAFT journey rather than look like a refresh', async () => {
     const draft = await store.create()
-    const submitted = await store.create()
-    await records.finalise(submitted.journeyId)
 
     expect(await get(journeyRequest(draft.journeyId), stubH())).toEqual({
-      redirect: '/'
+      redirect: '/?actionUnavailable=cancelAmend'
     })
-    expect(await post(journeyRequest(submitted.journeyId), stubH())).toEqual({
-      redirect: pagePath(submitted.journeyId, NOTIFICATION_VIEW_SLUG)
+    expect(await post(journeyRequest(draft.journeyId), stubH())).toEqual({
+      redirect: '/?actionUnavailable=cancelAmend'
     })
     expect((await records.load({ journeyId: draft.journeyId })).status).toBe(
       'draft'
     )
+  })
+
+  it('Should send a SUBMITTED journey back to its read-only view without attempting the transition', async () => {
+    const submitted = await store.create()
+    await records.finalise(submitted.journeyId)
+
+    expect(await get(journeyRequest(submitted.journeyId), stubH())).toEqual({
+      redirect: pagePath(submitted.journeyId, NOTIFICATION_VIEW_SLUG)
+    })
+    expect(await post(journeyRequest(submitted.journeyId), stubH())).toEqual({
+      redirect: pagePath(submitted.journeyId, NOTIFICATION_VIEW_SLUG)
+    })
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
     ).toBe(SUBMITTED)
   })
 
-  it('Should reject an unknown journey at the known-journey gate', async () => {
+  it('Should 404 a journey with no record — from the record load, not from a session predicate', async () => {
     await expect(
       post(
         journeyRequest('GBN-AG-26-UNKNOWN', {

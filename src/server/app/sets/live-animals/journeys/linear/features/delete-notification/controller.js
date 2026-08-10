@@ -16,6 +16,7 @@ const view = `${TEMPLATES}/features/delete-notification/template`
 const copy = copyFor({ en, cy })
 
 const deletePath = (journeyId) => pagePath(journeyId, 'delete')
+const unavailablePath = () => `${dashboardPath()}?actionUnavailable=delete`
 const deletable = (journey) =>
   journey.status === state.DRAFT ||
   journey.status === state.SUBMITTED ||
@@ -36,16 +37,16 @@ const render = (h, journey, recoverableError = false) =>
 
 const get = async (request, h) => {
   const { journey } = await state.get(request, h)
-  return deletable(journey) ? render(h, journey) : h.redirect(dashboardPath())
+  return deletable(journey) ? render(h, journey) : h.redirect(unavailablePath())
 }
 
 const post = async (request, h) => {
   const { journey } = await state.get(request, h)
   if (!deletable(journey)) {
-    return h.redirect(dashboardPath())
+    return h.redirect(unavailablePath())
   }
 
-  const { failure, value: deleted } = await kit.recoverableSave(
+  const { failure } = await kit.recoverableSave(
     () => softDeleteJourney(request, h, request.params.journeyId),
     () => render(h, journey, true).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
@@ -53,9 +54,7 @@ const post = async (request, h) => {
     return failure
   }
 
-  return deleted
-    ? h.redirect(`${dashboardPath()}?deleted=1`)
-    : h.redirect(dashboardPath())
+  return h.redirect(`${dashboardPath()}?deleted=1`)
 }
 
 export const routes = [

@@ -56,7 +56,7 @@ export const journeyRequest = (journeyId, overrides = {}) => ({
   ...overrides,
   params: { journeyId, ...overrides.params },
   state: {
-    [SESSION_COOKIES.knownJourneys]: [journeyId],
+    [SESSION_COOKIES.knownJourneys]: [],
     ...overrides.state
   }
 })
