@@ -56,6 +56,10 @@ notification projections through
 [`src/server/app/services/persistence/records/notification-mapper/`](../services/persistence/records/notification-mapper/).
 The projections are downstream views, not resume sources.
 
+Copy is the exception to writing canonical fulfilment first and then deriving the
+projection: the backend writes both aggregates inside one `Idempotency-Key`-guarded
+call, so the adapter makes a single request.
+
 ## Boot wiring
 
 [`src/server/app/routes.js`](../routes.js) passes the mode-selected records and
