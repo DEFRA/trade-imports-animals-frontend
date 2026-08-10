@@ -7,7 +7,7 @@ import {
 } from '../../../../../../lib/http-status.js'
 import {
   compose,
-  oneOf,
+  requiredOneOf,
   validate
 } from '../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../shared/kit.js'
@@ -27,7 +27,7 @@ const copy = copyFor({ en, cy })
 
 const fields = (options) =>
   compose(
-    oneOf(
+    requiredOneOf(
       'contactAddress',
       options.map((option) => option.id),
       copy.errors.contactRequired
@@ -91,7 +91,9 @@ const post = async (request, h) => {
     return render(h, journey, {}, options, errors).code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  const chosen = await addressBook.party(orgId, payload.contactAddress)
+  const chosen = payload.contactAddress
+    ? await addressBook.party(orgId, payload.contactAddress)
+    : undefined
   let committed
   const { failure } = await kit.recoverableSave(
     async () => {

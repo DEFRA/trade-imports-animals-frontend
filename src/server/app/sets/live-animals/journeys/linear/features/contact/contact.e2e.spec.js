@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
-import { CONTACT_OPTIONS } from '../../../../../../services/address-book/stub/index.js'
+import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import { copy } from './copy/copy.en.js'
 
 const CONTACT_ADDRESS_INPUT = 'input[name="contactAddress"]'
@@ -22,6 +22,7 @@ const startAtContact = async (page) => {
   await expect(page.getByRole('heading', { name: copy.legend })).toBeVisible()
 }
 
+/** Mirrors the contact controller's radio hint — only the fields it joins. */
 const addressSummary = (address) =>
   [
     address.addressLine1,
@@ -45,8 +46,12 @@ test.describe('contact feature', () => {
     const renderedValues = await group
       .locator(CONTACT_ADDRESS_INPUT)
       .evaluateAll((inputs) => inputs.map((input) => input.value))
-    expect(renderedValues).toEqual(CONTACT_OPTIONS.map(({ id }) => id))
-    for (const option of CONTACT_OPTIONS) {
+    // Stub-mode create-address tests may append in-process records; assert the
+    // canned book is present rather than an exact list equality.
+    expect(renderedValues).toEqual(
+      expect.arrayContaining(STUB_BOOK.map(({ id }) => id))
+    )
+    for (const option of STUB_BOOK) {
       await expect(
         page.getByRole('radio', { name: option.name, exact: true })
       ).toBeVisible()
@@ -83,11 +88,11 @@ test.describe('contact feature', () => {
     )
   })
 
-  test('copies a valid contact, redirects and persists the selection', async ({
+  test('selects a valid contact, redirects and persists the selection', async ({
     page
   }) => {
     const contactUrl = page.url()
-    const selected = CONTACT_OPTIONS[0]
+    const selected = STUB_BOOK[0]
 
     await page.getByRole('radio', { name: selected.name, exact: true }).check()
     await page.locator('form button[type="submit"]').first().click()

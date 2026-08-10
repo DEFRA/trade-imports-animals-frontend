@@ -1,5 +1,6 @@
 import { originLabel, countryCodeOf } from '../countries/index.js'
 import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
+import { BackendRequestError } from '../persistence/records/errors.js'
 
 const ORGANISATION_ID_HEADER = 'Trade-Imports-Organisation-Id'
 
@@ -37,11 +38,7 @@ const headers = (orgId) => ({
   [ORGANISATION_ID_HEADER]: orgId
 })
 
-const failed = (what, response) =>
-  Object.assign(new Error(`Failed to ${what}`), {
-    status: response.status,
-    statusText: response.statusText
-  })
+const failed = (what, response) => new BackendRequestError(what, response)
 
 /** Wire shape to the shape the journey renders. The API is the system of
  * record and uses its own names (`postcode`, `countryCode`, `phone`, `email`);

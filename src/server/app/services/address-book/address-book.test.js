@@ -335,6 +335,34 @@ describe('#addParty', () => {
       phone: '01632 960111'
     })
   })
+
+  test('Should mark a createAddress 500 as recoverable so the form can re-render', async () => {
+    realMode()
+    stubFetch(async () => ({
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error'
+    }))
+
+    // Import after resetModules so the Symbol matches the client's BackendRequestError.
+    const { addParty } = await addressBook()
+    const { isRecoverableBackendError } =
+      await import('../persistence/records/errors.js')
+
+    let surfaced
+    try {
+      await addParty(ORG, { name: 'Outage Trader', address: {} })
+    } catch (error) {
+      surfaced = error
+    }
+
+    expect(surfaced).toMatchObject({
+      name: 'BackendRequestError',
+      status: 500,
+      statusText: 'Internal Server Error'
+    })
+    expect(isRecoverableBackendError(surfaced)).toBe(true)
+  })
 })
 
 describe('in stub mode', () => {

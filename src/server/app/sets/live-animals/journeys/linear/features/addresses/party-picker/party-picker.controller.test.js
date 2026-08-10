@@ -16,7 +16,7 @@ import { PARTIES } from '../parties.js'
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
 const NORDVIK_ID = 'nordvik-seafood'
 const ALPINE_DAIRY_ID = 'alpine-dairy'
-const COPENHAGEN_ID = 'copenhagen-provisions'
+const DANISH_MEAT_ID = 'danish-meat-export-aps'
 const SELECT_A_CONSIGNOR_ERROR = 'Select a consignor from the list'
 
 const handlerFor = (method, slug) =>
@@ -44,13 +44,13 @@ describe('GET /consignors/select', () => {
     const picker = pickerFrom(await driveHandler(getConsignor))
 
     expect(picker.page).toBe(1)
-    expect(picker.resultsCaption).toBe('Showing 5 of 12 addresses')
+    expect(picker.resultsCaption).toBe('Showing 5 of 13 addresses')
     expect(idsOf(picker)).toEqual([
       'astra-rosales',
-      'eurostore-services',
-      'laiterie-du-nord',
-      NORDVIK_ID,
-      'pyrenean-livestock'
+      'tech-imports-ltd',
+      'origin-farm',
+      'british-livestock-ltd',
+      'import-co-uk'
     ])
     expect(picker.rows[0]).toMatchObject({
       name: 'Astra Rosales',
@@ -66,32 +66,32 @@ describe('GET /consignors/select', () => {
     const picker = pickerFrom(await driveHandler(getConsignor))
     const row = picker.rows[3]
 
-    expect(row.addressText).toBe('Havnegata 8, Ålesund, 6002')
+    expect(row.addressText).toBe('10 Market Street, Leeds, LS1 6HB')
     expect(row.detailLines).toEqual([
-      'Nordvik Seafood AS',
-      'Havnegata 8',
-      'Ålesund',
-      '6002',
-      'Norway',
+      'British Livestock Ltd',
+      '10 Market Street',
+      'Leeds',
+      'LS1 6HB',
+      'United Kingdom',
       '01632 960000',
-      'nordvik-seafood@example.com'
+      'british-livestock-ltd@example.com'
     ])
   })
 
   it('Should render a later page, carrying the search and the selection into every pagination link', async () => {
     const result = await driveHandler(getConsignor, {
-      query: { page: '2', selected: COPENHAGEN_ID }
+      query: { page: '2', selected: DANISH_MEAT_ID }
     })
     const picker = pickerFrom(result)
 
     expect(picker.page).toBe(2)
-    expect(idsOf(picker)).toContain(ALPINE_DAIRY_ID)
-    expect(picker.selected.name).toBe('Copenhagen Provisions ApS')
+    expect(idsOf(picker)).toContain(NORDVIK_ID)
+    expect(picker.selected.name).toBe('Danish Meat Export ApS')
     expect(picker.pagination.next.href).toBe(
-      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=3&selected=${COPENHAGEN_ID}`
+      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=3&selected=${DANISH_MEAT_ID}`
     )
     expect(picker.pagination.items[0].href).toBe(
-      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=1&selected=${COPENHAGEN_ID}`
+      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=1&selected=${DANISH_MEAT_ID}`
     )
   })
 
@@ -100,8 +100,8 @@ describe('GET /consignors/select', () => {
       await driveHandler(getConsignor, { query: { q: 'denmark' } })
     )
 
-    expect(picker.resultsCaption).toBe('Showing 1 of 1 addresses')
-    expect(idsOf(picker)).toEqual([COPENHAGEN_ID])
+    expect(picker.resultsCaption).toBe('Showing 2 of 2 addresses')
+    expect(idsOf(picker)).toEqual([DANISH_MEAT_ID, 'jutland-swine-aps'])
     expect(picker.pagination).toBeNull()
   })
 
@@ -109,7 +109,7 @@ describe('GET /consignors/select', () => {
     const picker = pickerFrom(
       await driveHandler(getConsignor, {
         seed: { consignor: { addressId: ALPINE_DAIRY_ID } },
-        query: { page: '2' }
+        query: { page: '3' }
       })
     )
 
@@ -131,7 +131,7 @@ describe('POST /consignors/select', () => {
 
     expect(result.response.statusCode).toBe(200)
     expect(picker.page).toBe(1)
-    expect(idsOf(picker)).toEqual([COPENHAGEN_ID])
+    expect(idsOf(picker)).toEqual([DANISH_MEAT_ID])
     expect(result.after.consignor).toBeUndefined()
   })
 
@@ -231,10 +231,10 @@ describe('The five spokes share the one picker', () => {
     for (const party of PARTIES) {
       store.clear()
       const result = await driveHandler(handlerFor('POST', party.slug), {
-        payload: { action: 'save', party: COPENHAGEN_ID }
+        payload: { action: 'save', party: DANISH_MEAT_ID }
       })
 
-      expect(result.after[party.id]).toEqual({ addressId: COPENHAGEN_ID })
+      expect(result.after[party.id]).toEqual({ addressId: DANISH_MEAT_ID })
       expect(result.response).toEqual({
         redirect: pagePath(result.journeyId, 'addresses')
       })

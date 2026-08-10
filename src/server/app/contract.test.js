@@ -155,7 +155,7 @@ const cases = [
     id: 'consignment-contact-select',
     collects: contactSelect.meta.collects,
     handler: postHandlerOf(contactSelect),
-    payload: { contactAddress: 'copenhagen-provisions' }
+    payload: { contactAddress: 'animal-and-plant-health-agency' }
   },
   {
     id: 'declaration',
@@ -304,10 +304,14 @@ describe('controller <-> model commit contract', () => {
       },
       {
         slug: 'consignees/select',
-        id: 'kilkenny-agri',
+        id: 'irish-beef-traders-ltd',
         commits: 'consignee'
       },
-      { slug: 'importers/select', id: 'baltic-freight', commits: 'importer' }
+      {
+        slug: 'importers/select',
+        id: 'iberian-swine-sa',
+        commits: 'importer'
+      }
     ]
     const committed = []
     for (const { slug, id, commits } of spokes) {

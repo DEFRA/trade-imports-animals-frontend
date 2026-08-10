@@ -241,11 +241,11 @@ test.describe('party picker details and pagination', () => {
   }) => {
     const showingFive = /Showing 5 of \d+ addresses/
     await expect(page.getByText(showingFive)).toBeVisible()
-    const danishRow = page.getByRole('row', {
-      name: /Danish Meat Export ApS/
+    const detailedRow = page.getByRole('row', {
+      name: /Tech Imports Ltd/
     })
-    await danishRow.getByText(copy.picker.viewDetails).click()
-    await expect(danishRow).toContainText('Copenhagen')
+    await detailedRow.getByText(copy.picker.viewDetails).click()
+    await expect(detailedRow).toContainText('London')
   })
 
   test('picker carries a later-page selection and keeps it selected off-page', async ({

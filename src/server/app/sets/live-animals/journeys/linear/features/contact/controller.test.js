@@ -102,4 +102,13 @@ describe('POST contact — invalid payload', () => {
     expect(result.view.context.errors.contactAddress).toBeDefined()
     expect(result.after).toEqual(result.before)
   })
+
+  it('Should answer 400 and re-render when no contact is selected, committing nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: {}
+    })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.contactAddress).toBeDefined()
+    expect(result.after).toEqual(result.before)
+  })
 })

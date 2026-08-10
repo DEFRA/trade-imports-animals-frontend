@@ -1,25 +1,25 @@
 import { fromRow } from './from-row.js'
 
-/** A small untyped book for `LIVE_ANIMALS_MODE=stub` — local development
- * without the address book running.
+/** The address book for `LIVE_ANIMALS_MODE=stub` — local development and the
+ * frontend Playwright suite without the address-book service running.
  *
- * EUDPA-294 deleted the placeholder operators the journey used to seed itself
- * from (six role-keyed lists of 40). This is not those: nothing here is offered
- * in real mode, and it exists only so the pickers have something to page
- * through offline. Addresses have no type (D3), so there is one book, not one
- * per role. Keep it long enough to paginate and no longer — tests build their
- * own fixtures rather than leaning on these records. */
+ * Mirrors `trade-imports-animals-tests/seeds/mongodb/30-seed-address-book.js`
+ * record-for-record and in the same page order (five per page): rows 1–5 are
+ * the happy-path parties, then contact plus the Danish/pagination records.
+ * Country is the display name `client.js` would resolve from the seed's
+ * `countryCode` (or the literal "United Kingdom" the seed stores as-is). */
 export const STUB_BOOK = [
   'astra-rosales|Astra Rosales|43 East Hague Extension|Bern|30055|Switzerland',
-  'eurostore-services|EuroStore Services|Rue de la Loi 200|Brussels|1040|Belgium',
+  'tech-imports-ltd|Tech Imports Ltd|18 Dockside Road|London|E14 9GE|United Kingdom',
+  'origin-farm|Origin Farm|1 Farm Lane|Ennis|V95 X7P2|Ireland',
+  'british-livestock-ltd|British Livestock Ltd|10 Market Street|Leeds|LS1 6HB|United Kingdom',
+  'import-co-uk|Import Co UK|20 Trade Road|London|EC1A 1BB|United Kingdom',
+  'animal-and-plant-health-agency|Animal and Plant Health Agency|Woodham Lane|Addlestone|KT15 3NB|United Kingdom',
+  'danish-meat-export-aps|Danish Meat Export ApS|Havnegade 21|Copenhagen|1058|Denmark',
+  'jutland-swine-aps|Jutland Swine ApS|Sondergade 4|Aarhus|8000|Denmark',
   'laiterie-du-nord|Laiterie du Nord SARL|12 Rue de la Gare|Lille|59000|France',
-  'nordvik-seafood|Nordvik Seafood AS|Havnegata 8|Ålesund|6002|Norway',
-  'pyrenean-livestock|Pyrenean Livestock SL|Calle Mayor 44|Huesca|22001|Spain',
+  'nordvik-seafood|Nordvik Seafood AS|Havnegata 8|Alesund|6002|Norway',
   'alpine-dairy|Alpine Dairy GmbH|Bahnhofstrasse 17|Innsbruck|6020|Austria',
-  'de-vries-veehandel|De Vries Veehandel BV|Marktplein 3|Utrecht|3511|Netherlands',
-  'kilkenny-agri|Kilkenny Agri Supplies|Castle Road 9|Kilkenny|R95|Ireland',
-  'baltic-freight|Baltic Freight OU|Sadama 12|Tallinn|10111|Estonia',
-  'lombardia-carni|Lombardia Carni SpA|Via Roma 88|Brescia|25121|Italy',
-  'copenhagen-provisions|Copenhagen Provisions ApS|Havnegade 21|Copenhagen|1058|Denmark',
-  'warsaw-agrimport|Warsaw AgriImport Sp z oo|Ulica Polna 5|Warsaw|00-625|Poland'
+  'irish-beef-traders-ltd|Irish Beef Traders Ltd|Castle Road 9|Kilkenny|R95 F2X8|Ireland',
+  'iberian-swine-sa|Iberian Swine SA|Calle Mayor 44|Huesca|22001|Spain'
 ].map(fromRow)
