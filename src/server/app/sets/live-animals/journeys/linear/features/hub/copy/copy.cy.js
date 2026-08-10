@@ -3,10 +3,10 @@ export const copy = {
   title: 'Trosolwg',
   commodityTotals: {
     heading: 'Eich nwyddau',
-    animalsCardTitle: 'Anifeiliaid',
-    animalsRow: 'Cyfanswm nifer yr anifeiliaid yn y llwyth hwn',
-    packagesCardTitle: 'Pecynnau/blychau',
-    packagesRow: 'Cyfanswm nifer y pecynnau yn y llwyth hwn'
+    animalsLabel: 'Anifeiliaid',
+    animalsCaption: 'Cyfanswm nifer yr anifeiliaid yn y llwyth hwn',
+    packagesLabel: 'Pecynnau/blychau',
+    packagesCaption: 'Cyfanswm nifer y pecynnau yn y llwyth hwn'
   },
   returnToDashboard: 'Dychwelyd i’r dangosfwrdd',
   statuses: {
