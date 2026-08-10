@@ -56,13 +56,15 @@ const requestsTo = (method, url) =>
     .filter((request) => request.method === method && request.url === url)
 
 describe('one load per request — real records adapter GET count', () => {
+  const notificationRefUrl = `${notificationsUrl}/${ref}`
+
   beforeEach(() => {
     fetchMocker.resetMocks()
     fetchMocker.mockResponse((req) => {
       if (req.method === 'GET' && req.url === fulfilmentUrl) {
         return fulfilmentBody
       }
-      if (req.method === 'PUT' && req.url === fulfilmentUrl) {
+      if (req.method === 'PUT' && req.url === notificationRefUrl) {
         return req
           .clone()
           .text()
@@ -70,7 +72,7 @@ describe('one load per request — real records adapter GET count', () => {
             JSON.stringify({
               ...JSON.parse(body),
               status: 'DRAFT',
-              createdAt: '2026-07-23T09:00:00',
+              created: '2026-07-23T09:00:00',
               submittedAt: null
             })
           )
@@ -94,7 +96,7 @@ describe('one load per request — real records adapter GET count', () => {
     configureReadyForCheckYourAnswers(() => false)
   })
 
-  test('Should issue exactly one GET for a read-then-write request, plus canonical PUT and notification POST', async () => {
+  test('Should issue exactly one GET for a read-then-write request, plus one PUT to the merged notifications endpoint', async () => {
     const request = buildRequest()
 
     const before = await get(request, recordingH())
@@ -102,8 +104,9 @@ describe('one load per request — real records adapter GET count', () => {
 
     expect(before.fulfilment).toEqual({})
     expect(getsFor(fulfilmentUrl)).toHaveLength(1)
-    expect(requestsTo('PUT', fulfilmentUrl)).toHaveLength(1)
-    expect(requestsTo('POST', notificationsUrl)).toHaveLength(1)
+    expect(requestsTo('PUT', notificationRefUrl)).toHaveLength(1)
+    // No more separate POST /notifications projection — merged into the PUT above.
+    expect(requestsTo('POST', notificationsUrl)).toHaveLength(0)
   })
 
   test('Should serve a post-write read from the request without a stale value or extra GET', async () => {

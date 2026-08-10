@@ -49,11 +49,6 @@ const canonical = ({
   submittedAt
 })
 
-const notification = ({ referenceNumber = journeyId } = {}) => ({
-  referenceNumber,
-  status: 'DRAFT'
-})
-
 const jsonOf = (request) => request.clone().json()
 
 describe('real records adapter — canonical fulfilment boundary', () => {
@@ -71,24 +66,16 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     )
   })
 
-  it('Should mint a ref via POST /notifications, then bootstrap the fulfilment at that ref', async () => {
-    fetchMocker.mockResponses(
-      [JSON.stringify(notification()), { status: 200 }],
-      [JSON.stringify(canonical()), { status: 200 }]
-    )
+  it('Should create the merged aggregate via a single POST /notifications carrying an empty fulfilments payload', async () => {
+    fetchMocker.mockResponse(JSON.stringify(canonical()), { status: 200 })
 
     const created = await records.create()
 
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
-      { method: 'POST', url: notificationsUrl },
-      { method: 'PUT', url: `${notificationFulfilmentsUrl}/${journeyId}` }
+      { method: 'POST', url: notificationsUrl }
     ])
-    expect(await requests[0].clone().text()).toBe('{}')
-    expect(await jsonOf(requests[1])).toEqual({
-      id: journeyId,
-      fulfilments: []
-    })
+    expect(await jsonOf(requests[0])).toEqual({ fulfilments: [] })
     expect(created).toEqual({
       journeyId,
       status: DRAFT,
@@ -165,7 +152,7 @@ describe('real records adapter — fulfilment writes', () => {
     fetchMocker.resetMocks()
   })
 
-  it('Should PUT canonical then POST the notification projection with ref-in-body', async () => {
+  it('Should PUT the merged aggregate in a single call carrying both notification-shape fields and the fulfilments payload', async () => {
     const snapshot = assembleFulfilments({
       countryOfOrigin: 'FR',
       commodityLines: [
@@ -178,9 +165,9 @@ describe('real records adapter — fulfilment writes', () => {
       ]
     })
     const encoded = encodeEvaluatorFulfilments(snapshot)
-    fetchMocker.mockResponses(
-      [JSON.stringify(canonical({ fulfilments: encoded })), { status: 200 }],
-      ['', { status: 200 }]
+    fetchMocker.mockResponse(
+      JSON.stringify(canonical({ fulfilments: encoded })),
+      { status: 200 }
     )
 
     const saved = await records.replaceFulfilment(journeyId, snapshot, {
@@ -189,19 +176,15 @@ describe('real records adapter — fulfilment writes', () => {
 
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
-      { method: 'PUT', url: `${notificationFulfilmentsUrl}/${journeyId}` },
-      { method: 'POST', url: notificationsUrl }
+      { method: 'PUT', url: `${notificationsUrl}/${journeyId}` }
     ])
     expect(await jsonOf(requests[0])).toEqual({
-      id: journeyId,
+      referenceNumber: journeyId,
+      ...fulfilmentToNotification(snapshot, journeyId),
       fulfilments: encoded
     })
-    expect(await jsonOf(requests[1])).toEqual({
-      referenceNumber: journeyId,
-      ...fulfilmentToNotification(snapshot, journeyId)
-    })
     expect(
-      (await jsonOf(requests[1])).commodity.commodityComplement[0].species[0]
+      (await jsonOf(requests[0])).commodity.commodityComplement[0].species[0]
         .noOfAnimals
     ).toBe('5')
     expect(saved.fulfilment).toEqual(snapshot)
@@ -222,67 +205,6 @@ describe('real records adapter — fulfilment writes', () => {
     ).rejects.toThrow(`is ${label} — writes blocked`)
     expect(fetchMocker.requests()).toEqual([])
   })
-
-  it('Should retry a failed projection with the identical idempotent POST', async () => {
-    const snapshot = { [countryOfOrigin.id]: 'FR' }
-    const encoded = encodeEvaluatorFulfilments(snapshot)
-    fetchMocker.mockResponses(
-      [JSON.stringify(canonical({ fulfilments: encoded })), { status: 200 }],
-      ['Unavailable', { status: 503 }],
-      ['', { status: 200 }]
-    )
-
-    await records.replaceFulfilment(journeyId, snapshot, {
-      known: { journeyId, status: DRAFT }
-    })
-
-    const requests = fetchMocker.requests()
-    expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
-      { method: 'PUT', url: `${notificationFulfilmentsUrl}/${journeyId}` },
-      { method: 'POST', url: notificationsUrl },
-      { method: 'POST', url: notificationsUrl }
-    ])
-    expect(await jsonOf(requests[1])).toEqual(await jsonOf(requests[2]))
-  })
-
-  it('Should surface persistent projection failure after canonical success', async () => {
-    const snapshot = { [countryOfOrigin.id]: 'FR' }
-    const encoded = encodeEvaluatorFulfilments(snapshot)
-    fetchMocker.mockResponses(
-      [JSON.stringify(canonical({ fulfilments: encoded })), { status: 200 }],
-      ['Unavailable', { status: 503 }],
-      ['Unavailable', { status: 503 }]
-    )
-
-    let surfaced
-    try {
-      await records.replaceFulfilment(journeyId, snapshot, {
-        known: { journeyId, status: DRAFT }
-      })
-    } catch (error) {
-      surfaced = error
-    }
-
-    expect(surfaced).toMatchObject({
-      canonicalSaved: true,
-      journeyId,
-      failedProjections: ['current notification']
-    })
-    expect(isRecoverableBackendError(surfaced)).toBe(true)
-    expect(surfaced.message).toMatch(
-      /Canonical fulfilment .* saved, but projection writes failed/
-    )
-    const requests = fetchMocker.requests()
-    expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
-      { method: 'PUT', url: `${notificationFulfilmentsUrl}/${journeyId}` },
-      { method: 'POST', url: notificationsUrl },
-      { method: 'POST', url: notificationsUrl }
-    ])
-    expect(await jsonOf(requests[0])).toEqual({
-      id: journeyId,
-      fulfilments: encoded
-    })
-  })
 })
 
 describe('real records adapter — lifecycle and list', () => {
@@ -290,9 +212,8 @@ describe('real records adapter — lifecycle and list', () => {
     fetchMocker.resetMocks()
   })
 
-  it('Should dual-post every lifecycle transition to fulfilment and notification', async () => {
+  it('Should single-post every lifecycle transition to the merged notifications endpoint', async () => {
     fetchMocker.mockResponses(
-      // submit: fulfilment + notification
       [
         JSON.stringify(
           canonical({
@@ -302,11 +223,7 @@ describe('real records adapter — lifecycle and list', () => {
         ),
         { status: 200 }
       ],
-      [JSON.stringify(notification()), { status: 200 }],
-      // amend: fulfilment + notification
       [JSON.stringify(canonical({ status: 'AMEND' })), { status: 200 }],
-      [JSON.stringify(notification()), { status: 200 }],
-      // cancel-amend: fulfilment + notification
       [
         JSON.stringify(
           canonical({
@@ -315,8 +232,7 @@ describe('real records adapter — lifecycle and list', () => {
           })
         ),
         { status: 200 }
-      ],
-      [JSON.stringify(notification()), { status: 200 }]
+      ]
     )
 
     const submitted = await records.finalise(journeyId, actor)
@@ -325,28 +241,13 @@ describe('real records adapter — lifecycle and list', () => {
 
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
-      {
-        method: 'POST',
-        url: `${notificationFulfilmentsUrl}/${journeyId}/submit`
-      },
       { method: 'POST', url: `${notificationsUrl}/${journeyId}/submit` },
-      {
-        method: 'POST',
-        url: `${notificationFulfilmentsUrl}/${journeyId}/amend`
-      },
       { method: 'POST', url: `${notificationsUrl}/${journeyId}/amend` },
-      {
-        method: 'POST',
-        url: `${notificationFulfilmentsUrl}/${journeyId}/cancel-amend`
-      },
       { method: 'POST', url: `${notificationsUrl}/${journeyId}/cancel-amend` }
     ])
     expect(await jsonOf(requests[0])).toEqual(actor)
     expect(await jsonOf(requests[1])).toEqual(actor)
-    expect(await jsonOf(requests[2])).toEqual(actor)
-    expect(await jsonOf(requests[3])).toEqual(actor)
-    expect(await requests[4].clone().text()).toBe('')
-    expect(await requests[5].clone().text()).toBe('')
+    expect(await requests[2].clone().text()).toBe('')
     expect(submitted.status).toBe(SUBMITTED)
     expect(submitted.submittedAt).toBe(submittedTimestamp)
     expect(amended.status).toBe(AMEND)
@@ -355,7 +256,7 @@ describe('real records adapter — lifecycle and list', () => {
     expect(restored.submittedAt).toBe(submittedTimestamp)
   })
 
-  it('Should copy with an idempotency header, then marshal the new draft', async () => {
+  it('Should copy via the merged endpoint without an idempotency header (copy dedup dropped pending EUDPA-314)', async () => {
     const copiedJourneyId = 'GBN-AG-26-COPIED'
     fetchMocker.mockResponse(
       JSON.stringify(canonical({ id: copiedJourneyId, status: 'DRAFT' })),
@@ -365,34 +266,28 @@ describe('real records adapter — lifecycle and list', () => {
     const copied = await records.copy(journeyId, 'copy-key-123')
 
     const [request] = fetchMocker.requests()
-    expect(request.url).toBe(`${notificationFulfilmentsUrl}/${journeyId}/copy`)
+    expect(request.url).toBe(`${notificationsUrl}/${journeyId}/copy`)
     expect(request.method).toBe('POST')
-    expect(request.headers.get('Idempotency-Key')).toBe('copy-key-123')
+    expect(request.headers.has('Idempotency-Key')).toBe(false)
     expect(copied).toMatchObject({
       journeyId: copiedJourneyId,
       status: DRAFT
     })
   })
 
-  it('Should dual-post soft-delete to fulfilment and notification, no body either side', async () => {
-    fetchMocker.mockResponses(
-      [JSON.stringify(canonical({ status: 'DELETED' })), { status: 200 }],
-      [JSON.stringify(notification()), { status: 200 }]
-    )
+  it('Should single-post soft-delete to the merged notifications endpoint with no body', async () => {
+    fetchMocker.mockResponse(JSON.stringify(canonical({ status: 'DELETED' })), {
+      status: 200
+    })
 
     const deleted = await records.softDelete(journeyId, actor)
 
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
-      {
-        method: 'POST',
-        url: `${notificationFulfilmentsUrl}/${journeyId}/soft-delete`
-      },
       { method: 'POST', url: `${notificationsUrl}/${journeyId}/soft-delete` }
     ])
     expect(requests[0].headers.has('Idempotency-Key')).toBe(false)
     expect(await requests[0].clone().text()).toBe('')
-    expect(await requests[1].clone().text()).toBe('')
     expect(deleted.status).toBe(DELETED)
   })
 

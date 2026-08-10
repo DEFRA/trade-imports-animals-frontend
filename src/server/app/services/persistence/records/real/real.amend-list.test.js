@@ -52,7 +52,7 @@ describe('real records adapter — amend', () => {
     const amended = await records.amend('GBN-1')
 
     const [request] = fetchMocker.requests()
-    expect(request.url).toBe(`${notificationFulfilmentsUrl}/GBN-1/amend`)
+    expect(request.url).toBe(`${notificationsUrl}/GBN-1/amend`)
     expect(request.method).toBe('POST')
     expect(amended.status).toBe(AMEND)
     expect(amended.submittedAt).toBeNull()
@@ -63,7 +63,7 @@ describe('real records adapter — amend', () => {
     fetchMocker.mockResponse('Conflict', { status: 409 })
 
     await expect(records.amend('GBN-1')).rejects.toThrow(
-      /Failed to amend notification-fulfilments: 409/
+      /Failed to amend notification: 409/
     )
   })
 })

@@ -1,46 +1,34 @@
-import { notificationFulfilmentsUrl, notificationsUrl } from '../config.js'
+import { notificationsUrl } from '../config.js'
 import { failed } from '../http/failed.js'
 import { headers } from '../http/headers.js'
-import { put } from '../http/put.js'
 import { marshal } from '../marshal/document.js'
 
-// Notification mints the reference number (main's saveOriginOfImport), then the
-// notification-fulfilments aggregate is bootstrapped at that same ref via
-// PUT /notification-fulfilments/{ref}. See eudpa-288-persistence-decision
-// memory + follow-up ticket for the rationale.
+// Under the merged aggregate (EUDPA-323), POST /notifications creates the merged
+// notification + fulfilments record in one call: the backend mints the reference
+// number and returns the created aggregate including an empty fulfilments payload.
 export const create = async () => {
-  const notificationResponse = await fetch(notificationsUrl, {
+  const response = await fetch(notificationsUrl, {
     method: 'POST',
     headers: headers(),
-    body: JSON.stringify({})
+    body: JSON.stringify({ fulfilments: [] })
   })
-  if (!notificationResponse.ok) {
-    throw failed('create notification', notificationResponse)
+  if (!response.ok) {
+    throw failed('create notification', response)
   }
-  const notification = await notificationResponse.json()
-  const journeyId = notification.referenceNumber
-
-  const response = await put(
-    `${notificationFulfilmentsUrl}/${journeyId}`,
-    { id: journeyId, fulfilments: [] },
-    'create notification-fulfilments'
-  )
   return marshal(await response.json())
 }
 
-export const copy = async (journeyId, idempotencyKey) => {
-  const response = await fetch(
-    `${notificationFulfilmentsUrl}/${journeyId}/copy`,
-    {
-      method: 'POST',
-      headers: {
-        ...headers(),
-        'Idempotency-Key': idempotencyKey
-      }
-    }
-  )
+// Copy: single POST to the merged endpoint. Copy dedup dropped pending EUDPA-314;
+// the idempotencyKey parameter is retained on the signature so upstream callers
+// (view-model, controller) don't have to change simultaneously, but it is no
+// longer forwarded as a header.
+export const copy = async (journeyId, _idempotencyKey) => {
+  const response = await fetch(`${notificationsUrl}/${journeyId}/copy`, {
+    method: 'POST',
+    headers: headers()
+  })
   if (!response.ok) {
-    throw failed('copy notification-fulfilments', response)
+    throw failed('copy notification', response)
   }
   return marshal(await response.json())
 }
