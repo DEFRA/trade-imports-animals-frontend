@@ -100,7 +100,8 @@ describe('copy notification action', () => {
         payload: {
           idempotencyKey: 'retry-this-key',
           copyOrigin: 'dashboard'
-        }
+        },
+        state: { [SESSION_COOKIES.knownJourneys]: [source.journeyId] }
       }),
       stubH()
     )
@@ -117,7 +118,7 @@ describe('copy notification action', () => {
     ).toBe('retry-this-key')
   })
 
-  it('Should redirect an unknown source to the dashboard without copying', async () => {
+  it('Should report an unavailable copy when the source does not exist', async () => {
     const response = await copyPost(
       journeyRequest('GBN-AG-26-UNKNOWN', {
         payload: {
@@ -129,6 +130,23 @@ describe('copy notification action', () => {
       stubH()
     )
 
-    expect(response.redirect).toBe('/')
+    expect(response.redirect).toBe('/?actionUnavailable=copy')
+  })
+
+  it('Should report an unavailable copy for a deleted source rather than an unwinnable retry', async () => {
+    const source = await records.create()
+    await records.softDelete(source.journeyId)
+
+    const response = await copyPost(
+      journeyRequest(source.journeyId, {
+        payload: {
+          idempotencyKey: 'unused-key',
+          copyOrigin: 'dashboard'
+        }
+      }),
+      stubH()
+    )
+
+    expect(response.redirect).toBe('/?actionUnavailable=copy')
   })
 })

@@ -37,6 +37,21 @@ export const copy = {
       text: 'Delete',
       successTitle: 'Notification deleted',
       successBody: 'The notification has been deleted.'
+    },
+    unavailable: {
+      body: 'It may have been deleted or changed since the list was loaded. Refresh the list and try again.',
+      amend: {
+        title: 'You cannot amend this notification'
+      },
+      copy: {
+        title: 'You cannot copy this notification'
+      },
+      delete: {
+        title: 'You cannot delete this notification'
+      },
+      cancelAmend: {
+        title: 'You cannot cancel this amendment'
+      }
     }
   },
   saveActions: {

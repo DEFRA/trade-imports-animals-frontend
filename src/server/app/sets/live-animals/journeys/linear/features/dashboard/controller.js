@@ -34,6 +34,11 @@ const view = `${TEMPLATES}/features/dashboard/template`
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
+const UNAVAILABLE_ACTIONS = new Set(['amend', 'copy', 'delete', 'cancelAmend'])
+
+const parseActionUnavailable = (value) =>
+  UNAVAILABLE_ACTIONS.has(value) ? value : undefined
+
 const parseReferenceNumber = (value) => {
   if (typeof value !== 'string') {
     return undefined
@@ -97,17 +102,18 @@ export const renderDashboard = async (
     }),
     recoverableError,
     deletionSucceeded: request.query?.deleted === '1',
-    copySucceeded: request.query?.copied === '1'
+    copySucceeded: request.query?.copied === '1',
+    actionUnavailable: parseActionUnavailable(request.query?.actionUnavailable)
   })
 }
 
 const listGet = async (request, h) => renderDashboard(request, h)
 
-const backToDashboard = (h) => h.redirect(dashboardPath())
-
 const amendPost = async (request, h) => {
   const journey = await amendJourney(request, h, request.params.journeyId)
-  return journey ? h.redirect(hubPath(journey.journeyId)) : backToDashboard(h)
+  return journey
+    ? h.redirect(hubPath(journey.journeyId))
+    : h.redirect(`${dashboardPath()}?actionUnavailable=amend`)
 }
 
 export const routes = [

@@ -24,6 +24,14 @@
     }) }}
   {% endif %}
 
+  {% if actionUnavailable %}
+    {{ govukNotificationBanner({
+      titleText: sharedCopy.notificationActions.unavailable[actionUnavailable].title,
+      text: sharedCopy.notificationActions.unavailable.body,
+      role: "alert"
+    }) }}
+  {% endif %}
+
   <h1 class="govuk-heading-xl">{{ copy.title }}</h1>
   <p class="govuk-body">{{ copy.body }}</p>
 

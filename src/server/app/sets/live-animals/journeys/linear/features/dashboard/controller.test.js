@@ -4,8 +4,7 @@ import {
   configureRecords,
   records,
   AMEND,
-  DELETED,
-  SUBMITTED
+  DELETED
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
@@ -394,7 +393,7 @@ describe('dashboard row actions', () => {
     ).toBe(AMEND)
   })
 
-  it('Should bounce an amend for a journey the session does not know and leave it frozen', async () => {
+  it('Should amend a journey the session never opened — the returning-user case', async () => {
     const submitted = await startSubmitted()
     const h = buildH()
 
@@ -403,10 +402,48 @@ describe('dashboard row actions', () => {
       h
     )
 
-    expect(h.captured.redirect).toBe('/')
+    expect(h.captured.redirect).toBe(hubPath(submitted.journeyId))
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
-    ).toBe(SUBMITTED)
+    ).toBe(AMEND)
+  })
+
+  it('Should report an unavailable amend for a deleted record rather than look like a refresh', async () => {
+    const submitted = await startSubmitted()
+    await records.softDelete(submitted.journeyId)
+    const h = buildH()
+
+    await amendPost(buildRequest({ journeyId: submitted.journeyId }), h)
+
+    expect(h.captured.redirect).toBe('/?actionUnavailable=amend')
+    expect(
+      (await records.load({ journeyId: submitted.journeyId })).status
+    ).toBe(DELETED)
+  })
+
+  it('Should report an unavailable amend for a record that does not exist, never a 404', async () => {
+    const h = buildH()
+
+    await amendPost(buildRequest({ journeyId: 'GBN-AG-26-GONE01' }), h)
+
+    expect(h.captured.redirect).toBe('/?actionUnavailable=amend')
+  })
+
+  it('Should expose the unavailable-action flag only for an action the dashboard offers', async () => {
+    const amend = buildH()
+    const crafted = buildH()
+
+    await listGet(
+      buildRequest({ query: { actionUnavailable: 'amend' } }),
+      amend
+    )
+    await listGet(
+      buildRequest({ query: { actionUnavailable: 'notificationActions' } }),
+      crafted
+    )
+
+    expect(amend.captured.view.context.actionUnavailable).toBe('amend')
+    expect(crafted.captured.view.context.actionUnavailable).toBeUndefined()
   })
 
   it('Should mint a different copy key for every source row on a render', async () => {
