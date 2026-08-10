@@ -5,7 +5,12 @@ import * as addressBook from '../../../../../../../services/address-book/index.j
  * which pre-checked the wrong row whenever two addresses shared a name. */
 export const committedId = (answers, party) => answers[party.id]?.addressId
 
-// A row ticked on THIS page wins; otherwise the hidden field carries the
-// selection made on an earlier page or search (no-JS safe across pagination).
-export const chosenPartyFor = async (orgId, selectedId) =>
-  selectedId ? addressBook.party(orgId, selectedId) : undefined
+/** Resolve a picker selection the same way resolveOne does: a missing or
+ * soft-deleted record is treated as no selection (UCD — never entered). */
+export const chosenPartyFor = async (orgId, selectedId) => {
+  if (!selectedId) {
+    return undefined
+  }
+  const record = await addressBook.party(orgId, selectedId)
+  return record && !record.deleted ? record : undefined
+}

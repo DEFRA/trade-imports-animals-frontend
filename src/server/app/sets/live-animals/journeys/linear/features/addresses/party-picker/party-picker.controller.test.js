@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
@@ -9,6 +9,7 @@ import { session as sessionStub } from '../../../../../../../services/persistenc
 import { driveHandler } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
+import * as addressBook from '../../../../../../../services/address-book/index.js'
 
 import * as partyPicker from './party-picker.controller.js'
 import { PARTIES } from '../parties.js'
@@ -117,6 +118,45 @@ describe('GET /consignors/select', () => {
     expect(picker.selected.id).toBe(ALPINE_DAIRY_ID)
     expect(row.checked).toBe(true)
   })
+
+  it('Should treat a soft-deleted selected reference as no selection', async () => {
+    const originalMode = process.env.LIVE_ANIMALS_MODE
+    process.env.LIVE_ANIMALS_MODE = 'real'
+    const deletedId = 'deleted-consignor'
+    vi.spyOn(addressBook, 'search').mockResolvedValue({
+      results: [],
+      total: 0,
+      page: 1,
+      totalPages: 1,
+      pageSize: 5
+    })
+    vi.spyOn(addressBook, 'party').mockResolvedValue({
+      id: deletedId,
+      name: 'Gone Trader',
+      deleted: true,
+      address: { addressLine1: '1 Nowhere' }
+    })
+
+    try {
+      // Drive via ?selected= so render()'s chosenPartyFor path is exercised
+      // (a committed deleted ref is already cleared in state.get).
+      const picker = pickerFrom(
+        await driveHandler(getConsignor, {
+          query: { selected: deletedId }
+        })
+      )
+
+      expect(picker.selected).toBeUndefined()
+      expect(picker.rows.every((row) => row.checked === false)).toBe(true)
+    } finally {
+      vi.restoreAllMocks()
+      if (originalMode === undefined) {
+        delete process.env.LIVE_ANIMALS_MODE
+      } else {
+        process.env.LIVE_ANIMALS_MODE = originalMode
+      }
+    }
+  })
 })
 
 describe('POST /consignors/select', () => {
@@ -220,6 +260,42 @@ describe('POST /consignors/select', () => {
 
     expect(result.view.context.picker.error).toBe(SELECT_A_CONSIGNOR_ERROR)
     expect(result.after.consignor).toBeUndefined()
+  })
+
+  it('Should refuse a soft-deleted address id on save', async () => {
+    const originalMode = process.env.LIVE_ANIMALS_MODE
+    process.env.LIVE_ANIMALS_MODE = 'real'
+    const deletedId = 'deleted-consignor'
+    vi.spyOn(addressBook, 'search').mockResolvedValue({
+      results: [],
+      total: 0,
+      page: 1,
+      totalPages: 1,
+      pageSize: 5
+    })
+    vi.spyOn(addressBook, 'party').mockResolvedValue({
+      id: deletedId,
+      name: 'Gone Trader',
+      deleted: true,
+      address: { addressLine1: '1 Nowhere' }
+    })
+
+    try {
+      const result = await driveHandler(postConsignor, {
+        payload: { action: 'save', party: deletedId }
+      })
+
+      expect(result.response.statusCode).toBe(400)
+      expect(result.view.context.picker.error).toBe(SELECT_A_CONSIGNOR_ERROR)
+      expect(result.after.consignor).toBeUndefined()
+    } finally {
+      vi.restoreAllMocks()
+      if (originalMode === undefined) {
+        delete process.env.LIVE_ANIMALS_MODE
+      } else {
+        process.env.LIVE_ANIMALS_MODE = originalMode
+      }
+    }
   })
 })
 

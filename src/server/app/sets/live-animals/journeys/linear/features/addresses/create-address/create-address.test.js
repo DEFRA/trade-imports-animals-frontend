@@ -167,6 +167,23 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
     expect(result.after).toEqual({})
     expect(await addressBook.all(undefined)).toHaveLength(before)
   })
+
+  it('Should commit a previously created address id on retry without writing a second book record', async () => {
+    const before = (await addressBook.all(undefined)).length
+    const created = await driveHandler(postCreate, { payload: validPayload() })
+    const { addressId } = created.after.consignor
+    expect(await addressBook.all(undefined)).toHaveLength(before + 1)
+
+    const retried = await driveHandler(postCreate, {
+      payload: validPayload({ createdAddressId: addressId })
+    })
+
+    expect(retried.response).toEqual({
+      redirect: pagePath(retried.journeyId, 'addresses')
+    })
+    expect(retried.after.consignor).toEqual({ addressId })
+    expect(await addressBook.all(undefined)).toHaveLength(before + 1)
+  })
 })
 
 describe('POST addresses/create — country membership follows the primed list', () => {

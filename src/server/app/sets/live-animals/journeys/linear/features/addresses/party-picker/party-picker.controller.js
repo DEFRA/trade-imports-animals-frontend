@@ -34,9 +34,10 @@ const render = async (
 ) => {
   // One book for every role — addresses have no type (D3).
   const found = await addressBook.search(orgId, { query, page })
-  const selected = selectedId
-    ? await addressBook.party(orgId, selectedId)
-    : undefined
+  const selected = await chosenPartyFor(orgId, selectedId)
+  // A deleted/missing reference must not travel as "Selected: …" or in
+  // pagination links — treat it as no selection (same as resolveOne).
+  const effectiveSelectedId = selected ? selectedId : ''
 
   return h.view(view, {
     ...kit.base(party.title, {
@@ -51,7 +52,7 @@ const render = async (
     picker: pickerViewModel(
       journey,
       party,
-      { query, selectedId, error, found, selected },
+      { query, selectedId: effectiveSelectedId, error, found, selected },
       copy
     )
   })
@@ -106,7 +107,7 @@ const post = (party) => async (request, h) => {
   }
 
   const chosen = await chosenPartyFor(orgId, selectedId)
-  if (!chosen || chosen.deleted) {
+  if (!chosen) {
     const { journey } = await state.get(request, h)
     return (
       await render(h, orgId, journey, party, {

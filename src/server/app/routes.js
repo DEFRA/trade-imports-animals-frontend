@@ -39,6 +39,8 @@ import { registerJourneyCookie } from './engine/journey.js'
 import { isRealMode } from './services/mode.js'
 import * as countries from './services/countries/index.js'
 import * as ports from './services/ports/index.js'
+import { configureAnswersForRead } from './bridge/answers-read.js'
+import { withoutUnresolvedPartyRefs } from './sets/live-animals/journeys/linear/features/addresses/resolve-parties.js'
 
 export const liveAnimals = {
   plugin: {
@@ -47,6 +49,7 @@ export const liveAnimals = {
       configureObligationSet(liveAnimalsObligationSet)
       configureFulfilmentRegistry(featureEvaluationBindings)
       configureCommodityReference(commodities)
+      configureAnswersForRead(withoutUnresolvedPartyRefs)
       configureJourneyFlow({
         sections,
         taskRows,

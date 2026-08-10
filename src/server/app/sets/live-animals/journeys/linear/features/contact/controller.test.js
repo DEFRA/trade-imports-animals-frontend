@@ -111,4 +111,21 @@ describe('POST contact — invalid payload', () => {
     expect(result.view.context.errors.contactAddress).toBeDefined()
     expect(result.after).toEqual(result.before)
   })
+
+  it('Should treat a dangling contact addressId as unselected on GET and reject it on POST', async () => {
+    const seed = { contactAddress: { addressId: 'gone' } }
+
+    const getResult = await driveHandler(get, { seed })
+    expect(
+      getResult.view.context.contactOptions.every((option) => !option.checked)
+    ).toBe(true)
+
+    const postResult = await driveHandler(post, {
+      seed,
+      payload: { contactAddress: 'gone' }
+    })
+    expect(postResult.response.statusCode).toBe(400)
+    expect(postResult.view.context.errors.contactAddress).toBeDefined()
+    expect(postResult.after).toEqual(postResult.before)
+  })
 })

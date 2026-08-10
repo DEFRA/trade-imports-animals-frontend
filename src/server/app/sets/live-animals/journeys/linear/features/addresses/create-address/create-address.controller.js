@@ -122,7 +122,8 @@ const render = (
   party,
   values,
   errors = {},
-  recoverableError = false
+  recoverableError = false,
+  createdAddressId = ''
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
@@ -132,6 +133,7 @@ const render = (
     }),
     copy,
     partyId: party.id,
+    createdAddressId,
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
@@ -194,22 +196,29 @@ const post = async (request, h) => {
   }
 
   const record = addressRecordFrom(values)
+  // Carry a previously created id across a recoverable commit failure so a
+  // retry commits that id instead of writing a second identical address-book
+  // record (AC2).
+  let createdAddressId = (payload.createdAddressId ?? '').trim()
   const { failure } = await kit.recoverableSave(
     async () => {
       // Save to the address book FIRST — the id it returns is what the journey
       // commits. Committing before the write would reference a record that does
       // not exist if the write then failed.
-      const saved = await addressBook.addParty(
-        organisationIdOf(request),
-        record
-      )
+      if (!createdAddressId) {
+        const saved = await addressBook.addParty(
+          organisationIdOf(request),
+          record
+        )
+        createdAddressId = saved.id
+      }
       await state.commit(request, h, {
-        [party.id]: { addressId: saved.id }
+        [party.id]: { addressId: createdAddressId }
       })
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return render(h, journey, party, values, {}, true).code(
+      return render(h, journey, party, values, {}, true, createdAddressId).code(
         HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
     }

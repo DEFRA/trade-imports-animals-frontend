@@ -50,3 +50,20 @@ export const resolveParties = async (request, answers = {}) => {
   }
   return resolved
 }
+
+/** Drop party answers whose address-book reference no longer resolves, so
+ * display (resolveParties) and fulfilment/evaluation agree: a deleted address
+ * behaves as if nothing were selected (UCD). Request-local — the next commit
+ * that rebuilds from `current.answers` persists the clear. */
+export const withoutUnresolvedPartyRefs = async (request, answers = {}) => {
+  const parties = await resolveParties(request, answers)
+  let changed = false
+  const next = { ...answers }
+  for (const id of PARTY_IDS) {
+    if (answers[id]?.addressId && parties[id] === undefined) {
+      delete next[id]
+      changed = true
+    }
+  }
+  return changed ? next : answers
+}

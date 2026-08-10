@@ -16,6 +16,7 @@ import * as addressBook from '../../../../../../services/address-book/index.js'
 import { CREATE_ADDRESS_SLUG } from '../addresses/create-address/create-address.controller.js'
 import { CONTACT_PARTY } from '../addresses/parties.js'
 import { organisationIdOf } from '../addresses/resolve-parties.js'
+import { addressText } from '../addresses/party-picker/view-model/address-lines.js'
 import { consignmentContactSelectPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
@@ -35,14 +36,7 @@ const fields = (options) =>
   )
 
 const addressSummary = (address) =>
-  [
-    address.addressLine1,
-    address.addressLine2,
-    address.addressLine3,
-    address.country
-  ]
-    .filter(Boolean)
-    .join(', ')
+  [addressText(address), address.country].filter(Boolean).join(', ')
 
 const render = (
   h,

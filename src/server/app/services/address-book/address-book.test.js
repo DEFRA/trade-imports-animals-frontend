@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 const originalMode = process.env.LIVE_ANIMALS_MODE
 
 const ORG = '5900001'
+const PHONE = '01632 960000'
 
 const okResponse = (body) => ({ ok: true, status: 200, json: async () => body })
 
@@ -17,7 +18,7 @@ const operator = (id, overrides = {}) => ({
   postcode: 'TE5 7ER',
   countryCode: 'BE',
   email: `${id}@example.com`,
-  phone: '01632 960000',
+  phone: PHONE,
   deleted: false,
   ...overrides
 })
@@ -177,7 +178,7 @@ describe('mapping the wire onto the journey', () => {
         county: 'Testshire',
         postalOrZipCode: 'TE5 7ER',
         emailAddress: 'record-1@example.com',
-        telephoneNumber: '01632 960000'
+        telephoneNumber: PHONE
       }
     })
   })
@@ -334,6 +335,30 @@ describe('#addParty', () => {
       email: 'new@example.com',
       phone: '01632 960111'
     })
+  })
+
+  test('Should map United Kingdom to GB on write and read it back as United Kingdom', async () => {
+    const fetched = vi.fn(async () =>
+      okResponse(operator('created-uk', { countryCode: 'GB' }))
+    )
+    realMode()
+    stubFetch(fetched)
+
+    const { addParty } = await addressBook()
+    const saved = await addParty(ORG, {
+      name: 'UK Trader',
+      address: {
+        addressLine1: '1 High Street',
+        country: 'United Kingdom',
+        emailAddress: 'uk@example.com',
+        telephoneNumber: PHONE
+      }
+    })
+
+    expect(JSON.parse(fetched.mock.calls[0][1].body)).toMatchObject({
+      countryCode: 'GB'
+    })
+    expect(saved.address.country).toBe('United Kingdom')
   })
 
   test('Should mark a createAddress 500 as recoverable so the form can re-render', async () => {

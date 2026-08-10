@@ -13,6 +13,13 @@
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="for" value="{{ partyId }}" />
+    {% if createdAddressId %}
+      <input
+        type="hidden"
+        name="createdAddressId"
+        value="{{ createdAddressId }}"
+      />
+    {% endif %}
 
     {{ govukInput({
       id: "nameOrOrganisationName", name: "nameOrOrganisationName",
