@@ -11,7 +11,9 @@ export default [
   {
     // page.evaluate callbacks in Playwright specs run in the browser
     files: ['**/*.e2e.spec.js'],
-    languageOptions: { globals: { Option: 'readonly' } }
+    languageOptions: {
+      globals: { Option: 'readonly', getComputedStyle: 'readonly' }
+    }
   },
   {
     // mirrors the SonarCloud quality-gate rules that have local equivalents

@@ -1,0 +1,26 @@
+@use "../../../../node_modules/govuk-frontend" as *;
+
+.app-commodity-total {
+  box-sizing: border-box;
+  padding: govuk-spacing(4);
+  background-color: govuk-colour("black", $variant: "tint-95");
+
+  &__value {
+    @include govuk-font($size: 48, $weight: bold);
+    margin-bottom: govuk-spacing(1);
+    color: govuk-colour("blue");
+  }
+
+  &__label {
+    @include govuk-font($size: 24, $weight: bold);
+    margin-top: 0;
+    margin-bottom: govuk-spacing(2);
+    color: govuk-colour("blue");
+  }
+
+  &__caption {
+    @include govuk-font($size: 19);
+    margin-bottom: 0;
+    color: $govuk-text-colour;
+  }
+}
