@@ -3,7 +3,7 @@ import { decodePersistedFulfilment } from '../../fulfilment-codec/index.js'
 import { mapStatus } from '../status.js'
 
 // Handles two response shapes:
-// - Fulfilment-view projection (`GET /notification-fulfilments/{id}`): exposes
+// - Fulfilment-view projection (`GET /notifications/{ref}/fulfilments`): exposes
 //   `id` (= referenceNumber via @Value) and `createdAt` (= created via @Value).
 // - Merged notification entity (`POST /notifications`, `PUT /notifications/{ref}`,
 //   `POST /notifications/{ref}/{lifecycle}`): exposes `referenceNumber` and `created`

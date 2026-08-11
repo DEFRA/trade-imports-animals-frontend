@@ -19,7 +19,6 @@ import { fulfilmentToNotification } from '../mapper.js'
 
 const backendBaseUrl =
   process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ?? 'http://localhost:8085'
-const notificationFulfilmentsUrl = `${backendBaseUrl}/notification-fulfilments`
 const notificationsUrl = `${backendBaseUrl}/notifications`
 
 const replaceAnswers = (journeyId, answers) =>
@@ -89,7 +88,8 @@ describe.skipIf(!runsIt('real'))(
   () => {
     beforeAll(async () => {
       try {
-        await fetch(`${notificationFulfilmentsUrl}/GBN-AG-99-ZZZZZZ`)
+        // Reachability probe — any HTTP response confirms the stack is up.
+        await fetch(`${notificationsUrl}?page=1`)
       } catch (cause) {
         throw new Error(
           `Backend not reachable at ${backendBaseUrl} — start the matching stack before running this integration test.`,
@@ -116,10 +116,13 @@ describe.skipIf(!runsIt('real'))(
 
       const saved = await records.replaceFulfilment(journeyId, snapshot)
       const loaded = await records.load({ journeyId })
-      const [canonical, current] = await Promise.all([
-        json(`${notificationFulfilmentsUrl}/${journeyId}`),
-        json(`${notificationsUrl}/${journeyId}`)
-      ])
+      const canonical = await json(
+        `${notificationsUrl}/${journeyId}/fulfilments`
+      )
+      const listPage = await json(
+        `${notificationsUrl}?referenceNumber=${journeyId}`
+      )
+      const current = listPage.content[0]
 
       expect(saved.fulfilment).toEqual(snapshot)
       expect(loaded.fulfilment).toEqual(snapshot)

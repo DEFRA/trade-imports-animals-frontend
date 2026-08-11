@@ -17,7 +17,7 @@ export const load = async ({ journeyId } = {}) => {
 // origin, arrival date, party names) from the merged notification collection
 // (EUDPA-323) via /notifications. The fulfilments payload used by the engine
 // during rehydrate is fetched separately per-notification via
-// /notification-fulfilments/{id} in load() above.
+// /notifications/{ref}/fulfilments in load() above.
 export const list = async ({
   page = 1,
   sort = 'arrivalDate,desc',

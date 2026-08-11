@@ -22,7 +22,6 @@ const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
 
 const backendBaseUrl = 'http://localhost:8085'
-const notificationFulfilmentsUrl = `${backendBaseUrl}/notification-fulfilments`
 const notificationsUrl = `${backendBaseUrl}/notifications`
 const journeyId = 'GBN-AG-26-ABC123'
 const createdAt = '2026-07-23T09:00:00'
@@ -125,14 +124,12 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     const loaded = await records.load({ journeyId })
 
     const [request] = fetchMocker.requests()
-    expect(request.url).toBe(`${notificationFulfilmentsUrl}/${journeyId}`)
+    expect(request.url).toBe(`${notificationsUrl}/${journeyId}/fulfilments`)
     expect(request.method).toBe('GET')
     expect(loaded.fulfilment).toEqual(decodePersistedFulfilment(encoded))
-    expect(
-      fetchMocker
-        .requests()
-        .some((entry) => entry.url.startsWith(notificationsUrl))
-    ).toBe(false)
+    // Load path fires exactly one request — the fulfilments GET — and no other
+    // notifications endpoints (writes, list, transitions, etc.).
+    expect(fetchMocker.requests()).toHaveLength(1)
   })
 
   it('Should return undefined when the fulfilment GET returns 404', async () => {
@@ -141,7 +138,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     const loaded = await records.load({ journeyId })
 
     const [request] = fetchMocker.requests()
-    expect(request.url).toBe(`${notificationFulfilmentsUrl}/${journeyId}`)
+    expect(request.url).toBe(`${notificationsUrl}/${journeyId}/fulfilments`)
     expect(request.method).toBe('GET')
     expect(loaded).toBeUndefined()
   })

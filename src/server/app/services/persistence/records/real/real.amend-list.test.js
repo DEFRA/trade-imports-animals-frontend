@@ -10,8 +10,6 @@ import { records } from './index.js'
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
 
-const notificationFulfilmentsUrl =
-  'http://localhost:8085/notification-fulfilments'
 const notificationsUrl = 'http://localhost:8085/notifications'
 
 const RECORD_CREATED_AT = '2026-07-14T09:00:00'
@@ -156,8 +154,8 @@ describe('real records adapter — paged list', () => {
     expect(await records.has('GBN-GONE')).toBe(false)
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
-      { method: 'GET', url: `${notificationFulfilmentsUrl}/GBN-1` },
-      { method: 'GET', url: `${notificationFulfilmentsUrl}/GBN-GONE` }
+      { method: 'GET', url: `${notificationsUrl}/GBN-1/fulfilments` },
+      { method: 'GET', url: `${notificationsUrl}/GBN-GONE/fulfilments` }
     ])
   })
 })
