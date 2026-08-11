@@ -7,7 +7,7 @@ import {
 } from '../../../../../../lib/http-status.js'
 import {
   compose,
-  requiredOneOf,
+  oneOf,
   validate
 } from '../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../shared/kit.js'
@@ -28,7 +28,10 @@ const copy = copyFor({ en, cy })
 
 const fields = (options) =>
   compose(
-    requiredOneOf(
+    // Contact is mandatory as an obligation, but Save and continue with no
+    // selection is allowed — the trader returns to the hub with the task
+    // incomplete. Reject only values that are not in the offered list.
+    oneOf(
       'contactAddress',
       options.map((option) => option.id),
       copy.errors.contactRequired

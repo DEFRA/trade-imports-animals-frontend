@@ -103,13 +103,12 @@ describe('POST contact — invalid payload', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should answer 400 and re-render when no contact is selected, committing nothing', async () => {
+  it('Should leave the page without committing when no contact is selected', async () => {
     const result = await driveHandler(post, {
       payload: {}
     })
-    expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.contactAddress).toBeDefined()
-    expect(result.after).toEqual(result.before)
+    expect(result.view).toBeUndefined()
+    expect(result.after.contactAddress).toBeUndefined()
   })
 
   it('Should treat a dangling contact addressId as unselected on GET and reject it on POST', async () => {
