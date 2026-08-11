@@ -6,10 +6,7 @@ import {
   journeyUrl,
   startNotification
 } from '../../../../../../../../../e2e/live-animals-journey.js'
-import {
-  captureAc6Screenshot,
-  expectNoHorizontalOverflow
-} from '../../../../../../../../../e2e/live-animals-layout.js'
+import { expectNoHorizontalOverflow } from '../../../../../../../../../e2e/live-animals-layout.js'
 import { copy } from './copy/copy.en.js'
 
 const INTERNAL_REFERENCE_LABEL =
@@ -65,7 +62,6 @@ test.describe('check-answers feature summary rows', () => {
     )
 
     await expectNoHorizontalOverflow(page)
-    await captureAc6Screenshot(page, 'check-answers-summary-lists')
   })
 
   test('untouched journey renders Not provided for missing answers', async ({

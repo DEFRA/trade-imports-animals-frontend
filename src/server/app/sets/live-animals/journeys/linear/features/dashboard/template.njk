@@ -109,44 +109,44 @@
           </ul>
         </div>
         <div class="govuk-summary-card__content">
-          <dl class="notification-list__grid-row">
-            <div class="notification-list__grid-column-30">
-              <dt class="notification-list__heading">{{ copy.table.commodity }}</dt>
-              <dd class="notification-list__value">{{ row.commodity }}</dd>
+          <dl class="govuk-grid-row notification-list__card-row">
+            <div class="govuk-grid-column-one-third">
+              <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.commodity }}</dt>
+              <dd class="govuk-body govuk-!-margin-bottom-0">{{ row.commodity }}</dd>
             </div>
-            <div class="notification-list__grid-column-30">
-              <dt class="notification-list__heading">{{ copy.table.origin }}</dt>
-              <dd class="notification-list__value">{{ row.origin }}</dd>
+            <div class="govuk-grid-column-one-third">
+              <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.origin }}</dt>
+              <dd class="govuk-body govuk-!-margin-bottom-0">{{ row.origin }}</dd>
             </div>
-            <div class="notification-list__grid-column-30">
-              <dt class="notification-list__heading">{{ copy.table.arrival }}</dt>
-              <dd class="notification-list__value">{{ row.arrival }}</dd>
+            <div class="govuk-grid-column-one-third">
+              <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.arrival }}</dt>
+              <dd class="govuk-body govuk-!-margin-bottom-0">{{ row.arrival }}</dd>
             </div>
           </dl>
-          <dl class="notification-list__grid-row">
-            <div class="notification-list__grid-column-30">
-              <dt class="notification-list__heading">{{ copy.table.consignee }}</dt>
-              <dd class="notification-list__value">{{ row.consignee }}</dd>
+          <dl class="govuk-grid-row notification-list__card-row">
+            <div class="govuk-grid-column-one-third">
+              <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.consignee }}</dt>
+              <dd class="govuk-body govuk-!-margin-bottom-0">{{ row.consignee }}</dd>
             </div>
-            <div class="notification-list__grid-column-30">
-              <dt class="notification-list__heading">{{ copy.table.consignor }}</dt>
-              <dd class="notification-list__value">{{ row.consignor }}</dd>
+            <div class="govuk-grid-column-one-third">
+              <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.consignor }}</dt>
+              <dd class="govuk-body govuk-!-margin-bottom-0">{{ row.consignor }}</dd>
             </div>
-            <div class="notification-list__grid-column-30">
-              <dt class="notification-list__heading">{{ copy.table.status }}</dt>
-              <dd class="notification-list__value">
+            <div class="govuk-grid-column-one-third">
+              <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.status }}</dt>
+              <dd class="govuk-body govuk-!-margin-bottom-0">
                 {{ govukTag({ text: row.status.text, classes: row.status.classes }) }}
               </dd>
             </div>
           </dl>
-          <dl class="notification-list__grid-row">
-            <div class="notification-list__grid-column-30">
-              <dt class="notification-list__heading">{{ copy.table.created }}</dt>
-              <dd class="notification-list__value">{{ row.created }}</dd>
+          <dl class="govuk-grid-row notification-list__card-row">
+            <div class="govuk-grid-column-one-third">
+              <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.created }}</dt>
+              <dd class="govuk-body govuk-!-margin-bottom-0">{{ row.created }}</dd>
             </div>
-            <div class="notification-list__grid-column-30">
-              <dt class="notification-list__heading">{{ copy.table.submitted }}</dt>
-              <dd class="notification-list__value">{{ row.submitted }}</dd>
+            <div class="govuk-grid-column-one-third">
+              <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.submitted }}</dt>
+              <dd class="govuk-body govuk-!-margin-bottom-0">{{ row.submitted }}</dd>
             </div>
           </dl>
         </div>

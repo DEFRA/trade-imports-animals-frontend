@@ -8,9 +8,7 @@ import {
   values
 } from '../../../../../../../../../e2e/live-animals-journey.js'
 import {
-  captureAc6Screenshot,
   expectNoHorizontalOverflow,
-  logLayoutMetric,
   measureHorizontalOverflow
 } from '../../../../../../../../../e2e/live-animals-layout.js'
 import { copy } from './copy/copy.en.js'
@@ -48,16 +46,11 @@ const cardFor = (page, reference) =>
 
 const actionsGeometry = async (card) => {
   const actionsBox = await card.locator(SUMMARY_CARD_ACTIONS).boundingBox()
-  const actions = await card.locator(SUMMARY_CARD_ACTION).all()
-  const actionBoxes = await Promise.all(
-    actions.map((action) => action.boundingBox())
-  )
-  const tops = actionBoxes.map(({ y }) => y)
-  return {
-    listHeight: actionsBox.height,
-    actionHeight: actionBoxes[0].height,
-    topSpread: Math.max(...tops) - Math.min(...tops)
-  }
+  const firstAction = await card
+    .locator(SUMMARY_CARD_ACTION)
+    .first()
+    .boundingBox()
+  return { listHeight: actionsBox.height, actionHeight: firstAction.height }
 }
 
 const mainColumnWidth = async (page) => {
@@ -157,11 +150,7 @@ test.describe('dashboard feature — notification rows and actions', () => {
     const card = cardFor(page, reference)
     await expect(card.locator(SUMMARY_CARD_ACTION)).toHaveCount(4)
 
-    const { listHeight, actionHeight, topSpread } = await actionsGeometry(card)
-
-    logLayoutMetric('submitted card actions list height', listHeight)
-    logLayoutMetric('submitted card single action height', actionHeight)
-    logLayoutMetric('submitted card action top spread', topSpread)
+    const { listHeight, actionHeight } = await actionsGeometry(card)
 
     expect(listHeight).toBeLessThanOrEqual(actionHeight + SINGLE_LINE_TOLERANCE)
   })
@@ -176,26 +165,20 @@ test.describe('dashboard feature — notification rows and actions', () => {
     ).toBeVisible()
 
     await expectNoHorizontalOverflow(page)
-    logLayoutMetric(
-      'notification-list__main width at 1280px',
-      await mainColumnWidth(page)
-    )
-    await captureAc6Screenshot(page, 'dashboard-submitted')
 
+    // 769px is where the filter panel stops stacking and starts squeezing the results
+    // column, so it is the width the layout is most likely to break at.
     await page.setViewportSize({
       width: DESKTOP_BREAKPOINT_WIDTH,
       height: 900
     })
-    const breakpointOverflow = await measureHorizontalOverflow(page)
+    const { overflow, offenders } = await measureHorizontalOverflow(page)
 
-    logLayoutMetric(
-      `notification-list__main width at ${DESKTOP_BREAKPOINT_WIDTH}px`,
-      await mainColumnWidth(page)
-    )
-    logLayoutMetric(
-      `horizontal overflow at ${DESKTOP_BREAKPOINT_WIDTH}px`,
-      JSON.stringify(breakpointOverflow)
-    )
+    expect(
+      overflow,
+      `Dashboard overflows at ${DESKTOP_BREAKPOINT_WIDTH}px: ${JSON.stringify(offenders)}`
+    ).toBeLessThanOrEqual(0)
+    expect(await mainColumnWidth(page)).toBeGreaterThan(0)
   })
 
   test('draft notification renders only its available actions', async ({
@@ -249,16 +232,6 @@ test.describe('dashboard feature — notification rows and actions', () => {
     await expect(
       actionFor(page, 'link', 'Cancel amendment', reference)
     ).toBeVisible()
-
-    const { listHeight, actionHeight } = await actionsGeometry(
-      cardFor(page, reference)
-    )
-    logLayoutMetric('amending card actions list height', listHeight)
-    logLayoutMetric('amending card single action height', actionHeight)
-    logLayoutMetric(
-      'amending card available width',
-      await mainColumnWidth(page)
-    )
   })
 })
 

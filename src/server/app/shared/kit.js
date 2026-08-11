@@ -17,6 +17,25 @@ export const routeOptions = {}
 
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
+// A page is either something the user fills in or something they read. Forms get the
+// GOV.UK reading measure; display surfaces get the whole container because they carry
+// side-by-side furniture — the notification list pins a 280px filter panel, which at
+// two-thirds left ~162px per summary card and wrapped the row actions onto three lines.
+export const SURFACES = Object.freeze({
+  form: 'govuk-grid-column-two-thirds',
+  display: 'govuk-grid-column-full'
+})
+
+const contentColumnClass = (surface) => {
+  const columnClass = SURFACES[surface]
+  if (!columnClass) {
+    throw new Error(
+      `Unknown surface '${surface}'. Expected one of: ${Object.keys(SURFACES).join(', ')}`
+    )
+  }
+  return columnClass
+}
+
 const STRIP_STATUS = {
   [DRAFT]: {
     text: sharedCopy.journeyStrip.draft,
@@ -92,7 +111,8 @@ export const base = (
     backLink,
     journey,
     journeyId = journey?.journeyId,
-    recoverableError = false
+    recoverableError = false,
+    surface = 'form'
   } = {}
 ) => {
   const hasJourney = journeyId != null
@@ -104,7 +124,8 @@ export const base = (
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
     journeyStrip: journeyStrip(journey),
     sharedCopy,
-    recoverableError
+    recoverableError,
+    contentColumnClass: contentColumnClass(surface)
   }
 }
 

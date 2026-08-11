@@ -7,10 +7,7 @@ import {
   selectSpecies,
   startNotification
 } from '../../../../../../../../../e2e/live-animals-journey.js'
-import {
-  captureAc6Screenshot,
-  expectNoHorizontalOverflow
-} from '../../../../../../../../../e2e/live-animals-layout.js'
+import { expectNoHorizontalOverflow } from '../../../../../../../../../e2e/live-animals-layout.js'
 import { copy } from './copy/copy.en.js'
 
 const taskRow = (page, title) =>
@@ -116,7 +113,6 @@ test.describe('hub feature', () => {
     await expect(review).toContainText(copy.statuses.cannotStartYet)
 
     await expectNoHorizontalOverflow(page)
-    await captureAc6Screenshot(page, 'hub-task-list')
   })
 })
 
