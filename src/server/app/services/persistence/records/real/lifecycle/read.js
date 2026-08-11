@@ -13,12 +13,11 @@ export const load = async ({ journeyId } = {}) => {
   return undefined
 }
 
-// Dashboard list source. The notification-fulfilments aggregate carries the
-// obligation-entry payload for rehydration, but every display field the
-// dashboard renders (commodity, origin, arrival date, party names) lives on
-// the notification side — so we list from /notifications directly and skip
-// the aggregation join. Follow-up ticket captures the option to relocate
-// fulfilment persistence entirely.
+// Dashboard list source. Reads notification-shape display fields (commodity,
+// origin, arrival date, party names) from the merged notification collection
+// (EUDPA-323) via /notifications. The fulfilments payload used by the engine
+// during rehydrate is fetched separately per-notification via
+// /notification-fulfilments/{id} in load() above.
 export const list = async ({
   page = 1,
   sort = 'arrivalDate,desc',
