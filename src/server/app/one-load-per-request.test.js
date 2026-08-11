@@ -19,8 +19,9 @@ const { countryOfOrigin } = obligationSet()
 // (state.get) or from a write helper re-deriving the journey — used to hit the
 // backend with a fresh GET /notification-fulfilments/{ref}, and each save re-fetched the same
 // record to guard the write. This pins the collapsed behaviour: within one HTTP
-// request the real adapter issues at most one canonical GET, followed by the
-// canonical PUT and the notification projection POST.
+// request the real adapter issues at most one canonical GET, followed by a
+// single PUT to the merged /notifications/{ref} endpoint (EUDPA-323 folded the
+// pre-existing PUT + separate notification-projection POST into that one call).
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
