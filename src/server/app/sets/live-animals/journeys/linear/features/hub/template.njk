@@ -1,35 +1,26 @@
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/task-list/macro.njk" import govukTaskList %}
-{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
 
 {% block journeyContent %}
   <h1 class="govuk-heading-xl">{{ heading }}</h1>
 
   {% if commodityTotals %}
     <h2 class="govuk-heading-l">{{ copy.commodityTotals.heading }}</h2>
-    <div class="govuk-grid-row govuk-!-margin-bottom-4">
-      <div class="govuk-grid-column-one-half">
-        {{ govukSummaryList({
-          card: { title: { text: copy.commodityTotals.animalsCardTitle, headingLevel: 3 } },
-          rows: [
-            {
-              key: { text: copy.commodityTotals.animalsRow },
-              value: { text: commodityTotals.animals }
-            }
-          ]
-        }) }}
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-one-half govuk-!-margin-bottom-4">
+        <div class="app-commodity-total">
+          <p class="app-commodity-total__value">{{ commodityTotals.animals }}</p>
+          <h3 class="app-commodity-total__label">{{ copy.commodityTotals.animalsLabel }}</h3>
+          <p class="app-commodity-total__caption">{{ copy.commodityTotals.animalsCaption }}</p>
+        </div>
       </div>
-      <div class="govuk-grid-column-one-half">
-        {{ govukSummaryList({
-          card: { title: { text: copy.commodityTotals.packagesCardTitle, headingLevel: 3 } },
-          rows: [
-            {
-              key: { text: copy.commodityTotals.packagesRow },
-              value: { text: commodityTotals.packages }
-            }
-          ]
-        }) }}
+      <div class="govuk-grid-column-one-half govuk-!-margin-bottom-4">
+        <div class="app-commodity-total">
+          <p class="app-commodity-total__value">{{ commodityTotals.packages }}</p>
+          <h3 class="app-commodity-total__label">{{ copy.commodityTotals.packagesLabel }}</h3>
+          <p class="app-commodity-total__caption">{{ copy.commodityTotals.packagesCaption }}</p>
+        </div>
       </div>
     </div>
   {% endif %}
