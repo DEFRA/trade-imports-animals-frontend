@@ -17,8 +17,9 @@ export const replaceFulfilment = async (
   const snapshot = structuredClone(fulfilment ?? {})
   // Under the merged aggregate (EUDPA-323), PUT /notifications/{ref} carries both
   // the notification-shape fields (via the mapper) AND the opaque fulfilments
-  // payload in a single request. Backend writes both atomically and fires the
-  // outbox event from the merged aggregate.
+  // payload in a single request. Backend writes both atomically; the outbox
+  // event is emitted only on lifecycle transitions (submit / amend /
+  // cancel-amend) via writeWithOutbox, unchanged from today.
   const body = {
     referenceNumber: journeyId,
     ...fulfilmentToNotification(snapshot, journeyId),
