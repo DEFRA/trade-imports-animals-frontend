@@ -26,14 +26,19 @@ export const SURFACES = Object.freeze({
   display: 'govuk-grid-column-full'
 })
 
-const contentColumnClass = (surface) => {
-  const columnClass = SURFACES[surface]
-  if (!columnClass) {
+// Exported because display surfaces cannot go through base(): it forces
+// breadcrumbs off for anything without a journey, which would strip the
+// dashboard's own. They call this directly instead, so the surface name is
+// still validated in one place rather than each page naming a raw class.
+export const surfaceClass = (surface) => {
+  // hasOwn, not truthiness — SURFACES.constructor inherits from Object and
+  // would otherwise pass as a valid surface and return a function.
+  if (!Object.hasOwn(SURFACES, surface)) {
     throw new Error(
       `Unknown surface '${surface}'. Expected one of: ${Object.keys(SURFACES).join(', ')}`
     )
   }
-  return columnClass
+  return SURFACES[surface]
 }
 
 const STRIP_STATUS = {
@@ -125,7 +130,7 @@ export const base = (
     journeyStrip: journeyStrip(journey),
     sharedCopy,
     recoverableError,
-    contentColumnClass: contentColumnClass(surface)
+    contentColumnClass: surfaceClass(surface)
   }
 }
 

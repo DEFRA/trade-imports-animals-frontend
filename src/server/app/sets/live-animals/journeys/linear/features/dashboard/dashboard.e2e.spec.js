@@ -53,11 +53,6 @@ const actionsGeometry = async (card) => {
   return { listHeight: actionsBox.height, actionHeight: firstAction.height }
 }
 
-const mainColumnWidth = async (page) => {
-  const box = await page.locator('.notification-list__main').boundingBox()
-  return box.width
-}
-
 const actionFor = (page, role, action, reference) =>
   page.getByRole(role, { name: `${action} ${copy.actionHidden(reference)}` })
 
@@ -178,7 +173,6 @@ test.describe('dashboard feature — notification rows and actions', () => {
       overflow,
       `Dashboard overflows at ${DESKTOP_BREAKPOINT_WIDTH}px: ${JSON.stringify(offenders)}`
     ).toBeLessThanOrEqual(0)
-    expect(await mainColumnWidth(page)).toBeGreaterThan(0)
   })
 
   test('draft notification renders only its available actions', async ({

@@ -33,8 +33,9 @@
   </form>
 
   <h2 class="govuk-heading-m">{{ copy.notificationsHeading }}</h2>
-  <div class="notification-list__layout">
-    <aside class="notification-list__filters" aria-labelledby="filter-notifications-heading">
+  <div class="govuk-grid-row notification-list__layout">
+    <div class="govuk-grid-column-one-quarter">
+      <aside class="notification-list__filters" aria-labelledby="filter-notifications-heading">
       <h3 class="govuk-heading-m" id="filter-notifications-heading">{{ copy.search.heading }}</h3>
 
       <form method="get" action="{{ listAction }}" class="notification-list__search-form" data-testid="notification-search-form">
@@ -52,9 +53,10 @@
         }) }}
         {{ govukButton({ text: copy.search.button }) }}
       </form>
-    </aside>
+      </aside>
+    </div>
 
-    <div class="notification-list__main">
+    <div class="govuk-grid-column-three-quarters">
       <div class="notification-list__toolbar">
         <p class="govuk-label govuk-label--s notification-list__results">{{ resultsLabel }}</p>
 
@@ -112,29 +114,29 @@
           <dl class="govuk-grid-row notification-list__card-row">
             <div class="govuk-grid-column-one-third">
               <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.commodity }}</dt>
-              <dd class="govuk-body govuk-!-margin-bottom-0">{{ row.commodity }}</dd>
+              <dd class="govuk-body govuk-!-margin-bottom-0 govuk-!-text-break-word">{{ row.commodity }}</dd>
             </div>
             <div class="govuk-grid-column-one-third">
               <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.origin }}</dt>
-              <dd class="govuk-body govuk-!-margin-bottom-0">{{ row.origin }}</dd>
+              <dd class="govuk-body govuk-!-margin-bottom-0 govuk-!-text-break-word">{{ row.origin }}</dd>
             </div>
             <div class="govuk-grid-column-one-third">
               <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.arrival }}</dt>
-              <dd class="govuk-body govuk-!-margin-bottom-0">{{ row.arrival }}</dd>
+              <dd class="govuk-body govuk-!-margin-bottom-0 govuk-!-text-break-word">{{ row.arrival }}</dd>
             </div>
           </dl>
           <dl class="govuk-grid-row notification-list__card-row">
             <div class="govuk-grid-column-one-third">
               <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.consignee }}</dt>
-              <dd class="govuk-body govuk-!-margin-bottom-0">{{ row.consignee }}</dd>
+              <dd class="govuk-body govuk-!-margin-bottom-0 govuk-!-text-break-word">{{ row.consignee }}</dd>
             </div>
             <div class="govuk-grid-column-one-third">
               <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.consignor }}</dt>
-              <dd class="govuk-body govuk-!-margin-bottom-0">{{ row.consignor }}</dd>
+              <dd class="govuk-body govuk-!-margin-bottom-0 govuk-!-text-break-word">{{ row.consignor }}</dd>
             </div>
             <div class="govuk-grid-column-one-third">
               <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.status }}</dt>
-              <dd class="govuk-body govuk-!-margin-bottom-0">
+              <dd class="govuk-body govuk-!-margin-bottom-0 govuk-!-text-break-word">
                 {{ govukTag({ text: row.status.text, classes: row.status.classes }) }}
               </dd>
             </div>
@@ -142,11 +144,11 @@
           <dl class="govuk-grid-row notification-list__card-row">
             <div class="govuk-grid-column-one-third">
               <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.created }}</dt>
-              <dd class="govuk-body govuk-!-margin-bottom-0">{{ row.created }}</dd>
+              <dd class="govuk-body govuk-!-margin-bottom-0 govuk-!-text-break-word">{{ row.created }}</dd>
             </div>
             <div class="govuk-grid-column-one-third">
               <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.submitted }}</dt>
-              <dd class="govuk-body govuk-!-margin-bottom-0">{{ row.submitted }}</dd>
+              <dd class="govuk-body govuk-!-margin-bottom-0 govuk-!-text-break-word">{{ row.submitted }}</dd>
             </div>
           </dl>
         </div>

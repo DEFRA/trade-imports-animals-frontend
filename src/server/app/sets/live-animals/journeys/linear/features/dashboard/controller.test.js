@@ -20,7 +20,7 @@ import {
   hubPath,
   pagePath
 } from '../../../../../../shared/paths.js'
-import { CYA_SLUG } from '../../../../../../shared/kit.js'
+import { CYA_SLUG, SURFACES } from '../../../../../../shared/kit.js'
 
 import { routes } from './controller.js'
 import { authenticatedCredentials } from '../../../../../../engine/test-support.js'
@@ -311,6 +311,25 @@ describe('dashboard notifications list', () => {
     expect((await records.load({ journeyId: deleted.journeyId })).status).toBe(
       DELETED
     )
+  })
+})
+
+// The dashboard is the service's only display surface, and it cannot say so
+// through kit.base — base() forces breadcrumbs off for anything without a
+// journey, which would strip the dashboard's own. Its membership therefore
+// lives in this one controller line, so without this test deleting that line
+// leaves the whole suite green while the list silently renders back at the
+// narrow reading measure. That is the exact regression this ticket undoes.
+describe('dashboard content width', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+  })
+
+  it('Should render the notification list as a display surface', async () => {
+    const h = buildH()
+    await listGet(buildRequest(), h)
+    expect(h.captured.view.context.contentColumnClass).toBe(SURFACES.display)
   })
 })
 

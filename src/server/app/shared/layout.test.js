@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { nunjucksConfig } from '../../../config/nunjucks/nunjucks.js'
-import { base, SURFACES } from './kit.js'
+import { base, SURFACES, surfaceClass } from './kit.js'
 import { copy as sharedCopy } from './copy.en.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
@@ -42,16 +42,9 @@ describe('promoted live-animals signed-in chrome', () => {
 })
 
 describe('content column width by surface', () => {
-  it('Should render a form surface at the GOV.UK reading measure', () => {
-    const html = renderLayout(
-      { isAuthenticated: true },
-      { contentColumnClass: SURFACES.form }
-    )
-
-    expect(html).toContain(SURFACES.form)
-    expect(html).not.toContain(SURFACES.display)
-  })
-
+  // No form-surface case here on purpose: SURFACES.form is also the template's
+  // fallback, so a layout that ignored contentColumnClass entirely would still
+  // pass it. Only the display case can prove the value is read at all.
   it('Should render a display surface at full container width', () => {
     const html = renderLayout(
       { isAuthenticated: true },
@@ -91,5 +84,18 @@ describe('kit surfaces', () => {
     expect(() => base('Any page', { surface: 'widescreen' })).toThrow(
       /Unknown surface 'widescreen'/
     )
+  })
+
+  // A plain-object lookup answers for everything on Object.prototype, so
+  // 'constructor' would resolve to a function and sail past a truthiness check.
+  it('Should reject an inherited Object property as a surface name', () => {
+    expect(() => base('Any page', { surface: 'constructor' })).toThrow(
+      /Unknown surface 'constructor'/
+    )
+  })
+
+  it('Should validate the surface for display pages that cannot call base', () => {
+    expect(surfaceClass('display')).toBe(SURFACES.display)
+    expect(() => surfaceClass('widescreen')).toThrow(/Unknown surface/)
   })
 })

@@ -2,25 +2,16 @@
 @use "../variables/colours" as *;
 
 .notification-list {
+  // Layout is govuk-grid-row + one-quarter / three-quarters. Those stack below
+  // tablet on their own, so the filters need no width, no flex and no media
+  // query — only the panel's own appearance.
   &__layout {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: govuk-spacing(6);
     margin-top: govuk-spacing(6);
   }
 
   &__filters {
-    flex: 0 0 100%;
-    max-width: 100%;
-    box-sizing: border-box;
     background-color: $app-light-grey;
     padding: govuk-spacing(4);
-  }
-
-  &__main {
-    flex: 1 1 100%;
-    min-width: 0;
   }
 
   &__toolbar {
@@ -80,19 +71,6 @@
 
     dd {
       margin-left: 0;
-    }
-  }
-}
-
-@include govuk-media-query($from: desktop) {
-  .notification-list {
-    &__filters {
-      flex: 0 0 280px;
-      max-width: 280px;
-    }
-
-    &__main {
-      flex: 1 1 0;
     }
   }
 }
