@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
+import { addressText } from '../addresses/party-picker/view-model/address-lines.js'
 import { copy } from './copy/copy.en.js'
 
 const CONTACT_ADDRESS_INPUT = 'input[name="contactAddress"]'
@@ -22,16 +23,9 @@ const startAtContact = async (page) => {
   await expect(page.getByRole('heading', { name: copy.legend })).toBeVisible()
 }
 
-/** Mirrors the contact controller's radio hint — only the fields it joins. */
+/** Mirrors the contact controller's radio hint (addressText + country). */
 const addressSummary = (address) =>
-  [
-    address.addressLine1,
-    address.addressLine2,
-    address.addressLine3,
-    address.country
-  ]
-    .filter(Boolean)
-    .join(', ')
+  [addressText(address), address.country].filter(Boolean).join(', ')
 
 test.describe('contact feature', () => {
   test.beforeEach(async ({ page }) => {
