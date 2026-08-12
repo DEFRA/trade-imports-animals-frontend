@@ -1,0 +1,51 @@
+{#
+  appAccessibleAutocomplete — a govukSelect enhanced into a type-ahead.
+
+  Renders a native govukSelect (the no-JS fallback that still submits the
+  option value) and marks it for progressive enhancement by the
+  accessible-autocomplete client component. Enhancement config is passed
+  through as data-* attributes, so this macro is field-agnostic and reusable
+  for any long option list on any page.
+
+  Params: the usual govukSelect params (id, name, label, hint, errorMessage,
+  value, items, classes, formGroup), plus an optional `autocomplete` object:
+    autocomplete.minLength     (int)     characters before matches show
+    autocomplete.noResults     (string)  message when nothing matches
+    autocomplete.language      (string)  'en' (default) or 'cy'
+    autocomplete.showAllValues (bool)    show the full list on focus
+    autocomplete.autoselect    (bool)    highlight the first match
+    autocomplete.defaultValue  (string)  value to prefill the input with
+
+  Usage:
+  {% from "accessible-autocomplete/macro.njk" import appAccessibleAutocomplete %}
+  {{ appAccessibleAutocomplete({
+    id: "portOfEntry", name: "portOfEntry",
+    label: { text: "Port of entry" }, items: portItems,
+    autocomplete: { showAllValues: true, noResults: "No ports found" }
+  }) }}
+#}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+
+{% macro appAccessibleAutocomplete(params) %}
+  {% set ac = params.autocomplete if params.autocomplete else {} %}
+  {{ govukSelect({
+    id: params.id,
+    name: params.name,
+    label: params.label,
+    hint: params.hint,
+    errorMessage: params.errorMessage,
+    value: params.value,
+    items: params.items,
+    classes: params.classes,
+    formGroup: params.formGroup,
+    attributes: {
+      "data-module": "app-accessible-autocomplete",
+      "data-min-length": ac.minLength if ac.minLength is defined else 0,
+      "data-language": ac.language if ac.language else "en",
+      "data-show-all-values": "true" if ac.showAllValues else "false",
+      "data-auto-select": "true" if ac.autoselect else "false",
+      "data-default-value": ac.defaultValue if ac.defaultValue else "",
+      "data-no-results": ac.noResults if ac.noResults else ""
+    }
+  }) }}
+{% endmacro %}

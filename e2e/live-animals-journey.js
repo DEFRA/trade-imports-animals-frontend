@@ -128,10 +128,13 @@ export const startNotification = async (page) => {
 const FIXTURE_PORT = PORTS.find((port) => port.code === values.portOfEntry)
 const FIXTURE_PORT_OPTION = `${FIXTURE_PORT.name} (${FIXTURE_PORT.code})`
 
-const choosePortOfEntry = async (page) => {
-  await page
-    .getByLabel('Port of entry', { exact: true })
-    .selectOption({ label: FIXTURE_PORT_OPTION })
+// Port of entry is a type-ahead (accessible-autocomplete) enhancing a native
+// <select>. Drive it the way a user does: type to filter, then pick the match.
+export const choosePortOfEntry = async (page, option = FIXTURE_PORT_OPTION) => {
+  const field = page.getByLabel('Port of entry', { exact: true })
+  await field.click()
+  await field.fill(option)
+  await page.getByRole('option', { name: option, exact: true }).click()
 }
 
 export const answerCountryOfOrigin = async (page) => {

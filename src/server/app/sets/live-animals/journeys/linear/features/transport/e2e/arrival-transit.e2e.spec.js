@@ -21,10 +21,16 @@ import { copy } from '../copy/copy.en.js'
 import { arrivalWindow, DAYS_BEFORE } from '../port-of-entry/arrival-window.js'
 import { MAX_TRANSITED_COUNTRIES } from '../transit-countries/transit-countries.controller.js'
 
-const portSelect = '#portOfEntry'
+// accessible-autocomplete enhances the native <select>: the visible combobox
+// input keeps the original id, and the native select is hidden and renamed with
+// a "-select" suffix (it still submits the port code).
+const portInput = 'input#portOfEntry'
+const portHidden = 'select#portOfEntry-select'
 const transitedCountriesInputs = 'input[name="transitedCountries"]'
 const transitedCountriesChecked = `${transitedCountriesInputs}:checked`
 const MAX_TRANSPORT_FIELD_LENGTH = 58
+const DOVER_OPTION = 'Port of Dover (GB DVR)'
+const PORT_OF_ENTRY_PAGE = 'port-of-entry'
 
 const dateWindow = arrivalWindow()
 const outOfRangeError = copy.portOfEntry.errors.arrivalDateOutOfRange(
@@ -61,10 +67,18 @@ const openArrival = async (page) => {
   ).toBeVisible()
 }
 
+const portLabel = (code) => {
+  const port = portsOfEntry.find((entry) => entry.code === code)
+  return `${port.name} (${port.code})`
+}
+
+// Drive the type-ahead: typing the code filters (the code is in the option
+// label), then pick the single match.
 const choosePort = async (page, code = values.portOfEntry) => {
-  await page
-    .getByLabel(copy.portOfEntry.port.label, { exact: true })
-    .selectOption(code)
+  const field = page.getByLabel(copy.portOfEntry.port.label, { exact: true })
+  await field.click()
+  await field.fill(code)
+  await page.getByRole('option', { name: portLabel(code), exact: true }).click()
 }
 
 const errorLink = (page, message) =>
@@ -151,9 +165,9 @@ test.describe('arrival details rendering', () => {
     ).toHaveAccessibleDescription(copy.portOfEntry.documentReference.hint)
 
     const options = await page
-      .locator('select#portOfEntry option')
+      .locator(`${portHidden} option`)
       .evaluateAll((items) =>
-        items.slice(2).map((option) => ({
+        items.slice(1).map((option) => ({
           code: option.value,
           label: option.textContent
         }))
@@ -170,6 +184,93 @@ test.describe('arrival details rendering', () => {
     await openArrival(page)
     await page.locator('.govuk-back-link').click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  })
+})
+
+test.describe('port of entry type-ahead', () => {
+  test('shows the full list of ports on focus', async ({ page }) => {
+    await openArrival(page)
+    // showAllValues: clicking the field opens the menu with every port,
+    // before the user types anything.
+    await page.getByLabel(copy.portOfEntry.port.label, { exact: true }).click()
+    await expect(
+      page.getByRole('option', { name: DOVER_OPTION, exact: true })
+    ).toBeVisible()
+    await expect(page.getByRole('option')).toHaveCount(portsOfEntry.length)
+  })
+
+  test('filters by port name or code, case-insensitively (AC1)', async ({
+    page
+  }) => {
+    await openArrival(page)
+    const field = page.getByLabel(copy.portOfEntry.port.label, { exact: true })
+    const doverOption = page.getByRole('option', {
+      name: DOVER_OPTION,
+      exact: true
+    })
+
+    // Matches part of the port name, case-insensitive.
+    await field.fill('DOV')
+    await expect(doverOption).toBeVisible()
+
+    // The same field matches by port code.
+    await field.fill('gb dvr')
+    await expect(doverOption).toBeVisible()
+  })
+
+  test('selecting a port shows its name and code and submits the code (AC2)', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await choosePort(page, 'GB DVR')
+    await expect(page.locator(portInput)).toHaveValue(DOVER_OPTION)
+    await expect(page.locator(portHidden)).toHaveValue('GB DVR')
+  })
+
+  test('shows the no-results message when nothing matches (AC3)', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await page
+      .getByLabel(copy.portOfEntry.port.label, { exact: true })
+      .fill('zzzzzz')
+    await expect(page.getByText(copy.portOfEntry.port.noResults)).toBeVisible()
+  })
+})
+
+test.describe('port of entry without JavaScript', () => {
+  test.use({ javaScriptEnabled: false })
+
+  test('native select submits and persists the port code (no-JS fallback)', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await page
+      .getByLabel(copy.portOfEntry.arrivalDate.label)
+      .fill(ARRIVAL_DATE_IN_WINDOW)
+    await page
+      .getByLabel(copy.portOfEntry.port.label, { exact: true })
+      .selectOption(values.portOfEntry)
+    await page
+      .getByRole('radio', {
+        name: copy.portOfEntry.means.options[values.meansOfTransport]
+      })
+      .check()
+    await page
+      .getByLabel(copy.portOfEntry.identification.label)
+      .fill(values.transportIdentification)
+    await page
+      .getByLabel(copy.portOfEntry.documentReference.label)
+      .fill(values.transportDocumentReference)
+    await submit(page)
+
+    await expect(
+      page.getByRole('heading', { name: copy.transitCountries.title })
+    ).toBeVisible()
+    await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
+    await expect(page.locator('select#portOfEntry')).toHaveValue(
+      values.portOfEntry
+    )
   })
 })
 
@@ -191,7 +292,7 @@ test.describe('arrival details validation', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
     ).toHaveValue('31/2/2026')
-    await expect(page.locator(portSelect)).toHaveValue(values.portOfEntry)
+    await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
   })
 
   test('the picker calendar excludes the day before the window and allows the boundary itself', async ({
@@ -245,7 +346,7 @@ test.describe('arrival details validation', () => {
         await expect(
           page.getByLabel(copy.portOfEntry.arrivalDate.label)
         ).toHaveValue(value)
-        await expect(page.locator(portSelect)).toHaveValue(values.portOfEntry)
+        await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
         await expect(
           page.getByLabel(copy.portOfEntry.identification.label)
         ).toHaveValue(values.transportIdentification)
@@ -271,19 +372,19 @@ test.describe('arrival details validation', () => {
         page.getByRole('heading', { name: copy.transitCountries.title })
       ).toBeVisible()
 
-      await page.goto(journeyUrl(page, 'port-of-entry'))
+      await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
       await expect(
         page.getByLabel(copy.portOfEntry.arrivalDate.label)
       ).toHaveValue(ARRIVAL_DATE_IN_WINDOW)
     })
   })
 
-  test('port validation: out-of-list value links to and focuses the cleared select while preserving other values', async ({
+  test('port validation: out-of-list value links to and focuses the cleared field while preserving other values', async ({
     page
   }) => {
     await openArrival(page)
     await fillValidArrival(page)
-    await page.locator('select#portOfEntry').evaluate((select) => {
+    await page.locator(portHidden).evaluate((select) => {
       select.add(new Option('Invalid port', 'INVALID'))
       select.value = 'INVALID'
     })
@@ -292,8 +393,8 @@ test.describe('arrival details validation', () => {
     const link = errorLink(page, validatorDefaults.oneOf)
     await expect(link).toBeVisible()
     await link.click()
-    await expect(page.locator(portSelect)).toBeFocused()
-    await expect(page.locator(portSelect)).toHaveValue('')
+    await expect(page.locator(portInput)).toBeFocused()
+    await expect(page.locator(portInput)).toHaveValue('')
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
     ).toHaveValue(values.transportIdentification)
@@ -321,7 +422,7 @@ test.describe('arrival details validation', () => {
     await expect(
       page.locator('input[name="meansOfTransport"]:checked')
     ).toHaveCount(0)
-    await expect(page.locator(portSelect)).toHaveValue(values.portOfEntry)
+    await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
   })
 })
 
@@ -347,7 +448,7 @@ test.describe('arrival transport reference validation', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
     ).toHaveValue(invalid)
-    await expect(page.locator(portSelect)).toHaveValue(values.portOfEntry)
+    await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
   })
 
   test('transport document validation: over 58 characters links to and focuses the preserved value', async ({
@@ -373,7 +474,7 @@ test.describe('arrival transport reference validation', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.documentReference.label)
     ).toHaveValue(invalid)
-    await expect(page.locator(portSelect)).toHaveValue(values.portOfEntry)
+    await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
   })
 })
 
@@ -390,16 +491,14 @@ test.describe('arrival save and routing', () => {
     ).toBeVisible()
     await page.locator('.govuk-back-link').click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-    await page.goto(journeyUrl(page, 'port-of-entry'))
+    await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
     await expect(
       page.getByRole('heading', { name: copy.portOfEntry.title })
     ).toBeVisible()
     await expect(
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
     ).toHaveValue(ARRIVAL_DATE_IN_WINDOW)
-    await expect(page.locator('select#portOfEntry')).toHaveValue(
-      values.portOfEntry
-    )
+    await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
     await expect(
       page.getByRole('radio', {
         name: copy.portOfEntry.means.options[values.meansOfTransport]
