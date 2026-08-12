@@ -14,10 +14,9 @@ export const load = async ({ journeyId } = {}) => {
 }
 
 // Dashboard list source. Reads notification-shape display fields (commodity,
-// origin, arrival date, party names) from the merged notification collection
-// (EUDPA-323) via /notifications. The fulfilments payload used by the engine
-// during rehydrate is fetched separately per-notification via
-// /notifications/{ref}/fulfilments in load() above.
+// origin, arrival date, party names) from /notifications; the fulfilments
+// payload used by the engine during rehydrate is fetched separately
+// per-notification via /notifications/{ref}/fulfilments in load() above.
 export const list = async ({
   page = 1,
   sort = 'arrivalDate,desc',

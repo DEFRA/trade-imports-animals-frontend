@@ -5,11 +5,11 @@ import { mapStatus } from '../status.js'
 // Handles two response shapes:
 // - Fulfilment-view projection (`GET /notifications/{ref}/fulfilments`): exposes
 //   `id` (= referenceNumber via @Value) and `createdAt` (= created via @Value).
-// - Merged notification entity (`POST /notifications`, `PUT /notifications/{ref}`,
+// - Notification entity (`POST /notifications`, `PUT /notifications/{ref}`,
 //   `POST /notifications/{ref}/{lifecycle}`): exposes `referenceNumber` and `created`
 //   directly; also has a Mongo `id` (_id) which is not the reference number.
-// Prefer the merged-shape fields when present, fall back to the fulfilment-view
-// fields for the read endpoint.
+// Prefer the notification-shape fields when present, fall back to the
+// fulfilment-view fields for the read endpoint.
 export const marshal = (document) => {
   const status = mapStatus(document.status)
   return {

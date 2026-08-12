@@ -65,7 +65,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     )
   })
 
-  it('Should create the merged aggregate via a single POST /notifications carrying an empty fulfilments payload', async () => {
+  it('Should create a notification via POST /notifications with an empty fulfilments payload', async () => {
     fetchMocker.mockResponse(JSON.stringify(canonical()), { status: 200 })
 
     const created = await records.create()
@@ -149,7 +149,7 @@ describe('real records adapter — fulfilment writes', () => {
     fetchMocker.resetMocks()
   })
 
-  it('Should PUT the merged aggregate in a single call carrying both notification-shape fields and the fulfilments payload', async () => {
+  it('Should PUT the notification in a single call carrying both notification-shape fields and the fulfilments payload', async () => {
     const snapshot = assembleFulfilments({
       countryOfOrigin: 'FR',
       commodityLines: [
@@ -209,7 +209,7 @@ describe('real records adapter — lifecycle and list', () => {
     fetchMocker.resetMocks()
   })
 
-  it('Should single-post every lifecycle transition to the merged notifications endpoint', async () => {
+  it('Should POST every lifecycle transition to the notifications endpoint', async () => {
     fetchMocker.mockResponses(
       [
         JSON.stringify(
@@ -253,7 +253,7 @@ describe('real records adapter — lifecycle and list', () => {
     expect(restored.submittedAt).toBe(submittedTimestamp)
   })
 
-  it('Should copy via the merged endpoint without an idempotency header (copy dedup dropped pending EUDPA-314)', async () => {
+  it('Should copy without an idempotency header (copy dedup dropped pending EUDPA-314)', async () => {
     const copiedJourneyId = 'GBN-AG-26-COPIED'
     fetchMocker.mockResponse(
       JSON.stringify(canonical({ id: copiedJourneyId, status: 'DRAFT' })),
@@ -272,7 +272,7 @@ describe('real records adapter — lifecycle and list', () => {
     })
   })
 
-  it('Should single-post soft-delete to the merged notifications endpoint with no body', async () => {
+  it('Should POST soft-delete with no body', async () => {
     fetchMocker.mockResponse(JSON.stringify(canonical({ status: 'DELETED' })), {
       status: 200
     })

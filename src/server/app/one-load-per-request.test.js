@@ -20,8 +20,7 @@ const { countryOfOrigin } = obligationSet()
 // backend with a fresh GET /notifications/{ref}/fulfilments, and each save re-fetched the same
 // record to guard the write. This pins the collapsed behaviour: within one HTTP
 // request the real adapter issues at most one canonical GET, followed by a
-// single PUT to the merged /notifications/{ref} endpoint (EUDPA-323 folded the
-// pre-existing PUT + separate notification-projection POST into that one call).
+// single PUT to /notifications/{ref}.
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
@@ -97,7 +96,7 @@ describe('one load per request — real records adapter GET count', () => {
     configureReadyForCheckYourAnswers(() => false)
   })
 
-  test('Should issue exactly one GET for a read-then-write request, plus one PUT to the merged notifications endpoint', async () => {
+  test('Should issue exactly one GET for a read-then-write request, plus one PUT to the notifications endpoint', async () => {
     const request = buildRequest()
 
     const before = await get(request, recordingH())
@@ -106,7 +105,7 @@ describe('one load per request — real records adapter GET count', () => {
     expect(before.fulfilment).toEqual({})
     expect(getsFor(fulfilmentUrl)).toHaveLength(1)
     expect(requestsTo('PUT', notificationRefUrl)).toHaveLength(1)
-    // No more separate POST /notifications projection — merged into the PUT above.
+    // No POST /notifications is expected — the PUT above carries everything.
     expect(requestsTo('POST', notificationsUrl)).toHaveLength(0)
   })
 
