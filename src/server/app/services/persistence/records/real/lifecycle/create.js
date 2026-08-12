@@ -12,7 +12,7 @@ export const create = async () => {
   const notificationResponse = await fetch(notificationsUrl, {
     method: 'POST',
     headers: headers(),
-    body: JSON.stringify({})
+    body: JSON.stringify({ notification: {} })
   })
   if (!notificationResponse.ok) {
     throw failed('create notification', notificationResponse)

@@ -84,7 +84,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       { method: 'POST', url: notificationsUrl },
       { method: 'PUT', url: `${notificationFulfilmentsUrl}/${journeyId}` }
     ])
-    expect(await requests[0].clone().text()).toBe('{}')
+    expect(await jsonOf(requests[0])).toEqual({ notification: {} })
     expect(await jsonOf(requests[1])).toEqual({
       id: journeyId,
       fulfilments: []
@@ -197,14 +197,38 @@ describe('real records adapter — fulfilment writes', () => {
       fulfilments: encoded
     })
     expect(await jsonOf(requests[1])).toEqual({
-      referenceNumber: journeyId,
-      ...fulfilmentToNotification(snapshot, journeyId)
+      notification: {
+        referenceNumber: journeyId,
+        ...fulfilmentToNotification(snapshot, journeyId)
+      }
     })
     expect(
-      (await jsonOf(requests[1])).commodity.commodityComplement[0].species[0]
-        .noOfAnimals
+      (await jsonOf(requests[1])).notification.commodity.commodityComplement[0]
+        .species[0].noOfAnimals
     ).toBe('5')
     expect(saved.fulfilment).toEqual(snapshot)
+  })
+
+  it('Should include actor on the notification projection POST when provided', async () => {
+    const snapshot = assembleFulfilments({ countryOfOrigin: 'FR' })
+    const encoded = encodeEvaluatorFulfilments(snapshot)
+    fetchMocker.mockResponses(
+      [JSON.stringify(canonical({ fulfilments: encoded })), { status: 200 }],
+      ['', { status: 200 }]
+    )
+
+    await records.replaceFulfilment(journeyId, snapshot, {
+      known: { journeyId, status: DRAFT },
+      actor
+    })
+
+    expect(await jsonOf(fetchMocker.requests()[1])).toEqual({
+      notification: {
+        referenceNumber: journeyId,
+        ...fulfilmentToNotification(snapshot, journeyId)
+      },
+      actor
+    })
   })
 
   it.each([

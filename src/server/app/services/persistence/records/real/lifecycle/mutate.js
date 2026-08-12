@@ -23,7 +23,7 @@ const saveProjections = async (journeyId, projections) => {
 export const replaceFulfilment = async (
   journeyId,
   fulfilment,
-  { known } = {}
+  { known, actor } = {}
 ) => {
   const status = await resolveStatus(journeyId, known)
   assertWritable(journeyId, status)
@@ -39,8 +39,11 @@ export const replaceFulfilment = async (
       url: notificationsUrl,
       method: 'POST',
       body: {
-        referenceNumber: journeyId,
-        ...fulfilmentToNotification(snapshot, journeyId)
+        notification: {
+          referenceNumber: journeyId,
+          ...fulfilmentToNotification(snapshot, journeyId)
+        },
+        ...(actor ? { actor } : {})
       }
     }
   ]

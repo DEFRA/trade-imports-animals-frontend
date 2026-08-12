@@ -77,8 +77,10 @@ export const replaceJourneyFulfilment = async (
 ) => {
   const cached = memoRead(request)
   const known = cached?.journeyId === journeyId ? cached : undefined
+  const actor = buildActor(request.auth?.credentials)
   const saved = await records.replaceFulfilment(journeyId, fulfilment, {
-    known
+    known,
+    actor
   })
   const next = known
     ? { ...known, fulfilment: structuredClone(fulfilment) }
