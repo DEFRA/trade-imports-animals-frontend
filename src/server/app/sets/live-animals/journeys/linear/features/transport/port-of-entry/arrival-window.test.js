@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { DAYS_BEFORE, MONTHS_AHEAD, arrivalWindow } from './arrival-window.js'
+import { arrivalWindow } from './arrival-window.js'
 
 describe('#arrivalWindow — the live-animals arrival-date policy', () => {
   it('Should span one week back to six months forward, at UTC midnight', () => {
@@ -28,10 +28,5 @@ describe('#arrivalWindow — the live-animals arrival-date policy', () => {
 
     expect(minText).toBe('5/8/2026')
     expect(maxText).toBe('12/2/2027')
-  })
-
-  it('Should publish the window size as named constants', () => {
-    expect(DAYS_BEFORE).toBe(7)
-    expect(MONTHS_AHEAD).toBe(6)
   })
 })

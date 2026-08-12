@@ -1,6 +1,18 @@
+import {
+  addDays,
+  addMonths,
+  format,
+  isValid,
+  parse,
+  startOfDay
+} from 'date-fns'
+
+// date-fns works in the process timezone. The container and every vitest
+// script both run TZ=UTC, so these operations are UTC operations, and the
+// dates here are UTC midnight throughout. `startOfDayInZone` is the one place
+// that steps outside it, because the service's users keep London days.
+const DATE_TEXT_FORMAT = 'd/M/yyyy'
 const MONTHS_IN_YEAR = 12
-const MS_PER_DAY = 86400000
-const DATE_TEXT = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
 
 /**
  * @param {number} year
@@ -29,10 +41,7 @@ export const isRealDate = (year, month, day) => {
  * @param {Date} date
  * @returns {Date} Midnight UTC on the same calendar day.
  */
-export const startOfUtcDay = (date) =>
-  new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
-  )
+export const startOfUtcDay = (date) => startOfDay(date)
 
 /**
  * @param {Date} date
@@ -59,45 +68,25 @@ export const startOfDayInZone = (date, timeZone) => {
  * @param {number} days - May be negative.
  * @returns {Date} Midnight UTC, `days` whole days away.
  */
-export const addUtcDays = (date, days) =>
-  new Date(startOfUtcDay(date).getTime() + days * MS_PER_DAY)
+export const addUtcDays = (date, days) => addDays(startOfDay(date), days)
 
 /**
- * Clamps to the last day of the target month, so 31 August plus six months is
- * 28 February, not the 3 March that plain month rollover would produce.
+ * `addMonths` clamps to the last day of the target month, so 31 August plus six
+ * months is 28 February rather than the 3 March plain rollover would give.
  * @param {Date} date
  * @param {number} months - May be negative.
  * @returns {Date} Midnight UTC in the target month.
  */
-export const addUtcMonths = (date, months) => {
-  const start = startOfUtcDay(date)
-  const year = start.getUTCFullYear()
-  const targetMonth = start.getUTCMonth() + months
-  const lastDayOfTargetMonth = new Date(
-    Date.UTC(year, targetMonth + 1, 0)
-  ).getUTCDate()
-  return new Date(
-    Date.UTC(
-      year,
-      targetMonth,
-      Math.min(start.getUTCDate(), lastDayOfTargetMonth)
-    )
-  )
-}
+export const addUtcMonths = (date, months) =>
+  addMonths(startOfDay(date), months)
 
 /**
  * @param {string} raw - A `d/m/yyyy` or `dd/mm/yyyy` value.
  * @returns {Date|null} Midnight UTC, or null when the value is not a real date.
  */
 export const parseDateText = (raw) => {
-  const match = DATE_TEXT.exec(String(raw ?? '').trim())
-  if (!match) {
-    return null
-  }
-  const [day, month, year] = match.slice(1).map(Number)
-  return isRealDate(year, month, day)
-    ? new Date(Date.UTC(year, month - 1, day))
-    : null
+  const parsed = parse(String(raw ?? '').trim(), DATE_TEXT_FORMAT, new Date())
+  return isValid(parsed) ? startOfDay(parsed) : null
 }
 
 /**
@@ -105,5 +94,4 @@ export const parseDateText = (raw) => {
  * @param {Date} date
  * @returns {string} `d/m/yyyy`, no leading zeros.
  */
-export const formatDateText = (date) =>
-  `${date.getUTCDate()}/${date.getUTCMonth() + 1}/${date.getUTCFullYear()}`
+export const formatDateText = (date) => format(date, DATE_TEXT_FORMAT)
