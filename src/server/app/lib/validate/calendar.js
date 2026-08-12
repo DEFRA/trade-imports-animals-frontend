@@ -47,10 +47,10 @@ export const startOfDayInZone = (date, timeZone) => {
     month: '2-digit',
     day: '2-digit'
   }).formatToParts(date)
-  const valueOf = (type) =>
+  const partValue = (type) =>
     Number(parts.find((part) => part.type === type).value)
   return new Date(
-    Date.UTC(valueOf('year'), valueOf('month') - 1, valueOf('day'))
+    Date.UTC(partValue('year'), partValue('month') - 1, partValue('day'))
   )
 }
 
