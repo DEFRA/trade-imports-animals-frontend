@@ -5,15 +5,15 @@ import { marshal } from '../marshal/document.js'
 
 // Backend mints the reference number; response carries the created notification.
 export const create = async () => {
-  const response = await fetch(notificationsUrl, {
+  const notificationResponse = await fetch(notificationsUrl, {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify({ fulfilments: [] })
   })
-  if (!response.ok) {
-    throw failed('create notification', response)
+  if (!notificationResponse.ok) {
+    throw failed('create notification', notificationResponse)
   }
-  return marshal(await response.json())
+  return marshal(await notificationResponse.json())
 }
 
 // Copy dedup dropped pending EUDPA-314; the idempotencyKey parameter is retained
