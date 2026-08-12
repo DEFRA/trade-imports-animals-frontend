@@ -1,8 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import {
   journeyUrl,
+  signIn,
   startNotification,
   unlockSections,
   values
@@ -92,6 +92,10 @@ const openTransit = async (page) => {
 }
 
 test.describe('arrival details rendering', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('renders captured port options and all feature copy', async ({
     page
   }) => {
@@ -138,6 +142,10 @@ test.describe('arrival details rendering', () => {
 })
 
 test.describe('arrival details validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('arrival date validation: impossible date links to and focuses the preserved value', async ({
     page
   }) => {
@@ -206,6 +214,10 @@ test.describe('arrival details validation', () => {
 })
 
 test.describe('arrival transport reference validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('transport identification validation: over 58 characters links to and focuses the preserved value', async ({
     page
   }) => {
@@ -258,6 +270,10 @@ test.describe('arrival transport reference validation', () => {
 })
 
 test.describe('arrival save and routing', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('saves and persists all arrival fields and routes overland transport to transit countries', async ({
     page
   }) => {
@@ -295,6 +311,10 @@ test.describe('arrival save and routing', () => {
 })
 
 test.describe('transit countries rendering and validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('transit page renders captured country options and feature copy', async ({
     page
   }) => {
@@ -347,6 +367,10 @@ test.describe('transit countries rendering and validation', () => {
 })
 
 test.describe('transit countries limits and persistence', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('transit validation: more than 12 countries links to the focused group and preserves selections', async ({
     page
   }) => {
@@ -400,6 +424,10 @@ test.describe('transit countries limits and persistence', () => {
 })
 
 test.describe('arrival and transit accessibility', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('arrival page with date picker has no serious or critical axe violations', async ({
     page
   }) => {

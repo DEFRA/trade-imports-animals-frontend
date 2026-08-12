@@ -27,6 +27,10 @@ vi.mock('../auth/get-safe-redirect.js', () => ({
   getSafeRedirect: getSafeRedirectMock
 }))
 
+vi.mock('../server/common/services/mode.js', () => ({
+  isAuthStubMode: () => false
+}))
+
 vi.mock('@hapi/jwt', () => ({
   default: {
     token: {

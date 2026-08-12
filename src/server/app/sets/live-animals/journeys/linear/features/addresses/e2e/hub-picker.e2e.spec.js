@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import {
+  signIn,
   startNotification,
   unlockSections,
   values
@@ -72,6 +72,7 @@ const saveAndContinue = (page) =>
 
 test.describe('addresses hub', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openAddresses(page)
   })
 
@@ -125,6 +126,7 @@ test.describe('addresses hub', () => {
 
 test.describe('party picker per role', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openAddresses(page)
   })
 
@@ -188,6 +190,7 @@ test.describe('party picker per role', () => {
 
 test.describe('party picker search', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openAddresses(page)
     await openPartyPicker(page, CONSIGNOR)
   })
@@ -232,6 +235,7 @@ test.describe('party picker search', () => {
 
 test.describe('party picker details and pagination', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openAddresses(page)
     await openPartyPicker(page, CONSIGNOR)
   })

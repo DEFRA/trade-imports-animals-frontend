@@ -250,6 +250,12 @@ export const config = convict({
       format: Boolean,
       default: true,
       env: 'AUTH_ENABLED'
+    },
+    stubMode: {
+      doc: 'Skip the real Defra ID OIDC exchange and locally sign a stub session instead. Auth is still enforced - only the external OIDC round-trip is bypassed. Ignored outside non-production (see isAuthStubMode).',
+      format: Boolean,
+      default: false,
+      env: 'AUTH_STUB_MODE'
     }
   },
   redis: {

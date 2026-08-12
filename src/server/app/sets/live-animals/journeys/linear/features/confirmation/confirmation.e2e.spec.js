@@ -1,10 +1,10 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import {
   completeAnswerSections,
   journeyIdFromPage,
   journeyUrl,
+  signIn,
   startNotification
 } from '../../../../../../../../../e2e/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
@@ -59,6 +59,10 @@ const expectHelpCopy = async (page) => {
 }
 
 test.describe('confirmation feature', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('redirects an unsubmitted notification back to its hub', async ({
     page
   }) => {
@@ -72,6 +76,10 @@ test.describe('confirmation feature', () => {
 })
 
 test.describe('submitted confirmation feature', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test.describe.configure({ timeout: 90000 })
 
   test.beforeEach(async ({ page }) => {

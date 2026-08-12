@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test'
 
 import {
   journeyIdFromPage,
+  signIn,
   startNotification
 } from '../../../../../../../../../e2e/live-animals-journey.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
@@ -11,6 +12,7 @@ import { copy } from './copy/copy.en.js'
 
 test.describe('delete-notification feature', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startNotification(page)
     const reference = journeyIdFromPage(page)
     await page.goto('/')

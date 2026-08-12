@@ -1,8 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import { countriesOrigin } from '../../../../../../services/_capture/fixtures.js'
 import { copy } from './copy/copy.en.js'
+import { signIn } from '../../../../../../../../../e2e/sign-in.js'
 
 const SUBMIT_BUTTON = 'form button[type="submit"]'
 
@@ -26,6 +26,7 @@ const startAtDestinationCountry = async (page) => {
 
 test.describe('destination-country feature', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtDestinationCountry(page)
   })
 

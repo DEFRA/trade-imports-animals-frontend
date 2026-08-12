@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
+  signIn,
   startNotification,
   unlockSections
 } from '../../../../../../../../../../e2e/live-animals-journey.js'
@@ -137,6 +138,7 @@ const formatValidations = [
 
 test.describe('create address', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openCreateAddress(page)
   })
 
@@ -198,6 +200,7 @@ test.describe('create address', () => {
 
 test.describe('create address validation', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openCreateAddress(page)
   })
 

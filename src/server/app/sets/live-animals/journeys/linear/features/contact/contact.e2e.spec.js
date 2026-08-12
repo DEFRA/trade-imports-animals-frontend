@@ -1,9 +1,9 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import { addressText } from '../addresses/party-picker/view-model/address-lines.js'
 import { copy } from './copy/copy.en.js'
+import { signIn } from '../../../../../../../../../e2e/sign-in.js'
 
 const CONTACT_ADDRESS_INPUT = 'input[name="contactAddress"]'
 
@@ -29,6 +29,7 @@ const addressSummary = (address) =>
 
 test.describe('contact feature', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtContact(page)
   })
 
@@ -101,6 +102,7 @@ test.describe('contact feature', () => {
 
 test.describe('contact feature — navigation and accessibility', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtContact(page)
   })
 

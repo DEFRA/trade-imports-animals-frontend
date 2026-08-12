@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import { copy } from './copy/copy.en.js'
+import { signIn } from '../../../../../../../../../e2e/sign-in.js'
 
 const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
 const POAO_RADIO_SELECTOR = 'input[name="importType"][value="poao"]'
@@ -36,6 +36,7 @@ const expectNoSeriousOrCriticalAxeViolations = async (page, pageName) => {
 
 test.describe('import-type-filter feature', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtImportType(page)
   })
 
@@ -101,6 +102,7 @@ test.describe('import-type-filter feature', () => {
 
 test.describe('import-type-filter not-available page', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtImportType(page)
   })
 

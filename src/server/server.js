@@ -8,7 +8,9 @@ import { router } from './router.js'
 import { csrf } from '../plugins/csrf.js'
 import { authPlugin } from '../plugins/auth.js'
 import { authRoutes } from './auth/index.js'
+import { stubSignInRoutes } from './auth/stub-sign-in.js'
 import { config } from '../config/config.js'
+import { isAuthStubMode } from './common/services/mode.js'
 import { pulse } from './common/helpers/pulse.js'
 import { catchAll } from './common/helpers/errors.js'
 import { nunjucksConfig } from '../config/nunjucks/nunjucks.js'
@@ -73,7 +75,9 @@ export async function createServer() {
     csrf,
     Cookie,
     Bell,
-    ...(authEnabled ? [authPlugin, authRoutes] : []),
+    ...(authEnabled
+      ? [authPlugin, isAuthStubMode() ? stubSignInRoutes : authRoutes]
+      : []),
     router // Register all the controllers/routes defined in src/server/router.js
   ])
 

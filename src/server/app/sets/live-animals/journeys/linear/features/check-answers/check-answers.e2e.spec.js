@@ -1,9 +1,9 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import {
   chooseCountryOfOrigin,
   journeyUrl,
+  signIn,
   startNotification
 } from '../../../../../../../../../e2e/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
@@ -25,6 +25,10 @@ const openOrigin = (page) =>
     .click()
 
 test.describe('check-answers feature summary rows', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('renders entered and missing answers in their summary rows', async ({
     page
   }) => {
@@ -80,6 +84,10 @@ test.describe('check-answers feature summary rows', () => {
 })
 
 test.describe('check-answers feature change links', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('Change link threads context and returns to the same review after saving', async ({
     page
   }) => {
@@ -113,6 +121,10 @@ test.describe('check-answers feature change links', () => {
 })
 
 test.describe('check-answers feature navigation and submission', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('back link returns to the notification hub', async ({ page }) => {
     await startNotification(page)
     const hubUrl = journeyUrl(page)

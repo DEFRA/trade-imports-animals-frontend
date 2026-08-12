@@ -1,9 +1,9 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import * as importReasonPurpose from '../../../../../../services/import-reason-purpose/index.js'
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
+import { signIn } from '../../../../../../../../../e2e/sign-in.js'
 
 const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
 const PURPOSE_INPUT_SELECTOR = 'input[name="purposeInInternalMarket"]'
@@ -47,6 +47,7 @@ const expectNoSeriousOrCriticalAxeViolations = async (page) => {
 
 test.describe('import-purpose feature', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtImportPurpose(page)
   })
 

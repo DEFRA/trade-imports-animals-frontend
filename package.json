@@ -15,7 +15,7 @@
     "dev": "AWS_EMF_ENVIRONMENT=Local run-p frontend:watch server:watch",
     "dev:debug": "AWS_EMF_ENVIRONMENT=Local run-p frontend:watch server:debug",
     "docker:dev": "npm run dev",
-    "e2e:start": "AUTH_ENABLED=false NODE_ENV=development node .",
+    "e2e:start": "NODE_ENV=development node .",
     "check:workspace-stack": "node e2e/check-workspace-stack.js",
     "test:e2e": "npm run build:frontend && DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test --project=journeys",
     "test:features": "npm run build:frontend && DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test --project=features",

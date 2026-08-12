@@ -1,9 +1,9 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import {
   completeAnswerSections,
   journeyIdFromPage,
+  signIn,
   startNotification,
   values
 } from '../../../../../../../../../e2e/live-animals-journey.js'
@@ -51,6 +51,10 @@ const expectNoSeriousOrCriticalViolations = async (page, subject) => {
 }
 
 test.describe('dashboard feature — empty state and start', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('renders the empty notification list and default sort', async ({
     page
   }) => {
@@ -83,6 +87,10 @@ test.describe('dashboard feature — empty state and start', () => {
 })
 
 test.describe('dashboard feature — notification rows and actions', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('submitted notification renders its row data and actions', async ({
     page
   }) => {
@@ -172,6 +180,10 @@ test.describe('dashboard feature — notification rows and actions', () => {
 })
 
 test.describe('dashboard feature — reference search', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('reference search finds an exact notification and preserves sort', async ({
     page
   }) => {
@@ -250,6 +262,10 @@ test.describe('dashboard feature — reference search', () => {
 })
 
 test.describe('dashboard feature — pagination', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('paginates at the 20-row boundary and preserves the selected sort', async ({
     page
   }) => {
@@ -309,6 +325,10 @@ test.describe('dashboard feature — pagination', () => {
 })
 
 test.describe('dashboard feature — accessibility', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('empty dashboard has no serious or critical axe violations', async ({
     page
   }) => {

@@ -1,9 +1,9 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import {
   answerCountryOfOrigin,
   selectSpecies,
+  signIn,
   startNotification
 } from '../../../../../../../../../../e2e/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
@@ -36,6 +36,7 @@ const errorLink = (page, message) =>
 
 test.describe('commodity selection', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openSelection(page)
   })
 

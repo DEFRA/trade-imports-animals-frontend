@@ -1,10 +1,10 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import {
   answerCountryOfOrigin,
   journeyUrl,
   selectSpecies,
+  signIn,
   startNotification
 } from '../../../../../../../../../../e2e/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
@@ -53,6 +53,7 @@ const errorFor = (field) =>
 
 test.describe('commodity consignment details — rendering and validation', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openDetails(page)
   })
 
@@ -111,6 +112,7 @@ test.describe('commodity consignment details — rendering and validation', () =
 
 test.describe('commodity consignment details — persistence and accessibility', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openDetails(page)
   })
 

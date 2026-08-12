@@ -19,12 +19,13 @@ export const list = async ({
   referenceNumber
 } = {}) => {
   const resolvedPage = validPage(page)
-  const rows = journeyIds
+  const documents = journeyIds
     .map((journeyId) => journeys.get(journeyId))
     .filter((journey) => journey && journey.status !== DELETED)
     .filter((journey) => !referenceNumber || journey.id === referenceNumber)
-    .map(marshalListItem)
-    .sort(sortByCreatedAt(sort))
+  const rows = (await Promise.all(documents.map(marshalListItem))).sort(
+    sortByCreatedAt(sort)
+  )
   const totalElements = rows.length
   const totalPages = Math.ceil(totalElements / LIST_PAGE_SIZE)
   const offset = (resolvedPage - 1) * LIST_PAGE_SIZE

@@ -1,10 +1,10 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import {
   chooseCountryOfOrigin,
   completeAnswerSections,
   journeyIdFromPage,
+  signIn,
   startNotification,
   values
 } from '../../../../../../../../../e2e/live-animals-journey.js'
@@ -58,6 +58,7 @@ const expectAxeClean = async (page, name) => {
 
 test.describe('cancel-amend feature', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     const reference = await submitNotification(page)
     await amendAndOpenCancel(page, reference)
   })

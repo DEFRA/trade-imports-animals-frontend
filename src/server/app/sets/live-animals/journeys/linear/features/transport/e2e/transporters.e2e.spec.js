@@ -1,8 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import {
   journeyUrl,
+  signIn,
   startNotification,
   unlockSections,
   values
@@ -199,6 +199,10 @@ const expectBranchOptions = async (page) => {
 }
 
 test.describe('transporter type page', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('renders transporter guidance and branch options', async ({ page }) => {
     await openTransporterType(page)
 
@@ -263,6 +267,10 @@ test.describe('transporter type page', () => {
 })
 
 test.describe('commercial transporter page', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('commercial transporter page renders address and approval details', async ({
     page
   }) => {
@@ -318,6 +326,10 @@ test.describe('commercial transporter page', () => {
 })
 
 test.describe('private transporter rendering and optionality', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('private transporter page renders all address fields and explanatory copy', async ({
     page
   }) => {
@@ -341,6 +353,10 @@ test.describe('private transporter rendering and optionality', () => {
 })
 
 test.describe('private transporter required validations', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   for (const [name, field, error] of requiredPrivateValidations) {
     test(`private transporter validation: empty ${name} links to and focuses the preserved field`, async ({
       page
@@ -367,6 +383,10 @@ test.describe('private transporter required validations', () => {
 })
 
 test.describe('private transporter format validations', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   for (const [name, field, invalid, error] of formatPrivateValidations) {
     test(`private transporter validation: ${name} links to and focuses the preserved value`, async ({
       page
@@ -417,6 +437,10 @@ test.describe('private transporter format validations', () => {
 })
 
 test.describe('private transporter persistence', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('saves and persists a complete private transporter record', async ({
     page
   }) => {
@@ -453,6 +477,10 @@ test.describe('private transporter persistence', () => {
 })
 
 test.describe('transporter pages accessibility', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('transporter type page has no serious or critical axe violations', async ({
     page
   }) => {

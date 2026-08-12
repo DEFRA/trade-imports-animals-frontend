@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import { copy } from './copy/copy.en.js'
+import { signIn } from '../../../../../../../../../e2e/sign-in.js'
 
 const SUBMIT_BUTTON = 'form button[type="submit"]'
 
@@ -27,6 +27,7 @@ const startAtCphNumber = async (page) => {
 
 test.describe('cph-number feature', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtCphNumber(page)
   })
 
@@ -74,6 +75,7 @@ test.describe('cph-number feature', () => {
 
 test.describe('cph-number validation', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtCphNumber(page)
   })
 

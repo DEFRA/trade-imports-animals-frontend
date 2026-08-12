@@ -1,15 +1,19 @@
 import { expect, test } from '@playwright/test'
-
 import {
   addDocument,
   chooseCountryOfOrigin,
   completeAnswerSections,
   journeyUrl,
   selectSpecies,
+  signIn,
   values
 } from './live-animals-journey.js'
 
 test.describe('live-animals journey glue', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('entry guards and the page-owned opening spine carry a fresh notification to the hub', async ({
     page
   }) => {

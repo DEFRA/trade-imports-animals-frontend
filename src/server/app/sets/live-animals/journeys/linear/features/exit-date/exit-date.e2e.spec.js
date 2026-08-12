@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import { copy } from './copy/copy.en.js'
+import { signIn } from '../../../../../../../../../e2e/sign-in.js'
 
 const SUBMIT_BUTTON = 'form button[type="submit"]'
 const CHOOSE_DATE_LABEL = 'Choose date'
@@ -66,6 +66,7 @@ const todayInPicker = (page) =>
 
 test.describe('exit-date feature', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtExitDate(page)
   })
 
@@ -120,6 +121,7 @@ test.describe('exit-date feature', () => {
 
 test.describe('exit-date date picker', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtExitDate(page)
   })
 
@@ -164,6 +166,10 @@ test.describe('exit-date date picker', () => {
 })
 
 test.describe('exit-date feature without JavaScript', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test.use({ javaScriptEnabled: false })
 
   test.beforeEach(async ({ page }) => {

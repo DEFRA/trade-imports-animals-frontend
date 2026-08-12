@@ -1,8 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import { portsOfEntry } from '../../../../../../services/_capture/fixtures.js'
 import { copy } from './copy/copy.en.js'
+import { signIn } from '../../../../../../../../../e2e/sign-in.js'
 
 const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
 
@@ -28,6 +28,7 @@ const startAtPortOfExit = async (page) => {
 
 test.describe('port-of-exit feature', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtPortOfExit(page)
   })
 

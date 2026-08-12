@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import {
+  signIn,
   startNotification,
   unlockSections
 } from '../../../../../../../../../../e2e/live-animals-journey.js'
@@ -46,6 +47,7 @@ const uploadDocument = async (page, document) => {
 
 test.describe('document scan-status rendering', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openDocuments(page)
   })
 
@@ -109,6 +111,7 @@ test.describe('document scan-status rendering', () => {
 
 test.describe('document scan-status polling', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openDocuments(page)
   })
 

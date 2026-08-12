@@ -1,9 +1,9 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import * as importReasonPurpose from '../../../../../../services/import-reason-purpose/index.js'
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
+import { signIn } from '../../../../../../../../../e2e/sign-in.js'
 
 const REASON_INPUT_SELECTOR = 'input[name="reasonForImport"]'
 
@@ -37,6 +37,7 @@ const startAtImportReason = async (page) => {
 
 test.describe('import-reason feature', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtImportReason(page)
   })
 
