@@ -36,9 +36,6 @@ const stageSubmittedNotification = async (page) => {
 const actionFor = (page, role, action, reference) =>
   page.getByRole(role, { name: `${action} ${copy.actionHidden(reference)}` })
 
-// Runs in the browser. Reports how far the page scrolls past its own width,
-// plus the first few elements sticking out, so a failure names the culprit
-// instead of just a number.
 const overflowReport = () => {
   const root = document.documentElement
   const offenders = [...document.querySelectorAll('body *')]
@@ -154,8 +151,6 @@ test.describe('dashboard feature — notification rows and actions', () => {
 
     await expectNoHorizontalOverflow(page)
 
-    // 769px is where the filter panel stops stacking and starts squeezing the
-    // results column, so it is the width the layout is most likely to break at.
     await page.setViewportSize({
       width: DESKTOP_BREAKPOINT_WIDTH,
       height: 900

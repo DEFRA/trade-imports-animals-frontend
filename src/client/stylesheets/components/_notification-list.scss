@@ -2,10 +2,6 @@
 @use "../variables/colours" as *;
 
 .notification-list {
-  // Layout is govuk-grid-row + one-third / two-thirds, the sidebar shape the
-  // GDS styles guide gives as its own grid example. Those columns stack below
-  // tablet unaided, so the panel needs no width, no flex and no media query —
-  // only its own background and padding.
   &__layout {
     margin-top: govuk-spacing(6);
   }
@@ -33,10 +29,6 @@
     flex-wrap: wrap;
     align-items: flex-end;
     gap: govuk-spacing(3);
-    // Must be allowed to shrink. Held at its content width it never gets narrow
-    // enough for its own flex-wrap to fire, so the select and button run past the
-    // results column instead of stacking — 7px of horizontal scroll at 769px,
-    // where the filter panel first pins to 280px and squeezes hardest.
     min-width: 0;
 
     .govuk-form-group {
@@ -58,10 +50,6 @@
     }
   }
 
-  // The card's key/value rows are govuk-grid-row + govuk-grid-column-one-third.
-  // All that remains is undoing user-agent <dl> defaults the grid does not expect:
-  // the list's top margin, and the 40px indent every browser puts on <dd>, which
-  // would offset each value from the <dt> above it.
   &__card-row {
     margin-top: 0;
     margin-bottom: govuk-spacing(3);

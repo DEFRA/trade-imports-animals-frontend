@@ -314,12 +314,6 @@ describe('dashboard notifications list', () => {
   })
 })
 
-// The dashboard is the service's only display surface, and it cannot say so
-// through kit.base — base() forces breadcrumbs off for anything without a
-// journey, which would strip the dashboard's own. Its membership therefore
-// lives in this one controller line, so without this test deleting that line
-// leaves the whole suite green while the list silently renders back at the
-// narrow reading measure. That is the exact regression this ticket undoes.
 describe('dashboard content width', () => {
   beforeAll(() => {
     configureRecords(recordsStub)

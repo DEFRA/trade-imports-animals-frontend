@@ -17,22 +17,12 @@ export const routeOptions = {}
 
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
-// A page is either something the user fills in or something they read. Forms get the
-// GOV.UK reading measure; display surfaces get the whole container because they carry
-// side-by-side furniture — the notification list pins a 280px filter panel, which at
-// two-thirds left ~162px per summary card and wrapped the row actions onto three lines.
 export const SURFACES = Object.freeze({
   form: 'govuk-grid-column-two-thirds',
   display: 'govuk-grid-column-full'
 })
 
-// Exported because display surfaces cannot go through base(): it forces
-// breadcrumbs off for anything without a journey, which would strip the
-// dashboard's own. They call this directly instead, so the surface name is
-// still validated in one place rather than each page naming a raw class.
 export const surfaceClass = (surface) => {
-  // hasOwn, not truthiness — SURFACES.constructor inherits from Object and
-  // would otherwise pass as a valid surface and return a function.
   if (!Object.hasOwn(SURFACES, surface)) {
     throw new Error(
       `Unknown surface '${surface}'. Expected one of: ${Object.keys(SURFACES).join(', ')}`
@@ -129,9 +119,6 @@ export const base = (
     journeyStrip: journeyStrip(journey),
     sharedCopy,
     recoverableError,
-    // No surface option: this builds the chrome for answering pages, and a
-    // display page cannot use it anyway — the line above forces breadcrumbs off
-    // without a journey, which would strip the dashboard's own.
     contentColumnClass: SURFACES.form
   }
 }
