@@ -7,7 +7,7 @@ import { records as recordsStub } from '../../services/persistence/records/stub/
 import { session as sessionStub } from '../../services/persistence/session/stub.js'
 import { journeyRequest, recordingH } from '../test-support.js'
 
-const IMPORT_TYPE_LIVE_ANIMALS = 'live-animals'
+const DECLARATION_CONFIRMED = 'confirmed'
 
 describe('flow-only answers — session round-trip', () => {
   beforeEach(async () => {
@@ -17,13 +17,12 @@ describe('flow-only answers — session round-trip', () => {
     await records.clear()
   })
 
-  it('Should return importType and declaration from a fresh read after commit without adding them to fulfilment', async () => {
+  it('Should return declaration from a fresh read after commit without adding it to fulfilment', async () => {
     const journey = await records.create()
     const writeH = recordingH()
 
     await commit(journeyRequest(journey.journeyId), writeH, {
-      importType: IMPORT_TYPE_LIVE_ANIMALS,
-      declaration: 'confirmed'
+      declaration: DECLARATION_CONFIRMED
     })
 
     expect(
@@ -38,8 +37,7 @@ describe('flow-only answers — session round-trip', () => {
     })
     const fresh = await get(freshRequest, recordingH())
 
-    expect(fresh.answers.importType).toBe(IMPORT_TYPE_LIVE_ANIMALS)
-    expect(fresh.answers.declaration).toBe('confirmed')
+    expect(fresh.answers.declaration).toBe(DECLARATION_CONFIRMED)
   })
 
   it('Should load flow-only session state once when a request reads repeatedly', async () => {
@@ -50,7 +48,7 @@ describe('flow-only answers — session round-trip', () => {
       app: {},
       state: {
         [SESSION_COOKIES.flowOnlyAnswers]: {
-          [journey.journeyId]: { importType: IMPORT_TYPE_LIVE_ANIMALS }
+          [journey.journeyId]: { declaration: DECLARATION_CONFIRMED }
         }
       }
     })

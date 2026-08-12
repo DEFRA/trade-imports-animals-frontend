@@ -14,7 +14,7 @@ import {
 } from '../../../../../../engine/journey.js'
 import { routeOptions, surfaceClass } from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
-import { importTypeFilterPage } from '../import-type-filter/page.js'
+import { originPage } from '../origin/page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
@@ -130,7 +130,7 @@ export const routes = [
     options: routeOptions,
     handler: async (request, h) => {
       const journey = await startJourney(request, h)
-      return h.redirect(pagePath(journey.journeyId, importTypeFilterPage.slug))
+      return h.redirect(pagePath(journey.journeyId, originPage.slug))
     }
   }
 ]

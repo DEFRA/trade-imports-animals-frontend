@@ -31,7 +31,7 @@ import { journeyFlowOnlyKeys } from '../flow/journey-flow.js'
 
 // `anyInstanceAnswered` — look up the obligation named `id` and walk the
 // answers tree over its ancestor-group chain, testing each positional instance
-// with `isAnswered`. The manifest does not carry importType / declaration, but
+// with `isAnswered`. The manifest does not carry declaration, but
 // `answered()` is only ever consulted for `ENFORCED_AT_CONTINUE` prerequisites
 // (`countryOfOrigin`, `commoditySelection`, flow/gates.js), which it does — so
 // the check is exact.
@@ -122,21 +122,20 @@ const projectInScope = (implications) => {
 
 /**
  * The RAW evaluator scope, projected into the pathKey grammar — the manifest
- * only, before the flow-only projection. importType/declaration are ABSENT here
- * because the notification model does not carry them. `makeScope` layers the
+ * only, before the flow-only projection. declaration is ABSENT here
+ * because the notification model does not carry it. `makeScope` layers the
  * flow-only obligations on TOP of this for the FULL scope the controllers
  * consume; this export stays the raw evaluator scope.
  */
 export const rawInScope = (evaluation) => projectInScope(evaluation.obligations)
 
-// Flow-only obligations the notification model does not carry: the pre-journey
-// import-type filter (the service entry filter) and the
-// submit-time declaration step. The evaluator omits them, so without this layer
-// their owning pages would be unreachable. Both are unconditional top-level
+// Flow-only obligations the notification model does not carry: the submit-time
+// declaration step. The evaluator omits them, so without this layer their
+// owning pages would be unreachable. They are unconditional top-level
 // obligations (bare-id pathKeys). Declared in bridge/obligation-source.js so
 // the answer-key recognition surface and this projection share one list.
 
-// Project the flow-only obligations onto the FULL scope. Both are unconditional
+// Project the flow-only obligations onto the FULL scope. They are unconditional
 // top-level obligations (no `activatedBy`, no collection ancestor), always in
 // scope regardless of answers. An additive layer only; the raw evaluator scope
 // (`rawInScope`) is untouched.
@@ -157,11 +156,11 @@ const projectFlowOnlyScope = (inScope) => {
  * without this module importing `read.js`.
  *
  * The FULL scope also carries the flow-only obligations the notification model
- * does not model (importType, declaration — `projectFlowOnlyScope`), so their
- * owning pages stay reachable. That projection is additive on the full scope
- * only; the raw evaluator scope (`rawInScope`) still excludes them.
+ * does not model (declaration — `projectFlowOnlyScope`), so their owning pages
+ * stay reachable. That projection is additive on the full scope only; the raw
+ * evaluator scope (`rawInScope`) still excludes them.
  * `readyForCheckYourAnswers` is unaffected — its task rows never cover
- * importType/declaration.
+ * declaration.
  *
  * @param {object} answers - the nested answer POJO.
  * @param {object} evaluation - the request-level evaluator result.

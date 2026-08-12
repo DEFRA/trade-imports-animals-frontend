@@ -3,7 +3,7 @@ import { session } from './stub.js'
 import { SESSION_COOKIES } from '../../../engine/persistence/session.js'
 import { recordingH } from '../../../engine/test-support.js'
 
-const IMPORT_TYPE_LIVE_ANIMALS = 'live-animals'
+const DECLARATION_CONFIRMED = 'confirmed'
 
 const requestKnowing = (...journeyIds) => ({
   state: { [SESSION_COOKIES.knownJourneys]: journeyIds }
@@ -81,7 +81,7 @@ describe('#session.flowOnlyAnswers', () => {
     await session.setFlowOnlyAnswers(
       h,
       'journey-1',
-      { importType: IMPORT_TYPE_LIVE_ANIMALS },
+      { declaration: DECLARATION_CONFIRMED },
       request
     )
 
@@ -91,7 +91,7 @@ describe('#session.flowOnlyAnswers', () => {
         { state: { [SESSION_COOKIES.flowOnlyAnswers]: stored } },
         'journey-1'
       )
-    ).toEqual({ importType: IMPORT_TYPE_LIVE_ANIMALS })
+    ).toEqual({ declaration: DECLARATION_CONFIRMED })
     expect(
       await session.flowOnlyAnswers(
         { state: { [SESSION_COOKIES.flowOnlyAnswers]: stored } },
@@ -102,20 +102,20 @@ describe('#session.flowOnlyAnswers', () => {
 
   it('Should preserve another journey while updating the current one', async () => {
     const existing = {
-      'journey-1': { importType: IMPORT_TYPE_LIVE_ANIMALS }
+      'journey-1': { declaration: '' }
     }
     const h = recordingH()
 
     await session.setFlowOnlyAnswers(
       h,
       'journey-2',
-      { declaration: 'confirmed' },
+      { declaration: DECLARATION_CONFIRMED },
       { state: { [SESSION_COOKIES.flowOnlyAnswers]: existing } }
     )
 
     expect(h.cookies[SESSION_COOKIES.flowOnlyAnswers]).toEqual({
       ...existing,
-      'journey-2': { declaration: 'confirmed' }
+      'journey-2': { declaration: DECLARATION_CONFIRMED }
     })
   })
 })

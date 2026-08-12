@@ -47,7 +47,6 @@ const comprehensive = characterisationCorpus.find(
 
 const parityFixture = structuredClone(comprehensive)
 for (const flowOrOutOfScope of [
-  'importType',
   'declaration',
   'referenceNumber',
   'destinationCountry',

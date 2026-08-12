@@ -18,7 +18,6 @@ import { journeyStrip } from '../../../../../shared/kit.js'
 
 import { routes as hubRoutes } from './hub/controller.js'
 import { routes as dashboardRoutes } from './dashboard/controller.js'
-import { routes as filterRoutes } from './import-type-filter/controller.js'
 import { routes as originRoutes } from './origin/controller.js'
 import { routes as importReasonRoutes } from './import-reason/controller.js'
 
@@ -107,11 +106,6 @@ describe('journey reference strip', () => {
   it('Should render no strip on the dashboard', async () => {
     const { context } = await renderWith(getHandlerOf(dashboardRoutes))
     expect(context.journeyStrip).toBeUndefined()
-  })
-
-  it('Should render no strip on the import-type filter', async () => {
-    const { context } = await renderWith(getHandlerOf(filterRoutes))
-    expect(context.journeyStrip).toBeNull()
   })
 
   it('Should render no strip on origin while the journey has no saved answers', async () => {

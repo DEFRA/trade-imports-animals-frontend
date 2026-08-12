@@ -6,6 +6,7 @@ import {
   completeAnswerSections,
   journeyUrl,
   selectSpecies,
+  startNotification,
   values
 } from './live-animals-journey.js'
 
@@ -19,18 +20,13 @@ test.describe('live-animals journey glue', () => {
 
     await page.goto('/')
     await page.getByRole('button', { name: 'Start a new notification' }).click()
-    await expect(heading('What are you importing?')).toBeVisible()
+    await expect(heading('Origin of the import')).toBeVisible()
 
-    // Until the service filter is passed, journey deep links return to it.
-    await page.goto(journeyUrl(page, 'origin'))
-    await expect(heading('What are you importing?')).toBeVisible()
+    // Until the entry page is answered, journey deep links return to it — and
+    // the entry page itself is exempt, so there is no redirect loop.
     await page.goto(journeyUrl(page))
-    await expect(heading('What are you importing?')).toBeVisible()
-
-    await page
-      .getByRole('radio', { name: 'Live animals or germinal products' })
-      .check()
-    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(heading('Origin of the import')).toBeVisible()
+    await page.goto(journeyUrl(page, 'origin'))
     await expect(heading('Origin of the import')).toBeVisible()
 
     await chooseCountryOfOrigin(page)
@@ -75,13 +71,7 @@ test.describe('live-animals journey glue', () => {
     page
   }) => {
     test.slow()
-    await page.goto('/')
-    await page.getByRole('button', { name: 'Start a new notification' }).click()
-    await page
-      .getByRole('radio', { name: 'Live animals or germinal products' })
-      .check()
-    await page.getByRole('button', { name: 'Continue' }).click()
-    await page.goto(journeyUrl(page))
+    await startNotification(page)
     await completeAnswerSections(page)
 
     const [document] = values.documents

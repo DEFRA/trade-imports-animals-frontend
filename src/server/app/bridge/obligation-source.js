@@ -49,8 +49,8 @@ export const MAX_ENTRIES_FROM = {
 // the engine's write paths and submitJourney reject it loudly instead.
 // ---------------------------------------------------------------------------
 
-// Flow-owned obligations the notification model does not carry: the
-// pre-journey import-type filter and the submit-time declaration step.
+// Flow-owned obligations the notification model does not carry, such as the
+// submit-time declaration step.
 export const flowOnlyObligations = () => journeyFlowOnlyKeys()
 
 export const flowOnlyAnswersFrom = (answers) =>

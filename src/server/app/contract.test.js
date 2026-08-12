@@ -23,7 +23,6 @@ import {
 } from './sets/live-animals/journeys/linear/features/transport/port-of-entry/arrival-window.js'
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
 
-import * as importTypeFilter from './sets/live-animals/journeys/linear/features/import-type-filter/controller.js'
 import * as origin from './sets/live-animals/journeys/linear/features/origin/controller.js'
 import * as commoditiesSearch from './sets/live-animals/journeys/linear/features/commodities/search/search.controller.js'
 import * as consignmentDetails from './sets/live-animals/journeys/linear/features/commodities/consignment-details/consignment-details.controller.js'
@@ -69,12 +68,6 @@ const committableCollects = (collects) =>
   })
 
 const cases = [
-  {
-    id: 'import-type-filter',
-    collects: importTypeFilter.meta.collects,
-    handler: postHandlerOf(importTypeFilter),
-    payload: { importType: 'live-animals' }
-  },
   {
     id: 'origin',
     collects: origin.meta.collects,

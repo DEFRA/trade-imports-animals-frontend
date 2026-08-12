@@ -154,7 +154,7 @@ describe('#session.flowOnlyAnswers (real, yar)', () => {
     const first = await server.inject({
       method: 'POST',
       url: '/flow/J-1',
-      payload: { importType: 'live-animals' }
+      payload: { declaration: '' }
     })
     const second = await server.inject({
       method: 'POST',
@@ -180,7 +180,7 @@ describe('#session.flowOnlyAnswers (real, yar)', () => {
       headers: { cookie }
     })
 
-    expect(journey1.result.values).toEqual({ importType: 'live-animals' })
+    expect(journey1.result.values).toEqual({ declaration: '' })
     expect(journey2.result.values).toEqual({ declaration: 'confirmed' })
     expect(unknown.result.values).toEqual({})
   })

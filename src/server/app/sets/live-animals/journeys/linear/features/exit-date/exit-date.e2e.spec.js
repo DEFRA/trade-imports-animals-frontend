@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
+import { answerOriginEntry } from '../../../../../../../../../e2e/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 
 const SUBMIT_BUTTON = 'form button[type="submit"]'
@@ -12,11 +13,11 @@ const startAtExitDate = async (page) => {
     .locator('form[action="/notifications"]')
     .getByRole('button')
     .click()
-  await page.locator('input[name="importType"][value="live-animals"]').check()
-  await page.locator('form').getByRole('button').click()
   await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
 
   const reasonUrl = page.url().replace(/\/origin$/, '/import-reason')
+  await answerOriginEntry(page)
+
   await page.goto(reasonUrl)
   await page
     .locator('input[name="reasonForImport"][value="temporaryAdmissionHorses"]')

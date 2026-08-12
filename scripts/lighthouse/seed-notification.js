@@ -45,7 +45,6 @@ const firstListedOption = (name) => (page) => {
 }
 
 const BEFORE_REASON = [
-  { slug: 'import-type', fields: { importType: values.importType } },
   {
     slug: 'origin',
     fields: {

@@ -11,8 +11,8 @@ section is a navigation sequence. The `review` section has the one authored sect
 gate: it requires `scope.readyForCheckYourAnswers`. Normal page gates are derived
 from `meta.collects`, scope and earlier continue prerequisites.
 
-`FLOW_ONLY_KEYS` contains `importType` and `declaration`. Those values use the
-session's flow-only store rather than canonical obligation fulfilment.
+`FLOW_ONLY_KEYS` contains `declaration`. That value uses the session's flow-only
+store rather than canonical obligation fulfilment.
 
 ## Task rows
 
@@ -32,6 +32,9 @@ task-row ids under visible headings and supplies their presentation order.
 [`run.js`](../journeys/linear/flow/run.js) owns the opening-run sequence and exports
 `nextRunTarget`. [`entry-guard.js`](../journeys/linear/flow/entry-guard.js) owns the
 journey's redirect policy before handlers run.
+
+The origin page is the journey entry. A new notification is held there by the
+guard until it is answered, and saving it is what opens the opening run.
 
 ## Registration wiring
 
