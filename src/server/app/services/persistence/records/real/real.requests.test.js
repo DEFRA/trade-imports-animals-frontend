@@ -42,9 +42,11 @@ const canonical = ({
   submittedAt = null
 } = {}) => ({
   id,
+  referenceNumber: id,
   fulfilments,
   status,
   createdAt,
+  created: createdAt,
   submittedAt
 })
 

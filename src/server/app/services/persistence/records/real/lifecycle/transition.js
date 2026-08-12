@@ -1,10 +1,8 @@
 import { notificationsUrl } from '../config.js'
 import { failed } from '../http/failed.js'
 import { headers } from '../http/headers.js'
-import { marshal } from '../marshal/document.js'
+import { marshalNotification } from '../marshal/document.js'
 
-// Each lifecycle transition is a POST; the backend writes the state change
-// and fires the outbox event atomically.
 const postTransition = async (url, action, body) => {
   const response = await fetch(url, {
     method: 'POST',
@@ -23,7 +21,7 @@ export const finalise = async (journeyId, actor) => {
     'submit notification',
     actor
   )
-  return marshal(await response.json())
+  return marshalNotification(await response.json())
 }
 
 export const amend = async (journeyId, actor) => {
@@ -32,7 +30,7 @@ export const amend = async (journeyId, actor) => {
     'amend notification',
     actor
   )
-  return marshal(await response.json())
+  return marshalNotification(await response.json())
 }
 
 export const cancelAmend = async (journeyId) => {
@@ -40,15 +38,13 @@ export const cancelAmend = async (journeyId) => {
     `${notificationsUrl}/${journeyId}/cancel-amend`,
     'cancel notification amendment'
   )
-  return marshal(await response.json())
+  return marshalNotification(await response.json())
 }
 
-// The soft-delete endpoint does not accept an actor body; keep the signature
-// for callers that pass one but do not forward it.
 export const softDelete = async (journeyId) => {
   const response = await postTransition(
     `${notificationsUrl}/${journeyId}/soft-delete`,
     'soft-delete notification'
   )
-  return marshal(await response.json())
+  return marshalNotification(await response.json())
 }

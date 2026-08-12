@@ -31,8 +31,10 @@ const notification = (referenceNumber, status) => ({
 
 const notificationFulfilments = (id, status) => ({
   id,
+  referenceNumber: id,
   status,
   createdAt: RECORD_CREATED_AT,
+  created: RECORD_CREATED_AT,
   submittedAt: status === 'SUBMITTED' ? '2026-07-14T10:00:00' : null,
   fulfilments: []
 })

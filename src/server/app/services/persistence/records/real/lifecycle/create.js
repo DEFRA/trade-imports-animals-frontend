@@ -1,7 +1,7 @@
 import { notificationsUrl } from '../config.js'
 import { failed } from '../http/failed.js'
 import { headers } from '../http/headers.js'
-import { marshal } from '../marshal/document.js'
+import { marshalNotification } from '../marshal/document.js'
 
 // Backend mints the reference number; response carries the created notification.
 export const create = async () => {
@@ -13,7 +13,7 @@ export const create = async () => {
   if (!notificationResponse.ok) {
     throw failed('create notification', notificationResponse)
   }
-  return marshal(await notificationResponse.json())
+  return marshalNotification(await notificationResponse.json())
 }
 
 // Copy dedup dropped pending EUDPA-314; the idempotencyKey parameter is retained
@@ -27,5 +27,5 @@ export const copy = async (journeyId, _idempotencyKey) => {
   if (!response.ok) {
     throw failed('copy notification', response)
   }
-  return marshal(await response.json())
+  return marshalNotification(await response.json())
 }
