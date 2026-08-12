@@ -20,7 +20,7 @@ import {
   hubPath,
   pagePath
 } from '../../../../../../shared/paths.js'
-import { CYA_SLUG } from '../../../../../../shared/kit.js'
+import { CYA_SLUG, SURFACES } from '../../../../../../shared/kit.js'
 
 import { routes } from './controller.js'
 import { authenticatedCredentials } from '../../../../../../engine/test-support.js'
@@ -311,6 +311,19 @@ describe('dashboard notifications list', () => {
     expect((await records.load({ journeyId: deleted.journeyId })).status).toBe(
       DELETED
     )
+  })
+})
+
+describe('dashboard content width', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+  })
+
+  it('Should render the notification list as a display surface', async () => {
+    const h = buildH()
+    await listGet(buildRequest(), h)
+    expect(h.captured.view.context.contentColumnClass).toBe(SURFACES.display)
   })
 })
 

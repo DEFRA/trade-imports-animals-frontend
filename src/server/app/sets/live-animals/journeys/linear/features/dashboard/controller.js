@@ -12,7 +12,7 @@ import {
   listKnownJourneys,
   startJourney
 } from '../../../../../../engine/journey.js'
-import { routeOptions } from '../../../../../../shared/kit.js'
+import { routeOptions, surfaceClass } from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { importTypeFilterPage } from '../import-type-filter/page.js'
 import { copy as en } from './copy/copy.en.js'
@@ -67,6 +67,7 @@ export const renderDashboard = async (
 
   return h.view(view, {
     pageTitle: copy.title,
+    contentColumnClass: surfaceClass('display'),
     copy,
     sharedCopy,
     startAction: createPath(),
