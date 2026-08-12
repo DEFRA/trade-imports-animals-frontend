@@ -1,7 +1,7 @@
 import { notificationsUrl } from '../config.js'
 import { failed } from '../http/failed.js'
 import { headers } from '../http/headers.js'
-import { marshalNotification } from '../marshal/document.js'
+import { marshal } from '../marshal/document.js'
 
 const postTransition = async (url, action, body) => {
   const response = await fetch(url, {
@@ -21,7 +21,7 @@ export const finalise = async (journeyId, actor) => {
     'submit notification',
     actor
   )
-  return marshalNotification(await response.json())
+  return marshal(await response.json())
 }
 
 export const amend = async (journeyId, actor) => {
@@ -30,7 +30,7 @@ export const amend = async (journeyId, actor) => {
     'amend notification',
     actor
   )
-  return marshalNotification(await response.json())
+  return marshal(await response.json())
 }
 
 export const cancelAmend = async (journeyId) => {
@@ -38,7 +38,7 @@ export const cancelAmend = async (journeyId) => {
     `${notificationsUrl}/${journeyId}/cancel-amend`,
     'cancel notification amendment'
   )
-  return marshalNotification(await response.json())
+  return marshal(await response.json())
 }
 
 export const softDelete = async (journeyId) => {
@@ -46,5 +46,5 @@ export const softDelete = async (journeyId) => {
     `${notificationsUrl}/${journeyId}/soft-delete`,
     'soft-delete notification'
   )
-  return marshalNotification(await response.json())
+  return marshal(await response.json())
 }

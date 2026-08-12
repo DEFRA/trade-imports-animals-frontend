@@ -36,16 +36,14 @@ const actor = {
 }
 
 const canonical = ({
-  id = journeyId,
+  referenceNumber = journeyId,
   fulfilments = [],
   status = 'DRAFT',
   submittedAt = null
 } = {}) => ({
-  id,
-  referenceNumber: id,
+  referenceNumber,
   fulfilments,
   status,
-  createdAt,
   created: createdAt,
   submittedAt
 })
@@ -258,7 +256,9 @@ describe('real records adapter — lifecycle and list', () => {
   it('Should copy without an idempotency header (copy dedup dropped pending EUDPA-314)', async () => {
     const copiedJourneyId = 'GBN-AG-26-COPIED'
     fetchMocker.mockResponse(
-      JSON.stringify(canonical({ id: copiedJourneyId, status: 'DRAFT' })),
+      JSON.stringify(
+        canonical({ referenceNumber: copiedJourneyId, status: 'DRAFT' })
+      ),
       { status: 201 }
     )
 

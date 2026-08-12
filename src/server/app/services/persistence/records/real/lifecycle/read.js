@@ -2,15 +2,13 @@ import { notificationsUrl } from '../config.js'
 import { failed } from '../http/failed.js'
 import { getFulfilment } from '../http/get-fulfilment.js'
 import { headers } from '../http/headers.js'
-import { marshalFulfilmentView } from '../marshal/document.js'
+import { marshal } from '../marshal/document.js'
 import { marshalListItem } from '../marshal/list-item.js'
 
 export const load = async ({ journeyId } = {}) => {
   if (journeyId != null) {
     const fulfilment = await getFulfilment(journeyId)
-    return fulfilment === undefined
-      ? undefined
-      : marshalFulfilmentView(fulfilment)
+    return fulfilment === undefined ? undefined : marshal(fulfilment)
   }
   return undefined
 }

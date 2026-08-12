@@ -2,7 +2,7 @@ import { encodeEvaluatorFulfilments } from '../../fulfilment-codec/index.js'
 import { fulfilmentToNotification } from '../../mapper.js'
 import { notificationsUrl } from '../config.js'
 import { put } from '../http/put.js'
-import { marshalNotification } from '../marshal/document.js'
+import { marshal } from '../marshal/document.js'
 import { assertWritable } from '../write-guards/assert-writable.js'
 import { resolveStatus } from '../write-guards/resolve-status.js'
 
@@ -28,7 +28,7 @@ export const replaceFulfilment = async (
     body,
     'save notification'
   )
-  return marshalNotification(await response.json())
+  return marshal(await response.json())
 }
 
 export const clear = async () => {}

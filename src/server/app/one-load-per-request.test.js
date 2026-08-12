@@ -31,9 +31,9 @@ const notificationsUrl = `${backendBaseUrl}/notifications`
 const fulfilmentUrl = `${notificationsUrl}/${ref}/fulfilments`
 
 const fulfilmentBody = JSON.stringify({
-  id: ref,
+  referenceNumber: ref,
   status: 'DRAFT',
-  createdAt: '2026-07-23T09:00:00',
+  created: '2026-07-23T09:00:00',
   submittedAt: null,
   fulfilments: []
 })

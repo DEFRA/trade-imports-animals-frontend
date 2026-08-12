@@ -29,11 +29,9 @@ const notification = (referenceNumber, status) => ({
   consignee: { name: CONSIGNEE_NAME }
 })
 
-const notificationFulfilments = (id, status) => ({
-  id,
-  referenceNumber: id,
+const mockNotification = (referenceNumber, status) => ({
+  referenceNumber,
   status,
-  createdAt: RECORD_CREATED_AT,
   created: RECORD_CREATED_AT,
   submittedAt: status === 'SUBMITTED' ? '2026-07-14T10:00:00' : null,
   fulfilments: []
@@ -45,9 +43,7 @@ describe('real records adapter — amend', () => {
   })
 
   test('Should POST the amend endpoint and marshal a writable amend record', async () => {
-    fetchMocker.mockResponse(
-      JSON.stringify(notificationFulfilments('GBN-1', 'AMEND'))
-    )
+    fetchMocker.mockResponse(JSON.stringify(mockNotification('GBN-1', 'AMEND')))
 
     const amended = await records.amend('GBN-1')
 
@@ -145,10 +141,7 @@ describe('real records adapter — paged list', () => {
 
   test('Should implement has with an exact-id canonical GET', async () => {
     fetchMocker.mockResponses(
-      [
-        JSON.stringify(notificationFulfilments('GBN-1', 'DRAFT')),
-        { status: 200 }
-      ],
+      [JSON.stringify(mockNotification('GBN-1', 'DRAFT')), { status: 200 }],
       ['Not Found', { status: 404 }]
     )
 
