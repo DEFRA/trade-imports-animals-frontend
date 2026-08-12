@@ -2,10 +2,10 @@ export const copy = {
   title: 'Overview',
   commodityTotals: {
     heading: 'Your commodities',
-    animalsCardTitle: 'Animals',
-    animalsRow: 'Total number of animals in this consignment',
-    packagesCardTitle: 'Packages/boxes',
-    packagesRow: 'Total number of packages in this consignment'
+    animalsLabel: 'Animals',
+    animalsCaption: 'Total number of animals in this consignment',
+    packagesLabel: 'Packages/boxes',
+    packagesCaption: 'Total number of packages in this consignment'
   },
   returnToDashboard: 'Return to dashboard',
   statuses: {

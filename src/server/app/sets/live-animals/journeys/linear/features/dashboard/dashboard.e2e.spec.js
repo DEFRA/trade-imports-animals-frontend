@@ -11,8 +11,10 @@ import {
 import { copy } from './copy/copy.en.js'
 
 const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
+const COPY_AS_NEW = 'Copy as new'
 const PAGE_SIZE = 20
 const SEEDED_NOTIFICATIONS = PAGE_SIZE + 1
+const DESKTOP_BREAKPOINT_WIDTH = 769
 
 const submitNotification = async (page) => {
   await completeAnswerSections(page)
@@ -24,8 +26,37 @@ const submitNotification = async (page) => {
   await page.getByRole('button', { name: 'Continue' }).click()
 }
 
+const stageSubmittedNotification = async (page) => {
+  await startNotification(page)
+  await submitNotification(page)
+  const reference = journeyIdFromPage(page)
+  await page.goto('/')
+  return reference
+}
+
 const actionFor = (page, role, action, reference) =>
   page.getByRole(role, { name: `${action} ${copy.actionHidden(reference)}` })
+
+const overflowReport = () => {
+  const root = document.documentElement
+  const offenders = [...document.querySelectorAll('body *')]
+    .map((element) => ({
+      selector: `${element.tagName.toLowerCase()}.${element.className || '(no class)'}`,
+      right: Math.round(element.getBoundingClientRect().right)
+    }))
+    .filter(({ right }) => right > root.clientWidth)
+    .slice(0, 10)
+  return { overflow: root.scrollWidth - root.clientWidth, offenders }
+}
+
+const expectNoHorizontalOverflow = async (page) => {
+  const { overflow, offenders } = await page.evaluate(overflowReport)
+
+  expect(
+    overflow,
+    `Dashboard overflows at ${page.viewportSize().width}px: ${JSON.stringify(offenders)}`
+  ).toBeLessThanOrEqual(0)
+}
 
 const startTwoNotifications = async (page) => {
   await startNotification(page)
@@ -87,11 +118,7 @@ test.describe('dashboard feature — notification rows and actions', () => {
     page
   }) => {
     test.slow()
-    await startNotification(page)
-    await submitNotification(page)
-    const reference = journeyIdFromPage(page)
-
-    await page.goto('/')
+    const reference = await stageSubmittedNotification(page)
 
     await expect(
       page.getByRole('heading', { name: reference, exact: true })
@@ -111,9 +138,27 @@ test.describe('dashboard feature — notification rows and actions', () => {
     await expect(actionFor(page, 'link', 'View', reference)).toBeVisible()
     await expect(actionFor(page, 'button', 'Amend', reference)).toBeVisible()
     await expect(
-      actionFor(page, 'button', 'Copy as new', reference)
+      actionFor(page, 'button', COPY_AS_NEW, reference)
     ).toBeVisible()
     await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
+  })
+
+  test('dashboard does not overflow horizontally at desktop', async ({
+    page
+  }) => {
+    test.slow()
+    const reference = await stageSubmittedNotification(page)
+    await expect(
+      page.getByRole('heading', { name: reference, exact: true })
+    ).toBeVisible()
+
+    await expectNoHorizontalOverflow(page)
+
+    await page.setViewportSize({
+      width: DESKTOP_BREAKPOINT_WIDTH,
+      height: 900
+    })
+    await expectNoHorizontalOverflow(page)
   })
 
   test('draft notification renders only its available actions', async ({
@@ -127,21 +172,36 @@ test.describe('dashboard feature — notification rows and actions', () => {
     await expect(page.getByText('Draft', { exact: true })).toBeVisible()
     await expect(actionFor(page, 'link', 'Resume', reference)).toBeVisible()
     await expect(
-      actionFor(page, 'button', 'Copy as new', reference)
+      actionFor(page, 'button', COPY_AS_NEW, reference)
     ).toBeVisible()
     await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
     await expect(actionFor(page, 'link', 'View', reference)).toHaveCount(0)
     await expect(actionFor(page, 'button', 'Amend', reference)).toHaveCount(0)
   })
 
+  test('copy as new renders in the same typeface as its neighbouring link actions', async ({
+    page
+  }) => {
+    await startNotification(page)
+    const reference = journeyIdFromPage(page)
+
+    await page.goto('/')
+
+    const fontFamilyOf = (locator) =>
+      locator.evaluate((element) => getComputedStyle(element).fontFamily)
+    const copyAsNew = actionFor(page, 'button', COPY_AS_NEW, reference)
+    const deleteAction = actionFor(page, 'link', 'Delete', reference)
+    const deleteFontFamily = await fontFamilyOf(deleteAction)
+
+    await expect.poll(() => fontFamilyOf(copyAsNew)).toBe(deleteFontFamily)
+    await expect.poll(() => fontFamilyOf(copyAsNew)).toMatch(/GDS Transport/)
+  })
+
   test('amending notification renders resume and cancel-amend actions', async ({
     page
   }) => {
     test.slow()
-    await startNotification(page)
-    await submitNotification(page)
-    const reference = journeyIdFromPage(page)
-    await page.goto('/')
+    const reference = await stageSubmittedNotification(page)
     await actionFor(page, 'button', 'Amend', reference).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
