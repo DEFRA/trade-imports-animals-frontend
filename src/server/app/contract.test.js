@@ -16,6 +16,7 @@ import {
   postHandlerEndingWith
 } from './engine/test-support.js'
 import { isAnswered } from './lib/answered.js'
+import { addUtcMonths, formatDateText } from './lib/validate/calendar.js'
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
 
 import * as importTypeFilter from './sets/live-animals/journeys/linear/features/import-type-filter/controller.js'
@@ -39,6 +40,9 @@ import * as contactSelect from './sets/live-animals/journeys/linear/features/con
 import * as declaration from './sets/live-animals/journeys/linear/features/declaration/controller.js'
 
 const drive = driveHandler
+
+// Inside the arrival-date window wherever the wall clock happens to be.
+const ARRIVAL_DATE = formatDateText(addUtcMonths(new Date(), 1))
 
 const obligationNames = [...walkObligations()].map(
   (node) => node.obligation.name
@@ -107,7 +111,7 @@ const cases = [
     collects: portOfEntry.meta.collects,
     handler: postHandlerOf(portOfEntry),
     payload: {
-      arrivalDateAtPort: '12/12/2026',
+      arrivalDateAtPort: ARRIVAL_DATE,
       portOfEntry: 'GB ABD',
       meansOfTransport: 'ROAD_VEHICLE',
       transportIdentification: 'FR-892-LK',

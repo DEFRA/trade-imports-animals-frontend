@@ -4,7 +4,8 @@ export const copy = {
     title: 'Manylion cyrraedd',
     arrivalDate: {
       label: 'Dyddiad cyrraedd y porthladd mynediad',
-      hint: 'Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. Er enghraifft, 27/3/2026'
+      hint: (earliest, latest) =>
+        `Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. Rhowch ddyddiad rhwng ${earliest} a ${latest}.`
     },
     port: {
       label: 'Porthladd mynediad',
@@ -30,6 +31,8 @@ export const copy = {
     },
     errors: {
       arrivalDateInvalid: 'Rhowch ddyddiad cyrraedd go iawn',
+      arrivalDateOutOfRange: (earliest, latest) =>
+        `Rhaid i’r dyddiad cyrraedd yn y porthladd mynediad fod rhwng ${earliest} a ${latest}`,
       identificationMaxLength:
         'Rhaid i adnabod y cludiant fod yn 58 nod neu lai',
       documentReferenceMaxLength:

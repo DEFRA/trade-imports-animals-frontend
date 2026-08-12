@@ -155,7 +155,10 @@ const dateInputValue = (value) =>
         .filter(Boolean)
         .join('/')
 
-export const dateField = (name, { label, hint, value = {}, error } = {}) => {
+export const dateField = (
+  name,
+  { label, hint, value = {}, error, minDate, maxDate } = {}
+) => {
   return {
     id: name,
     name,
@@ -163,6 +166,8 @@ export const dateField = (name, { label, hint, value = {}, error } = {}) => {
     label: { text: label, classes: 'govuk-label--s' },
     hint: hint ? { text: hint } : undefined,
     errorMessage: error ? { text: error } : undefined,
-    value: dateInputValue(value)
+    value: dateInputValue(value),
+    minDate,
+    maxDate
   }
 }

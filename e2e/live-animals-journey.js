@@ -1,7 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { expect } from '@playwright/test'
 
+import {
+  addUtcMonths,
+  formatDateText
+} from '../src/server/app/lib/validate/calendar.js'
 import { COUNTRY_LABELS } from '../src/server/app/services/countries/stub.js'
+import { formatDisplayDate } from '../src/server/app/sets/live-animals/journeys/linear/features/dashboard/notification-helper.js'
 import { PORTS } from '../src/server/app/services/ports/stub.js'
 import { copy as transportCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js'
 
@@ -71,6 +76,14 @@ export const { values } = JSON.parse(
 
 const meansOfTransportLabel =
   transportCopy.portOfEntry.means.options[values.meansOfTransport]
+
+// The arrival-date window moves with the wall clock, so the driver computes a
+// date inside it rather than reading the fixed value out of the fixture.
+const arrivalDate = addUtcMonths(new Date(), 1)
+export const ARRIVAL_DATE_IN_WINDOW = formatDateText(arrivalDate)
+export const ARRIVAL_DATE_IN_WINDOW_DISPLAY = formatDisplayDate(
+  arrivalDate.toISOString().slice(0, 10)
+)
 
 export const startNotification = async (page) => {
   await page.goto('/')
@@ -153,7 +166,6 @@ export const addDocument = async (page, entry) => {
 
 export const completeAnswerSections = async (page) => {
   const [line] = values.commodityLines
-  const arrival = values.arrivalDateAtPort
   const save = () =>
     page.getByRole('button', { name: 'Save and continue' }).click()
   const task = (name) => page.getByRole('link', { name }).click()
@@ -237,7 +249,7 @@ export const completeAnswerSections = async (page) => {
   await task('Arrival details')
   await page
     .getByLabel('Arrival date at port of entry')
-    .fill(`${arrival.day}/${arrival.month}/${arrival.year}`)
+    .fill(ARRIVAL_DATE_IN_WINDOW)
   await choosePortOfEntry(page)
   await page
     .getByRole('radio', { name: meansOfTransportLabel, exact: true })

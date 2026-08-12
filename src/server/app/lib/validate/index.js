@@ -13,5 +13,6 @@ export {
   requiredOneOf,
   integerInRange,
   dateParts,
-  dateText
+  dateText,
+  dateTextInRange
 } from './validators.js'

@@ -4,6 +4,7 @@ import {
   compose,
   dateParts,
   dateText,
+  dateTextInRange,
   integerInRange,
   maxText,
   oneOf,
@@ -257,6 +258,46 @@ describe('#dateText — optional dd/mm/yyyy input', () => {
     (value) => {
       expect(run(schema, { dateOfBirth: value }).errors).toEqual({
         dateOfBirth: 'Enter a valid date'
+      })
+    }
+  )
+})
+
+describe('#dateTextInRange — inclusive bounds on a dd/mm/yyyy input', () => {
+  const INVALID_MESSAGE = 'Enter a real arrival date'
+  const RANGE_MESSAGE = 'Arrival date must be between 1/3/2026 and 30/9/2026'
+  const schema = dateTextInRange('arrivalDateAtPort', {
+    min: new Date(Date.UTC(2026, 2, 1)),
+    max: new Date(Date.UTC(2026, 8, 30)),
+    invalidMessage: INVALID_MESSAGE,
+    rangeMessage: RANGE_MESSAGE
+  })
+
+  it('Should pass a blank value, leaving the field optional', () => {
+    expect(run(schema, { arrivalDateAtPort: '' }).errors).toBeNull()
+  })
+
+  it.each(['1/3/2026', '01/03/2026', '30/9/2026', '15/6/2026'])(
+    'Should accept %s, inside or on the bounds',
+    (value) => {
+      expect(run(schema, { arrivalDateAtPort: value }).errors).toBeNull()
+    }
+  )
+
+  it.each(['28/2/2026', '1/10/2026', '1/1/1900'])(
+    'Should reject %s as out of range',
+    (value) => {
+      expect(run(schema, { arrivalDateAtPort: value }).errors).toEqual({
+        arrivalDateAtPort: RANGE_MESSAGE
+      })
+    }
+  )
+
+  it.each(['31/2/2026', '27/3', '2026-03-27', 'not a date'])(
+    'Should reject %s as not a real date, not as out of range',
+    (value) => {
+      expect(run(schema, { arrivalDateAtPort: value }).errors).toEqual({
+        arrivalDateAtPort: INVALID_MESSAGE
       })
     }
   )

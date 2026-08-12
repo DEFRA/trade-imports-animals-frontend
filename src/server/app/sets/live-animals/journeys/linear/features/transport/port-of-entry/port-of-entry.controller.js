@@ -7,7 +7,7 @@ import {
 } from '../../../../../../../lib/http-status.js'
 import {
   compose,
-  dateText,
+  dateTextInRange,
   maxText,
   oneOf,
   validate
@@ -19,6 +19,7 @@ import * as transportReference from '../../../../../../../services/transport-ref
 import { portOfEntryPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
+import { arrivalWindow } from './arrival-window.js'
 
 export const meta = {
   ...page,
@@ -46,9 +47,17 @@ const portItems = (selected) => [
   }))
 ]
 
-const fields = () =>
+const fields = (dateWindow) =>
   compose(
-    dateText('arrivalDateAtPort', copy.errors.arrivalDateInvalid),
+    dateTextInRange('arrivalDateAtPort', {
+      min: dateWindow.min,
+      max: dateWindow.max,
+      invalidMessage: copy.errors.arrivalDateInvalid,
+      rangeMessage: copy.errors.arrivalDateOutOfRange(
+        dateWindow.minText,
+        dateWindow.maxText
+      )
+    }),
     oneOf(
       'portOfEntry',
       ports.list().map((port) => port.code)
@@ -69,6 +78,7 @@ const fields = () =>
 const render = (
   h,
   journey,
+  dateWindow,
   values,
   { errors = {}, recoverableError = false } = {}
 ) =>
@@ -85,15 +95,17 @@ const render = (
     portItems: portItems(values.portOfEntry),
     arrivalDate: kit.dateField('arrivalDateAtPort', {
       label: copy.arrivalDate.label,
-      hint: copy.arrivalDate.hint,
+      hint: copy.arrivalDate.hint(dateWindow.minText, dateWindow.maxText),
       value: values.arrivalDateAtPort ?? {},
-      error: errors.arrivalDateAtPort
+      error: errors.arrivalDateAtPort,
+      minDate: dateWindow.minText,
+      maxDate: dateWindow.maxText
     })
   })
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, {
+  return render(h, journey, arrivalWindow(), {
     arrivalDateAtPort: answers.arrivalDateAtPort ?? {},
     portOfEntry: answers.portOfEntry ?? '',
     meansOfTransport: answers.meansOfTransport ?? '',
@@ -104,6 +116,9 @@ const get = async (request, h) => {
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
+  // One clock read per request: two would let the widget bounds and the server
+  // bounds disagree across a midnight boundary.
+  const dateWindow = arrivalWindow()
   const values = {
     arrivalDateAtPort: kit.readDate(payload, 'arrivalDateAtPort'),
     portOfEntry: payload.portOfEntry ?? '',
@@ -113,10 +128,12 @@ const post = async (request, h) => {
       payload.transportDocumentReference ?? ''
     ).trim()
   }
-  const { errors } = validate(fields(), payload)
+  const { errors } = validate(fields(dateWindow), payload)
   if (errors) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, values, { errors }).code(HTTP_STATUS_BAD_REQUEST)
+    return render(h, journey, dateWindow, values, { errors }).code(
+      HTTP_STATUS_BAD_REQUEST
+    )
   }
 
   let committed
@@ -126,9 +143,9 @@ const post = async (request, h) => {
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return render(h, journey, values, { recoverableError: true }).code(
-        HTTP_STATUS_INTERNAL_SERVER_ERROR
-      )
+      return render(h, journey, dateWindow, values, {
+        recoverableError: true
+      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
   if (failure) {

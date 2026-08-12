@@ -1,6 +1,6 @@
 import Joi from 'joi'
 
-import { isRealDate } from './calendar.js'
+import { isRealDate, parseDateText } from './calendar.js'
 import { copyFor } from '../../shared/copy.js'
 import { validatorDefaults as en } from '../../shared/copy.en.js'
 import { validatorDefaults as cy } from '../../shared/copy.cy.js'
@@ -15,6 +15,7 @@ const PHONE_ALLOWED = /^[0-9+()\-.,;\s]+$/
 const UK_PHONE_MIN_DIGITS = 7
 const UK_PHONE_MAX_DIGITS = 15
 const INVALID_ERROR_CODE = 'any.invalid'
+const RANGE_ERROR_CODE = 'date.range'
 
 const single = (name, rule) => Joi.object({ [name]: rule }).unknown(true)
 
@@ -187,17 +188,33 @@ export const dateParts = (name, message = defaults.date) => {
   }).unknown(true)
 }
 
-export const dateText = (name, message = defaults.date) =>
+const isOutsideBounds = (date, min, max) =>
+  (min != null && date.getTime() < min.getTime()) ||
+  (max != null && date.getTime() > max.getTime())
+
+export const dateTextInRange = (
+  name,
+  { min, max, invalidMessage = defaults.date, rangeMessage } = {}
+) =>
   single(
     name,
     Joi.string()
       .trim()
       .allow('')
       .custom((raw, helpers) => {
-        const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
-        return match && isValidCalendarDate(match.slice(1))
-          ? raw
-          : helpers.error(INVALID_ERROR_CODE)
+        const parsed = parseDateText(raw)
+        if (!parsed) {
+          return helpers.error(INVALID_ERROR_CODE)
+        }
+        return isOutsideBounds(parsed, min, max)
+          ? helpers.error(RANGE_ERROR_CODE)
+          : raw
       })
-      .messages({ [INVALID_ERROR_CODE]: message })
+      .messages({
+        [INVALID_ERROR_CODE]: invalidMessage,
+        [RANGE_ERROR_CODE]: rangeMessage ?? invalidMessage
+      })
   )
+
+export const dateText = (name, message = defaults.date) =>
+  dateTextInRange(name, { invalidMessage: message })
