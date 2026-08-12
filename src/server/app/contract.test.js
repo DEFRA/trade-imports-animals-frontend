@@ -16,6 +16,11 @@ import {
   postHandlerEndingWith
 } from './engine/test-support.js'
 import { isAnswered } from './lib/answered.js'
+import { addUtcDays, formatDateText } from './lib/validate/calendar.js'
+import {
+  arrivalWindow,
+  DAYS_BEFORE
+} from './sets/live-animals/journeys/linear/features/transport/port-of-entry/arrival-window.js'
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
 
 import * as importTypeFilter from './sets/live-animals/journeys/linear/features/import-type-filter/controller.js'
@@ -39,6 +44,12 @@ import * as contactSelect from './sets/live-animals/journeys/linear/features/con
 import * as declaration from './sets/live-animals/journeys/linear/features/declaration/controller.js'
 
 const drive = driveHandler
+
+// Today, derived from the window itself rather than from a second guess at the
+// rule. Today stays inside the window even if the day ticks over mid-run.
+const ARRIVAL_DATE = formatDateText(
+  addUtcDays(arrivalWindow().min, DAYS_BEFORE)
+)
 
 const obligationNames = [...walkObligations()].map(
   (node) => node.obligation.name
@@ -107,7 +118,7 @@ const cases = [
     collects: portOfEntry.meta.collects,
     handler: postHandlerOf(portOfEntry),
     payload: {
-      arrivalDateAtPort: '12/12/2026',
+      arrivalDateAtPort: ARRIVAL_DATE,
       portOfEntry: 'GB ABD',
       meansOfTransport: 'ROAD_VEHICLE',
       transportIdentification: 'FR-892-LK',

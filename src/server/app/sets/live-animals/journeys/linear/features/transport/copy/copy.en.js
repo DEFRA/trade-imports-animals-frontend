@@ -3,7 +3,8 @@ export const copy = {
     title: 'Arrival details',
     arrivalDate: {
       label: 'Arrival date at port of entry',
-      hint: 'The expected date of arrival at the port of entry. For example, 27/3/2026'
+      hint: (earliest, latest) =>
+        `The expected date of arrival at the port of entry. Enter a date between ${earliest} and ${latest}.`
     },
     port: {
       label: 'Port of entry',
@@ -29,6 +30,8 @@ export const copy = {
     },
     errors: {
       arrivalDateInvalid: 'Enter a real arrival date',
+      arrivalDateOutOfRange: (earliest, latest) =>
+        `Arrival date at port of entry must be between ${earliest} and ${latest}`,
       identificationMaxLength:
         'Transport identification must be 58 characters or less',
       documentReferenceMaxLength:

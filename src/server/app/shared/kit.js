@@ -170,7 +170,18 @@ const dateInputValue = (value) =>
         .filter(Boolean)
         .join('/')
 
-export const dateField = (name, { label, hint, value = {}, error } = {}) => {
+/**
+ * @param {string} name
+ * @param {object} [options]
+ * @param {string} [options.minDate] - `d/m/yyyy` TEXT, not a Date: it goes
+ * verbatim into `data-min-date`, and the MoJ picker parses nothing else. Pass
+ * `arrivalWindow().minText`, never its sibling `min`.
+ * @param {string} [options.maxDate] - `d/m/yyyy` text, same contract.
+ */
+export const dateField = (
+  name,
+  { label, hint, value = {}, error, minDate, maxDate } = {}
+) => {
   return {
     id: name,
     name,
@@ -178,6 +189,8 @@ export const dateField = (name, { label, hint, value = {}, error } = {}) => {
     label: { text: label, classes: 'govuk-label--s' },
     hint: hint ? { text: hint } : undefined,
     errorMessage: error ? { text: error } : undefined,
-    value: dateInputValue(value)
+    value: dateInputValue(value),
+    minDate,
+    maxDate
   }
 }

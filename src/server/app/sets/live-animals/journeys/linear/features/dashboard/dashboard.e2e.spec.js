@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
+  ARRIVAL_DATE_IN_WINDOW_DISPLAY,
   completeAnswerSections,
   journeyIdFromPage,
   startNotification,
@@ -124,7 +125,9 @@ test.describe('dashboard feature — notification rows and actions', () => {
     ).toBeVisible()
     await expect(page.getByText('Cow', { exact: true })).toBeVisible()
     await expect(page.getByText('France', { exact: true })).toBeVisible()
-    await expect(page.getByText('12 Dec 2026', { exact: true })).toBeVisible()
+    await expect(
+      page.getByText(ARRIVAL_DATE_IN_WINDOW_DISPLAY, { exact: true })
+    ).toBeVisible()
     await expect(
       page.getByText(values.consignor.name, { exact: true })
     ).toBeVisible()
