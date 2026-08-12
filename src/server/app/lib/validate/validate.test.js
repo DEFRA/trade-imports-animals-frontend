@@ -301,6 +301,18 @@ describe('#dateTextInRange — inclusive bounds on a dd/mm/yyyy input', () => {
       })
     }
   )
+
+  it('Should fall back to the invalid message when no range message is given', () => {
+    const withoutRangeMessage = dateTextInRange('arrivalDateAtPort', {
+      min: new Date(Date.UTC(2026, 2, 1)),
+      max: new Date(Date.UTC(2026, 8, 30)),
+      invalidMessage: INVALID_MESSAGE
+    })
+
+    expect(
+      run(withoutRangeMessage, { arrivalDateAtPort: '1/1/1900' }).errors
+    ).toEqual({ arrivalDateAtPort: INVALID_MESSAGE })
+  })
 })
 
 describe('#compose + the Joi → GDS mapping', () => {

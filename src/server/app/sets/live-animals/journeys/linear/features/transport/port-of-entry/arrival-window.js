@@ -3,7 +3,7 @@ import {
   addUtcMonths,
   formatDateText,
   startOfDayInZone
-} from '../../../../../../../lib/validate/calendar.js'
+} from '../../../../../../../lib/validate/index.js'
 
 export const DAYS_BEFORE = 7
 export const MONTHS_AHEAD = 6

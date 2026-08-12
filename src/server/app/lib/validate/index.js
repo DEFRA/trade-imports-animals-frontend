@@ -16,3 +16,12 @@ export {
   dateText,
   dateTextInRange
 } from './validators.js'
+export {
+  addUtcDays,
+  addUtcMonths,
+  formatDateText,
+  isRealDate,
+  parseDateText,
+  startOfDayInZone,
+  startOfUtcDay
+} from './calendar.js'

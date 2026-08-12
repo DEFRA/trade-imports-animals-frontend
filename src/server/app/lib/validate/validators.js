@@ -192,6 +192,20 @@ const isOutsideBounds = (date, min, max) =>
   (min != null && date.getTime() < min.getTime()) ||
   (max != null && date.getTime() > max.getTime())
 
+/**
+ * Blank passes, so the range rule never makes an optional field required.
+ * @param {string} name
+ * @param {object} [options]
+ * @param {Date} [options.min] - Inclusive, and midnight UTC: the comparison is
+ * on raw timestamps, so a `new Date()` carrying a time silently loses that day.
+ * Build bounds with the `calendar.js` helpers.
+ * @param {Date} [options.max] - Inclusive, midnight UTC, same contract.
+ * @param {string} [options.invalidMessage] - Shown when the value is not a real
+ * calendar date, and when the value is out of range but no `rangeMessage` is
+ * given.
+ * @param {string} [options.rangeMessage] - Shown when a real date falls outside
+ * the bounds.
+ */
 export const dateTextInRange = (
   name,
   { min, max, invalidMessage = defaults.date, rangeMessage } = {}

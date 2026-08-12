@@ -16,7 +16,11 @@ import {
   postHandlerEndingWith
 } from './engine/test-support.js'
 import { isAnswered } from './lib/answered.js'
-import { addUtcMonths, formatDateText } from './lib/validate/calendar.js'
+import { addUtcDays, formatDateText } from './lib/validate/calendar.js'
+import {
+  arrivalWindow,
+  DAYS_BEFORE
+} from './sets/live-animals/journeys/linear/features/transport/port-of-entry/arrival-window.js'
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
 
 import * as importTypeFilter from './sets/live-animals/journeys/linear/features/import-type-filter/controller.js'
@@ -41,8 +45,11 @@ import * as declaration from './sets/live-animals/journeys/linear/features/decla
 
 const drive = driveHandler
 
-// Inside the arrival-date window wherever the wall clock happens to be.
-const ARRIVAL_DATE = formatDateText(addUtcMonths(new Date(), 1))
+// Today, derived from the window itself rather than from a second guess at the
+// rule. Today stays inside the window even if the day ticks over mid-run.
+const ARRIVAL_DATE = formatDateText(
+  addUtcDays(arrivalWindow().min, DAYS_BEFORE)
+)
 
 const obligationNames = [...walkObligations()].map(
   (node) => node.obligation.name

@@ -152,6 +152,10 @@ describe('port-of-entry — the arrival-date window', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.arrivalDateAtPort).toBe(outOfRangeError)
     expect(result.after).toEqual(result.before)
+    // The re-rendered picker keeps its bounds, so the calendar a user is sent
+    // back to still refuses what the server just refused.
+    expect(result.view.context.arrivalDate.minDate).toBe(dateWindow.minText)
+    expect(result.view.context.arrivalDate.maxDate).toBe(dateWindow.maxText)
   })
 
   it.each([

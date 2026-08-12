@@ -62,6 +62,15 @@ bound is not enough on its own. The MoJ date picker is a free-text input, so the
 server rule enforces the window and the `data-min-date`/`data-max-date`
 attributes only hint the calendar to the user.
 
+The two sides take the bounds in different forms, and mixing them fails
+quietly. `dateTextInRange` compares raw timestamps, so `min`/`max` must be
+midnight-UTC `Date`s — a `new Date()` carrying a time loses that whole day from
+an inclusive bound. `kit.dateField()` writes its values straight into an HTML
+attribute, so `minDate`/`maxDate` must be `d/m/yyyy` text, which is all the
+picker parses. `arrivalWindow()` returns both shapes for this reason: `min`/`max`
+for the validator, `minText`/`maxText` for the field. Build bounds with the
+[`calendar.js`](../lib/validate/calendar.js) helpers rather than by hand.
+
 Structured values such as addresses are opaque to model completeness: a non-blank
 object is filled. The collecting controller must validate required subfields before
 it commits the object.
