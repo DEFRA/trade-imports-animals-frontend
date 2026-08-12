@@ -10,6 +10,7 @@ import {
 import { copy } from './copy/copy.en.js'
 
 const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
+const COPY_AS_NEW = 'Copy as new'
 const PAGE_SIZE = 20
 const SEEDED_NOTIFICATIONS = PAGE_SIZE + 1
 
@@ -108,7 +109,7 @@ test.describe('dashboard feature — notification rows and actions', () => {
     await expect(actionFor(page, 'link', 'View', reference)).toBeVisible()
     await expect(actionFor(page, 'button', 'Amend', reference)).toBeVisible()
     await expect(
-      actionFor(page, 'button', 'Copy as new', reference)
+      actionFor(page, 'button', COPY_AS_NEW, reference)
     ).toBeVisible()
     await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
   })
@@ -124,11 +125,29 @@ test.describe('dashboard feature — notification rows and actions', () => {
     await expect(page.getByText('Draft', { exact: true })).toBeVisible()
     await expect(actionFor(page, 'link', 'Resume', reference)).toBeVisible()
     await expect(
-      actionFor(page, 'button', 'Copy as new', reference)
+      actionFor(page, 'button', COPY_AS_NEW, reference)
     ).toBeVisible()
     await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
     await expect(actionFor(page, 'link', 'View', reference)).toHaveCount(0)
     await expect(actionFor(page, 'button', 'Amend', reference)).toHaveCount(0)
+  })
+
+  test('copy as new renders in the same typeface as its neighbouring link actions', async ({
+    page
+  }) => {
+    await startNotification(page)
+    const reference = journeyIdFromPage(page)
+
+    await page.goto('/')
+
+    const fontFamilyOf = (locator) =>
+      locator.evaluate((element) => getComputedStyle(element).fontFamily)
+    const copyAsNew = actionFor(page, 'button', COPY_AS_NEW, reference)
+    const deleteAction = actionFor(page, 'link', 'Delete', reference)
+    const deleteFontFamily = await fontFamilyOf(deleteAction)
+
+    await expect.poll(() => fontFamilyOf(copyAsNew)).toBe(deleteFontFamily)
+    await expect.poll(() => fontFamilyOf(copyAsNew)).toMatch(/GDS Transport/)
   })
 
   test('amending notification renders resume and cancel-amend actions', async ({
