@@ -7,10 +7,6 @@ import {
   startNotification,
   values
 } from '../../../../../../../../../e2e/live-animals-journey.js'
-import {
-  expectNoHorizontalOverflow,
-  measureHorizontalOverflow
-} from '../../../../../../../../../e2e/live-animals-layout.js'
 import { copy } from './copy/copy.en.js'
 
 const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
@@ -39,6 +35,30 @@ const stageSubmittedNotification = async (page) => {
 
 const actionFor = (page, role, action, reference) =>
   page.getByRole(role, { name: `${action} ${copy.actionHidden(reference)}` })
+
+// Runs in the browser. Reports how far the page scrolls past its own width,
+// plus the first few elements sticking out, so a failure names the culprit
+// instead of just a number.
+const overflowReport = () => {
+  const root = document.documentElement
+  const offenders = [...document.querySelectorAll('body *')]
+    .map((element) => ({
+      selector: `${element.tagName.toLowerCase()}.${element.className || '(no class)'}`,
+      right: Math.round(element.getBoundingClientRect().right)
+    }))
+    .filter(({ right }) => right > root.clientWidth)
+    .slice(0, 10)
+  return { overflow: root.scrollWidth - root.clientWidth, offenders }
+}
+
+const expectNoHorizontalOverflow = async (page) => {
+  const { overflow, offenders } = await page.evaluate(overflowReport)
+
+  expect(
+    overflow,
+    `Dashboard overflows at ${page.viewportSize().width}px: ${JSON.stringify(offenders)}`
+  ).toBeLessThanOrEqual(0)
+}
 
 const startTwoNotifications = async (page) => {
   await startNotification(page)
@@ -134,18 +154,13 @@ test.describe('dashboard feature — notification rows and actions', () => {
 
     await expectNoHorizontalOverflow(page)
 
-    // 769px is where the filter panel stops stacking and starts squeezing the results
-    // column, so it is the width the layout is most likely to break at.
+    // 769px is where the filter panel stops stacking and starts squeezing the
+    // results column, so it is the width the layout is most likely to break at.
     await page.setViewportSize({
       width: DESKTOP_BREAKPOINT_WIDTH,
       height: 900
     })
-    const { overflow, offenders } = await measureHorizontalOverflow(page)
-
-    expect(
-      overflow,
-      `Dashboard overflows at ${DESKTOP_BREAKPOINT_WIDTH}px: ${JSON.stringify(offenders)}`
-    ).toBeLessThanOrEqual(0)
+    await expectNoHorizontalOverflow(page)
   })
 
   test('draft notification renders only its available actions', async ({
