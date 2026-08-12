@@ -18,7 +18,7 @@ import {
 } from '../../../../../../../lib/validate/calendar.js'
 import { validatorDefaults } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
-import { arrivalWindow } from '../port-of-entry/arrival-window.js'
+import { arrivalWindow, DAYS_BEFORE } from '../port-of-entry/arrival-window.js'
 import { MAX_TRANSITED_COUNTRIES } from '../transit-countries/transit-countries.controller.js'
 
 const portSelect = '#portOfEntry'
@@ -33,6 +33,24 @@ const outOfRangeError = copy.portOfEntry.errors.arrivalDateOutOfRange(
 )
 const justBeforeWindow = formatDateText(addUtcDays(dateWindow.min, -1))
 const justAfterWindow = formatDateText(addUtcDays(dateWindow.max, 1))
+
+const inUtc = (options) =>
+  new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', ...options })
+
+// The accessible name the MoJ picker gives a day button, assembled the way the
+// component assembles it.
+const dayLabel = (date) =>
+  `${inUtc({ weekday: 'long' }).format(date)} ${date.getUTCDate()} ${inUtc({ month: 'long' }).format(date)} ${date.getUTCFullYear()}`
+
+const showMonth = async (page, target, from) => {
+  const months =
+    (target.getUTCFullYear() - from.getUTCFullYear()) * 12 +
+    (target.getUTCMonth() - from.getUTCMonth())
+  const name = months < 0 ? 'Previous month' : 'Next month'
+  for (let step = 0; step < Math.abs(months); step++) {
+    await page.getByRole('button', { name }).click()
+  }
+}
 
 const openArrival = async (page) => {
   await startNotification(page)
@@ -176,16 +194,33 @@ test.describe('arrival details validation', () => {
     await expect(page.locator(portSelect)).toHaveValue(values.portOfEntry)
   })
 
-  test('arrival date picker carries the allowed window as data attributes', async ({
+  test('the picker calendar excludes the day before the window and allows the boundary itself', async ({
     page
   }) => {
     await openArrival(page)
+    await page.getByRole('button', { name: 'Choose date' }).click()
+    await expect(page.getByRole('dialog')).toBeVisible()
 
-    const picker = page.locator('.moj-datepicker', {
-      has: page.getByLabel(copy.portOfEntry.arrivalDate.label)
+    const today = addUtcDays(dateWindow.min, DAYS_BEFORE)
+    const dayBefore = addUtcDays(dateWindow.min, -1)
+
+    await showMonth(page, dayBefore, today)
+    await expect(
+      page.getByRole('button', {
+        name: `Excluded date, ${dayLabel(dayBefore)}`
+      })
+    ).toBeVisible()
+
+    await showMonth(page, dateWindow.min, dayBefore)
+    const boundary = page.getByRole('button', {
+      name: dayLabel(dateWindow.min),
+      exact: true
     })
-    await expect(picker).toHaveAttribute('data-min-date', dateWindow.minText)
-    await expect(picker).toHaveAttribute('data-max-date', dateWindow.maxText)
+    await boundary.click()
+
+    await expect(
+      page.getByLabel(copy.portOfEntry.arrivalDate.label)
+    ).toHaveValue(dateWindow.minText)
   })
 
   test.describe('arrival date out of the allowed window', () => {

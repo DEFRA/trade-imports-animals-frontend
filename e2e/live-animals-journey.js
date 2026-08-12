@@ -6,7 +6,6 @@ import {
   formatDateText
 } from '../src/server/app/lib/validate/calendar.js'
 import { COUNTRY_LABELS } from '../src/server/app/services/countries/stub.js'
-import { formatDisplayDate } from '../src/server/app/sets/live-animals/journeys/linear/features/dashboard/notification-helper.js'
 import { PORTS } from '../src/server/app/services/ports/stub.js'
 import { copy as transportCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js'
 
@@ -81,9 +80,25 @@ const meansOfTransportLabel =
 // date inside it rather than reading the fixed value out of the fixture.
 const arrivalDate = addUtcMonths(new Date(), 1)
 export const ARRIVAL_DATE_IN_WINDOW = formatDateText(arrivalDate)
-export const ARRIVAL_DATE_IN_WINDOW_DISPLAY = formatDisplayDate(
-  arrivalDate.toISOString().slice(0, 10)
-)
+
+// Spelled out rather than routed through `formatDisplayDate`: that is the
+// function rendering the cell this value is asserted against, so sharing it
+// would move expectation and actual together and hide a format regression.
+const SHORT_MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec'
+]
+export const ARRIVAL_DATE_IN_WINDOW_DISPLAY = `${arrivalDate.getUTCDate()} ${SHORT_MONTHS[arrivalDate.getUTCMonth()]} ${arrivalDate.getUTCFullYear()}`
 
 export const startNotification = async (page) => {
   await page.goto('/')
