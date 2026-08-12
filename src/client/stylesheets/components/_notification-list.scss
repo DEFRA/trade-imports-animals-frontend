@@ -2,9 +2,10 @@
 @use "../variables/colours" as *;
 
 .notification-list {
-  // Layout is govuk-grid-row + one-quarter / three-quarters. Those stack below
-  // tablet on their own, so the filters need no width, no flex and no media
-  // query — only the panel's own appearance.
+  // Layout is govuk-grid-row + one-third / two-thirds, the sidebar shape the
+  // GDS styles guide gives as its own grid example. Those columns stack below
+  // tablet unaided, so the panel needs no width, no flex and no media query —
+  // only its own background and padding.
   &__layout {
     margin-top: govuk-spacing(6);
   }

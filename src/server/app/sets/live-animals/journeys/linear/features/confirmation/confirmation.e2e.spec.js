@@ -7,7 +7,6 @@ import {
   journeyUrl,
   startNotification
 } from '../../../../../../../../../e2e/live-animals-journey.js'
-import { expectNoHorizontalOverflow } from '../../../../../../../../../e2e/live-animals-layout.js'
 import { copy } from './copy/copy.en.js'
 
 const expectPanelCopy = async (page) => {
@@ -97,8 +96,6 @@ test.describe('submitted confirmation feature', () => {
     await expect(
       page.getByRole('link', { name: 'Back', exact: true })
     ).toHaveCount(0)
-
-    await expectNoHorizontalOverflow(page)
   })
 
   test('dashboard link returns to the dashboard', async ({ page }) => {

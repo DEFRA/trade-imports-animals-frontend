@@ -67,21 +67,19 @@ describe('content column width by surface', () => {
 })
 
 describe('kit surfaces', () => {
-  it('Should give a form surface to a page that declares none', () => {
+  it('Should build answering-page chrome at the reading measure', () => {
     expect(base('Any page').contentColumnClass).toBe(SURFACES.form)
   })
 
-  it('Should give the full container to a declared display surface', () => {
-    expect(
-      base('Notifications', { surface: 'display' }).contentColumnClass
-    ).toBe(SURFACES.display)
+  it('Should give display pages the full container', () => {
+    expect(surfaceClass('display')).toBe(SURFACES.display)
   })
 
   // Fail loudly rather than render class="" — a typo'd surface would otherwise be
   // indistinguishable from full width, which is exactly the silent regression this
   // whole ticket exists to undo.
   it('Should reject an unknown surface rather than render nothing', () => {
-    expect(() => base('Any page', { surface: 'widescreen' })).toThrow(
+    expect(() => surfaceClass('widescreen')).toThrow(
       /Unknown surface 'widescreen'/
     )
   })
@@ -89,13 +87,8 @@ describe('kit surfaces', () => {
   // A plain-object lookup answers for everything on Object.prototype, so
   // 'constructor' would resolve to a function and sail past a truthiness check.
   it('Should reject an inherited Object property as a surface name', () => {
-    expect(() => base('Any page', { surface: 'constructor' })).toThrow(
+    expect(() => surfaceClass('constructor')).toThrow(
       /Unknown surface 'constructor'/
     )
-  })
-
-  it('Should validate the surface for display pages that cannot call base', () => {
-    expect(surfaceClass('display')).toBe(SURFACES.display)
-    expect(() => surfaceClass('widescreen')).toThrow(/Unknown surface/)
   })
 })

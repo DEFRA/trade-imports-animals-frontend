@@ -116,8 +116,7 @@ export const base = (
     backLink,
     journey,
     journeyId = journey?.journeyId,
-    recoverableError = false,
-    surface = 'form'
+    recoverableError = false
   } = {}
 ) => {
   const hasJourney = journeyId != null
@@ -130,7 +129,10 @@ export const base = (
     journeyStrip: journeyStrip(journey),
     sharedCopy,
     recoverableError,
-    contentColumnClass: surfaceClass(surface)
+    // No surface option: this builds the chrome for answering pages, and a
+    // display page cannot use it anyway — the line above forces breadcrumbs off
+    // without a journey, which would strip the dashboard's own.
+    contentColumnClass: SURFACES.form
   }
 }
 

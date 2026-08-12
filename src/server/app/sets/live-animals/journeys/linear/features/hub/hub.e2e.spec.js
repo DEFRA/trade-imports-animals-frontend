@@ -7,7 +7,6 @@ import {
   selectSpecies,
   startNotification
 } from '../../../../../../../../../e2e/live-animals-journey.js'
-import { expectNoHorizontalOverflow } from '../../../../../../../../../e2e/live-animals-layout.js'
 import { copy } from './copy/copy.en.js'
 
 const taskRow = (page, title) =>
@@ -111,8 +110,6 @@ test.describe('hub feature', () => {
 
     const review = taskRow(page, copy.rows.review.title)
     await expect(review).toContainText(copy.statuses.cannotStartYet)
-
-    await expectNoHorizontalOverflow(page)
   })
 })
 

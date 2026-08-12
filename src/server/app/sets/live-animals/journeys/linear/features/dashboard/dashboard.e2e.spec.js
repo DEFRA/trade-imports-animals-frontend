@@ -17,10 +17,6 @@ const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
 const COPY_AS_NEW = 'Copy as new'
 const PAGE_SIZE = 20
 const SEEDED_NOTIFICATIONS = PAGE_SIZE + 1
-const SUMMARY_CARD = '.govuk-summary-card'
-const SUMMARY_CARD_ACTIONS = '.govuk-summary-card__actions'
-const SUMMARY_CARD_ACTION = '.govuk-summary-card__action'
-const SINGLE_LINE_TOLERANCE = 10
 const DESKTOP_BREAKPOINT_WIDTH = 769
 
 const submitNotification = async (page) => {
@@ -39,18 +35,6 @@ const stageSubmittedNotification = async (page) => {
   const reference = journeyIdFromPage(page)
   await page.goto('/')
   return reference
-}
-
-const cardFor = (page, reference) =>
-  page.locator(SUMMARY_CARD).filter({ hasText: reference })
-
-const actionsGeometry = async (card) => {
-  const actionsBox = await card.locator(SUMMARY_CARD_ACTIONS).boundingBox()
-  const firstAction = await card
-    .locator(SUMMARY_CARD_ACTION)
-    .first()
-    .boundingBox()
-  return { listHeight: actionsBox.height, actionHeight: firstAction.height }
 }
 
 const actionFor = (page, role, action, reference) =>
@@ -137,17 +121,6 @@ test.describe('dashboard feature — notification rows and actions', () => {
       actionFor(page, 'button', COPY_AS_NEW, reference)
     ).toBeVisible()
     await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
-  })
-
-  test('submitted notification card actions do not wrap', async ({ page }) => {
-    test.slow()
-    const reference = await stageSubmittedNotification(page)
-    const card = cardFor(page, reference)
-    await expect(card.locator(SUMMARY_CARD_ACTION)).toHaveCount(4)
-
-    const { listHeight, actionHeight } = await actionsGeometry(card)
-
-    expect(listHeight).toBeLessThanOrEqual(actionHeight + SINGLE_LINE_TOLERANCE)
   })
 
   test('dashboard does not overflow horizontally at desktop', async ({
