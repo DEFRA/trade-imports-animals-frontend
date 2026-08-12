@@ -16,9 +16,7 @@ export const create = async () => {
   return marshal(await notificationResponse.json())
 }
 
-// Copy dedup dropped pending EUDPA-314; the idempotencyKey parameter is retained
-// on the signature so upstream callers (view-model, controller) don't have to
-// change simultaneously, but it is no longer forwarded as a header.
+// Copy dedup dropped pending EUDPA-314
 export const copy = async (journeyId, _idempotencyKey) => {
   const response = await fetch(`${notificationsUrl}/${journeyId}/copy`, {
     method: 'POST',
