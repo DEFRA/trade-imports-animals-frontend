@@ -67,7 +67,7 @@
           {% if referenceNumber %}
             <input type="hidden" name="referenceNumber" value="{{ referenceNumber }}" />
           {% endif %}
-          <div class="govuk-form-group govuk-!-width-auto">
+          <div class="govuk-form-group">
             <label class="govuk-label govuk-label--s" for="sort">{{ copy.sort.label }}</label>
             <select class="govuk-select" id="sort" name="sort">
               {% for option in sortOptions %}
@@ -113,42 +113,42 @@
         <div class="govuk-summary-card__content">
           <dl class="govuk-grid-row notification-list__card-row">
             <div class="govuk-grid-column-one-third">
-              <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.commodity }}</dt>
-              <dd class="govuk-body govuk-!-margin-bottom-0 govuk-!-text-break-word">{{ row.commodity }}</dd>
+              <dt>{{ copy.table.commodity }}</dt>
+              <dd>{{ row.commodity }}</dd>
             </div>
             <div class="govuk-grid-column-one-third">
-              <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.origin }}</dt>
-              <dd class="govuk-body govuk-!-margin-bottom-0 govuk-!-text-break-word">{{ row.origin }}</dd>
+              <dt>{{ copy.table.origin }}</dt>
+              <dd>{{ row.origin }}</dd>
             </div>
             <div class="govuk-grid-column-one-third">
-              <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.arrival }}</dt>
-              <dd class="govuk-body govuk-!-margin-bottom-0 govuk-!-text-break-word">{{ row.arrival }}</dd>
+              <dt>{{ copy.table.arrival }}</dt>
+              <dd>{{ row.arrival }}</dd>
             </div>
           </dl>
           <dl class="govuk-grid-row notification-list__card-row">
             <div class="govuk-grid-column-one-third">
-              <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.consignee }}</dt>
-              <dd class="govuk-body govuk-!-margin-bottom-0 govuk-!-text-break-word">{{ row.consignee }}</dd>
+              <dt>{{ copy.table.consignee }}</dt>
+              <dd>{{ row.consignee }}</dd>
             </div>
             <div class="govuk-grid-column-one-third">
-              <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.consignor }}</dt>
-              <dd class="govuk-body govuk-!-margin-bottom-0 govuk-!-text-break-word">{{ row.consignor }}</dd>
+              <dt>{{ copy.table.consignor }}</dt>
+              <dd>{{ row.consignor }}</dd>
             </div>
             <div class="govuk-grid-column-one-third">
-              <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.status }}</dt>
-              <dd class="govuk-body govuk-!-margin-bottom-0 govuk-!-text-break-word">
+              <dt>{{ copy.table.status }}</dt>
+              <dd>
                 {{ govukTag({ text: row.status.text, classes: row.status.classes }) }}
               </dd>
             </div>
           </dl>
           <dl class="govuk-grid-row notification-list__card-row">
             <div class="govuk-grid-column-one-third">
-              <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.created }}</dt>
-              <dd class="govuk-body govuk-!-margin-bottom-0 govuk-!-text-break-word">{{ row.created }}</dd>
+              <dt>{{ copy.table.created }}</dt>
+              <dd>{{ row.created }}</dd>
             </div>
             <div class="govuk-grid-column-one-third">
-              <dt class="govuk-body-s govuk-!-font-weight-bold govuk-!-margin-bottom-1">{{ copy.table.submitted }}</dt>
-              <dd class="govuk-body govuk-!-margin-bottom-0 govuk-!-text-break-word">{{ row.submitted }}</dd>
+              <dt>{{ copy.table.submitted }}</dt>
+              <dd>{{ row.submitted }}</dd>
             </div>
           </dl>
         </div>

@@ -32,6 +32,7 @@
     min-width: 0;
 
     .govuk-form-group {
+      width: auto;
       margin-bottom: 0;
     }
 
@@ -58,8 +59,15 @@
       margin-bottom: 0;
     }
 
+    dt {
+      @include govuk-font($size: 16, $weight: bold);
+      margin-bottom: govuk-spacing(1);
+    }
+
     dd {
-      margin-left: 0;
+      @include govuk-font($size: 19);
+      @include govuk-text-break-word;
+      margin: 0;
     }
   }
 }
