@@ -5,6 +5,7 @@ const getOidcConfigMock = vi.hoisted(() => vi.fn())
 const configGetMock = vi.hoisted(() => vi.fn())
 const refreshTokensMock = vi.hoisted(() => vi.fn())
 const getSafeRedirectMock = vi.hoisted(() => vi.fn())
+const isAuthStubModeMock = vi.hoisted(() => vi.fn())
 
 const jwtDecodeMock = vi.hoisted(() => vi.fn())
 const jwtVerifyTimeMock = vi.hoisted(() => vi.fn())
@@ -28,7 +29,7 @@ vi.mock('../auth/get-safe-redirect.js', () => ({
 }))
 
 vi.mock('../server/common/services/mode.js', () => ({
-  isAuthStubMode: () => false
+  isAuthStubMode: isAuthStubModeMock
 }))
 
 vi.mock('@hapi/jwt', () => ({
@@ -49,6 +50,7 @@ describe('auth plugin', () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
+    isAuthStubModeMock.mockReturnValue(false)
     getOidcConfigMock.mockResolvedValue(oidcConfig)
 
     configGetMock.mockImplementation((key) => {
@@ -108,6 +110,29 @@ describe('auth plugin', () => {
     )
 
     expect(server.auth.default).toHaveBeenCalledWith('session')
+    expect(isAuthStubModeMock).toHaveBeenCalled()
+  })
+
+  test('register skips Bell and the OIDC fetch in stub mode, still enforcing session auth', async () => {
+    // Stub mode replaces the Defra ID round-trip, not authentication itself:
+    // stub-sign-in.js writes the session that the cookie strategy then checks,
+    // so the strategy and the default must still be in place. Reaching for the
+    // OIDC config would also fail outright — there is no identity provider
+    // configured in the environments stub mode is meant for.
+    isAuthStubModeMock.mockReturnValue(true)
+    const server = {
+      auth: {
+        strategy: vi.fn(),
+        default: vi.fn()
+      }
+    }
+
+    await authPlugin.plugin.register(server)
+
+    expect(server.auth.strategy).toHaveBeenCalledTimes(1)
+    expect(server.auth.strategy.mock.calls[0][0]).toBe('session')
+    expect(server.auth.default).toHaveBeenCalledWith('session')
+    expect(getOidcConfigMock).not.toHaveBeenCalled()
   })
 
   test('getBellOptions.location stores safe redirect and returns redirectUrl', () => {
