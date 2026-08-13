@@ -1,5 +1,4 @@
 import { hubPath, pagePath } from '../../../../../shared/paths.js'
-import { importTypeFilterPage } from '../features/import-type-filter/page.js'
 import { originPage } from '../features/origin/page.js'
 import {
   animalIdentificationPage,
@@ -21,7 +20,6 @@ const flowPageTarget = (page) => (scope, journeyId) =>
  * is a single card-per-species surface, gated like every other
  * flow page (its RULE 1 prerequisite holds it until a line exists). */
 export const RUN_STEPS = [
-  { id: importTypeFilterPage.id, target: flowPageTarget(importTypeFilterPage) },
   { id: originPage.id, target: flowPageTarget(originPage) },
   { id: commoditiesPage.id, target: flowPageTarget(commoditiesPage) },
   {

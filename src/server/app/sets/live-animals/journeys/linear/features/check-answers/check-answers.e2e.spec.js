@@ -61,15 +61,12 @@ test.describe('check-answers feature summary rows', () => {
     )
   })
 
-  test('untouched journey renders Not provided for missing answers', async ({
+  test('journey with only the entry page answered renders Not provided for the blank rows', async ({
     page
   }) => {
     await startNotification(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
-    await expect(rowFor(page, copy.rows.countryOfOrigin)).toContainText(
-      copy.notProvided
-    )
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
       copy.notProvided
     )

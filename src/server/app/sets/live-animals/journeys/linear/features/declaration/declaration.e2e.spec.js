@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
+  answerOriginEntry,
   completeAnswerSections,
   startNotification
 } from '../../../../../../../../../e2e/live-animals-journey.js'
@@ -13,11 +14,12 @@ const startAtDeclaration = async (page) => {
     .locator('form[action="/notifications"]')
     .getByRole('button')
     .click()
-  await page.locator('input[name="importType"][value="live-animals"]').check()
-  await page.locator('form').getByRole('button').click()
   await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
 
-  await page.goto(page.url().replace(/\/origin$/, '/declaration'))
+  const declarationUrl = page.url().replace(/\/origin$/, '/declaration')
+  await answerOriginEntry(page)
+
+  await page.goto(declarationUrl)
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
 

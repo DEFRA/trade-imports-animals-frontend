@@ -24,8 +24,8 @@ export const leafFulfilledForRecord = (name, recId, state) => {
 }
 
 // A top-level scalar. Flow-only obligations the manifest does not carry
-// (pre-flow filters like `importType`) have no fulfilment, so fall back to the
-// answered check rather than a phantom fulfilment.
+// (submit-time steps like `declaration`) have no fulfilment, so fall back to
+// the answered check rather than a phantom fulfilment.
 export const singletonFulfilled = (name, answers, state) => {
   const obligation = obligationFor(name)
   return obligation

@@ -99,17 +99,15 @@ test.describe('dashboard feature — empty state and start', () => {
     )
   })
 
-  test('starts a new notification at the import-type filter', async ({
-    page
-  }) => {
+  test('starts a new notification at the origin page', async ({ page }) => {
     await page.goto('/')
 
     await page.getByRole('button', { name: copy.startButton }).click()
 
     await expect(
-      page.getByRole('heading', { name: 'What are you importing?' })
+      page.getByRole('heading', { name: 'Origin of the import' })
     ).toBeVisible()
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/import-type$/)
+    await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
   })
 })
 

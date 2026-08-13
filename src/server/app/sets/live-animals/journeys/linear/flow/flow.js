@@ -1,5 +1,4 @@
 import { dashboardPage } from '../features/dashboard/page.js'
-import { importTypeFilterPage } from '../features/import-type-filter/page.js'
 import { originPage } from '../features/origin/page.js'
 import {
   animalIdentificationPage,
@@ -27,12 +26,12 @@ import { notificationViewPage } from '../features/check-answers/page.js'
 import { declarationPage } from '../features/declaration/page.js'
 import { confirmationPage } from '../features/confirmation/page.js'
 
-export const FLOW_ONLY_KEYS = ['importType', 'declaration']
+export const FLOW_ONLY_KEYS = ['declaration']
 
 export const sections = [
   {
     id: 'start',
-    pages: [dashboardPage, importTypeFilterPage]
+    pages: [dashboardPage]
   },
   {
     id: 'origin',

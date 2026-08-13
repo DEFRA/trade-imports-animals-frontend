@@ -100,27 +100,29 @@ const SHORT_MONTHS = [
 ]
 export const ARRIVAL_DATE_IN_WINDOW_DISPLAY = `${arrivalDate.getUTCDate()} ${SHORT_MONTHS[arrivalDate.getUTCMonth()]} ${arrivalDate.getUTCFullYear()}`
 
-export const startNotification = async (page) => {
-  await page.goto('/')
-  await page.getByRole('button', { name: 'Start a new notification' }).click()
-  await expect(
-    page.getByRole('heading', { name: 'What are you importing?' })
-  ).toBeVisible()
-  await page
-    .getByRole('radio', { name: 'Live animals or germinal products' })
-    .check()
-  await page.getByRole('button', { name: 'Continue' }).click()
-  await expect(
-    page.getByRole('heading', { name: 'Origin of the import' })
-  ).toBeVisible()
-  await page.goto(journeyUrl(page))
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-}
-
 const FIXTURE_COUNTRY = COUNTRY_LABELS[values.countryOfOrigin]
 
 export const chooseCountryOfOrigin = async (page, name = FIXTURE_COUNTRY) => {
   await page.getByLabel('Country of origin').selectOption({ label: name })
+}
+
+export const answerOriginEntry = async (page) => {
+  await chooseCountryOfOrigin(page)
+  await page.getByRole('radio', { name: 'No' }).check()
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+}
+
+/** Origin is the journey's entry page: the entry guard holds a notification
+ * there until it is answered, so reaching the hub means answering it. */
+export const startNotification = async (page) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Start a new notification' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Origin of the import' })
+  ).toBeVisible()
+  await answerOriginEntry(page)
+  await page.goto(journeyUrl(page))
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
 const FIXTURE_PORT = PORTS.find((port) => port.code === values.portOfEntry)
