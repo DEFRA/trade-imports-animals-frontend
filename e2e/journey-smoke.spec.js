@@ -22,10 +22,8 @@ test.describe('live-animals journey glue', () => {
     await page.getByRole('button', { name: 'Start a new notification' }).click()
     await expect(heading('Origin of the import')).toBeVisible()
 
-    // Until the entry page is answered, journey deep links return to it — and
-    // the entry page itself is exempt, so there is no redirect loop.
-    await page.goto(journeyUrl(page))
-    await expect(heading('Origin of the import')).toBeVisible()
+    // The entry page is exempt from the guard, so revisiting it is not a
+    // redirect loop.
     await page.goto(journeyUrl(page, 'origin'))
     await expect(heading('Origin of the import')).toBeVisible()
 
@@ -65,6 +63,28 @@ test.describe('live-animals journey glue', () => {
     await expect(heading('Origin of the import')).toBeVisible()
     await save()
     await expect(heading('Overview')).toBeVisible()
+  })
+
+  test('a notification created in another session, holding no answers, is sent back to the entry page', async ({
+    page,
+    browser
+  }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Start a new notification' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Origin of the import' })
+    ).toBeVisible()
+    const hubUrl = new URL(journeyUrl(page), page.url()).toString()
+
+    const stranger = await browser.newContext()
+    const strangerPage = await stranger.newPage()
+    await strangerPage.goto(hubUrl)
+
+    await expect(strangerPage).toHaveURL(`${hubUrl}/origin`)
+    await expect(
+      strangerPage.getByRole('heading', { name: 'Origin of the import' })
+    ).toBeVisible()
+    await stranger.close()
   })
 
   test('collection changes from check answers retain change context until their explicit exits', async ({

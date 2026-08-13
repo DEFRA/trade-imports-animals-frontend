@@ -17,11 +17,6 @@ import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import * as countries from '../../../../../../services/countries/index.js'
 import { hasCommittedNotificationAnswers } from '../../flow/entry-guard.js'
-import { nextRunTarget } from '../../flow/run.js'
-import {
-  beginOpeningRun,
-  openingRunStarted
-} from '../../../../../../flow/run-state.js'
 import { originPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
@@ -93,20 +88,10 @@ const fields = () =>
 const journeyIfStarted = (journey, answers) =>
   hasCommittedNotificationAnswers(answers) ? journey : undefined
 
-/** The entry page's back link leaves the journey until the journey has
- * started — the hub is still behind the entry guard at that point. */
 const backLinkFor = (journey, answers) =>
   hasCommittedNotificationAnswers(answers)
     ? hubPath(journey.journeyId)
     : dashboardPath()
-
-/** Origin is the journey's entry page, so its save is what opens the opening
- * run — but only for a journey that is genuinely fresh. A journey that already
- * has a run record, or that already carries committed answers from an earlier
- * session, keeps the sequencing it has. */
-const shouldOpenRun = async (request, answersBeforeCommit) =>
-  !(await openingRunStarted(request, request.params.journeyId)) &&
-  !hasCommittedNotificationAnswers(answersBeforeCommit)
 
 const render = (
   h,
@@ -148,8 +133,6 @@ const post = async (request, h) => {
     )
   }
 
-  const { answers: answersBeforeCommit } = await state.get(request, h)
-
   let committed
   const { failure } = await kit.recoverableSave(
     async () => {
@@ -167,15 +150,6 @@ const post = async (request, h) => {
   }
 
   const { scope } = committed
-  if (await shouldOpenRun(request, answersBeforeCommit)) {
-    await beginOpeningRun(request, h, request.params.journeyId)
-    return h.redirect(
-      kit.exitTarget(
-        request,
-        nextRunTarget(page.id, scope, request.params.journeyId)
-      )
-    )
-  }
   return h.redirect(await kit.nextTarget(request, page, scope))
 }
 

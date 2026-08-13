@@ -13,6 +13,7 @@ import {
   startJourney
 } from '../../../../../../engine/journey.js'
 import { routeOptions, surfaceClass } from '../../../../../../shared/kit.js'
+import { beginOpeningRun } from '../../../../../../flow/run-state.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { originPage } from '../origin/page.js'
 import { copy as en } from './copy/copy.en.js'
@@ -111,6 +112,12 @@ const amendPost = async (request, h) => {
   return journey ? h.redirect(hubPath(journey.journeyId)) : backToDashboard(h)
 }
 
+const createPost = async (request, h) => {
+  const journey = await startJourney(request, h)
+  await beginOpeningRun(request, h, journey.journeyId)
+  return h.redirect(pagePath(journey.journeyId, originPage.slug))
+}
+
 export const routes = [
   {
     method: 'GET',
@@ -128,9 +135,6 @@ export const routes = [
     method: 'POST',
     path: createPath(),
     options: routeOptions,
-    handler: async (request, h) => {
-      const journey = await startJourney(request, h)
-      return h.redirect(pagePath(journey.journeyId, originPage.slug))
-    }
+    handler: createPost
   }
 ]

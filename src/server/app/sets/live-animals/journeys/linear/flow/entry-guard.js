@@ -39,8 +39,9 @@ export const hasCommittedNotificationAnswers = (answers) =>
     ([key, value]) => userEntered(key) && isAnswered(value)
   )
 
-/** Deep-link guard: a fresh journey asking for a page beyond the entry is sent
- * to the entry page (see docs/flow-and-gates.md, "The opening run"). */
+/** Deep-link guard: a journey with neither a run record in this session nor
+ * committed user answers is sent to the entry page (see
+ * sets/live-animals/docs/journey-flow-and-gates.md, "Opening run and entry guard"). */
 export const entryGuardTarget = async (request, h) => {
   if (!guardedJourneyPath(request.path)) {
     return null

@@ -95,29 +95,38 @@ const originPayload = {
   regionOfOriginCodeRequirement: 'no'
 }
 
-const journeyEntryOpensTheRun = () => {
-  it('Should land Start a new notification on origin, with no run begun yet', async () => {
-    const h = captureH()
-    await startPostHandler()(buildRequest(undefined), h)
-    const journeyId = h.captured.cookies[SESSION_COOKIES.knownJourneys][0]
-    expect(h.captured.redirect).toBe(pagePath(journeyId, ORIGIN_SLUG))
-    expect(SESSION_COOKIES.openingRun in h.captured.cookies).toBe(false)
-  })
+const createNotification = async (overrides) => {
+  const h = captureH()
+  await startPostHandler()(buildRequest(undefined, overrides), h)
+  return {
+    journeyId: h.captured.cookies[SESSION_COOKIES.knownJourneys][0],
+    record: h.captured.cookies[SESSION_COOKIES.openingRun],
+    h
+  }
+}
 
-  it('Should begin the run when origin is saved on a journey that never entered, and sequence on to the commodities page rather than the hub', async () => {
-    const { journeyId, h } = await drive(postHandlerOf(origin), {
-      payload: originPayload
-    })
-    expect(h.captured.redirect).toBe(pagePath(journeyId, 'commodities'))
+const creatingANotificationOpensTheRun = () => {
+  it('Should land Start a new notification on origin with the run already begun', async () => {
+    const { journeyId, h } = await createNotification()
+    expect(h.captured.redirect).toBe(pagePath(journeyId, ORIGIN_SLUG))
     expect(h.captured.cookies[SESSION_COOKIES.openingRun]).toEqual(
       active(journeyId)
     )
   })
 
-  it('Should NOT begin the run when origin is re-saved on a journey that already has committed answers', async () => {
+  it('Should sequence a created notification on from origin to the commodities page rather than the hub', async () => {
+    const { journeyId, record } = await createNotification()
+    const h = captureH()
+    await postHandlerOf(origin)(
+      buildRequest(journeyId, { payload: originPayload, record }),
+      h
+    )
+    expect(h.captured.redirect).toBe(pagePath(journeyId, 'commodities'))
+  })
+
+  it('Should send a journey with no run record to the hub after origin, not into the opening run — origin is an ordinary page now', async () => {
     const { journeyId, h } = await drive(postHandlerOf(origin), {
-      payload: originPayload,
-      seed: { countryOfOrigin: 'FR' }
+      payload: originPayload
     })
     expect(h.captured.redirect).toBe(hubPath(journeyId))
     expect(SESSION_COOKIES.openingRun in h.captured.cookies).toBe(false)
@@ -231,13 +240,22 @@ const deepLinkGuardTests = () => {
     expect(guardedJourneyPath(pagePath('j-1', 'notification-view'))).toBe(true)
   })
 
-  it('Should redirect a fresh journey to the entry page', async () => {
+  it('Should redirect a journey with neither a run record nor answers to the entry page', async () => {
     const journey = await store.create()
     const target = await entryGuardTarget(
       buildRequest(journey.journeyId, { path: hubPath(journey.journeyId) }),
       captureH()
     )
     expect(target).toBe(pagePath(journey.journeyId, ORIGIN_SLUG))
+  })
+
+  it('Should admit a notification created in this session before any page is answered', async () => {
+    const { journeyId, record } = await createNotification()
+    const target = await entryGuardTarget(
+      buildRequest(journeyId, { path: hubPath(journeyId), record }),
+      captureH()
+    )
+    expect(target).toBeNull()
   })
 
   it('Should let a journey with a committed answer straight through', async () => {
@@ -303,7 +321,7 @@ describe('the opening run', () => {
   })
   beforeEach(() => store.clear())
 
-  describe('starting a notification opens it', journeyEntryOpensTheRun)
+  describe('creating a notification opens it', creatingANotificationOpensTheRun)
 
   describe(
     'save-and-continue follows the run sequence',
@@ -398,22 +416,13 @@ describe('the opening run', () => {
   })
 
   describe('the run is scoped to its journey', () => {
-    it('Should open its own run rather than inherit a record belonging to a different journey', async () => {
-      const journey = await store.create()
-      const h = captureH()
-      await postHandlerOf(origin)(
-        buildRequest(journey.journeyId, {
-          payload: originPayload,
-          record: active('some-other-journey')
-        }),
-        h
-      )
-      expect(h.captured.redirect).toBe(
-        pagePath(journey.journeyId, 'commodities')
-      )
+    it('Should open its own run alongside a record belonging to a different journey', async () => {
+      const { journeyId, h } = await createNotification({
+        record: active('some-other-journey')
+      })
       expect(h.captured.cookies[SESSION_COOKIES.openingRun]).toEqual({
         'some-other-journey': RUN_ACTIVE,
-        [journey.journeyId]: RUN_ACTIVE
+        [journeyId]: RUN_ACTIVE
       })
     })
   })

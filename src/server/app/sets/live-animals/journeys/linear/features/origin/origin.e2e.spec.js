@@ -2,7 +2,10 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import { countriesOrigin } from '../../../../../../services/_capture/fixtures.js'
-import { validatorDefaults } from '../../../../../../shared/copy.en.js'
+import {
+  copy as sharedCopy,
+  validatorDefaults
+} from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
 const france = countriesOrigin.find(({ code }) => code === 'FR')
@@ -123,6 +126,18 @@ test.describe('origin feature', () => {
     await page.goto(originUrl)
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(hubUrl)
+  })
+
+  test('cancel and return to hub reaches the hub on a notification with no answers', async ({
+    page
+  }) => {
+    const hubUrl = page.url().replace(/\/origin$/, '')
+
+    await page
+      .getByRole('link', { name: sharedCopy.saveActions.cancelAndReturnToHub })
+      .click()
 
     await expect(page).toHaveURL(hubUrl)
   })
