@@ -119,18 +119,16 @@ describe('scope bridge — per-gate scoping', () => {
 })
 
 // ---------------------------------------------------------------------------
-// The flow shim — the two obligations the evaluator does not model, layered
-// onto the FULL scope so their owning pages stay reachable; the RAW projection
+// The flow shim — the obligations the evaluator does not model, layered onto
+// the FULL scope so their owning pages stay reachable; the RAW projection
 // excludes them.
 // ---------------------------------------------------------------------------
 
 describe('scope bridge — flow-only obligations layered on the full scope', () => {
-  it('Should add importType + declaration to the full scope, not the raw projection', () => {
+  it('Should add declaration to the full scope, not the raw projection', () => {
     const full = makeScope(happyPath).inScope
     const raw = rawInScope(evaluateAnswers(happyPath))
-    expect(full.has('importType')).toBe(true)
     expect(full.has('declaration')).toBe(true)
-    expect(raw.has('importType')).toBe(false)
     expect(raw.has('declaration')).toBe(false)
   })
 

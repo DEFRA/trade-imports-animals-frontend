@@ -1,5 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
+
+import { answerOriginEntry } from '../../../../../../../../../e2e/live-animals-journey.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import { addressText } from '../addresses/party-picker/view-model/address-lines.js'
 import { copy } from './copy/copy.en.js'
@@ -13,13 +15,14 @@ const startAtContact = async (page) => {
     .locator('form[action="/notifications"]')
     .getByRole('button')
     .click()
-  await page.locator('input[name="importType"][value="live-animals"]').check()
-  await page.locator('form').getByRole('button').click()
   await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
 
-  await page.goto(
-    page.url().replace(/\/origin$/, '/consignment/contact/select')
-  )
+  const contactUrl = page
+    .url()
+    .replace(/\/origin$/, '/consignment/contact/select')
+  await answerOriginEntry(page)
+
+  await page.goto(contactUrl)
   await expect(page.getByRole('heading', { name: copy.legend })).toBeVisible()
 }
 

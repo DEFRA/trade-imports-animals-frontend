@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
+  ARRIVAL_DATE_IN_WINDOW_DISPLAY,
   completeAnswerSections,
   journeyIdFromPage,
   signIn,
@@ -13,6 +14,7 @@ const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
 const COPY_AS_NEW = 'Copy as new'
 const PAGE_SIZE = 20
 const SEEDED_NOTIFICATIONS = PAGE_SIZE + 1
+const DESKTOP_BREAKPOINT_WIDTH = 769
 
 const submitNotification = async (page) => {
   await completeAnswerSections(page)
@@ -24,8 +26,37 @@ const submitNotification = async (page) => {
   await page.getByRole('button', { name: 'Continue' }).click()
 }
 
+const stageSubmittedNotification = async (page) => {
+  await startNotification(page)
+  await submitNotification(page)
+  const reference = journeyIdFromPage(page)
+  await page.goto('/')
+  return reference
+}
+
 const actionFor = (page, role, action, reference) =>
   page.getByRole(role, { name: `${action} ${copy.actionHidden(reference)}` })
+
+const overflowReport = () => {
+  const root = document.documentElement
+  const offenders = [...document.querySelectorAll('body *')]
+    .map((element) => ({
+      selector: `${element.tagName.toLowerCase()}.${element.className || '(no class)'}`,
+      right: Math.round(element.getBoundingClientRect().right)
+    }))
+    .filter(({ right }) => right > root.clientWidth)
+    .slice(0, 10)
+  return { overflow: root.scrollWidth - root.clientWidth, offenders }
+}
+
+const expectNoHorizontalOverflow = async (page) => {
+  const { overflow, offenders } = await page.evaluate(overflowReport)
+
+  expect(
+    overflow,
+    `Dashboard overflows at ${page.viewportSize().width}px: ${JSON.stringify(offenders)}`
+  ).toBeLessThanOrEqual(0)
+}
 
 const startTwoNotifications = async (page) => {
   await startNotification(page)
@@ -72,17 +103,15 @@ test.describe('dashboard feature — empty state and start', () => {
     )
   })
 
-  test('starts a new notification at the import-type filter', async ({
-    page
-  }) => {
+  test('starts a new notification at the origin page', async ({ page }) => {
     await page.goto('/')
 
     await page.getByRole('button', { name: copy.startButton }).click()
 
     await expect(
-      page.getByRole('heading', { name: 'What are you importing?' })
+      page.getByRole('heading', { name: 'Origin of the import' })
     ).toBeVisible()
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/import-type$/)
+    await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
   })
 })
 
@@ -95,18 +124,16 @@ test.describe('dashboard feature — notification rows and actions', () => {
     page
   }) => {
     test.slow()
-    await startNotification(page)
-    await submitNotification(page)
-    const reference = journeyIdFromPage(page)
-
-    await page.goto('/')
+    const reference = await stageSubmittedNotification(page)
 
     await expect(
       page.getByRole('heading', { name: reference, exact: true })
     ).toBeVisible()
     await expect(page.getByText('Cow', { exact: true })).toBeVisible()
     await expect(page.getByText('France', { exact: true })).toBeVisible()
-    await expect(page.getByText('12 Dec 2026', { exact: true })).toBeVisible()
+    await expect(
+      page.getByText(ARRIVAL_DATE_IN_WINDOW_DISPLAY, { exact: true })
+    ).toBeVisible()
     await expect(
       page.getByText(values.consignor.name, { exact: true })
     ).toBeVisible()
@@ -120,6 +147,24 @@ test.describe('dashboard feature — notification rows and actions', () => {
       actionFor(page, 'button', COPY_AS_NEW, reference)
     ).toBeVisible()
     await expect(actionFor(page, 'link', 'Delete', reference)).toBeVisible()
+  })
+
+  test('dashboard does not overflow horizontally at desktop', async ({
+    page
+  }) => {
+    test.slow()
+    const reference = await stageSubmittedNotification(page)
+    await expect(
+      page.getByRole('heading', { name: reference, exact: true })
+    ).toBeVisible()
+
+    await expectNoHorizontalOverflow(page)
+
+    await page.setViewportSize({
+      width: DESKTOP_BREAKPOINT_WIDTH,
+      height: 900
+    })
+    await expectNoHorizontalOverflow(page)
   })
 
   test('draft notification renders only its available actions', async ({
@@ -162,10 +207,7 @@ test.describe('dashboard feature — notification rows and actions', () => {
     page
   }) => {
     test.slow()
-    await startNotification(page)
-    await submitNotification(page)
-    const reference = journeyIdFromPage(page)
-    await page.goto('/')
+    const reference = await stageSubmittedNotification(page)
     await actionFor(page, 'button', 'Amend', reference).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 

@@ -9,6 +9,7 @@ import { session as sessionStub } from '../../../../../../../services/persistenc
 import { driveHandler } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 
+import { arrivalWindow } from '../port-of-entry/arrival-window.js'
 import * as portOfEntry from '../port-of-entry/port-of-entry.controller.js'
 import * as transporters from '../transporters/transporters.controller.js'
 import { copy } from './copy.en.js'
@@ -35,6 +36,20 @@ describe('transport copy module', () => {
   test('Should interpolate transitCountries.errors.maxCountries', () => {
     expect(copy.transitCountries.errors.maxCountries(12)).toBe(
       'Select up to 12 countries'
+    )
+  })
+
+  test('Should interpolate portOfEntry.arrivalDate.hint with the window bounds', () => {
+    expect(copy.portOfEntry.arrivalDate.hint('5/8/2026', '12/2/2027')).toBe(
+      'The expected date of arrival at the port of entry. Enter a date between 5/8/2026 and 12/2/2027.'
+    )
+  })
+
+  test('Should interpolate portOfEntry.errors.arrivalDateOutOfRange', () => {
+    expect(
+      copy.portOfEntry.errors.arrivalDateOutOfRange('5/8/2026', '12/2/2027')
+    ).toBe(
+      'Arrival date at port of entry must be between 5/8/2026 and 12/2/2027'
     )
   })
 
@@ -68,6 +83,10 @@ describe('GET /port-of-entry', () => {
     )
     expect(result.view.context.arrivalDate.label.text).toBe(
       copy.portOfEntry.arrivalDate.label
+    )
+    const { minText, maxText } = arrivalWindow()
+    expect(result.view.context.arrivalDate.hint.text).toBe(
+      copy.portOfEntry.arrivalDate.hint(minText, maxText)
     )
   })
 })

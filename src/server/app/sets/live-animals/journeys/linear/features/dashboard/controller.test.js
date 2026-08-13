@@ -20,13 +20,15 @@ import {
   hubPath,
   pagePath
 } from '../../../../../../shared/paths.js'
-import { CYA_SLUG } from '../../../../../../shared/kit.js'
+import { CYA_SLUG, SURFACES } from '../../../../../../shared/kit.js'
+import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
 
 import { routes } from './controller.js'
 import { authenticatedCredentials } from '../../../../../../engine/test-support.js'
 
 const COPY_AS_NEW_ACTION = 'Copy as new'
 const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
+const ORIGIN_SLUG = 'origin'
 
 const handlerOf = (method, pathSuffix) =>
   routes.find(
@@ -42,12 +44,16 @@ const startPost = routes.find(
 const buildRequest = ({
   knownJourneyIds = [],
   journeyId,
-  query = {}
+  query = {},
+  openingRun
 } = {}) => ({
   payload: {},
   params: journeyId ? { journeyId } : {},
   query,
-  state: { [SESSION_COOKIES.knownJourneys]: knownJourneyIds },
+  state: {
+    [SESSION_COOKIES.knownJourneys]: knownJourneyIds,
+    ...(openingRun ? { [SESSION_COOKIES.openingRun]: openingRun } : {})
+  },
   headers: {},
   auth: {
     isAuthenticated: true,
@@ -314,6 +320,19 @@ describe('dashboard notifications list', () => {
   })
 })
 
+describe('dashboard content width', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+  })
+
+  it('Should render the notification list as a display surface', async () => {
+    const h = buildH()
+    await listGet(buildRequest(), h)
+    expect(h.captured.view.context.contentColumnClass).toBe(SURFACES.display)
+  })
+})
+
 describe('dashboard row actions', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
@@ -481,5 +500,58 @@ describe('dashboard start with an in-flight draft', () => {
         (await records.load({ journeyId: oldDraft.journeyId })).fulfilment
       )
     ).toEqual({ countryOfOrigin: 'FR' })
+  })
+})
+
+describe('dashboard start opens the opening run', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+  })
+  beforeEach(() => records.clear())
+
+  it('Should begin the opening run for the new notification before any page is answered', async () => {
+    const h = buildH()
+
+    await startPost(buildRequest(), h)
+
+    const newJourneyId =
+      h.captured.cookies[SESSION_COOKIES.knownJourneys].at(-1)
+    expect(h.captured.redirect).toBe(pagePath(newJourneyId, ORIGIN_SLUG))
+    expect(h.captured.cookies[SESSION_COOKIES.openingRun]).toEqual({
+      [newJourneyId]: RUN_ACTIVE
+    })
+  })
+
+  it('Should leave an earlier notification run record intact', async () => {
+    const h = buildH()
+
+    await startPost(
+      buildRequest({ openingRun: { 'an-earlier-journey': RUN_ACTIVE } }),
+      h
+    )
+
+    const newJourneyId =
+      h.captured.cookies[SESSION_COOKIES.knownJourneys].at(-1)
+    expect(h.captured.cookies[SESSION_COOKIES.openingRun]).toEqual({
+      'an-earlier-journey': RUN_ACTIVE,
+      [newJourneyId]: RUN_ACTIVE
+    })
+  })
+
+  it('Should NOT begin a run when an existing notification is amended', async () => {
+    const submitted = await startSubmitted()
+    const h = buildH()
+
+    await amendPost(
+      buildRequest({
+        knownJourneyIds: [submitted.journeyId],
+        journeyId: submitted.journeyId
+      }),
+      h
+    )
+
+    expect(h.captured.redirect).toBe(hubPath(submitted.journeyId))
+    expect(SESSION_COOKIES.openingRun in h.captured.cookies).toBe(false)
   })
 })

@@ -63,7 +63,6 @@ describe('#unrecognisedAnswerKeys', () => {
   it('Should recognise the flow-only and system keys', () => {
     expect(
       unrecognisedAnswerKeys({
-        importType: 'live-animals',
         declaration: 'confirmed',
         referenceNumber: 'GBN-AG-26-0001'
       })

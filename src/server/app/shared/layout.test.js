@@ -1,17 +1,19 @@
 import { describe, expect, it } from 'vitest'
 
 import { nunjucksConfig } from '../../../config/nunjucks/nunjucks.js'
+import { base, SURFACES, surfaceClass } from './kit.js'
 import { copy as sharedCopy } from './copy.en.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
 
-const renderLayout = (userSession) =>
+const renderLayout = (userSession, context = {}) =>
   environment.render('shared/layout.njk', {
     pageTitle: 'Create an import notification',
     sharedCopy,
     userSession,
     breadcrumbs: false,
-    getAssetPath: (asset) => `/assets/${asset}`
+    getAssetPath: (asset) => `/assets/${asset}`,
+    ...context
   })
 
 describe('promoted live-animals signed-in chrome', () => {
@@ -36,5 +38,46 @@ describe('promoted live-animals signed-in chrome', () => {
     expect(html).not.toContain('app-service-header__user')
     expect(html).not.toContain('href="/auth/sign-out"')
     expect(html).not.toContain('Sign out')
+  })
+})
+
+describe('content column width by surface', () => {
+  it('Should render a display surface at full container width', () => {
+    const html = renderLayout(
+      { isAuthenticated: true },
+      { contentColumnClass: SURFACES.display }
+    )
+
+    expect(html).toContain(SURFACES.display)
+    expect(html).not.toContain(SURFACES.form)
+  })
+
+  it('Should fall back to the reading measure when no surface is declared', () => {
+    const html = renderLayout({ isAuthenticated: true })
+
+    expect(html).toContain(SURFACES.form)
+    expect(html).not.toContain('class=""')
+  })
+})
+
+describe('kit surfaces', () => {
+  it('Should build answering-page chrome at the reading measure', () => {
+    expect(base('Any page').contentColumnClass).toBe(SURFACES.form)
+  })
+
+  it('Should give display pages the full container', () => {
+    expect(surfaceClass('display')).toBe(SURFACES.display)
+  })
+
+  it('Should reject an unknown surface rather than render nothing', () => {
+    expect(() => surfaceClass('widescreen')).toThrow(
+      /Unknown surface 'widescreen'/
+    )
+  })
+
+  it('Should reject an inherited Object property as a surface name', () => {
+    expect(() => surfaceClass('constructor')).toThrow(
+      /Unknown surface 'constructor'/
+    )
   })
 })

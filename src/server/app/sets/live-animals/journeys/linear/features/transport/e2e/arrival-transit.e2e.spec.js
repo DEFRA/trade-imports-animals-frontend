@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
+  ARRIVAL_DATE_IN_WINDOW,
   journeyUrl,
   signIn,
   startNotification,
@@ -11,14 +12,45 @@ import {
   countriesOrigin,
   portsOfEntry
 } from '../../../../../../../services/_capture/fixtures.js'
+import {
+  addUtcDays,
+  formatDateText
+} from '../../../../../../../lib/validate/calendar.js'
 import { validatorDefaults } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
+import { arrivalWindow, DAYS_BEFORE } from '../port-of-entry/arrival-window.js'
 import { MAX_TRANSITED_COUNTRIES } from '../transit-countries/transit-countries.controller.js'
 
 const portSelect = '#portOfEntry'
 const transitedCountriesInputs = 'input[name="transitedCountries"]'
 const transitedCountriesChecked = `${transitedCountriesInputs}:checked`
 const MAX_TRANSPORT_FIELD_LENGTH = 58
+
+const dateWindow = arrivalWindow()
+const outOfRangeError = copy.portOfEntry.errors.arrivalDateOutOfRange(
+  dateWindow.minText,
+  dateWindow.maxText
+)
+const justBeforeWindow = formatDateText(addUtcDays(dateWindow.min, -1))
+const justAfterWindow = formatDateText(addUtcDays(dateWindow.max, 1))
+
+const inUtc = (options) =>
+  new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', ...options })
+
+// The accessible name the MoJ picker gives a day button, assembled the way the
+// component assembles it.
+const dayLabel = (date) =>
+  `${inUtc({ weekday: 'long' }).format(date)} ${date.getUTCDate()} ${inUtc({ month: 'long' }).format(date)} ${date.getUTCFullYear()}`
+
+const showMonth = async (page, target, from) => {
+  const months =
+    (target.getUTCFullYear() - from.getUTCFullYear()) * 12 +
+    (target.getUTCMonth() - from.getUTCMonth())
+  const name = months < 0 ? 'Previous month' : 'Next month'
+  for (let step = 0; step < Math.abs(months); step++) {
+    await page.getByRole('button', { name }).click()
+  }
+}
 
 const openArrival = async (page) => {
   await startNotification(page)
@@ -65,7 +97,9 @@ const submit = (page) =>
   page.getByRole('button', { name: 'Save and continue' }).click()
 
 const fillValidArrival = async (page) => {
-  await page.getByLabel(copy.portOfEntry.arrivalDate.label).fill('03/01/2026')
+  await page
+    .getByLabel(copy.portOfEntry.arrivalDate.label)
+    .fill(ARRIVAL_DATE_IN_WINDOW)
   await choosePort(page)
   await page
     .getByRole('radio', {
@@ -103,7 +137,9 @@ test.describe('arrival details rendering', () => {
 
     await expect(
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
-    ).toHaveAccessibleDescription(copy.portOfEntry.arrivalDate.hint)
+    ).toHaveAccessibleDescription(
+      copy.portOfEntry.arrivalDate.hint(dateWindow.minText, dateWindow.maxText)
+    )
     await expect(page.getByText(copy.portOfEntry.port.hint)).toBeVisible()
     await expect(
       page.getByRole('group', { name: copy.portOfEntry.means.legend })
@@ -164,6 +200,90 @@ test.describe('arrival details validation', () => {
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
     ).toHaveValue('31/2/2026')
     await expect(page.locator(portSelect)).toHaveValue(values.portOfEntry)
+  })
+
+  test('the picker calendar excludes the day before the window and allows the boundary itself', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await page.getByRole('button', { name: 'Choose date' }).click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+
+    const today = addUtcDays(dateWindow.min, DAYS_BEFORE)
+    const dayBefore = addUtcDays(dateWindow.min, -1)
+
+    await showMonth(page, dayBefore, today)
+    await expect(
+      page.getByRole('button', {
+        name: `Excluded date, ${dayLabel(dayBefore)}`
+      })
+    ).toBeVisible()
+
+    await showMonth(page, dateWindow.min, dayBefore)
+    const boundary = page.getByRole('button', {
+      name: dayLabel(dateWindow.min),
+      exact: true
+    })
+    await boundary.click()
+
+    await expect(
+      page.getByLabel(copy.portOfEntry.arrivalDate.label)
+    ).toHaveValue(dateWindow.minText)
+  })
+
+  test.describe('arrival date out of the allowed window', () => {
+    for (const [bound, value] of [
+      ['before the earliest allowed date', justBeforeWindow],
+      ['after the latest allowed date', justAfterWindow]
+    ]) {
+      test(`a typed date ${bound} links to and focuses the preserved value`, async ({
+        page
+      }) => {
+        await openArrival(page)
+        await fillValidArrival(page)
+        await page.getByLabel(copy.portOfEntry.arrivalDate.label).fill(value)
+        await submit(page)
+
+        const link = errorLink(page, outOfRangeError)
+        await expect(link).toBeVisible()
+        await link.click()
+        await expect(
+          page.getByLabel(copy.portOfEntry.arrivalDate.label)
+        ).toBeFocused()
+        await expect(
+          page.getByLabel(copy.portOfEntry.arrivalDate.label)
+        ).toHaveValue(value)
+        await expect(page.locator(portSelect)).toHaveValue(values.portOfEntry)
+        await expect(
+          page.getByLabel(copy.portOfEntry.identification.label)
+        ).toHaveValue(values.transportIdentification)
+      })
+    }
+  })
+
+  test.describe('arrival date without JavaScript', () => {
+    test.use({ javaScriptEnabled: false })
+
+    test('the arrival date stays an editable text input that saves an in-window date', async ({
+      page
+    }) => {
+      await openArrival(page)
+
+      const input = page.getByLabel(copy.portOfEntry.arrivalDate.label)
+      await expect(input).toBeEditable()
+      await expect(input).toHaveAttribute('type', 'text')
+
+      await fillValidArrival(page)
+      await submit(page)
+      await expect(
+        page.getByRole('heading', { name: copy.transitCountries.title })
+      ).toBeVisible()
+
+      await page.goto(journeyUrl(page, 'port-of-entry'))
+      await expect(
+        page.getByLabel(copy.portOfEntry.arrivalDate.label)
+      ).toHaveValue(ARRIVAL_DATE_IN_WINDOW)
+    })
   })
 
   test('port validation: out-of-list value links to and focuses the cleared select while preserving other values', async ({
@@ -292,7 +412,7 @@ test.describe('arrival save and routing', () => {
     ).toBeVisible()
     await expect(
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
-    ).toHaveValue('03/01/2026')
+    ).toHaveValue(ARRIVAL_DATE_IN_WINDOW)
     await expect(page.locator('select#portOfEntry')).toHaveValue(
       values.portOfEntry
     )

@@ -80,8 +80,8 @@ describe('#currentJourney', () => {
     await store.seedAnswers(journeyB.journeyId, { countryOfOrigin: 'DE' })
     const known = [journeyA.journeyId, journeyB.journeyId]
     const flowOnly = {
-      [journeyA.journeyId]: { importType: 'live-animals' },
-      [journeyB.journeyId]: { importType: 'poao' }
+      [journeyA.journeyId]: { declaration: 'confirmed' },
+      [journeyB.journeyId]: { declaration: '' }
     }
     const requestA = requestFor(journeyA.journeyId, known)
     const requestB = requestFor(journeyB.journeyId, known)
@@ -93,11 +93,11 @@ describe('#currentJourney', () => {
 
     expect(viewA.answers).toMatchObject({
       countryOfOrigin: 'FR',
-      importType: 'live-animals'
+      declaration: 'confirmed'
     })
     expect(viewB.answers).toMatchObject({
       countryOfOrigin: 'DE',
-      importType: 'poao'
+      declaration: ''
     })
   })
 

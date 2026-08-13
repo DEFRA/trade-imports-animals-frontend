@@ -49,7 +49,7 @@ const cases = {
       OPTIONAL
     ],
     sections: [
-      OPTIONAL,
+      NA,
       NOT_STARTED,
       NOT_STARTED,
       NA,
@@ -78,7 +78,7 @@ const cases = {
       OPTIONAL
     ],
     sections: [
-      OPTIONAL,
+      NA,
       IN_PROGRESS,
       NOT_STARTED,
       NA,
@@ -110,7 +110,7 @@ const cases = {
       OPTIONAL
     ],
     sections: [
-      OPTIONAL,
+      NA,
       IN_PROGRESS,
       IN_PROGRESS,
       NA,
@@ -149,7 +149,7 @@ const cases = {
       OPTIONAL
     ],
     sections: [
-      OPTIONAL,
+      NA,
       IN_PROGRESS,
       IN_PROGRESS,
       NA,
@@ -178,7 +178,7 @@ const cases = {
       FULFILLED
     ],
     sections: [
-      FULFILLED,
+      NA,
       FULFILLED,
       FULFILLED,
       NA,
@@ -207,7 +207,7 @@ const cases = {
       FULFILLED
     ],
     sections: [
-      FULFILLED,
+      NA,
       FULFILLED,
       NOT_STARTED,
       NA,

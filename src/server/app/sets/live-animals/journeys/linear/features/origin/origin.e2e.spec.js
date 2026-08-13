@@ -1,7 +1,10 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { countriesOrigin } from '../../../../../../services/_capture/fixtures.js'
-import { validatorDefaults } from '../../../../../../shared/copy.en.js'
+import {
+  copy as sharedCopy,
+  validatorDefaults
+} from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../e2e/sign-in.js'
 
@@ -16,9 +19,6 @@ const startAtOrigin = async (page) => {
     .locator('form[action="/notifications"]')
     .getByRole('button')
     .click()
-  await page.locator('input[name="importType"][value="live-animals"]').check()
-  await page.locator('form').getByRole('button').click()
-
   await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
@@ -107,10 +107,38 @@ test.describe('origin feature', () => {
     )
   })
 
-  test('back link returns to the notification hub', async ({ page }) => {
-    const hubUrl = page.url().replace(/\/origin$/, '')
+  test('back link returns to the dashboard while the journey is unanswered', async ({
+    page
+  }) => {
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL('/')
+  })
+
+  test('back link returns to the notification hub once the journey has answers', async ({
+    page
+  }) => {
+    const originUrl = page.url()
+    const hubUrl = originUrl.replace(/\/origin$/, '')
+
+    await page.getByLabel(copy.country.label).selectOption(france.code)
+    await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await page.goto(originUrl)
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(hubUrl)
+  })
+
+  test('cancel and return to hub reaches the hub on a notification with no answers', async ({
+    page
+  }) => {
+    const hubUrl = page.url().replace(/\/origin$/, '')
+
+    await page
+      .getByRole('link', { name: sharedCopy.saveActions.cancelAndReturnToHub })
+      .click()
 
     await expect(page).toHaveURL(hubUrl)
   })

@@ -1,5 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
+
+import { answerOriginEntry } from '../../../../../../../../../e2e/live-animals-journey.js'
 import * as importReasonPurpose from '../../../../../../services/import-reason-purpose/index.js'
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
@@ -14,20 +16,17 @@ const startAtImportPurpose = async (page) => {
     .locator('form[action="/notifications"]')
     .getByRole('button')
     .click()
-  await page.locator('input[name="importType"][value="live-animals"]').check()
-  await page.locator('form').getByRole('button').click()
   await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
 
-  await page.goto(page.url().replace(/\/origin$/, '/import-reason'))
+  const reasonUrl = page.url().replace(/\/origin$/, '/import-reason')
+  await answerOriginEntry(page)
+
+  await page.goto(reasonUrl)
   await page
     .locator('input[name="reasonForImport"][value="internalMarket"]')
     .check()
   await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
-  await page.goto(
-    page
-      .url()
-      .replace(/\/notifications\/([^/]+)$/, '/notifications/$1/import-purpose')
-  )
+  await page.goto(reasonUrl.replace(/\/import-reason$/, '/import-purpose'))
   await expect(page.getByRole('heading', { name: copy.legend })).toBeVisible()
 }
 

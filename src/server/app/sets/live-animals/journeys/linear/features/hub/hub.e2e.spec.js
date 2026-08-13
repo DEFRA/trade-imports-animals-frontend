@@ -51,7 +51,7 @@ test.describe('hub feature', () => {
     await signIn(page)
   })
 
-  test('renders navigation copy and initial task statuses', async ({
+  test('renders navigation copy and the task statuses of a newly entered journey', async ({
     page
   }) => {
     await startNotification(page)
@@ -65,13 +65,13 @@ test.describe('hub feature', () => {
     await expect(
       origin.getByRole('link', { name: copy.rows.origin.title })
     ).toBeVisible()
-    await expect(origin).toContainText(copy.statuses.notYetStarted)
+    await expect(origin).toContainText(copy.statuses.completed)
 
     const commodities = taskRow(page, copy.rows.commodities.title)
-    await expect(commodities).toContainText(copy.statuses.cannotStartYet)
+    await expect(commodities).toContainText(copy.statuses.notYetStarted)
     await expect(
       commodities.getByRole('link', { name: copy.rows.commodities.title })
-    ).toHaveCount(0)
+    ).toBeVisible()
 
     const review = taskRow(page, copy.rows.review.title)
     await expect(review).toContainText(copy.statuses.cannotStartYet)
@@ -95,25 +95,6 @@ test.describe('hub feature', () => {
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
     await expect(page).toHaveURL('/')
-  })
-
-  test('saved origin marks its task complete and unlocks commodities', async ({
-    page
-  }) => {
-    await startNotification(page)
-    await answerCountryOfOrigin(page)
-
-    const origin = taskRow(page, copy.rows.origin.title)
-    await expect(origin).toContainText(copy.statuses.completed)
-
-    const commodities = taskRow(page, copy.rows.commodities.title)
-    await expect(commodities).toContainText(copy.statuses.notYetStarted)
-    await expect(
-      commodities.getByRole('link', { name: copy.rows.commodities.title })
-    ).toBeVisible()
-
-    const review = taskRow(page, copy.rows.review.title)
-    await expect(review).toContainText(copy.statuses.cannotStartYet)
   })
 })
 

@@ -6,6 +6,7 @@ import {
   journeyUrl,
   selectSpecies,
   signIn,
+  startNotification,
   values
 } from './live-animals-journey.js'
 
@@ -23,18 +24,11 @@ test.describe('live-animals journey glue', () => {
 
     await page.goto('/')
     await page.getByRole('button', { name: 'Start a new notification' }).click()
-    await expect(heading('What are you importing?')).toBeVisible()
+    await expect(heading('Origin of the import')).toBeVisible()
 
-    // Until the service filter is passed, journey deep links return to it.
+    // The entry page is exempt from the guard, so revisiting it is not a
+    // redirect loop.
     await page.goto(journeyUrl(page, 'origin'))
-    await expect(heading('What are you importing?')).toBeVisible()
-    await page.goto(journeyUrl(page))
-    await expect(heading('What are you importing?')).toBeVisible()
-
-    await page
-      .getByRole('radio', { name: 'Live animals or germinal products' })
-      .check()
-    await page.getByRole('button', { name: 'Continue' }).click()
     await expect(heading('Origin of the import')).toBeVisible()
 
     await chooseCountryOfOrigin(page)
@@ -75,17 +69,33 @@ test.describe('live-animals journey glue', () => {
     await expect(heading('Overview')).toBeVisible()
   })
 
+  test('a notification created in another session, holding no answers, is sent back to the entry page', async ({
+    page,
+    browser
+  }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Start a new notification' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Origin of the import' })
+    ).toBeVisible()
+    const hubUrl = new URL(journeyUrl(page), page.url()).toString()
+
+    const stranger = await browser.newContext()
+    const strangerPage = await stranger.newPage()
+    await strangerPage.goto(hubUrl)
+
+    await expect(strangerPage).toHaveURL(`${hubUrl}/origin`)
+    await expect(
+      strangerPage.getByRole('heading', { name: 'Origin of the import' })
+    ).toBeVisible()
+    await stranger.close()
+  })
+
   test('collection changes from check answers retain change context until their explicit exits', async ({
     page
   }) => {
     test.slow()
-    await page.goto('/')
-    await page.getByRole('button', { name: 'Start a new notification' }).click()
-    await page
-      .getByRole('radio', { name: 'Live animals or germinal products' })
-      .check()
-    await page.getByRole('button', { name: 'Continue' }).click()
-    await page.goto(journeyUrl(page))
+    await startNotification(page)
     await completeAnswerSections(page)
 
     const [document] = values.documents

@@ -1,4 +1,4 @@
-import { hubPath } from '../../../../../../shared/paths.js'
+import { dashboardPath, hubPath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
@@ -88,6 +88,11 @@ const fields = () =>
 const journeyIfStarted = (journey, answers) =>
   hasCommittedNotificationAnswers(answers) ? journey : undefined
 
+const backLinkFor = (journey, answers) =>
+  hasCommittedNotificationAnswers(answers)
+    ? hubPath(journey.journeyId)
+    : dashboardPath()
+
 const render = (
   h,
   journey,
@@ -98,7 +103,7 @@ const render = (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: hubPath(journey.journeyId),
+      backLink: backLinkFor(journey, answers),
       journey: journeyIfStarted(journey, answers),
       journeyId: journey.journeyId,
       recoverableError

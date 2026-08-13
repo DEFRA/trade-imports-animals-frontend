@@ -17,6 +17,20 @@ export const routeOptions = {}
 
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
+export const SURFACES = Object.freeze({
+  form: 'govuk-grid-column-two-thirds',
+  display: 'govuk-grid-column-full'
+})
+
+export const surfaceClass = (surface) => {
+  if (!Object.hasOwn(SURFACES, surface)) {
+    throw new Error(
+      `Unknown surface '${surface}'. Expected one of: ${Object.keys(SURFACES).join(', ')}`
+    )
+  }
+  return SURFACES[surface]
+}
+
 const STRIP_STATUS = {
   [DRAFT]: {
     text: sharedCopy.journeyStrip.draft,
@@ -104,7 +118,8 @@ export const base = (
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
     journeyStrip: journeyStrip(journey),
     sharedCopy,
-    recoverableError
+    recoverableError,
+    contentColumnClass: SURFACES.form
   }
 }
 
@@ -155,7 +170,18 @@ const dateInputValue = (value) =>
         .filter(Boolean)
         .join('/')
 
-export const dateField = (name, { label, hint, value = {}, error } = {}) => {
+/**
+ * @param {string} name
+ * @param {object} [options]
+ * @param {string} [options.minDate] - `d/m/yyyy` TEXT, not a Date: it goes
+ * verbatim into `data-min-date`, and the MoJ picker parses nothing else. Pass
+ * `arrivalWindow().minText`, never its sibling `min`.
+ * @param {string} [options.maxDate] - `d/m/yyyy` text, same contract.
+ */
+export const dateField = (
+  name,
+  { label, hint, value = {}, error, minDate, maxDate } = {}
+) => {
   return {
     id: name,
     name,
@@ -163,6 +189,8 @@ export const dateField = (name, { label, hint, value = {}, error } = {}) => {
     label: { text: label, classes: 'govuk-label--s' },
     hint: hint ? { text: hint } : undefined,
     errorMessage: error ? { text: error } : undefined,
-    value: dateInputValue(value)
+    value: dateInputValue(value),
+    minDate,
+    maxDate
   }
 }

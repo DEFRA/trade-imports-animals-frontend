@@ -29,10 +29,6 @@ describe('#nextRunTarget — the opening run sequence', () => {
     buildDispatch(dispatchPages)
   })
 
-  it('Should send the entry filter to origin on a blank journey', () => {
-    expect(next('importTypeFilter', {})).toBe(pagePath(JOURNEY_ID, 'origin'))
-  })
-
   it('Should send origin to the commodity search page once the country is answered', () => {
     expect(next('origin', { countryOfOrigin: 'FR' })).toBe(
       pagePath(JOURNEY_ID, 'commodities')

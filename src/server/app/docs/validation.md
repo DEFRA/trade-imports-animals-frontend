@@ -51,7 +51,25 @@ open.
 
 The date helpers validate a `dd/mm/yyyy` text value, then
 [`kit.readDate()`](../shared/kit.js) stores `{ day, month, year }`.
-`kit.dateField()` creates the MoJ date-picker view model.
+`kit.dateField()` creates the MoJ date-picker view model, and carries optional
+`minDate`/`maxDate` through to the picker's `data-min-date`/`data-max-date`
+attributes.
+
+`dateTextInRange` layers inclusive `Date` bounds on top of the `dateText`
+calendar check. The caller supplies the bounds, so the policy and the
+current-date read stay in the journey feature, out of `lib/validate`. A picker
+bound is not enough on its own. The MoJ date picker is a free-text input, so the
+server rule enforces the window and the `data-min-date`/`data-max-date`
+attributes only hint the calendar to the user.
+
+The two sides take the bounds in different forms, and mixing them fails
+quietly. `dateTextInRange` compares raw timestamps, so `min`/`max` must be
+midnight-UTC `Date`s — a `new Date()` carrying a time loses that whole day from
+an inclusive bound. `kit.dateField()` writes its values straight into an HTML
+attribute, so `minDate`/`maxDate` must be `d/m/yyyy` text, which is all the
+picker parses. `arrivalWindow()` returns both shapes for this reason: `min`/`max`
+for the validator, `minText`/`maxText` for the field. Build bounds with the
+[`calendar.js`](../lib/validate/calendar.js) helpers rather than by hand.
 
 Structured values such as addresses are opaque to model completeness: a non-blank
 object is filled. The collecting controller must validate required subfields before

@@ -1,5 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
+
+import { answerOriginEntry } from '../../../../../../../../../e2e/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../e2e/sign-in.js'
 
@@ -11,11 +13,11 @@ const startAtCphNumber = async (page) => {
     .locator('form[action="/notifications"]')
     .getByRole('button')
     .click()
-  await page.locator('input[name="importType"][value="live-animals"]').check()
-  await page.locator('form').getByRole('button').click()
   await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
 
   const commodityUrl = page.url().replace(/\/origin$/, '/commodities')
+  await answerOriginEntry(page)
+
   await page.goto(commodityUrl)
   await page.getByRole('checkbox', { name: 'Bos taurus' }).check()
   await page.getByRole('button', { name: 'Save and continue' }).click()

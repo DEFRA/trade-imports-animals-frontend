@@ -1,7 +1,6 @@
 {
   "schema_version": 1,
   "values": {
-    "importType": "live-animals",
     "countryOfOrigin": "FR",
     "regionOfOriginCodeRequirement": "yes",
     "regionOfOriginCode": "FR-75",
