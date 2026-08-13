@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
 import {
   AMEND,
@@ -13,11 +13,32 @@ fetchMocker.enableMocks()
 const notificationFulfilmentsUrl =
   'http://localhost:8085/notification-fulfilments'
 const notificationsUrl = 'http://localhost:8085/notifications'
+const addressBookUrl = 'http://localhost:8089'
 
 const RECORD_CREATED_AT = '2026-07-14T09:00:00'
 const RECORD_ARRIVAL_DATE = '2026-07-20'
 const CONSIGNOR_NAME = 'Consignor Ltd'
 const CONSIGNEE_NAME = 'Consignee Ltd'
+const ORGANISATION = '5900002'
+const ADDRESS_ID = '665f1c2ab3e4d51a2c9d0e77'
+
+const addressRequests = () =>
+  fetchMocker
+    .requests()
+    .map(({ url }) => url)
+    .filter((url) => url.startsWith(addressBookUrl))
+
+const SAVED_ADDRESS_NAME = 'Astra Rosales'
+
+const addressBookRecord = () => ({
+  id: ADDRESS_ID,
+  name: SAVED_ADDRESS_NAME,
+  addressLine1: '43 East Hague Extension',
+  townOrCity: 'Vernier',
+  postcode: '30055',
+  countryCode: 'CH',
+  deleted: false
+})
 
 const notification = (referenceNumber, status) => ({
   referenceNumber,
@@ -29,6 +50,13 @@ const notification = (referenceNumber, status) => ({
   transport: { arrivalDate: RECORD_ARRIVAL_DATE },
   consignor: { name: CONSIGNOR_NAME },
   consignee: { name: CONSIGNEE_NAME }
+})
+
+/** As stored once the consignor is a saved address: the reference alone, with
+ * no copy of the name beside it. */
+const referencingNotification = (referenceNumber, addressId) => ({
+  ...notification(referenceNumber, 'DRAFT'),
+  consignor: { addressId }
 })
 
 const notificationFulfilments = (id, status) => ({
@@ -160,5 +188,120 @@ describe('real records adapter — paged list', () => {
       { method: 'GET', url: `${notificationFulfilmentsUrl}/GBN-1` },
       { method: 'GET', url: `${notificationFulfilmentsUrl}/GBN-GONE` }
     ])
+  })
+})
+
+// The unit suite runs in stub mode; the real address book only answers in real
+// mode, so these opt in the same way the address-book tests do.
+describe('real records adapter — referenced party names', () => {
+  const originalMode = process.env.LIVE_ANIMALS_MODE
+
+  beforeEach(() => {
+    fetchMocker.resetMocks()
+    process.env.LIVE_ANIMALS_MODE = 'real'
+  })
+
+  afterEach(() => {
+    if (originalMode === undefined) {
+      delete process.env.LIVE_ANIMALS_MODE
+    } else {
+      process.env.LIVE_ANIMALS_MODE = originalMode
+    }
+  })
+
+  test('Should resolve referenced party names, fetching a shared address once', async () => {
+    // Two rows naming the same saved address. The dashboard renders the name,
+    // the notification stores only the reference, so the name is fetched here —
+    // once for the page, not once per row.
+    fetchMocker.mockResponses(
+      [
+        JSON.stringify({
+          page: 1,
+          size: 20,
+          totalElements: 2,
+          totalPages: 1,
+          content: [
+            referencingNotification('GBN-1', ADDRESS_ID),
+            referencingNotification('GBN-2', ADDRESS_ID)
+          ]
+        }),
+        { status: 200 }
+      ],
+      [JSON.stringify(addressBookRecord()), { status: 200 }]
+    )
+
+    const listed = await records.list({ page: 1, organisationId: ORGANISATION })
+
+    expect(listed.rows.map((row) => row.consignorName)).toEqual([
+      SAVED_ADDRESS_NAME,
+      SAVED_ADDRESS_NAME
+    ])
+    expect(addressRequests()).toEqual([
+      `${addressBookUrl}/organisation/${ORGANISATION}/addresses/${ADDRESS_ID}`
+    ])
+  })
+
+  test('Should read an inline party name straight off the notification', async () => {
+    // A party answered inline (AC5) carries its own name and is nobody's
+    // address-book record, so the book is not asked about it.
+    fetchMocker.mockResponse(
+      JSON.stringify({
+        page: 1,
+        size: 20,
+        totalElements: 1,
+        totalPages: 1,
+        content: [notification('GBN-1', 'DRAFT')]
+      })
+    )
+
+    const listed = await records.list({ page: 1, organisationId: ORGANISATION })
+
+    expect(listed.rows[0].consignorName).toBe(CONSIGNOR_NAME)
+    expect(addressRequests()).toEqual([])
+  })
+
+  test('Should show a deleted address as no name rather than a stale one', async () => {
+    // The agreed handling of a deleted address: the role reads as if it were
+    // never entered. The API answers a tombstone rather than a 404 so that this
+    // stays distinguishable from an address book that is simply down.
+    fetchMocker.mockResponses(
+      [
+        JSON.stringify({
+          page: 1,
+          size: 20,
+          totalElements: 1,
+          totalPages: 1,
+          content: [referencingNotification('GBN-1', ADDRESS_ID)]
+        }),
+        { status: 200 }
+      ],
+      [
+        JSON.stringify({ ...addressBookRecord(), deleted: true }),
+        { status: 200 }
+      ]
+    )
+
+    const listed = await records.list({ page: 1, organisationId: ORGANISATION })
+
+    expect(listed.rows[0].consignorName).toBeNull()
+  })
+
+  test('Should fail loudly when a reference cannot be resolved for want of an organisation', async () => {
+    // Without an organisation the address book has no book to look in. Reading
+    // on regardless would render the row with a blank name, which is how a
+    // deleted address reads — an unsigned-in visitor must not look like that.
+    fetchMocker.mockResponse(
+      JSON.stringify({
+        page: 1,
+        size: 20,
+        totalElements: 1,
+        totalPages: 1,
+        content: [referencingNotification('GBN-1', ADDRESS_ID)]
+      })
+    )
+
+    await expect(records.list({ page: 1 })).rejects.toThrow(
+      /without an organisation/
+    )
   })
 })

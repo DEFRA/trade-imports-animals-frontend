@@ -445,7 +445,11 @@ describe('real records adapter — lifecycle and list', () => {
     expect(request.method).toBe('GET')
   })
 
-  it("Should send the reader's organisation on the notifications list request", async () => {
+  it("Should not send the reader's organisation to the backend", async () => {
+    // The backend stores parties as they are and hands them back the same way.
+    // The organisation is the address book's business, and the address book is
+    // called from here — sending it on the notifications read would be handing
+    // the backend an identity it has nothing to do with.
     fetchMocker.mockResponse(
       JSON.stringify({
         page: 1,
@@ -459,17 +463,6 @@ describe('real records adapter — lifecycle and list', () => {
     await records.list({ page: 1, organisationId: '5900002' })
 
     const [request] = fetchMocker.requests()
-    expect(request.headers.get('Trade-Imports-Organisation-Id')).toBe('5900002')
-  })
-
-  it('Should refuse to read at all when the session carries no organisation', async () => {
-    // Not a blank header — the backend rejects those, so the caller would get an
-    // opaque 400 from a request that should never have left. Fail here, naming
-    // the cause, and make no call.
-    await expect(records.list({ page: 1 })).rejects.toThrow(
-      /without an organisation/
-    )
-
-    expect(fetchMocker.requests()).toHaveLength(0)
+    expect(request.headers.get('Trade-Imports-Organisation-Id')).toBeNull()
   })
 })

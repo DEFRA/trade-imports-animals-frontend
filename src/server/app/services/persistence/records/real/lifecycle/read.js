@@ -1,9 +1,9 @@
 import { notificationsUrl } from '../config.js'
 import { failed } from '../http/failed.js'
 import { getFulfilment } from '../http/get-fulfilment.js'
-import { organisationHeaders } from '../http/headers.js'
+import { headers } from '../http/headers.js'
 import { marshal } from '../marshal/document.js'
-import { marshalListItem } from '../marshal/list-item.js'
+import { listItemMarshaller } from '../marshal/list-item.js'
 
 export const load = async ({ journeyId } = {}) => {
   if (journeyId != null) {
@@ -19,6 +19,10 @@ export const load = async ({ journeyId } = {}) => {
 // the notification side — so we list from /notifications directly and skip
 // the aggregation join. Follow-up ticket captures the option to relocate
 // fulfilment persistence entirely.
+//
+// `organisationId` is not sent to the backend, which stores and returns parties
+// as they are. It is needed here, to resolve referenced party names against the
+// organisation's address book while marshalling the rows.
 export const list = async ({
   page = 1,
   sort = 'arrivalDate,desc',
@@ -32,7 +36,7 @@ export const list = async ({
     `${notificationsUrl}?page=${page}&sort=${sort}${referenceQuery}`,
     {
       method: 'GET',
-      headers: organisationHeaders(organisationId)
+      headers: headers()
     }
   )
   if (!response.ok) {
@@ -40,7 +44,9 @@ export const list = async ({
   }
   const result = await response.json()
   return {
-    rows: result.content.map(marshalListItem),
+    rows: await Promise.all(
+      result.content.map(listItemMarshaller(organisationId))
+    ),
     page: result.page,
     size: result.size,
     totalElements: result.totalElements,

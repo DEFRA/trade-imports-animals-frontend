@@ -15,8 +15,9 @@ export const isoFromDateParts = (parts) => {
 }
 
 /** Dashboard list names: references resolve from the stub book; inline answers
- * (AC5) already carry the name. Mirrors the real backend list DTO, which
- * returns `consignor.name` / `consignee.name` after address-book resolve. */
+ * already carry the name. Mirrors `real/marshal/list-item.js`, which resolves the
+ * same two names against the real book — the backend stores and returns the
+ * reference either way. */
 const nameOf = async (answer) => {
   if (!answer) {
     return null

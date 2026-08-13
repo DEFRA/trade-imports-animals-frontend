@@ -94,15 +94,18 @@ export const listKnownJourneys = async (
   { page, sort, referenceNumber } = {}
 ) => {
   const journeyIds = await session.knownJourneyIds(request)
-  // The backend resolves each row's referenced parties against the address
-  // book, which scopes on the organisation and has no authentication of its
-  // own — so the read carries the reader's session organisation with it.
+  // Each row's referenced parties are resolved against the address book while
+  // the list is marshalled. The book scopes on the organisation and has no
+  // authentication of its own, so the read carries the reader's session
+  // organisation with it.
   const organisationId = organisationIdOf(request)
 
-  // The dashboard is reachable before sign-in — it is the page a visitor lands
-  // on to sign in from. Without a session there is no organisation, and so no
-  // journeys to show: answer empty here rather than attempt a read the backend
-  // must reject for want of an organisation it was never given.
+  // Not the unauthenticated case: `session` is the default strategy, so a
+  // signed-out request is redirected before it reaches this handler. This is
+  // reached when AUTH_ENABLED=false leaves the auth plugin unregistered, or
+  // when a signed-in session carries no organisation. Either way there is no
+  // book to resolve names against, so answer empty rather than start a read
+  // that cannot finish.
   if (!organisationId) {
     return { rows: [], page: 1, size: 0, totalElements: 0, totalPages: 0 }
   }
