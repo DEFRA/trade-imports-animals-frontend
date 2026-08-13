@@ -49,22 +49,30 @@ const welshText = (noResults) => ({
 })
 
 // Keep the selected option in sync with the enhanced input's chosen value.
-const onConfirmFor = (selectElement, selectOptions) => (chosenOption) => {
-  selectElement.value = ''
-  const chosen =
-    chosenOption !== undefined
-      ? chosenOption
-      : document.getElementById(selectElement.id)?.value
-  const selectedOption = selectOptions.find(
-    (option) => (option.textContent || option.innerText) === chosen
-  )
-  if (selectedOption) {
-    selectedOption.selected = true
+// On a blur-confirm, accessible-autocomplete calls onConfirm() with no option,
+// so fall back to the enhanced input's current value. `inputId` is the select's
+// original id, which enhanceSelectElement moves onto that input (the select
+// itself is renamed with a "-select" suffix); it is captured before enhancement.
+const onConfirmFor =
+  (selectElement, selectOptions, inputId) => (chosenOption) => {
+    selectElement.value = ''
+    const chosen =
+      chosenOption !== undefined
+        ? chosenOption
+        : document.getElementById(inputId)?.value
+    const selectedOption = selectOptions.find(
+      (option) => (option.textContent || option.innerText) === chosen
+    )
+    if (selectedOption) {
+      selectedOption.selected = true
+    }
   }
-}
 
 // Build the enhanceSelectElement configuration from the select's data-* config.
 const buildConfig = (selectElement, selectOptions) => {
+  // Captured before enhanceSelectElement renames the select — this id ends up
+  // on the enhanced input, which onConfirm reads on a blur-confirm.
+  const inputId = selectElement.id
   const { dataset } = selectElement
   const { noResults } = dataset
   const config = {
@@ -79,7 +87,7 @@ const buildConfig = (selectElement, selectOptions) => {
         .filter((option) => option.value)
         .map((option) => option.textContent)
     ),
-    onConfirm: onConfirmFor(selectElement, selectOptions)
+    onConfirm: onConfirmFor(selectElement, selectOptions, inputId)
   }
   if (noResults) {
     config.tNoResults = () => noResults

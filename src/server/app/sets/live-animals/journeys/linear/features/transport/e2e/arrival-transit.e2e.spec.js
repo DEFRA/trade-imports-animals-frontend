@@ -72,10 +72,15 @@ const portLabel = (code) => {
   return `${port.name} (${port.code})`
 }
 
-// Drive the type-ahead: typing the code filters (the code is in the option
-// label), then pick the single match.
+// Pick a port. With JavaScript the field is the enhanced type-ahead: typing
+// the code filters (the code is in the option label), then pick the single
+// match. Without JavaScript it stays a native <select>, chosen by its value.
 const choosePort = async (page, code = values.portOfEntry) => {
   const field = page.getByLabel(copy.portOfEntry.port.label, { exact: true })
+  if ((await field.evaluate((el) => el.tagName)) === 'SELECT') {
+    await field.selectOption(code)
+    return
+  }
   await field.click()
   await field.fill(code)
   await page.getByRole('option', { name: portLabel(code), exact: true }).click()
