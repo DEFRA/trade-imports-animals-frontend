@@ -187,19 +187,32 @@ const post = async (request, h) => {
   }
 
   const values = trimmedValues(payload)
-  const allErrors = fieldErrors(payload, values)
-  if (Object.keys(allErrors).length > 0) {
-    const { journey } = await state.get(request, h)
-    return render(h, journey, party, values, allErrors).code(
-      HTTP_STATUS_BAD_REQUEST
-    )
-  }
-
-  const record = addressRecordFrom(values)
   // Carry a previously created id across a recoverable commit failure so a
   // retry commits that id instead of writing a second identical address-book
   // record (AC2).
+  //
+  // Read before the validation branch, and passed through the 400 below: the
+  // recoverable-failure page is a form the trader can edit, so their retry can
+  // itself be invalid. Dropping the id on that re-render would send them back
+  // with an empty hidden field, and their next valid save would write a second
+  // record — orphaning the one already in the address book.
   let createdAddressId = (payload.createdAddressId ?? '').trim()
+
+  const allErrors = fieldErrors(payload, values)
+  if (Object.keys(allErrors).length > 0) {
+    const { journey } = await state.get(request, h)
+    return render(
+      h,
+      journey,
+      party,
+      values,
+      allErrors,
+      false,
+      createdAddressId
+    ).code(HTTP_STATUS_BAD_REQUEST)
+  }
+
+  const record = addressRecordFrom(values)
   const { failure } = await kit.recoverableSave(
     async () => {
       // Save to the address book FIRST — the id it returns is what the journey

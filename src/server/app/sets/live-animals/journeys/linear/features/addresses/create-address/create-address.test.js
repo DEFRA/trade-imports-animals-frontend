@@ -184,6 +184,32 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
     expect(retried.after.consignor).toEqual({ addressId })
     expect(await addressBook.all(undefined)).toHaveLength(before + 1)
   })
+
+  it('Should keep a created address id through an invalid retry, and still not write a second record', async () => {
+    // The recoverable-failure page is an editable form, so the retry can itself
+    // be invalid. If the 400 re-render dropped the hidden id, the trader's next
+    // valid save would write a second record and orphan the first.
+    const before = (await addressBook.all(undefined)).length
+    const created = await driveHandler(postCreate, { payload: validPayload() })
+    const { addressId } = created.after.consignor
+    expect(await addressBook.all(undefined)).toHaveLength(before + 1)
+
+    const invalid = await driveHandler(postCreate, {
+      payload: validPayload({ createdAddressId: addressId, townOrCity: '' })
+    })
+
+    expect(invalid.response.statusCode).toBe(400)
+    expect(invalid.view.context.createdAddressId).toBe(addressId)
+
+    const corrected = await driveHandler(postCreate, {
+      payload: validPayload({
+        createdAddressId: invalid.view.context.createdAddressId
+      })
+    })
+
+    expect(corrected.after.consignor).toEqual({ addressId })
+    expect(await addressBook.all(undefined)).toHaveLength(before + 1)
+  })
 })
 
 describe('POST addresses/create — country membership follows the primed list', () => {
