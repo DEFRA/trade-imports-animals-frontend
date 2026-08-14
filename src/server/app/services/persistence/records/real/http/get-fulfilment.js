@@ -1,9 +1,9 @@
-import { notificationFulfilmentsUrl, HTTP_NOT_FOUND } from '../config.js'
+import { notificationsUrl, HTTP_NOT_FOUND } from '../config.js'
 import { failed } from './failed.js'
 import { headers } from './headers.js'
 
 export const getFulfilment = async (journeyId) => {
-  const response = await fetch(`${notificationFulfilmentsUrl}/${journeyId}`, {
+  const response = await fetch(`${notificationsUrl}/${journeyId}/fulfilments`, {
     method: 'GET',
     headers: headers()
   })

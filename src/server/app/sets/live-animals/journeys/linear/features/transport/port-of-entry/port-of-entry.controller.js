@@ -39,7 +39,6 @@ const TRANSPORT_FIELD_MAX_LENGTH = 58
 
 const portItems = (selected) => [
   { value: '', text: copy.port.placeholder },
-  { value: '', text: '──────────', disabled: true },
   ...ports.list().map((port) => ({
     value: port.code,
     text: `${port.name} (${port.code})`,

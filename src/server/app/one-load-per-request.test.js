@@ -17,23 +17,23 @@ const { countryOfOrigin } = obligationSet()
 // Network-boundary perf contract for the REAL records adapter (S5 hardening —
 // "one load per request"). Every currentJourney call — whether from a read
 // (state.get) or from a write helper re-deriving the journey — used to hit the
-// backend with a fresh GET /notification-fulfilments/{ref}, and each save re-fetched the same
+// backend with a fresh GET /notifications/{ref}/fulfilments, and each save re-fetched the same
 // record to guard the write. This pins the collapsed behaviour: within one HTTP
-// request the real adapter issues at most one canonical GET, followed by the
-// canonical PUT and the notification projection POST.
+// request the real adapter issues at most one canonical GET, followed by a
+// single PUT to /notifications/{ref}.
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
 
 const backendBaseUrl = 'http://localhost:8085'
 const ref = 'GBN-AG-01-ABC123'
-const fulfilmentUrl = `${backendBaseUrl}/notification-fulfilments/${ref}`
 const notificationsUrl = `${backendBaseUrl}/notifications`
+const fulfilmentUrl = `${notificationsUrl}/${ref}/fulfilments`
 
 const fulfilmentBody = JSON.stringify({
-  id: ref,
+  referenceNumber: ref,
   status: 'DRAFT',
-  createdAt: '2026-07-23T09:00:00',
+  created: '2026-07-23T09:00:00',
   submittedAt: null,
   fulfilments: []
 })
@@ -56,21 +56,25 @@ const requestsTo = (method, url) =>
     .filter((request) => request.method === method && request.url === url)
 
 describe('one load per request — real records adapter GET count', () => {
+  const notificationRefUrl = `${notificationsUrl}/${ref}`
+
   beforeEach(() => {
     fetchMocker.resetMocks()
     fetchMocker.mockResponse((req) => {
       if (req.method === 'GET' && req.url === fulfilmentUrl) {
         return fulfilmentBody
       }
-      if (req.method === 'PUT' && req.url === fulfilmentUrl) {
+      if (req.method === 'PUT' && req.url === notificationRefUrl) {
         return req
           .clone()
           .text()
           .then((body) =>
+            // The backend answers with the saved Notification, not an echo of the
+            // request, so unwrap the SaveNotificationDto envelope.
             JSON.stringify({
-              ...JSON.parse(body),
+              ...JSON.parse(body).notification,
               status: 'DRAFT',
-              createdAt: '2026-07-23T09:00:00',
+              created: '2026-07-23T09:00:00',
               submittedAt: null
             })
           )
@@ -94,7 +98,7 @@ describe('one load per request — real records adapter GET count', () => {
     configureReadyForCheckYourAnswers(() => false)
   })
 
-  test('Should issue exactly one GET for a read-then-write request, plus canonical PUT and notification POST', async () => {
+  test('Should issue exactly one GET for a read-then-write request, plus one PUT to the notifications endpoint', async () => {
     const request = buildRequest()
 
     const before = await get(request, recordingH())
@@ -102,8 +106,9 @@ describe('one load per request — real records adapter GET count', () => {
 
     expect(before.fulfilment).toEqual({})
     expect(getsFor(fulfilmentUrl)).toHaveLength(1)
-    expect(requestsTo('PUT', fulfilmentUrl)).toHaveLength(1)
-    expect(requestsTo('POST', notificationsUrl)).toHaveLength(1)
+    expect(requestsTo('PUT', notificationRefUrl)).toHaveLength(1)
+    // No POST /notifications is expected — the PUT above carries everything.
+    expect(requestsTo('POST', notificationsUrl)).toHaveLength(0)
   })
 
   test('Should serve a post-write read from the request without a stale value or extra GET', async () => {

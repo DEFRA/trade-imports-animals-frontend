@@ -1,4 +1,5 @@
 // import custom component styles
+@use "../../../server/common/components/accessible-autocomplete/accessible-autocomplete";
 @use "../../../server/common/components/service-header/service-header";
 @use "commodity-total";
 @use "notification-list";
