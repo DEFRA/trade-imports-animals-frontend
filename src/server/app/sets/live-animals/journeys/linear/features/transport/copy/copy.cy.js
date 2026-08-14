@@ -10,7 +10,8 @@ export const copy = {
     port: {
       label: 'Porthladd mynediad',
       hint: 'Dewiswch ble bydd y cludwr yn dod i mewn gyda’r llwyth. Dechreuwch deipio i chwilio yn ôl enw neu god y porthladd neu’r maes awyr.',
-      placeholder: 'Dewiswch borthladd mynediad'
+      placeholder: 'Dewiswch borthladd mynediad',
+      noResults: 'Dim porthladdoedd wedi’u darganfod'
     },
     means: {
       legend: 'Cyfrwng cludo i’r porthladd mynediad',

@@ -101,11 +101,16 @@ describe('GET port-of-entry — server-rendered select data (no-JS path)', () =>
   })
   beforeEach(() => store.clear())
 
-  it('Should supply the placeholder and divider with empty values and name-plus-code option text', async () => {
+  it('Should supply an empty-value placeholder followed by name-plus-code options (no divider)', async () => {
     const result = await driveHandler(get)
     const items = result.view.context.portItems
     expect(items[0]).toEqual({ value: '', text: 'Select port of entry' })
-    expect(items[1]).toEqual({ value: '', text: '──────────', disabled: true })
+    const [firstPort] = ports.list()
+    expect(items[1]).toEqual({
+      value: firstPort.code,
+      text: `${firstPort.name} (${firstPort.code})`,
+      selected: false
+    })
     expect(items).toContainEqual({
       value: 'GB ABD',
       text: 'Aberdeen Harbour (GB ABD)',

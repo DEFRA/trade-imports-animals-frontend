@@ -9,7 +9,8 @@ export const copy = {
     port: {
       label: 'Port of entry',
       hint: 'Choose where the transporter will enter with the consignment. Start typing to search by port or airport name or code.',
-      placeholder: 'Select port of entry'
+      placeholder: 'Select port of entry',
+      noResults: 'No ports found'
     },
     means: {
       legend: 'Means of transport to the port of entry',

@@ -1,5 +1,5 @@
 {% extends "shared/layout.njk" %}
-{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "accessible-autocomplete/macro.njk" import appAccessibleAutocomplete %}
 {% from "moj/components/date-picker/macro.njk" import mojDatePicker %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/input/macro.njk" import govukInput %}
@@ -15,14 +15,15 @@
 
     {{ mojDatePicker(arrivalDate) }}
 
-    {{ govukSelect({
+    {{ appAccessibleAutocomplete({
       id: "portOfEntry",
       name: "portOfEntry",
       label: { text: copy.port.label, classes: "govuk-label--s" },
       hint: { text: copy.port.hint },
       value: values.portOfEntry,
       errorMessage: errors.portOfEntry and { text: errors.portOfEntry },
-      items: portItems
+      items: portItems,
+      autocomplete: { showAllValues: true, noResults: copy.port.noResults }
     }) }}
 
     {{ govukRadios({
