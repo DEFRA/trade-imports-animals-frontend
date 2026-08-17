@@ -59,39 +59,32 @@ describe('stub sign-in', () => {
     expect(session.currentRelationshipId).toBe('5900002')
   })
 
-  test('Should return to the page the caller was sent here from', async () => {
-    // What the session cookie's redirectTo produces — a relative path, honoured.
+  /** Where sign-in sends the caller afterwards. The route is unauthenticated and
+   * `redirect` is attacker-supplied, so only a relative path is honoured — the
+   * shape the session cookie's own redirectTo produces. An absolute URL would
+   * turn sign-in into an open redirector, so it falls back to the root, as does
+   * a request that names no destination at all. */
+  test.each([
+    {
+      case: 'returns to the page the caller was sent here from',
+      url: '/auth/sign-in?redirect=%2Fdashboard%3Fpage%3D2',
+      location: '/dashboard?page=2'
+    },
+    {
+      case: 'refuses to redirect off-site',
+      url: '/auth/stub-sign-in?redirect=https%3A%2F%2Fevil.example.com%2Fharvest',
+      location: '/'
+    },
+    {
+      case: 'redirects to the root when no destination is given',
+      url: '/auth/stub-sign-in',
+      location: '/'
+    }
+  ])('Should $case', async ({ url, location }) => {
     const { server } = await buildServer()
 
-    const response = await server.inject({
-      method: 'GET',
-      url: '/auth/sign-in?redirect=%2Fdashboard%3Fpage%3D2'
-    })
+    const response = await server.inject({ method: 'GET', url })
 
-    expect(response.headers.location).toBe('/dashboard?page=2')
-  })
-
-  test('Should refuse to redirect off-site', async () => {
-    // This route is unauthenticated and `redirect` is attacker-supplied, so an
-    // absolute URL would turn sign-in into an open redirector.
-    const { server } = await buildServer()
-
-    const response = await server.inject({
-      method: 'GET',
-      url: '/auth/stub-sign-in?redirect=https%3A%2F%2Fevil.example.com%2Fharvest'
-    })
-
-    expect(response.headers.location).toBe('/')
-  })
-
-  test('Should redirect to the root when no destination is given', async () => {
-    const { server } = await buildServer()
-
-    const response = await server.inject({
-      method: 'GET',
-      url: '/auth/stub-sign-in'
-    })
-
-    expect(response.headers.location).toBe('/')
+    expect(response.headers.location).toBe(location)
   })
 })

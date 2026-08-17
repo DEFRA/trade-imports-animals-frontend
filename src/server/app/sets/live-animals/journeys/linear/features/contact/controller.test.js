@@ -78,7 +78,14 @@ describe('GET contact — select or create an address', () => {
       payload: { contactAddress: addressId }
     })
     expect(postResult.view).toBeUndefined()
-    expect(postResult.after.contactAddress).toEqual({ addressId })
+    // The contact is held as a copy — a per-notification field, reset on
+    // copy, so it keeps what was picked. The id rides along only so the page can
+    // pre-select the row again.
+    expect(postResult.after.contactAddress).toEqual({
+      addressId,
+      name: ROUND_TRIP_CONTACT_NAME,
+      address: expect.any(Object)
+    })
 
     const saved = await addressBook.party(undefined, addressId)
     expect(saved.name).toBe(ROUND_TRIP_CONTACT_NAME)

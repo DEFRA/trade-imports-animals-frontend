@@ -117,13 +117,47 @@ describe('POST addresses/create — shared Standard Address Block form', () => {
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, 'consignment/contact/select')
     })
-    expect(Object.keys(result.after.contactAddress)).toEqual(['addressId'])
+    // Contact is held as a copy, so creating one commits the details, not
+    // a bare reference — the same shape as picking an existing address for it.
+    expect(result.after.contactAddress).toMatchObject({
+      addressId: expect.any(String),
+      name: CREATED_CONTACT_NAME,
+      address: expect.objectContaining({
+        addressLine1: CREATED_ADDRESS_LINE_1,
+        townOrCity: 'Carlisle',
+        postalOrZipCode: 'CA1 1AA',
+        country: CREATED_COUNTRY
+      })
+    })
 
     const saved = await addressBook.party(
       undefined,
       result.after.contactAddress.addressId
     )
     expect(saved.name).toBe(CREATED_CONTACT_NAME)
+  })
+
+  it('Should copy a new place of origin rather than reference it (D24)', async () => {
+    const result = await driveHandler(postCreate, {
+      payload: validPayload({
+        for: 'placeOfOrigin',
+        nameOrOrganisationName: CREATED_FARM_NAME
+      })
+    })
+
+    expect(result.after.placeOfOrigin).toMatchObject({
+      addressId: expect.any(String),
+      name: CREATED_FARM_NAME,
+      address: expect.objectContaining({ addressLine1: CREATED_ADDRESS_LINE_1 })
+    })
+
+    // The record is still written to the book — inline is about what the
+    // notification holds, not about skipping the save.
+    const saved = await addressBook.party(
+      undefined,
+      result.after.placeOfOrigin.addressId
+    )
+    expect(saved.name).toBe(CREATED_FARM_NAME)
   })
 
   it('Should reject a blank submit with an error per mandatory field and commit nothing', async () => {

@@ -17,6 +17,7 @@ import { copyFor } from '../../../../../../../shared/copy.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 import * as addressBook from '../../../../../../../services/address-book/index.js'
 import { partyOf } from '../parties.js'
+import { answerFor } from '../party-picker/selection.js'
 import { organisationIdOf } from '../resolve-parties.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
@@ -225,8 +226,12 @@ const post = async (request, h) => {
         )
         createdAddressId = saved.id
       }
+      // Same commit shape as picking an existing address: a reference for the
+      // four referenced roles, the details themselves for an inline one.
+      // The record just written is what those details are, so there is no
+      // need to read it back.
       await state.commit(request, h, {
-        [party.id]: { addressId: createdAddressId }
+        [party.id]: answerFor(party, { id: createdAddressId, ...record })
       })
     },
     async () => {

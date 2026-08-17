@@ -17,6 +17,7 @@ import { CREATE_ADDRESS_SLUG } from '../addresses/create-address/create-address.
 import { CONTACT_PARTY } from '../addresses/parties.js'
 import { organisationIdOf } from '../addresses/resolve-parties.js'
 import { addressText } from '../addresses/party-picker/view-model/address-lines.js'
+import { answerFor } from '../addresses/party-picker/selection.js'
 import { consignmentContactSelectPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
@@ -94,10 +95,9 @@ const post = async (request, h) => {
   let committed
   const { failure } = await kit.recoverableSave(
     async () => {
-      // The reference, not a copy (AC3).
       committed = chosen
         ? await state.commit(request, h, {
-            contactAddress: { addressId: chosen.id }
+            contactAddress: answerFor(CONTACT_PARTY, chosen)
           })
         : await state.get(request, h)
     },

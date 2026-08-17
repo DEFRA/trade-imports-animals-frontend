@@ -310,7 +310,18 @@ describe('The five spokes share the one picker', () => {
         payload: { action: 'save', party: DANISH_MEAT_ID }
       })
 
-      expect(result.after[party.id]).toEqual({ addressId: DANISH_MEAT_ID })
+      // A referenced party commits the id alone; an inline one also keeps
+      // the details, because the notification holds a copy rather than tracking
+      // later edits. Both carry the id — the picker needs it to pre-tick a row.
+      expect(result.after[party.id]).toEqual(
+        party.inline
+          ? {
+              addressId: DANISH_MEAT_ID,
+              name: expect.any(String),
+              address: expect.any(Object)
+            }
+          : { addressId: DANISH_MEAT_ID }
+      )
       expect(result.response).toEqual({
         redirect: pagePath(result.journeyId, 'addresses')
       })

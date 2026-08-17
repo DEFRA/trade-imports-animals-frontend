@@ -16,7 +16,7 @@ import { organisationIdOf } from '../resolve-parties.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { isSearchAction, pageNumber } from './request-params.js'
-import { chosenPartyFor, committedId } from './selection.js'
+import { answerFor, chosenPartyFor, committedId } from './selection.js'
 import { pickerViewModel } from './view-model/index.js'
 import { errorSummary } from './view-model/error-summary.js'
 
@@ -70,11 +70,8 @@ const get = (party) => async (request, h) => {
 const commitSelection = async (request, h, party, chosen, form) => {
   const { failure } = await kit.recoverableSave(
     async () => {
-      // The reference, not a copy (AC3). Display details are resolved on read;
-      // storing them here would be re-persisted by the next commit anywhere in
-      // the journey, and the reference would grow a stale copy beside it.
       await state.commit(request, h, {
-        [party.id]: { addressId: chosen.id }
+        [party.id]: answerFor(party, chosen)
       })
     },
     async () => {

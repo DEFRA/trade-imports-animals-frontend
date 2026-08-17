@@ -2,7 +2,17 @@ import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { fulfilmentToNotification } from './index.js'
 
+/** A party answer as the journey stores it — the journey has carried
+ * `postalOrZipCode` since before the address book existed. */
 const address = (name, line1) => ({
+  name,
+  address: { addressLine1: line1, postalOrZipCode: 'AB1 2CD' }
+})
+
+/** The same party as the notification holds it. The two inline roles
+ * carry their details across, so the mapper translates them into the address
+ * book's field names on the way. */
+const inlineAddress = (name, line1) => ({
   name,
   address: { addressLine1: line1, postcode: 'AB1 2CD' }
 })
@@ -211,7 +221,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     })
     expect(notification.reasonForImport).toBe('Internal market')
     expect(notification.placeOfOrigin).toEqual(
-      address('Origin Farm', ORIGIN_FARM_LINE1)
+      inlineAddress('Origin Farm', ORIGIN_FARM_LINE1)
     )
     expect(notification.consignor).toEqual(
       address('Consignor Ltd', '2 Depot Road')
@@ -224,7 +234,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
       address('Destination Farm', '5 Field Lane')
     )
     expect(notification.consignment).toEqual(
-      address('Contact Person', '6 High Street')
+      inlineAddress('Contact Person', '6 High Street')
     )
     expect(notification.cphNumber).toBe('12/345/6789')
     expect(notification.transport.portOfEntry).toBe('GB ABD')
