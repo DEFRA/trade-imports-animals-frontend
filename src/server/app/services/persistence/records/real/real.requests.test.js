@@ -39,13 +39,15 @@ const canonical = ({
   referenceNumber = journeyId,
   fulfilments = [],
   status = 'DRAFT',
-  submittedAt = null
+  submittedAt = null,
+  concurrencyToken = 0
 } = {}) => ({
   referenceNumber,
   fulfilments,
   status,
   created: createdAt,
-  submittedAt
+  submittedAt,
+  concurrencyToken
 })
 
 const jsonOf = (request) => request.clone().json()
@@ -80,6 +82,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       status: DRAFT,
       createdAt,
       submittedAt: null,
+      concurrencyToken: 0,
       fulfilment: {}
     })
   })
