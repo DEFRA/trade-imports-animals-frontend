@@ -16,9 +16,13 @@ export const create = async () => {
   return marshal(await notificationResponse.json())
 }
 
-// Copy dedup dropped pending EUDPA-314
-export const copy = async (journeyId, _idempotencyKey) => {
-  const response = await fetch(`${notificationsUrl}/${journeyId}/copy`, {
+// concurrencyToken rides on the query string — the copy endpoint has no request
+// body — and gives the "Copy as new" click a WYSIWYG guarantee: the backend
+// rejects with 409 STALE_CONCURRENCY_TOKEN if the source has moved on since
+// the user last saw it.
+export const copy = async (journeyId, concurrencyToken) => {
+  const url = `${notificationsUrl}/${journeyId}/copy?concurrencyToken=${encodeURIComponent(concurrencyToken)}`
+  const response = await fetch(url, {
     method: 'POST',
     headers: headers()
   })

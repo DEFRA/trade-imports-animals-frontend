@@ -171,7 +171,7 @@ describe('real records adapter — fulfilment writes', () => {
     )
 
     const saved = await records.replaceFulfilment(journeyId, snapshot, {
-      known: { journeyId, status: DRAFT }
+      known: { journeyId, status: DRAFT, concurrencyToken: 3 }
     })
 
     const requests = fetchMocker.requests()
@@ -180,6 +180,7 @@ describe('real records adapter — fulfilment writes', () => {
     ])
     expect(await jsonOf(requests[0])).toEqual({
       referenceNumber: journeyId,
+      concurrencyToken: 3,
       ...fulfilmentToNotification(snapshot, journeyId),
       fulfilments: encoded
     })
@@ -256,7 +257,7 @@ describe('real records adapter — lifecycle and list', () => {
     expect(restored.submittedAt).toBe(submittedTimestamp)
   })
 
-  it('Should copy without an idempotency header (copy dedup dropped pending EUDPA-314)', async () => {
+  it('Should copy with the source concurrencyToken as a query parameter (WYSIWYG guarantee)', async () => {
     const copiedJourneyId = 'GBN-AG-26-COPIED'
     fetchMocker.mockResponse(
       JSON.stringify(
@@ -265,10 +266,12 @@ describe('real records adapter — lifecycle and list', () => {
       { status: 201 }
     )
 
-    const copied = await records.copy(journeyId, 'copy-key-123')
+    const copied = await records.copy(journeyId, 7)
 
     const [request] = fetchMocker.requests()
-    expect(request.url).toBe(`${notificationsUrl}/${journeyId}/copy`)
+    expect(request.url).toBe(
+      `${notificationsUrl}/${journeyId}/copy?concurrencyToken=7`
+    )
     expect(request.method).toBe('POST')
     expect(request.headers.has('Idempotency-Key')).toBe(false)
     expect(copied).toMatchObject({
