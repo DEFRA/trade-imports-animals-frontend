@@ -27,6 +27,7 @@ import {
 
 import { copy } from '../copy/copy.en.js'
 import { arrivalWindow } from './arrival-window.js'
+import { config } from '../../../../../../../../../config/config.js'
 import * as portOfEntry from './port-of-entry.controller.js'
 
 const post = postHandlerOf(portOfEntry)
@@ -204,7 +205,7 @@ describe('port-of-entry — the arrival-date window', () => {
 })
 
 describe('POST port-of-entry — port membership follows the primed list', () => {
-  const originalMode = process.env.LIVE_ANIMALS_MODE
+  const originalMode = config.get('stubMode')
 
   beforeAll(() => {
     configureRecords(recordsStub)
@@ -215,15 +216,11 @@ describe('POST port-of-entry — port membership follows the primed list', () =>
 
   afterAll(() => {
     vi.unstubAllGlobals()
-    if (originalMode === undefined) {
-      delete process.env.LIVE_ANIMALS_MODE
-    } else {
-      process.env.LIVE_ANIMALS_MODE = originalMode
-    }
+    config.set('stubMode', originalMode)
   })
 
   it('Should validate against the list as primed at POST time, not as imported', async () => {
-    process.env.LIVE_ANIMALS_MODE = 'real'
+    config.set('stubMode', false)
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({

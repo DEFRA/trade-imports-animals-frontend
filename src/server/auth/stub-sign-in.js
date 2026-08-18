@@ -69,7 +69,7 @@ const signIn = async (request, h) => {
 const SIGN_IN_PATHS = ['/auth/stub-sign-in', '/auth/sign-in']
 
 /**
- * Replaces the real Defra ID OIDC round-trip when auth.stubMode is on
+ * Replaces the real Defra ID OIDC round-trip when stub mode is on
  * (see mode.js / plugins/auth.js). Auth is still enforced everywhere else -
  * this only produces the same end state the real sign-in-oidc handler does
  * (cached session + session cookie), signed locally rather than verified

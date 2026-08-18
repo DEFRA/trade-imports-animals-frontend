@@ -20,6 +20,7 @@ import {
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import * as countries from '../../../../../../services/countries/index.js'
+import { config } from '../../../../../../../../config/config.js'
 
 import * as origin from './controller.js'
 
@@ -122,7 +123,7 @@ describe('GET /origin — server-rendered select data (no-JS path)', () => {
 })
 
 describe('POST /origin — country membership follows the primed list', () => {
-  const originalMode = process.env.LIVE_ANIMALS_MODE
+  const originalMode = config.get('stubMode')
 
   beforeAll(() => {
     configureRecords(recordsStub)
@@ -133,15 +134,11 @@ describe('POST /origin — country membership follows the primed list', () => {
 
   afterAll(() => {
     vi.unstubAllGlobals()
-    if (originalMode === undefined) {
-      delete process.env.LIVE_ANIMALS_MODE
-    } else {
-      process.env.LIVE_ANIMALS_MODE = originalMode
-    }
+    config.set('stubMode', originalMode)
   })
 
   it('Should validate against the list as primed at POST time, not as imported', async () => {
-    process.env.LIVE_ANIMALS_MODE = 'real'
+    config.set('stubMode', false)
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({

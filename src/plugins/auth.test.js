@@ -5,7 +5,7 @@ const getOidcConfigMock = vi.hoisted(() => vi.fn())
 const configGetMock = vi.hoisted(() => vi.fn())
 const refreshTokensMock = vi.hoisted(() => vi.fn())
 const getSafeRedirectMock = vi.hoisted(() => vi.fn())
-const isAuthStubModeMock = vi.hoisted(() => vi.fn())
+const isStubModeMock = vi.hoisted(() => vi.fn())
 
 const jwtDecodeMock = vi.hoisted(() => vi.fn())
 const jwtVerifyTimeMock = vi.hoisted(() => vi.fn())
@@ -29,7 +29,7 @@ vi.mock('../auth/get-safe-redirect.js', () => ({
 }))
 
 vi.mock('../server/common/services/mode.js', () => ({
-  isAuthStubMode: isAuthStubModeMock
+  isStubMode: isStubModeMock
 }))
 
 vi.mock('@hapi/jwt', () => ({
@@ -50,7 +50,7 @@ describe('auth plugin', () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
-    isAuthStubModeMock.mockReturnValue(false)
+    isStubModeMock.mockReturnValue(false)
     getOidcConfigMock.mockResolvedValue(oidcConfig)
 
     configGetMock.mockImplementation((key) => {
@@ -110,7 +110,7 @@ describe('auth plugin', () => {
     )
 
     expect(server.auth.default).toHaveBeenCalledWith('session')
-    expect(isAuthStubModeMock).toHaveBeenCalled()
+    expect(isStubModeMock).toHaveBeenCalled()
   })
 
   test('register skips Bell and the OIDC fetch in stub mode, still enforcing session auth', async () => {
@@ -119,7 +119,7 @@ describe('auth plugin', () => {
     // so the strategy and the default must still be in place. Reaching for the
     // OIDC config would also fail outright — there is no identity provider
     // configured in the environments stub mode is meant for.
-    isAuthStubModeMock.mockReturnValue(true)
+    isStubModeMock.mockReturnValue(true)
     const server = {
       auth: {
         strategy: vi.fn(),

@@ -120,8 +120,8 @@ describe('GET /consignors/select', () => {
   })
 
   it('Should treat a soft-deleted selected reference as no selection', async () => {
-    const originalMode = process.env.LIVE_ANIMALS_MODE
-    process.env.LIVE_ANIMALS_MODE = 'real'
+    // The book's own functions are stubbed below, so the run mode is not part
+    // of what this exercises.
     const deletedId = 'deleted-consignor'
     vi.spyOn(addressBook, 'search').mockResolvedValue({
       results: [],
@@ -150,11 +150,6 @@ describe('GET /consignors/select', () => {
       expect(picker.rows.every((row) => row.checked === false)).toBe(true)
     } finally {
       vi.restoreAllMocks()
-      if (originalMode === undefined) {
-        delete process.env.LIVE_ANIMALS_MODE
-      } else {
-        process.env.LIVE_ANIMALS_MODE = originalMode
-      }
     }
   })
 })
@@ -263,8 +258,8 @@ describe('POST /consignors/select', () => {
   })
 
   it('Should refuse a soft-deleted address id on save', async () => {
-    const originalMode = process.env.LIVE_ANIMALS_MODE
-    process.env.LIVE_ANIMALS_MODE = 'real'
+    // The book's own functions are stubbed below, so the run mode is not part
+    // of what this exercises.
     const deletedId = 'deleted-consignor'
     vi.spyOn(addressBook, 'search').mockResolvedValue({
       results: [],
@@ -290,11 +285,6 @@ describe('POST /consignors/select', () => {
       expect(result.after.consignor).toBeUndefined()
     } finally {
       vi.restoreAllMocks()
-      if (originalMode === undefined) {
-        delete process.env.LIVE_ANIMALS_MODE
-      } else {
-        process.env.LIVE_ANIMALS_MODE = originalMode
-      }
     }
   })
 })

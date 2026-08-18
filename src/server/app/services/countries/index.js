@@ -1,11 +1,11 @@
 import { COUNTRY_LABELS } from './stub.js'
 import { fetchCountries } from './client.js'
-import { isRealMode } from '../mode.js'
+import { isStubMode } from '../../../common/services/mode.js'
 
 let labels = { ...COUNTRY_LABELS }
 
 export const prime = async () => {
-  if (!isRealMode()) {
+  if (isStubMode()) {
     return
   }
   const countries = await fetchCountries(['GBNAG_SPS_EX'])

@@ -5,6 +5,7 @@ import {
   DRAFT,
   SUBMITTED
 } from '../../../../engine/persistence/records.js'
+import { config } from '../../../../../../config/config.js'
 import { records } from './index.js'
 
 const fetchMocker = createFetchMock(vi)
@@ -185,21 +186,19 @@ describe('real records adapter — paged list', () => {
 })
 
 // The unit suite runs in stub mode; the real address book only answers in real
-// mode, so these opt in the same way the address-book tests do.
+// mode, so these turn the switch off for the length of the block. Set on the
+// loaded config rather than the environment, because the flag is read through
+// config and the environment is only consulted when config is first loaded.
 describe('real records adapter — referenced party names', () => {
-  const originalMode = process.env.LIVE_ANIMALS_MODE
+  const originalMode = config.get('stubMode')
 
   beforeEach(() => {
     fetchMocker.resetMocks()
-    process.env.LIVE_ANIMALS_MODE = 'real'
+    config.set('stubMode', false)
   })
 
   afterEach(() => {
-    if (originalMode === undefined) {
-      delete process.env.LIVE_ANIMALS_MODE
-    } else {
-      process.env.LIVE_ANIMALS_MODE = originalMode
-    }
+    config.set('stubMode', originalMode)
   })
 
   test('Should resolve referenced party names, fetching a shared address once', async () => {

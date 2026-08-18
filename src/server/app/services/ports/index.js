@@ -1,11 +1,11 @@
 import { PORTS } from './stub.js'
 import { fetchPortsOfEntry } from './client.js'
-import { isRealMode } from '../mode.js'
+import { isStubMode } from '../../../common/services/mode.js'
 
 let ports = [...PORTS]
 
 export const prime = async () => {
-  if (!isRealMode()) {
+  if (isStubMode()) {
     return
   }
   ports = await fetchPortsOfEntry()

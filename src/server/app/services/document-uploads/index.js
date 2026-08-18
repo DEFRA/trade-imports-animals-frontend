@@ -1,5 +1,5 @@
-import { isRealMode } from '../mode.js'
+import { isStubMode } from '../../../common/services/mode.js'
 import { documentUploads as stubUploads } from './stub.js'
 import { documentUploads as realUploads } from './real.js'
 
-export const documentUploads = isRealMode() ? realUploads : stubUploads
+export const documentUploads = isStubMode() ? stubUploads : realUploads

@@ -1,6 +1,6 @@
 import { fromRow } from './from-row.js'
 
-/** The address book for `LIVE_ANIMALS_MODE=stub` — local development and the
+/** The address book for `STUB_MODE=true` — local development and the
  * frontend Playwright suite without the address-book service running.
  *
  * Mirrors `trade-imports-animals-tests/seeds/mongodb/30-seed-address-book.js`

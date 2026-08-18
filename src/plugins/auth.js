@@ -4,7 +4,7 @@ import { getOidcConfig } from '../auth/get-oidc-config.js'
 import { refreshTokens } from '../auth/refresh-tokens.js'
 import { getSafeRedirect } from '../auth/get-safe-redirect.js'
 import { config } from '../config/config.js'
-import { isAuthStubMode } from '../server/common/services/mode.js'
+import { isStubMode } from '../server/common/services/mode.js'
 
 export const authPlugin = {
   plugin: {
@@ -19,9 +19,9 @@ export const authPlugin = {
       // All routes will require authentication unless explicitly set to 'defra-id' or `auth: false`
       server.auth.default('session')
 
-      // In auth.stubMode, skip Bell/Defra ID entirely - stub-sign-in.js writes
+      // In stub mode, skip Bell/Defra ID entirely - stub-sign-in.js writes
       // a session directly instead. Auth is still enforced everywhere else.
-      if (isAuthStubMode()) {
+      if (isStubMode()) {
         return
       }
 

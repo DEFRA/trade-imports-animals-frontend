@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-const originalMode = process.env.LIVE_ANIMALS_MODE
+const originalMode = process.env.STUB_MODE
 
 const ORG = '5900001'
 const PHONE = '01632 960000'
@@ -47,7 +47,7 @@ const bookOf = (total, apiPageSize = 25) => {
 }
 
 const realMode = () => {
-  process.env.LIVE_ANIMALS_MODE = 'real'
+  process.env.STUB_MODE = 'false'
 }
 
 const addressBook = () => import('./index.js')
@@ -59,9 +59,9 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals()
   if (originalMode === undefined) {
-    delete process.env.LIVE_ANIMALS_MODE
+    delete process.env.STUB_MODE
   } else {
-    process.env.LIVE_ANIMALS_MODE = originalMode
+    process.env.STUB_MODE = originalMode
   }
 })
 
@@ -322,7 +322,7 @@ describe('writes', () => {
 describe('in stub mode', () => {
   test('Should page the stub book without calling the API', async () => {
     const fetched = vi.fn()
-    process.env.LIVE_ANIMALS_MODE = 'stub'
+    process.env.STUB_MODE = 'true'
     stubFetch(fetched)
 
     const { search } = await addressBook()
@@ -334,7 +334,7 @@ describe('in stub mode', () => {
   })
 
   test('Should search the stub book by free text', async () => {
-    process.env.LIVE_ANIMALS_MODE = 'stub'
+    process.env.STUB_MODE = 'true'
 
     const { search } = await addressBook()
     const found = await search(ORG, { query: 'nordvik' })
@@ -346,7 +346,7 @@ describe('in stub mode', () => {
 
 describe('the book is untyped (D3)', () => {
   test('Should offer the same records whichever role is being filled', async () => {
-    process.env.LIVE_ANIMALS_MODE = 'stub'
+    process.env.STUB_MODE = 'true'
 
     const { search } = await addressBook()
     const forConsignor = await search(ORG, { page: 1 })

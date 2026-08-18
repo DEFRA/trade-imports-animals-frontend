@@ -244,18 +244,18 @@ export const config = convict({
       env: 'DEFRA_ID_REFRESH_TOKENS'
     }
   },
+  stubMode: {
+    doc: 'Run against stubs rather than real dependencies: stub data in place of the address book, backend and reference data, and a locally signed session in place of the Defra ID OIDC exchange. Auth is still enforced - only the external OIDC round-trip is bypassed. Ignored in production (see isStubMode).',
+    format: Boolean,
+    default: false,
+    env: 'STUB_MODE'
+  },
   auth: {
     enabled: {
       doc: 'Enable authentication (Bell + session cookie)',
       format: Boolean,
       default: true,
       env: 'AUTH_ENABLED'
-    },
-    stubMode: {
-      doc: 'Skip the real Defra ID OIDC exchange and locally sign a stub session instead. Auth is still enforced - only the external OIDC round-trip is bypassed. Ignored outside non-production (see isAuthStubMode).',
-      format: Boolean,
-      default: false,
-      env: 'AUTH_STUB_MODE'
     }
   },
   redis: {
