@@ -19,13 +19,13 @@ scope, service-backed options, validation, persistence and check-answers rows.
 - [`journeys/linear/features/origin/copy/copy.en.js`](../journeys/linear/features/origin/copy/copy.en.js)
 - [`journeys/linear/features/origin/copy/copy.cy.js`](../journeys/linear/features/origin/copy/copy.cy.js)
 - [`journeys/linear/features/origin/controller.test.js`](../journeys/linear/features/origin/controller.test.js)
-- [`journeys/linear/features/origin/origin.e2e.spec.js`](../journeys/linear/features/origin/origin.e2e.spec.js)
+- [`journeys/linear/features/origin/origin.fit.spec.js`](../journeys/linear/features/origin/origin.fit.spec.js)
 - [`journeys/linear/features/check-answers/view-model/cards/consignment/import-details.js`](../journeys/linear/features/check-answers/view-model/cards/consignment/import-details.js)
 - [`src/server/app/services/persistence/records/notification-mapper/mapper-a/sections/origin.js`](../../../services/persistence/records/notification-mapper/mapper-a/sections/origin.js)
 
 Read [`journeys/linear/features/cph-number/controller.js`](../journeys/linear/features/cph-number/controller.js)
 and
-[`journeys/linear/features/cph-number/cph-number.e2e.spec.js`](../journeys/linear/features/cph-number/cph-number.e2e.spec.js)
+[`journeys/linear/features/cph-number/cph-number.fit.spec.js`](../journeys/linear/features/cph-number/cph-number.fit.spec.js)
 when the field normalises input before it saves.
 
 ## 1. Add the obligation and run the focused tests
@@ -156,7 +156,7 @@ service label function when the stored value is a code. Show a conditional row
 only while the same obligation path is in scope.
 
 Extend
-[`journeys/linear/features/check-answers/check-answers.e2e.spec.js`](../journeys/linear/features/check-answers/check-answers.e2e.spec.js)
+[`journeys/linear/features/check-answers/check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js)
 to cover the displayed value and Change link.
 
 ## 6. Update downstream persistence when the backend needs the field
@@ -203,12 +203,12 @@ those contracts.
 
 ## Playwright feature test
 
-Keep the spec with the feature. Extend its existing `*.e2e.spec.js`. For a
-multi-page feature, use `journeys/linear/features/<feature>/e2e/<page>.e2e.spec.js` as shown by
-[`journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js`](../journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js).
+Keep the spec with the feature. Extend its existing `*.fit.spec.js`. For a
+multi-page feature, use `journeys/linear/features/<feature>/fit/<page>.fit.spec.js` as shown by
+[`journeys/linear/features/transport/fit/arrival-transit.fit.spec.js`](../journeys/linear/features/transport/fit/arrival-transit.fit.spec.js).
 Small single-page features currently keep the spec at the feature root, as
 shown by
-[`journeys/linear/features/origin/origin.e2e.spec.js`](../journeys/linear/features/origin/origin.e2e.spec.js).
+[`journeys/linear/features/origin/origin.fit.spec.js`](../journeys/linear/features/origin/origin.fit.spec.js).
 
 Keep each test independent. Start a new notification for each test. Do not use
 page objects. Use raw Playwright role, label and visible-copy locators. Use
@@ -235,7 +235,7 @@ Add an axe test for both page states the field changes:
 Use `AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa'])` and fail when any
 violation has `impact` equal to `serious` or `critical`. Use the initial and
 error-state examples in
-[`journeys/linear/features/origin/origin.e2e.spec.js`](../journeys/linear/features/origin/origin.e2e.spec.js).
+[`journeys/linear/features/origin/origin.fit.spec.js`](../journeys/linear/features/origin/origin.fit.spec.js).
 Filter a known component false positive only when the exemplar does and the
 same markup proves it applies.
 
@@ -244,7 +244,7 @@ same markup proves it applies.
 ```bash
 npm run test:live-animals
 npm test
-PORT=3050 npm run test:features
+PORT=3050 npm run test:fit:features
 npm run lint
 ```
 

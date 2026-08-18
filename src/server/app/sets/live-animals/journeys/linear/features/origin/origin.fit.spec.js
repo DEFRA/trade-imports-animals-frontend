@@ -6,7 +6,7 @@ import {
   validatorDefaults
 } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
-import { signIn } from '../../../../../../../../../e2e/sign-in.js'
+import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
 const france = countriesOrigin.find(({ code }) => code === 'FR')
 

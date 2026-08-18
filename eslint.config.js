@@ -10,7 +10,7 @@ export default [
   }),
   {
     // page.evaluate callbacks in Playwright specs run in the browser
-    files: ['**/*.e2e.spec.js'],
+    files: ['**/*.fit.spec.js'],
     languageOptions: {
       globals: { Option: 'readonly', getComputedStyle: 'readonly' }
     }

@@ -10,11 +10,11 @@ export default defineConfig({
     // way the Playwright suite does. Tests that exercise real mode set the flag
     // themselves and restore it.
     env: { LIVE_ANIMALS_MODE: 'stub' },
-    // Playwright E2E specs are run by Playwright, not vitest.
+    // Playwright FIT specs are run by Playwright, not vitest.
     exclude: [
       ...configDefaults.exclude,
-      'e2e/**',
-      'src/server/app/sets/live-animals/journeys/linear/features/**/*.e2e.spec.js'
+      'fit/**',
+      'src/server/app/sets/live-animals/journeys/linear/features/**/*.fit.spec.js'
     ],
     coverage: {
       provider: 'v8',

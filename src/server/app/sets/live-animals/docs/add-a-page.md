@@ -19,11 +19,11 @@ Use import reason as the small, complete page example:
 - [`journeys/linear/features/import-reason/copy/copy.cy.js`](../journeys/linear/features/import-reason/copy/copy.cy.js)
 - [`journeys/linear/features/import-reason/copy/copy.test.js`](../journeys/linear/features/import-reason/copy/copy.test.js)
 - [`journeys/linear/features/import-reason/controller.test.js`](../journeys/linear/features/import-reason/controller.test.js)
-- [`journeys/linear/features/import-reason/import-reason.e2e.spec.js`](../journeys/linear/features/import-reason/import-reason.e2e.spec.js)
+- [`journeys/linear/features/import-reason/import-reason.fit.spec.js`](../journeys/linear/features/import-reason/import-reason.fit.spec.js)
 - [`obligations/sections/import-reason.js`](../obligations/sections/import-reason.js)
 
 Use
-[`journeys/linear/features/origin/origin.e2e.spec.js`](../journeys/linear/features/origin/origin.e2e.spec.js)
+[`journeys/linear/features/origin/origin.fit.spec.js`](../journeys/linear/features/origin/origin.fit.spec.js)
 for per-rule validation and initial-render plus error-state accessibility tests.
 Read [`journeys/linear/features/index.js`](../journeys/linear/features/index.js),
 [`journeys/linear/flow/flow.js`](../journeys/linear/flow/flow.js) and
@@ -44,11 +44,11 @@ journeys/linear/features/<name>/
 ├── evaluation.js
 ├── page.js
 ├── template.njk
-└── <name>.e2e.spec.js
+└── <name>.fit.spec.js
 ```
 
 If the page joins an existing multi-page feature, add its controller and
-template inside that group. Keep the browser spec in that group's `e2e/`
+template inside that group. Keep the browser spec in that group's `fit/`
 folder.
 
 `page.js` exports only `{ id, slug }` and imports nothing. The controller and
@@ -172,7 +172,7 @@ If you add a task row, also:
   [`journeys/linear/features/hub/controller.js`](../journeys/linear/features/hub/controller.js)
 - add matching English and Welsh `rows` copy in the hub feature
 - update [`journeys/linear/features/hub/copy/copy.test.js`](../journeys/linear/features/hub/copy/copy.test.js),
-  [`journeys/linear/features/hub/hub.e2e.spec.js`](../journeys/linear/features/hub/hub.e2e.spec.js) and
+  [`journeys/linear/features/hub/hub.fit.spec.js`](../journeys/linear/features/hub/hub.fit.spec.js) and
   [`journeys/linear/flow/task-rows.test.js`](../journeys/linear/flow/task-rows.test.js)
 
 `pageGatePasses()` derives the normal gate from `collects` plus earlier
@@ -187,7 +187,7 @@ opening run. Update its run tests if you do.
 Add the page's fields to the matching check-answers card and both
 check-answers copy bundles. Pass each obligation name to `row()` or
 `changeAction()` so the dispatch index builds the Change URL. Extend
-[`journeys/linear/features/check-answers/check-answers.e2e.spec.js`](../journeys/linear/features/check-answers/check-answers.e2e.spec.js).
+[`journeys/linear/features/check-answers/check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js).
 
 Canonical persistence is complete once the feature binding is registered. If
 the backend notification shape also has a home for a new field, update the
@@ -239,10 +239,10 @@ status and opening-run behaviour.
 ## Playwright feature test
 
 Keep the spec with the feature. A small feature uses
-`journeys/linear/features/<name>/<name>.e2e.spec.js`, as in
-[`journeys/linear/features/import-reason/import-reason.e2e.spec.js`](../journeys/linear/features/import-reason/import-reason.e2e.spec.js).
-A multi-page feature uses `journeys/linear/features/<group>/e2e/<page>.e2e.spec.js`, as in
-[`journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js`](../journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js).
+`journeys/linear/features/<name>/<name>.fit.spec.js`, as in
+[`journeys/linear/features/import-reason/import-reason.fit.spec.js`](../journeys/linear/features/import-reason/import-reason.fit.spec.js).
+A multi-page feature uses `journeys/linear/features/<group>/fit/<page>.fit.spec.js`, as in
+[`journeys/linear/features/transport/fit/arrival-transit.fit.spec.js`](../journeys/linear/features/transport/fit/arrival-transit.fit.spec.js).
 
 Make every test independent and give it a new notification. Do not use page
 objects. Use raw role, label and visible-copy locators. Use locator assertions
@@ -265,7 +265,7 @@ Cover:
 
 Add one axe check for the initial render and one for the validation error
 state. Use
-[`journeys/linear/features/origin/origin.e2e.spec.js`](../journeys/linear/features/origin/origin.e2e.spec.js)
+[`journeys/linear/features/origin/origin.fit.spec.js`](../journeys/linear/features/origin/origin.fit.spec.js)
 as the example.
 
 Build axe with `AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa'])`. Fail if
@@ -277,7 +277,7 @@ component false positive when the same component and condition apply.
 ```bash
 npm run test:live-animals
 npm test
-PORT=3050 npm run test:features
+PORT=3050 npm run test:fit:features
 npm run lint
 ```
 

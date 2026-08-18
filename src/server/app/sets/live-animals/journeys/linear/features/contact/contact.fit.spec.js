@@ -1,11 +1,11 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
-import { answerOriginEntry } from '../../../../../../../../../e2e/live-animals-journey.js'
+import { answerOriginEntry } from '../../../../../../../../../fit/live-animals-journey.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import { addressText } from '../addresses/party-picker/view-model/address-lines.js'
 import { copy } from './copy/copy.en.js'
-import { signIn } from '../../../../../../../../../e2e/sign-in.js'
+import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
 const CONTACT_ADDRESS_INPUT = 'input[name="contactAddress"]'
 

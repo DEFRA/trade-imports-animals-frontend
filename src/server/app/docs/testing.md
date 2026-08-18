@@ -30,9 +30,12 @@ Cruiser scans `src/server/app` and enforces the L1–L4 rules in
 ## Browser-test projects
 
 Playwright has two projects in
-[`playwright.config.js`](../../../../playwright.config.js):
+[`playwright.config.js`](../../../../playwright.config.js). Both are frontend
+integration tests ("fit") — the real frontend server and browser, but every
+external integration (backend, auth) is stubbed, so no real deployed service
+is involved:
 
-- `journeys` runs repository-level journeys from `e2e/`
+- `journeys` runs repository-level journeys from `fit/`
 - `features` runs co-located journey feature specs
 
 The platform index does not define set-specific test cases. See the

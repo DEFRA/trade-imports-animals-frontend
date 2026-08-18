@@ -7,7 +7,7 @@ import {
   startNotification,
   unlockSections,
   values
-} from '../../../../../../../../../../e2e/live-animals-journey.js'
+} from '../../../../../../../../../../fit/live-animals-journey.js'
 import {
   countriesOrigin,
   portsOfEntry

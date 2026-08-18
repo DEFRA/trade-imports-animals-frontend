@@ -9,7 +9,7 @@ There is no dual-frontend parity project in the current Playwright config.
 
 - Vitest unit and contract tests under `src/`
 - stub and real adapter request-shape tests
-- the local stub journey smoke test in `e2e/`
+- the local stub journey smoke test in `fit/`
 - feature Playwright specs under
   `src/server/app/sets/live-animals/journeys/linear/features/`
 - the Playwright server and project settings in `playwright.config.js`

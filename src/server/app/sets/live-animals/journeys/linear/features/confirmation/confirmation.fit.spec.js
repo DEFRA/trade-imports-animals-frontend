@@ -6,7 +6,7 @@ import {
   journeyUrl,
   signIn,
   startNotification
-} from '../../../../../../../../../e2e/live-animals-journey.js'
+} from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 
 const expectPanelCopy = async (page) => {

@@ -1,11 +1,11 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
-import { answerOriginEntry } from '../../../../../../../../../e2e/live-animals-journey.js'
+import { answerOriginEntry } from '../../../../../../../../../fit/live-animals-journey.js'
 import * as importReasonPurpose from '../../../../../../services/import-reason-purpose/index.js'
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
-import { signIn } from '../../../../../../../../../e2e/sign-in.js'
+import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
 const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
 const PURPOSE_INPUT_SELECTOR = 'input[name="purposeInInternalMarket"]'
