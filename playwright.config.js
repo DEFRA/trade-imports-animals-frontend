@@ -6,7 +6,7 @@ import { defineConfig, devices } from '@playwright/test'
 const port = Number(process.env.PORT ?? 3000)
 
 export default defineConfig({
-  testDir: './e2e',
+  testDir: './fit',
   testMatch: '**/*.spec.js',
   // Journeys are independent (each owns its own quote id) and the JSON store is
   // synchronous, so they can run in parallel even though each is slow.
@@ -22,7 +22,7 @@ export default defineConfig({
   projects: [
     {
       name: 'journeys',
-      testMatch: '**/journey-smoke.spec.js',
+      testMatch: '**/journey-smoke.fit.spec.js',
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${port}`,
@@ -42,7 +42,7 @@ export default defineConfig({
     {
       name: 'features',
       testDir: './src/server/app/sets/live-animals/journeys/linear/features',
-      testMatch: '**/*.e2e.spec.js',
+      testMatch: '**/*.fit.spec.js',
       use: {
         ...devices['Desktop Chrome'],
         baseURL: `http://localhost:${port}`,
@@ -53,7 +53,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'npm run e2e:start',
+      command: 'npm run fit:start',
       url: `http://localhost:${port}/health`,
       // The service default is real mode; the canned journey suite runs against
       // stub data, so it opts in explicitly here.

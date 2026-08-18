@@ -30,8 +30,8 @@ Transport is the current multi-page feature-group example:
 - [`journeys/linear/features/transport/copy/copy.test.js`](../journeys/linear/features/transport/copy/copy.test.js)
 - [`journeys/linear/features/transport/port-of-entry/port-of-entry.controller.js`](../journeys/linear/features/transport/port-of-entry/port-of-entry.controller.js)
 - [`journeys/linear/features/transport/port-of-entry/port-of-entry.njk`](../journeys/linear/features/transport/port-of-entry/port-of-entry.njk)
-- [`journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js`](../journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js)
-- [`journeys/linear/features/transport/e2e/transporters.e2e.spec.js`](../journeys/linear/features/transport/e2e/transporters.e2e.spec.js)
+- [`journeys/linear/features/transport/fit/arrival-transit.fit.spec.js`](../journeys/linear/features/transport/fit/arrival-transit.fit.spec.js)
+- [`journeys/linear/features/transport/fit/transporters.fit.spec.js`](../journeys/linear/features/transport/fit/transporters.fit.spec.js)
 
 Trace its registration through:
 
@@ -42,7 +42,7 @@ Trace its registration through:
 - [`journeys/linear/features/hub/controller.js`](../journeys/linear/features/hub/controller.js)
 - [`journeys/linear/features/hub/copy/copy.en.js`](../journeys/linear/features/hub/copy/copy.en.js)
 - [`journeys/linear/flow/task-rows.test.js`](../journeys/linear/flow/task-rows.test.js)
-- [`journeys/linear/features/hub/hub.e2e.spec.js`](../journeys/linear/features/hub/hub.e2e.spec.js)
+- [`journeys/linear/features/hub/hub.fit.spec.js`](../journeys/linear/features/hub/hub.fit.spec.js)
 - [`journeys/linear/config.js`](../journeys/linear/config.js)
 - [`src/server/app/flow/journey-flow.js`](../../../flow/journey-flow.js)
 - [`src/server/app/routes.js`](../../../routes.js)
@@ -95,8 +95,8 @@ journeys/linear/features/<group>/
 │   ├── copy.cy.js
 │   ├── copy.en.js
 │   └── copy.test.js
-├── e2e/
-│   └── <group>.e2e.spec.js
+├── fit/
+│   └── <group>.fit.spec.js
 ├── <first-page>/
 │   ├── <first-page>.controller.js
 │   ├── <first-page>.controller.test.js
@@ -220,7 +220,7 @@ Update:
   entry page
 - [`journeys/linear/features/hub/copy/copy.test.js`](../journeys/linear/features/hub/copy/copy.test.js) for
   group copy, row copy, position, link and status
-- [`journeys/linear/features/hub/hub.e2e.spec.js`](../journeys/linear/features/hub/hub.e2e.spec.js) for the
+- [`journeys/linear/features/hub/hub.fit.spec.js`](../journeys/linear/features/hub/hub.fit.spec.js) for the
   visible task row, lock state, link and completed state
 
 Every task row participates in `readyForCheckYourAnswers`. A mandatory new row
@@ -261,7 +261,7 @@ check-answers copy bundles.
 
 Pass obligation names to `row()` and `changeAction()` so Change links resolve
 through dispatch. Use `scope` to omit out-of-scope rows. Extend
-[`journeys/linear/features/check-answers/check-answers.e2e.spec.js`](../journeys/linear/features/check-answers/check-answers.e2e.spec.js)
+[`journeys/linear/features/check-answers/check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js)
 for every value and Change target.
 
 ## 8. Update downstream persistence when applicable
@@ -300,10 +300,10 @@ task-row status, hub rendering, check-answers rows and notification mapping.
 
 ## Playwright feature test
 
-Put the co-located specs in `journeys/linear/features/<group>/e2e/`, following
-[`journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js`](../journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js)
+Put the co-located specs in `journeys/linear/features/<group>/fit/`, following
+[`journeys/linear/features/transport/fit/arrival-transit.fit.spec.js`](../journeys/linear/features/transport/fit/arrival-transit.fit.spec.js)
 and
-[`journeys/linear/features/transport/e2e/transporters.e2e.spec.js`](../journeys/linear/features/transport/e2e/transporters.e2e.spec.js).
+[`journeys/linear/features/transport/fit/transporters.fit.spec.js`](../journeys/linear/features/transport/fit/transporters.fit.spec.js).
 
 Keep tests independent. Each test starts its own notification. Do not create
 page objects. Use raw role, label and visible-copy locators. Use Playwright
@@ -331,7 +331,7 @@ Add axe coverage for every new page in both states:
 - validation error state after the error summary appears
 
 Use the helper pattern in
-[`journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js`](../journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js).
+[`journeys/linear/features/transport/fit/arrival-transit.fit.spec.js`](../journeys/linear/features/transport/fit/arrival-transit.fit.spec.js).
 Run `AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa'])` and fail on every
 `serious` or `critical` violation. Filter only a proved component false
 positive.
@@ -344,7 +344,7 @@ the hub state.
 ```bash
 npm run test:live-animals
 npm test
-PORT=3050 npm run test:features
+PORT=3050 npm run test:fit:features
 npm run lint
 ```
 

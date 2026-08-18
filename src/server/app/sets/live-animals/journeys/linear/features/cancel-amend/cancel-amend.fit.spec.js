@@ -7,7 +7,7 @@ import {
   journeyIdFromPage,
   startNotification,
   values
-} from '../../../../../../../../../e2e/live-animals-journey.js'
+} from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
 

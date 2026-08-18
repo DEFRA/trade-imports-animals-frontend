@@ -91,6 +91,6 @@ links, copy and validation. See [Add a repeatable collection](add-a-collection.m
 ## Tests
 
 Controller and copy tests sit beside the feature. Browser specs use
-`*.e2e.spec.js` and run in the Playwright `features` project. Feature tests include
+`*.fit.spec.js` and run in the Playwright `features` project. Feature tests include
 initial and error-state accessibility checks. See
 [Testing the live-animals set and journey](testing.md).

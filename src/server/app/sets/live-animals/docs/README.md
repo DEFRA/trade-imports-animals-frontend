@@ -12,8 +12,8 @@ Run commands from the repository root.
 npm run dev
 npm run test:live-animals
 npm test
-PORT=3050 npm run test:features
-npm run test:e2e
+PORT=3050 npm run test:fit:features
+npm run test:fit:journeys
 ```
 
 `npm run test:live-animals` runs only tests under

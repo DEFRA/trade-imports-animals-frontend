@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 import {
   startNotification,
   unlockSections
-} from '../../../../../../../../../../e2e/live-animals-journey.js'
+} from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
 import { SCAN_STATUS } from '../scan-poll.js'
 

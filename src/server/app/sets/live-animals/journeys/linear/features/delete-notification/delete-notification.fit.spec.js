@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test'
 import {
   journeyIdFromPage,
   startNotification
-} from '../../../../../../../../../e2e/live-animals-journey.js'
+} from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
