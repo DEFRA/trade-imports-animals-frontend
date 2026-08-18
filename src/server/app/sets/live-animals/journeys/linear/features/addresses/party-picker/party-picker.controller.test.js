@@ -340,14 +340,12 @@ describe('The five spokes share the one picker', () => {
     }
   })
 
-  it('Should title each spoke and link its Add a new address button back to itself', async () => {
+  it('Should title each spoke and offer it no way to add an address', async () => {
     for (const party of PARTIES) {
       const result = await driveHandler(handlerFor('GET', party.slug))
 
       expect(result.view.context.heading).toBe(party.title)
-      expect(result.view.context.picker.createAddressHref).toBe(
-        pagePath(result.journeyId, `addresses/create?for=${party.id}`)
-      )
+      expect(result.view.context.picker.createAddressHref).toBeUndefined()
     }
   })
 })

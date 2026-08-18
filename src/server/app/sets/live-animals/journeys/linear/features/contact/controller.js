@@ -1,4 +1,4 @@
-import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import { hubPath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
@@ -13,7 +13,6 @@ import {
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
-import { CREATE_ADDRESS_SLUG } from '../addresses/create-address/create-address.controller.js'
 import { CONTACT_PARTY } from '../addresses/parties.js'
 import { organisationIdOf } from '../addresses/resolve-parties.js'
 import { addressText } from '../addresses/party-picker/view-model/address-lines.js'
@@ -59,10 +58,6 @@ const render = (
     copy,
     errors,
     errorSummary: kit.errorSummary(errors),
-    createAddressHref: pagePath(
-      journey.journeyId,
-      `${CREATE_ADDRESS_SLUG}?for=${CONTACT_PARTY.id}`
-    ),
     contactOptions: options.map((option) => ({
       value: option.id,
       text: option.name,

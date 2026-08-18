@@ -56,8 +56,8 @@ export const PARTIES = [
   }
 ]
 
-/** Contact can launch the shared create-address form, but it is deliberately
- * not a consignment-address hub spoke and therefore does not belong in PARTIES. */
+/** Contact picks from the same address book, but it is deliberately not a
+ * consignment-address hub spoke and therefore does not belong in PARTIES. */
 export const CONTACT_PARTY = {
   id: 'contactAddress',
   role: 'contact',

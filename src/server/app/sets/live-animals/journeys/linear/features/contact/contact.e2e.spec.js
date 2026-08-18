@@ -36,7 +36,7 @@ test.describe('contact feature', () => {
     await startAtContact(page)
   })
 
-  test('renders the address-book contacts, feature copy and add link', async ({
+  test('renders the address-book contacts and feature copy', async ({
     page
   }) => {
     const group = page.getByRole('group', { name: copy.legend })
@@ -44,22 +44,18 @@ test.describe('contact feature', () => {
     const renderedValues = await group
       .locator(CONTACT_ADDRESS_INPUT)
       .evaluateAll((inputs) => inputs.map((input) => input.value))
-    // Stub-mode create-address tests may append in-process records; assert the
-    // canned book is present rather than an exact list equality.
-    expect(renderedValues).toEqual(
-      expect.arrayContaining(STUB_BOOK.map(({ id }) => id))
-    )
+    expect(renderedValues).toEqual(STUB_BOOK.map(({ id }) => id))
     for (const option of STUB_BOOK) {
       await expect(
         page.getByRole('radio', { name: option.name, exact: true })
       ).toBeVisible()
       await expect(group).toContainText(addressSummary(option.address))
     }
-    await expect(
-      page.getByRole('link', { name: copy.addNewAddress })
-    ).toHaveAttribute(
-      'href',
-      /\/notifications\/[^/]+\/addresses\/create\?for=contactAddress$/
+  })
+
+  test('offers no way to add an address', async ({ page }) => {
+    await expect(page.getByRole('link', { name: /add.*address/i })).toHaveCount(
+      0
     )
   })
 

@@ -59,43 +59,6 @@ export const copy = {
     selectRowPrefix: 'Select',
     viewDetails: 'View details',
     viewDetailsFor: 'for',
-    saveAndContinue: 'Save and continue',
-    addNewAddress: 'Add a new address'
-  },
-  createAddress: {
-    title: 'Add a new address',
-    intro: 'Enter the name and address to add to this notification.',
-    fields: {
-      nameOrOrganisationName: 'Name or organisation name',
-      addressLine1: 'Address line 1',
-      addressLine2: 'Address line 2 (optional)',
-      townOrCity: 'Town or city',
-      county: 'County (optional)',
-      postalOrZipCode: 'Postal or zip code',
-      country: 'Country',
-      telephoneNumber: 'Telephone number',
-      emailAddress: 'Email address'
-    },
-    countryPlaceholder: 'Select a country',
-    saveAndContinue: 'Save and continue',
-    errors: {
-      nameRequired: 'Enter a name or organisation name',
-      addressLine1Required: 'Enter address line 1',
-      townOrCityRequired: 'Enter a town or city',
-      postalOrZipCodeRequired: 'Enter a postal or zip code',
-      countryRequired: 'Select a country',
-      telephoneRequired: 'Enter a telephone number',
-      emailRequired: 'Enter an email address',
-      nameMaxLength: 'Name or organisation name must be 255 characters or less',
-      addressLine1MaxLength: 'Address line 1 must be 255 characters or less',
-      addressLine2MaxLength: 'Address line 2 must be 255 characters or less',
-      townOrCityMaxLength: 'Town or city must be 100 characters or less',
-      countyMaxLength: 'County must be 100 characters or less',
-      postalOrZipCodeMaxLength:
-        'Postal or zip code must be 12 characters or less',
-      countryFromList: 'Select a country from the list',
-      telephoneMaxLength: 'Telephone number must be 20 characters or less',
-      emailMaxLength: 'Email address must be 254 characters or less'
-    }
+    saveAndContinue: 'Save and continue'
   }
 }

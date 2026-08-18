@@ -1,5 +1,4 @@
 import { allRoutes } from '../../src/server/app/sets/live-animals/journeys/linear/features/index.js'
-import { PARTIES } from '../../src/server/app/sets/live-animals/journeys/linear/features/addresses/parties.js'
 
 const JOURNEY_PARAM = '{journeyId}'
 const OTHER_PARAM = /\{(?!journeyId})[^}]+}/
@@ -46,10 +45,9 @@ export const FILLED_BY = new Map([
   ['/notifications/{journeyId}/exit-date', 'temporaryAdmission']
 ])
 
-/** Query strings a route needs before it will render rather than redirect. */
-export const QUERY = new Map([
-  ['/notifications/{journeyId}/addresses/create', `?for=${PARTIES[0].id}`]
-])
+/** Query strings a route needs before it will render rather than redirect.
+ * Empty today — every audited page renders on its path alone. */
+export const QUERY = new Map()
 
 const getPathsOf = (routes) =>
   routes.filter(({ method }) => method === 'GET').map(({ path }) => path)

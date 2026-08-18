@@ -8,36 +8,21 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  postHandlerEndingWith,
   postHandlerOf
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
-import * as addressBook from '../../../../../../services/address-book/index.js'
-import { pagePath } from '../../../../../../shared/paths.js'
+import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 
 import * as contact from './controller.js'
-import * as createAddress from '../addresses/create-address/create-address.controller.js'
 
 const get = contact.routes.find((route) => route.method === 'GET').handler
 const post = postHandlerOf(contact)
-const postCreate = postHandlerEndingWith(createAddress, 'addresses/create')
 
-const ROUND_TRIP_CONTACT_NAME = 'Round-trip Contact Ltd'
+const CONTACT = STUB_BOOK.find(
+  (record) => record.name === 'Animal and Plant Health Agency'
+)
 
-const contactPayload = {
-  for: 'contactAddress',
-  nameOrOrganisationName: ROUND_TRIP_CONTACT_NAME,
-  addressLine1: '12 Contact Street',
-  addressLine2: '',
-  townOrCity: 'Bristol',
-  county: '',
-  postalOrZipCode: 'BS1 1AA',
-  country: 'United Kingdom',
-  telephoneNumber: '0117 555 0101',
-  emailAddress: 'contact@example.co.uk'
-}
-
-describe('GET contact — select or create an address', () => {
+describe('GET contact — select an address from the book', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -45,51 +30,32 @@ describe('GET contact — select or create an address', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should render the create-address link for a contact address', async () => {
+  it('Should offer no way to add an address — the book is read-only here', async () => {
     const result = await driveHandler(get)
 
-    expect(result.view.context.createAddressHref).toBe(
-      pagePath(result.journeyId, 'addresses/create?for=contactAddress')
-    )
-    expect(result.view.context.copy.addNewAddress).toBe(
-      'Add a new contact address'
-    )
+    expect(result.view.context.createAddressHref).toBeUndefined()
+    expect(result.view.context.copy.addNewAddress).toBeUndefined()
   })
 
-  it('Should list and pre-select a newly created contact, then accept it as a valid selection', async () => {
-    const createdResult = await driveHandler(postCreate, {
-      payload: contactPayload
-    })
-    const { addressId } = createdResult.after.contactAddress
-
-    const getResult = await driveHandler(get, {
-      seed: createdResult.after
-    })
-    const option = getResult.view.context.contactOptions.find(
-      (candidate) => candidate.value === addressId
-    )
-
-    expect(option).toMatchObject({
-      text: ROUND_TRIP_CONTACT_NAME,
-      checked: true
-    })
-
+  it('Should offer the book, then pre-select and commit the address that was picked', async () => {
     const postResult = await driveHandler(post, {
-      payload: { contactAddress: addressId }
+      payload: { contactAddress: CONTACT.id }
     })
     expect(postResult.view).toBeUndefined()
     // The contact is held as a copy — a per-notification field, reset on
     // copy, so it keeps what was picked. The id rides along only so the page can
     // pre-select the row again.
     expect(postResult.after.contactAddress).toEqual({
-      addressId,
-      name: ROUND_TRIP_CONTACT_NAME,
+      addressId: CONTACT.id,
+      name: CONTACT.name,
       address: expect.any(Object)
     })
 
-    const saved = await addressBook.party(undefined, addressId)
-    expect(saved.name).toBe(ROUND_TRIP_CONTACT_NAME)
-    expect(saved.address.townOrCity).toBe('Bristol')
+    const getResult = await driveHandler(get, { seed: postResult.after })
+    const option = getResult.view.context.contactOptions.find(
+      (candidate) => candidate.value === CONTACT.id
+    )
+    expect(option).toMatchObject({ text: CONTACT.name, checked: true })
   })
 })
 

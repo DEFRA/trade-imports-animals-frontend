@@ -53,11 +53,19 @@ describe('#auditPaths', () => {
   })
 
   it('Should carry the query string a route needs before it will render', () => {
-    expect(auditPaths(journeyIds)).toContain(
-      `/notifications/${journeyIds.draft}/addresses/create${QUERY.get(
-        '/notifications/{journeyId}/addresses/create'
-      )}`
-    )
+    // No page needs one today, so register one for the length of this test
+    // rather than let the mechanism go unproven.
+    const path = '/notifications/{journeyId}/needs-a-query'
+    const routes = [...allRoutes, { method: 'GET', path }]
+    QUERY.set(path, '?for=placeOfOrigin')
+
+    try {
+      expect(auditPaths(journeyIds, routes)).toContain(
+        `/notifications/${journeyIds.draft}/needs-a-query?for=placeOfOrigin`
+      )
+    } finally {
+      QUERY.delete(path)
+    }
   })
 
   it('Should audit a page the moment the app registers a GET route for it', () => {
@@ -132,10 +140,10 @@ describe('#reportName', () => {
   it('Should drop the query string a route needs to render', () => {
     expect(
       reportName(
-        `${ORIGIN}/notifications/${journeyIds.draft}/addresses/create?for=placeOfOrigin`,
+        `${ORIGIN}/notifications/${journeyIds.draft}/consignors/select?page=2`,
         journeyIds
       )
-    ).toBe('notifications_addresses_create')
+    ).toBe('notifications_consignors_select')
   })
 })
 

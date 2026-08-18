@@ -14,10 +14,9 @@ export const PAGE_SIZE = 5
  * searches one book, and no function here takes a role. What a picker does
  * with the record it gets back is the page's business, not the book's. */
 
-// Stub mode only: records created in-journey during this process's lifetime.
-const created = []
-
-const stubBook = () => [...STUB_BOOK, ...created]
+/** This service reads and never writes. The notification journey selects from
+ * the organisation's book; adding, changing and removing the records in it
+ * belongs to the INS frontend, which is the only writer. */
 
 const haystack = (record) =>
   [record.name, ...Object.values(record.address ?? {})]
@@ -44,7 +43,7 @@ const pageOf = (records, requested) => {
 const searchStub = (query, requested) => {
   const term = query.trim().toLowerCase()
   return pageOf(
-    stubBook().filter((record) => haystack(record).includes(term)),
+    STUB_BOOK.filter((record) => haystack(record).includes(term)),
     requested
   )
 }
@@ -103,7 +102,7 @@ export const search = async (orgId, { query = '', page = 1 } = {}) => {
  * picker, which renders a flat radio list rather than a searchable table. */
 export const all = async (orgId) => {
   if (!isRealMode()) {
-    return stubBook()
+    return [...STUB_BOOK]
   }
 
   const first = await client.listAddresses(orgId, { page: 1 })
@@ -127,22 +126,7 @@ export const all = async (orgId) => {
  * for one. */
 export const party = async (orgId, id) => {
   if (!isRealMode()) {
-    return stubBook().find((record) => record.id === id)
+    return STUB_BOOK.find((record) => record.id === id)
   }
   return client.getAddress(orgId, id)
-}
-
-/** Save a new address to the organisation's book and return it, id included —
- * the journey commits that id as its reference. */
-export const addParty = async (orgId, record) => {
-  if (!isRealMode()) {
-    const saved = {
-      ...record,
-      id: `created-${created.length + 1}`,
-      deleted: false
-    }
-    created.push(saved)
-    return saved
-  }
-  return client.createAddress(orgId, record)
 }

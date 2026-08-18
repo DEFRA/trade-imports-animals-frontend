@@ -222,15 +222,12 @@ describe('without an organisation', () => {
     realMode()
     stubFetch(async () => okResponse(operator('record-7')))
 
-    const { search, party, addParty } = await addressBook()
+    const { search, party } = await addressBook()
 
     await expect(search(undefined, {})).rejects.toThrow(
       /without an organisation/
     )
     await expect(party(undefined, 'record-7')).rejects.toThrow(
-      /without an organisation/
-    )
-    await expect(addParty(undefined, { name: 'X' })).rejects.toThrow(
       /without an organisation/
     )
     expect(globalThis.fetch).not.toHaveBeenCalled()
@@ -307,86 +304,18 @@ describe('#all', () => {
   })
 })
 
-describe('#addParty', () => {
-  test('Should save an address and hand back the id the journey references', async () => {
-    const fetched = vi.fn(async () => okResponse(operator('created-1')))
-    realMode()
-    stubFetch(fetched)
+describe('writes', () => {
+  test('Should expose no way to add, change or remove a record', async () => {
+    // The journey reads the book and never writes to it — creating and
+    // maintaining addresses belongs to the INS frontend.
+    const book = await addressBook()
 
-    const { addParty } = await addressBook()
-    const saved = await addParty(ORG, {
-      name: 'New Trader',
-      address: {
-        addressLine1: '2 New Road',
-        country: 'Belgium',
-        emailAddress: 'new@example.com',
-        telephoneNumber: '01632 960111'
-      }
-    })
-
-    expect(saved.id).toBe('created-1')
-
-    const [, options] = fetched.mock.calls[0]
-    expect(options.method).toBe('POST')
-    expect(JSON.parse(options.body)).toMatchObject({
-      name: 'New Trader',
-      addressLine1: '2 New Road',
-      countryCode: 'BE',
-      email: 'new@example.com',
-      phone: '01632 960111'
-    })
-  })
-
-  test('Should map United Kingdom to GB on write and read it back as United Kingdom', async () => {
-    const fetched = vi.fn(async () =>
-      okResponse(operator('created-uk', { countryCode: 'GB' }))
-    )
-    realMode()
-    stubFetch(fetched)
-
-    const { addParty } = await addressBook()
-    const saved = await addParty(ORG, {
-      name: 'UK Trader',
-      address: {
-        addressLine1: '1 High Street',
-        country: 'United Kingdom',
-        emailAddress: 'uk@example.com',
-        telephoneNumber: PHONE
-      }
-    })
-
-    expect(JSON.parse(fetched.mock.calls[0][1].body)).toMatchObject({
-      countryCode: 'GB'
-    })
-    expect(saved.address.country).toBe('United Kingdom')
-  })
-
-  test('Should mark a createAddress 500 as recoverable so the form can re-render', async () => {
-    realMode()
-    stubFetch(async () => ({
-      ok: false,
-      status: 500,
-      statusText: 'Internal Server Error'
-    }))
-
-    // Import after resetModules so the Symbol matches the client's BackendRequestError.
-    const { addParty } = await addressBook()
-    const { isRecoverableBackendError } =
-      await import('../persistence/records/errors.js')
-
-    let surfaced
-    try {
-      await addParty(ORG, { name: 'Outage Trader', address: {} })
-    } catch (error) {
-      surfaced = error
-    }
-
-    expect(surfaced).toMatchObject({
-      name: 'BackendRequestError',
-      status: 500,
-      statusText: 'Internal Server Error'
-    })
-    expect(isRecoverableBackendError(surfaced)).toBe(true)
+    expect(Object.keys(book).sort()).toEqual([
+      'PAGE_SIZE',
+      'all',
+      'party',
+      'search'
+    ])
   })
 })
 

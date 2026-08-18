@@ -1,4 +1,4 @@
-import { originLabel, countryCodeOf } from '../countries/index.js'
+import { originLabel } from '../countries/index.js'
 import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
 import { BackendRequestError } from '../persistence/records/errors.js'
 
@@ -57,23 +57,11 @@ const toRecord = (operator) => ({
     county: operator.county,
     postalOrZipCode: operator.postcode,
     country: originLabel(operator.countryCode) ?? operator.countryCode,
-    // Contact details sit inside the address block, as the create-address form
-    // has always collected them (see addressRecordFrom).
+    // Contact details sit inside the address block, which is where the journey
+    // has always read them from.
     telephoneNumber: operator.phone,
     emailAddress: operator.email
   }
-})
-
-const toRequest = ({ name, address = {} }) => ({
-  name,
-  addressLine1: address.addressLine1,
-  addressLine2: address.addressLine2,
-  townOrCity: address.townOrCity,
-  county: address.county,
-  postcode: address.postalOrZipCode,
-  countryCode: countryCodeOf(address.country) ?? address.country,
-  email: address.emailAddress,
-  phone: address.telephoneNumber
 })
 
 /** One API page of the organisation's live addresses. Soft-deleted records are
@@ -119,20 +107,6 @@ export const getAddress = async (orgId, id) => {
   }
   if (!response.ok) {
     throw failed('get address', response)
-  }
-
-  return toRecord(await response.json())
-}
-
-export const createAddress = async (orgId, record) => {
-  const response = await fetch(addressesUrl(orgId), {
-    method: 'POST',
-    headers: headers(orgId),
-    body: JSON.stringify(toRequest(record))
-  })
-
-  if (!response.ok) {
-    throw failed('create address', response)
   }
 
   return toRecord(await response.json())
