@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Report pending E2E check on PR
-        uses: DEFRA/trade-imports-animals-workspace/.github/actions/report-e2e-status@main
+        uses: DEFRA/trade-imports-workspace/.github/actions/report-e2e-status@main
         with:
           e2e-result: pending
 
@@ -37,7 +37,7 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.event == 'pull_request')
-    uses: DEFRA/trade-imports-animals-workspace/.github/workflows/e2e-tests.yml@main
+    uses: DEFRA/trade-imports-workspace/.github/workflows/e2e-tests.yml@main
     with:
       branch: ${{ inputs.branch || github.event.workflow_run.head_branch || github.ref_name }}
     secrets: inherit
@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Report E2E check run on PR
-        uses: DEFRA/trade-imports-animals-workspace/.github/actions/report-e2e-status@main
+        uses: DEFRA/trade-imports-workspace/.github/actions/report-e2e-status@main
         with:
           e2e-result: ${{ needs.e2e.result }}
           report-url: ${{ needs.e2e.outputs.report-url }}
