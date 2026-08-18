@@ -11,9 +11,10 @@ fulfilment-registry, copy-convention and controller contract checks.
 
 ## Feature browser tests
 
-`PORT=3050 npm run test:features` builds the frontend and runs co-located
-`*.e2e.spec.js` files under
-`src/server/app/sets/live-animals/journeys/linear/features`.
+`PORT=3050 npm run test:fit:features` builds the frontend and runs co-located
+`*.fit.spec.js` (frontend integration test — see
+[Browser-test projects](../../../docs/testing.md#browser-test-projects))
+files under `src/server/app/sets/live-animals/journeys/linear/features`.
 
 Each feature test starts its own notification. Use Playwright role, label and
 visible-copy locators, locator assertions and auto-waiting. Do not use sleeps or a
@@ -25,7 +26,7 @@ or AA violations.
 
 ## Whole-journey browser tests
 
-`npm run test:e2e` runs the `journeys` Playwright project under `e2e/`. Its
+`npm run test:fit:journeys` runs the `journeys` Playwright project under `fit/`. Its
 live-animals helper uses
 [`src/server/app/sets/live-animals/journeys/linear/flow/fixtures/happy-path.json`](../journeys/linear/flow/fixtures/happy-path.json).
 
@@ -34,9 +35,9 @@ live-animals helper uses
 ```bash
 npm run test:live-animals
 npm test
-PORT=3050 npm run test:features
+PORT=3050 npm run test:fit:features
 npm run lint
 ```
 
-Run `npm run test:e2e` when the change affects the complete journey or shared E2E
-helpers.
+Run `npm run test:fit:journeys` when the change affects the complete journey or shared
+FIT helpers.

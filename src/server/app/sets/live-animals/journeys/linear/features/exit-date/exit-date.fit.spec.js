@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
-import { answerOriginEntry } from '../../../../../../../../../e2e/live-animals-journey.js'
+import { answerOriginEntry } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 
 const SUBMIT_BUTTON = 'form button[type="submit"]'

@@ -115,7 +115,7 @@ jobs:
         run: npm run playwright:install
 
       - name: Run the frontend-owned Playwright suites
-        run: npm run test:playwright:ci
+        run: npm run test:fit:ci
 
       - name: Upload Playwright report
         if: always()
