@@ -91,7 +91,7 @@ jobs:
   # workspace stack, unlike the separate "E2E Tests" check. Kept out of
   # pr-validator so a browser run does not sit in front of the Sonar signal.
   playwright:
-    name: Frontend Playwright suites
+    name: FIT Tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
