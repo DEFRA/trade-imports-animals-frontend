@@ -15,6 +15,7 @@
   {% if hasLines %}
     <form method="post" novalidate>
       <input type="hidden" name="crumb" value="{{ crumb }}" />
+      <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
       <button type="submit" name="action" value="finish" class="govuk-visually-hidden" aria-hidden="true" tabindex="-1">{{ copy.saveAndFinish }}</button>
 

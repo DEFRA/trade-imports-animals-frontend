@@ -75,7 +75,17 @@ export const replaceJourneyFulfilment = async (
   fulfilment
 ) => {
   const cached = memoRead(request)
-  const known = cached?.journeyId === journeyId ? cached : undefined
+  const memoKnown = cached?.journeyId === journeyId ? cached : undefined
+  // POST arrives on a fresh request with an empty memo. The client observed the
+  // concurrencyToken at GET-render time; the hidden field round-trips it back
+  // through the form so the backend can reject stale writes with 409
+  // STALE_CONCURRENCY_TOKEN.
+  const payloadToken = request?.payload?.concurrencyToken
+  const known =
+    memoKnown ??
+    (payloadToken != null
+      ? { journeyId, concurrencyToken: Number(payloadToken) }
+      : undefined)
   const saved = await records.replaceFulfilment(journeyId, fulfilment, {
     known
   })

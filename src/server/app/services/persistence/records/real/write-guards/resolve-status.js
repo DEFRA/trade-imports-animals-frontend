@@ -2,7 +2,7 @@ import { getFulfilment } from '../http/get-fulfilment.js'
 import { mapStatus } from '../status.js'
 
 export const resolveStatus = async (journeyId, known) => {
-  if (known != null && known.journeyId === journeyId) {
+  if (known != null && known.journeyId === journeyId && known.status != null) {
     return known.status
   }
   const existing = await getFulfilment(journeyId)

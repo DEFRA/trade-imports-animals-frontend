@@ -117,6 +117,7 @@ export const base = (
     backLink,
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
     journeyStrip: journeyStrip(journey),
+    concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,
     recoverableError,
     contentColumnClass: SURFACES.form

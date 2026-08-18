@@ -12,6 +12,7 @@
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
     <input type="hidden" name="for" value="{{ partyId }}" />
 
     {{ govukInput({

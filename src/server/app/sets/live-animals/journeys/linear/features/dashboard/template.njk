@@ -29,6 +29,7 @@
 
   <form method="post" action="{{ startAction }}" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
     {{ govukButton({ text: copy.startButton, isStartButton: true }) }}
   </form>
 
@@ -93,6 +94,7 @@
                 {% if action.postAction %}
                   <form method="post" action="{{ action.postAction }}" class="app-form-inline">
                     <input type="hidden" name="crumb" value="{{ crumb }}" />
+                    <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
                     {% if action.idempotencyKey %}
                       <input type="hidden" name="idempotencyKey" value="{{ action.idempotencyKey }}" />
                       <input type="hidden" name="copyOrigin" value="{{ action.copyOrigin }}" />
