@@ -27,6 +27,10 @@ export const copy = {
     title: 'There is a problem',
     body: 'Sorry, there is a problem with the service. Your answers on this page have been saved. Try again in a few minutes.'
   },
+  staleTokenBanner: {
+    title: 'Another edit has occurred',
+    body: 'Someone else updated this notification while you were editing. Your last change was discarded. Please review the details and try again.'
+  },
   notificationActions: {
     copy: {
       text: 'Copy as new',

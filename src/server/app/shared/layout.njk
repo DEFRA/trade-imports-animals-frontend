@@ -62,6 +62,13 @@
           role: "alert"
         }) }}
       {% endif %}
+      {% if staleTokenBanner %}
+        {{ govukNotificationBanner({
+          titleText: sharedCopy.staleTokenBanner.title,
+          text: sharedCopy.staleTokenBanner.body,
+          role: "alert"
+        }) }}
+      {% endif %}
       {% if journeyStrip %}
         <div class="app-journey-strip govuk-!-margin-bottom-4">
           {{ govukTag({ text: journeyStrip.status.text, classes: journeyStrip.status.classes }) }}

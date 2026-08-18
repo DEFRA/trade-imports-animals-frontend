@@ -11,7 +11,7 @@ export const create = async () => {
     body: JSON.stringify({ fulfilments: [] })
   })
   if (!notificationResponse.ok) {
-    throw failed('create notification', notificationResponse)
+    throw await failed('create notification', notificationResponse)
   }
   return marshal(await notificationResponse.json())
 }
@@ -27,7 +27,7 @@ export const copy = async (journeyId, concurrencyToken) => {
     headers: headers()
   })
   if (!response.ok) {
-    throw failed('copy notification', response)
+    throw await failed('copy notification', response)
   }
   return marshal(await response.json())
 }

@@ -33,7 +33,7 @@ export const list = async ({
     }
   )
   if (!response.ok) {
-    throw failed('list notifications', response)
+    throw await failed('list notifications', response)
   }
   const result = await response.json()
   return {

@@ -20,6 +20,10 @@ export const copy = {
     title: 'Mae problem',
     body: "Mae'n ddrwg gennym, mae problem gyda'r gwasanaeth. Mae eich atebion ar y dudalen hon wedi'u cadw. Rhowch gynnig arall arni ymhen ychydig funudau."
   },
+  staleTokenBanner: {
+    title: 'Mae golygiad arall wedi digwydd',
+    body: 'Mae rhywun arall wedi diweddaru’r hysbysiad hwn tra oeddech yn golygu. Mae eich newid diwethaf wedi’i daflu. Adolygwch y manylion a rhowch gynnig arall arni.'
+  },
   notificationActions: {
     copy: {
       text: 'Copïo fel un newydd',

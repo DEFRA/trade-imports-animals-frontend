@@ -8,7 +8,7 @@ export const put = async (url, body, action) => {
     body: JSON.stringify(body)
   })
   if (!response.ok) {
-    throw failed(action, response)
+    throw await failed(action, response)
   }
   return response
 }
