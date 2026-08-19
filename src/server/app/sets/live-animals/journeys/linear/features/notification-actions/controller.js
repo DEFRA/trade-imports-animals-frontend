@@ -1,6 +1,7 @@
 import {
   dashboardPath,
   hubPath,
+  pagePath,
   pageRoutePath
 } from '../../../../../../shared/paths.js'
 import { copyJourney } from '../../../../../../engine/journey.js'
@@ -9,36 +10,39 @@ import * as kit from '../../../../../../shared/kit.js'
 import { renderNotificationView } from '../check-answers/controller.js'
 import { renderDashboard } from '../dashboard/controller.js'
 
-const recoverCopy = (request, h, idempotencyKey) =>
+const originPath = (request) =>
   request.payload?.copyOrigin === 'notification-view'
-    ? renderNotificationView(request, h, {
-        recoverableError: true,
-        copyIdempotencyKey: idempotencyKey
-      })
-    : renderDashboard(request, h, {
-        recoverableError: true,
-        retryCopy: {
-          journeyId: request.params.journeyId,
-          idempotencyKey
-        }
-      })
+    ? pagePath(request.params.journeyId, 'check-answers')
+    : dashboardPath()
+
+const recoverCopy = (request, h) =>
+  request.payload?.copyOrigin === 'notification-view'
+    ? renderNotificationView(request, h, { recoverableError: true })
+    : renderDashboard(request, h, { recoverableError: true })
 
 const copyPost = async (request, h) => {
-  const idempotencyKey = request.payload?.idempotencyKey?.trim()
-  const { failure, value: copied } = await kit.recoverableSave(
-    () => copyJourney(request, h, request.params.journeyId, idempotencyKey),
-    async () =>
-      (await recoverCopy(request, h, idempotencyKey)).code(
-        HTTP_STATUS_INTERNAL_SERVER_ERROR
-      )
-  )
-  if (failure) {
-    return failure
+  const concurrencyToken =
+    request.payload?.concurrencyToken != null
+      ? Number(request.payload.concurrencyToken)
+      : undefined
+  try {
+    const { failure, value: copied } = await kit.recoverableSave(
+      () => copyJourney(request, h, request.params.journeyId, concurrencyToken),
+      async () =>
+        (await recoverCopy(request, h)).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    )
+    if (failure) {
+      return failure
+    }
+    return copied
+      ? h.redirect(hubPath(copied.journeyId))
+      : h.redirect(dashboardPath())
+  } catch (error) {
+    if (error?.code === 'STALE_CONCURRENCY_TOKEN') {
+      return h.redirect(`${originPath(request)}?staleToken=1`)
+    }
+    throw error
   }
-
-  return copied
-    ? h.redirect(hubPath(copied.journeyId))
-    : h.redirect(dashboardPath())
 }
 
 export const routes = [

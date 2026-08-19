@@ -143,11 +143,11 @@ export const cancelAmendJourney = async (request, _h, journeyId) => {
   return restored
 }
 
-export const copyJourney = async (request, h, journeyId, idempotencyKey) => {
+export const copyJourney = async (request, h, journeyId, concurrencyToken) => {
   if (!(await isKnownJourney(request, journeyId))) {
     return undefined
   }
-  const copied = await records.copy(journeyId, idempotencyKey)
+  const copied = await records.copy(journeyId, concurrencyToken)
   await session.addKnownJourney(request, h, copied.journeyId)
   memoWrite(request, copied)
   return copied

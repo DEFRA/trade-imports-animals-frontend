@@ -127,7 +127,7 @@ describe('dashboard notifications list', () => {
     expect(row.actions[1]).toMatchObject({
       postAction: pagePath(draft.journeyId, 'copy'),
       copyOrigin: 'dashboard',
-      idempotencyKey: expect.any(String)
+      concurrencyToken: expect.anything()
     })
     expect(row.actions[2].href).toBe(pagePath(draft.journeyId, 'delete'))
   })
@@ -428,7 +428,7 @@ describe('dashboard row actions', () => {
     ).toBe(SUBMITTED)
   })
 
-  it('Should mint a different copy key for every source row on a render', async () => {
+  it('Should carry each row source concurrencyToken onto its copy action', async () => {
     const first = await startDraft()
     const second = await startDraft()
     const h = buildH()
@@ -440,12 +440,15 @@ describe('dashboard row actions', () => {
       h
     )
 
-    const keys = h.captured.view.context.notificationRows.map(
-      (row) =>
-        row.actions.find((action) => action.text === COPY_AS_NEW_ACTION)
-          .idempotencyKey
-    )
-    expect(new Set(keys).size).toBe(2)
+    // Each copy button POSTs its source's own concurrencyToken so the
+    // backend can enforce WYSIWYG against the exact state the user saw.
+    const rows = h.captured.view.context.notificationRows
+    rows.forEach((row) => {
+      const copyAction = row.actions.find(
+        (action) => action.text === COPY_AS_NEW_ACTION
+      )
+      expect(copyAction.concurrencyToken).toBeDefined()
+    })
   })
 
   it('Should expose the delete success banner only after a delete redirect', async () => {

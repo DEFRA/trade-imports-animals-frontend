@@ -163,9 +163,8 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     expect(view.context.readOnly).toBe(true)
     expect(changeHrefsOf(view.context.sections)).toEqual([])
     expect(view.context.cancelAmendHref).toBeNull()
-    expect(view.context.copyAction).toMatchObject({
-      href: expect.stringMatching(/\/copy$/),
-      idempotencyKey: expect.any(String)
+    expect(view.context.copyAction).toEqual({
+      href: expect.stringMatching(/\/copy$/)
     })
     expect(view.context.deleteHref).toMatch(/\/delete$/)
   })

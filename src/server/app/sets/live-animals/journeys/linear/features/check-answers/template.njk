@@ -34,7 +34,6 @@
         <form method="post" action="{{ copyAction.href }}" class="app-form-inline">
           <input type="hidden" name="crumb" value="{{ crumb }}" />
           <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
-          <input type="hidden" name="idempotencyKey" value="{{ copyAction.idempotencyKey }}" />
           <input type="hidden" name="copyOrigin" value="notification-view" />
           {{ govukButton({
             text: sharedCopy.notificationActions.copy.text,

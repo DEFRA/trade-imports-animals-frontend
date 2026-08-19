@@ -46,7 +46,7 @@ const parseReferenceNumber = (value) => {
 export const renderDashboard = async (
   request,
   h,
-  { recoverableError = false, retryCopy = null } = {}
+  { recoverableError = false } = {}
 ) => {
   const queryPage = Number.parseInt(request.query?.page, 10)
   const requestedPage = normalizePageNumber(queryPage)
@@ -73,7 +73,7 @@ export const renderDashboard = async (
     sharedCopy,
     startAction: createPath(),
     listAction: dashboardPath(),
-    notificationRows: rows.map((journey) => toRow(journey, retryCopy)),
+    notificationRows: rows.map(toRow),
     resultsLabel: buildPageResultsRangeLabel(
       pagination,
       rows.length,
