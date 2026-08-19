@@ -76,10 +76,6 @@ export const replaceJourneyFulfilment = async (
 ) => {
   const cached = memoRead(request)
   const memoKnown = cached?.journeyId === journeyId ? cached : undefined
-  // POST arrives on a fresh request with an empty memo. The client observed the
-  // concurrencyToken at GET-render time; the hidden field round-trips it back
-  // through the form so the backend can reject stale writes with 409
-  // STALE_CONCURRENCY_TOKEN.
   const payloadToken = request?.payload?.concurrencyToken
   const known =
     memoKnown ??
@@ -89,10 +85,7 @@ export const replaceJourneyFulfilment = async (
   const saved = await records.replaceFulfilment(journeyId, fulfilment, {
     known
   })
-  // The backend increments concurrencyToken on every save, so `saved` carries
-  // the fresh token; using `known` here would memoise the pre-save value and
-  // trip a self-inflicted 409 STALE_CONCURRENCY_TOKEN on any subsequent save
-  // in the same request (e.g. consignment-details saves once per line).
+  // The backend mints a new concurrencyToken on every save, so get the latest
   const next = { ...saved, fulfilment: structuredClone(fulfilment) }
   memoWrite(request, next)
   return next
