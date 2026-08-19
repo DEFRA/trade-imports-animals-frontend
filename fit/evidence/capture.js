@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
+import { capturePageModel } from './page-model.js'
 
 /**
  * Where the evidence lands. A findings report in another repo consumes it, so
@@ -94,7 +95,12 @@ export const captureScreen = async (page, screen, anchors) => {
     url: new URL(page.url()).pathname,
     title: await page.title(),
     deviceScaleFactor: Number(process.env.FIT_CAPTURE_DSF ?? 2),
-    crops: await captureAnchors(page, screen, anchors ?? loadAnchors()[screen])
+    crops: await captureAnchors(page, screen, anchors ?? loadAnchors()[screen]),
+    // Read in the same visit as the screenshot, so the model and the picture
+    // are of the same render. They used to be years apart: the models were
+    // mined from traces at an older commit, and every delta, anchor and
+    // insertion point derived from them was of markup that had since moved.
+    model: await capturePageModel(page, screen)
   }
 }
 

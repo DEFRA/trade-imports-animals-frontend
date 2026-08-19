@@ -35,6 +35,13 @@ const SPINE = [
   },
   {
     screen: 'fe-animal-identification',
+    // Reached, but with no commodity line on it, so the page renders no
+    // identifier fields at all. `?change=1` does not bring them back. Every
+    // finding about this screen is about those inputs, so the picture and the
+    // page model are both of a state the findings are not about. Left as it
+    // is and reported by `tim parity check-evidence`, because whether the
+    // journey should still hold a line here is a question about the
+    // application, not about the capture.
     slug: 'commodities/identification',
     heading: 'Animal identification details'
   },

@@ -9,10 +9,18 @@ export default [
     noStyle: true
   }),
   {
-    // page.evaluate callbacks in Playwright specs run in the browser
-    files: ['**/*.fit.spec.js'],
+    // page.evaluate callbacks run in the browser, so they reach browser
+    // globals this project otherwise has no business touching. Listed one by
+    // one rather than switching the whole file to a browser environment, so
+    // the surrounding Node code stays honest about what it can use.
+    files: ['**/*.fit.spec.js', 'fit/evidence/page-model.js'],
     languageOptions: {
-      globals: { Option: 'readonly', getComputedStyle: 'readonly' }
+      globals: {
+        Option: 'readonly',
+        getComputedStyle: 'readonly',
+        CSS: 'readonly',
+        location: 'readonly'
+      }
     }
   },
   {
