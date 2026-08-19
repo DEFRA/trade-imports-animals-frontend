@@ -36,35 +36,22 @@ export const appSha = () => {
 const captureDir = () => join(outputRoot(), `frontend@${appSha().slice(0, 8)}`)
 
 /**
- * Regions whose content changes on every run. Without masks a no-op re-capture
- * drifts every screen that has one, and the report's drift panel — which exists
- * to say "this picture changed under a decision you are about to make" — fills
- * with noise and stops being read.
- *
- * @param {import('@playwright/test').Page} page
- * @returns {import('@playwright/test').Locator[]}
- */
-export const volatileRegions = (page) => [
-  // The declaration page prints today's date.
-  page.locator('[data-evidence-volatile]'),
-  // The confirmation page prints the generated notification reference.
-  page.locator('.govuk-panel__body'),
-  // The documents page counts a scan timer that races the screenshot.
-  page.locator('[data-module="app-upload-status"]')
-]
-
-/**
  * Capture one screen, full page, at the settings the report needs.
  *
- * Everything volatile is masked and everything animated is stopped, so two
- * runs against the same commit produce the same bytes. That is what makes a
- * changed hash mean the code changed.
+ * Motion is stopped and the caret is hidden, so two runs against the same
+ * commit produce the same bytes. That is what makes a changed hash mean the
+ * code changed rather than the clock ticking.
+ *
+ * Three regions are still volatile and are not masked yet: the declaration
+ * page's date, the confirmation page's generated reference, and the documents
+ * scan timer. Their screens will report drift on every rebuild until they are.
  *
  * @param {import('@playwright/test').Page} page
  * @param {string} screen - Screen id, matching the corpus (for example fe-hub)
+ * @param {object[]} [anchors] - Overrides the anchors declared for this screen
  * @returns {Promise<object>} The manifest row
  */
-export const captureScreen = async (page, screen) => {
+export const captureScreen = async (page, screen, anchors) => {
   const dir = join(captureDir(), 'page')
   mkdirSync(dir, { recursive: true })
   const path = join(dir, `${screen}.png`)
@@ -75,7 +62,6 @@ export const captureScreen = async (page, screen) => {
     fullPage: true,
     animations: 'disabled',
     caret: 'hide',
-    mask: undefined,
     scale: 'device'
   })
 
@@ -87,8 +73,155 @@ export const captureScreen = async (page, screen) => {
     sha256: createHash('sha256').update(bytes).digest('hex'),
     url: new URL(page.url()).pathname,
     title: await page.title(),
-    deviceScaleFactor: Number(process.env.FIT_CAPTURE_DSF ?? 2)
+    deviceScaleFactor: Number(process.env.FIT_CAPTURE_DSF ?? 2),
+    crops: await captureAnchors(page, screen, anchors ?? loadAnchors()[screen])
   }
+}
+
+/**
+ * Ancestors worth cropping to, nearest first.
+ *
+ * A crop of the bare input is not evidence — the label, the hint and the error
+ * are the finding. Walking up to the form group gets all of it, and the wider
+ * containers catch a control that sits outside one.
+ */
+const CROP_ANCESTORS = [
+  '.govuk-form-group',
+  'fieldset',
+  '.govuk-radios',
+  '.govuk-checkboxes',
+  '.govuk-summary-list__row',
+  '.govuk-task-list__item',
+  '.govuk-details',
+  '.govuk-inset-text',
+  '.govuk-notification-banner',
+  '.govuk-error-summary'
+]
+
+const CROP_PADDING = 24
+
+/**
+ * Resolve one anchor descriptor to exactly one element, or refuse.
+ *
+ * The ladder asserts exactly one match. Zero or many is a typed error the
+ * report renders as an evidence-broken card, which is information — where a
+ * raw CSS string re-run against moved markup matches the wrong node silently.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {object} anchor
+ * @returns {import('@playwright/test').Locator|null}
+ */
+export const resolveAnchor = (page, anchor) => {
+  if (anchor.kind === 'field') {
+    return page.locator(
+      `[name="${anchor.name}"], [name^="${anchor.name}-"], [name^="${anchor.name}["]`
+    )
+  }
+  if (anchor.kind === 'label') {
+    return page.getByLabel(anchor.text, { exact: false })
+  }
+  return null
+}
+
+/**
+ * Crop the region around one anchor.
+ *
+ * Clipped in document coordinates rather than shot with locator.screenshot, so
+ * neighbours bleed in at the edges and the fragment reads as a place on a page
+ * rather than as a floating control.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} screen
+ * @param {object} anchor
+ * @returns {Promise<object|null>} The manifest row, or null with a reason
+ */
+export const captureAnchor = async (page, screen, anchor) => {
+  const locator = resolveAnchor(page, anchor)
+  if (!locator) {
+    return { anchor: anchor.key, why: `Unknown anchor kind "${anchor.kind}".` }
+  }
+  const count = await locator.count()
+  if (count === 0) {
+    return { anchor: anchor.key, why: 'No element matched this anchor.' }
+  }
+
+  // Document coordinates, clamped to the document, because the clip is applied
+  // to the full-page image rather than to the viewport.
+  const box = await locator.first().evaluate(
+    (element, { ancestors, padding }) => {
+      const container =
+        ancestors.map((selector) => element.closest(selector)).find(Boolean) ??
+        element
+      const rect = container.getBoundingClientRect()
+      const pageWidth = document.documentElement.scrollWidth
+      const pageHeight = document.documentElement.scrollHeight
+      const x = Math.max(0, rect.left + window.scrollX - padding)
+      const y = Math.max(0, rect.top + window.scrollY - padding)
+      return {
+        x,
+        y,
+        width: Math.min(rect.width + padding * 2, pageWidth - x),
+        height: Math.min(rect.height + padding * 2, pageHeight - y)
+      }
+    },
+    { ancestors: CROP_ANCESTORS, padding: CROP_PADDING }
+  )
+  if (box.width < 8 || box.height < 8) {
+    return {
+      anchor: anchor.key,
+      why: 'The resolved element has no visible box.'
+    }
+  }
+
+  const dir = join(captureDir(), 'crop')
+  mkdirSync(dir, { recursive: true })
+  const file = `${screen}__${anchor.key}.png`
+  await page.screenshot({
+    path: join(dir, file),
+    fullPage: true,
+    clip: box,
+    animations: 'disabled',
+    caret: 'hide',
+    scale: 'device'
+  })
+
+  const bytes = readFileSync(join(dir, file))
+  return {
+    anchor: anchor.key,
+    kind: anchor.kind,
+    file: `crop/${file}`,
+    bytes: bytes.length,
+    sha256: createHash('sha256').update(bytes).digest('hex'),
+    matched: count,
+    why: anchor.why ?? null
+  }
+}
+
+/**
+ * Every anchor declared for one screen, shot.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} screen
+ * @param {object[]} anchors
+ * @returns {Promise<object[]>}
+ */
+export const captureAnchors = async (page, screen, anchors = []) => {
+  const out = []
+  for (const anchor of anchors) {
+    out.push(await captureAnchor(page, screen, anchor))
+  }
+  return out
+}
+
+/**
+ * Load the anchors declared for this side, if any.
+ *
+ * @returns {Record<string, object[]>}
+ */
+export const loadAnchors = () => {
+  const path = join(outputRoot(), 'anchors.frontend.json')
+  if (!existsSync(path)) return {}
+  return JSON.parse(readFileSync(path, 'utf8')).screens ?? {}
 }
 
 /**
