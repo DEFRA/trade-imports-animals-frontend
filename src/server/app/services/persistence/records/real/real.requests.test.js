@@ -191,6 +191,24 @@ describe('real records adapter — fulfilment writes', () => {
     expect(saved.fulfilment).toEqual(snapshot)
   })
 
+  it('Should throw when the notification PUT returns a non-ok status', async () => {
+    fetchMocker.mockResponse('Server Error', {
+      status: 500,
+      statusText: 'Internal Server Error'
+    })
+
+    await expect(
+      records.replaceFulfilment(
+        journeyId,
+        assembleFulfilments({ countryOfOrigin: 'FR' }),
+        { known: { journeyId, status: DRAFT, concurrencyToken: 0 } }
+      )
+    ).rejects.toMatchObject({
+      name: 'BackendRequestError',
+      status: 500
+    })
+  })
+
   it.each([
     [SUBMITTED, 'submitted'],
     [DELETED, 'deleted']
@@ -294,6 +312,20 @@ describe('real records adapter — lifecycle and list', () => {
     expect(requests[0].headers.has('Idempotency-Key')).toBe(false)
     expect(await requests[0].clone().text()).toBe('')
     expect(deleted.status).toBe(DELETED)
+  })
+
+  it('Should throw when the notifications list request returns a non-ok status', async () => {
+    fetchMocker.mockResponse('Server Error', {
+      status: 500,
+      statusText: 'Internal Server Error'
+    })
+
+    await expect(
+      records.list({ page: 1, sort: 'createdAt,asc' })
+    ).rejects.toMatchObject({
+      name: 'BackendRequestError',
+      status: 500
+    })
   })
 
   it('Should pass an exact reference filter on the notifications list request', async () => {

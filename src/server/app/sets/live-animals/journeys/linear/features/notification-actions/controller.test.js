@@ -95,6 +95,35 @@ describe('copy notification action', () => {
     expect(response.context.recoverableError).toBe(true)
   })
 
+  it('Should redirect to the dashboard with ?staleToken=1 on 409 STALE_CONCURRENCY_TOKEN from copy', async () => {
+    configureRecords({ ...recordsStub, copy: realRecords.copy })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: false,
+        status: 409,
+        statusText: 'Conflict',
+        clone() {
+          return this
+        },
+        json: async () => ({ code: 'STALE_CONCURRENCY_TOKEN' })
+      }))
+    )
+    const source = await records.create()
+
+    const response = await copyPost(
+      journeyRequest(source.journeyId, {
+        payload: {
+          concurrencyToken: '0',
+          copyOrigin: 'dashboard'
+        }
+      }),
+      stubH()
+    )
+
+    expect(response.redirect).toBe('/?staleToken=1')
+  })
+
   it('Should redirect an unknown source to the dashboard without copying', async () => {
     const response = await copyPost(
       journeyRequest('GBN-AG-26-UNKNOWN', {
