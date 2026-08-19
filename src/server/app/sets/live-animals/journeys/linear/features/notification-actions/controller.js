@@ -39,7 +39,7 @@ const copyPost = async (request, h) => {
       : h.redirect(dashboardPath())
   } catch (error) {
     if (error?.code === 'STALE_CONCURRENCY_TOKEN') {
-      return h.redirect(`${originPath(request)}?staleToken=1`)
+      return h.redirect(`${originPath(request)}?staleAction=1`)
     }
     throw error
   }

@@ -128,11 +128,6 @@ export const recoverableSave = async (saveThunk, onRecoverableFailure) => {
   try {
     return { value: await saveThunk() }
   } catch (error) {
-    // Stale-token conflicts must break out — the pageRoutes wrapper catches
-    // them and redirects the browser to the page's GET so the fresh state is
-    // rendered with a banner. Falling through to the generic recoverable
-    // fallback would keep the user's stale in-flight values and loop them
-    // back through the same 409 on retry.
     if (error?.code === 'STALE_CONCURRENCY_TOKEN') {
       throw error
     }
@@ -143,18 +138,13 @@ export const recoverableSave = async (saveThunk, onRecoverableFailure) => {
   }
 }
 
-// Wraps a page's POST handler so a 409 STALE_CONCURRENCY_TOKEN thrown out of
-// the persistence layer is converted into a redirect back to the same URL
-// with `?staleToken=1`. The GET handler then loads fresh state and the
-// layout renders a `govuk-notification-banner` (driven by the nunjucks
-// context extension in `src/config/nunjucks/context/context.js`).
-const staleTokenRedirect = (post) => async (request, h) => {
+const redirectOnStaleAction = (post) => async (request, h) => {
   try {
     return await post(request, h)
   } catch (error) {
     if (error?.code === 'STALE_CONCURRENCY_TOKEN') {
       const query = request.url.searchParams
-      query.set('staleToken', '1')
+      query.set('staleAction', '1')
       return h.redirect(`${request.path}?${query.toString()}`)
     }
     throw error
@@ -172,7 +162,7 @@ export const pageRoutes = (page, { get, post }) => [
     method: 'POST',
     path: pageRoutePath(page.slug),
     options: routeOptions,
-    handler: staleTokenRedirect(post)
+    handler: redirectOnStaleAction(post)
   }
 ]
 

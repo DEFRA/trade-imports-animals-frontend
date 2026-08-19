@@ -121,7 +121,7 @@ describe('copy notification action', () => {
       stubH()
     )
 
-    expect(response.redirect).toBe('/?staleToken=1')
+    expect(response.redirect).toBe('/?staleAction=1')
   })
 
   it('Should propagate a non-STALE_CONCURRENCY_TOKEN error thrown from copy', async () => {
