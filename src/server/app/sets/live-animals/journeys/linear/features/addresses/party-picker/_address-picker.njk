@@ -107,13 +107,6 @@
       <p class="govuk-body">{{ copy.noMatches }}</p>
     {% endif %}
 
-    <div class="govuk-button-group">
-      {{ govukButton({ text: copy.saveAndContinue, name: "action", value: "save" }) }}
-      {{ govukButton({
-        text: copy.addNewAddress,
-        classes: "govuk-button--secondary",
-        href: picker.createAddressHref
-      }) }}
-    </div>
+    {{ govukButton({ text: copy.saveAndContinue, name: "action", value: "save" }) }}
   </form>
 {% endmacro %}

@@ -9,19 +9,23 @@ import { resolveStatus } from '../write-guards/resolve-status.js'
 export const replaceFulfilment = async (
   journeyId,
   fulfilment,
-  { known } = {}
+  { known, actor } = {}
 ) => {
   const status = await resolveStatus(journeyId, known)
   assertWritable(journeyId, status)
 
   const snapshot = structuredClone(fulfilment ?? {})
   // Body carries both the notification-shape fields (via the mapper) and the
-  // opaque fulfilments payload.
+  // opaque fulfilments payload. The actor rides alongside: the backend needs its
+  // organisation to resolve referenced parties onto the edit event.
   const body = {
-    referenceNumber: journeyId,
-    concurrencyToken: known?.concurrencyToken,
-    ...fulfilmentToNotification(snapshot, journeyId),
-    fulfilments: encodeEvaluatorFulfilments(snapshot)
+    notification: {
+      referenceNumber: journeyId,
+      concurrencyToken: known?.concurrencyToken,
+      ...fulfilmentToNotification(snapshot, journeyId),
+      fulfilments: encodeEvaluatorFulfilments(snapshot)
+    },
+    ...(actor ? { actor } : {})
   }
 
   const response = await put(

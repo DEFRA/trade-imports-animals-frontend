@@ -2,8 +2,10 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import { answerOriginEntry } from '../../../../../../../../../fit/live-animals-journey.js'
-import { CONTACT_OPTIONS } from '../../../../../../services/address-book/stub/index.js'
+import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
+import { addressText } from '../addresses/party-picker/view-model/address-lines.js'
 import { copy } from './copy/copy.en.js'
+import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
 const CONTACT_ADDRESS_INPUT = 'input[name="contactAddress"]'
 
@@ -24,22 +26,17 @@ const startAtContact = async (page) => {
   await expect(page.getByRole('heading', { name: copy.legend })).toBeVisible()
 }
 
+/** Mirrors the contact controller's radio hint (addressText + country). */
 const addressSummary = (address) =>
-  [
-    address.addressLine1,
-    address.addressLine2,
-    address.addressLine3,
-    address.country
-  ]
-    .filter(Boolean)
-    .join(', ')
+  [addressText(address), address.country].filter(Boolean).join(', ')
 
 test.describe('contact feature', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtContact(page)
   })
 
-  test('renders the address-book contacts, feature copy and add link', async ({
+  test('renders the address-book contacts and feature copy', async ({
     page
   }) => {
     const group = page.getByRole('group', { name: copy.legend })
@@ -47,18 +44,18 @@ test.describe('contact feature', () => {
     const renderedValues = await group
       .locator(CONTACT_ADDRESS_INPUT)
       .evaluateAll((inputs) => inputs.map((input) => input.value))
-    expect(renderedValues).toEqual(CONTACT_OPTIONS.map(({ id }) => id))
-    for (const option of CONTACT_OPTIONS) {
+    expect(renderedValues).toEqual(STUB_BOOK.map(({ id }) => id))
+    for (const option of STUB_BOOK) {
       await expect(
         page.getByRole('radio', { name: option.name, exact: true })
       ).toBeVisible()
       await expect(group).toContainText(addressSummary(option.address))
     }
-    await expect(
-      page.getByRole('link', { name: copy.addNewAddress })
-    ).toHaveAttribute(
-      'href',
-      /\/notifications\/[^/]+\/addresses\/create\?for=contactAddress$/
+  })
+
+  test('offers no way to add an address', async ({ page }) => {
+    await expect(page.getByRole('link', { name: /add.*address/i })).toHaveCount(
+      0
     )
   })
 
@@ -85,11 +82,11 @@ test.describe('contact feature', () => {
     )
   })
 
-  test('copies a valid contact, redirects and persists the selection', async ({
+  test('selects a valid contact, redirects and persists the selection', async ({
     page
   }) => {
     const contactUrl = page.url()
-    const selected = CONTACT_OPTIONS[0]
+    const selected = STUB_BOOK[0]
 
     await page.getByRole('radio', { name: selected.name, exact: true }).check()
     await page.locator('form button[type="submit"]').first().click()
@@ -104,6 +101,7 @@ test.describe('contact feature', () => {
 
 test.describe('contact feature — navigation and accessibility', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtContact(page)
   })
 

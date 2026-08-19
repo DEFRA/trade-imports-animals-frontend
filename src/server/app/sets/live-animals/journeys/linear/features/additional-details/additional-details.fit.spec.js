@@ -1,10 +1,10 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import {
   answerCountryOfOrigin,
   journeyUrl,
   selectSpecies,
+  signIn,
   startNotification
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import * as certification from '../../../../../../services/certification-purposes/index.js'
@@ -32,6 +32,7 @@ const startAtAdditionalDetails = async (page) => {
 
 test.describe('additional-details feature — rendering', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtAdditionalDetails(page)
   })
 
@@ -73,6 +74,7 @@ test.describe('additional-details feature — rendering', () => {
 
 test.describe('additional-details feature — validation', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtAdditionalDetails(page)
   })
 
@@ -141,6 +143,7 @@ test.describe('additional-details feature — validation', () => {
 
 test.describe('additional-details feature — persistence and accessibility', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtAdditionalDetails(page)
   })
 

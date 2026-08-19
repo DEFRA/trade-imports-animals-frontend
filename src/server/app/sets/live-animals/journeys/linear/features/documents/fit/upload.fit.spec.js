@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import {
+  signIn,
   startNotification,
   unlockSections,
   values
@@ -98,6 +98,7 @@ const expectNoSeriousAxeViolations = async (page, name) => {
 
 test.describe('document upload page', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openDocuments(page)
   })
 
@@ -138,6 +139,7 @@ test.describe('document upload page', () => {
 
 test.describe('document upload reference validation', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openDocuments(page)
   })
 
@@ -183,6 +185,7 @@ test.describe('document upload reference validation', () => {
 
 test.describe('document upload date validation', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openDocuments(page)
   })
 
@@ -229,6 +232,7 @@ test.describe('document upload date validation', () => {
 
 test.describe('document upload file validation', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openDocuments(page)
   })
 
@@ -267,6 +271,7 @@ test.describe('document upload file validation', () => {
 
 test.describe('document upload oversize validation', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openDocuments(page)
   })
 
@@ -317,6 +322,7 @@ test.describe('document upload oversize validation', () => {
 
 test.describe('document upload saved rows', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openDocuments(page)
   })
 
@@ -383,6 +389,7 @@ test.describe('document upload saved rows', () => {
 
 test.describe('document upload capacity and accessibility', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await openDocuments(page)
   })
 

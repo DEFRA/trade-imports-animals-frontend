@@ -4,6 +4,7 @@ import {
   copyJourney,
   currentJourney,
   amendJourney,
+  listKnownJourneys,
   replaceJourneyFulfilment,
   SESSION_COOKIES,
   softDeleteJourney,
@@ -211,31 +212,6 @@ describe('#currentJourney', () => {
     expect(copy).toHaveBeenCalledTimes(1)
   })
 
-  it('Should carry the freshly-saved concurrencyToken into the memo so a subsequent save in the same request does not send a stale one', async () => {
-    const journeyId = 'GBN-AG-26-MULTI'
-    const tokensSeen = []
-    const replaceFulfilment = vi.fn(async (id, fulfilment, { known }) => {
-      tokensSeen.push(known?.concurrencyToken)
-      return {
-        journeyId: id,
-        status: 'draft',
-        concurrencyToken: (known?.concurrencyToken ?? 0) + 1,
-        fulfilment
-      }
-    })
-    configureRecords({ ...recordsStub, replaceFulfilment })
-    const request = requestFor(journeyId, [journeyId])
-    request.payload = { concurrencyToken: '4' }
-
-    await replaceJourneyFulfilment(request, journeyId, { foo: 'first' })
-    await replaceJourneyFulfilment(request, journeyId, { foo: 'second' })
-
-    // First save reads the token from the payload (4); second save reads it
-    // from the memo, which must now carry the freshly-saved value (5), not
-    // the pre-save one (4).
-    expect(tokensSeen).toEqual([4, 5])
-  })
-
   it('Should soft-delete only a known journey', async () => {
     const softDelete = vi.fn(async (journeyId) => ({
       journeyId,
@@ -259,5 +235,69 @@ describe('#currentJourney', () => {
       )
     ).toBeUndefined()
     expect(softDelete).toHaveBeenCalledTimes(1)
+  })
+
+  it("Should send the session's organisation with the dashboard list read", async () => {
+    // The backend resolves each row's referenced parties against the address
+    // book, which scopes on the organisation — so the read has to say which.
+    const list = vi.fn(async () => ({ rows: [], page: 1, totalPages: 0 }))
+    configureRecords({ ...recordsStub, list })
+    const journeyId = 'GBN-AG-26-LIST01'
+
+    await listKnownJourneys(requestFor(journeyId, [journeyId]), { page: 2 })
+
+    expect(list).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 2, organisationId: '5900001' })
+    )
+  })
+
+  it('Should list nothing, and read nothing, when the request is unauthenticated', async () => {
+    // The dashboard is the page a visitor signs in FROM, so it has to render
+    // before there is a session. No organisation means no journeys — and no
+    // call, because the backend would rightly reject one.
+    const list = vi.fn(async () => ({ rows: [], page: 1, totalPages: 0 }))
+    configureRecords({ ...recordsStub, list })
+
+    const listed = await listKnownJourneys(
+      { state: {}, headers: {}, app: {} },
+      {}
+    )
+
+    expect(listed.rows).toEqual([])
+    expect(list).not.toHaveBeenCalled()
+  })
+})
+
+describe('#replaceJourneyFulfilment', () => {
+  beforeEach(async () => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    configureReadyForCheckYourAnswers(() => false)
+    await store.clear()
+  })
+
+  it('Should carry the freshly-saved concurrencyToken into the memo so a subsequent save in the same request does not send a stale one', async () => {
+    const journeyId = 'GBN-AG-26-MULTI'
+    const tokensSeen = []
+    const replaceFulfilment = vi.fn(async (id, fulfilment, { known }) => {
+      tokensSeen.push(known?.concurrencyToken)
+      return {
+        journeyId: id,
+        status: 'draft',
+        concurrencyToken: (known?.concurrencyToken ?? 0) + 1,
+        fulfilment
+      }
+    })
+    configureRecords({ ...recordsStub, replaceFulfilment })
+    const request = requestFor(journeyId, [journeyId])
+    request.payload = { concurrencyToken: '4' }
+
+    await replaceJourneyFulfilment(request, journeyId, { foo: 'first' })
+    await replaceJourneyFulfilment(request, journeyId, { foo: 'second' })
+
+    // First save reads the token from the payload (4); second save reads it
+    // from the memo, which must now carry the freshly-saved value (5), not
+    // the pre-save one (4).
+    expect(tokensSeen).toEqual([4, 5])
   })
 })

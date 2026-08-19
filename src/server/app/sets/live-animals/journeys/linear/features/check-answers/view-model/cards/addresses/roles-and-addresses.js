@@ -7,42 +7,50 @@ import { row } from '../../rows/summary-row.js'
 
 const copy = copyFor({ en, cy })
 
-export const rolesAndAddressesCard = (journeyId, answers, readOnly) => ({
+/** `parties` carries the same party answers with their address-book references
+ * resolved to current details. It defaults to `answers` so a caller holding only
+ * inline addresses renders exactly as before. */
+export const rolesAndAddressesCard = (
+  journeyId,
+  answers,
+  readOnly,
+  parties = answers
+) => ({
   title: copy.cards.rolesAndAddresses,
   rows: [
     partyRow(
       journeyId,
       readOnly,
       copy.rows.placeOfOrigin,
-      answers.placeOfOrigin,
+      parties.placeOfOrigin,
       'placeOfOrigin'
     ),
     partyRow(
       journeyId,
       readOnly,
       copy.rows.consignor,
-      answers.consignor,
+      parties.consignor,
       'consignor'
     ),
     partyRow(
       journeyId,
       readOnly,
       copy.rows.consignee,
-      answers.consignee,
+      parties.consignee,
       'consignee'
     ),
     partyRow(
       journeyId,
       readOnly,
       copy.rows.importer,
-      answers.importer,
+      parties.importer,
       'importer'
     ),
     partyRow(
       journeyId,
       readOnly,
       copy.rows.placeOfDestination,
-      answers.placeOfDestination,
+      parties.placeOfDestination,
       'placeOfDestination'
     ),
     ...(cphApplies(answers)

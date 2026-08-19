@@ -1,12 +1,12 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import { countriesOrigin } from '../../../../../../services/_capture/fixtures.js'
 import {
   copy as sharedCopy,
   validatorDefaults
 } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
+import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
 const france = countriesOrigin.find(({ code }) => code === 'FR')
 
@@ -45,6 +45,7 @@ const expectNoSeriousOrCriticalAxeViolations = async (page, pageName) => {
 
 test.describe('origin feature', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtOrigin(page)
   })
 
@@ -149,6 +150,7 @@ test.describe('origin feature', () => {
 
 test.describe('origin country and region validation', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtOrigin(page)
   })
 
@@ -233,6 +235,7 @@ test.describe('origin country and region validation', () => {
 
 test.describe('origin internal reference validation', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtOrigin(page)
   })
 

@@ -8,7 +8,7 @@ export const create = async () => {
   const notificationResponse = await fetch(notificationsUrl, {
     method: 'POST',
     headers: headers(),
-    body: JSON.stringify({ fulfilments: [] })
+    body: JSON.stringify({ notification: { fulfilments: [] } })
   })
   if (!notificationResponse.ok) {
     throw await failed('create notification', notificationResponse)

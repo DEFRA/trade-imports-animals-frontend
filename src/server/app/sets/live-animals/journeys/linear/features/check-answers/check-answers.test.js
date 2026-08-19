@@ -460,6 +460,33 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
   })
 })
 
+describe(`${SUITE} — address-book party references`, () => {
+  setupCheckAnswersEngine()
+
+  it('Should render the address book name and address for an addressId reference', async () => {
+    const card = cardByTitle(
+      await sectionsFor({
+        consignor: { addressId: 'astra-rosales' }
+      }),
+      ROLES_AND_ADDRESSES_CARD
+    )
+
+    expect(htmlOf(card.rows, 'Consignor')).toContain('Astra Rosales')
+    expect(htmlOf(card.rows, 'Consignor')).toContain(ADDRESS_LINE_1)
+  })
+
+  it('Should render Not provided when the referenced address is gone', async () => {
+    const card = cardByTitle(
+      await sectionsFor({
+        consignor: { addressId: 'gone' }
+      }),
+      ROLES_AND_ADDRESSES_CARD
+    )
+
+    expect(valueOf(card.rows, 'Consignor')).toBe(NOT_PROVIDED)
+  })
+})
+
 // The CYA commodity gates (packages / unweaned / CPH) read the obligation
 // `.metadata.values` (CN codes), normalising the stored commodity name to a
 // code. This matrix pins the gate outcome per selectable species

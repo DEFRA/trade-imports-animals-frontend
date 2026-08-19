@@ -27,12 +27,18 @@ describe('Mapper A PUT /notifications contract', () => {
     expect(fulfilmentToNotification(fulfilment, 'GBN-AG-26-CONTRACT')).toEqual({
       referenceNumber: 'GBN-AG-26-CONTRACT',
       reasonForImport: 'internalMarket',
+      // Held as a copy, so the details cross to the notification in the
+      // address book's field names — an ISO country code, not a display name.
+      // The happy-path fixture still carries the retired pre-EUDPA-198 shape
+      // (addressLine3, no townOrCity/postalOrZipCode), which is why nothing
+      // lands in postcode or townOrCity here. A record picked from the real
+      // address book carries both.
       placeOfOrigin: {
         name: 'Origin Farm',
         address: {
           addressLine1: '1 Farm Lane',
           addressLine2: 'County Clare',
-          country: 'Ireland'
+          countryCode: 'IE'
         }
       },
       consignor: {
@@ -68,13 +74,16 @@ describe('Mapper A PUT /notifications contract', () => {
           country: UNITED_KINGDOM
         }
       },
+      // Held as a copy, same translation as placeOfOrigin above. The
+      // fixture's addressLine3 has no home on the notification — the backend
+      // dropped it silently before this mapping existed too, since its Address
+      // has carried no addressLine3 since EUDPA-198.
       consignment: {
         name: 'Animal and Plant Health Agency',
         address: {
           addressLine1: 'Woodham Lane',
           addressLine2: 'New Haw',
-          addressLine3: 'Addlestone, KT15 3NB',
-          country: UNITED_KINGDOM
+          countryCode: 'GB'
         }
       },
       cphNumber: '12/345/6789',

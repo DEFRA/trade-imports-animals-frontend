@@ -2,6 +2,9 @@ import { defineConfig, devices } from '@playwright/test'
 
 /**
  * Playwright config for the live-animals feature coverage and journey smoke.
+ * Fully self-contained - STUB_MODE=true is set for the webServer below, which
+ * serves stub data and skips the Defra ID OIDC exchange, so no other service
+ * needs to be running.
  */
 const port = Number(process.env.PORT ?? 3000)
 
@@ -55,9 +58,10 @@ export default defineConfig({
     {
       command: 'npm run fit:start',
       url: `http://localhost:${port}/health`,
-      // The service default is real mode; the canned journey suite runs against
-      // stub data, so it opts in explicitly here.
-      env: { PORT: String(port), LIVE_ANIMALS_MODE: 'stub' },
+      // The service default is real; this suite runs against stub data and a
+      // locally signed session, so it opts in explicitly here. Auth stays
+      // enforced either way (see server/auth/stub-sign-in.js).
+      env: { PORT: String(port), STUB_MODE: 'true' },
       timeout: 180_000,
       reuseExistingServer: false
     }

@@ -4,6 +4,7 @@ import { expect, test } from '@playwright/test'
 import { answerOriginEntry } from '../../../../../../../../../fit/live-animals-journey.js'
 import { portsOfEntry } from '../../../../../../services/_capture/fixtures.js'
 import { copy } from './copy/copy.en.js'
+import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
 const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
 
@@ -29,6 +30,7 @@ const startAtPortOfExit = async (page) => {
 
 test.describe('port-of-exit feature', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtPortOfExit(page)
   })
 

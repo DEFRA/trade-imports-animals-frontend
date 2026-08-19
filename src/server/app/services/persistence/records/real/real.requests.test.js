@@ -76,7 +76,9 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
       { method: 'POST', url: notificationsUrl }
     ])
-    expect(await jsonOf(requests[0])).toEqual({ fulfilments: [] })
+    expect(await jsonOf(requests[0])).toEqual({
+      notification: { fulfilments: [] }
+    })
     expect(created).toEqual({
       journeyId,
       status: DRAFT,
@@ -179,14 +181,16 @@ describe('real records adapter — fulfilment writes', () => {
       { method: 'PUT', url: `${notificationsUrl}/${journeyId}` }
     ])
     expect(await jsonOf(requests[0])).toEqual({
-      referenceNumber: journeyId,
-      concurrencyToken: 3,
-      ...fulfilmentToNotification(snapshot, journeyId),
-      fulfilments: encoded
+      notification: {
+        referenceNumber: journeyId,
+        concurrencyToken: 3,
+        ...fulfilmentToNotification(snapshot, journeyId),
+        fulfilments: encoded
+      }
     })
     expect(
-      (await jsonOf(requests[0])).commodity.commodityComplement[0].species[0]
-        .noOfAnimals
+      (await jsonOf(requests[0])).notification.commodity.commodityComplement[0]
+        .species[0].noOfAnimals
     ).toBe('5')
     expect(saved.fulfilment).toEqual(snapshot)
   })
@@ -206,6 +210,29 @@ describe('real records adapter — fulfilment writes', () => {
     ).rejects.toMatchObject({
       name: 'BackendRequestError',
       status: 500
+    })
+  })
+
+  it('Should include actor on the notification PUT when provided', async () => {
+    const snapshot = assembleFulfilments({ countryOfOrigin: 'FR' })
+    const encoded = encodeEvaluatorFulfilments(snapshot)
+    fetchMocker.mockResponse(
+      JSON.stringify(canonical({ fulfilments: encoded })),
+      { status: 200 }
+    )
+
+    await records.replaceFulfilment(journeyId, snapshot, {
+      known: { journeyId, status: DRAFT },
+      actor
+    })
+
+    expect(await jsonOf(fetchMocker.requests()[0])).toEqual({
+      notification: {
+        referenceNumber: journeyId,
+        ...fulfilmentToNotification(snapshot, journeyId),
+        fulfilments: encoded
+      },
+      actor
     })
   })
 
@@ -342,7 +369,8 @@ describe('real records adapter — lifecycle and list', () => {
     await records.list({
       page: 1,
       sort: 'createdAt,asc',
-      referenceNumber: journeyId
+      referenceNumber: journeyId,
+      organisationId: '5900002'
     })
 
     const [request] = fetchMocker.requests()
@@ -350,5 +378,26 @@ describe('real records adapter — lifecycle and list', () => {
       `${notificationsUrl}?page=1&sort=createdAt,asc&referenceNumber=${journeyId}`
     )
     expect(request.method).toBe('GET')
+  })
+
+  it("Should not send the reader's organisation to the backend", async () => {
+    // The backend stores parties as they are and hands them back the same way.
+    // The organisation is the address book's business, and the address book is
+    // called from here — sending it on the notifications read would be handing
+    // the backend an identity it has nothing to do with.
+    fetchMocker.mockResponse(
+      JSON.stringify({
+        page: 1,
+        size: 20,
+        totalElements: 0,
+        totalPages: 0,
+        content: []
+      })
+    )
+
+    await records.list({ page: 1, organisationId: '5900002' })
+
+    const [request] = fetchMocker.requests()
+    expect(request.headers.get('Trade-Imports-Organisation-Id')).toBeNull()
   })
 })

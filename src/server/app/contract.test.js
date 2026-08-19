@@ -298,20 +298,24 @@ describe('controller <-> model commit contract', () => {
       },
       {
         slug: 'destinations/select',
-        id: 'tech-imports',
+        id: 'alpine-dairy',
         commits: 'placeOfDestination'
       },
       {
         slug: 'place-of-origin/select',
-        id: 'origin-farm',
+        id: 'nordvik-seafood',
         commits: 'placeOfOrigin'
       },
       {
         slug: 'consignees/select',
-        id: 'british-livestock',
+        id: 'irish-beef-traders-ltd',
         commits: 'consignee'
       },
-      { slug: 'importers/select', id: 'import-co-uk', commits: 'importer' }
+      {
+        slug: 'importers/select',
+        id: 'iberian-swine-sa',
+        commits: 'importer'
+      }
     ]
     const committed = []
     for (const { slug, id, commits } of spokes) {

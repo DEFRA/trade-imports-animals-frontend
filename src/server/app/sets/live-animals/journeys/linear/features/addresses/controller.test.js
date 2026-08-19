@@ -21,6 +21,8 @@ const cphRowOf = (rows) =>
   rows.find((row) =>
     row.key.html.includes('County Parish Holding number (CPH)')
   )
+const rowTitled = (rows, title) =>
+  rows.find((row) => row.key.html.includes(title))
 
 describe('GET addresses — conditional CPH hub row', () => {
   beforeAll(() => {
@@ -62,5 +64,40 @@ describe('GET addresses — conditional CPH hub row', () => {
     const cphRow = cphRowOf(rows)
     expect(cphRow.value.text).toBe('123456789')
     expect(cphRow.actions.items[0].text).toBe('Change')
+  })
+})
+
+describe('GET addresses — resolveParties hub rows', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should render the address book record name for a referenced party', async () => {
+    const result = await rowsFor({
+      consignor: { addressId: 'astra-rosales' }
+    })
+    const row = rowTitled(result.view.context.rows, 'Consignor or exporter')
+
+    expect(row.value.text).toBe('Astra Rosales')
+    expect(row.actions.items[0]).toMatchObject({
+      href: pagePath(result.journeyId, 'consignors/select'),
+      text: 'Change'
+    })
+  })
+
+  it('Should render Not added yet with an Add link when the referenced record is gone', async () => {
+    const result = await rowsFor({
+      consignor: { addressId: 'gone' }
+    })
+    const row = rowTitled(result.view.context.rows, 'Consignor or exporter')
+
+    expect(row.value.text).toBe('Not added yet')
+    expect(row.actions.items[0]).toMatchObject({
+      href: pagePath(result.journeyId, 'consignors/select'),
+      text: 'Add'
+    })
   })
 })

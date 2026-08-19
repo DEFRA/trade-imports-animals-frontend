@@ -9,6 +9,8 @@ import { COUNTRY_LABELS } from '../src/server/app/services/countries/stub.js'
 import { PORTS } from '../src/server/app/services/ports/stub.js'
 import { copy as transportCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js'
 
+export { signIn } from './sign-in.js'
+
 export const BASE = ''
 
 export const journeyIdFromPage = (page) => {

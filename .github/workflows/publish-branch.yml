@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   publish:
-    uses: DEFRA/trade-imports-animals-workspace/.github/workflows/publish-branch.yml@main
+    uses: DEFRA/trade-imports-workspace/.github/workflows/publish-branch.yml@main
     with:
       image-name: trade-imports-animals-frontend
     secrets: inherit
