@@ -1,5 +1,3 @@
-import { pagePath } from '../../../../../../../../shared/paths.js'
-import { CREATE_ADDRESS_SLUG } from '../../create-address/create-address.controller.js'
 import { addressText, detailLines } from './address-lines.js'
 import { pagination } from './pagination/index.js'
 
@@ -16,10 +14,6 @@ export const pickerViewModel = (
     page: found.page,
     error,
     selected,
-    createAddressHref: pagePath(
-      journey.journeyId,
-      `${CREATE_ADDRESS_SLUG}?for=${party.id}`
-    ),
     resultsCaption: copy.resultsCaption(found.results.length, found.total),
     rows: found.results.map((record, index) => ({
       id: record.id,

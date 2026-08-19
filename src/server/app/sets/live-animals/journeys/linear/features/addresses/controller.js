@@ -6,6 +6,7 @@ import { copyFor } from '../../../../../../shared/copy.js'
 import { isCphApplicable } from '../cph-number/controller.js'
 import { addressesPage as page } from './page.js'
 import { PARTIES } from './parties.js'
+import { resolveParties } from './resolve-parties.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 
@@ -44,8 +45,8 @@ const hubRow = (journeyId, { title, hint, slug }, valueText) => ({
   }
 })
 
-const rows = (journeyId, answers) => [
-  ...PARTIES.map((party) => hubRow(journeyId, party, answers[party.id]?.name)),
+const rows = (journeyId, answers, parties) => [
+  ...PARTIES.map((party) => hubRow(journeyId, party, parties[party.id]?.name)),
   ...(isCphApplicable(answers)
     ? [hubRow(journeyId, CPH_ROW, answers.countyParishHoldingCph)]
     : [])
@@ -53,13 +54,16 @@ const rows = (journeyId, answers) => [
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
+  // A referenced party shows the address book's current details, so a colleague's
+  // edit reaches this draft with no action from the trader (AC4).
+  const parties = await resolveParties(request, answers)
   return h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
       journey
     }),
     copy,
-    rows: rows(journey.journeyId, answers)
+    rows: rows(journey.journeyId, answers, parties)
   })
 }
 

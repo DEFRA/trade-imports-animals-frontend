@@ -906,7 +906,7 @@
         "address": {
           "addressLine1": "1 Farm Lane",
           "addressLine2": "County Clare",
-          "country": "Ireland"
+          "countryCode": "IE"
         }
       },
       "consignor": {
@@ -947,8 +947,7 @@
         "address": {
           "addressLine1": "Woodham Lane",
           "addressLine2": "New Haw",
-          "addressLine3": "Addlestone, KT15 3NB",
-          "country": "United Kingdom"
+          "countryCode": "GB"
         }
       },
       "cphNumber": "12/345/6789",

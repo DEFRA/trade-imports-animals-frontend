@@ -5,14 +5,19 @@ import { partyRow } from '../../rows/party-row.js'
 
 const copy = copyFor({ en, cy })
 
-export const contactAddressCard = (journeyId, answers, readOnly) => ({
+export const contactAddressCard = (
+  journeyId,
+  answers,
+  readOnly,
+  parties = answers
+) => ({
   title: copy.cards.contactAddress,
   rows: [
     partyRow(
       journeyId,
       readOnly,
       copy.rows.address,
-      answers.contactAddress,
+      parties.contactAddress,
       'contactAddress',
       copy.hidden.contactAddress
     )

@@ -6,15 +6,20 @@ import { rolesAndAddressesCard } from '../cards/addresses/roles-and-addresses.js
 
 const copy = copyFor({ en, cy })
 
-export const addressesSection = (journeyId, answers, readOnly) => {
+export const addressesSection = (
+  journeyId,
+  answers,
+  readOnly,
+  parties = answers
+) => {
   return {
     heading: copy.sections.addresses,
     groups: [
       {
         heading: null,
         cards: [
-          rolesAndAddressesCard(journeyId, answers, readOnly),
-          contactAddressCard(journeyId, answers, readOnly)
+          rolesAndAddressesCard(journeyId, answers, readOnly, parties),
+          contactAddressCard(journeyId, answers, readOnly, parties)
         ]
       }
     ]

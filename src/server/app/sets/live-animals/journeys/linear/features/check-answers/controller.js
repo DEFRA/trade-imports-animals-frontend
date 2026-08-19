@@ -15,6 +15,7 @@ import { copy as cy } from './copy/copy.cy.js'
 import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import { buildSections } from './view-model/index.js'
+import { resolveParties } from '../addresses/resolve-parties.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 
@@ -31,7 +32,8 @@ const renderCya = (
     readOnly,
     amendmentCancelled,
     recoverableError = false,
-    copyIdempotencyKey = null
+    copyIdempotencyKey = null,
+    parties = answers
   }
 ) =>
   h.view(view, {
@@ -45,7 +47,8 @@ const renderCya = (
       scope,
       evaluation,
       journey.journeyId,
-      readOnly
+      readOnly,
+      parties
     ),
     readOnly,
     amendmentCancelled,
@@ -83,7 +86,8 @@ export const renderNotificationView = async (
     readOnly,
     amendmentCancelled: readOnly && request.query.cancelled === '1',
     recoverableError,
-    copyIdempotencyKey: readOnly ? copyIdempotencyKey : null
+    copyIdempotencyKey: readOnly ? copyIdempotencyKey : null,
+    parties: await resolveParties(request, answers)
   })
 }
 

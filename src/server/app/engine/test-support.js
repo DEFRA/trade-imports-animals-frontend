@@ -1,10 +1,13 @@
 import { store } from './store.js'
 import { SESSION_COOKIES } from './journey.js'
 
+// Mirrors what plugins/auth.js puts on credentials after sign-in: the raw
+// `currentRelationshipId` claim, plus the `organisationId` it is mapped to.
 export const authenticatedCredentials = Object.freeze({
   contactId: 2100010101,
   name: 'Andrew Farmer',
-  currentRelationshipId: '5900001'
+  currentRelationshipId: '5900001',
+  organisationId: '5900001'
 })
 
 export const authenticatedActor = Object.freeze({

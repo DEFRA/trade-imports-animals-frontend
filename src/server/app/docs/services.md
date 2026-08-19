@@ -5,9 +5,14 @@ imports them directly; L1 injects adapters into engine ports.
 
 ## Run mode
 
-[`src/server/app/services/mode.js`](../services/mode.js) selects stub or real mode
-from `LIVE_ANIMALS_MODE`. Service barrels use that common decision where both
-implementations exist.
+`isStubMode()` in
+[`src/server/common/services/mode.js`](../../common/services/mode.js) selects stub
+or real. Service barrels ask it directly where both implementations exist.
+
+It is one service-wide switch, `STUB_MODE`, which also decides how a trader signs
+in — a stub run serves stub data and signs its own session, a real run uses the
+real services and Defra ID. The module reads the switch through config and refuses
+it in production.
 
 ## Reference services
 

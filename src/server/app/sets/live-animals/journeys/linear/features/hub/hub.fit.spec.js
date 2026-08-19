@@ -1,10 +1,10 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import {
   answerCountryOfOrigin,
   completeAnswerSections,
   selectSpecies,
+  signIn,
   startNotification
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
@@ -47,6 +47,10 @@ const openHubWithCommodityTotals = async (page) => {
 }
 
 test.describe('hub feature', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('renders navigation copy and the task statuses of a newly entered journey', async ({
     page
   }) => {
@@ -95,6 +99,10 @@ test.describe('hub feature', () => {
 })
 
 test.describe('hub feature — review readiness', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('completed answers unlock Check and submit and open the review', async ({
     page
   }) => {
@@ -125,6 +133,10 @@ test.describe('hub feature — review readiness', () => {
 })
 
 test.describe('hub feature — commodity totals', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('each box reads as the number, then the label, then the caption', async ({
     page
   }) => {

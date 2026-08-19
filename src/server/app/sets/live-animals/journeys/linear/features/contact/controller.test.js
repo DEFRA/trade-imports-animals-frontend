@@ -8,36 +8,21 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  postHandlerEndingWith,
   postHandlerOf
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
-import * as addressBook from '../../../../../../services/address-book/index.js'
-import { pagePath } from '../../../../../../shared/paths.js'
+import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 
 import * as contact from './controller.js'
-import * as createAddress from '../addresses/create-address/create-address.controller.js'
 
 const get = contact.routes.find((route) => route.method === 'GET').handler
 const post = postHandlerOf(contact)
-const postCreate = postHandlerEndingWith(createAddress, 'addresses/create')
 
-const ROUND_TRIP_CONTACT_NAME = 'Round-trip Contact Ltd'
+const CONTACT = STUB_BOOK.find(
+  (record) => record.name === 'Animal and Plant Health Agency'
+)
 
-const contactPayload = {
-  for: 'contactAddress',
-  nameOrOrganisationName: ROUND_TRIP_CONTACT_NAME,
-  addressLine1: '12 Contact Street',
-  addressLine2: '',
-  townOrCity: 'Bristol',
-  county: '',
-  postalOrZipCode: 'BS1 1AA',
-  country: 'United Kingdom',
-  telephoneNumber: '0117 555 0101',
-  emailAddress: 'contact@example.co.uk'
-}
-
-describe('GET contact — select or create an address', () => {
+describe('GET contact — select an address from the book', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
@@ -45,43 +30,32 @@ describe('GET contact — select or create an address', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should render the create-address link for a contact address', async () => {
+  it('Should offer no way to add an address — the book is read-only here', async () => {
     const result = await driveHandler(get)
 
-    expect(result.view.context.createAddressHref).toBe(
-      pagePath(result.journeyId, 'addresses/create?for=contactAddress')
-    )
-    expect(result.view.context.copy.addNewAddress).toBe(
-      'Add a new contact address'
-    )
+    expect(result.view.context.createAddressHref).toBeUndefined()
+    expect(result.view.context.copy.addNewAddress).toBeUndefined()
   })
 
-  it('Should list and pre-select a newly created contact, then accept it as a valid selection', async () => {
-    const createdResult = await driveHandler(postCreate, {
-      payload: contactPayload
-    })
-    const created = addressBook
-      .parties('contact')
-      .find((option) => option.name === contactPayload.nameOrOrganisationName)
-
-    const getResult = await driveHandler(get, {
-      seed: createdResult.after
-    })
-    const option = getResult.view.context.contactOptions.find(
-      (candidate) => candidate.value === created.id
-    )
-
-    expect(option).toMatchObject({
-      text: ROUND_TRIP_CONTACT_NAME,
-      checked: true
-    })
-
+  it('Should offer the book, then pre-select and commit the address that was picked', async () => {
     const postResult = await driveHandler(post, {
-      payload: { contactAddress: created.id }
+      payload: { contactAddress: CONTACT.id }
     })
     expect(postResult.view).toBeUndefined()
-    expect(postResult.after.contactAddress.name).toBe(ROUND_TRIP_CONTACT_NAME)
-    expect(postResult.after.contactAddress.address.townOrCity).toBe('Bristol')
+    // The contact is held as a copy — a per-notification field, reset on
+    // copy, so it keeps what was picked. The id rides along only so the page can
+    // pre-select the row again.
+    expect(postResult.after.contactAddress).toEqual({
+      addressId: CONTACT.id,
+      name: CONTACT.name,
+      address: expect.any(Object)
+    })
+
+    const getResult = await driveHandler(get, { seed: postResult.after })
+    const option = getResult.view.context.contactOptions.find(
+      (candidate) => candidate.value === CONTACT.id
+    )
+    expect(option).toMatchObject({ text: CONTACT.name, checked: true })
   })
 })
 
@@ -100,5 +74,30 @@ describe('POST contact — invalid payload', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.contactAddress).toBeDefined()
     expect(result.after).toEqual(result.before)
+  })
+
+  it('Should leave the page without committing when no contact is selected', async () => {
+    const result = await driveHandler(post, {
+      payload: {}
+    })
+    expect(result.view).toBeUndefined()
+    expect(result.after.contactAddress).toBeUndefined()
+  })
+
+  it('Should treat a dangling contact addressId as unselected on GET and reject it on POST', async () => {
+    const seed = { contactAddress: { addressId: 'gone' } }
+
+    const getResult = await driveHandler(get, { seed })
+    expect(
+      getResult.view.context.contactOptions.every((option) => !option.checked)
+    ).toBe(true)
+
+    const postResult = await driveHandler(post, {
+      seed,
+      payload: { contactAddress: 'gone' }
+    })
+    expect(postResult.response.statusCode).toBe(400)
+    expect(postResult.view.context.errors.contactAddress).toBeDefined()
+    expect(postResult.after).toEqual(postResult.before)
   })
 })

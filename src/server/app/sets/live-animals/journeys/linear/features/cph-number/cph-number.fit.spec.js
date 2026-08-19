@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test'
 
 import { answerOriginEntry } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
+import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
 const SUBMIT_BUTTON = 'form button[type="submit"]'
 
@@ -28,6 +29,7 @@ const startAtCphNumber = async (page) => {
 
 test.describe('cph-number feature', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtCphNumber(page)
   })
 
@@ -75,6 +77,7 @@ test.describe('cph-number feature', () => {
 
 test.describe('cph-number validation', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtCphNumber(page)
   })
 

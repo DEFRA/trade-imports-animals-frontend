@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const originalMode = process.env.LIVE_ANIMALS_MODE
+const originalMode = process.env.STUB_MODE
 
 const okResponse = (body) => ({ ok: true, json: async () => body })
 
@@ -20,9 +20,9 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals()
   if (originalMode === undefined) {
-    delete process.env.LIVE_ANIMALS_MODE
+    delete process.env.STUB_MODE
   } else {
-    process.env.LIVE_ANIMALS_MODE = originalMode
+    process.env.STUB_MODE = originalMode
   }
 })
 
@@ -70,7 +70,7 @@ describe('ports client', () => {
 
 describe('countries service — stub mode', () => {
   it('Should serve stub data through the accessors without priming', async () => {
-    process.env.LIVE_ANIMALS_MODE = 'stub'
+    process.env.STUB_MODE = 'true'
     const countries = await import('./countries/index.js')
     expect(countries.originLabel('AT')).toBe('Austria')
     expect(countries.originCountries()).toContainEqual({
@@ -80,7 +80,7 @@ describe('countries service — stub mode', () => {
   })
 
   it('Should treat prime() as a no-op in stub mode (no fetch, stub retained)', async () => {
-    process.env.LIVE_ANIMALS_MODE = 'stub'
+    process.env.STUB_MODE = 'true'
     stubFetch(async () => okResponse([{ code: 'ZZ', name: 'Zedland' }]))
     const countries = await import('./countries/index.js')
     await countries.prime()
@@ -92,7 +92,7 @@ describe('countries service — stub mode', () => {
 
 describe('countries service — real mode', () => {
   it('Should replace the cache on prime() so sync accessors serve fetched data', async () => {
-    process.env.LIVE_ANIMALS_MODE = 'real'
+    process.env.STUB_MODE = 'false'
     stubFetch(okOnlyForBlock('GBNAG_SPS_EX', [{ code: 'ZZ', name: 'Zedland' }]))
     const countries = await import('./countries/index.js')
 
@@ -110,7 +110,7 @@ describe('countries service — real mode', () => {
 
 describe('ports service — stub mode', () => {
   it('Should serve stub data through list() without priming', async () => {
-    process.env.LIVE_ANIMALS_MODE = 'stub'
+    process.env.STUB_MODE = 'true'
     const ports = await import('./ports/index.js')
     expect(ports.list()).toContainEqual({
       code: 'GB ABD',
@@ -121,7 +121,7 @@ describe('ports service — stub mode', () => {
 
 describe('ports service — real mode', () => {
   it('Should replace the cache on prime() so list() serves fetched ports', async () => {
-    process.env.LIVE_ANIMALS_MODE = 'real'
+    process.env.STUB_MODE = 'false'
     stubFetch(async () => okResponse([{ code: 'GB ZZZ', name: 'Zed Port' }]))
     const ports = await import('./ports/index.js')
 
@@ -131,18 +131,19 @@ describe('ports service — real mode', () => {
   })
 })
 
+// isStubMode's own unit test mocks config; these two run the real convict
+// schema, so they are what proves the STUB_MODE environment variable actually
+// reaches the services above.
 describe('mode resolution', () => {
-  it('Should default to real mode when the flag is unset', async () => {
-    delete process.env.LIVE_ANIMALS_MODE
-    const { mode, isRealMode } = await import('./mode.js')
-    expect(mode()).toBe('real')
-    expect(isRealMode()).toBe(true)
+  it('Should default to real when the flag is unset', async () => {
+    delete process.env.STUB_MODE
+    const { isStubMode } = await import('../../common/services/mode.js')
+    expect(isStubMode()).toBe(false)
   })
 
-  it('Should select stub mode when the flag is stub', async () => {
-    process.env.LIVE_ANIMALS_MODE = 'stub'
-    const { mode, isRealMode } = await import('./mode.js')
-    expect(mode()).toBe('stub')
-    expect(isRealMode()).toBe(false)
+  it('Should select stub when the flag is set', async () => {
+    process.env.STUB_MODE = 'true'
+    const { isStubMode } = await import('../../common/services/mode.js')
+    expect(isStubMode()).toBe(true)
   })
 })

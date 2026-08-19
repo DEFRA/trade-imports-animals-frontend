@@ -7,6 +7,7 @@ import puppeteer from 'puppeteer'
 import signIn from '../../tests/lighthouse/auth-setup.cjs'
 import { auditUrls, reportNames, TARGETS_FILE } from './audit-targets.js'
 import { createJourneyClient } from './journey-client.js'
+import { ensureAddressBookHasAnAddress } from './seed-address-book.js'
 import {
   createNotification,
   fillNotification,
@@ -73,6 +74,7 @@ const write = (payload) => {
   writeFileSync(TARGETS_FILE, `${JSON.stringify(payload, null, 2)}\n`)
 }
 
+await ensureAddressBookHasAnAddress()
 const journeyIds = await seedNotifications(await signedInCookies())
 const urls = auditUrls(origin, journeyIds)
 await assertUrlsRenderTheirOwnPage(urls, await signedInCookies())

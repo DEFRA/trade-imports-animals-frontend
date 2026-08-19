@@ -1,9 +1,9 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import {
   answerCountryOfOrigin,
   selectSpecies,
+  signIn,
   startNotification
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
@@ -218,6 +218,10 @@ const addressFormatValidations = [
 ]
 
 test.describe('animal identification', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('shows the identifier fields that apply to each commodity', async ({
     page
   }) => {
@@ -253,6 +257,10 @@ test.describe('animal identification', () => {
 })
 
 test.describe('animal identification identifier validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('validation: an empty record links to and focuses the first identifier', async ({
     page
   }) => {
@@ -287,6 +295,10 @@ test.describe('animal identification identifier validation', () => {
 })
 
 test.describe('animal identification address validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   for (const [name, field] of requiredAddressValidations) {
     test(`permanent address validation: empty ${name} links to and focuses the preserved field`, async ({
       page
@@ -350,6 +362,10 @@ test.describe('animal identification address validation', () => {
 })
 
 test.describe('animal identification records', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('adds a complete record and renders its identifier and permanent-address summary', async ({
     page
   }) => {

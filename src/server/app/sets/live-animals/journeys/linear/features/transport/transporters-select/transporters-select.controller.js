@@ -9,7 +9,7 @@ import {
 } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
-import * as addressBook from '../../../../../../../services/address-book/index.js'
+import * as commercialTransporters from '../../../../../../../services/commercial-transporters/index.js'
 import { transportersSelectPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
@@ -22,7 +22,7 @@ const copy = copyFor({ en, cy }).transportersSelect
 const fields = compose(
   oneOf(
     'commercialTransporter',
-    addressBook.parties('commercialTransporter').map((option) => option.id),
+    commercialTransporters.parties().map((option) => option.id),
     copy.errors.transporterRequired
   )
 )
@@ -52,19 +52,17 @@ const render = (
     copy,
     errors,
     errorSummary: kit.errorSummary(errors),
-    transporterOptions: addressBook
-      .parties('commercialTransporter')
-      .map((option) => ({
-        value: option.id,
-        text: option.name,
-        hint: {
-          text: copy.optionHint(
-            addressSummary(option.address),
-            option.approvalNumber
-          )
-        },
-        checked: option.name === values.selectedName
-      }))
+    transporterOptions: commercialTransporters.parties().map((option) => ({
+      value: option.id,
+      text: option.name,
+      hint: {
+        text: copy.optionHint(
+          addressSummary(option.address),
+          option.approvalNumber
+        )
+      },
+      checked: option.name === values.selectedName
+    }))
   })
 
 const get = async (request, h) => {
@@ -95,10 +93,7 @@ const post = async (request, h) => {
     return render(h, journey, {}, { errors })
   }
 
-  const chosen = addressBook.party(
-    'commercialTransporter',
-    payload.commercialTransporter
-  )
+  const chosen = commercialTransporters.party(payload.commercialTransporter)
   let committed
   const { failure } = await kit.recoverableSave(
     async () => {

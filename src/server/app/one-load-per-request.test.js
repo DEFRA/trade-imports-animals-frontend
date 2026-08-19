@@ -69,8 +69,10 @@ describe('one load per request — real records adapter GET count', () => {
           .clone()
           .text()
           .then((body) =>
+            // The backend answers with the saved Notification, not an echo of the
+            // request, so unwrap the SaveNotificationDto envelope.
             JSON.stringify({
-              ...JSON.parse(body),
+              ...JSON.parse(body).notification,
               status: 'DRAFT',
               created: '2026-07-23T09:00:00',
               submittedAt: null

@@ -3,6 +3,7 @@ import { BASE } from '../shared/paths.js'
 import { session, SESSION_COOKIES } from './persistence/session.js'
 import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
 import { buildActor } from '../../common/helpers/actor-helpers.js'
+import { organisationIdOf } from '../../common/helpers/organisation-id.js'
 
 export { SESSION_COOKIES } from './persistence/session.js'
 
@@ -76,8 +77,10 @@ export const replaceJourneyFulfilment = async (
 ) => {
   const cached = memoRead(request)
   const known = cached?.journeyId === journeyId ? cached : undefined
+  const actor = buildActor(request.auth?.credentials)
   const saved = await records.replaceFulfilment(journeyId, fulfilment, {
-    known
+    known,
+    actor
   })
   const next = known
     ? { ...known, fulfilment: structuredClone(fulfilment) }
@@ -91,7 +94,29 @@ export const listKnownJourneys = async (
   { page, sort, referenceNumber } = {}
 ) => {
   const journeyIds = await session.knownJourneyIds(request)
-  return records.list({ journeyIds, page, sort, referenceNumber })
+  // Each row's referenced parties are resolved against the address book while
+  // the list is marshalled. The book scopes on the organisation and has no
+  // authentication of its own, so the read carries the reader's session
+  // organisation with it.
+  const organisationId = organisationIdOf(request)
+
+  // Not the unauthenticated case: `session` is the default strategy, so a
+  // signed-out request is redirected before it reaches this handler. This is
+  // reached when AUTH_ENABLED=false leaves the auth plugin unregistered, or
+  // when a signed-in session carries no organisation. Either way there is no
+  // book to resolve names against, so answer empty rather than start a read
+  // that cannot finish.
+  if (!organisationId) {
+    return { rows: [], page: 1, size: 0, totalElements: 0, totalPages: 0 }
+  }
+
+  return records.list({
+    journeyIds,
+    page,
+    sort,
+    referenceNumber,
+    organisationId
+  })
 }
 
 export const isKnownJourney = async (request, journeyId) =>

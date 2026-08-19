@@ -4,6 +4,7 @@ import { expect, test } from '@playwright/test'
 import {
   answerOriginEntry,
   completeAnswerSections,
+  signIn,
   startNotification
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
@@ -25,6 +26,7 @@ const startAtDeclaration = async (page) => {
 
 test.describe('declaration feature', () => {
   test.beforeEach(async ({ page }) => {
+    await signIn(page)
     await startAtDeclaration(page)
   })
 
@@ -105,6 +107,10 @@ test.describe('declaration feature', () => {
 })
 
 test.describe('declaration submission', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test.describe.configure({ timeout: 90000 })
 
   test.beforeEach(async ({ page }) => {

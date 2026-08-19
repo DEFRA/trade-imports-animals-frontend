@@ -8,13 +8,14 @@ export const buildSections = (
   scope,
   evaluation,
   journeyId,
-  readOnly = false
+  readOnly = false,
+  parties = answers
 ) => {
   const documents = documentsSection(journeyId, answers, evaluation, readOnly)
   return [
     aboutConsignmentSection(journeyId, answers, scope, evaluation, readOnly),
     movementSection(journeyId, answers, scope, readOnly),
-    addressesSection(journeyId, answers, readOnly),
+    addressesSection(journeyId, answers, readOnly, parties),
     ...(documents ? [documents] : [])
   ]
 }

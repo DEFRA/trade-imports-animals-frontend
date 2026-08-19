@@ -1,9 +1,9 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-
 import {
   answerCountryOfOrigin,
   journeyIdFromPage,
+  signIn,
   startNotification
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
@@ -26,6 +26,10 @@ const copyNotification = (page, sourceReference) =>
     .click()
 
 test.describe('notification-actions feature', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
   test('copy creates a separate draft notification', async ({ page }) => {
     const sourceReference = await createAnsweredNotification(page)
 

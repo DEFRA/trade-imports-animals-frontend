@@ -13,7 +13,6 @@ import * as additionalDetails from './additional-details/controller.js'
 import * as documents from './documents/controller.js'
 import * as addresses from './addresses/controller.js'
 import * as partyPicker from './addresses/party-picker/party-picker.controller.js'
-import * as createAddress from './addresses/create-address/create-address.controller.js'
 import * as cphNumber from './cph-number/controller.js'
 import * as portOfEntry from './transport/port-of-entry/port-of-entry.controller.js'
 import * as transitCountries from './transport/transit-countries/transit-countries.controller.js'
@@ -68,7 +67,6 @@ export const allRoutes = [
   ...documents.routes,
   ...addresses.routes,
   ...partyPicker.routes,
-  ...createAddress.routes,
   ...cphNumber.routes,
   ...portOfEntry.routes,
   ...transitCountries.routes,
