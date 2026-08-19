@@ -4,6 +4,7 @@ import {
   copyJourney,
   currentJourney,
   amendJourney,
+  replaceJourneyFulfilment,
   SESSION_COOKIES,
   softDeleteJourney,
   startJourney
@@ -208,6 +209,31 @@ describe('#currentJourney', () => {
       )
     ).toBeUndefined()
     expect(copy).toHaveBeenCalledTimes(1)
+  })
+
+  it('Should carry the freshly-saved concurrencyToken into the memo so a subsequent save in the same request does not send a stale one', async () => {
+    const journeyId = 'GBN-AG-26-MULTI'
+    const tokensSeen = []
+    const replaceFulfilment = vi.fn(async (id, fulfilment, { known }) => {
+      tokensSeen.push(known?.concurrencyToken)
+      return {
+        journeyId: id,
+        status: 'draft',
+        concurrencyToken: (known?.concurrencyToken ?? 0) + 1,
+        fulfilment
+      }
+    })
+    configureRecords({ ...recordsStub, replaceFulfilment })
+    const request = requestFor(journeyId, [journeyId])
+    request.payload = { concurrencyToken: '4' }
+
+    await replaceJourneyFulfilment(request, journeyId, { foo: 'first' })
+    await replaceJourneyFulfilment(request, journeyId, { foo: 'second' })
+
+    // First save reads the token from the payload (4); second save reads it
+    // from the memo, which must now carry the freshly-saved value (5), not
+    // the pre-save one (4).
+    expect(tokensSeen).toEqual([4, 5])
   })
 
   it('Should soft-delete only a known journey', async () => {

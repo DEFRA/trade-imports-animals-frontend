@@ -89,9 +89,11 @@ export const replaceJourneyFulfilment = async (
   const saved = await records.replaceFulfilment(journeyId, fulfilment, {
     known
   })
-  const next = known
-    ? { ...known, fulfilment: structuredClone(fulfilment) }
-    : saved
+  // The backend increments concurrencyToken on every save, so `saved` carries
+  // the fresh token; using `known` here would memoise the pre-save value and
+  // trip a self-inflicted 409 STALE_CONCURRENCY_TOKEN on any subsequent save
+  // in the same request (e.g. consignment-details saves once per line).
+  const next = { ...saved, fulfilment: structuredClone(fulfilment) }
   memoWrite(request, next)
   return next
 }
