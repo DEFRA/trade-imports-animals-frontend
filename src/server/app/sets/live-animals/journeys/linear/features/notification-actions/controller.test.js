@@ -124,6 +124,25 @@ describe('copy notification action', () => {
     expect(response.redirect).toBe('/?staleToken=1')
   })
 
+  it('Should propagate a non-STALE_CONCURRENCY_TOKEN error thrown from copy', async () => {
+    configureRecords({
+      ...recordsStub,
+      copy: async () => {
+        throw new TypeError('programmer error')
+      }
+    })
+    const source = await records.create()
+
+    await expect(
+      copyPost(
+        journeyRequest(source.journeyId, {
+          payload: { concurrencyToken: '0', copyOrigin: 'dashboard' }
+        }),
+        stubH()
+      )
+    ).rejects.toThrow('programmer error')
+  })
+
   it('Should redirect an unknown source to the dashboard without copying', async () => {
     const response = await copyPost(
       journeyRequest('GBN-AG-26-UNKNOWN', {
