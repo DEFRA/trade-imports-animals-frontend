@@ -51,7 +51,7 @@ describe('context and cache', () => {
           serviceName: 'Animals',
           serviceUrl: '/',
           authEnabled: true,
-          staleTokenBanner: false,
+          staleActionRejected: false,
           userSession: { isAuthenticated: false }
         })
       })
@@ -131,7 +131,7 @@ describe('context and cache', () => {
           serviceName: 'Animals',
           serviceUrl: '/',
           authEnabled: true,
-          staleTokenBanner: false,
+          staleActionRejected: false,
           userSession: { isAuthenticated: false }
         })
       })

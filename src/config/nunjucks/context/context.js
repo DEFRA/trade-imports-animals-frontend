@@ -33,11 +33,12 @@ async function context(request) {
     serviceName: config.get('serviceName'),
     serviceUrl: '/',
     authEnabled: config.get('auth.enabled'),
-    // Set by kit.js's staleTokenRedirect wrapper — the POST hit a 409
-    // STALE_CONCURRENCY_TOKEN, the browser was redirected back to this GET
-    // with `?staleToken=1`, and the shared layout renders a notification
-    // banner so the user knows their in-flight edit was discarded.
-    staleTokenBanner: request.query?.staleToken === '1',
+    // Set by kit.js's staleTokenRedirect wrapper (and the copy controller) —
+    // the POST hit a 409 STALE_CONCURRENCY_TOKEN, the browser was redirected
+    // back to a GET with `?staleToken=1`, and the shared layout renders a
+    // notification banner so the user knows the action they took was
+    // rejected because their view of the notification was stale.
+    staleActionRejected: request.query?.staleToken === '1',
     breadcrumbs: [],
     userSession: authData
       ? {
