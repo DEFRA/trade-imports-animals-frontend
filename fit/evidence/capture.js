@@ -16,22 +16,42 @@ export const outputRoot = () =>
     'git/defra/trade-imports-workspace/workareas/shared/dr21-parity/evidence'
   )
 
-/**
- * The commit the application under test is at. Recorded per capture so a
- * picture can never be shown under a commit it is not of.
- *
- * @returns {string} Full forty-character sha, or 'unknown'
- */
-export const appSha = () => {
+// An empty answer is treated as no answer. `git log` exits zero and prints
+// nothing when a pathspec matches no commit, and a blank sha would name the
+// capture directory `frontend@` without anything failing.
+const git = (args) => {
   try {
-    return execFileSync('git', ['rev-parse', 'HEAD'], {
-      encoding: 'utf8',
-      cwd: dirname(new URL(import.meta.url).pathname)
-    }).trim()
+    return (
+      execFileSync('git', args, {
+        encoding: 'utf8',
+        cwd: dirname(new URL(import.meta.url).pathname)
+      }).trim() || 'unknown'
+    )
   } catch {
     return 'unknown'
   }
 }
+
+/**
+ * The commit the application under test is at. Recorded per capture so a
+ * picture can never be shown under a commit it is not of.
+ *
+ * This is the last commit that touched `src`, not HEAD. The capture directory
+ * is named after it, so naming it after HEAD would orphan every picture each
+ * time this harness itself was edited — and the pixels would be identical.
+ * A harness change that does move a pixel shows up where it should: as drift
+ * on the file, which the report already reads.
+ *
+ * @returns {string} Full forty-character sha, or 'unknown'
+ */
+export const appSha = () => git(['log', '-1', '--format=%H', '--', ':/src'])
+
+/**
+ * The commit the capture code itself is at.
+ *
+ * @returns {string} Full forty-character sha, or 'unknown'
+ */
+export const harnessSha = () => git(['rev-parse', 'HEAD'])
 
 const captureDir = () => join(outputRoot(), `frontend@${appSha().slice(0, 8)}`)
 
@@ -252,7 +272,7 @@ export const writeManifest = (rows) => {
       {
         side: 'frontend',
         appSha: appSha(),
-        harnessSha: appSha(),
+        harnessSha: harnessSha(),
         capturedOn: new Date().toISOString(),
         viewport: { width: 1280, height: 1200 },
         deviceScaleFactor: Number(process.env.FIT_CAPTURE_DSF ?? 2),
