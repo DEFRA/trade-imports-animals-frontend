@@ -12,6 +12,7 @@
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
     {{ saveActions(hubHref, { text: copy.continueButton }, sharedCopy.saveActions) }}
   </form>

@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import {
   breadcrumbs,
   hubPath,
@@ -32,7 +31,6 @@ const renderCya = (
     readOnly,
     amendmentCancelled,
     recoverableError = false,
-    copyIdempotencyKey = null,
     parties = answers
   }
 ) =>
@@ -41,6 +39,7 @@ const renderCya = (
     heading: copy.title,
     copy,
     sharedCopy,
+    concurrencyToken: journey.concurrencyToken,
     journeyStrip: journeyStrip(journey),
     sections: buildSections(
       answers,
@@ -53,13 +52,7 @@ const renderCya = (
     readOnly,
     amendmentCancelled,
     recoverableError,
-    copyAction:
-      readOnly && copyIdempotencyKey
-        ? {
-            href: pagePath(journey.journeyId, 'copy'),
-            idempotencyKey: copyIdempotencyKey
-          }
-        : null,
+    copyAction: readOnly ? { href: pagePath(journey.journeyId, 'copy') } : null,
     deleteHref:
       readOnly && journey.status === state.SUBMITTED
         ? pagePath(journey.journeyId, 'delete')
@@ -75,7 +68,7 @@ const renderCya = (
 export const renderNotificationView = async (
   request,
   h,
-  { recoverableError = false, copyIdempotencyKey = randomUUID() } = {}
+  { recoverableError = false } = {}
 ) => {
   const { journey, answers, scope, evaluation } = await state.get(request, h)
   const readOnly = journey.status === state.SUBMITTED
@@ -86,7 +79,6 @@ export const renderNotificationView = async (
     readOnly,
     amendmentCancelled: readOnly && request.query.cancelled === '1',
     recoverableError,
-    copyIdempotencyKey: readOnly ? copyIdempotencyKey : null,
     parties: await resolveParties(request, answers)
   })
 }

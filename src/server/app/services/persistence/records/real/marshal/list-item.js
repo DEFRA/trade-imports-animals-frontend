@@ -30,6 +30,7 @@ export const listItemMarshaller = (organisationId) => {
     status: mapStatus(notification.status),
     createdAt: notification.created ?? null,
     submittedAt: null,
+    concurrencyToken: notification.concurrencyToken ?? null,
     reference: notification.referenceNumber,
     commodity: notification.commodity ?? null,
     originCountryCode: notification.origin?.countryCode ?? null,

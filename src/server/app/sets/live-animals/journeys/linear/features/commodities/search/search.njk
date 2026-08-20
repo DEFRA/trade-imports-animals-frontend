@@ -15,6 +15,7 @@
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
     {% for group in commodityGroups %}
       {% set idPrefix = "species" if loop.first else "species-group-" + loop.index %}

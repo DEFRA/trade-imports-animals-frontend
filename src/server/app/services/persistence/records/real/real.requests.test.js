@@ -39,13 +39,15 @@ const canonical = ({
   referenceNumber = journeyId,
   fulfilments = [],
   status = 'DRAFT',
-  submittedAt = null
+  submittedAt = null,
+  concurrencyToken = 0
 } = {}) => ({
   referenceNumber,
   fulfilments,
   status,
   created: createdAt,
-  submittedAt
+  submittedAt,
+  concurrencyToken
 })
 
 const jsonOf = (request) => request.clone().json()
@@ -82,6 +84,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       status: DRAFT,
       createdAt,
       submittedAt: null,
+      concurrencyToken: 0,
       fulfilment: {}
     })
   })
@@ -170,7 +173,7 @@ describe('real records adapter — fulfilment writes', () => {
     )
 
     const saved = await records.replaceFulfilment(journeyId, snapshot, {
-      known: { journeyId, status: DRAFT }
+      known: { journeyId, status: DRAFT, concurrencyToken: 3 }
     })
 
     const requests = fetchMocker.requests()
@@ -180,6 +183,7 @@ describe('real records adapter — fulfilment writes', () => {
     expect(await jsonOf(requests[0])).toEqual({
       notification: {
         referenceNumber: journeyId,
+        concurrencyToken: 3,
         ...fulfilmentToNotification(snapshot, journeyId),
         fulfilments: encoded
       }
@@ -189,6 +193,24 @@ describe('real records adapter — fulfilment writes', () => {
         .species[0].noOfAnimals
     ).toBe('5')
     expect(saved.fulfilment).toEqual(snapshot)
+  })
+
+  it('Should throw when the notification PUT returns a non-ok status', async () => {
+    fetchMocker.mockResponse('Server Error', {
+      status: 500,
+      statusText: 'Internal Server Error'
+    })
+
+    await expect(
+      records.replaceFulfilment(
+        journeyId,
+        assembleFulfilments({ countryOfOrigin: 'FR' }),
+        { known: { journeyId, status: DRAFT, concurrencyToken: 0 } }
+      )
+    ).rejects.toMatchObject({
+      name: 'BackendRequestError',
+      status: 500
+    })
   })
 
   it('Should include actor on the notification PUT when provided', async () => {
@@ -280,7 +302,7 @@ describe('real records adapter — lifecycle and list', () => {
     expect(restored.submittedAt).toBe(submittedTimestamp)
   })
 
-  it('Should copy without an idempotency header (copy dedup dropped pending EUDPA-314)', async () => {
+  it('Should copy with the source concurrencyToken as a query parameter (WYSIWYG guarantee)', async () => {
     const copiedJourneyId = 'GBN-AG-26-COPIED'
     fetchMocker.mockResponse(
       JSON.stringify(
@@ -289,10 +311,12 @@ describe('real records adapter — lifecycle and list', () => {
       { status: 201 }
     )
 
-    const copied = await records.copy(journeyId, 'copy-key-123')
+    const copied = await records.copy(journeyId, 7)
 
     const [request] = fetchMocker.requests()
-    expect(request.url).toBe(`${notificationsUrl}/${journeyId}/copy`)
+    expect(request.url).toBe(
+      `${notificationsUrl}/${journeyId}/copy?concurrencyToken=7`
+    )
     expect(request.method).toBe('POST')
     expect(request.headers.has('Idempotency-Key')).toBe(false)
     expect(copied).toMatchObject({
@@ -315,6 +339,20 @@ describe('real records adapter — lifecycle and list', () => {
     expect(requests[0].headers.has('Idempotency-Key')).toBe(false)
     expect(await requests[0].clone().text()).toBe('')
     expect(deleted.status).toBe(DELETED)
+  })
+
+  it('Should throw when the notifications list request returns a non-ok status', async () => {
+    fetchMocker.mockResponse('Server Error', {
+      status: 500,
+      statusText: 'Internal Server Error'
+    })
+
+    await expect(
+      records.list({ page: 1, sort: 'createdAt,asc' })
+    ).rejects.toMatchObject({
+      name: 'BackendRequestError',
+      status: 500
+    })
   })
 
   it('Should pass an exact reference filter on the notifications list request', async () => {

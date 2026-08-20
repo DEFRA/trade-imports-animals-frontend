@@ -10,7 +10,7 @@ const postTransition = async (url, action, body) => {
     body: body === undefined ? undefined : JSON.stringify(body)
   })
   if (!response.ok) {
-    throw failed(action, response)
+    throw await failed(action, response)
   }
   return response
 }

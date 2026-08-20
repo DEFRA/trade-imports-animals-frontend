@@ -5,4 +5,5 @@ export const tracingHeader = process.env.TRACING_HEADER ?? 'x-cdp-request-id'
 export const notificationsUrl = `${backendBaseUrl}/notifications`
 
 export const HTTP_NOT_FOUND = 404
+export const HTTP_CONFLICT = 409
 export const MAX_PROJECTION_ATTEMPTS = 2

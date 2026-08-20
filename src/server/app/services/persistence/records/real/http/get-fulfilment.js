@@ -11,7 +11,7 @@ export const getFulfilment = async (journeyId) => {
     return undefined
   }
   if (!response.ok) {
-    throw failed('get fulfilment', response)
+    throw await failed('get fulfilment', response)
   }
   return response.json()
 }

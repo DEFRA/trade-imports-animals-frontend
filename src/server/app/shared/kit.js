@@ -117,6 +117,7 @@ export const base = (
     backLink,
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
     journeyStrip: journeyStrip(journey),
+    concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,
     recoverableError,
     contentColumnClass: SURFACES.form
@@ -127,8 +128,24 @@ export const recoverableSave = async (saveThunk, onRecoverableFailure) => {
   try {
     return { value: await saveThunk() }
   } catch (error) {
+    if (error?.code === 'STALE_CONCURRENCY_TOKEN') {
+      throw error
+    }
     if (isRecoverableBackendError(error)) {
       return { failure: await onRecoverableFailure() }
+    }
+    throw error
+  }
+}
+
+const redirectOnStaleAction = (post) => async (request, h) => {
+  try {
+    return await post(request, h)
+  } catch (error) {
+    if (error?.code === 'STALE_CONCURRENCY_TOKEN') {
+      const query = request.url.searchParams
+      query.set('staleAction', '1')
+      return h.redirect(`${request.path}?${query.toString()}`)
     }
     throw error
   }
@@ -145,7 +162,7 @@ export const pageRoutes = (page, { get, post }) => [
     method: 'POST',
     path: pageRoutePath(page.slug),
     options: routeOptions,
-    handler: post
+    handler: redirectOnStaleAction(post)
   }
 ]
 

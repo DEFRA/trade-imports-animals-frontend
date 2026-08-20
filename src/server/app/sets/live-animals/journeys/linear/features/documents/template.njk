@@ -19,6 +19,7 @@
         data-max-file-size="{{ maxFileSize }}"
         data-oversize-error="{{ oversizeFileMessage }}">
     <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
     {% if pendingDocumentSave %}
       <input type="hidden" name="retryUploadId" value="{{ pendingDocumentSave.uploadId }}" />
       <input type="hidden" name="retryFilename" value="{{ pendingDocumentSave.filename }}" />

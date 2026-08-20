@@ -9,6 +9,7 @@
 
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
     {{ govukRadios({
       name: "animalsCertifiedFor",

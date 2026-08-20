@@ -5,5 +5,6 @@ export const marshal = (document) => ({
   status: document.status,
   createdAt: document.createdAt,
   submittedAt: document.submittedAt,
+  concurrencyToken: document.concurrencyToken ?? 0,
   fulfilment: decodePersistedFulfilment(document.fulfilment)
 })

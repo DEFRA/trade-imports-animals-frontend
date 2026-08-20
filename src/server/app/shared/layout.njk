@@ -62,6 +62,13 @@
           role: "alert"
         }) }}
       {% endif %}
+      {% if staleActionRejected %}
+        {{ govukNotificationBanner({
+          titleText: sharedCopy.staleActionRejected.title,
+          text: sharedCopy.staleActionRejected.body,
+          role: "alert"
+        }) }}
+      {% endif %}
       {% if journeyStrip %}
         <div class="app-journey-strip govuk-!-margin-bottom-4">
           {{ govukTag({ text: journeyStrip.status.text, classes: journeyStrip.status.classes }) }}
