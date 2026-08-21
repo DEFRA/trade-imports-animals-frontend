@@ -6,6 +6,8 @@ import { copy as sharedCopy } from './copy.en.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
 
+const PHASE_BANNER = 'govuk-phase-banner'
+
 const renderLayout = (userSession, context = {}) =>
   environment.render('shared/layout.njk', {
     pageTitle: 'Create an import notification',
@@ -38,6 +40,28 @@ describe('promoted live-animals signed-in chrome', () => {
     expect(html).not.toContain('app-service-header__user')
     expect(html).not.toContain('href="/auth/sign-out"')
     expect(html).not.toContain('Sign out')
+  })
+})
+
+describe('service phase banner', () => {
+  it('Should tell every visitor the service is in alpha and how to feed back', () => {
+    const html = renderLayout({ isAuthenticated: false })
+
+    expect(html).toContain(PHASE_BANNER)
+    expect(html).toContain(sharedCopy.layout.phaseBanner.tag)
+    expect(html).toContain(sharedCopy.layout.phaseBanner.bodyPrefix)
+    expect(html).toContain(
+      `<a class="govuk-link" href="mailto:APHAServiceDesk@apha.gov.uk">${sharedCopy.layout.phaseBanner.feedbackLink}</a>.`
+    )
+  })
+
+  it('Should keep the banner above the breadcrumbs', () => {
+    const html = renderLayout({ isAuthenticated: true }, { breadcrumbs: null })
+
+    expect(html.indexOf(PHASE_BANNER)).toBeGreaterThan(-1)
+    expect(html.indexOf('govuk-breadcrumbs')).toBeGreaterThan(
+      html.indexOf(PHASE_BANNER)
+    )
   })
 })
 
