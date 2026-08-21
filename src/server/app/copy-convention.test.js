@@ -87,6 +87,20 @@ describe('copy convention — shared chrome', () => {
     })
   })
 
+  it('Should carry the Design release 1 phase-banner wording', () => {
+    expect(sharedCopy.layout.phaseBanner).toEqual({
+      tag: 'Alpha',
+      bodyPrefix: 'This is a new service. Help us improve it and',
+      feedbackLink: 'give your feedback by email'
+    })
+
+    expect(
+      `${sharedCopy.layout.phaseBanner.bodyPrefix} ${sharedCopy.layout.phaseBanner.feedbackLink}.`
+    ).toBe(
+      'This is a new service. Help us improve it and give your feedback by email.'
+    )
+  })
+
   it('Should keep every shared and validator-default leaf valid copy', () => {
     for (const { path: leafPath, value } of [
       ...leaves(sharedCopy),

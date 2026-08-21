@@ -48,17 +48,24 @@ describe('service phase banner', () => {
     const html = renderLayout({ isAuthenticated: false })
 
     expect(html).toContain(PHASE_BANNER)
-    expect(html).toContain(sharedCopy.layout.phaseBanner.tag)
-    expect(html).toContain(sharedCopy.layout.phaseBanner.bodyPrefix)
+    expect(html).toContain('Alpha')
     expect(html).toContain(
-      `<a class="govuk-link" href="mailto:APHAServiceDesk@apha.gov.uk">${sharedCopy.layout.phaseBanner.feedbackLink}</a>.`
+      'This is a new service. Help us improve it and <a class="govuk-link" href="mailto:APHAServiceDesk@apha.gov.uk">give your feedback by email</a>.'
     )
   })
 
   it('Should keep the banner above the breadcrumbs', () => {
-    const html = renderLayout({ isAuthenticated: true }, { breadcrumbs: null })
+    const html = renderLayout(
+      { isAuthenticated: true },
+      {
+        breadcrumbs: [
+          { text: 'Your notifications', href: '/' },
+          { text: 'Create an import notification' }
+        ]
+      }
+    )
 
-    expect(html.indexOf(PHASE_BANNER)).toBeGreaterThan(-1)
+    expect(html).toContain(PHASE_BANNER)
     expect(html.indexOf('govuk-breadcrumbs')).toBeGreaterThan(
       html.indexOf(PHASE_BANNER)
     )
