@@ -1,0 +1,280 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/pages/notification-view-states.spec.ts >> Notification view states >> SUBMITTED >> copies the submitted notification to a new draft
+- Location: tests/e2e/pages/notification-view-states.spec.ts:63:5
+
+# Error details
+
+```
+Test timeout of 30000ms exceeded.
+```
+
+```
+Error: locator.waitFor: Test timeout of 30000ms exceeded.
+Call log:
+  - waiting for getByRole('heading', { name: 'Overview', level: 1 }) to be visible
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - link "Import notification service" [ref=e25] [cursor=pointer]:
+        - /url: /
+  - generic [ref=e26]:
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - img [ref=e31]
+        - generic [ref=e34]: test.user11@defra.gov.uk
+      - generic [ref=e35]: "|"
+      - link "Sign out" [ref=e36] [cursor=pointer]:
+        - /url: /auth/sign-out
+    - navigation "Breadcrumb" [ref=e37]:
+      - list [ref=e38]:
+        - listitem [ref=e39]:
+          - link "Your notifications" [ref=e40] [cursor=pointer]:
+            - /url: /
+        - listitem [ref=e41]: Check your answers
+    - link "Back" [ref=e42] [cursor=pointer]:
+      - /url: /notifications/GBN-AG-26-AFQPTA
+    - main [ref=e43]:
+      - generic [ref=e45]:
+        - alert "There is a problem" [ref=e46]:
+          - heading "There is a problem" [level=2] [ref=e48]
+          - paragraph [ref=e50]: Sorry, there is a problem with the service. Your answers on this page have been saved. Try again in a few minutes.
+        - generic [ref=e51]:
+          - strong [ref=e52]: Submitted
+          - text: GBN-AG-26-AFQPTA
+        - heading "Check your answers" [level=1] [ref=e53]
+        - generic [ref=e54]:
+          - button "Copy as new" [ref=e56] [cursor=pointer]
+          - button "Delete" [ref=e57] [cursor=pointer]
+        - heading "1. About the consignment" [level=2] [ref=e58]
+        - heading "Consignment details" [level=3] [ref=e59]
+        - generic [ref=e60]:
+          - heading "Import details" [level=4] [ref=e62]
+          - generic [ref=e64]:
+            - generic [ref=e65]:
+              - term [ref=e66]: Country of origin
+              - definition [ref=e67]: France
+            - generic [ref=e68]:
+              - term [ref=e69]: Region of origin code required
+              - definition [ref=e70]: "No"
+            - generic [ref=e71]:
+              - term [ref=e72]: Region of origin code
+              - definition [ref=e73]: Not provided
+            - generic [ref=e74]:
+              - term [ref=e75]: Internal reference number
+              - definition [ref=e76]: Not provided
+        - heading "Commodity details" [level=3] [ref=e77]
+        - generic [ref=e78]:
+          - heading "Additional animal details" [level=4] [ref=e80]
+          - generic [ref=e82]:
+            - generic [ref=e83]:
+              - term [ref=e84]: Certified for
+              - definition [ref=e85]: Not provided
+            - generic [ref=e86]:
+              - term [ref=e87]: Includes unweaned animals
+              - definition [ref=e88]: Not provided
+            - generic [ref=e89]:
+              - term [ref=e90]: Reason for import
+              - definition [ref=e91]: Not provided
+        - heading "Species" [level=3] [ref=e92]
+        - generic [ref=e93]:
+          - heading "Cow (0102) — Bos taurus" [level=4] [ref=e95]
+          - generic [ref=e97]:
+            - generic [ref=e98]:
+              - term [ref=e99]: Commodity code
+              - definition [ref=e100]: "0102"
+            - generic [ref=e101]:
+              - term [ref=e102]: Common name
+              - definition [ref=e103]: Cow
+            - generic [ref=e104]:
+              - term [ref=e105]: Species
+              - definition [ref=e106]: Bos taurus
+            - generic [ref=e107]:
+              - term [ref=e108]: Number of animals
+              - definition [ref=e109]: "1"
+            - generic [ref=e110]:
+              - term [ref=e111]: Number of packages
+              - definition [ref=e112]: "5"
+        - separator [ref=e113]
+        - heading "2. Movement" [level=2] [ref=e114]
+        - generic [ref=e115]:
+          - heading "Arrival details" [level=3] [ref=e117]
+          - generic [ref=e119]:
+            - generic [ref=e120]:
+              - term [ref=e121]: Port of entry
+              - definition [ref=e122]: Not provided
+            - generic [ref=e123]:
+              - term [ref=e124]: Arrival date at port of entry
+              - definition [ref=e125]: Not provided
+            - generic [ref=e126]:
+              - term [ref=e127]: Means of transport
+              - definition [ref=e128]: Not provided
+            - generic [ref=e129]:
+              - term [ref=e130]: Transport identification
+              - definition [ref=e131]: Not provided
+            - generic [ref=e132]:
+              - term [ref=e133]: Transport document reference
+              - definition [ref=e134]: Not provided
+        - generic [ref=e135]:
+          - heading "Transport details" [level=3] [ref=e137]
+          - generic [ref=e140]:
+            - term [ref=e141]: Type
+            - definition [ref=e142]: Not provided
+        - separator [ref=e143]
+        - heading "3. Addresses" [level=2] [ref=e144]
+        - generic [ref=e145]:
+          - heading "Roles and addresses" [level=3] [ref=e147]
+          - generic [ref=e149]:
+            - generic [ref=e150]:
+              - term [ref=e151]: Place of origin
+              - definition [ref=e152]: Not provided
+            - generic [ref=e153]:
+              - term [ref=e154]: Consignor
+              - definition [ref=e155]: Not provided
+            - generic [ref=e156]:
+              - term [ref=e157]: Consignee
+              - definition [ref=e158]: Not provided
+            - generic [ref=e159]:
+              - term [ref=e160]: Importer
+              - definition [ref=e161]: Not provided
+            - generic [ref=e162]:
+              - term [ref=e163]: Place of destination
+              - definition [ref=e164]: Not provided
+            - generic [ref=e165]:
+              - term [ref=e166]: County Parish Holding number (CPH)
+              - definition [ref=e167]: Not provided
+        - generic [ref=e168]:
+          - heading "Contact address for this consignment" [level=3] [ref=e170]
+          - generic [ref=e173]:
+            - term [ref=e174]: Address
+            - definition [ref=e175]: Not provided
+        - heading "Now submit your notification" [level=2] [ref=e176]
+        - paragraph [ref=e177]: Continue to the declaration to submit your notification.
+        - button "Continue" [ref=e179] [cursor=pointer]
+  - contentinfo [ref=e180]:
+    - generic [ref=e193]:
+      - generic [ref=e194]:
+        - heading "Support links" [level=2] [ref=e195]
+        - list [ref=e196]:
+          - listitem [ref=e197]:
+            - link "Privacy" [ref=e198] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e199]:
+            - link "Cookies" [ref=e200] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e201]:
+            - link "Accessibility statement" [ref=e202] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e203]
+        - generic [ref=e205]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e206] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e208] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | 
+  3  | test.describe('Notification view states', { tag: ['@integration', '@duplicated-in-frontend'] }, () => {
+  4  |   test.describe('DRAFT', () => {
+  5  |     test.beforeEach(async ({ apiJourney, notificationActions, journeyContext }) => {
+  6  |       await apiJourney.createFullNotification();
+  7  |       await notificationActions.toNotificationView(journeyContext.journeyId);
+  8  |     });
+  9  | 
+  10 |     test('renders the recorded answers in the numbered design sections', async ({ pages }) => {
+  11 |       await expect(pages.notificationView.heading).toBeVisible();
+  12 |       await expect(pages.page.getByRole('heading', { name: '1. About the consignment' })).toBeVisible();
+  13 |       await expect(pages.page.getByRole('heading', { name: '2. Movement' })).toBeVisible();
+  14 |       await expect(pages.page.getByRole('heading', { name: '3. Addresses' })).toBeVisible();
+  15 |       await expect(pages.page.getByRole('heading', { name: '4. Documents' })).toHaveCount(0);
+  16 |       await expect(pages.notificationView.summaryCard('Import details')).toContainText('France');
+  17 |       await expect(pages.notificationView.summaryCard('Cow (0102) — Bos taurus')).toContainText('Number of animals');
+  18 |     });
+  19 | 
+  20 |     test('shows the Draft strip with the notification reference', async ({ pages, journeyContext }) => {
+  21 |       await expect(pages.notificationView.journeyStrip.locator('.govuk-tag')).toHaveText('Draft');
+  22 |       await expect(pages.notificationView.journeyStrip).toContainText(journeyContext.journeyId);
+  23 |     });
+  24 | 
+  25 |     test('shows Change links for the recorded answers', async ({ pages }) => {
+  26 |       await expect(pages.notificationView.changeLink('Change country of origin')).toBeVisible();
+  27 |       await expect(pages.notificationView.changeLink('Change commodity 1')).toBeVisible();
+  28 |     });
+  29 | 
+  30 |     test('offers submission and none of the post-submit actions', async ({ pages }) => {
+  31 |       await expect(pages.page.getByRole('heading', { name: 'Now submit your notification' })).toBeVisible();
+  32 |       await expect(pages.notificationView.continueButton).toBeVisible();
+  33 |       await expect(pages.page.getByRole('button', { name: 'Copy as new' })).toHaveCount(0);
+  34 |       await expect(pages.page.getByRole('button', { name: 'Delete' })).toHaveCount(0);
+  35 |       await expect(pages.notificationView.cancelAmendment).toHaveCount(0);
+  36 |     });
+  37 | 
+  38 |     test('Continue moves on to the declaration', async ({ pages }) => {
+  39 |       await pages.notificationView.continueButton.click();
+  40 |       await expect(pages.page).toHaveURL(/\/declaration$/);
+  41 |       await expect(pages.declaration.heading).toBeVisible();
+  42 |     });
+  43 |   });
+  44 | 
+  45 |   test.describe('SUBMITTED', () => {
+  46 |     test.beforeEach(async ({ apiJourney, notificationActions, journeyContext }) => {
+  47 |       await apiJourney.createSubmittedNotification();
+  48 |       await notificationActions.toNotificationView(journeyContext.journeyId);
+  49 |     });
+  50 | 
+  51 |     test('lands on the view page with the Submitted strip and reference', async ({ pages, journeyContext }) => {
+  52 |       await expect(pages.page).toHaveURL(new RegExp(`${pages.notificationView.expectedUrl(journeyContext.journeyId)}$`));
+  53 |       await expect(pages.notificationView.journeyStrip.locator('.govuk-tag')).toHaveText('Submitted');
+  54 |       await expect(pages.notificationView.journeyStrip).toContainText(journeyContext.journeyId);
+  55 |     });
+  56 | 
+  57 |     test('offers Copy as new and Delete on the read-only view', async ({ pages }) => {
+  58 |       await expect(pages.page.getByRole('button', { name: 'Copy as new' })).toBeVisible();
+  59 |       await expect(pages.page.getByRole('button', { name: 'Delete' })).toBeVisible();
+  60 |       await expect(pages.notificationView.cancelAmendment).toHaveCount(0);
+  61 |     });
+  62 | 
+  63 |     test('copies the submitted notification to a new draft', async ({ pages, journeyContext }) => {
+  64 |       const originalReferenceNumber = journeyContext.journeyId;
+  65 |       await pages.notificationView.btnCopyAsNew.click();
+  66 | 
+> 67 |       await pages.overview.heading.waitFor();
+     |                                    ^ Error: locator.waitFor: Test timeout of 30000ms exceeded.
+  68 |       const copiedReferenceNumber = (await pages.notificationView.referenceNumberCaption.textContent())?.match(
+  69 |         /GBN-AG-\d{2}-[0-9A-Z]{6}/,
+  70 |       )?.[0];
+  71 |       expect(copiedReferenceNumber).toMatch(/^GBN-AG-\d{2}-[0-9A-Z]{6}$/);
+  72 |       expect(copiedReferenceNumber).not.toEqual(originalReferenceNumber);
+  73 |     });
+  74 | 
+  75 |     test('still renders the recorded answers after submission', async ({ pages }) => {
+  76 |       await expect(pages.notificationView.summaryCard('Import details')).toContainText('France');
+  77 |       await expect(pages.notificationView.summaryCard('Cow (0102) — Bos taurus')).toBeVisible();
+  78 |     });
+  79 |   });
+  80 | });
+  81 | 
+```

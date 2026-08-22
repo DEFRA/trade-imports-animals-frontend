@@ -1,0 +1,149 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/addresses-add-new.spec.ts >> Add a new address >> adding a new address from the consignor spoke copies it into the consignor and the spoke then offers it
+- Location: tests/e2e/features/addresses-add-new.spec.ts:4:3
+
+# Error details
+
+```
+Test timeout of 30000ms exceeded.
+```
+
+```
+Error: locator.click: Test timeout of 30000ms exceeded.
+Call log:
+  - waiting for getByRole('button', { name: 'Add a new address' })
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - link "Import notification service" [ref=e25] [cursor=pointer]:
+        - /url: /
+  - generic [ref=e26]:
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - img [ref=e31]
+        - generic [ref=e34]: test.user11@defra.gov.uk
+      - generic [ref=e35]: "|"
+      - link "Sign out" [ref=e36] [cursor=pointer]:
+        - /url: /auth/sign-out
+    - navigation "Breadcrumb" [ref=e37]:
+      - list [ref=e38]:
+        - listitem [ref=e39]:
+          - link "Your notifications" [ref=e40] [cursor=pointer]:
+            - /url: /
+        - listitem [ref=e41]: Consignor or exporter
+    - link "Back" [ref=e42] [cursor=pointer]:
+      - /url: /notifications/GBN-AG-26-VBWJ75/addresses
+    - main [ref=e43]:
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - strong [ref=e47]: Draft
+          - text: GBN-AG-26-VBWJ75
+        - generic [ref=e48]: Consignment addresses
+        - heading "Consignor or exporter" [level=1] [ref=e49]
+        - paragraph [ref=e50]: This is the sender of the consignment.
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - generic [ref=e53]: Search
+            - generic [ref=e54]: Name, address or country
+            - textbox "Search" [ref=e55]
+          - button "Search" [ref=e56] [cursor=pointer]
+          - paragraph [ref=e57]: No addresses match your search.
+          - button "Save and continue" [ref=e58] [cursor=pointer]
+  - contentinfo [ref=e59]:
+    - generic [ref=e72]:
+      - generic [ref=e73]:
+        - heading "Support links" [level=2] [ref=e74]
+        - list [ref=e75]:
+          - listitem [ref=e76]:
+            - link "Privacy" [ref=e77] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e78]:
+            - link "Cookies" [ref=e79] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e80]:
+            - link "Accessibility statement" [ref=e81] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e82]
+        - generic [ref=e84]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e85] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e87] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | 
+  3  | test.describe('Add a new address', { tag: ['@integration', '@duplicated-in-frontend'] }, () => {
+  4  |   test('adding a new address from the consignor spoke copies it into the consignor and the spoke then offers it', async ({
+  5  |     journey,
+  6  |     pages,
+  7  |   }) => {
+  8  |     // The book is a persistent server store, so a fresh unique name each run keeps
+  9  |     // the created record unambiguous when it is searched back out.
+  10 |     const createdName = `Created Farm ${Date.now()}`;
+  11 | 
+  12 |     await journey.startNotification();
+  13 |     await journey.unlockSections();
+  14 | 
+  15 |     await pages.overview.task('Roles and addresses').click();
+  16 |     await expect(pages.addresses.heading).toBeVisible();
+  17 |     const consignorRow = pages.addresses.partyRow('Consignor or exporter');
+  18 |     await pages.addresses.addParty('Consignor or exporter').click();
+  19 | 
+  20 |     // The spoke offers a way out of the canned book: the create-address form.
+> 21 |     await pages.page.getByRole('button', { name: 'Add a new address' }).click();
+     |                                                                         ^ Error: locator.click: Test timeout of 30000ms exceeded.
+  22 |     await expect(pages.page.getByRole('heading', { name: 'Add a new address' })).toBeVisible();
+  23 | 
+  24 |     // A blank save is rejected with the mandatory Standard Address Block set.
+  25 |     await pages.page.getByRole('button', { name: 'Save and continue' }).click();
+  26 |     await expect(pages.page.getByRole('heading', { name: 'There is a problem' })).toBeVisible();
+  27 | 
+  28 |     await pages.page.getByLabel('Name or organisation name').fill(createdName);
+  29 |     await pages.page.getByLabel('Address line 1').fill('99 New Lane');
+  30 |     await pages.page.getByLabel('Town or city').fill('Carlisle');
+  31 |     await pages.page.getByLabel('Postal or zip code').fill('CA1 1AA');
+  32 |     await pages.page.getByLabel('Country').selectOption('United Kingdom');
+  33 |     await pages.page.getByLabel('Telephone number').fill('01228 555 0101');
+  34 |     await pages.page.getByLabel('Email address').fill('farm@example.co.uk');
+  35 |     await pages.page.getByRole('button', { name: 'Save and continue' }).click();
+  36 | 
+  37 |     // Saved by copy into the launching party, back on the landing page.
+  38 |     await expect(pages.addresses.heading).toBeVisible();
+  39 |     await expect(consignorRow).toContainText(createdName);
+  40 | 
+  41 |     // The created address joined the book but is minted at the end, so it is not
+  42 |     // on the picker's first page — yet it IS the committed consignor, so the
+  43 |     // picker carries it as the selection and searching surfaces its row checked.
+  44 |     await consignorRow.getByRole('link', { name: 'Change' }).click();
+  45 |     await expect(pages.page.getByText(`Selected address: ${createdName}`)).toBeVisible();
+  46 |     await pages.consignorSelection.search.fill(createdName);
+  47 |     await pages.consignorSelection.searchButton.click();
+  48 |     await expect(pages.consignorSelection.party(createdName)).toBeChecked();
+  49 |   });
+  50 | });
+  51 | 
+```

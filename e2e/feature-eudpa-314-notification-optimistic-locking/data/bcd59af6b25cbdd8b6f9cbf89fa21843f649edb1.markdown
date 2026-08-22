@@ -1,0 +1,335 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/addresses-add-new.spec.ts >> Add a new address >> adding a new address from the consignor spoke copies it into the consignor and the spoke then offers it
+- Location: tests/e2e/features/addresses-add-new.spec.ts:4:3
+
+# Error details
+
+```
+Test timeout of 30000ms exceeded.
+```
+
+```
+Error: locator.click: Test timeout of 30000ms exceeded.
+Call log:
+  - waiting for getByRole('link', { name: 'What are you importing?', exact: true })
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - link "Import notification service" [ref=e25] [cursor=pointer]:
+        - /url: /
+  - generic [ref=e26]:
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - img [ref=e31]
+        - generic [ref=e34]: test.user11@defra.gov.uk
+      - generic [ref=e35]: "|"
+      - link "Sign out" [ref=e36] [cursor=pointer]:
+        - /url: /auth/sign-out
+    - link "Back" [ref=e37] [cursor=pointer]:
+      - /url: /
+    - main [ref=e38]:
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - strong [ref=e42]: Draft
+          - text: GBN-AG-26-AQAGXN
+        - heading "Overview" [level=1] [ref=e43]
+        - heading "1. About the consignment" [level=2] [ref=e44]
+        - list [ref=e45]:
+          - listitem [ref=e46]:
+            - generic [ref=e47]:
+              - link "Where is this consignment coming from?" [ref=e48] [cursor=pointer]:
+                - /url: /notifications/GBN-AG-26-AQAGXN/origin
+              - generic [ref=e49]: Country of origin, region of origin code, your internal reference
+            - strong [ref=e51]: Not yet started
+          - listitem [ref=e52]:
+            - generic [ref=e53]:
+              - generic [ref=e54]: What are you importing?
+              - generic [ref=e55]: The commodities, species and numbers of animals you are importing
+            - generic [ref=e56]: Cannot start yet
+          - listitem [ref=e57]:
+            - generic [ref=e58]:
+              - generic [ref=e59]: Main reason for importing
+              - generic [ref=e60]: Why you are importing the animals and their purpose in the internal market
+            - generic [ref=e61]: Cannot start yet
+        - heading "2. Commodity details" [level=2] [ref=e62]
+        - list [ref=e63]:
+          - listitem [ref=e64]:
+            - generic [ref=e65]:
+              - generic [ref=e66]: Additional commodity details
+              - generic [ref=e67]: What the animals are certified for and whether any are unweaned
+            - generic [ref=e68]: Cannot start yet
+          - listitem [ref=e69]:
+            - generic [ref=e70]:
+              - generic [ref=e71]: Animal identification details
+              - generic [ref=e72]: Identification details for the animals in each commodity
+            - generic [ref=e73]: Cannot start yet
+        - heading "3. Movement" [level=2] [ref=e74]
+        - list [ref=e75]:
+          - listitem [ref=e76]:
+            - generic [ref=e77]:
+              - generic [ref=e78]: Arrival details
+              - generic [ref=e79]: The port of entry, when the consignment will arrive and how the animals will travel
+            - generic [ref=e80]: Cannot start yet
+          - listitem [ref=e81]:
+            - generic [ref=e82]:
+              - generic [ref=e83]: Transporter
+              - generic [ref=e84]: Who transports the animals to their destination
+            - generic [ref=e85]: Cannot start yet
+        - heading "4. Addresses" [level=2] [ref=e86]
+        - list [ref=e87]:
+          - listitem [ref=e88]:
+            - generic [ref=e89]:
+              - generic [ref=e90]: Roles and addresses
+              - generic [ref=e91]: The consignor, consignee, importer and the places of origin and destination
+            - generic [ref=e92]: Cannot start yet
+          - listitem [ref=e93]:
+            - generic [ref=e94]:
+              - generic [ref=e95]: Contact address
+              - generic [ref=e96]: Who we should contact about this notification
+            - generic [ref=e97]: Cannot start yet
+        - heading "5. Documents" [level=2] [ref=e98]
+        - list [ref=e99]:
+          - listitem [ref=e100]:
+            - generic [ref=e101]:
+              - generic [ref=e102]: Uploaded documents
+              - generic [ref=e103]: Certificates, permits and other documents for the consignment
+            - generic [ref=e104]: Cannot start yet
+        - heading "6. Check and submit" [level=2] [ref=e105]
+        - list [ref=e106]:
+          - listitem [ref=e107]:
+            - generic [ref=e108]:
+              - generic [ref=e109]: Check and submit
+              - generic [ref=e110]: Check your answers before you submit the notification
+            - generic [ref=e111]: Cannot start yet
+        - button "Return to dashboard" [ref=e112] [cursor=pointer]
+  - contentinfo [ref=e113]:
+    - generic [ref=e126]:
+      - generic [ref=e127]:
+        - heading "Support links" [level=2] [ref=e128]
+        - list [ref=e129]:
+          - listitem [ref=e130]:
+            - link "Privacy" [ref=e131] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e132]:
+            - link "Cookies" [ref=e133] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e134]:
+            - link "Accessibility statement" [ref=e135] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e136]
+        - generic [ref=e138]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e139] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e141] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1   | import type { PageObjects } from '@page-objects';
+  2   | import type { JourneyOptions } from '@domain/constants/journey-options';
+  3   | import { getRelativeAppDateText } from '@utils/date-utils';
+  4   | 
+  5   | export type JourneyContext = {
+  6   |   journeyId?: string;
+  7   |   referenceNumber?: string;
+  8   |   declarationDate?: string;
+  9   | };
+  10  | 
+  11  | const COUNTRY = 'France';
+  12  | const PORT = 'Aberdeen Harbour (GB ABD)';
+  13  | // Inside the arrival-date window (1 week back to 6 months ahead) wherever the
+  14  | // wall clock happens to be, in the unpadded d/m/yyyy the app itself renders —
+  15  | // so a CYA assertion compares against the app's shape, not the typed string it
+  16  | // happens to echo back.
+  17  | export const ARRIVAL_DATE = getRelativeAppDateText({ monthOffset: 1 });
+  18  | 
+  19  | export class Journey {
+  20  |   constructor(
+  21  |     private readonly pages: PageObjects,
+  22  |     private readonly context: JourneyContext,
+  23  |   ) {}
+  24  | 
+  25  |   async toSignIn(open: (attemptSignIn: boolean) => Promise<void>): Promise<void> {
+  26  |     await open(false);
+  27  |   }
+  28  | 
+  29  |   async toNotificationDashboard(): Promise<void> {
+  30  |     await this.pages.notificationDashboard.open();
+  31  |     await this.pages.notificationDashboard.heading.waitFor();
+  32  |   }
+  33  | 
+  34  |   private async createNotificationAtOrigin(): Promise<string> {
+  35  |     await this.toNotificationDashboard();
+  36  |     await this.pages.notificationDashboard.btnCreateNewNotification.click();
+  37  |     await this.pages.originOfImport.heading.waitFor();
+  38  |     const journeyId = this.pages.originOfImport.journeyIdFromUrl();
+  39  |     this.context.journeyId = journeyId;
+  40  |     this.context.referenceNumber = journeyId;
+  41  |     return journeyId;
+  42  |   }
+  43  | 
+  44  |   // Origin is the journey entry: the entry guard holds a new notification there
+  45  |   // until it is answered, so reaching the overview means answering it.
+  46  |   async startNotification(): Promise<string> {
+  47  |     const journeyId = await this.createNotificationAtOrigin();
+  48  |     await this.fillOriginOfImport();
+  49  |     await this.saveOriginOfImport();
+  50  |     await this.pages.overview.open(journeyId);
+  51  |     await this.pages.overview.heading.waitFor();
+  52  |     return journeyId;
+  53  |   }
+  54  | 
+  55  |   // Origin unanswered, as a brand-new notification first shows it.
+  56  |   async toOriginOfImport(): Promise<void> {
+  57  |     await this.createNotificationAtOrigin();
+  58  |   }
+  59  | 
+  60  |   async fillOriginOfImport(options: JourneyOptions = {}): Promise<void> {
+  61  |     await this.pages.originOfImport.selectCountry(COUNTRY);
+  62  |     const requiresRegionCode = options.requiresRegionCode ?? 'No';
+  63  |     await this.pages.originOfImport.radioRequiresOriginCode(requiresRegionCode).check();
+  64  |     if (requiresRegionCode === 'Yes') {
+  65  |       await this.pages.originOfImport.regionCode.fill('FR-75');
+  66  |     }
+  67  |     if (options.internalReference) {
+  68  |       await this.pages.originOfImport.internalReference.fill(options.internalReference);
+  69  |     }
+  70  |   }
+  71  | 
+  72  |   async saveOriginOfImport(): Promise<void> {
+  73  |     await this.pages.originOfImport.saveAndContinue.click();
+  74  |   }
+  75  | 
+  76  |   async answerOrigin(options: JourneyOptions = {}): Promise<void> {
+  77  |     await this.pages.overview.task('Where is this consignment coming from?').click();
+  78  |     await this.fillOriginOfImport(options);
+  79  |     await this.saveOriginOfImport();
+  80  |     await this.pages.overview.heading.waitFor();
+  81  |   }
+  82  | 
+  83  |   async answerCommodity(): Promise<void> {
+> 84  |     await this.pages.overview.task('What are you importing?').click();
+      |                                                               ^ Error: locator.click: Test timeout of 30000ms exceeded.
+  85  |     await this.pages.commoditySelection.selectSpecies(['Bos taurus']);
+  86  |     await this.pages.commoditySelection.saveAndContinue.click();
+  87  |     await this.pages.consignmentDetails.heading.waitFor();
+  88  |     await this.pages.consignmentDetails.numberOfAnimals.fill('1');
+  89  |     await this.pages.consignmentDetails.numberOfPackages.fill('5');
+  90  |     await this.pages.consignmentDetails.saveAndContinue.click();
+  91  |     await this.pages.overview.heading.waitFor();
+  92  |   }
+  93  | 
+  94  |   async answerAnimalIdentification(): Promise<void> {
+  95  |     await this.pages.overview.task('Animal identification details').click();
+  96  |     await this.pages.animalIdentification.earTag.fill('UK123456789012');
+  97  |     await this.pages.animalIdentification.saveAndFinish.click();
+  98  |     await this.pages.overview.heading.waitFor();
+  99  |   }
+  100 | 
+  101 |   async answerReasonAndAdditionalDetails(): Promise<void> {
+  102 |     await this.pages.overview.task('Main reason for importing').click();
+  103 |     await this.pages.importReason.reason('Internal market').check();
+  104 |     await this.pages.importReason.saveAndContinue.click();
+  105 |     await this.pages.importPurpose.heading.waitFor();
+  106 |     await this.pages.importPurpose.purpose('Breeding').check();
+  107 |     await this.pages.importPurpose.saveAndContinue.click();
+  108 |     await this.pages.additionalDetails.heading.waitFor();
+  109 |     await this.pages.additionalDetails.certifiedFor('Slaughter').check();
+  110 |     await this.pages.additionalDetails.containsUnweanedAnimals('No').check();
+  111 |     await this.pages.additionalDetails.saveAndContinue.click();
+  112 |     await this.pages.overview.heading.waitFor();
+  113 |   }
+  114 | 
+  115 |   async unlockSections(): Promise<void> {
+  116 |     await this.answerCommodity();
+  117 |   }
+  118 | 
+  119 |   async toAccompanyingDocuments(): Promise<void> {
+  120 |     await this.startNotification();
+  121 |     await this.unlockSections();
+  122 |     await this.pages.overview.task('Uploaded documents').click();
+  123 |     await this.pages.accompanyingDocuments.heading.waitFor();
+  124 |   }
+  125 | 
+  126 |   async fillAddressesToCph(): Promise<void> {
+  127 |     await this.pages.overview.task('Roles and addresses').click();
+  128 |     const parties = [
+  129 |       ['Consignor or exporter', 'Astra Rosales'],
+  130 |       ['Place of destination', 'Tech Imports Ltd'],
+  131 |       ['Place of origin', 'Origin Farm'],
+  132 |       ['Consignee', 'British Livestock Ltd'],
+  133 |       ['Importer', 'Import Co UK'],
+  134 |     ] as const;
+  135 |     for (const [role, name] of parties) {
+  136 |       await this.pages.addresses.addParty(role).click();
+  137 |       await this.pages.page.getByRole('radio', { name }).check();
+  138 |       await this.pages.page.getByRole('button', { name: 'Save and continue' }).click();
+  139 |       await this.pages.addresses.heading.waitFor();
+  140 |     }
+  141 |     await this.pages.addresses.continueButton.click();
+  142 |     await this.pages.cphNumber.heading.waitFor();
+  143 |   }
+  144 | 
+  145 |   async answerAddresses(): Promise<void> {
+  146 |     await this.fillAddressesToCph();
+  147 |     await this.pages.cphNumber.cphNumber.fill('12/345/6789');
+  148 |     await this.pages.cphNumber.saveAndContinue.click();
+  149 |     await this.pages.overview.heading.waitFor();
+  150 |   }
+  151 | 
+  152 |   async fillArrivalDetails(means: string = 'Road Vehicle'): Promise<void> {
+  153 |     await this.pages.arrivalDetails.fillArrivalDate(ARRIVAL_DATE);
+  154 |     await this.pages.arrivalDetails.selectPort(PORT);
+  155 |     await this.pages.page.getByRole('radio', { name: means, exact: true }).check();
+  156 |     await this.pages.arrivalDetails.transportIdentification.fill('FR-892-LK');
+  157 |     await this.pages.arrivalDetails.transportDocumentReference.fill('CMR-2026-884721');
+  158 |   }
+  159 | 
+  160 |   // Re-navigate from the hub to the transporter-type page within an already
+  161 |   // unlocked journey. The page itself saves through unfilled; it is filled
+  162 |   // because a road vehicle keeps transited countries in scope, which is
+  163 |   // answered on the way.
+  164 |   async reachTransporterFromHub(): Promise<void> {
+  165 |     await this.pages.overview.task('Arrival details').click();
+  166 |     await this.pages.arrivalDetails.heading.waitFor();
+  167 |     await this.fillArrivalDetails();
+  168 |     await this.pages.arrivalDetails.saveAndContinue.click();
+  169 |     await this.pages.transitedCountries.heading.waitFor();
+  170 |     await this.pages.transitedCountries.selectCountry('France');
+  171 |     await this.pages.transitedCountries.saveAndContinue.click();
+  172 |     await this.pages.transporter.heading.waitFor();
+  173 |   }
+  174 | 
+  175 |   async answerTransport(): Promise<void> {
+  176 |     await this.pages.overview.task('Arrival details').click();
+  177 |     await this.fillArrivalDetails();
+  178 |     await this.pages.arrivalDetails.saveAndContinue.click();
+  179 |     await this.pages.transitedCountries.heading.waitFor();
+  180 |     await this.pages.transitedCountries.selectCountry('France');
+  181 |     await this.pages.transitedCountries.selectCountry('Belgium');
+  182 |     await this.pages.transitedCountries.saveAndContinue.click();
+  183 |     await this.pages.transporter.heading.waitFor();
+  184 |     await this.pages.transporter.transporterType('Commercial').check();
+```

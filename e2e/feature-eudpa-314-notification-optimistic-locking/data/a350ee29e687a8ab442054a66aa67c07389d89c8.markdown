@@ -1,0 +1,190 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/cph-scope.spec.ts >> CPH scope >> the CPH page and addresses-hub row show only when a CPH-triggering commodity line exists
+- Location: tests/e2e/features/cph-scope.spec.ts:4:3
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: getByRole('heading', { name: 'Overview', level: 1 })
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" with timeout 5000ms
+  - waiting for getByRole('heading', { name: 'Overview', level: 1 })
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- banner:
+  - link "GOV.UK":
+    - /url: https://www.gov.uk/
+    - img "GOV.UK"
+  - region "Service information":
+    - link "Import notification service":
+      - /url: /
+- text: test.user11@defra.gov.uk
+- link "Sign out":
+  - /url: /auth/sign-out
+- navigation "Breadcrumb":
+  - list:
+    - listitem:
+      - link "Your notifications":
+        - /url: /
+    - listitem: Consignment details
+- link "Back":
+  - /url: /notifications/GBN-AG-26-3SHJ1Z/commodities
+- main:
+  - alert "Another edit has occurred":
+    - heading "Another edit has occurred" [level=2]
+    - paragraph: Someone else updated this notification while you were editing. Your last change was discarded. Please review the details and try again.
+  - strong: Draft
+  - text: GBN-AG-26-3SHJ1Z
+  - heading "Consignment details" [level=1]
+  - table "Selected commodities":
+    - caption: Selected commodities
+    - rowgroup:
+      - row "Commodity code Common name Actions":
+        - columnheader "Commodity code"
+        - columnheader "Common name"
+        - columnheader "Actions"
+    - rowgroup:
+      - row "0102 Cow Remove Cow":
+        - cell "0102"
+        - cell "Cow"
+        - cell "Remove Cow":
+          - button "Remove Cow"
+      - row "01061900 Cat Remove Cat":
+        - cell "01061900"
+        - cell "Cat"
+        - cell "Remove Cat":
+          - button "Remove Cat"
+  - paragraph:
+    - link "Add another commodity":
+      - /url: /notifications/GBN-AG-26-3SHJ1Z/commodities
+  - heading "Cow (0102)" [level=2]
+  - heading "Bos taurus" [level=3]
+  - text: Number of animals For example, 1, 25 or 5000.
+  - textbox "Number of animals"
+  - text: Number of packages (optional) Such as crates, bags or boxes
+  - textbox "Number of packages (optional)"
+  - separator
+  - heading "Cat (01061900)" [level=2]
+  - heading "Felis catus" [level=3]
+  - text: Number of animals For example, 1, 25 or 5000.
+  - textbox "Number of animals"
+  - text: Number of packages (optional) Such as crates, bags or boxes
+  - textbox "Number of packages (optional)"
+  - separator
+  - button "Save and continue"
+  - button "Save and return to hub"
+  - link "Cancel and return to hub":
+    - /url: /notifications/GBN-AG-26-3SHJ1Z
+- contentinfo:
+  - heading "Support links" [level=2]
+  - list:
+    - listitem:
+      - link "Privacy":
+        - /url: https://www.gov.uk/help/privacy-notice
+    - listitem:
+      - link "Cookies":
+        - /url: https://www.gov.uk/help/cookies
+    - listitem:
+      - link "Accessibility statement":
+        - /url: https://www.gov.uk/help/accessibility-statement
+  - text: All content is available under the
+  - link "Open Government Licence v3.0":
+    - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+  - text: ", except where otherwise stated"
+  - link "© Crown copyright":
+    - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | 
+  3  | test.describe('CPH scope', { tag: ['@integration', '@duplicated-in-frontend'] }, () => {
+  4  |   test('the CPH page and addresses-hub row show only when a CPH-triggering commodity line exists', async ({ journey, pages }) => {
+  5  |     const journeyId = await journey.startNotification();
+  6  | 
+  7  |     const page = pages.page;
+  8  |     const cphRow = page.locator('.govuk-summary-list__row', {
+  9  |       has: page.getByText('County Parish Holding number (CPH)', { exact: true }),
+  10 |     });
+  11 | 
+  12 |     // Add one commodity line for the given species, taking the fewest steps: the
+  13 |     // counts are submit-enforced, so the details page saves blank straight back
+  14 |     // to the hub.
+  15 |     const addCommodity = async (species: string): Promise<void> => {
+  16 |       await pages.overview.open(journeyId);
+  17 |       await pages.overview.task('What are you importing?').click();
+  18 |       await pages.commoditySelection.selectSpecies([species]);
+  19 |       await pages.commoditySelection.saveAndContinue.click();
+  20 |       await expect(pages.consignmentDetails.heading).toBeVisible();
+  21 |       await pages.consignmentDetails.saveAndContinue.click();
+> 22 |       await expect(pages.overview.heading).toBeVisible();
+     |                                            ^ Error: expect(locator).toBeVisible() failed
+  23 |     };
+  24 | 
+  25 |     const openAddresses = async (): Promise<void> => {
+  26 |       await pages.overview.open(journeyId);
+  27 |       await pages.overview.task('Roles and addresses').click();
+  28 |       await expect(pages.addresses.heading).toBeVisible();
+  29 |     };
+  30 | 
+  31 |     // A non-triggering commodity (cats): CPH is out of scope, so the addresses
+  32 |     // hub shows no CPH row and Continue returns straight to the hub — no CPH
+  33 |     // page (the derived gate).
+  34 |     await addCommodity('Felis catus');
+  35 |     await openAddresses();
+  36 |     await expect(cphRow).toBeHidden();
+  37 |     await pages.addresses.continueButton.click();
+  38 |     await expect(pages.overview.heading).toBeVisible();
+  39 |     await expect(pages.cphNumber.heading).toBeHidden();
+  40 | 
+  41 |     // Adding a triggering commodity (cattle) brings CPH into scope across the
+  42 |     // commodity lines (frame:"anyItem") — the row appears in its empty state.
+  43 |     await addCommodity('Bos taurus');
+  44 |     await openAddresses();
+  45 |     await expect(cphRow).toBeVisible();
+  46 |     await expect(cphRow).toContainText('Not added yet');
+  47 | 
+  48 |     // Hub-row add flow: the Add link opens the CPH page and saving returns to
+  49 |     // the addresses hub (not the sequential exit), the row showing the stored
+  50 |     // slash-stripped value.
+  51 |     await cphRow.getByRole('link', { name: 'Add' }).click();
+  52 |     await expect(pages.cphNumber.heading).toBeVisible();
+  53 |     await pages.cphNumber.cphNumber.fill('12/345/6789');
+  54 |     await pages.cphNumber.saveAndContinue.click();
+  55 |     await expect(pages.addresses.heading).toBeVisible();
+  56 |     await expect(cphRow).toContainText('123456789');
+  57 | 
+  58 |     // Filled state: the row's action reads Change, the page shows the stored
+  59 |     // value, and the back link returns to the addresses hub.
+  60 |     await cphRow.getByRole('link', { name: 'Change' }).click();
+  61 |     await expect(pages.cphNumber.cphNumber).toHaveValue('123456789');
+  62 |     await page.getByRole('link', { name: 'Back' }).click();
+  63 |     await expect(pages.addresses.heading).toBeVisible();
+  64 | 
+  65 |     // The sequential fallback stays: Continue from the addresses landing still
+  66 |     // walks to the CPH tail page.
+  67 |     await pages.addresses.continueButton.click();
+  68 |     await expect(pages.cphNumber.heading).toBeVisible();
+  69 |   });
+  70 | });
+  71 | 
+```

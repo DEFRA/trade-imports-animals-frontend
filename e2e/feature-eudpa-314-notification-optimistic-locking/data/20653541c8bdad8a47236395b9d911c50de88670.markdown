@@ -1,0 +1,149 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/pages/contact-address.spec.ts >> Contact address page >> adding a new contact address saves it and offers it selected
+- Location: tests/e2e/pages/contact-address.spec.ts:32:3
+
+# Error details
+
+```
+Test timeout of 30000ms exceeded.
+```
+
+```
+Error: locator.click: Test timeout of 30000ms exceeded.
+Call log:
+  - waiting for getByRole('link', { name: 'Add a new contact address' })
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - link "Import notification service" [ref=e25] [cursor=pointer]:
+        - /url: /
+  - generic [ref=e26]:
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - img [ref=e31]
+        - generic [ref=e34]: test.user11@defra.gov.uk
+      - generic [ref=e35]: "|"
+      - link "Sign out" [ref=e36] [cursor=pointer]:
+        - /url: /auth/sign-out
+    - navigation "Breadcrumb" [ref=e37]:
+      - list [ref=e38]:
+        - listitem [ref=e39]:
+          - link "Your notifications" [ref=e40] [cursor=pointer]:
+            - /url: /
+        - listitem [ref=e41]: Contact address for consignment
+    - link "Back" [ref=e42] [cursor=pointer]:
+      - /url: /notifications/GBN-AG-26-PKA31P
+    - main [ref=e43]:
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - strong [ref=e47]: Draft
+          - text: GBN-AG-26-PKA31P
+        - generic [ref=e48]:
+          - group "Contact address for consignment" [ref=e50]:
+            - heading "Contact address for consignment" [level=1] [ref=e52]
+            - generic [ref=e53]: Selecting a contact copies their name and address into this notification.
+          - generic [ref=e54]:
+            - button "Save and continue" [ref=e55] [cursor=pointer]
+            - button "Save and return to hub" [ref=e56] [cursor=pointer]
+            - link "Cancel and return to hub" [ref=e57] [cursor=pointer]:
+              - /url: /notifications/GBN-AG-26-PKA31P
+  - contentinfo [ref=e58]:
+    - generic [ref=e71]:
+      - generic [ref=e72]:
+        - heading "Support links" [level=2] [ref=e73]
+        - list [ref=e74]:
+          - listitem [ref=e75]:
+            - link "Privacy" [ref=e76] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e77]:
+            - link "Cookies" [ref=e78] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e79]:
+            - link "Accessibility statement" [ref=e80] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e81]
+        - generic [ref=e83]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e84] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e86] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | 
+  3  | test.describe('Contact address page', { tag: ['@integration', '@duplicated-in-frontend'] }, () => {
+  4  |   test.beforeEach(async ({ journey }) => {
+  5  |     await journey.toContactAddress();
+  6  |   });
+  7  | 
+  8  |   test('renders the page controls', async ({ pages }) => {
+  9  |     await expect(pages.contactAddress.heading).toBeVisible();
+  10 |     await expect(pages.contactAddress.address('Animal and Plant Health Agency')).toBeVisible();
+  11 |     await expect(pages.contactAddress.saveAndContinue).toBeVisible();
+  12 |   });
+  13 | 
+  14 |   test('leaves the contact address unchecked on load', async ({ pages }) => {
+  15 |     await expect(pages.contactAddress.address('Animal and Plant Health Agency')).not.toBeChecked();
+  16 |   });
+  17 | 
+  18 |   test('accepts a valid contact address', async ({ pages }) => {
+  19 |     await pages.contactAddress.address('Animal and Plant Health Agency').check();
+  20 |     await pages.contactAddress.saveAndContinue.click();
+  21 | 
+  22 |     await expect(pages.page.getByRole('heading', { name: 'There is a problem' })).toHaveCount(0);
+  23 |   });
+  24 | 
+  25 |   test('saving with no contact address selected is allowed and exits to the hub', async ({ pages }) => {
+  26 |     await pages.contactAddress.saveAndContinue.click();
+  27 | 
+  28 |     await expect(pages.overview.heading).toBeVisible();
+  29 |     await expect(pages.page.getByRole('heading', { name: 'There is a problem' })).toHaveCount(0);
+  30 |   });
+  31 | 
+  32 |   test('adding a new contact address saves it and offers it selected', async ({ pages }) => {
+  33 |     // The book is a persistent server store, so a fresh unique name each run keeps
+  34 |     // the created record unambiguous among the offered radios.
+  35 |     const createdName = `Created Contact ${Date.now()}`;
+  36 | 
+> 37 |     await pages.page.getByRole('link', { name: 'Add a new contact address' }).click();
+     |                                                                               ^ Error: locator.click: Test timeout of 30000ms exceeded.
+  38 |     await expect(pages.page.getByRole('heading', { name: 'Add a new address' })).toBeVisible();
+  39 | 
+  40 |     await pages.page.getByLabel('Name or organisation name').fill(createdName);
+  41 |     await pages.page.getByLabel('Address line 1').fill('12 Contact Way');
+  42 |     await pages.page.getByLabel('Town or city').fill('Penrith');
+  43 |     await pages.page.getByLabel('Postal or zip code').fill('CA11 7AA');
+  44 |     await pages.page.getByLabel('Country').selectOption('United Kingdom');
+  45 |     await pages.page.getByLabel('Telephone number').fill('01768 555 0102');
+  46 |     await pages.page.getByLabel('Email address').fill('contact@example.co.uk');
+  47 |     await pages.page.getByRole('button', { name: 'Save and continue' }).click();
+  48 | 
+  49 |     await expect(pages.contactAddress.heading).toBeVisible();
+  50 |     await expect(pages.contactAddress.address(createdName)).toBeChecked();
+  51 |   });
+  52 | });
+  53 | 
+```

@@ -1,0 +1,166 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/addresses-picker.spec.ts >> Addresses picker >> the picker searches and pages the address book, and the row selected on a later page is the one that saves
+- Location: tests/e2e/features/addresses-picker.spec.ts:4:3
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: getByText(/Showing 5 of \d+ addresses/)
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" with timeout 5000ms
+  - waiting for getByText(/Showing 5 of \d+ addresses/)
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- banner:
+  - link "GOV.UK":
+    - /url: https://www.gov.uk/
+    - img "GOV.UK"
+  - region "Service information":
+    - link "Import notification service":
+      - /url: /
+- text: test.user11@defra.gov.uk
+- link "Sign out":
+  - /url: /auth/sign-out
+- navigation "Breadcrumb":
+  - list:
+    - listitem:
+      - link "Your notifications":
+        - /url: /
+    - listitem: Consignor or exporter
+- link "Back":
+  - /url: /notifications/GBN-AG-26-4GFMKP/addresses
+- main:
+  - strong: Draft
+  - text: GBN-AG-26-4GFMKP Consignment addresses
+  - heading "Consignor or exporter" [level=1]
+  - paragraph: This is the sender of the consignment.
+  - text: Search Name, address or country
+  - textbox "Search"
+  - button "Search"
+  - paragraph: No addresses match your search.
+  - button "Save and continue"
+- contentinfo:
+  - heading "Support links" [level=2]
+  - list:
+    - listitem:
+      - link "Privacy":
+        - /url: https://www.gov.uk/help/privacy-notice
+    - listitem:
+      - link "Cookies":
+        - /url: https://www.gov.uk/help/cookies
+    - listitem:
+      - link "Accessibility statement":
+        - /url: https://www.gov.uk/help/accessibility-statement
+  - text: All content is available under the
+  - link "Open Government Licence v3.0":
+    - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+  - text: ", except where otherwise stated"
+  - link "© Crown copyright":
+    - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | 
+  3  | test.describe('Addresses picker', { tag: ['@integration', '@duplicated-in-frontend'] }, () => {
+  4  |   test('the picker searches and pages the address book, and the row selected on a later page is the one that saves', async ({
+  5  |     journey,
+  6  |     pages,
+  7  |   }) => {
+  8  |     const page = pages.page;
+  9  |     // Happy-path consignor record — appears on page one of the book.
+  10 |     const consignorName = 'Astra Rosales';
+  11 | 
+  12 |     await journey.startNotification();
+  13 |     await journey.unlockSections();
+  14 | 
+  15 |     await pages.overview.task('Roles and addresses').click();
+  16 |     const consignorRow = pages.addresses.partyRow('Consignor or exporter');
+  17 |     await pages.addresses.addParty('Consignor or exporter').click();
+  18 | 
+  19 |     // The book opens on page 1 — five of its ~forty records. It is a shared,
+  20 |     // mutable server book: repeated runs against a persistent stack append
+  21 |     // records to its END, so both the total and the page count are matched from
+  22 |     // what the page actually shows, never a literal.
+  23 |     const showingFive = /Showing 5 of \d+ addresses/;
+> 24 |     await expect(page.getByText(showingFive)).toBeVisible();
+     |                                               ^ Error: expect(locator).toBeVisible() failed
+  25 |     await expect(pages.consignorSelection.party(consignorName)).toBeVisible();
+  26 | 
+  27 |     // View details expands the row in place (no navigation, so nothing typed or
+  28 |     // ticked is lost) and shows the rest of the record.
+  29 |     const danishRow = page.locator('tr', { hasText: 'Danish Meat Export ApS' });
+  30 |     const danishDetails = danishRow.locator('details');
+  31 |     await expect(danishDetails.locator('.govuk-details__text')).toBeHidden();
+  32 |     await danishDetails.locator('summary').click();
+  33 |     await expect(danishDetails.locator('.govuk-details__text')).toBeVisible();
+  34 |     await expect(danishDetails).toContainText('Copenhagen');
+  35 | 
+  36 |     // Search is a server round-trip over the whole book and narrows it to a
+  37 |     // single page of results.
+  38 |     await pages.consignorSelection.search.fill('Denmark');
+  39 |     await pages.consignorSelection.searchButton.click();
+  40 |     await expect(page.getByText('Showing 2 of 2 addresses')).toBeVisible();
+  41 |     await expect(pages.consignorSelection.party('Jutland Swine ApS')).toBeVisible();
+  42 |     await expect(page.getByRole('link', { name: 'Page 2' })).toHaveCount(0);
+  43 | 
+  44 |     // Clearing the search restores the whole book and its pagination.
+  45 |     await pages.consignorSelection.search.fill('');
+  46 |     await pages.consignorSelection.searchButton.click();
+  47 |     await expect(page.getByText(showingFive)).toBeVisible();
+  48 | 
+  49 |     // GDS pagination renders a WINDOW, not every page: from page 1 that is
+  50 |     // 1, 2, an ellipsis and the last page — so page 3 is reached by stepping
+  51 |     // through the neighbours the component actually offers. The last page is
+  52 |     // derived from the current total (5 per page), not a fixed number, because
+  53 |     // the book grows as records are appended.
+  54 |     const showingText = (await page.getByText(showingFive).textContent()) ?? '';
+  55 |     const total = Number(showingText.match(/of (\d+)/)?.[1] ?? 0);
+  56 |     const lastPage = Math.ceil(total / 5);
+  57 |     await expect(page.getByRole('link', { name: `Page ${lastPage}` })).toBeVisible();
+  58 |     await expect(page.getByRole('link', { name: 'Page 3' })).toHaveCount(0);
+  59 |     await page.getByRole('link', { name: 'Page 2' }).click();
+  60 | 
+  61 |     // Page three holds records that page one never rendered.
+  62 |     await page.getByRole('link', { name: 'Page 3' }).click();
+  63 |     await expect(pages.consignorSelection.party('Irish Beef Traders Ltd')).toBeVisible();
+  64 |     await expect(pages.consignorSelection.party(consignorName)).toHaveCount(0);
+  65 | 
+  66 |     // Selecting there and saving copies THAT record onto the consignor.
+  67 |     await pages.consignorSelection.party('Iberian Swine SA').check();
+  68 |     await pages.consignorSelection.saveAndContinue.click();
+  69 |     await expect(pages.addresses.heading).toBeVisible();
+  70 |     await expect(consignorRow).toContainText('Iberian Swine SA');
+  71 | 
+  72 |     // Re-entering opens on page one, where the chosen record is not rendered —
+  73 |     // the picker still knows it (carried, not re-ticked), and a save from this
+  74 |     // page keeps it. That is the no-JS selection-across-pagination guarantee.
+  75 |     await consignorRow.getByRole('link', { name: 'Change' }).click();
+  76 |     await expect(page.getByText('Selected address: Iberian Swine SA')).toBeVisible();
+  77 |     await expect(pages.consignorSelection.party('Iberian Swine SA')).toHaveCount(0);
+  78 |     await pages.consignorSelection.saveAndContinue.click();
+  79 |     await expect(pages.addresses.heading).toBeVisible();
+  80 |     await expect(consignorRow).toContainText('Iberian Swine SA');
+  81 |   });
+  82 | });
+  83 | 
+```

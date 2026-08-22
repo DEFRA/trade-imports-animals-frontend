@@ -1,0 +1,1331 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/notification-dashboard-search.spec.ts >> Notification dashboard search >> preserves referenceNumber when updating sort after search
+- Location: tests/e2e/features/notification-dashboard-search.spec.ts:62:3
+
+# Error details
+
+```
+RestClientError: POST http://localhost:8085/notifications responded 400: {"type":"https://api.cdp.defra.cloud/problems/validation-error","title":"Validation Error","status":400,"detail":"Validation failed for one or more fields","instance":"/notifications","errors":{"notification":["must not be null"]}}
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - link "Import notification service" [ref=e25] [cursor=pointer]:
+        - /url: /
+  - generic [ref=e26]:
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - img [ref=e31]
+        - generic [ref=e34]: test.user11@defra.gov.uk
+      - generic [ref=e35]: "|"
+      - link "Sign out" [ref=e36] [cursor=pointer]:
+        - /url: /auth/sign-out
+    - navigation "Breadcrumb":
+      - list
+    - main [ref=e37]:
+      - generic [ref=e39]:
+        - heading "Import notification service" [level=1] [ref=e40]
+        - paragraph [ref=e41]: Use this service to tell the authorities about live animals you are importing. You will answer a short set of questions about the consignment, then submit your notification.
+        - button "Start a new notification" [ref=e43] [cursor=pointer]:
+          - text: Start a new notification
+          - img [ref=e44]
+        - heading "Your notifications" [level=2] [ref=e46]
+        - generic [ref=e47]:
+          - complementary "Filter notifications" [ref=e49]:
+            - heading "Filter notifications" [level=3] [ref=e50]
+            - generic [ref=e51]:
+              - generic [ref=e52]:
+                - generic [ref=e53]: Keyword or reference
+                - textbox "Keyword or reference" [ref=e54]
+              - button "Search" [ref=e55] [cursor=pointer]
+          - generic [ref=e56]:
+            - generic [ref=e57]:
+              - paragraph [ref=e58]: Showing 1 to 25 of 27 Results
+              - generic [ref=e59]:
+                - generic [ref=e60]:
+                  - generic [ref=e61]: Sort by
+                  - combobox "Sort by" [ref=e62]:
+                    - option "Arrival (newest to oldest)" [selected]
+                    - option "Arrival (oldest to newest)"
+                    - option "Date created (newest to oldest)"
+                    - option "Date created (oldest to newest)"
+                - button "Update sort" [ref=e63] [cursor=pointer]
+            - generic [ref=e64]:
+              - generic [ref=e65]:
+                - heading "GBN-AG-26-Q3HHRS" [level=3] [ref=e66]
+                - list [ref=e67]:
+                  - listitem [ref=e68]:
+                    - link "Resume notification GBN-AG-26-Q3HHRS" [ref=e69] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-Q3HHRS
+                      - text: Resume
+                      - generic [ref=e70]: notification GBN-AG-26-Q3HHRS
+                  - listitem [ref=e71]:
+                    - button "Copy as new notification GBN-AG-26-Q3HHRS" [ref=e73] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e74]: notification GBN-AG-26-Q3HHRS
+                  - listitem [ref=e75]:
+                    - link "Delete notification GBN-AG-26-Q3HHRS" [ref=e76] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-Q3HHRS/delete
+                      - text: Delete
+                      - generic [ref=e77]: notification GBN-AG-26-Q3HHRS
+              - generic [ref=e78]:
+                - generic [ref=e79]:
+                  - generic [ref=e80]:
+                    - term [ref=e81]: Commodity
+                    - definition [ref=e82]: Cow
+                  - generic [ref=e83]:
+                    - term [ref=e84]: Origin
+                    - definition [ref=e85]: France
+                  - generic [ref=e86]:
+                    - term [ref=e87]: Arrival at destination
+                    - definition [ref=e88]: 19 Sep 2026
+                - generic [ref=e89]:
+                  - generic [ref=e90]:
+                    - term [ref=e91]: Consignee
+                    - definition
+                  - generic [ref=e92]:
+                    - term [ref=e93]: Consignor
+                    - definition
+                  - generic [ref=e94]:
+                    - term [ref=e95]: Status
+                    - definition [ref=e96]:
+                      - strong [ref=e97]: Draft
+                - generic [ref=e98]:
+                  - generic [ref=e99]:
+                    - term [ref=e100]: Date created
+                    - definition [ref=e101]: 19 Aug 2026
+                  - generic [ref=e102]:
+                    - term [ref=e103]: Date submitted
+                    - definition
+            - generic [ref=e104]:
+              - generic [ref=e105]:
+                - heading "GBN-AG-26-N5FT1R" [level=3] [ref=e106]
+                - list [ref=e107]:
+                  - listitem [ref=e108]:
+                    - link "Resume notification GBN-AG-26-N5FT1R" [ref=e109] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-N5FT1R
+                      - text: Resume
+                      - generic [ref=e110]: notification GBN-AG-26-N5FT1R
+                  - listitem [ref=e111]:
+                    - button "Copy as new notification GBN-AG-26-N5FT1R" [ref=e113] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e114]: notification GBN-AG-26-N5FT1R
+                  - listitem [ref=e115]:
+                    - link "Delete notification GBN-AG-26-N5FT1R" [ref=e116] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-N5FT1R/delete
+                      - text: Delete
+                      - generic [ref=e117]: notification GBN-AG-26-N5FT1R
+              - generic [ref=e118]:
+                - generic [ref=e119]:
+                  - generic [ref=e120]:
+                    - term [ref=e121]: Commodity
+                    - definition [ref=e122]: Fish
+                  - generic [ref=e123]:
+                    - term [ref=e124]: Origin
+                    - definition [ref=e125]: France
+                  - generic [ref=e126]:
+                    - term [ref=e127]: Arrival at destination
+                    - definition
+                - generic [ref=e128]:
+                  - generic [ref=e129]:
+                    - term [ref=e130]: Consignee
+                    - definition
+                  - generic [ref=e131]:
+                    - term [ref=e132]: Consignor
+                    - definition
+                  - generic [ref=e133]:
+                    - term [ref=e134]: Status
+                    - definition [ref=e135]:
+                      - strong [ref=e136]: Draft
+                - generic [ref=e137]:
+                  - generic [ref=e138]:
+                    - term [ref=e139]: Date created
+                    - definition [ref=e140]: 19 Aug 2026
+                  - generic [ref=e141]:
+                    - term [ref=e142]: Date submitted
+                    - definition
+            - generic [ref=e143]:
+              - generic [ref=e144]:
+                - heading "GBN-AG-26-0YM64G" [level=3] [ref=e145]
+                - list [ref=e146]:
+                  - listitem [ref=e147]:
+                    - link "Resume notification GBN-AG-26-0YM64G" [ref=e148] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-0YM64G
+                      - text: Resume
+                      - generic [ref=e149]: notification GBN-AG-26-0YM64G
+                  - listitem [ref=e150]:
+                    - button "Copy as new notification GBN-AG-26-0YM64G" [ref=e152] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e153]: notification GBN-AG-26-0YM64G
+                  - listitem [ref=e154]:
+                    - link "Delete notification GBN-AG-26-0YM64G" [ref=e155] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-0YM64G/delete
+                      - text: Delete
+                      - generic [ref=e156]: notification GBN-AG-26-0YM64G
+              - generic [ref=e157]:
+                - generic [ref=e158]:
+                  - generic [ref=e159]:
+                    - term [ref=e160]: Commodity
+                    - definition [ref=e161]: Cow
+                  - generic [ref=e162]:
+                    - term [ref=e163]: Origin
+                    - definition [ref=e164]: France
+                  - generic [ref=e165]:
+                    - term [ref=e166]: Arrival at destination
+                    - definition
+                - generic [ref=e167]:
+                  - generic [ref=e168]:
+                    - term [ref=e169]: Consignee
+                    - definition
+                  - generic [ref=e170]:
+                    - term [ref=e171]: Consignor
+                    - definition
+                  - generic [ref=e172]:
+                    - term [ref=e173]: Status
+                    - definition [ref=e174]:
+                      - strong [ref=e175]: Draft
+                - generic [ref=e176]:
+                  - generic [ref=e177]:
+                    - term [ref=e178]: Date created
+                    - definition [ref=e179]: 19 Aug 2026
+                  - generic [ref=e180]:
+                    - term [ref=e181]: Date submitted
+                    - definition
+            - generic [ref=e182]:
+              - generic [ref=e183]:
+                - heading "GBN-AG-26-F217BV" [level=3] [ref=e184]
+                - list [ref=e185]:
+                  - listitem [ref=e186]:
+                    - link "Resume notification GBN-AG-26-F217BV" [ref=e187] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-F217BV
+                      - text: Resume
+                      - generic [ref=e188]: notification GBN-AG-26-F217BV
+                  - listitem [ref=e189]:
+                    - button "Copy as new notification GBN-AG-26-F217BV" [ref=e191] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e192]: notification GBN-AG-26-F217BV
+                  - listitem [ref=e193]:
+                    - link "Delete notification GBN-AG-26-F217BV" [ref=e194] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-F217BV/delete
+                      - text: Delete
+                      - generic [ref=e195]: notification GBN-AG-26-F217BV
+              - generic [ref=e196]:
+                - generic [ref=e197]:
+                  - generic [ref=e198]:
+                    - term [ref=e199]: Commodity
+                    - definition [ref=e200]: Cow
+                  - generic [ref=e201]:
+                    - term [ref=e202]: Origin
+                    - definition [ref=e203]: France
+                  - generic [ref=e204]:
+                    - term [ref=e205]: Arrival at destination
+                    - definition
+                - generic [ref=e206]:
+                  - generic [ref=e207]:
+                    - term [ref=e208]: Consignee
+                    - definition
+                  - generic [ref=e209]:
+                    - term [ref=e210]: Consignor
+                    - definition
+                  - generic [ref=e211]:
+                    - term [ref=e212]: Status
+                    - definition [ref=e213]:
+                      - strong [ref=e214]: Draft
+                - generic [ref=e215]:
+                  - generic [ref=e216]:
+                    - term [ref=e217]: Date created
+                    - definition [ref=e218]: 19 Aug 2026
+                  - generic [ref=e219]:
+                    - term [ref=e220]: Date submitted
+                    - definition
+            - generic [ref=e221]:
+              - generic [ref=e222]:
+                - heading "GBN-AG-26-G3B62E" [level=3] [ref=e223]
+                - list [ref=e224]:
+                  - listitem [ref=e225]:
+                    - link "Resume notification GBN-AG-26-G3B62E" [ref=e226] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-G3B62E
+                      - text: Resume
+                      - generic [ref=e227]: notification GBN-AG-26-G3B62E
+                  - listitem [ref=e228]:
+                    - button "Copy as new notification GBN-AG-26-G3B62E" [ref=e230] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e231]: notification GBN-AG-26-G3B62E
+                  - listitem [ref=e232]:
+                    - link "Delete notification GBN-AG-26-G3B62E" [ref=e233] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-G3B62E/delete
+                      - text: Delete
+                      - generic [ref=e234]: notification GBN-AG-26-G3B62E
+              - generic [ref=e235]:
+                - generic [ref=e236]:
+                  - generic [ref=e237]:
+                    - term [ref=e238]: Commodity
+                    - definition [ref=e239]: Cow
+                  - generic [ref=e240]:
+                    - term [ref=e241]: Origin
+                    - definition [ref=e242]: France
+                  - generic [ref=e243]:
+                    - term [ref=e244]: Arrival at destination
+                    - definition
+                - generic [ref=e245]:
+                  - generic [ref=e246]:
+                    - term [ref=e247]: Consignee
+                    - definition
+                  - generic [ref=e248]:
+                    - term [ref=e249]: Consignor
+                    - definition
+                  - generic [ref=e250]:
+                    - term [ref=e251]: Status
+                    - definition [ref=e252]:
+                      - strong [ref=e253]: Draft
+                - generic [ref=e254]:
+                  - generic [ref=e255]:
+                    - term [ref=e256]: Date created
+                    - definition [ref=e257]: 19 Aug 2026
+                  - generic [ref=e258]:
+                    - term [ref=e259]: Date submitted
+                    - definition
+            - generic [ref=e260]:
+              - generic [ref=e261]:
+                - heading "GBN-AG-26-X7PC21" [level=3] [ref=e262]
+                - list [ref=e263]:
+                  - listitem [ref=e264]:
+                    - link "Resume notification GBN-AG-26-X7PC21" [ref=e265] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-X7PC21
+                      - text: Resume
+                      - generic [ref=e266]: notification GBN-AG-26-X7PC21
+                  - listitem [ref=e267]:
+                    - button "Copy as new notification GBN-AG-26-X7PC21" [ref=e269] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e270]: notification GBN-AG-26-X7PC21
+                  - listitem [ref=e271]:
+                    - link "Delete notification GBN-AG-26-X7PC21" [ref=e272] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-X7PC21/delete
+                      - text: Delete
+                      - generic [ref=e273]: notification GBN-AG-26-X7PC21
+              - generic [ref=e274]:
+                - generic [ref=e275]:
+                  - generic [ref=e276]:
+                    - term [ref=e277]: Commodity
+                    - definition [ref=e278]: Cow
+                  - generic [ref=e279]:
+                    - term [ref=e280]: Origin
+                    - definition [ref=e281]: France
+                  - generic [ref=e282]:
+                    - term [ref=e283]: Arrival at destination
+                    - definition
+                - generic [ref=e284]:
+                  - generic [ref=e285]:
+                    - term [ref=e286]: Consignee
+                    - definition
+                  - generic [ref=e287]:
+                    - term [ref=e288]: Consignor
+                    - definition
+                  - generic [ref=e289]:
+                    - term [ref=e290]: Status
+                    - definition [ref=e291]:
+                      - strong [ref=e292]: Draft
+                - generic [ref=e293]:
+                  - generic [ref=e294]:
+                    - term [ref=e295]: Date created
+                    - definition [ref=e296]: 19 Aug 2026
+                  - generic [ref=e297]:
+                    - term [ref=e298]: Date submitted
+                    - definition
+            - generic [ref=e299]:
+              - generic [ref=e300]:
+                - heading "GBN-AG-26-7ARWFQ" [level=3] [ref=e301]
+                - list [ref=e302]:
+                  - listitem [ref=e303]:
+                    - link "Resume notification GBN-AG-26-7ARWFQ" [ref=e304] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-7ARWFQ
+                      - text: Resume
+                      - generic [ref=e305]: notification GBN-AG-26-7ARWFQ
+                  - listitem [ref=e306]:
+                    - button "Copy as new notification GBN-AG-26-7ARWFQ" [ref=e308] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e309]: notification GBN-AG-26-7ARWFQ
+                  - listitem [ref=e310]:
+                    - link "Delete notification GBN-AG-26-7ARWFQ" [ref=e311] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-7ARWFQ/delete
+                      - text: Delete
+                      - generic [ref=e312]: notification GBN-AG-26-7ARWFQ
+              - generic [ref=e313]:
+                - generic [ref=e314]:
+                  - generic [ref=e315]:
+                    - term [ref=e316]: Commodity
+                    - definition [ref=e317]: Cow
+                  - generic [ref=e318]:
+                    - term [ref=e319]: Origin
+                    - definition [ref=e320]: France
+                  - generic [ref=e321]:
+                    - term [ref=e322]: Arrival at destination
+                    - definition
+                - generic [ref=e323]:
+                  - generic [ref=e324]:
+                    - term [ref=e325]: Consignee
+                    - definition
+                  - generic [ref=e326]:
+                    - term [ref=e327]: Consignor
+                    - definition
+                  - generic [ref=e328]:
+                    - term [ref=e329]: Status
+                    - definition [ref=e330]:
+                      - strong [ref=e331]: Draft
+                - generic [ref=e332]:
+                  - generic [ref=e333]:
+                    - term [ref=e334]: Date created
+                    - definition [ref=e335]: 19 Aug 2026
+                  - generic [ref=e336]:
+                    - term [ref=e337]: Date submitted
+                    - definition
+            - generic [ref=e338]:
+              - generic [ref=e339]:
+                - heading "GBN-AG-26-JZ6X00" [level=3] [ref=e340]
+                - list [ref=e341]:
+                  - listitem [ref=e342]:
+                    - link "Resume notification GBN-AG-26-JZ6X00" [ref=e343] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-JZ6X00
+                      - text: Resume
+                      - generic [ref=e344]: notification GBN-AG-26-JZ6X00
+                  - listitem [ref=e345]:
+                    - button "Copy as new notification GBN-AG-26-JZ6X00" [ref=e347] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e348]: notification GBN-AG-26-JZ6X00
+                  - listitem [ref=e349]:
+                    - link "Delete notification GBN-AG-26-JZ6X00" [ref=e350] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-JZ6X00/delete
+                      - text: Delete
+                      - generic [ref=e351]: notification GBN-AG-26-JZ6X00
+              - generic [ref=e352]:
+                - generic [ref=e353]:
+                  - generic [ref=e354]:
+                    - term [ref=e355]: Commodity
+                    - definition [ref=e356]: Cow
+                  - generic [ref=e357]:
+                    - term [ref=e358]: Origin
+                    - definition [ref=e359]: France
+                  - generic [ref=e360]:
+                    - term [ref=e361]: Arrival at destination
+                    - definition
+                - generic [ref=e362]:
+                  - generic [ref=e363]:
+                    - term [ref=e364]: Consignee
+                    - definition
+                  - generic [ref=e365]:
+                    - term [ref=e366]: Consignor
+                    - definition
+                  - generic [ref=e367]:
+                    - term [ref=e368]: Status
+                    - definition [ref=e369]:
+                      - strong [ref=e370]: Draft
+                - generic [ref=e371]:
+                  - generic [ref=e372]:
+                    - term [ref=e373]: Date created
+                    - definition [ref=e374]: 19 Aug 2026
+                  - generic [ref=e375]:
+                    - term [ref=e376]: Date submitted
+                    - definition
+            - generic [ref=e377]:
+              - generic [ref=e378]:
+                - heading "GBN-AG-26-WVQ2DW" [level=3] [ref=e379]
+                - list [ref=e380]:
+                  - listitem [ref=e381]:
+                    - link "Resume notification GBN-AG-26-WVQ2DW" [ref=e382] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-WVQ2DW
+                      - text: Resume
+                      - generic [ref=e383]: notification GBN-AG-26-WVQ2DW
+                  - listitem [ref=e384]:
+                    - button "Copy as new notification GBN-AG-26-WVQ2DW" [ref=e386] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e387]: notification GBN-AG-26-WVQ2DW
+                  - listitem [ref=e388]:
+                    - link "Delete notification GBN-AG-26-WVQ2DW" [ref=e389] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-WVQ2DW/delete
+                      - text: Delete
+                      - generic [ref=e390]: notification GBN-AG-26-WVQ2DW
+              - generic [ref=e391]:
+                - generic [ref=e392]:
+                  - generic [ref=e393]:
+                    - term [ref=e394]: Commodity
+                    - definition [ref=e395]: Cow
+                  - generic [ref=e396]:
+                    - term [ref=e397]: Origin
+                    - definition [ref=e398]: France
+                  - generic [ref=e399]:
+                    - term [ref=e400]: Arrival at destination
+                    - definition
+                - generic [ref=e401]:
+                  - generic [ref=e402]:
+                    - term [ref=e403]: Consignee
+                    - definition
+                  - generic [ref=e404]:
+                    - term [ref=e405]: Consignor
+                    - definition
+                  - generic [ref=e406]:
+                    - term [ref=e407]: Status
+                    - definition [ref=e408]:
+                      - strong [ref=e409]: Draft
+                - generic [ref=e410]:
+                  - generic [ref=e411]:
+                    - term [ref=e412]: Date created
+                    - definition [ref=e413]: 19 Aug 2026
+                  - generic [ref=e414]:
+                    - term [ref=e415]: Date submitted
+                    - definition
+            - generic [ref=e416]:
+              - generic [ref=e417]:
+                - heading "GBN-AG-26-0TV8BY" [level=3] [ref=e418]
+                - list [ref=e419]:
+                  - listitem [ref=e420]:
+                    - link "Resume notification GBN-AG-26-0TV8BY" [ref=e421] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-0TV8BY
+                      - text: Resume
+                      - generic [ref=e422]: notification GBN-AG-26-0TV8BY
+                  - listitem [ref=e423]:
+                    - button "Copy as new notification GBN-AG-26-0TV8BY" [ref=e425] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e426]: notification GBN-AG-26-0TV8BY
+                  - listitem [ref=e427]:
+                    - link "Delete notification GBN-AG-26-0TV8BY" [ref=e428] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-0TV8BY/delete
+                      - text: Delete
+                      - generic [ref=e429]: notification GBN-AG-26-0TV8BY
+              - generic [ref=e430]:
+                - generic [ref=e431]:
+                  - generic [ref=e432]:
+                    - term [ref=e433]: Commodity
+                    - definition [ref=e434]: Cow
+                  - generic [ref=e435]:
+                    - term [ref=e436]: Origin
+                    - definition [ref=e437]: France
+                  - generic [ref=e438]:
+                    - term [ref=e439]: Arrival at destination
+                    - definition
+                - generic [ref=e440]:
+                  - generic [ref=e441]:
+                    - term [ref=e442]: Consignee
+                    - definition
+                  - generic [ref=e443]:
+                    - term [ref=e444]: Consignor
+                    - definition
+                  - generic [ref=e445]:
+                    - term [ref=e446]: Status
+                    - definition [ref=e447]:
+                      - strong [ref=e448]: Draft
+                - generic [ref=e449]:
+                  - generic [ref=e450]:
+                    - term [ref=e451]: Date created
+                    - definition [ref=e452]: 19 Aug 2026
+                  - generic [ref=e453]:
+                    - term [ref=e454]: Date submitted
+                    - definition
+            - generic [ref=e455]:
+              - generic [ref=e456]:
+                - heading "GBN-AG-26-STE3D5" [level=3] [ref=e457]
+                - list [ref=e458]:
+                  - listitem [ref=e459]:
+                    - link "Resume notification GBN-AG-26-STE3D5" [ref=e460] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-STE3D5
+                      - text: Resume
+                      - generic [ref=e461]: notification GBN-AG-26-STE3D5
+                  - listitem [ref=e462]:
+                    - button "Copy as new notification GBN-AG-26-STE3D5" [ref=e464] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e465]: notification GBN-AG-26-STE3D5
+                  - listitem [ref=e466]:
+                    - link "Delete notification GBN-AG-26-STE3D5" [ref=e467] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-STE3D5/delete
+                      - text: Delete
+                      - generic [ref=e468]: notification GBN-AG-26-STE3D5
+              - generic [ref=e469]:
+                - generic [ref=e470]:
+                  - generic [ref=e471]:
+                    - term [ref=e472]: Commodity
+                    - definition
+                  - generic [ref=e473]:
+                    - term [ref=e474]: Origin
+                    - definition [ref=e475]: France
+                  - generic [ref=e476]:
+                    - term [ref=e477]: Arrival at destination
+                    - definition
+                - generic [ref=e478]:
+                  - generic [ref=e479]:
+                    - term [ref=e480]: Consignee
+                    - definition
+                  - generic [ref=e481]:
+                    - term [ref=e482]: Consignor
+                    - definition
+                  - generic [ref=e483]:
+                    - term [ref=e484]: Status
+                    - definition [ref=e485]:
+                      - strong [ref=e486]: Draft
+                - generic [ref=e487]:
+                  - generic [ref=e488]:
+                    - term [ref=e489]: Date created
+                    - definition [ref=e490]: 19 Aug 2026
+                  - generic [ref=e491]:
+                    - term [ref=e492]: Date submitted
+                    - definition
+            - generic [ref=e493]:
+              - generic [ref=e494]:
+                - heading "GBN-AG-26-1DSWPJ" [level=3] [ref=e495]
+                - list [ref=e496]:
+                  - listitem [ref=e497]:
+                    - link "Resume notification GBN-AG-26-1DSWPJ" [ref=e498] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-1DSWPJ
+                      - text: Resume
+                      - generic [ref=e499]: notification GBN-AG-26-1DSWPJ
+                  - listitem [ref=e500]:
+                    - button "Copy as new notification GBN-AG-26-1DSWPJ" [ref=e502] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e503]: notification GBN-AG-26-1DSWPJ
+                  - listitem [ref=e504]:
+                    - link "Delete notification GBN-AG-26-1DSWPJ" [ref=e505] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-1DSWPJ/delete
+                      - text: Delete
+                      - generic [ref=e506]: notification GBN-AG-26-1DSWPJ
+              - generic [ref=e507]:
+                - generic [ref=e508]:
+                  - generic [ref=e509]:
+                    - term [ref=e510]: Commodity
+                    - definition [ref=e511]: Cow
+                  - generic [ref=e512]:
+                    - term [ref=e513]: Origin
+                    - definition [ref=e514]: France
+                  - generic [ref=e515]:
+                    - term [ref=e516]: Arrival at destination
+                    - definition
+                - generic [ref=e517]:
+                  - generic [ref=e518]:
+                    - term [ref=e519]: Consignee
+                    - definition
+                  - generic [ref=e520]:
+                    - term [ref=e521]: Consignor
+                    - definition
+                  - generic [ref=e522]:
+                    - term [ref=e523]: Status
+                    - definition [ref=e524]:
+                      - strong [ref=e525]: Draft
+                - generic [ref=e526]:
+                  - generic [ref=e527]:
+                    - term [ref=e528]: Date created
+                    - definition [ref=e529]: 19 Aug 2026
+                  - generic [ref=e530]:
+                    - term [ref=e531]: Date submitted
+                    - definition
+            - generic [ref=e532]:
+              - generic [ref=e533]:
+                - heading "GBN-AG-26-50TYHK" [level=3] [ref=e534]
+                - list [ref=e535]:
+                  - listitem [ref=e536]:
+                    - link "Resume notification GBN-AG-26-50TYHK" [ref=e537] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-50TYHK
+                      - text: Resume
+                      - generic [ref=e538]: notification GBN-AG-26-50TYHK
+                  - listitem [ref=e539]:
+                    - button "Copy as new notification GBN-AG-26-50TYHK" [ref=e541] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e542]: notification GBN-AG-26-50TYHK
+                  - listitem [ref=e543]:
+                    - link "Delete notification GBN-AG-26-50TYHK" [ref=e544] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-50TYHK/delete
+                      - text: Delete
+                      - generic [ref=e545]: notification GBN-AG-26-50TYHK
+              - generic [ref=e546]:
+                - generic [ref=e547]:
+                  - generic [ref=e548]:
+                    - term [ref=e549]: Commodity
+                    - definition [ref=e550]: Cow
+                  - generic [ref=e551]:
+                    - term [ref=e552]: Origin
+                    - definition [ref=e553]: France
+                  - generic [ref=e554]:
+                    - term [ref=e555]: Arrival at destination
+                    - definition
+                - generic [ref=e556]:
+                  - generic [ref=e557]:
+                    - term [ref=e558]: Consignee
+                    - definition
+                  - generic [ref=e559]:
+                    - term [ref=e560]: Consignor
+                    - definition
+                  - generic [ref=e561]:
+                    - term [ref=e562]: Status
+                    - definition [ref=e563]:
+                      - strong [ref=e564]: Draft
+                - generic [ref=e565]:
+                  - generic [ref=e566]:
+                    - term [ref=e567]: Date created
+                    - definition [ref=e568]: 19 Aug 2026
+                  - generic [ref=e569]:
+                    - term [ref=e570]: Date submitted
+                    - definition
+            - generic [ref=e571]:
+              - generic [ref=e572]:
+                - heading "GBN-AG-26-BSQBE5" [level=3] [ref=e573]
+                - list [ref=e574]:
+                  - listitem [ref=e575]:
+                    - link "Resume notification GBN-AG-26-BSQBE5" [ref=e576] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-BSQBE5
+                      - text: Resume
+                      - generic [ref=e577]: notification GBN-AG-26-BSQBE5
+                  - listitem [ref=e578]:
+                    - button "Copy as new notification GBN-AG-26-BSQBE5" [ref=e580] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e581]: notification GBN-AG-26-BSQBE5
+                  - listitem [ref=e582]:
+                    - link "Delete notification GBN-AG-26-BSQBE5" [ref=e583] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-BSQBE5/delete
+                      - text: Delete
+                      - generic [ref=e584]: notification GBN-AG-26-BSQBE5
+              - generic [ref=e585]:
+                - generic [ref=e586]:
+                  - generic [ref=e587]:
+                    - term [ref=e588]: Commodity
+                    - definition
+                  - generic [ref=e589]:
+                    - term [ref=e590]: Origin
+                    - definition [ref=e591]: Belgium
+                  - generic [ref=e592]:
+                    - term [ref=e593]: Arrival at destination
+                    - definition
+                - generic [ref=e594]:
+                  - generic [ref=e595]:
+                    - term [ref=e596]: Consignee
+                    - definition
+                  - generic [ref=e597]:
+                    - term [ref=e598]: Consignor
+                    - definition
+                  - generic [ref=e599]:
+                    - term [ref=e600]: Status
+                    - definition [ref=e601]:
+                      - strong [ref=e602]: Draft
+                - generic [ref=e603]:
+                  - generic [ref=e604]:
+                    - term [ref=e605]: Date created
+                    - definition [ref=e606]: 19 Aug 2026
+                  - generic [ref=e607]:
+                    - term [ref=e608]: Date submitted
+                    - definition
+            - generic [ref=e609]:
+              - generic [ref=e610]:
+                - heading "GBN-AG-26-VBWJ75" [level=3] [ref=e611]
+                - list [ref=e612]:
+                  - listitem [ref=e613]:
+                    - link "Resume notification GBN-AG-26-VBWJ75" [ref=e614] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-VBWJ75
+                      - text: Resume
+                      - generic [ref=e615]: notification GBN-AG-26-VBWJ75
+                  - listitem [ref=e616]:
+                    - button "Copy as new notification GBN-AG-26-VBWJ75" [ref=e618] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e619]: notification GBN-AG-26-VBWJ75
+                  - listitem [ref=e620]:
+                    - link "Delete notification GBN-AG-26-VBWJ75" [ref=e621] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-VBWJ75/delete
+                      - text: Delete
+                      - generic [ref=e622]: notification GBN-AG-26-VBWJ75
+              - generic [ref=e623]:
+                - generic [ref=e624]:
+                  - generic [ref=e625]:
+                    - term [ref=e626]: Commodity
+                    - definition [ref=e627]: Cow
+                  - generic [ref=e628]:
+                    - term [ref=e629]: Origin
+                    - definition [ref=e630]: France
+                  - generic [ref=e631]:
+                    - term [ref=e632]: Arrival at destination
+                    - definition
+                - generic [ref=e633]:
+                  - generic [ref=e634]:
+                    - term [ref=e635]: Consignee
+                    - definition
+                  - generic [ref=e636]:
+                    - term [ref=e637]: Consignor
+                    - definition
+                  - generic [ref=e638]:
+                    - term [ref=e639]: Status
+                    - definition [ref=e640]:
+                      - strong [ref=e641]: Draft
+                - generic [ref=e642]:
+                  - generic [ref=e643]:
+                    - term [ref=e644]: Date created
+                    - definition [ref=e645]: 19 Aug 2026
+                  - generic [ref=e646]:
+                    - term [ref=e647]: Date submitted
+                    - definition
+            - generic [ref=e648]:
+              - generic [ref=e649]:
+                - heading "GBN-AG-26-3WNVE7" [level=3] [ref=e650]
+                - list [ref=e651]:
+                  - listitem [ref=e652]:
+                    - link "Resume notification GBN-AG-26-3WNVE7" [ref=e653] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-3WNVE7
+                      - text: Resume
+                      - generic [ref=e654]: notification GBN-AG-26-3WNVE7
+                  - listitem [ref=e655]:
+                    - button "Copy as new notification GBN-AG-26-3WNVE7" [ref=e657] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e658]: notification GBN-AG-26-3WNVE7
+                  - listitem [ref=e659]:
+                    - link "Delete notification GBN-AG-26-3WNVE7" [ref=e660] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-3WNVE7/delete
+                      - text: Delete
+                      - generic [ref=e661]: notification GBN-AG-26-3WNVE7
+              - generic [ref=e662]:
+                - generic [ref=e663]:
+                  - generic [ref=e664]:
+                    - term [ref=e665]: Commodity
+                    - definition [ref=e666]: Cow
+                  - generic [ref=e667]:
+                    - term [ref=e668]: Origin
+                    - definition [ref=e669]: France
+                  - generic [ref=e670]:
+                    - term [ref=e671]: Arrival at destination
+                    - definition
+                - generic [ref=e672]:
+                  - generic [ref=e673]:
+                    - term [ref=e674]: Consignee
+                    - definition
+                  - generic [ref=e675]:
+                    - term [ref=e676]: Consignor
+                    - definition
+                  - generic [ref=e677]:
+                    - term [ref=e678]: Status
+                    - definition [ref=e679]:
+                      - strong [ref=e680]: Draft
+                - generic [ref=e681]:
+                  - generic [ref=e682]:
+                    - term [ref=e683]: Date created
+                    - definition [ref=e684]: 19 Aug 2026
+                  - generic [ref=e685]:
+                    - term [ref=e686]: Date submitted
+                    - definition
+            - generic [ref=e687]:
+              - generic [ref=e688]:
+                - heading "GBN-AG-26-JRNF13" [level=3] [ref=e689]
+                - list [ref=e690]:
+                  - listitem [ref=e691]:
+                    - link "Resume notification GBN-AG-26-JRNF13" [ref=e692] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-JRNF13
+                      - text: Resume
+                      - generic [ref=e693]: notification GBN-AG-26-JRNF13
+                  - listitem [ref=e694]:
+                    - button "Copy as new notification GBN-AG-26-JRNF13" [ref=e696] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e697]: notification GBN-AG-26-JRNF13
+                  - listitem [ref=e698]:
+                    - link "Delete notification GBN-AG-26-JRNF13" [ref=e699] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-JRNF13/delete
+                      - text: Delete
+                      - generic [ref=e700]: notification GBN-AG-26-JRNF13
+              - generic [ref=e701]:
+                - generic [ref=e702]:
+                  - generic [ref=e703]:
+                    - term [ref=e704]: Commodity
+                    - definition [ref=e705]: Cat
+                  - generic [ref=e706]:
+                    - term [ref=e707]: Origin
+                    - definition [ref=e708]: France
+                  - generic [ref=e709]:
+                    - term [ref=e710]: Arrival at destination
+                    - definition
+                - generic [ref=e711]:
+                  - generic [ref=e712]:
+                    - term [ref=e713]: Consignee
+                    - definition
+                  - generic [ref=e714]:
+                    - term [ref=e715]: Consignor
+                    - definition
+                  - generic [ref=e716]:
+                    - term [ref=e717]: Status
+                    - definition [ref=e718]:
+                      - strong [ref=e719]: Draft
+                - generic [ref=e720]:
+                  - generic [ref=e721]:
+                    - term [ref=e722]: Date created
+                    - definition [ref=e723]: 19 Aug 2026
+                  - generic [ref=e724]:
+                    - term [ref=e725]: Date submitted
+                    - definition
+            - generic [ref=e726]:
+              - generic [ref=e727]:
+                - heading "GBN-AG-26-S28NBA" [level=3] [ref=e728]
+                - list [ref=e729]:
+                  - listitem [ref=e730]:
+                    - link "Resume notification GBN-AG-26-S28NBA" [ref=e731] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-S28NBA
+                      - text: Resume
+                      - generic [ref=e732]: notification GBN-AG-26-S28NBA
+                  - listitem [ref=e733]:
+                    - button "Copy as new notification GBN-AG-26-S28NBA" [ref=e735] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e736]: notification GBN-AG-26-S28NBA
+                  - listitem [ref=e737]:
+                    - link "Delete notification GBN-AG-26-S28NBA" [ref=e738] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-S28NBA/delete
+                      - text: Delete
+                      - generic [ref=e739]: notification GBN-AG-26-S28NBA
+              - generic [ref=e740]:
+                - generic [ref=e741]:
+                  - generic [ref=e742]:
+                    - term [ref=e743]: Commodity
+                    - definition [ref=e744]: Cow
+                  - generic [ref=e745]:
+                    - term [ref=e746]: Origin
+                    - definition [ref=e747]: France
+                  - generic [ref=e748]:
+                    - term [ref=e749]: Arrival at destination
+                    - definition
+                - generic [ref=e750]:
+                  - generic [ref=e751]:
+                    - term [ref=e752]: Consignee
+                    - definition
+                  - generic [ref=e753]:
+                    - term [ref=e754]: Consignor
+                    - definition
+                  - generic [ref=e755]:
+                    - term [ref=e756]: Status
+                    - definition [ref=e757]:
+                      - strong [ref=e758]: Draft
+                - generic [ref=e759]:
+                  - generic [ref=e760]:
+                    - term [ref=e761]: Date created
+                    - definition [ref=e762]: 19 Aug 2026
+                  - generic [ref=e763]:
+                    - term [ref=e764]: Date submitted
+                    - definition
+            - generic [ref=e765]:
+              - generic [ref=e766]:
+                - heading "GBN-AG-26-V1V9RA" [level=3] [ref=e767]
+                - list [ref=e768]:
+                  - listitem [ref=e769]:
+                    - link "Resume notification GBN-AG-26-V1V9RA" [ref=e770] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-V1V9RA
+                      - text: Resume
+                      - generic [ref=e771]: notification GBN-AG-26-V1V9RA
+                  - listitem [ref=e772]:
+                    - button "Copy as new notification GBN-AG-26-V1V9RA" [ref=e774] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e775]: notification GBN-AG-26-V1V9RA
+                  - listitem [ref=e776]:
+                    - link "Delete notification GBN-AG-26-V1V9RA" [ref=e777] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-V1V9RA/delete
+                      - text: Delete
+                      - generic [ref=e778]: notification GBN-AG-26-V1V9RA
+              - generic [ref=e779]:
+                - generic [ref=e780]:
+                  - generic [ref=e781]:
+                    - term [ref=e782]: Commodity
+                    - definition [ref=e783]: Cow
+                  - generic [ref=e784]:
+                    - term [ref=e785]: Origin
+                    - definition [ref=e786]: France
+                  - generic [ref=e787]:
+                    - term [ref=e788]: Arrival at destination
+                    - definition
+                - generic [ref=e789]:
+                  - generic [ref=e790]:
+                    - term [ref=e791]: Consignee
+                    - definition
+                  - generic [ref=e792]:
+                    - term [ref=e793]: Consignor
+                    - definition
+                  - generic [ref=e794]:
+                    - term [ref=e795]: Status
+                    - definition [ref=e796]:
+                      - strong [ref=e797]: Draft
+                - generic [ref=e798]:
+                  - generic [ref=e799]:
+                    - term [ref=e800]: Date created
+                    - definition [ref=e801]: 19 Aug 2026
+                  - generic [ref=e802]:
+                    - term [ref=e803]: Date submitted
+                    - definition
+            - generic [ref=e804]:
+              - generic [ref=e805]:
+                - heading "GBN-AG-26-5NNB71" [level=3] [ref=e806]
+                - list [ref=e807]:
+                  - listitem [ref=e808]:
+                    - link "Resume notification GBN-AG-26-5NNB71" [ref=e809] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-5NNB71
+                      - text: Resume
+                      - generic [ref=e810]: notification GBN-AG-26-5NNB71
+                  - listitem [ref=e811]:
+                    - button "Copy as new notification GBN-AG-26-5NNB71" [ref=e813] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e814]: notification GBN-AG-26-5NNB71
+                  - listitem [ref=e815]:
+                    - link "Delete notification GBN-AG-26-5NNB71" [ref=e816] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-5NNB71/delete
+                      - text: Delete
+                      - generic [ref=e817]: notification GBN-AG-26-5NNB71
+              - generic [ref=e818]:
+                - generic [ref=e819]:
+                  - generic [ref=e820]:
+                    - term [ref=e821]: Commodity
+                    - definition [ref=e822]: Cow
+                  - generic [ref=e823]:
+                    - term [ref=e824]: Origin
+                    - definition [ref=e825]: France
+                  - generic [ref=e826]:
+                    - term [ref=e827]: Arrival at destination
+                    - definition
+                - generic [ref=e828]:
+                  - generic [ref=e829]:
+                    - term [ref=e830]: Consignee
+                    - definition
+                  - generic [ref=e831]:
+                    - term [ref=e832]: Consignor
+                    - definition
+                  - generic [ref=e833]:
+                    - term [ref=e834]: Status
+                    - definition [ref=e835]:
+                      - strong [ref=e836]: Draft
+                - generic [ref=e837]:
+                  - generic [ref=e838]:
+                    - term [ref=e839]: Date created
+                    - definition [ref=e840]: 19 Aug 2026
+                  - generic [ref=e841]:
+                    - term [ref=e842]: Date submitted
+                    - definition
+            - generic [ref=e843]:
+              - generic [ref=e844]:
+                - heading "GBN-AG-26-YAWTBK" [level=3] [ref=e845]
+                - list [ref=e846]:
+                  - listitem [ref=e847]:
+                    - link "Resume notification GBN-AG-26-YAWTBK" [ref=e848] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-YAWTBK
+                      - text: Resume
+                      - generic [ref=e849]: notification GBN-AG-26-YAWTBK
+                  - listitem [ref=e850]:
+                    - button "Copy as new notification GBN-AG-26-YAWTBK" [ref=e852] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e853]: notification GBN-AG-26-YAWTBK
+                  - listitem [ref=e854]:
+                    - link "Delete notification GBN-AG-26-YAWTBK" [ref=e855] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-YAWTBK/delete
+                      - text: Delete
+                      - generic [ref=e856]: notification GBN-AG-26-YAWTBK
+              - generic [ref=e857]:
+                - generic [ref=e858]:
+                  - generic [ref=e859]:
+                    - term [ref=e860]: Commodity
+                    - definition
+                  - generic [ref=e861]:
+                    - term [ref=e862]: Origin
+                    - definition [ref=e863]: France
+                  - generic [ref=e864]:
+                    - term [ref=e865]: Arrival at destination
+                    - definition
+                - generic [ref=e866]:
+                  - generic [ref=e867]:
+                    - term [ref=e868]: Consignee
+                    - definition
+                  - generic [ref=e869]:
+                    - term [ref=e870]: Consignor
+                    - definition
+                  - generic [ref=e871]:
+                    - term [ref=e872]: Status
+                    - definition [ref=e873]:
+                      - strong [ref=e874]: Draft
+                - generic [ref=e875]:
+                  - generic [ref=e876]:
+                    - term [ref=e877]: Date created
+                    - definition [ref=e878]: 19 Aug 2026
+                  - generic [ref=e879]:
+                    - term [ref=e880]: Date submitted
+                    - definition
+            - generic [ref=e881]:
+              - generic [ref=e882]:
+                - heading "GBN-AG-26-GDQAGE" [level=3] [ref=e883]
+                - list [ref=e884]:
+                  - listitem [ref=e885]:
+                    - link "Resume notification GBN-AG-26-GDQAGE" [ref=e886] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-GDQAGE
+                      - text: Resume
+                      - generic [ref=e887]: notification GBN-AG-26-GDQAGE
+                  - listitem [ref=e888]:
+                    - button "Copy as new notification GBN-AG-26-GDQAGE" [ref=e890] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e891]: notification GBN-AG-26-GDQAGE
+                  - listitem [ref=e892]:
+                    - link "Delete notification GBN-AG-26-GDQAGE" [ref=e893] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-GDQAGE/delete
+                      - text: Delete
+                      - generic [ref=e894]: notification GBN-AG-26-GDQAGE
+              - generic [ref=e895]:
+                - generic [ref=e896]:
+                  - generic [ref=e897]:
+                    - term [ref=e898]: Commodity
+                    - definition
+                  - generic [ref=e899]:
+                    - term [ref=e900]: Origin
+                    - definition
+                  - generic [ref=e901]:
+                    - term [ref=e902]: Arrival at destination
+                    - definition
+                - generic [ref=e903]:
+                  - generic [ref=e904]:
+                    - term [ref=e905]: Consignee
+                    - definition
+                  - generic [ref=e906]:
+                    - term [ref=e907]: Consignor
+                    - definition
+                  - generic [ref=e908]:
+                    - term [ref=e909]: Status
+                    - definition [ref=e910]:
+                      - strong [ref=e911]: Draft
+                - generic [ref=e912]:
+                  - generic [ref=e913]:
+                    - term [ref=e914]: Date created
+                    - definition [ref=e915]: 19 Aug 2026
+                  - generic [ref=e916]:
+                    - term [ref=e917]: Date submitted
+                    - definition
+            - generic [ref=e918]:
+              - generic [ref=e919]:
+                - heading "GBN-AG-26-4GFMKP" [level=3] [ref=e920]
+                - list [ref=e921]:
+                  - listitem [ref=e922]:
+                    - link "Resume notification GBN-AG-26-4GFMKP" [ref=e923] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-4GFMKP
+                      - text: Resume
+                      - generic [ref=e924]: notification GBN-AG-26-4GFMKP
+                  - listitem [ref=e925]:
+                    - button "Copy as new notification GBN-AG-26-4GFMKP" [ref=e927] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e928]: notification GBN-AG-26-4GFMKP
+                  - listitem [ref=e929]:
+                    - link "Delete notification GBN-AG-26-4GFMKP" [ref=e930] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-4GFMKP/delete
+                      - text: Delete
+                      - generic [ref=e931]: notification GBN-AG-26-4GFMKP
+              - generic [ref=e932]:
+                - generic [ref=e933]:
+                  - generic [ref=e934]:
+                    - term [ref=e935]: Commodity
+                    - definition [ref=e936]: Cow
+                  - generic [ref=e937]:
+                    - term [ref=e938]: Origin
+                    - definition [ref=e939]: France
+                  - generic [ref=e940]:
+                    - term [ref=e941]: Arrival at destination
+                    - definition
+                - generic [ref=e942]:
+                  - generic [ref=e943]:
+                    - term [ref=e944]: Consignee
+                    - definition
+                  - generic [ref=e945]:
+                    - term [ref=e946]: Consignor
+                    - definition
+                  - generic [ref=e947]:
+                    - term [ref=e948]: Status
+                    - definition [ref=e949]:
+                      - strong [ref=e950]: Draft
+                - generic [ref=e951]:
+                  - generic [ref=e952]:
+                    - term [ref=e953]: Date created
+                    - definition [ref=e954]: 19 Aug 2026
+                  - generic [ref=e955]:
+                    - term [ref=e956]: Date submitted
+                    - definition
+            - generic [ref=e957]:
+              - generic [ref=e958]:
+                - heading "GBN-AG-26-6JDKN5" [level=3] [ref=e959]
+                - list [ref=e960]:
+                  - listitem [ref=e961]:
+                    - link "Resume notification GBN-AG-26-6JDKN5" [ref=e962] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-6JDKN5
+                      - text: Resume
+                      - generic [ref=e963]: notification GBN-AG-26-6JDKN5
+                  - listitem [ref=e964]:
+                    - button "Copy as new notification GBN-AG-26-6JDKN5" [ref=e966] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e967]: notification GBN-AG-26-6JDKN5
+                  - listitem [ref=e968]:
+                    - link "Delete notification GBN-AG-26-6JDKN5" [ref=e969] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-6JDKN5/delete
+                      - text: Delete
+                      - generic [ref=e970]: notification GBN-AG-26-6JDKN5
+              - generic [ref=e971]:
+                - generic [ref=e972]:
+                  - generic [ref=e973]:
+                    - term [ref=e974]: Commodity
+                    - definition [ref=e975]: Cow
+                  - generic [ref=e976]:
+                    - term [ref=e977]: Origin
+                    - definition [ref=e978]: France
+                  - generic [ref=e979]:
+                    - term [ref=e980]: Arrival at destination
+                    - definition
+                - generic [ref=e981]:
+                  - generic [ref=e982]:
+                    - term [ref=e983]: Consignee
+                    - definition
+                  - generic [ref=e984]:
+                    - term [ref=e985]: Consignor
+                    - definition
+                  - generic [ref=e986]:
+                    - term [ref=e987]: Status
+                    - definition [ref=e988]:
+                      - strong [ref=e989]: Draft
+                - generic [ref=e990]:
+                  - generic [ref=e991]:
+                    - term [ref=e992]: Date created
+                    - definition [ref=e993]: 19 Aug 2026
+                  - generic [ref=e994]:
+                    - term [ref=e995]: Date submitted
+                    - definition
+            - generic [ref=e996]:
+              - generic [ref=e997]:
+                - heading "GBN-AG-26-67YC17" [level=3] [ref=e998]
+                - list [ref=e999]:
+                  - listitem [ref=e1000]:
+                    - link "Resume notification GBN-AG-26-67YC17" [ref=e1001] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-67YC17
+                      - text: Resume
+                      - generic [ref=e1002]: notification GBN-AG-26-67YC17
+                  - listitem [ref=e1003]:
+                    - button "Copy as new notification GBN-AG-26-67YC17" [ref=e1005] [cursor=pointer]:
+                      - text: Copy as new
+                      - generic [ref=e1006]: notification GBN-AG-26-67YC17
+                  - listitem [ref=e1007]:
+                    - link "Delete notification GBN-AG-26-67YC17" [ref=e1008] [cursor=pointer]:
+                      - /url: /notifications/GBN-AG-26-67YC17/delete
+                      - text: Delete
+                      - generic [ref=e1009]: notification GBN-AG-26-67YC17
+              - generic [ref=e1010]:
+                - generic [ref=e1011]:
+                  - generic [ref=e1012]:
+                    - term [ref=e1013]: Commodity
+                    - definition [ref=e1014]: Cow
+                  - generic [ref=e1015]:
+                    - term [ref=e1016]: Origin
+                    - definition [ref=e1017]: France
+                  - generic [ref=e1018]:
+                    - term [ref=e1019]: Arrival at destination
+                    - definition
+                - generic [ref=e1020]:
+                  - generic [ref=e1021]:
+                    - term [ref=e1022]: Consignee
+                    - definition
+                  - generic [ref=e1023]:
+                    - term [ref=e1024]: Consignor
+                    - definition
+                  - generic [ref=e1025]:
+                    - term [ref=e1026]: Status
+                    - definition [ref=e1027]:
+                      - strong [ref=e1028]: Draft
+                - generic [ref=e1029]:
+                  - generic [ref=e1030]:
+                    - term [ref=e1031]: Date created
+                    - definition [ref=e1032]: 19 Aug 2026
+                  - generic [ref=e1033]:
+                    - term [ref=e1034]: Date submitted
+                    - definition
+            - navigation "Pagination" [ref=e1035]:
+              - link "Next" [ref=e1037] [cursor=pointer]:
+                - /url: /?page=2
+                - img [ref=e1038]
+                - text: Next
+  - contentinfo [ref=e1040]:
+    - generic [ref=e1053]:
+      - generic [ref=e1054]:
+        - heading "Support links" [level=2] [ref=e1055]
+        - list [ref=e1056]:
+          - listitem [ref=e1057]:
+            - link "Privacy" [ref=e1058] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e1059]:
+            - link "Cookies" [ref=e1060] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e1061]:
+            - link "Accessibility statement" [ref=e1062] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e1063]
+        - generic [ref=e1065]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e1066] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e1068] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import type { APIRequestContext } from '@playwright/test';
+  2  | 
+  3  | export class RestClientError extends Error {
+  4  |   constructor(
+  5  |     readonly status: number,
+  6  |     readonly method: string,
+  7  |     readonly url: string,
+  8  |     readonly responseBody: string,
+  9  |   ) {
+  10 |     super(`${method} ${url} responded ${status}: ${responseBody}`);
+  11 |     this.name = 'RestClientError';
+  12 |   }
+  13 | }
+  14 | 
+  15 | export class RestClient {
+  16 |   constructor(
+  17 |     private readonly baseUrl: string,
+  18 |     private readonly request: APIRequestContext,
+  19 |     private readonly apiKey?: string,
+  20 |   ) {}
+  21 | 
+  22 |   async get<T>(path: string, headers?: Record<string, string>): Promise<T> {
+  23 |     return this.send<T>('GET', path, undefined, headers);
+  24 |   }
+  25 | 
+  26 |   async post<T>(path: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
+  27 |     return this.send<T>('POST', path, body, headers);
+  28 |   }
+  29 | 
+  30 |   async put<T>(path: string, body: unknown, headers?: Record<string, string>): Promise<T> {
+  31 |     return this.send<T>('PUT', path, body, headers);
+  32 |   }
+  33 | 
+  34 |   private async send<T>(method: string, path: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
+  35 |     const url = `${this.baseUrl}${path}`;
+  36 |     const response = await this.request.fetch(url, {
+  37 |       method,
+  38 |       headers: {
+  39 |         'content-type': 'application/json',
+  40 |         ...(this.apiKey ? { 'x-api-key': this.apiKey } : {}),
+  41 |         ...headers,
+  42 |       },
+  43 |       data: body,
+  44 |     });
+  45 |     const responseBody = await response.text();
+  46 | 
+  47 |     if (!response.ok()) {
+> 48 |       throw new RestClientError(response.status(), method, url, responseBody);
+     |             ^ RestClientError: POST http://localhost:8085/notifications responded 400: {"type":"https://api.cdp.defra.cloud/problems/validation-error","title":"Validation Error","status":400,"detail":"Validation failed for one or more fields","instance":"/notifications","errors":{"notification":["must not be null"]}}
+  49 |     }
+  50 | 
+  51 |     return (responseBody ? JSON.parse(responseBody) : undefined) as T;
+  52 |   }
+  53 | }
+  54 | 
+```

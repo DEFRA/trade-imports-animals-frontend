@@ -1,0 +1,76 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/promoted-lifecycle.spec.ts >> Notification lifecycle >> creates, submits, amends, cancels, copies and soft-deletes a notification; fulfilment view reflects each transition; copy no longer dedupes
+- Location: tests/e2e/features/promoted-lifecycle.spec.ts:6:3
+
+# Error details
+
+```
+RestClientError: POST http://localhost:8085/notifications/GBN-AG-26-8TF24V/copy responded 400: {"timestamp":"2026-08-18T15:34:04.143+00:00","status":400,"error":"Bad Request","path":"/notifications/GBN-AG-26-8TF24V/copy"}
+```
+
+# Test source
+
+```ts
+  1  | import type { APIRequestContext } from '@playwright/test';
+  2  | 
+  3  | export class RestClientError extends Error {
+  4  |   constructor(
+  5  |     readonly status: number,
+  6  |     readonly method: string,
+  7  |     readonly url: string,
+  8  |     readonly responseBody: string,
+  9  |   ) {
+  10 |     super(`${method} ${url} responded ${status}: ${responseBody}`);
+  11 |     this.name = 'RestClientError';
+  12 |   }
+  13 | }
+  14 | 
+  15 | export class RestClient {
+  16 |   constructor(
+  17 |     private readonly baseUrl: string,
+  18 |     private readonly request: APIRequestContext,
+  19 |     private readonly apiKey?: string,
+  20 |   ) {}
+  21 | 
+  22 |   async get<T>(path: string, headers?: Record<string, string>): Promise<T> {
+  23 |     return this.send<T>('GET', path, undefined, headers);
+  24 |   }
+  25 | 
+  26 |   async post<T>(path: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
+  27 |     return this.send<T>('POST', path, body, headers);
+  28 |   }
+  29 | 
+  30 |   async put<T>(path: string, body: unknown, headers?: Record<string, string>): Promise<T> {
+  31 |     return this.send<T>('PUT', path, body, headers);
+  32 |   }
+  33 | 
+  34 |   private async send<T>(method: string, path: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
+  35 |     const url = `${this.baseUrl}${path}`;
+  36 |     const response = await this.request.fetch(url, {
+  37 |       method,
+  38 |       headers: {
+  39 |         'content-type': 'application/json',
+  40 |         ...(this.apiKey ? { 'x-api-key': this.apiKey } : {}),
+  41 |         ...headers,
+  42 |       },
+  43 |       data: body,
+  44 |     });
+  45 |     const responseBody = await response.text();
+  46 | 
+  47 |     if (!response.ok()) {
+> 48 |       throw new RestClientError(response.status(), method, url, responseBody);
+     |             ^ RestClientError: POST http://localhost:8085/notifications/GBN-AG-26-8TF24V/copy responded 400: {"timestamp":"2026-08-18T15:34:04.143+00:00","status":400,"error":"Bad Request","path":"/notifications/GBN-AG-26-8TF24V/copy"}
+  49 |     }
+  50 | 
+  51 |     return (responseBody ? JSON.parse(responseBody) : undefined) as T;
+  52 |   }
+  53 | }
+  54 | 
+```
