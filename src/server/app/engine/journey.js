@@ -76,15 +76,20 @@ export const replaceJourneyFulfilment = async (
   fulfilment
 ) => {
   const cached = memoRead(request)
-  const known = cached?.journeyId === journeyId ? cached : undefined
+  const memoKnown = cached?.journeyId === journeyId ? cached : undefined
+  const payloadToken = request?.payload?.concurrencyToken
+  const known =
+    memoKnown ??
+    (payloadToken != null
+      ? { journeyId, concurrencyToken: Number(payloadToken) }
+      : undefined)
   const actor = buildActor(request.auth?.credentials)
   const saved = await records.replaceFulfilment(journeyId, fulfilment, {
     known,
     actor
   })
-  const next = known
-    ? { ...known, fulfilment: structuredClone(fulfilment) }
-    : saved
+  // The backend mints a new concurrencyToken on every save, so get the latest
+  const next = { ...saved, fulfilment: structuredClone(fulfilment) }
   memoWrite(request, next)
   return next
 }
@@ -158,11 +163,11 @@ export const cancelAmendJourney = async (request, _h, journeyId) => {
   return restored
 }
 
-export const copyJourney = async (request, h, journeyId, idempotencyKey) => {
+export const copyJourney = async (request, h, journeyId, concurrencyToken) => {
   if (!(await isKnownJourney(request, journeyId))) {
     return undefined
   }
-  const copied = await records.copy(journeyId, idempotencyKey)
+  const copied = await records.copy(journeyId, concurrencyToken)
   await session.addKnownJourney(request, h, copied.journeyId)
   memoWrite(request, copied)
   return copied

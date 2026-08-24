@@ -25,6 +25,10 @@ export const copy = {
     title: 'Mae problem',
     body: "Mae'n ddrwg gennym, mae problem gyda'r gwasanaeth. Mae eich atebion ar y dudalen hon wedi'u cadw. Rhowch gynnig arall arni ymhen ychydig funudau."
   },
+  staleActionRejected: {
+    title: 'Mae’r hysbysiad wedi cael ei ddiweddaru',
+    body: 'Cafodd yr hysbysiad hwn ei ddiweddaru ers i chi ei agor. Adolygwch y manylion a rhowch gynnig arall arni.'
+  },
   notificationActions: {
     copy: {
       text: 'Copïo fel un newydd',

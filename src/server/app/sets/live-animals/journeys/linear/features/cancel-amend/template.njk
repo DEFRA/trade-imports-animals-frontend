@@ -7,6 +7,7 @@
 
   <form method="post" action="{{ cancelAction }}" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
     <div class="govuk-button-group">
       {{ govukButton({ text: copy.confirmButton }) }}
       {{ govukButton({

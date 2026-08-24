@@ -11,19 +11,19 @@ export const create = async () => {
     body: JSON.stringify({ notification: { fulfilments: [] } })
   })
   if (!notificationResponse.ok) {
-    throw failed('create notification', notificationResponse)
+    throw await failed('create notification', notificationResponse)
   }
   return marshal(await notificationResponse.json())
 }
 
-// Copy dedup dropped pending EUDPA-314
-export const copy = async (journeyId, _idempotencyKey) => {
-  const response = await fetch(`${notificationsUrl}/${journeyId}/copy`, {
+export const copy = async (journeyId, concurrencyToken) => {
+  const url = `${notificationsUrl}/${journeyId}/copy?concurrencyToken=${encodeURIComponent(concurrencyToken)}`
+  const response = await fetch(url, {
     method: 'POST',
     headers: headers()
   })
   if (!response.ok) {
-    throw failed('copy notification', response)
+    throw await failed('copy notification', response)
   }
   return marshal(await response.json())
 }

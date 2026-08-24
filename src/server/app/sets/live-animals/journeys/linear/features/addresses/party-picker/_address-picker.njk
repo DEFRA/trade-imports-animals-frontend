@@ -69,6 +69,7 @@
 {% macro addressPicker(picker, crumb, copy) %}
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
     <input type="hidden" name="page" value="{{ picker.page }}" />
     {% if picker.selected %}
       <input type="hidden" name="selected" value="{{ picker.selected.id }}" />

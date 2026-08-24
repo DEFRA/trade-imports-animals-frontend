@@ -32,6 +32,10 @@ export const copy = {
     title: 'There is a problem',
     body: 'Sorry, there is a problem with the service. Your answers on this page have been saved. Try again in a few minutes.'
   },
+  staleActionRejected: {
+    title: 'The notification has been updated',
+    body: 'This notification was updated since you opened it. Review the details and try again.'
+  },
   notificationActions: {
     copy: {
       text: 'Copy as new',

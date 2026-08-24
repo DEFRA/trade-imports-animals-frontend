@@ -38,6 +38,7 @@ export const marshalListItem = async (document) => {
     status: document.status,
     createdAt: document.createdAt,
     submittedAt: document.submittedAt,
+    concurrencyToken: document.concurrencyToken ?? 0,
     reference: document.id,
     commodity: commodityName ? { name: commodityName } : null,
     originCountryCode: answers.countryOfOrigin ?? null,

@@ -50,7 +50,7 @@ describe('copy notification action', () => {
     const response = await copyPost(
       journeyRequest(source.journeyId, {
         payload: {
-          idempotencyKey: 'copy-key-123',
+          concurrencyToken: '0',
           copyOrigin: 'dashboard'
         }
       }),
@@ -66,24 +66,7 @@ describe('copy notification action', () => {
     })
   })
 
-  it('Should make a retry redirect stable for the same idempotency key', async () => {
-    const source = await records.create()
-    const request = () =>
-      journeyRequest(source.journeyId, {
-        payload: {
-          idempotencyKey: 'stable-copy-key',
-          copyOrigin: 'dashboard'
-        },
-        state: { [SESSION_COOKIES.knownJourneys]: [source.journeyId] }
-      })
-
-    const first = await copyPost(request(), stubH())
-    const retry = await copyPost(request(), stubH())
-
-    expect(retry.redirect).toBe(first.redirect)
-  })
-
-  it('Should re-render the dashboard at 500 with the same key after a recoverable backend failure', async () => {
+  it('Should re-render the dashboard at 500 after a recoverable backend failure', async () => {
     configureRecords({ ...recordsStub, copy: realRecords.copy })
     vi.stubGlobal(
       'fetch',
@@ -98,7 +81,7 @@ describe('copy notification action', () => {
     const response = await copyPost(
       journeyRequest(source.journeyId, {
         payload: {
-          idempotencyKey: 'retry-this-key',
+          concurrencyToken: '0',
           copyOrigin: 'dashboard'
         }
       }),
@@ -110,18 +93,61 @@ describe('copy notification action', () => {
       'live-animals/journeys/linear/features/dashboard/template'
     )
     expect(response.context.recoverableError).toBe(true)
-    expect(
-      response.context.notificationRows[0].actions.find(
-        (action) => action.text === 'Copy as new'
-      ).idempotencyKey
-    ).toBe('retry-this-key')
+  })
+
+  it('Should redirect to the dashboard with ?staleToken=1 on 409 STALE_CONCURRENCY_TOKEN from copy', async () => {
+    configureRecords({ ...recordsStub, copy: realRecords.copy })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: false,
+        status: 409,
+        statusText: 'Conflict',
+        clone() {
+          return this
+        },
+        json: async () => ({ code: 'STALE_CONCURRENCY_TOKEN' })
+      }))
+    )
+    const source = await records.create()
+
+    const response = await copyPost(
+      journeyRequest(source.journeyId, {
+        payload: {
+          concurrencyToken: '0',
+          copyOrigin: 'dashboard'
+        }
+      }),
+      stubH()
+    )
+
+    expect(response.redirect).toBe('/?staleAction=1')
+  })
+
+  it('Should propagate a non-STALE_CONCURRENCY_TOKEN error thrown from copy', async () => {
+    configureRecords({
+      ...recordsStub,
+      copy: async () => {
+        throw new TypeError('programmer error')
+      }
+    })
+    const source = await records.create()
+
+    await expect(
+      copyPost(
+        journeyRequest(source.journeyId, {
+          payload: { concurrencyToken: '0', copyOrigin: 'dashboard' }
+        }),
+        stubH()
+      )
+    ).rejects.toThrow('programmer error')
   })
 
   it('Should redirect an unknown source to the dashboard without copying', async () => {
     const response = await copyPost(
       journeyRequest('GBN-AG-26-UNKNOWN', {
         payload: {
-          idempotencyKey: 'unused-key',
+          concurrencyToken: '0',
           copyOrigin: 'dashboard'
         },
         state: { [SESSION_COOKIES.knownJourneys]: [] }

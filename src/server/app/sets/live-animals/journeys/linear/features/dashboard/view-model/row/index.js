@@ -7,7 +7,7 @@ import {
 } from '../../notification-helper.js'
 import { rowActions } from './actions.js'
 
-export const toRow = (journey, retryCopy = null) => ({
+export const toRow = (journey) => ({
   reference: journey.reference ?? journey.journeyId,
   status: journeyStrip(journey).status,
   commodity: formatCommodity(journey.commodity, commodities.commodityNameFor),
@@ -20,10 +20,5 @@ export const toRow = (journey, retryCopy = null) => ({
   consignee: journey.consigneeName ?? '',
   created: formatDisplayDate(journey.createdAt),
   submitted: formatDisplayDate(journey.submittedAt),
-  actions: rowActions(journey).map((action) =>
-    retryCopy?.journeyId === journey.journeyId &&
-    action.idempotencyKey !== undefined
-      ? { ...action, idempotencyKey: retryCopy.idempotencyKey }
-      : action
-  )
+  actions: rowActions(journey)
 })

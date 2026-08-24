@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import { hubPath, pagePath } from '../../../../../../../../shared/paths.js'
 import {
   AMEND,
@@ -19,7 +18,7 @@ export const rowActions = (journey) => {
   const copyAction = {
     text: sharedCopy.notificationActions.copy.text,
     postAction: pagePath(journey.journeyId, 'copy'),
-    idempotencyKey: randomUUID(),
+    concurrencyToken: journey.concurrencyToken,
     copyOrigin: 'dashboard'
   }
   const deleteAction = {

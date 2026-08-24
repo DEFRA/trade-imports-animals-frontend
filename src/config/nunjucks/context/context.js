@@ -33,6 +33,7 @@ async function context(request) {
     serviceName: config.get('serviceName'),
     serviceUrl: '/',
     authEnabled: config.get('auth.enabled'),
+    staleActionRejected: request.query?.staleAction === '1',
     breadcrumbs: [],
     userSession: authData
       ? {
