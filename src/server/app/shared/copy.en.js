@@ -1,6 +1,6 @@
 /**
  * Shared chrome copy — the only copy that legitimately lives outside a
- * feature folder: the layout (service name, phase banner, breadcrumbs,
+ * feature folder: the layout (service name, breadcrumbs,
  * back link, error title prefix), error-summary title, save-actions
  * buttons and journey-strip tags. Every view reaches it as `sharedCopy`
  * (via `kit.base`, or passed directly by the controllers that build
@@ -11,11 +11,6 @@ export const copy = {
     serviceName: 'Import notification service',
     errorTitlePrefix: 'Error: ',
     back: 'Back',
-    phaseBanner: {
-      tag: 'Alpha',
-      bodyPrefix: 'This is a new service. Help us improve it and',
-      feedbackLink: 'give your feedback by email'
-    },
     breadcrumbs: {
       serviceHome: 'Your notifications'
     },
