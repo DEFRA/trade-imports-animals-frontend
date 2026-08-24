@@ -69,6 +69,13 @@ const changeHrefsOf = (sections) =>
   ])
 
 const NOT_PROVIDED = 'Not provided'
+const CONSIGNOR_ERROR = 'Select an address for the consignor'
+
+const withoutParty = (seed, partyId) => {
+  const next = { ...seed }
+  delete next[partyId]
+  return next
+}
 const ADDRESS_LINE_1 = '43 East Hague Extension'
 const COW_CARD_TITLE = 'Cow (0102) — Bos taurus'
 const ROLES_AND_ADDRESSES_CARD = 'Roles and addresses'
@@ -451,12 +458,12 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     ).toBe(NOT_PROVIDED)
   })
 
-  it('Should render Not provided for an unset party', async () => {
+  it('Should render Not provided for an unset inline party', async () => {
     const card = cardByTitle(
       await sectionsFor(gatedOffSeed),
       ROLES_AND_ADDRESSES_CARD
     )
-    expect(valueOf(card.rows, 'Consignor')).toBe(NOT_PROVIDED)
+    expect(valueOf(card.rows, 'Place of origin')).toBe(NOT_PROVIDED)
   })
 })
 
@@ -475,7 +482,7 @@ describe(`${SUITE} — address-book party references`, () => {
     expect(htmlOf(card.rows, 'Consignor')).toContain(ADDRESS_LINE_1)
   })
 
-  it('Should render Not provided when the referenced address is gone', async () => {
+  it('Should render a message against the role when the referenced address is gone', async () => {
     const card = cardByTitle(
       await sectionsFor({
         consignor: { addressId: 'gone' }
@@ -483,7 +490,65 @@ describe(`${SUITE} — address-book party references`, () => {
       ROLES_AND_ADDRESSES_CARD
     )
 
-    expect(valueOf(card.rows, 'Consignor')).toBe(NOT_PROVIDED)
+    expect(htmlOf(card.rows, 'Consignor')).toContain(CONSIGNOR_ERROR)
+    expect(htmlOf(card.rows, 'Consignor')).toContain('govuk-error-message')
+  })
+})
+
+describe(`${SUITE} — outstanding referenced roles`, () => {
+  setupCheckAnswersEngine()
+
+  const summaryFor = async (seed) =>
+    (await driveHandler(getHandler, { seed })).view.context.errorSummary
+
+  it('Should list every outstanding role in the error summary', async () => {
+    const summary = await summaryFor({
+      ...withoutParty(fullSeed, 'importer'),
+      consignor: { addressId: 'gone' }
+    })
+
+    expect(summary.errorList.map((entry) => entry.text)).toEqual([
+      CONSIGNOR_ERROR,
+      'Select an address for the importer'
+    ])
+  })
+
+  it('Should link each summary entry where that role is changed', async () => {
+    const { view } = await driveHandler(getHandler, {
+      seed: { ...fullSeed, consignor: { addressId: 'gone' } }
+    })
+    const { errorSummary, sections } = view.context
+    const card = cardByTitle(sections, ROLES_AND_ADDRESSES_CARD)
+
+    expect(errorSummary.errorList[0].href).toMatch(/\/addresses\?change=1$/)
+    expect(errorSummary.errorList[0].href).toBe(
+      changeHrefOf(card.rows, 'Consignor')
+    )
+  })
+
+  it('Should carry no error summary once every referenced role resolves', async () => {
+    expect(await summaryFor(fullSeed)).toBeNull()
+  })
+
+  it('Should not flag an inline party the address book cannot empty', async () => {
+    const summary = await summaryFor(withoutParty(fullSeed, 'placeOfOrigin'))
+    expect(summary).toBeNull()
+  })
+
+  it('Should not flag a submitted notification', async () => {
+    const { context } = await viewForStatus(SUBMITTED, {
+      ...fullSeed,
+      consignor: { addressId: 'gone' }
+    })
+    expect(context.errorSummary).toBeNull()
+  })
+
+  it('Should flag an amend, which is still being worked on', async () => {
+    const { context } = await viewForStatus(AMEND, {
+      ...fullSeed,
+      consignor: { addressId: 'gone' }
+    })
+    expect(context.errorSummary.errorList[0].text).toBe(CONSIGNOR_ERROR)
   })
 })
 
@@ -529,20 +594,45 @@ describe(`${SUITE} — commodity-gate render matrix — model metadata per selec
 describe(`${SUITE} — POST navigation`, () => {
   setupCheckAnswersEngine()
 
+  const withParties = (seed) => ({
+    ...seed,
+    consignor: fullSeed.consignor,
+    consignee: fullSeed.consignee,
+    importer: fullSeed.importer,
+    placeOfDestination: fullSeed.placeOfDestination
+  })
+
   it('Should redirect to the hub when the next review page is not yet reachable', async () => {
     const { journeyId, response } = await driveHandler(postHandler, {
-      seed: {}
+      seed: withParties({})
     })
     expect(response.redirect).toBe(hubPath(journeyId))
   })
 
   it('Should redirect to the declaration once its prerequisites are answered', async () => {
     const { response } = await driveHandler(postHandler, {
-      seed: {
+      seed: withParties({
         countryOfOrigin: 'FR',
         commodityLines: [{ commoditySelection: 'Cow' }]
-      }
+      })
     })
     expect(response.redirect).toMatch(/\/declaration$/)
+  })
+
+  it('Should refuse Continue while a referenced role is outstanding', async () => {
+    const { response } = await driveHandler(postHandler, {
+      seed: { ...fullSeed, consignor: { addressId: 'gone' } }
+    })
+
+    expect(response.redirect).toBeUndefined()
+    expect(response.statusCode).toBe(400)
+  })
+
+  it('Should re-render the page with the summary when Continue is refused', async () => {
+    const { view } = await driveHandler(postHandler, {
+      seed: { ...fullSeed, consignor: { addressId: 'gone' } }
+    })
+
+    expect(view.context.errorSummary.errorList[0].text).toBe(CONSIGNOR_ERROR)
   })
 })

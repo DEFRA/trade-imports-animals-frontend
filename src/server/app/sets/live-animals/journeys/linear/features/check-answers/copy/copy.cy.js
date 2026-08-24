@@ -111,5 +111,14 @@ export const copy = {
     heading: 'Nawr cyflwynwch eich hysbysiad',
     body: 'Parhewch i’r datganiad i gyflwyno eich hysbysiad.',
     button: 'Parhau'
+  },
+  errors: {
+    prefix: 'Gwall:',
+    parties: {
+      consignor: 'Dewiswch gyfeiriad ar gyfer yr anfonwr',
+      consignee: 'Dewiswch gyfeiriad ar gyfer y derbynnydd',
+      importer: 'Dewiswch gyfeiriad ar gyfer y mewnforiwr',
+      placeOfDestination: 'Dewiswch gyfeiriad ar gyfer y man cyrchfan'
+    }
   }
 }

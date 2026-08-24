@@ -14,12 +14,29 @@ import { copy as cy } from './copy/copy.cy.js'
 import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import { buildSections } from './view-model/index.js'
+import { changeHref } from './view-model/rows/change-link.js'
+import { outstandingPartyErrors } from './view-model/outstanding-parties.js'
 import { resolveParties } from '../addresses/resolve-parties.js'
+import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
+
+const partyErrorSummary = (journeyId, partyErrors) => {
+  const entries = Object.entries(partyErrors)
+  if (entries.length === 0) {
+    return null
+  }
+  return {
+    titleText: sharedCopy.errorSummary.title,
+    errorList: entries.map(([partyId, text]) => ({
+      text,
+      href: changeHref(journeyId, partyId)
+    }))
+  }
+}
 
 const renderCya = (
   h,
@@ -31,7 +48,8 @@ const renderCya = (
     readOnly,
     amendmentCancelled,
     recoverableError = false,
-    parties = answers
+    parties = answers,
+    partyErrors = {}
   }
 ) =>
   h.view(view, {
@@ -41,6 +59,7 @@ const renderCya = (
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
     journeyStrip: journeyStrip(journey),
+    errorSummary: partyErrorSummary(journey.journeyId, partyErrors),
     sections: buildSections(
       answers,
       scope,
@@ -72,6 +91,7 @@ export const renderNotificationView = async (
 ) => {
   const { journey, answers, scope, evaluation } = await state.get(request, h)
   const readOnly = journey.status === state.SUBMITTED
+  const parties = await resolveParties(request, answers)
   return renderCya(h, journey, {
     answers,
     scope,
@@ -79,15 +99,21 @@ export const renderNotificationView = async (
     readOnly,
     amendmentCancelled: readOnly && request.query.cancelled === '1',
     recoverableError,
-    parties: await resolveParties(request, answers)
+    parties,
+    partyErrors: readOnly ? {} : outstandingPartyErrors(parties)
   })
 }
 
 const get = async (request, h) => renderNotificationView(request, h)
 
 const post = async (request, h) => {
-  const { scope } = await state.get(request, h)
-  return h.redirect(nextInSection(page.id, scope, request.params.journeyId))
+  const { journey, answers, scope } = await state.get(request, h)
+  const parties = await resolveParties(request, answers)
+  if (Object.keys(outstandingPartyErrors(parties)).length > 0) {
+    const rendered = await renderNotificationView(request, h)
+    return rendered.code(HTTP_STATUS_BAD_REQUEST)
+  }
+  return h.redirect(nextInSection(page.id, scope, journey.journeyId))
 }
 
 export const routes = pageRoutes(page, { get, post })

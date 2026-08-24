@@ -31,18 +31,35 @@ export const partyLines = (party) => {
   ]
 }
 
+/** A summary list has no error state of its own, so an outstanding role carries
+ * the error-message markup inside its value cell — the same class, and the same
+ * visually-hidden prefix, that govukErrorMessage renders on a form field. */
+const errorCell = (errorText) => ({
+  html:
+    '<p class="govuk-error-message">' +
+    `<span class="govuk-visually-hidden">${escapeHtml(copy.errors.prefix)}</span> ` +
+    `${escapeHtml(errorText)}</p>`
+})
+
+const valueCell = (lines, errorText) => {
+  if (lines) {
+    return { html: lines.join('<br>') }
+  }
+  return errorText ? errorCell(errorText) : { text: NOT_PROVIDED }
+}
+
 export const partyRow = (
   journeyId,
   readOnly,
   key,
   party,
   obligationId,
-  visuallyHiddenText = null
+  { visuallyHiddenText = null, errorText = null } = {}
 ) => {
   const lines = partyLines(party)
   return {
     key: { text: key },
-    value: lines ? { html: lines.join('<br>') } : { text: NOT_PROVIDED },
+    value: valueCell(lines, errorText),
     ...editableActions(
       readOnly,
       changeAction(

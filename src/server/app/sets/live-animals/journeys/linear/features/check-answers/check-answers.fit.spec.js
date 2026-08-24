@@ -149,15 +149,33 @@ test.describe('check-answers feature navigation and submission', () => {
     ).toEqual([])
   })
 
-  test('incomplete journey cannot continue to declaration', async ({
+  test('journey with an outstanding address cannot continue to declaration', async ({
     page
   }) => {
     await startNotification(page)
-    const hubUrl = journeyUrl(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
     await page.getByRole('button', { name: copy.submit.button }).click()
 
-    await expect(page).toHaveURL(hubUrl)
+    await expect(page).toHaveURL(/\/notification-view$/)
+    await expect(
+      page.getByRole('link', { name: copy.errors.parties.consignor })
+    ).toBeVisible()
+    await expect(rowFor(page, copy.rows.consignor)).toContainText(
+      copy.errors.parties.consignor
+    )
+  })
+
+  test('the outstanding-address summary links to where the role is changed', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    await page
+      .getByRole('link', { name: copy.errors.parties.consignor })
+      .click()
+
+    await expect(page).toHaveURL(/\/addresses\?change=1$/)
   })
 })
