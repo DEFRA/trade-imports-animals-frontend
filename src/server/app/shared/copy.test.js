@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
+import { copy as sharedCy } from './copy.cy.js'
 
 const leaves = (node, path = []) =>
   typeof node === 'object' && node !== null
@@ -24,6 +25,22 @@ describe('#copyFor', () => {
   it('Should fall back to English for an unknown locale', () => {
     const en = { title: 'Hello' }
     expect(copyFor({ en }, 'cy')).toBe(en)
+  })
+})
+
+describe('phase-banner copy', () => {
+  it('Should carry the Design release 1 banner wording', () => {
+    expect(sharedEn.layout.phaseBanner).toEqual({
+      tag: 'Alpha',
+      bodyPrefix: 'This is a new service. Help us improve it and',
+      feedbackLinkText: 'give your feedback by email'
+    })
+  })
+
+  it('Should carry the same banner keys in Welsh', () => {
+    expect(Object.keys(sharedCy.layout.phaseBanner)).toEqual(
+      Object.keys(sharedEn.layout.phaseBanner)
+    )
   })
 })
 

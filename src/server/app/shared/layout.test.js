@@ -6,6 +6,9 @@ import { copy as sharedCopy } from './copy.en.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
 
+const PHASE_BANNER = 'govuk-phase-banner'
+const BREADCRUMBS = 'govuk-breadcrumbs'
+
 const renderLayout = (userSession, context = {}) =>
   environment.render('shared/layout.njk', {
     pageTitle: 'Create an import notification',
@@ -38,6 +41,40 @@ describe('promoted live-animals signed-in chrome', () => {
     expect(html).not.toContain('app-service-header__user')
     expect(html).not.toContain('href="/auth/sign-out"')
     expect(html).not.toContain('Sign out')
+  })
+})
+
+describe('alpha phase banner', () => {
+  const feedbackAnchor =
+    '<a class="govuk-link" href="mailto:APHAServiceDesk@apha.gov.uk">give your feedback by email</a>'
+
+  it('Should tag the service as alpha in grey and offer the feedback link', () => {
+    const html = renderLayout({ isAuthenticated: true })
+
+    expect(html).toContain(PHASE_BANNER)
+    expect(html).toContain('govuk-tag--grey')
+    expect(html).toContain('Alpha')
+    expect(html).toContain(
+      `This is a new service. Help us improve it and ${feedbackAnchor}.`
+    )
+  })
+
+  it('Should render the banner on a signed-out page too', () => {
+    const html = renderLayout({ isAuthenticated: false })
+
+    expect(html).toContain(PHASE_BANNER)
+  })
+
+  it('Should place the banner above the breadcrumbs and the back link', () => {
+    const html = renderLayout(
+      { isAuthenticated: true },
+      { breadcrumbs: null, backLink: '/notifications' }
+    )
+
+    expect(html.indexOf(PHASE_BANNER)).toBeLessThan(html.indexOf(BREADCRUMBS))
+    expect(html.indexOf(BREADCRUMBS)).toBeLessThan(
+      html.indexOf('govuk-back-link')
+    )
   })
 })
 
