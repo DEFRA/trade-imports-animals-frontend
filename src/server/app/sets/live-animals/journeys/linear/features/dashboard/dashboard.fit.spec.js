@@ -10,6 +10,8 @@ import {
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 
+const FEEDBACK_MAILTO = 'mailto:APHAServiceDesk@apha.gov.uk'
+
 const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
 const COPY_AS_NEW = 'Copy as new'
 const PAGE_SIZE = 20
@@ -363,6 +365,40 @@ test.describe('dashboard feature — pagination', () => {
     await expect(
       page.getByRole('link', { name: /^Delete notification / })
     ).toHaveCount(1)
+  })
+})
+
+test.describe('shared chrome — alpha phase banner', () => {
+  const TAG = 'Alpha'
+  const BODY =
+    'This is a new service. Help us improve it and give your feedback by email.'
+  const FEEDBACK_LINK_TEXT = 'give your feedback by email'
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('dashboard tells the user the service is in alpha and offers feedback', async ({
+    page
+  }) => {
+    await page.goto('/')
+
+    await expect(page.getByText(TAG, { exact: true })).toBeVisible()
+    await expect(page.getByText(BODY)).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: FEEDBACK_LINK_TEXT })
+    ).toHaveAttribute('href', FEEDBACK_MAILTO)
+  })
+
+  test('the banner follows the layout onto an answering page', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await expect(page.getByText(TAG, { exact: true })).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: FEEDBACK_LINK_TEXT })
+    ).toHaveAttribute('href', FEEDBACK_MAILTO)
   })
 })
 

@@ -11,6 +11,11 @@ export const copy = {
     serviceName: 'Import notification service',
     errorTitlePrefix: 'Error: ',
     back: 'Back',
+    phaseBanner: {
+      tag: 'Alpha',
+      bodyPrefix: 'This is a new service. Help us improve it and',
+      feedbackLinkText: 'give your feedback by email'
+    },
     breadcrumbs: {
       serviceHome: 'Your notifications'
     },

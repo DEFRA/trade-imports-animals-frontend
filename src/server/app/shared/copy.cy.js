@@ -4,6 +4,11 @@ export const copy = {
     serviceName: 'Gwasanaeth hysbysu mewnforio',
     errorTitlePrefix: 'Gwall: ',
     back: 'Yn ôl',
+    phaseBanner: {
+      tag: 'Alffa',
+      bodyPrefix: "Gwasanaeth newydd yw hwn. Helpwch ni i'w wella —",
+      feedbackLinkText: 'rhowch eich adborth drwy e-bost'
+    },
     breadcrumbs: {
       serviceHome: 'Eich hysbysiadau'
     },
