@@ -1,6 +1,7 @@
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "shared/save-actions.njk" import saveActions %}
+{% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
   {% include "shared/error-summary.njk" %}
@@ -17,6 +18,7 @@
   <p class="govuk-body">{{ copy.guidance.daeraValid }}</p>
   <p class="govuk-body">{{ copy.guidance.euNotValid }}</p>
 
+  {{ sectionCaption(caption) }}
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />

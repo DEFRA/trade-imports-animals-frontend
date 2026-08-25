@@ -25,7 +25,8 @@ const render = (h, journey, { selected, errors = {} }) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
-      journey
+      journey,
+      page
     }),
     copy,
     commodityGroups: commodityGroups(selected),

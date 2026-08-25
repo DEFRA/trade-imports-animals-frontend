@@ -4,6 +4,7 @@
 {% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 {% from "govuk/components/pagination/macro.njk" import govukPagination %}
+{% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
   {% if deletionSucceeded %}
@@ -24,6 +25,7 @@
     }) }}
   {% endif %}
 
+  {{ sectionCaption(caption, "govuk-caption-xl") }}
   <h1 class="govuk-heading-xl">{{ copy.title }}</h1>
   <p class="govuk-body">{{ copy.body }}</p>
 

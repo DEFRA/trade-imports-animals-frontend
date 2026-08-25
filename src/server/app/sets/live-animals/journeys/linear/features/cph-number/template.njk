@@ -1,10 +1,12 @@
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "shared/save-actions.njk" import saveActions %}
+{% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
   {% include "shared/error-summary.njk" %}
 
+  {{ sectionCaption(caption) }}
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />

@@ -60,7 +60,8 @@ const get = async (request, h) => {
   return h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
-      journey
+      journey,
+      page
     }),
     copy,
     rows: rows(journey.journeyId, answers, parties)

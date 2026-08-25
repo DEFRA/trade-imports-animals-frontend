@@ -15,9 +15,15 @@ seam. `configureJourneyFlow()` receives:
 - `flowOnlyKeys`
 - `entryGuardTarget`
 - `layout`
+- `sectionCaption`
 
 The exported accessors fail when callable policy has not been configured. L1 calls
 this seam once during route registration.
+
+`sectionCaption` is chrome rather than topology: it maps a page id to the name of
+the section of the journey that page belongs to, which `kit.base()` puts in the
+view as `caption` and `shared/section-caption.njk` renders above the page heading.
+A journey that names no sections leaves it out and its pages render no caption.
 
 ## Dispatch
 

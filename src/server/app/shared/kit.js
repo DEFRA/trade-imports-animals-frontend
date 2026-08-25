@@ -6,7 +6,11 @@ import {
 } from './paths.js'
 import { AMEND, DELETED, DRAFT, SUBMITTED } from '../engine/index.js'
 import { nextInSection } from '../flow/navigation.js'
-import { journeyLayout, journeyNextRunTarget } from '../flow/journey-flow.js'
+import {
+  journeyLayout,
+  journeyNextRunTarget,
+  journeySectionCaption
+} from '../flow/journey-flow.js'
 import { inOpeningRun } from '../flow/run-state.js'
 import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
@@ -100,12 +104,23 @@ export const nextTarget = async (request, page, scope) =>
       nextInSection(page.id, scope, request.params.journeyId)
   )
 
+/**
+ * The chrome every journey page shares.
+ *
+ * @param {string} title - the page title.
+ * @param {object} [options]
+ * @param {object} [options.page] - the page identity. Supply it and the view
+ * gains the `caption` naming the section of the journey the page belongs to;
+ * omit it on a page the journey deliberately leaves uncaptioned.
+ * @returns {object} the common view model.
+ */
 export const base = (
   title,
   {
     backLink,
     journey,
     journeyId = journey?.journeyId,
+    page,
     recoverableError = false
   } = {}
 ) => {
@@ -113,6 +128,7 @@ export const base = (
   return {
     layout: journeyLayout(),
     pageTitle: title,
+    caption: journeySectionCaption(page?.id),
     breadcrumbs: hasJourney ? buildBreadcrumbs(journeyId, title) : false,
     backLink,
     hubHref: hasJourney ? hubPath(journeyId) : undefined,

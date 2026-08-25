@@ -1,0 +1,3 @@
+{% macro sectionCaption(text, classes = "govuk-caption-l") %}
+  {%- if text %}<span class="{{ classes }}">{{ text }}</span>{% endif -%}
+{% endmacro %}
