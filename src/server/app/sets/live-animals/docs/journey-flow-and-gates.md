@@ -60,10 +60,32 @@ from there. Only a notification created in this session sequences through
 them to
 [`configureJourneyFlow()`](../../../flow/journey-flow.js). It also passes the
 journey's `LAYOUT` from
-[`config.js`](../journeys/linear/config.js).
+[`config.js`](../journeys/linear/config.js) and its `sectionCaptionOf` from
+[`flow/section-captions/index.js`](../journeys/linear/flow/section-captions/index.js).
 
 Adding an entry to the existing `sections` or `taskRows` arrays needs no extra L1
 registration: `routes.js` already injects the whole arrays. A new feature still
 needs controller and binding registration in the journey barrels.
+
+## Section captions
+
+[`journeys/linear/flow/section-captions/index.js`](../journeys/linear/flow/section-captions/index.js)
+files every page under the section of the notification it belongs to, and names
+those sections in its own `copy/` bundles. `kit.base()` resolves the name for the
+page identity a controller passes it and puts it in the view as `caption`; the page
+template imports `sectionCaption` from
+[`shared/section-caption.njk`](../../../shared/section-caption.njk) and calls it
+immediately above its heading. Pass the caption size that matches the heading —
+`sectionCaption(caption, "govuk-caption-xl")` above a `govuk-heading-xl` — and let
+nothing sit between the two: the caption carries its own bottom margin, which
+collapses from the tablet breakpoint, so it only reads as a caption when it is the
+element directly above the heading.
+
+These sections are the ones a reader sees named above a heading. They are finer
+than the hub's task-row groups and are not derived from them — the caption keeps
+animal identification with the other consignment questions and separates arrival,
+transit and adding a transporter, where the hub does not. A page left out of the
+map renders no caption; its unit test lists those pages so a new page cannot be
+added without a decision either way.
 
 The generic algorithms are documented in [Flow machinery and gates](../../../docs/flow-and-gates.md).

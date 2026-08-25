@@ -5,6 +5,7 @@
 {% from "govuk/components/table/macro.njk" import govukTable %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "shared/save-actions.njk" import saveActions %}
+{% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
   <div id="js-error-summary-container"
@@ -13,6 +14,7 @@
     {% include "shared/error-summary.njk" %}
   </div>
 
+  {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
   <form method="post" enctype="multipart/form-data" novalidate

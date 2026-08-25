@@ -8,6 +8,7 @@ import {
   MAX_FILE_SIZE_LABEL,
   OVERSIZE_FILE_MESSAGE
 } from '../upload-config.js'
+import { documentsPage as page } from '../page.js'
 import { rejectedErrors } from '../scan/summary-errors.js'
 import { scanCopyJson } from './fragments/status.js'
 import { getAttempt, refreshHref } from './refresh.js'
@@ -35,7 +36,8 @@ export const render = ({
   return h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
-      journey
+      journey,
+      page
     }),
     ...extra,
     copy,

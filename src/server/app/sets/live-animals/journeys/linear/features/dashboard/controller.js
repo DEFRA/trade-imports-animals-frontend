@@ -13,8 +13,10 @@ import {
   startJourney
 } from '../../../../../../engine/journey.js'
 import { routeOptions, surfaceClass } from '../../../../../../shared/kit.js'
+import { journeySectionCaption } from '../../../../../../flow/journey-flow.js'
 import { beginOpeningRun } from '../../../../../../flow/run-state.js'
 import { copyFor } from '../../../../../../shared/copy.js'
+import { dashboardPage } from './page.js'
 import { originPage } from '../origin/page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
@@ -68,6 +70,7 @@ export const renderDashboard = async (
 
   return h.view(view, {
     pageTitle: copy.title,
+    caption: journeySectionCaption(dashboardPage.id),
     contentColumnClass: surfaceClass('display'),
     copy,
     sharedCopy,

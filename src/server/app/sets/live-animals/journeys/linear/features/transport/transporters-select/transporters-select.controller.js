@@ -47,6 +47,7 @@ const render = (
     ...kit.base(copy.title, {
       backLink: pagePath(journey.journeyId, 'transporters'),
       journey,
+      page,
       recoverableError
     }),
     copy,

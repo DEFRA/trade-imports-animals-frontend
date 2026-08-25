@@ -1,10 +1,12 @@
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
 {% from "shared/save-actions.njk" import saveActions %}
+{% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
   {% include "shared/error-summary.njk" %}
 
+  {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
   <p class="govuk-body">{{ copy.betweenCountries }}</p>

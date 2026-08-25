@@ -39,7 +39,8 @@ const render = (
   return h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
-      journey
+      journey,
+      page
     }),
     copy,
     cards: lines.map((line) =>
