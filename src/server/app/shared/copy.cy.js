@@ -9,6 +9,13 @@ export const copy = {
       bodyPrefix: "Gwasanaeth newydd yw hwn. Helpwch ni i'w wella —",
       feedbackLinkText: 'rhowch eich adborth drwy e-bost'
     },
+    serviceNavigation: {
+      menuButton: 'Dewislen',
+      dashboard: 'Dangosfwrdd',
+      addressBook: 'Llyfr cyfeiriadau',
+      manageAccount: 'Rheoli cyfrif',
+      logOut: 'Allgofnodi'
+    },
     breadcrumbs: {
       serviceHome: 'Eich hysbysiadau'
     },

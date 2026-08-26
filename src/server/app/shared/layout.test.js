@@ -1,3 +1,4 @@
+import { load } from 'cheerio'
 import { describe, expect, it } from 'vitest'
 
 import { nunjucksConfig } from '../../../config/nunjucks/nunjucks.js'
@@ -19,28 +20,74 @@ const renderLayout = (userSession, context = {}) =>
     ...context
   })
 
-describe('promoted live-animals signed-in chrome', () => {
-  it('Should show the authenticated user and the existing auth sign-out route', () => {
-    const html = renderLayout({
-      isAuthenticated: true,
-      displayName: 'Sam Example',
-      email: 'sam@example.test'
-    })
+const NAVIGATION_LIST = 'govuk-service-navigation__list'
+const ACTIVE_ITEM = 'govuk-service-navigation__item--active'
+const { serviceNavigation } = sharedCopy.layout
 
-    expect(html).toContain('Sam Example')
-    expect(html).toContain('href="/auth/sign-out"')
-    expect(html).toContain('Sign out')
+describe('service navigation', () => {
+  const signedIn = {
+    isAuthenticated: true,
+    displayName: 'Sam Example',
+    email: 'sam@example.test'
+  }
+
+  it('Should offer the four Design release 1 items on a signed-in page', () => {
+    const $ = load(renderLayout(signedIn))
+    const items = $('.govuk-service-navigation__item')
+    const links = items.find('a')
+
+    expect(items).toHaveLength(4)
+    expect(links.map((_, a) => $(a).text().trim()).get()).toEqual([
+      serviceNavigation.dashboard,
+      serviceNavigation.addressBook,
+      serviceNavigation.manageAccount,
+      serviceNavigation.logOut
+    ])
+    expect(links.map((_, a) => $(a).attr('href')).get()).toEqual([
+      '/',
+      '#',
+      '#',
+      '/auth/sign-out'
+    ])
   })
 
-  it('Should render cleanly without signed-in chrome when there is no user', () => {
+  it('Should mark the dashboard item active inside the notifications section', () => {
+    const $ = load(
+      renderLayout(signedIn, { activeNavigationItem: 'dashboard' })
+    )
+
+    expect($('.govuk-service-navigation__item--active')).toHaveLength(1)
+    expect($('[aria-current="true"]')).toHaveLength(1)
+    expect($('.govuk-service-navigation__active-fallback').text()).toBe(
+      serviceNavigation.dashboard
+    )
+  })
+
+  it('Should mark nothing active outside any navigation section', () => {
+    const html = renderLayout(signedIn, { activeNavigationItem: null })
+
+    expect(html).toContain(NAVIGATION_LIST)
+    expect(html).not.toContain(ACTIVE_ITEM)
+    expect(html).not.toContain('aria-current')
+  })
+
+  it('Should not show the signed-in user anywhere, as Design release 1 does not', () => {
+    const html = renderLayout(signedIn)
+
+    expect(html).not.toContain('Sam Example')
+    expect(html).not.toContain('sam@example.test')
+    expect(html).not.toContain('app-service-header')
+  })
+
+  it('Should carry the service name and no items when there is no user', () => {
     const html = renderLayout({ isAuthenticated: false })
 
-    expect(html).toContain('Import notification service')
+    expect(html).toContain(sharedCopy.layout.serviceName)
     expect(html).not.toContain('Prototype')
     expect(html).not.toContain('non-functional prototype')
-    expect(html).not.toContain('app-service-header__user')
+    expect(html).not.toContain(NAVIGATION_LIST)
     expect(html).not.toContain('href="/auth/sign-out"')
-    expect(html).not.toContain('Sign out')
+    expect(html).not.toContain(serviceNavigation.logOut)
   })
 })
 
