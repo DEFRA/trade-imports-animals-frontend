@@ -9,9 +9,12 @@ import { session as sessionStub } from '../../../../../../../services/persistenc
 import { driveHandler } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 
+import { copy as sectionCaptionsEn } from '../../../flow/section-captions/copy/copy.en.js'
+import { copy as sectionCaptionsCy } from '../../../flow/section-captions/copy/copy.cy.js'
 import * as addresses from '../controller.js'
 import { PARTIES } from '../parties.js'
 import { copy } from './copy.en.js'
+import { copy as copyCy } from './copy.cy.js'
 
 const leaves = (node, path = []) =>
   typeof node === 'object' && node !== null
@@ -34,6 +37,24 @@ describe('#copy', () => {
 
   it('Should interpolate the results caption', () => {
     expect(copy.picker.resultsCaption(5, 40)).toBe('Showing 5 of 40 addresses')
+  })
+
+  // A picker has no page id for `sectionCaptionOf` to resolve, so it holds
+  // its own copy of the section name.
+  it.each([
+    ['en', copy, sectionCaptionsEn],
+    ['cy', copyCy, sectionCaptionsCy]
+  ])(
+    'Should caption the %s pickers with the section name their hub carries',
+    (_locale, addressCopy, sectionCaptions) => {
+      expect(addressCopy.picker.caption).toBe(
+        sectionCaptions.sections.consignmentParties
+      )
+    }
+  )
+
+  it('Should keep the hub heading "Consignment addresses"', () => {
+    expect(copy.hub.title).toBe('Consignment addresses')
   })
 
   it('Should feed every party spoke its title, hint and error from the module', () => {
