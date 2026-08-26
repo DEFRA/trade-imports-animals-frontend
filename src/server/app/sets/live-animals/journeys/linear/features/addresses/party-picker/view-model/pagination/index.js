@@ -6,7 +6,7 @@ const MINIMUM_PAGES_TO_PAGINATE = 2
 export const pagination = (
   journeyId,
   party,
-  { query, page, totalPages, selectedId }
+  { query, page, totalPages, selectedId, changing }
 ) => {
   if (totalPages < MINIMUM_PAGES_TO_PAGINATE) {
     return null
@@ -15,7 +15,8 @@ export const pagination = (
     resultsHref(journeyId, party, {
       query,
       page: number,
-      selectedId
+      selectedId,
+      changing
     })
   return {
     previous: page > 1 ? { href: hrefFor(page - 1) } : undefined,

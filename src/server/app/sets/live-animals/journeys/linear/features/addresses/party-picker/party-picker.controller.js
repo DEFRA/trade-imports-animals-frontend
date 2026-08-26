@@ -26,6 +26,7 @@ const copy = copyFor({ en, cy }).picker
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 const render = async (
+  request,
   h,
   orgId,
   journey,
@@ -38,10 +39,17 @@ const render = async (
   // A deleted/missing reference must not travel as "Selected: …" or in
   // pagination links — treat it as no selection (same as resolveOne).
   const effectiveSelectedId = selected ? selectedId : ''
+  // Reached from a Change link, every way back out of the picker — Back,
+  // paging, the save — has to keep the context, or the trader is dropped into
+  // the section flow instead of the summary they came from.
+  const changing = kit.changeContext(request)
 
   return h.view(view, {
     ...kit.base(party.title, {
-      backLink: pagePath(journey.journeyId, 'addresses'),
+      backLink: kit.withChangeContext(
+        request,
+        pagePath(journey.journeyId, 'addresses')
+      ),
       journey,
       recoverableError
     }),
@@ -52,7 +60,14 @@ const render = async (
     picker: pickerViewModel(
       journey,
       party,
-      { query, selectedId: effectiveSelectedId, error, found, selected },
+      {
+        query,
+        selectedId: effectiveSelectedId,
+        error,
+        found,
+        selected,
+        changing
+      },
       copy
     )
   })
@@ -60,7 +75,7 @@ const render = async (
 
 const get = (party) => async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, organisationIdOf(request), journey, party, {
+  return render(request, h, organisationIdOf(request), journey, party, {
     query: request.query.q ?? '',
     page: pageNumber(request.query.page),
     selectedId: request.query.selected ?? committedId(answers, party)
@@ -77,7 +92,7 @@ const commitSelection = async (request, h, party, chosen, form) => {
     async () => {
       const { journey } = await state.get(request, h)
       return (
-        await render(h, organisationIdOf(request), journey, party, {
+        await render(request, h, organisationIdOf(request), journey, party, {
           ...form,
           selectedId: chosen.id,
           recoverableError: true
@@ -89,7 +104,12 @@ const commitSelection = async (request, h, party, chosen, form) => {
     return failure
   }
 
-  return h.redirect(pagePath(request.params.journeyId, 'addresses'))
+  return h.redirect(
+    kit.withChangeContext(
+      request,
+      pagePath(request.params.journeyId, 'addresses')
+    )
+  )
 }
 
 const post = (party) => async (request, h) => {
@@ -100,14 +120,18 @@ const post = (party) => async (request, h) => {
 
   if (isSearchAction(payload)) {
     const { journey } = await state.get(request, h)
-    return render(h, orgId, journey, party, { query, page: 1, selectedId })
+    return render(request, h, orgId, journey, party, {
+      query,
+      page: 1,
+      selectedId
+    })
   }
 
   const chosen = await chosenPartyFor(orgId, selectedId)
   if (!chosen) {
     const { journey } = await state.get(request, h)
     return (
-      await render(h, orgId, journey, party, {
+      await render(request, h, orgId, journey, party, {
         query,
         page: pageNumber(payload.page),
         selectedId: '',
