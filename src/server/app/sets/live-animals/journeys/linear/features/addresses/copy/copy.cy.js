@@ -40,7 +40,7 @@ export const copy = {
     }
   },
   picker: {
-    caption: 'Cyfeiriadau’r llwyth',
+    caption: 'Partïon y llwyth',
     search: {
       label: 'Chwilio',
       hint: 'Enw, cyfeiriad neu wlad',
