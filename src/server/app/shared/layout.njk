@@ -6,13 +6,18 @@
 {% from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner %}
 {% from "govuk/components/service-navigation/macro.njk" import govukServiceNavigation %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
-{% from "service-header/macro.njk" import appServiceHeader %}
 
 {% set homeUrl = "/" %}
 {# Destination for the alpha phase banner's feedback link. A destination, not
    copy, so it lives here beside the footer's meta links rather than in
    copy.en.js/copy.cy.js — it is identical in both locales. #}
 {% set feedbackUrl = "mailto:APHAServiceDesk@apha.gov.uk" %}
+{% set signOutUrl = "/auth/sign-out" %}
+{# The address book and the account page have no home in this service yet, so
+   both point at a placeholder — as Design release 1 does for the account page.
+   Where the address book lives is settled separately. #}
+{% set addressBookUrl = "#" %}
+{% set manageAccountUrl = "#" %}
 
 {% block head %}
   <meta name="csrf-token" content="{{ crumb }}">
@@ -30,17 +35,34 @@
 {% endblock %}
 
 {% block govukServiceNavigation %}
+  {% set navigationItems = [] %}
+  {% if userSession and userSession.isAuthenticated %}
+    {% set navigationItems = [
+      {
+        text: sharedCopy.layout.serviceNavigation.dashboard,
+        href: homeUrl,
+        active: activeNavigationItem == "dashboard"
+      },
+      {
+        text: sharedCopy.layout.serviceNavigation.addressBook,
+        href: addressBookUrl
+      },
+      {
+        text: sharedCopy.layout.serviceNavigation.manageAccount,
+        href: manageAccountUrl
+      },
+      {
+        text: sharedCopy.layout.serviceNavigation.logOut,
+        href: signOutUrl
+      }
+    ] %}
+  {% endif %}
   {{ govukServiceNavigation({
     serviceName: sharedCopy.layout.serviceName,
-    serviceUrl: homeUrl
+    serviceUrl: homeUrl,
+    menuButtonText: sharedCopy.layout.serviceNavigation.menuButton,
+    navigation: navigationItems
   }) }}
-{% endblock %}
-
-{% block containerStart %}
-  {% if userSession and userSession.isAuthenticated %}
-    {{ appServiceHeader({ userSession: userSession }) }}
-  {% endif %}
-  {{ super() }}
 {% endblock %}
 
 {% block beforeContent %}

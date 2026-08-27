@@ -52,8 +52,15 @@ describe('context and cache', () => {
           serviceUrl: '/',
           authEnabled: true,
           staleActionRejected: false,
+          activeNavigationItem: 'dashboard',
           userSession: { isAuthenticated: false }
         })
+      })
+
+      test('Should mark no navigation item outside the dashboard section', async () => {
+        const result = await contextImport.context({ path: '/auth/sign-out' })
+
+        expect(result.activeNavigationItem).toBeNull()
       })
 
       describe('With valid asset path', () => {
@@ -132,10 +139,41 @@ describe('context and cache', () => {
           serviceUrl: '/',
           authEnabled: true,
           staleActionRejected: false,
+          activeNavigationItem: 'dashboard',
           userSession: { isAuthenticated: false }
         })
       })
     })
+  })
+})
+
+describe('#activeNavigationItem', () => {
+  let activeNavigationItem
+
+  beforeAll(async () => {
+    ;({ activeNavigationItem } = await import('./context.js'))
+  })
+
+  test('Should mark the dashboard on the notifications list', () => {
+    expect(activeNavigationItem('/')).toBe('dashboard')
+  })
+
+  test('Should keep the dashboard marked inside a notification', () => {
+    expect(activeNavigationItem('/notifications/abc-123/origin')).toBe(
+      'dashboard'
+    )
+  })
+
+  test('Should mark nothing on a page outside the navigation', () => {
+    expect(activeNavigationItem('/auth/sign-out')).toBeNull()
+  })
+
+  test('Should mark nothing on a path that merely starts with the section name', () => {
+    expect(activeNavigationItem('/notificationsomething')).toBeNull()
+  })
+
+  test('Should mark nothing when there is no path', () => {
+    expect(activeNavigationItem(undefined)).toBeNull()
   })
 })
 

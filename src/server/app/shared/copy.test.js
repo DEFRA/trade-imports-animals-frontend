@@ -44,6 +44,24 @@ describe('phase-banner copy', () => {
   })
 })
 
+describe('service-navigation copy', () => {
+  it('Should carry the Design release 1 item labels', () => {
+    expect(sharedEn.layout.serviceNavigation).toEqual({
+      menuButton: 'Menu',
+      dashboard: 'Dashboard',
+      addressBook: 'Address book',
+      manageAccount: 'Manage account',
+      logOut: 'Log out'
+    })
+  })
+
+  it('Should carry the same item keys in Welsh', () => {
+    expect(Object.keys(sharedCy.layout.serviceNavigation)).toEqual(
+      Object.keys(sharedEn.layout.serviceNavigation)
+    )
+  })
+})
+
 describe('shared copy module', () => {
   it('Should have a non-empty string at every leaf', () => {
     for (const { path, value } of leaves(sharedEn)) {
