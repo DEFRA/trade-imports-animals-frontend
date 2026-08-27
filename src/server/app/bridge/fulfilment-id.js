@@ -1,5 +1,5 @@
 // Composite public shape: <obligationId>:<index>. The outer `:` marks the
-// obligation/fulfilment boundary; the inner `.` (see INDEX_DELIMITER)
+// obligation/fulfilment index boundary; the inner `.` (see INDEX_DELIMITER)
 // separates the segments of the index itself.
 export const INDEX_DELIMITER = '.'
 export const FULFILMENT_ID_DELIMITER = ':'

@@ -115,7 +115,7 @@ export const evaluationBindings = feature('commodities', [
 
 Boot rejects a missing leaf, duplicate UUID owner, inconsistent group token, or
 binding whose depth disagrees with the manifest's `within` chain. The resulting
-fulfilment ids (`line0`, `line0.unit1`) are positions within one canonical
+fulfilment indexes (`line0`, `line0.unit1`) are positions within one canonical
 snapshot, not durable identities for individual collection records. Every save
 replaces the whole snapshot, so removing an earlier item may renumber the rest.
 

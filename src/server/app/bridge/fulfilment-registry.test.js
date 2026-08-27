@@ -69,7 +69,7 @@ describe('#createFulfilmentRegistry', () => {
     ).toThrow(/invalid store field/)
   })
 
-  it('Should reject a field containing the fulfilment-id delimiter `:`', () => {
+  it('Should reject a field containing the fulfilment index delimiter `:`', () => {
     const invalidField = feature('invalid-field', [
       scalar({ field: 'country:ofOrigin', obligation: countryOfOrigin })
     ])

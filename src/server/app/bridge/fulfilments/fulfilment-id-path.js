@@ -4,7 +4,7 @@ import { failProjection } from './fail-projection.js'
 export const validateFulfilmentIndex = (chain, fulfilmentIndex, name) => {
   if (!hasIndexedSegments(fulfilmentIndex)) {
     failProjection(
-      `fulfilmentId "${String(
+      `fulfilment index "${String(
         fulfilmentIndex
       )}" for ${name} must have a trailing numeric index on every segment`
     )
@@ -13,7 +13,7 @@ export const validateFulfilmentIndex = (chain, fulfilmentIndex, name) => {
   const actualDepth = segmentsOf(fulfilmentIndex).length
   if (actualDepth !== chain.length) {
     failProjection(
-      `fulfilmentId "${fulfilmentIndex}" for ${name} has depth ${actualDepth}; ` +
+      `fulfilment index "${fulfilmentIndex}" for ${name} has depth ${actualDepth}; ` +
         `the within chain requires depth ${chain.length}`
     )
   }

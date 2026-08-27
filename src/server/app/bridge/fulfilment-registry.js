@@ -1,10 +1,8 @@
 import { obligations } from '../model/obligations/manifest.js'
 import { ancestorChain } from './fulfilments/index.js'
 
-// `:` is the fulfilment-id delimiter (obligationId : index); `.` is the
-// index-segment delimiter and the store-path grammar's own dot; `[`, `]`, `/`,
-// `*` reserve the rest of the store-path grammar. A binding field carrying any
-// of these would collide at parse time, so they are rejected at registry-load.
+// `:` separates the obligation id form the fulfilment index.
+// `.` is the fulfilment index segment delimiter.
 const FIELD_UNSAFE = /[.:[\]/*]/
 const TOKEN = /^[A-Za-z][A-Za-z-]*$/
 
