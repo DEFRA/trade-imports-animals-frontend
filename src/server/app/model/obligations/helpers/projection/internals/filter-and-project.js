@@ -1,8 +1,5 @@
 import { isRecordMap } from '../../../helper-internals.js'
-
-// Kept in sync with bridge/fulfilment-id.js#INDEX_DELIMITER; model/
-// cannot import from bridge/ per the dep-cruiser model-import-boundary rule.
-const INDEX_DELIMITER = '.'
+import { INDEX_DELIMITER } from '../../../index-delimiter.js'
 
 // The two storage shapes `filterAndProject` reads: a keyed-record map
 // (one candidate per key) or a bare scalar (a single candidate, keyed

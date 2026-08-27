@@ -1,7 +1,9 @@
+import { INDEX_DELIMITER } from '../model/obligations/index-delimiter.js'
+
 // Composite public shape: <obligationId>:<index>. The outer `:` marks the
-// obligation/fulfilment index boundary; the inner `.` (see INDEX_DELIMITER)
+// obligation/fulfilment index boundary; the inner `.` (INDEX_DELIMITER)
 // separates the segments of the index itself.
-export const INDEX_DELIMITER = '.'
+export { INDEX_DELIMITER }
 export const FULFILMENT_ID_DELIMITER = ':'
 
 export const formatCompositeFulfilmentId = (obligationId, fulfilmentIndex) =>

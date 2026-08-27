@@ -5,11 +5,8 @@
  * returns.
  */
 
+import { INDEX_DELIMITER } from './index-delimiter.js'
 import { isBlankValue } from './is-blank-value.js'
-
-// Kept in sync with bridge/fulfilment-id.js#INDEX_DELIMITER; model/
-// cannot import from bridge/ per the dep-cruiser model-import-boundary rule.
-const INDEX_DELIMITER = '.'
 
 export const STATUSES = {
   NOT_APPLICABLE: 'not-applicable',

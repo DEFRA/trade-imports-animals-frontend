@@ -1,8 +1,9 @@
 import { obligations } from '../model/obligations/manifest.js'
 import { ancestorChain } from './fulfilments/index.js'
 
-// `:` separates the obligation id from the fulfilment index.
-// `.` is the fulfilment index segment delimiter.
+// FIELD_UNSAFE forbids the two fulfilment-id delimiters (see
+// fulfilment-id.js): `:` is the obligation/fulfilment-index boundary,
+// `.` is the fulfilment-index segment separator.
 const FIELD_UNSAFE = /[.:[\]/*]/
 const TOKEN = /^[A-Za-z][A-Za-z-]*$/
 

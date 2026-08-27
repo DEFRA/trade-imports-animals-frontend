@@ -464,7 +464,7 @@ describe('V4 — commodity line group semantics', () => {
     expect(ids).toEqual(new Set([LINE_HORSE, LINE_CAT]))
   })
 
-  it('unions fulfilmentIndexs across any descendant field record', () => {
+  it('unions fulfilmentIndexes across any descendant field record', () => {
     // Only numberOfAnimals is answered on the second line — the line's
     // presence is still inferred (no dedicated commodityCode entry required).
     const result = evaluator.evaluate({
