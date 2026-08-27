@@ -1,7 +1,11 @@
 import { obligations } from '../model/obligations/manifest.js'
 import { ancestorChain } from './fulfilments/index.js'
 
-const PATH_UNSAFE = /[.[\]/*]/
+// `:` is the fulfilment-id delimiter (obligationId : index); `.` is the
+// index-segment delimiter and the store-path grammar's own dot; `[`, `]`, `/`,
+// `*` reserve the rest of the store-path grammar. A binding field carrying any
+// of these would collide at parse time, so they are rejected at registry-load.
+const FIELD_UNSAFE = /[.:[\]/*]/
 const TOKEN = /^[A-Za-z][A-Za-z-]*$/
 
 const fail = (message) => {
@@ -12,7 +16,7 @@ const assertField = (field, label) => {
   if (
     typeof field !== 'string' ||
     field.length === 0 ||
-    PATH_UNSAFE.test(field)
+    FIELD_UNSAFE.test(field)
   ) {
     fail(`${label} has invalid store field "${String(field)}"`)
   }
