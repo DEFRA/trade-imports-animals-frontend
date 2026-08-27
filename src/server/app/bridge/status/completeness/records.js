@@ -1,6 +1,6 @@
 import { INDEX_DELIMITER } from '../../fulfilment-id.js'
 
-// The record map for a grouped leaf ({ fulfilmentId: value }), or undefined.
+// The record map for a grouped leaf ({ fulfilmentIndex: value }), or undefined.
 export const recordMap = (obligation, state) => {
   const stored = state.fulfilments?.[obligation.id]
   if (
@@ -21,6 +21,6 @@ export const childRecords = (obligation, parentRecId, state) => {
   return parentRecId === null
     ? records
     : records.filter((record) =>
-        record.fulfilmentId.startsWith(`${parentRecId}${INDEX_DELIMITER}`)
+        record.fulfilmentIndex.startsWith(`${parentRecId}${INDEX_DELIMITER}`)
       )
 }

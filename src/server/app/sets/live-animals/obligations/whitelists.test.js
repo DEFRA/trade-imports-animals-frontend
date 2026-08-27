@@ -71,7 +71,7 @@ describe('package-count list → numberOfPackages (line-scoped)', () => {
         [commodityCode.id]: { line1: name }
       })
       const records = state.obligations[numberOfPackages.id].records ?? []
-      expect(records.map((record) => record.fulfilmentId)).toContain('line1')
+      expect(records.map((record) => record.fulfilmentIndex)).toContain('line1')
     })
   }
 
@@ -144,7 +144,7 @@ for (const { name, names, gated } of UNIT_SCOPED_ALLOWLISTS) {
           [gated.id]: { 'line1.unit1': '' }
         })
         const records = state.obligations[gated.id].records ?? []
-        expect(records.map((record) => record.fulfilmentId)).toContain(
+        expect(records.map((record) => record.fulfilmentIndex)).toContain(
           'line1.unit1'
         )
       })

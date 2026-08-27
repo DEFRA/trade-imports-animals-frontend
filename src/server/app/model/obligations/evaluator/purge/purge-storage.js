@@ -1,6 +1,6 @@
 import { isKeyedRecord } from '../internal/is-keyed-record.js'
 
-// applyTo returns the leaf fulfilmentIds it currently authorises; keep
+// applyTo returns the leaf fulfilmentIndexes it currently authorises; keep
 // only stored records whose fulfilmentId is in that set. `{ keep: false }`
 // when nothing survives the filter.
 const purgedDerivedLeaf = (
@@ -8,12 +8,12 @@ const purgedDerivedLeaf = (
   fulfilment,
   obligationApplicabilityDecisions
 ) => {
-  const fulfilmentIds = new Set(
+  const fulfilmentIndexes = new Set(
     obligationApplicabilityDecisions.get(obligation.id)?.records ?? []
   )
   const filtered = {}
   for (const [fulfilmentId, recordValue] of Object.entries(fulfilment ?? {})) {
-    if (fulfilmentIds.has(fulfilmentId)) {
+    if (fulfilmentIndexes.has(fulfilmentId)) {
       filtered[fulfilmentId] = recordValue
     }
   }

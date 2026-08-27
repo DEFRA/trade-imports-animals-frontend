@@ -1,7 +1,7 @@
 import {
   INDEX_DELIMITER,
   compareIndexArrays,
-  formatFulfilmentId,
+  formatFulfilmentIndex,
   hasIndexedSegments,
   indicesOf,
   segmentsOf
@@ -14,7 +14,7 @@ const ancestorsAndSelf = (obligation) => [
   obligation
 ]
 
-const compareFulfilmentIds = (left, right) =>
+const compareFulfilmentIndexes = (left, right) =>
   compareIndexArrays(indicesOf(left), indicesOf(right))
 
 const bindingFor = (registry, obligation, kind) => {
@@ -35,17 +35,17 @@ const assertDescendant = (group, obligation) => {
   }
 }
 
-const instanceIdOf = (fulfilmentId, groupChain, descriptors, parentId) => {
-  if (!hasIndexedSegments(fulfilmentId)) {
+const instanceIdOf = (fulfilmentIndex, groupChain, descriptors, parentId) => {
+  if (!hasIndexedSegments(fulfilmentIndex)) {
     return undefined
   }
-  const segments = segmentsOf(fulfilmentId)
+  const segments = segmentsOf(fulfilmentIndex)
   if (segments.length < groupChain.length) {
     return undefined
   }
-  const id = formatFulfilmentId(
+  const id = formatFulfilmentIndex(
     descriptors,
-    indicesOf(fulfilmentId).slice(0, groupChain.length)
+    indicesOf(fulfilmentIndex).slice(0, groupChain.length)
   )
   if (id !== segments.slice(0, groupChain.length).join(INDEX_DELIMITER)) {
     return undefined
@@ -93,14 +93,19 @@ export const readFulfilment = (
     const ids = new Set()
     for (const obligation of descendants) {
       assertDescendant(group, obligation)
-      for (const fulfilmentId of Object.keys(records(obligation))) {
-        const id = instanceIdOf(fulfilmentId, groupChain, descriptors, parentId)
+      for (const fulfilmentIndex of Object.keys(records(obligation))) {
+        const id = instanceIdOf(
+          fulfilmentIndex,
+          groupChain,
+          descriptors,
+          parentId
+        )
         if (id !== undefined) {
           ids.add(id)
         }
       }
     }
-    return [...ids].sort(compareFulfilmentIds)
+    return [...ids].sort(compareFulfilmentIndexes)
   }
 
   return { scalar, records, instanceIds }

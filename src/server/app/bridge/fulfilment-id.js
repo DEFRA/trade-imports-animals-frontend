@@ -4,8 +4,10 @@
 export const INDEX_DELIMITER = '.'
 export const FULFILMENT_ID_DELIMITER = ':'
 
-export const formatCompositeFulfilmentId = (obligationId, index) =>
-  index ? `${obligationId}${FULFILMENT_ID_DELIMITER}${index}` : obligationId
+export const formatCompositeFulfilmentId = (obligationId, fulfilmentIndex) =>
+  fulfilmentIndex
+    ? `${obligationId}${FULFILMENT_ID_DELIMITER}${fulfilmentIndex}`
+    : obligationId
 
 export const parseCompositeFulfilmentId = (composite) => {
   const idx = composite.indexOf(FULFILMENT_ID_DELIMITER)
@@ -46,8 +48,10 @@ export const depthOf = (obligation) => {
   return depth
 }
 
-export const indicesOf = (fulfilmentId) =>
-  segmentsOf(fulfilmentId).map((segment) => Number(trailingDigitsOf(segment)))
+export const indicesOf = (fulfilmentIndex) =>
+  segmentsOf(fulfilmentIndex).map((segment) =>
+    Number(trailingDigitsOf(segment))
+  )
 
 export const compareIndexArrays = (left, right) => {
   const sharedDepth = Math.min(left.length, right.length)
@@ -59,13 +63,13 @@ export const compareIndexArrays = (left, right) => {
   return left.length - right.length
 }
 
-export const formatFulfilmentId = (groups, indices) =>
+export const formatFulfilmentIndex = (groups, indices) =>
   groups
     .map(({ token }, depth) => `${token}${indices[depth]}`)
     .join(INDEX_DELIMITER)
 
-export const instanceFulfilmentId = (collectionPath, index, groups) =>
-  formatFulfilmentId(groups, [
+export const fulfilmentIndexInstance = (collectionPath, index, groups) =>
+  formatFulfilmentIndex(groups, [
     ...collectionPath.filter((segment) => typeof segment === 'number'),
     index
   ])

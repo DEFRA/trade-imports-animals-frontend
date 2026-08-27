@@ -1,4 +1,4 @@
-import { formatFulfilmentId } from './fulfilment-id.js'
+import { formatFulfilmentIndex } from './fulfilment-id.js'
 
 const identity = (value) => value
 
@@ -76,7 +76,7 @@ const walkGroup = (contribution, node, source, parentGroups, parentIndices) => {
   const groups = [...parentGroups, node.group]
   items.forEach((item, index) => {
     const indices = [...parentIndices, index]
-    const fulfilmentId = formatFulfilmentId(groups, indices)
+    const fulfilmentId = formatFulfilmentIndex(groups, indices)
     for (const binding of node.leaves) {
       addGroupedValue(contribution, binding, fulfilmentId, item)
     }

@@ -8,7 +8,7 @@ import {
 } from './fulfilment-id.js'
 
 const OBLIGATION_ID = '9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d'
-const INDEX = 'line0.unit1'
+const FULFILMENT_INDEX = 'line0.unit1'
 
 describe('delimiter constants', () => {
   it('separate the obligationId from the index and the index segments from each other with distinct RFC 3986 unreserved characters', () => {
@@ -19,8 +19,8 @@ describe('delimiter constants', () => {
 
 describe('formatCompositeFulfilmentId', () => {
   it('returns <obligationId>:<index> when an index is supplied', () => {
-    expect(formatCompositeFulfilmentId(OBLIGATION_ID, INDEX)).toBe(
-      `${OBLIGATION_ID}:${INDEX}`
+    expect(formatCompositeFulfilmentId(OBLIGATION_ID, FULFILMENT_INDEX)).toBe(
+      `${OBLIGATION_ID}:${FULFILMENT_INDEX}`
     )
   })
 
@@ -32,9 +32,11 @@ describe('formatCompositeFulfilmentId', () => {
 
 describe('parseCompositeFulfilmentId', () => {
   it('splits <obligationId>:<index> into its two parts', () => {
-    expect(parseCompositeFulfilmentId(`${OBLIGATION_ID}:${INDEX}`)).toEqual({
+    expect(
+      parseCompositeFulfilmentId(`${OBLIGATION_ID}:${FULFILMENT_INDEX}`)
+    ).toEqual({
       obligationId: OBLIGATION_ID,
-      index: INDEX
+      index: FULFILMENT_INDEX
     })
   })
 
@@ -46,7 +48,10 @@ describe('parseCompositeFulfilmentId', () => {
   })
 
   it('round-trips with formatCompositeFulfilmentId', () => {
-    const composite = formatCompositeFulfilmentId(OBLIGATION_ID, INDEX)
+    const composite = formatCompositeFulfilmentId(
+      OBLIGATION_ID,
+      FULFILMENT_INDEX
+    )
     const parsed = parseCompositeFulfilmentId(composite)
     expect(formatCompositeFulfilmentId(parsed.obligationId, parsed.index)).toBe(
       composite
@@ -58,10 +63,10 @@ describe('parseCompositeFulfilmentId', () => {
     // index can never contain one. This assertion documents the split
     // behaviour anyway so the invariant is explicit in the test suite.
     expect(
-      parseCompositeFulfilmentId(`${OBLIGATION_ID}:${INDEX}:extra`)
+      parseCompositeFulfilmentId(`${OBLIGATION_ID}:${FULFILMENT_INDEX}:extra`)
     ).toEqual({
       obligationId: OBLIGATION_ID,
-      index: `${INDEX}:extra`
+      index: `${FULFILMENT_INDEX}:extra`
     })
   })
 })

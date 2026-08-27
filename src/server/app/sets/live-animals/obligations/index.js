@@ -6,7 +6,7 @@
  * manifest expresses the V4 domain against that model.
  *
  * Scope mechanism: every obligation with a conditional scope uses
- * `applyTo(fulfilments, fulfilmentIdsByObligationId)`. Common gate
+ * `applyTo(fulfilments, fulfilmentIndexesByObligationId)`. Common gate
  * shapes are provided as pure helper functions in `helpers.js` —
  * `allowListed`, `notInUnionOf`, `anyAllowListed`, `matches`,
  * `equalsGate`, `presentGate`, `includesGate`, `alwaysInScope` (and

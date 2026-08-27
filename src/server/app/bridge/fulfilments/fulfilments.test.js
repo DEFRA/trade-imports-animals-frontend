@@ -116,7 +116,7 @@ describe('#fulfilments — round-trip A -> B -> A recovers the original', () => 
 })
 
 // ---------------------------------------------------------------------------
-// Shape — A positional path <-> B composite fulfilmentId, both directions.
+// Shape — A positional path <-> B composite fulfilmentIndex, both directions.
 // ---------------------------------------------------------------------------
 
 describe('#fulfilments — storage shape translation', () => {
@@ -422,10 +422,12 @@ describe('#fulfilments — evaluator smoke — a happy path produces real implic
 
   it('Should fire per-line and per-unit gates (packages + earTag in scope)', () => {
     expect(
-      result.obligations[numberOfPackages.id].records.map((r) => r.fulfilmentId)
+      result.obligations[numberOfPackages.id].records.map(
+        (r) => r.fulfilmentIndex
+      )
     ).toEqual(['line0'])
     expect(
-      result.obligations[earTag.id].records.map((r) => r.fulfilmentId)
+      result.obligations[earTag.id].records.map((r) => r.fulfilmentIndex)
     ).toContain('line0.unit0')
   })
 
@@ -445,10 +447,10 @@ describe('#fulfilments — evaluator smoke — a happy path produces real implic
 
   it('Should infer group instances from the composite keys', () => {
     expect(
-      result.obligations[commodityLine.id].records.map((r) => r.fulfilmentId)
+      result.obligations[commodityLine.id].records.map((r) => r.fulfilmentIndex)
     ).toEqual(['line0'])
     expect(
-      result.obligations[unitRecord.id].records.map((r) => r.fulfilmentId)
+      result.obligations[unitRecord.id].records.map((r) => r.fulfilmentIndex)
     ).toEqual(['line0.unit0'])
   })
 

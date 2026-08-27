@@ -1,4 +1,4 @@
-// Collection cap (MAX_ENTRIES) — group-level, no instanceId.
+// Collection cap (MAX_ENTRIES) — group-level, no fulfilmentIndex.
 export const collectionCapExceeded = (invariantErrors) =>
   invariantErrors.some((error) => error.code === 'MAX_ENTRIES')
 
@@ -7,7 +7,7 @@ export const collectionCapExceeded = (invariantErrors) =>
 // so it is checked here rather than per entry.
 export const parentCountInvariantViolated = (invariantErrors, parentRecId) =>
   parentRecId !== null &&
-  invariantErrors.some((error) => error.instanceId === parentRecId)
+  invariantErrors.some((error) => error.fulfilmentIndex === parentRecId)
 
 // Empty collection: satisfied iff there's no requiredAtLeastOne floor.
 export const emptyCollectionSatisfiesFloor = (collection) =>

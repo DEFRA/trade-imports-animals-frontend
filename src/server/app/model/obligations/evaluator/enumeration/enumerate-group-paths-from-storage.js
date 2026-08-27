@@ -1,7 +1,7 @@
 import { groupInstancePaths } from '../internal/group-instance-paths.js'
 
 // Step 2: pre-purge enumeration of group instance-paths from raw
-// storage. Same shape as `enumerateGroupFulfilmentIds` (step 6) but
+// storage. Same shape as `enumerateGroupFulfilmentIndexes` (step 6) but
 // without an `isInScope` filter — pre-purge, so no scope decisions
 // have been made yet.
 //

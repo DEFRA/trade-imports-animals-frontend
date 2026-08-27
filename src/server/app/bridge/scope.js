@@ -21,7 +21,7 @@
 import { obligationByName, obligations } from '../model/obligations/manifest.js'
 import {
   ancestorChain,
-  fulfilmentIdToPath,
+  fulfilmentIndexToPath,
   groupObligations
 } from './fulfilments/index.js'
 import { pathKey } from '../lib/path.js'
@@ -75,15 +75,15 @@ const groupNodeKey = (inScope, name) => {
 // instance whose nested group is empty still contributes its node key.
 const groupInstanceKeys = (inScope, implications, obligation, chain, name) => {
   const parentRecords = implications[obligation.within.id]?.records ?? []
-  for (const { fulfilmentId } of parentRecords) {
-    inScope.add(pathKey(fulfilmentIdToPath(chain, fulfilmentId, name)))
+  for (const { fulfilmentIndex } of parentRecords) {
+    inScope.add(pathKey(fulfilmentIndexToPath(chain, fulfilmentIndex, name)))
   }
 }
 
 // Grouped leaf — one positional pathKey per in-scope record.
 const leafRecordKeys = (inScope, chain, name, records) => {
-  for (const { fulfilmentId } of records) {
-    inScope.add(pathKey(fulfilmentIdToPath(chain, fulfilmentId, name)))
+  for (const { fulfilmentIndex } of records) {
+    inScope.add(pathKey(fulfilmentIndexToPath(chain, fulfilmentIndex, name)))
   }
 }
 

@@ -469,10 +469,10 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0"
+              "fulfilmentIndex": "line0"
             },
             {
-              "fulfilmentId": "line1"
+              "fulfilmentIndex": "line1"
             }
           ]
         },
@@ -480,11 +480,11 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             },
             {
-              "fulfilmentId": "line1",
+              "fulfilmentIndex": "line1",
               "status": "mandatory"
             }
           ]
@@ -493,11 +493,11 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             },
             {
-              "fulfilmentId": "line1",
+              "fulfilmentIndex": "line1",
               "status": "mandatory"
             }
           ]
@@ -506,11 +506,11 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             },
             {
-              "fulfilmentId": "line1",
+              "fulfilmentIndex": "line1",
               "status": "mandatory"
             }
           ]
@@ -519,11 +519,11 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             },
             {
-              "fulfilmentId": "line1",
+              "fulfilmentIndex": "line1",
               "status": "mandatory"
             }
           ]
@@ -538,11 +538,11 @@
           ],
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "optional"
             },
             {
-              "fulfilmentId": "line1",
+              "fulfilmentIndex": "line1",
               "status": "optional"
             }
           ]
@@ -561,10 +561,10 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0.unit0"
+              "fulfilmentIndex": "line0.unit0"
             },
             {
-              "fulfilmentId": "line1.unit0"
+              "fulfilmentIndex": "line1.unit0"
             }
           ]
         },
@@ -578,11 +578,11 @@
           ],
           "records": [
             {
-              "fulfilmentId": "line0.unit0",
+              "fulfilmentIndex": "line0.unit0",
               "status": "optional"
             },
             {
-              "fulfilmentId": "line1.unit0",
+              "fulfilmentIndex": "line1.unit0",
               "status": "optional"
             }
           ]
@@ -597,11 +597,11 @@
           ],
           "records": [
             {
-              "fulfilmentId": "line0.unit0",
+              "fulfilmentIndex": "line0.unit0",
               "status": "optional"
             },
             {
-              "fulfilmentId": "line1.unit0",
+              "fulfilmentIndex": "line1.unit0",
               "status": "optional"
             }
           ]
@@ -616,11 +616,11 @@
           ],
           "records": [
             {
-              "fulfilmentId": "line0.unit0",
+              "fulfilmentIndex": "line0.unit0",
               "status": "optional"
             },
             {
-              "fulfilmentId": "line1.unit0",
+              "fulfilmentIndex": "line1.unit0",
               "status": "optional"
             }
           ]
@@ -641,10 +641,10 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0"
+              "fulfilmentIndex": "line0"
             },
             {
-              "fulfilmentId": "line1"
+              "fulfilmentIndex": "line1"
             }
           ]
         },
@@ -652,11 +652,11 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             },
             {
-              "fulfilmentId": "line1",
+              "fulfilmentIndex": "line1",
               "status": "mandatory"
             }
           ]
@@ -665,11 +665,11 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             },
             {
-              "fulfilmentId": "line1",
+              "fulfilmentIndex": "line1",
               "status": "mandatory"
             }
           ]
@@ -678,11 +678,11 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             },
             {
-              "fulfilmentId": "line1",
+              "fulfilmentIndex": "line1",
               "status": "mandatory"
             }
           ]
@@ -691,11 +691,11 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             },
             {
-              "fulfilmentId": "line1",
+              "fulfilmentIndex": "line1",
               "status": "mandatory"
             }
           ]
@@ -704,11 +704,11 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "optional"
             },
             {
-              "fulfilmentId": "line1",
+              "fulfilmentIndex": "line1",
               "status": "optional"
             }
           ]
@@ -717,11 +717,11 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "optional"
             },
             {
-              "fulfilmentId": "line1",
+              "fulfilmentIndex": "line1",
               "status": "optional"
             }
           ]
@@ -1148,7 +1148,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0"
+              "fulfilmentIndex": "line0"
             }
           ]
         },
@@ -1156,7 +1156,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             }
           ]
@@ -1165,7 +1165,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             }
           ]
@@ -1174,7 +1174,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             }
           ]
@@ -1183,7 +1183,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             }
           ]
@@ -1198,7 +1198,7 @@
           ],
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "optional"
             }
           ]
@@ -1242,7 +1242,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0"
+              "fulfilmentIndex": "line0"
             }
           ]
         },
@@ -1250,7 +1250,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             }
           ]
@@ -1259,7 +1259,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             }
           ]
@@ -1268,7 +1268,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             }
           ]
@@ -1277,7 +1277,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             }
           ]
@@ -1286,7 +1286,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "optional"
             }
           ]
@@ -1295,7 +1295,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "optional"
             }
           ]
@@ -1681,7 +1681,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0"
+              "fulfilmentIndex": "line0"
             }
           ]
         },
@@ -1689,7 +1689,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             }
           ]
@@ -1698,7 +1698,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             }
           ]
@@ -1707,7 +1707,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             }
           ]
@@ -1716,7 +1716,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             }
           ]
@@ -1731,7 +1731,7 @@
           ],
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "optional"
             }
           ]
@@ -1750,7 +1750,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0.unit0"
+              "fulfilmentIndex": "line0.unit0"
             }
           ]
         },
@@ -1764,7 +1764,7 @@
           ],
           "records": [
             {
-              "fulfilmentId": "line0.unit0",
+              "fulfilmentIndex": "line0.unit0",
               "status": "optional"
             }
           ]
@@ -1779,7 +1779,7 @@
           ],
           "records": [
             {
-              "fulfilmentId": "line0.unit0",
+              "fulfilmentIndex": "line0.unit0",
               "status": "optional"
             }
           ]
@@ -1794,7 +1794,7 @@
           ],
           "records": [
             {
-              "fulfilmentId": "line0.unit0",
+              "fulfilmentIndex": "line0.unit0",
               "status": "optional"
             }
           ]
@@ -2040,7 +2040,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0"
+              "fulfilmentIndex": "line0"
             }
           ]
         },
@@ -2048,7 +2048,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             }
           ]
@@ -2057,7 +2057,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             }
           ]
@@ -2066,7 +2066,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             }
           ]
@@ -2075,7 +2075,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0",
+              "fulfilmentIndex": "line0",
               "status": "mandatory"
             }
           ]

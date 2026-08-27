@@ -42,12 +42,12 @@ export const notInUnionOf = (
         ? unionOfAllowlists()
         : unionOfAllowlists
     )
-  const fn = (fulfilments, fulfilmentIdsByObligationId) => {
+  const fn = (fulfilments, fulfilmentIndexesByObligationId) => {
     const decision = filterAndProject(
       fulfilments[gateObligation.id],
       (value) => !currentUnion().includes(value),
       projectionGroup,
-      fulfilmentIdsByObligationId
+      fulfilmentIndexesByObligationId
     )
     return decision.inScope && reasons ? { ...decision, reasons } : decision
   }

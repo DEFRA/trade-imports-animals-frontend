@@ -12,7 +12,7 @@ export const leafInScopeForRecord = (name, recId, state) => {
   if (!impl?.inScope) {
     return false
   }
-  return (impl.records ?? []).some((r) => r.fulfilmentId === recId)
+  return (impl.records ?? []).some((r) => r.fulfilmentIndex === recId)
 }
 
 export const leafMandatoryForRecord = (name, recId, state) =>

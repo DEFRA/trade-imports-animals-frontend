@@ -41,7 +41,7 @@ const collectionSatisfied = (collection, parentRecId, memberFilter, state) => {
   return records.every((rec) =>
     entrySatisfied(
       collection,
-      rec.fulfilmentId,
+      rec.fulfilmentIndex,
       memberFilter,
       invariantErrors,
       state
@@ -70,8 +70,8 @@ const memberSatisfied = (member, recId, state) => {
 }
 
 // The model's per-record group-invariant verdict (the anyOfIds rule),
-// then every filtered member. MIN_ENTRIES errors carry no instanceId, so
-// only per-record violations bite here.
+// then every filtered member. MIN_ENTRIES errors carry no fulfilmentIndex,
+// so only per-record violations bite here.
 const entrySatisfied = (
   collection,
   recId,
@@ -79,7 +79,7 @@ const entrySatisfied = (
   invariantErrors,
   state
 ) => {
-  if (invariantErrors.some((error) => error.instanceId === recId)) {
+  if (invariantErrors.some((error) => error.fulfilmentIndex === recId)) {
     return false
   }
   return filteredMembers(collection, memberFilter).every((member) =>

@@ -63,7 +63,7 @@ describe('a gate at depth >= 2 that projects', () => {
 
     expect(result.obligations.subDetail).toMatchObject({
       inScope: true,
-      records: [{ fulfilmentId: 'line1.unit1.sub1', status: 'mandatory' }]
+      records: [{ fulfilmentIndex: 'line1.unit1.sub1', status: 'mandatory' }]
     })
   })
 

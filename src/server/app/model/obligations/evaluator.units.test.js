@@ -9,7 +9,7 @@ import {
   runApplicabilityDecisions,
   makeInScopeCheck,
   purgeStorage,
-  enumerateGroupFulfilmentIds,
+  enumerateGroupFulfilmentIndexes,
   buildImplications,
   buildImplication
 } from './evaluator.js'
@@ -457,11 +457,11 @@ describe('purgeStorage', () => {
   })
 })
 
-describe('enumerateGroupFulfilmentIds', () => {
+describe('enumerateGroupFulfilmentIndexes', () => {
   const alwaysInScope = () => true
 
   it(emptyManifestGivesEmptyMapTitle, () => {
-    const result = enumerateGroupFulfilmentIds([], {
+    const result = enumerateGroupFulfilmentIndexes([], {
       obligationsByCategory: new Map(),
       obligationAncestorGroups: new Map(),
       obligationDescendants: new Map(),
@@ -473,7 +473,7 @@ describe('enumerateGroupFulfilmentIds', () => {
 
   it('skips non-group obligations', () => {
     const obligation = { id: 'o' }
-    const result = enumerateGroupFulfilmentIds([obligation], {
+    const result = enumerateGroupFulfilmentIndexes([obligation], {
       obligationsByCategory: new Map([['o', 'single']]),
       obligationAncestorGroups: new Map([['o', []]]),
       obligationDescendants: new Map([['o', []]]),
@@ -485,7 +485,7 @@ describe('enumerateGroupFulfilmentIds', () => {
 
   it('out-of-scope group → empty Set', () => {
     const group = { id: 'g' }
-    const result = enumerateGroupFulfilmentIds([group], {
+    const result = enumerateGroupFulfilmentIndexes([group], {
       obligationsByCategory: new Map([['g', 'group']]),
       obligationAncestorGroups: new Map([['g', []]]),
       obligationDescendants: new Map([['g', []]]),
@@ -498,7 +498,7 @@ describe('enumerateGroupFulfilmentIds', () => {
   it('top-level group (prefixLen=1) with one descendant field → single instance id', () => {
     const group = { id: 'g' }
     const field = { id: 'f', within: group }
-    const result = enumerateGroupFulfilmentIds([group, field], {
+    const result = enumerateGroupFulfilmentIndexes([group, field], {
       obligationsByCategory: new Map([
         ['g', 'group'],
         ['f', 'field']
@@ -526,7 +526,7 @@ describe('enumerateGroupFulfilmentIds', () => {
       within: claim,
       indexedBy: { source: 'user' }
     }
-    const result = enumerateGroupFulfilmentIds([driver, claim, leaf], {
+    const result = enumerateGroupFulfilmentIndexes([driver, claim, leaf], {
       obligationsByCategory: new Map([
         ['driver', 'group'],
         ['claim', 'group'],
@@ -560,7 +560,7 @@ describe('enumerateGroupFulfilmentIds', () => {
   it('descendant with non-object storage → skipped', () => {
     const group = { id: 'g' }
     const field = { id: 'f', within: group }
-    const result = enumerateGroupFulfilmentIds([group, field], {
+    const result = enumerateGroupFulfilmentIndexes([group, field], {
       obligationsByCategory: new Map([
         ['g', 'group'],
         ['f', 'field']
@@ -586,7 +586,7 @@ describe('buildImplications', () => {
       isInScope: () => true,
       obligationsByCategory: new Map(),
       obligationApplicabilityDecisions: new Map(),
-      fulfilmentIdsByObligationId: new Map(),
+      fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
     expect(result).toEqual({})
@@ -608,7 +608,7 @@ describe('buildImplications', () => {
         ['a', { inScope: true, status: 'mandatory' }],
         ['b', { inScope: false }]
       ]),
-      fulfilmentIdsByObligationId: new Map(),
+      fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
     expect(result.a).toEqual({ inScope: true, status: 'mandatory' })
@@ -625,7 +625,7 @@ describe('buildImplication', () => {
       isInScope: () => false,
       obligationsByCategory: new Map([['o', 'single']]),
       obligationApplicabilityDecisions: new Map(),
-      fulfilmentIdsByObligationId: new Map(),
+      fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
     expect(result).toEqual({ inScope: false })
@@ -638,7 +638,7 @@ describe('buildImplication', () => {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'single']]),
       obligationApplicabilityDecisions: new Map([['o', own]]),
-      fulfilmentIdsByObligationId: new Map(),
+      fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
     expect(result).toBe(own)
@@ -650,7 +650,7 @@ describe('buildImplication', () => {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'single']]),
       obligationApplicabilityDecisions: new Map(),
-      fulfilmentIdsByObligationId: new Map(),
+      fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
     expect(result).toEqual({ inScope: true })
@@ -664,13 +664,13 @@ describe('buildImplication', () => {
       obligationApplicabilityDecisions: new Map([
         ['g', { inScope: true, reasons: [{ code: 'r' }] }]
       ]),
-      fulfilmentIdsByObligationId: new Map([['g', new Set(['c1', 'c2'])]]),
+      fulfilmentIndexesByObligationId: new Map([['g', new Set(['c1', 'c2'])]]),
       amendedFulfilments: {}
     })
     expect(result).toEqual({
       inScope: true,
       reasons: [{ code: 'r' }],
-      records: [{ fulfilmentId: 'c1' }, { fulfilmentId: 'c2' }]
+      records: [{ fulfilmentIndex: 'c1' }, { fulfilmentIndex: 'c2' }]
     })
   })
 
@@ -680,7 +680,7 @@ describe('buildImplication', () => {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['g', 'group']]),
       obligationApplicabilityDecisions: new Map(),
-      fulfilmentIdsByObligationId: new Map([['g', new Set(['c1'])]]),
+      fulfilmentIndexesByObligationId: new Map([['g', new Set(['c1'])]]),
       amendedFulfilments: {}
     })
     expect(result.reasons).toBeUndefined()
@@ -693,14 +693,14 @@ describe('buildImplication', () => {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['f', 'field']]),
       obligationApplicabilityDecisions: new Map(),
-      fulfilmentIdsByObligationId: new Map([['g', new Set(['c1', 'c2'])]]),
+      fulfilmentIndexesByObligationId: new Map([['g', new Set(['c1', 'c2'])]]),
       amendedFulfilments: {}
     })
     expect(result).toEqual({
       inScope: true,
       records: [
-        { fulfilmentId: 'c1', status: 'mandatory' },
-        { fulfilmentId: 'c2', status: 'mandatory' }
+        { fulfilmentIndex: 'c1', status: 'mandatory' },
+        { fulfilmentIndex: 'c2', status: 'mandatory' }
       ]
     })
     expect(result.reasons).toBeUndefined()
@@ -716,7 +716,7 @@ describe('buildImplication', () => {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'field']]),
       obligationApplicabilityDecisions: new Map(),
-      fulfilmentIdsByObligationId: new Map(),
+      fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
     expect(result).toEqual({ inScope: true, status: 'optional' })
@@ -737,15 +737,15 @@ describe('buildImplication', () => {
           }
         ]
       ]),
-      fulfilmentIdsByObligationId: new Map(),
+      fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
     expect(result).toEqual({
       inScope: true,
       reasons: [{ code: 'r' }],
       records: [
-        { fulfilmentId: 'turbo', status: 'mandatory' },
-        { fulfilmentId: 'alloys', status: 'mandatory' }
+        { fulfilmentIndex: 'turbo', status: 'mandatory' },
+        { fulfilmentIndex: 'alloys', status: 'mandatory' }
       ]
     })
   })
@@ -756,12 +756,12 @@ describe('buildImplication', () => {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'user-leaf']]),
       obligationApplicabilityDecisions: new Map(),
-      fulfilmentIdsByObligationId: new Map(),
+      fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: { o: { 'd1.a1': {}, 'd1.a2': {} } }
     })
     expect(result.records).toEqual([
-      { fulfilmentId: 'd1.a1', status: 'mandatory' },
-      { fulfilmentId: 'd1.a2', status: 'mandatory' }
+      { fulfilmentIndex: 'd1.a1', status: 'mandatory' },
+      { fulfilmentIndex: 'd1.a2', status: 'mandatory' }
     ])
   })
 
@@ -771,7 +771,7 @@ describe('buildImplication', () => {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'user-leaf']]),
       obligationApplicabilityDecisions: new Map(),
-      fulfilmentIdsByObligationId: new Map(),
+      fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
     expect(result.records).toEqual([])

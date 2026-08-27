@@ -2,15 +2,17 @@ import { isKeyedRecord } from '../internal/is-keyed-record.js'
 
 const singleImplication = (own) => own ?? { inScope: true }
 
-const groupImplication = (obligation, own, fulfilmentIdsByObligationId) => {
-  const fulfilmentIds = [
-    ...(fulfilmentIdsByObligationId.get(obligation.id) ?? [])
+const groupImplication = (obligation, own, fulfilmentIndexesByObligationId) => {
+  const fulfilmentIndexes = [
+    ...(fulfilmentIndexesByObligationId.get(obligation.id) ?? [])
   ]
   const impl = { inScope: true }
   if (own?.reasons) {
     impl.reasons = own.reasons
   }
-  impl.records = fulfilmentIds.map((fulfilmentId) => ({ fulfilmentId }))
+  impl.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
+    fulfilmentIndex
+  }))
   return impl
 }
 
@@ -22,17 +24,17 @@ const groupImplication = (obligation, own, fulfilmentIdsByObligationId) => {
 //      parent group to enumerate, so return the status directly,
 //      mirroring what `applyTo: () => ({ inScope: true, status })` would
 //      return.
-const fieldImplication = (obligation, fulfilmentIdsByObligationId) => {
+const fieldImplication = (obligation, fulfilmentIndexesByObligationId) => {
   if (!obligation.within) {
     return { inScope: true, status: obligation.status }
   }
-  const parentGroupFulfilmentIds = [
-    ...(fulfilmentIdsByObligationId.get(obligation.within.id) ?? [])
+  const parentGroupFulfilmentIndexes = [
+    ...(fulfilmentIndexesByObligationId.get(obligation.within.id) ?? [])
   ]
   return {
     inScope: true,
-    records: parentGroupFulfilmentIds.map((fulfilmentId) => ({
-      fulfilmentId,
+    records: parentGroupFulfilmentIndexes.map((fulfilmentIndex) => ({
+      fulfilmentIndex,
       status: obligation.status
     }))
   }
@@ -45,9 +47,9 @@ const derivedLeafImplication = (obligation, own) => {
   if (own?.reasons) {
     impl.reasons = own.reasons
   }
-  const fulfilmentIds = own?.records ?? []
-  impl.records = fulfilmentIds.map((fulfilmentId) => ({
-    fulfilmentId,
+  const fulfilmentIndexes = own?.records ?? []
+  impl.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
+    fulfilmentIndex,
     status: obligation.status
   }))
   return impl
@@ -60,9 +62,11 @@ const userLeafImplication = (obligation, own, amendedFulfilments) => {
     impl.reasons = own.reasons
   }
   const fulfilment = amendedFulfilments[obligation.id]
-  const fulfilmentIds = isKeyedRecord(fulfilment) ? Object.keys(fulfilment) : []
-  impl.records = fulfilmentIds.map((fulfilmentId) => ({
-    fulfilmentId,
+  const fulfilmentIndexes = isKeyedRecord(fulfilment)
+    ? Object.keys(fulfilment)
+    : []
+  impl.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
+    fulfilmentIndex,
     status: obligation.status
   }))
   return impl
@@ -77,7 +81,7 @@ export function buildImplication(obligation, context) {
     isInScope,
     obligationsByCategory,
     obligationApplicabilityDecisions,
-    fulfilmentIdsByObligationId,
+    fulfilmentIndexesByObligationId,
     amendedFulfilments
   } = context
 
@@ -92,9 +96,9 @@ export function buildImplication(obligation, context) {
     case 'single':
       return singleImplication(own)
     case 'group':
-      return groupImplication(obligation, own, fulfilmentIdsByObligationId)
+      return groupImplication(obligation, own, fulfilmentIndexesByObligationId)
     case 'field':
-      return fieldImplication(obligation, fulfilmentIdsByObligationId)
+      return fieldImplication(obligation, fulfilmentIndexesByObligationId)
     case 'derived-leaf':
       return derivedLeafImplication(obligation, own)
     case 'user-leaf':

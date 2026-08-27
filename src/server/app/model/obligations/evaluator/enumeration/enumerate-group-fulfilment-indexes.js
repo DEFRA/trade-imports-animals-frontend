@@ -9,7 +9,7 @@ import { groupInstancePaths } from '../internal/group-instance-paths.js'
 // scope groups map to an empty Set.
 //
 // Returns `Map<group obligation id, Set<group fulfilmentId>>`.
-export function enumerateGroupFulfilmentIds(obligations, context) {
+export function enumerateGroupFulfilmentIndexes(obligations, context) {
   const {
     obligationsByCategory,
     obligationAncestorGroups,
@@ -18,7 +18,7 @@ export function enumerateGroupFulfilmentIds(obligations, context) {
     amendedFulfilments
   } = context
 
-  const fulfilmentIdsByObligationId = new Map()
+  const fulfilmentIndexesByObligationId = new Map()
   const groupObligations = obligations.filter(
     (obligation) => obligationsByCategory.get(obligation.id) === 'group'
   )
@@ -31,7 +31,7 @@ export function enumerateGroupFulfilmentIds(obligations, context) {
           (desc) => amendedFulfilments[desc.id]
         )
       : new Set()
-    fulfilmentIdsByObligationId.set(obligation.id, ids)
+    fulfilmentIndexesByObligationId.set(obligation.id, ids)
   }
-  return fulfilmentIdsByObligationId
+  return fulfilmentIndexesByObligationId
 }

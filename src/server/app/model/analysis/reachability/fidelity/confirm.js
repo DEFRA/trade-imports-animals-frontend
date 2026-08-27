@@ -3,8 +3,11 @@ import { witnessFulfilments } from './witness-fulfilments.js'
 // Fidelity check — the witness must actually open the closure. Any
 // mismatch is a build-time defect (metadata drift vs. the real predicate).
 export const confirmWitnessOpensGate = (obligation, witness) => {
-  const { fulfilments, fulfilmentIds } = witnessFulfilments(obligation, witness)
-  const decision = obligation.applyTo(fulfilments, fulfilmentIds)
+  const { fulfilments, fulfilmentIndexes } = witnessFulfilments(
+    obligation,
+    witness
+  )
+  const decision = obligation.applyTo(fulfilments, fulfilmentIndexes)
   if (decision?.inScope === true) {
     return { opened: true }
   }

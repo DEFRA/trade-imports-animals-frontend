@@ -1,6 +1,6 @@
 import { obligations } from '../../../model/obligations/manifest.js'
 import { compareIndexArrays } from '../../fulfilment-id.js'
-import { validateFulfilmentId } from '../fulfilment-id-path.js'
+import { validateFulfilmentIndex } from '../fulfilment-id-path.js'
 import { ancestorChain, groupObligations } from '../obligation-graph.js'
 import { addCollectionIndices, validateDenseIndices } from './dense-indices.js'
 
@@ -10,9 +10,13 @@ export const recordProjectionOf = (obligation, stored) => {
     obligation,
     chain,
     records: Object.entries(stored)
-      .map(([fulfilmentId, value]) => ({
-        fulfilmentId,
-        indices: validateFulfilmentId(chain, fulfilmentId, obligation.name),
+      .map(([fulfilmentIndex, value]) => ({
+        fulfilmentIndex,
+        indices: validateFulfilmentIndex(
+          chain,
+          fulfilmentIndex,
+          obligation.name
+        ),
         value
       }))
       .sort((a, b) => compareIndexArrays(a.indices, b.indices))

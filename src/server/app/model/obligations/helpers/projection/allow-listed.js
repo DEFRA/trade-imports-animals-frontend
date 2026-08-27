@@ -12,7 +12,7 @@ import { filterAndProject } from './internals/filter-and-project.js'
  * gated obligation), pass the gated obligation's parent group as
  * `projectionGroup`. Records are the group's instance-paths whose
  * ancestor prefix has a gate-passing value. The pipeline's
- * `fulfilmentIdsByObligationId` map supplies the paths — the
+ * `fulfilmentIndexesByObligationId` map supplies the paths — the
  * obligation code doesn't enumerate them itself.
  */
 export const allowListed = (
@@ -22,12 +22,12 @@ export const allowListed = (
   reasons
 ) => {
   const currentValues = () => (typeof values === 'function' ? values() : values)
-  const fn = (fulfilments, fulfilmentIdsByObligationId) => {
+  const fn = (fulfilments, fulfilmentIndexesByObligationId) => {
     const decision = filterAndProject(
       fulfilments[gateObligation.id],
       (value) => currentValues().includes(value),
       projectionGroup,
-      fulfilmentIdsByObligationId
+      fulfilmentIndexesByObligationId
     )
     return decision.inScope && reasons ? { ...decision, reasons } : decision
   }

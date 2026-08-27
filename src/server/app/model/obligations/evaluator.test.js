@@ -451,7 +451,7 @@ describe('V4 — commodity line group semantics', () => {
     })
   })
 
-  it('infers a group fulfilmentId per line from commodityCode composite-key prefixes', () => {
+  it('infers a group fulfilmentIndex per line from commodityCode composite-key prefixes', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
         [LINE_HORSE]: 'Horse',
@@ -459,12 +459,12 @@ describe('V4 — commodity line group semantics', () => {
       }
     })
     const ids = new Set(
-      result.obligations[commodityLine.id].records.map((r) => r.fulfilmentId)
+      result.obligations[commodityLine.id].records.map((r) => r.fulfilmentIndex)
     )
     expect(ids).toEqual(new Set([LINE_HORSE, LINE_CAT]))
   })
 
-  it('unions fulfilmentIds across any descendant field record', () => {
+  it('unions fulfilmentIndexs across any descendant field record', () => {
     // Only numberOfAnimals is answered on the second line — the line's
     // presence is still inferred (no dedicated commodityCode entry required).
     const result = evaluator.evaluate({
@@ -472,7 +472,7 @@ describe('V4 — commodity line group semantics', () => {
       [numberOfAnimals.id]: { [LINE_CAT]: 42 }
     })
     const ids = new Set(
-      result.obligations[commodityLine.id].records.map((r) => r.fulfilmentId)
+      result.obligations[commodityLine.id].records.map((r) => r.fulfilmentIndex)
     )
     expect(ids).toEqual(new Set([LINE_HORSE, LINE_CAT]))
   })
@@ -551,7 +551,7 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
     expect(result.obligations[numberOfPackages.id]).toEqual({
       inScope: true,
       reasons: [numberOfPackagesReason],
-      records: [{ fulfilmentId: LINE_HORSE, status: 'optional' }]
+      records: [{ fulfilmentIndex: LINE_HORSE, status: 'optional' }]
     })
   })
 
@@ -564,7 +564,7 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
       }
     })
     const ids = result.obligations[numberOfPackages.id].records.map(
-      (r) => r.fulfilmentId
+      (r) => r.fulfilmentIndex
     )
     expect(new Set(ids)).toEqual(new Set([LINE_HORSE, LINE_CAT]))
   })
@@ -623,7 +623,7 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
       [LINE_CAT]: 5
     })
     const ids = result.obligations[numberOfPackages.id].records.map(
-      (r) => r.fulfilmentId
+      (r) => r.fulfilmentIndex
     )
     expect(new Set(ids)).toEqual(new Set([LINE_HORSE, LINE_CAT]))
   })
@@ -690,7 +690,9 @@ describe('V4 — cow line triggers both packages and CPH gates', () => {
       [commodityCode.id]: { [LINE_COW]: 'Cow' }
     })
     expect(
-      result.obligations[numberOfPackages.id].records.map((r) => r.fulfilmentId)
+      result.obligations[numberOfPackages.id].records.map(
+        (r) => r.fulfilmentIndex
+      )
     ).toEqual([LINE_COW])
     expect(result.obligations[cph.id]).toEqual({
       inScope: true,
@@ -726,7 +728,7 @@ describe('V4 — unit record group semantics', () => {
       }
     })
     const ids = new Set(
-      result.obligations[unitRecord.id].records.map((r) => r.fulfilmentId)
+      result.obligations[unitRecord.id].records.map((r) => r.fulfilmentIndex)
     )
     expect(ids).toEqual(
       new Set([`${LINE_COW}.${UNIT_1}`, `${LINE_COW}.${UNIT_2}`])
@@ -740,7 +742,7 @@ describe('V4 — unit record group semantics', () => {
       [earTag.id]: { [`${LINE_COW}.${UNIT_2}`]: 'UK-EAR-999' }
     })
     const ids = new Set(
-      result.obligations[unitRecord.id].records.map((r) => r.fulfilmentId)
+      result.obligations[unitRecord.id].records.map((r) => r.fulfilmentIndex)
     )
     expect(ids).toEqual(
       new Set([`${LINE_COW}.${UNIT_1}`, `${LINE_COW}.${UNIT_2}`])
@@ -777,7 +779,7 @@ describe('V4 — passport (gatedBy allowListed(commodityCode, passport list))', 
     expect(result.obligations[passport.id].inScope).toBe(true)
     expect(result.obligations[passport.id].reasons).toEqual([passportReason])
     const ids = new Set(
-      result.obligations[passport.id].records.map((r) => r.fulfilmentId)
+      result.obligations[passport.id].records.map((r) => r.fulfilmentIndex)
     )
     expect(ids).toEqual(
       new Set([`${LINE_COW}.${UNIT_1}`, `${LINE_COW}.${UNIT_2}`])
@@ -856,7 +858,7 @@ describe('V4 — earTag (gatedBy allowListed(commodityCode, ear-tag list))', () 
     expect(result.obligations[earTag.id].inScope).toBe(true)
     expect(result.obligations[earTag.id].reasons).toEqual([earTagReason])
     const ids = new Set(
-      result.obligations[earTag.id].records.map((r) => r.fulfilmentId)
+      result.obligations[earTag.id].records.map((r) => r.fulfilmentIndex)
     )
     expect(ids).toEqual(
       new Set([`${LINE_COW}.${UNIT_1}`, `${LINE_UNKNOWN}.${UNIT_1}`])
@@ -993,7 +995,7 @@ describe('V4 — permanentAddress (gatedBy for cats/dogs)', () => {
       permanentAddressReason
     ])
     expect(result.obligations[permanentAddress.id].records).toEqual([
-      { fulfilmentId: `${LINE_CAT}.${UNIT_1}`, status: 'mandatory' }
+      { fulfilmentIndex: `${LINE_CAT}.${UNIT_1}`, status: 'mandatory' }
     ])
     expect(result.fulfilments[permanentAddress.id]).toEqual({
       [`${LINE_CAT}.${UNIT_1}`]: petAddress
@@ -1036,19 +1038,19 @@ describe('V4 — mixed lines drive per-line identifier gating', () => {
       [horseName.id]: { [`${LINE_HORSE}.${UNIT_1}`]: 'Silver' }
     })
     const passportIds = new Set(
-      result.obligations[passport.id].records.map((r) => r.fulfilmentId)
+      result.obligations[passport.id].records.map((r) => r.fulfilmentIndex)
     )
     expect(passportIds).toEqual(
       new Set([`${LINE_COW}.${UNIT_1}`, `${LINE_HORSE}.${UNIT_1}`])
     )
 
     const earTagIds = new Set(
-      result.obligations[earTag.id].records.map((r) => r.fulfilmentId)
+      result.obligations[earTag.id].records.map((r) => r.fulfilmentIndex)
     )
     expect(earTagIds).toEqual(new Set([`${LINE_COW}.${UNIT_1}`]))
 
     const horseNameIds = new Set(
-      result.obligations[horseName.id].records.map((r) => r.fulfilmentId)
+      result.obligations[horseName.id].records.map((r) => r.fulfilmentIndex)
     )
     expect(horseNameIds).toEqual(new Set([`${LINE_HORSE}.${UNIT_1}`]))
   })
@@ -1097,7 +1099,7 @@ describe('V4 — accompanying documents: upload returns are optional obligations
     const result = evaluator.evaluate(uploadOnly)
     expect(result.obligations[documents.id]).toEqual({
       inScope: true,
-      records: [{ fulfilmentId: 'd0' }]
+      records: [{ fulfilmentIndex: 'd0' }]
     })
   })
 
@@ -1107,7 +1109,7 @@ describe('V4 — accompanying documents: upload returns are optional obligations
       const result = evaluator.evaluate(uploadOnly)
       expect(result.obligations[obligation.id]).toEqual({
         inScope: true,
-        records: [{ fulfilmentId: 'd0', status: 'optional' }]
+        records: [{ fulfilmentIndex: 'd0', status: 'optional' }]
       })
       expect(result.fulfilments[obligation.id]).toEqual(
         uploadOnly[obligation.id]
@@ -1121,7 +1123,7 @@ describe('V4 — accompanying documents: upload returns are optional obligations
       const result = evaluator.evaluate(uploadOnly)
       expect(result.obligations[obligation.id]).toEqual({
         inScope: true,
-        records: [{ fulfilmentId: 'd0', status: 'mandatory' }]
+        records: [{ fulfilmentIndex: 'd0', status: 'mandatory' }]
       })
     }
   )
@@ -1136,7 +1138,7 @@ describe('V4 — accompanying documents: four metadata fields are mandatory per 
     const result = evaluator.evaluate(withType)
     expect(result.obligations[documents.id]).toEqual({
       inScope: true,
-      records: [{ fulfilmentId: 'd0' }]
+      records: [{ fulfilmentIndex: 'd0' }]
     })
   })
 
@@ -1146,7 +1148,7 @@ describe('V4 — accompanying documents: four metadata fields are mandatory per 
       const result = evaluator.evaluate(withType)
       expect(result.obligations[obligation.id]).toEqual({
         inScope: true,
-        records: [{ fulfilmentId: 'd0', status: 'mandatory' }]
+        records: [{ fulfilmentIndex: 'd0', status: 'mandatory' }]
       })
     }
   )
@@ -1166,7 +1168,7 @@ describe('V4 — accompanying documents: all four filled on one record', () => {
       const result = evaluator.evaluate(stored)
       expect(result.obligations[obligation.id]).toEqual({
         inScope: true,
-        records: [{ fulfilmentId: 'd0', status: 'mandatory' }]
+        records: [{ fulfilmentIndex: 'd0', status: 'mandatory' }]
       })
       expect(result.fulfilments[obligation.id]).toEqual(stored[obligation.id])
     }
@@ -1182,8 +1184,8 @@ describe('V4 — accompanying documents: a partial record keeps every field owed
     expect(result.obligations[accompanyingDocumentReference.id]).toEqual({
       inScope: true,
       records: [
-        { fulfilmentId: 'd0', status: 'mandatory' },
-        { fulfilmentId: 'd1', status: 'mandatory' }
+        { fulfilmentIndex: 'd0', status: 'mandatory' },
+        { fulfilmentIndex: 'd1', status: 'mandatory' }
       ]
     })
     expect(result.fulfilments[accompanyingDocumentReference.id]).toEqual({

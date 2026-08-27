@@ -29,7 +29,7 @@
  * rule — the model emits nothing for a group with zero records, but an
  * empty required collection must still block FULFILLED. The per-record
  * any-of verdict is sourced from the model's `groupInvariantErrors`
- * (filtered by instanceId), the same interpreter collection-complete
+ * (filtered by fulfilmentIndex), the same interpreter collection-complete
  * uses.
  */
 
