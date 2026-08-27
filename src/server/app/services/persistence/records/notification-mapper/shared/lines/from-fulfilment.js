@@ -63,9 +63,9 @@ export const commodityLinesFromFulfilment = (reader) => {
     })
 
   return reader
-    .instanceIds(commodityLine, commodityObligations)
+    .groupFulfilmentIndexes(commodityLine, commodityObligations)
     .map((lineId) => {
-      const unitIds = reader.instanceIds(
+      const unitIds = reader.groupFulfilmentIndexes(
         unitRecord,
         identifierObligations,
         lineId

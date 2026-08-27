@@ -35,7 +35,12 @@ const assertDescendant = (group, obligation) => {
   }
 }
 
-const instanceIdOf = (fulfilmentIndex, groupChain, descriptors, parentId) => {
+const deriveFulfilmentIndex = (
+  fulfilmentIndex,
+  groupChain,
+  descriptors,
+  parentId
+) => {
   if (!hasIndexedSegments(fulfilmentIndex)) {
     return undefined
   }
@@ -81,7 +86,7 @@ export const readFulfilment = (
   // Infer collection instances from the union of descendant record maps.
   // Truncating each exact composite-id prefix to the requested group depth
   // means a unit-only record still establishes its containing commodity line.
-  const instanceIds = (group, descendants, parentId) => {
+  const groupFulfilmentIndexes = (group, descendants, parentId) => {
     const groupChain = ancestorsAndSelf(group)
     const descriptors = groupChain.map(({ id }) =>
       registry.groupDescriptorOf(id)
@@ -94,7 +99,7 @@ export const readFulfilment = (
     for (const obligation of descendants) {
       assertDescendant(group, obligation)
       for (const fulfilmentIndex of Object.keys(records(obligation))) {
-        const id = instanceIdOf(
+        const id = deriveFulfilmentIndex(
           fulfilmentIndex,
           groupChain,
           descriptors,
@@ -108,5 +113,5 @@ export const readFulfilment = (
     return [...ids].sort(compareFulfilmentIndexes)
   }
 
-  return { scalar, records, instanceIds }
+  return { scalar, records, groupFulfilmentIndexes }
 }
