@@ -1,3 +1,24 @@
+// Composite public shape: <obligationId>:<instanceId>. The outer `:` marks the
+// obligation/fulfilment boundary; the inner `.` (see INSTANCE_ID_DELIMITER)
+// separates the segments of the instance id itself.
+export const INSTANCE_ID_DELIMITER = '.'
+export const FULFILMENT_ID_DELIMITER = ':'
+
+export const formatCompositeFulfilmentId = (obligationId, instanceId) =>
+  instanceId
+    ? `${obligationId}${FULFILMENT_ID_DELIMITER}${instanceId}`
+    : obligationId
+
+export const parseCompositeFulfilmentId = (composite) => {
+  const idx = composite.indexOf(FULFILMENT_ID_DELIMITER)
+  return idx === -1
+    ? { obligationId: composite, instanceId: null }
+    : {
+        obligationId: composite.slice(0, idx),
+        instanceId: composite.slice(idx + 1)
+      }
+}
+
 export const segmentsOf = (fulfilmentId) => fulfilmentId.split('/')
 
 const DIGIT = /\d/
