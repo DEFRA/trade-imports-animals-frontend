@@ -43,6 +43,7 @@ const render = (h, journey, values, errors = {}, recoverableError = false) =>
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
       journey,
+      page,
       recoverableError
     }),
     copy,

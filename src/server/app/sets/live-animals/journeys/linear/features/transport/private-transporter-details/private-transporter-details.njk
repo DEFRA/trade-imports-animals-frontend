@@ -2,10 +2,12 @@
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "shared/save-actions.njk" import saveActions %}
+{% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
   {% include "shared/error-summary.njk" %}
 
+  {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
   <p class="govuk-body">{{ copy.intro }}</p>

@@ -26,3 +26,5 @@ export const journeyFlowOnlyKeys = () => configured.flowOnlyKeys
 export const journeyEntryGuardTarget = async (...args) =>
   configured.entryGuardTarget(...args)
 export const journeyLayout = () => configured.layout
+export const journeySectionCaption = (pageId) =>
+  configured.sectionCaption?.(pageId)

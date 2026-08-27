@@ -16,6 +16,13 @@ export const copy = {
       bodyPrefix: 'This is a new service. Help us improve it and',
       feedbackLinkText: 'give your feedback by email'
     },
+    serviceNavigation: {
+      menuButton: 'Menu',
+      dashboard: 'Dashboard',
+      addressBook: 'Address book',
+      manageAccount: 'Manage account',
+      logOut: 'Log out'
+    },
     breadcrumbs: {
       serviceHome: 'Your notifications'
     },

@@ -93,8 +93,9 @@ Use `collects: []` only when the page owns no obligation or edits a collection
 whose root another page already owns.
 
 Use one `render()` helper for GET and POST errors. Build the common view with
-`kit.base()`. Pass `journey` so the shared reference strip renders. The normal
-back link is `hubPath(journey.journeyId)`.
+`kit.base()`. Pass `journey` so the shared reference strip renders, and `page`
+so the section caption does. The normal back link is
+`hubPath(journey.journeyId)`.
 
 GET calls `state.get()` once and prefills from `answers`. POST:
 
@@ -123,9 +124,12 @@ Put all user-facing text in `copy/copy.en.js` and `copy/copy.cy.js`. Keep both
 bundles the same shape and resolve them with `copyFor({ en, cy })`.
 
 Extend `shared/layout.njk`, which resolves from the `src/server/app` Nunjucks root.
-Include the shared error summary and save actions. Render fields with GOV.UK or MoJ
-macros. Keep each input name, input id and validation error key the same so an
-error-summary link focuses the control.
+Include the shared error summary and save actions. Import the section caption with
+`{% from "shared/section-caption.njk" import sectionCaption %}` and call
+`{{ sectionCaption(caption) }}` immediately above the page heading, passing the
+caption size that matches the heading. `journeys/linear/features/origin/template.njk`
+is the example. Render fields with GOV.UK or MoJ macros. Keep each input name, input
+id and validation error key the same so an error-summary link focuses the control.
 
 Import `TEMPLATES` from
 [`journeys/linear/config.js`](../journeys/linear/config.js) in the controller and
@@ -165,6 +169,11 @@ Import it into [`journeys/linear/flow/task-rows.js`](../journeys/linear/flow/tas
 existing task row when those pages form one user task. Add a task row only when
 the page needs its own entry on the hub. A task row is the hub entry; a flow
 section is the navigation sequence.
+
+Decide the page's caption in
+[`journeys/linear/flow/section-captions/index.js`](../journeys/linear/flow/section-captions/index.js):
+add it to the section it belongs to, or to the bare list in that folder's test.
+The test fails until you do one or the other.
 
 If you add a task row, also:
 

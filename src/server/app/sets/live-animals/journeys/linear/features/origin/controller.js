@@ -106,6 +106,7 @@ const render = (
       backLink: backLinkFor(journey, answers),
       journey: journeyIfStarted(journey, answers),
       journeyId: journey.journeyId,
+      page,
       recoverableError
     }),
     copy,

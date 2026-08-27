@@ -2,8 +2,10 @@
 {% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
 {% from "shared/save-actions.njk" import saveActions %}
 {% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
+{% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
+  {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
   {{ govukWarningText({ text: copy.warning }) }}

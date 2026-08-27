@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 
 import { config } from '../../config.js'
 import { createLogger } from '../../../server/common/helpers/logging/logger.js'
+import { inDashboardSection } from '../../../server/app/shared/paths.js'
 
 const logger = createLogger()
 const assetPath = config.get('assetPath')
@@ -12,6 +13,20 @@ const manifestPath = path.join(
 )
 
 let webpackManifest
+
+/**
+ * Which service-navigation item the current request sits under, so the layout
+ * can mark it active. Section-wide, not page-wide: every notification page is
+ * inside the dashboard's section of the service, which is why the answer for
+ * `/notifications/123/origin` is still `dashboard`.
+ *
+ * @param {string} [requestPath] - the request path.
+ * @returns {string|null} the id of the active navigation item, or null when the
+ * request is under none of them.
+ */
+export function activeNavigationItem(requestPath = '') {
+  return inDashboardSection(requestPath) ? 'dashboard' : null
+}
 
 async function context(request) {
   if (!webpackManifest) {
@@ -34,6 +49,7 @@ async function context(request) {
     serviceUrl: '/',
     authEnabled: config.get('auth.enabled'),
     staleActionRejected: request.query?.staleAction === '1',
+    activeNavigationItem: activeNavigationItem(request.path),
     breadcrumbs: [],
     userSession: authData
       ? {

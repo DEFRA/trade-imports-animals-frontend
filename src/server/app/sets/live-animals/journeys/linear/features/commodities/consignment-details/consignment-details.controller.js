@@ -47,7 +47,8 @@ const render = (
         request,
         pagePath(request.params.journeyId, commoditiesPage.slug)
       ),
-      journey
+      journey,
+      page
     }),
     copy,
     hasLines: lines.length > 0,

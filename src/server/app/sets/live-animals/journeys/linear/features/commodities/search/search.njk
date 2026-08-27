@@ -3,10 +3,12 @@
 {% from "govuk/components/details/macro.njk" import govukDetails %}
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
 {% from "shared/save-actions.njk" import saveActions %}
+{% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
   {% include "shared/error-summary.njk" %}
 
+  {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
   {{ govukInsetText({

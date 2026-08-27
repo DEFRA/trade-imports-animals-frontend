@@ -2,10 +2,12 @@
 {% from "live-animals/journeys/linear/features/commodities/consignment-details/_selected-commodities-table.njk" import selectedCommoditiesTable %}
 {% from "live-animals/journeys/linear/features/commodities/consignment-details/_species-quantities.njk" import speciesQuantityGroup %}
 {% from "shared/save-actions.njk" import saveActions %}
+{% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
   {% include "shared/error-summary.njk" %}
 
+  {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
   {% if hasLines %}
