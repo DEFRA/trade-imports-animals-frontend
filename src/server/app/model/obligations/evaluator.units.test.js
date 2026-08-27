@@ -429,7 +429,7 @@ describe('purgeStorage', () => {
 
   it('user leaf → map kept as-is', () => {
     const obligation = { id: 'o', indexedBy: { source: 'user' } }
-    const stored = { 'd1/a1': { line1: '10 High St' } }
+    const stored = { 'd1.a1': { line1: '10 High St' } }
     const result = purgeStorage(
       { o: stored },
       {
@@ -545,16 +545,16 @@ describe('enumerateGroupFulfilmentIds', () => {
       isInScope: alwaysInScope,
       amendedFulfilments: {
         leaf: {
-          'd1/c1/p1': {},
-          'd1/c1/p2': {},
-          'd1/c2/p3': {}
+          'd1.c1.p1': {},
+          'd1.c1.p2': {},
+          'd1.c2.p3': {}
         }
       }
     })
     // driver at depth 1 → {d1}
     expect(result.get('driver')).toEqual(new Set(['d1']))
-    // driverClaim at depth 2 → {d1/c1, d1/c2}
-    expect(result.get('claim')).toEqual(new Set(['d1/c1', 'd1/c2']))
+    // driverClaim at depth 2 → {d1.c1, d1.c2}
+    expect(result.get('claim')).toEqual(new Set(['d1.c1', 'd1.c2']))
   })
 
   it('descendant with non-object storage → skipped', () => {
@@ -757,11 +757,11 @@ describe('buildImplication', () => {
       obligationsByCategory: new Map([['o', 'user-leaf']]),
       obligationApplicabilityDecisions: new Map(),
       fulfilmentIdsByObligationId: new Map(),
-      amendedFulfilments: { o: { 'd1/a1': {}, 'd1/a2': {} } }
+      amendedFulfilments: { o: { 'd1.a1': {}, 'd1.a2': {} } }
     })
     expect(result.records).toEqual([
-      { fulfilmentId: 'd1/a1', status: 'mandatory' },
-      { fulfilmentId: 'd1/a2', status: 'mandatory' }
+      { fulfilmentId: 'd1.a1', status: 'mandatory' },
+      { fulfilmentId: 'd1.a2', status: 'mandatory' }
     ])
   })
 

@@ -1,3 +1,5 @@
+import { INSTANCE_ID_DELIMITER } from '../../fulfilment-id.js'
+
 // The record map for a grouped leaf ({ fulfilmentId: value }), or undefined.
 export const recordMap = (obligation, state) => {
   const stored = state.fulfilments?.[obligation.id]
@@ -19,6 +21,6 @@ export const childRecords = (obligation, parentRecId, state) => {
   return parentRecId === null
     ? records
     : records.filter((record) =>
-        record.fulfilmentId.startsWith(`${parentRecId}/`)
+        record.fulfilmentId.startsWith(`${parentRecId}${INSTANCE_ID_DELIMITER}`)
       )
 }

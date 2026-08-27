@@ -11,8 +11,8 @@
  *                 NOT `name` — verified against `evaluator.js`'s
  *                 `dropUnknownFulfilments`/`buildObligationsById`). Grouped
  *                 values are records-maps `{ fulfilmentId: value }` whose
- *                 fulfilmentId is a `/`-delimited composite of one segment
- *                 per enclosing group (`line0` at depth 1, `line0/unit1` at
+ *                 fulfilmentId is a `.`-delimited composite of one segment
+ *                 per enclosing group (`line0` at depth 1, `line0.unit1` at
  *                 depth 2). Top-level scalars store the value directly.
  *
  * An obligation's `name` is its answers key, its `id` is its fulfilments UUID,

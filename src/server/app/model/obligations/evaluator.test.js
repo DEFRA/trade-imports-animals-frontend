@@ -112,7 +112,7 @@ const LINE_COW = 'line4' //   Cow — packages AND CPH, passport + tattoo + earT
 const LINE_HORSE = 'lineH' // Horse — packages, passport + horseName
 const LINE_CAT = 'lineD' //   Cat — packages, passport + tattoo + permanentAddress
 
-// Unit-instance-id mnemonics for depth-2 composite keys (`lineId/unitId`).
+// Unit-instance-id mnemonics for depth-2 composite keys (`lineId.unitId`).
 const UNIT_1 = 'unit1'
 const UNIT_2 = 'unit2'
 
@@ -721,29 +721,29 @@ describe('V4 — unit record group semantics', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_COW]: 'Cow' },
       [passport.id]: {
-        [`${LINE_COW}/${UNIT_1}`]: 'UK123',
-        [`${LINE_COW}/${UNIT_2}`]: 'UK456'
+        [`${LINE_COW}.${UNIT_1}`]: 'UK123',
+        [`${LINE_COW}.${UNIT_2}`]: 'UK456'
       }
     })
     const ids = new Set(
       result.obligations[unitRecord.id].records.map((r) => r.fulfilmentId)
     )
     expect(ids).toEqual(
-      new Set([`${LINE_COW}/${UNIT_1}`, `${LINE_COW}/${UNIT_2}`])
+      new Set([`${LINE_COW}.${UNIT_1}`, `${LINE_COW}.${UNIT_2}`])
     )
   })
 
   it('unions unit-instance paths across multiple identifier storages', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_COW]: 'Cow' },
-      [passport.id]: { [`${LINE_COW}/${UNIT_1}`]: 'UK123' },
-      [earTag.id]: { [`${LINE_COW}/${UNIT_2}`]: 'UK-EAR-999' }
+      [passport.id]: { [`${LINE_COW}.${UNIT_1}`]: 'UK123' },
+      [earTag.id]: { [`${LINE_COW}.${UNIT_2}`]: 'UK-EAR-999' }
     })
     const ids = new Set(
       result.obligations[unitRecord.id].records.map((r) => r.fulfilmentId)
     )
     expect(ids).toEqual(
-      new Set([`${LINE_COW}/${UNIT_1}`, `${LINE_COW}/${UNIT_2}`])
+      new Set([`${LINE_COW}.${UNIT_1}`, `${LINE_COW}.${UNIT_2}`])
     )
   })
 })
@@ -770,8 +770,8 @@ describe('V4 — passport (gatedBy allowListed(commodityCode, passport list))', 
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_COW]: 'Cow' },
       [passport.id]: {
-        [`${LINE_COW}/${UNIT_1}`]: 'UK123',
-        [`${LINE_COW}/${UNIT_2}`]: 'UK456'
+        [`${LINE_COW}.${UNIT_1}`]: 'UK123',
+        [`${LINE_COW}.${UNIT_2}`]: 'UK456'
       }
     })
     expect(result.obligations[passport.id].inScope).toBe(true)
@@ -780,24 +780,24 @@ describe('V4 — passport (gatedBy allowListed(commodityCode, passport list))', 
       result.obligations[passport.id].records.map((r) => r.fulfilmentId)
     )
     expect(ids).toEqual(
-      new Set([`${LINE_COW}/${UNIT_1}`, `${LINE_COW}/${UNIT_2}`])
+      new Set([`${LINE_COW}.${UNIT_1}`, `${LINE_COW}.${UNIT_2}`])
     )
   })
 
   it('keeps a stored passport value on a matching-line unit (round-trip)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_COW]: 'Cow' },
-      [passport.id]: { [`${LINE_COW}/${UNIT_1}`]: 'UK123' }
+      [passport.id]: { [`${LINE_COW}.${UNIT_1}`]: 'UK123' }
     })
     expect(result.fulfilments[passport.id]).toEqual({
-      [`${LINE_COW}/${UNIT_1}`]: 'UK123'
+      [`${LINE_COW}.${UNIT_1}`]: 'UK123'
     })
   })
 
   it('purges a stored passport value on a non-matching-line unit', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_FISH]: 'Fish' },
-      [passport.id]: { [`${LINE_FISH}/${UNIT_1}`]: 'STRAY' }
+      [passport.id]: { [`${LINE_FISH}.${UNIT_1}`]: 'STRAY' }
     })
     expect(result.fulfilments[passport.id]).toBeUndefined()
   })
@@ -809,12 +809,12 @@ describe('V4 — passport (gatedBy allowListed(commodityCode, passport list))', 
         [LINE_COW]: 'Cow'
       },
       [passport.id]: {
-        [`${LINE_FISH}/${UNIT_1}`]: 'STRAY',
-        [`${LINE_COW}/${UNIT_1}`]: 'UK123'
+        [`${LINE_FISH}.${UNIT_1}`]: 'STRAY',
+        [`${LINE_COW}.${UNIT_1}`]: 'UK123'
       }
     })
     expect(result.fulfilments[passport.id]).toEqual({
-      [`${LINE_COW}/${UNIT_1}`]: 'UK123'
+      [`${LINE_COW}.${UNIT_1}`]: 'UK123'
     })
   })
 })
@@ -827,7 +827,7 @@ describe('V4 — tattoo (gatedBy allowListed(commodityCode, tattoo list))', () =
   it('is in scope for a cow line (Cow in the tattoo list)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_COW]: 'Cow' },
-      [tattoo.id]: { [`${LINE_COW}/${UNIT_1}`]: 'CT-99' }
+      [tattoo.id]: { [`${LINE_COW}.${UNIT_1}`]: 'CT-99' }
     })
     expect(result.obligations[tattoo.id].inScope).toBe(true)
     expect(result.obligations[tattoo.id].reasons).toEqual([tattooReason])
@@ -849,8 +849,8 @@ describe('V4 — earTag (gatedBy allowListed(commodityCode, ear-tag list))', () 
         [LINE_UNKNOWN]: 'Cow'
       },
       [earTag.id]: {
-        [`${LINE_COW}/${UNIT_1}`]: 'UK-COW-1',
-        [`${LINE_UNKNOWN}/${UNIT_1}`]: 'UK-COW-2'
+        [`${LINE_COW}.${UNIT_1}`]: 'UK-COW-1',
+        [`${LINE_UNKNOWN}.${UNIT_1}`]: 'UK-COW-2'
       }
     })
     expect(result.obligations[earTag.id].inScope).toBe(true)
@@ -859,7 +859,7 @@ describe('V4 — earTag (gatedBy allowListed(commodityCode, ear-tag list))', () 
       result.obligations[earTag.id].records.map((r) => r.fulfilmentId)
     )
     expect(ids).toEqual(
-      new Set([`${LINE_COW}/${UNIT_1}`, `${LINE_UNKNOWN}/${UNIT_1}`])
+      new Set([`${LINE_COW}.${UNIT_1}`, `${LINE_UNKNOWN}.${UNIT_1}`])
     )
   })
 
@@ -875,7 +875,7 @@ describe('V4 — horseName (gatedBy allowListed(commodityCode, horse-name list))
   it('is in scope only for horse commodity', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_HORSE]: 'Horse' },
-      [horseName.id]: { [`${LINE_HORSE}/${UNIT_1}`]: 'Silver' }
+      [horseName.id]: { [`${LINE_HORSE}.${UNIT_1}`]: 'Silver' }
     })
     expect(result.obligations[horseName.id].inScope).toBe(true)
     expect(result.obligations[horseName.id].reasons).toEqual([horseNameReason])
@@ -899,7 +899,7 @@ describe('V4 — identificationDetails (inverse gate — no specific identifier 
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_FISH]: 'Fish' },
       [identificationDetails.id]: {
-        [`${LINE_FISH}/${UNIT_1}`]: 'Tank 12, batch 7'
+        [`${LINE_FISH}.${UNIT_1}`]: 'Tank 12, batch 7'
       }
     })
     expect(result.obligations[identificationDetails.id].inScope).toBe(true)
@@ -939,7 +939,7 @@ describe('V4 — identificationDetails (inverse gate — no specific identifier 
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_COW]: 'Cow' },
       [identificationDetails.id]: {
-        [`${LINE_COW}/${UNIT_1}`]: 'STRAY'
+        [`${LINE_COW}.${UNIT_1}`]: 'STRAY'
       }
     })
     expect(result.fulfilments[identificationDetails.id]).toBeUndefined()
@@ -960,7 +960,7 @@ describe('V4 — description (same inverse gate as identificationDetails)', () =
     // permit them. Add a stored record to make fish concrete.
     const fishWithUnit = evaluator.evaluate({
       [commodityCode.id]: { [LINE_FISH]: 'Fish' },
-      [description.id]: { [`${LINE_FISH}/${UNIT_1}`]: 'Farmed salmon' }
+      [description.id]: { [`${LINE_FISH}.${UNIT_1}`]: 'Farmed salmon' }
     })
     expect(fishWithUnit.obligations[description.id].inScope).toBe(true)
     expect(cow.obligations[description.id]).toEqual({ inScope: false })
@@ -986,17 +986,17 @@ describe('V4 — permanentAddress (gatedBy for cats/dogs)', () => {
   it('is in scope for cats with composite address value', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_CAT]: 'Cat' },
-      [permanentAddress.id]: { [`${LINE_CAT}/${UNIT_1}`]: petAddress }
+      [permanentAddress.id]: { [`${LINE_CAT}.${UNIT_1}`]: petAddress }
     })
     expect(result.obligations[permanentAddress.id].inScope).toBe(true)
     expect(result.obligations[permanentAddress.id].reasons).toEqual([
       permanentAddressReason
     ])
     expect(result.obligations[permanentAddress.id].records).toEqual([
-      { fulfilmentId: `${LINE_CAT}/${UNIT_1}`, status: 'mandatory' }
+      { fulfilmentId: `${LINE_CAT}.${UNIT_1}`, status: 'mandatory' }
     ])
     expect(result.fulfilments[permanentAddress.id]).toEqual({
-      [`${LINE_CAT}/${UNIT_1}`]: petAddress
+      [`${LINE_CAT}.${UNIT_1}`]: petAddress
     })
   })
 
@@ -1010,7 +1010,7 @@ describe('V4 — permanentAddress (gatedBy for cats/dogs)', () => {
   it('purges a stored permanentAddress on a non-cats/dogs line', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_COW]: 'Cow' },
-      [permanentAddress.id]: { [`${LINE_COW}/${UNIT_1}`]: petAddress }
+      [permanentAddress.id]: { [`${LINE_COW}.${UNIT_1}`]: petAddress }
     })
     expect(result.fulfilments[permanentAddress.id]).toBeUndefined()
   })
@@ -1029,28 +1029,28 @@ describe('V4 — mixed lines drive per-line identifier gating', () => {
         [LINE_HORSE]: 'Horse'
       },
       [passport.id]: {
-        [`${LINE_COW}/${UNIT_1}`]: 'UK-C-1',
-        [`${LINE_HORSE}/${UNIT_1}`]: 'UK-H-1'
+        [`${LINE_COW}.${UNIT_1}`]: 'UK-C-1',
+        [`${LINE_HORSE}.${UNIT_1}`]: 'UK-H-1'
       },
-      [earTag.id]: { [`${LINE_COW}/${UNIT_1}`]: 'ET-1' },
-      [horseName.id]: { [`${LINE_HORSE}/${UNIT_1}`]: 'Silver' }
+      [earTag.id]: { [`${LINE_COW}.${UNIT_1}`]: 'ET-1' },
+      [horseName.id]: { [`${LINE_HORSE}.${UNIT_1}`]: 'Silver' }
     })
     const passportIds = new Set(
       result.obligations[passport.id].records.map((r) => r.fulfilmentId)
     )
     expect(passportIds).toEqual(
-      new Set([`${LINE_COW}/${UNIT_1}`, `${LINE_HORSE}/${UNIT_1}`])
+      new Set([`${LINE_COW}.${UNIT_1}`, `${LINE_HORSE}.${UNIT_1}`])
     )
 
     const earTagIds = new Set(
       result.obligations[earTag.id].records.map((r) => r.fulfilmentId)
     )
-    expect(earTagIds).toEqual(new Set([`${LINE_COW}/${UNIT_1}`]))
+    expect(earTagIds).toEqual(new Set([`${LINE_COW}.${UNIT_1}`]))
 
     const horseNameIds = new Set(
       result.obligations[horseName.id].records.map((r) => r.fulfilmentId)
     )
-    expect(horseNameIds).toEqual(new Set([`${LINE_HORSE}/${UNIT_1}`]))
+    expect(horseNameIds).toEqual(new Set([`${LINE_HORSE}.${UNIT_1}`]))
   })
 })
 

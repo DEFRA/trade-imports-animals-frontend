@@ -19,7 +19,8 @@ export const parseCompositeFulfilmentId = (composite) => {
       }
 }
 
-export const segmentsOf = (fulfilmentId) => fulfilmentId.split('/')
+export const segmentsOf = (fulfilmentId) =>
+  fulfilmentId.split(INSTANCE_ID_DELIMITER)
 
 const DIGIT = /\d/
 
@@ -62,7 +63,9 @@ export const compareIndexArrays = (left, right) => {
 }
 
 export const formatFulfilmentId = (groups, indices) =>
-  groups.map(({ token }, depth) => `${token}${indices[depth]}`).join('/')
+  groups
+    .map(({ token }, depth) => `${token}${indices[depth]}`)
+    .join(INSTANCE_ID_DELIMITER)
 
 export const instanceFulfilmentId = (collectionPath, index, groups) =>
   formatFulfilmentId(groups, [

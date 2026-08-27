@@ -29,7 +29,7 @@
 
 import { obligationByName, obligations } from '../model/obligations/manifest.js'
 import { ancestorChain, groupObligations } from './fulfilments/index.js'
-import { instanceFulfilmentId } from './fulfilment-id.js'
+import { INSTANCE_ID_DELIMITER, instanceFulfilmentId } from './fulfilment-id.js'
 import { fulfilmentRegistry } from './fulfilment-registry.js'
 import { SYSTEM_POPULATED } from './obligation-source.js'
 import { groupInvariantErrors } from '../model/obligations/state-queries.js'
@@ -38,10 +38,11 @@ import { isBlankValue } from '../model/obligations/is-blank-value.js'
 const isFulfilled = (value) => !isBlankValue(value)
 
 // A leaf record's fulfilmentId belongs to instance P iff it IS P (a direct
-// leaf of the instance's own group) or sits beneath it (`P/...`, a nested
+// leaf of the instance's own group) or sits beneath it (`P.…`, a nested
 // group's leaf) — the same positional-prefix rule the evaluator uses.
 const belongsToInstance = (fulfilmentId, instanceId) =>
-  fulfilmentId === instanceId || fulfilmentId.startsWith(`${instanceId}/`)
+  fulfilmentId === instanceId ||
+  fulfilmentId.startsWith(`${instanceId}${INSTANCE_ID_DELIMITER}`)
 
 const leavesUnder = (group) =>
   obligations().filter(

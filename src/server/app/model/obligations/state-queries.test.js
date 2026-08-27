@@ -5,8 +5,8 @@ import { groupInvariantErrors } from './state-queries.js'
 // Synthetic obligations — the queries can be exercised in isolation,
 // without the parent obligations manifest or evaluator.
 
-const line1Unit1Path = 'line1/unit1'
-const line1Unit2Path = 'line1/unit2'
+const line1Unit1Path = 'line1.unit1'
+const line1Unit2Path = 'line1.unit2'
 const commodityLineFloorErrorCode = 'obligation.commodityLine.atLeastOne'
 
 // Convenience: build a state as the ObligationEvaluator would.

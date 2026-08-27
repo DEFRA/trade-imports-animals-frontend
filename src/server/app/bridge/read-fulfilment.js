@@ -1,4 +1,5 @@
 import {
+  INSTANCE_ID_DELIMITER,
   compareIndexArrays,
   formatFulfilmentId,
   hasIndexedSegments,
@@ -46,10 +47,13 @@ const instanceIdOf = (fulfilmentId, groupChain, descriptors, parentId) => {
     descriptors,
     indicesOf(fulfilmentId).slice(0, groupChain.length)
   )
-  if (id !== segments.slice(0, groupChain.length).join('/')) {
+  if (id !== segments.slice(0, groupChain.length).join(INSTANCE_ID_DELIMITER)) {
     return undefined
   }
-  if (parentId !== undefined && !id.startsWith(`${parentId}/`)) {
+  if (
+    parentId !== undefined &&
+    !id.startsWith(`${parentId}${INSTANCE_ID_DELIMITER}`)
+  ) {
     return undefined
   }
   return id

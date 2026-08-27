@@ -123,26 +123,26 @@
       },
       "263b4c5d-6e7f-4c93-8012-6cd3e4f50618": "12/345/6789",
       "39657a80-91a2-4fc6-8345-9f0617284a51": {
-        "line0/unit0": "UK123456789"
+        "line0.unit0": "UK123456789"
       },
       "3a768b91-a2b3-4fd7-8456-a01728395b62": {
-        "line0/unit0": "AB1234"
+        "line0.unit0": "AB1234"
       },
       "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
-        "line0/unit0": "UK123456789012",
-        "line1/unit0": "UK000000000001"
+        "line0.unit0": "UK123456789012",
+        "line1.unit0": "UK000000000001"
       },
       "3c98adb3-c4d5-4ff9-8678-a2394b5b7d84": {
-        "line0/unit1": "Silver"
+        "line0.unit1": "Silver"
       },
       "3da9bec4-d5e6-4a0a-8789-a34a5c6c8e95": {
-        "line0/unit1": "Microchip 900123"
+        "line0.unit1": "Microchip 900123"
       },
       "3ebacfd5-e6f7-4b1b-889a-a45b6d7d9fa6": {
-        "line0/unit1": "Brown with a white blaze"
+        "line0.unit1": "Brown with a white blaze"
       },
       "3fcbd0e6-f708-4c2c-89ab-a56c7e8ea0b7": {
-        "line0/unit1": {
+        "line0.unit1": {
           "name": "Owner",
           "address": {
             "addressLine1": "8 Stable Close",
@@ -288,14 +288,14 @@
         },
         "263b4c5d-6e7f-4c93-8012-6cd3e4f50618": "12/345/6789",
         "39657a80-91a2-4fc6-8345-9f0617284a51": {
-          "line0/unit0": "UK123456789"
+          "line0.unit0": "UK123456789"
         },
         "3a768b91-a2b3-4fd7-8456-a01728395b62": {
-          "line0/unit0": "AB1234"
+          "line0.unit0": "AB1234"
         },
         "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
-          "line0/unit0": "UK123456789012",
-          "line1/unit0": "UK000000000001"
+          "line0.unit0": "UK123456789012",
+          "line1.unit0": "UK000000000001"
         },
         "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
           "line0": "ITAHC",
@@ -561,10 +561,10 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0/unit0"
+              "fulfilmentId": "line0.unit0"
             },
             {
-              "fulfilmentId": "line1/unit0"
+              "fulfilmentId": "line1.unit0"
             }
           ]
         },
@@ -578,11 +578,11 @@
           ],
           "records": [
             {
-              "fulfilmentId": "line0/unit0",
+              "fulfilmentId": "line0.unit0",
               "status": "optional"
             },
             {
-              "fulfilmentId": "line1/unit0",
+              "fulfilmentId": "line1.unit0",
               "status": "optional"
             }
           ]
@@ -597,11 +597,11 @@
           ],
           "records": [
             {
-              "fulfilmentId": "line0/unit0",
+              "fulfilmentId": "line0.unit0",
               "status": "optional"
             },
             {
-              "fulfilmentId": "line1/unit0",
+              "fulfilmentId": "line1.unit0",
               "status": "optional"
             }
           ]
@@ -616,11 +616,11 @@
           ],
           "records": [
             {
-              "fulfilmentId": "line0/unit0",
+              "fulfilmentId": "line0.unit0",
               "status": "optional"
             },
             {
-              "fulfilmentId": "line1/unit0",
+              "fulfilmentId": "line1.unit0",
               "status": "optional"
             }
           ]
@@ -1536,7 +1536,7 @@
         "line0": "1"
       },
       "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
-        "line0/unit0": "UK123456789012"
+        "line0.unit0": "UK123456789012"
       }
     },
     "evaluation": {
@@ -1559,7 +1559,7 @@
           "line0": "1"
         },
         "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
-          "line0/unit0": "UK123456789012"
+          "line0.unit0": "UK123456789012"
         }
       },
       "obligations": {
@@ -1750,7 +1750,7 @@
           "inScope": true,
           "records": [
             {
-              "fulfilmentId": "line0/unit0"
+              "fulfilmentId": "line0.unit0"
             }
           ]
         },
@@ -1764,7 +1764,7 @@
           ],
           "records": [
             {
-              "fulfilmentId": "line0/unit0",
+              "fulfilmentId": "line0.unit0",
               "status": "optional"
             }
           ]
@@ -1779,7 +1779,7 @@
           ],
           "records": [
             {
-              "fulfilmentId": "line0/unit0",
+              "fulfilmentId": "line0.unit0",
               "status": "optional"
             }
           ]
@@ -1794,7 +1794,7 @@
           ],
           "records": [
             {
-              "fulfilmentId": "line0/unit0",
+              "fulfilmentId": "line0.unit0",
               "status": "optional"
             }
           ]
@@ -1902,7 +1902,7 @@
         "line0": "1"
       },
       "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
-        "line0/unit0": "UK123456789012"
+        "line0.unit0": "UK123456789012"
       }
     },
     "evaluation": {

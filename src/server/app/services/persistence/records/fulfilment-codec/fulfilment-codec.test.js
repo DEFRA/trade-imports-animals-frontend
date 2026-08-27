@@ -23,8 +23,8 @@ const extraMapCorpus = [
     name: 'explicit-non-manifest-key-order',
     map: {
       [earTag.id]: {
-        'line1/unit2': '',
-        'line0/unit0': 'UK123456789012'
+        'line1.unit2': '',
+        'line0.unit0': 'UK123456789012'
       },
       [reasonForImport.id]: 'internalMarket',
       [commodityCode.id]: {
@@ -191,7 +191,7 @@ describe('persisted fulfilment codec', () => {
       persisted: [
         {
           obligationId: commodityCode.id,
-          records: [{ fulfilmentId: 'line0/unit0', value: 'Cow' }]
+          records: [{ fulfilmentId: 'line0.unit0', value: 'Cow' }]
         }
       ],
       error: /requires depth 1/
@@ -212,7 +212,7 @@ describe('persisted fulfilment codec', () => {
         {
           obligationId: earTag.id,
           records: [
-            { fulfilmentId: 'line0/unit-unknown', value: 'UK123456789012' }
+            { fulfilmentId: 'line0.unit-unknown', value: 'UK123456789012' }
           ]
         }
       ],
@@ -234,7 +234,7 @@ describe('persisted fulfilment codec', () => {
         obligationId: unknownGroupedId,
         records: [
           { fulfilmentId: 'historic2', value: 'first' },
-          { fulfilmentId: 'historic0/record3', value: { untouched: true } }
+          { fulfilmentId: 'historic0.record3', value: { untouched: true } }
         ]
       }
     ]
@@ -244,7 +244,7 @@ describe('persisted fulfilment codec', () => {
     expect(decoded).toHaveProperty(unknownScalarId, { legacyValue: true })
     expect(decoded).toHaveProperty(unknownGroupedId, {
       historic2: 'first',
-      'historic0/record3': { untouched: true }
+      'historic0.record3': { untouched: true }
     })
     expect(encodeEvaluatorFulfilments(decoded)).toEqual(persisted)
 

@@ -8,7 +8,7 @@
 export const witnessFulfilments = (obligation, witness) => {
   const fulfilmentIds = new Map()
   if (witness.projection) {
-    fulfilmentIds.set(witness.projection, ['line1/unit1'])
+    fulfilmentIds.set(witness.projection, ['line1.unit1'])
     return {
       fulfilments: { [witness.obligationId]: { line1: witness.value } },
       fulfilmentIds
