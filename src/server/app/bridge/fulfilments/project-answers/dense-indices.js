@@ -1,4 +1,4 @@
-import { INSTANCE_ID_DELIMITER } from '../../fulfilment-id.js'
+import { INDEX_DELIMITER } from '../../fulfilment-id.js'
 import { failProjection } from '../fail-projection.js'
 
 export const addCollectionIndices = (collectionIndices, projection) => {
@@ -6,7 +6,7 @@ export const addCollectionIndices = (collectionIndices, projection) => {
     projection.chain.forEach((group, depth) => {
       const byParent = collectionIndices.get(group) ?? new Map()
       collectionIndices.set(group, byParent)
-      const parent = indices.slice(0, depth).join(INSTANCE_ID_DELIMITER)
+      const parent = indices.slice(0, depth).join(INDEX_DELIMITER)
       const present = byParent.get(parent) ?? new Set()
       byParent.set(parent, present)
       present.add(indices[depth])

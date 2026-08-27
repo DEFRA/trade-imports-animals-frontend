@@ -7,9 +7,9 @@
 
 import { isBlankValue } from './is-blank-value.js'
 
-// Kept in sync with bridge/fulfilment-id.js#INSTANCE_ID_DELIMITER; model/
+// Kept in sync with bridge/fulfilment-id.js#INDEX_DELIMITER; model/
 // cannot import from bridge/ per the dep-cruiser model-import-boundary rule.
-const INSTANCE_ID_DELIMITER = '.'
+const INDEX_DELIMITER = '.'
 
 export const STATUSES = {
   NOT_APPLICABLE: 'not-applicable',
@@ -148,7 +148,7 @@ const checkRecordCountEquals = (group, records, state) => {
       continue
     }
     const actual = records.filter((record) =>
-      record.fulfilmentId.startsWith(`${parentId}${INSTANCE_ID_DELIMITER}`)
+      record.fulfilmentId.startsWith(`${parentId}${INDEX_DELIMITER}`)
     ).length
     if (actual !== expected) {
       errors.push({

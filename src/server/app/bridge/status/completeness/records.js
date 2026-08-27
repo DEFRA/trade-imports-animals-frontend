@@ -1,4 +1,4 @@
-import { INSTANCE_ID_DELIMITER } from '../../fulfilment-id.js'
+import { INDEX_DELIMITER } from '../../fulfilment-id.js'
 
 // The record map for a grouped leaf ({ fulfilmentId: value }), or undefined.
 export const recordMap = (obligation, state) => {
@@ -21,6 +21,6 @@ export const childRecords = (obligation, parentRecId, state) => {
   return parentRecId === null
     ? records
     : records.filter((record) =>
-        record.fulfilmentId.startsWith(`${parentRecId}${INSTANCE_ID_DELIMITER}`)
+        record.fulfilmentId.startsWith(`${parentRecId}${INDEX_DELIMITER}`)
       )
 }

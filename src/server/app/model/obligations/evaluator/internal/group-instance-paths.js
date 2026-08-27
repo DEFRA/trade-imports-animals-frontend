@@ -1,10 +1,10 @@
 import { isKeyedRecord } from './is-keyed-record.js'
 
-// Kept in sync with bridge/fulfilment-id.js#INSTANCE_ID_DELIMITER; model/
+// Kept in sync with bridge/fulfilment-id.js#INDEX_DELIMITER; model/
 // cannot import from bridge/ per the dep-cruiser model-import-boundary rule.
-const INSTANCE_ID_DELIMITER = '.'
-const joinPath = (segments) => segments.join(INSTANCE_ID_DELIMITER)
-const splitPath = (key) => key.split(INSTANCE_ID_DELIMITER)
+const INDEX_DELIMITER = '.'
+const joinPath = (segments) => segments.join(INDEX_DELIMITER)
+const splitPath = (key) => key.split(INDEX_DELIMITER)
 
 // The instance-path prefixes one descendant's stored keyed-record
 // contributes to its group's instance-id set.

@@ -1,8 +1,8 @@
 import { isRecordMap } from '../../../helper-internals.js'
 
-// Kept in sync with bridge/fulfilment-id.js#INSTANCE_ID_DELIMITER; model/
+// Kept in sync with bridge/fulfilment-id.js#INDEX_DELIMITER; model/
 // cannot import from bridge/ per the dep-cruiser model-import-boundary rule.
-const INSTANCE_ID_DELIMITER = '.'
+const INDEX_DELIMITER = '.'
 
 // The two storage shapes `filterAndProject` reads: a keyed-record map
 // (one candidate per key) or a bare scalar (a single candidate, keyed
@@ -16,9 +16,7 @@ const recordMapPassingKeys = (stored, predicate) =>
 const scalarPassingKeys = (stored, predicate) => (predicate(stored) ? [''] : [])
 
 const pathMatchesPassingKey = (path, key) =>
-  key === '' ||
-  path === key ||
-  path.startsWith(`${key}${INSTANCE_ID_DELIMITER}`)
+  key === '' || path === key || path.startsWith(`${key}${INDEX_DELIMITER}`)
 
 const projectedRecords = (
   projectionGroup,

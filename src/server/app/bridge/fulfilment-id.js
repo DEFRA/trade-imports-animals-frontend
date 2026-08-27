@@ -1,26 +1,23 @@
-// Composite public shape: <obligationId>:<instanceId>. The outer `:` marks the
-// obligation/fulfilment boundary; the inner `.` (see INSTANCE_ID_DELIMITER)
-// separates the segments of the instance id itself.
-export const INSTANCE_ID_DELIMITER = '.'
+// Composite public shape: <obligationId>:<index>. The outer `:` marks the
+// obligation/fulfilment boundary; the inner `.` (see INDEX_DELIMITER)
+// separates the segments of the index itself.
+export const INDEX_DELIMITER = '.'
 export const FULFILMENT_ID_DELIMITER = ':'
 
-export const formatCompositeFulfilmentId = (obligationId, instanceId) =>
-  instanceId
-    ? `${obligationId}${FULFILMENT_ID_DELIMITER}${instanceId}`
-    : obligationId
+export const formatCompositeFulfilmentId = (obligationId, index) =>
+  index ? `${obligationId}${FULFILMENT_ID_DELIMITER}${index}` : obligationId
 
 export const parseCompositeFulfilmentId = (composite) => {
   const idx = composite.indexOf(FULFILMENT_ID_DELIMITER)
   return idx === -1
-    ? { obligationId: composite, instanceId: null }
+    ? { obligationId: composite, index: null }
     : {
         obligationId: composite.slice(0, idx),
-        instanceId: composite.slice(idx + 1)
+        index: composite.slice(idx + 1)
       }
 }
 
-export const segmentsOf = (fulfilmentId) =>
-  fulfilmentId.split(INSTANCE_ID_DELIMITER)
+export const segmentsOf = (fulfilmentId) => fulfilmentId.split(INDEX_DELIMITER)
 
 const DIGIT = /\d/
 
@@ -65,7 +62,7 @@ export const compareIndexArrays = (left, right) => {
 export const formatFulfilmentId = (groups, indices) =>
   groups
     .map(({ token }, depth) => `${token}${indices[depth]}`)
-    .join(INSTANCE_ID_DELIMITER)
+    .join(INDEX_DELIMITER)
 
 export const instanceFulfilmentId = (collectionPath, index, groups) =>
   formatFulfilmentId(groups, [

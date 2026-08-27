@@ -29,7 +29,7 @@
 
 import { obligationByName, obligations } from '../model/obligations/manifest.js'
 import { ancestorChain, groupObligations } from './fulfilments/index.js'
-import { INSTANCE_ID_DELIMITER, instanceFulfilmentId } from './fulfilment-id.js'
+import { INDEX_DELIMITER, instanceFulfilmentId } from './fulfilment-id.js'
 import { fulfilmentRegistry } from './fulfilment-registry.js'
 import { SYSTEM_POPULATED } from './obligation-source.js'
 import { groupInvariantErrors } from '../model/obligations/state-queries.js'
@@ -42,7 +42,7 @@ const isFulfilled = (value) => !isBlankValue(value)
 // group's leaf) — the same positional-prefix rule the evaluator uses.
 const belongsToInstance = (fulfilmentId, instanceId) =>
   fulfilmentId === instanceId ||
-  fulfilmentId.startsWith(`${instanceId}${INSTANCE_ID_DELIMITER}`)
+  fulfilmentId.startsWith(`${instanceId}${INDEX_DELIMITER}`)
 
 const leavesUnder = (group) =>
   obligations().filter(
