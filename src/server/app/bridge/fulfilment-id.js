@@ -1,31 +1,8 @@
 import { INDEX_DELIMITER } from '../model/obligations/index-delimiter.js'
 
-// Composite public shape: <obligationId>:<index>. The outer `:` marks the
-// obligation/fulfilment index boundary; the inner `.` (INDEX_DELIMITER)
-// separates the segments of the index itself.
+// Fulfilment indexes are dot-delimited strings whose segments each identify
+// one enclosing group instance (`line0`, `line0.unit1`, ...).
 export { INDEX_DELIMITER }
-export const FULFILMENT_ID_DELIMITER = ':'
-
-// EUDPA-333 groundwork: this pair encodes/decodes the composite public
-// fulfilmentId used at URL boundaries and log correlation keys. There are
-// no in-tree callers yet — landing them here so EUDPA-333 can consume them
-// without re-opening this ticket. Boundary-hardening (input guards,
-// trailing-delimiter normalisation, obligationId/index shape validation)
-// is deliberately deferred until that wire-up has a real caller in view.
-export const formatCompositeFulfilmentId = (obligationId, fulfilmentIndex) =>
-  fulfilmentIndex
-    ? `${obligationId}${FULFILMENT_ID_DELIMITER}${fulfilmentIndex}`
-    : obligationId
-
-export const parseCompositeFulfilmentId = (composite) => {
-  const idx = composite.indexOf(FULFILMENT_ID_DELIMITER)
-  return idx === -1
-    ? { obligationId: composite, index: null }
-    : {
-        obligationId: composite.slice(0, idx),
-        index: composite.slice(idx + 1)
-      }
-}
 
 export const segmentsOf = (fulfilmentIndex) =>
   fulfilmentIndex.split(INDEX_DELIMITER)
