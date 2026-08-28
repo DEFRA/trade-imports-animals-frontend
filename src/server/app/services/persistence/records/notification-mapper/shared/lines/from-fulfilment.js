@@ -4,6 +4,20 @@ import { compact } from '../compact.js'
 const legacyAnimalCount = (value) =>
   typeof value === 'number' ? String(value) : value
 
+const unitFrom = (valueAt, identifiers, unitIndex) =>
+  compact({
+    animalIdentifierPassport: valueAt(identifiers.passport, unitIndex),
+    animalIdentifierTattoo: valueAt(identifiers.tattoo, unitIndex),
+    animalIdentifierEarTag: valueAt(identifiers.earTag, unitIndex),
+    horseName: valueAt(identifiers.horseName, unitIndex),
+    animalIdentifierIdentificationDetails: valueAt(
+      identifiers.identificationDetails,
+      unitIndex
+    ),
+    animalIdentifierDescription: valueAt(identifiers.description, unitIndex),
+    permanentAddress: valueAt(identifiers.permanentAddress, unitIndex)
+  })
+
 // One logical line/unit join over the independent canonical record maps.
 // Line and unit identity comes only from exact fulfilment indexes; a leaf
 // is joined only when its record map contains that exact fulfilment index.
@@ -49,20 +63,15 @@ export const commodityLinesFromFulfilment = (reader) => {
   )
   const valueAt = (obligation, fulfilmentIndex) =>
     recordsByObligation.get(obligation)[fulfilmentIndex]
-  const unitFrom = (unitIndex) =>
-    compact({
-      animalIdentifierPassport: valueAt(passport, unitIndex),
-      animalIdentifierTattoo: valueAt(tattoo, unitIndex),
-      animalIdentifierEarTag: valueAt(earTag, unitIndex),
-      horseName: valueAt(horseName, unitIndex),
-      animalIdentifierIdentificationDetails: valueAt(
-        identificationDetails,
-        unitIndex
-      ),
-      animalIdentifierDescription: valueAt(description, unitIndex),
-      permanentAddress: valueAt(permanentAddress, unitIndex)
-    })
-
+  const identifiers = {
+    passport,
+    tattoo,
+    earTag,
+    horseName,
+    identificationDetails,
+    description,
+    permanentAddress
+  }
   return reader
     .groupFulfilmentIndexes(commodityLine, commodityObligations)
     .map((lineIndex) => {
@@ -80,7 +89,9 @@ export const commodityLinesFromFulfilment = (reader) => {
         ),
         numberOfPackages: valueAt(numberOfPackages, lineIndex),
         animalIdentifiers:
-          unitIndexes.length > 0 ? unitIndexes.map(unitFrom) : undefined
+          unitIndexes.length > 0
+            ? unitIndexes.map((u) => unitFrom(valueAt, identifiers, u))
+            : undefined
       })
     })
 }
