@@ -151,7 +151,7 @@ describe('#fulfilments — storage shape translation', () => {
     })
   })
 
-  it('Should translate a depth-2 nested array to a two-segment composite (line<i>/unit<j>)', () => {
+  it('Should translate a depth-2 nested array to a two-segment composite (line<i>.unit<j>)', () => {
     const answers = {
       commodityLines: [
         {
