@@ -6,6 +6,12 @@ import { INDEX_DELIMITER } from '../model/obligations/index-delimiter.js'
 export { INDEX_DELIMITER }
 export const FULFILMENT_ID_DELIMITER = ':'
 
+// EUDPA-333 groundwork: this pair encodes/decodes the composite public
+// fulfilmentId used at URL boundaries and log correlation keys. There are
+// no in-tree callers yet — landing them here so EUDPA-333 can consume them
+// without re-opening this ticket. Boundary-hardening (input guards,
+// trailing-delimiter normalisation, obligationId/index shape validation)
+// is deliberately deferred until that wire-up has a real caller in view.
 export const formatCompositeFulfilmentId = (obligationId, fulfilmentIndex) =>
   fulfilmentIndex
     ? `${obligationId}${FULFILMENT_ID_DELIMITER}${fulfilmentIndex}`
