@@ -22,6 +22,13 @@ const { privateTransporter } = values
 
 const ukDate = ({ day, month, year }) => `${day}/${month}/${year}`
 
+// The origin page fills the country in as a fixed prefix and asks only for the
+// part after it, so the fixture's whole code is split the same way here.
+const REGION_CODE_SEPARATOR = '-'
+const regionCodeSuffix = values.regionOfOriginCode.slice(
+  values.countryOfOrigin.length + REGION_CODE_SEPARATOR.length
+)
+
 /** The address-book id of the first option the page itself offers. Picking from
  * the rendered form keeps the seed off hard-coded reference data. */
 const firstOption = (name) => (page) => {
@@ -50,7 +57,7 @@ const BEFORE_REASON = [
     fields: {
       countryOfOrigin: values.countryOfOrigin,
       regionOfOriginCodeRequirement: values.regionOfOriginCodeRequirement,
-      regionOfOriginCode: values.regionOfOriginCode,
+      regionOfOriginCodeSuffix: regionCodeSuffix,
       internalReferenceNumber: values.internalReferenceNumber
     }
   },
