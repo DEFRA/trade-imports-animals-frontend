@@ -4,9 +4,9 @@ import { compact } from '../compact.js'
 const legacyAnimalCount = (value) =>
   typeof value === 'number' ? String(value) : value
 
-// One logical line/unit join over the independent canonical record maps. Line
-// and unit identity comes only from exact composite ids; a leaf is joined only
-// when its record map contains that exact id.
+// One logical line/unit join over the independent canonical record maps.
+// Line and unit identity comes only from exact fulfilment indexes; a leaf
+// is joined only when its record map contains that exact fulfilment index.
 export const commodityLinesFromFulfilment = (reader) => {
   const {
     commodityCode,
@@ -47,39 +47,40 @@ export const commodityLinesFromFulfilment = (reader) => {
       reader.records(obligation)
     ])
   )
-  const valueAt = (obligation, id) => recordsByObligation.get(obligation)[id]
-  const unitFrom = (unitId) =>
+  const valueAt = (obligation, fulfilmentIndex) =>
+    recordsByObligation.get(obligation)[fulfilmentIndex]
+  const unitFrom = (unitIndex) =>
     compact({
-      animalIdentifierPassport: valueAt(passport, unitId),
-      animalIdentifierTattoo: valueAt(tattoo, unitId),
-      animalIdentifierEarTag: valueAt(earTag, unitId),
-      horseName: valueAt(horseName, unitId),
+      animalIdentifierPassport: valueAt(passport, unitIndex),
+      animalIdentifierTattoo: valueAt(tattoo, unitIndex),
+      animalIdentifierEarTag: valueAt(earTag, unitIndex),
+      horseName: valueAt(horseName, unitIndex),
       animalIdentifierIdentificationDetails: valueAt(
         identificationDetails,
-        unitId
+        unitIndex
       ),
-      animalIdentifierDescription: valueAt(description, unitId),
-      permanentAddress: valueAt(permanentAddress, unitId)
+      animalIdentifierDescription: valueAt(description, unitIndex),
+      permanentAddress: valueAt(permanentAddress, unitIndex)
     })
 
   return reader
     .groupFulfilmentIndexes(commodityLine, commodityObligations)
-    .map((lineId) => {
-      const unitIds = reader.groupFulfilmentIndexes(
+    .map((lineIndex) => {
+      const unitIndexes = reader.groupFulfilmentIndexes(
         unitRecord,
         identifierObligations,
-        lineId
+        lineIndex
       )
       return compact({
-        commoditySelection: valueAt(commodityCode, lineId),
-        commodityType: valueAt(commodityType, lineId),
-        speciesSelection: valueAt(species, lineId),
+        commoditySelection: valueAt(commodityCode, lineIndex),
+        commodityType: valueAt(commodityType, lineIndex),
+        speciesSelection: valueAt(species, lineIndex),
         numberOfAnimalsQuantity: legacyAnimalCount(
-          valueAt(numberOfAnimals, lineId)
+          valueAt(numberOfAnimals, lineIndex)
         ),
-        numberOfPackages: valueAt(numberOfPackages, lineId),
+        numberOfPackages: valueAt(numberOfPackages, lineIndex),
         animalIdentifiers:
-          unitIds.length > 0 ? unitIds.map(unitFrom) : undefined
+          unitIndexes.length > 0 ? unitIndexes.map(unitFrom) : undefined
       })
     })
 }

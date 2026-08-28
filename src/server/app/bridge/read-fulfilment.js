@@ -39,7 +39,7 @@ const deriveFulfilmentIndex = (
   fulfilmentIndex,
   groupChain,
   descriptors,
-  parentId
+  parentFulfilmentIndex
 ) => {
   if (!hasIndexedSegments(fulfilmentIndex)) {
     return undefined
@@ -48,20 +48,22 @@ const deriveFulfilmentIndex = (
   if (segments.length < groupChain.length) {
     return undefined
   }
-  const id = formatFulfilmentIndex(
+  const groupIndex = formatFulfilmentIndex(
     descriptors,
     indicesOf(fulfilmentIndex).slice(0, groupChain.length)
   )
-  if (id !== segments.slice(0, groupChain.length).join(INDEX_DELIMITER)) {
-    return undefined
-  }
   if (
-    parentId !== undefined &&
-    !id.startsWith(`${parentId}${INDEX_DELIMITER}`)
+    groupIndex !== segments.slice(0, groupChain.length).join(INDEX_DELIMITER)
   ) {
     return undefined
   }
-  return id
+  if (
+    parentFulfilmentIndex !== undefined &&
+    !groupIndex.startsWith(`${parentFulfilmentIndex}${INDEX_DELIMITER}`)
+  ) {
+    return undefined
+  }
+  return groupIndex
 }
 
 /**
@@ -84,9 +86,13 @@ export const readFulfilment = (
   }
 
   // Infer collection instances from the union of descendant record maps.
-  // Truncating each exact composite-id prefix to the requested group depth
-  // means a unit-only record still establishes its containing commodity line.
-  const groupFulfilmentIndexes = (group, descendants, parentId) => {
+  // Truncating each exact fulfilment-index prefix to the requested group
+  // depth means a unit-only record still establishes its containing line.
+  const groupFulfilmentIndexes = (
+    group,
+    descendants,
+    parentFulfilmentIndex
+  ) => {
     const groupChain = ancestorsAndSelf(group)
     const descriptors = groupChain.map(({ id }) =>
       registry.groupDescriptorOf(id)
@@ -95,7 +101,7 @@ export const readFulfilment = (
       throw new TypeError(`Cannot enumerate unbound group ${group.name}`)
     }
 
-    const ids = new Set()
+    const indexes = new Set()
     for (const obligation of descendants) {
       assertDescendant(group, obligation)
       for (const fulfilmentIndex of Object.keys(records(obligation))) {
@@ -103,14 +109,14 @@ export const readFulfilment = (
           fulfilmentIndex,
           groupChain,
           descriptors,
-          parentId
+          parentFulfilmentIndex
         )
         if (id !== undefined) {
-          ids.add(id)
+          indexes.add(id)
         }
       }
     }
-    return [...ids].sort(compareFulfilmentIndexes)
+    return [...indexes].sort(compareFulfilmentIndexes)
   }
 
   return { scalar, records, groupFulfilmentIndexes }

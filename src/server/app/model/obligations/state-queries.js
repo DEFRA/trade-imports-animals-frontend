@@ -139,20 +139,22 @@ const checkRecordCountEquals = (group, records, state) => {
   const parentRecords = parentImpl?.records ?? []
   const errors = []
   for (const parentRec of parentRecords) {
-    const parentId = parentRec.fulfilmentIndex
-    const expected = state.fulfilments?.[fieldId]?.[parentId]
+    const parentFulfilmentIndex = parentRec.fulfilmentIndex
+    const expected = state.fulfilments?.[fieldId]?.[parentFulfilmentIndex]
     if (isBlankValue(expected)) {
       continue
     }
     const actual = records.filter((record) =>
-      record.fulfilmentIndex.startsWith(`${parentId}${INDEX_DELIMITER}`)
+      record.fulfilmentIndex.startsWith(
+        `${parentFulfilmentIndex}${INDEX_DELIMITER}`
+      )
     ).length
     if (actual !== expected) {
       errors.push({
         code: countErrorCode,
         groupId: group.id,
         groupName: group.name,
-        fulfilmentIndex: parentId,
+        fulfilmentIndex: parentFulfilmentIndex,
         expected,
         actual
       })
@@ -181,9 +183,10 @@ const checkRecordCountEquals = (group, records, state) => {
  *     0 < filledCount < total; none when all-blank or all-filled.
  *   - `recordCountEquals` — `{ fieldId, errorCode }`. One error per
  *     in-scope parent (`group.within`) instance whose count of records
- *     under `parentId/` differs from the non-blank expected count in
- *     `state.fulfilments[fieldId][parentId]`; blank expected counts
- *     are skipped (the field's own mandatory rule catches those).
+ *     under `parentFulfilmentIndex/` differs from the non-blank expected
+ *     count in `state.fulfilments[fieldId][parentFulfilmentIndex]`;
+ *     blank expected counts are skipped (the field's own mandatory rule
+ *     catches those).
  */
 export function groupInvariantErrors(group, state) {
   if (!group?.requires) {

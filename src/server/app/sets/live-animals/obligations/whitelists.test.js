@@ -114,8 +114,8 @@ describe('CPH list → cph (top-level anyAllowListed)', () => {
 // Unit-record-scoped gates: passport / tattoo / earTag / horseName /
 // permanentAddress. Each uses
 // `applyTo: allowListed(commodityCode, LIST, unitRecord, …)`, so
-// records are `lineId/unitId` paths for units on matching-commodity
-// lines.
+// records are `lineId.unitId` fulfilment indexes for units on
+// matching-commodity lines.
 //
 // A unit record is observed via a seed on the gated obligation itself
 // (raw storage at `line1.unit1`), which pre-purge enumeration reads as

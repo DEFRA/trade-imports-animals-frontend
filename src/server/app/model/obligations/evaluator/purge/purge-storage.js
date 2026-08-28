@@ -1,7 +1,7 @@
 import { isKeyedRecord } from '../internal/is-keyed-record.js'
 
 // applyTo returns the leaf fulfilmentIndexes it currently authorises; keep
-// only stored records whose fulfilmentId is in that set. `{ keep: false }`
+// only stored records whose fulfilmentIndex is in that set. `{ keep: false }`
 // when nothing survives the filter.
 const purgedDerivedLeaf = (
   obligation,
@@ -12,9 +12,11 @@ const purgedDerivedLeaf = (
     obligationApplicabilityDecisions.get(obligation.id)?.records ?? []
   )
   const filtered = {}
-  for (const [fulfilmentId, recordValue] of Object.entries(fulfilment ?? {})) {
-    if (fulfilmentIndexes.has(fulfilmentId)) {
-      filtered[fulfilmentId] = recordValue
+  for (const [fulfilmentIndex, recordValue] of Object.entries(
+    fulfilment ?? {}
+  )) {
+    if (fulfilmentIndexes.has(fulfilmentIndex)) {
+      filtered[fulfilmentIndex] = recordValue
     }
   }
   return Object.keys(filtered).length > 0
@@ -52,7 +54,7 @@ const purgedFulfilmentFor = (
 
 // Step 5: purge storage.
 //   - Out-of-scope obligation → drop entire entry.
-//   - Derived indexed leaf → keep only records whose fulfilmentId is in
+//   - Derived indexed leaf → keep only records whose fulfilmentIndex is in
 //     the `applyTo`-returned set.
 //   - Otherwise → keep as-is (ancestors already in scope, own storage
 //     is self-valid for field records and user-driven indexed leaves).

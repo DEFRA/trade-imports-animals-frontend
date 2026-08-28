@@ -21,7 +21,8 @@ export const parseCompositeFulfilmentId = (composite) => {
       }
 }
 
-export const segmentsOf = (fulfilmentId) => fulfilmentId.split(INDEX_DELIMITER)
+export const segmentsOf = (fulfilmentIndex) =>
+  fulfilmentIndex.split(INDEX_DELIMITER)
 
 const DIGIT = /\d/
 
@@ -33,10 +34,10 @@ const trailingDigitsOf = (segment) => {
   return start === segment.length ? undefined : segment.slice(start)
 }
 
-export const hasIndexedSegments = (fulfilmentId) =>
-  typeof fulfilmentId === 'string' &&
-  fulfilmentId.length > 0 &&
-  segmentsOf(fulfilmentId).every(
+export const hasIndexedSegments = (fulfilmentIndex) =>
+  typeof fulfilmentIndex === 'string' &&
+  fulfilmentIndex.length > 0 &&
+  segmentsOf(fulfilmentIndex).every(
     (segment) => segment.length > 0 && DIGIT.test(segment.at(-1))
   )
 

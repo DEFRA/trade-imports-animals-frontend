@@ -6,9 +6,9 @@
  * positional, so an empty or partial entry is never lost; only its completeness
  * comes from the evaluator.
  *
- * Instance identity is positional (the array index). `instanceFulfilmentId`
- * maps a positional entry to its composite fulfilmentId prefix with the segment
- * machinery, exactly as scope.js / purge.js convert composite <-> positional.
+ * Instance identity is positional (the array index). `fulfilmentIndexInstance`
+ * maps a positional entry to its fulfilment index with the segment machinery,
+ * exactly as scope.js / purge.js convert fulfilment index <-> positional.
  *
  * `entryComplete` reproduces the FULFILLED verdict scoped to one
  * instance: the instance is complete iff the evaluator finds no unsatisfied
@@ -21,10 +21,11 @@
  * the manifest but no page collects them, so they must not mark an instance
  * incomplete.
  *
- * Known structural divergence: instances are inferred from leaf composite
- * prefixes, so a fully-EMPTY nested instance (a unit with no stored leaf)
- * vanishes on round-trip and its unmet `anyOf` cannot be flagged. A fully-empty
- * TOP-LEVEL entry is caught here via its unconditional mandatory field leaves.
+ * Known structural divergence: instances are inferred from leaf fulfilment
+ * index prefixes, so a fully-EMPTY nested instance (a unit with no stored
+ * leaf) vanishes on round-trip and its unmet `anyOf` cannot be flagged. A
+ * fully-empty TOP-LEVEL entry is caught here via its unconditional mandatory
+ * field leaves.
  */
 
 import { obligationByName, obligations } from '../model/obligations/manifest.js'

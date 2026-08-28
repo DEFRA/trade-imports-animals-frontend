@@ -6,23 +6,23 @@
 // Depth-1 `allowListed`/`notInUnionOf` still read as a map; every other
 // helper accepts a plain scalar.
 export const witnessFulfilments = (obligation, witness) => {
-  const fulfilmentIndexes = new Map()
+  const fulfilmentIndexesByObligationId = new Map()
   if (witness.projection) {
-    fulfilmentIndexes.set(witness.projection, ['line1.unit1'])
+    fulfilmentIndexesByObligationId.set(witness.projection, ['line1.unit1'])
     return {
       fulfilments: { [witness.obligationId]: { line1: witness.value } },
-      fulfilmentIndexes
+      fulfilmentIndexesByObligationId
     }
   }
   const metaType = obligation.applyTo.metadata?.type
   if (metaType === 'allowListed' || metaType === 'notInUnionOf') {
     return {
       fulfilments: { [witness.obligationId]: { line1: witness.value } },
-      fulfilmentIndexes
+      fulfilmentIndexesByObligationId
     }
   }
   return {
     fulfilments: { [witness.obligationId]: witness.value },
-    fulfilmentIndexes
+    fulfilmentIndexesByObligationId
   }
 }
