@@ -9,6 +9,7 @@ import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
 const france = countriesOrigin.find(({ code }) => code === 'FR')
+const ireland = countriesOrigin.find(({ code }) => code === 'IE')
 
 const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
 const INTERNAL_REFERENCE_MAX_LENGTH = 58
@@ -21,6 +22,15 @@ const startAtOrigin = async (page) => {
     .click()
   await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+}
+
+const fillOriginAnswers = async (
+  page,
+  { country = france.code, regionCode }
+) => {
+  await page.getByLabel(copy.country.label).selectOption(country)
+  await page.getByRole('radio', { name: copy.regionRequirement.yes }).check()
+  await page.getByLabel(copy.regionCode.label, { exact: true }).fill(regionCode)
 }
 
 const isGovukConditionalRevealFalsePositive = (violation) =>
@@ -86,9 +96,7 @@ test.describe('origin feature', () => {
   }) => {
     const originUrl = page.url()
 
-    await page.getByLabel(copy.country.label).selectOption(france.code)
-    await page.getByRole('radio', { name: copy.regionRequirement.yes }).check()
-    await page.getByLabel(copy.regionCode.label, { exact: true }).fill('FR-75')
+    await fillOriginAnswers(page, { regionCode: '75' })
     await page.getByLabel(copy.internalReference.label).fill('Imports456_GB')
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
@@ -101,10 +109,47 @@ test.describe('origin feature', () => {
     ).toBeChecked()
     await expect(
       page.getByLabel(copy.regionCode.label, { exact: true })
-    ).toHaveValue('FR-75')
+    ).toHaveValue('75')
     await expect(page.getByLabel(copy.internalReference.label)).toHaveValue(
       'Imports456_GB'
     )
+  })
+
+  test('shows the country already chosen as a fixed prefix beside the region code box', async ({
+    page
+  }) => {
+    const originUrl = page.url()
+
+    await fillOriginAnswers(page, { regionCode: '75' })
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await page.goto(originUrl)
+
+    const prefix = page.locator('.govuk-input__prefix')
+    await expect(prefix).toHaveText(france.code)
+    await expect(
+      page.getByLabel(copy.regionCode.label, { exact: true })
+    ).toHaveValue('75')
+  })
+
+  test('the prefix follows the country the user chose', async ({ page }) => {
+    const originUrl = page.url()
+    await fillOriginAnswers(page, { country: ireland.code, regionCode: '75' })
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await page.goto(originUrl)
+
+    await expect(page.locator('.govuk-input__prefix')).toHaveText(ireland.code)
+  })
+
+  test('region code prefix has no serious or critical axe violations', async ({
+    page
+  }) => {
+    const originUrl = page.url()
+
+    await fillOriginAnswers(page, { regionCode: '75' })
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await page.goto(originUrl)
+
+    await expectNoSeriousOrCriticalAxeViolations(page, 'Origin with prefix')
   })
 
   test('back link returns to the dashboard while the journey is unanswered', async ({

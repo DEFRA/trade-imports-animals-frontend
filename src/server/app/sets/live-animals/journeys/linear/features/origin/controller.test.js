@@ -25,6 +25,7 @@ import { config } from '../../../../../../../../config/config.js'
 import * as origin from './controller.js'
 
 const post = postHandlerOf(origin)
+const get = origin.routes.find((route) => route.method === 'GET').handler
 
 const COUNTRY_REQUIRED_MESSAGE =
   'Select the country where the animal originates from'
@@ -104,6 +105,94 @@ describe('POST /origin — valid internal reference', () => {
   })
 })
 
+describe('POST /origin — region of origin code prefix and suffix', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  const postSuffix = (regionOfOriginCodeSuffix) =>
+    driveHandler(post, {
+      payload: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCodeSuffix,
+        internalReferenceNumber: ''
+      }
+    })
+
+  it('Should store the country prefix joined to the typed part in upper case', async () => {
+    const result = await postSuffix('75')
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.regionOfOriginCode).toBe('FR-75')
+  })
+
+  it('Should accept a region part longer than two characters', async () => {
+    const result = await postSuffix('dub')
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.regionOfOriginCode).toBe('FR-DUB')
+  })
+
+  it('Should not double the prefix when the typed part already carries it', async () => {
+    const result = await postSuffix('fr-75')
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.regionOfOriginCode).toBe('FR-75')
+  })
+
+  it('Should store nothing when the typed part is blank', async () => {
+    const result = await postSuffix('   ')
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.regionOfOriginCode).toBe('')
+  })
+
+  it('Should reject a typed part over 5 characters and commit nothing', async () => {
+    const result = await postSuffix('ABCDEF')
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
+      'Region of origin code must be 5 characters or less'
+    )
+    expect(result.view.context.regionCodePrefix).toBe('FR')
+    expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('ABCDEF')
+    expect(result.after).toEqual(result.before)
+  })
+})
+
+describe('GET /origin — region of origin code splits back into its two parts', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should render the country as the prefix and only the rest in the box', async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCode: 'FR-75'
+      }
+    })
+
+    expect(result.view.context.regionCodePrefix).toBe('FR')
+    expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('75')
+  })
+
+  it('Should render no prefix before a country has been chosen', async () => {
+    const result = await driveHandler(get)
+
+    expect(result.view.context.regionCodePrefix).toBe('')
+    expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('')
+  })
+})
+
 describe('GET /origin — server-rendered select data (no-JS path)', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
@@ -113,7 +202,6 @@ describe('GET /origin — server-rendered select data (no-JS path)', () => {
   beforeEach(() => store.clear())
 
   it('Should supply the placeholder, divider and full country list to the select', async () => {
-    const get = origin.routes.find((route) => route.method === 'GET').handler
     const result = await driveHandler(get)
     const items = result.view.context.countryItems
     expect(items[0]).toEqual({ value: '', text: 'Select a country' })
