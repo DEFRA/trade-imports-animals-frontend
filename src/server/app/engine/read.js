@@ -38,6 +38,7 @@ const readViewOf = async (request, journey) => {
       fulfilment: journey.fulfilment,
       evaluation: assembled.evaluation,
       answers: assembled.answers,
+      storedAnswers: assembled.answers,
       scope: assembled.scope,
       flowOnlyAnswers
     }
@@ -45,12 +46,20 @@ const readViewOf = async (request, journey) => {
 
   // Re-evaluate when a set sanitiser changed answers (e.g. a deleted
   // address-book reference treated as never entered).
+  //
+  // `storedAnswers` keeps what was actually saved, which is the only place a
+  // reference the sanitiser dropped still exists. Render from `answers`: a
+  // dangling reference resolves to nothing, so anything drawn from
+  // `storedAnswers` risks showing an address that has been deleted. It is here
+  // so a page can tell "answered, then deleted" from "never answered" — the
+  // two are identical once the sanitiser has run.
   const evaluation = evaluateAnswers(answers)
   return {
     journey,
     fulfilment: journey.fulfilment,
     evaluation,
     answers,
+    storedAnswers: assembled.answers,
     scope: makeScopeFromEvaluation(evaluation, answers),
     flowOnlyAnswers
   }

@@ -94,9 +94,15 @@ export const renderNotificationView = async (
   h,
   { recoverableError = false, disableAutoFocus = true } = {}
 ) => {
-  const { journey, answers, scope, evaluation } = await state.get(request, h)
+  const { journey, answers, storedAnswers, scope, evaluation } =
+    await state.get(request, h)
   const readOnly = journey.status === state.SUBMITTED
-  const parties = await resolveParties(request, answers)
+  // Outstanding parties are read from what was SAVED, not from what survived
+  // the read-path sanitiser: the sanitiser drops a party whose address-book
+  // reference no longer resolves, which is precisely the case this page has to
+  // name. The rest of the page still renders from the sanitised answers.
+  const source = storedAnswers ?? answers
+  const parties = await resolveParties(request, source)
   return renderCya(h, journey, {
     answers,
     scope,
@@ -105,7 +111,7 @@ export const renderNotificationView = async (
     amendmentCancelled: readOnly && request.query.cancelled === '1',
     recoverableError,
     parties,
-    partyErrors: readOnly ? {} : outstandingPartyErrors(answers, parties),
+    partyErrors: readOnly ? {} : outstandingPartyErrors(source, parties),
     disableAutoFocus
   })
 }
@@ -113,9 +119,11 @@ export const renderNotificationView = async (
 const get = async (request, h) => renderNotificationView(request, h)
 
 const post = async (request, h) => {
-  const { journey, answers, scope } = await state.get(request, h)
-  const parties = await resolveParties(request, answers)
-  if (Object.keys(outstandingPartyErrors(answers, parties)).length > 0) {
+  const { journey, answers, storedAnswers, scope } = await state.get(request, h)
+  // Same source as the GET, or the refusal and the page would disagree.
+  const source = storedAnswers ?? answers
+  const parties = await resolveParties(request, source)
+  if (Object.keys(outstandingPartyErrors(source, parties)).length > 0) {
     const rendered = await renderNotificationView(request, h, {
       disableAutoFocus: false
     })

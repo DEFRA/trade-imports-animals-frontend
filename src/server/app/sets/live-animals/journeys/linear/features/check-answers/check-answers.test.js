@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { commodityCodeFor } from '../../../../services/commodities/index.js'
@@ -18,6 +18,8 @@ import {
   journeyRequest,
   stubH
 } from '../../../../../../engine/test-support.js'
+import { configureAnswersForRead } from '../../../../../../engine/read.js'
+import { withoutUnresolvedPartyRefs } from '../addresses/resolve-parties.js'
 import { hubPath } from '../../../../../../shared/paths.js'
 import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
@@ -575,6 +577,49 @@ describe(`${SUITE} — outstanding referenced roles`, () => {
       consignor: { addressId: 'gone' }
     })
     expect(context.errorSummary.errorList[0].text).toBe(CONSIGNOR_ERROR)
+  })
+})
+
+// The rest of this file drives the handler directly, which skips the plugin
+// registration that installs the read-path sanitiser — so those tests never see
+// the answers the sanitiser strips. The server always has it installed, and it
+// deletes a party whose reference no longer resolves: exactly the answer this
+// page has to name. These cases wire the real sanitiser so the page is asserted
+// against the state a trader can actually reach.
+describe(`${SUITE} — outstanding roles behind the read-path sanitiser`, () => {
+  setupCheckAnswersEngine()
+
+  beforeAll(() => configureAnswersForRead(withoutUnresolvedPartyRefs))
+  afterAll(() => configureAnswersForRead((_request, answers) => answers))
+
+  it('Should still name a deleted address the sanitiser has stripped', async () => {
+    const { view } = await driveHandler(getHandler, {
+      seed: { ...fullSeed, consignor: { addressId: 'gone' } }
+    })
+    const card = cardByTitle(view.context.sections, ROLES_AND_ADDRESSES_CARD)
+
+    expect(view.context.errorSummary.errorList[0].text).toBe(CONSIGNOR_ERROR)
+    expect(htmlOf(card.rows, 'Consignor')).toContain('govuk-error-message')
+    expect(valueOf(card.rows, 'Consignor')).not.toBe(NOT_PROVIDED)
+  })
+
+  it('Should still refuse Continue while that deleted address stands', async () => {
+    const { response } = await driveHandler(postHandler, {
+      seed: { ...fullSeed, consignor: { addressId: 'gone' } }
+    })
+
+    expect(response.redirect).toBeUndefined()
+    expect(response.statusCode).toBe(400)
+  })
+
+  it('Should leave a role that was never answered as Not provided', async () => {
+    const { view } = await driveHandler(getHandler, {
+      seed: withoutParty(fullSeed, 'importer')
+    })
+    const card = cardByTitle(view.context.sections, ROLES_AND_ADDRESSES_CARD)
+
+    expect(view.context.errorSummary).toBeNull()
+    expect(valueOf(card.rows, 'Importer')).toBe(NOT_PROVIDED)
   })
 })
 
