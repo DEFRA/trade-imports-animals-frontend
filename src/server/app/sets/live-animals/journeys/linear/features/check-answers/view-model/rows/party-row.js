@@ -41,6 +41,10 @@ const errorCell = (errorText) => ({
     `${escapeHtml(errorText)}</p>`
 })
 
+/** Resolved lines win over `errorText`: a role that has details to show renders
+ * them, and the error is dropped. The two never arrive together in practice —
+ * `outstandingPartyErrors` only raises an error for a role that resolved to
+ * nothing, which is exactly the case where `partyLines` returns `null`. */
 const valueCell = (lines, errorText) => {
   if (lines) {
     return { html: lines.join('<br>') }

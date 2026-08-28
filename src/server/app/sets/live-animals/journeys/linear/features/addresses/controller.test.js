@@ -8,7 +8,7 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import { driveHandler } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
-import { pagePath } from '../../../../../../shared/paths.js'
+import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 
 import * as addresses from './controller.js'
 import { PARTIES } from './parties.js'
@@ -154,6 +154,23 @@ describe('GET addresses — change context', () => {
     expect(row.actions.items[0].href).toBe(
       pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)
     )
+  })
+
+  it('Should point Back at check your answers under change context', async () => {
+    const result = await rowsFor(
+      { consignor: { addressId: 'gone' } },
+      { change: '1' }
+    )
+
+    expect(result.view.context.backLink).toBe(
+      pagePath(result.journeyId, 'notification-view')
+    )
+  })
+
+  it('Should point Back at the task list when not changing', async () => {
+    const result = await rowsFor({ consignor: { addressId: 'gone' } })
+
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
 
   it('Should exit to check your answers when continuing under change context', async () => {

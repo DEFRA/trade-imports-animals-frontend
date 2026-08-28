@@ -6,7 +6,11 @@ import {
 import { TEMPLATES } from '../../config.js'
 import { nextInSection } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
-import { journeyStrip, pageRoutes } from '../../../../../../shared/kit.js'
+import {
+  errorSummary,
+  journeyStrip,
+  pageRoutes
+} from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { notificationViewPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
@@ -24,19 +28,14 @@ const view = `${TEMPLATES}/features/check-answers/template`
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
-const partyErrorSummary = (journeyId, partyErrors) => {
-  const entries = Object.entries(partyErrors)
-  if (entries.length === 0) {
-    return null
-  }
-  return {
-    titleText: sharedCopy.errorSummary.title,
-    errorList: entries.map(([partyId, text]) => ({
-      text,
-      href: changeHref(journeyId, partyId)
-    }))
-  }
-}
+// The entries link back to the party's own page rather than to an anchor on
+// this one. Focus is only moved to the summary when the user has just been
+// refused, so a plain visit does not yank the caret out of the page heading.
+const partyErrorSummary = (journeyId, partyErrors, disableAutoFocus) =>
+  errorSummary(partyErrors, {
+    href: (partyId) => changeHref(journeyId, partyId),
+    disableAutoFocus
+  })
 
 const renderCya = (
   h,
@@ -49,7 +48,8 @@ const renderCya = (
     amendmentCancelled,
     recoverableError = false,
     parties = answers,
-    partyErrors = {}
+    partyErrors = {},
+    disableAutoFocus = true
   }
 ) =>
   h.view(view, {
@@ -59,14 +59,19 @@ const renderCya = (
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
     journeyStrip: journeyStrip(journey),
-    errorSummary: partyErrorSummary(journey.journeyId, partyErrors),
+    errorSummary: partyErrorSummary(
+      journey.journeyId,
+      partyErrors,
+      disableAutoFocus
+    ),
     sections: buildSections(
       answers,
       scope,
       evaluation,
       journey.journeyId,
       readOnly,
-      parties
+      parties,
+      partyErrors
     ),
     readOnly,
     amendmentCancelled,
@@ -87,7 +92,7 @@ const renderCya = (
 export const renderNotificationView = async (
   request,
   h,
-  { recoverableError = false } = {}
+  { recoverableError = false, disableAutoFocus = true } = {}
 ) => {
   const { journey, answers, scope, evaluation } = await state.get(request, h)
   const readOnly = journey.status === state.SUBMITTED
@@ -100,7 +105,8 @@ export const renderNotificationView = async (
     amendmentCancelled: readOnly && request.query.cancelled === '1',
     recoverableError,
     parties,
-    partyErrors: readOnly ? {} : outstandingPartyErrors(parties)
+    partyErrors: readOnly ? {} : outstandingPartyErrors(answers, parties),
+    disableAutoFocus
   })
 }
 
@@ -109,8 +115,10 @@ const get = async (request, h) => renderNotificationView(request, h)
 const post = async (request, h) => {
   const { journey, answers, scope } = await state.get(request, h)
   const parties = await resolveParties(request, answers)
-  if (Object.keys(outstandingPartyErrors(parties)).length > 0) {
-    const rendered = await renderNotificationView(request, h)
+  if (Object.keys(outstandingPartyErrors(answers, parties)).length > 0) {
+    const rendered = await renderNotificationView(request, h, {
+      disableAutoFocus: false
+    })
     return rendered.code(HTTP_STATUS_BAD_REQUEST)
   }
   return h.redirect(nextInSection(page.id, scope, journey.journeyId))

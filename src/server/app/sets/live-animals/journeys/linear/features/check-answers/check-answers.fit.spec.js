@@ -149,33 +149,25 @@ test.describe('check-answers feature navigation and submission', () => {
     ).toEqual([])
   })
 
-  test('journey with an outstanding address cannot continue to declaration', async ({
+  // An address error belongs to a reference that no longer resolves, not to a
+  // role nobody has reached yet. A new journey must read as unanswered.
+  test('new journey shows no address error before a role has been answered', async ({
     page
   }) => {
     await startNotification(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    await expect(rowFor(page, copy.rows.consignor)).toContainText(
+      copy.notProvided
+    )
+    await expect(
+      page.getByRole('link', { name: copy.errors.parties.consignor })
+    ).toBeHidden()
 
     await page.getByRole('button', { name: copy.submit.button }).click()
 
-    await expect(page).toHaveURL(/\/notification-view$/)
     await expect(
       page.getByRole('link', { name: copy.errors.parties.consignor })
-    ).toBeVisible()
-    await expect(rowFor(page, copy.rows.consignor)).toContainText(
-      copy.errors.parties.consignor
-    )
-  })
-
-  test('the outstanding-address summary links to where the role is changed', async ({
-    page
-  }) => {
-    await startNotification(page)
-    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
-
-    await page
-      .getByRole('link', { name: copy.errors.parties.consignor })
-      .click()
-
-    await expect(page).toHaveURL(/\/addresses\?change=1$/)
+    ).toBeHidden()
   })
 })

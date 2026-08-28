@@ -2,7 +2,6 @@ import { copyFor } from '../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../copy/copy.en.js'
 import { copy as cy } from '../../../copy/copy.cy.js'
 import { cphApplies } from '../../applicability.js'
-import { outstandingPartyErrors } from '../../outstanding-parties.js'
 import { partyRow } from '../../rows/party-row.js'
 import { row } from '../../rows/summary-row.js'
 
@@ -10,13 +9,16 @@ const copy = copyFor({ en, cy })
 
 /** `parties` carries the same party answers with their address-book references
  * resolved to current details. It defaults to `answers` so a caller holding only
- * inline addresses renders exactly as before. */
+ * inline addresses renders exactly as before.
+ *
+ * `partyErrors` is computed once by the controller and threaded down, so the
+ * rows and the error summary always agree on which roles are outstanding. */
 export const rolesAndAddressesCard = (
   journeyId,
   answers,
   readOnly,
   parties = answers,
-  partyErrors = readOnly ? {} : outstandingPartyErrors(parties)
+  partyErrors = {}
 ) => ({
   title: copy.cards.rolesAndAddresses,
   rows: [

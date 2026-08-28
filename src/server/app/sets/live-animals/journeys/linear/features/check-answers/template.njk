@@ -3,7 +3,6 @@
 {% from "govuk/components/table/macro.njk" import govukTable %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
-{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 {% macro cardActions(actions) %}
   {% if actions and actions.items.length %}
@@ -27,9 +26,7 @@
     }) }}
   {% endif %}
 
-  {% if errorSummary %}
-    {{ govukErrorSummary(errorSummary) }}
-  {% endif %}
+  {% include "shared/error-summary.njk" %}
 
   <h1 class="govuk-heading-l">{{ heading }}</h1>
 

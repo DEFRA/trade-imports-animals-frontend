@@ -503,14 +503,31 @@ describe(`${SUITE} — outstanding referenced roles`, () => {
 
   it('Should list every outstanding role in the error summary', async () => {
     const summary = await summaryFor({
-      ...withoutParty(fullSeed, 'importer'),
-      consignor: { addressId: 'gone' }
+      ...fullSeed,
+      consignor: { addressId: 'gone' },
+      importer: { addressId: 'gone' }
     })
 
     expect(summary.errorList.map((entry) => entry.text)).toEqual([
       CONSIGNOR_ERROR,
       'Select an address for the importer'
     ])
+  })
+
+  it('Should not flag a role that has never been answered', async () => {
+    expect(await summaryFor(withoutParty(fullSeed, 'importer'))).toBeNull()
+  })
+
+  it('Should not flag anything on a brand-new draft', async () => {
+    expect(await summaryFor({})).toBeNull()
+  })
+
+  it('Should render Not provided for a role that has never been answered', async () => {
+    const card = cardByTitle(
+      await sectionsFor(withoutParty(fullSeed, 'importer')),
+      ROLES_AND_ADDRESSES_CARD
+    )
+    expect(valueOf(card.rows, 'Importer')).toBe(NOT_PROVIDED)
   })
 
   it('Should link each summary entry where that role is changed', async () => {
@@ -524,6 +541,15 @@ describe(`${SUITE} — outstanding referenced roles`, () => {
     expect(errorSummary.errorList[0].href).toBe(
       changeHrefOf(card.rows, 'Consignor')
     )
+  })
+
+  it('Should leave focus where it is when the page is merely visited', async () => {
+    const summary = await summaryFor({
+      ...fullSeed,
+      consignor: { addressId: 'gone' }
+    })
+
+    expect(summary.disableAutoFocus).toBe(true)
   })
 
   it('Should carry no error summary once every referenced role resolves', async () => {
@@ -628,11 +654,28 @@ describe(`${SUITE} — POST navigation`, () => {
     expect(response.statusCode).toBe(400)
   })
 
+  it('Should not refuse Continue for a role that has never been answered', async () => {
+    const { journeyId, response } = await driveHandler(postHandler, {
+      seed: {}
+    })
+
+    expect(response.statusCode).not.toBe(400)
+    expect(response.redirect).toBe(hubPath(journeyId))
+  })
+
   it('Should re-render the page with the summary when Continue is refused', async () => {
     const { view } = await driveHandler(postHandler, {
       seed: { ...fullSeed, consignor: { addressId: 'gone' } }
     })
 
     expect(view.context.errorSummary.errorList[0].text).toBe(CONSIGNOR_ERROR)
+  })
+
+  it('Should move focus to the summary when Continue is refused', async () => {
+    const { view } = await driveHandler(postHandler, {
+      seed: { ...fullSeed, consignor: { addressId: 'gone' } }
+    })
+
+    expect(view.context.errorSummary.disableAutoFocus).toBe(false)
   })
 })
