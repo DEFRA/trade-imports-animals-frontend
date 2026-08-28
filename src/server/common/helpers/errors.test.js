@@ -95,7 +95,6 @@ describe('#catchAll', () => {
       pageTitle,
       heading,
       message: pageTitle,
-      breadcrumbs: false,
       journeyStrip: null,
       recoverableError: false
     })

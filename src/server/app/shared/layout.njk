@@ -1,7 +1,6 @@
 {% extends "govuk/template.njk" %}
 
 {% from "govuk/components/back-link/macro.njk" import govukBackLink %}
-{% from "govuk/components/breadcrumbs/macro.njk" import govukBreadcrumbs %}
 {% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 {% from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner %}
 {% from "govuk/components/service-navigation/macro.njk" import govukServiceNavigation %}
@@ -72,14 +71,8 @@
     tag: { text: sharedCopy.layout.phaseBanner.tag, classes: "govuk-tag--grey" },
     html: phaseBannerHtml
   }) }}
-  {% if breadcrumbs !== false %}
-    {{ govukBreadcrumbs({
-      items: breadcrumbs if breadcrumbs else [
-        { text: sharedCopy.layout.breadcrumbs.serviceHome, href: homeUrl },
-        { text: pageTitle }
-      ]
-    }) }}
-  {% endif %}
+  {# No breadcrumbs: Design release 1 gives a page one route backwards — the
+     back link — and one route up, the service navigation. #}
   {% if backLink %}
     {{ govukBackLink({ text: sharedCopy.layout.back, href: backLink }) }}
   {% endif %}
