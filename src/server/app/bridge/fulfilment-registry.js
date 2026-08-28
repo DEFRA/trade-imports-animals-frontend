@@ -1,10 +1,10 @@
 import { obligations } from '../model/obligations/manifest.js'
 import { ancestorChain } from './fulfilments/index.js'
 
-// FIELD_UNSAFE forbids the two fulfilment-id delimiters (see
-// fulfilment-id.js): `:` is the obligation/fulfilment-index boundary,
-// `.` is the fulfilment-index segment separator.
-const FIELD_UNSAFE = /[.:[\]/*]/
+// Binding field names appear inside the store-path grammar
+// (`groupedPathOf`/`pathOf`), so they cannot contain the grammar's
+// own separators or meta-characters.
+const FIELD_UNSAFE = /[.[\]/*]/
 const TOKEN = /^[A-Za-z][A-Za-z-]*$/
 
 const fail = (message) => {

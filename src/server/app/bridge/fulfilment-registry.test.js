@@ -68,13 +68,4 @@ describe('#createFulfilmentRegistry', () => {
       createFulfilmentRegistry([invalidPath], [countryOfOrigin])
     ).toThrow(/invalid store field/)
   })
-
-  it('Should reject a field containing the fulfilment id delimiter `:`', () => {
-    const invalidField = feature('invalid-field', [
-      scalar({ field: 'country:ofOrigin', obligation: countryOfOrigin })
-    ])
-    expect(() =>
-      createFulfilmentRegistry([invalidField], [countryOfOrigin])
-    ).toThrow(/invalid store field/)
-  })
 })
