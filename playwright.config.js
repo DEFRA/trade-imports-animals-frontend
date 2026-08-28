@@ -52,7 +52,32 @@ export default defineConfig({
         video: 'off',
         trace: 'retain-on-failure'
       }
-    }
+    },
+    // Evidence capture for the findings report in the workspace. It exists only
+    // when FIT_CAPTURE is set, which only `npm run test:fit:capture` does, so
+    // `test:fit`, `test:fit:features` and CI never run it and never pay for it.
+    //
+    // Everything here is about two runs at the same commit producing the same
+    // bytes: a fixed viewport, 2x so the image is legible on a Retina display,
+    // and motion stopped. Without that a no-op re-capture drifts every screen
+    // and the report's changed-since-curation panel becomes noise.
+    ...(process.env.FIT_CAPTURE
+      ? [
+          {
+            name: 'evidence',
+            testMatch: '**/evidence-capture.fit.spec.js',
+            use: {
+              ...devices['Desktop Chrome'],
+              baseURL: `http://localhost:${port}`,
+              viewport: { width: 1280, height: 1200 },
+              deviceScaleFactor: Number(process.env.FIT_CAPTURE_DSF ?? 2),
+              reducedMotion: 'reduce',
+              video: 'off',
+              trace: 'retain-on-failure'
+            }
+          }
+        ]
+      : [])
   ],
   webServer: [
     {
