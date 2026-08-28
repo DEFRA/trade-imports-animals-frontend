@@ -1,6 +1,6 @@
 import { obligations } from '../../../model/obligations/manifest.js'
 import { compareIndexArrays } from '../../fulfilment-id.js'
-import { validateFulfilmentIndex } from '../fulfilment-id-path.js'
+import { validateFulfilmentIndex } from '../fulfilment-index-path.js'
 import { ancestorChain, groupObligations } from '../obligation-graph.js'
 import { addCollectionIndices, validateDenseIndices } from './dense-indices.js'
 

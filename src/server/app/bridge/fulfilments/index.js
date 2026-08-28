@@ -26,5 +26,5 @@
  */
 
 export { groupObligations, ancestorChain } from './obligation-graph.js'
-export { fulfilmentIndexToPath } from './fulfilment-id-path.js'
+export { fulfilmentIndexToPath } from './fulfilment-index-path.js'
 export { projectAnswers } from './project-answers/index.js'

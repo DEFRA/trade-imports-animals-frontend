@@ -1,5 +1,5 @@
 import { setAt } from '../../../lib/path.js'
-import { fulfilmentIndexToPath } from '../fulfilment-id-path.js'
+import { fulfilmentIndexToPath } from '../fulfilment-index-path.js'
 
 export const answersWithScalar = (answers, name, stored) =>
   setAt(answers, [name], stored)
