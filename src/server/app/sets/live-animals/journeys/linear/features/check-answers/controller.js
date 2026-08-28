@@ -1,8 +1,4 @@
-import {
-  breadcrumbs,
-  hubPath,
-  pagePath
-} from '../../../../../../shared/paths.js'
+import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import { nextInSection } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
@@ -61,8 +57,7 @@ const renderCya = (
       journey.status === state.AMEND
         ? pagePath(journey.journeyId, 'cancel-amend')
         : null,
-    backLink: hubPath(journey.journeyId),
-    breadcrumbs: breadcrumbs(journey.journeyId, copy.title)
+    backLink: hubPath(journey.journeyId)
   })
 
 export const renderNotificationView = async (

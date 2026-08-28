@@ -50,7 +50,6 @@ async function context(request) {
     authEnabled: config.get('auth.enabled'),
     staleActionRejected: request.query?.staleAction === '1',
     activeNavigationItem: activeNavigationItem(request.path),
-    breadcrumbs: [],
     userSession: authData
       ? {
           isAuthenticated: true,

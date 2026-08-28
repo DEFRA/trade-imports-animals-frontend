@@ -15,7 +15,6 @@ const renderLayout = (userSession, context = {}) =>
     pageTitle: 'Create an import notification',
     sharedCopy,
     userSession,
-    breadcrumbs: false,
     getAssetPath: (asset) => `/assets/${asset}`,
     ...context
   })
@@ -112,16 +111,36 @@ describe('alpha phase banner', () => {
     expect(html).toContain(PHASE_BANNER)
   })
 
-  it('Should place the banner above the breadcrumbs and the back link', () => {
+  it('Should place the banner above the back link', () => {
     const html = renderLayout(
       { isAuthenticated: true },
-      { breadcrumbs: null, backLink: '/notifications' }
+      { backLink: '/notifications' }
     )
 
-    expect(html.indexOf(PHASE_BANNER)).toBeLessThan(html.indexOf(BREADCRUMBS))
-    expect(html.indexOf(BREADCRUMBS)).toBeLessThan(
+    expect(html.indexOf(PHASE_BANNER)).toBeLessThan(
       html.indexOf('govuk-back-link')
     )
+  })
+})
+
+describe('breadcrumbs', () => {
+  it('Should render no breadcrumb trail, as Design release 1 has none', () => {
+    const html = renderLayout(
+      { isAuthenticated: true },
+      { backLink: '/notifications' }
+    )
+
+    expect(html).not.toContain(BREADCRUMBS)
+  })
+
+  it('Should ignore a breadcrumbs value a caller still passes', () => {
+    const html = renderLayout(
+      { isAuthenticated: true },
+      { breadcrumbs: [{ text: 'Your notifications', href: '/' }] }
+    )
+
+    expect(html).not.toContain(BREADCRUMBS)
+    expect(html).not.toContain('Your notifications')
   })
 })
 

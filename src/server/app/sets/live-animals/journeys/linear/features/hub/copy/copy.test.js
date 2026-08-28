@@ -91,7 +91,7 @@ describe('#hubHandler', () => {
     expect(context.pageTitle).toBe('Overview')
     expect(context.backLink).toBe('/')
     expect(context.dashboardHref).toBe('/')
-    expect(context.breadcrumbs).toBe(false)
+    expect(context.breadcrumbs).toBeUndefined()
     expect(context.progressLine).toBeUndefined()
   })
 

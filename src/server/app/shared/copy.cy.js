@@ -16,9 +16,6 @@ export const copy = {
       manageAccount: 'Rheoli cyfrif',
       logOut: 'Allgofnodi'
     },
-    breadcrumbs: {
-      serviceHome: 'Eich hysbysiadau'
-    },
     footer: {
       privacy: 'Preifatrwydd',
       cookies: 'Cwcis',
