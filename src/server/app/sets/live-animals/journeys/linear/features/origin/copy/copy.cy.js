@@ -3,7 +3,9 @@ export const copy = {
   title: 'Tarddiad y mewnforyn',
   country: {
     label: 'Gwlad tarddiad',
-    placeholder: 'Dewiswch wlad'
+    hint: 'Dechreuwch deipio i chwilio am wlad.',
+    placeholder: 'Dewiswch wlad',
+    noResults: 'Dim gwledydd wedi’u darganfod'
   },
   regionRequirement: {
     legend: 'A oes gan y llwyth god rhanbarth tarddiad?',

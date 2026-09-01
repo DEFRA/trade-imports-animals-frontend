@@ -201,12 +201,18 @@ describe('GET /origin — server-rendered select data (no-JS path)', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should supply the placeholder, divider and full country list to the select', async () => {
+  it('Should supply the placeholder and full country list to the select', async () => {
     const result = await driveHandler(get)
     const items = result.view.context.countryItems
     expect(items[0]).toEqual({ value: '', text: 'Select a country' })
-    expect(items[1]).toEqual({ value: '', text: '──────────', disabled: true })
     expect(items).toContainEqual({ value: 'FR', text: 'France' })
+  })
+
+  it('Should offer no unselectable filler rows for the type-ahead to search', async () => {
+    const result = await driveHandler(get)
+    const items = result.view.context.countryItems
+    expect(items.filter((item) => item.disabled)).toEqual([])
+    expect(items.filter((item) => item.value === '')).toHaveLength(1)
   })
 })
 

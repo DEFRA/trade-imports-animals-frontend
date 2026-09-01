@@ -1,5 +1,5 @@
 {% extends "shared/layout.njk" %}
-{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "accessible-autocomplete/macro.njk" import appAccessibleAutocomplete %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "shared/save-actions.njk" import saveActions %}
@@ -15,13 +15,15 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
-    {{ govukSelect({
+    {{ appAccessibleAutocomplete({
       id: "countryOfOrigin",
       name: "countryOfOrigin",
       label: { text: copy.country.label, classes: "govuk-label--s" },
+      hint: { text: copy.country.hint },
       value: values.countryOfOrigin,
       errorMessage: errors.countryOfOrigin and { text: errors.countryOfOrigin },
-      items: countryItems
+      items: countryItems,
+      autocomplete: { showAllValues: true, noResults: copy.country.noResults }
     }) }}
 
     {% set regionCodeHtml %}

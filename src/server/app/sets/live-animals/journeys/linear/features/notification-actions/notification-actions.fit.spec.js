@@ -55,7 +55,11 @@ test.describe('notification-actions feature', () => {
     })
     await expect(origin).toContainText(hubCopy.statuses.completed)
     await origin.getByRole('link', { name: hubCopy.rows.origin.title }).click()
-    await expect(page.getByLabel('Country of origin')).toHaveValue('FR')
+    // The country picker is a type-ahead over a native select: the visible box
+    // holds the country name, the hidden select still carries the code.
+    await expect(page.locator('select#countryOfOrigin-select')).toHaveValue(
+      'FR'
+    )
   })
 
   test('copy leaves both source and copied notifications on the dashboard', async ({

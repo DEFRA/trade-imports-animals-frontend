@@ -111,8 +111,26 @@ const FIXTURE_REGION_CODE_SUFFIX = values.regionOfOriginCode.slice(
   values.countryOfOrigin.length + REGION_CODE_SEPARATOR.length
 )
 
+// Country of origin is a type-ahead (accessible-autocomplete) enhancing a
+// native <select>. With JavaScript the field resolved by its label is the
+// enhanced input; without it the field is still the select. Ask the element
+// what it is — one round trip, no timeout. Mirrors `choosePort` in
+// src/server/app/sets/live-animals/journeys/linear/features/transport/fit/arrival-transit.fit.spec.js.
 export const chooseCountryOfOrigin = async (page, name = FIXTURE_COUNTRY) => {
-  await page.getByLabel('Country of origin').selectOption({ label: name })
+  // The enhancement is a module script, so it has run by DOMContentLoaded.
+  // Waiting for that event settles which element the label resolves to before
+  // the probe reads it — without it the probe can catch the page mid-load,
+  // read the not-yet-enhanced select and then act on the enhanced input.
+  // With JavaScript off the event has already fired, so this costs nothing.
+  await page.waitForLoadState('domcontentloaded')
+  const field = page.getByLabel('Country of origin', { exact: true })
+  if ((await field.evaluate((el) => el.tagName)) === 'SELECT') {
+    await field.selectOption({ label: name })
+    return
+  }
+  await field.click()
+  await field.fill(name)
+  await page.getByRole('option', { name, exact: true }).click()
 }
 
 export const answerOriginEntry = async (page) => {

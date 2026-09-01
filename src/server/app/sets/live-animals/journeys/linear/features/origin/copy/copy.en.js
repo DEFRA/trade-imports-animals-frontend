@@ -2,7 +2,9 @@ export const copy = {
   title: 'Origin of the import',
   country: {
     label: 'Country of origin',
-    placeholder: 'Select a country'
+    hint: 'Start typing to search for a country.',
+    placeholder: 'Select a country',
+    noResults: 'No countries found'
   },
   regionRequirement: {
     legend: 'Does the consignment have a region of origin code?',

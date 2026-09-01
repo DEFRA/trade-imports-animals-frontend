@@ -106,9 +106,11 @@ const formValuesFromAnswers = (answers) => ({
   internalReferenceNumber: answers.internalReferenceNumber ?? ''
 })
 
+// The list feeds a type-ahead that enhances this select, so it carries only the
+// placeholder and the real countries — a scroll-only list needed a divider rule
+// under the placeholder, a searchable one does not.
 const countryItems = () => [
   { value: '', text: copy.country.placeholder },
-  { value: '', text: '──────────', disabled: true },
   ...countries.originCountries()
 ]
 
