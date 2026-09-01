@@ -89,6 +89,17 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     })
   })
 
+  it('Should include actor in the create request body when provided', async () => {
+    fetchMocker.mockResponse(JSON.stringify(canonical()), { status: 200 })
+
+    await records.create(actor)
+
+    expect(await jsonOf(fetchMocker.requests()[0])).toEqual({
+      notification: { fulfilments: [] },
+      actor
+    })
+  })
+
   it('Should classify the adapter fetch failure shape, but not programming errors, as recoverable', async () => {
     fetchMocker.mockResponse('Unavailable', {
       status: 503,
