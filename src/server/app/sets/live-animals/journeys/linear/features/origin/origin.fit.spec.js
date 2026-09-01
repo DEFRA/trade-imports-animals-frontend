@@ -360,6 +360,53 @@ test.describe('origin country and region validation', () => {
     ).toHaveCount(0)
   })
 
+  test('region code validation: when Yes is chosen and the box is empty, holds the user on the page', async ({
+    page
+  }) => {
+    const originUrl = page.url()
+    await chooseCountry(page, france)
+    await page.getByRole('radio', { name: copy.regionRequirement.yes }).check()
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+
+    await expect(page).toHaveURL(originUrl)
+    const regionCodeError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.regionCodeRequired })
+    await expect(regionCodeError).toBeVisible()
+    await regionCodeError.click()
+    await expect(
+      page.getByLabel(copy.regionCode.label, { exact: true })
+    ).toBeFocused()
+    await expect(
+      page.getByRole('radio', { name: copy.regionRequirement.yes })
+    ).toBeChecked()
+    await expect(page.locator(countryHidden)).toHaveValue(france.code)
+  })
+
+  test('region code validation: No leaves the empty box unasked for', async ({
+    page
+  }) => {
+    await chooseCountry(page, france)
+    await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+
+    await expect(page).toHaveURL(/\/notifications\/[^/]+\/commodities$/)
+  })
+
+  test('empty region code error page has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await chooseCountry(page, france)
+    await page.getByRole('radio', { name: copy.regionRequirement.yes }).check()
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await expect(page.getByRole('alert')).toBeVisible()
+
+    await expectNoSeriousOrCriticalAxeViolations(
+      page,
+      'Origin empty region code error'
+    )
+  })
+
   test('region code validation: when over 5 characters, links to and focuses the preserved value', async ({
     page
   }) => {

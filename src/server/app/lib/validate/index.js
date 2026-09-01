@@ -5,6 +5,7 @@ export {
   requiredExactDigits,
   optionalText,
   maxText,
+  requiredMaxText,
   pattern,
   postcode,
   vehicleReg,

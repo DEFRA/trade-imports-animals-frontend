@@ -10,6 +10,7 @@ import {
   maxText,
   oneOf,
   pattern,
+  requiredMaxText,
   requiredOneOf,
   validate
 } from '../../../../../../lib/validate/index.js'
@@ -42,6 +43,12 @@ const INTERNAL_REFERENCE_MAX_LENGTH = 58
 // stays the whole code, joined here, and nothing downstream sees two fields.
 const REGION_CODE_SUFFIX_FIELD = 'regionOfOriginCodeSuffix'
 const REGION_CODE_SEPARATOR = '-'
+const REGION_CODE_REQUIRED_ANSWER = 'yes'
+const REGION_CODE_NOT_REQUIRED_ANSWER = 'no'
+const REGION_CODE_REQUIREMENT_ANSWERS = [
+  REGION_CODE_REQUIRED_ANSWER,
+  REGION_CODE_NOT_REQUIRED_ANSWER
+]
 
 const FORM_FIELD_ORDER = [
   'countryOfOrigin',
@@ -114,19 +121,31 @@ const countryItems = () => [
   ...countries.originCountries()
 ]
 
-const fields = () =>
+// The code is only asked for when the user says the consignment has one, so
+// the box is required under Yes and left alone under No. The obligation behind
+// the answer says the same thing, and would stop the notification later; the
+// rule here is what tells the user at the point of the mistake.
+const regionCodeSuffixRule = (requirement) =>
+  requirement === REGION_CODE_REQUIRED_ANSWER
+    ? requiredMaxText(REGION_CODE_SUFFIX_FIELD, REGION_CODE_SUFFIX_MAX_LENGTH, {
+        required: copy.errors.regionCodeRequired,
+        maxLength: copy.errors.regionCodeMaxLength
+      })
+    : maxText(
+        REGION_CODE_SUFFIX_FIELD,
+        REGION_CODE_SUFFIX_MAX_LENGTH,
+        copy.errors.regionCodeMaxLength
+      )
+
+const fields = (requirement) =>
   compose(
     requiredOneOf(
       'countryOfOrigin',
       countries.originCountries().map(({ value }) => value),
       copy.errors.countryRequired
     ),
-    oneOf('regionOfOriginCodeRequirement', ['yes', 'no']),
-    maxText(
-      REGION_CODE_SUFFIX_FIELD,
-      REGION_CODE_SUFFIX_MAX_LENGTH,
-      copy.errors.regionCodeMaxLength
-    ),
+    oneOf('regionOfOriginCodeRequirement', REGION_CODE_REQUIREMENT_ANSWERS),
+    regionCodeSuffixRule(requirement),
     maxText(
       'internalReferenceNumber',
       INTERNAL_REFERENCE_MAX_LENGTH,
@@ -176,10 +195,24 @@ const get = async (request, h) => {
   return render(h, journey, formValuesFromAnswers(answers), {}, answers)
 }
 
+// The rules measure the code the answer would store, not the raw box: a user
+// who types the country prefix themselves has it stripped before the answer is
+// committed, so a box holding nothing but the prefix is an empty code.
+const validationPayloadFrom = (payload, values) => ({
+  ...payload,
+  [REGION_CODE_SUFFIX_FIELD]: suffixOf(
+    prefixFor(values.countryOfOrigin),
+    values[REGION_CODE_SUFFIX_FIELD]
+  )
+})
+
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const values = formValuesFrom(payload)
-  const { errors } = validate(fields(), payload)
+  const { errors } = validate(
+    fields(values.regionOfOriginCodeRequirement),
+    validationPayloadFrom(payload, values)
+  )
   if (errors) {
     const { journey, answers } = await state.get(request, h)
     return render(h, journey, values, errors, answers).code(

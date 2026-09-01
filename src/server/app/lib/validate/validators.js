@@ -58,6 +58,31 @@ export const maxText = (name, max, message) =>
       .messages({ 'string.max': message ?? defaults.maxLength(max) })
   )
 
+/**
+ * Save-blocking text with a length cap. One primitive rather than
+ * `compose(requiredText, maxText)` because `maxText` allows the empty string,
+ * and composing schemas merges that allowance onto the required rule — blank
+ * would then pass. `requiredExactDigits` exists for the same reason.
+ * @param {string} name
+ * @param {number} max
+ * @param {object} messages
+ * @param {string} messages.required - Shown when the value is blank or absent.
+ * @param {string} [messages.maxLength] - Shown when the value is over the cap.
+ */
+export const requiredMaxText = (name, max, messages) =>
+  single(
+    name,
+    Joi.string()
+      .trim()
+      .required()
+      .max(max)
+      .messages({
+        'string.empty': messages.required,
+        'any.required': messages.required,
+        'string.max': messages.maxLength ?? defaults.maxLength(max)
+      })
+  )
+
 export const pattern = (name, regex, message) =>
   single(
     name,
