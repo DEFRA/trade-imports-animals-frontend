@@ -71,7 +71,7 @@ describe('package-count list → numberOfPackages (line-scoped)', () => {
         [commodityCode.id]: { line1: name }
       })
       const records = state.obligations[numberOfPackages.id].records ?? []
-      expect(records.map((record) => record.fulfilmentId)).toContain('line1')
+      expect(records.map((record) => record.fulfilmentIndex)).toContain('line1')
     })
   }
 
@@ -114,13 +114,13 @@ describe('CPH list → cph (top-level anyAllowListed)', () => {
 // Unit-record-scoped gates: passport / tattoo / earTag / horseName /
 // permanentAddress. Each uses
 // `applyTo: allowListed(commodityCode, LIST, unitRecord, …)`, so
-// records are `lineId/unitId` paths for units on matching-commodity
-// lines.
+// records are `lineId.unitId` fulfilment indexes for units on
+// matching-commodity lines.
 //
 // A unit record is observed via a seed on the gated obligation itself
-// (raw storage at `line1/unit1`), which pre-purge enumeration reads as
+// (raw storage at `line1.unit1`), which pre-purge enumeration reads as
 // a unitRecord instance. On the positive path applyTo returns
-// ['line1/unit1']; on the negative path it returns [].
+// ['line1.unit1']; on the negative path it returns [].
 // ---------------------------------------------------------------------------
 
 const UNIT_SCOPED_ALLOWLISTS = [
@@ -141,11 +141,11 @@ for (const { name, names, gated } of UNIT_SCOPED_ALLOWLISTS) {
       it(`Should put ${gated.name} in scope for a unit under commodity = '${commodity}'`, () => {
         const state = evaluate({
           [commodityCode.id]: { line1: commodity },
-          [gated.id]: { 'line1/unit1': '' }
+          [gated.id]: { 'line1.unit1': '' }
         })
         const records = state.obligations[gated.id].records ?? []
-        expect(records.map((record) => record.fulfilmentId)).toContain(
-          'line1/unit1'
+        expect(records.map((record) => record.fulfilmentIndex)).toContain(
+          'line1.unit1'
         )
       })
     }
@@ -153,7 +153,7 @@ for (const { name, names, gated } of UNIT_SCOPED_ALLOWLISTS) {
     it(`Should not put ${gated.name} in scope for a control value`, () => {
       const state = evaluate({
         [commodityCode.id]: { line1: CONTROL_NAME },
-        [gated.id]: { 'line1/unit1': '' }
+        [gated.id]: { 'line1.unit1': '' }
       })
       const records = state.obligations[gated.id].records ?? []
       expect(records).toEqual([])

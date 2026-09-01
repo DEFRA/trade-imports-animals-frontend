@@ -6,9 +6,9 @@
  * positional, so an empty or partial entry is never lost; only its completeness
  * comes from the evaluator.
  *
- * Instance identity is positional (the array index). `instanceFulfilmentId`
- * maps a positional entry to its composite fulfilmentId prefix with the segment
- * machinery, exactly as scope.js / purge.js convert composite <-> positional.
+ * Instance identity is positional (the array index). `fulfilmentIndexInstance`
+ * maps a positional entry to its fulfilment index with the segment machinery,
+ * exactly as scope.js / purge.js convert fulfilment index <-> positional.
  *
  * `entryComplete` reproduces the FULFILLED verdict scoped to one
  * instance: the instance is complete iff the evaluator finds no unsatisfied
@@ -21,15 +21,16 @@
  * the manifest but no page collects them, so they must not mark an instance
  * incomplete.
  *
- * Known structural divergence: instances are inferred from leaf composite
- * prefixes, so a fully-EMPTY nested instance (a unit with no stored leaf)
- * vanishes on round-trip and its unmet `anyOf` cannot be flagged. A fully-empty
- * TOP-LEVEL entry is caught here via its unconditional mandatory field leaves.
+ * Known structural divergence: instances are inferred from leaf fulfilment
+ * index prefixes, so a fully-EMPTY nested instance (a unit with no stored
+ * leaf) vanishes on round-trip and its unmet `anyOf` cannot be flagged. A
+ * fully-empty TOP-LEVEL entry is caught here via its unconditional mandatory
+ * field leaves.
  */
 
 import { obligationByName, obligations } from '../model/obligations/manifest.js'
 import { ancestorChain, groupObligations } from './fulfilments/index.js'
-import { instanceFulfilmentId } from './fulfilment-id.js'
+import { INDEX_DELIMITER, fulfilmentIndexInstance } from './fulfilment-id.js'
 import { fulfilmentRegistry } from './fulfilment-registry.js'
 import { SYSTEM_POPULATED } from './obligation-source.js'
 import { groupInvariantErrors } from '../model/obligations/state-queries.js'
@@ -37,11 +38,13 @@ import { isBlankValue } from '../model/obligations/is-blank-value.js'
 
 const isFulfilled = (value) => !isBlankValue(value)
 
-// A leaf record's fulfilmentId belongs to instance P iff it IS P (a direct
-// leaf of the instance's own group) or sits beneath it (`P/...`, a nested
-// group's leaf) — the same positional-prefix rule the evaluator uses.
-const belongsToInstance = (fulfilmentId, instanceId) =>
-  fulfilmentId === instanceId || fulfilmentId.startsWith(`${instanceId}/`)
+// A leaf record's fulfilmentIndex belongs to the instance identified by
+// `ancestorIndex` iff it IS `ancestorIndex` (a direct leaf of that instance's
+// own group) or sits beneath it (`ancestor.…`, a nested group's leaf) — the
+// same positional-prefix rule the evaluator uses.
+const belongsToFulfilmentIndex = (childIndex, ancestorIndex) =>
+  childIndex === ancestorIndex ||
+  childIndex.startsWith(`${ancestorIndex}${INDEX_DELIMITER}`)
 
 const leavesUnder = (group) =>
   obligations().filter(
@@ -61,27 +64,27 @@ const groupsFrom = (group) =>
 // concern for the instance even when the evaluator enumerated no record —
 // an empty entry has no leaf storage, so the evaluator never sees the
 // instance, but the entry still shows and its mandatory fields are unfilled.
-const emptyEntryBlocks = (leaf, group, instanceId, stored) => {
+const emptyEntryBlocks = (leaf, group, fulfilmentIndex, stored) => {
   if (leaf.within !== group || leaf.applyTo) {
     return false
   }
   if ((leaf.status ?? 'mandatory') !== 'mandatory') {
     return false
   }
-  return !isFulfilled(stored?.[instanceId])
+  return !isFulfilled(stored?.[fulfilmentIndex])
 }
 
 const belongingRecordBlocks = (belonging, stored) =>
   belonging.some(
     (record) =>
       (record.status ?? 'mandatory') === 'mandatory' &&
-      !isFulfilled(stored?.[record.fulfilmentId])
+      !isFulfilled(stored?.[record.fulfilmentIndex])
   )
 
 const leafBlocksInstance = (
   leaf,
   group,
-  instanceId,
+  fulfilmentIndex,
   implications,
   fulfilments
 ) => {
@@ -94,20 +97,21 @@ const leafBlocksInstance = (
   }
   const stored = fulfilments[leaf.id]
   const belonging = (implication.records ?? []).filter((record) =>
-    belongsToInstance(record.fulfilmentId, instanceId)
+    belongsToFulfilmentIndex(record.fulfilmentIndex, fulfilmentIndex)
   )
   return belonging.length === 0
-    ? emptyEntryBlocks(leaf, group, instanceId, stored)
+    ? emptyEntryBlocks(leaf, group, fulfilmentIndex, stored)
     : belongingRecordBlocks(belonging, stored)
 }
 
-const groupInvariantBlocksInstance = (group, instanceId, state) =>
+const groupInvariantBlocksInstance = (group, fulfilmentIndex, state) =>
   groupsFrom(group).some(
     (nested) =>
       nested.requires?.anyOfIds &&
       groupInvariantErrors(nested, state).some(
         (error) =>
-          error.instanceId && belongsToInstance(error.instanceId, instanceId)
+          error.fulfilmentIndex &&
+          belongsToFulfilmentIndex(error.fulfilmentIndex, fulfilmentIndex)
       )
   )
 
@@ -131,16 +135,20 @@ export const entryComplete = (evaluation, collectionPath, index) => {
   const descriptors = groupChain.map(({ id }) =>
     fulfilmentRegistry.groupDescriptorOf(id)
   )
-  const instanceId = instanceFulfilmentId(collectionPath, index, descriptors)
+  const fulfilmentIndex = fulfilmentIndexInstance(
+    collectionPath,
+    index,
+    descriptors
+  )
   const { obligations: implications, fulfilments } = evaluation
 
   const blockedByLeaf = leavesUnder(group).some((leaf) =>
-    leafBlocksInstance(leaf, group, instanceId, implications, fulfilments)
+    leafBlocksInstance(leaf, group, fulfilmentIndex, implications, fulfilments)
   )
   if (blockedByLeaf) {
     return false
   }
 
   const state = { obligations: implications, fulfilments }
-  return !groupInvariantBlocksInstance(group, instanceId, state)
+  return !groupInvariantBlocksInstance(group, fulfilmentIndex, state)
 }

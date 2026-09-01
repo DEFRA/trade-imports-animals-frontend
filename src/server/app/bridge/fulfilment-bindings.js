@@ -1,4 +1,4 @@
-import { formatFulfilmentId } from './fulfilment-id.js'
+import { formatFulfilmentIndex } from './fulfilment-id.js'
 
 const identity = (value) => value
 
@@ -58,13 +58,13 @@ const groupedTree = (bindings) => {
   return root
 }
 
-const addGroupedValue = (contribution, binding, fulfilmentId, source) => {
+const addGroupedValue = (contribution, binding, fulfilmentIndex, source) => {
   const value = source?.[binding.field]
   if (value === undefined) {
     return
   }
   const records = contribution[binding.obligation.id] ?? {}
-  records[fulfilmentId] = binding.convert(value)
+  records[fulfilmentIndex] = binding.convert(value)
   contribution[binding.obligation.id] = records
 }
 
@@ -76,9 +76,9 @@ const walkGroup = (contribution, node, source, parentGroups, parentIndices) => {
   const groups = [...parentGroups, node.group]
   items.forEach((item, index) => {
     const indices = [...parentIndices, index]
-    const fulfilmentId = formatFulfilmentId(groups, indices)
+    const fulfilmentIndex = formatFulfilmentIndex(groups, indices)
     for (const binding of node.leaves) {
-      addGroupedValue(contribution, binding, fulfilmentId, item)
+      addGroupedValue(contribution, binding, fulfilmentIndex, item)
     }
     for (const child of node.children.values()) {
       walkGroup(contribution, child, item, groups, indices)

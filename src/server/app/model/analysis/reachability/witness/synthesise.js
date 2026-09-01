@@ -37,7 +37,7 @@ function synthesiseFromMetadata(meta) {
     case 'allowListed':
       // metadata.values IS the allowlist — first entry is a witness.
       // Include the projection group id (if any) so the fidelity check
-      // can seed a synthetic path in `fulfilmentIdsByObligationId` for
+      // can seed a synthetic path in `fulfilmentIndexesByObligationId` for
       // depth-N > 1 gates (passport, tattoo, earTag, horseName,
       // permanentAddress — all project onto unitRecord). Without a
       // projection path the closure's `filterAndProject` returns

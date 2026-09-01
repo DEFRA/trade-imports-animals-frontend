@@ -1,4 +1,11 @@
-export const segmentsOf = (fulfilmentId) => fulfilmentId.split('/')
+import { INDEX_DELIMITER } from '../model/obligations/index-delimiter.js'
+
+// Fulfilment indexes are dot-delimited strings whose segments each identify
+// one enclosing group instance (`line0`, `line0.unit1`, ...).
+export { INDEX_DELIMITER }
+
+export const segmentsOf = (fulfilmentIndex) =>
+  fulfilmentIndex.split(INDEX_DELIMITER)
 
 const DIGIT = /\d/
 
@@ -10,10 +17,10 @@ const trailingDigitsOf = (segment) => {
   return start === segment.length ? undefined : segment.slice(start)
 }
 
-export const hasIndexedSegments = (fulfilmentId) =>
-  typeof fulfilmentId === 'string' &&
-  fulfilmentId.length > 0 &&
-  segmentsOf(fulfilmentId).every(
+export const hasIndexedSegments = (fulfilmentIndex) =>
+  typeof fulfilmentIndex === 'string' &&
+  fulfilmentIndex.length > 0 &&
+  segmentsOf(fulfilmentIndex).every(
     (segment) => segment.length > 0 && DIGIT.test(segment.at(-1))
   )
 
@@ -27,8 +34,10 @@ export const depthOf = (obligation) => {
   return depth
 }
 
-export const indicesOf = (fulfilmentId) =>
-  segmentsOf(fulfilmentId).map((segment) => Number(trailingDigitsOf(segment)))
+export const indicesOf = (fulfilmentIndex) =>
+  segmentsOf(fulfilmentIndex).map((segment) =>
+    Number(trailingDigitsOf(segment))
+  )
 
 export const compareIndexArrays = (left, right) => {
   const sharedDepth = Math.min(left.length, right.length)
@@ -40,11 +49,13 @@ export const compareIndexArrays = (left, right) => {
   return left.length - right.length
 }
 
-export const formatFulfilmentId = (groups, indices) =>
-  groups.map(({ token }, depth) => `${token}${indices[depth]}`).join('/')
+export const formatFulfilmentIndex = (groups, indices) =>
+  groups
+    .map(({ token }, depth) => `${token}${indices[depth]}`)
+    .join(INDEX_DELIMITER)
 
-export const instanceFulfilmentId = (collectionPath, index, groups) =>
-  formatFulfilmentId(groups, [
+export const fulfilmentIndexInstance = (collectionPath, index, groups) =>
+  formatFulfilmentIndex(groups, [
     ...collectionPath.filter((segment) => typeof segment === 'number'),
     index
   ])

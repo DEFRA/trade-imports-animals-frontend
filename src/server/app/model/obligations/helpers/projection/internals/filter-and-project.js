@@ -1,4 +1,5 @@
 import { isRecordMap } from '../../../helper-internals.js'
+import { INDEX_DELIMITER } from '../../../index-delimiter.js'
 
 // The two storage shapes `filterAndProject` reads: a keyed-record map
 // (one candidate per key) or a bare scalar (a single candidate, keyed
@@ -12,15 +13,15 @@ const recordMapPassingKeys = (stored, predicate) =>
 const scalarPassingKeys = (stored, predicate) => (predicate(stored) ? [''] : [])
 
 const pathMatchesPassingKey = (path, key) =>
-  key === '' || path === key || path.startsWith(`${key}/`)
+  key === '' || path === key || path.startsWith(`${key}${INDEX_DELIMITER}`)
 
 const projectedRecords = (
   projectionGroup,
   passingKeys,
-  fulfilmentIdsByObligationId
+  fulfilmentIndexesByObligationId
 ) => {
   const projectionPaths =
-    fulfilmentIdsByObligationId?.get(projectionGroup.id) ?? []
+    fulfilmentIndexesByObligationId?.get(projectionGroup.id) ?? []
   return projectionPaths.filter((path) =>
     passingKeys.some((key) => pathMatchesPassingKey(path, key))
   )
@@ -29,7 +30,7 @@ const projectedRecords = (
 const decisionForPassingKeys = (
   passingKeys,
   projectionGroup,
-  fulfilmentIdsByObligationId
+  fulfilmentIndexesByObligationId
 ) => {
   if (passingKeys.length === 0) {
     return { inScope: false }
@@ -40,7 +41,7 @@ const decisionForPassingKeys = (
   const records = projectedRecords(
     projectionGroup,
     passingKeys,
-    fulfilmentIdsByObligationId
+    fulfilmentIndexesByObligationId
   )
   return { inScope: records.length > 0, records }
 }
@@ -49,7 +50,7 @@ export const filterAndProject = (
   storedForGate,
   predicate,
   projectionGroup,
-  fulfilmentIdsByObligationId
+  fulfilmentIndexesByObligationId
 ) => {
   const stored = storedForGate ?? {}
   const passingKeys = isRecordMap(stored)
@@ -59,6 +60,6 @@ export const filterAndProject = (
   return decisionForPassingKeys(
     passingKeys,
     projectionGroup,
-    fulfilmentIdsByObligationId
+    fulfilmentIndexesByObligationId
   )
 }

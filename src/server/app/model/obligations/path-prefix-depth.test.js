@@ -3,24 +3,24 @@ import { createObligationEvaluator } from './evaluator.js'
 import { allowListed } from './helpers/index.js'
 
 // A gate that itself sits at depth >= 2 and projects a deeper obligation must
-// match its records by full path prefix, not by the first path segment. When a
-// projection path is sliced at its first slash, `filterAndProject` only ever
-// matches a gate whose record keys are one segment long, so a deeper gate
-// matches nothing, reports `inScope: false`, and `purgeStorage`'s derived-leaf
-// branch then deletes the user's stored records — silent data loss. The fix
-// tests each passing key as a real path prefix
-// (`key === '' || path === key || path.startsWith(`${key}/`)`); the empty-key
-// case matters because `filterAndProject` uses `''` as the key for a scalar
-// (non-record-map) gate.
+// match its records by full fulfilment-index prefix, not by the first segment.
+// When a projection fulfilment index is sliced at its first delimiter,
+// `filterAndProject` only ever matches a gate whose record keys are one
+// segment long, so a deeper gate matches nothing, reports `inScope: false`,
+// and `purgeStorage`'s derived-leaf branch then deletes the user's stored
+// records — silent data loss. The fix tests each passing key as a real
+// prefix (`key === '' || path === key || path.startsWith(`${key}.`)`); the
+// empty-key case matters because `filterAndProject` uses `''` as the key for
+// a scalar (non-record-map) gate.
 describe('a gate at depth >= 2 that projects', () => {
   // Three nested groups, one segment of composite key each:
   //
   //   line        depth 1   keys 'line1'
-  //   unit        depth 2   keys 'line1/unit1'
-  //   subUnit     depth 3   keys 'line1/unit1/sub1'
+  //   unit        depth 2   keys 'line1.unit1'
+  //   subUnit     depth 3   keys 'line1.unit1.sub1'
   //
   // `unitFlag` is the gate. It is `within: unit`, so its stored keys are
-  // two segments ('line1/unit1'). `subDetail` is gated on it and projects
+  // two segments ('line1.unit1'). `subDetail` is gated on it and projects
   // onto `subUnit`, whose paths are three segments.
   const buildManifest = () => {
     const line = { id: 'line' }
@@ -39,8 +39,8 @@ describe('a gate at depth >= 2 that projects', () => {
   // The gate says 'yes' on the only unit, so the sub-record below it is in
   // scope and its value must survive the purge.
   const fulfilments = {
-    unitFlag: { 'line1/unit1': 'yes' },
-    subDetail: { 'line1/unit1/sub1': 'the user typed this' }
+    unitFlag: { 'line1.unit1': 'yes' },
+    subDetail: { 'line1.unit1.sub1': 'the user typed this' }
   }
 
   const evaluateFixture = () => {
@@ -54,7 +54,7 @@ describe('a gate at depth >= 2 that projects', () => {
     const result = evaluateFixture()
 
     expect(result.fulfilments.subDetail).toEqual({
-      'line1/unit1/sub1': 'the user typed this'
+      'line1.unit1.sub1': 'the user typed this'
     })
   })
 
@@ -63,7 +63,7 @@ describe('a gate at depth >= 2 that projects', () => {
 
     expect(result.obligations.subDetail).toMatchObject({
       inScope: true,
-      records: [{ fulfilmentId: 'line1/unit1/sub1', status: 'mandatory' }]
+      records: [{ fulfilmentIndex: 'line1.unit1.sub1', status: 'mandatory' }]
     })
   })
 
@@ -77,7 +77,7 @@ describe('a gate at depth >= 2 that projects', () => {
     // admit everything.
     const result = evaluator.evaluate({
       ...fulfilments,
-      unitFlag: { 'line1/unit1': 'no' }
+      unitFlag: { 'line1.unit1': 'no' }
     })
 
     expect(result.fulfilments.subDetail).toBeUndefined()

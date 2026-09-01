@@ -33,7 +33,7 @@ describe('commodities evaluation bindings', () => {
     expect(contribution).toMatchObject({
       [commodityCode.id]: { line0: 'Cow' },
       [numberOfAnimals.id]: { line0: 1 },
-      [earTag.id]: { 'line0/unit0': 'UK123456789012' }
+      [earTag.id]: { 'line0.unit0': 'UK123456789012' }
     })
   })
 })

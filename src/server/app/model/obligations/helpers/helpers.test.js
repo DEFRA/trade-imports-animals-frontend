@@ -20,8 +20,8 @@ const codeObl = { id: 'code-obl' }
 const boolObl = { id: 'bool-obl' }
 const groupObl = { id: 'group-obl' }
 
-const line1Unit1Path = 'line1/unit1'
-const line1Unit2Path = 'line1/unit2'
+const line1Unit1Path = 'line1.unit1'
+const line1Unit2Path = 'line1.unit2'
 
 const undefinedValueEntry = (key) => Object.fromEntries([[key, undefined]])
 
@@ -49,7 +49,7 @@ describe('allowListed', () => {
     const gate = allowListed(codeObl, ['a'], groupObl)
     const fulfilments = { [codeObl.id]: { line1: 'a', line2: 'x' } }
     const ids = new Map([
-      [groupObl.id, [line1Unit1Path, line1Unit2Path, 'line2/unit1']]
+      [groupObl.id, [line1Unit1Path, line1Unit2Path, 'line2.unit1']]
     ])
     const decision = gate(fulfilments, ids)
     expect(decision).toEqual({
@@ -139,7 +139,7 @@ describe('notInUnionOf', () => {
     )
     const fulfilments = { [codeObl.id]: { line1: 'z', line2: 'a' } }
     const ids = new Map([
-      [groupObl.id, [line1Unit1Path, line1Unit2Path, 'line2/unit1']]
+      [groupObl.id, [line1Unit1Path, line1Unit2Path, 'line2.unit1']]
     ])
     const decision = gate(fulfilments, ids)
     expect(decision).toEqual({
@@ -404,7 +404,7 @@ describe('obligationMetadata', () => {
 //
 // Frame semantics: all four helpers use the SAME-FRAME scalar-read
 // pattern used by `matches` / `anyAllowListed` / `branchedGate` — no
-// `filterAndProject`, no projection group, no `fulfilmentIdsByObligationId`
+// `filterAndProject`, no projection group, no `fulfilmentIndexesByObligationId`
 // touch. The migration sites (regionCode etc.) are all notification-
 // level scalar gates; if a future depth-N call site emerges,
 // `allowListed`'s projection pattern is the escape hatch.

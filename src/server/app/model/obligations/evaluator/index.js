@@ -1,6 +1,6 @@
 import { obligations as configuredObligations } from '../manifest.js'
 import { convergePurge } from './converge-purge.js'
-import { enumerateGroupFulfilmentIds } from './enumeration/enumerate-group-fulfilment-ids.js'
+import { enumerateGroupFulfilmentIndexes } from './enumeration/enumerate-group-fulfilment-indexes.js'
 import { buildImplications } from './implications/build.js'
 import { buildAncestorGroups } from './manifest-index/build-ancestor-groups.js'
 import { buildDescendants } from './manifest-index/build-descendants.js'
@@ -20,7 +20,7 @@ import { dropUnknownFulfilments } from './purge/drop-unknown-fulfilments.js'
  * pure. The obligations manifest is injected at construction.
  *
  * Scope resolution: every obligation with an `applyTo` receives
- * `applyTo(fulfilments, fulfilmentIdsByObligationId)` where the second
+ * `applyTo(fulfilments, fulfilmentIndexesByObligationId)` where the second
  * arg is a `Map<obligationId, string[]>` of currently-present
  * group-instance-paths, enumerated pre-purge from raw storage. This
  * lets gated obligations look up their parent-group's instance-paths
@@ -90,7 +90,7 @@ export function createObligationEvaluator({
 
       // 3. Post-purge enumeration — group instance-paths for implication
       // building (accounts for records dropped by the converged purge).
-      const fulfilmentIdsByObligationId = enumerateGroupFulfilmentIds(
+      const fulfilmentIndexesByObligationId = enumerateGroupFulfilmentIndexes(
         obligations,
         {
           obligationsByCategory,
@@ -106,7 +106,7 @@ export function createObligationEvaluator({
         isInScope,
         obligationsByCategory,
         obligationApplicabilityDecisions,
-        fulfilmentIdsByObligationId,
+        fulfilmentIndexesByObligationId,
         amendedFulfilments
       })
 

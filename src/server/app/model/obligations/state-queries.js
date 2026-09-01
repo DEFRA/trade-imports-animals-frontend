@@ -5,6 +5,7 @@
  * returns.
  */
 
+import { INDEX_DELIMITER } from './index-delimiter.js'
 import { isBlankValue } from './is-blank-value.js'
 
 export const STATUSES = {
@@ -19,7 +20,7 @@ export const STATUSES = {
 /**
  * Effective mandate for an obligation at a path. Singleton implications
  * carry `status` at the top level; field / derived-leaf records live in
- * `impl.records[]`, each carrying `{ fulfilmentId, status }`. Defaults
+ * `impl.records[]`, each carrying `{ fulfilmentIndex, status }`. Defaults
  * to 'mandatory'; undefined when the obligation has no implication.
  */
 export function effectiveStatus(obligation, path, state) {
@@ -31,7 +32,7 @@ export function effectiveStatus(obligation, path, state) {
     return impl.status ?? 'mandatory'
   }
   const record = (impl.records ?? []).find(
-    (candidate) => candidate.fulfilmentId === path
+    (candidate) => candidate.fulfilmentIndex === path
   )
   return record?.status ?? 'mandatory'
 }
@@ -77,21 +78,21 @@ const checkAnyOfIds = (group, records, state) => {
   }
   const errors = []
   for (const record of records) {
-    const instanceId = record.fulfilmentId
+    const fulfilmentIndex = record.fulfilmentIndex
     const inScopeLeafIds = group.requires.anyOfIds.filter((leafId) => {
       const impl = state.obligations?.[leafId]
       if (!impl?.inScope) {
         return false
       }
       return (impl.records ?? []).some(
-        (candidate) => candidate.fulfilmentId === instanceId
+        (candidate) => candidate.fulfilmentIndex === fulfilmentIndex
       )
     })
     if (inScopeLeafIds.length === 0) {
       continue
     }
     const anyFilled = inScopeLeafIds.some((leafId) => {
-      const stored = state.fulfilments?.[leafId]?.[instanceId]
+      const stored = state.fulfilments?.[leafId]?.[fulfilmentIndex]
       return !isBlankValue(stored)
     })
     if (!anyFilled) {
@@ -99,7 +100,7 @@ const checkAnyOfIds = (group, records, state) => {
         code: group.requires.errorCode,
         groupId: group.id,
         groupName: group.name,
-        instanceId
+        fulfilmentIndex
       })
     }
   }
@@ -138,20 +139,22 @@ const checkRecordCountEquals = (group, records, state) => {
   const parentRecords = parentImpl?.records ?? []
   const errors = []
   for (const parentRec of parentRecords) {
-    const parentId = parentRec.fulfilmentId
-    const expected = state.fulfilments?.[fieldId]?.[parentId]
+    const parentFulfilmentIndex = parentRec.fulfilmentIndex
+    const expected = state.fulfilments?.[fieldId]?.[parentFulfilmentIndex]
     if (isBlankValue(expected)) {
       continue
     }
     const actual = records.filter((record) =>
-      record.fulfilmentId.startsWith(`${parentId}/`)
+      record.fulfilmentIndex.startsWith(
+        `${parentFulfilmentIndex}${INDEX_DELIMITER}`
+      )
     ).length
     if (actual !== expected) {
       errors.push({
         code: countErrorCode,
         groupId: group.id,
         groupName: group.name,
-        instanceId: parentId,
+        fulfilmentIndex: parentFulfilmentIndex,
         expected,
         actual
       })
@@ -180,9 +183,10 @@ const checkRecordCountEquals = (group, records, state) => {
  *     0 < filledCount < total; none when all-blank or all-filled.
  *   - `recordCountEquals` — `{ fieldId, errorCode }`. One error per
  *     in-scope parent (`group.within`) instance whose count of records
- *     under `parentId/` differs from the non-blank expected count in
- *     `state.fulfilments[fieldId][parentId]`; blank expected counts
- *     are skipped (the field's own mandatory rule catches those).
+ *     under `parentFulfilmentIndex/` differs from the non-blank expected
+ *     count in `state.fulfilments[fieldId][parentFulfilmentIndex]`;
+ *     blank expected counts are skipped (the field's own mandatory rule
+ *     catches those).
  */
 export function groupInvariantErrors(group, state) {
   if (!group?.requires) {
