@@ -11,8 +11,8 @@ export const copy = {
     no: 'No'
   },
   regionCode: {
-    label: 'Region of origin code',
-    hint: 'For example, FR-75'
+    label: 'Enter the region of origin code',
+    hint: 'Enter up to 5 characters.'
   },
   internalReference: {
     label: 'Your internal reference for this consignment (optional)',

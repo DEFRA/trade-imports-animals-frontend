@@ -104,6 +104,13 @@ export const ARRIVAL_DATE_IN_WINDOW_DISPLAY = `${arrivalDate.getUTCDate()} ${SHO
 
 const FIXTURE_COUNTRY = COUNTRY_LABELS[values.countryOfOrigin]
 
+// The origin page fills the country in as a fixed prefix and asks only for the
+// part after it, so the fixture's whole code is split the same way here.
+const REGION_CODE_SEPARATOR = '-'
+const FIXTURE_REGION_CODE_SUFFIX = values.regionOfOriginCode.slice(
+  values.countryOfOrigin.length + REGION_CODE_SEPARATOR.length
+)
+
 export const chooseCountryOfOrigin = async (page, name = FIXTURE_COUNTRY) => {
   await page.getByLabel('Country of origin').selectOption({ label: name })
 }
@@ -196,8 +203,8 @@ export const completeAnswerSections = async (page) => {
   await chooseCountryOfOrigin(page)
   await page.getByRole('radio', { name: 'Yes' }).check()
   await page
-    .getByLabel('Region of origin code', { exact: true })
-    .fill(values.regionOfOriginCode)
+    .getByLabel('Enter the region of origin code', { exact: true })
+    .fill(FIXTURE_REGION_CODE_SUFFIX)
   await page
     .getByLabel('Your internal reference for this consignment (optional)')
     .fill(values.internalReferenceNumber)

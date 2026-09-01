@@ -26,13 +26,14 @@
 
     {% set regionCodeHtml %}
       {{ govukInput({
-        id: "regionOfOriginCode",
-        name: "regionOfOriginCode",
+        id: "regionOfOriginCodeSuffix",
+        name: "regionOfOriginCodeSuffix",
         label: { text: copy.regionCode.label },
         hint: { text: copy.regionCode.hint },
         classes: "govuk-input--width-5",
-        value: values.regionOfOriginCode,
-        errorMessage: errors.regionOfOriginCode and { text: errors.regionOfOriginCode }
+        prefix: { text: regionCodePrefix },
+        value: values.regionOfOriginCodeSuffix,
+        errorMessage: errors.regionOfOriginCodeSuffix and { text: errors.regionOfOriginCodeSuffix }
       }) }}
     {% endset %}
 

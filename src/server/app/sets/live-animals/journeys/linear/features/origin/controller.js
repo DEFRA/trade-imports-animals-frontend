@@ -34,25 +34,77 @@ const view = `${TEMPLATES}/features/origin/template`
 
 const copy = copyFor({ en, cy })
 
-const REGION_CODE_MAX_LENGTH = 5
+const REGION_CODE_SUFFIX_MAX_LENGTH = 5
 const INTERNAL_REFERENCE_MAX_LENGTH = 58
 
-const FIELD_ORDER = [
+// The country part of the region of origin code is filled in for the user as a
+// fixed prefix, so the form asks only for the part after it. The answer stored
+// stays the whole code, joined here, and nothing downstream sees two fields.
+const REGION_CODE_SUFFIX_FIELD = 'regionOfOriginCodeSuffix'
+const REGION_CODE_SEPARATOR = '-'
+
+const FORM_FIELD_ORDER = [
   'countryOfOrigin',
   'regionOfOriginCodeRequirement',
-  'regionOfOriginCode',
+  REGION_CODE_SUFFIX_FIELD,
   'internalReferenceNumber'
 ]
 
-const valuesFrom = (source, { trim = [] } = {}) =>
+const TRIMMED_FORM_FIELDS = [
+  REGION_CODE_SUFFIX_FIELD,
+  'internalReferenceNumber'
+]
+
+const formValuesFrom = (source) =>
   Object.fromEntries(
-    FIELD_ORDER.map((field) => [
+    FORM_FIELD_ORDER.map((field) => [
       field,
-      trim.includes(field)
+      TRIMMED_FORM_FIELDS.includes(field)
         ? (source[field] ?? '').trim()
         : (source[field] ?? '')
     ])
   )
+
+const prefixFor = (countryOfOrigin) =>
+  (countryOfOrigin ?? '').trim().toUpperCase()
+
+// Splitting a whole code back into the part after the prefix. Used to redisplay
+// a stored answer, and to forgive a user who typed the prefix themselves.
+const suffixOf = (prefix, code) => {
+  const value = (code ?? '').trim().toUpperCase()
+  return prefix && value.startsWith(`${prefix}${REGION_CODE_SEPARATOR}`)
+    ? value.slice(prefix.length + REGION_CODE_SEPARATOR.length)
+    : value
+}
+
+const regionCodeFrom = (countryOfOrigin, suffix) => {
+  const prefix = prefixFor(countryOfOrigin)
+  const rest = suffixOf(prefix, suffix)
+  if (!rest) {
+    return ''
+  }
+  return prefix ? `${prefix}${REGION_CODE_SEPARATOR}${rest}` : rest
+}
+
+const answersFrom = (formValues) => ({
+  countryOfOrigin: formValues.countryOfOrigin,
+  regionOfOriginCodeRequirement: formValues.regionOfOriginCodeRequirement,
+  regionOfOriginCode: regionCodeFrom(
+    formValues.countryOfOrigin,
+    formValues[REGION_CODE_SUFFIX_FIELD]
+  ),
+  internalReferenceNumber: formValues.internalReferenceNumber
+})
+
+const formValuesFromAnswers = (answers) => ({
+  countryOfOrigin: answers.countryOfOrigin ?? '',
+  regionOfOriginCodeRequirement: answers.regionOfOriginCodeRequirement ?? '',
+  [REGION_CODE_SUFFIX_FIELD]: suffixOf(
+    prefixFor(answers.countryOfOrigin),
+    answers.regionOfOriginCode
+  ),
+  internalReferenceNumber: answers.internalReferenceNumber ?? ''
+})
 
 const countryItems = () => [
   { value: '', text: copy.country.placeholder },
@@ -69,8 +121,8 @@ const fields = () =>
     ),
     oneOf('regionOfOriginCodeRequirement', ['yes', 'no']),
     maxText(
-      'regionOfOriginCode',
-      REGION_CODE_MAX_LENGTH,
+      REGION_CODE_SUFFIX_FIELD,
+      REGION_CODE_SUFFIX_MAX_LENGTH,
       copy.errors.regionCodeMaxLength
     ),
     maxText(
@@ -113,19 +165,18 @@ const render = (
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
-    countryItems: countryItems()
+    countryItems: countryItems(),
+    regionCodePrefix: prefixFor(values.countryOfOrigin)
   })
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, valuesFrom(answers), {}, answers)
+  return render(h, journey, formValuesFromAnswers(answers), {}, answers)
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
-  const values = valuesFrom(payload, {
-    trim: ['regionOfOriginCode', 'internalReferenceNumber']
-  })
+  const values = formValuesFrom(payload)
   const { errors } = validate(fields(), payload)
   if (errors) {
     const { journey, answers } = await state.get(request, h)
@@ -137,7 +188,7 @@ const post = async (request, h) => {
   let committed
   const { failure } = await kit.recoverableSave(
     async () => {
-      committed = await state.commit(request, h, values)
+      committed = await state.commit(request, h, answersFrom(values))
     },
     async () => {
       const { journey, answers } = await state.get(request, h)

@@ -12,8 +12,8 @@ export const copy = {
     no: 'Nac oes'
   },
   regionCode: {
-    label: 'Cod rhanbarth tarddiad',
-    hint: 'Er enghraifft, FR-75'
+    label: 'Rhowch god rhanbarth tarddiad',
+    hint: 'Rhowch hyd at 5 nod.'
   },
   internalReference: {
     label: 'Eich cyfeirnod mewnol ar gyfer y llwyth hwn (dewisol)',
