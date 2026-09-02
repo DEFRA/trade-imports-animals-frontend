@@ -49,7 +49,8 @@ describe('getOidcConfig', () => {
     expect(configGetMock).toHaveBeenCalledWith('defraId.oidcDiscoveryUrl')
     expect(wreckGetMock).toHaveBeenCalledWith(localDiscoveryUrl, {
       headers: { [tracingHeader]: traceId },
-      json: true
+      json: true,
+      timeout: 3000
     })
   })
 
@@ -196,7 +197,8 @@ describe('getOidcConfig', () => {
     await expect(getOidcConfig()).rejects.toThrow('discovery failed')
     expect(wreckGetMock).toHaveBeenCalledWith(localDiscoveryUrl, {
       headers: { [tracingHeader]: traceId },
-      json: true
+      json: true,
+      timeout: 3000
     })
   })
 })

@@ -2,6 +2,7 @@ import Wreck from '@hapi/wreck'
 import { getTraceId } from '@defra/hapi-tracing'
 import { config } from '../config/config.js'
 
+const DISCOVERY_TIMEOUT_MS = 3000
 const SERVER_SIDE_ENDPOINTS = ['token_endpoint', 'jwks_uri']
 const LOCAL_HOSTNAMES = new Set(['localhost', 'host.docker.internal'])
 
@@ -22,7 +23,8 @@ async function getOidcConfig() {
   const discoveryUrl = config.get('defraId.oidcDiscoveryUrl')
   const { payload } = await Wreck.get(discoveryUrl, {
     headers: { [config.get('tracing.header')]: getTraceId() ?? '' },
-    json: true
+    json: true,
+    timeout: DISCOVERY_TIMEOUT_MS
   })
 
   const discoveryHostname = new URL(discoveryUrl).hostname
