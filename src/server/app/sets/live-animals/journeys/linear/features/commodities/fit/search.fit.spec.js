@@ -51,6 +51,25 @@ test.describe('commodity search', () => {
     ).toBeVisible()
   })
 
+  test('explains commodity codes and links out to the Trade Tariff tool', async ({
+    page
+  }) => {
+    await page.getByText(copy.search.help.summary, { exact: true }).click()
+    await expect(page.getByText(copy.search.help.reference)).toBeVisible()
+    await expect(page.getByText(copy.search.help.describes)).toBeVisible()
+    await expect(page.getByText(copy.search.help.lookupPrefix)).toBeVisible()
+    const tradeTariff = page.getByRole('link', {
+      name: copy.search.help.lookupLink
+    })
+    await expect(tradeTariff).toBeVisible()
+    await expect(tradeTariff).toHaveAttribute(
+      'href',
+      copy.search.help.lookupHref
+    )
+    await expect(tradeTariff).toHaveAttribute('target', '_blank')
+    await expect(tradeTariff).toHaveAttribute('rel', 'noreferrer noopener')
+  })
+
   test('lists nothing for a query shorter than three characters', async ({
     page
   }) => {
@@ -163,6 +182,8 @@ test.describe('commodity search', () => {
   test('has no serious or critical axe violations', async ({ page }) => {
     await selectSpecies(page, [BOS_TAURUS])
     await searchCommodities(page, '0106')
+    // Open the help details so its paragraphs and outbound link are scanned.
+    await page.getByText(copy.search.help.summary, { exact: true }).click()
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()

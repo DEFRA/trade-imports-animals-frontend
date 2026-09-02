@@ -11,6 +11,7 @@ import { dispatchPages } from '../../index.js'
 
 import * as search from '../search/search.controller.js'
 import { copy } from './copy.en.js'
+import { copy as copyCy } from './copy.cy.js'
 
 const BOS_TAURUS = 'Bos taurus'
 
@@ -31,6 +32,13 @@ describe('#copy', () => {
       expect(typeof text, `${path} must resolve to a string`).toBe('string')
       expect(text.trim().length, `${path} must not be empty`).toBeGreaterThan(0)
     }
+  })
+
+  it('Should point the commodity-code lookup at the Trade Tariff tool', () => {
+    expect(copy.search.help.lookupHref).toBe('https://www.gov.uk/trade-tariff')
+    expect(copyCy.search.help.lookupHref).toBe(
+      'https://www.gov.uk/trade-tariff'
+    )
   })
 
   it('Should interpolate countDrop', () => {
