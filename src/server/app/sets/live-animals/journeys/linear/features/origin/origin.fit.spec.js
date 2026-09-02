@@ -112,6 +112,25 @@ test.describe('origin feature', () => {
     expect(renderedCountries).toEqual(countriesOrigin)
   })
 
+  // The page asks three questions under one h1, so all three have to carry the
+  // same weight — the size class is the whole of the behaviour here, which is
+  // why it is asserted directly rather than through a rendered role.
+  test('sets all three question labels at the same medium size', async ({
+    page
+  }) => {
+    await expect(page.locator('label[for="countryOfOrigin"]')).toHaveClass(
+      /govuk-label--m/
+    )
+    await expect(
+      page
+        .getByRole('group', { name: copy.regionRequirement.legend })
+        .locator('legend')
+    ).toHaveClass(/govuk-fieldset__legend--m/)
+    await expect(
+      page.locator('label[for="internalReferenceNumber"]')
+    ).toHaveClass(/govuk-label--m/)
+  })
+
   // The strip is drawn from the first request, before anything is saved: the
   // reference is minted when the notification is created, so the user starting
   // one can read it off the page they land on.

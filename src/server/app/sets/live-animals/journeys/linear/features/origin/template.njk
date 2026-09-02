@@ -18,7 +18,7 @@
     {{ appAccessibleAutocomplete({
       id: "countryOfOrigin",
       name: "countryOfOrigin",
-      label: { text: copy.country.label, classes: "govuk-label--s" },
+      label: { text: copy.country.label, classes: "govuk-label--m" },
       hint: { text: copy.country.hint },
       value: values.countryOfOrigin,
       errorMessage: errors.countryOfOrigin and { text: errors.countryOfOrigin },
@@ -41,7 +41,7 @@
 
     {{ govukRadios({
       name: "regionOfOriginCodeRequirement",
-      fieldset: { legend: { text: copy.regionRequirement.legend, classes: "govuk-fieldset__legend--s" } },
+      fieldset: { legend: { text: copy.regionRequirement.legend, classes: "govuk-fieldset__legend--m" } },
       hint: { text: copy.regionRequirement.hint },
       items: [
         { value: "yes", text: copy.regionRequirement.yes, checked: values.regionOfOriginCodeRequirement == "yes", conditional: { html: regionCodeHtml } },
@@ -52,7 +52,7 @@
     {{ govukInput({
       id: "internalReferenceNumber",
       name: "internalReferenceNumber",
-      label: { text: copy.internalReference.label },
+      label: { text: copy.internalReference.label, classes: "govuk-label--m" },
       hint: { text: copy.internalReference.hint },
       classes: "govuk-!-width-three-quarters",
       value: values.internalReferenceNumber,
