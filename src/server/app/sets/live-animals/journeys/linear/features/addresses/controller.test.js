@@ -28,6 +28,7 @@ const cphRowOf = (rows) =>
   )
 const CONSIGNOR_TITLE = 'Consignor or exporter'
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
+const CYA_SLUG = 'notification-view'
 
 const rowTitled = (rows, title) =>
   rows.find((row) => row.key.html.includes(title))
@@ -163,7 +164,7 @@ describe('GET addresses — change context', () => {
     )
 
     expect(result.view.context.backLink).toBe(
-      pagePath(result.journeyId, 'notification-view')
+      pagePath(result.journeyId, CYA_SLUG)
     )
   })
 
@@ -176,8 +177,15 @@ describe('GET addresses — change context', () => {
   it('Should exit to check your answers when continuing under change context', async () => {
     const result = await driveHandler(postAddresses, { query: { change: '1' } })
 
-    expect(result.response.redirect).toBe(
-      pagePath(result.journeyId, 'notification-view')
+    expect(result.response.redirect).toBe(pagePath(result.journeyId, CYA_SLUG))
+  })
+
+  it('Should follow the ordinary flow when continuing without change context', async () => {
+    const result = await driveHandler(postAddresses, {})
+
+    expect(result.response.redirect).not.toBe(
+      pagePath(result.journeyId, CYA_SLUG)
     )
+    expect(result.response.redirect).toBe(hubPath(result.journeyId))
   })
 })
