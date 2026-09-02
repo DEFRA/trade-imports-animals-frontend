@@ -31,11 +31,6 @@ async function getOidcConfigWithRetry(logger) {
     }
   }
 
-  logger.error(
-    { err: lastError, discoveryUrl, attempts: MAX_ATTEMPTS },
-    'Could not reach the OIDC provider'
-  )
-
   throw new Error(
     `Could not reach the OIDC provider at ${discoveryUrl} after ${MAX_ATTEMPTS} attempts`,
     { cause: lastError }

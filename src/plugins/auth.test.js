@@ -1,4 +1,4 @@
-import { describe, expect, test, vi, beforeEach } from 'vitest'
+import { afterEach, describe, expect, test, vi, beforeEach } from 'vitest'
 import { authPlugin, getBellOptions, getCookieOptions } from './auth.js'
 
 const getOidcConfigMock = vi.hoisted(() => vi.fn())
@@ -46,6 +46,23 @@ describe('auth plugin', () => {
     authorization_endpoint: 'https://idp.example.com/auth',
     token_endpoint: 'https://idp.example.com/token'
   }
+  const discoveryUrl =
+    'https://idp.example.com/.well-known/openid-configuration'
+
+  const buildServer = () => ({
+    auth: {
+      strategy: vi.fn(),
+      default: vi.fn()
+    },
+    logger: {
+      warn: vi.fn(),
+      error: vi.fn()
+    }
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -55,6 +72,7 @@ describe('auth plugin', () => {
 
     configGetMock.mockImplementation((key) => {
       const map = {
+        'defraId.oidcDiscoveryUrl': discoveryUrl,
         'defraId.clientId': 'test-client-id',
         'defraId.clientSecret': 'test-client-secret',
         'session.cookie.password': 'some-password-32-chars-long-000000',
@@ -71,12 +89,7 @@ describe('auth plugin', () => {
   })
 
   test('register registers Bell + cookie strategies and sets default auth to session', async () => {
-    const server = {
-      auth: {
-        strategy: vi.fn(),
-        default: vi.fn()
-      }
-    }
+    const server = buildServer()
 
     await authPlugin.plugin.register(server)
 
@@ -120,12 +133,7 @@ describe('auth plugin', () => {
     // OIDC config would also fail outright — there is no identity provider
     // configured in the environments stub mode is meant for.
     isStubModeMock.mockReturnValue(true)
-    const server = {
-      auth: {
-        strategy: vi.fn(),
-        default: vi.fn()
-      }
-    }
+    const server = buildServer()
 
     await authPlugin.plugin.register(server)
 
@@ -133,6 +141,29 @@ describe('auth plugin', () => {
     expect(server.auth.strategy.mock.calls[0][0]).toBe('session')
     expect(server.auth.default).toHaveBeenCalledWith('session')
     expect(getOidcConfigMock).not.toHaveBeenCalled()
+  })
+
+  test('register retries through the server logger and fails naming the discovery URL when the provider never answers', async () => {
+    vi.useFakeTimers()
+    getOidcConfigMock.mockRejectedValue(new Error('connect ETIMEDOUT'))
+    const server = buildServer()
+
+    const registered = authPlugin.plugin.register(server)
+    const tracked = registered.catch((error) => error)
+
+    await vi.advanceTimersByTimeAsync(7000)
+    const error = await tracked
+
+    expect(error.message).toBe(
+      `Could not reach the OIDC provider at ${discoveryUrl} after 4 attempts`
+    )
+    expect(getOidcConfigMock).toHaveBeenCalledTimes(4)
+    expect(server.logger.warn).toHaveBeenCalledTimes(3)
+    expect(server.auth.strategy).not.toHaveBeenCalledWith(
+      'defra-id',
+      'bell',
+      expect.anything()
+    )
   })
 
   test('getBellOptions.location stores safe redirect and returns redirectUrl', () => {

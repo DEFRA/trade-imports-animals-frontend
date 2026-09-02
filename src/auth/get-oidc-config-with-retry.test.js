@@ -87,22 +87,28 @@ describe('getOidcConfigWithRetry', () => {
     expect(logger.warn).toHaveBeenCalledTimes(1)
   })
 
-  test('gives up after four timed-out attempts and throws an error naming the discovery URL', async () => {
+  test('gives up only after the full 1s, 2s and 4s backoff and throws an error naming the discovery URL', async () => {
     wreckGetMock.mockRejectedValue(timedOut())
 
     const result = getOidcConfigWithRetry(logger)
-    const assertion = expect(result).rejects.toThrow(
+    let settled = false
+    const tracked = result.catch((error) => {
+      settled = true
+      return error
+    })
+
+    await vi.advanceTimersByTimeAsync(6999)
+    expect(settled).toBe(false)
+
+    await vi.advanceTimersByTimeAsync(1)
+    const error = await tracked
+
+    expect(error.message).toBe(
       `Could not reach the OIDC provider at ${discoveryUrl} after 4 attempts`
     )
-
-    await vi.advanceTimersByTimeAsync(7000)
-    await assertion
-
     expect(wreckGetMock).toHaveBeenCalledTimes(4)
-    expect(logger.error).toHaveBeenCalledWith(
-      expect.objectContaining({ discoveryUrl, attempts: 4 }),
-      'Could not reach the OIDC provider'
-    )
+    expect(logger.warn).toHaveBeenCalledTimes(3)
+    expect(logger.error).not.toHaveBeenCalled()
   })
 
   test('keeps the underlying timeout as the cause of the thrown error', async () => {
@@ -116,5 +122,29 @@ describe('getOidcConfigWithRetry', () => {
 
     expect(error).toBeInstanceOf(Error)
     expect(error.cause.code).toBe('ETIMEDOUT')
+  })
+
+  test('retries a provider that answers with a document it cannot use, keeping the parse failure as the cause', async () => {
+    const localDiscoveryUrl =
+      'http://localhost:3007/idp/.well-known/openid-configuration'
+    configGetMock.mockImplementation((key) => {
+      if (key === 'defraId.oidcDiscoveryUrl') return localDiscoveryUrl
+      if (key === 'tracing.header') return 'x-cdp-request-id'
+    })
+    wreckGetMock.mockResolvedValue({
+      payload: { token_endpoint: '/token', jwks_uri: '/jwks' }
+    })
+
+    const result = getOidcConfigWithRetry(logger)
+    const tracked = result.catch((error) => error)
+
+    await vi.advanceTimersByTimeAsync(7000)
+    const error = await tracked
+
+    expect(wreckGetMock).toHaveBeenCalledTimes(4)
+    expect(error.message).toBe(
+      `Could not reach the OIDC provider at ${localDiscoveryUrl} after 4 attempts`
+    )
+    expect(error.cause).toBeInstanceOf(TypeError)
   })
 })

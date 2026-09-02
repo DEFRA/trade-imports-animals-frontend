@@ -5,6 +5,9 @@ import { getPermissions } from '../../auth/get-permissions.js'
 import { getSafeRedirect } from '../../auth/get-safe-redirect.js'
 import { base } from '../app/shared/kit.js'
 
+const unableToSignIn = (h) =>
+  h.view('auth/unauthorised', base('Sorry, we are unable to sign you in'))
+
 export const authController = {
   signin: {
     handler: async function (_request, h) {
@@ -26,15 +29,23 @@ export const authController = {
           },
           'Bell auth failed for /auth/sign-in-oidc'
         )
-        return h.view(
-          'auth/unauthorised',
-          base('Sorry, we are unable to sign you in')
-        )
+        return unableToSignIn(h)
       }
 
       const { profile, token, refreshToken } = request.auth.credentials
-      // verify token returned from Defra Identity against public key
-      await verifyToken(token)
+      // Verifying the token against Defra Identity's public key reaches OIDC
+      // discovery and the JWKS endpoint, so a slow identity provider fails
+      // here on a sign-in the user has already completed. Show the sign-in
+      // failure page rather than a server error.
+      try {
+        await verifyToken(token)
+      } catch (err) {
+        request.logger?.error(
+          { err },
+          'Token verification failed for /auth/sign-in-oidc'
+        )
+        return unableToSignIn(h)
+      }
 
       // Typically permissions for the selected organisation would be available in the `roles` property of the token
       // However, when signing in with RPA credentials, the roles only include the role name and not the permissions
