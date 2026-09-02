@@ -13,7 +13,8 @@ vi.mock('@hapi/wreck', () => ({
   default: { get: wreckGetMock }
 }))
 
-vi.mock('./get-oidc-config.js', () => ({
+vi.mock('./get-oidc-config.js', async (importOriginal) => ({
+  ...(await importOriginal()),
   getOidcConfig: getOidcConfigMock
 }))
 
@@ -72,7 +73,8 @@ describe('verifyToken', () => {
     expect(getOidcConfigMock).toHaveBeenCalledTimes(1)
     expect(wreckGetMock).toHaveBeenCalledWith(jwksUri, {
       headers: { [tracingHeader]: traceId },
-      json: true
+      json: true,
+      timeout: 1000
     })
     expect(createPublicKeyMock).toHaveBeenCalledWith({
       key: jwk,

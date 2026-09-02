@@ -2,7 +2,7 @@ import { createPublicKey } from 'node:crypto'
 import Wreck from '@hapi/wreck'
 import Jwt from '@hapi/jwt'
 import { getTraceId } from '@defra/hapi-tracing'
-import { getOidcConfig } from './get-oidc-config.js'
+import { getOidcConfig, OIDC_TIMEOUT_MS } from './get-oidc-config.js'
 import { config } from '../config/config.js'
 
 async function verifyToken(token) {
@@ -10,7 +10,8 @@ async function verifyToken(token) {
 
   const { payload } = await Wreck.get(uri, {
     headers: { [config.get('tracing.header')]: getTraceId() ?? '' },
-    json: true
+    json: true,
+    timeout: OIDC_TIMEOUT_MS
   })
   const { keys } = payload
 
