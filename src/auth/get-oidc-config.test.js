@@ -50,7 +50,7 @@ describe('getOidcConfig', () => {
     expect(wreckGetMock).toHaveBeenCalledWith(localDiscoveryUrl, {
       headers: { [tracingHeader]: traceId },
       json: true,
-      timeout: 3000
+      timeout: 1000
     })
   })
 
@@ -198,7 +198,7 @@ describe('getOidcConfig', () => {
     expect(wreckGetMock).toHaveBeenCalledWith(localDiscoveryUrl, {
       headers: { [tracingHeader]: traceId },
       json: true,
-      timeout: 3000
+      timeout: 1000
     })
   })
 })

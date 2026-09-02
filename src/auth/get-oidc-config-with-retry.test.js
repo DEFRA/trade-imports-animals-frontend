@@ -60,7 +60,7 @@ describe('getOidcConfigWithRetry', () => {
     expect(wreckGetMock).toHaveBeenCalledTimes(1)
     expect(wreckGetMock).toHaveBeenCalledWith(
       discoveryUrl,
-      expect.objectContaining({ timeout: 3000 })
+      expect.objectContaining({ timeout: 1000 })
     )
     expect(logger.warn).not.toHaveBeenCalled()
   })
