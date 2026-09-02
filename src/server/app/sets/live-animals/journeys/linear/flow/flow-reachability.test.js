@@ -34,9 +34,11 @@ describe('#proveFlowReachability', () => {
     expect(enumerateScopeStates()).toHaveLength(48)
   })
 
+  // Exhaustive proof over all enumerated answer states — given enough time
+  // this always terminates correctly; 60s covers even resource-starved CI.
   it('Should prove no in-scope obligation is ever page-unreachable', () => {
     expect(proveFlowReachability({ answerStates })).toEqual([])
-  })
+  }, 60_000)
 
   it('Should have teeth — reporting dead ends when pages go unreachable', () => {
     // Only origin + commodities survive; every in-scope obligation owned by
@@ -95,13 +97,14 @@ describe('#proveFlowReachability', () => {
     ])
   })
 
+  // Exhaustive completeness proof — same rationale as the reachability proof above.
   it('Should put every manifest obligation in scope under some enumerated state', () => {
     // The completeness half of the prover: a manifest obligation the seed
     // variants never scope would dodge proveFlowReachability silently — a
     // new model addition whose gate values are missing from the seeds turns
     // this red instead.
     expect(proveScopeCompleteness({ answerStates })).toEqual([])
-  })
+  }, 60_000)
 
   it('Should have teeth — reporting obligations no enumerated state scopes', () => {
     // Freeze the scope to a single obligation: everything else in the

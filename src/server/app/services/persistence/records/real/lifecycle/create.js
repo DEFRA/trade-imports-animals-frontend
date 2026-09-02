@@ -4,11 +4,14 @@ import { headers } from '../http/headers.js'
 import { marshal } from '../marshal/document.js'
 
 // Backend mints the reference number; response carries the created notification.
-export const create = async () => {
+export const create = async (actor) => {
   const notificationResponse = await fetch(notificationsUrl, {
     method: 'POST',
     headers: headers(),
-    body: JSON.stringify({ notification: { fulfilments: [] } })
+    body: JSON.stringify({
+      notification: { fulfilments: [] },
+      ...(actor ? { actor } : {})
+    })
   })
   if (!notificationResponse.ok) {
     throw await failed('create notification', notificationResponse)

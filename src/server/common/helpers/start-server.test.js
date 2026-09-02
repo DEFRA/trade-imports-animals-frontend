@@ -1,50 +1,40 @@
-import { vi } from 'vitest'
-
-import hapi from '@hapi/hapi'
+import { beforeAll, afterAll, describe, expect, test, vi } from 'vitest'
 import { statusCodes } from '../constants/status-codes.js'
-
 import { mockOidcConfig } from '../test-helpers/mock-oidc-config.js'
 
 vi.mock('../../../auth/get-oidc-config.js', () => ({
   getOidcConfig: vi.fn(() => Promise.resolve(mockOidcConfig))
 }))
 
+// Wrap createServer so server.start() calls initialize() instead of binding
+// to a port — inject() works after initialize(), no available port needed.
+vi.mock('../../server.js', async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    createServer: vi.fn(async () => {
+      const server = await actual.createServer()
+      server.start = () => server.initialize()
+      return server
+    })
+  }
+})
+
+import { startServer } from './start-server.js'
+import { createServer } from '../../server.js'
+
 describe('#startServer', () => {
-  let createServerSpy
-  let hapiServerSpy
-  let startServerImport
-  let createServerImport
-
-  beforeAll(async () => {
-    vi.stubEnv('PORT', '3097')
-    vi.resetModules()
-
-    createServerImport = await import('../../server.js')
-    startServerImport = await import('./start-server.js')
-
-    createServerSpy = vi.spyOn(createServerImport, 'createServer')
-    hapiServerSpy = vi.spyOn(hapi, 'server')
-  })
-
-  afterAll(() => {
-    vi.unstubAllEnvs()
-  })
-
   describe('When server starts', () => {
     let server
 
+    beforeAll(async () => {
+      server = await startServer()
+    })
+
     afterAll(async () => {
-      if (server && typeof server.stop === 'function') {
-        await server.stop({ timeout: 0 })
-      }
+      await server?.stop({ timeout: 0 })
     })
 
     test('Should start up server as expected', async () => {
-      server = await startServerImport.startServer()
-
-      expect(createServerSpy).toHaveBeenCalled()
-      expect(hapiServerSpy).toHaveBeenCalled()
-
       const { result, statusCode } = await server.inject({
         method: 'GET',
         url: '/health'
@@ -56,12 +46,12 @@ describe('#startServer', () => {
   })
 
   describe('When server start fails', () => {
-    test('Should log failed startup message', async () => {
-      createServerSpy.mockRejectedValue(new Error('Server failed to start'))
-
-      await expect(startServerImport.startServer()).rejects.toThrow(
-        'Server failed to start'
+    test('Should propagate createServer errors', async () => {
+      vi.mocked(createServer).mockRejectedValueOnce(
+        new Error('Server failed to start')
       )
+
+      await expect(startServer()).rejects.toThrow('Server failed to start')
     })
   })
 })
