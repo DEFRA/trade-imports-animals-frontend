@@ -559,7 +559,10 @@ describe(`${SUITE} — outstanding referenced roles`, () => {
   })
 
   it('Should not flag an inline party the address book cannot empty', async () => {
-    const summary = await summaryFor(withoutParty(fullSeed, 'placeOfOrigin'))
+    const summary = await summaryFor({
+      ...fullSeed,
+      placeOfOrigin: { name: 'Origin Farm', addressId: 'gone' }
+    })
     expect(summary).toBeNull()
   })
 
