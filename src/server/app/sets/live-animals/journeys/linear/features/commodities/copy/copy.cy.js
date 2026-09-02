@@ -8,7 +8,8 @@ const plural = (count, noun) => `${count} ${noun}`
 export const copy = {
   search: {
     title: 'Beth ydych chi’n ei fewnforio?',
-    inset: 'Mae angen hysbysiad ar wahân ar gyfer pob tystysgrif iechyd.',
+    inset:
+      'Mae angen hysbysiad ar wahân ar gyfer pob tystysgrif iechyd. Rhaid hysbysu llwythi nad oes angen tystysgrif iechyd arnynt o hyd.',
     searchLabel: 'Chwilio am nwydd',
     searchHint:
       'Gallwch chwilio yn ôl enw’r nwydd (er enghraifft, Cow), cod nwyddau (0102), neu enw’r rhywogaeth (Bos taurus). Rhowch o leiaf 3 nod.',

@@ -41,6 +41,17 @@ describe('#copy', () => {
     )
   })
 
+  // A user reading only the first sentence could conclude that no health
+  // certificate means no notification. The second sentence closes that off.
+  it('Should tell the user that a consignment without a health certificate must still be notified', () => {
+    expect(copy.search.inset).toBe(
+      'A separate notification is required for each health certificate. Consignments that do not require a health certificate must still be notified.'
+    )
+    expect(copyCy.search.inset).toContain(
+      'Rhaid hysbysu llwythi nad oes angen tystysgrif iechyd arnynt o hyd.'
+    )
+  })
+
   it('Should interpolate countDrop', () => {
     expect(copy.consignmentDetails.errors.countDrop(3, BOS_TAURUS, 2)).toBe(
       'You have 3 identifier records for Bos taurus but entered 2 animals. Remove identifier records or keep the higher count.'
