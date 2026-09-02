@@ -4,6 +4,15 @@ export const copy = {
   search: {
     title: 'What are you importing?',
     inset: 'Each health certificate requires a separate notification.',
+    searchLabel: 'Search for a commodity',
+    searchHint:
+      'You can search by commodity name (for example, Cow), commodity code (0102), or species name (Bos taurus). Enter at least 3 characters.',
+    searchButton: 'Search',
+    noResults: 'No results found',
+    selected: {
+      heading: (count) => `${count} selected`,
+      clearAll: 'Clear all'
+    },
     help: {
       summary: 'Help with commodity codes',
       text: 'Commodity codes are used to classify goods for import and export.'
