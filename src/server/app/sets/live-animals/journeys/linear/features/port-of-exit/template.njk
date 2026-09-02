@@ -23,6 +23,8 @@
       items: portItems
     }) }}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+    {# Second page of the exit-details row — reached from the destination
+       country page, not from the hub, so it ends with the primary alone. #}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions, showReturnControls = false) }}
   </form>
 {% endblock %}

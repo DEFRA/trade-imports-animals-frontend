@@ -8,6 +8,7 @@ import {
 import { COUNTRY_LABELS } from '../src/server/app/services/countries/stub.js'
 import { PORTS } from '../src/server/app/services/ports/stub.js'
 import { copy as transportCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js'
+import { copy as sharedAppCopy } from '../src/server/app/shared/copy.en.js'
 
 export { signIn } from './sign-in.js'
 
@@ -323,4 +324,28 @@ export const completeAnswerSections = async (page) => {
   await task('Contact address')
   await page.getByRole('radio', { name: values.contactAddress.name }).check()
   await save()
+}
+
+/**
+ * A page reached from another page ends with the primary alone: the shared
+ * saveActions macro emits no "Save and return to hub" button and no
+ * "Cancel and return to hub" link.
+ */
+export const expectPageEndsWithPrimaryAlone = async (page) => {
+  await expect(
+    page.getByRole('button', {
+      name: sharedAppCopy.saveActions.saveAndContinue,
+      exact: true
+    })
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', {
+      name: sharedAppCopy.saveActions.saveAndReturnToHub
+    })
+  ).toHaveCount(0)
+  await expect(
+    page.getByRole('link', {
+      name: sharedAppCopy.saveActions.cancelAndReturnToHub
+    })
+  ).toHaveCount(0)
 }

@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
+  expectPageEndsWithPrimaryAlone,
   journeyUrl,
   signIn,
   startNotification,
@@ -349,6 +350,14 @@ test.describe('private transporter rendering and optionality', () => {
     await submit(page)
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  })
+
+  test('private transporter page ends with the primary alone, being reached from the transporter type page', async ({
+    page
+  }) => {
+    await openPrivate(page)
+
+    await expectPageEndsWithPrimaryAlone(page)
   })
 })
 
