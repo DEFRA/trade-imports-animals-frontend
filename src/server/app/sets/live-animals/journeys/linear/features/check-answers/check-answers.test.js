@@ -558,6 +558,15 @@ describe(`${SUITE} — outstanding referenced roles`, () => {
     expect(await summaryFor(fullSeed)).toBeNull()
   })
 
+  it('Should carry no error summary for a reference the address book still holds', async () => {
+    const summary = await summaryFor({
+      ...fullSeed,
+      consignor: { addressId: 'astra-rosales' }
+    })
+
+    expect(summary).toBeNull()
+  })
+
   it('Should not flag an inline party the address book cannot empty', async () => {
     const summary = await summaryFor({
       ...fullSeed,
