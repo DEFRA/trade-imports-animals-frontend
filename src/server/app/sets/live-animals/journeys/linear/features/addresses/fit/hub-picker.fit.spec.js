@@ -6,6 +6,7 @@ import {
   unlockSections,
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { PARTIES } from '../parties.js'
 
@@ -68,7 +69,12 @@ const searchAddresses = async (page, query) => {
 }
 
 const saveAndContinue = (page) =>
-  page.getByRole('button', { name: copy.picker.saveAndContinue }).click()
+  page
+    .getByRole('button', {
+      name: sharedCopy.saveActions.saveAndContinue,
+      exact: true
+    })
+    .click()
 
 test.describe('addresses hub', () => {
   test.beforeEach(async ({ page }) => {

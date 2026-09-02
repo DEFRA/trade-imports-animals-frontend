@@ -59,7 +59,6 @@ export const copy = {
     },
     selectRowPrefix: 'Dewis',
     viewDetails: 'Gweld manylion',
-    viewDetailsFor: 'ar gyfer',
-    saveAndContinue: 'Cadw a pharhau'
+    viewDetailsFor: 'ar gyfer'
   }
 }

@@ -4,6 +4,7 @@
 {% from "govuk/components/table/macro.njk" import govukTable %}
 {% from "govuk/components/pagination/macro.njk" import govukPagination %}
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
+{% from "shared/save-actions.njk" import saveActions %}
 
 {# Search + paginated results table with a radio per row (design 05-03..06).
    The whole picker is one form: the search button and Save and continue are
@@ -66,7 +67,7 @@
   {% endif %}
 {% endmacro %}
 
-{% macro addressPicker(picker, crumb, copy) %}
+{% macro addressPicker(picker, crumb, copy, saveActionsCopy, hubHref) %}
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
@@ -107,6 +108,15 @@
       <p class="govuk-body">{{ copy.noMatches }}</p>
     {% endif %}
 
-    {{ govukButton({ text: copy.saveAndContinue, name: "action", value: "save" }) }}
+    {# A picker is reached from the consignment addresses page, not from the
+       hub, so it ends with the primary alone — but the ending comes out of the
+       shared macro like every other page's. The primary keeps its own `action`
+       value so the form can tell it from the search submit above. #}
+    {{ saveActions(
+      hubHref,
+      { text: saveActionsCopy.saveAndContinue, name: "action", value: "save" },
+      saveActionsCopy,
+      false
+    ) }}
   </form>
 {% endmacro %}

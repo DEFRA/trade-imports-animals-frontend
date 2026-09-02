@@ -24,6 +24,8 @@
       items: purposeOptions
     }) }}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+    {# Second page of the import-reason row — reached from the reason page,
+       not from the hub, so it ends with the primary alone. #}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions, showReturnControls = false) }}
   </form>
 {% endblock %}

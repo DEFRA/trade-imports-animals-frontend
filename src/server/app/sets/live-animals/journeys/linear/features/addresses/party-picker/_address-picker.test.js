@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { nunjucksConfig } from '../../../../../../../../../config/nunjucks/nunjucks.js'
+import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
 import { copy as addressesCopy } from '../copy/copy.en.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
@@ -16,6 +17,19 @@ const renderResults = (rows) =>
         resultsCaption: pickerCopy.resultsCaption(rows.length, rows.length)
       },
       copy: pickerCopy
+    }
+  )
+
+const renderPicker = () =>
+  environment.renderString(
+    `{% from "live-animals/journeys/linear/features/addresses/party-picker/_address-picker.njk" import addressPicker %}
+     {{ addressPicker(picker, crumb, copy, saveActionsCopy, hubHref) }}`,
+    {
+      picker: { page: 1, rows: [], query: '' },
+      crumb: 'test-crumb',
+      copy: pickerCopy,
+      saveActionsCopy: sharedEn.saveActions,
+      hubHref: '/notifications/journey-1/hub'
     }
   )
 
@@ -49,5 +63,20 @@ describe('addressPickerResults macro', () => {
     expect(html).toContain(
       '<span class="govuk-visually-hidden">Select Astra Rosales</span>'
     )
+  })
+})
+
+describe('addressPicker macro', () => {
+  it('Should end with the primary alone, since a picker is reached from the consignment addresses page', () => {
+    const html = renderPicker()
+
+    // The picker's controller redirects to the addresses page and never reads
+    // `exit`, so a rendered "Save and return to hub" would save and then land
+    // the trader in the wrong place. The ending must stay primary-only.
+    expect(html).toContain(sharedEn.saveActions.saveAndContinue)
+    expect(html).toContain('value="save"')
+    expect(html).not.toContain(sharedEn.saveActions.saveAndReturnToHub)
+    expect(html).not.toContain(sharedEn.saveActions.cancelAndReturnToHub)
+    expect(html).not.toContain('name="exit"')
   })
 })

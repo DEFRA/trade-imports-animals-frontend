@@ -58,7 +58,6 @@ export const copy = {
     },
     selectRowPrefix: 'Select',
     viewDetails: 'View details',
-    viewDetailsFor: 'for',
-    saveAndContinue: 'Save and continue'
+    viewDetailsFor: 'for'
   }
 }

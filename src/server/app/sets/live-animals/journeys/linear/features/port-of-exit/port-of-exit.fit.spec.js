@@ -1,7 +1,10 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
-import { answerOriginEntry } from '../../../../../../../../../fit/live-animals-journey.js'
+import {
+  answerOriginEntry,
+  expectPageEndsWithPrimaryAlone
+} from '../../../../../../../../../fit/live-animals-journey.js'
 import { portsOfEntry } from '../../../../../../services/_capture/fixtures.js'
 import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
@@ -58,6 +61,12 @@ test.describe('port-of-exit feature', () => {
         name: `${port.name} (${port.code})`
       }))
     )
+  })
+
+  test('ends with the primary alone, being reached from the destination country page', async ({
+    page
+  }) => {
+    await expectPageEndsWithPrimaryAlone(page)
   })
 
   test('port validation: when no port is selected, links to and focuses the empty select', async ({
