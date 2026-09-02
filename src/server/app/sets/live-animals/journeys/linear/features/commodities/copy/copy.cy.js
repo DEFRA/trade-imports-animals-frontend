@@ -9,6 +9,15 @@ export const copy = {
   search: {
     title: 'Beth ydych chi’n ei fewnforio?',
     inset: 'Mae angen hysbysiad ar wahân ar gyfer pob tystysgrif iechyd.',
+    searchLabel: 'Chwilio am nwydd',
+    searchHint:
+      'Gallwch chwilio yn ôl enw’r nwydd (er enghraifft, Cow), cod nwyddau (0102), neu enw’r rhywogaeth (Bos taurus). Rhowch o leiaf 3 nod.',
+    searchButton: 'Chwilio',
+    noResults: 'Ni chanfuwyd unrhyw ganlyniadau',
+    selected: {
+      heading: (count) => `${count} wedi’u dewis`,
+      clearAll: 'Clirio’r cyfan'
+    },
     help: {
       summary: 'Help gyda chodau nwyddau',
       text: 'Defnyddir codau nwyddau i ddosbarthu nwyddau ar gyfer mewnforio ac allforio.'

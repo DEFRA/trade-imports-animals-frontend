@@ -3,7 +3,8 @@ import { expect, test } from '@playwright/test'
 
 import {
   answerOriginEntry,
-  expectPageEndsWithPrimaryAlone
+  expectPageEndsWithPrimaryAlone,
+  selectSpecies
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
@@ -22,7 +23,7 @@ const startAtCphNumber = async (page) => {
   await answerOriginEntry(page)
 
   await page.goto(commodityUrl)
-  await page.getByRole('checkbox', { name: 'Bos taurus' }).check()
+  await selectSpecies(page, ['Bos taurus'])
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await expect(page).toHaveURL(/\/notifications\/[^/]+\/consignment-details$/)
 

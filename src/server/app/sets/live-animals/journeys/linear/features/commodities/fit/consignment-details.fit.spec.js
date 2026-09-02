@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   answerCountryOfOrigin,
+  expectSpeciesSelected,
   journeyUrl,
   selectSpecies,
   signIn,
@@ -149,7 +150,7 @@ test.describe('commodity consignment details — persistence and accessibility',
     await page
       .getByRole('link', { name: copy.consignmentDetails.addAnother })
       .click()
-    await expect(page.getByRole('checkbox', { name: BOS_TAURUS })).toBeChecked()
+    await expectSpeciesSelected(page, BOS_TAURUS)
     await selectSpecies(page, ['Canis lupus familiaris'])
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(page.locator(GOVUK_TABLE)).toContainText('Dog')

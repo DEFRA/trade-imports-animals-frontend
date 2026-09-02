@@ -175,11 +175,22 @@ export const answerCountryOfOrigin = async (page) => {
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
+// The commodity page lists nothing until it is searched, so a species is
+// reached the way a trader reaches it: search, then tick the result.
+export const searchCommodities = async (page, query) => {
+  await page.getByLabel('Search for a commodity').fill(query)
+  await page.getByRole('button', { name: 'Search', exact: true }).click()
+}
+
 export const selectSpecies = async (page, speciesNames) => {
   for (const name of speciesNames) {
+    await searchCommodities(page, name)
     await page.getByRole('checkbox', { name }).check()
   }
 }
+
+export const expectSpeciesSelected = async (page, name) =>
+  expect(page.locator('#commodity-selection')).toContainText(name)
 
 export const unlockSections = async (page) => {
   await answerCountryOfOrigin(page)
