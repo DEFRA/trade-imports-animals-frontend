@@ -31,14 +31,15 @@ const readViewOf = async (request, journey) => {
     undefined,
     flowOnlyAnswers
   )
-  const answers = await answersForRead(request, assembled.answers)
-  if (answers === assembled.answers) {
+  const { answers: storedAnswers } = assembled
+  const answers = await answersForRead(request, storedAnswers)
+  if (answers === storedAnswers) {
     return {
       journey,
       fulfilment: journey.fulfilment,
       evaluation: assembled.evaluation,
-      answers: assembled.answers,
-      storedAnswers: assembled.answers,
+      answers: storedAnswers,
+      storedAnswers,
       scope: assembled.scope,
       flowOnlyAnswers
     }
@@ -59,7 +60,7 @@ const readViewOf = async (request, journey) => {
     fulfilment: journey.fulfilment,
     evaluation,
     answers,
-    storedAnswers: assembled.answers,
+    storedAnswers,
     scope: makeScopeFromEvaluation(evaluation, answers),
     flowOnlyAnswers
   }
