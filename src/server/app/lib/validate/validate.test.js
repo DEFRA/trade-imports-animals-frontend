@@ -10,12 +10,14 @@ import {
   oneOf,
   postcode,
   requiredExactDigits,
+  requiredMaxText,
   requiredOneOf,
   requiredText,
   ukPhone,
   validate,
   vehicleReg
 } from './index.js'
+import { validatorDefaults } from '../../shared/copy.en.js'
 
 const run = (schema, payload) => validate(schema, payload)
 
@@ -23,6 +25,9 @@ const FULL_NAME_REQUIRED_MESSAGE = 'Enter your full name'
 const CPH_REQUIRED_MESSAGE = 'Enter a CPH number'
 const CPH_LENGTH_MESSAGE = 'CPH number must be exactly 9 digits'
 const COMMODITY_REQUIRED_MESSAGE = 'Select a commodity'
+const REGION_CODE_REQUIRED_MESSAGE = 'Enter the region of origin code'
+const REGION_CODE_MAX_LENGTH_MESSAGE =
+  'Region of origin code must be 5 characters or less'
 
 describe('#requiredText — the sole save-blocking primitive', () => {
   const schema = requiredText('fullName', FULL_NAME_REQUIRED_MESSAGE)
@@ -197,6 +202,45 @@ describe('#maxText — length cap', () => {
     expect(
       run(schema, { description: 'far too long to allow' }).errors
     ).toHaveProperty('description')
+  })
+})
+
+describe('#requiredMaxText — save-blocking text with a length cap', () => {
+  const schema = requiredMaxText('regionCode', 5, {
+    required: REGION_CODE_REQUIRED_MESSAGE,
+    maxLength: REGION_CODE_MAX_LENGTH_MESSAGE
+  })
+
+  it('Should accept text within the cap', () => {
+    expect(run(schema, { regionCode: 'FR-75' }).errors).toBeNull()
+  })
+
+  it('Should block blank, whitespace-only and missing values', () => {
+    expect(run(schema, { regionCode: '' }).errors).toEqual({
+      regionCode: REGION_CODE_REQUIRED_MESSAGE
+    })
+    expect(run(schema, { regionCode: '   ' }).errors).toEqual({
+      regionCode: REGION_CODE_REQUIRED_MESSAGE
+    })
+    expect(run(schema, {}).errors).toEqual({
+      regionCode: REGION_CODE_REQUIRED_MESSAGE
+    })
+  })
+
+  it('Should reject text over the cap with the length message', () => {
+    expect(run(schema, { regionCode: 'ABCDEF' }).errors).toEqual({
+      regionCode: REGION_CODE_MAX_LENGTH_MESSAGE
+    })
+  })
+
+  it('Should fall back to the shared length message when none is given', () => {
+    const withoutLengthMessage = requiredMaxText('regionCode', 5, {
+      required: REGION_CODE_REQUIRED_MESSAGE
+    })
+
+    expect(run(withoutLengthMessage, { regionCode: 'ABCDEF' }).errors).toEqual({
+      regionCode: validatorDefaults.maxLength(5)
+    })
   })
 })
 

@@ -23,6 +23,7 @@ export const copy = {
   },
   errors: {
     countryRequired: "Dewiswch y wlad y mae'r anifail yn tarddu ohoni",
+    regionCodeRequired: 'Rhowch god rhanbarth tarddiad',
     regionCodeMaxLength:
       "Rhaid i'r cod rhanbarth tarddiad fod yn 5 nod neu lai",
     internalReferenceMaxLength:

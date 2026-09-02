@@ -29,6 +29,7 @@ const get = origin.routes.find((route) => route.method === 'GET').handler
 
 const COUNTRY_REQUIRED_MESSAGE =
   'Select the country where the animal originates from'
+const REGION_CODE_REQUIRED_MESSAGE = 'Enter the region of origin code'
 
 describe('POST /origin — invalid payload', () => {
   beforeAll(() => {
@@ -144,11 +145,72 @@ describe('POST /origin — region of origin code prefix and suffix', () => {
     expect(result.after.regionOfOriginCode).toBe('FR-75')
   })
 
-  it('Should store nothing when the typed part is blank', async () => {
+  it('Should hold the user on the page when the typed part is blank', async () => {
     const result = await postSuffix('   ')
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
+      REGION_CODE_REQUIRED_MESSAGE
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should hold the user on the page when the typed part is only the prefix', async () => {
+    const result = await postSuffix('fr-')
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
+      REGION_CODE_REQUIRED_MESSAGE
+    )
+    expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('fr-')
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should hold the user on the page when the box was never submitted', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'yes',
+        internalReferenceNumber: ''
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
+      REGION_CODE_REQUIRED_MESSAGE
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should let a blank box through when the answer is No', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'no',
+        regionOfOriginCodeSuffix: '',
+        internalReferenceNumber: ''
+      }
+    })
 
     expect(result.view).toBeUndefined()
     expect(result.after.regionOfOriginCode).toBe('')
+  })
+
+  it('Should reject a typed part over 5 characters even when the answer is No', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'no',
+        regionOfOriginCodeSuffix: 'ABCDEF',
+        internalReferenceNumber: ''
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
+      'Region of origin code must be 5 characters or less'
+    )
+    expect(result.after).toEqual(result.before)
   })
 
   it('Should reject a typed part over 5 characters and commit nothing', async () => {

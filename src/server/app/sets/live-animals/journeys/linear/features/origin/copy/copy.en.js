@@ -22,6 +22,7 @@ export const copy = {
   },
   errors: {
     countryRequired: 'Select the country where the animal originates from',
+    regionCodeRequired: 'Enter the region of origin code',
     regionCodeMaxLength: 'Region of origin code must be 5 characters or less',
     internalReferenceMaxLength:
       'Internal reference must be 58 characters or less',
