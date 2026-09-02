@@ -112,6 +112,20 @@ test.describe('origin feature', () => {
     expect(renderedCountries).toEqual(countriesOrigin)
   })
 
+  // The strip is drawn from the first request, before anything is saved: the
+  // reference is minted when the notification is created, so the user starting
+  // one can read it off the page they land on.
+  test('shows the draft status and the notification reference before any answer is saved', async ({
+    page
+  }) => {
+    const reference = new URL(page.url()).pathname.split('/').at(-2)
+
+    const strip = page.locator('.app-journey-strip')
+    await expect(strip).toBeVisible()
+    await expect(strip).toContainText(sharedCopy.journeyStrip.draft)
+    await expect(strip).toContainText(reference)
+  })
+
   test('saves valid values, redirects to the next page and persists the answer', async ({
     page
   }) => {
