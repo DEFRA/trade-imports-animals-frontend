@@ -158,14 +158,18 @@ const fields = (requirement) =>
     )
   )
 
-const journeyIfStarted = (journey, answers) =>
-  hasCommittedNotificationAnswers(answers) ? journey : undefined
-
+// The back link is the one thing on this page told by what has been saved: a
+// notification with nothing saved has no hub to go back to, so it goes to the
+// dashboard instead. The status strip does not follow it — see `render`.
 const backLinkFor = (journey, answers) =>
   hasCommittedNotificationAnswers(answers)
     ? hubPath(journey.journeyId)
     : dashboardPath()
 
+// The journey always reaches the layout, so the status strip — the Draft tag
+// and the notification reference — is drawn from the first request, matching
+// every later page. The reference exists by then: starting a notification
+// creates the record, and the user arrives here redirected under it.
 const render = (
   h,
   journey,
@@ -177,8 +181,7 @@ const render = (
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: backLinkFor(journey, answers),
-      journey: journeyIfStarted(journey, answers),
-      journeyId: journey.journeyId,
+      journey,
       page,
       recoverableError
     }),

@@ -23,6 +23,7 @@ import { routes as importReasonRoutes } from './import-reason/controller.js'
 
 const JOURNEY_REFERENCE = 'GBN-AG-26-ABC123'
 const DRAFT_TAG = { text: 'Draft', classes: 'govuk-tag--blue' }
+const DASHBOARD_PATH = '/'
 
 const getHandlerOf = (routes) =>
   routes.find((route) => route.method === 'GET').handler
@@ -108,19 +109,30 @@ describe('journey reference strip', () => {
     expect(context.journeyStrip).toBeUndefined()
   })
 
-  it('Should render no strip on origin while the journey has no saved answers', async () => {
-    const { context } = await renderWith(getHandlerOf(originRoutes))
-    expect(context.journeyStrip).toBeNull()
+  // The reference is minted when the notification is created, so origin can
+  // show it on the very first request — before the user has saved anything.
+  it('Should render the strip on origin while the journey has no saved answers', async () => {
+    const { journey, context } = await renderWith(getHandlerOf(originRoutes))
+    expect(context.journeyStrip).toEqual({
+      reference: journey.journeyId,
+      status: DRAFT_TAG
+    })
   })
 
   // Real mode rebuilds `answers` from the stored notification, so a fresh
-  // backend DRAFT loads carrying its server-minted referenceNumber. That is
-  // the backend's field, not a saved answer — origin stays strip-less.
-  it('Should render no strip on origin for a real-mode fresh draft carrying only the backend reference', async () => {
-    const { context } = await renderWith(getHandlerOf(originRoutes), {
+  // backend DRAFT loads carrying its server-minted referenceNumber. The strip
+  // is drawn either way; the back link is the one thing still told by saved
+  // answers, and the backend's own field is not one — so it stays on the
+  // dashboard rather than the hub.
+  it('Should render the strip but keep the dashboard back link for a real-mode fresh draft carrying only the backend reference', async () => {
+    const { journey, context } = await renderWith(getHandlerOf(originRoutes), {
       referenceNumber: 'GBN-AG-26-29Q5Q7'
     })
-    expect(context.journeyStrip).toBeNull()
+    expect(context.journeyStrip).toEqual({
+      reference: journey.journeyId,
+      status: DRAFT_TAG
+    })
+    expect(context.backLink).toBe(DASHBOARD_PATH)
   })
 
   it('Should render the strip on origin once the journey has saved answers', async () => {
