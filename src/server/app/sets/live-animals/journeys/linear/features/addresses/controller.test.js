@@ -173,6 +173,15 @@ describe('GET addresses — change context', () => {
 
     expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })
+})
+
+describe('POST addresses — change context', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
 
   it('Should exit to check your answers when continuing under change context', async () => {
     const result = await driveHandler(postAddresses, { query: { change: '1' } })
