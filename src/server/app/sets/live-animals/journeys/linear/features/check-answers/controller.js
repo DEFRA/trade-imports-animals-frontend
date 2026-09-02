@@ -123,7 +123,13 @@ const post = async (request, h) => {
   // Same source as the GET, or the refusal and the page would disagree.
   const source = storedAnswers ?? answers
   const parties = await resolveParties(request, source)
-  if (Object.keys(outstandingPartyErrors(source, parties)).length > 0) {
+  // A submitted notification is read-only: the GET zeroes its party errors, so
+  // the POST must not refuse it either.
+  const readOnly = journey.status === state.SUBMITTED
+  if (
+    !readOnly &&
+    Object.keys(outstandingPartyErrors(source, parties)).length > 0
+  ) {
     const rendered = await renderNotificationView(request, h, {
       disableAutoFocus: false
     })

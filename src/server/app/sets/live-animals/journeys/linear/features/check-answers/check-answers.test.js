@@ -735,4 +735,21 @@ describe(`${SUITE} — POST navigation`, () => {
 
     expect(view.context.errorSummary.disableAutoFocus).toBe(false)
   })
+
+  it('Should not refuse a submitted notification carrying a deleted address', async () => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, {
+      ...fullSeed,
+      consignor: { addressId: 'gone' }
+    })
+    await store.submit(journey.journeyId)
+
+    const response = await postHandler(
+      journeyRequest(journey.journeyId),
+      stubH()
+    )
+
+    expect(response.statusCode).not.toBe(400)
+    expect(response.redirect).toBeDefined()
+  })
 })
