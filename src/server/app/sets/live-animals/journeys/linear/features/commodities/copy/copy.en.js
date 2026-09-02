@@ -15,7 +15,13 @@ export const copy = {
     },
     help: {
       summary: 'Help with commodity codes',
-      text: 'Commodity codes are used to classify goods for import and export.'
+      reference:
+        'Commodity codes are internationally recognised reference numbers.',
+      describes:
+        'A commodity code describes a specific product when importing or exporting goods.',
+      lookupPrefix: 'You can look up commodity codes using the',
+      lookupLink: 'Trade Tariff tool (opens in a new tab)',
+      lookupHref: 'https://www.gov.uk/trade-tariff'
     },
     errors: {
       selectCommodity: 'Select a commodity'

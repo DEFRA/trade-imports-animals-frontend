@@ -20,7 +20,13 @@ export const copy = {
     },
     help: {
       summary: 'Help gyda chodau nwyddau',
-      text: 'Defnyddir codau nwyddau i ddosbarthu nwyddau ar gyfer mewnforio ac allforio.'
+      reference:
+        'Mae codau nwyddau yn rhifau cyfeirio a gydnabyddir yn rhyngwladol.',
+      describes:
+        'Mae cod nwyddau yn disgrifio cynnyrch penodol wrth fewnforio neu allforio nwyddau.',
+      lookupPrefix: 'Gallwch chwilio am godau nwyddau gan ddefnyddio’r',
+      lookupLink: 'teclyn Tariff Masnach (yn agor mewn tab newydd)',
+      lookupHref: 'https://www.gov.uk/trade-tariff'
     },
     errors: {
       selectCommodity: 'Dewiswch nwydd'
