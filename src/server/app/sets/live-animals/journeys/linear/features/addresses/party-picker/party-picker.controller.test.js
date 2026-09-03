@@ -339,3 +339,52 @@ describe('The five spokes share the one picker', () => {
     }
   })
 })
+
+// A trader sent here from check your answers to replace an address it cannot
+// show has to end up back there. Every way out of the picker keeps the context,
+// so the hub it returns to can make that exit.
+describe('/consignors/select — change context', () => {
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  it('Should hand the save back to the hub still changing', async () => {
+    const result = await driveHandler(postConsignor, {
+      payload: { action: 'save', party: ALPINE_DAIRY_ID },
+      query: { change: '1' }
+    })
+
+    expect(result.response).toEqual({
+      redirect: `${pagePath(result.journeyId, 'addresses')}?change=1`
+    })
+    expect(result.after.consignor).toEqual({ addressId: ALPINE_DAIRY_ID })
+  })
+
+  it('Should point Back at the hub still changing', async () => {
+    const result = await driveHandler(getConsignor, { query: { change: '1' } })
+
+    expect(result.view.context.backLink).toBe(
+      `${pagePath(result.journeyId, 'addresses')}?change=1`
+    )
+  })
+
+  it('Should keep changing across a paged link, beside the search and the selection', async () => {
+    const result = await driveHandler(getConsignor, {
+      query: { page: '2', selected: DANISH_MEAT_ID, change: '1' }
+    })
+
+    expect(pickerFrom(result).pagination.next.href).toBe(
+      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=3&selected=${DANISH_MEAT_ID}&change=1`
+    )
+  })
+
+  it('Should leave the hub link and the paged links plain when not changing', async () => {
+    const result = await driveHandler(getConsignor, {
+      query: { page: '2', selected: DANISH_MEAT_ID }
+    })
+
+    expect(result.view.context.backLink).toBe(
+      pagePath(result.journeyId, 'addresses')
+    )
+    expect(pickerFrom(result).pagination.next.href).not.toContain('change')
+  })
+})

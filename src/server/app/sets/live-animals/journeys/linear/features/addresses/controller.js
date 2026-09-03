@@ -29,7 +29,7 @@ const CPH_ROW = {
   slug: 'cph-number?return=addresses'
 }
 
-const hubRow = (journeyId, { title, hint, slug }, valueText) => ({
+const hubRow = (href, { title, hint }, valueText) => ({
   key: {
     html: `<span>${title}</span><span class="govuk-hint govuk-!-display-block govuk-!-margin-bottom-0">${hint}</span>`
   },
@@ -37,7 +37,7 @@ const hubRow = (journeyId, { title, hint, slug }, valueText) => ({
   actions: {
     items: [
       {
-        href: pagePath(journeyId, slug),
+        href,
         text: valueText ? copy.change : copy.add,
         visuallyHiddenText: title.toLowerCase()
       }
@@ -45,10 +45,26 @@ const hubRow = (journeyId, { title, hint, slug }, valueText) => ({
   }
 })
 
-const rows = (journeyId, answers, parties) => [
-  ...PARTIES.map((party) => hubRow(journeyId, party, parties[party.id]?.name)),
+// A party row keeps change context so the picker can hand the trader back here
+// and this page's Continue can return them to check your answers. The CPH row
+// does not: its slug already carries `?return=addresses`, and it is a different
+// obligation reached by its own route.
+const rows = (request, journeyId, answers, parties) => [
+  ...PARTIES.map((party) =>
+    hubRow(
+      kit.withChangeContext(request, pagePath(journeyId, party.slug)),
+      party,
+      parties[party.id]?.name
+    )
+  ),
   ...(isCphApplicable(answers)
-    ? [hubRow(journeyId, CPH_ROW, answers.countyParishHoldingCph)]
+    ? [
+        hubRow(
+          pagePath(journeyId, CPH_ROW.slug),
+          CPH_ROW,
+          answers.countyParishHoldingCph
+        )
+      ]
     : [])
 ]
 
@@ -57,14 +73,19 @@ const get = async (request, h) => {
   // A referenced party shows the address book's current details, so a colleague's
   // edit reaches this draft with no action from the trader (AC4).
   const parties = await resolveParties(request, answers)
+  // Reached from a Change link, Back has to return to the summary that sent the
+  // trader here rather than dropping them on the task list.
+  const backLink = kit.changeContext(request)
+    ? pagePath(journey.journeyId, kit.CYA_SLUG)
+    : hubPath(journey.journeyId)
   return h.view(view, {
     ...kit.base(copy.title, {
-      backLink: hubPath(journey.journeyId),
+      backLink,
       journey,
       page
     }),
     copy,
-    rows: rows(journey.journeyId, answers, parties)
+    rows: rows(request, journey.journeyId, answers, parties)
   })
 }
 

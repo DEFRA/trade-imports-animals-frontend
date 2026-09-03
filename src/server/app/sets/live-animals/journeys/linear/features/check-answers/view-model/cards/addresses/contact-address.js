@@ -19,7 +19,7 @@ export const contactAddressCard = (
       copy.rows.address,
       parties.contactAddress,
       'contactAddress',
-      copy.hidden.contactAddress
+      { visuallyHiddenText: copy.hidden.contactAddress }
     )
   ]
 })

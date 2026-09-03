@@ -110,5 +110,14 @@ export const copy = {
     heading: 'Now submit your notification',
     body: 'Continue to the declaration to submit your notification.',
     button: 'Continue'
+  },
+  errors: {
+    prefix: 'Error:',
+    parties: {
+      consignor: 'Select an address for the consignor',
+      consignee: 'Select an address for the consignee',
+      importer: 'Select an address for the importer',
+      placeOfDestination: 'Select an address for the place of destination'
+    }
   }
 }

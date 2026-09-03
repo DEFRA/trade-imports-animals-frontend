@@ -150,15 +150,26 @@ test.describe('check-answers feature navigation and submission', () => {
     ).toEqual([])
   })
 
-  test('incomplete journey cannot continue to declaration', async ({
+  // An address error belongs to a reference that no longer resolves, not to a
+  // role nobody has reached yet. A new journey must read as unanswered.
+  test('new journey shows no address error before a role has been answered', async ({
     page
   }) => {
     await startNotification(page)
     const hubUrl = journeyUrl(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
+    await expect(rowFor(page, copy.rows.consignor)).toContainText(
+      copy.notProvided
+    )
+    await expect(
+      page.getByRole('link', { name: copy.errors.parties.consignor })
+    ).toBeHidden()
+
     await page.getByRole('button', { name: copy.submit.button }).click()
 
+    // Continue is not refused, so it leaves the review page: the incomplete
+    // journey sends it back to the hub rather than on to the declaration.
     await expect(page).toHaveURL(hubUrl)
   })
 })

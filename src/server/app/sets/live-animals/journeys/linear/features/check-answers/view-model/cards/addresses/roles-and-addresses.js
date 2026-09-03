@@ -9,12 +9,16 @@ const copy = copyFor({ en, cy })
 
 /** `parties` carries the same party answers with their address-book references
  * resolved to current details. It defaults to `answers` so a caller holding only
- * inline addresses renders exactly as before. */
+ * inline addresses renders exactly as before.
+ *
+ * `partyErrors` is computed once by the controller and threaded down, so the
+ * rows and the error summary always agree on which roles are outstanding. */
 export const rolesAndAddressesCard = (
   journeyId,
   answers,
   readOnly,
-  parties = answers
+  parties = answers,
+  partyErrors = {}
 ) => ({
   title: copy.cards.rolesAndAddresses,
   rows: [
@@ -30,28 +34,32 @@ export const rolesAndAddressesCard = (
       readOnly,
       copy.rows.consignor,
       parties.consignor,
-      'consignor'
+      'consignor',
+      { errorText: partyErrors.consignor }
     ),
     partyRow(
       journeyId,
       readOnly,
       copy.rows.consignee,
       parties.consignee,
-      'consignee'
+      'consignee',
+      { errorText: partyErrors.consignee }
     ),
     partyRow(
       journeyId,
       readOnly,
       copy.rows.importer,
       parties.importer,
-      'importer'
+      'importer',
+      { errorText: partyErrors.importer }
     ),
     partyRow(
       journeyId,
       readOnly,
       copy.rows.placeOfDestination,
       parties.placeOfDestination,
-      'placeOfDestination'
+      'placeOfDestination',
+      { errorText: partyErrors.placeOfDestination }
     ),
     ...(cphApplies(answers)
       ? [

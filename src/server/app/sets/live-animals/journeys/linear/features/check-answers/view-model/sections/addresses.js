@@ -10,7 +10,8 @@ export const addressesSection = (
   journeyId,
   answers,
   readOnly,
-  parties = answers
+  parties = answers,
+  partyErrors = {}
 ) => {
   return {
     heading: copy.sections.addresses,
@@ -18,7 +19,13 @@ export const addressesSection = (
       {
         heading: null,
         cards: [
-          rolesAndAddressesCard(journeyId, answers, readOnly, parties),
+          rolesAndAddressesCard(
+            journeyId,
+            answers,
+            readOnly,
+            parties,
+            partyErrors
+          ),
           contactAddressCard(journeyId, answers, readOnly, parties)
         ]
       }

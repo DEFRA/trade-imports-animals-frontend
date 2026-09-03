@@ -4,7 +4,7 @@ import { pagination } from './pagination/index.js'
 export const pickerViewModel = (
   journey,
   party,
-  { query, selectedId, error, found, selected },
+  { query, selectedId, error, found, selected, changing },
   copy
 ) => {
   const from = (found.page - 1) * found.pageSize
@@ -28,7 +28,8 @@ export const pickerViewModel = (
       query,
       page: found.page,
       totalPages: found.totalPages,
-      selectedId
+      selectedId,
+      changing
     })
   }
 }

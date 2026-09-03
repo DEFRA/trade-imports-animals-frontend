@@ -26,6 +26,8 @@
     }) }}
   {% endif %}
 
+  {% include "shared/error-summary.njk" %}
+
   <h1 class="govuk-heading-l">{{ heading }}</h1>
 
   {% if copyAction or deleteHref %}
