@@ -87,6 +87,24 @@ describe('verifyToken', () => {
     })
   })
 
+  test('sends an empty tracing header when the request has no trace id', async () => {
+    const jwksUri = 'https://mock-auth-server/.well-known/jwks'
+    getTraceIdMock.mockReturnValue(undefined)
+    getOidcConfigMock.mockResolvedValue({ jwks_uri: jwksUri })
+    wreckGetMock.mockResolvedValue({ payload: { keys: [{}] } })
+    createPublicKeyMock.mockReturnValue({
+      export: vi.fn().mockReturnValue('pem')
+    })
+    jwtDecodeMock.mockReturnValue({})
+
+    await verifyToken('jwt-token')
+
+    expect(wreckGetMock).toHaveBeenCalledWith(
+      jwksUri,
+      expect.objectContaining({ headers: { [tracingHeader]: '' } })
+    )
+  })
+
   test('propagates errors from Wreck.get', async () => {
     getOidcConfigMock.mockResolvedValue({
       jwks_uri: 'https://mock-auth-server/jwks'

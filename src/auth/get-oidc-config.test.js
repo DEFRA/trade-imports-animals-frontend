@@ -54,6 +54,18 @@ describe('getOidcConfig', () => {
     })
   })
 
+  test('sends an empty tracing header when the request has no trace id', async () => {
+    getTraceIdMock.mockReturnValue(undefined)
+    wreckGetMock.mockResolvedValue({ payload: {} })
+
+    await getOidcConfig()
+
+    expect(wreckGetMock).toHaveBeenCalledWith(
+      localDiscoveryUrl,
+      expect.objectContaining({ headers: { [tracingHeader]: '' } })
+    )
+  })
+
   test('rewrites token_endpoint and jwks_uri hostnames to discovery URL hostname', async () => {
     const payload = {
       authorization_endpoint: 'https://external-host/auth',
