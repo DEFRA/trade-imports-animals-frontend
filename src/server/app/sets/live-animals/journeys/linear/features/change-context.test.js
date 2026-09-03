@@ -131,6 +131,9 @@ describe('change context — context survives the internal loop navigation', () 
     expect(groups[0].index).toBe(0)
   })
 
+  // The seed holds one line, so this removal empties the notification and the
+  // user goes back to the commodity question rather than to an empty details
+  // page. The context has to travel with that redirect too.
   it('Should carry the context through a commodity remove round-trip', async () => {
     const { journeyId, response, after } = await drive(
       postHandlerOf(consignmentDetails),
@@ -141,7 +144,7 @@ describe('change context — context survives the internal loop navigation', () 
       }
     )
     expect(response).toEqual({
-      redirect: `${pagePath(journeyId, 'consignment-details')}?change=1`
+      redirect: `${pagePath(journeyId, 'commodities')}?change=1`
     })
     expect(after.commodityLines ?? []).toHaveLength(0)
   })

@@ -30,9 +30,7 @@ export const copy = {
   },
   consignmentDetails: {
     title: 'Consignment details',
-    emptyText: 'You have not added any commodities yet.',
     addAnother: 'Add another commodity',
-    addFirst: 'Add a commodity',
     table: {
       caption: 'Selected commodities',
       commodityCode: 'Commodity code',

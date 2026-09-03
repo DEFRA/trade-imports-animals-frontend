@@ -18,6 +18,8 @@ const SECOND_ANIMALS_QUANTITY_FIELD = 'numberOfAnimalsQuantity-1'
 const SECOND_ANIMALS_QUANTITY_INPUT = `#${SECOND_ANIMALS_QUANTITY_FIELD}`
 const GOVUK_TABLE = '.govuk-table'
 const CONSIGNMENT_DETAILS_PATH = 'consignment-details'
+const REMOVE_COW = 'Remove Cow'
+const REMOVE_CAT = 'Remove Cat'
 
 const openDetails = async (page) => {
   await startNotification(page)
@@ -91,10 +93,10 @@ test.describe('commodity consignment details — rendering and validation', () =
     // Cow keeps the commodity-level remove; Cat is on 01061900, so its row is
     // the species' own and its remove names the line rather than the commodity.
     await expect(
-      table.getByRole('button', { name: 'Remove Cow' })
+      table.getByRole('button', { name: REMOVE_COW })
     ).toHaveAttribute('value', 'remove:0')
     await expect(
-      table.getByRole('button', { name: 'Remove Cat' })
+      table.getByRole('button', { name: REMOVE_CAT })
     ).toHaveAttribute('value', 'remove-species:1')
   })
 
@@ -189,7 +191,7 @@ test.describe('commodity consignment details — persistence and accessibility',
     await fillValidQuantities(page)
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
-    await page.getByRole('button', { name: 'Remove Cat' }).click()
+    await page.getByRole('button', { name: REMOVE_CAT }).click()
 
     await expect(page.locator(GOVUK_TABLE)).not.toContainText('Cat')
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
@@ -202,7 +204,7 @@ test.describe('commodity consignment details — persistence and accessibility',
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
     // Cow is not on 01061900, so its row keeps the commodity-level remove.
-    await page.getByRole('button', { name: 'Remove Cow' }).click()
+    await page.getByRole('button', { name: REMOVE_COW }).click()
 
     const table = page.locator(GOVUK_TABLE)
     await expect(table).not.toContainText('Cow')
@@ -210,6 +212,27 @@ test.describe('commodity consignment details — persistence and accessibility',
     // The cat line is the only one left and its saved count travelled with it,
     // so the right group was dropped.
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('2')
+  })
+
+  test('removing the last commodity returns to the commodity question', async ({
+    page
+  }) => {
+    await page.getByRole('button', { name: REMOVE_COW }).click()
+    // Cat is on 01061900, so its row carries the species-level remove — and it
+    // is the only line left, so the page has nothing more to ask.
+    await page.getByRole('button', { name: REMOVE_CAT }).click()
+
+    await expect(
+      page.getByRole('heading', { name: copy.search.title })
+    ).toBeVisible()
+    await expect(page.getByLabel(copy.search.searchLabel)).toBeVisible()
+
+    // Re-entering the details page with nothing selected has nothing to ask,
+    // so it bounces back to the commodity question too.
+    await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
+    await expect(
+      page.getByRole('heading', { name: copy.search.title })
+    ).toBeVisible()
   })
 
   test('adds another commodity while preserving an existing quantity', async ({

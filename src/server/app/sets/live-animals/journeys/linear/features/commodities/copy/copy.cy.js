@@ -35,9 +35,7 @@ export const copy = {
   },
   consignmentDetails: {
     title: 'Manylion y llwyth',
-    emptyText: 'Nid ydych wedi ychwanegu unrhyw nwyddau eto.',
     addAnother: 'Ychwanegu nwydd arall',
-    addFirst: 'Ychwanegu nwydd',
     table: {
       caption: 'Nwyddau a ddewiswyd',
       commodityCode: 'Cod nwyddau',

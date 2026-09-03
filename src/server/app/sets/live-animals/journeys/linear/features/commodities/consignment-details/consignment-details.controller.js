@@ -54,21 +54,32 @@ const render = (
       page
     }),
     copy,
-    hasLines: lines.length > 0,
     addHref: kit.withChangeContext(
       request,
       pagePath(request.params.journeyId, commoditiesPage.slug)
     ),
-    addText: lines.length > 0 ? copy.addAnother : copy.addFirst,
     groups: buildGroups(lines, values, errors),
     selectedRows: buildSelectedRows(lines),
     errors,
     errorSummary: errorSummary ?? kit.errorSummary(errors)
   })
 
+// While a line is left the page still has quantities to collect. With none
+// left it has nothing to ask, so a load sends the user to the commodity
+// question — the same rule the removal applies on the way out, applied on
+// the way in, so a browser Back, a refresh or a bookmark cannot land on an
+// empty details page.
 const get = async (request, h) => {
   const { journey, answers, evaluation } = await state.get(request, h)
   const lines = linesOf(answers, evaluation)
+  if (lines.length === 0) {
+    return h.redirect(
+      kit.withChangeContext(
+        request,
+        pagePath(request.params.journeyId, commoditiesPage.slug)
+      )
+    )
+  }
   return render(request, h, journey, lines, storedValues(lines))
 }
 
