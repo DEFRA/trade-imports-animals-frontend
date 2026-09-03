@@ -16,7 +16,7 @@ async function getOidcConfigWithRetry(logger) {
       const delayMs = RETRY_DELAYS_MS[attempt - 1]
       if (delayMs === undefined) {
         throw new Error(
-          `Could not reach the OIDC provider at ${discoveryUrl} after ${attempt} attempts`,
+          `OIDC discovery at ${discoveryUrl} failed after ${attempt} attempts`,
           { cause: err }
         )
       }

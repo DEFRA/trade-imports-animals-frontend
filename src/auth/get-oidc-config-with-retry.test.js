@@ -100,7 +100,7 @@ describe('getOidcConfigWithRetry', () => {
     const error = await tracked
 
     expect(error.message).toBe(
-      `Could not reach the OIDC provider at ${discoveryUrl} after 4 attempts`
+      `OIDC discovery at ${discoveryUrl} failed after 4 attempts`
     )
     expect(error.cause.code).toBe('ETIMEDOUT')
     expect(wreckGetMock).toHaveBeenCalledTimes(4)

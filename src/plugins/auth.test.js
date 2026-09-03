@@ -132,14 +132,16 @@ describe('auth plugin', () => {
     expect(getOidcConfigWithRetryMock).not.toHaveBeenCalled()
   })
 
-  test('register propagates a discovery failure and does not register the Bell strategy', async () => {
+  test('register registers no strategy when OIDC discovery fails', async () => {
     getOidcConfigWithRetryMock.mockRejectedValue(
-      new Error('Could not reach the OIDC provider')
+      new Error(
+        'OIDC discovery at https://idp.example.com/.well-known/openid-configuration failed after 4 attempts'
+      )
     )
     const server = buildServer()
 
     await expect(authPlugin.plugin.register(server)).rejects.toThrow(
-      'Could not reach the OIDC provider'
+      'OIDC discovery at'
     )
 
     expect(server.auth.strategy).not.toHaveBeenCalledWith(
