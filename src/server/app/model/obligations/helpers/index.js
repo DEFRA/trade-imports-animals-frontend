@@ -7,10 +7,10 @@
  *
  * Design contract:
  *   - Each helper is a pure function returning an
- *     `applyTo(fulfilments, fulfilmentIdsByObligationId) → decision`.
+ *     `applyTo(fulfilments, fulfilmentIndexesByObligationId) → decision`.
  *   - `fulfilments` is the raw storage map.
- *   - `fulfilmentIdsByObligationId` is a `Map<obligationId, string[]>`
- *     giving current instance-paths per obligation (in particular per
+ *   - `fulfilmentIndexesByObligationId` is a `Map<obligationId, Set<string>>`
+ *     giving current fulfilment indexes per obligation (in particular per
  *     group, so a gated obligation can look up its parent-group's
  *     instances without enumerating storage itself).
  *   - Each returned function has a `.metadata` property describing

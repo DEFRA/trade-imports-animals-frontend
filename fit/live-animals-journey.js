@@ -8,6 +8,7 @@ import {
 import { COUNTRY_LABELS } from '../src/server/app/services/countries/stub.js'
 import { PORTS } from '../src/server/app/services/ports/stub.js'
 import { copy as transportCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js'
+import { copy as sharedAppCopy } from '../src/server/app/shared/copy.en.js'
 
 export { signIn } from './sign-in.js'
 
@@ -104,8 +105,33 @@ export const ARRIVAL_DATE_IN_WINDOW_DISPLAY = `${arrivalDate.getUTCDate()} ${SHO
 
 const FIXTURE_COUNTRY = COUNTRY_LABELS[values.countryOfOrigin]
 
+// The origin page fills the country in as a fixed prefix and asks only for the
+// part after it, so the fixture's whole code is split the same way here.
+const REGION_CODE_SEPARATOR = '-'
+const FIXTURE_REGION_CODE_SUFFIX = values.regionOfOriginCode.slice(
+  values.countryOfOrigin.length + REGION_CODE_SEPARATOR.length
+)
+
+// Country of origin is a type-ahead (accessible-autocomplete) enhancing a
+// native <select>. With JavaScript the field resolved by its label is the
+// enhanced input; without it the field is still the select. Ask the element
+// what it is — one round trip, no timeout. Mirrors `choosePort` in
+// src/server/app/sets/live-animals/journeys/linear/features/transport/fit/arrival-transit.fit.spec.js.
 export const chooseCountryOfOrigin = async (page, name = FIXTURE_COUNTRY) => {
-  await page.getByLabel('Country of origin').selectOption({ label: name })
+  // The enhancement is a module script, so it has run by DOMContentLoaded.
+  // Waiting for that event settles which element the label resolves to before
+  // the probe reads it — without it the probe can catch the page mid-load,
+  // read the not-yet-enhanced select and then act on the enhanced input.
+  // With JavaScript off the event has already fired, so this costs nothing.
+  await page.waitForLoadState('domcontentloaded')
+  const field = page.getByLabel('Country of origin', { exact: true })
+  if ((await field.evaluate((el) => el.tagName)) === 'SELECT') {
+    await field.selectOption({ label: name })
+    return
+  }
+  await field.click()
+  await field.fill(name)
+  await page.getByRole('option', { name, exact: true }).click()
 }
 
 export const answerOriginEntry = async (page) => {
@@ -149,11 +175,22 @@ export const answerCountryOfOrigin = async (page) => {
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
+// The commodity page lists nothing until it is searched, so a species is
+// reached the way a trader reaches it: search, then tick the result.
+export const searchCommodities = async (page, query) => {
+  await page.getByLabel('Search for a commodity').fill(query)
+  await page.getByRole('button', { name: 'Search', exact: true }).click()
+}
+
 export const selectSpecies = async (page, speciesNames) => {
   for (const name of speciesNames) {
+    await searchCommodities(page, name)
     await page.getByRole('checkbox', { name }).check()
   }
 }
+
+export const expectSpeciesSelected = async (page, name) =>
+  expect(page.locator('#commodity-selection')).toContainText(name)
 
 export const unlockSections = async (page) => {
   await answerCountryOfOrigin(page)
@@ -196,8 +233,8 @@ export const completeAnswerSections = async (page) => {
   await chooseCountryOfOrigin(page)
   await page.getByRole('radio', { name: 'Yes' }).check()
   await page
-    .getByLabel('Region of origin code', { exact: true })
-    .fill(values.regionOfOriginCode)
+    .getByLabel('Enter the region of origin code', { exact: true })
+    .fill(FIXTURE_REGION_CODE_SUFFIX)
   await page
     .getByLabel('Your internal reference for this consignment (optional)')
     .fill(values.internalReferenceNumber)
@@ -298,4 +335,28 @@ export const completeAnswerSections = async (page) => {
   await task('Contact address')
   await page.getByRole('radio', { name: values.contactAddress.name }).check()
   await save()
+}
+
+/**
+ * A page reached from another page ends with the primary alone: the shared
+ * saveActions macro emits no "Save and return to hub" button and no
+ * "Cancel and return to hub" link.
+ */
+export const expectPageEndsWithPrimaryAlone = async (page) => {
+  await expect(
+    page.getByRole('button', {
+      name: sharedAppCopy.saveActions.saveAndContinue,
+      exact: true
+    })
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', {
+      name: sharedAppCopy.saveActions.saveAndReturnToHub
+    })
+  ).toHaveCount(0)
+  await expect(
+    page.getByRole('link', {
+      name: sharedAppCopy.saveActions.cancelAndReturnToHub
+    })
+  ).toHaveCount(0)
 }

@@ -1,7 +1,10 @@
 import { obligations } from '../model/obligations/manifest.js'
 import { ancestorChain } from './fulfilments/index.js'
 
-const PATH_UNSAFE = /[.[\]/*]/
+// Binding field names appear inside the store-path grammar
+// (`groupedPathOf`/`pathOf`), so they cannot contain the grammar's
+// own separators or meta-characters.
+const FIELD_UNSAFE = /[.[\]/*]/
 const TOKEN = /^[A-Za-z][A-Za-z-]*$/
 
 const fail = (message) => {
@@ -12,7 +15,7 @@ const assertField = (field, label) => {
   if (
     typeof field !== 'string' ||
     field.length === 0 ||
-    PATH_UNSAFE.test(field)
+    FIELD_UNSAFE.test(field)
   ) {
     fail(`${label} has invalid store field "${String(field)}"`)
   }

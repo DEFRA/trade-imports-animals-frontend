@@ -92,6 +92,8 @@
       errorMessage: errors.emailAddress and { text: errors.emailAddress }
     }) }}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+    {# Third page of the transporter row — reached from the transporter type
+       page, not from the hub, so it ends with the primary alone. #}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions, showReturnControls = false) }}
   </form>
 {% endblock %}

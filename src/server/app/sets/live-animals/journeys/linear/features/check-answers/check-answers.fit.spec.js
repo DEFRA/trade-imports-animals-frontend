@@ -36,9 +36,10 @@ test.describe('check-answers feature summary rows', () => {
     await openOrigin(page)
     await chooseCountryOfOrigin(page, 'France')
     await page.getByRole('radio', { name: 'Yes' }).check()
+    // Five characters after the prefix — the joined code is eight, which the old whole-code cap made impossible.
     await page
-      .getByLabel('Region of origin code', { exact: true })
-      .fill('FR-75')
+      .getByLabel('Enter the region of origin code', { exact: true })
+      .fill('IDF75')
     await page.getByLabel(INTERNAL_REFERENCE_LABEL).fill('ReviewRef1')
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
@@ -56,7 +57,7 @@ test.describe('check-answers feature summary rows', () => {
     await expect(rowFor(page, copy.rows.regionCodeRequired)).toContainText(
       copy.yesNo.yes
     )
-    await expect(rowFor(page, copy.rows.regionCode)).toContainText('FR-75')
+    await expect(rowFor(page, copy.rows.regionCode)).toContainText('FR-IDF75')
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
       'ReviewRef1'
     )

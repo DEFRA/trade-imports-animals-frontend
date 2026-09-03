@@ -1,9 +1,4 @@
-import {
-  breadcrumbs as buildBreadcrumbs,
-  hubPath,
-  pagePath,
-  pageRoutePath
-} from './paths.js'
+import { hubPath, pagePath, pageRoutePath } from './paths.js'
 import { AMEND, DELETED, DRAFT, SUBMITTED } from '../engine/index.js'
 import { nextInSection } from '../flow/navigation.js'
 import {
@@ -149,7 +144,6 @@ export const base = (
     layout: journeyLayout(),
     pageTitle: title,
     caption: journeySectionCaption(page?.id),
-    breadcrumbs: hasJourney ? buildBreadcrumbs(journeyId, title) : false,
     backLink,
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
     journeyStrip: journeyStrip(journey),

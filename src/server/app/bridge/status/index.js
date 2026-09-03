@@ -18,10 +18,10 @@
  * sources three things from the evaluator state:
  *
  *   - per-record SCOPE   — a leaf is present for a record iff the implication
- *                          `records[]` carries that record's fulfilmentId
+ *                          `records[]` carries that record's fulfilmentIndex
  *                          (post-purge membership).
- *   - per-record MANDATE  — `effectiveStatus(leaf, recId, state)` (mandatory /
- *                          optional per record).
+ *   - per-record MANDATE  — `effectiveStatus(leaf, fulfilmentIndex, state)`
+ *                          (mandatory / optional per record).
  *   - FULFILMENT          — `!isBlankValue` for every part.
  *
  * The empty-collection floor is manifest-sourced (`requiredAtLeastOne`:
@@ -29,7 +29,7 @@
  * rule — the model emits nothing for a group with zero records, but an
  * empty required collection must still block FULFILLED. The per-record
  * any-of verdict is sourced from the model's `groupInvariantErrors`
- * (filtered by instanceId), the same interpreter collection-complete
+ * (filtered by fulfilmentIndex), the same interpreter collection-complete
  * uses.
  */
 

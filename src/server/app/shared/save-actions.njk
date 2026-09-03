@@ -1,14 +1,23 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
 
-{% macro saveActions(hubHref, primary, copy) %}
+{# The one place a journey page's ending is stated.
+
+   The rule: a page the hub links to directly ends with all three controls —
+   the primary, "Save and return to hub" and "Cancel and return to hub" — so a
+   trader can stop and leave from where the hub sent them. A page reached from
+   another page ends with the primary alone, and the trader leaves the way they
+   came in. Pass `showReturnControls = false` on those. #}
+{% macro saveActions(hubHref, primary, copy, showReturnControls = true) %}
   <div class="govuk-button-group">
     {{ govukButton(primary or { text: copy.saveAndContinue }) }}
-    {{ govukButton({
-      text: copy.saveAndReturnToHub,
-      classes: "govuk-button--secondary",
-      name: "exit",
-      value: "hub"
-    }) }}
-    <a class="govuk-link" href="{{ hubHref }}">{{ copy.cancelAndReturnToHub }}</a>
+    {% if showReturnControls %}
+      {{ govukButton({
+        text: copy.saveAndReturnToHub,
+        classes: "govuk-button--secondary",
+        name: "exit",
+        value: "hub"
+      }) }}
+      <a class="govuk-link" href="{{ hubHref }}">{{ copy.cancelAndReturnToHub }}</a>
+    {% endif %}
   </div>
 {% endmacro %}

@@ -1,4 +1,6 @@
-// The record map for a grouped leaf ({ fulfilmentId: value }), or undefined.
+import { INDEX_DELIMITER } from '../../fulfilment-id.js'
+
+// The record map for a grouped leaf ({ fulfilmentIndex: value }), or undefined.
 export const recordMap = (obligation, state) => {
   const stored = state.fulfilments?.[obligation.id]
   if (
@@ -12,13 +14,15 @@ export const recordMap = (obligation, state) => {
   return stored
 }
 
-// The in-scope records for a collection that sit directly under parentRecId
-// (parentRecId null -> a top-level collection: all its records).
-export const childRecords = (obligation, parentRecId, state) => {
+// The in-scope records for a collection that sit directly under
+// `parentFulfilmentIndex` (null -> a top-level collection: all its records).
+export const childRecords = (obligation, parentFulfilmentIndex, state) => {
   const records = state.obligations?.[obligation.id]?.records ?? []
-  return parentRecId === null
+  return parentFulfilmentIndex === null
     ? records
     : records.filter((record) =>
-        record.fulfilmentId.startsWith(`${parentRecId}/`)
+        record.fulfilmentIndex.startsWith(
+          `${parentFulfilmentIndex}${INDEX_DELIMITER}`
+        )
       )
 }

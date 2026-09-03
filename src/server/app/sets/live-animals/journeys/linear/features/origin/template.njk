@@ -1,5 +1,5 @@
 {% extends "shared/layout.njk" %}
-{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "accessible-autocomplete/macro.njk" import appAccessibleAutocomplete %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "shared/save-actions.njk" import saveActions %}
@@ -15,30 +15,33 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
-    {{ govukSelect({
+    {{ appAccessibleAutocomplete({
       id: "countryOfOrigin",
       name: "countryOfOrigin",
-      label: { text: copy.country.label, classes: "govuk-label--s" },
+      label: { text: copy.country.label, classes: "govuk-label--m" },
+      hint: { text: copy.country.hint },
       value: values.countryOfOrigin,
       errorMessage: errors.countryOfOrigin and { text: errors.countryOfOrigin },
-      items: countryItems
+      items: countryItems,
+      autocomplete: { showAllValues: true, noResults: copy.country.noResults }
     }) }}
 
     {% set regionCodeHtml %}
       {{ govukInput({
-        id: "regionOfOriginCode",
-        name: "regionOfOriginCode",
+        id: "regionOfOriginCodeSuffix",
+        name: "regionOfOriginCodeSuffix",
         label: { text: copy.regionCode.label },
         hint: { text: copy.regionCode.hint },
         classes: "govuk-input--width-5",
-        value: values.regionOfOriginCode,
-        errorMessage: errors.regionOfOriginCode and { text: errors.regionOfOriginCode }
+        prefix: { text: regionCodePrefix },
+        value: values.regionOfOriginCodeSuffix,
+        errorMessage: errors.regionOfOriginCodeSuffix and { text: errors.regionOfOriginCodeSuffix }
       }) }}
     {% endset %}
 
     {{ govukRadios({
       name: "regionOfOriginCodeRequirement",
-      fieldset: { legend: { text: copy.regionRequirement.legend, classes: "govuk-fieldset__legend--s" } },
+      fieldset: { legend: { text: copy.regionRequirement.legend, classes: "govuk-fieldset__legend--m" } },
       hint: { text: copy.regionRequirement.hint },
       items: [
         { value: "yes", text: copy.regionRequirement.yes, checked: values.regionOfOriginCodeRequirement == "yes", conditional: { html: regionCodeHtml } },
@@ -49,7 +52,7 @@
     {{ govukInput({
       id: "internalReferenceNumber",
       name: "internalReferenceNumber",
-      label: { text: copy.internalReference.label },
+      label: { text: copy.internalReference.label, classes: "govuk-label--m" },
       hint: { text: copy.internalReference.hint },
       classes: "govuk-!-width-three-quarters",
       value: values.internalReferenceNumber,

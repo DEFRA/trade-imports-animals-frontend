@@ -1,7 +1,10 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
-import { answerOriginEntry } from '../../../../../../../../../fit/live-animals-journey.js'
+import {
+  answerOriginEntry,
+  expectPageEndsWithPrimaryAlone
+} from '../../../../../../../../../fit/live-animals-journey.js'
 import * as importReasonPurpose from '../../../../../../services/import-reason-purpose/index.js'
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
@@ -66,6 +69,12 @@ test.describe('import-purpose feature', () => {
       ).toBeVisible()
       await expect(group).toContainText(copy.purposeHints[option.value])
     }
+  })
+
+  test('ends with the primary alone, being reached from the import reason page', async ({
+    page
+  }) => {
+    await expectPageEndsWithPrimaryAlone(page)
   })
 
   test('purpose validation: when the submitted option is invalid, links to and focuses the group without preserving an invalid selection', async ({

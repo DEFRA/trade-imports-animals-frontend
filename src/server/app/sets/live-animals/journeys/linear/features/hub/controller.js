@@ -164,8 +164,7 @@ const handler = async (request, h) => {
     commodityTotals: buildCommodityTotals(answers, evaluation),
     groups: buildGroups(answers, scope, evaluation, journeyId),
     dashboardHref: dashboardPath(),
-    backLink: dashboardPath(),
-    breadcrumbs: false
+    backLink: dashboardPath()
   })
 }
 

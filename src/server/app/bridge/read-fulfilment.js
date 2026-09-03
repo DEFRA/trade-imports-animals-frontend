@@ -1,6 +1,7 @@
 import {
+  INDEX_DELIMITER,
   compareIndexArrays,
-  formatFulfilmentId,
+  formatFulfilmentIndex,
   hasIndexedSegments,
   indicesOf,
   segmentsOf
@@ -13,7 +14,7 @@ const ancestorsAndSelf = (obligation) => [
   obligation
 ]
 
-const compareFulfilmentIds = (left, right) =>
+const compareFulfilmentIndexes = (left, right) =>
   compareIndexArrays(indicesOf(left), indicesOf(right))
 
 const bindingFor = (registry, obligation, kind) => {
@@ -34,25 +35,35 @@ const assertDescendant = (group, obligation) => {
   }
 }
 
-const instanceIdOf = (fulfilmentId, groupChain, descriptors, parentId) => {
-  if (!hasIndexedSegments(fulfilmentId)) {
+const deriveFulfilmentIndex = (
+  fulfilmentIndex,
+  groupChain,
+  descriptors,
+  parentFulfilmentIndex
+) => {
+  if (!hasIndexedSegments(fulfilmentIndex)) {
     return undefined
   }
-  const segments = segmentsOf(fulfilmentId)
+  const segments = segmentsOf(fulfilmentIndex)
   if (segments.length < groupChain.length) {
     return undefined
   }
-  const id = formatFulfilmentId(
+  const groupIndex = formatFulfilmentIndex(
     descriptors,
-    indicesOf(fulfilmentId).slice(0, groupChain.length)
+    indicesOf(fulfilmentIndex).slice(0, groupChain.length)
   )
-  if (id !== segments.slice(0, groupChain.length).join('/')) {
+  if (
+    groupIndex !== segments.slice(0, groupChain.length).join(INDEX_DELIMITER)
+  ) {
     return undefined
   }
-  if (parentId !== undefined && !id.startsWith(`${parentId}/`)) {
+  if (
+    parentFulfilmentIndex !== undefined &&
+    !groupIndex.startsWith(`${parentFulfilmentIndex}${INDEX_DELIMITER}`)
+  ) {
     return undefined
   }
-  return id
+  return groupIndex
 }
 
 /**
@@ -75,9 +86,13 @@ export const readFulfilment = (
   }
 
   // Infer collection instances from the union of descendant record maps.
-  // Truncating each exact composite-id prefix to the requested group depth
-  // means a unit-only record still establishes its containing commodity line.
-  const instanceIds = (group, descendants, parentId) => {
+  // Truncating each exact fulfilment-index prefix to the requested group
+  // depth means a unit-only record still establishes its containing line.
+  const groupFulfilmentIndexes = (
+    group,
+    descendants,
+    parentFulfilmentIndex
+  ) => {
     const groupChain = ancestorsAndSelf(group)
     const descriptors = groupChain.map(({ id }) =>
       registry.groupDescriptorOf(id)
@@ -86,18 +101,23 @@ export const readFulfilment = (
       throw new TypeError(`Cannot enumerate unbound group ${group.name}`)
     }
 
-    const ids = new Set()
+    const indexes = new Set()
     for (const obligation of descendants) {
       assertDescendant(group, obligation)
-      for (const fulfilmentId of Object.keys(records(obligation))) {
-        const id = instanceIdOf(fulfilmentId, groupChain, descriptors, parentId)
+      for (const fulfilmentIndex of Object.keys(records(obligation))) {
+        const id = deriveFulfilmentIndex(
+          fulfilmentIndex,
+          groupChain,
+          descriptors,
+          parentFulfilmentIndex
+        )
         if (id !== undefined) {
-          ids.add(id)
+          indexes.add(id)
         }
       }
     }
-    return [...ids].sort(compareFulfilmentIds)
+    return [...indexes].sort(compareFulfilmentIndexes)
   }
 
-  return { scalar, records, instanceIds }
+  return { scalar, records, groupFulfilmentIndexes }
 }

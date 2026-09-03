@@ -13,8 +13,3 @@ export const inDashboardSection = (path) =>
   path === dashboardPath() ||
   path === createPath() ||
   path.startsWith(`${createPath()}/`)
-
-export const breadcrumbs = (_journeyId, title) => [
-  { text: 'Your notifications', href: dashboardPath() },
-  { text: title }
-]

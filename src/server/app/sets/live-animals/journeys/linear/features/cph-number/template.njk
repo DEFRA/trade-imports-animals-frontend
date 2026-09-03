@@ -25,6 +25,8 @@
       errorMessage: errors.countyParishHoldingCph and { text: errors.countyParishHoldingCph }
     }) }}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+    {# Second page of the addresses row — reached from the hub's addresses
+       page, not from the hub, so it ends with the primary alone. #}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions, showReturnControls = false) }}
   </form>
 {% endblock %}

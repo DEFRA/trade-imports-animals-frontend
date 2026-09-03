@@ -75,7 +75,7 @@ const cases = [
     payload: {
       countryOfOrigin: 'FR',
       regionOfOriginCodeRequirement: 'yes',
-      regionOfOriginCode: 'FR-75',
+      regionOfOriginCodeSuffix: '75',
       internalReferenceNumber: 'Imports456GB'
     }
   },

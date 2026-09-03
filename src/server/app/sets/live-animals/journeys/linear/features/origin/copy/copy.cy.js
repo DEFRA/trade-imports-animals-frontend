@@ -3,7 +3,9 @@ export const copy = {
   title: 'Tarddiad y mewnforyn',
   country: {
     label: 'Gwlad tarddiad',
-    placeholder: 'Dewiswch wlad'
+    hint: 'Dechreuwch deipio i chwilio am wlad.',
+    placeholder: 'Dewiswch wlad',
+    noResults: 'Dim gwledydd wedi’u darganfod'
   },
   regionRequirement: {
     legend: 'A oes gan y llwyth god rhanbarth tarddiad?',
@@ -12,8 +14,8 @@ export const copy = {
     no: 'Nac oes'
   },
   regionCode: {
-    label: 'Cod rhanbarth tarddiad',
-    hint: 'Er enghraifft, FR-75'
+    label: 'Rhowch god rhanbarth tarddiad',
+    hint: 'Rhowch hyd at 5 nod.'
   },
   internalReference: {
     label: 'Eich cyfeirnod mewnol ar gyfer y llwyth hwn (dewisol)',
@@ -21,6 +23,7 @@ export const copy = {
   },
   errors: {
     countryRequired: "Dewiswch y wlad y mae'r anifail yn tarddu ohoni",
+    regionCodeRequired: 'Rhowch god rhanbarth tarddiad',
     regionCodeMaxLength:
       "Rhaid i'r cod rhanbarth tarddiad fod yn 5 nod neu lai",
     internalReferenceMaxLength:
