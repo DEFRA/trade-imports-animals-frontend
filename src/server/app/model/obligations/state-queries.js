@@ -38,23 +38,20 @@ export function leafSatisfied(obligation, fulfilmentIndex, state) {
 }
 
 /**
- * Effective mandate for an obligation at a path. Singleton implications
- * carry `status` at the top level; field / derived-leaf records live in
- * `implication.records[]`, each carrying `{ fulfilmentIndex, status }`. Defaults
- * to 'mandatory'; undefined when the obligation has no implication.
+ * Effective mandate for an obligation at a fulfilmentIndex. Status lives on
+ * the implication after Phase 2.1 — constructors stamp `obligation.status`
+ * onto the implication, or the applicabilityDecision propagates its own
+ * (applyTo helpers such as `equalsGate` / `branchedGate` can return per-branch
+ * status for a scalar obligation, e.g. `regionCode` flipping mandatory ↔
+ * optional). `effectiveStatus` reads whichever the implication carries.
+ * Returns `undefined` when the obligation has no implication.
  */
-export function effectiveStatus(obligation, path, state) {
+export function effectiveStatus(obligation, _path, state) {
   const implication = state.obligations?.[obligation.id]
   if (!implication) {
     return undefined
   }
-  if (path === null) {
-    return implication.status ?? 'mandatory'
-  }
-  const record = (implication.records ?? []).find(
-    (candidate) => candidate.fulfilmentIndex === path
-  )
-  return record?.status ?? 'mandatory'
+  return implication.status ?? 'mandatory'
 }
 
 // Each `checkXxx` below implements one `requires` rule shape from
@@ -62,9 +59,12 @@ export function effectiveStatus(obligation, path, state) {
 // error object or `null`; multi-error rules (one error per instance)
 // return an array. `groupInvariantErrors` composes and flattens them.
 
-const checkMinEntries = (group, records) => {
+const checkMinEntries = (group, fulfilmentIndexes) => {
   const { minEntries, errorCode } = group.requires
-  if (typeof minEntries !== 'number' || records.length >= minEntries) {
+  if (
+    typeof minEntries !== 'number' ||
+    fulfilmentIndexes.length >= minEntries
+  ) {
     return null
   }
   return {
@@ -73,13 +73,16 @@ const checkMinEntries = (group, records) => {
     groupName: group.name,
     errorCode,
     minEntries,
-    actual: records.length
+    actual: fulfilmentIndexes.length
   }
 }
 
-const checkMaxEntries = (group, records) => {
+const checkMaxEntries = (group, fulfilmentIndexes) => {
   const { maxEntries, errorCode } = group.requires
-  if (typeof maxEntries !== 'number' || records.length <= maxEntries) {
+  if (
+    typeof maxEntries !== 'number' ||
+    fulfilmentIndexes.length <= maxEntries
+  ) {
     return null
   }
   return {
@@ -88,25 +91,22 @@ const checkMaxEntries = (group, records) => {
     groupName: group.name,
     errorCode: group.requires.maxEntriesErrorCode ?? errorCode,
     maxEntries,
-    actual: records.length
+    actual: fulfilmentIndexes.length
   }
 }
 
-const checkAnyOfIds = (group, records, state) => {
+const checkAnyOfIds = (group, fulfilmentIndexes, state) => {
   if (!group.requires.anyOfIds) {
     return []
   }
   const errors = []
-  for (const record of records) {
-    const fulfilmentIndex = record.fulfilmentIndex
+  for (const fulfilmentIndex of fulfilmentIndexes) {
     const inScopeLeafIds = group.requires.anyOfIds.filter((leafId) => {
       const implication = state.obligations?.[leafId]
       if (!implication?.inScope) {
         return false
       }
-      return (implication.records ?? []).some(
-        (candidate) => candidate.fulfilmentIndex === fulfilmentIndex
-      )
+      return (implication.fulfilmentIndexes ?? []).includes(fulfilmentIndex)
     })
     if (inScopeLeafIds.length === 0) {
       continue
@@ -149,25 +149,22 @@ const checkAllOrNothingOfIds = (group, state) => {
   }
 }
 
-const checkRecordCountEquals = (group, records, state) => {
+const checkRecordCountEquals = (group, fulfilmentIndexes, state) => {
   if (!group.requires.recordCountEquals || !group.within) {
     return []
   }
   const { fieldId, errorCode: countErrorCode } =
     group.requires.recordCountEquals
   const parentImplication = state.obligations?.[group.within.id]
-  const parentRecords = parentImplication?.records ?? []
+  const parentFulfilmentIndexes = parentImplication?.fulfilmentIndexes ?? []
   const errors = []
-  for (const parentRec of parentRecords) {
-    const parentFulfilmentIndex = parentRec.fulfilmentIndex
+  for (const parentFulfilmentIndex of parentFulfilmentIndexes) {
     const expected = state.fulfilments?.[fieldId]?.[parentFulfilmentIndex]
     if (isBlankValue(expected)) {
       continue
     }
-    const actual = records.filter((record) =>
-      record.fulfilmentIndex.startsWith(
-        `${parentFulfilmentIndex}${INDEX_DELIMITER}`
-      )
+    const actual = fulfilmentIndexes.filter((fulfilmentIndex) =>
+      fulfilmentIndex.startsWith(`${parentFulfilmentIndex}${INDEX_DELIMITER}`)
     ).length
     if (actual !== expected) {
       errors.push({
@@ -191,9 +188,9 @@ const checkRecordCountEquals = (group, records, state) => {
  * any combination of five `requires` rule shapes:
  *
  *   - `minEntries` — collection floor. ONE `MIN_ENTRIES` error when
- *     `records.length` is below it.
+ *     `fulfilmentIndexes.length` is below it.
  *   - `maxEntries` — collection cap. ONE `MAX_ENTRIES` error when
- *     `records.length` exceeds it.
+ *     `fulfilmentIndexes.length` exceeds it.
  *   - `anyOfIds` — per-instance rule. One error per in-scope instance
  *     where NONE of the required leaves has a non-blank fulfilment;
  *     vacuously satisfied when no leaf is in scope for the instance.
@@ -202,11 +199,11 @@ const checkRecordCountEquals = (group, records, state) => {
  *     error `{ code, groupId, groupName, missingIds }` when
  *     0 < filledCount < total; none when all-blank or all-filled.
  *   - `recordCountEquals` — `{ fieldId, errorCode }`. One error per
- *     in-scope parent (`group.within`) instance whose count of records
- *     under `parentFulfilmentIndex/` differs from the non-blank expected
- *     count in `state.fulfilments[fieldId][parentFulfilmentIndex]`;
- *     blank expected counts are skipped (the field's own mandatory rule
- *     catches those).
+ *     in-scope parent (`group.within`) instance whose count of
+ *     fulfilmentIndexes under `parentFulfilmentIndex/` differs from the
+ *     non-blank expected count in
+ *     `state.fulfilments[fieldId][parentFulfilmentIndex]`; blank expected
+ *     counts are skipped (the field's own mandatory rule catches those).
  */
 export function groupInvariantErrors(group, state) {
   if (!group?.requires) {
@@ -216,12 +213,12 @@ export function groupInvariantErrors(group, state) {
   if (!groupImplication?.inScope) {
     return []
   }
-  const records = groupImplication.records ?? []
+  const fulfilmentIndexes = groupImplication.fulfilmentIndexes ?? []
   return [
-    checkMinEntries(group, records),
-    checkMaxEntries(group, records),
-    ...checkAnyOfIds(group, records, state),
+    checkMinEntries(group, fulfilmentIndexes),
+    checkMaxEntries(group, fulfilmentIndexes),
+    ...checkAnyOfIds(group, fulfilmentIndexes, state),
     checkAllOrNothingOfIds(group, state),
-    ...checkRecordCountEquals(group, records, state)
+    ...checkRecordCountEquals(group, fulfilmentIndexes, state)
   ].filter(Boolean)
 }

@@ -8,76 +8,68 @@ const groupImplication = (
   applicabilityDecision,
   fulfilmentIndexesByObligationId
 ) => {
-  const fulfilmentIndexes = [
-    ...(fulfilmentIndexesByObligationId.get(obligation.id) ?? [])
-  ]
-  const implication = { inScope: true }
+  const implication = {
+    inScope: true,
+    fulfilmentIndexes: [
+      ...(fulfilmentIndexesByObligationId.get(obligation.id) ?? [])
+    ]
+  }
   if (applicabilityDecision?.reasons) {
     implication.reasons = applicabilityDecision.reasons
   }
-  implication.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
-    fulfilmentIndex
-  }))
   return implication
 }
 
 // Two shapes land here:
 //   1. Group-scoped field record (`within` set) — enumerate the parent
-//      group's instance-paths and stamp each one with `obligation.status`.
-//   2. Top-level scalar with intrinsic status (no `within`) — the natural
-//      data-only shape for an always-in-scope obligation. There is no
-//      parent group to enumerate, so return the status directly,
-//      mirroring what `applyTo: () => ({ inScope: true, status })` would
-//      return.
+//      group's instance-paths as the leaf's fulfilmentIndexes. Status is
+//      read from `obligation.status` by consumers (via `effectiveStatus`);
+//      it is not stamped onto the implication.
+//   2. Top-level scalar (no `within`) — the natural data-only shape for
+//      an always-in-scope obligation. No fulfilmentIndexes; consumers read
+//      status from the obligation directly.
 const fieldImplication = (obligation, fulfilmentIndexesByObligationId) => {
   if (!obligation.within) {
     return { inScope: true, status: obligation.status }
   }
-  const parentGroupFulfilmentIndexes = [
-    ...(fulfilmentIndexesByObligationId.get(obligation.within.id) ?? [])
-  ]
   return {
     inScope: true,
-    records: parentGroupFulfilmentIndexes.map((fulfilmentIndex) => ({
-      fulfilmentIndex,
-      status: obligation.status
-    }))
+    status: obligation.status,
+    fulfilmentIndexes: [
+      ...(fulfilmentIndexesByObligationId.get(obligation.within.id) ?? [])
+    ]
   }
 }
 
-// Id set comes from applyTo — the authoritative "what records CAN exist".
-// Storage tracks which ones have VALUES.
+// Id set comes from applyTo — the authoritative "what fulfilmentIndexes CAN
+// exist". Storage tracks which ones have VALUES.
 const derivedLeafImplication = (obligation, applicabilityDecision) => {
-  const implication = { inScope: true }
+  const implication = {
+    inScope: true,
+    status: obligation.status,
+    fulfilmentIndexes: applicabilityDecision?.fulfilmentIndexes ?? []
+  }
   if (applicabilityDecision?.reasons) {
     implication.reasons = applicabilityDecision.reasons
   }
-  const fulfilmentIndexes = applicabilityDecision?.records ?? []
-  implication.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
-    fulfilmentIndex,
-    status: obligation.status
-  }))
   return implication
 }
 
-// Record presence via storage keys.
+// FulfilmentIndex presence via storage keys.
 const userLeafImplication = (
   obligation,
   applicabilityDecision,
   amendedFulfilments
 ) => {
-  const implication = { inScope: true }
+  const fulfilment = amendedFulfilments[obligation.id]
+  const implication = {
+    inScope: true,
+    status: obligation.status,
+    fulfilmentIndexes: isKeyedRecord(fulfilment) ? Object.keys(fulfilment) : []
+  }
   if (applicabilityDecision?.reasons) {
     implication.reasons = applicabilityDecision.reasons
   }
-  const fulfilment = amendedFulfilments[obligation.id]
-  const fulfilmentIndexes = isKeyedRecord(fulfilment)
-    ? Object.keys(fulfilment)
-    : []
-  implication.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
-    fulfilmentIndex,
-    status: obligation.status
-  }))
   return implication
 }
 

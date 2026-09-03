@@ -86,7 +86,7 @@ describe('#buildProjectionGate', () => {
       })
       expect(fn({ gate: { k1: 'x', k2: 'y' } }, undefined)).toEqual({
         inScope: true,
-        records: ['k1']
+        fulfilmentIndexes: ['k1']
       })
     })
 
@@ -102,7 +102,7 @@ describe('#buildProjectionGate', () => {
       const decision = fn({ gate: { k1: 'x' } }, undefined)
       expect(decision).toEqual({
         inScope: true,
-        records: ['k1'],
+        fulfilmentIndexes: ['k1'],
         reasons: ['r1']
       })
     })

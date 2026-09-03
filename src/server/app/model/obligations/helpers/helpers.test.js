@@ -42,7 +42,7 @@ describe('allowListed', () => {
       { [codeObl.id]: { k1: 'a', k2: 'x', k3: 'b' } },
       new Map()
     )
-    expect(decision).toEqual({ inScope: true, records: ['k1', 'k3'] })
+    expect(decision).toEqual({ inScope: true, fulfilmentIndexes: ['k1', 'k3'] })
   })
 
   it('Should project to group instance-paths when a projection group is supplied', () => {
@@ -54,7 +54,7 @@ describe('allowListed', () => {
     const decision = gate(fulfilments, ids)
     expect(decision).toEqual({
       inScope: true,
-      records: [line1Unit1Path, line1Unit2Path]
+      fulfilmentIndexes: [line1Unit1Path, line1Unit2Path]
     })
   })
 
@@ -63,7 +63,7 @@ describe('allowListed', () => {
     const fulfilments = { [codeObl.id]: { line1: 'a' } }
     const ids = new Map()
     const decision = gate(fulfilments, ids)
-    expect(decision).toEqual({ inScope: false, records: [] })
+    expect(decision).toEqual({ inScope: false })
   })
 
   it('Should expose metadata for introspection', () => {
@@ -83,7 +83,7 @@ describe('allowListed', () => {
     const decision = gate({ [codeObl.id]: { k1: 'a' } }, new Map())
     expect(decision).toEqual({
       inScope: true,
-      records: ['k1'],
+      fulfilmentIndexes: ['k1'],
       reasons: [reason]
     })
   })
@@ -128,7 +128,7 @@ describe('notInUnionOf', () => {
       { [codeObl.id]: { k1: 'a', k2: 'z', k3: 'c', k4: 'q' } },
       new Map()
     )
-    expect(decision).toEqual({ inScope: true, records: ['k2', 'k4'] })
+    expect(decision).toEqual({ inScope: true, fulfilmentIndexes: ['k2', 'k4'] })
   })
 
   it('Should project to group instance-paths when a projection group is supplied', () => {
@@ -144,7 +144,7 @@ describe('notInUnionOf', () => {
     const decision = gate(fulfilments, ids)
     expect(decision).toEqual({
       inScope: true,
-      records: [line1Unit1Path, line1Unit2Path]
+      fulfilmentIndexes: [line1Unit1Path, line1Unit2Path]
     })
   })
 
@@ -189,7 +189,7 @@ describe('notInUnionOf', () => {
     const decision = gate({ [codeObl.id]: { k1: 'z' } }, new Map())
     expect(decision).toEqual({
       inScope: true,
-      records: ['k1'],
+      fulfilmentIndexes: ['k1'],
       reasons: [reason]
     })
   })
@@ -214,7 +214,7 @@ describe('notInUnionOf', () => {
     const gate = notInUnionOf(codeObl, ['a', 'b'])
     expect(gate.metadata.values).toEqual(['a', 'b'])
     const decision = gate({ [codeObl.id]: { k1: 'z' } }, new Map())
-    expect(decision).toEqual({ inScope: true, records: ['k1'] })
+    expect(decision).toEqual({ inScope: true, fulfilmentIndexes: ['k1'] })
   })
 })
 

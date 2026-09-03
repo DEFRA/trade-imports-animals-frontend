@@ -14,9 +14,7 @@ export const leafInScopeForRecord = (name, fulfilmentIndex, state) => {
   if (!implication?.inScope) {
     return false
   }
-  return (implication.records ?? []).some(
-    (r) => r.fulfilmentIndex === fulfilmentIndex
-  )
+  return (implication.fulfilmentIndexes ?? []).includes(fulfilmentIndex)
 }
 
 export const leafMandatoryForRecord = (name, fulfilmentIndex, state) =>

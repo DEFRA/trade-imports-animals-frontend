@@ -46,7 +46,7 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
           obligation: unitRecord,
           implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
+            fulfilmentIndexes: [line1Unit1FulfilmentIndex]
           }
         }
       ])
@@ -72,7 +72,7 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
           obligation: unitRecord,
           implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
+            fulfilmentIndexes: [line1Unit1FulfilmentIndex]
           }
         },
         { obligation: passport, implication: { inScope: false } },
@@ -91,9 +91,9 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
           obligation: unitRecord,
           implication: {
             inScope: true,
-            records: [
-              { fulfilmentIndex: line1Unit1FulfilmentIndex },
-              { fulfilmentIndex: line1Unit2FulfilmentIndex }
+            fulfilmentIndexes: [
+              line1Unit1FulfilmentIndex,
+              line1Unit2FulfilmentIndex
             ]
           }
         },
@@ -101,12 +101,10 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
           obligation: passport,
           implication: {
             inScope: true,
-            records: [
-              {
-                fulfilmentIndex: line1Unit1FulfilmentIndex,
-                status: 'optional'
-              },
-              { fulfilmentIndex: line1Unit2FulfilmentIndex, status: 'optional' }
+            status: 'optional',
+            fulfilmentIndexes: [
+              line1Unit1FulfilmentIndex,
+              line1Unit2FulfilmentIndex
             ]
           }
         },
@@ -114,12 +112,10 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
           obligation: earTag,
           implication: {
             inScope: true,
-            records: [
-              {
-                fulfilmentIndex: line1Unit1FulfilmentIndex,
-                status: 'optional'
-              },
-              { fulfilmentIndex: line1Unit2FulfilmentIndex, status: 'optional' }
+            status: 'optional',
+            fulfilmentIndexes: [
+              line1Unit1FulfilmentIndex,
+              line1Unit2FulfilmentIndex
             ]
           }
         }
@@ -144,25 +140,23 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
           obligation: unitRecord,
           implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
+            fulfilmentIndexes: [line1Unit1FulfilmentIndex]
           }
         },
         {
           obligation: passport,
           implication: {
             inScope: true,
-            records: [
-              { fulfilmentIndex: line1Unit1FulfilmentIndex, status: 'optional' }
-            ]
+            status: 'optional',
+            fulfilmentIndexes: [line1Unit1FulfilmentIndex]
           }
         },
         {
           obligation: earTag,
           implication: {
             inScope: true,
-            records: [
-              { fulfilmentIndex: line1Unit1FulfilmentIndex, status: 'optional' }
-            ]
+            status: 'optional',
+            fulfilmentIndexes: [line1Unit1FulfilmentIndex]
           }
         }
       ])
@@ -189,16 +183,15 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
           obligation: unitRecord,
           implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
+            fulfilmentIndexes: [line1Unit1FulfilmentIndex]
           }
         },
         {
           obligation: passport,
           implication: {
             inScope: true,
-            records: [
-              { fulfilmentIndex: line1Unit1FulfilmentIndex, status: 'optional' }
-            ]
+            status: 'optional',
+            fulfilmentIndexes: [line1Unit1FulfilmentIndex]
           }
         }
       ])
@@ -230,7 +223,7 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
       obligations: implications([
         {
           obligation: commodityLineGroup,
-          implication: { inScope: true, records: [] }
+          implication: { inScope: true, fulfilmentIndexes: [] }
         }
       ])
     })
@@ -253,7 +246,7 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
           obligation: commodityLineGroup,
           implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: 'line1' }]
+            fulfilmentIndexes: ['line1']
           }
         }
       ])
@@ -297,14 +290,15 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
           obligation: commodityLineGroup,
           implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: 'line1' }]
+            fulfilmentIndexes: ['line1']
           }
         },
         {
           obligation: leafObl,
           implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: 'line1', status: 'optional' }]
+            status: 'optional',
+            fulfilmentIndexes: ['line1']
           }
         }
       ])

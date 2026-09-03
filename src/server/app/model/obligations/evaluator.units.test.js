@@ -390,7 +390,7 @@ describe('purgeStorage', () => {
         obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', derivedLeafCategory]]),
         applicabilityDecisions: new Map([
-          ['o', { records: ['turbo', 'alloys'] }]
+          ['o', { fulfilmentIndexes: ['turbo', 'alloys'] }]
         ]),
         isInScope: alwaysInScope
       }
@@ -405,7 +405,7 @@ describe('purgeStorage', () => {
       {
         obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', derivedLeafCategory]]),
-        applicabilityDecisions: new Map([['o', { records: [] }]]),
+        applicabilityDecisions: new Map([['o', { fulfilmentIndexes: [] }]]),
         isInScope: alwaysInScope
       }
     )
@@ -673,8 +673,8 @@ describe('buildImplication', () => {
     })
     expect(result).toEqual({
       inScope: true,
-      reasons: [{ code: 'r' }],
-      records: [{ fulfilmentIndex: 'c1' }, { fulfilmentIndex: 'c2' }]
+      fulfilmentIndexes: ['c1', 'c2'],
+      reasons: [{ code: 'r' }]
     })
   })
 
@@ -702,10 +702,8 @@ describe('buildImplication', () => {
     })
     expect(result).toEqual({
       inScope: true,
-      records: [
-        { fulfilmentIndex: 'c1', status: 'mandatory' },
-        { fulfilmentIndex: 'c2', status: 'mandatory' }
-      ]
+      status: 'mandatory',
+      fulfilmentIndexes: ['c1', 'c2']
     })
     expect(result.reasons).toBeUndefined()
   })
@@ -737,7 +735,7 @@ describe('buildImplication', () => {
           {
             inScope: true,
             reasons: [{ code: 'r' }],
-            records: ['turbo', 'alloys']
+            fulfilmentIndexes: ['turbo', 'alloys']
           }
         ]
       ]),
@@ -746,11 +744,9 @@ describe('buildImplication', () => {
     })
     expect(result).toEqual({
       inScope: true,
-      reasons: [{ code: 'r' }],
-      records: [
-        { fulfilmentIndex: 'turbo', status: 'mandatory' },
-        { fulfilmentIndex: 'alloys', status: 'mandatory' }
-      ]
+      status: 'mandatory',
+      fulfilmentIndexes: ['turbo', 'alloys'],
+      reasons: [{ code: 'r' }]
     })
   })
 
@@ -763,10 +759,8 @@ describe('buildImplication', () => {
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: { o: { 'd1.a1': {}, 'd1.a2': {} } }
     })
-    expect(result.records).toEqual([
-      { fulfilmentIndex: 'd1.a1', status: 'mandatory' },
-      { fulfilmentIndex: 'd1.a2', status: 'mandatory' }
-    ])
+    expect(result.status).toBe('mandatory')
+    expect(result.fulfilmentIndexes).toEqual(['d1.a1', 'd1.a2'])
   })
 
   it('user-leaf with no storage → empty records array', () => {
@@ -778,6 +772,6 @@ describe('buildImplication', () => {
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
-    expect(result.records).toEqual([])
+    expect(result.fulfilmentIndexes).toEqual([])
   })
 })

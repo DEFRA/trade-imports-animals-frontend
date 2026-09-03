@@ -467,83 +467,36 @@
         },
         "20e5f607-1829-4c3d-8abc-06d7e8f9a0b2": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0"
-            },
-            {
-              "fulfilmentIndex": "line1"
-            }
-          ]
+          "fulfilmentIndexes": ["line0", "line1"]
         },
         "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            },
-            {
-              "fulfilmentIndex": "line1",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0", "line1"]
         },
         "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            },
-            {
-              "fulfilmentIndex": "line1",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0", "line1"]
         },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            },
-            {
-              "fulfilmentIndex": "line1",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0", "line1"]
         },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            },
-            {
-              "fulfilmentIndex": "line1",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0", "line1"]
         },
         "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
           "inScope": true,
+          "status": "optional",
+          "fulfilmentIndexes": ["line0", "line1"],
           "reasons": [
             {
               "code": "obligation.numberOfPackages.applicable.becausePackageCountCommodity",
               "explanation": "numberOfPackages applies on lines whose commodityCode is in the package-count list"
-            }
-          ],
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "optional"
-            },
-            {
-              "fulfilmentIndex": "line1",
-              "status": "optional"
             }
           ]
         },
@@ -559,69 +512,38 @@
         },
         "385d6e7f-8091-4eb5-8234-8ef506172940": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0.unit0"
-            },
-            {
-              "fulfilmentIndex": "line1.unit0"
-            }
-          ]
+          "fulfilmentIndexes": ["line0.unit0", "line1.unit0"]
         },
         "39657a80-91a2-4fc6-8345-9f0617284a51": {
           "inScope": true,
+          "status": "optional",
+          "fulfilmentIndexes": ["line0.unit0", "line1.unit0"],
           "reasons": [
             {
               "code": "obligation.passport.applicable.becausePassportCommodity",
               "explanation": "passport applies on units of lines whose commodityCode is in the passport list"
             }
-          ],
-          "records": [
-            {
-              "fulfilmentIndex": "line0.unit0",
-              "status": "optional"
-            },
-            {
-              "fulfilmentIndex": "line1.unit0",
-              "status": "optional"
-            }
           ]
         },
         "3a768b91-a2b3-4fd7-8456-a01728395b62": {
           "inScope": true,
+          "status": "optional",
+          "fulfilmentIndexes": ["line0.unit0", "line1.unit0"],
           "reasons": [
             {
               "code": "obligation.tattoo.applicable.becauseTattooCommodity",
               "explanation": "tattoo applies on units of lines whose commodityCode is in the tattoo list"
             }
-          ],
-          "records": [
-            {
-              "fulfilmentIndex": "line0.unit0",
-              "status": "optional"
-            },
-            {
-              "fulfilmentIndex": "line1.unit0",
-              "status": "optional"
-            }
           ]
         },
         "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
           "inScope": true,
+          "status": "optional",
+          "fulfilmentIndexes": ["line0.unit0", "line1.unit0"],
           "reasons": [
             {
               "code": "obligation.earTag.applicable.becauseEarTagCommodity",
               "explanation": "earTag applies on units of lines whose commodityCode is in the ear-tag list"
-            }
-          ],
-          "records": [
-            {
-              "fulfilmentIndex": "line0.unit0",
-              "status": "optional"
-            },
-            {
-              "fulfilmentIndex": "line1.unit0",
-              "status": "optional"
             }
           ]
         },
@@ -639,92 +561,37 @@
         },
         "52210b3b-4c53-4b81-8ef0-fa0b1223e40c": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0"
-            },
-            {
-              "fulfilmentIndex": "line1"
-            }
-          ]
+          "fulfilmentIndexes": ["line0", "line1"]
         },
         "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            },
-            {
-              "fulfilmentIndex": "line1",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0", "line1"]
         },
         "50ede208-1920-4e4e-8bcd-c78e9f0fb1d9": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            },
-            {
-              "fulfilmentIndex": "line1",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0", "line1"]
         },
         "51fef319-2a31-4f5f-8cde-d89fa010c2ea": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            },
-            {
-              "fulfilmentIndex": "line1",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0", "line1"]
         },
         "5210042a-3b42-4a70-8def-e9a0b121d3fb": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            },
-            {
-              "fulfilmentIndex": "line1",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0", "line1"]
         },
         "59dc2402-3805-4af3-9690-2b9628a59e83": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "optional"
-            },
-            {
-              "fulfilmentIndex": "line1",
-              "status": "optional"
-            }
-          ]
+          "status": "optional",
+          "fulfilmentIndexes": ["line0", "line1"]
         },
         "74dc1adc-b2d4-4a66-bf75-3af127810264": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "optional"
-            },
-            {
-              "fulfilmentIndex": "line1",
-              "status": "optional"
-            }
-          ]
+          "status": "optional",
+          "fulfilmentIndexes": ["line0", "line1"]
         }
       }
     },
@@ -1146,60 +1013,36 @@
         },
         "20e5f607-1829-4c3d-8abc-06d7e8f9a0b2": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0"
-            }
-          ]
+          "fulfilmentIndexes": ["line0"]
         },
         "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0"]
         },
         "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0"]
         },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0"]
         },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0"]
         },
         "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
           "inScope": true,
+          "status": "optional",
+          "fulfilmentIndexes": ["line0"],
           "reasons": [
             {
               "code": "obligation.numberOfPackages.applicable.becausePackageCountCommodity",
               "explanation": "numberOfPackages applies on lines whose commodityCode is in the package-count list"
-            }
-          ],
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "optional"
             }
           ]
         },
@@ -1215,7 +1058,7 @@
         },
         "385d6e7f-8091-4eb5-8234-8ef506172940": {
           "inScope": true,
-          "records": []
+          "fulfilmentIndexes": []
         },
         "39657a80-91a2-4fc6-8345-9f0617284a51": {
           "inScope": false
@@ -1240,65 +1083,37 @@
         },
         "52210b3b-4c53-4b81-8ef0-fa0b1223e40c": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0"
-            }
-          ]
+          "fulfilmentIndexes": ["line0"]
         },
         "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0"]
         },
         "50ede208-1920-4e4e-8bcd-c78e9f0fb1d9": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0"]
         },
         "51fef319-2a31-4f5f-8cde-d89fa010c2ea": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0"]
         },
         "5210042a-3b42-4a70-8def-e9a0b121d3fb": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0"]
         },
         "59dc2402-3805-4af3-9690-2b9628a59e83": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "optional"
-            }
-          ]
+          "status": "optional",
+          "fulfilmentIndexes": ["line0"]
         },
         "74dc1adc-b2d4-4a66-bf75-3af127810264": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "optional"
-            }
-          ]
+          "status": "optional",
+          "fulfilmentIndexes": ["line0"]
         }
       }
     },
@@ -1434,23 +1249,27 @@
         },
         "20e5f607-1829-4c3d-8abc-06d7e8f9a0b2": {
           "inScope": true,
-          "records": []
+          "fulfilmentIndexes": []
         },
         "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
           "inScope": true,
-          "records": []
+          "status": "mandatory",
+          "fulfilmentIndexes": []
         },
         "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
           "inScope": true,
-          "records": []
+          "status": "mandatory",
+          "fulfilmentIndexes": []
         },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
           "inScope": true,
-          "records": []
+          "status": "mandatory",
+          "fulfilmentIndexes": []
         },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "inScope": true,
-          "records": []
+          "status": "mandatory",
+          "fulfilmentIndexes": []
         },
         "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
           "inScope": false
@@ -1460,7 +1279,7 @@
         },
         "385d6e7f-8091-4eb5-8234-8ef506172940": {
           "inScope": true,
-          "records": []
+          "fulfilmentIndexes": []
         },
         "39657a80-91a2-4fc6-8345-9f0617284a51": {
           "inScope": false
@@ -1485,31 +1304,37 @@
         },
         "52210b3b-4c53-4b81-8ef0-fa0b1223e40c": {
           "inScope": true,
-          "records": []
+          "fulfilmentIndexes": []
         },
         "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
           "inScope": true,
-          "records": []
+          "status": "mandatory",
+          "fulfilmentIndexes": []
         },
         "50ede208-1920-4e4e-8bcd-c78e9f0fb1d9": {
           "inScope": true,
-          "records": []
+          "status": "mandatory",
+          "fulfilmentIndexes": []
         },
         "51fef319-2a31-4f5f-8cde-d89fa010c2ea": {
           "inScope": true,
-          "records": []
+          "status": "mandatory",
+          "fulfilmentIndexes": []
         },
         "5210042a-3b42-4a70-8def-e9a0b121d3fb": {
           "inScope": true,
-          "records": []
+          "status": "mandatory",
+          "fulfilmentIndexes": []
         },
         "59dc2402-3805-4af3-9690-2b9628a59e83": {
           "inScope": true,
-          "records": []
+          "status": "optional",
+          "fulfilmentIndexes": []
         },
         "74dc1adc-b2d4-4a66-bf75-3af127810264": {
           "inScope": true,
-          "records": []
+          "status": "optional",
+          "fulfilmentIndexes": []
         }
       }
     },
@@ -1679,60 +1504,36 @@
         },
         "20e5f607-1829-4c3d-8abc-06d7e8f9a0b2": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0"
-            }
-          ]
+          "fulfilmentIndexes": ["line0"]
         },
         "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0"]
         },
         "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0"]
         },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0"]
         },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0"]
         },
         "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
           "inScope": true,
+          "status": "optional",
+          "fulfilmentIndexes": ["line0"],
           "reasons": [
             {
               "code": "obligation.numberOfPackages.applicable.becausePackageCountCommodity",
               "explanation": "numberOfPackages applies on lines whose commodityCode is in the package-count list"
-            }
-          ],
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "optional"
             }
           ]
         },
@@ -1748,54 +1549,38 @@
         },
         "385d6e7f-8091-4eb5-8234-8ef506172940": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0.unit0"
-            }
-          ]
+          "fulfilmentIndexes": ["line0.unit0"]
         },
         "39657a80-91a2-4fc6-8345-9f0617284a51": {
           "inScope": true,
+          "status": "optional",
+          "fulfilmentIndexes": ["line0.unit0"],
           "reasons": [
             {
               "code": "obligation.passport.applicable.becausePassportCommodity",
               "explanation": "passport applies on units of lines whose commodityCode is in the passport list"
             }
-          ],
-          "records": [
-            {
-              "fulfilmentIndex": "line0.unit0",
-              "status": "optional"
-            }
           ]
         },
         "3a768b91-a2b3-4fd7-8456-a01728395b62": {
           "inScope": true,
+          "status": "optional",
+          "fulfilmentIndexes": ["line0.unit0"],
           "reasons": [
             {
               "code": "obligation.tattoo.applicable.becauseTattooCommodity",
               "explanation": "tattoo applies on units of lines whose commodityCode is in the tattoo list"
             }
-          ],
-          "records": [
-            {
-              "fulfilmentIndex": "line0.unit0",
-              "status": "optional"
-            }
           ]
         },
         "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
           "inScope": true,
+          "status": "optional",
+          "fulfilmentIndexes": ["line0.unit0"],
           "reasons": [
             {
               "code": "obligation.earTag.applicable.becauseEarTagCommodity",
               "explanation": "earTag applies on units of lines whose commodityCode is in the ear-tag list"
-            }
-          ],
-          "records": [
-            {
-              "fulfilmentIndex": "line0.unit0",
-              "status": "optional"
             }
           ]
         },
@@ -1813,31 +1598,37 @@
         },
         "52210b3b-4c53-4b81-8ef0-fa0b1223e40c": {
           "inScope": true,
-          "records": []
+          "fulfilmentIndexes": []
         },
         "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
           "inScope": true,
-          "records": []
+          "status": "mandatory",
+          "fulfilmentIndexes": []
         },
         "50ede208-1920-4e4e-8bcd-c78e9f0fb1d9": {
           "inScope": true,
-          "records": []
+          "status": "mandatory",
+          "fulfilmentIndexes": []
         },
         "51fef319-2a31-4f5f-8cde-d89fa010c2ea": {
           "inScope": true,
-          "records": []
+          "status": "mandatory",
+          "fulfilmentIndexes": []
         },
         "5210042a-3b42-4a70-8def-e9a0b121d3fb": {
           "inScope": true,
-          "records": []
+          "status": "mandatory",
+          "fulfilmentIndexes": []
         },
         "59dc2402-3805-4af3-9690-2b9628a59e83": {
           "inScope": true,
-          "records": []
+          "status": "optional",
+          "fulfilmentIndexes": []
         },
         "74dc1adc-b2d4-4a66-bf75-3af127810264": {
           "inScope": true,
-          "records": []
+          "status": "optional",
+          "fulfilmentIndexes": []
         }
       }
     },
@@ -2038,47 +1829,27 @@
         },
         "20e5f607-1829-4c3d-8abc-06d7e8f9a0b2": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0"
-            }
-          ]
+          "fulfilmentIndexes": ["line0"]
         },
         "21f60718-192a-4d4e-8bcd-17e8f9a0b1c3": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0"]
         },
         "22071829-2a3b-4e5f-8cde-28f9a0b1c2d4": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0"]
         },
         "2318293a-3b4c-4f60-8def-39a0b1c2d3e5": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0"]
         },
         "24192a3b-4c5d-4a71-8ef0-4ab1c2d3e4f6": {
           "inScope": true,
-          "records": [
-            {
-              "fulfilmentIndex": "line0",
-              "status": "mandatory"
-            }
-          ]
+          "status": "mandatory",
+          "fulfilmentIndexes": ["line0"]
         },
         "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
           "inScope": false
@@ -2088,7 +1859,7 @@
         },
         "385d6e7f-8091-4eb5-8234-8ef506172940": {
           "inScope": true,
-          "records": []
+          "fulfilmentIndexes": []
         },
         "39657a80-91a2-4fc6-8345-9f0617284a51": {
           "inScope": false
@@ -2113,31 +1884,37 @@
         },
         "52210b3b-4c53-4b81-8ef0-fa0b1223e40c": {
           "inScope": true,
-          "records": []
+          "fulfilmentIndexes": []
         },
         "4fdce1f7-0819-4d3d-8abc-b67d8f9fa0c8": {
           "inScope": true,
-          "records": []
+          "status": "mandatory",
+          "fulfilmentIndexes": []
         },
         "50ede208-1920-4e4e-8bcd-c78e9f0fb1d9": {
           "inScope": true,
-          "records": []
+          "status": "mandatory",
+          "fulfilmentIndexes": []
         },
         "51fef319-2a31-4f5f-8cde-d89fa010c2ea": {
           "inScope": true,
-          "records": []
+          "status": "mandatory",
+          "fulfilmentIndexes": []
         },
         "5210042a-3b42-4a70-8def-e9a0b121d3fb": {
           "inScope": true,
-          "records": []
+          "status": "mandatory",
+          "fulfilmentIndexes": []
         },
         "59dc2402-3805-4af3-9690-2b9628a59e83": {
           "inScope": true,
-          "records": []
+          "status": "optional",
+          "fulfilmentIndexes": []
         },
         "74dc1adc-b2d4-4a66-bf75-3af127810264": {
           "inScope": true,
-          "records": []
+          "status": "optional",
+          "fulfilmentIndexes": []
         }
       }
     },

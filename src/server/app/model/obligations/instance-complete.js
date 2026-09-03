@@ -52,11 +52,11 @@ const directChildRequirementUnmet = (leaf, group, fulfilmentIndex, state) => {
   return !leafSatisfied(leaf, fulfilmentIndex, state)
 }
 
-const belongingRecordUnfilled = (belonging, leaf, state) =>
-  belonging.some(
-    (record) =>
-      effectiveStatus(leaf, record.fulfilmentIndex, state) === 'mandatory' &&
-      !leafSatisfied(leaf, record.fulfilmentIndex, state)
+const anyBelongingUnfilled = (belongingFulfilmentIndexes, leaf, state) =>
+  belongingFulfilmentIndexes.some(
+    (fulfilmentIndex) =>
+      effectiveStatus(leaf, fulfilmentIndex, state) === 'mandatory' &&
+      !leafSatisfied(leaf, fulfilmentIndex, state)
   )
 
 const leafBlocksInstance = (leaf, group, fulfilmentIndex, state) => {
@@ -64,19 +64,21 @@ const leafBlocksInstance = (leaf, group, fulfilmentIndex, state) => {
   if (!implication?.inScope) {
     return false
   }
-  const belonging = (implication.records ?? []).filter((record) =>
-    belongsToFulfilmentIndex(record.fulfilmentIndex, fulfilmentIndex)
+  const belongingFulfilmentIndexes = (
+    implication.fulfilmentIndexes ?? []
+  ).filter((leafFulfilmentIndex) =>
+    belongsToFulfilmentIndex(leafFulfilmentIndex, fulfilmentIndex)
   )
-  return belonging.length === 0
+  return belongingFulfilmentIndexes.length === 0
     ? directChildRequirementUnmet(leaf, group, fulfilmentIndex, state)
-    : belongingRecordUnfilled(belonging, leaf, state)
+    : anyBelongingUnfilled(belongingFulfilmentIndexes, leaf, state)
 }
 
 const groupInvariantBlocksInstance = (group, fulfilmentIndex, state) =>
   groupsFrom(group).some(
-    (nested) =>
-      nested.requires?.anyOfIds &&
-      groupInvariantErrors(nested, state).some(
+    (nestedGroup) =>
+      nestedGroup.requires?.anyOfIds &&
+      groupInvariantErrors(nestedGroup, state).some(
         (error) =>
           error.fulfilmentIndex &&
           belongsToFulfilmentIndex(error.fulfilmentIndex, fulfilmentIndex)

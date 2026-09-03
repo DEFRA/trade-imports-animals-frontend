@@ -68,7 +68,7 @@ export function convergePurge(recognisedFulfilments, context) {
     if (viewsEqual(view, next)) {
       return {
         amendedFulfilments: next,
-        applicabilityDecisions: applicabilityDecisions,
+        applicabilityDecisions,
         isInScope
       }
     }
