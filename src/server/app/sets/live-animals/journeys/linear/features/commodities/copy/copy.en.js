@@ -43,7 +43,7 @@ export const copy = {
       hint: 'For example, 1, 25 or 5000.'
     },
     packages: {
-      label: 'Number of packages (optional)',
+      label: 'Number of packages (when required)',
       hint: 'Such as crates, bags or boxes'
     },
     errors: {

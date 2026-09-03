@@ -48,7 +48,7 @@ export const copy = {
       hint: 'Er enghraifft, 1, 25 neu 5000.'
     },
     packages: {
-      label: 'Nifer y pecynnau (dewisol)',
+      label: 'Nifer y pecynnau (pan fo angen)',
       hint: 'Fel cratiau, bagiau neu flychau'
     },
     errors: {
