@@ -10,18 +10,18 @@
   {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
-  {% if hasLines %}
-    <form method="post" novalidate>
-      <input type="hidden" name="crumb" value="{{ crumb }}" />
-      <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
-      {{ selectedCommoditiesTable(selectedRows, copy.table) }}
-    </form>
-  {% else %}
-    <p class="govuk-body">{{ copy.emptyText }}</p>
-  {% endif %}
+  {# A load with no lines redirects to the commodity question and a removal
+     that empties the notification does the same, so the only renders left
+     are loads and validation re-renders of lines that exist — the table
+     always has rows. #}
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
+    {{ selectedCommoditiesTable(selectedRows, copy.table) }}
+  </form>
 
   <p class="govuk-body">
-    <a class="govuk-link" href="{{ addHref }}">{{ addText }}</a>
+    <a class="govuk-link" href="{{ addHref }}">{{ copy.addAnother }}</a>
   </p>
 
   <form method="post" novalidate>

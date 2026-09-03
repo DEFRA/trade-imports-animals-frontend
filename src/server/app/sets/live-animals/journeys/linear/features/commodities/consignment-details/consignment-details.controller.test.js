@@ -23,6 +23,7 @@ const post = postHandlerOf(consignmentDetails)
 
 const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
 const PAGE_SLUG = 'consignment-details'
+const COMMODITIES_SLUG = 'commodities'
 
 const seedLines = () => ({
   commodityLines: [
@@ -245,6 +246,45 @@ describe('#consignmentDetailsController — per-species quantities over every li
     ).toEqual(['Fish'])
   })
 
+  it('Should send the user back to the commodity question when the removed group was the only one, leaving no commodity behind', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [
+          {
+            commoditySelection: 'Fish',
+            speciesSelection: '801204',
+            numberOfAnimalsQuantity: '4'
+          }
+        ]
+      },
+      payload: { action: 'remove:0' }
+    })
+    expect(result.response.redirect).toBe(
+      pagePath(result.journeyId, COMMODITIES_SLUG)
+    )
+    expect(result.after.commodityLines ?? []).toEqual([])
+  })
+
+  it('Should send a details load with no commodities back to the commodity question rather than rendering an empty page', async () => {
+    const result = await driveHandler(getHandlerOf(consignmentDetails), {
+      seed: { commodityLines: [] }
+    })
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, COMMODITIES_SLUG)
+    })
+    expect(result.view).toBeUndefined()
+  })
+
+  it('Should carry the change context on the redirect away from an empty details page', async () => {
+    const result = await driveHandler(getHandlerOf(consignmentDetails), {
+      seed: { commodityLines: [] },
+      query: { change: '1' }
+    })
+    expect(result.response).toEqual({
+      redirect: `${pagePath(result.journeyId, COMMODITIES_SLUG)}?change=1`
+    })
+  })
+
   it('Should refuse a remove for a group index outside the selection and delete nothing', async () => {
     const seed = seedLines()
     const result = await driveHandler(post, {
@@ -349,6 +389,26 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
     // keeps its own quantities rather than inheriting the removed line's.
     expect(lines[1].numberOfAnimalsQuantity).toBe(9)
     expect(lines[1].numberOfPackages).toBe('4')
+  })
+
+  it('Should send the user back to the commodity question when the removed species was the last line left', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [
+          {
+            commoditySelection: 'Dog',
+            speciesSelection: '923502',
+            numberOfPackages: '3',
+            numberOfAnimalsQuantity: '7'
+          }
+        ]
+      },
+      payload: { action: 'remove-species:0' }
+    })
+    expect(result.response.redirect).toBe(
+      pagePath(result.journeyId, COMMODITIES_SLUG)
+    )
+    expect(result.after.commodityLines ?? []).toEqual([])
   })
 
   it('Should refuse a species remove aimed at a commodity the page lists as one row, and delete nothing', async () => {

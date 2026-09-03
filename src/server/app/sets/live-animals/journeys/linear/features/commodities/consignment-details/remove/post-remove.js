@@ -3,17 +3,24 @@ import * as state from '../../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../../../shared/kit.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
-import { consignmentDetailsPage as page } from '../../page.js'
+import { commoditiesPage, consignmentDetailsPage as page } from '../../page.js'
 import { commodityNamesOf, linesOf } from '../lines.js'
 
 export const groupNames = (answers, evaluation) =>
   commodityNamesOf(linesOf(answers, evaluation))
 
-const backToPage = (request, h) =>
+// While a line is left the page still has quantities to collect, so a removal
+// returns to it. Take the last line out and it has nothing to ask, so the user
+// goes back to the commodity question instead — that is where the next answer
+// has to come from, and it saves them spotting a link on an empty page.
+const afterRemoval = (request, h, kept) =>
   h.redirect(
     kit.withChangeContext(
       request,
-      pagePath(request.params.journeyId, page.slug)
+      pagePath(
+        request.params.journeyId,
+        kept.length > 0 ? page.slug : commoditiesPage.slug
+      )
     )
   )
 
@@ -32,7 +39,7 @@ export const postRemove = async (request, h, index, lineKey) => {
     (entry) => entry.commoditySelection !== name
   )
   await state.reconcileEntriesAt(request, h, ['commodityLines'], lineKey, kept)
-  return backToPage(request, h)
+  return afterRemoval(request, h, kept)
 }
 
 // A species removal drops one line and leaves the rest of its commodity in
@@ -52,5 +59,5 @@ export const postRemoveSpecies = async (request, h, index, lineKey) => {
 
   const kept = stored.toSpliced(index, 1)
   await state.reconcileEntriesAt(request, h, ['commodityLines'], lineKey, kept)
-  return backToPage(request, h)
+  return afterRemoval(request, h, kept)
 }
