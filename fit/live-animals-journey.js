@@ -198,7 +198,7 @@ export const unlockSections = async (page) => {
   await selectSpecies(page, ['Felis catus'])
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await expect(
-    page.getByRole('heading', { name: 'Consignment details' })
+    page.getByRole('heading', { name: 'Commodity details' })
   ).toBeVisible()
   // The animal count is save-blocking, so the page will not let the journey
   // past it unanswered.
@@ -247,7 +247,7 @@ export const completeAnswerSections = async (page) => {
   await selectSpecies(page, ['Bos taurus'])
   await save()
   await expect(
-    page.getByRole('heading', { name: 'Consignment details' })
+    page.getByRole('heading', { name: 'Commodity details' })
   ).toBeVisible()
   await page.getByLabel('Number of animals').fill(line.numberOfAnimalsQuantity)
   await page

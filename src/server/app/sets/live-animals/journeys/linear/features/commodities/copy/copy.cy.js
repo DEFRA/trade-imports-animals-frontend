@@ -34,7 +34,7 @@ export const copy = {
     }
   },
   consignmentDetails: {
-    title: 'Manylion y llwyth',
+    title: 'Manylion y nwyddau',
     addAnother: 'Ychwanegu nwydd arall',
     table: {
       caption: 'Nwyddau a ddewiswyd',

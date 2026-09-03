@@ -38,7 +38,7 @@ test.describe('live-animals journey glue', () => {
 
     await selectSpecies(page, ['Felis catus'])
     await save()
-    await expect(heading('Consignment details')).toBeVisible()
+    await expect(heading('Commodity details')).toBeVisible()
 
     await page.getByLabel('Number of animals').fill('2')
     await save()
