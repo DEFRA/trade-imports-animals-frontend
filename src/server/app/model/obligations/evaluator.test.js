@@ -251,11 +251,11 @@ describe('V4 — regionCode conditional gate (retain-value)', () => {
   // Retain-value: the requirement flipping off demotes regionCode to
   // optional but keeps it in scope — the stored value survives.
   it('retains a stored regionCode value when the requirement flips from yes to no', () => {
-    const stored = {
+    const fulfilments = {
       [regionCodeRequirement.id]: 'no',
       [regionCode.id]: 'FR-75'
     }
-    const result = evaluator.evaluate(stored)
+    const result = evaluator.evaluate(fulfilments)
     expect(result.fulfilments[regionCode.id]).toBe('FR-75')
     expect(result.obligations[regionCode.id]).toEqual(optional)
   })
@@ -484,13 +484,17 @@ describe('V4 — commodity line group semantics', () => {
 
 describe('V4 — commodity line field records (round-trip)', () => {
   it('commodityCode stores one value per line', () => {
-    const stored = {
+    const commodityCodeFulfilments = {
       [LINE_UNKNOWN]: 'Unicorn',
       [LINE_HORSE]: 'Horse',
       [LINE_CAT]: 'Cat'
     }
-    const result = evaluator.evaluate({ [commodityCode.id]: stored })
-    expect(result.fulfilments[commodityCode.id]).toEqual(stored)
+    const result = evaluator.evaluate({
+      [commodityCode.id]: commodityCodeFulfilments
+    })
+    expect(result.fulfilments[commodityCode.id]).toEqual(
+      commodityCodeFulfilments
+    )
   })
 
   it('commodityType stores one value per line', () => {
@@ -1155,7 +1159,7 @@ describe('V4 — accompanying documents: four metadata fields are mandatory per 
 })
 
 describe('V4 — accompanying documents: all four filled on one record', () => {
-  const stored = {
+  const fulfilments = {
     [accompanyingDocumentType.id]: { d0: 'VETERINARY_HEALTH_CERTIFICATE' },
     [accompanyingDocumentAttachmentType.id]: { d0: 'PDF' },
     [accompanyingDocumentReference.id]: { d0: 'GBHC1234567890' },
@@ -1165,12 +1169,14 @@ describe('V4 — accompanying documents: all four filled on one record', () => {
   it.each(documentFields)(
     '%s is mandatory and its value round-trips',
     (_name, obligation) => {
-      const result = evaluator.evaluate(stored)
+      const result = evaluator.evaluate(fulfilments)
       expect(result.obligations[obligation.id]).toEqual({
         inScope: true,
         records: [{ fulfilmentIndex: 'd0', status: 'mandatory' }]
       })
-      expect(result.fulfilments[obligation.id]).toEqual(stored[obligation.id])
+      expect(result.fulfilments[obligation.id]).toEqual(
+        fulfilments[obligation.id]
+      )
     }
   )
 })

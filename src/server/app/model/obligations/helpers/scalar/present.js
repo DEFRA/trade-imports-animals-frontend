@@ -1,7 +1,7 @@
 import { isNonArrayObject } from '../../helper-internals.js'
 
 const isNullish = (value) => value === undefined || value === null
-const hasRecordEntries = (stored) => Object.keys(stored).length > 0
+const hasRecordEntries = (fulfilment) => Object.keys(fulfilment).length > 0
 
 /**
  * present — predicate primitive. True iff the given obligation has
@@ -14,12 +14,12 @@ const hasRecordEntries = (stored) => Object.keys(stored).length > 0
  */
 export const present = (obligation) => {
   return (fulfilments) => {
-    const stored = fulfilments[obligation.id]
-    if (isNullish(stored)) {
+    const fulfilment = fulfilments[obligation.id]
+    if (isNullish(fulfilment)) {
       return false
     }
-    if (isNonArrayObject(stored)) {
-      return hasRecordEntries(stored)
+    if (isNonArrayObject(fulfilment)) {
+      return hasRecordEntries(fulfilment)
     }
     return true
   }

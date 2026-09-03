@@ -699,10 +699,10 @@ describe('readGate', () => {
     // because of `!Array.isArray(stored)`. Preserve that verbatim — a
     // helper caller receiving an array-shaped stored value gets ONE
     // candidate (the array itself), not the array spread.
-    const stored = ['a', 'b']
-    expect(readGate({ [gateId]: stored }, gateId)).toEqual({
+    const fulfilment = ['a', 'b']
+    expect(readGate({ [gateId]: fulfilment }, gateId)).toEqual({
       present: true,
-      candidates: [stored]
+      candidates: [fulfilment]
     })
   })
 })

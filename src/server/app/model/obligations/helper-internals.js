@@ -48,12 +48,12 @@ export const isNonArrayObject = (value) =>
  * @returns {{ present: boolean, candidates: unknown[] }}
  */
 export const readGate = (fulfilments, gateId) => {
-  const stored = fulfilments[gateId]
-  if (stored === undefined) {
+  const fulfilment = fulfilments[gateId]
+  if (fulfilment === undefined) {
     return { present: false, candidates: [] }
   }
-  if (isNonArrayObject(stored)) {
-    return { present: true, candidates: Object.values(stored) }
+  if (isNonArrayObject(fulfilment)) {
+    return { present: true, candidates: Object.values(fulfilment) }
   }
-  return { present: true, candidates: [stored] }
+  return { present: true, candidates: [fulfilment] }
 }

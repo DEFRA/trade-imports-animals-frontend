@@ -25,16 +25,16 @@ export const STATUSES = {
  * storage entry or when the entry itself is not a records map.
  */
 export function leafSatisfied(obligation, fulfilmentIndex, state) {
-  const stored = state.fulfilments?.[obligation.id]
+  const fulfilment = state.fulfilments?.[obligation.id]
   if (
-    stored === undefined ||
-    stored === null ||
-    typeof stored !== 'object' ||
-    Array.isArray(stored)
+    fulfilment === undefined ||
+    fulfilment === null ||
+    typeof fulfilment !== 'object' ||
+    Array.isArray(fulfilment)
   ) {
     return false
   }
-  return !isBlankValue(stored[fulfilmentIndex])
+  return !isBlankValue(fulfilment[fulfilmentIndex])
 }
 
 /**
@@ -112,8 +112,8 @@ const checkAnyOfIds = (group, records, state) => {
       continue
     }
     const anyFilled = inScopeLeafIds.some((leafId) => {
-      const stored = state.fulfilments?.[leafId]?.[fulfilmentIndex]
-      return !isBlankValue(stored)
+      const fulfilment = state.fulfilments?.[leafId]?.[fulfilmentIndex]
+      return !isBlankValue(fulfilment)
     })
     if (!anyFilled) {
       errors.push({

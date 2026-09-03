@@ -414,9 +414,9 @@ describe('purgeStorage', () => {
 
   it('field record → map kept as-is', () => {
     const obligation = { id: 'o', within: { id: 'g' }, status: 'mandatory' }
-    const stored = { c1: 'accident', c2: 'theft' }
+    const fulfilment = { c1: 'accident', c2: 'theft' }
     const result = purgeStorage(
-      { o: stored },
+      { o: fulfilment },
       {
         obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', 'field']]),
@@ -424,14 +424,14 @@ describe('purgeStorage', () => {
         isInScope: alwaysInScope
       }
     )
-    expect(result.o).toEqual(stored)
+    expect(result.o).toEqual(fulfilment)
   })
 
   it('user leaf → map kept as-is', () => {
     const obligation = { id: 'o', indexedBy: { source: 'user' } }
-    const stored = { 'd1.a1': { line1: '10 High St' } }
+    const fulfilment = { 'd1.a1': { line1: '10 High St' } }
     const result = purgeStorage(
-      { o: stored },
+      { o: fulfilment },
       {
         obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', 'user-leaf']]),
@@ -439,7 +439,7 @@ describe('purgeStorage', () => {
         isInScope: alwaysInScope
       }
     )
-    expect(result.o).toEqual(stored)
+    expect(result.o).toEqual(fulfilment)
   })
 
   it('empty object storage → entry omitted entirely', () => {
