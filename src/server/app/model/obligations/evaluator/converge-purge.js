@@ -1,5 +1,5 @@
 import { enumerateGroupPathsFromStorage } from './enumeration/enumerate-group-paths-from-storage.js'
-import { viewsEqual } from './internal/views-equal.js'
+import { fulfilmentsEqual } from './internal/fulfilments-equal.js'
 import { purgeStorage } from './purge/purge-storage.js'
 import { makeInScopeCheck } from './scope/make-in-scope-check.js'
 import { runApplicabilityDecisions } from './scope/run-applicability-decisions.js'
@@ -13,9 +13,9 @@ import { runApplicabilityDecisions } from './scope/run-applicability-decisions.j
 const MAX_PURGE_ITERATIONS = 16
 
 // Fixpoint loop: repeat {enumerate → applyTo → isInScope → purge}
-// until the view stops shrinking. Each iteration replaces the view
-// with the just-purged fulfilments, so the next applyTo sees exactly
-// what every other gate is going to see.
+// until the amended fulfilments stop shrinking. Each iteration
+// replaces `amendedFulfilments` with the just-purged snapshot, so the
+// next applyTo sees exactly what every other gate is going to see.
 //
 // Bounded by `MAX_PURGE_ITERATIONS`; throws if we exceed the cap so
 // a pathological gate design fails loudly rather than silently
@@ -33,7 +33,7 @@ export function convergePurge(recognisedFulfilments, context) {
     obligationDescendants
   } = context
 
-  let view = recognisedFulfilments
+  let amendedFulfilments = recognisedFulfilments
   let applicabilityDecisions
   let isInScope
 
@@ -43,11 +43,11 @@ export function convergePurge(recognisedFulfilments, context) {
       obligationsByCategory,
       obligationAncestorGroups,
       obligationDescendants,
-      view
+      amendedFulfilments
     )
     applicabilityDecisions = runApplicabilityDecisions(
       obligations,
-      view,
+      amendedFulfilments,
       groupPaths
     )
     isInScope = makeInScopeCheck(
@@ -58,21 +58,23 @@ export function convergePurge(recognisedFulfilments, context) {
       isInScope(obligation)
     }
 
-    const next = purgeStorage(view, {
+    const next = purgeStorage(amendedFulfilments, {
       obligationsById,
       obligationsByCategory,
       applicabilityDecisions,
       isInScope
     })
 
-    if (viewsEqual(view, next)) {
+    // Termination: purge produced no new drops or filtered entries — the
+    // fixpoint has settled and the caller can consume the amended snapshot.
+    if (fulfilmentsEqual(amendedFulfilments, next)) {
       return {
         amendedFulfilments: next,
         applicabilityDecisions,
         isInScope
       }
     }
-    view = next
+    amendedFulfilments = next
   }
   throw new Error(
     `ObligationEvaluator: applyTo/purge did not converge within ${MAX_PURGE_ITERATIONS} iterations — check for oscillating gate design`
