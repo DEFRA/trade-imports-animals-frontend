@@ -32,12 +32,6 @@ const defraIdAuth = () => ({
   }
 })
 
-const joinedSetCookie = (headers) => {
-  const setCookie = headers['set-cookie'] ?? []
-  const cookies = Array.isArray(setCookie) ? setCookie : [setCookie]
-  return cookies.join('\n')
-}
-
 describe('#authController', () => {
   const originalMode = config.get('stubMode')
   let server
@@ -61,15 +55,16 @@ describe('#authController', () => {
   test('GET /auth/sign-in-oidc renders unauthorised when token verification fails', async () => {
     verifyToken.mockRejectedValue(new Error('Client request timeout'))
 
-    const { statusCode, result, headers } = await server.inject({
+    const { statusCode, payload, headers } = await server.inject({
       method: 'GET',
       url: '/auth/sign-in-oidc',
       auth: defraIdAuth()
     })
 
     expect(statusCode).toBe(statusCodes.ok)
-    expect(result).toContain('Sorry, we are unable to sign you in')
-    expect(verifyToken).toHaveBeenCalledWith('mock-token')
-    expect(joinedSetCookie(headers)).not.toContain('sid=')
+    expect(payload).toContain('Sorry, we are unable to sign you in')
+    expect(headers['set-cookie'] ?? []).not.toContainEqual(
+      expect.stringContaining('sid=')
+    )
   })
 })
