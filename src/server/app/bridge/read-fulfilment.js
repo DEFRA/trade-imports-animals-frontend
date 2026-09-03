@@ -7,7 +7,7 @@ import {
   segmentsOf
 } from './fulfilment-id.js'
 import { fulfilmentRegistry } from './fulfilment-registry.js'
-import { ancestorChain } from './fulfilments/index.js'
+import { ancestorChain } from '../model/obligations/manifest-graph.js'
 
 const ancestorsAndSelf = (obligation) => [
   ...ancestorChain(obligation),

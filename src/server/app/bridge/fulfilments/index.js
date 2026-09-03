@@ -25,6 +25,5 @@
  * coordinated by `assemble-fulfilments.js`.
  */
 
-export { groupObligations, ancestorChain } from './obligation-graph.js'
 export { fulfilmentIndexToPath } from './fulfilment-index-path.js'
 export { projectAnswers } from './project-answers/index.js'

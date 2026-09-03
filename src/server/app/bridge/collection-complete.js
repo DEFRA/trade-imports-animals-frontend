@@ -19,8 +19,8 @@
  */
 
 import { obligationByName } from '../model/obligations/manifest.js'
+import { ancestorChain } from '../model/obligations/manifest-graph.js'
 import { instanceComplete } from '../model/obligations/instance-complete.js'
-import { ancestorChain } from './fulfilments/index.js'
 import { fulfilmentIndexInstance } from './fulfilment-id.js'
 import { fulfilmentRegistry } from './fulfilment-registry.js'
 

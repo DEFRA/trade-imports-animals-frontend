@@ -16,11 +16,8 @@
  */
 
 import { obligations } from '../model/obligations/manifest.js'
-import {
-  ancestorChain,
-  fulfilmentIndexToPath,
-  groupObligations
-} from './fulfilments/index.js'
+import { ancestorChain, isGroup } from '../model/obligations/manifest-graph.js'
+import { fulfilmentIndexToPath } from './fulfilments/index.js'
 import { pathKey } from '../lib/path.js'
 import { isAnswered } from '../lib/answered.js'
 
@@ -48,7 +45,7 @@ const wipedRecordKeys = (obligation, chain, inVal, fulfilmentsOut) => {
 }
 
 const wipedKeysFor = (obligation, fulfilmentsIn, fulfilmentsOut) => {
-  if (groupObligations.has(obligation)) {
+  if (isGroup(obligation)) {
     return []
   }
   const inVal = fulfilmentsIn[obligation.id]

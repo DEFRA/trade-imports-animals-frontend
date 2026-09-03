@@ -21,12 +21,12 @@
  * the direct-child mandatory-leaf rule above.
  *
  * Lives outside `state-queries.js` because it enumerates leaves under the
- * group via `obligations()`, which needs a configured manifest. Keeping it
- * separate lets `state-queries.js` stay manifest-agnostic.
+ * group via the manifest graph, which needs a configured manifest. Keeping
+ * it separate lets `state-queries.js` stay manifest-agnostic.
  */
 
-import { obligations } from './manifest.js'
 import { INDEX_DELIMITER } from './index-delimiter.js'
+import { leavesUnder, groupsFrom } from './manifest-graph.js'
 import {
   effectiveStatus,
   groupInvariantErrors,
@@ -39,33 +39,6 @@ import {
 const belongsToFulfilmentIndex = (childIndex, ancestorIndex) =>
   childIndex === ancestorIndex ||
   childIndex.startsWith(`${ancestorIndex}${INDEX_DELIMITER}`)
-
-const ancestorChain = (obligation) => {
-  const chain = []
-  let cur = obligation.within
-  while (cur) {
-    chain.unshift(cur)
-    cur = cur.within
-  }
-  return chain
-}
-
-const isGroup = (obligation, allObligations) =>
-  allObligations.some((other) => other.within === obligation)
-
-const leavesUnder = (group, allObligations) =>
-  allObligations.filter(
-    (obligation) =>
-      !isGroup(obligation, allObligations) &&
-      ancestorChain(obligation).includes(group)
-  )
-
-const groupsFrom = (group, allObligations) =>
-  allObligations.filter(
-    (obligation) =>
-      isGroup(obligation, allObligations) &&
-      (obligation === group || ancestorChain(obligation).includes(group))
-  )
 
 // Unconditional mandatory direct child leaf with no enumerated record for
 // this instance — the instance still requires a value there.
@@ -99,13 +72,8 @@ const leafBlocksInstance = (leaf, group, fulfilmentIndex, state) => {
     : belongingRecordUnfilled(belonging, leaf, state)
 }
 
-const groupInvariantBlocksInstance = (
-  group,
-  fulfilmentIndex,
-  state,
-  allObligations
-) =>
-  groupsFrom(group, allObligations).some(
+const groupInvariantBlocksInstance = (group, fulfilmentIndex, state) =>
+  groupsFrom(group).some(
     (nested) =>
       nested.requires?.anyOfIds &&
       groupInvariantErrors(nested, state).some(
@@ -126,17 +94,11 @@ const groupInvariantBlocksInstance = (
  * @returns {boolean}
  */
 export const instanceComplete = (group, fulfilmentIndex, state) => {
-  const allObligations = obligations()
-  const blockedByLeaf = leavesUnder(group, allObligations).some((leaf) =>
+  const blockedByLeaf = leavesUnder(group).some((leaf) =>
     leafBlocksInstance(leaf, group, fulfilmentIndex, state)
   )
   if (blockedByLeaf) {
     return false
   }
-  return !groupInvariantBlocksInstance(
-    group,
-    fulfilmentIndex,
-    state,
-    allObligations
-  )
+  return !groupInvariantBlocksInstance(group, fulfilmentIndex, state)
 }

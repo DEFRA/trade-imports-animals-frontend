@@ -1,5 +1,5 @@
 import { obligations } from '../model/obligations/manifest.js'
-import { ancestorChain } from './fulfilments/index.js'
+import { ancestorChain } from '../model/obligations/manifest-graph.js'
 
 // Binding field names appear inside the store-path grammar
 // (`groupedPathOf`/`pathOf`), so they cannot contain the grammar's
