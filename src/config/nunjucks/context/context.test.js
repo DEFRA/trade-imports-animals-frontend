@@ -62,6 +62,42 @@ describe('context and cache', () => {
         expect(result.activeNavigationItem).toBeNull()
       })
 
+      test('Should describe the signed-in user from their session', async () => {
+        const cacheGet = vi
+          .fn()
+          .mockResolvedValue({ email: 'trader@example.com' })
+        const result = await contextImport.context({
+          path: '/',
+          auth: {
+            isAuthenticated: true,
+            credentials: { sessionId: 'session-1' }
+          },
+          server: { app: { cache: { get: cacheGet } } }
+        })
+
+        expect(cacheGet).toHaveBeenCalledWith('session-1')
+        expect(result.userSession).toEqual({
+          isAuthenticated: true,
+          displayName: 'trader@example.com',
+          email: 'trader@example.com'
+        })
+      })
+
+      test('Should not look up a session for a sign-in callback that has no session id yet', async () => {
+        const cacheGet = vi.fn()
+        const result = await contextImport.context({
+          path: '/auth/sign-in-oidc',
+          auth: {
+            isAuthenticated: true,
+            credentials: { profile: { sessionId: 'session-1' } }
+          },
+          server: { app: { cache: { get: cacheGet } } }
+        })
+
+        expect(cacheGet).not.toHaveBeenCalled()
+        expect(result.userSession).toEqual({ isAuthenticated: false })
+      })
+
       describe('With valid asset path', () => {
         test('Should provide expected asset path', () => {
           expect(contextResult.getAssetPath('application.js')).toBe(
