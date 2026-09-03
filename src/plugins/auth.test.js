@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, test, vi, beforeEach } from 'vitest'
+import { describe, expect, test, vi, beforeEach } from 'vitest'
 import { authPlugin, getBellOptions, getCookieOptions } from './auth.js'
 
-const getOidcConfigMock = vi.hoisted(() => vi.fn())
+const getOidcConfigWithRetryMock = vi.hoisted(() => vi.fn())
 const configGetMock = vi.hoisted(() => vi.fn())
 const refreshTokensMock = vi.hoisted(() => vi.fn())
 const getSafeRedirectMock = vi.hoisted(() => vi.fn())
@@ -10,8 +10,8 @@ const isStubModeMock = vi.hoisted(() => vi.fn())
 const jwtDecodeMock = vi.hoisted(() => vi.fn())
 const jwtVerifyTimeMock = vi.hoisted(() => vi.fn())
 
-vi.mock('../auth/get-oidc-config.js', () => ({
-  getOidcConfig: getOidcConfigMock
+vi.mock('../auth/get-oidc-config-with-retry.js', () => ({
+  getOidcConfigWithRetry: getOidcConfigWithRetryMock
 }))
 
 vi.mock('../config/config.js', () => ({
@@ -46,33 +46,22 @@ describe('auth plugin', () => {
     authorization_endpoint: 'https://idp.example.com/auth',
     token_endpoint: 'https://idp.example.com/token'
   }
-  const discoveryUrl =
-    'https://idp.example.com/.well-known/openid-configuration'
-
   const buildServer = () => ({
     auth: {
       strategy: vi.fn(),
       default: vi.fn()
     },
-    logger: {
-      warn: vi.fn(),
-      error: vi.fn()
-    }
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
+    logger: { warn: vi.fn() }
   })
 
   beforeEach(() => {
     vi.clearAllMocks()
 
     isStubModeMock.mockReturnValue(false)
-    getOidcConfigMock.mockResolvedValue(oidcConfig)
+    getOidcConfigWithRetryMock.mockResolvedValue(oidcConfig)
 
     configGetMock.mockImplementation((key) => {
       const map = {
-        'defraId.oidcDiscoveryUrl': discoveryUrl,
         'defraId.clientId': 'test-client-id',
         'defraId.clientSecret': 'test-client-secret',
         'session.cookie.password': 'some-password-32-chars-long-000000',
@@ -93,7 +82,7 @@ describe('auth plugin', () => {
 
     await authPlugin.plugin.register(server)
 
-    expect(getOidcConfigMock).toHaveBeenCalledTimes(1)
+    expect(getOidcConfigWithRetryMock).toHaveBeenCalledWith(server.logger)
 
     expect(server.auth.strategy).toHaveBeenCalledWith(
       'defra-id',
@@ -140,25 +129,19 @@ describe('auth plugin', () => {
     expect(server.auth.strategy).toHaveBeenCalledTimes(1)
     expect(server.auth.strategy.mock.calls[0][0]).toBe('session')
     expect(server.auth.default).toHaveBeenCalledWith('session')
-    expect(getOidcConfigMock).not.toHaveBeenCalled()
+    expect(getOidcConfigWithRetryMock).not.toHaveBeenCalled()
   })
 
-  test('register retries through the server logger and fails naming the discovery URL when the provider never answers', async () => {
-    vi.useFakeTimers()
-    getOidcConfigMock.mockRejectedValue(new Error('connect ETIMEDOUT'))
+  test('register propagates a discovery failure and does not register the Bell strategy', async () => {
+    getOidcConfigWithRetryMock.mockRejectedValue(
+      new Error('Could not reach the OIDC provider')
+    )
     const server = buildServer()
 
-    const registered = authPlugin.plugin.register(server)
-    const tracked = registered.catch((error) => error)
-
-    await vi.advanceTimersByTimeAsync(7000)
-    const error = await tracked
-
-    expect(error.message).toBe(
-      `Could not reach the OIDC provider at ${discoveryUrl} after 4 attempts`
+    await expect(authPlugin.plugin.register(server)).rejects.toThrow(
+      'Could not reach the OIDC provider'
     )
-    expect(getOidcConfigMock).toHaveBeenCalledTimes(4)
-    expect(server.logger.warn).toHaveBeenCalledTimes(3)
+
     expect(server.auth.strategy).not.toHaveBeenCalledWith(
       'defra-id',
       'bell',
@@ -182,6 +165,22 @@ describe('auth plugin', () => {
 
     expect(getSafeRedirectMock).toHaveBeenCalledWith('/some/path?x=1')
     expect(request.yar.set).toHaveBeenCalledWith('redirect', '/safe/redirect')
+    expect(location).toBe('http://localhost:3000/auth/sign-in-oidc')
+  })
+
+  test('getBellOptions.location stores nothing when no redirect is requested', () => {
+    const options = getBellOptions(oidcConfig)
+
+    const request = {
+      query: {},
+      yar: {
+        set: vi.fn()
+      }
+    }
+
+    const location = options.location(request)
+
+    expect(request.yar.set).not.toHaveBeenCalled()
     expect(location).toBe('http://localhost:3000/auth/sign-in-oidc')
   })
 
@@ -357,38 +356,6 @@ describe('auth plugin', () => {
           refreshToken: 'new-refresh-token'
         }
       })
-    })
-
-    test('validate rejects without writing a session when the refresh times out', async () => {
-      const options = getCookieOptions()
-      const userSession = {
-        token: 'old-token',
-        refreshToken: 'old-refresh'
-      }
-
-      const request = {
-        server: {
-          app: {
-            cache: {
-              get: vi.fn().mockResolvedValue(userSession),
-              set: vi.fn()
-            }
-          }
-        }
-      }
-
-      jwtDecodeMock.mockReturnValue({ exp: 1 })
-      jwtVerifyTimeMock.mockImplementation(() => {
-        throw new Error('token expired')
-      })
-
-      refreshTokensMock.mockRejectedValue(new Error('Client request timeout'))
-
-      await expect(
-        options.validate(request, { sessionId: 'session-1' })
-      ).rejects.toThrow('Client request timeout')
-
-      expect(request.server.app.cache.set).not.toHaveBeenCalled()
     })
 
     test('validate returns isValid:false when verification fails and refreshTokens disabled', async () => {

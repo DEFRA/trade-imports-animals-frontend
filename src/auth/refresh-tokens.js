@@ -3,7 +3,6 @@ import { getTraceId } from '@defra/hapi-tracing'
 import { getOidcConfig } from './get-oidc-config.js'
 import { config } from '../config/config.js'
 
-// Doubled by Wreck (request + read); signing tokens is slower than discovery.
 const TOKEN_ENDPOINT_TIMEOUT_MS = 3000
 
 async function refreshTokens(refreshToken) {
