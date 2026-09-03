@@ -39,8 +39,9 @@ async function context(request) {
 
   // If the user is authenticated, add the user's details to the view context
   // This allows the view to display the user's session details and the ability to conditionally render content
-  const authData = request.auth?.isAuthenticated
-    ? await request.server.app.cache.get(request.auth.credentials.sessionId)
+  const sessionId = request.auth?.credentials?.sessionId
+  const authData = sessionId
+    ? await request.server.app.cache.get(sessionId)
     : null
 
   return {

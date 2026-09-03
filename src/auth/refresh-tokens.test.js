@@ -90,8 +90,29 @@ describe('refreshTokens', () => {
           'Content-Type': 'application/x-www-form-urlencoded',
           [tracingHeader]: traceId
         },
-        json: true
+        json: true,
+        timeout: 3000
       }
+    )
+  })
+
+  test('sends an empty tracing header when the request has no trace id', async () => {
+    getTraceIdMock.mockReturnValue(undefined)
+    getOidcConfigMock.mockResolvedValue({
+      token_endpoint: 'https://mock-auth-server/oauth/token'
+    })
+    configGetMock.mockImplementation((key) =>
+      key === 'tracing.header' ? tracingHeader : undefined
+    )
+    wreckPostMock.mockResolvedValue({ payload: {} })
+
+    await refreshTokens('rt')
+
+    expect(wreckPostMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: expect.objectContaining({ [tracingHeader]: '' })
+      })
     )
   })
 
