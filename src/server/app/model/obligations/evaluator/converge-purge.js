@@ -21,7 +21,7 @@ const MAX_PURGE_ITERATIONS = 16
 // a pathological gate design fails loudly rather than silently
 // truncating at some arbitrary iteration.
 //
-// Returns the final `{ amendedFulfilments, obligationApplicabilityDecisions,
+// Returns the final `{ amendedFulfilments, applicabilityDecisions,
 // isInScope }` — the caller feeds these to enumeration + implication
 // building.
 export function convergePurge(recognisedFulfilments, context) {
@@ -34,7 +34,7 @@ export function convergePurge(recognisedFulfilments, context) {
   } = context
 
   let view = recognisedFulfilments
-  let obligationApplicabilityDecisions
+  let applicabilityDecisions
   let isInScope
 
   for (let iteration = 0; iteration < MAX_PURGE_ITERATIONS; iteration++) {
@@ -45,13 +45,13 @@ export function convergePurge(recognisedFulfilments, context) {
       obligationDescendants,
       view
     )
-    obligationApplicabilityDecisions = runApplicabilityDecisions(
+    applicabilityDecisions = runApplicabilityDecisions(
       obligations,
       view,
       groupPaths
     )
     isInScope = makeInScopeCheck(
-      obligationApplicabilityDecisions,
+      applicabilityDecisions,
       obligationAncestorGroups
     )
     for (const obligation of obligations) {
@@ -61,14 +61,14 @@ export function convergePurge(recognisedFulfilments, context) {
     const next = purgeStorage(view, {
       obligationsById,
       obligationsByCategory,
-      obligationApplicabilityDecisions,
+      applicabilityDecisions,
       isInScope
     })
 
     if (viewsEqual(view, next)) {
       return {
         amendedFulfilments: next,
-        obligationApplicabilityDecisions,
+        applicabilityDecisions: applicabilityDecisions,
         isInScope
       }
     }

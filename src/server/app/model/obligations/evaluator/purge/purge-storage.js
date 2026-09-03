@@ -3,13 +3,9 @@ import { isKeyedRecord } from '../internal/is-keyed-record.js'
 // applyTo returns the leaf fulfilmentIndexes it currently authorises; keep
 // only stored records whose fulfilmentIndex is in that set. `{ keep: false }`
 // when nothing survives the filter.
-const purgedDerivedLeaf = (
-  obligation,
-  fulfilment,
-  obligationApplicabilityDecisions
-) => {
+const purgedDerivedLeaf = (obligation, fulfilment, applicabilityDecisions) => {
   const fulfilmentIndexes = new Set(
-    obligationApplicabilityDecisions.get(obligation.id)?.records ?? []
+    applicabilityDecisions.get(obligation.id)?.records ?? []
   )
   const filtered = {}
   for (const [fulfilmentIndex, recordValue] of Object.entries(
@@ -34,14 +30,10 @@ const purgedFulfilmentFor = (
   obligation,
   fulfilment,
   category,
-  obligationApplicabilityDecisions
+  applicabilityDecisions
 ) => {
   if (category === 'derived-leaf') {
-    return purgedDerivedLeaf(
-      obligation,
-      fulfilment,
-      obligationApplicabilityDecisions
-    )
+    return purgedDerivedLeaf(obligation, fulfilment, applicabilityDecisions)
   }
   if (category === 'single') {
     return { keep: true, value: fulfilment }
@@ -62,7 +54,7 @@ export function purgeStorage(recognisedFulfilments, context) {
   const {
     obligationsById,
     obligationsByCategory,
-    obligationApplicabilityDecisions,
+    applicabilityDecisions,
     isInScope
   } = context
 
@@ -80,7 +72,7 @@ export function purgeStorage(recognisedFulfilments, context) {
       obligation,
       fulfilment,
       category,
-      obligationApplicabilityDecisions
+      applicabilityDecisions
     )
     if (purged.keep) {
       amendedFulfilments[obligationId] = purged.value

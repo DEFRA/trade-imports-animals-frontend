@@ -347,7 +347,7 @@ describe('purgeStorage', () => {
       {
         obligationsById: new Map(),
         obligationsByCategory: new Map(),
-        obligationApplicabilityDecisions: new Map(),
+        applicabilityDecisions: new Map(),
         isInScope: alwaysInScope
       }
     )
@@ -361,7 +361,7 @@ describe('purgeStorage', () => {
       {
         obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', 'single']]),
-        obligationApplicabilityDecisions: new Map(),
+        applicabilityDecisions: new Map(),
         isInScope: alwaysOutOfScope
       }
     )
@@ -375,7 +375,7 @@ describe('purgeStorage', () => {
       {
         obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', 'single']]),
-        obligationApplicabilityDecisions: new Map(),
+        applicabilityDecisions: new Map(),
         isInScope: alwaysInScope
       }
     )
@@ -389,7 +389,7 @@ describe('purgeStorage', () => {
       {
         obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', derivedLeafCategory]]),
-        obligationApplicabilityDecisions: new Map([
+        applicabilityDecisions: new Map([
           ['o', { records: ['turbo', 'alloys'] }]
         ]),
         isInScope: alwaysInScope
@@ -405,7 +405,7 @@ describe('purgeStorage', () => {
       {
         obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', derivedLeafCategory]]),
-        obligationApplicabilityDecisions: new Map([['o', { records: [] }]]),
+        applicabilityDecisions: new Map([['o', { records: [] }]]),
         isInScope: alwaysInScope
       }
     )
@@ -420,7 +420,7 @@ describe('purgeStorage', () => {
       {
         obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', 'field']]),
-        obligationApplicabilityDecisions: new Map(),
+        applicabilityDecisions: new Map(),
         isInScope: alwaysInScope
       }
     )
@@ -435,7 +435,7 @@ describe('purgeStorage', () => {
       {
         obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', 'user-leaf']]),
-        obligationApplicabilityDecisions: new Map(),
+        applicabilityDecisions: new Map(),
         isInScope: alwaysInScope
       }
     )
@@ -449,7 +449,7 @@ describe('purgeStorage', () => {
       {
         obligationsById: new Map([['o', obligation]]),
         obligationsByCategory: new Map([['o', 'user-leaf']]),
-        obligationApplicabilityDecisions: new Map(),
+        applicabilityDecisions: new Map(),
         isInScope: alwaysInScope
       }
     )
@@ -585,7 +585,7 @@ describe('buildImplications', () => {
     const result = buildImplications([], {
       isInScope: () => true,
       obligationsByCategory: new Map(),
-      obligationApplicabilityDecisions: new Map(),
+      applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
@@ -604,7 +604,7 @@ describe('buildImplications', () => {
         ['a', 'single'],
         ['b', 'single']
       ]),
-      obligationApplicabilityDecisions: new Map([
+      applicabilityDecisions: new Map([
         ['a', { inScope: true, status: 'mandatory' }],
         ['b', { inScope: false }]
       ]),
@@ -624,7 +624,7 @@ describe('buildImplication', () => {
     const result = buildImplication(obligation, {
       isInScope: () => false,
       obligationsByCategory: new Map([['o', 'single']]),
-      obligationApplicabilityDecisions: new Map(),
+      applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
@@ -641,7 +641,7 @@ describe('buildImplication', () => {
     const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'single']]),
-      obligationApplicabilityDecisions: new Map([['o', applicabilityDecision]]),
+      applicabilityDecisions: new Map([['o', applicabilityDecision]]),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
@@ -653,7 +653,7 @@ describe('buildImplication', () => {
     const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'single']]),
-      obligationApplicabilityDecisions: new Map(),
+      applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
@@ -665,7 +665,7 @@ describe('buildImplication', () => {
     const result = buildImplication(group, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['g', 'group']]),
-      obligationApplicabilityDecisions: new Map([
+      applicabilityDecisions: new Map([
         ['g', { inScope: true, reasons: [{ code: 'r' }] }]
       ]),
       fulfilmentIndexesByObligationId: new Map([['g', new Set(['c1', 'c2'])]]),
@@ -683,7 +683,7 @@ describe('buildImplication', () => {
     const result = buildImplication(group, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['g', 'group']]),
-      obligationApplicabilityDecisions: new Map(),
+      applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map([['g', new Set(['c1'])]]),
       amendedFulfilments: {}
     })
@@ -696,7 +696,7 @@ describe('buildImplication', () => {
     const result = buildImplication(field, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['f', 'field']]),
-      obligationApplicabilityDecisions: new Map(),
+      applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map([['g', new Set(['c1', 'c2'])]]),
       amendedFulfilments: {}
     })
@@ -719,7 +719,7 @@ describe('buildImplication', () => {
     const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'field']]),
-      obligationApplicabilityDecisions: new Map(),
+      applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
@@ -731,7 +731,7 @@ describe('buildImplication', () => {
     const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', derivedLeafCategory]]),
-      obligationApplicabilityDecisions: new Map([
+      applicabilityDecisions: new Map([
         [
           'o',
           {
@@ -759,7 +759,7 @@ describe('buildImplication', () => {
     const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'user-leaf']]),
-      obligationApplicabilityDecisions: new Map(),
+      applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: { o: { 'd1.a1': {}, 'd1.a2': {} } }
     })
@@ -774,7 +774,7 @@ describe('buildImplication', () => {
     const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'user-leaf']]),
-      obligationApplicabilityDecisions: new Map(),
+      applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })

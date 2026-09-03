@@ -8,10 +8,10 @@ export function runApplicabilityDecisions(
   recognisedFulfilments,
   fulfilmentIndexesByObligationId = new Map()
 ) {
-  const obligationApplicabilityDecisions = new Map()
+  const applicabilityDecisions = new Map()
   for (const obligation of obligations) {
     if (obligation.applyTo) {
-      obligationApplicabilityDecisions.set(
+      applicabilityDecisions.set(
         obligation.id,
         obligation.applyTo(
           recognisedFulfilments,
@@ -20,5 +20,5 @@ export function runApplicabilityDecisions(
       )
     }
   }
-  return obligationApplicabilityDecisions
+  return applicabilityDecisions
 }

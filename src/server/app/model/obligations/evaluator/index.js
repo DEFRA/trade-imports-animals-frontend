@@ -76,17 +76,14 @@ export function createObligationEvaluator({
       // fulfilments — a value purged in this call cannot leak into
       // another gate's decision (the two-hop failure mode where a
       // purged value silently drives a second gate).
-      const {
-        amendedFulfilments,
-        obligationApplicabilityDecisions,
-        isInScope
-      } = convergePurge(recognisedFulfilments, {
-        obligations,
-        obligationsById,
-        obligationsByCategory,
-        obligationAncestorGroups,
-        obligationDescendants
-      })
+      const { amendedFulfilments, applicabilityDecisions, isInScope } =
+        convergePurge(recognisedFulfilments, {
+          obligations,
+          obligationsById,
+          obligationsByCategory,
+          obligationAncestorGroups,
+          obligationDescendants
+        })
 
       // 3. Post-purge enumeration — group instance-paths for implication
       // building (accounts for records dropped by the converged purge).
@@ -105,7 +102,7 @@ export function createObligationEvaluator({
       const implicationsByObligation = buildImplications(obligations, {
         isInScope,
         obligationsByCategory,
-        obligationApplicabilityDecisions,
+        applicabilityDecisions,
         fulfilmentIndexesByObligationId,
         amendedFulfilments
       })

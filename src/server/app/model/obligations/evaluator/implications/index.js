@@ -89,7 +89,7 @@ export function buildImplication(obligation, context) {
   const {
     isInScope,
     obligationsByCategory,
-    obligationApplicabilityDecisions,
+    applicabilityDecisions,
     fulfilmentIndexesByObligationId,
     amendedFulfilments
   } = context
@@ -99,9 +99,7 @@ export function buildImplication(obligation, context) {
   }
 
   const category = obligationsByCategory.get(obligation.id)
-  const applicabilityDecision = obligationApplicabilityDecisions.get(
-    obligation.id
-  )
+  const applicabilityDecision = applicabilityDecisions.get(obligation.id)
 
   switch (category) {
     case 'single':

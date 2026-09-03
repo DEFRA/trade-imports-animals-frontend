@@ -5,7 +5,7 @@
 // inside the closure across calls; the caller can optionally warm
 // the cache by invoking it for every obligation up front.
 export function makeInScopeCheck(
-  obligationApplicabilityDecisions,
+  applicabilityDecisions,
   obligationAncestorGroups
 ) {
   const inScopeCache = new Map()
@@ -13,9 +13,7 @@ export function makeInScopeCheck(
     if (inScopeCache.has(obligation.id)) {
       return inScopeCache.get(obligation.id)
     }
-    const applicabilityDecision = obligationApplicabilityDecisions.get(
-      obligation.id
-    )
+    const applicabilityDecision = applicabilityDecisions.get(obligation.id)
     if (applicabilityDecision?.inScope === false) {
       inScopeCache.set(obligation.id, false)
       return false
