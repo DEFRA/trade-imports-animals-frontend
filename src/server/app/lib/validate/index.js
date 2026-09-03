@@ -13,6 +13,7 @@ export {
   oneOf,
   requiredOneOf,
   integerInRange,
+  requiredIntegerInRange,
   dateParts,
   dateText,
   dateTextInRange

@@ -49,6 +49,7 @@ export const copy = {
       hint: 'Such as crates, bags or boxes'
     },
     errors: {
+      animalsRequired: 'Enter the number of animals',
       animalsWholeNumber: 'Number of animals must be a whole number, like 25',
       packagesWholeNumber: 'Number of packages must be a whole number, like 5',
       countDrop: (records, species, entered) =>
