@@ -24,6 +24,14 @@ const MAX_TELEPHONE_LENGTH = 20
 const MAX_EMAIL_LENGTH = 254
 const MAX_IDENTIFIER_LENGTH = 58
 const EMAIL_DOMAIN = '@example.com'
+const DEFAULT_ANIMALS_COUNT = '1'
+
+// One commodity line per species selected, in selection order.
+const lineIndicesOf = (selections) => [
+  ...Array(
+    selections.reduce((total, [, species]) => total + species.length, 0)
+  ).keys()
+]
 
 const addLines = async (page, selections, counts = []) => {
   await startNotification(page)
@@ -33,10 +41,12 @@ const addLines = async (page, selections, counts = []) => {
     await selectSpecies(page, species)
   }
   await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
-  for (const [index, count] of counts.entries()) {
-    if (count !== undefined) {
-      await page.locator(`#numberOfAnimalsQuantity-${index}`).fill(count)
-    }
+  // Every line's animal count is save-blocking, so a line the caller said
+  // nothing about still gets one.
+  for (const index of lineIndicesOf(selections)) {
+    await page
+      .locator(`#numberOfAnimalsQuantity-${index}`)
+      .fill(counts[index] ?? DEFAULT_ANIMALS_COUNT)
   }
 }
 

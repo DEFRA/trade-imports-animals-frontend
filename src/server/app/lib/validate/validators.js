@@ -16,6 +16,8 @@ const UK_PHONE_MIN_DIGITS = 7
 const UK_PHONE_MAX_DIGITS = 15
 const INVALID_ERROR_CODE = 'any.invalid'
 const RANGE_ERROR_CODE = 'date.range'
+const NUMBER_ERROR_CODE = 'number.base'
+const NUMBER_RANGE_ERROR_CODE = 'number.range'
 
 const single = (name, rule) => Joi.object({ [name]: rule }).unknown(true)
 
@@ -145,25 +147,58 @@ export const oneOf = (name, values, message = defaults.oneOf) =>
       .messages({ 'any.only': message })
   )
 
+const wholeNumberInRange = (min, max) => (raw, helpers) => {
+  if (!/^-?\d+$/.test(raw)) {
+    return helpers.error(NUMBER_ERROR_CODE)
+  }
+  const parsed = Number(raw)
+  if ((min != null && parsed < min) || (max != null && parsed > max)) {
+    return helpers.error(NUMBER_RANGE_ERROR_CODE)
+  }
+  return raw
+}
+
 export const integerInRange = (name, { min, max, message } = {}) =>
   single(
     name,
     Joi.string()
       .trim()
       .allow('')
-      .custom((raw, helpers) => {
-        if (!/^-?\d+$/.test(raw)) {
-          return helpers.error('number.base')
-        }
-        const parsed = Number(raw)
-        if ((min != null && parsed < min) || (max != null && parsed > max)) {
-          return helpers.error('number.range')
-        }
-        return raw
-      })
+      .custom(wholeNumberInRange(min, max))
       .messages({
-        'number.base': message ?? defaults.wholeNumber,
-        'number.range': message ?? defaults.numberBetween(min, max)
+        [NUMBER_ERROR_CODE]: message ?? defaults.wholeNumber,
+        [NUMBER_RANGE_ERROR_CODE]: message ?? defaults.numberBetween(min, max)
+      })
+  )
+
+/**
+ * Save-blocking whole number in a range. A separate primitive rather than
+ * `compose(requiredText, integerInRange)` because `integerInRange` allows the
+ * empty string, and composing schemas merges that allowance onto the required
+ * rule — blank would then pass. `requiredMaxText` exists for the same reason.
+ * @param {string} name
+ * @param {object} options
+ * @param {number} [options.min] - Inclusive lower bound.
+ * @param {number} [options.max] - Inclusive upper bound.
+ * @param {object} options.messages
+ * @param {string} options.messages.required - Shown when the value is blank or
+ * absent.
+ * @param {string} [options.messages.invalid] - Shown when the value is not a
+ * whole number, and when it falls outside the bounds.
+ */
+export const requiredIntegerInRange = (name, { min, max, messages }) =>
+  single(
+    name,
+    Joi.string()
+      .trim()
+      .required()
+      .custom(wholeNumberInRange(min, max))
+      .messages({
+        'string.empty': messages.required,
+        'any.required': messages.required,
+        [NUMBER_ERROR_CODE]: messages.invalid ?? defaults.wholeNumber,
+        [NUMBER_RANGE_ERROR_CODE]:
+          messages.invalid ?? defaults.numberBetween(min, max)
       })
   )
 

@@ -21,6 +21,8 @@ import * as consignmentDetails from './consignment-details.controller.js'
 
 const post = postHandlerOf(consignmentDetails)
 
+const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
+
 const seedLines = () => ({
   commodityLines: [
     {
@@ -147,26 +149,6 @@ describe('#consignmentDetailsController — per-species quantities over every li
     expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
   })
 
-  it('Should leave a blank count out of the drop check — unanswered means uncapped, not zero', async () => {
-    const result = await driveHandler(post, {
-      seed: {
-        commodityLines: [
-          {
-            commoditySelection: 'Cow',
-            speciesSelection: '1148346',
-            numberOfPackages: '',
-            numberOfAnimalsQuantity: '3',
-            animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
-          }
-        ]
-      },
-      payload: { 'numberOfAnimalsQuantity-0': '', 'numberOfPackages-0': '' }
-    })
-    expect(result.view).toBeUndefined()
-    expect(result.after.commodityLines[0].numberOfAnimalsQuantity).toBe('')
-    expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
-  })
-
   it('Should group the view by commodity with one quantity block per species line', async () => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, seedLines())
@@ -237,5 +219,63 @@ describe('#consignmentDetailsController — per-species quantities over every li
       url: pagePath('journey-1', 'consignment-details/Cow/remove')
     })
     expect(prefetched.statusCode).toBe(404)
+  })
+})
+
+describe('#consignmentDetailsController — the animal count must be answered before the page saves', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should hold the page on a blank count rather than saving the blank, leaving the stored count and its identifier records alone', async () => {
+    const seed = {
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          speciesSelection: '1148346',
+          numberOfPackages: '',
+          numberOfAnimalsQuantity: '3',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+        }
+      ]
+    }
+    const result = await driveHandler(post, {
+      seed,
+      payload: { 'numberOfAnimalsQuantity-0': '', 'numberOfPackages-0': '' }
+    })
+    expect(result.view.context.errors['numberOfAnimalsQuantity-0']).toBe(
+      ANIMALS_REQUIRED_MESSAGE
+    )
+    expect(result.after).toEqual({
+      commodityLines: [
+        {
+          ...seed.commodityLines[0],
+          numberOfAnimalsQuantity: 3
+        }
+      ]
+    })
+  })
+
+  it('Should name every line left blank in the error summary, one entry per species', async () => {
+    const result = await driveHandler(post, {
+      seed: seedLines(),
+      payload: {
+        'numberOfAnimalsQuantity-0': '',
+        'numberOfAnimalsQuantity-1': '4',
+        'numberOfAnimalsQuantity-2': ''
+      }
+    })
+    const { errors, errorSummary } = result.view.context
+    expect(errors['numberOfAnimalsQuantity-0']).toBe(ANIMALS_REQUIRED_MESSAGE)
+    expect(errors['numberOfAnimalsQuantity-1']).toBeUndefined()
+    expect(errors['numberOfAnimalsQuantity-2']).toBe(ANIMALS_REQUIRED_MESSAGE)
+    expect(errorSummary.errorList.map(({ href }) => href)).toEqual([
+      '#numberOfAnimalsQuantity-0',
+      '#numberOfAnimalsQuantity-2'
+    ])
+    expect(result.after).toEqual(result.before)
   })
 })

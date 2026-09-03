@@ -10,6 +10,7 @@ import {
   oneOf,
   postcode,
   requiredExactDigits,
+  requiredIntegerInRange,
   requiredMaxText,
   requiredOneOf,
   requiredText,
@@ -28,6 +29,9 @@ const COMMODITY_REQUIRED_MESSAGE = 'Select a commodity'
 const REGION_CODE_REQUIRED_MESSAGE = 'Enter the region of origin code'
 const REGION_CODE_MAX_LENGTH_MESSAGE =
   'Region of origin code must be 5 characters or less'
+const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
+const ANIMALS_WHOLE_NUMBER_MESSAGE =
+  'Number of animals must be a whole number, like 25'
 
 describe('#requiredText — the sole save-blocking primitive', () => {
   const schema = requiredText('fullName', FULL_NAME_REQUIRED_MESSAGE)
@@ -188,6 +192,55 @@ describe('#integerInRange — bounds', () => {
   it('Should reject out-of-range and non-numeric input', () => {
     expect(run(schema, { year: '1850' }).errors).toHaveProperty('year')
     expect(run(schema, { year: 'twenty' }).errors).toHaveProperty('year')
+  })
+})
+
+describe('#requiredIntegerInRange — save-blocking whole number in a range', () => {
+  const schema = requiredIntegerInRange('animals', {
+    min: 1,
+    messages: {
+      required: ANIMALS_REQUIRED_MESSAGE,
+      invalid: ANIMALS_WHOLE_NUMBER_MESSAGE
+    }
+  })
+
+  it('Should accept an in-range whole number', () => {
+    expect(run(schema, { animals: '25' }).errors).toBeNull()
+  })
+
+  it('Should block blank, whitespace-only and missing values with the required message', () => {
+    expect(run(schema, { animals: '' }).errors).toEqual({
+      animals: ANIMALS_REQUIRED_MESSAGE
+    })
+    expect(run(schema, { animals: '   ' }).errors).toEqual({
+      animals: ANIMALS_REQUIRED_MESSAGE
+    })
+    expect(run(schema, {}).errors).toEqual({
+      animals: ANIMALS_REQUIRED_MESSAGE
+    })
+  })
+
+  it('Should reject non-numeric and out-of-range values with the invalid message', () => {
+    expect(run(schema, { animals: 'ten' }).errors).toEqual({
+      animals: ANIMALS_WHOLE_NUMBER_MESSAGE
+    })
+    expect(run(schema, { animals: '0' }).errors).toEqual({
+      animals: ANIMALS_WHOLE_NUMBER_MESSAGE
+    })
+  })
+
+  it('Should fall back to the shared defaults when no invalid message is given', () => {
+    const withoutInvalidMessage = requiredIntegerInRange('animals', {
+      min: 1,
+      max: 10,
+      messages: { required: ANIMALS_REQUIRED_MESSAGE }
+    })
+    expect(run(withoutInvalidMessage, { animals: 'ten' }).errors).toEqual({
+      animals: validatorDefaults.wholeNumber
+    })
+    expect(run(withoutInvalidMessage, { animals: '11' }).errors).toEqual({
+      animals: validatorDefaults.numberBetween(1, 10)
+    })
   })
 })
 
