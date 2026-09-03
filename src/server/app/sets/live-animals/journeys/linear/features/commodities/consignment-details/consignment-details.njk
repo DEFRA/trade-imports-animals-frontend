@@ -14,7 +14,7 @@
     <form method="post" novalidate>
       <input type="hidden" name="crumb" value="{{ crumb }}" />
       <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
-      {{ selectedCommoditiesTable(groups, copy.table) }}
+      {{ selectedCommoditiesTable(selectedRows, copy.table) }}
     </form>
   {% else %}
     <p class="govuk-body">{{ copy.emptyText }}</p>
