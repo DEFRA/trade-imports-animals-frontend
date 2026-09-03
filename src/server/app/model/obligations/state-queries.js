@@ -55,9 +55,11 @@ export function effectiveStatus(obligation, _path, state) {
 }
 
 // Each `checkXxx` below implements one `requires` rule shape from
-// `groupInvariantErrors`'s doc comment. Single-error rules return the
-// error object or `null`; multi-error rules (one error per instance)
-// return an array. `groupInvariantErrors` composes and flattens them.
+// `groupInvariantErrors`'s doc comment. Every checker returns an
+// `error[]` — empty when the rule doesn't apply or is satisfied.
+// Collection-level checkers can only ever return 0 or 1 error; the
+// list-typed return keeps the composition in `groupInvariantErrors`
+// uniform.
 
 const checkMinEntries = (group, fulfilmentIndexes) => {
   const { minEntries, errorCode } = group.requires
@@ -65,16 +67,18 @@ const checkMinEntries = (group, fulfilmentIndexes) => {
     typeof minEntries !== 'number' ||
     fulfilmentIndexes.length >= minEntries
   ) {
-    return null
+    return []
   }
-  return {
-    code: 'MIN_ENTRIES',
-    groupId: group.id,
-    groupName: group.name,
-    errorCode,
-    minEntries,
-    actual: fulfilmentIndexes.length
-  }
+  return [
+    {
+      code: 'MIN_ENTRIES',
+      groupId: group.id,
+      groupName: group.name,
+      errorCode,
+      minEntries,
+      actual: fulfilmentIndexes.length
+    }
+  ]
 }
 
 const checkMaxEntries = (group, fulfilmentIndexes) => {
@@ -83,16 +87,42 @@ const checkMaxEntries = (group, fulfilmentIndexes) => {
     typeof maxEntries !== 'number' ||
     fulfilmentIndexes.length <= maxEntries
   ) {
-    return null
+    return []
   }
-  return {
-    code: 'MAX_ENTRIES',
-    groupId: group.id,
-    groupName: group.name,
-    errorCode: group.requires.maxEntriesErrorCode ?? errorCode,
-    maxEntries,
-    actual: fulfilmentIndexes.length
+  return [
+    {
+      code: 'MAX_ENTRIES',
+      groupId: group.id,
+      groupName: group.name,
+      errorCode: group.requires.maxEntriesErrorCode ?? errorCode,
+      maxEntries,
+      actual: fulfilmentIndexes.length
+    }
+  ]
+}
+
+const checkAllOrNothingOfIds = (group, state) => {
+  if (!group.requires.allOrNothingOfIds) {
+    return []
   }
+  const memberIds = group.requires.allOrNothingOfIds
+  const filledIds = memberIds.filter(
+    (id) => !isBlankValue(state.fulfilments?.[id])
+  )
+  if (filledIds.length === 0 || filledIds.length >= memberIds.length) {
+    return []
+  }
+  const missingIds = memberIds.filter((id) =>
+    isBlankValue(state.fulfilments?.[id])
+  )
+  return [
+    {
+      code: group.requires.errorCode,
+      groupId: group.id,
+      groupName: group.name,
+      missingIds
+    }
+  ]
 }
 
 const checkAnyOfIds = (group, fulfilmentIndexes, state) => {
@@ -125,28 +155,6 @@ const checkAnyOfIds = (group, fulfilmentIndexes, state) => {
     }
   }
   return errors
-}
-
-const checkAllOrNothingOfIds = (group, state) => {
-  if (!group.requires.allOrNothingOfIds) {
-    return null
-  }
-  const memberIds = group.requires.allOrNothingOfIds
-  const filledIds = memberIds.filter(
-    (id) => !isBlankValue(state.fulfilments?.[id])
-  )
-  if (filledIds.length === 0 || filledIds.length >= memberIds.length) {
-    return null
-  }
-  const missingIds = memberIds.filter((id) =>
-    isBlankValue(state.fulfilments?.[id])
-  )
-  return {
-    code: group.requires.errorCode,
-    groupId: group.id,
-    groupName: group.name,
-    missingIds
-  }
 }
 
 const checkRecordCountEquals = (group, fulfilmentIndexes, state) => {
@@ -185,19 +193,23 @@ const checkRecordCountEquals = (group, fulfilmentIndexes, state) => {
  *   → [{ code, groupId, groupName, ... }]
  *
  * One entry per unsatisfied invariant on the group. A group may carry
- * any combination of five `requires` rule shapes:
+ * any combination of five `requires` rule shapes. The output is ordered
+ * collection-level first, then per-instance:
  *
+ * Collection-level (at most one error each):
  *   - `minEntries` — collection floor. ONE `MIN_ENTRIES` error when
  *     `fulfilmentIndexes.length` is below it.
  *   - `maxEntries` — collection cap. ONE `MAX_ENTRIES` error when
  *     `fulfilmentIndexes.length` exceeds it.
- *   - `anyOfIds` — per-instance rule. One error per in-scope instance
- *     where NONE of the required leaves has a non-blank fulfilment;
- *     vacuously satisfied when no leaf is in scope for the instance.
- *   - `allOrNothingOfIds` — field-block rule over scalar obligations,
+ *   - `allOrNothingOfIds` — field-block rule over unindexed obligations,
  *     keyed directly by obligation id in `state.fulfilments`. ONE
  *     error `{ code, groupId, groupName, missingIds }` when
  *     0 < filledCount < total; none when all-blank or all-filled.
+ *
+ * Per-instance (one error per offending fulfilmentIndex):
+ *   - `anyOfIds` — per-instance rule. One error per in-scope instance
+ *     where NONE of the required leaves has a non-blank fulfilment;
+ *     vacuously satisfied when no leaf is in scope for the instance.
  *   - `recordCountEquals` — `{ fieldId, errorCode }`. One error per
  *     in-scope parent (`group.within`) instance whose count of
  *     fulfilmentIndexes under `parentFulfilmentIndex/` differs from the
@@ -215,10 +227,12 @@ export function groupInvariantErrors(group, state) {
   }
   const fulfilmentIndexes = groupImplication.fulfilmentIndexes ?? []
   return [
-    checkMinEntries(group, fulfilmentIndexes),
-    checkMaxEntries(group, fulfilmentIndexes),
+    // Collection-level rules (fire once for the whole group).
+    ...checkMinEntries(group, fulfilmentIndexes),
+    ...checkMaxEntries(group, fulfilmentIndexes),
+    ...checkAllOrNothingOfIds(group, state),
+    // Per-instance rules (fire per fulfilmentIndex).
     ...checkAnyOfIds(group, fulfilmentIndexes, state),
-    checkAllOrNothingOfIds(group, state),
     ...checkRecordCountEquals(group, fulfilmentIndexes, state)
-  ].filter(Boolean)
+  ]
 }
