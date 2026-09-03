@@ -12,11 +12,23 @@ import { copy } from '../copy/copy.en.js'
 const BISON_BISON = 'Bison bison'
 const BOS_TAURUS = 'Bos taurus'
 const FELIS_CATUS = 'Felis catus'
+// Every option is offered as its common name with the scientific name in
+// brackets, so the trader who does not read Latin can tell the tick boxes apart.
+const BISON_BISON_LABEL = 'American bison (Bison bison)'
+const BOS_SPP_LABEL = 'Cattle (Bos spp.)'
+const BOS_TAURUS_LABEL = 'Domestic cattle (Bos taurus)'
+const FELIS_CATUS_LABEL = 'Cat (Felis catus)'
+const CANIS_LUPUS_LABEL = 'Dog (Canis lupus familiaris)'
 const COW_LEGEND = 'Cow (0102)'
 const SAVE_AND_CONTINUE = 'Save and continue'
 const BACK_LINK = '.govuk-back-link'
 
 const canonicalSelectionOrder = [BISON_BISON, BOS_TAURUS, FELIS_CATUS]
+const canonicalSelectionLabels = [
+  BISON_BISON_LABEL,
+  BOS_TAURUS_LABEL,
+  FELIS_CATUS_LABEL
+]
 
 const openSelection = async (page) => {
   await startNotification(page)
@@ -86,7 +98,29 @@ test.describe('commodity search', () => {
     await expect(group).toBeVisible()
     await expect(group.getByRole('checkbox')).toHaveCount(2)
     await expect(
-      group.getByRole('checkbox', { name: BOS_TAURUS })
+      group.getByRole('checkbox', { name: BOS_TAURUS_LABEL, exact: true })
+    ).toBeVisible()
+    await expect(page.getByRole('checkbox')).toHaveCount(2)
+  })
+
+  test('offers each species as its common name with the scientific name after it', async ({
+    page
+  }) => {
+    await searchCommodities(page, 'Bos')
+    await expect(page.locator('.govuk-checkboxes__label')).toHaveText([
+      BOS_SPP_LABEL,
+      BOS_TAURUS_LABEL
+    ])
+  })
+
+  test('finds a species by its common name', async ({ page }) => {
+    await searchCommodities(page, 'cattle')
+    const group = page.getByRole('group', { name: COW_LEGEND })
+    await expect(
+      group.getByRole('checkbox', { name: BOS_SPP_LABEL, exact: true })
+    ).toBeVisible()
+    await expect(
+      group.getByRole('checkbox', { name: BOS_TAURUS_LABEL, exact: true })
     ).toBeVisible()
     await expect(page.getByRole('checkbox')).toHaveCount(2)
   })
@@ -98,10 +132,10 @@ test.describe('commodity search', () => {
     await expect(cats).toBeVisible()
     await expect(dogs).toBeVisible()
     await expect(
-      cats.getByRole('checkbox', { name: FELIS_CATUS })
+      cats.getByRole('checkbox', { name: FELIS_CATUS_LABEL, exact: true })
     ).toBeVisible()
     await expect(
-      dogs.getByRole('checkbox', { name: 'Canis lupus familiaris' })
+      dogs.getByRole('checkbox', { name: CANIS_LUPUS_LABEL, exact: true })
     ).toBeVisible()
     await expect(page.getByRole('checkbox')).toHaveCount(2)
   })
@@ -120,8 +154,8 @@ test.describe('commodity search', () => {
     const panel = selectionPanel(page)
 
     await expect(panel).toContainText(copy.search.selected.heading(2))
-    await expect(panel).toContainText(BOS_TAURUS)
-    await expect(panel).toContainText(FELIS_CATUS)
+    await expect(panel).toContainText(BOS_TAURUS_LABEL)
+    await expect(panel).toContainText(FELIS_CATUS_LABEL)
 
     await page
       .getByRole('button', { name: copy.search.selected.clearAll })
@@ -163,8 +197,8 @@ test.describe('commodity search', () => {
     await page.locator(BACK_LINK).click()
     const panel = selectionPanel(page)
     await expect(panel).toContainText(copy.search.selected.heading(3))
-    for (const name of canonicalSelectionOrder) {
-      await expect(panel).toContainText(name)
+    for (const label of canonicalSelectionLabels) {
+      await expect(panel).toContainText(label)
     }
     await expect(panel).not.toContainText('Canis lupus familiaris')
   })
@@ -176,7 +210,9 @@ test.describe('commodity search', () => {
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await page.locator(BACK_LINK).click()
     await searchCommodities(page, 'Bos')
-    await expect(page.getByRole('checkbox', { name: BOS_TAURUS })).toBeChecked()
+    await expect(
+      page.getByRole('checkbox', { name: BOS_TAURUS_LABEL, exact: true })
+    ).toBeChecked()
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {

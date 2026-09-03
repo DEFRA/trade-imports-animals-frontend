@@ -19,11 +19,8 @@
  */
 
 import { obligationByName, obligations } from '../model/obligations/manifest.js'
-import {
-  ancestorChain,
-  fulfilmentIndexToPath,
-  groupObligations
-} from './fulfilments/index.js'
+import { ancestorChain, isGroup } from '../model/obligations/manifest-graph.js'
+import { fulfilmentIndexToPath } from './fulfilments/index.js'
 import { pathKey } from '../lib/path.js'
 import { isAnswered } from '../lib/answered.js'
 import { computeReadyForCheckYourAnswers } from './readiness-config.js'
@@ -97,7 +94,7 @@ const addProjectedKeys = (inScope, implications, obligation) => {
   const name = obligation.name
   const chain = ancestorChain(obligation)
 
-  if (groupObligations.has(obligation)) {
+  if (isGroup(obligation)) {
     if (chain.length === 0) {
       return groupNodeKey(inScope, name)
     }

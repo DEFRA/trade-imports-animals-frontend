@@ -2,7 +2,7 @@ import {
   obligationByName as configuredObligationByName,
   obligations
 } from '../model/obligations/manifest.js'
-import { groupObligations } from './fulfilments/index.js'
+import { isGroup } from '../model/obligations/manifest-graph.js'
 import { journeyFlowOnlyKeys } from '../flow/journey-flow.js'
 
 const namesUpTo = (obligation) =>
@@ -88,7 +88,7 @@ const sweepKey = (memberKeys, entryPath, key, value) => {
     return [{ key, path: entryPath }]
   }
   const member = obligationByName(key)
-  return member && groupObligations.has(member)
+  return member && isGroup(member)
     ? sweepEntries(member, value, `${entryPath}.${key}`)
     : []
 }
@@ -118,7 +118,7 @@ const unrecognisedKeysFor = (key, value) => {
     return [{ key, path: '(top level)' }]
   }
   const obligation = obligationByName(key)
-  return obligation && groupObligations.has(obligation)
+  return obligation && isGroup(obligation)
     ? sweepEntries(obligation, value, key)
     : []
 }

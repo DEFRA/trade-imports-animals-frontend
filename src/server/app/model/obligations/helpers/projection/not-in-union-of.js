@@ -1,14 +1,13 @@
 import { deriveUnion } from './internals/derive-union.js'
-import { filterAndProject } from './internals/filter-and-project.js'
+import { buildProjectionGate } from './internals/build-projection-gate.js'
 
 /**
  * notInUnionOf — dual of `allowListed`. Obligation is in scope on
  * entries whose `gateObligation` stored value is NOT in the union of
- * the given allowlists. The derived union is computed when the gate runs
- * and exposed on `.metadata.values`
- * so static analysis (witness synthesiser, browser-side controllers)
- * can inspect "would this value be admitted?" without executing the
- * closure.
+ * the given allowlists. The derived union is computed when the gate
+ * runs and exposed on `.metadata.values` so static analysis (witness
+ * synthesiser, browser-side controllers) can inspect "would this value
+ * be admitted?" without executing the closure.
  *
  * Two input shapes accepted:
  *   - `[[a, b], [c, d]]` — a list of allowlists (typical case:
@@ -19,16 +18,18 @@ import { filterAndProject } from './internals/filter-and-project.js'
  *   - `[a, b, c]` — a flat list of values (single-allowlist complement).
  *     Ergonomic shorthand; the derived union is just the input.
  *
- * Rationale — `notInUnionOf` as a
- * derived-union helper over `.metadata.values` is STRICTLY better than
- * a hand-restated four-whitelist complement expressed as an opaque JS
- * predicate: adding a fifth typed identifier to one of the source
- * allowlists widens the derived union automatically; a hand-restated
- * complement would silently double-gate if the author forgot to add a
- * fifth `!X.includes(code)` conjunct.
+ * Rationale — `notInUnionOf` as a derived-union helper over
+ * `.metadata.values` is STRICTLY better than a hand-restated
+ * four-whitelist complement expressed as an opaque JS predicate: adding
+ * a fifth typed identifier to one of the source allowlists widens the
+ * derived union automatically; a hand-restated complement would
+ * silently double-gate if the author forgot to add a fifth
+ * `!X.includes(code)` conjunct.
  *
- * See also `allowListed` (identical projection/frame semantics — the
- * two are duals).
+ * Shares the outer factory in `internals/build-projection-gate.js`
+ * with `allowListed`. Only the predicate direction (not-in-union vs
+ * in-list), the values source (derived union vs plain list), and the
+ * metadata `type` string differ.
  */
 export const notInUnionOf = (
   gateObligation,
@@ -36,30 +37,18 @@ export const notInUnionOf = (
   projectionGroup,
   reasons
 ) => {
-  const currentUnion = () =>
+  const currentValues = () =>
     deriveUnion(
       typeof unionOfAllowlists === 'function'
         ? unionOfAllowlists()
         : unionOfAllowlists
     )
-  const fn = (fulfilments, fulfilmentIndexesByObligationId) => {
-    const decision = filterAndProject(
-      fulfilments[gateObligation.id],
-      (value) => !currentUnion().includes(value),
-      projectionGroup,
-      fulfilmentIndexesByObligationId
-    )
-    return decision.inScope && reasons ? { ...decision, reasons } : decision
-  }
-  fn.metadata = {
+  return buildProjectionGate({
     type: 'notInUnionOf',
-    obligation: gateObligation.id,
-    projection: projectionGroup?.id ?? null,
-    reasons: reasons ?? null
-  }
-  Object.defineProperty(fn.metadata, 'values', {
-    enumerable: true,
-    get: currentUnion
+    gateObligation,
+    currentValues,
+    admits: (value) => !currentValues().includes(value),
+    projectionGroup,
+    reasons
   })
-  return fn
 }

@@ -34,7 +34,18 @@ export const authController = {
 
       const { profile, token, refreshToken } = request.auth.credentials
       // verify token returned from Defra Identity against public key
-      await verifyToken(token)
+      try {
+        await verifyToken(token)
+      } catch (err) {
+        request.logger?.error(
+          { err },
+          'Token verification failed for /auth/sign-in-oidc'
+        )
+        return h.view(
+          'auth/unauthorised',
+          base('Sorry, we are unable to sign you in')
+        )
+      }
 
       // Typically permissions for the selected organisation would be available in the `roles` property of the token
       // However, when signing in with RPA credentials, the roles only include the role name and not the permissions

@@ -41,6 +41,20 @@ export const speciesLabel = (code) =>
 
 export const speciesFor = (name) => COMMODITY_SPECIES[name] ?? []
 
+// What the species is called in English. A species the catalogue holds no
+// common name for is named after its commodity instead.
+export const speciesCommonName = (name, value) =>
+  speciesFor(name).find((option) => option.value === value)?.commonName ?? name
+
+// Commodity code 01061900 covers several commodities — cat, dog, ferret and
+// other live mammals — and hundreds of species between them. The design lists a
+// chosen species of one of those under its own name rather than folding it into
+// the commodity (design 01-14).
+const PER_SPECIES_COMMODITY_CODE = '01061900'
+
+export const speciesListedIndividually = (name) =>
+  commodityCodeFor(name) === PER_SPECIES_COMMODITY_CODE
+
 export const isCommoditySpecies = (name, value) =>
   speciesFor(name).some((option) => option.value === value)
 

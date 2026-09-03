@@ -1,5 +1,5 @@
 import { obligations } from '../../../model/obligations/manifest.js'
-import { groupObligations } from '../obligation-graph.js'
+import { isGroup } from '../../../model/obligations/manifest-graph.js'
 import { answersWithRecords, answersWithScalar } from './assemble.js'
 import { projectionsOf } from './projections.js'
 
@@ -9,7 +9,7 @@ const withObligationAnswer = (
   projections,
   obligation
 ) => {
-  if (groupObligations.has(obligation)) {
+  if (isGroup(obligation)) {
     return answers
   }
   const stored = fulfilments?.[obligation.id]

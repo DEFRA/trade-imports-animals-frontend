@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 
-import { groupInvariantErrors } from './state-queries.js'
+import { groupInvariantErrors, leafSatisfied } from './state-queries.js'
 
 // Synthetic obligations — the queries can be exercised in isolation,
 // without the parent obligations manifest or evaluator.
@@ -305,5 +305,44 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
     expect(errors).toHaveLength(2)
     expect(errors.some((e) => e.code === 'MIN_ENTRIES')).toBe(true)
     expect(errors.some((e) => e.fulfilmentIndex === 'line1')).toBe(true)
+  })
+})
+
+describe('#leafSatisfied', () => {
+  const leaf = { id: 'passport', name: 'passport' }
+
+  it('returns true when the stored value at the fulfilmentIndex is non-blank', () => {
+    const st = state({
+      fulfilments: { [leaf.id]: { [line1Unit1FulfilmentIndex]: 'P-1' } }
+    })
+    expect(leafSatisfied(leaf, line1Unit1FulfilmentIndex, st)).toBe(true)
+  })
+
+  it('returns false when the stored value at the fulfilmentIndex is blank', () => {
+    const st = state({
+      fulfilments: { [leaf.id]: { [line1Unit1FulfilmentIndex]: '' } }
+    })
+    expect(leafSatisfied(leaf, line1Unit1FulfilmentIndex, st)).toBe(false)
+  })
+
+  it('returns false when the fulfilmentIndex has no stored value', () => {
+    const st = state({ fulfilments: { [leaf.id]: {} } })
+    expect(leafSatisfied(leaf, line1Unit1FulfilmentIndex, st)).toBe(false)
+  })
+
+  it('returns false when the obligation has no storage entry at all', () => {
+    const st = state({ fulfilments: {} })
+    expect(leafSatisfied(leaf, line1Unit1FulfilmentIndex, st)).toBe(false)
+  })
+
+  it('returns false when the storage entry is a scalar (not a records map)', () => {
+    // Top-level scalars store a value directly; leafSatisfied is defined only
+    // for grouped leaves, so a scalar storage shape reads as false.
+    const scalar = {
+      id: 'purposeInInternalMarket',
+      name: 'purposeInInternalMarket'
+    }
+    const st = state({ fulfilments: { [scalar.id]: 'BREEDING' } })
+    expect(leafSatisfied(scalar, line1Unit1FulfilmentIndex, st)).toBe(false)
   })
 })

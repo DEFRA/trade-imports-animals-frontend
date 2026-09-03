@@ -18,6 +18,26 @@ export const STATUSES = {
 }
 
 /**
+ * True iff the stored value at `state.fulfilments[obligation.id]?.[fulfilmentIndex]`
+ * is non-blank. Deliberately does not check scope or mandate — those stay
+ * separate concerns so the bridge's three-check pattern (in-scope → mandate →
+ * fulfilled) composes cleanly. Returns false when the obligation has no
+ * storage entry or when the entry itself is not a records map.
+ */
+export function leafSatisfied(obligation, fulfilmentIndex, state) {
+  const stored = state.fulfilments?.[obligation.id]
+  if (
+    stored === undefined ||
+    stored === null ||
+    typeof stored !== 'object' ||
+    Array.isArray(stored)
+  ) {
+    return false
+  }
+  return !isBlankValue(stored[fulfilmentIndex])
+}
+
+/**
  * Effective mandate for an obligation at a path. Singleton implications
  * carry `status` at the top level; field / derived-leaf records live in
  * `impl.records[]`, each carrying `{ fulfilmentIndex, status }`. Defaults

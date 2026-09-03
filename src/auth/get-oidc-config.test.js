@@ -49,8 +49,21 @@ describe('getOidcConfig', () => {
     expect(configGetMock).toHaveBeenCalledWith('defraId.oidcDiscoveryUrl')
     expect(wreckGetMock).toHaveBeenCalledWith(localDiscoveryUrl, {
       headers: { [tracingHeader]: traceId },
-      json: true
+      json: true,
+      timeout: 1000
     })
+  })
+
+  test('sends an empty tracing header when the request has no trace id', async () => {
+    getTraceIdMock.mockReturnValue(undefined)
+    wreckGetMock.mockResolvedValue({ payload: {} })
+
+    await getOidcConfig()
+
+    expect(wreckGetMock).toHaveBeenCalledWith(
+      localDiscoveryUrl,
+      expect.objectContaining({ headers: { [tracingHeader]: '' } })
+    )
   })
 
   test('rewrites token_endpoint and jwks_uri hostnames to discovery URL hostname', async () => {
@@ -196,7 +209,8 @@ describe('getOidcConfig', () => {
     await expect(getOidcConfig()).rejects.toThrow('discovery failed')
     expect(wreckGetMock).toHaveBeenCalledWith(localDiscoveryUrl, {
       headers: { [tracingHeader]: traceId },
-      json: true
+      json: true,
+      timeout: 1000
     })
   })
 })

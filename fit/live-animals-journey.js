@@ -200,6 +200,9 @@ export const unlockSections = async (page) => {
   await expect(
     page.getByRole('heading', { name: 'Consignment details' })
   ).toBeVisible()
+  // The animal count is save-blocking, so the page will not let the journey
+  // past it unanswered.
+  await page.getByLabel('Number of animals').fill('1')
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }

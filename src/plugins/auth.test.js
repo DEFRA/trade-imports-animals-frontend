@@ -1,7 +1,7 @@
 import { describe, expect, test, vi, beforeEach } from 'vitest'
 import { authPlugin, getBellOptions, getCookieOptions } from './auth.js'
 
-const getOidcConfigMock = vi.hoisted(() => vi.fn())
+const getOidcConfigWithRetryMock = vi.hoisted(() => vi.fn())
 const configGetMock = vi.hoisted(() => vi.fn())
 const refreshTokensMock = vi.hoisted(() => vi.fn())
 const getSafeRedirectMock = vi.hoisted(() => vi.fn())
@@ -10,8 +10,8 @@ const isStubModeMock = vi.hoisted(() => vi.fn())
 const jwtDecodeMock = vi.hoisted(() => vi.fn())
 const jwtVerifyTimeMock = vi.hoisted(() => vi.fn())
 
-vi.mock('../auth/get-oidc-config.js', () => ({
-  getOidcConfig: getOidcConfigMock
+vi.mock('../auth/get-oidc-config-with-retry.js', () => ({
+  getOidcConfigWithRetry: getOidcConfigWithRetryMock
 }))
 
 vi.mock('../config/config.js', () => ({
@@ -46,12 +46,19 @@ describe('auth plugin', () => {
     authorization_endpoint: 'https://idp.example.com/auth',
     token_endpoint: 'https://idp.example.com/token'
   }
+  const buildServer = () => ({
+    auth: {
+      strategy: vi.fn(),
+      default: vi.fn()
+    },
+    logger: { warn: vi.fn() }
+  })
 
   beforeEach(() => {
     vi.clearAllMocks()
 
     isStubModeMock.mockReturnValue(false)
-    getOidcConfigMock.mockResolvedValue(oidcConfig)
+    getOidcConfigWithRetryMock.mockResolvedValue(oidcConfig)
 
     configGetMock.mockImplementation((key) => {
       const map = {
@@ -71,16 +78,11 @@ describe('auth plugin', () => {
   })
 
   test('register registers Bell + cookie strategies and sets default auth to session', async () => {
-    const server = {
-      auth: {
-        strategy: vi.fn(),
-        default: vi.fn()
-      }
-    }
+    const server = buildServer()
 
     await authPlugin.plugin.register(server)
 
-    expect(getOidcConfigMock).toHaveBeenCalledTimes(1)
+    expect(getOidcConfigWithRetryMock).toHaveBeenCalledWith(server.logger)
 
     expect(server.auth.strategy).toHaveBeenCalledWith(
       'defra-id',
@@ -120,19 +122,33 @@ describe('auth plugin', () => {
     // OIDC config would also fail outright — there is no identity provider
     // configured in the environments stub mode is meant for.
     isStubModeMock.mockReturnValue(true)
-    const server = {
-      auth: {
-        strategy: vi.fn(),
-        default: vi.fn()
-      }
-    }
+    const server = buildServer()
 
     await authPlugin.plugin.register(server)
 
     expect(server.auth.strategy).toHaveBeenCalledTimes(1)
     expect(server.auth.strategy.mock.calls[0][0]).toBe('session')
     expect(server.auth.default).toHaveBeenCalledWith('session')
-    expect(getOidcConfigMock).not.toHaveBeenCalled()
+    expect(getOidcConfigWithRetryMock).not.toHaveBeenCalled()
+  })
+
+  test('register registers no Bell strategy when OIDC discovery fails', async () => {
+    getOidcConfigWithRetryMock.mockRejectedValue(
+      new Error(
+        'OIDC discovery at https://idp.example.com/.well-known/openid-configuration failed after 4 attempts'
+      )
+    )
+    const server = buildServer()
+
+    await expect(authPlugin.plugin.register(server)).rejects.toThrow(
+      'OIDC discovery at'
+    )
+
+    expect(server.auth.strategy).not.toHaveBeenCalledWith(
+      'defra-id',
+      'bell',
+      expect.anything()
+    )
   })
 
   test('getBellOptions.location stores safe redirect and returns redirectUrl', () => {
@@ -151,6 +167,22 @@ describe('auth plugin', () => {
 
     expect(getSafeRedirectMock).toHaveBeenCalledWith('/some/path?x=1')
     expect(request.yar.set).toHaveBeenCalledWith('redirect', '/safe/redirect')
+    expect(location).toBe('http://localhost:3000/auth/sign-in-oidc')
+  })
+
+  test('getBellOptions.location stores nothing when no redirect is requested', () => {
+    const options = getBellOptions(oidcConfig)
+
+    const request = {
+      query: {},
+      yar: {
+        set: vi.fn()
+      }
+    }
+
+    const location = options.location(request)
+
+    expect(request.yar.set).not.toHaveBeenCalled()
     expect(location).toBe('http://localhost:3000/auth/sign-in-oidc')
   })
 

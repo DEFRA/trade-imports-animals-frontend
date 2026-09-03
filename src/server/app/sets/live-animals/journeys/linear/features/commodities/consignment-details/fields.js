@@ -1,6 +1,7 @@
 import {
   compose,
-  integerInRange
+  integerInRange,
+  requiredIntegerInRange
 } from '../../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as commodities from '../../../../../services/commodities/index.js'
@@ -18,9 +19,12 @@ export const packagesField = (index) => `numberOfPackages-${index}`
 export const fieldsFor = (lines) =>
   compose(
     ...lines.flatMap(({ index, entry }) => [
-      integerInRange(animalsField(index), {
+      requiredIntegerInRange(animalsField(index), {
         min: 1,
-        message: copy.errors.animalsWholeNumber
+        messages: {
+          required: copy.errors.animalsRequired,
+          invalid: copy.errors.animalsWholeNumber
+        }
       }),
       ...(packagesApply(entry.commoditySelection)
         ? [

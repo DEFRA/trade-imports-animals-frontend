@@ -13,7 +13,8 @@ vi.mock('@hapi/wreck', () => ({
   default: { get: wreckGetMock }
 }))
 
-vi.mock('./get-oidc-config.js', () => ({
+vi.mock('./get-oidc-config.js', async (importOriginal) => ({
+  ...(await importOriginal()),
   getOidcConfig: getOidcConfigMock
 }))
 
@@ -72,7 +73,8 @@ describe('verifyToken', () => {
     expect(getOidcConfigMock).toHaveBeenCalledTimes(1)
     expect(wreckGetMock).toHaveBeenCalledWith(jwksUri, {
       headers: { [tracingHeader]: traceId },
-      json: true
+      json: true,
+      timeout: 1000
     })
     expect(createPublicKeyMock).toHaveBeenCalledWith({
       key: jwk,
@@ -83,6 +85,24 @@ describe('verifyToken', () => {
       key: pem,
       algorithm: 'RS256'
     })
+  })
+
+  test('sends an empty tracing header when the request has no trace id', async () => {
+    const jwksUri = 'https://mock-auth-server/.well-known/jwks'
+    getTraceIdMock.mockReturnValue(undefined)
+    getOidcConfigMock.mockResolvedValue({ jwks_uri: jwksUri })
+    wreckGetMock.mockResolvedValue({ payload: { keys: [{}] } })
+    createPublicKeyMock.mockReturnValue({
+      export: vi.fn().mockReturnValue('pem')
+    })
+    jwtDecodeMock.mockReturnValue({})
+
+    await verifyToken('jwt-token')
+
+    expect(wreckGetMock).toHaveBeenCalledWith(
+      jwksUri,
+      expect.objectContaining({ headers: { [tracingHeader]: '' } })
+    )
   })
 
   test('propagates errors from Wreck.get', async () => {

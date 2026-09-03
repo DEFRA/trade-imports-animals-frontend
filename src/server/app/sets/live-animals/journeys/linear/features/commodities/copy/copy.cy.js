@@ -54,6 +54,7 @@ export const copy = {
       hint: 'Fel cratiau, bagiau neu flychau'
     },
     errors: {
+      animalsRequired: 'Rhowch nifer yr anifeiliaid',
       animalsWholeNumber:
         'Rhaid i nifer yr anifeiliaid fod yn rif cyfan, fel 25',
       packagesWholeNumber: 'Rhaid i nifer y pecynnau fod yn rif cyfan, fel 5',

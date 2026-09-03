@@ -1,9 +1,11 @@
 import * as commodities from '../../../../../../services/commodities/index.js'
 import { animalsField, packagesApply, packagesField } from '../fields.js'
+import { commodityNamesOf } from '../lines.js'
 
-// One table row + quantity block group per commodity, one species block per
-// line — the design's Consignment details page over the line-per-species
-// store (design 01-14/15).
+// One quantity block group per commodity, one species block per line — the
+// design's Consignment details page over the line-per-species store
+// (design 01-14/15). The Selected commodities table rows are built separately,
+// in ./selected-rows.js.
 export const groupLine = ({ index, entry }, values, errors) => ({
   index,
   speciesText:
@@ -21,13 +23,11 @@ export const linesForGroup = (lines, name, values, errors) =>
     .filter(({ entry }) => entry.commoditySelection === name)
     .map((line) => groupLine(line, values, errors))
 
-export const buildGroups = (lines, values, errors) => {
-  const names = [...new Set(lines.map(({ entry }) => entry.commoditySelection))]
-  return names.map((name, index) => ({
+export const buildGroups = (lines, values, errors) =>
+  commodityNamesOf(lines).map((name, index) => ({
     index,
     name,
     code: commodities.commodityCodeFor(name) ?? '',
     showPackages: packagesApply(name),
     lines: linesForGroup(lines, name, values, errors)
   }))
-}

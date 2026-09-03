@@ -1,6 +1,6 @@
 import Jwt from '@hapi/jwt'
 
-import { getOidcConfig } from '../auth/get-oidc-config.js'
+import { getOidcConfigWithRetry } from '../auth/get-oidc-config-with-retry.js'
 import { refreshTokens } from '../auth/refresh-tokens.js'
 import { getSafeRedirect } from '../auth/get-safe-redirect.js'
 import { config } from '../config/config.js'
@@ -25,7 +25,7 @@ export const authPlugin = {
         return
       }
 
-      const oidcConfig = await getOidcConfig()
+      const oidcConfig = await getOidcConfigWithRetry(server.logger)
 
       // Bell is a third-party plugin that provides a common interface for OAuth 2.0 authentication
       // Used to authenticate users with Defra Identity and a pre-requisite for the Cookie authentication strategy
