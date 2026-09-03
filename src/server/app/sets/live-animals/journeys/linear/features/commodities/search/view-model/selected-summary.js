@@ -4,12 +4,18 @@ import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { splitKey } from '../selection/keys.js'
 import { legendFor } from './legend.js'
+import { speciesLabelFor } from './species-label.js'
 
 const copy = copyFor({ en, cy }).search
 
-const speciesTextFor = (name, value) =>
-  commodities.speciesFor(name).find((option) => option.value === value)?.text ??
-  value
+// The panel names a chosen species the same way its tick box did, so the two
+// halves of the page do not drift apart.
+const speciesTextFor = (name, value) => {
+  const option = commodities
+    .speciesFor(name)
+    .find((candidate) => candidate.value === value)
+  return option ? speciesLabelFor(name, option) : value
+}
 
 const groupsFor = (selected) =>
   Object.entries(

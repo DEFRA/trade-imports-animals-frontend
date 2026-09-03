@@ -1,26 +1,29 @@
 import * as commodities from '../../../../../../services/commodities/index.js'
 import { isSearchable, matchesCode, matchesWords } from '../matching.js'
 import { legendFor } from './legend.js'
+import { speciesLabelFor } from './species-label.js'
 
 const commodityMatches = (name, query) =>
   matchesWords(name, query) ||
   matchesCode(commodities.commodityCodeFor(name), query)
 
 // Name or code hits the whole commodity, so every species under it stays in
-// the results; otherwise only the species that match on their own.
+// the results; otherwise only the species that match on their own. A species
+// matches on the label the trader is shown, so the common name in front of the
+// scientific name is searchable rather than decorative.
 const speciesMatching = (name, query) =>
   commodityMatches(name, query)
     ? commodities.speciesFor(name)
     : commodities
         .speciesFor(name)
-        .filter((option) => matchesWords(option.text, query))
+        .filter((option) => matchesWords(speciesLabelFor(name, option), query))
 
 const itemsFor = (name, query, selected) =>
   speciesMatching(name, query).map((option) => {
     const key = `${name}|${option.value}`
     return {
       value: key,
-      text: option.text,
+      text: speciesLabelFor(name, option),
       checked: selected.includes(key)
     }
   })

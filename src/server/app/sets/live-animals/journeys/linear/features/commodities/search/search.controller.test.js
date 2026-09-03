@@ -23,7 +23,11 @@ const CAT_FELIS_CATUS_KEY = 'Cat|923501'
 
 const COW_LEGEND = 'Cow (0102)'
 const CAT_LEGEND = 'Cat (01061900)'
-const BOS_TAURUS = 'Bos taurus'
+const BISON_BISON = 'American bison (Bison bison)'
+const BOS_SPP = 'Cattle (Bos spp.)'
+const BOS_TAURUS = 'Domestic cattle (Bos taurus)'
+const BUBALUS_BUBALIS = 'Water buffalo (Bubalus bubalis)'
+const FELIS_CATUS = 'Cat (Felis catus)'
 const SELECT_COMMODITY = 'Select a commodity'
 
 const searchFor = (commoditySearch, payload = {}) =>
@@ -68,7 +72,7 @@ describe('commodity search', () => {
       {
         legend: COW_LEGEND,
         items: [
-          { value: 'Cow|1388624', text: 'Bos spp.', checked: false },
+          { value: 'Cow|1388624', text: BOS_SPP, checked: false },
           { value: COW_BOS_TAURUS_KEY, text: BOS_TAURUS, checked: false }
         ]
       }
@@ -82,11 +86,22 @@ describe('commodity search', () => {
     const result = await searchFor('Cow')
     expect(legendsOf(result)).toEqual([COW_LEGEND])
     expect(textsOf(result)).toEqual([
-      'Bison bison',
-      'Bos spp.',
+      BISON_BISON,
+      BOS_SPP,
       BOS_TAURUS,
-      'Bubalus bubalis'
+      BUBALUS_BUBALIS
     ])
+  })
+
+  it('Should label a species with its common name and its scientific name', async () => {
+    const result = await searchFor('Salmo')
+    expect(textsOf(result)).toEqual(['Atlantic salmon (Salmo salar)'])
+  })
+
+  it('Should reach a species by its common name', async () => {
+    const result = await searchFor('cattle')
+    expect(legendsOf(result)).toEqual([COW_LEGEND])
+    expect(textsOf(result)).toEqual([BOS_SPP, BOS_TAURUS])
   })
 
   it('Should match a commodity code on its leading digits', async () => {
@@ -149,8 +164,8 @@ describe('commodity search — what has been chosen so far', () => {
       count: 3,
       heading: '3 selected',
       groups: [
-        { legend: COW_LEGEND, items: ['Bison bison', BOS_TAURUS] },
-        { legend: CAT_LEGEND, items: ['Felis catus'] }
+        { legend: COW_LEGEND, items: [BISON_BISON, BOS_TAURUS] },
+        { legend: CAT_LEGEND, items: [FELIS_CATUS] }
       ]
     })
   })
