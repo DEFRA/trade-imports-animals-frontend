@@ -51,11 +51,11 @@ describe('increment 0 golden boundary characterisation', () => {
       purposeInInternalMarket.id
     )
     expect(open.evaluation.fulfilments[earTag.id]).toEqual({
-      'line0/unit0': 'UK123456789012'
+      'line0.unit0': 'UK123456789012'
     })
     expect(flipped.fulfilments).toHaveProperty(purposeInInternalMarket.id)
     expect(flipped.fulfilments[earTag.id]).toEqual({
-      'line0/unit0': 'UK123456789012'
+      'line0.unit0': 'UK123456789012'
     })
     expect(flipped.evaluation.fulfilments).not.toHaveProperty(
       purposeInInternalMarket.id

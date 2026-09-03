@@ -6,7 +6,7 @@
  * document all-or-nothing block).
  *
  * The predicate has the same signature as an applyTo function:
- * `(fulfilments, fulfilmentIdsByObligationId) → boolean`.
+ * `(fulfilments, fulfilmentIndexesByObligationId) → boolean`.
  *
  * `predicateMeta` (optional) — structured description of the predicate
  * shape so the reachability prover can synthesise a witness
@@ -29,8 +29,10 @@
  * updating `analysis/reachability.js` `synthesiseWitness`.
  */
 export const branchedGate = (predicate, whenTrue, whenFalse, predicateMeta) => {
-  const fn = (fulfilments, fulfilmentIdsByObligationId) =>
-    predicate(fulfilments, fulfilmentIdsByObligationId) ? whenTrue : whenFalse
+  const fn = (fulfilments, fulfilmentIndexesByObligationId) =>
+    predicate(fulfilments, fulfilmentIndexesByObligationId)
+      ? whenTrue
+      : whenFalse
   fn.metadata = {
     type: 'branchedGate',
     whenTrue,

@@ -1,6 +1,8 @@
 {% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/checkboxes/macro.njk" import govukCheckboxes %}
 {% from "govuk/components/details/macro.njk" import govukDetails %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
 {% from "shared/save-actions.njk" import saveActions %}
 {% from "shared/section-caption.njk" import sectionCaption %}
@@ -19,21 +21,75 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
-    {% for group in commodityGroups %}
-      {% set idPrefix = "species" if loop.first else "species-group-" + loop.index %}
-      {{ govukCheckboxes({
-        idPrefix: idPrefix,
-        name: "species",
-        classes: "govuk-checkboxes--small",
-        fieldset: { legend: { text: group.legend, classes: "govuk-fieldset__legend--s" } },
-        errorMessage: loop.first and errors.species and { text: errors.species },
-        items: group.items
-      }) }}
+    {# A choice made under an earlier query has no tick box on screen, so it
+       rides back with the form as a hidden value. #}
+    {% for key in carriedKeys %}
+      <input type="hidden" name="selection" value="{{ key }}" />
     {% endfor %}
+
+    {{ govukInput({
+      id: "commoditySearch",
+      name: "commoditySearch",
+      type: "search",
+      label: { text: copy.searchLabel, classes: "govuk-label--m" },
+      hint: { text: copy.searchHint },
+      classes: "govuk-!-width-three-quarters",
+      value: query,
+      errorMessage: errors.commoditySearch and { text: errors.commoditySearch }
+    }) }}
+
+    {{ govukButton({
+      text: copy.searchButton,
+      classes: "govuk-button--secondary",
+      name: "action",
+      value: "search"
+    }) }}
+
+    {% if commodityGroups.length %}
+      <div>
+        {% for group in commodityGroups %}
+          {{ govukCheckboxes({
+            idPrefix: "species" if loop.first else "species-group-" + loop.index,
+            name: "species",
+            classes: "govuk-checkboxes--small",
+            fieldset: { legend: { text: group.legend, classes: "govuk-fieldset__legend--s" } },
+            errorMessage: loop.first and errors.species and { text: errors.species },
+            items: group.items
+          }) }}
+        {% endfor %}
+      </div>
+    {% elif noResults %}
+      <p class="govuk-body">{{ copy.noResults }}</p>
+    {% endif %}
+
+    {% if selectedSummary.count %}
+      <div id="commodity-selection">
+        <h2 class="govuk-heading-s">{{ selectedSummary.heading }}</h2>
+        <ul class="govuk-list govuk-!-margin-bottom-4">
+          {% for group in selectedSummary.groups %}
+            <li>
+              <span class="govuk-!-font-weight-bold">{{ group.legend }}</span>: {{ group.items | join(", ") }}
+            </li>
+          {% endfor %}
+        </ul>
+        {{ govukButton({
+          text: copy.selected.clearAll,
+          classes: "govuk-button--secondary",
+          name: "action",
+          value: "clear"
+        }) }}
+      </div>
+    {% endif %}
+
+    {% set helpHtml %}
+      <p class="govuk-body">{{ copy.help.reference }}</p>
+      <p class="govuk-body">{{ copy.help.describes }}</p>
+      <p class="govuk-body">{{ copy.help.lookupPrefix }} <a href="{{ copy.help.lookupHref }}" class="govuk-link" rel="noreferrer noopener" target="_blank">{{ copy.help.lookupLink }}</a>.</p>
+    {% endset %}
 
     {{ govukDetails({
       summaryText: copy.help.summary,
-      text: copy.help.text
+      html: helpHtml
     }) }}
 
     {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}

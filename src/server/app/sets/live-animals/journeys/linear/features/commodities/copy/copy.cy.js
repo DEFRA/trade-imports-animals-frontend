@@ -8,10 +8,26 @@ const plural = (count, noun) => `${count} ${noun}`
 export const copy = {
   search: {
     title: 'Beth ydych chi’n ei fewnforio?',
-    inset: 'Mae angen hysbysiad ar wahân ar gyfer pob tystysgrif iechyd.',
+    inset:
+      'Mae angen hysbysiad ar wahân ar gyfer pob tystysgrif iechyd. Rhaid hysbysu llwythi nad oes angen tystysgrif iechyd arnynt o hyd.',
+    searchLabel: 'Chwilio am nwydd',
+    searchHint:
+      'Gallwch chwilio yn ôl enw’r nwydd (er enghraifft, Cow), cod nwyddau (0102), neu enw’r rhywogaeth (Bos taurus). Rhowch o leiaf 3 nod.',
+    searchButton: 'Chwilio',
+    noResults: 'Ni chanfuwyd unrhyw ganlyniadau',
+    selected: {
+      heading: (count) => `${count} wedi’u dewis`,
+      clearAll: 'Clirio’r cyfan'
+    },
     help: {
       summary: 'Help gyda chodau nwyddau',
-      text: 'Defnyddir codau nwyddau i ddosbarthu nwyddau ar gyfer mewnforio ac allforio.'
+      reference:
+        'Mae codau nwyddau yn rhifau cyfeirio a gydnabyddir yn rhyngwladol.',
+      describes:
+        'Mae cod nwyddau yn disgrifio cynnyrch penodol wrth fewnforio neu allforio nwyddau.',
+      lookupPrefix: 'Gallwch chwilio am godau nwyddau gan ddefnyddio’r',
+      lookupLink: 'teclyn Tariff Masnach (yn agor mewn tab newydd)',
+      lookupHref: 'https://www.gov.uk/trade-tariff'
     },
     errors: {
       selectCommodity: 'Dewiswch nwydd'

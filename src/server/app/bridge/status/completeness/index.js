@@ -22,12 +22,17 @@ import {
 // the collection cap and the per-parent count invariant.
 // `memberFilter` applies only at THIS level (facet split); nested
 // sub-collections recurse over all members.
-const collectionSatisfied = (collection, parentRecId, memberFilter, state) => {
+const collectionSatisfied = (
+  collection,
+  parentFulfilmentIndex,
+  memberFilter,
+  state
+) => {
   const obligation = obligationFor(collection.id)
   if (!obligation) {
     return true
   }
-  const records = childRecords(obligation, parentRecId, state)
+  const records = childRecords(obligation, parentFulfilmentIndex, state)
   if (records.length === 0) {
     return emptyCollectionSatisfiesFloor(collection)
   }
@@ -35,13 +40,13 @@ const collectionSatisfied = (collection, parentRecId, memberFilter, state) => {
   if (collectionCapExceeded(invariantErrors)) {
     return false
   }
-  if (parentCountInvariantViolated(invariantErrors, parentRecId)) {
+  if (parentCountInvariantViolated(invariantErrors, parentFulfilmentIndex)) {
     return false
   }
   return records.every((rec) =>
     entrySatisfied(
       collection,
-      rec.fulfilmentId,
+      rec.fulfilmentIndex,
       memberFilter,
       invariantErrors,
       state
@@ -56,34 +61,36 @@ const filteredMembers = (collection, memberFilter) =>
 
 // A member's own satisfaction: nested-collection recursion, out-of-scope
 // pass, not-mandatory pass, or the fulfilment check.
-const memberSatisfied = (member, recId, state) => {
+const memberSatisfied = (member, fulfilmentIndex, state) => {
   if (isCollection(member)) {
-    return collectionSatisfied(member, recId, null, state)
+    return collectionSatisfied(member, fulfilmentIndex, null, state)
   }
-  if (!leafInScopeForRecord(member.id, recId, state)) {
+  if (!leafInScopeForRecord(member.id, fulfilmentIndex, state)) {
     return true
   }
-  if (!leafMandatoryForRecord(member.id, recId, state)) {
+  if (!leafMandatoryForRecord(member.id, fulfilmentIndex, state)) {
     return true
   }
-  return leafFulfilledForRecord(member.id, recId, state)
+  return leafFulfilledForRecord(member.id, fulfilmentIndex, state)
 }
 
 // The model's per-record group-invariant verdict (the anyOfIds rule),
-// then every filtered member. MIN_ENTRIES errors carry no instanceId, so
-// only per-record violations bite here.
+// then every filtered member. MIN_ENTRIES errors carry no fulfilmentIndex,
+// so only per-record violations bite here.
 const entrySatisfied = (
   collection,
-  recId,
+  fulfilmentIndex,
   memberFilter,
   invariantErrors,
   state
 ) => {
-  if (invariantErrors.some((error) => error.instanceId === recId)) {
+  if (
+    invariantErrors.some((error) => error.fulfilmentIndex === fulfilmentIndex)
+  ) {
     return false
   }
   return filteredMembers(collection, memberFilter).every((member) =>
-    memberSatisfied(member, recId, state)
+    memberSatisfied(member, fulfilmentIndex, state)
   )
 }
 

@@ -3,10 +3,26 @@ const plural = (count, noun) => `${count} ${noun}${count === 1 ? '' : 's'}`
 export const copy = {
   search: {
     title: 'What are you importing?',
-    inset: 'Each health certificate requires a separate notification.',
+    inset:
+      'A separate notification is required for each health certificate. Consignments that do not require a health certificate must still be notified.',
+    searchLabel: 'Search for a commodity',
+    searchHint:
+      'You can search by commodity name (for example, Cow), commodity code (0102), or species name (Bos taurus). Enter at least 3 characters.',
+    searchButton: 'Search',
+    noResults: 'No results found',
+    selected: {
+      heading: (count) => `${count} selected`,
+      clearAll: 'Clear all'
+    },
     help: {
       summary: 'Help with commodity codes',
-      text: 'Commodity codes are used to classify goods for import and export.'
+      reference:
+        'Commodity codes are internationally recognised reference numbers.',
+      describes:
+        'A commodity code describes a specific product when importing or exporting goods.',
+      lookupPrefix: 'You can look up commodity codes using the',
+      lookupLink: 'Trade Tariff tool (opens in a new tab)',
+      lookupHref: 'https://www.gov.uk/trade-tariff'
     },
     errors: {
       selectCommodity: 'Select a commodity'

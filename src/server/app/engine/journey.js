@@ -44,7 +44,8 @@ const memoWrite = (request, journey) => {
 }
 
 export const startJourney = async (request, h) => {
-  const journey = await records.create()
+  const actor = buildActor(request.auth?.credentials)
+  const journey = await records.create(actor)
   await session.addKnownJourney(request, h, journey.journeyId)
   memoWrite(request, journey)
   return journey

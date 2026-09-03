@@ -2,7 +2,9 @@ export const copy = {
   title: 'Origin of the import',
   country: {
     label: 'Country of origin',
-    placeholder: 'Select a country'
+    hint: 'Start typing to search for a country.',
+    placeholder: 'Select a country',
+    noResults: 'No countries found'
   },
   regionRequirement: {
     legend: 'Does the consignment have a region of origin code?',
@@ -11,8 +13,8 @@ export const copy = {
     no: 'No'
   },
   regionCode: {
-    label: 'Region of origin code',
-    hint: 'For example, FR-75'
+    label: 'Enter the region of origin code',
+    hint: 'Enter up to 5 characters.'
   },
   internalReference: {
     label: 'Your internal reference for this consignment (optional)',
@@ -20,6 +22,7 @@ export const copy = {
   },
   errors: {
     countryRequired: 'Select the country where the animal originates from',
+    regionCodeRequired: 'Enter the region of origin code',
     regionCodeMaxLength: 'Region of origin code must be 5 characters or less',
     internalReferenceMaxLength:
       'Internal reference must be 58 characters or less',

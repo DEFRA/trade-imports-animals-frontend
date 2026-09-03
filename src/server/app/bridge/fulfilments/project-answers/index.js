@@ -24,7 +24,7 @@ const withObligationAnswer = (
     answers,
     chain,
     obligation.name,
-    records.map(({ fulfilmentId, value }) => [fulfilmentId, value])
+    records.map(({ fulfilmentIndex, value }) => [fulfilmentIndex, value])
   )
 }
 

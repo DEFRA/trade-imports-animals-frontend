@@ -4,23 +4,23 @@ import { isAnswered } from '../../../lib/answered.js'
 import { obligationFor } from '../obligation-lookup.js'
 import { recordMap } from './records.js'
 
-// A leaf is present for a record iff the record's fulfilmentId is in the
-// leaf's in-scope implication (post-purge membership).
-export const leafInScopeForRecord = (name, recId, state) => {
+// A leaf is present for a record iff the record's fulfilmentIndex is in
+// the leaf's in-scope implication (post-purge membership).
+export const leafInScopeForRecord = (name, fulfilmentIndex, state) => {
   const obligation = obligationFor(name)
   const impl = obligation && state.obligations?.[obligation.id]
   if (!impl?.inScope) {
     return false
   }
-  return (impl.records ?? []).some((r) => r.fulfilmentId === recId)
+  return (impl.records ?? []).some((r) => r.fulfilmentIndex === fulfilmentIndex)
 }
 
-export const leafMandatoryForRecord = (name, recId, state) =>
-  effectiveStatus(obligationFor(name), recId, state) === 'mandatory'
+export const leafMandatoryForRecord = (name, fulfilmentIndex, state) =>
+  effectiveStatus(obligationFor(name), fulfilmentIndex, state) === 'mandatory'
 
-export const leafFulfilledForRecord = (name, recId, state) => {
+export const leafFulfilledForRecord = (name, fulfilmentIndex, state) => {
   const map = recordMap(obligationFor(name), state)
-  return map === undefined ? false : !isBlankValue(map[recId])
+  return map === undefined ? false : !isBlankValue(map[fulfilmentIndex])
 }
 
 // A top-level scalar. Flow-only obligations the manifest does not carry

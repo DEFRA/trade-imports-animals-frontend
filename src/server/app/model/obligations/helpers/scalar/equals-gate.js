@@ -21,7 +21,7 @@
 // pattern used by `matches` / `anyAllowListed` / `branchedGate`: the
 // closure reads `fulfilments[gateObligation.id]` and returns a scalar
 // decision object. No `filterAndProject`, no projection group, no
-// touching of `fulfilmentIdsByObligationId`. The migration sites are
+// touching of `fulfilmentIndexesByObligationId`. The migration sites are
 // all notification-level scalar gates; the depth-N projection variants
 // stay `allowListed` / `notInUnionOf`.
 // -----------------------------------------------------------------------------

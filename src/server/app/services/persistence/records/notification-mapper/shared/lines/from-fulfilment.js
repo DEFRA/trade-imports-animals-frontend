@@ -4,9 +4,23 @@ import { compact } from '../compact.js'
 const legacyAnimalCount = (value) =>
   typeof value === 'number' ? String(value) : value
 
-// One logical line/unit join over the independent canonical record maps. Line
-// and unit identity comes only from exact composite ids; a leaf is joined only
-// when its record map contains that exact id.
+const unitFrom = (valueAt, identifiers, unitIndex) =>
+  compact({
+    animalIdentifierPassport: valueAt(identifiers.passport, unitIndex),
+    animalIdentifierTattoo: valueAt(identifiers.tattoo, unitIndex),
+    animalIdentifierEarTag: valueAt(identifiers.earTag, unitIndex),
+    horseName: valueAt(identifiers.horseName, unitIndex),
+    animalIdentifierIdentificationDetails: valueAt(
+      identifiers.identificationDetails,
+      unitIndex
+    ),
+    animalIdentifierDescription: valueAt(identifiers.description, unitIndex),
+    permanentAddress: valueAt(identifiers.permanentAddress, unitIndex)
+  })
+
+// One logical line/unit join over the independent canonical record maps.
+// Line and unit identity comes only from exact fulfilment indexes; a leaf
+// is joined only when its record map contains that exact fulfilment index.
 export const commodityLinesFromFulfilment = (reader) => {
   const {
     commodityCode,
@@ -47,39 +61,37 @@ export const commodityLinesFromFulfilment = (reader) => {
       reader.records(obligation)
     ])
   )
-  const valueAt = (obligation, id) => recordsByObligation.get(obligation)[id]
-  const unitFrom = (unitId) =>
-    compact({
-      animalIdentifierPassport: valueAt(passport, unitId),
-      animalIdentifierTattoo: valueAt(tattoo, unitId),
-      animalIdentifierEarTag: valueAt(earTag, unitId),
-      horseName: valueAt(horseName, unitId),
-      animalIdentifierIdentificationDetails: valueAt(
-        identificationDetails,
-        unitId
-      ),
-      animalIdentifierDescription: valueAt(description, unitId),
-      permanentAddress: valueAt(permanentAddress, unitId)
-    })
-
+  const valueAt = (obligation, fulfilmentIndex) =>
+    recordsByObligation.get(obligation)[fulfilmentIndex]
+  const identifiers = {
+    passport,
+    tattoo,
+    earTag,
+    horseName,
+    identificationDetails,
+    description,
+    permanentAddress
+  }
   return reader
-    .instanceIds(commodityLine, commodityObligations)
-    .map((lineId) => {
-      const unitIds = reader.instanceIds(
+    .groupFulfilmentIndexes(commodityLine, commodityObligations)
+    .map((lineIndex) => {
+      const unitIndexes = reader.groupFulfilmentIndexes(
         unitRecord,
         identifierObligations,
-        lineId
+        lineIndex
       )
       return compact({
-        commoditySelection: valueAt(commodityCode, lineId),
-        commodityType: valueAt(commodityType, lineId),
-        speciesSelection: valueAt(species, lineId),
+        commoditySelection: valueAt(commodityCode, lineIndex),
+        commodityType: valueAt(commodityType, lineIndex),
+        speciesSelection: valueAt(species, lineIndex),
         numberOfAnimalsQuantity: legacyAnimalCount(
-          valueAt(numberOfAnimals, lineId)
+          valueAt(numberOfAnimals, lineIndex)
         ),
-        numberOfPackages: valueAt(numberOfPackages, lineId),
+        numberOfPackages: valueAt(numberOfPackages, lineIndex),
         animalIdentifiers:
-          unitIds.length > 0 ? unitIds.map(unitFrom) : undefined
+          unitIndexes.length > 0
+            ? unitIndexes.map((u) => unitFrom(valueAt, identifiers, u))
+            : undefined
       })
     })
 }

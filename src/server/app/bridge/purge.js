@@ -18,7 +18,7 @@
 import { obligations } from '../model/obligations/manifest.js'
 import {
   ancestorChain,
-  fulfilmentIdToPath,
+  fulfilmentIndexToPath,
   groupObligations
 } from './fulfilments/index.js'
 import { pathKey } from '../lib/path.js'
@@ -39,11 +39,11 @@ const wipedRecordKeys = (obligation, chain, inVal, fulfilmentsOut) => {
   const outRecords = fulfilmentsOut[obligation.id] ?? {}
   return Object.entries(inVal)
     .filter(
-      ([fulfilmentId, value]) =>
-        isAnswered(value) && outRecords[fulfilmentId] === undefined
+      ([fulfilmentIndex, value]) =>
+        isAnswered(value) && outRecords[fulfilmentIndex] === undefined
     )
-    .map(([fulfilmentId]) =>
-      pathKey(fulfilmentIdToPath(chain, fulfilmentId, obligation.name))
+    .map(([fulfilmentIndex]) =>
+      pathKey(fulfilmentIndexToPath(chain, fulfilmentIndex, obligation.name))
     )
 }
 

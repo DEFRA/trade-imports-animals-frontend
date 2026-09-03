@@ -54,6 +54,16 @@ describe('#currentJourney', () => {
     ])
   })
 
+  it('Should forward the authenticated actor to records.create on startJourney', async () => {
+    const create = vi.fn(recordsStub.create)
+    configureRecords({ ...recordsStub, create })
+    const h = recordingH()
+
+    await startJourney(requestFor(undefined, []), h)
+
+    expect(create).toHaveBeenCalledWith(authenticatedActor)
+  })
+
   it('Should resolve two URL-selected journeys independently in one shared session', async () => {
     const journeyA = await store.create()
     const journeyB = await store.create()

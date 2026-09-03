@@ -1,7 +1,11 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
-import { answerOriginEntry } from '../../../../../../../../../fit/live-animals-journey.js'
+import {
+  answerOriginEntry,
+  expectPageEndsWithPrimaryAlone,
+  selectSpecies
+} from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
@@ -19,7 +23,7 @@ const startAtCphNumber = async (page) => {
   await answerOriginEntry(page)
 
   await page.goto(commodityUrl)
-  await page.getByRole('checkbox', { name: 'Bos taurus' }).check()
+  await selectSpecies(page, ['Bos taurus'])
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await expect(page).toHaveURL(/\/notifications\/[^/]+\/consignment-details$/)
 
@@ -37,6 +41,12 @@ test.describe('cph-number feature', () => {
     await expect(page.getByLabel(copy.cph.label)).toHaveAccessibleDescription(
       copy.cph.hint
     )
+  })
+
+  test('ends with the primary alone, being reached from the addresses page', async ({
+    page
+  }) => {
+    await expectPageEndsWithPrimaryAlone(page)
   })
 
   test('back link returns to the notification hub', async ({ page }) => {

@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   answerCountryOfOrigin,
+  searchCommodities,
   selectSpecies,
   signIn,
   startNotification
@@ -11,16 +12,11 @@ import { copy } from '../copy/copy.en.js'
 const BISON_BISON = 'Bison bison'
 const BOS_TAURUS = 'Bos taurus'
 const FELIS_CATUS = 'Felis catus'
+const COW_LEGEND = 'Cow (0102)'
+const SAVE_AND_CONTINUE = 'Save and continue'
+const BACK_LINK = '.govuk-back-link'
 
 const canonicalSelectionOrder = [BISON_BISON, BOS_TAURUS, FELIS_CATUS]
-
-const expectedGroups = [
-  ['Cow (0102)', [BISON_BISON, 'Bos spp.', BOS_TAURUS, 'Bubalus bubalis']],
-  ['Horse (0101)', ['Equus caballus']],
-  ['Cat (01061900)', [FELIS_CATUS]],
-  ['Dog (01061900)', ['Canis lupus familiaris']],
-  ['Fish (0301)', ['Salmo salar']]
-]
 
 const openSelection = async (page) => {
   await startNotification(page)
@@ -34,56 +30,127 @@ const openSelection = async (page) => {
 const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
 
-test.describe('commodity selection', () => {
+const selectionPanel = (page) => page.locator('#commodity-selection')
+
+test.describe('commodity search', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     await openSelection(page)
   })
 
-  test('renders all eight pairs in commodity groups with grounded copy', async ({
+  test('offers a search box and lists nothing until it is used', async ({
     page
   }) => {
     await expect(page.getByText(copy.search.inset)).toBeVisible()
-    for (const [legend, species] of expectedGroups) {
-      const group = page.getByRole('group', { name: legend })
-      await expect(group).toBeVisible()
-      for (const name of species) {
-        await expect(group.getByRole('checkbox', { name })).toBeVisible()
-      }
-    }
-    await expect(page.getByRole('checkbox')).toHaveCount(8)
-    await expect(page.getByRole('textbox')).toHaveCount(0)
-    await expect(
-      page.getByRole('button', { name: 'Search', exact: true })
-    ).toHaveCount(0)
+    await expect(page.getByLabel(copy.search.searchLabel)).toBeVisible()
+    await expect(page.getByText(copy.search.searchHint)).toBeVisible()
+    await expect(page.getByRole('checkbox')).toHaveCount(0)
+    await expect(selectionPanel(page)).toHaveCount(0)
     await expect(
       page.getByText(copy.search.help.summary, { exact: true })
     ).toBeVisible()
   })
 
+  test('explains commodity codes and links out to the Trade Tariff tool', async ({
+    page
+  }) => {
+    await page.getByText(copy.search.help.summary, { exact: true }).click()
+    await expect(page.getByText(copy.search.help.reference)).toBeVisible()
+    await expect(page.getByText(copy.search.help.describes)).toBeVisible()
+    await expect(page.getByText(copy.search.help.lookupPrefix)).toBeVisible()
+    const tradeTariff = page.getByRole('link', {
+      name: copy.search.help.lookupLink
+    })
+    await expect(tradeTariff).toBeVisible()
+    await expect(tradeTariff).toHaveAttribute(
+      'href',
+      copy.search.help.lookupHref
+    )
+    await expect(tradeTariff).toHaveAttribute('target', '_blank')
+    await expect(tradeTariff).toHaveAttribute('rel', 'noreferrer noopener')
+  })
+
+  test('lists nothing for a query shorter than three characters', async ({
+    page
+  }) => {
+    await searchCommodities(page, 'Bo')
+    await expect(page.getByRole('checkbox')).toHaveCount(0)
+    await expect(page.getByText(copy.search.noResults)).toHaveCount(0)
+  })
+
+  test('groups the matching species under their commodity heading', async ({
+    page
+  }) => {
+    await searchCommodities(page, 'Bos')
+    const group = page.getByRole('group', { name: COW_LEGEND })
+    await expect(group).toBeVisible()
+    await expect(group.getByRole('checkbox')).toHaveCount(2)
+    await expect(
+      group.getByRole('checkbox', { name: BOS_TAURUS })
+    ).toBeVisible()
+    await expect(page.getByRole('checkbox')).toHaveCount(2)
+  })
+
+  test('renders a separate group per matching commodity', async ({ page }) => {
+    await searchCommodities(page, '0106')
+    const cats = page.getByRole('group', { name: 'Cat (01061900)' })
+    const dogs = page.getByRole('group', { name: 'Dog (01061900)' })
+    await expect(cats).toBeVisible()
+    await expect(dogs).toBeVisible()
+    await expect(
+      cats.getByRole('checkbox', { name: FELIS_CATUS })
+    ).toBeVisible()
+    await expect(
+      dogs.getByRole('checkbox', { name: 'Canis lupus familiaris' })
+    ).toBeVisible()
+    await expect(page.getByRole('checkbox')).toHaveCount(2)
+  })
+
+  test('says so when nothing matches', async ({ page }) => {
+    await searchCommodities(page, 'zzz')
+    await expect(page.getByText(copy.search.noResults)).toBeVisible()
+    await expect(page.getByRole('checkbox')).toHaveCount(0)
+  })
+
+  test('counts and lists what has been chosen, and clears it on request', async ({
+    page
+  }) => {
+    await selectSpecies(page, [BOS_TAURUS, FELIS_CATUS])
+    await searchCommodities(page, 'Salmo')
+    const panel = selectionPanel(page)
+
+    await expect(panel).toContainText(copy.search.selected.heading(2))
+    await expect(panel).toContainText(BOS_TAURUS)
+    await expect(panel).toContainText(FELIS_CATUS)
+
+    await page
+      .getByRole('button', { name: copy.search.selected.clearAll })
+      .click()
+    await expect(selectionPanel(page)).toHaveCount(0)
+  })
+
   test('back link returns to the overview', async ({ page }) => {
-    await page.locator('.govuk-back-link').click()
+    await page.locator(BACK_LINK).click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
-  test('validation: no commodity links to and focuses the first checkbox while keeping the checklist', async ({
+  test('validation: no commodity links to and focuses the search box', async ({
     page
   }) => {
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     const link = errorLink(page, copy.search.errors.selectCommodity)
     await expect(link).toBeVisible()
     await link.click()
-    await expect(page.getByRole('checkbox').first()).toBeFocused()
-    await expect(page.getByRole('checkbox', { checked: true })).toHaveCount(0)
-    await expect(page.getByRole('checkbox')).toHaveCount(8)
+    await expect(page.getByLabel(copy.search.searchLabel)).toBeFocused()
+    await expect(selectionPanel(page)).toHaveCount(0)
   })
 
-  test('saves multiple pairs in canonical order and persists checked state', async ({
+  test('saves pairs found under different queries, in canonical order', async ({
     page
   }) => {
     await selectSpecies(page, [FELIS_CATUS, BOS_TAURUS, BISON_BISON])
-    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(
       page.getByRole('heading', { name: copy.consignmentDetails.title })
@@ -93,16 +160,30 @@ test.describe('commodity selection', () => {
       .allTextContents()
     expect(speciesHeadings).toEqual(canonicalSelectionOrder)
 
-    await page.locator('.govuk-back-link').click()
+    await page.locator(BACK_LINK).click()
+    const panel = selectionPanel(page)
+    await expect(panel).toContainText(copy.search.selected.heading(3))
     for (const name of canonicalSelectionOrder) {
-      await expect(page.getByRole('checkbox', { name })).toBeChecked()
+      await expect(panel).toContainText(name)
     }
-    await expect(
-      page.getByRole('checkbox', { name: 'Canis lupus familiaris' })
-    ).not.toBeChecked()
+    await expect(panel).not.toContainText('Canis lupus familiaris')
+  })
+
+  test('ticks a result that is already on the notification', async ({
+    page
+  }) => {
+    await selectSpecies(page, [BOS_TAURUS])
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await page.locator(BACK_LINK).click()
+    await searchCommodities(page, 'Bos')
+    await expect(page.getByRole('checkbox', { name: BOS_TAURUS })).toBeChecked()
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
+    await selectSpecies(page, [BOS_TAURUS])
+    await searchCommodities(page, '0106')
+    // Open the help details so its paragraphs and outbound link are scanned.
+    await page.getByText(copy.search.help.summary, { exact: true }).click()
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()
@@ -111,7 +192,7 @@ test.describe('commodity selection', () => {
     )
     expect(
       violations,
-      `Commodity selection has serious/critical accessibility violations.\n${JSON.stringify(results.violations, null, 2)}`
+      `Commodity search has serious/critical accessibility violations.\n${JSON.stringify(results.violations, null, 2)}`
     ).toEqual([])
   })
 })

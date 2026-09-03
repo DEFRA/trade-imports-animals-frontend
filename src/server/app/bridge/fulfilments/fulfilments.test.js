@@ -116,7 +116,7 @@ describe('#fulfilments — round-trip A -> B -> A recovers the original', () => 
 })
 
 // ---------------------------------------------------------------------------
-// Shape — A positional path <-> B composite fulfilmentId, both directions.
+// Shape — A positional path <-> B composite fulfilmentIndex, both directions.
 // ---------------------------------------------------------------------------
 
 describe('#fulfilments — storage shape translation', () => {
@@ -151,7 +151,7 @@ describe('#fulfilments — storage shape translation', () => {
     })
   })
 
-  it('Should translate a depth-2 nested array to a two-segment composite (line<i>/unit<j>)', () => {
+  it('Should translate a depth-2 nested array to a two-segment composite (line<i>.unit<j>)', () => {
     const answers = {
       commodityLines: [
         {
@@ -164,8 +164,8 @@ describe('#fulfilments — storage shape translation', () => {
     }
     const fulfilments = assembleFulfilments(answers)
     expect(fulfilments[earTag.id]).toEqual({
-      'line0/unit0': 'first',
-      'line0/unit1': 'second'
+      'line0.unit0': 'first',
+      'line0.unit1': 'second'
     })
     expect(projectAnswers(fulfilments)).toEqual(answers)
   })
@@ -188,7 +188,7 @@ describe('#fulfilments — page projection validation and ordering', () => {
     {
       name: 'deeper',
       fulfilments: {
-        [commodityCode.id]: { 'line0/unit0': 'Cow' }
+        [commodityCode.id]: { 'line0.unit0': 'Cow' }
       }
     },
     {
@@ -210,7 +210,7 @@ describe('#fulfilments — page projection validation and ordering', () => {
     expect(() =>
       projectAnswers({
         [earTag.id]: {
-          'line0/unit-unknown': 'UK123456789012'
+          'line0.unit-unknown': 'UK123456789012'
         }
       })
     ).toThrow(/trailing numeric index/)
@@ -221,9 +221,9 @@ describe('#fulfilments — page projection validation and ordering', () => {
       [commodityCode.id]: { line1: 'Horse', line0: 'Cow' },
       [species.id]: { line1: '716661', line0: '1148346' },
       [earTag.id]: {
-        'line1/unit1': 'horse-2',
-        'line0/unit0': 'cow-1',
-        'line1/unit0': 'horse-1'
+        'line1.unit1': 'horse-2',
+        'line0.unit0': 'cow-1',
+        'line1.unit0': 'horse-1'
       }
     }
     const before = structuredClone(fulfilments)
@@ -260,8 +260,8 @@ describe('#fulfilments — page projection validation and ordering', () => {
       fulfilments: {
         [commodityCode.id]: { line0: 'Cow' },
         [earTag.id]: {
-          'line0/unit0': 'first',
-          'line0/unit2': 'third'
+          'line0.unit0': 'first',
+          'line0.unit2': 'third'
         }
       }
     }
@@ -422,11 +422,13 @@ describe('#fulfilments — evaluator smoke — a happy path produces real implic
 
   it('Should fire per-line and per-unit gates (packages + earTag in scope)', () => {
     expect(
-      result.obligations[numberOfPackages.id].records.map((r) => r.fulfilmentId)
+      result.obligations[numberOfPackages.id].records.map(
+        (r) => r.fulfilmentIndex
+      )
     ).toEqual(['line0'])
     expect(
-      result.obligations[earTag.id].records.map((r) => r.fulfilmentId)
-    ).toContain('line0/unit0')
+      result.obligations[earTag.id].records.map((r) => r.fulfilmentIndex)
+    ).toContain('line0.unit0')
   })
 
   it('Should fire value-gated notification obligations (internalMarket, land transport)', () => {
@@ -445,11 +447,11 @@ describe('#fulfilments — evaluator smoke — a happy path produces real implic
 
   it('Should infer group instances from the composite keys', () => {
     expect(
-      result.obligations[commodityLine.id].records.map((r) => r.fulfilmentId)
+      result.obligations[commodityLine.id].records.map((r) => r.fulfilmentIndex)
     ).toEqual(['line0'])
     expect(
-      result.obligations[unitRecord.id].records.map((r) => r.fulfilmentId)
-    ).toEqual(['line0/unit0'])
+      result.obligations[unitRecord.id].records.map((r) => r.fulfilmentIndex)
+    ).toEqual(['line0.unit0'])
   })
 
   it('Should make the conditional region gate mandatory when required', () => {
