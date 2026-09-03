@@ -3,6 +3,9 @@ import { getTraceId } from '@defra/hapi-tracing'
 import { getOidcConfig } from './get-oidc-config.js'
 import { config } from '../config/config.js'
 
+// Doubled by Wreck (request + read); signing tokens is slower than discovery.
+const TOKEN_ENDPOINT_TIMEOUT_MS = 2000
+
 async function refreshTokens(refreshToken) {
   const { token_endpoint: url } = await getOidcConfig()
 
@@ -20,7 +23,8 @@ async function refreshTokens(refreshToken) {
       'Content-Type': 'application/x-www-form-urlencoded',
       [config.get('tracing.header')]: getTraceId() ?? ''
     },
-    json: true
+    json: true,
+    timeout: TOKEN_ENDPOINT_TIMEOUT_MS
   })
 
   // Payload will include both a new access token and a new refresh token

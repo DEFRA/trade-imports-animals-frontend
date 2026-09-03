@@ -90,7 +90,8 @@ describe('refreshTokens', () => {
           'Content-Type': 'application/x-www-form-urlencoded',
           [tracingHeader]: traceId
         },
-        json: true
+        json: true,
+        timeout: 2000
       }
     )
   })

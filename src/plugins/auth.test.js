@@ -359,6 +359,38 @@ describe('auth plugin', () => {
       })
     })
 
+    test('validate rejects without writing a session when the refresh times out', async () => {
+      const options = getCookieOptions()
+      const userSession = {
+        token: 'old-token',
+        refreshToken: 'old-refresh'
+      }
+
+      const request = {
+        server: {
+          app: {
+            cache: {
+              get: vi.fn().mockResolvedValue(userSession),
+              set: vi.fn()
+            }
+          }
+        }
+      }
+
+      jwtDecodeMock.mockReturnValue({ exp: 1 })
+      jwtVerifyTimeMock.mockImplementation(() => {
+        throw new Error('token expired')
+      })
+
+      refreshTokensMock.mockRejectedValue(new Error('Client request timeout'))
+
+      await expect(
+        options.validate(request, { sessionId: 'session-1' })
+      ).rejects.toThrow('Client request timeout')
+
+      expect(request.server.app.cache.set).not.toHaveBeenCalled()
+    })
+
     test('validate returns isValid:false when verification fails and refreshTokens disabled', async () => {
       configGetMock.mockImplementation((key) => {
         if (key === 'defraId.refreshTokens') return false
