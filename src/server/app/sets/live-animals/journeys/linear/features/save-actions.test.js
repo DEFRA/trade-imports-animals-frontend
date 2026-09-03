@@ -78,7 +78,7 @@ describe('save actions — hub exit semantics', () => {
     reasonForImport: 'internalMarket'
   }
 
-  it('Should commit the page and redirect to the hub on Save and return to hub', async () => {
+  it('Should commit the page and redirect to the hub on Save and return to overview', async () => {
     const { journeyId, response, after } = await drivePost(
       postHandlerOf(importPurpose),
       {
@@ -104,7 +104,7 @@ describe('save actions — hub exit semantics', () => {
     expect(after.purposeInInternalMarket).toBe('breeding')
   })
 
-  it('Should reject an invalid Save and return to hub with the same errors as Save and continue', async () => {
+  it('Should reject an invalid Save and return to overview with the same errors as Save and continue', async () => {
     const invalid = { purposeInInternalMarket: 'not-a-purpose' }
     const plain = await drivePost(postHandlerOf(importPurpose), {
       payload: invalid

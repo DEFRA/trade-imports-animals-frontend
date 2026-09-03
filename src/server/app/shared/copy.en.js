@@ -54,8 +54,8 @@ export const copy = {
   },
   saveActions: {
     saveAndContinue: 'Save and continue',
-    saveAndReturnToHub: 'Save and return to hub',
-    cancelAndReturnToHub: 'Cancel and return to hub'
+    saveAndReturnToHub: 'Save and return to overview',
+    cancelAndReturnToHub: 'Cancel and return to overview'
   },
   journeyStrip: {
     draft: 'Draft',

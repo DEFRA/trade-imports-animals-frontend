@@ -342,8 +342,8 @@ export const completeAnswerSections = async (page) => {
 
 /**
  * A page reached from another page ends with the primary alone: the shared
- * saveActions macro emits no "Save and return to hub" button and no
- * "Cancel and return to hub" link.
+ * saveActions macro emits no "Save and return to overview" button and no
+ * "Cancel and return to overview" link.
  */
 export const expectPageEndsWithPrimaryAlone = async (page) => {
   await expect(

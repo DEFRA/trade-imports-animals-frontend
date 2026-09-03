@@ -266,7 +266,7 @@ Cover:
 - each validation rule in its own test
 - preservation of entered values on error
 - every error-summary link moving focus to its control
-- back, Save and return to hub, Cancel and Change navigation as applicable
+- back, Save and return to overview, Cancel and Change navigation as applicable
 - conditional scope, skip and purge behaviour
 - the check-answers rows and Change links
 

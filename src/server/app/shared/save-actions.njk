@@ -3,10 +3,12 @@
 {# The one place a journey page's ending is stated.
 
    The rule: a page the hub links to directly ends with all three controls —
-   the primary, "Save and return to hub" and "Cancel and return to hub" — so a
-   trader can stop and leave from where the hub sent them. A page reached from
-   another page ends with the primary alone, and the trader leaves the way they
-   came in. Pass `showReturnControls = false` on those. #}
+   the primary, "Save and return to overview" and "Cancel and return to
+   overview" — so a trader can stop and leave from where the hub sent them. The
+   two return controls name the page they lead to, which is headed "Overview";
+   "hub" is the internal name for it and never appears on screen. A page reached
+   from another page ends with the primary alone, and the trader leaves the way
+   they came in. Pass `showReturnControls = false` on those. #}
 {% macro saveActions(hubHref, primary, copy, showReturnControls = true) %}
   <div class="govuk-button-group">
     {{ govukButton(primary or { text: copy.saveAndContinue }) }}
