@@ -633,15 +633,19 @@ describe('buildImplication', () => {
 
   it('single-cardinality → returns applyTo output verbatim', () => {
     const obligation = { id: 'o' }
-    const own = { inScope: true, status: 'optional', reasons: [{ code: 'x' }] }
+    const applicabilityDecision = {
+      inScope: true,
+      status: 'optional',
+      reasons: [{ code: 'x' }]
+    }
     const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['o', 'single']]),
-      obligationApplicabilityDecisions: new Map([['o', own]]),
+      obligationApplicabilityDecisions: new Map([['o', applicabilityDecision]]),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
-    expect(result).toBe(own)
+    expect(result).toBe(applicabilityDecision)
   })
 
   it('single-cardinality with no applyTo entry → { inScope: true }', () => {

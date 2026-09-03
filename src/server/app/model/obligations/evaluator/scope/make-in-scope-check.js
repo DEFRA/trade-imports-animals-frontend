@@ -13,8 +13,10 @@ export function makeInScopeCheck(
     if (inScopeCache.has(obligation.id)) {
       return inScopeCache.get(obligation.id)
     }
-    const own = obligationApplicabilityDecisions.get(obligation.id)
-    if (own?.inScope === false) {
+    const applicabilityDecision = obligationApplicabilityDecisions.get(
+      obligation.id
+    )
+    if (applicabilityDecision?.inScope === false) {
       inScopeCache.set(obligation.id, false)
       return false
     }

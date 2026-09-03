@@ -1,14 +1,19 @@
 import { isKeyedRecord } from '../internal/is-keyed-record.js'
 
-const singleImplication = (own) => own ?? { inScope: true }
+const singleImplication = (applicabilityDecision) =>
+  applicabilityDecision ?? { inScope: true }
 
-const groupImplication = (obligation, own, fulfilmentIndexesByObligationId) => {
+const groupImplication = (
+  obligation,
+  applicabilityDecision,
+  fulfilmentIndexesByObligationId
+) => {
   const fulfilmentIndexes = [
     ...(fulfilmentIndexesByObligationId.get(obligation.id) ?? [])
   ]
   const implication = { inScope: true }
-  if (own?.reasons) {
-    implication.reasons = own.reasons
+  if (applicabilityDecision?.reasons) {
+    implication.reasons = applicabilityDecision.reasons
   }
   implication.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
     fulfilmentIndex
@@ -42,12 +47,12 @@ const fieldImplication = (obligation, fulfilmentIndexesByObligationId) => {
 
 // Id set comes from applyTo — the authoritative "what records CAN exist".
 // Storage tracks which ones have VALUES.
-const derivedLeafImplication = (obligation, own) => {
+const derivedLeafImplication = (obligation, applicabilityDecision) => {
   const implication = { inScope: true }
-  if (own?.reasons) {
-    implication.reasons = own.reasons
+  if (applicabilityDecision?.reasons) {
+    implication.reasons = applicabilityDecision.reasons
   }
-  const fulfilmentIndexes = own?.records ?? []
+  const fulfilmentIndexes = applicabilityDecision?.records ?? []
   implication.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
     fulfilmentIndex,
     status: obligation.status
@@ -55,11 +60,15 @@ const derivedLeafImplication = (obligation, own) => {
   return implication
 }
 
-// Record presence via own storage keys.
-const userLeafImplication = (obligation, own, amendedFulfilments) => {
+// Record presence via storage keys.
+const userLeafImplication = (
+  obligation,
+  applicabilityDecision,
+  amendedFulfilments
+) => {
   const implication = { inScope: true }
-  if (own?.reasons) {
-    implication.reasons = own.reasons
+  if (applicabilityDecision?.reasons) {
+    implication.reasons = applicabilityDecision.reasons
   }
   const fulfilment = amendedFulfilments[obligation.id]
   const fulfilmentIndexes = isKeyedRecord(fulfilment)
@@ -90,19 +99,29 @@ export function buildImplication(obligation, context) {
   }
 
   const category = obligationsByCategory.get(obligation.id)
-  const own = obligationApplicabilityDecisions.get(obligation.id)
+  const applicabilityDecision = obligationApplicabilityDecisions.get(
+    obligation.id
+  )
 
   switch (category) {
     case 'single':
-      return singleImplication(own)
+      return singleImplication(applicabilityDecision)
     case 'group':
-      return groupImplication(obligation, own, fulfilmentIndexesByObligationId)
+      return groupImplication(
+        obligation,
+        applicabilityDecision,
+        fulfilmentIndexesByObligationId
+      )
     case 'field':
       return fieldImplication(obligation, fulfilmentIndexesByObligationId)
     case 'derived-leaf':
-      return derivedLeafImplication(obligation, own)
+      return derivedLeafImplication(obligation, applicabilityDecision)
     case 'user-leaf':
-      return userLeafImplication(obligation, own, amendedFulfilments)
+      return userLeafImplication(
+        obligation,
+        applicabilityDecision,
+        amendedFulfilments
+      )
     default:
       return { inScope: true }
   }
