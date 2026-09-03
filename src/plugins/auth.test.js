@@ -132,7 +132,7 @@ describe('auth plugin', () => {
     expect(getOidcConfigWithRetryMock).not.toHaveBeenCalled()
   })
 
-  test('register registers no strategy when OIDC discovery fails', async () => {
+  test('register registers no Bell strategy when OIDC discovery fails', async () => {
     getOidcConfigWithRetryMock.mockRejectedValue(
       new Error(
         'OIDC discovery at https://idp.example.com/.well-known/openid-configuration failed after 4 attempts'
