@@ -91,7 +91,7 @@ describe('refreshTokens', () => {
           [tracingHeader]: traceId
         },
         json: true,
-        timeout: 2000
+        timeout: 3000
       }
     )
   })
