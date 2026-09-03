@@ -11,18 +11,23 @@ export const COMMODITY_CODES = {
 
 // Species per commodity. Cow's four are the skeleton's mock-species.json for
 // 0102; the others carry one representative species each so the batch search
-// can select across commodity codes.
+// can select across commodity codes. `text` is the scientific name the backend
+// payload carries; `commonName` is what the animal is called in English, and a
+// species the catalogue holds no common name for is shown under the name of its
+// commodity instead.
 export const COMMODITY_SPECIES = {
   Cow: [
-    { value: '716661', text: 'Bison bison' },
-    { value: '1388624', text: 'Bos spp.' },
-    { value: '1148346', text: 'Bos taurus' },
-    { value: '749313', text: 'Bubalus bubalis' }
+    { value: '716661', text: 'Bison bison', commonName: 'American bison' },
+    { value: '1388624', text: 'Bos spp.', commonName: 'Cattle' },
+    { value: '1148346', text: 'Bos taurus', commonName: 'Domestic cattle' },
+    { value: '749313', text: 'Bubalus bubalis', commonName: 'Water buffalo' }
   ],
-  Horse: [{ value: '822332', text: 'Equus caballus' }],
-  Cat: [{ value: '923501', text: 'Felis catus' }],
-  Dog: [{ value: '923502', text: 'Canis lupus familiaris' }],
-  Fish: [{ value: '801204', text: 'Salmo salar' }]
+  Horse: [{ value: '822332', text: 'Equus caballus', commonName: 'Horse' }],
+  Cat: [{ value: '923501', text: 'Felis catus', commonName: 'Cat' }],
+  Dog: [{ value: '923502', text: 'Canis lupus familiaris', commonName: 'Dog' }],
+  Fish: [
+    { value: '801204', text: 'Salmo salar', commonName: 'Atlantic salmon' }
+  ]
 }
 
 export const SPECIES_OPTIONS = Object.values(COMMODITY_SPECIES).flat()
