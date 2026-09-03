@@ -84,6 +84,20 @@ test.describe('commodity consignment details — rendering and validation', () =
     ).toHaveAccessibleDescription(copy.consignmentDetails.packages.hint)
   })
 
+  test('lists a commodity on code 01061900 as a species row whose remove drops that species alone', async ({
+    page
+  }) => {
+    const table = page.locator(GOVUK_TABLE)
+    // Cow keeps the commodity-level remove; Cat is on 01061900, so its row is
+    // the species' own and its remove names the line rather than the commodity.
+    await expect(
+      table.getByRole('button', { name: 'Remove Cow' })
+    ).toHaveAttribute('value', 'remove:0')
+    await expect(
+      table.getByRole('button', { name: 'Remove Cat' })
+    ).toHaveAttribute('value', 'remove-species:1')
+  })
+
   test('back link returns to commodity selection', async ({ page }) => {
     await page.locator('.govuk-back-link').click()
     await expect(
@@ -169,7 +183,7 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expect(page.locator('#numberOfPackages-1')).toHaveValue('1')
   })
 
-  test('removes one commodity group without changing another quantity', async ({
+  test('removes one species row without changing another quantity', async ({
     page
   }) => {
     await fillValidQuantities(page)
@@ -179,6 +193,23 @@ test.describe('commodity consignment details — persistence and accessibility',
 
     await expect(page.locator(GOVUK_TABLE)).not.toContainText('Cat')
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
+  })
+
+  test('removes one commodity group without changing another quantity', async ({
+    page
+  }) => {
+    await fillValidQuantities(page)
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
+    // Cow is not on 01061900, so its row keeps the commodity-level remove.
+    await page.getByRole('button', { name: 'Remove Cow' }).click()
+
+    const table = page.locator(GOVUK_TABLE)
+    await expect(table).not.toContainText('Cow')
+    await expect(table).toContainText('Cat')
+    // The cat line is the only one left and its saved count travelled with it,
+    // so the right group was dropped.
+    await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('2')
   })
 
   test('adds another commodity while preserving an existing quantity', async ({

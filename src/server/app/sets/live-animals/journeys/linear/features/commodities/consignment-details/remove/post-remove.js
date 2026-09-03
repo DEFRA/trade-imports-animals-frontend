@@ -2,22 +2,20 @@ import { pagePath } from '../../../../../../../../shared/paths.js'
 import * as state from '../../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../../../shared/kit.js'
+import * as commodities from '../../../../../../services/commodities/index.js'
 import { consignmentDetailsPage as page } from '../../page.js'
-import { linesOf } from '../lines.js'
+import { commodityNamesOf, linesOf } from '../lines.js'
 
-export const REMOVE_ACTION_PREFIX = 'remove:'
+export const groupNames = (answers, evaluation) =>
+  commodityNamesOf(linesOf(answers, evaluation))
 
-export const isRemoveAction = (action) =>
-  action.startsWith(REMOVE_ACTION_PREFIX)
-
-export const removeIndexOf = (action) =>
-  Number(action.slice(REMOVE_ACTION_PREFIX.length))
-
-export const groupNames = (answers, evaluation) => [
-  ...new Set(
-    linesOf(answers, evaluation).map(({ entry }) => entry.commoditySelection)
+const backToPage = (request, h) =>
+  h.redirect(
+    kit.withChangeContext(
+      request,
+      pagePath(request.params.journeyId, page.slug)
+    )
   )
-]
 
 // A removal drops every line of one commodity group, so it submits the page
 // form — the crumb travels with it and no GET can trigger it. The group index
@@ -34,10 +32,25 @@ export const postRemove = async (request, h, index, lineKey) => {
     (entry) => entry.commoditySelection !== name
   )
   await state.reconcileEntriesAt(request, h, ['commodityLines'], lineKey, kept)
-  return h.redirect(
-    kit.withChangeContext(
-      request,
-      pagePath(request.params.journeyId, page.slug)
-    )
-  )
+  return backToPage(request, h)
+}
+
+// A species removal drops one line and leaves the rest of its commodity in
+// place. The page only offers it for the commodities the design lists species
+// by species, so the line index must name a stored line of one of those;
+// anything else is refused before any reconcile runs.
+export const postRemoveSpecies = async (request, h, index, lineKey) => {
+  const { answers } = await state.get(request, h)
+  const stored = answers.commodityLines ?? []
+  const line = stored[index]
+  if (
+    line === undefined ||
+    !commodities.speciesListedIndividually(line.commoditySelection)
+  ) {
+    return h.response().code(HTTP_STATUS_BAD_REQUEST)
+  }
+
+  const kept = stored.toSpliced(index, 1)
+  await state.reconcileEntriesAt(request, h, ['commodityLines'], lineKey, kept)
+  return backToPage(request, h)
 }

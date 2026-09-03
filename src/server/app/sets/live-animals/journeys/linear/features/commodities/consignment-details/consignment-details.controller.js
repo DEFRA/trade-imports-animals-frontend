@@ -19,11 +19,14 @@ import {
 import { linesOf } from './lines.js'
 import {
   isRemoveAction,
-  postRemove,
-  removeIndexOf
-} from './remove/post-remove.js'
+  isRemoveSpeciesAction,
+  removeIndexOf,
+  removeSpeciesIndexOf
+} from './remove/actions.js'
+import { postRemove, postRemoveSpecies } from './remove/post-remove.js'
 import { countDropIssues } from './validation/count-drop.js'
 import { buildGroups } from './view-model/groups.js'
+import { buildSelectedRows } from './view-model/selected-rows.js'
 import { payloadValues, storedValues } from './view-model/values.js'
 
 export const meta = { ...page, collects: [] }
@@ -58,6 +61,7 @@ const render = (
     ),
     addText: lines.length > 0 ? copy.addAnother : copy.addFirst,
     groups: buildGroups(lines, values, errors),
+    selectedRows: buildSelectedRows(lines),
     errors,
     errorSummary: errorSummary ?? kit.errorSummary(errors)
   })
@@ -73,6 +77,9 @@ const post = async (request, h) => {
   const lines = linesOf(answers, evaluation)
   const payload = request.payload ?? {}
   const action = (payload.action ?? '').toString()
+  if (isRemoveSpeciesAction(action)) {
+    return postRemoveSpecies(request, h, removeSpeciesIndexOf(action), lineKey)
+  }
   if (isRemoveAction(action)) {
     return postRemove(request, h, removeIndexOf(action), lineKey)
   }
