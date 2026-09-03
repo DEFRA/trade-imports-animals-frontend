@@ -3,7 +3,7 @@ import { animalsField, packagesApply, packagesField } from '../fields.js'
 import { commodityNamesOf } from '../lines.js'
 
 // One quantity block group per commodity, one species block per line — the
-// design's Consignment details page over the line-per-species store
+// design's Commodity details page over the line-per-species store
 // (design 01-14/15). The Selected commodities table rows are built separately,
 // in ./selected-rows.js.
 export const groupLine = ({ index, entry }, values, errors) => ({

@@ -262,7 +262,7 @@ test.describe('commodity consignment details — persistence and accessibility',
     )
     expect(
       violations,
-      `Consignment details has serious/critical accessibility violations.\n${JSON.stringify(results.violations, null, 2)}`
+      `Commodity details has serious/critical accessibility violations.\n${JSON.stringify(results.violations, null, 2)}`
     ).toEqual([])
   })
 })

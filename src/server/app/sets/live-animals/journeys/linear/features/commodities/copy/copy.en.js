@@ -29,7 +29,7 @@ export const copy = {
     }
   },
   consignmentDetails: {
-    title: 'Consignment details',
+    title: 'Commodity details',
     addAnother: 'Add another commodity',
     table: {
       caption: 'Selected commodities',
