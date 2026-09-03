@@ -1,9 +1,9 @@
-import { groupInstancePaths } from '../internal/group-instance-paths.js'
+import { groupFulfilmentIndexesFromDescendants } from '../internal/group-fulfilment-indexes-from-descendants.js'
 
-// Step 2: pre-purge enumeration of group instance-paths from raw
-// storage. Same shape as `enumerateGroupFulfilmentIndexes` (step 6) but
-// without an `isInScope` filter — pre-purge, so no scope decisions
-// have been made yet.
+// Step 2: pre-purge enumeration of group fulfilmentIndexes from raw
+// storage. Same shape as `enumerateGroupFulfilmentIndexesPostPurge`
+// (step 6) but without an `isInScope` filter — pre-purge, so no scope
+// decisions have been made yet.
 //
 // Returns `Map<groupId, string[]>`. Groups without any descendant
 // storage get an empty array.
@@ -19,7 +19,7 @@ export function enumerateGroupPathsFromStorage(
     if (obligationsByCategory.get(obligation.id) !== 'group') {
       continue
     }
-    const ids = groupInstancePaths(
+    const ids = groupFulfilmentIndexesFromDescendants(
       obligation,
       obligationAncestorGroups,
       obligationDescendants,

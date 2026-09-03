@@ -10,6 +10,6 @@ export { enumerateGroupPathsFromStorage } from './evaluator/enumeration/enumerat
 export { runApplicabilityDecisions } from './evaluator/scope/run-applicability-decisions.js'
 export { makeInScopeCheck } from './evaluator/scope/make-in-scope-check.js'
 export { purgeStorage } from './evaluator/purge/purge-storage.js'
-export { enumerateGroupFulfilmentIndexes } from './evaluator/enumeration/enumerate-group-fulfilment-indexes.js'
+export { enumerateGroupFulfilmentIndexesPostPurge } from './evaluator/enumeration/enumerate-group-fulfilment-indexes-post-purge.js'
 export { buildImplications } from './evaluator/implications/build.js'
 export { buildImplication } from './evaluator/implications/index.js'

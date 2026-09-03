@@ -1,6 +1,6 @@
 import { obligations as configuredObligations } from '../manifest.js'
 import { convergePurge } from './converge-purge.js'
-import { enumerateGroupFulfilmentIndexes } from './enumeration/enumerate-group-fulfilment-indexes.js'
+import { enumerateGroupFulfilmentIndexesPostPurge } from './enumeration/enumerate-group-fulfilment-indexes-post-purge.js'
 import { buildImplications } from './implications/build.js'
 import { buildAncestorGroups } from './manifest-index/build-ancestor-groups.js'
 import { buildDescendants } from './manifest-index/build-descendants.js'
@@ -21,9 +21,9 @@ import { dropUnknownFulfilments } from './purge/drop-unknown-fulfilments.js'
  *
  * Scope resolution: every obligation with an `applyTo` receives
  * `applyTo(fulfilments, fulfilmentIndexesByObligationId)` where the second
- * arg is a `Map<obligationId, string[]>` of currently-present
- * group-instance-paths, enumerated pre-purge from raw storage. This
- * lets gated obligations look up their parent-group's instance-paths
+ * arg is a `Map<obligationId, string[]>` of currently-present group
+ * fulfilmentIndexes, enumerated pre-purge from raw storage. This lets
+ * gated obligations look up their parent-group's fulfilmentIndexes
  * without enumerating storage themselves — see `helpers.js` for the
  * common gate shapes (`allowListed`, `allowListedByPredicate`,
  * `branchedGate`, `anyAllowListed`).
@@ -42,7 +42,7 @@ import { dropUnknownFulfilments } from './purge/drop-unknown-fulfilments.js'
  *      manifests because `purgeStorage` is monotonic (never adds).
  *   3. Post-purge enumeration for group implications.
  *   4. Build per-obligation implications (category-specific shape;
- *      groups/leaves carry a `records` array).
+ *      groups/leaves carry a `fulfilmentIndexes` array).
  */
 
 export function createObligationEvaluator({
@@ -85,18 +85,16 @@ export function createObligationEvaluator({
           obligationDescendants
         })
 
-      // 3. Post-purge enumeration — group instance-paths for implication
-      // building (accounts for records dropped by the converged purge).
-      const fulfilmentIndexesByObligationId = enumerateGroupFulfilmentIndexes(
-        obligations,
-        {
+      // 3. Post-purge enumeration — group fulfilmentIndexes for implication
+      // building (accounts for entries dropped by the converged purge).
+      const fulfilmentIndexesByObligationId =
+        enumerateGroupFulfilmentIndexesPostPurge(obligations, {
           obligationsByCategory,
           obligationAncestorGroups,
           obligationDescendants,
           isInScope,
           amendedFulfilments
-        }
-      )
+        })
 
       // 4. Build implications.
       const implicationsByObligation = buildImplications(obligations, {

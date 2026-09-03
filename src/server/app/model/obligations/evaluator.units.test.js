@@ -9,7 +9,7 @@ import {
   runApplicabilityDecisions,
   makeInScopeCheck,
   purgeStorage,
-  enumerateGroupFulfilmentIndexes,
+  enumerateGroupFulfilmentIndexesPostPurge,
   buildImplications,
   buildImplication
 } from './evaluator.js'
@@ -457,11 +457,11 @@ describe('purgeStorage', () => {
   })
 })
 
-describe('enumerateGroupFulfilmentIndexes', () => {
+describe('enumerateGroupFulfilmentIndexesPostPurge', () => {
   const alwaysInScope = () => true
 
   it(emptyManifestGivesEmptyMapTitle, () => {
-    const result = enumerateGroupFulfilmentIndexes([], {
+    const result = enumerateGroupFulfilmentIndexesPostPurge([], {
       obligationsByCategory: new Map(),
       obligationAncestorGroups: new Map(),
       obligationDescendants: new Map(),
@@ -473,7 +473,7 @@ describe('enumerateGroupFulfilmentIndexes', () => {
 
   it('skips non-group obligations', () => {
     const obligation = { id: 'o' }
-    const result = enumerateGroupFulfilmentIndexes([obligation], {
+    const result = enumerateGroupFulfilmentIndexesPostPurge([obligation], {
       obligationsByCategory: new Map([['o', 'single']]),
       obligationAncestorGroups: new Map([['o', []]]),
       obligationDescendants: new Map([['o', []]]),
@@ -485,7 +485,7 @@ describe('enumerateGroupFulfilmentIndexes', () => {
 
   it('out-of-scope group → empty Set', () => {
     const group = { id: 'g' }
-    const result = enumerateGroupFulfilmentIndexes([group], {
+    const result = enumerateGroupFulfilmentIndexesPostPurge([group], {
       obligationsByCategory: new Map([['g', 'group']]),
       obligationAncestorGroups: new Map([['g', []]]),
       obligationDescendants: new Map([['g', []]]),
@@ -498,7 +498,7 @@ describe('enumerateGroupFulfilmentIndexes', () => {
   it('top-level group (prefixLen=1) with one descendant field → single instance id', () => {
     const group = { id: 'g' }
     const field = { id: 'f', within: group }
-    const result = enumerateGroupFulfilmentIndexes([group, field], {
+    const result = enumerateGroupFulfilmentIndexesPostPurge([group, field], {
       obligationsByCategory: new Map([
         ['g', 'group'],
         ['f', 'field']
@@ -526,31 +526,34 @@ describe('enumerateGroupFulfilmentIndexes', () => {
       within: claim,
       indexedBy: { source: 'user' }
     }
-    const result = enumerateGroupFulfilmentIndexes([driver, claim, leaf], {
-      obligationsByCategory: new Map([
-        ['driver', 'group'],
-        ['claim', 'group'],
-        ['leaf', 'user-leaf']
-      ]),
-      obligationAncestorGroups: new Map([
-        ['driver', []],
-        ['claim', [driver]],
-        ['leaf', [driver, claim]]
-      ]),
-      obligationDescendants: new Map([
-        ['driver', [claim, leaf]],
-        ['claim', [leaf]],
-        ['leaf', []]
-      ]),
-      isInScope: alwaysInScope,
-      amendedFulfilments: {
-        leaf: {
-          'd1.c1.p1': {},
-          'd1.c1.p2': {},
-          'd1.c2.p3': {}
+    const result = enumerateGroupFulfilmentIndexesPostPurge(
+      [driver, claim, leaf],
+      {
+        obligationsByCategory: new Map([
+          ['driver', 'group'],
+          ['claim', 'group'],
+          ['leaf', 'user-leaf']
+        ]),
+        obligationAncestorGroups: new Map([
+          ['driver', []],
+          ['claim', [driver]],
+          ['leaf', [driver, claim]]
+        ]),
+        obligationDescendants: new Map([
+          ['driver', [claim, leaf]],
+          ['claim', [leaf]],
+          ['leaf', []]
+        ]),
+        isInScope: alwaysInScope,
+        amendedFulfilments: {
+          leaf: {
+            'd1.c1.p1': {},
+            'd1.c1.p2': {},
+            'd1.c2.p3': {}
+          }
         }
       }
-    })
+    )
     // driver at depth 1 → {d1}
     expect(result.get('driver')).toEqual(new Set(['d1']))
     // driverClaim at depth 2 → {d1.c1, d1.c2}
@@ -560,7 +563,7 @@ describe('enumerateGroupFulfilmentIndexes', () => {
   it('descendant with non-object storage → skipped', () => {
     const group = { id: 'g' }
     const field = { id: 'f', within: group }
-    const result = enumerateGroupFulfilmentIndexes([group, field], {
+    const result = enumerateGroupFulfilmentIndexesPostPurge([group, field], {
       obligationsByCategory: new Map([
         ['g', 'group'],
         ['f', 'field']
