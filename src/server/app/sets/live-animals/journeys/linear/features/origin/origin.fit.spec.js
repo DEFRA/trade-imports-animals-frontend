@@ -231,7 +231,7 @@ test.describe('origin feature', () => {
     await expect(page).toHaveURL(hubUrl)
   })
 
-  test('cancel and return to hub reaches the hub on a notification with no answers', async ({
+  test('cancel and return to overview reaches the hub on a notification with no answers', async ({
     page
   }) => {
     const hubUrl = page.url().replace(/\/origin$/, '')

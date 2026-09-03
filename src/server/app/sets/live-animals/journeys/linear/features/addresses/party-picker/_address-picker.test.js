@@ -71,8 +71,8 @@ describe('addressPicker macro', () => {
     const html = renderPicker()
 
     // The picker's controller redirects to the addresses page and never reads
-    // `exit`, so a rendered "Save and return to hub" would save and then land
-    // the trader in the wrong place. The ending must stay primary-only.
+    // `exit`, so a rendered "Save and return to overview" would save and then
+    // land the trader in the wrong place. The ending must stay primary-only.
     expect(html).toContain(sharedEn.saveActions.saveAndContinue)
     expect(html).toContain('value="save"')
     expect(html).not.toContain(sharedEn.saveActions.saveAndReturnToHub)

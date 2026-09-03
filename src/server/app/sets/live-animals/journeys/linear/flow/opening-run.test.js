@@ -331,7 +331,7 @@ describe('the opening run', () => {
   describe('explicit exits beat the run', () => {
     const originPost = postHandlerOf(origin)
 
-    it('Should honour Save and return to hub mid-run', async () => {
+    it('Should honour Save and return to overview mid-run', async () => {
       const journey = await store.create()
       const h = captureH()
       await originPost(

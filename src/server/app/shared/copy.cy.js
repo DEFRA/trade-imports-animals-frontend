@@ -47,8 +47,8 @@ export const copy = {
   },
   saveActions: {
     saveAndContinue: 'Cadw a pharhau',
-    saveAndReturnToHub: "Cadw a dychwelyd i'r hyb",
-    cancelAndReturnToHub: "Canslo a dychwelyd i'r hyb"
+    saveAndReturnToHub: "Cadw a dychwelyd i'r trosolwg",
+    cancelAndReturnToHub: "Canslo a dychwelyd i'r trosolwg"
   },
   journeyStrip: {
     draft: 'Drafft',

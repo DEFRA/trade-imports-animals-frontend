@@ -62,6 +62,22 @@ describe('service-navigation copy', () => {
   })
 })
 
+describe('save-actions copy', () => {
+  it('Should carry the Design release 1 control labels', () => {
+    expect(sharedEn.saveActions).toEqual({
+      saveAndContinue: 'Save and continue',
+      saveAndReturnToHub: 'Save and return to overview',
+      cancelAndReturnToHub: 'Cancel and return to overview'
+    })
+  })
+
+  it('Should carry the same control keys in Welsh', () => {
+    expect(Object.keys(sharedCy.saveActions)).toEqual(
+      Object.keys(sharedEn.saveActions)
+    )
+  })
+})
+
 describe('shared copy module', () => {
   it('Should have a non-empty string at every leaf', () => {
     for (const { path, value } of leaves(sharedEn)) {
