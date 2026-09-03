@@ -1,8 +1,10 @@
 import { isBlankValue } from '../../../model/obligations/is-blank-value.js'
-import { effectiveStatus } from '../../../model/obligations/state-queries.js'
+import {
+  effectiveStatus,
+  leafSatisfied
+} from '../../../model/obligations/state-queries.js'
 import { isAnswered } from '../../../lib/answered.js'
 import { obligationFor } from '../obligation-lookup.js'
-import { recordMap } from './records.js'
 
 // A leaf is present for a record iff the record's fulfilmentIndex is in
 // the leaf's in-scope implication (post-purge membership).
@@ -18,10 +20,8 @@ export const leafInScopeForRecord = (name, fulfilmentIndex, state) => {
 export const leafMandatoryForRecord = (name, fulfilmentIndex, state) =>
   effectiveStatus(obligationFor(name), fulfilmentIndex, state) === 'mandatory'
 
-export const leafFulfilledForRecord = (name, fulfilmentIndex, state) => {
-  const map = recordMap(obligationFor(name), state)
-  return map === undefined ? false : !isBlankValue(map[fulfilmentIndex])
-}
+export const leafFulfilledForRecord = (name, fulfilmentIndex, state) =>
+  leafSatisfied(obligationFor(name), fulfilmentIndex, state)
 
 // A top-level scalar. Flow-only obligations the manifest does not carry
 // (submit-time steps like `declaration`) have no fulfilment, so fall back to

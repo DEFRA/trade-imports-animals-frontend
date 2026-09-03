@@ -1,4 +1,4 @@
-import { filterAndProject } from './internals/filter-and-project.js'
+import { buildProjectionGate } from './internals/build-projection-gate.js'
 
 /**
  * allowListed — obligation is in scope on entries where
@@ -14,6 +14,10 @@ import { filterAndProject } from './internals/filter-and-project.js'
  * ancestor prefix has a gate-passing value. The pipeline's
  * `fulfilmentIndexesByObligationId` map supplies the paths — the
  * obligation code doesn't enumerate them itself.
+ *
+ * Semantic inverse: see `not-in-union-of.js`. Both share the outer
+ * factory in `internals/build-projection-gate.js`; only the predicate
+ * direction, the values source, and the metadata `type` differ.
  */
 export const allowListed = (
   gateObligation,
@@ -22,24 +26,12 @@ export const allowListed = (
   reasons
 ) => {
   const currentValues = () => (typeof values === 'function' ? values() : values)
-  const fn = (fulfilments, fulfilmentIndexesByObligationId) => {
-    const decision = filterAndProject(
-      fulfilments[gateObligation.id],
-      (value) => currentValues().includes(value),
-      projectionGroup,
-      fulfilmentIndexesByObligationId
-    )
-    return decision.inScope && reasons ? { ...decision, reasons } : decision
-  }
-  fn.metadata = {
+  return buildProjectionGate({
     type: 'allowListed',
-    obligation: gateObligation.id,
-    projection: projectionGroup?.id ?? null,
-    reasons: reasons ?? null
-  }
-  Object.defineProperty(fn.metadata, 'values', {
-    enumerable: true,
-    get: currentValues
+    gateObligation,
+    currentValues,
+    admits: (value) => currentValues().includes(value),
+    projectionGroup,
+    reasons
   })
-  return fn
 }
