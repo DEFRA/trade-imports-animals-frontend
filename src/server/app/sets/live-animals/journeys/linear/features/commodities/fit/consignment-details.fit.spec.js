@@ -91,6 +91,27 @@ test.describe('commodity consignment details — rendering and validation', () =
     ).toHaveAccessibleDescription(copy.consignmentDetails.packages.hint)
   })
 
+  // The page repeats the same two questions for every commodity, so the type
+  // has to step down from the commodity to the species to the question and the
+  // labels have to outweigh their own hints. The size classes are the whole of
+  // the behaviour, which is why they are asserted directly.
+  test('steps the type down from commodity heading to species heading to quantity labels', async ({
+    page
+  }) => {
+    await expect(page.getByRole('heading', { name: 'Cow (0102)' })).toHaveClass(
+      /govuk-heading-l/
+    )
+    await expect(page.getByRole('heading', { name: BOS_TAURUS })).toHaveClass(
+      /govuk-heading-m/
+    )
+    await expect(
+      page.locator(`label[for="${FIRST_ANIMALS_QUANTITY_FIELD}"]`)
+    ).toHaveClass(/govuk-label--s/)
+    await expect(
+      page.locator(`label[for="${FIRST_PACKAGES_FIELD}"]`)
+    ).toHaveClass(/govuk-label--s/)
+  })
+
   test('lists a commodity on code 01061900 as a species row whose remove drops that species alone', async ({
     page
   }) => {

@@ -190,7 +190,7 @@ test.describe('commodity search', () => {
       page.getByRole('heading', { name: copy.consignmentDetails.title })
     ).toBeVisible()
     const speciesHeadings = await page
-      .locator('h3.govuk-heading-s')
+      .getByRole('heading', { level: 3 })
       .allTextContents()
     expect(speciesHeadings).toEqual(canonicalSelectionOrder)
 
