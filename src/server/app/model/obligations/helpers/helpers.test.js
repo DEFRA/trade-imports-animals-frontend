@@ -12,7 +12,7 @@ import {
   present,
   presentGate
 } from './index.js'
-import { isRecordMap, readGate } from '../helper-internals.js'
+import { isNonArrayObject, readGate } from '../helper-internals.js'
 
 // Synthetic obligations — plain data. No evaluator, no manifest, no
 // obligationsById construction. This is the entire test surface.
@@ -589,52 +589,42 @@ describe('alwaysInScope', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// Shared internals — isRecordMap / readGate.
-//
-// Extracted from the "stored → candidates" normalization that used to be
-// inlined verbatim in `anyAllowListed` and (in an entries-shaped variant)
-// `filterAndProject`. Pinned here so migrating helpers to use the shared
-// surface is a behaviour-preserving refactor. See helpers.js file-level
-// docstring for the taxonomy that motivates the shape.
-// ---------------------------------------------------------------------------
-
-describe('isRecordMap', () => {
+describe('isNonArrayObject', () => {
   it('Should return true for a plain records-keyed object', () => {
-    expect(isRecordMap({ line1: 'a', line2: 'b' })).toBe(true)
+    expect(isNonArrayObject({ line1: 'a', line2: 'b' })).toBe(true)
   })
 
   it('Should return true for an empty object (still a records-map shape)', () => {
     // Empty-map is treated as a records-map at the shape level — callers
     // that care about "has any records" use `present` semantics on top.
-    expect(isRecordMap({})).toBe(true)
+    expect(isNonArrayObject({})).toBe(true)
   })
 
   it('Should return false for scalar strings', () => {
-    expect(isRecordMap('a')).toBe(false)
-    expect(isRecordMap('')).toBe(false)
+    expect(isNonArrayObject('a')).toBe(false)
+    expect(isNonArrayObject('')).toBe(false)
   })
 
   it('Should return false for other scalar primitives', () => {
-    expect(isRecordMap(0)).toBe(false)
-    expect(isRecordMap(false)).toBe(false)
-    expect(isRecordMap(true)).toBe(false)
+    expect(isNonArrayObject(0)).toBe(false)
+    expect(isNonArrayObject(false)).toBe(false)
+    expect(isNonArrayObject(true)).toBe(false)
   })
 
   it('Should return false for undefined', () => {
-    expect(isRecordMap(undefined)).toBe(false)
+    expect(isNonArrayObject(undefined)).toBe(false)
   })
 
   it('Should return false for null', () => {
     // null is `typeof 'object'` in JS — the check must exclude it.
-    expect(isRecordMap(null)).toBe(false)
+    expect(isNonArrayObject(null)).toBe(false)
   })
 
   it('Should return false for arrays', () => {
     // Arrays are `typeof 'object'` but semantically not records-maps.
     // The original inline check used `!Array.isArray(stored)` — pin it.
-    expect(isRecordMap([])).toBe(false)
-    expect(isRecordMap(['a', 'b'])).toBe(false)
+    expect(isNonArrayObject([])).toBe(false)
+    expect(isNonArrayObject(['a', 'b'])).toBe(false)
   })
 })
 

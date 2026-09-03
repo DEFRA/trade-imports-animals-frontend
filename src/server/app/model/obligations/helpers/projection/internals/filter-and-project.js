@@ -1,4 +1,4 @@
-import { isRecordMap } from '../../../helper-internals.js'
+import { isNonArrayObject } from '../../../helper-internals.js'
 import { INDEX_DELIMITER } from '../../../index-delimiter.js'
 
 // The two storage shapes `filterAndProject` reads: a keyed-record map
@@ -53,7 +53,7 @@ export const filterAndProject = (
   fulfilmentIndexesByObligationId
 ) => {
   const stored = storedForGate ?? {}
-  const passingKeys = isRecordMap(stored)
+  const passingKeys = isNonArrayObject(stored)
     ? recordMapPassingKeys(stored, predicate)
     : scalarPassingKeys(stored, predicate)
 

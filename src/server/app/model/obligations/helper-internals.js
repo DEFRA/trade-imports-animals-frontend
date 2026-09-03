@@ -10,7 +10,7 @@
  * not gate helpers.
  *
  * Two functions:
- *   - `isRecordMap(value)` — shape test. Answers the taxonomy question
+ *   - `isNonArrayObject(value)` — shape test. Answers the taxonomy question
  *     (top-level scalar vs group-scoped gate).
  *   - `readGate(fulfilments, gateId) → { present, candidates }` — one
  *     canonical read of the stored value. `present` flags "any stored
@@ -28,15 +28,15 @@
  */
 
 /**
- * isRecordMap — true iff `value` is a plain records-keyed object
- * (not a scalar, not null, not an array). Distinguishes group-scoped
- * fulfilments (`{lineId1: value, ...}`) from top-level scalar
- * fulfilments.
+ * True iff `value` is an object other than null or an array — the
+ * shape that distinguishes group-scoped stored fulfilments (a
+ * records-keyed map) from top-level scalar fulfilments in callers'
+ * usage. See helpers/projection/* for the callers.
  *
  * @param {*} value
  * @returns {boolean}
  */
-export const isRecordMap = (value) =>
+export const isNonArrayObject = (value) =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
 
 /**
@@ -52,7 +52,7 @@ export const readGate = (fulfilments, gateId) => {
   if (stored === undefined) {
     return { present: false, candidates: [] }
   }
-  if (isRecordMap(stored)) {
+  if (isNonArrayObject(stored)) {
     return { present: true, candidates: Object.values(stored) }
   }
   return { present: true, candidates: [stored] }

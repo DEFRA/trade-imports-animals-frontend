@@ -1,4 +1,4 @@
-import { isRecordMap } from '../../helper-internals.js'
+import { isNonArrayObject } from '../../helper-internals.js'
 
 const isNullish = (value) => value === undefined || value === null
 const hasRecordEntries = (stored) => Object.keys(stored).length > 0
@@ -18,7 +18,7 @@ export const present = (obligation) => {
     if (isNullish(stored)) {
       return false
     }
-    if (isRecordMap(stored)) {
+    if (isNonArrayObject(stored)) {
       return hasRecordEntries(stored)
     }
     return true
