@@ -50,7 +50,7 @@ const state = ({ fulfilments = {}, obligations = {} } = {}) => ({
 })
 
 const impls = (entries) =>
-  Object.fromEntries(entries.map((entry) => [entry.id, entry.impl]))
+  Object.fromEntries(entries.map((entry) => [entry.id, entry.implication]))
 
 describe('#instanceComplete', () => {
   beforeAll(() => {
@@ -72,33 +72,33 @@ describe('#instanceComplete', () => {
       obligations: impls([
         {
           id: line.id,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: line1FulfilmentIndex }]
           }
         },
         {
           id: unit.id,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
           }
         },
         {
           id: commoditySelection.id,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: line1FulfilmentIndex }]
           }
         },
         {
           id: passport.id,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
           }
         },
-        { id: earTag.id, impl: { inScope: true, records: [] } }
+        { id: earTag.id, implication: { inScope: true, records: [] } }
       ])
     })
     expect(instanceComplete(unit, line1Unit1FulfilmentIndex, st)).toBe(true)
@@ -112,15 +112,18 @@ describe('#instanceComplete', () => {
       obligations: impls([
         {
           id: line.id,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: line1FulfilmentIndex }]
           }
         },
-        { id: commoditySelection.id, impl: { inScope: true, records: [] } },
-        { id: unit.id, impl: { inScope: true, records: [] } },
-        { id: passport.id, impl: { inScope: true, records: [] } },
-        { id: earTag.id, impl: { inScope: true, records: [] } }
+        {
+          id: commoditySelection.id,
+          implication: { inScope: true, records: [] }
+        },
+        { id: unit.id, implication: { inScope: true, records: [] } },
+        { id: passport.id, implication: { inScope: true, records: [] } },
+        { id: earTag.id, implication: { inScope: true, records: [] } }
       ])
     })
     expect(instanceComplete(line, line1FulfilmentIndex, st)).toBe(false)
@@ -134,35 +137,35 @@ describe('#instanceComplete', () => {
       obligations: impls([
         {
           id: line.id,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: line1FulfilmentIndex }]
           }
         },
         {
           id: unit.id,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
           }
         },
         {
           id: commoditySelection.id,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: line1FulfilmentIndex }]
           }
         },
         {
           id: passport.id,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
           }
         },
         {
           id: earTag.id,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
           }
@@ -180,15 +183,18 @@ describe('#instanceComplete', () => {
       obligations: impls([
         {
           id: line.id,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: line1FulfilmentIndex }]
           }
         },
-        { id: commoditySelection.id, impl: { inScope: true, records: [] } },
-        { id: unit.id, impl: { inScope: true, records: [] } },
-        { id: passport.id, impl: { inScope: true, records: [] } },
-        { id: earTag.id, impl: { inScope: true, records: [] } }
+        {
+          id: commoditySelection.id,
+          implication: { inScope: true, records: [] }
+        },
+        { id: unit.id, implication: { inScope: true, records: [] } },
+        { id: passport.id, implication: { inScope: true, records: [] } },
+        { id: earTag.id, implication: { inScope: true, records: [] } }
       ])
     })
     expect(instanceComplete(unit, 'line2.unit1', st)).toBe(true)
@@ -202,15 +208,18 @@ describe('#instanceComplete', () => {
       obligations: impls([
         {
           id: line.id,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: line1FulfilmentIndex }]
           }
         },
-        { id: commoditySelection.id, impl: { inScope: false, records: [] } },
-        { id: unit.id, impl: { inScope: true, records: [] } },
-        { id: passport.id, impl: { inScope: true, records: [] } },
-        { id: earTag.id, impl: { inScope: true, records: [] } }
+        {
+          id: commoditySelection.id,
+          implication: { inScope: false, records: [] }
+        },
+        { id: unit.id, implication: { inScope: true, records: [] } },
+        { id: passport.id, implication: { inScope: true, records: [] } },
+        { id: earTag.id, implication: { inScope: true, records: [] } }
       ])
     })
     expect(instanceComplete(line, line1FulfilmentIndex, st)).toBe(true)

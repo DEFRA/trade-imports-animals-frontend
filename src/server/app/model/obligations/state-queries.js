@@ -40,18 +40,18 @@ export function leafSatisfied(obligation, fulfilmentIndex, state) {
 /**
  * Effective mandate for an obligation at a path. Singleton implications
  * carry `status` at the top level; field / derived-leaf records live in
- * `impl.records[]`, each carrying `{ fulfilmentIndex, status }`. Defaults
+ * `implication.records[]`, each carrying `{ fulfilmentIndex, status }`. Defaults
  * to 'mandatory'; undefined when the obligation has no implication.
  */
 export function effectiveStatus(obligation, path, state) {
-  const impl = state.obligations?.[obligation.id]
-  if (!impl) {
+  const implication = state.obligations?.[obligation.id]
+  if (!implication) {
     return undefined
   }
   if (path === null) {
-    return impl.status ?? 'mandatory'
+    return implication.status ?? 'mandatory'
   }
-  const record = (impl.records ?? []).find(
+  const record = (implication.records ?? []).find(
     (candidate) => candidate.fulfilmentIndex === path
   )
   return record?.status ?? 'mandatory'
@@ -100,11 +100,11 @@ const checkAnyOfIds = (group, records, state) => {
   for (const record of records) {
     const fulfilmentIndex = record.fulfilmentIndex
     const inScopeLeafIds = group.requires.anyOfIds.filter((leafId) => {
-      const impl = state.obligations?.[leafId]
-      if (!impl?.inScope) {
+      const implication = state.obligations?.[leafId]
+      if (!implication?.inScope) {
         return false
       }
-      return (impl.records ?? []).some(
+      return (implication.records ?? []).some(
         (candidate) => candidate.fulfilmentIndex === fulfilmentIndex
       )
     })
@@ -155,8 +155,8 @@ const checkRecordCountEquals = (group, records, state) => {
   }
   const { fieldId, errorCode: countErrorCode } =
     group.requires.recordCountEquals
-  const parentImpl = state.obligations?.[group.within.id]
-  const parentRecords = parentImpl?.records ?? []
+  const parentImplication = state.obligations?.[group.within.id]
+  const parentRecords = parentImplication?.records ?? []
   const errors = []
   for (const parentRec of parentRecords) {
     const parentFulfilmentIndex = parentRec.fulfilmentIndex
@@ -212,11 +212,11 @@ export function groupInvariantErrors(group, state) {
   if (!group?.requires) {
     return []
   }
-  const groupImpl = state.obligations?.[group.id]
-  if (!groupImpl?.inScope) {
+  const groupImplication = state.obligations?.[group.id]
+  if (!groupImplication?.inScope) {
     return []
   }
-  const records = groupImpl.records ?? []
+  const records = groupImplication.records ?? []
   return [
     checkMinEntries(group, records),
     checkMaxEntries(group, records),

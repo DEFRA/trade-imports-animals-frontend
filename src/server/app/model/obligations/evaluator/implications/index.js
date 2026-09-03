@@ -6,14 +6,14 @@ const groupImplication = (obligation, own, fulfilmentIndexesByObligationId) => {
   const fulfilmentIndexes = [
     ...(fulfilmentIndexesByObligationId.get(obligation.id) ?? [])
   ]
-  const impl = { inScope: true }
+  const implication = { inScope: true }
   if (own?.reasons) {
-    impl.reasons = own.reasons
+    implication.reasons = own.reasons
   }
-  impl.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
+  implication.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
     fulfilmentIndex
   }))
-  return impl
+  return implication
 }
 
 // Two shapes land here:
@@ -43,33 +43,33 @@ const fieldImplication = (obligation, fulfilmentIndexesByObligationId) => {
 // Id set comes from applyTo — the authoritative "what records CAN exist".
 // Storage tracks which ones have VALUES.
 const derivedLeafImplication = (obligation, own) => {
-  const impl = { inScope: true }
+  const implication = { inScope: true }
   if (own?.reasons) {
-    impl.reasons = own.reasons
+    implication.reasons = own.reasons
   }
   const fulfilmentIndexes = own?.records ?? []
-  impl.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
+  implication.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
     fulfilmentIndex,
     status: obligation.status
   }))
-  return impl
+  return implication
 }
 
 // Record presence via own storage keys.
 const userLeafImplication = (obligation, own, amendedFulfilments) => {
-  const impl = { inScope: true }
+  const implication = { inScope: true }
   if (own?.reasons) {
-    impl.reasons = own.reasons
+    implication.reasons = own.reasons
   }
   const fulfilment = amendedFulfilments[obligation.id]
   const fulfilmentIndexes = isKeyedRecord(fulfilment)
     ? Object.keys(fulfilment)
     : []
-  impl.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
+  implication.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
     fulfilmentIndex,
     status: obligation.status
   }))
-  return impl
+  return implication
 }
 
 // Build one obligation's implication given the evaluate-call context.

@@ -10,11 +10,13 @@ import { obligationFor } from '../obligation-lookup.js'
 // the leaf's in-scope implication (post-purge membership).
 export const leafInScopeForRecord = (name, fulfilmentIndex, state) => {
   const obligation = obligationFor(name)
-  const impl = obligation && state.obligations?.[obligation.id]
-  if (!impl?.inScope) {
+  const implication = obligation && state.obligations?.[obligation.id]
+  if (!implication?.inScope) {
     return false
   }
-  return (impl.records ?? []).some((r) => r.fulfilmentIndex === fulfilmentIndex)
+  return (implication.records ?? []).some(
+    (r) => r.fulfilmentIndex === fulfilmentIndex
+  )
 }
 
 export const leafMandatoryForRecord = (name, fulfilmentIndex, state) =>

@@ -16,9 +16,9 @@ function state({ fulfilments = {}, obligations = {} } = {}) {
 
 // Minimal implication builder: mimics what ObligationEvaluator returns
 // for a given set of in-scope obligations + fulfilments.
-function impls(entries) {
+function implications(entries) {
   return Object.fromEntries(
-    entries.map((entry) => [entry.obligation.id, entry.impl])
+    entries.map((entry) => [entry.obligation.id, entry.implication])
   )
 }
 
@@ -41,10 +41,10 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
   it('empty list when no group carries `requires`', () => {
     const groupNoRequires = { ...unitRecord }
     const st = state({
-      obligations: impls([
+      obligations: implications([
         {
           obligation: unitRecord,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
           }
@@ -56,7 +56,9 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
 
   it('empty list when the group is out of scope', () => {
     const st = state({
-      obligations: impls([{ obligation: unitRecord, impl: { inScope: false } }])
+      obligations: implications([
+        { obligation: unitRecord, implication: { inScope: false } }
+      ])
     })
     expect(groupInvariantErrors(groupWithRequires, st)).toEqual([])
   })
@@ -65,16 +67,16 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
     // A unit whose commodity code opens NEITHER passport nor earTag
     // has nothing to satisfy; treat as vacuous.
     const st = state({
-      obligations: impls([
+      obligations: implications([
         {
           obligation: unitRecord,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
           }
         },
-        { obligation: passport, impl: { inScope: false } },
-        { obligation: earTag, impl: { inScope: false } }
+        { obligation: passport, implication: { inScope: false } },
+        { obligation: earTag, implication: { inScope: false } }
       ])
     })
     expect(groupInvariantErrors(groupWithRequires, st)).toEqual([])
@@ -84,10 +86,10 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
     const st = state({
       // Two in-scope units on line1; neither has a passport or earTag
       // filled.
-      obligations: impls([
+      obligations: implications([
         {
           obligation: unitRecord,
-          impl: {
+          implication: {
             inScope: true,
             records: [
               { fulfilmentIndex: line1Unit1FulfilmentIndex },
@@ -97,7 +99,7 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
         },
         {
           obligation: passport,
-          impl: {
+          implication: {
             inScope: true,
             records: [
               {
@@ -110,7 +112,7 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
         },
         {
           obligation: earTag,
-          impl: {
+          implication: {
             inScope: true,
             records: [
               {
@@ -137,17 +139,17 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
   it('no error when at least one required leaf is filled', () => {
     const st = state({
       fulfilments: { [passport.id]: { [line1Unit1FulfilmentIndex]: 'PP-001' } },
-      obligations: impls([
+      obligations: implications([
         {
           obligation: unitRecord,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
           }
         },
         {
           obligation: passport,
-          impl: {
+          implication: {
             inScope: true,
             records: [
               { fulfilmentIndex: line1Unit1FulfilmentIndex, status: 'optional' }
@@ -156,7 +158,7 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
         },
         {
           obligation: earTag,
-          impl: {
+          implication: {
             inScope: true,
             records: [
               { fulfilmentIndex: line1Unit1FulfilmentIndex, status: 'optional' }
@@ -182,17 +184,17 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
           }
         }
       },
-      obligations: impls([
+      obligations: implications([
         {
           obligation: unitRecord,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
           }
         },
         {
           obligation: passport,
-          impl: {
+          implication: {
             inScope: true,
             records: [
               { fulfilmentIndex: line1Unit1FulfilmentIndex, status: 'optional' }
@@ -225,10 +227,10 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
 
   it('emits one collection-scoped MIN_ENTRIES error when records.length is below the floor', () => {
     const st = state({
-      obligations: impls([
+      obligations: implications([
         {
           obligation: commodityLineGroup,
-          impl: { inScope: true, records: [] }
+          implication: { inScope: true, records: [] }
         }
       ])
     })
@@ -246,10 +248,13 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
 
   it('emits no floor error when records.length meets the floor', () => {
     const st = state({
-      obligations: impls([
+      obligations: implications([
         {
           obligation: commodityLineGroup,
-          impl: { inScope: true, records: [{ fulfilmentIndex: 'line1' }] }
+          implication: {
+            inScope: true,
+            records: [{ fulfilmentIndex: 'line1' }]
+          }
         }
       ])
     })
@@ -261,10 +266,10 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
     // at all, so the floor doesn't apply either. Symmetric with the
     // `anyOf` early-return.
     const st = state({
-      obligations: impls([
+      obligations: implications([
         {
           obligation: commodityLineGroup,
-          impl: { inScope: false }
+          implication: { inScope: false }
         }
       ])
     })
@@ -287,14 +292,17 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
       }
     }
     const st = state({
-      obligations: impls([
+      obligations: implications([
         {
           obligation: commodityLineGroup,
-          impl: { inScope: true, records: [{ fulfilmentIndex: 'line1' }] }
+          implication: {
+            inScope: true,
+            records: [{ fulfilmentIndex: 'line1' }]
+          }
         },
         {
           obligation: leafObl,
-          impl: {
+          implication: {
             inScope: true,
             records: [{ fulfilmentIndex: 'line1', status: 'optional' }]
           }
