@@ -22,7 +22,7 @@ const startAtAdditionalDetails = async (page) => {
     .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
     .click()
   await page.getByLabel('Number of animals').fill('1')
-  await page.getByLabel('Number of packages (optional)').fill('1')
+  await page.getByLabel('Number of packages (when required)').fill('1')
   await page
     .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
     .click()

@@ -251,7 +251,7 @@ export const completeAnswerSections = async (page) => {
   ).toBeVisible()
   await page.getByLabel('Number of animals').fill(line.numberOfAnimalsQuantity)
   await page
-    .getByLabel('Number of packages (optional)')
+    .getByLabel('Number of packages (when required)')
     .fill(line.numberOfPackages)
   await save()
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()

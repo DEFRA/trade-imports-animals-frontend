@@ -16,6 +16,8 @@ const FIRST_ANIMALS_QUANTITY_FIELD = 'numberOfAnimalsQuantity-0'
 const FIRST_ANIMALS_QUANTITY_INPUT = `#${FIRST_ANIMALS_QUANTITY_FIELD}`
 const SECOND_ANIMALS_QUANTITY_FIELD = 'numberOfAnimalsQuantity-1'
 const SECOND_ANIMALS_QUANTITY_INPUT = `#${SECOND_ANIMALS_QUANTITY_FIELD}`
+const FIRST_PACKAGES_FIELD = 'numberOfPackages-0'
+const FIRST_PACKAGES_INPUT = `#${FIRST_PACKAGES_FIELD}`
 const GOVUK_TABLE = '.govuk-table'
 const CONSIGNMENT_DETAILS_PATH = 'consignment-details'
 const REMOVE_COW = 'Remove Cow'
@@ -35,7 +37,7 @@ const openDetails = async (page) => {
 const validQuantities = ['25', '5', '2', '1']
 const quantityFields = [
   ['number of animals for Bos taurus', FIRST_ANIMALS_QUANTITY_FIELD, '2.5'],
-  ['number of packages for Bos taurus', 'numberOfPackages-0', 'boxes'],
+  ['number of packages for Bos taurus', FIRST_PACKAGES_FIELD, 'boxes'],
   ['number of animals for Felis catus', SECOND_ANIMALS_QUANTITY_FIELD, '0'],
   ['number of packages for Felis catus', 'numberOfPackages-1', '-1']
 ]
@@ -43,7 +45,7 @@ const quantityFields = [
 const fillValidQuantities = async (page) => {
   for (const [index, field] of [
     FIRST_ANIMALS_QUANTITY_FIELD,
-    'numberOfPackages-0',
+    FIRST_PACKAGES_FIELD,
     SECOND_ANIMALS_QUANTITY_FIELD,
     'numberOfPackages-1'
   ].entries()) {
@@ -81,8 +83,11 @@ test.describe('commodity consignment details — rendering and validation', () =
     await expect(
       page.locator(FIRST_ANIMALS_QUANTITY_INPUT)
     ).toHaveAccessibleDescription(copy.consignmentDetails.animals.hint)
+    await expect(page.locator(FIRST_PACKAGES_INPUT)).toHaveAccessibleName(
+      copy.consignmentDetails.packages.label
+    )
     await expect(
-      page.locator('#numberOfPackages-0')
+      page.locator(FIRST_PACKAGES_INPUT)
     ).toHaveAccessibleDescription(copy.consignmentDetails.packages.hint)
   })
 
@@ -180,7 +185,7 @@ test.describe('commodity consignment details — persistence and accessibility',
 
     await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
-    await expect(page.locator('#numberOfPackages-0')).toHaveValue('5')
+    await expect(page.locator(FIRST_PACKAGES_INPUT)).toHaveValue('5')
     await expect(page.locator(SECOND_ANIMALS_QUANTITY_INPUT)).toHaveValue('2')
     await expect(page.locator('#numberOfPackages-1')).toHaveValue('1')
   })

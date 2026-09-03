@@ -41,7 +41,7 @@ const openHubWithCommodityTotals = async (page) => {
     page.getByRole('heading', { name: 'Commodity details' })
   ).toBeVisible()
   await page.getByLabel('Number of animals').fill(ANIMALS)
-  await page.getByLabel('Number of packages (optional)').fill(PACKAGES)
+  await page.getByLabel('Number of packages (when required)').fill(PACKAGES)
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
