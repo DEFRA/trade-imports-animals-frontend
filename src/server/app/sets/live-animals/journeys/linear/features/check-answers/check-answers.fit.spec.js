@@ -156,6 +156,7 @@ test.describe('check-answers feature navigation and submission', () => {
     page
   }) => {
     await startNotification(page)
+    const hubUrl = journeyUrl(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
     await expect(rowFor(page, copy.rows.consignor)).toContainText(
@@ -167,8 +168,8 @@ test.describe('check-answers feature navigation and submission', () => {
 
     await page.getByRole('button', { name: copy.submit.button }).click()
 
-    await expect(
-      page.getByRole('link', { name: copy.errors.parties.consignor })
-    ).toBeHidden()
+    // Continue is not refused, so it leaves the review page: the incomplete
+    // journey sends it back to the hub rather than on to the declaration.
+    await expect(page).toHaveURL(hubUrl)
   })
 })
