@@ -129,7 +129,7 @@ jobs:
 
       - name: Tear down stack
         if: always()
-        run: docker compose -p trade-imports-animals down
+        run: docker compose -p trade-imports down
 
   lighthouse-publish:
     needs: lighthouse-test
