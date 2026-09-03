@@ -1,32 +1,43 @@
-// Classify each obligation into one of the categories used by the
-// pipeline branches. Under the applyTo + helpers model:
-//   'derived-leaf' — indexed leaf with imperative scope: either
-//                    `indexedBy.source === 'derived'`, OR `applyTo`
-//                    present alongside `within` (leaf inside a group).
-//                    In both shapes purge filters records by
-//                    applyTo's `records` set.
-//   'user-leaf'    — indexedBy present, non-derived source (ids from
-//                    own storage).
-//   'field'        — has `status`, no `applyTo`, no `indexedBy`
-//                    (always-in-scope-for-parent-group leaf).
-//   'group'        — has children via `within` back-refs.
-//   'single'       — otherwise (scalar leaf value at fulfilments[o.id]).
+// Classify each obligation into one of the five categories used by the
+// pipeline branches. The taxonomy splits on two axes:
+//   - structural shape: `unindexed` (one value, no fulfilmentIndex) vs
+//     `group` (has children)
+//   - enumeration provenance (indexed leaves only): where the leaf's
+//     fulfilmentIndexes come from
+//
+//   'unindexed'             — top-level obligation whose fulfilment
+//                             sits directly at
+//                             `state.fulfilments[obligation.id]`. No
+//                             fulfilmentIndex. Contrast with the three
+//                             `-derived` categories, whose fulfilments
+//                             live in `indexedFulfilments`.
+//   'group'                 — has children via `within` back-refs.
+//                             fulfilmentIndexes enumerated from
+//                             descendants.
+//   'parent-derived'        — indexed leaf whose fulfilmentIndexes come
+//                             from the parent group's enumeration
+//                             (one entry at every parent instance).
+//   'user-storage-derived'  — indexed leaf whose fulfilmentIndexes
+//                             come from the user's own storage keys
+//                             (`indexedBy.source !== 'derived'`).
+//   'apply-to-derived'      — indexed leaf whose fulfilmentIndexes
+//                             come from the applyTo gate's output.
 const categoryOf = (obligation, obligationChildren) => {
   if (obligation.indexedBy) {
     return obligation.indexedBy.source === 'derived'
-      ? 'derived-leaf'
-      : 'user-leaf'
+      ? 'apply-to-derived'
+      : 'user-storage-derived'
   }
   if (obligation.applyTo && obligation.within) {
-    return 'derived-leaf'
+    return 'apply-to-derived'
   }
   if (obligation.status !== undefined && !obligation.applyTo) {
-    return 'field'
+    return obligation.within ? 'parent-derived' : 'unindexed'
   }
   if (obligationChildren.has(obligation.id)) {
     return 'group'
   }
-  return 'single'
+  return 'unindexed'
 }
 
 export function classifyObligations(obligations, obligationChildren) {

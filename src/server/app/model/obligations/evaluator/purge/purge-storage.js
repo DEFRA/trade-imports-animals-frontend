@@ -1,9 +1,13 @@
 import { isKeyedRecord } from '../internal/is-keyed-record.js'
 
 // applyTo returns the leaf fulfilmentIndexes it currently authorises; keep
-// only stored records whose fulfilmentIndex is in that set. `{ keep: false }`
+// only stored entries whose fulfilmentIndex is in that set. `{ keep: false }`
 // when nothing survives the filter.
-const purgedDerivedLeaf = (obligation, fulfilment, applicabilityDecisions) => {
+const purgedApplyToDerived = (
+  obligation,
+  fulfilment,
+  applicabilityDecisions
+) => {
   const authorisedIndexes = new Set(
     applicabilityDecisions.get(obligation.id)?.fulfilmentIndexes ?? []
   )
@@ -18,8 +22,9 @@ const purgedDerivedLeaf = (obligation, fulfilment, applicabilityDecisions) => {
     : { keep: false }
 }
 
-// field record or user-leaf with a keyed map — drop only if it's empty.
-const purgedKeyedRecord = (fulfilment) =>
+// parent-derived leaf or user-storage-derived leaf whose fulfilment is an
+// indexedFulfilments map — drop only if it's empty.
+const purgedIndexedFulfilments = (fulfilment) =>
   Object.keys(fulfilment).length > 0
     ? { keep: true, value: fulfilment }
     : { keep: false }
@@ -30,24 +35,24 @@ const purgedFulfilmentFor = (
   category,
   applicabilityDecisions
 ) => {
-  if (category === 'derived-leaf') {
-    return purgedDerivedLeaf(obligation, fulfilment, applicabilityDecisions)
+  if (category === 'apply-to-derived') {
+    return purgedApplyToDerived(obligation, fulfilment, applicabilityDecisions)
   }
-  if (category === 'single') {
+  if (category === 'unindexed') {
     return { keep: true, value: fulfilment }
   }
   if (isKeyedRecord(fulfilment)) {
-    return purgedKeyedRecord(fulfilment)
+    return purgedIndexedFulfilments(fulfilment)
   }
   return { keep: true, value: fulfilment }
 }
 
 // Step 5: purge storage.
 //   - Out-of-scope obligation → drop entire entry.
-//   - Derived indexed leaf → keep only records whose fulfilmentIndex is in
-//     the `applyTo`-returned set.
+//   - apply-to-derived leaf → keep only entries whose fulfilmentIndex is
+//     in the `applyTo`-returned set.
 //   - Otherwise → keep as-is (ancestors already in scope, own storage
-//     is self-valid for field records and user-driven indexed leaves).
+//     is self-valid for parent-derived and user-storage-derived leaves).
 export function purgeStorage(recognisedFulfilments, context) {
   const {
     obligationsById,

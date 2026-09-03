@@ -1,7 +1,22 @@
 import { isKeyedRecord } from '../internal/is-keyed-record.js'
 
-const singleImplication = (applicabilityDecision) =>
-  applicabilityDecision ?? { inScope: true }
+// Top-level obligation stored directly at `state.fulfilments[obligation.id]`.
+// Either an applyTo returned an applicability decision (which may carry
+// flip-status such as `{ inScope: true, status: 'optional' }` from an
+// `equalsGate` / `branchedGate`), or we fall through to the obligation's
+// intrinsic status. Prior to Phase 1.4, top-level obligations with
+// intrinsic status but no applyTo were classified as `'field'` and produced
+// the same `{ inScope: true, status }` shape via a separate branch — that
+// case now folds into `'unindexed'`.
+const unindexedImplication = (obligation, applicabilityDecision) => {
+  if (applicabilityDecision) {
+    return applicabilityDecision
+  }
+  if (obligation.status !== undefined) {
+    return { inScope: true, status: obligation.status }
+  }
+  return { inScope: true }
+}
 
 const groupImplication = (
   obligation,
@@ -20,30 +35,23 @@ const groupImplication = (
   return implication
 }
 
-// Two shapes land here:
-//   1. Group-scoped field record (`within` set) — enumerate the parent
-//      group's instance-paths as the leaf's fulfilmentIndexes. Status is
-//      read from `obligation.status` by consumers (via `effectiveStatus`);
-//      it is not stamped onto the implication.
-//   2. Top-level scalar (no `within`) — the natural data-only shape for
-//      an always-in-scope obligation. No fulfilmentIndexes; consumers read
-//      status from the obligation directly.
-const fieldImplication = (obligation, fulfilmentIndexesByObligationId) => {
-  if (!obligation.within) {
-    return { inScope: true, status: obligation.status }
-  }
-  return {
-    inScope: true,
-    status: obligation.status,
-    fulfilmentIndexes: [
-      ...(fulfilmentIndexesByObligationId.get(obligation.within.id) ?? [])
-    ]
-  }
-}
+// Group-scoped leaf with no conditional gate — enumerate the parent group's
+// fulfilmentIndexes as this leaf's fulfilmentIndexes. One entry at every
+// parent instance.
+const parentDerivedImplication = (
+  obligation,
+  fulfilmentIndexesByObligationId
+) => ({
+  inScope: true,
+  status: obligation.status,
+  fulfilmentIndexes: [
+    ...(fulfilmentIndexesByObligationId.get(obligation.within.id) ?? [])
+  ]
+})
 
-// Id set comes from applyTo — the authoritative "what fulfilmentIndexes CAN
-// exist". Storage tracks which ones have VALUES.
-const derivedLeafImplication = (obligation, applicabilityDecision) => {
+// FulfilmentIndex set comes from applyTo — the authoritative "what
+// fulfilmentIndexes CAN exist". Storage tracks which ones have VALUES.
+const applyToDerivedImplication = (obligation, applicabilityDecision) => {
   const implication = {
     inScope: true,
     status: obligation.status,
@@ -55,8 +63,8 @@ const derivedLeafImplication = (obligation, applicabilityDecision) => {
   return implication
 }
 
-// FulfilmentIndex presence via storage keys.
-const userLeafImplication = (
+// FulfilmentIndex presence via the user's own indexedFulfilments keys.
+const userStorageDerivedImplication = (
   obligation,
   applicabilityDecision,
   amendedFulfilments
@@ -94,20 +102,23 @@ export function buildImplication(obligation, context) {
   const applicabilityDecision = applicabilityDecisions.get(obligation.id)
 
   switch (category) {
-    case 'single':
-      return singleImplication(applicabilityDecision)
+    case 'unindexed':
+      return unindexedImplication(obligation, applicabilityDecision)
     case 'group':
       return groupImplication(
         obligation,
         applicabilityDecision,
         fulfilmentIndexesByObligationId
       )
-    case 'field':
-      return fieldImplication(obligation, fulfilmentIndexesByObligationId)
-    case 'derived-leaf':
-      return derivedLeafImplication(obligation, applicabilityDecision)
-    case 'user-leaf':
-      return userLeafImplication(
+    case 'parent-derived':
+      return parentDerivedImplication(
+        obligation,
+        fulfilmentIndexesByObligationId
+      )
+    case 'apply-to-derived':
+      return applyToDerivedImplication(obligation, applicabilityDecision)
+    case 'user-storage-derived':
+      return userStorageDerivedImplication(
         obligation,
         applicabilityDecision,
         amendedFulfilments
