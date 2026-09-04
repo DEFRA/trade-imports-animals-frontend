@@ -24,6 +24,7 @@ const getHandler = animalIdentification.routes.find(
   (route) => route.method === 'GET'
 ).handler
 
+const MICROCHIP_FIELD_0 = 'animalIdentifierMicrochip-0'
 const PASSPORT_FIELD_0 = 'animalIdentifierPassport-0'
 const TATTOO_FIELD_0 = 'animalIdentifierTattoo-0'
 const IDENTIFICATION_PAGE = 'commodities/identification'
@@ -103,10 +104,10 @@ describe(`${SUITE} — the cards view`, () => {
   it('Should show only the commodity-gated fields per card — typed for Cats with the address, no fallbacks', async () => {
     const [card] = await viewCards({ commodityLines: [catLine()] })
     const labels = card.fields.map((field) => field.label)
-    expect(labels).toEqual(['Passport number', 'Tattoo'])
+    expect(labels).toEqual(['Microchip number', 'Passport number', 'Tattoo'])
     expect(card.showAddress).toBe(true)
     const ids = card.fields.map((field) => field.id)
-    expect(ids).toEqual([PASSPORT_FIELD_0, TATTOO_FIELD_0])
+    expect(ids).toEqual([MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0])
   })
 
   it('Should replace the entry form with the maximum-reached state at N = M, keeping the rows removable', async () => {
@@ -262,11 +263,12 @@ describe(`${SUITE} — the saved-animals table`, () => {
       ]
     })
     expect(card.identifierColumns).toEqual([
+      'Microchip',
       'Passport',
       'Tattoo',
       'Permanent address'
     ])
-    expect(card.units[0].cells).toEqual(['UK123456789', '', 'Pet Owner'])
+    expect(card.units[0].cells).toEqual(['', 'UK123456789', '', 'Pet Owner'])
   })
 
   it('Should head a fallback-identifier commodity with its own columns and no permanent address', async () => {
@@ -523,19 +525,19 @@ describe(`${SUITE} — identifier render matrix — model metadata per selectabl
     {
       commodity: 'Horse',
       species: '822332',
-      fieldIds: [PASSPORT_FIELD_0, 'horseName-0'],
+      fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, 'horseName-0'],
       showAddress: false
     },
     {
       commodity: 'Cat',
       species: '923501',
-      fieldIds: [PASSPORT_FIELD_0, TATTOO_FIELD_0],
+      fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
       showAddress: true
     },
     {
       commodity: 'Dog',
       species: '923502',
-      fieldIds: [PASSPORT_FIELD_0, TATTOO_FIELD_0],
+      fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
       showAddress: true
     },
     {

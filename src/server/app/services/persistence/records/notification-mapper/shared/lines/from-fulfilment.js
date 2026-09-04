@@ -6,6 +6,7 @@ const legacyAnimalCount = (value) =>
 
 const unitFrom = (valueAt, identifiers, unitIndex) =>
   compact({
+    animalIdentifierMicrochip: valueAt(identifiers.microchip, unitIndex),
     animalIdentifierPassport: valueAt(identifiers.passport, unitIndex),
     animalIdentifierTattoo: valueAt(identifiers.tattoo, unitIndex),
     animalIdentifierEarTag: valueAt(identifiers.earTag, unitIndex),
@@ -30,6 +31,7 @@ export const commodityLinesFromFulfilment = (reader) => {
     earTag,
     horseName,
     identificationDetails,
+    microchip,
     numberOfAnimals,
     numberOfPackages,
     passport,
@@ -39,6 +41,7 @@ export const commodityLinesFromFulfilment = (reader) => {
     unitRecord
   } = obligationSet()
   const identifierObligations = [
+    microchip,
     passport,
     tattoo,
     earTag,
@@ -64,6 +67,7 @@ export const commodityLinesFromFulfilment = (reader) => {
   const valueAt = (obligation, fulfilmentIndex) =>
     recordsByObligation.get(obligation)[fulfilmentIndex]
   const identifiers = {
+    microchip,
     passport,
     tattoo,
     earTag,

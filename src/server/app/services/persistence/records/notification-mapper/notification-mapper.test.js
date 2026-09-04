@@ -28,8 +28,8 @@ const currentNotificationFrom = (answers) =>
 
 // Answers carrying only the obligations Mapper A maps to the current backend
 // notification. One commodity line = one species, with one animal
-// identifier unit carrying earTag + passport — the identifiers that DO have a
-// home on the backend species entry.
+// identifier unit carrying earTag + passport — two of the identifiers that
+// have a home on the backend species entry.
 const mappedAnswers = () => ({
   referenceNumber: 'GBN-AG-26-ABC123',
   countryOfOrigin: 'FR',
@@ -71,7 +71,8 @@ const mappedAnswers = () => ({
 
 // mappedAnswers plus every obligation Mapper A has no home for: the Tier-A
 // pair, the Tier-B gaps, the Tier-C documents collection, and a richer
-// animal-identifier unit carrying the five dropped unit identifiers.
+// animal-identifier unit carrying the microchip (which does have a home) and
+// the five dropped unit identifiers.
 const answersWithGaps = () => ({
   ...mappedAnswers(),
   regionOfOriginCode: 'FR-75',
@@ -102,6 +103,7 @@ const answersWithGaps = () => ({
         {
           animalIdentifierEarTag: 'UK123456789012',
           animalIdentifierPassport: 'UK123456789',
+          animalIdentifierMicrochip: '900123456789012',
           animalIdentifierTattoo: 'AB1234',
           horseName: 'Dobbin',
           animalIdentifierIdentificationDetails: 'Hive mark HM-2026-004',
@@ -139,7 +141,12 @@ const groupedLines = () => [
     commodityType: '2',
     numberOfPackages: '1',
     numberOfAnimalsQuantity: '2',
-    animalIdentifiers: [{ animalIdentifierPassport: 'UK-CAT-1' }]
+    animalIdentifiers: [
+      {
+        animalIdentifierPassport: 'UK-CAT-1',
+        animalIdentifierMicrochip: '900987654321098'
+      }
+    ]
   }
 ]
 
@@ -190,7 +197,8 @@ describe('Mapper A — current backend notification (as-is)', () => {
         text: 'Felis catus',
         noOfAnimals: '2',
         noOfPackages: '1',
-        passport: 'UK-CAT-1'
+        passport: 'UK-CAT-1',
+        microchip: '900987654321098'
       }
     ])
   })
@@ -283,7 +291,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     ).toBe(false)
   })
 
-  test('Should keep only earTag and passport on the species entry, dropping the five unit identifiers', () => {
+  test('Should keep only earTag, passport and microchip on the species entry, dropping the five unit identifiers', () => {
     const notification = currentNotificationFrom(answersWithGaps())
     const species = notification.commodity.commodityComplement[0].species[0]
 
@@ -293,9 +301,32 @@ describe('Mapper A — current backend notification (as-is)', () => {
       noOfAnimals: '25',
       noOfPackages: '5',
       earTag: 'UK123456789012',
-      passport: 'UK123456789'
+      passport: 'UK123456789',
+      microchip: '900123456789012'
     })
     expect('animalIdentifiers' in notification.commodity).toBe(false)
+  })
+
+  test('Should carry a unit identified only by its microchip onto the species entry', () => {
+    const notification = currentNotificationFrom({
+      commodityLines: [
+        {
+          commoditySelection: 'Cat',
+          speciesSelection: '923501',
+          numberOfPackages: '1',
+          numberOfAnimalsQuantity: '2',
+          animalIdentifiers: [{ animalIdentifierMicrochip: '900987654321098' }]
+        }
+      ]
+    })
+
+    expect(notification.commodity.commodityComplement[0].species[0]).toEqual({
+      value: '923501',
+      text: 'Felis catus',
+      noOfAnimals: '2',
+      noOfPackages: '1',
+      microchip: '900987654321098'
+    })
   })
 
   test('Should intentionally keep ear tag and passport from only the first unit', () => {

@@ -10,6 +10,7 @@ import {
   earTag,
   horseName,
   identificationDetails,
+  microchip,
   numberOfAnimals,
   numberOfPackages,
   passport,
@@ -53,6 +54,7 @@ export const evaluationBindings = feature('commodities', [
     convert: toNumberWhenParses
   }),
   lineLeaf('numberOfPackages', numberOfPackages),
+  unitLeaf('animalIdentifierMicrochip', microchip),
   unitLeaf('animalIdentifierPassport', passport),
   unitLeaf('animalIdentifierTattoo', tattoo),
   unitLeaf('animalIdentifierEarTag', earTag),

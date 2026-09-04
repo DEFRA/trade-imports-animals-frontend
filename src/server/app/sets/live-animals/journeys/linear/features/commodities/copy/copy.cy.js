@@ -78,6 +78,7 @@ export const copy = {
       change: 'Newid'
     },
     identifierLabels: {
+      animalIdentifierMicrochip: 'Microsglodyn',
       animalIdentifierPassport: 'Pasbort',
       animalIdentifierTattoo: 'Tatŵ',
       animalIdentifierEarTag: 'Tag clust',
@@ -91,6 +92,10 @@ export const copy = {
       actionsHidden: ACTIONS_HIDDEN
     },
     typeFields: {
+      animalIdentifierMicrochip: {
+        label: 'Rhif microsglodyn',
+        hint: 'Er enghraifft, 900123456789012'
+      },
       animalIdentifierPassport: {
         label: 'Rhif pasbort',
         hint: 'Er enghraifft, UK123456789'
@@ -143,6 +148,8 @@ export const copy = {
     },
     errors: {
       identifierMax: {
+        animalIdentifierMicrochip:
+          'Rhaid i’r microsglodyn fod yn 58 nod neu lai',
         animalIdentifierPassport: 'Rhaid i’r pasbort fod yn 58 nod neu lai',
         animalIdentifierTattoo: 'Rhaid i’r tatŵ fod yn 58 nod neu lai',
         animalIdentifierEarTag: 'Rhaid i’r tag clust fod yn 58 nod neu lai',
