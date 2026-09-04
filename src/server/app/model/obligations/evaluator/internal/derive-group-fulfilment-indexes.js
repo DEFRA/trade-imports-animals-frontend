@@ -19,7 +19,7 @@ const indexPrefixesFromDescendant = (fulfilment, prefixLen) => {
 // fulfilmentIndex prefixes of its indexedFulfilments keys. `fulfilmentFor`
 // resolves a descendant to its stored fulfilment (pre- or post-purge,
 // depending on the caller).
-export const groupFulfilmentIndexesFromDescendants = (
+export const deriveGroupFulfilmentIndexes = (
   obligation,
   obligationAncestorGroups,
   obligationDescendants,

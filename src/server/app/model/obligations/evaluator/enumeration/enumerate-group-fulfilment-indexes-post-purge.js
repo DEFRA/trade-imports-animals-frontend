@@ -1,4 +1,4 @@
-import { groupFulfilmentIndexesFromDescendants } from '../internal/group-fulfilment-indexes-from-descendants.js'
+import { deriveGroupFulfilmentIndexes } from '../internal/derive-group-fulfilment-indexes.js'
 
 // Step 6: enumerate each group's fulfilmentIndexes by scanning
 // descendants' indexedFulfilments keys on POST-purge storage.
@@ -23,7 +23,7 @@ export function enumerateGroupFulfilmentIndexesPostPurge(obligations, context) {
   )
   for (const obligation of groupObligations) {
     const ids = isInScope(obligation)
-      ? groupFulfilmentIndexesFromDescendants(
+      ? deriveGroupFulfilmentIndexes(
           obligation,
           obligationAncestorGroups,
           obligationDescendants,

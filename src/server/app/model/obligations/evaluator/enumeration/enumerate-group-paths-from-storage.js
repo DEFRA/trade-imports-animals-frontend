@@ -1,4 +1,4 @@
-import { groupFulfilmentIndexesFromDescendants } from '../internal/group-fulfilment-indexes-from-descendants.js'
+import { deriveGroupFulfilmentIndexes } from '../internal/derive-group-fulfilment-indexes.js'
 
 // Step 2: pre-purge enumeration of group fulfilmentIndexes from raw
 // storage. Same shape as `enumerateGroupFulfilmentIndexesPostPurge`
@@ -19,7 +19,7 @@ export function enumerateGroupPathsFromStorage(
     if (obligationsByCategory.get(obligation.id) !== 'group') {
       continue
     }
-    const ids = groupFulfilmentIndexesFromDescendants(
+    const ids = deriveGroupFulfilmentIndexes(
       obligation,
       obligationAncestorGroups,
       obligationDescendants,
