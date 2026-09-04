@@ -126,7 +126,8 @@ export const addressFieldsFor = (index, values, errors) => {
     input('telephoneNumber', copy.address.telephoneNumber, {
       type: 'tel',
       classes: 'govuk-input--width-20',
-      autocomplete: 'tel'
+      autocomplete: 'tel',
+      hint: copy.addressHints.telephoneNumber
     }),
     input('emailAddress', copy.address.emailAddress, {
       type: 'email',

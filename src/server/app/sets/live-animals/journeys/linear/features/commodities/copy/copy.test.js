@@ -151,6 +151,36 @@ describe('#copy', () => {
     )
   })
 
+  // Design release 1 names these two address fields 'Postcode or Zip code' and
+  // 'Phone number', and hints the phone field so a trader abroad knows to give
+  // a diallable number. The errors are pinned alongside the labels because an
+  // error that names the field by another word sends the trader looking for a
+  // field that is not on the page.
+  it('Should label the permanent address postcode and phone fields as Design release 1 does', () => {
+    expect(copy.identification.address.postalOrZipCode).toBe(
+      'Postcode or Zip code'
+    )
+    expect(copy.identification.address.telephoneNumber).toBe('Phone number')
+    expect(copy.identification.addressHints.telephoneNumber).toBe(
+      'For international numbers include the country code'
+    )
+    expect(copyCy.identification.addressHints.telephoneNumber).toBe(
+      'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad'
+    )
+    expect(copy.identification.errors.addressMandatory.telephoneNumber).toBe(
+      'Enter a phone number'
+    )
+    expect(copy.identification.errors.addressFormat.postalOrZipCode).toBe(
+      'Postcode or Zip code must be 12 characters or less'
+    )
+    expect(copy.identification.errors.addressMandatory.postalOrZipCode).toBe(
+      'Enter a postcode or Zip code'
+    )
+    expect(copy.identification.errors.addressFormat.telephoneNumber).toBe(
+      'Phone number must be 20 characters or less'
+    )
+  })
+
   it('Should interpolate capReached', () => {
     expect(copy.identification.errors.capReached(2)).toBe(
       'You have already entered details for all 2 animals — remove a record before adding another'
