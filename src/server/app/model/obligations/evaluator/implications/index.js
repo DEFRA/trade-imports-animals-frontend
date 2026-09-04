@@ -90,10 +90,10 @@ export function buildImplication(obligation, context) {
     return { inScope: false }
   }
 
-  const category = obligationsByCategory.get(obligation.id)
+  const obligationCategory = obligationsByCategory.get(obligation.id)
   const applicabilityDecision = applicabilityDecisions.get(obligation.id)
 
-  switch (category) {
+  switch (obligationCategory) {
     case 'unindexed':
       return unindexedImplication(obligation, applicabilityDecision)
     case 'group':

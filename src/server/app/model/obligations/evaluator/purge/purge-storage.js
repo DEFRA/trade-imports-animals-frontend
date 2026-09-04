@@ -30,13 +30,13 @@ const purgedIndexedFulfilments = (fulfilment) =>
 const purgedFulfilmentFor = (
   obligation,
   fulfilment,
-  category,
+  obligationCategory,
   applicabilityDecisions
 ) => {
-  if (category === 'apply-to-derived') {
+  if (obligationCategory === 'apply-to-derived') {
     return purgedApplyToDerived(obligation, fulfilment, applicabilityDecisions)
   }
-  if (category === 'unindexed') {
+  if (obligationCategory === 'unindexed') {
     return { keep: true, value: fulfilment }
   }
   if (isNonArrayObject(fulfilment)) {
@@ -65,11 +65,11 @@ export function purgeStorage(recognisedFulfilments, context) {
       continue
     }
 
-    const category = obligationsByCategory.get(obligation.id)
+    const obligationCategory = obligationsByCategory.get(obligation.id)
     const purged = purgedFulfilmentFor(
       obligation,
       fulfilment,
-      category,
+      obligationCategory,
       applicabilityDecisions
     )
     if (purged.keep) {
