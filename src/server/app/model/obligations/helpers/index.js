@@ -16,19 +16,23 @@
  *     invert gates. A coverage assertion fails the build for any gated
  *     obligation without a complete (declared or derived) `dependsOn`.
  *
- * Which helper to pick — the split is by the SHAPE of the gate
- * obligation's stored value, not by identity level:
+ * Which helper to pick — the split is by the SHAPE of the DECISION
+ * the gate needs to return (which usually mirrors the gated
+ * obligation's category):
  *
- *   - **Unindexed gate** (gate has no `within`, or otherwise stores a
- *     single value): use `equalsGate` / `includesGate` / `presentGate`
- *     / `alwaysInScope`. The gate returns one decision.
+ *   - **Single-decision gates** (`single-decision/`) return one
+ *     `{ inScope, status, reasons? }` verdict for the whole gated
+ *     obligation. Use for unindexed gated obligations: `equalsGate` /
+ *     `includesGate` / `presentGate` / `alwaysInScope`.
  *
- *   - **Group-scoped gate** (gate has `within`, so
- *     `fulfilments[gate.id]` is an indexedFulfilments map): use
- *     `allowListed` / `notInUnionOf`. Pass `null` for `gatedParentGroup`
- *     when gate and gated are at the same identity level; pass a group
- *     when the gated obligation is deeper (the engine fans across that
- *     group's fulfilmentIndexes for each matching parent).
+ *   - **Per-fulfilmentIndex-decision gates**
+ *     (`per-fulfilmentIndex-decision/`) return a decision that names
+ *     which fulfilmentIndexes are in scope. Use for indexed gated
+ *     obligations: `allowListed` / `notInUnionOf`. Pass `null` for
+ *     `gatedParentGroup` when gate and gated are at the same identity
+ *     level; pass a group when the gated obligation is deeper (the
+ *     engine fans across that group's fulfilmentIndexes for each
+ *     matching parent).
  *
  * `matches` is a same-frame single-decision equality gate (kept for
  * backwards compat). `anyAllowListed` reduces a group's
@@ -39,14 +43,14 @@
  * prover to synthesise a witness.
  */
 
-export { allowListed } from './indexed/allow-listed.js'
-export { notInUnionOf } from './indexed/not-in-union-of.js'
-export { anyAllowListed } from './unindexed/any-allow-listed.js'
-export { branchedGate } from './unindexed/branched-gate.js'
-export { matches } from './unindexed/matches.js'
-export { present } from './unindexed/present.js'
-export { equalsGate } from './unindexed/equals-gate.js'
-export { presentGate } from './unindexed/present-gate.js'
-export { includesGate } from './unindexed/includes-gate.js'
-export { alwaysInScope } from './unindexed/always-in-scope.js'
+export { allowListed } from './per-fulfilmentIndex-decision/allow-listed.js'
+export { notInUnionOf } from './per-fulfilmentIndex-decision/not-in-union-of.js'
+export { anyAllowListed } from './single-decision/any-allow-listed.js'
+export { branchedGate } from './single-decision/branched-gate.js'
+export { matches } from './single-decision/matches.js'
+export { present } from './single-decision/present.js'
+export { equalsGate } from './single-decision/equals-gate.js'
+export { presentGate } from './single-decision/present-gate.js'
+export { includesGate } from './single-decision/includes-gate.js'
+export { alwaysInScope } from './single-decision/always-in-scope.js'
 export { obligationMetadata } from './introspection/obligation-metadata.js'
