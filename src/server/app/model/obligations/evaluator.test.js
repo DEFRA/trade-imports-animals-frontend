@@ -475,10 +475,10 @@ describe('V4 — commodity line group semantics', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Commodity line field records — per-line round-trip
+// Commodity line field fulfilments — per-line round-trip
 // ---------------------------------------------------------------------------
 
-describe('V4 — commodity line field records (round-trip)', () => {
+describe('V4 — commodity line field fulfilments (round-trip)', () => {
   it('commodityCode stores one value per line', () => {
     const commodityCodeFulfilments = {
       [LINE_UNKNOWN]: 'Unicorn',
@@ -698,12 +698,12 @@ describe('V4 — cow line triggers both packages and CPH gates', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Unit record — nested user-driven indexed group inside commodityLine
-// (depth-2). Instance-ids inferred from descendant field-record composite-
-// key prefixes.
+// `unitRecord` — nested user-driven indexed group inside commodityLine
+// (depth-2). Instance-ids inferred from descendant field-fulfilment
+// composite-key prefixes.
 // ---------------------------------------------------------------------------
 
-describe('V4 — unit record group semantics', () => {
+describe('V4 — unitRecord group semantics', () => {
   it('has no fulfilmentIndexes when no unit-level obligations have storage', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_COW]: 'Cow' }
@@ -759,7 +759,7 @@ describe('V4 — passport (gatedBy allowListed(commodityCode, passport list))', 
     expect(result.obligations[passport.id]).toEqual({ inScope: false })
   })
 
-  it('is in scope with one record per unit under a passport-list line', () => {
+  it('is in scope with one fulfilmentIndex per unit under a passport-list line', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_COW]: 'Cow' },
       [passport.id]: {
@@ -945,8 +945,8 @@ describe('V4 — description (same inverse gate as identificationDetails)', () =
     })
     // With no unit storage the inScope flag reflects "any path in scope"
     // → for fish, the enumerated paths at unit level are empty, so
-    // technically no records are in scope even though the gate would
-    // permit them. Add a stored record to make fish concrete.
+    // technically no fulfilmentIndexes are in scope even though the gate
+    // would permit them. Add a stored fulfilment to make fish concrete.
     const fishWithUnit = evaluator.evaluate({
       [commodityCode.id]: { [LINE_FISH]: 'Fish' },
       [description.id]: { [`${LINE_FISH}.${UNIT_1}`]: 'Farmed salmon' }
@@ -1107,7 +1107,7 @@ describe('V4 — accompanying documents: upload returns are optional obligations
     [documentFilename.id]: { d0: 'certificate.pdf' }
   }
 
-  it('an upload-only record is a visible group instance', () => {
+  it('an upload-only document is a visible group instance', () => {
     const result = evaluator.evaluate(uploadOnly)
     expect(result.obligations[documents.id]).toEqual({
       inScope: true,
@@ -1131,7 +1131,7 @@ describe('V4 — accompanying documents: upload returns are optional obligations
   )
 
   it.each(documentFields)(
-    '%s remains mandatory on an upload-only record',
+    '%s remains mandatory on an upload-only document',
     (_name, obligation) => {
       const result = evaluator.evaluate(uploadOnly)
       expect(result.obligations[obligation.id]).toEqual({
@@ -1143,12 +1143,12 @@ describe('V4 — accompanying documents: upload returns are optional obligations
   )
 })
 
-describe('V4 — accompanying documents: four metadata fields are mandatory per record', () => {
+describe('V4 — accompanying documents: four metadata fields are mandatory per document', () => {
   const withType = {
     [accompanyingDocumentType.id]: { d0: 'VETERINARY_HEALTH_CERTIFICATE' }
   }
 
-  it('a document record appears once any of its fields is stored', () => {
+  it('a document appears once any of its fields is stored', () => {
     const result = evaluator.evaluate(withType)
     expect(result.obligations[documents.id]).toEqual({
       inScope: true,
@@ -1157,7 +1157,7 @@ describe('V4 — accompanying documents: four metadata fields are mandatory per 
   })
 
   it.each(documentFields)(
-    '%s is mandatory on an existing record',
+    '%s is mandatory on an existing document',
     (_name, obligation) => {
       const result = evaluator.evaluate(withType)
       expect(result.obligations[obligation.id]).toEqual({
@@ -1169,7 +1169,7 @@ describe('V4 — accompanying documents: four metadata fields are mandatory per 
   )
 })
 
-describe('V4 — accompanying documents: all four filled on one record', () => {
+describe('V4 — accompanying documents: all four filled on one document', () => {
   const fulfilments = {
     [accompanyingDocumentType.id]: { d0: 'VETERINARY_HEALTH_CERTIFICATE' },
     [accompanyingDocumentAttachmentType.id]: { d0: 'PDF' },
@@ -1193,8 +1193,8 @@ describe('V4 — accompanying documents: all four filled on one record', () => {
   )
 })
 
-describe('V4 — accompanying documents: a partial record keeps every field owed', () => {
-  it('a record with only a Reference keeps its other fields mandatory (nothing purged)', () => {
+describe('V4 — accompanying documents: a partial document keeps every field owed', () => {
+  it('a document with only a Reference keeps its other fields mandatory (nothing purged)', () => {
     const result = evaluator.evaluate({
       [accompanyingDocumentType.id]: { d0: 'VETERINARY_HEALTH_CERTIFICATE' },
       [accompanyingDocumentReference.id]: { d0: 'GBHC1234567890', d1: 'KEPT' }
@@ -1212,21 +1212,21 @@ describe('V4 — accompanying documents: a partial record keeps every field owed
 })
 
 describe('V4 — accompanying documents: the 0..10 cap', () => {
-  const recordsOf = (count) =>
+  const documentsOf = (count) =>
     Object.fromEntries(
       Array.from({ length: count }, (_, i) => [`d${i}`, 'ITAHC'])
     )
 
   it('ten inferred upload-only document instances raise no invariant error', () => {
     const state = evaluator.evaluate({
-      [documentUploadId.id]: recordsOf(10)
+      [documentUploadId.id]: documentsOf(10)
     })
     expect(groupInvariantErrors(documents, state)).toEqual([])
   })
 
   it('an eleventh inferred upload-only document instance trips MAX_ENTRIES', () => {
     const state = evaluator.evaluate({
-      [documentUploadId.id]: recordsOf(11)
+      [documentUploadId.id]: documentsOf(11)
     })
     expect(groupInvariantErrors(documents, state)).toEqual([
       {

@@ -33,10 +33,7 @@ import {
   leafSatisfied
 } from './state-queries.js'
 
-// `Record<K, V>` below is TypeScript's built-in utility type — an
-// object whose keys are of type `K` and values of type `V`. It does
-// not refer to the retired `record` shape (Phase 2.1); the collision
-// is coincidental.
+// `Record<K, V>` below is TypeScript's built-in utility type.
 
 /**
  * @typedef {object} EvaluatorState

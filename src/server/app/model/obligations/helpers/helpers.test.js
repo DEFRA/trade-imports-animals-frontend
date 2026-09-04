@@ -36,7 +36,7 @@ describe('allowListed', () => {
     expect(decision).toEqual({ inScope: false })
   })
 
-  it('Should return records at gate level when no projection group', () => {
+  it('Should return fulfilmentIndexes at gate level when no projection group', () => {
     const gate = allowListed(codeObl, ['a', 'b'])
     const decision = gate(
       { [codeObl.id]: { k1: 'a', k2: 'x', k3: 'b' } },
@@ -58,7 +58,7 @@ describe('allowListed', () => {
     })
   })
 
-  it('Should return empty records when the group has no instances yet', () => {
+  it('Should return an empty fulfilmentIndexes list when the group has no instances yet', () => {
     const gate = allowListed(codeObl, ['a'], groupObl)
     const fulfilments = { [codeObl.id]: { line1: 'a' } }
     const ids = new Map()
@@ -122,7 +122,7 @@ describe('notInUnionOf', () => {
     expect(decision).toEqual({ inScope: false })
   })
 
-  it('Should return records at gate level for keys whose value is NOT in the union', () => {
+  it('Should return fulfilmentIndexes at gate level for keys whose value is NOT in the union', () => {
     const gate = notInUnionOf(codeObl, [firstAllowlist, secondAllowlist])
     const decision = gate(
       { [codeObl.id]: { k1: 'a', k2: 'z', k3: 'c', k4: 'q' } },
@@ -590,13 +590,13 @@ describe('alwaysInScope', () => {
 })
 
 describe('isNonArrayObject', () => {
-  it('Should return true for a plain records-keyed object', () => {
+  it('Should return true for a plain indexedFulfilments object', () => {
     expect(isNonArrayObject({ line1: 'a', line2: 'b' })).toBe(true)
   })
 
-  it('Should return true for an empty object (still a records-map shape)', () => {
-    // Empty-map is treated as a records-map at the shape level — callers
-    // that care about "has any records" use `present` semantics on top.
+  it('Should return true for an empty object (still an indexedFulfilments shape)', () => {
+    // Empty-map is treated as indexedFulfilments at the shape level — callers
+    // that care about "has any fulfilmentIndexes" use `present` semantics on top.
     expect(isNonArrayObject({})).toBe(true)
   })
 
@@ -621,7 +621,7 @@ describe('isNonArrayObject', () => {
   })
 
   it('Should return false for arrays', () => {
-    // Arrays are `typeof 'object'` but semantically not records-maps.
+    // Arrays are `typeof 'object'` but semantically not indexedFulfilments.
     // The original inline check used `!Array.isArray(stored)` — pin it.
     expect(isNonArrayObject([])).toBe(false)
     expect(isNonArrayObject(['a', 'b'])).toBe(false)
@@ -677,7 +677,7 @@ describe('readGate', () => {
     })
   })
 
-  it('Should project a records-map to its values as candidates', () => {
+  it('Should project an indexedFulfilments map to its values as candidates', () => {
     expect(readGate({ [gateId]: { line1: 'a', line2: 'b' } }, gateId)).toEqual({
       present: true,
       candidates: ['a', 'b']

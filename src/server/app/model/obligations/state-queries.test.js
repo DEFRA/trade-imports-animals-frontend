@@ -165,7 +165,7 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
   })
 
   it('treats an all-blank composite value as unfilled (uses isBlankValue)', () => {
-    // A composite address record with all-empty sub-fields must not
+    // A composite address value with all-empty sub-fields must not
     // "satisfy" the invariant.
     const st = state({
       fulfilments: {

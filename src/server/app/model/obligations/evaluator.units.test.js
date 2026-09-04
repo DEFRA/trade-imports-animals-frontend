@@ -42,7 +42,7 @@ describe('buildObligationsById', () => {
     expect(result.get('o1')).toBe(obligation)
   })
 
-  it('multiple obligations → each id maps to its own record', () => {
+  it('multiple obligations → each id maps to its own obligation', () => {
     const first = { id: 'a', name: 'a' }
     const second = { id: 'b', name: 'b' }
     const result = buildObligationsById([first, second])
