@@ -1,6 +1,6 @@
 /**
  * Surface the introspection sidecar for an obligation. Merges the
- * gate-shape metadata attached by the applyTo helper with the
+ * gate-shape metadata attached by the gate helper with the
  * obligation-level `dependsOn` schema key.
  *
  * The reachability prover needs a dependency graph in data, not
@@ -8,7 +8,7 @@
  * every gated obligation carries a complete one. Resolution order:
  *
  *   1. Explicit `dependsOn: string[]` on the obligation, used verbatim.
- *   2. Otherwise DERIVE from the applyTo helper's `.metadata` (see
+ *   2. Otherwise DERIVE from the gate helper's `.metadata` (see
  *      `deriveDependsOn` below for per-helper rules).
  *
  * Missing `applyTo` or missing derivable metadata returns `undefined`
@@ -16,16 +16,16 @@
  * gates.
  */
 export const obligationMetadata = (obligation) => {
-  const gateMeta = obligation?.applyTo?.metadata ?? {}
+  const gateMetadata = obligation?.applyTo?.metadata ?? {}
   const explicit = obligation?.dependsOn
   const dependsOn = Array.isArray(explicit)
     ? explicit
-    : deriveDependsOn(gateMeta)
-  return { ...gateMeta, dependsOn }
+    : deriveDependsOn(gateMetadata)
+  return { ...gateMetadata, dependsOn }
 }
 
 /**
- * Per-helper rules for recovering `dependsOn` from an applyTo helper's
+ * Per-helper rules for recovering `dependsOn` from a gate helper's
  * metadata. Extending the helper library means updating this table.
  *
  *   - `allowListed` / `anyAllowListed` / `notInUnionOf` / `matches` /
@@ -50,16 +50,16 @@ const SINGLE_GATE_TYPES = new Set([
   'includesGate'
 ])
 
-const deriveDependsOn = (gateMeta) => {
-  const type = gateMeta?.type
+const deriveDependsOn = (gateMetadata) => {
+  const type = gateMetadata?.type
   if (SINGLE_GATE_TYPES.has(type)) {
-    return typeof gateMeta.obligation === 'string'
-      ? [gateMeta.obligation]
+    return typeof gateMetadata.obligation === 'string'
+      ? [gateMetadata.obligation]
       : undefined
   }
   if (type === 'branchedGate') {
-    return typeof gateMeta.predicateMeta?.obligationId === 'string'
-      ? [gateMeta.predicateMeta.obligationId]
+    return typeof gateMetadata.predicateMeta?.obligationId === 'string'
+      ? [gateMetadata.predicateMeta.obligationId]
       : undefined
   }
   if (type === 'alwaysInScope') {

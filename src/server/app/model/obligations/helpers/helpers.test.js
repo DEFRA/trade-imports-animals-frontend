@@ -365,7 +365,7 @@ describe('obligationMetadata', () => {
     expect(meta.dependsOn).toBeUndefined()
   })
 
-  it('Should merge the applyTo helper sidecar (gate shape) with dependsOn', () => {
+  it('Should merge the gate helper sidecar (gate shape) with dependsOn', () => {
     // The helper-attached `.metadata` (allowListed/branchedGate/etc.)
     // still surfaces — dependsOn is additive, not a replacement.
     const gateObl = { id: 'gate-id' }

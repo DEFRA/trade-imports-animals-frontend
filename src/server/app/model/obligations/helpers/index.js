@@ -1,5 +1,6 @@
 /**
- * applyTo helper library — pure factories that build applyTo functions.
+ * Gate helper library — pure factories that build the `applyTo`
+ * function attached to an obligation.
  *
  * Contract:
  *   - Each helper returns an
@@ -10,18 +11,17 @@
  *
  * Obligation-side additive key:
  *   - `dependsOn?: string[]` — ids of obligations whose stored values
- *     the `applyTo` closure reads. Makes the dependency graph explicit
- *     data alongside the opaque closure so a static reachability prover
- *     can invert gates. A coverage assertion fails the build for any
- *     gated obligation without a complete (declared or derived)
- *     `dependsOn`.
+ *     the gate reads. Makes the dependency graph explicit data
+ *     alongside the opaque closure so a static reachability prover can
+ *     invert gates. A coverage assertion fails the build for any gated
+ *     obligation without a complete (declared or derived) `dependsOn`.
  *
  * Which helper to pick — the split is by the SHAPE of the gate
  * obligation's stored value, not by identity level:
  *
  *   - **Unindexed gate** (gate has no `within`, or otherwise stores a
  *     single value): use `equalsGate` / `includesGate` / `presentGate`
- *     / `alwaysInScope`. The applyTo returns one decision.
+ *     / `alwaysInScope`. The gate returns one decision.
  *
  *   - **Group-scoped gate** (gate has `within`, so
  *     `fulfilments[gate.id]` is an indexedFulfilments map): use
