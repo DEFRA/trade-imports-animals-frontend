@@ -60,20 +60,20 @@ export const filterAndProject = (
   projectionGroup,
   fulfilmentIndexesByObligationId
 ) => {
-  // Coalesce a nullish fulfilment to `{}` BEFORE the shape check — this
-  // routes "nothing stored" through the indexed branch (which yields
-  // `{ inScope: false }` on an empty admittedIndexes), matching the
-  // pre-refactor behaviour.
-  const storedFulfilment = fulfilment ?? {}
-  return isNonArrayObject(storedFulfilment)
+  // `{}` for "nothing stored" routes through the indexed branch, which
+  // yields `{ inScope: false }` on empty admittedIndexes. Without the
+  // default, the undefined would fall through to `decisionFromUnindexed`
+  // and the predicate could spuriously return `true` on `undefined`.
+  const fulfilmentOrEmpty = fulfilment ?? {}
+  return isNonArrayObject(fulfilmentOrEmpty)
     ? decisionFromIndexed(
-        storedFulfilment,
+        fulfilmentOrEmpty,
         predicate,
         projectionGroup,
         fulfilmentIndexesByObligationId
       )
     : decisionFromUnindexed(
-        storedFulfilment,
+        fulfilmentOrEmpty,
         predicate,
         projectionGroup,
         fulfilmentIndexesByObligationId
