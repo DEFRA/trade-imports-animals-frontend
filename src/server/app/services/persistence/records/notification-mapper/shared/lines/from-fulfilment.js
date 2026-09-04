@@ -1,8 +1,22 @@
 import { obligationSet } from '../../../../../../model/obligations/manifest.js'
 import { compact } from '../compact.js'
 
+const IDENTIFIER_KEYS = [
+  'microchip',
+  'passport',
+  'tattoo',
+  'earTag',
+  'horseName',
+  'identificationDetails',
+  'description',
+  'permanentAddress'
+]
+
 const legacyAnimalCount = (value) =>
   typeof value === 'number' ? String(value) : value
+
+const identifiersFrom = (obligations) =>
+  Object.fromEntries(IDENTIFIER_KEYS.map((key) => [key, obligations[key]]))
 
 const unitFrom = (valueAt, identifiers, unitIndex) =>
   compact({
@@ -19,43 +33,40 @@ const unitFrom = (valueAt, identifiers, unitIndex) =>
     permanentAddress: valueAt(identifiers.permanentAddress, unitIndex)
   })
 
+const lineFrom = ({
+  obligations,
+  identifiers,
+  valueAt,
+  unitIndexes,
+  lineIndex
+}) =>
+  compact({
+    commoditySelection: valueAt(obligations.commodityCode, lineIndex),
+    commodityType: valueAt(obligations.commodityType, lineIndex),
+    speciesSelection: valueAt(obligations.species, lineIndex),
+    numberOfAnimalsQuantity: legacyAnimalCount(
+      valueAt(obligations.numberOfAnimals, lineIndex)
+    ),
+    numberOfPackages: valueAt(obligations.numberOfPackages, lineIndex),
+    animalIdentifiers:
+      unitIndexes.length > 0
+        ? unitIndexes.map((u) => unitFrom(valueAt, identifiers, u))
+        : undefined
+  })
+
 // One logical line/unit join over the independent canonical record maps.
 // Line and unit identity comes only from exact fulfilment indexes; a leaf
 // is joined only when its record map contains that exact fulfilment index.
 export const commodityLinesFromFulfilment = (reader) => {
-  const {
-    commodityCode,
-    commodityLine,
-    commodityType,
-    description,
-    earTag,
-    horseName,
-    identificationDetails,
-    microchip,
-    numberOfAnimals,
-    numberOfPackages,
-    passport,
-    permanentAddress,
-    species,
-    tattoo,
-    unitRecord
-  } = obligationSet()
-  const identifierObligations = [
-    microchip,
-    passport,
-    tattoo,
-    earTag,
-    horseName,
-    identificationDetails,
-    description,
-    permanentAddress
-  ]
+  const obligations = obligationSet()
+  const identifiers = identifiersFrom(obligations)
+  const identifierObligations = Object.values(identifiers)
   const commodityObligations = [
-    commodityCode,
-    commodityType,
-    species,
-    numberOfAnimals,
-    numberOfPackages,
+    obligations.commodityCode,
+    obligations.commodityType,
+    obligations.species,
+    obligations.numberOfAnimals,
+    obligations.numberOfPackages,
     ...identifierObligations
   ]
   const recordsByObligation = new Map(
@@ -66,36 +77,19 @@ export const commodityLinesFromFulfilment = (reader) => {
   )
   const valueAt = (obligation, fulfilmentIndex) =>
     recordsByObligation.get(obligation)[fulfilmentIndex]
-  const identifiers = {
-    microchip,
-    passport,
-    tattoo,
-    earTag,
-    horseName,
-    identificationDetails,
-    description,
-    permanentAddress
-  }
   return reader
-    .groupFulfilmentIndexes(commodityLine, commodityObligations)
-    .map((lineIndex) => {
-      const unitIndexes = reader.groupFulfilmentIndexes(
-        unitRecord,
-        identifierObligations,
-        lineIndex
-      )
-      return compact({
-        commoditySelection: valueAt(commodityCode, lineIndex),
-        commodityType: valueAt(commodityType, lineIndex),
-        speciesSelection: valueAt(species, lineIndex),
-        numberOfAnimalsQuantity: legacyAnimalCount(
-          valueAt(numberOfAnimals, lineIndex)
+    .groupFulfilmentIndexes(obligations.commodityLine, commodityObligations)
+    .map((lineIndex) =>
+      lineFrom({
+        obligations,
+        identifiers,
+        valueAt,
+        unitIndexes: reader.groupFulfilmentIndexes(
+          obligations.unitRecord,
+          identifierObligations,
+          lineIndex
         ),
-        numberOfPackages: valueAt(numberOfPackages, lineIndex),
-        animalIdentifiers:
-          unitIndexes.length > 0
-            ? unitIndexes.map((u) => unitFrom(valueAt, identifiers, u))
-            : undefined
+        lineIndex
       })
-    })
+    )
 }
