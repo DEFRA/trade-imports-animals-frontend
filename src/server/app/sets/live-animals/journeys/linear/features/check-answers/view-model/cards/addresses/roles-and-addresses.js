@@ -27,7 +27,8 @@ export const rolesAndAddressesCard = (
       readOnly,
       copy.rows.placeOfOrigin,
       parties.placeOfOrigin,
-      'placeOfOrigin'
+      'placeOfOrigin',
+      { errorText: partyErrors.placeOfOrigin }
     ),
     partyRow(
       journeyId,

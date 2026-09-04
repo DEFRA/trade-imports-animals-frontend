@@ -109,6 +109,15 @@ describe('GET addresses — resolveParties hub rows', () => {
       text: 'Add'
     })
   })
+
+  it('Should render the live book name for place of origin, not a stale copy on the answer', async () => {
+    const result = await rowsFor({
+      placeOfOrigin: { addressId: 'origin-farm', name: 'Stale Origin Copy' }
+    })
+    const row = rowTitled(result.view.context.rows, 'Place of origin')
+
+    expect(row.value.text).toBe('Origin Farm')
+  })
 })
 
 describe('GET addresses — change context', () => {

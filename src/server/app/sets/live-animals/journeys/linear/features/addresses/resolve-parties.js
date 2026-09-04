@@ -8,21 +8,14 @@ const ALL_PARTIES = [...PARTIES, CONTACT_PARTY]
 
 export { organisationIdOf }
 
-/** A party answer is either a REFERENCE to an address-book record or an inline
- * address. A reference resolves to the record's current details; an inline
- * answer is already the details and passes straight through.
- *
- * An inline party keeps its details even though it carries an `addressId` — the
- * id records which row was picked so the picker can pre-tick it, and must never
- * be treated as a live reference. Deleting the address it came from leaves the
- * copy alone.
- *
- * A deleted record resolves to nothing, so the row renders as "not provided" —
- * the UCD decision to treat a deleted address as if it were never entered. An
- * outage is NOT that: the address book throws, and the throw propagates, because
- * an unavailable service must never be indistinguishable from a deletion. */
-const resolveOne = async (orgId, party, answer) => {
-  if (party.inline || !answer?.addressId) {
+/** A party answer is an address-book reference. It resolves to the record's
+ * current details for display. A deleted record resolves to nothing, so the
+ * row renders as "not provided" — the UCD decision to treat a deleted address
+ * as if it were never entered. An outage is NOT that: the address book throws,
+ * and the throw propagates, because an unavailable service must never be
+ * indistinguishable from a deletion. */
+const resolveOne = async (orgId, _party, answer) => {
+  if (!answer?.addressId) {
     return answer
   }
   const record = await addressBook.party(orgId, answer.addressId)
@@ -62,17 +55,13 @@ export const resolveParties = async (request, answers = {}) => {
 /** Drop party answers whose address-book reference no longer resolves, so
  * display (resolveParties) and fulfilment/evaluation agree: a deleted address
  * behaves as if nothing were selected (UCD). Request-local — the next commit
- * that rebuilds from `current.answers` persists the clear.
- *
- * Inline parties are left alone. They hold their own details, so there is no
- * reference to dangle and nothing to clear when the address they were picked
- * from is deleted. */
+ * that rebuilds from `current.answers` persists the clear. */
 export const withoutUnresolvedPartyRefs = async (request, answers = {}) => {
   const parties = await resolveParties(request, answers)
   let changed = false
   const next = { ...answers }
-  for (const { id, inline } of ALL_PARTIES) {
-    if (!inline && answers[id]?.addressId && parties[id] === undefined) {
+  for (const { id } of ALL_PARTIES) {
+    if (answers[id]?.addressId && parties[id] === undefined) {
       delete next[id]
       changed = true
     }

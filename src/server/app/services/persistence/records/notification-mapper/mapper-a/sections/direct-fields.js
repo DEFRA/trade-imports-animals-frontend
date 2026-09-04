@@ -2,27 +2,15 @@ import { obligationSet } from '../../../../../../model/obligations/manifest.js'
 import { countryCodeOf } from '../../../../../countries/index.js'
 import { compact, orUndefined } from '../../shared/compact.js'
 
-/** Place of origin and the contact address are held as copies, not references,
- * so unlike the other four roles their details have to cross to the
- * notification rather than being resolved there.
- *
- * Two translations are needed on the way. The journey has carried
- * `postalOrZipCode`/`country` (a display name) since before the address book
- * existed, while the notification uses the address book's own names — the same
- * mapping the address-book client does in `toRequest`. And contact details sit
- * inside the journey's address block but are the party's own fields on a
- * notification.
- *
- * The `addressId` is dropped: it records which row the copy was taken from, so
- * the picker can pre-tick it, and must never reach the notification or the
- * outbox would treat the copy as a live reference.
- *
- * @param {object|undefined} answer an inline party answer, or nothing
- * @returns {object|undefined} the party as the notification holds it
- */
-const inlineParty = (answer) => {
+/** Older origin/contact answers may still be a copy with no address-book id.
+ * Those keep their details (and the journey-to-notification address names).
+ * Anything with an id is stored as a reference, like the other parties. */
+const asPartyRef = (answer) => {
   if (!answer) {
     return answer
+  }
+  if (answer.addressId) {
+    return { addressId: answer.addressId }
   }
   const { name, address = {} } = answer
   return orUndefined(
@@ -58,12 +46,12 @@ export const directFieldsFromFulfilment = (reader, referenceNumber) => {
   return compact({
     referenceNumber,
     reasonForImport: reader.scalar(reasonForImport),
-    placeOfOrigin: inlineParty(reader.scalar(placeOfOrigin)),
+    placeOfOrigin: asPartyRef(reader.scalar(placeOfOrigin)),
     consignor: reader.scalar(consignor),
     consignee: reader.scalar(consignee),
     importer: reader.scalar(importer),
     destination: reader.scalar(placeOfDestination),
-    consignment: inlineParty(reader.scalar(contactAddress)),
+    consignment: asPartyRef(reader.scalar(contactAddress)),
     cphNumber: reader.scalar(cph)
   })
 }

@@ -7,6 +7,7 @@ import { isCphApplicable } from '../cph-number/controller.js'
 import { addressesPage as page } from './page.js'
 import { PARTIES } from './parties.js'
 import { resolveParties } from './resolve-parties.js'
+import { frozenPartiesOf } from './frozen-parties.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 
@@ -70,9 +71,9 @@ const rows = (request, journeyId, answers, parties) => [
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  // A referenced party shows the address book's current details, so a colleague's
-  // edit reaches this draft with no action from the trader (AC4).
-  const parties = await resolveParties(request, answers)
+  const parties = journey.frozenParties
+    ? frozenPartiesOf(journey.frozenParties)
+    : await resolveParties(request, answers)
   // Reached from a Change link, Back has to return to the summary that sent the
   // trader here rather than dropping them on the task list.
   const backLink = kit.changeContext(request)
