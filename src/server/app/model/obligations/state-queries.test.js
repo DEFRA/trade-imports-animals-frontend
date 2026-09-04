@@ -348,3 +348,87 @@ describe('#leafSatisfied', () => {
     expect(leafSatisfied(scalar, line1Unit1FulfilmentIndex, st)).toBe(false)
   })
 })
+
+describe('groupInvariantErrors — `requires.allOrNothingOfIds` unindexed field-block', () => {
+  // A field-block invariant over three sibling unindexed obligations —
+  // whichever container the manifest attaches it to. The rule fires once
+  // for the whole group when the block is partially filled; it stays
+  // silent when the block is fully blank or fully filled.
+  const container = { id: 'address-block', name: 'address' }
+  const addressLine1Id = 'addressLine1'
+  const townId = 'town'
+  const postCodeId = 'postCode'
+  const errorCode = 'obligation.address.allOrNothing'
+
+  const highStreetAddress = '1 High Street'
+
+  const groupWithBlock = {
+    ...container,
+    requires: {
+      allOrNothingOfIds: [addressLine1Id, townId, postCodeId],
+      errorCode
+    }
+  }
+
+  const inScopeGroupState = (fulfilments) =>
+    state({
+      fulfilments,
+      obligations: implications([
+        {
+          obligation: container,
+          implication: { inScope: true, fulfilmentIndexes: [] }
+        }
+      ])
+    })
+
+  it('emits no error when every member of the block is blank (nothing filled)', () => {
+    expect(groupInvariantErrors(groupWithBlock, inScopeGroupState({}))).toEqual(
+      []
+    )
+  })
+
+  it('emits no error when every member of the block is filled (all filled)', () => {
+    const st = inScopeGroupState({
+      [addressLine1Id]: highStreetAddress,
+      [townId]: 'Bristol',
+      [postCodeId]: 'BS1 1AA'
+    })
+    expect(groupInvariantErrors(groupWithBlock, st)).toEqual([])
+  })
+
+  it('emits exactly one error naming every missing member id when partially filled', () => {
+    // town blank string, postCode missing entirely — both count as blank.
+    const st = inScopeGroupState({
+      [addressLine1Id]: highStreetAddress,
+      [townId]: ''
+    })
+    expect(groupInvariantErrors(groupWithBlock, st)).toEqual([
+      {
+        code: errorCode,
+        groupId: container.id,
+        groupName: container.name,
+        missingIds: [townId, postCodeId]
+      }
+    ])
+  })
+
+  it('composes with anyOf on the same group without interfering', () => {
+    // A group that has both an anyOfIds rule (unused because no fulfilmentIndexes
+    // in scope) and an allOrNothing rule — allOrNothing still fires.
+    const combined = {
+      ...container,
+      requires: {
+        allOrNothingOfIds: [addressLine1Id, townId, postCodeId],
+        anyOfIds: ['someLeaf'],
+        errorCode
+      }
+    }
+    const st = inScopeGroupState({
+      [addressLine1Id]: highStreetAddress
+    })
+    const errors = groupInvariantErrors(combined, st)
+    expect(errors).toHaveLength(1)
+    expect(errors[0].code).toBe(errorCode)
+    expect(errors[0].missingIds).toEqual([townId, postCodeId])
+  })
+})
