@@ -48,6 +48,28 @@ describe('#copy', () => {
     expect(copyCy.identification.title).toBe('Manylion adnabod')
   })
 
+  // Design release 1 names an identifier once and uses that one name both on
+  // the entry field and as the column heading of the saved-animals table. A
+  // trader who types under one word and reads the value back under another is
+  // being shown two names for one thing, so the two label sets are pinned to
+  // each other in both locales. Microchip is left out on purpose: its entry
+  // label still reads 'Microchip number', which is a separate decision.
+  it('Should label each identifier entry field with its saved-animals column heading', () => {
+    for (const field of [
+      'animalIdentifierPassport',
+      'animalIdentifierTattoo',
+      'animalIdentifierEarTag',
+      'horseName'
+    ]) {
+      expect(copy.identification.typeFields[field].label).toBe(
+        copy.identification.identifierLabels[field]
+      )
+      expect(copyCy.identification.typeFields[field].label).toBe(
+        copyCy.identification.identifierLabels[field]
+      )
+    }
+  })
+
   // A user reading only the first sentence could conclude that no health
   // certificate means no notification. The second sentence closes that off.
   it('Should tell the user that a consignment without a health certificate must still be notified', () => {

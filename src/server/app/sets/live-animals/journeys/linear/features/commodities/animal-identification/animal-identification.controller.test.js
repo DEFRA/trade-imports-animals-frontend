@@ -105,7 +105,7 @@ describe(`${SUITE} — the cards view`, () => {
   it('Should show only the commodity-gated fields per card — typed for Cats with the address, no fallbacks', async () => {
     const [card] = await viewCards({ commodityLines: [catLine()] })
     const labels = card.fields.map((field) => field.label)
-    expect(labels).toEqual(['Microchip number', 'Passport number', 'Tattoo'])
+    expect(labels).toEqual(['Microchip number', 'Passport', 'Tattoo'])
     expect(card.showAddress).toBe(true)
     const ids = card.fields.map((field) => field.id)
     expect(ids).toEqual([MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0])

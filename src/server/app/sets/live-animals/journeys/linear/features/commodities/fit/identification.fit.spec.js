@@ -280,6 +280,29 @@ test.describe('animal identification', () => {
     await expect(page.locator('#nameOrOrganisationName-0')).toHaveCount(0)
   })
 
+  // Design release 1 names an identifier once and uses that name both on the
+  // entry field and as the column heading of the saved-animals table. A trader
+  // who types under "Passport number" and reads the value back under
+  // "Passport" is being shown two names for one thing, so the entry label is
+  // pinned to the column label rather than to a wording of its own.
+  // Cattle only: microchip's entry label still reads 'Microchip number', a
+  // wording Design release 1 has not settled here.
+  test('labels the passport, tattoo and ear tag fields on a cattle line with the words the saved-animals table heads them with', async ({
+    page
+  }) => {
+    await openIdentification(page, [['Cow', [BOS_TAURUS]]])
+
+    for (const field of [
+      'animalIdentifierPassport',
+      'animalIdentifierTattoo',
+      'animalIdentifierEarTag'
+    ]) {
+      await expect(page.locator(`label[for="${field}-0"]`)).toHaveText(
+        copy.identification.identifierLabels[field]
+      )
+    }
+  })
+
   test('permanent address asks for eight fields and never for a country', async ({
     page
   }) => {
