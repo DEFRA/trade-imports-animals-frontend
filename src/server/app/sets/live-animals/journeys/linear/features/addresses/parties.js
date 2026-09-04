@@ -13,17 +13,14 @@ const contactCopy = copyFor({ en: contactEn, cy: contactCy })
  * they share ONE picker (party-picker.controller.js) and the hub builds its
  * rows from the same table.
  *
- * `inline: true` marks a party the notification holds as a COPY rather than a
- * reference. It is still picked from the address book like any other
- * — the difference is only what the notification ends up holding, so a later
- * edit in the book does not reach it. */
+ * Every party is stored as an address-book reference. Display resolves the
+ * current record, so an edit in the book shows through on a draft. */
 export const PARTIES = [
   {
     id: 'placeOfOrigin',
     role: 'placeOfOrigin',
     slug: 'place-of-origin/select',
     returnSlug: 'addresses',
-    inline: true,
     ...partyCopy.placeOfOrigin
   },
   {
@@ -63,7 +60,6 @@ export const CONTACT_PARTY = {
   role: 'contact',
   slug: consignmentContactSelectPage.slug,
   returnSlug: consignmentContactSelectPage.slug,
-  inline: true,
   title: contactCopy.title,
   hint: contactCopy.hint,
   error: contactCopy.errors.contactRequired

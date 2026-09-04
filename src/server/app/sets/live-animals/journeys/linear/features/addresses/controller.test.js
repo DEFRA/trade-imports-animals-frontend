@@ -1,12 +1,20 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../engine/persistence/records.js'
+import {
+  configureRecords,
+  records,
+  SUBMITTED
+} from '../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../../engine/test-support.js'
+import {
+  driveHandler,
+  journeyRequest,
+  stubH
+} from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 
@@ -108,6 +116,63 @@ describe('GET addresses — resolveParties hub rows', () => {
       href: pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG),
       text: 'Add'
     })
+  })
+
+  it('Should render the live book name for place of origin, not a stale copy on the answer', async () => {
+    const result = await rowsFor({
+      placeOfOrigin: { addressId: 'origin-farm', name: 'Stale Origin Copy' }
+    })
+    const row = rowTitled(result.view.context.rows, 'Place of origin')
+
+    expect(row.value.text).toBe('Origin Farm')
+  })
+})
+
+describe('GET addresses — frozen parties on submitted notification', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should render the frozen name, not the live address-book name', async () => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, {
+      placeOfOrigin: { addressId: 'origin-farm', name: 'Stale Origin Copy' }
+    })
+    await store.submit(journey.journeyId)
+
+    const frozenName = 'Frozen At Submit'
+    const load = records.load
+    const spy = vi
+      .spyOn(records, 'load')
+      .mockImplementation(async (...args) => {
+        const loaded = await load(...args)
+        if (!loaded || loaded.status !== SUBMITTED) {
+          return loaded
+        }
+        return {
+          ...loaded,
+          frozenParties: {
+            placeOfOrigin: {
+              name: frozenName,
+              address: { addressLine1: '1 Lane', countryCode: 'GB' }
+            }
+          }
+        }
+      })
+
+    try {
+      const h = stubH()
+      await getAddresses(journeyRequest(journey.journeyId), h)
+      const row = rowTitled(h.captured.view.context.rows, 'Place of origin')
+
+      expect(row.value.text).toBe(frozenName)
+      expect(row.value.text).not.toBe('Origin Farm')
+    } finally {
+      spy.mockRestore()
+    }
   })
 })
 

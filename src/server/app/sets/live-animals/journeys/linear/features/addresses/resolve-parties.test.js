@@ -10,6 +10,7 @@ const ORG_ID = '5900001'
 const CONSIGNOR_ID = 'astra-rosales'
 const CONSIGNOR_NAME = 'Astra Rosales'
 const ORIGIN_ID = 'origin-farm'
+const CPH_NUMBER = '12/345/6789'
 
 /** `party()` is spied on rather than left to answer from the stub book, which
  * the unit suite runs against by default — an unmocked read would resolve to
@@ -50,21 +51,21 @@ describe('resolveParties', () => {
     expect(spy).toHaveBeenCalledWith(ORG_ID, CONSIGNOR_ID)
   })
 
-  it('Should pass an inline party through without reading the book (D24, D26)', async () => {
-    // Both inline roles carry an addressId for the picker's benefit. Reading it
-    // as a live reference is exactly what the D24/D26 ruling forbids.
-    const spy = bookHolding({})
-    const placeOfOrigin = { addressId: ORIGIN_ID, name: 'Origin Farm' }
-    const contactAddress = { addressId: 'contact-1', name: 'Contact Ltd' }
-
-    const parties = await resolveParties(requestFor(), {
-      placeOfOrigin,
-      contactAddress
+  it('Should resolve place of origin and the contact address like any other party', async () => {
+    const spy = bookHolding({
+      [ORIGIN_ID]: record(ORIGIN_ID, 'Live Origin Farm'),
+      'contact-1': record('contact-1', 'Live Contact Ltd')
     })
 
-    expect(parties.placeOfOrigin).toBe(placeOfOrigin)
-    expect(parties.contactAddress).toBe(contactAddress)
-    expect(spy).not.toHaveBeenCalled()
+    const parties = await resolveParties(requestFor(), {
+      placeOfOrigin: { addressId: ORIGIN_ID, name: 'Stale Origin Copy' },
+      contactAddress: { addressId: 'contact-1', name: 'Stale Contact Copy' }
+    })
+
+    expect(parties.placeOfOrigin).toMatchObject({ name: 'Live Origin Farm' })
+    expect(parties.contactAddress).toMatchObject({ name: 'Live Contact Ltd' })
+    expect(spy).toHaveBeenCalledWith(ORG_ID, ORIGIN_ID)
+    expect(spy).toHaveBeenCalledWith(ORG_ID, 'contact-1')
   })
 
   it('Should resolve a deleted record to nothing, as if it were never entered', async () => {
@@ -128,24 +129,23 @@ describe('withoutUnresolvedPartyRefs', () => {
 
     const next = await withoutUnresolvedPartyRefs(requestFor(), {
       consignor: { addressId: 'deleted-since' },
-      cph: '12/345/6789'
+      cph: CPH_NUMBER
     })
 
     expect(next.consignor).toBeUndefined()
-    expect(next.cph).toBe('12/345/6789')
+    expect(next.cph).toBe(CPH_NUMBER)
   })
 
-  it('Should keep an inline party whose source address has been deleted', async () => {
-    // The copy is the answer. Deleting the record it was taken from is not a
-    // dangling reference, so there is nothing to clear (D24, D26).
+  it('Should drop place of origin when its address no longer resolves', async () => {
     bookHolding({})
-    const placeOfOrigin = { addressId: ORIGIN_ID, name: 'Origin Farm' }
 
     const next = await withoutUnresolvedPartyRefs(requestFor(), {
-      placeOfOrigin
+      placeOfOrigin: { addressId: ORIGIN_ID, name: 'Stale Origin Copy' },
+      cph: CPH_NUMBER
     })
 
-    expect(next.placeOfOrigin).toBe(placeOfOrigin)
+    expect(next.placeOfOrigin).toBeUndefined()
+    expect(next.cph).toBe(CPH_NUMBER)
   })
 
   it('Should return the answers unchanged when every reference still resolves', async () => {

@@ -85,6 +85,7 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       createdAt,
       submittedAt: null,
       concurrencyToken: 0,
+      frozenParties: null,
       fulfilment: {}
     })
   })
@@ -294,7 +295,7 @@ describe('real records adapter — lifecycle and list', () => {
 
     const submitted = await records.finalise(journeyId, actor)
     const amended = await records.amend(journeyId, actor)
-    const restored = await records.cancelAmend(journeyId)
+    const restored = await records.cancelAmend(journeyId, actor)
 
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
@@ -304,7 +305,7 @@ describe('real records adapter — lifecycle and list', () => {
     ])
     expect(await jsonOf(requests[0])).toEqual(actor)
     expect(await jsonOf(requests[1])).toEqual(actor)
-    expect(await requests[2].clone().text()).toBe('')
+    expect(await jsonOf(requests[2])).toEqual(actor)
     expect(submitted.status).toBe(SUBMITTED)
     expect(submitted.submittedAt).toBe(submittedTimestamp)
     expect(amended.status).toBe(AMEND)

@@ -17,20 +17,7 @@ export const chosenPartyFor = async (orgId, selectedId) => {
 
 /** The answer to commit for a party the trader has just picked.
  *
- * A referenced party holds the id alone — the details are resolved on read, and
+ * Holds the address-book id alone — the details are resolved on read, and
  * storing them here would let the next commit anywhere in the journey re-persist
- * a copy that has since gone stale.
- *
- * An inline party holds the details themselves, because the
- * notification is meant to keep what was picked rather than track later edits.
- * The id rides along for the picker's benefit only — it is what pre-ticks the
- * row on a return visit — and the notification mapper drops it, so nothing but
- * this journey ever sees it. */
-export const answerFor = (party, chosen) =>
-  party.inline
-    ? {
-        addressId: chosen.id,
-        name: chosen.name,
-        address: { ...chosen.address }
-      }
-    : { addressId: chosen.id }
+ * a copy that has since gone stale. */
+export const answerFor = (_party, chosen) => ({ addressId: chosen.id })

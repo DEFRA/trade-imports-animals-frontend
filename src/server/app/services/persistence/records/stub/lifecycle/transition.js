@@ -33,7 +33,7 @@ export const amend = async (journeyId, _actor) => {
   return structuredClone(marshal(journey))
 }
 
-export const cancelAmend = async (journeyId) => {
+export const cancelAmend = async (journeyId, _actor) => {
   const journey = journeys.get(journeyId)
   if (!journey) {
     throw new Error(`Unknown journey "${journeyId}"`)
