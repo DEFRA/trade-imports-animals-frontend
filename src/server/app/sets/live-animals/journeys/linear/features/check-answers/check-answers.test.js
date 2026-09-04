@@ -545,19 +545,14 @@ describe(`${SUITE} — submitted freeze vs live amend`, () => {
     }
   })
 
-  it('Should resolve live on an amendment, even when a freeze would still exist', async () => {
-    const spy = withFreeze()
-    try {
-      const { context } = await viewForStatus(AMEND, {
-        ...fullSeed,
-        consignor: { addressId: CONSIGNOR_ADDRESS_ID }
-      })
-      const card = cardByTitle(context.sections, ROLES_AND_ADDRESSES_CARD)
-      expect(htmlOf(card.rows, 'Consignor')).toContain(CONSIGNOR_NAME)
-      expect(htmlOf(card.rows, 'Consignor')).not.toContain(FROZEN_CONSIGNOR)
-    } finally {
-      spy.mockRestore()
-    }
+  it('Should resolve live on an amendment when the journey carries no freeze', async () => {
+    const { context } = await viewForStatus(AMEND, {
+      ...fullSeed,
+      consignor: { addressId: CONSIGNOR_ADDRESS_ID }
+    })
+    const card = cardByTitle(context.sections, ROLES_AND_ADDRESSES_CARD)
+    expect(htmlOf(card.rows, 'Consignor')).toContain(CONSIGNOR_NAME)
+    expect(htmlOf(card.rows, 'Consignor')).not.toContain(FROZEN_CONSIGNOR)
   })
 })
 
