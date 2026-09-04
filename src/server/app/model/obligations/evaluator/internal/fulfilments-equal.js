@@ -18,11 +18,14 @@ const indexedFulfilmentsEqual = (indexedA, indexedB) => {
   return true
 }
 
-const fulfilmentValuesEqual = (valueA, valueB) =>
-  valueA === valueB ||
-  (isNonArrayObject(valueA) &&
-    isNonArrayObject(valueB) &&
-    indexedFulfilmentsEqual(valueA, valueB))
+// Compare one obligation's fulfilment from each snapshot. Either shape:
+// an unindexed value (primitive, null, array — all handled by `===`)
+// or an indexedFulfilments map (deep-compared).
+const fulfilmentEqual = (fulfilmentA, fulfilmentB) =>
+  fulfilmentA === fulfilmentB ||
+  (isNonArrayObject(fulfilmentA) &&
+    isNonArrayObject(fulfilmentB) &&
+    indexedFulfilmentsEqual(fulfilmentA, fulfilmentB))
 
 // Structural equality between two fulfilments snapshots (obligation-id →
 // value). Used by the purge fixpoint to detect convergence. Values are
@@ -44,7 +47,7 @@ export function fulfilmentsEqual(fulfilmentsA, fulfilmentsB) {
     if (!Object.hasOwn(fulfilmentsB, key)) {
       return false
     }
-    if (!fulfilmentValuesEqual(fulfilmentsA[key], fulfilmentsB[key])) {
+    if (!fulfilmentEqual(fulfilmentsA[key], fulfilmentsB[key])) {
       return false
     }
   }
