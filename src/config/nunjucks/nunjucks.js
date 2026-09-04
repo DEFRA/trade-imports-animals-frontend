@@ -42,10 +42,6 @@ export const nunjucksConfig = {
     },
     relativeTo: path.resolve(dirname, '../..'),
     path: ['server/app', 'server/app/sets'],
-    // Tied to the template cache rather than to isProduction: a view cache that
-    // hands back a template Nunjucks is recompiling anyway buys nothing, and
-    // caching views while templates recompile would serve stale markup to
-    // whoever is editing them.
     isCached: !config.get('nunjucks.noCache'),
     context
   }
