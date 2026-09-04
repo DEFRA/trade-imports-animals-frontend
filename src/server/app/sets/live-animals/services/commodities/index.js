@@ -5,6 +5,7 @@ import {
   COMMODITY_TYPE_DATA,
   SPECIES_OPTIONS,
   PACKAGE_COUNT_COMMODITIES,
+  MICROCHIP_COMMODITIES,
   PASSPORT_COMMODITIES,
   TATTOO_COMMODITIES,
   EAR_TAG_COMMODITIES,
@@ -59,6 +60,8 @@ export const isCommoditySpecies = (name, value) =>
   speciesFor(name).some((option) => option.value === value)
 
 export const packageCountCommodities = () => PACKAGE_COUNT_COMMODITIES
+
+export const microchipCommodities = () => MICROCHIP_COMMODITIES
 
 export const passportCommodities = () => PASSPORT_COMMODITIES
 

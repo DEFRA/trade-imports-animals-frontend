@@ -1,6 +1,7 @@
 import {
   earTagCommodities,
   horseNameCommodities,
+  microchipCommodities,
   passportCommodities,
   permanentAddressCommodities,
   tattooCommodities
@@ -10,6 +11,12 @@ import {
   notInUnionOf
 } from '../../../../../model/obligations/helpers/index.js'
 import { commodityCode, commodityLine, numberOfAnimals } from './lines.js'
+
+const microchipReason = {
+  code: 'obligation.microchip.applicable.becauseMicrochipCommodity',
+  explanation:
+    'microchip applies on units of lines whose commodityCode is in the microchip list'
+}
 
 const passportReason = {
   code: 'obligation.passport.applicable.becausePassportCommodity',
@@ -66,7 +73,7 @@ export const unitRecord = {
   //
   // V4 spec (Confluence page 6497338582): "Field Block - Mandatory
   // to Submit - At least one Animal Identifier". Every unit-record
-  // must carry ≥ 1 of the six identifier obligations. Listed as
+  // must carry ≥ 1 of the seven identifier obligations. Listed as
   // literal ids in `requires.anyOfIds` rather than obligation
   // references — id-based deferred resolution avoids
   // declaration-order coupling and makes the "requires-any-of" edge
@@ -87,6 +94,7 @@ export const unitRecord = {
   // by adding / removing units or amending the number.
   requires: {
     anyOfIds: [
+      '8f030bfa-0734-40c8-9d9e-b9e95dac4724', // microchip
       '39657a80-91a2-4fc6-8345-9f0617284a51', // passport
       '3a768b91-a2b3-4fd7-8456-a01728395b62', // tattoo
       '3b879ca2-b3c4-4fe8-8567-a1283a4a6c73', // earTag
@@ -109,6 +117,16 @@ export const unitRecord = {
 // obligation code doesn't enumerate them itself. Allowlists come from
 // the commodities service in the stored picker-name vocabulary.
 // -----------------------------------------------------------------------------
+
+export const microchip = {
+  id: '8f030bfa-0734-40c8-9d9e-b9e95dac4724',
+  name: 'animalIdentifierMicrochip',
+  within: unitRecord,
+  status: 'optional',
+  applyTo: allowListed(commodityCode, microchipCommodities, unitRecord, [
+    microchipReason
+  ])
+}
 
 export const passport = {
   id: '39657a80-91a2-4fc6-8345-9f0617284a51',
@@ -156,15 +174,16 @@ export const horseName = {
 
 // Inverse gate — the free-text identifiers apply on units whose parent
 // line's commodity has NO specific identifier. Expressed as
-// `notInUnionOf` over the four specific-identifier whitelists.
+// `notInUnionOf` over the five specific-identifier whitelists.
 // The derived union lives on `.metadata.values`
 // so the reachability prover can synthesise a witness value (any code
 // not in the union) and the browser-side controllers can inspect
-// admissibility without executing the closure. Adding a fifth typed
+// admissibility without executing the closure. Adding a sixth typed
 // identifier means adding its list to the array here — the derived
-// union widens automatically. Hand-restated four-conjunct complements
+// union widens automatically. Hand-restated five-conjunct complements
 // would silently double-gate on such an addition.
 const specificIdentifierWhitelists = () => [
+  microchipCommodities(),
   passportCommodities(),
   tattooCommodities(),
   earTagCommodities(),

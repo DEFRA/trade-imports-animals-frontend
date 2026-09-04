@@ -262,6 +262,7 @@ describe('controller <-> model commit contract', () => {
       seed: { commodityLines: [{ commoditySelection: 'Cat' }] },
       payload: {
         action: 'add:0',
+        'animalIdentifierMicrochip-0': '900123456789012',
         'animalIdentifierPassport-0': 'UK123456789',
         'animalIdentifierEarTag-0': 'UK999',
         'nameOrOrganisationName-0': 'Pet Owner',
@@ -274,6 +275,7 @@ describe('controller <-> model commit contract', () => {
       }
     })
     const unit = result.after.commodityLines[0].animalIdentifiers[0]
+    expect(unit.animalIdentifierMicrochip).toBe('900123456789012')
     expect(unit.animalIdentifierPassport).toBe('UK123456789')
     expect('animalIdentifierEarTag' in unit).toBe(false)
     expect(unit.permanentAddress.name).toBe('Pet Owner')

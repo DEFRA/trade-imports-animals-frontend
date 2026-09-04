@@ -1,7 +1,7 @@
 /**
  * Whitelist scope tests.
  *
- * V4 gates seven commodity-scoped obligations on the commodities
+ * V4 gates eight commodity-scoped obligations on the commodities
  * service's allowlists, in the stored picker-name vocabulary.
  * Silently widening any allowlist is a real risk (e.g. adding a name
  * to the package-count list that puts `numberOfPackages` in scope for
@@ -20,6 +20,7 @@ import {
   commodityCode,
   numberOfPackages,
   cph,
+  microchip,
   passport,
   tattoo,
   earTag,
@@ -31,6 +32,7 @@ import {
   earTagCommodities,
   horseNameCommodities,
   list,
+  microchipCommodities,
   packageCountCommodities,
   passportCommodities,
   permanentAddressCommodities,
@@ -111,8 +113,8 @@ describe('CPH list → cph (top-level anyAllowListed)', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Unit-record-scoped gates: passport / tattoo / earTag / horseName /
-// permanentAddress. Each uses
+// Unit-record-scoped gates: microchip / passport / tattoo / earTag /
+// horseName / permanentAddress. Each uses
 // `applyTo: allowListed(commodityCode, LIST, unitRecord, …)`, so
 // records are `lineId.unitId` fulfilment indexes for units on
 // matching-commodity lines.
@@ -124,6 +126,7 @@ describe('CPH list → cph (top-level anyAllowListed)', () => {
 // ---------------------------------------------------------------------------
 
 const UNIT_SCOPED_ALLOWLISTS = [
+  { name: 'microchip list', names: microchipCommodities(), gated: microchip },
   { name: 'passport list', names: passportCommodities(), gated: passport },
   { name: 'tattoo list', names: tattooCommodities(), gated: tattoo },
   { name: 'ear-tag list', names: earTagCommodities(), gated: earTag },
@@ -179,6 +182,7 @@ for (const { name, names, gated } of UNIT_SCOPED_ALLOWLISTS) {
 const EXPECTED = {
   'storable package-count entries': ['Cat', 'Cow', 'Dog', 'Horse'],
   'CPH list': ['Cow'],
+  'microchip list': ['Horse', 'Cat', 'Dog'],
   'passport list': ['Horse', 'Cow', 'Cat', 'Dog'],
   'tattoo list': ['Cat', 'Dog', 'Cow'],
   'ear-tag list': ['Cow'],
@@ -192,6 +196,7 @@ const ALLOWLISTS_UNDER_TEST = [
     names: storablePackageCountCommodities()
   },
   { name: 'CPH list', names: cphCommodities() },
+  { name: 'microchip list', names: microchipCommodities() },
   { name: 'passport list', names: passportCommodities() },
   { name: 'tattoo list', names: tattooCommodities() },
   { name: 'ear-tag list', names: earTagCommodities() },

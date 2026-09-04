@@ -109,6 +109,12 @@ export const PACKAGE_COUNT_COMMODITIES = [
   '0407 - SPF Eggs'
 ]
 
+// The equine and companion-animal commodities. Design release 1 asks for a
+// microchip on commodity code 0101 (Horse) and on 01061900 — the code Cat, Dog,
+// ferret and the other live mammals share — so ferret is covered by the same
+// entry as Cat and Dog once the picker offers it (design 01-16/17).
+export const MICROCHIP_COMMODITIES = ['Horse', 'Cat', 'Dog']
+
 export const PASSPORT_COMMODITIES = ['Horse', 'Cow', 'Cat', 'Dog']
 
 export const TATTOO_COMMODITIES = ['Cat', 'Dog', 'Cow']

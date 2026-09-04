@@ -70,6 +70,7 @@ export const copy = {
       change: 'Change'
     },
     identifierLabels: {
+      animalIdentifierMicrochip: 'Microchip',
       animalIdentifierPassport: 'Passport',
       animalIdentifierTattoo: 'Tattoo',
       animalIdentifierEarTag: 'Ear tag',
@@ -83,6 +84,10 @@ export const copy = {
       actionsHidden: 'Actions'
     },
     typeFields: {
+      animalIdentifierMicrochip: {
+        label: 'Microchip number',
+        hint: 'For example, 900123456789012'
+      },
       animalIdentifierPassport: {
         label: 'Passport number',
         hint: 'For example, UK123456789'
@@ -135,6 +140,7 @@ export const copy = {
     },
     errors: {
       identifierMax: {
+        animalIdentifierMicrochip: 'Microchip must be 58 characters or fewer',
         animalIdentifierPassport: 'Passport must be 58 characters or fewer',
         animalIdentifierTattoo: 'Tattoo must be 58 characters or fewer',
         animalIdentifierEarTag: 'Ear tag must be 58 characters or fewer',
