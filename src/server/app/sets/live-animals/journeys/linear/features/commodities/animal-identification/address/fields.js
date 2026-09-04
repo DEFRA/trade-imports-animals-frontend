@@ -1,9 +1,4 @@
-import {
-  compose,
-  maxText,
-  oneOf
-} from '../../../../../../../../lib/validate/index.js'
-import * as countries from '../../../../../../../../services/countries/index.js'
+import { compose, maxText } from '../../../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
@@ -20,7 +15,6 @@ const ADDRESS_FIELD_ORDER = [
   'townOrCity',
   'county',
   'postalOrZipCode',
-  'country',
   'telephoneNumber',
   'emailAddress'
 ]
@@ -63,11 +57,6 @@ export const addressChecksFor = (index) =>
       POSTCODE_MAX_LENGTH,
       copy.errors.addressFormat.postalOrZipCode
     ),
-    oneOf(
-      fieldName('country', index),
-      countries.addressCountries(),
-      copy.errors.addressFormat.country
-    ),
     maxText(
       fieldName('telephoneNumber', index),
       TELEPHONE_MAX_LENGTH,
@@ -105,18 +94,8 @@ export const missingAddressErrors = (values, index) => {
   )
 }
 
-const addressCountryItems = (selected) => [
-  { value: '', text: copy.address.countryPlaceholder },
-  ...countries.addressCountries().map((name) => ({
-    value: name,
-    text: name,
-    selected: name === selected
-  }))
-]
-
 export const addressFieldsFor = (index, values, errors) => {
   const input = (id, label, extra = {}) => ({
-    kind: 'input',
     id: fieldName(id, index),
     label,
     value: values[id] ?? '',
@@ -144,13 +123,6 @@ export const addressFieldsFor = (index, values, errors) => {
       classes: 'govuk-input--width-10',
       autocomplete: 'postal-code'
     }),
-    {
-      kind: 'select',
-      id: fieldName('country', index),
-      label: copy.address.country,
-      items: addressCountryItems(values.country ?? ''),
-      error: errors[fieldName('country', index)]
-    },
     input('telephoneNumber', copy.address.telephoneNumber, {
       type: 'tel',
       classes: 'govuk-input--width-20',

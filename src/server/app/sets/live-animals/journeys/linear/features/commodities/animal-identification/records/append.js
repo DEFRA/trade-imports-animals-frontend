@@ -17,7 +17,6 @@ const unitFromForm = (form) => {
         townOrCity: form.addressValues.townOrCity,
         county: form.addressValues.county,
         postalOrZipCode: form.addressValues.postalOrZipCode,
-        country: form.addressValues.country,
         telephoneNumber: form.addressValues.telephoneNumber,
         emailAddress: form.addressValues.emailAddress
       }

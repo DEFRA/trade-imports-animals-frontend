@@ -141,8 +141,6 @@ export const copy = {
       townOrCity: 'Tref neu ddinas',
       county: 'Sir (dewisol)',
       postalOrZipCode: 'Cod post neu god zip',
-      country: 'Gwlad',
-      countryPlaceholder: 'Dewiswch wlad',
       telephoneNumber: 'Rhif ffôn',
       emailAddress: 'Cyfeiriad e-bost'
     },
@@ -164,7 +162,6 @@ export const copy = {
         addressLine1: 'Rhowch linell gyfeiriad 1',
         townOrCity: 'Rhowch dref neu ddinas',
         postalOrZipCode: 'Rhowch god post neu god zip',
-        country: 'Dewiswch wlad',
         telephoneNumber: 'Rhowch rif ffôn',
         emailAddress: 'Rhowch gyfeiriad e-bost'
       },
@@ -177,7 +174,6 @@ export const copy = {
         county: 'Rhaid i’r sir fod yn 100 nod neu lai',
         postalOrZipCode:
           'Rhaid i’r cod post neu’r cod zip fod yn 12 nod neu lai',
-        country: 'Dewiswch wlad o’r rhestr',
         telephoneNumber: 'Rhaid i’r rhif ffôn fod yn 20 nod neu lai',
         emailAddress: 'Rhaid i’r cyfeiriad e-bost fod yn 254 nod neu lai'
       },
