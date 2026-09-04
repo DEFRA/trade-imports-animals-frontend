@@ -53,8 +53,7 @@ export const copy = {
     },
     errors: {
       animalsRequired: 'Rhowch nifer yr anifeiliaid',
-      animalsWholeNumber:
-        'Rhaid i nifer yr anifeiliaid fod yn rif cyfan, fel 25',
+      animalsWholeNumber: 'Rhowch rif cyfan sy’n fwy na 0',
       packagesWholeNumber: 'Rhaid i nifer y pecynnau fod yn rif cyfan, fel 5',
       countDrop: (records, species, entered) =>
         `Mae gennych ${plural(records, 'cofnod dynodwr')} ar gyfer ${species} ond fe wnaethoch nodi ${plural(entered, 'anifail')}. Tynnwch gofnodion dynodwr neu cadwch y cyfrif uwch.`

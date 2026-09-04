@@ -157,7 +157,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
       }
     })
     expect(result.view.context.errors['numberOfAnimalsQuantity-1']).toBe(
-      'Number of animals must be a whole number, like 25'
+      'Enter a whole number greater than 0'
     )
     expect(result.after).toEqual(result.before)
   })
