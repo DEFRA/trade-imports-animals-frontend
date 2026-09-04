@@ -52,10 +52,14 @@ test.describe('live-animals journey glue', () => {
 
     await page.getByRole('radio', { name: 'Breeding' }).check()
     await save()
-    await expect(heading('Animal identification details')).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Identification details', exact: true })
+    ).toBeVisible()
 
     await page.getByRole('button', { name: 'Save and finish' }).click()
-    await expect(heading('Additional animal details')).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Additional details', exact: true })
+    ).toBeVisible()
 
     await page.getByRole('radio', { name: 'Slaughter' }).check()
     await save()

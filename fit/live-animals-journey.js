@@ -258,7 +258,7 @@ export const completeAnswerSections = async (page) => {
   const [unit] = line.animalIdentifiers
   await task('Animal identification details')
   await expect(
-    page.getByRole('heading', { name: 'Animal identification details' })
+    page.getByRole('heading', { name: 'Identification details', exact: true })
   ).toBeVisible()
   await page.getByLabel('Ear tag number').fill(unit.animalIdentifierEarTag)
   await page.getByRole('button', { name: 'Save and finish' }).click()
@@ -270,7 +270,7 @@ export const completeAnswerSections = async (page) => {
   await page.getByRole('radio', { name: 'Breeding' }).check()
   await save()
   await expect(
-    page.getByRole('heading', { name: 'Additional animal details' })
+    page.getByRole('heading', { name: 'Additional details', exact: true })
   ).toBeVisible()
   await page.getByRole('radio', { name: 'Slaughter' }).check()
   await page

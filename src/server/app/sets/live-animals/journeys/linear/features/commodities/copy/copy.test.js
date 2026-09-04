@@ -41,6 +41,13 @@ describe('#copy', () => {
     )
   })
 
+  // Design release 1 names this page 'Identification details'; the section
+  // caption above it now carries the orientation the old name carried.
+  it('Should name the identification page without the word animal', () => {
+    expect(copy.identification.title).toBe('Identification details')
+    expect(copyCy.identification.title).toBe('Manylion adnabod')
+  })
+
   // A user reading only the first sentence could conclude that no health
   // certificate means no notification. The second sentence closes that off.
   it('Should tell the user that a consignment without a health certificate must still be notified', () => {

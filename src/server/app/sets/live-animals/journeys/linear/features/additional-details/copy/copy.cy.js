@@ -1,6 +1,6 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 export const copy = {
-  title: 'Manylion ychwanegol am yr anifeiliaid',
+  title: 'Manylion ychwanegol',
   certified: {
     legend: "Ar gyfer beth mae'r anifeiliaid wedi'u hardystio?",
     hint: 'Fe welwch hyn ar y dystysgrif iechyd.'
