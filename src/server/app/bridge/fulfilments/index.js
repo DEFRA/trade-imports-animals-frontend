@@ -9,7 +9,7 @@
  *
  *   `fulfilments` flat map keyed by the obligation UUID (`obligation.id`,
  *                 NOT `name` — verified against `evaluator.js`'s
- *                 `dropUnknownFulfilments`/`buildObligationsById`). Grouped
+ *                 `dropUnrecognisedFulfilments`/`buildObligationsById`). Grouped
  *                 values are records-maps `{ fulfilmentIndex: value }` whose
  *                 fulfilmentIndex is a `.`-delimited composite of one segment
  *                 per enclosing group (`line0` at depth 1, `line0.unit1` at

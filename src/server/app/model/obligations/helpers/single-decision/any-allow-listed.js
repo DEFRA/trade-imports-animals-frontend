@@ -1,11 +1,9 @@
 import { readGate } from '../../helper-internals.js'
 
-/**
- * anyAllowListed — scalar aggregation. True if ANY of the gate
- * obligation's stored values is in the allowlist. Returns whenTrue on
- * match, whenFalse on miss. Handles per-line-gate → notification-level-
- * gated shape (e.g. CPH: "any commodity line has a CPH-required code").
- */
+// Reduces a per-instance gate to one decision — true if ANY stored value
+// on the gate obligation is in the allowlist. Handles the "cph reads ANY
+// commodityCode across commodity lines" shape (per-line gate feeding a
+// notification-level gated obligation).
 export const anyAllowListed = (gateObligation, values, whenTrue, whenFalse) => {
   const currentValues = () => (typeof values === 'function' ? values() : values)
   const fn = (fulfilments) => {
@@ -15,8 +13,8 @@ export const anyAllowListed = (gateObligation, values, whenTrue, whenFalse) => {
       : whenFalse
   }
   fn.metadata = {
-    type: 'anyAllowListed',
-    obligation: gateObligation.id,
+    gateType: 'anyAllowListed',
+    obligationId: gateObligation.id,
     whenTrue,
     whenFalse
   }

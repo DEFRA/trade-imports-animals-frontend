@@ -12,7 +12,7 @@ import {
   present,
   presentGate
 } from './index.js'
-import { isRecordMap, readGate } from '../helper-internals.js'
+import { isNonArrayObject, readGate } from '../helper-internals.js'
 
 // Synthetic obligations — plain data. No evaluator, no manifest, no
 // obligationsById construction. This is the entire test surface.
@@ -36,16 +36,16 @@ describe('allowListed', () => {
     expect(decision).toEqual({ inScope: false })
   })
 
-  it('Should return records at gate level when no projection group', () => {
+  it('Should return fulfilmentIndexes at gate level when no gatedParentGroup', () => {
     const gate = allowListed(codeObl, ['a', 'b'])
     const decision = gate(
       { [codeObl.id]: { k1: 'a', k2: 'x', k3: 'b' } },
       new Map()
     )
-    expect(decision).toEqual({ inScope: true, records: ['k1', 'k3'] })
+    expect(decision).toEqual({ inScope: true, fulfilmentIndexes: ['k1', 'k3'] })
   })
 
-  it('Should project to group instance-paths when a projection group is supplied', () => {
+  it('Should project to group instance-paths when a gatedParentGroup is supplied', () => {
     const gate = allowListed(codeObl, ['a'], groupObl)
     const fulfilments = { [codeObl.id]: { line1: 'a', line2: 'x' } }
     const ids = new Map([
@@ -54,25 +54,25 @@ describe('allowListed', () => {
     const decision = gate(fulfilments, ids)
     expect(decision).toEqual({
       inScope: true,
-      records: [line1Unit1Path, line1Unit2Path]
+      fulfilmentIndexes: [line1Unit1Path, line1Unit2Path]
     })
   })
 
-  it('Should return empty records when the group has no instances yet', () => {
+  it('Should return an empty fulfilmentIndexes list when the group has no instances yet', () => {
     const gate = allowListed(codeObl, ['a'], groupObl)
     const fulfilments = { [codeObl.id]: { line1: 'a' } }
     const ids = new Map()
     const decision = gate(fulfilments, ids)
-    expect(decision).toEqual({ inScope: false, records: [] })
+    expect(decision).toEqual({ inScope: false })
   })
 
   it('Should expose metadata for introspection', () => {
     const gate = allowListed(codeObl, ['a', 'b'], groupObl)
     expect(gate.metadata).toEqual({
-      type: 'allowListed',
-      obligation: codeObl.id,
+      gateType: 'allowListed',
+      obligationId: codeObl.id,
       values: ['a', 'b'],
-      projection: groupObl.id,
+      gatedParentGroupId: groupObl.id,
       reasons: null
     })
   })
@@ -83,7 +83,7 @@ describe('allowListed', () => {
     const decision = gate({ [codeObl.id]: { k1: 'a' } }, new Map())
     expect(decision).toEqual({
       inScope: true,
-      records: ['k1'],
+      fulfilmentIndexes: ['k1'],
       reasons: [reason]
     })
   })
@@ -122,16 +122,16 @@ describe('notInUnionOf', () => {
     expect(decision).toEqual({ inScope: false })
   })
 
-  it('Should return records at gate level for keys whose value is NOT in the union', () => {
+  it('Should return fulfilmentIndexes at gate level for keys whose value is NOT in the union', () => {
     const gate = notInUnionOf(codeObl, [firstAllowlist, secondAllowlist])
     const decision = gate(
       { [codeObl.id]: { k1: 'a', k2: 'z', k3: 'c', k4: 'q' } },
       new Map()
     )
-    expect(decision).toEqual({ inScope: true, records: ['k2', 'k4'] })
+    expect(decision).toEqual({ inScope: true, fulfilmentIndexes: ['k2', 'k4'] })
   })
 
-  it('Should project to group instance-paths when a projection group is supplied', () => {
+  it('Should project to group instance-paths when a gatedParentGroup is supplied', () => {
     const gate = notInUnionOf(
       codeObl,
       [firstAllowlist, secondAllowlist],
@@ -144,7 +144,7 @@ describe('notInUnionOf', () => {
     const decision = gate(fulfilments, ids)
     expect(decision).toEqual({
       inScope: true,
-      records: [line1Unit1Path, line1Unit2Path]
+      fulfilmentIndexes: [line1Unit1Path, line1Unit2Path]
     })
   })
 
@@ -160,10 +160,10 @@ describe('notInUnionOf', () => {
       null
     )
     expect(gate.metadata).toEqual({
-      type: 'notInUnionOf',
-      obligation: codeObl.id,
+      gateType: 'notInUnionOf',
+      obligationId: codeObl.id,
       values: ['a', 'b', 'c', 'd'],
-      projection: groupObl.id,
+      gatedParentGroupId: groupObl.id,
       reasons: null
     })
   })
@@ -189,7 +189,7 @@ describe('notInUnionOf', () => {
     const decision = gate({ [codeObl.id]: { k1: 'z' } }, new Map())
     expect(decision).toEqual({
       inScope: true,
-      records: ['k1'],
+      fulfilmentIndexes: ['k1'],
       reasons: [reason]
     })
   })
@@ -214,7 +214,7 @@ describe('notInUnionOf', () => {
     const gate = notInUnionOf(codeObl, ['a', 'b'])
     expect(gate.metadata.values).toEqual(['a', 'b'])
     const decision = gate({ [codeObl.id]: { k1: 'z' } }, new Map())
-    expect(decision).toEqual({ inScope: true, records: ['k1'] })
+    expect(decision).toEqual({ inScope: true, fulfilmentIndexes: ['k1'] })
   })
 })
 
@@ -239,7 +239,7 @@ describe('anyAllowListed', () => {
     expect(gate({})).toEqual(whenFalse)
   })
 
-  it('Should handle scalar stored values (not just maps)', () => {
+  it('Should handle unindexed stored values (not just maps)', () => {
     const gate = anyAllowListed(codeObl, ['yes'], whenTrue, whenFalse)
     expect(gate({ [codeObl.id]: 'yes' })).toEqual(whenTrue)
     expect(gate({ [codeObl.id]: 'no' })).toEqual(whenFalse)
@@ -282,7 +282,7 @@ describe('branchedGate', () => {
 })
 
 // ---------------------------------------------------------------------------
-// matches (scalar)
+// matches (unindexed)
 // ---------------------------------------------------------------------------
 
 describe('matches', () => {
@@ -307,7 +307,7 @@ describe('matches', () => {
 // ---------------------------------------------------------------------------
 
 describe('present', () => {
-  it('Should return true when a scalar value is stored', () => {
+  it('Should return true when an unindexed value is stored', () => {
     expect(present(boolObl)({ [boolObl.id]: 'anything' })).toBe(true)
     expect(present(boolObl)({ [boolObl.id]: 0 })).toBe(true)
     expect(present(boolObl)({ [boolObl.id]: false })).toBe(true)
@@ -365,7 +365,7 @@ describe('obligationMetadata', () => {
     expect(meta.dependsOn).toBeUndefined()
   })
 
-  it('Should merge the applyTo helper sidecar (gate shape) with dependsOn', () => {
+  it('Should merge the gate helper sidecar (gate shape) with dependsOn', () => {
     // The helper-attached `.metadata` (allowListed/branchedGate/etc.)
     // still surfaces — dependsOn is additive, not a replacement.
     const gateObl = { id: 'gate-id' }
@@ -376,8 +376,8 @@ describe('obligationMetadata', () => {
       dependsOn: [gateObl.id]
     }
     const meta = obligationMetadata(obligation)
-    expect(meta.type).toBe('allowListed')
-    expect(meta.obligation).toBe(gateObl.id)
+    expect(meta.gateType).toBe('allowListed')
+    expect(meta.obligationId).toBe(gateObl.id)
     expect(meta.dependsOn).toEqual([gateObl.id])
   })
 
@@ -402,11 +402,11 @@ describe('obligationMetadata', () => {
 // duplication: the metadata IS the definition, the closure body is
 // auto-generated.
 //
-// Frame semantics: all four helpers use the SAME-FRAME scalar-read
+// Frame semantics: all four helpers use the SAME-FRAME direct-read
 // pattern used by `matches` / `anyAllowListed` / `branchedGate` — no
-// `filterAndProject`, no projection group, no `fulfilmentIndexesByObligationId`
+// `runGate`, no gatedParentGroup, no `fulfilmentIndexesByObligationId`
 // touch. The migration sites (regionCode etc.) are all notification-
-// level scalar gates; if a future depth-N call site emerges,
+// level unindexed gates; if a future depth-N call site emerges,
 // `allowListed`'s projection pattern is the escape hatch.
 // ---------------------------------------------------------------------------
 
@@ -455,8 +455,8 @@ describe('equalsGate', () => {
   it('Should expose metadata with obligationId + value + branches', () => {
     const gate = equalsGate(boolObl, 'yes', whenTrue, whenFalse)
     expect(gate.metadata).toEqual({
-      type: 'equalsGate',
-      obligation: boolObl.id,
+      gateType: 'equalsGate',
+      obligationId: boolObl.id,
       value: 'yes',
       whenTrue,
       whenFalse
@@ -468,13 +468,13 @@ describe('presentGate', () => {
   const whenTrue = { inScope: true, status: 'mandatory' }
   const whenFalse = { inScope: true, status: 'optional' }
 
-  it('Should return whenTrue when the gate has any scalar value', () => {
+  it('Should return whenTrue when the gate has any unindexed value', () => {
     const gate = presentGate(boolObl, whenTrue, whenFalse)
     expect(gate({ [boolObl.id]: 'anything' })).toEqual(whenTrue)
   })
 
   it('Should return whenTrue for truthy-but-falsy values (0, false, "")', () => {
-    // Matches `present`'s semantics: any non-null/non-undefined scalar
+    // Matches `present`'s semantics: any non-null/non-undefined value
     // counts as "answered". Empty-string is a stored answer (the user
     // saved the page blank), which regionCode's status-swap needs to
     // treat as present.
@@ -504,8 +504,8 @@ describe('presentGate', () => {
   it('Should expose metadata with obligationId + branches (no value)', () => {
     const gate = presentGate(boolObl, whenTrue, whenFalse)
     expect(gate.metadata).toEqual({
-      type: 'presentGate',
-      obligation: boolObl.id,
+      gateType: 'presentGate',
+      obligationId: boolObl.id,
       whenTrue,
       whenFalse
     })
@@ -536,8 +536,8 @@ describe('includesGate', () => {
   it('Should expose metadata with obligationId + values + branches', () => {
     const gate = includesGate(boolObl, LAND_MODES, whenTrue, whenFalse)
     expect(gate.metadata).toEqual({
-      type: 'includesGate',
-      obligation: boolObl.id,
+      gateType: 'includesGate',
+      obligationId: boolObl.id,
       values: LAND_MODES,
       whenTrue,
       whenFalse
@@ -574,7 +574,7 @@ describe('alwaysInScope', () => {
   it('Should expose metadata with status (+ optional reasons)', () => {
     const gate = alwaysInScope('mandatory')
     expect(gate.metadata).toEqual({
-      type: 'alwaysInScope',
+      gateType: 'alwaysInScope',
       status: 'mandatory',
       reasons: null
     })
@@ -582,59 +582,49 @@ describe('alwaysInScope', () => {
       { code: 'x', explanation: 'y' }
     ])
     expect(gateWithReasons.metadata).toEqual({
-      type: 'alwaysInScope',
+      gateType: 'alwaysInScope',
       status: 'mandatory',
       reasons: [{ code: 'x', explanation: 'y' }]
     })
   })
 })
 
-// ---------------------------------------------------------------------------
-// Shared internals — isRecordMap / readGate.
-//
-// Extracted from the "stored → candidates" normalization that used to be
-// inlined verbatim in `anyAllowListed` and (in an entries-shaped variant)
-// `filterAndProject`. Pinned here so migrating helpers to use the shared
-// surface is a behaviour-preserving refactor. See helpers.js file-level
-// docstring for the taxonomy that motivates the shape.
-// ---------------------------------------------------------------------------
-
-describe('isRecordMap', () => {
-  it('Should return true for a plain records-keyed object', () => {
-    expect(isRecordMap({ line1: 'a', line2: 'b' })).toBe(true)
+describe('isNonArrayObject', () => {
+  it('Should return true for a plain indexedFulfilments object', () => {
+    expect(isNonArrayObject({ line1: 'a', line2: 'b' })).toBe(true)
   })
 
-  it('Should return true for an empty object (still a records-map shape)', () => {
-    // Empty-map is treated as a records-map at the shape level — callers
-    // that care about "has any records" use `present` semantics on top.
-    expect(isRecordMap({})).toBe(true)
+  it('Should return true for an empty object (still an indexedFulfilments shape)', () => {
+    // Empty-map is treated as indexedFulfilments at the shape level — callers
+    // that care about "has any fulfilmentIndexes" use `present` semantics on top.
+    expect(isNonArrayObject({})).toBe(true)
   })
 
-  it('Should return false for scalar strings', () => {
-    expect(isRecordMap('a')).toBe(false)
-    expect(isRecordMap('')).toBe(false)
+  it('Should return false for primitive strings', () => {
+    expect(isNonArrayObject('a')).toBe(false)
+    expect(isNonArrayObject('')).toBe(false)
   })
 
-  it('Should return false for other scalar primitives', () => {
-    expect(isRecordMap(0)).toBe(false)
-    expect(isRecordMap(false)).toBe(false)
-    expect(isRecordMap(true)).toBe(false)
+  it('Should return false for other primitives', () => {
+    expect(isNonArrayObject(0)).toBe(false)
+    expect(isNonArrayObject(false)).toBe(false)
+    expect(isNonArrayObject(true)).toBe(false)
   })
 
   it('Should return false for undefined', () => {
-    expect(isRecordMap(undefined)).toBe(false)
+    expect(isNonArrayObject(undefined)).toBe(false)
   })
 
   it('Should return false for null', () => {
     // null is `typeof 'object'` in JS — the check must exclude it.
-    expect(isRecordMap(null)).toBe(false)
+    expect(isNonArrayObject(null)).toBe(false)
   })
 
   it('Should return false for arrays', () => {
-    // Arrays are `typeof 'object'` but semantically not records-maps.
+    // Arrays are `typeof 'object'` but semantically not indexedFulfilments.
     // The original inline check used `!Array.isArray(stored)` — pin it.
-    expect(isRecordMap([])).toBe(false)
-    expect(isRecordMap(['a', 'b'])).toBe(false)
+    expect(isNonArrayObject([])).toBe(false)
+    expect(isNonArrayObject(['a', 'b'])).toBe(false)
   })
 })
 
@@ -653,14 +643,14 @@ describe('readGate', () => {
     })
   })
 
-  it('Should wrap a scalar string in a single-element candidates array', () => {
+  it('Should wrap a primitive string in a single-element candidates array', () => {
     expect(readGate({ [gateId]: 'yes' }, gateId)).toEqual({
       present: true,
       candidates: ['yes']
     })
   })
 
-  it('Should wrap other scalar primitives (0, false, empty string) as present', () => {
+  it('Should wrap other primitives (0, false, empty string) as present', () => {
     // Matches the original inline `stored !== undefined ? [stored] : []`
     // — falsy-but-defined values ARE present as candidates.
     expect(readGate({ [gateId]: 0 }, gateId)).toEqual({
@@ -677,25 +667,25 @@ describe('readGate', () => {
     })
   })
 
-  it('Should treat null as a scalar (present with a single null candidate)', () => {
+  it('Should treat null as a primitive (present with a single null candidate)', () => {
     // The original inline check was `stored && typeof stored === 'object'
     // && !Array.isArray(stored)` — null fails the truthiness gate and
-    // falls to the scalar branch as `!== undefined`. Pin that.
+    // falls to the primitive branch as `!== undefined`. Pin that.
     expect(readGate({ [gateId]: null }, gateId)).toEqual({
       present: true,
       candidates: [null]
     })
   })
 
-  it('Should project a records-map to its values as candidates', () => {
+  it('Should project an indexedFulfilments map to its values as candidates', () => {
     expect(readGate({ [gateId]: { line1: 'a', line2: 'b' } }, gateId)).toEqual({
       present: true,
       candidates: ['a', 'b']
     })
   })
 
-  it('Should return present:true with empty candidates for an empty records-map', () => {
-    // Empty object is a records-map shape but has no values; `some()`
+  it('Should return present:true with empty candidates for empty indexedFulfilments', () => {
+    // Empty object is an indexedFulfilments shape but has no values; `some()`
     // over an empty candidates array still returns false — matches the
     // original inline behaviour for `{}` (Object.values({}) is []).
     expect(readGate({ [gateId]: {} }, gateId)).toEqual({
@@ -704,15 +694,15 @@ describe('readGate', () => {
     })
   })
 
-  it('Should treat arrays as scalars (single-element candidates wrapping the array)', () => {
-    // The original inline check falls arrays through to the scalar branch
+  it('Should treat arrays as primitives (single-element candidates wrapping the array)', () => {
+    // The original inline check falls arrays through to the primitive branch
     // because of `!Array.isArray(stored)`. Preserve that verbatim — a
     // helper caller receiving an array-shaped stored value gets ONE
     // candidate (the array itself), not the array spread.
-    const stored = ['a', 'b']
-    expect(readGate({ [gateId]: stored }, gateId)).toEqual({
+    const fulfilment = ['a', 'b']
+    expect(readGate({ [gateId]: fulfilment }, gateId)).toEqual({
       present: true,
-      candidates: [stored]
+      candidates: [fulfilment]
     })
   })
 })

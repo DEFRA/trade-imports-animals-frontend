@@ -1,17 +1,19 @@
-// Transitive descendants (excluding self).
+// Transitive descendants (excluding self). DFS via a LIFO worklist.
 export function buildDescendants(obligations, obligationChildren) {
   const obligationDescendants = new Map()
   for (const obligation of obligations) {
-    const acc = []
-    const stack = [...(obligationChildren.get(obligation.id) ?? [])]
-    while (stack.length) {
-      const child = stack.pop()
-      acc.push(child)
+    const descendants = []
+    const pendingDescendants = [
+      ...(obligationChildren.get(obligation.id) ?? [])
+    ]
+    while (pendingDescendants.length) {
+      const child = pendingDescendants.pop()
+      descendants.push(child)
       for (const grandchild of obligationChildren.get(child.id) ?? []) {
-        stack.push(grandchild)
+        pendingDescendants.push(grandchild)
       }
     }
-    obligationDescendants.set(obligation.id, acc)
+    obligationDescendants.set(obligation.id, descendants)
   }
   return obligationDescendants
 }

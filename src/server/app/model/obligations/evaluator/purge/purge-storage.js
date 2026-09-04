@@ -1,22 +1,19 @@
-import { isKeyedRecord } from '../internal/is-keyed-record.js'
+import { isNonArrayObject } from '../../helper-internals.js'
 
-// applyTo returns the leaf fulfilmentIndexes it currently authorises; keep
-// only stored records whose fulfilmentIndex is in that set. `{ keep: false }`
-// when nothing survives the filter.
-const purgedDerivedLeaf = (
+// Keep only entries whose fulfilmentIndex is in the applyTo-authorised
+// set; `{ keep: false }` when nothing survives.
+const purgedApplyToDerived = (
   obligation,
   fulfilment,
-  obligationApplicabilityDecisions
+  applicabilityDecisions
 ) => {
-  const fulfilmentIndexes = new Set(
-    obligationApplicabilityDecisions.get(obligation.id)?.records ?? []
+  const authorisedIndexes = new Set(
+    applicabilityDecisions.get(obligation.id)?.fulfilmentIndexes ?? []
   )
   const filtered = {}
-  for (const [fulfilmentIndex, recordValue] of Object.entries(
-    fulfilment ?? {}
-  )) {
-    if (fulfilmentIndexes.has(fulfilmentIndex)) {
-      filtered[fulfilmentIndex] = recordValue
+  for (const [fulfilmentIndex, value] of Object.entries(fulfilment ?? {})) {
+    if (authorisedIndexes.has(fulfilmentIndex)) {
+      filtered[fulfilmentIndex] = value
     }
   }
   return Object.keys(filtered).length > 0
@@ -24,8 +21,8 @@ const purgedDerivedLeaf = (
     : { keep: false }
 }
 
-// field record or user-leaf with a keyed map — drop only if it's empty.
-const purgedKeyedRecord = (fulfilment) =>
+// Drop an indexedFulfilments map only if it's empty.
+const purgedIndexedFulfilments = (fulfilment) =>
   Object.keys(fulfilment).length > 0
     ? { keep: true, value: fulfilment }
     : { keep: false }
@@ -33,36 +30,29 @@ const purgedKeyedRecord = (fulfilment) =>
 const purgedFulfilmentFor = (
   obligation,
   fulfilment,
-  category,
-  obligationApplicabilityDecisions
+  obligationCategory,
+  applicabilityDecisions
 ) => {
-  if (category === 'derived-leaf') {
-    return purgedDerivedLeaf(
-      obligation,
-      fulfilment,
-      obligationApplicabilityDecisions
-    )
+  if (obligationCategory === 'apply-to-derived') {
+    return purgedApplyToDerived(obligation, fulfilment, applicabilityDecisions)
   }
-  if (category === 'single') {
+  if (obligationCategory === 'unindexed') {
     return { keep: true, value: fulfilment }
   }
-  if (isKeyedRecord(fulfilment)) {
-    return purgedKeyedRecord(fulfilment)
+  if (isNonArrayObject(fulfilment)) {
+    return purgedIndexedFulfilments(fulfilment)
   }
   return { keep: true, value: fulfilment }
 }
 
-// Step 5: purge storage.
-//   - Out-of-scope obligation → drop entire entry.
-//   - Derived indexed leaf → keep only records whose fulfilmentIndex is in
-//     the `applyTo`-returned set.
-//   - Otherwise → keep as-is (ancestors already in scope, own storage
-//     is self-valid for field records and user-driven indexed leaves).
+// Out-of-scope obligation → drop entire entry. apply-to-derived leaf →
+// keep only entries the gate still authorises. Others (parent-derived,
+// user-input-derived) → keep as-is; own storage is self-valid.
 export function purgeStorage(recognisedFulfilments, context) {
   const {
     obligationsById,
     obligationsByCategory,
-    obligationApplicabilityDecisions,
+    applicabilityDecisions,
     isInScope
   } = context
 
@@ -75,12 +65,12 @@ export function purgeStorage(recognisedFulfilments, context) {
       continue
     }
 
-    const category = obligationsByCategory.get(obligation.id)
+    const obligationCategory = obligationsByCategory.get(obligation.id)
     const purged = purgedFulfilmentFor(
       obligation,
       fulfilment,
-      category,
-      obligationApplicabilityDecisions
+      obligationCategory,
+      applicabilityDecisions
     )
     if (purged.keep) {
       amendedFulfilments[obligationId] = purged.value

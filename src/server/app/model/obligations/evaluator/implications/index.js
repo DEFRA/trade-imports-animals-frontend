@@ -1,86 +1,87 @@
-import { isKeyedRecord } from '../internal/is-keyed-record.js'
+import { isNonArrayObject } from '../../helper-internals.js'
 
-const singleImplication = (own) => own ?? { inScope: true }
+// The five implication constructors below correspond to the five categories
+// emitted by `classifyObligations`.
 
-const groupImplication = (obligation, own, fulfilmentIndexesByObligationId) => {
-  const fulfilmentIndexes = [
-    ...(fulfilmentIndexesByObligationId.get(obligation.id) ?? [])
-  ]
-  const impl = { inScope: true }
-  if (own?.reasons) {
-    impl.reasons = own.reasons
+const unindexedImplication = (obligation, applicabilityDecision) => {
+  if (applicabilityDecision) {
+    return applicabilityDecision
   }
-  impl.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
-    fulfilmentIndex
-  }))
-  return impl
-}
-
-// Two shapes land here:
-//   1. Group-scoped field record (`within` set) — enumerate the parent
-//      group's instance-paths and stamp each one with `obligation.status`.
-//   2. Top-level scalar with intrinsic status (no `within`) — the natural
-//      data-only shape for an always-in-scope obligation. There is no
-//      parent group to enumerate, so return the status directly,
-//      mirroring what `applyTo: () => ({ inScope: true, status })` would
-//      return.
-const fieldImplication = (obligation, fulfilmentIndexesByObligationId) => {
-  if (!obligation.within) {
+  if (obligation.status !== undefined) {
     return { inScope: true, status: obligation.status }
   }
-  const parentGroupFulfilmentIndexes = [
+  return { inScope: true }
+}
+
+const groupImplication = (
+  obligation,
+  applicabilityDecision,
+  fulfilmentIndexesByObligationId
+) => {
+  const implication = {
+    inScope: true,
+    fulfilmentIndexes: [
+      ...(fulfilmentIndexesByObligationId.get(obligation.id) ?? [])
+    ]
+  }
+  if (applicabilityDecision?.reasons) {
+    implication.reasons = applicabilityDecision.reasons
+  }
+  return implication
+}
+
+// One fulfilmentIndex at every parent-group instance.
+const parentDerivedImplication = (
+  obligation,
+  fulfilmentIndexesByObligationId
+) => ({
+  inScope: true,
+  status: obligation.status,
+  fulfilmentIndexes: [
     ...(fulfilmentIndexesByObligationId.get(obligation.within.id) ?? [])
   ]
-  return {
+})
+
+// FulfilmentIndexes come from applyTo — the authoritative "what CAN exist".
+// Storage tracks which of those have VALUES.
+const applyToDerivedImplication = (obligation, applicabilityDecision) => {
+  const implication = {
     inScope: true,
-    records: parentGroupFulfilmentIndexes.map((fulfilmentIndex) => ({
-      fulfilmentIndex,
-      status: obligation.status
-    }))
+    status: obligation.status,
+    fulfilmentIndexes: applicabilityDecision?.fulfilmentIndexes ?? []
   }
+  if (applicabilityDecision?.reasons) {
+    implication.reasons = applicabilityDecision.reasons
+  }
+  return implication
 }
 
-// Id set comes from applyTo — the authoritative "what records CAN exist".
-// Storage tracks which ones have VALUES.
-const derivedLeafImplication = (obligation, own) => {
-  const impl = { inScope: true }
-  if (own?.reasons) {
-    impl.reasons = own.reasons
-  }
-  const fulfilmentIndexes = own?.records ?? []
-  impl.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
-    fulfilmentIndex,
-    status: obligation.status
-  }))
-  return impl
-}
-
-// Record presence via own storage keys.
-const userLeafImplication = (obligation, own, amendedFulfilments) => {
-  const impl = { inScope: true }
-  if (own?.reasons) {
-    impl.reasons = own.reasons
-  }
+// FulfilmentIndexes come directly from the user's inputs — the keys of
+// the obligation's indexedFulfilments map.
+const userInputDerivedImplication = (
+  obligation,
+  applicabilityDecision,
+  amendedFulfilments
+) => {
   const fulfilment = amendedFulfilments[obligation.id]
-  const fulfilmentIndexes = isKeyedRecord(fulfilment)
-    ? Object.keys(fulfilment)
-    : []
-  impl.records = fulfilmentIndexes.map((fulfilmentIndex) => ({
-    fulfilmentIndex,
-    status: obligation.status
-  }))
-  return impl
+  const implication = {
+    inScope: true,
+    status: obligation.status,
+    fulfilmentIndexes: isNonArrayObject(fulfilment)
+      ? Object.keys(fulfilment)
+      : []
+  }
+  if (applicabilityDecision?.reasons) {
+    implication.reasons = applicabilityDecision.reasons
+  }
+  return implication
 }
 
-// Build one obligation's implication given the evaluate-call context.
-//
-// Returns `{ inScope: false }` if the obligation is out of scope.
-// Otherwise returns the category-specific implication.
 export function buildImplication(obligation, context) {
   const {
     isInScope,
     obligationsByCategory,
-    obligationApplicabilityDecisions,
+    applicabilityDecisions,
     fulfilmentIndexesByObligationId,
     amendedFulfilments
   } = context
@@ -89,20 +90,31 @@ export function buildImplication(obligation, context) {
     return { inScope: false }
   }
 
-  const category = obligationsByCategory.get(obligation.id)
-  const own = obligationApplicabilityDecisions.get(obligation.id)
+  const obligationCategory = obligationsByCategory.get(obligation.id)
+  const applicabilityDecision = applicabilityDecisions.get(obligation.id)
 
-  switch (category) {
-    case 'single':
-      return singleImplication(own)
+  switch (obligationCategory) {
+    case 'unindexed':
+      return unindexedImplication(obligation, applicabilityDecision)
     case 'group':
-      return groupImplication(obligation, own, fulfilmentIndexesByObligationId)
-    case 'field':
-      return fieldImplication(obligation, fulfilmentIndexesByObligationId)
-    case 'derived-leaf':
-      return derivedLeafImplication(obligation, own)
-    case 'user-leaf':
-      return userLeafImplication(obligation, own, amendedFulfilments)
+      return groupImplication(
+        obligation,
+        applicabilityDecision,
+        fulfilmentIndexesByObligationId
+      )
+    case 'parent-derived':
+      return parentDerivedImplication(
+        obligation,
+        fulfilmentIndexesByObligationId
+      )
+    case 'apply-to-derived':
+      return applyToDerivedImplication(obligation, applicabilityDecision)
+    case 'user-input-derived':
+      return userInputDerivedImplication(
+        obligation,
+        applicabilityDecision,
+        amendedFulfilments
+      )
     default:
       return { inScope: true }
   }

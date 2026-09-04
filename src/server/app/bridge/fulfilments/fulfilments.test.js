@@ -137,7 +137,7 @@ describe('#fulfilments — storage shape translation', () => {
     }
     const fulfilments = assembleFulfilments(answers)
     // The count field is coerced to a NUMBER on the way in — the
-    // model's recordCountEquals invariant compares it strictly against
+    // model's fulfilmentIndexCountEquals invariant compares it strictly against
     // a record tally — and stays a number on the way out.
     expect(fulfilments[numberOfAnimals.id]).toEqual({
       line0: 10,
@@ -421,14 +421,12 @@ describe('#fulfilments — evaluator smoke — a happy path produces real implic
   })
 
   it('Should fire per-line and per-unit gates (packages + earTag in scope)', () => {
-    expect(
-      result.obligations[numberOfPackages.id].records.map(
-        (r) => r.fulfilmentIndex
-      )
-    ).toEqual(['line0'])
-    expect(
-      result.obligations[earTag.id].records.map((r) => r.fulfilmentIndex)
-    ).toContain('line0.unit0')
+    expect(result.obligations[numberOfPackages.id].fulfilmentIndexes).toEqual([
+      'line0'
+    ])
+    expect(result.obligations[earTag.id].fulfilmentIndexes).toContain(
+      'line0.unit0'
+    )
   })
 
   it('Should fire value-gated notification obligations (internalMarket, land transport)', () => {
@@ -446,12 +444,12 @@ describe('#fulfilments — evaluator smoke — a happy path produces real implic
   })
 
   it('Should infer group instances from the composite keys', () => {
-    expect(
-      result.obligations[commodityLine.id].records.map((r) => r.fulfilmentIndex)
-    ).toEqual(['line0'])
-    expect(
-      result.obligations[unitRecord.id].records.map((r) => r.fulfilmentIndex)
-    ).toEqual(['line0.unit0'])
+    expect(result.obligations[commodityLine.id].fulfilmentIndexes).toEqual([
+      'line0'
+    ])
+    expect(result.obligations[unitRecord.id].fulfilmentIndexes).toEqual([
+      'line0.unit0'
+    ])
   })
 
   it('Should make the conditional region gate mandatory when required', () => {

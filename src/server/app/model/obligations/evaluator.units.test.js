@@ -5,11 +5,11 @@ import {
   classifyObligations,
   buildAncestorGroups,
   buildDescendants,
-  dropUnknownFulfilments,
+  dropUnrecognisedFulfilments,
   runApplicabilityDecisions,
   makeInScopeCheck,
   purgeStorage,
-  enumerateGroupFulfilmentIndexes,
+  enumerateGroupFulfilmentIndexesPostPurge,
   buildImplications,
   buildImplication
 } from './evaluator.js'
@@ -21,7 +21,9 @@ import {
 // ('g1' = group 1, 'f1' = field 1, etc.). Real obligations use UUIDs.
 
 const emptyManifestGivesEmptyMapTitle = 'empty manifest → empty Map'
-const derivedLeafCategory = 'derived-leaf'
+const applyToDerivedCategory = 'apply-to-derived'
+const parentDerivedCategory = 'parent-derived'
+const userInputDerivedCategory = 'user-input-derived'
 
 // ---------------------------------------------------------------------------
 // Construction-phase builders
@@ -40,7 +42,7 @@ describe('buildObligationsById', () => {
     expect(result.get('o1')).toBe(obligation)
   })
 
-  it('multiple obligations → each id maps to its own record', () => {
+  it('multiple obligations → each id maps to its own obligation', () => {
     const first = { id: 'a', name: 'a' }
     const second = { id: 'b', name: 'b' }
     const result = buildObligationsById([first, second])
@@ -81,16 +83,16 @@ describe('buildObligationChildren', () => {
 describe('classifyObligations', () => {
   const noChildren = new Map()
 
-  it('single-cardinality (no indexedBy / status / children) → "single"', () => {
+  it('top-level obligation with applyTo, no status → "unindexed"', () => {
     const obligation = { id: 'o', applyTo: () => ({}) }
     const result = classifyObligations([obligation], noChildren)
-    expect(result.get('o')).toBe('single')
+    expect(result.get('o')).toBe('unindexed')
   })
 
-  it('field record (status, no applyTo, no indexedBy) → "field"', () => {
+  it('group-scoped leaf (status, within, no applyTo, no indexedBy) → "parent-derived"', () => {
     const obligation = { id: 'o', status: 'mandatory', within: { id: 'g' } }
     const result = classifyObligations([obligation], noChildren)
-    expect(result.get('o')).toBe('field')
+    expect(result.get('o')).toBe(parentDerivedCategory)
   })
 
   it('group (has children, no status/indexedBy) → "group"', () => {
@@ -101,33 +103,40 @@ describe('classifyObligations', () => {
     expect(result.get('g')).toBe('group')
   })
 
-  it('derived indexed leaf → "derived-leaf"', () => {
+  it('derived indexed leaf → "apply-to-derived"', () => {
     const obligation = {
       id: 'o',
       indexedBy: { source: 'derived', controllingObligation: {} },
       applyTo: () => ({})
     }
     const result = classifyObligations([obligation], noChildren)
-    expect(result.get('o')).toBe(derivedLeafCategory)
+    expect(result.get('o')).toBe(applyToDerivedCategory)
   })
 
-  it('user indexed leaf → "user-leaf"', () => {
+  it('user indexed leaf → "user-input-derived"', () => {
     const obligation = { id: 'o', indexedBy: { source: 'user' } }
     const result = classifyObligations([obligation], noChildren)
-    expect(result.get('o')).toBe('user-leaf')
+    expect(result.get('o')).toBe(userInputDerivedCategory)
   })
 
-  it('non-derived indexedBy source falls through to "user-leaf" (seeded case)', () => {
+  it('non-derived indexedBy source falls through to "user-input-derived" (seeded case)', () => {
     const obligation = { id: 'o', indexedBy: { source: 'seeded' } }
     const result = classifyObligations([obligation], noChildren)
-    expect(result.get('o')).toBe('user-leaf')
+    expect(result.get('o')).toBe(userInputDerivedCategory)
   })
 
-  it('single-cardinality with applyTo is preferred over field even if status present', () => {
-    // Any obligation with applyTo bypasses the "field" branch.
+  it('top-level obligation with applyTo AND status → "unindexed", not "parent-derived"', () => {
+    // applyTo bypasses the parent-derived branch; without a within it lands
+    // in "unindexed".
     const obligation = { id: 'o', status: 'mandatory', applyTo: () => ({}) }
     const result = classifyObligations([obligation], noChildren)
-    expect(result.get('o')).not.toBe('field')
+    expect(result.get('o')).toBe('unindexed')
+  })
+
+  it('top-level obligation with intrinsic status only (no applyTo, no within) → "unindexed" (folded from "field")', () => {
+    const obligation = { id: 'o', status: 'mandatory' }
+    const result = classifyObligations([obligation], noChildren)
+    expect(result.get('o')).toBe('unindexed')
   })
 })
 
@@ -199,23 +208,23 @@ describe('buildDescendants', () => {
 // Evaluate-phase helpers
 // ---------------------------------------------------------------------------
 
-describe('dropUnknownFulfilments', () => {
+describe('dropUnrecognisedFulfilments', () => {
   const obligationsById = new Map([
     ['a', {}],
     ['b', {}]
   ])
 
   it('empty input → empty output', () => {
-    expect(dropUnknownFulfilments({}, obligationsById)).toEqual({})
+    expect(dropUnrecognisedFulfilments({}, obligationsById)).toEqual({})
   })
 
   it('keeps known ids', () => {
-    const result = dropUnknownFulfilments({ a: 1, b: 2 }, obligationsById)
+    const result = dropUnrecognisedFulfilments({ a: 1, b: 2 }, obligationsById)
     expect(result).toEqual({ a: 1, b: 2 })
   })
 
   it('drops unknown ids', () => {
-    const result = dropUnknownFulfilments(
+    const result = dropUnrecognisedFulfilments(
       { a: 1, unknown: 99 },
       obligationsById
     )
@@ -225,7 +234,10 @@ describe('dropUnknownFulfilments', () => {
   it('preserves values verbatim (including objects and arrays)', () => {
     const obj = { nested: 'value' }
     const arr = [1, 2, 3]
-    const result = dropUnknownFulfilments({ a: obj, b: arr }, obligationsById)
+    const result = dropUnrecognisedFulfilments(
+      { a: obj, b: arr },
+      obligationsById
+    )
     expect(result.a).toBe(obj)
     expect(result.b).toBe(arr)
   })
@@ -347,7 +359,7 @@ describe('purgeStorage', () => {
       {
         obligationsById: new Map(),
         obligationsByCategory: new Map(),
-        obligationApplicabilityDecisions: new Map(),
+        applicabilityDecisions: new Map(),
         isInScope: alwaysInScope
       }
     )
@@ -360,22 +372,22 @@ describe('purgeStorage', () => {
       { o: 'value' },
       {
         obligationsById: new Map([['o', obligation]]),
-        obligationsByCategory: new Map([['o', 'single']]),
-        obligationApplicabilityDecisions: new Map(),
+        obligationsByCategory: new Map([['o', 'unindexed']]),
+        applicabilityDecisions: new Map(),
         isInScope: alwaysOutOfScope
       }
     )
     expect(result).toEqual({})
   })
 
-  it('single-cardinality in scope → value kept verbatim', () => {
+  it('unindexed in scope → value kept verbatim', () => {
     const obligation = { id: 'o' }
     const result = purgeStorage(
       { o: 'Alex' },
       {
         obligationsById: new Map([['o', obligation]]),
-        obligationsByCategory: new Map([['o', 'single']]),
-        obligationApplicabilityDecisions: new Map(),
+        obligationsByCategory: new Map([['o', 'unindexed']]),
+        applicabilityDecisions: new Map(),
         isInScope: alwaysInScope
       }
     )
@@ -388,9 +400,9 @@ describe('purgeStorage', () => {
       { o: { turbo: '800', alloys: '200', stale: '999' } },
       {
         obligationsById: new Map([['o', obligation]]),
-        obligationsByCategory: new Map([['o', derivedLeafCategory]]),
-        obligationApplicabilityDecisions: new Map([
-          ['o', { records: ['turbo', 'alloys'] }]
+        obligationsByCategory: new Map([['o', applyToDerivedCategory]]),
+        applicabilityDecisions: new Map([
+          ['o', { fulfilmentIndexes: ['turbo', 'alloys'] }]
         ]),
         isInScope: alwaysInScope
       }
@@ -404,42 +416,42 @@ describe('purgeStorage', () => {
       { o: { turbo: '800' } },
       {
         obligationsById: new Map([['o', obligation]]),
-        obligationsByCategory: new Map([['o', derivedLeafCategory]]),
-        obligationApplicabilityDecisions: new Map([['o', { records: [] }]]),
+        obligationsByCategory: new Map([['o', applyToDerivedCategory]]),
+        applicabilityDecisions: new Map([['o', { fulfilmentIndexes: [] }]]),
         isInScope: alwaysInScope
       }
     )
     expect(result.o).toBeUndefined()
   })
 
-  it('field record → map kept as-is', () => {
+  it('parent-derived leaf → map kept as-is', () => {
     const obligation = { id: 'o', within: { id: 'g' }, status: 'mandatory' }
-    const stored = { c1: 'accident', c2: 'theft' }
+    const fulfilment = { c1: 'accident', c2: 'theft' }
     const result = purgeStorage(
-      { o: stored },
+      { o: fulfilment },
       {
         obligationsById: new Map([['o', obligation]]),
-        obligationsByCategory: new Map([['o', 'field']]),
-        obligationApplicabilityDecisions: new Map(),
+        obligationsByCategory: new Map([['o', parentDerivedCategory]]),
+        applicabilityDecisions: new Map(),
         isInScope: alwaysInScope
       }
     )
-    expect(result.o).toEqual(stored)
+    expect(result.o).toEqual(fulfilment)
   })
 
-  it('user leaf → map kept as-is', () => {
+  it('user-input-derived leaf → map kept as-is', () => {
     const obligation = { id: 'o', indexedBy: { source: 'user' } }
-    const stored = { 'd1.a1': { line1: '10 High St' } }
+    const fulfilment = { 'd1.a1': { line1: '10 High St' } }
     const result = purgeStorage(
-      { o: stored },
+      { o: fulfilment },
       {
         obligationsById: new Map([['o', obligation]]),
-        obligationsByCategory: new Map([['o', 'user-leaf']]),
-        obligationApplicabilityDecisions: new Map(),
+        obligationsByCategory: new Map([['o', userInputDerivedCategory]]),
+        applicabilityDecisions: new Map(),
         isInScope: alwaysInScope
       }
     )
-    expect(result.o).toEqual(stored)
+    expect(result.o).toEqual(fulfilment)
   })
 
   it('empty object storage → entry omitted entirely', () => {
@@ -448,8 +460,8 @@ describe('purgeStorage', () => {
       { o: {} },
       {
         obligationsById: new Map([['o', obligation]]),
-        obligationsByCategory: new Map([['o', 'user-leaf']]),
-        obligationApplicabilityDecisions: new Map(),
+        obligationsByCategory: new Map([['o', userInputDerivedCategory]]),
+        applicabilityDecisions: new Map(),
         isInScope: alwaysInScope
       }
     )
@@ -457,11 +469,11 @@ describe('purgeStorage', () => {
   })
 })
 
-describe('enumerateGroupFulfilmentIndexes', () => {
+describe('enumerateGroupFulfilmentIndexesPostPurge', () => {
   const alwaysInScope = () => true
 
   it(emptyManifestGivesEmptyMapTitle, () => {
-    const result = enumerateGroupFulfilmentIndexes([], {
+    const result = enumerateGroupFulfilmentIndexesPostPurge([], {
       obligationsByCategory: new Map(),
       obligationAncestorGroups: new Map(),
       obligationDescendants: new Map(),
@@ -473,8 +485,8 @@ describe('enumerateGroupFulfilmentIndexes', () => {
 
   it('skips non-group obligations', () => {
     const obligation = { id: 'o' }
-    const result = enumerateGroupFulfilmentIndexes([obligation], {
-      obligationsByCategory: new Map([['o', 'single']]),
+    const result = enumerateGroupFulfilmentIndexesPostPurge([obligation], {
+      obligationsByCategory: new Map([['o', 'unindexed']]),
       obligationAncestorGroups: new Map([['o', []]]),
       obligationDescendants: new Map([['o', []]]),
       isInScope: alwaysInScope,
@@ -485,7 +497,7 @@ describe('enumerateGroupFulfilmentIndexes', () => {
 
   it('out-of-scope group → empty Set', () => {
     const group = { id: 'g' }
-    const result = enumerateGroupFulfilmentIndexes([group], {
+    const result = enumerateGroupFulfilmentIndexesPostPurge([group], {
       obligationsByCategory: new Map([['g', 'group']]),
       obligationAncestorGroups: new Map([['g', []]]),
       obligationDescendants: new Map([['g', []]]),
@@ -498,10 +510,10 @@ describe('enumerateGroupFulfilmentIndexes', () => {
   it('top-level group (prefixLen=1) with one descendant field → single instance id', () => {
     const group = { id: 'g' }
     const field = { id: 'f', within: group }
-    const result = enumerateGroupFulfilmentIndexes([group, field], {
+    const result = enumerateGroupFulfilmentIndexesPostPurge([group, field], {
       obligationsByCategory: new Map([
         ['g', 'group'],
-        ['f', 'field']
+        ['f', parentDerivedCategory]
       ]),
       obligationAncestorGroups: new Map([
         ['g', []],
@@ -526,31 +538,34 @@ describe('enumerateGroupFulfilmentIndexes', () => {
       within: claim,
       indexedBy: { source: 'user' }
     }
-    const result = enumerateGroupFulfilmentIndexes([driver, claim, leaf], {
-      obligationsByCategory: new Map([
-        ['driver', 'group'],
-        ['claim', 'group'],
-        ['leaf', 'user-leaf']
-      ]),
-      obligationAncestorGroups: new Map([
-        ['driver', []],
-        ['claim', [driver]],
-        ['leaf', [driver, claim]]
-      ]),
-      obligationDescendants: new Map([
-        ['driver', [claim, leaf]],
-        ['claim', [leaf]],
-        ['leaf', []]
-      ]),
-      isInScope: alwaysInScope,
-      amendedFulfilments: {
-        leaf: {
-          'd1.c1.p1': {},
-          'd1.c1.p2': {},
-          'd1.c2.p3': {}
+    const result = enumerateGroupFulfilmentIndexesPostPurge(
+      [driver, claim, leaf],
+      {
+        obligationsByCategory: new Map([
+          ['driver', 'group'],
+          ['claim', 'group'],
+          ['leaf', userInputDerivedCategory]
+        ]),
+        obligationAncestorGroups: new Map([
+          ['driver', []],
+          ['claim', [driver]],
+          ['leaf', [driver, claim]]
+        ]),
+        obligationDescendants: new Map([
+          ['driver', [claim, leaf]],
+          ['claim', [leaf]],
+          ['leaf', []]
+        ]),
+        isInScope: alwaysInScope,
+        amendedFulfilments: {
+          leaf: {
+            'd1.c1.p1': {},
+            'd1.c1.p2': {},
+            'd1.c2.p3': {}
+          }
         }
       }
-    })
+    )
     // driver at depth 1 → {d1}
     expect(result.get('driver')).toEqual(new Set(['d1']))
     // driverClaim at depth 2 → {d1.c1, d1.c2}
@@ -560,10 +575,10 @@ describe('enumerateGroupFulfilmentIndexes', () => {
   it('descendant with non-object storage → skipped', () => {
     const group = { id: 'g' }
     const field = { id: 'f', within: group }
-    const result = enumerateGroupFulfilmentIndexes([group, field], {
+    const result = enumerateGroupFulfilmentIndexesPostPurge([group, field], {
       obligationsByCategory: new Map([
         ['g', 'group'],
-        ['f', 'field']
+        ['f', parentDerivedCategory]
       ]),
       obligationAncestorGroups: new Map([
         ['g', []],
@@ -585,7 +600,7 @@ describe('buildImplications', () => {
     const result = buildImplications([], {
       isInScope: () => true,
       obligationsByCategory: new Map(),
-      obligationApplicabilityDecisions: new Map(),
+      applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
@@ -601,10 +616,10 @@ describe('buildImplications', () => {
     const result = buildImplications([first, second], {
       isInScope: (obligation) => obligation.id === 'a',
       obligationsByCategory: new Map([
-        ['a', 'single'],
-        ['b', 'single']
+        ['a', 'unindexed'],
+        ['b', 'unindexed']
       ]),
-      obligationApplicabilityDecisions: new Map([
+      applicabilityDecisions: new Map([
         ['a', { inScope: true, status: 'mandatory' }],
         ['b', { inScope: false }]
       ]),
@@ -623,45 +638,49 @@ describe('buildImplication', () => {
     const obligation = { id: 'o' }
     const result = buildImplication(obligation, {
       isInScope: () => false,
-      obligationsByCategory: new Map([['o', 'single']]),
-      obligationApplicabilityDecisions: new Map(),
+      obligationsByCategory: new Map([['o', 'unindexed']]),
+      applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
     expect(result).toEqual({ inScope: false })
   })
 
-  it('single-cardinality → returns applyTo output verbatim', () => {
+  it('unindexed → returns applyTo output verbatim', () => {
     const obligation = { id: 'o' }
-    const own = { inScope: true, status: 'optional', reasons: [{ code: 'x' }] }
+    const applicabilityDecision = {
+      inScope: true,
+      status: 'optional',
+      reasons: [{ code: 'x' }]
+    }
     const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
-      obligationsByCategory: new Map([['o', 'single']]),
-      obligationApplicabilityDecisions: new Map([['o', own]]),
+      obligationsByCategory: new Map([['o', 'unindexed']]),
+      applicabilityDecisions: new Map([['o', applicabilityDecision]]),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
-    expect(result).toBe(own)
+    expect(result).toBe(applicabilityDecision)
   })
 
-  it('single-cardinality with no applyTo entry → { inScope: true }', () => {
+  it('unindexed with no applyTo entry → { inScope: true }', () => {
     const obligation = { id: 'o' }
     const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
-      obligationsByCategory: new Map([['o', 'single']]),
-      obligationApplicabilityDecisions: new Map(),
+      obligationsByCategory: new Map([['o', 'unindexed']]),
+      applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
     expect(result).toEqual({ inScope: true })
   })
 
-  it('group with reasons and instance ids → reasons + records list', () => {
+  it('group with reasons and instance ids → reasons + fulfilmentIndexes list', () => {
     const group = { id: 'g' }
     const result = buildImplication(group, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['g', 'group']]),
-      obligationApplicabilityDecisions: new Map([
+      applicabilityDecisions: new Map([
         ['g', { inScope: true, reasons: [{ code: 'r' }] }]
       ]),
       fulfilmentIndexesByObligationId: new Map([['g', new Set(['c1', 'c2'])]]),
@@ -669,8 +688,8 @@ describe('buildImplication', () => {
     })
     expect(result).toEqual({
       inScope: true,
-      reasons: [{ code: 'r' }],
-      records: [{ fulfilmentIndex: 'c1' }, { fulfilmentIndex: 'c2' }]
+      fulfilmentIndexes: ['c1', 'c2'],
+      reasons: [{ code: 'r' }]
     })
   })
 
@@ -679,61 +698,60 @@ describe('buildImplication', () => {
     const result = buildImplication(group, {
       isInScope: inScopeAlways,
       obligationsByCategory: new Map([['g', 'group']]),
-      obligationApplicabilityDecisions: new Map(),
+      applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map([['g', new Set(['c1'])]]),
       amendedFulfilments: {}
     })
     expect(result.reasons).toBeUndefined()
   })
 
-  it('field record → parent group instances with own status; no reasons', () => {
+  it('parent-derived → parent group instances with own status; no reasons', () => {
     const parent = { id: 'g' }
     const field = { id: 'f', within: parent, status: 'mandatory' }
     const result = buildImplication(field, {
       isInScope: inScopeAlways,
-      obligationsByCategory: new Map([['f', 'field']]),
-      obligationApplicabilityDecisions: new Map(),
+      obligationsByCategory: new Map([['f', parentDerivedCategory]]),
+      applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map([['g', new Set(['c1', 'c2'])]]),
       amendedFulfilments: {}
     })
     expect(result).toEqual({
       inScope: true,
-      records: [
-        { fulfilmentIndex: 'c1', status: 'mandatory' },
-        { fulfilmentIndex: 'c2', status: 'mandatory' }
-      ]
+      status: 'mandatory',
+      fulfilmentIndexes: ['c1', 'c2']
     })
     expect(result.reasons).toBeUndefined()
   })
 
-  // A top-level field-category obligation (no `within`) is a scalar
-  // with an intrinsic status — e.g. `{ id, name, status: 'optional' }`.
-  // The field branch must guard the `obligation.within.id` deref, since
-  // an unconditional deref throws TypeError on this data-only shape.
-  it('field record with no `within` (top-level scalar) → { inScope, status } like an always-in-scope applyTo', () => {
+  // A top-level obligation with intrinsic status (no `within`, no `applyTo`)
+  // — e.g. `{ id, name, status: 'optional' }` — classifies as 'unindexed'
+  // after Phase 1.4's fold (was 'field' pre-fold). `unindexedImplication`
+  // falls through to the obligation's intrinsic status when no
+  // applicabilityDecision is present.
+  it('unindexed with intrinsic status (no applyTo, no within) → { inScope, status } from obligation.status', () => {
     const obligation = { id: 'o', status: 'optional' }
     const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
-      obligationsByCategory: new Map([['o', 'field']]),
-      obligationApplicabilityDecisions: new Map(),
+      obligationsByCategory: new Map([['o', 'unindexed']]),
+      applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
     expect(result).toEqual({ inScope: true, status: 'optional' })
   })
 
-  it('derived-leaf → applyTo records × own status', () => {
+  it('apply-to-derived → applyTo fulfilmentIndexes × own status', () => {
     const obligation = { id: 'o', status: 'mandatory' }
     const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
-      obligationsByCategory: new Map([['o', derivedLeafCategory]]),
-      obligationApplicabilityDecisions: new Map([
+      obligationsByCategory: new Map([['o', applyToDerivedCategory]]),
+      applicabilityDecisions: new Map([
         [
           'o',
           {
             inScope: true,
             reasons: [{ code: 'r' }],
-            records: ['turbo', 'alloys']
+            fulfilmentIndexes: ['turbo', 'alloys']
           }
         ]
       ]),
@@ -742,38 +760,34 @@ describe('buildImplication', () => {
     })
     expect(result).toEqual({
       inScope: true,
-      reasons: [{ code: 'r' }],
-      records: [
-        { fulfilmentIndex: 'turbo', status: 'mandatory' },
-        { fulfilmentIndex: 'alloys', status: 'mandatory' }
-      ]
+      status: 'mandatory',
+      fulfilmentIndexes: ['turbo', 'alloys'],
+      reasons: [{ code: 'r' }]
     })
   })
 
-  it('user-leaf → own storage keys × own status', () => {
+  it('user-input-derived → own storage keys × own status', () => {
     const obligation = { id: 'o', status: 'mandatory' }
     const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
-      obligationsByCategory: new Map([['o', 'user-leaf']]),
-      obligationApplicabilityDecisions: new Map(),
+      obligationsByCategory: new Map([['o', userInputDerivedCategory]]),
+      applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: { o: { 'd1.a1': {}, 'd1.a2': {} } }
     })
-    expect(result.records).toEqual([
-      { fulfilmentIndex: 'd1.a1', status: 'mandatory' },
-      { fulfilmentIndex: 'd1.a2', status: 'mandatory' }
-    ])
+    expect(result.status).toBe('mandatory')
+    expect(result.fulfilmentIndexes).toEqual(['d1.a1', 'd1.a2'])
   })
 
-  it('user-leaf with no storage → empty records array', () => {
+  it('user-input-derived with no storage → empty fulfilmentIndexes array', () => {
     const obligation = { id: 'o', status: 'mandatory' }
     const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
-      obligationsByCategory: new Map([['o', 'user-leaf']]),
-      obligationApplicabilityDecisions: new Map(),
+      obligationsByCategory: new Map([['o', userInputDerivedCategory]]),
+      applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
     })
-    expect(result.records).toEqual([])
+    expect(result.fulfilmentIndexes).toEqual([])
   })
 })

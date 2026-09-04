@@ -1,11 +1,8 @@
-// Step 4: build a memoised effective-inScope predicate.
-//
-// `isInScope(obligation) → boolean` ANDs the obligation's own applyTo
-// inScope with every ancestor group's inScope. Results are cached
-// inside the closure across calls; the caller can optionally warm
-// the cache by invoking it for every obligation up front.
+// Build a memoised `isInScope(obligation) → boolean` — ANDs the obligation's
+// own applyTo inScope with every ancestor group's inScope. Cached across
+// calls via a closure-local Map.
 export function makeInScopeCheck(
-  obligationApplicabilityDecisions,
+  applicabilityDecisions,
   obligationAncestorGroups
 ) {
   const inScopeCache = new Map()
@@ -13,8 +10,8 @@ export function makeInScopeCheck(
     if (inScopeCache.has(obligation.id)) {
       return inScopeCache.get(obligation.id)
     }
-    const own = obligationApplicabilityDecisions.get(obligation.id)
-    if (own?.inScope === false) {
+    const applicabilityDecision = applicabilityDecisions.get(obligation.id)
+    if (applicabilityDecision?.inScope === false) {
       inScopeCache.set(obligation.id, false)
       return false
     }

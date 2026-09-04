@@ -1,0 +1,40 @@
+import { INDEX_DELIMITER } from '../../index-delimiter.js'
+import { isNonArrayObject } from '../../helper-internals.js'
+const joinFulfilmentIndex = (segments) => segments.join(INDEX_DELIMITER)
+const splitFulfilmentIndex = (fulfilmentIndex) =>
+  fulfilmentIndex.split(INDEX_DELIMITER)
+
+// The fulfilmentIndex prefixes one descendant contributes to its
+// group's fulfilmentIndex set — take the first `prefixLength` segments
+// of each stored fulfilmentIndex.
+const indexPrefixesFromDescendant = (fulfilment, prefixLength) => {
+  if (!isNonArrayObject(fulfilment)) {
+    return []
+  }
+  return Object.keys(fulfilment)
+    .map((fulfilmentIndex) => splitFulfilmentIndex(fulfilmentIndex))
+    .filter((segments) => segments.length >= prefixLength)
+    .map((segments) => joinFulfilmentIndex(segments.slice(0, prefixLength)))
+}
+
+// Union the fulfilmentIndex prefixes contributed by every descendant.
+// `fulfilmentFor` resolves a descendant to its stored fulfilment (raw
+// pre-purge or amended post-purge, depending on the caller).
+export const deriveGroupFulfilmentIndexes = (
+  obligation,
+  obligationAncestorGroups,
+  obligationDescendants,
+  fulfilmentFor
+) => {
+  const prefixLength = obligationAncestorGroups.get(obligation.id).length + 1
+  const fulfilmentIndexes = new Set()
+  for (const descendant of obligationDescendants.get(obligation.id)) {
+    for (const fulfilmentIndex of indexPrefixesFromDescendant(
+      fulfilmentFor(descendant),
+      prefixLength
+    )) {
+      fulfilmentIndexes.add(fulfilmentIndex)
+    }
+  }
+  return fulfilmentIndexes
+}

@@ -240,8 +240,8 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
       obligationId: codeObl.id,
       value: 'a'
     })
-    // projection defaults to null for depth-1 allowListed.
-    expect(witness.projection).toBeNull()
+    // gatedParentGroupId defaults to null for depth-1 allowListed.
+    expect(witness.gatedParentGroupId).toBeNull()
     // Fidelity — inject the witness and run the actual closure.
     const decision = obl.applyTo(
       { [witness.obligationId]: { k1: witness.value } },
@@ -250,7 +250,7 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
     expect(decision.inScope).toBe(true)
   })
 
-  it('Should carry the projection id when allowListed has a projection group', () => {
+  it('Should carry the gatedParentGroupId when allowListed has a gatedParentGroup', () => {
     const groupObl = { id: 'group-obl' }
     const gate = allowListed(codeObl, ['a'], groupObl)
     const witness = synthesiseWitness({ id: 'gated', applyTo: gate })
@@ -258,7 +258,7 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
       kind: WITNESS_KIND.WITNESS,
       obligationId: codeObl.id,
       value: 'a',
-      projection: groupObl.id
+      gatedParentGroupId: groupObl.id
     })
   })
 
@@ -378,13 +378,13 @@ describe('#synthesiseWitness — per-helper metadata inversion', () => {
     expect(decision.inScope).toBe(true)
   })
 
-  it('Should carry the projection id when notInUnionOf has a projection group', () => {
+  it('Should carry the gatedParentGroupId when notInUnionOf has a gatedParentGroup', () => {
     const groupObl = { id: 'group-obl' }
     const gate = notInUnionOf(codeObl, [['a']], groupObl)
     const witness = synthesiseWitness({ id: 'gated', applyTo: gate })
     expect(witness.kind).toBe(WITNESS_KIND.WITNESS)
     expect(witness.obligationId).toBe(codeObl.id)
-    expect(witness.projection).toBe(groupObl.id)
+    expect(witness.gatedParentGroupId).toBe(groupObl.id)
     expect(['a']).not.toContain(witness.value)
   })
 
@@ -517,7 +517,7 @@ describe('#synthesiseWitness — real manifest fidelity', () => {
     const witness = synthesiseWitness(regionCode)
     expect(witness.kind).toBe(WITNESS_KIND.TRIVIAL)
     const decision = regionCode.applyTo(
-      { [regionCode.applyTo.metadata.obligation]: 'yes' },
+      { [regionCode.applyTo.metadata.obligationId]: 'yes' },
       new Map()
     )
     expect(decision.inScope).toBe(true)
@@ -722,8 +722,8 @@ describe('migration fidelity — 9 sites round-trip', () => {
   })
 
   // Meta-first invariant: every branchedGate→meta-first migrated site's
-  // applyTo.metadata.type is one of the three helpers.
-  it('every migrated site now uses a meta-first helper metadata.type', () => {
+  // applyTo.metadata.gateType is one of the three helpers.
+  it('every migrated site now uses a meta-first helper metadata.gateType', () => {
     const META_FIRST = new Set(['equalsGate', 'presentGate', 'includesGate'])
     const migratedNames = [
       'purposeInInternalMarket',
@@ -737,8 +737,8 @@ describe('migration fidelity — 9 sites round-trip', () => {
     ]
     const stragglers = migratedNames
       .map(findOblByName)
-      .filter((o) => !META_FIRST.has(o.applyTo?.metadata?.type))
-      .map((o) => `${o.name} → ${o.applyTo?.metadata?.type}`)
+      .filter((o) => !META_FIRST.has(o.applyTo?.metadata?.gateType))
+      .map((o) => `${o.name} → ${o.applyTo?.metadata?.gateType}`)
     expect(stragglers).toEqual([])
   })
 })

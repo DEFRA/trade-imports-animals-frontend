@@ -31,11 +31,11 @@ export const projectionsOf = (fulfilments) => {
   const collectionIndices = new Map()
 
   for (const obligation of obligations()) {
-    const stored = fulfilments?.[obligation.id]
-    if (isGroup(obligation) || stored === undefined || !obligation.within) {
+    const fulfilment = fulfilments?.[obligation.id]
+    if (isGroup(obligation) || fulfilment === undefined || !obligation.within) {
       continue
     }
-    const projection = recordProjectionOf(obligation, stored)
+    const projection = recordProjectionOf(obligation, fulfilment)
     projections.set(obligation, projection)
     addCollectionIndices(collectionIndices, projection)
   }

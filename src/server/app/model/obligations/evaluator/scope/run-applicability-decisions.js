@@ -1,6 +1,7 @@
-// Step 3: evaluate each obligation's applyTo (if it has one).
-// `applyTo(fulfilments, fulfilmentIndexesByObligationId)` — the second arg
-// is the pre-purge group-paths map from step 2.
+// Evaluate each obligation's applyTo (if it has one).
+// `applyTo(fulfilments, fulfilmentIndexesByObligationId)` — the second
+// arg is the group-fulfilmentIndex map produced by
+// `enumerateGroupPathsFromStorage`.
 //
 // Returns `Map<obligationId, applyTo return>`.
 export function runApplicabilityDecisions(
@@ -8,10 +9,10 @@ export function runApplicabilityDecisions(
   recognisedFulfilments,
   fulfilmentIndexesByObligationId = new Map()
 ) {
-  const obligationApplicabilityDecisions = new Map()
+  const applicabilityDecisions = new Map()
   for (const obligation of obligations) {
     if (obligation.applyTo) {
-      obligationApplicabilityDecisions.set(
+      applicabilityDecisions.set(
         obligation.id,
         obligation.applyTo(
           recognisedFulfilments,
@@ -20,5 +21,5 @@ export function runApplicabilityDecisions(
       )
     }
   }
-  return obligationApplicabilityDecisions
+  return applicabilityDecisions
 }
