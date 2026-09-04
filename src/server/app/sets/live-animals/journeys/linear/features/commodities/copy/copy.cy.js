@@ -103,7 +103,7 @@ export const copy = {
         hint: 'Er enghraifft, 900123456789012'
       },
       animalIdentifierPassport: {
-        label: 'Rhif pasbort',
+        label: 'Pasbort',
         hint: 'Er enghraifft, UK123456789'
       },
       animalIdentifierTattoo: {
@@ -111,7 +111,7 @@ export const copy = {
         hint: 'Er enghraifft, AB1234'
       },
       animalIdentifierEarTag: {
-        label: 'Rhif tag clust',
+        label: 'Tag clust',
         hint: 'Er enghraifft, UK123456789012'
       },
       horseName: { label: 'Enw’r ceffyl' }

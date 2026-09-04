@@ -95,7 +95,7 @@ export const copy = {
         hint: 'For example, 900123456789012'
       },
       animalIdentifierPassport: {
-        label: 'Passport number',
+        label: 'Passport',
         hint: 'For example, UK123456789'
       },
       animalIdentifierTattoo: {
@@ -103,7 +103,7 @@ export const copy = {
         hint: 'For example, AB1234'
       },
       animalIdentifierEarTag: {
-        label: 'Ear tag number',
+        label: 'Ear tag',
         hint: 'For example, UK123456789012'
       },
       horseName: { label: 'Horse name' }

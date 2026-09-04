@@ -126,7 +126,7 @@ test.describe('live-animals journey glue', () => {
     await expect(page).toHaveURL(
       /\/identification\?change=1(?:#identification-card-0)?$/
     )
-    await page.getByLabel('Ear tag number').fill('UK000000000002')
+    await page.getByLabel('Ear tag', { exact: true }).fill('UK000000000002')
     await page.getByRole('button', { name: 'Save and add another' }).click()
     await expect(page).toHaveURL(
       /\/identification\?change=1(?:#identification-card-0)?$/

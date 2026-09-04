@@ -260,7 +260,9 @@ export const completeAnswerSections = async (page) => {
   await expect(
     page.getByRole('heading', { name: 'Identification details', exact: true })
   ).toBeVisible()
-  await page.getByLabel('Ear tag number').fill(unit.animalIdentifierEarTag)
+  await page
+    .getByLabel('Ear tag', { exact: true })
+    .fill(unit.animalIdentifierEarTag)
   await page.getByRole('button', { name: 'Save and finish' }).click()
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
