@@ -100,6 +100,28 @@ describe('#copy', () => {
     )
   })
 
+  // Saying the address is required tells the trader nothing about why an
+  // invented one is a problem. The warning names the offence and the second
+  // bullet names APHA, who will turn up at whatever address was given.
+  it('Should warn that a false permanent address is fraud and say APHA can check it', () => {
+    expect(copy.identification.permanentAddress.warning).toBe(
+      'Providing a false address is an act of fraud'
+    )
+    expect(copy.identification.permanentAddress.definitionLeadIn).toBe(
+      'A permanent address is where an animal:'
+    )
+    expect(copy.identification.permanentAddress.definitionItems).toEqual([
+      'will permanently reside',
+      'can be checked by the Animal and Plant Health Agency (APHA)'
+    ])
+    expect(copy.identification.permanentAddress.question).toBe(
+      'Where will their permanent address be?'
+    )
+    expect(copyCy.identification.permanentAddress.definitionItems[1]).toContain(
+      'APHA'
+    )
+  })
+
   it('Should interpolate capReached', () => {
     expect(copy.identification.errors.capReached(2)).toBe(
       'You have already entered details for all 2 animals — remove a record before adding another'

@@ -289,6 +289,27 @@ test.describe('animal identification', () => {
     await expect(page.locator('select')).toHaveCount(0)
   })
 
+  // Asking for the address without saying why leaves an invented one looking
+  // harmless. The warning names the offence, and the second bullet names the
+  // body that will turn up at whatever address was given.
+  test('permanent address warns that a false address is fraud and says APHA can check it', async ({
+    page
+  }) => {
+    await openCatIdentification(page)
+
+    const guidance = copy.identification.permanentAddress
+    await expect(page.getByText(guidance.warning)).toBeVisible()
+    await expect(page.getByText(guidance.definitionLeadIn)).toBeVisible()
+    for (const item of guidance.definitionItems) {
+      await expect(
+        page.getByRole('listitem').filter({ hasText: item })
+      ).toBeVisible()
+    }
+    await expect(
+      page.getByRole('heading', { name: guidance.question })
+    ).toBeVisible()
+  })
+
   test('back link returns to the overview', async ({ page }) => {
     await openCatIdentification(page)
     await page.locator('.govuk-back-link').click()

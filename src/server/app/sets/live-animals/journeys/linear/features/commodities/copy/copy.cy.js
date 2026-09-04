@@ -130,8 +130,13 @@ export const copy = {
     removeRow: 'Tynnu',
     removeRowAria: (number) => `anifail ${number}`,
     permanentAddress: {
-      heading: 'Cyfeiriad parhaol',
-      required: 'Mae angen cyfeiriad parhaol ar gyfer yr anifail hwn.'
+      warning: 'Mae darparu cyfeiriad ffug yn weithred o dwyll',
+      definitionLeadIn: 'Cyfeiriad parhaol yw lle bydd anifail:',
+      definitionItems: [
+        'yn preswylio’n barhaol',
+        'yn gallu cael ei wirio gan yr Asiantaeth Iechyd Anifeiliaid a Phlanhigion (APHA)'
+      ],
+      question: 'Ble bydd eu cyfeiriad parhaol?'
     },
     saveAndAddAnother: 'Cadw ac ychwanegu un arall',
     saveAndFinish: 'Cadw a gorffen',
