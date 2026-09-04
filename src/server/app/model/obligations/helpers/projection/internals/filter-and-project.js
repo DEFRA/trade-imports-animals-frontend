@@ -3,24 +3,24 @@ import { INDEX_DELIMITER } from '../../../index-delimiter.js'
 
 // Two shape branches, dispatched below in `filterAndProject`:
 //   - indexedFulfilments — collect the fulfilmentIndexes whose stored values
-//     pass the predicate; optionally intersect with `projectionGroup`.
+//     pass the predicate; optionally intersect with `gatedParentGroup`.
 //   - unindexed — predicate either admits the value or it doesn't; a
-//     projectionGroup fans the yes verdict across every instance.
+//     gatedParentGroup fans the yes verdict across every instance.
 
 const decisionFromUnindexed = (
-  unindexedValue,
+  unindexedFulfilment,
   predicate,
-  projectionGroup,
+  gatedParentGroup,
   fulfilmentIndexesByObligationId
 ) => {
-  if (!predicate(unindexedValue)) {
+  if (!predicate(unindexedFulfilment)) {
     return { inScope: false }
   }
-  if (!projectionGroup) {
+  if (!gatedParentGroup) {
     return { inScope: true }
   }
   const projectionPaths = [
-    ...(fulfilmentIndexesByObligationId?.get(projectionGroup.id) ?? [])
+    ...(fulfilmentIndexesByObligationId?.get(gatedParentGroup.id) ?? [])
   ]
   return projectionPaths.length > 0
     ? { inScope: true, fulfilmentIndexes: projectionPaths }
@@ -30,7 +30,7 @@ const decisionFromUnindexed = (
 const decisionFromIndexed = (
   indexedFulfilment,
   predicate,
-  projectionGroup,
+  gatedParentGroup,
   fulfilmentIndexesByObligationId
 ) => {
   const admittedIndexes = Object.entries(indexedFulfilment)
@@ -39,11 +39,11 @@ const decisionFromIndexed = (
   if (admittedIndexes.length === 0) {
     return { inScope: false }
   }
-  if (!projectionGroup) {
+  if (!gatedParentGroup) {
     return { inScope: true, fulfilmentIndexes: admittedIndexes }
   }
   const projectionPaths =
-    fulfilmentIndexesByObligationId?.get(projectionGroup.id) ?? []
+    fulfilmentIndexesByObligationId?.get(gatedParentGroup.id) ?? []
   const fulfilmentIndexes = [...projectionPaths].filter((path) =>
     admittedIndexes.some(
       (idx) => path === idx || path.startsWith(`${idx}${INDEX_DELIMITER}`)
@@ -57,7 +57,7 @@ const decisionFromIndexed = (
 export const filterAndProject = (
   fulfilment,
   predicate,
-  projectionGroup,
+  gatedParentGroup,
   fulfilmentIndexesByObligationId
 ) => {
   // `{}` for "nothing stored" routes through the indexed branch, which
@@ -69,13 +69,13 @@ export const filterAndProject = (
     ? decisionFromIndexed(
         fulfilmentOrEmpty,
         predicate,
-        projectionGroup,
+        gatedParentGroup,
         fulfilmentIndexesByObligationId
       )
     : decisionFromUnindexed(
         fulfilmentOrEmpty,
         predicate,
-        projectionGroup,
+        gatedParentGroup,
         fulfilmentIndexesByObligationId
       )
 }

@@ -17,12 +17,12 @@ import { filterAndProject } from './filter-and-project.js'
  *   - `admits`           — the per-value predicate (in-list vs
  *                          not-in-union); `filterAndProject` applies it
  *                          per fulfilmentIndex. Differs per flavour.
- *   - `projectionGroup`  — optional. When set, `filterAndProject`
+ *   - `gatedParentGroup` — optional. When set, `filterAndProject`
  *                          projects the passing gate keys through this
  *                          group's fulfilmentIndexes (a depth-N > 1
  *                          gate). Its id is stamped on
- *                          `.metadata.projection`, or `null` when
- *                          absent.
+ *                          `.metadata.gatedParentGroupId`, or `null`
+ *                          when absent.
  *   - `reasons`          — optional array of `{ code, explanation }`
  *                          justifications. Merged into the decision
  *                          when in scope so downstream consumers can
@@ -35,14 +35,14 @@ export const buildProjectionGate = ({
   gateObligation,
   currentValues,
   admits,
-  projectionGroup,
+  gatedParentGroup,
   reasons
 }) => {
   const fn = (fulfilments, fulfilmentIndexesByObligationId) => {
     const decision = filterAndProject(
       fulfilments[gateObligation.id],
       admits,
-      projectionGroup,
+      gatedParentGroup,
       fulfilmentIndexesByObligationId
     )
     return decision.inScope && reasons ? { ...decision, reasons } : decision
@@ -50,7 +50,7 @@ export const buildProjectionGate = ({
   fn.metadata = {
     gateType,
     obligationId: gateObligation.id,
-    projection: projectionGroup?.id ?? null,
+    gatedParentGroupId: gatedParentGroup?.id ?? null,
     reasons: reasons ?? null
   }
   Object.defineProperty(fn.metadata, 'values', {

@@ -8,7 +8,7 @@
 // `alwaysInScope`) use the same-frame direct-read pattern: the closure
 // reads `fulfilments[gateObligation.id]` and returns a single
 // `{inScope, status, reasons?}` decision — no `filterAndProject`, no
-// projection group. Depth-N projection variants stay in `allowListed`
+// gatedParentGroup. Depth-N projection variants stay in `allowListed`
 // / `notInUnionOf`.
 
 /**

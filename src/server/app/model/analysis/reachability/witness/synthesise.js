@@ -9,7 +9,7 @@ import {
  * return a witness classification.
  *
  * @param {object} obligation — manifest entry with `.applyTo` (or not).
- * @returns {{ kind: 'witness', obligationId: string, value: any, projection?: string | null }
+ * @returns {{ kind: 'witness', obligationId: string, value: any, gatedParentGroupId?: string | null }
  *          | { kind: 'trivial' }
  *          | { kind: 'opaque', reason: string }}
  */
@@ -36,23 +36,23 @@ function synthesiseFromMetadata(meta) {
   switch (meta.gateType) {
     case 'allowListed':
       // metadata.values IS the allowlist — first entry is a witness.
-      // Include the projection group id (if any) so the fidelity check
+      // Include the gatedParentGroup id (if any) so the fidelity check
       // can seed a synthetic path in `fulfilmentIndexesByObligationId` for
       // depth-N > 1 gates (passport, tattoo, earTag, horseName,
       // permanentAddress — all project onto unitRecord). Without a
-      // projection path the closure's `filterAndProject` returns
+      // gatedParentGroup fulfilmentIndex the closure's `filterAndProject` returns
       // records: [] and `inScope: false`, which would be a false
       // negative — the gate WOULD open in the real evaluator, which
       // always seeds unitRecord paths from user-created units.
       return firstListedValueWitness(
         meta,
         'allowListed metadata has empty values array',
-        { withProjection: true }
+        { withGatedParentGroupId: true }
       )
 
     case 'anyAllowListed':
       // Same shape as allowListed — but anyAllowListed has no
-      // projection group (notification-level aggregate).
+      // gatedParentGroup (notification-level aggregate).
       return firstListedValueWitness(
         meta,
         'anyAllowListed metadata has empty values array'
@@ -74,7 +74,7 @@ function synthesiseFromMetadata(meta) {
       // Witness = any value NOT in that union. A stable sentinel that
       // is virtually guaranteed not to collide with real commodity
       // codes; defensively confirmed against the derived union.
-      // Include the projection group id (if any) for depth-N gates —
+      // Include the gatedParentGroup id (if any) for depth-N gates —
       // identificationDetails + description both project onto
       // unitRecord.
       return synthesiseNotInUnionOfWitness(meta)
@@ -221,13 +221,13 @@ function synthesiseNotInUnionOfWitness(meta) {
       kind: WITNESS_KIND.WITNESS,
       obligationId: meta.obligationId,
       value: fallback,
-      projection: meta.projection ?? null
+      gatedParentGroupId: meta.gatedParentGroupId ?? null
     }
   }
   return {
     kind: WITNESS_KIND.WITNESS,
     obligationId: meta.obligationId,
     value: SENTINEL,
-    projection: meta.projection ?? null
+    gatedParentGroupId: meta.gatedParentGroupId ?? null
   }
 }

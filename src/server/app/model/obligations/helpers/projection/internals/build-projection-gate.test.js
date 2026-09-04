@@ -9,32 +9,32 @@ const neverAdmits = () => false
 
 describe('#buildProjectionGate', () => {
   describe('metadata', () => {
-    it('stamps the type, obligation id, projection id, and reasons', () => {
-      const projectionGroup = { id: 'group' }
+    it('stamps the gateType, obligationId, gatedParentGroupId, and reasons', () => {
+      const gatedParentGroup = { id: 'group' }
       const reasons = ['because']
       const fn = buildProjectionGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => ['a'],
         admits: alwaysAdmits,
-        projectionGroup,
+        gatedParentGroup,
         reasons
       })
       expect(fn.metadata.gateType).toBe('testKind')
       expect(fn.metadata.obligationId).toBe('gate')
-      expect(fn.metadata.projection).toBe('group')
+      expect(fn.metadata.gatedParentGroupId).toBe('group')
       expect(fn.metadata.reasons).toEqual(['because'])
     })
 
-    it('sets projection to null when no projection group is supplied', () => {
+    it('sets gatedParentGroupId to null when no gatedParentGroup is supplied', () => {
       const fn = buildProjectionGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => [],
         admits: alwaysAdmits,
-        projectionGroup: null
+        gatedParentGroup: null
       })
-      expect(fn.metadata.projection).toBeNull()
+      expect(fn.metadata.gatedParentGroupId).toBeNull()
     })
 
     it('exposes values via a getter that calls currentValues each time', () => {
@@ -44,7 +44,7 @@ describe('#buildProjectionGate', () => {
         gateObligation,
         currentValues: () => [`call-${++call}`],
         admits: alwaysAdmits,
-        projectionGroup: null
+        gatedParentGroup: null
       })
       expect(fn.metadata.values).toEqual(['call-1'])
       expect(fn.metadata.values).toEqual(['call-2'])
@@ -56,7 +56,7 @@ describe('#buildProjectionGate', () => {
         gateObligation,
         currentValues: () => [],
         admits: alwaysAdmits,
-        projectionGroup: null
+        gatedParentGroup: null
       })
       expect(fn.metadata.reasons).toBeNull()
     })
@@ -69,7 +69,7 @@ describe('#buildProjectionGate', () => {
         gateObligation,
         currentValues: () => [],
         admits: neverAdmits,
-        projectionGroup: null
+        gatedParentGroup: null
       })
       expect(fn({ gate: { k1: 'x', k2: 'y' } }, undefined)).toEqual({
         inScope: false
@@ -82,7 +82,7 @@ describe('#buildProjectionGate', () => {
         gateObligation,
         currentValues: () => [],
         admits: (value) => value === 'x',
-        projectionGroup: null
+        gatedParentGroup: null
       })
       expect(fn({ gate: { k1: 'x', k2: 'y' } }, undefined)).toEqual({
         inScope: true,
@@ -96,7 +96,7 @@ describe('#buildProjectionGate', () => {
         gateObligation,
         currentValues: () => [],
         admits: alwaysAdmits,
-        projectionGroup: null,
+        gatedParentGroup: null,
         reasons: ['r1']
       })
       const decision = fn({ gate: { k1: 'x' } }, undefined)
@@ -113,7 +113,7 @@ describe('#buildProjectionGate', () => {
         gateObligation,
         currentValues: () => [],
         admits: neverAdmits,
-        projectionGroup: null,
+        gatedParentGroup: null,
         reasons: ['r1']
       })
       expect(fn({ gate: {} }, undefined)).toEqual({ inScope: false })
@@ -131,30 +131,30 @@ describe('#buildProjectionGate', () => {
         gateObligation,
         currentValues: () => [],
         admits: (value) => value === 'yes',
-        projectionGroup: null
+        gatedParentGroup: null
       })
       expect(fn({ gate: 'no' }, undefined)).toEqual({ inScope: false })
     })
 
-    it('returns { inScope: true } when the predicate admits the value and no projection group is set', () => {
+    it('returns { inScope: true } when the predicate admits the value and no gatedParentGroup is set', () => {
       const fn = buildProjectionGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => [],
         admits: (value) => value === 'yes',
-        projectionGroup: null
+        gatedParentGroup: null
       })
       expect(fn({ gate: 'yes' }, undefined)).toEqual({ inScope: true })
     })
 
-    it('fans the yes verdict out across every instance of a projection group when the value passes', () => {
-      const projectionGroup = { id: 'commodityLines' }
+    it('fans the yes verdict out across every instance of a gatedParentGroup when the value passes', () => {
+      const gatedParentGroup = { id: 'commodityLines' }
       const fn = buildProjectionGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => [],
         admits: (value) => value === 'yes',
-        projectionGroup
+        gatedParentGroup
       })
       const indexes = new Map([['commodityLines', ['line0', 'line1']]])
       expect(fn({ gate: 'yes' }, indexes)).toEqual({
@@ -163,14 +163,14 @@ describe('#buildProjectionGate', () => {
       })
     })
 
-    it('returns { inScope: false } when the value passes but the projection group has no instances', () => {
-      const projectionGroup = { id: 'commodityLines' }
+    it('returns { inScope: false } when the value passes but the gatedParentGroup has no instances', () => {
+      const gatedParentGroup = { id: 'commodityLines' }
       const fn = buildProjectionGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => [],
         admits: (value) => value === 'yes',
-        projectionGroup
+        gatedParentGroup
       })
       const indexes = new Map([['commodityLines', []]])
       expect(fn({ gate: 'yes' }, indexes)).toEqual({ inScope: false })
@@ -182,7 +182,7 @@ describe('#buildProjectionGate', () => {
         gateObligation,
         currentValues: () => [],
         admits: (value) => value !== undefined,
-        projectionGroup: null
+        gatedParentGroup: null
       })
       // No `gate` key in fulfilments — filterAndProject falls back to `{}`,
       // which is an indexed-shape branch. Passing an unindexed value via a

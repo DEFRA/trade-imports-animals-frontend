@@ -36,7 +36,7 @@ describe('allowListed', () => {
     expect(decision).toEqual({ inScope: false })
   })
 
-  it('Should return fulfilmentIndexes at gate level when no projection group', () => {
+  it('Should return fulfilmentIndexes at gate level when no gatedParentGroup', () => {
     const gate = allowListed(codeObl, ['a', 'b'])
     const decision = gate(
       { [codeObl.id]: { k1: 'a', k2: 'x', k3: 'b' } },
@@ -45,7 +45,7 @@ describe('allowListed', () => {
     expect(decision).toEqual({ inScope: true, fulfilmentIndexes: ['k1', 'k3'] })
   })
 
-  it('Should project to group instance-paths when a projection group is supplied', () => {
+  it('Should project to group instance-paths when a gatedParentGroup is supplied', () => {
     const gate = allowListed(codeObl, ['a'], groupObl)
     const fulfilments = { [codeObl.id]: { line1: 'a', line2: 'x' } }
     const ids = new Map([
@@ -72,7 +72,7 @@ describe('allowListed', () => {
       gateType: 'allowListed',
       obligationId: codeObl.id,
       values: ['a', 'b'],
-      projection: groupObl.id,
+      gatedParentGroupId: groupObl.id,
       reasons: null
     })
   })
@@ -131,7 +131,7 @@ describe('notInUnionOf', () => {
     expect(decision).toEqual({ inScope: true, fulfilmentIndexes: ['k2', 'k4'] })
   })
 
-  it('Should project to group instance-paths when a projection group is supplied', () => {
+  it('Should project to group instance-paths when a gatedParentGroup is supplied', () => {
     const gate = notInUnionOf(
       codeObl,
       [firstAllowlist, secondAllowlist],
@@ -163,7 +163,7 @@ describe('notInUnionOf', () => {
       gateType: 'notInUnionOf',
       obligationId: codeObl.id,
       values: ['a', 'b', 'c', 'd'],
-      projection: groupObl.id,
+      gatedParentGroupId: groupObl.id,
       reasons: null
     })
   })
@@ -404,7 +404,7 @@ describe('obligationMetadata', () => {
 //
 // Frame semantics: all four helpers use the SAME-FRAME direct-read
 // pattern used by `matches` / `anyAllowListed` / `branchedGate` — no
-// `filterAndProject`, no projection group, no `fulfilmentIndexesByObligationId`
+// `filterAndProject`, no gatedParentGroup, no `fulfilmentIndexesByObligationId`
 // touch. The migration sites (regionCode etc.) are all notification-
 // level unindexed gates; if a future depth-N call site emerges,
 // `allowListed`'s projection pattern is the escape hatch.

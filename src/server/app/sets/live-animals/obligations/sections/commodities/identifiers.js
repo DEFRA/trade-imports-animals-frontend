@@ -118,9 +118,9 @@ export const passport = {
   applyTo: allowListed(commodityCode, passportCommodities, unitRecord, [
     passportReason
   ])
-  // Note: `unitRecord` is a structural projection group (the closure's
+  // Note: `unitRecord` is a structural gatedParentGroup (the closure's
   // 3rd arg), not a value read. Only the gate obligation
-  // (`commodityCode.id`) is a dependency — projection groups are
+  // (`commodityCode.id`) is a dependency — gatedParentGroups are
   // structural and are not part of the reachability dependency graph.
 }
 

@@ -26,7 +26,7 @@
  *   - **Group-scoped gate** (gate has `within`, so
  *     `fulfilments[gate.id]` is an indexedFulfilments map): use
  *     `allowListed` / `notInUnionOf`. `null` projection when gate and
- *     gated are at the same identity level; a `projectionGroup` when
+ *     gated are at the same identity level; a `gatedParentGroup` when
  *     the gated obligation is deeper (the engine walks the projection
  *     group's fulfilmentIndexes for each matching parent).
  *

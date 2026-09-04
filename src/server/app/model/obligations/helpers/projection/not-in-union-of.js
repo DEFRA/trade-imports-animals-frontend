@@ -21,7 +21,7 @@ import { buildProjectionGate } from './internals/build-projection-gate.js'
 export const notInUnionOf = (
   gateObligation,
   unionOfAllowlists,
-  projectionGroup,
+  gatedParentGroup,
   reasons
 ) => {
   const currentValues = () =>
@@ -35,7 +35,7 @@ export const notInUnionOf = (
     gateObligation,
     currentValues,
     admits: (value) => !currentValues().includes(value),
-    projectionGroup,
+    gatedParentGroup,
     reasons
   })
 }
