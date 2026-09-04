@@ -66,16 +66,20 @@ export const filterAndProject = (
   projectionGroup,
   fulfilmentIndexesByObligationId
 ) => {
-  const stored = fulfilment ?? {}
-  return isNonArrayObject(stored)
+  // Coalesce a nullish fulfilment to `{}` BEFORE the shape check — this
+  // routes "nothing stored" through the indexed branch (which yields
+  // `{ inScope: false }` on an empty admittedIndexes), matching the
+  // pre-refactor behaviour.
+  const storedFulfilment = fulfilment ?? {}
+  return isNonArrayObject(storedFulfilment)
     ? decisionFromIndexed(
-        stored,
+        storedFulfilment,
         predicate,
         projectionGroup,
         fulfilmentIndexesByObligationId
       )
     : decisionFromUnindexed(
-        stored,
+        storedFulfilment,
         predicate,
         projectionGroup,
         fulfilmentIndexesByObligationId
