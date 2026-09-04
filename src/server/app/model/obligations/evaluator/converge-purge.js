@@ -56,14 +56,15 @@ export function convergePurge(recognisedFulfilments, context) {
       isInScope
     })
 
-    if (fulfilmentsEqual(amendedFulfilments, next)) {
+    const converged = fulfilmentsEqual(amendedFulfilments, next)
+    amendedFulfilments = next
+    if (converged) {
       return {
-        amendedFulfilments: next,
+        amendedFulfilments,
         applicabilityDecisions,
         isInScope
       }
     }
-    amendedFulfilments = next
   }
   throw new Error(
     `ObligationEvaluator: applyTo/purge did not converge within ${MAX_PURGE_ITERATIONS} iterations — check for oscillating gate design`
