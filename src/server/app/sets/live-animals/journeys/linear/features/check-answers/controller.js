@@ -18,6 +18,7 @@ import { changeHref } from './view-model/rows/change-link.js'
 import { outstandingPartyErrors } from './view-model/outstanding-parties.js'
 import { resolveParties } from '../addresses/resolve-parties.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
+import { frozenPartiesOf } from '../addresses/frozen-parties.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 
@@ -97,7 +98,9 @@ export const renderNotificationView = async (
   // reference no longer resolves, which is precisely the case this page has to
   // name. The rest of the page still renders from the sanitised answers.
   const source = storedAnswers ?? answers
-  const parties = await resolveParties(request, source)
+  const parties = journey.frozenParties
+    ? frozenPartiesOf(journey.frozenParties)
+    : await resolveParties(request, source)
   return renderCya(h, journey, {
     answers,
     scope,
