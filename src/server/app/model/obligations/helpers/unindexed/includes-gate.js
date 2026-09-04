@@ -7,7 +7,7 @@ export const includesGate = (gateObligation, values, whenTrue, whenFalse) => {
     values.includes(fulfilments[gateObligation.id]) ? whenTrue : whenFalse
   fn.metadata = {
     type: 'includesGate',
-    obligation: gateObligation.id,
+    obligationId: gateObligation.id,
     values,
     whenTrue,
     whenFalse

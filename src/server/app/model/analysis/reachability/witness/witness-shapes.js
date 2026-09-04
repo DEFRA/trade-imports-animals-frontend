@@ -14,7 +14,7 @@ export const firstListedValueWitness = (
   }
   const witness = {
     kind: WITNESS_KIND.WITNESS,
-    obligationId: meta.obligation,
+    obligationId: meta.obligationId,
     value: meta.values[0]
   }
   return withProjection

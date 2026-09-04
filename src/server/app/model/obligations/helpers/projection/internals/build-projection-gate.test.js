@@ -21,7 +21,7 @@ describe('#buildProjectionGate', () => {
         reasons
       })
       expect(fn.metadata.type).toBe('testKind')
-      expect(fn.metadata.obligation).toBe('gate')
+      expect(fn.metadata.obligationId).toBe('gate')
       expect(fn.metadata.projection).toBe('group')
       expect(fn.metadata.reasons).toEqual(['because'])
     })

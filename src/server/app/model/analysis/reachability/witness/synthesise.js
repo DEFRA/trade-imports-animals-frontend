@@ -62,7 +62,7 @@ function synthesiseFromMetadata(meta) {
       // metadata.value IS the scalar target.
       return {
         kind: WITNESS_KIND.WITNESS,
-        obligationId: meta.obligation,
+        obligationId: meta.obligationId,
         value: meta.value
       }
 
@@ -87,7 +87,7 @@ function synthesiseFromMetadata(meta) {
       // needed. Otherwise the value witnesses the whenTrue branch.
       return totalBranchWitnessOrValue(meta, () => ({
         kind: WITNESS_KIND.WITNESS,
-        obligationId: meta.obligation,
+        obligationId: meta.obligationId,
         value: meta.value
       }))
 
@@ -98,7 +98,7 @@ function synthesiseFromMetadata(meta) {
       // convention as branchedGate's `isFilled` synth.
       return totalBranchWitnessOrValue(meta, () => ({
         kind: WITNESS_KIND.WITNESS,
-        obligationId: meta.obligation,
+        obligationId: meta.obligationId,
         value: '__witness__'
       }))
 
@@ -219,14 +219,14 @@ function synthesiseNotInUnionOfWitness(meta) {
     }
     return {
       kind: WITNESS_KIND.WITNESS,
-      obligationId: meta.obligation,
+      obligationId: meta.obligationId,
       value: fallback,
       projection: meta.projection ?? null
     }
   }
   return {
     kind: WITNESS_KIND.WITNESS,
-    obligationId: meta.obligation,
+    obligationId: meta.obligationId,
     value: SENTINEL,
     projection: meta.projection ?? null
   }

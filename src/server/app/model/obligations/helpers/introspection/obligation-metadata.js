@@ -30,7 +30,7 @@ export const obligationMetadata = (obligation) => {
  *
  *   - `allowListed` / `anyAllowListed` / `notInUnionOf` / `matches` /
  *     `equalsGate` / `presentGate` / `includesGate`
- *          → `[metadata.obligation]` (all name a single gate obligation)
+ *          → `[metadata.obligationId]` (all name a single gate obligation)
  *   - `branchedGate`
  *          → `[metadata.predicateMeta.obligationId]` when annotated;
  *            otherwise `undefined` — the coverage assertion then requires
@@ -53,8 +53,8 @@ const SINGLE_GATE_TYPES = new Set([
 const deriveDependsOn = (gateMetadata) => {
   const type = gateMetadata?.type
   if (SINGLE_GATE_TYPES.has(type)) {
-    return typeof gateMetadata.obligation === 'string'
-      ? [gateMetadata.obligation]
+    return typeof gateMetadata.obligationId === 'string'
+      ? [gateMetadata.obligationId]
       : undefined
   }
   if (type === 'branchedGate') {

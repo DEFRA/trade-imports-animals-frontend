@@ -113,7 +113,7 @@ describe('system-populated fields declared but not presented', () => {
 // recoverable graph without giving up the imperative-JS gate surface.
 //
 // Meta-first helpers name their gate obligation on
-// `.metadata.obligation`, so `dependsOn` becomes DERIVABLE for those
+// `.metadata.obligationId`, so `dependsOn` becomes DERIVABLE for those
 // sites. The assertion accepts either:
 //   (a) an explicit `dependsOn: string[]` on the obligation, OR
 //   (b) a helper metadata whose type is one that `obligationMetadata`

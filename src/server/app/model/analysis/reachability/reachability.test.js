@@ -517,7 +517,7 @@ describe('#synthesiseWitness — real manifest fidelity', () => {
     const witness = synthesiseWitness(regionCode)
     expect(witness.kind).toBe(WITNESS_KIND.TRIVIAL)
     const decision = regionCode.applyTo(
-      { [regionCode.applyTo.metadata.obligation]: 'yes' },
+      { [regionCode.applyTo.metadata.obligationId]: 'yes' },
       new Map()
     )
     expect(decision.inScope).toBe(true)

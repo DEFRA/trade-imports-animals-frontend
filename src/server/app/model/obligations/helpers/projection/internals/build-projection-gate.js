@@ -31,7 +31,7 @@ export const buildProjectionGate = ({
   }
   fn.metadata = {
     type,
-    obligation: gateObligation.id,
+    obligationId: gateObligation.id,
     projection: projectionGroup?.id ?? null,
     reasons: reasons ?? null
   }

@@ -70,7 +70,7 @@ describe('allowListed', () => {
     const gate = allowListed(codeObl, ['a', 'b'], groupObl)
     expect(gate.metadata).toEqual({
       type: 'allowListed',
-      obligation: codeObl.id,
+      obligationId: codeObl.id,
       values: ['a', 'b'],
       projection: groupObl.id,
       reasons: null
@@ -161,7 +161,7 @@ describe('notInUnionOf', () => {
     )
     expect(gate.metadata).toEqual({
       type: 'notInUnionOf',
-      obligation: codeObl.id,
+      obligationId: codeObl.id,
       values: ['a', 'b', 'c', 'd'],
       projection: groupObl.id,
       reasons: null
@@ -377,7 +377,7 @@ describe('obligationMetadata', () => {
     }
     const meta = obligationMetadata(obligation)
     expect(meta.type).toBe('allowListed')
-    expect(meta.obligation).toBe(gateObl.id)
+    expect(meta.obligationId).toBe(gateObl.id)
     expect(meta.dependsOn).toEqual([gateObl.id])
   })
 
@@ -456,7 +456,7 @@ describe('equalsGate', () => {
     const gate = equalsGate(boolObl, 'yes', whenTrue, whenFalse)
     expect(gate.metadata).toEqual({
       type: 'equalsGate',
-      obligation: boolObl.id,
+      obligationId: boolObl.id,
       value: 'yes',
       whenTrue,
       whenFalse
@@ -505,7 +505,7 @@ describe('presentGate', () => {
     const gate = presentGate(boolObl, whenTrue, whenFalse)
     expect(gate.metadata).toEqual({
       type: 'presentGate',
-      obligation: boolObl.id,
+      obligationId: boolObl.id,
       whenTrue,
       whenFalse
     })
@@ -537,7 +537,7 @@ describe('includesGate', () => {
     const gate = includesGate(boolObl, LAND_MODES, whenTrue, whenFalse)
     expect(gate.metadata).toEqual({
       type: 'includesGate',
-      obligation: boolObl.id,
+      obligationId: boolObl.id,
       values: LAND_MODES,
       whenTrue,
       whenFalse

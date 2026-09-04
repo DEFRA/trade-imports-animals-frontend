@@ -7,6 +7,6 @@ export const matches = (gateObligation, value) => {
     fulfilments[gateObligation.id] === value
       ? { inScope: true }
       : { inScope: false }
-  fn.metadata = { type: 'matches', obligation: gateObligation.id, value }
+  fn.metadata = { type: 'matches', obligationId: gateObligation.id, value }
   return fn
 }
