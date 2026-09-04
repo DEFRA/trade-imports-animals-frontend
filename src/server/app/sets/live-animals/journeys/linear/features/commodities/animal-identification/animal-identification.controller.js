@@ -17,10 +17,7 @@ import {
 import { appendLineRecords } from './records/append.js'
 import { isRemoveAction, postRemove } from './remove/post-remove.js'
 
-export {
-  IDENTIFIER_LABELS,
-  animalIdentifierSummary
-} from './identifier/summary.js'
+export { IDENTIFIER_LABELS } from './identifier/table.js'
 
 export const meta = { ...page, collects: [] }
 const view = `${TEMPLATES}/features/commodities/animal-identification/animal-identification`

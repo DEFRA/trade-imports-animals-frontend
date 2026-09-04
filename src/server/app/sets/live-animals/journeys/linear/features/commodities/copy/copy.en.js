@@ -68,8 +68,11 @@ export const copy = {
       animalIdentifierIdentificationDetails: 'Identification details',
       animalIdentifierDescription: 'Description'
     },
-    permanentAddressSummaryLabel: 'Permanent address',
-    noIdentifier: 'No identifier provided',
+    table: {
+      animalColumn: 'Animal',
+      permanentAddressColumn: 'Permanent address',
+      actionsHidden: 'Actions'
+    },
     typeFields: {
       animalIdentifierPassport: {
         label: 'Passport number',
@@ -100,6 +103,7 @@ export const copy = {
     allEntered: (cap, species) =>
       `You have entered details for all ${cap} ${species} animals. Remove a record if you need to replace it.`,
     animalRow: (number) => `Animal ${number}`,
+    animalRowNamed: (species, number) => `${species} ${number}`,
     removeRow: 'Remove',
     removeRowAria: (number) => `animal ${number}`,
     permanentAddress: {

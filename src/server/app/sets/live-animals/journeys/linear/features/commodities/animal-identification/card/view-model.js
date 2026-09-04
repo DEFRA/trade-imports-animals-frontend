@@ -10,7 +10,7 @@ import {
   permanentAddressApplies,
   scopedFields
 } from '../identifier/fields.js'
-import { animalIdentifierSummary } from '../identifier/summary.js'
+import { identifierCellText, identifierColumns } from '../identifier/table.js'
 
 const copy = copyFor({ en, cy }).identification
 
@@ -42,12 +42,18 @@ const maxReachedTextFor = (cap, species, units, overBy, atMax) => {
   return null
 }
 
-const unitEntries = (index, units) =>
+// The row is keyed by the animal, not by its place in the list: on a page
+// holding four commodity lines "Animal 1" heads the first row of every one of
+// them, where "Bos taurus 1" says which animal of which species it is.
+const animalLabelOf = (species, number) =>
+  species ? copy.animalRowNamed(species, number) : copy.animalRow(number)
+
+const unitEntries = (index, species, columns, units) =>
   units.map((unit, unitIndex) => ({
     line: index,
     unitIndex,
-    label: copy.animalRow(unitIndex + 1),
-    summary: animalIdentifierSummary(unit),
+    label: animalLabelOf(species, unitIndex + 1),
+    cells: columns.map(([id]) => identifierCellText(unit, id)),
     removeAria: copy.removeRowAria(unitIndex + 1)
   }))
 
@@ -90,6 +96,7 @@ export const buildCard = (answers, line, form, errors) => {
   const values = form?.values ?? blankValuesFor(commodity)
   const addressValues = form?.addressValues ?? blankAddress()
   const showAddress = permanentAddressApplies(commodity)
+  const columns = identifierColumns(commodity)
   return {
     index,
     anchor: `identification-card-${index}`,
@@ -104,7 +111,8 @@ export const buildCard = (answers, line, form, errors) => {
       atMax
     ),
     atMax,
-    units: unitEntries(index, units),
+    identifierColumns: columns.map(([, label]) => label),
+    units: unitEntries(index, species, columns, units),
     hasUnits: units.length > 0,
     fields: visibleIdentifierFields(atMax, commodity, index, values, errors),
     showAddress: showAddress && !atMax,

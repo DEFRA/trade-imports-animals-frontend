@@ -1,6 +1,7 @@
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "live-animals/journeys/linear/features/commodities/animal-identification/_saved-animals-table.njk" import savedAnimalsTable %}
 
 {# One card per species line (design 01-16/17): the entered-identifiers
    table with per-row Remove, then the counter-driven entry form for the NEXT
@@ -10,17 +11,7 @@
     <h2 class="govuk-heading-m">{{ card.title }}</h2>
 
     {% if card.hasUnits %}
-      <dl class="govuk-summary-list">
-        {% for unit in card.units %}
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key">{{ unit.label }}</dt>
-            <dd class="govuk-summary-list__value">{{ unit.summary }}</dd>
-            <dd class="govuk-summary-list__actions">
-              <button type="submit" class="govuk-link app-link-button" name="action" value="remove:{{ unit.line }}:{{ unit.unitIndex }}">{{ copy.removeRow }}<span class="govuk-visually-hidden"> {{ unit.removeAria }}</span></button>
-            </dd>
-          </div>
-        {% endfor %}
-      </dl>
+      {{ savedAnimalsTable(card, copy) }}
     {% endif %}
 
     {% if card.atMax %}

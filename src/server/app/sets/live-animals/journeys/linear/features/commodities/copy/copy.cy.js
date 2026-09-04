@@ -73,8 +73,11 @@ export const copy = {
       animalIdentifierIdentificationDetails: 'Manylion adnabod',
       animalIdentifierDescription: 'Disgrifiad'
     },
-    permanentAddressSummaryLabel: 'Cyfeiriad parhaol',
-    noIdentifier: 'Dim dynodwr wedi’i ddarparu',
+    table: {
+      animalColumn: 'Anifail',
+      permanentAddressColumn: 'Cyfeiriad parhaol',
+      actionsHidden: 'Camau gweithredu'
+    },
     typeFields: {
       animalIdentifierPassport: {
         label: 'Rhif pasbort',
@@ -105,6 +108,7 @@ export const copy = {
     allEntered: (cap, species) =>
       `Rydych wedi nodi manylion ar gyfer pob un o’r ${cap} anifail ${species}. Tynnwch gofnod os oes angen i chi ei ddisodli.`,
     animalRow: (number) => `Anifail ${number}`,
+    animalRowNamed: (species, number) => `${species} ${number}`,
     removeRow: 'Tynnu',
     removeRowAria: (number) => `anifail ${number}`,
     permanentAddress: {
