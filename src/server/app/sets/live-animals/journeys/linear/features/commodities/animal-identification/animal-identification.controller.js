@@ -2,7 +2,10 @@ import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
-import { animalIdentificationPage as page } from '../page.js'
+import {
+  animalIdentificationPage as page,
+  consignmentDetailsPage
+} from '../page.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
@@ -34,6 +37,10 @@ const render = (
   { forms = new Map(), errors = {}, cardErrors = [] } = {}
 ) => {
   const lines = state.collectionView(answers, ['commodityLines'], evaluation)
+  const changeCountHref = kit.withChangeContext(
+    request,
+    pagePath(request.params.journeyId, consignmentDetailsPage.slug)
+  )
   return h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
@@ -42,7 +49,7 @@ const render = (
     }),
     copy,
     cards: lines.map((line) =>
-      buildCard(answers, line, forms.get(line.index), errors)
+      buildCard(answers, line, forms.get(line.index), errors, changeCountHref)
     ),
     selectedCommodities: buildSelectedCommodities(lines),
     hasLines: lines.length > 0,

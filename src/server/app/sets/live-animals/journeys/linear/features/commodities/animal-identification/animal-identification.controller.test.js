@@ -16,6 +16,7 @@ import {
   stubH
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
+import { consignmentDetailsPage } from '../page.js'
 
 import * as animalIdentification from './animal-identification.controller.js'
 
@@ -179,6 +180,50 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
       expect(hasLines).toBe(commodityLines.length > 0)
       expect(addHref).toBe(pagePath(journey.journeyId, 'commodities'))
     }
+  })
+
+  // A trader who miscounted has nowhere to go from the counter otherwise: the
+  // count lives on consignment details, and dropping it is refused outright.
+  it('Should point every card at the consignment-details page to change the animal count', async () => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, {
+      commodityLines: [
+        cowLine({ numberOfAnimalsQuantity: '2' }),
+        catLine({ numberOfAnimalsQuantity: '3' })
+      ]
+    })
+    const h = stubH()
+    await getHandler(journeyRequest(journey.journeyId), h)
+    const { cards } = h.captured.view.context
+
+    expect(cards.map((card) => card.changeCountHref)).toEqual([
+      pagePath(journey.journeyId, 'consignment-details'),
+      pagePath(journey.journeyId, 'consignment-details')
+    ])
+  })
+
+  // Arriving from check-your-answers, the way back to the count has to keep
+  // the change context or Continue on consignment details lands on the hub.
+  it('Should keep the change context on every card link when the trader arrived from check your answers', async () => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, {
+      commodityLines: [
+        cowLine({ numberOfAnimalsQuantity: '2' }),
+        catLine({ numberOfAnimalsQuantity: '3' })
+      ]
+    })
+    const h = stubH()
+    await getHandler(
+      journeyRequest(journey.journeyId, { query: { change: '1' } }),
+      h
+    )
+    const { cards } = h.captured.view.context
+
+    const expected = `${pagePath(journey.journeyId, consignmentDetailsPage.slug)}?change=1`
+    expect(cards.map((card) => card.changeCountHref)).toEqual([
+      expected,
+      expected
+    ])
   })
 })
 

@@ -7,7 +7,13 @@
    record — replaced by the maximum-reached state at N = M. #}
 {% macro identificationCard(card, copy) %}
   <section id="{{ card.anchor }}" class="govuk-!-margin-bottom-6">
-    <h2 class="govuk-heading-m">{{ card.title }}</h2>
+    <h2 class="govuk-heading-m govuk-!-margin-bottom-2">{{ card.title }}</h2>
+
+    {# The counter below is the only mention of the number the trader is held
+       to, so the way to correct that number sits beside it. #}
+    <p class="govuk-body">
+      <a class="govuk-link" href="{{ card.changeCountHref }}">{{ copy.changeAnimalCount }}<span class="govuk-visually-hidden"> {{ card.title }}</span></a>
+    </p>
 
     {% if card.hasUnits %}
       {{ savedAnimalsTable(card, copy) }}

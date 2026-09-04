@@ -61,6 +61,7 @@ export const copy = {
     emptyText: 'You have not added any commodities yet.',
     addCommodity: 'Add a commodity',
     addAnotherCommodity: 'Add another commodity',
+    changeAnimalCount: 'Change number of animals',
     summary: {
       caption: 'Selected commodities',
       commodityCode: 'Commodity code',

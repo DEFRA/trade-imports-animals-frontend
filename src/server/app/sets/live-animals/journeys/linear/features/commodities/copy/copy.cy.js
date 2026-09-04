@@ -69,6 +69,7 @@ export const copy = {
     emptyText: 'Nid ydych wedi ychwanegu unrhyw nwyddau eto.',
     addCommodity: 'Ychwanegu nwydd',
     addAnotherCommodity: 'Ychwanegu nwydd arall',
+    changeAnimalCount: 'Newid nifer yr anifeiliaid',
     summary: {
       caption: 'Nwyddau a ddewiswyd',
       commodityCode: 'Cod nwyddau',

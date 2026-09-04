@@ -87,7 +87,11 @@ const visibleAddressFields = (
 ) =>
   showAddress && !atMax ? addressFieldsFor(index, addressValues, errors) : []
 
-export const buildCard = (answers, line, form, errors) => {
+// The card counter is the only place the declared animal count appears, so
+// every card carries the route back to the page that sets it. Design release 1
+// puts the same bare link on every panel: no species, no query, no change
+// context — the trader lands on the counts and finds their own way back.
+export const buildCard = (answers, line, form, errors, changeCountHref) => {
   const { index, entry } = line
   const commodity = entry.commoditySelection
   const units = entry.animalIdentifiers ?? []
@@ -102,6 +106,7 @@ export const buildCard = (answers, line, form, errors) => {
     anchor: `identification-card-${index}`,
     title: cardTitleOf(entry),
     species,
+    changeCountHref,
     counter: atMax ? null : counterOf(species, units.length, cap),
     maxReachedText: maxReachedTextFor(
       cap,
