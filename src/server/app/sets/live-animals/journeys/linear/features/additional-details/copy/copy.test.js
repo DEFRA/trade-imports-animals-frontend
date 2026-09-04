@@ -11,6 +11,7 @@ import { dispatchPages } from '../../index.js'
 
 import * as additionalDetails from '../controller.js'
 import { copy } from './copy.en.js'
+import { copy as copyCy } from './copy.cy.js'
 
 const leaves = (node, path = []) =>
   typeof node === 'object' && node !== null
@@ -27,6 +28,11 @@ describe('additional-details copy module', () => {
         0
       )
     }
+  })
+
+  it('Should name the page without the word animal', () => {
+    expect(copy.title).toBe('Additional details')
+    expect(copyCy.title).toBe('Manylion ychwanegol')
   })
 })
 

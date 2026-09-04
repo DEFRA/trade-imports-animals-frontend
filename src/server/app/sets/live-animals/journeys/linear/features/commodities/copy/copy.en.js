@@ -1,5 +1,10 @@
 const plural = (count, noun) => `${count} ${noun}${count === 1 ? '' : 's'}`
 
+// The fallback identifier type an animal falls back to when it has no
+// passport, tattoo or ear tag — named once for its list label and its field
+// label. Not the identification page's own name, which is its own string.
+const FALLBACK_IDENTIFIER_LABEL = 'Identification details'
+
 export const copy = {
   search: {
     title: 'What are you importing?',
@@ -55,7 +60,7 @@ export const copy = {
     }
   },
   identification: {
-    title: 'Animal identification details',
+    title: 'Identification details',
     inset:
       'You must add all animal identification details before the consignment arrives at the port of entry.',
     emptyText: 'You have not added any commodities yet.',
@@ -76,7 +81,7 @@ export const copy = {
       animalIdentifierTattoo: 'Tattoo',
       animalIdentifierEarTag: 'Ear tag',
       horseName: 'Horse name',
-      animalIdentifierIdentificationDetails: 'Identification details',
+      animalIdentifierIdentificationDetails: FALLBACK_IDENTIFIER_LABEL,
       animalIdentifierDescription: 'Description'
     },
     table: {
@@ -105,7 +110,7 @@ export const copy = {
     },
     fallbackFields: {
       animalIdentifierIdentificationDetails: {
-        label: 'Identification details',
+        label: FALLBACK_IDENTIFIER_LABEL,
         hint: 'Any other way this animal is identified, if it has no passport, tattoo or ear tag'
       },
       animalIdentifierDescription: { label: 'Animal description' }

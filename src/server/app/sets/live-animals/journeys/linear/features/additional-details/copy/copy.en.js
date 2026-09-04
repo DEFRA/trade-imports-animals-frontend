@@ -1,5 +1,5 @@
 export const copy = {
-  title: 'Additional animal details',
+  title: 'Additional details',
   certified: {
     legend: 'What are the animals certified for?',
     hint: "You'll find this on the health certificate."

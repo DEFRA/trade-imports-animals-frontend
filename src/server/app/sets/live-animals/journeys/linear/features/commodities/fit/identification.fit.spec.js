@@ -7,6 +7,7 @@ import {
   startNotification
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
+import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 
 const SAVE_AND_CONTINUE = 'Save and continue'
 const PASSPORT_FIELD = '#animalIdentifierPassport-0'
@@ -56,9 +57,11 @@ const addLines = async (page, selections, counts = []) => {
 const openIdentification = async (page, selections, counts = []) => {
   await addLines(page, selections, counts)
   await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
-  await page.getByRole('link', { name: copy.identification.title }).click()
+  await page
+    .getByRole('link', { name: hubCopy.rows.animalIdentification.title })
+    .click()
   await expect(
-    page.getByRole('heading', { name: copy.identification.title })
+    page.getByRole('heading', { name: 'Identification details', exact: true })
   ).toBeVisible()
 }
 
