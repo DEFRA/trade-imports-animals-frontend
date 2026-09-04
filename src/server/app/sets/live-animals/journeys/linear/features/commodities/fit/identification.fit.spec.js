@@ -12,8 +12,8 @@ const SAVE_AND_CONTINUE = 'Save and continue'
 const PASSPORT_FIELD = '#animalIdentifierPassport-0'
 const EAR_TAG_FIELD = '#animalIdentifierEarTag-0'
 const COUNTRY_FIELD = '#country-0'
-const SUMMARY_ROW = '.govuk-summary-list__row'
 const BOS_TAURUS = 'Bos taurus'
+const FELIS_CATUS = 'Felis catus'
 const SALMO_SALAR = 'Salmo salar'
 const INVALID_COUNTRY = 'Invalid country'
 const PASSPORT_NUMBER = 'UK123456789'
@@ -60,7 +60,7 @@ const openIdentification = async (page, selections, counts = []) => {
 }
 
 const openCatIdentification = (page) =>
-  openIdentification(page, [['Cat', ['Felis catus']]], ['2'])
+  openIdentification(page, [['Cat', [FELIS_CATUS]]], ['2'])
 
 const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
@@ -127,10 +127,18 @@ const submitAdd = (page) =>
 const saveAndFinish = (page) =>
   page.getByRole('button', { name: copy.identification.saveAndFinish }).click()
 
-const removeAnimalRow = async (page, index) => {
-  const row = page.locator(SUMMARY_ROW, {
-    hasText: copy.identification.animalRow(index)
-  })
+// A saved animal is one row of the card's table, keyed by its species and
+// number — "Bos taurus 1".
+const savedAnimalRow = (page, species, number) =>
+  page
+    .getByRole('row')
+    .filter({ hasText: copy.identification.animalRowNamed(species, number) })
+
+const columnHeader = (page, name) =>
+  page.getByRole('columnheader', { name, exact: true })
+
+const removeAnimalRow = async (page, species, number) => {
+  const row = savedAnimalRow(page, species, number)
   await row.getByRole('button', { name: copy.identification.removeRow }).click()
   return row
 }
@@ -144,9 +152,7 @@ const addCatRecordRow = async (page) => {
   await openCatIdentification(page)
   await fillCatRecord(page)
   await submitAdd(page)
-  return page.locator(SUMMARY_ROW, {
-    hasText: copy.identification.animalRow(1)
-  })
+  return savedAnimalRow(page, FELIS_CATUS, 1)
 }
 
 const submitStaleAdd = (page) =>
@@ -376,23 +382,79 @@ test.describe('animal identification records', () => {
     await signIn(page)
   })
 
-  test('adds a complete record and renders its identifier and permanent-address summary', async ({
+  test('adds a complete record and reads it back as a row of the saved-animals table', async ({
     page
   }) => {
     const row = await addCatRecordRow(page)
 
-    await expect(row).toContainText(
-      `${copy.identification.identifierLabels.animalIdentifierPassport}: ${PASSPORT_NUMBER}`
-    )
-    await expect(row).toContainText(
-      `${copy.identification.permanentAddressSummaryLabel}: Pet Owner`
-    )
+    await expect(
+      columnHeader(page, copy.identification.table.animalColumn)
+    ).toBeVisible()
+    await expect(
+      columnHeader(
+        page,
+        copy.identification.identifierLabels.animalIdentifierPassport
+      )
+    ).toBeVisible()
+    await expect(
+      columnHeader(
+        page,
+        copy.identification.identifierLabels.animalIdentifierTattoo
+      )
+    ).toBeVisible()
+    await expect(
+      columnHeader(page, copy.identification.table.permanentAddressColumn)
+    ).toBeVisible()
+
+    await expect(
+      row.getByRole('cell', { name: PASSPORT_NUMBER, exact: true })
+    ).toBeVisible()
+    await expect(
+      row.getByRole('cell', { name: 'Pet Owner', exact: true })
+    ).toBeVisible()
+  })
+
+  test('heads the table with every identifier the commodity declares, not only the ones filled in', async ({
+    page
+  }) => {
+    await openIdentification(page, [['Cow', [BOS_TAURUS]]], ['2'])
+    await addCowRecord(page, 'UK000000000001')
+
+    await expect(
+      columnHeader(page, copy.identification.table.animalColumn)
+    ).toBeVisible()
+    await expect(
+      columnHeader(
+        page,
+        copy.identification.identifierLabels.animalIdentifierPassport
+      )
+    ).toBeVisible()
+    await expect(
+      columnHeader(
+        page,
+        copy.identification.identifierLabels.animalIdentifierEarTag
+      )
+    ).toBeVisible()
+    await expect(
+      savedAnimalRow(page, BOS_TAURUS, 1).getByRole('cell', {
+        name: 'UK000000000001',
+        exact: true
+      })
+    ).toBeVisible()
   })
 
   test('removes an added record', async ({ page }) => {
     await addCatRecordRow(page)
-    const row = await removeAnimalRow(page, 1)
+    const row = await removeAnimalRow(page, FELIS_CATUS, 1)
     await expect(row).toHaveCount(0)
+  })
+
+  test('has no serious or critical axe violations once an animal is saved', async ({
+    page
+  }) => {
+    const row = await addCatRecordRow(page)
+    await expect(row).toBeVisible()
+    await expectAxeClean(page, 'Animal identification with a saved animal')
   })
 
   test('rejects a stale add action after the animal-count cap is reached', async ({
@@ -439,7 +501,7 @@ test.describe('animal identification records', () => {
     await expect(errorLink(page, countDrop)).toBeVisible()
     await errorLink(page, countDrop).click()
 
-    await removeAnimalRow(page, 2)
+    await removeAnimalRow(page, BOS_TAURUS, 2)
     await expect(
       page.getByRole('heading', {
         name: copy.identification.counter(BOS_TAURUS, 2, 2)

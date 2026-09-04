@@ -27,6 +27,7 @@ const getHandler = animalIdentification.routes.find(
 const PASSPORT_FIELD_0 = 'animalIdentifierPassport-0'
 const TATTOO_FIELD_0 = 'animalIdentifierTattoo-0'
 const IDENTIFICATION_PAGE = 'commodities/identification'
+const BOS_TAURUS_1 = 'Bos taurus 1'
 
 const catLine = (extra = {}) => ({
   commoditySelection: 'Cat',
@@ -39,6 +40,14 @@ const catLine = (extra = {}) => ({
 const cowLine = (extra = {}) => ({
   commoditySelection: 'Cow',
   speciesSelection: '1148346',
+  numberOfPackages: '',
+  numberOfAnimalsQuantity: '',
+  ...extra
+})
+
+const fishLine = (extra = {}) => ({
+  commoditySelection: 'Fish',
+  speciesSelection: '801204',
   numberOfPackages: '',
   numberOfAnimalsQuantity: '',
   ...extra
@@ -80,7 +89,7 @@ describe(`${SUITE} — the cards view`, () => {
     expect(card.counter).toBe('Enter details for Bos taurus 2 of 2')
     expect(card.atMax).toBe(false)
     expect(card.units).toHaveLength(1)
-    expect(card.units[0].summary).toContain('Ear tag: UK1')
+    expect(card.units[0].label).toBe(BOS_TAURUS_1)
   })
 
   it('Should drop the M from the counter while the count is unanswered — no cap, entry still allowed', async () => {
@@ -133,6 +142,113 @@ describe(`${SUITE} — the cards view`, () => {
     )
     expect(card.units).toHaveLength(2)
     expect(card.units[0].removeAria).toBe('animal 1')
+  })
+})
+
+describe(`${SUITE} — the saved-animals table`, () => {
+  setupIdentificationEngine()
+
+  it('Should head the table with every identifier the commodity declares, not only the ones filled in', async () => {
+    const [card] = await viewCards({
+      commodityLines: [
+        cowLine({
+          numberOfAnimalsQuantity: '2',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+        })
+      ]
+    })
+    expect(card.identifierColumns).toEqual(['Passport', 'Tattoo', 'Ear tag'])
+    expect(card.units[0].cells).toEqual(['', '', 'UK1'])
+  })
+
+  it('Should number the rows within a commodity line by the species and the row position', async () => {
+    const [card] = await viewCards({
+      commodityLines: [
+        cowLine({
+          numberOfAnimalsQuantity: '2',
+          animalIdentifiers: [
+            { animalIdentifierEarTag: 'UK1' },
+            { animalIdentifierPassport: 'UK2' }
+          ]
+        })
+      ]
+    })
+    expect(card.units.map((unit) => unit.label)).toEqual([
+      BOS_TAURUS_1,
+      'Bos taurus 2'
+    ])
+    expect(card.units[1].cells).toEqual(['UK2', '', ''])
+  })
+
+  it('Should key each row by its own line\'s species so two commodity lines do not both start at "Animal 1"', async () => {
+    const cards = await viewCards({
+      commodityLines: [
+        cowLine({
+          numberOfAnimalsQuantity: '2',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+        }),
+        catLine({
+          numberOfAnimalsQuantity: '2',
+          animalIdentifiers: [{ animalIdentifierPassport: 'UK2' }]
+        })
+      ]
+    })
+    expect(cards).toHaveLength(2)
+    expect(cards[0].units.map((unit) => unit.label)).toEqual([BOS_TAURUS_1])
+    expect(cards[1].units.map((unit) => unit.label)).toEqual(['Felis catus 1'])
+  })
+
+  it('Should fall back to the positional label when the line names no species', async () => {
+    const [card] = await viewCards({
+      commodityLines: [
+        cowLine({
+          speciesSelection: '',
+          numberOfAnimalsQuantity: '2',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+        })
+      ]
+    })
+    expect(card.units[0].label).toBe('Animal 1')
+  })
+
+  it('Should give the permanent address its own column where the commodity requires one', async () => {
+    const [card] = await viewCards({
+      commodityLines: [
+        catLine({
+          numberOfAnimalsQuantity: '2',
+          animalIdentifiers: [
+            {
+              animalIdentifierPassport: 'UK123456789',
+              permanentAddress: { name: 'Pet Owner' }
+            }
+          ]
+        })
+      ]
+    })
+    expect(card.identifierColumns).toEqual([
+      'Passport',
+      'Tattoo',
+      'Permanent address'
+    ])
+    expect(card.units[0].cells).toEqual(['UK123456789', '', 'Pet Owner'])
+  })
+
+  it('Should head a fallback-identifier commodity with its own columns and no permanent address', async () => {
+    const [card] = await viewCards({
+      commodityLines: [
+        fishLine({
+          numberOfAnimalsQuantity: '2',
+          animalIdentifiers: [
+            { animalIdentifierIdentificationDetails: 'Tank mark TM-77' }
+          ]
+        })
+      ]
+    })
+    expect(card.identifierColumns).toEqual([
+      'Identification details',
+      'Description'
+    ])
+    expect(card.units[0].cells).toEqual(['Tank mark TM-77', ''])
   })
 })
 
