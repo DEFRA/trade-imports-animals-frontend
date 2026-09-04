@@ -27,14 +27,14 @@ export const deriveGroupFulfilmentIndexes = (
   fulfilmentFor
 ) => {
   const prefixLength = obligationAncestorGroups.get(obligation.id).length + 1
-  const ids = new Set()
+  const fulfilmentIndexes = new Set()
   for (const descendant of obligationDescendants.get(obligation.id)) {
-    for (const id of indexPrefixesFromDescendant(
+    for (const fulfilmentIndex of indexPrefixesFromDescendant(
       fulfilmentFor(descendant),
       prefixLength
     )) {
-      ids.add(id)
+      fulfilmentIndexes.add(fulfilmentIndex)
     }
   }
-  return ids
+  return fulfilmentIndexes
 }
