@@ -1,4 +1,4 @@
-import { buildProjectionGate } from './internals/build-projection-gate.js'
+import { buildIndexedGate } from './internals/build-indexed-gate.js'
 
 /**
  * allowListed — in scope on entries where `gateObligation`'s stored
@@ -11,7 +11,7 @@ import { buildProjectionGate } from './internals/build-projection-gate.js'
  *   group's fulfilmentIndexes whose ancestor prefix has a passing gate.
  *
  * Semantic inverse: `not-in-union-of.js`. Both share the outer factory
- * in `internals/build-projection-gate.js`.
+ * in `internals/build-indexed-gate.js`.
  */
 export const allowListed = (
   gateObligation,
@@ -20,7 +20,7 @@ export const allowListed = (
   reasons
 ) => {
   const currentValues = () => (typeof values === 'function' ? values() : values)
-  return buildProjectionGate({
+  return buildIndexedGate({
     gateType: 'allowListed',
     gateObligation,
     currentValues,

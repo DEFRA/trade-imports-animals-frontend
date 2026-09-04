@@ -1,7 +1,7 @@
 import { isNonArrayObject } from '../../../helper-internals.js'
 import { INDEX_DELIMITER } from '../../../index-delimiter.js'
 
-// Two shape branches, dispatched below in `filterAndProject`:
+// Two shape branches, dispatched below in `runIndexedGate`:
 //   - indexedFulfilments — collect the fulfilmentIndexes whose stored values
 //     pass the predicate; optionally intersect with `gatedParentGroup`.
 //   - unindexed — predicate either admits the value or it doesn't; a
@@ -19,11 +19,11 @@ const decisionFromUnindexed = (
   if (!gatedParentGroup) {
     return { inScope: true }
   }
-  const projectionPaths = [
+  const parentFulfilmentIndexes = [
     ...(fulfilmentIndexesByObligationId?.get(gatedParentGroup.id) ?? [])
   ]
-  return projectionPaths.length > 0
-    ? { inScope: true, fulfilmentIndexes: projectionPaths }
+  return parentFulfilmentIndexes.length > 0
+    ? { inScope: true, fulfilmentIndexes: parentFulfilmentIndexes }
     : { inScope: false }
 }
 
@@ -42,9 +42,9 @@ const decisionFromIndexed = (
   if (!gatedParentGroup) {
     return { inScope: true, fulfilmentIndexes: admittedIndexes }
   }
-  const projectionPaths =
+  const parentFulfilmentIndexes =
     fulfilmentIndexesByObligationId?.get(gatedParentGroup.id) ?? []
-  const fulfilmentIndexes = [...projectionPaths].filter((path) =>
+  const fulfilmentIndexes = [...parentFulfilmentIndexes].filter((path) =>
     admittedIndexes.some(
       (idx) => path === idx || path.startsWith(`${idx}${INDEX_DELIMITER}`)
     )
@@ -54,7 +54,7 @@ const decisionFromIndexed = (
     : { inScope: false }
 }
 
-export const filterAndProject = (
+export const runIndexedGate = (
   fulfilment,
   predicate,
   gatedParentGroup,

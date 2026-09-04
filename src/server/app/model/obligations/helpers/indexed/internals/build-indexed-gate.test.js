@@ -1,18 +1,18 @@
 import { describe, it, expect } from 'vitest'
 
-import { buildProjectionGate } from './build-projection-gate.js'
+import { buildIndexedGate } from './build-indexed-gate.js'
 
 const gateObligation = { id: 'gate' }
 
 const alwaysAdmits = () => true
 const neverAdmits = () => false
 
-describe('#buildProjectionGate', () => {
+describe('#buildIndexedGate', () => {
   describe('metadata', () => {
     it('stamps the gateType, obligationId, gatedParentGroupId, and reasons', () => {
       const gatedParentGroup = { id: 'group' }
       const reasons = ['because']
-      const fn = buildProjectionGate({
+      const fn = buildIndexedGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => ['a'],
@@ -27,7 +27,7 @@ describe('#buildProjectionGate', () => {
     })
 
     it('sets gatedParentGroupId to null when no gatedParentGroup is supplied', () => {
-      const fn = buildProjectionGate({
+      const fn = buildIndexedGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => [],
@@ -39,7 +39,7 @@ describe('#buildProjectionGate', () => {
 
     it('exposes values via a getter that calls currentValues each time', () => {
       let call = 0
-      const fn = buildProjectionGate({
+      const fn = buildIndexedGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => [`call-${++call}`],
@@ -51,7 +51,7 @@ describe('#buildProjectionGate', () => {
     })
 
     it('defaults reasons to null when not supplied', () => {
-      const fn = buildProjectionGate({
+      const fn = buildIndexedGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => [],
@@ -64,7 +64,7 @@ describe('#buildProjectionGate', () => {
 
   describe('applyTo call', () => {
     it('returns { inScope: false } when the predicate admits no stored values', () => {
-      const fn = buildProjectionGate({
+      const fn = buildIndexedGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => [],
@@ -77,7 +77,7 @@ describe('#buildProjectionGate', () => {
     })
 
     it('returns { inScope: true, fulfilmentIndexes } for a depth-1 gate whose keys pass', () => {
-      const fn = buildProjectionGate({
+      const fn = buildIndexedGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => [],
@@ -91,7 +91,7 @@ describe('#buildProjectionGate', () => {
     })
 
     it('folds reasons into the returned decision when in scope', () => {
-      const fn = buildProjectionGate({
+      const fn = buildIndexedGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => [],
@@ -108,7 +108,7 @@ describe('#buildProjectionGate', () => {
     })
 
     it('does not fold reasons in when out of scope', () => {
-      const fn = buildProjectionGate({
+      const fn = buildIndexedGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => [],
@@ -122,11 +122,11 @@ describe('#buildProjectionGate', () => {
 
   // The gate's stored value can be a single stored value (an unindexed
   // obligation as the gate source) rather than an indexedFulfilments map.
-  // `filterAndProject` routes those through `decisionFromUnindexed` — no
+  // `runIndexedGate` routes those through `decisionFromUnindexed` — no
   // per-key iteration; the predicate either admits the value or it doesn't.
   describe('applyTo call — unindexed gate value', () => {
     it('returns { inScope: false } when the predicate rejects the value', () => {
-      const fn = buildProjectionGate({
+      const fn = buildIndexedGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => [],
@@ -137,7 +137,7 @@ describe('#buildProjectionGate', () => {
     })
 
     it('returns { inScope: true } when the predicate admits the value and no gatedParentGroup is set', () => {
-      const fn = buildProjectionGate({
+      const fn = buildIndexedGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => [],
@@ -149,7 +149,7 @@ describe('#buildProjectionGate', () => {
 
     it('fans the yes verdict out across every instance of a gatedParentGroup when the value passes', () => {
       const gatedParentGroup = { id: 'commodityLines' }
-      const fn = buildProjectionGate({
+      const fn = buildIndexedGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => [],
@@ -165,7 +165,7 @@ describe('#buildProjectionGate', () => {
 
     it('returns { inScope: false } when the value passes but the gatedParentGroup has no instances', () => {
       const gatedParentGroup = { id: 'commodityLines' }
-      const fn = buildProjectionGate({
+      const fn = buildIndexedGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => [],
@@ -177,14 +177,14 @@ describe('#buildProjectionGate', () => {
     })
 
     it('treats a missing (undefined) fulfilment as an absent value the predicate can reject', () => {
-      const fn = buildProjectionGate({
+      const fn = buildIndexedGate({
         gateType: 'testKind',
         gateObligation,
         currentValues: () => [],
         admits: (value) => value !== undefined,
         gatedParentGroup: null
       })
-      // No `gate` key in fulfilments — filterAndProject falls back to `{}`,
+      // No `gate` key in fulfilments — runIndexedGate falls back to `{}`,
       // which is an indexed-shape branch. Passing an unindexed value via a
       // nullish check would be a separate arrangement; this ensures the
       // wrapper doesn't blow up on missing storage.

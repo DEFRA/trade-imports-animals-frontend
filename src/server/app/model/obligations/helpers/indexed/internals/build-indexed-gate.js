@@ -1,7 +1,7 @@
-import { filterAndProject } from './filter-and-project.js'
+import { runIndexedGate } from './run-indexed-gate.js'
 
 /**
- * Shared factory for projection-gate helpers (`allowListed`,
+ * Shared factory for indexed-gate helpers (`allowListed`,
  * `notInUnionOf`). Params:
  *
  *   - `gateType`         — stamped onto `.metadata.gateType`.
@@ -15,12 +15,12 @@ import { filterAndProject } from './filter-and-project.js'
  *                          `.metadata.values` for lazy static
  *                          inspection. Differs per flavour.
  *   - `admits`           — the per-value predicate (in-list vs
- *                          not-in-union); `filterAndProject` applies it
+ *                          not-in-union); `runIndexedGate` applies it
  *                          per fulfilmentIndex. Differs per flavour.
- *   - `gatedParentGroup` — optional. When set, `filterAndProject`
- *                          projects the passing gate keys through this
- *                          group's fulfilmentIndexes (a depth-N > 1
- *                          gate). Its id is stamped on
+ *   - `gatedParentGroup` — optional. When set, `runIndexedGate` fans
+ *                          the passing gate keys onto this group's
+ *                          fulfilmentIndexes (a depth-N > 1 gate). Its
+ *                          id is stamped on
  *                          `.metadata.gatedParentGroupId`, or `null`
  *                          when absent.
  *   - `reasons`          — optional array of `{ code, explanation }`
@@ -30,7 +30,7 @@ import { filterAndProject } from './filter-and-project.js'
  *                          stamped on `.metadata.reasons` (or `null`)
  *                          for static introspection.
  */
-export const buildProjectionGate = ({
+export const buildIndexedGate = ({
   gateType,
   gateObligation,
   currentValues,
@@ -39,7 +39,7 @@ export const buildProjectionGate = ({
   reasons
 }) => {
   const fn = (fulfilments, fulfilmentIndexesByObligationId) => {
-    const decision = filterAndProject(
+    const decision = runIndexedGate(
       fulfilments[gateObligation.id],
       admits,
       gatedParentGroup,

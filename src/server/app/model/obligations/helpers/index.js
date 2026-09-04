@@ -25,9 +25,9 @@
  *
  *   - **Group-scoped gate** (gate has `within`, so
  *     `fulfilments[gate.id]` is an indexedFulfilments map): use
- *     `allowListed` / `notInUnionOf`. `null` projection when gate and
- *     gated are at the same identity level; a `gatedParentGroup` when
- *     the gated obligation is deeper (the engine walks the projection
+ *     `allowListed` / `notInUnionOf`. Pass `null` for `gatedParentGroup`
+ *     when gate and gated are at the same identity level; pass a group
+ *     when the gated obligation is deeper (the engine fans across that
  *     group's fulfilmentIndexes for each matching parent).
  *
  * `matches` is a same-frame single-decision equality gate (kept for
@@ -39,8 +39,8 @@
  * prover to synthesise a witness.
  */
 
-export { allowListed } from './projection/allow-listed.js'
-export { notInUnionOf } from './projection/not-in-union-of.js'
+export { allowListed } from './indexed/allow-listed.js'
+export { notInUnionOf } from './indexed/not-in-union-of.js'
 export { anyAllowListed } from './unindexed/any-allow-listed.js'
 export { branchedGate } from './unindexed/branched-gate.js'
 export { matches } from './unindexed/matches.js'

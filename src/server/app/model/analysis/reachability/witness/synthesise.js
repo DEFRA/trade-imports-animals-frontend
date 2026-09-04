@@ -40,7 +40,7 @@ function synthesiseFromMetadata(meta) {
       // can seed a synthetic path in `fulfilmentIndexesByObligationId` for
       // depth-N > 1 gates (passport, tattoo, earTag, horseName,
       // permanentAddress — all project onto unitRecord). Without a
-      // gatedParentGroup fulfilmentIndex the closure's `filterAndProject` returns
+      // gatedParentGroup fulfilmentIndex the closure's `runIndexedGate` returns
       // records: [] and `inScope: false`, which would be a false
       // negative — the gate WOULD open in the real evaluator, which
       // always seeds unitRecord paths from user-created units.

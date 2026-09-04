@@ -1,7 +1,7 @@
 /**
  * Shape-level utilities shared by the gate helpers — the
  * "stored fulfilment → candidate values" normalisation used by
- * `anyAllowListed`, `filterAndProject`, and `present`.
+ * `anyAllowListed`, `runIndexedGate`, and `present`.
  *
  * Kept in a separate module (not re-exported through `helpers/index.js`)
  * so the `analysis/coverage.test.js` invariant — "every `helpers/index.js`
