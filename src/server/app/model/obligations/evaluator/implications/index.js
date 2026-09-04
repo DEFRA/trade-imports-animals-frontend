@@ -56,8 +56,9 @@ const applyToDerivedImplication = (obligation, applicabilityDecision) => {
   return implication
 }
 
-// FulfilmentIndexes come from the user's own indexedFulfilments keys.
-const userStorageDerivedImplication = (
+// FulfilmentIndexes come directly from the user's inputs — the keys of
+// the obligation's indexedFulfilments map.
+const userInputDerivedImplication = (
   obligation,
   applicabilityDecision,
   amendedFulfilments
@@ -108,8 +109,8 @@ export function buildImplication(obligation, context) {
       )
     case 'apply-to-derived':
       return applyToDerivedImplication(obligation, applicabilityDecision)
-    case 'user-storage-derived':
-      return userStorageDerivedImplication(
+    case 'user-input-derived':
+      return userInputDerivedImplication(
         obligation,
         applicabilityDecision,
         amendedFulfilments

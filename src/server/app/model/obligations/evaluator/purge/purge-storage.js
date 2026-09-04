@@ -47,7 +47,7 @@ const purgedFulfilmentFor = (
 
 // Out-of-scope obligation → drop entire entry. apply-to-derived leaf →
 // keep only entries the gate still authorises. Others (parent-derived,
-// user-storage-derived) → keep as-is; own storage is self-valid.
+// user-input-derived) → keep as-is; own storage is self-valid.
 export function purgeStorage(recognisedFulfilments, context) {
   const {
     obligationsById,

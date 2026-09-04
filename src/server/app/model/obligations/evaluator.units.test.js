@@ -23,7 +23,7 @@ import {
 const emptyManifestGivesEmptyMapTitle = 'empty manifest → empty Map'
 const applyToDerivedCategory = 'apply-to-derived'
 const parentDerivedCategory = 'parent-derived'
-const userStorageDerivedCategory = 'user-storage-derived'
+const userInputDerivedCategory = 'user-input-derived'
 
 // ---------------------------------------------------------------------------
 // Construction-phase builders
@@ -113,16 +113,16 @@ describe('classifyObligations', () => {
     expect(result.get('o')).toBe(applyToDerivedCategory)
   })
 
-  it('user indexed leaf → "user-storage-derived"', () => {
+  it('user indexed leaf → "user-input-derived"', () => {
     const obligation = { id: 'o', indexedBy: { source: 'user' } }
     const result = classifyObligations([obligation], noChildren)
-    expect(result.get('o')).toBe(userStorageDerivedCategory)
+    expect(result.get('o')).toBe(userInputDerivedCategory)
   })
 
-  it('non-derived indexedBy source falls through to "user-storage-derived" (seeded case)', () => {
+  it('non-derived indexedBy source falls through to "user-input-derived" (seeded case)', () => {
     const obligation = { id: 'o', indexedBy: { source: 'seeded' } }
     const result = classifyObligations([obligation], noChildren)
-    expect(result.get('o')).toBe(userStorageDerivedCategory)
+    expect(result.get('o')).toBe(userInputDerivedCategory)
   })
 
   it('top-level obligation with applyTo AND status → "unindexed", not "parent-derived"', () => {
@@ -436,14 +436,14 @@ describe('purgeStorage', () => {
     expect(result.o).toEqual(fulfilment)
   })
 
-  it('user-storage-derived leaf → map kept as-is', () => {
+  it('user-input-derived leaf → map kept as-is', () => {
     const obligation = { id: 'o', indexedBy: { source: 'user' } }
     const fulfilment = { 'd1.a1': { line1: '10 High St' } }
     const result = purgeStorage(
       { o: fulfilment },
       {
         obligationsById: new Map([['o', obligation]]),
-        obligationsByCategory: new Map([['o', userStorageDerivedCategory]]),
+        obligationsByCategory: new Map([['o', userInputDerivedCategory]]),
         applicabilityDecisions: new Map(),
         isInScope: alwaysInScope
       }
@@ -457,7 +457,7 @@ describe('purgeStorage', () => {
       { o: {} },
       {
         obligationsById: new Map([['o', obligation]]),
-        obligationsByCategory: new Map([['o', userStorageDerivedCategory]]),
+        obligationsByCategory: new Map([['o', userInputDerivedCategory]]),
         applicabilityDecisions: new Map(),
         isInScope: alwaysInScope
       }
@@ -541,7 +541,7 @@ describe('enumerateGroupFulfilmentIndexesPostPurge', () => {
         obligationsByCategory: new Map([
           ['driver', 'group'],
           ['claim', 'group'],
-          ['leaf', userStorageDerivedCategory]
+          ['leaf', userInputDerivedCategory]
         ]),
         obligationAncestorGroups: new Map([
           ['driver', []],
@@ -763,11 +763,11 @@ describe('buildImplication', () => {
     })
   })
 
-  it('user-storage-derived → own storage keys × own status', () => {
+  it('user-input-derived → own storage keys × own status', () => {
     const obligation = { id: 'o', status: 'mandatory' }
     const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
-      obligationsByCategory: new Map([['o', userStorageDerivedCategory]]),
+      obligationsByCategory: new Map([['o', userInputDerivedCategory]]),
       applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: { o: { 'd1.a1': {}, 'd1.a2': {} } }
@@ -776,11 +776,11 @@ describe('buildImplication', () => {
     expect(result.fulfilmentIndexes).toEqual(['d1.a1', 'd1.a2'])
   })
 
-  it('user-storage-derived with no storage → empty fulfilmentIndexes array', () => {
+  it('user-input-derived with no storage → empty fulfilmentIndexes array', () => {
     const obligation = { id: 'o', status: 'mandatory' }
     const result = buildImplication(obligation, {
       isInScope: inScopeAlways,
-      obligationsByCategory: new Map([['o', userStorageDerivedCategory]]),
+      obligationsByCategory: new Map([['o', userInputDerivedCategory]]),
       applicabilityDecisions: new Map(),
       fulfilmentIndexesByObligationId: new Map(),
       amendedFulfilments: {}
