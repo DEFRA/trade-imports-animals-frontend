@@ -1,28 +1,22 @@
 /**
- * Per-instance completeness verdict.
+ * `instanceComplete(group, fulfilmentIndex, state)` — true iff no
+ * unsatisfied mandatory concern exists under the instance:
+ *   - no mandatory leaf under the instance is unfilled, either because
+ *     the evaluator enumerated a fulfilmentIndex for it that lacks a
+ *     stored value, or because it's a direct-child mandatory leaf with
+ *     no conditional gate and no enumerated fulfilmentIndex at all;
+ *   - no per-instance group invariant (`requires.anyOfIds`) fires under
+ *     the instance.
  *
- * `instanceComplete(group, fulfilmentIndex, state)` returns true iff no
- * unsatisfied mandatory concern exists under the instance at
- * `fulfilmentIndex` — no unfilled mandatory leaf fulfilmentIndex beneath it, and
- * no unmet per-instance group invariant (`requires.anyOfIds`).
+ * Retained divergence: a fully-empty NESTED instance (positionally
+ * present but with zero leaf storage) does not surface an unmet nested
+ * `anyOfIds` — no fulfilmentIndex exists to attach the invariant error
+ * to. Top-level empty entries are caught by the direct-child mandatory
+ * rule above.
  *
- * Two mandatory-leaf shapes are recognised:
- *   - Leaves the evaluator enumerated for this instance (a fulfilmentIndex
- *     under the instance exists) — the stored value must be non-blank.
- *   - Direct-child leaves under the group with no conditional gate — the
- *     instance carries an implicit requirement to fill them, even when the
- *     evaluator did not enumerate a fulfilmentIndex for them (partially-filled
- *     instance where a mandatory field was never touched).
- *
- * Structural divergence retained from the previous implementation: a
- * fully-empty nested instance (positionally present but with zero leaf
- * storage) does not surface an unmet nested `anyOfIds` — no fulfilmentIndex
- * exists to attach the invariant error to. Top-level empty entries are caught via
- * the direct-child mandatory-leaf rule above.
- *
- * Lives outside `state-queries.js` because it enumerates leaves under the
- * group via the manifest graph, which needs a configured manifest. Keeping
- * it separate lets `state-queries.js` stay manifest-agnostic.
+ * Lives outside `state-queries.js` because it walks leaves under the
+ * group via the manifest graph, which needs a configured manifest.
+ * Keeping it separate lets `state-queries.js` stay manifest-agnostic.
  */
 
 import { INDEX_DELIMITER } from './index-delimiter.js'
@@ -44,15 +38,14 @@ import {
  *   - the implication for each obligation.
  */
 
-// A leaf's fulfilmentIndex belongs to the instance identified by
-// `ancestorIndex` iff it IS `ancestorIndex` or sits beneath it — the same
+// True iff `childIndex` IS `ancestorIndex` or sits beneath it — the same
 // positional-prefix rule the evaluator uses.
 const belongsToFulfilmentIndex = (childIndex, ancestorIndex) =>
   childIndex === ancestorIndex ||
   childIndex.startsWith(`${ancestorIndex}${INDEX_DELIMITER}`)
 
-// Unconditional mandatory direct child leaf with no enumerated fulfilmentIndex
-// for this instance — the instance still requires a value there.
+// Unconditional mandatory direct-child leaf that the evaluator did not
+// enumerate for this instance — the instance still requires a value.
 const directChildRequirementUnmet = (leaf, group, fulfilmentIndex, state) => {
   if (leaf.within !== group || leaf.applyTo) {
     return false
@@ -102,14 +95,9 @@ const groupInvariantBlocksInstance = (group, fulfilmentIndex, state) =>
   )
 
 /**
- * True iff no unsatisfied mandatory concern exists under the instance at
- * `fulfilmentIndex`. See module comment for shape rules and the retained
- * structural divergence for fully-empty nested instances.
- *
  * @param {object} group - the collection obligation carrying the instance.
  * @param {string} fulfilmentIndex - the instance's composite path.
- * @param {EvaluatorState} state - `{ fulfilments, obligations }` as the
- *   evaluator returns.
+ * @param {EvaluatorState} state - `{ fulfilments, obligations }`.
  * @returns {boolean}
  */
 export const instanceComplete = (group, fulfilmentIndex, state) => {

@@ -1,8 +1,7 @@
 /**
  * Read-side queries over evaluator output — the
  * `{ fulfilments, obligations: implicationsByObligation }` state that
- * `createObligationEvaluator({ obligations }).evaluate(fulfilments)`
- * returns.
+ * `createObligationEvaluator(...).evaluate(fulfilments)` returns.
  */
 
 import { INDEX_DELIMITER } from './index-delimiter.js'
@@ -17,13 +16,9 @@ export const STATUSES = {
   SUBMITTED: 'submitted'
 }
 
-/**
- * True iff the stored value at `state.fulfilments[obligation.id]?.[fulfilmentIndex]`
- * is non-blank. Deliberately does not check scope or mandate — those stay
- * separate concerns so the bridge's three-check pattern (in-scope → mandate →
- * fulfilled) composes cleanly. Returns false when the obligation has no
- * storage entry or when the entry itself is not an indexedFulfilments map.
- */
+// Non-blank stored value at `state.fulfilments[obligation.id][fulfilmentIndex]`.
+// Deliberately no scope or mandate check — those are separate concerns so the
+// bridge's three-check pattern (in-scope → mandate → fulfilled) composes.
 export function leafSatisfied(obligation, fulfilmentIndex, state) {
   const fulfilment = state.fulfilments?.[obligation.id]
   if (
@@ -37,15 +32,11 @@ export function leafSatisfied(obligation, fulfilmentIndex, state) {
   return !isBlankValue(fulfilment[fulfilmentIndex])
 }
 
-/**
- * Effective mandate for an obligation at a fulfilmentIndex. Status lives on
- * the implication after Phase 2.1 — constructors stamp `obligation.status`
- * onto the implication, or the applicabilityDecision propagates its own
- * (applyTo helpers such as `equalsGate` / `branchedGate` can return per-branch
- * status for an unindexed obligation, e.g. `regionCode` flipping mandatory ↔
- * optional). `effectiveStatus` reads whichever the implication carries.
- * Returns `undefined` when the obligation has no implication.
- */
+// Effective mandate. Reads `implication.status`, which either carries the
+// obligation's intrinsic status or a per-branch override from an applyTo
+// helper (e.g. `equalsGate` flipping `regionCode` mandatory ↔ optional).
+// Falls back to `'mandatory'` when the implication carries no status;
+// `undefined` when the obligation has no implication at all.
 export function effectiveStatus(obligation, _path, state) {
   const implication = state.obligations?.[obligation.id]
   if (!implication) {
@@ -54,12 +45,10 @@ export function effectiveStatus(obligation, _path, state) {
   return implication.status ?? 'mandatory'
 }
 
-// Each `checkXxx` below implements one `requires` rule shape from
-// `groupInvariantErrors`'s doc comment. Every checker returns an
-// `error[]` — empty when the rule doesn't apply or is satisfied.
-// Collection-level checkers can only ever return 0 or 1 error; the
-// list-typed return keeps the composition in `groupInvariantErrors`
-// uniform.
+// Every `checkXxx` below returns `error[]` — empty when the rule doesn't
+// apply or is satisfied. Collection-level checkers can only ever return 0
+// or 1 error; list-typed return keeps `groupInvariantErrors`'s composition
+// uniform (spread everything, no null filter).
 
 const checkMinEntries = (group, fulfilmentIndexes) => {
   const { minEntries, errorCode } = group.requires
@@ -189,33 +178,24 @@ const checkFulfilmentIndexCountEquals = (group, fulfilmentIndexes, state) => {
 }
 
 /**
- * groupInvariantErrors(group, state)
- *   → [{ code, groupId, groupName, ... }]
- *
- * One entry per unsatisfied invariant on the group. A group may carry
- * any combination of five `requires` rule shapes. The output is ordered
- * collection-level first, then per-instance:
+ * One entry per unsatisfied invariant on the group. Output is ordered
+ * collection-level first, then per-instance. A group may carry any
+ * combination of the five `requires` rules:
  *
  * Collection-level (at most one error each):
- *   - `minEntries` — collection floor. ONE `MIN_ENTRIES` error when
- *     `fulfilmentIndexes.length` is below it.
- *   - `maxEntries` — collection cap. ONE `MAX_ENTRIES` error when
- *     `fulfilmentIndexes.length` exceeds it.
- *   - `allOrNothingOfIds` — field-block rule over unindexed obligations,
- *     keyed directly by obligation id in `state.fulfilments`. ONE
- *     error `{ code, groupId, groupName, missingIds }` when
- *     0 < filledCount < total; none when all-blank or all-filled.
+ *   - `minEntries` — collection floor.
+ *   - `maxEntries` — collection cap.
+ *   - `allOrNothingOfIds` — field-block over unindexed obligations
+ *     (keyed by obligation id in `state.fulfilments`); fires when
+ *     0 < filledCount < total.
  *
  * Per-instance (one error per offending fulfilmentIndex):
- *   - `anyOfIds` — per-instance rule. One error per in-scope instance
- *     where NONE of the required leaves has a non-blank fulfilment;
- *     vacuously satisfied when no leaf is in scope for the instance.
- *   - `fulfilmentIndexCountEquals` — `{ fieldId, errorCode }`. One error per
- *     in-scope parent (`group.within`) instance whose count of
- *     fulfilmentIndexes under `parentFulfilmentIndex/` differs from the
- *     non-blank expected count in
- *     `state.fulfilments[fieldId][parentFulfilmentIndex]`; blank expected
- *     counts are skipped (the field's own mandatory rule catches those).
+ *   - `anyOfIds` — one error per in-scope instance where none of the
+ *     required leaves has a non-blank fulfilment.
+ *   - `fulfilmentIndexCountEquals: { fieldId, errorCode }` — one error
+ *     per in-scope parent (`group.within`) instance whose count of
+ *     child fulfilmentIndexes differs from the non-blank expected
+ *     count at `state.fulfilments[fieldId][parentFulfilmentIndex]`.
  */
 export function groupInvariantErrors(group, state) {
   if (!group?.requires) {
@@ -227,11 +207,9 @@ export function groupInvariantErrors(group, state) {
   }
   const fulfilmentIndexes = groupImplication.fulfilmentIndexes ?? []
   return [
-    // Collection-level rules (fire once for the whole group).
     ...checkMinEntries(group, fulfilmentIndexes),
     ...checkMaxEntries(group, fulfilmentIndexes),
     ...checkAllOrNothingOfIds(group, state),
-    // Per-instance rules (fire per fulfilmentIndex).
     ...checkAnyOfIds(group, fulfilmentIndexes, state),
     ...checkFulfilmentIndexCountEquals(group, fulfilmentIndexes, state)
   ]

@@ -1,52 +1,23 @@
 /**
- * Shared internals for `helpers.js` — canonical "stored fulfilment
- * value → candidate values" normalization. Extracted so the same
- * three-branch shape-test isn't duplicated across `anyAllowListed`,
- * `filterAndProject`, and `present`.
+ * Shape-level utilities shared by the gate helpers — the
+ * "stored fulfilment → candidate values" normalisation used by
+ * `anyAllowListed`, `filterAndProject`, and `present`.
  *
- * Kept in a separate module (not a named export of `helpers.js`) so the
- * `analysis/coverage.test.js` invariant — "every helpers.js named export
- * is an applyTo factory" — still holds. These are shape-level utilities,
- * not gate helpers.
- *
- * Two functions:
- *   - `isNonArrayObject(value)` — shape test. Answers the taxonomy question
- *     (top-level unindexed vs group-scoped gate).
- *   - `readGate(fulfilments, gateId) → { present, candidates }` — one
- *     canonical read of the stored value. `present` flags "any stored
- *     value at all"; `candidates` is the flattened array of atomic
- *     values callers check against an allowlist / target.
- *
- * Semantics preserved verbatim from the original inline logic:
- *   - `undefined` stored value → `{ present: false, candidates: [] }`
- *   - indexedFulfilments (plain object) → `{ present: true, candidates:
- *     Object.values(stored) }`
- *   - anything else (unindexed value, null, array, boolean, number) → `{
- *     present: true, candidates: [stored] }`. Arrays fall through to the
- *     unindexed branch (preserves the `!Array.isArray(stored)` guard — an
- *     array-valued fulfilment is one opaque candidate, not spread).
+ * Kept in a separate module (not re-exported through `helpers/index.js`)
+ * so the `analysis/coverage.test.js` invariant — "every `helpers/index.js`
+ * named export is an applyTo factory" — still holds.
  */
 
-/**
- * True iff `value` is an object other than null or an array — the
- * shape that distinguishes indexedFulfilments (group-scoped storage,
- * fulfilmentIndex-keyed map) from top-level unindexed fulfilments in
- * callers' usage. See helpers/projection/* for the callers.
- *
- * @param {*} value
- * @returns {boolean}
- */
+// True iff `value` is a non-null non-array object — the shape check that
+// separates indexedFulfilments from unindexed fulfilments in callers.
 export const isNonArrayObject = (value) =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
 
-/**
- * readGate — canonical "stored → candidates" normalization. Reads
- * `fulfilments[gateId]` and returns `{ present, candidates }`.
- *
- * @param {object} fulfilments - the raw storage map.
- * @param {string} gateId - the obligation id whose stored value to read.
- * @returns {{ present: boolean, candidates: unknown[] }}
- */
+// Read `fulfilments[gateId]` and normalise to `{ present, candidates }`:
+//   - undefined            → { present: false, candidates: [] }
+//   - indexedFulfilments   → { present: true,  candidates: Object.values(...) }
+//   - anything else        → { present: true,  candidates: [value] }
+// Arrays fall through the last branch as one opaque candidate (not spread).
 export const readGate = (fulfilments, gateId) => {
   const fulfilment = fulfilments[gateId]
   if (fulfilment === undefined) {
