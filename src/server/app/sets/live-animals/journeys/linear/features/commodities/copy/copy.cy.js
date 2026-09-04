@@ -5,6 +5,9 @@
 // mutations. A translator should review every function leaf.
 const plural = (count, noun) => `${count} ${noun}`
 
+// The visually-hidden head of every table's action column.
+const ACTIONS_HIDDEN = 'Camau gweithredu'
+
 export const copy = {
   search: {
     title: 'Beth ydych chi’n ei fewnforio?',
@@ -40,7 +43,7 @@ export const copy = {
       caption: 'Nwyddau a ddewiswyd',
       commodityCode: 'Cod nwyddau',
       commonName: 'Enw cyffredin',
-      actionsHidden: 'Camau gweithredu',
+      actionsHidden: ACTIONS_HIDDEN,
       remove: 'Tynnu'
     },
     animals: {
@@ -65,6 +68,15 @@ export const copy = {
       'Rhaid i chi ychwanegu holl fanylion adnabod yr anifeiliaid cyn i’r llwyth gyrraedd y porthladd mynediad.',
     emptyText: 'Nid ydych wedi ychwanegu unrhyw nwyddau eto.',
     addCommodity: 'Ychwanegu nwydd',
+    addAnotherCommodity: 'Ychwanegu nwydd arall',
+    summary: {
+      caption: 'Nwyddau a ddewiswyd',
+      commodityCode: 'Cod nwyddau',
+      commonName: 'Enw cyffredin',
+      numberOfAnimals: 'Nifer yr anifeiliaid',
+      actionsHidden: ACTIONS_HIDDEN,
+      change: 'Newid'
+    },
     identifierLabels: {
       animalIdentifierPassport: 'Pasbort',
       animalIdentifierTattoo: 'Tatŵ',
@@ -76,7 +88,7 @@ export const copy = {
     table: {
       animalColumn: 'Anifail',
       permanentAddressColumn: 'Cyfeiriad parhaol',
-      actionsHidden: 'Camau gweithredu'
+      actionsHidden: ACTIONS_HIDDEN
     },
     typeFields: {
       animalIdentifierPassport: {
