@@ -17,9 +17,9 @@
  */
 export const obligationMetadata = (obligation) => {
   const gateMetadata = obligation?.applyTo?.metadata ?? {}
-  const explicit = obligation?.dependsOn
-  const dependsOn = Array.isArray(explicit)
-    ? explicit
+  const explicitDependsOn = obligation?.dependsOn
+  const dependsOn = Array.isArray(explicitDependsOn)
+    ? explicitDependsOn
     : deriveDependsOn(gateMetadata)
   return { ...gateMetadata, dependsOn }
 }

@@ -2,15 +2,33 @@ import { filterAndProject } from './filter-and-project.js'
 
 /**
  * Shared factory for projection-gate helpers (`allowListed`,
- * `notInUnionOf`). Callers supply the three per-flavour specifics:
+ * `notInUnionOf`). Params:
  *
- *   - `gateType`      — stamped onto `.metadata.gateType`
- *   - `currentValues` — getter for the live allowlist / union;
- *                       wrapped by `Object.defineProperty` on
- *                       `.metadata.values` for lazy static inspection
- *   - `admits`        — the per-value predicate (in-list vs
- *                       not-in-union); `filterAndProject` applies it
- *                       per fulfilmentIndex
+ *   - `gateType`         — stamped onto `.metadata.gateType`.
+ *                          Differs per flavour (`'allowListed'` vs
+ *                          `'notInUnionOf'`).
+ *   - `gateObligation`   — the obligation whose stored value the gate
+ *                          reads. Its id is used for the storage lookup
+ *                          and stamped on `.metadata.obligationId`.
+ *   - `currentValues`    — getter for the live allowlist / union;
+ *                          wrapped by `Object.defineProperty` on
+ *                          `.metadata.values` for lazy static
+ *                          inspection. Differs per flavour.
+ *   - `admits`           — the per-value predicate (in-list vs
+ *                          not-in-union); `filterAndProject` applies it
+ *                          per fulfilmentIndex. Differs per flavour.
+ *   - `projectionGroup`  — optional. When set, `filterAndProject`
+ *                          projects the passing gate keys through this
+ *                          group's fulfilmentIndexes (a depth-N > 1
+ *                          gate). Its id is stamped on
+ *                          `.metadata.projection`, or `null` when
+ *                          absent.
+ *   - `reasons`          — optional array of `{ code, explanation }`
+ *                          justifications. Merged into the decision
+ *                          when in scope so downstream consumers can
+ *                          explain WHY the obligation applies; also
+ *                          stamped on `.metadata.reasons` (or `null`)
+ *                          for static introspection.
  */
 export const buildProjectionGate = ({
   gateType,
