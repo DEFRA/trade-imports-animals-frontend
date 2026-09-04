@@ -33,11 +33,16 @@ import {
   leafSatisfied
 } from './state-queries.js'
 
+// `Record<K, V>` below is TypeScript's built-in utility type — an
+// object whose keys are of type `K` and values of type `V`. It does
+// not refer to the retired `record` shape (Phase 2.1); the collision
+// is coincidental.
+
 /**
  * @typedef {object} EvaluatorState
  * @property {Record<string, unknown>} fulfilments - the stored fulfilments
  *   keyed by obligation id (indexed obligations carry an inner map keyed by
- *   fulfilmentIndex; unindexed obligations carry a scalar).
+ *   fulfilmentIndex; unindexed obligations carry a single stored value).
  * @property {Record<string, {inScope: boolean, status?: string, fulfilmentIndexes?: string[], reasons?: object[]}>} obligations
  *   - the implication for each obligation.
  */
