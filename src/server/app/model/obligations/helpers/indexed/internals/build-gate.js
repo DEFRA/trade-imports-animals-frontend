@@ -30,7 +30,7 @@ import { runGate } from './run-gate.js'
  *                          stamped on `.metadata.reasons` (or `null`)
  *                          for static introspection.
  */
-export const buildIndexedGate = ({
+export const buildGate = ({
   gateType,
   gateObligation,
   currentValues,

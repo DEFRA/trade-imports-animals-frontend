@@ -1,5 +1,5 @@
 import { deriveUnion } from './internals/derive-union.js'
-import { buildIndexedGate } from './internals/build-indexed-gate.js'
+import { buildGate } from './internals/build-gate.js'
 
 /**
  * notInUnionOf — dual of `allowListed`. In scope on entries whose
@@ -30,7 +30,7 @@ export const notInUnionOf = (
         ? unionOfAllowlists()
         : unionOfAllowlists
     )
-  return buildIndexedGate({
+  return buildGate({
     gateType: 'notInUnionOf',
     gateObligation,
     currentValues,
