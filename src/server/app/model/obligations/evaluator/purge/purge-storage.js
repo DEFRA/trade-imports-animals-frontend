@@ -47,7 +47,7 @@ const purgedFulfilmentFor = (
   return { keep: true, value: fulfilment }
 }
 
-// Step 5: purge storage.
+// Purge storage.
 //   - Out-of-scope obligation → drop entire entry.
 //   - apply-to-derived leaf → keep only entries whose fulfilmentIndex is
 //     in the `applyTo`-returned set.

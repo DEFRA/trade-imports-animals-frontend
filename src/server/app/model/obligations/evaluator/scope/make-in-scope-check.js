@@ -1,4 +1,4 @@
-// Step 4: build a memoised effective-inScope predicate.
+// Build a memoised effective-inScope predicate.
 //
 // `isInScope(obligation) → boolean` ANDs the obligation's own applyTo
 // inScope with every ancestor group's inScope. Results are cached
