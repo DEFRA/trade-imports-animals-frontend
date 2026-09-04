@@ -301,12 +301,14 @@ export const config = convict({
     watch: {
       doc: 'Reload templates when they are changed.',
       format: Boolean,
-      default: isDevelopment
+      default: isDevelopment,
+      env: 'NUNJUCKS_WATCH'
     },
     noCache: {
-      doc: 'Use a cache and recompile templates each time',
+      doc: 'Recompile every template on every render instead of caching it.',
       format: Boolean,
-      default: isDevelopment
+      default: isDevelopment,
+      env: 'NUNJUCKS_NO_CACHE'
     }
   },
   csrf: {

@@ -42,7 +42,7 @@ export const nunjucksConfig = {
     },
     relativeTo: path.resolve(dirname, '../..'),
     path: ['server/app', 'server/app/sets'],
-    isCached: config.get('isProduction'),
+    isCached: !config.get('nunjucks.noCache'),
     context
   }
 }
