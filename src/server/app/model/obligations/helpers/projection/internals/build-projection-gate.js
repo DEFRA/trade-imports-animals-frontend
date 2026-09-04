@@ -1,25 +1,16 @@
 import { filterAndProject } from './filter-and-project.js'
 
 /**
- * Build a projection-gate applyTo function. Centralises the shared
- * outer-wrapper machinery for gate helpers such as `allowListed` and
- * `notInUnionOf`; callers supply the three specifics that vary between
- * gate flavours:
+ * Shared factory for projection-gate helpers (`allowListed`,
+ * `notInUnionOf`). Callers supply the three per-flavour specifics:
  *
- *   - `type`          — the string stamped onto `.metadata.type`
- *   - `currentValues` — a getter returning the live allowlist / union.
- *                       Wrapped by `Object.defineProperty` on
- *                       `.metadata.values` so static analysis can
- *                       inspect it without executing the closure.
- *   - `admits`        — the predicate `(value) => boolean` deciding which
- *                       stored gate values pass. `filterAndProject`
- *                       applies it per fulfilmentIndex; the
- *                       flavour-specific direction (in-list vs
- *                       not-in-union) lives here.
- *
- * Everything else — the `fulfilments` lookup, the `filterAndProject`
- * call, the `reasons` wrap, the metadata construction and lazy `values`
- * property — is shared and lives in one place.
+ *   - `type`          — stamped onto `.metadata.type`
+ *   - `currentValues` — getter for the live allowlist / union;
+ *                       wrapped by `Object.defineProperty` on
+ *                       `.metadata.values` for lazy static inspection
+ *   - `admits`        — the per-value predicate (in-list vs
+ *                       not-in-union); `filterAndProject` applies it
+ *                       per fulfilmentIndex
  */
 export const buildProjectionGate = ({
   type,

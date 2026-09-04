@@ -1,51 +1,25 @@
-// -----------------------------------------------------------------------------
-// Meta-first gate helpers.
+// Meta-first gate helpers — `.metadata` IS the definition, and the
+// closure body is auto-generated from it. Replaces the
+// `branchedGate` + `predicateMeta` + `dependsOn` triple-declaration
+// pattern, where a rename could silently drift the closure body away
+// from what static analysis thought the gate read.
 //
-// The `branchedGate`-plus-`predicateMeta` pattern used by regionCode /
-// purposeInInternalMarket / commercialTransporter / privateTransporter /
-// transitedCountries co-declares the same dependency THREE times: the
-// predicate closure body reads `fulfilments[X.id]`, `predicateMeta`
-// restates it as `{operator, obligationId, value}`, and `dependsOn`
-// restates it a third time as `[X.id]`. Rename the gate obligation and
-// three touchpoints have to stay aligned — miss one and the closure
-// body silently drifts from what static analysis THINKS the gate reads.
-//
-// The four helpers below (`equalsGate`, `presentGate`, `includesGate`,
-// `alwaysInScope`) extend the pattern that `allowListed` / `notInUnionOf`
-// already use — the helper's `.metadata` IS the definition, and the
-// closure body is auto-generated from it. `branchedGate` stays as an
-// escape hatch for genuinely opaque predicates, of which the manifest
-// today has none.
-//
-// Frame semantics — all four helpers use the SAME-FRAME direct-read
-// pattern used by `matches` / `anyAllowListed` / `branchedGate`: the
-// closure reads `fulfilments[gateObligation.id]` and returns a single
-// `{inScope, status, reasons?}` decision. No `filterAndProject`, no
-// projection group, no touching of `fulfilmentIndexesByObligationId`.
-// The migration sites are all notification-level unindexed gates; the
-// depth-N projection variants stay `allowListed` / `notInUnionOf`.
-// -----------------------------------------------------------------------------
+// All four helpers here (`equalsGate`, `presentGate`, `includesGate`,
+// `alwaysInScope`) use the same-frame direct-read pattern: the closure
+// reads `fulfilments[gateObligation.id]` and returns a single
+// `{inScope, status, reasons?}` decision — no `filterAndProject`, no
+// projection group. Depth-N projection variants stay in `allowListed`
+// / `notInUnionOf`.
 
 /**
  * equalsGate — "gate stored value === target ? whenTrue : whenFalse".
  *
- * The workhorse for status-swap and purge-on-flip patterns:
- *   - `regionCode` — mandatory when `regionCodeRequirement === 'yes'`,
- *     otherwise optional (both branches in-scope; status flips).
- *   - `purposeInInternalMarket` — mandatory when `reasonForImport ===
- *     'internalMarket'`, otherwise out of scope (purge on flip).
- *   - `commercialTransporter` / `privateTransporter` — in scope when
- *     `transporterType` matches, otherwise out of scope.
- *
- * The status-flip case (both branches in-scope) is a natural consequence
- * of the caller-supplied decisions — no separate status-only variant is
- * needed. Whatever the caller passes as `whenTrue` / `whenFalse` is
- * returned verbatim.
- *
- * @param {object} gateObligation — the obligation whose stored value is read.
- * @param {*} value — the target value for equality.
- * @param {object} whenTrue — decision returned on match.
- * @param {object} whenFalse — decision returned on mismatch.
+ * Workhorse for status-swap and purge-on-flip patterns. Both
+ * `whenTrue` and `whenFalse` are returned verbatim, so a caller who
+ * passes two in-scope decisions gets a pure status flip (e.g.
+ * `regionCode` mandatory ↔ optional), and one in-scope + one
+ * out-of-scope gets a purge-on-flip (e.g. `purposeInInternalMarket`
+ * dropped when `reasonForImport` changes).
  */
 export const equalsGate = (gateObligation, value, whenTrue, whenFalse) => {
   const fn = (fulfilments) =>

@@ -1,17 +1,11 @@
 import { isNonArrayObject } from '../../../helper-internals.js'
 import { INDEX_DELIMITER } from '../../../index-delimiter.js'
 
-// Two shape branches, each producing its applyTo decision natively:
-//   - Indexed fulfilment (indexedFulfilments map). Collect the fulfilmentIndexes
-//     whose stored values pass the predicate; optionally project through
-//     `projectionGroup`'s instances (a depth-N > 1 gate).
-//   - Unindexed fulfilment (single stored value). Predicate either admits it
-//     or it doesn't; if a projectionGroup is set, the unindexed value's
-//     yes/no verdict fans out across every instance of that group.
-//
-// The two branches don't share a "list of keys" abstraction — an unindexed
-// value has no key. Each returns its own `{ inScope, fulfilmentIndexes? }`
-// decision.
+// Two shape branches, dispatched below in `filterAndProject`:
+//   - indexedFulfilments — collect the fulfilmentIndexes whose stored values
+//     pass the predicate; optionally intersect with `projectionGroup`.
+//   - unindexed — predicate either admits the value or it doesn't; a
+//     projectionGroup fans the yes verdict across every instance.
 
 const decisionFromUnindexed = (
   unindexedValue,
