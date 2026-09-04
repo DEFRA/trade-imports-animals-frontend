@@ -5,21 +5,21 @@ import { INDEX_DELIMITER } from '../../../index-delimiter.js'
 //   - Indexed fulfilment (indexedFulfilments map). Collect the fulfilmentIndexes
 //     whose stored values pass the predicate; optionally project through
 //     `projectionGroup`'s instances (a depth-N > 1 gate).
-//   - Scalar fulfilment (single stored value). Predicate either admits it
-//     or it doesn't; if a projectionGroup is set, the scalar's yes/no
-//     verdict fans out across every instance of that group.
+//   - Unindexed fulfilment (single stored value). Predicate either admits it
+//     or it doesn't; if a projectionGroup is set, the unindexed value's
+//     yes/no verdict fans out across every instance of that group.
 //
-// The two branches don't share a "list of keys" abstraction — a scalar
-// has no key. Each returns its own `{ inScope, fulfilmentIndexes? }`
+// The two branches don't share a "list of keys" abstraction — an unindexed
+// value has no key. Each returns its own `{ inScope, fulfilmentIndexes? }`
 // decision.
 
-const decisionFromScalar = (
-  scalar,
+const decisionFromUnindexed = (
+  unindexedValue,
   predicate,
   projectionGroup,
   fulfilmentIndexesByObligationId
 ) => {
-  if (!predicate(scalar)) {
+  if (!predicate(unindexedValue)) {
     return { inScope: false }
   }
   if (!projectionGroup) {
@@ -74,7 +74,7 @@ export const filterAndProject = (
         projectionGroup,
         fulfilmentIndexesByObligationId
       )
-    : decisionFromScalar(
+    : decisionFromUnindexed(
         stored,
         predicate,
         projectionGroup,

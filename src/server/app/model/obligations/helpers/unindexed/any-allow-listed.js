@@ -1,7 +1,7 @@
 import { readGate } from '../../helper-internals.js'
 
 /**
- * anyAllowListed — scalar aggregation. True if ANY of the gate
+ * anyAllowListed — single-decision aggregation. True if ANY of the gate
  * obligation's stored values is in the allowlist. Returns whenTrue on
  * match, whenFalse on miss. Handles per-line-gate → notification-level-
  * gated shape (e.g. CPH: "any commodity line has a CPH-required code").

@@ -341,12 +341,12 @@ describe('#leafSatisfied', () => {
     // Top-level unindexed obligations store a value directly; leafSatisfied
     // is defined only for grouped leaves, so an unindexed storage shape
     // reads as false.
-    const scalar = {
+    const unindexed = {
       id: 'purposeInInternalMarket',
       name: 'purposeInInternalMarket'
     }
-    const st = state({ fulfilments: { [scalar.id]: 'BREEDING' } })
-    expect(leafSatisfied(scalar, line1Unit1FulfilmentIndex, st)).toBe(false)
+    const st = state({ fulfilments: { [unindexed.id]: 'BREEDING' } })
+    expect(leafSatisfied(unindexed, line1Unit1FulfilmentIndex, st)).toBe(false)
   })
 })
 

@@ -4,12 +4,12 @@
  * The one-liner for `transitedCountries`'s
  * `LAND_TRANSPORT_MODES.includes(fulfilments[meansOfTransport.id])`
  * predicate. Structurally analogous to `equalsGate` but with a set of
- * admitted values rather than a single scalar target.
+ * admitted values rather than a single target.
  *
- * NOT to be confused with `allowListed` — `allowListed` filters over a
- * KEYED-RECORD storage shape and projects to instance-paths (depth-N
- * gates); `includesGate` reads the gate value as a scalar and returns
- * a scalar decision.
+ * NOT to be confused with `allowListed` — `allowListed` filters over
+ * an indexedFulfilments storage shape and projects to fulfilmentIndexes
+ * (depth-N gates); `includesGate` reads the gate value as an unindexed
+ * fulfilment and returns a single `{ inScope }` decision.
  *
  * @param {object} gateObligation — the obligation whose stored value is read.
  * @param {Array} values — the admitted list.

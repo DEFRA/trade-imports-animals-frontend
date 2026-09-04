@@ -1,6 +1,7 @@
 /**
- * matches — scalar equality check. True where `gateObligation`'s
- * stored value equals `value`. Returns a scalar decision.
+ * matches — equality check on an unindexed obligation. True where
+ * `gateObligation`'s stored value equals `value`. Returns a single
+ * `{ inScope }` decision.
  */
 export const matches = (gateObligation, value) => {
   const fn = (fulfilments) =>

@@ -120,12 +120,12 @@ describe('#buildProjectionGate', () => {
     })
   })
 
-  // The gate's stored value can be a scalar (unindexed obligation as the
-  // gate source) rather than an indexedFulfilments map. `filterAndProject`
-  // routes those through `decisionFromScalar` — no per-key iteration; the
-  // predicate either admits the scalar or it doesn't.
-  describe('applyTo call — scalar gate value', () => {
-    it('returns { inScope: false } when the predicate rejects the scalar', () => {
+  // The gate's stored value can be a single stored value (an unindexed
+  // obligation as the gate source) rather than an indexedFulfilments map.
+  // `filterAndProject` routes those through `decisionFromUnindexed` — no
+  // per-key iteration; the predicate either admits the value or it doesn't.
+  describe('applyTo call — unindexed gate value', () => {
+    it('returns { inScope: false } when the predicate rejects the value', () => {
       const fn = buildProjectionGate({
         type: 'testKind',
         gateObligation,
@@ -136,7 +136,7 @@ describe('#buildProjectionGate', () => {
       expect(fn({ gate: 'no' }, undefined)).toEqual({ inScope: false })
     })
 
-    it('returns { inScope: true } when the predicate admits the scalar and no projection group is set', () => {
+    it('returns { inScope: true } when the predicate admits the value and no projection group is set', () => {
       const fn = buildProjectionGate({
         type: 'testKind',
         gateObligation,
@@ -147,7 +147,7 @@ describe('#buildProjectionGate', () => {
       expect(fn({ gate: 'yes' }, undefined)).toEqual({ inScope: true })
     })
 
-    it('fans the yes verdict out across every instance of a projection group when the scalar passes', () => {
+    it('fans the yes verdict out across every instance of a projection group when the value passes', () => {
       const projectionGroup = { id: 'commodityLines' }
       const fn = buildProjectionGate({
         type: 'testKind',
@@ -163,7 +163,7 @@ describe('#buildProjectionGate', () => {
       })
     })
 
-    it('returns { inScope: false } when the scalar passes but the projection group has no instances', () => {
+    it('returns { inScope: false } when the value passes but the projection group has no instances', () => {
       const projectionGroup = { id: 'commodityLines' }
       const fn = buildProjectionGate({
         type: 'testKind',
@@ -185,9 +185,9 @@ describe('#buildProjectionGate', () => {
         projectionGroup: null
       })
       // No `gate` key in fulfilments — filterAndProject falls back to `{}`,
-      // which is an indexed-shape branch. Passing a scalar via a nullish
-      // check would be a separate arrangement; this ensures the wrapper
-      // doesn't blow up on missing storage.
+      // which is an indexed-shape branch. Passing an unindexed value via a
+      // nullish check would be a separate arrangement; this ensures the
+      // wrapper doesn't blow up on missing storage.
       expect(fn({}, undefined)).toEqual({ inScope: false })
     })
   })

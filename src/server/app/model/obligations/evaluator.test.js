@@ -1331,16 +1331,16 @@ describe('evaluator — applyTo evaluates on the post-purge view (two-hop cascad
 //
 // 18 always-in-scope obligations use the data-only shape
 // `{ id, name, status: '<literal>' }` with no `applyTo` closure and no
-// `dependsOn`. The `within.id` deref guard makes them routable through
-// the evaluator's `field` classifier (evaluator.js buildImplication →
-// the "top-level scalar with intrinsic status" branch returns
-// `{ inScope: true, status: obligation.status }`).
+// `dependsOn`. They classify as `'unindexed'` (Phase 1.4 folded the
+// former no-within `'field'` case in) and `unindexedImplication` falls
+// through to `{ inScope: true, status: obligation.status }` when no
+// applicabilityDecision is present.
 //
 // The fidelity contract this block pins: for every one of the 18
 // obligations, `evaluator.evaluate({})` returns EXACTLY the decision
 // object shape `{ inScope: true, status: '<literal>' }`. Any regression
-// here means the classifier didn't route the obligation to the `field`
-// category or the field branch produced a different shape.
+// here means the classifier didn't route the obligation to the
+// `'unindexed'` category or the constructor produced a different shape.
 //
 // Expected split: 17 mandatory + 1 optional (`internalReferenceNumber`).
 // ---------------------------------------------------------------------------

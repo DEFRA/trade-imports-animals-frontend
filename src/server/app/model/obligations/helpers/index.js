@@ -36,9 +36,9 @@
  *   in the identity-level sense — it's about the SHAPE of the stored
  *   value the gate reads.
  *
- *   1. **Top-level scalar gate** — the gate obligation has no `within`,
- *      OR is otherwise stored as a plain scalar in `fulfilments[gate.id]`.
- *      Example: `reasonForImport` (top-level, scalar). The `applyTo`
+ *   1. **Top-level unindexed gate** — the gate obligation has no `within`,
+ *      OR is otherwise stored as a single stored value in `fulfilments[gate.id]`.
+ *      Example: `reasonForImport` (top-level, unindexed). The `applyTo`
  *      returns a SINGLE `{inScope, status, reasons?}` decision.
  *      Use: `equalsGate` / `includesGate` / `presentGate`.
  *
@@ -59,14 +59,14 @@
  *        each matching commodity-line.
  *
  *   Rule of thumb: if the gate obligation has a `within`, use the
- *   `allowListed`/`notInUnionOf` family. Otherwise use the scalar
+ *   `allowListed`/`notInUnionOf` family. Otherwise use the unindexed
  *   family (`equalsGate` / `includesGate` / `presentGate` /
- *   `alwaysInScope`). `matches` is a same-frame scalar equality gate
- *   with same-frame semantics (kept for backwards compat).
- *   `anyAllowListed` is a scalar aggregation over a group's
- *   fulfilmentIndexes (returns a single decision, not
- *   per-fulfilmentIndex) — for the "cph reads ANY commodityCode across
- *   commodity lines" case; see its docstring.
+ *   `alwaysInScope`). `matches` is a same-frame single-decision
+ *   equality gate with same-frame semantics (kept for backwards
+ *   compat). `anyAllowListed` reduces a group's fulfilmentIndexes to
+ *   one decision (rather than a per-fulfilmentIndex list) — for the
+ *   "cph reads ANY commodityCode across commodity lines" case; see
+ *   its docstring.
  *
  *   `branchedGate` is the escape hatch for genuinely non-derivable
  *   predicates. It is absent from the manifest today but retained here
@@ -76,12 +76,12 @@
 
 export { allowListed } from './projection/allow-listed.js'
 export { notInUnionOf } from './projection/not-in-union-of.js'
-export { anyAllowListed } from './scalar/any-allow-listed.js'
-export { branchedGate } from './scalar/branched-gate.js'
-export { matches } from './scalar/matches.js'
-export { present } from './scalar/present.js'
-export { equalsGate } from './scalar/equals-gate.js'
-export { presentGate } from './scalar/present-gate.js'
-export { includesGate } from './scalar/includes-gate.js'
-export { alwaysInScope } from './scalar/always-in-scope.js'
+export { anyAllowListed } from './unindexed/any-allow-listed.js'
+export { branchedGate } from './unindexed/branched-gate.js'
+export { matches } from './unindexed/matches.js'
+export { present } from './unindexed/present.js'
+export { equalsGate } from './unindexed/equals-gate.js'
+export { presentGate } from './unindexed/present-gate.js'
+export { includesGate } from './unindexed/includes-gate.js'
+export { alwaysInScope } from './unindexed/always-in-scope.js'
 export { obligationMetadata } from './introspection/obligation-metadata.js'

@@ -3,8 +3,9 @@ import { present } from './present.js'
 /**
  * presentGate — "gate has ANY answer ? whenTrue : whenFalse". The
  * closure body defers to the same "answered" test used by `present`:
- * scalar values other than `null`/`undefined` count as present; indexed
- * obligations count as present iff at least one key exists.
+ * unindexed obligations count as present iff their stored value is
+ * neither `null` nor `undefined`; indexed obligations count as present
+ * iff at least one key exists.
  *
  * Applies to `accompanyingDocumentType`'s self-referential status-swap
  * block (though the four accompanying-document siblings currently share

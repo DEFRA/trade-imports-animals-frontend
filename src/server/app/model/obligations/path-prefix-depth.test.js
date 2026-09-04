@@ -12,7 +12,7 @@ import { allowListed } from './helpers/index.js'
 // key as a real prefix
 // (`key === '' || path === key || path.startsWith(`${key}.`)`); the
 // empty-key case matters because `filterAndProject` uses `''` as the key for
-// a scalar (non-indexedFulfilments) gate.
+// an unindexed (non-indexedFulfilments) gate.
 describe('a gate at depth >= 2 that projects', () => {
   // Three nested groups, one segment of composite key each:
   //

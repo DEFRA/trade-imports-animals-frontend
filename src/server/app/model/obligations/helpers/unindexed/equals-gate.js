@@ -17,13 +17,13 @@
 // escape hatch for genuinely opaque predicates, of which the manifest
 // today has none.
 //
-// Frame semantics — all four helpers use the SAME-FRAME scalar-read
+// Frame semantics — all four helpers use the SAME-FRAME direct-read
 // pattern used by `matches` / `anyAllowListed` / `branchedGate`: the
-// closure reads `fulfilments[gateObligation.id]` and returns a scalar
-// decision object. No `filterAndProject`, no projection group, no
-// touching of `fulfilmentIndexesByObligationId`. The migration sites are
-// all notification-level scalar gates; the depth-N projection variants
-// stay `allowListed` / `notInUnionOf`.
+// closure reads `fulfilments[gateObligation.id]` and returns a single
+// `{inScope, status, reasons?}` decision. No `filterAndProject`, no
+// projection group, no touching of `fulfilmentIndexesByObligationId`.
+// The migration sites are all notification-level unindexed gates; the
+// depth-N projection variants stay `allowListed` / `notInUnionOf`.
 // -----------------------------------------------------------------------------
 
 /**

@@ -239,7 +239,7 @@ describe('anyAllowListed', () => {
     expect(gate({})).toEqual(whenFalse)
   })
 
-  it('Should handle scalar stored values (not just maps)', () => {
+  it('Should handle unindexed stored values (not just maps)', () => {
     const gate = anyAllowListed(codeObl, ['yes'], whenTrue, whenFalse)
     expect(gate({ [codeObl.id]: 'yes' })).toEqual(whenTrue)
     expect(gate({ [codeObl.id]: 'no' })).toEqual(whenFalse)
@@ -282,7 +282,7 @@ describe('branchedGate', () => {
 })
 
 // ---------------------------------------------------------------------------
-// matches (scalar)
+// matches (unindexed)
 // ---------------------------------------------------------------------------
 
 describe('matches', () => {
@@ -307,7 +307,7 @@ describe('matches', () => {
 // ---------------------------------------------------------------------------
 
 describe('present', () => {
-  it('Should return true when a scalar value is stored', () => {
+  it('Should return true when an unindexed value is stored', () => {
     expect(present(boolObl)({ [boolObl.id]: 'anything' })).toBe(true)
     expect(present(boolObl)({ [boolObl.id]: 0 })).toBe(true)
     expect(present(boolObl)({ [boolObl.id]: false })).toBe(true)
@@ -402,11 +402,11 @@ describe('obligationMetadata', () => {
 // duplication: the metadata IS the definition, the closure body is
 // auto-generated.
 //
-// Frame semantics: all four helpers use the SAME-FRAME scalar-read
+// Frame semantics: all four helpers use the SAME-FRAME direct-read
 // pattern used by `matches` / `anyAllowListed` / `branchedGate` — no
 // `filterAndProject`, no projection group, no `fulfilmentIndexesByObligationId`
 // touch. The migration sites (regionCode etc.) are all notification-
-// level scalar gates; if a future depth-N call site emerges,
+// level unindexed gates; if a future depth-N call site emerges,
 // `allowListed`'s projection pattern is the escape hatch.
 // ---------------------------------------------------------------------------
 
@@ -468,13 +468,13 @@ describe('presentGate', () => {
   const whenTrue = { inScope: true, status: 'mandatory' }
   const whenFalse = { inScope: true, status: 'optional' }
 
-  it('Should return whenTrue when the gate has any scalar value', () => {
+  it('Should return whenTrue when the gate has any unindexed value', () => {
     const gate = presentGate(boolObl, whenTrue, whenFalse)
     expect(gate({ [boolObl.id]: 'anything' })).toEqual(whenTrue)
   })
 
   it('Should return whenTrue for truthy-but-falsy values (0, false, "")', () => {
-    // Matches `present`'s semantics: any non-null/non-undefined scalar
+    // Matches `present`'s semantics: any non-null/non-undefined value
     // counts as "answered". Empty-string is a stored answer (the user
     // saved the page blank), which regionCode's status-swap needs to
     // treat as present.
@@ -600,12 +600,12 @@ describe('isNonArrayObject', () => {
     expect(isNonArrayObject({})).toBe(true)
   })
 
-  it('Should return false for scalar strings', () => {
+  it('Should return false for primitive strings', () => {
     expect(isNonArrayObject('a')).toBe(false)
     expect(isNonArrayObject('')).toBe(false)
   })
 
-  it('Should return false for other scalar primitives', () => {
+  it('Should return false for other primitives', () => {
     expect(isNonArrayObject(0)).toBe(false)
     expect(isNonArrayObject(false)).toBe(false)
     expect(isNonArrayObject(true)).toBe(false)
@@ -643,14 +643,14 @@ describe('readGate', () => {
     })
   })
 
-  it('Should wrap a scalar string in a single-element candidates array', () => {
+  it('Should wrap a primitive string in a single-element candidates array', () => {
     expect(readGate({ [gateId]: 'yes' }, gateId)).toEqual({
       present: true,
       candidates: ['yes']
     })
   })
 
-  it('Should wrap other scalar primitives (0, false, empty string) as present', () => {
+  it('Should wrap other primitives (0, false, empty string) as present', () => {
     // Matches the original inline `stored !== undefined ? [stored] : []`
     // — falsy-but-defined values ARE present as candidates.
     expect(readGate({ [gateId]: 0 }, gateId)).toEqual({
@@ -667,10 +667,10 @@ describe('readGate', () => {
     })
   })
 
-  it('Should treat null as a scalar (present with a single null candidate)', () => {
+  it('Should treat null as a primitive (present with a single null candidate)', () => {
     // The original inline check was `stored && typeof stored === 'object'
     // && !Array.isArray(stored)` — null fails the truthiness gate and
-    // falls to the scalar branch as `!== undefined`. Pin that.
+    // falls to the primitive branch as `!== undefined`. Pin that.
     expect(readGate({ [gateId]: null }, gateId)).toEqual({
       present: true,
       candidates: [null]
@@ -694,8 +694,8 @@ describe('readGate', () => {
     })
   })
 
-  it('Should treat arrays as scalars (single-element candidates wrapping the array)', () => {
-    // The original inline check falls arrays through to the scalar branch
+  it('Should treat arrays as primitives (single-element candidates wrapping the array)', () => {
+    // The original inline check falls arrays through to the primitive branch
     // because of `!Array.isArray(stored)`. Preserve that verbatim — a
     // helper caller receiving an array-shaped stored value gets ONE
     // candidate (the array itself), not the array spread.

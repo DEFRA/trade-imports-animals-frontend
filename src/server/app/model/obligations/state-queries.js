@@ -42,7 +42,7 @@ export function leafSatisfied(obligation, fulfilmentIndex, state) {
  * the implication after Phase 2.1 — constructors stamp `obligation.status`
  * onto the implication, or the applicabilityDecision propagates its own
  * (applyTo helpers such as `equalsGate` / `branchedGate` can return per-branch
- * status for a scalar obligation, e.g. `regionCode` flipping mandatory ↔
+ * status for an unindexed obligation, e.g. `regionCode` flipping mandatory ↔
  * optional). `effectiveStatus` reads whichever the implication carries.
  * Returns `undefined` when the obligation has no implication.
  */

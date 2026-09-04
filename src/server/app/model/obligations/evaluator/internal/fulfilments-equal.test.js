@@ -15,11 +15,11 @@ describe('fulfilmentsEqual', () => {
     expect(fulfilmentsEqual({ a: 'x' }, { b: 'x' })).toBe(false)
   })
 
-  it('is true when scalar top-level values match by reference / primitive equality', () => {
+  it('is true when unindexed top-level values match by reference / primitive equality', () => {
     expect(fulfilmentsEqual({ a: 'x' }, { a: 'x' })).toBe(true)
   })
 
-  it('is false when a top-level scalar value differs', () => {
+  it('is false when a top-level unindexed value differs', () => {
     expect(fulfilmentsEqual({ a: 'x' }, { a: 'y' })).toBe(false)
   })
 

@@ -5,7 +5,7 @@ const hasFulfilmentIndexes = (fulfilment) => Object.keys(fulfilment).length > 0
 
 /**
  * present — predicate primitive. True iff the given obligation has
- * any stored value. For scalar obligations checks `!== undefined`;
+ * any stored value. For unindexed obligations checks `!== undefined`;
  * for indexed obligations checks the storage map has at least one key.
  *
  * Returns a predicate (not an applyTo). Compose into a `branchedGate`

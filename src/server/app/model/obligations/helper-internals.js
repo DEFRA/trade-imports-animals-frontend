@@ -1,6 +1,6 @@
 /**
  * Shared internals for `helpers.js` — canonical "stored fulfilment
- * value → candidate scalars" normalization. Extracted so the same
+ * value → candidate values" normalization. Extracted so the same
  * three-branch shape-test isn't duplicated across `anyAllowListed`,
  * `filterAndProject`, and `present`.
  *
@@ -11,10 +11,10 @@
  *
  * Two functions:
  *   - `isNonArrayObject(value)` — shape test. Answers the taxonomy question
- *     (top-level scalar vs group-scoped gate).
+ *     (top-level unindexed vs group-scoped gate).
  *   - `readGate(fulfilments, gateId) → { present, candidates }` — one
  *     canonical read of the stored value. `present` flags "any stored
- *     value at all"; `candidates` is the flattened array of scalar
+ *     value at all"; `candidates` is the flattened array of atomic
  *     values callers check against an allowlist / target.
  *
  * Semantics preserved verbatim from the original inline logic:
