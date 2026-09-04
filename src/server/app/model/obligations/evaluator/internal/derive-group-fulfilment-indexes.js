@@ -1,19 +1,19 @@
 import { INDEX_DELIMITER } from '../../index-delimiter.js'
 import { isNonArrayObject } from '../../helper-internals.js'
 const joinIndex = (segments) => segments.join(INDEX_DELIMITER)
-const splitIndex = (key) => key.split(INDEX_DELIMITER)
+const splitIndex = (fulfilmentIndex) => fulfilmentIndex.split(INDEX_DELIMITER)
 
 // The fulfilmentIndex prefixes one descendant contributes to its
-// group's fulfilmentIndex set — take the first `prefixLen` segments
-// of each stored key.
-const indexPrefixesFromDescendant = (fulfilment, prefixLen) => {
+// group's fulfilmentIndex set — take the first `prefixLength` segments
+// of each stored fulfilmentIndex.
+const indexPrefixesFromDescendant = (fulfilment, prefixLength) => {
   if (!isNonArrayObject(fulfilment)) {
     return []
   }
   return Object.keys(fulfilment)
-    .map((key) => splitIndex(key))
-    .filter((segments) => segments.length >= prefixLen)
-    .map((segments) => joinIndex(segments.slice(0, prefixLen)))
+    .map((fulfilmentIndex) => splitIndex(fulfilmentIndex))
+    .filter((segments) => segments.length >= prefixLength)
+    .map((segments) => joinIndex(segments.slice(0, prefixLength)))
 }
 
 // Union the fulfilmentIndex prefixes contributed by every descendant.
@@ -25,12 +25,12 @@ export const deriveGroupFulfilmentIndexes = (
   obligationDescendants,
   fulfilmentFor
 ) => {
-  const prefixLen = obligationAncestorGroups.get(obligation.id).length + 1
+  const prefixLength = obligationAncestorGroups.get(obligation.id).length + 1
   const ids = new Set()
   for (const descendant of obligationDescendants.get(obligation.id)) {
     for (const id of indexPrefixesFromDescendant(
       fulfilmentFor(descendant),
-      prefixLen
+      prefixLength
     )) {
       ids.add(id)
     }
