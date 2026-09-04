@@ -722,8 +722,8 @@ describe('migration fidelity — 9 sites round-trip', () => {
   })
 
   // Meta-first invariant: every branchedGate→meta-first migrated site's
-  // applyTo.metadata.type is one of the three helpers.
-  it('every migrated site now uses a meta-first helper metadata.type', () => {
+  // applyTo.metadata.gateType is one of the three helpers.
+  it('every migrated site now uses a meta-first helper metadata.gateType', () => {
     const META_FIRST = new Set(['equalsGate', 'presentGate', 'includesGate'])
     const migratedNames = [
       'purposeInInternalMarket',
@@ -737,8 +737,8 @@ describe('migration fidelity — 9 sites round-trip', () => {
     ]
     const stragglers = migratedNames
       .map(findOblByName)
-      .filter((o) => !META_FIRST.has(o.applyTo?.metadata?.type))
-      .map((o) => `${o.name} → ${o.applyTo?.metadata?.type}`)
+      .filter((o) => !META_FIRST.has(o.applyTo?.metadata?.gateType))
+      .map((o) => `${o.name} → ${o.applyTo?.metadata?.gateType}`)
     expect(stragglers).toEqual([])
   })
 })

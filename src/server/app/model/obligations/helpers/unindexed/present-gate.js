@@ -8,7 +8,7 @@ export const presentGate = (gateObligation, whenTrue, whenFalse) => {
   const isPresent = present(gateObligation)
   const fn = (fulfilments) => (isPresent(fulfilments) ? whenTrue : whenFalse)
   fn.metadata = {
-    type: 'presentGate',
+    gateType: 'presentGate',
     obligationId: gateObligation.id,
     whenTrue,
     whenFalse

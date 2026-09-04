@@ -4,7 +4,7 @@ import { filterAndProject } from './filter-and-project.js'
  * Shared factory for projection-gate helpers (`allowListed`,
  * `notInUnionOf`). Callers supply the three per-flavour specifics:
  *
- *   - `type`          — stamped onto `.metadata.type`
+ *   - `gateType`      — stamped onto `.metadata.gateType`
  *   - `currentValues` — getter for the live allowlist / union;
  *                       wrapped by `Object.defineProperty` on
  *                       `.metadata.values` for lazy static inspection
@@ -13,7 +13,7 @@ import { filterAndProject } from './filter-and-project.js'
  *                       per fulfilmentIndex
  */
 export const buildProjectionGate = ({
-  type,
+  gateType,
   gateObligation,
   currentValues,
   admits,
@@ -30,7 +30,7 @@ export const buildProjectionGate = ({
     return decision.inScope && reasons ? { ...decision, reasons } : decision
   }
   fn.metadata = {
-    type,
+    gateType,
     obligationId: gateObligation.id,
     projection: projectionGroup?.id ?? null,
     reasons: reasons ?? null

@@ -69,7 +69,7 @@ describe('allowListed', () => {
   it('Should expose metadata for introspection', () => {
     const gate = allowListed(codeObl, ['a', 'b'], groupObl)
     expect(gate.metadata).toEqual({
-      type: 'allowListed',
+      gateType: 'allowListed',
       obligationId: codeObl.id,
       values: ['a', 'b'],
       projection: groupObl.id,
@@ -160,7 +160,7 @@ describe('notInUnionOf', () => {
       null
     )
     expect(gate.metadata).toEqual({
-      type: 'notInUnionOf',
+      gateType: 'notInUnionOf',
       obligationId: codeObl.id,
       values: ['a', 'b', 'c', 'd'],
       projection: groupObl.id,
@@ -376,7 +376,7 @@ describe('obligationMetadata', () => {
       dependsOn: [gateObl.id]
     }
     const meta = obligationMetadata(obligation)
-    expect(meta.type).toBe('allowListed')
+    expect(meta.gateType).toBe('allowListed')
     expect(meta.obligationId).toBe(gateObl.id)
     expect(meta.dependsOn).toEqual([gateObl.id])
   })
@@ -455,7 +455,7 @@ describe('equalsGate', () => {
   it('Should expose metadata with obligationId + value + branches', () => {
     const gate = equalsGate(boolObl, 'yes', whenTrue, whenFalse)
     expect(gate.metadata).toEqual({
-      type: 'equalsGate',
+      gateType: 'equalsGate',
       obligationId: boolObl.id,
       value: 'yes',
       whenTrue,
@@ -504,7 +504,7 @@ describe('presentGate', () => {
   it('Should expose metadata with obligationId + branches (no value)', () => {
     const gate = presentGate(boolObl, whenTrue, whenFalse)
     expect(gate.metadata).toEqual({
-      type: 'presentGate',
+      gateType: 'presentGate',
       obligationId: boolObl.id,
       whenTrue,
       whenFalse
@@ -536,7 +536,7 @@ describe('includesGate', () => {
   it('Should expose metadata with obligationId + values + branches', () => {
     const gate = includesGate(boolObl, LAND_MODES, whenTrue, whenFalse)
     expect(gate.metadata).toEqual({
-      type: 'includesGate',
+      gateType: 'includesGate',
       obligationId: boolObl.id,
       values: LAND_MODES,
       whenTrue,
@@ -574,7 +574,7 @@ describe('alwaysInScope', () => {
   it('Should expose metadata with status (+ optional reasons)', () => {
     const gate = alwaysInScope('mandatory')
     expect(gate.metadata).toEqual({
-      type: 'alwaysInScope',
+      gateType: 'alwaysInScope',
       status: 'mandatory',
       reasons: null
     })
@@ -582,7 +582,7 @@ describe('alwaysInScope', () => {
       { code: 'x', explanation: 'y' }
     ])
     expect(gateWithReasons.metadata).toEqual({
-      type: 'alwaysInScope',
+      gateType: 'alwaysInScope',
       status: 'mandatory',
       reasons: [{ code: 'x', explanation: 'y' }]
     })

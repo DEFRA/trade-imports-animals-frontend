@@ -51,18 +51,18 @@ const SINGLE_GATE_TYPES = new Set([
 ])
 
 const deriveDependsOn = (gateMetadata) => {
-  const type = gateMetadata?.type
-  if (SINGLE_GATE_TYPES.has(type)) {
+  const gateType = gateMetadata?.gateType
+  if (SINGLE_GATE_TYPES.has(gateType)) {
     return typeof gateMetadata.obligationId === 'string'
       ? [gateMetadata.obligationId]
       : undefined
   }
-  if (type === 'branchedGate') {
+  if (gateType === 'branchedGate') {
     return typeof gateMetadata.predicateMeta?.obligationId === 'string'
       ? [gateMetadata.predicateMeta.obligationId]
       : undefined
   }
-  if (type === 'alwaysInScope') {
+  if (gateType === 'alwaysInScope') {
     return []
   }
   return undefined

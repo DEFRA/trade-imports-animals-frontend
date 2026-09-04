@@ -22,7 +22,7 @@ export const branchedGate = (predicate, whenTrue, whenFalse, predicateMeta) => {
       ? whenTrue
       : whenFalse
   fn.metadata = {
-    type: 'branchedGate',
+    gateType: 'branchedGate',
     whenTrue,
     whenFalse,
     predicateMeta: predicateMeta ?? null

@@ -21,7 +21,7 @@ export const allowListed = (
 ) => {
   const currentValues = () => (typeof values === 'function' ? values() : values)
   return buildProjectionGate({
-    type: 'allowListed',
+    gateType: 'allowListed',
     gateObligation,
     currentValues,
     admits: (value) => currentValues().includes(value),

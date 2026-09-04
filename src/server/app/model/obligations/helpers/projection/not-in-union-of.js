@@ -31,7 +31,7 @@ export const notInUnionOf = (
         : unionOfAllowlists
     )
   return buildProjectionGate({
-    type: 'notInUnionOf',
+    gateType: 'notInUnionOf',
     gateObligation,
     currentValues,
     admits: (value) => !currentValues().includes(value),

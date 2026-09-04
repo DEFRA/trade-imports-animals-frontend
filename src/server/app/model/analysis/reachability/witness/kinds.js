@@ -43,7 +43,7 @@ export const WITNESS_KIND = Object.freeze({
 })
 
 /**
- * STRUCTURED_HELPER_TYPES — the `.metadata.type` labels for helpers
+ * STRUCTURED_HELPER_TYPES — the `.metadata.gateType` labels for helpers
  * whose gates `synthesiseWitness` can invert into a concrete
  * `{ obligationId, value }` witness. Each label here MUST have a
  * matching `case` in `synthesiseWitness`'s dispatch (the coverage test
@@ -71,7 +71,7 @@ export const STRUCTURED_HELPER_TYPES = new Set([
 ])
 
 /**
- * OPAQUE_HELPER_TYPES — the `.metadata.type` labels for helpers
+ * OPAQUE_HELPER_TYPES — the `.metadata.gateType` labels for helpers
  * classified as opaque BY DECLARED DESIGN. Presence here is an
  * explicit deferral, not "we forgot to write the synth". Every entry
  * must be justified with a comment naming the reason.

@@ -13,7 +13,7 @@ export const anyAllowListed = (gateObligation, values, whenTrue, whenFalse) => {
       : whenFalse
   }
   fn.metadata = {
-    type: 'anyAllowListed',
+    gateType: 'anyAllowListed',
     obligationId: gateObligation.id,
     whenTrue,
     whenFalse

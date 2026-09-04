@@ -33,7 +33,7 @@ export const synthesiseWitness = (obligation) => {
 }
 
 function synthesiseFromMetadata(meta) {
-  switch (meta.type) {
+  switch (meta.gateType) {
     case 'allowListed':
       // metadata.values IS the allowlist — first entry is a witness.
       // Include the projection group id (if any) so the fidelity check
@@ -121,7 +121,7 @@ function synthesiseFromMetadata(meta) {
     default:
       return {
         kind: WITNESS_KIND.OPAQUE,
-        reason: `unrecognised helper metadata type '${meta.type}'`
+        reason: `unrecognised helper metadata gateType '${meta.gateType}'`
       }
   }
 }

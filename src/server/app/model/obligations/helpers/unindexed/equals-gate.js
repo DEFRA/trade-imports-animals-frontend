@@ -25,7 +25,7 @@ export const equalsGate = (gateObligation, value, whenTrue, whenFalse) => {
   const fn = (fulfilments) =>
     fulfilments[gateObligation.id] === value ? whenTrue : whenFalse
   fn.metadata = {
-    type: 'equalsGate',
+    gateType: 'equalsGate',
     obligationId: gateObligation.id,
     value,
     whenTrue,
