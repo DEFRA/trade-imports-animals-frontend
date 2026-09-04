@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { originLabel } from '../../../../../../services/countries/index.js'
 import { frozenPartiesOf } from './frozen-parties.js'
 
 const frozen = {
@@ -42,7 +43,29 @@ describe('frozenPartiesOf', () => {
       telephoneNumber: '01228 555 0001',
       emailAddress: 'origin@example.co.uk'
     })
-    expect(placeOfOrigin.address.country).toBeDefined()
+    expect(placeOfOrigin.address.country).toBe(originLabel('IE') ?? 'IE')
+  })
+
+  it('Should map a known country code to its origin label', () => {
+    const { placeOfOrigin } = frozenPartiesOf({
+      placeOfOrigin: {
+        name: 'French Farm',
+        address: { countryCode: 'FR' }
+      }
+    })
+
+    expect(placeOfOrigin.address.country).toBe(originLabel('FR') ?? 'FR')
+  })
+
+  it('Should fall back to the raw country code when the label is unknown', () => {
+    const { placeOfOrigin } = frozenPartiesOf({
+      placeOfOrigin: {
+        name: 'Unknown Farm',
+        address: { countryCode: 'XX' }
+      }
+    })
+
+    expect(placeOfOrigin.address.country).toBe('XX')
   })
 
   it('Should treat a nameless frozen role as unanswered', () => {

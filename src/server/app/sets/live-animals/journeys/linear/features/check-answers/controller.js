@@ -120,7 +120,9 @@ const post = async (request, h) => {
   const { journey, answers, storedAnswers, scope } = await state.get(request, h)
   // Same source as the GET, or the refusal and the page would disagree.
   const source = storedAnswers ?? answers
-  const parties = await resolveParties(request, source)
+  const parties = journey.frozenParties
+    ? frozenPartiesOf(journey.frozenParties)
+    : await resolveParties(request, source)
   // A submitted notification is read-only: the GET zeroes its party errors, so
   // the POST must not refuse it either.
   const readOnly = journey.status === state.SUBMITTED
