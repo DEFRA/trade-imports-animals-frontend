@@ -23,7 +23,7 @@ export function enumerateGroupPathsFromStorage(
       obligation,
       obligationAncestorGroups,
       obligationDescendants,
-      (desc) => fulfilments[desc.id]
+      (descendant) => fulfilments[descendant.id]
     )
     paths.set(obligation.id, [...ids])
   }

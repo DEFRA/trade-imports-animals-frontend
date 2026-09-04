@@ -27,7 +27,7 @@ export function enumerateGroupFulfilmentIndexesPostPurge(obligations, context) {
           obligation,
           obligationAncestorGroups,
           obligationDescendants,
-          (desc) => amendedFulfilments[desc.id]
+          (descendant) => amendedFulfilments[descendant.id]
         )
       : new Set()
     fulfilmentIndexesByObligationId.set(obligation.id, ids)
