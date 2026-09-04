@@ -1,0 +1,31 @@
+{% from "govuk/components/table/macro.njk" import govukTable %}
+
+{# What the consignment holds, above the identification cards: one row per
+   commodity line with its code, common name and declared animal count, and a
+   Change link per row back to the commodity question (design release 1,
+   animal identification details). #}
+{% macro selectedCommoditiesSummary(selectedRows, changeHref, copy) %}
+  {% set rows = [] %}
+  {% for row in selectedRows %}
+    {% set changeCell %}
+      <a class="govuk-link" href="{{ changeHref }}">{{ copy.change }}<span class="govuk-visually-hidden"> {{ row.name }}</span></a>
+    {% endset %}
+    {% set ignored = rows.push([
+      { text: row.code },
+      { text: row.name },
+      { text: row.animals },
+      { html: changeCell, classes: "govuk-!-text-align-right" }
+    ]) %}
+  {% endfor %}
+  {{ govukTable({
+    caption: copy.caption,
+    captionClasses: "govuk-table__caption--m",
+    head: [
+      { text: copy.commodityCode },
+      { text: copy.commonName },
+      { text: copy.numberOfAnimals },
+      { html: '<span class="govuk-visually-hidden">' + copy.actionsHidden + '</span>' }
+    ],
+    rows: rows
+  }) }}
+{% endmacro %}

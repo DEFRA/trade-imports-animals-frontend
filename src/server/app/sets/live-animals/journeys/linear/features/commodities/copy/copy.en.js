@@ -60,6 +60,15 @@ export const copy = {
       'You must add all animal identification details before the consignment arrives at the port of entry.',
     emptyText: 'You have not added any commodities yet.',
     addCommodity: 'Add a commodity',
+    addAnotherCommodity: 'Add another commodity',
+    summary: {
+      caption: 'Selected commodities',
+      commodityCode: 'Commodity code',
+      commonName: 'Common name',
+      numberOfAnimals: 'Number of animals',
+      actionsHidden: 'Actions',
+      change: 'Change'
+    },
     identifierLabels: {
       animalIdentifierPassport: 'Passport',
       animalIdentifierTattoo: 'Tattoo',

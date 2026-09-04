@@ -1,6 +1,7 @@
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
 {% from "live-animals/journeys/linear/features/commodities/animal-identification/_identification-card.njk" import identificationCard %}
+{% from "live-animals/journeys/linear/features/commodities/animal-identification/_selected-commodities-summary.njk" import selectedCommoditiesSummary %}
 {% from "shared/save-actions.njk" import saveActions %}
 {% from "shared/section-caption.njk" import sectionCaption %}
 
@@ -15,6 +16,12 @@
   }) }}
 
   {% if hasLines %}
+    {{ selectedCommoditiesSummary(selectedCommodities, addHref, copy.summary) }}
+
+    <p class="govuk-body">
+      <a class="govuk-link" href="{{ addHref }}">{{ copy.addAnotherCommodity }}</a>
+    </p>
+
     <form method="post" novalidate>
       <input type="hidden" name="crumb" value="{{ crumb }}" />
       <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />

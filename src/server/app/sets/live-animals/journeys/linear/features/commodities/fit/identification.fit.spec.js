@@ -15,6 +15,8 @@ const COUNTRY_FIELD = '#country-0'
 const BOS_TAURUS = 'Bos taurus'
 const FELIS_CATUS = 'Felis catus'
 const SALMO_SALAR = 'Salmo salar'
+const DOMESTIC_CATTLE = 'Domestic cattle'
+const ATLANTIC_SALMON = 'Atlantic salmon'
 const INVALID_COUNTRY = 'Invalid country'
 const PASSPORT_NUMBER = 'UK123456789'
 const MAX_LINE_LENGTH = 255
@@ -136,6 +138,19 @@ const savedAnimalRow = (page, species, number) =>
 
 const columnHeader = (page, name) =>
   page.getByRole('columnheader', { name, exact: true })
+
+// The Selected commodities summary is named by its table caption.
+const selectedCommoditiesSummary = (page) =>
+  page.getByRole('table', { name: copy.identification.summary.caption })
+
+const expectSummaryRow = async (summary, commonName, code, animals) => {
+  const row = summary.getByRole('row').filter({ hasText: commonName })
+  for (const cell of [code, commonName, animals]) {
+    await expect(
+      row.getByRole('cell', { name: cell, exact: true })
+    ).toBeVisible()
+  }
+}
 
 const removeAnimalRow = async (page, species, number) => {
   const row = savedAnimalRow(page, species, number)
@@ -269,6 +284,72 @@ test.describe('animal identification', () => {
   test('has no serious or critical axe violations', async ({ page }) => {
     await openIdentification(page, [['Fish', [SALMO_SALAR]]])
     await expectAxeClean(page, 'Animal identification')
+  })
+})
+
+test.describe('animal identification selected commodities summary', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('opens with a summary of what the consignment holds, one line per card', async ({
+    page
+  }) => {
+    await openIdentification(
+      page,
+      [
+        ['Cow', [BOS_TAURUS]],
+        ['Fish', [SALMO_SALAR]]
+      ],
+      ['2', '3']
+    )
+    const summary = selectedCommoditiesSummary(page)
+
+    for (const head of [
+      copy.identification.summary.commodityCode,
+      copy.identification.summary.commonName,
+      copy.identification.summary.numberOfAnimals
+    ]) {
+      await expect(
+        summary.getByRole('columnheader', { name: head, exact: true })
+      ).toBeVisible()
+    }
+
+    await expectSummaryRow(summary, DOMESTIC_CATTLE, '0102', '2')
+    await expectSummaryRow(summary, ATLANTIC_SALMON, '0301', '3')
+
+    const main = await page.locator('main').innerHTML()
+    expect(main.indexOf(copy.identification.summary.caption)).toBeLessThan(
+      main.indexOf('identification-card-0')
+    )
+  })
+
+  test('changes the commodity list from a summary row', async ({ page }) => {
+    await openIdentification(page, [['Cow', [BOS_TAURUS]]], ['2'])
+    await selectedCommoditiesSummary(page)
+      .getByRole('link', {
+        name: `${copy.identification.summary.change} ${DOMESTIC_CATTLE}`
+      })
+      .click()
+
+    await expect(
+      page.getByRole('heading', { name: copy.search.title })
+    ).toBeVisible()
+  })
+
+  // The route back to the commodity question used to appear only when there
+  // was nothing to identify, so it vanished as the page became usable.
+  test('offers Add another commodity while there are commodities to identify', async ({
+    page
+  }) => {
+    await openIdentification(page, [['Cow', [BOS_TAURUS]]], ['2'])
+    await page
+      .getByRole('link', { name: copy.identification.addAnotherCommodity })
+      .click()
+
+    await expect(
+      page.getByRole('heading', { name: copy.search.title })
+    ).toBeVisible()
   })
 })
 

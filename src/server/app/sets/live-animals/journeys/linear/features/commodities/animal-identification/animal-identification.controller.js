@@ -16,6 +16,7 @@ import {
 } from './form/forms.js'
 import { appendLineRecords } from './records/append.js'
 import { isRemoveAction, postRemove } from './remove/post-remove.js'
+import { buildSelectedCommodities } from './summary/selected-commodities.js'
 
 export { IDENTIFIER_LABELS } from './identifier/table.js'
 
@@ -43,6 +44,7 @@ const render = (
     cards: lines.map((line) =>
       buildCard(answers, line, forms.get(line.index), errors)
     ),
+    selectedCommodities: buildSelectedCommodities(lines),
     hasLines: lines.length > 0,
     addHref: kit.withChangeContext(
       request,

@@ -53,13 +53,15 @@ const fishLine = (extra = {}) => ({
   ...extra
 })
 
-const viewCards = async (seed) => {
+const viewContext = async (seed) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, seed)
   const h = stubH()
   await getHandler(journeyRequest(journey.journeyId), h)
-  return h.captured.view.context.cards
+  return h.captured.view.context
 }
+
+const viewCards = async (seed) => (await viewContext(seed)).cards
 
 const SUITE =
   '#animalIdentificationController — the single card-per-species surface'
@@ -142,6 +144,40 @@ describe(`${SUITE} — the cards view`, () => {
     )
     expect(card.units).toHaveLength(2)
     expect(card.units[0].removeAria).toBe('animal 1')
+  })
+})
+
+describe(`${SUITE} — the Selected commodities summary`, () => {
+  setupIdentificationEngine()
+
+  it('Should summarise every line with its code, common name and declared count', async () => {
+    const context = await viewContext({
+      commodityLines: [
+        cowLine({ numberOfAnimalsQuantity: '2' }),
+        fishLine({ numberOfAnimalsQuantity: '3' })
+      ]
+    })
+    expect(context.selectedCommodities).toEqual([
+      { code: '0102', name: 'Domestic cattle', animals: '2' },
+      { code: '0301', name: 'Atlantic salmon', animals: '3' }
+    ])
+  })
+
+  // The link to the commodity question used to live only in the no-commodities
+  // branch of the template, so it vanished as soon as the page had cards. The
+  // href the summary and the Add another commodity link both use is the same
+  // one either way.
+  it('Should offer the route back to the commodity question whether or not there is anything to identify', async () => {
+    for (const commodityLines of [[catLine()], []]) {
+      const journey = await store.create()
+      await store.seedAnswers(journey.journeyId, { commodityLines })
+      const h = stubH()
+      await getHandler(journeyRequest(journey.journeyId), h)
+      const { addHref, hasLines } = h.captured.view.context
+
+      expect(hasLines).toBe(commodityLines.length > 0)
+      expect(addHref).toBe(pagePath(journey.journeyId, 'commodities'))
+    }
   })
 })
 
