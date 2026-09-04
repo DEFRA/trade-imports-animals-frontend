@@ -5,7 +5,7 @@ export { buildObligationChildren } from './evaluator/manifest-index/build-obliga
 export { classifyObligations } from './evaluator/manifest-index/classify-obligations.js'
 export { buildAncestorGroups } from './evaluator/manifest-index/build-ancestor-groups.js'
 export { buildDescendants } from './evaluator/manifest-index/build-descendants.js'
-export { dropUnknownFulfilments } from './evaluator/purge/drop-unknown-fulfilments.js'
+export { dropUnrecognisedFulfilments } from './evaluator/purge/drop-unrecognised-fulfilments.js'
 export { enumerateGroupPathsFromStorage } from './evaluator/enumeration/enumerate-group-paths-from-storage.js'
 export { runApplicabilityDecisions } from './evaluator/scope/run-applicability-decisions.js'
 export { makeInScopeCheck } from './evaluator/scope/make-in-scope-check.js'

@@ -5,7 +5,7 @@ import {
   classifyObligations,
   buildAncestorGroups,
   buildDescendants,
-  dropUnknownFulfilments,
+  dropUnrecognisedFulfilments,
   runApplicabilityDecisions,
   makeInScopeCheck,
   purgeStorage,
@@ -208,23 +208,23 @@ describe('buildDescendants', () => {
 // Evaluate-phase helpers
 // ---------------------------------------------------------------------------
 
-describe('dropUnknownFulfilments', () => {
+describe('dropUnrecognisedFulfilments', () => {
   const obligationsById = new Map([
     ['a', {}],
     ['b', {}]
   ])
 
   it('empty input → empty output', () => {
-    expect(dropUnknownFulfilments({}, obligationsById)).toEqual({})
+    expect(dropUnrecognisedFulfilments({}, obligationsById)).toEqual({})
   })
 
   it('keeps known ids', () => {
-    const result = dropUnknownFulfilments({ a: 1, b: 2 }, obligationsById)
+    const result = dropUnrecognisedFulfilments({ a: 1, b: 2 }, obligationsById)
     expect(result).toEqual({ a: 1, b: 2 })
   })
 
   it('drops unknown ids', () => {
-    const result = dropUnknownFulfilments(
+    const result = dropUnrecognisedFulfilments(
       { a: 1, unknown: 99 },
       obligationsById
     )
@@ -234,7 +234,10 @@ describe('dropUnknownFulfilments', () => {
   it('preserves values verbatim (including objects and arrays)', () => {
     const obj = { nested: 'value' }
     const arr = [1, 2, 3]
-    const result = dropUnknownFulfilments({ a: obj, b: arr }, obligationsById)
+    const result = dropUnrecognisedFulfilments(
+      { a: obj, b: arr },
+      obligationsById
+    )
     expect(result.a).toBe(obj)
     expect(result.b).toBe(arr)
   })

@@ -7,7 +7,7 @@ import { buildDescendants } from './manifest-index/build-descendants.js'
 import { buildObligationChildren } from './manifest-index/build-obligation-children.js'
 import { buildObligationsById } from './manifest-index/build-obligations-by-id.js'
 import { classifyObligations } from './manifest-index/classify-obligations.js'
-import { dropUnknownFulfilments } from './purge/drop-unknown-fulfilments.js'
+import { dropUnrecognisedFulfilments } from './purge/drop-unrecognised-fulfilments.js'
 
 /**
  * ObligationEvaluator.
@@ -25,7 +25,7 @@ import { dropUnknownFulfilments } from './purge/drop-unknown-fulfilments.js'
  *
  * Algorithm per call:
  *
- *   1. Drop unknown obligation ids (tolerate-and-amend).
+ *   1. Drop unrecognised obligation ids (tolerate-and-amend).
  *   2. Fixpoint: repeat {enumerate → applyTo → isInScope → purge}
  *      until the fulfilments map stops changing. Guarantees every
  *      applyTo sees the same post-purge view, so a value being purged
@@ -54,7 +54,7 @@ export function createObligationEvaluator({
 
   return {
     evaluate(fulfilments) {
-      const recognisedFulfilments = dropUnknownFulfilments(
+      const recognisedFulfilments = dropUnrecognisedFulfilments(
         fulfilments,
         obligationsById
       )
