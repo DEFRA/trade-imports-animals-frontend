@@ -296,6 +296,32 @@ test.describe('animal identification', () => {
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
+  // A trader who miscounts has to reach the count from the card that told
+  // them it was wrong — the count itself lives on consignment details.
+  test('offers Change number of animals on every card and lands on the consignment details page', async ({
+    page
+  }) => {
+    await openIdentification(
+      page,
+      [
+        ['Cow', [BOS_TAURUS]],
+        ['Fish', [SALMO_SALAR]]
+      ],
+      ['2', '3']
+    )
+    const changeCount = page.getByRole('link', {
+      name: copy.identification.changeAnimalCount
+    })
+    await expect(changeCount).toHaveCount(2)
+
+    await changeCount.first().click()
+
+    await expect(
+      page.getByRole('heading', { name: copy.consignmentDetails.title })
+    ).toBeVisible()
+    await expect(page.locator('#numberOfAnimalsQuantity-0')).toHaveValue('2')
+  })
+
   test('has no serious or critical axe violations', async ({ page }) => {
     await openIdentification(page, [['Fish', [SALMO_SALAR]]])
     await expectAxeClean(page, 'Animal identification')

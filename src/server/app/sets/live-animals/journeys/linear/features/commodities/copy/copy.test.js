@@ -89,6 +89,17 @@ describe('#copy', () => {
     )
   })
 
+  // Every card gets the same link, so it names no species — it says what it
+  // changes, not which animal it changes it for.
+  it('Should label the route back to the animal count without naming a species', () => {
+    expect(copy.identification.changeAnimalCount).toBe(
+      'Change number of animals'
+    )
+    expect(copyCy.identification.changeAnimalCount).toBe(
+      'Newid nifer yr anifeiliaid'
+    )
+  })
+
   it('Should interpolate capReached', () => {
     expect(copy.identification.errors.capReached(2)).toBe(
       'You have already entered details for all 2 animals — remove a record before adding another'
