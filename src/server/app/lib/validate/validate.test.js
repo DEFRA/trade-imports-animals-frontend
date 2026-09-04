@@ -30,8 +30,7 @@ const REGION_CODE_REQUIRED_MESSAGE = 'Enter the region of origin code'
 const REGION_CODE_MAX_LENGTH_MESSAGE =
   'Region of origin code must be 5 characters or less'
 const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
-const ANIMALS_WHOLE_NUMBER_MESSAGE =
-  'Number of animals must be a whole number, like 25'
+const ANIMALS_WHOLE_NUMBER_MESSAGE = 'Enter a whole number greater than 0'
 
 describe('#requiredText — the sole save-blocking primitive', () => {
   const schema = requiredText('fullName', FULL_NAME_REQUIRED_MESSAGE)
