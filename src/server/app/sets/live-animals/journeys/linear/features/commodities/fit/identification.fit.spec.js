@@ -203,8 +203,8 @@ const requiredAddressValidations = [
   ['name or organisation name', 'nameOrOrganisationName'],
   ['address line 1', 'addressLine1'],
   ['town or city', 'townOrCity'],
-  ['postal or zip code', 'postalOrZipCode'],
-  ['telephone number', 'telephoneNumber'],
+  ['postcode or Zip code', 'postalOrZipCode'],
+  ['phone number', 'telephoneNumber'],
   ['email address', 'emailAddress']
 ]
 
@@ -235,12 +235,12 @@ const addressFormatValidations = [
     'C'.repeat(MAX_TOWN_OR_COUNTY_LENGTH + 1)
   ],
   [
-    'postal or zip code over 12 characters',
+    'postcode or Zip code over 12 characters',
     'postalOrZipCode',
     'P'.repeat(MAX_POSTAL_OR_ZIP_CODE_LENGTH + 1)
   ],
   [
-    'telephone number over 20 characters',
+    'phone number over 20 characters',
     'telephoneNumber',
     '1'.repeat(MAX_TELEPHONE_LENGTH + 1)
   ],
@@ -313,6 +313,28 @@ test.describe('animal identification', () => {
     }
     await expect(page.locator('#country-0')).toHaveCount(0)
     await expect(page.locator('select')).toHaveCount(0)
+  })
+
+  // Design release 1 asks for the postcode and the phone number in these
+  // words, and tells a trader abroad to include the country code — without
+  // that hint the number they give may not be diallable from here.
+  test('permanent address names the postcode and phone fields as Design release 1 does', async ({
+    page
+  }) => {
+    await openCatIdentification(page)
+
+    await expect(
+      page.getByLabel(copy.identification.address.postalOrZipCode, {
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(
+      page.getByLabel(copy.identification.address.telephoneNumber, {
+        exact: true
+      })
+    ).toHaveAccessibleDescription(
+      copy.identification.addressHints.telephoneNumber
+    )
   })
 
   // Asking for the address without saying why leaves an invented one looking

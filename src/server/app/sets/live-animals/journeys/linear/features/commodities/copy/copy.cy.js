@@ -155,6 +155,9 @@ export const copy = {
       telephoneNumber: 'Rhif ffôn',
       emailAddress: 'Cyfeiriad e-bost'
     },
+    addressHints: {
+      telephoneNumber: 'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad'
+    },
     errors: {
       identifierMax: {
         animalIdentifierMicrochip:
