@@ -272,10 +272,9 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
   it('composes with `requires.anyOf` — both a floor error and per-instance errors surface', () => {
     // A group carrying both a floor and an anyOf: with fewer
     // fulfilmentIndexes than the floor AND unfilled leaves on each
-    // present instance, the
-    // two rules must co-emit. Here minEntries=2 but only 1 record
-    // exists — expect one MIN_ENTRIES error plus one anyOf error on
-    // the unfilled record.
+    // present instance, the two rules must co-emit. Here minEntries=2 but
+    // only 1 fulfilmentIndex exists — expect one MIN_ENTRIES error plus
+    // one anyOf error on the unfilled instance.
     const leafObl = { id: 'leaf', name: 'leaf' }
     const composite = {
       ...commodityLineGroup,
@@ -338,9 +337,10 @@ describe('#leafSatisfied', () => {
     expect(leafSatisfied(leaf, line1Unit1FulfilmentIndex, st)).toBe(false)
   })
 
-  it('returns false when the storage entry is a scalar (not a records map)', () => {
-    // Top-level scalars store a value directly; leafSatisfied is defined only
-    // for grouped leaves, so a scalar storage shape reads as false.
+  it('returns false when the storage entry is an unindexed value (not indexedFulfilments)', () => {
+    // Top-level unindexed obligations store a value directly; leafSatisfied
+    // is defined only for grouped leaves, so an unindexed storage shape
+    // reads as false.
     const scalar = {
       id: 'purposeInInternalMarket',
       name: 'purposeInInternalMarket'

@@ -106,7 +106,7 @@ describe('#instanceComplete', () => {
 
   it('reads an instance missing a mandatory direct-child leaf as incomplete', () => {
     // commoditySelection is a mandatory direct child of line but has no
-    // record for line1 — the direct-child requirement fires.
+    // fulfilmentIndex for line1 — the direct-child requirement fires.
     const st = state({
       fulfilments: {},
       obligations: impls([
@@ -179,7 +179,7 @@ describe('#instanceComplete', () => {
   })
 
   it('reads a not-enumerated instance as vacuously complete', () => {
-    // No records anywhere for line2.unit1 — outside the enumerated set. No
+    // No fulfilmentIndexes anywhere for line2.unit1 — outside the enumerated set. No
     // direct-child mandatory leaves under unit either, so nothing blocks.
     const st = state({
       fulfilments: {},
@@ -208,7 +208,7 @@ describe('#instanceComplete', () => {
 
   it('does not block on out-of-scope leaves', () => {
     // commoditySelection is out of scope — the direct-child requirement is
-    // gated behind inScope, so the missing record is ignored.
+    // gated behind inScope, so the missing fulfilmentIndex is ignored.
     const st = state({
       fulfilments: {},
       obligations: impls([

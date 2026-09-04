@@ -443,7 +443,7 @@ describe('V4 — standard address blocks (composite value round-trip)', () => {
 // ---------------------------------------------------------------------------
 
 describe('V4 — commodity line group semantics', () => {
-  it('has no records when no commodity lines exist', () => {
+  it('has no fulfilmentIndexes when no commodity lines exist', () => {
     const result = evaluator.evaluate({})
     expect(result.obligations[commodityLine.id]).toEqual({
       inScope: true,
@@ -462,7 +462,7 @@ describe('V4 — commodity line group semantics', () => {
     expect(ids).toEqual(new Set([LINE_HORSE, LINE_CAT]))
   })
 
-  it('unions fulfilmentIndexes across any descendant field record', () => {
+  it('unions fulfilmentIndexes across any descendant field fulfilment', () => {
     // Only numberOfAnimals is answered on the second line — the line's
     // presence is still inferred (no dedicated commodityCode entry required).
     const result = evaluator.evaluate({
@@ -556,7 +556,7 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
     })
   })
 
-  it('records list contains only matching line ids (mixed manifest)', () => {
+  it('fulfilmentIndexes list contains only matching line ids (mixed manifest)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: {
         [LINE_FISH]: 'Fish',
@@ -704,7 +704,7 @@ describe('V4 — cow line triggers both packages and CPH gates', () => {
 // ---------------------------------------------------------------------------
 
 describe('V4 — unit record group semantics', () => {
-  it('has no records when no unit-level obligations have storage', () => {
+  it('has no fulfilmentIndexes when no unit-level obligations have storage', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_COW]: 'Cow' }
     })
@@ -1061,11 +1061,12 @@ const optionalDocumentFields = [
   ['Filename', documentFilename]
 ]
 
-const inScopeWithNoRecordsTitle = '%s is in scope with no records'
+const inScopeWithNoFulfilmentIndexesTitle =
+  '%s is in scope with no fulfilmentIndexes'
 
 describe('V4 — accompanying documents: no documents at all', () => {
   it.each([['documents group', documents]])(
-    inScopeWithNoRecordsTitle,
+    inScopeWithNoFulfilmentIndexesTitle,
     (_name, obligation) => {
       const result = evaluator.evaluate({})
       expect(result.obligations[obligation.id]).toEqual({
@@ -1075,17 +1076,20 @@ describe('V4 — accompanying documents: no documents at all', () => {
     }
   )
 
-  it.each(documentFields)(inScopeWithNoRecordsTitle, (_name, obligation) => {
-    const result = evaluator.evaluate({})
-    expect(result.obligations[obligation.id]).toEqual({
-      inScope: true,
-      status: 'mandatory',
-      fulfilmentIndexes: []
-    })
-  })
+  it.each(documentFields)(
+    inScopeWithNoFulfilmentIndexesTitle,
+    (_name, obligation) => {
+      const result = evaluator.evaluate({})
+      expect(result.obligations[obligation.id]).toEqual({
+        inScope: true,
+        status: 'mandatory',
+        fulfilmentIndexes: []
+      })
+    }
+  )
 
   it.each(optionalDocumentFields)(
-    inScopeWithNoRecordsTitle,
+    inScopeWithNoFulfilmentIndexesTitle,
     (_name, obligation) => {
       const result = evaluator.evaluate({})
       expect(result.obligations[obligation.id]).toEqual({
