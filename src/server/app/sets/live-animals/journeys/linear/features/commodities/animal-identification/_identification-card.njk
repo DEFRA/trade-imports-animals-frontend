@@ -1,5 +1,6 @@
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
 {% from "live-animals/journeys/linear/features/commodities/animal-identification/_saved-animals-table.njk" import savedAnimalsTable %}
 
 {# One card per species line (design 01-16/17): the entered-identifiers
@@ -37,8 +38,19 @@
       {% endfor %}
 
       {% if card.showAddress %}
-        <h3 class="govuk-heading-s">{{ copy.permanentAddress.heading }}</h3>
-        <p class="govuk-body">{{ copy.permanentAddress.required }}</p>
+        {# Design release 1 puts the fraud warning and the definition of a
+           permanent address above the question, because the reason the
+           address matters — APHA checks it — is what stops an invented one. #}
+        {{ govukWarningText({ text: copy.permanentAddress.warning }) }}
+
+        <p class="govuk-body">{{ copy.permanentAddress.definitionLeadIn }}</p>
+        <ul class="govuk-list govuk-list--bullet">
+          {% for item in copy.permanentAddress.definitionItems %}
+            <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+
+        <h3 class="govuk-heading-s">{{ copy.permanentAddress.question }}</h3>
 
         {% for field in card.addressFields %}
           {{ govukInput({

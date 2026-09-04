@@ -122,8 +122,13 @@ export const copy = {
     removeRow: 'Remove',
     removeRowAria: (number) => `animal ${number}`,
     permanentAddress: {
-      heading: 'Permanent address',
-      required: 'A permanent address is required for this animal.'
+      warning: 'Providing a false address is an act of fraud',
+      definitionLeadIn: 'A permanent address is where an animal:',
+      definitionItems: [
+        'will permanently reside',
+        'can be checked by the Animal and Plant Health Agency (APHA)'
+      ],
+      question: 'Where will their permanent address be?'
     },
     saveAndAddAnother: 'Save and add another',
     saveAndFinish: 'Save and finish',
