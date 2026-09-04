@@ -80,7 +80,7 @@ export const unitRecord = {
   // V4 spec cross-check ("unit records ARE animals" reading of
   // Confluence page 6497338582): the count of unit-record instances
   // on a given commodity line must equal `numberOfAnimals` on that
-  // line. Modelled as `requires.recordCountEquals` — a per-parent-
+  // line. Modelled as `requires.fulfilmentIndexCountEquals` — a per-parent-
   // instance count check that fires one error per mismatched line.
   // Rollup-only: neither the number field nor the unit records are
   // purged when the other changes — the user resolves the mismatch
@@ -95,7 +95,7 @@ export const unitRecord = {
       '3ebacfd5-e6f7-4b1b-889a-a45b6d7d9fa6' // description
     ],
     errorCode: 'obligation.unitRecord.identifiersRequired',
-    recordCountEquals: {
+    fulfilmentIndexCountEquals: {
       fieldId: numberOfAnimals.id,
       errorCode: 'obligation.unitRecord.countMustMatchNumberOfAnimals'
     }

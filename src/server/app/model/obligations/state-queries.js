@@ -157,12 +157,12 @@ const checkAnyOfIds = (group, fulfilmentIndexes, state) => {
   return errors
 }
 
-const checkRecordCountEquals = (group, fulfilmentIndexes, state) => {
-  if (!group.requires.recordCountEquals || !group.within) {
+const checkFulfilmentIndexCountEquals = (group, fulfilmentIndexes, state) => {
+  if (!group.requires.fulfilmentIndexCountEquals || !group.within) {
     return []
   }
   const { fieldId, errorCode: countErrorCode } =
-    group.requires.recordCountEquals
+    group.requires.fulfilmentIndexCountEquals
   const parentImplication = state.obligations?.[group.within.id]
   const parentFulfilmentIndexes = parentImplication?.fulfilmentIndexes ?? []
   const errors = []
@@ -210,7 +210,7 @@ const checkRecordCountEquals = (group, fulfilmentIndexes, state) => {
  *   - `anyOfIds` — per-instance rule. One error per in-scope instance
  *     where NONE of the required leaves has a non-blank fulfilment;
  *     vacuously satisfied when no leaf is in scope for the instance.
- *   - `recordCountEquals` — `{ fieldId, errorCode }`. One error per
+ *   - `fulfilmentIndexCountEquals` — `{ fieldId, errorCode }`. One error per
  *     in-scope parent (`group.within`) instance whose count of
  *     fulfilmentIndexes under `parentFulfilmentIndex/` differs from the
  *     non-blank expected count in
@@ -233,6 +233,6 @@ export function groupInvariantErrors(group, state) {
     ...checkAllOrNothingOfIds(group, state),
     // Per-instance rules (fire per fulfilmentIndex).
     ...checkAnyOfIds(group, fulfilmentIndexes, state),
-    ...checkRecordCountEquals(group, fulfilmentIndexes, state)
+    ...checkFulfilmentIndexCountEquals(group, fulfilmentIndexes, state)
   ]
 }
