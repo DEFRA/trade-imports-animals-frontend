@@ -1,7 +1,8 @@
 import { INDEX_DELIMITER } from '../../index-delimiter.js'
 import { isNonArrayObject } from '../../helper-internals.js'
-const joinIndex = (segments) => segments.join(INDEX_DELIMITER)
-const splitIndex = (fulfilmentIndex) => fulfilmentIndex.split(INDEX_DELIMITER)
+const joinFulfilmentIndex = (segments) => segments.join(INDEX_DELIMITER)
+const splitFulfilmentIndex = (fulfilmentIndex) =>
+  fulfilmentIndex.split(INDEX_DELIMITER)
 
 // The fulfilmentIndex prefixes one descendant contributes to its
 // group's fulfilmentIndex set — take the first `prefixLength` segments
@@ -11,9 +12,9 @@ const indexPrefixesFromDescendant = (fulfilment, prefixLength) => {
     return []
   }
   return Object.keys(fulfilment)
-    .map((fulfilmentIndex) => splitIndex(fulfilmentIndex))
+    .map((fulfilmentIndex) => splitFulfilmentIndex(fulfilmentIndex))
     .filter((segments) => segments.length >= prefixLength)
-    .map((segments) => joinIndex(segments.slice(0, prefixLength)))
+    .map((segments) => joinFulfilmentIndex(segments.slice(0, prefixLength)))
 }
 
 // Union the fulfilmentIndex prefixes contributed by every descendant.
