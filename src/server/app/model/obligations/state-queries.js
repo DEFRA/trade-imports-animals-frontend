@@ -7,15 +7,6 @@
 import { INDEX_DELIMITER } from './index-delimiter.js'
 import { isBlankValue } from './is-blank-value.js'
 
-export const STATUSES = {
-  NOT_APPLICABLE: 'not-applicable',
-  NOT_STARTED: 'not-started',
-  OPTIONAL: 'optional',
-  IN_PROGRESS: 'in-progress',
-  FULFILLED: 'fulfilled',
-  SUBMITTED: 'submitted'
-}
-
 // Non-blank stored value at `state.fulfilments[obligation.id][fulfilmentIndex]`.
 // Deliberately no scope or mandate check — those are separate concerns so the
 // bridge's three-check pattern (in-scope → mandate → fulfilled) composes.
