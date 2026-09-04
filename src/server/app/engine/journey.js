@@ -159,7 +159,8 @@ export const cancelAmendJourney = async (request, _h, journeyId) => {
   if (!(await isKnownJourney(request, journeyId))) {
     return undefined
   }
-  const restored = await records.cancelAmend(journeyId)
+  const actor = buildActor(request.auth?.credentials)
+  const restored = await records.cancelAmend(journeyId, actor)
   memoWrite(request, restored)
   return restored
 }

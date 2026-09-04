@@ -162,7 +162,7 @@ describe('#currentJourney', () => {
 
     const restored = await cancelAmendJourney(request, recordingH(), journeyId)
 
-    expect(cancelAmend).toHaveBeenCalledWith(journeyId)
+    expect(cancelAmend).toHaveBeenCalledWith(journeyId, authenticatedActor)
     expect(restored.status).toBe('submitted')
 
     const unknown = await cancelAmendJourney(
