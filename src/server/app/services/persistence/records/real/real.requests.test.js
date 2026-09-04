@@ -294,7 +294,7 @@ describe('real records adapter — lifecycle and list', () => {
 
     const submitted = await records.finalise(journeyId, actor)
     const amended = await records.amend(journeyId, actor)
-    const restored = await records.cancelAmend(journeyId)
+    const restored = await records.cancelAmend(journeyId, actor)
 
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
@@ -302,9 +302,13 @@ describe('real records adapter — lifecycle and list', () => {
       { method: 'POST', url: `${notificationsUrl}/${journeyId}/amend` },
       { method: 'POST', url: `${notificationsUrl}/${journeyId}/cancel-amend` }
     ])
+    // Every transition carries the actor. The backend resolves the
+    // notification's address-book parties against the actor's organisation
+    // before it writes the event, and cancel-amend has to resolve them
+    // strictly — without the actor it rejects the transition outright.
     expect(await jsonOf(requests[0])).toEqual(actor)
     expect(await jsonOf(requests[1])).toEqual(actor)
-    expect(await requests[2].clone().text()).toBe('')
+    expect(await jsonOf(requests[2])).toEqual(actor)
     expect(submitted.status).toBe(SUBMITTED)
     expect(submitted.submittedAt).toBe(submittedTimestamp)
     expect(amended.status).toBe(AMEND)
@@ -322,7 +326,7 @@ describe('real records adapter — lifecycle and list', () => {
       { status: 201 }
     )
 
-    const copied = await records.copy(journeyId, 7)
+    const copied = await records.copy(journeyId, 7, actor)
 
     const [request] = fetchMocker.requests()
     expect(request.url).toBe(
@@ -330,13 +334,14 @@ describe('real records adapter — lifecycle and list', () => {
     )
     expect(request.method).toBe('POST')
     expect(request.headers.has('Idempotency-Key')).toBe(false)
+    expect(await jsonOf(request)).toEqual(actor)
     expect(copied).toMatchObject({
       journeyId: copiedJourneyId,
       status: DRAFT
     })
   })
 
-  it('Should POST soft-delete with no body', async () => {
+  it('Should POST soft-delete with the actor as its body', async () => {
     fetchMocker.mockResponse(JSON.stringify(canonical({ status: 'DELETED' })), {
       status: 200
     })
@@ -348,7 +353,9 @@ describe('real records adapter — lifecycle and list', () => {
       { method: 'POST', url: `${notificationsUrl}/${journeyId}/soft-delete` }
     ])
     expect(requests[0].headers.has('Idempotency-Key')).toBe(false)
-    expect(await requests[0].clone().text()).toBe('')
+    // Deleting a submitted notification emits a GBN-AG event, which resolves
+    // the parties strictly and so needs the actor's organisation.
+    expect(await jsonOf(requests[0])).toEqual(actor)
     expect(deleted.status).toBe(DELETED)
   })
 
