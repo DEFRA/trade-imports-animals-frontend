@@ -3,8 +3,9 @@ import { isNonArrayObject } from '../../helper-internals.js'
 const joinIndex = (segments) => segments.join(INDEX_DELIMITER)
 const splitIndex = (key) => key.split(INDEX_DELIMITER)
 
-// The fulfilmentIndex prefixes one descendant's indexedFulfilments
-// contributes to its group's fulfilmentIndex set.
+// The fulfilmentIndex prefixes one descendant contributes to its
+// group's fulfilmentIndex set — take the first `prefixLen` segments
+// of each stored key.
 const indexPrefixesFromDescendant = (fulfilment, prefixLen) => {
   if (!isNonArrayObject(fulfilment)) {
     return []
@@ -15,10 +16,9 @@ const indexPrefixesFromDescendant = (fulfilment, prefixLen) => {
     .map((segments) => joinIndex(segments.slice(0, prefixLen)))
 }
 
-// A group's fulfilmentIndex set: the union, across every descendant, of the
-// fulfilmentIndex prefixes of its indexedFulfilments keys. `fulfilmentFor`
-// resolves a descendant to its stored fulfilment (pre- or post-purge,
-// depending on the caller).
+// Union the fulfilmentIndex prefixes contributed by every descendant.
+// `fulfilmentFor` resolves a descendant to its stored fulfilment (raw
+// pre-purge or amended post-purge, depending on the caller).
 export const deriveGroupFulfilmentIndexes = (
   obligation,
   obligationAncestorGroups,

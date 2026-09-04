@@ -1,14 +1,8 @@
 import { deriveGroupFulfilmentIndexes } from '../internal/derive-group-fulfilment-indexes.js'
 
-// Enumerate each group's fulfilmentIndexes by scanning descendants'
-// indexedFulfilments keys on POST-purge storage. Applies the
+// Post-purge enumeration of group fulfilmentIndexes. Applies the
 // `isInScope` filter so out-of-scope groups map to an empty Set.
-//
-// A group's fulfilmentIndex is the first N segments of any descendant
-// leaf's fulfilmentIndex, where N = ancestorGroups.length + 1. Union
-// across all descendants.
-//
-// Returns `Map<group obligation id, Set<group fulfilmentIndex>>`.
+// Returns `Map<groupId, Set<fulfilmentIndex>>`.
 export function enumerateGroupFulfilmentIndexesPostPurge(obligations, context) {
   const {
     obligationsByCategory,

@@ -1,8 +1,7 @@
 import { isNonArrayObject } from '../../helper-internals.js'
 
-// applyTo returns the leaf fulfilmentIndexes it currently authorises; keep
-// only stored entries whose fulfilmentIndex is in that set. `{ keep: false }`
-// when nothing survives the filter.
+// Keep only entries whose fulfilmentIndex is in the applyTo-authorised
+// set; `{ keep: false }` when nothing survives.
 const purgedApplyToDerived = (
   obligation,
   fulfilment,
@@ -22,8 +21,7 @@ const purgedApplyToDerived = (
     : { keep: false }
 }
 
-// parent-derived leaf or user-storage-derived leaf whose fulfilment is an
-// indexedFulfilments map — drop only if it's empty.
+// Drop an indexedFulfilments map only if it's empty.
 const purgedIndexedFulfilments = (fulfilment) =>
   Object.keys(fulfilment).length > 0
     ? { keep: true, value: fulfilment }
@@ -47,12 +45,9 @@ const purgedFulfilmentFor = (
   return { keep: true, value: fulfilment }
 }
 
-// Purge storage.
-//   - Out-of-scope obligation → drop entire entry.
-//   - apply-to-derived leaf → keep only entries whose fulfilmentIndex is
-//     in the `applyTo`-returned set.
-//   - Otherwise → keep as-is (ancestors already in scope, own storage
-//     is self-valid for parent-derived and user-storage-derived leaves).
+// Out-of-scope obligation → drop entire entry. apply-to-derived leaf →
+// keep only entries the gate still authorises. Others (parent-derived,
+// user-storage-derived) → keep as-is; own storage is self-valid.
 export function purgeStorage(recognisedFulfilments, context) {
   const {
     obligationsById,

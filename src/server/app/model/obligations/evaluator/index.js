@@ -13,36 +13,28 @@ import { dropUnknownFulfilments } from './purge/drop-unknown-fulfilments.js'
  * ObligationEvaluator.
  *
  * Pure sync evaluator over the flat, composite-key `fulfilments` map.
- * See obligations.md for the model and FULFILMENT_SHAPES.md for storage
- * examples.
- *
  * Constructed once per Service; each `evaluate(fulfilments)` call is
  * pure. The obligations manifest is injected at construction.
  *
- * Scope resolution: every obligation with an `applyTo` receives
- * `applyTo(fulfilments, fulfilmentIndexesByObligationId)` where the second
+ * Every applyTo receives
+ * `applyTo(fulfilments, fulfilmentIndexesByObligationId)` — the second
  * arg is a `Map<obligationId, string[]>` of currently-present group
- * fulfilmentIndexes, enumerated pre-purge from raw storage. This lets
- * gated obligations look up their parent-group's fulfilmentIndexes
- * without enumerating storage themselves — see `helpers.js` for the
- * common gate shapes (`allowListed`, `allowListedByPredicate`,
- * `branchedGate`, `anyAllowListed`).
+ * fulfilmentIndexes enumerated pre-purge from raw storage. Gated
+ * obligations can look up their parent-group's fulfilmentIndexes
+ * without enumerating storage themselves — see `helpers/index.js`.
  *
  * Algorithm per call:
  *
  *   1. Drop unknown obligation ids (tolerate-and-amend).
- *   2. Converge on the post-purge view via fixpoint iteration:
- *      repeat {enumerate group paths → evaluate `applyTo` →
- *      compute effective inScope → purge storage} until the
- *      fulfilments map stops changing. Every `applyTo` is thus
- *      exercised against the same post-purge view all other gates
- *      see — a value this call is purging cannot silently drive
- *      another gate. Bounded by `MAX_PURGE_ITERATIONS` for safety;
- *      convergence typically hits in 1-2 iterations for real
- *      manifests because `purgeStorage` is monotonic (never adds).
- *   3. Post-purge enumeration for group implications.
- *   4. Build per-obligation implications (category-specific shape;
- *      groups/leaves carry a `fulfilmentIndexes` array).
+ *   2. Fixpoint: repeat {enumerate → applyTo → isInScope → purge}
+ *      until the fulfilments map stops changing. Guarantees every
+ *      applyTo sees the same post-purge view, so a value being purged
+ *      in this call cannot silently drive another gate. Bounded by
+ *      `MAX_PURGE_ITERATIONS`; typically converges in 1-2 iterations
+ *      because `purgeStorage` is monotonic.
+ *   3. Post-purge enumeration for group implications (accounts for
+ *      entries dropped by the converged purge).
+ *   4. Build per-obligation implications.
  */
 
 export function createObligationEvaluator({
@@ -62,20 +54,11 @@ export function createObligationEvaluator({
 
   return {
     evaluate(fulfilments) {
-      // 1. Drop unknown obligation ids.
       const recognisedFulfilments = dropUnknownFulfilments(
         fulfilments,
         obligationsById
       )
 
-      // 2. Fixpoint: converge applyTo + purge on a stable post-purge
-      // view. Each iteration enumerates group paths from the current
-      // view, runs applyTo against that view, computes effective
-      // inScope, and purges storage. When the view stops changing,
-      // every applyTo has been exercised against the same post-purge
-      // fulfilments — a value purged in this call cannot leak into
-      // another gate's decision (the two-hop failure mode where a
-      // purged value silently drives a second gate).
       const { amendedFulfilments, applicabilityDecisions, isInScope } =
         convergePurge(recognisedFulfilments, {
           obligations,
@@ -85,8 +68,6 @@ export function createObligationEvaluator({
           obligationDescendants
         })
 
-      // 3. Post-purge enumeration — group fulfilmentIndexes for implication
-      // building (accounts for entries dropped by the converged purge).
       const fulfilmentIndexesByObligationId =
         enumerateGroupFulfilmentIndexesPostPurge(obligations, {
           obligationsByCategory,
@@ -96,7 +77,6 @@ export function createObligationEvaluator({
           amendedFulfilments
         })
 
-      // 4. Build implications.
       const implicationsByObligation = buildImplications(obligations, {
         isInScope,
         obligationsByCategory,

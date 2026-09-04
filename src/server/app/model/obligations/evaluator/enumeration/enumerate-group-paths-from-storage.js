@@ -1,13 +1,9 @@
 import { deriveGroupFulfilmentIndexes } from '../internal/derive-group-fulfilment-indexes.js'
 
 // Pre-purge enumeration of group fulfilmentIndexes from raw storage.
-// Same shape as `enumerateGroupFulfilmentIndexesPostPurge` but without
-// an `isInScope` filter — this runs before any scope decisions are
-// made, so every group with descendant storage contributes its
-// fulfilmentIndex set.
-//
-// Returns `Map<groupId, string[]>`. Groups without any descendant
-// storage get an empty array.
+// No `isInScope` filter (scope hasn't been decided yet), so every group
+// with descendant storage contributes its fulfilmentIndex set.
+// Returns `Map<groupId, string[]>`.
 export function enumerateGroupPathsFromStorage(
   obligations,
   obligationsByCategory,

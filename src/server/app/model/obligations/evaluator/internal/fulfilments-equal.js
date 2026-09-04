@@ -1,6 +1,8 @@
 import { isNonArrayObject } from '../../helper-internals.js'
 
-// purge may recreate indexedFulfilments entries — compare their keys.
+// purge may recreate indexedFulfilments entries as fresh objects with the
+// same content — reference equality wouldn't catch convergence, so compare
+// keys and values.
 const indexedFulfilmentsEqual = (indexedA, indexedB) => {
   const keysA = Object.keys(indexedA)
   const keysB = Object.keys(indexedB)
@@ -28,12 +30,7 @@ const fulfilmentEqual = (fulfilmentA, fulfilmentB) =>
     indexedFulfilmentsEqual(fulfilmentA, fulfilmentB))
 
 // Structural equality between two fulfilments snapshots (obligation-id →
-// value). Used by the purge fixpoint to detect convergence. Values are
-// compared by reference at the top level (purge only ever drops keys or
-// filters an indexedFulfilments map into a fresh object, so a stable
-// iteration re-uses the previous object refs for untouched entries; a
-// filter produces a new object even when its contents are identical, which
-// we resolve by deep-comparing the indexedFulfilments case).
+// value). Used by the purge fixpoint to detect convergence.
 export function fulfilmentsEqual(fulfilmentsA, fulfilmentsB) {
   if (fulfilmentsA === fulfilmentsB) {
     return true

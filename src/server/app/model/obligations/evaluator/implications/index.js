@@ -1,13 +1,8 @@
 import { isNonArrayObject } from '../../helper-internals.js'
 
-// Top-level obligation stored directly at `state.fulfilments[obligation.id]`.
-// Either an applyTo returned an applicability decision (which may carry
-// flip-status such as `{ inScope: true, status: 'optional' }` from an
-// `equalsGate` / `branchedGate`), or we fall through to the obligation's
-// intrinsic status. Prior to Phase 1.4, top-level obligations with
-// intrinsic status but no applyTo were classified as `'field'` and produced
-// the same `{ inScope: true, status }` shape via a separate branch — that
-// case now folds into `'unindexed'`.
+// The five implication constructors below correspond to the five categories
+// emitted by `classifyObligations`.
+
 const unindexedImplication = (obligation, applicabilityDecision) => {
   if (applicabilityDecision) {
     return applicabilityDecision
@@ -35,9 +30,7 @@ const groupImplication = (
   return implication
 }
 
-// Group-scoped leaf with no conditional gate — enumerate the parent group's
-// fulfilmentIndexes as this leaf's fulfilmentIndexes. One entry at every
-// parent instance.
+// One fulfilmentIndex at every parent-group instance.
 const parentDerivedImplication = (
   obligation,
   fulfilmentIndexesByObligationId
@@ -49,8 +42,8 @@ const parentDerivedImplication = (
   ]
 })
 
-// FulfilmentIndex set comes from applyTo — the authoritative "what
-// fulfilmentIndexes CAN exist". Storage tracks which ones have VALUES.
+// FulfilmentIndexes come from applyTo — the authoritative "what CAN exist".
+// Storage tracks which of those have VALUES.
 const applyToDerivedImplication = (obligation, applicabilityDecision) => {
   const implication = {
     inScope: true,
@@ -63,7 +56,7 @@ const applyToDerivedImplication = (obligation, applicabilityDecision) => {
   return implication
 }
 
-// FulfilmentIndex presence via the user's own indexedFulfilments keys.
+// FulfilmentIndexes come from the user's own indexedFulfilments keys.
 const userStorageDerivedImplication = (
   obligation,
   applicabilityDecision,
@@ -83,10 +76,6 @@ const userStorageDerivedImplication = (
   return implication
 }
 
-// Build one obligation's implication given the evaluate-call context.
-//
-// Returns `{ inScope: false }` if the obligation is out of scope.
-// Otherwise returns the category-specific implication.
 export function buildImplication(obligation, context) {
   const {
     isInScope,

@@ -4,26 +4,15 @@ import { purgeStorage } from './purge/purge-storage.js'
 import { makeInScopeCheck } from './scope/make-in-scope-check.js'
 import { runApplicabilityDecisions } from './scope/run-applicability-decisions.js'
 
-// Fixpoint safety cap for the applyTo/purge convergence loop. Real
-// manifests are expected to converge in 1-2 iterations because
-// `purgeStorage` is monotonic on storage (never adds), but a
-// pathological gate design (e.g. an `applyTo` that flips inScope
-// based on absence) could oscillate. Throwing after this cap is a
-// louder signal than silently truncating.
+// Fixpoint safety cap. Real manifests converge in 1-2 iterations because
+// `purgeStorage` is monotonic (never adds), but a pathological gate design
+// (e.g. an `applyTo` that flips inScope based on absence) could oscillate —
+// better to throw than silently truncate.
 const MAX_PURGE_ITERATIONS = 16
 
-// Fixpoint loop: repeat {enumerate → applyTo → isInScope → purge}
-// until the amended fulfilments stop shrinking. Each iteration
-// replaces `amendedFulfilments` with the just-purged snapshot, so the
-// next applyTo sees exactly what every other gate is going to see.
-//
-// Bounded by `MAX_PURGE_ITERATIONS`; throws if we exceed the cap so
-// a pathological gate design fails loudly rather than silently
-// truncating at some arbitrary iteration.
-//
-// Returns the final `{ amendedFulfilments, applicabilityDecisions,
-// isInScope }` — the caller feeds these to enumeration + implication
-// building.
+// Repeat {enumerate → applyTo → isInScope → purge} until the amended
+// fulfilments stop shrinking, so every applyTo sees the same post-purge
+// view its neighbours see.
 export function convergePurge(recognisedFulfilments, context) {
   const {
     obligations,
@@ -54,6 +43,8 @@ export function convergePurge(recognisedFulfilments, context) {
       applicabilityDecisions,
       obligationAncestorGroups
     )
+    // Warm `isInScope`'s memoisation cache so `purgeStorage` and downstream
+    // callers see a fully populated closure.
     for (const obligation of obligations) {
       isInScope(obligation)
     }
@@ -65,8 +56,6 @@ export function convergePurge(recognisedFulfilments, context) {
       isInScope
     })
 
-    // Termination: purge produced no new drops or filtered entries — the
-    // fixpoint has settled and the caller can consume the amended snapshot.
     if (fulfilmentsEqual(amendedFulfilments, next)) {
       return {
         amendedFulfilments: next,

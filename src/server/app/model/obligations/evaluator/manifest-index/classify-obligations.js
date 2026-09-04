@@ -1,27 +1,18 @@
-// Classify each obligation into one of the five categories used by the
-// pipeline branches. The taxonomy splits on two axes:
-//   - structural shape: `unindexed` (one value, no fulfilmentIndex) vs
-//     `group` (has children)
-//   - enumeration provenance (indexed leaves only): where the leaf's
-//     fulfilmentIndexes come from
+// The five categories emitted by `classifyObligations`, split on two axes —
+// structural shape (`unindexed` vs `group`) and, for indexed leaves,
+// enumeration provenance:
 //
-//   'unindexed'             — top-level obligation whose fulfilment
-//                             sits directly at
-//                             `state.fulfilments[obligation.id]`. No
-//                             fulfilmentIndex. Contrast with the three
-//                             `-derived` categories, whose fulfilments
-//                             live in `indexedFulfilments`.
-//   'group'                 — has children via `within` back-refs.
-//                             fulfilmentIndexes enumerated from
-//                             descendants.
+//   'unindexed'             — no fulfilmentIndex; stored directly at
+//                             `state.fulfilments[obligation.id]`.
+//   'group'                 — has children via `within` back-refs;
+//                             fulfilmentIndexes enumerated from descendants.
 //   'parent-derived'        — indexed leaf whose fulfilmentIndexes come
-//                             from the parent group's enumeration
-//                             (one entry at every parent instance).
-//   'user-storage-derived'  — indexed leaf whose fulfilmentIndexes
-//                             come from the user's own storage keys
+//                             from the parent group's enumeration.
+//   'user-storage-derived'  — indexed leaf whose fulfilmentIndexes come
+//                             from the user's own storage keys
 //                             (`indexedBy.source !== 'derived'`).
-//   'apply-to-derived'      — indexed leaf whose fulfilmentIndexes
-//                             come from the applyTo gate's output.
+//   'apply-to-derived'      — indexed leaf whose fulfilmentIndexes come
+//                             from the applyTo gate's output.
 const categoryOf = (obligation, obligationChildren) => {
   if (obligation.indexedBy) {
     return obligation.indexedBy.source === 'derived'
