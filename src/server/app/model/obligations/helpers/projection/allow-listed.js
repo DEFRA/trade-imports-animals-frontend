@@ -5,15 +5,15 @@ import { buildProjectionGate } from './internals/build-projection-gate.js'
  * `gateObligation`'s stored value is in the allowlist.
  *
  * For depth-1 gates (gate and gated at the same identity level), pass
- * `null` for `projectionGroup`; records are the passing gate keys
- * directly.
+ * `null` for `projectionGroup`; fulfilmentIndexes are the passing gate
+ * keys directly.
  *
  * For depth-N > 1 gates (gate at a broader identity level than the
  * gated obligation), pass the gated obligation's parent group as
- * `projectionGroup`. Records are the group's instance-paths whose
- * ancestor prefix has a gate-passing value. The pipeline's
- * `fulfilmentIndexesByObligationId` map supplies the paths — the
- * obligation code doesn't enumerate them itself.
+ * `projectionGroup`. FulfilmentIndexes are the group's fulfilmentIndexes
+ * whose ancestor prefix has a gate-passing value. The pipeline's
+ * `fulfilmentIndexesByObligationId` map supplies them — the obligation
+ * code doesn't enumerate them itself.
  *
  * Semantic inverse: see `not-in-union-of.js`. Both share the outer
  * factory in `internals/build-projection-gate.js`; only the predicate

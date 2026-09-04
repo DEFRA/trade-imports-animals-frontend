@@ -1,4 +1,4 @@
-import { isKeyedRecord } from '../internal/is-keyed-record.js'
+import { isNonArrayObject } from '../../helper-internals.js'
 
 // Top-level obligation stored directly at `state.fulfilments[obligation.id]`.
 // Either an applyTo returned an applicability decision (which may carry
@@ -73,7 +73,9 @@ const userStorageDerivedImplication = (
   const implication = {
     inScope: true,
     status: obligation.status,
-    fulfilmentIndexes: isKeyedRecord(fulfilment) ? Object.keys(fulfilment) : []
+    fulfilmentIndexes: isNonArrayObject(fulfilment)
+      ? Object.keys(fulfilment)
+      : []
   }
   if (applicabilityDecision?.reasons) {
     implication.reasons = applicabilityDecision.reasons

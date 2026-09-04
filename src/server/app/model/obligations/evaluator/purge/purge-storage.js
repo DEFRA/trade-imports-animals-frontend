@@ -1,4 +1,4 @@
-import { isKeyedRecord } from '../internal/is-keyed-record.js'
+import { isNonArrayObject } from '../../helper-internals.js'
 
 // applyTo returns the leaf fulfilmentIndexes it currently authorises; keep
 // only stored entries whose fulfilmentIndex is in that set. `{ keep: false }`
@@ -41,7 +41,7 @@ const purgedFulfilmentFor = (
   if (category === 'unindexed') {
     return { keep: true, value: fulfilment }
   }
-  if (isKeyedRecord(fulfilment)) {
+  if (isNonArrayObject(fulfilment)) {
     return purgedIndexedFulfilments(fulfilment)
   }
   return { keep: true, value: fulfilment }

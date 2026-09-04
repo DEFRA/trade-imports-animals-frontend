@@ -3,7 +3,7 @@
  *
  * `instanceComplete(group, fulfilmentIndex, state)` returns true iff no
  * unsatisfied mandatory concern exists under the instance at
- * `fulfilmentIndex` — no unfilled mandatory leaf record beneath it, and
+ * `fulfilmentIndex` — no unfilled mandatory leaf fulfilmentIndex beneath it, and
  * no unmet per-instance group invariant (`requires.anyOfIds`).
  *
  * Two mandatory-leaf shapes are recognised:
@@ -16,8 +16,8 @@
  *
  * Structural divergence retained from the previous implementation: a
  * fully-empty nested instance (positionally present but with zero leaf
- * storage) does not surface an unmet nested `anyOfIds` — no record exists
- * to attach the invariant error to. Top-level empty entries are caught via
+ * storage) does not surface an unmet nested `anyOfIds` — no fulfilmentIndex
+ * exists to attach the invariant error to. Top-level empty entries are caught via
  * the direct-child mandatory-leaf rule above.
  *
  * Lives outside `state-queries.js` because it enumerates leaves under the

@@ -684,8 +684,8 @@ describe('readGate', () => {
     })
   })
 
-  it('Should return present:true with empty candidates for an empty records-map', () => {
-    // Empty object is a records-map shape but has no values; `some()`
+  it('Should return present:true with empty candidates for empty indexedFulfilments', () => {
+    // Empty object is an indexedFulfilments shape but has no values; `some()`
     // over an empty candidates array still returns false — matches the
     // original inline behaviour for `{}` (Object.values({}) is []).
     expect(readGate({ [gateId]: {} }, gateId)).toEqual({

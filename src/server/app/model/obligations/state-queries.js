@@ -22,7 +22,7 @@ export const STATUSES = {
  * is non-blank. Deliberately does not check scope or mandate — those stay
  * separate concerns so the bridge's three-check pattern (in-scope → mandate →
  * fulfilled) composes cleanly. Returns false when the obligation has no
- * storage entry or when the entry itself is not a records map.
+ * storage entry or when the entry itself is not an indexedFulfilments map.
  */
 export function leafSatisfied(obligation, fulfilmentIndex, state) {
   const fulfilment = state.fulfilments?.[obligation.id]

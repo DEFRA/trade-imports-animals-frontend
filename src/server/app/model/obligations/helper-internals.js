@@ -19,19 +19,19 @@
  *
  * Semantics preserved verbatim from the original inline logic:
  *   - `undefined` stored value → `{ present: false, candidates: [] }`
- *   - records-map (plain object) → `{ present: true, candidates:
+ *   - indexedFulfilments (plain object) → `{ present: true, candidates:
  *     Object.values(stored) }`
- *   - anything else (scalar, null, array, boolean, number) → `{ present:
- *     true, candidates: [stored] }`. Arrays fall through to the scalar
- *     branch (preserves the `!Array.isArray(stored)` guard — an array-
- *     valued fulfilment is one opaque candidate, not spread).
+ *   - anything else (unindexed value, null, array, boolean, number) → `{
+ *     present: true, candidates: [stored] }`. Arrays fall through to the
+ *     unindexed branch (preserves the `!Array.isArray(stored)` guard — an
+ *     array-valued fulfilment is one opaque candidate, not spread).
  */
 
 /**
  * True iff `value` is an object other than null or an array — the
- * shape that distinguishes group-scoped stored fulfilments (a
- * records-keyed map) from top-level scalar fulfilments in callers'
- * usage. See helpers/projection/* for the callers.
+ * shape that distinguishes indexedFulfilments (group-scoped storage,
+ * fulfilmentIndex-keyed map) from top-level unindexed fulfilments in
+ * callers' usage. See helpers/projection/* for the callers.
  *
  * @param {*} value
  * @returns {boolean}

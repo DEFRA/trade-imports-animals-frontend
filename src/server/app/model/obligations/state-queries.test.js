@@ -202,7 +202,7 @@ describe('groupInvariantErrors (V4 requires.anyOf)', () => {
 
 describe('groupInvariantErrors — `requires.minEntries` collection floor', () => {
   // A group carrying a `minEntries` floor emits one collection-scoped
-  // error when records.length is below the floor, so an empty
+  // error when fulfilmentIndexes.length is below the floor, so an empty
   // collection is not vacuously satisfied.
   //
   // The floor is orthogonal to `requires.anyOf` (the per-instance rule):
@@ -218,7 +218,7 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
     }
   }
 
-  it('emits one collection-scoped MIN_ENTRIES error when records.length is below the floor', () => {
+  it('emits one collection-scoped MIN_ENTRIES error when fulfilmentIndexes.length is below the floor', () => {
     const st = state({
       obligations: implications([
         {
@@ -239,7 +239,7 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
     ])
   })
 
-  it('emits no floor error when records.length meets the floor', () => {
+  it('emits no floor error when fulfilmentIndexes.length meets the floor', () => {
     const st = state({
       obligations: implications([
         {
@@ -270,8 +270,9 @@ describe('groupInvariantErrors — `requires.minEntries` collection floor', () =
   })
 
   it('composes with `requires.anyOf` — both a floor error and per-instance errors surface', () => {
-    // A group carrying both a floor and an anyOf: with fewer records
-    // than the floor AND unfilled leaves on each present record, the
+    // A group carrying both a floor and an anyOf: with fewer
+    // fulfilmentIndexes than the floor AND unfilled leaves on each
+    // present instance, the
     // two rules must co-emit. Here minEntries=2 but only 1 record
     // exists — expect one MIN_ENTRIES error plus one anyOf error on
     // the unfilled record.

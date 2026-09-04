@@ -2,7 +2,7 @@ import { isNonArrayObject } from '../../../helper-internals.js'
 import { INDEX_DELIMITER } from '../../../index-delimiter.js'
 
 // Two shape branches, each producing its applyTo decision natively:
-//   - Indexed fulfilment (records-keyed map). Collect the fulfilmentIndexes
+//   - Indexed fulfilment (indexedFulfilments map). Collect the fulfilmentIndexes
 //     whose stored values pass the predicate; optionally project through
 //     `projectionGroup`'s instances (a depth-N > 1 gate).
 //   - Scalar fulfilment (single stored value). Predicate either admits it

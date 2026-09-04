@@ -13,8 +13,9 @@ import { filterAndProject } from './filter-and-project.js'
  *                       inspect it without executing the closure.
  *   - `admits`        — the predicate `(value) => boolean` deciding which
  *                       stored gate values pass. `filterAndProject`
- *                       applies it per record; the flavour-specific
- *                       direction (in-list vs not-in-union) lives here.
+ *                       applies it per fulfilmentIndex; the
+ *                       flavour-specific direction (in-list vs
+ *                       not-in-union) lives here.
  *
  * Everything else — the `fulfilments` lookup, the `filterAndProject`
  * call, the `reasons` wrap, the metadata construction and lazy `values`

@@ -672,7 +672,7 @@ describe('buildImplication', () => {
     expect(result).toEqual({ inScope: true })
   })
 
-  it('group with reasons and instance ids → reasons + records list', () => {
+  it('group with reasons and instance ids → reasons + fulfilmentIndexes list', () => {
     const group = { id: 'g' }
     const result = buildImplication(group, {
       isInScope: inScopeAlways,

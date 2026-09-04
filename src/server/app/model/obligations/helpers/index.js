@@ -43,9 +43,9 @@
  *      Use: `equalsGate` / `includesGate` / `presentGate`.
  *
  *   2. **Group-scoped gate** — the gate obligation is `within` a group,
- *      so `fulfilments[gate.id]` is a records-map (`{lineId1: value,
- *      lineId2: value, ...}`). The `applyTo` returns PER-RECORD
- *      decisions (via `filterAndProject`). Use:
+ *      so `fulfilments[gate.id]` is an indexedFulfilments map
+ *      (`{lineId1: value, lineId2: value, ...}`). The `applyTo` returns
+ *      per-fulfilmentIndex decisions (via `filterAndProject`). Use:
  *      - `allowListed` / `notInUnionOf` with `null` projection when the
  *        gated obligation is at the SAME identity level as the gate
  *        (both `within` the same group). Example: `numberOfPackages`
@@ -55,17 +55,18 @@
  *        the gated obligation is DEEPER than the gate. Example:
  *        `passport` (`within: unitRecord`, deeper than commodityLine)
  *        reads `commodityCode` (`within: commodityLine`) via projection
- *        `unitRecord` — the engine walks unit-records for each matching
- *        commodity-line.
+ *        `unitRecord` — the engine walks unitRecord fulfilmentIndexes for
+ *        each matching commodity-line.
  *
  *   Rule of thumb: if the gate obligation has a `within`, use the
  *   `allowListed`/`notInUnionOf` family. Otherwise use the scalar
  *   family (`equalsGate` / `includesGate` / `presentGate` /
  *   `alwaysInScope`). `matches` is a same-frame scalar equality gate
  *   with same-frame semantics (kept for backwards compat).
- *   `anyAllowListed` is a scalar aggregation over a group's records
- *   (returns a single decision, not per-record) — for the "cph reads
- *   ANY commodityCode across commodity lines" case; see its docstring.
+ *   `anyAllowListed` is a scalar aggregation over a group's
+ *   fulfilmentIndexes (returns a single decision, not
+ *   per-fulfilmentIndex) — for the "cph reads ANY commodityCode across
+ *   commodity lines" case; see its docstring.
  *
  *   `branchedGate` is the escape hatch for genuinely non-derivable
  *   predicates. It is absent from the manifest today but retained here

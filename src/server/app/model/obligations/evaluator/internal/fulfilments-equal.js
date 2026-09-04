@@ -1,4 +1,4 @@
-import { isKeyedRecord } from './is-keyed-record.js'
+import { isNonArrayObject } from '../../helper-internals.js'
 
 // purge may recreate indexedFulfilments entries — compare their keys.
 const indexedFulfilmentsEqual = (indexedA, indexedB) => {
@@ -20,8 +20,8 @@ const indexedFulfilmentsEqual = (indexedA, indexedB) => {
 
 const fulfilmentValuesEqual = (valueA, valueB) =>
   valueA === valueB ||
-  (isKeyedRecord(valueA) &&
-    isKeyedRecord(valueB) &&
+  (isNonArrayObject(valueA) &&
+    isNonArrayObject(valueB) &&
     indexedFulfilmentsEqual(valueA, valueB))
 
 // Structural equality between two fulfilments snapshots (obligation-id →

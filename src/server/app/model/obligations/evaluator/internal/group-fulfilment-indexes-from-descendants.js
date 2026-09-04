@@ -1,12 +1,12 @@
 import { INDEX_DELIMITER } from '../../index-delimiter.js'
-import { isKeyedRecord } from './is-keyed-record.js'
+import { isNonArrayObject } from '../../helper-internals.js'
 const joinIndex = (segments) => segments.join(INDEX_DELIMITER)
 const splitIndex = (key) => key.split(INDEX_DELIMITER)
 
 // The fulfilmentIndex prefixes one descendant's indexedFulfilments
 // contributes to its group's fulfilmentIndex set.
 const indexPrefixesFromDescendant = (fulfilment, prefixLen) => {
-  if (!isKeyedRecord(fulfilment)) {
+  if (!isNonArrayObject(fulfilment)) {
     return []
   }
   return Object.keys(fulfilment)

@@ -76,7 +76,7 @@ describe('#buildProjectionGate', () => {
       })
     })
 
-    it('returns { inScope: true, records } for a depth-1 gate whose keys pass', () => {
+    it('returns { inScope: true, fulfilmentIndexes } for a depth-1 gate whose keys pass', () => {
       const fn = buildProjectionGate({
         type: 'testKind',
         gateObligation,
