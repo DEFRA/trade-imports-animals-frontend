@@ -7,7 +7,7 @@
 // All four helpers here (`equalsGate`, `presentGate`, `includesGate`,
 // `alwaysInScope`) use the same-frame direct-read pattern: the closure
 // reads `fulfilments[gateObligation.id]` and returns a single
-// `{inScope, status, reasons?}` decision — no `runIndexedGate`, no
+// `{inScope, status, reasons?}` decision — no `runGate`, no
 // gatedParentGroup. Depth-N projection variants stay in `allowListed`
 // / `notInUnionOf`.
 

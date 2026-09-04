@@ -1,4 +1,4 @@
-import { runIndexedGate } from './run-indexed-gate.js'
+import { runGate } from './run-gate.js'
 
 /**
  * Shared factory for indexed-gate helpers (`allowListed`,
@@ -15,9 +15,9 @@ import { runIndexedGate } from './run-indexed-gate.js'
  *                          `.metadata.values` for lazy static
  *                          inspection. Differs per flavour.
  *   - `admits`           — the per-value predicate (in-list vs
- *                          not-in-union); `runIndexedGate` applies it
+ *                          not-in-union); `runGate` applies it
  *                          per fulfilmentIndex. Differs per flavour.
- *   - `gatedParentGroup` — optional. When set, `runIndexedGate` fans
+ *   - `gatedParentGroup` — optional. When set, `runGate` fans
  *                          the passing gate keys onto this group's
  *                          fulfilmentIndexes (a depth-N > 1 gate). Its
  *                          id is stamped on
@@ -39,7 +39,7 @@ export const buildIndexedGate = ({
   reasons
 }) => {
   const fn = (fulfilments, fulfilmentIndexesByObligationId) => {
-    const decision = runIndexedGate(
+    const decision = runGate(
       fulfilments[gateObligation.id],
       admits,
       gatedParentGroup,

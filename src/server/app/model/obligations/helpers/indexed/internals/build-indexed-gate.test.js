@@ -122,7 +122,7 @@ describe('#buildIndexedGate', () => {
 
   // The gate's stored value can be a single stored value (an unindexed
   // obligation as the gate source) rather than an indexedFulfilments map.
-  // `runIndexedGate` routes those through `decisionFromUnindexed` — no
+  // `runGate` routes those through `runGateUnindexed` — no
   // per-key iteration; the predicate either admits the value or it doesn't.
   describe('applyTo call — unindexed gate value', () => {
     it('returns { inScope: false } when the predicate rejects the value', () => {
@@ -184,7 +184,7 @@ describe('#buildIndexedGate', () => {
         admits: (value) => value !== undefined,
         gatedParentGroup: null
       })
-      // No `gate` key in fulfilments — runIndexedGate falls back to `{}`,
+      // No `gate` key in fulfilments — runGate falls back to `{}`,
       // which is an indexed-shape branch. Passing an unindexed value via a
       // nullish check would be a separate arrangement; this ensures the
       // wrapper doesn't blow up on missing storage.

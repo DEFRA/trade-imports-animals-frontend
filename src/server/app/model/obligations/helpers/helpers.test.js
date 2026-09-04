@@ -404,7 +404,7 @@ describe('obligationMetadata', () => {
 //
 // Frame semantics: all four helpers use the SAME-FRAME direct-read
 // pattern used by `matches` / `anyAllowListed` / `branchedGate` — no
-// `runIndexedGate`, no gatedParentGroup, no `fulfilmentIndexesByObligationId`
+// `runGate`, no gatedParentGroup, no `fulfilmentIndexesByObligationId`
 // touch. The migration sites (regionCode etc.) are all notification-
 // level unindexed gates; if a future depth-N call site emerges,
 // `allowListed`'s projection pattern is the escape hatch.

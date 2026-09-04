@@ -5,13 +5,13 @@ import { allowListed } from './helpers/index.js'
 // A gate that itself sits at depth >= 2 and projects a deeper obligation must
 // match its fulfilmentIndexes by full-prefix, not by the first segment.
 // When a projection fulfilmentIndex is sliced at its first delimiter,
-// `runIndexedGate` only ever matches a gate whose indexedFulfilments keys
+// `runGate` only ever matches a gate whose indexedFulfilments keys
 // are one segment long, so a deeper gate matches nothing, reports
 // `inScope: false`, and `purgeStorage`'s apply-to-derived branch then deletes
 // the user's stored entries — silent data loss. The fix tests each passing
 // key as a real prefix
 // (`key === '' || path === key || path.startsWith(`${key}.`)`); the
-// empty-key case matters because `runIndexedGate` uses `''` as the key for
+// empty-key case matters because `runGate` uses `''` as the key for
 // an unindexed (non-indexedFulfilments) gate.
 describe('a gate at depth >= 2 that projects', () => {
   // Three nested groups, one segment of composite key each:
