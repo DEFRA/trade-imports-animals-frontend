@@ -133,8 +133,6 @@ export const copy = {
       townOrCity: 'Town or city',
       county: 'County (optional)',
       postalOrZipCode: 'Postal or zip code',
-      country: 'Country',
-      countryPlaceholder: 'Select a country',
       telephoneNumber: 'Telephone number',
       emailAddress: 'Email address'
     },
@@ -155,7 +153,6 @@ export const copy = {
         addressLine1: 'Enter address line 1',
         townOrCity: 'Enter a town or city',
         postalOrZipCode: 'Enter a postal or zip code',
-        country: 'Select a country',
         telephoneNumber: 'Enter a telephone number',
         emailAddress: 'Enter an email address'
       },
@@ -167,7 +164,6 @@ export const copy = {
         townOrCity: 'Town or city must be 100 characters or less',
         county: 'County must be 100 characters or less',
         postalOrZipCode: 'Postal or zip code must be 12 characters or less',
-        country: 'Select a country from the list',
         telephoneNumber: 'Telephone number must be 20 characters or less',
         emailAddress: 'Email address must be 254 characters or less'
       },

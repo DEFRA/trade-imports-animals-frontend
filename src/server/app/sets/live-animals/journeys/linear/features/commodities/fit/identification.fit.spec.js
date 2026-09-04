@@ -12,14 +12,12 @@ const SAVE_AND_CONTINUE = 'Save and continue'
 const PASSPORT_FIELD = '#animalIdentifierPassport-0'
 const MICROCHIP_FIELD = '#animalIdentifierMicrochip-0'
 const EAR_TAG_FIELD = '#animalIdentifierEarTag-0'
-const COUNTRY_FIELD = '#country-0'
 const BOS_TAURUS = 'Bos taurus'
 const FELIS_CATUS = 'Felis catus'
 const CANIS_LUPUS_FAMILIARIS = 'Canis lupus familiaris'
 const SALMO_SALAR = 'Salmo salar'
 const DOMESTIC_CATTLE = 'Domestic cattle'
 const ATLANTIC_SALMON = 'Atlantic salmon'
-const INVALID_COUNTRY = 'Invalid country'
 const PASSPORT_NUMBER = 'UK123456789'
 const MICROCHIP_NUMBER = '900123456789012'
 const MAX_LINE_LENGTH = 255
@@ -107,19 +105,13 @@ const validPermanentAddress = {
   townOrCity: 'Skipton',
   county: 'North Yorkshire',
   postalOrZipCode: 'BD23 1UD',
-  country: 'United Kingdom',
   telephoneNumber: '+44 1756 555 0192',
   emailAddress: 'owner@example.co.uk'
 }
 
 const fillAddress = async (page, address = validPermanentAddress) => {
   for (const [field, value] of Object.entries(address)) {
-    const control = page.locator(`#${field}-0`)
-    if (field === 'country') {
-      await control.selectOption(value)
-    } else {
-      await control.fill(value)
-    }
+    await page.locator(`#${field}-0`).fill(value)
   }
 }
 
@@ -209,7 +201,6 @@ const requiredAddressValidations = [
   ['address line 1', 'addressLine1'],
   ['town or city', 'townOrCity'],
   ['postal or zip code', 'postalOrZipCode'],
-  ['country', 'country'],
   ['telephone number', 'telephoneNumber'],
   ['email address', 'emailAddress']
 ]
@@ -284,6 +275,18 @@ test.describe('animal identification', () => {
     ).toBeVisible()
     await expect(page.locator('#animalIdentifierDescription-2')).toBeVisible()
     await expect(page.locator('#nameOrOrganisationName-0')).toHaveCount(0)
+  })
+
+  test('permanent address asks for eight fields and never for a country', async ({
+    page
+  }) => {
+    await openCatIdentification(page)
+
+    for (const field of Object.keys(validPermanentAddress)) {
+      await expect(page.locator(`#${field}-0`)).toBeVisible()
+    }
+    await expect(page.locator('#country-0')).toHaveCount(0)
+    await expect(page.locator('select')).toHaveCount(0)
   })
 
   test('back link returns to the overview', async ({ page }) => {
@@ -442,11 +445,7 @@ test.describe('animal identification address validation', () => {
     }) => {
       await openCatIdentification(page)
       await fillCatRecord(page)
-      if (field === 'country') {
-        await page.locator(COUNTRY_FIELD).selectOption('')
-      } else {
-        await page.locator(`#${field}-0`).fill('')
-      }
+      await page.locator(`#${field}-0`).fill('')
       await submitAdd(page)
 
       await expectErrorFocus(
@@ -476,26 +475,6 @@ test.describe('animal identification address validation', () => {
       await expect(page.locator(PASSPORT_FIELD)).toHaveValue(PASSPORT_NUMBER)
     })
   }
-
-  test('permanent address validation: an out-of-list country focuses the cleared select and preserves the record', async ({
-    page
-  }) => {
-    await openCatIdentification(page)
-    await fillCatRecord(page)
-    await page.locator(COUNTRY_FIELD).evaluate((select, invalidCountry) => {
-      select.add(new Option(invalidCountry, invalidCountry))
-      select.value = invalidCountry
-    }, INVALID_COUNTRY)
-    await submitAdd(page)
-
-    await expectErrorFocus(
-      page,
-      copy.identification.errors.addressFormat.country,
-      COUNTRY_FIELD
-    )
-    await expect(page.locator(COUNTRY_FIELD)).toHaveValue('')
-    await expect(page.locator(PASSPORT_FIELD)).toHaveValue(PASSPORT_NUMBER)
-  })
 })
 
 test.describe('animal identification records', () => {

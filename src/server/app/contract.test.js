@@ -269,7 +269,6 @@ describe('controller <-> model commit contract', () => {
         'addressLine1-0': '1 Farm Lane',
         'townOrCity-0': 'Skipton',
         'postalOrZipCode-0': 'BD23 1UD',
-        'country-0': 'United Kingdom',
         'telephoneNumber-0': '+44 1756 555 0192',
         'emailAddress-0': 'owner@example.co.uk'
       }
