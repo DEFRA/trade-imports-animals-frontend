@@ -8,13 +8,13 @@ import { obligations, groups } from './manifest.js'
 
 // Root down to immediate parent; excludes the obligation itself.
 export const ancestorChain = (obligation) => {
-  const chain = []
-  let cur = obligation.within
-  while (cur) {
-    chain.unshift(cur)
-    cur = cur.within
+  const ancestorGroups = []
+  let ancestor = obligation.within
+  while (ancestor) {
+    ancestorGroups.unshift(ancestor)
+    ancestor = ancestor.within
   }
-  return chain
+  return ancestorGroups
 }
 
 // A group is any obligation that some other obligation references via `within`.

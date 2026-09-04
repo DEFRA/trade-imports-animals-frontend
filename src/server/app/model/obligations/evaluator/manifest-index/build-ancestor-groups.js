@@ -2,13 +2,13 @@
 export function buildAncestorGroups(obligations) {
   const obligationAncestorGroups = new Map()
   for (const obligation of obligations) {
-    const chain = []
-    let cur = obligation.within
-    while (cur) {
-      chain.unshift(cur)
-      cur = cur.within
+    const ancestorGroups = []
+    let ancestor = obligation.within
+    while (ancestor) {
+      ancestorGroups.unshift(ancestor)
+      ancestor = ancestor.within
     }
-    obligationAncestorGroups.set(obligation.id, chain)
+    obligationAncestorGroups.set(obligation.id, ancestorGroups)
   }
   return obligationAncestorGroups
 }
