@@ -1,0 +1,139 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/pages/origin.spec.ts >> Origin of the import page >> shows the country selector on load
+- Location: tests/e2e/pages/origin.spec.ts:15:3
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: locator('select#countryOfOrigin')
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" with timeout 5000ms
+  - waiting for locator('select#countryOfOrigin')
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- banner:
+  - link "GOV.UK":
+    - /url: https://www.gov.uk/
+    - img "GOV.UK"
+  - region "Service information":
+    - link "Import notification service":
+      - /url: /
+    - navigation "Menu":
+      - list:
+        - listitem:
+          - link "Dashboard":
+            - /url: /
+            - strong: Dashboard
+        - listitem:
+          - link "Address book":
+            - /url: "#"
+        - listitem:
+          - link "Manage account":
+            - /url: "#"
+        - listitem:
+          - link "Log out":
+            - /url: /auth/sign-out
+- paragraph:
+  - strong: Alpha
+  - text: This is a new service. Help us improve it and
+  - link "give your feedback by email":
+    - /url: mailto:APHAServiceDesk@apha.gov.uk
+  - text: .
+- link "Back":
+  - /url: /
+- main:
+  - strong: Draft
+  - text: GBN-AG-26-F67NY8 About the consignment
+  - heading "Origin of the import" [level=1]
+  - text: Country of origin Start typing to search for a country.
+  - status
+  - status
+  - combobox "Country of origin"
+  - img
+  - group "Does the consignment have a region of origin code?":
+    - text: Does the consignment have a region of origin code? If a region of origin code is required it will be shown on your health certificate.
+    - radio "Yes"
+    - text: "Yes"
+    - radio "No"
+    - text: "No"
+  - text: Your internal reference for this consignment (optional) Enter any internal reference you want to use to identify this consignment, or leave blank.
+  - textbox "Your internal reference for this consignment (optional)"
+  - button "Save and continue"
+  - button "Save and return to overview"
+  - link "Cancel and return to overview":
+    - /url: /notifications/GBN-AG-26-F67NY8
+- contentinfo:
+  - heading "Support links" [level=2]
+  - list:
+    - listitem:
+      - link "Privacy":
+        - /url: https://www.gov.uk/help/privacy-notice
+    - listitem:
+      - link "Cookies":
+        - /url: https://www.gov.uk/help/cookies
+    - listitem:
+      - link "Accessibility statement":
+        - /url: https://www.gov.uk/help/accessibility-statement
+  - text: All content is available under the
+  - link "Open Government Licence v3.0":
+    - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+  - text: ", except where otherwise stated"
+  - link "© Crown copyright":
+    - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | 
+  3  | test.describe('Origin of the import page', { tag: ['@integration', '@duplicated-in-frontend'] }, () => {
+  4  |   test.beforeEach(async ({ journey }) => {
+  5  |     await journey.toOriginOfImport();
+  6  |   });
+  7  | 
+  8  |   test('renders the page controls', async ({ pages }) => {
+  9  |     await expect(pages.originOfImport.heading).toBeVisible();
+  10 |     await expect(pages.originOfImport.countryOfOrigin).toBeVisible();
+  11 |     await expect(pages.originOfImport.radioRequiresOriginCode('No')).toBeVisible();
+  12 |     await expect(pages.originOfImport.saveAndContinue).toBeVisible();
+  13 |   });
+  14 | 
+  15 |   test('shows the country selector on load', async ({ pages }) => {
+> 16 |     await expect(pages.originOfImport.countryOfOrigin).toBeVisible();
+     |                                                        ^ Error: expect(locator).toBeVisible() failed
+  17 |   });
+  18 | 
+  19 |   test('accepts valid origin details', async ({ pages }) => {
+  20 |     await pages.originOfImport.selectCountry('France');
+  21 |     await pages.originOfImport.radioRequiresOriginCode('No').check();
+  22 |     await pages.originOfImport.saveAndContinue.click();
+  23 | 
+  24 |     await expect(pages.page.getByRole('heading', { name: 'There is a problem' })).toHaveCount(0);
+  25 |   });
+  26 | 
+  27 |   test('shows an error summary when submitted without a country', async ({ pages }) => {
+  28 |     await pages.originOfImport.saveAndContinue.click();
+  29 | 
+  30 |     await expect(pages.page.getByRole('heading', { name: 'There is a problem' })).toBeVisible();
+  31 |   });
+  32 | });
+  33 | 
+```

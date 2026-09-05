@@ -1,0 +1,315 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/animal-identifiers-conditional.spec.ts >> Animal identifiers — conditional identifier surface >> a unit form shows only the identifier types the commodity requires, plus the permanent address for cats and dogs
+- Location: tests/e2e/features/animal-identifiers-conditional.spec.ts:4:3
+
+# Error details
+
+```
+Error: expect(locator).toHaveCount(expected) failed
+
+Locator:  getByLabel('Country')
+Expected: 0
+Received: 1
+Timeout:  5000ms
+
+Call log:
+  - Expect "toHaveCount" with timeout 5000ms
+  - waiting for getByLabel('Country')
+    14 × locator resolved to 1 element
+       - unexpected value "1"
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - generic [ref=e23]:
+        - link "Import notification service" [ref=e25] [cursor=pointer]:
+          - /url: /
+        - navigation "Menu" [ref=e26]:
+          - list [ref=e27]:
+            - listitem [ref=e28]:
+              - link "Dashboard" [ref=e29] [cursor=pointer]:
+                - /url: /
+                - strong [ref=e30]: Dashboard
+            - listitem [ref=e31]:
+              - link "Address book" [ref=e32] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e33]:
+              - link "Manage account" [ref=e34] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e35]:
+              - link "Log out" [ref=e36] [cursor=pointer]:
+                - /url: /auth/sign-out
+  - generic [ref=e37]:
+    - paragraph [ref=e39]:
+      - strong [ref=e40]: Alpha
+      - generic [ref=e41]:
+        - text: This is a new service. Help us improve it and
+        - link "give your feedback by email" [ref=e42] [cursor=pointer]:
+          - /url: mailto:APHAServiceDesk@apha.gov.uk
+        - text: .
+    - link "Back" [ref=e43] [cursor=pointer]:
+      - /url: /notifications/GBN-AG-26-9G8KTN
+    - main [ref=e44]:
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - strong [ref=e48]: Draft
+          - text: GBN-AG-26-9G8KTN
+        - generic [ref=e49]: About the consignment
+        - heading "Animal identification details" [level=1] [ref=e50]
+        - generic [ref=e51]: You must add all animal identification details before the consignment arrives at the port of entry.
+        - table "Selected commodities" [ref=e52]:
+          - caption [ref=e53]: Selected commodities
+          - rowgroup [ref=e54]:
+            - row "Commodity code Common name Number of animals Actions" [ref=e55]:
+              - columnheader "Commodity code" [ref=e56]
+              - columnheader "Common name" [ref=e57]
+              - columnheader "Number of animals" [ref=e58]
+              - columnheader "Actions" [ref=e59]:
+                - generic [ref=e60]: Actions
+          - rowgroup [ref=e61]:
+            - row "01061900 Cat 2 Change Cat" [ref=e62]:
+              - cell "01061900" [ref=e63]
+              - cell "Cat" [ref=e64]
+              - cell "2" [ref=e65]
+              - cell "Change Cat" [ref=e66]:
+                - link "Change Cat" [ref=e67] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-9G8KTN/commodities
+                  - text: Change
+                  - generic [ref=e68]: Cat
+        - paragraph [ref=e69]:
+          - link "Add another commodity" [ref=e70] [cursor=pointer]:
+            - /url: /notifications/GBN-AG-26-9G8KTN/commodities
+        - generic [ref=e71]:
+          - button [ref=e72]: Save and finish
+          - generic [ref=e73]:
+            - heading "Cat (01061900) — Felis catus" [level=2] [ref=e74]
+            - heading "Enter details for Felis catus 1 of 2" [level=3] [ref=e75]
+            - generic [ref=e76]:
+              - generic [ref=e77]: Microchip number
+              - generic [ref=e78]: For example, 900123456789012
+              - textbox "Microchip number" [ref=e79]
+            - generic [ref=e80]:
+              - generic [ref=e81]: Passport number
+              - generic [ref=e82]: For example, UK123456789
+              - textbox "Passport number" [ref=e83]
+            - generic [ref=e84]:
+              - generic [ref=e85]: Tattoo
+              - generic [ref=e86]: For example, AB1234
+              - textbox "Tattoo" [ref=e87]
+            - heading "Permanent address" [level=3] [ref=e88]
+            - paragraph [ref=e89]: A permanent address is required for this animal.
+            - generic [ref=e90]:
+              - generic [ref=e91]: Name or organisation name
+              - textbox "Name or organisation name" [ref=e92]
+            - generic [ref=e93]:
+              - generic [ref=e94]: Address line 1
+              - textbox "Address line 1" [ref=e95]
+            - generic [ref=e96]:
+              - generic [ref=e97]: Address line 2 (optional)
+              - textbox "Address line 2 (optional)" [ref=e98]
+            - generic [ref=e99]:
+              - generic [ref=e100]: Town or city
+              - textbox "Town or city" [ref=e101]
+            - generic [ref=e102]:
+              - generic [ref=e103]: County (optional)
+              - textbox "County (optional)" [ref=e104]
+            - generic [ref=e105]:
+              - generic [ref=e106]: Postal or zip code
+              - textbox "Postal or zip code" [ref=e107]
+            - generic [ref=e108]:
+              - generic [ref=e109]: Country
+              - combobox "Country" [ref=e110]:
+                - option "Select a country" [selected]
+                - option "United Kingdom"
+                - option "Austria"
+                - option "Belgium"
+                - option "Bulgaria"
+                - option "Croatia"
+                - option "Cyprus"
+                - option "Czechia"
+                - option "Denmark"
+                - option "Estonia"
+                - option "Finland"
+                - option "France"
+                - option "Germany"
+                - option "Greece"
+                - option "Hungary"
+                - option "Iceland"
+                - option "Ireland"
+                - option "Italy"
+                - option "Latvia"
+                - option "Liechtenstein"
+                - option "Lithuania"
+                - option "Luxembourg"
+                - option "Malta"
+                - option "Netherlands (the)"
+                - option "Norway"
+                - option "Poland"
+                - option "Portugal"
+                - option "Romania"
+                - option "Slovakia"
+                - option "Slovenia"
+                - option "Spain"
+                - option "Sweden"
+                - option "Switzerland"
+            - generic [ref=e111]:
+              - generic [ref=e112]: Telephone number
+              - textbox "Telephone number" [ref=e113]
+            - generic [ref=e114]:
+              - generic [ref=e115]: Email address
+              - textbox "Email address" [ref=e116]
+            - button "Save and add another" [ref=e117] [cursor=pointer]
+          - separator [ref=e118]
+          - generic [ref=e119]:
+            - button "Save and finish" [ref=e120] [cursor=pointer]
+            - button "Save and return to overview" [ref=e121] [cursor=pointer]
+            - link "Cancel and return to overview" [ref=e122] [cursor=pointer]:
+              - /url: /notifications/GBN-AG-26-9G8KTN
+  - contentinfo [ref=e123]:
+    - generic [ref=e136]:
+      - generic [ref=e137]:
+        - heading "Support links" [level=2] [ref=e138]
+        - list [ref=e139]:
+          - listitem [ref=e140]:
+            - link "Privacy" [ref=e141] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e142]:
+            - link "Cookies" [ref=e143] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e144]:
+            - link "Accessibility statement" [ref=e145] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e146]
+        - generic [ref=e148]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e149] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e151] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1   | import { test, expect } from '@fixtures';
+  2   | 
+  3   | test.describe('Animal identifiers — conditional identifier surface', { tag: ['@integration', '@duplicated-in-frontend'] }, () => {
+  4   |   test('a unit form shows only the identifier types the commodity requires, plus the permanent address for cats and dogs', async ({
+  5   |     journey,
+  6   |     pages,
+  7   |   }) => {
+  8   |     await journey.startNotification();
+  9   | 
+  10  |     // Batch-create a Cats commodity line. The animal count is save-blocking,
+  11  |     // and a count of 2 keeps the identifier form open after the first record
+  12  |     // is committed — at the declared count the maximum-reached state replaces
+  13  |     // it, which is the cap spec's subject, not this one's.
+  14  |     await pages.overview.task('What are you importing?').click();
+  15  |     await pages.commoditySelection.selectSpecies(['Felis catus']);
+  16  |     await pages.commoditySelection.saveAndContinue.click();
+  17  |     await expect(pages.consignmentDetails.heading).toBeVisible();
+  18  | 
+  19  |     await pages.consignmentDetails.numberOfAnimals.fill('2');
+  20  |     await pages.consignmentDetails.saveAndContinue.click();
+  21  |     await expect(pages.overview.heading).toBeVisible();
+  22  |     await pages.overview.task('Animal identification details').click();
+  23  |     await expect(pages.animalIdentification.heading).toBeVisible();
+  24  |     await expect(pages.page.getByRole('heading', { name: 'Enter details for Felis catus' })).toBeVisible();
+  25  | 
+  26  |     // Cats gate passport + tattoo + permanent address on; ear tag + horse name
+  27  |     // are hidden (they belong to other commodities), and the free-text fallbacks
+  28  |     // are hidden too — a typed commodity is in the notInUnionOf union.
+  29  |     await expect(pages.animalIdentification.passportNumber).toBeVisible();
+  30  |     await expect(pages.page.getByLabel('Tattoo')).toBeVisible();
+  31  |     await expect(pages.animalIdentification.earTag).toBeHidden();
+  32  |     await expect(pages.page.getByLabel('Horse name')).toBeHidden();
+  33  |     await expect(pages.page.getByLabel('Identification details')).toBeHidden();
+  34  |     await expect(pages.page.getByLabel('Animal description')).toBeHidden();
+  35  |     await expect(pages.page.getByLabel('Name or organisation name')).toBeVisible();
+  36  |     // The permanent address block asks for eight fields and no country — an
+  37  |     // address APHA can inspect is a Great Britain address, so there is nothing
+  38  |     // to choose.
+> 39  |     await expect(pages.page.getByLabel('Country')).toHaveCount(0);
+      |                                                    ^ Error: expect(locator).toHaveCount(expected) failed
+  40  | 
+  41  |     // A partial permanent address blocks the add — the fieldGroup mandates apply
+  42  |     // once any part of the record is provided.
+  43  |     await pages.animalIdentification.passportNumber.fill('UK123456789');
+  44  |     await pages.page.getByLabel('Name or organisation name').fill('Pet Owner');
+  45  |     await pages.animalIdentification.saveAndAddAnother.click();
+  46  |     await expect(pages.page.getByRole('heading', { name: 'There is a problem' })).toBeVisible();
+  47  |     await expect(pages.page.getByRole('link', { name: 'Enter address line 1' })).toBeVisible();
+  48  | 
+  49  |     // Completing the mandatory address fields commits the unit with its
+  50  |     // { name, address } permanent address and keeps the surface open.
+  51  |     await pages.page.getByLabel('Address line 1').fill('1 Farm Lane');
+  52  |     await pages.page.getByLabel('Town or city').fill('Skipton');
+  53  |     await pages.page.getByLabel('Postal or zip code').fill('BD23 1UD');
+  54  |     await pages.page.getByLabel('Telephone number').fill('+44 1756 555 0192');
+  55  |     await pages.page.getByLabel('Email address').fill('owner@example.co.uk');
+  56  |     await pages.animalIdentification.saveAndAddAnother.click();
+  57  | 
+  58  |     await expect(pages.animalIdentification.heading).toBeVisible();
+  59  |     const unitRow = pages.animalIdentification.savedAnimalRow('Felis catus', 1);
+  60  |     await expect(pages.animalIdentification.identifierColumn('Permanent address')).toBeVisible();
+  61  |     await expect(unitRow.getByRole('cell', { name: 'UK123456789', exact: true })).toBeVisible();
+  62  |     await expect(unitRow.getByRole('cell', { name: 'Pet Owner', exact: true })).toBeVisible();
+  63  |   });
+  64  | 
+  65  |   test('a commodity with no typed identifier shows only the free-text fallbacks, and one satisfies the group', async ({
+  66  |     journey,
+  67  |     pages,
+  68  |   }) => {
+  69  |     await journey.startNotification();
+  70  | 
+  71  |     // Fish is in no typed-identifier list, so the notInUnionOf gate turns the
+  72  |     // free-text fallbacks ON and every typed input OFF. The animal count is
+  73  |     // save-blocking, and a count of 2 keeps the identifier form open after the
+  74  |     // first record is committed.
+  75  |     await pages.overview.task('What are you importing?').click();
+  76  |     await pages.commoditySelection.selectSpecies(['Salmo salar']);
+  77  |     await pages.commoditySelection.saveAndContinue.click();
+  78  |     await expect(pages.consignmentDetails.heading).toBeVisible();
+  79  | 
+  80  |     await pages.consignmentDetails.numberOfAnimals.fill('2');
+  81  |     await pages.consignmentDetails.saveAndContinue.click();
+  82  |     await expect(pages.overview.heading).toBeVisible();
+  83  |     await pages.overview.task('Animal identification details').click();
+  84  |     await expect(pages.animalIdentification.heading).toBeVisible();
+  85  | 
+  86  |     await expect(pages.page.getByLabel('Identification details')).toBeVisible();
+  87  |     await expect(pages.page.getByLabel('Animal description')).toBeVisible();
+  88  |     await expect(pages.animalIdentification.passportNumber).toBeHidden();
+  89  |     await expect(pages.page.getByLabel('Tattoo')).toBeHidden();
+  90  |     await expect(pages.animalIdentification.earTag).toBeHidden();
+  91  |     await expect(pages.page.getByLabel('Horse name')).toBeHidden();
+  92  | 
+  93  |     // A fallback alone satisfies the at-least-one identifier group.
+  94  |     await pages.page.getByLabel('Identification details').fill('Tank mark TM-77');
+  95  |     await pages.animalIdentification.saveAndAddAnother.click();
+  96  |     await expect(pages.animalIdentification.heading).toBeVisible();
+  97  |     await expect(
+  98  |       pages.animalIdentification.savedAnimalRow('Salmo salar', 1).getByRole('cell', { name: 'Tank mark TM-77', exact: true }),
+  99  |     ).toBeVisible();
+  100 |   });
+  101 | });
+  102 | 
+```

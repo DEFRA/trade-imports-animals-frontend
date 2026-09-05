@@ -1,0 +1,158 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/visual/origin-of-import.visual.spec.ts >> Origin of import (visual regression) >> shows expected page appearance on first load
+- Location: tests/e2e/visual/origin-of-import.visual.spec.ts:12:3
+
+# Error details
+
+```
+Error: expect(page).toHaveScreenshot(expected) failed
+
+  Expected an image 1280px by 1332px, received 1280px by 1417px. 78633 pixels (ratio 0.05 of all image pixels) are different.
+
+  Snapshot: origin-of-import.png
+
+Call log:
+  - Expect "toHaveScreenshot(origin-of-import.png)" with timeout 5000ms
+    - verifying given screenshot expectation
+  - taking page screenshot
+    - disabled all CSS animations
+  - waiting for fonts to load...
+  - fonts loaded
+  - Expected an image 1280px by 1332px, received 1280px by 1417px. 78633 pixels (ratio 0.05 of all image pixels) are different.
+  - waiting 100ms before taking screenshot
+  - taking page screenshot
+    - disabled all CSS animations
+  - waiting for fonts to load...
+  - fonts loaded
+  - captured a stable screenshot
+  - Expected an image 1280px by 1332px, received 1280px by 1417px. 78633 pixels (ratio 0.05 of all image pixels) are different.
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - generic [ref=e23]:
+        - link "Import notification service" [ref=e25] [cursor=pointer]:
+          - /url: /
+        - navigation "Menu" [ref=e26]:
+          - list [ref=e27]:
+            - listitem [ref=e28]:
+              - link "Dashboard" [ref=e29] [cursor=pointer]:
+                - /url: /
+                - strong [ref=e30]: Dashboard
+            - listitem [ref=e31]:
+              - link "Address book" [ref=e32] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e33]:
+              - link "Manage account" [ref=e34] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e35]:
+              - link "Log out" [ref=e36] [cursor=pointer]:
+                - /url: /auth/sign-out
+  - generic [ref=e37]:
+    - paragraph [ref=e39]:
+      - strong [ref=e40]: Alpha
+      - generic [ref=e41]:
+        - text: This is a new service. Help us improve it and
+        - link "give your feedback by email" [ref=e42] [cursor=pointer]:
+          - /url: mailto:APHAServiceDesk@apha.gov.uk
+        - text: .
+    - link "Back" [ref=e43] [cursor=pointer]:
+      - /url: /
+    - main [ref=e44]:
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - strong [ref=e48]: Draft
+          - text: GBN-AG-26-ZFXBV4
+        - generic [ref=e49]: About the consignment
+        - heading "Origin of the import" [level=1] [ref=e50]
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - generic [ref=e53]: Country of origin
+            - generic [ref=e54]: Start typing to search for a country.
+            - generic [ref=e56]:
+              - generic [ref=e57]:
+                - status
+                - status
+              - combobox "Country of origin" [ref=e58] [cursor=pointer]
+              - img [ref=e59]
+          - group "Does the consignment have a region of origin code?" [ref=e63]:
+            - generic [ref=e64]: Does the consignment have a region of origin code?
+            - generic [ref=e65]: If a region of origin code is required it will be shown on your health certificate.
+            - generic [ref=e66]:
+              - generic [ref=e67]:
+                - radio "Yes" [ref=e68] [cursor=pointer]
+                - generic [ref=e69] [cursor=pointer]: "Yes"
+              - generic [ref=e70]:
+                - radio "No" [ref=e71] [cursor=pointer]
+                - generic [ref=e72] [cursor=pointer]: "No"
+          - generic [ref=e73]:
+            - generic [ref=e74]: Your internal reference for this consignment (optional)
+            - generic [ref=e75]: Enter any internal reference you want to use to identify this consignment, or leave blank.
+            - textbox "Your internal reference for this consignment (optional)" [ref=e76]
+          - generic [ref=e77]:
+            - button "Save and continue" [ref=e78] [cursor=pointer]
+            - button "Save and return to hub" [ref=e79] [cursor=pointer]
+            - link "Cancel and return to hub" [ref=e80] [cursor=pointer]:
+              - /url: /notifications/GBN-AG-26-ZFXBV4
+  - contentinfo [ref=e81]:
+    - generic [ref=e94]:
+      - generic [ref=e95]:
+        - heading "Support links" [level=2] [ref=e96]
+        - list [ref=e97]:
+          - listitem [ref=e98]:
+            - link "Privacy" [ref=e99] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e100]:
+            - link "Cookies" [ref=e101] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e102]:
+            - link "Accessibility statement" [ref=e103] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e104]
+        - generic [ref=e106]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e107] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e109] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | 
+  3  | // Override headless: headed mode uses OS font rendering, producing pixel differences against a headless baseline.
+  4  | test.use({ headless: true });
+  5  | 
+  6  | test.describe('Origin of import (visual regression)', { tag: '@visual' }, () => {
+  7  |   test.beforeEach(async ({ journey }) => {
+  8  |     await journey.toOriginOfImport();
+  9  |   });
+  10 | 
+  11 |   // No mask: the page no longer shows the signed-in user's email address, so there is nothing varying to hide.
+  12 |   test('shows expected page appearance on first load', async ({ page }) => {
+> 13 |     await expect(page).toHaveScreenshot('origin-of-import.png', { fullPage: true });
+     |                        ^ Error: expect(page).toHaveScreenshot(expected) failed
+  14 |   });
+  15 | });
+  16 | 
+```

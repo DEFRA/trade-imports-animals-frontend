@@ -1,0 +1,170 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/pages/origin.spec.ts >> Origin of the import page >> accepts valid origin details
+- Location: tests/e2e/pages/origin.spec.ts:19:3
+
+# Error details
+
+```
+Test timeout of 30000ms exceeded.
+```
+
+```
+Error: locator.selectOption: Test timeout of 30000ms exceeded.
+Call log:
+  - waiting for locator('select#countryOfOrigin')
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - generic [ref=e23]:
+        - link "Import notification service" [ref=e25] [cursor=pointer]:
+          - /url: /
+        - navigation "Menu" [ref=e26]:
+          - list [ref=e27]:
+            - listitem [ref=e28]:
+              - link "Dashboard" [ref=e29] [cursor=pointer]:
+                - /url: /
+                - strong [ref=e30]: Dashboard
+            - listitem [ref=e31]:
+              - link "Address book" [ref=e32] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e33]:
+              - link "Manage account" [ref=e34] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e35]:
+              - link "Log out" [ref=e36] [cursor=pointer]:
+                - /url: /auth/sign-out
+  - generic [ref=e37]:
+    - paragraph [ref=e39]:
+      - strong [ref=e40]: Alpha
+      - generic [ref=e41]:
+        - text: This is a new service. Help us improve it and
+        - link "give your feedback by email" [ref=e42] [cursor=pointer]:
+          - /url: mailto:APHAServiceDesk@apha.gov.uk
+        - text: .
+    - link "Back" [ref=e43] [cursor=pointer]:
+      - /url: /
+    - main [ref=e44]:
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - strong [ref=e48]: Draft
+          - text: GBN-AG-26-0378Y3
+        - generic [ref=e49]: About the consignment
+        - heading "Origin of the import" [level=1] [ref=e50]
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - generic [ref=e53]: Country of origin
+            - generic [ref=e54]: Start typing to search for a country.
+            - generic [ref=e56]:
+              - generic [ref=e57]:
+                - status
+                - status
+              - combobox "Country of origin" [ref=e58] [cursor=pointer]
+              - img [ref=e59]
+          - group "Does the consignment have a region of origin code?" [ref=e63]:
+            - generic [ref=e64]: Does the consignment have a region of origin code?
+            - generic [ref=e65]: If a region of origin code is required it will be shown on your health certificate.
+            - generic [ref=e66]:
+              - generic [ref=e67]:
+                - radio "Yes" [ref=e68] [cursor=pointer]
+                - generic [ref=e69] [cursor=pointer]: "Yes"
+              - generic [ref=e70]:
+                - radio "No" [ref=e71] [cursor=pointer]
+                - generic [ref=e72] [cursor=pointer]: "No"
+          - generic [ref=e73]:
+            - generic [ref=e74]: Your internal reference for this consignment (optional)
+            - generic [ref=e75]: Enter any internal reference you want to use to identify this consignment, or leave blank.
+            - textbox "Your internal reference for this consignment (optional)" [ref=e76]
+          - generic [ref=e77]:
+            - button "Save and continue" [ref=e78] [cursor=pointer]
+            - button "Save and return to overview" [ref=e79] [cursor=pointer]
+            - link "Cancel and return to overview" [ref=e80] [cursor=pointer]:
+              - /url: /notifications/GBN-AG-26-0378Y3
+  - contentinfo [ref=e81]:
+    - generic [ref=e94]:
+      - generic [ref=e95]:
+        - heading "Support links" [level=2] [ref=e96]
+        - list [ref=e97]:
+          - listitem [ref=e98]:
+            - link "Privacy" [ref=e99] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e100]:
+            - link "Cookies" [ref=e101] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e102]:
+            - link "Accessibility statement" [ref=e103] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e104]
+        - generic [ref=e106]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e107] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e109] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { type Locator, type Page } from '@playwright/test';
+  2  | import { NotificationPage } from '@page-objects/base/base-page';
+  3  | import type { YesNoValue } from '@domain/constants/yes-no-values';
+  4  | 
+  5  | export class OriginOfImportPage extends NotificationPage {
+  6  |   constructor(page: Page) {
+  7  |     super(page, 'origin');
+  8  |   }
+  9  | 
+  10 |   get heading(): Locator {
+  11 |     return this.page.getByRole('heading', { level: 1, name: 'Origin of the import' });
+  12 |   }
+  13 | 
+  14 |   get countryOfOrigin(): Locator {
+  15 |     return this.page.locator('select#countryOfOrigin');
+  16 |   }
+  17 | 
+  18 |   async selectCountry(name: string): Promise<void> {
+> 19 |     await this.countryOfOrigin.selectOption({ label: name });
+     |                                ^ Error: locator.selectOption: Test timeout of 30000ms exceeded.
+  20 |   }
+  21 | 
+  22 |   radioRequiresOriginCode(value: YesNoValue): Locator {
+  23 |     return this.page.getByRole('radio', { name: value, exact: true });
+  24 |   }
+  25 | 
+  26 |   get regionCode(): Locator {
+  27 |     return this.page.getByLabel('Region of origin code', { exact: true });
+  28 |   }
+  29 | 
+  30 |   get internalReference(): Locator {
+  31 |     return this.page.getByLabel('Your internal reference for this consignment (optional)');
+  32 |   }
+  33 | 
+  34 |   get saveAndContinue(): Locator {
+  35 |     return this.page.getByRole('button', { name: 'Save and continue' });
+  36 |   }
+  37 | 
+  38 |   get errorSummary(): Locator {
+  39 |     return this.page.getByRole('heading', { level: 2, name: 'There is a problem' });
+  40 |   }
+  41 | }
+  42 | 
+```

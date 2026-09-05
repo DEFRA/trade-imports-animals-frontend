@@ -1,0 +1,176 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/addresses-submit-freeze.spec.ts >> Submitted addresses are frozen >> renaming the book after submit does not change the submitted view, then shows live on amend
+- Location: tests/e2e/features/addresses-submit-freeze.spec.ts:4:3
+
+# Error details
+
+```
+Error: expect(page).toHaveURL(expected) failed
+
+Expected pattern: /\/notification-view\?cancelled=1$/
+Received string:  "http://localhost:3000/notifications/GBN-AG-26-TRJXV3/cancel-amend"
+Timeout: 5000ms
+
+Call log:
+  - Expect "toHaveURL" with timeout 5000ms
+    14 × unexpected value "http://localhost:3000/notifications/GBN-AG-26-TRJXV3/cancel-amend"
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- banner:
+  - link "GOV.UK":
+    - /url: https://www.gov.uk/
+    - img "GOV.UK"
+  - region "Service information":
+    - link "Import notification service":
+      - /url: /
+    - navigation "Menu":
+      - list:
+        - listitem:
+          - link "Dashboard":
+            - /url: /
+            - strong: Dashboard
+        - listitem:
+          - link "Address book":
+            - /url: "#"
+        - listitem:
+          - link "Manage account":
+            - /url: "#"
+        - listitem:
+          - link "Log out":
+            - /url: /auth/sign-out
+- paragraph:
+  - strong: Alpha
+  - text: This is a new service. Help us improve it and
+  - link "give your feedback by email":
+    - /url: mailto:APHAServiceDesk@apha.gov.uk
+  - text: .
+- link "Back":
+  - /url: /notifications/GBN-AG-26-TRJXV3/notification-view
+- main:
+  - alert "There is a problem":
+    - heading "There is a problem" [level=2]
+    - paragraph: Sorry, there is a problem with the service. Your answers on this page have been saved. Try again in a few minutes.
+  - strong: Amending
+  - text: GBN-AG-26-TRJXV3
+  - heading "Cancel this amendment?" [level=1]
+  - paragraph: Your changes since you started amending will be discarded and the submitted version restored.
+  - button "Yes, cancel amendment"
+  - button "No, return to notification"
+- contentinfo:
+  - heading "Support links" [level=2]
+  - list:
+    - listitem:
+      - link "Privacy":
+        - /url: https://www.gov.uk/help/privacy-notice
+    - listitem:
+      - link "Cookies":
+        - /url: https://www.gov.uk/help/cookies
+    - listitem:
+      - link "Accessibility statement":
+        - /url: https://www.gov.uk/help/accessibility-statement
+  - text: All content is available under the
+  - link "Open Government Licence v3.0":
+    - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+  - text: ", except where otherwise stated"
+  - link "© Crown copyright":
+    - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | 
+  3  | test.describe('Submitted addresses are frozen', { tag: ['@integration'] }, () => {
+  4  |   test('renaming the book after submit does not change the submitted view, then shows live on amend', async ({
+  5  |     journey,
+  6  |     journeyContext,
+  7  |     pages,
+  8  |     addressBookApi,
+  9  |     notificationActions,
+  10 |   }) => {
+  11 |     test.slow();
+  12 | 
+  13 |     const stamp = Date.now();
+  14 |     const originalName = `Frozen Origin ${stamp}`;
+  15 |     const renamed = `Live Origin ${stamp}`;
+  16 |     const address = await addressBookApi.createAddress({
+  17 |       name: originalName,
+  18 |       addressLine1: '8 Freeze Street',
+  19 |       townOrCity: 'Carlisle',
+  20 |       postcode: 'CA1 4DD',
+  21 |       countryCode: 'United Kingdom',
+  22 |       phone: '01228 555 0106',
+  23 |       email: 'freeze@example.co.uk',
+  24 |     });
+  25 | 
+  26 |     try {
+  27 |       await journey.toReview();
+  28 |       await pages.notificationView.changeLink('Change place of origin').click();
+  29 |       await expect(pages.addresses.heading).toBeVisible();
+  30 |       await pages.addresses.changeParty('Place of origin').click();
+  31 |       await pages.placeOfOriginSelection.select(originalName);
+  32 |       await pages.placeOfOriginSelection.saveAndContinue.click();
+  33 |       await expect(pages.addresses.heading).toBeVisible();
+  34 |       await pages.addresses.continueButton.click();
+  35 |       await expect(pages.notificationView.heading).toBeVisible();
+  36 | 
+  37 |       const originRow = pages.notificationView.partyRow('Roles and addresses', 'Place of origin');
+  38 |       await expect(originRow).toContainText(originalName);
+  39 | 
+  40 |       await pages.notificationView.continueButton.click();
+  41 |       await expect(pages.declaration.heading).toBeVisible();
+  42 |       await pages.declaration.confirmation.check();
+  43 |       await pages.declaration.continueButton.click();
+  44 |       await expect(pages.page.getByRole('heading', { name: 'Import notification submitted' })).toBeVisible();
+  45 | 
+  46 |       await addressBookApi.updateAddress(address.id, {
+  47 |         name: renamed,
+  48 |         addressLine1: '8 Freeze Street',
+  49 |         townOrCity: 'Penrith',
+  50 |         postcode: 'CA11 8DD',
+  51 |         countryCode: 'United Kingdom',
+  52 |         phone: '01228 555 0106',
+  53 |         email: 'freeze@example.co.uk',
+  54 |       });
+  55 | 
+  56 |       await notificationActions.toNotificationView(journeyContext.journeyId);
+  57 |       await expect(pages.notificationView.journeyStrip).toContainText('Submitted');
+  58 |       await expect(originRow).toContainText(originalName);
+  59 |       await expect(originRow).toContainText('Carlisle');
+  60 |       await expect(originRow).not.toContainText(renamed);
+  61 |       await expect(originRow).not.toContainText('Penrith');
+  62 | 
+  63 |       await notificationActions.amendNotification(journeyContext.journeyId);
+  64 |       await pages.overview.task('Check and submit').click();
+  65 |       await expect(pages.notificationView.heading).toBeVisible();
+  66 |       await expect(pages.notificationView.journeyStrip).toContainText('Amending');
+  67 |       await expect(originRow).toContainText(renamed);
+  68 |       await expect(originRow).toContainText('Penrith');
+  69 |       await expect(originRow).not.toContainText(originalName);
+  70 | 
+  71 |       await pages.notificationView.cancelAmendment.click();
+  72 |       await pages.notificationCancelAmend.confirm.click();
+> 73 |       await expect(pages.page).toHaveURL(/\/notification-view\?cancelled=1$/);
+     |                                ^ Error: expect(page).toHaveURL(expected) failed
+  74 |       await expect(pages.notificationView.journeyStrip).toContainText('Submitted');
+  75 |       await expect(originRow).toContainText(originalName);
+  76 |       await expect(originRow).not.toContainText(renamed);
+  77 |     } finally {
+  78 |       await addressBookApi.deleteAddress(address.id);
+  79 |     }
+  80 |   });
+  81 | });
+  82 | 
+```

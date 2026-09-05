@@ -1,0 +1,159 @@
+{
+  "generatedAt": "2026-09-04T15:00:40.448Z",
+  "pages": [
+    {
+      "pageUrl": "/",
+      "requestedUrl": "http://localhost:3000/",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/origin",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/origin",
+      "audits": [
+        {
+          "auditId": "aria-allowed-attr",
+          "title": "`[aria-*]` attributes do not match their roles",
+          "score": 0,
+          "scoreDisplayMode": "binary",
+          "displayValue": null,
+          "category": "accessibility"
+        }
+      ]
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/commodities",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/commodities",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/consignment-details",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/consignment-details",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/commodities/identification",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/commodities/identification",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/import-reason",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/import-reason",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/import-purpose",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/import-purpose",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-RBDVS4/destination-country",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-RBDVS4/destination-country",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-RBDVS4/port-of-exit",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-RBDVS4/port-of-exit",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-TGV8AK/exit-date",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-TGV8AK/exit-date",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/additional-details",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/additional-details",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/accompanying-documents",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/accompanying-documents",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/addresses",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/addresses",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/place-of-origin/select",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/place-of-origin/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/consignors/select",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/consignors/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/consignees/select",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/consignees/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/importers/select",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/importers/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/destinations/select",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/destinations/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/cph-number",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/cph-number",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/port-of-entry",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/port-of-entry",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/transit-countries",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/transit-countries",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/transporters",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/transporters",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/transporters/select",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/transporters/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-RBDVS4/transporters/private",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-RBDVS4/transporters/private",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/consignment/contact/select",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/consignment/contact/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/notification-view",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/notification-view",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-T0AA98/declaration",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-T0AA98/declaration",
+      "audits": []
+    },
+    {
+      "pageUrl": "/notifications/GBN-AG-26-ZFDM5N/confirmation",
+      "requestedUrl": "http://localhost:3000/notifications/GBN-AG-26-ZFDM5N/confirmation",
+      "audits": []
+    }
+  ]
+}

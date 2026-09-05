@@ -1,0 +1,193 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/admin/outbox-event-replay.spec.ts >> Outbox event replay >> replays outbox events and shows success banner
+- Location: tests/e2e/features/admin/outbox-event-replay.spec.ts:10:3
+
+# Error details
+
+```
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: 2
+Received: 3
+
+Call Log:
+- Timeout 5000ms exceeded while waiting on the predicate
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - generic [ref=e23]:
+        - link "trade-imports-animals-admin" [ref=e25] [cursor=pointer]:
+          - /url: /
+        - navigation "Menu" [ref=e26]:
+          - list [ref=e27]:
+            - listitem [ref=e28]:
+              - link "Home" [ref=e29] [cursor=pointer]:
+                - /url: /
+            - listitem [ref=e30]:
+              - link "About" [ref=e31] [cursor=pointer]:
+                - /url: /about
+  - generic [ref=e32]:
+    - generic [ref=e35]:
+      - generic [ref=e36]:
+        - img [ref=e37]
+        - generic [ref=e40]: test.user11@defra.gov.uk
+      - generic [ref=e41]: "|"
+      - link "Sign out" [ref=e42] [cursor=pointer]:
+        - /url: /signout
+    - navigation "Breadcrumb" [ref=e43]:
+      - list [ref=e44]:
+        - listitem [ref=e45]:
+          - link "Home" [ref=e46] [cursor=pointer]:
+            - /url: /
+        - listitem [ref=e47]: Outbox events
+    - main [ref=e48]:
+      - generic [ref=e50]:
+        - heading "Outbox events" [level=1] [ref=e51]
+        - generic [ref=e52]: trade-imports-animals-admin
+      - generic [ref=e55]:
+        - generic [ref=e56]:
+          - generic [ref=e57]: Notification reference number
+          - textbox "Notification reference number" [ref=e58]: GBN-AG-26-EZ6MG2
+        - button "Search" [ref=e59] [cursor=pointer]
+      - generic [ref=e61]:
+        - table [ref=e62]:
+          - rowgroup [ref=e63]:
+            - row "Version Event type Timestamp Data" [ref=e64]:
+              - columnheader "Version" [ref=e65]
+              - columnheader "Event type" [ref=e66]
+              - columnheader "Timestamp" [ref=e67]
+              - columnheader "Data" [ref=e68]
+          - rowgroup [ref=e69]:
+            - row "1 uk.gov.defra.imports.notification.NotificationCreated 2026-09-03T18:05:22.462Z" [ref=e70]:
+              - cell "1" [ref=e71]
+              - cell "uk.gov.defra.imports.notification.NotificationCreated" [ref=e72]
+              - cell "2026-09-03T18:05:22.462Z" [ref=e73]
+              - cell [ref=e74]:
+                - group [ref=e75]:
+                  - generic "View JSON" [ref=e76] [cursor=pointer]
+            - row "2 uk.gov.defra.imports.notification.NotificationSubmitted 2026-09-03T18:05:22.536Z" [ref=e77]:
+              - cell "2" [ref=e78]
+              - cell "uk.gov.defra.imports.notification.NotificationSubmitted" [ref=e79]
+              - cell "2026-09-03T18:05:22.536Z" [ref=e80]
+              - cell [ref=e81]:
+                - group [ref=e82]:
+                  - generic "View JSON" [ref=e83] [cursor=pointer]
+            - row "3 uk.gov.defra.imports.notification.NotificationAmendmentRequested 2026-09-03T18:05:22.611Z" [ref=e84]:
+              - cell "3" [ref=e85]
+              - cell "uk.gov.defra.imports.notification.NotificationAmendmentRequested" [ref=e86]
+              - cell "2026-09-03T18:05:22.611Z" [ref=e87]
+              - cell [ref=e88]:
+                - group [ref=e89]:
+                  - generic "View JSON" [ref=e90] [cursor=pointer]
+        - button "Replay all events" [ref=e92] [cursor=pointer]
+  - contentinfo [ref=e93]:
+    - generic [ref=e106]:
+      - generic [ref=e107]:
+        - heading "Support links" [level=2] [ref=e108]
+        - list [ref=e109]:
+          - listitem [ref=e110]:
+            - link "Privacy" [ref=e111] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e112]:
+            - link "Cookies" [ref=e113] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e114]:
+            - link "Accessibility statement" [ref=e115] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e116]
+        - generic [ref=e118]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e119] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e121] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | import { MongoDbClient } from '@adapters/db/mongodb-client';
+  3  | import { timeouts } from '@config/timeouts';
+  4  | 
+  5  | test.describe('Outbox event replay', { tag: ['@compose', '@integration'] }, () => {
+  6  |   test.beforeEach(async ({ apiJourney }) => {
+  7  |     await apiJourney.createAmendNotification();
+  8  |   });
+  9  | 
+  10 |   test('replays outbox events and shows success banner', async ({ adminNavigation, pages, journeyContext }) => {
+  11 |     await adminNavigation.toOutboxEvents(journeyContext.referenceNumber);
+  12 | 
+  13 |     await test.step('shows two outbox events before replay', async () => {
+> 14 |       await expect.poll(() => pages.adminOutboxEvents.tableRows.count(), { timeout: timeouts.short }).toBe(2);
+     |                                                                                                       ^ Error: expect(received).toBe(expected) // Object.is equality
+  15 |     });
+  16 | 
+  17 |     await test.step('replays all events and shows success banner', async () => {
+  18 |       await pages.adminOutboxEvents.btnReplay.click();
+  19 |       await expect(pages.adminOutboxEvents.bannerSuccess).toBeVisible();
+  20 |       await expect(pages.adminOutboxEvents.bannerSuccess).toContainText('All outbox events have been re-published to the SNS topic.');
+  21 |     });
+  22 | 
+  23 |     await test.step('still shows the two outbox events after replay', async () => {
+  24 |       await expect(pages.adminOutboxEvents.tableRows).toHaveCount(2);
+  25 |     });
+  26 |   });
+  27 | 
+  28 |   test(
+  29 |     'writes a REPLAY_EVENTS audit record covering both outbox events',
+  30 |     { tag: '@mongodb' },
+  31 |     async ({ adminNavigation, pages, journeyContext }) => {
+  32 |       const referenceNumber = journeyContext.referenceNumber;
+  33 | 
+  34 |       await adminNavigation.toOutboxEvents(referenceNumber);
+  35 |       await expect.poll(() => pages.adminOutboxEvents.tableRows.count(), { timeout: timeouts.short }).toBe(2);
+  36 |       await pages.adminOutboxEvents.btnReplay.click();
+  37 |       await expect(pages.adminOutboxEvents.bannerSuccess).toBeVisible();
+  38 | 
+  39 |       const client = new MongoDbClient();
+  40 | 
+  41 |       try {
+  42 |         await client.connect();
+  43 |         const collection = client.collection('trade-imports-animals-backend', 'audit');
+  44 | 
+  45 |         await expect
+  46 |           .poll(() => collection.countDocuments({ notificationReferenceNumbers: referenceNumber, action: 'REPLAY_EVENTS' }), {
+  47 |             timeout: timeouts.short,
+  48 |           })
+  49 |           .toBe(1);
+  50 | 
+  51 |         const doc = await collection.findOne({ notificationReferenceNumbers: referenceNumber, action: 'REPLAY_EVENTS' });
+  52 |         expect(doc?.action).toBe('REPLAY_EVENTS');
+  53 |         expect(doc?.result).toBe('SUCCESS');
+  54 |         expect(doc?.notificationReferenceNumbers).toEqual([referenceNumber]);
+  55 |         expect(doc?.numberOfNotifications).toBe(1);
+  56 |         expect(doc?.numberOfEvents).toBe(2);
+  57 |         expect(doc?.userId).toBeDefined();
+  58 |         expect(doc?.timestamp).toBeDefined();
+  59 |       } finally {
+  60 |         await client.close();
+  61 |       }
+  62 |     },
+  63 |   );
+  64 | });
+  65 | 
+```
