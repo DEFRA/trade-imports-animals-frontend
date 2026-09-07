@@ -57,7 +57,7 @@ const startAtImportReason = async (page) => {
   await answerOriginEntry(page)
 
   await page.goto(reasonUrl)
-  await expect(page.getByRole('heading', { name: copy.legend })).toBeVisible()
+  await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
 
 const radioFor = (page, value) =>
@@ -80,6 +80,23 @@ test.describe('import-reason feature', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     await startAtImportReason(page)
+  })
+
+  test('heads the page with its name and keeps the question as a legend only a screen reader meets', async ({
+    page
+  }) => {
+    await expect(
+      page.getByRole('heading', { level: 1, name: copy.title, exact: true })
+    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: copy.legend })).toHaveCount(
+      0
+    )
+
+    // Hidden from sight, still the group's accessible name.
+    await expect(
+      page.locator('legend').filter({ hasText: copy.legend })
+    ).toHaveClass(/govuk-visually-hidden/)
+    await expect(page.getByRole('group', { name: copy.legend })).toBeVisible()
   })
 
   test('renders the service-backed reasons and feature copy', async ({

@@ -9,6 +9,7 @@
   {% include "shared/error-summary.njk" %}
 
   {{ sectionCaption(caption) }}
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
 
   {# Each reason that needs follow-up questions opens them underneath itself,
      so the whole reason is answered in one go. A question two reasons ask
@@ -94,13 +95,15 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
+    {# The page is headed with its name, so the question stays as the group's
+       legend for a screen reader without being the largest thing on the page —
+       as Design release 1 does. #}
     {{ govukRadios({
       name: "reasonForImport",
       fieldset: {
         legend: {
           text: copy.legend,
-          isPageHeading: true,
-          classes: "govuk-fieldset__legend--l"
+          classes: "govuk-visually-hidden"
         }
       },
       errorMessage: errors.reasonForImport and { text: errors.reasonForImport },

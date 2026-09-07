@@ -31,13 +31,14 @@ const startAtOrigin = async (page) => {
   await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
 }
 
-/** Import reason is the first page whose heading is the question legend. */
+/** Import reason is the first page whose question is a hidden legend, so its
+ * heading is the page name and the caption sits above that. */
 const startAtImportReason = async (page) => {
   await startAtOrigin(page)
   await answerOriginEntry(page)
   await page.goto(journeyUrl(page, 'import-reason'))
   await expect(
-    page.getByRole('heading', { name: importReasonCopy.legend })
+    page.getByRole('heading', { name: importReasonCopy.title })
   ).toBeVisible()
 }
 
@@ -61,7 +62,7 @@ test.describe('section caption above the page heading', () => {
     )
   })
 
-  test('names the section on a page whose heading is the question legend', async ({
+  test('names the section on a page whose question is a hidden legend', async ({
     page
   }) => {
     await startAtImportReason(page)
@@ -69,9 +70,14 @@ test.describe('section caption above the page heading', () => {
     await expect(page.locator(ANY_GOVUK_CAPTION)).toHaveText(
       ABOUT_THE_CONSIGNMENT
     )
-    await expect(page.locator('.govuk-caption-l + form h1')).toHaveText(
-      importReasonCopy.legend
-    )
+    // The caption still sits directly above the page heading, and the question
+    // the fieldset asks is not competing with it for the heading.
+    await expect(
+      page.locator('span.govuk-caption-l + h1.govuk-heading-l')
+    ).toHaveText(importReasonCopy.title)
+    await expect(
+      page.locator('legend').filter({ hasText: importReasonCopy.legend })
+    ).toHaveClass(/govuk-visually-hidden/)
   })
 
   test('names the dashboard above its heading', async ({ page }) => {
