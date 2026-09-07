@@ -1,29 +1,18 @@
 import { enumerateGroupPathsFromStorage } from './enumeration/enumerate-group-paths-from-storage.js'
-import { viewsEqual } from './internal/views-equal.js'
+import { fulfilmentsEqual } from './internal/fulfilments-equal.js'
 import { purgeStorage } from './purge/purge-storage.js'
 import { makeInScopeCheck } from './scope/make-in-scope-check.js'
 import { runApplicabilityDecisions } from './scope/run-applicability-decisions.js'
 
-// Fixpoint safety cap for the applyTo/purge convergence loop. Real
-// manifests are expected to converge in 1-2 iterations because
-// `purgeStorage` is monotonic on storage (never adds), but a
-// pathological gate design (e.g. an `applyTo` that flips inScope
-// based on absence) could oscillate. Throwing after this cap is a
-// louder signal than silently truncating.
+// Fixpoint safety cap. Real manifests converge in 1-2 iterations because
+// `purgeStorage` is monotonic (never adds), but a pathological gate design
+// (e.g. an `applyTo` that flips inScope based on absence) could oscillate —
+// better to throw than silently truncate.
 const MAX_PURGE_ITERATIONS = 16
 
-// Fixpoint loop: repeat {enumerate → applyTo → isInScope → purge}
-// until the view stops shrinking. Each iteration replaces the view
-// with the just-purged fulfilments, so the next applyTo sees exactly
-// what every other gate is going to see.
-//
-// Bounded by `MAX_PURGE_ITERATIONS`; throws if we exceed the cap so
-// a pathological gate design fails loudly rather than silently
-// truncating at some arbitrary iteration.
-//
-// Returns the final `{ amendedFulfilments, obligationApplicabilityDecisions,
-// isInScope }` — the caller feeds these to enumeration + implication
-// building.
+// Repeat {enumerate → applyTo → isInScope → purge} until the amended
+// fulfilments stop shrinking, so every applyTo sees the same post-purge
+// view its neighbours see.
 export function convergePurge(recognisedFulfilments, context) {
   const {
     obligations,
@@ -33,8 +22,8 @@ export function convergePurge(recognisedFulfilments, context) {
     obligationDescendants
   } = context
 
-  let view = recognisedFulfilments
-  let obligationApplicabilityDecisions
+  let amendedFulfilments = recognisedFulfilments
+  let applicabilityDecisions
   let isInScope
 
   for (let iteration = 0; iteration < MAX_PURGE_ITERATIONS; iteration++) {
@@ -43,36 +32,39 @@ export function convergePurge(recognisedFulfilments, context) {
       obligationsByCategory,
       obligationAncestorGroups,
       obligationDescendants,
-      view
+      amendedFulfilments
     )
-    obligationApplicabilityDecisions = runApplicabilityDecisions(
+    applicabilityDecisions = runApplicabilityDecisions(
       obligations,
-      view,
+      amendedFulfilments,
       groupPaths
     )
     isInScope = makeInScopeCheck(
-      obligationApplicabilityDecisions,
+      applicabilityDecisions,
       obligationAncestorGroups
     )
+    // Warm `isInScope`'s memoisation cache so `purgeStorage` and downstream
+    // callers see a fully populated closure.
     for (const obligation of obligations) {
       isInScope(obligation)
     }
 
-    const next = purgeStorage(view, {
+    const next = purgeStorage(amendedFulfilments, {
       obligationsById,
       obligationsByCategory,
-      obligationApplicabilityDecisions,
+      applicabilityDecisions,
       isInScope
     })
 
-    if (viewsEqual(view, next)) {
+    const converged = fulfilmentsEqual(amendedFulfilments, next)
+    amendedFulfilments = next
+    if (converged) {
       return {
-        amendedFulfilments: next,
-        obligationApplicabilityDecisions,
+        amendedFulfilments,
+        applicabilityDecisions,
         isInScope
       }
     }
-    view = next
   }
   throw new Error(
     `ObligationEvaluator: applyTo/purge did not converge within ${MAX_PURGE_ITERATIONS} iterations — check for oscillating gate design`

@@ -3,15 +3,16 @@ import { createObligationEvaluator } from './evaluator.js'
 import { allowListed } from './helpers/index.js'
 
 // A gate that itself sits at depth >= 2 and projects a deeper obligation must
-// match its records by full fulfilment-index prefix, not by the first segment.
-// When a projection fulfilment index is sliced at its first delimiter,
-// `filterAndProject` only ever matches a gate whose record keys are one
-// segment long, so a deeper gate matches nothing, reports `inScope: false`,
-// and `purgeStorage`'s derived-leaf branch then deletes the user's stored
-// records — silent data loss. The fix tests each passing key as a real
-// prefix (`key === '' || path === key || path.startsWith(`${key}.`)`); the
-// empty-key case matters because `filterAndProject` uses `''` as the key for
-// a scalar (non-record-map) gate.
+// match its fulfilmentIndexes by full-prefix, not by the first segment.
+// When a projection fulfilmentIndex is sliced at its first delimiter,
+// `runGate` only ever matches a gate whose indexedFulfilments keys
+// are one segment long, so a deeper gate matches nothing, reports
+// `inScope: false`, and `purgeStorage`'s apply-to-derived branch then deletes
+// the user's stored entries — silent data loss. The fix tests each passing
+// key as a real prefix
+// (`key === '' || path === key || path.startsWith(`${key}.`)`); the
+// empty-key case matters because `runGate` uses `''` as the key for
+// an unindexed (non-indexedFulfilments) gate.
 describe('a gate at depth >= 2 that projects', () => {
   // Three nested groups, one segment of composite key each:
   //
@@ -36,7 +37,7 @@ describe('a gate at depth >= 2 that projects', () => {
     return [line, unit, subUnit, unitFlag, subDetail]
   }
 
-  // The gate says 'yes' on the only unit, so the sub-record below it is in
+  // The gate says 'yes' on the only unit, so the sub-instance below it is in
   // scope and its value must survive the purge.
   const fulfilments = {
     unitFlag: { 'line1.unit1': 'yes' },
@@ -50,7 +51,7 @@ describe('a gate at depth >= 2 that projects', () => {
     return evaluator.evaluate(fulfilments)
   }
 
-  it('Should keep the stored record of a gated-in leaf below a depth-2 gate', () => {
+  it('Should keep the stored entry of a gated-in leaf below a depth-2 gate', () => {
     const result = evaluateFixture()
 
     expect(result.fulfilments.subDetail).toEqual({
@@ -58,16 +59,17 @@ describe('a gate at depth >= 2 that projects', () => {
     })
   })
 
-  it('Should report the leaf in scope on the record its depth-2 gate admits', () => {
+  it('Should report the leaf in scope on the fulfilmentIndex its depth-2 gate admits', () => {
     const result = evaluateFixture()
 
     expect(result.obligations.subDetail).toMatchObject({
       inScope: true,
-      records: [{ fulfilmentIndex: 'line1.unit1.sub1', status: 'mandatory' }]
+      status: 'mandatory',
+      fulfilmentIndexes: ['line1.unit1.sub1']
     })
   })
 
-  it('Should still purge the record when the depth-2 gate does not admit it', () => {
+  it('Should still purge the entry when the depth-2 gate does not admit it', () => {
     const evaluator = createObligationEvaluator({
       obligations: buildManifest()
     })

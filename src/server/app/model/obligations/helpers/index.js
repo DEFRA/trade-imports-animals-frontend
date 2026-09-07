@@ -1,86 +1,54 @@
 /**
- * applyTo helper library — pure functions that build applyTo functions.
+ * Gate helper library — pure factories that build the `applyTo`
+ * function attached to an obligation.
  *
- * Part of a prototype exploring "consolidate on applyTo + helpers" as
- * an alternative to the gatedBy DSL. Companion to
- * `obligations-all-applyto.js`.
- *
- * Design contract:
- *   - Each helper is a pure function returning an
+ * Contract:
+ *   - Each helper returns an
  *     `applyTo(fulfilments, fulfilmentIndexesByObligationId) → decision`.
- *   - `fulfilments` is the raw storage map.
- *   - `fulfilmentIndexesByObligationId` is a `Map<obligationId, Set<string>>`
- *     giving current fulfilment indexes per obligation (in particular per
- *     group, so a gated obligation can look up its parent-group's
- *     instances without enumerating storage itself).
- *   - Each returned function has a `.metadata` property describing
- *     the gate declaratively. Enables optional static
- *     introspection / cross-language export without giving up the
- *     imperative-JS surface.
+ *   - Each returned function has a `.metadata` property describing the
+ *     gate declaratively — enables static introspection without
+ *     executing the closure.
  *
- * Obligation schema — additive keys authored on the obligation object
- * itself (not on the applyTo sidecar):
+ * Obligation-side additive key:
  *   - `dependsOn?: string[]` — ids of obligations whose stored values
- *     the `applyTo` closure reads. Makes the dependency graph explicit
- *     data alongside the opaque closure so a static reachability prover
- *     can invert gates without executing them. A coverage assertion
- *     fails the build for any gated obligation without a complete
- *     (declared or derived) `dependsOn`.
+ *     the gate reads. Makes the dependency graph explicit data
+ *     alongside the opaque closure so a static reachability prover can
+ *     invert gates. A coverage assertion fails the build for any gated
+ *     obligation without a complete (declared or derived) `dependsOn`.
  *
- * All helpers are unit-testable in isolation — see helpers.test.js.
+ * Which helper to pick — guidance by CURRENT usage patterns, not a
+ * folder-level contract. Every helper handles input shapes defensively
+ * via `runGate`; the pattern below describes how they're typically
+ * used, not what they exclusively support.
  *
- * Helper taxonomy — which to use when:
+ *   - Returning one `{ inScope, status, reasons? }` verdict for the
+ *     whole gated obligation: `equalsGate` / `includesGate` /
+ *     `presentGate` / `alwaysInScope` / `matches`. Typically used when
+ *     the gated obligation is unindexed.
  *
- *   Two shapes of gate exist in this manifest, and they take different
- *   helpers. The distinction is NOT about "same frame vs cross frame"
- *   in the identity-level sense — it's about the SHAPE of the stored
- *   value the gate reads.
+ *   - Returning a decision naming which fulfilmentIndexes are in
+ *     scope: `allowListed` / `notInUnionOf`. Typically used when the
+ *     gated obligation is indexed. Pass `null` for `gatedParentGroup`
+ *     when gate and gated are at the same identity level; pass a group
+ *     when the gated obligation is deeper (the engine fans across that
+ *     group's fulfilmentIndexes for each matching parent).
  *
- *   1. **Top-level scalar gate** — the gate obligation has no `within`,
- *      OR is otherwise stored as a plain scalar in `fulfilments[gate.id]`.
- *      Example: `reasonForImport` (top-level, scalar). The `applyTo`
- *      returns a SINGLE `{inScope, status, reasons?}` decision.
- *      Use: `equalsGate` / `includesGate` / `presentGate`.
- *
- *   2. **Group-scoped gate** — the gate obligation is `within` a group,
- *      so `fulfilments[gate.id]` is a records-map (`{lineId1: value,
- *      lineId2: value, ...}`). The `applyTo` returns PER-RECORD
- *      decisions (via `filterAndProject`). Use:
- *      - `allowListed` / `notInUnionOf` with `null` projection when the
- *        gated obligation is at the SAME identity level as the gate
- *        (both `within` the same group). Example: `numberOfPackages`
- *        (`within: commodityLine`) reads `commodityCode` (also
- *        `within: commodityLine`) — same level, so null projection.
- *      - `allowListed` / `notInUnionOf` with `projectionGroup` set when
- *        the gated obligation is DEEPER than the gate. Example:
- *        `passport` (`within: unitRecord`, deeper than commodityLine)
- *        reads `commodityCode` (`within: commodityLine`) via projection
- *        `unitRecord` — the engine walks unit-records for each matching
- *        commodity-line.
- *
- *   Rule of thumb: if the gate obligation has a `within`, use the
- *   `allowListed`/`notInUnionOf` family. Otherwise use the scalar
- *   family (`equalsGate` / `includesGate` / `presentGate` /
- *   `alwaysInScope`). `matches` is a same-frame scalar equality gate
- *   with same-frame semantics (kept for backwards compat).
- *   `anyAllowListed` is a scalar aggregation over a group's records
- *   (returns a single decision, not per-record) — for the "cph reads
- *   ANY commodityCode across commodity lines" case; see its docstring.
- *
- *   `branchedGate` is the escape hatch for genuinely non-derivable
- *   predicates. It is absent from the manifest today but retained here
- *   for future use — it must be paired with `predicateMeta` for the
- *   reachability prover to synthesise a witness.
+ * `anyAllowListed` reduces a group's fulfilmentIndexes to one decision
+ * (rather than a per-fulfilmentIndex list) — for the "cph reads ANY
+ * commodityCode across commodity lines" case. `branchedGate` is the
+ * escape hatch for genuinely non-derivable predicates; must be paired
+ * with `predicateMeta` for the reachability prover to synthesise a
+ * witness.
  */
 
-export { allowListed } from './projection/allow-listed.js'
-export { notInUnionOf } from './projection/not-in-union-of.js'
-export { anyAllowListed } from './scalar/any-allow-listed.js'
-export { branchedGate } from './scalar/branched-gate.js'
-export { matches } from './scalar/matches.js'
-export { present } from './scalar/present.js'
-export { equalsGate } from './scalar/equals-gate.js'
-export { presentGate } from './scalar/present-gate.js'
-export { includesGate } from './scalar/includes-gate.js'
-export { alwaysInScope } from './scalar/always-in-scope.js'
+export { allowListed } from './allow-listed.js'
+export { notInUnionOf } from './not-in-union-of.js'
+export { anyAllowListed } from './any-allow-listed.js'
+export { branchedGate } from './branched-gate.js'
+export { matches } from './matches.js'
+export { present } from './present.js'
+export { equalsGate } from './equals-gate.js'
+export { presentGate } from './present-gate.js'
+export { includesGate } from './includes-gate.js'
+export { alwaysInScope } from './always-in-scope.js'
 export { obligationMetadata } from './introspection/obligation-metadata.js'

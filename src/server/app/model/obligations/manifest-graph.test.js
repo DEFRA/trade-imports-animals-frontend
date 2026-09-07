@@ -8,7 +8,7 @@ import {
   groupsFrom
 } from './manifest-graph.js'
 
-// Synthetic manifest — two-level nested collection with a scalar
+// Synthetic manifest — two-level nested collection with an unindexed
 // sibling, exercised without pulling in the live-animals set.
 
 const line = { id: 'line-group', name: 'commodityLines' }
@@ -19,10 +19,10 @@ const commoditySelection = {
   name: 'commoditySelection',
   within: line
 }
-const topLevelScalar = { id: 'reasonForImport', name: 'reasonForImport' }
+const topLevelUnindexed = { id: 'reasonForImport', name: 'reasonForImport' }
 
 const syntheticSet = {
-  obligations: [line, unit, passport, commoditySelection, topLevelScalar],
+  obligations: [line, unit, passport, commoditySelection, topLevelUnindexed],
   groups: [line, unit]
 }
 
@@ -37,7 +37,7 @@ describe('#manifest-graph', () => {
 
   describe('#ancestorChain', () => {
     it('returns an empty chain for a top-level obligation', () => {
-      expect(ancestorChain(topLevelScalar)).toEqual([])
+      expect(ancestorChain(topLevelUnindexed)).toEqual([])
     })
 
     it('returns the parent group for a direct child', () => {
@@ -58,7 +58,7 @@ describe('#manifest-graph', () => {
     it('is false for a leaf', () => {
       expect(isGroup(passport)).toBe(false)
       expect(isGroup(commoditySelection)).toBe(false)
-      expect(isGroup(topLevelScalar)).toBe(false)
+      expect(isGroup(topLevelUnindexed)).toBe(false)
     })
   })
 

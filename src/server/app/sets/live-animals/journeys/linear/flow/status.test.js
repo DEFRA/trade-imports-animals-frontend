@@ -355,7 +355,7 @@ describe('statusOf — the commodities/identification facet split', () => {
   })
 })
 
-describe('statusOf — the recordCountEquals invariant in isolation', () => {
+describe('statusOf — the fulfilmentIndexCountEquals invariant in isolation', () => {
   const inScope = new Set(['commodityLines'])
   const onlyIdentifiers = {
     collection: 'commodityLines',

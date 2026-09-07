@@ -12,7 +12,7 @@ support:
 - `maxEntries` — a maximum number of group records
 - `anyOfIds` — at least one listed in-scope leaf is filled per instance
 - `allOrNothingOfIds` — a scalar block is either empty or complete
-- `recordCountEquals` — a nested record count matches a declared field
+- `fulfilmentIndexCountEquals` — a nested record count matches a declared field
 
 `groupInvariantErrors()` emits structured errors only while the group is in scope.
 Status and submit-readiness calculations consume those errors.

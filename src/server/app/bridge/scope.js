@@ -68,18 +68,19 @@ const groupNodeKey = (inScope, name) => {
 }
 
 // A nested group's node is keyed once per PARENT-group instance — derived
-// from the parent's instances, not the group's own records, so a parent
-// instance whose nested group is empty still contributes its node key.
+// from the parent's instances, not the group's own fulfilmentIndexes, so a
+// parent instance whose nested group is empty still contributes its node key.
 const groupInstanceKeys = (inScope, implications, obligation, chain, name) => {
-  const parentRecords = implications[obligation.within.id]?.records ?? []
-  for (const { fulfilmentIndex } of parentRecords) {
+  const parentFulfilmentIndexes =
+    implications[obligation.within.id]?.fulfilmentIndexes ?? []
+  for (const fulfilmentIndex of parentFulfilmentIndexes) {
     inScope.add(pathKey(fulfilmentIndexToPath(chain, fulfilmentIndex, name)))
   }
 }
 
-// Grouped leaf — one positional pathKey per in-scope record.
-const leafRecordKeys = (inScope, chain, name, records) => {
-  for (const { fulfilmentIndex } of records) {
+// Grouped leaf — one positional pathKey per in-scope fulfilmentIndex.
+const leafFulfilmentIndexKeys = (inScope, chain, name, fulfilmentIndexes) => {
+  for (const fulfilmentIndex of fulfilmentIndexes) {
     inScope.add(pathKey(fulfilmentIndexToPath(chain, fulfilmentIndex, name)))
   }
 }
@@ -102,8 +103,13 @@ const addProjectedKeys = (inScope, implications, obligation) => {
   }
 
   const implication = implications[obligation.id]
-  return Array.isArray(implication.records)
-    ? leafRecordKeys(inScope, chain, name, implication.records)
+  return Array.isArray(implication.fulfilmentIndexes)
+    ? leafFulfilmentIndexKeys(
+        inScope,
+        chain,
+        name,
+        implication.fulfilmentIndexes
+      )
     : leafScalarKey(inScope, name)
 }
 

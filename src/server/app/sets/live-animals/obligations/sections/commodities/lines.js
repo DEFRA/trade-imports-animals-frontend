@@ -65,10 +65,10 @@ export const numberOfAnimals = {
   status: 'mandatory'
 }
 
-// Depth-1 commodity-gated field record. `applyTo` returns records
-// = matching line-ids; no projection group needed (the gate lives at
+// Depth-1 commodity-gated field. `applyTo` returns fulfilmentIndexes
+// = matching line-ids; no gatedParentGroup needed (the gate lives at
 // the same identity level as the gated obligation). Uses `allowListed`
-// with `null` projection (NOT `includesGate`) — see helpers.js
+// with `null` gatedParentGroup (NOT `includesGate`) — see helpers.js
 // taxonomy: the gate `commodityCode` is `within: commodityLine`, so
 // `fulfilments[commodityCode.id]` is a records-map, not a scalar.
 // The allowlist is the service's package-count list; only entries that

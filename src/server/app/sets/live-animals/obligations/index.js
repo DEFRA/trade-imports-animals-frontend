@@ -28,9 +28,9 @@
  * single value, so renaming a gate obligation touches one call site.
  *
  * Dependency declaration: gated obligations may carry an explicit
- * `dependsOn: string[]` schema key OR let it be DERIVED from the applyTo
+ * `dependsOn: string[]` schema key OR let it be DERIVED from the gate
  * helper's metadata. Meta-first helpers all name their gate obligation
- * on `.metadata.obligation`, so `obligationMetadata()` recovers the
+ * on `.metadata.obligationId`, so `obligationMetadata()` recovers the
  * dependency graph without duplication. Closures are opaque to a
  * reachability prover; the derived-or-declared `dependsOn` makes the
  * graph explicit data alongside the closure, and the coverage assertion

@@ -9,7 +9,7 @@
  *    silently stops proving anything."
  *
  * So every new helper in `obligations/helpers/index.js` that attaches
- * `.metadata.type` must either be added to the witness-synthesiser
+ * `.metadata.gateType` must either be added to the witness-synthesiser
  * dispatch (STRUCTURED) or explicitly listed as opaque-by-design
  * (OPAQUE). Without this coverage gate, someone can add a sixth helper
  * without a synth, and the prover's classification silently drifts toward
@@ -27,7 +27,7 @@
  *      declare a helper structured while omitting the synth (or vice
  *      versa).
  *   4. Every export of `obligations/helpers/index.js` that produces a gate
- *      function with `.metadata.type` classifies as one of those two
+ *      function with `.metadata.gateType` classifies as one of those two
  *      sets — no unlisted helpers.
  *   5. A synthesised sample of each STRUCTURED helper type actually
  *      returns a `WITNESS_KIND.WITNESS` (or `.TRIVIAL` when the sample
@@ -35,10 +35,10 @@
  *   6. A synthesised sample of each OPAQUE helper type returns
  *      `WITNESS_KIND.OPAQUE`.
  *
- * Failure-mode intuition: rename a helper's `.metadata.type` string
+ * Failure-mode intuition: rename a helper's `.metadata.gateType` string
  * (e.g. `'allowListed'` → `'allowListedTypo'`) and the invariant #4
  * test fails with a clear diff. Add a new helper `notInUnionOf` that
- * attaches `.metadata.type = 'notInUnionOf'` without updating either
+ * attaches `.metadata.gateType = 'notInUnionOf'` without updating either
  * set and invariant #4 fires. Add a case label inside
  * `synthesiseWitness` without adding it to `STRUCTURED_HELPER_TYPES`
  * and invariant #3 fires. Etc.
@@ -232,18 +232,18 @@ describe('coverage — synthesiseWitness dispatch matches the declared sets', ()
 
 // ---------------------------------------------------------------------------
 // Invariant #4 — enumerate every export of `helpers.js` that produces
-// a gate function with `.metadata.type`, and assert the type is in the
+// a gate function with `.metadata.gateType`, and assert the type is in the
 // union of STRUCTURED + OPAQUE sets.
 //
 // This is the "someone added a sixth helper without a synth" catch.
-// Adding a new helper that attaches `.metadata.type = 'foo'` without
+// Adding a new helper that attaches `.metadata.gateType = 'foo'` without
 // updating either set fails here with a helpful diff.
 // ---------------------------------------------------------------------------
 
 describe('coverage — every helper export classifies as STRUCTURED or OPAQUE', () => {
   // Probe each function export: call it with the minimum shape we can
-  // fabricate, then inspect the returned gate's `.metadata.type`.
-  // Helpers that don't produce a gate with `.metadata.type` (e.g.
+  // fabricate, then inspect the returned gate's `.metadata.gateType`.
+  // Helpers that don't produce a gate with `.metadata.gateType` (e.g.
   // `present` returns a raw predicate; `obligationMetadata` is an
   // accessor) are skipped — the invariant is about GATE helpers.
   const helperExports = Object.entries(helpers).filter(
@@ -266,17 +266,20 @@ describe('coverage — every helper export classifies as STRUCTURED or OPAQUE', 
     if (!sample) {
       return `helper '${name}' — no sample in SAMPLE_OBLIGATIONS; add one and register the helper type in STRUCTURED_HELPER_TYPES or OPAQUE_HELPER_TYPES`
     }
-    const type = sample.applyTo?.metadata?.type
-    if (!type) {
-      return `helper '${name}' — sample.applyTo.metadata.type missing; helper must attach a metadata.type or be added to NON_GATE_HELPERS`
+    const gateType = sample.applyTo?.metadata?.gateType
+    if (!gateType) {
+      return `helper '${name}' — sample.applyTo.metadata.gateType missing; helper must attach a metadata.gateType or be added to NON_GATE_HELPERS`
     }
-    if (!STRUCTURED_HELPER_TYPES.has(type) && !OPAQUE_HELPER_TYPES.has(type)) {
-      return `helper '${name}' — metadata.type '${type}' is not in STRUCTURED_HELPER_TYPES or OPAQUE_HELPER_TYPES; add it (with a comment) to one of the sets in analysis/reachability.js`
+    if (
+      !STRUCTURED_HELPER_TYPES.has(gateType) &&
+      !OPAQUE_HELPER_TYPES.has(gateType)
+    ) {
+      return `helper '${name}' — metadata.gateType '${gateType}' is not in STRUCTURED_HELPER_TYPES or OPAQUE_HELPER_TYPES; add it (with a comment) to one of the sets in analysis/reachability.js`
     }
     return null
   }
 
-  it('Should classify every helper export whose gate carries .metadata.type', () => {
+  it('Should classify every helper export whose gate carries .metadata.gateType', () => {
     const unclassified = helperExports
       .map(([name]) => name)
       .filter((name) => !NON_GATE_HELPERS.has(name))
@@ -296,30 +299,30 @@ describe('coverage — every helper export classifies as STRUCTURED or OPAQUE', 
 
 describe('coverage — synthesiseWitness classifies each helper sample as declared', () => {
   it('Should synthesise every STRUCTURED helper type as a WITNESS or TRIVIAL kind', () => {
-    for (const type of STRUCTURED_HELPER_TYPES) {
+    for (const gateType of STRUCTURED_HELPER_TYPES) {
       const sample = Object.values(SAMPLE_OBLIGATIONS).find(
-        (s) => s.applyTo?.metadata?.type === type
+        (s) => s.applyTo?.metadata?.gateType === gateType
       )
       expect(
         sample,
-        `no SAMPLE_OBLIGATIONS entry produces metadata.type='${type}' — add one so this invariant can prove the STRUCTURED classification is honest`
+        `no SAMPLE_OBLIGATIONS entry produces metadata.gateType='${gateType}' — add one so this invariant can prove the STRUCTURED classification is honest`
       ).toBeDefined()
       const w = synthesiseWitness(sample)
       expect(
         [WITNESS_KIND.WITNESS, WITNESS_KIND.TRIVIAL],
-        `STRUCTURED helper type '${type}' synthesised as '${w.kind}' — a structured helper must be witness-synthesisable or trivially open, never opaque`
+        `STRUCTURED helper type '${gateType}' synthesised as '${w.kind}' — a structured helper must be witness-synthesisable or trivially open, never opaque`
       ).toContain(w.kind)
     }
   })
 
   it('Should synthesise every OPAQUE helper type to WITNESS_KIND.OPAQUE', () => {
-    for (const type of OPAQUE_HELPER_TYPES) {
+    for (const gateType of OPAQUE_HELPER_TYPES) {
       const sample = Object.values(SAMPLE_OBLIGATIONS).find(
-        (s) => s.applyTo?.metadata?.type === type
+        (s) => s.applyTo?.metadata?.gateType === gateType
       )
       expect(
         sample,
-        `no SAMPLE_OBLIGATIONS entry produces metadata.type='${type}' — add one`
+        `no SAMPLE_OBLIGATIONS entry produces metadata.gateType='${gateType}' — add one`
       ).toBeDefined()
       const w = synthesiseWitness(sample)
       expect(w.kind).toBe(WITNESS_KIND.OPAQUE)

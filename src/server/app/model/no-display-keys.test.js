@@ -98,7 +98,7 @@ describe('model has no display keys', () => {
   it('inspects display keys hidden on an applyTo.metadata gate decision', () => {
     const fn = () => ({ inScope: true })
     fn.metadata = {
-      type: 'equalsGate',
+      gateType: 'equalsGate',
       whenTrue: { inScope: true, label: 'x' }
     }
     const gated = { id: 'ctrl-5', name: 'gatedControl', applyTo: fn }

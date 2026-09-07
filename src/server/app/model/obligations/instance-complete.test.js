@@ -50,7 +50,7 @@ const state = ({ fulfilments = {}, obligations = {} } = {}) => ({
 })
 
 const impls = (entries) =>
-  Object.fromEntries(entries.map((entry) => [entry.id, entry.impl]))
+  Object.fromEntries(entries.map((entry) => [entry.id, entry.implication]))
 
 describe('#instanceComplete', () => {
   beforeAll(() => {
@@ -72,33 +72,33 @@ describe('#instanceComplete', () => {
       obligations: impls([
         {
           id: line.id,
-          impl: {
+          implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: line1FulfilmentIndex }]
+            fulfilmentIndexes: [line1FulfilmentIndex]
           }
         },
         {
           id: unit.id,
-          impl: {
+          implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
+            fulfilmentIndexes: [line1Unit1FulfilmentIndex]
           }
         },
         {
           id: commoditySelection.id,
-          impl: {
+          implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: line1FulfilmentIndex }]
+            fulfilmentIndexes: [line1FulfilmentIndex]
           }
         },
         {
           id: passport.id,
-          impl: {
+          implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
+            fulfilmentIndexes: [line1Unit1FulfilmentIndex]
           }
         },
-        { id: earTag.id, impl: { inScope: true, records: [] } }
+        { id: earTag.id, implication: { inScope: true, fulfilmentIndexes: [] } }
       ])
     })
     expect(instanceComplete(unit, line1Unit1FulfilmentIndex, st)).toBe(true)
@@ -106,21 +106,27 @@ describe('#instanceComplete', () => {
 
   it('reads an instance missing a mandatory direct-child leaf as incomplete', () => {
     // commoditySelection is a mandatory direct child of line but has no
-    // record for line1 — the direct-child requirement fires.
+    // fulfilmentIndex for line1 — the direct-child requirement fires.
     const st = state({
       fulfilments: {},
       obligations: impls([
         {
           id: line.id,
-          impl: {
+          implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: line1FulfilmentIndex }]
+            fulfilmentIndexes: [line1FulfilmentIndex]
           }
         },
-        { id: commoditySelection.id, impl: { inScope: true, records: [] } },
-        { id: unit.id, impl: { inScope: true, records: [] } },
-        { id: passport.id, impl: { inScope: true, records: [] } },
-        { id: earTag.id, impl: { inScope: true, records: [] } }
+        {
+          id: commoditySelection.id,
+          implication: { inScope: true, fulfilmentIndexes: [] }
+        },
+        { id: unit.id, implication: { inScope: true, fulfilmentIndexes: [] } },
+        {
+          id: passport.id,
+          implication: { inScope: true, fulfilmentIndexes: [] }
+        },
+        { id: earTag.id, implication: { inScope: true, fulfilmentIndexes: [] } }
       ])
     })
     expect(instanceComplete(line, line1FulfilmentIndex, st)).toBe(false)
@@ -134,37 +140,37 @@ describe('#instanceComplete', () => {
       obligations: impls([
         {
           id: line.id,
-          impl: {
+          implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: line1FulfilmentIndex }]
+            fulfilmentIndexes: [line1FulfilmentIndex]
           }
         },
         {
           id: unit.id,
-          impl: {
+          implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
+            fulfilmentIndexes: [line1Unit1FulfilmentIndex]
           }
         },
         {
           id: commoditySelection.id,
-          impl: {
+          implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: line1FulfilmentIndex }]
+            fulfilmentIndexes: [line1FulfilmentIndex]
           }
         },
         {
           id: passport.id,
-          impl: {
+          implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
+            fulfilmentIndexes: [line1Unit1FulfilmentIndex]
           }
         },
         {
           id: earTag.id,
-          impl: {
+          implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: line1Unit1FulfilmentIndex }]
+            fulfilmentIndexes: [line1Unit1FulfilmentIndex]
           }
         }
       ])
@@ -173,22 +179,28 @@ describe('#instanceComplete', () => {
   })
 
   it('reads a not-enumerated instance as vacuously complete', () => {
-    // No records anywhere for line2.unit1 — outside the enumerated set. No
+    // No fulfilmentIndexes anywhere for line2.unit1 — outside the enumerated set. No
     // direct-child mandatory leaves under unit either, so nothing blocks.
     const st = state({
       fulfilments: {},
       obligations: impls([
         {
           id: line.id,
-          impl: {
+          implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: line1FulfilmentIndex }]
+            fulfilmentIndexes: [line1FulfilmentIndex]
           }
         },
-        { id: commoditySelection.id, impl: { inScope: true, records: [] } },
-        { id: unit.id, impl: { inScope: true, records: [] } },
-        { id: passport.id, impl: { inScope: true, records: [] } },
-        { id: earTag.id, impl: { inScope: true, records: [] } }
+        {
+          id: commoditySelection.id,
+          implication: { inScope: true, fulfilmentIndexes: [] }
+        },
+        { id: unit.id, implication: { inScope: true, fulfilmentIndexes: [] } },
+        {
+          id: passport.id,
+          implication: { inScope: true, fulfilmentIndexes: [] }
+        },
+        { id: earTag.id, implication: { inScope: true, fulfilmentIndexes: [] } }
       ])
     })
     expect(instanceComplete(unit, 'line2.unit1', st)).toBe(true)
@@ -196,21 +208,27 @@ describe('#instanceComplete', () => {
 
   it('does not block on out-of-scope leaves', () => {
     // commoditySelection is out of scope — the direct-child requirement is
-    // gated behind inScope, so the missing record is ignored.
+    // gated behind inScope, so the missing fulfilmentIndex is ignored.
     const st = state({
       fulfilments: {},
       obligations: impls([
         {
           id: line.id,
-          impl: {
+          implication: {
             inScope: true,
-            records: [{ fulfilmentIndex: line1FulfilmentIndex }]
+            fulfilmentIndexes: [line1FulfilmentIndex]
           }
         },
-        { id: commoditySelection.id, impl: { inScope: false, records: [] } },
-        { id: unit.id, impl: { inScope: true, records: [] } },
-        { id: passport.id, impl: { inScope: true, records: [] } },
-        { id: earTag.id, impl: { inScope: true, records: [] } }
+        {
+          id: commoditySelection.id,
+          implication: { inScope: false, fulfilmentIndexes: [] }
+        },
+        { id: unit.id, implication: { inScope: true, fulfilmentIndexes: [] } },
+        {
+          id: passport.id,
+          implication: { inScope: true, fulfilmentIndexes: [] }
+        },
+        { id: earTag.id, implication: { inScope: true, fulfilmentIndexes: [] } }
       ])
     })
     expect(instanceComplete(line, line1FulfilmentIndex, st)).toBe(true)

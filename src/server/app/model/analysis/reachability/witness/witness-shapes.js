@@ -1,24 +1,24 @@
 import { WITNESS_KIND } from './kinds.js'
 
 // A witness from an allowlist-shaped `meta.values` array: the first entry,
-// or opaque when the array is missing/empty. `withProjection` controls
-// whether the returned witness carries a `projection` key at all (some
+// or opaque when the array is missing/empty. `withGatedParentGroupId`
+// controls whether the returned witness carries the id key at all (some
 // callers never included one).
 export const firstListedValueWitness = (
   meta,
   emptyReason,
-  { withProjection } = {}
+  { withGatedParentGroupId } = {}
 ) => {
   if (!Array.isArray(meta.values) || meta.values.length === 0) {
     return { kind: WITNESS_KIND.OPAQUE, reason: emptyReason }
   }
   const witness = {
     kind: WITNESS_KIND.WITNESS,
-    obligationId: meta.obligation,
+    obligationId: meta.obligationId,
     value: meta.values[0]
   }
-  return withProjection
-    ? { ...witness, projection: meta.projection ?? null }
+  return withGatedParentGroupId
+    ? { ...witness, gatedParentGroupId: meta.gatedParentGroupId ?? null }
     : witness
 }
 

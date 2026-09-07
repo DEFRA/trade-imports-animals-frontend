@@ -2,7 +2,7 @@
 export const collectionCapExceeded = (invariantErrors) =>
   invariantErrors.some((error) => error.code === 'MAX_ENTRIES')
 
-// Per-parent count invariant (recordCountEquals) — keyed by the PARENT
+// Per-parent count invariant (fulfilmentIndexCountEquals) — keyed by the PARENT
 // record's fulfilment index (the commodity line), not this collection's
 // own record fulfilment indexes, so it is checked here rather than per entry.
 export const parentCountInvariantViolated = (

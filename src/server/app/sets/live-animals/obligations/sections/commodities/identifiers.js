@@ -87,7 +87,7 @@ export const unitRecord = {
   // V4 spec cross-check ("unit records ARE animals" reading of
   // Confluence page 6497338582): the count of unit-record instances
   // on a given commodity line must equal `numberOfAnimals` on that
-  // line. Modelled as `requires.recordCountEquals` — a per-parent-
+  // line. Modelled as `requires.fulfilmentIndexCountEquals` — a per-parent-
   // instance count check that fires one error per mismatched line.
   // Rollup-only: neither the number field nor the unit records are
   // purged when the other changes — the user resolves the mismatch
@@ -103,7 +103,7 @@ export const unitRecord = {
       '3ebacfd5-e6f7-4b1b-889a-a45b6d7d9fa6' // description
     ],
     errorCode: 'obligation.unitRecord.identifiersRequired',
-    recordCountEquals: {
+    fulfilmentIndexCountEquals: {
       fieldId: numberOfAnimals.id,
       errorCode: 'obligation.unitRecord.countMustMatchNumberOfAnimals'
     }
@@ -136,9 +136,9 @@ export const passport = {
   applyTo: allowListed(commodityCode, passportCommodities, unitRecord, [
     passportReason
   ])
-  // Note: `unitRecord` is a structural projection group (the closure's
+  // Note: `unitRecord` is a structural gatedParentGroup (the closure's
   // 3rd arg), not a value read. Only the gate obligation
-  // (`commodityCode.id`) is a dependency — projection groups are
+  // (`commodityCode.id`) is a dependency — gatedParentGroups are
   // structural and are not part of the reachability dependency graph.
 }
 

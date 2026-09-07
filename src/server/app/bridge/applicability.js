@@ -30,7 +30,7 @@ export const appliesForCommodity = (obligationName, commodityName) => {
   const metadata = obligationByName(obligationName)?.applyTo?.metadata
   const values = metadata?.values ?? []
   const inList = values.includes(commodityName)
-  return metadata?.type === 'notInUnionOf' ? !inList : inList
+  return metadata?.gateType === 'notInUnionOf' ? !inList : inList
 }
 
 /**

@@ -138,18 +138,18 @@ export const numberOfPackages = {
 }
 ```
 
-`allowListed(gate, values, projectionGroup, reasons)` scopes the field to the
-instances whose gate value is on the whitelist. The **projection group**
+`allowListed(gate, values, gatedParentGroup, reasons)` scopes the field to the
+instances whose gate value is on the whitelist. The **gated parent group**
 argument is what makes it work at depth:
 
-- **`null` projection** — the gate and the gated field sit at the same identity
-  level. `numberOfPackages` and its gate `commodityCode` are both `within
-commodityLine`, so the field is in scope for exactly the lines whose own
-  commodity code is whitelisted.
+- **`null` gatedParentGroup** — the gate and the gated field sit at the same
+  identity level. `numberOfPackages` and its gate `commodityCode` are both
+  `within commodityLine`, so the field is in scope for exactly the lines
+  whose own commodity code is whitelisted.
 - **a group** — the gated field is deeper than its gate. The per-unit
   identifier fields (`passport`, `earTag`, …) are `within unitRecord` but gate
   on `commodityCode`, which lives one level up on the line. They pass
-  `unitRecord` as the projection group so the line-level decision projects down
+  `unitRecord` as the gatedParentGroup so the line-level decision fans down
   onto every unit in that line.
 
 When an instance falls out of scope, the engine wipes that instance's stale
@@ -349,8 +349,8 @@ what it declares. Add a case shaped like the matching layout:
 
 ## The one hard limit
 
-A member's `applyTo` gate reads values at the same identity level, or projects
-a shallower gate down onto its own instances via the projection group. It
+A member's `applyTo` gate reads values at the same identity level, or fans
+a shallower gate down onto its own instances via the gatedParentGroup. It
 cannot read a value in a sibling frame at the same depth. A field gated on
 another value in the _same_ enclosing instance (for example a per-unit field
 gated on a per-unit sibling) is expressible; a field gated across unrelated

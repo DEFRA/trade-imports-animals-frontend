@@ -1,14 +1,17 @@
 import { INDEX_DELIMITER } from '../../fulfilment-id.js'
 
-// The in-scope records for a collection that sit directly under
-// `parentFulfilmentIndex` (null -> a top-level collection: all its records).
-export const childRecords = (obligation, parentFulfilmentIndex, state) => {
-  const records = state.obligations?.[obligation.id]?.records ?? []
+// The in-scope fulfilmentIndexes for a collection that sit directly under
+// `parentFulfilmentIndex` (null → a top-level collection: all its indexes).
+export const childFulfilmentIndexes = (
+  obligation,
+  parentFulfilmentIndex,
+  state
+) => {
+  const fulfilmentIndexes =
+    state.obligations?.[obligation.id]?.fulfilmentIndexes ?? []
   return parentFulfilmentIndex === null
-    ? records
-    : records.filter((record) =>
-        record.fulfilmentIndex.startsWith(
-          `${parentFulfilmentIndex}${INDEX_DELIMITER}`
-        )
+    ? fulfilmentIndexes
+    : fulfilmentIndexes.filter((fulfilmentIndex) =>
+        fulfilmentIndex.startsWith(`${parentFulfilmentIndex}${INDEX_DELIMITER}`)
       )
 }

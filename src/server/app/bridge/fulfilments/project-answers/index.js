@@ -12,12 +12,12 @@ const withObligationAnswer = (
   if (isGroup(obligation)) {
     return answers
   }
-  const stored = fulfilments?.[obligation.id]
-  if (stored === undefined) {
+  const fulfilment = fulfilments?.[obligation.id]
+  if (fulfilment === undefined) {
     return answers
   }
   if (!obligation.within) {
-    return answersWithScalar(answers, obligation.name, stored)
+    return answersWithScalar(answers, obligation.name, fulfilment)
   }
   const { chain, records } = projections.get(obligation)
   return answersWithRecords(
