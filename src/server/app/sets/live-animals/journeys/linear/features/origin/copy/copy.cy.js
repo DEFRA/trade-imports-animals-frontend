@@ -19,7 +19,7 @@ export const copy = {
   },
   internalReference: {
     label: 'Eich cyfeirnod mewnol ar gyfer y llwyth hwn (dewisol)',
-    hint: 'Rhowch unrhyw gyfeirnod mewnol yr hoffech ei ddefnyddio i adnabod y llwyth hwn, neu gadewch yn wag.'
+    hint: 'Rhowch unrhyw gyfeirnod mewnol yr hoffech ei ddefnyddio i adnabod y llwyth hwn, neu gadewch yn wag. Gall fod hyd at 58 nod.'
   },
   errors: {
     countryFromList: 'Dewiswch wlad o’r rhestr',
@@ -27,8 +27,6 @@ export const copy = {
     regionCodeMaxLength:
       "Rhaid i'r cod rhanbarth tarddiad fod yn 5 nod neu lai",
     internalReferenceMaxLength:
-      "Rhaid i'r cyfeirnod mewnol fod yn 58 nod neu lai",
-    internalReferencePattern:
-      "Rhaid i'r cyfeirnod mewnol gynnwys llythrennau, rhifau a thanlinellau yn unig"
+      "Rhaid i'r cyfeirnod mewnol fod yn 58 nod neu lai"
   }
 }

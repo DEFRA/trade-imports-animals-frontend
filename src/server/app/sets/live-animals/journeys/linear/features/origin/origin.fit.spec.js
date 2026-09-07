@@ -21,6 +21,7 @@ const countryHidden = 'select#countryOfOrigin-select'
 const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
 const INTERNAL_REFERENCE_MAX_LENGTH = 58
 const INTERNAL_REFERENCE = 'Imports456GB'
+const PUNCTUATED_INTERNAL_REFERENCE = 'ACME-2026/01 batch 2.'
 const OUT_OF_LIST_COUNTRY = 'XX'
 
 const countryField = (page) =>
@@ -548,21 +549,25 @@ test.describe('origin internal reference validation', () => {
     )
   })
 
-  test('internal reference validation: when characters are invalid, links to and focuses the preserved value', async ({
+  // The reference belongs to the user's own records, so the punctuation those
+  // records use — hyphens, slashes, spaces, full stops — goes in as they hold
+  // it, and comes back the same when they return to the page.
+  test('internal reference validation: saves a reference punctuated the way the user holds it', async ({
     page
   }) => {
+    const originUrl = page.url()
+
     await chooseCountry(page, france)
-    await page.getByLabel(copy.internalReference.label).fill('bad ref!')
+    await page
+      .getByLabel(copy.internalReference.label)
+      .fill(PUNCTUATED_INTERNAL_REFERENCE)
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
-    const referenceError = page
-      .getByRole('alert')
-      .getByRole('link', { name: copy.errors.internalReferencePattern })
-    await expect(referenceError).toBeVisible()
-    await referenceError.click()
-    await expect(page.getByLabel(copy.internalReference.label)).toBeFocused()
+    await expect(page).toHaveURL(/\/notifications\/[^/]+\/commodities$/)
+
+    await page.goto(originUrl)
     await expect(page.getByLabel(copy.internalReference.label)).toHaveValue(
-      'bad ref!'
+      PUNCTUATED_INTERNAL_REFERENCE
     )
   })
 })

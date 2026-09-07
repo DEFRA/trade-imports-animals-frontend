@@ -11,6 +11,7 @@ import { dispatchPages } from '../../index.js'
 
 import * as origin from '../controller.js'
 import { copy } from './copy.en.js'
+import { copy as copyCy } from './copy.cy.js'
 
 const leaves = (node, path = []) =>
   typeof node === 'object' && node !== null
@@ -18,6 +19,10 @@ const leaves = (node, path = []) =>
         leaves(value, [...path, key])
       )
     : [{ path: path.join('.'), value: node }]
+
+// Mirrors INTERNAL_REFERENCE_MAX_LENGTH in ../controller.js — the hint must
+// state the limit the validator enforces, not only the error message.
+const INTERNAL_REFERENCE_MAX_LENGTH = 58
 
 describe('#copy', () => {
   it('Should have a non-empty string at every leaf', () => {
@@ -27,6 +32,13 @@ describe('#copy', () => {
         0
       )
     }
+  })
+
+  it('Should state the internal reference length limit in the hint, not only in the error', () => {
+    const limit = String(INTERNAL_REFERENCE_MAX_LENGTH)
+    expect(copy.internalReference.hint).toContain(limit)
+    expect(copyCy.internalReference.hint).toContain(limit)
+    expect(copy.errors.internalReferenceMaxLength).toContain(limit)
   })
 })
 

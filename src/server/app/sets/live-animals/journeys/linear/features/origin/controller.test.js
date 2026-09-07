@@ -29,6 +29,9 @@ const get = origin.routes.find((route) => route.method === 'GET').handler
 
 const COUNTRY_FROM_LIST_MESSAGE = 'Select a country from the list'
 const REGION_CODE_REQUIRED_MESSAGE = 'Enter the region of origin code'
+const INTERNAL_REFERENCE_MAX_LENGTH = 58
+const INTERNAL_REFERENCE_MAX_LENGTH_MESSAGE =
+  'Internal reference must be 58 characters or less'
 
 describe('POST /origin — invalid payload', () => {
   beforeAll(() => {
@@ -50,15 +53,14 @@ describe('POST /origin — invalid payload', () => {
       message: COUNTRY_FROM_LIST_MESSAGE
     },
     {
-      name: 'invalid-character internalReferenceNumber',
+      name: 'an internal reference over the length limit',
       payload: {
         countryOfOrigin: 'FR',
         regionOfOriginCodeRequirement: 'no',
-        internalReferenceNumber: 'bad ref!'
+        internalReferenceNumber: 'A'.repeat(INTERNAL_REFERENCE_MAX_LENGTH + 1)
       },
       field: 'internalReferenceNumber',
-      message:
-        'Internal reference must only contain letters, numbers and underscores'
+      message: INTERNAL_REFERENCE_MAX_LENGTH_MESSAGE
     }
   ]
 
@@ -170,6 +172,45 @@ describe('POST /origin — valid internal reference', () => {
 
     expect(result.view).toBeUndefined()
     expect(result.after.internalReferenceNumber).toBe('Imports456_GB')
+  })
+
+  // The reference is whatever the user's own system calls the consignment, so
+  // the punctuation their records use has to survive the page untouched.
+  const punctuatedReferences = [
+    'ACME-2026/01',
+    'Acme ref 12',
+    'ACME.2026.01',
+    'ACME-2026/01 (batch 2)'
+  ]
+
+  it.each(punctuatedReferences)(
+    'Should accept and save the internal reference %s',
+    async (internalReferenceNumber) => {
+      const result = await driveHandler(post, {
+        payload: {
+          countryOfOrigin: 'FR',
+          regionOfOriginCodeRequirement: 'no',
+          internalReferenceNumber
+        }
+      })
+
+      expect(result.view).toBeUndefined()
+      expect(result.after.internalReferenceNumber).toBe(internalReferenceNumber)
+    }
+  )
+
+  it('Should accept an internal reference at the length limit', async () => {
+    const atLimit = 'A'.repeat(INTERNAL_REFERENCE_MAX_LENGTH)
+    const result = await driveHandler(post, {
+      payload: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'no',
+        internalReferenceNumber: atLimit
+      }
+    })
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.internalReferenceNumber).toBe(atLimit)
   })
 })
 
