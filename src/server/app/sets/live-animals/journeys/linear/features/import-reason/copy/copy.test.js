@@ -44,6 +44,30 @@ describe('import-reason copy module', () => {
     }
   })
 
+  // Design release 1 closes every internal-market purpose hint with a full
+  // stop. Four of them had lost theirs, so the whole set is pinned rather
+  // than the four that drifted.
+  it('Should close every internal-market purpose hint with a full stop', () => {
+    for (const [value, hint] of Object.entries(copy.purpose.hints)) {
+      expect(hint.endsWith('.'), `${value} must end in a full stop`).toBe(true)
+    }
+    for (const [value, hint] of Object.entries(copyCy.purpose.hints)) {
+      expect(hint.endsWith('.'), `${value} must end in a full stop`).toBe(true)
+    }
+  })
+
+  // The sale/gift hint also carried a wrong possessive, a comma splitting
+  // "aim" from what it governs, and "e.g." where GDS style wants the words.
+  it('Should write the sale or gift hint in plain, correct English', () => {
+    const hint = copy.purpose.hints['transfer-of-ownership-sale-gift']
+    expect(hint).toContain('has as its aim the sale of')
+    expect(hint).toContain('with no sale involved (for example a gift).')
+    expect(hint).not.toContain('e.g.')
+    expect(
+      copyCy.purpose.hints['transfer-of-ownership-sale-gift']
+    ).not.toContain('e.e.')
+  })
+
   // The reason a reveal belongs to is where the explanation sits, so the
   // follow-up questions ask with a label alone and the exit date keeps only
   // its worked example.
