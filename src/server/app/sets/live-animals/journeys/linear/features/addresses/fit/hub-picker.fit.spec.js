@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
+  partyPickerName,
   signIn,
   startNotification,
   unlockSections,
@@ -110,7 +111,9 @@ test.describe('addresses hub', () => {
   }) => {
     for (const party of PARTIES) {
       await openPartyPicker(page, party)
-      await page.getByRole('radio', { name: values[party.id].name }).check()
+      await page
+        .getByRole('radio', { name: partyPickerName(values[party.id]) })
+        .check()
       await saveAndContinue(page)
     }
     await page.getByRole('button', { name: copy.hub.continueButton }).click()
@@ -182,21 +185,22 @@ test.describe('party picker per role', () => {
       await openPartyPicker(page, party)
       const row = rowFor(page, party.title)
       const selected = values[party.id]
-      await page.getByRole('radio', { name: selected.name }).check()
+      const selectedName = partyPickerName(selected)
+      await page.getByRole('radio', { name: selectedName }).check()
       await saveAndContinue(page)
       await expect(
         page.getByRole('heading', { name: copy.hub.title })
       ).toBeVisible()
-      await expect(row).toContainText(selected.name)
+      await expect(row).toContainText(selectedName)
       await expect(
         row.getByRole('link', { name: copy.hub.change })
       ).toBeVisible()
       await row.getByRole('link', { name: copy.hub.change }).click()
       await expect(
-        page.getByText(`${copy.picker.selectedAddressPrefix} ${selected.name}`)
+        page.getByText(`${copy.picker.selectedAddressPrefix} ${selectedName}`)
       ).toBeVisible()
       await expect(
-        page.getByRole('radio', { name: selected.name })
+        page.getByRole('radio', { name: selectedName })
       ).toBeChecked()
     })
   }
