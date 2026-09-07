@@ -6,27 +6,24 @@ import puppeteer from 'puppeteer'
 
 import signIn from '../../tests/lighthouse/auth-setup.cjs'
 import { auditUrls, reportNames, TARGETS_FILE } from './audit-targets.js'
-import {
-  createNotificationInBrowser,
-  fillNotificationInBrowser,
-  submitNotificationInBrowser
-} from './browser-journey.js'
 import { createJourneyClient } from './journey-client.js'
 import { ensureAddressBookHasAnAddress } from './seed-address-book.js'
-import { SEED_SHAPES } from './seed-notification.js'
+import {
+  createNotification,
+  fillNotification,
+  SEED_SHAPES,
+  submitNotification
+} from './seed-notification.js'
 import { waitForStack } from './wait-for-stack.js'
 
 const HTTP_OK = 200
 
 const origin = process.env.LIGHTHOUSE_BASE_URL ?? 'http://localhost:3000'
 
-const launchBrowser = () =>
-  puppeteer.launch({
+const signedInCookies = async () => {
+  const browser = await puppeteer.launch({
     args: ['--no-sandbox', '--disable-gpu']
   })
-
-const signedInCookies = async () => {
-  const browser = await launchBrowser()
   try {
     await signIn(browser, { url: origin })
     const { hostname } = new URL(origin)
@@ -38,27 +35,20 @@ const signedInCookies = async () => {
   }
 }
 
-/** Walk each shape in a real browser so redirects, session cookies and the
- * opening run match production — the fetch client deep-linked pages and hit
- * intermittent 404s at import-purpose in CI. */
-const seedNotifications = async () => {
-  const browser = await launchBrowser()
-  try {
-    await signIn(browser, { url: origin })
-    const page = await browser.newPage()
-    const journeyIds = {}
-    for (const [name, shape] of Object.entries(SEED_SHAPES)) {
-      const journeyId = await createNotificationInBrowser(page, origin)
-      await fillNotificationInBrowser(page, origin, journeyId, shape)
-      if (shape.submit) {
-        await submitNotificationInBrowser(page, origin, journeyId)
-      }
-      journeyIds[name] = journeyId
+/** Follow each POST redirect in order instead of deep-linking step slugs — the
+ * latter 404s at gated pages such as import-purpose in CI. */
+const seedNotifications = async (cookies) => {
+  const client = createJourneyClient(origin, cookies)
+  const journeyIds = {}
+  for (const [name, shape] of Object.entries(SEED_SHAPES)) {
+    const { journeyId, startPath } = await createNotification(client)
+    await fillNotification(client, journeyId, shape, startPath)
+    if (shape.submit) {
+      await submitNotification(client, journeyId)
     }
-    return journeyIds
-  } finally {
-    await browser.close()
+    journeyIds[name] = journeyId
   }
+  return journeyIds
 }
 
 /** A page whose prerequisites are unmet redirects to the hub, so every URL is
@@ -89,7 +79,7 @@ const write = (payload) => {
 
 await waitForStack()
 await ensureAddressBookHasAnAddress()
-const journeyIds = await seedNotifications()
+const journeyIds = await seedNotifications(await signedInCookies())
 const urls = auditUrls(origin, journeyIds)
 await assertUrlsRenderTheirOwnPage(urls, await signedInCookies())
 write({ origin, journeyIds, urls, reports: reportNames(urls, journeyIds) })

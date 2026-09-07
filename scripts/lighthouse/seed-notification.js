@@ -269,12 +269,13 @@ export const createNotification = async (client) => {
   const dashboard = await client.document('/')
   const created = await client.submit('/notifications', {}, dashboard.crumb)
   const journeyId = journeyIdFromLocation(created.location)
-  if (created.status !== HTTP_FOUND || !journeyId) {
+  const startPath = pathFromLocation(created.location)
+  if (created.status !== HTTP_FOUND || !journeyId || !startPath) {
     throw new Error(
       `Could not create a notification (status ${created.status}, location ${created.location})`
     )
   }
-  return journeyId
+  return { journeyId, startPath }
 }
 
 const settleAfterSubmit = async (client, step, posted) => {
@@ -290,21 +291,33 @@ const settleAfterSubmit = async (client, step, posted) => {
   }
 }
 
-export const fillNotification = async (client, journeyId, shape) => {
+export const fillNotification = async (client, journeyId, shape, startPath) => {
+  let currentPath = startPath
+
   for (const step of seedSteps(shape)) {
-    const path = `/notifications/${journeyId}/${step.slug}`
+    const expectedPath = `/notifications/${journeyId}/${step.slug}`
     let lastError
 
     for (let attempt = 0; attempt < STEP_ATTEMPTS; attempt++) {
       try {
-        const page = await client.document(path)
+        if (currentPath !== expectedPath) {
+          const recovered = await client.document(expectedPath)
+          if (recovered.status === HTTP_OK) {
+            currentPath = expectedPath
+          } else {
+            throw new Error(
+              `Seed step ${step.slug} expected ${expectedPath} but journey is at ${currentPath}`
+            )
+          }
+        }
+        const page = await client.document(currentPath)
         if (page.status !== HTTP_OK) {
           throw new Error(
-            `Seed step ${step.slug} did not render (${page.status})`
+            `Seed step ${step.slug} did not render (${page.status} at ${currentPath})`
           )
         }
         const posted = await client.submit(
-          path,
+          currentPath,
           await resolveSeedFields(step, page),
           page.crumb
         )
@@ -315,6 +328,7 @@ export const fillNotification = async (client, journeyId, shape) => {
           )
         }
         await settleAfterSubmit(client, step, posted)
+        currentPath = pathFromLocation(posted.location)
         lastError = undefined
         break
       } catch (error) {
