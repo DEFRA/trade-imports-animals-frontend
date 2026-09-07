@@ -51,9 +51,9 @@ export const copy = {
   },
   errors: {
     purposeRequired: 'Select a purpose in the internal market',
-    countryRequired: 'Select the destination country',
-    portRequired: 'Select the port of exit',
+    countryRequired: 'Select a destination country',
+    portRequired: 'Select a port of exit',
     dateRequired: 'Enter an exit date',
-    dateInvalid: 'Enter a real exit date'
+    dateInvalid: 'Enter a real date'
   }
 }

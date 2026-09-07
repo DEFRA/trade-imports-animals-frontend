@@ -53,9 +53,9 @@ export const copy = {
   },
   errors: {
     purposeRequired: 'Dewiswch ddiben yn y farchnad fewnol',
-    countryRequired: 'Dewiswch y wlad gyrchfan',
-    portRequired: 'Dewiswch y porthladd ymadael',
+    countryRequired: 'Dewiswch wlad gyrchfan',
+    portRequired: 'Dewiswch borthladd ymadael',
     dateRequired: 'Rhowch ddyddiad ymadael',
-    dateInvalid: 'Rhowch ddyddiad ymadael go iawn'
+    dateInvalid: 'Rhowch ddyddiad go iawn'
   }
 }
