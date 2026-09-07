@@ -1,4 +1,4 @@
-import { isNonArrayObject } from '../../helper-internals.js'
+import { isNonArrayObject } from '../helper-internals.js'
 
 const isNullish = (value) => value === undefined || value === null
 const hasFulfilmentIndexes = (fulfilment) => Object.keys(fulfilment).length > 0

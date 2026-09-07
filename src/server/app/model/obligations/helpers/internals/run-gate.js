@@ -1,5 +1,5 @@
-import { isNonArrayObject } from '../../../helper-internals.js'
-import { INDEX_DELIMITER } from '../../../index-delimiter.js'
+import { isNonArrayObject } from '../../helper-internals.js'
+import { INDEX_DELIMITER } from '../../index-delimiter.js'
 
 // Two shape branches, dispatched below in `runGate`:
 //   - indexedFulfilments — collect the fulfilmentIndexes whose stored values

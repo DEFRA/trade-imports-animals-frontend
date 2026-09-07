@@ -1,4 +1,4 @@
-import { readGate } from '../../helper-internals.js'
+import { readGate } from '../helper-internals.js'
 
 // Reduces a per-instance gate to one decision — true if ANY stored value
 // on the gate obligation is in the allowlist. Handles the "cph reads ANY

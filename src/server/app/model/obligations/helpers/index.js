@@ -16,41 +16,39 @@
  *     invert gates. A coverage assertion fails the build for any gated
  *     obligation without a complete (declared or derived) `dependsOn`.
  *
- * Which helper to pick — the split is by the SHAPE of the DECISION
- * the gate needs to return (which usually mirrors the gated
- * obligation's category):
+ * Which helper to pick — guidance by CURRENT usage patterns, not a
+ * folder-level contract. Every helper handles input shapes defensively
+ * via `runGate`; the pattern below describes how they're typically
+ * used, not what they exclusively support.
  *
- *   - **Single-decision gates** (`single-decision/`) return one
- *     `{ inScope, status, reasons? }` verdict for the whole gated
- *     obligation. Use for unindexed gated obligations: `equalsGate` /
- *     `includesGate` / `presentGate` / `alwaysInScope`.
+ *   - Returning one `{ inScope, status, reasons? }` verdict for the
+ *     whole gated obligation: `equalsGate` / `includesGate` /
+ *     `presentGate` / `alwaysInScope` / `matches`. Typically used when
+ *     the gated obligation is unindexed.
  *
- *   - **Per-fulfilmentIndex-decision gates**
- *     (`per-fulfilmentIndex-decision/`) return a decision that names
- *     which fulfilmentIndexes are in scope. Use for indexed gated
- *     obligations: `allowListed` / `notInUnionOf`. Pass `null` for
- *     `gatedParentGroup` when gate and gated are at the same identity
- *     level; pass a group when the gated obligation is deeper (the
- *     engine fans across that group's fulfilmentIndexes for each
- *     matching parent).
+ *   - Returning a decision naming which fulfilmentIndexes are in
+ *     scope: `allowListed` / `notInUnionOf`. Typically used when the
+ *     gated obligation is indexed. Pass `null` for `gatedParentGroup`
+ *     when gate and gated are at the same identity level; pass a group
+ *     when the gated obligation is deeper (the engine fans across that
+ *     group's fulfilmentIndexes for each matching parent).
  *
- * `matches` is a same-frame single-decision equality gate (kept for
- * backwards compat). `anyAllowListed` reduces a group's
- * fulfilmentIndexes to one decision (rather than a per-fulfilmentIndex
- * list) — for the "cph reads ANY commodityCode across commodity lines"
- * case. `branchedGate` is the escape hatch for genuinely non-derivable
- * predicates; must be paired with `predicateMeta` for the reachability
- * prover to synthesise a witness.
+ * `anyAllowListed` reduces a group's fulfilmentIndexes to one decision
+ * (rather than a per-fulfilmentIndex list) — for the "cph reads ANY
+ * commodityCode across commodity lines" case. `branchedGate` is the
+ * escape hatch for genuinely non-derivable predicates; must be paired
+ * with `predicateMeta` for the reachability prover to synthesise a
+ * witness.
  */
 
-export { allowListed } from './per-fulfilmentIndex-decision/allow-listed.js'
-export { notInUnionOf } from './per-fulfilmentIndex-decision/not-in-union-of.js'
-export { anyAllowListed } from './single-decision/any-allow-listed.js'
-export { branchedGate } from './single-decision/branched-gate.js'
-export { matches } from './single-decision/matches.js'
-export { present } from './single-decision/present.js'
-export { equalsGate } from './single-decision/equals-gate.js'
-export { presentGate } from './single-decision/present-gate.js'
-export { includesGate } from './single-decision/includes-gate.js'
-export { alwaysInScope } from './single-decision/always-in-scope.js'
+export { allowListed } from './allow-listed.js'
+export { notInUnionOf } from './not-in-union-of.js'
+export { anyAllowListed } from './any-allow-listed.js'
+export { branchedGate } from './branched-gate.js'
+export { matches } from './matches.js'
+export { present } from './present.js'
+export { equalsGate } from './equals-gate.js'
+export { presentGate } from './present-gate.js'
+export { includesGate } from './includes-gate.js'
+export { alwaysInScope } from './always-in-scope.js'
 export { obligationMetadata } from './introspection/obligation-metadata.js'

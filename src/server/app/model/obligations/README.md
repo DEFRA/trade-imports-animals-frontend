@@ -180,11 +180,10 @@ Top-level primitives (used everywhere else in the module):
 - `evaluator/implications/` — the five implication constructors and their dispatcher (`buildImplication` / `buildImplications`).
 - `evaluator/internal/` — `deriveGroupFulfilmentIndexes` (the shared engine for both enumeration passes), `fulfilmentsEqual` (structural equality for the fixpoint check).
 
-`helpers/` — gate helper factories that build `applyTo` closures. See `helpers/index.js` for the pick-a-helper guidance. Split into:
+`helpers/` — gate helper factories that build `applyTo` closures. All at one level; see `helpers/index.js` for the pick-a-helper guidance. Subfolders:
 
-- `helpers/single-decision/` — helpers whose gate returns one `{ inScope, status, reasons? }` verdict (`equalsGate`, `presentGate`, `includesGate`, `matches`, `anyAllowListed`, `alwaysInScope`, `branchedGate`, `present`). Use when the gated obligation is `unindexed`.
-- `helpers/per-fulfilmentIndex-decision/` — helpers whose gate returns a decision naming which `fulfilmentIndexes` are in scope (`allowListed`, `notInUnionOf`). Use when the gated obligation is indexed.
-- `helpers/introspection/` — `obligationMetadata` — surfaces the gate's `.metadata` sidecar + the `dependsOn` schema key for the reachability prover.
+- `helpers/internals/` — shared machinery. `build-gate.js` (the factory used by `allowListed` / `notInUnionOf`), `run-gate.js` (the gate runner with defensive input-shape dispatch — `runGate`, `runGateIndexed`, `runGateUnindexed`), and `derive-union.js` (used by `notInUnionOf`).
+- `helpers/introspection/` — `obligationMetadata` — surfaces the gate's `.metadata` sidecar and the `dependsOn` schema key for the reachability prover.
 
 ## Algorithm
 
