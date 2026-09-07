@@ -82,6 +82,23 @@ describe('import-reason copy module', () => {
     expect(copy.date.hint).toBe('For example, 27/3/2026')
     expect(copyCy.date.hint).toBe('Er enghraifft, 27/3/2026')
   })
+
+  // Design release 1 asks for a choice the user has yet to make, so the two
+  // select errors take the indefinite article. Welsh carries the same sense
+  // by dropping the definite article rather than adding one.
+  it('Should ask for a destination country and a port of exit', () => {
+    expect(copy.errors.countryRequired).toBe('Select a destination country')
+    expect(copy.errors.portRequired).toBe('Select a port of exit')
+    expect(copyCy.errors.countryRequired).toBe('Dewiswch wlad gyrchfan')
+    expect(copyCy.errors.portRequired).toBe('Dewiswch borthladd ymadael')
+  })
+
+  // The unreadable-date message does not repeat the field name that is
+  // already the legend and the label above it.
+  it('Should report an unreadable exit date without naming the field again', () => {
+    expect(copy.errors.dateInvalid).toBe('Enter a real date')
+    expect(copyCy.errors.dateInvalid).toBe('Rhowch ddyddiad go iawn')
+  })
 })
 
 describe('GET import-reason — copy reaches the view', () => {
