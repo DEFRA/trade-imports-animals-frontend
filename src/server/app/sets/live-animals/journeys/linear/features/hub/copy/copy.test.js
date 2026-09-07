@@ -39,10 +39,27 @@ const unlockedSeed = {
 
 const ORIGIN_ROW_TITLE = 'Where is this consignment coming from?'
 const COMMODITIES_ROW_TITLE = 'What are you importing?'
+const IMPORT_REASON_ROW_TITLE = 'Main reason for importing'
 const TRANSIT_ROW_TITLE = 'Transit countries'
 const NOT_YET_STARTED_STATUS = {
   tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
 }
+const IN_PROGRESS_STATUS = {
+  tag: { text: 'In progress', classes: 'govuk-tag--light-blue' }
+}
+const COMPLETED_STATUS = {
+  tag: { text: 'Completed', classes: 'govuk-tag--green' }
+}
+
+// Temporary admission of horses is the one reason that opens both a port of
+// exit and an exit date under it — the state the retired "Exit details" task
+// used to appear in.
+const temporaryAdmissionSeed = {
+  ...unlockedSeed,
+  reasonForImport: 'temporaryAdmissionHorses',
+  portOfExit: 'GB DVR'
+}
+const EXIT_DATE = { day: '20', month: '12', year: '2026' }
 
 describe('#copy', () => {
   test('Should have a non-empty string or copy function at every leaf', () => {
@@ -112,13 +129,40 @@ describe('#hubHandler', () => {
     expect(
       groups.map((group) => group.items.map((item) => item.title.text))
     ).toEqual([
-      [ORIGIN_ROW_TITLE, COMMODITIES_ROW_TITLE, 'Main reason for importing'],
+      [ORIGIN_ROW_TITLE, COMMODITIES_ROW_TITLE, IMPORT_REASON_ROW_TITLE],
       ['Additional commodity details', 'Animal identification details'],
       ['Arrival details', 'Transporter'],
       ['Roles and addresses', 'Contact address'],
       ['Uploaded documents'],
       ['Check and submit']
     ])
+  })
+
+  it('Should hold "About the consignment" at three rows once a reason opens its exit questions', async () => {
+    const { groups } = await renderHub({
+      ...temporaryAdmissionSeed,
+      exitDate: EXIT_DATE
+    })
+    expect(groups[0].items.map((item) => item.title.text)).toEqual([
+      ORIGIN_ROW_TITLE,
+      COMMODITIES_ROW_TITLE,
+      IMPORT_REASON_ROW_TITLE
+    ])
+  })
+
+  it('Should carry the exit questions in the import-reason row status rather than a task of their own', async () => {
+    const owingTheExitDate = await renderHub(temporaryAdmissionSeed)
+    expect(
+      rowByTitle(owingTheExitDate, IMPORT_REASON_ROW_TITLE).status
+    ).toEqual(IN_PROGRESS_STATUS)
+
+    const answered = await renderHub({
+      ...temporaryAdmissionSeed,
+      exitDate: EXIT_DATE
+    })
+    expect(rowByTitle(answered, IMPORT_REASON_ROW_TITLE).status).toEqual(
+      COMPLETED_STATUS
+    )
   })
 
   it('Should render the always-open origin row as a blue "Not yet started" tag with a link', async () => {
@@ -136,9 +180,7 @@ describe('#hubHandler', () => {
       }),
       ORIGIN_ROW_TITLE
     )
-    expect(originRow.status).toEqual({
-      tag: { text: 'Completed', classes: 'govuk-tag--green' }
-    })
+    expect(originRow.status).toEqual(COMPLETED_STATUS)
   })
 
   it('Should render a gated row as "Cannot start yet" text with NO link', async () => {
@@ -163,9 +205,9 @@ describe('#hubHandler', () => {
         }
       ]
     })
-    expect(rowByTitle(context, COMMODITIES_ROW_TITLE).status).toEqual({
-      tag: { text: 'Completed', classes: 'govuk-tag--green' }
-    })
+    expect(rowByTitle(context, COMMODITIES_ROW_TITLE).status).toEqual(
+      COMPLETED_STATUS
+    )
     const identificationRow = rowByTitle(
       context,
       'Animal identification details'
