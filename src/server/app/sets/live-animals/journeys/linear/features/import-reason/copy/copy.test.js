@@ -13,6 +13,7 @@ import { dispatchPages } from '../../index.js'
 
 import * as importReason from '../controller.js'
 import { copy } from './copy.en.js'
+import { copy as copyCy } from './copy.cy.js'
 
 const leaves = (node, path = []) =>
   typeof node === 'object' && node !== null
@@ -41,6 +42,21 @@ describe('import-reason copy module', () => {
     for (const option of importReasonPurpose.purposes()) {
       expect(copy.purpose.hints[option.value]).toBeTruthy()
     }
+  })
+
+  // The reason a reveal belongs to is where the explanation sits, so the
+  // follow-up questions ask with a label alone and the exit date keeps only
+  // its worked example.
+  it('Should ask the destination country and the port of exit without a hint', () => {
+    expect(copy.country.hint).toBeUndefined()
+    expect(copy.port.hint).toBeUndefined()
+    expect(copyCy.country.hint).toBeUndefined()
+    expect(copyCy.port.hint).toBeUndefined()
+  })
+
+  it('Should hint the exit date with the worked example alone', () => {
+    expect(copy.date.hint).toBe('For example, 27/3/2026')
+    expect(copyCy.date.hint).toBe('Er enghraifft, 27/3/2026')
   })
 })
 

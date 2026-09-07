@@ -18,6 +18,7 @@ const PORT_CODE = 'GB DVR'
 const COUNTRY_CODE = 'IE'
 const TRANSIT_PORT = '#transitPortOfExit'
 const TRANSIT_COUNTRY = '#transitDestinationCountry'
+const TRANSHIPMENT_COUNTRY = '#transhipmentDestinationCountry'
 const TEMPORARY_ADMISSION_DATE = '#temporaryAdmissionExitDate'
 const TEMPORARY_ADMISSION_PORT = '#temporaryAdmissionPortOfExit'
 
@@ -213,15 +214,11 @@ test.describe('import-reason reveals', () => {
     await expect(page.locator(TRANSIT_PORT)).toHaveAccessibleName(
       copy.port.label
     )
-    await expect(page.locator(TRANSIT_PORT)).toHaveAccessibleDescription(
-      copy.port.hint
-    )
+    await expect(page.locator(TRANSIT_PORT)).toHaveAccessibleDescription('')
     await expect(page.locator(TRANSIT_COUNTRY)).toHaveAccessibleName(
       copy.country.label
     )
-    await expect(page.locator(TRANSIT_COUNTRY)).toHaveAccessibleDescription(
-      copy.country.hint
-    )
+    await expect(page.locator(TRANSIT_COUNTRY)).toHaveAccessibleDescription('')
     const renderedCountries = await page
       .locator(`${TRANSIT_COUNTRY} option`)
       .evaluateAll((options) =>
@@ -246,6 +243,9 @@ test.describe('import-reason reveals', () => {
     await expect(
       page.locator(TEMPORARY_ADMISSION_DATE)
     ).toHaveAccessibleDescription(copy.date.hint)
+    await expect(
+      page.locator(TEMPORARY_ADMISSION_PORT)
+    ).toHaveAccessibleDescription('')
     expect(await fieldIdsIn(reveal)).toEqual([
       'temporaryAdmissionExitDate',
       'temporaryAdmissionPortOfExit'
@@ -260,6 +260,12 @@ test.describe('import-reason reveals', () => {
 
     await expect(reveal).toBeVisible()
     expect(await fieldIdsIn(reveal)).toEqual(['transhipmentDestinationCountry'])
+    await expect(page.locator(TRANSHIPMENT_COUNTRY)).toHaveAccessibleName(
+      copy.country.label
+    )
+    await expect(
+      page.locator(TRANSHIPMENT_COUNTRY)
+    ).toHaveAccessibleDescription('')
   })
 
   test('saves a reason and its reveal in one submit, and offers the answers back', async ({

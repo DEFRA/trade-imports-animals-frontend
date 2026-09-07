@@ -41,17 +41,15 @@ export const copy = {
   },
   country: {
     label: 'Gwlad gyrchfan',
-    hint: 'Y wlad y mae’r llwyth yn teithio ymlaen iddi ar ôl Prydain Fawr.',
     placeholder: 'Dewiswch wlad'
   },
   port: {
     label: 'Porthladd ymadael',
-    hint: 'Dewiswch ble bydd y llwyth yn gadael Prydain Fawr. Mae ymadael a mynediad yn rhannu’r un rhestr porthladdoedd.',
     placeholder: 'Dewiswch borthladd ymadael'
   },
   date: {
     label: 'Dyddiad ymadael',
-    hint: 'Y dyddiad y disgwylir i’r anifeiliaid adael Prydain Fawr. Er enghraifft, 27/3/2026'
+    hint: 'Er enghraifft, 27/3/2026'
   },
   errors: {
     countryRequired: 'Dewiswch y wlad gyrchfan',
