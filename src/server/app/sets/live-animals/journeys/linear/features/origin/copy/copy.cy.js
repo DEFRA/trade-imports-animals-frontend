@@ -22,7 +22,7 @@ export const copy = {
     hint: 'Rhowch unrhyw gyfeirnod mewnol yr hoffech ei ddefnyddio i adnabod y llwyth hwn, neu gadewch yn wag.'
   },
   errors: {
-    countryRequired: "Dewiswch y wlad y mae'r anifail yn tarddu ohoni",
+    countryFromList: 'Dewiswch wlad o’r rhestr',
     regionCodeRequired: 'Rhowch god rhanbarth tarddiad',
     regionCodeMaxLength:
       "Rhaid i'r cod rhanbarth tarddiad fod yn 5 nod neu lai",

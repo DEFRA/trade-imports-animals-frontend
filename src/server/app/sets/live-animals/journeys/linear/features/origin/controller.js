@@ -11,7 +11,6 @@ import {
   oneOf,
   pattern,
   requiredMaxText,
-  requiredOneOf,
   validate
 } from '../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../shared/kit.js'
@@ -137,12 +136,19 @@ const regionCodeSuffixRule = (requirement) =>
         copy.errors.regionCodeMaxLength
       )
 
+// The country does not block the save. A user who has the internal reference
+// but is still waiting on the health certificate to confirm where the animal
+// comes from can record what they know and come back to it. Membership of the
+// list still holds, so a submitted value that is not a country is refused.
+// The obligation behind the answer keeps it mandatory, so the unanswered
+// country still shows the origin task as unfinished on the hub and still
+// stops the notification at the check page.
 const fields = (requirement) =>
   compose(
-    requiredOneOf(
+    oneOf(
       'countryOfOrigin',
       countries.originCountries().map(({ value }) => value),
-      copy.errors.countryRequired
+      copy.errors.countryFromList
     ),
     oneOf('regionOfOriginCodeRequirement', REGION_CODE_REQUIREMENT_ANSWERS),
     regionCodeSuffixRule(requirement),

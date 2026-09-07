@@ -6,6 +6,7 @@ import {
   validatorDefaults
 } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
+import { copy as hubCopy } from '../hub/copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
 const france = countriesOrigin.find(({ code }) => code === 'FR')
@@ -19,9 +20,13 @@ const countryHidden = 'select#countryOfOrigin-select'
 
 const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
 const INTERNAL_REFERENCE_MAX_LENGTH = 58
+const INTERNAL_REFERENCE = 'Imports456GB'
+const OUT_OF_LIST_COUNTRY = 'XX'
 
 const countryField = (page) =>
   page.getByLabel(copy.country.label, { exact: true })
+
+const hubUrlOf = (originUrl) => originUrl.replace(/\/origin$/, '')
 
 const startAtOrigin = async (page) => {
   await page.goto('/')
@@ -43,6 +48,15 @@ const chooseCountry = async (page, { name }) => {
   await field.fill(name)
   await page.getByRole('option', { name, exact: true }).click()
 }
+
+// Nothing in the type-ahead offers a value that is not a country, so the
+// out-of-list case is reached the only way it could be reached at all — by
+// putting the value into the select the form submits.
+const chooseOutOfListCountry = (page) =>
+  page.locator(countryHidden).evaluate((select, code) => {
+    select.add(new Option(code, code))
+    select.value = code
+  }, OUT_OF_LIST_COUNTRY)
 
 const fillOriginAnswers = async (page, { country = france, regionCode }) => {
   await chooseCountry(page, country)
@@ -219,7 +233,7 @@ test.describe('origin feature', () => {
     page
   }) => {
     const originUrl = page.url()
-    const hubUrl = originUrl.replace(/\/origin$/, '')
+    const hubUrl = hubUrlOf(originUrl)
 
     await chooseCountry(page, france)
     await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
@@ -234,7 +248,7 @@ test.describe('origin feature', () => {
   test('cancel and return to overview reaches the hub on a notification with no answers', async ({
     page
   }) => {
-    const hubUrl = page.url().replace(/\/origin$/, '')
+    const hubUrl = hubUrlOf(page.url())
 
     await page
       .getByRole('link', { name: sharedCopy.saveActions.cancelAndReturnToHub })
@@ -339,14 +353,55 @@ test.describe('origin country and region validation', () => {
     await startAtOrigin(page)
   })
 
-  test('country validation: when no country is chosen, links to and focuses the empty field', async ({
+  // The commodity search is asked for by country of origin, so with the
+  // country unanswered the opening run has no next page to offer and the user
+  // is set down on the hub. The point of the test is that the save went
+  // through at all: nothing on the page is thrown away.
+  test('country: an unanswered country saves the rest of the page and moves on', async ({
     page
   }) => {
+    const originUrl = page.url()
+
+    await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
+    await page.getByLabel(copy.internalReference.label).fill(INTERNAL_REFERENCE)
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+
+    await expect(page).toHaveURL(hubUrlOf(originUrl))
+
+    await page.goto(originUrl)
+    await expect(page.locator(countryHidden)).toHaveValue('')
+    await expect(
+      page.getByRole('radio', { name: copy.regionRequirement.no })
+    ).toBeChecked()
+    await expect(page.getByLabel(copy.internalReference.label)).toHaveValue(
+      INTERNAL_REFERENCE
+    )
+  })
+
+  // The country is mandatory for completeness even though it does not block
+  // the save, so the gap is shown on the hub rather than enforced at the page.
+  test('country: an unanswered country leaves the origin task unfinished', async ({
+    page
+  }) => {
+    await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+
+    const originRow = page.getByRole('listitem').filter({
+      has: page.getByText(hubCopy.rows.origin.title, { exact: true })
+    })
+    await expect(originRow).toContainText(hubCopy.statuses.inProgress)
+  })
+
+  test('country validation: an out-of-list country links to and focuses the cleared field', async ({
+    page
+  }) => {
+    await chooseOutOfListCountry(page)
+    await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
     const countryError = page
       .getByRole('alert')
-      .getByRole('link', { name: copy.errors.countryRequired })
+      .getByRole('link', { name: copy.errors.countryFromList })
     await expect(countryError).toBeVisible()
     await countryError.click()
     await expect(page.locator(countryInput)).toBeFocused()
@@ -354,15 +409,16 @@ test.describe('origin country and region validation', () => {
     await expect(page.locator(countryHidden)).toHaveValue('')
   })
 
-  test('validation error page has no serious or critical axe violations', async ({
+  test('out-of-list country error page has no serious or critical axe violations', async ({
     page
   }) => {
+    await chooseOutOfListCountry(page)
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
     await expect(page.getByRole('alert')).toBeVisible()
 
     await expectNoSeriousOrCriticalAxeViolations(
       page,
-      'Origin validation error'
+      'Origin out-of-list country error'
     )
   })
 

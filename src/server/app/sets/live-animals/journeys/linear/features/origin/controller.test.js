@@ -27,8 +27,7 @@ import * as origin from './controller.js'
 const post = postHandlerOf(origin)
 const get = origin.routes.find((route) => route.method === 'GET').handler
 
-const COUNTRY_REQUIRED_MESSAGE =
-  'Select the country where the animal originates from'
+const COUNTRY_FROM_LIST_MESSAGE = 'Select a country from the list'
 const REGION_CODE_REQUIRED_MESSAGE = 'Enter the region of origin code'
 
 describe('POST /origin — invalid payload', () => {
@@ -41,16 +40,6 @@ describe('POST /origin — invalid payload', () => {
 
   const cases = [
     {
-      name: 'blank countryOfOrigin',
-      payload: {
-        countryOfOrigin: '',
-        regionOfOriginCodeRequirement: 'no',
-        internalReferenceNumber: 'Imports456GB'
-      },
-      field: 'countryOfOrigin',
-      message: COUNTRY_REQUIRED_MESSAGE
-    },
-    {
       name: 'countryOfOrigin outside the countries list',
       payload: {
         countryOfOrigin: 'XX',
@@ -58,7 +47,7 @@ describe('POST /origin — invalid payload', () => {
         internalReferenceNumber: 'Imports456GB'
       },
       field: 'countryOfOrigin',
-      message: COUNTRY_REQUIRED_MESSAGE
+      message: COUNTRY_FROM_LIST_MESSAGE
     },
     {
       name: 'invalid-character internalReferenceNumber',
@@ -82,6 +71,84 @@ describe('POST /origin — invalid payload', () => {
       expect(result.after).toEqual(result.before)
     }
   )
+})
+
+describe('POST /origin — an unanswered country still saves', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should keep the rest of the page and move on when no country is chosen', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        countryOfOrigin: '',
+        regionOfOriginCodeRequirement: 'no',
+        internalReferenceNumber: 'Imports456GB'
+      }
+    })
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.countryOfOrigin).toBe('')
+    expect(result.after.internalReferenceNumber).toBe('Imports456GB')
+    expect(result.after.regionOfOriginCodeRequirement).toBe('no')
+  })
+
+  it('Should save a page answered by nothing but the internal reference', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        countryOfOrigin: '',
+        regionOfOriginCodeRequirement: '',
+        internalReferenceNumber: 'Imports456GB'
+      }
+    })
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.internalReferenceNumber).toBe('Imports456GB')
+    expect(result.after.countryOfOrigin).toBe('')
+    expect(result.after.regionOfOriginCodeRequirement).toBe('')
+  })
+
+  it('Should store the region code without a prefix while no country is chosen', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        countryOfOrigin: '',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCodeSuffix: '75',
+        internalReferenceNumber: ''
+      }
+    })
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.regionOfOriginCode).toBe('75')
+  })
+
+  // The prefix-free region code is an intermediate value: it self-heals when
+  // the user comes back to the page and chooses the country.
+  it('Should join the country prefix once the country is filled in later', async () => {
+    await driveHandler(post, {
+      payload: {
+        countryOfOrigin: '',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCodeSuffix: '75',
+        internalReferenceNumber: ''
+      }
+    })
+
+    const result = await driveHandler(post, {
+      payload: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCodeSuffix: '75',
+        internalReferenceNumber: ''
+      }
+    })
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.regionOfOriginCode).toBe('FR-75')
+  })
 })
 
 describe('POST /origin — valid internal reference', () => {
@@ -322,7 +389,7 @@ describe('POST /origin — country membership follows the primed list', () => {
       }
     })
     expect(rejected.view.context.errors.countryOfOrigin).toBe(
-      COUNTRY_REQUIRED_MESSAGE
+      COUNTRY_FROM_LIST_MESSAGE
     )
   })
 })
