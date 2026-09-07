@@ -32,24 +32,48 @@ const regionCodeSuffix = values.regionOfOriginCode.slice(
   values.countryOfOrigin.length + REGION_CODE_SEPARATOR.length
 )
 
+const isPuppeteerPage = (page) => typeof page.goto === 'function'
+
 /** The address-book id of the first option the page itself offers. Picking from
  * the rendered form keeps the seed off hard-coded reference data. */
-const firstOption = (name) => (page) => {
-  const value = page.$(`input[name="${name}"]`).first().attr('value')
+export const firstOption = (name) => async (page) => {
+  let value
+  if (isPuppeteerPage(page)) {
+    value = await page.$eval(
+      `input[name="${name}"]`,
+      (input) => input?.value ?? ''
+    )
+  } else {
+    value = page.$(`input[name="${name}"]`).first().attr('value')
+  }
   if (!value) {
-    throw new Error(`No "${name}" option on ${page.heading || 'the page'}`)
+    const where = isPuppeteerPage(page)
+      ? page.url()
+      : page.heading || 'the page'
+    throw new Error(`No "${name}" option on ${where}`)
   }
   return { [name]: value }
 }
 
 /** The same idea for a dropdown, skipping the placeholder and the divider. */
-const firstListedOption = (name) => (page) => {
-  const value = page
-    .$(`select[name="${name}"] option[value]:not([value=""])`)
-    .first()
-    .attr('value')
+export const firstListedOption = (name) => async (page) => {
+  let value
+  if (isPuppeteerPage(page)) {
+    value = await page.$eval(
+      `select[name="${name}"] option[value]:not([value=""])`,
+      (option) => option?.value ?? ''
+    )
+  } else {
+    value = page
+      .$(`select[name="${name}"] option[value]:not([value=""])`)
+      .first()
+      .attr('value')
+  }
   if (!value) {
-    throw new Error(`No "${name}" option on ${page.heading || 'the page'}`)
+    const where = isPuppeteerPage(page)
+      ? page.url()
+      : page.heading || 'the page'
+    throw new Error(`No "${name}" option on ${where}`)
   }
   return { [name]: value }
 }
@@ -215,8 +239,8 @@ export const seedSteps = ({ reasonForImport, transporterType }) => [
   CONTACT_STEP
 ]
 
-const fieldsFor = (step, page) =>
-  typeof step.fields === 'function' ? step.fields(page) : step.fields
+export const resolveSeedFields = async (step, page) =>
+  typeof step.fields === 'function' ? await step.fields(page) : step.fields
 
 export const pathFromLocation = (location) => {
   if (typeof location !== 'string' || location.length === 0) {
@@ -281,7 +305,7 @@ export const fillNotification = async (client, journeyId, shape) => {
         }
         const posted = await client.submit(
           path,
-          fieldsFor(step, page),
+          await resolveSeedFields(step, page),
           page.crumb
         )
         if (posted.status !== HTTP_FOUND) {
