@@ -42,9 +42,7 @@ test.describe('live-animals journey glue', () => {
 
     await page.getByLabel('Number of animals').fill('2')
     await save()
-    await expect(
-      heading('What is the main reason for importing the animals?')
-    ).toBeVisible()
+    await expect(heading('Main reason for import')).toBeVisible()
 
     await page.getByRole('radio', { name: 'Internal market' }).check()
     await expect(

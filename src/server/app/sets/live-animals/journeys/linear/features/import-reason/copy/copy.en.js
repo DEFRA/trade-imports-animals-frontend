@@ -1,5 +1,5 @@
 export const copy = {
-  title: 'Reason for import',
+  title: 'Main reason for import',
   legend: 'What is the main reason for importing the animals?',
   reasonHints: {
     internalMarket:
