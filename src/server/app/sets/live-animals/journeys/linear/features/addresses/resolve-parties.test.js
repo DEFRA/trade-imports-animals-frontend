@@ -158,13 +158,13 @@ describe('withoutUnresolvedPartyRefs', () => {
     expect(next).toBe(answers)
   })
 
-  it('Should leave an inline answer that carries no addressId alone', async () => {
+  it('Should treat a name-only answer with no addressId as unresolved', async () => {
     const spy = bookHolding({})
     const answers = { consignor: { name: 'Typed In Ltd' } }
 
-    const next = await withoutUnresolvedPartyRefs(requestFor(), answers)
+    const parties = await resolveParties(requestFor(), answers)
 
-    expect(next).toBe(answers)
+    expect(parties.consignor).toBeUndefined()
     expect(spy).not.toHaveBeenCalled()
   })
 })

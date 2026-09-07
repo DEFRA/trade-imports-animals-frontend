@@ -16,12 +16,7 @@
       },
       "01a2b3c4-d5e6-4f07-8a89-0b1c2d3e4f5a": "no",
       "89c0d1e2-f3a4-4b5f-8c0b-8d9e0f1a2b3c": {
-        "name": "Origin Farm",
-        "address": {
-          "addressLine1": "1 Farm Lane",
-          "addressLine2": "County Clare",
-          "country": "Ireland"
-        }
+        "addressId": "origin-farm"
       },
       "9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d": {
         "name": "Astra Rosales",
@@ -91,13 +86,7 @@
       },
       "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": "GB ABD",
       "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
-        "name": "Animal and Plant Health Agency",
-        "address": {
-          "addressLine1": "Woodham Lane",
-          "addressLine2": "New Haw",
-          "addressLine3": "Addlestone, KT15 3NB",
-          "country": "United Kingdom"
-        }
+        "addressId": "animal-and-plant-health-agency"
       },
       "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": "",
       "274c5d6e-7f80-4da4-8123-7de4f5061729": "slaughter",
@@ -191,12 +180,7 @@
         "e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f": "breeding",
         "01a2b3c4-d5e6-4f07-8a89-0b1c2d3e4f5a": "no",
         "89c0d1e2-f3a4-4b5f-8c0b-8d9e0f1a2b3c": {
-          "name": "Origin Farm",
-          "address": {
-            "addressLine1": "1 Farm Lane",
-            "addressLine2": "County Clare",
-            "country": "Ireland"
-          }
+          "addressId": "origin-farm"
         },
         "9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d": {
           "name": "Astra Rosales",
@@ -253,13 +237,7 @@
         },
         "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": "GB ABD",
         "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
-          "name": "Animal and Plant Health Agency",
-          "address": {
-            "addressLine1": "Woodham Lane",
-            "addressLine2": "New Haw",
-            "addressLine3": "Addlestone, KT15 3NB",
-            "country": "United Kingdom"
-          }
+          "addressId": "animal-and-plant-health-agency"
         },
         "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": "",
         "274c5d6e-7f80-4da4-8123-7de4f5061729": "slaughter",
@@ -594,12 +572,7 @@
       },
       "containsUnweanedAnimals": "no",
       "placeOfOrigin": {
-        "name": "Origin Farm",
-        "address": {
-          "addressLine1": "1 Farm Lane",
-          "addressLine2": "County Clare",
-          "country": "Ireland"
-        }
+        "addressId": "origin-farm"
       },
       "consignor": {
         "name": "Astra Rosales",
@@ -669,13 +642,7 @@
       },
       "portOfEntry": "GB ABD",
       "contactAddress": {
-        "name": "Animal and Plant Health Agency",
-        "address": {
-          "addressLine1": "Woodham Lane",
-          "addressLine2": "New Haw",
-          "addressLine3": "Addlestone, KT15 3NB",
-          "country": "United Kingdom"
-        }
+        "addressId": "animal-and-plant-health-agency"
       },
       "internalReferenceNumber": "",
       "animalsCertifiedFor": "slaughter",
@@ -751,12 +718,7 @@
       "referenceNumber": "GBN-AG-26-ABC123",
       "reasonForImport": "internalMarket",
       "placeOfOrigin": {
-        "name": "Origin Farm",
-        "address": {
-          "addressLine1": "1 Farm Lane",
-          "addressLine2": "County Clare",
-          "countryCode": "IE"
-        }
+        "addressId": "origin-farm"
       },
       "consignor": {
         "name": "Astra Rosales",
@@ -792,12 +754,7 @@
         }
       },
       "consignment": {
-        "name": "Animal and Plant Health Agency",
-        "address": {
-          "addressLine1": "Woodham Lane",
-          "addressLine2": "New Haw",
-          "countryCode": "GB"
-        }
+        "addressId": "animal-and-plant-health-agency"
       },
       "cphNumber": "12/345/6789",
       "origin": {

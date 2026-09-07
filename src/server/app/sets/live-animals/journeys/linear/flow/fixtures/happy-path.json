@@ -54,12 +54,7 @@
       }
     },
     "placeOfOrigin": {
-      "name": "Origin Farm",
-      "address": {
-        "addressLine1": "1 Farm Lane",
-        "addressLine2": "County Clare",
-        "country": "Ireland"
-      }
+      "addressId": "origin-farm"
     },
     "consignee": {
       "name": "British Livestock Ltd",
@@ -113,13 +108,7 @@
       }
     },
     "contactAddress": {
-      "name": "Animal and Plant Health Agency",
-      "address": {
-        "addressLine1": "Woodham Lane",
-        "addressLine2": "New Haw",
-        "addressLine3": "Addlestone, KT15 3NB",
-        "country": "United Kingdom"
-      }
+      "addressId": "animal-and-plant-health-agency"
     },
     "declaration": "confirmed"
   }

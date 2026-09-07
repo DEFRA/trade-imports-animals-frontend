@@ -132,18 +132,11 @@ const fullSeed = {
       accompanyingDocumentDateOfIssue: { day: '12', month: '12', year: '2025' }
     }
   ],
-  placeOfOrigin: { name: 'Origin Farm' },
-  consignor: {
-    name: CONSIGNOR_NAME,
-    address: {
-      addressLine1: ADDRESS_LINE_1,
-      townOrCity: 'Delectus',
-      country: 'Switzerland'
-    }
-  },
-  consignee: { name: 'British Livestock Ltd' },
-  importer: { name: 'Import Co UK' },
-  placeOfDestination: { name: 'Tech Imports Ltd' },
+  placeOfOrigin: { addressId: 'origin-farm' },
+  consignor: { addressId: CONSIGNOR_ADDRESS_ID },
+  consignee: { addressId: 'british-livestock-ltd' },
+  importer: { addressId: 'import-co-uk' },
+  placeOfDestination: { addressId: 'tech-imports-ltd' },
   countyParishHoldingCph: '123456789',
   portOfEntry: 'GB ABD',
   arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
@@ -160,7 +153,7 @@ const fullSeed = {
       country: 'Switzerland'
     }
   },
-  contactAddress: { name: 'Animal and Plant Health Agency' }
+  contactAddress: { addressId: 'animal-and-plant-health-agency' }
 }
 
 const SUITE = `#${buildSections.name} (check-answers GET)`
@@ -338,17 +331,17 @@ describe(`${SUITE} — fully-populated notification`, () => {
       ROLES_AND_ADDRESSES_CARD
     )
     expect(htmlOf(card.rows, 'Consignor')).toBe(
-      `<strong>${CONSIGNOR_NAME}</strong><br>43 East Hague Extension<br>Delectus<br>Switzerland`
+      `<strong>${CONSIGNOR_NAME}</strong><br>${ADDRESS_LINE_1}<br>Bern<br>30055<br>Switzerland`
     )
     expect(htmlOf(card.rows, 'Place of destination')).toBe(
-      '<strong>Tech Imports Ltd</strong>'
+      '<strong>Tech Imports Ltd</strong><br>18 Dockside Road<br>London<br>E14 9GE<br>United Kingdom'
     )
     const contact = cardByTitle(
       await sectionsFor(fullSeed),
       'Contact address for this consignment'
     )
     expect(htmlOf(contact.rows, 'Address')).toBe(
-      '<strong>Animal and Plant Health Agency</strong>'
+      '<strong>Animal and Plant Health Agency</strong><br>Woodham Lane<br>Addlestone<br>KT15 3NB<br>United Kingdom'
     )
   })
 

@@ -9,14 +9,6 @@ const address = (name, line1) => ({
   address: { addressLine1: line1, postalOrZipCode: 'AB1 2CD' }
 })
 
-/** The same party as the notification holds it. The two inline roles
- * carry their details across, so the mapper translates them into the address
- * book's field names on the way. */
-const inlineAddress = (name, line1) => ({
-  name,
-  address: { addressLine1: line1, postcode: 'AB1 2CD' }
-})
-
 const referenceNumber = 'GBN-AG-26-ABC123'
 const ORIGIN_FARM_LINE1 = '1 Farm Lane'
 const BOS_TAURUS = 'Bos taurus'
@@ -39,12 +31,12 @@ const mappedAnswers = () => ({
   animalsCertifiedFor: 'Further keeping',
   containsUnweanedAnimals: 'No',
   reasonForImport: 'Internal market',
-  placeOfOrigin: address('Origin Farm', ORIGIN_FARM_LINE1),
+  placeOfOrigin: { addressId: 'origin-farm' },
   consignor: address('Consignor Ltd', '2 Depot Road'),
   consignee: address('Consignee Ltd', '3 Dock Street'),
   importer: address('Importer Ltd', '4 Port Way'),
   placeOfDestination: address('Destination Farm', '5 Field Lane'),
-  contactAddress: address('Contact Person', '6 High Street'),
+  contactAddress: { addressId: 'animal-and-plant-health-agency' },
   commercialTransporter: {
     name: 'Transporter Co',
     approvalNumber: 'UK/NEWCA/T1/00090953',
@@ -227,9 +219,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
       unweanedAnimals: 'No'
     })
     expect(notification.reasonForImport).toBe('Internal market')
-    expect(notification.placeOfOrigin).toEqual(
-      inlineAddress('Origin Farm', ORIGIN_FARM_LINE1)
-    )
+    expect(notification.placeOfOrigin).toEqual({ addressId: 'origin-farm' })
     expect(notification.consignor).toEqual(
       address('Consignor Ltd', '2 Depot Road')
     )
@@ -240,9 +230,9 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect(notification.destination).toEqual(
       address('Destination Farm', '5 Field Lane')
     )
-    expect(notification.consignment).toEqual(
-      inlineAddress('Contact Person', '6 High Street')
-    )
+    expect(notification.consignment).toEqual({
+      addressId: 'animal-and-plant-health-agency'
+    })
     expect(notification.cphNumber).toBe('12/345/6789')
     expect(notification.transport.portOfEntry).toBe('GB ABD')
     expect(notification.transport.arrivalDate).toBe('2026-12-12')

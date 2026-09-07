@@ -20,6 +20,7 @@ const { values: completeJourneyAnswers } = JSON.parse(
 // accepted document types and all 16 certifiedFor values.
 const UNITED_KINGDOM = 'United Kingdom'
 const CONTRACT_REFERENCE = 'GBN-AG-26-CONTRACT'
+const ORIGIN_FARM_ID = 'origin-farm'
 
 describe('Mapper A PUT /notifications contract', () => {
   test('emits the exact backend payload from a complete canonical fulfilment', () => {
@@ -28,18 +29,7 @@ describe('Mapper A PUT /notifications contract', () => {
     expect(fulfilmentToNotification(fulfilment, CONTRACT_REFERENCE)).toEqual({
       referenceNumber: CONTRACT_REFERENCE,
       reasonForImport: 'internalMarket',
-      // The happy-path fixture still carries an id-less copy (the retired
-      // pre-EUDPA-198 shape: addressLine3, no townOrCity/postalOrZipCode), so
-      // the mapper keeps the details. A picker answer with addressId maps to a
-      // reference instead — see the test below.
-      placeOfOrigin: {
-        name: 'Origin Farm',
-        address: {
-          addressLine1: '1 Farm Lane',
-          addressLine2: 'County Clare',
-          countryCode: 'IE'
-        }
-      },
+      placeOfOrigin: { addressId: ORIGIN_FARM_ID },
       consignor: {
         name: 'Astra Rosales',
         address: {
@@ -73,16 +63,7 @@ describe('Mapper A PUT /notifications contract', () => {
           country: UNITED_KINGDOM
         }
       },
-      // Same id-less-copy translation as placeOfOrigin. The fixture's
-      // addressLine3 has no home on the notification.
-      consignment: {
-        name: 'Animal and Plant Health Agency',
-        address: {
-          addressLine1: 'Woodham Lane',
-          addressLine2: 'New Haw',
-          countryCode: 'GB'
-        }
-      },
+      consignment: { addressId: 'animal-and-plant-health-agency' },
       cphNumber: '12/345/6789',
       origin: {
         countryCode: 'FR',
@@ -133,7 +114,7 @@ describe('Mapper A PUT /notifications contract', () => {
   test('emits origin and contact as addressId when the answer is a reference', () => {
     const answers = {
       ...completeJourneyAnswers,
-      placeOfOrigin: { addressId: 'origin-farm' },
+      placeOfOrigin: { addressId: ORIGIN_FARM_ID },
       contactAddress: { addressId: 'apha' }
     }
     const payload = fulfilmentToNotification(
@@ -141,7 +122,7 @@ describe('Mapper A PUT /notifications contract', () => {
       CONTRACT_REFERENCE
     )
 
-    expect(payload.placeOfOrigin).toEqual({ addressId: 'origin-farm' })
+    expect(payload.placeOfOrigin).toEqual({ addressId: ORIGIN_FARM_ID })
     expect(payload.consignment).toEqual({ addressId: 'apha' })
   })
 })

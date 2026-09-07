@@ -16,7 +16,12 @@ import { organisationIdOf } from '../resolve-parties.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { isSearchAction, pageNumber } from './request-params.js'
-import { answerFor, chosenPartyFor, committedId } from './selection.js'
+import {
+  answerFor,
+  chosenPartyFor,
+  committedId,
+  selectedPartyFor
+} from './selection.js'
 import { pickerViewModel } from './view-model/index.js'
 import { errorSummary } from './view-model/error-summary.js'
 
@@ -31,14 +36,20 @@ const render = async (
   orgId,
   journey,
   party,
-  { query, page, selectedId, error, recoverableError = false }
+  { query, page, selectedId, answers, error, recoverableError = false }
 ) => {
   // One book for every role — addresses have no type (D3).
   const found = await addressBook.search(orgId, { query, page })
-  const selected = await chosenPartyFor(orgId, selectedId)
+  const selected = await selectedPartyFor(
+    journey,
+    orgId,
+    party,
+    answers,
+    selectedId
+  )
   // A deleted/missing reference must not travel as "Selected: …" or in
   // pagination links — treat it as no selection (same as resolveOne).
-  const effectiveSelectedId = selected ? selectedId : ''
+  const effectiveSelectedId = selected ? selectedId || selected.id : ''
   // Reached from a Change link, every way back out of the picker — Back,
   // paging, the save — has to keep the context, or the trader is dropped into
   // the section flow instead of the summary they came from.
@@ -78,7 +89,8 @@ const get = (party) => async (request, h) => {
   return render(request, h, organisationIdOf(request), journey, party, {
     query: request.query.q ?? '',
     page: pageNumber(request.query.page),
-    selectedId: request.query.selected ?? committedId(answers, party)
+    selectedId: request.query.selected ?? committedId(answers, party),
+    answers
   })
 }
 
@@ -90,11 +102,12 @@ const commitSelection = async (request, h, party, chosen, form) => {
       })
     },
     async () => {
-      const { journey } = await state.get(request, h)
+      const { journey, answers } = await state.get(request, h)
       return (
         await render(request, h, organisationIdOf(request), journey, party, {
           ...form,
           selectedId: chosen.id,
+          answers,
           recoverableError: true
         })
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
@@ -119,22 +132,24 @@ const post = (party) => async (request, h) => {
   const orgId = organisationIdOf(request)
 
   if (isSearchAction(payload)) {
-    const { journey } = await state.get(request, h)
+    const { journey, answers } = await state.get(request, h)
     return render(request, h, orgId, journey, party, {
       query,
       page: 1,
-      selectedId
+      selectedId,
+      answers
     })
   }
 
   const chosen = await chosenPartyFor(orgId, selectedId)
   if (!chosen) {
-    const { journey } = await state.get(request, h)
+    const { journey, answers } = await state.get(request, h)
     return (
       await render(request, h, orgId, journey, party, {
         query,
         page: pageNumber(payload.page),
         selectedId: '',
+        answers,
         error: party.error
       })
     ).code(HTTP_STATUS_BAD_REQUEST)

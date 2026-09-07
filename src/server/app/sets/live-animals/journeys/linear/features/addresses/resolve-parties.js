@@ -16,7 +16,7 @@ export { organisationIdOf }
  * indistinguishable from a deletion. */
 const resolveOne = async (orgId, _party, answer) => {
   if (!answer?.addressId) {
-    return answer
+    return undefined
   }
   const record = await addressBook.party(orgId, answer.addressId)
   return record && !record.deleted ? record : undefined
