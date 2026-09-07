@@ -162,7 +162,7 @@ describe('#currentJourney', () => {
 
     const restored = await cancelAmendJourney(request, recordingH(), journeyId)
 
-    expect(cancelAmend).toHaveBeenCalledWith(journeyId)
+    expect(cancelAmend).toHaveBeenCalledWith(journeyId, authenticatedActor)
     expect(restored.status).toBe('submitted')
 
     const unknown = await cancelAmendJourney(
@@ -204,7 +204,8 @@ describe('#currentJourney', () => {
 
     const copied = await copyJourney(request, h, sourceId, 'copy-key-123')
 
-    expect(copy).toHaveBeenCalledWith(sourceId, 'copy-key-123')
+    const [args] = copy.mock.calls
+    expect(args).toEqual([sourceId, 'copy-key-123', authenticatedActor])
     expect(copied.status).toBe('draft')
     expect(h.cookies[SESSION_COOKIES.knownJourneys]).toEqual([
       sourceId,

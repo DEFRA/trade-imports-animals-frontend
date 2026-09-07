@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
+  completeAnswerSections,
   journeyIdFromPage,
   signIn,
   startNotification
@@ -85,5 +86,41 @@ test.describe('delete-notification feature', () => {
       seriousOrCritical,
       `Delete notification has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
     ).toEqual([])
+  })
+})
+
+// Deleting a submitted notification carrying real address-book parties emits a
+// NotificationSubmissionDeleted event that has to resolve those parties, so the
+// backend requires the acting user's organisationId. This flow proves the
+// frontend forwards it (EUDPA-389).
+test.describe('delete-notification feature (submitted)', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startNotification(page)
+    await completeAnswerSections(page)
+    await page.getByRole('link', { name: 'Check and submit' }).click()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await page
+      .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
+      .check()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    const reference = journeyIdFromPage(page)
+    await page.goto('/')
+    await page
+      .getByRole('link', {
+        name: `Delete ${dashboardCopy.actionHidden(reference)}`
+      })
+      .click()
+  })
+
+  test('confirmation removes a submitted notification carrying address-book parties', async ({
+    page
+  }) => {
+    await page.getByRole('button', { name: copy.confirmButton }).click()
+
+    await expect(page).toHaveURL('/?deleted=1')
+    await expect(
+      page.getByText(sharedCopy.notificationActions.delete.successTitle)
+    ).toBeVisible()
   })
 })
