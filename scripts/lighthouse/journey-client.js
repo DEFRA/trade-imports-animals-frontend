@@ -1,8 +1,20 @@
 import { load } from 'cheerio'
 
-const FORM_ENCODED = 'application/x-www-form-urlencoded'
+import {
+  DEFAULT_DOCUMENT_RETRIES,
+  documentRetryDelayMs,
+  RETRYABLE_DOCUMENT_STATUSES,
+  sleep
+} from './retry.js'
 
-export const createJourneyClient = (baseUrl, cookies = []) => {
+const FORM_ENCODED = 'application/x-www-form-urlencoded'
+const HTTP_OK = 200
+
+export const createJourneyClient = (
+  baseUrl,
+  cookies = [],
+  { documentRetries = DEFAULT_DOCUMENT_RETRIES } = {}
+) => {
   const jar = new Map(cookies.map(({ name, value }) => [name, value]))
 
   const cookieHeader = () =>
@@ -26,7 +38,7 @@ export const createJourneyClient = (baseUrl, cookies = []) => {
     return response
   }
 
-  const document = async (path) => {
+  const documentOnce = async (path) => {
     const response = await request(path)
     const body = response.ok ? load(await response.text()) : load('')
     return {
@@ -36,6 +48,21 @@ export const createJourneyClient = (baseUrl, cookies = []) => {
       crumb: body('meta[name="csrf-token"]').attr('content') ?? '',
       heading: body('h1').first().text().trim()
     }
+  }
+
+  const document = async (path) => {
+    let page = await documentOnce(path)
+    for (let attempt = 0; attempt < documentRetries; attempt++) {
+      if (
+        page.status === HTTP_OK ||
+        !RETRYABLE_DOCUMENT_STATUSES.has(page.status)
+      ) {
+        return page
+      }
+      await sleep(documentRetryDelayMs(attempt))
+      page = await documentOnce(path)
+    }
+    return page
   }
 
   const submit = async (path, fields, crumb) => {

@@ -215,10 +215,25 @@ export const seedSteps = ({ reasonForImport, transporterType }) => [
 const fieldsFor = (step, page) =>
   typeof step.fields === 'function' ? step.fields(page) : step.fields
 
+export const journeyIdFromLocation = (location) => {
+  if (typeof location !== 'string' || location.length === 0) {
+    return undefined
+  }
+  const pathname = location.startsWith('http')
+    ? new URL(location).pathname
+    : location.split('?')[0]
+  const segments = pathname.split('/').filter(Boolean)
+  const notificationsAt = segments.indexOf('notifications')
+  if (notificationsAt === -1 || notificationsAt + 1 >= segments.length) {
+    return undefined
+  }
+  return segments[notificationsAt + 1]
+}
+
 export const createNotification = async (client) => {
   const dashboard = await client.document('/')
   const created = await client.submit('/notifications', {}, dashboard.crumb)
-  const journeyId = created.location?.split('/')[2]
+  const journeyId = journeyIdFromLocation(created.location)
   if (created.status !== HTTP_FOUND || !journeyId) {
     throw new Error(
       `Could not create a notification (status ${created.status}, location ${created.location})`

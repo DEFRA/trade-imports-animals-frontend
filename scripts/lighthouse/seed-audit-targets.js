@@ -14,6 +14,7 @@ import {
   SEED_SHAPES,
   submitNotification
 } from './seed-notification.js'
+import { waitForStack } from './wait-for-stack.js'
 
 const HTTP_OK = 200
 
@@ -74,6 +75,7 @@ const write = (payload) => {
   writeFileSync(TARGETS_FILE, `${JSON.stringify(payload, null, 2)}\n`)
 }
 
+await waitForStack()
 await ensureAddressBookHasAnAddress()
 const journeyIds = await seedNotifications(await signedInCookies())
 const urls = auditUrls(origin, journeyIds)
