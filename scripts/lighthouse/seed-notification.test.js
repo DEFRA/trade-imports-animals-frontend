@@ -1,6 +1,28 @@
 import { describe, expect, it } from 'vitest'
 
-import { journeyIdFromLocation } from './seed-notification.js'
+import { journeyIdFromLocation, pathFromLocation } from './seed-notification.js'
+
+describe('pathFromLocation', () => {
+  it('normalises a relative redirect', () => {
+    expect(
+      pathFromLocation('/notifications/GBN-AG-26-TN3BJ3/import-purpose')
+    ).toBe('/notifications/GBN-AG-26-TN3BJ3/import-purpose')
+  })
+
+  it('strips query strings from a redirect', () => {
+    expect(
+      pathFromLocation('/notifications/GBN-AG-26-TN3BJ3/origin?staleAction=1')
+    ).toBe('/notifications/GBN-AG-26-TN3BJ3/origin')
+  })
+
+  it('reads the pathname from an absolute redirect', () => {
+    expect(
+      pathFromLocation(
+        'http://localhost:3000/notifications/GBN-AG-26-TN3BJ3/import-purpose'
+      )
+    ).toBe('/notifications/GBN-AG-26-TN3BJ3/import-purpose')
+  })
+})
 
 describe('journeyIdFromLocation', () => {
   it('reads the reference from a relative redirect', () => {

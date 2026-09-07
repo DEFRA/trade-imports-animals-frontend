@@ -17,7 +17,11 @@ export const waitForStack = async ({
   backendUrl = process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ??
     'http://localhost:8085',
   maxAttempts = 30,
-  delayMs = 2000
+  delayMs = 2000,
+  settleMs = Number.parseInt(
+    process.env.LIGHTHOUSE_STACK_SETTLE_MS ?? '2000',
+    10
+  )
 } = {}) => {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const [frontendOk, backendOk] = await Promise.all([
@@ -25,6 +29,9 @@ export const waitForStack = async ({
       probe(`${backendUrl}/health`)
     ])
     if (frontendOk && backendOk) {
+      if (settleMs > 0) {
+        await sleep(settleMs)
+      }
       return
     }
     if (attempt === maxAttempts) {

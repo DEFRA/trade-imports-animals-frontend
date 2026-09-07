@@ -1,9 +1,12 @@
 import { readFileSync } from 'node:fs'
 
 import { lineKey } from '../../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/selection/line-key.js'
+import { sleep } from './retry.js'
 
 const HTTP_FOUND = 302
 const HTTP_OK = 200
+const STEP_ATTEMPTS = 3
+const STEP_RETRY_DELAY_MS = 2000
 
 export const { values } = JSON.parse(
   readFileSync(
@@ -215,13 +218,21 @@ export const seedSteps = ({ reasonForImport, transporterType }) => [
 const fieldsFor = (step, page) =>
   typeof step.fields === 'function' ? step.fields(page) : step.fields
 
-export const journeyIdFromLocation = (location) => {
+export const pathFromLocation = (location) => {
   if (typeof location !== 'string' || location.length === 0) {
     return undefined
   }
   const pathname = location.startsWith('http')
     ? new URL(location).pathname
     : location.split('?')[0]
+  return pathname.startsWith('/') ? pathname : `/${pathname}`
+}
+
+export const journeyIdFromLocation = (location) => {
+  const pathname = pathFromLocation(location)
+  if (!pathname) {
+    return undefined
+  }
   const segments = pathname.split('/').filter(Boolean)
   const notificationsAt = segments.indexOf('notifications')
   if (notificationsAt === -1 || notificationsAt + 1 >= segments.length) {
@@ -242,19 +253,56 @@ export const createNotification = async (client) => {
   return journeyId
 }
 
+const settleAfterSubmit = async (client, step, posted) => {
+  const settlePath = pathFromLocation(posted.location)
+  if (!settlePath) {
+    return
+  }
+  const settled = await client.document(settlePath)
+  if (settled.status !== HTTP_OK) {
+    throw new Error(
+      `Seed step ${step.slug} redirect did not settle (${settled.status} at ${settlePath})`
+    )
+  }
+}
+
 export const fillNotification = async (client, journeyId, shape) => {
   for (const step of seedSteps(shape)) {
     const path = `/notifications/${journeyId}/${step.slug}`
-    const page = await client.document(path)
-    if (page.status !== HTTP_OK) {
-      throw new Error(`Seed step ${step.slug} did not render (${page.status})`)
+    let lastError
+
+    for (let attempt = 0; attempt < STEP_ATTEMPTS; attempt++) {
+      try {
+        const page = await client.document(path)
+        if (page.status !== HTTP_OK) {
+          throw new Error(
+            `Seed step ${step.slug} did not render (${page.status})`
+          )
+        }
+        const posted = await client.submit(
+          path,
+          fieldsFor(step, page),
+          page.crumb
+        )
+        if (posted.status !== HTTP_FOUND) {
+          throw new Error(
+            `Seed step ${step.slug} was rejected (${posted.status}) — the page's ` +
+              'fields have moved on from what this seed sends'
+          )
+        }
+        await settleAfterSubmit(client, step, posted)
+        lastError = undefined
+        break
+      } catch (error) {
+        lastError = error
+        if (attempt + 1 < STEP_ATTEMPTS) {
+          await sleep(STEP_RETRY_DELAY_MS * (attempt + 1))
+        }
+      }
     }
-    const posted = await client.submit(path, fieldsFor(step, page), page.crumb)
-    if (posted.status !== HTTP_FOUND) {
-      throw new Error(
-        `Seed step ${step.slug} was rejected (${posted.status}) — the page's ` +
-          'fields have moved on from what this seed sends'
-      )
+
+    if (lastError) {
+      throw lastError
     }
   }
 }
