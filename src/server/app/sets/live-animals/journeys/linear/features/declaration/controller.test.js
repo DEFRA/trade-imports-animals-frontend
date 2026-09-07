@@ -26,6 +26,8 @@ import {
 import { dispatchPages } from '../index.js'
 
 import * as declaration from './controller.js'
+import * as reinflate from '../addresses/reinflate-party-answers.js'
+import { records } from '../../../../../../engine/persistence/records.js'
 
 const post = postHandlerOf(declaration)
 const get = declaration.routes.find((route) => route.method === 'GET').handler
@@ -59,6 +61,7 @@ describe('#declaration', () => {
         buildDispatch(dispatchPages)
       })
       beforeEach(() => store.clear())
+      afterEach(() => vi.restoreAllMocks())
 
       it('Should redirect to the confirmation page after a successful submit', async () => {
         configureReadyForCheckYourAnswers(() => true)
@@ -68,6 +71,34 @@ describe('#declaration', () => {
         expect(result.response).toEqual({
           redirect: pagePath(result.journeyId, 'confirmation')
         })
+      })
+
+      it('Should persist reinflated party answers before submit', async () => {
+        configureReadyForCheckYourAnswers(() => true)
+        const inflated = {
+          consignor: {
+            addressId: 'consignor-1',
+            name: 'Frozen Consignor',
+            address: { addressLine1: '1 Test Street' }
+          }
+        }
+        const reinflateSpy = vi
+          .spyOn(reinflate, 'reinflatePartyAnswers')
+          .mockResolvedValue(inflated)
+        const replaceSpy = vi.spyOn(records, 'replaceFulfilment')
+
+        await driveHandler(post, {
+          payload: { declaration: 'confirmed' },
+          seed: { consignor: { addressId: 'consignor-1' } }
+        })
+
+        expect(reinflateSpy).toHaveBeenCalledOnce()
+        const reinflateOrder = reinflateSpy.mock.invocationCallOrder[0]
+        const replaceAfterReinflate = replaceSpy.mock.calls.find(
+          (_, index) =>
+            replaceSpy.mock.invocationCallOrder[index] > reinflateOrder
+        )
+        expect(replaceAfterReinflate).toBeDefined()
       })
 
       it('Should keep the not-ready outcome as a redirect to check answers', async () => {
