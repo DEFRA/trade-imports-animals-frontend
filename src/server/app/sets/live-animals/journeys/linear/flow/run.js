@@ -6,7 +6,6 @@ import {
   consignmentDetailsPage
 } from '../features/commodities/page.js'
 import { importReasonPage } from '../features/import-reason/page.js'
-import { importPurposePage } from '../features/import-purpose/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
 import { pageGatePasses } from '../../../../../flow/gates.js'
 
@@ -27,7 +26,6 @@ export const RUN_STEPS = [
     target: flowPageTarget(consignmentDetailsPage)
   },
   { id: importReasonPage.id, target: flowPageTarget(importReasonPage) },
-  { id: importPurposePage.id, target: flowPageTarget(importPurposePage) },
   {
     id: animalIdentificationPage.id,
     target: flowPageTarget(animalIdentificationPage)

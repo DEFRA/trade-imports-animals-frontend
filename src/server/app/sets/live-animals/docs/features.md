@@ -14,7 +14,7 @@ order. Keeping the identity leaf import-free avoids a controller–flow module c
 ## Collecting controllers
 
 [`journeys/linear/features/import-reason/controller.js`](../journeys/linear/features/import-reason/controller.js)
-is the smallest complete collecting page. A controller normally owns:
+is a complete collecting page. A controller normally owns:
 
 - `meta: { ...page, collects: [...] }`
 - a shared render helper for GET and POST errors

@@ -1,5 +1,7 @@
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "moj/components/date-picker/macro.njk" import mojDatePicker %}
 {% from "shared/save-actions.njk" import saveActions %}
 {% from "shared/section-caption.njk" import sectionCaption %}
 
@@ -7,6 +9,91 @@
   {% include "shared/error-summary.njk" %}
 
   {{ sectionCaption(caption) }}
+
+  {# Each reason that needs follow-up questions opens them underneath itself,
+     so the whole reason is answered in one go. A question two reasons ask
+     carries a form field per reason — two inputs cannot share a name — and the
+     controller maps both back to the one answer. #}
+  {% set internalMarketReveal %}
+    {{ govukRadios({
+      name: "purposeInInternalMarket",
+      fieldset: {
+        legend: {
+          text: copy.purpose.legend,
+          classes: "govuk-fieldset__legend--m"
+        }
+      },
+      errorMessage: errors.purposeInInternalMarket and { text: errors.purposeInInternalMarket },
+      items: purposeOptions
+    }) }}
+  {% endset %}
+
+  {% set transhipmentReveal %}
+    {{ govukSelect({
+      id: "transhipmentDestinationCountry",
+      name: "transhipmentDestinationCountry",
+      label: { text: copy.country.label, classes: "govuk-label--s" },
+      hint: { text: copy.country.hint },
+      value: values.transhipmentDestinationCountry,
+      errorMessage: errors.transhipmentDestinationCountry and { text: errors.transhipmentDestinationCountry },
+      items: countryItems
+    }) }}
+  {% endset %}
+
+  {% set transitReveal %}
+    {{ govukSelect({
+      id: "transitPortOfExit",
+      name: "transitPortOfExit",
+      label: { text: copy.port.label, classes: "govuk-label--s" },
+      hint: { text: copy.port.hint },
+      value: values.transitPortOfExit,
+      errorMessage: errors.transitPortOfExit and { text: errors.transitPortOfExit },
+      items: portItems
+    }) }}
+
+    {{ govukSelect({
+      id: "transitDestinationCountry",
+      name: "transitDestinationCountry",
+      label: { text: copy.country.label, classes: "govuk-label--s" },
+      hint: { text: copy.country.hint },
+      value: values.transitDestinationCountry,
+      errorMessage: errors.transitDestinationCountry and { text: errors.transitDestinationCountry },
+      items: countryItems
+    }) }}
+  {% endset %}
+
+  {% set temporaryAdmissionReveal %}
+    {{ mojDatePicker(exitDateField) }}
+
+    {{ govukSelect({
+      id: "temporaryAdmissionPortOfExit",
+      name: "temporaryAdmissionPortOfExit",
+      label: { text: copy.port.label, classes: "govuk-label--s" },
+      hint: { text: copy.port.hint },
+      value: values.temporaryAdmissionPortOfExit,
+      errorMessage: errors.temporaryAdmissionPortOfExit and { text: errors.temporaryAdmissionPortOfExit },
+      items: portItems
+    }) }}
+  {% endset %}
+
+  {% set reveals = {
+    internalMarket: internalMarketReveal,
+    transhipmentOrOnwardTravel: transhipmentReveal,
+    transit: transitReveal,
+    temporaryAdmissionHorses: temporaryAdmissionReveal
+  } %}
+
+  {% set reasonItems = [] %}
+  {% for option in reasonOptions %}
+    {% set ignored = reasonItems.push({
+      value: option.value,
+      text: option.text,
+      hint: option.hint,
+      checked: option.checked,
+      conditional: { html: reveals[option.value] }
+    }) %}
+  {% endfor %}
+
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
@@ -21,7 +108,7 @@
         }
       },
       errorMessage: errors.reasonForImport and { text: errors.reasonForImport },
-      items: reasonOptions
+      items: reasonItems
     }) }}
 
     {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}

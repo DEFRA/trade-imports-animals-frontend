@@ -37,10 +37,6 @@ export const copy = {
       title: 'Prif reswm dros fewnforio',
       hint: 'Pam rydych chi’n mewnforio’r anifeiliaid a’u diben yn y farchnad fewnol'
     },
-    exitDetails: {
-      title: 'Manylion ymadael',
-      hint: 'Ble mae’r llwyth yn teithio ymlaen iddo a phryd mae’n gadael Prydain Fawr'
-    },
     additionalDetails: {
       title: 'Manylion ychwanegol am y nwyddau',
       hint: 'Ar gyfer beth mae’r anifeiliaid wedi’u hardystio ac a oes unrhyw rai heb eu diddyfnu'

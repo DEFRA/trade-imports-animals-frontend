@@ -23,7 +23,7 @@ import { entryGuardTarget, guardedJourneyPath } from './entry-guard.js'
 import * as origin from '../features/origin/controller.js'
 import * as consignmentDetails from '../features/commodities/consignment-details/consignment-details.controller.js'
 import * as animalIdentification from '../features/commodities/animal-identification/animal-identification.controller.js'
-import * as importPurpose from '../features/import-purpose/controller.js'
+import * as importReason from '../features/import-reason/controller.js'
 import * as additionalDetails from '../features/additional-details/controller.js'
 import * as hub from '../features/hub/controller.js'
 import * as dashboard from '../features/dashboard/controller.js'
@@ -187,16 +187,16 @@ const saveAndContinueFollowsTheRunSequence = () => {
     )
   })
 
-  it('Should send import purpose to the first line identification mid-run', async () => {
+  it('Should send import reason to the first line identification mid-run', async () => {
     const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, {
-      ...lineSeed,
-      reasonForImport: 'internalMarket'
-    })
+    await store.seedAnswers(journey.journeyId, lineSeed)
     const h = captureH()
-    await postHandlerOf(importPurpose)(
+    await postHandlerOf(importReason)(
       buildRequest(journey.journeyId, {
-        payload: { purposeInInternalMarket: 'breeding' },
+        payload: {
+          reasonForImport: 'internalMarket',
+          purposeInInternalMarket: 'breeding'
+        },
         record: active(journey.journeyId)
       }),
       h

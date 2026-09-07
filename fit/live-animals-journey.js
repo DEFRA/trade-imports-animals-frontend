@@ -268,7 +268,8 @@ export const completeAnswerSections = async (page) => {
 
   await task('Main reason for importing')
   await page.getByRole('radio', { name: 'Internal market' }).check()
-  await save()
+  // The purpose is a conditional reveal under the reason, so both answers go
+  // in on the one submit.
   await page.getByRole('radio', { name: 'Breeding' }).check()
   await save()
   await expect(

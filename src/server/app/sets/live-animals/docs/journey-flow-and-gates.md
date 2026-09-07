@@ -16,7 +16,7 @@ store rather than canonical obligation fulfilment.
 
 ## Task rows
 
-[`task-rows.js`](../journeys/linear/flow/task-rows.js) exports twelve `taskRows`. A
+[`task-rows.js`](../journeys/linear/flow/task-rows.js) exports eleven `taskRows`. A
 task row is a hub item and a submit-readiness unit; it is not a flow section.
 
 Most row status comes from the union of each page's `collects`. `parts` narrows a

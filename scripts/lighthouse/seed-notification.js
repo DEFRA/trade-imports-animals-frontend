@@ -120,35 +120,20 @@ const CONTACT_STEP = {
   fields: firstOption('contactAddress')
 }
 
-/** The steps each reason for import brings into scope. A page whose obligation
- * is out of scope still renders, so a shape that never answers it is a page
- * Lighthouse audits blank. */
-const REASON_STEPS = new Map([
+/** The follow-up answers each reason for import reveals on the reason page
+ * itself, keyed by the branch's own input name. A reason whose reveal is not
+ * opened submits nothing extra. */
+const REASON_REVEAL_FIELDS = new Map([
   [
     'internalMarket',
-    [
-      {
-        slug: 'import-purpose',
-        fields: { purposeInInternalMarket: values.purposeInInternalMarket }
-      }
-    ]
+    () => ({ purposeInInternalMarket: values.purposeInInternalMarket })
   ],
   [
     'transit',
-    [
-      {
-        slug: 'destination-country',
-        fields: firstListedOption('destinationCountry')
-      },
-      { slug: 'port-of-exit', fields: firstListedOption('portOfExit') }
-    ]
-  ],
-  [
-    'temporaryAdmissionHorses',
-    [
-      { slug: 'port-of-exit', fields: firstListedOption('portOfExit') },
-      { slug: 'exit-date', fields: { exitDate: ukDate(arrival) } }
-    ]
+    (page) => ({
+      ...firstListedOption('transitPortOfExit')(page),
+      ...firstListedOption('transitDestinationCountry')(page)
+    })
   ]
 ])
 
@@ -195,28 +180,35 @@ export const SEED_SHAPES = {
     transporterType: values.transporterType,
     submit: true
   },
-  transit: { reasonForImport: 'transit', transporterType: 'Private' },
-  temporaryAdmission: {
-    reasonForImport: 'temporaryAdmissionHorses',
-    transporterType: values.transporterType
-  }
+  transit: { reasonForImport: 'transit', transporterType: 'Private' }
 }
 
-const stepsIn = (steps, key, label) => {
-  const scoped = steps.get(key)
-  if (!scoped) {
-    throw new Error(`The seed has no steps for ${label} "${key}"`)
+const branchFor = (branches, key, label) => {
+  const branch = branches.get(key)
+  if (!branch) {
+    throw new Error(`The seed has nothing for ${label} "${key}"`)
   }
-  return scoped
+  return branch
 }
+
+const reasonStep = (reasonForImport) => ({
+  slug: 'import-reason',
+  fields: (page) => ({
+    reasonForImport,
+    ...branchFor(
+      REASON_REVEAL_FIELDS,
+      reasonForImport,
+      'reason for import'
+    )(page)
+  })
+})
 
 export const seedSteps = ({ reasonForImport, transporterType }) => [
   ...BEFORE_REASON,
-  { slug: 'import-reason', fields: { reasonForImport } },
-  ...stepsIn(REASON_STEPS, reasonForImport, 'reason for import'),
+  reasonStep(reasonForImport),
   ...AFTER_REASON,
   { slug: 'transporters', fields: { transporterType } },
-  ...stepsIn(TRANSPORTER_STEPS, transporterType, 'transporter type'),
+  ...branchFor(TRANSPORTER_STEPS, transporterType, 'transporter type'),
   CONTACT_STEP
 ]
 

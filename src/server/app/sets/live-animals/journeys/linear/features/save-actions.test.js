@@ -15,7 +15,7 @@ import {
 import { dispatchPages } from './index.js'
 import { base, hubExitTarget } from '../../../../../shared/kit.js'
 
-import * as importPurpose from './import-purpose/controller.js'
+import * as importReason from './import-reason/controller.js'
 import * as consignmentDetails from './commodities/consignment-details/consignment-details.controller.js'
 import * as animalIdentification from './commodities/animal-identification/animal-identification.controller.js'
 import * as documents from './documents/controller.js'
@@ -68,22 +68,25 @@ describe('save actions — hub exit semantics', () => {
     expect(hubExitTarget({ params: { journeyId: 'journey-1' } })).toBeNull()
   })
 
-  // purposeInInternalMarket is activated by reasonForImport=internalMarket,
-  // so the commits below seed the gate to keep the committed value in scope —
-  // plus the two enforcedAt=continue prerequisites, so the section's next
-  // page (additional-details) is reachable for the no-exit contrast.
-  const purposeInScope = {
+  // The reason page carries its own reveal, so the payload answers both the
+  // reason and the purpose it opens. The seed supplies the two
+  // enforcedAt=continue prerequisites, so the section's next page
+  // (additional-details) is reachable for the no-exit contrast.
+  const reasonPrerequisites = {
     countryOfOrigin: 'FR',
-    commodityLines: [{ commoditySelection: 'Cat' }],
-    reasonForImport: 'internalMarket'
+    commodityLines: [{ commoditySelection: 'Cat' }]
+  }
+  const internalMarketPayload = {
+    reasonForImport: 'internalMarket',
+    purposeInInternalMarket: 'breeding'
   }
 
   it('Should commit the page and redirect to the hub on Save and return to overview', async () => {
     const { journeyId, response, after } = await drivePost(
-      postHandlerOf(importPurpose),
+      postHandlerOf(importReason),
       {
-        payload: { purposeInInternalMarket: 'breeding', exit: 'hub' },
-        seed: purposeInScope
+        payload: { ...internalMarketPayload, exit: 'hub' },
+        seed: reasonPrerequisites
       }
     )
     expect(response).toEqual({ redirect: hubPath(journeyId) })
@@ -92,10 +95,10 @@ describe('save actions — hub exit semantics', () => {
 
   it('Should keep Save and continue on the flow target when no exit is named', async () => {
     const { journeyId, response, after } = await drivePost(
-      postHandlerOf(importPurpose),
+      postHandlerOf(importReason),
       {
-        payload: { purposeInInternalMarket: 'breeding' },
-        seed: purposeInScope
+        payload: internalMarketPayload,
+        seed: reasonPrerequisites
       }
     )
     expect(response).toEqual({
@@ -105,11 +108,14 @@ describe('save actions — hub exit semantics', () => {
   })
 
   it('Should reject an invalid Save and return to overview with the same errors as Save and continue', async () => {
-    const invalid = { purposeInInternalMarket: 'not-a-purpose' }
-    const plain = await drivePost(postHandlerOf(importPurpose), {
+    const invalid = {
+      reasonForImport: 'internalMarket',
+      purposeInInternalMarket: 'not-a-purpose'
+    }
+    const plain = await drivePost(postHandlerOf(importReason), {
       payload: invalid
     })
-    const exit = await drivePost(postHandlerOf(importPurpose), {
+    const exit = await drivePost(postHandlerOf(importReason), {
       payload: { ...invalid, exit: 'hub' }
     })
     expect(plain.response.redirect).toBeUndefined()
@@ -122,11 +128,11 @@ describe('save actions — hub exit semantics', () => {
 
   it('Should send a change-context Save and continue back to check your answers', async () => {
     const { journeyId, response } = await drivePost(
-      postHandlerOf(importPurpose),
+      postHandlerOf(importReason),
       {
-        payload: { purposeInInternalMarket: 'breeding' },
+        payload: internalMarketPayload,
         query: { change: '1' },
-        seed: purposeInScope
+        seed: reasonPrerequisites
       }
     )
     expect(response).toEqual({
@@ -136,11 +142,11 @@ describe('save actions — hub exit semantics', () => {
 
   it('Should let an explicit hub exit win over the change context', async () => {
     const { journeyId, response, after } = await drivePost(
-      postHandlerOf(importPurpose),
+      postHandlerOf(importReason),
       {
-        payload: { purposeInInternalMarket: 'breeding', exit: 'hub' },
+        payload: { ...internalMarketPayload, exit: 'hub' },
         query: { change: '1' },
-        seed: purposeInScope
+        seed: reasonPrerequisites
       }
     )
     expect(response).toEqual({ redirect: hubPath(journeyId) })

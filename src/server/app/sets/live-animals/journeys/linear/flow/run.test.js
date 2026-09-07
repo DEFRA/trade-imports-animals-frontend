@@ -8,7 +8,6 @@ import {
   consignmentDetailsPage
 } from '../features/commodities/page.js'
 import { importReasonPage } from '../features/import-reason/page.js'
-import { importPurposePage } from '../features/import-purpose/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
 import { portOfEntryPage } from '../features/transport/page.js'
 import { makeScope } from '../../../../../engine/index.js'
@@ -53,25 +52,12 @@ describe('#nextRunTarget — the opening run sequence', () => {
     )
   })
 
-  it('Should send import reason to the conditional purpose page only when the purpose is in scope', () => {
-    expect(
-      next(importReasonPage.id, {
-        ...lineSeed,
-        reasonForImport: 'internalMarket'
-      })
-    ).toBe(pagePath(JOURNEY_ID, 'import-purpose'))
-    expect(
-      next(importReasonPage.id, { ...lineSeed, reasonForImport: 'transit' })
-    ).toBe(pagePath(JOURNEY_ID, animalIdentificationPage.slug))
-  })
-
-  it('Should send import purpose to the identification surface', () => {
-    expect(
-      next(importPurposePage.id, {
-        ...lineSeed,
-        reasonForImport: 'internalMarket'
-      })
-    ).toBe(pagePath(JOURNEY_ID, animalIdentificationPage.slug))
+  it('Should send import reason straight to the identification surface — its follow-up questions are answered on the reason page itself', () => {
+    for (const reasonForImport of ['internalMarket', 'transit']) {
+      expect(next(importReasonPage.id, { ...lineSeed, reasonForImport })).toBe(
+        pagePath(JOURNEY_ID, animalIdentificationPage.slug)
+      )
+    }
   })
 
   it('Should pass identification through to additional details with zero identifier records', () => {
@@ -86,7 +72,7 @@ describe('#nextRunTarget — the opening run sequence', () => {
 
   it('Should collapse to the hub when every later step is unreachable', () => {
     expect(
-      next(importPurposePage.id, {
+      next(importReasonPage.id, {
         countryOfOrigin: 'FR',
         reasonForImport: 'internalMarket'
       })

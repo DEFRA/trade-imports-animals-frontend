@@ -36,10 +36,6 @@ export const copy = {
       title: 'Main reason for importing',
       hint: 'Why you are importing the animals and their purpose in the internal market'
     },
-    exitDetails: {
-      title: 'Exit details',
-      hint: 'Where the consignment travels on to and when it leaves Great Britain'
-    },
     additionalDetails: {
       title: 'Additional commodity details',
       hint: 'What the animals are certified for and whether any are unweaned'

@@ -16,6 +16,15 @@ const ANY_GOVUK_CAPTION =
   '.govuk-caption-s, .govuk-caption-m, .govuk-caption-l, .govuk-caption-xl'
 const ABOUT_THE_CONSIGNMENT = 'About the consignment'
 
+// govuk-frontend's own conditional-reveal script puts aria-expanded on the
+// radio it belongs to, which axe reads as an attribute a radio may not carry.
+// The same filter guards the origin page's axe tests.
+const isGovukConditionalRevealFalsePositive = (violation) =>
+  violation.id === 'aria-allowed-attr' &&
+  violation.nodes.every((node) =>
+    /govuk-(radios|checkboxes)__input/.test(node.html)
+  )
+
 const startAtOrigin = async (page) => {
   await page.goto('/')
   await page.getByRole('button', { name: dashboardCopy.startButton }).click()
@@ -96,9 +105,9 @@ test.describe('section caption above the page heading', () => {
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
+    const seriousOrCritical = results.violations
+      .filter(({ impact }) => ['serious', 'critical'].includes(impact))
+      .filter((violation) => !isGovukConditionalRevealFalsePositive(violation))
 
     expect(
       seriousOrCritical,
