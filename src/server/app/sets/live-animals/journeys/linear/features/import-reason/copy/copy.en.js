@@ -39,17 +39,15 @@ export const copy = {
   },
   country: {
     label: 'Destination country',
-    hint: 'The country the consignment travels on to after Great Britain.',
     placeholder: 'Select a country'
   },
   port: {
     label: 'Port of exit',
-    hint: 'Choose where the consignment will leave Great Britain. Exit and entry share the same port list.',
     placeholder: 'Select port of exit'
   },
   date: {
     label: 'Exit date',
-    hint: 'The date the animals are expected to leave Great Britain. For example, 27/3/2026'
+    hint: 'For example, 27/3/2026'
   },
   errors: {
     countryRequired: 'Select the destination country',
