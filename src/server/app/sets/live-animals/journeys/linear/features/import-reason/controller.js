@@ -7,8 +7,8 @@ import {
 } from '../../../../../../lib/http-status.js'
 import {
   compose,
-  dateText,
   oneOf,
+  requiredDateText,
   requiredOneOf,
   validate
 } from '../../../../../../lib/validate/index.js'
@@ -85,9 +85,9 @@ const portRule = (field) =>
 
 // The reason radio itself is optional to proceed — Design release 1 says so in
 // its own words — but the questions a chosen reason reveals are enforced here,
-// not left to the submit. The purpose, both destination countries and both
-// ports of exit are required. The exit date is the one gap still open: it has
-// only to be a real date, so a blank one is still let through.
+// not left to the submit. The purpose, both destination countries, both ports
+// of exit and the exit date are all required, and the exit date is told apart
+// twice over: blank asks for one, unreadable says it is not a real date.
 const RULES = Object.freeze({
   [PURPOSE_FIELD]: () =>
     requiredOneOf(
@@ -101,7 +101,10 @@ const RULES = Object.freeze({
   [TEMPORARY_ADMISSION_PORT_FIELD]: () =>
     portRule(TEMPORARY_ADMISSION_PORT_FIELD),
   [TEMPORARY_ADMISSION_DATE_FIELD]: () =>
-    dateText(TEMPORARY_ADMISSION_DATE_FIELD, copy.errors.dateInvalid)
+    requiredDateText(TEMPORARY_ADMISSION_DATE_FIELD, {
+      required: copy.errors.dateRequired,
+      invalid: copy.errors.dateInvalid
+    })
 })
 
 // Only the reveal the submitted reason opens is answerable, so only its

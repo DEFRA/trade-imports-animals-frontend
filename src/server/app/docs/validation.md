@@ -55,6 +55,13 @@ The date helpers validate a `dd/mm/yyyy` text value, then
 `minDate`/`maxDate` through to the picker's `data-min-date`/`data-max-date`
 attributes.
 
+`dateText` leaves the field optional: a blank value passes before the calendar
+check runs. `requiredDateText` is the save-blocking form, and takes two messages
+so a blank answer and an unreadable one read differently. It is a primitive
+rather than `compose(requiredText, dateText)` because composing merges
+`dateText`'s empty-string allowance onto the required rule — the same reason
+`requiredMaxText` and `requiredIntegerInRange` exist.
+
 `dateTextInRange` layers inclusive `Date` bounds on top of the `dateText`
 calendar check. The caller supplies the bounds, so the policy and the
 current-date read stay in the journey feature, out of `lib/validate`. A picker

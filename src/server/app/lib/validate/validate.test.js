@@ -9,6 +9,7 @@ import {
   maxText,
   oneOf,
   postcode,
+  requiredDateText,
   requiredExactDigits,
   requiredIntegerInRange,
   requiredMaxText,
@@ -31,6 +32,7 @@ const REGION_CODE_MAX_LENGTH_MESSAGE =
   'Region of origin code must be 5 characters or less'
 const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
 const ANIMALS_WHOLE_NUMBER_MESSAGE = 'Enter a whole number greater than 0'
+const NOT_A_DATE = 'not a date'
 
 describe('#requiredText — the sole save-blocking primitive', () => {
   const schema = requiredText('fullName', FULL_NAME_REQUIRED_MESSAGE)
@@ -349,7 +351,7 @@ describe('#dateText — optional dd/mm/yyyy input', () => {
     expect(run(schema, { dateOfBirth: '27/03/1985' }).errors).toBeNull()
   })
 
-  it.each(['27/3', '31/2/2000', '2000-03-27', 'not a date'])(
+  it.each(['27/3', '31/2/2000', '2000-03-27', NOT_A_DATE])(
     'Should reject %s on the single input',
     (value) => {
       expect(run(schema, { dateOfBirth: value }).errors).toEqual({
@@ -357,6 +359,52 @@ describe('#dateText — optional dd/mm/yyyy input', () => {
       })
     }
   )
+})
+
+describe('#requiredDateText — save-blocking dd/mm/yyyy input', () => {
+  const REQUIRED_MESSAGE = 'Enter an exit date'
+  const INVALID_MESSAGE = 'Enter a real exit date'
+  const schema = requiredDateText('exitDate', {
+    required: REQUIRED_MESSAGE,
+    invalid: INVALID_MESSAGE
+  })
+
+  it('Should accept real dates with one- or two-digit parts', () => {
+    expect(run(schema, { exitDate: '7/3/1985' }).errors).toBeNull()
+    expect(run(schema, { exitDate: '27/03/1985' }).errors).toBeNull()
+  })
+
+  it.each(['', '   '])(
+    'Should ask for the date when the value is %j',
+    (value) => {
+      expect(run(schema, { exitDate: value }).errors).toEqual({
+        exitDate: REQUIRED_MESSAGE
+      })
+    }
+  )
+
+  it('Should ask for the date when the field is absent altogether', () => {
+    expect(run(schema, {}).errors).toEqual({ exitDate: REQUIRED_MESSAGE })
+  })
+
+  it.each(['27/3', '31/2/2000', '2000-03-27', NOT_A_DATE])(
+    'Should reject %s as not a real date rather than as missing',
+    (value) => {
+      expect(run(schema, { exitDate: value }).errors).toEqual({
+        exitDate: INVALID_MESSAGE
+      })
+    }
+  )
+
+  it('Should fall back to the shared date message when no invalid message is given', () => {
+    const withoutInvalidMessage = requiredDateText('exitDate', {
+      required: REQUIRED_MESSAGE
+    })
+
+    expect(run(withoutInvalidMessage, { exitDate: NOT_A_DATE }).errors).toEqual(
+      { exitDate: validatorDefaults.date }
+    )
+  })
 })
 
 describe('#dateTextInRange — inclusive bounds on a dd/mm/yyyy input', () => {
@@ -389,7 +437,7 @@ describe('#dateTextInRange — inclusive bounds on a dd/mm/yyyy input', () => {
     }
   )
 
-  it.each(['31/2/2026', '27/3', '2026-03-27', 'not a date'])(
+  it.each(['31/2/2026', '27/3', '2026-03-27', NOT_A_DATE])(
     'Should reject %s as not a real date, not as out of range',
     (value) => {
       expect(run(schema, { arrivalDateAtPort: value }).errors).toEqual({

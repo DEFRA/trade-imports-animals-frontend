@@ -55,6 +55,7 @@ export const copy = {
     purposeRequired: 'Dewiswch ddiben yn y farchnad fewnol',
     countryRequired: 'Dewiswch y wlad gyrchfan',
     portRequired: 'Dewiswch y porthladd ymadael',
+    dateRequired: 'Rhowch ddyddiad ymadael',
     dateInvalid: 'Rhowch ddyddiad ymadael go iawn'
   }
 }

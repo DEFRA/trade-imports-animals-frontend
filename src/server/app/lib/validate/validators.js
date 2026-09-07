@@ -252,6 +252,19 @@ const isOutsideBounds = (date, min, max) =>
   (min != null && date.getTime() < min.getTime()) ||
   (max != null && date.getTime() > max.getTime())
 
+// Reads `dd/mm/yyyy` text and holds it to the calendar, and to the bounds when
+// there are any. Shared by the optional and the save-blocking date rules so
+// both read the same text the same way.
+const realDateWithin = (min, max) => (raw, helpers) => {
+  const parsed = parseDateText(raw)
+  if (!parsed) {
+    return helpers.error(INVALID_ERROR_CODE)
+  }
+  return isOutsideBounds(parsed, min, max)
+    ? helpers.error(RANGE_ERROR_CODE)
+    : raw
+}
+
 /**
  * Blank passes, so the range rule never makes an optional field required.
  * @param {string} name
@@ -275,15 +288,7 @@ export const dateTextInRange = (
     Joi.string()
       .trim()
       .allow('')
-      .custom((raw, helpers) => {
-        const parsed = parseDateText(raw)
-        if (!parsed) {
-          return helpers.error(INVALID_ERROR_CODE)
-        }
-        return isOutsideBounds(parsed, min, max)
-          ? helpers.error(RANGE_ERROR_CODE)
-          : raw
-      })
+      .custom(realDateWithin(min, max))
       .messages({
         [INVALID_ERROR_CODE]: invalidMessage,
         [RANGE_ERROR_CODE]: rangeMessage ?? invalidMessage
@@ -292,3 +297,29 @@ export const dateTextInRange = (
 
 export const dateText = (name, message = defaults.date) =>
   dateTextInRange(name, { invalidMessage: message })
+
+/**
+ * Save-blocking `dd/mm/yyyy` text. A separate primitive rather than
+ * `compose(requiredText, dateText)` because `dateText` allows the empty string,
+ * and composing schemas merges that allowance onto the required rule — blank
+ * would then pass. `requiredMaxText` and `requiredIntegerInRange` exist for the
+ * same reason.
+ * @param {string} name
+ * @param {object} messages
+ * @param {string} messages.required - Shown when the value is blank or absent.
+ * @param {string} [messages.invalid] - Shown when the value is not a real
+ * calendar date.
+ */
+export const requiredDateText = (name, messages) =>
+  single(
+    name,
+    Joi.string()
+      .trim()
+      .required()
+      .custom(realDateWithin())
+      .messages({
+        'string.empty': messages.required,
+        'any.required': messages.required,
+        [INVALID_ERROR_CODE]: messages.invalid ?? defaults.date
+      })
+  )

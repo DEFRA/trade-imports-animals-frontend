@@ -356,6 +356,43 @@ test.describe('import-reason reveals', () => {
     await expect(page.locator(TEMPORARY_ADMISSION_PORT)).toHaveValue(PORT_CODE)
   })
 
+  test('refuses a blank exit date, links to the picker input and keeps the port the user did choose', async ({
+    page
+  }) => {
+    await radioFor(page, 'temporaryAdmissionHorses').check()
+    await page.locator(TEMPORARY_ADMISSION_PORT).selectOption(PORT_CODE)
+    await page.locator(SUBMIT_BUTTON).first().click()
+
+    const dateError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.dateRequired })
+    await expect(dateError).toBeVisible()
+
+    const reveal = await revealFor(page, 'temporaryAdmissionHorses')
+    await expect(reveal).toContainText(copy.errors.dateRequired)
+
+    await dateError.click()
+    await expect(page.locator(TEMPORARY_ADMISSION_DATE)).toBeFocused()
+    await expect(page.locator(TEMPORARY_ADMISSION_PORT)).toHaveValue(PORT_CODE)
+  })
+})
+
+test.describe('import-reason reveal accessibility', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startAtImportReason(page)
+  })
+
+  test('has no serious or critical axe violations with the exit date missing', async ({
+    page
+  }) => {
+    await radioFor(page, 'temporaryAdmissionHorses').check()
+    await page.locator(SUBMIT_BUTTON).first().click()
+    await expect(page.getByRole('alert')).toBeVisible()
+
+    await expectNoSeriousOrCriticalAxeViolations(page)
+  })
+
   test('has no serious or critical axe violations with a reveal open and in error', async ({
     page
   }) => {

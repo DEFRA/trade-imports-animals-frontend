@@ -115,6 +115,47 @@ describe('POST import-reason — invalid payload', () => {
     expect(result.after).toEqual(result.before)
   })
 
+  it('Should refuse an unanswered exit date on the temporary-admission reveal, committing nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'temporaryAdmissionHorses',
+        temporaryAdmissionExitDate: '',
+        temporaryAdmissionPortOfExit: 'GB DVR'
+      }
+    })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.temporaryAdmissionExitDate).toBe(
+      copy.errors.dateRequired
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should ask for both the exit date and the port of exit when neither is answered', async () => {
+    const result = await driveHandler(post, {
+      payload: { reasonForImport: 'temporaryAdmissionHorses' }
+    })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.temporaryAdmissionExitDate).toBe(
+      copy.errors.dateRequired
+    )
+    expect(result.view.context.errors.temporaryAdmissionPortOfExit).toBe(
+      copy.errors.portRequired
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  // The exit date is asked only under temporary admission, so leaving it blank
+  // under any other reason is not a mistake to report.
+  it('Should not ask for the exit date under a reason that never reveals it', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'transhipmentOrOnwardTravel',
+        transhipmentDestinationCountry: 'FR'
+      }
+    })
+    expect(result.response.redirect).toBeDefined()
+  })
+
   it('Should refuse an unreal exit date the temporary-admission reveal asks for', async () => {
     const result = await driveHandler(post, {
       payload: {
@@ -124,7 +165,12 @@ describe('POST import-reason — invalid payload', () => {
       }
     })
     expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.temporaryAdmissionExitDate).toBeDefined()
+    expect(result.view.context.errors.temporaryAdmissionExitDate).toBe(
+      copy.errors.dateInvalid
+    )
+    expect(result.view.context.errors.temporaryAdmissionExitDate).not.toBe(
+      copy.errors.dateRequired
+    )
     expect(result.after).toEqual(result.before)
   })
 
