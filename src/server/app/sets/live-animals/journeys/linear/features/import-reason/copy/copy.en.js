@@ -50,6 +50,7 @@ export const copy = {
     hint: 'For example, 27/3/2026'
   },
   errors: {
+    purposeRequired: 'Select a purpose in the internal market',
     countryRequired: 'Select the destination country',
     portRequired: 'Select the port of exit',
     dateInvalid: 'Enter a real exit date'

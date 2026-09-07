@@ -49,6 +49,43 @@ describe('POST import-reason — invalid payload', () => {
     expect(result.after).toEqual(result.before)
   })
 
+  it('Should refuse an unanswered purpose on the internal-market reveal, committing nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'internalMarket',
+        purposeInInternalMarket: ''
+      }
+    })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.purposeInInternalMarket).toBe(
+      copy.errors.purposeRequired
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should refuse an out-of-list purpose on the internal-market reveal', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'internalMarket',
+        purposeInInternalMarket: 'not-a-real-purpose'
+      }
+    })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.purposeInInternalMarket).toBe(
+      copy.errors.purposeRequired
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  // The reason radio stays optional to proceed; only the questions a chosen
+  // reason opens are enforced.
+  it('Should still accept a submit that names no reason at all', async () => {
+    const result = await driveHandler(post, {
+      payload: { reasonForImport: '' }
+    })
+    expect(result.response.redirect).toBeDefined()
+  })
+
   it('Should refuse the destination country the transit reveal asks for and keep the port the user did choose', async () => {
     const result = await driveHandler(post, {
       payload: {
