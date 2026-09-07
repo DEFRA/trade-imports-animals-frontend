@@ -16,6 +16,10 @@ import { dropUnrecognisedFulfilments } from './purge/drop-unrecognised-fulfilmen
  * Constructed once per Service; each `evaluate(fulfilments)` call is
  * pure. The obligations manifest is injected at construction.
  *
+ * See `../README.md` for the module-level overview: vocabulary,
+ * category taxonomy, and concrete storage-shape examples for each
+ * category. This docstring covers the algorithm.
+ *
  * Every applyTo receives
  * `applyTo(fulfilments, fulfilmentIndexesByObligationId)` — the second
  * arg is a `Map<obligationId, string[]>` of currently-present group
