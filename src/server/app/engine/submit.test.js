@@ -28,7 +28,7 @@ describe('submitJourney — gates on scope readiness, finalises via records', ()
     journeyId = (await records.create()).journeyId
   })
 
-  it('Should finalise the CYA-ready journey by its journeyId', async () => {
+  it('Should finalise the CYA-ready journey', async () => {
     const finalise = vi.fn(recordsStub.finalise)
     configureRecords({ ...recordsStub, finalise })
     configureReadyForCheckYourAnswers(() => true)

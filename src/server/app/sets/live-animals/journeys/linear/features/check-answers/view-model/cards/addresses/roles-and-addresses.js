@@ -9,7 +9,7 @@ const copy = copyFor({ en, cy })
 
 /** `parties` carries party answers with address-book references resolved to
  * current details, or the submit freeze when the controller passes
- * {@link frozenPartiesOf} output. `partyErrors` is computed once by the
+ * {@link partiesFromStoredAnswers} output. `partyErrors` is computed once by the
  * controller and threaded down, so the rows and the error summary always agree
  * on which roles are outstanding. */
 export const rolesAndAddressesCard = (

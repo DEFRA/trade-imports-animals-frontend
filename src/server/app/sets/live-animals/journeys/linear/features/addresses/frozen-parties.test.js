@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import { originLabel } from '../../../../../../services/countries/index.js'
-import { frozenPartiesOf } from './frozen-parties.js'
+import { partiesFromStoredAnswers, toDisplayParty } from './frozen-parties.js'
 
-const frozen = {
+const stored = {
   placeOfOrigin: {
     addressId: 'origin-1',
     name: 'Origin Farm',
@@ -17,13 +17,13 @@ const frozen = {
     }
   },
   consignor: { name: 'Frozen Consignor' },
-  destination: { name: 'Frozen Destination' },
-  consignment: { name: 'Frozen Contact' }
+  placeOfDestination: { name: 'Frozen Destination' },
+  contactAddress: { name: 'Frozen Contact' }
 }
 
-describe('frozenPartiesOf', () => {
-  it('Should key destination and consignment by their journey ids', () => {
-    const parties = frozenPartiesOf(frozen)
+describe('partiesFromStoredAnswers', () => {
+  it('Should map stored inline answers onto journey party ids', () => {
+    const parties = partiesFromStoredAnswers(stored)
 
     expect(parties.placeOfDestination).toMatchObject({
       name: 'Frozen Destination'
@@ -33,8 +33,8 @@ describe('frozenPartiesOf', () => {
     expect(parties.consignor).toMatchObject({ name: 'Frozen Consignor' })
   })
 
-  it('Should map the freeze address names onto the journey address shape', () => {
-    const { placeOfOrigin } = frozenPartiesOf(frozen)
+  it('Should map the stored address names onto the journey address shape', () => {
+    const { placeOfOrigin } = partiesFromStoredAnswers(stored)
 
     expect(placeOfOrigin.address).toMatchObject({
       addressLine1: '1 Farm Lane',
@@ -46,31 +46,20 @@ describe('frozenPartiesOf', () => {
     expect(placeOfOrigin.address.country).toBe(originLabel('IE') ?? 'IE')
   })
 
-  it('Should map a known country code to its origin label', () => {
-    const { placeOfOrigin } = frozenPartiesOf({
-      placeOfOrigin: {
-        name: 'French Farm',
-        address: { countryCode: 'FR' }
-      }
-    })
-
-    expect(placeOfOrigin.address.country).toBe(originLabel('FR') ?? 'FR')
-  })
-
-  it('Should fall back to the raw country code when the label is unknown', () => {
-    const { placeOfOrigin } = frozenPartiesOf({
-      placeOfOrigin: {
-        name: 'Unknown Farm',
-        address: { countryCode: 'XX' }
-      }
-    })
-
-    expect(placeOfOrigin.address.country).toBe('XX')
-  })
-
-  it('Should treat a nameless frozen role as unanswered', () => {
+  it('Should treat a nameless stored role as unanswered', () => {
     expect(
-      frozenPartiesOf({ consignor: { addressId: 'gone' } }).consignor
+      partiesFromStoredAnswers({ consignor: { addressId: 'gone' } }).consignor
     ).toBeUndefined()
+  })
+})
+
+describe('toDisplayParty', () => {
+  it('Should fall back to the raw country code when the label is unknown', () => {
+    const party = toDisplayParty({
+      name: 'Unknown Farm',
+      address: { countryCode: 'XX' }
+    })
+
+    expect(party.address.country).toBe('XX')
   })
 })

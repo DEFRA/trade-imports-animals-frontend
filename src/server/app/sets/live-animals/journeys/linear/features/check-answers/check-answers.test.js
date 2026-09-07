@@ -1,12 +1,4 @@
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi
-} from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { commodityCodeFor } from '../../../../services/commodities/index.js'
@@ -502,45 +494,26 @@ describe(`${SUITE} — address-book party references`, () => {
   })
 })
 
-describe(`${SUITE} — submitted freeze vs live amend`, () => {
+describe(`${SUITE} — submitted inline vs live amend`, () => {
   setupCheckAnswersEngine()
 
   const FROZEN_CONSIGNOR = 'Frozen Consignor Ltd'
-  const withFreeze = () => {
-    const load = records.load
-    return vi.spyOn(records, 'load').mockImplementation(async (...args) => {
-      const journey = await load(...args)
-      if (!journey || journey.status !== SUBMITTED) {
-        return journey
-      }
-      return {
-        ...journey,
-        frozenParties: {
-          consignor: {
-            name: FROZEN_CONSIGNOR,
-            address: { addressLine1: 'Old Lane', countryCode: 'GB' }
-          }
-        }
+
+  it('Should render stored inline details on a submitted notification, not the live book name', async () => {
+    const { context } = await viewForStatus(SUBMITTED, {
+      ...fullSeed,
+      consignor: {
+        addressId: CONSIGNOR_ADDRESS_ID,
+        name: FROZEN_CONSIGNOR,
+        address: { addressLine1: 'Old Lane', countryCode: 'GB' }
       }
     })
-  }
-
-  it('Should render the freeze on a submitted notification, not the live book name', async () => {
-    const spy = withFreeze()
-    try {
-      const { context } = await viewForStatus(SUBMITTED, {
-        ...fullSeed,
-        consignor: { addressId: CONSIGNOR_ADDRESS_ID }
-      })
-      const card = cardByTitle(context.sections, ROLES_AND_ADDRESSES_CARD)
-      expect(htmlOf(card.rows, 'Consignor')).toContain(FROZEN_CONSIGNOR)
-      expect(htmlOf(card.rows, 'Consignor')).not.toContain(CONSIGNOR_NAME)
-    } finally {
-      spy.mockRestore()
-    }
+    const card = cardByTitle(context.sections, ROLES_AND_ADDRESSES_CARD)
+    expect(htmlOf(card.rows, 'Consignor')).toContain(FROZEN_CONSIGNOR)
+    expect(htmlOf(card.rows, 'Consignor')).not.toContain(CONSIGNOR_NAME)
   })
 
-  it('Should resolve live on an amendment when the journey carries no freeze', async () => {
+  it('Should resolve live on an amendment from the address book', async () => {
     const { context } = await viewForStatus(AMEND, {
       ...fullSeed,
       consignor: { addressId: CONSIGNOR_ADDRESS_ID }

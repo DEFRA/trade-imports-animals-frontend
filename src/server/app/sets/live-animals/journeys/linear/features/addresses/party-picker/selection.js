@@ -1,5 +1,7 @@
 import * as addressBook from '../../../../../../../services/address-book/index.js'
-import { frozenPartiesOf } from '../frozen-parties.js'
+import { answerForInlineParty } from '../party-inline.js'
+import { toDisplayParty } from '../frozen-parties.js'
+import { SUBMITTED } from '../../../../../../../engine/persistence/records.js'
 
 /** The committed answer holds the address-book id, so the row to pre-check is a
  * direct lookup. It used to be a copy with no id, re-found by matching on name —
@@ -25,19 +27,16 @@ export const selectedPartyFor = async (
   answers,
   selectedId = committedId(answers, party)
 ) => {
-  if (journey.frozenParties) {
-    const frozen = frozenPartiesOf(journey.frozenParties)[party.id]
-    if (frozen && (!selectedId || frozen.id === selectedId)) {
-      return frozen
+  if (journey.status === SUBMITTED) {
+    const stored = toDisplayParty(answers[party.id])
+    if (stored && (!selectedId || stored.id === selectedId)) {
+      return stored
     }
   }
   return chosenPartyFor(orgId, selectedId)
 }
 
-/** The answer to commit for a party the trader has just picked.
- *
- * Holds the address-book id alone — the details are resolved on read, and
- * storing them here would let the next commit anywhere in the journey re-persist
- * a copy that has since gone stale. A submitted notification renders the
- * pre-submit details from {@link frozenPartiesOf} instead of re-resolving here. */
-export const answerFor = (_party, chosen) => ({ addressId: chosen.id })
+/** The answer to commit for a party the trader has just picked — inline details
+ * alongside the address-book id so a SUBMITTED notification can render from the
+ * stored copy while DRAFT and AMEND live-resolve from the id alone. */
+export const answerFor = (_party, chosen) => answerForInlineParty(chosen)

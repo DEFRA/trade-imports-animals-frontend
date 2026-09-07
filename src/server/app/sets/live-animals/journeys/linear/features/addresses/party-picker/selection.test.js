@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import * as addressBook from '../../../../../../../services/address-book/index.js'
+import { SUBMITTED } from '../../../../../../../engine/persistence/records.js'
 import { PARTIES } from '../parties.js'
 import { selectedPartyFor } from './selection.js'
 
@@ -12,21 +13,19 @@ describe('selectedPartyFor', () => {
     vi.restoreAllMocks()
   })
 
-  it('Should render the frozen party on a submitted notification without re-resolving', async () => {
-    const journey = {
-      frozenParties: {
-        placeOfOrigin: {
-          addressId: ORIGIN_FARM_ID,
-          name: 'Frozen Origin Farm',
-          address: {
-            addressLine1: '1 Farm Lane',
-            postcode: 'V95 X7P2',
-            countryCode: 'IE'
-          }
+  it('Should render stored inline details on a submitted notification without re-resolving', async () => {
+    const journey = { status: SUBMITTED }
+    const answers = {
+      placeOfOrigin: {
+        addressId: ORIGIN_FARM_ID,
+        name: 'Frozen Origin Farm',
+        address: {
+          addressLine1: '1 Farm Lane',
+          postcode: 'V95 X7P2',
+          countryCode: 'IE'
         }
       }
     }
-    const answers = { placeOfOrigin: { addressId: ORIGIN_FARM_ID } }
     const partySpy = vi.spyOn(addressBook, 'party')
 
     const selected = await selectedPartyFor(
@@ -54,7 +53,7 @@ describe('selectedPartyFor', () => {
     vi.spyOn(addressBook, 'party').mockResolvedValue(live)
 
     const selected = await selectedPartyFor(
-      { frozenParties: null },
+      { status: 'DRAFT' },
       'org-001',
       ORIGIN,
       { placeOfOrigin: { addressId: ORIGIN_FARM_ID } },

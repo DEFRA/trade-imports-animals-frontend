@@ -42,9 +42,11 @@ describe('GET contact — select an address from the book', () => {
       payload: { contactAddress: CONTACT.id }
     })
     expect(postResult.view).toBeUndefined()
-    expect(postResult.after.contactAddress).toEqual({
-      addressId: CONTACT.id
+    expect(postResult.after.contactAddress).toMatchObject({
+      addressId: CONTACT.id,
+      name: CONTACT.name
     })
+    expect(postResult.after.contactAddress.address).toBeDefined()
 
     const getResult = await driveHandler(get, { seed: postResult.after })
     const option = getResult.view.context.contactOptions.find(

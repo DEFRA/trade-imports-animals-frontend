@@ -238,8 +238,6 @@ describe('real records adapter — referenced party names', () => {
   })
 
   test('Should read an inline party name straight off the notification', async () => {
-    // A party answered inline (AC5) carries its own name and is nobody's
-    // address-book record, so the book is not asked about it.
     fetchMocker.mockResponse(
       JSON.stringify({
         page: 1,
@@ -254,6 +252,65 @@ describe('real records adapter — referenced party names', () => {
 
     expect(listed.rows[0].consignorName).toBe(CONSIGNOR_NAME)
     expect(addressRequests()).toEqual([])
+  })
+
+  test('Should show the frozen name on a submitted row even when the book has since changed', async () => {
+    const frozenName = 'Frozen At Submit'
+    fetchMocker.mockResponses(
+      [
+        JSON.stringify({
+          page: 1,
+          size: 20,
+          totalElements: 1,
+          totalPages: 1,
+          content: [
+            {
+              ...notification('GBN-1', 'SUBMITTED'),
+              consignor: {
+                addressId: ADDRESS_ID,
+                name: frozenName
+              }
+            }
+          ]
+        }),
+        { status: 200 }
+      ],
+      [JSON.stringify(addressBookRecord()), { status: 200 }]
+    )
+
+    const listed = await records.list({ page: 1, organisationId: ORGANISATION })
+
+    expect(listed.rows[0].consignorName).toBe(frozenName)
+    expect(addressRequests()).toEqual([])
+  })
+
+  test('Should live-resolve party names on an in-flight amendment', async () => {
+    fetchMocker.mockResponses(
+      [
+        JSON.stringify({
+          page: 1,
+          size: 20,
+          totalElements: 1,
+          totalPages: 1,
+          content: [
+            {
+              ...notification('GBN-1', 'AMEND'),
+              consignor: {
+                addressId: ADDRESS_ID,
+                name: 'Stale inline from submit'
+              }
+            }
+          ]
+        }),
+        { status: 200 }
+      ],
+      [JSON.stringify(addressBookRecord()), { status: 200 }]
+    )
+
+    const listed = await records.list({ page: 1, organisationId: ORGANISATION })
+
+    expect(listed.rows[0].consignorName).toBe(SAVED_ADDRESS_NAME)
+    expect(addressRequests()).toHaveLength(1)
   })
 
   test('Should show a deleted address as no name rather than a stale one', async () => {

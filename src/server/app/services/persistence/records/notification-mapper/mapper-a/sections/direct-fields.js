@@ -1,8 +1,19 @@
 import { obligationSet } from '../../../../../../model/obligations/manifest.js'
 import { compact } from '../../shared/compact.js'
 
-const asPartyRef = (answer) =>
-  answer?.addressId ? { addressId: answer.addressId } : undefined
+/** Persist a party answer with inline details when an address-book id is present. */
+const asInlineParty = (answer) => {
+  if (!answer?.addressId) {
+    return answer
+  }
+  return compact({
+    addressId: answer.addressId,
+    name: answer.name,
+    email: answer.email,
+    phone: answer.phone,
+    address: answer.address
+  })
+}
 
 export const directFieldsFromFulfilment = (reader, referenceNumber) => {
   const {
@@ -18,12 +29,12 @@ export const directFieldsFromFulfilment = (reader, referenceNumber) => {
   return compact({
     referenceNumber,
     reasonForImport: reader.scalar(reasonForImport),
-    placeOfOrigin: asPartyRef(reader.scalar(placeOfOrigin)),
-    consignor: reader.scalar(consignor),
-    consignee: reader.scalar(consignee),
-    importer: reader.scalar(importer),
-    destination: reader.scalar(placeOfDestination),
-    consignment: asPartyRef(reader.scalar(contactAddress)),
+    placeOfOrigin: asInlineParty(reader.scalar(placeOfOrigin)),
+    consignor: asInlineParty(reader.scalar(consignor)),
+    consignee: asInlineParty(reader.scalar(consignee)),
+    importer: asInlineParty(reader.scalar(importer)),
+    destination: asInlineParty(reader.scalar(placeOfDestination)),
+    consignment: asInlineParty(reader.scalar(contactAddress)),
     cphNumber: reader.scalar(cph)
   })
 }
