@@ -12,6 +12,7 @@ import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
 const REASON_INPUT_SELECTOR = 'input[name="reasonForImport"]'
+const PURPOSE_INPUT_SELECTOR = 'input[name="purposeInInternalMarket"]'
 const SUBMIT_BUTTON = 'form button[type="submit"]'
 const CHOOSE_DATE_LABEL = 'Choose date'
 const PORT_CODE = 'GB DVR'
@@ -204,7 +205,7 @@ test.describe('import-reason reveals', () => {
     await expect(reveal).toBeVisible()
     await expect(reveal.getByText(copy.purpose.legend)).toBeVisible()
     const renderedPurposes = await reveal
-      .locator('input[name="purposeInInternalMarket"]')
+      .locator(PURPOSE_INPUT_SELECTOR)
       .evaluateAll((inputs) => inputs.map((input) => input.value))
     expect(renderedPurposes).toEqual(
       importReasonPurpose.purposes().map(({ value }) => value)
@@ -318,6 +319,26 @@ test.describe('import-reason reveals', () => {
     await expect(page.locator(TRANSIT_PORT)).toHaveValue(PORT_CODE)
   })
 
+  test('refuses an unanswered internal-market purpose, links to the first radio and keeps the reveal open', async ({
+    page
+  }) => {
+    await radioFor(page, 'internalMarket').check()
+    await page.locator(SUBMIT_BUTTON).first().click()
+
+    const purposeError = page
+      .getByRole('alert')
+      .getByRole('link', { name: copy.errors.purposeRequired })
+    await expect(purposeError).toBeVisible()
+
+    const reveal = await revealFor(page, 'internalMarket')
+    await expect(reveal).toBeVisible()
+    await expect(reveal).toContainText(copy.errors.purposeRequired)
+
+    await purposeError.click()
+    await expect(page.locator(PURPOSE_INPUT_SELECTOR).first()).toBeFocused()
+    await expect(radioFor(page, 'internalMarket')).toBeChecked()
+  })
+
   test('saves an exit date chosen from the picker inside the reveal, and offers it back', async ({
     page
   }) => {
@@ -351,6 +372,16 @@ test.describe('import-reason reveals', () => {
     await radioFor(page, 'internalMarket').check()
     const reveal = await revealFor(page, 'internalMarket')
     await expect(reveal).toBeVisible()
+
+    await expectNoSeriousOrCriticalAxeViolations(page)
+  })
+
+  test('has no serious or critical axe violations with the internal-market purpose reveal in error', async ({
+    page
+  }) => {
+    await radioFor(page, 'internalMarket').check()
+    await page.locator(SUBMIT_BUTTON).first().click()
+    await expect(page.getByRole('alert')).toBeVisible()
 
     await expectNoSeriousOrCriticalAxeViolations(page)
   })

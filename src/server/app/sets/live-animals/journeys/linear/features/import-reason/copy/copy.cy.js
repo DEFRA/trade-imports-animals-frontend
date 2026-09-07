@@ -52,6 +52,7 @@ export const copy = {
     hint: 'Er enghraifft, 27/3/2026'
   },
   errors: {
+    purposeRequired: 'Dewiswch ddiben yn y farchnad fewnol',
     countryRequired: 'Dewiswch y wlad gyrchfan',
     portRequired: 'Dewiswch y porthladd ymadael',
     dateInvalid: 'Rhowch ddyddiad ymadael go iawn'

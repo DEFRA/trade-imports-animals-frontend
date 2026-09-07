@@ -83,11 +83,17 @@ const portRule = (field) =>
     copy.errors.portRequired
   )
 
+// The reason radio itself is optional to proceed — Design release 1 says so in
+// its own words — but the questions a chosen reason reveals are enforced here,
+// not left to the submit. The purpose, both destination countries and both
+// ports of exit are required. The exit date is the one gap still open: it has
+// only to be a real date, so a blank one is still let through.
 const RULES = Object.freeze({
   [PURPOSE_FIELD]: () =>
-    oneOf(
+    requiredOneOf(
       PURPOSE_FIELD,
-      importReasonPurpose.purposes().map((option) => option.value)
+      importReasonPurpose.purposes().map((option) => option.value),
+      copy.errors.purposeRequired
     ),
   [TRANSHIPMENT_COUNTRY_FIELD]: () => countryRule(TRANSHIPMENT_COUNTRY_FIELD),
   [TRANSIT_COUNTRY_FIELD]: () => countryRule(TRANSIT_COUNTRY_FIELD),
