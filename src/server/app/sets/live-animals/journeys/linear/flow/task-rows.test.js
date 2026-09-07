@@ -58,6 +58,36 @@ describe('#rowStatus — one status per hub task row', () => {
     ).toBe(FULFILLED)
   })
 
+  it('Should walk the import-reason row through Not yet started, In progress and Completed for the reasons that open a reveal', () => {
+    expect(statusIn('importReason', unlocked)).toBe(NOT_STARTED)
+    expect(
+      statusIn('importReason', { ...unlocked, reasonForImport: 'transit' })
+    ).toBe(IN_PROGRESS)
+    expect(
+      statusIn('importReason', {
+        ...unlocked,
+        reasonForImport: 'transit',
+        destinationCountry: 'IE',
+        portOfExit: 'GB DVR'
+      })
+    ).toBe(FULFILLED)
+    expect(
+      statusIn('importReason', {
+        ...unlocked,
+        reasonForImport: 'temporaryAdmissionHorses',
+        portOfExit: 'GB DVR'
+      })
+    ).toBe(IN_PROGRESS)
+    expect(
+      statusIn('importReason', {
+        ...unlocked,
+        reasonForImport: 'temporaryAdmissionHorses',
+        portOfExit: 'GB DVR',
+        exitDate: { day: '20', month: '12', year: '2026' }
+      })
+    ).toBe(FULFILLED)
+  })
+
   it('Should walk the arrival-details row over the merged page (all five arrival and transport collects)', () => {
     expect(statusIn('arrivalDetails', unlocked)).toBe(NOT_STARTED)
     expect(
@@ -274,6 +304,11 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
     'an origin-only journey': { countryOfOrigin: 'FR' },
     'an unlocked skeleton journey': unlocked,
     'the happy path without a reason': { ...happyPath, reasonForImport: '' },
+    'the happy path for temporary admission without an exit date': {
+      ...happyPath,
+      reasonForImport: 'temporaryAdmissionHorses',
+      portOfExit: 'GB DVR'
+    },
     'the happy path without certified-for': {
       ...happyPath,
       animalsCertifiedFor: ''

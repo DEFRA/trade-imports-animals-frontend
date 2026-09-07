@@ -8,6 +8,7 @@ import { records as recordsStub } from '../../../../../../../services/persistenc
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import { driveHandler } from '../../../../../../../engine/test-support.js'
 import * as importReasonPurpose from '../../../../../../../services/import-reason-purpose/index.js'
+import * as ports from '../../../../../../../services/ports/index.js'
 import { dispatchPages } from '../../index.js'
 
 import * as importReason from '../controller.js'
@@ -35,6 +36,12 @@ describe('import-reason copy module', () => {
       expect(copy.reasonHints[option.value]).toBeTruthy()
     }
   })
+
+  it('Should carry a hint for every service purpose option the internal-market reveal asks', () => {
+    for (const option of importReasonPurpose.purposes()) {
+      expect(copy.purpose.hints[option.value]).toBeTruthy()
+    }
+  })
 })
 
 describe('GET import-reason — copy reaches the view', () => {
@@ -55,5 +62,27 @@ describe('GET import-reason — copy reaches the view', () => {
     for (const option of result.view.context.reasonOptions) {
       expect(option.hint.text).toBe(copy.reasonHints[option.value])
     }
+    for (const option of result.view.context.purposeOptions) {
+      expect(option.hint.text).toBe(copy.purpose.hints[option.value])
+    }
+  })
+
+  it('Should carry the reveal placeholders, the port list and the exit-date label into the view', async () => {
+    const get = importReason.routes.find(
+      (route) => route.method === 'GET'
+    ).handler
+    const result = await driveHandler(get)
+
+    expect(result.view.context.countryItems[0].text).toBe(
+      copy.country.placeholder
+    )
+    expect(result.view.context.portItems[0].text).toBe(copy.port.placeholder)
+    expect(result.view.context.portItems.slice(2)).toEqual(
+      ports.list().map((port) => ({
+        value: port.code,
+        text: `${port.name} (${port.code})`
+      }))
+    )
+    expect(result.view.context.exitDateField.label.text).toBe(copy.date.label)
   })
 })

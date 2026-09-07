@@ -22,13 +22,13 @@ import {
   DAYS_BEFORE
 } from './sets/live-animals/journeys/linear/features/transport/port-of-entry/arrival-window.js'
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
+import * as importReasonPurpose from './services/import-reason-purpose/index.js'
 
 import * as origin from './sets/live-animals/journeys/linear/features/origin/controller.js'
 import * as commoditiesSearch from './sets/live-animals/journeys/linear/features/commodities/search/search.controller.js'
 import * as consignmentDetails from './sets/live-animals/journeys/linear/features/commodities/consignment-details/consignment-details.controller.js'
 import * as animalIdentification from './sets/live-animals/journeys/linear/features/commodities/animal-identification/animal-identification.controller.js'
 import * as importReason from './sets/live-animals/journeys/linear/features/import-reason/controller.js'
-import * as importPurpose from './sets/live-animals/journeys/linear/features/import-purpose/controller.js'
 import * as additionalDetails from './sets/live-animals/journeys/linear/features/additional-details/controller.js'
 import * as documents from './sets/live-animals/journeys/linear/features/documents/controller.js'
 import * as addresses from './sets/live-animals/journeys/linear/features/addresses/controller.js'
@@ -78,19 +78,6 @@ const cases = [
       regionOfOriginCodeSuffix: '75',
       internalReferenceNumber: 'Imports456GB'
     }
-  },
-  {
-    id: 'import-reason',
-    collects: importReason.meta.collects,
-    handler: postHandlerOf(importReason),
-    payload: { reasonForImport: 'internalMarket' }
-  },
-  {
-    id: 'import-purpose',
-    collects: importPurpose.meta.collects,
-    handler: postHandlerOf(importPurpose),
-    seed: { reasonForImport: 'internalMarket' },
-    payload: { purposeInInternalMarket: 'breeding' }
   },
   {
     id: 'additional-details',
@@ -168,6 +155,78 @@ const cases = [
     payload: { declaration: 'confirmed' }
   }
 ]
+
+// The reason page asks its follow-up questions as conditional reveals, so
+// which of its collects a POST commits is the reason's call. One case per
+// reason, and the union of them has to be everything the page declares.
+const REASON_REVEALS = [
+  { reasonForImport: 'reEntry', payload: {}, commits: [] },
+  {
+    reasonForImport: 'internalMarket',
+    payload: { purposeInInternalMarket: 'breeding' },
+    commits: ['purposeInInternalMarket']
+  },
+  {
+    reasonForImport: 'transhipmentOrOnwardTravel',
+    payload: { transhipmentDestinationCountry: 'IE' },
+    commits: ['destinationCountry']
+  },
+  {
+    reasonForImport: 'transit',
+    payload: { transitPortOfExit: 'GB DVR', transitDestinationCountry: 'IE' },
+    commits: ['destinationCountry', 'portOfExit']
+  },
+  {
+    reasonForImport: 'temporaryAdmissionHorses',
+    payload: {
+      temporaryAdmissionExitDate: '20/12/2026',
+      temporaryAdmissionPortOfExit: 'GB DVR'
+    },
+    commits: ['exitDate', 'portOfExit']
+  }
+]
+
+describe('reason-for-import commit contract — one reveal per reason', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it.each(REASON_REVEALS)(
+    'Should commit the reason $reasonForImport and only the answers its reveal opens',
+    async ({ reasonForImport, payload, commits }) => {
+      const result = await drive(postHandlerOf(importReason), {
+        payload: { reasonForImport, ...payload }
+      })
+      expect(new Set(committedIds(result))).toEqual(
+        new Set(['reasonForImport', ...commits])
+      )
+    }
+  )
+
+  it('Should carry one case per reason the service offers', () => {
+    expect(
+      REASON_REVEALS.map(({ reasonForImport }) => reasonForImport).sort()
+    ).toEqual(
+      importReasonPurpose
+        .reasons()
+        .map(({ value }) => value)
+        .sort()
+    )
+  })
+
+  it('Should cover every collect the reason page declares across its reveals', () => {
+    const covered = new Set([
+      'reasonForImport',
+      ...REASON_REVEALS.flatMap(({ commits }) => commits)
+    ])
+    expect([...covered].sort()).toEqual(
+      [...committableCollects(importReason.meta.collects)].sort()
+    )
+  })
+})
 
 describe('controller <-> model commit contract', () => {
   beforeAll(() => {

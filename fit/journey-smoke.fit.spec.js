@@ -47,8 +47,9 @@ test.describe('live-animals journey glue', () => {
     ).toBeVisible()
 
     await page.getByRole('radio', { name: 'Internal market' }).check()
-    await save()
-    await expect(heading('Purpose in the internal market')).toBeVisible()
+    await expect(
+      page.getByRole('group', { name: 'Purpose in the internal market' })
+    ).toBeVisible()
 
     await page.getByRole('radio', { name: 'Breeding' }).check()
     await save()

@@ -20,10 +20,6 @@ import { routes as commoditiesSearchRoutes } from './commodities/search/search.c
 import { routes as consignmentDetailsRoutes } from './commodities/consignment-details/consignment-details.controller.js'
 import { routes as animalIdentificationRoutes } from './commodities/animal-identification/animal-identification.controller.js'
 import { routes as importReasonRoutes } from './import-reason/controller.js'
-import { routes as importPurposeRoutes } from './import-purpose/controller.js'
-import { routes as destinationCountryRoutes } from './destination-country/controller.js'
-import { routes as portOfExitRoutes } from './port-of-exit/controller.js'
-import { routes as exitDateRoutes } from './exit-date/controller.js'
 import { routes as additionalDetailsRoutes } from './additional-details/controller.js'
 import { routes as addressesRoutes } from './addresses/controller.js'
 import { routes as cphNumberRoutes } from './cph-number/controller.js'
@@ -57,22 +53,6 @@ parityFixture.commodityLines[0].animalIdentifiers[1] = {
   animalIdentifierEarTag: 'UK123456789013',
   animalIdentifierPassport: 'UK123456780'
 }
-
-const transitFixture = {
-  ...parityFixture,
-  reasonForImport: 'transit',
-  destinationCountry: comprehensive.destinationCountry,
-  portOfExit: comprehensive.portOfExit
-}
-delete transitFixture.purposeInInternalMarket
-
-const temporaryAdmissionFixture = {
-  ...parityFixture,
-  reasonForImport: 'temporaryAdmissionHorses',
-  portOfExit: comprehensive.portOfExit,
-  exitDate: comprehensive.exitDate
-}
-delete temporaryAdmissionFixture.purposeInInternalMarket
 
 const privateTransportFixture = {
   ...parityFixture,
@@ -129,20 +109,6 @@ const CAPTIONED_PAGES = [
     parityFixture
   ],
   ['import reason', ABOUT_THE_CONSIGNMENT, importReasonRoutes, parityFixture],
-  ['import purpose', ABOUT_THE_CONSIGNMENT, importPurposeRoutes, parityFixture],
-  [
-    'destination country',
-    ABOUT_THE_CONSIGNMENT,
-    destinationCountryRoutes,
-    transitFixture
-  ],
-  ['port of exit', ABOUT_THE_CONSIGNMENT, portOfExitRoutes, transitFixture],
-  [
-    'exit date',
-    ABOUT_THE_CONSIGNMENT,
-    exitDateRoutes,
-    temporaryAdmissionFixture
-  ],
   [
     'additional details',
     'Commodity details',

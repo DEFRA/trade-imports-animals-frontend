@@ -15,8 +15,7 @@ import {
 const journeyIds = {
   draft: 'GBN-AG-26-DRAFT1',
   submitted: 'GBN-AG-26-SUBMIT',
-  transit: 'GBN-AG-26-TRANS1',
-  temporaryAdmission: 'GBN-AG-26-TEMPA1'
+  transit: 'GBN-AG-26-TRANS1'
 }
 
 const ORIGIN = 'http://localhost:3000'
@@ -40,13 +39,8 @@ describe('#auditPaths', () => {
       [`/notifications/${journeyIds.submitted}/confirmation`]
     )
     expect(paths.filter((path) => path.includes(journeyIds.transit))).toEqual([
-      `/notifications/${journeyIds.transit}/destination-country`,
-      `/notifications/${journeyIds.transit}/port-of-exit`,
       `/notifications/${journeyIds.transit}/transporters/private`
     ])
-    expect(
-      paths.filter((path) => path.includes(journeyIds.temporaryAdmission))
-    ).toEqual([`/notifications/${journeyIds.temporaryAdmission}/exit-date`])
     expect(
       paths.filter((path) => path.includes(journeyIds.draft))
     ).toHaveLength(paths.length - FILLED_BY.size - 1)

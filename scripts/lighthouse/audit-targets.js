@@ -39,10 +39,7 @@ export const SKIPPED = new Map([
  * Everything else is audited on the draft. */
 export const FILLED_BY = new Map([
   ['/notifications/{journeyId}/confirmation', 'submitted'],
-  ['/notifications/{journeyId}/destination-country', 'transit'],
-  ['/notifications/{journeyId}/port-of-exit', 'transit'],
-  ['/notifications/{journeyId}/transporters/private', 'transit'],
-  ['/notifications/{journeyId}/exit-date', 'temporaryAdmission']
+  ['/notifications/{journeyId}/transporters/private', 'transit']
 ])
 
 /** Query strings a route needs before it will render rather than redirect.

@@ -17,10 +17,6 @@ import { assembleRequestView } from '../../../../../engine/request-view.js'
 
 import * as origin from './origin/controller.js'
 import * as importReason from './import-reason/controller.js'
-import * as importPurpose from './import-purpose/controller.js'
-import * as destinationCountry from './destination-country/controller.js'
-import * as portOfExit from './port-of-exit/controller.js'
-import * as exitDate from './exit-date/controller.js'
 import * as additionalDetails from './additional-details/controller.js'
 import * as addresses from './addresses/controller.js'
 import * as cphNumber from './cph-number/controller.js'
@@ -87,10 +83,12 @@ delete privateTransportFixture.commercialTransporter
 const scalarPages = [
   ['origin', origin, parityFixture],
   ['import reason', importReason, parityFixture],
-  ['import purpose', importPurpose, parityFixture],
-  ['destination country', destinationCountry, transitFixture],
-  ['port of exit', portOfExit, transitFixture],
-  ['exit date', exitDate, temporaryAdmissionFixture],
+  ['import reason on transit', importReason, transitFixture],
+  [
+    'import reason on temporary admission',
+    importReason,
+    temporaryAdmissionFixture
+  ],
   ['additional details', additionalDetails, parityFixture],
   ['addresses', addresses, parityFixture],
   ['CPH number', cphNumber, parityFixture],

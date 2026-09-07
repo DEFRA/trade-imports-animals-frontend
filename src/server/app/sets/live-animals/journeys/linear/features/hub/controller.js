@@ -33,7 +33,7 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 const GROUPS = [
   {
     id: 'about-the-consignment',
-    rows: ['origin', 'commodities', 'importReason', 'exitDetails']
+    rows: ['origin', 'commodities', 'importReason']
   },
   {
     id: 'commodity-details',

@@ -9,7 +9,10 @@ are relative to
 
 ## Read these files first
 
-Use import reason as the small, complete page example:
+Use import reason as the complete page example — it shows every file a page
+needs. Its conditional-reveal machinery (the `REVEALS` map, the per-branch
+`RULES` table and the branch-keyed `fields()`) is specific to that page: read
+past it, do not copy it into a plain new page.
 
 - [`journeys/linear/features/import-reason/page.js`](../journeys/linear/features/import-reason/page.js)
 - [`journeys/linear/features/import-reason/controller.js`](../journeys/linear/features/import-reason/controller.js)

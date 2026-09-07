@@ -346,7 +346,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
       /\/origin\?change=1$/
     )
     expect(changeHrefOf(rows, PURPOSE_IN_MARKET_KEY)).toMatch(
-      /\/import-purpose\?change=1$/
+      /\/import-reason\?change=1$/
     )
     expect(changeHrefOf(rows, TRANSITED_COUNTRIES_KEY)).toMatch(
       /\/transit-countries\?change=1$/
