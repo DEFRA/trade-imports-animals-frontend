@@ -9,7 +9,6 @@ import {
   compose,
   maxText,
   oneOf,
-  pattern,
   requiredMaxText,
   validate
 } from '../../../../../../lib/validate/index.js'
@@ -152,15 +151,14 @@ const fields = (requirement) =>
     ),
     oneOf('regionOfOriginCodeRequirement', REGION_CODE_REQUIREMENT_ANSWERS),
     regionCodeSuffixRule(requirement),
+    // The reference is the user's own, and the service never reads it: a
+    // reference their records write as ACME-2026/01, or with a space in it,
+    // has to go in as they hold it. So nothing rules on the characters — only
+    // the length, and the hint says the limit before the user meets it.
     maxText(
       'internalReferenceNumber',
       INTERNAL_REFERENCE_MAX_LENGTH,
       copy.errors.internalReferenceMaxLength
-    ),
-    pattern(
-      'internalReferenceNumber',
-      /^\w*$/,
-      copy.errors.internalReferencePattern
     )
   )
 

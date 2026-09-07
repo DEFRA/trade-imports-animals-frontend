@@ -18,15 +18,13 @@ export const copy = {
   },
   internalReference: {
     label: 'Your internal reference for this consignment (optional)',
-    hint: 'Enter any internal reference you want to use to identify this consignment, or leave blank.'
+    hint: 'Enter any internal reference you want to use to identify this consignment, or leave blank. It can be up to 58 characters.'
   },
   errors: {
     countryFromList: 'Select a country from the list',
     regionCodeRequired: 'Enter the region of origin code',
     regionCodeMaxLength: 'Region of origin code must be 5 characters or less',
     internalReferenceMaxLength:
-      'Internal reference must be 58 characters or less',
-    internalReferencePattern:
-      'Internal reference must only contain letters, numbers and underscores'
+      'Internal reference must be 58 characters or less'
   }
 }
