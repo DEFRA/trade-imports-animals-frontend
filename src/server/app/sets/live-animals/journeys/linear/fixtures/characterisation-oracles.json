@@ -376,7 +376,7 @@
           "reasons": [
             {
               "code": "obligation.containsUnweanedAnimals.mandatory.becauseApplicableCommodity",
-              "explanation": "consignment includes at least one commodity that requires unweaned-animal tracking (equines, cattle, pigs, sheep, or goats)"
+              "explanation": "containsUnweanedAnimals applies when any commodity line has a commodityCode in the unweaned list"
             }
           ]
         },
@@ -924,7 +924,7 @@
           "reasons": [
             {
               "code": "obligation.containsUnweanedAnimals.mandatory.becauseApplicableCommodity",
-              "explanation": "consignment includes at least one commodity that requires unweaned-animal tracking (equines, cattle, pigs, sheep, or goats)"
+              "explanation": "containsUnweanedAnimals applies when any commodity line has a commodityCode in the unweaned list"
             }
           ]
         },
@@ -1409,7 +1409,7 @@
           "reasons": [
             {
               "code": "obligation.containsUnweanedAnimals.mandatory.becauseApplicableCommodity",
-              "explanation": "consignment includes at least one commodity that requires unweaned-animal tracking (equines, cattle, pigs, sheep, or goats)"
+              "explanation": "containsUnweanedAnimals applies when any commodity line has a commodityCode in the unweaned list"
             }
           ]
         },

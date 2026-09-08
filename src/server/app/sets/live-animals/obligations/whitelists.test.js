@@ -1,7 +1,7 @@
 /**
  * Whitelist scope tests.
  *
- * V4 gates eight commodity-scoped obligations on the commodities
+ * V4 gates nine commodity-scoped obligations on the commodities
  * service's allowlists, in the stored picker-name vocabulary.
  * Silently widening any allowlist is a real risk (e.g. adding a name
  * to the package-count list that puts `numberOfPackages` in scope for
@@ -20,6 +20,7 @@ import {
   commodityCode,
   numberOfPackages,
   cph,
+  containsUnweanedAnimals,
   microchip,
   passport,
   tattoo,
@@ -36,7 +37,8 @@ import {
   packageCountCommodities,
   passportCommodities,
   permanentAddressCommodities,
-  tattooCommodities
+  tattooCommodities,
+  unweanedCommodities
 } from '../services/commodities/index.js'
 
 // Sentinel — a commodity name deliberately not present in any V4
@@ -115,6 +117,43 @@ describe('CPH list → cph (top-level anyAllowListed)', () => {
 })
 
 // ---------------------------------------------------------------------------
+// Notification-level gate: containsUnweanedAnimals
+//
+// Same shape as cph — `anyAllowListed(commodityCode, unweanedCommodities())`
+// — so the question is asked once for the consignment as soon as ANY line
+// carries a commodity design release 1 asks it of.
+// ---------------------------------------------------------------------------
+
+describe('unweaned list → containsUnweanedAnimals (top-level anyAllowListed)', () => {
+  for (const name of unweanedCommodities()) {
+    it(`Should put containsUnweanedAnimals in scope when a line has commodity = '${name}'`, () => {
+      const state = evaluate({
+        [commodityCode.id]: { line1: name }
+      })
+      expect(state.obligations[containsUnweanedAnimals.id].inScope).toBe(true)
+    })
+  }
+
+  it(`Should not put containsUnweanedAnimals in scope when no line matches`, () => {
+    const state = evaluate({
+      [commodityCode.id]: { line1: CONTROL_NAME }
+    })
+    expect(state.obligations[containsUnweanedAnimals.id].inScope).toBe(false)
+  })
+
+  // Design release 1 asks the question only of a commodity carrying unweaned
+  // options, and horses carry none — so a horses-only consignment is never
+  // asked it. Named rather than left to the sentinel because Horse is a real
+  // commodity the picker offers and the gate used to hold it.
+  it('Should not put containsUnweanedAnimals in scope for a horses-only consignment', () => {
+    const state = evaluate({
+      [commodityCode.id]: { line1: 'Horse' }
+    })
+    expect(state.obligations[containsUnweanedAnimals.id].inScope).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
 // Unit-record-scoped gates: microchip / passport / tattoo / earTag /
 // horseName / permanentAddress. Each uses
 // `applyTo: allowListed(commodityCode, LIST, unitRecord, …)`, so
@@ -184,6 +223,7 @@ for (const { name, names, gated } of UNIT_SCOPED_ALLOWLISTS) {
 const EXPECTED = {
   'storable package-count entries': ['Cat', 'Cow', 'Dog', 'Horse'],
   'CPH list': ['Cow'],
+  'unweaned list': ['Cow'],
   'microchip list': ['Horse', 'Cat', 'Dog'],
   'passport list': ['Horse', 'Cow', 'Cat', 'Dog'],
   'tattoo list': ['Cat', 'Dog'],
@@ -198,6 +238,7 @@ const ALLOWLISTS_UNDER_TEST = [
     names: storablePackageCountCommodities()
   },
   { name: 'CPH list', names: cphCommodities() },
+  { name: 'unweaned list', names: unweanedCommodities() },
   { name: 'microchip list', names: microchipCommodities() },
   { name: 'passport list', names: passportCommodities() },
   { name: 'tattoo list', names: tattooCommodities() },

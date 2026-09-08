@@ -662,7 +662,9 @@ describe(`${SUITE} — commodity-gate render matrix — model metadata per selec
 
   const MATRIX = [
     { commodity: 'Cow', packages: true, unweaned: true, cph: true },
-    { commodity: 'Horse', packages: true, unweaned: true, cph: false },
+    // Design release 1 asks the unweaned-animals question only of a commodity
+    // carrying unweaned options, and a horse carries none.
+    { commodity: 'Horse', packages: true, unweaned: false, cph: false },
     { commodity: 'Cat', packages: true, unweaned: false, cph: false },
     { commodity: 'Dog', packages: true, unweaned: false, cph: false },
     { commodity: 'Fish', packages: false, unweaned: false, cph: false }
