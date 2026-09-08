@@ -38,8 +38,11 @@ const featuresWithCopy = readdirSync(FEATURES_DIR, { withFileTypes: true })
 // - ITAHC is a certificate acronym; both locales display it verbatim.
 // - transporters.guidance.linkHref is a gov.uk URL, identical in both locales.
 // - search.help.lookupHref is the Trade Tariff gov.uk URL, likewise.
+// - documents.guidance.additional.linkHref is the IPAFFS guidance gov.uk URL,
+//   likewise.
 const IDENTICAL_ALLOWLIST = new Set([
   'documents:types.ITAHC',
+  'documents:guidance.additional.linkHref',
   'check-answers:documentTypes.ITAHC',
   'transport:transporters.guidance.linkHref',
   'commodities:search.help.lookupHref'
