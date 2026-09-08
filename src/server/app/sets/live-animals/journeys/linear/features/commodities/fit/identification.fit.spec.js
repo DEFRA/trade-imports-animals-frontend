@@ -132,6 +132,14 @@ const submitAdd = (page) =>
     .getByRole('button', { name: copy.identification.saveAndAddAnother })
     .click()
 
+// The same in-card button on the last animal the line still owes, where it
+// stops inviting another record and finishes the line instead.
+const submitFinish = (page) =>
+  page.getByRole('button', { name: copy.identification.saveAndFinish }).click()
+
+const inCardSaveButton = (page, name) =>
+  page.getByRole('button', { name, exact: true })
+
 // The page ends on the same primary as every other journey page — the shared
 // "Save and continue", not a wording of its own.
 const saveAndContinue = (page) =>
@@ -166,9 +174,9 @@ const removeAnimalRow = async (page, species, number) => {
   return row
 }
 
-const addCowRecord = async (page, earTag) => {
+const addCowRecord = async (page, earTag, { last = false } = {}) => {
   await page.locator(EAR_TAG_FIELD).fill(earTag)
-  await submitAdd(page)
+  await (last ? submitFinish(page) : submitAdd(page))
 }
 
 const addCatRecordRow = async (page) => {
@@ -387,18 +395,21 @@ test.describe('animal identification', () => {
   })
 
   // Design release 1 ends this page the way it ends every other page of the
-  // journey. "Save and finish" here would say a different thing from the rest
-  // of the service for the same action.
+  // journey. The page's own primary keeps the shared wording whatever the cards
+  // are doing — the in-card button is a separate control and may read "Save and
+  // finish" on the last outstanding animal, so the ban is scoped to the page's
+  // save actions rather than the whole page.
   test('ends on the same Save and continue as every other journey page', async ({
     page
   }) => {
     await openCatIdentification(page)
 
+    const saveActions = page.locator('.govuk-button-group')
     await expect(
-      page.getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
+      saveActions.getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
     ).toBeVisible()
     await expect(
-      page.getByRole('button', { name: 'Save and finish' })
+      saveActions.getByRole('button', { name: 'Save and finish' })
     ).toHaveCount(0)
   })
 
@@ -465,6 +476,85 @@ test.describe('animal identification', () => {
     await expect(
       page.getByRole('heading', { name: 'Identification details', exact: true })
     ).toHaveCount(0)
+  })
+})
+
+// Design release 1 makes the in-card button name what is left on the line, so
+// the words tell the trader what pressing them does next.
+test.describe('animal identification in-card save button', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('invites another record while more than one animal is outstanding, then finishes the line on the last', async ({
+    page
+  }) => {
+    await openIdentification(page, [['Cow', [BOS_TAURUS]]], ['2'])
+    await expect(
+      inCardSaveButton(page, copy.identification.saveAndAddAnother)
+    ).toBeVisible()
+
+    await addCowRecord(page, 'UK000000000001')
+
+    await expect(
+      page.getByRole('heading', {
+        name: copy.identification.counter(BOS_TAURUS, 2, 2)
+      })
+    ).toBeVisible()
+    await expect(
+      inCardSaveButton(page, copy.identification.saveAndFinish)
+    ).toBeVisible()
+    await expect(
+      inCardSaveButton(page, copy.identification.saveAndAddAnother)
+    ).toHaveCount(0)
+
+    await addCowRecord(page, 'UK000000000002', { last: true })
+    await expect(
+      page.getByText(copy.identification.allEntered(2, BOS_TAURUS))
+    ).toBeVisible()
+  })
+
+  // One animal has nothing to add after it, so the card offers no button of
+  // its own — the page's Save and continue is what captures the record.
+  test('offers no in-card button on a line of one animal and saves it on Save and continue', async ({
+    page
+  }) => {
+    await openIdentification(page, [['Cow', [BOS_TAURUS]]], ['1'])
+    await expect(
+      page.getByRole('heading', {
+        name: copy.identification.counter(BOS_TAURUS, 1, 1)
+      })
+    ).toBeVisible()
+    await expect(
+      inCardSaveButton(page, copy.identification.saveAndAddAnother)
+    ).toHaveCount(0)
+    await expect(
+      inCardSaveButton(page, copy.identification.saveAndFinish)
+    ).toHaveCount(0)
+
+    await page.locator(EAR_TAG_FIELD).fill('UK000000000001')
+    await saveAndContinue(page)
+
+    await page
+      .getByRole('link', { name: hubCopy.rows.animalIdentification.title })
+      .click()
+    await expect(
+      savedAnimalRow(page, BOS_TAURUS, 1).getByRole('cell', {
+        name: 'UK000000000001',
+        exact: true
+      })
+    ).toBeVisible()
+  })
+
+  test('has no serious or critical axe violations on the last outstanding animal', async ({
+    page
+  }) => {
+    await openIdentification(page, [['Cow', [BOS_TAURUS]]], ['2'])
+    await addCowRecord(page, 'UK000000000001')
+    await expect(
+      inCardSaveButton(page, copy.identification.saveAndFinish)
+    ).toBeVisible()
+    await expectAxeClean(page, 'Animal identification on the last animal')
   })
 })
 
@@ -715,7 +805,7 @@ test.describe('animal identification records', () => {
   test('saves a dog identified only by its microchip and reads the number back', async ({
     page
   }) => {
-    await openIdentification(page, [['Dog', [CANIS_LUPUS_FAMILIARIS]]])
+    await openIdentification(page, [['Dog', [CANIS_LUPUS_FAMILIARIS]]], ['2'])
     await page.locator(MICROCHIP_FIELD).fill(MICROCHIP_NUMBER)
     await fillAddress(page)
     await submitAdd(page)
@@ -754,7 +844,7 @@ test.describe('animal identification records', () => {
   }) => {
     await openIdentification(page, [['Cow', [BOS_TAURUS]]], ['2'])
     await addCowRecord(page, 'UK000000000001')
-    await addCowRecord(page, 'UK000000000002')
+    await addCowRecord(page, 'UK000000000002', { last: true })
     await expect(
       page.getByText(copy.identification.allEntered(2, BOS_TAURUS))
     ).toBeVisible()
@@ -778,7 +868,7 @@ test.describe('animal identification records', () => {
       })
     ).toBeVisible()
     await addCowRecord(page, 'UK000000000001')
-    await addCowRecord(page, 'UK000000000002')
+    await addCowRecord(page, 'UK000000000002', { last: true })
     await expect(
       page.getByText(copy.identification.allEntered(2, BOS_TAURUS))
     ).toBeVisible()

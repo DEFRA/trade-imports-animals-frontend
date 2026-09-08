@@ -32,6 +32,7 @@ const EAR_TAG_FIELD_0 = 'animalIdentifierEarTag-0'
 const IDENTIFICATION_PAGE = 'commodities/identification'
 const REMOVE_FIRST_UNIT = 'remove:0:0'
 const BOS_TAURUS_1 = 'Bos taurus 1'
+const SAVE_AND_ADD_ANOTHER = 'Save and add another'
 
 const catLine = (extra = {}) => ({
   commoditySelection: 'Cat',
@@ -179,6 +180,94 @@ describe(`${SUITE} — the cards view`, () => {
     )
     expect(card.units).toHaveLength(2)
     expect(card.units[0].removeAria).toBe('animal 1')
+  })
+})
+
+// Design release 1 lets the in-card button name what is left on the line, so
+// the words tell the trader what pressing them does next.
+describe(`${SUITE} — the in-card save button`, () => {
+  setupIdentificationEngine()
+
+  it('Should invite another record while more than one animal is still outstanding', async () => {
+    const [card] = await viewCards({
+      commodityLines: [cowLine({ numberOfAnimalsQuantity: '3' })]
+    })
+    expect(card.saveButtonText).toBe(SAVE_AND_ADD_ANOTHER)
+  })
+
+  // Two animals still outstanding on a line that has already saved one: the
+  // wording has to follow what is left, not how many records exist.
+  it('Should keep inviting another record when a saved line still has more than one animal outstanding', async () => {
+    const [card] = await viewCards({
+      commodityLines: [
+        cowLine({
+          numberOfAnimalsQuantity: '3',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+        })
+      ]
+    })
+    expect(card.counter).toBe('Enter details for Bos taurus 2 of 3')
+    expect(card.saveButtonText).toBe(SAVE_AND_ADD_ANOTHER)
+  })
+
+  it('Should finish the line on the last outstanding animal rather than inviting another', async () => {
+    const [card] = await viewCards({
+      commodityLines: [
+        cowLine({
+          numberOfAnimalsQuantity: '2',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+        })
+      ]
+    })
+    expect(card.counter).toBe('Enter details for Bos taurus 2 of 2')
+    expect(card.saveButtonText).toBe('Save and finish')
+  })
+
+  // One animal has nothing to add after it, so the card offers no button of
+  // its own — the page's Save and continue captures the record.
+  it('Should offer no in-card button on a line of one animal', async () => {
+    const [card] = await viewCards({
+      commodityLines: [cowLine({ numberOfAnimalsQuantity: '1' })]
+    })
+    expect(card.counter).toBe('Enter details for Bos taurus 1 of 1')
+    expect(card.saveButtonText).toBeNull()
+  })
+
+  it('Should keep the open wording while the count is unanswered — no last animal to name', async () => {
+    const [card] = await viewCards({ commodityLines: [catLine()] })
+    expect(card.saveButtonText).toBe(SAVE_AND_ADD_ANOTHER)
+  })
+
+  it('Should drop the button with the rest of the entry block at N = M', async () => {
+    const [card] = await viewCards({
+      commodityLines: [
+        cowLine({
+          numberOfAnimalsQuantity: '2',
+          animalIdentifiers: [
+            { animalIdentifierEarTag: 'UK1' },
+            { animalIdentifierEarTag: 'UK2' }
+          ]
+        })
+      ]
+    })
+    expect(card.atMax).toBe(true)
+    expect(card.saveButtonText).toBeNull()
+  })
+
+  // The button the single-animal line no longer has is not a lost route to
+  // saving: the page primary already captures the record it holds.
+  it('Should still capture a one-animal record through the page primary', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [cowLine({ numberOfAnimalsQuantity: '1' })]
+      },
+      payload: { 'animalIdentifierEarTag-0': 'UK1' }
+    })
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.commodityLines[0].animalIdentifiers).toHaveLength(1)
+    expect(
+      result.after.commodityLines[0].animalIdentifiers[0].animalIdentifierEarTag
+    ).toBe('UK1')
   })
 })
 

@@ -68,6 +68,21 @@ const capacityStateFor = (answers, index, unitCount) => {
   return { cap, atMax, overBy }
 }
 
+// Design release 1 makes the in-card button say what pressing it will do next.
+// A line of one animal gets no button of its own — there is nothing to add
+// after this record, so the page's own Save and continue captures it. The last
+// animal still outstanding finishes the line rather than inviting another. An
+// unanswered count has no last animal to name, so it keeps the open wording.
+const saveButtonTextFor = (cap, records) => {
+  if (cap === null) {
+    return copy.saveAndAddAnother
+  }
+  if (cap <= 1) {
+    return null
+  }
+  return cap - records === 1 ? copy.saveAndFinish : copy.saveAndAddAnother
+}
+
 const visibleIdentifierFields = (atMax, commodity, index, values, errors) =>
   atMax
     ? []
@@ -116,6 +131,7 @@ export const buildCard = (answers, line, form, errors, changeCountHref) => {
       atMax
     ),
     atMax,
+    saveButtonText: atMax ? null : saveButtonTextFor(cap, units.length),
     identifierColumns: columns.map(([, label]) => label),
     units: unitEntries(index, species, columns, units),
     hasUnits: units.length > 0,
