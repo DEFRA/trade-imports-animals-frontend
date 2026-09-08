@@ -22,7 +22,8 @@ import { capacityExceededError, documentAddErrors } from './form/errors.js'
 import {
   EMPTY_FORM,
   documentFromPayload,
-  pendingDocumentSaveFrom
+  pendingDocumentSaveFrom,
+  startsADocument
 } from './form/payload.js'
 import { loadPage } from './handlers/load-page.js'
 import { fileResponse, uploadDetails } from './handlers/reads/download.js'
@@ -88,7 +89,18 @@ const uploadOutcome = async (pageState, entry, file, filename) => {
   }
 }
 
-const postAdd = async (request, h, payload) => {
+const pageHref = (request) =>
+  kit.withChangeContext(request, pagePath(request.params.journeyId, page.slug))
+
+// The single-page loop: a saved document leaves the trader on the page it was
+// added from, ready for the next one.
+const backToPage = (request, h) => h.redirect(pageHref(request))
+
+// `afterSave` is where a saved document lands the trader. Every successful
+// save redirects back to the page — the POST mutated state, so a reload must
+// not be able to replay it and append the document twice. Continue is then
+// pressed again from the fresh GET, once the scan has settled.
+const postAdd = async (request, h, payload, afterSave) => {
   const pageState = await loadPage(request, h)
   const bare = documentFromPayload(payload)
   const pendingDocumentSave = pendingDocumentSaveFrom(payload)
@@ -120,7 +132,7 @@ const postAdd = async (request, h, payload) => {
     uploadId: outcome.uploadId,
     filename
   }
-  return saveAddedDocument(request, h, pageState, savedEntry, bare)
+  return saveAddedDocument(request, h, pageState, savedEntry, bare, afterSave)
 }
 
 const isAlreadySaved = (pageState, uploadId) =>
@@ -128,7 +140,14 @@ const isAlreadySaved = (pageState, uploadId) =>
     ({ entry: document }) => document.uploadId === uploadId
   )
 
-const saveAddedDocument = async (request, h, pageState, savedEntry, bare) => {
+const saveAddedDocument = async (
+  request,
+  h,
+  pageState,
+  savedEntry,
+  bare,
+  afterSave
+) => {
   const { failure } = await kit.recoverableSave(
     async () => {
       if (isAlreadySaved(pageState, savedEntry.uploadId)) {
@@ -153,12 +172,7 @@ const saveAddedDocument = async (request, h, pageState, savedEntry, bare) => {
   if (failure) {
     return failure
   }
-  return h.redirect(
-    kit.withChangeContext(
-      request,
-      pagePath(request.params.journeyId, page.slug)
-    )
-  )
+  return afterSave()
 }
 
 const documentAt = (answers, evaluation, index) =>
@@ -187,12 +201,7 @@ const retryProjectionSave = async (
   if (failure) {
     return failure
   }
-  return h.redirect(
-    kit.withChangeContext(
-      request,
-      pagePath(request.params.journeyId, page.slug)
-    )
-  )
+  return backToPage(request, h)
 }
 
 const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
@@ -214,15 +223,11 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
     return h.response().code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  const backToPage = kit.withChangeContext(
-    request,
-    pagePath(request.params.journeyId, page.slug)
-  )
   if (entry.uploadId && !retryUploadId) {
     try {
       await documentUploads.remove(entry.uploadId)
     } catch {
-      return h.redirect(backToPage)
+      return backToPage(request, h)
     }
   }
   const { failure } = await kit.recoverableSave(
@@ -244,8 +249,28 @@ const postRemove = async (request, h, index, { retryUploadId = null } = {}) => {
     return failure
   }
 
-  return h.redirect(backToPage)
+  return backToPage(request, h)
 }
+
+// Leaving the page, once nothing is left to save. A file still being checked
+// holds Continue back; the exit to the overview is a deliberate stop and goes.
+const leavePage = async (request, h) => {
+  const pageState = await loadPage(request, h)
+  if (!kit.hubExitTarget(request) && isStillSettling(pageState.documents)) {
+    return render(request, h, pageState, EMPTY_FORM, {
+      summaryErrors: settlingSummaryErrors(pageState.documents)
+    })
+  }
+  return h.redirect(await kit.nextTarget(request, page, pageState.scope))
+}
+
+// Continue submits the add-a-document fields along with it, so a part-filled
+// form reaching here is a document the trader means to attach. Finish it —
+// save it and return them to the page, or say what is missing — rather than
+// drop it without a word. Continue is pressed again from that fresh page to
+// leave. The exit to the overview deliberately leaves the form behind.
+const continuesADocument = (request, payload) =>
+  !kit.hubExitTarget(request) && startsADocument(payload)
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
@@ -259,18 +284,15 @@ const post = async (request, h) => {
     })
   }
   if (action === 'add') {
-    return postAdd(request, h, payload)
+    return postAdd(request, h, payload, () => backToPage(request, h))
   }
   if (isRemoveAction(action)) {
     return postRemove(request, h, removeIndexOf(action))
   }
-  const pageState = await loadPage(request, h)
-  if (!kit.hubExitTarget(request) && isStillSettling(pageState.documents)) {
-    return render(request, h, pageState, EMPTY_FORM, {
-      summaryErrors: settlingSummaryErrors(pageState.documents)
-    })
+  if (continuesADocument(request, payload)) {
+    return postAdd(request, h, payload, () => backToPage(request, h))
   }
-  return h.redirect(await kit.nextTarget(request, page, pageState.scope))
+  return leavePage(request, h)
 }
 
 const isOversizeBoom = (request) =>

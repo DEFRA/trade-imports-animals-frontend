@@ -206,9 +206,16 @@ export const meta = { ...page, collects: ['documents'] }
 ```
 
 Its POST branches on the submit button. `action === 'add'` validates the entry
-fields and appends; a plain Continue advances with no write. The append creates
-the snapshot-local position — until that POST the draft lives only in the
-payload, never a half-created instance in the store:
+fields, appends, and redirects back to the page for the next one. Continue
+posts the same entry fields with it, so it appends too when the payload holds
+a started entry — `startsADocument` in
+[`form/payload.js`](../journeys/linear/features/documents/form/payload.js)
+keys that on the trader having chosen a document type — and otherwise advances
+with no write. Both saving paths run through the same `postAdd`, which takes an
+`afterSave` callback, so every successful append ends in a redirect rather than
+a render: the POST mutated state and a reload must not replay it. The append
+creates the snapshot-local position — until that POST the draft lives only in
+the payload, never a half-created instance in the store:
 
 ```js
 await state.appendEntry(request, h, 'documents', entry)

@@ -426,8 +426,95 @@ describe('documents — listing, scanning and removing', () => {
   })
 
   it('Should treat a POST without the add action as Continue, appending nothing', async () => {
+    const result = await driveHandler(post, { payload: {} })
+    expect(result.response.redirect).toBeDefined()
+    expect(result.after).toEqual(result.before)
+  })
+})
+
+// Continue posts the add-a-document fields with it. Design release 1 reads a
+// chosen document type as the trader saying a document is coming, and finishes
+// the form rather than dropping it.
+describe('documents — Continue finishes a part-filled document', () => {
+  beforeAll(configureEngine)
+  beforeEach(() => store.clear())
+
+  it('Should carry an untouched form past the page, appending nothing', async () => {
     const result = await driveHandler(post, {
-      payload: { action: 'continue', ...validDocument }
+      payload: { action: 'continue' }
+    })
+    expect(result.response.redirect).toBeDefined()
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should save the document Continue carries rather than discard it', async () => {
+    const result = await driveHandler(post, {
+      payload: { action: 'continue', ...validDocument, file: pdfFile() }
+    })
+    const [entry] = result.after.documents
+    expect(entry.accompanyingDocumentReference).toBe('GBHC1234567890')
+    expect(entry.accompanyingDocumentType).toBe('ITAHC')
+    expect(entry.uploadId).toBeDefined()
+  })
+
+  // A Continue that saves has mutated state, so it must end in a redirect —
+  // a reload of the POST would otherwise append the document a second time.
+  it('Should redirect back to the page after saving the document Continue carries', async () => {
+    const result = await driveHandler(post, {
+      payload: { action: 'continue', ...validDocument, file: pdfFile() }
+    })
+    expect(result.response.redirect).toContain('accompanying-documents')
+    expect(result.after.documents).toHaveLength(1)
+  })
+
+  it('Should name what is missing when Continue carries a type and nothing else, appending nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: { action: 'continue', accompanyingDocumentType: 'ITAHC' }
+    })
+    expect(result.response.statusCode).toBe(400)
+    expect(Object.keys(result.view.context.errors)).toEqual([
+      'accompanyingDocumentReference',
+      'accompanyingDocumentDateOfIssue',
+      'file'
+    ])
+    expect(result.after).toEqual(result.before)
+  })
+
+  // Uploading is optional, and the type is the whole of the signal: without one
+  // there is no document to finish, so the rest of the form goes with the page.
+  it('Should carry a form with no document type chosen past the page, appending nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        action: 'continue',
+        accompanyingDocumentReference: 'GBHC1234567890',
+        accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT,
+        file: pdfFile()
+      }
+    })
+    expect(result.response.redirect).toBeDefined()
+    expect(result.after).toEqual(result.before)
+  })
+
+  // The signal is a type the page actually offers, not merely a non-empty
+  // select. HEALTH_CERTIFICATE is in the service enum but design release 1
+  // never offers it, so a Continue carrying it is carried past like any other
+  // form the trader did not start.
+  it('Should carry a form whose document type the page does not offer past the page, appending nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        action: 'continue',
+        ...validDocument,
+        accompanyingDocumentType: EXCLUDED_TYPE,
+        file: pdfFile()
+      }
+    })
+    expect(result.response.redirect).toBeDefined()
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should leave a part-filled form behind on the exit to the overview, appending nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: { exit: 'hub', ...validDocument, file: pdfFile() }
     })
     expect(result.response.redirect).toBeDefined()
     expect(result.after).toEqual(result.before)

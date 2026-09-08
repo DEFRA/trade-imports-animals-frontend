@@ -77,6 +77,9 @@ const fillDocument = async (page, document = validDocument) => {
 const submitAdd = (page) =>
   page.getByRole('button', { name: copy.addAnother }).click()
 
+const submitContinue = (page) =>
+  page.getByRole('button', { name: copy.continueButton }).click()
+
 const uploadDocument = async (page, document = validDocument) => {
   await fillDocument(page, document)
   await submitAdd(page)
@@ -474,6 +477,52 @@ test.describe('document upload oversize validation', () => {
     await link.click()
     await expect(uploadControl(page)).toBeFocused()
     await expect(page.getByText(copy.empty)).toBeVisible()
+  })
+})
+
+// Continue posts the add-a-document fields with it, so a trader who fills the
+// form and presses the primary button has to end up with the document saved or
+// told what is missing — never carried on with the file quietly dropped.
+test.describe('document upload continue', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openDocuments(page)
+  })
+
+  test('continue saves the document the trader filled in, then leaves once it is scanned', async ({
+    page
+  }) => {
+    test.slow()
+    await fillDocument(page)
+    await submitContinue(page)
+
+    const row = rowFor(page, validDocument.accompanyingDocumentReference)
+    await expect(row).toContainText(copy.types.ITAHC)
+    await expect(row).toContainText(copy.scanTags.safe)
+
+    await submitContinue(page)
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  })
+
+  test('continue with a document type and nothing else says what is missing', async ({
+    page
+  }) => {
+    await page
+      .getByLabel(copy.documentType.label)
+      .selectOption(validDocument.accompanyingDocumentType)
+    await submitContinue(page)
+
+    await expect(errorLink(page, copy.errors.referenceRequired)).toBeVisible()
+    await expect(errorLink(page, copy.errors.dateRequired)).toBeVisible()
+    await expect(errorLink(page, copy.errors.fileRequired)).toBeVisible()
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+  })
+
+  test('continue with an untouched form leaves the page, uploading being optional', async ({
+    page
+  }) => {
+    await submitContinue(page)
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 })
 
