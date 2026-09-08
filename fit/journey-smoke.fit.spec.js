@@ -179,11 +179,12 @@ test.describe('live-animals journey glue', () => {
     await expect(page).toHaveURL(
       /\/identification\?change=1(?:#identification-card-0)?$/
     )
+    // The line holds a single animal, so the card offers no button of its own
+    // — the page's Save and continue is what captures the replacement record.
     await page.getByLabel('Ear tag', { exact: true }).fill('UK000000000002')
-    await page.getByRole('button', { name: 'Save and add another' }).click()
-    await expect(page).toHaveURL(
-      /\/identification\?change=1(?:#identification-card-0)?$/
-    )
+    await expect(
+      page.getByRole('button', { name: 'Save and add another' })
+    ).toHaveCount(0)
     await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(page).toHaveURL(/\/notification-view(?:#.*)?$/)
     await expect(page.getByText('UK000000000002')).toBeVisible()

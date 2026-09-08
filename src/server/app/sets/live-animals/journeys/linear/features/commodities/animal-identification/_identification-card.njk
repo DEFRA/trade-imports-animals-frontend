@@ -67,12 +67,17 @@
         {% endfor %}
       {% endif %}
 
-      {{ govukButton({
-        text: copy.saveAndAddAnother,
-        classes: "govuk-button--secondary",
-        name: "action",
-        value: "add:" ~ card.index
-      }) }}
+      {# The wording says what is left on this line: "Save and finish" on the
+         last outstanding animal, and no button at all where the line holds a
+         single animal — the page's own Save and continue captures that one. #}
+      {% if card.saveButtonText %}
+        {{ govukButton({
+          text: card.saveButtonText,
+          classes: "govuk-button--secondary",
+          name: "action",
+          value: "add:" ~ card.index
+        }) }}
+      {% endif %}
     {% endif %}
   </section>
   <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible" />
