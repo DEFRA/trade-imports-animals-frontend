@@ -287,9 +287,6 @@
         "39657a80-91a2-4fc6-8345-9f0617284a51": {
           "line0.unit0": "UK123456789"
         },
-        "3a768b91-a2b3-4fd7-8456-a01728395b62": {
-          "line0.unit0": "AB1234"
-        },
         "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
           "line0.unit0": "UK123456789012",
           "line1.unit0": "UK000000000001"
@@ -526,15 +523,7 @@
           ]
         },
         "3a768b91-a2b3-4fd7-8456-a01728395b62": {
-          "inScope": true,
-          "status": "optional",
-          "fulfilmentIndexes": ["line0.unit0", "line1.unit0"],
-          "reasons": [
-            {
-              "code": "obligation.tattoo.applicable.becauseTattooCommodity",
-              "explanation": "tattoo applies on units of lines whose commodityCode is in the tattoo list"
-            }
-          ]
+          "inScope": false
         },
         "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
           "inScope": true,
@@ -1553,15 +1542,7 @@
           ]
         },
         "3a768b91-a2b3-4fd7-8456-a01728395b62": {
-          "inScope": true,
-          "status": "optional",
-          "fulfilmentIndexes": ["line0.unit0"],
-          "reasons": [
-            {
-              "code": "obligation.tattoo.applicable.becauseTattooCommodity",
-              "explanation": "tattoo applies on units of lines whose commodityCode is in the tattoo list"
-            }
-          ]
+          "inScope": false
         },
         "3b879ca2-b3c4-4fe8-8567-a1283a4a6c73": {
           "inScope": true,

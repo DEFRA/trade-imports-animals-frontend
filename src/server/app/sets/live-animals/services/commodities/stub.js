@@ -121,11 +121,10 @@ export const PACKAGE_COUNT_COMMODITIES = [
 // identifier's gate and its position on the panel cannot drift apart. Adding
 // an identifier to a commodity is one edit here.
 export const COMMODITY_IDENTIFIERS = {
-  Cow: [
-    'animalIdentifierEarTag',
-    'animalIdentifierPassport',
-    'animalIdentifierTattoo'
-  ],
+  // A cow is asked for an ear tag and a passport and nothing else: design
+  // release 1 puts the tattoo on commodity code 01061900 — the cat, dog and
+  // ferret code — and not on 0102 (design 01-14/16/17).
+  Cow: ['animalIdentifierEarTag', 'animalIdentifierPassport'],
   Horse: ['animalIdentifierMicrochip', 'animalIdentifierPassport', 'horseName'],
   Cat: [
     'animalIdentifierMicrochip',

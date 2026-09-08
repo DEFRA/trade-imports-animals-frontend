@@ -133,8 +133,7 @@ describe(`${SUITE} — the cards view`, () => {
     const [cow] = await viewCards({ commodityLines: [cowLine()] })
     expect(cow.fields.map((field) => field.id)).toEqual([
       EAR_TAG_FIELD_0,
-      PASSPORT_FIELD_0,
-      TATTOO_FIELD_0
+      PASSPORT_FIELD_0
     ])
 
     const [horse] = await viewCards({ commodityLines: [horseLine()] })
@@ -358,8 +357,8 @@ describe(`${SUITE} — the saved-animals table`, () => {
         })
       ]
     })
-    expect(card.identifierColumns).toEqual(['Ear tag', 'Passport', 'Tattoo'])
-    expect(card.units[0].cells).toEqual(['UK1', '', ''])
+    expect(card.identifierColumns).toEqual(['Ear tag', 'Passport'])
+    expect(card.units[0].cells).toEqual(['UK1', ''])
   })
 
   it('Should number the rows within a commodity line by the species and the row position', async () => {
@@ -378,7 +377,7 @@ describe(`${SUITE} — the saved-animals table`, () => {
       BOS_TAURUS_1,
       'Bos taurus 2'
     ])
-    expect(card.units[1].cells).toEqual(['', 'UK2', ''])
+    expect(card.units[1].cells).toEqual(['', 'UK2'])
   })
 
   it('Should key each row by its own line\'s species so two commodity lines do not both start at "Animal 1"', async () => {
@@ -687,7 +686,7 @@ describe(`${SUITE} — identifier render matrix — model metadata per selectabl
     {
       commodity: 'Cow',
       species: '1148346',
-      fieldIds: [EAR_TAG_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
+      fieldIds: [EAR_TAG_FIELD_0, PASSPORT_FIELD_0],
       showAddress: false
     },
     {
@@ -769,8 +768,7 @@ describe(`${SUITE} — a commodity that carries no identifier of its own`, () =>
     expect(context.cards[0].anchor).toBe('identification-card-1')
     expect(context.cards[0].fields.map((field) => field.id)).toEqual([
       'animalIdentifierEarTag-1',
-      'animalIdentifierPassport-1',
-      'animalIdentifierTattoo-1'
+      'animalIdentifierPassport-1'
     ])
   })
 

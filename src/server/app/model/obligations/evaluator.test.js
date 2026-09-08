@@ -107,7 +107,7 @@ const cphReason = {
 // scannable.
 const LINE_UNKNOWN = 'line1' // commodity not in any allowlist
 const LINE_FISH = 'line2' //  Fish — no packages, no CPH, no specific identifier
-const LINE_COW = 'line4' //   Cow — packages AND CPH, passport + tattoo + earTag
+const LINE_COW = 'line4' //   Cow — packages AND CPH, passport + earTag
 const LINE_HORSE = 'lineH' // Horse — packages, passport + horseName
 const LINE_CAT = 'lineD' //   Cat — packages, passport + tattoo + permanentAddress
 
@@ -809,10 +809,10 @@ describe('V4 — passport (gatedBy allowListed(commodityCode, passport list))', 
 // ---------------------------------------------------------------------------
 
 describe('V4 — tattoo (gatedBy allowListed(commodityCode, tattoo list))', () => {
-  it('is in scope for a cow line (Cow in the tattoo list)', () => {
+  it('is in scope for a cat line (Cat in the tattoo list)', () => {
     const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_COW]: 'Cow' },
-      [tattoo.id]: { [`${LINE_COW}.${UNIT_1}`]: 'CT-99' }
+      [commodityCode.id]: { [LINE_CAT]: 'Cat' },
+      [tattoo.id]: { [`${LINE_CAT}.${UNIT_1}`]: 'CT-99' }
     })
     expect(result.obligations[tattoo.id].inScope).toBe(true)
     expect(result.obligations[tattoo.id].reasons).toEqual([tattooReason])
@@ -821,6 +821,18 @@ describe('V4 — tattoo (gatedBy allowListed(commodityCode, tattoo list))', () =
   it('is out of scope for horse (Horse not in the tattoo list)', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_HORSE]: 'Horse' }
+    })
+    expect(result.obligations[tattoo.id]).toEqual({ inScope: false })
+  })
+
+  // Design release 1 puts the tattoo on the cat, dog and ferret code and not
+  // on cattle, so a cow is asked for its ear tag and its passport only. The
+  // ear tag value is stored so a unit instance is enumerated and the commodity
+  // gate — not an empty unitRecord — is what puts the tattoo out of scope.
+  it('is out of scope for cow (Cow not in the tattoo list)', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_COW]: 'Cow' },
+      [earTag.id]: { [`${LINE_COW}.${UNIT_1}`]: 'UK123456789012' }
     })
     expect(result.obligations[tattoo.id]).toEqual({ inScope: false })
   })
@@ -902,6 +914,7 @@ describe('V4 — a commodity with no identifier type of its own', () => {
     expect(result.obligations[earTag.id].inScope).toBe(true)
     expect(result.obligations[passport.id].inScope).toBe(true)
     expect(result.obligations[horseName.id]).toEqual({ inScope: false })
+    expect(result.obligations[tattoo.id]).toEqual({ inScope: false })
   })
 
   it('purges an identifier value smuggled onto a fish unit', () => {

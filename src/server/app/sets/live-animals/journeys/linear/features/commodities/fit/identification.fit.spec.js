@@ -199,8 +199,8 @@ const submitStaleAdd = (page) =>
 
 const identifierValidations = [
   ['Cat', FELIS_CATUS, 'animalIdentifierMicrochip', 'Microchip'],
+  ['Cat', FELIS_CATUS, 'animalIdentifierTattoo', 'Tattoo'],
   ['Cow', BOS_TAURUS, 'animalIdentifierPassport', 'Passport'],
-  ['Cow', BOS_TAURUS, 'animalIdentifierTattoo', 'Tattoo'],
   ['Cow', BOS_TAURUS, 'animalIdentifierEarTag', 'Ear tag'],
   ['Horse', EQUUS_CABALLUS, 'horseName', 'Horse name']
 ]
@@ -273,8 +273,11 @@ test.describe('animal identification', () => {
 
     await expect(page.getByText(copy.identification.inset)).toBeVisible()
     await expect(page.locator(PASSPORT_FIELD)).toBeVisible()
-    await expect(page.locator('#animalIdentifierTattoo-0')).toBeVisible()
     await expect(page.locator(EAR_TAG_FIELD)).toBeVisible()
+    // Design release 1 puts the tattoo on the cat, dog and ferret code and
+    // not on cattle, so a cow is asked for its ear tag and its passport and
+    // nothing else.
+    await expect(page.locator('#animalIdentifierTattoo-0')).toHaveCount(0)
     await expect(page.locator('#animalIdentifierMicrochip-1')).toBeVisible()
     await expect(page.locator('#horseName-1')).toBeVisible()
     await expect(page.locator(MICROCHIP_FIELD)).toHaveCount(0)
@@ -301,11 +304,7 @@ test.describe('animal identification', () => {
     ])
 
     await expect(page.locator('label[for$="-0"]')).toHaveText(
-      entryLabelsOf([
-        'animalIdentifierEarTag',
-        'animalIdentifierPassport',
-        'animalIdentifierTattoo'
-      ])
+      entryLabelsOf(['animalIdentifierEarTag', 'animalIdentifierPassport'])
     )
     await expect(page.locator('label[for$="-1"]')).toHaveText(
       entryLabelsOf([
@@ -323,14 +322,13 @@ test.describe('animal identification', () => {
   // pinned to the column label rather than to a wording of its own.
   // Cattle only: microchip's entry label still reads 'Microchip number', a
   // wording Design release 1 has not settled here.
-  test('labels the passport, tattoo and ear tag fields on a cattle line with the words the saved-animals table heads them with', async ({
+  test('labels the passport and ear tag fields on a cattle line with the words the saved-animals table heads them with', async ({
     page
   }) => {
     await openIdentification(page, [['Cow', [BOS_TAURUS]]])
 
     for (const field of [
       'animalIdentifierPassport',
-      'animalIdentifierTattoo',
       'animalIdentifierEarTag'
     ]) {
       await expect(page.locator(`label[for="${field}-0"]`)).toHaveText(

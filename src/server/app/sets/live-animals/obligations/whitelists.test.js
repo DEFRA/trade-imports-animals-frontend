@@ -186,7 +186,7 @@ const EXPECTED = {
   'CPH list': ['Cow'],
   'microchip list': ['Horse', 'Cat', 'Dog'],
   'passport list': ['Horse', 'Cow', 'Cat', 'Dog'],
-  'tattoo list': ['Cat', 'Dog', 'Cow'],
+  'tattoo list': ['Cat', 'Dog'],
   'ear-tag list': ['Cow'],
   'horse-name list': ['Horse'],
   'permanent-address list': ['Cat', 'Dog']

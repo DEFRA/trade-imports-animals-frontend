@@ -47,8 +47,7 @@ describe('#identifiersFor', () => {
   it('Should give each commodity its identifiers in the order it asks for them', () => {
     expect(identifiersFor('Cow')).toEqual([
       'animalIdentifierEarTag',
-      'animalIdentifierPassport',
-      'animalIdentifierTattoo'
+      'animalIdentifierPassport'
     ])
     expect(identifiersFor('Horse')).toEqual([
       'animalIdentifierMicrochip',
