@@ -2,7 +2,7 @@ export const copy = {
   title: 'Additional details',
   certified: {
     legend: 'What are the animals certified for?',
-    hint: "You'll find this on the health certificate."
+    hint: 'This information can be found on the ITAHC.'
   },
   unweaned: {
     legend: 'Does the consignment contain any unweaned animals?',

@@ -3,7 +3,7 @@ export const copy = {
   title: 'Manylion ychwanegol',
   certified: {
     legend: "Ar gyfer beth mae'r anifeiliaid wedi'u hardystio?",
-    hint: 'Fe welwch hyn ar y dystysgrif iechyd.'
+    hint: "Gellir dod o hyd i'r wybodaeth hon ar yr ITAHC."
   },
   unweaned: {
     legend: "A yw'r llwyth yn cynnwys unrhyw anifeiliaid heb eu diddyfnu?",
