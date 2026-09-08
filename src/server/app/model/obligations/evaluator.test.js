@@ -1020,7 +1020,7 @@ describe('V4 — mixed lines drive per-line identifier gating', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Accompanying Documents — 0..10 user-driven indexed group. The four
+// Accompanying Documents — 0..15 user-driven indexed group. The four
 // document metadata fields are plain `status: 'mandatory'` within the
 // group; the upload-return fields are optional. The cap rides
 // `requires.maxEntries` via `groupInvariantErrors`.
@@ -1188,22 +1188,22 @@ describe('V4 — accompanying documents: a partial document keeps every field ow
   })
 })
 
-describe('V4 — accompanying documents: the 0..10 cap', () => {
+describe('V4 — accompanying documents: the 0..15 cap', () => {
   const documentsOf = (count) =>
     Object.fromEntries(
       Array.from({ length: count }, (_, i) => [`d${i}`, 'ITAHC'])
     )
 
-  it('ten inferred upload-only document instances raise no invariant error', () => {
+  it('fifteen inferred upload-only document instances raise no invariant error', () => {
     const state = evaluator.evaluate({
-      [documentUploadId.id]: documentsOf(10)
+      [documentUploadId.id]: documentsOf(15)
     })
     expect(groupInvariantErrors(documents, state)).toEqual([])
   })
 
-  it('an eleventh inferred upload-only document instance trips MAX_ENTRIES', () => {
+  it('a sixteenth inferred upload-only document instance trips MAX_ENTRIES', () => {
     const state = evaluator.evaluate({
-      [documentUploadId.id]: documentsOf(11)
+      [documentUploadId.id]: documentsOf(16)
     })
     expect(groupInvariantErrors(documents, state)).toEqual([
       {
@@ -1211,8 +1211,8 @@ describe('V4 — accompanying documents: the 0..10 cap', () => {
         groupId: documents.id,
         groupName: 'documents',
         errorCode: 'obligation.accompanyingDocument.tooMany',
-        maxEntries: 10,
-        actual: 11
+        maxEntries: 15,
+        actual: 16
       }
     ])
   })

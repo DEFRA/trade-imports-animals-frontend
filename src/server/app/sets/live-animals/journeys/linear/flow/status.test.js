@@ -397,14 +397,14 @@ describe('statusOf — the documents MAX_ENTRIES cap', () => {
   })
 
   it('Should fulfil the documents part at the cap', () => {
-    const answers = completeDocuments(10)
+    const answers = completeDocuments(15)
     expect(
       statusOf(['documents'], answers, inScope, evaluateAnswers(answers))
     ).toBe(FULFILLED)
   })
 
   it('Should block the documents part beyond the cap', () => {
-    const answers = completeDocuments(11)
+    const answers = completeDocuments(16)
     expect(
       statusOf(['documents'], answers, inScope, evaluateAnswers(answers))
     ).toBe(IN_PROGRESS)
