@@ -35,12 +35,11 @@ const {
   numberOfPackages,
   cph,
   unitRecord,
+  microchip,
   passport,
   tattoo,
   earTag,
   horseName,
-  identificationDetails,
-  description,
   permanentAddress,
   documents,
   accompanyingDocumentType,
@@ -135,11 +134,6 @@ const earTagReason = {
 const horseNameReason = {
   code: 'obligation.horseName.applicable.becauseHorseCommodity',
   explanation: 'horseName applies on units of horse-commodity lines'
-}
-const identificationDetailsReason = {
-  code: 'obligation.identificationDetails.applicable.becauseNoSpecificIdentifier',
-  explanation:
-    'identificationDetails applies on units of lines whose commodityCode has no specific identifier type'
 }
 const permanentAddressReason = {
   code: 'obligation.permanentAddress.applicable.becausePermanentAddressCommodity',
@@ -879,81 +873,51 @@ describe('V4 — horseName (gatedBy allowListed(commodityCode, horse-name list))
 })
 
 // ---------------------------------------------------------------------------
-// identificationDetails / description — inverse gate (in scope only where
-// no specific identifier applies)
+// A commodity on none of the identifier allowlists. Design release 1 asks
+// nothing at all of it: there is no free-text fallback to catch it, so every
+// identifier obligation stays out of scope on its line.
 // ---------------------------------------------------------------------------
 
-describe('V4 — identificationDetails (inverse gate — no specific identifier applies)', () => {
-  it('is in scope for fish (no specific identifier)', () => {
+describe('V4 — a commodity with no identifier type of its own', () => {
+  // With no unit storage every unit-level identifier is out of scope for a
+  // reason unrelated to the commodity — unitRecord enumerates no instance at
+  // all. Store a value so a unit exists pre-purge and the commodity gate is
+  // what decides, and pin the same shape on a Cow line so the pair
+  // discriminates.
+  it('puts no identifier obligation in scope on a fish line', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_FISH]: 'Fish' },
-      [identificationDetails.id]: {
-        [`${LINE_FISH}.${UNIT_1}`]: 'Tank 12, batch 7'
-      }
+      [earTag.id]: { [`${LINE_FISH}.${UNIT_1}`]: 'STRAY' }
     })
-    expect(result.obligations[identificationDetails.id].inScope).toBe(true)
-    expect(result.obligations[identificationDetails.id].reasons).toEqual([
-      identificationDetailsReason
-    ])
+    for (const identifier of [microchip, passport, tattoo, earTag, horseName]) {
+      expect(result.obligations[identifier.id]).toEqual({ inScope: false })
+    }
   })
 
-  it('is out of scope for cows (passport / tattoo / earTag apply)', () => {
-    const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_COW]: 'Cow' }
-    })
-    expect(result.obligations[identificationDetails.id]).toEqual({
-      inScope: false
-    })
-  })
-
-  it('is out of scope for horse (passport / horseName apply)', () => {
-    const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_HORSE]: 'Horse' }
-    })
-    expect(result.obligations[identificationDetails.id]).toEqual({
-      inScope: false
-    })
-  })
-
-  it('is out of scope for cats (passport / tattoo apply)', () => {
-    const result = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_CAT]: 'Cat' }
-    })
-    expect(result.obligations[identificationDetails.id]).toEqual({
-      inScope: false
-    })
-  })
-
-  it('purges a stored idDetails value on a specific-identifier line', () => {
+  it('puts the commodity’s own identifiers in scope on the same shape of cow line', () => {
     const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_COW]: 'Cow' },
-      [identificationDetails.id]: {
-        [`${LINE_COW}.${UNIT_1}`]: 'STRAY'
-      }
+      [earTag.id]: { [`${LINE_COW}.${UNIT_1}`]: 'UK123456789012' }
     })
-    expect(result.fulfilments[identificationDetails.id]).toBeUndefined()
+    expect(result.obligations[earTag.id].inScope).toBe(true)
+    expect(result.obligations[passport.id].inScope).toBe(true)
+    expect(result.obligations[horseName.id]).toEqual({ inScope: false })
   })
-})
 
-describe('V4 — description (same inverse gate as identificationDetails)', () => {
-  it('is in scope for fish, out of scope for cows', () => {
-    const fish = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_FISH]: 'Fish' }
-    })
-    const cow = evaluator.evaluate({
-      [commodityCode.id]: { [LINE_COW]: 'Cow' }
-    })
-    // With no unit storage the inScope flag reflects "any path in scope"
-    // → for fish, the enumerated paths at unit level are empty, so
-    // technically no fulfilmentIndexes are in scope even though the gate
-    // would permit them. Add a stored fulfilment to make fish concrete.
-    const fishWithUnit = evaluator.evaluate({
+  it('purges an identifier value smuggled onto a fish unit', () => {
+    const result = evaluator.evaluate({
       [commodityCode.id]: { [LINE_FISH]: 'Fish' },
-      [description.id]: { [`${LINE_FISH}.${UNIT_1}`]: 'Farmed salmon' }
+      [earTag.id]: { [`${LINE_FISH}.${UNIT_1}`]: 'STRAY' }
     })
-    expect(fishWithUnit.obligations[description.id].inScope).toBe(true)
-    expect(cow.obligations[description.id]).toEqual({ inScope: false })
-    expect(fish.obligations[description.id]).toEqual({ inScope: false })
+    expect(result.fulfilments[earTag.id]).toBeUndefined()
+  })
+
+  it('leaves the at-least-one-identifier rule with nothing to ask on such a line', () => {
+    const result = evaluator.evaluate({
+      [commodityCode.id]: { [LINE_FISH]: 'Fish' },
+      [numberOfAnimals.id]: { [LINE_FISH]: 2 }
+    })
+    expect(groupInvariantErrors(unitRecord, result)).toEqual([])
   })
 })
 

@@ -30,6 +30,7 @@ const PASSPORT_FIELD_0 = 'animalIdentifierPassport-0'
 const TATTOO_FIELD_0 = 'animalIdentifierTattoo-0'
 const EAR_TAG_FIELD_0 = 'animalIdentifierEarTag-0'
 const IDENTIFICATION_PAGE = 'commodities/identification'
+const REMOVE_FIRST_UNIT = 'remove:0:0'
 const BOS_TAURUS_1 = 'Bos taurus 1'
 
 const catLine = (extra = {}) => ({
@@ -188,12 +189,12 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
     const context = await viewContext({
       commodityLines: [
         cowLine({ numberOfAnimalsQuantity: '2' }),
-        fishLine({ numberOfAnimalsQuantity: '3' })
+        horseLine({ numberOfAnimalsQuantity: '3' })
       ]
     })
     expect(context.selectedCommodities).toEqual([
       { code: '0102', name: 'Domestic cattle', animals: '2' },
-      { code: '0301', name: 'Atlantic salmon', animals: '3' }
+      { code: '0101', name: 'Horse', animals: '3' }
     ])
   })
 
@@ -201,17 +202,14 @@ describe(`${SUITE} — the Selected commodities summary`, () => {
   // branch of the template, so it vanished as soon as the page had cards. The
   // href the summary and the Add another commodity link both use is the same
   // one either way.
-  it('Should offer the route back to the commodity question whether or not there is anything to identify', async () => {
-    for (const commodityLines of [[catLine()], []]) {
-      const journey = await store.create()
-      await store.seedAnswers(journey.journeyId, { commodityLines })
-      const h = stubH()
-      await getHandler(journeyRequest(journey.journeyId), h)
-      const { addHref, hasLines } = h.captured.view.context
+  it('Should offer the route back to the commodity question alongside the cards', async () => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, { commodityLines: [catLine()] })
+    const h = stubH()
+    await getHandler(journeyRequest(journey.journeyId), h)
+    const { addHref } = h.captured.view.context
 
-      expect(hasLines).toBe(commodityLines.length > 0)
-      expect(addHref).toBe(pagePath(journey.journeyId, 'commodities'))
-    }
+    expect(addHref).toBe(pagePath(journey.journeyId, 'commodities'))
   })
 
   // A trader who miscounted has nowhere to go from the counter otherwise: the
@@ -348,22 +346,21 @@ describe(`${SUITE} — the saved-animals table`, () => {
     expect(card.units[0].cells).toEqual(['', 'UK123456789', '', 'Pet Owner'])
   })
 
-  it('Should head a fallback-identifier commodity with its own columns and no permanent address', async () => {
+  it('Should head a horse line with the three identifiers it carries and no permanent address', async () => {
     const [card] = await viewCards({
       commodityLines: [
-        fishLine({
+        horseLine({
           numberOfAnimalsQuantity: '2',
-          animalIdentifiers: [
-            { animalIdentifierIdentificationDetails: 'Tank mark TM-77' }
-          ]
+          animalIdentifiers: [{ horseName: 'Shergar' }]
         })
       ]
     })
     expect(card.identifierColumns).toEqual([
-      'Identification details',
-      'Description'
+      'Microchip',
+      'Passport',
+      'Horse name'
     ])
-    expect(card.units[0].cells).toEqual(['Tank mark TM-77', ''])
+    expect(card.units[0].cells).toEqual(['', '', 'Shergar'])
   })
 })
 
@@ -514,7 +511,7 @@ describe(`${SUITE} — Remove`, () => {
           })
         ]
       },
-      payload: { action: 'remove:0:0' }
+      payload: { action: REMOVE_FIRST_UNIT }
     })
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, IDENTIFICATION_PAGE)
@@ -558,7 +555,7 @@ describe(`${SUITE} — Remove`, () => {
     const forged = await server.inject({
       method: 'POST',
       url: pagePath('journey-1', IDENTIFICATION_PAGE),
-      payload: { action: 'remove:0:0' }
+      payload: { action: REMOVE_FIRST_UNIT }
     })
     expect(forged.statusCode).toBe(403)
 
@@ -573,7 +570,9 @@ describe(`${SUITE} — Remove`, () => {
 // The identifier-field render reads the `.metadata.values` (the coverage-gated
 // sidecar), normalising the selected commodity NAME to a CN code via
 // commodityCodeFor before comparing. This matrix pins the rendered fields per
-// selectable species (Cow/Horse/Cat/Dog/Fish).
+// selectable species that carries identifiers (Cow/Horse/Cat/Dog). Fish
+// carries none, so it is not in the matrix — it earns no panel at all, which
+// the "no commodity carries an identifier" suite below pins instead.
 describe(`${SUITE} — identifier render matrix — model metadata per selectable species`, () => {
   setupIdentificationEngine()
 
@@ -618,15 +617,6 @@ describe(`${SUITE} — identifier render matrix — model metadata per selectabl
       species: '923502',
       fieldIds: [MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
       showAddress: true
-    },
-    {
-      commodity: 'Fish',
-      species: '801204',
-      fieldIds: [
-        'animalIdentifierIdentificationDetails-0',
-        'animalIdentifierDescription-0'
-      ],
-      showAddress: false
     }
   ]
 
@@ -638,4 +628,103 @@ describe(`${SUITE} — identifier render matrix — model metadata per selectabl
       expect(rendered.showAddress).toBe(showAddress)
     }
   )
+})
+
+// Design release 1 asks for identification only where the commodity has an
+// identifier type of its own. Fish is on none of the allowlists, so it earns
+// no panel — and where no line earns one there is no page to show: the
+// request carries on to the next step rather than rendering an empty surface.
+describe(`${SUITE} — a commodity that carries no identifier of its own`, () => {
+  setupIdentificationEngine()
+
+  const requestPage = async (seed) => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, seed)
+    const h = stubH()
+    const response = await getHandler(journeyRequest(journey.journeyId), h)
+    return { journeyId: journey.journeyId, response, view: h.captured.view }
+  }
+
+  it('Should give a fish line no panel but keep it in the summary', async () => {
+    const context = await viewContext({
+      commodityLines: [
+        cowLine({ numberOfAnimalsQuantity: '2' }),
+        fishLine({ numberOfAnimalsQuantity: '3' })
+      ]
+    })
+    expect(context.cards.map((card) => card.title)).toEqual([
+      'Cow (0102) — Bos taurus'
+    ])
+    // The recap is the whole consignment: the fish line the page asks nothing
+    // of still has to appear, or the table misdescribes what was declared.
+    expect(context.selectedCommodities).toEqual([
+      { code: '0102', name: 'Domestic cattle', animals: '2' },
+      { code: '0301', name: 'Atlantic salmon', animals: '3' }
+    ])
+  })
+
+  // The card keeps its own commodity-line index, not its position among the
+  // rendered cards: the anchor, the field names and the add action all address
+  // the line by index, and consignment-details' count-drop error points at the
+  // same anchor.
+  it('Should keep a surviving card on its own commodity-line index when an earlier line is filtered out', async () => {
+    const context = await viewContext({
+      commodityLines: [
+        fishLine({ numberOfAnimalsQuantity: '3' }),
+        cowLine({ numberOfAnimalsQuantity: '2' })
+      ]
+    })
+    expect(context.cards).toHaveLength(1)
+    expect(context.cards[0].index).toBe(1)
+    expect(context.cards[0].anchor).toBe('identification-card-1')
+    expect(context.cards[0].fields.map((field) => field.id)).toEqual([
+      'animalIdentifierEarTag-1',
+      'animalIdentifierPassport-1',
+      'animalIdentifierTattoo-1'
+    ])
+  })
+
+  it('Should carry a request for the page on when no line carries an identifier', async () => {
+    const { journeyId, response, view } = await requestPage({
+      commodityLines: [fishLine({ numberOfAnimalsQuantity: '3' })]
+    })
+    expect(view).toBeUndefined()
+    expect(response).toEqual({ redirect: hubPath(journeyId) })
+  })
+
+  it('Should carry a request for the page on when the notification has no commodities', async () => {
+    const { journeyId, response, view } = await requestPage({
+      commodityLines: []
+    })
+    expect(view).toBeUndefined()
+    expect(response).toEqual({ redirect: hubPath(journeyId) })
+  })
+
+  // A stale form posted against a consignment with nothing to identify is
+  // carried on rather than falling through to the add/remove handling. The
+  // store holds the declared count as a number once saved, so the untouched
+  // answers are stated outright rather than compared against the raw seed.
+  const untouchedFishAnswers = {
+    commodityLines: [fishLine({ numberOfAnimalsQuantity: 3 })]
+  }
+
+  it('Should carry a stale add post on without writing a record', async () => {
+    const result = await driveHandler(post, {
+      seed: { commodityLines: [fishLine({ numberOfAnimalsQuantity: '3' })] },
+      payload: { action: 'add:0', 'animalIdentifierEarTag-0': 'UK1' }
+    })
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.view).toBeUndefined()
+    expect(result.after).toEqual(untouchedFishAnswers)
+  })
+
+  it('Should carry a stale remove post on without deleting a record', async () => {
+    const result = await driveHandler(post, {
+      seed: { commodityLines: [fishLine({ numberOfAnimalsQuantity: '3' })] },
+      payload: { action: REMOVE_FIRST_UNIT }
+    })
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.view).toBeUndefined()
+    expect(result.after).toEqual(untouchedFishAnswers)
+  })
 })

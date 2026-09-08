@@ -142,36 +142,6 @@ describe('#rowStatus — one status per hub task row', () => {
     ).toBe(FULFILLED)
   })
 
-  describe('the conditional transit-countries row', () => {
-    it('Should be Not applicable (absent) while the means of transport is not overland', () => {
-      expect(statusIn('transitCountries', unlocked)).toBe(NA)
-      expect(
-        statusIn('transitCountries', {
-          ...unlocked,
-          meansOfTransport: 'AIRPLANE'
-        })
-      ).toBe(NA)
-    })
-
-    it('Should appear as Not yet started for each overland means and complete once countries are added', () => {
-      for (const means of ['RAILWAY', 'ROAD_VEHICLE']) {
-        expect(
-          statusIn('transitCountries', {
-            ...unlocked,
-            meansOfTransport: means
-          })
-        ).toBe(NOT_STARTED)
-      }
-      expect(
-        statusIn('transitCountries', {
-          ...unlocked,
-          meansOfTransport: 'ROAD_VEHICLE',
-          transitedCountries: ['FR', 'BE']
-        })
-      ).toBe(FULFILLED)
-    })
-  })
-
   describe('the commodities/identification facet split of commodityLines', () => {
     it('Should read Not yet started on both rows while no line exists', () => {
       expect(statusIn('commodities', {})).toBe(NOT_STARTED)
@@ -214,10 +184,23 @@ describe('#rowStatus — one status per hub task row', () => {
             commoditySelection: 'Cow',
             animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
           },
-          { commoditySelection: 'Fish' }
+          { commoditySelection: 'Horse' }
         ]
       }
       expect(statusIn('animalIdentification', answers)).toBe(IN_PROGRESS)
+    })
+
+    it('Should ask no animal records of a line whose commodity carries no identifier of its own', () => {
+      const answers = {
+        commodityLines: [
+          {
+            commoditySelection: 'Cow',
+            animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
+          },
+          { commoditySelection: 'Fish' }
+        ]
+      }
+      expect(statusIn('animalIdentification', answers)).toBe(FULFILLED)
     })
 
     it('Should resolve the enclosing-commodity activations through the facet (a Cat identifier owes its permanent address)', () => {
@@ -242,6 +225,36 @@ describe('#rowStatus — one status per hub task row', () => {
         )
       ).toBe(FULFILLED)
     })
+  })
+})
+
+describe('#rowStatus — the conditional transit-countries row', () => {
+  it('Should be Not applicable (absent) while the means of transport is not overland', () => {
+    expect(statusIn('transitCountries', unlocked)).toBe(NA)
+    expect(
+      statusIn('transitCountries', {
+        ...unlocked,
+        meansOfTransport: 'AIRPLANE'
+      })
+    ).toBe(NA)
+  })
+
+  it('Should appear as Not yet started for each overland means and complete once countries are added', () => {
+    for (const means of ['RAILWAY', 'ROAD_VEHICLE']) {
+      expect(
+        statusIn('transitCountries', {
+          ...unlocked,
+          meansOfTransport: means
+        })
+      ).toBe(NOT_STARTED)
+    }
+    expect(
+      statusIn('transitCountries', {
+        ...unlocked,
+        meansOfTransport: 'ROAD_VEHICLE',
+        transitedCountries: ['FR', 'BE']
+      })
+    ).toBe(FULFILLED)
   })
 })
 

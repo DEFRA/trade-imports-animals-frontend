@@ -19,7 +19,6 @@ const EQUUS_CABALLUS = 'Equus caballus'
 const CANIS_LUPUS_FAMILIARIS = 'Canis lupus familiaris'
 const SALMO_SALAR = 'Salmo salar'
 const DOMESTIC_CATTLE = 'Domestic cattle'
-const ATLANTIC_SALMON = 'Atlantic salmon'
 const PASSPORT_NUMBER = 'UK123456789'
 const MICROCHIP_NUMBER = '900123456789012'
 const MAX_LINE_LENGTH = 255
@@ -193,14 +192,7 @@ const identifierValidations = [
   ['Cow', BOS_TAURUS, 'animalIdentifierPassport', 'Passport'],
   ['Cow', BOS_TAURUS, 'animalIdentifierTattoo', 'Tattoo'],
   ['Cow', BOS_TAURUS, 'animalIdentifierEarTag', 'Ear tag'],
-  ['Horse', EQUUS_CABALLUS, 'horseName', 'Horse name'],
-  [
-    'Fish',
-    SALMO_SALAR,
-    'animalIdentifierIdentificationDetails',
-    'Identification details'
-  ],
-  ['Fish', SALMO_SALAR, 'animalIdentifierDescription', 'Description']
+  ['Horse', EQUUS_CABALLUS, 'horseName', 'Horse name']
 ]
 
 const requiredAddressValidations = [
@@ -277,10 +269,9 @@ test.describe('animal identification', () => {
     await expect(page.locator('#horseName-1')).toBeVisible()
     await expect(page.locator(MICROCHIP_FIELD)).toHaveCount(0)
     await expect(page.locator('#animalIdentifierMicrochip-2')).toHaveCount(0)
-    await expect(
-      page.locator('#animalIdentifierIdentificationDetails-2')
-    ).toBeVisible()
-    await expect(page.locator('#animalIdentifierDescription-2')).toBeVisible()
+    // Fish carries no identifier of its own, so its line earns no panel —
+    // design release 1 offers no free-text box to fall back on.
+    await expect(page.locator('#identification-card-2')).toHaveCount(0)
     await expect(page.locator('#nameOrOrganisationName-0')).toHaveCount(0)
   })
 
@@ -409,7 +400,7 @@ test.describe('animal identification', () => {
       page,
       [
         ['Cow', [BOS_TAURUS]],
-        ['Fish', [SALMO_SALAR]]
+        ['Horse', [EQUUS_CABALLUS]]
       ],
       ['2', '3']
     )
@@ -427,7 +418,7 @@ test.describe('animal identification', () => {
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
-    await openIdentification(page, [['Fish', [SALMO_SALAR]]])
+    await openIdentification(page, [['Cow', [BOS_TAURUS]]])
     await expectAxeClean(page, 'Animal identification')
   })
 
@@ -437,6 +428,25 @@ test.describe('animal identification', () => {
     await openCatIdentification(page)
     await expect(page.locator(MICROCHIP_FIELD)).toBeVisible()
     await expectAxeClean(page, 'Animal identification with a microchip field')
+  })
+
+  // Design release 1 asks for identification only where the commodity has an
+  // identifier of its own. A consignment holding nothing but ornamental fish
+  // has nothing to identify, so the page does not exist for that person: a
+  // request for it carries them on rather than showing an empty surface.
+  test('carries a consignment with nothing to identify past the page', async ({
+    page
+  }) => {
+    await addLines(page, [['Fish', [SALMO_SALAR]]], ['3'])
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await page
+      .getByRole('link', { name: hubCopy.rows.animalIdentification.title })
+      .click()
+
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Identification details', exact: true })
+    ).toHaveCount(0)
   })
 })
 
@@ -452,7 +462,7 @@ test.describe('animal identification selected commodities summary', () => {
       page,
       [
         ['Cow', [BOS_TAURUS]],
-        ['Fish', [SALMO_SALAR]]
+        ['Horse', [EQUUS_CABALLUS]]
       ],
       ['2', '3']
     )
@@ -469,7 +479,7 @@ test.describe('animal identification selected commodities summary', () => {
     }
 
     await expectSummaryRow(summary, DOMESTIC_CATTLE, '0102', '2')
-    await expectSummaryRow(summary, ATLANTIC_SALMON, '0301', '3')
+    await expectSummaryRow(summary, 'Horse', '0101', '3')
 
     const main = await page.locator('main').innerHTML()
     expect(main.indexOf(copy.identification.summary.caption)).toBeLessThan(

@@ -11,6 +11,7 @@ import {
   TATTOO_COMMODITIES,
   EAR_TAG_COMMODITIES,
   HORSE_NAME_COMMODITIES,
+  IDENTIFIED_COMMODITIES,
   PERMANENT_ADDRESS_COMMODITIES,
   UNWEANED_ANIMAL_COMMODITIES,
   CPH_COMMODITIES
@@ -63,8 +64,9 @@ export const isCommoditySpecies = (name, value) =>
 export const packageCountCommodities = () => PACKAGE_COUNT_COMMODITIES
 
 // The identifiers this commodity carries, in the order it asks for them. A
-// commodity the catalogue holds no identifiers for carries none, and is
-// identified in free text instead.
+// commodity the catalogue holds no identifiers for is asked for none — design
+// release 1 has no free-text fallback, so such a commodity gets no
+// identification panel at all.
 export const identifiersFor = (name) => COMMODITY_IDENTIFIERS[name] ?? []
 
 export const microchipCommodities = () => MICROCHIP_COMMODITIES
@@ -76,6 +78,10 @@ export const tattooCommodities = () => TATTOO_COMMODITIES
 export const earTagCommodities = () => EAR_TAG_COMMODITIES
 
 export const horseNameCommodities = () => HORSE_NAME_COMMODITIES
+
+// The commodities that carry an identifier of their own — the ones design
+// release 1 asks a trader to identify.
+export const identifiedCommodities = () => IDENTIFIED_COMMODITIES
 
 export const permanentAddressCommodities = () => PERMANENT_ADDRESS_COMMODITIES
 

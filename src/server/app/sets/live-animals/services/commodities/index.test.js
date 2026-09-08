@@ -3,9 +3,12 @@ import { describe, expect, it } from 'vitest'
 import {
   earTagCommodities,
   horseNameCommodities,
+  identifiedCommodities,
   identifiersFor,
+  list,
   microchipCommodities,
   passportCommodities,
+  permanentAddressCommodities,
   speciesCommonName,
   speciesListedIndividually,
   tattooCommodities
@@ -85,4 +88,30 @@ describe('the identifier allowlists', () => {
       expect(identifiersFor('Fish')).not.toContain(identifier)
     })
   }
+
+  // The list that gates the identification panel and the one-record-per-animal
+  // count rule. Asserted as a derivation, not a literal: a commodity's
+  // identifiers and whether it is asked to identify at all are one edit.
+  it('Should hold exactly the commodities whose own list carries at least one identifier', () => {
+    for (const commodity of list()) {
+      expect(identifiedCommodities().includes(commodity)).toBe(
+        identifiersFor(commodity).length > 0
+      )
+    }
+    expect(identifiedCommodities()).not.toContain('Fish')
+    expect(identifiedCommodities()).toEqual(
+      expect.arrayContaining(['Cow', 'Horse', 'Cat', 'Dog'])
+    )
+  })
+
+  // `permanentAddress` is mandatory inside the same unitRecord group but its
+  // allowlist is hand-written, not derived. Both the identification panel and
+  // the one-record-per-animal count rule are gated on identifiedCommodities(),
+  // so a commodity asked for a permanent address that is missing from that list
+  // would collect nothing at all and still read as Fulfilled.
+  it('Should hold every commodity that is asked for a permanent address', () => {
+    for (const commodity of permanentAddressCommodities()) {
+      expect(identifiedCommodities()).toContain(commodity)
+    }
+  })
 })

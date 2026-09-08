@@ -7,8 +7,7 @@ import { compact } from '../compact.js'
 // skeleton pairs one earTag/passport per species row, so the entry carries the
 // line's first identifier unit. The microchip joins ear tag and passport as an
 // identifier the backend species entry has a home for; the tattoo, the horse
-// name, the two free-text identifiers and the permanent address still have
-// none and are dropped.
+// name and the permanent address still have none and are dropped.
 export const speciesEntryFromLine = (line) => {
   const unit = line.animalIdentifiers?.[0] ?? {}
   return compact({

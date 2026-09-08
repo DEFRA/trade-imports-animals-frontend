@@ -86,6 +86,20 @@ const lineSeed = {
   ]
 }
 
+// A consignment of Atlantic salmon: Fish is on none of the identifier
+// allowlists, so the identification page has nothing to ask of this line.
+const fishLineSeed = {
+  countryOfOrigin: 'FR',
+  commodityLines: [
+    {
+      commoditySelection: 'Fish',
+      speciesSelection: '801204',
+      numberOfAnimalsQuantity: '3',
+      numberOfPackages: ''
+    }
+  ]
+}
+
 const startPostHandler = () =>
   dashboard.routes.find(
     (route) => route.method === 'POST' && route.path === createPath()
@@ -186,6 +200,26 @@ const saveAndContinueFollowsTheRunSequence = () => {
     expect(h.captured.redirect).toBe(
       pagePath(journey.journeyId, 'additional-details')
     )
+  })
+
+  // Pins where the no-identifiers guard sends the request, not merely that it
+  // redirects: mid-run it has to carry the person on to the next question,
+  // which a bare hop to the hub would not do.
+  it('Should carry a consignment with nothing to identify on to additional details mid-run', async () => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, fishLineSeed)
+    const h = captureH()
+    const getHandler = animalIdentification.routes.find(
+      (route) => route.method === 'GET'
+    ).handler
+    await getHandler(
+      buildRequest(journey.journeyId, { record: active(journey.journeyId) }),
+      h
+    )
+    expect(h.captured.redirect).toBe(
+      pagePath(journey.journeyId, 'additional-details')
+    )
+    expect(h.captured.view).toBeUndefined()
   })
 
   it('Should send import reason to the first line identification mid-run', async () => {

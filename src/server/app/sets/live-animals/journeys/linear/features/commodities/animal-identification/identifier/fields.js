@@ -8,11 +8,6 @@ import { fieldName } from '../fields.js'
 
 const copy = copyFor({ en, cy }).identification
 
-const toFields = (byId) =>
-  Object.entries(byId).map(([id, field]) => ({ id, ...field }))
-
-const FALLBACK_FIELDS = toFields(copy.fallbackFields)
-
 const IDENTIFIER_MAX_MESSAGES = copy.errors.identifierMax
 
 const IDENTIFIER_MAX_LENGTH = 58
@@ -21,19 +16,14 @@ const IDENTIFIER_MAX_LENGTH = 58
 // of labels and hints, not a running order (design 01-14/16/17). Applicability
 // still decides whether a listed identifier renders, so the obligation model
 // stays the one authority on what is in scope.
-const scopedTypeFields = (commodity) =>
+//
+// A commodity that declares no identifier is asked for none: design release 1
+// has no free-text fallback, so the list is empty and the line gets no panel.
+export const scopedFields = (commodity) =>
   commodities
     .identifiersFor(commodity)
     .filter((id) => appliesForCommodity(id, commodity))
     .map((id) => ({ id, ...copy.typeFields[id] }))
-
-const scopedFallbackFields = (commodity) =>
-  FALLBACK_FIELDS.filter((field) => appliesForCommodity(field.id, commodity))
-
-export const scopedFields = (commodity) => [
-  ...scopedTypeFields(commodity),
-  ...scopedFallbackFields(commodity)
-]
 
 export const permanentAddressApplies = (commodity) =>
   appliesForCommodity('permanentAddress', commodity)

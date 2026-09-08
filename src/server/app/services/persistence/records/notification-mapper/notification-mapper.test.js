@@ -20,6 +20,7 @@ const inlineAddress = (name, line1) => ({
 const referenceNumber = 'GBN-AG-26-ABC123'
 const ORIGIN_FARM_LINE1 = '1 Farm Lane'
 const BOS_TAURUS = 'Bos taurus'
+const SALMO_SALAR = 'Salmo salar'
 const currentNotificationFrom = (answers) =>
   fulfilmentToNotification(
     assembleFulfilments(answers),
@@ -72,7 +73,7 @@ const mappedAnswers = () => ({
 // mappedAnswers plus every obligation Mapper A has no home for: the Tier-A
 // pair, the Tier-B gaps, the Tier-C documents collection, and a richer
 // animal-identifier unit carrying the microchip (which does have a home) and
-// the five dropped unit identifiers.
+// the three dropped unit identifiers.
 const answersWithGaps = () => ({
   ...mappedAnswers(),
   regionOfOriginCode: 'FR-75',
@@ -106,8 +107,6 @@ const answersWithGaps = () => ({
           animalIdentifierMicrochip: '900123456789012',
           animalIdentifierTattoo: 'AB1234',
           horseName: 'Dobbin',
-          animalIdentifierIdentificationDetails: 'Hive mark HM-2026-004',
-          animalIdentifierDescription: 'Brown cow',
           permanentAddress: address('Owner', ORIGIN_FARM_LINE1)
         }
       ]
@@ -291,7 +290,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     ).toBe(false)
   })
 
-  test('Should keep only earTag, passport and microchip on the species entry, dropping the five unit identifiers', () => {
+  test('Should keep only earTag, passport and microchip on the species entry, dropping the tattoo, horse name and permanent address', () => {
     const notification = currentNotificationFrom(answersWithGaps())
     const species = notification.commodity.commodityComplement[0].species[0]
 
@@ -357,6 +356,33 @@ describe('Mapper A — current backend notification (as-is)', () => {
     })
     expect(JSON.stringify(notification)).not.toContain('SECOND-EAR-TAG')
     expect(JSON.stringify(notification)).not.toContain('SECOND-PASSPORT')
+  })
+})
+
+// A commodity on none of the identifier allowlists carries no identifier
+// obligation, so its line reaches the mapper with no animal-identifier unit at
+// all. The species entry must be built from the line alone rather than
+// throwing on a missing unit. Its own describe rather than the Mapper A block
+// above, which is already at the file's max-lines-per-function ceiling.
+describe('Mapper A — a commodity line with no animal-identifier unit', () => {
+  test('Should map a commodity line that carries no animal-identifier unit', () => {
+    const notification = currentNotificationFrom({
+      commodityLines: [
+        {
+          commoditySelection: 'Fish',
+          speciesSelection: '801204',
+          numberOfPackages: '1',
+          numberOfAnimalsQuantity: '40'
+        }
+      ]
+    })
+
+    expect(notification.commodity.commodityComplement[0].species[0]).toEqual({
+      value: '801204',
+      text: SALMO_SALAR,
+      noOfAnimals: '40',
+      noOfPackages: '1'
+    })
   })
 })
 

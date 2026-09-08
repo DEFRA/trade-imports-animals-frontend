@@ -602,26 +602,21 @@ describe('#proveWithWitnesses — real V4 manifest classification', () => {
     expect(classifiedCount).toBe(obligations.length)
   })
 
-  it('Should have the expected classification counts after the notInUnionOf migration (≥14 synthesisable, 0 opaque)', () => {
+  it('Should have the expected classification counts (≥14 synthesisable, 0 opaque)', () => {
     const result = proveWithWitnesses(obligations)
-    // identificationDetails + description
-    // migrated off `allowListedByPredicate` onto `notInUnionOf`. Both
-    // now witness-synthesisable — the manifest carries ZERO opaque
-    // gates.
-    //
-    // Structured helpers: allowListed, anyAllowListed, notInUnionOf and
-    // the meta-first gates are all synthesisable. Trivial: structural
-    // groups, the four applyTo-less accompanying-document fields and
-    // the retain-value regionOfOriginCode (both branches in scope).
+    // Structured helpers: allowListed, anyAllowListed and the meta-first
+    // gates are all synthesisable, so the manifest carries ZERO opaque
+    // gates. Trivial: structural groups, the four applyTo-less
+    // accompanying-document fields and the retain-value
+    // regionOfOriginCode (both branches in scope).
     expect(result.witnesses.synthesisable.length).toBeGreaterThanOrEqual(14)
-    // The two former-opaque gates are now synthesisable.
+    // Every commodity-gated identifier is witness-synthesisable from its
+    // own allowlist.
     const synthesisableNames = result.witnesses.synthesisable.map(
       (id) => obligations.find((o) => o.id === id).name
     )
-    expect(synthesisableNames).toContain(
-      'animalIdentifierIdentificationDetails'
-    )
-    expect(synthesisableNames).toContain('animalIdentifierDescription')
+    expect(synthesisableNames).toContain('animalIdentifierEarTag')
+    expect(synthesisableNames).toContain('horseName')
     // No opaque gates left on the manifest.
     expect(result.witnesses.opaque).toEqual([])
   })

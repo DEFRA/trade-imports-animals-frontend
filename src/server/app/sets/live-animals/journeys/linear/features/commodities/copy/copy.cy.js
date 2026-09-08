@@ -8,11 +8,6 @@ const plural = (count, noun) => `${count} ${noun}`
 // The visually-hidden head of every table's action column.
 const ACTIONS_HIDDEN = 'Camau gweithredu'
 
-// The fallback identifier type an animal falls back to when it has no
-// passport, tattoo or ear tag — named once for its list label and its field
-// label. Not the identification page's own name, which is its own string.
-const FALLBACK_IDENTIFIER_LABEL = 'Manylion adnabod'
-
 export const copy = {
   search: {
     title: 'Beth ydych chi’n ei fewnforio?',
@@ -71,8 +66,6 @@ export const copy = {
     title: 'Manylion adnabod',
     inset:
       'Rhaid i chi ychwanegu holl fanylion adnabod yr anifeiliaid cyn i’r llwyth gyrraedd y porthladd mynediad.',
-    emptyText: 'Nid ydych wedi ychwanegu unrhyw nwyddau eto.',
-    addCommodity: 'Ychwanegu nwydd',
     addAnotherCommodity: 'Ychwanegu nwydd arall',
     changeAnimalCount: 'Newid nifer yr anifeiliaid',
     summary: {
@@ -88,9 +81,7 @@ export const copy = {
       animalIdentifierPassport: 'Pasbort',
       animalIdentifierTattoo: 'Tatŵ',
       animalIdentifierEarTag: 'Tag clust',
-      horseName: 'Enw’r ceffyl',
-      animalIdentifierIdentificationDetails: FALLBACK_IDENTIFIER_LABEL,
-      animalIdentifierDescription: 'Disgrifiad'
+      horseName: 'Enw’r ceffyl'
     },
     table: {
       animalColumn: 'Anifail',
@@ -115,13 +106,6 @@ export const copy = {
         hint: 'Er enghraifft, UK123456789012'
       },
       horseName: { label: 'Enw’r ceffyl' }
-    },
-    fallbackFields: {
-      animalIdentifierIdentificationDetails: {
-        label: FALLBACK_IDENTIFIER_LABEL,
-        hint: 'Unrhyw ffordd arall y caiff yr anifail hwn ei adnabod, os nad oes ganddo basbort, tatŵ na thag clust'
-      },
-      animalIdentifierDescription: { label: 'Disgrifiad o’r anifail' }
     },
     counterNoCap: (species) => `Rhowch fanylion ar gyfer ${species}`,
     counter: (species, next, cap) =>
@@ -165,11 +149,7 @@ export const copy = {
         animalIdentifierPassport: 'Rhaid i’r pasbort fod yn 58 nod neu lai',
         animalIdentifierTattoo: 'Rhaid i’r tatŵ fod yn 58 nod neu lai',
         animalIdentifierEarTag: 'Rhaid i’r tag clust fod yn 58 nod neu lai',
-        horseName: 'Rhaid i enw’r ceffyl fod yn 58 nod neu lai',
-        animalIdentifierIdentificationDetails:
-          'Rhaid i’r manylion adnabod fod yn 58 nod neu lai',
-        animalIdentifierDescription:
-          'Rhaid i’r disgrifiad fod yn 58 nod neu lai'
+        horseName: 'Rhaid i enw’r ceffyl fod yn 58 nod neu lai'
       },
       addressMandatory: {
         nameOrOrganisationName: 'Rhowch enw neu enw sefydliad',

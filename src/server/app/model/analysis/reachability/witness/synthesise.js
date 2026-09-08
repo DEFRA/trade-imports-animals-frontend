@@ -74,9 +74,8 @@ function synthesiseFromMetadata(meta) {
       // Witness = any value NOT in that union. A stable sentinel that
       // is virtually guaranteed not to collide with real commodity
       // codes; defensively confirmed against the derived union.
-      // Include the gatedParentGroup id (if any) for depth-N gates —
-      // identificationDetails + description both project onto
-      // unitRecord.
+      // Include the gatedParentGroup id (if any) for depth-N gates,
+      // which project onto that group's fulfilmentIndexes.
       return synthesiseNotInUnionOfWitness(meta)
 
     case 'equalsGate':

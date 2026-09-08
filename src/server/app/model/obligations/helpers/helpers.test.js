@@ -107,9 +107,9 @@ describe('allowListed', () => {
 // Rationale: notInUnionOf is a derived-union helper over the metadata's
 // .values — strictly better than a hand-restated four-whitelist
 // complement, which silently double-gates if you add a fifth typed
-// identifier and forget a conjunct. The helper migrated the two opaque
-// `allowListedByPredicate` sites (identificationDetails, description)
-// onto it.
+// identifier and forget a conjunct. The live-animals manifest carries no
+// complement gate today; the helper stays as the platform's supported
+// shape for one.
 // ---------------------------------------------------------------------------
 
 describe('notInUnionOf', () => {

@@ -148,8 +148,7 @@ describe('coverage — helper classification sets are exported and disjoint', ()
   })
 
   it('Should export OPAQUE_HELPER_TYPES as a Set (may be empty — see reachability.js)', () => {
-    // The `notInUnionOf` helper landed and migrated the two
-    // former opaque sites (identificationDetails, description) onto it.
+    // Every gate on the manifest is a structured helper today.
     // The set is retained as the enforcement point for future opaque-
     // by-design helpers, but is currently EMPTY on the manifest — a
     // clean-slate state. Any addition here MUST cite a rationale in

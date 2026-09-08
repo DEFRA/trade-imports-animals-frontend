@@ -1,10 +1,5 @@
 const plural = (count, noun) => `${count} ${noun}${count === 1 ? '' : 's'}`
 
-// The fallback identifier type an animal falls back to when it has no
-// passport, tattoo or ear tag — named once for its list label and its field
-// label. Not the identification page's own name, which is its own string.
-const FALLBACK_IDENTIFIER_LABEL = 'Identification details'
-
 export const copy = {
   search: {
     title: 'What are you importing?',
@@ -63,8 +58,6 @@ export const copy = {
     title: 'Identification details',
     inset:
       'You must add all animal identification details before the consignment arrives at the port of entry.',
-    emptyText: 'You have not added any commodities yet.',
-    addCommodity: 'Add a commodity',
     addAnotherCommodity: 'Add another commodity',
     changeAnimalCount: 'Change number of animals',
     summary: {
@@ -80,9 +73,7 @@ export const copy = {
       animalIdentifierPassport: 'Passport',
       animalIdentifierTattoo: 'Tattoo',
       animalIdentifierEarTag: 'Ear tag',
-      horseName: 'Horse name',
-      animalIdentifierIdentificationDetails: FALLBACK_IDENTIFIER_LABEL,
-      animalIdentifierDescription: 'Description'
+      horseName: 'Horse name'
     },
     table: {
       animalColumn: 'Animal',
@@ -107,13 +98,6 @@ export const copy = {
         hint: 'For example, UK123456789012'
       },
       horseName: { label: 'Horse name' }
-    },
-    fallbackFields: {
-      animalIdentifierIdentificationDetails: {
-        label: FALLBACK_IDENTIFIER_LABEL,
-        hint: 'Any other way this animal is identified, if it has no passport, tattoo or ear tag'
-      },
-      animalIdentifierDescription: { label: 'Animal description' }
     },
     counterNoCap: (species) => `Enter details for ${species}`,
     counter: (species, next, cap) =>
@@ -159,11 +143,7 @@ export const copy = {
         animalIdentifierPassport: 'Passport must be 58 characters or fewer',
         animalIdentifierTattoo: 'Tattoo must be 58 characters or fewer',
         animalIdentifierEarTag: 'Ear tag must be 58 characters or fewer',
-        horseName: 'Horse name must be 58 characters or fewer',
-        animalIdentifierIdentificationDetails:
-          'Identification details must be 58 characters or fewer',
-        animalIdentifierDescription:
-          'Description must be 58 characters or fewer'
+        horseName: 'Horse name must be 58 characters or fewer'
       },
       addressMandatory: {
         nameOrOrganisationName: 'Enter a name or organisation name',

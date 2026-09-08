@@ -73,11 +73,14 @@ export const submitReadySeed = {
  * Seed variants — overlays on `submitReadySeed` whose commodity/documents
  * choices open the gates the base seed leaves shut. The base seed's single
  * Cow line never scopes the Horse-gated `horseName`, the Cat/Dog-gated
- * `permanentAddress`, the `notInUnionOf` free-text identifiers (Cow sits in
- * the passport∪tattoo∪earTag union) or the four per-document leaves (no
+ * `permanentAddress` or the four per-document leaves (no
  * `documents` records). Values are the real canned commodity and
  * document-type reference data — the same vocabulary
- * the pages store.
+ * the pages store. `fish-line` is the inverse case rather than a
+ * gate-opener: Fish is on none of the identifier allowlists, so its line
+ * carries no identifier obligation and no animal records, which makes it the
+ * corpus's only design-release-1 consignment with no identification panel at
+ * all.
  *
  * Both provers run every variant × every scope state, so page reachability
  * is proven in the states these variants create, and `proveScopeCompleteness`
@@ -120,8 +123,8 @@ export const seedVariants = () => [
     }
   },
   {
-    // Fish is outside the specific-identifier union — the notInUnionOf
-    // free-text identifiers (identificationDetails, description) apply.
+    // Fish is on none of the identifier allowlists, so no identifier
+    // obligation applies to its line and it carries no animal records.
     id: 'fish-line',
     answers: {
       ...submitReadySeed,
@@ -129,10 +132,7 @@ export const seedVariants = () => [
         {
           commoditySelection: 'Fish',
           speciesSelection: '801204',
-          numberOfAnimalsQuantity: '40',
-          animalIdentifiers: [
-            { animalIdentifierIdentificationDetails: 'Tank 12, batch 7' }
-          ]
+          numberOfAnimalsQuantity: '40'
         }
       ]
     }
