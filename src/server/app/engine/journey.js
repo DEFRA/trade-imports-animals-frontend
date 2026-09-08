@@ -159,8 +159,7 @@ export const cancelAmendJourney = async (request, _h, journeyId) => {
   if (!(await isKnownJourney(request, journeyId))) {
     return undefined
   }
-  const actor = buildActor(request.auth.credentials)
-  const restored = await records.cancelAmend(journeyId, actor)
+  const restored = await records.cancelAmend(journeyId)
   memoWrite(request, restored)
   return restored
 }
@@ -169,8 +168,7 @@ export const copyJourney = async (request, h, journeyId, concurrencyToken) => {
   if (!(await isKnownJourney(request, journeyId))) {
     return undefined
   }
-  const actor = buildActor(request.auth.credentials)
-  const copied = await records.copy(journeyId, concurrencyToken, actor)
+  const copied = await records.copy(journeyId, concurrencyToken)
   await session.addKnownJourney(request, h, copied.journeyId)
   memoWrite(request, copied)
   return copied

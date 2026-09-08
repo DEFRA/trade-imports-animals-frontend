@@ -33,20 +33,18 @@ export const amend = async (journeyId, actor) => {
   return marshal(await response.json())
 }
 
-export const cancelAmend = async (journeyId, actor) => {
+export const cancelAmend = async (journeyId) => {
   const response = await postTransition(
     `${notificationsUrl}/${journeyId}/cancel-amend`,
-    'cancel notification amendment',
-    actor
+    'cancel notification amendment'
   )
   return marshal(await response.json())
 }
 
-export const softDelete = async (journeyId, actor) => {
+export const softDelete = async (journeyId) => {
   const response = await postTransition(
     `${notificationsUrl}/${journeyId}/soft-delete`,
-    'soft-delete notification',
-    actor
+    'soft-delete notification'
   )
   return marshal(await response.json())
 }

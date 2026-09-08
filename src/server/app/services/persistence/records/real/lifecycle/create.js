@@ -19,12 +19,11 @@ export const create = async (actor) => {
   return marshal(await notificationResponse.json())
 }
 
-export const copy = async (journeyId, concurrencyToken, actor) => {
+export const copy = async (journeyId, concurrencyToken) => {
   const url = `${notificationsUrl}/${journeyId}/copy?concurrencyToken=${encodeURIComponent(concurrencyToken)}`
   const response = await fetch(url, {
     method: 'POST',
-    headers: headers(),
-    body: actor === undefined ? undefined : JSON.stringify(actor)
+    headers: headers()
   })
   if (!response.ok) {
     throw await failed('copy notification', response)
