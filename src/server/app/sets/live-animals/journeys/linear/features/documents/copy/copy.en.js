@@ -1,5 +1,37 @@
 export const copy = {
   title: 'Upload documents',
+  guidance: {
+    intro:
+      'You must attach an ITAHC if this consignment requires one. If you do not have it now, you can add it later. All documents should be uploaded before the consignment arrives at the UK port. Documents must be in English and you must upload all pages.',
+    otherDocumentsLead: 'Other documents you may need to attach include:',
+    otherDocuments: [
+      'import licences or authorisations',
+      'commercial documents or invoices'
+    ],
+    additional: {
+      summary: 'Check which additional documents you must upload',
+      caption: 'Additional documents by type of consignment',
+      consignment: 'Consignment',
+      documentsNeeded: 'Documents needed',
+      rows: [
+        {
+          consignment: 'Animals that do not need a health certificate',
+          documents: "An exporter's declaration that they are fit to travel"
+        },
+        {
+          consignment: 'Livestock transiting bluetongue restricted territories',
+          documents: 'Bluetongue declaration GBHC172'
+        },
+        {
+          consignment: 'Rodents imported for research purposes',
+          documents: 'An RM39 licence and supplementary health certificate'
+        }
+      ],
+      linkText: 'Check the documents you need on GOV.UK (opens in a new tab)',
+      linkHref:
+        'https://www.gov.uk/guidance/import-of-products-animals-food-and-feed-system'
+    }
+  },
   fileUploadHeading: 'File upload',
   reference: {
     label: 'Document reference',

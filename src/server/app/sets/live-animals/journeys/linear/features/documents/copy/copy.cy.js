@@ -1,6 +1,42 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 export const copy = {
   title: 'Uwchlwytho dogfennau',
+  guidance: {
+    intro:
+      'Rhaid i chi atodi ITAHC os oes angen un ar y llwyth hwn. Os nad yw gennych nawr, gallwch ei ychwanegu yn nes ymlaen. Dylid uwchlwytho pob dogfen cyn i’r llwyth gyrraedd porthladd yn y DU. Rhaid i ddogfennau fod yn Saesneg a rhaid i chi uwchlwytho pob tudalen.',
+    otherDocumentsLead:
+      'Mae dogfennau eraill y gallai fod angen i chi eu hatodi yn cynnwys:',
+    otherDocuments: [
+      'trwyddedau neu awdurdodiadau mewnforio',
+      'dogfennau masnachol neu anfonebau'
+    ],
+    additional: {
+      summary:
+        'Gwirio pa ddogfennau ychwanegol y mae’n rhaid i chi eu huwchlwytho',
+      caption: 'Dogfennau ychwanegol yn ôl math o lwyth',
+      consignment: 'Llwyth',
+      documentsNeeded: 'Dogfennau sydd eu hangen',
+      rows: [
+        {
+          consignment: 'Anifeiliaid nad oes angen tystysgrif iechyd arnynt',
+          documents: 'Datganiad gan yr allforiwr eu bod yn ffit i deithio'
+        },
+        {
+          consignment:
+            'Da byw sy’n tramwyo drwy diriogaethau cyfyngedig tafod glas',
+          documents: 'Datganiad tafod glas GBHC172'
+        },
+        {
+          consignment: 'Cnofilod a fewnforir at ddibenion ymchwil',
+          documents: 'Trwydded RM39 a thystysgrif iechyd atodol'
+        }
+      ],
+      linkText:
+        'Gwirio pa ddogfennau sydd eu hangen arnoch ar GOV.UK (yn agor mewn tab newydd)',
+      linkHref:
+        'https://www.gov.uk/guidance/import-of-products-animals-food-and-feed-system'
+    }
+  },
   fileUploadHeading: 'Uwchlwytho ffeil',
   reference: {
     label: 'Cyfeirnod y ddogfen',

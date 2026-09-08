@@ -3,6 +3,7 @@
 {% from "moj/components/date-picker/macro.njk" import mojDatePicker %}
 {% from "govuk/components/file-upload/macro.njk" import govukFileUpload %}
 {% from "govuk/components/table/macro.njk" import govukTable %}
+{% from "govuk/components/details/macro.njk" import govukDetails %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "shared/save-actions.njk" import saveActions %}
 {% from "shared/section-caption.njk" import sectionCaption %}
@@ -16,6 +17,43 @@
 
   {{ sectionCaption(caption) }}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
+  {# What to attach and why, before the form asks for it (design release 1). #}
+  <p class="govuk-body">{{ copy.guidance.intro }}</p>
+  <p class="govuk-body">{{ copy.guidance.otherDocumentsLead }}</p>
+  <ul class="govuk-list govuk-list--bullet">
+    {% for document in copy.guidance.otherDocuments %}
+      <li>{{ document }}</li>
+    {% endfor %}
+  </ul>
+
+  {% set additionalRows = [] %}
+  {% for row in copy.guidance.additional.rows %}
+    {% set ignored = additionalRows.push([
+      { text: row.consignment },
+      { text: row.documents }
+    ]) %}
+  {% endfor %}
+
+  {% set additionalDocumentsHtml %}
+    {{ govukTable({
+      caption: copy.guidance.additional.caption,
+      captionClasses: "govuk-visually-hidden",
+      head: [
+        { text: copy.guidance.additional.consignment },
+        { text: copy.guidance.additional.documentsNeeded }
+      ],
+      rows: additionalRows
+    }) }}
+    <p class="govuk-body">
+      <a href="{{ copy.guidance.additional.linkHref }}" class="govuk-link" rel="noreferrer noopener" target="_blank">{{ copy.guidance.additional.linkText }}</a>
+    </p>
+  {% endset %}
+
+  {{ govukDetails({
+    summaryText: copy.guidance.additional.summary,
+    html: additionalDocumentsHtml
+  }) }}
 
   <form method="post" enctype="multipart/form-data" novalidate
         data-max-file-size="{{ maxFileSize }}"

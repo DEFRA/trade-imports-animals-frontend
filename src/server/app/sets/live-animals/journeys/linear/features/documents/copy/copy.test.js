@@ -37,6 +37,45 @@ describe('#copy', () => {
     }
   })
 
+  it('Should carry the pre-form guidance the trader needs to act on', () => {
+    const { guidance } = copy
+    expect(guidance.intro).toBe(
+      'You must attach an ITAHC if this consignment requires one. If you do not have it now, you can add it later. All documents should be uploaded before the consignment arrives at the UK port. Documents must be in English and you must upload all pages.'
+    )
+    expect(guidance.otherDocumentsLead).toBe(
+      'Other documents you may need to attach include:'
+    )
+    expect(guidance.otherDocuments).toEqual([
+      'import licences or authorisations',
+      'commercial documents or invoices'
+    ])
+    expect(guidance.additional.summary).toBe(
+      'Check which additional documents you must upload'
+    )
+    expect(guidance.additional.rows).toEqual([
+      {
+        consignment: 'Animals that do not need a health certificate',
+        documents: "An exporter's declaration that they are fit to travel"
+      },
+      {
+        consignment: 'Livestock transiting bluetongue restricted territories',
+        documents: 'Bluetongue declaration GBHC172'
+      },
+      {
+        consignment: 'Rodents imported for research purposes',
+        documents: 'An RM39 licence and supplementary health certificate'
+      }
+    ])
+    // The hard-coded target="_blank" in template.njk requires the GDS new-tab suffix.
+    expect(guidance.additional.linkText).toBe(
+      'Check the documents you need on GOV.UK (opens in a new tab)'
+    )
+    // The design's href carried prototype analytics parameters; ours is clean.
+    expect(guidance.additional.linkHref).toBe(
+      'https://www.gov.uk/guidance/import-of-products-animals-food-and-feed-system'
+    )
+  })
+
   it('Should build the upload-config messages from the copy templates', () => {
     expect(FILE_TYPE_MESSAGE).toBe(
       copy.errors.fileType(ALLOWED_FILE_TYPES_HINT)
