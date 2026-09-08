@@ -25,6 +25,7 @@ import * as consignmentDetails from '../features/commodities/consignment-details
 import * as animalIdentification from '../features/commodities/animal-identification/animal-identification.controller.js'
 import * as importReason from '../features/import-reason/controller.js'
 import * as additionalDetails from '../features/additional-details/controller.js'
+import * as cphNumber from '../features/cph-number/controller.js'
 import * as hub from '../features/hub/controller.js'
 import * as dashboard from '../features/dashboard/controller.js'
 
@@ -206,7 +207,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
     )
   })
 
-  it('Should land additional details on the hub — the run is exhausted', async () => {
+  it('Should carry additional details on to the arrival details mid-run rather than ending on the hub', async () => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, lineSeed)
     const h = captureH()
@@ -217,7 +218,33 @@ const saveAndContinueFollowsTheRunSequence = () => {
       }),
       h
     )
-    expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
+    expect(h.captured.redirect).toBe(
+      pagePath(journey.journeyId, 'port-of-entry')
+    )
+  })
+
+  it('Should carry a later section on to the next question too — the run is the whole notification, not its opening leg', async () => {
+    const inRun = await store.create()
+    await store.seedAnswers(inRun.journeyId, lineSeed)
+    const h = captureH()
+    await postHandlerOf(cphNumber)(
+      buildRequest(inRun.journeyId, {
+        payload: { countyParishHoldingCph: '123456789' },
+        record: active(inRun.journeyId)
+      }),
+      h
+    )
+    expect(h.captured.redirect).toBe(
+      pagePath(inRun.journeyId, 'consignment/contact/select')
+    )
+
+    // Outside the run the page is the addresses section's last page, so the
+    // section flow rests on the hub.
+    const outside = await drive(postHandlerOf(cphNumber), {
+      payload: { countyParishHoldingCph: '123456789' },
+      seed: lineSeed
+    })
+    expect(outside.h.captured.redirect).toBe(hubPath(outside.journeyId))
   })
 }
 

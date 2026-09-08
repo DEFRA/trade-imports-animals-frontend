@@ -1,6 +1,17 @@
 import { expect, test } from '@playwright/test'
 import {
   addDocument,
+  answerAdditionalDetails,
+  answerAnimalIdentification,
+  answerArrivalDetails,
+  answerCommodityDetails,
+  answerContactAddress,
+  answerCphNumber,
+  answerImportReason,
+  answerOriginDetails,
+  answerRolesAndAddresses,
+  answerTransitCountries,
+  answerTransporter,
   chooseCountryOfOrigin,
   completeAnswerSections,
   journeyUrl,
@@ -15,7 +26,7 @@ test.describe('live-animals journey glue', () => {
     await signIn(page)
   })
 
-  test('entry guards and the page-owned opening spine carry a fresh notification to the hub', async ({
+  test('entry guards and the page-owned opening spine carry a fresh notification on past the additional details', async ({
     page
   }) => {
     const heading = (name) => page.getByRole('heading', { name })
@@ -62,14 +73,57 @@ test.describe('live-animals journey glue', () => {
 
     await page.getByRole('radio', { name: 'Slaughter' }).check()
     await save()
+    // The run carries the notification on rather than dropping it on the hub.
+    await expect(heading('Arrival details')).toBeVisible()
+
+    // The hub is somewhere the user chooses to go, and reaching it ends run
+    // mode, so later task saves return to the ordinary hub resting state.
+    await page.goto(journeyUrl(page))
     await expect(heading('Overview')).toBeVisible()
 
-    // Completing the opening run ends run mode, so later task saves return to
-    // the ordinary hub resting state.
     await page.goto(journeyUrl(page, 'origin'))
     await expect(heading('Origin of the import')).toBeVisible()
     await save()
     await expect(heading('Overview')).toBeVisible()
+  })
+
+  test('the opening run carries a new notification through to the review page in one pass', async ({
+    page
+  }) => {
+    test.slow()
+    const heading = (name) => page.getByRole('heading', { name })
+
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Start a new notification' }).click()
+    await expect(heading('Origin of the import')).toBeVisible()
+
+    await answerOriginDetails(page)
+    await expect(heading('What are you importing?')).toBeVisible()
+
+    await answerCommodityDetails(page)
+    await expect(heading('Main reason for import')).toBeVisible()
+
+    await answerImportReason(page)
+    await answerAnimalIdentification(page)
+    await answerAdditionalDetails(page)
+
+    await expect(heading('Arrival details')).toBeVisible()
+    await answerArrivalDetails(page)
+    await answerTransitCountries(page)
+    await answerTransporter(page)
+
+    // Documents are optional, so the run passes through the page and the user
+    // continues without adding one.
+    await expect(page).toHaveURL(/\/accompanying-documents$/)
+    await page.getByRole('button', { name: 'Continue' }).click()
+
+    await answerRolesAndAddresses(page)
+    await answerCphNumber(page)
+    await answerContactAddress(page)
+
+    // No question in the notification sent the user to the hub on the way.
+    await expect(page).toHaveURL(/\/notification-view$/)
+    await expect(heading('Check your answers')).toBeVisible()
   })
 
   test('a notification created in another session, holding no answers, is sent back to the entry page', async ({

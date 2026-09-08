@@ -137,7 +137,7 @@ export const chooseCountryOfOrigin = async (page, name = FIXTURE_COUNTRY) => {
 export const answerOriginEntry = async (page) => {
   await chooseCountryOfOrigin(page)
   await page.getByRole('radio', { name: 'No' }).check()
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await save(page)
 }
 
 /** Origin is the journey's entry page: the entry guard holds a notification
@@ -196,14 +196,14 @@ export const unlockSections = async (page) => {
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
   await selectSpecies(page, ['Felis catus'])
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await save(page)
   await expect(
     page.getByRole('heading', { name: 'Commodity details' })
   ).toBeVisible()
   // The animal count is save-blocking, so the page will not let the journey
   // past it unanswered.
   await page.getByLabel('Number of animals').fill('1')
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await save(page)
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
@@ -226,13 +226,16 @@ export const addDocument = async (page, entry) => {
   await page.getByRole('button', { name: 'Save and add another' }).click()
 }
 
-export const completeAnswerSections = async (page) => {
-  const [line] = values.commodityLines
-  const save = () =>
-    page.getByRole('button', { name: 'Save and continue' }).click()
-  const task = (name) => page.getByRole('link', { name }).click()
+const save = (page) =>
+  page.getByRole('button', { name: 'Save and continue' }).click()
 
-  await task('Where is this consignment coming from?')
+// One page-answering block per question, so the same keystrokes drive the
+// journey whether it is reached page by page through the opening run or one
+// task at a time from the hub. Each block ends on its own save and leaves the
+// landing assertion to the caller, because where a page lands is exactly what
+// the two ways of walking the journey disagree about.
+
+export const answerOriginDetails = async (page) => {
   await chooseCountryOfOrigin(page)
   await page.getByRole('radio', { name: 'Yes' }).check()
   await page
@@ -241,11 +244,13 @@ export const completeAnswerSections = async (page) => {
   await page
     .getByLabel('Your internal reference for this consignment (optional)')
     .fill(values.internalReferenceNumber)
-  await save()
+  await save(page)
+}
 
-  await task('What are you importing?')
+export const answerCommodityDetails = async (page) => {
+  const [line] = values.commodityLines
   await selectSpecies(page, ['Bos taurus'])
-  await save()
+  await save(page)
   await expect(
     page.getByRole('heading', { name: 'Commodity details' })
   ).toBeVisible()
@@ -253,10 +258,11 @@ export const completeAnswerSections = async (page) => {
   await page
     .getByLabel('Number of packages (when required)')
     .fill(line.numberOfPackages)
-  await save()
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-  const [unit] = line.animalIdentifiers
-  await task('Animal identification details')
+  await save(page)
+}
+
+export const answerAnimalIdentification = async (page) => {
+  const [unit] = values.commodityLines[0].animalIdentifiers
   await expect(
     page.getByRole('heading', { name: 'Identification details', exact: true })
   ).toBeVisible()
@@ -264,14 +270,17 @@ export const completeAnswerSections = async (page) => {
     .getByLabel('Ear tag', { exact: true })
     .fill(unit.animalIdentifierEarTag)
   await page.getByRole('button', { name: 'Save and finish' }).click()
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+}
 
-  await task('Main reason for importing')
+export const answerImportReason = async (page) => {
   await page.getByRole('radio', { name: 'Internal market' }).check()
   // The purpose is a conditional reveal under the reason, so both answers go
   // in on the one submit.
   await page.getByRole('radio', { name: 'Breeding' }).check()
-  await save()
+  await save(page)
+}
+
+export const answerAdditionalDetails = async (page) => {
   await expect(
     page.getByRole('heading', { name: 'Additional details', exact: true })
   ).toBeVisible()
@@ -282,9 +291,10 @@ export const completeAnswerSections = async (page) => {
     })
     .getByRole('radio', { name: 'No' })
     .check()
-  await save()
+  await save(page)
+}
 
-  await task('Roles and addresses')
+export const answerRolesAndAddresses = async (page) => {
   const parties = [
     ['Consignor or exporter', values.consignor.name],
     ['Place of destination', values.placeOfDestination.name],
@@ -300,18 +310,22 @@ export const completeAnswerSections = async (page) => {
       .getByRole('link', { name: 'Add' })
       .click()
     await page.getByRole('radio', { name }).check()
-    await save()
+    await save(page)
   }
   await page.getByRole('button', { name: 'Continue' }).click()
+}
+
+export const answerCphNumber = async (page) => {
   await expect(
     page.getByRole('heading', { name: 'County Parish Holding (CPH)' })
   ).toBeVisible()
   await page
     .getByLabel('County Parish Holding (CPH)')
     .fill(values.countyParishHoldingCph)
-  await save()
+  await save(page)
+}
 
-  await task('Arrival details')
+export const answerArrivalDetails = async (page) => {
   await page
     .getByLabel('Arrival date at port of entry')
     .fill(ARRIVAL_DATE_IN_WINDOW)
@@ -325,22 +339,64 @@ export const completeAnswerSections = async (page) => {
   await page
     .getByLabel('Transport document reference')
     .fill(values.transportDocumentReference)
-  await save()
+  await save(page)
+}
+
+export const answerTransitCountries = async (page) => {
   await page.getByRole('checkbox', { name: 'France' }).check()
   await page.getByRole('checkbox', { name: 'Belgium' }).check()
-  await save()
+  await save(page)
+}
+
+export const answerTransporter = async (page) => {
   await page
     .getByRole('radio', { name: values.transporterType, exact: true })
     .check()
-  await save()
+  await save(page)
   await page
     .getByRole('radio', { name: values.commercialTransporter.name })
     .check()
-  await save()
+  await save(page)
+}
+
+export const answerContactAddress = async (page) => {
+  await page.getByRole('radio', { name: values.contactAddress.name }).check()
+  await save(page)
+}
+
+/** Answers the whole notification one task row at a time, the way a returning
+ * user works once the opening run is over. */
+export const completeAnswerSections = async (page) => {
+  const task = (name) => page.getByRole('link', { name }).click()
+  const overview = () =>
+    expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+
+  await task('Where is this consignment coming from?')
+  await answerOriginDetails(page)
+
+  await task('What are you importing?')
+  await answerCommodityDetails(page)
+  await overview()
+
+  await task('Animal identification details')
+  await answerAnimalIdentification(page)
+  await overview()
+
+  await task('Main reason for importing')
+  await answerImportReason(page)
+  await answerAdditionalDetails(page)
+
+  await task('Roles and addresses')
+  await answerRolesAndAddresses(page)
+  await answerCphNumber(page)
+
+  await task('Arrival details')
+  await answerArrivalDetails(page)
+  await answerTransitCountries(page)
+  await answerTransporter(page)
 
   await task('Contact address')
-  await page.getByRole('radio', { name: values.contactAddress.name }).check()
-  await save()
+  await answerContactAddress(page)
 }
 
 /**

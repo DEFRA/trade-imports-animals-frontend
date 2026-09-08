@@ -57,7 +57,7 @@ test.describe('cph-number feature', () => {
     await expect(page).toHaveURL(hubUrl)
   })
 
-  test('strips slashes, saves a valid CPH number, redirects and persists it', async ({
+  test('strips slashes, saves a valid CPH number, continues the run and persists it', async ({
     page
   }) => {
     const cphUrl = page.url()
@@ -65,7 +65,12 @@ test.describe('cph-number feature', () => {
     await page.getByLabel(copy.cph.label).fill('123/456/789')
     await page.locator(SUBMIT_BUTTON).first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    // The notification was created in this session, so the opening run is still
+    // running and carries the page on to the next question rather than back to
+    // the hub.
+    await expect(page).toHaveURL(
+      /\/notifications\/[^/]+\/consignment\/contact\/select$/
+    )
     await page.goto(cphUrl)
     await expect(page.getByLabel(copy.cph.label)).toHaveValue('123456789')
   })
