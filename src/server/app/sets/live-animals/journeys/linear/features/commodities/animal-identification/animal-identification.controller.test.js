@@ -28,6 +28,7 @@ const getHandler = animalIdentification.routes.find(
 const MICROCHIP_FIELD_0 = 'animalIdentifierMicrochip-0'
 const PASSPORT_FIELD_0 = 'animalIdentifierPassport-0'
 const TATTOO_FIELD_0 = 'animalIdentifierTattoo-0'
+const EAR_TAG_FIELD_0 = 'animalIdentifierEarTag-0'
 const IDENTIFICATION_PAGE = 'commodities/identification'
 const BOS_TAURUS_1 = 'Bos taurus 1'
 
@@ -42,6 +43,14 @@ const catLine = (extra = {}) => ({
 const cowLine = (extra = {}) => ({
   commoditySelection: 'Cow',
   speciesSelection: '1148346',
+  numberOfPackages: '',
+  numberOfAnimalsQuantity: '',
+  ...extra
+})
+
+const horseLine = (extra = {}) => ({
+  commoditySelection: 'Horse',
+  speciesSelection: '822332',
   numberOfPackages: '',
   numberOfAnimalsQuantity: '',
   ...extra
@@ -109,6 +118,29 @@ describe(`${SUITE} — the cards view`, () => {
     expect(card.showAddress).toBe(true)
     const ids = card.fields.map((field) => field.id)
     expect(ids).toEqual([MICROCHIP_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0])
+  })
+
+  // Design release 1 asks for each commodity's identifiers in the order that
+  // commodity's own list gives, so a cow is asked for its ear tag — the
+  // identifier a cow actually carries — before its passport, where a horse is
+  // asked for its microchip first. This pins the rendered order per
+  // commodity; that the order is a property of the COMMODITY rather than one
+  // global sequence is pinned by #identifiersFor in
+  // services/commodities/index.test.js.
+  it("Should order each commodity's entry fields by that commodity's own identifier list", async () => {
+    const [cow] = await viewCards({ commodityLines: [cowLine()] })
+    expect(cow.fields.map((field) => field.id)).toEqual([
+      EAR_TAG_FIELD_0,
+      PASSPORT_FIELD_0,
+      TATTOO_FIELD_0
+    ])
+
+    const [horse] = await viewCards({ commodityLines: [horseLine()] })
+    expect(horse.fields.map((field) => field.label)).toEqual([
+      'Microchip number',
+      'Passport',
+      'Horse name'
+    ])
   })
 
   it('Should replace the entry form with the maximum-reached state at N = M, keeping the rows removable', async () => {
@@ -239,8 +271,8 @@ describe(`${SUITE} — the saved-animals table`, () => {
         })
       ]
     })
-    expect(card.identifierColumns).toEqual(['Passport', 'Tattoo', 'Ear tag'])
-    expect(card.units[0].cells).toEqual(['', '', 'UK1'])
+    expect(card.identifierColumns).toEqual(['Ear tag', 'Passport', 'Tattoo'])
+    expect(card.units[0].cells).toEqual(['UK1', '', ''])
   })
 
   it('Should number the rows within a commodity line by the species and the row position', async () => {
@@ -259,7 +291,7 @@ describe(`${SUITE} — the saved-animals table`, () => {
       BOS_TAURUS_1,
       'Bos taurus 2'
     ])
-    expect(card.units[1].cells).toEqual(['UK2', '', ''])
+    expect(card.units[1].cells).toEqual(['', 'UK2', ''])
   })
 
   it('Should key each row by its own line\'s species so two commodity lines do not both start at "Animal 1"', async () => {
@@ -356,7 +388,9 @@ describe(`${SUITE} — Save and add another`, () => {
       seed: { commodityLines: [cowLine()] },
       payload: { action: 'add:0', 'animalIdentifierEarTag-0': '' }
     })
-    expect(result.view.context.errors[PASSPORT_FIELD_0]).toBe(
+    // The error anchors to the first box the commodity asks for, so the
+    // summary link lands a cow's trader on its ear tag.
+    expect(result.view.context.errors[EAR_TAG_FIELD_0]).toBe(
       'Enter at least one identifier for this animal'
     )
     expect(result.after).toEqual(result.before)
@@ -564,7 +598,7 @@ describe(`${SUITE} — identifier render matrix — model metadata per selectabl
     {
       commodity: 'Cow',
       species: '1148346',
-      fieldIds: [PASSPORT_FIELD_0, TATTOO_FIELD_0, 'animalIdentifierEarTag-0'],
+      fieldIds: [EAR_TAG_FIELD_0, PASSPORT_FIELD_0, TATTOO_FIELD_0],
       showAddress: false
     },
     {

@@ -103,6 +103,7 @@ const fullSeed = {
       numberOfPackages: '5',
       animalIdentifiers: [
         {
+          animalIdentifierEarTag: 'UK1',
           animalIdentifierPassport: 'UK123456789',
           permanentAddress: { name: 'Pet Owner' }
         }
@@ -291,10 +292,11 @@ describe(`${SUITE} — fully-populated notification`, () => {
     const card = cardByTitle(await sectionsFor(fullSeed), COW_CARD_TITLE)
     expect(card.identifierTable.head.map((cell) => cell.text)).toEqual([
       'Animal',
+      'Ear tag',
       'Passport'
     ])
     expect(card.identifierTable.rows).toEqual([
-      [{ text: 'Animal 1' }, { text: 'UK123456789' }]
+      [{ text: 'Animal 1' }, { text: 'UK1' }, { text: 'UK123456789' }]
     ])
   })
 

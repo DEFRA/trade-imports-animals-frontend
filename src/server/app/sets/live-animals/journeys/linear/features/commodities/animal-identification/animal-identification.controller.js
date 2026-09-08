@@ -22,6 +22,7 @@ import { isRemoveAction, postRemove } from './remove/post-remove.js'
 import { buildSelectedCommodities } from './summary/selected-commodities.js'
 
 export { IDENTIFIER_LABELS } from './identifier/table.js'
+export { scopedFields } from './identifier/fields.js'
 
 export const meta = { ...page, collects: [] }
 const view = `${TEMPLATES}/features/commodities/animal-identification/animal-identification`

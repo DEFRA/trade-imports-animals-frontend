@@ -15,6 +15,7 @@ const MICROCHIP_FIELD = '#animalIdentifierMicrochip-0'
 const EAR_TAG_FIELD = '#animalIdentifierEarTag-0'
 const BOS_TAURUS = 'Bos taurus'
 const FELIS_CATUS = 'Felis catus'
+const EQUUS_CABALLUS = 'Equus caballus'
 const CANIS_LUPUS_FAMILIARIS = 'Canis lupus familiaris'
 const SALMO_SALAR = 'Salmo salar'
 const DOMESTIC_CATTLE = 'Domestic cattle'
@@ -67,6 +68,9 @@ const openIdentification = async (page, selections, counts = []) => {
 
 const openCatIdentification = (page) =>
   openIdentification(page, [['Cat', [FELIS_CATUS]]], ['2'])
+
+const entryLabelsOf = (fields) =>
+  fields.map((field) => copy.identification.typeFields[field].label)
 
 const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
@@ -189,7 +193,7 @@ const identifierValidations = [
   ['Cow', BOS_TAURUS, 'animalIdentifierPassport', 'Passport'],
   ['Cow', BOS_TAURUS, 'animalIdentifierTattoo', 'Tattoo'],
   ['Cow', BOS_TAURUS, 'animalIdentifierEarTag', 'Ear tag'],
-  ['Horse', 'Equus caballus', 'horseName', 'Horse name'],
+  ['Horse', EQUUS_CABALLUS, 'horseName', 'Horse name'],
   [
     'Fish',
     SALMO_SALAR,
@@ -261,7 +265,7 @@ test.describe('animal identification', () => {
   }) => {
     await openIdentification(page, [
       ['Cow', [BOS_TAURUS]],
-      ['Horse', ['Equus caballus']],
+      ['Horse', [EQUUS_CABALLUS]],
       ['Fish', [SALMO_SALAR]]
     ])
 
@@ -278,6 +282,37 @@ test.describe('animal identification', () => {
     ).toBeVisible()
     await expect(page.locator('#animalIdentifierDescription-2')).toBeVisible()
     await expect(page.locator('#nameOrOrganisationName-0')).toHaveCount(0)
+  })
+
+  // Design release 1 asks for each commodity's identifiers in the order that
+  // commodity's own list gives. A cow carries an ear tag, so the ear tag is
+  // the box it is asked for first — and a horse, which carries a chip, is
+  // asked for its microchip first. This pins the rendered order per
+  // commodity; that the order is a property of the COMMODITY rather than one
+  // global sequence is pinned by #identifiersFor in
+  // services/commodities/index.test.js.
+  test('asks a cattle line for its ear tag before its passport, and a horse for its microchip first', async ({
+    page
+  }) => {
+    await openIdentification(page, [
+      ['Cow', [BOS_TAURUS]],
+      ['Horse', [EQUUS_CABALLUS]]
+    ])
+
+    await expect(page.locator('label[for$="-0"]')).toHaveText(
+      entryLabelsOf([
+        'animalIdentifierEarTag',
+        'animalIdentifierPassport',
+        'animalIdentifierTattoo'
+      ])
+    )
+    await expect(page.locator('label[for$="-1"]')).toHaveText(
+      entryLabelsOf([
+        'animalIdentifierMicrochip',
+        'animalIdentifierPassport',
+        'horseName'
+      ])
+    )
   })
 
   // Design release 1 names an identifier once and uses that name both on the
