@@ -20,6 +20,7 @@ import {
   stubH
 } from '../../../../../../engine/test-support.js'
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
+import * as documentTypes from '../../../../../../services/document-types/index.js'
 import { dispatchPages } from '../index.js'
 
 import * as documents from './controller.js'
@@ -46,9 +47,12 @@ const pdfFile = (filename = 'itahc-certificate.pdf', size = 8) => ({
 
 const DATE_OF_ISSUE_TEXT = '12/12/2025'
 const VIRUS_NOTES_FILENAME = 'virus-notes.pdf'
+// The one member of the service enum design release 1 keeps to itself.
+const EXCLUDED_TYPE = 'HEALTH_CERTIFICATE'
 
 const validDocument = {
   accompanyingDocumentReference: 'GBHC1234567890',
+  accompanyingDocumentType: 'ITAHC',
   accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT
 }
 
@@ -78,6 +82,7 @@ describe('documents — real upload leg on the single-page loop', () => {
       payload: {
         action: 'add',
         file: pdfFile(),
+        accompanyingDocumentType: 'ITAHC',
         accompanyingDocumentDateOfIssue: '31/2/2000'
       }
     })
@@ -88,12 +93,15 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should require a document reference and a date of issue at add time', async () => {
+  it('Should require a document reference, a document type and a date of issue at add time', async () => {
     const result = await driveHandler(post, {
       payload: { action: 'add', file: pdfFile() }
     })
     expect(result.view.context.errors.accompanyingDocumentReference).toBe(
       'Enter a document reference'
+    )
+    expect(result.view.context.errors.accompanyingDocumentType).toBe(
+      'Select a document type'
     )
     expect(result.view.context.errors.accompanyingDocumentDateOfIssue).toBe(
       'Enter the date of issue'
@@ -101,13 +109,42 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should not upload or persist an otherwise-started document with either mandatory form field blank', async () => {
+  it('Should list the add errors in the order the fields appear on the page', async () => {
+    const result = await driveHandler(post, {
+      payload: { action: 'add' }
+    })
+    expect(Object.keys(result.view.context.errors)).toEqual([
+      'accompanyingDocumentReference',
+      'accompanyingDocumentType',
+      'accompanyingDocumentDateOfIssue',
+      'file'
+    ])
+  })
+
+  it('Should refuse a document type the page never offered and append nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        action: 'add',
+        ...validDocument,
+        accompanyingDocumentType: EXCLUDED_TYPE,
+        file: pdfFile()
+      }
+    })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.accompanyingDocumentType).toBe(
+      'Select a document type'
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should not upload or persist an otherwise-started document with any mandatory form field blank', async () => {
     const upload = vi.spyOn(documentUploads, 'upload')
     const incompletePayloads = [
       {
         payload: {
           action: 'add',
           file: pdfFile(),
+          accompanyingDocumentType: 'ITAHC',
           accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT
         },
         errorField: 'accompanyingDocumentReference'
@@ -116,7 +153,17 @@ describe('documents — real upload leg on the single-page loop', () => {
         payload: {
           action: 'add',
           file: pdfFile(),
-          accompanyingDocumentReference: 'GBHC1234567890'
+          accompanyingDocumentReference: 'GBHC1234567890',
+          accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT
+        },
+        errorField: 'accompanyingDocumentType'
+      },
+      {
+        payload: {
+          action: 'add',
+          file: pdfFile(),
+          accompanyingDocumentReference: 'GBHC1234567890',
+          accompanyingDocumentType: 'ITAHC'
         },
         errorField: 'accompanyingDocumentDateOfIssue'
       }
@@ -132,7 +179,7 @@ describe('documents — real upload leg on the single-page loop', () => {
     upload.mockRestore()
   })
 
-  it('Should append the uploaded document with the type and attachment type derived from the filename, then redirect', async () => {
+  it('Should append the uploaded document with the chosen type and the attachment type derived from the filename, then redirect', async () => {
     const result = await driveHandler(post, {
       payload: { action: 'add', ...validDocument, file: pdfFile('itahc.pdf') }
     })
@@ -144,16 +191,17 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(entry.accompanyingDocumentType).toBe('ITAHC')
   })
 
-  it('Should derive Other for a filename matching no document type', async () => {
+  it('Should store the chosen type whatever the filename says', async () => {
     const result = await driveHandler(post, {
       payload: {
         action: 'add',
         ...validDocument,
-        file: pdfFile('holiday-snaps.pdf')
+        accompanyingDocumentType: 'COMMERCIAL_INVOICE',
+        file: pdfFile('itahc-certificate.pdf')
       }
     })
     const [entry] = result.after.documents
-    expect(entry.accompanyingDocumentType).toBe('OTHER')
+    expect(entry.accompanyingDocumentType).toBe('COMMERCIAL_INVOICE')
   })
 
   it('Should refuse an add without a file and append nothing', async () => {
@@ -513,6 +561,31 @@ describe('documents — scan-status poll and view context', () => {
       seed: { documents: [storedDocument()] }
     })
     expect(result.view.context.rows[0][4].html).not.toContain('View file')
+  })
+
+  it('Should offer the thirteen design-release document types behind a placeholder, in the service order', async () => {
+    const result = await driveHandler(get)
+    const items = result.view.context.documentTypeItems
+    expect(items[0]).toEqual({ value: '', text: 'Select one' })
+    expect(items.slice(1).map(({ value }) => value)).toEqual(
+      documentTypes.documentTypes().filter((code) => code !== EXCLUDED_TYPE)
+    )
+    expect(items.slice(1).map(({ text }) => text)).toEqual([
+      'Intra Trade Animal Health Certificate (ITAHC)',
+      'Veterinary health certificate',
+      'Air waybill',
+      'Import permit',
+      'Letter of authority (Directive 2008/61/EC)',
+      'Commercial invoice',
+      'Sea waybill',
+      'Rail waybill',
+      'Bill of lading',
+      'Catch certificate',
+      'Laboratory sampling results for aflatoxin (Reg 2019/1793)',
+      'Journey log',
+      'Other'
+    ])
+    expect(result.view.context.values.accompanyingDocumentType).toBe('')
   })
 
   it('Should register the multipart POST route with the 10MB payload cap', () => {

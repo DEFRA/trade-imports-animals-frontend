@@ -10,7 +10,7 @@ export const copy = {
     VESSEL: 'Llong'
   },
   documentTypes: {
-    ITAHC: 'ITAHC',
+    ITAHC: 'Tystysgrif Iechyd Anifeiliaid Masnach Fewnol (ITAHC)',
     VETERINARY_HEALTH_CERTIFICATE: 'Tystysgrif iechyd milfeddygol',
     AIR_WAYBILL: 'Bil cludo awyr',
     IMPORT_PERMIT: 'Trwydded fewnforio',

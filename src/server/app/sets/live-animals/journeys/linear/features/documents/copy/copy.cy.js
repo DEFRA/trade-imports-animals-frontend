@@ -42,6 +42,10 @@ export const copy = {
     label: 'Cyfeirnod y ddogfen',
     hint: 'Er enghraifft, GBHC1234567890.'
   },
+  documentType: {
+    label: 'Math o ddogfen',
+    placeholder: 'Dewiswch un'
+  },
   dateOfIssue: {
     label: 'Dyddiad cyhoeddi',
     hint: 'Er enghraifft, 12/12/2025'
@@ -62,7 +66,7 @@ export const copy = {
     actionsHidden: 'Camau gweithredu'
   },
   types: {
-    ITAHC: 'ITAHC',
+    ITAHC: 'Tystysgrif Iechyd Anifeiliaid Masnach Fewnol (ITAHC)',
     VETERINARY_HEALTH_CERTIFICATE: 'Tystysgrif iechyd milfeddygol',
     AIR_WAYBILL: 'Bil cludo awyr',
     IMPORT_PERMIT: 'Trwydded fewnforio',
@@ -103,6 +107,7 @@ export const copy = {
     referenceMaxLength: 'Rhaid i gyfeirnod y ddogfen fod yn 58 nod neu lai',
     dateInvalid: 'Rhowch ddyddiad cyhoeddi go iawn',
     referenceRequired: 'Rhowch gyfeirnod dogfen',
+    typeRequired: 'Dewiswch fath o ddogfen',
     dateRequired: 'Rhowch y dyddiad cyhoeddi',
     fileRequired: 'Dewiswch ffeil i’w huwchlwytho',
     cannotContinue:

@@ -25,6 +25,7 @@ const DATE_OF_ISSUE = { day: '3', month: '1', year: '2026' }
 
 const documentNamed = (reference, filename) => ({
   accompanyingDocumentReference: reference,
+  accompanyingDocumentType: 'ITAHC',
   accompanyingDocumentDateOfIssue: DATE_OF_ISSUE,
   filename
 })
@@ -34,6 +35,9 @@ const uploadDocument = async (page, document) => {
   await page
     .getByLabel(copy.reference.label)
     .fill(document.accompanyingDocumentReference)
+  await page
+    .getByLabel(copy.documentType.label)
+    .selectOption(document.accompanyingDocumentType)
   await page
     .getByLabel(copy.dateOfIssue.label)
     .fill(`${issued.day}/${issued.month}/${issued.year}`)

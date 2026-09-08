@@ -176,6 +176,7 @@ describe('change context — context survives the internal loop navigation', () 
         payload: {
           action: 'add',
           accompanyingDocumentReference: 'GBHC1234567890',
+          accompanyingDocumentType: 'ITAHC',
           accompanyingDocumentDateOfIssue: '12/12/2025',
           file: {
             filename: 'itahc-certificate.pdf',

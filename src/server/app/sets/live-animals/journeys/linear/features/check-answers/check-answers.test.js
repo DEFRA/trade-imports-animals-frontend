@@ -83,6 +83,7 @@ const CONSIGNOR_NAME = 'Astra Rosales'
 const CONSIGNOR_ADDRESS_ID = 'astra-rosales'
 const COW_CARD_TITLE = 'Cow (0102) — Bos taurus'
 const ROLES_AND_ADDRESSES_CARD = 'Roles and addresses'
+const UPLOADED_DOCUMENTS_CARD = 'Uploaded documents'
 const COUNTRY_OF_ORIGIN_KEY = 'Country of origin'
 const PURPOSE_IN_MARKET_KEY = 'Purpose in the market'
 const REGION_CODE_KEY = 'Region of origin code'
@@ -296,7 +297,10 @@ describe(`${SUITE} — fully-populated notification`, () => {
   })
 
   it('Should render a document group with the design rows inside the uploaded-documents card', async () => {
-    const card = cardByTitle(await sectionsFor(fullSeed), 'Uploaded documents')
+    const card = cardByTitle(
+      await sectionsFor(fullSeed),
+      UPLOADED_DOCUMENTS_CARD
+    )
     expect(card.documents).toHaveLength(1)
     const [document] = card.documents
     expect(document.heading).toBe('Document 1')
@@ -306,6 +310,20 @@ describe(`${SUITE} — fully-populated notification`, () => {
     )
     expect(valueOf(document.rows, 'Date of issue')).toBe('12/12/2025')
     expect(valueOf(document.rows, 'Attachment type')).toBe('PDF')
+  })
+
+  it('Should name an ITAHC document with the same label the documents page uses', async () => {
+    const seed = {
+      ...fullSeed,
+      documents: [
+        { ...fullSeed.documents[0], accompanyingDocumentType: 'ITAHC' }
+      ]
+    }
+    const card = cardByTitle(await sectionsFor(seed), UPLOADED_DOCUMENTS_CARD)
+    const [document] = card.documents
+    expect(valueOf(document.rows, 'Document type')).toBe(
+      'Intra Trade Animal Health Certificate (ITAHC)'
+    )
   })
 
   it('Should format the arrival date as day/month/year', async () => {
@@ -363,7 +381,10 @@ describe(`${SUITE} — fully-populated notification`, () => {
   })
 
   it('Should point the uploaded-documents card Change action at the documents page with a change flag', async () => {
-    const card = cardByTitle(await sectionsFor(fullSeed), 'Uploaded documents')
+    const card = cardByTitle(
+      await sectionsFor(fullSeed),
+      UPLOADED_DOCUMENTS_CARD
+    )
     expect(card.actions.items[0].href).toMatch(
       /\/accompanying-documents\?change=1$/
     )
