@@ -225,6 +225,9 @@ export const addDocument = async (page, entry) => {
   await page
     .getByLabel('Document reference')
     .fill(entry.accompanyingDocumentReference)
+  await page
+    .getByLabel('Document type')
+    .selectOption(entry.accompanyingDocumentType)
   const issued = entry.accompanyingDocumentDateOfIssue
   await page
     .getByLabel('Date of issue')

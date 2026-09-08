@@ -40,13 +40,31 @@ export const fileErrors = (file) => {
   return {}
 }
 
+// The error summary lists the fields in the order it is handed them, and the
+// summary has to read down the page. Presence and format rules fire in their
+// own order, so the merged result is rebuilt in the page's order.
+const FIELD_ORDER = [
+  'accompanyingDocumentReference',
+  'accompanyingDocumentType',
+  'accompanyingDocumentDateOfIssue',
+  'file'
+]
+
+const inFieldOrder = (errors) =>
+  Object.fromEntries(
+    FIELD_ORDER.filter((field) => errors[field]).map((field) => [
+      field,
+      errors[field]
+    ])
+  )
+
 export const documentAddErrors = (payload, bare, pendingDocumentSave) => {
-  const { errors } = validate(fields, payload)
-  return {
+  const { errors } = validate(fields(), payload)
+  return inFieldOrder({
     ...errors,
     ...presenceErrors(bare),
     ...(pendingDocumentSave ? {} : fileErrors(payload.file))
-  }
+  })
 }
 
 export const capacityExceededError = () => [

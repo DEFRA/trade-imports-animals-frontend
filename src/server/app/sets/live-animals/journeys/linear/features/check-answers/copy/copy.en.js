@@ -9,7 +9,7 @@ export const copy = {
     VESSEL: 'Vessel'
   },
   documentTypes: {
-    ITAHC: 'ITAHC',
+    ITAHC: 'Intra Trade Animal Health Certificate (ITAHC)',
     VETERINARY_HEALTH_CERTIFICATE: 'Veterinary health certificate',
     AIR_WAYBILL: 'Air waybill',
     IMPORT_PERMIT: 'Import permit',

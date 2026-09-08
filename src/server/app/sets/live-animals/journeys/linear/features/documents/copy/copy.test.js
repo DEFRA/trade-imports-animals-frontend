@@ -112,4 +112,14 @@ describe('GET /accompanying-documents', () => {
       copy.dateOfIssue.label
     )
   })
+
+  it('Should label every offered document type from the feature copy', async () => {
+    const get = documents.routes.find((route) => route.method === 'GET').handler
+    const result = await driveHandler(get)
+    const [placeholder, ...types] = result.view.context.documentTypeItems
+    expect(placeholder.text).toBe(copy.documentType.placeholder)
+    for (const { value, text } of types) {
+      expect(text, `${value} must be labelled`).toBe(copy.types[value])
+    }
+  })
 })

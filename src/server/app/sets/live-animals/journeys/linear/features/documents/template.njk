@@ -1,5 +1,6 @@
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "moj/components/date-picker/macro.njk" import mojDatePicker %}
 {% from "govuk/components/file-upload/macro.njk" import govukFileUpload %}
 {% from "govuk/components/table/macro.njk" import govukTable %}
@@ -82,6 +83,15 @@
           classes: "govuk-input--width-20",
           value: values.accompanyingDocumentReference,
           errorMessage: errors.accompanyingDocumentReference and { text: errors.accompanyingDocumentReference }
+        }) }}
+
+        {{ govukSelect({
+          id: "accompanyingDocumentType",
+          name: "accompanyingDocumentType",
+          label: { text: copy.documentType.label, classes: "govuk-label--s" },
+          value: values.accompanyingDocumentType,
+          items: documentTypeItems,
+          errorMessage: errors.accompanyingDocumentType and { text: errors.accompanyingDocumentType }
         }) }}
 
         {{ mojDatePicker(dateOfIssue) }}

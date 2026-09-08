@@ -43,27 +43,26 @@ const setUploadFile = (page, filename, bytes, mimeType = 'application/pdf') =>
 
 const validDocument = {
   accompanyingDocumentReference: 'ITAHC-2026-0001',
+  accompanyingDocumentType: 'ITAHC',
   accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT,
   filename: 'itahc-upload.pdf'
 }
 
-const fillDocument = async (page, document = validDocument) => {
+const fillMetadata = async (page, document = validDocument) => {
   await page
     .getByLabel(copy.reference.label)
     .fill(document.accompanyingDocumentReference)
   await page
+    .getByLabel(copy.documentType.label)
+    .selectOption(document.accompanyingDocumentType)
+  await page
     .getByLabel(copy.dateOfIssue.label)
     .fill(document.accompanyingDocumentDateOfIssue)
-  await setUploadFile(page, document.filename)
 }
 
-const fillMetadataOnly = async (page) => {
-  await page
-    .getByLabel(copy.reference.label)
-    .fill(validDocument.accompanyingDocumentReference)
-  await page
-    .getByLabel(copy.dateOfIssue.label)
-    .fill(validDocument.accompanyingDocumentDateOfIssue)
+const fillDocument = async (page, document = validDocument) => {
+  await fillMetadata(page, document)
+  await setUploadFile(page, document.filename)
 }
 
 const submitAdd = (page) =>
@@ -77,6 +76,9 @@ const uploadDocument = async (page, document = validDocument) => {
 const expectPreservedMetadata = async (page) => {
   await expect(page.getByLabel(copy.reference.label)).toHaveValue(
     validDocument.accompanyingDocumentReference
+  )
+  await expect(page.getByLabel(copy.documentType.label)).toHaveValue(
+    validDocument.accompanyingDocumentType
   )
   await expect(page.getByLabel(copy.dateOfIssue.label)).toHaveValue(
     validDocument.accompanyingDocumentDateOfIssue
@@ -111,6 +113,7 @@ test.describe('document upload page', () => {
     await expect(
       page.getByLabel(copy.dateOfIssue.label)
     ).toHaveAccessibleDescription(copy.dateOfIssue.hint)
+    await expect(page.getByLabel(copy.documentType.label)).toHaveValue('')
     await expect(page.getByLabel(copy.file.label)).toHaveAttribute(
       'accept',
       ACCEPT_ATTRIBUTE
@@ -131,6 +134,47 @@ test.describe('document upload page', () => {
     ).toBeVisible()
   })
 
+  test('offers the thirteen document types behind a placeholder, between the reference and the date', async ({
+    page
+  }) => {
+    const select = page.getByLabel(copy.documentType.label)
+    await expect(select.getByRole('option')).toHaveText([
+      copy.documentType.placeholder,
+      copy.types.ITAHC,
+      copy.types.VETERINARY_HEALTH_CERTIFICATE,
+      copy.types.AIR_WAYBILL,
+      copy.types.IMPORT_PERMIT,
+      copy.types.LETTER_OF_AUTHORITY,
+      copy.types.COMMERCIAL_INVOICE,
+      copy.types.SEA_WAYBILL,
+      copy.types.RAIL_WAYBILL,
+      copy.types.BILL_OF_LADING,
+      copy.types.CATCH_CERTIFICATE,
+      copy.types.LABORATORY_SAMPLING_RESULTS_FOR_AFLATOXIN,
+      copy.types.JOURNEY_LOG,
+      copy.types.OTHER
+    ])
+    // The design keeps this one for its own internal testing release.
+    await expect(
+      select.getByRole('option', {
+        name: copy.types.HEALTH_CERTIFICATE,
+        exact: true
+      })
+    ).toHaveCount(0)
+
+    // A locator resolves in document order, so this pins where the select sits.
+    const controlIds = await page
+      .locator(
+        '#accompanyingDocumentReference, #accompanyingDocumentType, #accompanyingDocumentDateOfIssue'
+      )
+      .evaluateAll((controls) => controls.map((control) => control.id))
+    expect(controlIds).toEqual([
+      'accompanyingDocumentReference',
+      'accompanyingDocumentType',
+      'accompanyingDocumentDateOfIssue'
+    ])
+  })
+
   test('groups the fields and the add button under the file upload heading, leaving the page actions outside', async ({
     page
   }) => {
@@ -141,6 +185,7 @@ test.describe('document upload page', () => {
       fileUpload.getByRole('heading', { name: copy.fileUploadHeading })
     ).toBeVisible()
     await expect(fileUpload.getByLabel(copy.reference.label)).toBeVisible()
+    await expect(fileUpload.getByLabel(copy.documentType.label)).toBeVisible()
     await expect(fileUpload.getByLabel(copy.dateOfIssue.label)).toBeVisible()
     await expect(fileUpload.getByLabel(copy.file.label)).toBeVisible()
     await expect(
@@ -206,6 +251,50 @@ test.describe('document upload reference validation', () => {
   })
 })
 
+test.describe('document upload type validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openDocuments(page)
+  })
+
+  test('type validation: leaving the placeholder links to and focuses the select, preserving the other answers', async ({
+    page
+  }) => {
+    await fillDocument(page, {
+      ...validDocument,
+      accompanyingDocumentType: ''
+    })
+    await submitAdd(page)
+
+    const link = errorLink(page, copy.errors.typeRequired)
+    await expect(link).toBeVisible()
+    await link.click()
+    await expect(page.getByLabel(copy.documentType.label)).toBeFocused()
+    await expect(page.getByLabel(copy.documentType.label)).toHaveValue('')
+    await expect(page.getByLabel(copy.reference.label)).toHaveValue(
+      validDocument.accompanyingDocumentReference
+    )
+    await expect(page.getByLabel(copy.dateOfIssue.label)).toHaveValue(
+      validDocument.accompanyingDocumentDateOfIssue
+    )
+  })
+
+  test('the chosen type is what the saved row reports, whatever the file is called', async ({
+    page
+  }) => {
+    test.slow()
+    await uploadDocument(page, {
+      ...validDocument,
+      accompanyingDocumentType: 'COMMERCIAL_INVOICE',
+      filename: 'itahc-upload.pdf'
+    })
+
+    const row = rowFor(page, validDocument.accompanyingDocumentReference)
+    await expect(row).toContainText(copy.types.COMMERCIAL_INVOICE)
+    await expect(page.getByLabel(copy.documentType.label)).toHaveValue('')
+  })
+})
+
 test.describe('document upload date validation', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -262,7 +351,7 @@ test.describe('document upload file validation', () => {
   test('file validation: no file links to and focuses the upload while preserving metadata', async ({
     page
   }) => {
-    await fillMetadataOnly(page)
+    await fillMetadata(page)
     await submitAdd(page)
 
     const link = errorLink(page, copy.errors.fileRequired)
@@ -275,7 +364,7 @@ test.describe('document upload file validation', () => {
   test('file validation: unsupported type links to and focuses the upload while preserving metadata', async ({
     page
   }) => {
-    await fillMetadataOnly(page)
+    await fillMetadata(page)
     await setUploadFile(
       page,
       'notes.zip',
@@ -302,7 +391,7 @@ test.describe('document upload oversize validation', () => {
     page
   }) => {
     test.slow()
-    await fillMetadataOnly(page)
+    await fillMetadata(page)
     await setUploadFile(
       page,
       'oversize.pdf',
@@ -357,6 +446,7 @@ test.describe('document upload saved rows', () => {
     const issued = document.accompanyingDocumentDateOfIssue
     await uploadDocument(page, {
       accompanyingDocumentReference: document.accompanyingDocumentReference,
+      accompanyingDocumentType: document.accompanyingDocumentType,
       accompanyingDocumentDateOfIssue: `${issued.day}/${issued.month}/${issued.year}`,
       filename: document.filename
     })
@@ -441,14 +531,14 @@ test.describe('document upload capacity and accessibility', () => {
     test.slow()
     for (let index = 1; index <= MAX_DOCUMENTS; index++) {
       await uploadDocument(page, {
+        ...validDocument,
         accompanyingDocumentReference: `ITAHC-CAPACITY-${index}`,
-        accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT,
         filename: `itahc-capacity-${index}.pdf`
       })
     }
     await fillDocument(page, {
+      ...validDocument,
       accompanyingDocumentReference: 'ITAHC-ONE-TOO-MANY',
-      accompanyingDocumentDateOfIssue: DATE_OF_ISSUE_TEXT,
       filename: 'itahc-one-too-many.pdf'
     })
     await submitAdd(page)
@@ -467,6 +557,15 @@ test.describe('document upload capacity and accessibility', () => {
     page
   }) => {
     await expectNoSeriousAxeViolations(page, 'Empty document upload page')
+  })
+
+  test('validation error state has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await submitAdd(page)
+    await expect(page.locator('.govuk-error-summary')).toBeVisible()
+    await expect(page.locator('#accompanyingDocumentType-error')).toBeVisible()
+    await expectNoSeriousAxeViolations(page, 'Document upload error state')
   })
 
   test('document date picker has no serious or critical axe violations', async ({

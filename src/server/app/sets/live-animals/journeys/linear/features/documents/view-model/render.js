@@ -10,6 +10,7 @@ import {
 } from '../upload-config.js'
 import { documentsPage as page } from '../page.js'
 import { rejectedErrors } from '../scan/summary-errors.js'
+import { documentTypeItems } from './fragments/document-type.js'
 import { scanCopyJson } from './fragments/status.js'
 import { getAttempt, refreshHref } from './refresh.js'
 import { documentRows } from './rows.js'
@@ -57,6 +58,7 @@ export const render = ({
     maxFileSize: MAX_FILE_SIZE_BYTES,
     oversizeFileMessage: OVERSIZE_FILE_MESSAGE,
     scanCopyJson,
+    documentTypeItems: documentTypeItems(),
     dateOfIssue: kit.dateField('accompanyingDocumentDateOfIssue', {
       label: copy.dateOfIssue.label,
       hint: copy.dateOfIssue.hint,

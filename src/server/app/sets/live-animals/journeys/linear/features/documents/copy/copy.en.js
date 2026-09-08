@@ -37,6 +37,10 @@ export const copy = {
     label: 'Document reference',
     hint: 'For example, GBHC1234567890.'
   },
+  documentType: {
+    label: 'Document type',
+    placeholder: 'Select one'
+  },
   dateOfIssue: {
     label: 'Date of issue',
     hint: 'For example, 12/12/2025'
@@ -57,7 +61,7 @@ export const copy = {
     actionsHidden: 'Actions'
   },
   types: {
-    ITAHC: 'ITAHC',
+    ITAHC: 'Intra Trade Animal Health Certificate (ITAHC)',
     VETERINARY_HEALTH_CERTIFICATE: 'Veterinary health certificate',
     AIR_WAYBILL: 'Air waybill',
     IMPORT_PERMIT: 'Import permit',
@@ -98,6 +102,7 @@ export const copy = {
     referenceMaxLength: 'Document reference must be 58 characters or fewer',
     dateInvalid: 'Enter a real date of issue',
     referenceRequired: 'Enter a document reference',
+    typeRequired: 'Select a document type',
     dateRequired: 'Enter the date of issue',
     fileRequired: 'Select a file to upload',
     cannotContinue:

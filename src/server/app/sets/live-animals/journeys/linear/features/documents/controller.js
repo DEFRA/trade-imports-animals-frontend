@@ -18,7 +18,6 @@ import { isRemoveAction, removeIndexOf } from './contracts/remove-action.js'
 import { UPLOAD_ID_PATTERN, ownsUpload } from './contracts/upload-id.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
-import { deriveDocumentTypeFromFilename } from './derive-document-type.js'
 import { capacityExceededError, documentAddErrors } from './form/errors.js'
 import {
   EMPTY_FORM,
@@ -106,13 +105,9 @@ const postAdd = async (request, h, payload) => {
   }
 
   const filename = pendingDocumentSave?.filename ?? payload.file.filename
-  const entry = {
-    ...bare,
-    accompanyingDocumentType: deriveDocumentTypeFromFilename(filename)
-  }
   const outcome = pendingDocumentSave
     ? { uploadId: pendingDocumentSave.uploadId }
-    : await uploadOutcome(pageState, entry, payload.file, filename)
+    : await uploadOutcome(pageState, bare, payload.file, filename)
   if (outcome.failed) {
     return render(request, h, pageState, bare, {
       errors: { file: UPLOAD_FAILURE_MESSAGE }
@@ -120,7 +115,7 @@ const postAdd = async (request, h, payload) => {
   }
 
   const savedEntry = {
-    ...entry,
+    ...bare,
     accompanyingDocumentAttachmentType: attachmentTypeFor(filename),
     uploadId: outcome.uploadId,
     filename

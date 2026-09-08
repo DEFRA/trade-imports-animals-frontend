@@ -35,15 +35,12 @@ const featuresWithCopy = readdirSync(FEATURES_DIR, { withFileTypes: true })
 // String leaves that may legitimately be byte-identical across en and cy
 // (proper nouns, codes, reference formats). Keyed `${module}:${path}` —
 // every addition must be justified here.
-// - ITAHC is a certificate acronym; both locales display it verbatim.
 // - transporters.guidance.linkHref is a gov.uk URL, identical in both locales.
 // - search.help.lookupHref is the Trade Tariff gov.uk URL, likewise.
 // - documents.guidance.additional.linkHref is the IPAFFS guidance gov.uk URL,
 //   likewise.
 const IDENTICAL_ALLOWLIST = new Set([
-  'documents:types.ITAHC',
   'documents:guidance.additional.linkHref',
-  'check-answers:documentTypes.ITAHC',
   'transport:transporters.guidance.linkHref',
   'commodities:search.help.lookupHref'
 ])

@@ -191,6 +191,7 @@ test.describe('live-animals journey glue', () => {
 
     const secondDocument = {
       accompanyingDocumentReference: 'INV-2026-0042',
+      accompanyingDocumentType: 'COMMERCIAL_INVOICE',
       accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
       filename: 'commercial-invoice.pdf'
     }
