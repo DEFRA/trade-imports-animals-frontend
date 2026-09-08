@@ -31,8 +31,8 @@ const openDocuments = async (page) => {
 const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
 
-const rowFor = (page, reference) =>
-  page.locator('.govuk-table__row', { hasText: reference })
+const rowFor = (scope, reference) =>
+  scope.locator('.govuk-table__row', { hasText: reference })
 
 const setUploadFile = (page, filename, bytes, mimeType = 'application/pdf') =>
   page.getByLabel(copy.file.label).setInputFiles({
@@ -126,6 +126,29 @@ test.describe('document upload page', () => {
     await expect(
       page.getByRole('button', { name: copy.addAnother })
     ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: copy.continueButton })
+    ).toBeVisible()
+  })
+
+  test('groups the fields and the add button under the file upload heading, leaving the page actions outside', async ({
+    page
+  }) => {
+    const fileUpload = page.getByRole('region', {
+      name: copy.fileUploadHeading
+    })
+    await expect(
+      fileUpload.getByRole('heading', { name: copy.fileUploadHeading })
+    ).toBeVisible()
+    await expect(fileUpload.getByLabel(copy.reference.label)).toBeVisible()
+    await expect(fileUpload.getByLabel(copy.dateOfIssue.label)).toBeVisible()
+    await expect(fileUpload.getByLabel(copy.file.label)).toBeVisible()
+    await expect(
+      fileUpload.getByRole('button', { name: copy.addAnother })
+    ).toBeVisible()
+    await expect(
+      fileUpload.getByRole('button', { name: copy.continueButton })
+    ).toHaveCount(0)
     await expect(
       page.getByRole('button', { name: copy.continueButton })
     ).toBeVisible()
@@ -348,6 +371,25 @@ test.describe('document upload saved rows', () => {
     await expect(row).toContainText(copy.scanTags.checking)
     await expect(page.getByLabel(copy.reference.label)).toHaveValue('')
     await expect(row).toContainText(copy.scanTags.safe)
+  })
+
+  test('keeps the saved row inside the file upload group and the page actions outside it', async ({
+    page
+  }) => {
+    test.slow()
+    await uploadDocument(page)
+    const fileUpload = page.getByRole('region', {
+      name: copy.fileUploadHeading
+    })
+    await expect(
+      rowFor(fileUpload, validDocument.accompanyingDocumentReference)
+    ).toBeVisible()
+    await expect(
+      fileUpload.getByRole('button', { name: copy.continueButton })
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole('button', { name: copy.continueButton })
+    ).toBeVisible()
   })
 
   test('downloads a saved document with safe response headers', async ({

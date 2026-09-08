@@ -1,6 +1,7 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 export const copy = {
   title: 'Uwchlwytho dogfennau',
+  fileUploadHeading: 'Uwchlwytho ffeil',
   reference: {
     label: 'Cyfeirnod y ddogfen',
     hint: 'Er enghraifft, GBHC1234567890.'
