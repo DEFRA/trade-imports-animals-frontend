@@ -37,12 +37,12 @@ export const ALLOWED_FILE_TYPES_HINT = new Intl.ListFormat('en-GB', {
 
 export const FILE_TYPE_MESSAGE = en.errors.fileType(ALLOWED_FILE_TYPES_HINT)
 
-// 10 MB decimal (not MiB) so the user-facing "10 MB" hint is literally
-// accurate and we stay ~485 KB clear of the CDP nginx ingress 10 MiB cap.
-const MAX_FILE_SIZE_MB = 10
+// The ingress request-body cap in front of this service must allow at least
+// MAX_PAYLOAD_BYTES; CDP's nginx default is 10 MiB. See EUDPA-518.
+const MAX_FILE_SIZE_MB = 50
 const BYTES_PER_MEGABYTE = 1_000_000
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * BYTES_PER_MEGABYTE
-export const MAX_FILE_SIZE_LABEL = `${MAX_FILE_SIZE_MB} MB`
+export const MAX_FILE_SIZE_LABEL = `${MAX_FILE_SIZE_MB}MB`
 export const OVERSIZE_FILE_MESSAGE = en.errors.oversize(MAX_FILE_SIZE_LABEL)
 
 const MULTIPART_OVERHEAD_BYTES = 1024
