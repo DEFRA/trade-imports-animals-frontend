@@ -63,6 +63,19 @@ test.describe('additional-details feature — rendering', () => {
     ).toBeVisible()
   })
 
+  // The page asks two questions under one h1, and the eighteen radios beneath
+  // them only read as two groups if the legends outweigh the option labels —
+  // the size class is the whole of the behaviour, so it is asserted directly
+  // rather than through a rendered role.
+  test('sets both question legends at the medium size', async ({ page }) => {
+    await expect(
+      page.getByRole('group', { name: copy.certified.legend }).locator('legend')
+    ).toHaveClass(/govuk-fieldset__legend--m/)
+    await expect(
+      page.getByRole('group', { name: copy.unweaned.legend }).locator('legend')
+    ).toHaveClass(/govuk-fieldset__legend--m/)
+  })
+
   test('back link returns to the notification hub', async ({ page }) => {
     const hubUrl = journeyUrl(page)
 
