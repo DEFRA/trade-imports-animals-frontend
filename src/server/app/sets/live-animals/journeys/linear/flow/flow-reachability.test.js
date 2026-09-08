@@ -119,10 +119,10 @@ describe('#proveFlowReachability', () => {
 
   it('Should cover the base seed gaps through the seed variants', () => {
     // The specific obligations the base Cow-line seed cannot scope: the
-    // 0101-gated horse name, the 01061900-gated permanent address, the
-    // notInUnionOf free-text identifiers (0301 line) and the per-document
-    // dependants (typed document record). Each must be scoped by at least
-    // one variant × state — this pins the variants to their purpose.
+    // 0101-gated horse name, the 01061900-gated permanent address and the
+    // per-document dependants (typed document record). Each must be scoped
+    // by at least one variant × state — this pins the variants to their
+    // purpose.
     const scopedNames = new Set()
     for (const { answers } of seedVariants()) {
       for (const state of enumerateScopeStates()) {
@@ -143,14 +143,46 @@ describe('#proveFlowReachability', () => {
     for (const name of [
       'horseName',
       'permanentAddress',
-      'animalIdentifierIdentificationDetails',
-      'animalIdentifierDescription',
       'accompanyingDocumentType',
       'accompanyingDocumentAttachmentType',
       'accompanyingDocumentReference',
       'accompanyingDocumentDateOfIssue'
     ]) {
       expect(scopedNames).toContain(name)
+    }
+  })
+
+  // fish-line is the one variant that opens no gate — it is the corpus's only
+  // state where no commodity line carries a typed identifier. Pin that, so
+  // re-adding a free-text fallback obligation, or wrongly adding Fish to an
+  // allowlist, turns this red instead of leaving the state inert.
+  it('Should scope no identifier leaf on the fish-line variant', () => {
+    const { answers } = seedVariants().find(
+      (variant) => variant.id === 'fish-line'
+    )
+    const scopedNames = new Set()
+    for (const state of enumerateScopeStates()) {
+      const overlay = Object.fromEntries(
+        Object.entries(state).filter(([, value]) => value !== '')
+      )
+      for (const key of makeScope({ ...answers, ...overlay }).inScope) {
+        scopedNames.add(
+          key
+            .replace(/\[\d+\]/g, '')
+            .split('.')
+            .pop()
+        )
+      }
+    }
+    for (const name of [
+      'animalIdentifierMicrochip',
+      'animalIdentifierPassport',
+      'animalIdentifierTattoo',
+      'animalIdentifierEarTag',
+      'horseName',
+      'permanentAddress'
+    ]) {
+      expect(scopedNames).not.toContain(name)
     }
   })
 })

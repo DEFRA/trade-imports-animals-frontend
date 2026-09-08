@@ -1,15 +1,13 @@
 import {
   earTagCommodities,
   horseNameCommodities,
+  identifiedCommodities,
   microchipCommodities,
   passportCommodities,
   permanentAddressCommodities,
   tattooCommodities
 } from '../../../services/commodities/index.js'
-import {
-  allowListed,
-  notInUnionOf
-} from '../../../../../model/obligations/helpers/index.js'
+import { allowListed } from '../../../../../model/obligations/helpers/index.js'
 import { commodityCode, commodityLine, numberOfAnimals } from './lines.js'
 
 const microchipReason = {
@@ -41,18 +39,6 @@ const horseNameReason = {
   explanation: 'horseName applies on units of horse-commodity lines'
 }
 
-const identificationDetailsReason = {
-  code: 'obligation.identificationDetails.applicable.becauseNoSpecificIdentifier',
-  explanation:
-    'identificationDetails applies on units of lines whose commodityCode has no specific identifier type'
-}
-
-const descriptionReason = {
-  code: 'obligation.description.applicable.becauseNoSpecificIdentifier',
-  explanation:
-    'description applies on units of lines whose commodityCode has no specific identifier type'
-}
-
 const permanentAddressReason = {
   code: 'obligation.permanentAddress.applicable.becausePermanentAddressCommodity',
   explanation:
@@ -73,7 +59,7 @@ export const unitRecord = {
   //
   // V4 spec (Confluence page 6497338582): "Field Block - Mandatory
   // to Submit - At least one Animal Identifier". Every unit-record
-  // must carry ≥ 1 of the seven identifier obligations. Listed as
+  // must carry ≥ 1 of the five identifier obligations. Listed as
   // literal ids in `requires.anyOfIds` rather than obligation
   // references — id-based deferred resolution avoids
   // declaration-order coupling and makes the "requires-any-of" edge
@@ -83,6 +69,16 @@ export const unitRecord = {
   // instances and emits one error per instance that violates the
   // invariant, so the per-unit-records subsection stays In progress
   // until the user fixes it.
+  //
+  // Every listed identifier is commodity-gated, so on a line whose
+  // commodity carries none of them the rule has nothing it could
+  // ask for. It is vacuous there rather than unsatisfiable:
+  // `checkAnyOfIds` skips an instance no listed leaf is in scope
+  // for, and the empty-collection floor the bridge derives from
+  // this key does the same (bridge/status/completeness/invariants.js).
+  // Design release 1 asks for identification only where the
+  // commodity has an identifier of its own; such a line gets no
+  // unit records and none are demanded of it.
   //
   // V4 spec cross-check ("unit records ARE animals" reading of
   // Confluence page 6497338582): the count of unit-record instances
@@ -98,14 +94,17 @@ export const unitRecord = {
       '39657a80-91a2-4fc6-8345-9f0617284a51', // passport
       '3a768b91-a2b3-4fd7-8456-a01728395b62', // tattoo
       '3b879ca2-b3c4-4fe8-8567-a1283a4a6c73', // earTag
-      '3c98adb3-c4d5-4ff9-8678-a2394b5b7d84', // horseName
-      '3da9bec4-d5e6-4a0a-8789-a34a5c6c8e95', // identificationDetails
-      '3ebacfd5-e6f7-4b1b-889a-a45b6d7d9fa6' // description
+      '3c98adb3-c4d5-4ff9-8678-a2394b5b7d84' // horseName
     ],
     errorCode: 'obligation.unitRecord.identifiersRequired',
     fulfilmentIndexCountEquals: {
       fieldId: numberOfAnimals.id,
-      errorCode: 'obligation.unitRecord.countMustMatchNumberOfAnimals'
+      errorCode: 'obligation.unitRecord.countMustMatchNumberOfAnimals',
+      // Only a line whose commodity carries an identifier of its own is
+      // asked for one record per animal. A commodity on none of the
+      // identifier allowlists gets no identification panel, so it is asked
+      // for no records and the count has nothing to compare.
+      applyToParent: allowListed(commodityCode, identifiedCommodities, null)
     }
   }
 }
@@ -172,49 +171,12 @@ export const horseName = {
   ])
 }
 
-// Inverse gate — the free-text identifiers apply on units whose parent
-// line's commodity has NO specific identifier. Expressed as
-// `notInUnionOf` over the five specific-identifier whitelists.
-// The derived union lives on `.metadata.values`
-// so the reachability prover can synthesise a witness value (any code
-// not in the union) and the browser-side controllers can inspect
-// admissibility without executing the closure. Adding a sixth typed
-// identifier means adding its list to the array here — the derived
-// union widens automatically. Hand-restated five-conjunct complements
-// would silently double-gate on such an addition.
-const specificIdentifierWhitelists = () => [
-  microchipCommodities(),
-  passportCommodities(),
-  tattooCommodities(),
-  earTagCommodities(),
-  horseNameCommodities()
-]
-
-export const identificationDetails = {
-  id: '3da9bec4-d5e6-4a0a-8789-a34a5c6c8e95',
-  name: 'animalIdentifierIdentificationDetails',
-  within: unitRecord,
-  status: 'optional',
-  applyTo: notInUnionOf(
-    commodityCode,
-    specificIdentifierWhitelists,
-    unitRecord,
-    [identificationDetailsReason]
-  )
-}
-
-export const description = {
-  id: '3ebacfd5-e6f7-4b1b-889a-a45b6d7d9fa6',
-  name: 'animalIdentifierDescription',
-  within: unitRecord,
-  status: 'optional',
-  applyTo: notInUnionOf(
-    commodityCode,
-    specificIdentifierWhitelists,
-    unitRecord,
-    [descriptionReason]
-  )
-}
+// A commodity on none of the identifier allowlists is asked for no
+// identifier at all. There is no free-text fallback: design release 1
+// asks for identification only where the commodity has an identifier
+// type of its own, so an unlisted commodity — ornamental fish, say —
+// carries no identifier obligation and gets no panel on the
+// identification page.
 
 export const permanentAddress = {
   id: '3fcbd0e6-f708-4c2c-89ab-a56c7e8ea0b7',

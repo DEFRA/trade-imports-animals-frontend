@@ -38,7 +38,12 @@ const collectionSatisfied = (
     state
   )
   if (fulfilmentIndexes.length === 0) {
-    return emptyCollectionSatisfiesFloor(collection)
+    return emptyCollectionSatisfiesFloor(
+      collection,
+      obligation,
+      parentFulfilmentIndex,
+      state
+    )
   }
   const invariantErrors = groupInvariantErrors(obligation, state)
   if (collectionCapExceeded(invariantErrors)) {

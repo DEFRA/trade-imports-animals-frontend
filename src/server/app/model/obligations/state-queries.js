@@ -137,14 +137,31 @@ const checkAnyOfIds = (group, fulfilmentIndexes, state) => {
   return errors
 }
 
+// The parent instances the count rule asks about. A rule may carry
+// `applyToParent` — a gate over the PARENT's own stored value, in the same
+// shape `applyTo` uses — so a parent the group can carry no records for is
+// asked for none. Without it every in-scope parent is asked.
+const countedParents = (group, state) => {
+  const parents = state.obligations?.[group.within.id]?.fulfilmentIndexes ?? []
+  const { applyToParent } = group.requires.fulfilmentIndexCountEquals
+  if (!applyToParent) {
+    return parents
+  }
+  const decision = applyToParent(state.fulfilments ?? {}, new Map())
+  if (!decision?.inScope) {
+    return []
+  }
+  const asked = new Set(decision.fulfilmentIndexes ?? [])
+  return parents.filter((parent) => asked.has(parent))
+}
+
 const checkFulfilmentIndexCountEquals = (group, fulfilmentIndexes, state) => {
   if (!group.requires.fulfilmentIndexCountEquals || !group.within) {
     return []
   }
   const { fieldId, errorCode: countErrorCode } =
     group.requires.fulfilmentIndexCountEquals
-  const parentImplication = state.obligations?.[group.within.id]
-  const parentFulfilmentIndexes = parentImplication?.fulfilmentIndexes ?? []
+  const parentFulfilmentIndexes = countedParents(group, state)
   const errors = []
   for (const parentFulfilmentIndex of parentFulfilmentIndexes) {
     const expected = state.fulfilments?.[fieldId]?.[parentFulfilmentIndex]
@@ -183,10 +200,12 @@ const checkFulfilmentIndexCountEquals = (group, fulfilmentIndexes, state) => {
  * Per-instance (one error per offending fulfilmentIndex):
  *   - `anyOfIds` — one error per in-scope instance where none of the
  *     required leaves has a non-blank fulfilment.
- *   - `fulfilmentIndexCountEquals: { fieldId, errorCode }` — one error
- *     per in-scope parent (`group.within`) instance whose count of
- *     child fulfilmentIndexes differs from the non-blank expected
- *     count at `state.fulfilments[fieldId][parentFulfilmentIndex]`.
+ *   - `fulfilmentIndexCountEquals: { fieldId, errorCode, applyToParent? }`
+ *     — one error per in-scope parent (`group.within`) instance whose
+ *     count of child fulfilmentIndexes differs from the non-blank
+ *     expected count at
+ *     `state.fulfilments[fieldId][parentFulfilmentIndex]`. The optional
+ *     `applyToParent` gate narrows which parents are asked at all.
  */
 export function groupInvariantErrors(group, state) {
   if (!group?.requires) {

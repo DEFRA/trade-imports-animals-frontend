@@ -113,9 +113,9 @@ export const PACKAGE_COUNT_COMMODITIES = [
 // for them. The order belongs to the COMMODITY, not to the service: a cow is
 // asked for its ear tag before its passport because the ear tag is what a cow
 // actually carries, where a horse is asked for its microchip first
-// (design 01-14/16/17). A commodity with no typed identifier — Fish — is
-// described in free text instead, which the `notInUnionOf` gate on the
-// identification-details and description obligations derives.
+// (design 01-14/16/17). A commodity with an empty list — Fish — is asked for
+// nothing at all: design release 1 offers no free-text fallback, so such a
+// line gets no identification panel and no animal records.
 //
 // The five per-identifier allowlists below are DERIVED from this map, so an
 // identifier's gate and its position on the panel cannot drift apart. Adding
@@ -163,6 +163,18 @@ export const EAR_TAG_COMMODITIES = commoditiesCarrying('animalIdentifierEarTag')
 
 export const HORSE_NAME_COMMODITIES = commoditiesCarrying('horseName')
 
+// The commodities design release 1 asks a trader to identify at all — the
+// ones the catalogue gives an identifier of their own. A commodity outside
+// this list is asked for no animal records, so it is not held to the
+// one-record-per-animal count either.
+export const IDENTIFIED_COMMODITIES = COMMODITY_OPTIONS.filter(
+  (name) => (COMMODITY_IDENTIFIERS[name] ?? []).length > 0
+)
+
+// A mandatory unitRecord obligation, so every commodity here must also be in
+// IDENTIFIED_COMMODITIES above — a commodity asked for a permanent address but
+// missing from that list gets no identification panel and no per-animal count
+// rule, so the address is never collected. Pinned by commodities/index.test.js.
 export const PERMANENT_ADDRESS_COMMODITIES = ['Cat', 'Dog']
 
 export const UNWEANED_ANIMAL_COMMODITIES = ['Cow', 'Horse']

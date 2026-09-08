@@ -46,8 +46,7 @@ const comprehensive = {
         },
         {
           horseName: 'Silver',
-          animalIdentifierIdentificationDetails: 'Microchip 900123',
-          animalIdentifierDescription: 'Brown with a white blaze',
+          animalIdentifierMicrochip: '900123456789012',
           permanentAddress: animalAddress
         }
       ]

@@ -74,9 +74,7 @@ const answers = {
           animalIdentifierEarTag: 'UK123456700001',
           animalIdentifierPassport: 'PP-001',
           animalIdentifierTattoo: 'AB1234',
-          horseName: 'Dobbin',
-          animalIdentifierIdentificationDetails: 'Chip 981000012345678',
-          animalIdentifierDescription: 'Brown cow'
+          horseName: 'Dobbin'
         }
       ]
     }
