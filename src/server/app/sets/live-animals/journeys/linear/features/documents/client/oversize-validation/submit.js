@@ -1,4 +1,5 @@
 import { exceedsMaxFileSize } from '../../upload-config.js'
+import { uploadControl, uploadInput } from './control.js'
 import { getOrCreateSummary } from './error-summary.js'
 import { renderFieldError } from './field-error.js'
 import { ARIA_DESCRIBEDBY, CLIENT_ERROR_MARKER } from './markers.js'
@@ -6,16 +7,16 @@ import { ARIA_DESCRIBEDBY, CLIENT_ERROR_MARKER } from './markers.js'
 const clientErrorSelector = (suffix) =>
   `[data-client-error="${CLIENT_ERROR_MARKER}-${suffix}"]`
 
-const restoreInputState = (input) => {
-  input.classList.remove('govuk-file-upload--error')
-  const previous = input.dataset.clientErrorPrevDescribedby ?? ''
+const restoreControlState = (control) => {
+  uploadInput(control).classList.remove('govuk-file-upload--error')
+  const previous = control.dataset.clientErrorPrevDescribedby ?? ''
   if (previous) {
-    input.setAttribute(ARIA_DESCRIBEDBY, previous)
+    control.setAttribute(ARIA_DESCRIBEDBY, previous)
   } else {
-    input.removeAttribute(ARIA_DESCRIBEDBY)
+    control.removeAttribute(ARIA_DESCRIBEDBY)
   }
-  delete input.dataset.clientError
-  delete input.dataset.clientErrorPrevDescribedby
+  delete control.dataset.clientError
+  delete control.dataset.clientErrorPrevDescribedby
 }
 
 const clearGroupError = (group) => {
@@ -31,7 +32,9 @@ const clearPreviousClientErrors = (form) => {
     .querySelectorAll(clientErrorSelector('message'))
     .forEach((message) => message.remove())
   form.querySelectorAll(clientErrorSelector('group')).forEach(clearGroupError)
-  form.querySelectorAll(clientErrorSelector('input')).forEach(restoreInputState)
+  form
+    .querySelectorAll(clientErrorSelector('control'))
+    .forEach(restoreControlState)
 }
 
 const focusSummaryTitle = (summary) => {
@@ -51,7 +54,11 @@ const onUploadSubmit = (form, container, maxFileSize) => (event) => {
   }
   event.preventDefault()
   const message = form.dataset.oversizeError
-  const summary = getOrCreateSummary(container, message, fileInput.id)
+  const summary = getOrCreateSummary(
+    container,
+    message,
+    uploadControl(fileInput).id
+  )
   renderFieldError(fileInput, message, container.dataset.errorPrefix)
   focusSummaryTitle(summary)
 }

@@ -20,6 +20,7 @@ import {
 
 const HTTP_OK = 200
 const DATE_OF_ISSUE_TEXT = '03/01/2026'
+const OVERSIZE_FILENAME = 'oversize.pdf'
 
 const openDocuments = async (page) => {
   await startNotification(page)
@@ -34,8 +35,16 @@ const errorLink = (page, message) =>
 const rowFor = (scope, reference) =>
   scope.locator('.govuk-table__row', { hasText: reference })
 
+// The enhanced upload hides the input inside a drop zone and puts a button in
+// front of it carrying the field's id, so the element that takes the file and
+// the control the trader reaches are two different elements.
+const fileInput = (page) => page.locator('input[type="file"]')
+
+const uploadControl = (scope) =>
+  scope.getByRole('button', { name: copy.file.label })
+
 const setUploadFile = (page, filename, bytes, mimeType = 'application/pdf') =>
-  page.getByLabel(copy.file.label).setInputFiles({
+  fileInput(page).setInputFiles({
     name: filename,
     mimeType,
     buffer: bytes ?? Buffer.from('%PDF-1.4 test upload')
@@ -114,10 +123,7 @@ test.describe('document upload page', () => {
       page.getByLabel(copy.dateOfIssue.label)
     ).toHaveAccessibleDescription(copy.dateOfIssue.hint)
     await expect(page.getByLabel(copy.documentType.label)).toHaveValue('')
-    await expect(page.getByLabel(copy.file.label)).toHaveAttribute(
-      'accept',
-      ACCEPT_ATTRIBUTE
-    )
+    await expect(fileInput(page)).toHaveAttribute('accept', ACCEPT_ATTRIBUTE)
     await expect(page.getByText(copy.file.mustBe)).toBeVisible()
     await expect(
       page.getByText(`${copy.file.smallerThan} ${MAX_FILE_SIZE_LABEL}`)
@@ -187,7 +193,7 @@ test.describe('document upload page', () => {
     await expect(fileUpload.getByLabel(copy.reference.label)).toBeVisible()
     await expect(fileUpload.getByLabel(copy.documentType.label)).toBeVisible()
     await expect(fileUpload.getByLabel(copy.dateOfIssue.label)).toBeVisible()
-    await expect(fileUpload.getByLabel(copy.file.label)).toBeVisible()
+    await expect(uploadControl(fileUpload)).toBeVisible()
     await expect(
       fileUpload.getByRole('button', { name: copy.addAnother })
     ).toBeVisible()
@@ -357,7 +363,7 @@ test.describe('document upload file validation', () => {
     const link = errorLink(page, copy.errors.fileRequired)
     await expect(link).toBeVisible()
     await link.click()
-    await expect(page.getByLabel(copy.file.label)).toBeFocused()
+    await expect(uploadControl(page)).toBeFocused()
     await expectPreservedMetadata(page)
   })
 
@@ -376,7 +382,7 @@ test.describe('document upload file validation', () => {
     const link = errorLink(page, FILE_TYPE_MESSAGE)
     await expect(link).toBeVisible()
     await link.click()
-    await expect(page.getByLabel(copy.file.label)).toBeFocused()
+    await expect(uploadControl(page)).toBeFocused()
     await expectPreservedMetadata(page)
   })
 })
@@ -394,7 +400,7 @@ test.describe('document upload oversize validation', () => {
     await fillMetadata(page)
     await setUploadFile(
       page,
-      'oversize.pdf',
+      OVERSIZE_FILENAME,
       Buffer.alloc(MAX_FILE_SIZE_BYTES + 100_000, 1)
     )
     await submitAdd(page)
@@ -403,11 +409,50 @@ test.describe('document upload oversize validation', () => {
       page.locator('li[data-client-error="file-size-summary"]')
     ).toContainText(OVERSIZE_FILE_MESSAGE)
     await expect(page.locator('.govuk-error-summary__title')).toBeFocused()
-    await expect(page.getByLabel(copy.file.label)).toHaveAttribute(
+    await expect(uploadControl(page)).toHaveAttribute(
       'aria-describedby',
       /file-error/
     )
+    const clientMessage = page.locator(
+      '[data-client-error="file-size-message"]'
+    )
+    await expect(clientMessage).toContainText(OVERSIZE_FILE_MESSAGE)
+    // GDS order is label, hint, error, control: the message goes above the
+    // whole drop zone, never inside it under the Choose file button.
+    await expect(
+      page.locator(
+        '.govuk-file-upload-wrapper [data-client-error="file-size-message"]'
+      )
+    ).toHaveCount(0)
+    await expect(
+      page.locator(
+        '.govuk-form-group--error > [data-client-error="file-size-message"]'
+      )
+    ).toHaveCount(1)
     await expectPreservedMetadata(page)
+  })
+
+  // The enhanced upload renames the input to file-input and gives the new
+  // button the original id, so the summary link has to point at the button.
+  // Pointing it at the input sends focus to a hidden element.
+  test('file validation: the client-side oversize summary link focuses the upload control', async ({
+    page
+  }) => {
+    test.slow()
+    await fillMetadata(page)
+    await setUploadFile(
+      page,
+      OVERSIZE_FILENAME,
+      Buffer.alloc(MAX_FILE_SIZE_BYTES + 100_000, 1)
+    )
+    await submitAdd(page)
+
+    const link = page
+      .locator('li[data-client-error="file-size-summary"]')
+      .getByRole('link', { name: OVERSIZE_FILE_MESSAGE })
+    await expect(link).toBeVisible()
+    await link.click()
+    await expect(uploadControl(page)).toBeFocused()
   })
 
   test('file validation: server rejects an oversize multipart payload', async ({
@@ -417,7 +462,7 @@ test.describe('document upload oversize validation', () => {
     await fillDocument(page)
     await setUploadFile(
       page,
-      'oversize.pdf',
+      OVERSIZE_FILENAME,
       Buffer.alloc(MAX_FILE_SIZE_BYTES + 100_000, 1)
     )
     await page.evaluate(() =>
@@ -427,7 +472,7 @@ test.describe('document upload oversize validation', () => {
     const link = errorLink(page, OVERSIZE_FILE_MESSAGE)
     await expect(link).toBeVisible()
     await link.click()
-    await expect(page.getByLabel(copy.file.label)).toBeFocused()
+    await expect(uploadControl(page)).toBeFocused()
     await expect(page.getByText(copy.empty)).toBeVisible()
   })
 })

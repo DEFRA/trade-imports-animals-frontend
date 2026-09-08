@@ -49,7 +49,15 @@ export const copy = {
     label: 'Upload a file',
     mustBe: 'Your file must be:',
     smallerThan: 'smaller than',
-    a: 'a'
+    a: 'a',
+    // Wording for the JavaScript-enhanced drop zone. These match the design
+    // system's own defaults so the control reads the way traders meet it
+    // elsewhere on GOV.UK.
+    chooseButton: 'Choose file',
+    dropInstruction: 'or drop file',
+    noFileChosen: 'No file chosen',
+    enteredDropZone: 'Entered drop zone',
+    leftDropZone: 'Left drop zone'
   },
   addAnother: 'Save and add another',
   table: {

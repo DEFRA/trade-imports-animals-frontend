@@ -54,7 +54,12 @@ export const copy = {
     label: 'Uwchlwytho ffeil',
     mustBe: 'Rhaid i’ch ffeil fod:',
     smallerThan: 'yn llai na',
-    a: 'yn'
+    a: 'yn',
+    chooseButton: 'Dewiswch ffeil',
+    dropInstruction: 'neu ollwng ffeil',
+    noFileChosen: 'Dim ffeil wedi’i dewis',
+    enteredDropZone: 'Wedi mynd i mewn i’r parth gollwng',
+    leftDropZone: 'Wedi gadael y parth gollwng'
   },
   addAnother: 'Cadw ac ychwanegu un arall',
   table: {
