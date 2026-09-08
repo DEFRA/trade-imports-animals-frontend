@@ -76,6 +76,16 @@ describe('#copy', () => {
     )
   })
 
+  it('Should word the drop zone the way the design system does', () => {
+    // The template hands these to govukFileUpload, so a drift here silently
+    // reworded a control traders meet elsewhere on GOV.UK.
+    expect(copy.file.chooseButton).toBe('Choose file')
+    expect(copy.file.dropInstruction).toBe('or drop file')
+    expect(copy.file.noFileChosen).toBe('No file chosen')
+    expect(copy.file.enteredDropZone).toBe('Entered drop zone')
+    expect(copy.file.leftDropZone).toBe('Left drop zone')
+  })
+
   it('Should build the upload-config messages from the copy templates', () => {
     expect(FILE_TYPE_MESSAGE).toBe(
       copy.errors.fileType(ALLOWED_FILE_TYPES_HINT)

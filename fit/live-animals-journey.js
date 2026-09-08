@@ -214,8 +214,10 @@ export const unlockSections = async (page) => {
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
+// The enhanced file upload hides the input behind a drop-zone button, so the
+// file goes to the input itself rather than to the labelled control.
 const setUploadFile = (page, filename, bytes) =>
-  page.getByLabel('Upload a file').setInputFiles({
+  page.locator('input[type="file"]').setInputFiles({
     name: filename,
     mimeType: 'application/pdf',
     buffer: bytes ?? Buffer.from('%PDF-1.4 test upload')

@@ -21,6 +21,10 @@ const rowFor = (page, reference) =>
 const errorSummaryLink = (page, name) =>
   page.locator('.govuk-error-summary').getByRole('link', { name })
 
+// The enhanced upload hides the input behind a drop-zone button, so the file
+// goes to the input itself rather than to the labelled control.
+const fileInput = (page) => page.locator('input[type="file"]')
+
 const DATE_OF_ISSUE = { day: '3', month: '1', year: '2026' }
 
 const documentNamed = (reference, filename) => ({
@@ -41,7 +45,7 @@ const uploadDocument = async (page, document) => {
   await page
     .getByLabel(copy.dateOfIssue.label)
     .fill(`${issued.day}/${issued.month}/${issued.year}`)
-  await page.getByLabel(copy.file.label).setInputFiles({
+  await fileInput(page).setInputFiles({
     name: document.filename,
     mimeType: 'application/pdf',
     buffer: Buffer.from('%PDF-1.4 scan status test')

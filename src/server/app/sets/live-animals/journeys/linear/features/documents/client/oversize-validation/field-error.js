@@ -1,4 +1,5 @@
 import { createEl } from '../dom.js'
+import { uploadAnchor, uploadControl } from './control.js'
 import { ARIA_DESCRIBEDBY, CLIENT_ERROR_MARKER } from './markers.js'
 
 const buildErrorMessageEl = (id, message, hiddenPrefix) => {
@@ -20,14 +21,14 @@ const buildErrorMessageEl = (id, message, hiddenPrefix) => {
 // Strip the error id token: any server-rendered error element with the same
 // id was removed above, so keeping the token would duplicate the join and
 // leave a dangling idref once the client error clears.
-const applyInputErrorState = (input, errorId) => {
-  const previousDescribedby = (input.getAttribute(ARIA_DESCRIBEDBY) ?? '')
+const applyControlErrorState = (input, control, errorId) => {
+  const previousDescribedby = (control.getAttribute(ARIA_DESCRIBEDBY) ?? '')
     .split(/\s+/)
     .filter((token) => token && token !== errorId)
     .join(' ')
-  input.dataset.clientErrorPrevDescribedby = previousDescribedby
-  input.dataset.clientError = `${CLIENT_ERROR_MARKER}-input`
-  input.setAttribute(
+  control.dataset.clientErrorPrevDescribedby = previousDescribedby
+  control.dataset.clientError = `${CLIENT_ERROR_MARKER}-control`
+  control.setAttribute(
     ARIA_DESCRIBEDBY,
     [previousDescribedby, errorId].filter(Boolean).join(' ')
   )
@@ -39,14 +40,16 @@ export const renderFieldError = (input, message, hiddenPrefix) => {
   if (!group) {
     return
   }
+  const control = uploadControl(input)
   group.classList.add('govuk-form-group--error')
   group.dataset.clientError = `${CLIENT_ERROR_MARKER}-group`
-  group.querySelector(`#${input.id}-error`)?.remove()
+  group.querySelector(`#${control.id}-error`)?.remove()
   const errorMessage = buildErrorMessageEl(
-    `${input.id}-error`,
+    `${control.id}-error`,
     message,
     hiddenPrefix
   )
-  input.parentNode.insertBefore(errorMessage, input)
-  applyInputErrorState(input, errorMessage.id)
+  const anchor = uploadAnchor(input)
+  anchor.parentNode.insertBefore(errorMessage, anchor)
+  applyControlErrorState(input, control, errorMessage.id)
 }

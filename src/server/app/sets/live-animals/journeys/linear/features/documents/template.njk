@@ -104,12 +104,21 @@
           </ul>
         {%- endset -%}
 
+        {# javascript: true asks for the enhanced control — a drop zone with a
+           live region naming the chosen file (design release 1). The plain
+           input stays behind it for a trader whose JavaScript does not run. #}
         {{ govukFileUpload({
           id: "file",
           name: "file",
           label: { text: copy.file.label, classes: "govuk-label--s" },
           hint: { html: fileHintHtml },
           attributes: { accept: acceptAttribute },
+          javascript: true,
+          chooseFilesButtonText: copy.file.chooseButton,
+          dropInstructionText: copy.file.dropInstruction,
+          noFileChosenText: copy.file.noFileChosen,
+          enteredDropZoneText: copy.file.enteredDropZone,
+          leftDropZoneText: copy.file.leftDropZone,
           errorMessage: errors.file and { text: errors.file }
         }) }}
 
