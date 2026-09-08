@@ -169,8 +169,8 @@ describe('notInUnionOf', () => {
   })
 
   it('Should de-duplicate metadata.values across overlapping input allowlists', () => {
-    // Real manifest: PASSPORT + TATTOO share '01061900', '0102' — the
-    // derived union must be a set-like list, not a bag.
+    // Real manifest: PASSPORT + TATTOO share '01061900' — the derived union
+    // must be a set-like list, not a bag.
     const gate = notInUnionOf(codeObl, [
       ['0101', '0102'],
       ['0102', '0103']
