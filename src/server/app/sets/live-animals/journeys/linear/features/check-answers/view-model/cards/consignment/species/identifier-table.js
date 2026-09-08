@@ -6,11 +6,11 @@ import { identifierColumns } from './identifier-columns.js'
 
 const copy = copyFor({ en, cy })
 
-export const identifierTable = (units) => {
+export const identifierTable = (units, commodity) => {
   if (units.length === 0) {
     return null
   }
-  const columns = identifierColumns(units)
+  const columns = identifierColumns(units, commodity)
   return {
     head: [
       { text: copy.identifierTable.animalColumn },

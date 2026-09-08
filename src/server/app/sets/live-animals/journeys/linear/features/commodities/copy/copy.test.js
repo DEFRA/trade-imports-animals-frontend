@@ -8,6 +8,10 @@ import { records as recordsStub } from '../../../../../../../services/persistenc
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import { driveHandler } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
+import {
+  list,
+  identifiersFor
+} from '../../../../../services/commodities/index.js'
 
 import * as search from '../search/search.controller.js'
 import { copy } from './copy.en.js'
@@ -67,6 +71,34 @@ describe('#copy', () => {
       expect(copyCy.identification.typeFields[field].label).toBe(
         copyCy.identification.identifierLabels[field]
       )
+    }
+  })
+
+  // The commodity now sets the running order of its own identifier boxes, so
+  // the copy block is a lookup rather than a list. An identifier a commodity
+  // asks for but the copy block has no entry for would render an unlabelled
+  // box, which this closes off in both locales.
+  const expectLabelledIn = (block, commodity, identifier) => {
+    const where = `${commodity} asks for ${identifier}`
+    expect(block.identification.typeFields[identifier]?.label, where).toEqual(
+      expect.any(String)
+    )
+    expect(block.identification.identifierLabels[identifier], where).toEqual(
+      expect.any(String)
+    )
+  }
+
+  it('Should carry an entry field and a column heading for every identifier a commodity asks for', () => {
+    const pairs = list().flatMap((commodity) =>
+      identifiersFor(commodity).map((identifier) => [commodity, identifier])
+    )
+    expect(pairs.length, 'no commodity carries any identifier').toBeGreaterThan(
+      0
+    )
+
+    for (const [commodity, identifier] of pairs) {
+      expectLabelledIn(copy, commodity, identifier)
+      expectLabelledIn(copyCy, commodity, identifier)
     }
   })
 

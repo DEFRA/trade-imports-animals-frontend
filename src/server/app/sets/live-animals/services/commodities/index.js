@@ -1,6 +1,7 @@
 import {
   COMMODITY_OPTIONS,
   COMMODITY_CODES,
+  COMMODITY_IDENTIFIERS,
   COMMODITY_SPECIES,
   COMMODITY_TYPE_DATA,
   SPECIES_OPTIONS,
@@ -60,6 +61,11 @@ export const isCommoditySpecies = (name, value) =>
   speciesFor(name).some((option) => option.value === value)
 
 export const packageCountCommodities = () => PACKAGE_COUNT_COMMODITIES
+
+// The identifiers this commodity carries, in the order it asks for them. A
+// commodity the catalogue holds no identifiers for carries none, and is
+// identified in free text instead.
+export const identifiersFor = (name) => COMMODITY_IDENTIFIERS[name] ?? []
 
 export const microchipCommodities = () => MICROCHIP_COMMODITIES
 

@@ -18,6 +18,6 @@ export const speciesCards = (journeyId, answers, evaluation, readOnly) =>
           speciesCardActions(journeyId, index, units)
         ),
         rows: speciesCardRows(entry),
-        identifierTable: identifierTable(units)
+        identifierTable: identifierTable(units, entry.commoditySelection)
       }
     })

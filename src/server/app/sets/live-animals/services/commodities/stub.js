@@ -109,19 +109,59 @@ export const PACKAGE_COUNT_COMMODITIES = [
   '0407 - SPF Eggs'
 ]
 
+// The identifiers each commodity carries, in the order Design release 1 asks
+// for them. The order belongs to the COMMODITY, not to the service: a cow is
+// asked for its ear tag before its passport because the ear tag is what a cow
+// actually carries, where a horse is asked for its microchip first
+// (design 01-14/16/17). A commodity with no typed identifier — Fish — is
+// described in free text instead, which the `notInUnionOf` gate on the
+// identification-details and description obligations derives.
+//
+// The five per-identifier allowlists below are DERIVED from this map, so an
+// identifier's gate and its position on the panel cannot drift apart. Adding
+// an identifier to a commodity is one edit here.
+export const COMMODITY_IDENTIFIERS = {
+  Cow: [
+    'animalIdentifierEarTag',
+    'animalIdentifierPassport',
+    'animalIdentifierTattoo'
+  ],
+  Horse: ['animalIdentifierMicrochip', 'animalIdentifierPassport', 'horseName'],
+  Cat: [
+    'animalIdentifierMicrochip',
+    'animalIdentifierPassport',
+    'animalIdentifierTattoo'
+  ],
+  Dog: [
+    'animalIdentifierMicrochip',
+    'animalIdentifierPassport',
+    'animalIdentifierTattoo'
+  ],
+  Fish: []
+}
+
+const commoditiesCarrying = (identifier) =>
+  COMMODITY_OPTIONS.filter((name) =>
+    COMMODITY_IDENTIFIERS[name]?.includes(identifier)
+  )
+
 // The equine and companion-animal commodities. Design release 1 asks for a
 // microchip on commodity code 0101 (Horse) and on 01061900 — the code Cat, Dog,
 // ferret and the other live mammals share — so ferret is covered by the same
 // entry as Cat and Dog once the picker offers it (design 01-16/17).
-export const MICROCHIP_COMMODITIES = ['Horse', 'Cat', 'Dog']
+export const MICROCHIP_COMMODITIES = commoditiesCarrying(
+  'animalIdentifierMicrochip'
+)
 
-export const PASSPORT_COMMODITIES = ['Horse', 'Cow', 'Cat', 'Dog']
+export const PASSPORT_COMMODITIES = commoditiesCarrying(
+  'animalIdentifierPassport'
+)
 
-export const TATTOO_COMMODITIES = ['Cat', 'Dog', 'Cow']
+export const TATTOO_COMMODITIES = commoditiesCarrying('animalIdentifierTattoo')
 
-export const EAR_TAG_COMMODITIES = ['Cow']
+export const EAR_TAG_COMMODITIES = commoditiesCarrying('animalIdentifierEarTag')
 
-export const HORSE_NAME_COMMODITIES = ['Horse']
+export const HORSE_NAME_COMMODITIES = commoditiesCarrying('horseName')
 
 export const PERMANENT_ADDRESS_COMMODITIES = ['Cat', 'Dog']
 
