@@ -1,5 +1,6 @@
 export const copy = {
   title: 'Upload documents',
+  fileUploadHeading: 'File upload',
   reference: {
     label: 'Document reference',
     hint: 'For example, GBHC1234567890.'
