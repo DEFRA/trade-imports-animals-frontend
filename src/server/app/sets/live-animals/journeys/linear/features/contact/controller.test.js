@@ -42,14 +42,11 @@ describe('GET contact — select an address from the book', () => {
       payload: { contactAddress: CONTACT.id }
     })
     expect(postResult.view).toBeUndefined()
-    // The contact is held as a copy — a per-notification field, reset on
-    // copy, so it keeps what was picked. The id rides along only so the page can
-    // pre-select the row again.
-    expect(postResult.after.contactAddress).toEqual({
+    expect(postResult.after.contactAddress).toMatchObject({
       addressId: CONTACT.id,
-      name: CONTACT.name,
-      address: expect.any(Object)
+      name: CONTACT.name
     })
+    expect(postResult.after.contactAddress.address).toBeDefined()
 
     const getResult = await driveHandler(get, { seed: postResult.after })
     const option = getResult.view.context.contactOptions.find(

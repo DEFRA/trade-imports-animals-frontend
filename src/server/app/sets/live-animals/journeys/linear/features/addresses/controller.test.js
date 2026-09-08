@@ -6,7 +6,11 @@ import { configureRecords } from '../../../../../../engine/persistence/records.j
 import { configureSession } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../../engine/test-support.js'
+import {
+  driveHandler,
+  journeyRequest,
+  stubH
+} from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 
@@ -108,6 +112,48 @@ describe('GET addresses — resolveParties hub rows', () => {
       href: pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG),
       text: 'Add'
     })
+  })
+
+  it('Should render the live book name for place of origin, not a stale copy on the answer', async () => {
+    const result = await rowsFor({
+      placeOfOrigin: { addressId: 'origin-farm', name: 'Stale Origin Copy' }
+    })
+    const row = rowTitled(result.view.context.rows, 'Place of origin')
+
+    expect(row.value.text).toBe('Origin Farm')
+  })
+})
+
+describe('GET addresses — frozen parties on submitted notification', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should render the frozen name, not the live address-book name', async () => {
+    const frozenName = 'Frozen At Submit'
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, {
+      placeOfOrigin: {
+        addressId: 'origin-farm',
+        name: frozenName,
+        address: { addressLine1: '1 Lane', countryCode: 'GB' }
+      }
+    })
+    await store.submit(journey.journeyId)
+
+    try {
+      const h = stubH()
+      await getAddresses(journeyRequest(journey.journeyId), h)
+      const row = rowTitled(h.captured.view.context.rows, 'Place of origin')
+
+      expect(row.value.text).toBe(frozenName)
+      expect(row.value.text).not.toBe('Origin Farm')
+    } finally {
+      /* no spy */
+    }
   })
 })
 

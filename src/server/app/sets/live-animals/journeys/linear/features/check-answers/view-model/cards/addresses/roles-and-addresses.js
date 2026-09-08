@@ -7,12 +7,11 @@ import { row } from '../../rows/summary-row.js'
 
 const copy = copyFor({ en, cy })
 
-/** `parties` carries the same party answers with their address-book references
- * resolved to current details. It defaults to `answers` so a caller holding only
- * inline addresses renders exactly as before.
- *
- * `partyErrors` is computed once by the controller and threaded down, so the
- * rows and the error summary always agree on which roles are outstanding. */
+/** `parties` carries party answers with address-book references resolved to
+ * current details, or the submit freeze when the controller passes
+ * {@link partiesFromStoredAnswers} output. `partyErrors` is computed once by the
+ * controller and threaded down, so the rows and the error summary always agree
+ * on which roles are outstanding. */
 export const rolesAndAddressesCard = (
   journeyId,
   answers,
@@ -27,7 +26,8 @@ export const rolesAndAddressesCard = (
       readOnly,
       copy.rows.placeOfOrigin,
       parties.placeOfOrigin,
-      'placeOfOrigin'
+      'placeOfOrigin',
+      { errorText: partyErrors.placeOfOrigin }
     ),
     partyRow(
       journeyId,

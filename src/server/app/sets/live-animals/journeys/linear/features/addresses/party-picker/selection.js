@@ -1,4 +1,7 @@
 import * as addressBook from '../../../../../../../services/address-book/index.js'
+import { answerForInlineParty } from '../party-inline.js'
+import { toDisplayParty } from '../frozen-parties.js'
+import { SUBMITTED } from '../../../../../../../engine/persistence/records.js'
 
 /** The committed answer holds the address-book id, so the row to pre-check is a
  * direct lookup. It used to be a copy with no id, re-found by matching on name —
@@ -15,22 +18,25 @@ export const chosenPartyFor = async (orgId, selectedId) => {
   return record && !record.deleted ? record : undefined
 }
 
-/** The answer to commit for a party the trader has just picked.
- *
- * A referenced party holds the id alone — the details are resolved on read, and
- * storing them here would let the next commit anywhere in the journey re-persist
- * a copy that has since gone stale.
- *
- * An inline party holds the details themselves, because the
- * notification is meant to keep what was picked rather than track later edits.
- * The id rides along for the picker's benefit only — it is what pre-ticks the
- * row on a return visit — and the notification mapper drops it, so nothing but
- * this journey ever sees it. */
-export const answerFor = (party, chosen) =>
-  party.inline
-    ? {
-        addressId: chosen.id,
-        name: chosen.name,
-        address: { ...chosen.address }
-      }
-    : { addressId: chosen.id }
+/** The row to show as selected on the picker — frozen details on a submitted
+ * notification, otherwise the current address-book record. */
+export const selectedPartyFor = async (
+  journey,
+  orgId,
+  party,
+  answers,
+  selectedId = committedId(answers, party)
+) => {
+  if (journey.status === SUBMITTED) {
+    const stored = toDisplayParty(answers[party.id])
+    if (stored && (!selectedId || stored.id === selectedId)) {
+      return stored
+    }
+  }
+  return chosenPartyFor(orgId, selectedId)
+}
+
+/** The answer to commit for a party the trader has just picked — inline details
+ * alongside the address-book id so a SUBMITTED notification can render from the
+ * stored copy while DRAFT and AMEND live-resolve from the id alone. */
+export const answerFor = (_party, chosen) => answerForInlineParty(chosen)

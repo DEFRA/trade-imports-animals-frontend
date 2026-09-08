@@ -19,28 +19,17 @@ const { values: completeJourneyAnswers } = JSON.parse(
 // payload contract; mapper-a-enum-contract.test.js separately pins all 14
 // accepted document types and all 16 certifiedFor values.
 const UNITED_KINGDOM = 'United Kingdom'
+const CONTRACT_REFERENCE = 'GBN-AG-26-CONTRACT'
+const ORIGIN_FARM_ID = 'origin-farm'
 
 describe('Mapper A PUT /notifications contract', () => {
   test('emits the exact backend payload from a complete canonical fulfilment', () => {
     const fulfilment = assembleFulfilments(completeJourneyAnswers)
 
-    expect(fulfilmentToNotification(fulfilment, 'GBN-AG-26-CONTRACT')).toEqual({
-      referenceNumber: 'GBN-AG-26-CONTRACT',
+    expect(fulfilmentToNotification(fulfilment, CONTRACT_REFERENCE)).toEqual({
+      referenceNumber: CONTRACT_REFERENCE,
       reasonForImport: 'internalMarket',
-      // Held as a copy, so the details cross to the notification in the
-      // address book's field names — an ISO country code, not a display name.
-      // The happy-path fixture still carries the retired pre-EUDPA-198 shape
-      // (addressLine3, no townOrCity/postalOrZipCode), which is why nothing
-      // lands in postcode or townOrCity here. A record picked from the real
-      // address book carries both.
-      placeOfOrigin: {
-        name: 'Origin Farm',
-        address: {
-          addressLine1: '1 Farm Lane',
-          addressLine2: 'County Clare',
-          countryCode: 'IE'
-        }
-      },
+      placeOfOrigin: { addressId: ORIGIN_FARM_ID },
       consignor: {
         name: 'Astra Rosales',
         address: {
@@ -74,18 +63,7 @@ describe('Mapper A PUT /notifications contract', () => {
           country: UNITED_KINGDOM
         }
       },
-      // Held as a copy, same translation as placeOfOrigin above. The
-      // fixture's addressLine3 has no home on the notification — the backend
-      // dropped it silently before this mapping existed too, since its Address
-      // has carried no addressLine3 since EUDPA-198.
-      consignment: {
-        name: 'Animal and Plant Health Agency',
-        address: {
-          addressLine1: 'Woodham Lane',
-          addressLine2: 'New Haw',
-          countryCode: 'GB'
-        }
-      },
+      consignment: { addressId: 'animal-and-plant-health-agency' },
       cphNumber: '12/345/6789',
       origin: {
         countryCode: 'FR',
@@ -131,5 +109,20 @@ describe('Mapper A PUT /notifications contract', () => {
         ]
       }
     })
+  })
+
+  test('emits origin and contact as addressId when the answer is a reference', () => {
+    const answers = {
+      ...completeJourneyAnswers,
+      placeOfOrigin: { addressId: ORIGIN_FARM_ID },
+      contactAddress: { addressId: 'apha' }
+    }
+    const payload = fulfilmentToNotification(
+      assembleFulfilments(answers),
+      CONTRACT_REFERENCE
+    )
+
+    expect(payload.placeOfOrigin).toEqual({ addressId: ORIGIN_FARM_ID })
+    expect(payload.consignment).toEqual({ addressId: 'apha' })
   })
 })

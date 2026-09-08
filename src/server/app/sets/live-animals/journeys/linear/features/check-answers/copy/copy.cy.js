@@ -115,6 +115,7 @@ export const copy = {
   errors: {
     prefix: 'Gwall:',
     parties: {
+      placeOfOrigin: 'Dewiswch gyfeiriad ar gyfer y man tarddiad',
       consignor: 'Dewiswch gyfeiriad ar gyfer yr anfonwr',
       consignee: 'Dewiswch gyfeiriad ar gyfer y derbynnydd',
       importer: 'Dewiswch gyfeiriad ar gyfer y mewnforiwr',

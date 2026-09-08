@@ -79,6 +79,8 @@ const withoutParty = (seed, partyId) => {
   return next
 }
 const ADDRESS_LINE_1 = '43 East Hague Extension'
+const CONSIGNOR_NAME = 'Astra Rosales'
+const CONSIGNOR_ADDRESS_ID = 'astra-rosales'
 const COW_CARD_TITLE = 'Cow (0102) — Bos taurus'
 const ROLES_AND_ADDRESSES_CARD = 'Roles and addresses'
 const COUNTRY_OF_ORIGIN_KEY = 'Country of origin'
@@ -122,18 +124,11 @@ const fullSeed = {
       accompanyingDocumentDateOfIssue: { day: '12', month: '12', year: '2025' }
     }
   ],
-  placeOfOrigin: { name: 'Origin Farm' },
-  consignor: {
-    name: 'Astra Rosales',
-    address: {
-      addressLine1: ADDRESS_LINE_1,
-      townOrCity: 'Delectus',
-      country: 'Switzerland'
-    }
-  },
-  consignee: { name: 'British Livestock Ltd' },
-  importer: { name: 'Import Co UK' },
-  placeOfDestination: { name: 'Tech Imports Ltd' },
+  placeOfOrigin: { addressId: 'origin-farm' },
+  consignor: { addressId: CONSIGNOR_ADDRESS_ID },
+  consignee: { addressId: 'british-livestock-ltd' },
+  importer: { addressId: 'import-co-uk' },
+  placeOfDestination: { addressId: 'tech-imports-ltd' },
   countyParishHoldingCph: '123456789',
   portOfEntry: 'GB ABD',
   arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
@@ -150,7 +145,7 @@ const fullSeed = {
       country: 'Switzerland'
     }
   },
-  contactAddress: { name: 'Animal and Plant Health Agency' }
+  contactAddress: { addressId: 'animal-and-plant-health-agency' }
 }
 
 const SUITE = `#${buildSections.name} (check-answers GET)`
@@ -328,17 +323,17 @@ describe(`${SUITE} — fully-populated notification`, () => {
       ROLES_AND_ADDRESSES_CARD
     )
     expect(htmlOf(card.rows, 'Consignor')).toBe(
-      '<strong>Astra Rosales</strong><br>43 East Hague Extension<br>Delectus<br>Switzerland'
+      `<strong>${CONSIGNOR_NAME}</strong><br>${ADDRESS_LINE_1}<br>Bern<br>30055<br>Switzerland`
     )
     expect(htmlOf(card.rows, 'Place of destination')).toBe(
-      '<strong>Tech Imports Ltd</strong>'
+      '<strong>Tech Imports Ltd</strong><br>18 Dockside Road<br>London<br>E14 9GE<br>United Kingdom'
     )
     const contact = cardByTitle(
       await sectionsFor(fullSeed),
       'Contact address for this consignment'
     )
     expect(htmlOf(contact.rows, 'Address')).toBe(
-      '<strong>Animal and Plant Health Agency</strong>'
+      '<strong>Animal and Plant Health Agency</strong><br>Woodham Lane<br>Addlestone<br>KT15 3NB<br>United Kingdom'
     )
   })
 
@@ -462,7 +457,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     ).toBe(NOT_PROVIDED)
   })
 
-  it('Should render Not provided for an unset inline party', async () => {
+  it('Should render Not provided for an unset party', async () => {
     const card = cardByTitle(
       await sectionsFor(gatedOffSeed),
       ROLES_AND_ADDRESSES_CARD
@@ -477,12 +472,12 @@ describe(`${SUITE} — address-book party references`, () => {
   it('Should render the address book name and address for an addressId reference', async () => {
     const card = cardByTitle(
       await sectionsFor({
-        consignor: { addressId: 'astra-rosales' }
+        consignor: { addressId: CONSIGNOR_ADDRESS_ID }
       }),
       ROLES_AND_ADDRESSES_CARD
     )
 
-    expect(htmlOf(card.rows, 'Consignor')).toContain('Astra Rosales')
+    expect(htmlOf(card.rows, 'Consignor')).toContain(CONSIGNOR_NAME)
     expect(htmlOf(card.rows, 'Consignor')).toContain(ADDRESS_LINE_1)
   })
 
@@ -496,6 +491,36 @@ describe(`${SUITE} — address-book party references`, () => {
 
     expect(htmlOf(card.rows, 'Consignor')).toContain(CONSIGNOR_ERROR)
     expect(htmlOf(card.rows, 'Consignor')).toContain('govuk-error-message')
+  })
+})
+
+describe(`${SUITE} — submitted inline vs live amend`, () => {
+  setupCheckAnswersEngine()
+
+  const FROZEN_CONSIGNOR = 'Frozen Consignor Ltd'
+
+  it('Should render stored inline details on a submitted notification, not the live book name', async () => {
+    const { context } = await viewForStatus(SUBMITTED, {
+      ...fullSeed,
+      consignor: {
+        addressId: CONSIGNOR_ADDRESS_ID,
+        name: FROZEN_CONSIGNOR,
+        address: { addressLine1: 'Old Lane', countryCode: 'GB' }
+      }
+    })
+    const card = cardByTitle(context.sections, ROLES_AND_ADDRESSES_CARD)
+    expect(htmlOf(card.rows, 'Consignor')).toContain(FROZEN_CONSIGNOR)
+    expect(htmlOf(card.rows, 'Consignor')).not.toContain(CONSIGNOR_NAME)
+  })
+
+  it('Should resolve live on an amendment from the address book', async () => {
+    const { context } = await viewForStatus(AMEND, {
+      ...fullSeed,
+      consignor: { addressId: CONSIGNOR_ADDRESS_ID }
+    })
+    const card = cardByTitle(context.sections, ROLES_AND_ADDRESSES_CARD)
+    expect(htmlOf(card.rows, 'Consignor')).toContain(CONSIGNOR_NAME)
+    expect(htmlOf(card.rows, 'Consignor')).not.toContain(FROZEN_CONSIGNOR)
   })
 })
 
@@ -563,18 +588,21 @@ describe(`${SUITE} — outstanding referenced roles`, () => {
   it('Should carry no error summary for a reference the address book still holds', async () => {
     const summary = await summaryFor({
       ...fullSeed,
-      consignor: { addressId: 'astra-rosales' }
+      consignor: { addressId: CONSIGNOR_ADDRESS_ID }
     })
 
     expect(summary).toBeNull()
   })
 
-  it('Should not flag an inline party the address book cannot empty', async () => {
+  it('Should flag a gone place of origin like any other role', async () => {
     const summary = await summaryFor({
       ...fullSeed,
-      placeOfOrigin: { name: 'Origin Farm', addressId: 'gone' }
+      placeOfOrigin: { addressId: 'gone' }
     })
-    expect(summary).toBeNull()
+
+    expect(summary.errorList.map((entry) => entry.text)).toContain(
+      'Select an address for the place of origin'
+    )
   })
 
   it('Should not flag a submitted notification', async () => {

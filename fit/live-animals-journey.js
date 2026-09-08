@@ -6,11 +6,18 @@ import {
   formatDateText
 } from '../src/server/app/lib/validate/calendar.js'
 import { COUNTRY_LABELS } from '../src/server/app/services/countries/stub.js'
+import { STUB_BOOK } from '../src/server/app/services/address-book/stub/index.js'
 import { PORTS } from '../src/server/app/services/ports/stub.js'
 import { copy as transportCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js'
 import { copy as sharedAppCopy } from '../src/server/app/shared/copy.en.js'
 
 export { signIn } from './sign-in.js'
+
+const stubNameById = new Map(STUB_BOOK.map(({ id, name }) => [id, name]))
+
+/** Happy-path parties may be inline ({ name }) or picker refs ({ addressId }). */
+export const partyPickerName = (party) =>
+  party?.name ?? stubNameById.get(party?.addressId)
 
 export const BASE = ''
 
@@ -296,11 +303,11 @@ export const answerAdditionalDetails = async (page) => {
 
 export const answerRolesAndAddresses = async (page) => {
   const parties = [
-    ['Consignor or exporter', values.consignor.name],
-    ['Place of destination', values.placeOfDestination.name],
-    ['Place of origin', values.placeOfOrigin.name],
-    ['Consignee', values.consignee.name],
-    ['Importer', values.importer.name]
+    ['Consignor or exporter', partyPickerName(values.consignor)],
+    ['Place of destination', partyPickerName(values.placeOfDestination)],
+    ['Place of origin', partyPickerName(values.placeOfOrigin)],
+    ['Consignee', partyPickerName(values.consignee)],
+    ['Importer', partyPickerName(values.importer)]
   ]
   for (const [label, name] of parties) {
     await page
@@ -360,7 +367,9 @@ export const answerTransporter = async (page) => {
 }
 
 export const answerContactAddress = async (page) => {
-  await page.getByRole('radio', { name: values.contactAddress.name }).check()
+  await page
+    .getByRole('radio', { name: partyPickerName(values.contactAddress) })
+    .check()
   await save(page)
 }
 

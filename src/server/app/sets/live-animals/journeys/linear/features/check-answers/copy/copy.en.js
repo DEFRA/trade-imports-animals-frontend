@@ -114,6 +114,7 @@ export const copy = {
   errors: {
     prefix: 'Error:',
     parties: {
+      placeOfOrigin: 'Select an address for the place of origin',
       consignor: 'Select an address for the consignor',
       consignee: 'Select an address for the consignee',
       importer: 'Select an address for the importer',

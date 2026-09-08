@@ -16,7 +16,7 @@ import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import { buildSections } from './view-model/index.js'
 import { changeHref } from './view-model/rows/change-link.js'
 import { outstandingPartyErrors } from './view-model/outstanding-parties.js'
-import { resolveParties } from '../addresses/resolve-parties.js'
+import { partiesForRender } from '../addresses/parties-for-render.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
@@ -97,7 +97,7 @@ export const renderNotificationView = async (
   // reference no longer resolves, which is precisely the case this page has to
   // name. The rest of the page still renders from the sanitised answers.
   const source = storedAnswers ?? answers
-  const parties = await resolveParties(request, source)
+  const parties = await partiesForRender(request, journey, source)
   return renderCya(h, journey, {
     answers,
     scope,
@@ -117,7 +117,7 @@ const post = async (request, h) => {
   const { journey, answers, storedAnswers, scope } = await state.get(request, h)
   // Same source as the GET, or the refusal and the page would disagree.
   const source = storedAnswers ?? answers
-  const parties = await resolveParties(request, source)
+  const parties = await partiesForRender(request, journey, source)
   // A submitted notification is read-only: the GET zeroes its party errors, so
   // the POST must not refuse it either.
   const readOnly = journey.status === state.SUBMITTED

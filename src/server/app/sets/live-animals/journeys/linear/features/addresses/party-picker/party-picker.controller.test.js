@@ -17,6 +17,7 @@ import { PARTIES } from '../parties.js'
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
 const NORDVIK_ID = 'nordvik-seafood'
 const ALPINE_DAIRY_ID = 'alpine-dairy'
+const ALPINE_DAIRY_NAME = 'Alpine Dairy GmbH'
 const DANISH_MEAT_ID = 'danish-meat-export-aps'
 const SELECT_A_CONSIGNOR_ERROR = 'Select a consignor from the list'
 
@@ -190,17 +191,20 @@ describe('POST /consignors/select', () => {
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, 'addresses')
     })
-    expect(result.after.consignor).toEqual({ addressId: ALPINE_DAIRY_ID })
+    expect(result.after.consignor).toMatchObject({
+      addressId: ALPINE_DAIRY_ID,
+      name: ALPINE_DAIRY_NAME
+    })
   })
 
-  it('Should store the id and nothing else — no copy of the address travels with it', async () => {
+  it('Should store inline details alongside the address-book id', async () => {
     const result = await driveHandler(postConsignor, {
       payload: { action: 'save', party: ALPINE_DAIRY_ID }
     })
 
-    expect(Object.keys(result.after.consignor)).toEqual(['addressId'])
-    expect(result.after.consignor.name).toBeUndefined()
-    expect(result.after.consignor.address).toBeUndefined()
+    expect(result.after.consignor.addressId).toBe(ALPINE_DAIRY_ID)
+    expect(result.after.consignor.name).toBe(ALPINE_DAIRY_NAME)
+    expect(result.after.consignor.address).toBeDefined()
   })
 
   it('Should save the selection made on an earlier page when the page on screen has no row ticked', async () => {
@@ -209,7 +213,10 @@ describe('POST /consignors/select', () => {
     })
 
     expect(result.view).toBeUndefined()
-    expect(result.after.consignor).toEqual({ addressId: NORDVIK_ID })
+    expect(result.after.consignor).toMatchObject({
+      addressId: NORDVIK_ID,
+      name: 'Nordvik Seafood AS'
+    })
   })
 
   it('Should let a row ticked on the page on screen beat the selection carried from an earlier one', async () => {
@@ -222,7 +229,10 @@ describe('POST /consignors/select', () => {
       }
     })
 
-    expect(result.after.consignor).toEqual({ addressId: ALPINE_DAIRY_ID })
+    expect(result.after.consignor).toMatchObject({
+      addressId: ALPINE_DAIRY_ID,
+      name: ALPINE_DAIRY_NAME
+    })
   })
 
   it('Should reject a save with nothing selected, anchoring the error on the first row', async () => {
@@ -300,18 +310,10 @@ describe('The five spokes share the one picker', () => {
         payload: { action: 'save', party: DANISH_MEAT_ID }
       })
 
-      // A referenced party commits the id alone; an inline one also keeps
-      // the details, because the notification holds a copy rather than tracking
-      // later edits. Both carry the id — the picker needs it to pre-tick a row.
-      expect(result.after[party.id]).toEqual(
-        party.inline
-          ? {
-              addressId: DANISH_MEAT_ID,
-              name: expect.any(String),
-              address: expect.any(Object)
-            }
-          : { addressId: DANISH_MEAT_ID }
-      )
+      expect(result.after[party.id]).toMatchObject({
+        addressId: DANISH_MEAT_ID,
+        name: 'Danish Meat Export ApS'
+      })
       expect(result.response).toEqual({
         redirect: pagePath(result.journeyId, 'addresses')
       })
@@ -356,7 +358,10 @@ describe('/consignors/select — change context', () => {
     expect(result.response).toEqual({
       redirect: `${pagePath(result.journeyId, 'addresses')}?change=1`
     })
-    expect(result.after.consignor).toEqual({ addressId: ALPINE_DAIRY_ID })
+    expect(result.after.consignor).toMatchObject({
+      addressId: ALPINE_DAIRY_ID,
+      name: ALPINE_DAIRY_NAME
+    })
   })
 
   it('Should point Back at the hub still changing', async () => {
