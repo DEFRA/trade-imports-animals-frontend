@@ -1,9 +1,9 @@
 # Live-animals limits and edges
 
-## Accompanying documents are capped at ten
+## Accompanying documents are capped at fifteen
 
-The document collection has a maximum of ten entries. The set manifest declares the
-cardinality and the documents feature enforces it on its write path.
+The document collection has a maximum of fifteen entries. The set manifest declares
+the cardinality and the documents feature enforces it on its write path.
 
 ## Commodity rules are set data
 

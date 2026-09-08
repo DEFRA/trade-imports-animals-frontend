@@ -1,15 +1,15 @@
 // -----------------------------------------------------------------------------
-// Accompanying Documents — user-driven indexed group (0..10 documents
+// Accompanying Documents — user-driven indexed group (0..15 documents
 // per notification).
 //
-// Spec source: traders can attach between 0 and 10 accompanying
+// Spec source: traders can attach between 0 and 15 accompanying
 // documents to a notification; each document carries its own type /
 // attachment / reference / date-of-issue. Confluence page 6497338582
 // still reads as if there is at most one document — the model is the
 // source of truth until the page is amended.
 //
 // Per-document mandatoriness is expressed at the field level
-// (`status: 'mandatory'` within the group). `requires.maxEntries: 10`
+// (`status: 'mandatory'` within the group). `requires.maxEntries: 15`
 // caps the collection; the documents feature also caps the Add
 // affordance but the invariant is authoritative for after-the-fact
 // defence (e.g. a redeploy lowering the cap after the user saved
@@ -22,7 +22,7 @@ export const documents = {
   // No applyTo — top-level user-driven indexed group, always in scope.
   // Instance ids are session-scoped counter values (`doc1`, `doc2`, …).
   requires: {
-    maxEntries: 10,
+    maxEntries: 15,
     maxEntriesErrorCode: 'obligation.accompanyingDocument.tooMany'
   }
 }

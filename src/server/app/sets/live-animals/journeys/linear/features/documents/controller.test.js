@@ -406,12 +406,12 @@ describe('documents — listing, scanning and removing', () => {
     expect(prefetched.statusCode).toBe(404)
   })
 
-  it('Should refuse an eleventh document with the maximum message and append nothing', async () => {
-    const tenDocuments = Array.from({ length: MAX_DOCUMENTS }, () =>
+  it('Should refuse a document past the cap with the maximum message and append nothing', async () => {
+    const documentsAtCapacity = Array.from({ length: MAX_DOCUMENTS }, () =>
       storedDocument()
     )
     const result = await driveHandler(post, {
-      seed: { documents: tenDocuments },
+      seed: { documents: documentsAtCapacity },
       payload: { action: 'add', ...validDocument, file: pdfFile() }
     })
     expect(result.response.statusCode).toBe(400)
