@@ -427,13 +427,15 @@ describe(`${SUITE} — Save and add another`, () => {
   })
 })
 
-describe(`${SUITE} — Save and finish`, () => {
+// The page primary is the shared "Save and continue", so it carries no action
+// of its own — the post falls through to the save-and-move-on default.
+describe(`${SUITE} — Save and continue`, () => {
   setupIdentificationEngine()
 
   it('Should append the held record then exit along the section flow to the hub', async () => {
     const result = await driveHandler(post, {
       seed: { commodityLines: [cowLine({ numberOfAnimalsQuantity: '2' })] },
-      payload: { action: 'finish', 'animalIdentifierEarTag-0': 'UK1' }
+      payload: { 'animalIdentifierEarTag-0': 'UK1' }
     })
     expect(result.response).toEqual({
       redirect: hubPath(result.journeyId)
@@ -446,7 +448,7 @@ describe(`${SUITE} — Save and finish`, () => {
   it('Should exit without appending when no form holds data — the zero-record pass', async () => {
     const result = await driveHandler(post, {
       seed: { commodityLines: [cowLine()] },
-      payload: { action: 'finish' }
+      payload: {}
     })
     expect(result.response).toEqual({
       redirect: hubPath(result.journeyId)
@@ -458,7 +460,6 @@ describe(`${SUITE} — Save and finish`, () => {
     const result = await driveHandler(post, {
       seed: { commodityLines: [cowLine(), catLine()] },
       payload: {
-        action: 'finish',
         'animalIdentifierEarTag-0': 'UK1',
         'animalIdentifierPassport-1': 'UK123456789'
       }

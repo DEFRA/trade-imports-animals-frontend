@@ -132,8 +132,10 @@ const submitAdd = (page) =>
     .getByRole('button', { name: copy.identification.saveAndAddAnother })
     .click()
 
-const saveAndFinish = (page) =>
-  page.getByRole('button', { name: copy.identification.saveAndFinish }).click()
+// The page ends on the same primary as every other journey page — the shared
+// "Save and continue", not a wording of its own.
+const saveAndContinue = (page) =>
+  page.getByRole('button', { name: SAVE_AND_CONTINUE, exact: true }).click()
 
 // A saved animal is one row of the card's table, keyed by its species and
 // number — "Bos taurus 1".
@@ -384,6 +386,22 @@ test.describe('animal identification', () => {
     ).toBeVisible()
   })
 
+  // Design release 1 ends this page the way it ends every other page of the
+  // journey. "Save and finish" here would say a different thing from the rest
+  // of the service for the same action.
+  test('ends on the same Save and continue as every other journey page', async ({
+    page
+  }) => {
+    await openCatIdentification(page)
+
+    await expect(
+      page.getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Save and finish' })
+    ).toHaveCount(0)
+  })
+
   test('back link returns to the overview', async ({ page }) => {
     await openCatIdentification(page)
     await page.locator('.govuk-back-link').click()
@@ -544,7 +562,7 @@ test.describe('animal identification identifier validation', () => {
       await openIdentification(page, [[commodity, [species]]])
       const invalid = 'X'.repeat(MAX_IDENTIFIER_LENGTH + 1)
       await page.locator(`#${field}-0`).fill(invalid)
-      await saveAndFinish(page)
+      await saveAndContinue(page)
 
       await expectErrorFocus(
         page,
@@ -562,7 +580,7 @@ test.describe('animal identification identifier validation', () => {
     await page
       .locator(MICROCHIP_FIELD)
       .fill('X'.repeat(MAX_IDENTIFIER_LENGTH + 1))
-    await saveAndFinish(page)
+    await saveAndContinue(page)
 
     await expect(
       errorLink(
@@ -766,7 +784,7 @@ test.describe('animal identification records', () => {
     ).toBeVisible()
     await expect(page.locator(EAR_TAG_FIELD)).toHaveCount(0)
 
-    await saveAndFinish(page)
+    await saveAndContinue(page)
     await page.getByRole('link', { name: 'What are you importing?' }).click()
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await page.locator('#numberOfAnimalsQuantity-0').fill('1')
