@@ -7,17 +7,46 @@ import {
 } from '../features/commodities/page.js'
 import { importReasonPage } from '../features/import-reason/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
+import {
+  portOfEntryPage,
+  privateTransporterDetailsPage,
+  transitCountriesPage,
+  transportersPage,
+  transportersSelectPage
+} from '../features/transport/page.js'
+import { documentsPage } from '../features/documents/page.js'
+import { addressesPage } from '../features/addresses/page.js'
+import { cphNumberPage } from '../features/cph-number/page.js'
+import { consignmentContactSelectPage } from '../features/contact/page.js'
+import { notificationViewPage } from '../features/check-answers/page.js'
 import { pageGatePasses } from '../../../../../flow/gates.js'
 
 const flowPageTarget = (page) => (scope, journeyId) =>
   pageGatePasses(page, scope) ? pagePath(journeyId, page.slug) : null
 
+/** The review page ends the run rather than asking a question in it, so it
+ * carries the same authored gate the review flow section does: it opens once
+ * every task row is ready. A run that arrives with the notification still
+ * incomplete falls through to the hub instead. */
+const reviewTarget = (scope, journeyId) =>
+  scope.readyForCheckYourAnswers
+    ? pagePath(journeyId, notificationViewPage.slug)
+    : null
+
 /** The opening run's ordered steps — a null target skips the step (see
- * docs/flow-and-gates.md, "The opening run"). The commodity leg is a
- * two-page shape: batch search then the consolidated details page
- * (whose derived gate holds until a line exists). The identification step
- * is a single card-per-species surface, gated like every other
- * flow page (its RULE 1 prerequisite holds it until a line exists). */
+ * docs/flow-and-gates.md, "The opening run"). The run is the whole
+ * notification, not a first leg of it: "Save and continue" carries a new
+ * notification from the origin page through to the review page in one pass,
+ * and the hub is somewhere the user chooses to go through the secondary
+ * "Save and return to overview" button.
+ *
+ * The commodity leg is a two-page shape: batch search then the consolidated
+ * details page (whose derived gate holds until a line exists). The
+ * identification step is a single card-per-species surface, gated like every
+ * other flow page (its RULE 1 prerequisite holds it until a line exists). The
+ * transporter leg lists both of its branch pages and the addresses leg both of
+ * its pages; the derived gates pick the one the answers reach, so the run does
+ * not need to know which branch it is on. */
 export const RUN_STEPS = [
   { id: originPage.id, target: flowPageTarget(originPage) },
   { id: commoditiesPage.id, target: flowPageTarget(commoditiesPage) },
@@ -33,7 +62,26 @@ export const RUN_STEPS = [
   {
     id: additionalDetailsPage.id,
     target: flowPageTarget(additionalDetailsPage)
-  }
+  },
+  { id: portOfEntryPage.id, target: flowPageTarget(portOfEntryPage) },
+  { id: transitCountriesPage.id, target: flowPageTarget(transitCountriesPage) },
+  { id: transportersPage.id, target: flowPageTarget(transportersPage) },
+  {
+    id: transportersSelectPage.id,
+    target: flowPageTarget(transportersSelectPage)
+  },
+  {
+    id: privateTransporterDetailsPage.id,
+    target: flowPageTarget(privateTransporterDetailsPage)
+  },
+  { id: documentsPage.id, target: flowPageTarget(documentsPage) },
+  { id: addressesPage.id, target: flowPageTarget(addressesPage) },
+  { id: cphNumberPage.id, target: flowPageTarget(cphNumberPage) },
+  {
+    id: consignmentContactSelectPage.id,
+    target: flowPageTarget(consignmentContactSelectPage)
+  },
+  { id: notificationViewPage.id, target: reviewTarget }
 ]
 
 export const nextRunTarget = (stepId, scope, journeyId) => {

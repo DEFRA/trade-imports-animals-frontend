@@ -192,8 +192,16 @@ obligations and earlier continue prerequisites. Add an authored `gate` only for
 a flow fact that those rules cannot express. Add focused navigation and gate
 tests for every conditional page or branch.
 
-Add these pages to [`journeys/linear/flow/run.js`](../journeys/linear/flow/run.js) only if product behaviour
-puts them in the opening run. Update opening-run tests when you do.
+Add every new question page to
+[`journeys/linear/flow/run.js`](../journeys/linear/flow/run.js) in journey order.
+The run is the whole notification, so each of them gets a `RUN_STEPS` entry unless
+it is deliberately outside the run (the dashboard, declaration and confirmation
+are the only ones today) — a page left out is jumped straight over while the run
+is active and is reachable only from its hub row. See
+[`journey-flow-and-gates.md`](journey-flow-and-gates.md), "Opening run and entry
+guard". Update
+[`journeys/linear/flow/run.test.js`](../journeys/linear/flow/run.test.js) when you
+do; its coverage invariant fails if you forget.
 
 ## 6. Add one task row and wire it to the hub
 
@@ -246,7 +254,7 @@ Registration work for the feature group is therefore limited to:
 2. add its binding bundle to `featureEvaluationBindings`
 3. add page identities to `sections` and `taskRows`
 4. add task-row ids and copy to the hub
-5. add pages to `run.js` only when they belong in the opening run
+5. add pages to `run.js` in journey order — the run is the whole notification
 
 Change `journeys/linear/config.js` or the `configureJourneyFlow()` call only when
 the journey's template identity, cookie identity or injected policy surface itself

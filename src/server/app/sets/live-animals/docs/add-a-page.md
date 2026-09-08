@@ -191,8 +191,15 @@ If you add a task row, also:
 continue-enforced fields. Add an authored `gate` to the page identity only when
 that rule cannot express the page.
 
-Add the page to [`journeys/linear/flow/run.js`](../journeys/linear/flow/run.js) only when it belongs in the
-opening run. Update its run tests if you do.
+Add the page to [`journeys/linear/flow/run.js`](../journeys/linear/flow/run.js) in
+journey order. The run is the whole notification, so every new question page gets
+a `RUN_STEPS` entry unless it is deliberately outside the run (the dashboard,
+declaration and confirmation are the only ones today) — a page left out is jumped
+straight over while the run is active and is reachable only from its hub row. See
+[`journey-flow-and-gates.md`](journey-flow-and-gates.md), "Opening run and entry
+guard". Update
+[`journeys/linear/flow/run.test.js`](../journeys/linear/flow/run.test.js) when you
+do; its coverage invariant fails if you forget.
 
 ## 7. Add check-answers and backend mapping when needed
 

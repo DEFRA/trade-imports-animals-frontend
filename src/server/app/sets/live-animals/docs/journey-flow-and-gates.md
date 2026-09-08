@@ -33,6 +33,28 @@ task-row ids under visible headings and supplies their presentation order.
 `nextRunTarget`. [`entry-guard.js`](../journeys/linear/flow/entry-guard.js) owns the
 journey's redirect policy before handlers run.
 
+The run is the whole notification, not its first leg. `RUN_STEPS` runs origin,
+what you are importing, the consignment details, the reason for import, animal
+identification, the additional details, the arrival details, the transit
+countries, the transporter, the uploaded documents, the roles and addresses, the
+CPH number, the contact address and then the review page, so the primary button —
+"Save and continue", or "Continue" on the uploaded-documents and
+roles-and-addresses pages — carries a new notification from the entry page to the
+review page in one pass. The hub is somewhere the user chooses to go — through the
+secondary "Save and return to overview" button on every page, or by opening the
+notification from the dashboard — not somewhere the run puts them between
+sections. Taking that button, or otherwise landing on the hub — including the
+run's own fall-through when the review gate or every remaining step is closed —
+renders the hub, and rendering it completes the run
+([`completeOpeningRun`](../../../flow/run-state.js), called from
+[`features/hub/controller.js`](../journeys/linear/features/hub/controller.js)).
+After that, saving a page follows `nextInSection` and returns to the hub at the
+end of each section: the run is not re-entered for that notification. The review
+step
+carries the same authored gate the review flow section does, so a run that
+arrives with the notification incomplete falls through to the hub; so does a run
+whose remaining steps are all gated out.
+
 The opening run begins when the notification is created — the dashboard's
 create POST in
 [`features/dashboard/controller.js`](../journeys/linear/features/dashboard/controller.js)
