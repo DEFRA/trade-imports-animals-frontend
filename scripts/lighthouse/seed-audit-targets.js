@@ -35,14 +35,12 @@ const signedInCookies = async () => {
   }
 }
 
-/** Follow each POST redirect in order instead of deep-linking step slugs — the
- * latter 404s at gated pages such as import-purpose in CI. */
 const seedNotifications = async (cookies) => {
   const client = createJourneyClient(origin, cookies)
   const journeyIds = {}
   for (const [name, shape] of Object.entries(SEED_SHAPES)) {
-    const { journeyId, startPath } = await createNotification(client)
-    await fillNotification(client, journeyId, shape, startPath)
+    const journeyId = await createNotification(client)
+    await fillNotification(client, journeyId, shape)
     if (shape.submit) {
       await submitNotification(client, journeyId)
     }

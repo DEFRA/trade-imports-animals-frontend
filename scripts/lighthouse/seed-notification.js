@@ -32,48 +32,24 @@ const regionCodeSuffix = values.regionOfOriginCode.slice(
   values.countryOfOrigin.length + REGION_CODE_SEPARATOR.length
 )
 
-const isPuppeteerPage = (page) => typeof page.goto === 'function'
-
 /** The address-book id of the first option the page itself offers. Picking from
  * the rendered form keeps the seed off hard-coded reference data. */
 export const firstOption = (name) => async (page) => {
-  let value
-  if (isPuppeteerPage(page)) {
-    value = await page.$eval(
-      `input[name="${name}"]`,
-      (input) => input?.value ?? ''
-    )
-  } else {
-    value = page.$(`input[name="${name}"]`).first().attr('value')
-  }
+  const value = page.$(`input[name="${name}"]`).first().attr('value')
   if (!value) {
-    const where = isPuppeteerPage(page)
-      ? page.url()
-      : page.heading || 'the page'
-    throw new Error(`No "${name}" option on ${where}`)
+    throw new Error(`No "${name}" option on ${page.heading || 'the page'}`)
   }
   return { [name]: value }
 }
 
 /** The same idea for a dropdown, skipping the placeholder and the divider. */
 export const firstListedOption = (name) => async (page) => {
-  let value
-  if (isPuppeteerPage(page)) {
-    value = await page.$eval(
-      `select[name="${name}"] option[value]:not([value=""])`,
-      (option) => option?.value ?? ''
-    )
-  } else {
-    value = page
-      .$(`select[name="${name}"] option[value]:not([value=""])`)
-      .first()
-      .attr('value')
-  }
+  const value = page
+    .$(`select[name="${name}"] option[value]:not([value=""])`)
+    .first()
+    .attr('value')
   if (!value) {
-    const where = isPuppeteerPage(page)
-      ? page.url()
-      : page.heading || 'the page'
-    throw new Error(`No "${name}" option on ${where}`)
+    throw new Error(`No "${name}" option on ${page.heading || 'the page'}`)
   }
   return { [name]: value }
 }
@@ -153,13 +129,13 @@ const CONTACT_STEP = {
 const REASON_REVEAL_FIELDS = new Map([
   [
     'internalMarket',
-    () => ({ purposeInInternalMarket: values.purposeInInternalMarket })
+    async () => ({ purposeInInternalMarket: values.purposeInInternalMarket })
   ],
   [
     'transit',
-    (page) => ({
-      ...firstListedOption('transitPortOfExit')(page),
-      ...firstListedOption('transitDestinationCountry')(page)
+    async (page) => ({
+      ...(await firstListedOption('transitPortOfExit')(page)),
+      ...(await firstListedOption('transitDestinationCountry')(page))
     })
   ]
 ])
@@ -220,13 +196,13 @@ const branchFor = (branches, key, label) => {
 
 const reasonStep = (reasonForImport) => ({
   slug: 'import-reason',
-  fields: (page) => ({
+  fields: async (page) => ({
     reasonForImport,
-    ...branchFor(
+    ...(await branchFor(
       REASON_REVEAL_FIELDS,
       reasonForImport,
       'reason for import'
-    )(page)
+    )(page))
   })
 })
 
@@ -269,57 +245,32 @@ export const createNotification = async (client) => {
   const dashboard = await client.document('/')
   const created = await client.submit('/notifications', {}, dashboard.crumb)
   const journeyId = journeyIdFromLocation(created.location)
-  const startPath = pathFromLocation(created.location)
-  if (created.status !== HTTP_FOUND || !journeyId || !startPath) {
+  if (created.status !== HTTP_FOUND || !journeyId) {
     throw new Error(
       `Could not create a notification (status ${created.status}, location ${created.location})`
     )
   }
-  return { journeyId, startPath }
+  return journeyId
 }
 
-const settleAfterSubmit = async (client, step, posted) => {
-  const settlePath = pathFromLocation(posted.location)
-  if (!settlePath) {
-    return
-  }
-  const settled = await client.document(settlePath)
-  if (settled.status !== HTTP_OK) {
-    throw new Error(
-      `Seed step ${step.slug} redirect did not settle (${settled.status} at ${settlePath})`
-    )
-  }
-}
-
-export const fillNotification = async (client, journeyId, shape, startPath) => {
-  let currentPath = startPath
-
+export const fillNotification = async (client, journeyId, shape) => {
   for (const step of seedSteps(shape)) {
-    const expectedPath = `/notifications/${journeyId}/${step.slug}`
+    const path = `/notifications/${journeyId}/${step.slug}`
     let lastError
 
     for (let attempt = 0; attempt < STEP_ATTEMPTS; attempt++) {
       try {
-        if (currentPath !== expectedPath) {
-          const recovered = await client.document(expectedPath)
-          if (recovered.status === HTTP_OK) {
-            currentPath = expectedPath
-          } else {
-            throw new Error(
-              `Seed step ${step.slug} expected ${expectedPath} but journey is at ${currentPath}`
-            )
-          }
-        }
-        const page = await client.document(currentPath)
+        const page = await client.document(path)
         if (page.status !== HTTP_OK) {
           throw new Error(
-            `Seed step ${step.slug} did not render (${page.status} at ${currentPath})`
+            `Seed step ${step.slug} did not render (${page.status})`
           )
         }
         const posted = await client.submit(
-          currentPath,
+          path,
           await resolveSeedFields(step, page),
-          page.crumb
+          page.crumb,
+          page
         )
         if (posted.status !== HTTP_FOUND) {
           throw new Error(
@@ -327,8 +278,6 @@ export const fillNotification = async (client, journeyId, shape, startPath) => {
               'fields have moved on from what this seed sends'
           )
         }
-        await settleAfterSubmit(client, step, posted)
-        currentPath = pathFromLocation(posted.location)
         lastError = undefined
         break
       } catch (error) {
@@ -351,7 +300,8 @@ export const submitNotification = async (client, journeyId) => {
   const posted = await client.submit(
     path,
     { declaration: values.declaration },
-    page.crumb
+    page.crumb,
+    page
   )
   const confirmation = `/notifications/${journeyId}/confirmation`
   if (posted.location !== confirmation) {

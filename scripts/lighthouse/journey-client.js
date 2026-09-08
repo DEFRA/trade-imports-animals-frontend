@@ -10,6 +10,15 @@ import {
 const FORM_ENCODED = 'application/x-www-form-urlencoded'
 const HTTP_OK = 200
 
+const hiddenFormFields = ($) => {
+  const fields = {}
+  const concurrencyToken = $('input[name="concurrencyToken"]').attr('value')
+  if (concurrencyToken) {
+    fields.concurrencyToken = concurrencyToken
+  }
+  return fields
+}
+
 export const createJourneyClient = (
   baseUrl,
   cookies = [],
@@ -65,8 +74,13 @@ export const createJourneyClient = (
     return page
   }
 
-  const submit = async (path, fields, crumb) => {
+  const submit = async (path, fields, crumb, page) => {
     const body = new URLSearchParams([['crumb', crumb]])
+    if (page?.$) {
+      for (const [name, value] of Object.entries(hiddenFormFields(page.$))) {
+        body.append(name, value)
+      }
+    }
     for (const [name, value] of Object.entries(fields)) {
       for (const one of [value].flat()) {
         body.append(name, one)

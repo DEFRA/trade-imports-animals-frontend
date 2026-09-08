@@ -5,8 +5,8 @@ import { journeyIdFromLocation, pathFromLocation } from './seed-notification.js'
 describe('pathFromLocation', () => {
   it('normalises a relative redirect', () => {
     expect(
-      pathFromLocation('/notifications/GBN-AG-26-TN3BJ3/import-purpose')
-    ).toBe('/notifications/GBN-AG-26-TN3BJ3/import-purpose')
+      pathFromLocation('/notifications/GBN-AG-26-TN3BJ3/import-reason')
+    ).toBe('/notifications/GBN-AG-26-TN3BJ3/import-reason')
   })
 
   it('strips query strings from a redirect', () => {
@@ -18,9 +18,9 @@ describe('pathFromLocation', () => {
   it('reads the pathname from an absolute redirect', () => {
     expect(
       pathFromLocation(
-        'http://localhost:3000/notifications/GBN-AG-26-TN3BJ3/import-purpose'
+        'http://localhost:3000/notifications/GBN-AG-26-TN3BJ3/import-reason'
       )
-    ).toBe('/notifications/GBN-AG-26-TN3BJ3/import-purpose')
+    ).toBe('/notifications/GBN-AG-26-TN3BJ3/import-reason')
   })
 })
 
