@@ -269,7 +269,7 @@ export const answerAnimalIdentification = async (page) => {
   await page
     .getByLabel('Ear tag', { exact: true })
     .fill(unit.animalIdentifierEarTag)
-  await page.getByRole('button', { name: 'Save and finish' }).click()
+  await save(page)
 }
 
 export const answerImportReason = async (page) => {

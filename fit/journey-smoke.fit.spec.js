@@ -66,7 +66,7 @@ test.describe('live-animals journey glue', () => {
       page.getByRole('heading', { name: 'Identification details', exact: true })
     ).toBeVisible()
 
-    await page.getByRole('button', { name: 'Save and finish' }).click()
+    await save()
     await expect(
       page.getByRole('heading', { name: 'Additional details', exact: true })
     ).toBeVisible()
@@ -184,7 +184,7 @@ test.describe('live-animals journey glue', () => {
     await expect(page).toHaveURL(
       /\/identification\?change=1(?:#identification-card-0)?$/
     )
-    await page.getByRole('button', { name: 'Save and finish' }).click()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(page).toHaveURL(/\/notification-view(?:#.*)?$/)
     await expect(page.getByText('UK000000000002')).toBeVisible()
 
