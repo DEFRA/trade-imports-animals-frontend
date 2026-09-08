@@ -28,19 +28,19 @@ export const cph = {
 
 // -----------------------------------------------------------------------------
 // Contains unweaned animals — notification-level yes/no, gated on the
-// active commodities per V4. Only mandatory when the
-// consignment includes at least one commodity requiring unweaned
-// tracking (equines / cattle / pigs / sheep / goats). Declared here
-// (rather than up top with
-// the other notification-level scalar obligations) because the
-// applyTo closure captures `commodityCode` — declaring it before
-// commodityCode would trip the temporal dead zone.
+// active commodities. Only mandatory when the consignment includes at
+// least one commodity design release 1 asks the question of; which
+// commodities those are is the commodities service's to say
+// (unweanedCommodities()). Declared here (rather than up top with the
+// other notification-level scalar obligations) because the applyTo
+// closure captures `commodityCode` — declaring it before commodityCode
+// would trip the temporal dead zone.
 // -----------------------------------------------------------------------------
 
 const unweanedApplicableReason = {
   code: 'obligation.containsUnweanedAnimals.mandatory.becauseApplicableCommodity',
   explanation:
-    'consignment includes at least one commodity that requires unweaned-animal tracking (equines, cattle, pigs, sheep, or goats)'
+    'containsUnweanedAnimals applies when any commodity line has a commodityCode in the unweaned list'
 }
 
 export const containsUnweanedAnimals = {

@@ -13,11 +13,14 @@ import { copy } from './copy/copy.en.js'
 
 const SAVE_AND_CONTINUE = 'Save and continue'
 
-const startAtAdditionalDetails = async (page) => {
+// The species drives which questions the page asks, so it is the one thing
+// the set-up varies: cattle are asked the unweaned-animals question and
+// horses are not.
+const startAtAdditionalDetails = async (page, species = 'Bos taurus') => {
   await startNotification(page)
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
-  await selectSpecies(page, ['Bos taurus'])
+  await selectSpecies(page, [species])
   await page
     .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
     .click()
@@ -82,6 +85,47 @@ test.describe('additional-details feature — rendering', () => {
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
     await expect(page).toHaveURL(hubUrl)
+  })
+})
+
+// Design release 1 asks the unweaned-animals question only of a commodity
+// that carries unweaned options — cattle, not horses — so a horses-only
+// consignment is asked what the animals are certified for and nothing else.
+test.describe('additional-details feature — the unweaned commodity gate', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startAtAdditionalDetails(page, 'Equus caballus')
+  })
+
+  test('does not ask a horses-only consignment about unweaned animals', async ({
+    page
+  }) => {
+    await expect(
+      page.getByRole('group', { name: copy.certified.legend })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('group', { name: copy.unweaned.legend })
+    ).toHaveCount(0)
+  })
+
+  test('saves a horses-only consignment without an unweaned answer', async ({
+    page
+  }) => {
+    const detailsUrl = page.url()
+
+    await page.getByRole('radio', { name: 'Slaughter', exact: true }).check()
+    await page
+      .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
+      .click()
+
+    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    await page.goto(detailsUrl)
+    await expect(
+      page.getByRole('radio', { name: 'Slaughter', exact: true })
+    ).toBeChecked()
+    await expect(
+      page.getByRole('group', { name: copy.unweaned.legend })
+    ).toHaveCount(0)
   })
 })
 

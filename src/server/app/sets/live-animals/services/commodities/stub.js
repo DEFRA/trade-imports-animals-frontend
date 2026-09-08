@@ -176,6 +176,12 @@ export const IDENTIFIED_COMMODITIES = COMMODITY_OPTIONS.filter(
 // rule, so the address is never collected. Pinned by commodities/index.test.js.
 export const PERMANENT_ADDRESS_COMMODITIES = ['Cat', 'Dog']
 
-export const UNWEANED_ANIMAL_COMMODITIES = ['Cow', 'Horse']
+// The commodities design release 1 asks the unweaned-animals question of. It
+// asks it only where a selected commodity carries unweaned options, and its
+// catalogue puts those on cattle and pigs alone — not on horses, and not on
+// sheep or goats. Of the five commodities this catalogue offers today only Cow
+// qualifies; Pig joins the list when the catalogue grows to hold it. Pinned by
+// obligations/whitelists.test.js.
+export const UNWEANED_ANIMAL_COMMODITIES = ['Cow']
 
 export const CPH_COMMODITIES = ['Cow']
