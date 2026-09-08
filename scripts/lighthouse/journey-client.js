@@ -1,29 +1,8 @@
 import { load } from 'cheerio'
 
-import {
-  DEFAULT_DOCUMENT_RETRIES,
-  documentRetryDelayMs,
-  RETRYABLE_DOCUMENT_STATUSES,
-  sleep
-} from './retry.js'
-
 const FORM_ENCODED = 'application/x-www-form-urlencoded'
-const HTTP_OK = 200
 
-const hiddenFormFields = ($) => {
-  const fields = {}
-  const concurrencyToken = $('input[name="concurrencyToken"]').attr('value')
-  if (concurrencyToken) {
-    fields.concurrencyToken = concurrencyToken
-  }
-  return fields
-}
-
-export const createJourneyClient = (
-  baseUrl,
-  cookies = [],
-  { documentRetries = DEFAULT_DOCUMENT_RETRIES } = {}
-) => {
+export const createJourneyClient = (baseUrl, cookies = []) => {
   const jar = new Map(cookies.map(({ name, value }) => [name, value]))
 
   const cookieHeader = () =>
@@ -47,7 +26,7 @@ export const createJourneyClient = (
     return response
   }
 
-  const documentOnce = async (path) => {
+  const document = async (path) => {
     const response = await request(path)
     const body = response.ok ? load(await response.text()) : load('')
     return {
@@ -59,28 +38,8 @@ export const createJourneyClient = (
     }
   }
 
-  const document = async (path) => {
-    let page = await documentOnce(path)
-    for (let attempt = 0; attempt < documentRetries; attempt++) {
-      if (
-        page.status === HTTP_OK ||
-        !RETRYABLE_DOCUMENT_STATUSES.has(page.status)
-      ) {
-        return page
-      }
-      await sleep(documentRetryDelayMs(attempt))
-      page = await documentOnce(path)
-    }
-    return page
-  }
-
-  const submit = async (path, fields, crumb, page) => {
+  const submit = async (path, fields, crumb) => {
     const body = new URLSearchParams([['crumb', crumb]])
-    if (page?.$) {
-      for (const [name, value] of Object.entries(hiddenFormFields(page.$))) {
-        body.append(name, value)
-      }
-    }
     for (const [name, value] of Object.entries(fields)) {
       for (const one of [value].flat()) {
         body.append(name, one)

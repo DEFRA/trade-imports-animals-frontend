@@ -1,12 +1,9 @@
 import { readFileSync } from 'node:fs'
 
 import { lineKey } from '../../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/selection/line-key.js'
-import { sleep } from './retry.js'
 
 const HTTP_FOUND = 302
 const HTTP_OK = 200
-const STEP_ATTEMPTS = 3
-const STEP_RETRY_DELAY_MS = 2000
 
 export const { values } = JSON.parse(
   readFileSync(
@@ -34,7 +31,7 @@ const regionCodeSuffix = values.regionOfOriginCode.slice(
 
 /** The address-book id of the first option the page itself offers. Picking from
  * the rendered form keeps the seed off hard-coded reference data. */
-export const firstOption = (name) => async (page) => {
+const firstOption = (name) => (page) => {
   const value = page.$(`input[name="${name}"]`).first().attr('value')
   if (!value) {
     throw new Error(`No "${name}" option on ${page.heading || 'the page'}`)
@@ -43,7 +40,7 @@ export const firstOption = (name) => async (page) => {
 }
 
 /** The same idea for a dropdown, skipping the placeholder and the divider. */
-export const firstListedOption = (name) => async (page) => {
+const firstListedOption = (name) => (page) => {
   const value = page
     .$(`select[name="${name}"] option[value]:not([value=""])`)
     .first()
@@ -129,13 +126,13 @@ const CONTACT_STEP = {
 const REASON_REVEAL_FIELDS = new Map([
   [
     'internalMarket',
-    async () => ({ purposeInInternalMarket: values.purposeInInternalMarket })
+    () => ({ purposeInInternalMarket: values.purposeInInternalMarket })
   ],
   [
     'transit',
-    async (page) => ({
-      ...(await firstListedOption('transitPortOfExit')(page)),
-      ...(await firstListedOption('transitDestinationCountry')(page))
+    (page) => ({
+      ...firstListedOption('transitPortOfExit')(page),
+      ...firstListedOption('transitDestinationCountry')(page)
     })
   ]
 ])
@@ -196,13 +193,13 @@ const branchFor = (branches, key, label) => {
 
 const reasonStep = (reasonForImport) => ({
   slug: 'import-reason',
-  fields: async (page) => ({
+  fields: (page) => ({
     reasonForImport,
-    ...(await branchFor(
+    ...branchFor(
       REASON_REVEAL_FIELDS,
       reasonForImport,
       'reason for import'
-    )(page))
+    )(page)
   })
 })
 
@@ -215,36 +212,13 @@ export const seedSteps = ({ reasonForImport, transporterType }) => [
   CONTACT_STEP
 ]
 
-export const resolveSeedFields = async (step, page) =>
-  typeof step.fields === 'function' ? await step.fields(page) : step.fields
-
-export const pathFromLocation = (location) => {
-  if (typeof location !== 'string' || location.length === 0) {
-    return undefined
-  }
-  const pathname = location.startsWith('http')
-    ? new URL(location).pathname
-    : location.split('?')[0]
-  return pathname.startsWith('/') ? pathname : `/${pathname}`
-}
-
-export const journeyIdFromLocation = (location) => {
-  const pathname = pathFromLocation(location)
-  if (!pathname) {
-    return undefined
-  }
-  const segments = pathname.split('/').filter(Boolean)
-  const notificationsAt = segments.indexOf('notifications')
-  if (notificationsAt === -1 || notificationsAt + 1 >= segments.length) {
-    return undefined
-  }
-  return segments[notificationsAt + 1]
-}
+const fieldsFor = (step, page) =>
+  typeof step.fields === 'function' ? step.fields(page) : step.fields
 
 export const createNotification = async (client) => {
   const dashboard = await client.document('/')
   const created = await client.submit('/notifications', {}, dashboard.crumb)
-  const journeyId = journeyIdFromLocation(created.location)
+  const journeyId = created.location?.split('/')[2]
   if (created.status !== HTTP_FOUND || !journeyId) {
     throw new Error(
       `Could not create a notification (status ${created.status}, location ${created.location})`
@@ -256,40 +230,16 @@ export const createNotification = async (client) => {
 export const fillNotification = async (client, journeyId, shape) => {
   for (const step of seedSteps(shape)) {
     const path = `/notifications/${journeyId}/${step.slug}`
-    let lastError
-
-    for (let attempt = 0; attempt < STEP_ATTEMPTS; attempt++) {
-      try {
-        const page = await client.document(path)
-        if (page.status !== HTTP_OK) {
-          throw new Error(
-            `Seed step ${step.slug} did not render (${page.status})`
-          )
-        }
-        const posted = await client.submit(
-          path,
-          await resolveSeedFields(step, page),
-          page.crumb,
-          page
-        )
-        if (posted.status !== HTTP_FOUND) {
-          throw new Error(
-            `Seed step ${step.slug} was rejected (${posted.status}) — the page's ` +
-              'fields have moved on from what this seed sends'
-          )
-        }
-        lastError = undefined
-        break
-      } catch (error) {
-        lastError = error
-        if (attempt + 1 < STEP_ATTEMPTS) {
-          await sleep(STEP_RETRY_DELAY_MS * (attempt + 1))
-        }
-      }
+    const page = await client.document(path)
+    if (page.status !== HTTP_OK) {
+      throw new Error(`Seed step ${step.slug} did not render (${page.status})`)
     }
-
-    if (lastError) {
-      throw lastError
+    const posted = await client.submit(path, fieldsFor(step, page), page.crumb)
+    if (posted.status !== HTTP_FOUND) {
+      throw new Error(
+        `Seed step ${step.slug} was rejected (${posted.status}) — the page's ` +
+          'fields have moved on from what this seed sends'
+      )
     }
   }
 }
@@ -300,8 +250,7 @@ export const submitNotification = async (client, journeyId) => {
   const posted = await client.submit(
     path,
     { declaration: values.declaration },
-    page.crumb,
-    page
+    page.crumb
   )
   const confirmation = `/notifications/${journeyId}/confirmation`
   if (posted.location !== confirmation) {
