@@ -120,15 +120,15 @@ export const copy = {
   errors: {
     hiddenPrefix: 'Error:',
     referenceMaxLength: 'Document reference must be 58 characters or fewer',
-    dateInvalid: 'Enter a real date of issue',
+    dateInvalid: 'Enter a real date',
     referenceRequired: 'Enter a document reference',
     typeRequired: 'Select a document type',
-    dateRequired: 'Enter the date of issue',
-    fileRequired: 'Select a file to upload',
+    dateRequired: 'Enter a date of issue',
+    fileRequired: 'Upload a document',
     cannotContinue:
       'You cannot continue until all documents have been scanned or removed',
     uploadFailed: 'The file could not be uploaded. Try again.',
-    maxDocuments: (max) => `You can add a maximum of ${max} documents`,
+    maxDocuments: (max) => `You can upload a maximum of ${max} files`,
     fileFallbackName: 'The file',
     virusFound: (filename) =>
       `${filename} contains a virus. Remove it and try again with a different file.`,
