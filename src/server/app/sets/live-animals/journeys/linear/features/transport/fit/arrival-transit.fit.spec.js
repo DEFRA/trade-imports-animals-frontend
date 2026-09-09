@@ -161,10 +161,12 @@ test.describe('arrival details rendering', () => {
   }) => {
     await openArrival(page)
 
+    // The hint is a worked example of the date format (design release 1); the
+    // window it must fall in is policed by the picker's own bounds below.
     await expect(
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
     ).toHaveAccessibleDescription(
-      copy.portOfEntry.arrivalDate.hint(dateWindow.minText, dateWindow.maxText)
+      copy.portOfEntry.arrivalDate.hint(dateWindow.exampleText)
     )
     await expect(page.getByText(copy.portOfEntry.port.hint)).toBeVisible()
     // Means of transport is a dropdown: it opens on the placeholder with
@@ -377,6 +379,29 @@ test.describe('arrival details validation', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
     ).toHaveValue(dateWindow.minText)
+  })
+
+  // The hint's example is computed rather than hard-coded precisely so it never
+  // goes stale into a date the service would then reject.
+  test('the worked example in the arrival date hint is itself accepted', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await fillValidArrival(page)
+    await page
+      .getByLabel(copy.portOfEntry.arrivalDate.label)
+      .fill(dateWindow.exampleText)
+    await submit(page)
+
+    await expect(
+      page.getByRole('heading', { name: copy.transitCountries.title })
+    ).toBeVisible()
+    await expect(page.locator('.govuk-error-summary')).toHaveCount(0)
+
+    await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
+    await expect(
+      page.getByLabel(copy.portOfEntry.arrivalDate.label)
+    ).toHaveValue(dateWindow.exampleText)
   })
 
   test.describe('arrival date out of the allowed window', () => {

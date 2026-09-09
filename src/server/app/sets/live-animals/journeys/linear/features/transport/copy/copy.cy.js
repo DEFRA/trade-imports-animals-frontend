@@ -4,8 +4,8 @@ export const copy = {
     title: 'Manylion cyrraedd',
     arrivalDate: {
       label: 'Dyddiad cyrraedd y porthladd mynediad',
-      hint: (earliest, latest) =>
-        `Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. Rhowch ddyddiad rhwng ${earliest} a ${latest}.`
+      hint: (example) =>
+        `Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. Er enghraifft, ${example}`
     },
     port: {
       label: 'Porthladd mynediad',
