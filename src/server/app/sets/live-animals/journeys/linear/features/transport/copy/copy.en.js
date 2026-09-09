@@ -24,7 +24,18 @@ export const copy = {
     },
     identification: {
       label: 'Transport identification',
-      hint: 'To identify the means of transport, enter (one of the following): flight number; train number; road vehicle registration number; vessel name (for ferries, also the road vehicle registration number)'
+      // The four alternatives are a list, not a sentence: a lead-in plus one
+      // bullet each, so the number of choices is visible without reading
+      // (design release 1).
+      hint: {
+        lead: 'To identify the means of transport, enter (one of the following):',
+        items: [
+          'flight number',
+          'train number',
+          'road vehicle registration number',
+          'vessel name (for ferries, also the road vehicle registration number)'
+        ]
+      }
     },
     documentReference: {
       label: 'Transport document reference',
