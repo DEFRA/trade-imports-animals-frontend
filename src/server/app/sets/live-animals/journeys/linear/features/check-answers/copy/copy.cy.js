@@ -83,7 +83,7 @@ export const copy = {
     consignee: 'Derbynnydd',
     importer: 'Mewnforiwr',
     placeOfDestination: 'Man cyrchfan',
-    cph: 'Rhif Daliad Plwyf Sirol (CPH)',
+    cph: 'Rhif daliad plwyf sirol (CPH)',
     documentReference: 'Cyfeirnod y ddogfen',
     documentType: 'Math o ddogfen',
     dateOfIssue: 'Dyddiad cyhoeddi',

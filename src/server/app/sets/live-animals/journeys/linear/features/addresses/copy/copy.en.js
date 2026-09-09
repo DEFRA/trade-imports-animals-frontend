@@ -6,8 +6,8 @@ export const copy = {
     change: 'Change',
     add: 'Add',
     cph: {
-      title: 'County Parish Holding number (CPH)',
-      hint: 'The County Parish Holding (CPH) number identifies the holding where the animals will be kept.'
+      title: 'County parish holding (CPH) number',
+      hint: 'The county parish holding (CPH) number identifies the holding where the animals will be kept.'
     }
   },
   parties: {

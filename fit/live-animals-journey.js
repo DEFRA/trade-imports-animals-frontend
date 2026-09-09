@@ -329,11 +329,11 @@ export const answerRolesAndAddresses = async (page) => {
 
 export const answerCphNumber = async (page) => {
   await expect(
-    page.getByRole('heading', { name: 'County Parish Holding (CPH)' })
+    page.getByRole('heading', {
+      name: 'Add the county parish holding number (CPH)'
+    })
   ).toBeVisible()
-  await page
-    .getByLabel('County Parish Holding (CPH)')
-    .fill(values.countyParishHoldingCph)
+  await page.getByLabel('CPH number').fill(values.countyParishHoldingCph)
   await save(page)
 }
 

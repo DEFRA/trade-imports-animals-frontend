@@ -38,6 +38,20 @@ test.describe('cph-number feature', () => {
   })
 
   test('renders the CPH copy', async ({ page }) => {
+    // The page heading is an instruction in its own right, directly under the
+    // caption — the field beneath it carries the shorter label, so the two are
+    // separate strings rather than one label doubling as the heading.
+    await expect(
+      page.locator('span.govuk-caption-l + h1.govuk-heading-l')
+    ).toHaveText(copy.title)
+
+    // The field label is a label, not the heading: a revert to
+    // `isPageHeading: true` on the input would put it back into a second h1.
+    await expect(
+      page.getByRole('heading', { name: copy.cph.label })
+    ).toHaveCount(0)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
+
     await expect(page.getByLabel(copy.cph.label)).toHaveAccessibleDescription(
       copy.cph.hint
     )

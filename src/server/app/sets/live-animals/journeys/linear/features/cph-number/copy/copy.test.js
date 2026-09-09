@@ -11,6 +11,7 @@ import { dispatchPages } from '../../index.js'
 
 import * as cphNumber from '../controller.js'
 import { copy } from './copy.en.js'
+import { copy as copyCy } from './copy.cy.js'
 
 const leaves = (node, path = []) =>
   typeof node === 'object' && node !== null
@@ -27,6 +28,16 @@ describe('cph-number copy module', () => {
         0
       )
     }
+  })
+
+  // Design release 1 heads the page with an instruction and gives the field a
+  // short label of its own, in both locales. src/server/app/copy-parity.test.js
+  // only checks that cy differs from en, so the Welsh wording needs pinning here.
+  it('Should head the page with an instruction and label the field short', () => {
+    expect(copy.title).toBe('Add the county parish holding number (CPH)')
+    expect(copy.cph.label).toBe('CPH number')
+    expect(copyCy.title).toBe('Ychwanegu rhif daliad plwyf sirol (CPH)')
+    expect(copyCy.cph.label).toBe('Rhif CPH')
   })
 })
 
