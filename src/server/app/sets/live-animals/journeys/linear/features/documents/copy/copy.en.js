@@ -46,7 +46,7 @@ export const copy = {
     hint: 'For example, 12/12/2025'
   },
   file: {
-    label: 'Upload a file',
+    label: 'Attachment',
     mustBe: 'Your file must be:',
     smallerThan: 'smaller than',
     a: 'a',
