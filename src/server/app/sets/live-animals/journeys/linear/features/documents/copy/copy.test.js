@@ -76,6 +76,14 @@ describe('#copy', () => {
     )
   })
 
+  it('Should state the archive rule and its reason before the trader chooses a file', () => {
+    // The allow-list refuses a ZIP either way; this bullet is the only place
+    // the trader is told so, and told why, ahead of choosing.
+    expect(copy.file.noZipFiles).toBe(
+      'ZIP files are not allowed for security reasons'
+    )
+  })
+
   it('Should word the drop zone the way the design system does', () => {
     // The template hands these to govukFileUpload, so a drift here silently
     // reworded a control traders meet elsewhere on GOV.UK.
