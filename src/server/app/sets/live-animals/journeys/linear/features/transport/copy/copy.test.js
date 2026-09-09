@@ -13,6 +13,7 @@ import { arrivalWindow } from '../port-of-entry/arrival-window.js'
 import * as portOfEntry from '../port-of-entry/port-of-entry.controller.js'
 import * as transporters from '../transporters/transporters.controller.js'
 import { copy } from './copy.en.js'
+import { copy as copyCy } from './copy.cy.js'
 
 const leaves = (node, path = []) =>
   typeof node === 'object' && node !== null
@@ -48,6 +49,15 @@ describe('transport copy module', () => {
   test('Should keep the accepted window out of portOfEntry.arrivalDate.hint', () => {
     expect(copy.portOfEntry.arrivalDate.hint('27/3/2026')).not.toContain(
       'between'
+    )
+  })
+
+  // The Welsh deck carries the same sentence and takes the same one argument.
+  // Copy parity only checks the arity of a function leaf, never the sentence it
+  // builds, so the Welsh hint is asserted here alongside the English one.
+  test('Should interpolate the Welsh portOfEntry.arrivalDate.hint with the worked example', () => {
+    expect(copyCy.portOfEntry.arrivalDate.hint('27/3/2026')).toBe(
+      'Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. Er enghraifft, 27/3/2026'
     )
   })
 
