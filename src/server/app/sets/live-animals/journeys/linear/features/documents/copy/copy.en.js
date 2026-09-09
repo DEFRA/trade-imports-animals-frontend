@@ -50,6 +50,7 @@ export const copy = {
     mustBe: 'Your file must be:',
     smallerThan: 'smaller than',
     a: 'a',
+    noZipFiles: 'ZIP files are not allowed for security reasons',
     // Wording for the JavaScript-enhanced drop zone. These match the design
     // system's own defaults so the control reads the way traders meet it
     // elsewhere on GOV.UK.

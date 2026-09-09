@@ -134,6 +134,7 @@ test.describe('document upload page', () => {
     await expect(
       page.getByText(`${copy.file.a} ${ALLOWED_FILE_TYPES_HINT}`)
     ).toBeVisible()
+    await expect(page.getByText(copy.file.noZipFiles)).toBeVisible()
     await expect(page.getByText(copy.empty)).toBeVisible()
     await expect(
       page.getByRole('button', { name: copy.addAnother })
@@ -387,6 +388,9 @@ test.describe('document upload file validation', () => {
     await link.click()
     await expect(uploadControl(page)).toBeFocused()
     await expectPreservedMetadata(page)
+    // The rule the trader has just fallen foul of stays in the hint on the
+    // error state, so they can read why the archive was refused.
+    await expect(page.getByText(copy.file.noZipFiles)).toBeVisible()
   })
 })
 
