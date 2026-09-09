@@ -32,6 +32,9 @@ const transitedCountriesChecked = `${transitedCountriesInputs}:checked`
 const MAX_TRANSPORT_FIELD_LENGTH = 58
 const DOVER_OPTION = 'Port of Dover (GB DVR)'
 const PORT_OF_ENTRY_PAGE = 'port-of-entry'
+// The visually hidden name the MoJ picker gives the button that opens the
+// calendar.
+const CHOOSE_DATE = 'Choose date'
 
 const dateWindow = arrivalWindow()
 const outOfRangeError = copy.portOfEntry.errors.arrivalDateOutOfRange(
@@ -86,6 +89,14 @@ const choosePort = async (page, code = values.portOfEntry) => {
   await field.fill(code)
   await page.getByRole('option', { name: portLabel(code), exact: true }).click()
 }
+
+// Positions measured against the document, not the viewport, so a scroll
+// between two measurements cannot make an unmoved element look like it moved.
+const documentTop = (locator) =>
+  locator.evaluate((el) => el.getBoundingClientRect().top + window.scrollY)
+
+const documentBottom = (locator) =>
+  locator.evaluate((el) => el.getBoundingClientRect().bottom + window.scrollY)
 
 const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
@@ -309,11 +320,32 @@ test.describe('arrival details validation', () => {
     await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
   })
 
+  test('the open calendar sits in the flow of the page and pushes the port question below it', async ({
+    page
+  }) => {
+    await openArrival(page)
+    const port = page.getByLabel(copy.portOfEntry.port.label, { exact: true })
+    const closed = await documentTop(port)
+
+    await page.getByRole('button', { name: CHOOSE_DATE }).click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+
+    const calendarBottom = await documentBottom(dialog)
+    const open = await documentTop(port)
+
+    // The calendar takes up room rather than floating: the port question moves
+    // down the page ...
+    expect(open).toBeGreaterThan(closed)
+    // ... and starts below the calendar's bottom edge instead of behind it.
+    expect(open).toBeGreaterThanOrEqual(calendarBottom)
+  })
+
   test('the picker calendar excludes the day before the window and allows the boundary itself', async ({
     page
   }) => {
     await openArrival(page)
-    await page.getByRole('button', { name: 'Choose date' }).click()
+    await page.getByRole('button', { name: CHOOSE_DATE }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
 
     const today = addUtcDays(dateWindow.min, DAYS_BEFORE)
@@ -651,7 +683,7 @@ test.describe('arrival and transit accessibility', () => {
     page
   }) => {
     await openArrival(page)
-    await page.getByRole('button', { name: 'Choose date' }).click()
+    await page.getByRole('button', { name: CHOOSE_DATE }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
     await expectAxeClean(page, 'Arrival details with date picker open')
   })

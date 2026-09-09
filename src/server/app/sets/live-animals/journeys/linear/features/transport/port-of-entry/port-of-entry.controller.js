@@ -109,7 +109,10 @@ const render = (
       value: values.arrivalDateAtPort ?? {},
       error: errors.arrivalDateAtPort,
       minDate: dateWindow.minText,
-      maxDate: dateWindow.maxText
+      maxDate: dateWindow.maxText,
+      // Opens the calendar in the flow of the page so it pushes the port and
+      // transport questions down rather than covering them.
+      formGroupClasses: 'app-date-picker'
     })
   })
 
