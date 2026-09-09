@@ -1,3 +1,4 @@
+import { getTraceId } from '@defra/hapi-tracing'
 import { originLabel } from '../countries/index.js'
 import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
 import { BackendRequestError } from '../persistence/records/errors.js'
@@ -6,6 +7,8 @@ const ORGANISATION_ID_HEADER = 'Trade-Imports-Organisation-Id'
 
 const addressBookUrl =
   process.env.TRADE_IMPORTS_ADDRESS_BOOK_URL ?? 'http://localhost:8089'
+
+const tracingHeader = process.env.TRACING_HEADER ?? 'x-cdp-request-id'
 
 /** Page size the API serves. Server-owned (cv-025) — it is deliberately not a
  * request parameter, so the service re-slices to its own page size rather than
@@ -35,7 +38,8 @@ const addressesUrl = (orgId, addressId) => {
  * field, and it must match the orgId in the path (cv-010). */
 const headers = (orgId) => ({
   'Content-Type': 'application/json',
-  [ORGANISATION_ID_HEADER]: orgId
+  [ORGANISATION_ID_HEADER]: orgId,
+  [tracingHeader]: getTraceId() ?? ''
 })
 
 const failed = (what, response) => new BackendRequestError(what, response)
