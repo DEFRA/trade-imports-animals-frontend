@@ -26,11 +26,16 @@ import { MAX_TRANSITED_COUNTRIES } from '../transit-countries/transit-countries.
 // a "-select" suffix (it still submits the port code).
 const portInput = 'input#portOfEntry'
 const portHidden = 'select#portOfEntry-select'
+const meansSelect = 'select#meansOfTransport'
+const identificationHint = 'div#transportIdentification-hint'
 const transitedCountriesInputs = 'input[name="transitedCountries"]'
 const transitedCountriesChecked = `${transitedCountriesInputs}:checked`
 const MAX_TRANSPORT_FIELD_LENGTH = 58
 const DOVER_OPTION = 'Port of Dover (GB DVR)'
 const PORT_OF_ENTRY_PAGE = 'port-of-entry'
+// The visually hidden name the MoJ picker gives the button that opens the
+// calendar.
+const CHOOSE_DATE = 'Choose date'
 
 const dateWindow = arrivalWindow()
 const outOfRangeError = copy.portOfEntry.errors.arrivalDateOutOfRange(
@@ -86,6 +91,14 @@ const choosePort = async (page, code = values.portOfEntry) => {
   await page.getByRole('option', { name: portLabel(code), exact: true }).click()
 }
 
+// Positions measured against the document, not the viewport, so a scroll
+// between two measurements cannot make an unmoved element look like it moved.
+const documentTop = (locator) =>
+  locator.evaluate((el) => el.getBoundingClientRect().top + window.scrollY)
+
+const documentBottom = (locator) =>
+  locator.evaluate((el) => el.getBoundingClientRect().bottom + window.scrollY)
+
 const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
 
@@ -120,11 +133,7 @@ const fillValidArrival = async (page) => {
     .getByLabel(copy.portOfEntry.arrivalDate.label)
     .fill(ARRIVAL_DATE_IN_WINDOW)
   await choosePort(page)
-  await page
-    .getByRole('radio', {
-      name: copy.portOfEntry.means.options[values.meansOfTransport]
-    })
-    .check()
+  await page.locator(meansSelect).selectOption(values.meansOfTransport)
   await page
     .getByLabel(copy.portOfEntry.identification.label)
     .fill(values.transportIdentification)
@@ -135,9 +144,7 @@ const fillValidArrival = async (page) => {
 
 const openTransit = async (page) => {
   await openArrival(page)
-  await page
-    .getByRole('radio', { name: copy.portOfEntry.means.options.ROAD_VEHICLE })
-    .check()
+  await page.locator(meansSelect).selectOption('ROAD_VEHICLE')
   await submit(page)
   await expect(
     page.getByRole('heading', { name: copy.transitCountries.title })
@@ -160,15 +167,29 @@ test.describe('arrival details rendering', () => {
       copy.portOfEntry.arrivalDate.hint(dateWindow.minText, dateWindow.maxText)
     )
     await expect(page.getByText(copy.portOfEntry.port.hint)).toBeVisible()
-    await expect(
-      page.getByRole('group', { name: copy.portOfEntry.means.legend })
-    ).toBeVisible()
-    for (const label of Object.values(copy.portOfEntry.means.options)) {
-      await expect(page.getByRole('radio', { name: label })).toBeVisible()
-    }
+    // Means of transport is a dropdown: it opens on the placeholder with
+    // nothing chosen, and the four options are the reference list in order.
+    const means = page.getByLabel(copy.portOfEntry.means.label, { exact: true })
+    await expect(means).toBeVisible()
+    await expect(means).toHaveValue('')
+    const meansOptions = await means
+      .locator('option')
+      .evaluateAll((items) => items.map((option) => option.textContent.trim()))
+    expect(meansOptions).toEqual([
+      copy.portOfEntry.means.placeholder,
+      ...Object.values(copy.portOfEntry.means.options)
+    ])
+    // The transport identification hint is a lead-in sentence plus one bullet
+    // per alternative (design release 1), so it is asserted as a list.
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
-    ).toHaveAccessibleDescription(copy.portOfEntry.identification.hint)
+    ).toHaveAttribute('aria-describedby', /transportIdentification-hint/)
+    await expect(page.locator(`${identificationHint} p`)).toHaveText(
+      copy.portOfEntry.identification.hint.lead
+    )
+    await expect(
+      page.locator(`${identificationHint} ul.govuk-list--bullet li`)
+    ).toHaveText(copy.portOfEntry.identification.hint.items)
     await expect(
       page.getByLabel(copy.portOfEntry.documentReference.label)
     ).toHaveAccessibleDescription(copy.portOfEntry.documentReference.hint)
@@ -205,7 +226,11 @@ test.describe('port of entry type-ahead', () => {
     await expect(
       page.getByRole('option', { name: DOVER_OPTION, exact: true })
     ).toBeVisible()
-    await expect(page.getByRole('option')).toHaveCount(portsOfEntry.length)
+    // Scoped to the type-ahead's own menu: the means-of-transport dropdown
+    // puts options on the page too, and they are not ports.
+    await expect(page.getByRole('listbox').getByRole('option')).toHaveCount(
+      portsOfEntry.length
+    )
   })
 
   test('filters by port name or code, case-insensitively (AC1)', async ({
@@ -260,11 +285,7 @@ test.describe('port of entry without JavaScript', () => {
     await page
       .getByLabel(copy.portOfEntry.port.label, { exact: true })
       .selectOption(values.portOfEntry)
-    await page
-      .getByRole('radio', {
-        name: copy.portOfEntry.means.options[values.meansOfTransport]
-      })
-      .check()
+    await page.locator(meansSelect).selectOption(values.meansOfTransport)
     await page
       .getByLabel(copy.portOfEntry.identification.label)
       .fill(values.transportIdentification)
@@ -308,11 +329,32 @@ test.describe('arrival details validation', () => {
     await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
   })
 
+  test('the open calendar sits in the flow of the page and pushes the port question below it', async ({
+    page
+  }) => {
+    await openArrival(page)
+    const port = page.getByLabel(copy.portOfEntry.port.label, { exact: true })
+    const closed = await documentTop(port)
+
+    await page.getByRole('button', { name: CHOOSE_DATE }).click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+
+    const calendarBottom = await documentBottom(dialog)
+    const open = await documentTop(port)
+
+    // The calendar takes up room rather than floating: the port question moves
+    // down the page ...
+    expect(open).toBeGreaterThan(closed)
+    // ... and starts below the calendar's bottom edge instead of behind it.
+    expect(open).toBeGreaterThanOrEqual(calendarBottom)
+  })
+
   test('the picker calendar excludes the day before the window and allows the boundary itself', async ({
     page
   }) => {
     await openArrival(page)
-    await page.getByRole('button', { name: 'Choose date' }).click()
+    await page.getByRole('button', { name: CHOOSE_DATE }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
 
     const today = addUtcDays(dateWindow.min, DAYS_BEFORE)
@@ -363,6 +405,9 @@ test.describe('arrival details validation', () => {
         await expect(
           page.getByLabel(copy.portOfEntry.identification.label)
         ).toHaveValue(values.transportIdentification)
+        await expect(page.locator(meansSelect)).toHaveValue(
+          values.meansOfTransport
+        )
       })
     }
   })
@@ -411,30 +456,25 @@ test.describe('arrival details validation', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
     ).toHaveValue(values.transportIdentification)
+    await expect(page.locator(meansSelect)).toHaveValue(values.meansOfTransport)
   })
 
-  test('means validation: out-of-list value links to and focuses the cleared group while preserving other values', async ({
+  test('means validation: out-of-list value links to and focuses the cleared dropdown while preserving other values', async ({
     page
   }) => {
     await openArrival(page)
     await fillValidArrival(page)
-    await page
-      .getByRole('radio', { name: copy.portOfEntry.means.options.AIRPLANE })
-      .evaluate((radio) => {
-        radio.value = 'INVALID'
-        radio.checked = true
-      })
+    await page.locator(meansSelect).evaluate((select) => {
+      select.add(new Option('Invalid means', 'INVALID'))
+      select.value = 'INVALID'
+    })
     await submit(page)
 
     const link = errorLink(page, validatorDefaults.oneOf)
     await expect(link).toBeVisible()
     await link.click()
-    await expect(
-      page.locator('input[name="meansOfTransport"]').first()
-    ).toBeFocused()
-    await expect(
-      page.locator('input[name="meansOfTransport"]:checked')
-    ).toHaveCount(0)
+    await expect(page.locator(meansSelect)).toBeFocused()
+    await expect(page.locator(meansSelect)).toHaveValue('')
     await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
   })
 })
@@ -520,11 +560,7 @@ test.describe('arrival save and routing', () => {
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
     ).toHaveValue(ARRIVAL_DATE_IN_WINDOW)
     await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
-    await expect(
-      page.getByRole('radio', {
-        name: copy.portOfEntry.means.options[values.meansOfTransport]
-      })
-    ).toBeChecked()
+    await expect(page.locator(meansSelect)).toHaveValue(values.meansOfTransport)
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
     ).toHaveValue(values.transportIdentification)
@@ -656,7 +692,7 @@ test.describe('arrival and transit accessibility', () => {
     page
   }) => {
     await openArrival(page)
-    await page.getByRole('button', { name: 'Choose date' }).click()
+    await page.getByRole('button', { name: CHOOSE_DATE }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
     await expectAxeClean(page, 'Arrival details with date picker open')
   })

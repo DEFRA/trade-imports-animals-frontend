@@ -2,8 +2,11 @@
 export const copy = {
   title: 'Ychwanegu rhif daliad plwyf sirol (CPH)',
   cph: {
-    label: 'Rhif CPH',
-    hint: 'Er enghraifft, 123456789 neu 123/456/789.'
+    legend: 'Rhif CPH',
+    hint: 'Er enghraifft, 12/345/6789.',
+    county: 'Sir',
+    parish: 'Plwyf',
+    holding: 'Rhif daliad'
   },
   help: {
     summary: 'Beth yw rhif CPH?',
@@ -14,7 +17,14 @@ export const copy = {
   },
   errors: {
     cphRequired: 'Nodwch rif CPH',
-    cphLength: "Rhaid i'r rhif CPH fod yn union 9 digid",
-    cphDigitsOnly: "Rhaid i'r rhif CPH gynnwys rhifau yn unig"
+    countyRequired: 'Nodwch y sir',
+    countyLength: "Rhaid i'r sir fod yn 2 ddigid",
+    countyDigitsOnly: "Rhaid i'r sir gynnwys rhifau yn unig",
+    parishRequired: 'Nodwch y plwyf',
+    parishLength: "Rhaid i'r plwyf fod yn 3 digid",
+    parishDigitsOnly: "Rhaid i'r plwyf gynnwys rhifau yn unig",
+    holdingRequired: 'Nodwch y rhif daliad',
+    holdingLength: "Rhaid i'r rhif daliad fod yn 4 digid",
+    holdingDigitsOnly: "Rhaid i'r rhif daliad gynnwys rhifau yn unig"
   }
 }

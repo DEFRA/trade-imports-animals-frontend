@@ -13,7 +13,8 @@ export const copy = {
       noResults: 'No ports found'
     },
     means: {
-      legend: 'Means of transport to the port of entry',
+      label: 'Means of transport to the port of entry',
+      placeholder: 'Select one',
       options: {
         AIRPLANE: 'Airplane',
         RAILWAY: 'Railway',
@@ -23,7 +24,18 @@ export const copy = {
     },
     identification: {
       label: 'Transport identification',
-      hint: 'To identify the means of transport, enter (one of the following): flight number; train number; road vehicle registration number; vessel name (for ferries, also the road vehicle registration number)'
+      // The four alternatives are a list, not a sentence: a lead-in plus one
+      // bullet each, so the number of choices is visible without reading
+      // (design release 1).
+      hint: {
+        lead: 'To identify the means of transport, enter (one of the following):',
+        items: [
+          'flight number',
+          'train number',
+          'road vehicle registration number',
+          'vessel name (for ferries, also the road vehicle registration number)'
+        ]
+      }
     },
     documentReference: {
       label: 'Transport document reference',

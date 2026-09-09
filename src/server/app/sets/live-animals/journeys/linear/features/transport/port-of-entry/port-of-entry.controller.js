@@ -46,6 +46,15 @@ const portItems = (selected) => [
   }))
 ]
 
+const meansItems = (selected) => [
+  { value: '', text: copy.means.placeholder },
+  ...transportReference.meansOfTransport().map((code) => ({
+    value: code,
+    text: copy.means.options[code],
+    selected: code === selected
+  }))
+]
+
 const fields = (dateWindow) =>
   compose(
     dateTextInRange('arrivalDateAtPort', {
@@ -93,13 +102,17 @@ const render = (
     errors,
     errorSummary: kit.errorSummary(errors),
     portItems: portItems(values.portOfEntry),
+    meansItems: meansItems(values.meansOfTransport),
     arrivalDate: kit.dateField('arrivalDateAtPort', {
       label: copy.arrivalDate.label,
       hint: copy.arrivalDate.hint(dateWindow.minText, dateWindow.maxText),
       value: values.arrivalDateAtPort ?? {},
       error: errors.arrivalDateAtPort,
       minDate: dateWindow.minText,
-      maxDate: dateWindow.maxText
+      maxDate: dateWindow.maxText,
+      // Opens the calendar in the flow of the page so it pushes the port and
+      // transport questions down rather than covering them.
+      formGroupClasses: 'app-date-picker'
     })
   })
 

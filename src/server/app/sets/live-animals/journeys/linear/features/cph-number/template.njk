@@ -1,5 +1,8 @@
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/details/macro.njk" import govukDetails %}
+{% from "govuk/components/error-message/macro.njk" import govukErrorMessage %}
+{% from "govuk/components/fieldset/macro.njk" import govukFieldset %}
+{% from "govuk/components/hint/macro.njk" import govukHint %}
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "shared/save-actions.njk" import saveActions %}
 {% from "shared/section-caption.njk" import sectionCaption %}
@@ -26,15 +29,74 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
-    {{ govukInput({
-      id: "countyParishHoldingCph",
-      name: "countyParishHoldingCph",
-      label: { text: copy.cph.label, classes: "govuk-label--s" },
-      hint: { text: copy.cph.hint },
-      classes: "govuk-input--width-10",
-      value: values.countyParishHoldingCph,
-      errorMessage: errors.countyParishHoldingCph and { text: errors.countyParishHoldingCph }
-    }) }}
+    {# One question in three boxes. The stepping widths and the maxlengths carry
+       the 2/3/4 shape of a CPH number without a word of copy, and each box keeps
+       a visible label so a trader knows which part they are in. The
+       govuk-date-input layout classes are the Design System's only shipped way
+       to sit inputs side by side; nothing here is a date. #}
+    {% set cphPartsHtml %}
+      {{ govukHint({
+        id: "cph-hint",
+        text: copy.cph.hint
+      }) }}
+
+      {# One message for the whole question, as govukDateInput does it: a
+         block-level error inside a narrow .govuk-date-input__item would break
+         the row of boxes apart. #}
+      {% if errorSummary %}
+        {{ govukErrorMessage({ id: "cph-error", html: errorSummary.errorList | join("<br>", "text") }) }}
+      {% endif %}
+
+      <div class="govuk-date-input">
+        <div class="govuk-date-input__item">
+          {{ govukInput({
+            id: "cphCounty",
+            name: "cphCounty",
+            label: { text: copy.cph.county, classes: "govuk-date-input__label" },
+            classes: "govuk-input--width-2" + (" govuk-input--error" if errors.cphCounty else ""),
+            inputmode: "numeric",
+            spellcheck: false,
+            attributes: { maxlength: "2" },
+            value: values.cphCounty
+          }) }}
+        </div>
+
+        <div class="govuk-date-input__item">
+          {{ govukInput({
+            id: "cphParish",
+            name: "cphParish",
+            label: { text: copy.cph.parish, classes: "govuk-date-input__label" },
+            classes: "govuk-input--width-3" + (" govuk-input--error" if errors.cphParish else ""),
+            inputmode: "numeric",
+            spellcheck: false,
+            attributes: { maxlength: "3" },
+            value: values.cphParish
+          }) }}
+        </div>
+
+        <div class="govuk-date-input__item">
+          {{ govukInput({
+            id: "cphHolding",
+            name: "cphHolding",
+            label: { text: copy.cph.holding, classes: "govuk-date-input__label" },
+            classes: "govuk-input--width-4" + (" govuk-input--error" if errors.cphHolding else ""),
+            inputmode: "numeric",
+            spellcheck: false,
+            attributes: { maxlength: "4" },
+            value: values.cphHolding
+          }) }}
+        </div>
+      </div>
+    {% endset %}
+
+    <div class="govuk-form-group{{ ' govuk-form-group--error' if errorSummary }}">
+      {{ govukFieldset({
+        role: "group",
+        describedBy: "cph-hint cph-error" if errorSummary else "cph-hint",
+        legend: { text: copy.cph.legend, classes: "govuk-fieldset__legend--s" },
+        html: cphPartsHtml
+      }) }}
+    </div>
 
     {# Second page of the addresses row — reached from the hub's addresses
        page, not from the hub, so it ends with the primary alone. #}

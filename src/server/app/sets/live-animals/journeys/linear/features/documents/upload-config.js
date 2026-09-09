@@ -36,9 +36,11 @@ export const ALLOWED_FILE_TYPES_HINT = new Intl.ListFormat('en-GB', {
 
 export const FILE_TYPE_MESSAGE = en.errors.fileType(ALLOWED_FILE_TYPES_HINT)
 
-// The ingress request-body cap in front of this service must allow at least
-// MAX_PAYLOAD_BYTES; CDP's nginx default is 10 MiB. See EUDPA-518.
-const MAX_FILE_SIZE_MB = 50
+// Held at 10 so MAX_PAYLOAD_BYTES stays inside the ingress request-body cap in
+// front of this service, which on CDP is nginx's 10 MiB default. EUDPA-518
+// raised this to 50 for Design release 1; a 50MB upload never reaches the
+// service, so the limit goes back until the ingress cap is raised with it.
+const MAX_FILE_SIZE_MB = 10
 const BYTES_PER_MEGABYTE = 1_000_000
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * BYTES_PER_MEGABYTE
 export const MAX_FILE_SIZE_LABEL = `${MAX_FILE_SIZE_MB}MB`

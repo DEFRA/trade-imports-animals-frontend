@@ -14,7 +14,8 @@ export const copy = {
       noResults: 'Dim porthladdoedd wedi’u darganfod'
     },
     means: {
-      legend: 'Cyfrwng cludo i’r porthladd mynediad',
+      label: 'Cyfrwng cludo i’r porthladd mynediad',
+      placeholder: 'Dewiswch un',
       options: {
         AIRPLANE: 'Awyren',
         RAILWAY: 'Rheilffordd',
@@ -24,7 +25,15 @@ export const copy = {
     },
     identification: {
       label: 'Adnabod y cludiant',
-      hint: 'I adnabod y cyfrwng cludo, rhowch (un o’r canlynol): rhif hediad; rhif trên; rhif cofrestru cerbyd ffordd; enw llong (ar gyfer fferïau, rhif cofrestru’r cerbyd ffordd hefyd)'
+      hint: {
+        lead: 'I adnabod y cyfrwng cludo, rhowch (un o’r canlynol):',
+        items: [
+          'rhif hediad',
+          'rhif trên',
+          'rhif cofrestru cerbyd ffordd',
+          'enw llong (ar gyfer fferïau, rhif cofrestru’r cerbyd ffordd hefyd)'
+        ]
+      }
     },
     documentReference: {
       label: 'Cyfeirnod dogfen cludo',

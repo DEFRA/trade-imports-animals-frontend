@@ -8,7 +8,6 @@ import {
 import { COUNTRY_LABELS } from '../src/server/app/services/countries/stub.js'
 import { STUB_BOOK } from '../src/server/app/services/address-book/stub/index.js'
 import { PORTS } from '../src/server/app/services/ports/stub.js'
-import { copy as transportCopy } from '../src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js'
 import { copy as sharedAppCopy } from '../src/server/app/shared/copy.en.js'
 
 export { signIn } from './sign-in.js'
@@ -82,9 +81,6 @@ export const { values } = JSON.parse(
     'utf8'
   )
 )
-
-const meansOfTransportLabel =
-  transportCopy.portOfEntry.means.options[values.meansOfTransport]
 
 // The arrival-date window moves with the wall clock, so the driver computes a
 // date inside it rather than reading the fixed value out of the fixture.
@@ -327,13 +323,22 @@ export const answerRolesAndAddresses = async (page) => {
   await save(page)
 }
 
+// The fixture holds the number in the slashed form a trader reads it in,
+// which is the 2/3/4 split the page takes in three boxes.
+const [FIXTURE_CPH_COUNTY, FIXTURE_CPH_PARISH, FIXTURE_CPH_HOLDING] =
+  values.countyParishHoldingCph.split('/')
+
 export const answerCphNumber = async (page) => {
   await expect(
     page.getByRole('heading', {
       name: 'Add the county parish holding number (CPH)'
     })
   ).toBeVisible()
-  await page.getByLabel('CPH number').fill(values.countyParishHoldingCph)
+  await page.getByLabel('County', { exact: true }).fill(FIXTURE_CPH_COUNTY)
+  await page.getByLabel('Parish', { exact: true }).fill(FIXTURE_CPH_PARISH)
+  await page
+    .getByLabel('Holding number', { exact: true })
+    .fill(FIXTURE_CPH_HOLDING)
   await save(page)
 }
 
@@ -343,8 +348,8 @@ export const answerArrivalDetails = async (page) => {
     .fill(ARRIVAL_DATE_IN_WINDOW)
   await choosePortOfEntry(page)
   await page
-    .getByRole('radio', { name: meansOfTransportLabel, exact: true })
-    .check()
+    .locator('select#meansOfTransport')
+    .selectOption(values.meansOfTransport)
   await page
     .getByLabel('Transport identification')
     .fill(values.transportIdentification)
