@@ -88,7 +88,7 @@ const COUNTRY_OF_ORIGIN_KEY = 'Country of origin'
 const PURPOSE_IN_MARKET_KEY = 'Purpose in the market'
 const REGION_CODE_KEY = 'Region of origin code'
 const UNWEANED_KEY = 'Includes unweaned animals'
-const CPH_KEY = 'County Parish Holding number (CPH)'
+const CPH_KEY = 'County parish holding (CPH) number'
 const TRANSITED_COUNTRIES_KEY =
   'Countries that the consignment will travel through'
 const PACKAGES_KEY = 'Number of packages'

@@ -7,6 +7,8 @@
   {% include "shared/error-summary.njk" %}
 
   {{ sectionCaption(caption) }}
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
@@ -14,11 +16,7 @@
     {{ govukInput({
       id: "countyParishHoldingCph",
       name: "countyParishHoldingCph",
-      label: {
-        text: copy.cph.label,
-        isPageHeading: true,
-        classes: "govuk-label--l"
-      },
+      label: { text: copy.cph.label, classes: "govuk-label--s" },
       hint: { text: copy.cph.hint },
       classes: "govuk-input--width-10",
       value: values.countyParishHoldingCph,

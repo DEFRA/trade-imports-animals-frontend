@@ -1,7 +1,7 @@
 export const copy = {
-  title: 'County Parish Holding (CPH)',
+  title: 'Add the county parish holding number (CPH)',
   cph: {
-    label: 'County Parish Holding (CPH)',
+    label: 'CPH number',
     hint: 'For example, 123456789 or 123/456/789.'
   },
   errors: {

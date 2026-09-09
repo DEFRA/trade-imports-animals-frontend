@@ -82,7 +82,7 @@ export const copy = {
     consignee: 'Consignee',
     importer: 'Importer',
     placeOfDestination: 'Place of destination',
-    cph: 'County Parish Holding number (CPH)',
+    cph: 'County parish holding (CPH) number',
     documentReference: 'Document reference',
     documentType: 'Document type',
     dateOfIssue: 'Date of issue',

@@ -1,8 +1,8 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 export const copy = {
-  title: 'Rhif Daliad Plwyf Sirol (CPH)',
+  title: 'Ychwanegu rhif daliad plwyf sirol (CPH)',
   cph: {
-    label: 'Rhif Daliad Plwyf Sirol (CPH)',
+    label: 'Rhif CPH',
     hint: 'Er enghraifft, 123456789 neu 123/456/789.'
   },
   errors: {

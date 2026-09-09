@@ -7,8 +7,8 @@ export const copy = {
     change: 'Newid',
     add: 'Ychwanegu',
     cph: {
-      title: 'Rhif Daliad Plwyf Sirol (CPH)',
-      hint: 'Mae’r rhif Daliad Plwyf Sirol (CPH) yn adnabod y daliad lle bydd yr anifeiliaid yn cael eu cadw.'
+      title: 'Rhif daliad plwyf sirol (CPH)',
+      hint: 'Mae’r rhif daliad plwyf sirol (CPH) yn adnabod y daliad lle bydd yr anifeiliaid yn cael eu cadw.'
     }
   },
   parties: {
