@@ -170,6 +170,14 @@ describe('port-of-entry — the arrival-date window', () => {
     expect(result.view.context.arrivalDate.maxDate).toBe(dateWindow.maxText)
   })
 
+  it('Should mark the picker in-flow so an open calendar pushes the questions below it down rather than covering them', async () => {
+    const result = await driveHandler(get)
+
+    expect(result.view.context.arrivalDate.formGroup).toEqual({
+      classes: 'app-date-picker'
+    })
+  })
+
   it.each([
     ['a day before the earliest allowed date', dayOutside('min', -1)],
     ['a day after the latest allowed date', dayOutside('max', 1)]

@@ -224,10 +224,14 @@ const dateInputValue = (value) =>
  * verbatim into `data-min-date`, and the MoJ picker parses nothing else. Pass
  * `arrivalWindow().minText`, never its sibling `min`.
  * @param {string} [options.maxDate] - `d/m/yyyy` text, same contract.
+ * @param {string} [options.formGroupClasses] - classes for the field's form
+ * group. The picker's client-side script inserts the calendar dialog inside
+ * the form group, so a class here is the simplest stylesheet hook onto one
+ * picker rather than all of them.
  */
 export const dateField = (
   name,
-  { label, hint, value = {}, error, minDate, maxDate } = {}
+  { label, hint, value = {}, error, minDate, maxDate, formGroupClasses } = {}
 ) => {
   return {
     id: name,
@@ -238,6 +242,7 @@ export const dateField = (
     errorMessage: error ? { text: error } : undefined,
     value: dateInputValue(value),
     minDate,
-    maxDate
+    maxDate,
+    formGroup: formGroupClasses ? { classes: formGroupClasses } : undefined
   }
 }

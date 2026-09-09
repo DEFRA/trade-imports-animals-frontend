@@ -22,4 +22,19 @@ describe('#dateField — MoJ date-picker view model', () => {
     expect(field.minDate).toBeUndefined()
     expect(field.maxDate).toBeUndefined()
   })
+
+  it('Should carry form-group classes through, so a stylesheet can reach one picker rather than all of them', () => {
+    const field = dateField('arrivalDateAtPort', {
+      label: 'Arrival date at port of entry',
+      formGroupClasses: 'app-date-picker'
+    })
+
+    expect(field.formGroup).toEqual({ classes: 'app-date-picker' })
+  })
+
+  it('Should leave the form group undefined when no classes are supplied, so the macro emits the default markup', () => {
+    const field = dateField('exitDate', { label: 'Exit date' })
+
+    expect(field.formGroup).toBeUndefined()
+  })
 })

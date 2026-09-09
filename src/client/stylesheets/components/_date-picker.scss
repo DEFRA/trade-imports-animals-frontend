@@ -1,0 +1,25 @@
+@use "../../../../node_modules/govuk-frontend" as *;
+
+// MoJ date picker — in-flow calendar (pushes content down, no overlay).
+//
+// The component ships an absolutely positioned dialog, so an open calendar
+// floats over whatever follows the date field. On the arrival details page
+// that hides "Port of entry" and "Means of transport to the port of entry"
+// behind the calendar, and the trader has to close it to read them again.
+//
+// Static positioning drops the dialog back into the flow of the page: the
+// questions after it move down instead of disappearing behind it. It also
+// makes the inline `top` and `right` offsets the component writes on every
+// open inert, so no script is needed to clear them.
+//
+// 7 day buttons of 44px plus the dialog's own govuk-spacing(4) padding on
+// each side is 348px, so the calendar never has to shrink or wrap.
+$app-date-picker-dialog-max-width: 360px;
+
+.app-date-picker .moj-datepicker__dialog {
+  box-sizing: border-box;
+  position: static;
+  width: 100%;
+  max-width: $app-date-picker-dialog-max-width;
+  margin-top: govuk-spacing(2);
+}
