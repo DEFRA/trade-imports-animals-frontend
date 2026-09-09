@@ -520,7 +520,7 @@ test.describe('document upload continue', () => {
 
     const row = rowFor(page, validDocument.accompanyingDocumentReference)
     await expect(row).toContainText(copy.types.ITAHC)
-    await expect(row).toContainText(copy.scanTags.safe)
+    await expect(row).toContainText(copy.scanTags.complete)
 
     await submitContinue(page)
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
@@ -574,9 +574,9 @@ test.describe('document upload saved rows', () => {
     await expect(row).toContainText(
       `${issued.day}/${issued.month}/${issued.year}`
     )
-    await expect(row).toContainText(copy.scanTags.checking)
+    await expect(row).toContainText(copy.scanTags.scanning)
     await expect(page.getByLabel(copy.reference.label)).toHaveValue('')
-    await expect(row).toContainText(copy.scanTags.safe)
+    await expect(row).toContainText(copy.scanTags.complete)
   })
 
   test('keeps the saved row inside the file upload group and the page actions outside it', async ({
@@ -626,7 +626,7 @@ test.describe('document upload saved rows', () => {
     test.slow()
     await uploadDocument(page)
     const row = rowFor(page, validDocument.accompanyingDocumentReference)
-    await expect(row).toContainText(copy.scanTags.safe)
+    await expect(row).toContainText(copy.scanTags.complete)
     const viewFile = row.getByRole('link', {
       name: `${copy.viewFile} ${copy.viewFileHidden(1)}`
     })
@@ -721,7 +721,7 @@ test.describe('document upload capacity and accessibility', () => {
     await uploadDocument(page)
     await expect(
       rowFor(page, validDocument.accompanyingDocumentReference)
-    ).toContainText(copy.scanTags.safe)
+    ).toContainText(copy.scanTags.complete)
     await expectNoSeriousAxeViolations(page, 'Populated document upload page')
   })
 })

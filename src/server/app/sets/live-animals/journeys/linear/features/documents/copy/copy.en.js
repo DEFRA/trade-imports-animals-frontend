@@ -98,12 +98,20 @@ export const copy = {
   stillChecking: 'Still checking some documents. Refresh again in a moment.',
   empty: 'You have not added any documents yet.',
   notProvided: 'Not provided',
+  // The Status column reports the virus check, not a verdict on the file
+  // (design release 1): "Scanning for virus" while it runs, "Check completed"
+  // once it has. Virus found and Unknown have no design release 1 counterpart
+  // and keep the wording this service already uses.
   scanTags: {
-    safe: 'Safe',
+    complete: 'Check completed',
     virusFound: 'Virus found',
-    checking: 'Checking',
+    scanning: 'Scanning for virus',
     unknown: 'Unknown'
   },
+  // Read out ahead of the tag so the status names the document it belongs to.
+  // The tag carries no other text, so without this a screen reader hears
+  // "Check completed" with nothing saying what was checked.
+  scanStatusHidden: (reference) => `Virus check status for ${reference}`,
   announce: {
     safe: 'Document scan complete: the file is safe to use',
     virusFound:

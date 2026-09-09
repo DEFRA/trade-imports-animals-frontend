@@ -46,6 +46,11 @@ const pdfFile = (filename = 'itahc-certificate.pdf', size = 8) => ({
 })
 
 const DATE_OF_ISSUE_TEXT = '12/12/2025'
+// The wording design release 1 gives the Status column. Pinned as literals
+// here rather than read from copy.en.js so a reworded tag fails a test rather
+// than following the copy silently; copy.test.js pins the same two words.
+const TAG_SCANNING = 'Scanning for virus'
+const TAG_COMPLETE = 'Check completed'
 const VIRUS_NOTES_FILENAME = 'virus-notes.pdf'
 // The one member of the service enum design release 1 keeps to itself.
 const EXCLUDED_TYPE = 'HEALTH_CERTIFICATE'
@@ -270,27 +275,59 @@ describe('documents — listing, scanning and removing', () => {
     expect(row[0].text).toBe('GBHC1234567890')
     expect(row[1].text).toBe('Veterinary health certificate')
     expect(row[2].text).toBe(DATE_OF_ISSUE_TEXT)
-    expect(row[3].html).toContain('Safe')
+    expect(row[3].html).toContain(TAG_COMPLETE)
     expect(row[4].html).toContain('<button type="submit"')
     expect(row[4].html).toContain('name="action" value="remove:0"')
     expect(row[4].html).not.toContain('href')
   })
 
-  it('Should show Checking on every render of a fresh upload until a refresh-link GET settles it to Safe', async () => {
+  it('Should precede the status tag with a hidden label naming the document', async () => {
+    // The tag itself is two or three words with no context, so the hidden
+    // label is the only thing telling a screen-reader user which row's check
+    // it reports. It sits outside the tag, which the client rewrites in place
+    // on a poll, so it survives every status change.
+    const result = await driveHandler(get, {
+      seed: { documents: [storedDocument()] }
+    })
+    expect(result.view.context.rows[0][3].html).toBe(
+      '<span class="govuk-visually-hidden">Virus check status for GBHC1234567890</span>' +
+        '<strong class="govuk-tag govuk-tag--green">Check completed</strong>'
+    )
+  })
+
+  it('Should escape a document reference before putting it in the hidden label', async () => {
+    // The cell is built as HTML, so Nunjucks does not escape it for us and a
+    // reference is whatever the trader typed.
+    const result = await driveHandler(get, {
+      seed: {
+        documents: [
+          storedDocument({
+            accompanyingDocumentReference: '<script>alert("x")</script>'
+          })
+        ]
+      }
+    })
+    expect(result.view.context.rows[0][3].html).toContain(
+      '&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;'
+    )
+    expect(result.view.context.rows[0][3].html).not.toContain('<script>')
+  })
+
+  it('Should show Scanning for virus on every render of a fresh upload until a refresh-link GET settles it to Check completed', async () => {
     const uploadId = await documentUploads.upload({ filename: 'itahc.pdf' })
     const seed = {
       documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
     }
     const first = await driveHandler(get, { seed })
-    expect(first.view.context.rows[0][3].html).toContain('Checking')
+    expect(first.view.context.rows[0][3].html).toContain(TAG_SCANNING)
     expect(first.view.context.anyPending).toBe(true)
     expect(first.view.context.refreshHref).toContain('attempt=1')
 
     const stillPending = await driveHandler(get, { seed })
-    expect(stillPending.view.context.rows[0][3].html).toContain('Checking')
+    expect(stillPending.view.context.rows[0][3].html).toContain(TAG_SCANNING)
 
     const refreshed = await driveHandler(get, { seed, query: { attempt: '1' } })
-    expect(refreshed.view.context.rows[0][3].html).toContain('Safe')
+    expect(refreshed.view.context.rows[0][3].html).toContain(TAG_COMPLETE)
     expect(refreshed.view.context.anyPending).toBe(false)
 
     const settled = await driveHandler(post, {
@@ -543,7 +580,7 @@ describe('documents — scan-status poll and view context', () => {
       documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
     }
     const beforePoll = await driveHandler(get, { seed })
-    expect(beforePoll.view.context.rows[0][3].html).toContain('Checking')
+    expect(beforePoll.view.context.rows[0][3].html).toContain(TAG_SCANNING)
 
     const polled = await driveHandler(statusRoute.handler, { seed })
     expect(polled.response.payload.documents).toEqual([
@@ -551,7 +588,7 @@ describe('documents — scan-status poll and view context', () => {
     ])
 
     const afterPoll = await driveHandler(get, { seed })
-    expect(afterPoll.view.context.rows[0][3].html).toContain('Safe')
+    expect(afterPoll.view.context.rows[0][3].html).toContain(TAG_COMPLETE)
   })
 
   it('Should report a rejected scan so the client can rewrite the tag', async () => {
@@ -603,7 +640,7 @@ describe('documents — scan-status poll and view context', () => {
     expect(result.view.context.oversizeFileMessage).toBe(OVERSIZE_FILE_MESSAGE)
     expect(JSON.parse(result.view.context.scanCopyJson)).toEqual({
       COMPLETE: {
-        text: 'Safe',
+        text: TAG_COMPLETE,
         classes: 'govuk-tag--green',
         announcement: 'Document scan complete: the file is safe to use'
       },
@@ -613,7 +650,7 @@ describe('documents — scan-status poll and view context', () => {
         announcement:
           'Document scan failed: a virus was found. Remove the file and try again.'
       },
-      PENDING: { text: 'Checking', classes: 'govuk-tag--blue' },
+      PENDING: { text: TAG_SCANNING, classes: 'govuk-tag--blue' },
       UNKNOWN: { text: 'Unknown', classes: 'govuk-tag--grey' }
     })
   })

@@ -114,6 +114,35 @@ describe('#copy', () => {
     expect(copy.file.leftDropZone).toBe('Left drop zone')
   })
 
+  it('Should name the virus check in the status tags rather than judge the file', () => {
+    // Design release 1 words the Status column as a report on the check: what
+    // is running, then that it has finished. "Safe" was a verdict about the
+    // file and "Checking" never said what was being checked.
+    expect(copy.scanTags.scanning).toBe('Scanning for virus')
+    expect(copy.scanTags.complete).toBe('Check completed')
+    // The other two states are ours, not design release 1's, and stand.
+    expect(copy.scanTags.virusFound).toBe('Virus found')
+    expect(copy.scanTags.unknown).toBe('Unknown')
+  })
+
+  it('Should name the document the status belongs to for a screen reader', () => {
+    // The tag carries no other text, so the hidden label is the only thing
+    // tying "Check completed" to the row it sits in. The reference is an
+    // argument, never a literal, in both decks.
+    expect(copy.scanStatusHidden('GBHC1234567890')).toBe(
+      'Virus check status for GBHC1234567890'
+    )
+    expect(copy.scanStatusHidden('ITAHC-000123')).toBe(
+      'Virus check status for ITAHC-000123'
+    )
+    // Asserted on the interpolation rather than the whole sentence: the Welsh
+    // wording is machine-draft awaiting a translator, the reference is what
+    // must survive that review.
+    expect(copyCy.scanStatusHidden('GBHC1234567890')).toContain(
+      'GBHC1234567890'
+    )
+  })
+
   it('Should build the upload-config messages from the copy templates', () => {
     expect(FILE_TYPE_MESSAGE).toBe(
       copy.errors.fileType(ALLOWED_FILE_TYPES_HINT)
