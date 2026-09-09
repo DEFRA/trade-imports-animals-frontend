@@ -57,6 +57,32 @@ test.describe('cph-number feature', () => {
     )
   })
 
+  test('keeps the CPH help collapsed above the field until it is opened', async ({
+    page
+  }) => {
+    const summary = page.getByText(copy.help.summary, { exact: true })
+    await expect(summary).toBeVisible()
+
+    // Collapsed by default: the help costs a trader who already knows what a
+    // CPH number is nothing but a line of summary text.
+    await expect(page.getByText(copy.help.definition)).toBeHidden()
+    await expect(page.getByText(copy.help.whereToFind)).toBeHidden()
+
+    // Above the input, not below it — the explanation has to arrive before the
+    // question it explains.
+    await expect(
+      page.locator('details').filter({ hasText: copy.help.summary })
+    ).toHaveCount(1)
+    await expect(
+      page.locator('details ~ form #countyParishHoldingCph')
+    ).toHaveCount(1)
+
+    await summary.click()
+
+    await expect(page.getByText(copy.help.definition)).toBeVisible()
+    await expect(page.getByText(copy.help.whereToFind)).toBeVisible()
+  })
+
   test('ends with the primary alone, being reached from the addresses page', async ({
     page
   }) => {
