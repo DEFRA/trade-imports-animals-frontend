@@ -14,7 +14,8 @@ export const copy = {
       noResults: 'Dim porthladdoedd wedi’u darganfod'
     },
     means: {
-      legend: 'Cyfrwng cludo i’r porthladd mynediad',
+      label: 'Cyfrwng cludo i’r porthladd mynediad',
+      placeholder: 'Dewiswch un',
       options: {
         AIRPLANE: 'Awyren',
         RAILWAY: 'Rheilffordd',

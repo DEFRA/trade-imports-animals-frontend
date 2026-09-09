@@ -13,7 +13,8 @@ export const copy = {
       noResults: 'No ports found'
     },
     means: {
-      legend: 'Means of transport to the port of entry',
+      label: 'Means of transport to the port of entry',
+      placeholder: 'Select one',
       options: {
         AIRPLANE: 'Airplane',
         RAILWAY: 'Railway',

@@ -46,6 +46,15 @@ const portItems = (selected) => [
   }))
 ]
 
+const meansItems = (selected) => [
+  { value: '', text: copy.means.placeholder },
+  ...transportReference.meansOfTransport().map((code) => ({
+    value: code,
+    text: copy.means.options[code],
+    selected: code === selected
+  }))
+]
+
 const fields = (dateWindow) =>
   compose(
     dateTextInRange('arrivalDateAtPort', {
@@ -93,6 +102,7 @@ const render = (
     errors,
     errorSummary: kit.errorSummary(errors),
     portItems: portItems(values.portOfEntry),
+    meansItems: meansItems(values.meansOfTransport),
     arrivalDate: kit.dateField('arrivalDateAtPort', {
       label: copy.arrivalDate.label,
       hint: copy.arrivalDate.hint(dateWindow.minText, dateWindow.maxText),
