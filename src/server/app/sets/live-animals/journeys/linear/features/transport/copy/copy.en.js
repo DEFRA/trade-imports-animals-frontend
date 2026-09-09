@@ -60,15 +60,34 @@ export const copy = {
     betweenCountries:
       'Countries the consignment will travel through are countries between the country of origin and the destination country.',
     excludesUk: 'This does not include the United Kingdom.',
-    countries: {
-      label: 'Select all countries the consignment will travel through',
-      hint: 'Select up to 12 countries'
+    country: {
+      label: 'Enter a country',
+      hint: 'Enter each country that the consignment will travel through',
+      placeholder: 'Search for a country',
+      noResults: 'No countries found'
     },
+    add: 'Add country',
+    table: {
+      caption: 'Countries you have added',
+      country: 'Country',
+      actionsHidden: 'Actions'
+    },
+    remove: 'Remove',
+    removeHidden: (country) => country,
+    empty: 'You have not added any countries yet.',
+    added: (country) => `${country} added.`,
+    removed: (country) => `${country} removed.`,
+    // The cap is not stated before the trader meets it (design release 1): the
+    // search goes when the last country is added and this says why.
+    limitReached: (max) =>
+      `Maximum of ${max} countries reached. Remove a country to add another.`,
     errors: {
       fromList: 'Select countries from the list',
       maxCountries: (max) => `Select up to ${max} countries`,
       selectAtLeastOne:
-        'Select at least one country the consignment will travel through'
+        'Select at least one country the consignment will travel through',
+      chooseCountry: 'Enter a country to add',
+      alreadyAdded: (country) => `You have already added ${country}`
     }
   },
   transporters: {

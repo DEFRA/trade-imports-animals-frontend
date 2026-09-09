@@ -54,15 +54,32 @@ export const copy = {
     betweenCountries:
       'Gwledydd y bydd y llwyth yn teithio drwyddynt yw’r gwledydd rhwng y wlad tarddiad a’r wlad gyrchfan.',
     excludesUk: 'Nid yw hyn yn cynnwys y Deyrnas Unedig.',
-    countries: {
-      label: 'Dewiswch bob gwlad y bydd y llwyth yn teithio drwyddi',
-      hint: 'Dewiswch hyd at 12 gwlad'
+    country: {
+      label: 'Rhowch wlad',
+      hint: 'Rhowch bob gwlad y bydd y llwyth yn teithio drwyddi',
+      placeholder: 'Chwiliwch am wlad',
+      noResults: 'Dim gwledydd wedi’u darganfod'
     },
+    add: 'Ychwanegu gwlad',
+    table: {
+      caption: 'Gwledydd rydych wedi’u hychwanegu',
+      country: 'Gwlad',
+      actionsHidden: 'Camau gweithredu'
+    },
+    remove: 'Tynnu',
+    removeHidden: (country) => country,
+    empty: 'Nid ydych wedi ychwanegu unrhyw wledydd eto.',
+    added: (country) => `${country} wedi’i ychwanegu.`,
+    removed: (country) => `${country} wedi’i dynnu.`,
+    limitReached: (max) =>
+      `Uchafswm o ${max} gwlad wedi’i gyrraedd. Tynnwch wlad i ychwanegu un arall.`,
     errors: {
       fromList: 'Dewiswch wledydd o’r rhestr',
       maxCountries: (max) => `Dewiswch hyd at ${max} gwlad`,
       selectAtLeastOne:
-        'Dewiswch o leiaf un wlad y bydd y llwyth yn teithio drwyddi'
+        'Dewiswch o leiaf un wlad y bydd y llwyth yn teithio drwyddi',
+      chooseCountry: 'Rhowch wlad i’w hychwanegu',
+      alreadyAdded: (country) => `Rydych eisoes wedi ychwanegu ${country}`
     }
   },
   transporters: {
