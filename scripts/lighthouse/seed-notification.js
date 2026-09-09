@@ -29,6 +29,30 @@ const regionCodeSuffix = values.regionOfOriginCode.slice(
   values.countryOfOrigin.length + REGION_CODE_SEPARATOR.length
 )
 
+// The CPH page asks for the number in three boxes — two digits of county, three
+// of parish and four of holding — so the fixture's whole number is split the
+// same way here. The fixture carries the slashed form, so the split reads
+// digits only.
+const CPH_PARTS = [
+  ['cphCounty', 2],
+  ['cphParish', 3],
+  ['cphHolding', 4]
+]
+
+const splitCph = (whole) => {
+  const digits = String(whole ?? '').replace(/\D/g, '')
+  const { fields } = CPH_PARTS.reduce(
+    ({ fields, taken }, [part, count]) => ({
+      fields: { ...fields, [part]: digits.slice(taken, taken + count) },
+      taken: taken + count
+    }),
+    { fields: {}, taken: 0 }
+  )
+  return fields
+}
+
+const cphFields = splitCph(values.countyParishHoldingCph)
+
 /** The address-book id of the first option the page itself offers. Picking from
  * the rendered form keeps the seed off hard-coded reference data. */
 const firstOption = (name) => (page) => {
@@ -97,7 +121,7 @@ const AFTER_REASON = [
   { slug: 'addresses', fields: {} },
   {
     slug: 'cph-number',
-    fields: { countyParishHoldingCph: values.countyParishHoldingCph }
+    fields: cphFields
   },
   {
     slug: 'port-of-entry',
