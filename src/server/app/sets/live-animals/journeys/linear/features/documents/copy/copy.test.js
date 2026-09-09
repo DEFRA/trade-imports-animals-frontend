@@ -17,6 +17,7 @@ import {
   MAX_FILE_SIZE_LABEL
 } from '../upload-config.js'
 import { copy } from './copy.en.js'
+import { copy as copyCy } from './copy.cy.js'
 
 const leaves = (node, path = []) =>
   typeof node === 'object' && node !== null
@@ -94,6 +95,13 @@ describe('#copy', () => {
     // here rather than sliding through because the sample happened to match.
     expect(copy.file.upToMaximum(3)).toBe('up to a maximum of 3 files')
     expect(copy.file.upToMaximum(7)).toBe('up to a maximum of 7 files')
+    // The Welsh deck states the same limit and takes it the same way, so a
+    // trader reading Welsh is told the count too rather than meeting it only
+    // at the point of refusal. Asserted on the number rather than the whole
+    // sentence: the wording is machine-draft and awaits a translator, the
+    // interpolation is what must survive that review.
+    expect(copyCy.file.upToMaximum(3)).toContain('3')
+    expect(copyCy.file.upToMaximum(7)).toContain('7')
   })
 
   it('Should word the drop zone the way the design system does', () => {
