@@ -79,6 +79,18 @@ describe('#search against the real address book', () => {
     expect(options.headers['Trade-Imports-Organisation-Id']).toBe(ORG)
   })
 
+  test('Should carry the request trace on to the address book', async () => {
+    const fetched = vi.fn(bookOf(10))
+    realMode()
+    stubFetch(fetched)
+
+    const { search } = await addressBook()
+    await search(ORG, { page: 1 })
+
+    const [, options] = fetched.mock.calls[0]
+    expect(options.headers).toHaveProperty('x-cdp-request-id')
+  })
+
   test('Should serve five records a page out of the API page of twenty-five', async () => {
     realMode()
     stubFetch(bookOf(60))
