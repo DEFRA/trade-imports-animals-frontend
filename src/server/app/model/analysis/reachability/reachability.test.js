@@ -659,7 +659,8 @@ describe('migration fidelity — 9 sites round-trip', () => {
     ['purposeInInternalMarket', 'mandatory'],
     ['commercialTransporter', 'mandatory'],
     ['privateTransporter', 'mandatory'],
-    ['transitedCountries', 'mandatory']
+    // In scope on rail or road, but never compulsory there.
+    ['transitedCountries', 'optional']
   ])(
     '%s: witness opens the migrated closure with status=%s',
     (name, status) => {

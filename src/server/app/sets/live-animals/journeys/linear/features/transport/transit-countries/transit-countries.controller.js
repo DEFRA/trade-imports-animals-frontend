@@ -44,7 +44,9 @@ const isOffered = (code) =>
   countries.originCountries().some((country) => country.value === code)
 
 // The saved answer, not the page: these are the guards against a submitted list
-// that no rendering of this page could have produced.
+// that no rendering of this page could have produced. An EMPTY list is not one
+// of them — the question is optional (design release 1), so continuing without
+// adding a country saves the empty list and moves on.
 const transitedCountriesErrors = (selected) => {
   if (selected.some((code) => !isOffered(code))) {
     return { [COUNTRY_FIELD]: copy.errors.fromList }
@@ -53,9 +55,6 @@ const transitedCountriesErrors = (selected) => {
     return {
       [COUNTRY_FIELD]: copy.errors.maxCountries(MAX_TRANSITED_COUNTRIES)
     }
-  }
-  if (selected.length === 0) {
-    return { [COUNTRY_FIELD]: copy.errors.selectAtLeastOne }
   }
   return {}
 }
