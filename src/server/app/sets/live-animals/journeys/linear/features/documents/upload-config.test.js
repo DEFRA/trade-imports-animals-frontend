@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { attachmentTypes } from '../../../../../../services/document-types/index.js'
 import {
+  ACCEPT_ATTRIBUTE,
   ALLOWED_TYPES,
   ALLOWED_FILE_TYPES_HINT,
   attachmentTypeFor,
@@ -31,10 +32,20 @@ describe('#upload-config', () => {
     ).toBe(true)
   })
 
-  it('Should de-duplicate shared MIME types in the user-facing hint', () => {
+  it('Should name every accepted extension in the user-facing hint, including JPG', () => {
     expect(ALLOWED_FILE_TYPES_HINT).toBe(
-      'PDF, DOC, DOCX, JPEG, PNG, XLS or XLSX'
+      'PDF, DOC, DOCX, JPEG, JPG, PNG, XLS or XLSX'
     )
+  })
+
+  it('Should keep the user-facing hint in step with what the file input accepts', () => {
+    const accepted = ACCEPT_ATTRIBUTE.split(',').map((extension) =>
+      extension.replace('.', '').toUpperCase()
+    )
+
+    const listed = ALLOWED_FILE_TYPES_HINT.replaceAll(' or ', ', ').split(', ')
+
+    expect(listed).toEqual(accepted)
   })
 
   it('Should hold the 50MB decimal limit with multipart headroom on the route cap', () => {
