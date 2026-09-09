@@ -36,6 +36,16 @@ const PORT_OF_ENTRY_PAGE = 'port-of-entry'
 // The visually hidden name the MoJ picker gives the button that opens the
 // calendar.
 const CHOOSE_DATE = 'Choose date'
+// govuk-frontend's blue and its shades, as the browser reports them.
+const GOVUK_BLUE = 'rgb(29, 112, 184)'
+const GOVUK_BLUE_SHADE_25 = 'rgb(22, 84, 138)'
+const GOVUK_BLUE_SHADE_50 = 'rgb(15, 56, 92)'
+const WHITE = 'rgb(255, 255, 255)'
+// The GOV.UK focus colours, as the browser reports them.
+const GOVUK_FOCUS = 'rgb(255, 221, 0)'
+const GOVUK_FOCUS_TEXT = 'rgb(11, 12, 12)'
+// The computed property those colours are read from.
+const BACKGROUND_COLOR = 'background-color'
 
 const dateWindow = arrivalWindow()
 const outOfRangeError = copy.portOfEntry.errors.arrivalDateOutOfRange(
@@ -98,6 +108,12 @@ const documentTop = (locator) =>
 
 const documentBottom = (locator) =>
   locator.evaluate((el) => el.getBoundingClientRect().bottom + window.scrollY)
+
+const computedStyle = (locator, property) =>
+  locator.evaluate(
+    (el, name) => window.getComputedStyle(el).getPropertyValue(name),
+    property
+  )
 
 const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
@@ -350,6 +366,45 @@ test.describe('arrival details validation', () => {
     expect(open).toBeGreaterThan(closed)
     // ... and starts below the calendar's bottom edge instead of behind it.
     expect(open).toBeGreaterThanOrEqual(calendarBottom)
+  })
+
+  test('the button that opens the calendar is a blue button with a white icon', async ({
+    page
+  }) => {
+    await openArrival(page)
+    const toggle = page.getByRole('button', { name: CHOOSE_DATE })
+    await expect(toggle).toBeVisible()
+
+    expect(await computedStyle(toggle, BACKGROUND_COLOR)).toBe(GOVUK_BLUE)
+    // The icon paints itself with currentColor, so the button's text colour is
+    // the icon's colour.
+    expect(await computedStyle(toggle, 'color')).toBe(WHITE)
+    expect(await computedStyle(toggle, 'border-bottom-width')).toBe('0px')
+    // The darker blue bottom edge a GOV.UK button carries.
+    expect(await computedStyle(toggle, 'box-shadow')).toContain(
+      GOVUK_BLUE_SHADE_50
+    )
+
+    // Hovering darkens the blue rather than handing hover back to the
+    // component's grey default.
+    await toggle.hover()
+    expect(await computedStyle(toggle, BACKGROUND_COLOR)).toBe(
+      GOVUK_BLUE_SHADE_25
+    )
+    expect(await computedStyle(toggle, 'color')).toBe(WHITE)
+  })
+
+  test('the button that opens the calendar keeps the GOV.UK focus indicator', async ({
+    page
+  }) => {
+    await openArrival(page)
+    const toggle = page.getByRole('button', { name: CHOOSE_DATE })
+    await toggle.focus()
+
+    // The component drops the browser's own focus ring, so our restated focus
+    // rule is the only thing drawing the indicator.
+    expect(await computedStyle(toggle, BACKGROUND_COLOR)).toBe(GOVUK_FOCUS)
+    expect(await computedStyle(toggle, 'color')).toBe(GOVUK_FOCUS_TEXT)
   })
 
   test('the picker calendar excludes the day before the window and allows the boundary itself', async ({

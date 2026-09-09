@@ -23,3 +23,42 @@ $app-date-picker-dialog-max-width: 360px;
   max-width: $app-date-picker-dialog-max-width;
   margin-top: govuk-spacing(2);
 }
+
+// MoJ date picker — the toggle reads as a button.
+//
+// The component ships the toggle in the same near-black as the body text, so
+// sitting flush against a black-bordered input it reads as part of the input
+// rather than as something to press. Design release 1 paints it as a GOV.UK
+// button in blue with a white icon, so the toggle announces itself.
+//
+// Blue rather than the button green because it opens a panel; green is the
+// service's colour for a call to action that moves the trader on.
+
+.app-date-picker .moj-datepicker__toggle {
+  border: 0;
+  // The bottom edge a GOV.UK button carries, drawn inset rather than as the
+  // component's own border, so the toggle keeps its 40px and stays level with
+  // the input beside it.
+  box-shadow: inset 0 (-$govuk-border-width-form-element) 0
+    govuk-colour("blue", $variant: "shade-50");
+  color: govuk-colour("white");
+  background-color: govuk-colour("blue");
+
+  &:hover {
+    border: 0;
+    color: govuk-colour("white");
+    background-color: govuk-colour("blue", $variant: "shade-25");
+  }
+
+  // These rules outrank the component's own focus styling — same specificity,
+  // later in the sheet — so the focus state has to be restated here or the
+  // yellow indicator is lost.
+  &:focus,
+  &:focus:hover {
+    border: 0;
+    box-shadow: inset 0 (-$govuk-border-width-form-element) 0
+      govuk-functional-colour(focus-text);
+    color: govuk-functional-colour(focus-text);
+    background-color: govuk-functional-colour(focus);
+  }
+}
