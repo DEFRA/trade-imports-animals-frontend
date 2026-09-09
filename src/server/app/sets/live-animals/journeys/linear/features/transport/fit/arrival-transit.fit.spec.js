@@ -26,6 +26,7 @@ import { MAX_TRANSITED_COUNTRIES } from '../transit-countries/transit-countries.
 // a "-select" suffix (it still submits the port code).
 const portInput = 'input#portOfEntry'
 const portHidden = 'select#portOfEntry-select'
+const meansSelect = 'select#meansOfTransport'
 const transitedCountriesInputs = 'input[name="transitedCountries"]'
 const transitedCountriesChecked = `${transitedCountriesInputs}:checked`
 const MAX_TRANSPORT_FIELD_LENGTH = 58
@@ -120,11 +121,7 @@ const fillValidArrival = async (page) => {
     .getByLabel(copy.portOfEntry.arrivalDate.label)
     .fill(ARRIVAL_DATE_IN_WINDOW)
   await choosePort(page)
-  await page
-    .getByRole('radio', {
-      name: copy.portOfEntry.means.options[values.meansOfTransport]
-    })
-    .check()
+  await page.locator(meansSelect).selectOption(values.meansOfTransport)
   await page
     .getByLabel(copy.portOfEntry.identification.label)
     .fill(values.transportIdentification)
@@ -135,9 +132,7 @@ const fillValidArrival = async (page) => {
 
 const openTransit = async (page) => {
   await openArrival(page)
-  await page
-    .getByRole('radio', { name: copy.portOfEntry.means.options.ROAD_VEHICLE })
-    .check()
+  await page.locator(meansSelect).selectOption('ROAD_VEHICLE')
   await submit(page)
   await expect(
     page.getByRole('heading', { name: copy.transitCountries.title })
@@ -160,12 +155,18 @@ test.describe('arrival details rendering', () => {
       copy.portOfEntry.arrivalDate.hint(dateWindow.minText, dateWindow.maxText)
     )
     await expect(page.getByText(copy.portOfEntry.port.hint)).toBeVisible()
-    await expect(
-      page.getByRole('group', { name: copy.portOfEntry.means.legend })
-    ).toBeVisible()
-    for (const label of Object.values(copy.portOfEntry.means.options)) {
-      await expect(page.getByRole('radio', { name: label })).toBeVisible()
-    }
+    // Means of transport is a dropdown: it opens on the placeholder with
+    // nothing chosen, and the four options are the reference list in order.
+    const means = page.getByLabel(copy.portOfEntry.means.label, { exact: true })
+    await expect(means).toBeVisible()
+    await expect(means).toHaveValue('')
+    const meansOptions = await means
+      .locator('option')
+      .evaluateAll((items) => items.map((option) => option.textContent.trim()))
+    expect(meansOptions).toEqual([
+      copy.portOfEntry.means.placeholder,
+      ...Object.values(copy.portOfEntry.means.options)
+    ])
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
     ).toHaveAccessibleDescription(copy.portOfEntry.identification.hint)
@@ -205,7 +206,11 @@ test.describe('port of entry type-ahead', () => {
     await expect(
       page.getByRole('option', { name: DOVER_OPTION, exact: true })
     ).toBeVisible()
-    await expect(page.getByRole('option')).toHaveCount(portsOfEntry.length)
+    // Scoped to the type-ahead's own menu: the means-of-transport dropdown
+    // puts options on the page too, and they are not ports.
+    await expect(page.getByRole('listbox').getByRole('option')).toHaveCount(
+      portsOfEntry.length
+    )
   })
 
   test('filters by port name or code, case-insensitively (AC1)', async ({
@@ -260,11 +265,7 @@ test.describe('port of entry without JavaScript', () => {
     await page
       .getByLabel(copy.portOfEntry.port.label, { exact: true })
       .selectOption(values.portOfEntry)
-    await page
-      .getByRole('radio', {
-        name: copy.portOfEntry.means.options[values.meansOfTransport]
-      })
-      .check()
+    await page.locator(meansSelect).selectOption(values.meansOfTransport)
     await page
       .getByLabel(copy.portOfEntry.identification.label)
       .fill(values.transportIdentification)
@@ -363,6 +364,9 @@ test.describe('arrival details validation', () => {
         await expect(
           page.getByLabel(copy.portOfEntry.identification.label)
         ).toHaveValue(values.transportIdentification)
+        await expect(page.locator(meansSelect)).toHaveValue(
+          values.meansOfTransport
+        )
       })
     }
   })
@@ -411,30 +415,25 @@ test.describe('arrival details validation', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
     ).toHaveValue(values.transportIdentification)
+    await expect(page.locator(meansSelect)).toHaveValue(values.meansOfTransport)
   })
 
-  test('means validation: out-of-list value links to and focuses the cleared group while preserving other values', async ({
+  test('means validation: out-of-list value links to and focuses the cleared dropdown while preserving other values', async ({
     page
   }) => {
     await openArrival(page)
     await fillValidArrival(page)
-    await page
-      .getByRole('radio', { name: copy.portOfEntry.means.options.AIRPLANE })
-      .evaluate((radio) => {
-        radio.value = 'INVALID'
-        radio.checked = true
-      })
+    await page.locator(meansSelect).evaluate((select) => {
+      select.add(new Option('Invalid means', 'INVALID'))
+      select.value = 'INVALID'
+    })
     await submit(page)
 
     const link = errorLink(page, validatorDefaults.oneOf)
     await expect(link).toBeVisible()
     await link.click()
-    await expect(
-      page.locator('input[name="meansOfTransport"]').first()
-    ).toBeFocused()
-    await expect(
-      page.locator('input[name="meansOfTransport"]:checked')
-    ).toHaveCount(0)
+    await expect(page.locator(meansSelect)).toBeFocused()
+    await expect(page.locator(meansSelect)).toHaveValue('')
     await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
   })
 })
@@ -520,11 +519,7 @@ test.describe('arrival save and routing', () => {
       page.getByLabel(copy.portOfEntry.arrivalDate.label)
     ).toHaveValue(ARRIVAL_DATE_IN_WINDOW)
     await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
-    await expect(
-      page.getByRole('radio', {
-        name: copy.portOfEntry.means.options[values.meansOfTransport]
-      })
-    ).toBeChecked()
+    await expect(page.locator(meansSelect)).toHaveValue(values.meansOfTransport)
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
     ).toHaveValue(values.transportIdentification)

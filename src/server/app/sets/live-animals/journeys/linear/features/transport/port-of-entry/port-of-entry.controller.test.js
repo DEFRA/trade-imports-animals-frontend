@@ -118,6 +118,29 @@ describe('GET port-of-entry — server-rendered select data (no-JS path)', () =>
       selected: false
     })
   })
+
+  it('Should supply the means of transport as a placeholder followed by every reference code, none selected', async () => {
+    const result = await driveHandler(get)
+    expect(result.view.context.meansItems).toEqual([
+      { value: '', text: 'Select one' },
+      { value: 'AIRPLANE', text: 'Airplane', selected: false },
+      { value: 'RAILWAY', text: 'Railway', selected: false },
+      { value: 'ROAD_VEHICLE', text: 'Road Vehicle', selected: false },
+      { value: 'VESSEL', text: 'Vessel', selected: false }
+    ])
+  })
+
+  it('Should mark the saved means of transport as the selected option', async () => {
+    const result = await driveHandler(get, {
+      seed: { meansOfTransport: 'VESSEL' }
+    })
+    const selected = result.view.context.meansItems.filter(
+      (item) => item.selected
+    )
+    expect(selected).toEqual([
+      { value: 'VESSEL', text: 'Vessel', selected: true }
+    ])
+  })
 })
 
 describe('port-of-entry — the arrival-date window', () => {
