@@ -586,6 +586,17 @@ describe('documents — scan-status poll and view context', () => {
     })
   })
 
+  it('Should hand the view the document limit the hint states, straight from the obligation', async () => {
+    // The hint and the too-many error must name the same number. The view gets
+    // it from the same contract the error does, so raising the obligation's
+    // maxEntries moves both at once.
+    const result = await driveHandler(get)
+    expect(result.view.context.maxDocuments).toBe(MAX_DOCUMENTS)
+    expect(result.view.context.maxDocuments).toBe(
+      manifestDocuments.requires.maxEntries
+    )
+  })
+
   it('Should hand the view the browser-side upload limit and the scan copy the client rewrites tags with', async () => {
     const result = await driveHandler(get)
     expect(result.view.context.maxFileSize).toBe(MAX_FILE_SIZE_BYTES)

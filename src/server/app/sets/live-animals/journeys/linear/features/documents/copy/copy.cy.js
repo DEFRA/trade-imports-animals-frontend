@@ -55,6 +55,7 @@ export const copy = {
     mustBe: 'Rhaid i’ch ffeil fod:',
     smallerThan: 'yn llai na',
     a: 'yn',
+    upToMaximum: (max) => `hyd at uchafswm o ${max} ffeil`,
     noZipFiles: 'Ni chaniateir ffeiliau ZIP am resymau diogelwch',
     chooseButton: 'Dewiswch ffeil',
     dropInstruction: 'neu ollwng ffeil',
