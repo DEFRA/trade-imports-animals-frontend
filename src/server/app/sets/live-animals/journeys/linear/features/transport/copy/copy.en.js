@@ -3,8 +3,12 @@ export const copy = {
     title: 'Arrival details',
     arrivalDate: {
       label: 'Arrival date at port of entry',
-      hint: (earliest, latest) =>
-        `The expected date of arrival at the port of entry. Enter a date between ${earliest} and ${latest}.`
+      // The second sentence is a worked example of the date format, not a
+      // statement of the accepted window (design release 1): the picker's own
+      // bounds and errors.arrivalDateOutOfRange already police the window, so
+      // the hint is free to show the user what a date should look like.
+      hint: (example) =>
+        `The expected date of arrival at the port of entry. For example, ${example}`
     },
     port: {
       label: 'Port of entry',

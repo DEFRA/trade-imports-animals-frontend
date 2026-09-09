@@ -39,9 +39,15 @@ describe('transport copy module', () => {
     )
   })
 
-  test('Should interpolate portOfEntry.arrivalDate.hint with the window bounds', () => {
-    expect(copy.portOfEntry.arrivalDate.hint('5/8/2026', '12/2/2027')).toBe(
-      'The expected date of arrival at the port of entry. Enter a date between 5/8/2026 and 12/2/2027.'
+  test('Should interpolate portOfEntry.arrivalDate.hint with the worked example', () => {
+    expect(copy.portOfEntry.arrivalDate.hint('27/3/2026')).toBe(
+      'The expected date of arrival at the port of entry. For example, 27/3/2026'
+    )
+  })
+
+  test('Should keep the accepted window out of portOfEntry.arrivalDate.hint', () => {
+    expect(copy.portOfEntry.arrivalDate.hint('27/3/2026')).not.toContain(
+      'between'
     )
   })
 
@@ -87,9 +93,9 @@ describe('GET /port-of-entry', () => {
     expect(result.view.context.arrivalDate.label.text).toBe(
       copy.portOfEntry.arrivalDate.label
     )
-    const { minText, maxText } = arrivalWindow()
+    const { exampleText } = arrivalWindow()
     expect(result.view.context.arrivalDate.hint.text).toBe(
-      copy.portOfEntry.arrivalDate.hint(minText, maxText)
+      copy.portOfEntry.arrivalDate.hint(exampleText)
     )
   })
 })

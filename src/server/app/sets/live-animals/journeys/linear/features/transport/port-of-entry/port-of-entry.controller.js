@@ -105,7 +105,7 @@ const render = (
     meansItems: meansItems(values.meansOfTransport),
     arrivalDate: kit.dateField('arrivalDateAtPort', {
       label: copy.arrivalDate.label,
-      hint: copy.arrivalDate.hint(dateWindow.minText, dateWindow.maxText),
+      hint: copy.arrivalDate.hint(dateWindow.exampleText),
       value: values.arrivalDateAtPort ?? {},
       error: errors.arrivalDateAtPort,
       minDate: dateWindow.minText,
