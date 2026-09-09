@@ -6,7 +6,6 @@ export const copy = {
     notAddedYet: 'Heb ei ychwanegu eto',
     change: 'Newid',
     add: 'Ychwanegu',
-    continueButton: 'Parhau',
     cph: {
       title: 'Rhif Daliad Plwyf Sirol (CPH)',
       hint: 'Mae’r rhif Daliad Plwyf Sirol (CPH) yn adnabod y daliad lle bydd yr anifeiliaid yn cael eu cadw.'
