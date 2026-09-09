@@ -40,6 +40,20 @@ describe('transport copy module', () => {
     )
   })
 
+  test('Should interpolate transitCountries.limitReached with the cap', () => {
+    expect(copy.transitCountries.limitReached(12)).toBe(
+      'Maximum of 12 countries reached. Remove a country to add another.'
+    )
+  })
+
+  test('Should interpolate transitCountries.added, removed and alreadyAdded with the country', () => {
+    expect(copy.transitCountries.added('France')).toBe('France added.')
+    expect(copy.transitCountries.removed('France')).toBe('France removed.')
+    expect(copy.transitCountries.errors.alreadyAdded('France')).toBe(
+      'You have already added France'
+    )
+  })
+
   test('Should interpolate portOfEntry.arrivalDate.hint with the worked example', () => {
     expect(copy.portOfEntry.arrivalDate.hint('27/3/2026')).toBe(
       'The expected date of arrival at the port of entry. For example, 27/3/2026'

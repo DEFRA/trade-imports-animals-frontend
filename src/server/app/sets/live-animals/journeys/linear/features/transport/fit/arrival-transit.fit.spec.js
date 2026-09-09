@@ -28,8 +28,17 @@ const portInput = 'input#portOfEntry'
 const portHidden = 'select#portOfEntry-select'
 const meansSelect = 'select#meansOfTransport'
 const identificationHint = 'div#transportIdentification-hint'
-const transitedCountriesInputs = 'input[name="transitedCountries"]'
-const transitedCountriesChecked = `${transitedCountriesInputs}:checked`
+// Transit countries is a type-ahead over the same native <select> contract:
+// the visible combobox input keeps the original id and holds the country name,
+// and the native select is hidden and renamed with a "-select" suffix.
+const transitCountryInput = 'input#transitedCountry'
+const transitCountryHidden = 'select#transitedCountry-select'
+// The countries added so far ride with the page as hidden inputs until the
+// trader saves.
+const transitedCountriesInputs =
+  'input[type="hidden"][name="transitedCountries"]'
+const transitStatus = '#transit-countries-status'
+const transitLimit = '#transit-countries-limit'
 const MAX_TRANSPORT_FIELD_LENGTH = 58
 const DOVER_OPTION = 'Port of Dover (GB DVR)'
 const PORT_OF_ENTRY_PAGE = 'port-of-entry'
@@ -115,8 +124,10 @@ const computedStyle = (locator, property) =>
     property
   )
 
+const ERROR_SUMMARY = '.govuk-error-summary'
+
 const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
+  page.locator(ERROR_SUMMARY).getByRole('link', { name: message })
 
 const seriousOrCritical = (violations) =>
   violations
@@ -166,6 +177,59 @@ const openTransit = async (page) => {
     page.getByRole('heading', { name: copy.transitCountries.title })
   ).toBeVisible()
 }
+
+const transitField = (page) =>
+  page.getByLabel(copy.transitCountries.country.label, { exact: true })
+
+// Add a transit country the way a user does: type part of the name to filter,
+// pick the match, then press the button that adds it to the list. Without
+// JavaScript the field is still the native select, chosen by option label.
+const addTransitCountry = async (page, name) => {
+  const field = transitField(page)
+  if ((await field.evaluate((el) => el.tagName)) === 'SELECT') {
+    await field.selectOption({ label: name })
+  } else {
+    await field.click()
+    await field.fill(name)
+    await page.getByRole('option', { name, exact: true }).click()
+  }
+  await page
+    .getByRole('button', { name: copy.transitCountries.add, exact: true })
+    .click()
+  // The row landing is the post-condition. `addedCountries` reads the hidden
+  // inputs with evaluateAll, which does not auto-wait, so without this it can
+  // race the form submit and read a document that is still navigating.
+  await expect(page.getByRole('cell', { name, exact: true })).toBeVisible()
+}
+
+const addedCountries = (page) =>
+  page
+    .locator(transitedCountriesInputs)
+    .evaluateAll((items) => items.map((item) => item.value))
+
+// Put codes into the form the page could not have put there itself. The tamper
+// tests are the only way to reach the guards that hold against a submitted list
+// no rendering of the page produces.
+const forceTransitedCountries = (page, codes) =>
+  page.evaluate(
+    ({ wanted, selector }) => {
+      const form = document.querySelector('form')
+      for (const input of form.querySelectorAll(selector)) {
+        input.remove()
+      }
+      for (const code of wanted) {
+        const input = document.createElement('input')
+        input.type = 'hidden'
+        input.name = 'transitedCountries'
+        input.value = code
+        form.appendChild(input)
+      }
+    },
+    { wanted: codes, selector: transitedCountriesInputs }
+  )
+
+const removeControl = (page, name) =>
+  page.getByRole('button', { name: `Remove ${name}` })
 
 test.describe('arrival details rendering', () => {
   test.beforeEach(async ({ page }) => {
@@ -451,7 +515,7 @@ test.describe('arrival details validation', () => {
     await expect(
       page.getByRole('heading', { name: copy.transitCountries.title })
     ).toBeVisible()
-    await expect(page.locator('.govuk-error-summary')).toHaveCount(0)
+    await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
 
     await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
     await expect(
@@ -655,7 +719,7 @@ test.describe('transit countries rendering and validation', () => {
     await signIn(page)
   })
 
-  test('transit page renders captured country options and feature copy', async ({
+  test('transit page asks for one country at a time and starts with an empty list', async ({
     page
   }) => {
     await openTransit(page)
@@ -664,16 +728,64 @@ test.describe('transit countries rendering and validation', () => {
       page.getByText(copy.transitCountries.betweenCountries)
     ).toBeVisible()
     await expect(page.getByText(copy.transitCountries.excludesUk)).toBeVisible()
+    await expect(transitField(page)).toBeVisible()
     await expect(
-      page.getByText(copy.transitCountries.countries.hint)
+      page.getByText(copy.transitCountries.country.hint)
     ).toBeVisible()
-    const countryCodes = await page
-      .locator(transitedCountriesInputs)
-      .evaluateAll((items) => items.map((item) => item.value))
-    expect(countryCodes).toEqual(countriesOrigin.map(({ code }) => code))
+    await expect(
+      page.getByRole('button', { name: copy.transitCountries.add, exact: true })
+    ).toBeVisible()
+    // Nothing added yet, so there is no table to read back — just the sentence
+    // that says so, and no cap stated up front.
+    await expect(page.getByText(copy.transitCountries.empty)).toBeVisible()
+    await expect(page.getByRole('table')).toHaveCount(0)
+    await expect(
+      page.getByText(
+        copy.transitCountries.limitReached(MAX_TRANSITED_COUNTRIES)
+      )
+    ).toHaveCount(0)
   })
 
-  test('transit validation: no countries links to and focuses the empty checkbox group', async ({
+  test('the transit type-ahead offers every captured country behind a search placeholder', async ({
+    page
+  }) => {
+    await openTransit(page)
+
+    const options = await page
+      .locator(`${transitCountryHidden} option`)
+      .evaluateAll((items) =>
+        items.map((option) => ({
+          code: option.value,
+          label: option.textContent.trim()
+        }))
+      )
+    expect(options[0]).toEqual({
+      code: '',
+      label: copy.transitCountries.country.placeholder
+    })
+    expect(options.slice(1)).toEqual(
+      countriesOrigin.map(({ code, name }) => ({ code, label: name }))
+    )
+  })
+
+  test('filters the country list by what the user types (AC1)', async ({
+    page
+  }) => {
+    await openTransit(page)
+    const field = transitField(page)
+
+    await field.fill('fran')
+    await expect(
+      page.getByRole('option', { name: 'France', exact: true })
+    ).toBeVisible()
+
+    await field.fill('zzzzzz')
+    await expect(
+      page.getByText(copy.transitCountries.country.noResults)
+    ).toBeVisible()
+  })
+
+  test('transit validation: no countries links to and focuses the search box', async ({
     page
   }) => {
     await openTransit(page)
@@ -682,57 +794,174 @@ test.describe('transit countries rendering and validation', () => {
     const link = errorLink(page, copy.transitCountries.errors.selectAtLeastOne)
     await expect(link).toBeVisible()
     await link.click()
-    await expect(page.locator(transitedCountriesInputs).first()).toBeFocused()
-    await expect(page.locator(transitedCountriesChecked)).toHaveCount(0)
+    await expect(page.locator(transitCountryInput)).toBeFocused()
+    expect(await addedCountries(page)).toEqual([])
   })
 
-  test('transit validation: out-of-list country links to and focuses the cleared checkbox group', async ({
+  test('transit validation: pressing Add with nothing chosen links to and focuses the search box', async ({
     page
   }) => {
     await openTransit(page)
     await page
-      .getByRole('checkbox', { name: 'France' })
-      .evaluate((checkbox) => {
-        checkbox.value = 'INVALID'
-        checkbox.checked = true
-      })
+      .getByRole('button', { name: copy.transitCountries.add, exact: true })
+      .click()
+
+    const link = errorLink(page, copy.transitCountries.errors.chooseCountry)
+    await expect(link).toBeVisible()
+    await link.click()
+    await expect(page.locator(transitCountryInput)).toBeFocused()
+  })
+
+  test('transit validation: a country already added is refused by name', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await addTransitCountry(page, 'France')
+    await addTransitCountry(page, 'France')
+
+    await expect(
+      errorLink(page, copy.transitCountries.errors.alreadyAdded('France'))
+    ).toBeVisible()
+    expect(await addedCountries(page)).toEqual(['FR'])
+  })
+
+  test('transit validation: out-of-list country links to and focuses the search box', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await forceTransitedCountries(page, ['INVALID'])
     await submit(page)
 
     const link = errorLink(page, copy.transitCountries.errors.fromList)
     await expect(link).toBeVisible()
     await link.click()
-    await expect(page.locator(transitedCountriesInputs).first()).toBeFocused()
-    await expect(page.locator(transitedCountriesChecked)).toHaveCount(0)
+    await expect(page.locator(transitCountryInput)).toBeFocused()
+    // The refused value does not survive the re-render: a code the list does
+    // not contain is never rendered back.
+    expect(await addedCountries(page)).toEqual([])
+    await expect(page.getByRole('cell', { name: 'INVALID' })).toHaveCount(0)
+  })
+
+  test('transit validation: a tampered country code is never reflected as markup', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await forceTransitedCountries(page, [
+      '"><img src=x onerror="window.__xss=1">'
+    ])
+    await submit(page)
+
+    await expect(
+      errorLink(page, copy.transitCountries.errors.fromList)
+    ).toBeVisible()
+    await expect(page.locator('form img')).toHaveCount(0)
+    expect(await page.evaluate(() => window.__xss)).toBeUndefined()
+    expect(await addedCountries(page)).toEqual([])
   })
 })
 
-test.describe('transit countries limits and persistence', () => {
+test.describe('transit countries list, limits and persistence', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
   })
 
-  test('transit validation: more than 12 countries links to the focused group and preserves selections', async ({
+  test('adding a country lists it with its own Remove control and announces it (AC2)', async ({
     page
   }) => {
     await openTransit(page)
-    const tooMany = countriesOrigin
-      .slice(0, MAX_TRANSITED_COUNTRIES + 1)
-      .map(({ code }) => code)
-    await page.evaluate(
-      ({ codes, selector }) => {
-        const form = document.querySelector('form')
-        for (const checkbox of form.querySelectorAll(selector)) {
-          checkbox.removeAttribute('name')
-        }
-        for (const code of codes) {
-          const input = document.createElement('input')
-          input.type = 'hidden'
-          input.name = 'transitedCountries'
-          input.value = code
-          form.appendChild(input)
-        }
-      },
-      { codes: tooMany, selector: transitedCountriesInputs }
+    await addTransitCountry(page, 'France')
+
+    await expect(
+      page.getByRole('columnheader', {
+        name: copy.transitCountries.table.country
+      })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('cell', { name: 'France', exact: true })
+    ).toBeVisible()
+    await expect(removeControl(page, 'France')).toBeVisible()
+    // The mechanism, not just the string: strip the ARIA attributes and this
+    // region stops being a status, whatever text it ends up holding.
+    const statusRegion = page.locator(transitStatus)
+    await expect(statusRegion).toHaveAttribute('role', 'status')
+    await expect(statusRegion).toHaveAttribute('aria-live', 'polite')
+    await expect(statusRegion).toHaveAttribute('aria-atomic', 'true')
+    // The message ships in the attribute and is written into the region after
+    // load — content already there at parse is not announced.
+    await expect(statusRegion).toHaveAttribute(
+      'data-message',
+      copy.transitCountries.added('France')
+    )
+    await expect(page.locator(transitStatus)).toHaveText(
+      copy.transitCountries.added('France')
+    )
+    // The search box is cleared and ready for the next one.
+    await expect(page.locator(transitCountryInput)).toHaveValue('')
+    expect(await addedCountries(page)).toEqual(['FR'])
+  })
+
+  test('removing a country takes its row away and announces it', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await addTransitCountry(page, 'France')
+    await addTransitCountry(page, 'Belgium')
+    await removeControl(page, 'France').click()
+
+    await expect(
+      page.getByRole('cell', { name: 'France', exact: true })
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole('cell', { name: 'Belgium', exact: true })
+    ).toBeVisible()
+    await expect(page.locator(transitStatus)).toHaveText(
+      copy.transitCountries.removed('France')
+    )
+    expect(await addedCountries(page)).toEqual(['BE'])
+  })
+
+  test('the twelfth country takes the search away and announces the limit (AC3)', async ({
+    page
+  }) => {
+    await openTransit(page)
+    const before = countriesOrigin.slice(0, MAX_TRANSITED_COUNTRIES - 1)
+    const last = countriesOrigin[MAX_TRANSITED_COUNTRIES - 1]
+    await forceTransitedCountries(
+      page,
+      before.map(({ code }) => code)
+    )
+    await addTransitCountry(page, last.name)
+
+    expect(await addedCountries(page)).toHaveLength(MAX_TRANSITED_COUNTRIES)
+    await expect(page.locator(transitCountryInput)).toHaveCount(0)
+    await expect(
+      page.getByRole('button', { name: copy.transitCountries.add, exact: true })
+    ).toHaveCount(0)
+    const limit = copy.transitCountries.limitReached(MAX_TRANSITED_COUNTRIES)
+    // On the page for anyone reading it, and in the live region for anyone
+    // who will not see it appear.
+    await expect(page.locator(transitLimit)).toHaveText(limit)
+    await expect(page.locator(transitStatus)).toContainText(limit)
+    // The country that reached the cap is said in the same breath as the cap.
+    await expect(page.locator(transitStatus)).toContainText(
+      copy.transitCountries.added(last.name)
+    )
+
+    // Removing one brings the search back, so a thirteenth is never offered
+    // and a swap is always possible.
+    await removeControl(page, last.name).click()
+    await expect(transitField(page)).toBeVisible()
+  })
+
+  test('transit validation: more than 12 countries links to and focuses the search box', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await forceTransitedCountries(
+      page,
+      countriesOrigin
+        .slice(0, MAX_TRANSITED_COUNTRIES + 1)
+        .map(({ code }) => code)
     )
     await submit(page)
 
@@ -742,24 +971,48 @@ test.describe('transit countries limits and persistence', () => {
     )
     await expect(link).toBeVisible()
     await link.click()
-    await expect(page.locator(transitedCountriesInputs).first()).toBeFocused()
-    await expect(page.locator(transitedCountriesChecked)).toHaveCount(
-      MAX_TRANSITED_COUNTRIES + 1
-    )
+    await expect(page.locator(transitCountryInput)).toBeFocused()
+    expect(await addedCountries(page)).toHaveLength(MAX_TRANSITED_COUNTRIES + 1)
   })
 
-  test('saves and persists selected transit countries', async ({ page }) => {
+  test('saves and persists the countries that were added', async ({ page }) => {
     await openTransit(page)
-    await page.getByRole('checkbox', { name: 'France' }).check()
-    await page.getByRole('checkbox', { name: 'Belgium' }).check()
+    await addTransitCountry(page, 'France')
+    await addTransitCountry(page, 'Belgium')
     await submit(page)
     await expect(
       page.getByRole('heading', { name: copy.transporters.legend })
     ).toBeVisible()
 
     await page.goto(journeyUrl(page, 'transit-countries'))
-    await expect(page.getByRole('checkbox', { name: 'France' })).toBeChecked()
-    await expect(page.getByRole('checkbox', { name: 'Belgium' })).toBeChecked()
+    await expect(
+      page.getByRole('cell', { name: 'France', exact: true })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('cell', { name: 'Belgium', exact: true })
+    ).toBeVisible()
+    // Nothing is announced on a fresh load — the live region only speaks for a
+    // change the trader has just made.
+    await expect(page.locator(transitStatus)).toHaveText('')
+  })
+})
+
+test.describe('transit countries without JavaScript', () => {
+  test.use({ javaScriptEnabled: false })
+
+  test('the native select adds a country and the list still reads back', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await addTransitCountry(page, 'France')
+
+    await expect(
+      page.getByRole('cell', { name: 'France', exact: true })
+    ).toBeVisible()
+    await submit(page)
+    await expect(
+      page.getByRole('heading', { name: copy.transporters.legend })
+    ).toBeVisible()
   })
 })
 
@@ -782,5 +1035,23 @@ test.describe('arrival and transit accessibility', () => {
   }) => {
     await openTransit(page)
     await expectAxeClean(page, 'Transit countries')
+  })
+
+  test('transit page with a country added has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await addTransitCountry(page, 'France')
+    await expect(removeControl(page, 'France')).toBeVisible()
+    await expectAxeClean(page, 'Transit countries with a country added')
+  })
+
+  test('transit page in its error state has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await submit(page)
+    await expect(page.locator(ERROR_SUMMARY)).toBeVisible()
+    await expectAxeClean(page, 'Transit countries with a validation error')
   })
 })

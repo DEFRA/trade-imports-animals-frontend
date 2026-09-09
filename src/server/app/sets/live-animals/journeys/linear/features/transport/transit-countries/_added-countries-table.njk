@@ -1,0 +1,26 @@
+{% from "govuk/components/table/macro.njk" import govukTable %}
+
+{# One row per country added, each with its own Remove control (design release
+   1). The button is built here rather than in JS so the country name and code
+   are autoescaped. #}
+{% macro addedCountriesTable(countryRows, copy) %}
+  {% set rows = [] %}
+  {% for row in countryRows %}
+    {% set removeCell %}
+      <button type="submit" class="govuk-link app-link-button" name="action" value="{{ row.removeAction }}">{{ copy.remove }}<span class="govuk-visually-hidden"> {{ copy.removeHidden(row.name) }}</span></button>
+    {% endset %}
+    {% set ignored = rows.push([
+      { text: row.name },
+      { html: removeCell }
+    ]) %}
+  {% endfor %}
+  {{ govukTable({
+    caption: copy.table.caption,
+    captionClasses: "govuk-visually-hidden",
+    head: [
+      { text: copy.table.country },
+      { html: '<span class="govuk-visually-hidden">' + copy.table.actionsHidden + '</span>' }
+    ],
+    rows: rows
+  }) }}
+{% endmacro %}
