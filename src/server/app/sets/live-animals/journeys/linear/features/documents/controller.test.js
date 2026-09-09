@@ -93,7 +93,7 @@ describe('documents — real upload leg on the single-page loop', () => {
     })
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.accompanyingDocumentDateOfIssue).toBe(
-      'Enter a real date of issue'
+      'Enter a real date'
     )
     expect(result.after).toEqual(result.before)
   })
@@ -109,7 +109,7 @@ describe('documents — real upload leg on the single-page loop', () => {
       'Select a document type'
     )
     expect(result.view.context.errors.accompanyingDocumentDateOfIssue).toBe(
-      'Enter the date of issue'
+      'Enter a date of issue'
     )
     expect(result.after).toEqual(result.before)
   })
@@ -213,7 +213,7 @@ describe('documents — real upload leg on the single-page loop', () => {
     const result = await driveHandler(post, {
       payload: { action: 'add', ...validDocument }
     })
-    expect(result.view.context.errors.file).toBe('Select a file to upload')
+    expect(result.view.context.errors.file).toBe('Upload a document')
     expect(result.after).toEqual(result.before)
   })
 
@@ -453,7 +453,7 @@ describe('documents — listing, scanning and removing', () => {
     })
     expect(result.response.statusCode).toBe(400)
     expect(summaryTexts(result)).toContain(
-      `You can add a maximum of ${MAX_DOCUMENTS} documents`
+      `You can upload a maximum of ${MAX_DOCUMENTS} files`
     )
     expect(result.after.documents).toHaveLength(MAX_DOCUMENTS)
   })

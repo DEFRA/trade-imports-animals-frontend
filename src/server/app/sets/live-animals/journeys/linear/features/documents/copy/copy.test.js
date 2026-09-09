@@ -169,7 +169,7 @@ describe('#copy', () => {
       copy.errors.oversize(MAX_FILE_SIZE_LABEL)
     )
     expect(copy.errors.maxDocuments(10)).toBe(
-      'You can add a maximum of 10 documents'
+      'You can upload a maximum of 10 files'
     )
     expect(copy.errors.virusFound('cert.pdf')).toBe(
       'cert.pdf contains a virus. Remove it and try again with a different file.'

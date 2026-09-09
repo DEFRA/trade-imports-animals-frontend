@@ -112,15 +112,15 @@ export const copy = {
   errors: {
     hiddenPrefix: 'Gwall:',
     referenceMaxLength: 'Rhaid i gyfeirnod y ddogfen fod yn 58 nod neu lai',
-    dateInvalid: 'Rhowch ddyddiad cyhoeddi go iawn',
+    dateInvalid: 'Rhowch ddyddiad go iawn',
     referenceRequired: 'Rhowch gyfeirnod dogfen',
     typeRequired: 'Dewiswch fath o ddogfen',
-    dateRequired: 'Rhowch y dyddiad cyhoeddi',
-    fileRequired: 'Dewiswch ffeil i’w huwchlwytho',
+    dateRequired: 'Rhowch ddyddiad cyhoeddi',
+    fileRequired: 'Uwchlwythwch ddogfen',
     cannotContinue:
       'Ni allwch barhau nes bod pob dogfen wedi’i sganio neu ei thynnu',
     uploadFailed: 'Nid oedd modd uwchlwytho’r ffeil. Rhowch gynnig arall arni.',
-    maxDocuments: (max) => `Gallwch ychwanegu uchafswm o ${max} dogfen`,
+    maxDocuments: (max) => `Gallwch uwchlwytho uchafswm o ${max} ffeil`,
     fileFallbackName: 'Mae’r ffeil',
     virusFound: (filename) =>
       `${filename} yn cynnwys firws. Tynnwch hi a rhowch gynnig arall arni gyda ffeil wahanol.`,
