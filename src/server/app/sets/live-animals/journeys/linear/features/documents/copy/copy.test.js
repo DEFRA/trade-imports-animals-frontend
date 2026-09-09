@@ -84,6 +84,18 @@ describe('#copy', () => {
     )
   })
 
+  it('Should state how many documents a notification holds before a file is chosen', () => {
+    // The hint carries the count as well as the size and the file types, so a
+    // trader is told the limit ahead of choosing rather than on refusal. The
+    // number is an argument, never a literal, so it can only ever be the
+    // obligation's — the same value errors.maxDocuments is given. Both samples
+    // are deliberately not the current cap, and they differ from each other, so
+    // a copy function that ignored its argument and hard-coded the cap fails
+    // here rather than sliding through because the sample happened to match.
+    expect(copy.file.upToMaximum(3)).toBe('up to a maximum of 3 files')
+    expect(copy.file.upToMaximum(7)).toBe('up to a maximum of 7 files')
+  })
+
   it('Should word the drop zone the way the design system does', () => {
     // The template hands these to govukFileUpload, so a drift here silently
     // reworded a control traders meet elsewhere on GOV.UK.

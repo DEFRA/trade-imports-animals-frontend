@@ -50,6 +50,10 @@ export const copy = {
     mustBe: 'Your file must be:',
     smallerThan: 'smaller than',
     a: 'a',
+    // The limit is stated here before the trader picks a file, and again by
+    // errors.maxDocuments once they reach it (design release 1). Both take the
+    // number as an argument so the hint and the error cannot disagree.
+    upToMaximum: (max) => `up to a maximum of ${max} files`,
     noZipFiles: 'ZIP files are not allowed for security reasons',
     // Wording for the JavaScript-enhanced drop zone. These match the design
     // system's own defaults so the control reads the way traders meet it

@@ -8,6 +8,7 @@ import {
   MAX_FILE_SIZE_LABEL,
   OVERSIZE_FILE_MESSAGE
 } from '../upload-config.js'
+import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
 import { documentsPage as page } from '../page.js'
 import { rejectedErrors } from '../scan/summary-errors.js'
 import { documentTypeItems } from './fragments/document-type.js'
@@ -56,6 +57,7 @@ export const render = ({
     allowedFileTypesHint: ALLOWED_FILE_TYPES_HINT,
     maxFileSizeLabel: MAX_FILE_SIZE_LABEL,
     maxFileSize: MAX_FILE_SIZE_BYTES,
+    maxDocuments: MAX_DOCUMENTS,
     oversizeFileMessage: OVERSIZE_FILE_MESSAGE,
     scanCopyJson,
     documentTypeItems: documentTypeItems(),

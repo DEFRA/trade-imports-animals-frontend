@@ -134,6 +134,9 @@ test.describe('document upload page', () => {
     await expect(
       page.getByText(`${copy.file.a} ${ALLOWED_FILE_TYPES_HINT}`)
     ).toBeVisible()
+    await expect(
+      page.getByText(copy.file.upToMaximum(MAX_DOCUMENTS))
+    ).toBeVisible()
     await expect(page.getByText(copy.file.noZipFiles)).toBeVisible()
     await expect(page.getByText(copy.empty)).toBeVisible()
     await expect(
@@ -577,6 +580,22 @@ test.describe('document upload saved rows', () => {
     ).toHaveCount(0)
     await expect(
       page.getByRole('button', { name: copy.continueButton })
+    ).toBeVisible()
+  })
+
+  test('keeps stating the document limit once a document is saved', async ({
+    page
+  }) => {
+    test.slow()
+    await uploadDocument(page)
+    await expect(
+      rowFor(page, validDocument.accompanyingDocumentReference)
+    ).toBeVisible()
+    // The limit bullet stays on the page once rows exist, so the trader sees the
+    // total on the populated state — not only on the empty page and not only
+    // once they are refused.
+    await expect(
+      page.getByText(copy.file.upToMaximum(MAX_DOCUMENTS))
     ).toBeVisible()
   })
 
