@@ -263,7 +263,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
     const h = captureH()
     await postHandlerOf(cphNumber)(
       buildRequest(inRun.journeyId, {
-        payload: { countyParishHoldingCph: '123456789' },
+        payload: { cphCounty: '12', cphParish: '345', cphHolding: '6789' },
         record: active(inRun.journeyId)
       }),
       h
@@ -275,7 +275,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
     // Outside the run the page is the addresses section's last page, so the
     // section flow rests on the hub.
     const outside = await drive(postHandlerOf(cphNumber), {
-      payload: { countyParishHoldingCph: '123456789' },
+      payload: { cphCounty: '12', cphParish: '345', cphHolding: '6789' },
       seed: lineSeed
     })
     expect(outside.h.captured.redirect).toBe(hubPath(outside.journeyId))

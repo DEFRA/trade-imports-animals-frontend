@@ -91,7 +91,7 @@ const cases = [
     collects: cphNumber.meta.collects,
     handler: postHandlerOf(cphNumber),
     seed: { commodityLines: [{ commoditySelection: 'Cow' }] },
-    payload: { countyParishHoldingCph: '12/345/6789' }
+    payload: { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
   },
   {
     id: 'port-of-entry',

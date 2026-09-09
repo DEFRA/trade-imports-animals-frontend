@@ -327,13 +327,22 @@ export const answerRolesAndAddresses = async (page) => {
   await save(page)
 }
 
+// The fixture holds the number in the slashed form a trader reads it in,
+// which is the 2/3/4 split the page takes in three boxes.
+const [FIXTURE_CPH_COUNTY, FIXTURE_CPH_PARISH, FIXTURE_CPH_HOLDING] =
+  values.countyParishHoldingCph.split('/')
+
 export const answerCphNumber = async (page) => {
   await expect(
     page.getByRole('heading', {
       name: 'Add the county parish holding number (CPH)'
     })
   ).toBeVisible()
-  await page.getByLabel('CPH number').fill(values.countyParishHoldingCph)
+  await page.getByLabel('County', { exact: true }).fill(FIXTURE_CPH_COUNTY)
+  await page.getByLabel('Parish', { exact: true }).fill(FIXTURE_CPH_PARISH)
+  await page
+    .getByLabel('Holding number', { exact: true })
+    .fill(FIXTURE_CPH_HOLDING)
   await save(page)
 }
 
