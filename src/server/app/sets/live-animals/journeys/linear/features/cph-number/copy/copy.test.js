@@ -39,6 +39,21 @@ describe('cph-number copy module', () => {
     expect(copyCy.title).toBe('Ychwanegu rhif daliad plwyf sirol (CPH)')
     expect(copyCy.cph.label).toBe('Rhif CPH')
   })
+
+  // Design release 1 puts the help behind a "What is a CPH number?" expander:
+  // a definition and where to find the number. The second paragraph names APHA
+  // documents only — DR1's GOV.UK holding-details link is a placeholder href,
+  // so there is no destination to ship yet and no link string to hold.
+  it('Should explain what a CPH number is and where to find one', () => {
+    expect(copy.help.summary).toBe('What is a CPH number?')
+    expect(copy.help.definition).toBe(
+      'A county parish holding (CPH) number is a unique 9-digit number used to identify land and buildings where livestock are kept, moved or handled.'
+    )
+    expect(copy.help.whereToFind).toBe(
+      'You can find your CPH number on documents from the Animal and Plant Health Agency (APHA).'
+    )
+    expect(copyCy.help.summary).toBe('Beth yw rhif CPH?')
+  })
 })
 
 describe('GET cph-number — copy reaches the view', () => {
