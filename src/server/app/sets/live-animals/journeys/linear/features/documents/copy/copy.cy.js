@@ -51,7 +51,7 @@ export const copy = {
     hint: 'Er enghraifft, 12/12/2025'
   },
   file: {
-    label: 'Uwchlwytho ffeil',
+    label: 'Atodiad',
     mustBe: 'Rhaid i’ch ffeil fod:',
     smallerThan: 'yn llai na',
     a: 'yn',
