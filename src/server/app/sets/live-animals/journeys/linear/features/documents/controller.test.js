@@ -225,7 +225,7 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(result.after).toEqual(result.before)
   })
 
-  it('Should refuse a file over the 50MB limit', async () => {
+  it('Should refuse a file over the 10MB limit', async () => {
     const result = await driveHandler(post, {
       payload: {
         action: 'add',
@@ -723,7 +723,7 @@ describe('documents — scan-status poll and view context', () => {
     expect(result.view.context.values.accompanyingDocumentType).toBe('')
   })
 
-  it('Should register the multipart POST route with the 50MB payload cap', () => {
+  it('Should register the multipart POST route with the 10MB payload cap', () => {
     const server = Hapi.server()
     server.route(documents.routes)
     const route = server.table().find((entry) => entry.method === 'post')
