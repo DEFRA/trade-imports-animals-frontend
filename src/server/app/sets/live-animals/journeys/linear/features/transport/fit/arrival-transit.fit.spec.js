@@ -27,6 +27,7 @@ import { MAX_TRANSITED_COUNTRIES } from '../transit-countries/transit-countries.
 const portInput = 'input#portOfEntry'
 const portHidden = 'select#portOfEntry-select'
 const meansSelect = 'select#meansOfTransport'
+const identificationHint = 'div#transportIdentification-hint'
 const transitedCountriesInputs = 'input[name="transitedCountries"]'
 const transitedCountriesChecked = `${transitedCountriesInputs}:checked`
 const MAX_TRANSPORT_FIELD_LENGTH = 58
@@ -178,9 +179,17 @@ test.describe('arrival details rendering', () => {
       copy.portOfEntry.means.placeholder,
       ...Object.values(copy.portOfEntry.means.options)
     ])
+    // The transport identification hint is a lead-in sentence plus one bullet
+    // per alternative (design release 1), so it is asserted as a list.
     await expect(
       page.getByLabel(copy.portOfEntry.identification.label)
-    ).toHaveAccessibleDescription(copy.portOfEntry.identification.hint)
+    ).toHaveAttribute('aria-describedby', /transportIdentification-hint/)
+    await expect(page.locator(`${identificationHint} p`)).toHaveText(
+      copy.portOfEntry.identification.hint.lead
+    )
+    await expect(
+      page.locator(`${identificationHint} ul.govuk-list--bullet li`)
+    ).toHaveText(copy.portOfEntry.identification.hint.items)
     await expect(
       page.getByLabel(copy.portOfEntry.documentReference.label)
     ).toHaveAccessibleDescription(copy.portOfEntry.documentReference.hint)
