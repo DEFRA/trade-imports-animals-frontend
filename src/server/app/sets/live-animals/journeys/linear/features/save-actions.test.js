@@ -220,8 +220,9 @@ describe('save actions — hub exit semantics', () => {
     const cphInScope = {
       commodityLines: [{ commoditySelection: 'Cow' }]
     }
+    const cphParts = { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
     const returned = await drivePost(postHandlerOf(cphNumber), {
-      payload: { countyParishHoldingCph: '123456789' },
+      payload: cphParts,
       query: { return: 'addresses' },
       seed: cphInScope
     })
@@ -230,7 +231,7 @@ describe('save actions — hub exit semantics', () => {
     })
 
     const exit = await drivePost(postHandlerOf(cphNumber), {
-      payload: { countyParishHoldingCph: '123456789', exit: 'hub' },
+      payload: { ...cphParts, exit: 'hub' },
       query: { return: 'addresses' },
       seed: cphInScope
     })

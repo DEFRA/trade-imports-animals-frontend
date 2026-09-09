@@ -30,14 +30,37 @@ describe('cph-number copy module', () => {
     }
   })
 
-  // Design release 1 heads the page with an instruction and gives the field a
-  // short label of its own, in both locales. src/server/app/copy-parity.test.js
-  // only checks that cy differs from en, so the Welsh wording needs pinning here.
-  it('Should head the page with an instruction and label the field short', () => {
+  // Design release 1 heads the page with an instruction and gives the group of
+  // boxes a short legend of its own, in both locales.
+  // src/server/app/copy-parity.test.js only checks that cy differs from en, so
+  // the Welsh wording needs pinning here.
+  it('Should head the page with an instruction and name the group short', () => {
     expect(copy.title).toBe('Add the county parish holding number (CPH)')
-    expect(copy.cph.label).toBe('CPH number')
+    expect(copy.cph.legend).toBe('CPH number')
     expect(copyCy.title).toBe('Ychwanegu rhif daliad plwyf sirol (CPH)')
-    expect(copyCy.cph.label).toBe('Rhif CPH')
+    expect(copyCy.cph.legend).toBe('Rhif CPH')
+  })
+
+  // The three boxes take the number in its real parts, so each carries a
+  // label of its own. Design release 1 hides these labels with its own
+  // stylesheet; the service keeps them on screen — pinned in
+  // cph-number.fit.spec.js, which asserts the label elements are rendered.
+  // This test pins the strings only.
+  it('Should name each part of the number', () => {
+    expect(copy.cph.county).toBe('County')
+    expect(copy.cph.parish).toBe('Parish')
+    expect(copy.cph.holding).toBe('Holding number')
+    expect(copyCy.cph.county).toBe('Sir')
+    expect(copyCy.cph.parish).toBe('Plwyf')
+    expect(copyCy.cph.holding).toBe('Rhif daliad')
+  })
+
+  // A CPH number is two digits of county, three of parish and four of holding.
+  // The example has to teach that grouping — the page used to offer 123/456/789,
+  // a 3/3/3 shape no CPH number uses.
+  it('Should give an example in the real 2/3/4 grouping', () => {
+    expect(copy.cph.hint).toBe('For example, 12/345/6789.')
+    expect(copyCy.cph.hint).toBe('Er enghraifft, 12/345/6789.')
   })
 
   // Design release 1 puts the help behind a "What is a CPH number?" expander:

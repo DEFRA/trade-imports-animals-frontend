@@ -1,8 +1,11 @@
 export const copy = {
   title: 'Add the county parish holding number (CPH)',
   cph: {
-    label: 'CPH number',
-    hint: 'For example, 123456789 or 123/456/789.'
+    legend: 'CPH number',
+    hint: 'For example, 12/345/6789.',
+    county: 'County',
+    parish: 'Parish',
+    holding: 'Holding number'
   },
   help: {
     summary: 'What is a CPH number?',
@@ -13,7 +16,14 @@ export const copy = {
   },
   errors: {
     cphRequired: 'Enter a CPH number',
-    cphLength: 'CPH number must be exactly 9 digits',
-    cphDigitsOnly: 'CPH number must only contain numbers'
+    countyRequired: 'Enter the county',
+    countyLength: 'County must be 2 digits',
+    countyDigitsOnly: 'County must only contain numbers',
+    parishRequired: 'Enter the parish',
+    parishLength: 'Parish must be 3 digits',
+    parishDigitsOnly: 'Parish must only contain numbers',
+    holdingRequired: 'Enter the holding number',
+    holdingLength: 'Holding number must be 4 digits',
+    holdingDigitsOnly: 'Holding number must only contain numbers'
   }
 }
