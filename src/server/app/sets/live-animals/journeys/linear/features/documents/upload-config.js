@@ -25,11 +25,10 @@ export const ACCEPT_ATTRIBUTE = ALLOWED_TYPES.map(
   (type) => `.${type.ext}`
 ).join(',')
 
-const allowedTypeLabels = ALLOWED_TYPES.map((type) => type.mime)
-  .filter((mime, index, mimes) => mimes.indexOf(mime) === index)
-  .map((mime) =>
-    ALLOWED_TYPES.find((type) => type.mime === mime).ext.toUpperCase()
-  )
+// Label every accepted extension, not the de-duplicated MIME types: .jpeg and
+// .jpg share image/jpeg, so collapsing on MIME dropped JPG from the sentence
+// while the input still accepted it. See EUDPA-523.
+const allowedTypeLabels = ALLOWED_TYPES.map((type) => type.ext.toUpperCase())
 
 export const ALLOWED_FILE_TYPES_HINT = new Intl.ListFormat('en-GB', {
   type: 'disjunction'
