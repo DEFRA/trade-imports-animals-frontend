@@ -2,11 +2,11 @@ import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { fulfilmentToNotification } from './index.js'
 
-/** A party answer as the journey stores it — the journey has carried
- * `postalOrZipCode` since before the address book existed. */
+/** A party answer in backend wire shape, as `answerForInlineParty` stores it
+ * — see addresses/party-inline.js. */
 const address = (name, line1) => ({
   name,
-  address: { addressLine1: line1, postalOrZipCode: 'AB1 2CD' }
+  address: { addressLine1: line1, postcode: 'AB1 2CD' }
 })
 
 const referenceNumber = 'GBN-AG-26-ABC123'
@@ -70,6 +70,9 @@ const answersWithGaps = () => ({
   ...mappedAnswers(),
   regionOfOriginCode: 'FR-75',
   purposeInInternalMarket: 'Breeding',
+  destinationCountry: 'DE',
+  portOfExit: 'GB DVR',
+  exitDate: { day: 20, month: 12, year: 2026 },
   transporterType: 'Commercial',
   privateTransporter: address('Jane Private', '9 Private Road'),
   meansOfTransport: 'ROAD_VEHICLE',
@@ -100,6 +103,10 @@ const answersWithGaps = () => ({
           animalIdentifierTattoo: 'AB1234',
           horseName: 'Dobbin',
           permanentAddress: address('Owner', ORIGIN_FARM_LINE1)
+        },
+        {
+          animalIdentifierEarTag: 'UK000000000099',
+          animalIdentifierPassport: 'UK000000099'
         }
       ]
     }
@@ -158,7 +165,10 @@ describe('Mapper A — current backend notification (as-is)', () => {
               noOfAnimals: '25',
               noOfPackages: '5',
               earTag: 'UK123456789012',
-              passport: 'UK123456789'
+              passport: 'UK123456789',
+              animalIdentifiers: [
+                { earTag: 'UK123456789012', passport: 'UK123456789' }
+              ]
             }
           ]
         }
@@ -189,7 +199,10 @@ describe('Mapper A — current backend notification (as-is)', () => {
         noOfAnimals: '2',
         noOfPackages: '1',
         passport: 'UK-CAT-1',
-        microchip: '900987654321098'
+        microchip: '900987654321098',
+        animalIdentifiers: [
+          { passport: 'UK-CAT-1', microchip: '900987654321098' }
+        ]
       }
     ])
   })
@@ -248,7 +261,8 @@ describe('Mapper A — current backend notification (as-is)', () => {
       noOfAnimals: '25',
       noOfPackages: '5',
       earTag: 'UK123456789012',
-      passport: 'UK123456789'
+      passport: 'UK123456789',
+      animalIdentifiers: [{ earTag: 'UK123456789012', passport: 'UK123456789' }]
     })
   })
 
@@ -265,22 +279,31 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect('declaration' in notification).toBe(false)
     expect('documents' in notification).toBe(false)
     expect('regionCode' in notification.origin).toBe(false)
+    expect(notification.origin.regionOfOriginCode).toBe('FR-75')
+    expect(notification.purposeInInternalMarket).toBe('Breeding')
+    expect(notification.destinationCountry).toBe('DE')
+    expect(notification.portOfExit).toBe('GB DVR')
+    expect(notification.exitDate).toBe('2026-12-20')
     expect(Object.keys(notification.transport)).toEqual([
       'portOfEntry',
       'arrivalDate',
-      'transporter'
+      'transporter',
+      'meansOfTransport',
+      'transportIdentification',
+      'transportDocumentReference',
+      'transitedCountries'
     ])
     expect(
       'commodityCode' in notification.commodity.commodityComplement[0]
     ).toBe(false)
     expect('name' in notification.commodity.commodityComplement[0]).toBe(false)
-    expect(
-      'animalIdentifiers' in
-        notification.commodity.commodityComplement[0].species[0]
-    ).toBe(false)
   })
+})
 
-  test('Should keep only earTag, passport and microchip on the species entry, dropping the tattoo, horse name and permanent address', () => {
+// Per-unit animal-identifier coverage — a separate describe from the block
+// above, which is already at the file's max-lines-per-function ceiling.
+describe('Mapper A — per-unit animal identifiers', () => {
+  test('Should keep earTag, passport and microchip scalars first-unit-only, while animalIdentifiers carries every unit including tattoo, horse name and the translated permanent address', () => {
     const notification = currentNotificationFrom(answersWithGaps())
     const species = notification.commodity.commodityComplement[0].species[0]
 
@@ -291,9 +314,28 @@ describe('Mapper A — current backend notification (as-is)', () => {
       noOfPackages: '5',
       earTag: 'UK123456789012',
       passport: 'UK123456789',
-      microchip: '900123456789012'
+      microchip: '900123456789012',
+      animalIdentifiers: [
+        {
+          earTag: 'UK123456789012',
+          passport: 'UK123456789',
+          microchip: '900123456789012',
+          tattoo: 'AB1234',
+          horseName: 'Dobbin',
+          permanentAddress: {
+            name: 'Owner',
+            address: {
+              addressLine1: ORIGIN_FARM_LINE1,
+              postcode: 'AB1 2CD'
+            }
+          }
+        },
+        {
+          earTag: 'UK000000000099',
+          passport: 'UK000000099'
+        }
+      ]
     })
-    expect('animalIdentifiers' in notification.commodity).toBe(false)
   })
 
   test('Should carry a unit identified only by its microchip onto the species entry', () => {
@@ -314,11 +356,14 @@ describe('Mapper A — current backend notification (as-is)', () => {
       text: 'Felis catus',
       noOfAnimals: '2',
       noOfPackages: '1',
-      microchip: '900987654321098'
+      microchip: '900987654321098',
+      animalIdentifiers: [{ microchip: '900987654321098' }]
     })
   })
 
-  test('Should intentionally keep ear tag and passport from only the first unit', () => {
+  test('Should keep the scalar earTag/passport as first-unit-only while animalIdentifiers carries every unit', () => {
+    const firstUnit = { earTag: 'FIRST-EAR-TAG', passport: 'FIRST-PASSPORT' }
+    const secondUnit = { earTag: 'SECOND-EAR-TAG', passport: 'SECOND-PASSPORT' }
     const notification = currentNotificationFrom({
       commodityLines: [
         {
@@ -326,26 +371,21 @@ describe('Mapper A — current backend notification (as-is)', () => {
           speciesSelection: '1148346',
           animalIdentifiers: [
             {
-              animalIdentifierEarTag: 'FIRST-EAR-TAG',
-              animalIdentifierPassport: 'FIRST-PASSPORT'
+              animalIdentifierEarTag: firstUnit.earTag,
+              animalIdentifierPassport: firstUnit.passport
             },
             {
-              animalIdentifierEarTag: 'SECOND-EAR-TAG',
-              animalIdentifierPassport: 'SECOND-PASSPORT'
+              animalIdentifierEarTag: secondUnit.earTag,
+              animalIdentifierPassport: secondUnit.passport
             }
           ]
         }
       ]
     })
 
-    expect(
-      notification.commodity.commodityComplement[0].species[0]
-    ).toMatchObject({
-      earTag: 'FIRST-EAR-TAG',
-      passport: 'FIRST-PASSPORT'
-    })
-    expect(JSON.stringify(notification)).not.toContain('SECOND-EAR-TAG')
-    expect(JSON.stringify(notification)).not.toContain('SECOND-PASSPORT')
+    const species = notification.commodity.commodityComplement[0].species[0]
+    expect(species).toMatchObject(firstUnit)
+    expect(species.animalIdentifiers).toEqual([firstUnit, secondUnit])
   })
 })
 

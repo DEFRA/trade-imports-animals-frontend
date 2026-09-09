@@ -757,9 +757,14 @@
         "addressId": "animal-and-plant-health-agency"
       },
       "cphNumber": "12/345/6789",
+      "purposeInInternalMarket": "breeding",
+      "destinationCountry": "IE",
+      "portOfExit": "GB DOV",
+      "exitDate": "2026-12-20",
       "origin": {
         "countryCode": "FR",
         "requiresRegionCode": "yes",
+        "regionOfOriginCode": "FR-75",
         "internalReference": ""
       },
       "additionalDetails": {
@@ -779,7 +784,11 @@
           },
           "approvalNumber": "ES-T2-45001294",
           "type": "Commercial"
-        }
+        },
+        "meansOfTransport": "ROAD_VEHICLE",
+        "transportIdentification": "FR-892-LK",
+        "transportDocumentReference": "CMR-2026-884721",
+        "transitedCountries": ["FR", "BE"]
       },
       "commodity": {
         "name": "Cow",
@@ -795,14 +804,38 @@
                 "noOfAnimals": "2",
                 "noOfPackages": "1",
                 "earTag": "UK123456789012",
-                "passport": "UK123456789"
+                "passport": "UK123456789",
+                "animalIdentifiers": [
+                  {
+                    "passport": "UK123456789",
+                    "tattoo": "AB1234",
+                    "earTag": "UK123456789012"
+                  },
+                  {
+                    "microchip": "900123456789012",
+                    "horseName": "Silver",
+                    "permanentAddress": {
+                      "name": "Owner",
+                      "address": {
+                        "addressLine1": "8 Stable Close",
+                        "addressLine2": "Little Pasture",
+                        "countryCode": "GB"
+                      }
+                    }
+                  }
+                ]
               },
               {
                 "value": "716661",
                 "text": "Bison bison",
                 "noOfAnimals": "1",
                 "noOfPackages": "1",
-                "earTag": "UK000000000001"
+                "earTag": "UK000000000001",
+                "animalIdentifiers": [
+                  {
+                    "earTag": "UK000000000001"
+                  }
+                ]
               }
             ]
           }
@@ -1574,6 +1607,7 @@
     },
     "mapperA": {
       "reasonForImport": "internalMarket",
+      "purposeInInternalMarket": "breeding",
       "commodity": {
         "name": "Cow",
         "commodityComplement": [
@@ -1587,7 +1621,12 @@
                 "text": "Bos taurus",
                 "noOfAnimals": "1",
                 "noOfPackages": "1",
-                "earTag": "UK123456789012"
+                "earTag": "UK123456789012",
+                "animalIdentifiers": [
+                  {
+                    "earTag": "UK123456789012"
+                  }
+                ]
               }
             ]
           }
@@ -1857,6 +1896,7 @@
     },
     "mapperA": {
       "reasonForImport": "transit",
+      "purposeInInternalMarket": "breeding",
       "commodity": {
         "name": "Fish",
         "commodityComplement": [
@@ -1869,7 +1909,12 @@
                 "text": "Salmo salar",
                 "noOfAnimals": "1",
                 "noOfPackages": "1",
-                "earTag": "UK123456789012"
+                "earTag": "UK123456789012",
+                "animalIdentifiers": [
+                  {
+                    "earTag": "UK123456789012"
+                  }
+                ]
               }
             ]
           }

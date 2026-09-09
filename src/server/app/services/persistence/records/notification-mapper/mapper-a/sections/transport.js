@@ -18,12 +18,23 @@ export const transporterFromFulfilment = (reader) => {
 }
 
 export const transportFromFulfilment = (reader) => {
-  const { arrivalDateAtPort, portOfEntry } = obligationSet()
+  const {
+    arrivalDateAtPort,
+    portOfEntry,
+    meansOfTransport,
+    transportIdentification,
+    transportDocumentReference,
+    transitedCountries
+  } = obligationSet()
   return orUndefined(
     compact({
       portOfEntry: reader.scalar(portOfEntry),
       arrivalDate: isoFromDateParts(reader.scalar(arrivalDateAtPort)),
-      transporter: transporterFromFulfilment(reader)
+      transporter: transporterFromFulfilment(reader),
+      meansOfTransport: reader.scalar(meansOfTransport),
+      transportIdentification: reader.scalar(transportIdentification),
+      transportDocumentReference: reader.scalar(transportDocumentReference),
+      transitedCountries: reader.scalar(transitedCountries)
     })
   )
 }

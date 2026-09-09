@@ -65,9 +65,11 @@ describe('Mapper A PUT /notifications contract', () => {
       },
       consignment: { addressId: 'animal-and-plant-health-agency' },
       cphNumber: '12/345/6789',
+      purposeInInternalMarket: 'breeding',
       origin: {
         countryCode: 'FR',
         requiresRegionCode: 'yes',
+        regionOfOriginCode: 'FR-75',
         internalReference: 'Imports456GB'
       },
       additionalDetails: {
@@ -87,7 +89,11 @@ describe('Mapper A PUT /notifications contract', () => {
           },
           approvalNumber: 'ES-T2-45001294',
           type: 'Commercial'
-        }
+        },
+        meansOfTransport: 'ROAD_VEHICLE',
+        transportIdentification: 'FR-892-LK',
+        transportDocumentReference: 'CMR-2026-884721',
+        transitedCountries: ['FR', 'BE']
       },
       commodity: {
         name: 'Cow',
@@ -102,7 +108,8 @@ describe('Mapper A PUT /notifications contract', () => {
                 text: 'Bos taurus',
                 noOfAnimals: '1',
                 noOfPackages: '5',
-                earTag: 'UK123456789012'
+                earTag: 'UK123456789012',
+                animalIdentifiers: [{ earTag: 'UK123456789012' }]
               }
             ]
           }
