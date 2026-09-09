@@ -6,6 +6,7 @@ import {
   unlockSections,
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
 import { REFERENCE_MAX_LENGTH } from '../form/payload.js'
@@ -78,7 +79,12 @@ const submitAdd = (page) =>
   page.getByRole('button', { name: copy.addAnother }).click()
 
 const submitContinue = (page) =>
-  page.getByRole('button', { name: copy.continueButton }).click()
+  page
+    .getByRole('button', {
+      name: sharedCopy.saveActions.saveAndContinue,
+      exact: true
+    })
+    .click()
 
 const uploadDocument = async (page, document = validDocument) => {
   await fillDocument(page, document)
@@ -143,7 +149,10 @@ test.describe('document upload page', () => {
       page.getByRole('button', { name: copy.addAnother })
     ).toBeVisible()
     await expect(
-      page.getByRole('button', { name: copy.continueButton })
+      page.getByRole('button', {
+        name: sharedCopy.saveActions.saveAndContinue,
+        exact: true
+      })
     ).toBeVisible()
   })
 
@@ -205,10 +214,16 @@ test.describe('document upload page', () => {
       fileUpload.getByRole('button', { name: copy.addAnother })
     ).toBeVisible()
     await expect(
-      fileUpload.getByRole('button', { name: copy.continueButton })
+      fileUpload.getByRole('button', {
+        name: sharedCopy.saveActions.saveAndContinue,
+        exact: true
+      })
     ).toHaveCount(0)
     await expect(
-      page.getByRole('button', { name: copy.continueButton })
+      page.getByRole('button', {
+        name: sharedCopy.saveActions.saveAndContinue,
+        exact: true
+      })
     ).toBeVisible()
   })
 
@@ -576,10 +591,16 @@ test.describe('document upload saved rows', () => {
       rowFor(fileUpload, validDocument.accompanyingDocumentReference)
     ).toBeVisible()
     await expect(
-      fileUpload.getByRole('button', { name: copy.continueButton })
+      fileUpload.getByRole('button', {
+        name: sharedCopy.saveActions.saveAndContinue,
+        exact: true
+      })
     ).toHaveCount(0)
     await expect(
-      page.getByRole('button', { name: copy.continueButton })
+      page.getByRole('button', {
+        name: sharedCopy.saveActions.saveAndContinue,
+        exact: true
+      })
     ).toBeVisible()
   })
 

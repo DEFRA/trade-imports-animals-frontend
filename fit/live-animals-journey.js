@@ -324,7 +324,7 @@ export const answerRolesAndAddresses = async (page) => {
     await page.getByRole('radio', { name }).check()
     await save(page)
   }
-  await page.getByRole('button', { name: 'Continue' }).click()
+  await save(page)
 }
 
 export const answerCphNumber = async (page) => {

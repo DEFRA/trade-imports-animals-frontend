@@ -97,7 +97,10 @@ test.describe('addresses hub', () => {
     }
 
     await expect(
-      page.getByRole('button', { name: copy.hub.continueButton })
+      page.getByRole('button', {
+        name: sharedCopy.saveActions.saveAndContinue,
+        exact: true
+      })
     ).toBeVisible()
   })
 
@@ -116,7 +119,7 @@ test.describe('addresses hub', () => {
         .check()
       await saveAndContinue(page)
     }
-    await page.getByRole('button', { name: copy.hub.continueButton }).click()
+    await saveAndContinue(page)
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(

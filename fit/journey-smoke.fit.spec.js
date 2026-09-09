@@ -115,7 +115,7 @@ test.describe('live-animals journey glue', () => {
     // Documents are optional, so the run passes through the page and the user
     // continues without adding one.
     await expect(page).toHaveURL(/\/accompanying-documents$/)
-    await page.getByRole('button', { name: 'Continue' }).click()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
 
     await answerRolesAndAddresses(page)
     await answerCphNumber(page)
@@ -163,7 +163,7 @@ test.describe('live-animals journey glue', () => {
         hasText: document.accompanyingDocumentReference
       })
     ).toContainText('Safe')
-    await page.getByRole('button', { name: 'Continue' }).click()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
 
     await page.getByRole('link', { name: 'Check and submit' }).click()
 
@@ -211,7 +211,7 @@ test.describe('live-animals journey glue', () => {
     await expect(page).toHaveURL(
       /\/accompanying-documents\?change=1(?:&attempt=\d+)?$/
     )
-    await page.getByRole('button', { name: 'Continue' }).click()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
     await expect(page).toHaveURL(/\/notification-view(?:#.*)?$/)
     await expect(
       page.getByText(secondDocument.accompanyingDocumentReference)

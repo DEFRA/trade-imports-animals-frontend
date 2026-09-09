@@ -5,6 +5,7 @@ import {
   startNotification,
   unlockSections
 } from '../../../../../../../../../../fit/live-animals-journey.js'
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { SCAN_STATUS } from '../scan-poll.js'
 
@@ -73,7 +74,12 @@ test.describe('document scan-status rendering', () => {
     )
     await expect(row).toContainText(copy.scanTags.checking)
 
-    await page.getByRole('button', { name: copy.continueButton }).click()
+    await page
+      .getByRole('button', {
+        name: sharedCopy.saveActions.saveAndContinue,
+        exact: true
+      })
+      .click()
     await expect(
       errorSummaryLink(page, copy.errors.cannotContinue)
     ).toBeVisible()
@@ -83,7 +89,12 @@ test.describe('document scan-status rendering', () => {
       'data-scan-status',
       SCAN_STATUS.COMPLETE
     )
-    await page.getByRole('button', { name: copy.continueButton }).click()
+    await page
+      .getByRole('button', {
+        name: sharedCopy.saveActions.saveAndContinue,
+        exact: true
+      })
+      .click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
@@ -101,7 +112,12 @@ test.describe('document scan-status rendering', () => {
     ).toBeVisible()
     await expect(row.getByRole('link', { name: copy.viewFile })).toHaveCount(0)
 
-    await page.getByRole('button', { name: copy.continueButton }).click()
+    await page
+      .getByRole('button', {
+        name: sharedCopy.saveActions.saveAndContinue,
+        exact: true
+      })
+      .click()
     await expect(
       errorSummaryLink(page, copy.errors.virusFound(document.filename))
     ).toBeVisible()
@@ -112,7 +128,12 @@ test.describe('document scan-status rendering', () => {
       })
       .click()
     await expect(row).toHaveCount(0)
-    await page.getByRole('button', { name: copy.continueButton }).click()
+    await page
+      .getByRole('button', {
+        name: sharedCopy.saveActions.saveAndContinue,
+        exact: true
+      })
+      .click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 })

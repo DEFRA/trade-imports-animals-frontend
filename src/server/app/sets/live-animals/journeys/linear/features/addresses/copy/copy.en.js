@@ -5,7 +5,6 @@ export const copy = {
     notAddedYet: 'Not added yet',
     change: 'Change',
     add: 'Add',
-    continueButton: 'Continue',
     cph: {
       title: 'County Parish Holding number (CPH)',
       hint: 'The County Parish Holding (CPH) number identifies the holding where the animals will be kept.'

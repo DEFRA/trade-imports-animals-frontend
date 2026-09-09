@@ -98,7 +98,6 @@ export const copy = {
   stillChecking: 'Still checking some documents. Refresh again in a moment.',
   empty: 'You have not added any documents yet.',
   notProvided: 'Not provided',
-  continueButton: 'Continue',
   scanTags: {
     safe: 'Safe',
     virusFound: 'Virus found',

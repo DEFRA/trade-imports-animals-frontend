@@ -97,7 +97,6 @@ export const copy = {
   stillChecking: 'Yn dal i wirio rhai dogfennau. Adnewyddwch eto mewn eiliad.',
   empty: 'Nid ydych wedi ychwanegu unrhyw ddogfennau eto.',
   notProvided: 'Heb ei ddarparu',
-  continueButton: 'Parhau',
   scanTags: {
     safe: 'Diogel',
     virusFound: 'Firws wedi’i ganfod',
