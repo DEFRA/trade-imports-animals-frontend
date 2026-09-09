@@ -37,7 +37,10 @@ export const actionsCell = ({ entry, index, scanStatus, journeyId }) => ({
 // The scan-status cell carries the polling contract: the client rewrites the
 // tag it holds in place, keyed by upload id.
 export const statusCell = (entry, scanStatus) => ({
-  html: statusTagHtml(scanStatus),
+  html: statusTagHtml(
+    scanStatus,
+    cellText(entry.accompanyingDocumentReference)
+  ),
   attributes: entry.uploadId
     ? { 'data-upload-id': entry.uploadId, 'data-scan-status': scanStatus }
     : undefined

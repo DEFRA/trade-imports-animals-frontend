@@ -98,11 +98,12 @@ export const copy = {
   empty: 'Nid ydych wedi ychwanegu unrhyw ddogfennau eto.',
   notProvided: 'Heb ei ddarparu',
   scanTags: {
-    safe: 'Diogel',
+    complete: 'Gwiriad wedi’i gwblhau',
     virusFound: 'Firws wedi’i ganfod',
-    checking: 'Yn gwirio',
+    scanning: 'Yn sganio am firws',
     unknown: 'Anhysbys'
   },
+  scanStatusHidden: (reference) => `Statws gwirio firws ar gyfer ${reference}`,
   announce: {
     safe: 'Sgan y ddogfen wedi’i gwblhau: mae’r ffeil yn ddiogel i’w defnyddio',
     virusFound:

@@ -60,7 +60,7 @@ test.describe('document scan-status rendering', () => {
     await openDocuments(page)
   })
 
-  test('blocks continue while checking, then renders Safe and allows the journey to continue', async ({
+  test('blocks continue while the scan runs, then renders Check completed and allows the journey to continue', async ({
     page
   }) => {
     test.slow()
@@ -72,7 +72,12 @@ test.describe('document scan-status rendering', () => {
       'data-scan-status',
       SCAN_STATUS.PENDING
     )
-    await expect(row).toContainText(copy.scanTags.checking)
+    await expect(row).toContainText(copy.scanTags.scanning)
+    // The hidden label sits outside the tag the client rewrites, so it names
+    // the document for the pending state and for the settled one after it.
+    await expect(statusCell).toContainText(
+      copy.scanStatusHidden(document.accompanyingDocumentReference)
+    )
 
     await page
       .getByRole('button', {
@@ -84,10 +89,13 @@ test.describe('document scan-status rendering', () => {
       errorSummaryLink(page, copy.errors.cannotContinue)
     ).toBeVisible()
 
-    await expect(row).toContainText(copy.scanTags.safe)
+    await expect(row).toContainText(copy.scanTags.complete)
     await expect(statusCell).toHaveAttribute(
       'data-scan-status',
       SCAN_STATUS.COMPLETE
+    )
+    await expect(statusCell).toContainText(
+      copy.scanStatusHidden(document.accompanyingDocumentReference)
     )
     await page
       .getByRole('button', {
@@ -105,7 +113,7 @@ test.describe('document scan-status rendering', () => {
     const document = documentNamed('SCAN-VIRUS-0001', 'virus-invoice.pdf')
     await uploadDocument(page, document)
     const row = rowFor(page, document.accompanyingDocumentReference)
-    await expect(row).toContainText(copy.scanTags.checking)
+    await expect(row).toContainText(copy.scanTags.scanning)
     await expect(row).toContainText(copy.scanTags.virusFound)
     await expect(
       errorSummaryLink(page, copy.errors.virusFound(document.filename))
@@ -155,9 +163,9 @@ test.describe('document scan-status polling', () => {
 
     const settlingRow = rowFor(page, settling.accompanyingDocumentReference)
     const stuckRow = rowFor(page, stuck.accompanyingDocumentReference)
-    await expect(settlingRow).toContainText(copy.scanTags.checking)
-    await expect(settlingRow).toContainText(copy.scanTags.safe)
-    await expect(stuckRow).toContainText(copy.scanTags.checking)
+    await expect(settlingRow).toContainText(copy.scanTags.scanning)
+    await expect(settlingRow).toContainText(copy.scanTags.complete)
+    await expect(stuckRow).toContainText(copy.scanTags.scanning)
     await expect(
       settlingRow.getByRole('link', {
         name: `${copy.viewFile} ${copy.viewFileHidden(1)}`

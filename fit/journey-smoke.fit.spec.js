@@ -162,7 +162,7 @@ test.describe('live-animals journey glue', () => {
       page.locator('.govuk-table__row', {
         hasText: document.accompanyingDocumentReference
       })
-    ).toContainText('Safe')
+    ).toContainText('Check completed')
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     await page.getByRole('link', { name: 'Check and submit' }).click()
@@ -207,7 +207,7 @@ test.describe('live-animals journey glue', () => {
       page.locator('.govuk-table__row', {
         hasText: secondDocument.accompanyingDocumentReference
       })
-    ).toContainText('Safe')
+    ).toContainText('Check completed')
     await expect(page).toHaveURL(
       /\/accompanying-documents\?change=1(?:&attempt=\d+)?$/
     )
