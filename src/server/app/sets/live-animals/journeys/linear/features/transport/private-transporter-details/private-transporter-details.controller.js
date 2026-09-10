@@ -1,7 +1,6 @@
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
 import {
   compose,
   maxText,
@@ -13,9 +12,9 @@ import { copyFor } from '../../../../../../../shared/copy.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 import {
   privateTransporterDetailsPage as page,
-  transporterAddPage,
-  transportersPage
+  transporterAddPage
 } from '../page.js'
+import { saveTransporterDetails } from '../transporter-details-save.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
@@ -166,40 +165,12 @@ const privateTransporterRecord = (values) => ({
   }
 })
 
-const commitOrSkip = (request, h, values) =>
-  recordProvided(values)
-    ? state.commit(request, h, privateTransporterRecord(values))
-    : state.get(request, h)
-
-const post = async (request, h) => {
-  const payload = request.payload ?? {}
-  const values = trimmedValues(payload)
-  const allErrors = formErrors(payload, values)
-  if (Object.keys(allErrors).length > 0) {
-    const { journey } = await state.get(request, h)
-    return render(request, h, journey, values, { errors: allErrors })
-  }
-
-  let committed
-  const { failure } = await kit.recoverableSave(
-    async () => {
-      committed = await commitOrSkip(request, h, values)
-    },
-    async () => {
-      const { journey } = await state.get(request, h)
-      return render(request, h, journey, values, {
-        recoverableError: true
-      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    }
-  )
-  if (failure) {
-    return failure
-  }
-
-  // Adding a transporter finishes the transporter step, so the journey carries
-  // on from the list rather than from this spoke.
-  const { scope } = committed
-  return h.redirect(await kit.nextTarget(request, transportersPage, scope))
-}
+const post = saveTransporterDetails({
+  trimmedValues,
+  formErrors,
+  recordProvided,
+  record: privateTransporterRecord,
+  render
+})
 
 export const routes = kit.pageRoutes(page, { get, post })
