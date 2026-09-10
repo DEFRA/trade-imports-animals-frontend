@@ -1,5 +1,28 @@
-// Styles for the accessible-autocomplete component.
-//
-// Sourced from the alphagov `accessible-autocomplete` package (MIT licensed),
-// which the client component progressively enhances a native <select> with.
-@use "accessible-autocomplete/src/autocomplete.css";
+@use '../../../../../node_modules/govuk-frontend' as *;
+@use 'accessible-autocomplete/src/autocomplete.css';
+
+// The upstream component sets its text size but no font family. Apply GOV.UK
+// typography to the whole enhancement and to the form controls that do not
+// inherit a font from their parent by default.
+.autocomplete__wrapper,
+.autocomplete__input,
+.autocomplete__hint,
+.autocomplete__option {
+  @include govuk-font($size: 19);
+}
+
+// The upstream arrow has a negative z-index so it sits below the transparent
+// input. Give the wrapper its own stacking context: the arrow then paints over
+// the page background while remaining behind the interactive input.
+.autocomplete__wrapper {
+  position: relative;
+  z-index: 0;
+}
+
+// appAccessibleAutocomplete puts the GOV.UK error class on the form group and
+// enhances its select into a new input, so restate the standard error border
+// on that generated control.
+.govuk-form-group--error .autocomplete__input {
+  border-color: $govuk-error-colour;
+  border-width: $govuk-border-width-form-element;
+}

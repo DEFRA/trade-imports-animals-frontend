@@ -17,6 +17,8 @@ const ireland = countriesOrigin.find(({ code }) => code === 'IE')
 // is hidden and renamed with a "-select" suffix (it still submits the code).
 const countryInput = 'input#countryOfOrigin'
 const countryHidden = 'select#countryOfOrigin-select'
+const AUTOCOMPLETE_ARROW = '.autocomplete__dropdown-arrow-down'
+const AUTOCOMPLETE_OPTION = '.autocomplete__option'
 
 const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
 const INTERNAL_REFERENCE_MAX_LENGTH = 58
@@ -323,6 +325,149 @@ test.describe('country of origin type-ahead', () => {
     ).toBeVisible()
 
     await expectNoSeriousOrCriticalAxeViolations(page, 'Origin results list')
+  })
+})
+
+test.describe('country of origin type-ahead styles', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startAtOrigin(page)
+  })
+
+  test('uses GOV.UK typography for the enhanced input and its options', async ({
+    page
+  }) => {
+    const input = page.locator(countryInput)
+    await input.fill('Fr')
+    await expect(
+      page.getByRole('option', { name: france.name, exact: true })
+    ).toBeVisible()
+
+    const typography = await page.evaluate(
+      ({ inputSelector, optionSelector }) => {
+        const enhancedInput = document.querySelector(inputSelector)
+        const option = document.querySelector(optionSelector)
+        const reference = document.createElement('input')
+        reference.className = 'govuk-input'
+        document.body.append(reference)
+
+        const inputStyle = getComputedStyle(enhancedInput)
+        const optionStyle = getComputedStyle(option)
+        const referenceStyle = getComputedStyle(reference)
+        const result = {
+          inputFamily: inputStyle.fontFamily,
+          inputSize: inputStyle.fontSize,
+          optionFamily: optionStyle.fontFamily,
+          optionSize: optionStyle.fontSize,
+          referenceFamily: referenceStyle.fontFamily,
+          referenceSize: referenceStyle.fontSize
+        }
+        reference.remove()
+        return result
+      },
+      { inputSelector: countryInput, optionSelector: AUTOCOMPLETE_OPTION }
+    )
+
+    expect(typography.inputFamily).toBe(typography.referenceFamily)
+    expect(typography.optionFamily).toBe(typography.referenceFamily)
+    expect(typography.inputFamily).toMatch(/^"?GDS Transport/)
+    expect(typography.inputSize).toBe(typography.referenceSize)
+    expect(typography.optionSize).toBe(typography.referenceSize)
+  })
+
+  test('paints the dropdown arrow behind the interactive input', async ({
+    page
+  }) => {
+    const paintStack = await page
+      .locator(AUTOCOMPLETE_ARROW)
+      .evaluate((arrow) => {
+        const bounds = arrow.getBoundingClientRect()
+        const hits = document.elementsFromPoint(
+          bounds.left + bounds.width / 2,
+          bounds.top + bounds.height / 2
+        )
+        const wrapper = arrow.closest('.autocomplete__wrapper')
+        return {
+          arrowIsInStack: hits.some(
+            (element) => element === arrow || arrow.contains(element)
+          ),
+          inputIsTopHit: hits[0]?.matches('.autocomplete__input') ?? false,
+          inputPaddingRight: getComputedStyle(hits[0]).paddingRight,
+          wrapperZIndex: getComputedStyle(wrapper).zIndex
+        }
+      })
+
+    expect(paintStack).toEqual({
+      arrowIsInStack: true,
+      inputIsTopHit: true,
+      inputPaddingRight: '35px',
+      wrapperZIndex: '0'
+    })
+  })
+
+  test('keeps the upstream focus indicator on the enhanced input', async ({
+    page
+  }) => {
+    const input = page.locator(countryInput)
+
+    await input.focus()
+
+    const indicator = await input.evaluate((enhancedInput) => {
+      const reference = document.createElement('span')
+      reference.style.color = 'var(--govuk-focus-colour)'
+      document.body.append(reference)
+      const inputStyle = getComputedStyle(enhancedInput)
+      const result = {
+        boxShadow: inputStyle.boxShadow,
+        focusColour: getComputedStyle(reference).color,
+        outlineColour: inputStyle.outlineColor,
+        outlineWidth: inputStyle.outlineWidth
+      }
+      reference.remove()
+      return result
+    })
+
+    expect(indicator.outlineColour).toBe(indicator.focusColour)
+    expect(indicator.outlineWidth).toBe('3px')
+    expect(indicator.boxShadow).toContain('inset')
+  })
+
+  test('gives the enhanced input the standard GOV.UK error border', async ({
+    page
+  }) => {
+    await chooseOutOfListCountry(page)
+    await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await expect(
+      page.getByRole('alert').getByRole('link', {
+        name: copy.errors.countryFromList
+      })
+    ).toBeVisible()
+
+    const borders = await page.evaluate((inputSelector) => {
+      const enhancedInput = document.querySelector(inputSelector)
+      const errorMessage = document.querySelector('#countryOfOrigin-error')
+      const reference = document.createElement('input')
+      reference.className = 'govuk-input govuk-input--error'
+      document.body.append(reference)
+
+      const inputStyle = getComputedStyle(enhancedInput)
+      const errorStyle = getComputedStyle(errorMessage)
+      const referenceStyle = getComputedStyle(reference)
+      const result = {
+        inputColour: inputStyle.borderTopColor,
+        inputWidth: inputStyle.borderTopWidth,
+        errorColour: errorStyle.color,
+        referenceColour: referenceStyle.borderTopColor,
+        referenceWidth: referenceStyle.borderTopWidth
+      }
+      reference.remove()
+      return result
+    }, countryInput)
+
+    expect(borders.inputColour).toBe(borders.errorColour)
+    expect(borders.inputColour).toBe(borders.referenceColour)
+    expect(borders.inputWidth).toBe(borders.referenceWidth)
   })
 })
 
