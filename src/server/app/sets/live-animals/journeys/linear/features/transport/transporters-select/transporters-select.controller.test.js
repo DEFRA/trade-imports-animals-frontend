@@ -5,8 +5,14 @@ import { store } from '../../../../../../../engine/store.js'
 import { configureRecords } from '../../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
+import { BackendRequestError } from '../../../../../../../services/persistence/records/errors.js'
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
-import { driveHandler } from '../../../../../../../engine/test-support.js'
+import {
+  driveHandler,
+  journeyRequest,
+  stubH
+} from '../../../../../../../engine/test-support.js'
+import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
 import { dispatchPages } from '../../index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 
@@ -25,6 +31,28 @@ const configure = () => {
   configureRecords(recordsStub)
   configureSession(sessionStub)
   buildDispatch(dispatchPages)
+}
+
+/** Drive a POST whose save fails the way a backend outage fails it: recoverably,
+ * so the register comes back with the banner rather than throwing. */
+const driveSaveFailure = async (payload) => {
+  const journey = await store.create()
+  await store.seedAnswers(journey.journeyId, { transporterType: 'Commercial' })
+  const h = stubH()
+  configureRecords({
+    ...recordsStub,
+    replaceFulfilment: () => {
+      throw new BackendRequestError('save the transporter', {
+        status: 503,
+        statusText: 'Service Unavailable'
+      })
+    }
+  })
+  try {
+    return await postHandler(journeyRequest(journey.journeyId, { payload }), h)
+  } finally {
+    configureRecords(recordsStub)
+  }
 }
 
 // The register is a spoke off the add route, not a journey step, so Back has to
@@ -60,5 +88,42 @@ describe('/transporters/select', () => {
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, 'notification-view')
     })
+  })
+
+  it('Should reject a transporter that is not on the register', async () => {
+    const result = await driveHandler(postHandler, {
+      seed: { transporterType: 'Commercial' },
+      payload: { commercialTransporter: 'not-a-transporter' }
+    })
+
+    expect(result.view.context.errors.commercialTransporter).toBeTruthy()
+    expect(result.view.context.errorSummary.errorList).toHaveLength(1)
+    expect(result.after.commercialTransporter).toBeUndefined()
+  })
+
+  // The register saves through unfilled, the way the transporter pages always
+  // have: a trader who has not chosen yet still walks on.
+  it('Should walk on without saving when no transporter is picked', async () => {
+    const result = await driveHandler(postHandler, {
+      seed: { transporterType: 'Commercial' },
+      payload: {}
+    })
+
+    expect(result.after.commercialTransporter).toBeUndefined()
+    expect(result.response.redirect).toBeTruthy()
+  })
+
+  it('Should re-render the register at 500 with the pick kept after a recoverable save failure', async () => {
+    const response = await driveSaveFailure({
+      commercialTransporter: GARCIA_ID
+    })
+
+    expect(response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    expect(response.context.recoverableError).toBe(true)
+    expect(
+      response.context.transporterOptions.find(
+        (option) => option.value === GARCIA_ID
+      ).checked
+    ).toBe(true)
   })
 })

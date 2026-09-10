@@ -18,6 +18,35 @@
 export const COMMERCIAL = 'Commercial'
 export const PRIVATE = 'Private'
 
+/** One private record. Every private transporter carries the same address
+ * shape — the fields the private-transporter form collects — so the shape is
+ * written once here and each record lists only what differs. */
+const privateRecord = ({
+  id,
+  name,
+  addressLine1,
+  townOrCity,
+  county = '',
+  postalOrZipCode,
+  country,
+  telephoneNumber,
+  emailAddress
+}) => ({
+  id,
+  type: PRIVATE,
+  name,
+  address: {
+    addressLine1,
+    addressLine2: '',
+    townOrCity,
+    county,
+    postalOrZipCode,
+    country,
+    telephoneNumber,
+    emailAddress
+  }
+})
+
 export const TRANSPORTER_OPTIONS = [
   {
     id: 'garcia-livestock-transport',
@@ -42,64 +71,45 @@ export const TRANSPORTER_OPTIONS = [
       country: 'Belgium'
     }
   },
-  {
+  privateRecord({
     id: 'aberdeen-livestock',
-    type: PRIVATE,
     name: 'Aberdeen Livestock Ltd',
-    address: {
-      addressLine1: '12 Harbour Road',
-      addressLine2: '',
-      townOrCity: 'Aberdeen',
-      county: 'Aberdeenshire',
-      postalOrZipCode: 'AB11 5DQ',
-      country: 'United Kingdom',
-      telephoneNumber: '+44 1224 000 111',
-      emailAddress: 'movements@aberdeen-livestock.example.com'
-    }
-  },
-  {
+    addressLine1: '12 Harbour Road',
+    townOrCity: 'Aberdeen',
+    county: 'Aberdeenshire',
+    postalOrZipCode: 'AB11 5DQ',
+    country: 'United Kingdom',
+    telephoneNumber: '+44 1224 000 111',
+    emailAddress: 'movements@aberdeen-livestock.example.com'
+  }),
+  privateRecord({
     id: 'romanian-agri-exports',
-    type: PRIVATE,
     name: 'Romanian Agri Exports SRL',
-    address: {
-      addressLine1: 'Strada Agricultorilor 8',
-      addressLine2: '',
-      townOrCity: 'Cluj-Napoca',
-      county: '',
-      postalOrZipCode: '400000',
-      country: 'Romania',
-      telephoneNumber: '+40 264 000 222',
-      emailAddress: 'transport@romanian-agri.example.com'
-    }
-  },
-  {
+    addressLine1: 'Strada Agricultorilor 8',
+    townOrCity: 'Cluj-Napoca',
+    postalOrZipCode: '400000',
+    country: 'Romania',
+    telephoneNumber: '+40 264 000 222',
+    emailAddress: 'transport@romanian-agri.example.com'
+  }),
+  privateRecord({
     id: 'slovak-farm-export',
-    type: PRIVATE,
     name: 'Slovak Farm Export',
-    address: {
-      addressLine1: 'Hlavná 45',
-      addressLine2: '',
-      townOrCity: 'Košice',
-      county: '',
-      postalOrZipCode: '040 01',
-      country: 'Slovakia',
-      telephoneNumber: '+421 55 000 333',
-      emailAddress: 'export@slovak-farm.example.com'
-    }
-  },
-  {
+    addressLine1: 'Hlavná 45',
+    townOrCity: 'Košice',
+    postalOrZipCode: '040 01',
+    country: 'Slovakia',
+    telephoneNumber: '+421 55 000 333',
+    emailAddress: 'export@slovak-farm.example.com'
+  }),
+  privateRecord({
     id: 'finnish-livestock-oy',
-    type: PRIVATE,
     name: 'Finnish Livestock Oy',
-    address: {
-      addressLine1: 'Satamakatu 3',
-      addressLine2: '',
-      townOrCity: 'Turku',
-      county: '',
-      postalOrZipCode: '20100',
-      country: 'Finland',
-      telephoneNumber: '+358 2 000 444',
-      emailAddress: 'kuljetus@finnish-livestock.example.com'
-    }
-  }
+    addressLine1: 'Satamakatu 3',
+    townOrCity: 'Turku',
+    postalOrZipCode: '20100',
+    country: 'Finland',
+    telephoneNumber: '+358 2 000 444',
+    emailAddress: 'kuljetus@finnish-livestock.example.com'
+  })
 ]
