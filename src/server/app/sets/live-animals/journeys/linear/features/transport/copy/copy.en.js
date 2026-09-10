@@ -136,6 +136,15 @@ export const copy = {
       status: 'Status'
     },
     selectRowPrefix: 'Select',
+    // Design release 1 searches the list over the three facts a trader would
+    // recognise a transporter by. The hint names them so the trader knows what
+    // the box will match before they type into it.
+    search: {
+      label: 'Search',
+      hint: 'Name, address or approval number',
+      button: 'Search'
+    },
+    noMatches: 'No transporters match your search.',
     add: 'Add a transporter',
     errors: {
       transporterRequired: 'Select a transporter from the list'

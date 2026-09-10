@@ -14,7 +14,7 @@ import { transporterAddPage, transportersPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { transporterAnswer } from './transporter-record.js'
-import { transporterRows } from './rows.js'
+import { matchingTransporters, transporterRows } from './rows.js'
 
 /** The transporter list — the journey's one transporter step.
  *
@@ -39,14 +39,23 @@ const fields = compose(
   )
 )
 
+/** The search button and the page's own submits share the one form, told apart
+ * by their `action` value — the address picker's shape. */
+const isSearchAction = (payload) => payload.action === 'search'
+
 const render = (
   request,
   h,
   journey,
   values,
   { errors = {}, recoverableError = false } = {}
-) =>
-  h.view(view, {
+) => {
+  const query = String(values.query ?? '')
+  const rows = transporterRows(
+    matchingTransporters(transporters.parties(), query),
+    { selectedId: values.selectedId }
+  )
+  return h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
       journey,
@@ -55,17 +64,24 @@ const render = (
     }),
     copy,
     errors,
-    errorSummary: kit.errorSummary(errors),
+    // A search that matches nothing leaves no radio for the summary to link
+    // to, so the entry sends the trader to the only control they can act on —
+    // the search box. The address picker switches its anchor the same way
+    // (addresses/party-picker/view-model/error-summary.js).
+    errorSummary: kit.errorSummary(errors, {
+      href: (field) => (rows.length ? `#${field}` : '#search')
+    }),
     // Reached from a Change link, the add route has to keep the context or
     // the trader is dropped into the journey instead of the summary.
     addHref: kit.withChangeContext(
       request,
       pagePath(journey.journeyId, transporterAddPage.slug)
     ),
-    transporterRows: transporterRows(transporters.parties(), {
-      selectedId: values.selectedId
-    })
+    query,
+    selectedId: values.selectedId,
+    transporterRows: rows
   })
+}
 
 /** The record behind the answers already on the notification, so a returning
  * trader sees their pick still checked. Matched on name: the notification
@@ -88,10 +104,24 @@ const commitOrSkip = (request, h, chosen) =>
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
+  const query = String(payload.search ?? '')
+
+  // Searching filters the list in place: nothing is validated and nothing is
+  // committed, and the row the trader had picked stays picked if the search
+  // leaves it on the list.
+  if (isSearchAction(payload)) {
+    const { journey, answers } = await state.get(request, h)
+    return render(request, h, journey, {
+      query,
+      selectedId:
+        payload.transporter || payload.selected || selectedIdFor(answers)
+    })
+  }
+
   const { errors } = validate(fields, payload)
   if (errors) {
     const { journey } = await state.get(request, h)
-    return render(request, h, journey, {}, { errors })
+    return render(request, h, journey, { query }, { errors })
   }
 
   const chosen = transporters.party(payload.transporter)
@@ -106,7 +136,7 @@ const post = async (request, h) => {
         request,
         h,
         journey,
-        { selectedId: chosen?.id },
+        { selectedId: chosen?.id, query },
         { recoverableError: true }
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
