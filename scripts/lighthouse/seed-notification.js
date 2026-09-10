@@ -175,7 +175,7 @@ const TRANSPORTER_STEPS = new Map([
     'Private',
     [
       {
-        slug: 'transporters/private',
+        slug: 'transporters/add/private',
         fields: {
           nameOrOrganisationName: privateTransporter.name,
           addressLine1: privateTransporter.address.addressLine1,
@@ -231,7 +231,7 @@ export const seedSteps = ({ reasonForImport, transporterType }) => [
   ...BEFORE_REASON,
   reasonStep(reasonForImport),
   ...AFTER_REASON,
-  { slug: 'transporters', fields: { transporterType } },
+  { slug: 'transporters/add', fields: { transporterType } },
   ...branchFor(TRANSPORTER_STEPS, transporterType, 'transporter type'),
   CONTACT_STEP
 ]

@@ -16,6 +16,7 @@ import {
   portOfEntryPage,
   privateTransporterDetailsPage,
   transitCountriesPage,
+  transporterAddPage,
   transportersPage,
   transportersSelectPage
 } from '../../features/transport/page.js'
@@ -61,7 +62,11 @@ export const captionSections = [
   { id: 'transportAndArrival', pages: [portOfEntryPage, transportersPage] },
   {
     id: 'newTransporter',
-    pages: [transportersSelectPage, privateTransporterDetailsPage]
+    pages: [
+      transporterAddPage,
+      transportersSelectPage,
+      privateTransporterDetailsPage
+    ]
   },
   { id: 'documents', pages: [documentsPage] }
 ]

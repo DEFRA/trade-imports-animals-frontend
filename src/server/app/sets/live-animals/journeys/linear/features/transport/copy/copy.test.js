@@ -15,6 +15,9 @@ import * as transporters from '../transporters/transporters.controller.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
 
+const SAMPLE_ADDRESS = '1 Farm Lane, Kent'
+const SAMPLE_APPROVAL_NUMBER = 'GB-01'
+
 const leaves = (node, path = []) =>
   typeof node === 'object' && node !== null
     ? Object.entries(node).flatMap(([key, value]) =>
@@ -85,8 +88,45 @@ describe('transport copy module', () => {
 
   test('Should interpolate transportersSelect.optionHint', () => {
     expect(
-      copy.transportersSelect.optionHint('1 Farm Lane, Kent', 'GB-01')
+      copy.transportersSelect.optionHint(SAMPLE_ADDRESS, SAMPLE_APPROVAL_NUMBER)
     ).toBe('1 Farm Lane, Kent — approval number GB-01')
+  })
+
+  test('Should interpolate transporters.optionHint', () => {
+    expect(copy.transporters.optionHint('Commercial', SAMPLE_ADDRESS)).toBe(
+      'Commercial — 1 Farm Lane, Kent'
+    )
+  })
+
+  test('Should interpolate transporters.optionHintApproved', () => {
+    expect(
+      copy.transporters.optionHintApproved(
+        'Commercial',
+        SAMPLE_ADDRESS,
+        SAMPLE_APPROVAL_NUMBER
+      )
+    ).toBe('Commercial — 1 Farm Lane, Kent — approval number GB-01')
+  })
+
+  // Both list hints take the same arguments in Welsh, and copy parity only
+  // checks a function leaf's arity, so the Welsh sentences are asserted here
+  // beside the English ones.
+  test('Should interpolate the Welsh transporters.optionHint', () => {
+    expect(
+      copyCy.transporters.optionHint('Preifat', '12 Harbour Road, Aberdeen')
+    ).toBe('Preifat — 12 Harbour Road, Aberdeen')
+  })
+
+  test('Should interpolate the Welsh transporters.optionHintApproved', () => {
+    expect(
+      copyCy.transporters.optionHintApproved(
+        'Masnachol',
+        'Rue de la Loi 200, Brussels',
+        'UK/BURY/T2/00104115'
+      )
+    ).toBe(
+      'Masnachol — Rue de la Loi 200, Brussels — rhif cymeradwyo UK/BURY/T2/00104115'
+    )
   })
 })
 

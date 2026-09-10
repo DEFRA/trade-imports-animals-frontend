@@ -1,10 +1,16 @@
 {% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "shared/save-actions.njk" import saveActions %}
 {% from "shared/section-caption.njk" import sectionCaption %}
 
 {% block journeyContent %}
   {% include "shared/error-summary.njk" %}
+
+  {{ sectionCaption(caption) }}
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
+  <p class="govuk-body">{{ copy.intro }}</p>
 
   <p class="govuk-body">{{ copy.guidance.authorisationLead }}</p>
   <ul class="govuk-list govuk-list--bullet govuk-list--spaced">
@@ -18,36 +24,27 @@
   <p class="govuk-body">{{ copy.guidance.daeraValid }}</p>
   <p class="govuk-body">{{ copy.guidance.euNotValid }}</p>
 
-  {{ sectionCaption(caption) }}
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
     {{ govukRadios({
-      name: "transporterType",
+      name: "transporter",
       fieldset: {
         legend: {
           text: copy.legend,
-          isPageHeading: true,
-          classes: "govuk-fieldset__legend--l"
+          classes: "govuk-fieldset__legend--m"
         }
       },
-      hint: { text: copy.hint },
-      errorMessage: errors.transporterType and { text: errors.transporterType },
-      items: [
-        {
-          value: "Commercial",
-          text: copy.options["Commercial"].text,
-          hint: { text: copy.options["Commercial"].hint },
-          checked: values.transporterType == "Commercial"
-        },
-        {
-          value: "Private",
-          text: copy.options["Private"].text,
-          hint: { text: copy.options["Private"].hint },
-          checked: values.transporterType == "Private"
-        }
-      ]
+      errorMessage: errors.transporter and { text: errors.transporter },
+      items: transporterOptions
+    }) }}
+
+    {# The way out of the list for a trader whose transporter is not on it. #}
+    {{ govukButton({
+      text: copy.add,
+      href: addHref,
+      classes: "govuk-button--secondary"
     }) }}
 
     {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}

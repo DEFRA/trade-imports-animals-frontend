@@ -100,9 +100,8 @@ describe('#buildDispatch', () => {
   })
 
   it('Should resolve pageOfObligation for a gated obligation', () => {
-    expect(pageOfObligation('commercialTransporter')).toBe(
-      'transporters-select'
-    )
+    expect(pageOfObligation('commercialTransporter')).toBe('transporters')
+    expect(pageOfObligation('privateTransporter')).toBe('transporters')
   })
 
   it('Should list collectsOf for a page', () => {
@@ -182,7 +181,7 @@ describe('#buildDispatch', () => {
     expect(pageOfObligation('commodityLines[0]')).toBe('commodities')
   })
 
-  it('Should walk the transport section, skipping the spokes the type gates out', () => {
+  it('Should end the transport section at the transporter list, whatever type the answers reach', () => {
     const answered = () => true
     const scopeNoType = { inScope: makeScope({}).inScope, answered }
     const scopeCommercial = {
@@ -193,18 +192,27 @@ describe('#buildDispatch', () => {
       inScope: makeScope({ transporterType: 'Private' }).inScope,
       answered
     }
-    expect(nextInSection('transporters', scopeCommercial, 'journey-1')).toMatch(
-      /\/transporters\/select$/
-    )
-    expect(nextInSection('transporters', scopePrivate, 'journey-1')).toMatch(
-      /\/transporters\/private$/
-    )
-    expect(nextInSection('transporters', scopeNoType, 'journey-1')).toMatch(
-      /\/notifications\/journey-1$/
-    )
-    expect(
-      nextInSection('private-transporter-details', scopePrivate, 'journey-1')
-    ).toMatch(/\/notifications\/journey-1$/)
+    for (const scope of [scopeNoType, scopeCommercial, scopePrivate]) {
+      expect(nextInSection('transporters', scope, 'journey-1')).toMatch(
+        /\/notifications\/journey-1$/
+      )
+    }
+  })
+
+  it('Should keep the add spokes off the journey — they belong to no section', () => {
+    const scope = {
+      inScope: makeScope({ transporterType: 'Private' }).inScope,
+      answered: () => true
+    }
+    for (const spoke of [
+      'transporter-add',
+      'transporters-select',
+      'private-transporter-details'
+    ]) {
+      expect(nextInSection(spoke, scope, 'journey-1')).toMatch(
+        /\/notifications\/journey-1$/
+      )
+    }
   })
 
   it('Should enter a section at its first gated-in page', () => {

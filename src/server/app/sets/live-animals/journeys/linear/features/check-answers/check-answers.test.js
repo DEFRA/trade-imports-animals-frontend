@@ -366,9 +366,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(changeHrefOf(rows, TRANSITED_COUNTRIES_KEY)).toMatch(
       /\/transit-countries\?change=1$/
     )
-    expect(changeHrefOf(rows, 'Name')).toMatch(
-      /\/transporters\/select\?change=1$/
-    )
+    expect(changeHrefOf(rows, 'Name')).toMatch(/\/transporters\?change=1$/)
   })
 
   it('Should point the species-card Change actions at the commodities pages with a change flag', async () => {

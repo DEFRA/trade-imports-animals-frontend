@@ -23,6 +23,7 @@ import {
 } from './sets/live-animals/journeys/linear/features/transport/port-of-entry/arrival-window.js'
 import { dispatchPages } from './sets/live-animals/journeys/linear/features/index.js'
 import * as importReasonPurpose from './services/import-reason-purpose/index.js'
+import * as transportersService from './services/transporters/index.js'
 
 import * as origin from './sets/live-animals/journeys/linear/features/origin/controller.js'
 import * as commoditiesSearch from './sets/live-animals/journeys/linear/features/commodities/search/search.controller.js'
@@ -37,6 +38,7 @@ import * as cphNumber from './sets/live-animals/journeys/linear/features/cph-num
 import * as portOfEntry from './sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.controller.js'
 import * as transitCountries from './sets/live-animals/journeys/linear/features/transport/transit-countries/transit-countries.controller.js'
 import * as transporters from './sets/live-animals/journeys/linear/features/transport/transporters/transporters.controller.js'
+import * as transporterAdd from './sets/live-animals/journeys/linear/features/transport/transporter-add/transporter-add.controller.js'
 import * as transportersSelect from './sets/live-animals/journeys/linear/features/transport/transporters-select/transporters-select.controller.js'
 import * as privateTransporterDetails from './sets/live-animals/journeys/linear/features/transport/private-transporter-details/private-transporter-details.controller.js'
 import * as contactSelect from './sets/live-animals/journeys/linear/features/contact/controller.js'
@@ -113,36 +115,6 @@ const cases = [
     payload: { transitedCountries: ['FR', 'BE'] }
   },
   {
-    id: 'transporters',
-    collects: transporters.meta.collects,
-    handler: postHandlerOf(transporters),
-    payload: { transporterType: 'Commercial' }
-  },
-  {
-    id: 'transporters-select',
-    collects: transportersSelect.meta.collects,
-    handler: postHandlerOf(transportersSelect),
-    seed: { transporterType: 'Commercial' },
-    payload: { commercialTransporter: 'garcia-livestock-transport' }
-  },
-  {
-    id: 'private-transporter-details',
-    collects: privateTransporterDetails.meta.collects,
-    handler: postHandlerOf(privateTransporterDetails),
-    seed: { transporterType: 'Private' },
-    payload: {
-      nameOrOrganisationName: 'Jean Dupont',
-      addressLine1: '12 Rue des Fermes',
-      addressLine2: '',
-      townOrCity: 'Amiens',
-      county: '',
-      postalOrZipCode: '80000',
-      country: 'France',
-      telephoneNumber: '+33 3 22 55 01 44',
-      emailAddress: 'jean.dupont@example.fr'
-    }
-  },
-  {
     id: 'consignment-contact-select',
     collects: contactSelect.meta.collects,
     handler: postHandlerOf(contactSelect),
@@ -186,13 +158,17 @@ const REASON_REVEALS = [
   }
 ]
 
-describe('reason-for-import commit contract — one reveal per reason', () => {
+const setupJourneyEngine = () => {
   beforeAll(() => {
     configureRecords(recordsStub)
     configureSession(sessionStub)
     buildDispatch(dispatchPages)
   })
   beforeEach(() => store.clear())
+}
+
+describe('reason-for-import commit contract — one reveal per reason', () => {
+  setupJourneyEngine()
 
   it.each(REASON_REVEALS)(
     'Should commit the reason $reasonForImport and only the answers its reveal opens',
@@ -229,12 +205,7 @@ describe('reason-for-import commit contract — one reveal per reason', () => {
 })
 
 describe('controller <-> model commit contract', () => {
-  beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
-  })
-  beforeEach(() => store.clear())
+  setupJourneyEngine()
 
   it.each(cases)(
     'Should commit exactly the committable collects for $id',
@@ -388,5 +359,87 @@ describe('controller <-> model commit contract', () => {
     expect(new Set(committed)).toEqual(
       new Set(committableCollects(addresses.meta.collects))
     )
+  })
+})
+
+// The transporter list declares all three transporter answers and the add
+// spokes write them without declaring them, so the contract is a union across
+// the pick and the spokes rather than one POST per page.
+describe('transporter commit contract — the list and its add spokes', () => {
+  setupJourneyEngine()
+
+  it('Should commit the transporter and its type from the one list page, whichever kind the pick is', async () => {
+    expect(transporters.meta.collects).toEqual([
+      'transporterType',
+      'commercialTransporter',
+      'privateTransporter'
+    ])
+
+    const picks = [
+      ['garcia-livestock-transport', 'commercialTransporter'],
+      ['aberdeen-livestock', 'privateTransporter']
+    ]
+    const committed = []
+    for (const [transporter, expected] of picks) {
+      const result = await drive(postHandlerOf(transporters), {
+        payload: { transporter }
+      })
+      expect(new Set(committedIds(result))).toEqual(
+        new Set(['transporterType', expected])
+      )
+
+      // The body, not just which obligation flipped: a dropped approval number
+      // or a swapped name would ship green into the notification mapper.
+      const record = transportersService.party(transporter)
+      if (expected === 'commercialTransporter') {
+        expect(result.after.commercialTransporter).toEqual({
+          name: record.name,
+          address: { ...record.address },
+          approvalNumber: record.approvalNumber
+        })
+      } else {
+        expect(result.after.privateTransporter).toEqual({
+          name: record.name,
+          address: { ...record.address }
+        })
+        expect(result.after.privateTransporter).not.toHaveProperty(
+          'approvalNumber'
+        )
+      }
+
+      committed.push(...committedIds(result))
+    }
+    expect(new Set(committed)).toEqual(
+      new Set(committableCollects(transporters.meta.collects))
+    )
+  })
+
+  it('Should commit the same transporter answers from the add spokes the list declares them for', async () => {
+    const chooser = await drive(postHandlerOf(transporterAdd), {
+      payload: { transporterType: 'Private' }
+    })
+    expect(committedIds(chooser)).toEqual(['transporterType'])
+
+    const register = await drive(postHandlerOf(transportersSelect), {
+      seed: { transporterType: 'Commercial' },
+      payload: { commercialTransporter: 'garcia-livestock-transport' }
+    })
+    expect(committedIds(register)).toEqual(['commercialTransporter'])
+
+    const typedIn = await drive(postHandlerOf(privateTransporterDetails), {
+      seed: { transporterType: 'Private' },
+      payload: {
+        nameOrOrganisationName: 'Jean Dupont',
+        addressLine1: '12 Rue des Fermes',
+        addressLine2: '',
+        townOrCity: 'Amiens',
+        county: '',
+        postalOrZipCode: '80000',
+        country: 'France',
+        telephoneNumber: '+33 3 22 55 01 44',
+        emailAddress: 'jean.dupont@example.fr'
+      }
+    })
+    expect(committedIds(typedIn)).toEqual(['privateTransporter'])
   })
 })

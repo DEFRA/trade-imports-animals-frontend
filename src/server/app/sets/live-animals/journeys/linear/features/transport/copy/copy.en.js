@@ -89,9 +89,10 @@ export const copy = {
     }
   },
   transporters: {
-    title: 'Transporter',
-    legend: 'What type of transporter will move the animals?',
-    hint: "We will ask for the transporter's details next.",
+    title: 'Transporter details',
+    intro:
+      'This is the person or company responsible for transporting the consignment.',
+    legend: 'Select a transporter',
     guidance: {
       authorisationLead:
         'Your transporter must hold a valid transporter authorisation, issued by DAERA or APHA in the UK if they are:',
@@ -108,6 +109,24 @@ export const copy = {
       euNotValid:
         'Documents issued in any EU Member State are not valid for use in GB.'
     },
+    // The list carries both kinds of transporter, so each row says which it
+    // is. A private transporter has no approval number to show.
+    types: {
+      Commercial: 'Commercial',
+      Private: 'Private'
+    },
+    optionHint: (type, address) => `${type} — ${address}`,
+    optionHintApproved: (type, address, approvalNumber) =>
+      `${type} — ${address} — approval number ${approvalNumber}`,
+    add: 'Add a transporter',
+    errors: {
+      transporterRequired: 'Select a transporter from the list'
+    }
+  },
+  transporterAdd: {
+    title: 'Transporter',
+    legend: 'What type of transporter will move the animals?',
+    hint: "We will ask for the transporter's details next.",
     options: {
       Commercial: {
         text: 'Commercial',

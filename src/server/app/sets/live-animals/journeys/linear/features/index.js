@@ -13,6 +13,7 @@ import * as cphNumber from './cph-number/controller.js'
 import * as portOfEntry from './transport/port-of-entry/port-of-entry.controller.js'
 import * as transitCountries from './transport/transit-countries/transit-countries.controller.js'
 import * as transporters from './transport/transporters/transporters.controller.js'
+import * as transporterAdd from './transport/transporter-add/transporter-add.controller.js'
 import * as transportersSelect from './transport/transporters-select/transporters-select.controller.js'
 import * as privateTransporterDetails from './transport/private-transporter-details/private-transporter-details.controller.js'
 import * as contactSelect from './contact/controller.js'
@@ -37,8 +38,6 @@ export const dispatchPages = [
   portOfEntry.meta,
   transitCountries.meta,
   transporters.meta,
-  transportersSelect.meta,
-  privateTransporterDetails.meta,
   contactSelect.meta,
   declaration.meta
 ]
@@ -59,6 +58,7 @@ export const allRoutes = [
   ...portOfEntry.routes,
   ...transitCountries.routes,
   ...transporters.routes,
+  ...transporterAdd.routes,
   ...transportersSelect.routes,
   ...privateTransporterDetails.routes,
   ...contactSelect.routes,

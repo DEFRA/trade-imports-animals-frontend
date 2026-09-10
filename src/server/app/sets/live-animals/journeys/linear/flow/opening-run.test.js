@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
@@ -18,6 +19,7 @@ import { postHandlerOf } from '../../../../../engine/test-support.js'
 import { dispatchPages } from '../features/index.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
 import { RUN_ACTIVE, RUN_COMPLETE } from '../../../../../flow/run-state.js'
+import { documentsPage } from '../features/documents/page.js'
 import { entryGuardTarget, guardedJourneyPath } from './entry-guard.js'
 
 import * as origin from '../features/origin/controller.js'
@@ -26,6 +28,8 @@ import * as animalIdentification from '../features/commodities/animal-identifica
 import * as importReason from '../features/import-reason/controller.js'
 import * as additionalDetails from '../features/additional-details/controller.js'
 import * as cphNumber from '../features/cph-number/controller.js'
+import * as transportersSelect from '../features/transport/transporters-select/transporters-select.controller.js'
+import * as privateTransporterDetails from '../features/transport/private-transporter-details/private-transporter-details.controller.js'
 import * as hub from '../features/hub/controller.js'
 import * as dashboard from '../features/dashboard/controller.js'
 
@@ -99,6 +103,12 @@ const fishLineSeed = {
     }
   ]
 }
+
+// A whole notification, so a step deep in the run has every earlier question
+// answered and the next one admitted.
+const { values: completeSeed } = JSON.parse(
+  readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))
+)
 
 const startPostHandler = () =>
   dashboard.routes.find(
@@ -255,6 +265,53 @@ const saveAndContinueFollowsTheRunSequence = () => {
     expect(h.captured.redirect).toBe(
       pagePath(journey.journeyId, 'port-of-entry')
     )
+  })
+
+  // The add spokes are off the run, so the only thing that carries the trader
+  // on is each spoke handing back at the list's step. A spoke that continued
+  // from itself would find no step and drop them on the hub.
+  const driveAddSpoke = async (featureModule, { seed, payload }) => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, { ...completeSeed, ...seed })
+    const h = captureH()
+    await postHandlerOf(featureModule)(
+      buildRequest(journey.journeyId, {
+        payload,
+        record: active(journey.journeyId)
+      }),
+      h
+    )
+    return { journeyId: journey.journeyId, h }
+  }
+
+  it('Should carry a commercial add-spoke save on to the documents mid-run, continuing from the list rather than the spoke', async () => {
+    const { journeyId, h } = await driveAddSpoke(transportersSelect, {
+      seed: { transporterType: 'Commercial' },
+      payload: { commercialTransporter: 'garcia-livestock-transport' }
+    })
+
+    expect(h.captured.redirect).toBe(pagePath(journeyId, documentsPage.slug))
+    expect(h.captured.redirect).not.toBe(hubPath(journeyId))
+  })
+
+  it('Should carry a private add-spoke save on to the documents mid-run, continuing from the list rather than the spoke', async () => {
+    const { journeyId, h } = await driveAddSpoke(privateTransporterDetails, {
+      seed: { transporterType: 'Private' },
+      payload: {
+        nameOrOrganisationName: 'Jean Dupont',
+        addressLine1: '12 Rue des Fermes',
+        addressLine2: '',
+        townOrCity: 'Amiens',
+        county: '',
+        postalOrZipCode: '80000',
+        country: 'France',
+        telephoneNumber: '+33 3 22 55 01 44',
+        emailAddress: 'jean.dupont@example.fr'
+      }
+    })
+
+    expect(h.captured.redirect).toBe(pagePath(journeyId, documentsPage.slug))
+    expect(h.captured.redirect).not.toBe(hubPath(journeyId))
   })
 
   it('Should carry a later section on to the next question too — the run is the whole notification, not its opening leg', async () => {

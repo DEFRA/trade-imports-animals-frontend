@@ -9,10 +9,8 @@ import { importReasonPage } from '../features/import-reason/page.js'
 import { additionalDetailsPage } from '../features/additional-details/page.js'
 import {
   portOfEntryPage,
-  privateTransporterDetailsPage,
   transitCountriesPage,
-  transportersPage,
-  transportersSelectPage
+  transportersPage
 } from '../features/transport/page.js'
 import { documentsPage } from '../features/documents/page.js'
 import { addressesPage } from '../features/addresses/page.js'
@@ -44,9 +42,11 @@ const reviewTarget = (scope, journeyId) =>
  * details page (whose derived gate holds until a line exists). The
  * identification step is a single card-per-species surface, gated like every
  * other flow page (its RULE 1 prerequisite holds it until a line exists). The
- * transporter leg lists both of its branch pages and the addresses leg both of
- * its pages; the derived gates pick the one the answers reach, so the run does
- * not need to know which branch it is on. */
+ * transporter leg is one step, the list; the add spokes behind it are a
+ * detour, and they hand the run back at the list's step when they save. The
+ * addresses leg lists both of its pages; each one's derived gate decides on
+ * its own whether the run stops there, so the run does not need to know which
+ * of them this notification needs. */
 export const RUN_STEPS = [
   { id: originPage.id, target: flowPageTarget(originPage) },
   { id: commoditiesPage.id, target: flowPageTarget(commoditiesPage) },
@@ -66,14 +66,6 @@ export const RUN_STEPS = [
   { id: portOfEntryPage.id, target: flowPageTarget(portOfEntryPage) },
   { id: transitCountriesPage.id, target: flowPageTarget(transitCountriesPage) },
   { id: transportersPage.id, target: flowPageTarget(transportersPage) },
-  {
-    id: transportersSelectPage.id,
-    target: flowPageTarget(transportersSelectPage)
-  },
-  {
-    id: privateTransporterDetailsPage.id,
-    target: flowPageTarget(privateTransporterDetailsPage)
-  },
   { id: documentsPage.id, target: flowPageTarget(documentsPage) },
   { id: addressesPage.id, target: flowPageTarget(addressesPage) },
   { id: cphNumberPage.id, target: flowPageTarget(cphNumberPage) },

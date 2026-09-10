@@ -794,7 +794,7 @@ test.describe('transit countries rendering and validation', () => {
     await submit(page)
 
     await expect(
-      page.getByRole('heading', { name: copy.transporters.legend })
+      page.getByRole('heading', { name: copy.transporters.title, exact: true })
     ).toBeVisible()
     await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
 
@@ -986,7 +986,7 @@ test.describe('transit countries list, limits and persistence', () => {
     await addTransitCountry(page, 'Belgium')
     await submit(page)
     await expect(
-      page.getByRole('heading', { name: copy.transporters.legend })
+      page.getByRole('heading', { name: copy.transporters.title, exact: true })
     ).toBeVisible()
 
     await page.goto(journeyUrl(page, 'transit-countries'))
@@ -1016,7 +1016,7 @@ test.describe('transit countries without JavaScript', () => {
     ).toBeVisible()
     await submit(page)
     await expect(
-      page.getByRole('heading', { name: copy.transporters.legend })
+      page.getByRole('heading', { name: copy.transporters.title, exact: true })
     ).toBeVisible()
   })
 })
