@@ -95,11 +95,11 @@ export const copy = {
       linkText:
         'Darganfyddwch sut i gludo anifeiliaid mewn cysylltiad â gweithgaredd economaidd (yn agor mewn tab newydd)',
       linkHref:
-        'https://www.gov.uk/guidance/transporting-animals-in-great-britain',
+        'https://www.gov.uk/guidance/animal-welfare-in-transport#transporting-animals-in-connection-with-an-economic-activity',
       daeraValid:
         'Mae dogfennau a roddwyd gan DAERA yn ddilys i’w defnyddio yn GB.',
       euNotValid:
-        'Nid yw dogfennau a roddwyd mewn unrhyw Aelod-wladwriaeth yr UE yn ddilys i’w defnyddio yn GB.'
+        'Nid yw dogfennau a roddwyd mewn unrhyw aelod-wladwriaeth yr UE yn ddilys i’w defnyddio yn GB.'
     },
     types: {
       Commercial: 'Masnachol',
