@@ -2,6 +2,7 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/error-message/macro.njk" import govukErrorMessage %}
 {% from "govuk/components/fieldset/macro.njk" import govukFieldset %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
 {% from "govuk/components/table/macro.njk" import govukTable %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
@@ -31,6 +32,38 @@
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
+
+    {# The pick rides on the radio, which the browser posts only while its row
+       is still on the list — so a search that filters the chosen row off would
+       drop it. The address picker carries the pick through a search in a
+       hidden field; so does this. The name is `selected`, not `transporter`,
+       or a save submit would post two values for the one field. #}
+    {% if selectedId %}
+      <input type="hidden" name="selected" value="{{ selectedId }}" />
+    {% endif %}
+
+    {# Design release 1 searches the list over name, address and approval
+       number, above the table. The whole page is one form: the search button
+       and the primary are both submits, told apart by their `action` value —
+       the page's return controls are told apart by their own `exit` name, and
+       "Cancel and return to overview" is a link. The filtering happens on the
+       server, so a trader without JavaScript searches the same list the same
+       way. #}
+    {{ govukInput({
+      id: "search",
+      name: "search",
+      classes: "govuk-!-width-two-thirds",
+      label: { text: copy.search.label, classes: "govuk-label--s" },
+      hint: { text: copy.search.hint },
+      value: query
+    }) }}
+
+    {{ govukButton({
+      text: copy.search.button,
+      classes: "govuk-button--secondary",
+      name: "action",
+      value: "search"
+    }) }}
 
     {# Design release 1 aligns the transporters into headed columns rather than
        running each one's facts together in a radio hint, with the radio that
@@ -69,17 +102,21 @@
         {{ govukErrorMessage({ id: "transporter-error", text: errors.transporter }) }}
       {% endif %}
 
-      {{ govukTable({
-        head: [
-          { html: '<span class="govuk-visually-hidden">' + copy.table.selectHidden + '</span>' },
-          { text: copy.table.name },
-          { text: copy.table.address },
-          { text: copy.table.approvalNumber },
-          { text: copy.table.type },
-          { text: copy.table.status }
-        ],
-        rows: transporterTableRows
-      }) }}
+      {% if transporterTableRows.length %}
+        {{ govukTable({
+          head: [
+            { html: '<span class="govuk-visually-hidden">' + copy.table.selectHidden + '</span>' },
+            { text: copy.table.name },
+            { text: copy.table.address },
+            { text: copy.table.approvalNumber },
+            { text: copy.table.type },
+            { text: copy.table.status }
+          ],
+          rows: transporterTableRows
+        }) }}
+      {% else %}
+        <p class="govuk-body">{{ copy.noMatches }}</p>
+      {% endif %}
     {% endset %}
 
     <div class="govuk-form-group{{ ' govuk-form-group--error' if errors.transporter }}">
@@ -100,6 +137,12 @@
       classes: "govuk-button--secondary"
     }) }}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+    {# The primary keeps its own `action` value so the form can tell it from
+       the search submit above. #}
+    {{ saveActions(
+      hubHref,
+      { text: sharedCopy.saveActions.saveAndContinue, name: "action", value: "save" },
+      sharedCopy.saveActions
+    ) }}
   </form>
 {% endblock %}

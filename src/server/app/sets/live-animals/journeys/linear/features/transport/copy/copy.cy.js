@@ -118,6 +118,12 @@ export const copy = {
       status: 'Statws'
     },
     selectRowPrefix: 'Dewis',
+    search: {
+      label: 'Chwilio',
+      hint: 'Enw, cyfeiriad neu rif cymeradwyo',
+      button: 'Chwilio'
+    },
+    noMatches: 'Nid oes unrhyw gludwyr yn cyfateb i’ch chwiliad.',
     add: 'Ychwanegu cludwr',
     errors: {
       transporterRequired: 'Dewiswch gludwr o’r rhestr'
@@ -194,6 +200,7 @@ export const copy = {
     title: 'Ychwanegu cludwr preifat',
     intro:
       'Rhowch enw a chyfeiriad y cludwr preifat sy’n symud yr anifeiliaid.',
+    contactHeading: 'Rhowch fanylion cyswllt',
     fields: {
       nameOrOrganisationName: 'Enw neu enw’r sefydliad',
       addressLine1: 'Llinell gyfeiriad 1',
@@ -202,9 +209,10 @@ export const copy = {
       county: 'Sir (dewisol)',
       postalOrZipCode: 'Cod post neu god zip',
       country: 'Gwlad',
-      telephoneNumber: 'Rhif ffôn',
-      emailAddress: 'Cyfeiriad e-bost'
+      emailAddress: 'Cyfeiriad e-bost',
+      telephoneNumber: 'Rhif ffôn'
     },
+    telephoneHint: 'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad',
     countryPlaceholder: 'Dewiswch wlad',
     errors: {
       nameRequired: 'Rhowch enw neu enw sefydliad',

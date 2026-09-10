@@ -138,6 +138,28 @@ describe('transport copy module', () => {
     })
   })
 
+  // The hint is the promise the search makes: it names the three facts the box
+  // matches, so the trader knows what to type before they type it. Parity only
+  // checks that the Welsh leaf differs from the English, so both are pinned.
+  test('Should name the three facts the transporter search matches, in both languages', () => {
+    expect(copy.transporters.search).toEqual({
+      label: 'Search',
+      hint: 'Name, address or approval number',
+      button: 'Search'
+    })
+    expect(copyCy.transporters.search).toEqual({
+      label: 'Chwilio',
+      hint: 'Enw, cyfeiriad neu rif cymeradwyo',
+      button: 'Chwilio'
+    })
+    expect(copy.transporters.noMatches).toBe(
+      'No transporters match your search.'
+    )
+    expect(copyCy.transporters.noMatches).toBe(
+      'Nid oes unrhyw gludwyr yn cyfateb i’ch chwiliad.'
+    )
+  })
+
   // Design release 1 heads the type question with the choice, warns that
   // adding is a last resort, and explains only the commercial arm.
   test('Should head the type question with the choice and leave the private option unhinted', () => {
@@ -163,6 +185,38 @@ describe('transport copy module', () => {
     expect(copy.privateTransporterDetails.title).toBe('Add private transporter')
     expect(copyCy.privateTransporterDetails.title).toBe(
       'Ychwanegu cludwr preifat'
+    )
+  })
+
+  // Design release 1 closes the address at the country and heads the last two
+  // questions as contact details, exactly as the commercial form does. Copy
+  // parity only checks that a Welsh leaf differs from its English counterpart,
+  // so both headings are pinned here.
+  test('Should head the private form’s contact details in both languages', () => {
+    expect(copy.privateTransporterDetails.contactHeading).toBe(
+      'Enter contact details'
+    )
+    expect(copyCy.privateTransporterDetails.contactHeading).toBe(
+      'Rhowch fanylion cyswllt'
+    )
+  })
+
+  // A private transporter can be based anywhere the country list offers, so
+  // design release 1 asks for a "Phone number" and hints the dialling code —
+  // the same wording the commercial form uses. The two error messages quote
+  // the label, so they have to move with it.
+  test('Should ask the private form for a phone number and hint the country code', () => {
+    expect(copy.privateTransporterDetails.fields.telephoneNumber).toBe(
+      'Phone number'
+    )
+    expect(copy.privateTransporterDetails.telephoneHint).toBe(
+      'For international numbers include the country code'
+    )
+    expect(copy.privateTransporterDetails.errors.telephoneRequired).toBe(
+      'Enter a phone number'
+    )
+    expect(copy.privateTransporterDetails.errors.telephoneMaxLength).toBe(
+      'Phone number must be 20 characters or less'
     )
   })
 

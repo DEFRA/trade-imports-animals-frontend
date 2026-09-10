@@ -25,6 +25,7 @@ const invalidCountry = 'Invalid country'
 const PRIVATE_ADD_SLUG = 'transporters/add/private'
 const REGISTER_SLUG = 'transporters/select'
 const BACK_LINK = '.govuk-back-link'
+const ERROR_SUMMARY = '.govuk-error-summary'
 
 const transporterRecords = parties()
 const privateRecord = transporterRecords.find(
@@ -57,6 +58,17 @@ const openTransporterList = async (page) => {
   await expect(
     page.getByRole('heading', { name: copy.transporters.title })
   ).toBeVisible()
+}
+
+/** Search the list the way a trader does: type a term and submit. The search
+ * is a submit on the page's own form, so nothing here depends on client JS. */
+const searchTransporters = async (page, term) => {
+  await page
+    .getByLabel(copy.transporters.search.label, { exact: true })
+    .fill(term)
+  await page
+    .getByRole('button', { name: copy.transporters.search.button, exact: true })
+    .click()
 }
 
 const openTransporterType = async (page) => {
@@ -105,7 +117,7 @@ const openPrivate = async (page) => {
 }
 
 const errorLink = (page, message) =>
-  page.locator('.govuk-error-summary').getByRole('link', { name: message })
+  page.locator(ERROR_SUMMARY).getByRole('link', { name: message })
 
 const seriousOrCritical = (violations) =>
   violations
@@ -173,7 +185,7 @@ const requiredPrivateValidations = [
   ['town or city', 'townOrCity', 'townOrCityRequired'],
   ['postal or zip code', 'postalOrZipCode', 'postalOrZipCodeRequired'],
   ['country', 'country', 'countryRequired'],
-  ['telephone number', 'telephoneNumber', 'telephoneRequired'],
+  ['phone number', 'telephoneNumber', 'telephoneRequired'],
   ['email address', 'emailAddress', 'emailRequired']
 ]
 
@@ -222,7 +234,7 @@ const formatPrivateValidations = [
     'postalOrZipCodeMaxLength'
   ],
   [
-    'telephone number over 20 characters',
+    'phone number over 20 characters',
     'telephoneNumber',
     '1'.repeat(MAX_TELEPHONE_LENGTH + 1),
     'telephoneMaxLength'
@@ -430,7 +442,7 @@ test.describe('transporter list page', () => {
     await submit(page)
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-    await expect(page.locator('.govuk-error-summary')).toHaveCount(0)
+    await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
 
     await page.goto(journeyUrl(page, PRIVATE_ADD_SLUG))
     await expect(
@@ -461,6 +473,113 @@ test.describe('transporter list page', () => {
     await expect(page.locator('input[name="transporter"]:checked')).toHaveCount(
       0
     )
+  })
+})
+
+// Design release 1 puts a search over the list — the register is longer than a
+// screenful and grows. It is a submit on the page's own form, so the filtering
+// is the server's and a trader without JavaScript searches the same way.
+test.describe('searching the transporter list', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('carries a labelled search, hinted with what it matches, above the list', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+
+    const search = page.getByLabel(copy.transporters.search.label, {
+      exact: true
+    })
+    await expect(search).toBeVisible()
+    await expect(page.getByText(copy.transporters.search.hint)).toBeVisible()
+    await expect(
+      page.getByRole('button', {
+        name: copy.transporters.search.button,
+        exact: true
+      })
+    ).toBeVisible()
+
+    // Above the list, not below it: a search a trader meets after the rows is
+    // a search they have already scrolled past.
+    const searchPrecedesTable = await page.evaluate(() => {
+      const input = document.querySelector('#search')
+      const table = document.querySelector('.govuk-table')
+      // Neither element contains the other, so the comparison is the plain
+      // "comes after" flag — DOCUMENT_POSITION_FOLLOWING, 4 — rather than a
+      // mask of several. The constant is spelled out because this callback
+      // runs in the browser, where the linter cannot see `Node`.
+      const following = 4
+      return (
+        Boolean(input) &&
+        Boolean(table) &&
+        input.compareDocumentPosition(table) === following
+      )
+    })
+    expect(searchPrecedesTable).toBe(true)
+  })
+
+  test('searching by name leaves only the matching transporter on the list', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    await searchTransporters(page, privateRecord.name)
+
+    await expect(transporterRow(page, privateRecord.name)).toHaveCount(1)
+    await expect(transporterRow(page, commercialRecord.name)).toHaveCount(0)
+  })
+
+  test('searching by approval number finds the transporter it belongs to', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    await searchTransporters(page, commercialRecord.approvalNumber)
+
+    await expect(transporterRow(page, commercialRecord.name)).toHaveCount(1)
+    await expect(transporterRow(page, privateRecord.name)).toHaveCount(0)
+  })
+
+  test('searching by address finds the transporter at it', async ({ page }) => {
+    await openTransporterList(page)
+    await searchTransporters(page, privateRecord.address.postalOrZipCode)
+
+    await expect(transporterRow(page, privateRecord.name)).toHaveCount(1)
+    await expect(transporterRow(page, commercialRecord.name)).toHaveCount(0)
+  })
+
+  test('keeps the term in the box and stays on the list, saving nothing', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    await searchTransporters(page, privateRecord.name)
+
+    await expect(
+      page.getByLabel(copy.transporters.search.label, { exact: true })
+    ).toHaveValue(privateRecord.name)
+    await expect(
+      page.getByRole('heading', { name: copy.transporters.title })
+    ).toBeVisible()
+    await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
+  })
+
+  test('says so when nothing matches, rather than showing an empty table', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    await searchTransporters(page, 'no such transporter')
+
+    await expect(page.getByText(copy.transporters.noMatches)).toBeVisible()
+    await expect(page.locator('.govuk-table')).toHaveCount(0)
+  })
+
+  test('a searched list has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    await searchTransporters(page, privateRecord.name)
+
+    await expectAxeClean(page, 'Transporter list search results')
   })
 })
 
@@ -654,6 +773,46 @@ test.describe('private transporter rendering and optionality', () => {
     for (const label of Object.values(copy.privateTransporterDetails.fields)) {
       await expect(page.getByLabel(label)).toBeVisible()
     }
+  })
+
+  // A private transporter is commonly based outside the UK, so design release 1
+  // tells the trader to include the dialling code — the same hint the
+  // commercial form carries.
+  test('private transporter phone number hints the international dialling code', async ({
+    page
+  }) => {
+    await openPrivate(page)
+
+    await expect(
+      page.getByLabel(copy.privateTransporterDetails.fields.telephoneNumber)
+    ).toHaveAccessibleDescription(copy.privateTransporterDetails.telephoneHint)
+  })
+
+  // Design release 1 closes the address at the country and heads the last two
+  // questions as contact details, email before phone.
+  test('private transporter page heads the contact details after the address, email first', async ({
+    page
+  }) => {
+    await openPrivate(page)
+
+    await expect(
+      page.getByRole('heading', {
+        name: copy.privateTransporterDetails.contactHeading
+      })
+    ).toBeVisible()
+    const orderedIds = await page
+      .locator(
+        'form #country, form h2, form #emailAddress, form #telephoneNumber'
+      )
+      .evaluateAll((nodes) =>
+        nodes.map((node) => node.id || node.tagName.toLowerCase())
+      )
+    expect(orderedIds).toEqual([
+      'country',
+      'h2',
+      'emailAddress',
+      'telephoneNumber'
+    ])
   })
 
   test('a completely blank private transporter record is optional', async ({
