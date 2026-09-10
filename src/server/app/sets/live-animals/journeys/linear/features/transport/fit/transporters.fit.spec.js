@@ -14,6 +14,7 @@ import {
   PRIVATE,
   parties
 } from '../../../../../../../services/transporters/index.js'
+import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { addressSummary } from '../transporters/transporter-record.js'
 
@@ -48,7 +49,7 @@ const openTransporterType = async (page) => {
   // The govuk button macro renders an href as a link with role="button".
   await page.getByRole('button', { name: copy.transporters.add }).click()
   await expect(
-    page.getByRole('heading', { name: copy.transporterAdd.legend })
+    page.getByRole('heading', { name: copy.transporterAdd.title })
   ).toBeVisible()
 }
 
@@ -228,11 +229,33 @@ const expectTransporterGuidance = async (page) => {
   ).toBeVisible()
 }
 
+// Design release 1 offers the private arm first and explains only the
+// commercial one, which carries the Northern Ireland condition.
 const expectBranchOptions = async (page) => {
-  for (const option of Object.values(copy.transporterAdd.options)) {
-    await expect(page.getByRole('radio', { name: option.text })).toBeVisible()
-    await expect(page.getByText(option.hint)).toBeVisible()
-  }
+  const options = page.getByRole('radio')
+  await expect(options).toHaveCount(2)
+  await expect(options.nth(0)).toHaveValue(PRIVATE)
+  await expect(options.nth(1)).toHaveValue(COMMERCIAL)
+
+  const privateOption = page.getByRole('radio', {
+    name: copy.transporterAdd.options.Private.text
+  })
+  await expect(privateOption).toBeVisible()
+  await expect(privateOption).toHaveAccessibleDescription('')
+
+  const commercialOption = page.getByRole('radio', {
+    name: copy.transporterAdd.options.Commercial.text
+  })
+  await expect(commercialOption).toBeVisible()
+  await expect(commercialOption).toHaveAccessibleDescription(
+    copy.transporterAdd.options.Commercial.hint
+  )
+
+  // Design release 1 drops the journey-describing group hint entirely. A
+  // govuk fieldset-level hint renders as a direct child of the fieldset and
+  // hangs off its aria-describedby, so neither radio's own accessible
+  // description would see it come back — assert it is not there at all.
+  await expect(page.locator('fieldset > .govuk-hint')).toHaveCount(0)
 }
 
 test.describe('transporter list page', () => {
@@ -281,7 +304,7 @@ test.describe('transporter list page', () => {
     await openTransporterList(page)
 
     await expect(
-      page.getByRole('heading', { name: copy.transporterAdd.legend })
+      page.getByRole('heading', { name: copy.transporterAdd.title })
     ).toHaveCount(0)
   })
 
@@ -395,6 +418,38 @@ test.describe('adding a transporter that is not on the list', () => {
     await expect(page).toHaveURL(/\/transporters\/add$/)
     await expectBranchOptions(page)
     await expectPageEndsWithPrimaryAlone(page)
+  })
+
+  test('heads the type question with the choice it asks for, under the new-transporter caption, and warns the trader to search first', async ({
+    page
+  }) => {
+    await openTransporterType(page)
+
+    await expect(
+      page.locator('span.govuk-caption-l + h1.govuk-heading-l')
+    ).toHaveText(copy.transporterAdd.title)
+    await expect(page.locator('span.govuk-caption-l')).toHaveText(
+      sectionCaptionsCopy.sections.newTransporter
+    )
+    await expect(page.getByText(copy.transporterAdd.warning)).toBeVisible()
+    // The question still names the group for a screen reader, without
+    // competing with the heading.
+    await expect(
+      page.locator('legend').filter({ hasText: copy.transporterAdd.legend })
+    ).toHaveClass(/govuk-visually-hidden/)
+  })
+
+  test('heads the private form as an addition, under the same caption', async ({
+    page
+  }) => {
+    await openPrivate(page)
+
+    await expect(
+      page.locator('span.govuk-caption-l + h1.govuk-heading-l')
+    ).toHaveText(copy.privateTransporterDetails.title)
+    await expect(page.locator('span.govuk-caption-l')).toHaveText(
+      sectionCaptionsCopy.sections.newTransporter
+    )
   })
 
   test('the type question goes back to the list', async ({ page }) => {

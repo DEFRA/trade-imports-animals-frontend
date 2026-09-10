@@ -1,5 +1,6 @@
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
 {% from "shared/save-actions.njk" import saveActions %}
 {% from "shared/section-caption.njk" import sectionCaption %}
 
@@ -7,33 +8,39 @@
   {% include "shared/error-summary.njk" %}
 
   {{ sectionCaption(caption) }}
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
+  {# Adding a transporter is the last resort, so the warning comes between the
+     heading and the choice — as Design release 1 does. #}
+  {{ govukWarningText({ text: copy.warning }) }}
+
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
+    {# The page is headed with its name, so the question stays as the group's
+       legend for a screen reader without being the largest thing on the page —
+       as Design release 1 does. #}
     {{ govukRadios({
       name: "transporterType",
       fieldset: {
         legend: {
           text: copy.legend,
-          isPageHeading: true,
-          classes: "govuk-fieldset__legend--l"
+          classes: "govuk-visually-hidden"
         }
       },
-      hint: { text: copy.hint },
       errorMessage: errors.transporterType and { text: errors.transporterType },
       items: [
+        {
+          value: "Private",
+          text: copy.options.Private.text,
+          checked: values.transporterType == "Private"
+        },
         {
           value: "Commercial",
           text: copy.options.Commercial.text,
           hint: { text: copy.options.Commercial.hint },
           checked: values.transporterType == "Commercial"
-        },
-        {
-          value: "Private",
-          text: copy.options.Private.text,
-          hint: { text: copy.options.Private.hint },
-          checked: values.transporterType == "Private"
         }
       ]
     }) }}

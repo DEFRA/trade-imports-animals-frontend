@@ -129,6 +129,34 @@ describe('transport copy module', () => {
     )
   })
 
+  // Design release 1 heads the type question with the choice, warns that
+  // adding is a last resort, and explains only the commercial arm.
+  test('Should head the type question with the choice and leave the private option unhinted', () => {
+    expect(copy.transporterAdd.title).toBe('Choose a transporter type')
+    expect(copy.transporterAdd.warning).toBe(
+      'Before you add this transporter, please ensure you have already searched for it first.'
+    )
+    // Design release 1 warns instead of describing the next page, so the
+    // journey-describing hint is gone from both decks.
+    expect(copy.transporterAdd.hint).toBeUndefined()
+    expect(copyCy.transporterAdd.hint).toBeUndefined()
+    expect(copy.transporterAdd.options.Private).toEqual({
+      text: 'Private transporter'
+    })
+    expect(copy.transporterAdd.options.Commercial.hint).toBe(
+      'This can only be a commercial transporter from Northern Ireland.'
+    )
+  })
+
+  // Design release 1 heads the private form as the addition it is, under the
+  // same new-transporter caption as the type question.
+  test('Should head the private form as an addition', () => {
+    expect(copy.privateTransporterDetails.title).toBe('Add private transporter')
+    expect(copyCy.privateTransporterDetails.title).toBe(
+      'Ychwanegu cludwr preifat'
+    )
+  })
+
   // Both languages must send the trader to the same guidance section — a
   // divergent href here is a broken translation, not a wording choice.
   test('Should link the same guidance section in Welsh as in English', () => {
