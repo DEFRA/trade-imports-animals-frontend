@@ -114,17 +114,17 @@ export const copy = {
     }
   },
   transporterAdd: {
-    title: 'Cludwr',
+    title: 'Dewiswch fath o gludwr',
     legend: 'Pa fath o gludwr fydd yn symud yr anifeiliaid?',
-    hint: 'Byddwn yn gofyn am fanylion y cludwr nesaf.',
+    warning:
+      'Cyn i chi ychwanegu’r cludwr hwn, gwnewch yn siŵr eich bod wedi chwilio amdano yn gyntaf.',
     options: {
+      Private: {
+        text: 'Cludwr preifat'
+      },
       Commercial: {
         text: 'Masnachol',
-        hint: 'Busnes sydd wedi’i gymeradwyo i gludo anifeiliaid — byddwch yn dewis un o restr'
-      },
-      Private: {
-        text: 'Preifat',
-        hint: 'Chi neu unigolyn arall sy’n symud yr anifeiliaid — byddwch yn rhoi eu cyfeiriad'
+        hint: 'Dim ond cludwr masnachol o Ogledd Iwerddon y gall hwn fod.'
       }
     }
   },
@@ -138,7 +138,7 @@ export const copy = {
     }
   },
   privateTransporterDetails: {
-    title: 'Manylion y cludwr preifat',
+    title: 'Ychwanegu cludwr preifat',
     intro:
       'Rhowch enw a chyfeiriad y cludwr preifat sy’n symud yr anifeiliaid.',
     fields: {

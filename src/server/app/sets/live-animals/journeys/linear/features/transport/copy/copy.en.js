@@ -127,17 +127,25 @@ export const copy = {
     }
   },
   transporterAdd: {
-    title: 'Transporter',
+    title: 'Choose a transporter type',
+    // The page is headed with the choice it asks for, so the question stays as
+    // the group's legend for a screen reader without competing with the
+    // heading — as Design release 1 does.
     legend: 'What type of transporter will move the animals?',
-    hint: "We will ask for the transporter's details next.",
+    // Design release 1 warns here rather than describing the next page: adding
+    // a transporter is the last resort, after searching the list for one.
+    warning:
+      'Before you add this transporter, please ensure you have already searched for it first.',
     options: {
+      // Private first, as Design release 1 orders them, and unhinted: an
+      // individual moving their own animals needs no explaining. Only the
+      // commercial arm carries a condition.
+      Private: {
+        text: 'Private transporter'
+      },
       Commercial: {
         text: 'Commercial',
-        hint: 'A business approved to transport animals — you will choose one from a list'
-      },
-      Private: {
-        text: 'Private',
-        hint: 'You or another individual moving the animals — you will give their address'
+        hint: 'This can only be a commercial transporter from Northern Ireland.'
       }
     }
   },
@@ -151,7 +159,7 @@ export const copy = {
     }
   },
   privateTransporterDetails: {
-    title: 'Private transporter details',
+    title: 'Add private transporter',
     intro:
       'Enter the name and address of the private transporter moving the animals.',
     fields: {
