@@ -138,6 +138,28 @@ describe('transport copy module', () => {
     })
   })
 
+  // The hint is the promise the search makes: it names the three facts the box
+  // matches, so the trader knows what to type before they type it. Parity only
+  // checks that the Welsh leaf differs from the English, so both are pinned.
+  test('Should name the three facts the transporter search matches, in both languages', () => {
+    expect(copy.transporters.search).toEqual({
+      label: 'Search',
+      hint: 'Name, address or approval number',
+      button: 'Search'
+    })
+    expect(copyCy.transporters.search).toEqual({
+      label: 'Chwilio',
+      hint: 'Enw, cyfeiriad neu rif cymeradwyo',
+      button: 'Chwilio'
+    })
+    expect(copy.transporters.noMatches).toBe(
+      'No transporters match your search.'
+    )
+    expect(copyCy.transporters.noMatches).toBe(
+      'Nid oes unrhyw gludwyr yn cyfateb i’ch chwiliad.'
+    )
+  })
+
   // Design release 1 heads the type question with the choice, warns that
   // adding is a last resort, and explains only the commercial arm.
   test('Should head the type question with the choice and leave the private option unhinted', () => {

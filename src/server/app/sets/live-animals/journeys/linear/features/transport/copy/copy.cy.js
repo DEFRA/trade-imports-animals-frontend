@@ -118,6 +118,12 @@ export const copy = {
       status: 'Statws'
     },
     selectRowPrefix: 'Dewis',
+    search: {
+      label: 'Chwilio',
+      hint: 'Enw, cyfeiriad neu rif cymeradwyo',
+      button: 'Chwilio'
+    },
+    noMatches: 'Nid oes unrhyw gludwyr yn cyfateb i’ch chwiliad.',
     add: 'Ychwanegu cludwr',
     errors: {
       transporterRequired: 'Dewiswch gludwr o’r rhestr'

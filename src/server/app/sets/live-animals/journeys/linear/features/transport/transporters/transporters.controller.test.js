@@ -27,6 +27,8 @@ const ABERDEEN_ID = 'aberdeen-livestock'
 const ABERDEEN_NAME = 'Aberdeen Livestock Ltd'
 // The one record design release 1 shows as added but not yet approved.
 const ROMANIAN_ID = 'romanian-agri-exports'
+// A pick the list does not offer — the only thing that refuses a save here.
+const NOT_ON_THE_LIST = 'not-a-transporter'
 
 const handlerFor = (method) =>
   transporters.routes.find((route) => route.method === method).handler
@@ -152,7 +154,7 @@ describe('/transporters', () => {
 
   it('Should reject a transporter that is not on the list', async () => {
     const result = await driveHandler(postHandler, {
-      payload: { transporter: 'not-a-transporter' }
+      payload: { transporter: NOT_ON_THE_LIST }
     })
 
     expect(result.view.context.errors.transporter).toBeTruthy()
@@ -162,7 +164,7 @@ describe('/transporters', () => {
 
   it('Should save the type off the record when a commercial transporter is picked', async () => {
     const result = await driveHandler(postHandler, {
-      payload: { transporter: GARCIA_ID }
+      payload: { action: 'save', transporter: GARCIA_ID }
     })
 
     expect(result.after.transporterType).toBe(COMMERCIAL)
@@ -175,7 +177,7 @@ describe('/transporters', () => {
 
   it('Should save the type off the record when a private transporter is picked', async () => {
     const result = await driveHandler(postHandler, {
-      payload: { transporter: ABERDEEN_ID }
+      payload: { action: 'save', transporter: ABERDEEN_ID }
     })
 
     expect(result.after.transporterType).toBe(PRIVATE)
@@ -198,5 +200,159 @@ describe('/transporters', () => {
     expect(response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     expect(response.context.recoverableError).toBe(true)
     expect(rowFor(response.context, GARCIA_ID).checked).toBe(true)
+  })
+
+  // The search survives the outage too: coming back to the whole register
+  // under an error banner loses the trader the filtering they had done.
+  it('Should keep the search on the page after a recoverable save failure', async () => {
+    const response = await driveSaveFailure({
+      action: 'save',
+      search: 'aberdeen',
+      transporter: ABERDEEN_ID
+    })
+
+    expect(response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    expect(response.context.query).toBe('aberdeen')
+    expect(response.context.transporterRows.map((row) => row.id)).toEqual([
+      ABERDEEN_ID
+    ])
+  })
+})
+
+// Design release 1 puts a search over the list. It is a submit on the same
+// form, so the filtering happens on the server and a trader without JavaScript
+// searches the same way.
+describe('/transporters — searching the list', () => {
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  it('Should filter the list to the transporters matching the search', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { action: 'search', search: 'aberdeen' }
+    })
+
+    expect(result.view.context.transporterRows.map((row) => row.id)).toEqual([
+      ABERDEEN_ID
+    ])
+    expect(result.view.context.query).toBe('aberdeen')
+    expect(result.response.redirect).toBeFalsy()
+  })
+
+  it('Should commit nothing when the list is searched', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { action: 'search', search: 'aberdeen', transporter: GARCIA_ID }
+    })
+
+    expect(result.after.transporterType).toBeUndefined()
+    expect(result.after.privateTransporter).toBeUndefined()
+  })
+
+  it('Should keep the row the trader had picked checked when the search leaves it on the list', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { action: 'search', search: 'garcia', transporter: GARCIA_ID }
+    })
+
+    expect(rowFor(result.view.context, GARCIA_ID).checked).toBe(true)
+  })
+
+  // The chosen radio is not posted once its row is filtered off, so the pick
+  // has to survive on the hidden carrier or the trader loses it silently.
+  it('Should keep the pick when the search that filtered its row off is cleared', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { action: 'search', search: '', selected: GARCIA_ID }
+    })
+
+    expect(rowFor(result.view.context, GARCIA_ID).checked).toBe(true)
+    expect(result.view.context.selectedId).toBe(GARCIA_ID)
+  })
+
+  // A returning trader's saved row posts no radio once a search has filtered
+  // it off, so the notification is the only thing left to re-check it from.
+  it('Should re-check the transporter already on the notification when the list is searched', async () => {
+    const result = await driveHandler(postHandler, {
+      seed: {
+        transporterType: COMMERCIAL,
+        commercialTransporter: { name: GARCIA_NAME }
+      },
+      payload: { action: 'search', search: 'garcia' }
+    })
+
+    expect(rowFor(result.view.context, GARCIA_ID).checked).toBe(true)
+  })
+
+  // The first row carries the field's own id so the error summary link lands
+  // on it — that has to hold for the filtered list too, not just the whole one.
+  it('Should give the first matching row the field id', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { action: 'search', search: 'aberdeen' }
+    })
+
+    expect(result.view.context.transporterRows[0].idPrefix).toBe('transporter')
+  })
+
+  it('Should leave no rows when nothing matches the search', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { action: 'search', search: 'no such transporter' }
+    })
+
+    expect(result.view.context.transporterRows).toEqual([])
+  })
+
+  // A repeated form key parses to an array; the search must fold it to a
+  // string rather than throwing out of the handler as a 500.
+  it('Should survive a repeated search key rather than throwing', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { action: 'search', search: ['aberdeen', 'garcia'] }
+    })
+
+    expect(typeof result.view.context.query).toBe('string')
+    expect(result.view.context.transporterRows).toEqual([])
+  })
+
+  it('Should keep the search on the page when the pick fails validation', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { search: 'aberdeen', transporter: NOT_ON_THE_LIST }
+    })
+
+    expect(result.view.context.errors.transporter).toBeTruthy()
+    expect(result.view.context.query).toBe('aberdeen')
+  })
+
+  // A search that matches nothing leaves no radio to link to, so the summary
+  // has to send the trader to the search box instead of a dead anchor. An
+  // unpicked list is not what refuses the save — the page walks on through
+  // that — so the pick refused here is one that is not on the list.
+  it('Should point the error summary at the search box when nothing matched', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: {
+        action: 'save',
+        search: 'no such transporter',
+        transporter: NOT_ON_THE_LIST
+      }
+    })
+
+    expect(result.view.context.transporterRows).toEqual([])
+    expect(result.view.context.errorSummary.errorList[0].href).toBe('#search')
+  })
+
+  it('Should point the error summary at the first row when the list still has one', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: {
+        action: 'save',
+        search: 'aberdeen',
+        transporter: NOT_ON_THE_LIST
+      }
+    })
+
+    expect(result.view.context.errorSummary.errorList[0].href).toBe(
+      '#transporter'
+    )
+  })
+
+  it('Should show the whole list before anything is searched for', async () => {
+    const result = await driveHandler(getHandler)
+
+    expect(result.view.context.query).toBe('')
+    expect(result.view.context.transporterRows.length).toBeGreaterThan(1)
   })
 })
