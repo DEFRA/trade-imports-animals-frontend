@@ -1,6 +1,10 @@
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/error-message/macro.njk" import govukErrorMessage %}
+{% from "govuk/components/fieldset/macro.njk" import govukFieldset %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
+{% from "govuk/components/table/macro.njk" import govukTable %}
+{% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "shared/save-actions.njk" import saveActions %}
 {% from "shared/section-caption.njk" import sectionCaption %}
 
@@ -28,17 +32,66 @@
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
 
-    {{ govukRadios({
-      name: "transporter",
-      fieldset: {
+    {# Design release 1 aligns the transporters into headed columns rather than
+       running each one's facts together in a radio hint, with the radio that
+       picks a row in the leading column — the same shape as the address
+       picker's results table. Names are escaped into the hidden label because
+       a transporter name may carry an ampersand. #}
+    {% set transporterTableRows = [] %}
+    {% for row in transporterRows %}
+      {% set selectCell %}
+        {{ govukRadios({
+          idPrefix: row.idPrefix,
+          name: "transporter",
+          classes: "govuk-radios--small",
+          items: [{
+            value: row.id,
+            html: '<span class="govuk-visually-hidden">' + copy.selectRowPrefix + " " + (row.name | escape) + '</span>',
+            checked: row.checked
+          }]
+        }) }}
+      {% endset %}
+      {% set statusCell %}
+        {{ govukTag({ text: row.status.text, classes: row.status.classes }) }}
+      {% endset %}
+      {% set ignored = transporterTableRows.push([
+        { html: selectCell },
+        { text: row.name },
+        { text: row.addressText },
+        { text: row.approvalNumber },
+        { text: row.type },
+        { html: statusCell }
+      ]) %}
+    {% endfor %}
+
+    {% set transporterListHtml %}
+      {% if errors.transporter %}
+        {{ govukErrorMessage({ id: "transporter-error", text: errors.transporter }) }}
+      {% endif %}
+
+      {{ govukTable({
+        head: [
+          { html: '<span class="govuk-visually-hidden">' + copy.table.selectHidden + '</span>' },
+          { text: copy.table.name },
+          { text: copy.table.address },
+          { text: copy.table.approvalNumber },
+          { text: copy.table.type },
+          { text: copy.table.status }
+        ],
+        rows: transporterTableRows
+      }) }}
+    {% endset %}
+
+    <div class="govuk-form-group{{ ' govuk-form-group--error' if errors.transporter }}">
+      {{ govukFieldset({
         legend: {
           text: copy.legend,
           classes: "govuk-fieldset__legend--m"
-        }
-      },
-      errorMessage: errors.transporter and { text: errors.transporter },
-      items: transporterOptions
-    }) }}
+        },
+        describedBy: "transporter-error" if errors.transporter else "",
+        html: transporterListHtml
+      }) }}
+    </div>
 
     {# The way out of the list for a trader whose transporter is not on it. #}
     {{ govukButton({

@@ -10,7 +10,9 @@ import {
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { validatorDefaults } from '../../../../../../../shared/copy.en.js'
 import {
+  APPROVED,
   COMMERCIAL,
+  NEW,
   PRIVATE,
   parties
 } from '../../../../../../../services/transporters/index.js'
@@ -31,6 +33,18 @@ const privateRecord = transporterRecords.find(
 const commercialRecord = transporterRecords.find(
   (record) => record.type === COMMERCIAL
 )
+const approvedRecord = transporterRecords.find(
+  (record) => record.status === APPROVED
+)
+const newRecord = transporterRecords.find((record) => record.status === NEW)
+
+/** The one table row a transporter owns, found by the cell under Name. Matching
+ * the row's text would also match the radio's visually hidden "Select <name>"
+ * label, so an empty Name column would still find the row. */
+const transporterRow = (page, name) =>
+  page
+    .getByRole('row')
+    .filter({ has: page.getByRole('cell', { name, exact: true }) })
 
 const submit = (page) =>
   page.getByRole('button', { name: 'Save and continue' }).click()
@@ -290,27 +304,57 @@ test.describe('transporter list page', () => {
     ).toBeVisible()
   })
 
-  test('lists every transporter the service knows about, commercial and private, each showing its type', async ({
+  // Design release 1 aligns the transporters into headed columns rather than
+  // running each one's facts together in a radio hint.
+  test('lists every transporter the service knows about in headed columns, each row showing its address, approval number and type', async ({
     page
   }) => {
     await openTransporterList(page)
 
-    for (const record of transporterRecords) {
-      const type = copy.transporters.types[record.type]
-      const address = addressSummary(record.address)
-      const expectedHint = record.approvalNumber
-        ? copy.transporters.optionHintApproved(
-            type,
-            address,
-            record.approvalNumber
-          )
-        : copy.transporters.optionHint(type, address)
-
-      await expect(page.getByRole('radio', { name: record.name })).toBeVisible()
+    for (const heading of Object.values(copy.transporters.table)) {
       await expect(
-        page.getByRole('radio', { name: record.name })
-      ).toHaveAccessibleDescription(expectedHint)
+        page.getByRole('columnheader', { name: heading, exact: true })
+      ).toHaveCount(1)
     }
+
+    // The column order Design release 1 uses: select, Name, Address, Approval
+    // number, Type, Status. Asserting by position is what pins a fact to its
+    // heading — checking the row merely contains it would pass with the
+    // address and the type swapped.
+    for (const record of transporterRecords) {
+      const row = transporterRow(page, record.name)
+      await expect(row).toHaveCount(1)
+      await expect(row.getByRole('radio')).toBeVisible()
+      await expect(row.getByRole('cell').nth(1)).toHaveText(record.name)
+      await expect(row.getByRole('cell').nth(2)).toHaveText(
+        addressSummary(record.address)
+      )
+      // A private transporter has no approval number, so its cell stays blank.
+      await expect(row.getByRole('cell').nth(3)).toHaveText(
+        record.approvalNumber ?? ''
+      )
+      await expect(row.getByRole('cell').nth(4)).toHaveText(
+        copy.transporters.types[record.type]
+      )
+      await expect(row.getByRole('cell').nth(5)).toHaveText(
+        copy.transporters.statuses[record.status]
+      )
+    }
+  })
+
+  // The tag is what tells a trader at a glance that a transporter has been
+  // added but not approved yet.
+  test('tags an approved transporter green and a newly added one pink', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+
+    await expect(
+      transporterRow(page, approvedRecord.name).locator('.govuk-tag--green')
+    ).toHaveText(copy.transporters.statuses.Approved)
+    await expect(
+      transporterRow(page, newRecord.name).locator('.govuk-tag--magenta')
+    ).toHaveText(copy.transporters.statuses.New)
   })
 
   test('does not ask the transporter type before the list', async ({

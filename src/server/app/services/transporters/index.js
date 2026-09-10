@@ -1,6 +1,12 @@
-import { COMMERCIAL, PRIVATE, TRANSPORTER_OPTIONS } from './records.js'
+import {
+  APPROVED,
+  COMMERCIAL,
+  NEW,
+  PRIVATE,
+  TRANSPORTER_OPTIONS
+} from './records.js'
 
-export { COMMERCIAL, PRIVATE }
+export { APPROVED, COMMERCIAL, NEW, PRIVATE }
 
 /** Every transporter the trader can pick, commercial and private together.
  *

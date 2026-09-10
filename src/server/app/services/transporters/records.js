@@ -14,9 +14,24 @@
  * collects.
  *
  * A transporter a trader types in by hand does not join this list: it lives on
- * the notification it was entered into and nowhere else. */
+ * the notification it was entered into and nowhere else.
+ *
+ * `status` is whether the transporter has been approved yet, which the list
+ * shows so a trader can tell at a glance. Like `type` it is a fact about the
+ * record, held here because nothing serves it — when the register moves behind
+ * a service the status travels with it and this fixture goes.
+ *
+ * The four private records' statuses are copied from design release 1, which
+ * hardcodes them against the same four names: Aberdeen Livestock Ltd and
+ * Slovak Farm Export approved, Romanian Agri Exports SRL and Finnish Livestock
+ * Oy new. The two commercial records are this service's own fixtures and have
+ * no design release 1 row, so nothing has ruled on their status — see the note
+ * on each. */
 export const COMMERCIAL = 'Commercial'
 export const PRIVATE = 'Private'
+
+export const APPROVED = 'Approved'
+export const NEW = 'New'
 
 /** One private record. Every private transporter carries the same address
  * shape — the fields the private-transporter form collects — so the shape is
@@ -24,6 +39,7 @@ export const PRIVATE = 'Private'
 const privateRecord = ({
   id,
   name,
+  status,
   addressLine1,
   townOrCity,
   county = '',
@@ -34,6 +50,7 @@ const privateRecord = ({
 }) => ({
   id,
   type: PRIVATE,
+  status,
   name,
   address: {
     addressLine1,
@@ -51,6 +68,10 @@ export const TRANSPORTER_OPTIONS = [
   {
     id: 'garcia-livestock-transport',
     type: COMMERCIAL,
+    // Unruled: design release 1 has no row for this transporter, so no register
+    // has said what it may be labelled. Placeholder until the commercial
+    // register's owner rules — see inc-122's open question.
+    status: APPROVED,
     name: 'García Livestock Transport SL',
     approvalNumber: 'ES-T2-45001294',
     address: {
@@ -63,6 +84,10 @@ export const TRANSPORTER_OPTIONS = [
   {
     id: 'j-and-g-campbell',
     type: COMMERCIAL,
+    // Unruled: design release 1 has no row for this transporter, so no register
+    // has said what it may be labelled. Placeholder until the commercial
+    // register's owner rules — see inc-122's open question.
+    status: APPROVED,
     name: 'J & G Campbell LTD',
     approvalNumber: 'UK/BURY/T2/00104115',
     address: {
@@ -74,6 +99,7 @@ export const TRANSPORTER_OPTIONS = [
   privateRecord({
     id: 'aberdeen-livestock',
     name: 'Aberdeen Livestock Ltd',
+    status: APPROVED,
     addressLine1: '12 Harbour Road',
     townOrCity: 'Aberdeen',
     county: 'Aberdeenshire',
@@ -85,6 +111,7 @@ export const TRANSPORTER_OPTIONS = [
   privateRecord({
     id: 'romanian-agri-exports',
     name: 'Romanian Agri Exports SRL',
+    status: NEW,
     addressLine1: 'Strada Agricultorilor 8',
     townOrCity: 'Cluj-Napoca',
     postalOrZipCode: '400000',
@@ -95,6 +122,7 @@ export const TRANSPORTER_OPTIONS = [
   privateRecord({
     id: 'slovak-farm-export',
     name: 'Slovak Farm Export',
+    status: APPROVED,
     addressLine1: 'Hlavná 45',
     townOrCity: 'Košice',
     postalOrZipCode: '040 01',
@@ -105,6 +133,7 @@ export const TRANSPORTER_OPTIONS = [
   privateRecord({
     id: 'finnish-livestock-oy',
     name: 'Finnish Livestock Oy',
+    status: NEW,
     addressLine1: 'Satamakatu 3',
     townOrCity: 'Turku',
     postalOrZipCode: '20100',
