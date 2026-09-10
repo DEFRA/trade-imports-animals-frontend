@@ -11,14 +11,15 @@ import { partyForFulfilmentId } from '../obligation-party-map.js'
 import { answerFor, chosenPartyFor } from '../party-picker/selection.js'
 
 const pickerPath = (journeyId, party, query = {}) => {
-  const url = new URL(pagePath(journeyId, party.slug), 'http://local')
+  const path = pagePath(journeyId, party.slug)
+  const params = new URLSearchParams()
   for (const [key, value] of Object.entries(query)) {
     if (value) {
-      url.searchParams.set(key, value)
+      params.set(key, value)
     }
   }
-  const path = `${url.pathname}${url.search}`
-  return path
+  const search = params.toString()
+  return search ? `${path}?${search}` : path
 }
 
 const redirectToPicker = (request, journeyId, party, query = {}) =>
