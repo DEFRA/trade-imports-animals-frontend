@@ -40,6 +40,7 @@ import * as transitCountries from './sets/live-animals/journeys/linear/features/
 import * as transporters from './sets/live-animals/journeys/linear/features/transport/transporters/transporters.controller.js'
 import * as transporterAdd from './sets/live-animals/journeys/linear/features/transport/transporter-add/transporter-add.controller.js'
 import * as transportersSelect from './sets/live-animals/journeys/linear/features/transport/transporters-select/transporters-select.controller.js'
+import * as commercialTransporterDetails from './sets/live-animals/journeys/linear/features/transport/commercial-transporter-details/commercial-transporter-details.controller.js'
 import * as privateTransporterDetails from './sets/live-animals/journeys/linear/features/transport/private-transporter-details/private-transporter-details.controller.js'
 import * as contactSelect from './sets/live-animals/journeys/linear/features/contact/controller.js'
 import * as declaration from './sets/live-animals/journeys/linear/features/declaration/controller.js'
@@ -425,6 +426,35 @@ describe('transporter commit contract — the list and its add spokes', () => {
       payload: { commercialTransporter: 'garcia-livestock-transport' }
     })
     expect(committedIds(register)).toEqual(['commercialTransporter'])
+
+    // The commercial arm of the add route types a transporter that is on no
+    // register, so it carries its own approval number and the Northern Ireland
+    // country the page fixes.
+    const typedInCommercial = await drive(
+      postHandlerOf(commercialTransporterDetails),
+      {
+        seed: { transporterType: 'Commercial' },
+        payload: {
+          approvalNumber: 'UK/BELF/T2/00104115',
+          nameOrOrganisationName: 'Lough Neagh Livestock Ltd',
+          addressLine1: '4 Quay Road',
+          addressLine2: '',
+          townOrCity: 'Belfast',
+          county: 'County Antrim',
+          postalOrZipCode: 'BT1 3LG',
+          country: 'Northern Ireland',
+          emailAddress: 'movements@lough-neagh.example.com',
+          telephoneNumber: '+44 28 9000 0111'
+        }
+      }
+    )
+    expect(committedIds(typedInCommercial)).toEqual(['commercialTransporter'])
+    expect(typedInCommercial.after.commercialTransporter.approvalNumber).toBe(
+      'UK/BELF/T2/00104115'
+    )
+    expect(typedInCommercial.after.commercialTransporter.address.country).toBe(
+      'Northern Ireland'
+    )
 
     const typedIn = await drive(postHandlerOf(privateTransporterDetails), {
       seed: { transporterType: 'Private' },

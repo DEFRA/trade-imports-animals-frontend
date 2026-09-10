@@ -23,7 +23,7 @@ import { dispatchPages } from '../../index.js'
 import * as transporterAdd from './transporter-add.controller.js'
 
 const LIST_SLUG = 'transporters'
-const SELECT_SLUG = 'transporters/select'
+const COMMERCIAL_SLUG = 'transporters/add/commercial'
 const PRIVATE_SLUG = 'transporters/add/private'
 
 const handlerFor = (method) =>
@@ -96,14 +96,14 @@ describe('/transporters/add', () => {
     expect(result.view.context.values.transporterType).toBe(COMMERCIAL)
   })
 
-  it('Should send a commercial transporter to the approved register', async () => {
+  it('Should send a commercial transporter to the details form', async () => {
     const result = await driveHandler(postHandler, {
       payload: { transporterType: COMMERCIAL }
     })
 
     expect(result.after.transporterType).toBe(COMMERCIAL)
     expect(result.response).toEqual({
-      redirect: pagePath(result.journeyId, SELECT_SLUG)
+      redirect: pagePath(result.journeyId, COMMERCIAL_SLUG)
     })
   })
 
@@ -135,7 +135,7 @@ describe('/transporters/add', () => {
     })
 
     expect(result.response).toEqual({
-      redirect: `${pagePath(result.journeyId, SELECT_SLUG)}?change=1`
+      redirect: `${pagePath(result.journeyId, COMMERCIAL_SLUG)}?change=1`
     })
   })
 
