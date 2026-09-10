@@ -102,12 +102,15 @@ export const copy = {
         'transporting as part of an economic (commercial) activity'
       ],
       linkText:
-        'Find out how to transport animals in connection with an economic activity (opens in new tab)',
+        'Find out how to transport animals in connection with an economic activity (opens in a new tab)',
+      // Design release 1 links the anchored section of the animal-welfare-in-
+      // transport guidance, not the top of the general transporting-animals
+      // page: the trader lands on the economic-activity rules themselves.
       linkHref:
-        'https://www.gov.uk/guidance/transporting-animals-in-great-britain',
+        'https://www.gov.uk/guidance/animal-welfare-in-transport#transporting-animals-in-connection-with-an-economic-activity',
       daeraValid: 'Documents issued by DAERA are valid for use in GB.',
       euNotValid:
-        'Documents issued in any EU Member State are not valid for use in GB.'
+        'Documents issued in any EU member state are not valid for use in GB.'
     },
     // The list carries both kinds of transporter, so each row says which it
     // is. A private transporter has no approval number to show.

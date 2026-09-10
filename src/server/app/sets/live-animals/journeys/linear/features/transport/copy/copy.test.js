@@ -128,6 +128,23 @@ describe('transport copy module', () => {
       'Masnachol — Rue de la Loi 200, Brussels — rhif cymeradwyo UK/BURY/T2/00104115'
     )
   })
+
+  // Both languages must send the trader to the same guidance section — a
+  // divergent href here is a broken translation, not a wording choice.
+  test('Should link the same guidance section in Welsh as in English', () => {
+    expect(copyCy.transporters.guidance.linkHref).toBe(
+      copy.transporters.guidance.linkHref
+    )
+  })
+
+  // Copy parity only checks that a Welsh leaf differs from its English
+  // counterpart, never the sentence itself, so the Welsh guidance sentence is
+  // asserted here beside the English one.
+  test('Should carry the Welsh transporters.guidance.euNotValid sentence', () => {
+    expect(copyCy.transporters.guidance.euNotValid).toBe(
+      'Nid yw dogfennau a roddwyd mewn unrhyw aelod-wladwriaeth yr UE yn ddilys i’w defnyddio yn GB.'
+    )
+  })
 })
 
 describe('GET /port-of-entry', () => {
@@ -185,14 +202,17 @@ describe('GET /transporters', () => {
     expect(guidance.authorisationConditions).toContain(
       'travelling on journeys of over 65 km'
     )
+    expect(guidance.linkText).toBe(
+      'Find out how to transport animals in connection with an economic activity (opens in a new tab)'
+    )
     expect(guidance.linkHref).toBe(
-      'https://www.gov.uk/guidance/transporting-animals-in-great-britain'
+      'https://www.gov.uk/guidance/animal-welfare-in-transport#transporting-animals-in-connection-with-an-economic-activity'
     )
     expect(guidance.daeraValid).toBe(
       'Documents issued by DAERA are valid for use in GB.'
     )
     expect(guidance.euNotValid).toBe(
-      'Documents issued in any EU Member State are not valid for use in GB.'
+      'Documents issued in any EU member state are not valid for use in GB.'
     )
   })
 })
