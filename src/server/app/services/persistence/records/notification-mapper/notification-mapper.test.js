@@ -13,6 +13,8 @@ const referenceNumber = 'GBN-AG-26-ABC123'
 const ORIGIN_FARM_LINE1 = '1 Farm Lane'
 const BOS_TAURUS = 'Bos taurus'
 const SALMO_SALAR = 'Salmo salar'
+const PORT_OF_ENTRY = 'GB ABD'
+const ARRIVAL_DATE_ISO = '2026-12-12'
 const currentNotificationFrom = (answers) =>
   fulfilmentToNotification(
     assembleFulfilments(answers),
@@ -43,7 +45,7 @@ const mappedAnswers = () => ({
     address: { addressLine1: '7 Route One' }
   },
   countyParishHoldingCph: '12/345/6789',
-  portOfEntry: 'GB ABD',
+  portOfEntry: PORT_OF_ENTRY,
   arrivalDateAtPort: { day: 12, month: 12, year: 2026 },
   commodityLines: [
     {
@@ -247,8 +249,8 @@ describe('Mapper A — current backend notification (as-is)', () => {
       addressId: 'animal-and-plant-health-agency'
     })
     expect(notification.cphNumber).toBe('12/345/6789')
-    expect(notification.transport.portOfEntry).toBe('GB ABD')
-    expect(notification.transport.arrivalDate).toBe('2026-12-12')
+    expect(notification.transport.portOfEntry).toBe(PORT_OF_ENTRY)
+    expect(notification.transport.arrivalDate).toBe(ARRIVAL_DATE_ISO)
     expect(notification.transport.transporter).toEqual({
       name: 'Transporter Co',
       approvalNumber: 'UK/NEWCA/T1/00090953',
@@ -268,7 +270,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
 
   test('Should convert the arrival date parts to an ISO string', () => {
     expect(currentNotificationFrom(mappedAnswers()).transport.arrivalDate).toBe(
-      '2026-12-12'
+      ARRIVAL_DATE_ISO
     )
   })
 
@@ -412,6 +414,23 @@ describe('Mapper A — a commodity line with no animal-identifier unit', () => {
       text: SALMO_SALAR,
       noOfAnimals: '40',
       noOfPackages: '1'
+    })
+  })
+})
+
+describe('Mapper A — unanswered transport fields', () => {
+  test('Should omit transport fields the arrival-details page saved as blank', () => {
+    const { transport } = currentNotificationFrom({
+      portOfEntry: PORT_OF_ENTRY,
+      arrivalDateAtPort: { day: 12, month: 12, year: 2026 },
+      meansOfTransport: '',
+      transportIdentification: '',
+      transportDocumentReference: ''
+    })
+
+    expect(transport).toEqual({
+      portOfEntry: PORT_OF_ENTRY,
+      arrivalDate: ARRIVAL_DATE_ISO
     })
   })
 })
