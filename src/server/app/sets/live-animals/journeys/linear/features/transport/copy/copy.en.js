@@ -118,9 +118,24 @@ export const copy = {
       Commercial: 'Commercial',
       Private: 'Private'
     },
-    optionHint: (type, address) => `${type} — ${address}`,
-    optionHintApproved: (type, address, approvalNumber) =>
-      `${type} — ${address} — approval number ${approvalNumber}`,
+    // Whether the transporter has been approved yet. Design release 1 shows
+    // this as a tag so a trader can tell approved from newly added at a
+    // glance; the tag colour is presentation and lives with the view model.
+    statuses: {
+      Approved: 'Approved',
+      New: 'New'
+    },
+    // Design release 1 aligns the transporters into headed columns rather than
+    // running each one's facts together in a hint.
+    table: {
+      selectHidden: 'Select',
+      name: 'Name',
+      address: 'Address',
+      approvalNumber: 'Approval number',
+      type: 'Type',
+      status: 'Status'
+    },
+    selectRowPrefix: 'Select',
     add: 'Add a transporter',
     errors: {
       transporterRequired: 'Select a transporter from the list'

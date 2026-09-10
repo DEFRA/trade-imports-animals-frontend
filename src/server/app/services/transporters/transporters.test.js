@@ -32,6 +32,24 @@ describe('#parties', () => {
     )
   })
 
+  // The list shows the status as a tag, so a record without one would render a
+  // blank tag rather than say nothing.
+  test('Should say of every transporter whether it is approved yet', () => {
+    for (const record of transporters.parties()) {
+      expect([transporters.APPROVED, transporters.NEW], record.id).toContain(
+        record.status
+      )
+    }
+  })
+
+  test('Should hold both approval statuses, so the list distinguishes them', () => {
+    const statuses = new Set(
+      transporters.parties().map((record) => record.status)
+    )
+
+    expect(statuses).toEqual(new Set([transporters.APPROVED, transporters.NEW]))
+  })
+
   test('Should carry the approval number the address book cannot represent on every commercial record', () => {
     for (const record of transporters.commercialParties()) {
       expect(record.approvalNumber).toBeTruthy()

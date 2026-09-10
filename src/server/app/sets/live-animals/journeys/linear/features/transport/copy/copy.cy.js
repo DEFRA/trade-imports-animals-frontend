@@ -105,9 +105,19 @@ export const copy = {
       Commercial: 'Masnachol',
       Private: 'Preifat'
     },
-    optionHint: (type, address) => `${type} — ${address}`,
-    optionHintApproved: (type, address, approvalNumber) =>
-      `${type} — ${address} — rhif cymeradwyo ${approvalNumber}`,
+    statuses: {
+      Approved: 'Cymeradwywyd',
+      New: 'Newydd'
+    },
+    table: {
+      selectHidden: 'Dewis',
+      name: 'Enw',
+      address: 'Cyfeiriad',
+      approvalNumber: 'Rhif cymeradwyo',
+      type: 'Math',
+      status: 'Statws'
+    },
+    selectRowPrefix: 'Dewis',
     add: 'Ychwanegu cludwr',
     errors: {
       transporterRequired: 'Dewiswch gludwr o’r rhestr'

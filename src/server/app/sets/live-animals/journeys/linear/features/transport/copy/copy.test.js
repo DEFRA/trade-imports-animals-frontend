@@ -92,41 +92,50 @@ describe('transport copy module', () => {
     ).toBe('1 Farm Lane, Kent — approval number GB-01')
   })
 
-  test('Should interpolate transporters.optionHint', () => {
-    expect(copy.transporters.optionHint('Commercial', SAMPLE_ADDRESS)).toBe(
-      'Commercial — 1 Farm Lane, Kent'
-    )
+  // Design release 1 heads the transporter list's columns rather than running
+  // each transporter's facts together in one hint. Copy parity only checks that
+  // the two decks carry the same paths and that each Welsh leaf differs from
+  // its English one, so a Welsh heading landing over the wrong column would
+  // pass it — the Welsh values are pinned here for that reason.
+  test('Should head every column Design release 1 shows on the transporter list', () => {
+    expect(copy.transporters.table).toEqual({
+      selectHidden: 'Select',
+      name: 'Name',
+      address: 'Address',
+      approvalNumber: 'Approval number',
+      type: 'Type',
+      status: 'Status'
+    })
+    expect(copyCy.transporters.table).toEqual({
+      selectHidden: 'Dewis',
+      name: 'Enw',
+      address: 'Cyfeiriad',
+      approvalNumber: 'Rhif cymeradwyo',
+      type: 'Math',
+      status: 'Statws'
+    })
+    expect(copy.transporters.selectRowPrefix).toBe('Select')
+    expect(copyCy.transporters.selectRowPrefix).toBe('Dewis')
   })
 
-  test('Should interpolate transporters.optionHintApproved', () => {
-    expect(
-      copy.transporters.optionHintApproved(
-        'Commercial',
-        SAMPLE_ADDRESS,
-        SAMPLE_APPROVAL_NUMBER
-      )
-    ).toBe('Commercial — 1 Farm Lane, Kent — approval number GB-01')
+  test('Should drop the run-on radio hint the columns replace', () => {
+    expect(copy.transporters.optionHint).toBeUndefined()
+    expect(copy.transporters.optionHintApproved).toBeUndefined()
+    expect(copyCy.transporters.optionHint).toBeUndefined()
+    expect(copyCy.transporters.optionHintApproved).toBeUndefined()
   })
 
-  // Both list hints take the same arguments in Welsh, and copy parity only
-  // checks a function leaf's arity, so the Welsh sentences are asserted here
-  // beside the English ones.
-  test('Should interpolate the Welsh transporters.optionHint', () => {
-    expect(
-      copyCy.transporters.optionHint('Preifat', '12 Harbour Road, Aberdeen')
-    ).toBe('Preifat — 12 Harbour Road, Aberdeen')
-  })
-
-  test('Should interpolate the Welsh transporters.optionHintApproved', () => {
-    expect(
-      copyCy.transporters.optionHintApproved(
-        'Masnachol',
-        'Rue de la Loi 200, Brussels',
-        'UK/BURY/T2/00104115'
-      )
-    ).toBe(
-      'Masnachol — Rue de la Loi 200, Brussels — rhif cymeradwyo UK/BURY/T2/00104115'
-    )
+  // Copy parity only checks that a Welsh leaf differs from its English one, so
+  // the Welsh status words are asserted here beside the English ones.
+  test('Should name both approval statuses in both languages', () => {
+    expect(copy.transporters.statuses).toEqual({
+      Approved: 'Approved',
+      New: 'New'
+    })
+    expect(copyCy.transporters.statuses).toEqual({
+      Approved: 'Cymeradwywyd',
+      New: 'Newydd'
+    })
   })
 
   // Design release 1 heads the type question with the choice, warns that

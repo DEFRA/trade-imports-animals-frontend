@@ -13,7 +13,8 @@ import * as transporters from '../../../../../../../services/transporters/index.
 import { transporterAddPage, transportersPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
-import { addressSummary, transporterAnswer } from './transporter-record.js'
+import { transporterAnswer } from './transporter-record.js'
+import { transporterRows } from './rows.js'
 
 /** The transporter list — the journey's one transporter step.
  *
@@ -38,14 +39,6 @@ const fields = compose(
   )
 )
 
-const optionHint = (option) => {
-  const type = copy.types[option.type]
-  const address = addressSummary(option.address)
-  return option.approvalNumber
-    ? copy.optionHintApproved(type, address, option.approvalNumber)
-    : copy.optionHint(type, address)
-}
-
 const render = (
   request,
   h,
@@ -69,12 +62,9 @@ const render = (
       request,
       pagePath(journey.journeyId, transporterAddPage.slug)
     ),
-    transporterOptions: transporters.parties().map((option) => ({
-      value: option.id,
-      text: option.name,
-      hint: { text: optionHint(option) },
-      checked: option.id === values.selectedId
-    }))
+    transporterRows: transporterRows(transporters.parties(), {
+      selectedId: values.selectedId
+    })
   })
 
 /** The record behind the answers already on the notification, so a returning

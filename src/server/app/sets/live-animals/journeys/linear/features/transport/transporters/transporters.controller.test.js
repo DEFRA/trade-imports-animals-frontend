@@ -25,6 +25,8 @@ const GARCIA_ID = 'garcia-livestock-transport'
 const GARCIA_NAME = 'García Livestock Transport SL'
 const ABERDEEN_ID = 'aberdeen-livestock'
 const ABERDEEN_NAME = 'Aberdeen Livestock Ltd'
+// The one record design release 1 shows as added but not yet approved.
+const ROMANIAN_ID = 'romanian-agri-exports'
 
 const handlerFor = (method) =>
   transporters.routes.find((route) => route.method === method).handler
@@ -38,8 +40,8 @@ const configure = () => {
   buildDispatch(dispatchPages)
 }
 
-const optionFor = (context, value) =>
-  context.transporterOptions.find((option) => option.value === value)
+const rowFor = (context, id) =>
+  context.transporterRows.find((row) => row.id === id)
 
 /** Drive a POST whose save fails the way a backend outage fails it: recoverably,
  * so the page comes back with the banner rather than throwing. */
@@ -71,20 +73,58 @@ describe('/transporters', () => {
   it('Should offer both kinds of transporter on the one list, each row saying which it is', async () => {
     const result = await driveHandler(getHandler)
 
-    const garcia = optionFor(result.view.context, GARCIA_ID)
-    const aberdeen = optionFor(result.view.context, ABERDEEN_ID)
-    expect(garcia.text).toBe(GARCIA_NAME)
-    expect(garcia.hint.text).toContain(COMMERCIAL)
-    expect(garcia.hint.text).toContain('ES-T2-45001294')
-    expect(aberdeen.text).toBe(ABERDEEN_NAME)
-    expect(aberdeen.hint.text).toContain(PRIVATE)
+    const garcia = rowFor(result.view.context, GARCIA_ID)
+    const aberdeen = rowFor(result.view.context, ABERDEEN_ID)
+    expect(garcia.name).toBe(GARCIA_NAME)
+    expect(garcia.type).toBe(COMMERCIAL)
+    expect(garcia.approvalNumber).toBe('ES-T2-45001294')
+    expect(aberdeen.name).toBe(ABERDEEN_NAME)
+    expect(aberdeen.type).toBe(PRIVATE)
+  })
+
+  // Design release 1 gives every transporter its own column of facts rather
+  // than one run-on hint, so the address stands on its own and a private
+  // transporter's blank approval number leaves an empty cell.
+  it('Should give every row a column for each fact the list shows', async () => {
+    const result = await driveHandler(getHandler)
+
+    const garcia = rowFor(result.view.context, GARCIA_ID)
+    expect(garcia.addressText).toBe(
+      '43 East Hague Extension, Delectus sitodio p. Laborum Odio tempor, Quasoccaecat ut ear, 30055, Switzerland'
+    )
+    expect(rowFor(result.view.context, ABERDEEN_ID).approvalNumber).toBe('')
+  })
+
+  it('Should tag an approved transporter green and a newly added one pink', async () => {
+    const result = await driveHandler(getHandler)
+
+    expect(rowFor(result.view.context, GARCIA_ID).status).toEqual({
+      text: 'Approved',
+      classes: 'govuk-tag--green'
+    })
+    expect(rowFor(result.view.context, ROMANIAN_ID).status).toEqual({
+      text: 'New',
+      classes: 'govuk-tag--magenta'
+    })
+  })
+
+  // The error summary links to the field's own id, so the first radio has to
+  // carry it and the rest have to differ.
+  it('Should give the first row the field id and every other row a unique one', async () => {
+    const result = await driveHandler(getHandler)
+
+    const prefixes = result.view.context.transporterRows.map(
+      (row) => row.idPrefix
+    )
+    expect(prefixes[0]).toBe('transporter')
+    expect(new Set(prefixes).size).toBe(prefixes.length)
   })
 
   it('Should leave every transporter unchecked before one is picked', async () => {
     const result = await driveHandler(getHandler)
 
     expect(
-      result.view.context.transporterOptions.every((option) => !option.checked)
+      result.view.context.transporterRows.every((row) => !row.checked)
     ).toBe(true)
   })
 
@@ -96,7 +136,7 @@ describe('/transporters', () => {
       }
     })
 
-    expect(optionFor(result.view.context, GARCIA_ID).checked).toBe(true)
+    expect(rowFor(result.view.context, GARCIA_ID).checked).toBe(true)
   })
 
   it('Should re-check the private transporter already on the notification', async () => {
@@ -107,7 +147,7 @@ describe('/transporters', () => {
       }
     })
 
-    expect(optionFor(result.view.context, ABERDEEN_ID).checked).toBe(true)
+    expect(rowFor(result.view.context, ABERDEEN_ID).checked).toBe(true)
   })
 
   it('Should reject a transporter that is not on the list', async () => {
@@ -157,6 +197,6 @@ describe('/transporters', () => {
 
     expect(response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     expect(response.context.recoverableError).toBe(true)
-    expect(optionFor(response.context, GARCIA_ID).checked).toBe(true)
+    expect(rowFor(response.context, GARCIA_ID).checked).toBe(true)
   })
 })
