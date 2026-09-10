@@ -212,6 +212,7 @@ export const copy = {
       emailAddress: 'Cyfeiriad e-bost',
       telephoneNumber: 'Rhif ffôn'
     },
+    telephoneHint: 'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad',
     countryPlaceholder: 'Dewiswch wlad',
     errors: {
       nameRequired: 'Rhowch enw neu enw sefydliad',

@@ -246,8 +246,12 @@ export const copy = {
       postalOrZipCode: 'Postal or zip code',
       country: 'Country',
       emailAddress: 'Email address',
-      telephoneNumber: 'Telephone number'
+      telephoneNumber: 'Phone number'
     },
+    // A private transporter can be based in any of the countries the form
+    // offers, so design release 1 hints the dialling code here exactly as it
+    // does on the commercial form — one rule, stated the same way on both.
+    telephoneHint: 'For international numbers include the country code',
     countryPlaceholder: 'Select a country',
     errors: {
       nameRequired: 'Enter a name or organisation name',
@@ -255,7 +259,7 @@ export const copy = {
       townOrCityRequired: 'Enter a town or city',
       postalOrZipCodeRequired: 'Enter a postal or zip code',
       countryRequired: 'Select a country',
-      telephoneRequired: 'Enter a telephone number',
+      telephoneRequired: 'Enter a phone number',
       emailRequired: 'Enter an email address',
       nameMaxLength: 'Name or organisation name must be 255 characters or less',
       addressLine1MaxLength: 'Address line 1 must be 255 characters or less',
@@ -265,7 +269,7 @@ export const copy = {
       postalOrZipCodeMaxLength:
         'Postal or zip code must be 12 characters or less',
       countryFromList: 'Select a country from the list',
-      telephoneMaxLength: 'Telephone number must be 20 characters or less',
+      telephoneMaxLength: 'Phone number must be 20 characters or less',
       emailMaxLength: 'Email address must be 254 characters or less'
     }
   }

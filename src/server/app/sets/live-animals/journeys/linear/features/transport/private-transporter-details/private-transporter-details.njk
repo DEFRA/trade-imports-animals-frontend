@@ -89,6 +89,7 @@
     {{ govukInput({
       id: "telephoneNumber", name: "telephoneNumber",
       label: { text: copy.fields.telephoneNumber },
+      hint: { text: copy.telephoneHint },
       type: "tel",
       classes: "govuk-input--width-20",
       autocomplete: "tel",
