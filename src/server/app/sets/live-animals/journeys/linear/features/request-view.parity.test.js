@@ -25,6 +25,7 @@ import * as transitCountries from './transport/transit-countries/transit-countri
 import * as transporters from './transport/transporters/transporters.controller.js'
 import * as transporterAdd from './transport/transporter-add/transporter-add.controller.js'
 import * as transportersSelect from './transport/transporters-select/transporters-select.controller.js'
+import * as commercialTransporterDetails from './transport/commercial-transporter-details/commercial-transporter-details.controller.js'
 import * as privateTransporterDetails from './transport/private-transporter-details/private-transporter-details.controller.js'
 import * as contact from './contact/controller.js'
 import * as declaration from './declaration/controller.js'
@@ -98,7 +99,12 @@ const scalarPages = [
   ['transporter list', transporters, parityFixture],
   ['transporter list on a private pick', transporters, privateTransportFixture],
   ['transporter type', transporterAdd, parityFixture],
-  ['commercial transporter', transportersSelect, parityFixture],
+  ['commercial transporter register', transportersSelect, parityFixture],
+  [
+    'commercial transporter details',
+    commercialTransporterDetails,
+    parityFixture
+  ],
   ['private transporter', privateTransporterDetails, privateTransportFixture],
   ['contact', contact, parityFixture],
   ['declaration', declaration, parityFixture]

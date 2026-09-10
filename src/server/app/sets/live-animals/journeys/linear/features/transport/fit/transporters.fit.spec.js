@@ -21,6 +21,7 @@ import { addressSummary } from '../transporters/transporter-record.js'
 const addressLine1Input = '#addressLine1'
 const invalidCountry = 'Invalid country'
 const PRIVATE_ADD_SLUG = 'transporters/add/private'
+const REGISTER_SLUG = 'transporters/select'
 const BACK_LINK = '.govuk-back-link'
 
 const transporterRecords = parties()
@@ -53,12 +54,26 @@ const openTransporterType = async (page) => {
   ).toBeVisible()
 }
 
-const openCommercial = async (page) => {
+const openCommercialAdd = async (page) => {
   await openTransporterType(page)
   await page
     .getByRole('radio', { name: copy.transporterAdd.options.Commercial.text })
     .check()
   await submit(page)
+  await expect(
+    page.getByRole('heading', {
+      name: copy.commercialTransporterDetails.title
+    })
+  ).toBeVisible()
+}
+
+/** The approved commercial register, which nothing links to now that the add
+ * route's commercial arm is the add-commercial form. Reached through that arm
+ * so the transporter type is answered, which is what puts the commercial
+ * answer the register writes in scope. */
+const openCommercialRegister = async (page) => {
+  await openCommercialAdd(page)
+  await page.goto(journeyUrl(page, REGISTER_SLUG))
   await expect(
     page.getByRole('heading', { name: copy.transportersSelect.title })
   ).toBeVisible()
@@ -321,7 +336,7 @@ test.describe('transporter list page', () => {
       page.getByRole('radio', { name: commercialRecord.name })
     ).toBeChecked()
     // The pick lands on the commercial answer, so the register shows it too.
-    await page.goto(journeyUrl(page, 'transporters/select'))
+    await page.goto(journeyUrl(page, REGISTER_SLUG))
     await expect(
       page.getByRole('radio', { name: commercialRecord.name })
     ).toBeChecked()
@@ -512,12 +527,12 @@ test.describe('adding a transporter that is not on the list', () => {
     ).toBeChecked()
   })
 
-  test('commercial branch routes to the approved commercial register', async ({
+  test('commercial branch routes to the add-commercial form', async ({
     page
   }) => {
-    await openCommercial(page)
+    await openCommercialAdd(page)
 
-    await expect(page).toHaveURL(/\/transporters\/select$/)
+    await expect(page).toHaveURL(/\/transporters\/add\/commercial$/)
   })
 })
 
@@ -529,7 +544,7 @@ test.describe('commercial transporter page', () => {
   test('commercial transporter page renders address and approval details', async ({
     page
   }) => {
-    await openCommercial(page)
+    await openCommercialRegister(page)
     await expect(page.getByText(copy.transportersSelect.hint)).toBeVisible()
 
     const selected = values.commercialTransporter
@@ -545,7 +560,7 @@ test.describe('commercial transporter page', () => {
   test('commercial transporter validation: out-of-list value links to and focuses the cleared group', async ({
     page
   }) => {
-    await openCommercial(page)
+    await openCommercialRegister(page)
     const selected = values.commercialTransporter
     await page.getByRole('radio', { name: selected.name }).evaluate((radio) => {
       radio.value = 'invalid-transporter'
@@ -570,12 +585,12 @@ test.describe('commercial transporter page', () => {
   test('commercial transporter selection saves and persists', async ({
     page
   }) => {
-    await openCommercial(page)
+    await openCommercialRegister(page)
     const selected = values.commercialTransporter
     await page.getByRole('radio', { name: selected.name }).check()
     await submit(page)
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-    await page.goto(journeyUrl(page, 'transporters/select'))
+    await page.goto(journeyUrl(page, REGISTER_SLUG))
     await expect(page.getByRole('radio', { name: selected.name })).toBeChecked()
   })
 })
@@ -761,7 +776,7 @@ test.describe('transporter pages accessibility', () => {
   test('commercial transporter page has no serious or critical axe violations', async ({
     page
   }) => {
-    await openCommercial(page)
+    await openCommercialRegister(page)
     await expectAxeClean(page, 'Commercial transporter')
   })
 

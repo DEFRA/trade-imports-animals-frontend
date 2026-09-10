@@ -13,6 +13,7 @@ import { additionalDetailsPage } from '../../features/additional-details/page.js
 import { addressesPage } from '../../features/addresses/page.js'
 import { cphNumberPage } from '../../features/cph-number/page.js'
 import {
+  commercialTransporterDetailsPage,
   portOfEntryPage,
   privateTransporterDetailsPage,
   transitCountriesPage,
@@ -65,6 +66,7 @@ export const captionSections = [
     pages: [
       transporterAddPage,
       transportersSelectPage,
+      commercialTransporterDetailsPage,
       privateTransporterDetailsPage
     ]
   },

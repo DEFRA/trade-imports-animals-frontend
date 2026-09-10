@@ -158,6 +158,53 @@ export const copy = {
       transporterRequired: 'Select a transporter from the list'
     }
   },
+  commercialTransporterDetails: {
+    title: 'Add commercial transporter',
+    // Design release 1 opens the form with the authorisation rules the list
+    // already carries, so a trader typing a transporter in by hand meets the
+    // same conditions before they give its authorisation number. The sentences
+    // are the list's own — one statement of the rules, shown twice.
+    guidanceTitle: 'Help with transporter authorisation',
+    contactHeading: 'Enter contact details',
+    fields: {
+      approvalNumber: 'Transporter authorisation number',
+      nameOrOrganisationName: 'Name or organisation name',
+      addressLine1: 'Address line 1',
+      addressLine2: 'Address line 2 (optional)',
+      townOrCity: 'Town or city',
+      county: 'County (optional)',
+      postalOrZipCode: 'Postcode or zip code',
+      country: 'Country',
+      emailAddress: 'Email address',
+      telephoneNumber: 'Phone number'
+    },
+    telephoneHint: 'For international numbers include the country code',
+    // A commercial transporter a trader adds by hand can only be a Northern
+    // Irish one (design release 1), so the country is shown rather than asked.
+    country: 'Northern Ireland',
+    errors: {
+      approvalNumberRequired: 'Enter the transporter authorisation number',
+      nameRequired: 'Enter a name or organisation name',
+      addressLine1Required: 'Enter address line 1',
+      townOrCityRequired: 'Enter a town or city',
+      postalOrZipCodeRequired: 'Enter a postcode or zip code',
+      emailRequired: 'Enter an email address',
+      telephoneRequired: 'Enter a phone number',
+      approvalNumberMaxLength:
+        'Transporter authorisation number must be 50 characters or less',
+      nameMaxLength: 'Name or organisation name must be 255 characters or less',
+      addressLine1MaxLength: 'Address line 1 must be 255 characters or less',
+      addressLine2MaxLength: 'Address line 2 must be 255 characters or less',
+      townOrCityMaxLength: 'Town or city must be 100 characters or less',
+      countyMaxLength: 'County must be 100 characters or less',
+      postalOrZipCodeMaxLength:
+        'Postcode or zip code must be 12 characters or less',
+      emailMaxLength: 'Email address must be 254 characters or less',
+      telephoneMaxLength: 'Phone number must be 20 characters or less',
+      countryFixed:
+        'A commercial transporter you add must be in Northern Ireland'
+    }
+  },
   privateTransporterDetails: {
     title: 'Add private transporter',
     intro:

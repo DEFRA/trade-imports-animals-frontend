@@ -157,6 +157,36 @@ describe('transport copy module', () => {
     )
   })
 
+  // Design release 1 heads the commercial form as the addition it is, asks the
+  // authorisation number first and fixes the country to Northern Ireland.
+  test('Should head the commercial form as an addition and fix its country', () => {
+    expect(copy.commercialTransporterDetails.title).toBe(
+      'Add commercial transporter'
+    )
+    expect(copyCy.commercialTransporterDetails.title).toBe(
+      'Ychwanegu cludwr masnachol'
+    )
+    expect(copy.commercialTransporterDetails.fields.approvalNumber).toBe(
+      'Transporter authorisation number'
+    )
+    expect(copy.commercialTransporterDetails.country).toBe('Northern Ireland')
+    expect(copyCy.commercialTransporterDetails.country).toBe('Gogledd Iwerddon')
+  })
+
+  // The banner repeats the authorisation rules the list states, and the phone
+  // number carries the international hint (design release 1).
+  test('Should head the commercial form guidance banner and hint the phone number', () => {
+    expect(copy.commercialTransporterDetails.guidanceTitle).toBe(
+      'Help with transporter authorisation'
+    )
+    expect(copy.commercialTransporterDetails.contactHeading).toBe(
+      'Enter contact details'
+    )
+    expect(copy.commercialTransporterDetails.telephoneHint).toBe(
+      'For international numbers include the country code'
+    )
+  })
+
   // Both languages must send the trader to the same guidance section — a
   // divergent href here is a broken translation, not a wording choice.
   test('Should link the same guidance section in Welsh as in English', () => {

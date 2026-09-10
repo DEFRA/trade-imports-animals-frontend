@@ -12,10 +12,10 @@ import { copyFor } from '../../../../../../../shared/copy.js'
 import * as transportReference from '../../../../../../../services/transport-reference/index.js'
 import { COMMERCIAL } from '../../../../../../../services/transporters/index.js'
 import {
+  commercialTransporterDetailsPage,
   privateTransporterDetailsPage,
   transporterAddPage as page,
-  transportersPage,
-  transportersSelectPage
+  transportersPage
 } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
@@ -66,13 +66,13 @@ const get = async (request, h) => {
 
 /** Where the chosen type takes the trader.
  *
- * Commercial reaches the approved commercial register, which is the only way
- * to record a commercial transporter until the add-commercial form lands. An
- * unanswered question adds nothing, so it goes back to the list — the same
- * tolerance the question carried as a journey step. */
+ * Each arm is a form for entering the transporter that could not be found on
+ * the list — commercial or private (design release 1). An unanswered question
+ * adds nothing, so it goes back to the list — the same tolerance the question
+ * carried as a journey step. */
 const branchSlug = (transporterType) => {
   if (transporterType === COMMERCIAL) {
-    return transportersSelectPage.slug
+    return commercialTransporterDetailsPage.slug
   }
   return transporterType === ''
     ? transportersPage.slug

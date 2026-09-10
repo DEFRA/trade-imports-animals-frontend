@@ -19,13 +19,14 @@ import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { addressSummary } from '../transporters/transporter-record.js'
 
-/** The approved commercial register — the commercial arm of the add route.
+/** The approved commercial register.
  *
- * A spoke off the type chooser, and the only way to record a commercial
- * transporter until the add-commercial form lands: it picks from the register
- * rather than letting a trader enter one. The `commercialTransporter` it
- * writes is declared by the transporter list, which is where the answer is
- * normally given. */
+ * A second way of picking a commercial transporter the service already knows
+ * about, kept from the flow that asked the type before the list. Nothing links
+ * to it now that the add route's commercial arm is the add-commercial form and
+ * the transporter list carries the register's rows itself. The
+ * `commercialTransporter` it writes is declared by the transporter list, which
+ * is where the answer is normally given. */
 const view = `${TEMPLATES}/features/transport/transporters-select/transporters-select`
 
 const copy = copyFor({ en, cy }).transportersSelect

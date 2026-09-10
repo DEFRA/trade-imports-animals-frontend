@@ -29,6 +29,7 @@ import * as importReason from '../features/import-reason/controller.js'
 import * as additionalDetails from '../features/additional-details/controller.js'
 import * as cphNumber from '../features/cph-number/controller.js'
 import * as transportersSelect from '../features/transport/transporters-select/transporters-select.controller.js'
+import * as commercialTransporterDetails from '../features/transport/commercial-transporter-details/commercial-transporter-details.controller.js'
 import * as privateTransporterDetails from '../features/transport/private-transporter-details/private-transporter-details.controller.js'
 import * as hub from '../features/hub/controller.js'
 import * as dashboard from '../features/dashboard/controller.js'
@@ -284,10 +285,31 @@ const saveAndContinueFollowsTheRunSequence = () => {
     return { journeyId: journey.journeyId, h }
   }
 
-  it('Should carry a commercial add-spoke save on to the documents mid-run, continuing from the list rather than the spoke', async () => {
+  it('Should carry a commercial register pick on to the documents mid-run, continuing from the list rather than the spoke', async () => {
     const { journeyId, h } = await driveAddSpoke(transportersSelect, {
       seed: { transporterType: 'Commercial' },
       payload: { commercialTransporter: 'garcia-livestock-transport' }
+    })
+
+    expect(h.captured.redirect).toBe(pagePath(journeyId, documentsPage.slug))
+    expect(h.captured.redirect).not.toBe(hubPath(journeyId))
+  })
+
+  it('Should carry a hand-entered commercial transporter on to the documents mid-run, continuing from the list rather than the spoke', async () => {
+    const { journeyId, h } = await driveAddSpoke(commercialTransporterDetails, {
+      seed: { transporterType: 'Commercial' },
+      payload: {
+        approvalNumber: 'UK/BELF/T2/00104115',
+        nameOrOrganisationName: 'Lough Neagh Livestock Ltd',
+        addressLine1: '4 Quay Road',
+        addressLine2: '',
+        townOrCity: 'Belfast',
+        county: 'County Antrim',
+        postalOrZipCode: 'BT1 3LG',
+        country: 'Northern Ireland',
+        emailAddress: 'movements@lough-neagh.example.com',
+        telephoneNumber: '+44 28 9000 0111'
+      }
     })
 
     expect(h.captured.redirect).toBe(pagePath(journeyId, documentsPage.slug))

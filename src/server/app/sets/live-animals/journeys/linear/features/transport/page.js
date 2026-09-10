@@ -29,6 +29,16 @@ export const transportersSelectPage = {
   slug: 'transporters/select'
 }
 
+/** Off the linear journey: the commercial arm of the add route. The form a
+ * trader fills in for a commercial transporter that is not on the list, giving
+ * its authorisation number, name, address and contact details (design release
+ * 1). Its country is fixed to Northern Ireland, which is the restriction the
+ * type chooser states on the Commercial option. */
+export const commercialTransporterDetailsPage = {
+  id: 'commercial-transporter-details',
+  slug: 'transporters/add/commercial'
+}
+
 export const privateTransporterDetailsPage = {
   id: 'private-transporter-details',
   slug: 'transporters/add/private'

@@ -28,6 +28,7 @@ import { routes as portOfEntryRoutes } from './transport/port-of-entry/port-of-e
 import { routes as transportersRoutes } from './transport/transporters/transporters.controller.js'
 import { routes as transporterAddRoutes } from './transport/transporter-add/transporter-add.controller.js'
 import { routes as transportersSelectRoutes } from './transport/transporters-select/transporters-select.controller.js'
+import { routes as commercialTransporterDetailsRoutes } from './transport/commercial-transporter-details/commercial-transporter-details.controller.js'
 import { routes as privateTransporterDetailsRoutes } from './transport/private-transporter-details/private-transporter-details.controller.js'
 import { routes as documentsRoutes } from './documents/controller.js'
 import { routes as hubRoutes } from './hub/controller.js'
@@ -126,6 +127,12 @@ const CAPTIONED_PAGES = [
     'transporters select',
     NEW_TRANSPORTER,
     transportersSelectRoutes,
+    parityFixture
+  ],
+  [
+    'commercial transporter details',
+    NEW_TRANSPORTER,
+    commercialTransporterDetailsRoutes,
     parityFixture
   ],
   [
