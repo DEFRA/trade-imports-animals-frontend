@@ -185,7 +185,7 @@ const requiredPrivateValidations = [
   ['town or city', 'townOrCity', 'townOrCityRequired'],
   ['postal or zip code', 'postalOrZipCode', 'postalOrZipCodeRequired'],
   ['country', 'country', 'countryRequired'],
-  ['telephone number', 'telephoneNumber', 'telephoneRequired'],
+  ['phone number', 'telephoneNumber', 'telephoneRequired'],
   ['email address', 'emailAddress', 'emailRequired']
 ]
 
@@ -234,7 +234,7 @@ const formatPrivateValidations = [
     'postalOrZipCodeMaxLength'
   ],
   [
-    'telephone number over 20 characters',
+    'phone number over 20 characters',
     'telephoneNumber',
     '1'.repeat(MAX_TELEPHONE_LENGTH + 1),
     'telephoneMaxLength'
@@ -773,6 +773,19 @@ test.describe('private transporter rendering and optionality', () => {
     for (const label of Object.values(copy.privateTransporterDetails.fields)) {
       await expect(page.getByLabel(label)).toBeVisible()
     }
+  })
+
+  // A private transporter is commonly based outside the UK, so design release 1
+  // tells the trader to include the dialling code — the same hint the
+  // commercial form carries.
+  test('private transporter phone number hints the international dialling code', async ({
+    page
+  }) => {
+    await openPrivate(page)
+
+    await expect(
+      page.getByLabel(copy.privateTransporterDetails.fields.telephoneNumber)
+    ).toHaveAccessibleDescription(copy.privateTransporterDetails.telephoneHint)
   })
 
   // Design release 1 closes the address at the country and heads the last two
