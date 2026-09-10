@@ -348,6 +348,22 @@ export const config = convict({
       default: 'http://localhost:8086',
       env: 'TRADE_IMPORTS_REFERENCE_DATA_URL'
     }
+  },
+  tradeImportsAddressBookApi: {
+    baseUrl: {
+      doc: 'Trade Imports Address Book API base URL',
+      format: String,
+      default: 'http://localhost:8089',
+      env: 'TRADE_IMPORTS_ADDRESS_BOOK_URL'
+    }
+  },
+  tradeImportsInsFrontend: {
+    baseUrl: {
+      doc: "Trade Imports INS Frontend base URL. Browser-visible — used to build deep links the trader's own browser navigates to, so it must resolve outside the Docker network (unlike the server-side API base URLs above).",
+      format: String,
+      default: 'http://localhost:3002',
+      env: 'TRADE_IMPORTS_INS_FRONTEND_URL'
+    }
   }
 })
 
