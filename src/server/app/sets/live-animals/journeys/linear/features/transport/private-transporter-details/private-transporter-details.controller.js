@@ -33,10 +33,13 @@ const MANDATORY_MESSAGES = {
   townOrCity: copy.errors.townOrCityRequired,
   postalOrZipCode: copy.errors.postalOrZipCodeRequired,
   country: copy.errors.countryRequired,
-  telephoneNumber: copy.errors.telephoneRequired,
-  emailAddress: copy.errors.emailRequired
+  emailAddress: copy.errors.emailRequired,
+  telephoneNumber: copy.errors.telephoneRequired
 }
 
+/** The fields the page shows, in the order it asks for them — the order the
+ * error summary lists them in too. The contact details close the form, email
+ * before phone, as design release 1 asks them. */
 const FIELD_ORDER = [
   'nameOrOrganisationName',
   'addressLine1',
@@ -45,8 +48,8 @@ const FIELD_ORDER = [
   'county',
   'postalOrZipCode',
   'country',
-  'telephoneNumber',
-  'emailAddress'
+  'emailAddress',
+  'telephoneNumber'
 ]
 
 const MAX_NAME_LENGTH = 255
@@ -67,8 +70,8 @@ const fields = compose(
     copy.errors.postalOrZipCodeMaxLength
   ),
   oneOf('country', countries.addressCountries(), copy.errors.countryFromList),
-  maxText('telephoneNumber', MAX_PHONE_LENGTH, copy.errors.telephoneMaxLength),
-  maxText('emailAddress', MAX_EMAIL_LENGTH, copy.errors.emailMaxLength)
+  maxText('emailAddress', MAX_EMAIL_LENGTH, copy.errors.emailMaxLength),
+  maxText('telephoneNumber', MAX_PHONE_LENGTH, copy.errors.telephoneMaxLength)
 )
 
 const recordProvided = (values) =>
@@ -128,8 +131,8 @@ const get = async (request, h) => {
     county: saved?.address?.county ?? '',
     postalOrZipCode: saved?.address?.postalOrZipCode ?? '',
     country: saved?.address?.country ?? '',
-    telephoneNumber: saved?.address?.telephoneNumber ?? '',
-    emailAddress: saved?.address?.emailAddress ?? ''
+    emailAddress: saved?.address?.emailAddress ?? '',
+    telephoneNumber: saved?.address?.telephoneNumber ?? ''
   })
 }
 

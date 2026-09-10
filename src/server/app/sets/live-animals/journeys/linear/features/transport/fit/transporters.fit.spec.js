@@ -775,6 +775,33 @@ test.describe('private transporter rendering and optionality', () => {
     }
   })
 
+  // Design release 1 closes the address at the country and heads the last two
+  // questions as contact details, email before phone.
+  test('private transporter page heads the contact details after the address, email first', async ({
+    page
+  }) => {
+    await openPrivate(page)
+
+    await expect(
+      page.getByRole('heading', {
+        name: copy.privateTransporterDetails.contactHeading
+      })
+    ).toBeVisible()
+    const orderedIds = await page
+      .locator(
+        'form #country, form h2, form #emailAddress, form #telephoneNumber'
+      )
+      .evaluateAll((nodes) =>
+        nodes.map((node) => node.id || node.tagName.toLowerCase())
+      )
+    expect(orderedIds).toEqual([
+      'country',
+      'h2',
+      'emailAddress',
+      'telephoneNumber'
+    ])
+  })
+
   test('a completely blank private transporter record is optional', async ({
     page
   }) => {

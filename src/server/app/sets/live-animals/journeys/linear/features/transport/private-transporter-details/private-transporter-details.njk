@@ -73,15 +73,9 @@
       errorMessage: errors.country and { text: errors.country }
     }) }}
 
-    {{ govukInput({
-      id: "telephoneNumber", name: "telephoneNumber",
-      label: { text: copy.fields.telephoneNumber },
-      type: "tel",
-      classes: "govuk-input--width-20",
-      autocomplete: "tel",
-      value: values.telephoneNumber,
-      errorMessage: errors.telephoneNumber and { text: errors.telephoneNumber }
-    }) }}
+    {# Design release 1 closes the address at the country and heads the contact
+       details separately, email first — as the commercial form already does. #}
+    <h2 class="govuk-heading-m">{{ copy.contactHeading }}</h2>
 
     {{ govukInput({
       id: "emailAddress", name: "emailAddress",
@@ -90,6 +84,16 @@
       autocomplete: "email",
       value: values.emailAddress,
       errorMessage: errors.emailAddress and { text: errors.emailAddress }
+    }) }}
+
+    {{ govukInput({
+      id: "telephoneNumber", name: "telephoneNumber",
+      label: { text: copy.fields.telephoneNumber },
+      type: "tel",
+      classes: "govuk-input--width-20",
+      autocomplete: "tel",
+      value: values.telephoneNumber,
+      errorMessage: errors.telephoneNumber and { text: errors.telephoneNumber }
     }) }}
 
     {# The private arm of the add route — reached from the type chooser, not
