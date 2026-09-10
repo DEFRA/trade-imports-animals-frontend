@@ -15,6 +15,7 @@ const BOS_TAURUS = 'Bos taurus'
 const SALMO_SALAR = 'Salmo salar'
 const PORT_OF_ENTRY = 'GB ABD'
 const ARRIVAL_DATE_ISO = '2026-12-12'
+const TRANSPORTER_NAME = 'Transporter Co'
 const currentNotificationFrom = (answers) =>
   fulfilmentToNotification(
     assembleFulfilments(answers),
@@ -40,7 +41,7 @@ const mappedAnswers = () => ({
   placeOfDestination: address('Destination Farm', '5 Field Lane'),
   contactAddress: { addressId: 'animal-and-plant-health-agency' },
   commercialTransporter: {
-    name: 'Transporter Co',
+    name: TRANSPORTER_NAME,
     approvalNumber: 'UK/NEWCA/T1/00090953',
     address: { addressLine1: '7 Route One' }
   },
@@ -64,10 +65,11 @@ const mappedAnswers = () => ({
   ]
 })
 
-// mappedAnswers plus every obligation Mapper A has no home for: the Tier-A
-// pair, the Tier-B gaps, the Tier-C documents collection, and a richer
-// animal-identifier unit carrying the microchip (which does have a home) and
-// the three dropped unit identifiers.
+// mappedAnswers plus the obligations beyond it: those Mapper A still has no
+// home for (purpose, declaration, the documents collection), those it now maps
+// (region code, internal-market purpose, destination country, exit port and
+// date, the transport details), and a richer animal-identifier unit carrying
+// microchip, tattoo, horse name and a permanent address.
 const answersWithGaps = () => ({
   ...mappedAnswers(),
   regionOfOriginCode: 'FR-75',
@@ -104,7 +106,18 @@ const answersWithGaps = () => ({
           animalIdentifierMicrochip: '900123456789012',
           animalIdentifierTattoo: 'AB1234',
           horseName: 'Dobbin',
-          permanentAddress: address('Owner', ORIGIN_FARM_LINE1)
+          // The identification page stores the journey's own names, not the
+          // wire names the other parties are held in.
+          permanentAddress: {
+            name: 'Owner',
+            address: {
+              addressLine1: ORIGIN_FARM_LINE1,
+              postalOrZipCode: 'AB1 2CD',
+              country: 'France',
+              telephoneNumber: '01234 567890',
+              emailAddress: 'owner@example.com'
+            }
+          }
         },
         {
           animalIdentifierEarTag: 'UK000000000099',
@@ -252,7 +265,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect(notification.transport.portOfEntry).toBe(PORT_OF_ENTRY)
     expect(notification.transport.arrivalDate).toBe(ARRIVAL_DATE_ISO)
     expect(notification.transport.transporter).toEqual({
-      name: 'Transporter Co',
+      name: TRANSPORTER_NAME,
       approvalNumber: 'UK/NEWCA/T1/00090953',
       address: { addressLine1: '7 Route One' },
       type: 'Commercial'
@@ -274,7 +287,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     )
   })
 
-  test('Should omit every gap obligation from the notification', () => {
+  test('Should omit the obligations with no home and map the newly homed ones', () => {
     const notification = currentNotificationFrom(answersWithGaps())
 
     expect('purpose' in notification).toBe(false)
@@ -286,15 +299,15 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect(notification.destinationCountry).toBe('DE')
     expect(notification.portOfExit).toBe('GB DVR')
     expect(notification.exitDate).toBe('2026-12-20')
-    expect(Object.keys(notification.transport)).toEqual([
-      'portOfEntry',
-      'arrivalDate',
-      'transporter',
-      'meansOfTransport',
-      'transportIdentification',
-      'transportDocumentReference',
-      'transitedCountries'
-    ])
+    expect(notification.transport).toEqual({
+      portOfEntry: PORT_OF_ENTRY,
+      arrivalDate: ARRIVAL_DATE_ISO,
+      transporter: expect.objectContaining({ name: TRANSPORTER_NAME }),
+      meansOfTransport: 'ROAD_VEHICLE',
+      transportIdentification: 'FR-892-LK',
+      transportDocumentReference: 'CMR-2026-884721',
+      transitedCountries: ['France', 'Belgium']
+    })
     expect(
       'commodityCode' in notification.commodity.commodityComplement[0]
     ).toBe(false)
@@ -326,9 +339,12 @@ describe('Mapper A — per-unit animal identifiers', () => {
           horseName: 'Dobbin',
           permanentAddress: {
             name: 'Owner',
+            phone: '01234 567890',
+            email: 'owner@example.com',
             address: {
               addressLine1: ORIGIN_FARM_LINE1,
-              postcode: 'AB1 2CD'
+              postcode: 'AB1 2CD',
+              countryCode: 'FR'
             }
           }
         },
