@@ -5,6 +5,12 @@
 {% block journeyContent %}
   {% include "shared/error-summary.njk" %}
 
+  {% if addAddressHref %}
+    <p class="govuk-body">
+      <a class="govuk-link" href="{{ addAddressHref }}">{{ addNewAddressLabel }}</a>
+    </p>
+  {% endif %}
+
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />

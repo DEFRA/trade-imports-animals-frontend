@@ -17,6 +17,10 @@ import { CONTACT_PARTY } from '../addresses/parties.js'
 import { organisationIdOf } from '../addresses/resolve-parties.js'
 import { addressText } from '../addresses/party-picker/view-model/address-lines.js'
 import { answerFor } from '../addresses/party-picker/selection.js'
+import { isStubMode } from '../../../../../../../common/services/mode.js'
+import { buildInsAddAddressUrl } from '../addresses/ins-handshake.js'
+import { copy as addressesEn } from '../addresses/copy/copy.en.js'
+import { copy as addressesCy } from '../addresses/copy/copy.cy.js'
 import { consignmentContactSelectPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
@@ -25,6 +29,7 @@ export const meta = { ...page, collects: ['contactAddress'] }
 const view = `${TEMPLATES}/features/contact/template`
 
 const copy = copyFor({ en, cy })
+const addressesCopy = copyFor({ en: addressesEn, cy: addressesCy }).picker
 
 const fields = (options) =>
   compose(
@@ -41,11 +46,15 @@ const fields = (options) =>
 const addressSummary = (address) =>
   [addressText(address), address.country].filter(Boolean).join(', ')
 
+const addAddressLinkFor = (journey) =>
+  !isStubMode() && buildInsAddAddressUrl(journey.journeyId, CONTACT_PARTY)
+
 const render = (
   h,
   journey,
   values,
   options,
+  addAddressHref,
   errors = {},
   recoverableError = false
 ) =>
@@ -58,6 +67,8 @@ const render = (
     copy,
     errors,
     errorSummary: kit.errorSummary(errors),
+    addAddressHref,
+    addNewAddressLabel: addressesCopy.addNewAddress,
     contactOptions: options.map((option) => ({
       value: option.id,
       text: option.name,
@@ -69,9 +80,13 @@ const render = (
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const orgId = organisationIdOf(request)
-  return render(h, journey, { selectedId: answers.contactAddress?.addressId }, [
-    ...(await addressBook.all(orgId))
-  ])
+  return render(
+    h,
+    journey,
+    { selectedId: answers.contactAddress?.addressId },
+    [...(await addressBook.all(orgId))],
+    addAddressLinkFor(journey)
+  )
 }
 
 const post = async (request, h) => {
@@ -81,7 +96,14 @@ const post = async (request, h) => {
   const { errors } = validate(fields(options), payload)
   if (errors) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, {}, options, errors).code(HTTP_STATUS_BAD_REQUEST)
+    return render(
+      h,
+      journey,
+      {},
+      options,
+      addAddressLinkFor(journey),
+      errors
+    ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   const chosen = payload.contactAddress
@@ -103,6 +125,7 @@ const post = async (request, h) => {
         journey,
         { selectedId: chosen?.id },
         options,
+        addAddressLinkFor(journey),
         {},
         true
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
