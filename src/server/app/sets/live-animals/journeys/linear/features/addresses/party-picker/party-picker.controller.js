@@ -24,6 +24,8 @@ import {
 } from './selection.js'
 import { pickerViewModel } from './view-model/index.js'
 import { errorSummary } from './view-model/error-summary.js'
+import { isStubMode } from '../../../../../../../../common/services/mode.js'
+import { buildInsAddAddressUrl } from '../ins-handshake.js'
 
 const view = `${TEMPLATES}/features/addresses/party-picker/party-picker`
 
@@ -36,7 +38,15 @@ const render = async (
   orgId,
   journey,
   party,
-  { query, page, selectedId, answers, error, recoverableError = false }
+  {
+    query,
+    page,
+    selectedId,
+    answers,
+    error,
+    recoverableError = false,
+    addAddressHref
+  }
 ) => {
   // One book for every role — addresses have no type (D3).
   const found = await addressBook.search(orgId, { query, page })
@@ -68,6 +78,7 @@ const render = async (
     description: party.hint,
     pickerCopy: copy,
     errorSummary: errorSummary(error, found.results.length > 0, sharedCopy),
+    addAddressHref,
     picker: pickerViewModel(
       journey,
       party,
@@ -84,13 +95,31 @@ const render = async (
   })
 }
 
+const addAddressLinkFor = (journey, party) =>
+  !isStubMode() && buildInsAddAddressUrl(journey.journeyId, party)
+
+const handshakeErrorMessage = (code) => {
+  if (code === 'not-found') {
+    return copy.handshakeErrors.notFound
+  }
+  if (code === 'unavailable') {
+    return copy.handshakeErrors.unavailable
+  }
+  return undefined
+}
+
 const get = (party) => async (request, h) => {
   const { journey, answers } = await state.get(request, h)
+  const handshakeError = handshakeErrorMessage(request.query.handshakeError)
+  const recoverableError = request.query.handshakeError === 'unavailable'
   return render(request, h, organisationIdOf(request), journey, party, {
     query: request.query.q ?? '',
     page: pageNumber(request.query.page),
     selectedId: request.query.selected ?? committedId(answers, party),
-    answers
+    answers,
+    error: handshakeError,
+    recoverableError,
+    addAddressHref: addAddressLinkFor(journey, party)
   })
 }
 
@@ -108,7 +137,8 @@ const commitSelection = async (request, h, party, chosen, form) => {
           ...form,
           selectedId: chosen.id,
           answers,
-          recoverableError: true
+          recoverableError: true,
+          addAddressHref: addAddressLinkFor(journey, party)
         })
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
@@ -137,7 +167,8 @@ const post = (party) => async (request, h) => {
       query,
       page: 1,
       selectedId,
-      answers
+      answers,
+      addAddressHref: addAddressLinkFor(journey, party)
     })
   }
 
@@ -150,7 +181,8 @@ const post = (party) => async (request, h) => {
         page: pageNumber(payload.page),
         selectedId: '',
         answers,
-        error: party.error
+        error: party.error,
+        addAddressHref: addAddressLinkFor(journey, party)
       })
     ).code(HTTP_STATUS_BAD_REQUEST)
   }

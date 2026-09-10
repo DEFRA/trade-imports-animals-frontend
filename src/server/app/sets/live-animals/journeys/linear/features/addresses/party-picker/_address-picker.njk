@@ -67,7 +67,12 @@
   {% endif %}
 {% endmacro %}
 
-{% macro addressPicker(picker, crumb, copy, saveActionsCopy, hubHref) %}
+{% macro addressPicker(picker, crumb, copy, saveActionsCopy, hubHref, addAddressHref) %}
+  {% if addAddressHref %}
+    <p class="govuk-body">
+      <a class="govuk-link" href="{{ addAddressHref }}">{{ copy.addNewAddress }}</a>
+    </p>
+  {% endif %}
   <form method="post" novalidate>
     <input type="hidden" name="crumb" value="{{ crumb }}" />
     <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
