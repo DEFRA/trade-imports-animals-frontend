@@ -233,6 +233,10 @@ export const copy = {
     title: 'Add private transporter',
     intro:
       'Enter the name and address of the private transporter moving the animals.',
+    // Design release 1 closes the address at the country and heads the last two
+    // questions as the contact details they are — the same split, and the same
+    // heading, as the commercial form above.
+    contactHeading: 'Enter contact details',
     fields: {
       nameOrOrganisationName: 'Name or organisation name',
       addressLine1: 'Address line 1',
@@ -241,8 +245,8 @@ export const copy = {
       county: 'County (optional)',
       postalOrZipCode: 'Postal or zip code',
       country: 'Country',
-      telephoneNumber: 'Telephone number',
-      emailAddress: 'Email address'
+      emailAddress: 'Email address',
+      telephoneNumber: 'Telephone number'
     },
     countryPlaceholder: 'Select a country',
     errors: {

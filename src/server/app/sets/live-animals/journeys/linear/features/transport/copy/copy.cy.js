@@ -200,6 +200,7 @@ export const copy = {
     title: 'Ychwanegu cludwr preifat',
     intro:
       'Rhowch enw a chyfeiriad y cludwr preifat sy’n symud yr anifeiliaid.',
+    contactHeading: 'Rhowch fanylion cyswllt',
     fields: {
       nameOrOrganisationName: 'Enw neu enw’r sefydliad',
       addressLine1: 'Llinell gyfeiriad 1',
@@ -208,8 +209,8 @@ export const copy = {
       county: 'Sir (dewisol)',
       postalOrZipCode: 'Cod post neu god zip',
       country: 'Gwlad',
-      telephoneNumber: 'Rhif ffôn',
-      emailAddress: 'Cyfeiriad e-bost'
+      emailAddress: 'Cyfeiriad e-bost',
+      telephoneNumber: 'Rhif ffôn'
     },
     countryPlaceholder: 'Dewiswch wlad',
     errors: {

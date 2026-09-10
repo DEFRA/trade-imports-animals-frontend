@@ -188,6 +188,19 @@ describe('transport copy module', () => {
     )
   })
 
+  // Design release 1 closes the address at the country and heads the last two
+  // questions as contact details, exactly as the commercial form does. Copy
+  // parity only checks that a Welsh leaf differs from its English counterpart,
+  // so both headings are pinned here.
+  test('Should head the private form’s contact details in both languages', () => {
+    expect(copy.privateTransporterDetails.contactHeading).toBe(
+      'Enter contact details'
+    )
+    expect(copyCy.privateTransporterDetails.contactHeading).toBe(
+      'Rhowch fanylion cyswllt'
+    )
+  })
+
   // Design release 1 heads the commercial form as the addition it is, asks the
   // authorisation number first and fixes the country to Northern Ireland.
   test('Should head the commercial form as an addition and fix its country', () => {

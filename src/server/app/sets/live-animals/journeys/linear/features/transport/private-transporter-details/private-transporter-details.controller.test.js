@@ -131,8 +131,8 @@ describe('/transporters/add/private', () => {
       'townOrCity',
       'postalOrZipCode',
       'country',
-      'telephoneNumber',
-      'emailAddress'
+      'emailAddress',
+      'telephoneNumber'
     ])
     expect(result.after.privateTransporter).toBeUndefined()
   })
