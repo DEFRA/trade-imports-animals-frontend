@@ -4,7 +4,13 @@ import { buildDispatch } from '../../../../../flow/dispatch.js'
 import { dispatchPages } from '../features/index.js'
 import { simulateJourney } from '../../../../../analysis/simulate.js'
 
-const TRANSPORTERS_SELECT_PAGE = 'transporters-select'
+// The add spokes hang off the transporter list rather than sitting in the
+// journey, so no set of answers walks the simulator through them.
+const ADD_SPOKE_PAGES = [
+  'transporter-add',
+  'transporters-select',
+  'private-transporter-details'
+]
 
 describe('#simulateJourney', () => {
   beforeAll(() => {
@@ -20,8 +26,6 @@ describe('#simulateJourney', () => {
     const pages = simulateJourney(prereqs)
     expect(pages).toContain('port-of-entry')
     expect(pages).toContain('transporters')
-    expect(pages).not.toContain(TRANSPORTERS_SELECT_PAGE)
-    expect(pages).not.toContain('private-transporter-details')
     expect(pages.indexOf('port-of-entry')).toBeLessThan(
       pages.indexOf('transporters')
     )
@@ -30,15 +34,14 @@ describe('#simulateJourney', () => {
     )
   })
 
-  it('Should insert the gated transporter spoke exactly for the chosen type', () => {
-    const pages = simulateJourney({
-      ...prereqs,
-      transporterType: 'Commercial'
-    })
-    expect(pages).toContain(TRANSPORTERS_SELECT_PAGE)
-    expect(pages).not.toContain('private-transporter-details')
-    expect(pages.indexOf('transporters')).toBeLessThan(
-      pages.indexOf(TRANSPORTERS_SELECT_PAGE)
-    )
-  })
+  it.each(['', 'Commercial', 'Private'])(
+    'Should keep the add spokes off the journey when the transporter type is "%s"',
+    (transporterType) => {
+      const pages = simulateJourney({ ...prereqs, transporterType })
+      expect(pages).toContain('transporters')
+      for (const spoke of ADD_SPOKE_PAGES) {
+        expect(pages).not.toContain(spoke)
+      }
+    }
+  )
 })

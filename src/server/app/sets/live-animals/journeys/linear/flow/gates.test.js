@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { dispatchPages } from '../features/index.js'
-import { transportersSelectPage } from '../features/transport/page.js'
+import { transitCountriesPage } from '../features/transport/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
 import { makeScope } from '../../../../../engine/index.js'
 import { enumerateScopeStates } from './reachability-fixtures/scope-states.js'
@@ -25,7 +25,7 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
     expect(() => sectionGatePasses(derivedSection, scope)).toThrow(
       /buildDispatch/
     )
-    expect(() => pageGatePasses(transportersSelectPage, scope)).toThrow(
+    expect(() => pageGatePasses(transitCountriesPage, scope)).toThrow(
       /buildDispatch/
     )
   })
@@ -59,13 +59,13 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
       buildDispatch(dispatchPages)
     })
 
-    it('Should pass the derived transporter-select page gate exactly when the commercial transporter is owed, in every scope state', () => {
+    it('Should pass the derived transit-countries page gate exactly when the transited countries are owed, in every scope state', () => {
       const answered = () => true
       for (const answers of enumerateScopeStates()) {
         const { inScope } = makeScope(answers)
         expect(
-          pageGatePasses(transportersSelectPage, { inScope, answered })
-        ).toBe(inScope.has('commercialTransporter'))
+          pageGatePasses(transitCountriesPage, { inScope, answered })
+        ).toBe(inScope.has('transitedCountries'))
       }
     })
 

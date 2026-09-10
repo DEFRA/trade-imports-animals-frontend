@@ -386,11 +386,9 @@ export const answerTransitCountries = async (page) => {
   await save(page)
 }
 
+// One step: the transporter list carries both kinds, so the pick settles the
+// type too and there is no question in front of it.
 export const answerTransporter = async (page) => {
-  await page
-    .getByRole('radio', { name: values.transporterType, exact: true })
-    .check()
-  await save(page)
   await page
     .getByRole('radio', { name: values.commercialTransporter.name })
     .check()

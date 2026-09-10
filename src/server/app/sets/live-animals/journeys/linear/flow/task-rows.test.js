@@ -105,7 +105,7 @@ describe('#rowStatus — one status per hub task row', () => {
     ).toBe(FULFILLED)
   })
 
-  it('Should aggregate the transporter row over its three pages, following the type into scope', () => {
+  it('Should aggregate the transporter row over the three answers the list declares, following the type into scope', () => {
     expect(statusIn('transporter', unlocked)).toBe(NOT_STARTED)
     expect(
       statusIn('transporter', { ...unlocked, transporterType: 'Commercial' })

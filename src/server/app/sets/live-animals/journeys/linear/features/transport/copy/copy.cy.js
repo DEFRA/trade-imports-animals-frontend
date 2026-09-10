@@ -81,9 +81,9 @@ export const copy = {
     }
   },
   transporters: {
-    title: 'Cludwr',
-    legend: 'Pa fath o gludwr fydd yn symud yr anifeiliaid?',
-    hint: 'Byddwn yn gofyn am fanylion y cludwr nesaf.',
+    title: 'Manylion y cludwr',
+    intro: 'Dyma’r person neu’r cwmni sy’n gyfrifol am gludo’r llwyth.',
+    legend: 'Dewiswch gludwr',
     guidance: {
       authorisationLead:
         'Rhaid i’ch cludwr feddu ar awdurdodiad cludo dilys, a roddwyd gan DAERA neu APHA yn y DU os ydynt yn:',
@@ -101,6 +101,22 @@ export const copy = {
       euNotValid:
         'Nid yw dogfennau a roddwyd mewn unrhyw Aelod-wladwriaeth yr UE yn ddilys i’w defnyddio yn GB.'
     },
+    types: {
+      Commercial: 'Masnachol',
+      Private: 'Preifat'
+    },
+    optionHint: (type, address) => `${type} — ${address}`,
+    optionHintApproved: (type, address, approvalNumber) =>
+      `${type} — ${address} — rhif cymeradwyo ${approvalNumber}`,
+    add: 'Ychwanegu cludwr',
+    errors: {
+      transporterRequired: 'Dewiswch gludwr o’r rhestr'
+    }
+  },
+  transporterAdd: {
+    title: 'Cludwr',
+    legend: 'Pa fath o gludwr fydd yn symud yr anifeiliaid?',
+    hint: 'Byddwn yn gofyn am fanylion y cludwr nesaf.',
     options: {
       Commercial: {
         text: 'Masnachol',

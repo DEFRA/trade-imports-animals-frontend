@@ -8,9 +8,20 @@ export const transitCountriesPage = {
   slug: 'transit-countries'
 }
 
+/** The transporter list — the journey's one transporter step. Every
+ * transporter the trader can use is on it, commercial and private together,
+ * and the pick carries the type with it (design release 1). */
 export const transportersPage = {
   id: 'transporters',
   slug: 'transporters'
+}
+
+/** Off the linear journey: the first step of adding a transporter that is not
+ * on the list. Asked only of a trader who could not find theirs, which is why
+ * it is reached from the list rather than sitting in front of it. */
+export const transporterAddPage = {
+  id: 'transporter-add',
+  slug: 'transporters/add'
 }
 
 export const transportersSelectPage = {
@@ -20,5 +31,5 @@ export const transportersSelectPage = {
 
 export const privateTransporterDetailsPage = {
   id: 'private-transporter-details',
-  slug: 'transporters/private'
+  slug: 'transporters/add/private'
 }

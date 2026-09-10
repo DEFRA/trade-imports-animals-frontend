@@ -12,10 +12,8 @@ import { addressesPage } from '../features/addresses/page.js'
 import { cphNumberPage } from '../features/cph-number/page.js'
 import {
   portOfEntryPage,
-  privateTransporterDetailsPage,
   transitCountriesPage,
-  transportersPage,
-  transportersSelectPage
+  transportersPage
 } from '../features/transport/page.js'
 import { consignmentContactSelectPage } from '../features/contact/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
@@ -55,13 +53,9 @@ export const sections = [
   },
   {
     id: 'transport',
-    pages: [
-      portOfEntryPage,
-      transitCountriesPage,
-      transportersPage,
-      transportersSelectPage,
-      privateTransporterDetailsPage
-    ]
+    // One transporter step: the list. Adding a transporter that is not on it
+    // is a detour off that page, not a leg of the journey (design release 1).
+    pages: [portOfEntryPage, transitCountriesPage, transportersPage]
   },
   {
     id: 'contact',

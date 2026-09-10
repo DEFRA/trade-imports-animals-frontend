@@ -9,28 +9,53 @@ import {
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { validatorDefaults } from '../../../../../../../shared/copy.en.js'
+import {
+  COMMERCIAL,
+  PRIVATE,
+  parties
+} from '../../../../../../../services/transporters/index.js'
 import { copy } from '../copy/copy.en.js'
+import { addressSummary } from '../transporters/transporter-record.js'
 
 const addressLine1Input = '#addressLine1'
 const invalidCountry = 'Invalid country'
+const PRIVATE_ADD_SLUG = 'transporters/add/private'
+const BACK_LINK = '.govuk-back-link'
+
+const transporterRecords = parties()
+const privateRecord = transporterRecords.find(
+  (record) => record.type === PRIVATE
+)
+const commercialRecord = transporterRecords.find(
+  (record) => record.type === COMMERCIAL
+)
 
 const submit = (page) =>
   page.getByRole('button', { name: 'Save and continue' }).click()
 
-const openTransporterType = async (page) => {
+const openTransporterList = async (page) => {
   await startNotification(page)
   await unlockSections(page)
   await page.getByRole('link', { name: copy.portOfEntry.title }).click()
   await submit(page)
   await expect(
-    page.getByRole('heading', { name: copy.transporters.legend })
+    page.getByRole('heading', { name: copy.transporters.title })
+  ).toBeVisible()
+}
+
+const openTransporterType = async (page) => {
+  await openTransporterList(page)
+  // The govuk button macro renders an href as a link with role="button".
+  await page.getByRole('button', { name: copy.transporters.add }).click()
+  await expect(
+    page.getByRole('heading', { name: copy.transporterAdd.legend })
   ).toBeVisible()
 }
 
 const openCommercial = async (page) => {
   await openTransporterType(page)
   await page
-    .getByRole('radio', { name: copy.transporters.options.Commercial.text })
+    .getByRole('radio', { name: copy.transporterAdd.options.Commercial.text })
     .check()
   await submit(page)
   await expect(
@@ -41,7 +66,7 @@ const openCommercial = async (page) => {
 const openPrivate = async (page) => {
   await openTransporterType(page)
   await page
-    .getByRole('radio', { name: copy.transporters.options.Private.text })
+    .getByRole('radio', { name: copy.transporterAdd.options.Private.text })
     .check()
   await submit(page)
   await expect(
@@ -84,6 +109,17 @@ const validPrivateTransporter = {
   postalOrZipCode: '62100',
   country: 'France',
   telephoneNumber: '+33 3 21 00 00 00',
+  emailAddress: 'jean.dupont@example.fr'
+}
+
+// Not on the fixture list, so it can only have come from the add form.
+const handTypedTransporter = {
+  nameOrOrganisationName: 'Jean Dupont',
+  addressLine1: '12 Rue des Fermes',
+  townOrCity: 'Amiens',
+  postalOrZipCode: '80000',
+  country: 'France',
+  telephoneNumber: '+33 3 22 55 01 44',
   emailAddress: 'jean.dupont@example.fr'
 }
 
@@ -193,22 +229,195 @@ const expectTransporterGuidance = async (page) => {
 }
 
 const expectBranchOptions = async (page) => {
-  for (const option of Object.values(copy.transporters.options)) {
+  for (const option of Object.values(copy.transporterAdd.options)) {
     await expect(page.getByRole('radio', { name: option.text })).toBeVisible()
     await expect(page.getByText(option.hint)).toBeVisible()
   }
 }
 
-test.describe('transporter type page', () => {
+test.describe('transporter list page', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
   })
 
-  test('renders transporter guidance and branch options', async ({ page }) => {
+  test('opens the transporter task on the list, carrying the introduction and the authorisation guidance', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+
+    await expect(page.getByText(copy.transporters.intro)).toBeVisible()
+    await expectTransporterGuidance(page)
+    await expect(
+      page.getByRole('group', { name: copy.transporters.legend })
+    ).toBeVisible()
+  })
+
+  test('lists every transporter the service knows about, commercial and private, each showing its type', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+
+    for (const record of transporterRecords) {
+      const type = copy.transporters.types[record.type]
+      const address = addressSummary(record.address)
+      const expectedHint = record.approvalNumber
+        ? copy.transporters.optionHintApproved(
+            type,
+            address,
+            record.approvalNumber
+          )
+        : copy.transporters.optionHint(type, address)
+
+      await expect(page.getByRole('radio', { name: record.name })).toBeVisible()
+      await expect(
+        page.getByRole('radio', { name: record.name })
+      ).toHaveAccessibleDescription(expectedHint)
+    }
+  })
+
+  test('does not ask the transporter type before the list', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+
+    await expect(
+      page.getByRole('heading', { name: copy.transporterAdd.legend })
+    ).toHaveCount(0)
+  })
+
+  test('picking a commercial transporter saves it with its type and persists', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    await page.getByRole('radio', { name: commercialRecord.name }).check()
+    await submit(page)
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+
+    await page.goto(journeyUrl(page, 'transporters'))
+    await expect(
+      page.getByRole('radio', { name: commercialRecord.name })
+    ).toBeChecked()
+    // The pick lands on the commercial answer, so the register shows it too.
+    await page.goto(journeyUrl(page, 'transporters/select'))
+    await expect(
+      page.getByRole('radio', { name: commercialRecord.name })
+    ).toBeChecked()
+  })
+
+  test('picking a private transporter saves it with its type and persists — the branch the old flow had no list for', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    await page.getByRole('radio', { name: privateRecord.name }).check()
+    await submit(page)
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+
+    await page.goto(journeyUrl(page, 'transporters'))
+    await expect(
+      page.getByRole('radio', { name: privateRecord.name })
+    ).toBeChecked()
+    // The pick lands on the private answer, address and all, so nothing has to
+    // be typed in again.
+    await page.goto(journeyUrl(page, PRIVATE_ADD_SLUG))
+    await expect(
+      page.getByLabel(
+        copy.privateTransporterDetails.fields.nameOrOrganisationName
+      )
+    ).toHaveValue(privateRecord.name)
+    await expect(
+      page.getByLabel(copy.privateTransporterDetails.fields.townOrCity)
+    ).toHaveValue(privateRecord.address.townOrCity)
+  })
+
+  test('saving the list with nothing picked skips the commit and leaves a hand-typed transporter alone', async ({
+    page
+  }) => {
+    // Through the add route, which is the only way a trader reaches the form —
+    // it is the answer to the type question that puts privateTransporter in
+    // scope, so a record typed without it would be purged before the save.
+    await openPrivate(page)
+    await fillPrivateTransporter(page, handTypedTransporter)
+    await submit(page)
+
+    await page.goto(journeyUrl(page, 'transporters'))
+    // A hand-typed record is not on the list, so nothing is checked and the
+    // save has no pick to commit.
+    await expect(page.locator('input[name="transporter"]:checked')).toHaveCount(
+      0
+    )
+    await submit(page)
+
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(page.locator('.govuk-error-summary')).toHaveCount(0)
+
+    await page.goto(journeyUrl(page, PRIVATE_ADD_SLUG))
+    await expect(
+      page.getByLabel(
+        copy.privateTransporterDetails.fields.nameOrOrganisationName
+      )
+    ).toHaveValue(handTypedTransporter.nameOrOrganisationName)
+  })
+
+  test('transporter validation: out-of-list value links to and focuses the cleared group', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    await page
+      .getByRole('radio', { name: commercialRecord.name })
+      .evaluate((radio) => {
+        radio.value = 'invalid-transporter'
+        radio.checked = true
+      })
+    await submit(page)
+
+    const link = errorLink(page, copy.transporters.errors.transporterRequired)
+    await expect(link).toBeVisible()
+    await link.click()
+    await expect(
+      page.locator('input[name="transporter"]').first()
+    ).toBeFocused()
+    await expect(page.locator('input[name="transporter"]:checked')).toHaveCount(
+      0
+    )
+  })
+})
+
+test.describe('adding a transporter that is not on the list', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('reaches the type question from the list, not before it', async ({
+    page
+  }) => {
     await openTransporterType(page)
 
-    await expectTransporterGuidance(page)
+    await expect(page).toHaveURL(/\/transporters\/add$/)
     await expectBranchOptions(page)
+    await expectPageEndsWithPrimaryAlone(page)
+  })
+
+  test('the type question goes back to the list', async ({ page }) => {
+    await openTransporterType(page)
+    await page.locator(BACK_LINK).click()
+
+    await expect(
+      page.getByRole('heading', { name: copy.transporters.title })
+    ).toBeVisible()
+  })
+
+  test('the add route keeps the change context on its back link', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    await page.goto(`${journeyUrl(page, 'transporters')}?change=1`)
+    await page.getByRole('button', { name: copy.transporters.add }).click()
+
+    await expect(page).toHaveURL(/\/transporters\/add\?change=1$/)
+    await expect(page.locator(BACK_LINK)).toHaveAttribute(
+      'href',
+      /\/transporters\?change=1$/
+    )
   })
 
   test('transporter type validation: out-of-list value links to and focuses the cleared group', async ({
@@ -216,7 +425,7 @@ test.describe('transporter type page', () => {
   }) => {
     await openTransporterType(page)
     await page
-      .getByRole('radio', { name: copy.transporters.options.Commercial.text })
+      .getByRole('radio', { name: copy.transporterAdd.options.Commercial.text })
       .evaluate((radio) => {
         radio.value = 'Invalid transporter type'
         radio.checked = true
@@ -234,36 +443,26 @@ test.describe('transporter type page', () => {
     ).toHaveCount(0)
   })
 
-  test('private branch selection routes to its details page and persists on back', async ({
+  test('private branch routes to its details page and persists on back', async ({
     page
   }) => {
-    await openTransporterType(page)
-    await page
-      .getByRole('radio', { name: copy.transporters.options.Private.text })
-      .check()
-    await submit(page)
+    await openPrivate(page)
 
+    await expect(page).toHaveURL(/\/transporters\/add\/private$/)
+    await page.locator(BACK_LINK).click()
     await expect(
-      page.getByRole('heading', { name: copy.privateTransporterDetails.title })
-    ).toBeVisible()
-    await page.locator('.govuk-back-link').click()
-    await expect(
-      page.getByRole('radio', { name: copy.transporters.options.Private.text })
+      page.getByRole('radio', {
+        name: copy.transporterAdd.options.Private.text
+      })
     ).toBeChecked()
   })
 
-  test('commercial branch selection routes to its address-book page', async ({
+  test('commercial branch routes to the approved commercial register', async ({
     page
   }) => {
-    await openTransporterType(page)
-    await page
-      .getByRole('radio', { name: copy.transporters.options.Commercial.text })
-      .check()
-    await submit(page)
+    await openCommercial(page)
 
-    await expect(
-      page.getByRole('heading', { name: copy.transportersSelect.title })
-    ).toBeVisible()
+    await expect(page).toHaveURL(/\/transporters\/select$/)
   })
 })
 
@@ -352,7 +551,7 @@ test.describe('private transporter rendering and optionality', () => {
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
-  test('private transporter page ends with the primary alone, being reached from the transporter type page', async ({
+  test('private transporter page ends with the primary alone, being reached from the type question', async ({
     page
   }) => {
     await openPrivate(page)
@@ -470,7 +669,7 @@ test.describe('private transporter persistence', () => {
     await submit(page)
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
-    await page.goto(journeyUrl(page, 'transporters/private'))
+    await page.goto(journeyUrl(page, PRIVATE_ADD_SLUG))
     await expect(
       page.getByLabel(
         copy.privateTransporterDetails.fields.nameOrOrganisationName
@@ -488,6 +687,13 @@ test.describe('private transporter persistence', () => {
 test.describe('transporter pages accessibility', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
+  })
+
+  test('transporter list page has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await openTransporterList(page)
+    await expectAxeClean(page, 'Transporter list')
   })
 
   test('transporter type page has no serious or critical axe violations', async ({
