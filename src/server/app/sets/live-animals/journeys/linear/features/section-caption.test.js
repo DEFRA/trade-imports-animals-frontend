@@ -26,7 +26,9 @@ import { routes as cphNumberRoutes } from './cph-number/controller.js'
 import { routes as transitCountriesRoutes } from './transport/transit-countries/transit-countries.controller.js'
 import { routes as portOfEntryRoutes } from './transport/port-of-entry/port-of-entry.controller.js'
 import { routes as transportersRoutes } from './transport/transporters/transporters.controller.js'
+import { routes as transporterAddRoutes } from './transport/transporter-add/transporter-add.controller.js'
 import { routes as transportersSelectRoutes } from './transport/transporters-select/transporters-select.controller.js'
+import { routes as commercialTransporterDetailsRoutes } from './transport/commercial-transporter-details/commercial-transporter-details.controller.js'
 import { routes as privateTransporterDetailsRoutes } from './transport/private-transporter-details/private-transporter-details.controller.js'
 import { routes as documentsRoutes } from './documents/controller.js'
 import { routes as hubRoutes } from './hub/controller.js'
@@ -120,10 +122,17 @@ const CAPTIONED_PAGES = [
   ['transit countries', 'Movement', transitCountriesRoutes, parityFixture],
   ['port of entry', TRANSPORT_AND_ARRIVAL, portOfEntryRoutes, parityFixture],
   ['transporters', TRANSPORT_AND_ARRIVAL, transportersRoutes, parityFixture],
+  ['transporter add', NEW_TRANSPORTER, transporterAddRoutes, parityFixture],
   [
     'transporters select',
     NEW_TRANSPORTER,
     transportersSelectRoutes,
+    parityFixture
+  ],
+  [
+    'commercial transporter details',
+    NEW_TRANSPORTER,
+    commercialTransporterDetailsRoutes,
     parityFixture
   ],
   [

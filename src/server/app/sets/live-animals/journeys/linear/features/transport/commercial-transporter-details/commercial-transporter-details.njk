@@ -1,0 +1,134 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "shared/save-actions.njk" import saveActions %}
+{% from "shared/section-caption.njk" import sectionCaption %}
+
+{% block journeyContent %}
+  {% include "shared/error-summary.njk" %}
+
+  {{ sectionCaption(caption) }}
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+
+  {# Design release 1 opens the form with the authorisation rules, so a trader
+     typing a transporter in by hand meets the conditions the list states
+     before giving the authorisation number. #}
+  {% call govukNotificationBanner({ titleText: copy.guidanceTitle }) %}
+    <p class="govuk-body">{{ guidance.authorisationLead }}</p>
+    <ul class="govuk-list govuk-list--bullet">
+      {% for condition in guidance.authorisationConditions %}
+        <li>{{ condition }}</li>
+      {% endfor %}
+    </ul>
+    <p class="govuk-body">
+      <a href="{{ guidance.linkHref }}" class="govuk-link" rel="noreferrer noopener" target="_blank">{{ guidance.linkText }}</a>
+    </p>
+    <p class="govuk-body">{{ guidance.daeraValid }}</p>
+    <p class="govuk-body">{{ guidance.euNotValid }}</p>
+  {% endcall %}
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
+
+    {# The authorisation number comes first, as Design release 1 asks it: it is
+       what makes the transporter a commercial one. #}
+    {{ govukInput({
+      id: "approvalNumber", name: "approvalNumber",
+      label: { text: copy.fields.approvalNumber },
+      classes: "govuk-!-width-two-thirds",
+      value: values.approvalNumber,
+      errorMessage: errors.approvalNumber and { text: errors.approvalNumber }
+    }) }}
+
+    {{ govukInput({
+      id: "nameOrOrganisationName", name: "nameOrOrganisationName",
+      label: { text: copy.fields.nameOrOrganisationName },
+      autocomplete: "name",
+      value: values.nameOrOrganisationName,
+      errorMessage: errors.nameOrOrganisationName and { text: errors.nameOrOrganisationName }
+    }) }}
+
+    {{ govukInput({
+      id: "addressLine1", name: "addressLine1",
+      label: { text: copy.fields.addressLine1 },
+      autocomplete: "address-line1",
+      value: values.addressLine1,
+      errorMessage: errors.addressLine1 and { text: errors.addressLine1 }
+    }) }}
+
+    {{ govukInput({
+      id: "addressLine2", name: "addressLine2",
+      label: { text: copy.fields.addressLine2 },
+      autocomplete: "address-line2",
+      value: values.addressLine2,
+      errorMessage: errors.addressLine2 and { text: errors.addressLine2 }
+    }) }}
+
+    {{ govukInput({
+      id: "townOrCity", name: "townOrCity",
+      label: { text: copy.fields.townOrCity },
+      classes: "govuk-!-width-two-thirds",
+      autocomplete: "address-level2",
+      value: values.townOrCity,
+      errorMessage: errors.townOrCity and { text: errors.townOrCity }
+    }) }}
+
+    {{ govukInput({
+      id: "county", name: "county",
+      label: { text: copy.fields.county },
+      classes: "govuk-!-width-two-thirds",
+      value: values.county,
+      errorMessage: errors.county and { text: errors.county }
+    }) }}
+
+    {{ govukInput({
+      id: "postalOrZipCode", name: "postalOrZipCode",
+      label: { text: copy.fields.postalOrZipCode },
+      classes: "govuk-input--width-10",
+      autocomplete: "postal-code",
+      value: values.postalOrZipCode,
+      errorMessage: errors.postalOrZipCode and { text: errors.postalOrZipCode }
+    }) }}
+
+    {# A commercial transporter added by hand can only be a Northern Irish one,
+       so the country is shown and cannot be changed (Design release 1). The
+       disabled control carries no value to the server, so the hidden field
+       beside it posts the one the page fixed. #}
+    {{ govukSelect({
+      id: "country", name: "country",
+      label: { text: copy.fields.country },
+      items: [{ value: country, text: copy.country, selected: true }],
+      disabled: true,
+      errorMessage: errors.country and { text: errors.country }
+    }) }}
+    <input type="hidden" name="country" value="{{ country }}" />
+
+    <h2 class="govuk-heading-m">{{ copy.contactHeading }}</h2>
+
+    {{ govukInput({
+      id: "emailAddress", name: "emailAddress",
+      label: { text: copy.fields.emailAddress },
+      type: "email",
+      autocomplete: "email",
+      value: values.emailAddress,
+      errorMessage: errors.emailAddress and { text: errors.emailAddress }
+    }) }}
+
+    {{ govukInput({
+      id: "telephoneNumber", name: "telephoneNumber",
+      label: { text: copy.fields.telephoneNumber },
+      hint: { text: copy.telephoneHint },
+      type: "tel",
+      classes: "govuk-input--width-20",
+      autocomplete: "tel",
+      value: values.telephoneNumber,
+      errorMessage: errors.telephoneNumber and { text: errors.telephoneNumber }
+    }) }}
+
+    {# The commercial arm of the add route — reached from the type question, not
+       from the hub, so it ends with the primary alone. #}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions, showReturnControls = false) }}
+  </form>
+{% endblock %}

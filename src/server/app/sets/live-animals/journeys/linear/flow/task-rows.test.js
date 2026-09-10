@@ -105,7 +105,7 @@ describe('#rowStatus — one status per hub task row', () => {
     ).toBe(FULFILLED)
   })
 
-  it('Should aggregate the transporter row over its three pages, following the type into scope', () => {
+  it('Should aggregate the transporter row over the three answers the list declares, following the type into scope', () => {
     expect(statusIn('transporter', unlocked)).toBe(NOT_STARTED)
     expect(
       statusIn('transporter', { ...unlocked, transporterType: 'Commercial' })
@@ -239,14 +239,14 @@ describe('#rowStatus — the conditional transit-countries row', () => {
     ).toBe(NA)
   })
 
-  it('Should appear as Not yet started for each overland means and complete once countries are added', () => {
+  it('Should appear as Optional for each overland means and complete once countries are added', () => {
     for (const means of ['RAILWAY', 'ROAD_VEHICLE']) {
       expect(
         statusIn('transitCountries', {
           ...unlocked,
           meansOfTransport: means
         })
-      ).toBe(NOT_STARTED)
+      ).toBe(OPTIONAL)
     }
     expect(
       statusIn('transitCountries', {
@@ -305,14 +305,16 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
       ...happyPath,
       transporterType: 'Private',
       commercialTransporter: null
+    },
+    // The transit row is in scope overland but optional, so an empty list
+    // reads Optional and does not hold submission up.
+    'the happy path leaving transit countries empty': {
+      ...happyPath,
+      transitedCountries: []
     }
   }
 
   const notSubmittable = {
-    'the happy path leaving transit countries empty': {
-      ...happyPath,
-      transitedCountries: []
-    },
     'a blank journey': {},
     'an origin-only journey': { countryOfOrigin: 'FR' },
     'an unlocked skeleton journey': unlocked,

@@ -13,6 +13,10 @@ import { arrivalWindow } from '../port-of-entry/arrival-window.js'
 import * as portOfEntry from '../port-of-entry/port-of-entry.controller.js'
 import * as transporters from '../transporters/transporters.controller.js'
 import { copy } from './copy.en.js'
+import { copy as copyCy } from './copy.cy.js'
+
+const SAMPLE_ADDRESS = '1 Farm Lane, Kent'
+const SAMPLE_APPROVAL_NUMBER = 'GB-01'
 
 const leaves = (node, path = []) =>
   typeof node === 'object' && node !== null
@@ -39,9 +43,38 @@ describe('transport copy module', () => {
     )
   })
 
-  test('Should interpolate portOfEntry.arrivalDate.hint with the window bounds', () => {
-    expect(copy.portOfEntry.arrivalDate.hint('5/8/2026', '12/2/2027')).toBe(
-      'The expected date of arrival at the port of entry. Enter a date between 5/8/2026 and 12/2/2027.'
+  test('Should interpolate transitCountries.limitReached with the cap', () => {
+    expect(copy.transitCountries.limitReached(12)).toBe(
+      'Maximum of 12 countries reached. Remove a country to add another.'
+    )
+  })
+
+  test('Should interpolate transitCountries.added, removed and alreadyAdded with the country', () => {
+    expect(copy.transitCountries.added('France')).toBe('France added.')
+    expect(copy.transitCountries.removed('France')).toBe('France removed.')
+    expect(copy.transitCountries.errors.alreadyAdded('France')).toBe(
+      'You have already added France'
+    )
+  })
+
+  test('Should interpolate portOfEntry.arrivalDate.hint with the worked example', () => {
+    expect(copy.portOfEntry.arrivalDate.hint('27/3/2026')).toBe(
+      'The expected date of arrival at the port of entry. For example, 27/3/2026'
+    )
+  })
+
+  test('Should keep the accepted window out of portOfEntry.arrivalDate.hint', () => {
+    expect(copy.portOfEntry.arrivalDate.hint('27/3/2026')).not.toContain(
+      'between'
+    )
+  })
+
+  // The Welsh deck carries the same sentence and takes the same one argument.
+  // Copy parity only checks the arity of a function leaf, never the sentence it
+  // builds, so the Welsh hint is asserted here alongside the English one.
+  test('Should interpolate the Welsh portOfEntry.arrivalDate.hint with the worked example', () => {
+    expect(copyCy.portOfEntry.arrivalDate.hint('27/3/2026')).toBe(
+      'Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. Er enghraifft, 27/3/2026'
     )
   })
 
@@ -55,8 +88,129 @@ describe('transport copy module', () => {
 
   test('Should interpolate transportersSelect.optionHint', () => {
     expect(
-      copy.transportersSelect.optionHint('1 Farm Lane, Kent', 'GB-01')
+      copy.transportersSelect.optionHint(SAMPLE_ADDRESS, SAMPLE_APPROVAL_NUMBER)
     ).toBe('1 Farm Lane, Kent — approval number GB-01')
+  })
+
+  // Design release 1 heads the transporter list's columns rather than running
+  // each transporter's facts together in one hint. Copy parity only checks that
+  // the two decks carry the same paths and that each Welsh leaf differs from
+  // its English one, so a Welsh heading landing over the wrong column would
+  // pass it — the Welsh values are pinned here for that reason.
+  test('Should head every column Design release 1 shows on the transporter list', () => {
+    expect(copy.transporters.table).toEqual({
+      selectHidden: 'Select',
+      name: 'Name',
+      address: 'Address',
+      approvalNumber: 'Approval number',
+      type: 'Type',
+      status: 'Status'
+    })
+    expect(copyCy.transporters.table).toEqual({
+      selectHidden: 'Dewis',
+      name: 'Enw',
+      address: 'Cyfeiriad',
+      approvalNumber: 'Rhif cymeradwyo',
+      type: 'Math',
+      status: 'Statws'
+    })
+    expect(copy.transporters.selectRowPrefix).toBe('Select')
+    expect(copyCy.transporters.selectRowPrefix).toBe('Dewis')
+  })
+
+  test('Should drop the run-on radio hint the columns replace', () => {
+    expect(copy.transporters.optionHint).toBeUndefined()
+    expect(copy.transporters.optionHintApproved).toBeUndefined()
+    expect(copyCy.transporters.optionHint).toBeUndefined()
+    expect(copyCy.transporters.optionHintApproved).toBeUndefined()
+  })
+
+  // Copy parity only checks that a Welsh leaf differs from its English one, so
+  // the Welsh status words are asserted here beside the English ones.
+  test('Should name both approval statuses in both languages', () => {
+    expect(copy.transporters.statuses).toEqual({
+      Approved: 'Approved',
+      New: 'New'
+    })
+    expect(copyCy.transporters.statuses).toEqual({
+      Approved: 'Cymeradwywyd',
+      New: 'Newydd'
+    })
+  })
+
+  // Design release 1 heads the type question with the choice, warns that
+  // adding is a last resort, and explains only the commercial arm.
+  test('Should head the type question with the choice and leave the private option unhinted', () => {
+    expect(copy.transporterAdd.title).toBe('Choose a transporter type')
+    expect(copy.transporterAdd.warning).toBe(
+      'Before you add this transporter, please ensure you have already searched for it first.'
+    )
+    // Design release 1 warns instead of describing the next page, so the
+    // journey-describing hint is gone from both decks.
+    expect(copy.transporterAdd.hint).toBeUndefined()
+    expect(copyCy.transporterAdd.hint).toBeUndefined()
+    expect(copy.transporterAdd.options.Private).toEqual({
+      text: 'Private transporter'
+    })
+    expect(copy.transporterAdd.options.Commercial.hint).toBe(
+      'This can only be a commercial transporter from Northern Ireland.'
+    )
+  })
+
+  // Design release 1 heads the private form as the addition it is, under the
+  // same new-transporter caption as the type question.
+  test('Should head the private form as an addition', () => {
+    expect(copy.privateTransporterDetails.title).toBe('Add private transporter')
+    expect(copyCy.privateTransporterDetails.title).toBe(
+      'Ychwanegu cludwr preifat'
+    )
+  })
+
+  // Design release 1 heads the commercial form as the addition it is, asks the
+  // authorisation number first and fixes the country to Northern Ireland.
+  test('Should head the commercial form as an addition and fix its country', () => {
+    expect(copy.commercialTransporterDetails.title).toBe(
+      'Add commercial transporter'
+    )
+    expect(copyCy.commercialTransporterDetails.title).toBe(
+      'Ychwanegu cludwr masnachol'
+    )
+    expect(copy.commercialTransporterDetails.fields.approvalNumber).toBe(
+      'Transporter authorisation number'
+    )
+    expect(copy.commercialTransporterDetails.country).toBe('Northern Ireland')
+    expect(copyCy.commercialTransporterDetails.country).toBe('Gogledd Iwerddon')
+  })
+
+  // The banner repeats the authorisation rules the list states, and the phone
+  // number carries the international hint (design release 1).
+  test('Should head the commercial form guidance banner and hint the phone number', () => {
+    expect(copy.commercialTransporterDetails.guidanceTitle).toBe(
+      'Help with transporter authorisation'
+    )
+    expect(copy.commercialTransporterDetails.contactHeading).toBe(
+      'Enter contact details'
+    )
+    expect(copy.commercialTransporterDetails.telephoneHint).toBe(
+      'For international numbers include the country code'
+    )
+  })
+
+  // Both languages must send the trader to the same guidance section — a
+  // divergent href here is a broken translation, not a wording choice.
+  test('Should link the same guidance section in Welsh as in English', () => {
+    expect(copyCy.transporters.guidance.linkHref).toBe(
+      copy.transporters.guidance.linkHref
+    )
+  })
+
+  // Copy parity only checks that a Welsh leaf differs from its English
+  // counterpart, never the sentence itself, so the Welsh guidance sentence is
+  // asserted here beside the English one.
+  test('Should carry the Welsh transporters.guidance.euNotValid sentence', () => {
+    expect(copyCy.transporters.guidance.euNotValid).toBe(
+      'Nid yw dogfennau a roddwyd mewn unrhyw aelod-wladwriaeth yr UE yn ddilys i’w defnyddio yn GB.'
+    )
   })
 })
 
@@ -87,9 +241,9 @@ describe('GET /port-of-entry', () => {
     expect(result.view.context.arrivalDate.label.text).toBe(
       copy.portOfEntry.arrivalDate.label
     )
-    const { minText, maxText } = arrivalWindow()
+    const { exampleText } = arrivalWindow()
     expect(result.view.context.arrivalDate.hint.text).toBe(
-      copy.portOfEntry.arrivalDate.hint(minText, maxText)
+      copy.portOfEntry.arrivalDate.hint(exampleText)
     )
   })
 })
@@ -115,14 +269,17 @@ describe('GET /transporters', () => {
     expect(guidance.authorisationConditions).toContain(
       'travelling on journeys of over 65 km'
     )
+    expect(guidance.linkText).toBe(
+      'Find out how to transport animals in connection with an economic activity (opens in a new tab)'
+    )
     expect(guidance.linkHref).toBe(
-      'https://www.gov.uk/guidance/transporting-animals-in-great-britain'
+      'https://www.gov.uk/guidance/animal-welfare-in-transport#transporting-animals-in-connection-with-an-economic-activity'
     )
     expect(guidance.daeraValid).toBe(
       'Documents issued by DAERA are valid for use in GB.'
     )
     expect(guidance.euNotValid).toBe(
-      'Documents issued in any EU Member State are not valid for use in GB.'
+      'Documents issued in any EU member state are not valid for use in GB.'
     )
   })
 })

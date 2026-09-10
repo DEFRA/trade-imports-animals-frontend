@@ -14,6 +14,7 @@ import {
   portOfEntryPage,
   privateTransporterDetailsPage,
   transitCountriesPage,
+  transporterAddPage,
   transportersPage,
   transportersSelectPage
 } from '../features/transport/page.js'
@@ -136,28 +137,27 @@ describe('#nextRunTarget — the run past the arrival details', () => {
     ).toBe(pagePath(JOURNEY_ID, transitCountriesPage.slug))
   })
 
-  it('Should send the transit countries on to the transporter question', () => {
+  it('Should send the transit countries on to the transporter list', () => {
     expect(step(transitCountriesPage.id)).toBe(
       pagePath(JOURNEY_ID, transportersPage.slug)
     )
   })
 
-  it('Should take the transporter branch the answers reach and skip the other', () => {
+  it('Should send the transporter list on to the documents, whichever type the pick carries', () => {
     expect(step(transportersPage.id)).toBe(
-      pagePath(JOURNEY_ID, transportersSelectPage.slug)
-    )
-    expect(step(transportersSelectPage.id)).toBe(
       pagePath(JOURNEY_ID, documentsPage.slug)
     )
     expect(
       next(transportersPage.id, { ...completeSeed, transporterType: 'Private' })
-    ).toBe(pagePath(JOURNEY_ID, privateTransporterDetailsPage.slug))
-    expect(
-      next(privateTransporterDetailsPage.id, {
-        ...completeSeed,
-        transporterType: 'Private'
-      })
     ).toBe(pagePath(JOURNEY_ID, documentsPage.slug))
+  })
+
+  it('Should return null for the transporter add spokes — they are not run steps', () => {
+    // The spokes are off the run, so they carry no step of their own — they
+    // continue from the list, which is the step they hang off.
+    expect(next(transporterAddPage.id, completeSeed)).toBeNull()
+    expect(next(transportersSelectPage.id, completeSeed)).toBeNull()
+    expect(next(privateTransporterDetailsPage.id, completeSeed)).toBeNull()
   })
 
   it('Should send the documents on to the roles and addresses', () => {

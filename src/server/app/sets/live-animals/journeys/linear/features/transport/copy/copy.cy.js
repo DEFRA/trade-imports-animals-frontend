@@ -4,8 +4,8 @@ export const copy = {
     title: 'Manylion cyrraedd',
     arrivalDate: {
       label: 'Dyddiad cyrraedd y porthladd mynediad',
-      hint: (earliest, latest) =>
-        `Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. Rhowch ddyddiad rhwng ${earliest} a ${latest}.`
+      hint: (example) =>
+        `Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. Er enghraifft, ${example}`
     },
     port: {
       label: 'Porthladd mynediad',
@@ -54,21 +54,36 @@ export const copy = {
     betweenCountries:
       'Gwledydd y bydd y llwyth yn teithio drwyddynt yw’r gwledydd rhwng y wlad tarddiad a’r wlad gyrchfan.',
     excludesUk: 'Nid yw hyn yn cynnwys y Deyrnas Unedig.',
-    countries: {
-      label: 'Dewiswch bob gwlad y bydd y llwyth yn teithio drwyddi',
-      hint: 'Dewiswch hyd at 12 gwlad'
+    country: {
+      label: 'Rhowch wlad',
+      hint: 'Rhowch bob gwlad y bydd y llwyth yn teithio drwyddi',
+      placeholder: 'Chwiliwch am wlad',
+      noResults: 'Dim gwledydd wedi’u darganfod'
     },
+    add: 'Ychwanegu gwlad',
+    table: {
+      caption: 'Gwledydd rydych wedi’u hychwanegu',
+      country: 'Gwlad',
+      actionsHidden: 'Camau gweithredu'
+    },
+    remove: 'Tynnu',
+    removeHidden: (country) => country,
+    empty: 'Nid ydych wedi ychwanegu unrhyw wledydd eto.',
+    added: (country) => `${country} wedi’i ychwanegu.`,
+    removed: (country) => `${country} wedi’i dynnu.`,
+    limitReached: (max) =>
+      `Uchafswm o ${max} gwlad wedi’i gyrraedd. Tynnwch wlad i ychwanegu un arall.`,
     errors: {
       fromList: 'Dewiswch wledydd o’r rhestr',
       maxCountries: (max) => `Dewiswch hyd at ${max} gwlad`,
-      selectAtLeastOne:
-        'Dewiswch o leiaf un wlad y bydd y llwyth yn teithio drwyddi'
+      chooseCountry: 'Rhowch wlad i’w hychwanegu',
+      alreadyAdded: (country) => `Rydych eisoes wedi ychwanegu ${country}`
     }
   },
   transporters: {
-    title: 'Cludwr',
-    legend: 'Pa fath o gludwr fydd yn symud yr anifeiliaid?',
-    hint: 'Byddwn yn gofyn am fanylion y cludwr nesaf.',
+    title: 'Manylion y cludwr',
+    intro: 'Dyma’r person neu’r cwmni sy’n gyfrifol am gludo’r llwyth.',
+    legend: 'Dewiswch gludwr',
     guidance: {
       authorisationLead:
         'Rhaid i’ch cludwr feddu ar awdurdodiad cludo dilys, a roddwyd gan DAERA neu APHA yn y DU os ydynt yn:',
@@ -80,20 +95,46 @@ export const copy = {
       linkText:
         'Darganfyddwch sut i gludo anifeiliaid mewn cysylltiad â gweithgaredd economaidd (yn agor mewn tab newydd)',
       linkHref:
-        'https://www.gov.uk/guidance/transporting-animals-in-great-britain',
+        'https://www.gov.uk/guidance/animal-welfare-in-transport#transporting-animals-in-connection-with-an-economic-activity',
       daeraValid:
         'Mae dogfennau a roddwyd gan DAERA yn ddilys i’w defnyddio yn GB.',
       euNotValid:
-        'Nid yw dogfennau a roddwyd mewn unrhyw Aelod-wladwriaeth yr UE yn ddilys i’w defnyddio yn GB.'
+        'Nid yw dogfennau a roddwyd mewn unrhyw aelod-wladwriaeth yr UE yn ddilys i’w defnyddio yn GB.'
     },
+    types: {
+      Commercial: 'Masnachol',
+      Private: 'Preifat'
+    },
+    statuses: {
+      Approved: 'Cymeradwywyd',
+      New: 'Newydd'
+    },
+    table: {
+      selectHidden: 'Dewis',
+      name: 'Enw',
+      address: 'Cyfeiriad',
+      approvalNumber: 'Rhif cymeradwyo',
+      type: 'Math',
+      status: 'Statws'
+    },
+    selectRowPrefix: 'Dewis',
+    add: 'Ychwanegu cludwr',
+    errors: {
+      transporterRequired: 'Dewiswch gludwr o’r rhestr'
+    }
+  },
+  transporterAdd: {
+    title: 'Dewiswch fath o gludwr',
+    legend: 'Pa fath o gludwr fydd yn symud yr anifeiliaid?',
+    warning:
+      'Cyn i chi ychwanegu’r cludwr hwn, gwnewch yn siŵr eich bod wedi chwilio amdano yn gyntaf.',
     options: {
+      Private: {
+        text: 'Cludwr preifat'
+      },
       Commercial: {
         text: 'Masnachol',
-        hint: 'Busnes sydd wedi’i gymeradwyo i gludo anifeiliaid — byddwch yn dewis un o restr'
-      },
-      Private: {
-        text: 'Preifat',
-        hint: 'Chi neu unigolyn arall sy’n symud yr anifeiliaid — byddwch yn rhoi eu cyfeiriad'
+        hint: 'Dim ond cludwr masnachol o Ogledd Iwerddon y gall hwn fod.'
       }
     }
   },
@@ -106,8 +147,51 @@ export const copy = {
       transporterRequired: 'Dewiswch gludwr o’r rhestr'
     }
   },
+  commercialTransporterDetails: {
+    title: 'Ychwanegu cludwr masnachol',
+    guidanceTitle: 'Help gydag awdurdodiad cludwr',
+    contactHeading: 'Rhowch fanylion cyswllt',
+    fields: {
+      approvalNumber: 'Rhif awdurdodiad y cludwr',
+      nameOrOrganisationName: 'Enw neu enw’r sefydliad',
+      addressLine1: 'Llinell gyfeiriad 1',
+      addressLine2: 'Llinell gyfeiriad 2 (dewisol)',
+      townOrCity: 'Tref neu ddinas',
+      county: 'Sir (dewisol)',
+      postalOrZipCode: 'Cod post neu god zip',
+      country: 'Gwlad',
+      emailAddress: 'Cyfeiriad e-bost',
+      telephoneNumber: 'Rhif ffôn'
+    },
+    telephoneHint: 'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad',
+    country: 'Gogledd Iwerddon',
+    errors: {
+      approvalNumberRequired: 'Rhowch rif awdurdodiad y cludwr',
+      nameRequired: 'Rhowch enw neu enw sefydliad',
+      addressLine1Required: 'Rhowch linell gyfeiriad 1',
+      townOrCityRequired: 'Rhowch dref neu ddinas',
+      postalOrZipCodeRequired: 'Rhowch god post neu god zip',
+      emailRequired: 'Rhowch gyfeiriad e-bost',
+      telephoneRequired: 'Rhowch rif ffôn',
+      approvalNumberMaxLength:
+        'Rhaid i rif awdurdodiad y cludwr fod yn 50 nod neu lai',
+      nameMaxLength: 'Rhaid i’r enw neu enw’r sefydliad fod yn 255 nod neu lai',
+      addressLine1MaxLength:
+        'Rhaid i linell gyfeiriad 1 fod yn 255 nod neu lai',
+      addressLine2MaxLength:
+        'Rhaid i linell gyfeiriad 2 fod yn 255 nod neu lai',
+      townOrCityMaxLength: 'Rhaid i’r dref neu ddinas fod yn 100 nod neu lai',
+      countyMaxLength: 'Rhaid i’r sir fod yn 100 nod neu lai',
+      postalOrZipCodeMaxLength:
+        'Rhaid i’r cod post neu’r cod zip fod yn 12 nod neu lai',
+      emailMaxLength: 'Rhaid i’r cyfeiriad e-bost fod yn 254 nod neu lai',
+      telephoneMaxLength: 'Rhaid i’r rhif ffôn fod yn 20 nod neu lai',
+      countryFixed:
+        'Rhaid i gludwr masnachol rydych chi’n ei ychwanegu fod yng Ngogledd Iwerddon'
+    }
+  },
   privateTransporterDetails: {
-    title: 'Manylion y cludwr preifat',
+    title: 'Ychwanegu cludwr preifat',
     intro:
       'Rhowch enw a chyfeiriad y cludwr preifat sy’n symud yr anifeiliaid.',
     fields: {

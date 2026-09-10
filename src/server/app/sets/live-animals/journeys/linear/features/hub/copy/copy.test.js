@@ -236,7 +236,9 @@ describe('#hubHandler', () => {
     expect(transitRow.href).toBe(
       pagePath(byRoad.journeyId, 'transit-countries')
     )
-    expect(transitRow.status).toEqual(NOT_YET_STARTED_STATUS)
+    // Asked overland, but the answer is optional, so an untouched row reads
+    // Optional rather than Not yet started.
+    expect(transitRow.status).toEqual({ text: 'Optional' })
   })
 
   it('Should render the optional documents row as an Optional status', async () => {

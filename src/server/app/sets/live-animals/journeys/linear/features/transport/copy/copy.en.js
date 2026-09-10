@@ -3,8 +3,12 @@ export const copy = {
     title: 'Arrival details',
     arrivalDate: {
       label: 'Arrival date at port of entry',
-      hint: (earliest, latest) =>
-        `The expected date of arrival at the port of entry. Enter a date between ${earliest} and ${latest}.`
+      // The second sentence is a worked example of the date format, not a
+      // statement of the accepted window (design release 1): the picker's own
+      // bounds and errors.arrivalDateOutOfRange already police the window, so
+      // the hint is free to show the user what a date should look like.
+      hint: (example) =>
+        `The expected date of arrival at the port of entry. For example, ${example}`
     },
     port: {
       label: 'Port of entry',
@@ -56,21 +60,39 @@ export const copy = {
     betweenCountries:
       'Countries the consignment will travel through are countries between the country of origin and the destination country.',
     excludesUk: 'This does not include the United Kingdom.',
-    countries: {
-      label: 'Select all countries the consignment will travel through',
-      hint: 'Select up to 12 countries'
+    country: {
+      label: 'Enter a country',
+      hint: 'Enter each country that the consignment will travel through',
+      placeholder: 'Search for a country',
+      noResults: 'No countries found'
     },
+    add: 'Add country',
+    table: {
+      caption: 'Countries you have added',
+      country: 'Country',
+      actionsHidden: 'Actions'
+    },
+    remove: 'Remove',
+    removeHidden: (country) => country,
+    empty: 'You have not added any countries yet.',
+    added: (country) => `${country} added.`,
+    removed: (country) => `${country} removed.`,
+    // The cap is not stated before the trader meets it (design release 1): the
+    // search goes when the last country is added and this says why.
+    limitReached: (max) =>
+      `Maximum of ${max} countries reached. Remove a country to add another.`,
     errors: {
       fromList: 'Select countries from the list',
       maxCountries: (max) => `Select up to ${max} countries`,
-      selectAtLeastOne:
-        'Select at least one country the consignment will travel through'
+      chooseCountry: 'Enter a country to add',
+      alreadyAdded: (country) => `You have already added ${country}`
     }
   },
   transporters: {
-    title: 'Transporter',
-    legend: 'What type of transporter will move the animals?',
-    hint: "We will ask for the transporter's details next.",
+    title: 'Transporter details',
+    intro:
+      'This is the person or company responsible for transporting the consignment.',
+    legend: 'Select a transporter',
     guidance: {
       authorisationLead:
         'Your transporter must hold a valid transporter authorisation, issued by DAERA or APHA in the UK if they are:',
@@ -80,21 +102,65 @@ export const copy = {
         'transporting as part of an economic (commercial) activity'
       ],
       linkText:
-        'Find out how to transport animals in connection with an economic activity (opens in new tab)',
+        'Find out how to transport animals in connection with an economic activity (opens in a new tab)',
+      // Design release 1 links the anchored section of the animal-welfare-in-
+      // transport guidance, not the top of the general transporting-animals
+      // page: the trader lands on the economic-activity rules themselves.
       linkHref:
-        'https://www.gov.uk/guidance/transporting-animals-in-great-britain',
+        'https://www.gov.uk/guidance/animal-welfare-in-transport#transporting-animals-in-connection-with-an-economic-activity',
       daeraValid: 'Documents issued by DAERA are valid for use in GB.',
       euNotValid:
-        'Documents issued in any EU Member State are not valid for use in GB.'
+        'Documents issued in any EU member state are not valid for use in GB.'
     },
+    // The list carries both kinds of transporter, so each row says which it
+    // is. A private transporter has no approval number to show.
+    types: {
+      Commercial: 'Commercial',
+      Private: 'Private'
+    },
+    // Whether the transporter has been approved yet. Design release 1 shows
+    // this as a tag so a trader can tell approved from newly added at a
+    // glance; the tag colour is presentation and lives with the view model.
+    statuses: {
+      Approved: 'Approved',
+      New: 'New'
+    },
+    // Design release 1 aligns the transporters into headed columns rather than
+    // running each one's facts together in a hint.
+    table: {
+      selectHidden: 'Select',
+      name: 'Name',
+      address: 'Address',
+      approvalNumber: 'Approval number',
+      type: 'Type',
+      status: 'Status'
+    },
+    selectRowPrefix: 'Select',
+    add: 'Add a transporter',
+    errors: {
+      transporterRequired: 'Select a transporter from the list'
+    }
+  },
+  transporterAdd: {
+    title: 'Choose a transporter type',
+    // The page is headed with the choice it asks for, so the question stays as
+    // the group's legend for a screen reader without competing with the
+    // heading — as Design release 1 does.
+    legend: 'What type of transporter will move the animals?',
+    // Design release 1 warns here rather than describing the next page: adding
+    // a transporter is the last resort, after searching the list for one.
+    warning:
+      'Before you add this transporter, please ensure you have already searched for it first.',
     options: {
+      // Private first, as Design release 1 orders them, and unhinted: an
+      // individual moving their own animals needs no explaining. Only the
+      // commercial arm carries a condition.
+      Private: {
+        text: 'Private transporter'
+      },
       Commercial: {
         text: 'Commercial',
-        hint: 'A business approved to transport animals — you will choose one from a list'
-      },
-      Private: {
-        text: 'Private',
-        hint: 'You or another individual moving the animals — you will give their address'
+        hint: 'This can only be a commercial transporter from Northern Ireland.'
       }
     }
   },
@@ -107,8 +173,55 @@ export const copy = {
       transporterRequired: 'Select a transporter from the list'
     }
   },
+  commercialTransporterDetails: {
+    title: 'Add commercial transporter',
+    // Design release 1 opens the form with the authorisation rules the list
+    // already carries, so a trader typing a transporter in by hand meets the
+    // same conditions before they give its authorisation number. The sentences
+    // are the list's own — one statement of the rules, shown twice.
+    guidanceTitle: 'Help with transporter authorisation',
+    contactHeading: 'Enter contact details',
+    fields: {
+      approvalNumber: 'Transporter authorisation number',
+      nameOrOrganisationName: 'Name or organisation name',
+      addressLine1: 'Address line 1',
+      addressLine2: 'Address line 2 (optional)',
+      townOrCity: 'Town or city',
+      county: 'County (optional)',
+      postalOrZipCode: 'Postcode or zip code',
+      country: 'Country',
+      emailAddress: 'Email address',
+      telephoneNumber: 'Phone number'
+    },
+    telephoneHint: 'For international numbers include the country code',
+    // A commercial transporter a trader adds by hand can only be a Northern
+    // Irish one (design release 1), so the country is shown rather than asked.
+    country: 'Northern Ireland',
+    errors: {
+      approvalNumberRequired: 'Enter the transporter authorisation number',
+      nameRequired: 'Enter a name or organisation name',
+      addressLine1Required: 'Enter address line 1',
+      townOrCityRequired: 'Enter a town or city',
+      postalOrZipCodeRequired: 'Enter a postcode or zip code',
+      emailRequired: 'Enter an email address',
+      telephoneRequired: 'Enter a phone number',
+      approvalNumberMaxLength:
+        'Transporter authorisation number must be 50 characters or less',
+      nameMaxLength: 'Name or organisation name must be 255 characters or less',
+      addressLine1MaxLength: 'Address line 1 must be 255 characters or less',
+      addressLine2MaxLength: 'Address line 2 must be 255 characters or less',
+      townOrCityMaxLength: 'Town or city must be 100 characters or less',
+      countyMaxLength: 'County must be 100 characters or less',
+      postalOrZipCodeMaxLength:
+        'Postcode or zip code must be 12 characters or less',
+      emailMaxLength: 'Email address must be 254 characters or less',
+      telephoneMaxLength: 'Phone number must be 20 characters or less',
+      countryFixed:
+        'A commercial transporter you add must be in Northern Ireland'
+    }
+  },
   privateTransporterDetails: {
-    title: 'Private transporter details',
+    title: 'Add private transporter',
     intro:
       'Enter the name and address of the private transporter moving the animals.',
     fields: {

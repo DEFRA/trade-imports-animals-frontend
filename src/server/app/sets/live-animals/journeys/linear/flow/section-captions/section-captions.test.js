@@ -25,6 +25,7 @@ const CAPTIONED = [
   ['port-of-entry', TRANSPORT_AND_ARRIVAL],
   ['transporters', TRANSPORT_AND_ARRIVAL],
   ['transporters-select', NEW_TRANSPORTER],
+  ['commercial-transporter-details', NEW_TRANSPORTER],
   ['private-transporter-details', NEW_TRANSPORTER],
   ['accompanying-documents', 'Documents']
 ]

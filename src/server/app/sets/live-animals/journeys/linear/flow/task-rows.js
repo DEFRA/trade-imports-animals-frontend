@@ -13,10 +13,8 @@ import { addressesPage } from '../features/addresses/page.js'
 import { cphNumberPage } from '../features/cph-number/page.js'
 import {
   portOfEntryPage,
-  privateTransporterDetailsPage,
   transitCountriesPage,
-  transportersPage,
-  transportersSelectPage
+  transportersPage
 } from '../features/transport/page.js'
 import { consignmentContactSelectPage } from '../features/contact/page.js'
 
@@ -36,14 +34,9 @@ export const taskRows = [
   },
   { id: 'arrivalDetails', pages: [portOfEntryPage] },
   { id: 'transitCountries', pages: [transitCountriesPage], conditional: true },
-  {
-    id: 'transporter',
-    pages: [
-      transportersPage,
-      transportersSelectPage,
-      privateTransporterDetailsPage
-    ]
-  },
+  // The list declares all three transporter answers, so the row still spans
+  // the type and both address blocks from the one page.
+  { id: 'transporter', pages: [transportersPage] },
   { id: 'addresses', pages: [addressesPage, cphNumberPage] },
   { id: 'contact', pages: [consignmentContactSelectPage] },
   { id: 'documents', pages: [documentsPage] }

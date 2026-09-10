@@ -359,17 +359,36 @@ export const answerArrivalDetails = async (page) => {
   await save(page)
 }
 
+// Transit countries are added one at a time through a type-ahead, each one
+// landing in the list before the next is searched for. Mirrors
+// `addTransitCountry` in
+// src/server/app/sets/live-animals/journeys/linear/features/transport/fit/arrival-transit.fit.spec.js.
+export const addTransitCountry = async (page, name) => {
+  await page.waitForLoadState('domcontentloaded')
+  const field = page.getByLabel('Enter a country', { exact: true })
+  if ((await field.evaluate((el) => el.tagName)) === 'SELECT') {
+    await field.selectOption({ label: name })
+  } else {
+    await field.click()
+    await field.fill(name)
+    await page.getByRole('option', { name, exact: true }).click()
+  }
+  await page.getByRole('button', { name: 'Add country', exact: true }).click()
+  // The row landing is the post-condition — a refused add re-renders this page
+  // with the button still on it, so without this the journey quietly saves a
+  // different answer.
+  await expect(page.getByRole('cell', { name, exact: true })).toBeVisible()
+}
+
 export const answerTransitCountries = async (page) => {
-  await page.getByRole('checkbox', { name: 'France' }).check()
-  await page.getByRole('checkbox', { name: 'Belgium' }).check()
+  await addTransitCountry(page, 'France')
+  await addTransitCountry(page, 'Belgium')
   await save(page)
 }
 
+// One step: the transporter list carries both kinds, so the pick settles the
+// type too and there is no question in front of it.
 export const answerTransporter = async (page) => {
-  await page
-    .getByRole('radio', { name: values.transporterType, exact: true })
-    .check()
-  await save(page)
   await page
     .getByRole('radio', { name: values.commercialTransporter.name })
     .check()

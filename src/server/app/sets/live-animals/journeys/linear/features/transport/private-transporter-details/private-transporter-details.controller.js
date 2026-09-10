@@ -1,7 +1,6 @@
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
 import {
   compose,
   maxText,
@@ -11,11 +10,19 @@ import {
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as countries from '../../../../../../../services/countries/index.js'
-import { privateTransporterDetailsPage as page } from '../page.js'
+import {
+  privateTransporterDetailsPage as page,
+  transporterAddPage
+} from '../page.js'
+import { saveTransporterDetails } from '../transporter-details-save.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 
-export const meta = { ...page, collects: ['privateTransporter'] }
+/** The private arm of the add route.
+ *
+ * A spoke off the type chooser rather than a step in the journey: the
+ * `privateTransporter` it writes is declared by the transporter list, which is
+ * where a trader normally answers it by picking a row. */
 const view = `${TEMPLATES}/features/transport/private-transporter-details/private-transporter-details`
 
 const copy = copyFor({ en, cy }).privateTransporterDetails
@@ -87,6 +94,7 @@ const countryItems = (selected) => [
 ]
 
 const render = (
+  request,
   h,
   journey,
   values,
@@ -94,7 +102,10 @@ const render = (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: pagePath(journey.journeyId, 'transporters'),
+      backLink: kit.withChangeContext(
+        request,
+        pagePath(journey.journeyId, transporterAddPage.slug)
+      ),
       journey,
       page,
       recoverableError
@@ -109,7 +120,7 @@ const render = (
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const saved = answers.privateTransporter
-  return render(h, journey, {
+  return render(request, h, journey, {
     nameOrOrganisationName: saved?.name ?? '',
     addressLine1: saved?.address?.addressLine1 ?? '',
     addressLine2: saved?.address?.addressLine2 ?? '',
@@ -154,38 +165,12 @@ const privateTransporterRecord = (values) => ({
   }
 })
 
-const commitOrSkip = (request, h, values) =>
-  recordProvided(values)
-    ? state.commit(request, h, privateTransporterRecord(values))
-    : state.get(request, h)
-
-const post = async (request, h) => {
-  const payload = request.payload ?? {}
-  const values = trimmedValues(payload)
-  const allErrors = formErrors(payload, values)
-  if (Object.keys(allErrors).length > 0) {
-    const { journey } = await state.get(request, h)
-    return render(h, journey, values, { errors: allErrors })
-  }
-
-  let committed
-  const { failure } = await kit.recoverableSave(
-    async () => {
-      committed = await commitOrSkip(request, h, values)
-    },
-    async () => {
-      const { journey } = await state.get(request, h)
-      return render(h, journey, values, { recoverableError: true }).code(
-        HTTP_STATUS_INTERNAL_SERVER_ERROR
-      )
-    }
-  )
-  if (failure) {
-    return failure
-  }
-
-  const { scope } = committed
-  return h.redirect(await kit.nextTarget(request, page, scope))
-}
+const post = saveTransporterDetails({
+  trimmedValues,
+  formErrors,
+  recordProvided,
+  record: privateTransporterRecord,
+  render
+})
 
 export const routes = kit.pageRoutes(page, { get, post })
