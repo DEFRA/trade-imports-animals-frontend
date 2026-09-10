@@ -380,24 +380,24 @@ describe('V4 — transitedCountries conditional gate', () => {
     expect(result.obligations[transitedCountries.id]).toEqual(outOfScope)
   })
 
-  it('is mandatory in-scope when meansOfTransport is ROAD_VEHICLE', () => {
+  it('is optional in-scope when meansOfTransport is ROAD_VEHICLE', () => {
     const result = evaluator.evaluate({
       [meansOfTransport.id]: 'ROAD_VEHICLE'
     })
     expect(result.obligations[transitedCountries.id]).toEqual({
       inScope: true,
-      status: 'mandatory',
+      status: 'optional',
       reasons: [transitedCountriesReason]
     })
   })
 
-  it('is mandatory in-scope when meansOfTransport is RAILWAY', () => {
+  it('is optional in-scope when meansOfTransport is RAILWAY', () => {
     const result = evaluator.evaluate({
       [meansOfTransport.id]: 'RAILWAY'
     })
     expect(result.obligations[transitedCountries.id]).toEqual({
       inScope: true,
-      status: 'mandatory',
+      status: 'optional',
       reasons: [transitedCountriesReason]
     })
   })

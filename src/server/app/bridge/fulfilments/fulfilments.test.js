@@ -433,7 +433,10 @@ describe('#fulfilments — evaluator smoke — a happy path produces real implic
     expect(result.obligations[purposeInInternalMarket.id].status).toBe(
       'mandatory'
     )
-    expect(result.obligations[transitedCountries.id].status).toBe('mandatory')
+    // The land-transport gate brings transited countries INTO scope; the
+    // answer itself is optional there.
+    expect(result.obligations[transitedCountries.id].inScope).toBe(true)
+    expect(result.obligations[transitedCountries.id].status).toBe('optional')
   })
 
   it('Should resolve the mutually-exclusive transporter gate (commercial in, private out)', () => {

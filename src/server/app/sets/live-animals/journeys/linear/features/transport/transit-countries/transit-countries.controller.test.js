@@ -199,11 +199,6 @@ describe('POST transit-countries — continuing', () => {
       message: `Select up to ${MAX_TRANSITED_COUNTRIES} countries`
     },
     {
-      name: 'no transited countries on continue',
-      payload: {},
-      message: 'Select at least one country the consignment will travel through'
-    },
-    {
       // GB has a label but is not on the offered list, so a commit of it is
       // refused the same way an unknown code is.
       name: 'a transited GB, which the list never offers',
@@ -254,6 +249,15 @@ describe('POST transit-countries — continuing', () => {
       payload: { transitedCountries: tooManyCodes }
     })
     expect(result.view.context.showCountryField).toBe(true)
+  })
+
+  // The question is optional, so an empty list is an answer: it saves and the
+  // trader carries on rather than being sent back to the page.
+  it('Should commit an empty list and continue when no country was added', async () => {
+    const result = await driveHandler(post, { seed, payload: {} })
+    expect(result.after.transitedCountries).toEqual([])
+    expect(result.response.redirect).toBeDefined()
+    expect(result.response.redirect).not.toContain('transit-countries')
   })
 
   it('Should deduplicate and commit the added country codes', async () => {

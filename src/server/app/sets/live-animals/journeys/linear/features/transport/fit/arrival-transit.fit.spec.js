@@ -785,16 +785,21 @@ test.describe('transit countries rendering and validation', () => {
     ).toBeVisible()
   })
 
-  test('transit validation: no countries links to and focuses the search box', async ({
+  // The question is asked overland but never compulsory, so an empty list is
+  // an answer: continuing without adding a country saves it and moves on.
+  test('transit countries are optional: continuing with none saves and goes on', async ({
     page
   }) => {
     await openTransit(page)
     await submit(page)
 
-    const link = errorLink(page, copy.transitCountries.errors.selectAtLeastOne)
-    await expect(link).toBeVisible()
-    await link.click()
-    await expect(page.locator(transitCountryInput)).toBeFocused()
+    await expect(
+      page.getByRole('heading', { name: copy.transporters.legend })
+    ).toBeVisible()
+    await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
+
+    await page.goto(journeyUrl(page, 'transit-countries'))
+    await expect(page.getByText(copy.transitCountries.empty)).toBeVisible()
     expect(await addedCountries(page)).toEqual([])
   })
 
@@ -1046,11 +1051,13 @@ test.describe('arrival and transit accessibility', () => {
     await expectAxeClean(page, 'Transit countries with a country added')
   })
 
-  test('transit page in its error state has no serious or critical axe violations', async ({
+  test('transit page with an empty Add attempt has no serious or critical axe violations', async ({
     page
   }) => {
     await openTransit(page)
-    await submit(page)
+    await page
+      .getByRole('button', { name: copy.transitCountries.add, exact: true })
+      .click()
     await expect(page.locator(ERROR_SUMMARY)).toBeVisible()
     await expectAxeClean(page, 'Transit countries with a validation error')
   })

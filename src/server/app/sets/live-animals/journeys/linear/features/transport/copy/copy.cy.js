@@ -76,8 +76,6 @@ export const copy = {
     errors: {
       fromList: 'Dewiswch wledydd o’r rhestr',
       maxCountries: (max) => `Dewiswch hyd at ${max} gwlad`,
-      selectAtLeastOne:
-        'Dewiswch o leiaf un wlad y bydd y llwyth yn teithio drwyddi',
       chooseCountry: 'Rhowch wlad i’w hychwanegu',
       alreadyAdded: (country) => `Rydych eisoes wedi ychwanegu ${country}`
     }

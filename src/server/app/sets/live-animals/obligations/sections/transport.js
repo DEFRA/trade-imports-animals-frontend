@@ -84,9 +84,15 @@ export const transportDocumentReference = {
   status: 'mandatory'
 }
 
-// Conditional in-scope-mandatory multi-select — stored as an array of
+// Conditional in-scope-OPTIONAL multi-select — stored as an array of
 // country strings. Out of scope (and purged) when means-of-transport
 // is not RAILWAY or ROAD_VEHICLE.
+//
+// Asked of rail and road consignments, but never compulsory (design
+// release 1): a trader who travels through nowhere they can name leaves
+// the list empty, the row reads Optional and submission is not held up.
+// `status` must say 'optional' outright — `effectiveStatus` falls back to
+// 'mandatory' for an implication that carries none.
 const LAND_TRANSPORT_MODES = ['RAILWAY', 'ROAD_VEHICLE']
 
 export const transitedCountries = {
@@ -97,7 +103,7 @@ export const transitedCountries = {
     LAND_TRANSPORT_MODES,
     {
       inScope: true,
-      status: 'mandatory',
+      status: 'optional',
       reasons: [transitedCountriesReason]
     },
     { inScope: false }
