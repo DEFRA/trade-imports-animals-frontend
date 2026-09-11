@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { toWireAddress } from './to-wire-address.js'
 
-describe('toWireAddress', () => {
+describe('#toWireAddress', () => {
   it('Should translate the journey address names onto the wire names', () => {
     expect(
       toWireAddress({
