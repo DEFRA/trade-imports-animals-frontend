@@ -183,9 +183,9 @@ const requiredPrivateValidations = [
   ['name or organisation name', 'nameOrOrganisationName', 'nameRequired'],
   ['address line 1', 'addressLine1', 'addressLine1Required'],
   ['town or city', 'townOrCity', 'townOrCityRequired'],
-  ['postal or zip code', 'postalOrZipCode', 'postalOrZipCodeRequired'],
+  ['postcode or Zip code', 'postalOrZipCode', 'postalOrZipCodeRequired'],
   ['country', 'country', 'countryRequired'],
-  ['telephone number', 'telephoneNumber', 'telephoneRequired'],
+  ['phone number', 'telephoneNumber', 'telephoneRequired'],
   ['email address', 'emailAddress', 'emailRequired']
 ]
 
@@ -228,13 +228,13 @@ const formatPrivateValidations = [
     'countyMaxLength'
   ],
   [
-    'postal or zip code over 12 characters',
+    'postcode or Zip code over 12 characters',
     'postalOrZipCode',
     'P'.repeat(MAX_POSTAL_OR_ZIP_CODE_LENGTH + 1),
     'postalOrZipCodeMaxLength'
   ],
   [
-    'telephone number over 20 characters',
+    'phone number over 20 characters',
     'telephoneNumber',
     '1'.repeat(MAX_TELEPHONE_LENGTH + 1),
     'telephoneMaxLength'
@@ -773,6 +773,46 @@ test.describe('private transporter rendering and optionality', () => {
     for (const label of Object.values(copy.privateTransporterDetails.fields)) {
       await expect(page.getByLabel(label)).toBeVisible()
     }
+  })
+
+  // A private transporter is commonly based outside the UK, so design release 1
+  // tells the trader to include the dialling code — the same hint the
+  // commercial form carries.
+  test('private transporter phone number hints the international dialling code', async ({
+    page
+  }) => {
+    await openPrivate(page)
+
+    await expect(
+      page.getByLabel(copy.privateTransporterDetails.fields.telephoneNumber)
+    ).toHaveAccessibleDescription(copy.privateTransporterDetails.telephoneHint)
+  })
+
+  // Design release 1 closes the address at the country and heads the last two
+  // questions as contact details, email before phone.
+  test('private transporter page heads the contact details after the address, email first', async ({
+    page
+  }) => {
+    await openPrivate(page)
+
+    await expect(
+      page.getByRole('heading', {
+        name: copy.privateTransporterDetails.contactHeading
+      })
+    ).toBeVisible()
+    const orderedIds = await page
+      .locator(
+        'form #country, form h2, form #emailAddress, form #telephoneNumber'
+      )
+      .evaluateAll((nodes) =>
+        nodes.map((node) => node.id || node.tagName.toLowerCase())
+      )
+    expect(orderedIds).toEqual([
+      'country',
+      'h2',
+      'emailAddress',
+      'telephoneNumber'
+    ])
   })
 
   test('a completely blank private transporter record is optional', async ({

@@ -188,6 +188,55 @@ describe('transport copy module', () => {
     )
   })
 
+  // Design release 1 closes the address at the country and heads the last two
+  // questions as contact details, exactly as the commercial form does. Copy
+  // parity only checks that a Welsh leaf differs from its English counterpart,
+  // so both headings are pinned here.
+  test('Should head the private form’s contact details in both languages', () => {
+    expect(copy.privateTransporterDetails.contactHeading).toBe(
+      'Enter contact details'
+    )
+    expect(copyCy.privateTransporterDetails.contactHeading).toBe(
+      'Rhowch fanylion cyswllt'
+    )
+  })
+
+  // A private transporter can be based anywhere the country list offers, so
+  // design release 1 asks for a "Phone number" and hints the dialling code —
+  // the same wording the commercial form uses. The two error messages quote
+  // the label, so they have to move with it.
+  test('Should ask the private form for a phone number and hint the country code', () => {
+    expect(copy.privateTransporterDetails.fields.telephoneNumber).toBe(
+      'Phone number'
+    )
+    expect(copy.privateTransporterDetails.telephoneHint).toBe(
+      'For international numbers include the country code'
+    )
+    expect(copy.privateTransporterDetails.errors.telephoneRequired).toBe(
+      'Enter a phone number'
+    )
+    expect(copy.privateTransporterDetails.errors.telephoneMaxLength).toBe(
+      'Phone number must be 20 characters or less'
+    )
+  })
+
+  // Design release 1 asks for a "Postcode or Zip code" on every form that takes
+  // an address, so the private transporter's sixth field is worded exactly as
+  // the animals' permanent address is. The two error messages quote the label,
+  // so they move with it — an error naming a field by another word sends the
+  // trader looking for a field that is not on the page.
+  test('Should label the private form’s postcode field as Design release 1 does', () => {
+    expect(copy.privateTransporterDetails.fields.postalOrZipCode).toBe(
+      'Postcode or Zip code'
+    )
+    expect(copy.privateTransporterDetails.errors.postalOrZipCodeRequired).toBe(
+      'Enter a postcode or Zip code'
+    )
+    expect(copy.privateTransporterDetails.errors.postalOrZipCodeMaxLength).toBe(
+      'Postcode or Zip code must be 12 characters or less'
+    )
+  })
+
   // Design release 1 heads the commercial form as the addition it is, asks the
   // authorisation number first and fixes the country to Northern Ireland.
   test('Should head the commercial form as an addition and fix its country', () => {

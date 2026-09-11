@@ -233,25 +233,33 @@ export const copy = {
     title: 'Add private transporter',
     intro:
       'Enter the name and address of the private transporter moving the animals.',
+    // Design release 1 closes the address at the country and heads the last two
+    // questions as the contact details they are — the same split, and the same
+    // heading, as the commercial form above.
+    contactHeading: 'Enter contact details',
     fields: {
       nameOrOrganisationName: 'Name or organisation name',
       addressLine1: 'Address line 1',
       addressLine2: 'Address line 2 (optional)',
       townOrCity: 'Town or city',
       county: 'County (optional)',
-      postalOrZipCode: 'Postal or zip code',
+      postalOrZipCode: 'Postcode or Zip code',
       country: 'Country',
-      telephoneNumber: 'Telephone number',
-      emailAddress: 'Email address'
+      emailAddress: 'Email address',
+      telephoneNumber: 'Phone number'
     },
+    // A private transporter can be based in any of the countries the form
+    // offers, so design release 1 hints the dialling code here exactly as it
+    // does on the commercial form — one rule, stated the same way on both.
+    telephoneHint: 'For international numbers include the country code',
     countryPlaceholder: 'Select a country',
     errors: {
       nameRequired: 'Enter a name or organisation name',
       addressLine1Required: 'Enter address line 1',
       townOrCityRequired: 'Enter a town or city',
-      postalOrZipCodeRequired: 'Enter a postal or zip code',
+      postalOrZipCodeRequired: 'Enter a postcode or Zip code',
       countryRequired: 'Select a country',
-      telephoneRequired: 'Enter a telephone number',
+      telephoneRequired: 'Enter a phone number',
       emailRequired: 'Enter an email address',
       nameMaxLength: 'Name or organisation name must be 255 characters or less',
       addressLine1MaxLength: 'Address line 1 must be 255 characters or less',
@@ -259,9 +267,9 @@ export const copy = {
       townOrCityMaxLength: 'Town or city must be 100 characters or less',
       countyMaxLength: 'County must be 100 characters or less',
       postalOrZipCodeMaxLength:
-        'Postal or zip code must be 12 characters or less',
+        'Postcode or Zip code must be 12 characters or less',
       countryFromList: 'Select a country from the list',
-      telephoneMaxLength: 'Telephone number must be 20 characters or less',
+      telephoneMaxLength: 'Phone number must be 20 characters or less',
       emailMaxLength: 'Email address must be 254 characters or less'
     }
   }
