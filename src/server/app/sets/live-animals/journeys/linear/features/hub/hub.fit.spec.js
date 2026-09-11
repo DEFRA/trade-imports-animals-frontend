@@ -123,6 +123,29 @@ test.describe('hub feature — review readiness', () => {
     ).toBeVisible()
   })
 
+  // Design release 1: "Animal identifiers are optional unless multiple species
+  // are selected." A single-species consignment reaches Check your answers with
+  // no identifier saved; what is outstanding is chased after submission.
+  test('a single-species notification unlocks the review with no identifier saved', async ({
+    page
+  }) => {
+    test.slow()
+    await startNotification(page)
+    await completeAnswerSections(page, { skipAnimalIdentification: true })
+
+    const identification = taskRow(page, copy.rows.animalIdentification.title)
+    await expect(identification).toContainText(copy.statuses.completed)
+
+    const review = taskRow(page, copy.rows.review.title)
+    await expect(review).not.toContainText(copy.statuses.cannotStartYet)
+
+    await review.getByRole('link', { name: copy.rows.review.title }).click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Check your answers' })
+    ).toBeVisible()
+  })
+
   test('blocked review hub has no serious or critical axe violations', async ({
     page
   }) => {

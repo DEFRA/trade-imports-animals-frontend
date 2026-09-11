@@ -258,7 +258,16 @@ describe('coverage — every helper export classifies as STRUCTURED or OPAQUE', 
   // predicate closure — no gate metadata), `obligationMetadata` (a
   // pure accessor — no gate produced). Anything else without a
   // sample must be added.
-  const NON_GATE_HELPERS = new Set(['present', 'obligationMetadata'])
+  // `moreThanOne` joins them: a combinator over a group's `requires`
+  // (`floorAppliesToParent`), never an obligation's `applyTo`. Its
+  // metadata carries `combinator`, not `gateType`, so the prover never
+  // meets it — and an obligation that used it anyway would fall to
+  // `synthesiseWitness`'s default and classify OPAQUE, loudly.
+  const NON_GATE_HELPERS = new Set([
+    'present',
+    'obligationMetadata',
+    'moreThanOne'
+  ])
 
   const classificationProblemFor = (name) => {
     const sample = SAMPLE_OBLIGATIONS[name]

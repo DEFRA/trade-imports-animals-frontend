@@ -88,6 +88,9 @@ const cases = {
     ],
     ready: false
   },
+  // The identification row reads Completed from the first line onwards: a
+  // consignment of one identified species is asked for no identifier at all,
+  // so the row owes nothing even before anything is entered on it.
   'a partial single-line journey': {
     answers: {
       countryOfOrigin: 'FR',
@@ -98,7 +101,7 @@ const cases = {
       IN_PROGRESS,
       NOT_STARTED,
       NOT_STARTED,
-      NOT_STARTED,
+      FULFILLED,
       NOT_STARTED,
       NA,
       NOT_STARTED,
@@ -136,7 +139,7 @@ const cases = {
       FULFILLED,
       NOT_STARTED,
       NOT_STARTED,
-      NOT_STARTED,
+      FULFILLED,
       NOT_STARTED,
       NA,
       NOT_STARTED,
@@ -147,7 +150,7 @@ const cases = {
     sections: [
       NA,
       IN_PROGRESS,
-      IN_PROGRESS,
+      FULFILLED,
       NA,
       NOT_STARTED,
       OPTIONAL,
@@ -274,12 +277,16 @@ describe('statusOf — the commodities/identification facet split', () => {
   }
 
   // [answers, exceptIdentifiers status, onlyIdentifiers status]
+  // A consignment of ONE identified commodity line owes no identifier at all,
+  // so the identifiers facet reads Completed from the first line onwards. A
+  // second identified commodity line is what turns it back into outstanding
+  // work.
   const facetCases = [
     [{}, NOT_STARTED, NOT_STARTED],
     [
       { commodityLines: [{ commoditySelection: 'Cow' }] },
       IN_PROGRESS,
-      NOT_STARTED
+      FULFILLED
     ],
     [
       {
@@ -293,6 +300,16 @@ describe('statusOf — the commodities/identification facet split', () => {
         ]
       },
       FULFILLED,
+      FULFILLED
+    ],
+    [
+      {
+        commodityLines: [
+          { commoditySelection: 'Cow' },
+          { commoditySelection: 'Horse' }
+        ]
+      },
+      IN_PROGRESS,
       NOT_STARTED
     ],
     [
@@ -349,37 +366,70 @@ describe('statusOf — the commodities/identification facet split', () => {
   })
 })
 
-describe('statusOf — the fulfilmentIndexCountEquals invariant in isolation', () => {
+describe('statusOf — the multi-species identifier floor in isolation', () => {
   const inScope = new Set(['commodityLines'])
   const onlyIdentifiers = {
     collection: 'commodityLines',
     only: ['animalIdentifiers']
   }
 
-  const lineWith = (quantity) => ({
-    commodityLines: [
-      {
-        commoditySelection: 'Cow',
-        speciesSelection: '1148346',
-        numberOfAnimalsQuantity: quantity,
-        animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
-      }
-    ]
+  const cowLine = (quantity, identifiers) => ({
+    commoditySelection: 'Cow',
+    speciesSelection: '1148346',
+    numberOfAnimalsQuantity: quantity,
+    animalIdentifiers: identifiers
   })
 
-  it('Should block the identifiers facet while the unit count trails the declared quantity', () => {
-    // One complete unit satisfies the any-of rule, so the count
-    // mismatch is the only outstanding concern.
-    const answers = lineWith('2')
+  const earTag = { animalIdentifierEarTag: 'UK123456789012' }
+
+  const facetStatus = (answers) =>
+    statusOf([onlyIdentifiers], answers, inScope, evaluateAnswers(answers))
+
+  it('Should fulfil the identifiers facet on one species however many animals it declares', () => {
+    // Two hundred salmon, or two hundred cattle, need not be entered one
+    // record at a time — the declared quantity is progress, not a gate.
+    expect(facetStatus({ commodityLines: [cowLine('200', [earTag])] })).toBe(
+      FULFILLED
+    )
+  })
+
+  it('Should fulfil the identifiers facet on one species carrying no identifier at all', () => {
+    expect(facetStatus({ commodityLines: [cowLine('5', [])] })).toBe(FULFILLED)
+  })
+
+  it('Should block the identifiers facet while a second identified species carries no record', () => {
     expect(
-      statusOf([onlyIdentifiers], answers, inScope, evaluateAnswers(answers))
+      facetStatus({
+        commodityLines: [
+          cowLine('5', [earTag]),
+          { commoditySelection: 'Horse' }
+        ]
+      })
     ).toBe(IN_PROGRESS)
   })
 
-  it('Should fulfil the identifiers facet when the unit count matches the declared quantity', () => {
-    const answers = lineWith('1')
+  it('Should fulfil the identifiers facet on one record per identified species', () => {
     expect(
-      statusOf([onlyIdentifiers], answers, inScope, evaluateAnswers(answers))
+      facetStatus({
+        commodityLines: [
+          cowLine('5', [earTag]),
+          {
+            commoditySelection: 'Horse',
+            numberOfAnimalsQuantity: '4',
+            animalIdentifiers: [{ horseName: 'Shergar' }]
+          }
+        ]
+      })
+    ).toBe(FULFILLED)
+  })
+
+  it('Should ask no record of a second species that carries no identifier of its own', () => {
+    // Fish is on none of the identifier allowlists, so a Cow-and-Fish
+    // consignment is a one-identified-species consignment.
+    expect(
+      facetStatus({
+        commodityLines: [cowLine('5', []), { commoditySelection: 'Fish' }]
+      })
     ).toBe(FULFILLED)
   })
 })

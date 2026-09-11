@@ -148,7 +148,7 @@ describe('#rowStatus — one status per hub task row', () => {
       expect(statusIn('animalIdentification', {})).toBe(NOT_STARTED)
     })
 
-    it('Should complete the commodities row on line data alone, leaving identification Not yet started', () => {
+    it('Should complete the commodities row on line data alone, owing no identifier on a single species', () => {
       const answers = {
         commodityLines: [
           {
@@ -157,6 +157,32 @@ describe('#rowStatus — one status per hub task row', () => {
             commodityType: '16',
             numberOfPackages: '5',
             numberOfAnimalsQuantity: '25'
+          }
+        ]
+      }
+      expect(statusIn('commodities', answers)).toBe(FULFILLED)
+      // Design release 1 asks for identifiers only once a consignment
+      // carries more than one identified species, so a twenty-five-animal
+      // single-species line owes none of them.
+      expect(statusIn('animalIdentification', answers)).toBe(FULFILLED)
+    })
+
+    it('Should leave the identification row Not yet started while a second species owes its first identifier', () => {
+      const answers = {
+        commodityLines: [
+          {
+            commoditySelection: 'Cow',
+            speciesSelection: '1148346',
+            commodityType: '16',
+            numberOfPackages: '5',
+            numberOfAnimalsQuantity: '25'
+          },
+          {
+            commoditySelection: 'Horse',
+            speciesSelection: '822332',
+            commodityType: '2',
+            numberOfPackages: '3',
+            numberOfAnimalsQuantity: '4'
           }
         ]
       }
@@ -294,6 +320,16 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
       PASSING.includes(sectionStatus(section, answers, inScope, evaluation))
     )
 
+  // A second identified commodity line — a complete Horse line — turns the
+  // identifiers from optional into one record per line.
+  const horseLine = {
+    commoditySelection: 'Horse',
+    speciesSelection: '822332',
+    commodityType: '2',
+    numberOfPackages: '3',
+    numberOfAnimalsQuantity: '4'
+  }
+
   const submittable = {
     'the happy path': happyPath,
     'the happy path by air (the conditional transit row is Not applicable)': {
@@ -311,6 +347,34 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
     'the happy path leaving transit countries empty': {
       ...happyPath,
       transitedCountries: []
+    },
+    // Design release 1: "Animal identifiers are optional unless multiple
+    // species are selected". The happy path carries one species, so it can
+    // be submitted with no identifier saved at all — the outstanding work
+    // is chased after submission rather than refused before it.
+    'the happy path without identifiers on its single species': {
+      ...happyPath,
+      commodityLines: [
+        { ...happyPath.commodityLines[0], animalIdentifiers: [] }
+      ]
+    },
+    // Nor does the declared number of animals gate the submission: one
+    // identifier record stands for the line however many animals it counts.
+    'the happy path declaring more animals than it identifies': {
+      ...happyPath,
+      commodityLines: [
+        { ...happyPath.commodityLines[0], numberOfAnimalsQuantity: '2' }
+      ]
+    },
+    // Two identified species, one identifier record each — four horses
+    // covered by one record, which is what "at least one identifier per
+    // species" asks for.
+    'two identified species carrying one identifier each': {
+      ...happyPath,
+      commodityLines: [
+        ...happyPath.commodityLines,
+        { ...horseLine, animalIdentifiers: [{ horseName: 'Shergar' }] }
+      ]
     }
   }
 
@@ -328,12 +392,6 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
       ...happyPath,
       animalsCertifiedFor: ''
     },
-    'the happy path without identifiers': {
-      ...happyPath,
-      commodityLines: [
-        { ...happyPath.commodityLines[0], animalIdentifiers: [] }
-      ]
-    },
     'the happy path without the species': {
       ...happyPath,
       commodityLines: [{ ...happyPath.commodityLines[0], speciesSelection: '' }]
@@ -344,13 +402,12 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
     },
     'the happy path without a contact': { ...happyPath, contactAddress: null },
     'the happy path without an importer': { ...happyPath, importer: null },
-    // The unit-count invariant: a line declaring more animals than it
-    // has unit records cannot submit.
-    'the happy path with a short unit count': {
+    // The multi-species rule: a second identified species owes one
+    // identifier record of its own before the notification can be
+    // submitted, however many animals either line declares.
+    'a second identified species carrying no identifier': {
       ...happyPath,
-      commodityLines: [
-        { ...happyPath.commodityLines[0], numberOfAnimalsQuantity: '2' }
-      ]
+      commodityLines: [...happyPath.commodityLines, horseLine]
     }
   }
 

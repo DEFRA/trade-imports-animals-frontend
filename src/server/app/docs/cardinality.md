@@ -17,6 +17,29 @@ support:
 `groupInvariantErrors()` emits structured errors only while the group is in scope.
 Status and submit-readiness calculations consume those errors.
 
+## The empty-collection floor
+
+A group whose `requires` carries `minEntries` or `anyOfIds` also carries an
+empty-collection floor: with no records saved under a parent, the collection is
+not satisfied. `requires.floorAppliesToParent` narrows the `anyOfIds`-derived
+floor ONLY. A group carrying `minEntries` is asked of every parent regardless:
+`emptyCollectionSatisfiesFloor` returns false on `minEntries` before it consults
+the gate, so declaring both keys leaves the gate silently ignored. The key holds
+an INDEXED, DEPTH-1 gate over a parent-level obligation — one whose
+`fulfilmentIndexes` are the parent collection's own indexes, such as
+`allowListed(field, values, null)`, optionally wrapped in `moreThanOne` — read
+over the PARENT's stored values in
+[`src/server/app/bridge/status/completeness/invariants.js`](../bridge/status/completeness/invariants.js);
+a parent the gate does not name passes with no records at all. A gate carrying a
+`gatedParentGroup` projection, or an unindexed gate, is NOT supported here: it is
+read with an empty index map and stands the floor down for every parent,
+silently. The animalIdentifiers group is the exemplar — design release 1 asks for
+at least one identifier record per commodity line only on a consignment carrying
+more than one identified commodity line, which the `moreThanOne` combinator
+expresses over the identified-commodity allowlist. The gate counts lines whose
+commodity has an identifier set, not distinct species, so two lines of the same
+species satisfy it.
+
 ## Value-linked append caps
 
 [`src/server/app/engine/evaluate/cardinality.js`](../engine/evaluate/cardinality.js)

@@ -39,6 +39,11 @@
  * escape hatch for genuinely non-derivable predicates; must be paired
  * with `predicateMeta` for the reachability prover to synthesise a
  * witness.
+ *
+ * `moreThanOne` is a combinator rather than a gate: it wraps another
+ * helper and stands it down unless that helper admits more than one
+ * entry — for the "only ask this of a consignment carrying more than
+ * one identified commodity line" case.
  */
 
 export { allowListed } from './allow-listed.js'
@@ -51,4 +56,5 @@ export { equalsGate } from './equals-gate.js'
 export { presentGate } from './present-gate.js'
 export { includesGate } from './includes-gate.js'
 export { alwaysInScope } from './always-in-scope.js'
+export { moreThanOne } from './more-than-one.js'
 export { obligationMetadata } from './introspection/obligation-metadata.js'

@@ -3,7 +3,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { configureObligationSet } from '../../../model/obligations/manifest.js'
 import {
   allowListed,
-  equalsGate
+  equalsGate,
+  moreThanOne
 } from '../../../model/obligations/helpers/index.js'
 import { emptyCollectionSatisfiesFloor } from './invariants.js'
 
@@ -143,5 +144,87 @@ describe('#emptyCollectionSatisfiesFloor', () => {
         stateWithCommodity('Fish')
       )
     ).toBe(false)
+  })
+
+  // `requires.floorAppliesToParent` — the group says which parents it asks
+  // for a record at all. Everything else about the floor is unchanged.
+  describe('the floorAppliesToParent gate', () => {
+    const gatedGroup = (gate) => ({
+      ...unitGroupWith([allowListedLeaf.id]),
+      requires: {
+        anyOfIds: [allowListedLeaf.id],
+        errorCode: 'unit.identifierRequired',
+        floorAppliesToParent: gate
+      }
+    })
+
+    const twoLines = {
+      fulfilments: {
+        [commoditySelection.id]: { line1: 'Cow', line2: 'Cow' }
+      }
+    }
+
+    it('Should stand the floor down where the gate admits only one entry', () => {
+      expect(
+        emptyCollectionSatisfiesFloor(
+          collection,
+          gatedGroup(
+            moreThanOne(allowListed(commoditySelection, ['Cow'], null))
+          ),
+          LINE_1,
+          stateWithCommodity('Cow')
+        )
+      ).toBe(true)
+    })
+
+    // The gate is in scope and names the two Horse lines, not this one,
+    // while `allowListedLeaf` could still apply on a Cow line — so only
+    // the gate's own index list can stand the floor down here.
+    it('Should stand the floor down for a parent the in-scope gate does not name', () => {
+      expect(
+        emptyCollectionSatisfiesFloor(
+          collection,
+          gatedGroup(
+            moreThanOne(allowListed(commoditySelection, ['Horse'], null))
+          ),
+          LINE_1,
+          {
+            fulfilments: {
+              [commoditySelection.id]: {
+                line1: 'Cow',
+                line2: 'Horse',
+                line3: 'Horse'
+              }
+            }
+          }
+        )
+      ).toBe(true)
+    })
+
+    it('Should bite on a parent the gate does name', () => {
+      expect(
+        emptyCollectionSatisfiesFloor(
+          collection,
+          gatedGroup(
+            moreThanOne(allowListed(commoditySelection, ['Cow'], null))
+          ),
+          LINE_1,
+          twoLines
+        )
+      ).toBe(false)
+    })
+
+    // The leaf could apply on this parent, so only the gate's own verdict
+    // can stand the floor down here.
+    it('Should stand the floor down where the gate is out of scope altogether', () => {
+      expect(
+        emptyCollectionSatisfiesFloor(
+          collection,
+          gatedGroup(allowListed(commoditySelection, ['Horse'], null)),
+          LINE_1,
+          stateWithCommodity('Cow')
+        )
+      ).toBe(true)
+    })
   })
 })

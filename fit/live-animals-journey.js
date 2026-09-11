@@ -402,9 +402,19 @@ export const answerContactAddress = async (page) => {
   await save(page)
 }
 
-/** Answers the whole notification one task row at a time, the way a returning
- * user works once the opening run is over. */
-export const completeAnswerSections = async (page) => {
+/**
+ * Answers the whole notification one task row at a time, the way a returning
+ * user works once the opening run is over.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {{ skipAnimalIdentification?: boolean }} [options] - pass
+ *   `skipAnimalIdentification` to leave the identification row untouched, as a
+ *   trader may on a single-species consignment.
+ */
+export const completeAnswerSections = async (
+  page,
+  { skipAnimalIdentification = false } = {}
+) => {
   const task = (name) => page.getByRole('link', { name }).click()
   const overview = () =>
     expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
@@ -416,9 +426,11 @@ export const completeAnswerSections = async (page) => {
   await answerCommodityDetails(page)
   await overview()
 
-  await task('Animal identification details')
-  await answerAnimalIdentification(page)
-  await overview()
+  if (!skipAnimalIdentification) {
+    await task('Animal identification details')
+    await answerAnimalIdentification(page)
+    await overview()
+  }
 
   await task('Main reason for importing')
   await answerImportReason(page)

@@ -193,15 +193,25 @@ describe('#hubHandler', () => {
   })
 
   it('Should split the commodities and identification rows over one collection — line data completes one, identifiers the other', async () => {
+    const cowLine = {
+      commoditySelection: 'Cow',
+      speciesSelection: '1148346',
+      commodityType: '16',
+      numberOfPackages: '5',
+      numberOfAnimalsQuantity: '25'
+    }
     const context = await renderHub({
       countryOfOrigin: 'FR',
+      // Two identified species, so the identification row has work to show.
+      // On one species the service asks for no identifier at all.
       commodityLines: [
+        cowLine,
         {
-          commoditySelection: 'Cow',
-          speciesSelection: '1148346',
-          commodityType: '16',
-          numberOfPackages: '5',
-          numberOfAnimalsQuantity: '25'
+          commoditySelection: 'Horse',
+          speciesSelection: '822332',
+          commodityType: '2',
+          numberOfPackages: '3',
+          numberOfAnimalsQuantity: '4'
         }
       ]
     })
