@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
 import * as transporters from './index.js'
 import * as addressBook from '../address-book/index.js'
@@ -122,5 +122,149 @@ describe('separation from the address book', () => {
       false
     )
     expect(book.some((record) => record.approvalNumber)).toBe(false)
+  })
+})
+
+// A transporter a trader types in has to live somewhere other than the
+// notification, or the same nine fields are retyped on the next one.
+describe('the transporters an organisation has added for itself', () => {
+  const ORG = '5900001'
+  const ANOTHER_ORG = '5900002'
+  const HAULIER_NAME = 'Jean Dupont'
+
+  const haulier = (overrides = {}) => ({
+    type: transporters.PRIVATE,
+    status: transporters.NEW,
+    name: HAULIER_NAME,
+    address: {
+      addressLine1: '10 Rue de la Ferme',
+      addressLine2: '',
+      townOrCity: 'Calais',
+      county: 'Pas-de-Calais',
+      postalOrZipCode: '62100',
+      country: 'France',
+      telephoneNumber: '+33 3 21 00 00 00',
+      emailAddress: 'jean.dupont@example.fr'
+    },
+    ...overrides
+  })
+
+  beforeEach(() => transporters.forgetAddedTransporters())
+  afterEach(() => transporters.forgetAddedTransporters())
+
+  test('Should offer only the shipped register to an organisation that has added nothing', () => {
+    expect(transporters.partiesFor(ORG)).toEqual(transporters.parties())
+  })
+
+  test('Should put a transporter it has added ahead of the ones the service ships', () => {
+    transporters.rememberTransporter(ORG, haulier())
+
+    const [first, ...rest] = transporters.partiesFor(ORG)
+    expect(first.name).toBe(HAULIER_NAME)
+    expect(first.type).toBe(transporters.PRIVATE)
+    expect(first.status).toBe(transporters.NEW)
+    expect(rest).toEqual(transporters.parties())
+  })
+
+  test('Should give an added transporter an id of its own, so the list can pick it', () => {
+    const kept = transporters.rememberTransporter(ORG, haulier())
+
+    expect(kept.id).toBeTruthy()
+    expect(transporters.parties().map((record) => record.id)).not.toContain(
+      kept.id
+    )
+    expect(
+      transporters.partiesFor(ORG).find((record) => record.id === kept.id).name
+    ).toBe(HAULIER_NAME)
+  })
+
+  test('Should keep the newest addition at the top, the way design release 1 shows it', () => {
+    transporters.rememberTransporter(ORG, haulier())
+    transporters.rememberTransporter(ORG, haulier({ name: 'Marie Leclerc' }))
+
+    expect(
+      transporters
+        .partiesFor(ORG)
+        .slice(0, 2)
+        .map((record) => record.name)
+    ).toEqual(['Marie Leclerc', HAULIER_NAME])
+  })
+
+  // Otherwise a trader correcting a typo ends up with two rows for the one
+  // haulier and no way to tell them apart.
+  test('Should correct a transporter entered again rather than add a second row for it', () => {
+    const first = transporters.rememberTransporter(ORG, haulier())
+    const corrected = transporters.rememberTransporter(
+      ORG,
+      // The same haulier, typed with the casing and spacing of a second go.
+      haulier({
+        name: '  jean   dupont  ',
+        address: { ...haulier().address, townOrCity: 'Dunkerque' }
+      })
+    )
+
+    expect(corrected.id).toBe(first.id)
+    expect(transporters.partiesFor(ORG)).toHaveLength(
+      transporters.parties().length + 1
+    )
+    expect(
+      transporters.partiesFor(ORG).find((record) => record.id === first.id)
+        .address.townOrCity
+    ).toBe('Dunkerque')
+  })
+
+  test('Should replace a shipped transporter the organisation has added under the same name', () => {
+    const shipped = transporters
+      .parties()
+      .find((record) => record.name === 'Aberdeen Livestock Ltd')
+    const kept = transporters.rememberTransporter(
+      ORG,
+      haulier({ name: '  aberdeen   LIVESTOCK ltd  ' })
+    )
+
+    const list = transporters.partiesFor(ORG)
+    expect(
+      list.filter(
+        (record) =>
+          record.name.trim().toLowerCase().replace(/\s+/gu, ' ') ===
+          'aberdeen livestock ltd'
+      )
+    ).toHaveLength(1)
+    expect(list.some((record) => record.id === shipped.id)).toBe(false)
+    expect(list[0].id).toBe(kept.id)
+    expect(list).toHaveLength(transporters.parties().length)
+  })
+
+  test('Should keep the transporters one organisation added off every other list', () => {
+    const kept = transporters.rememberTransporter(ORG, haulier())
+
+    expect(transporters.partiesFor(ANOTHER_ORG)).toEqual(transporters.parties())
+    expect(
+      transporters
+        .partiesFor(ANOTHER_ORG)
+        .find((record) => record.id === kept.id)
+    ).toBeUndefined()
+  })
+
+  // organisationIdOf resolves to undefined on an unauthenticated request, and
+  // filing the record under a guess would hand it to the wrong organisation.
+  test('Should keep nothing when there is no organisation to file it under', () => {
+    expect(
+      transporters.rememberTransporter(undefined, haulier())
+    ).toBeUndefined()
+    expect(transporters.partiesFor(undefined)).toEqual(transporters.parties())
+  })
+
+  test('Should keep nothing when the transporter has no name to be found by', () => {
+    expect(
+      transporters.rememberTransporter(ORG, haulier({ name: '   ' }))
+    ).toBeUndefined()
+    expect(transporters.partiesFor(ORG)).toEqual(transporters.parties())
+  })
+
+  test('Should resolve synchronously, so the list can validate what it renders', () => {
+    transporters.rememberTransporter(ORG, haulier())
+
+    expect(transporters.partiesFor(ORG)).not.toBeInstanceOf(Promise)
   })
 })

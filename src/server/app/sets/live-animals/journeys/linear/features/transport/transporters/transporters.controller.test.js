@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
@@ -8,6 +8,7 @@ import { records as recordsStub } from '../../../../../../../services/persistenc
 import { BackendRequestError } from '../../../../../../../services/persistence/records/errors.js'
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
+  authenticatedCredentials,
   driveHandler,
   journeyRequest,
   stubH
@@ -15,7 +16,11 @@ import {
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
 import {
   COMMERCIAL,
-  PRIVATE
+  NEW,
+  PRIVATE,
+  forgetAddedTransporters,
+  parties,
+  rememberTransporter
 } from '../../../../../../../services/transporters/index.js'
 import { dispatchPages } from '../../index.js'
 
@@ -354,5 +359,139 @@ describe('/transporters — searching the list', () => {
 
     expect(result.view.context.query).toBe('')
     expect(result.view.context.transporterRows.length).toBeGreaterThan(1)
+  })
+})
+
+// A transporter the organisation has added for itself is on the list beside the
+// ones the service ships, so it is picked rather than typed again.
+describe('/transporters with a transporter the organisation added', () => {
+  const ORG = authenticatedCredentials.organisationId
+  const ANOTHER_ORG = '5900002'
+  const HAULIER_NAME = 'Dupont Transport SARL'
+
+  const haulier = () => ({
+    type: PRIVATE,
+    status: NEW,
+    name: HAULIER_NAME,
+    address: {
+      addressLine1: '10 Rue de la Ferme',
+      addressLine2: '',
+      townOrCity: 'Calais',
+      county: 'Pas-de-Calais',
+      postalOrZipCode: '62100',
+      country: 'France',
+      telephoneNumber: '+33 3 21 00 00 00',
+      emailAddress: 'transport@dupont.example.fr'
+    }
+  })
+
+  beforeAll(configure)
+  beforeEach(() => {
+    store.clear()
+    forgetAddedTransporters()
+  })
+  afterEach(forgetAddedTransporters)
+
+  it('Should show it at the top of the list, typed and tagged like any other row', async () => {
+    const kept = rememberTransporter(ORG, haulier())
+
+    const result = await driveHandler(getHandler)
+
+    const [first] = result.view.context.transporterRows
+    expect(first.id).toBe(kept.id)
+    expect(first.name).toBe(HAULIER_NAME)
+    expect(first.type).toBe(PRIVATE)
+    expect(first.status).toEqual({ text: 'New', classes: 'govuk-tag--magenta' })
+    expect(first.approvalNumber).toBe('')
+  })
+
+  it('Should leave the shipped register on the list behind it', async () => {
+    rememberTransporter(ORG, haulier())
+
+    const result = await driveHandler(getHandler)
+
+    expect(rowFor(result.view.context, GARCIA_ID).name).toBe(GARCIA_NAME)
+    expect(rowFor(result.view.context, ABERDEEN_ID).name).toBe(ABERDEEN_NAME)
+  })
+
+  it('Should accept a pick of it and save it the way it saves any private transporter', async () => {
+    const kept = rememberTransporter(ORG, haulier())
+
+    const result = await driveHandler(postHandler, {
+      payload: { action: 'save', transporter: kept.id }
+    })
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.transporterType).toBe(PRIVATE)
+    expect(result.after.privateTransporter.name).toBe(HAULIER_NAME)
+    expect(result.after.privateTransporter.address.townOrCity).toBe('Calais')
+    expect(result.response.redirect).toBeTruthy()
+  })
+
+  it('Should re-check it on a notification that already names it', async () => {
+    const kept = rememberTransporter(ORG, haulier())
+
+    const result = await driveHandler(getHandler, {
+      seed: {
+        transporterType: PRIVATE,
+        privateTransporter: { name: HAULIER_NAME }
+      }
+    })
+
+    expect(rowFor(result.view.context, kept.id).checked).toBe(true)
+  })
+
+  it('Should find it by name when the list is searched', async () => {
+    const kept = rememberTransporter(ORG, haulier())
+
+    const result = await driveHandler(postHandler, {
+      payload: { action: 'search', search: 'dupont' }
+    })
+
+    expect(result.view.context.transporterRows.map((row) => row.id)).toEqual([
+      kept.id
+    ])
+  })
+
+  // Another organisation must not be offered it, and must not be able to pick
+  // it by guessing its id either.
+  it('Should refuse a pick of a transporter another organisation added', async () => {
+    const kept = rememberTransporter(ANOTHER_ORG, haulier())
+
+    const result = await driveHandler(postHandler, {
+      payload: { action: 'save', transporter: kept.id }
+    })
+
+    expect(result.view.context.errors.transporter).toBeTruthy()
+    expect(result.after.transporterType).toBeUndefined()
+    expect(rowFor(result.view.context, kept.id)).toBeUndefined()
+  })
+
+  it('Should keep another organisation’s transporter off the list entirely', async () => {
+    const kept = rememberTransporter(ANOTHER_ORG, haulier())
+
+    const result = await driveHandler(getHandler)
+
+    expect(rowFor(result.view.context, kept.id)).toBeUndefined()
+    expect(
+      result.view.context.transporterRows.some(
+        (row) => row.name === HAULIER_NAME
+      )
+    ).toBe(false)
+    expect(result.view.context.transporterRows).toHaveLength(parties().length)
+  })
+
+  it('Should re-check it on an earlier notification after a later one corrected its spelling', async () => {
+    const kept = rememberTransporter(ORG, haulier())
+    rememberTransporter(ORG, { ...haulier(), name: HAULIER_NAME.toUpperCase() })
+
+    const result = await driveHandler(getHandler, {
+      seed: {
+        transporterType: PRIVATE,
+        privateTransporter: { name: HAULIER_NAME }
+      }
+    })
+
+    expect(rowFor(result.view.context, kept.id).checked).toBe(true)
   })
 })
