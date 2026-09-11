@@ -1,5 +1,14 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest'
 
+import { config } from '../../../../../../../../config/config.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
 import { configureRecords } from '../../../../../../engine/persistence/records.js'
@@ -11,6 +20,9 @@ import {
   postHandlerOf
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import * as state from '../../../../../../engine/index.js'
+import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
+import { BackendRequestError } from '../../../../../../services/persistence/records/errors.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 
 import * as contact from './controller.js'
@@ -21,6 +33,7 @@ const post = postHandlerOf(contact)
 const CONTACT = STUB_BOOK.find(
   (record) => record.name === 'Animal and Plant Health Agency'
 )
+const INS_FRONTEND_BASE_URL_KEY = 'tradeImportsInsFrontend.baseUrl'
 
 describe('GET contact — select an address from the book', () => {
   beforeAll(() => {
@@ -30,11 +43,36 @@ describe('GET contact — select an address from the book', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should offer no way to add an address — the book is read-only here', async () => {
+  it('Should offer no INS add link in stub mode', async () => {
     const result = await driveHandler(get)
 
-    expect(result.view.context.createAddressHref).toBeUndefined()
-    expect(result.view.context.copy.addNewAddress).toBeUndefined()
+    expect(result.view.context.addAddressHref).toBeFalsy()
+    expect(result.view.context.addNewAddressLabel).toBe('Add a new address')
+  })
+
+  it('Should surface a not-found handshake error', async () => {
+    const result = await driveHandler(get, {
+      query: { handshakeError: 'not-found' }
+    })
+
+    expect(result.view.context.errorSummary.errorList[0].text).toContain(
+      'could not be found'
+    )
+    expect(result.view.context.errorSummary.errorList[0].href).toBe(
+      '#contactAddress'
+    )
+    expect(result.view.context.recoverableError).toBe(false)
+  })
+
+  it('Should surface an unavailable handshake error', async () => {
+    const result = await driveHandler(get, {
+      query: { handshakeError: 'unavailable' }
+    })
+
+    expect(result.view.context.errorSummary.errorList[0].text).toContain(
+      'could not be reached'
+    )
+    expect(result.view.context.recoverableError).toBe(true)
   })
 
   it('Should offer the book, then pre-select and commit the address that was picked', async () => {
@@ -96,5 +134,85 @@ describe('POST contact — invalid payload', () => {
     expect(postResult.response.statusCode).toBe(400)
     expect(postResult.view.context.errors.contactAddress).toBeDefined()
     expect(postResult.after).toEqual(postResult.before)
+  })
+})
+
+describe('GET contact — INS add-address link', () => {
+  const originalMode = config.get('stubMode')
+  const originalInsUrl = config.get(INS_FRONTEND_BASE_URL_KEY)
+
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    config.set('stubMode', originalMode)
+    config.set(INS_FRONTEND_BASE_URL_KEY, originalInsUrl)
+  })
+
+  afterAll(() => {
+    vi.unstubAllGlobals()
+    config.set('stubMode', originalMode)
+    config.set(INS_FRONTEND_BASE_URL_KEY, originalInsUrl)
+  })
+
+  it('Should offer an INS add-address link when not in stub mode', async () => {
+    config.set('stubMode', false)
+    config.set(INS_FRONTEND_BASE_URL_KEY, 'http://localhost:3002')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          items: [],
+          page: 1,
+          pageSize: 25,
+          totalItems: 0,
+          totalPages: 1
+        })
+      }))
+    )
+
+    const result = await driveHandler(get)
+
+    expect(result.view.context.addAddressHref).toContain(
+      'http://localhost:3002/address-book/add'
+    )
+    expect(result.view.context.addAddressHref).toContain('journey-type=gbn-ag')
+    expect(result.view.context.addAddressHref).toContain(
+      `notification-id=${result.journeyId}`
+    )
+    expect(result.view.context.addAddressHref).toContain('fulfilment-id=')
+  })
+})
+
+describe('POST contact — recoverable save failure', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+  afterEach(() => vi.restoreAllMocks())
+
+  it('Should re-render the page when saving the selection fails', async () => {
+    vi.spyOn(state, 'commit').mockRejectedValue(
+      new BackendRequestError('save answers', {
+        status: 503,
+        statusText: 'Service Unavailable'
+      })
+    )
+
+    const result = await driveHandler(post, {
+      payload: { contactAddress: CONTACT.id }
+    })
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    expect(result.view.context.recoverableError).toBe(true)
+    expect(result.after.contactAddress).toBeUndefined()
   })
 })

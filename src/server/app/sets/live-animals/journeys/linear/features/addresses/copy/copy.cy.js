@@ -58,6 +58,13 @@ export const copy = {
     },
     selectRowPrefix: 'Dewis',
     viewDetails: 'Gweld manylion',
-    viewDetailsFor: 'ar gyfer'
+    viewDetailsFor: 'ar gyfer',
+    addNewAddress: 'Ychwanegu cyfeiriad newydd',
+    handshakeErrors: {
+      notFound:
+        'Ni ellid dod o hyd i’r cyfeiriad yn eich llyfr cyfeiriadau. Dewiswch gyfeiriad arall neu ceisiwch ei ychwanegu eto.',
+      unavailable:
+        'Ni ellid cyrchu’r llyfr cyfeiriadau. Mae eich atebion ar y dudalen hon wedi’u cadw. Ceisiwch eto mewn ychydig funudau.'
+    }
   }
 }
