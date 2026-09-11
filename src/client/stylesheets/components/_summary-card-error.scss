@@ -1,0 +1,9 @@
+@use "../../../../node_modules/govuk-frontend" as *;
+
+// A summary card with answers still outstanding. govuk-frontend has no error
+// state for the component, so the card borrows the error colour and the left
+// bar the error summary and form groups already use — the same signal, in the
+// same red, one level up from a field.
+.app-summary-card--error {
+  border-left: $govuk-border-width-form-group-error solid $govuk-error-colour;
+}

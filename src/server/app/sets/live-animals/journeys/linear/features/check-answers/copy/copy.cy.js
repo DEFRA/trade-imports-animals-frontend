@@ -118,6 +118,17 @@ export const copy = {
   },
   errors: {
     prefix: 'Gwall:',
+    cards: {
+      importDetails: 'Cwblhewch y manylion mewnforio',
+      additionalAnimalDetails:
+        'Cwblhewch y manylion ychwanegol am yr anifeiliaid',
+      species: 'Cwblhewch fanylion y rhywogaeth',
+      arrivalDetails: 'Cwblhewch y manylion cyrraedd',
+      transportDetails: 'Cwblhewch y manylion cludo',
+      rolesAndAddresses: 'Cwblhewch y rolau a’r cyfeiriadau',
+      contactAddress: 'Cwblhewch y cyfeiriad cyswllt ar gyfer y llwyth hwn',
+      documents: 'Cwblhewch y dogfennau'
+    },
     parties: {
       placeOfOrigin: 'Dewiswch gyfeiriad ar gyfer y man tarddiad',
       consignor: 'Dewiswch gyfeiriad ar gyfer yr anfonwr',

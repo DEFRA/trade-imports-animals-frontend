@@ -11,6 +11,7 @@ export const contactAddressCard = (
   readOnly,
   parties = answers
 ) => ({
+  id: 'contactAddress',
   title: copy.cards.contactAddress,
   rows: [
     partyRow(

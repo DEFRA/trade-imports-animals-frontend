@@ -6,18 +6,34 @@ import {
   signIn,
   startNotification
 } from '../../../../../../../../../fit/live-animals-journey.js'
+import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
 const INTERNAL_REFERENCE_LABEL =
   'Your internal reference for this consignment (optional)'
 const SAVE_AND_CONTINUE = 'Save and continue'
 const NOTIFICATION_VIEW_SLUG = 'notification-view'
+const ARRIVAL_DETAILS_ANCHOR = '#arrival-details'
 
 const rowFor = (page, label) =>
   page
     .getByRole('term')
     .filter({ has: page.getByText(label, { exact: true }) })
     .locator('..')
+
+const expectNoSeriousOrCriticalAxeViolations = async (page, pageName) => {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa'])
+    .analyze()
+  const seriousOrCritical = results.violations.filter(({ impact }) =>
+    ['serious', 'critical'].includes(impact)
+  )
+
+  expect(
+    seriousOrCritical,
+    `${pageName} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
+  ).toEqual([])
+}
 
 const openOrigin = (page) =>
   page
@@ -272,17 +288,7 @@ test.describe('check-answers feature navigation and submission', () => {
     await startNotification(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-
-    expect(
-      seriousOrCritical,
-      `Check answers has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectNoSeriousOrCriticalAxeViolations(page, 'Check answers')
   })
 
   // An address error belongs to a reference that no longer resolves, not to a
@@ -291,7 +297,6 @@ test.describe('check-answers feature navigation and submission', () => {
     page
   }) => {
     await startNotification(page)
-    const hubUrl = journeyUrl(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
     await expect(rowFor(page, copy.rows.consignor)).toContainText(
@@ -300,11 +305,68 @@ test.describe('check-answers feature navigation and submission', () => {
     await expect(
       page.getByRole('link', { name: copy.errors.parties.consignor })
     ).toBeHidden()
+  })
+})
+
+// Design release 1 heads the review page of an unfinished notification with
+// "There is a problem", names each unfinished card, marks the card itself, and
+// refuses to go on until the notification is complete.
+test.describe('check-answers feature unfinished notification', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('names every unfinished card and marks the card it names', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    await expect(
+      page.getByRole('heading', { name: sharedCopy.errorSummary.title })
+    ).toBeVisible()
+    const entry = page.getByRole('link', {
+      name: copy.errors.cards.arrivalDetails
+    })
+    await expect(entry).toHaveAttribute('href', ARRIVAL_DETAILS_ANCHOR)
+    await expect(
+      page
+        .locator(ARRIVAL_DETAILS_ANCHOR)
+        .getByText(copy.errors.cards.arrivalDetails)
+    ).toBeVisible()
+    await expect(page.locator(ARRIVAL_DETAILS_ANCHOR)).toHaveClass(
+      /app-summary-card--error/
+    )
+    await expect(
+      page.locator(`${ARRIVAL_DETAILS_ANCHOR} .govuk-error-message`)
+    ).toContainText(copy.errors.prefix)
+  })
+
+  test('refuses Continue and keeps the trader on the review page', async ({
+    page
+  }) => {
+    await startNotification(page)
+    const reviewUrl = journeyUrl(page, NOTIFICATION_VIEW_SLUG)
+    await page.goto(reviewUrl)
 
     await page.getByRole('button', { name: copy.submit.button }).click()
 
-    // Continue is not refused, so it leaves the review page: the incomplete
-    // journey sends it back to the hub rather than on to the declaration.
-    await expect(page).toHaveURL(hubUrl)
+    await expect(page).toHaveURL(reviewUrl)
+    await expect(
+      page.getByRole('heading', { name: sharedCopy.errorSummary.title })
+    ).toBeVisible()
+  })
+
+  test('unfinished review has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await page.getByRole('button', { name: copy.submit.button }).click()
+
+    await expectNoSeriousOrCriticalAxeViolations(
+      page,
+      'Unfinished check answers'
+    )
   })
 })

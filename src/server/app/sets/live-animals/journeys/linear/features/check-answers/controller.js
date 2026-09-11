@@ -16,6 +16,11 @@ import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import { buildSections } from './view-model/index.js'
 import { changeHref } from './view-model/rows/change-link.js'
 import { outstandingPartyErrors } from './view-model/outstanding-parties.js'
+import {
+  cardAnchorHref,
+  incompleteCardErrors,
+  withCardErrors
+} from './view-model/incomplete-cards.js'
 import { partiesForRender } from '../addresses/parties-for-render.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
 
@@ -24,14 +29,30 @@ const view = `${TEMPLATES}/features/check-answers/template`
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
-// The entries link back to the party's own page rather than to an anchor on
-// this one. Focus is only moved to the summary when the user has just been
-// refused, so a plain visit does not yank the caret out of the page heading.
-const partyErrorSummary = (journeyId, partyErrors, disableAutoFocus) =>
-  errorSummary(partyErrors, {
-    href: (partyId) => changeHref(journeyId, partyId),
-    disableAutoFocus
-  })
+/** One summary over both kinds of refusal: first the roles whose saved address
+ * no longer resolves, then the cards with answers still outstanding. A role
+ * that broke is a more particular statement than "complete this card", so it
+ * leads; the cards follow in page order. An unfinished card is somewhere on
+ * this page, so its entry is an anchor; a party's entry links back to the
+ * party's own page, because that is where the answer is given.
+ * `cardAnchorHref` tells the two apart — the keys never collide, card ids and
+ * party ids being drawn from different lists.
+ *
+ * Focus is only moved to the summary when the user has just been refused, so a
+ * plain visit does not yank the caret out of the page heading. */
+const reviewErrorSummary = (
+  journeyId,
+  cardErrors,
+  partyErrors,
+  disableAutoFocus
+) =>
+  errorSummary(
+    { ...partyErrors, ...cardErrors },
+    {
+      href: (key) => cardAnchorHref(key) ?? changeHref(journeyId, key),
+      disableAutoFocus
+    }
+  )
 
 const renderCya = (
   h,
@@ -45,6 +66,7 @@ const renderCya = (
     recoverableError = false,
     parties = answers,
     partyErrors = {},
+    cardErrors = {},
     disableAutoFocus = true
   }
 ) =>
@@ -55,19 +77,23 @@ const renderCya = (
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
     journeyStrip: journeyStrip(journey),
-    errorSummary: partyErrorSummary(
+    errorSummary: reviewErrorSummary(
       journey.journeyId,
+      cardErrors,
       partyErrors,
       disableAutoFocus
     ),
-    sections: buildSections(
-      answers,
-      scope,
-      evaluation,
-      journey.journeyId,
-      readOnly,
-      parties,
-      partyErrors
+    sections: withCardErrors(
+      buildSections(
+        answers,
+        scope,
+        evaluation,
+        journey.journeyId,
+        readOnly,
+        parties,
+        partyErrors
+      ),
+      cardErrors
     ),
     readOnly,
     amendmentCancelled,
@@ -107,6 +133,11 @@ export const renderNotificationView = async (
     recoverableError,
     parties,
     partyErrors: readOnly ? {} : outstandingPartyErrors(source, parties),
+    // A submitted notification is a record of what was sent, so nothing on it
+    // is outstanding however its answers now read.
+    cardErrors: readOnly
+      ? {}
+      : incompleteCardErrors(answers, scope, evaluation),
     disableAutoFocus
   })
 }
@@ -118,13 +149,19 @@ const post = async (request, h) => {
   // Same source as the GET, or the refusal and the page would disagree.
   const source = storedAnswers ?? answers
   const parties = await partiesForRender(request, journey, source)
-  // A submitted notification is read-only: the GET zeroes its party errors, so
-  // the POST must not refuse it either.
+  // A submitted notification is read-only: the GET zeroes its errors, so the
+  // POST must not refuse it either.
   const readOnly = journey.status === state.SUBMITTED
-  if (
+  // An unfinished notification is refused here rather than three pages later at
+  // the declaration's submit, where the same readiness test used to bounce the
+  // trader back to this page saying nothing. `readyForCheckYourAnswers` is the
+  // roll-up of the very task rows `incompleteCardErrors` reads, so a refusal
+  // always arrives with a summary naming what is left.
+  const refused =
     !readOnly &&
-    Object.keys(outstandingPartyErrors(source, parties)).length > 0
-  ) {
+    (!scope.readyForCheckYourAnswers ||
+      Object.keys(outstandingPartyErrors(source, parties)).length > 0)
+  if (refused) {
     const rendered = await renderNotificationView(request, h, {
       disableAutoFocus: false
     })

@@ -8,6 +8,7 @@ import { row } from '../../rows/summary-row.js'
 const copy = copyFor({ en, cy })
 
 export const importDetailsCard = (journeyId, answers, scope, readOnly) => ({
+  id: 'importDetails',
   title: copy.cards.importDetails,
   rows: [
     row(
