@@ -1,27 +1,10 @@
-import { changeAction, editableActions } from './change-link.js'
 import { valueText } from './value-text.js'
 
-export const row = (
-  journeyId,
-  readOnly,
-  key,
-  value,
-  obligationId,
-  visuallyHiddenText = null
-) => ({
-  key: { text: key },
-  value: { text: valueText(value) },
-  ...editableActions(
-    readOnly,
-    changeAction(
-      journeyId,
-      obligationId,
-      visuallyHiddenText ?? key.toLowerCase()
-    )
-  )
-})
-
-export const readOnlyRow = (key, value) => ({
+/** A row is a key and a value, and nothing else. Design release 1 puts no
+ * Change link on a row — the card heading carries the one link that changes
+ * every answer inside it, so the page offers one link per card rather than one
+ * per answer. */
+export const row = (key, value) => ({
   key: { text: key },
   value: { text: valueText(value) }
 })

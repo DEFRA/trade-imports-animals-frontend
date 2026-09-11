@@ -1,6 +1,8 @@
 import { copyFor } from '../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../copy/copy.en.js'
 import { copy as cy } from '../../../copy/copy.cy.js'
+import { consignmentContactSelectPage } from '../../../../contact/page.js'
+import { cardAction, editableActions } from '../../rows/change-link.js'
 import { partyRow } from '../../rows/party-row.js'
 
 const copy = copyFor({ en, cy })
@@ -13,14 +15,13 @@ export const contactAddressCard = (
 ) => ({
   id: 'contactAddress',
   title: copy.cards.contactAddress,
-  rows: [
-    partyRow(
+  ...editableActions(
+    readOnly,
+    cardAction(
       journeyId,
-      readOnly,
-      copy.rows.address,
-      parties.contactAddress,
-      'contactAddress',
-      { visuallyHiddenText: copy.hidden.contactAddress }
+      consignmentContactSelectPage.slug,
+      copy.hidden.cards.contactAddress
     )
-  ]
+  ),
+  rows: [partyRow(copy.rows.address, parties.contactAddress)]
 })

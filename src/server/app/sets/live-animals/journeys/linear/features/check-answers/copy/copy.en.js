@@ -101,16 +101,21 @@ export const copy = {
   // Shown inside the uploaded-documents card when nothing has been uploaded.
   // The card itself always stands, so it needs a line rather than an empty box.
   documentsEmpty: 'You have not added any documents yet.',
+  // What each Change link names once a screen reader reaches it. Cards carry
+  // the only Change links on the page, so a card's entry here reads as the rest
+  // of "Change ..." — lower case, and the card's own title in words.
   hidden: {
-    transporterName: 'transporter name',
-    transporterAddress: 'transporter address',
-    transporterCountry: 'transporter country',
-    transporterApprovalNumber: 'transporter approval number',
-    transporterType: 'transporter type',
-    contactAddress: 'contact address',
-    documents: 'documents',
-    commodity: (n) => `commodity ${n}`,
-    identifiersForCommodity: (n) => `animal identifiers for commodity ${n}`
+    cards: {
+      importDetails: 'import details',
+      additionalAnimalDetails: 'additional animal details',
+      arrivalDetails: 'arrival details',
+      transitCountries: 'countries the consignment will travel through',
+      transportDetails: 'transport details',
+      rolesAndAddresses: 'roles and addresses',
+      contactAddress: 'contact address for this consignment',
+      documents: 'uploaded documents'
+    },
+    commodity: (n) => `commodity ${n}`
   },
   submit: {
     heading: 'Now submit your notification',

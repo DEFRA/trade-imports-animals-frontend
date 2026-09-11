@@ -101,15 +101,17 @@ export const copy = {
   documentN: (n) => `Dogfen ${n}`,
   documentsEmpty: 'Nid ydych wedi ychwanegu unrhyw ddogfennau eto.',
   hidden: {
-    transporterName: 'enw’r cludwr',
-    transporterAddress: 'cyfeiriad y cludwr',
-    transporterCountry: 'gwlad y cludwr',
-    transporterApprovalNumber: 'rhif cymeradwyo’r cludwr',
-    transporterType: 'math y cludwr',
-    contactAddress: 'cyfeiriad cyswllt',
-    documents: 'dogfennau',
-    commodity: (n) => `nwydd ${n}`,
-    identifiersForCommodity: (n) => `dynodwyr anifeiliaid ar gyfer nwydd ${n}`
+    cards: {
+      importDetails: 'manylion mewnforio',
+      additionalAnimalDetails: 'manylion ychwanegol am yr anifeiliaid',
+      arrivalDetails: 'manylion cyrraedd',
+      transitCountries: 'gwledydd y bydd y llwyth yn teithio drwyddynt',
+      transportDetails: 'manylion cludo',
+      rolesAndAddresses: 'rolau a chyfeiriadau',
+      contactAddress: 'cyfeiriad cyswllt ar gyfer y llwyth hwn',
+      documents: 'dogfennau wedi’u huwchlwytho'
+    },
+    commodity: (n) => `nwydd ${n}`
   },
   submit: {
     heading: 'Nawr cyflwynwch eich hysbysiad',
