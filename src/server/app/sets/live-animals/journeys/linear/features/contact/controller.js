@@ -12,6 +12,8 @@ import {
 } from '../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
+import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
+import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import { CONTACT_PARTY } from '../addresses/parties.js'
 import { organisationIdOf } from '../addresses/resolve-parties.js'
@@ -29,7 +31,29 @@ export const meta = { ...page, collects: ['contactAddress'] }
 const view = `${TEMPLATES}/features/contact/template`
 
 const copy = copyFor({ en, cy })
+const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 const addressesCopy = copyFor({ en: addressesEn, cy: addressesCy }).picker
+
+const handshakeErrorMessage = (code) => {
+  if (code === 'not-found') {
+    return addressesCopy.handshakeErrors.notFound
+  }
+  if (code === 'unavailable') {
+    return addressesCopy.handshakeErrors.unavailable
+  }
+  return undefined
+}
+
+const handshakeErrorSummary = (error) =>
+  error
+    ? {
+        titleText: sharedCopy.errorSummary.title,
+        errorList: [{ text: error, href: '#contactAddress' }]
+      }
+    : null
+
+const resolveErrorSummary = (errors, handshakeError) =>
+  kit.errorSummary(errors) ?? handshakeErrorSummary(handshakeError)
 
 const fields = (options) =>
   compose(
@@ -55,8 +79,7 @@ const render = (
   values,
   options,
   addAddressHref,
-  errors = {},
-  recoverableError = false
+  { errors = {}, recoverableError = false, handshakeError } = {}
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
@@ -66,7 +89,7 @@ const render = (
     }),
     copy,
     errors,
-    errorSummary: kit.errorSummary(errors),
+    errorSummary: resolveErrorSummary(errors, handshakeError),
     addAddressHref,
     addNewAddressLabel: addressesCopy.addNewAddress,
     contactOptions: options.map((option) => ({
@@ -80,12 +103,15 @@ const render = (
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const orgId = organisationIdOf(request)
+  const handshakeError = handshakeErrorMessage(request.query.handshakeError)
+  const recoverableError = request.query.handshakeError === 'unavailable'
   return render(
     h,
     journey,
     { selectedId: answers.contactAddress?.addressId },
     [...(await addressBook.all(orgId))],
-    addAddressLinkFor(journey)
+    addAddressLinkFor(journey),
+    { recoverableError, handshakeError }
   )
 }
 
@@ -96,14 +122,9 @@ const post = async (request, h) => {
   const { errors } = validate(fields(options), payload)
   if (errors) {
     const { journey } = await state.get(request, h)
-    return render(
-      h,
-      journey,
-      {},
-      options,
-      addAddressLinkFor(journey),
+    return render(h, journey, {}, options, addAddressLinkFor(journey), {
       errors
-    ).code(HTTP_STATUS_BAD_REQUEST)
+    }).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   const chosen = payload.contactAddress
@@ -126,8 +147,9 @@ const post = async (request, h) => {
         { selectedId: chosen?.id },
         options,
         addAddressLinkFor(journey),
-        {},
-        true
+        {
+          recoverableError: true
+        }
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )

@@ -50,6 +50,31 @@ describe('GET contact — select an address from the book', () => {
     expect(result.view.context.addNewAddressLabel).toBe('Add a new address')
   })
 
+  it('Should surface a not-found handshake error', async () => {
+    const result = await driveHandler(get, {
+      query: { handshakeError: 'not-found' }
+    })
+
+    expect(result.view.context.errorSummary.errorList[0].text).toContain(
+      'could not be found'
+    )
+    expect(result.view.context.errorSummary.errorList[0].href).toBe(
+      '#contactAddress'
+    )
+    expect(result.view.context.recoverableError).toBe(false)
+  })
+
+  it('Should surface an unavailable handshake error', async () => {
+    const result = await driveHandler(get, {
+      query: { handshakeError: 'unavailable' }
+    })
+
+    expect(result.view.context.errorSummary.errorList[0].text).toContain(
+      'could not be reached'
+    )
+    expect(result.view.context.recoverableError).toBe(true)
+  })
+
   it('Should offer the book, then pre-select and commit the address that was picked', async () => {
     const postResult = await driveHandler(post, {
       payload: { contactAddress: CONTACT.id }
