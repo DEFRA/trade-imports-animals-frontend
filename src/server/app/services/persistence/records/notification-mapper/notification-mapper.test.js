@@ -2,17 +2,20 @@ import { describe, expect, test } from 'vitest'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { fulfilmentToNotification } from './index.js'
 
-/** A party answer as the journey stores it — the journey has carried
- * `postalOrZipCode` since before the address book existed. */
+/** A party answer in backend wire shape, as `answerForInlineParty` stores it
+ * — see addresses/party-inline.js. */
 const address = (name, line1) => ({
   name,
-  address: { addressLine1: line1, postalOrZipCode: 'AB1 2CD' }
+  address: { addressLine1: line1, postcode: 'AB1 2CD' }
 })
 
 const referenceNumber = 'GBN-AG-26-ABC123'
 const ORIGIN_FARM_LINE1 = '1 Farm Lane'
 const BOS_TAURUS = 'Bos taurus'
 const SALMO_SALAR = 'Salmo salar'
+const PORT_OF_ENTRY = 'GB ABD'
+const ARRIVAL_DATE_ISO = '2026-12-12'
+const TRANSPORTER_NAME = 'Transporter Co'
 const currentNotificationFrom = (answers) =>
   fulfilmentToNotification(
     assembleFulfilments(answers),
@@ -38,12 +41,12 @@ const mappedAnswers = () => ({
   placeOfDestination: address('Destination Farm', '5 Field Lane'),
   contactAddress: { addressId: 'animal-and-plant-health-agency' },
   commercialTransporter: {
-    name: 'Transporter Co',
+    name: TRANSPORTER_NAME,
     approvalNumber: 'UK/NEWCA/T1/00090953',
     address: { addressLine1: '7 Route One' }
   },
   countyParishHoldingCph: '12/345/6789',
-  portOfEntry: 'GB ABD',
+  portOfEntry: PORT_OF_ENTRY,
   arrivalDateAtPort: { day: 12, month: 12, year: 2026 },
   commodityLines: [
     {
@@ -62,14 +65,18 @@ const mappedAnswers = () => ({
   ]
 })
 
-// mappedAnswers plus every obligation Mapper A has no home for: the Tier-A
-// pair, the Tier-B gaps, the Tier-C documents collection, and a richer
-// animal-identifier unit carrying the microchip (which does have a home) and
-// the three dropped unit identifiers.
+// mappedAnswers plus the obligations beyond it: those Mapper A still has no
+// home for (purpose, declaration, the documents collection), those it now maps
+// (region code, internal-market purpose, destination country, exit port and
+// date, the transport details), and a richer animal-identifier unit carrying
+// microchip, tattoo, horse name and a permanent address.
 const answersWithGaps = () => ({
   ...mappedAnswers(),
   regionOfOriginCode: 'FR-75',
   purposeInInternalMarket: 'Breeding',
+  destinationCountry: 'DE',
+  portOfExit: 'GB DVR',
+  exitDate: { day: 20, month: 12, year: 2026 },
   transporterType: 'Commercial',
   privateTransporter: address('Jane Private', '9 Private Road'),
   meansOfTransport: 'ROAD_VEHICLE',
@@ -99,7 +106,22 @@ const answersWithGaps = () => ({
           animalIdentifierMicrochip: '900123456789012',
           animalIdentifierTattoo: 'AB1234',
           horseName: 'Dobbin',
-          permanentAddress: address('Owner', ORIGIN_FARM_LINE1)
+          // The identification page stores the journey's own names, not the
+          // wire names the other parties are held in.
+          permanentAddress: {
+            name: 'Owner',
+            address: {
+              addressLine1: ORIGIN_FARM_LINE1,
+              postalOrZipCode: 'AB1 2CD',
+              country: 'France',
+              telephoneNumber: '01234 567890',
+              emailAddress: 'owner@example.com'
+            }
+          }
+        },
+        {
+          animalIdentifierEarTag: 'UK000000000099',
+          animalIdentifierPassport: 'UK000000099'
         }
       ]
     }
@@ -158,7 +180,10 @@ describe('Mapper A — current backend notification (as-is)', () => {
               noOfAnimals: '25',
               noOfPackages: '5',
               earTag: 'UK123456789012',
-              passport: 'UK123456789'
+              passport: 'UK123456789',
+              animalIdentifiers: [
+                { earTag: 'UK123456789012', passport: 'UK123456789' }
+              ]
             }
           ]
         }
@@ -189,7 +214,10 @@ describe('Mapper A — current backend notification (as-is)', () => {
         noOfAnimals: '2',
         noOfPackages: '1',
         passport: 'UK-CAT-1',
-        microchip: '900987654321098'
+        microchip: '900987654321098',
+        animalIdentifiers: [
+          { passport: 'UK-CAT-1', microchip: '900987654321098' }
+        ]
       }
     ])
   })
@@ -234,10 +262,10 @@ describe('Mapper A — current backend notification (as-is)', () => {
       addressId: 'animal-and-plant-health-agency'
     })
     expect(notification.cphNumber).toBe('12/345/6789')
-    expect(notification.transport.portOfEntry).toBe('GB ABD')
-    expect(notification.transport.arrivalDate).toBe('2026-12-12')
+    expect(notification.transport.portOfEntry).toBe(PORT_OF_ENTRY)
+    expect(notification.transport.arrivalDate).toBe(ARRIVAL_DATE_ISO)
     expect(notification.transport.transporter).toEqual({
-      name: 'Transporter Co',
+      name: TRANSPORTER_NAME,
       approvalNumber: 'UK/NEWCA/T1/00090953',
       address: { addressLine1: '7 Route One' },
       type: 'Commercial'
@@ -248,39 +276,49 @@ describe('Mapper A — current backend notification (as-is)', () => {
       noOfAnimals: '25',
       noOfPackages: '5',
       earTag: 'UK123456789012',
-      passport: 'UK123456789'
+      passport: 'UK123456789',
+      animalIdentifiers: [{ earTag: 'UK123456789012', passport: 'UK123456789' }]
     })
   })
 
   test('Should convert the arrival date parts to an ISO string', () => {
     expect(currentNotificationFrom(mappedAnswers()).transport.arrivalDate).toBe(
-      '2026-12-12'
+      ARRIVAL_DATE_ISO
     )
   })
 
-  test('Should omit every gap obligation from the notification', () => {
+  test('Should omit the obligations with no home and map the newly homed ones', () => {
     const notification = currentNotificationFrom(answersWithGaps())
 
     expect('purpose' in notification).toBe(false)
     expect('declaration' in notification).toBe(false)
     expect('documents' in notification).toBe(false)
     expect('regionCode' in notification.origin).toBe(false)
-    expect(Object.keys(notification.transport)).toEqual([
-      'portOfEntry',
-      'arrivalDate',
-      'transporter'
-    ])
+    expect(notification.origin.regionOfOriginCode).toBe('FR-75')
+    expect(notification.purposeInInternalMarket).toBe('Breeding')
+    expect(notification.destinationCountry).toBe('DE')
+    expect(notification.portOfExit).toBe('GB DVR')
+    expect(notification.exitDate).toBe('2026-12-20')
+    expect(notification.transport).toEqual({
+      portOfEntry: PORT_OF_ENTRY,
+      arrivalDate: ARRIVAL_DATE_ISO,
+      transporter: expect.objectContaining({ name: TRANSPORTER_NAME }),
+      meansOfTransport: 'ROAD_VEHICLE',
+      transportIdentification: 'FR-892-LK',
+      transportDocumentReference: 'CMR-2026-884721',
+      transitedCountries: ['France', 'Belgium']
+    })
     expect(
       'commodityCode' in notification.commodity.commodityComplement[0]
     ).toBe(false)
     expect('name' in notification.commodity.commodityComplement[0]).toBe(false)
-    expect(
-      'animalIdentifiers' in
-        notification.commodity.commodityComplement[0].species[0]
-    ).toBe(false)
   })
+})
 
-  test('Should keep only earTag, passport and microchip on the species entry, dropping the tattoo, horse name and permanent address', () => {
+// Per-unit animal-identifier coverage — a separate describe from the block
+// above, which is already at the file's max-lines-per-function ceiling.
+describe('Mapper A — per-unit animal identifiers', () => {
+  test('Should keep earTag, passport and microchip scalars first-unit-only, while animalIdentifiers carries every unit including tattoo, horse name and the translated permanent address', () => {
     const notification = currentNotificationFrom(answersWithGaps())
     const species = notification.commodity.commodityComplement[0].species[0]
 
@@ -291,9 +329,31 @@ describe('Mapper A — current backend notification (as-is)', () => {
       noOfPackages: '5',
       earTag: 'UK123456789012',
       passport: 'UK123456789',
-      microchip: '900123456789012'
+      microchip: '900123456789012',
+      animalIdentifiers: [
+        {
+          earTag: 'UK123456789012',
+          passport: 'UK123456789',
+          microchip: '900123456789012',
+          tattoo: 'AB1234',
+          horseName: 'Dobbin',
+          permanentAddress: {
+            name: 'Owner',
+            phone: '01234 567890',
+            email: 'owner@example.com',
+            address: {
+              addressLine1: ORIGIN_FARM_LINE1,
+              postcode: 'AB1 2CD',
+              countryCode: 'FR'
+            }
+          }
+        },
+        {
+          earTag: 'UK000000000099',
+          passport: 'UK000000099'
+        }
+      ]
     })
-    expect('animalIdentifiers' in notification.commodity).toBe(false)
   })
 
   test('Should carry a unit identified only by its microchip onto the species entry', () => {
@@ -314,11 +374,14 @@ describe('Mapper A — current backend notification (as-is)', () => {
       text: 'Felis catus',
       noOfAnimals: '2',
       noOfPackages: '1',
-      microchip: '900987654321098'
+      microchip: '900987654321098',
+      animalIdentifiers: [{ microchip: '900987654321098' }]
     })
   })
 
-  test('Should intentionally keep ear tag and passport from only the first unit', () => {
+  test('Should keep the scalar earTag/passport as first-unit-only while animalIdentifiers carries every unit', () => {
+    const firstUnit = { earTag: 'FIRST-EAR-TAG', passport: 'FIRST-PASSPORT' }
+    const secondUnit = { earTag: 'SECOND-EAR-TAG', passport: 'SECOND-PASSPORT' }
     const notification = currentNotificationFrom({
       commodityLines: [
         {
@@ -326,26 +389,21 @@ describe('Mapper A — current backend notification (as-is)', () => {
           speciesSelection: '1148346',
           animalIdentifiers: [
             {
-              animalIdentifierEarTag: 'FIRST-EAR-TAG',
-              animalIdentifierPassport: 'FIRST-PASSPORT'
+              animalIdentifierEarTag: firstUnit.earTag,
+              animalIdentifierPassport: firstUnit.passport
             },
             {
-              animalIdentifierEarTag: 'SECOND-EAR-TAG',
-              animalIdentifierPassport: 'SECOND-PASSPORT'
+              animalIdentifierEarTag: secondUnit.earTag,
+              animalIdentifierPassport: secondUnit.passport
             }
           ]
         }
       ]
     })
 
-    expect(
-      notification.commodity.commodityComplement[0].species[0]
-    ).toMatchObject({
-      earTag: 'FIRST-EAR-TAG',
-      passport: 'FIRST-PASSPORT'
-    })
-    expect(JSON.stringify(notification)).not.toContain('SECOND-EAR-TAG')
-    expect(JSON.stringify(notification)).not.toContain('SECOND-PASSPORT')
+    const species = notification.commodity.commodityComplement[0].species[0]
+    expect(species).toMatchObject(firstUnit)
+    expect(species.animalIdentifiers).toEqual([firstUnit, secondUnit])
   })
 })
 
@@ -372,6 +430,23 @@ describe('Mapper A — a commodity line with no animal-identifier unit', () => {
       text: SALMO_SALAR,
       noOfAnimals: '40',
       noOfPackages: '1'
+    })
+  })
+})
+
+describe('Mapper A — unanswered transport fields', () => {
+  test('Should omit transport fields the arrival-details page saved as blank', () => {
+    const { transport } = currentNotificationFrom({
+      portOfEntry: PORT_OF_ENTRY,
+      arrivalDateAtPort: { day: 12, month: 12, year: 2026 },
+      meansOfTransport: '',
+      transportIdentification: '',
+      transportDocumentReference: ''
+    })
+
+    expect(transport).toEqual({
+      portOfEntry: PORT_OF_ENTRY,
+      arrivalDate: ARRIVAL_DATE_ISO
     })
   })
 })

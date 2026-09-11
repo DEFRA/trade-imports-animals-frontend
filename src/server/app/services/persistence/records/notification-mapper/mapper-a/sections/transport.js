@@ -17,13 +17,32 @@ export const transporterFromFulfilment = (reader) => {
   )
 }
 
+// The arrival-details page saves an unanswered field as '', which the backend
+// cannot read as a means-of-transport enum.
+const unlessBlank = (value) => (value === '' ? undefined : value)
+
 export const transportFromFulfilment = (reader) => {
-  const { arrivalDateAtPort, portOfEntry } = obligationSet()
+  const {
+    arrivalDateAtPort,
+    portOfEntry,
+    meansOfTransport,
+    transportIdentification,
+    transportDocumentReference,
+    transitedCountries
+  } = obligationSet()
   return orUndefined(
     compact({
       portOfEntry: reader.scalar(portOfEntry),
       arrivalDate: isoFromDateParts(reader.scalar(arrivalDateAtPort)),
-      transporter: transporterFromFulfilment(reader)
+      transporter: transporterFromFulfilment(reader),
+      meansOfTransport: unlessBlank(reader.scalar(meansOfTransport)),
+      transportIdentification: unlessBlank(
+        reader.scalar(transportIdentification)
+      ),
+      transportDocumentReference: unlessBlank(
+        reader.scalar(transportDocumentReference)
+      ),
+      transitedCountries: reader.scalar(transitedCountries)
     })
   )
 }
