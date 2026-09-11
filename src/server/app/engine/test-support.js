@@ -41,7 +41,16 @@ export const stubH = () => {
   const captured = {}
   return {
     view: stubView(captured),
-    redirect: (to) => ({ redirect: to }),
+    redirect: (to) => {
+      const result = { redirect: to }
+      Object.defineProperty(result, 'code', {
+        value: (statusCode) => {
+          result.statusCode = statusCode
+          return result
+        }
+      })
+      return result
+    },
     response: stubResponse,
     state: () => {},
     captured
