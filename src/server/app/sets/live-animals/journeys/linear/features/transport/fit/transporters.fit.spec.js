@@ -423,7 +423,7 @@ test.describe('transporter list page', () => {
     ).toHaveValue(privateRecord.address.townOrCity)
   })
 
-  test('saving the list with nothing picked skips the commit and leaves a hand-typed transporter alone', async ({
+  test('a transporter the trader added is on the list, checked, and saving the list again leaves it alone', async ({
     page
   }) => {
     // Through the add route, which is the only way a trader reaches the form —
@@ -434,11 +434,13 @@ test.describe('transporter list page', () => {
     await submit(page)
 
     await page.goto(journeyUrl(page, 'transporters'))
-    // A hand-typed record is not on the list, so nothing is checked and the
-    // save has no pick to commit.
-    await expect(page.locator('input[name="transporter"]:checked')).toHaveCount(
-      0
-    )
+    // The transporter joined the list on the way through, so it is the row the
+    // notification already names and the one that comes back checked.
+    await expect(
+      page.getByRole('radio', {
+        name: handTypedTransporter.nameOrOrganisationName
+      })
+    ).toBeChecked()
     await submit(page)
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
@@ -696,6 +698,57 @@ test.describe('adding a transporter that is not on the list', () => {
     await openCommercialAdd(page)
 
     await expect(page).toHaveURL(/\/transporters\/add\/commercial$/)
+  })
+
+  test('a transporter added on one notification is on the list of the next one, ready to pick', async ({
+    page
+  }) => {
+    const reusedTransporter = {
+      ...handTypedTransporter,
+      nameOrOrganisationName: 'Dupont Transport SARL'
+    }
+    await openPrivate(page)
+    await fillPrivateTransporter(page, reusedTransporter)
+    await submit(page)
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+
+    // A second notification, started from nothing. The transporter is on its
+    // list, carrying the address and the type it was added with.
+    await openTransporterList(page)
+    const row = transporterRow(page, reusedTransporter.nameOrOrganisationName)
+    await expect(row).toHaveCount(1)
+    await expect(row.getByRole('cell').nth(2)).toHaveText(
+      addressSummary({
+        addressLine1: reusedTransporter.addressLine1,
+        townOrCity: reusedTransporter.townOrCity,
+        postalOrZipCode: reusedTransporter.postalOrZipCode,
+        country: reusedTransporter.country
+      })
+    )
+    await expect(row.getByRole('cell').nth(4)).toHaveText(
+      copy.transporters.types[PRIVATE]
+    )
+    await expect(row.getByRole('cell').nth(5)).toHaveText(
+      copy.transporters.statuses[NEW]
+    )
+
+    // Picking it fills the record in.
+    await row.getByRole('radio').check()
+    await submit(page)
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+
+    await page.goto(journeyUrl(page, PRIVATE_ADD_SLUG))
+    await expect(
+      page.getByLabel(
+        copy.privateTransporterDetails.fields.nameOrOrganisationName
+      )
+    ).toHaveValue(reusedTransporter.nameOrOrganisationName)
+    await expect(
+      page.getByLabel(copy.privateTransporterDetails.fields.townOrCity)
+    ).toHaveValue(reusedTransporter.townOrCity)
+    await expect(
+      page.getByLabel(copy.privateTransporterDetails.fields.emailAddress)
+    ).toHaveValue(reusedTransporter.emailAddress)
   })
 })
 
