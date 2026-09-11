@@ -96,6 +96,7 @@ export const copy = {
     heading: 'Manylion yr anifeiliaid'
   },
   documentN: (n) => `Dogfen ${n}`,
+  documentsEmpty: 'Nid ydych wedi ychwanegu unrhyw ddogfennau eto.',
   hidden: {
     transporterName: 'enw’r cludwr',
     transporterAddress: 'cyfeiriad y cludwr',

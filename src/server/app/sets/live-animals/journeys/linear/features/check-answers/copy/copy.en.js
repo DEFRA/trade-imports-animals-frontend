@@ -95,6 +95,9 @@ export const copy = {
     heading: 'Animal details'
   },
   documentN: (n) => `Document ${n}`,
+  // Shown inside the uploaded-documents card when nothing has been uploaded.
+  // The card itself always stands, so it needs a line rather than an empty box.
+  documentsEmpty: 'You have not added any documents yet.',
   hidden: {
     transporterName: 'transporter name',
     transporterAddress: 'transporter address',

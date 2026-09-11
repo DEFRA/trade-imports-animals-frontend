@@ -71,7 +71,7 @@
       {% set cardHeadingLevel = 4 if group.heading else 3 %}
       {% set innerHeadingLevel = cardHeadingLevel + 1 %}
       {% for card in group.cards %}
-        {% if card.identifierTable or card.documents %}
+        {% if card.identifierTable or card.documents or card.emptyText %}
           <div class="govuk-summary-card">
             <div class="govuk-summary-card__title-wrapper">
               <h{{ cardHeadingLevel }} class="govuk-summary-card__title">{{ card.title }}</h{{ cardHeadingLevel }}>
@@ -92,6 +92,9 @@
                 <h{{ innerHeadingLevel }} class="govuk-heading-s">{{ document.heading }}</h{{ innerHeadingLevel }}>
                 {{ govukSummaryList({ rows: document.rows }) }}
               {% endfor %}
+              {% if card.emptyText %}
+                <p class="govuk-body">{{ card.emptyText }}</p>
+              {% endif %}
             </div>
           </div>
         {% else %}

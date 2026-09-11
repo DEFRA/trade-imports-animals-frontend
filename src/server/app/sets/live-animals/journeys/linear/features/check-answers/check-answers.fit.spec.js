@@ -81,6 +81,42 @@ test.describe('check-answers feature summary rows', () => {
   })
 })
 
+test.describe('check-answers feature documents section', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  // Documents are optional, so a journey with none is the ordinary case. The
+  // section has to stand anyway, or the review never mentions documents and
+  // offers no route to the upload page.
+  test('shows the documents section and a Change route with nothing uploaded', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    await expect(
+      page.getByRole('heading', { name: copy.sections.documents })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: copy.cards.documents })
+    ).toBeVisible()
+    await expect(page.getByText(copy.documentsEmpty)).toBeVisible()
+
+    const changeLink = page.getByRole('link', {
+      name: `${copy.change} ${copy.hidden.documents}`
+    })
+    await expect(changeLink).toHaveAttribute(
+      'href',
+      /\/notifications\/[^/]+\/accompanying-documents\?change=1$/
+    )
+
+    await changeLink.click()
+
+    await expect(page).toHaveURL(/\/accompanying-documents\?change=1$/)
+  })
+})
+
 test.describe('check-answers feature change links', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
