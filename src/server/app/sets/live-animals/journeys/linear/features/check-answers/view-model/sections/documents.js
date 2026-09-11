@@ -5,13 +5,15 @@ import { documentsCard } from '../cards/documents.js'
 
 const copy = copyFor({ en, cy })
 
-export const documentsSection = (journeyId, answers, evaluation, readOnly) => {
-  const documents = documentsCard(journeyId, answers, evaluation, readOnly)
-  if (!documents) {
-    return null
-  }
-  return {
-    heading: copy.sections.documents,
-    groups: [{ heading: null, cards: [documents] }]
-  }
-}
+// Unconditional: the section is part of the review whether or not anything has
+// been uploaded, so a trader with no documents still sees them named and still
+// has a link to the upload page.
+export const documentsSection = (journeyId, answers, evaluation, readOnly) => ({
+  heading: copy.sections.documents,
+  groups: [
+    {
+      heading: null,
+      cards: [documentsCard(journeyId, answers, evaluation, readOnly)]
+    }
+  ]
+})

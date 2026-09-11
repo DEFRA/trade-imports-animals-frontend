@@ -191,6 +191,18 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     }
   )
 
+  // A submitted journey has no Change links at all, so an empty documents card
+  // would otherwise stand with nothing inside it.
+  it('Should keep the documents card readable on a submitted journey with nothing uploaded', async () => {
+    const seed = { ...fullSeed }
+    delete seed.documents
+    const view = await viewForStatus(SUBMITTED, seed)
+    const card = cardByTitle(view.context.sections, UPLOADED_DOCUMENTS_CARD)
+
+    expect(card.actions).toBeUndefined()
+    expect(card.emptyText).toBe('You have not added any documents yet.')
+  })
+
   it('Should expose Cancel amendment only on an amending CYA', async () => {
     const draft = await viewForStatus(DRAFT)
     const submitted = await viewForStatus(SUBMITTED)
@@ -302,6 +314,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
       UPLOADED_DOCUMENTS_CARD
     )
     expect(card.documents).toHaveLength(1)
+    expect(card.emptyText).toBeNull()
     const [document] = card.documents
     expect(document.heading).toBe('Document 1')
     expect(valueOf(document.rows, 'Document reference')).toBe('GBHC1234567890')
@@ -447,11 +460,29 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     expect(keysOf(card.rows)).not.toContain('Approval number')
   })
 
-  it('Should omit the identifier table and documents section when neither holds an entry', async () => {
+  it('Should omit the identifier table when the commodity holds no entry', async () => {
     const sections = await sectionsFor(gatedOffSeed)
     expect(cardByTitle(sections, 'Fish (0301)').identifierTable).toBeNull()
-    expect(sections.map((section) => section.heading)).not.toContain(
-      '4. Documents'
+  })
+
+  // Documents are optional, so an empty collection is the ordinary case. The
+  // section and its card stand anyway, or the review never mentions documents
+  // and the trader has no route to the upload page from it.
+  it('Should keep the documents section and its card when nothing has been uploaded', async () => {
+    const sections = await sectionsFor(gatedOffSeed)
+    expect(sections.map((section) => section.heading)).toContain('4. Documents')
+    const card = cardByTitle(sections, UPLOADED_DOCUMENTS_CARD)
+    expect(card.documents).toEqual([])
+    expect(card.emptyText).toBe('You have not added any documents yet.')
+  })
+
+  it('Should still offer the Change route to the documents page when nothing has been uploaded', async () => {
+    const card = cardByTitle(
+      await sectionsFor(gatedOffSeed),
+      UPLOADED_DOCUMENTS_CARD
+    )
+    expect(card.actions.items[0].href).toMatch(
+      /\/accompanying-documents\?change=1$/
     )
   })
 
