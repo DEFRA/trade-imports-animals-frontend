@@ -92,6 +92,9 @@ const CPH_KEY = 'County parish holding (CPH) number'
 const TRANSITED_COUNTRIES_KEY =
   'Countries that the consignment will travel through'
 const PACKAGES_KEY = 'Number of packages'
+const DESTINATION_COUNTRY_KEY = 'Destination country'
+const EXIT_DATE_KEY = 'Exit date'
+const PORT_OF_EXIT_KEY = 'Port of exit'
 
 const fullSeed = {
   countryOfOrigin: 'FR',
@@ -513,6 +516,108 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
       ROLES_AND_ADDRESSES_CARD
     )
     expect(valueOf(card.rows, 'Place of origin')).toBe(NOT_PROVIDED)
+  })
+})
+
+// The reason for import asks up to three further questions — the destination
+// country, the exit date and the port of exit. A trader who answered one has
+// to be able to read it back and change it from the review.
+describe(`${SUITE} — reason-for-import exit answers`, () => {
+  setupCheckAnswersEngine()
+
+  const reasonSeed = (answers) => ({
+    commodityLines: [{ commoditySelection: 'Fish' }],
+    ...answers
+  })
+
+  it('Should show the destination country and port of exit for a transit, labelling both codes', async () => {
+    const rows = rowsOf(
+      await sectionsFor(
+        reasonSeed({
+          reasonForImport: 'transit',
+          destinationCountry: 'IE',
+          portOfExit: 'GB DVR'
+        })
+      )
+    )
+
+    expect(valueOf(rows, DESTINATION_COUNTRY_KEY)).toBe('Ireland')
+    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover (GB DVR)')
+    expect(keysOf(rows)).not.toContain(EXIT_DATE_KEY)
+    expect(changeHrefOf(rows, DESTINATION_COUNTRY_KEY)).toMatch(
+      /\/import-reason\?change=1$/
+    )
+  })
+
+  it('Should show the destination country alone for a transhipment', async () => {
+    const rows = rowsOf(
+      await sectionsFor(
+        reasonSeed({
+          reasonForImport: 'transhipmentOrOnwardTravel',
+          destinationCountry: 'IE'
+        })
+      )
+    )
+
+    expect(valueOf(rows, DESTINATION_COUNTRY_KEY)).toBe('Ireland')
+    expect(keysOf(rows)).not.toContain(EXIT_DATE_KEY)
+    expect(keysOf(rows)).not.toContain(PORT_OF_EXIT_KEY)
+  })
+
+  it('Should show the exit date and port of exit for a temporary admission of horses', async () => {
+    const rows = rowsOf(
+      await sectionsFor(
+        reasonSeed({
+          reasonForImport: 'temporaryAdmissionHorses',
+          exitDate: { day: '27', month: '3', year: '2026' },
+          portOfExit: 'GB DVR'
+        })
+      )
+    )
+
+    expect(valueOf(rows, EXIT_DATE_KEY)).toBe('27/3/2026')
+    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover (GB DVR)')
+    expect(keysOf(rows)).not.toContain(DESTINATION_COUNTRY_KEY)
+  })
+
+  it('Should omit all three rows for a reason that asks none of them', async () => {
+    const keys = keysOf(
+      rowsOf(await sectionsFor(reasonSeed({ reasonForImport: 'reEntry' })))
+    )
+
+    expect(keys).not.toContain(DESTINATION_COUNTRY_KEY)
+    expect(keys).not.toContain(EXIT_DATE_KEY)
+    expect(keys).not.toContain(PORT_OF_EXIT_KEY)
+  })
+
+  it('Should render Not provided for an in-scope exit answer left blank', async () => {
+    const rows = rowsOf(
+      await sectionsFor(
+        reasonSeed({ reasonForImport: 'temporaryAdmissionHorses' })
+      )
+    )
+
+    expect(valueOf(rows, EXIT_DATE_KEY)).toBe(NOT_PROVIDED)
+    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe(NOT_PROVIDED)
+  })
+
+  it('Should point every exit row Change link at the reason-for-import page', async () => {
+    const rows = rowsOf(
+      await sectionsFor(
+        reasonSeed({
+          reasonForImport: 'temporaryAdmissionHorses',
+          exitDate: { day: '27', month: '3', year: '2026' },
+          portOfExit: 'GB DVR'
+        })
+      )
+    )
+
+    expect(changeHrefOf(rows, EXIT_DATE_KEY)).toMatch(
+      /\/import-reason\?change=1$/
+    )
+    expect(changeHrefOf(rows, PORT_OF_EXIT_KEY)).toMatch(
+      /\/import-reason\?change=1$/
+    )
   })
 })
 
