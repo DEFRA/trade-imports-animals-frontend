@@ -117,6 +117,105 @@ test.describe('check-answers feature documents section', () => {
   })
 })
 
+// The reason for import asks up to three further questions as conditional
+// reveals. Each answer has to read back on the review with a Change route to
+// the page that collected it.
+test.describe('check-answers feature exit answers', () => {
+  const IMPORT_REASON_SLUG = 'import-reason'
+  const EXIT_PORT_CODE = 'GB DVR'
+  const EXIT_PORT_LABEL = 'Port of Dover (GB DVR)'
+  const DESTINATION_COUNTRY_CODE = 'IE'
+  const DESTINATION_COUNTRY_NAME = 'Ireland'
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('shows the destination country and port of exit a transit collected, and changes them from the review', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page.goto(journeyUrl(page, IMPORT_REASON_SLUG))
+    await page.locator('input[name="reasonForImport"][value="transit"]').check()
+    await page.locator('#transitPortOfExit').selectOption(EXIT_PORT_CODE)
+    await page
+      .locator('#transitDestinationCountry')
+      .selectOption(DESTINATION_COUNTRY_CODE)
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    await expect(rowFor(page, copy.rows.destinationCountry)).toContainText(
+      DESTINATION_COUNTRY_NAME
+    )
+    await expect(rowFor(page, copy.rows.portOfExit)).toContainText(
+      EXIT_PORT_LABEL
+    )
+    await expect(
+      page.getByText(copy.rows.exitDate, { exact: true })
+    ).toHaveCount(0)
+
+    const changeLink = rowFor(page, copy.rows.destinationCountry).getByRole(
+      'link',
+      { name: `${copy.change} destination country` }
+    )
+    await expect(changeLink).toHaveAttribute(
+      'href',
+      /\/notifications\/[^/]+\/import-reason\?change=1$/
+    )
+
+    await changeLink.click()
+
+    await expect(page).toHaveURL(/\/import-reason\?change=1$/)
+  })
+
+  test('shows the exit date and port of exit a temporary admission collected', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page.goto(journeyUrl(page, IMPORT_REASON_SLUG))
+    await page
+      .locator(
+        'input[name="reasonForImport"][value="temporaryAdmissionHorses"]'
+      )
+      .check()
+    await page.locator('#temporaryAdmissionExitDate').fill('27/3/2026')
+    await page
+      .locator('#temporaryAdmissionPortOfExit')
+      .selectOption(EXIT_PORT_CODE)
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    await expect(rowFor(page, copy.rows.exitDate)).toContainText('27/3/2026')
+    await expect(rowFor(page, copy.rows.portOfExit)).toContainText(
+      EXIT_PORT_LABEL
+    )
+    await expect(
+      page.getByText(copy.rows.destinationCountry, { exact: true })
+    ).toHaveCount(0)
+  })
+
+  test('leaves all three rows off the review for a reason that asks none of them', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page.goto(journeyUrl(page, IMPORT_REASON_SLUG))
+    await page.locator('input[name="reasonForImport"][value="reEntry"]').check()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    for (const label of [
+      copy.rows.destinationCountry,
+      copy.rows.exitDate,
+      copy.rows.portOfExit
+    ]) {
+      await expect(page.getByText(label, { exact: true })).toHaveCount(0)
+    }
+  })
+})
+
 test.describe('check-answers feature change links', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
