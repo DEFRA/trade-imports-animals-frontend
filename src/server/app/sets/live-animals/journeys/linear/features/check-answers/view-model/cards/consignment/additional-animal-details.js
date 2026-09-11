@@ -63,6 +63,7 @@ export const additionalAnimalDetailsCard = (
   scope,
   readOnly
 ) => ({
+  id: 'additionalAnimalDetails',
   title: copy.cards.additionalAnimalDetails,
   rows: [
     row(

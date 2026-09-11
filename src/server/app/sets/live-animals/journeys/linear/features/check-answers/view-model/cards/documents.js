@@ -38,6 +38,7 @@ export const documentsCard = (journeyId, answers, evaluation, readOnly) => {
       ]
     }))
   return {
+    id: 'documents',
     title: copy.cards.documents,
     ...editableActions(readOnly, {
       items: [

@@ -20,16 +20,21 @@ import {
 } from '../../../../../../engine/test-support.js'
 import { configureAnswersForRead } from '../../../../../../engine/read.js'
 import { withoutUnresolvedPartyRefs } from '../addresses/resolve-parties.js'
-import { hubPath } from '../../../../../../shared/paths.js'
+import { taskRows } from '../../flow/task-rows.js'
 import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
 import { buildSections } from './view-model/index.js'
+import { REVIEW_CARDS } from './view-model/incomplete-cards.js'
+import { copy as copyEn } from './copy/copy.en.js'
 
 const getHandler = routes.find((route) => route.method === 'GET').handler
 const postHandler = routes.find((route) => route.method === 'POST').handler
 
 const sectionsFor = async (seed) =>
   (await driveHandler(getHandler, { seed })).view.context.sections
+
+const summaryFor = async (seed) =>
+  (await driveHandler(getHandler, { seed })).view.context.errorSummary
 
 const viewForStatus = async (status, seed = fullSeed, query = {}) => {
   const journey = await store.create()
@@ -72,6 +77,8 @@ const changeHrefsOf = (sections) =>
 
 const NOT_PROVIDED = 'Not provided'
 const CONSIGNOR_ERROR = 'Select an address for the consignor'
+const ADDRESSES_INCOMPLETE = 'Complete roles and addresses'
+const SPECIES_INCOMPLETE = 'Complete species details'
 
 const withoutParty = (seed, partyId) => {
   const next = { ...seed }
@@ -105,6 +112,7 @@ const fullSeed = {
     {
       commoditySelection: 'Cow',
       speciesSelection: '1148346',
+      commodityType: '16',
       numberOfAnimalsQuantity: '25',
       numberOfPackages: '5',
       animalIdentifiers: [
@@ -682,9 +690,6 @@ describe(`${SUITE} — submitted inline vs live amend`, () => {
 describe(`${SUITE} — outstanding referenced roles`, () => {
   setupCheckAnswersEngine()
 
-  const summaryFor = async (seed) =>
-    (await driveHandler(getHandler, { seed })).view.context.errorSummary
-
   it('Should list every outstanding role in the error summary', async () => {
     const summary = await summaryFor({
       ...fullSeed,
@@ -698,12 +703,21 @@ describe(`${SUITE} — outstanding referenced roles`, () => {
     ])
   })
 
-  it('Should not flag a role that has never been answered', async () => {
-    expect(await summaryFor(withoutParty(fullSeed, 'importer'))).toBeNull()
+  // A role never answered raises no role error — there is nothing broken to
+  // name. It leaves its card unfinished, which the card entry says instead.
+  it('Should not raise a role error for a role that has never been answered', async () => {
+    const summary = await summaryFor(withoutParty(fullSeed, 'importer'))
+
+    expect(summary.errorList.map((entry) => entry.text)).toEqual([
+      ADDRESSES_INCOMPLETE
+    ])
   })
 
-  it('Should not flag anything on a brand-new draft', async () => {
-    expect(await summaryFor({})).toBeNull()
+  it('Should not raise a role error on a brand-new draft', async () => {
+    const texts = (await summaryFor({})).errorList.map((entry) => entry.text)
+
+    expect(texts).not.toContain(CONSIGNOR_ERROR)
+    expect(texts).toContain(ADDRESSES_INCOMPLETE)
   })
 
   it('Should render Not provided for a role that has never been answered', async () => {
@@ -815,7 +829,9 @@ describe(`${SUITE} — outstanding roles behind the read-path sanitiser`, () => 
     })
     const card = cardByTitle(view.context.sections, ROLES_AND_ADDRESSES_CARD)
 
-    expect(view.context.errorSummary).toBeNull()
+    expect(
+      view.context.errorSummary.errorList.map((entry) => entry.text)
+    ).not.toContain('Select an address for the importer')
     expect(valueOf(card.rows, 'Importer')).toBe(NOT_PROVIDED)
   })
 })
@@ -872,20 +888,21 @@ describe(`${SUITE} — POST navigation`, () => {
     placeOfDestination: fullSeed.placeOfDestination
   })
 
-  it('Should redirect to the hub when the next review page is not yet reachable', async () => {
-    const { journeyId, response } = await driveHandler(postHandler, {
+  // Continue used to carry an unfinished notification through to the
+  // declaration, where the submit failed its readiness check and bounced the
+  // trader back here saying nothing. It is refused on this page instead.
+  it('Should refuse Continue while the notification is unfinished', async () => {
+    const { response } = await driveHandler(postHandler, {
       seed: withParties({})
     })
-    expect(response.redirect).toBe(hubPath(journeyId))
+
+    expect(response.redirect).toBeUndefined()
+    expect(response.statusCode).toBe(400)
   })
 
-  it('Should redirect to the declaration once its prerequisites are answered', async () => {
-    const { response } = await driveHandler(postHandler, {
-      seed: withParties({
-        countryOfOrigin: 'FR',
-        commodityLines: [{ commoditySelection: 'Cow' }]
-      })
-    })
+  it('Should redirect to the declaration once the notification is complete', async () => {
+    const { response } = await driveHandler(postHandler, { seed: fullSeed })
+
     expect(response.redirect).toMatch(/\/declaration$/)
   })
 
@@ -898,13 +915,11 @@ describe(`${SUITE} — POST navigation`, () => {
     expect(response.statusCode).toBe(400)
   })
 
-  it('Should not refuse Continue for a role that has never been answered', async () => {
-    const { journeyId, response } = await driveHandler(postHandler, {
-      seed: {}
-    })
+  it('Should refuse Continue on a brand-new draft, naming what is outstanding', async () => {
+    const { response, view } = await driveHandler(postHandler, { seed: {} })
 
-    expect(response.statusCode).not.toBe(400)
-    expect(response.redirect).toBe(hubPath(journeyId))
+    expect(response.statusCode).toBe(400)
+    expect(view.context.errorSummary.errorList.length).toBeGreaterThan(0)
   })
 
   it('Should re-render the page with the summary when Continue is refused', async () => {
@@ -938,5 +953,161 @@ describe(`${SUITE} — POST navigation`, () => {
 
     expect(response.statusCode).not.toBe(400)
     expect(response.redirect).toBeDefined()
+  })
+})
+
+// Design release 1 heads the review page of an unfinished notification with
+// "There is a problem", names each unfinished card, marks the card itself, and
+// refuses to go on. Before this, the page looked finished: no summary, no
+// marking, and a live Continue that carried the trader to the declaration only
+// to bounce them back here with nothing said.
+describe(`${SUITE} — the unfinished notification`, () => {
+  setupCheckAnswersEngine()
+
+  const textsFor = async (seed) =>
+    (await summaryFor(seed)).errorList.map((entry) => entry.text)
+
+  const cardById = (sections, id) =>
+    cardsOf(sections).find((card) => card.id === id)
+
+  it('Should head a brand-new draft with one entry per unfinished card, in page order', async () => {
+    expect(await textsFor({})).toEqual([
+      'Complete import details',
+      'Complete additional animal details',
+      SPECIES_INCOMPLETE,
+      'Complete arrival details',
+      'Complete transport details',
+      'Complete roles and addresses',
+      'Complete contact address for this consignment'
+    ])
+  })
+
+  it('Should name only the cards still outstanding as the trader gets further', async () => {
+    const texts = await textsFor({
+      countryOfOrigin: 'FR',
+      regionOfOriginCodeRequirement: 'no',
+      portOfEntry: 'GB ABD',
+      arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
+      meansOfTransport: 'ROAD_VEHICLE',
+      transportIdentification: 'FR-892-LK',
+      transportDocumentReference: 'CMR-2026-884721'
+    })
+
+    expect(texts).not.toContain('Complete import details')
+    expect(texts).not.toContain('Complete arrival details')
+    expect(texts).toContain('Complete transport details')
+  })
+
+  it('Should anchor each entry to the card it names', async () => {
+    const summary = await summaryFor(withoutParty(fullSeed, 'importer'))
+
+    expect(summary.errorList).toEqual([
+      { text: ADDRESSES_INCOMPLETE, href: '#roles-and-addresses' }
+    ])
+  })
+
+  it('Should title the summary There is a problem', async () => {
+    expect((await summaryFor({})).titleText).toBe('There is a problem')
+  })
+
+  it('Should repeat the message inside the card it names', async () => {
+    const sections = await sectionsFor(withoutParty(fullSeed, 'importer'))
+
+    expect(cardById(sections, 'rolesAndAddresses').error).toBe(
+      ADDRESSES_INCOMPLETE
+    )
+  })
+
+  it('Should leave a finished card unmarked', async () => {
+    const sections = await sectionsFor(withoutParty(fullSeed, 'importer'))
+
+    expect(cardById(sections, 'arrivalDetails').error).toBeNull()
+    expect(cardById(sections, 'arrivalDetails').anchor).toBe('arrival-details')
+  })
+
+  it('Should say nothing is outstanding on a complete notification', async () => {
+    expect(await summaryFor(fullSeed)).toBeNull()
+  })
+
+  it('Should say nothing is outstanding on a submitted notification', async () => {
+    const { context } = await viewForStatus(
+      SUBMITTED,
+      withoutParty(fullSeed, 'importer')
+    )
+
+    expect(context.errorSummary).toBeNull()
+    expect(cardById(context.sections, 'rolesAndAddresses').error).toBeNull()
+  })
+
+  // The only summary anchor that is not copied onto the card it names: every
+  // other one rides along on the card via `decorateCard`, while this one is the
+  // section heading's own id. The two literals live in different modules, so
+  // they have to be checked against each other.
+  it('Should resolve the species entry to a section anchor that exists on the page', async () => {
+    const { view } = await driveHandler(getHandler, { seed: {} })
+    const entry = view.context.errorSummary.errorList.find(
+      (item) => item.text === SPECIES_INCOMPLETE
+    )
+
+    expect(entry.href).toBe('#about-the-consignment')
+    expect(
+      view.context.sections.some(
+        (section) => section.anchor === 'about-the-consignment'
+      )
+    ).toBe(true)
+  })
+
+  // DOCUMENTED EXCEPTION, not an oversight: species cards carry no id, so
+  // `decorateCard` never marks them. The summary still names the outstanding
+  // work. See inc-150's open question on marking a short species card.
+  it('Should name species in the summary while leaving the species cards unmarked', async () => {
+    // Two lines, the second barely started: species cards are built for both,
+    // and the species rows stay outstanding.
+    const seed = {
+      commodityLines: [
+        fullSeed.commodityLines[0],
+        { commoditySelection: 'Cow' }
+      ]
+    }
+
+    expect(await textsFor(seed)).toContain(SPECIES_INCOMPLETE)
+
+    const sections = await sectionsFor(seed)
+    const speciesCard = cardsOf(sections).find((card) => card.identifierTable)
+
+    expect(speciesCard).toBeDefined()
+    expect(speciesCard.error).toBeUndefined()
+  })
+
+  // The card `id` literals are the only join between the built cards and
+  // REVIEW_CARDS, and `decorateCard` fails silently on a miss: the summary would
+  // still emit "Complete <card>" with an href pointing at nothing. `species` is
+  // the deliberate exception — it anchors to a section heading, not a card.
+  it('Should build a card for every REVIEW_CARDS entry that anchors to one', async () => {
+    const sections = await sectionsFor({})
+    const builtIds = cardsOf(sections).map((card) => card.id)
+    const anchoredIds = REVIEW_CARDS.filter(
+      (card) => card.id !== 'species'
+    ).map((card) => card.id)
+
+    expect(builtIds).toEqual(expect.arrayContaining(anchoredIds))
+  })
+})
+
+// The POST refuses on `scope.readyForCheckYourAnswers`, and the summary is
+// built from REVIEW_CARDS. The two agree only while every task row is covered
+// exactly once — otherwise a refusal could arrive with nothing named, or a card
+// could be flagged for a row the hub does not count.
+describe('#REVIEW_CARDS — the cards cover the task rows exactly', () => {
+  it('Should map every task row to exactly one card', () => {
+    const covered = REVIEW_CARDS.flatMap((card) => card.rows)
+
+    expect([...covered].sort()).toEqual(taskRows.map((row) => row.id).sort())
+  })
+
+  it('Should carry a message for every card', () => {
+    for (const card of REVIEW_CARDS) {
+      expect(typeof copyEn.errors.cards[card.id]).toBe('string')
+    }
   })
 })

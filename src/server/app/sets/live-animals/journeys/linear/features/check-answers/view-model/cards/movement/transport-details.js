@@ -77,6 +77,7 @@ export const activeTransporterRows = (journeyId, active, readOnly) =>
 export const transportDetailsCard = (journeyId, answers, scope, readOnly) => {
   const active = activeTransporter(answers, scope)
   return {
+    id: 'transportDetails',
     title: copy.cards.transportDetails,
     rows: [
       ...activeTransporterRows(journeyId, active, readOnly),

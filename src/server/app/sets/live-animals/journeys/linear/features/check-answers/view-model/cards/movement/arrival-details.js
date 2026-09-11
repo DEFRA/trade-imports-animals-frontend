@@ -10,6 +10,7 @@ import { dateText, toArray } from '../../rows/value-text.js'
 const copy = copyFor({ en, cy })
 
 export const arrivalDetailsCard = (journeyId, answers, scope, readOnly) => ({
+  id: 'arrivalDetails',
   title: copy.cards.arrivalDetails,
   rows: [
     row(

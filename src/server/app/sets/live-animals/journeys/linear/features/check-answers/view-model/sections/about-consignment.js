@@ -16,6 +16,7 @@ export const aboutConsignmentSection = (
 ) => {
   const species = speciesCards(journeyId, answers, evaluation, readOnly)
   return {
+    anchor: 'about-the-consignment',
     heading: copy.sections.aboutTheConsignment,
     groups: [
       {

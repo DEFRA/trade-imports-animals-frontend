@@ -19,6 +19,7 @@ export const rolesAndAddressesCard = (
   parties = answers,
   partyErrors = {}
 ) => ({
+  id: 'rolesAndAddresses',
   title: copy.cards.rolesAndAddresses,
   rows: [
     partyRow(

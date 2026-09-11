@@ -14,6 +14,7 @@ export const addressesSection = (
   partyErrors = {}
 ) => {
   return {
+    anchor: 'addresses',
     heading: copy.sections.addresses,
     groups: [
       {

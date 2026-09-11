@@ -119,6 +119,19 @@ export const copy = {
   },
   errors: {
     prefix: 'Error:',
+    // One line per review card that still has answers outstanding. The same
+    // line carries the error summary entry and the message inside the card, so
+    // a trader reading either sees the same words.
+    cards: {
+      importDetails: 'Complete import details',
+      additionalAnimalDetails: 'Complete additional animal details',
+      species: 'Complete species details',
+      arrivalDetails: 'Complete arrival details',
+      transportDetails: 'Complete transport details',
+      rolesAndAddresses: 'Complete roles and addresses',
+      contactAddress: 'Complete contact address for this consignment',
+      documents: 'Complete documents'
+    },
     parties: {
       placeOfOrigin: 'Select an address for the place of origin',
       consignor: 'Select an address for the consignor',

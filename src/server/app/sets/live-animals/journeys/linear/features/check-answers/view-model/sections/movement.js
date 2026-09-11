@@ -8,6 +8,7 @@ const copy = copyFor({ en, cy })
 
 export const movementSection = (journeyId, answers, scope, readOnly) => {
   return {
+    anchor: 'movement',
     heading: copy.sections.movement,
     groups: [
       {
