@@ -10,6 +10,7 @@ import {
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as transporters from '../../../../../../../services/transporters/index.js'
+import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
 import { transporterAddPage, transportersPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
@@ -31,13 +32,23 @@ const view = `${TEMPLATES}/features/transport/transporters/transporters`
 
 const copy = copyFor({ en, cy }).transporters
 
-const fields = compose(
-  oneOf(
-    'transporter',
-    transporters.parties().map((option) => option.id),
-    copy.errors.transporterRequired
+/** The transporters this organisation can pick — the ones it has added for
+ * itself as well as the ones the service ships. Per-organisation, so it is read
+ * per request rather than held at module load. */
+const availableTransporters = (request) =>
+  transporters.partiesFor(organisationIdOf(request))
+
+/** A pick is valid when it is a row the page just rendered, which is why the
+ * options are built from the list in hand rather than from a fixed set: a
+ * transporter the organisation added is as pickable as one the service ships. */
+const fieldsFor = (records) =>
+  compose(
+    oneOf(
+      'transporter',
+      records.map((option) => option.id),
+      copy.errors.transporterRequired
+    )
   )
-)
 
 /** The search button and the page's own submits share the one form, told apart
  * by their `action` value — the address picker's shape. */
@@ -52,7 +63,7 @@ const render = (
 ) => {
   const query = String(values.query ?? '')
   const rows = transporterRows(
-    matchingTransporters(transporters.parties(), query),
+    matchingTransporters(availableTransporters(request), query),
     { selectedId: values.selectedId }
   )
   return h.view(view, {
@@ -85,16 +96,29 @@ const render = (
 
 /** The record behind the answers already on the notification, so a returning
  * trader sees their pick still checked. Matched on name: the notification
- * stores the transporter's details, not the id of the row it came from. */
-const selectedIdFor = (answers) => {
+ * stores the transporter's details, not the id of the row it came from.
+ *
+ * The match folds case and spacing the way the register does, so a record whose
+ * spelling was corrected still resolves for a notification that recorded the
+ * old one — re-adding a transporter overwrites its stored name, and an exact
+ * match would leave the earlier notification with nothing checked. */
+const selectedIdFor = (request, answers) => {
   const chosenName =
     answers.commercialTransporter?.name ?? answers.privateTransporter?.name
-  return transporters.parties().find((option) => option.name === chosenName)?.id
+  if (!chosenName) {
+    return undefined
+  }
+  const chosenKey = transporters.nameKey(chosenName)
+  return availableTransporters(request).find(
+    (option) => transporters.nameKey(option.name) === chosenKey
+  )?.id
 }
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(request, h, journey, { selectedId: selectedIdFor(answers) })
+  return render(request, h, journey, {
+    selectedId: selectedIdFor(request, answers)
+  })
 }
 
 const commitOrSkip = (request, h, chosen) =>
@@ -114,17 +138,20 @@ const post = async (request, h) => {
     return render(request, h, journey, {
       query,
       selectedId:
-        payload.transporter || payload.selected || selectedIdFor(answers)
+        payload.transporter ||
+        payload.selected ||
+        selectedIdFor(request, answers)
     })
   }
 
-  const { errors } = validate(fields, payload)
+  const records = availableTransporters(request)
+  const { errors } = validate(fieldsFor(records), payload)
   if (errors) {
     const { journey } = await state.get(request, h)
     return render(request, h, journey, { query }, { errors })
   }
 
-  const chosen = transporters.party(payload.transporter)
+  const chosen = records.find((record) => record.id === payload.transporter)
   let committed
   const { failure } = await kit.recoverableSave(
     async () => {

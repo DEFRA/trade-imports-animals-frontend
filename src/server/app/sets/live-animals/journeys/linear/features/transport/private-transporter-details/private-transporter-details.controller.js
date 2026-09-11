@@ -11,6 +11,12 @@ import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 import {
+  NEW,
+  PRIVATE,
+  rememberTransporter
+} from '../../../../../../../services/transporters/index.js'
+import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
+import {
   privateTransporterDetailsPage as page,
   transporterAddPage
 } from '../page.js'
@@ -152,28 +158,45 @@ const formErrors = (payload, values) => {
   )
 }
 
-const privateTransporterRecord = (values) => ({
-  privateTransporter: {
-    name: values.nameOrOrganisationName,
-    address: {
-      addressLine1: values.addressLine1,
-      addressLine2: values.addressLine2,
-      townOrCity: values.townOrCity,
-      county: values.county,
-      postalOrZipCode: values.postalOrZipCode,
-      country: values.country,
-      telephoneNumber: values.telephoneNumber,
-      emailAddress: values.emailAddress
-    }
+const privateTransporter = (values) => ({
+  name: values.nameOrOrganisationName,
+  address: {
+    addressLine1: values.addressLine1,
+    addressLine2: values.addressLine2,
+    townOrCity: values.townOrCity,
+    county: values.county,
+    postalOrZipCode: values.postalOrZipCode,
+    country: values.country,
+    telephoneNumber: values.telephoneNumber,
+    emailAddress: values.emailAddress
   }
 })
+
+const privateTransporterRecord = (values) => ({
+  privateTransporter: privateTransporter(values)
+})
+
+/** Keep the transporter for the organisation as well as for the notification.
+ *
+ * A transporter that lives only on the notification it was typed into is typed
+ * again on the next one, so the same record joins the organisation's own list
+ * and the transporter list offers it from then on (design release 1). It goes
+ * on as a private transporter that has not been approved yet, which is what the
+ * organisation knows about it: nothing here has approved anything. */
+const remember = (request, values) =>
+  rememberTransporter(organisationIdOf(request), {
+    ...privateTransporter(values),
+    type: PRIVATE,
+    status: NEW
+  })
 
 const post = saveTransporterDetails({
   trimmedValues,
   formErrors,
   recordProvided,
   record: privateTransporterRecord,
-  render
+  render,
+  remember
 })
 
 export const routes = kit.pageRoutes(page, { get, post })

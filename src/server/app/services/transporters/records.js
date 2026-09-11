@@ -1,4 +1,4 @@
-/** The transporters a trader can pick from — one list, both kinds.
+/** The transporters the service ships — one list, both kinds.
  *
  * Not address-book data. A transporter carries an `approvalNumber` and the
  * address book has no field for one (EUDPA-294, D13 scopes that ticket to the
@@ -13,8 +13,10 @@
  * number, a private one carries the address the private-transporter form
  * collects.
  *
- * A transporter a trader types in by hand does not join this list: it lives on
- * the notification it was entered into and nowhere else.
+ * These are the records the service ships. A transporter a trader types in for
+ * themselves joins the list too, from the organisation's own store in
+ * `register.js` — same shape, filed under the organisation rather than written
+ * here.
  *
  * `status` is whether the transporter has been approved yet, which the list
  * shows so a trader can tell at a glance. Like `type` it is a fact about the
