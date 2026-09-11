@@ -265,7 +265,7 @@ describe('auth plugin', () => {
         }
       })
 
-      expect(redirect).toBe('/auth/sign-in?redirect=/origin?a=1')
+      expect(redirect).toBe('/auth/sign-in?redirect=%2Forigin%3Fa%3D1')
     })
 
     test('validate returns isValid:false when session does not exist in cache', async () => {
