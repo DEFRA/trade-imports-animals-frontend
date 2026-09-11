@@ -7,8 +7,11 @@ import {
   permanentAddressCommodities,
   tattooCommodities
 } from '../../../services/commodities/index.js'
-import { allowListed } from '../../../../../model/obligations/helpers/index.js'
-import { commodityCode, commodityLine, numberOfAnimals } from './lines.js'
+import {
+  allowListed,
+  moreThanOne
+} from '../../../../../model/obligations/helpers/index.js'
+import { commodityCode, commodityLine } from './lines.js'
 
 const microchipReason = {
   code: 'obligation.microchip.applicable.becauseMicrochipCommodity',
@@ -80,14 +83,24 @@ export const unitRecord = {
   // commodity has an identifier of its own; such a line gets no
   // unit records and none are demanded of it.
   //
-  // V4 spec cross-check ("unit records ARE animals" reading of
-  // Confluence page 6497338582): the count of unit-record instances
-  // on a given commodity line must equal `numberOfAnimals` on that
-  // line. Modelled as `requires.fulfilmentIndexCountEquals` — a per-parent-
-  // instance count check that fires one error per mismatched line.
-  // Rollup-only: neither the number field nor the unit records are
-  // purged when the other changes — the user resolves the mismatch
-  // by adding / removing units or amending the number.
+  // How MANY animals must be identified before the notification can be
+  // submitted. Design release 1's own rule is "Animal identifiers are
+  // optional unless multiple species are selected, in which case at
+  // least one identifier is required per species" — so a consignment
+  // carrying one identified species can be submitted with no identifier
+  // saved at all, and one carrying several is asked for one complete
+  // record per species, never one per animal.
+  //
+  // `requires.floorAppliesToParent` carries that condition. It narrows
+  // the empty-collection floor the bridge derives from `anyOfIds`
+  // (bridge/status/completeness/invariants.js) to the lines of a
+  // multi-species consignment: `moreThanOne` stands the whole floor down
+  // unless more than one line carries a commodity with an identifier set
+  // of its own.
+  //
+  // The number of animals a line declares is still shown as progress on
+  // the identification page and on Check your answers; it no longer
+  // gates the submission.
   requires: {
     anyOfIds: [
       '8f030bfa-0734-40c8-9d9e-b9e95dac4724', // microchip
@@ -97,15 +110,9 @@ export const unitRecord = {
       '3c98adb3-c4d5-4ff9-8678-a2394b5b7d84' // horseName
     ],
     errorCode: 'obligation.unitRecord.identifiersRequired',
-    fulfilmentIndexCountEquals: {
-      fieldId: numberOfAnimals.id,
-      errorCode: 'obligation.unitRecord.countMustMatchNumberOfAnimals',
-      // Only a line whose commodity carries an identifier of its own is
-      // asked for one record per animal. A commodity on none of the
-      // identifier allowlists gets no identification panel, so it is asked
-      // for no records and the count has nothing to compare.
-      applyToParent: allowListed(commodityCode, identifiedCommodities, null)
-    }
+    floorAppliesToParent: moreThanOne(
+      allowListed(commodityCode, identifiedCommodities, null)
+    )
   }
 }
 

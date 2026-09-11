@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 
 import { groupInvariantErrors, leafSatisfied } from './state-queries.js'
+import { allowListed } from './helpers/index.js'
 
 // Synthetic obligations — the queries can be exercised in isolation,
 // without the parent obligations manifest or evaluator.
@@ -431,5 +432,109 @@ describe('groupInvariantErrors — `requires.allOrNothingOfIds` unindexed field-
     expect(errors).toHaveLength(1)
     expect(errors[0].code).toBe(errorCode)
     expect(errors[0].missingIds).toEqual([townId, postCodeId])
+  })
+})
+
+describe('groupInvariantErrors — `requires.fulfilmentIndexCountEquals` per-parent count', () => {
+  // A depth-2 unit-record group under a commodity line, whose record count
+  // per line must equal the line's declared animal count. No obligation in
+  // the live set declares this today, so it is pinned here directly.
+  const lineGroup = { id: 'line-group', name: 'commodityLines' }
+  const countField = { id: 'animal-count', name: 'numberOfAnimals' }
+  const countErrorCode = 'obligation.animalIdentifiers.countMismatch'
+
+  const LINE_0 = 'line0'
+  const LINE_1 = 'line1'
+  const LINE_0_UNIT_0 = 'line0.unit0'
+  const LINE_0_UNIT_1 = 'line0.unit1'
+  const identifierGroupId = 'animal-identifiers-group'
+  const identifierGroupName = 'animalIdentifiers'
+
+  const unitGroupWith = (applyToParent) => ({
+    id: identifierGroupId,
+    name: identifierGroupName,
+    within: lineGroup,
+    requires: {
+      fulfilmentIndexCountEquals: {
+        fieldId: countField.id,
+        errorCode: countErrorCode,
+        ...(applyToParent ? { applyToParent } : {})
+      }
+    }
+  })
+
+  // `unitFulfilmentIndexes` are the unit records actually saved; the parent
+  // indexes live on the line group's own implication.
+  const countState = (declaredCounts, unitFulfilmentIndexes) =>
+    state({
+      fulfilments: { [countField.id]: declaredCounts },
+      obligations: implications([
+        {
+          obligation: lineGroup,
+          implication: { inScope: true, fulfilmentIndexes: [LINE_0, LINE_1] }
+        },
+        {
+          obligation: unitGroupWith(),
+          implication: {
+            inScope: true,
+            fulfilmentIndexes: unitFulfilmentIndexes
+          }
+        }
+      ])
+    })
+
+  it('emits no error when every in-scope parent carries exactly its declared count', () => {
+    const st = countState({ [LINE_0]: 2, [LINE_1]: 1 }, [
+      LINE_0_UNIT_0,
+      LINE_0_UNIT_1,
+      'line1.unit0'
+    ])
+    expect(groupInvariantErrors(unitGroupWith(), st)).toEqual([])
+  })
+
+  it('emits exactly one error naming the short parent, its expected and actual counts', () => {
+    const st = countState({ [LINE_0]: 2, [LINE_1]: 1 }, [
+      LINE_0_UNIT_0,
+      LINE_0_UNIT_1
+    ])
+    expect(groupInvariantErrors(unitGroupWith(), st)).toEqual([
+      {
+        code: countErrorCode,
+        groupId: identifierGroupId,
+        groupName: identifierGroupName,
+        fulfilmentIndex: LINE_1,
+        expected: 1,
+        actual: 0
+      }
+    ])
+  })
+
+  it('skips a parent whose declared count is blank, however many records it holds', () => {
+    // line1 declares nothing and holds nothing — a blank expected count is
+    // not a count of zero, so the rule has nothing to compare.
+    const st = countState({ [LINE_0]: 2, [LINE_1]: '' }, [
+      LINE_0_UNIT_0,
+      LINE_0_UNIT_1
+    ])
+    expect(groupInvariantErrors(unitGroupWith(), st)).toEqual([])
+  })
+
+  it('emits no error for a short parent the `applyToParent` gate does not name', () => {
+    // The gate admits only the line declaring two animals, so the short
+    // line1 is never counted.
+    const gate = allowListed(countField, [2], null)
+    const st = countState({ [LINE_0]: 2, [LINE_1]: 1 }, [
+      LINE_0_UNIT_0,
+      LINE_0_UNIT_1
+    ])
+    expect(groupInvariantErrors(unitGroupWith(gate), st)).toEqual([])
+  })
+
+  it('emits no error at all when the `applyToParent` gate is out of scope', () => {
+    // No line's declared count is in the allowlist, so the gate returns
+    // `{ inScope: false }` and no parent is counted — both lines are short.
+    const gate = allowListed(countField, [99], null)
+    const st = countState({ [LINE_0]: 2, [LINE_1]: 1 }, [])
+    expect(groupInvariantErrors(unitGroupWith(gate), st)).toEqual([])
   })
 })

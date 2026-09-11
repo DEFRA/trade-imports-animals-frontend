@@ -48,11 +48,32 @@ const anyOfLeafCouldApply = (group, parentFulfilmentIndex, state) =>
     )
   })
 
+// Which parents the floor is asked of at all. A group may carry
+// `requires.floorAppliesToParent` — an indexed, depth-1 gate over a
+// parent-level obligation, read with an empty index map — a projected
+// (`gatedParentGroup`) or unindexed gate is not supported and stands the floor
+// down for every parent — so a parent outside the gate's decision
+// passes with no records. Without the key every parent is asked, which is the
+// behaviour of every group that does not declare one.
+const floorAskedOfParent = (group, parentFulfilmentIndex, state) => {
+  const gate = group?.requires?.floorAppliesToParent
+  if (!gate) {
+    return true
+  }
+  const decision = gate(state.fulfilments ?? {}, new Map())
+  if (!decision?.inScope) {
+    return false
+  }
+  return (decision.fulfilmentIndexes ?? []).includes(parentFulfilmentIndex)
+}
+
 // Empty collection: satisfied iff no requiredAtLeastOne floor bites. A floor
 // that is only an `anyOfIds` rule is vacuous under a parent none of its leaves
 // could apply to — a commodity line whose commodity carries no identifier of
 // its own is asked for no animal records, rather than for records it could
-// never fill in.
+// never fill in. A `floorAppliesToParent` gate is the second way the floor
+// goes vacuous: the group declares the states in which it asks for a record
+// at all.
 export const emptyCollectionSatisfiesFloor = (
   collection,
   group,
@@ -64,6 +85,9 @@ export const emptyCollectionSatisfiesFloor = (
   }
   if (group?.requires?.minEntries || parentFulfilmentIndex === null) {
     return false
+  }
+  if (!floorAskedOfParent(group, parentFulfilmentIndex, state)) {
+    return true
   }
   return !anyOfLeafCouldApply(group, parentFulfilmentIndex, state)
 }

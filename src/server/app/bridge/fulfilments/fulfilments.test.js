@@ -136,9 +136,8 @@ describe('#fulfilments — storage shape translation', () => {
       ]
     }
     const fulfilments = assembleFulfilments(answers)
-    // The count field is coerced to a NUMBER on the way in — the
-    // model's fulfilmentIndexCountEquals invariant compares it strictly against
-    // a record tally — and stays a number on the way out.
+    // The count field is coerced to a number on the way in and stays a
+    // number on the way out.
     expect(fulfilments[numberOfAnimals.id]).toEqual({
       line0: 10,
       line1: 20

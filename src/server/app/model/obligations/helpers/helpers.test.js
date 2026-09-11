@@ -7,6 +7,7 @@ import {
   equalsGate,
   includesGate,
   matches,
+  moreThanOne,
   notInUnionOf,
   obligationMetadata,
   present,
@@ -586,6 +587,62 @@ describe('alwaysInScope', () => {
       status: 'mandatory',
       reasons: [{ code: 'x', explanation: 'y' }]
     })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// moreThanOne
+// ---------------------------------------------------------------------------
+
+describe('moreThanOne', () => {
+  const inner = allowListed(codeObl, ['Cow'], null)
+
+  it('Should hand back the inner decision where it admits more than one entry', () => {
+    const gate = moreThanOne(inner)
+    expect(gate({ [codeObl.id]: { line1: 'Cow', line2: 'Cow' } })).toEqual({
+      inScope: true,
+      fulfilmentIndexes: ['line1', 'line2']
+    })
+  })
+
+  it('Should stand the inner gate down on a single admitted entry', () => {
+    const gate = moreThanOne(inner)
+    expect(gate({ [codeObl.id]: { line1: 'Cow', line2: 'Fish' } })).toEqual({
+      inScope: false
+    })
+  })
+
+  it('Should stay out of scope where the inner gate admits nothing', () => {
+    const gate = moreThanOne(inner)
+    expect(gate({ [codeObl.id]: { line1: 'Fish' } })).toEqual({
+      inScope: false
+    })
+  })
+
+  // An unindexed decision names one verdict, not several — "more than one"
+  // is a question it cannot answer yes to.
+  it('Should stay out of scope for an inner decision naming no entries', () => {
+    const gate = moreThanOne(() => ({ inScope: true }))
+    expect(gate({})).toEqual({ inScope: false })
+  })
+
+  // A combinator over a group's `requires`, not an obligation gate — so
+  // the metadata carries `combinator` rather than `gateType`, and the
+  // reachability prover's helper-type sets never have to classify it.
+  it('Should expose combinator metadata carrying the wrapped gate', () => {
+    const gate = moreThanOne(inner)
+    expect(gate.metadata.gateType).toBeUndefined()
+    expect(gate.metadata.combinator).toBe('moreThanOne')
+    expect(gate.metadata.inner.gateType).toBe('allowListed')
+    expect(gate.metadata.inner.obligationId).toBe(codeObl.id)
+  })
+
+  // No gate obligation of its own, so nothing to derive a dependency from:
+  // a site using it as an `applyTo` must declare `dependsOn` explicitly.
+  it('Should derive no dependsOn of its own', () => {
+    expect(
+      obligationMetadata({ applyTo: moreThanOne(inner) }).dependsOn
+    ).toBeUndefined()
   })
 })
 

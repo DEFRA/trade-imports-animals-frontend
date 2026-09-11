@@ -16,30 +16,30 @@ respectively; this module is what they call into.
 The canonical terms used in identifiers, prose, and docs. Every entry
 below reads exactly the same way in the code — one word, one meaning.
 
-| Term                    | Meaning                                                                                                                                             |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `obligation`            | One manifest entry — a field, a group, or an unindexed value the notification carries.                                                              |
-| `fulfilment`            | One stored value for one obligation. Either an unindexed value (`'FR'`, `42`, `null`) or an `indexedFulfilments` map.                               |
-| `fulfilments`           | The whole snapshot: `Record<obligationId, fulfilment>`. The evaluator's input.                                                                      |
-| `fulfilmentIndex`       | A composite key identifying one instance of a group: `'line0'`, `'line0.unit1'`, etc. Segments joined by `INDEX_DELIMITER` (`.`).                   |
-| `indexedFulfilments`    | A map keyed by `fulfilmentIndex` — the storage shape for an indexed obligation.                                                                     |
-| `instance`              | One entry in a group's enumeration, identified by a `fulfilmentIndex`.                                                                              |
-| `implication`           | The evaluator's verdict for one obligation: `{ inScope, status?, fulfilmentIndexes?, reasons? }`.                                                   |
-| `applicabilityDecision` | The raw return value from an obligation's `applyTo` function, before the implication constructor consumes it.                                       |
-| `leaf`                  | An obligation that is not a group (has no children).                                                                                                |
-| `group`                 | An obligation that other obligations reference via `within`.                                                                                        |
-| `unindexed`             | An obligation whose stored value lives directly at `state.fulfilments[id]`. No `fulfilmentIndex`.                                                   |
-| `indexed`               | An obligation whose stored values live in an `indexedFulfilments` map.                                                                              |
-| `applyTo`               | The optional `applyTo(fulfilments, fulfilmentIndexesByObligationId) → decision` closure on an obligation. Naming role: "gate".                      |
-| `gate`                  | The concept: what an `applyTo` does — makes a scope decision. Used freely in prose and helper names (`equalsGate`, `presentGate`, etc.).            |
-| `gateObligation`        | The obligation whose stored value a gate reads through its predicate.                                                                               |
-| `gatedParentGroup`      | The gated obligation's parent group when the gate is at a shallower identity level; the gate's decision fans onto this group's `fulfilmentIndexes`. |
-| `reasons`               | An optional array of `{ code, explanation }` justifications on an in-scope decision.                                                                |
-| `within`                | An obligation's link to its parent group.                                                                                                           |
-| `status`                | `'mandatory'` or `'optional'` — the effective mandate on an instance.                                                                               |
-| `scope`                 | Whether an obligation applies (`inScope: true/false`).                                                                                              |
-| `converge-purge`        | The evaluator's fixpoint loop — `{enumerate → applyTo → isInScope → purge}` until fulfilments stop shrinking.                                       |
-| `requires`              | Group-level invariants: `minEntries`, `maxEntries`, `anyOfIds`, `allOrNothingOfIds`, `fulfilmentIndexCountEquals`.                                  |
+| Term                    | Meaning                                                                                                                                                                                                          |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `obligation`            | One manifest entry — a field, a group, or an unindexed value the notification carries.                                                                                                                           |
+| `fulfilment`            | One stored value for one obligation. Either an unindexed value (`'FR'`, `42`, `null`) or an `indexedFulfilments` map.                                                                                            |
+| `fulfilments`           | The whole snapshot: `Record<obligationId, fulfilment>`. The evaluator's input.                                                                                                                                   |
+| `fulfilmentIndex`       | A composite key identifying one instance of a group: `'line0'`, `'line0.unit1'`, etc. Segments joined by `INDEX_DELIMITER` (`.`).                                                                                |
+| `indexedFulfilments`    | A map keyed by `fulfilmentIndex` — the storage shape for an indexed obligation.                                                                                                                                  |
+| `instance`              | One entry in a group's enumeration, identified by a `fulfilmentIndex`.                                                                                                                                           |
+| `implication`           | The evaluator's verdict for one obligation: `{ inScope, status?, fulfilmentIndexes?, reasons? }`.                                                                                                                |
+| `applicabilityDecision` | The raw return value from an obligation's `applyTo` function, before the implication constructor consumes it.                                                                                                    |
+| `leaf`                  | An obligation that is not a group (has no children).                                                                                                                                                             |
+| `group`                 | An obligation that other obligations reference via `within`.                                                                                                                                                     |
+| `unindexed`             | An obligation whose stored value lives directly at `state.fulfilments[id]`. No `fulfilmentIndex`.                                                                                                                |
+| `indexed`               | An obligation whose stored values live in an `indexedFulfilments` map.                                                                                                                                           |
+| `applyTo`               | The optional `applyTo(fulfilments, fulfilmentIndexesByObligationId) → decision` closure on an obligation. Naming role: "gate".                                                                                   |
+| `gate`                  | The concept: what an `applyTo` does — makes a scope decision. Used freely in prose and helper names (`equalsGate`, `presentGate`, etc.).                                                                         |
+| `gateObligation`        | The obligation whose stored value a gate reads through its predicate.                                                                                                                                            |
+| `gatedParentGroup`      | The gated obligation's parent group when the gate is at a shallower identity level; the gate's decision fans onto this group's `fulfilmentIndexes`.                                                              |
+| `reasons`               | An optional array of `{ code, explanation }` justifications on an in-scope decision.                                                                                                                             |
+| `within`                | An obligation's link to its parent group.                                                                                                                                                                        |
+| `status`                | `'mandatory'` or `'optional'` — the effective mandate on an instance.                                                                                                                                            |
+| `scope`                 | Whether an obligation applies (`inScope: true/false`).                                                                                                                                                           |
+| `converge-purge`        | The evaluator's fixpoint loop — `{enumerate → applyTo → isInScope → purge}` until fulfilments stop shrinking.                                                                                                    |
+| `requires`              | Group-level invariants: `minEntries`, `maxEntries`, `anyOfIds`, `allOrNothingOfIds`, `fulfilmentIndexCountEquals`, plus `floorAppliesToParent` (narrows the empty-collection floor to the parents a gate names). |
 
 ## Taxonomy — the five obligation categories
 
