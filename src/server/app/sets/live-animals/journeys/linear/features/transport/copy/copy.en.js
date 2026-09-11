@@ -243,7 +243,7 @@ export const copy = {
       addressLine2: 'Address line 2 (optional)',
       townOrCity: 'Town or city',
       county: 'County (optional)',
-      postalOrZipCode: 'Postal or zip code',
+      postalOrZipCode: 'Postcode or Zip code',
       country: 'Country',
       emailAddress: 'Email address',
       telephoneNumber: 'Phone number'
@@ -257,7 +257,7 @@ export const copy = {
       nameRequired: 'Enter a name or organisation name',
       addressLine1Required: 'Enter address line 1',
       townOrCityRequired: 'Enter a town or city',
-      postalOrZipCodeRequired: 'Enter a postal or zip code',
+      postalOrZipCodeRequired: 'Enter a postcode or Zip code',
       countryRequired: 'Select a country',
       telephoneRequired: 'Enter a phone number',
       emailRequired: 'Enter an email address',
@@ -267,7 +267,7 @@ export const copy = {
       townOrCityMaxLength: 'Town or city must be 100 characters or less',
       countyMaxLength: 'County must be 100 characters or less',
       postalOrZipCodeMaxLength:
-        'Postal or zip code must be 12 characters or less',
+        'Postcode or Zip code must be 12 characters or less',
       countryFromList: 'Select a country from the list',
       telephoneMaxLength: 'Phone number must be 20 characters or less',
       emailMaxLength: 'Email address must be 254 characters or less'

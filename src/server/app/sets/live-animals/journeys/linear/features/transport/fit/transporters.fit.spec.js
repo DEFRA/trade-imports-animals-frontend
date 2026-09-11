@@ -183,7 +183,7 @@ const requiredPrivateValidations = [
   ['name or organisation name', 'nameOrOrganisationName', 'nameRequired'],
   ['address line 1', 'addressLine1', 'addressLine1Required'],
   ['town or city', 'townOrCity', 'townOrCityRequired'],
-  ['postal or zip code', 'postalOrZipCode', 'postalOrZipCodeRequired'],
+  ['postcode or Zip code', 'postalOrZipCode', 'postalOrZipCodeRequired'],
   ['country', 'country', 'countryRequired'],
   ['phone number', 'telephoneNumber', 'telephoneRequired'],
   ['email address', 'emailAddress', 'emailRequired']
@@ -228,7 +228,7 @@ const formatPrivateValidations = [
     'countyMaxLength'
   ],
   [
-    'postal or zip code over 12 characters',
+    'postcode or Zip code over 12 characters',
     'postalOrZipCode',
     'P'.repeat(MAX_POSTAL_OR_ZIP_CODE_LENGTH + 1),
     'postalOrZipCodeMaxLength'
