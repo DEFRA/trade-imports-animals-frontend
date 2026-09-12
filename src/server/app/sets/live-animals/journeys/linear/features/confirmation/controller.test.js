@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { hubPath } from '../../../../../../shared/paths.js'
+import { createPath, hubPath } from '../../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
 import { configureRecords } from '../../../../../../engine/persistence/records.js'
@@ -70,6 +70,15 @@ describe('GET /confirmation', () => {
     const view = await submittedView({ documents: [DOCUMENT] })
 
     expect(view.context.outstandingItems).toEqual([])
+  })
+
+  // The page offers a second way on: start another notification without going
+  // back to the dashboard first.
+  it('Should supply the create-a-notification action alongside the dashboard link', async () => {
+    const view = await submittedView()
+
+    expect(view.context.dashboardHref).toBe('/')
+    expect(view.context.createAction).toBe(createPath())
   })
 
   it('Should redirect a notification that is not submitted to the hub', async () => {

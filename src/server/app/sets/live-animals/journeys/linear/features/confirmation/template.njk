@@ -35,6 +35,15 @@
   <p class="govuk-body">
     <a class="govuk-link" href="{{ dashboardHref }}">{{ copy.viewOrAmend.dashboardLink }}</a>
   </p>
+  {# Starting a notification is a POST (it creates a record), so this is a
+     form styled as a link rather than an anchor — same route and same idiom as
+     the dashboard's start action. #}
+  <form method="post" action="{{ createAction }}" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    <p class="govuk-body">
+      <button type="submit" class="govuk-link app-link-button">{{ copy.viewOrAmend.createButton }}</button>
+    </p>
+  </form>
 
   <h2 class="govuk-heading-m">{{ copy.help.heading }}</h2>
   <p class="govuk-body">{{ copy.help.importsEmailPrefix }} <a class="govuk-link" href="mailto:importsriskmanagement@apha.gov.uk">importsriskmanagement@apha.gov.uk</a>.</p>
