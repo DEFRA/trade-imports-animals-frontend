@@ -22,6 +22,6 @@ export const copy = {
   continueButton: 'Continue',
   errors: {
     declarationRequired:
-      'Confirm that the information is true and correct before submitting'
+      'Confirm that you have reviewed and comply with this declaration'
   }
 }
