@@ -36,9 +36,14 @@ test.describe('declaration feature', () => {
     await expect(
       page.getByRole('heading', { name: copy.body.contactUk })
     ).toBeVisible()
+    await expect(page.getByText(copy.body.contactUkDetail)).toBeVisible()
     await expect(
-      page.getByRole('heading', { name: copy.body.responsible })
+      page.getByRole('heading', { name: copy.body.responsible, exact: true })
     ).toBeVisible()
+    await expect(page.getByText(copy.body.responsibleDetail)).toBeVisible()
+    for (const item of copy.body.responsibleItems) {
+      await expect(page.getByText(item, { exact: true })).toBeVisible()
+    }
     await expect(
       page.getByRole('heading', { name: copy.body.accountableFor })
     ).toBeVisible()

@@ -4,14 +4,21 @@ export const copy = {
   body: {
     contactUk:
       'Fi yw’r cyswllt ar gyfer yr awdurdodau ac rwyf wedi fy lleoli yn y DU.',
-    responsible:
-      'Rwy’n cadarnhau mai fi sy’n gyfrifol am y llwyth hwn nes iddo glirio gwiriadau rheoli’r ffin neu gyrraedd y man cyrchfan.',
+    contactUkDetail:
+      'Rwy’n cydymffurfio â gofynion Rheoliad (EU) 2017/625 gan gynnwys ar iechyd a lles anifeiliaid.',
+    responsible: 'Rwy’n cadarnhau mai fi sy’n gyfrifol am y llwyth hwn.',
+    responsibleDetail:
+      'Rwy’n gyfrifol o adeg cyflwyno’r hysbysiad hwn hyd nes iddo ddod i mewn i Brydain Fawr. Ac rwy’n gyfrifol nes iddo naill ai:',
+    responsibleItems: [
+      'glirio gwiriadau swyddogol wrth y ffin',
+      'gyrraedd y man cyrchfan fel y nodir ar y dystysgrif iechyd neu’r hysbysiad'
+    ],
     accountableFor: 'Rwy’n cadarnhau fy mod yn atebol am:',
     accountableItems: [
-      'taliadau am wiriadau rheoli’r ffin',
-      'ail-anfon y llwyth',
-      'cwarantin neu ynysu’r anifeiliaid',
-      'costau dinistrio a gwaredu'
+      'unrhyw daliad am y rheolaethau swyddogol wrth y ffin',
+      'unrhyw drefniadau i ail-anfon y llwyth',
+      'unrhyw gostau sydd eu hangen ar gyfer cwarantin neu ynysu llwythi',
+      'unrhyw gostau sydd eu hangen ar gyfer dinistrio a gwaredu llwythi, pan gyfarwyddir gan yr awdurdodau'
     ],
     authorised:
       'Rwyf wedi fy awdurdodi fel un sy’n atebol am y pethau hyn os wyf yn codi hysbysiadau ar ran trydydd parti.',
