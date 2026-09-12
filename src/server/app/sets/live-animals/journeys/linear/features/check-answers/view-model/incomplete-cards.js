@@ -3,6 +3,7 @@ import { copyFor } from '../../../../../../../shared/copy.js'
 import { rowStatus, taskRowById } from '../../../flow/task-rows.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
+import { missingCell } from './rows/value-text.js'
 
 const copy = copyFor({ en, cy })
 
@@ -106,12 +107,47 @@ export const cardAnchorHref = (key) => {
   return card ? `#${card.anchor}` : undefined
 }
 
+/** An empty row is one whose value cell was built by `notApplicableCell`, which
+ * stamps `empty: true` — whichever row builder produced it. The flag is the
+ * mark, not the rendered text: a trader can type "Not applicable" into a
+ * free-text answer, and that answer must survive the blanking pass. */
+const isEmptyRow = (row) => row.value?.empty === true
+
+const blankEmptyRows = (rows) =>
+  Array.isArray(rows)
+    ? rows.map((row) =>
+        isEmptyRow(row) ? { ...row, value: missingCell() } : row
+      )
+    : rows
+
+/** Every empty row inside an unfinished card loses its placeholder, whether the
+ * answer was required or optional. Design release 1 decides this per card, not
+ * per row: on a card that is still owed something the whole card reads as
+ * unfinished, so an optional blank in it is not settled business either. */
+const blankEmptyValues = (card) => ({
+  ...card,
+  rows: blankEmptyRows(card.rows),
+  ...(Array.isArray(card.documents)
+    ? {
+        documents: card.documents.map((document) => ({
+          ...document,
+          rows: blankEmptyRows(document.rows)
+        }))
+      }
+    : {})
+})
+
 const decorateCard = (card, cardErrors) => {
   const known = cardById.get(card.id)
   if (!known) {
     return card
   }
-  return { ...card, anchor: known.anchor, error: cardErrors[card.id] ?? null }
+  const decorated = {
+    ...card,
+    anchor: known.anchor,
+    error: cardErrors[card.id] ?? null
+  }
+  return decorated.error ? blankEmptyValues(decorated) : decorated
 }
 
 /** Give every card its anchor, and the unfinished ones their own message. The

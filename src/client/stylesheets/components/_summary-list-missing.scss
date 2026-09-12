@@ -1,0 +1,13 @@
+@use "../../../../node_modules/govuk-frontend" as *;
+
+// An empty answer inside a summary card that still has answers outstanding.
+// The row carries no text at all — only a visually hidden "Missing" — so the
+// value cell needs a mark of its own, or the row would read as a blank the
+// trader has already dealt with. It borrows the error colour and the bar
+// weight the card around it already uses, one level down from the card.
+.app-summary-list__value--missing {
+  display: inline-block;
+  width: 100%;
+  max-width: govuk-spacing(9);
+  border-bottom: $govuk-border-width-form-group-error solid $govuk-error-colour;
+}

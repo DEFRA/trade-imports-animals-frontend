@@ -1,4 +1,5 @@
-import { valueText } from './value-text.js'
+import { isBlank } from '../../../../../../../../lib/answered.js'
+import { notApplicableCell, valueText } from './value-text.js'
 
 /** A row is a key and a value, and nothing else. Design release 1 puts no
  * Change link on a row — the card heading carries the one link that changes
@@ -6,5 +7,5 @@ import { valueText } from './value-text.js'
  * per answer. */
 export const row = (key, value) => ({
   key: { text: key },
-  value: { text: valueText(value) }
+  value: isBlank(value) ? notApplicableCell() : { text: valueText(value) }
 })

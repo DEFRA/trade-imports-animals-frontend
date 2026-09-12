@@ -2,11 +2,9 @@ import { isBlank } from '../../../../../../../../lib/answered.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
-import { escapeHtml } from './value-text.js'
+import { escapeHtml, notApplicableCell } from './value-text.js'
 
 const copy = copyFor({ en, cy })
-
-const NOT_PROVIDED = copy.notProvided
 
 export const addressLines = (address = {}) =>
   [
@@ -48,7 +46,7 @@ const valueCell = (lines, errorText) => {
   if (lines) {
     return { html: lines.join('<br>') }
   }
-  return errorText ? errorCell(errorText) : { text: NOT_PROVIDED }
+  return errorText ? errorCell(errorText) : notApplicableCell()
 }
 
 /** A key and a value with no Change link of its own, like an ordinary row — the

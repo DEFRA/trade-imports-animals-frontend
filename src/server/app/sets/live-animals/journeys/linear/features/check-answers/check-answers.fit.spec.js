@@ -24,6 +24,11 @@ const rowFor = (page, label) =>
     .filter({ has: page.getByText(label, { exact: true }) })
     .locator('..')
 
+/** The mark an empty row carries inside a card that still has answers
+ * outstanding: no text, and a visually hidden "Missing" in place of one. */
+const missingMarker = (page, label) =>
+  rowFor(page, label).locator('.app-summary-list__value--missing')
+
 /** The one Change link a card carries in its heading, named the way a screen
  * reader reads it — "Change import details". */
 const cardChangeLink = (page, hiddenText) =>
@@ -85,22 +90,32 @@ test.describe('check-answers feature summary rows', () => {
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
       'ReviewRef1'
     )
-    await expect(rowFor(page, copy.rows.arrivalDate)).toContainText(
-      copy.notProvided
+    await expect(missingMarker(page, copy.rows.arrivalDate)).toHaveText(
+      copy.missing
     )
   })
 
-  test('journey with only the entry page answered renders Not provided for the blank rows', async ({
+  // Design release 1 gives an empty value two different treatments, and the
+  // difference is the card around it, not whether that particular answer was
+  // required. The entry page finishes import details, so the optional internal
+  // reference it left blank is settled business and written out; arrival
+  // details is still outstanding, so its blank row is given no text at all and
+  // marked instead. A trader can then see which rows are still owed without
+  // reading a word.
+  test('journey with only the entry page answered writes the settled blanks out and marks the outstanding ones', async ({
     page
   }) => {
     await startNotification(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
-      copy.notProvided
+      copy.notApplicable
     )
-    await expect(rowFor(page, copy.rows.arrivalDate)).toContainText(
-      copy.notProvided
+    await expect(missingMarker(page, copy.rows.arrivalDate)).toHaveText(
+      copy.missing
+    )
+    await expect(rowFor(page, copy.rows.arrivalDate)).not.toContainText(
+      copy.notApplicable
     )
   })
 })
@@ -321,7 +336,7 @@ test.describe('check-answers feature change links', () => {
 
     await expect(page).toHaveURL(/\/notifications\/[^/]+\/notification-view$/)
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
-      copy.notProvided
+      copy.notApplicable
     )
   })
 
@@ -380,8 +395,8 @@ test.describe('check-answers feature navigation and submission', () => {
     await startNotification(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
-    await expect(rowFor(page, copy.rows.consignor)).toContainText(
-      copy.notProvided
+    await expect(missingMarker(page, copy.rows.consignor)).toHaveText(
+      copy.missing
     )
     await expect(
       page.getByRole('link', { name: copy.errors.parties.consignor })
@@ -395,6 +410,22 @@ test.describe('check-answers feature navigation and submission', () => {
 test.describe('check-answers feature unfinished notification', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
+  })
+
+  // The decision is per card, so every blank row inside a marked card loses its
+  // placeholder — the required arrival date and anything optional beside it
+  // alike. Only a screen reader is told the answer is missing.
+  test('gives every blank row in a marked card no text and a hidden Missing', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    const card = page.locator(ARRIVAL_DETAILS_ANCHOR)
+    const markers = card.locator('.app-summary-list__value--missing')
+
+    await expect(card.getByText(copy.notApplicable)).toHaveCount(0)
+    await expect(markers.first()).toHaveText(copy.missing)
   })
 
   test('names every unfinished card and marks the card it names', async ({
