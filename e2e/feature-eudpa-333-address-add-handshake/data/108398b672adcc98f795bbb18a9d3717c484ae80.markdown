@@ -1,0 +1,370 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/plants/destination.spec.ts >> High-risk plants destination section >> a potato notification is asked for the intended destination
+- Location: tests/e2e/features/plants/destination.spec.ts:135:3
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: getByRole('heading', { name: 'Intended destination', exact: true, level: 1 })
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" with timeout 5000ms
+  - waiting for getByRole('heading', { name: 'Intended destination', exact: true, level: 1 })
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- banner:
+  - link "GOV.UK":
+    - /url: https://www.gov.uk/
+    - img "GOV.UK"
+  - region "Service information":
+    - link "Import notification service":
+      - /url: /
+    - navigation "Menu":
+      - list:
+        - listitem:
+          - link "Dashboard":
+            - /url: /
+            - strong: Dashboard
+        - listitem:
+          - link "Address book":
+            - /url: "#"
+        - listitem:
+          - link "Manage account":
+            - /url: "#"
+        - listitem:
+          - link "Log out":
+            - /url: /auth/sign-out
+- paragraph:
+  - strong: Alpha
+  - text: This is a new service. Help us improve it and
+  - link "give your feedback by email":
+    - /url: mailto:APHAServiceDesk@apha.gov.uk
+  - text: .
+- link "Back":
+  - /url: /notifications/GBN-HRP-26-GAXZN9
+- main:
+  - strong: Draft
+  - text: GBN-HRP-26-GAXZN9 Destination
+  - heading "Place of destination" [level=1]
+  - paragraph: Where the goods will be kept after arrival. This is where a plant health inspector may carry out a spot check.
+  - text: Search Name, address or country
+  - textbox "Search"
+  - button "Search"
+  - table "Showing 5 of 24 addresses":
+    - caption: Showing 5 of 24 addresses
+    - rowgroup:
+      - row "Select Name Address Country Actions":
+        - columnheader "Select"
+        - columnheader "Name"
+        - columnheader "Address"
+        - columnheader "Country"
+        - columnheader "Actions"
+    - rowgroup:
+      - row "Select Review 3a857256-7847-4d26-9d9a-7547ab210ff6 Review 3a857256-7847-4d26-9d9a-7547ab210ff6 4 Nursery Lane, Perth, PH1 5EX United Kingdom":
+        - cell "Select Review 3a857256-7847-4d26-9d9a-7547ab210ff6":
+          - radio "Select Review 3a857256-7847-4d26-9d9a-7547ab210ff6"
+          - text: Select Review 3a857256-7847-4d26-9d9a-7547ab210ff6
+        - cell "Review 3a857256-7847-4d26-9d9a-7547ab210ff6"
+        - cell "4 Nursery Lane, Perth, PH1 5EX"
+        - cell "United Kingdom"
+        - cell:
+          - group: View details for Review 3a857256-7847-4d26-9d9a-7547ab210ff6
+      - row "Select Contact cd232330-95b5-4961-817e-1f67a430e75b 5 Contact cd232330-95b5-4961-817e-1f67a430e75b 5 4 Nursery Lane, Perth, PH1 5EX United Kingdom":
+        - cell "Select Contact cd232330-95b5-4961-817e-1f67a430e75b 5":
+          - radio "Select Contact cd232330-95b5-4961-817e-1f67a430e75b 5"
+          - text: Select Contact cd232330-95b5-4961-817e-1f67a430e75b 5
+        - cell "Contact cd232330-95b5-4961-817e-1f67a430e75b 5"
+        - cell "4 Nursery Lane, Perth, PH1 5EX"
+        - cell "United Kingdom"
+        - cell:
+          - group: View details for Contact cd232330-95b5-4961-817e-1f67a430e75b 5
+      - row "Select Contact cd232330-95b5-4961-817e-1f67a430e75b 4 Contact cd232330-95b5-4961-817e-1f67a430e75b 4 4 Nursery Lane, Perth, PH1 5EX United Kingdom":
+        - cell "Select Contact cd232330-95b5-4961-817e-1f67a430e75b 4":
+          - radio "Select Contact cd232330-95b5-4961-817e-1f67a430e75b 4"
+          - text: Select Contact cd232330-95b5-4961-817e-1f67a430e75b 4
+        - cell "Contact cd232330-95b5-4961-817e-1f67a430e75b 4"
+        - cell "4 Nursery Lane, Perth, PH1 5EX"
+        - cell "United Kingdom"
+        - cell:
+          - group: View details for Contact cd232330-95b5-4961-817e-1f67a430e75b 4
+      - row "Select Contact cd232330-95b5-4961-817e-1f67a430e75b 3 Contact cd232330-95b5-4961-817e-1f67a430e75b 3 4 Nursery Lane, Perth, PH1 5EX United Kingdom":
+        - cell "Select Contact cd232330-95b5-4961-817e-1f67a430e75b 3":
+          - radio "Select Contact cd232330-95b5-4961-817e-1f67a430e75b 3"
+          - text: Select Contact cd232330-95b5-4961-817e-1f67a430e75b 3
+        - cell "Contact cd232330-95b5-4961-817e-1f67a430e75b 3"
+        - cell "4 Nursery Lane, Perth, PH1 5EX"
+        - cell "United Kingdom"
+        - cell:
+          - group: View details for Contact cd232330-95b5-4961-817e-1f67a430e75b 3
+      - row "Select Contact cd232330-95b5-4961-817e-1f67a430e75b 2 Contact cd232330-95b5-4961-817e-1f67a430e75b 2 4 Nursery Lane, Perth, PH1 5EX United Kingdom":
+        - cell "Select Contact cd232330-95b5-4961-817e-1f67a430e75b 2":
+          - radio "Select Contact cd232330-95b5-4961-817e-1f67a430e75b 2"
+          - text: Select Contact cd232330-95b5-4961-817e-1f67a430e75b 2
+        - cell "Contact cd232330-95b5-4961-817e-1f67a430e75b 2"
+        - cell "4 Nursery Lane, Perth, PH1 5EX"
+        - cell "United Kingdom"
+        - cell:
+          - group: View details for Contact cd232330-95b5-4961-817e-1f67a430e75b 2
+  - navigation "Pagination":
+    - list:
+      - listitem:
+        - link "Page 1":
+          - /url: /notifications/GBN-HRP-26-GAXZN9/destinations/select?page=1
+          - text: "1"
+      - listitem:
+        - link "Page 2":
+          - /url: /notifications/GBN-HRP-26-GAXZN9/destinations/select?page=2
+          - text: "2"
+      - listitem: ⋯
+      - listitem:
+        - link "Page 5":
+          - /url: /notifications/GBN-HRP-26-GAXZN9/destinations/select?page=5
+          - text: "5"
+    - link "Next":
+      - /url: /notifications/GBN-HRP-26-GAXZN9/destinations/select?page=2
+  - button "Save and continue"
+  - button "Save and return to overview"
+  - link "Cancel and return to overview":
+    - /url: /notifications/GBN-HRP-26-GAXZN9
+- contentinfo:
+  - heading "Support links" [level=2]
+  - list:
+    - listitem:
+      - link "Privacy":
+        - /url: https://www.gov.uk/help/privacy-notice
+    - listitem:
+      - link "Cookies":
+        - /url: https://www.gov.uk/help/cookies
+    - listitem:
+      - link "Accessibility statement":
+        - /url: https://www.gov.uk/help/accessibility-statement
+  - text: All content is available under the
+  - link "Open Government Licence v3.0":
+    - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+  - text: ", except where otherwise stated"
+  - link "© Crown copyright":
+    - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  41  | 
+  42  | const FULL_BOOK_CAPTION = new RegExp(`Showing ${PICKER_PAGE_SIZE} of \\d+ addresses`);
+  43  | 
+  44  | const potatoLine = {
+  45  |   Variety: 'Maris Piper',
+  46  |   Quantity: '250',
+  47  |   'Intended use': 'Planting',
+  48  | };
+  49  | 
+  50  | const plantsLine = {
+  51  |   Genus: 'Quercus (oak)',
+  52  |   Species: 'Quercus robur',
+  53  |   'Commodity code': '0602 20 20',
+  54  |   Quantity: '120',
+  55  |   'EPPO code': 'QUERO',
+  56  | };
+  57  | 
+  58  | /** A record only this run can find: the address book is shared across workers
+  59  |  * and never wiped, so anything that counts rows has to search its own token. */
+  60  | const addressNamed = (name: string) => ({
+  61  |   name,
+  62  |   addressLine1: '4 Nursery Lane',
+  63  |   townOrCity: 'Perth',
+  64  |   postcode: 'PH1 5EX',
+  65  |   countryCode: 'GB',
+  66  |   phone: '01738 555 0143',
+  67  |   email: 'destination@example.co.uk',
+  68  | });
+  69  | 
+  70  | /**
+  71  |  * A plants-for-planting notification walked to the destination page. The
+  72  |  * consignor page follows it in the opening run, so saving here continues there
+  73  |  * rather than to the Overview. The arrival answer decides which of the three
+  74  |  * questions the page asks, so the caller names it.
+  75  |  */
+  76  | const plantsToDestination = async (pages: PageObjects, plantsJourney: PlantsJourney, arrivalStatus: string): Promise<string> => {
+  77  |   const reference = await plantsJourney.startNotification();
+  78  |   await plantsJourney.chooseCommodityType(PLANTS_FOR_PLANTING);
+  79  |   await plantsJourney.addCommodityLine(PLANTS_FOR_PLANTING, plantsLine);
+  80  |   await plantsJourney.toOrigin();
+  81  |   await plantsJourney.toArrivalStatus(GERMANY);
+  82  |   await plantsJourney.answerArrivalStatus(arrivalStatus);
+  83  |   await pages.plantsArrivalDetails.arrivalDate.fill(ARRIVING_ON);
+  84  |   await pages.plantsArrivalDetails.btnSaveAndContinue.click();
+  85  |   await pages.plantsPlaceOfDestination.heading.waitFor();
+  86  |   return reference;
+  87  | };
+  88  | 
+  89  | /**
+  90  |  * A seed-potato notification walked to the same page. Potatoes are never asked
+  91  |  * whether the consignment has arrived — reg 24A gives them no post-arrival
+  92  |  * branch — and they owe a time and a place of landing that nothing else does.
+  93  |  */
+  94  | const potatoesToDestination = async (pages: PageObjects, plantsJourney: PlantsJourney): Promise<string> => {
+  95  |   const reference = await plantsJourney.startNotification();
+  96  |   await plantsJourney.chooseCommodityType(POTATOES);
+  97  |   await plantsJourney.addCommodityLine(SEED_POTATOES, potatoLine);
+  98  |   await plantsJourney.toOrigin();
+  99  |   await plantsJourney.toArrivalDetails(FRANCE);
+  100 |   await pages.plantsArrivalDetails.arrivalDate.fill(ARRIVING_ON);
+  101 |   await pages.plantsArrivalDetails.arrivalTime.fill(ARRIVING_AT);
+  102 |   await pages.plantsArrivalDetails.selectPlaceOfLanding(ABERDEEN_HARBOUR);
+  103 |   await pages.plantsArrivalDetails.btnSaveAndContinue.click();
+  104 |   await pages.plantsPlaceOfDestination.heading.waitFor();
+  105 |   return reference;
+  106 | };
+  107 | 
+  108 | /** Picks the one address this test minted and saves it, which carries the
+  109 |  * opening run on to the consignor page. */
+  110 | const chooseAddress = async (pages: PageObjects, token: string, name: string): Promise<void> => {
+  111 |   await pages.plantsPlaceOfDestination.searchFor(token);
+  112 |   await pages.plantsPlaceOfDestination.address(name).check();
+  113 |   await pages.plantsPlaceOfDestination.btnSaveAndContinue.click();
+  114 | };
+  115 | 
+  116 | test.describe('High-risk plants destination section', { tag: '@integration' }, () => {
+  117 |   test('the question is asked in the state the arrival answer put the notification in', async ({ pages, plantsJourney }) => {
+  118 |     const reference = await plantsToDestination(pages, plantsJourney, NOT_YET_ARRIVED);
+  119 | 
+  120 |     await expect(pages.page).toHaveURL(pages.plantsPlaceOfDestination.expectedUrl(reference));
+  121 |     await expect(pages.plantsPlaceOfDestination.headingNamed(INTENDED_DESTINATION_HEADING)).toBeVisible();
+  122 |     await expect(pages.plantsPlaceOfDestination.descriptionNamed(INTENDED_DESTINATION_DESCRIPTION)).toBeVisible();
+  123 | 
+  124 |     // The state is read from the arrival answer on every render rather than
+  125 |     // stored with the destination, so re-answering the arrival question
+  126 |     // re-asks this one.
+  127 |     await pages.plantsArrivalStatus.open(reference);
+  128 |     await plantsJourney.answerArrivalStatus(ALREADY_ARRIVED);
+  129 | 
+  130 |     await pages.plantsPlaceOfDestination.open(reference);
+  131 |     await expect(pages.plantsPlaceOfDestination.headingNamed(POST_ARRIVAL_DESTINATION_HEADING)).toBeVisible();
+  132 |     await expect(pages.plantsPlaceOfDestination.descriptionNamed(POST_ARRIVAL_DESTINATION_DESCRIPTION)).toBeVisible();
+  133 |   });
+  134 | 
+  135 |   test('a potato notification is asked for the intended destination', async ({ pages, plantsJourney }) => {
+  136 |     const reference = await potatoesToDestination(pages, plantsJourney);
+  137 | 
+  138 |     // Potatoes have no arrival status to read, so the page is asked in its
+  139 |     // pre-arrival state without the trader ever having chosen one.
+  140 |     await expect(pages.page).toHaveURL(pages.plantsPlaceOfDestination.expectedUrl(reference));
+> 141 |     await expect(pages.plantsPlaceOfDestination.headingNamed(INTENDED_DESTINATION_HEADING)).toBeVisible();
+      |                                                                                             ^ Error: expect(locator).toBeVisible() failed
+  142 |     await expect(pages.plantsPlaceOfDestination.descriptionNamed(INTENDED_DESTINATION_DESCRIPTION)).toBeVisible();
+  143 |   });
+  144 | 
+  145 |   test('an address must be chosen before the notification moves on', async ({ pages, plantsJourney }) => {
+  146 |     const reference = await plantsToDestination(pages, plantsJourney, NOT_YET_ARRIVED);
+  147 | 
+  148 |     await pages.plantsPlaceOfDestination.btnSaveAndContinue.click();
+  149 | 
+  150 |     await expect(pages.page).toHaveURL(pages.plantsPlaceOfDestination.expectedUrl(reference));
+  151 |     await expect(pages.plantsPlaceOfDestination.errorSummary).toContainText(DESTINATION_REQUIRED_ERROR);
+  152 |   });
+  153 | 
+  154 |   test('search narrows the organisation address book, and a term nothing matches says so', async ({
+  155 |     pages,
+  156 |     plantsJourney,
+  157 |     addressBookApi,
+  158 |   }) => {
+  159 |     const token = `Kirkcaldy${Date.now()}`;
+  160 |     const matches = [`Highland Nurseries ${token}`, `Tayside Growers ${token}`];
+  161 |     for (const name of matches) {
+  162 |       await addressBookApi.createAddress(addressNamed(name));
+  163 |     }
+  164 | 
+  165 |     await plantsToDestination(pages, plantsJourney, NOT_YET_ARRIVED);
+  166 | 
+  167 |     // The picker opens on the whole book, however many addresses the
+  168 |     // organisation has saved by now.
+  169 |     await expect(pages.plantsPlaceOfDestination.resultsCaption).toHaveText(FULL_BOOK_CAPTION);
+  170 | 
+  171 |     await pages.plantsPlaceOfDestination.searchFor(token);
+  172 | 
+  173 |     await expect(pages.plantsPlaceOfDestination.resultsCaption).toHaveText('Showing 2 of 2 addresses');
+  174 |     await expect(pages.plantsPlaceOfDestination.address(matches[0])).toBeVisible();
+  175 |     await expect(pages.plantsPlaceOfDestination.address(matches[1])).toBeVisible();
+  176 | 
+  177 |     await pages.plantsPlaceOfDestination.searchFor(`${token} Ardnamurchan`);
+  178 | 
+  179 |     // Nothing matching is a sentence, not an empty table.
+  180 |     await expect(pages.plantsPlaceOfDestination.noMatches).toBeVisible();
+  181 |     await expect(pages.plantsPlaceOfDestination.resultsCaption).toHaveCount(0);
+  182 | 
+  183 |     // Clearing the search restores the whole book.
+  184 |     await pages.plantsPlaceOfDestination.searchFor('');
+  185 |     await expect(pages.plantsPlaceOfDestination.resultsCaption).toHaveText(FULL_BOOK_CAPTION);
+  186 |   });
+  187 | 
+  188 |   test('results are paged five at a time, and a row ticked on a later page is the one that saves', async ({
+  189 |     pages,
+  190 |     plantsJourney,
+  191 |     addressBookApi,
+  192 |   }) => {
+  193 |     const token = `Peterhead${Date.now()}`;
+  194 |     const target = `Target Nursery ${token}`;
+  195 |     // The target first, then a full page of newer ones: the book lists newest
+  196 |     // first, so those five fill page one and push the target onto page two.
+  197 |     await addressBookApi.createAddress(addressNamed(target));
+  198 |     for (let newer = 0; newer < PICKER_PAGE_SIZE; newer += 1) {
+  199 |       await addressBookApi.createAddress(addressNamed(`Newer Than Target ${token} ${newer}`));
+  200 |     }
+  201 | 
+  202 |     const reference = await plantsToDestination(pages, plantsJourney, NOT_YET_ARRIVED);
+  203 |     await pages.plantsPlaceOfDestination.searchFor(token);
+  204 | 
+  205 |     await expect(pages.plantsPlaceOfDestination.resultsCaption).toHaveText('Showing 5 of 6 addresses');
+  206 |     await expect(pages.plantsPlaceOfDestination.address(target)).toHaveCount(0);
+  207 | 
+  208 |     // Paging is a link, not a submit, and it carries the search term with it.
+  209 |     await pages.plantsPlaceOfDestination.pageLink(2).click();
+  210 |     await expect(pages.plantsPlaceOfDestination.resultsCaption).toHaveText('Showing 1 of 6 addresses');
+  211 | 
+  212 |     await pages.plantsPlaceOfDestination.address(target).check();
+  213 |     await pages.plantsPlaceOfDestination.btnSaveAndContinue.click();
+  214 | 
+  215 |     // The consignor page follows the destination in the opening run, so
+  216 |     // Continue reaches that rather than the Overview.
+  217 |     await expect(pages.page).toHaveURL(pages.plantsConsignorSelect.expectedUrl(reference));
+  218 | 
+  219 |     await pages.plantsOverview.open(reference);
+  220 |     await expect(pages.plantsOverview.taskRow(DESTINATION_TASK_ROW)).toContainText('Completed');
+  221 | 
+  222 |     // Re-entering opens on page one of the whole book, where the chosen record
+  223 |     // is not rendered — the picker still knows it, and says so in the inset.
+  224 |     // That is the no-JS selection-across-pagination guarantee.
+  225 |     await pages.plantsPlaceOfDestination.open(reference);
+  226 |     await expect(pages.plantsPlaceOfDestination.selectedAddress(target)).toBeVisible();
+  227 |     await expect(pages.plantsPlaceOfDestination.address(target)).toHaveCount(0);
+  228 |   });
+  229 | 
+  230 |   test('deleting the chosen address takes the answer off the notification', async ({ pages, plantsJourney, addressBookApi }) => {
+  231 |     const token = `Montrose${Date.now()}`;
+  232 |     const name = `Doomed Nursery ${token}`;
+  233 |     const record = await addressBookApi.createAddress(addressNamed(name));
+  234 | 
+  235 |     const reference = await plantsToDestination(pages, plantsJourney, NOT_YET_ARRIVED);
+  236 |     await chooseAddress(pages, token, name);
+  237 | 
+  238 |     await expect(pages.page).toHaveURL(pages.plantsConsignorSelect.expectedUrl(reference));
+  239 | 
+  240 |     await pages.plantsOverview.open(reference);
+  241 |     await expect(pages.plantsOverview.taskRow(DESTINATION_TASK_ROW)).toContainText('Completed');
+```

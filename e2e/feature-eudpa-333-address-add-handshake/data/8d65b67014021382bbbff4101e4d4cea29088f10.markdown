@@ -1,0 +1,248 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/addresses-read-only.spec.ts >> Addresses are read-only in the journey >> the party picker offers no way to add an address
+- Location: tests/e2e/features/addresses-read-only.spec.ts:9:3
+
+# Error details
+
+```
+Error: expect(locator).toHaveCount(expected) failed
+
+Locator:  getByRole('link', { name: /add.*address/i })
+Expected: 0
+Received: 1
+Timeout:  5000ms
+
+Call log:
+  - Expect "toHaveCount" with timeout 5000ms
+  - waiting for getByRole('link', { name: /add.*address/i })
+    14 × locator resolved to 1 element
+       - unexpected value "1"
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - generic [ref=e23]:
+        - link "Import notification service" [ref=e25] [cursor=pointer]:
+          - /url: /
+        - navigation "Menu" [ref=e26]:
+          - list [ref=e27]:
+            - listitem [ref=e28]:
+              - link "Dashboard" [ref=e29] [cursor=pointer]:
+                - /url: /
+                - strong [ref=e30]: Dashboard
+            - listitem [ref=e31]:
+              - link "Address book" [ref=e32] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e33]:
+              - link "Manage account" [ref=e34] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e35]:
+              - link "Log out" [ref=e36] [cursor=pointer]:
+                - /url: /auth/sign-out
+  - generic [ref=e37]:
+    - paragraph [ref=e39]:
+      - strong [ref=e40]: Alpha
+      - generic [ref=e41]:
+        - text: This is a new service. Help us improve it and
+        - link "give your feedback by email" [ref=e42] [cursor=pointer]:
+          - /url: mailto:APHAServiceDesk@apha.gov.uk
+        - text: .
+    - link "Back" [ref=e43] [cursor=pointer]:
+      - /url: /notifications/GBN-AG-26-21Y1DW/addresses
+    - main [ref=e44]:
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - strong [ref=e48]: Draft
+          - text: GBN-AG-26-21Y1DW
+        - generic [ref=e49]: Consignment parties
+        - heading "Consignor or exporter" [level=1] [ref=e50]
+        - paragraph [ref=e51]: This is the sender of the consignment.
+        - paragraph [ref=e52]:
+          - link "Add a new address" [ref=e53] [cursor=pointer]:
+            - /url: http://localhost:3002/address-book/add?journey-type=gbn-ag&notification-id=GBN-AG-26-21Y1DW&fulfilment-id=9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e56]: Search
+            - generic [ref=e57]: Name, address or country
+            - textbox "Search" [ref=e58]
+          - button "Search" [ref=e59] [cursor=pointer]
+          - table "Showing 5 of 24 addresses" [ref=e60]:
+            - caption [ref=e61]: Showing 5 of 24 addresses
+            - rowgroup [ref=e62]:
+              - row "Select Name Address Country Actions" [ref=e63]:
+                - columnheader "Select" [ref=e64]:
+                  - generic [ref=e65]: Select
+                - columnheader "Name" [ref=e66]
+                - columnheader "Address" [ref=e67]
+                - columnheader "Country" [ref=e68]
+                - columnheader "Actions" [ref=e69]:
+                  - generic [ref=e70]: Actions
+            - rowgroup [ref=e71]:
+              - row "Select Newer Than Target 1789127541017 4 Newer Than Target 1789127541017 4 4 Front Row, Carlisle, CA1 1BB United Kingdom" [ref=e72]:
+                - cell "Select Newer Than Target 1789127541017 4" [ref=e73]:
+                  - generic [ref=e76]:
+                    - radio "Select Newer Than Target 1789127541017 4" [ref=e77] [cursor=pointer]
+                    - generic [ref=e79] [cursor=pointer]: Select Newer Than Target 1789127541017 4
+                - cell "Newer Than Target 1789127541017 4" [ref=e80]
+                - cell "4 Front Row, Carlisle, CA1 1BB" [ref=e81]
+                - cell "United Kingdom" [ref=e82]
+                - cell [ref=e83]:
+                  - group [ref=e84]:
+                    - generic "View details for Newer Than Target 1789127541017 4" [ref=e85] [cursor=pointer]:
+                      - generic [ref=e86]:
+                        - text: View details
+                        - generic [ref=e87]: for Newer Than Target 1789127541017 4
+              - row "Select Newer Than Target 1789127541017 3 Newer Than Target 1789127541017 3 3 Front Row, Carlisle, CA1 1BB United Kingdom" [ref=e88]:
+                - cell "Select Newer Than Target 1789127541017 3" [ref=e89]:
+                  - generic [ref=e92]:
+                    - radio "Select Newer Than Target 1789127541017 3" [ref=e93] [cursor=pointer]
+                    - generic [ref=e95] [cursor=pointer]: Select Newer Than Target 1789127541017 3
+                - cell "Newer Than Target 1789127541017 3" [ref=e96]
+                - cell "3 Front Row, Carlisle, CA1 1BB" [ref=e97]
+                - cell "United Kingdom" [ref=e98]
+                - cell [ref=e99]:
+                  - group [ref=e100]:
+                    - generic "View details for Newer Than Target 1789127541017 3" [ref=e101] [cursor=pointer]:
+                      - generic [ref=e102]:
+                        - text: View details
+                        - generic [ref=e103]: for Newer Than Target 1789127541017 3
+              - row "Select Newer Than Target 1789127541017 2 Newer Than Target 1789127541017 2 2 Front Row, Carlisle, CA1 1BB United Kingdom" [ref=e104]:
+                - cell "Select Newer Than Target 1789127541017 2" [ref=e105]:
+                  - generic [ref=e108]:
+                    - radio "Select Newer Than Target 1789127541017 2" [ref=e109] [cursor=pointer]
+                    - generic [ref=e111] [cursor=pointer]: Select Newer Than Target 1789127541017 2
+                - cell "Newer Than Target 1789127541017 2" [ref=e112]
+                - cell "2 Front Row, Carlisle, CA1 1BB" [ref=e113]
+                - cell "United Kingdom" [ref=e114]
+                - cell [ref=e115]:
+                  - group [ref=e116]:
+                    - generic "View details for Newer Than Target 1789127541017 2" [ref=e117] [cursor=pointer]:
+                      - generic [ref=e118]:
+                        - text: View details
+                        - generic [ref=e119]: for Newer Than Target 1789127541017 2
+              - row "Select Newer Than Target 1789127541017 1 Newer Than Target 1789127541017 1 1 Front Row, Carlisle, CA1 1BB United Kingdom" [ref=e120]:
+                - cell "Select Newer Than Target 1789127541017 1" [ref=e121]:
+                  - generic [ref=e124]:
+                    - radio "Select Newer Than Target 1789127541017 1" [ref=e125] [cursor=pointer]
+                    - generic [ref=e127] [cursor=pointer]: Select Newer Than Target 1789127541017 1
+                - cell "Newer Than Target 1789127541017 1" [ref=e128]
+                - cell "1 Front Row, Carlisle, CA1 1BB" [ref=e129]
+                - cell "United Kingdom" [ref=e130]
+                - cell [ref=e131]:
+                  - group [ref=e132]:
+                    - generic "View details for Newer Than Target 1789127541017 1" [ref=e133] [cursor=pointer]:
+                      - generic [ref=e134]:
+                        - text: View details
+                        - generic [ref=e135]: for Newer Than Target 1789127541017 1
+              - row "Select Newer Than Target 1789127541017 0 Newer Than Target 1789127541017 0 0 Front Row, Carlisle, CA1 1BB United Kingdom" [ref=e136]:
+                - cell "Select Newer Than Target 1789127541017 0" [ref=e137]:
+                  - generic [ref=e140]:
+                    - radio "Select Newer Than Target 1789127541017 0" [ref=e141] [cursor=pointer]
+                    - generic [ref=e143] [cursor=pointer]: Select Newer Than Target 1789127541017 0
+                - cell "Newer Than Target 1789127541017 0" [ref=e144]
+                - cell "0 Front Row, Carlisle, CA1 1BB" [ref=e145]
+                - cell "United Kingdom" [ref=e146]
+                - cell [ref=e147]:
+                  - group [ref=e148]:
+                    - generic "View details for Newer Than Target 1789127541017 0" [ref=e149] [cursor=pointer]:
+                      - generic [ref=e150]:
+                        - text: View details
+                        - generic [ref=e151]: for Newer Than Target 1789127541017 0
+          - navigation "Pagination" [ref=e152]:
+            - list [ref=e153]:
+              - listitem [ref=e154]:
+                - link "Page 1" [ref=e155] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-21Y1DW/consignors/select?page=1
+                  - text: "1"
+              - listitem [ref=e156]:
+                - link "Page 2" [ref=e157] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-21Y1DW/consignors/select?page=2
+                  - text: "2"
+              - listitem [ref=e158]: ⋯
+              - listitem [ref=e159]:
+                - link "Page 5" [ref=e160] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-21Y1DW/consignors/select?page=5
+                  - text: "5"
+            - link "Next page" [ref=e162] [cursor=pointer]:
+              - /url: /notifications/GBN-AG-26-21Y1DW/consignors/select?page=2
+              - generic [ref=e163]:
+                - text: Next
+                - generic [ref=e164]: page
+              - img [ref=e165]
+          - button "Save and continue" [ref=e168] [cursor=pointer]
+  - contentinfo [ref=e169]:
+    - generic [ref=e182]:
+      - generic [ref=e183]:
+        - heading "Support links" [level=2] [ref=e184]
+        - list [ref=e185]:
+          - listitem [ref=e186]:
+            - link "Privacy" [ref=e187] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e188]:
+            - link "Cookies" [ref=e189] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e190]:
+            - link "Accessibility statement" [ref=e191] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e192]
+        - generic [ref=e194]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e195] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e197] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | 
+  3  | /**
+  4  |  * The notification journey reads the address book and never writes to it.
+  5  |  * Adding, changing and removing records belongs to the INS frontend, so these
+  6  |  * specs prove the animals frontend offers no way in — by control and by URL.
+  7  |  */
+  8  | test.describe('Addresses are read-only in the journey', { tag: ['@integration'] }, () => {
+  9  |   test('the party picker offers no way to add an address', async ({ journey, pages }) => {
+  10 |     await journey.startNotification();
+  11 |     await journey.unlockSections();
+  12 | 
+  13 |     await pages.overview.task('Roles and addresses').click();
+  14 |     await pages.addresses.addParty('Consignor or exporter').click();
+  15 | 
+  16 |     await expect(pages.consignorSelection.saveAndContinue).toBeVisible();
+  17 |     await expect(pages.page.getByRole('button', { name: /add.*address/i })).toHaveCount(0);
+> 18 |     await expect(pages.page.getByRole('link', { name: /add.*address/i })).toHaveCount(0);
+     |                                                                           ^ Error: expect(locator).toHaveCount(expected) failed
+  19 |   });
+  20 | 
+  21 |   test('the create-address page is no longer served', async ({ journey, journeyContext, pages }) => {
+  22 |     await journey.startNotification();
+  23 |     const journeyId = journeyContext.journeyId;
+  24 | 
+  25 |     const response = await pages.page.goto(`/notifications/${journeyId}/addresses/create?for=consignor`);
+  26 | 
+  27 |     expect(response?.status()).toBe(404);
+  28 |   });
+  29 | });
+  30 | 
+```

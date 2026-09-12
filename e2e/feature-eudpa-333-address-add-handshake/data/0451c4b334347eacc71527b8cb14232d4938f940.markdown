@@ -1,0 +1,442 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/plants/review.spec.ts >> High-risk plants check and submit section >> a deleted destination renders Not provided on CYA and blocks submission
+- Location: tests/e2e/features/plants/review.spec.ts:243:3
+
+# Error details
+
+```
+Error: expect(locator).toHaveCount(expected) failed
+
+Locator:  locator('.govuk-summary-card').filter({ has: getByRole('heading', { name: 'Intended destination', exact: true }) }).getByText('Not provided', { exact: true })
+Expected: 4
+Received: 0
+Timeout:  5000ms
+
+Call log:
+  - Expect "toHaveCount" with timeout 5000ms
+  - waiting for locator('.govuk-summary-card').filter({ has: getByRole('heading', { name: 'Intended destination', exact: true }) }).getByText('Not provided', { exact: true })
+    14 × locator resolved to 0 elements
+       - unexpected value "0"
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - generic [ref=e23]:
+        - link "Import notification service" [ref=e25] [cursor=pointer]:
+          - /url: /
+        - navigation "Menu" [ref=e26]:
+          - list [ref=e27]:
+            - listitem [ref=e28]:
+              - link "Dashboard" [ref=e29] [cursor=pointer]:
+                - /url: /
+                - strong [ref=e30]: Dashboard
+            - listitem [ref=e31]:
+              - link "Address book" [ref=e32] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e33]:
+              - link "Manage account" [ref=e34] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e35]:
+              - link "Log out" [ref=e36] [cursor=pointer]:
+                - /url: /auth/sign-out
+  - generic [ref=e37]:
+    - paragraph [ref=e39]:
+      - strong [ref=e40]: Alpha
+      - generic [ref=e41]:
+        - text: This is a new service. Help us improve it and
+        - link "give your feedback by email" [ref=e42] [cursor=pointer]:
+          - /url: mailto:APHAServiceDesk@apha.gov.uk
+        - text: .
+    - link "Back" [ref=e43] [cursor=pointer]:
+      - /url: /notifications/GBN-HRP-26-Q6M07V
+    - main [ref=e44]:
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - strong [ref=e48]: Draft
+          - text: GBN-HRP-26-Q6M07V
+        - alert [ref=e50]:
+          - heading "There is a problem" [level=2] [ref=e51]
+          - list [ref=e53]:
+            - listitem [ref=e54]:
+              - link "Select an address for the place of destination" [ref=e55] [cursor=pointer]:
+                - /url: /notifications/GBN-HRP-26-Q6M07V/destinations/select?change=1
+        - heading "Check your answers" [level=1] [ref=e56]
+        - heading "1. About the consignment" [level=2] [ref=e57]
+        - generic [ref=e58]:
+          - heading "Import details" [level=3] [ref=e60]
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - term [ref=e64]: What are you importing?
+              - definition [ref=e65]: Potatoes (seed or ware)
+              - definition [ref=e66]:
+                - link "Change what are you importing? (Import details)" [ref=e67] [cursor=pointer]:
+                  - /url: /notifications/GBN-HRP-26-Q6M07V/commodity-type?change=1
+                  - text: Change
+                  - generic [ref=e68]: what are you importing? (Import details)
+            - generic [ref=e69]:
+              - term [ref=e70]: Country of origin
+              - definition [ref=e71]: France
+              - definition [ref=e72]:
+                - link "Change country of origin (Import details)" [ref=e73] [cursor=pointer]:
+                  - /url: /notifications/GBN-HRP-26-Q6M07V/origin?change=1
+                  - text: Change
+                  - generic [ref=e74]: country of origin (Import details)
+        - generic [ref=e75]:
+          - generic [ref=e76]:
+            - heading "Commodity 1" [level=3] [ref=e77]
+            - link "Change Commodity 1 (Commodity 1)" [ref=e79] [cursor=pointer]:
+              - /url: /notifications/GBN-HRP-26-Q6M07V/commodities/details?index=0&change=1
+              - text: Change
+              - generic [ref=e80]: Commodity 1 (Commodity 1)
+          - generic [ref=e82]:
+            - generic [ref=e83]:
+              - term [ref=e84]: Category
+              - definition [ref=e85]: Seed potatoes
+            - generic [ref=e86]:
+              - term [ref=e87]: Variety
+              - definition [ref=e88]: Maris Piper
+            - generic [ref=e89]:
+              - term [ref=e90]: Quantity
+              - definition [ref=e91]: "250"
+            - generic [ref=e92]:
+              - term [ref=e93]: Intended use
+              - definition [ref=e94]: Planting
+        - heading "2. Arrival and destination" [level=2] [ref=e95]
+        - generic [ref=e96]:
+          - heading "Arrival details" [level=3] [ref=e98]
+          - generic [ref=e100]:
+            - generic [ref=e101]:
+              - term [ref=e102]: Expected date of arrival
+              - definition [ref=e103]: 18/09/2026
+              - definition [ref=e104]:
+                - link "Change expected date of arrival (Arrival details)" [ref=e105] [cursor=pointer]:
+                  - /url: /notifications/GBN-HRP-26-Q6M07V/arrival-details?change=1
+                  - text: Change
+                  - generic [ref=e106]: expected date of arrival (Arrival details)
+            - generic [ref=e107]:
+              - term [ref=e108]: Arrival time
+              - definition [ref=e109]: 14:30
+              - definition [ref=e110]:
+                - link "Change arrival time (Arrival details)" [ref=e111] [cursor=pointer]:
+                  - /url: /notifications/GBN-HRP-26-Q6M07V/arrival-details?change=1
+                  - text: Change
+                  - generic [ref=e112]: arrival time (Arrival details)
+            - generic [ref=e113]:
+              - term [ref=e114]: Place of landing
+              - definition [ref=e115]: Aberdeen Harbour (GB ABD)
+              - definition [ref=e116]:
+                - link "Change place of landing (Arrival details)" [ref=e117] [cursor=pointer]:
+                  - /url: /notifications/GBN-HRP-26-Q6M07V/arrival-details?change=1
+                  - text: Change
+                  - generic [ref=e118]: place of landing (Arrival details)
+        - generic [ref=e119]:
+          - generic [ref=e120]:
+            - heading "Place of destination" [level=3] [ref=e121]
+            - link "Change Place of destination (Place of destination)" [ref=e123] [cursor=pointer]:
+              - /url: /notifications/GBN-HRP-26-Q6M07V/destinations/select?change=1
+              - text: Change
+              - generic [ref=e124]: Place of destination (Place of destination)
+          - generic [ref=e126]:
+            - generic [ref=e127]:
+              - term [ref=e128]: Name
+              - definition [ref=e129]: Not provided
+            - generic [ref=e130]:
+              - term [ref=e131]: Address
+              - definition [ref=e132]: Not provided
+            - generic [ref=e133]:
+              - term [ref=e134]: Telephone number
+              - definition [ref=e135]: Not provided
+            - generic [ref=e136]:
+              - term [ref=e137]: Email address
+              - definition [ref=e138]: Not provided
+        - heading "3. Consignment parties" [level=2] [ref=e139]
+        - generic [ref=e140]:
+          - heading "Identification numbers" [level=3] [ref=e142]
+          - generic [ref=e144]:
+            - generic [ref=e145]:
+              - term [ref=e146]: Identification number of the producer of the potatoes
+              - definition [ref=e147]: P123
+              - definition [ref=e148]:
+                - link "Change identification number of the producer of the potatoes (Identification numbers)" [ref=e149] [cursor=pointer]:
+                  - /url: /notifications/GBN-HRP-26-Q6M07V/identification-numbers?change=1
+                  - text: Change
+                  - generic [ref=e150]: identification number of the producer of the potatoes (Identification numbers)
+            - generic [ref=e151]:
+              - term [ref=e152]: Crop identification number
+              - definition [ref=e153]: C123
+              - definition [ref=e154]:
+                - link "Change crop identification number (Identification numbers)" [ref=e155] [cursor=pointer]:
+                  - /url: /notifications/GBN-HRP-26-Q6M07V/identification-numbers?change=1
+                  - text: Change
+                  - generic [ref=e156]: crop identification number (Identification numbers)
+            - generic [ref=e157]:
+              - term [ref=e158]: Consignment number (optional)
+              - definition [ref=e159]: Not provided
+              - definition [ref=e160]:
+                - link "Change consignment number (optional) (Identification numbers)" [ref=e161] [cursor=pointer]:
+                  - /url: /notifications/GBN-HRP-26-Q6M07V/identification-numbers?change=1
+                  - text: Change
+                  - generic [ref=e162]: consignment number (optional) (Identification numbers)
+        - generic [ref=e163]:
+          - generic [ref=e164]:
+            - heading "Contact" [level=3] [ref=e165]
+            - link "Change Contact (Contact)" [ref=e167] [cursor=pointer]:
+              - /url: /notifications/GBN-HRP-26-Q6M07V/consignment/contact/select?change=1
+              - text: Change
+              - generic [ref=e168]: Contact (Contact)
+          - generic [ref=e170]:
+            - generic [ref=e171]:
+              - term [ref=e172]: Name
+              - definition [ref=e173]: Not provided
+            - generic [ref=e174]:
+              - term [ref=e175]: Address
+              - definition [ref=e176]: Not provided
+            - generic [ref=e177]:
+              - term [ref=e178]: Telephone number
+              - definition [ref=e179]: Not provided
+            - generic [ref=e180]:
+              - term [ref=e181]: Email address
+              - definition [ref=e182]: Not provided
+        - heading "Now submit your notification" [level=2] [ref=e183]
+        - paragraph [ref=e184]: Continue to the declaration to submit your notification.
+        - generic [ref=e186]:
+          - button "Continue" [ref=e187] [cursor=pointer]
+          - button "Save and return to overview" [ref=e188] [cursor=pointer]
+          - link "Cancel and return to overview" [ref=e189] [cursor=pointer]:
+            - /url: /notifications/GBN-HRP-26-Q6M07V
+  - contentinfo [ref=e190]:
+    - generic [ref=e203]:
+      - generic [ref=e204]:
+        - heading "Support links" [level=2] [ref=e205]
+        - list [ref=e206]:
+          - listitem [ref=e207]:
+            - link "Privacy" [ref=e208] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e209]:
+            - link "Cookies" [ref=e210] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e211]:
+            - link "Accessibility statement" [ref=e212] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e213]
+        - generic [ref=e215]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e216] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e218] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  149 |     await expect(pages.plantsNotificationView.card('Commodity 1')).toContainText('300');
+  150 |   });
+  151 | 
+  152 |   test('declaration is required and submission produces a read-only notification and Submitted dashboard card', async ({
+  153 |     pages,
+  154 |     plantsJourney,
+  155 |     addressBookApi,
+  156 |   }) => {
+  157 |     const { reference } = await completeNotification(pages, plantsJourney, addressBookApi);
+  158 |     await openReview(pages);
+  159 |     await pages.plantsNotificationView.btnContinue.click();
+  160 |     await expect(pages.page).toHaveURL(pages.plantsDeclaration.expectedUrl(reference));
+  161 |     await pages.plantsDeclaration.btnContinue.click();
+  162 |     await expect(pages.plantsDeclaration.errorSummary).toContainText('Confirm that the information is true and correct before submitting');
+  163 |     await expect(pages.page).toHaveURL(pages.plantsDeclaration.expectedUrl(reference));
+  164 |     await pages.plantsDeclaration.linkBack.click();
+  165 |     await expect(pages.plantsNotificationView.heading).toBeVisible();
+  166 |     await submit(pages);
+  167 |     await expect(pages.page).toHaveURL(pages.plantsConfirmation.expectedUrl(reference));
+  168 |     await expect(pages.plantsConfirmation.panel).toContainText(reference);
+  169 |     await expect(pages.plantsOverview.statusTag).toHaveText('Submitted');
+  170 |     await expect(pages.plantsConfirmation.notificationDate).toBeVisible();
+  171 |     await expect(pages.plantsConfirmation.content).toContainText(
+  172 |       new RegExp(`Date of notification[^0-9]{0,20}(${getRelativeServiceDisplayDate()}|${getRelativeServiceDisplayDate(1)})`),
+  173 |     );
+  174 |     await expect(pages.plantsConfirmation.lateBanner).toHaveCount(0);
+  175 |     await pages.plantsConfirmation.viewNotification.click();
+  176 |     await assertReadOnly(pages);
+  177 |     await expect(pages.plantsNotificationView.lateBanner).toHaveCount(0);
+  178 |     await pages.plantsDashboard.open();
+  179 |     await pages.plantsDashboard.searchForReference(reference);
+  180 |     await expect(pages.plantsDashboard.notificationCard(reference).getByText('Submitted', { exact: true })).toBeVisible();
+  181 |   });
+  182 | 
+  183 |   for (const { type, days, rule } of [
+  184 |     { type: POTATOES, days: 0, rule: 'Notifications for potatoes must be made at least 2 days before the expected date of arrival.' },
+  185 |     {
+  186 |       type: PLANTS,
+  187 |       days: -7,
+  188 |       rule: 'Notifications for plants for planting and wood must be made no later than 4 days after the date of arrival.',
+  189 |     },
+  190 |   ]) {
+  191 |     test(`${type}: late notifications are accepted and highlighted`, async ({ pages, plantsJourney, addressBookApi }) => {
+  192 |       const { reference } = await completeNotification(pages, plantsJourney, addressBookApi, { type, days });
+  193 |       await openReview(pages);
+  194 |       // govukWarningText always prepends a visually-hidden "Warning" fallback inside
+  195 |       // the same <strong>, so an exact match can never pass here — pin the message
+  196 |       // as a substring instead (unpassable-assertion exception: the accessible-tree
+  197 |       // snapshot shows `strong: Warning If you submit...`, the app renders the
+  198 |       // correct message, and no other spec in this repo asserts govukWarningText by exact text).
+  199 |       await expect(
+  200 |         pages.page.getByText(`If you submit this notification today it will be late. ${rule} You can still submit it.`, { exact: false }),
+  201 |       ).toBeVisible();
+  202 |       await submit(pages);
+  203 |       await expect(pages.plantsConfirmation.panel).toContainText(reference);
+  204 |       await expect(pages.plantsConfirmation.lateBanner).toBeVisible();
+  205 |       await expect(pages.page.getByText(rule, { exact: false })).toBeVisible();
+  206 |       await pages.plantsConfirmation.viewNotification.click();
+  207 |       await assertReadOnly(pages);
+  208 |       await expect(pages.plantsNotificationView.lateBanner).toBeVisible();
+  209 |       await pages.plantsDashboard.open();
+  210 |       await pages.plantsDashboard.searchForReference(reference);
+  211 |       await expect(pages.plantsDashboard.notificationCard(reference).getByText('Submitted', { exact: true })).toBeVisible();
+  212 |       // No dashboard Late tag assertion: ruled c-030/c-035 parks projecting
+  213 |       // lateNotificationIndicator onto the backend NotificationDto ("the mapper
+  214 |       // has no typed home for it ... explicit omission assertion on the
+  215 |       // NotificationDto" — plants-frontend rulings.json panel/rulings.json). The
+  216 |       // stub persistence layer already carries the row field correctly (proven
+  217 |       // directly against the stub), but this stack runs the real
+  218 |       // trade-imports-plants-backend, which has no such field yet (confirmed:
+  219 |       // no lateNotificationIndicator anywhere under plants-backend/src/main) — so
+  220 |       // the tag cannot render here until that residual-parked mapping is built.
+  221 |     });
+  222 |   }
+  223 | 
+  224 |   test('a saved French origin becomes invalid when a ware-potato line is added and prevents submission', async ({
+  225 |     pages,
+  226 |     plantsJourney,
+  227 |     addressBookApi,
+  228 |   }) => {
+  229 |     const { reference } = await completeNotification(pages, plantsJourney, addressBookApi);
+  230 |     await pages.plantsCommodities.open(reference);
+  231 |     await plantsJourney.addAnotherCommodityLine('Ware potatoes', { ...potatoLine, 'Intended use': 'Consumption' });
+  232 |     await pages.plantsNotificationView.open(reference);
+  233 |     await expect(pages.plantsNotificationView.card('Import details')).toContainText('France');
+  234 |     await pages.plantsNotificationView.btnContinue.click();
+  235 |     await expect(pages.page).toHaveURL(pages.plantsNotificationView.expectedUrl(reference));
+  236 |     const correction = pages.plantsNotificationView.errorSummary.getByRole('link', { name: /Poland/ });
+  237 |     await expect(correction).toHaveAttribute('href', `/notifications/${reference}/origin?change=1`);
+  238 |     await expect(pages.plantsOverview.statusTag).toHaveText('Draft');
+  239 |     await correction.click();
+  240 |     await expect(pages.page).toHaveURL(/\/origin\?change=1$/);
+  241 |   });
+  242 | 
+  243 |   test('a deleted destination renders Not provided on CYA and blocks submission', async ({ pages, plantsJourney, addressBookApi }) => {
+  244 |     const { reference, address } = await completeNotification(pages, plantsJourney, addressBookApi);
+  245 |     await openReview(pages);
+  246 |     await addressBookApi.deleteAddress(address.id);
+  247 |     await pages.page.reload();
+  248 |     const destination = pages.plantsNotificationView.card('Intended destination');
+> 249 |     await expect(destination.getByText('Not provided', { exact: true })).toHaveCount(4);
+      |                                                                          ^ Error: expect(locator).toHaveCount(expected) failed
+  250 |     await expect(destination).not.toContainText(address.name);
+  251 |     await pages.plantsNotificationView.btnContinue.click();
+  252 |     await expect(pages.page).toHaveURL(pages.plantsNotificationView.expectedUrl(reference));
+  253 |     await expect(pages.plantsNotificationView.errorSummary).toContainText('Select an address for the place of destination');
+  254 |   });
+  255 | 
+  256 |   for (const source of ['dashboard', 'CYA']) {
+  257 |     test(`cancel amendment from ${source} restores submitted answers and read-only CYA`, async ({
+  258 |       pages,
+  259 |       plantsJourney,
+  260 |       addressBookApi,
+  261 |     }) => {
+  262 |       const { reference } = await completeNotification(pages, plantsJourney, addressBookApi);
+  263 |       await openReview(pages);
+  264 |       await submit(pages);
+  265 |       await amend(pages, reference);
+  266 |       await pages.plantsIdentificationNumbers.open(reference);
+  267 |       await pages.plantsIdentificationNumbers.producer.fill('DiscardMe99');
+  268 |       await pages.plantsIdentificationNumbers.btnSaveAndContinue.click();
+  269 |       await pages.plantsDashboard.open();
+  270 |       await pages.plantsDashboard.searchForReference(reference);
+  271 |       await expect(pages.plantsDashboard.statusTag(reference)).toHaveText('Amending');
+  272 |       if (source === 'dashboard') {
+  273 |         await pages.plantsDashboard
+  274 |           .notificationCard(reference)
+  275 |           .getByRole('link', { name: `Cancel amendment (${reference})`, exact: true })
+  276 |           .click();
+  277 |       } else {
+  278 |         await pages.plantsNotificationView.open(reference);
+  279 |         await expect(pages.plantsNotificationView.card('Identification numbers')).toContainText('DiscardMe99');
+  280 |         await pages.page.getByRole('link', { name: 'Cancel amendment', exact: true }).click();
+  281 |       }
+  282 |       await expect(pages.page.getByRole('heading', { name: 'Cancel this amendment?', level: 1 })).toBeVisible();
+  283 |       await pages.page.getByRole('button', { name: 'Yes, cancel amendment', exact: true }).click();
+  284 |       await expect(pages.page).toHaveURL(/\/notification-view\?cancelled=1$/);
+  285 |       await assertReadOnly(pages);
+  286 |       await expect(pages.page.getByRole('alert')).toContainText(/amendment.*cancelled/i);
+  287 |       await expect(pages.plantsNotificationView.card('Identification numbers')).toContainText('P123');
+  288 |       await expect(pages.plantsNotificationView.card('Identification numbers')).not.toContainText('DiscardMe99');
+  289 |       await pages.page.reload();
+  290 |       await assertReadOnly(pages);
+  291 |       await expect(pages.plantsNotificationView.card('Identification numbers')).toContainText('P123');
+  292 |     });
+  293 |   }
+  294 | 
+  295 |   test('a submitted notification can be deleted from CYA', async ({ pages, plantsJourney, addressBookApi }) => {
+  296 |     const { reference } = await completeNotification(pages, plantsJourney, addressBookApi);
+  297 |     await openReview(pages);
+  298 |     await submit(pages);
+  299 |     await pages.plantsConfirmation.viewNotification.click();
+  300 |     await pages.page.getByRole('button', { name: 'Delete notification', exact: true }).click();
+  301 |     await expect(pages.plantsDeleteNotification.heading).toBeVisible();
+  302 |     await pages.plantsDeleteNotification.btnConfirm.click();
+  303 |     await expect(pages.plantsDashboard.heading).toBeVisible();
+  304 |     await expect(pages.plantsDashboard.deletedBanner).toContainText('Notification deleted');
+  305 |     await pages.plantsDashboard.searchForReference(reference);
+  306 |     await expect(pages.plantsDashboard.notificationCard(reference)).toHaveCount(0);
+  307 |   });
+  308 | 
+  309 |   for (const initiallyLate of [true, false]) {
+  310 |     test(`resubmitting an amended arrival date preserves the original ${initiallyLate ? 'late' : 'on-time'} flag`, async ({
+  311 |       pages,
+  312 |       plantsJourney,
+  313 |       addressBookApi,
+  314 |     }) => {
+  315 |       const { reference } = await completeNotification(pages, plantsJourney, addressBookApi, { days: initiallyLate ? 0 : 7 });
+  316 |       await openReview(pages);
+  317 |       await submit(pages);
+  318 |       await pages.plantsConfirmation.viewNotification.click();
+  319 |       await expect(pages.plantsNotificationView.lateBanner).toHaveCount(initiallyLate ? 1 : 0);
+  320 |       await amend(pages, reference);
+  321 |       await pages.plantsArrivalDetails.open(reference);
+  322 |       const amendedDate = arrivalDate(initiallyLate ? 7 : 0);
+  323 |       await pages.plantsArrivalDetails.arrivalDate.fill(amendedDate);
+  324 |       await pages.plantsArrivalDetails.btnSaveAndContinue.click();
+  325 |       await pages.plantsNotificationView.open(reference);
+  326 |       await submit(pages);
+  327 |       await expect(pages.plantsConfirmation.lateBanner).toHaveCount(initiallyLate ? 1 : 0);
+  328 |       await pages.plantsConfirmation.viewNotification.click();
+  329 |       await pages.page.reload();
+  330 |       await assertReadOnly(pages);
+  331 |       // readDate (shared/kit.js) keeps the day/month/year digits verbatim from the
+  332 |       // single free-text field, so the card echoes the zero-padded string as typed.
+  333 |       await expect(pages.plantsNotificationView.card('Arrival details')).toContainText(amendedDate);
+  334 |       await expect(pages.plantsNotificationView.lateBanner).toHaveCount(initiallyLate ? 1 : 0);
+  335 |     });
+  336 |   }
+  337 | });
+  338 | 
+```

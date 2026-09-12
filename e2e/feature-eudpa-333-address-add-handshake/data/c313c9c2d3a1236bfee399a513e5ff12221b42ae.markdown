@@ -1,0 +1,203 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/pages/contact-address.spec.ts >> Contact address page >> offers no way to add an address
+- Location: tests/e2e/pages/contact-address.spec.ts:32:3
+
+# Error details
+
+```
+Error: expect(locator).toHaveCount(expected) failed
+
+Locator:  getByRole('link', { name: /add.*address/i })
+Expected: 0
+Received: 1
+Timeout:  5000ms
+
+Call log:
+  - Expect "toHaveCount" with timeout 5000ms
+  - waiting for getByRole('link', { name: /add.*address/i })
+    14 × locator resolved to 1 element
+       - unexpected value "1"
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - generic [ref=e23]:
+        - link "Import notification service" [ref=e25] [cursor=pointer]:
+          - /url: /
+        - navigation "Menu" [ref=e26]:
+          - list [ref=e27]:
+            - listitem [ref=e28]:
+              - link "Dashboard" [ref=e29] [cursor=pointer]:
+                - /url: /
+                - strong [ref=e30]: Dashboard
+            - listitem [ref=e31]:
+              - link "Address book" [ref=e32] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e33]:
+              - link "Manage account" [ref=e34] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e35]:
+              - link "Log out" [ref=e36] [cursor=pointer]:
+                - /url: /auth/sign-out
+  - generic [ref=e37]:
+    - paragraph [ref=e39]:
+      - strong [ref=e40]: Alpha
+      - generic [ref=e41]:
+        - text: This is a new service. Help us improve it and
+        - link "give your feedback by email" [ref=e42] [cursor=pointer]:
+          - /url: mailto:APHAServiceDesk@apha.gov.uk
+        - text: .
+    - link "Back" [ref=e43] [cursor=pointer]:
+      - /url: /notifications/GBN-AG-26-RDV5AB
+    - main [ref=e44]:
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - strong [ref=e48]: Draft
+          - text: GBN-AG-26-RDV5AB
+        - paragraph [ref=e49]:
+          - link "Add a new address" [ref=e50] [cursor=pointer]:
+            - /url: http://localhost:3002/address-book/add?journey-type=gbn-ag&notification-id=GBN-AG-26-RDV5AB&fulfilment-id=f037e8f9-a0b1-4c26-8d72-fe5f60718293
+        - generic [ref=e51]:
+          - group "Contact address for consignment" [ref=e53]:
+            - heading "Contact address for consignment" [level=1] [ref=e55]
+            - generic [ref=e56]: Selecting a contact copies their name and address into this notification.
+            - generic [ref=e57]:
+              - generic [ref=e58]:
+                - radio "Import Co UK" [ref=e59] [cursor=pointer]
+                - generic [ref=e60] [cursor=pointer]: Import Co UK
+                - generic [ref=e61]: 20 Trade Road, London, EC1A 1BB, United Kingdom
+              - generic [ref=e62]:
+                - radio "British Livestock Ltd" [ref=e63] [cursor=pointer]
+                - generic [ref=e64] [cursor=pointer]: British Livestock Ltd
+                - generic [ref=e65]: 10 Market Street, Leeds, LS1 6HB, United Kingdom
+              - generic [ref=e66]:
+                - radio "Origin Farm" [ref=e67] [cursor=pointer]
+                - generic [ref=e68] [cursor=pointer]: Origin Farm
+                - generic [ref=e69]: 1 Farm Lane, Ennis, V95 X7P2, Ireland
+              - generic [ref=e70]:
+                - radio "Tech Imports Ltd" [ref=e71] [cursor=pointer]
+                - generic [ref=e72] [cursor=pointer]: Tech Imports Ltd
+                - generic [ref=e73]: 18 Dockside Road, London, E14 9GE, United Kingdom
+              - generic [ref=e74]:
+                - radio "Astra Rosales" [ref=e75] [cursor=pointer]
+                - generic [ref=e76] [cursor=pointer]: Astra Rosales
+                - generic [ref=e77]: 43 East Hague Extension, Bern, 30055, Switzerland
+              - generic [ref=e78]:
+                - radio "Nordvik Seafood AS" [ref=e79] [cursor=pointer]
+                - generic [ref=e80] [cursor=pointer]: Nordvik Seafood AS
+                - generic [ref=e81]: Havnegata 8, Alesund, 6002, Norway
+              - generic [ref=e82]:
+                - radio "Laiterie du Nord SARL" [ref=e83] [cursor=pointer]
+                - generic [ref=e84] [cursor=pointer]: Laiterie du Nord SARL
+                - generic [ref=e85]: 12 Rue de la Gare, Lille, 59000, France
+              - generic [ref=e86]:
+                - radio "Jutland Swine ApS" [ref=e87] [cursor=pointer]
+                - generic [ref=e88] [cursor=pointer]: Jutland Swine ApS
+                - generic [ref=e89]: Sondergade 4, Aarhus, 8000, Denmark
+              - generic [ref=e90]:
+                - radio "Danish Meat Export ApS" [ref=e91] [cursor=pointer]
+                - generic [ref=e92] [cursor=pointer]: Danish Meat Export ApS
+                - generic [ref=e93]: Havnegade 21, Copenhagen, 1058, Denmark
+              - generic [ref=e94]:
+                - radio "Animal and Plant Health Agency" [ref=e95] [cursor=pointer]
+                - generic [ref=e96] [cursor=pointer]: Animal and Plant Health Agency
+                - generic [ref=e97]: Woodham Lane, Addlestone, KT15 3NB, United Kingdom
+              - generic [ref=e98]:
+                - radio "Iberian Swine SA" [ref=e99] [cursor=pointer]
+                - generic [ref=e100] [cursor=pointer]: Iberian Swine SA
+                - generic [ref=e101]: Calle Mayor 44, Huesca, 22001, Spain
+              - generic [ref=e102]:
+                - radio "Irish Beef Traders Ltd" [ref=e103] [cursor=pointer]
+                - generic [ref=e104] [cursor=pointer]: Irish Beef Traders Ltd
+                - generic [ref=e105]: Castle Road 9, Kilkenny, R95 F2X8, Ireland
+              - generic [ref=e106]:
+                - radio "Alpine Dairy GmbH" [ref=e107] [cursor=pointer]
+                - generic [ref=e108] [cursor=pointer]: Alpine Dairy GmbH
+                - generic [ref=e109]: Bahnhofstrasse 17, Innsbruck, 6020, Austria
+          - generic [ref=e110]:
+            - button "Save and continue" [ref=e111] [cursor=pointer]
+            - button "Save and return to overview" [ref=e112] [cursor=pointer]
+            - link "Cancel and return to overview" [ref=e113] [cursor=pointer]:
+              - /url: /notifications/GBN-AG-26-RDV5AB
+  - contentinfo [ref=e114]:
+    - generic [ref=e127]:
+      - generic [ref=e128]:
+        - heading "Support links" [level=2] [ref=e129]
+        - list [ref=e130]:
+          - listitem [ref=e131]:
+            - link "Privacy" [ref=e132] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e133]:
+            - link "Cookies" [ref=e134] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e135]:
+            - link "Accessibility statement" [ref=e136] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e137]
+        - generic [ref=e139]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e140] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e142] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | 
+  3  | test.describe('Contact address page', { tag: ['@integration', '@duplicated-in-frontend'] }, () => {
+  4  |   test.beforeEach(async ({ journey }) => {
+  5  |     await journey.toContactAddress();
+  6  |   });
+  7  | 
+  8  |   test('renders the page controls', async ({ pages }) => {
+  9  |     await expect(pages.contactAddress.heading).toBeVisible();
+  10 |     await expect(pages.contactAddress.address('Animal and Plant Health Agency')).toBeVisible();
+  11 |     await expect(pages.contactAddress.saveAndContinue).toBeVisible();
+  12 |   });
+  13 | 
+  14 |   test('leaves the contact address unchecked on load', async ({ pages }) => {
+  15 |     await expect(pages.contactAddress.address('Animal and Plant Health Agency')).not.toBeChecked();
+  16 |   });
+  17 | 
+  18 |   test('accepts a valid contact address', async ({ pages }) => {
+  19 |     await pages.contactAddress.address('Animal and Plant Health Agency').check();
+  20 |     await pages.contactAddress.saveAndContinue.click();
+  21 | 
+  22 |     await expect(pages.page.getByRole('heading', { name: 'There is a problem' })).toHaveCount(0);
+  23 |   });
+  24 | 
+  25 |   test('saving with no contact address selected is allowed and exits to the hub', async ({ pages }) => {
+  26 |     await pages.contactAddress.saveAndContinue.click();
+  27 | 
+  28 |     await expect(pages.overview.heading).toBeVisible();
+  29 |     await expect(pages.page.getByRole('heading', { name: 'There is a problem' })).toHaveCount(0);
+  30 |   });
+  31 | 
+  32 |   test('offers no way to add an address', async ({ pages }) => {
+> 33 |     await expect(pages.page.getByRole('link', { name: /add.*address/i })).toHaveCount(0);
+     |                                                                           ^ Error: expect(locator).toHaveCount(expected) failed
+  34 |   });
+  35 | });
+  36 | 
+```

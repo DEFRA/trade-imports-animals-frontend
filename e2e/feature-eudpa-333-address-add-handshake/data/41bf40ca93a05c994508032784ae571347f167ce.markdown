@@ -1,0 +1,281 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/plants/arrival.spec.ts >> High-risk plants arrival section >> a potato notification is asked the time and the place of landing as well as the date
+- Location: tests/e2e/features/plants/arrival.spec.ts:233:3
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: getByRole('heading', { name: 'Intended destination', exact: true, level: 1 })
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" with timeout 5000ms
+  - waiting for getByRole('heading', { name: 'Intended destination', exact: true, level: 1 })
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- banner:
+  - link "GOV.UK":
+    - /url: https://www.gov.uk/
+    - img "GOV.UK"
+  - region "Service information":
+    - link "Import notification service":
+      - /url: /
+    - navigation "Menu":
+      - list:
+        - listitem:
+          - link "Dashboard":
+            - /url: /
+            - strong: Dashboard
+        - listitem:
+          - link "Address book":
+            - /url: "#"
+        - listitem:
+          - link "Manage account":
+            - /url: "#"
+        - listitem:
+          - link "Log out":
+            - /url: /auth/sign-out
+- paragraph:
+  - strong: Alpha
+  - text: This is a new service. Help us improve it and
+  - link "give your feedback by email":
+    - /url: mailto:APHAServiceDesk@apha.gov.uk
+  - text: .
+- link "Back":
+  - /url: /notifications/GBN-HRP-26-QCQNQ1
+- main:
+  - strong: Draft
+  - text: GBN-HRP-26-QCQNQ1 Destination
+  - heading "Place of destination" [level=1]
+  - paragraph: Where the goods will be kept after arrival. This is where a plant health inspector may carry out a spot check.
+  - text: Search Name, address or country
+  - textbox "Search"
+  - button "Search"
+  - table "Showing 5 of 17 addresses":
+    - caption: Showing 5 of 17 addresses
+    - rowgroup:
+      - row "Select Name Address Country Actions":
+        - columnheader "Select"
+        - columnheader "Name"
+        - columnheader "Address"
+        - columnheader "Country"
+        - columnheader "Actions"
+    - rowgroup:
+      - row "Select Persistence Test Farm 1789127525408 Persistence Test Farm 1789127525408 1 Test Lane, Unit 2, Carlisle, Cumbria, CA1 1AA United Kingdom":
+        - cell "Select Persistence Test Farm 1789127525408":
+          - radio "Select Persistence Test Farm 1789127525408"
+          - text: Select Persistence Test Farm 1789127525408
+        - cell "Persistence Test Farm 1789127525408"
+        - cell "1 Test Lane, Unit 2, Carlisle, Cumbria, CA1 1AA"
+        - cell "United Kingdom"
+        - cell:
+          - group: View details for Persistence Test Farm 1789127525408
+      - row "Select Relisted Holding 1789127524982 Relisted Holding 1789127524982 3 Change Lane, Unit 9, Carlisle, Cumbria, CA1 3CC United Kingdom":
+        - cell "Select Relisted Holding 1789127524982":
+          - radio "Select Relisted Holding 1789127524982"
+          - text: Select Relisted Holding 1789127524982
+        - cell "Relisted Holding 1789127524982"
+        - cell "3 Change Lane, Unit 9, Carlisle, Cumbria, CA1 3CC"
+        - cell "United Kingdom"
+        - cell:
+          - group: View details for Relisted Holding 1789127524982
+      - row "Select Edit Test Farm 1789127524750 Renamed Edit Test Farm 1789127524750 Renamed 3 Change Lane, Carlisle, CA1 3CC United Kingdom":
+        - cell "Select Edit Test Farm 1789127524750 Renamed":
+          - radio "Select Edit Test Farm 1789127524750 Renamed"
+          - text: Select Edit Test Farm 1789127524750 Renamed
+        - cell "Edit Test Farm 1789127524750 Renamed"
+        - cell "3 Change Lane, Carlisle, CA1 3CC"
+        - cell "United Kingdom"
+        - cell:
+          - group: View details for Edit Test Farm 1789127524750 Renamed
+      - row "Select Cross User Farm 1789127523778 Cross User Farm 1789127523778 2 Test Lane, Carlisle, CA1 1AA United Kingdom":
+        - cell "Select Cross User Farm 1789127523778":
+          - radio "Select Cross User Farm 1789127523778"
+          - text: Select Cross User Farm 1789127523778
+        - cell "Cross User Farm 1789127523778"
+        - cell "2 Test Lane, Carlisle, CA1 1AA"
+        - cell "United Kingdom"
+        - cell:
+          - group: View details for Cross User Farm 1789127523778
+      - row "Select Import Co UK Import Co UK 20 Trade Road, London, EC1A 1BB United Kingdom":
+        - cell "Select Import Co UK":
+          - radio "Select Import Co UK"
+          - text: Select Import Co UK
+        - cell "Import Co UK"
+        - cell "20 Trade Road, London, EC1A 1BB"
+        - cell "United Kingdom"
+        - cell:
+          - group: View details for Import Co UK
+  - navigation "Pagination":
+    - list:
+      - listitem:
+        - link "Page 1":
+          - /url: /notifications/GBN-HRP-26-QCQNQ1/destinations/select?page=1
+          - text: "1"
+      - listitem:
+        - link "Page 2":
+          - /url: /notifications/GBN-HRP-26-QCQNQ1/destinations/select?page=2
+          - text: "2"
+      - listitem: ⋯
+      - listitem:
+        - link "Page 4":
+          - /url: /notifications/GBN-HRP-26-QCQNQ1/destinations/select?page=4
+          - text: "4"
+    - link "Next":
+      - /url: /notifications/GBN-HRP-26-QCQNQ1/destinations/select?page=2
+  - button "Save and continue"
+  - button "Save and return to overview"
+  - link "Cancel and return to overview":
+    - /url: /notifications/GBN-HRP-26-QCQNQ1
+- contentinfo:
+  - heading "Support links" [level=2]
+  - list:
+    - listitem:
+      - link "Privacy":
+        - /url: https://www.gov.uk/help/privacy-notice
+    - listitem:
+      - link "Cookies":
+        - /url: https://www.gov.uk/help/cookies
+    - listitem:
+      - link "Accessibility statement":
+        - /url: https://www.gov.uk/help/accessibility-statement
+  - text: All content is available under the
+  - link "Open Government Licence v3.0":
+    - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+  - text: ", except where otherwise stated"
+  - link "© Crown copyright":
+    - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  155 |     await plantsJourney.answerArrivalStatus(ALREADY_ARRIVED);
+  156 | 
+  157 |     await expect(pages.plantsArrivalDetails.dateQuestionLabelled(POST_ARRIVAL_DATE_LABEL)).toBeVisible();
+  158 |     await pages.plantsArrivalDetails.arrivalDate.fill(ARRIVED_ON);
+  159 |     await pages.plantsArrivalDetails.btnSaveAndContinue.click();
+  160 | 
+  161 |     // Reg 26(1) gives the notifier four days, but a notification made after
+  162 |     // them is late rather than void: nothing lower-bounds the date, so the
+  163 |     // service takes it and completes the row instead of refusing the save.
+  164 |     // Arrival-details is followed by the destination section, so Continue asks
+  165 |     // the next question — and this notification has already arrived, so it is
+  166 |     // asked where the consignment is being kept now.
+  167 |     await expect(pages.page).toHaveURL(pages.plantsPlaceOfDestination.expectedUrl(reference));
+  168 |     await expect(pages.plantsPlaceOfDestination.headingNamed(POST_ARRIVAL_DESTINATION_HEADING)).toBeVisible();
+  169 | 
+  170 |     await pages.plantsOverview.open(reference);
+  171 |     await expect(pages.plantsOverview.taskRow(ARRIVAL_TASK_ROW)).toContainText('Completed');
+  172 | 
+  173 |     await pages.plantsArrivalDetails.open(reference);
+  174 |     await expect(pages.plantsArrivalDetails.arrivalDate).toHaveValue(ARRIVED_ON);
+  175 |   });
+  176 | 
+  177 |   test('changing the answer from arrived to not arrived re-labels the question and keeps the date', async ({ pages, plantsJourney }) => {
+  178 |     const reference = await toArrivalStatus(plantsJourney);
+  179 |     await plantsJourney.answerArrivalStatus(ALREADY_ARRIVED);
+  180 |     await pages.plantsArrivalDetails.arrivalDate.fill(ARRIVED_ON);
+  181 |     await pages.plantsArrivalDetails.btnSaveAndContinue.click();
+  182 |     await expect(pages.page).toHaveURL(pages.plantsPlaceOfDestination.expectedUrl(reference));
+  183 | 
+  184 |     await pages.plantsArrivalStatus.open(reference);
+  185 |     await pages.plantsArrivalStatus.arrivalStatus(NOT_YET_ARRIVED).check();
+  186 |     await pages.plantsArrivalStatus.btnSaveAndContinue.click();
+  187 | 
+  188 |     // Every notification owes a date and both branches of the question ask for
+  189 |     // one, so `arrivalDate` is ungated: the new answer changes the sentence it
+  190 |     // is asked under and leaves the answer itself alone. Nothing takes it out
+  191 |     // of scope, so the engine has nothing to purge.
+  192 |     await expect(pages.page).toHaveURL(pages.plantsArrivalDetails.expectedUrl(reference));
+  193 |     await expect(pages.plantsArrivalDetails.dateQuestionLabelled(PRE_ARRIVAL_DATE_LABEL)).toBeVisible();
+  194 |     await expect(pages.plantsArrivalDetails.arrivalDate).toHaveValue(ARRIVED_ON);
+  195 |   });
+  196 | 
+  197 |   test('a date that names no day on the calendar is refused', async ({ pages, plantsJourney }) => {
+  198 |     const reference = await toArrivalStatus(plantsJourney);
+  199 |     await plantsJourney.answerArrivalStatus(NOT_YET_ARRIVED);
+  200 | 
+  201 |     await pages.plantsArrivalDetails.arrivalDate.fill(NOT_A_REAL_DATE);
+  202 |     await pages.plantsArrivalDetails.btnSaveAndContinue.click();
+  203 | 
+  204 |     // A missing date and an impossible one are different mistakes, so the page
+  205 |     // says which one was made rather than repeating the required message.
+  206 |     await expect(pages.page).toHaveURL(pages.plantsArrivalDetails.expectedUrl(reference));
+  207 |     await expect(pages.plantsArrivalDetails.errorSummary).toContainText(REAL_ARRIVAL_DATE_ERROR);
+  208 |     await expect(pages.plantsArrivalDetails.errorSummary).not.toContainText(ARRIVAL_DATE_ERROR);
+  209 |   });
+  210 | 
+  211 |   test('a potato notification is never asked the question and opens the arrival row on the details', async ({ pages, plantsJourney }) => {
+  212 |     const reference = await plantsJourney.startNotification();
+  213 |     await plantsJourney.chooseCommodityType(POTATOES);
+  214 |     await plantsJourney.addCommodityLine(SEED_POTATOES, potatoLine);
+  215 |     await plantsJourney.toOrigin();
+  216 | 
+  217 |     await pages.plantsOrigin.selectCountry(FRANCE);
+  218 |     await pages.plantsOrigin.btnSaveAndContinue.click();
+  219 | 
+  220 |     // Reg 24A gives the potato notification no post-arrival branch, so
+  221 |     // `arrivalStatus` is out of scope: the opening run passes the step over and
+  222 |     // lands on the details, the page every commodity type answers.
+  223 |     await expect(pages.page).toHaveURL(pages.plantsArrivalDetails.expectedUrl(reference));
+  224 |     await expect(pages.plantsArrivalDetails.dateQuestionLabelled(POTATO_DATE_LABEL)).toBeVisible();
+  225 | 
+  226 |     await pages.plantsOverview.open(reference);
+  227 |     await expect(pages.plantsOverview.taskRowLink(ARRIVAL_TASK_ROW)).toHaveAttribute(
+  228 |       'href',
+  229 |       pages.plantsArrivalDetails.expectedUrl(reference),
+  230 |     );
+  231 |   });
+  232 | 
+  233 |   test('a potato notification is asked the time and the place of landing as well as the date', async ({ pages, plantsJourney }) => {
+  234 |     const reference = await plantsJourney.startNotification();
+  235 |     await plantsJourney.chooseCommodityType(POTATOES);
+  236 |     await plantsJourney.addCommodityLine(SEED_POTATOES, potatoLine);
+  237 |     await plantsJourney.toOrigin();
+  238 |     await plantsJourney.toArrivalDetails(FRANCE);
+  239 | 
+  240 |     await pages.plantsArrivalDetails.btnSaveAndContinue.click();
+  241 | 
+  242 |     // All three are mandatory for potatoes, so an empty page names all three.
+  243 |     await expect(pages.plantsArrivalDetails.errorSummary).toContainText(ARRIVAL_DATE_ERROR);
+  244 |     await expect(pages.plantsArrivalDetails.errorSummary).toContainText(ARRIVAL_TIME_ERROR);
+  245 |     await expect(pages.plantsArrivalDetails.errorSummary).toContainText(PLACE_OF_LANDING_ERROR);
+  246 | 
+  247 |     await pages.plantsArrivalDetails.arrivalDate.fill(ARRIVING_ON);
+  248 |     await pages.plantsArrivalDetails.arrivalTime.fill(ARRIVING_AT);
+  249 |     await pages.plantsArrivalDetails.selectPlaceOfLanding(ABERDEEN_HARBOUR);
+  250 |     await pages.plantsArrivalDetails.btnSaveAndContinue.click();
+  251 | 
+  252 |     // Reg 24A gives potatoes no post-arrival branch, so the destination
+  253 |     // question is asked in its own state: the intended destination.
+  254 |     await expect(pages.page).toHaveURL(pages.plantsPlaceOfDestination.expectedUrl(reference));
+> 255 |     await expect(pages.plantsPlaceOfDestination.headingNamed(INTENDED_DESTINATION_HEADING)).toBeVisible();
+      |                                                                                             ^ Error: expect(locator).toBeVisible() failed
+  256 | 
+  257 |     await pages.plantsOverview.open(reference);
+  258 |     await expect(pages.plantsOverview.taskRow(ARRIVAL_TASK_ROW)).toContainText('Completed');
+  259 | 
+  260 |     await pages.plantsArrivalDetails.open(reference);
+  261 |     await expect(pages.plantsArrivalDetails.arrivalDate).toHaveValue(ARRIVING_ON);
+  262 |     await expect(pages.plantsArrivalDetails.arrivalTime).toHaveValue(ARRIVING_AT);
+  263 |     await expect(pages.plantsArrivalDetails.proposedPlaceOfLanding).toHaveValue(ABERDEEN_HARBOUR);
+  264 |   });
+  265 | });
+  266 | 
+```

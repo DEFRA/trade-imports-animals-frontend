@@ -1,0 +1,258 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/plants/journey.spec.ts >> High-risk plants full happy-path journeys >> ware potatoes from Portugal notified late: sign in, submit and view the saved notification
+- Location: tests/e2e/features/plants/journey.spec.ts:58:5
+
+# Error details
+
+```
+Error: expect(locator).toContainText(expected) failed
+
+Locator: locator('.govuk-summary-card').filter({ has: getByRole('heading', { name: 'Intended destination', exact: true }) })
+Expected substring: "Journey Nursery 2dde9c87-07d5-47c6-b275-bbbd3c0b6b19"
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toContainText" with timeout 5000ms
+  - waiting for locator('.govuk-summary-card').filter({ has: getByRole('heading', { name: 'Intended destination', exact: true }) })
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- banner:
+  - link "GOV.UK":
+    - /url: https://www.gov.uk/
+    - img "GOV.UK"
+  - region "Service information":
+    - link "Import notification service":
+      - /url: /
+    - navigation "Menu":
+      - list:
+        - listitem:
+          - link "Dashboard":
+            - /url: /
+            - strong: Dashboard
+        - listitem:
+          - link "Address book":
+            - /url: "#"
+        - listitem:
+          - link "Manage account":
+            - /url: "#"
+        - listitem:
+          - link "Log out":
+            - /url: /auth/sign-out
+- paragraph:
+  - strong: Alpha
+  - text: This is a new service. Help us improve it and
+  - link "give your feedback by email":
+    - /url: mailto:APHAServiceDesk@apha.gov.uk
+  - text: .
+- link "Back":
+  - /url: /notifications/GBN-HRP-26-65ZMNE
+- main:
+  - strong: Submitted
+  - text: GBN-HRP-26-65ZMNE
+  - heading "Check your answers" [level=1]
+  - region "Important":
+    - heading "Important" [level=2]
+    - heading "Your notification was made outside the required timing" [level=2]
+    - paragraph: Notifications for potatoes must be made at least 2 days before the expected date of arrival. It has still been accepted and recorded.
+  - heading "1. About the consignment" [level=2]
+  - heading "Import details" [level=3]
+  - term: What are you importing?
+  - definition: Potatoes (seed or ware)
+  - term: Country of origin
+  - definition: Portugal
+  - heading "Commodity 1" [level=3]
+  - term: Category
+  - definition: Ware potatoes
+  - term: Variety
+  - definition: Maris Piper
+  - term: Quantity
+  - definition: "250"
+  - term: Intended use
+  - definition: Eating
+  - heading "2. Arrival and destination" [level=2]
+  - heading "Arrival details" [level=3]
+  - term: Expected date of arrival
+  - definition: 10/09/2026
+  - term: Arrival time
+  - definition: 14:30
+  - term: Place of landing
+  - definition: Aberdeen Harbour (GB ABD)
+  - heading "Place of destination" [level=3]
+  - term: Name
+  - definition: Journey Nursery 2dde9c87-07d5-47c6-b275-bbbd3c0b6b19
+  - term: Address
+  - definition: 4 Nursery Lane, Perth, PH1 5EX, United Kingdom
+  - term: Telephone number
+  - definition: 01738 555 0143
+  - term: Email address
+  - definition: journey@example.co.uk
+  - heading "3. Consignment parties" [level=2]
+  - heading "Identification numbers" [level=3]
+  - term: Identification number of the producer of the potatoes
+  - definition: P123
+  - term: Crop identification number
+  - definition: C123
+  - term: Consignment number (optional)
+  - definition: JOURNEY_123
+  - heading "Contact" [level=3]
+  - term: Name
+  - definition: Journey Nursery 2dde9c87-07d5-47c6-b275-bbbd3c0b6b19
+  - term: Address
+  - definition: 4 Nursery Lane, Perth, PH1 5EX, United Kingdom
+  - term: Telephone number
+  - definition: 01738 555 0143
+  - term: Email address
+  - definition: journey@example.co.uk
+  - button "Delete notification"
+- contentinfo:
+  - heading "Support links" [level=2]
+  - list:
+    - listitem:
+      - link "Privacy":
+        - /url: https://www.gov.uk/help/privacy-notice
+    - listitem:
+      - link "Cookies":
+        - /url: https://www.gov.uk/help/cookies
+    - listitem:
+      - link "Accessibility statement":
+        - /url: https://www.gov.uk/help/accessibility-statement
+  - text: All content is available under the
+  - link "Open Government Licence v3.0":
+    - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+  - text: ", except where otherwise stated"
+  - link "© Crown copyright":
+    - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  34  |   },
+  35  |   {
+  36  |     name: 'spruce from Germany with species and EPPO code',
+  37  |     type: PLANTS,
+  38  |     category: PLANTS,
+  39  |     country: 'Germany',
+  40  |     late: false,
+  41  |     line: { Genus: 'Picea (spruce)', Species: 'Picea abies', 'Commodity code': '0602 20 20', Quantity: '40', 'EPPO code': 'PIEAB' },
+  42  |   },
+  43  |   {
+  44  |     name: 'conifer wood without bark from Italy with treatments',
+  45  |     type: 'Wood and cut trees',
+  46  |     category: 'Conifer wood without bark (from Italy, France, Portugal or Spain)',
+  47  |     country: 'Italy',
+  48  |     late: false,
+  49  |     line: { 'Commodity code': '4403 21 10', Quantity: '12', 'Phytosanitary treatments applied': 'Kiln dried (KD)' },
+  50  |   },
+  51  | ];
+  52  | 
+  53  | // These full walks include sign-in even when worker session reuse is enabled.
+  54  | test.use({ storageState: COLD_START });
+  55  | 
+  56  | test.describe('High-risk plants full happy-path journeys', { tag: '@integration' }, () => {
+  57  |   for (const scenario of scenarios) {
+  58  |     test(`${scenario.name}: sign in, submit and view the saved notification`, async ({ pages, plantsJourney, addressBookApi }) => {
+  59  |       const address = await addressBookApi.createAddress({
+  60  |         name: `Journey Nursery ${randomUUID()}`,
+  61  |         addressLine1: '4 Nursery Lane',
+  62  |         townOrCity: 'Perth',
+  63  |         postcode: 'PH1 5EX',
+  64  |         countryCode: 'GB',
+  65  |         phone: '01738 555 0143',
+  66  |         email: 'journey@example.co.uk',
+  67  |       });
+  68  |       // Relative London dates avoid fixed fixtures expiring and timing boundaries.
+  69  |       const date = new Date();
+  70  |       date.setUTCDate(date.getUTCDate() + (scenario.late ? -1 : 7));
+  71  |       const arrivalDate = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London' }).format(date);
+  72  |       const reference = await plantsJourney.startNotification();
+  73  |       expect(reference).toMatch(/^GBN-HRP-\d{2}-[0-9A-HJ-KM-NP-TV-Z]{6}$/);
+  74  |       await plantsJourney.chooseCommodityType(scenario.type);
+  75  |       await plantsJourney.addCommodityLine(scenario.category, scenario.line);
+  76  |       await plantsJourney.toOrigin();
+  77  |       if (scenario.type === POTATOES) {
+  78  |         await plantsJourney.toArrivalDetails(scenario.country);
+  79  |         await pages.plantsArrivalDetails.arrivalTime.fill('14:30');
+  80  |         await pages.plantsArrivalDetails.selectPlaceOfLanding('Aberdeen Harbour (GB ABD)');
+  81  |       } else {
+  82  |         await plantsJourney.toArrivalStatus(scenario.country);
+  83  |         await plantsJourney.answerArrivalStatus('No, it has not arrived yet');
+  84  |       }
+  85  |       await pages.plantsArrivalDetails.arrivalDate.fill(arrivalDate);
+  86  |       await pages.plantsArrivalDetails.btnSaveAndContinue.click();
+  87  |       await pages.plantsPlaceOfDestination.searchFor(address.name);
+  88  |       await pages.plantsPlaceOfDestination.address(address.name).check();
+  89  |       await pages.plantsPlaceOfDestination.btnSaveAndContinue.click();
+  90  |       if (scenario.type !== POTATOES) {
+  91  |         await pages.plantsConsignorSelect.searchFor(address.name);
+  92  |         await pages.plantsConsignorSelect.address(address.name).check();
+  93  |         await pages.plantsConsignorSelect.btnSaveAndContinue.click();
+  94  |       }
+  95  |       if (scenario.type === POTATOES) {
+  96  |         await pages.plantsIdentificationNumbers.producer.fill('P123');
+  97  |         await pages.plantsIdentificationNumbers.crop.fill('C123');
+  98  |       } else if (scenario.type === PLANTS) {
+  99  |         await pages.plantsIdentificationNumbers.supplier.fill('DE-12345');
+  100 |       }
+  101 |       await pages.plantsIdentificationNumbers.consignment.fill('JOURNEY_123');
+  102 |       await pages.plantsIdentificationNumbers.btnSaveAndContinue.click();
+  103 |       await pages.plantsConsignmentContactSelect.address(address.name).check();
+  104 |       await pages.plantsConsignmentContactSelect.btnSaveAndContinue.click();
+  105 |       await expect(pages.page).toHaveURL(pages.plantsOverview.expectedUrl(reference));
+  106 |       await pages.plantsOverview.taskRowLink('Check and submit').click();
+  107 |       await expect(pages.plantsNotificationView.heading).toBeVisible();
+  108 |       await pages.plantsNotificationView.btnContinue.click();
+  109 |       await expect(pages.page).toHaveURL(pages.plantsDeclaration.expectedUrl(reference));
+  110 |       await pages.plantsDeclaration.checkbox.check();
+  111 |       await pages.plantsDeclaration.btnContinue.click();
+  112 | 
+  113 |       await expect(pages.page).toHaveURL(pages.plantsConfirmation.expectedUrl(reference));
+  114 |       await expect(pages.plantsConfirmation.heading).toBeVisible();
+  115 |       await expect(pages.plantsConfirmation.panel).toContainText(reference);
+  116 |       await expect(pages.plantsConfirmation.lateBanner).toHaveCount(scenario.late ? 1 : 0);
+  117 |       await pages.plantsConfirmation.viewNotification.click();
+  118 |       // Reload proves the submitted answers survive a fresh read.
+  119 |       await pages.page.reload();
+  120 |       await expect(pages.page).toHaveURL(pages.plantsNotificationView.expectedUrl(reference));
+  121 |       await expect(pages.plantsNotificationView.heading).toBeVisible();
+  122 |       await expect(pages.plantsOverview.reference).toHaveText(reference);
+  123 |       await expect(pages.plantsOverview.statusTag).toHaveText('Submitted');
+  124 |       await expect(pages.plantsNotificationView.changeLinks).toHaveCount(0);
+  125 |       await expect(pages.plantsNotificationView.btnContinue).toHaveCount(0);
+  126 |       await expect(pages.plantsNotificationView.lateBanner).toHaveCount(scenario.late ? 1 : 0);
+  127 |       await expect(pages.plantsNotificationView.card('Import details')).toContainText(scenario.country);
+  128 |       const commodity = pages.plantsNotificationView.card('Commodity 1');
+  129 |       await expect(commodity).toContainText(scenario.category);
+  130 |       for (const value of Object.values(scenario.line)) {
+  131 |         await expect(commodity).toContainText(value);
+  132 |       }
+  133 |       await expect(pages.plantsNotificationView.card('Arrival details')).toContainText(arrivalDate);
+> 134 |       await expect(pages.plantsNotificationView.card('Intended destination')).toContainText(address.name);
+      |                                                                               ^ Error: expect(locator).toContainText(expected) failed
+  135 |       await expect(pages.plantsNotificationView.card('Identification numbers')).toContainText('JOURNEY_123');
+  136 |       await expect(pages.plantsNotificationView.card('Contact')).toContainText(address.name);
+  137 |       await expect(pages.plantsNotificationView.card('Contact')).toContainText(address.email);
+  138 |       if (scenario.type !== POTATOES) {
+  139 |         await expect(pages.plantsNotificationView.card('Consignor or exporter')).toContainText(address.name);
+  140 |       }
+  141 |       await pages.plantsDashboard.open();
+  142 |       await pages.plantsDashboard.searchForReference(reference);
+  143 |       await expect(pages.plantsDashboard.notificationCard(reference)).toBeVisible();
+  144 |       await expect(pages.plantsDashboard.statusTag(reference)).toHaveText('Submitted');
+  145 |     });
+  146 |   }
+  147 | });
+  148 | 
+```
