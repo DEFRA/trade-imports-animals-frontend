@@ -17,7 +17,7 @@ export const documentsSection = (journeyId, answers, evaluation, readOnly) => ({
   heading: copy.sections.documents,
   groups: [
     {
-      heading: null,
+      heading: copy.groups.uploadDocuments,
       cards: [documentsCard(journeyId, answers, evaluation, readOnly)]
     }
   ]

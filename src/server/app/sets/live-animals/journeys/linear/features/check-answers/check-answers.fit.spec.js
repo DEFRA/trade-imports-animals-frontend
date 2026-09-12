@@ -105,6 +105,56 @@ test.describe('check-answers feature summary rows', () => {
   })
 })
 
+// Design release 1 lays the review out as six numbered sections mirroring the
+// task list, with a subsection heading above every card. A brand-new
+// notification shows the sections that always stand: the commodity group waits
+// on a line and the transit-countries group on an overland arrival.
+test.describe('check-answers feature section structure', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('numbers the six sections in order', async ({ page }) => {
+    await startNotification(page)
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    // Numbered, so the section headings are the level-2 headings that open
+    // with a number — the error summary, the submit heading and the footer's
+    // own level-2 headings are not part of the spine.
+    await expect(
+      page.getByRole('heading', { level: 2 }).filter({ hasText: /^\d\.\s/ })
+    ).toHaveText([
+      copy.sections.aboutTheConsignment,
+      copy.sections.descriptionOfTheGoods,
+      copy.sections.transportAndArrival,
+      copy.sections.documents,
+      copy.sections.consignmentParties,
+      copy.sections.contactAddress
+    ])
+  })
+
+  test('heads every card with its own subsection heading', async ({ page }) => {
+    await startNotification(page)
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    // Every group carries a heading, so each card title drops to level 4 and
+    // the level-3 headings are exactly the subsection headings.
+    await expect(page.getByRole('heading', { level: 3 })).toHaveText([
+      copy.groups.whereFrom,
+      copy.groups.mainReasonForImport,
+      copy.groups.additionalDetails,
+      copy.groups.arrivalDetails,
+      copy.groups.transportDetails,
+      copy.groups.uploadDocuments,
+      copy.groups.rolesAndAddresses,
+      copy.groups.contactAddress
+    ])
+    await expect(page.getByRole('heading', { level: 4 })).toHaveCount(
+      await page.locator('.govuk-summary-card').count()
+    )
+  })
+})
+
 test.describe('check-answers feature documents section', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -177,24 +227,22 @@ test.describe('check-answers feature exit answers', () => {
       page.getByText(copy.rows.exitDate, { exact: true })
     ).toHaveCount(0)
 
-    // The exit answers sit in the Additional animal details card, and that card
-    // — not the row — carries the one Change link. That link opens the
-    // additional-details page, which does not collect these two answers: the
-    // destination country and the port of exit come from the reason-for-import
-    // page, so they cannot be changed from the review at all. Tracked as an
-    // open question on inc-146.
+    // The exit answers sit in the Reason for import card, and that card — not
+    // the row — carries the one Change link. Every row on the card comes from
+    // the reason-for-import page, so the link reaches all of them.
     await expect(
       rowFor(page, copy.rows.destinationCountry).getByRole('link')
     ).toHaveCount(0)
 
-    const changeLink = cardChangeLink(
-      page,
-      copy.hidden.cards.additionalAnimalDetails
-    )
+    const changeLink = cardChangeLink(page, copy.hidden.cards.reasonForImport)
     await expect(changeLink).toHaveAttribute(
       'href',
-      /\/notifications\/[^/]+\/additional-details\?change=1$/
+      /\/notifications\/[^/]+\/import-reason\?change=1$/
     )
+
+    await changeLink.click()
+
+    await expect(page).toHaveURL(/\/import-reason\?change=1$/)
   })
 
   test('shows the exit date and port of exit a temporary admission collected', async ({

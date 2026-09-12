@@ -35,19 +35,30 @@ export const copy = {
   },
   sections: {
     aboutTheConsignment: '1. Am y llwyth',
-    movement: '2. Symudiad',
-    addresses: '3. Cyfeiriadau',
-    documents: '4. Dogfennau'
+    descriptionOfTheGoods: '2. Disgrifiad o’r nwyddau',
+    transportAndArrival: '3. Cludiant a chyrraedd',
+    documents: '4. Dogfennau',
+    consignmentParties: '5. Partïon y llwyth',
+    contactAddress: '6. Cyfeiriad cyswllt'
   },
   groups: {
-    consignmentDetails: 'Manylion y llwyth',
+    whereFrom: 'O ble mae’r llwyth hwn yn dod?',
+    mainReasonForImport: 'Prif reswm dros fewnforio',
     commodityDetails: 'Manylion y nwyddau',
-    species: 'Rhywogaeth'
+    additionalDetails: 'Manylion ychwanegol',
+    arrivalDetails: 'Manylion cyrraedd',
+    transitCountries: 'Gwledydd tramwy',
+    transportDetails: 'Manylion cludo',
+    uploadDocuments: 'Uwchlwytho dogfennau',
+    rolesAndAddresses: 'Rolau a chyfeiriadau',
+    contactAddress: 'Cyfeiriad cyswllt ar gyfer y llwyth hwn'
   },
   cards: {
     importDetails: 'Manylion mewnforio',
+    reasonForImport: 'Rheswm dros fewnforio',
     additionalAnimalDetails: 'Manylion ychwanegol am yr anifeiliaid',
     arrivalDetails: 'Manylion cyrraedd',
+    transitCountries: 'Gwledydd tramwy',
     transportDetails: 'Manylion cludo',
     rolesAndAddresses: 'Rolau a chyfeiriadau',
     contactAddress: 'Cyfeiriad cyswllt ar gyfer y llwyth hwn',
@@ -103,9 +114,10 @@ export const copy = {
   hidden: {
     cards: {
       importDetails: 'manylion mewnforio',
+      reasonForImport: 'rheswm dros fewnforio',
       additionalAnimalDetails: 'manylion ychwanegol am yr anifeiliaid',
       arrivalDetails: 'manylion cyrraedd',
-      transitCountries: 'gwledydd y bydd y llwyth yn teithio drwyddynt',
+      transitCountries: 'gwledydd tramwy',
       transportDetails: 'manylion cludo',
       rolesAndAddresses: 'rolau a chyfeiriadau',
       contactAddress: 'cyfeiriad cyswllt ar gyfer y llwyth hwn',
@@ -122,10 +134,12 @@ export const copy = {
     prefix: 'Gwall:',
     cards: {
       importDetails: 'Cwblhewch y manylion mewnforio',
+      reasonForImport: 'Cwblhewch y rheswm dros fewnforio',
       additionalAnimalDetails:
         'Cwblhewch y manylion ychwanegol am yr anifeiliaid',
       species: 'Cwblhewch fanylion y rhywogaeth',
       arrivalDetails: 'Cwblhewch y manylion cyrraedd',
+      transitCountries: 'Cwblhewch y gwledydd tramwy',
       transportDetails: 'Cwblhewch y manylion cludo',
       rolesAndAddresses: 'Cwblhewch y rolau a’r cyfeiriadau',
       contactAddress: 'Cwblhewch y cyfeiriad cyswllt ar gyfer y llwyth hwn',

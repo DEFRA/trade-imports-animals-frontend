@@ -32,21 +32,35 @@ export const copy = {
     successBody:
       'The amendment has been cancelled and the submitted version restored.'
   },
+  // The six numbered sections of design release 1, in its order. The number is
+  // part of the heading, so renumbering means editing these strings.
   sections: {
     aboutTheConsignment: '1. About the consignment',
-    movement: '2. Movement',
-    addresses: '3. Addresses',
-    documents: '4. Documents'
+    descriptionOfTheGoods: '2. Description of the goods',
+    transportAndArrival: '3. Transport and arrival',
+    documents: '4. Documents',
+    consignmentParties: '5. Consignment parties',
+    contactAddress: '6. Contact address'
   },
+  // The subsection heading that stands above each card. Every card has one.
   groups: {
-    consignmentDetails: 'Consignment details',
+    whereFrom: 'Where is this consignment coming from?',
+    mainReasonForImport: 'Main reason for import',
     commodityDetails: 'Commodity details',
-    species: 'Species'
+    additionalDetails: 'Additional details',
+    arrivalDetails: 'Arrival details',
+    transitCountries: 'Transit countries',
+    transportDetails: 'Transport details',
+    uploadDocuments: 'Upload documents',
+    rolesAndAddresses: 'Roles and addresses',
+    contactAddress: 'Contact address for this consignment'
   },
   cards: {
     importDetails: 'Import details',
+    reasonForImport: 'Reason for import',
     additionalAnimalDetails: 'Additional animal details',
     arrivalDetails: 'Arrival details',
+    transitCountries: 'Transit countries',
     transportDetails: 'Transport details',
     rolesAndAddresses: 'Roles and addresses',
     contactAddress: 'Contact address for this consignment',
@@ -107,9 +121,10 @@ export const copy = {
   hidden: {
     cards: {
       importDetails: 'import details',
+      reasonForImport: 'reason for import',
       additionalAnimalDetails: 'additional animal details',
       arrivalDetails: 'arrival details',
-      transitCountries: 'countries the consignment will travel through',
+      transitCountries: 'transit countries',
       transportDetails: 'transport details',
       rolesAndAddresses: 'roles and addresses',
       contactAddress: 'contact address for this consignment',
@@ -129,9 +144,11 @@ export const copy = {
     // a trader reading either sees the same words.
     cards: {
       importDetails: 'Complete import details',
+      reasonForImport: 'Complete reason for import',
       additionalAnimalDetails: 'Complete additional animal details',
       species: 'Complete species details',
       arrivalDetails: 'Complete arrival details',
+      transitCountries: 'Complete transit countries',
       transportDetails: 'Complete transport details',
       rolesAndAddresses: 'Complete roles and addresses',
       contactAddress: 'Complete contact address for this consignment',

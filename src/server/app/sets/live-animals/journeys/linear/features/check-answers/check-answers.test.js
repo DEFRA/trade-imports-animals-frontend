@@ -93,12 +93,15 @@ const CONSIGNOR_NAME = 'Astra Rosales'
 const CONSIGNOR_ADDRESS_ID = 'astra-rosales'
 const COW_CARD_TITLE = 'Cow (0102) — Bos taurus'
 const IMPORT_DETAILS_CARD = 'Import details'
+const REASON_FOR_IMPORT_CARD = 'Reason for import'
 const ADDITIONAL_ANIMAL_DETAILS_CARD = 'Additional animal details'
 const ARRIVAL_DETAILS_CARD = 'Arrival details'
+const TRANSIT_COUNTRIES_CARD = 'Transit countries'
 const TRANSPORT_DETAILS_CARD = 'Transport details'
 const ROLES_AND_ADDRESSES_CARD = 'Roles and addresses'
 const CONTACT_ADDRESS_CARD = 'Contact address for this consignment'
 const UPLOADED_DOCUMENTS_CARD = 'Uploaded documents'
+const TRANSPORT_AND_ARRIVAL_ANCHOR = 'transport-and-arrival'
 const COUNTRY_OF_ORIGIN_KEY = 'Country of origin'
 const PURPOSE_IN_MARKET_KEY = 'Purpose in the market'
 const REGION_CODE_KEY = 'Region of origin code'
@@ -243,18 +246,88 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
   })
 })
 
-describe(`${SUITE} — fully-populated notification`, () => {
+// Design release 1 lays the review out as six numbered sections mirroring the
+// task list, with a subsection heading above every card. The numbers are part
+// of the heading copy, so the order here and the numbering there have to agree.
+describe(`${SUITE} — section and subsection headings`, () => {
   setupCheckAnswersEngine()
 
   it('Should render the numbered design sections in order', async () => {
     const sections = await sectionsFor(fullSeed)
     expect(sections.map((section) => section.heading)).toEqual([
       '1. About the consignment',
-      '2. Movement',
-      '3. Addresses',
-      '4. Documents'
+      '2. Description of the goods',
+      '3. Transport and arrival',
+      '4. Documents',
+      '5. Consignment parties',
+      '6. Contact address'
     ])
   })
+
+  // No group reaches the template without a heading — a null one would silently
+  // drop its cards straight under the numbered heading, which is what design
+  // release 1 does not do.
+  it('Should head every group with a subsection heading', async () => {
+    const groups = (await sectionsFor(fullSeed)).flatMap(
+      (section) => section.groups
+    )
+
+    expect(groups.length).toBeGreaterThan(0)
+    for (const group of groups) {
+      expect(typeof group.heading, JSON.stringify(group.heading)).toBe('string')
+    }
+  })
+
+  it('Should name the subsection headings design release 1 gives each card', async () => {
+    const sections = await sectionsFor(fullSeed)
+
+    expect(
+      sections.flatMap((section) =>
+        section.groups.map((group) => group.heading)
+      )
+    ).toEqual([
+      'Where is this consignment coming from?',
+      'Main reason for import',
+      'Commodity details',
+      'Additional details',
+      ARRIVAL_DETAILS_CARD,
+      TRANSIT_COUNTRIES_CARD,
+      TRANSPORT_DETAILS_CARD,
+      'Upload documents',
+      ROLES_AND_ADDRESSES_CARD,
+      CONTACT_ADDRESS_CARD
+    ])
+  })
+
+  // Which numbered section a subsection sits under is the whole substance of
+  // design release 1's grouping, and a flattened list cannot see it move.
+  it('Should place each subsection under the numbered section that owns it', async () => {
+    const sections = await sectionsFor(fullSeed)
+
+    expect(
+      sections.map((section) => [
+        section.anchor,
+        section.groups.map((group) => group.heading)
+      ])
+    ).toEqual([
+      [
+        'about-the-consignment',
+        ['Where is this consignment coming from?', 'Main reason for import']
+      ],
+      ['description-of-the-goods', ['Commodity details', 'Additional details']],
+      [
+        TRANSPORT_AND_ARRIVAL_ANCHOR,
+        [ARRIVAL_DETAILS_CARD, TRANSIT_COUNTRIES_CARD, TRANSPORT_DETAILS_CARD]
+      ],
+      ['documents-section', ['Upload documents']],
+      ['consignment-parties', [ROLES_AND_ADDRESSES_CARD]],
+      ['contact-address-section', [CONTACT_ADDRESS_CARD]]
+    ])
+  })
+})
+
+describe(`${SUITE} — fully-populated notification`, () => {
+  setupCheckAnswersEngine()
 
   it('Should resolve service-backed labels for coded answers', async () => {
     const rows = rowsOf(await sectionsFor(fullSeed))
@@ -391,14 +464,14 @@ describe(`${SUITE} — fully-populated notification`, () => {
   })
 
   // Design release 1 puts the Change links in each card's heading and none on a
-  // row, so the page offers links per card rather than one per answer. A card
-  // normally carries one; arrival details carries a second for the conditional
-  // transit-countries page, which its own test pins.
+  // row, so the page offers links per card rather than one per answer. Exactly
+  // one per card: a conditional second page gets its own headed card with its
+  // own link, rather than a second link on the card beside it.
   it('Should give every card a Change action in its heading and no row any action', async () => {
     const sections = await sectionsFor(fullSeed)
 
     for (const card of cardsOf(sections)) {
-      expect(card.actions.items.length, card.title).toBeGreaterThanOrEqual(1)
+      expect(card.actions.items, card.title).toHaveLength(1)
     }
     expect(rowActionsOf(sections)).toEqual([])
   })
@@ -455,33 +528,98 @@ describe(`${SUITE} — fully-populated notification`, () => {
   })
 })
 
-// The arrival-details card's rows span two pages, so its heading carries a
-// second Change link while the transited-countries row stands — the card is
-// marked incomplete for a missing transited-countries answer, and the trader
-// has to be able to reach the page that collects it.
-describe(`${SUITE} — arrival-details change links`, () => {
+// Design release 1 gives the countries a consignment travels through their own
+// headed card rather than a row inside arrival details. They are collected on
+// their own page and asked for only on an overland arrival, so the card stands
+// exactly while the answer is in scope and carries the link to that page.
+describe(`${SUITE} — transit countries`, () => {
   setupCheckAnswersEngine()
 
-  it('Should give the arrival-details card a Change link to the transit-countries page when transited countries apply', async () => {
+  it('Should build the transit-countries card under its own heading when transited countries apply', async () => {
     const sections = await sectionsFor(fullSeed)
-    const items = cardByTitle(sections, ARRIVAL_DETAILS_CARD).actions.items
+    const transport = sections.find(
+      (section) => section.anchor === TRANSPORT_AND_ARRIVAL_ANCHOR
+    )
 
-    expect(items).toHaveLength(2)
-    expect(items[0].href).toMatch(/\/port-of-entry\?change=1$/)
-    expect(items[1].href).toMatch(/\/transit-countries\?change=1$/)
-    expect(items[1].visuallyHiddenText).toBe(
+    expect(transport.groups.map((group) => group.heading)).toEqual([
+      ARRIVAL_DETAILS_CARD,
+      TRANSIT_COUNTRIES_CARD,
+      TRANSPORT_DETAILS_CARD
+    ])
+    expect(
+      valueOf(
+        cardByTitle(sections, TRANSIT_COUNTRIES_CARD).rows,
+        TRANSITED_COUNTRIES_KEY
+      )
+    ).toBe('France, Belgium')
+  })
+
+  it('Should give the transit-countries card its own Change link to the page that collects it', async () => {
+    const items = cardByTitle(
+      await sectionsFor(fullSeed),
+      TRANSIT_COUNTRIES_CARD
+    ).actions.items
+
+    expect(items).toHaveLength(1)
+    expect(items[0].href).toMatch(/\/transit-countries\?change=1$/)
+    expect(items[0].visuallyHiddenText).toBe(
       copyEn.hidden.cards.transitCountries
     )
   })
 
-  it('Should give the arrival-details card a single Change link when transited countries do not apply', async () => {
+  it('Should leave the arrival-details card one Change link and no transited-countries row', async () => {
+    const card = cardByTitle(await sectionsFor(fullSeed), ARRIVAL_DETAILS_CARD)
+
+    expect(card.actions.items).toHaveLength(1)
+    expect(card.actions.items[0].href).toMatch(/\/port-of-entry\?change=1$/)
+    expect(keysOf(card.rows)).not.toContain(TRANSITED_COUNTRIES_KEY)
+  })
+
+  it('Should drop the transit-countries card and its heading when transited countries do not apply', async () => {
     const sections = await sectionsFor({
       ...fullSeed,
       meansOfTransport: 'AIRPLANE'
     })
-    const card = cardByTitle(sections, ARRIVAL_DETAILS_CARD)
+    const transport = sections.find(
+      (section) => section.anchor === TRANSPORT_AND_ARRIVAL_ANCHOR
+    )
 
+    expect(transport.groups.map((group) => group.heading)).toEqual([
+      ARRIVAL_DETAILS_CARD,
+      TRANSPORT_DETAILS_CARD
+    ])
+    expect(keysOf(rowsOf(sections))).not.toContain(TRANSITED_COUNTRIES_KEY)
+  })
+})
+
+// Design release 1 gives the reason for import a card of its own rather than
+// folding it in among the animal details, and every row on it comes from the
+// reason-for-import page — so unlike the card that used to hold them, this one
+// can offer a Change link that reaches them all.
+describe(`${SUITE} — reason-for-import card`, () => {
+  setupCheckAnswersEngine()
+
+  it('Should carry the reason and the purpose, and link to the page that collects them', async () => {
+    const card = cardByTitle(
+      await sectionsFor(fullSeed),
+      REASON_FOR_IMPORT_CARD
+    )
+
+    expect(valueOf(card.rows, copyEn.rows.reasonForImport)).toBe(
+      'Internal market'
+    )
+    expect(valueOf(card.rows, PURPOSE_IN_MARKET_KEY)).toBe('Breeding')
     expect(card.actions.items).toHaveLength(1)
+    expect(card.actions.items[0].href).toMatch(/\/import-reason\?change=1$/)
+  })
+
+  it('Should leave the additional-animal-details card only the answers its own page collects', async () => {
+    const card = cardByTitle(
+      await sectionsFor(fullSeed),
+      ADDITIONAL_ANIMAL_DETAILS_CARD
+    )
+
+    expect(keysOf(card.rows)).toEqual([copyEn.rows.certifiedFor, UNWEANED_KEY])
   })
 })
 
@@ -678,10 +816,11 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe(NOT_PROVIDED)
   })
 
-  // The exit answers are collected on the reason-for-import page, but they are
-  // shown inside the Additional animal details card, whose one Change link goes
-  // to the page it is named for. No row carries a link of its own.
-  it('Should leave every exit row without a Change link of its own', async () => {
+  // The exit answers sit on the reason-for-import card, the card whose one
+  // Change link reaches the page that collects them. That pairing is what makes
+  // a card without row links changeable at all, so pin the rows and the link
+  // together rather than either on its own.
+  it('Should show every exit row on the reason-for-import card, whose one Change link reaches them', async () => {
     const sections = await sectionsFor(
       reasonSeed({
         reasonForImport: 'temporaryAdmissionHorses',
@@ -689,13 +828,13 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
         portOfExit: 'GB DVR'
       })
     )
-    const rows = rowsOf(sections)
+    const card = cardByTitle(sections, REASON_FOR_IMPORT_CARD)
 
-    expect(keysOf(rows)).toContain(EXIT_DATE_KEY)
-    expect(keysOf(rows)).toContain(PORT_OF_EXIT_KEY)
+    expect(keysOf(card.rows)).toContain(EXIT_DATE_KEY)
+    expect(keysOf(card.rows)).toContain(PORT_OF_EXIT_KEY)
     expect(rowActionsOf(sections)).toEqual([])
-    expect(cardChangeHrefOf(sections, ADDITIONAL_ANIMAL_DETAILS_CARD)).toMatch(
-      /\/additional-details\?change=1$/
+    expect(cardChangeHrefOf(sections, REASON_FOR_IMPORT_CARD)).toMatch(
+      /\/import-reason\?change=1$/
     )
   })
 })
@@ -1042,8 +1181,9 @@ describe(`${SUITE} — the unfinished notification`, () => {
   it('Should head a brand-new draft with one entry per unfinished card, in page order', async () => {
     expect(await textsFor({})).toEqual([
       'Complete import details',
-      'Complete additional animal details',
+      'Complete reason for import',
       SPECIES_INCOMPLETE,
+      'Complete additional animal details',
       'Complete arrival details',
       'Complete transport details',
       'Complete roles and addresses',
@@ -1118,10 +1258,10 @@ describe(`${SUITE} — the unfinished notification`, () => {
       (item) => item.text === SPECIES_INCOMPLETE
     )
 
-    expect(entry.href).toBe('#about-the-consignment')
+    expect(entry.href).toBe('#description-of-the-goods')
     expect(
       view.context.sections.some(
-        (section) => section.anchor === 'about-the-consignment'
+        (section) => section.anchor === 'description-of-the-goods'
       )
     ).toBe(true)
   })
@@ -1153,13 +1293,34 @@ describe(`${SUITE} — the unfinished notification`, () => {
   // still emit "Complete <card>" with an href pointing at nothing. `species` is
   // the deliberate exception — it anchors to a section heading, not a card.
   it('Should build a card for every REVIEW_CARDS entry that anchors to one', async () => {
-    const sections = await sectionsFor({})
+    // A fully-populated seed rather than an empty draft: transit countries are
+    // the one card built conditionally, and they apply to an overland arrival.
+    const sections = await sectionsFor(fullSeed)
     const builtIds = cardsOf(sections).map((card) => card.id)
     const anchoredIds = REVIEW_CARDS.filter(
       (card) => card.id !== 'species'
     ).map((card) => card.id)
 
     expect(builtIds).toEqual(expect.arrayContaining(anchoredIds))
+  })
+
+  // The transit-countries card stands only while the answer is in scope, so a
+  // summary entry for it on a draft that never asked the question would point
+  // at an anchor the page does not carry. Its task row is NA out of scope,
+  // which is what keeps the two in step.
+  it('Should anchor every summary entry to an id the page carries', async () => {
+    const summary = await summaryFor({})
+    const sections = await sectionsFor({})
+    const ids = [
+      ...sections.map((section) => section.anchor),
+      ...cardsOf(sections)
+        .map((card) => card.anchor)
+        .filter(Boolean)
+    ]
+
+    for (const entry of summary.errorList) {
+      expect(ids, entry.text).toContain(entry.href.slice(1))
+    }
   })
 })
 
