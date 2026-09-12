@@ -48,7 +48,7 @@ describe('#declaration', () => {
         })
         expect(result.response.statusCode).toBe(400)
         expect(result.view.context.errors.declaration).toBe(
-          'Confirm that the information is true and correct before submitting'
+          'Confirm that you have reviewed and comply with this declaration'
         )
         expect(result.after).toEqual(result.before)
       })

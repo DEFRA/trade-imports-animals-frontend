@@ -67,6 +67,9 @@ test.describe('declaration feature', () => {
       .getByRole('alert')
       .getByRole('link', { name: copy.errors.declarationRequired })
     await expect(declarationError).toBeVisible()
+    await expect(page.locator('.govuk-error-message')).toContainText(
+      copy.errors.declarationRequired
+    )
     await declarationError.click()
     await expect(
       page.getByRole('checkbox', { name: copy.declarationLabel })

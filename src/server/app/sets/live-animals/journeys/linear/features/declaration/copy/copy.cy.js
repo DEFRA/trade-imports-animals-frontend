@@ -24,6 +24,6 @@ export const copy = {
   continueButton: 'Parhau',
   errors: {
     declarationRequired:
-      'Cadarnhewch fod yr wybodaeth yn wir ac yn gywir cyn cyflwyno'
+      'Cadarnhewch eich bod wedi adolygu’r datganiad hwn a’ch bod yn cydymffurfio ag ef'
   }
 }
