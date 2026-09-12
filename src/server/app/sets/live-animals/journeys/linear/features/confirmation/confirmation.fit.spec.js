@@ -54,6 +54,9 @@ const expectViewOrAmendCopy = async (page) => {
   await expect(
     page.getByRole('link', { name: copy.viewOrAmend.dashboardLink })
   ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: copy.viewOrAmend.createButton })
+  ).toBeVisible()
 }
 
 const expectHelpCopy = async (page) => {
@@ -129,6 +132,23 @@ test.describe('submitted confirmation feature', () => {
     await dashboardLink.click()
 
     await expect(page).toHaveURL('/')
+  })
+
+  // Second consignment, no detour: the page starts a fresh notification without
+  // sending the trader back to the dashboard for the start button.
+  test('create-a-new-notification starts a fresh notification', async ({
+    page
+  }) => {
+    const submittedReference = journeyIdFromPage(page)
+
+    await page
+      .getByRole('button', { name: copy.viewOrAmend.createButton })
+      .click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Origin of the import' })
+    ).toBeVisible()
+    expect(journeyIdFromPage(page)).not.toBe(submittedReference)
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {

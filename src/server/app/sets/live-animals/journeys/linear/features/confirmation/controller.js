@@ -1,4 +1,5 @@
 import {
+  createPath,
   dashboardPath,
   hubPath,
   pageRoutePath
@@ -34,7 +35,8 @@ const get = async (request, h) => {
     referenceNumber: journey.journeyId,
     submissionDate: dateText(journey.submittedAt),
     outstandingItems: outstandingItems(answers, evaluation),
-    dashboardHref: dashboardPath()
+    dashboardHref: dashboardPath(),
+    createAction: createPath()
   })
 }
 

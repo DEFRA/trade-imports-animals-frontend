@@ -26,7 +26,8 @@ export const copy = {
   viewOrAmend: {
     heading: 'Sut i weld neu ddiwygio’r hysbysiad hwn',
     body: 'Gallwch weld neu ddiwygio’r hysbysiad hwn o’ch dangosfwrdd a’i ailgyflwyno.',
-    dashboardLink: 'Dychwelyd i’ch dangosfwrdd'
+    dashboardLink: 'Dychwelyd i’ch dangosfwrdd',
+    createButton: 'Creu hysbysiad newydd'
   },
   help: {
     heading: 'Cael help',

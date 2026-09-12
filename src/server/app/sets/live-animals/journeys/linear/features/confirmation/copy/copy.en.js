@@ -24,7 +24,8 @@ export const copy = {
   viewOrAmend: {
     heading: 'How to view or amend this notification',
     body: 'You can view or amend this notification from your dashboard and resubmit it.',
-    dashboardLink: 'Return to your dashboard'
+    dashboardLink: 'Return to your dashboard',
+    createButton: 'Create a new notification'
   },
   help: {
     heading: 'Getting help',
