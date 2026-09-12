@@ -123,7 +123,7 @@ test.describe('live-animals journey glue', () => {
 
     // No question in the notification sent the user to the hub on the way.
     await expect(page).toHaveURL(/\/notification-view$/)
-    await expect(heading('Check your answers')).toBeVisible()
+    await expect(heading('Review your notification')).toBeVisible()
   })
 
   test('a notification created in another session, holding no answers, is sent back to the entry page', async ({

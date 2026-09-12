@@ -7,6 +7,7 @@ import {
   signIn,
   startNotification
 } from '../../../../../../../../../fit/live-animals-journey.js'
+import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
 const taskRow = (page, title) =>
@@ -119,12 +120,12 @@ test.describe('hub feature — review readiness', () => {
     await review.getByRole('link', { name: copy.rows.review.title }).click()
 
     await expect(
-      page.getByRole('heading', { name: 'Check your answers' })
+      page.getByRole('heading', { name: checkAnswersCopy.title })
     ).toBeVisible()
   })
 
   // Design release 1: "Animal identifiers are optional unless multiple species
-  // are selected." A single-species consignment reaches Check your answers with
+  // are selected." A single-species consignment reaches the review page with
   // no identifier saved; what is outstanding is chased after submission.
   test('a single-species notification unlocks the review with no identifier saved', async ({
     page
@@ -142,7 +143,7 @@ test.describe('hub feature — review readiness', () => {
     await review.getByRole('link', { name: copy.rows.review.title }).click()
 
     await expect(
-      page.getByRole('heading', { name: 'Check your answers' })
+      page.getByRole('heading', { name: checkAnswersCopy.title })
     ).toBeVisible()
   })
 
