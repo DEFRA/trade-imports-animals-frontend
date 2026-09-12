@@ -1,5 +1,5 @@
 export const copy = {
-  title: 'Check your answers',
+  title: 'Review your notification',
   // An empty value inside a card that is finished. Nothing more is owed on
   // that card, so the blank is a settled answer rather than a gap.
   notApplicable: 'Not applicable',
