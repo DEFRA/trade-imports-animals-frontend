@@ -78,10 +78,19 @@ const changeHrefsOf = (sections) =>
 const rowActionsOf = (sections) =>
   rowsOf(sections).flatMap((entry) => entry.actions?.items ?? [])
 
-const NOT_PROVIDED = 'Not provided'
+// The two treatments an empty value gets. A card that is finished writes the
+// blank out; a card that still has answers outstanding gives it no text at all
+// and marks the cell instead, so the eye can separate the two.
+const NOT_APPLICABLE = 'Not applicable'
+const MISSING_HTML =
+  '<span class="app-summary-list__value--missing">' +
+  '<span class="govuk-visually-hidden">Missing</span>' +
+  '</span>'
 const CONSIGNOR_ERROR = 'Select an address for the consignor'
+const IMPORT_DETAILS_INCOMPLETE = 'Complete import details'
 const ADDRESSES_INCOMPLETE = 'Complete roles and addresses'
 const SPECIES_INCOMPLETE = 'Complete species details'
+const DOCUMENTS_INCOMPLETE = 'Complete documents'
 
 const withoutParty = (seed, partyId) => {
   const next = { ...seed }
@@ -105,11 +114,13 @@ const TRANSPORT_AND_ARRIVAL_ANCHOR = 'transport-and-arrival'
 const COUNTRY_OF_ORIGIN_KEY = 'Country of origin'
 const PURPOSE_IN_MARKET_KEY = 'Purpose in the market'
 const REGION_CODE_KEY = 'Region of origin code'
+const INTERNAL_REFERENCE_KEY = 'Internal reference number'
 const UNWEANED_KEY = 'Includes unweaned animals'
 const CPH_KEY = 'County parish holding (CPH) number'
 const TRANSITED_COUNTRIES_KEY =
   'Countries that the consignment will travel through'
 const PACKAGES_KEY = 'Number of packages'
+const DOCUMENT_TYPE_KEY = 'Document type'
 const DESTINATION_COUNTRY_KEY = 'Destination country'
 const EXIT_DATE_KEY = 'Exit date'
 const PORT_OF_EXIT_KEY = 'Port of exit'
@@ -413,7 +424,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
     const [document] = card.documents
     expect(document.heading).toBe('Document 1')
     expect(valueOf(document.rows, 'Document reference')).toBe('GBHC1234567890')
-    expect(valueOf(document.rows, 'Document type')).toBe(
+    expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(
       'Veterinary health certificate'
     )
     expect(valueOf(document.rows, 'Date of issue')).toBe('12/12/2025')
@@ -429,7 +440,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
     }
     const card = cardByTitle(await sectionsFor(seed), UPLOADED_DOCUMENTS_CARD)
     const [document] = card.documents
-    expect(valueOf(document.rows, 'Document type')).toBe(
+    expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(
       'Intra Trade Animal Health Certificate (ITAHC)'
     )
   })
@@ -707,33 +718,128 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     )
   })
 
-  it('Should render Not provided for a blank plain answer', async () => {
+  // Every card on this seed still has answers outstanding, so every blank row
+  // in it is marked missing rather than written out.
+  it('Should mark a blank plain answer missing', async () => {
     const rows = rowsOf(await sectionsFor(gatedOffSeed))
-    expect(valueOf(rows, 'Internal reference number')).toBe(NOT_PROVIDED)
-    expect(valueOf(rows, 'Port of entry')).toBe(NOT_PROVIDED)
+    expect(htmlOf(rows, INTERNAL_REFERENCE_KEY)).toBe(MISSING_HTML)
+    expect(htmlOf(rows, 'Port of entry')).toBe(MISSING_HTML)
   })
 
-  it('Should render Not provided when a coded answer has no matching label', async () => {
+  it('Should mark a coded answer with no matching label missing', async () => {
     expect(
-      valueOf(rowsOf(await sectionsFor(gatedOffSeed)), COUNTRY_OF_ORIGIN_KEY)
-    ).toBe(NOT_PROVIDED)
+      htmlOf(rowsOf(await sectionsFor(gatedOffSeed)), COUNTRY_OF_ORIGIN_KEY)
+    ).toBe(MISSING_HTML)
   })
 
-  it('Should render Not provided for a blank date', async () => {
+  it('Should mark a blank date missing', async () => {
     expect(
-      valueOf(
+      htmlOf(
         rowsOf(await sectionsFor(gatedOffSeed)),
         'Arrival date at port of entry'
       )
-    ).toBe(NOT_PROVIDED)
+    ).toBe(MISSING_HTML)
   })
 
-  it('Should render Not provided for an unset party', async () => {
+  it('Should mark an unset party missing', async () => {
     const card = cardByTitle(
       await sectionsFor(gatedOffSeed),
       ROLES_AND_ADDRESSES_CARD
     )
-    expect(valueOf(card.rows, 'Place of origin')).toBe(NOT_PROVIDED)
+    expect(htmlOf(card.rows, 'Place of origin')).toBe(MISSING_HTML)
+  })
+})
+
+// Design release 1 writes an empty value out as "Not applicable" while the card
+// around it is finished, and gives it no text at all while the card still has
+// answers outstanding. The decision is per card, not per row: an optional blank
+// inside an unfinished card is marked missing along with the rest.
+describe(`${SUITE} — empty values on a finished and an unfinished card`, () => {
+  setupCheckAnswersEngine()
+
+  const without = (seed, ...keys) => {
+    const next = { ...seed }
+    for (const key of keys) {
+      delete next[key]
+    }
+    return next
+  }
+  const withoutInternalReference = () =>
+    without(fullSeed, 'internalReferenceNumber')
+
+  it('Should write an unanswered optional row out as Not applicable on a finished card', async () => {
+    const sections = await sectionsFor(withoutInternalReference())
+    const card = cardByTitle(sections, IMPORT_DETAILS_CARD)
+
+    expect(card.error).toBeNull()
+    expect(valueOf(card.rows, INTERNAL_REFERENCE_KEY)).toBe(NOT_APPLICABLE)
+  })
+
+  it('Should give the same optional row no text at all on an unfinished card', async () => {
+    const sections = await sectionsFor(
+      without(fullSeed, 'internalReferenceNumber', 'countryOfOrigin')
+    )
+    const card = cardByTitle(sections, IMPORT_DETAILS_CARD)
+    const reference = rowByKey(card.rows, INTERNAL_REFERENCE_KEY)
+
+    expect(card.error).toBe(IMPORT_DETAILS_INCOMPLETE)
+    expect(reference.value.text).toBeUndefined()
+    expect(reference.value.html).toBe(MISSING_HTML)
+  })
+
+  it('Should leave an answered row alone inside an unfinished card', async () => {
+    const sections = await sectionsFor(without(fullSeed, 'countryOfOrigin'))
+    const card = cardByTitle(sections, IMPORT_DETAILS_CARD)
+
+    expect(card.error).toBe(IMPORT_DETAILS_INCOMPLETE)
+    expect(valueOf(card.rows, INTERNAL_REFERENCE_KEY)).toBe('Imports456GB')
+  })
+
+  // The placeholder is a rendered string, not a signal. A trader who types it
+  // into a free-text answer has given an answer, and an unfinished card must
+  // not swallow it.
+  it('Should keep a typed answer that reads Not applicable on an unfinished card', async () => {
+    const sections = await sectionsFor({
+      ...without(fullSeed, 'countryOfOrigin'),
+      internalReferenceNumber: NOT_APPLICABLE
+    })
+    const card = cardByTitle(sections, IMPORT_DETAILS_CARD)
+    const reference = rowByKey(card.rows, INTERNAL_REFERENCE_KEY)
+
+    expect(card.error).toBe(IMPORT_DETAILS_INCOMPLETE)
+    expect(reference.value.text).toBe(NOT_APPLICABLE)
+    expect(reference.value.html).toBeUndefined()
+  })
+
+  // The uploaded-documents card is the only card whose rows are nested inside
+  // document groups, so it is the only card that exercises the nested half of
+  // the blanking pass. A part-filled document leaves the documents task row
+  // in progress, which is what marks the card.
+  it('Should mark the blank rows inside an unfinished documents card missing', async () => {
+    const sections = await sectionsFor({
+      ...fullSeed,
+      documents: [{ accompanyingDocumentType: 'VETERINARY_HEALTH_CERTIFICATE' }]
+    })
+    const card = cardByTitle(sections, UPLOADED_DOCUMENTS_CARD)
+    const [document] = card.documents
+
+    expect(card.error).toBe(DOCUMENTS_INCOMPLETE)
+    expect(htmlOf(document.rows, 'Document reference')).toBe(MISSING_HTML)
+    expect(htmlOf(document.rows, 'Date of issue')).toBe(MISSING_HTML)
+    expect(htmlOf(document.rows, 'Attachment type')).toBe(MISSING_HTML)
+    expect(valueOf(document.rows, DOCUMENT_TYPE_KEY)).toBe(
+      'Veterinary health certificate'
+    )
+  })
+
+  it('Should write every empty value out on a submitted notification', async () => {
+    const { context } = await viewForStatus(
+      SUBMITTED,
+      withoutInternalReference()
+    )
+    const card = cardByTitle(context.sections, IMPORT_DETAILS_CARD)
+
+    expect(valueOf(card.rows, INTERNAL_REFERENCE_KEY)).toBe(NOT_APPLICABLE)
   })
 })
 
@@ -805,15 +911,15 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     expect(keys).not.toContain(PORT_OF_EXIT_KEY)
   })
 
-  it('Should render Not provided for an in-scope exit answer left blank', async () => {
+  it('Should mark an in-scope exit answer left blank missing', async () => {
     const rows = rowsOf(
       await sectionsFor(
         reasonSeed({ reasonForImport: 'temporaryAdmissionHorses' })
       )
     )
 
-    expect(valueOf(rows, EXIT_DATE_KEY)).toBe(NOT_PROVIDED)
-    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe(NOT_PROVIDED)
+    expect(htmlOf(rows, EXIT_DATE_KEY)).toBe(MISSING_HTML)
+    expect(htmlOf(rows, PORT_OF_EXIT_KEY)).toBe(MISSING_HTML)
   })
 
   // The exit answers sit on the reason-for-import card, the card whose one
@@ -930,12 +1036,12 @@ describe(`${SUITE} — outstanding referenced roles`, () => {
     expect(texts).toContain(ADDRESSES_INCOMPLETE)
   })
 
-  it('Should render Not provided for a role that has never been answered', async () => {
+  it('Should mark a role that has never been answered missing', async () => {
     const card = cardByTitle(
       await sectionsFor(withoutParty(fullSeed, 'importer')),
       ROLES_AND_ADDRESSES_CARD
     )
-    expect(valueOf(card.rows, 'Importer')).toBe(NOT_PROVIDED)
+    expect(htmlOf(card.rows, 'Importer')).toBe(MISSING_HTML)
   })
 
   it('Should link each summary entry where that role is changed', async () => {
@@ -1019,7 +1125,7 @@ describe(`${SUITE} — outstanding roles behind the read-path sanitiser`, () => 
 
     expect(view.context.errorSummary.errorList[0].text).toBe(CONSIGNOR_ERROR)
     expect(htmlOf(card.rows, 'Consignor')).toContain('govuk-error-message')
-    expect(valueOf(card.rows, 'Consignor')).not.toBe(NOT_PROVIDED)
+    expect(valueOf(card.rows, 'Consignor')).not.toBe(NOT_APPLICABLE)
   })
 
   it('Should still refuse Continue while that deleted address stands', async () => {
@@ -1031,7 +1137,7 @@ describe(`${SUITE} — outstanding roles behind the read-path sanitiser`, () => 
     expect(response.statusCode).toBe(400)
   })
 
-  it('Should leave a role that was never answered as Not provided', async () => {
+  it('Should leave a role that was never answered marked missing', async () => {
     const { view } = await driveHandler(getHandler, {
       seed: withoutParty(fullSeed, 'importer')
     })
@@ -1040,7 +1146,7 @@ describe(`${SUITE} — outstanding roles behind the read-path sanitiser`, () => 
     expect(
       view.context.errorSummary.errorList.map((entry) => entry.text)
     ).not.toContain('Select an address for the importer')
-    expect(valueOf(card.rows, 'Importer')).toBe(NOT_PROVIDED)
+    expect(htmlOf(card.rows, 'Importer')).toBe(MISSING_HTML)
   })
 })
 
@@ -1180,7 +1286,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
 
   it('Should head a brand-new draft with one entry per unfinished card, in page order', async () => {
     expect(await textsFor({})).toEqual([
-      'Complete import details',
+      IMPORT_DETAILS_INCOMPLETE,
       'Complete reason for import',
       SPECIES_INCOMPLETE,
       'Complete additional animal details',
@@ -1202,7 +1308,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
       transportDocumentReference: 'CMR-2026-884721'
     })
 
-    expect(texts).not.toContain('Complete import details')
+    expect(texts).not.toContain(IMPORT_DETAILS_INCOMPLETE)
     expect(texts).not.toContain('Complete arrival details')
     expect(texts).toContain('Complete transport details')
   })

@@ -6,11 +6,9 @@ import { transportersPage } from '../../../../transport/page.js'
 import { addressLines } from '../../rows/party-row.js'
 import { cardAction, editableActions } from '../../rows/change-link.js'
 import { row } from '../../rows/summary-row.js'
-import { escapeHtml } from '../../rows/value-text.js'
+import { escapeHtml, notApplicableCell } from '../../rows/value-text.js'
 
 const copy = copyFor({ en, cy })
-
-const NOT_PROVIDED = copy.notProvided
 
 export const activeTransporter = (answers, scope) => {
   if (scope.has('commercialTransporter')) {
@@ -26,7 +24,7 @@ export const transporterAddressRow = (party) => {
   const lines = addressLines(party?.address).map(escapeHtml)
   return {
     key: { text: copy.rows.address },
-    value: lines.length ? { html: lines.join('<br>') } : { text: NOT_PROVIDED }
+    value: lines.length ? { html: lines.join('<br>') } : notApplicableCell()
   }
 }
 

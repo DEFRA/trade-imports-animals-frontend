@@ -6,14 +6,14 @@ import { speciesText } from './species-text.js'
 
 const copy = copyFor({ en, cy })
 
-const NOT_PROVIDED = copy.notProvided
+const NOT_APPLICABLE = copy.notApplicable
 
 // One card per commodity line = one per species; the title carries
 // both the commodity and the species so same-commodity cards stay distinct.
 export const speciesCardTitle = (entry) => {
   const name = (entry.commoditySelection ?? '').trim()
   if (!name) {
-    return NOT_PROVIDED
+    return NOT_APPLICABLE
   }
   const code = commodities.commodityCodeFor(name)
   const commodity = code ? `${name} (${code})` : name

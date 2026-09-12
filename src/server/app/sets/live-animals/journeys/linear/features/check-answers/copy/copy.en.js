@@ -1,6 +1,12 @@
 export const copy = {
   title: 'Check your answers',
-  notProvided: 'Not provided',
+  // An empty value inside a card that is finished. Nothing more is owed on
+  // that card, so the blank is a settled answer rather than a gap.
+  notApplicable: 'Not applicable',
+  // An empty value inside a card that still has answers outstanding gets no
+  // text at all — the row is drawn in the missing style, and this is what a
+  // screen reader is told in its place.
+  missing: 'Missing',
   yesNo: { yes: 'Yes', no: 'No' },
   means: {
     AIRPLANE: 'Airplane',
