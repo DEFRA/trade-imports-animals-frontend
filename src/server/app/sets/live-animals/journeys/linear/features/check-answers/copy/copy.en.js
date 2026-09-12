@@ -91,7 +91,7 @@ export const copy = {
     numberOfPackages: 'Number of packages',
     portOfEntry: 'Port of entry',
     arrivalDate: 'Arrival date at port of entry',
-    meansOfTransport: 'Means of transport',
+    meansOfTransport: 'Means of transport to the port of entry',
     transitedCountries: 'Countries that the consignment will travel through',
     transportIdentification: 'Transport identification',
     transportDocumentReference: 'Transport document reference',
