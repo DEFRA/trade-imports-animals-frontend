@@ -21,6 +21,19 @@ const expectPanelCopy = async (page) => {
   ).toBeVisible()
 }
 
+// The journey these tests submit uploads no documents, and documents are
+// optional at submission, so the outstanding-work section is the one this page
+// has to carry.
+const expectOutstandingCopy = async (page) => {
+  await expect(
+    page.getByRole('heading', { name: copy.outstanding.heading })
+  ).toBeVisible()
+  await expect(page.getByText(copy.outstanding.intro)).toBeVisible()
+  await expect(
+    page.getByText(copy.outstanding.documents, { exact: true })
+  ).toBeVisible()
+}
+
 const expectTransportingCopy = async (page) => {
   await expect(
     page.getByRole('heading', { name: copy.transporting.heading })
@@ -98,6 +111,7 @@ test.describe('submitted confirmation feature', () => {
     page
   }) => {
     await expectPanelCopy(page)
+    await expectOutstandingCopy(page)
     await expectTransportingCopy(page)
     await expectViewOrAmendCopy(page)
     await expectHelpCopy(page)

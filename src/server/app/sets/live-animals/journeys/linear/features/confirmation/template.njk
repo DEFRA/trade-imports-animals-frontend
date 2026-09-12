@@ -10,6 +10,16 @@
 
   <p class="govuk-body">{{ copy.dateOfDeclaration }} {{ submissionDate }}</p>
 
+  {% if outstandingItems.length %}
+    <h2 class="govuk-heading-m">{{ copy.outstanding.heading }}</h2>
+    <p class="govuk-body">{{ copy.outstanding.intro }}</p>
+    <ul class="govuk-list govuk-list--bullet">
+      {% for item in outstandingItems %}
+        <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
   <h2 class="govuk-heading-m">{{ copy.transporting.heading }}</h2>
   <p class="govuk-body">{{ copy.transporting.direct }}</p>
   <p class="govuk-body">{{ copy.transporting.inspection }}</p>

@@ -5,6 +5,11 @@ export const copy = {
     referencePrefix: 'Your reference number'
   },
   dateOfDeclaration: 'Date of declaration:',
+  outstanding: {
+    heading: 'Before the consignment is imported',
+    intro: 'You still need to:',
+    documents: 'upload the health certificate and any other required documents'
+  },
   transporting: {
     heading: 'Transporting the consignment',
     direct:
