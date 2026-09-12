@@ -6,6 +6,12 @@ export const copy = {
     referencePrefix: 'Eich cyfeirnod'
   },
   dateOfDeclaration: 'Dyddiad y datganiad:',
+  outstanding: {
+    heading: 'Cyn i’r llwyth gael ei fewnforio',
+    intro: 'Mae angen i chi o hyd:',
+    documents:
+      'uwchlwytho’r dystysgrif iechyd ac unrhyw ddogfennau gofynnol eraill'
+  },
   transporting: {
     heading: 'Cludo’r llwyth',
     direct:
