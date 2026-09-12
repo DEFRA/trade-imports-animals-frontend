@@ -9,15 +9,12 @@ import { unitsForCommodityLine } from './units-for-commodity-line.js'
 export const speciesCards = (journeyId, answers, evaluation, readOnly) =>
   state
     .collectionView(answers, ['commodityLines'], evaluation)
-    .map(({ index, entry }) => {
-      const units = unitsForCommodityLine(answers, evaluation, index)
-      return {
-        title: speciesCardTitle(entry),
-        ...editableActions(
-          readOnly,
-          speciesCardActions(journeyId, index, units)
-        ),
-        rows: speciesCardRows(entry),
-        identifierTable: identifierTable(units, entry.commoditySelection)
-      }
-    })
+    .map(({ index, entry }) => ({
+      title: speciesCardTitle(entry),
+      ...editableActions(readOnly, speciesCardActions(journeyId, index)),
+      rows: speciesCardRows(entry),
+      identifierTable: identifierTable(
+        unitsForCommodityLine(answers, evaluation, index),
+        entry.commoditySelection
+      )
+    }))

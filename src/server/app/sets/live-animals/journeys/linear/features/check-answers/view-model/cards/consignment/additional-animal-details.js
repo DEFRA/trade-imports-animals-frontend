@@ -5,6 +5,7 @@ import * as ports from '../../../../../../../../../services/ports/index.js'
 import { copyFor } from '../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../copy/copy.en.js'
 import { copy as cy } from '../../../copy/copy.cy.js'
+import { additionalDetailsPage } from '../../../../additional-details/page.js'
 import {
   destinationCountryApplies,
   exitDateApplies,
@@ -12,51 +13,47 @@ import {
   purposeApplies,
   unweanedApplies
 } from '../../applicability.js'
+import { cardAction, editableActions } from '../../rows/change-link.js'
 import { row } from '../../rows/summary-row.js'
 import { dateText } from '../../rows/value-text.js'
 
 const copy = copyFor({ en, cy })
 
 // The exit answers the chosen reason for import asks for. Each row stands only
-// while its obligation is in scope, and its Change link resolves through the
-// obligation to the reason-for-import page that collects it.
-const exitRows = (journeyId, answers, scope, readOnly) => [
+// while its obligation is in scope. They are collected on the reason-for-import
+// page rather than this card's own, so the card's one Change link does not
+// reach them — see the note on the card itself.
+const exitRows = (answers, scope) => [
   ...(destinationCountryApplies(answers, scope)
     ? [
         row(
-          journeyId,
-          readOnly,
           copy.rows.destinationCountry,
           countries.originLabel(answers.destinationCountry) ??
-            answers.destinationCountry,
-          'destinationCountry'
+            answers.destinationCountry
         )
       ]
     : []),
   ...(exitDateApplies(answers, scope)
-    ? [
-        row(
-          journeyId,
-          readOnly,
-          copy.rows.exitDate,
-          dateText(answers.exitDate),
-          'exitDate'
-        )
-      ]
+    ? [row(copy.rows.exitDate, dateText(answers.exitDate))]
     : []),
   ...(portOfExitApplies(answers, scope)
     ? [
         row(
-          journeyId,
-          readOnly,
           copy.rows.portOfExit,
-          ports.label(answers.portOfExit) ?? answers.portOfExit,
-          'portOfExit'
+          ports.label(answers.portOfExit) ?? answers.portOfExit
         )
       ]
     : [])
 ]
 
+/**
+ * The card's rows span two pages: this card's namesake collects what the
+ * animals are certified for and whether any are unweaned, and the
+ * reason-for-import page collects the reason, the purpose and the exit answers.
+ * The one Change link goes to the page the card is named for, which is also the
+ * page the trader would expect "Change additional animal details" to open. The
+ * reason-for-import page stays reachable from its own task row on the hub.
+ */
 export const additionalAnimalDetailsCard = (
   journeyId,
   answers,
@@ -65,44 +62,40 @@ export const additionalAnimalDetailsCard = (
 ) => ({
   id: 'additionalAnimalDetails',
   title: copy.cards.additionalAnimalDetails,
+  ...editableActions(
+    readOnly,
+    cardAction(
+      journeyId,
+      additionalDetailsPage.slug,
+      copy.hidden.cards.additionalAnimalDetails
+    )
+  ),
   rows: [
     row(
-      journeyId,
-      readOnly,
       copy.rows.certifiedFor,
-      certification.certificationLabel(answers.animalsCertifiedFor) ?? '',
-      'animalsCertifiedFor'
+      certification.certificationLabel(answers.animalsCertifiedFor) ?? ''
     ),
     ...(unweanedApplies(answers)
       ? [
           row(
-            journeyId,
-            readOnly,
             copy.rows.unweaned,
-            copy.yesNo[answers.containsUnweanedAnimals] ?? '',
-            'containsUnweanedAnimals'
+            copy.yesNo[answers.containsUnweanedAnimals] ?? ''
           )
         ]
       : []),
     row(
-      journeyId,
-      readOnly,
       copy.rows.reasonForImport,
-      importReasonPurpose.reasonLabel(answers.reasonForImport) ?? '',
-      'reasonForImport'
+      importReasonPurpose.reasonLabel(answers.reasonForImport) ?? ''
     ),
     ...(purposeApplies(answers, scope)
       ? [
           row(
-            journeyId,
-            readOnly,
             copy.rows.purpose,
             importReasonPurpose.purposeLabel(answers.purposeInInternalMarket) ??
-              '',
-            'purposeInInternalMarket'
+              ''
           )
         ]
       : []),
-    ...exitRows(journeyId, answers, scope, readOnly)
+    ...exitRows(answers, scope)
   ]
 })

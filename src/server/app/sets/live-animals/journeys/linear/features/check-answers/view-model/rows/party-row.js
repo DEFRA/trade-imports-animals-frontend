@@ -2,7 +2,6 @@ import { isBlank } from '../../../../../../../../lib/answered.js'
 import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
-import { changeAction, editableActions } from './change-link.js'
 import { escapeHtml } from './value-text.js'
 
 const copy = copyFor({ en, cy })
@@ -52,25 +51,9 @@ const valueCell = (lines, errorText) => {
   return errorText ? errorCell(errorText) : { text: NOT_PROVIDED }
 }
 
-export const partyRow = (
-  journeyId,
-  readOnly,
-  key,
-  party,
-  obligationId,
-  { visuallyHiddenText = null, errorText = null } = {}
-) => {
-  const lines = partyLines(party)
-  return {
-    key: { text: key },
-    value: valueCell(lines, errorText),
-    ...editableActions(
-      readOnly,
-      changeAction(
-        journeyId,
-        obligationId,
-        visuallyHiddenText ?? key.toLowerCase()
-      )
-    )
-  }
-}
+/** A key and a value with no Change link of its own, like an ordinary row — the
+ * card that holds the role carries the one link to the page that collects it. */
+export const partyRow = (key, party, { errorText = null } = {}) => ({
+  key: { text: key },
+  value: valueCell(partyLines(party), errorText)
+})

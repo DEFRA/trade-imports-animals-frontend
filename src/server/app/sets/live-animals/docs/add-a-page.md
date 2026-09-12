@@ -204,8 +204,15 @@ do; its coverage invariant fails if you forget.
 ## 7. Add check-answers and backend mapping when needed
 
 Add the page's fields to the matching check-answers card and both
-check-answers copy bundles. Pass each obligation name to `row()` or
-`changeAction()` so the dispatch index builds the Change URL. Extend
+check-answers copy bundles. Rows carry no Change link — `row(key, value)` is a
+key and a value. If the page's fields go into a NEW card, the card needs one
+`cardAction(journeyId, <page>.slug, copy.hidden.cards.<cardId>)` wrapped in
+`editableActions(readOnly, ...)`, plus a `hidden.cards.<cardId>` leaf in BOTH
+check-answers copy bundles — `copy.en.js` and `copy.cy.js`. Without that leaf
+the fit assertion "every Change link sits in a card heading and no summary row
+carries one"
+([`check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js))
+fails. Extend
 [`journeys/linear/features/check-answers/check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js).
 
 Canonical persistence is complete once the feature binding is registered. If

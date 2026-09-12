@@ -21,6 +21,11 @@ const rowFor = (page, label) =>
     .filter({ has: page.getByText(label, { exact: true }) })
     .locator('..')
 
+/** The one Change link a card carries in its heading, named the way a screen
+ * reader reads it — "Change import details". */
+const cardChangeLink = (page, hiddenText) =>
+  page.getByRole('link', { name: `${copy.change} ${hiddenText}` })
+
 const expectNoSeriousOrCriticalAxeViolations = async (page, pageName) => {
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa'])
@@ -119,9 +124,7 @@ test.describe('check-answers feature documents section', () => {
     ).toBeVisible()
     await expect(page.getByText(copy.documentsEmpty)).toBeVisible()
 
-    const changeLink = page.getByRole('link', {
-      name: `${copy.change} ${copy.hidden.documents}`
-    })
+    const changeLink = cardChangeLink(page, copy.hidden.cards.documents)
     await expect(changeLink).toHaveAttribute(
       'href',
       /\/notifications\/[^/]+\/accompanying-documents\?change=1$/
@@ -147,7 +150,7 @@ test.describe('check-answers feature exit answers', () => {
     await signIn(page)
   })
 
-  test('shows the destination country and port of exit a transit collected, and changes them from the review', async ({
+  test('shows the destination country and port of exit a transit collected, with the one Change link in the card heading', async ({
     page
   }) => {
     await startNotification(page)
@@ -171,18 +174,24 @@ test.describe('check-answers feature exit answers', () => {
       page.getByText(copy.rows.exitDate, { exact: true })
     ).toHaveCount(0)
 
-    const changeLink = rowFor(page, copy.rows.destinationCountry).getByRole(
-      'link',
-      { name: `${copy.change} destination country` }
+    // The exit answers sit in the Additional animal details card, and that card
+    // — not the row — carries the one Change link. That link opens the
+    // additional-details page, which does not collect these two answers: the
+    // destination country and the port of exit come from the reason-for-import
+    // page, so they cannot be changed from the review at all. Tracked as an
+    // open question on inc-146.
+    await expect(
+      rowFor(page, copy.rows.destinationCountry).getByRole('link')
+    ).toHaveCount(0)
+
+    const changeLink = cardChangeLink(
+      page,
+      copy.hidden.cards.additionalAnimalDetails
     )
     await expect(changeLink).toHaveAttribute(
       'href',
-      /\/notifications\/[^/]+\/import-reason\?change=1$/
+      /\/notifications\/[^/]+\/additional-details\?change=1$/
     )
-
-    await changeLink.click()
-
-    await expect(page).toHaveURL(/\/import-reason\?change=1$/)
   })
 
   test('shows the exit date and port of exit a temporary admission collected', async ({
@@ -247,10 +256,7 @@ test.describe('check-answers feature change links', () => {
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
-    const changeLink = rowFor(page, copy.rows.internalReference).getByRole(
-      'link',
-      { name: `${copy.change} internal reference number` }
-    )
+    const changeLink = cardChangeLink(page, copy.hidden.cards.importDetails)
     await expect(changeLink).toHaveAttribute(
       'href',
       /\/notifications\/[^/]+\/origin\?change=1$/
@@ -266,6 +272,30 @@ test.describe('check-answers feature change links', () => {
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
       copy.notProvided
     )
+  })
+
+  // Design release 1 puts one Change link in each card's heading bar and none
+  // on a row, so the trader meets one link per card rather than one per answer.
+  test('every Change link sits in a card heading and no summary row carries one', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    const cards = page.locator('.govuk-summary-card')
+    const cardCount = await cards.count()
+
+    expect(cardCount).toBeGreaterThan(0)
+    await expect(page.getByRole('link', { name: copy.change })).toHaveCount(
+      cardCount
+    )
+    await expect(page.locator('.govuk-summary-list__actions')).toHaveCount(0)
+
+    for (let index = 0; index < cardCount; index += 1) {
+      await expect(
+        cards.nth(index).locator('.govuk-summary-card__actions a')
+      ).toHaveCount(1)
+    }
   })
 })
 

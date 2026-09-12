@@ -2,8 +2,9 @@ import { isBlank } from '../../../../../../../../../lib/answered.js'
 import { copyFor } from '../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../copy/copy.en.js'
 import { copy as cy } from '../../../copy/copy.cy.js'
+import { transportersPage } from '../../../../transport/page.js'
 import { addressLines } from '../../rows/party-row.js'
-import { changeAction, editableActions } from '../../rows/change-link.js'
+import { cardAction, editableActions } from '../../rows/change-link.js'
 import { row } from '../../rows/summary-row.js'
 import { escapeHtml } from '../../rows/value-text.js'
 
@@ -13,82 +14,53 @@ const NOT_PROVIDED = copy.notProvided
 
 export const activeTransporter = (answers, scope) => {
   if (scope.has('commercialTransporter')) {
-    return {
-      party: answers.commercialTransporter,
-      id: 'commercialTransporter'
-    }
+    return answers.commercialTransporter
   }
   if (scope.has('privateTransporter')) {
-    return { party: answers.privateTransporter, id: 'privateTransporter' }
+    return answers.privateTransporter
   }
   return null
 }
 
-export const transporterAddressRow = (journeyId, party, id, readOnly) => {
+export const transporterAddressRow = (party) => {
   const lines = addressLines(party?.address).map(escapeHtml)
   return {
     key: { text: copy.rows.address },
-    value: lines.length ? { html: lines.join('<br>') } : { text: NOT_PROVIDED },
-    ...editableActions(
-      readOnly,
-      changeAction(journeyId, id, copy.hidden.transporterAddress)
-    )
+    value: lines.length ? { html: lines.join('<br>') } : { text: NOT_PROVIDED }
   }
 }
 
-export const approvalNumberRow = (journeyId, active, readOnly) =>
-  isBlank(active.party?.approvalNumber)
+export const approvalNumberRow = (transporter) =>
+  isBlank(transporter?.approvalNumber)
     ? []
-    : [
-        row(
-          journeyId,
-          readOnly,
-          copy.rows.approvalNumber,
-          active.party.approvalNumber,
-          active.id,
-          copy.hidden.transporterApprovalNumber
-        )
-      ]
+    : [row(copy.rows.approvalNumber, transporter.approvalNumber)]
 
-export const activeTransporterRows = (journeyId, active, readOnly) =>
-  active
+export const activeTransporterRows = (transporter) =>
+  transporter
     ? [
-        row(
-          journeyId,
-          readOnly,
-          copy.rows.name,
-          active.party?.name,
-          active.id,
-          copy.hidden.transporterName
-        ),
-        transporterAddressRow(journeyId, active.party, active.id, readOnly),
-        row(
-          journeyId,
-          readOnly,
-          copy.rows.country,
-          active.party?.address?.country,
-          active.id,
-          copy.hidden.transporterCountry
-        ),
-        ...approvalNumberRow(journeyId, active, readOnly)
+        row(copy.rows.name, transporter.name),
+        transporterAddressRow(transporter),
+        row(copy.rows.country, transporter.address?.country),
+        ...approvalNumberRow(transporter)
       ]
     : []
 
 export const transportDetailsCard = (journeyId, answers, scope, readOnly) => {
-  const active = activeTransporter(answers, scope)
+  const transporter = activeTransporter(answers, scope)
   return {
     id: 'transportDetails',
     title: copy.cards.transportDetails,
-    rows: [
-      ...activeTransporterRows(journeyId, active, readOnly),
-      row(
+    ...editableActions(
+      readOnly,
+      cardAction(
         journeyId,
-        readOnly,
-        copy.rows.type,
-        answers.transporterType,
-        'transporterType',
-        copy.hidden.transporterType
+        transportersPage.slug,
+        copy.hidden.cards.transportDetails
       )
+    ),
+    rows: [
+      ...activeTransporterRows(transporter),
+      row(copy.rows.type, answers.transporterType)
     ]
   }
 }

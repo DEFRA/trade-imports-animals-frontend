@@ -3,20 +3,20 @@ import { copyFor } from '../../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../../copy/copy.en.js'
 import { copy as cy } from '../../../../copy/copy.cy.js'
 import { packagesApply } from '../../../applicability.js'
-import { readOnlyRow } from '../../../rows/summary-row.js'
+import { row } from '../../../rows/summary-row.js'
 import { speciesText } from './species-text.js'
 
 const copy = copyFor({ en, cy })
 
 export const speciesCardRows = (entry) => [
-  readOnlyRow(
+  row(
     copy.rows.commodityCode,
     commodities.commodityCodeFor(entry.commoditySelection)
   ),
-  readOnlyRow(copy.rows.commonName, entry.commoditySelection),
-  readOnlyRow(copy.rows.species, speciesText(entry)),
-  readOnlyRow(copy.rows.numberOfAnimals, entry.numberOfAnimalsQuantity),
+  row(copy.rows.commonName, entry.commoditySelection),
+  row(copy.rows.species, speciesText(entry)),
+  row(copy.rows.numberOfAnimals, entry.numberOfAnimalsQuantity),
   ...(packagesApply(entry.commoditySelection)
-    ? [readOnlyRow(copy.rows.numberOfPackages, entry.numberOfPackages)]
+    ? [row(copy.rows.numberOfPackages, entry.numberOfPackages)]
     : [])
 ]

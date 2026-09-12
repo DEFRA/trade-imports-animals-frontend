@@ -65,8 +65,9 @@ const rowsOf = (sections) =>
 const rowByKey = (rows, key) => rows.find((row) => row.key.text === key)
 const valueOf = (rows, key) => rowByKey(rows, key)?.value.text
 const htmlOf = (rows, key) => rowByKey(rows, key)?.value.html
-const changeHrefOf = (rows, key) => rowByKey(rows, key)?.actions.items[0].href
 const keysOf = (rows) => rows.map((row) => row.key.text)
+const cardChangeHrefOf = (sections, title) =>
+  cardByTitle(sections, title)?.actions?.items[0].href
 const changeHrefsOf = (sections) =>
   cardsOf(sections).flatMap((card) => [
     ...(card.actions?.items ?? []).map((action) => action.href),
@@ -74,6 +75,8 @@ const changeHrefsOf = (sections) =>
       (entry.actions?.items ?? []).map((action) => action.href)
     )
   ])
+const rowActionsOf = (sections) =>
+  rowsOf(sections).flatMap((entry) => entry.actions?.items ?? [])
 
 const NOT_PROVIDED = 'Not provided'
 const CONSIGNOR_ERROR = 'Select an address for the consignor'
@@ -89,7 +92,12 @@ const ADDRESS_LINE_1 = '43 East Hague Extension'
 const CONSIGNOR_NAME = 'Astra Rosales'
 const CONSIGNOR_ADDRESS_ID = 'astra-rosales'
 const COW_CARD_TITLE = 'Cow (0102) — Bos taurus'
+const IMPORT_DETAILS_CARD = 'Import details'
+const ADDITIONAL_ANIMAL_DETAILS_CARD = 'Additional animal details'
+const ARRIVAL_DETAILS_CARD = 'Arrival details'
+const TRANSPORT_DETAILS_CARD = 'Transport details'
 const ROLES_AND_ADDRESSES_CARD = 'Roles and addresses'
+const CONTACT_ADDRESS_CARD = 'Contact address for this consignment'
 const UPLOADED_DOCUMENTS_CARD = 'Uploaded documents'
 const COUNTRY_OF_ORIGIN_KEY = 'Country of origin'
 const PURPOSE_IN_MARKET_KEY = 'Purpose in the market'
@@ -290,7 +298,10 @@ describe(`${SUITE} — fully-populated notification`, () => {
   })
 
   it('Should expand the commercial transporter in the transport-details card when the type is commercial', async () => {
-    const card = cardByTitle(await sectionsFor(fullSeed), 'Transport details')
+    const card = cardByTitle(
+      await sectionsFor(fullSeed),
+      TRANSPORT_DETAILS_CARD
+    )
     expect(valueOf(card.rows, 'Name')).toBe('García Livestock Transport SL')
     expect(htmlOf(card.rows, 'Address')).toBe(ADDRESS_LINE_1)
     expect(valueOf(card.rows, 'Country')).toBe('Switzerland')
@@ -379,26 +390,57 @@ describe(`${SUITE} — fully-populated notification`, () => {
     )
   })
 
-  it('Should point each Change link at the owning page slug with a change flag', async () => {
-    const rows = rowsOf(await sectionsFor(fullSeed))
-    expect(changeHrefOf(rows, COUNTRY_OF_ORIGIN_KEY)).toMatch(
-      /\/origin\?change=1$/
-    )
-    expect(changeHrefOf(rows, PURPOSE_IN_MARKET_KEY)).toMatch(
-      /\/import-reason\?change=1$/
-    )
-    expect(changeHrefOf(rows, TRANSITED_COUNTRIES_KEY)).toMatch(
-      /\/transit-countries\?change=1$/
-    )
-    expect(changeHrefOf(rows, 'Name')).toMatch(/\/transporters\?change=1$/)
+  // Design release 1 puts the Change links in each card's heading and none on a
+  // row, so the page offers links per card rather than one per answer. A card
+  // normally carries one; arrival details carries a second for the conditional
+  // transit-countries page, which its own test pins.
+  it('Should give every card a Change action in its heading and no row any action', async () => {
+    const sections = await sectionsFor(fullSeed)
+
+    for (const card of cardsOf(sections)) {
+      expect(card.actions.items.length, card.title).toBeGreaterThanOrEqual(1)
+    }
+    expect(rowActionsOf(sections)).toEqual([])
   })
 
-  it('Should point the species-card Change actions at the commodities pages with a change flag', async () => {
+  it('Should point each card Change link at the page that collects its answers with a change flag', async () => {
+    const sections = await sectionsFor(fullSeed)
+
+    expect(cardChangeHrefOf(sections, IMPORT_DETAILS_CARD)).toMatch(
+      /\/origin\?change=1$/
+    )
+    expect(cardChangeHrefOf(sections, ADDITIONAL_ANIMAL_DETAILS_CARD)).toMatch(
+      /\/additional-details\?change=1$/
+    )
+    expect(cardChangeHrefOf(sections, ARRIVAL_DETAILS_CARD)).toMatch(
+      /\/port-of-entry\?change=1$/
+    )
+    expect(cardChangeHrefOf(sections, TRANSPORT_DETAILS_CARD)).toMatch(
+      /\/transporters\?change=1$/
+    )
+    expect(cardChangeHrefOf(sections, ROLES_AND_ADDRESSES_CARD)).toMatch(
+      /\/addresses\?change=1$/
+    )
+    expect(cardChangeHrefOf(sections, CONTACT_ADDRESS_CARD)).toMatch(
+      /\/consignment\/contact\/select\?change=1$/
+    )
+  })
+
+  it('Should name the card, not the row, in each Change link visually hidden text', async () => {
+    const sections = await sectionsFor(fullSeed)
+    const hiddenTextOf = (title) =>
+      cardByTitle(sections, title).actions.items[0].visuallyHiddenText
+
+    expect(hiddenTextOf(IMPORT_DETAILS_CARD)).toBe('import details')
+    expect(hiddenTextOf(TRANSPORT_DETAILS_CARD)).toBe('transport details')
+    expect(hiddenTextOf(COW_CARD_TITLE)).toBe('commodity 1')
+  })
+
+  it('Should point the species-card Change action at the consignment-details page with a change flag', async () => {
     const card = cardByTitle(await sectionsFor(fullSeed), COW_CARD_TITLE)
-    const [commodityAction, identifiersAction] = card.actions.items
-    expect(commodityAction.href).toMatch(/\/consignment-details\?change=1$/)
-    expect(identifiersAction.href).toMatch(
-      /\/commodities\/identification\?change=1#identification-card-0$/
+    expect(card.actions.items).toHaveLength(1)
+    expect(card.actions.items[0].href).toMatch(
+      /\/consignment-details\?change=1$/
     )
   })
 
@@ -410,6 +452,36 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(card.actions.items[0].href).toMatch(
       /\/accompanying-documents\?change=1$/
     )
+  })
+})
+
+// The arrival-details card's rows span two pages, so its heading carries a
+// second Change link while the transited-countries row stands — the card is
+// marked incomplete for a missing transited-countries answer, and the trader
+// has to be able to reach the page that collects it.
+describe(`${SUITE} — arrival-details change links`, () => {
+  setupCheckAnswersEngine()
+
+  it('Should give the arrival-details card a Change link to the transit-countries page when transited countries apply', async () => {
+    const sections = await sectionsFor(fullSeed)
+    const items = cardByTitle(sections, ARRIVAL_DETAILS_CARD).actions.items
+
+    expect(items).toHaveLength(2)
+    expect(items[0].href).toMatch(/\/port-of-entry\?change=1$/)
+    expect(items[1].href).toMatch(/\/transit-countries\?change=1$/)
+    expect(items[1].visuallyHiddenText).toBe(
+      copyEn.hidden.cards.transitCountries
+    )
+  })
+
+  it('Should give the arrival-details card a single Change link when transited countries do not apply', async () => {
+    const sections = await sectionsFor({
+      ...fullSeed,
+      meansOfTransport: 'AIRPLANE'
+    })
+    const card = cardByTitle(sections, ARRIVAL_DETAILS_CARD)
+
+    expect(card.actions.items).toHaveLength(1)
   })
 })
 
@@ -464,7 +536,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
   it('Should expand the private transporter and omit the approval-number row when the type is private', async () => {
     const card = cardByTitle(
       await sectionsFor(gatedOffSeed),
-      'Transport details'
+      TRANSPORT_DETAILS_CARD
     )
     expect(valueOf(card.rows, 'Name')).toBe('Jean Dupont')
     expect(valueOf(card.rows, 'Type')).toBe('Private')
@@ -552,9 +624,6 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     expect(valueOf(rows, DESTINATION_COUNTRY_KEY)).toBe('Ireland')
     expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover (GB DVR)')
     expect(keysOf(rows)).not.toContain(EXIT_DATE_KEY)
-    expect(changeHrefOf(rows, DESTINATION_COUNTRY_KEY)).toMatch(
-      /\/import-reason\?change=1$/
-    )
   })
 
   it('Should show the destination country alone for a transhipment', async () => {
@@ -609,22 +678,24 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe(NOT_PROVIDED)
   })
 
-  it('Should point every exit row Change link at the reason-for-import page', async () => {
-    const rows = rowsOf(
-      await sectionsFor(
-        reasonSeed({
-          reasonForImport: 'temporaryAdmissionHorses',
-          exitDate: { day: '27', month: '3', year: '2026' },
-          portOfExit: 'GB DVR'
-        })
-      )
+  // The exit answers are collected on the reason-for-import page, but they are
+  // shown inside the Additional animal details card, whose one Change link goes
+  // to the page it is named for. No row carries a link of its own.
+  it('Should leave every exit row without a Change link of its own', async () => {
+    const sections = await sectionsFor(
+      reasonSeed({
+        reasonForImport: 'temporaryAdmissionHorses',
+        exitDate: { day: '27', month: '3', year: '2026' },
+        portOfExit: 'GB DVR'
+      })
     )
+    const rows = rowsOf(sections)
 
-    expect(changeHrefOf(rows, EXIT_DATE_KEY)).toMatch(
-      /\/import-reason\?change=1$/
-    )
-    expect(changeHrefOf(rows, PORT_OF_EXIT_KEY)).toMatch(
-      /\/import-reason\?change=1$/
+    expect(keysOf(rows)).toContain(EXIT_DATE_KEY)
+    expect(keysOf(rows)).toContain(PORT_OF_EXIT_KEY)
+    expect(rowActionsOf(sections)).toEqual([])
+    expect(cardChangeHrefOf(sections, ADDITIONAL_ANIMAL_DETAILS_CARD)).toMatch(
+      /\/additional-details\?change=1$/
     )
   })
 })
@@ -736,9 +807,7 @@ describe(`${SUITE} — outstanding referenced roles`, () => {
     const card = cardByTitle(sections, ROLES_AND_ADDRESSES_CARD)
 
     expect(errorSummary.errorList[0].href).toMatch(/\/addresses\?change=1$/)
-    expect(errorSummary.errorList[0].href).toBe(
-      changeHrefOf(card.rows, 'Consignor')
-    )
+    expect(errorSummary.errorList[0].href).toBe(card.actions.items[0].href)
   })
 
   it('Should leave focus where it is when the page is merely visited', async () => {

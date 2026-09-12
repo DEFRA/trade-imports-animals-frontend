@@ -1,32 +1,18 @@
-import { pagePath } from '../../../../../../../../../../shared/paths.js'
-import {
-  animalIdentificationPage,
-  consignmentDetailsPage
-} from '../../../../../commodities/page.js'
+import { consignmentDetailsPage } from '../../../../../commodities/page.js'
 import { copyFor } from '../../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../../copy/copy.en.js'
 import { copy as cy } from '../../../../copy/copy.cy.js'
-import { withChange } from '../../../rows/change-link.js'
+import { cardAction } from '../../../rows/change-link.js'
 
 const copy = copyFor({ en, cy })
 
-export const speciesCardActions = (journeyId, index, units) => ({
-  items: [
-    {
-      href: withChange(pagePath(journeyId, consignmentDetailsPage.slug)),
-      text: copy.change,
-      visuallyHiddenText: copy.hidden.commodity(index + 1)
-    },
-    ...(units.length
-      ? [
-          {
-            href: `${withChange(
-              pagePath(journeyId, animalIdentificationPage.slug)
-            )}#identification-card-${index}`,
-            text: copy.change,
-            visuallyHiddenText: copy.hidden.identifiersForCommodity(index + 1)
-          }
-        ]
-      : [])
-  ]
-})
+/** One link, like every other card on the review (design release 1). It goes to
+ * the consignment-details page, which collects the commodity line itself; the
+ * animal identifiers the card also shows are collected on their own page, which
+ * keeps its own task row on the hub. */
+export const speciesCardActions = (journeyId, index) =>
+  cardAction(
+    journeyId,
+    consignmentDetailsPage.slug,
+    copy.hidden.commodity(index + 1)
+  )

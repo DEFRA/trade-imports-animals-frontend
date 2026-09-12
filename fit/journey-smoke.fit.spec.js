@@ -167,9 +167,15 @@ test.describe('live-animals journey glue', () => {
 
     await page.getByRole('link', { name: 'Check and submit' }).click()
 
-    await page
-      .getByRole('link', { name: 'Change animal identifiers for commodity 1' })
-      .click()
+    // The review offers one Change link per card (design release 1), and the
+    // Species card's goes to the consignment details. The review no longer
+    // offers a change-context route to the identification page, so this leg
+    // opens it with the flag directly — the closest live equivalent is the
+    // consignment-details count-drop error link
+    // (features/commodities/consignment-details/validation/count-drop.js:26-32).
+    await page.goto(
+      `${journeyUrl(page, 'commodities/identification')}?change=1`
+    )
     await expect(page).toHaveURL(
       /\/identification\?change=1(?:#identification-card-0)?$/
     )
@@ -195,7 +201,7 @@ test.describe('live-animals journey glue', () => {
       accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
       filename: 'commercial-invoice.pdf'
     }
-    await page.getByRole('link', { name: 'Change documents' }).click()
+    await page.getByRole('link', { name: 'Change uploaded documents' }).click()
     await expect(page).toHaveURL(
       /\/accompanying-documents\?change=1(?:&attempt=\d+)?$/
     )

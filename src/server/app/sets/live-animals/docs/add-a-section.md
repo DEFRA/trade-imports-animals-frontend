@@ -267,10 +267,16 @@ Add a section or cards for the feature under
 Add English and Welsh headings, row labels and value labels to the
 check-answers copy bundles.
 
-Pass obligation names to `row()` and `changeAction()` so Change links resolve
-through dispatch. Use `scope` to omit out-of-scope rows. Extend
+Rows carry no Change link — `row(key, value)` is a key and a value. Each new
+card needs one `cardAction(journeyId, <page>.slug, copy.hidden.cards.<cardId>)`
+wrapped in `editableActions(readOnly, ...)`, plus a `hidden.cards.<cardId>` leaf
+in BOTH check-answers copy bundles — `copy.en.js` and `copy.cy.js`. Without that
+leaf the fit assertion "every Change link sits in a card heading and no summary
+row carries one"
+([`check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js))
+fails. Use `scope` to omit out-of-scope rows. Extend
 [`journeys/linear/features/check-answers/check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js)
-for every value and Change target.
+for every value, and for the card's one Change target.
 
 ## 8. Update downstream persistence when applicable
 

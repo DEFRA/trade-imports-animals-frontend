@@ -150,14 +150,15 @@ Add the row to the matching card under
 Add its label and any displayed value labels to both check-answers copy
 bundles.
 
-Use `row()` for an editable scalar. Pass the obligation name so
-`changeAction()` resolves the owning page through the dispatch index. Use a
-service label function when the stored value is a code. Show a conditional row
-only while the same obligation path is in scope.
+Use `row(key, value)` for a scalar. Rows carry no Change link: the card's
+heading carries the one link for every answer inside it, so adding a field to
+an existing card needs no action work at all. Use a service label function when
+the stored value is a code. Show a conditional row only while the same
+obligation path is in scope.
 
 Extend
 [`journeys/linear/features/check-answers/check-answers.fit.spec.js`](../journeys/linear/features/check-answers/check-answers.fit.spec.js)
-to cover the displayed value and Change link.
+to cover the displayed value.
 
 ## 6. Update downstream persistence when the backend needs the field
 
