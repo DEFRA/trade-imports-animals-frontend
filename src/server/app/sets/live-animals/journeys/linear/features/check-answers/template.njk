@@ -120,12 +120,19 @@
     {% endfor %}
   {% endfor %}
 
-  <h2 class="govuk-heading-m">{{ copy.submit.heading }}</h2>
-  <p class="govuk-body">{{ copy.submit.body }}</p>
+  {# A submitted notification is a record, not a form. The read-only review has
+     already dropped every Change link, so inviting the trader to submit again
+     would offer the one action the page has otherwise taken away — and the
+     declaration redirects a submitted journey to a confirmation it did not
+     just produce. The read-only review ends with the last card. #}
+  {% if not readOnly %}
+    <h2 class="govuk-heading-m">{{ copy.submit.heading }}</h2>
+    <p class="govuk-body">{{ copy.submit.body }}</p>
 
-  <form method="post" novalidate>
-    <input type="hidden" name="crumb" value="{{ crumb }}" />
-    <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
-    {{ govukButton({ text: copy.submit.button }) }}
-  </form>
+    <form method="post" novalidate>
+      <input type="hidden" name="crumb" value="{{ crumb }}" />
+      <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
+      {{ govukButton({ text: copy.submit.button }) }}
+    </form>
+  {% endif %}
 {% endblock %}

@@ -2,10 +2,13 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   chooseCountryOfOrigin,
+  completeAnswerSections,
+  journeyIdFromPage,
   journeyUrl,
   signIn,
   startNotification
 } from '../../../../../../../../../fit/live-animals-journey.js'
+import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
@@ -397,6 +400,60 @@ test.describe('check-answers feature unfinished notification', () => {
     await expectNoSeriousOrCriticalAxeViolations(
       page,
       'Unfinished check answers'
+    )
+  })
+})
+
+// Design release 1 renders no form on the review page once a notification is
+// submitted: the read-only review is a record of what was sent, ending with the
+// last card. It must not still invite the trader to submit a notification that
+// is already submitted.
+test.describe('check-answers feature submitted notification', () => {
+  test.describe.configure({ timeout: 90000 })
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startNotification(page)
+    await completeAnswerSections(page)
+    await page.getByRole('link', { name: 'Check and submit' }).click()
+    await page.getByRole('button', { name: copy.submit.button }).click()
+    await page
+      .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
+      .check()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    const reference = journeyIdFromPage(page)
+    await page.goto('/')
+    await page
+      .getByRole('link', {
+        name: `View ${dashboardCopy.actionHidden(reference)}`
+      })
+      .click()
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+  })
+
+  test('ends with the last card and offers no way to submit again', async ({
+    page
+  }) => {
+    await expect(
+      page.getByRole('button', {
+        name: sharedCopy.notificationActions.copy.text
+      })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: copy.submit.heading })
+    ).toHaveCount(0)
+    await expect(page.getByText(copy.submit.body)).toHaveCount(0)
+    await expect(
+      page.getByRole('button', { name: copy.submit.button })
+    ).toHaveCount(0)
+  })
+
+  test('submitted review has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await expectNoSeriousOrCriticalAxeViolations(
+      page,
+      'Submitted check answers'
     )
   })
 })
