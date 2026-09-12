@@ -2,14 +2,21 @@ export const copy = {
   title: 'Declaration',
   body: {
     contactUk: 'I am the contact for the authorities and located in the UK.',
-    responsible:
-      'I confirm I am responsible for this consignment until it has cleared border control checks or reached the place of destination.',
+    contactUkDetail:
+      'I am complying with the requirements of Regulation (EU) 2017/625 including on animal health and welfare.',
+    responsible: 'I confirm I am responsible for this consignment.',
+    responsibleDetail:
+      'I am responsible from the submission of this notification to when it enters Great Britain. And I am responsible until it has either:',
+    responsibleItems: [
+      'cleared official checks at the border',
+      'reached the Place of Destination as stated on the health certificate or notification'
+    ],
     accountableFor: 'I confirm that I am accountable for:',
     accountableItems: [
-      'payments for border control checks',
-      're-dispatch of the consignment',
-      'quarantine or isolation of the animals',
-      'the costs of destruction and disposal'
+      'any payment for the official controls at the border',
+      'any arrangements to re-dispatch the consignment',
+      'any costs needed for quarantine or isolation of consignments',
+      'any costs needed for destruction and disposal of consignments, when instructed by the authorities'
     ],
     authorised:
       'I am authorised as being accountable for these things if raising notifications on behalf of a third party.',
