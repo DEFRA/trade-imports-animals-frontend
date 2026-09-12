@@ -27,36 +27,51 @@ const copy = copyFor({ en, cy })
  * anchors to the heading of the section those answers live in, which always
  * stands. Whether a short species card should be marked in its own right is an
  * open question on inc-150.
+ *
+ * The transit-countries card is the one entry whose card is conditional: it is
+ * built only while the answer is in scope, and while it is out of scope its
+ * task row is NA, so `incompleteCardErrors` never names a card that is not on
+ * the page.
  */
 export const REVIEW_CARDS = [
   { id: 'importDetails', anchor: 'import-details', rows: ['origin'] },
   {
-    id: 'additionalAnimalDetails',
-    anchor: 'additional-animal-details',
-    rows: ['importReason', 'additionalDetails']
+    id: 'reasonForImport',
+    anchor: 'reason-for-import',
+    rows: ['importReason']
   },
   {
     id: 'species',
-    anchor: 'about-the-consignment',
+    anchor: 'description-of-the-goods',
     rows: ['commodities', 'animalIdentification']
+  },
+  {
+    id: 'additionalAnimalDetails',
+    anchor: 'additional-animal-details',
+    rows: ['additionalDetails']
   },
   {
     id: 'arrivalDetails',
     anchor: 'arrival-details',
-    rows: ['arrivalDetails', 'transitCountries']
+    rows: ['arrivalDetails']
+  },
+  {
+    id: 'transitCountries',
+    anchor: 'transit-countries',
+    rows: ['transitCountries']
   },
   {
     id: 'transportDetails',
     anchor: 'transport-details',
     rows: ['transporter']
   },
+  { id: 'documents', anchor: 'documents', rows: ['documents'] },
   {
     id: 'rolesAndAddresses',
     anchor: 'roles-and-addresses',
     rows: ['addresses']
   },
-  { id: 'contactAddress', anchor: 'contact-address', rows: ['contact'] },
-  { id: 'documents', anchor: 'documents', rows: ['documents'] }
+  { id: 'contactAddress', anchor: 'contact-address', rows: ['contact'] }
 ]
 
 const cardById = new Map(REVIEW_CARDS.map((card) => [card.id, card]))

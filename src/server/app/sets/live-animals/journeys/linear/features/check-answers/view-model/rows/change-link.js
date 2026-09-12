@@ -20,13 +20,11 @@ export const changeHref = (journeyId, obligationId) =>
  * where they are changed.
  *
  * The card names its page rather than deriving it from a row, because a card's
- * rows can span two pages — arrival details shows the transit countries the
- * transit-countries page collects, and roles and addresses shows the CPH number
- * the CPH page collects. A card normally has one destination, so the card has
- * to say which one, and it says the page the hub's own task row leads with. A
- * card whose rows span a conditional second page may carry a second item for
- * it: the arrival-details card builds its items from two of these calls when
- * the transited-countries row stands.
+ * rows can span two pages — roles and addresses shows the CPH number the CPH
+ * page collects. A card has one destination, so it has to say which one, and
+ * it says the page the hub's own task row leads with. A conditional second
+ * page does not get a second link here: it gets a headed card of its own that
+ * carries its own, as cards/movement/transit-countries.js does.
  */
 export const cardAction = (journeyId, slug, visuallyHiddenText) => ({
   items: [
