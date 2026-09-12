@@ -84,7 +84,7 @@ export const copy = {
     numberOfPackages: 'Nifer y pecynnau',
     portOfEntry: 'Porthladd mynediad',
     arrivalDate: 'Dyddiad cyrraedd y porthladd mynediad',
-    meansOfTransport: 'Cyfrwng cludo',
+    meansOfTransport: 'Cyfrwng cludo i’r porthladd mynediad',
     transitedCountries: 'Gwledydd y bydd y llwyth yn teithio drwyddynt',
     transportIdentification: 'Adnabod y cludiant',
     transportDocumentReference: 'Cyfeirnod dogfen cludo',
