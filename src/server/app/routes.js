@@ -71,7 +71,7 @@ export const liveAnimals = {
         type: 'onPreHandler',
         method: async (request, h) => {
           try {
-            await Promise.all([countries.prime(), ports.prime()])
+            await Promise.all([countries.ensureLoaded(), ports.ensureLoaded()])
           } catch (err) {
             request.logger.error({ err }, 'Failed to load reference data')
             throw Boom.serverUnavailable('Reference data unavailable')

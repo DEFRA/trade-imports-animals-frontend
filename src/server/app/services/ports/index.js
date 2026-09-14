@@ -5,7 +5,7 @@ import { isStubMode } from '../../../common/services/mode.js'
 let ports = [...PORTS]
 let loaded = false
 
-export const prime = async () => {
+export const ensureLoaded = async () => {
   if (isStubMode() || loaded) {
     return
   }

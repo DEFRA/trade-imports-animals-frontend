@@ -5,7 +5,7 @@ import { isStubMode } from '../../../common/services/mode.js'
 let labels = { ...COUNTRY_LABELS }
 let loaded = false
 
-export const prime = async () => {
+export const ensureLoaded = async () => {
   if (isStubMode() || loaded) {
     return
   }

@@ -79,11 +79,11 @@ describe('countries service — stub mode', () => {
     })
   })
 
-  it('Should treat prime() as a no-op in stub mode (no fetch, stub retained)', async () => {
+  it('Should treat ensureLoaded() as a no-op in stub mode (no fetch, stub retained)', async () => {
     process.env.STUB_MODE = 'true'
     stubFetch(async () => okResponse([{ code: 'ZZ', name: 'Zedland' }]))
     const countries = await import('./countries/index.js')
-    await countries.prime()
+    await countries.ensureLoaded()
     expect(fetch).not.toHaveBeenCalled()
     expect(countries.originLabel('AT')).toBe('Austria')
     expect(countries.originLabel('ZZ')).toBeUndefined()
@@ -91,13 +91,13 @@ describe('countries service — stub mode', () => {
 })
 
 describe('countries service — real mode', () => {
-  it('Should replace the cache on prime() so sync accessors serve fetched data', async () => {
+  it('Should replace the cache on ensureLoaded() so sync accessors serve fetched data', async () => {
     process.env.STUB_MODE = 'false'
     stubFetch(okOnlyForBlock('GBNAG_SPS_EX', [{ code: 'ZZ', name: 'Zedland' }]))
     const countries = await import('./countries/index.js')
 
     expect(countries.originLabel('ZZ')).toBeUndefined()
-    await countries.prime()
+    await countries.ensureLoaded()
 
     expect(countries.originLabel('ZZ')).toBe('Zedland')
     expect(countries.originLabel('AT')).toBeUndefined()
@@ -107,7 +107,7 @@ describe('countries service — real mode', () => {
     expect(countries.addressCountries()).toEqual(['United Kingdom', 'Zedland'])
   })
 
-  it('Should not re-fetch on a second prime() call after a successful first', async () => {
+  it('Should not re-fetch on a second ensureLoaded() call after a successful first', async () => {
     process.env.STUB_MODE = 'false'
     const fetchMock = vi.fn(
       okOnlyForBlock('GBNAG_SPS_EX', [{ code: 'ZZ', name: 'Zedland' }])
@@ -115,13 +115,13 @@ describe('countries service — real mode', () => {
     vi.stubGlobal('fetch', fetchMock)
     const countries = await import('./countries/index.js')
 
-    await countries.prime()
-    await countries.prime()
+    await countries.ensureLoaded()
+    await countries.ensureLoaded()
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
-  it('Should re-attempt on prime() after a prior failure', async () => {
+  it('Should re-attempt on ensureLoaded() after a prior failure', async () => {
     process.env.STUB_MODE = 'false'
     const fetchMock = vi
       .fn()
@@ -132,10 +132,10 @@ describe('countries service — real mode', () => {
     vi.stubGlobal('fetch', fetchMock)
     const countries = await import('./countries/index.js')
 
-    await expect(countries.prime()).rejects.toThrow()
+    await expect(countries.ensureLoaded()).rejects.toThrow()
     expect(countries.originLabel('ZZ')).toBeUndefined()
 
-    await countries.prime()
+    await countries.ensureLoaded()
     expect(countries.originLabel('ZZ')).toBe('Zedland')
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
@@ -153,17 +153,17 @@ describe('ports service — stub mode', () => {
 })
 
 describe('ports service — real mode', () => {
-  it('Should replace the cache on prime() so list() serves fetched ports', async () => {
+  it('Should replace the cache on ensureLoaded() so list() serves fetched ports', async () => {
     process.env.STUB_MODE = 'false'
     stubFetch(async () => okResponse([{ code: 'GB ZZZ', name: 'Zed Port' }]))
     const ports = await import('./ports/index.js')
 
-    await ports.prime()
+    await ports.ensureLoaded()
 
     expect(ports.list()).toEqual([{ code: 'GB ZZZ', name: 'Zed Port' }])
   })
 
-  it('Should not re-fetch on a second prime() call after a successful first', async () => {
+  it('Should not re-fetch on a second ensureLoaded() call after a successful first', async () => {
     process.env.STUB_MODE = 'false'
     const fetchMock = vi.fn(async () =>
       okResponse([{ code: 'GB ZZZ', name: 'Zed Port' }])
@@ -171,13 +171,13 @@ describe('ports service — real mode', () => {
     vi.stubGlobal('fetch', fetchMock)
     const ports = await import('./ports/index.js')
 
-    await ports.prime()
-    await ports.prime()
+    await ports.ensureLoaded()
+    await ports.ensureLoaded()
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
-  it('Should re-attempt on prime() after a prior failure', async () => {
+  it('Should re-attempt on ensureLoaded() after a prior failure', async () => {
     process.env.STUB_MODE = 'false'
     const fetchMock = vi
       .fn()
@@ -188,13 +188,13 @@ describe('ports service — real mode', () => {
     vi.stubGlobal('fetch', fetchMock)
     const ports = await import('./ports/index.js')
 
-    await expect(ports.prime()).rejects.toThrow()
+    await expect(ports.ensureLoaded()).rejects.toThrow()
     expect(ports.list()).not.toContainEqual({
       code: 'GB ZZZ',
       name: 'Zed Port'
     })
 
-    await ports.prime()
+    await ports.ensureLoaded()
     expect(ports.list()).toEqual([{ code: 'GB ZZZ', name: 'Zed Port' }])
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
