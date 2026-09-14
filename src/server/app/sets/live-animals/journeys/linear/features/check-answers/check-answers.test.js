@@ -469,11 +469,26 @@ describe(`${SUITE} — fully-populated notification`, () => {
     )
     const contact = cardByTitle(
       await sectionsFor(fullSeed),
-      'Contact address for this consignment'
+      CONTACT_ADDRESS_CARD
     )
-    expect(htmlOf(contact.rows, 'Address')).toBe(
+    expect(htmlOf(contact.rows, 'Contact address')).toBe(
       '<strong>Animal and Plant Health Agency</strong><br>Woodham Lane<br>Addlestone<br>KT15 3NB<br>United Kingdom'
     )
+  })
+
+  // Design release 1 keys the contact address card's one row 'Contact address',
+  // not the generic 'Address' the Transport details card keeps — on a page
+  // listing seven addresses, the row has to say which one it is. The two labels
+  // are separate copy strings so naming this one cannot rename the other.
+  it('Should key the contact address row by name while the transporter row keeps the generic address label', async () => {
+    const sections = await sectionsFor(fullSeed)
+
+    expect(keysOf(cardByTitle(sections, CONTACT_ADDRESS_CARD).rows)).toEqual([
+      'Contact address'
+    ])
+    expect(
+      keysOf(cardByTitle(sections, TRANSPORT_DETAILS_CARD).rows)
+    ).toContain('Address')
   })
 
   // Design release 1 puts the Change links in each card's heading and none on a

@@ -97,6 +97,7 @@ export const copy = {
     transportDocumentReference: 'Transport document reference',
     name: 'Name',
     address: 'Address',
+    contactAddress: 'Contact address',
     country: 'Country',
     approvalNumber: 'Approval number',
     type: 'Type',

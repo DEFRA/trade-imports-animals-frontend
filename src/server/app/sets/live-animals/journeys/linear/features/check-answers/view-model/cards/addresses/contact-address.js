@@ -23,5 +23,5 @@ export const contactAddressCard = (
       copy.hidden.cards.contactAddress
     )
   ),
-  rows: [partyRow(copy.rows.address, parties.contactAddress)]
+  rows: [partyRow(copy.rows.contactAddress, parties.contactAddress)]
 })
