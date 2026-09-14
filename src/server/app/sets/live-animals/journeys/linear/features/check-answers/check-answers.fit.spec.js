@@ -134,8 +134,8 @@ test.describe('check-answers feature section structure', () => {
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
     // Numbered, so the section headings are the level-2 headings that open
-    // with a number — the error summary, the submit heading and the footer's
-    // own level-2 headings are not part of the spine.
+    // with a number — the error summary and the footer's own level-2 headings
+    // are not part of the spine.
     await expect(
       page.getByRole('heading', { level: 2 }).filter({ hasText: /^\d\.\s/ })
     ).toHaveText([
@@ -146,6 +146,33 @@ test.describe('check-answers feature section structure', () => {
       copy.sections.consignmentParties,
       copy.sections.contactAddress
     ])
+  })
+
+  // Design release 1 ends the review with the button. Nothing stands between
+  // the last card and Continue — no heading and no sentence — so the button's
+  // own label carries the whole instruction.
+  test('ends with the Continue button and nothing above it', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    await expect(
+      page.getByRole('main').getByRole('heading', { level: 2 }).last()
+    ).toHaveText(copy.sections.contactAddress)
+
+    const lastBlock = page.locator('.govuk-grid-column-two-thirds > *').last()
+    await expect(lastBlock).toHaveJSProperty('tagName', 'FORM')
+
+    // Nothing sits between the last card and the form: a reinstated heading
+    // or explanatory sentence would land here and fail.
+    await expect(
+      lastBlock.locator('xpath=preceding-sibling::*[1]')
+    ).toHaveClass(/govuk-summary-card/)
+
+    await expect(
+      lastBlock.getByRole('button', { name: copy.submit.button })
+    ).toBeVisible()
   })
 
   test('heads every card with its own subsection heading', async ({ page }) => {
@@ -518,10 +545,6 @@ test.describe('check-answers feature submitted notification', () => {
         name: sharedCopy.notificationActions.copy.text
       })
     ).toBeVisible()
-    await expect(
-      page.getByRole('heading', { name: copy.submit.heading })
-    ).toHaveCount(0)
-    await expect(page.getByText(copy.submit.body)).toHaveCount(0)
     await expect(
       page.getByRole('button', { name: copy.submit.button })
     ).toHaveCount(0)

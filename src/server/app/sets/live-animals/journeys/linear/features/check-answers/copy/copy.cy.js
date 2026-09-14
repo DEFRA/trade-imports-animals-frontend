@@ -128,8 +128,6 @@ export const copy = {
     commodity: (n) => `nwydd ${n}`
   },
   submit: {
-    heading: 'Nawr cyflwynwch eich hysbysiad',
-    body: 'Parhewch i’r datganiad i gyflwyno eich hysbysiad.',
     button: 'Parhau'
   },
   errors: {
