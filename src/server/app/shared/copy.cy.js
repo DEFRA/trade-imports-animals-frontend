@@ -22,6 +22,12 @@ export const copy = {
       accessibility: 'Datganiad hygyrchedd'
     }
   },
+  unauthorised: {
+    title: "Mae'n ddrwg gennym, ni allwn eich mewngofnodi",
+    heading: "Mae'n ddrwg gennym, ni allwn eich mewngofnodi.",
+    bodyPrefix: 'Rhowch',
+    signInLinkText: 'gynnig arall arni'
+  },
   errorSummary: {
     title: 'Mae problem'
   },

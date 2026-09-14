@@ -21,4 +21,16 @@ describe('getSafeRedirect', () => {
     expect(getSafeRedirect('/auth/sign-in')).toBe('/auth/sign-in')
     expect(getSafeRedirect('/some/deep/path?x=1')).toBe('/some/deep/path?x=1')
   })
+
+  test('returns "/" for protocol-relative redirects', () => {
+    expect(getSafeRedirect('//evil.com')).toBe('/')
+  })
+
+  test('returns "/" for backslash open-redirect bypass', () => {
+    expect(getSafeRedirect(String.raw`/\evil.com`)).toBe('/')
+  })
+
+  test('returns "/" for CRLF in redirect path', () => {
+    expect(getSafeRedirect('/address-book\r\n/evil')).toBe('/')
+  })
 })

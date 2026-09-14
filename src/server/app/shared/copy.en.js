@@ -1,10 +1,10 @@
 /**
  * Shared chrome copy — the only copy that legitimately lives outside a
  * feature folder: the layout (service name, service navigation,
- * back link, error title prefix), error-summary title, save-actions
- * buttons and journey-strip tags. Every view reaches it as `sharedCopy`
- * (via `kit.base`, or passed directly by the controllers that build
- * their view models without it).
+ * back link, error title prefix), the unauthorised page, error-summary
+ * title, save-actions buttons and journey-strip tags. Every view reaches
+ * it as `sharedCopy` (via `kit.base`, or passed directly by the controllers
+ * that build their view models without it).
  */
 export const copy = {
   layout: {
@@ -28,6 +28,12 @@ export const copy = {
       cookies: 'Cookies',
       accessibility: 'Accessibility statement'
     }
+  },
+  unauthorised: {
+    title: 'Sorry, we are unable to sign you in',
+    heading: 'Sorry, we are unable to sign you in.',
+    bodyPrefix: 'Please',
+    signInLinkText: 'try again'
   },
   errorSummary: {
     title: 'There is a problem'

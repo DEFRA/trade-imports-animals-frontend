@@ -104,7 +104,8 @@ function getCookieOptions() {
       isSecure: config.get('isProduction')
     },
     redirectTo: function (request) {
-      return `/auth/sign-in?redirect=${request.url.pathname}${request.url.search}`
+      const target = `${request.url.pathname}${request.url.search}`
+      return `/auth/sign-in?redirect=${encodeURIComponent(target)}`
     },
     validate: async function (request, session) {
       const userSession = await request.server.app.cache.get(session.sessionId)
@@ -123,11 +124,15 @@ function getCookieOptions() {
         if (!config.get('defraId.refreshTokens')) {
           return { isValid: false }
         }
-        const { access_token: token, refresh_token: refreshToken } =
-          await refreshTokens(userSession.refreshToken)
-        userSession.token = token
-        userSession.refreshToken = refreshToken
-        await request.server.app.cache.set(session.sessionId, userSession)
+        try {
+          const { access_token: token, refresh_token: refreshToken } =
+            await refreshTokens(userSession.refreshToken)
+          userSession.token = token
+          userSession.refreshToken = refreshToken
+          await request.server.app.cache.set(session.sessionId, userSession)
+        } catch {
+          return { isValid: false }
+        }
       }
 
       // Set the user's details on the request object and allow the request to continue

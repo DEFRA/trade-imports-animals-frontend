@@ -21,6 +21,29 @@ const csrfEnabled = !isTest
 
 convict.addFormats(convictFormatWithValidator)
 
+// convict's built-in Boolean format coerces any string other than exactly
+// 'false' to true (e.g. a typo like 'flase' silently enables the flag), so
+// security/environment-gating flags use this stricter format instead - it
+// only accepts an actual boolean, or the literal strings 'true'/'false' from
+// an env var, and fails config.validate() on anything else.
+convict.addFormat({
+  name: 'strict-boolean',
+  validate(val) {
+    if (typeof val !== 'boolean') {
+      throw new Error("must be 'true' or 'false'")
+    }
+  },
+  coerce(val) {
+    if (val === 'true') {
+      return true
+    }
+    if (val === 'false') {
+      return false
+    }
+    return val
+  }
+})
+
 export const config = convict({
   serviceVersion: {
     doc: 'The service version, this variable is injected into your docker container in CDP environments',
@@ -246,7 +269,7 @@ export const config = convict({
   },
   stubMode: {
     doc: 'Run against stubs rather than real dependencies: stub data in place of the address book, backend and reference data, and a locally signed session in place of the Defra ID OIDC exchange. Auth is still enforced - only the external OIDC round-trip is bypassed. Ignored in production (see isStubMode).',
-    format: Boolean,
+    format: 'strict-boolean',
     default: false,
     env: 'STUB_MODE'
   },
