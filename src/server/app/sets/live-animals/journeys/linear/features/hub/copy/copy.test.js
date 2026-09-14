@@ -272,8 +272,11 @@ describe('#hubHandler', () => {
     )
   })
 
-  it('Should omit the commodity totals on a journey with no commodity lines', async () => {
-    expect((await renderHub()).commodityTotals).toBeNull()
+  it('Should read both commodity totals as 0 on a journey with no commodity lines', async () => {
+    expect((await renderHub()).commodityTotals).toEqual({
+      animals: 0,
+      packages: 0
+    })
   })
 
   it('Should sum animals and packages over the commodity lines, treating blanks as 0', async () => {

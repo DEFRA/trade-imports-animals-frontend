@@ -47,6 +47,21 @@ const openHubWithCommodityTotals = async (page) => {
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
 
+const expectTotalBoxes = async (page, animals, packages) => {
+  const boxes = page.locator(TOTAL_BOX)
+  await expect(boxes).toHaveCount(2)
+  await expect(boxes.nth(0).locator('> *')).toHaveText([
+    animals,
+    copy.commodityTotals.animalsLabel,
+    copy.commodityTotals.animalsCaption
+  ])
+  await expect(boxes.nth(1).locator('> *')).toHaveText([
+    packages,
+    copy.commodityTotals.packagesLabel,
+    copy.commodityTotals.packagesCaption
+  ])
+}
+
 test.describe('hub feature', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -152,6 +167,12 @@ test.describe('hub feature — review readiness', () => {
   }) => {
     await startNotification(page)
 
+    // The commodity summary shows from the first visit, so this run covers the
+    // zero-total panels as well as the blocked task list.
+    await expect(
+      page.getByRole('heading', { name: copy.commodityTotals.heading })
+    ).toBeVisible()
+
     await expectAxeClean(page, 'Hub')
   })
 })
@@ -161,23 +182,27 @@ test.describe('hub feature — commodity totals', () => {
     await signIn(page)
   })
 
+  // Design release 1 shows the summary from the first visit to the hub, with
+  // both totals reading zero before any commodity line has been added.
+  test('both boxes read 0 before a commodity is added', async ({ page }) => {
+    await startNotification(page)
+
+    await expect(
+      page.getByRole('heading', {
+        level: 2,
+        name: copy.commodityTotals.heading
+      })
+    ).toBeVisible()
+
+    await expectTotalBoxes(page, '0', '0')
+  })
+
   test('each box reads as the number, then the label, then the caption', async ({
     page
   }) => {
     await openHubWithCommodityTotals(page)
 
-    const boxes = page.locator(TOTAL_BOX)
-    await expect(boxes).toHaveCount(2)
-    await expect(boxes.nth(0).locator('> *')).toHaveText([
-      ANIMALS,
-      copy.commodityTotals.animalsLabel,
-      copy.commodityTotals.animalsCaption
-    ])
-    await expect(boxes.nth(1).locator('> *')).toHaveText([
-      PACKAGES,
-      copy.commodityTotals.packagesLabel,
-      copy.commodityTotals.packagesCaption
-    ])
+    await expectTotalBoxes(page, ANIMALS, PACKAGES)
 
     await expect(
       page.getByRole('heading', {
