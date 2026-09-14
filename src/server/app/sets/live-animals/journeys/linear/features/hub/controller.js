@@ -139,11 +139,10 @@ const toCount = (value) => {
 const sumOverLines = (lines, field) =>
   lines.reduce((total, { entry }) => total + toCount(entry[field]), 0)
 
+// Design release 1 shows the summary on every visit to the hub, reading zero
+// before any commodity line exists, so the totals are never absent.
 const buildCommodityTotals = (answers, evaluation) => {
   const lines = state.collectionView(answers, ['commodityLines'], evaluation)
-  if (lines.length === 0) {
-    return null
-  }
   return {
     animals: sumOverLines(lines, 'numberOfAnimalsQuantity'),
     packages: sumOverLines(lines, 'numberOfPackages')
