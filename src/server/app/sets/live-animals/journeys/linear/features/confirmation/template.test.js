@@ -106,3 +106,16 @@ describe('confirmation template view-or-amend section', () => {
     )
   })
 })
+
+// HMRC's contact index lists every tax and every helpline. A trader who has
+// just submitted an import notification wants one desk, so the link goes
+// straight to the customs, international trade and excise enquiries page.
+describe('confirmation template help section', () => {
+  it('Should send the customs link to HMRC customs enquiries, not the contact index', () => {
+    const $ = load(render([]))
+
+    expect($(`a:contains("${copy.help.customsLink}")`).attr('href')).toBe(
+      'https://www.gov.uk/government/organisations/hm-revenue-customs/contact/customs-international-trade-and-excise-enquiries'
+    )
+  })
+})
