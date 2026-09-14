@@ -143,9 +143,8 @@ describe('#rowStatus — one status per hub task row', () => {
   })
 
   describe('the commodities/identification facet split of commodityLines', () => {
-    it('Should read Not yet started on both rows while no line exists', () => {
+    it('Should read Not yet started on the commodities row while no line exists', () => {
       expect(statusIn('commodities', {})).toBe(NOT_STARTED)
-      expect(statusIn('animalIdentification', {})).toBe(NOT_STARTED)
     })
 
     it('Should complete the commodities row on line data alone, owing no identifier on a single species', () => {
@@ -254,6 +253,40 @@ describe('#rowStatus — one status per hub task row', () => {
   })
 })
 
+// Design release 1 inserts the identification task between the commodity rows
+// only once a chosen commodity carries an identifier of its own.
+describe('#rowStatus — the conditional animal-identification row', () => {
+  it('Should be Not applicable (absent) on a notification with no commodity', () => {
+    expect(statusIn('animalIdentification', {})).toBe(NA)
+    expect(statusIn('animalIdentification', { countryOfOrigin: 'FR' })).toBe(NA)
+  })
+
+  it('Should be Not applicable (absent) while no chosen commodity carries an identifier', () => {
+    expect(
+      statusIn('animalIdentification', {
+        countryOfOrigin: 'FR',
+        commodityLines: [{ commoditySelection: 'Fish' }]
+      })
+    ).toBe(NA)
+  })
+
+  it('Should read Completed as soon as one chosen commodity carries an identifier', () => {
+    expect(
+      statusIn('animalIdentification', {
+        countryOfOrigin: 'FR',
+        commodityLines: [
+          { commoditySelection: 'Fish' },
+          { commoditySelection: 'Cow' }
+        ]
+      })
+    ).toBe(FULFILLED)
+  })
+
+  it('Should be marked conditional so the hub drops it while it is Not applicable', () => {
+    expect(taskRowById('animalIdentification').conditional).toBe(true)
+  })
+})
+
 describe('#rowStatus — the conditional transit-countries row', () => {
   it('Should be Not applicable (absent) while the means of transport is not overland', () => {
     expect(statusIn('transitCountries', unlocked)).toBe(NA)
@@ -285,6 +318,9 @@ describe('#rowStatus — the conditional transit-countries row', () => {
 })
 
 describe('#rowGatePasses / #rowEntry — a row is gated exactly as its first page is', () => {
+  const shownRows = (answers) =>
+    taskRows.filter((row) => statusIn(row.id, answers) !== NA)
+
   it('Should open only the origin row on a blank journey', () => {
     const scope = makeScope({})
     for (const row of taskRows) {
@@ -292,9 +328,11 @@ describe('#rowGatePasses / #rowEntry — a row is gated exactly as its first pag
     }
   })
 
-  it('Should unlock every unconditional row once the origin and a commodity line are answered', () => {
+  it('Should unlock every row the hub shows once the origin and a commodity line are answered', () => {
     const scope = makeScope(unlocked)
-    for (const row of taskRows.filter((taskRow) => !taskRow.conditional)) {
+    const shown = shownRows(unlocked)
+    expect(shown.map((row) => row.id)).toContain('animalIdentification')
+    for (const row of shown) {
       expect(rowGatePasses(row, scope)).toBe(true)
     }
   })
