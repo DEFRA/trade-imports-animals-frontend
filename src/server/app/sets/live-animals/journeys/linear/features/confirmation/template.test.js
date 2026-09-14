@@ -17,13 +17,36 @@ const render = (outstandingItems) =>
       userSession: { isAuthenticated: true, displayName: 'Sam Example' },
       getAssetPath: (asset) => `/assets/${asset}`,
       referenceNumber: 'ABC-123',
-      submissionDate: '12 December 2025',
       outstandingItems,
       dashboardHref: '/',
       createAction: '/notifications',
       crumb: 'test-crumb'
     }
   )
+
+// Design release 1 goes from the reference panel straight into what the trader
+// has to do. Nothing — the declaration date least of all — sits in between.
+describe('confirmation template panel', () => {
+  it('Should follow the panel with what the trader still has to do', () => {
+    const $ = load(render([copy.outstanding.documents]))
+    const afterPanel = $('.govuk-panel').nextAll().first()
+
+    expect(afterPanel.is('h2')).toBe(true)
+    expect(afterPanel.text().trim()).toBe(copy.outstanding.heading)
+  })
+
+  it('Should follow the panel with the transport guidance when nothing is outstanding', () => {
+    const $ = load(render([]))
+    const afterPanel = $('.govuk-panel').nextAll().first()
+
+    expect(afterPanel.is('h2')).toBe(true)
+    expect(afterPanel.text().trim()).toBe(copy.transporting.heading)
+  })
+
+  it('Should not print a date of declaration', () => {
+    expect(load(render([])).text()).not.toMatch(/date of declaration/i)
+  })
+})
 
 describe('confirmation template outstanding-work section', () => {
   it('Should list what the trader still owes when something is outstanding', () => {

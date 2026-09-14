@@ -41,7 +41,7 @@ describe('GET /confirmation', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should render the confirmation panel with the reference and submission date for a submitted notification', async () => {
+  it('Should render the confirmation panel with the reference for a submitted notification', async () => {
     const { journeyId } = await store.create()
     await store.submit(journeyId)
     const h = stubH()
@@ -52,9 +52,15 @@ describe('GET /confirmation', () => {
       'Import notification submitted'
     )
     expect(h.captured.view.context.referenceNumber).toBe(journeyId)
-    expect(h.captured.view.context.submissionDate).toMatch(
-      /^\d{1,2} \w+ \d{4}$/
-    )
+  })
+
+  // The declaration date belongs to the declaration page. Design release 1
+  // takes the submitted page straight from the reference panel to what the
+  // trader still has to do, so the date is not repeated here.
+  it('Should not supply a submission date to the submitted page', async () => {
+    const view = await submittedView()
+
+    expect(view.context).not.toHaveProperty('submissionDate')
   })
 
   // Documents are optional at submission, so the trader can land here with the
