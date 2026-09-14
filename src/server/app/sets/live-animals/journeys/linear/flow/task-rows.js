@@ -22,8 +22,27 @@ export const taskRows = [
   { id: 'origin', pages: [originPage] },
   {
     id: 'commodities',
-    pages: [commoditiesPage, consignmentDetailsPage],
-    parts: [{ collection: 'commodityLines', except: ['animalIdentifiers'] }]
+    pages: [commoditiesPage],
+    parts: [
+      {
+        collection: 'commodityLines',
+        except: [
+          'animalIdentifiers',
+          'numberOfAnimalsQuantity',
+          'numberOfPackages'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'consignmentDetails',
+    pages: [consignmentDetailsPage],
+    parts: [
+      {
+        collection: 'commodityLines',
+        only: ['numberOfAnimalsQuantity', 'numberOfPackages']
+      }
+    ]
   },
   { id: 'importReason', pages: [importReasonPage] },
   { id: 'additionalDetails', pages: [additionalDetailsPage] },

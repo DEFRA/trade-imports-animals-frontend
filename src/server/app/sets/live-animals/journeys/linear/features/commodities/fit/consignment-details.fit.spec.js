@@ -9,6 +9,7 @@ import {
   startNotification
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from '../copy/copy.en.js'
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 
 const BOS_TAURUS = 'Bos taurus'
 const SAVE_AND_CONTINUE = 'Save and continue'
@@ -126,11 +127,11 @@ test.describe('commodity consignment details — rendering and validation', () =
     ).toHaveAttribute('value', 'remove-species:1')
   })
 
-  test('back link returns to commodity selection', async ({ page }) => {
+  test('back link returns to the overview the hub task came from', async ({
+    page
+  }) => {
     await page.locator('.govuk-back-link').click()
-    await expect(
-      page.getByRole('heading', { name: copy.search.title })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
   for (const [name, field, invalid] of quantityFields) {
@@ -277,6 +278,41 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
     await expect(page.locator(SECOND_ANIMALS_QUANTITY_INPUT)).toHaveValue('2')
     await expect(page.locator('#numberOfAnimalsQuantity-2')).toHaveValue('')
+  })
+
+  test('ends with all three controls now the hub links straight here', async ({
+    page
+  }) => {
+    const group = page.locator('.govuk-button-group')
+
+    await expect(
+      group.getByRole('button', { name: SAVE_AND_CONTINUE })
+    ).toBeVisible()
+    await expect(
+      group.getByRole('button', {
+        name: sharedCopy.saveActions.saveAndReturnToHub
+      })
+    ).toBeVisible()
+    await expect(
+      group.getByRole('link', {
+        name: sharedCopy.saveActions.cancelAndReturnToHub
+      })
+    ).toBeVisible()
+  })
+
+  test('save and return to overview stores the counts and marks the row Completed', async ({
+    page
+  }) => {
+    await fillValidQuantities(page)
+    await page
+      .getByRole('button', { name: sharedCopy.saveActions.saveAndReturnToHub })
+      .click()
+
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+
+    await page.goto(journeyUrl(page, CONSIGNMENT_DETAILS_PATH))
+    await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
+    await expect(page.locator(FIRST_PACKAGES_INPUT)).toHaveValue('5')
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {

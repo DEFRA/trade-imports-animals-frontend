@@ -44,6 +44,16 @@ const errorLink = (page, message) =>
 
 const selectionPanel = (page) => page.locator('#commodity-selection')
 
+// Commodity details is its own hub task now, so its back link returns to the
+// hub. Reopen the search page from the row that owns it.
+const reopenSelection = async (page) => {
+  await page.locator(BACK_LINK).click()
+  await page.getByRole('link', { name: 'What are you importing?' }).click()
+  await expect(
+    page.getByRole('heading', { name: copy.search.title })
+  ).toBeVisible()
+}
+
 test.describe('commodity search', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -194,7 +204,7 @@ test.describe('commodity search', () => {
       .allTextContents()
     expect(speciesHeadings).toEqual(canonicalSelectionOrder)
 
-    await page.locator(BACK_LINK).click()
+    await reopenSelection(page)
     const panel = selectionPanel(page)
     await expect(panel).toContainText(copy.search.selected.heading(3))
     for (const label of canonicalSelectionLabels) {
@@ -208,7 +218,7 @@ test.describe('commodity search', () => {
   }) => {
     await selectSpecies(page, [BOS_TAURUS])
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
-    await page.locator(BACK_LINK).click()
+    await reopenSelection(page)
     await searchCommodities(page, 'Bos')
     await expect(
       page.getByRole('checkbox', { name: BOS_TAURUS_LABEL, exact: true })

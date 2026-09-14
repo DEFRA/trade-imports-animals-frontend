@@ -1,4 +1,4 @@
-import { pagePath } from '../../../../../../../shared/paths.js'
+import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import { validate } from '../../../../../../../lib/validate/index.js'
@@ -46,10 +46,7 @@ const render = (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: kit.withChangeContext(
-        request,
-        pagePath(request.params.journeyId, commoditiesPage.slug)
-      ),
+      backLink: hubPath(journey.journeyId),
       journey,
       page
     }),

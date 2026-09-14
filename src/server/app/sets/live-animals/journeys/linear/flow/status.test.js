@@ -41,6 +41,7 @@ const cases = {
       NOT_STARTED,
       NOT_STARTED,
       NOT_STARTED,
+      NOT_STARTED,
       NA,
       NOT_STARTED,
       NOT_STARTED,
@@ -64,6 +65,7 @@ const cases = {
     answers: { countryOfOrigin: 'FR' },
     rows: [
       IN_PROGRESS,
+      NOT_STARTED,
       NOT_STARTED,
       NOT_STARTED,
       NOT_STARTED,
@@ -99,6 +101,7 @@ const cases = {
     rows: [
       IN_PROGRESS,
       IN_PROGRESS,
+      NOT_STARTED,
       NOT_STARTED,
       NOT_STARTED,
       FULFILLED,
@@ -137,6 +140,7 @@ const cases = {
     rows: [
       IN_PROGRESS,
       FULFILLED,
+      FULFILLED,
       NOT_STARTED,
       NOT_STARTED,
       FULFILLED,
@@ -173,6 +177,7 @@ const cases = {
       FULFILLED,
       FULFILLED,
       FULFILLED,
+      FULFILLED,
       FULFILLED
     ],
     sections: [
@@ -192,6 +197,7 @@ const cases = {
     answers: { ...happyPath, commodityLines: [] },
     rows: [
       FULFILLED,
+      NOT_STARTED,
       NOT_STARTED,
       FULFILLED,
       FULFILLED,
