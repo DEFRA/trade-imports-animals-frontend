@@ -3,6 +3,8 @@ import { vi } from 'vitest'
 import { catchAll } from './errors.js'
 import { createServer } from '../../server.js'
 import { statusCodes } from '../constants/status-codes.js'
+import * as countries from '../../app/services/countries/index.js'
+import { config } from '../../../config/config.js'
 
 import { mockOidcConfig } from '../test-helpers/mock-oidc-config.js'
 
@@ -22,6 +24,15 @@ describe('#errors', () => {
       handler: () => {
         throw new TypeError('programming failure')
       }
+    })
+    // Simulates a page that reads reference data — the reader throws when
+    // it has not been primed, which is the failure the frontend surfaces
+    // when MDM was down at startup (see EUDPA-575).
+    server.route({
+      method: 'GET',
+      path: '/test/refdata-missing',
+      options: { auth: false },
+      handler: () => countries.originLabel('FR')
     })
     await server.initialize()
   })
@@ -61,6 +72,30 @@ describe('#errors', () => {
         'Your answers on this page have been saved. Try again in a few minutes.'
       )
     )
+  })
+
+  test('Should serve the error page when a page reads reference data that was never primed', async () => {
+    // Flip to real mode for the length of this request so the reader's
+    // "not loaded" guard fires — mimicking a pod that came up while MDM
+    // was unavailable, so prime() failed and the module was never seeded.
+    const originalStubMode = config.get('stubMode')
+    config.set('stubMode', false)
+    try {
+      const { result, statusCode } = await server.inject({
+        method: 'GET',
+        url: '/test/refdata-missing'
+      })
+
+      expect(statusCode).toBe(statusCodes.serviceUnavailable)
+      expect(result).toEqual(
+        expect.stringContaining(
+          'Something went wrong | Import notification service'
+        )
+      )
+      expect(result).toEqual(expect.stringContaining('>503</h1>'))
+    } finally {
+      config.set('stubMode', originalStubMode)
+    }
   })
 })
 

@@ -71,9 +71,19 @@ export const liveAnimals = {
         const target = await journeyEntryGuardTarget(request, h)
         return target ? h.redirect(target).takeover() : h.continue
       })
+      // Non-fatal at startup: an MDM outage that trips prime() must not
+      // stop the pod from serving. The readers throw when called before a
+      // successful load, so catchAll renders the error page for pages
+      // that need ref-data; routes that don't touch it keep serving.
       if (!isStubMode()) {
-        await countries.prime()
-        await ports.prime()
+        try {
+          await Promise.all([countries.prime(), ports.prime()])
+        } catch (err) {
+          server.logger.warn(
+            { err },
+            'Reference data unavailable at startup — pages that need it will error until the pod restarts against a healthy MDM'
+          )
+        }
       }
       server.route(allRoutes)
     }

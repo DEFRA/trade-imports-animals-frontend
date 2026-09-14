@@ -90,13 +90,37 @@ describe('countries service — stub mode', () => {
   })
 })
 
+const REF_DATA_UNAVAILABLE = 'Reference data unavailable'
+
 describe('countries service — real mode', () => {
+  it('Should throw when a reader is called before prime() has succeeded', async () => {
+    process.env.STUB_MODE = 'false'
+    const countries = await import('./countries/index.js')
+
+    expect(() => countries.originLabel('ZZ')).toThrow(REF_DATA_UNAVAILABLE)
+    expect(() => countries.originCountries()).toThrow(REF_DATA_UNAVAILABLE)
+    expect(() => countries.addressCountries()).toThrow(REF_DATA_UNAVAILABLE)
+    expect(() => countries.countryCodeOf('France')).toThrow(
+      REF_DATA_UNAVAILABLE
+    )
+  })
+
+  it('Should reject prime() with a serverUnavailable Boom error on load failure', async () => {
+    process.env.STUB_MODE = 'false'
+    stubFetch(async () => ({ ok: false, status: 503, statusText: 'Down' }))
+    const countries = await import('./countries/index.js')
+
+    await expect(countries.prime()).rejects.toMatchObject({
+      isBoom: true,
+      output: { statusCode: 503 }
+    })
+  })
+
   it('Should replace the cache on prime() so sync accessors serve fetched data', async () => {
     process.env.STUB_MODE = 'false'
     stubFetch(okOnlyForBlock('GBNAG_SPS_EX', [{ code: 'ZZ', name: 'Zedland' }]))
     const countries = await import('./countries/index.js')
 
-    expect(countries.originLabel('ZZ')).toBeUndefined()
     await countries.prime()
 
     expect(countries.originLabel('ZZ')).toBe('Zedland')
@@ -120,6 +144,25 @@ describe('ports service — stub mode', () => {
 })
 
 describe('ports service — real mode', () => {
+  it('Should throw when a reader is called before prime() has succeeded', async () => {
+    process.env.STUB_MODE = 'false'
+    const ports = await import('./ports/index.js')
+
+    expect(() => ports.list()).toThrow(REF_DATA_UNAVAILABLE)
+    expect(() => ports.label('GB ABD')).toThrow(REF_DATA_UNAVAILABLE)
+  })
+
+  it('Should reject prime() with a serverUnavailable Boom error on load failure', async () => {
+    process.env.STUB_MODE = 'false'
+    stubFetch(async () => ({ ok: false, status: 500, statusText: 'Boom' }))
+    const ports = await import('./ports/index.js')
+
+    await expect(ports.prime()).rejects.toMatchObject({
+      isBoom: true,
+      output: { statusCode: 503 }
+    })
+  })
+
   it('Should replace the cache on prime() so list() serves fetched ports', async () => {
     process.env.STUB_MODE = 'false'
     stubFetch(async () => okResponse([{ code: 'GB ZZZ', name: 'Zed Port' }]))
