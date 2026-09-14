@@ -98,7 +98,7 @@ const commitSelection = async (request, h, party, chosen, form) => {
   const { failure } = await kit.recoverableSave(
     async () => {
       await state.commit(request, h, {
-        [party.id]: answerFor(party, chosen)
+        [party.id]: await answerFor(party, chosen)
       })
     },
     async () => {

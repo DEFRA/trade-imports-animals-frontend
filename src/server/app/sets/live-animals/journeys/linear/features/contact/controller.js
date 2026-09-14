@@ -92,7 +92,7 @@ const post = async (request, h) => {
     async () => {
       committed = chosen
         ? await state.commit(request, h, {
-            contactAddress: answerFor(CONTACT_PARTY, chosen)
+            contactAddress: await answerFor(CONTACT_PARTY, chosen)
           })
         : await state.get(request, h)
     },

@@ -8,23 +8,23 @@ import { toWireAddress } from '../../../../../address-book/to-wire-address.js'
 // (postalOrZipCode/telephoneNumber/emailAddress) — translate it the same way
 // every other party in the service already is, or postcode/phone/email are
 // silently dropped by the backend's unknown-property tolerance.
-const permanentAddressFrom = (pa) =>
+const permanentAddressFrom = async (pa) =>
   pa &&
   compact({
     name: pa.name,
     phone: pa.address?.telephoneNumber,
     email: pa.address?.emailAddress,
-    address: toWireAddress(pa.address)
+    address: await toWireAddress(pa.address)
   })
 
-const animalIdentifierFrom = (unit) =>
+const animalIdentifierFrom = async (unit) =>
   compact({
     microchip: unit.animalIdentifierMicrochip,
     passport: unit.animalIdentifierPassport,
     tattoo: unit.animalIdentifierTattoo,
     earTag: unit.animalIdentifierEarTag,
     horseName: unit.horseName,
-    permanentAddress: permanentAddressFrom(unit.permanentAddress)
+    permanentAddress: await permanentAddressFrom(unit.permanentAddress)
   })
 
 // Species value → display name via the prototype's commodity reference data,
@@ -34,7 +34,7 @@ const animalIdentifierFrom = (unit) =>
 // identifier unit (an in-tree hop-2 GBN-AG mapper reads them as scalars);
 // `animalIdentifiers` carries every unit on the line, with all 6 per-unit
 // fields.
-export const speciesEntryFromLine = (line) => {
+export const speciesEntryFromLine = async (line) => {
   const units = line.animalIdentifiers ?? []
   const unit = units[0] ?? {}
   return compact({
@@ -46,6 +46,8 @@ export const speciesEntryFromLine = (line) => {
     passport: unit.animalIdentifierPassport,
     microchip: unit.animalIdentifierMicrochip,
     animalIdentifiers:
-      units.length > 0 ? units.map(animalIdentifierFrom) : undefined
+      units.length > 0
+        ? await Promise.all(units.map(animalIdentifierFrom))
+        : undefined
   })
 }

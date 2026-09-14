@@ -1,5 +1,15 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
+// Mock the countries module: the address-book mapper uses originLabel to
+// resolve a countryCode back to its display name. In real mode the readers
+// would trigger a countries fetch — but this file only stubs the address-book
+// fetch, so short-circuit the readers instead.
+const COUNTRY_LABELS = { BE: 'Belgium', FR: 'France' }
+vi.mock('../countries/index.js', () => ({
+  ensureLoaded: vi.fn(async () => {}),
+  originLabel: vi.fn(async (code) => COUNTRY_LABELS[code])
+}))
+
 const originalMode = process.env.STUB_MODE
 
 const ORG = '5900001'

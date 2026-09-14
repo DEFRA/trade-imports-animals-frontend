@@ -72,42 +72,41 @@ describe('countries service — stub mode', () => {
   it('Should serve stub data through the accessors without priming', async () => {
     process.env.STUB_MODE = 'true'
     const countries = await import('./countries/index.js')
-    expect(countries.originLabel('AT')).toBe('Austria')
-    expect(countries.originCountries()).toContainEqual({
+    expect(await countries.originLabel('AT')).toBe('Austria')
+    expect(await countries.originCountries()).toContainEqual({
       value: 'AT',
       text: 'Austria'
     })
   })
 
-  it('Should treat ensureLoaded() as a no-op in stub mode (no fetch, stub retained)', async () => {
+  it('Should treat the readers as no-ops in stub mode (no fetch, stub retained)', async () => {
     process.env.STUB_MODE = 'true'
     stubFetch(async () => okResponse([{ code: 'ZZ', name: 'Zedland' }]))
     const countries = await import('./countries/index.js')
-    await countries.ensureLoaded()
+    expect(await countries.originLabel('AT')).toBe('Austria')
+    expect(await countries.originLabel('ZZ')).toBeUndefined()
     expect(fetch).not.toHaveBeenCalled()
-    expect(countries.originLabel('AT')).toBe('Austria')
-    expect(countries.originLabel('ZZ')).toBeUndefined()
   })
 })
 
 describe('countries service — real mode', () => {
-  it('Should replace the cache on ensureLoaded() so sync accessors serve fetched data', async () => {
+  it('Should self-load on the first reader call and serve fetched data', async () => {
     process.env.STUB_MODE = 'false'
     stubFetch(okOnlyForBlock('GBNAG_SPS_EX', [{ code: 'ZZ', name: 'Zedland' }]))
     const countries = await import('./countries/index.js')
 
-    expect(countries.originLabel('ZZ')).toBeUndefined()
-    await countries.ensureLoaded()
-
-    expect(countries.originLabel('ZZ')).toBe('Zedland')
-    expect(countries.originLabel('AT')).toBeUndefined()
-    expect(countries.originCountries()).toEqual([
+    expect(await countries.originLabel('ZZ')).toBe('Zedland')
+    expect(await countries.originLabel('AT')).toBeUndefined()
+    expect(await countries.originCountries()).toEqual([
       { value: 'ZZ', text: 'Zedland' }
     ])
-    expect(countries.addressCountries()).toEqual(['United Kingdom', 'Zedland'])
+    expect(await countries.addressCountries()).toEqual([
+      'United Kingdom',
+      'Zedland'
+    ])
   })
 
-  it('Should not re-fetch on a second ensureLoaded() call after a successful first', async () => {
+  it('Should not re-fetch across multiple reader calls once loaded', async () => {
     process.env.STUB_MODE = 'false'
     const fetchMock = vi.fn(
       okOnlyForBlock('GBNAG_SPS_EX', [{ code: 'ZZ', name: 'Zedland' }])
@@ -115,13 +114,14 @@ describe('countries service — real mode', () => {
     vi.stubGlobal('fetch', fetchMock)
     const countries = await import('./countries/index.js')
 
-    await countries.ensureLoaded()
-    await countries.ensureLoaded()
+    await countries.originLabel('ZZ')
+    await countries.originCountries()
+    await countries.addressCountries()
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
-  it('Should re-attempt on ensureLoaded() after a prior failure', async () => {
+  it('Should re-attempt on a reader call after a prior load failure', async () => {
     process.env.STUB_MODE = 'false'
     const fetchMock = vi
       .fn()
@@ -132,12 +132,20 @@ describe('countries service — real mode', () => {
     vi.stubGlobal('fetch', fetchMock)
     const countries = await import('./countries/index.js')
 
-    await expect(countries.ensureLoaded()).rejects.toThrow()
-    expect(countries.originLabel('ZZ')).toBeUndefined()
-
-    await countries.ensureLoaded()
-    expect(countries.originLabel('ZZ')).toBe('Zedland')
+    await expect(countries.originLabel('ZZ')).rejects.toThrow()
+    expect(await countries.originLabel('ZZ')).toBe('Zedland')
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('Should reject with a serverUnavailable Boom error on load failure', async () => {
+    process.env.STUB_MODE = 'false'
+    stubFetch(async () => ({ ok: false, status: 503, statusText: 'Down' }))
+    const countries = await import('./countries/index.js')
+
+    await expect(countries.originLabel('ZZ')).rejects.toMatchObject({
+      isBoom: true,
+      output: { statusCode: 503 }
+    })
   })
 })
 
@@ -145,7 +153,7 @@ describe('ports service — stub mode', () => {
   it('Should serve stub data through list() without priming', async () => {
     process.env.STUB_MODE = 'true'
     const ports = await import('./ports/index.js')
-    expect(ports.list()).toContainEqual({
+    expect(await ports.list()).toContainEqual({
       code: 'GB ABD',
       name: 'Aberdeen Harbour'
     })
@@ -153,17 +161,15 @@ describe('ports service — stub mode', () => {
 })
 
 describe('ports service — real mode', () => {
-  it('Should replace the cache on ensureLoaded() so list() serves fetched ports', async () => {
+  it('Should self-load on the first reader call and serve fetched ports', async () => {
     process.env.STUB_MODE = 'false'
     stubFetch(async () => okResponse([{ code: 'GB ZZZ', name: 'Zed Port' }]))
     const ports = await import('./ports/index.js')
 
-    await ports.ensureLoaded()
-
-    expect(ports.list()).toEqual([{ code: 'GB ZZZ', name: 'Zed Port' }])
+    expect(await ports.list()).toEqual([{ code: 'GB ZZZ', name: 'Zed Port' }])
   })
 
-  it('Should not re-fetch on a second ensureLoaded() call after a successful first', async () => {
+  it('Should not re-fetch across multiple reader calls once loaded', async () => {
     process.env.STUB_MODE = 'false'
     const fetchMock = vi.fn(async () =>
       okResponse([{ code: 'GB ZZZ', name: 'Zed Port' }])
@@ -171,13 +177,13 @@ describe('ports service — real mode', () => {
     vi.stubGlobal('fetch', fetchMock)
     const ports = await import('./ports/index.js')
 
-    await ports.ensureLoaded()
-    await ports.ensureLoaded()
+    await ports.list()
+    await ports.label('GB ZZZ')
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
-  it('Should re-attempt on ensureLoaded() after a prior failure', async () => {
+  it('Should re-attempt on a reader call after a prior load failure', async () => {
     process.env.STUB_MODE = 'false'
     const fetchMock = vi
       .fn()
@@ -188,15 +194,20 @@ describe('ports service — real mode', () => {
     vi.stubGlobal('fetch', fetchMock)
     const ports = await import('./ports/index.js')
 
-    await expect(ports.ensureLoaded()).rejects.toThrow()
-    expect(ports.list()).not.toContainEqual({
-      code: 'GB ZZZ',
-      name: 'Zed Port'
-    })
-
-    await ports.ensureLoaded()
-    expect(ports.list()).toEqual([{ code: 'GB ZZZ', name: 'Zed Port' }])
+    await expect(ports.list()).rejects.toThrow()
+    expect(await ports.list()).toEqual([{ code: 'GB ZZZ', name: 'Zed Port' }])
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('Should reject with a serverUnavailable Boom error on load failure', async () => {
+    process.env.STUB_MODE = 'false'
+    stubFetch(async () => ({ ok: false, status: 500, statusText: 'Boom' }))
+    const ports = await import('./ports/index.js')
+
+    await expect(ports.list()).rejects.toMatchObject({
+      isBoom: true,
+      output: { statusCode: 503 }
+    })
   })
 })
 

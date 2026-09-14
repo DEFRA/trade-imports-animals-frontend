@@ -8,6 +8,10 @@ import {
   vi
 } from 'vitest'
 
+// Stub-mode short-circuits the ports service so ports.list() serves the seeded
+// stub without a fetch, unless a specific test flips it via config.set.
+process.env.STUB_MODE = 'true'
+
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
 import { configureRecords } from '../../../../../../../engine/persistence/records.js'
@@ -106,7 +110,7 @@ describe('GET port-of-entry — server-rendered select data (no-JS path)', () =>
     const result = await driveHandler(get)
     const items = result.view.context.portItems
     expect(items[0]).toEqual({ value: '', text: 'Select port of entry' })
-    const [firstPort] = ports.list()
+    const [firstPort] = await ports.list()
     expect(items[1]).toEqual({
       value: firstPort.code,
       text: `${firstPort.name} (${firstPort.code})`,

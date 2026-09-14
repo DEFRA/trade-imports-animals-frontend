@@ -5,11 +5,15 @@ import { directFieldsFromFulfilment } from './direct-fields.js'
 import { originFromFulfilment } from './origin.js'
 import { transportFromFulfilment } from './transport.js'
 
-export const notificationFromFulfilment = (reader, referenceNumber, lines) =>
+export const notificationFromFulfilment = async (
+  reader,
+  referenceNumber,
+  lines
+) =>
   compact({
     ...directFieldsFromFulfilment(reader, referenceNumber),
     origin: originFromFulfilment(reader),
     additionalDetails: additionalDetailsFromFulfilment(reader),
     transport: transportFromFulfilment(reader),
-    commodity: commodityFromLinesA(lines)
+    commodity: await commodityFromLinesA(lines)
   })

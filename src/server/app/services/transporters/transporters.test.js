@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
+// Stub-mode short-circuits the countries service so addressCountries serves the
+// seeded stub without a fetch.
+process.env.STUB_MODE = 'true'
+
 import * as transporters from './index.js'
 import * as addressBook from '../address-book/index.js'
 import { addressCountries } from '../countries/index.js'
@@ -56,8 +60,8 @@ describe('#parties', () => {
     }
   })
 
-  test('Should carry every field the private-transporter form makes mandatory on every private record', () => {
-    const addresses = addressCountries()
+  test('Should carry every field the private-transporter form makes mandatory on every private record', async () => {
+    const addresses = await addressCountries()
 
     for (const record of transporters
       .parties()

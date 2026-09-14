@@ -1,5 +1,9 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
+// Stub-mode short-circuits the countries and ports services so the check-answers
+// view-model reads use the seeded stub without a fetch.
+process.env.STUB_MODE = 'true'
+
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { commodityCodeFor } from '../../../../services/commodities/index.js'
 import { store } from '../../../../../../engine/store.js'

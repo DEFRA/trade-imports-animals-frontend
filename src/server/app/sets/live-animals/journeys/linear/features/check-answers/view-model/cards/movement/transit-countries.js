@@ -15,23 +15,22 @@ const copy = copyFor({ en, cy })
  * gives them their own card under their own heading, so the card stands only
  * while the answer is in scope — the section builder makes that call.
  */
-export const transitCountriesCard = (journeyId, answers, readOnly) => ({
-  id: 'transitCountries',
-  title: copy.cards.transitCountries,
-  ...editableActions(
-    readOnly,
-    cardAction(
-      journeyId,
-      transitCountriesPage.slug,
-      copy.hidden.cards.transitCountries
-    )
-  ),
-  rows: [
-    row(
-      copy.rows.transitedCountries,
-      toArray(answers.transitedCountries)
-        .map((code) => countries.originLabel(code) ?? code)
-        .join(', ')
-    )
-  ]
-})
+export const transitCountriesCard = async (journeyId, answers, readOnly) => {
+  const codes = toArray(answers.transitedCountries)
+  const labels = await Promise.all(
+    codes.map(async (code) => (await countries.originLabel(code)) ?? code)
+  )
+  return {
+    id: 'transitCountries',
+    title: copy.cards.transitCountries,
+    ...editableActions(
+      readOnly,
+      cardAction(
+        journeyId,
+        transitCountriesPage.slug,
+        copy.hidden.cards.transitCountries
+      )
+    ),
+    rows: [row(copy.rows.transitedCountries, labels.join(', '))]
+  }
+}

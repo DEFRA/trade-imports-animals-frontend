@@ -6,5 +6,5 @@ import { partiesFromStoredAnswers } from './frozen-parties.js'
  * AMEND live-resolve from the address book and ignore any stored inline copy. */
 export const partiesForRender = async (request, journey, answers = {}) =>
   journey.status === SUBMITTED
-    ? partiesFromStoredAnswers(answers)
+    ? await partiesFromStoredAnswers(answers)
     : await resolveParties(request, answers)

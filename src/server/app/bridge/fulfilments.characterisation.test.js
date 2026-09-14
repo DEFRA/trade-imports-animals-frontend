@@ -1,5 +1,10 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
+
+// Stub-mode short-circuits the countries service so the mapper's
+// display-name → ISO code reverse-lookup uses the seeded stub without a fetch.
+process.env.STUB_MODE = 'true'
+
 import { assembleFulfilments } from './assemble-fulfilments.js'
 import { projectAnswers } from './fulfilments/index.js'
 import { characterisationCorpus } from '../sets/live-animals/journeys/linear/fixtures/characterisation-corpus.js'
@@ -23,7 +28,7 @@ const evaluator = createObligationEvaluator({ obligations })
 describe('increment 0 golden boundary characterisation', () => {
   test.each(characterisationCorpus)(
     'Should preserve the current outputs for $name',
-    ({ name, answers }) => {
+    async ({ name, answers }) => {
       const oracle = oracles[name]
       const fulfilments = assembleFulfilments(answers)
 
@@ -38,7 +43,7 @@ describe('increment 0 golden boundary characterisation', () => {
 
       expect(projectAnswers(fulfilments)).toEqual(oracle.answersFromFulfilments)
       expect(
-        fulfilmentToNotification(fulfilments, answers.referenceNumber)
+        await fulfilmentToNotification(fulfilments, answers.referenceNumber)
       ).toEqual(oracle.mapperA)
     }
   )

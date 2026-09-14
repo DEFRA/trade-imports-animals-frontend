@@ -15,8 +15,10 @@ export const typeTextForLine = (line) => {
   return text === '' ? undefined : text
 }
 
-export const baseComplementFromGroup = (group) => {
-  const species = speciesLines(group).map(speciesEntryFromLine)
+export const baseComplementFromGroup = async (group) => {
+  const species = await Promise.all(
+    speciesLines(group).map(speciesEntryFromLine)
+  )
   return compact({
     typeOfCommodity: typeTextForLine(group[0]),
     totalNoOfAnimals: totalOf(group, 'numberOfAnimalsQuantity'),
@@ -25,14 +27,14 @@ export const baseComplementFromGroup = (group) => {
   })
 }
 
-export const commodityFromLinesA = (lines) => {
+export const commodityFromLinesA = async (lines) => {
   if (!Array.isArray(lines) || lines.length === 0) {
     return undefined
   }
   return {
     name: lines[0].commoditySelection,
-    commodityComplement: groupLinesByCommodity(lines).map(
-      baseComplementFromGroup
+    commodityComplement: await Promise.all(
+      groupLinesByCommodity(lines).map(baseComplementFromGroup)
     )
   }
 }

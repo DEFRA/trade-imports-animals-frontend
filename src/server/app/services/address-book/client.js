@@ -50,7 +50,7 @@ const failed = (what, response) => new BackendRequestError(what, response)
  * and is read by two renderers plus templates. Only the addressId crosses to
  * the backend, so the display shape never has to match the wire — mapping here
  * is cheaper than renaming the journey. */
-const toRecord = (operator) => ({
+const toRecord = async (operator) => ({
   id: operator.id,
   name: operator.name,
   deleted: Boolean(operator.deleted),
@@ -60,7 +60,7 @@ const toRecord = (operator) => ({
     townOrCity: operator.townOrCity,
     county: operator.county,
     postalOrZipCode: operator.postcode,
-    country: originLabel(operator.countryCode) ?? operator.countryCode,
+    country: (await originLabel(operator.countryCode)) ?? operator.countryCode,
     // Contact details sit inside the address block, which is where the journey
     // has always read them from.
     telephoneNumber: operator.phone,
@@ -89,7 +89,7 @@ export const listAddresses = async (orgId, { page = 1, query } = {}) => {
 
   const body = await response.json()
   return {
-    records: body.items.map(toRecord),
+    records: await Promise.all(body.items.map(toRecord)),
     page: body.page,
     pageSize: body.pageSize,
     totalItems: body.totalItems,

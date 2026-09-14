@@ -1,4 +1,9 @@
 import { describe, expect, test } from 'vitest'
+
+// Stub-mode short-circuits the countries service so the mapper's
+// display-name → ISO code reverse-lookup uses the seeded stub without a fetch.
+process.env.STUB_MODE = 'true'
+
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { fulfilmentToNotification } from './index.js'
 
@@ -164,8 +169,8 @@ const groupedLines = () => [
 ]
 
 describe('Mapper A — current backend notification (as-is)', () => {
-  test('Should reshape per-species lines into the fixed backend commodity shape', () => {
-    const { commodity } = currentNotificationFrom(mappedAnswers())
+  test('Should reshape per-species lines into the fixed backend commodity shape', async () => {
+    const { commodity } = await currentNotificationFrom(mappedAnswers())
     expect(commodity).toEqual({
       name: 'Cow',
       commodityComplement: [
@@ -191,8 +196,8 @@ describe('Mapper A — current backend notification (as-is)', () => {
     })
   })
 
-  test('Should group lines by commodity, keep per-species counts and sum the complement totals', () => {
-    const { commodity } = currentNotificationFrom({
+  test('Should group lines by commodity, keep per-species counts and sum the complement totals', async () => {
+    const { commodity } = await currentNotificationFrom({
       commodityLines: groupedLines()
     })
     expect(commodity.name).toBe('Cow')
@@ -222,8 +227,8 @@ describe('Mapper A — current backend notification (as-is)', () => {
     ])
   })
 
-  test('Should derive typeOfCommodity from the commodity reference data, omitting it for commodities without a type', () => {
-    const { commodity } = currentNotificationFrom({
+  test('Should derive typeOfCommodity from the commodity reference data, omitting it for commodities without a type', async () => {
+    const { commodity } = await currentNotificationFrom({
       commodityLines: groupedLines()
     })
     const [cow, cat] = commodity.commodityComplement
@@ -231,8 +236,8 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect('typeOfCommodity' in cat).toBe(false)
   })
 
-  test('Should place every storable answer in its skeleton field home', () => {
-    const notification = currentNotificationFrom({
+  test('Should place every storable answer in its skeleton field home', async () => {
+    const notification = await currentNotificationFrom({
       ...mappedAnswers(),
       transporterType: 'Commercial'
     })
@@ -281,14 +286,14 @@ describe('Mapper A — current backend notification (as-is)', () => {
     })
   })
 
-  test('Should convert the arrival date parts to an ISO string', () => {
-    expect(currentNotificationFrom(mappedAnswers()).transport.arrivalDate).toBe(
-      ARRIVAL_DATE_ISO
-    )
+  test('Should convert the arrival date parts to an ISO string', async () => {
+    expect(
+      (await currentNotificationFrom(mappedAnswers())).transport.arrivalDate
+    ).toBe(ARRIVAL_DATE_ISO)
   })
 
-  test('Should omit the obligations with no home and map the newly homed ones', () => {
-    const notification = currentNotificationFrom(answersWithGaps())
+  test('Should omit the obligations with no home and map the newly homed ones', async () => {
+    const notification = await currentNotificationFrom(answersWithGaps())
 
     expect('purpose' in notification).toBe(false)
     expect('declaration' in notification).toBe(false)
@@ -318,8 +323,8 @@ describe('Mapper A — current backend notification (as-is)', () => {
 // Per-unit animal-identifier coverage — a separate describe from the block
 // above, which is already at the file's max-lines-per-function ceiling.
 describe('Mapper A — per-unit animal identifiers', () => {
-  test('Should keep earTag, passport and microchip scalars first-unit-only, while animalIdentifiers carries every unit including tattoo, horse name and the translated permanent address', () => {
-    const notification = currentNotificationFrom(answersWithGaps())
+  test('Should keep earTag, passport and microchip scalars first-unit-only, while animalIdentifiers carries every unit including tattoo, horse name and the translated permanent address', async () => {
+    const notification = await currentNotificationFrom(answersWithGaps())
     const species = notification.commodity.commodityComplement[0].species[0]
 
     expect(species).toEqual({
@@ -356,8 +361,8 @@ describe('Mapper A — per-unit animal identifiers', () => {
     })
   })
 
-  test('Should carry a unit identified only by its microchip onto the species entry', () => {
-    const notification = currentNotificationFrom({
+  test('Should carry a unit identified only by its microchip onto the species entry', async () => {
+    const notification = await currentNotificationFrom({
       commodityLines: [
         {
           commoditySelection: 'Cat',
@@ -379,10 +384,10 @@ describe('Mapper A — per-unit animal identifiers', () => {
     })
   })
 
-  test('Should keep the scalar earTag/passport as first-unit-only while animalIdentifiers carries every unit', () => {
+  test('Should keep the scalar earTag/passport as first-unit-only while animalIdentifiers carries every unit', async () => {
     const firstUnit = { earTag: 'FIRST-EAR-TAG', passport: 'FIRST-PASSPORT' }
     const secondUnit = { earTag: 'SECOND-EAR-TAG', passport: 'SECOND-PASSPORT' }
-    const notification = currentNotificationFrom({
+    const notification = await currentNotificationFrom({
       commodityLines: [
         {
           commoditySelection: 'Cow',
@@ -413,8 +418,8 @@ describe('Mapper A — per-unit animal identifiers', () => {
 // throwing on a missing unit. Its own describe rather than the Mapper A block
 // above, which is already at the file's max-lines-per-function ceiling.
 describe('Mapper A — a commodity line with no animal-identifier unit', () => {
-  test('Should map a commodity line that carries no animal-identifier unit', () => {
-    const notification = currentNotificationFrom({
+  test('Should map a commodity line that carries no animal-identifier unit', async () => {
+    const notification = await currentNotificationFrom({
       commodityLines: [
         {
           commoditySelection: 'Fish',
@@ -435,8 +440,8 @@ describe('Mapper A — a commodity line with no animal-identifier unit', () => {
 })
 
 describe('Mapper A — unanswered transport fields', () => {
-  test('Should omit transport fields the arrival-details page saved as blank', () => {
-    const { transport } = currentNotificationFrom({
+  test('Should omit transport fields the arrival-details page saved as blank', async () => {
+    const { transport } = await currentNotificationFrom({
       portOfEntry: PORT_OF_ENTRY,
       arrivalDateAtPort: { day: 12, month: 12, year: 2026 },
       meansOfTransport: '',
@@ -451,8 +456,8 @@ describe('Mapper A — unanswered transport fields', () => {
   })
 })
 
-test('Mapper A should use the envelope id as the reference number', () => {
-  const actual = fulfilmentToNotification(
+test('Mapper A should use the envelope id as the reference number', async () => {
+  const actual = await fulfilmentToNotification(
     assembleFulfilments({
       referenceNumber: 'LEGACY-ANSWERS-REFERENCE',
       poApprovedReferenceNumber: 'SYSTEM-OBLIGATION-REFERENCE'

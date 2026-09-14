@@ -14,7 +14,7 @@ const copy = copyFor({ en, cy })
  * apply only to an overland arrival, so they stand as their own headed card
  * rather than as a row inside arrival details.
  */
-export const transportAndArrivalSection = (
+export const transportAndArrivalSection = async (
   journeyId,
   answers,
   scope,
@@ -25,13 +25,13 @@ export const transportAndArrivalSection = (
   groups: [
     {
       heading: copy.groups.arrivalDetails,
-      cards: [arrivalDetailsCard(journeyId, answers, readOnly)]
+      cards: [await arrivalDetailsCard(journeyId, answers, readOnly)]
     },
     ...(transitedCountriesApplies(answers, scope)
       ? [
           {
             heading: copy.groups.transitCountries,
-            cards: [transitCountriesCard(journeyId, answers, readOnly)]
+            cards: [await transitCountriesCard(journeyId, answers, readOnly)]
           }
         ]
       : []),
