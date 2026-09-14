@@ -13,8 +13,8 @@ function getSafeRedirect(redirect) {
   }
 
   try {
-    const resolved = new URL(redirect, 'http://placeholder')
-    if (resolved.origin !== 'http://placeholder') {
+    const resolved = new URL(redirect, 'https://placeholder')
+    if (resolved.origin !== 'https://placeholder') {
       return '/'
     }
     return redirect

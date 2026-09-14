@@ -30,7 +30,7 @@ convict.addFormat({
   name: 'strict-boolean',
   validate(val) {
     if (typeof val !== 'boolean') {
-      throw new Error("must be 'true' or 'false'")
+      throw new TypeError("must be 'true' or 'false'")
     }
   },
   coerce(val) {
