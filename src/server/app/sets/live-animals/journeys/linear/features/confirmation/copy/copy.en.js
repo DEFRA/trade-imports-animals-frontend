@@ -4,7 +4,6 @@ export const copy = {
     title: 'Import notification submitted',
     referencePrefix: 'Your reference number'
   },
-  dateOfDeclaration: 'Date of declaration:',
   outstanding: {
     heading: 'Before the consignment is imported',
     intro: 'You still need to:',
