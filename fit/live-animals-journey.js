@@ -195,10 +195,10 @@ export const selectSpecies = async (page, speciesNames) => {
 export const expectSpeciesSelected = async (page, name) =>
   expect(page.locator('#commodity-selection')).toContainText(name)
 
-export const unlockSections = async (page) => {
+export const unlockSections = async (page, species = 'Felis catus') => {
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
-  await selectSpecies(page, ['Felis catus'])
+  await selectSpecies(page, [species])
   await save(page)
   await expect(
     page.getByRole('heading', { name: 'Commodity details' })

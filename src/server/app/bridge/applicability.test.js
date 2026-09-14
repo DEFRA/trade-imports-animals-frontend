@@ -13,9 +13,14 @@ describe('#appliesForCommodity', () => {
     expect(appliesForCommodity('permanentAddress', 'Cow')).toBe(false)
   })
 
+  // The CPH list is derived by exemption rather than by inclusion — design
+  // release 1 asks every consignment for a CPH number and lets off two
+  // commodity codes — so Horse (0101) is the value outside it and Fish, on no
+  // other list at all, is inside.
   it('Should apply an anyAllowListed obligation per its commodity list', () => {
     expect(appliesForCommodity('containsUnweanedAnimals', 'Cow')).toBe(true)
-    expect(appliesForCommodity('countyParishHoldingCph', 'Fish')).toBe(false)
+    expect(appliesForCommodity('countyParishHoldingCph', 'Fish')).toBe(true)
+    expect(appliesForCommodity('countyParishHoldingCph', 'Horse')).toBe(false)
   })
 
   // Design release 1 asks for identification only where the commodity has an

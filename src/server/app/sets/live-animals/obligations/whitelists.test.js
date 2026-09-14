@@ -96,6 +96,13 @@ describe('package-count list → numberOfPackages (line-scoped)', () => {
 // `cph` is a top-level singleton with
 // `applyTo: anyAllowListed(commodityCode, cphCommodities(), …)`.
 // In scope iff ANY commodity line has a matching commodity.
+//
+// The list itself is derived the other way round from the ones above: design
+// release 1 asks every consignment for a CPH number and exempts named
+// commodity codes, so the list is every picker name outside
+// CPH_EXEMPT_COMMODITY_CODES. The named negatives below pin the picker names
+// that carry the two exempt codes — the iteration above only walks the
+// positive list, and the sentinel only proves an unknown value is refused.
 // ---------------------------------------------------------------------------
 
 describe('CPH list → cph (top-level anyAllowListed)', () => {
@@ -113,6 +120,36 @@ describe('CPH list → cph (top-level anyAllowListed)', () => {
       [commodityCode.id]: { line1: CONTROL_NAME }
     })
     expect(state.obligations[cph.id].inScope).toBe(false)
+  })
+
+  // Commodity code 0101. A horse is not kept on a county parish holding, so
+  // design release 1 exempts the code outright.
+  it('Should not put cph in scope for a horses-only consignment', () => {
+    const state = evaluate({
+      [commodityCode.id]: { line1: 'Horse' }
+    })
+    expect(state.obligations[cph.id].inScope).toBe(false)
+  })
+
+  // Commodity code 01061900 — cats, dogs and ferrets. Design release 1 asks
+  // this code for each animal's permanent address instead of a CPH number.
+  for (const name of ['Cat', 'Dog']) {
+    it(`Should not put cph in scope for a ${name.toLowerCase()}-only consignment`, () => {
+      const state = evaluate({
+        [commodityCode.id]: { line1: name }
+      })
+      expect(state.obligations[cph.id].inScope).toBe(false)
+    })
+  }
+
+  // The rule is an exemption list, so a commodity nobody thought about is
+  // asked rather than silently let off. Fish is today's instance of that:
+  // code 0301 is outside the two exempt codes, so it is asked.
+  it('Should put cph in scope for a consignment of fish', () => {
+    const state = evaluate({
+      [commodityCode.id]: { line1: 'Fish' }
+    })
+    expect(state.obligations[cph.id].inScope).toBe(true)
   })
 })
 
@@ -222,7 +259,10 @@ for (const { name, names, gated } of UNIT_SCOPED_ALLOWLISTS) {
 
 const EXPECTED = {
   'storable package-count entries': ['Cat', 'Cow', 'Dog', 'Horse'],
-  'CPH list': ['Cow'],
+  // Derived: every picker name whose commodity code is not CPH-exempt. Cat and
+  // Dog share the exempt 01061900 code and Horse is 0101, so today's catalogue
+  // leaves Cow and Fish.
+  'CPH list': ['Cow', 'Fish'],
   'unweaned list': ['Cow'],
   'microchip list': ['Horse', 'Cat', 'Dog'],
   'passport list': ['Horse', 'Cow', 'Cat', 'Dog'],
