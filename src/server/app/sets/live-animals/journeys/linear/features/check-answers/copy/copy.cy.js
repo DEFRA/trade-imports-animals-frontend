@@ -90,6 +90,7 @@ export const copy = {
     transportDocumentReference: 'Cyfeirnod dogfen cludo',
     name: 'Enw',
     address: 'Cyfeiriad',
+    contactAddress: 'Cyfeiriad cyswllt',
     country: 'Gwlad',
     approvalNumber: 'Rhif cymeradwyo',
     type: 'Math',
