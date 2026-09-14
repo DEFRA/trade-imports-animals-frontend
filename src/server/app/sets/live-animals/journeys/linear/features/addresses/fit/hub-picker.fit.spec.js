@@ -14,16 +14,17 @@ import { PARTIES } from '../parties.js'
 const NO_MATCH_QUERY = 'no such address'
 const LATER_PAGE_ADDRESS = 'Iberian Swine SA'
 const CONSIGNOR = PARTIES.find(({ id }) => id === 'consignor')
+const ROLES_AND_ADDRESSES = 'Roles and addresses'
 
 const rowFor = (page, title) =>
   page.locator('.govuk-summary-list__row', {
     has: page.getByText(title, { exact: true })
   })
 
-const openAddresses = async (page) => {
+const openAddresses = async (page, species) => {
   await startNotification(page)
-  await unlockSections(page)
-  await page.getByRole('link', { name: 'Roles and addresses' }).click()
+  await unlockSections(page, species)
+  await page.getByRole('link', { name: ROLES_AND_ADDRESSES }).click()
   await expect(
     page.getByRole('heading', { name: copy.hub.title })
   ).toBeVisible()
@@ -124,7 +125,7 @@ test.describe('addresses hub', () => {
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(
       page.locator('.govuk-task-list__item', {
-        hasText: 'Roles and addresses'
+        hasText: ROLES_AND_ADDRESSES
       })
     ).toContainText('Completed')
   })
@@ -133,6 +134,39 @@ test.describe('addresses hub', () => {
     page
   }) => {
     await expectAxeClean(page, 'Addresses hub')
+  })
+})
+
+// Design release 1 asks every consignment for a CPH number and names the
+// commodity codes that escape the question, so the row is the default and its
+// absence is the exception. Fish is the sharpest case: it is on no other
+// commodity list at all, so if the rule were an allow-list of the commodities
+// somebody remembered, fish would be let off.
+test.describe('addresses hub — who is asked for a CPH number', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('asks a consignment of fish for a CPH number', async ({ page }) => {
+    await openAddresses(page, 'Salmo salar')
+
+    const row = rowFor(page, copy.hub.cph.title)
+    await expect(row).toContainText(copy.hub.cph.hint)
+    await expect(row).toContainText(copy.hub.notAddedYet)
+    await expect(
+      row.getByRole('link', {
+        name: `${copy.hub.add} ${copy.hub.cph.title.toLowerCase()}`
+      })
+    ).toBeVisible()
+  })
+
+  // Commodity code 0101 is one of the two design release 1 lets off.
+  test('does not ask a consignment of horses for a CPH number', async ({
+    page
+  }) => {
+    await openAddresses(page, 'Equus caballus')
+
+    await expect(rowFor(page, copy.hub.cph.title)).toHaveCount(0)
   })
 })
 

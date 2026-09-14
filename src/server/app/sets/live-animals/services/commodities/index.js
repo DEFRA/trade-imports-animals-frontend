@@ -14,7 +14,8 @@ import {
   IDENTIFIED_COMMODITIES,
   PERMANENT_ADDRESS_COMMODITIES,
   UNWEANED_ANIMAL_COMMODITIES,
-  CPH_COMMODITIES
+  CPH_COMMODITIES,
+  CPH_EXEMPT_COMMODITY_CODES
 } from './stub.js'
 
 export const list = () => COMMODITY_OPTIONS
@@ -88,3 +89,8 @@ export const permanentAddressCommodities = () => PERMANENT_ADDRESS_COMMODITIES
 export const unweanedCommodities = () => UNWEANED_ANIMAL_COMMODITIES
 
 export const cphCommodities = () => CPH_COMMODITIES
+
+// The commodity codes design release 1 lets off the CPH question. Exported
+// so the derivation can be pinned: cphCommodities() is every picker name
+// whose code is NOT on this list, so the default is to ask.
+export const cphExemptCommodityCodes = () => CPH_EXEMPT_COMMODITY_CODES
