@@ -214,7 +214,10 @@ add one row:
 
 The row status defaults to the union of those pages' `collects`. Use `parts`
 only when the row needs a collection facet. Use `conditional: true` only when
-the hub must hide a Not applicable row.
+the hub must hide a Not applicable row. Use `applies` only when the row's parts
+cannot express its applicability — it makes the row read Not applicable
+whatever the parts roll up to. See
+[`journey-flow-and-gates.md`](journey-flow-and-gates.md), "Task rows".
 
 Add the task-row id to the right object in the hub controller's `GROUPS` list.
 Add the row title and hint to both hub copy bundles. Add a new numbered hub
