@@ -106,6 +106,39 @@ describe('countries service — real mode', () => {
     ])
     expect(countries.addressCountries()).toEqual(['United Kingdom', 'Zedland'])
   })
+
+  it('Should not re-fetch on a second prime() call after a successful first', async () => {
+    process.env.STUB_MODE = 'false'
+    const fetchMock = vi.fn(
+      okOnlyForBlock('GBNAG_SPS_EX', [{ code: 'ZZ', name: 'Zedland' }])
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    const countries = await import('./countries/index.js')
+
+    await countries.prime()
+    await countries.prime()
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('Should re-attempt on prime() after a prior failure', async () => {
+    process.env.STUB_MODE = 'false'
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('MDM down'))
+      .mockImplementation(
+        okOnlyForBlock('GBNAG_SPS_EX', [{ code: 'ZZ', name: 'Zedland' }])
+      )
+    vi.stubGlobal('fetch', fetchMock)
+    const countries = await import('./countries/index.js')
+
+    await expect(countries.prime()).rejects.toThrow()
+    expect(countries.originLabel('ZZ')).toBeUndefined()
+
+    await countries.prime()
+    expect(countries.originLabel('ZZ')).toBe('Zedland')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
 })
 
 describe('ports service — stub mode', () => {
@@ -128,6 +161,42 @@ describe('ports service — real mode', () => {
     await ports.prime()
 
     expect(ports.list()).toEqual([{ code: 'GB ZZZ', name: 'Zed Port' }])
+  })
+
+  it('Should not re-fetch on a second prime() call after a successful first', async () => {
+    process.env.STUB_MODE = 'false'
+    const fetchMock = vi.fn(async () =>
+      okResponse([{ code: 'GB ZZZ', name: 'Zed Port' }])
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    const ports = await import('./ports/index.js')
+
+    await ports.prime()
+    await ports.prime()
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('Should re-attempt on prime() after a prior failure', async () => {
+    process.env.STUB_MODE = 'false'
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('MDM down'))
+      .mockImplementation(async () =>
+        okResponse([{ code: 'GB ZZZ', name: 'Zed Port' }])
+      )
+    vi.stubGlobal('fetch', fetchMock)
+    const ports = await import('./ports/index.js')
+
+    await expect(ports.prime()).rejects.toThrow()
+    expect(ports.list()).not.toContainEqual({
+      code: 'GB ZZZ',
+      name: 'Zed Port'
+    })
+
+    await ports.prime()
+    expect(ports.list()).toEqual([{ code: 'GB ZZZ', name: 'Zed Port' }])
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })
 

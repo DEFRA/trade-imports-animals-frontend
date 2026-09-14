@@ -3,13 +3,15 @@ import { fetchCountries } from './client.js'
 import { isStubMode } from '../../../common/services/mode.js'
 
 let labels = { ...COUNTRY_LABELS }
+let loaded = false
 
 export const prime = async () => {
-  if (isStubMode()) {
+  if (isStubMode() || loaded) {
     return
   }
   const countries = await fetchCountries(['GBNAG_SPS_EX'])
   labels = Object.fromEntries(countries.map(({ code, name }) => [code, name]))
+  loaded = true
 }
 
 /** Address forms offer "United Kingdom" ahead of the SPS origin list, but UK

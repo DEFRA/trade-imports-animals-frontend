@@ -3,12 +3,14 @@ import { fetchPortsOfEntry } from './client.js'
 import { isStubMode } from '../../../common/services/mode.js'
 
 let ports = [...PORTS]
+let loaded = false
 
 export const prime = async () => {
-  if (isStubMode()) {
+  if (isStubMode() || loaded) {
     return
   }
   ports = await fetchPortsOfEntry()
+  loaded = true
 }
 
 export const list = () => ports
