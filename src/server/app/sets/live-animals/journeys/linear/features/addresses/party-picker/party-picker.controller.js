@@ -95,8 +95,8 @@ const render = async (
   })
 }
 
-const addAddressLinkFor = (journey, party) =>
-  !isStubMode() && buildInsAddAddressUrl(journey.journeyId, party)
+const addAddressLinkFor = (request, h, journey, party) =>
+  !isStubMode() && buildInsAddAddressUrl(request, h, journey.journeyId, party)
 
 const handshakeErrorMessage = (code) => {
   if (code === 'not-found') {
@@ -119,7 +119,7 @@ const get = (party) => async (request, h) => {
     answers,
     error: handshakeError,
     recoverableError,
-    addAddressHref: addAddressLinkFor(journey, party)
+    addAddressHref: addAddressLinkFor(request, h, journey, party)
   })
 }
 
@@ -138,7 +138,7 @@ const commitSelection = async (request, h, party, chosen, form) => {
           selectedId: chosen.id,
           answers,
           recoverableError: true,
-          addAddressHref: addAddressLinkFor(journey, party)
+          addAddressHref: addAddressLinkFor(request, h, journey, party)
         })
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
@@ -168,7 +168,7 @@ const post = (party) => async (request, h) => {
       page: 1,
       selectedId,
       answers,
-      addAddressHref: addAddressLinkFor(journey, party)
+      addAddressHref: addAddressLinkFor(request, h, journey, party)
     })
   }
 
@@ -182,7 +182,7 @@ const post = (party) => async (request, h) => {
         selectedId: '',
         answers,
         error: party.error,
-        addAddressHref: addAddressLinkFor(journey, party)
+        addAddressHref: addAddressLinkFor(request, h, journey, party)
       })
     ).code(HTTP_STATUS_BAD_REQUEST)
   }

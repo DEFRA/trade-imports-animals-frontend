@@ -2,12 +2,12 @@ import Boom from '@hapi/boom'
 
 import { pagePath, pageRoutePath } from '../../../../../../../shared/paths.js'
 import * as state from '../../../../../../../engine/index.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { routeOptions } from '../../../../../../../shared/kit.js'
 import { isRecoverableBackendError } from '../../../../../../../services/persistence/records/errors.js'
 import { organisationIdOf } from '../resolve-parties.js'
 import { partyForFulfilmentId } from '../obligation-party-map.js'
+import { clearHandshakeToken, verifyHandshakeToken } from '../ins-handshake.js'
 import { answerFor, chosenPartyFor } from '../party-picker/selection.js'
 
 const pickerPath = (journeyId, party, query = {}) => {
@@ -29,6 +29,7 @@ const get = async (request, h) => {
   const { journeyId } = request.params
   const fulfilmentId = request.query['fulfilment-id'] ?? ''
   const addressId = request.query.addressId ?? ''
+  const handshakeToken = request.query['handshake-token'] ?? ''
 
   const party = partyForFulfilmentId(fulfilmentId)
   if (!party) {
@@ -38,6 +39,12 @@ const get = async (request, h) => {
   if (!addressId) {
     return h.redirect(redirectToPicker(request, journeyId, party))
   }
+
+  if (!verifyHandshakeToken(request, fulfilmentId, handshakeToken)) {
+    throw Boom.badRequest('Invalid handshake')
+  }
+
+  clearHandshakeToken(request, h, fulfilmentId)
 
   const orgId = organisationIdOf(request)
   let chosen
@@ -70,13 +77,11 @@ const get = async (request, h) => {
       })
     },
     async () =>
-      h
-        .redirect(
-          redirectToPicker(request, journeyId, party, {
-            handshakeError: 'unavailable'
-          })
-        )
-        .code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+      h.redirect(
+        redirectToPicker(request, journeyId, party, {
+          handshakeError: 'unavailable'
+        })
+      )
   )
 
   if (failure) {

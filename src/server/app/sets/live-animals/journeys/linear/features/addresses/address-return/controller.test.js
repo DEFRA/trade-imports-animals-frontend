@@ -3,12 +3,12 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import * as state from '../../../../../../../engine/index.js'
 import { store } from '../../../../../../../engine/store.js'
+import { SESSION_COOKIES } from '../../../../../../../engine/persistence/session.js'
 import { configureRecords } from '../../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import { driveHandler } from '../../../../../../../engine/test-support.js'
-import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
 import { BackendRequestError } from '../../../../../../../services/persistence/records/errors.js'
 import { dispatchPages } from '../../index.js'
 import { consignor } from '../../../../../obligations/index.js'
@@ -18,7 +18,19 @@ import * as addressReturn from './controller.js'
 
 const handler = addressReturn.routes[0].handler
 const newAddressId = 'new-address-id'
+const handshakeToken = 'handshake-token-value'
 const CONSIGNOR_PICKER_PATH = '/consignors/select'
+
+const handshakeQuery = (fulfilmentId = consignor.id) => ({
+  'fulfilment-id': fulfilmentId,
+  'handshake-token': handshakeToken
+})
+
+const handshakeState = (fulfilmentId = consignor.id) => ({
+  [SESSION_COOKIES.addressHandshakeTokens]: {
+    [fulfilmentId]: handshakeToken
+  }
+})
 
 const configure = () => {
   configureRecords(recordsStub)
@@ -56,14 +68,28 @@ describe('GET /address-return', () => {
 
     const result = await driveHandler(handler, {
       query: {
-        'fulfilment-id': consignor.id,
+        ...handshakeQuery(),
         addressId: newAddressId
-      }
+      },
+      state: handshakeState()
     })
 
     expect(result.response.redirect).toContain(CONSIGNOR_PICKER_PATH)
     expect(result.response.redirect).toContain(`selected=${newAddressId}`)
     expect(result.after.consignor.addressId).toBe(newAddressId)
+  })
+
+  it('rejects a commit when the handshake token does not match', async () => {
+    await expect(
+      driveHandler(handler, {
+        query: {
+          ...handshakeQuery(),
+          addressId: newAddressId,
+          'handshake-token': 'wrong-token'
+        },
+        state: handshakeState()
+      })
+    ).rejects.toMatchObject({ output: { statusCode: 400 } })
   })
 
   it('rejects an unknown fulfilment id', async () => {
@@ -79,9 +105,10 @@ describe('GET /address-return', () => {
 
     const result = await driveHandler(handler, {
       query: {
-        'fulfilment-id': consignor.id,
+        ...handshakeQuery(),
         addressId: 'missing-address'
-      }
+      },
+      state: handshakeState()
     })
 
     expect(result.response.redirect).toContain(CONSIGNOR_PICKER_PATH)
@@ -99,9 +126,10 @@ describe('GET /address-return', () => {
 
     const result = await driveHandler(handler, {
       query: {
-        'fulfilment-id': consignor.id,
+        ...handshakeQuery(),
         addressId: newAddressId
-      }
+      },
+      state: handshakeState()
     })
 
     expect(result.response.redirect).toContain(CONSIGNOR_PICKER_PATH)
@@ -130,14 +158,15 @@ describe('GET /address-return', () => {
 
     const result = await driveHandler(handler, {
       query: {
-        'fulfilment-id': consignor.id,
+        ...handshakeQuery(),
         addressId: newAddressId
-      }
+      },
+      state: handshakeState()
     })
 
     expect(result.response.redirect).toContain(CONSIGNOR_PICKER_PATH)
     expect(result.response.redirect).toContain('handshakeError=unavailable')
-    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    expect(result.response.statusCode).toBeUndefined()
     expect(result.after.consignor).toBeUndefined()
   })
 })
