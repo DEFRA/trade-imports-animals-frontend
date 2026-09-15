@@ -1,5 +1,15 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
+// The address-book mapper resolves a countryCode → display name via the
+// countries service. This file's tests are about the address-book, not
+// countries; mock the reader so it doesn't matter whether ref-data has been
+// primed and so the fetch mock only has to answer address-book URLs.
+const COUNTRY_LABELS = { BE: 'Belgium', FR: 'France' }
+vi.mock('../countries/index.js', () => ({
+  prime: async () => {},
+  originLabel: (code) => COUNTRY_LABELS[code]
+}))
+
 const originalMode = process.env.STUB_MODE
 
 const ORG = '5900001'

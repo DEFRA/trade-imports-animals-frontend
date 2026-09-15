@@ -8,6 +8,18 @@ import {
 import { config } from '../../../../../../config/config.js'
 import { records } from './index.js'
 
+// The referenced-party-names describe flips to real mode, which would make the
+// address-book mapper's originLabel lookup throw (no countries prime happened).
+// Mock the countries reader so the fetch mock only needs to answer notification
+// and address-book URLs.
+vi.mock('../../../countries/index.js', () => {
+  const LABELS = { CH: 'Switzerland', GB: 'United Kingdom' }
+  return {
+    prime: async () => {},
+    originLabel: (code) => LABELS[code]
+  }
+})
+
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
 
