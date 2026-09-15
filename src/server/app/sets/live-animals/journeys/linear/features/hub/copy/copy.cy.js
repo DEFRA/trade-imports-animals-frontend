@@ -8,13 +8,13 @@ export const copy = {
     packagesLabel: 'Pecynnau/blychau',
     packagesCaption: 'Cyfanswm nifer y pecynnau yn y llwyth hwn'
   },
+  reviewAndSubmit: 'Adolygu a chyflwyno',
   returnToDashboard: 'Dychwelyd i’r dangosfwrdd',
   statuses: {
     completed: 'Wedi’i gwblhau',
     optional: 'Dewisol',
     inProgress: 'Ar y gweill',
-    notYetStarted: 'Heb ddechrau eto',
-    cannotStartYet: 'Methu dechrau eto'
+    notYetStarted: 'Heb ddechrau eto'
   },
   taskListHeading: 'Rhestr dasgau’r hysbysiad',
   groups: {
@@ -23,8 +23,7 @@ export const copy = {
     'transport-and-arrival': '3. Cludiant a chyrraedd',
     documents: '4. Dogfennau',
     'consignment-parties': '5. Partïon y llwyth',
-    'contact-address': '6. Cyfeiriad cyswllt',
-    'check-and-submit': 'Gwirio a chyflwyno'
+    'contact-address': '6. Cyfeiriad cyswllt'
   },
   rows: {
     origin: {
@@ -74,10 +73,6 @@ export const copy = {
     documents: {
       title: 'Dogfennau wedi’u huwchlwytho',
       hint: 'Tystysgrifau, trwyddedau a dogfennau eraill ar gyfer y llwyth'
-    },
-    review: {
-      title: 'Gwirio a chyflwyno',
-      hint: 'Gwiriwch eich atebion cyn i chi gyflwyno’r hysbysiad'
     }
   }
 }

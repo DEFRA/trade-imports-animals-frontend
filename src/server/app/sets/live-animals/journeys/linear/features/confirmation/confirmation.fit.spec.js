@@ -4,6 +4,7 @@ import {
   completeAnswerSections,
   journeyIdFromPage,
   journeyUrl,
+  openReviewFromHub,
   signIn,
   startNotification
 } from '../../../../../../../../../fit/live-animals-journey.js'
@@ -105,7 +106,7 @@ test.describe('submitted confirmation feature', () => {
   test.beforeEach(async ({ page }) => {
     await startNotification(page)
     await completeAnswerSections(page)
-    await page.getByRole('link', { name: 'Check and submit' }).click()
+    await openReviewFromHub(page)
     await page.getByRole('button', { name: 'Continue' }).click()
     await page
       .getByRole('checkbox', { name: /I confirm that I have reviewed/ })

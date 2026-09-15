@@ -15,6 +15,7 @@ import {
   chooseCountryOfOrigin,
   completeAnswerSections,
   journeyUrl,
+  openReviewFromHub,
   selectSpecies,
   signIn,
   startNotification,
@@ -165,7 +166,7 @@ test.describe('live-animals journey glue', () => {
     ).toContainText('Check completed')
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
-    await page.getByRole('link', { name: 'Check and submit' }).click()
+    await openReviewFromHub(page)
 
     // The review offers one Change link per card (design release 1), and the
     // Species card's goes to the consignment details. The review no longer

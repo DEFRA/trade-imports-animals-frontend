@@ -7,13 +7,13 @@ export const copy = {
     packagesLabel: 'Packages/boxes',
     packagesCaption: 'Total number of packages in this consignment'
   },
+  reviewAndSubmit: 'Review and submit',
   returnToDashboard: 'Return to dashboard',
   statuses: {
     completed: 'Completed',
     optional: 'Optional',
     inProgress: 'In progress',
-    notYetStarted: 'Not yet started',
-    cannotStartYet: 'Cannot start yet'
+    notYetStarted: 'Not yet started'
   },
   taskListHeading: 'Notification tasklist',
   groups: {
@@ -22,8 +22,7 @@ export const copy = {
     'transport-and-arrival': '3. Transport and arrival',
     documents: '4. Documents',
     'consignment-parties': '5. Consignment parties',
-    'contact-address': '6. Contact address',
-    'check-and-submit': 'Check and submit'
+    'contact-address': '6. Contact address'
   },
   rows: {
     origin: {
@@ -73,10 +72,6 @@ export const copy = {
     documents: {
       title: 'Uploaded documents',
       hint: 'Certificates, permits and other documents for the consignment'
-    },
-    review: {
-      title: 'Check and submit',
-      hint: 'Check your answers before you submit the notification'
     }
   }
 }

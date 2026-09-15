@@ -34,9 +34,16 @@
     }) }}
   {% endfor %}
 
-  {{ govukButton({
-    text: copy.returnToDashboard,
-    href: dashboardHref,
-    classes: "govuk-button--secondary"
-  }) }}
+  <div class="govuk-button-group">
+    {{ govukButton({
+      text: copy.reviewAndSubmit,
+      href: reviewHref
+    }) }}
+
+    {{ govukButton({
+      text: copy.returnToDashboard,
+      href: dashboardHref,
+      classes: "govuk-button--secondary"
+    }) }}
+  </div>
 {% endblock %}

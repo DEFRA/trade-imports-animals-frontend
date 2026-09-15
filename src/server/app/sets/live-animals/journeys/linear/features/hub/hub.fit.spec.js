@@ -4,6 +4,7 @@ import {
   answerArrivalDetails,
   answerCountryOfOrigin,
   completeAnswerSections,
+  openReviewFromHub,
   selectSpecies,
   signIn,
   startNotification
@@ -47,6 +48,10 @@ const PACKAGES = '5'
 const TOTAL_BOX = '.app-commodity-total'
 const SECTION_HEADING = 'h3.govuk-heading-m'
 const SAVE_AND_CONTINUE = 'Save and continue'
+// The task row Design release 1 does not have: the review is a button now, so
+// nothing on the hub carries this title or the shut status it used to read.
+const RETIRED_REVIEW_ROW_TITLE = 'Check and submit'
+const CANNOT_START_STATUS = '.govuk-task-list__status--cannot-start-yet'
 
 const selectCommodityAndOpenDetails = async (page) => {
   await startNotification(page)
@@ -135,20 +140,14 @@ test.describe('hub feature', () => {
       })
     ).toBeVisible()
 
-    const review = taskRow(page, copy.rows.review.title)
-    await expect(review).toContainText(copy.statuses.cannotStartYet)
-    await expect(
-      review.getByRole('link', { name: copy.rows.review.title })
-    ).toHaveCount(0)
+    await expect(page.getByText(RETIRED_REVIEW_ROW_TITLE)).toHaveCount(0)
   })
 
   // Design release 1 heads the whole list "Notification tasklist" and divides
   // the notification into six numbered sections under it: the documents come
   // fourth, and the consignment parties and the contact address are sections
-  // of their own. The six are followed by the unnumbered "Check and submit"
-  // section, which survives only until the review becomes a button under the
-  // list.
-  test('the task list is headed "Notification tasklist" over the six numbered design sections in order, with the unnumbered review section last', async ({
+  // of their own. Nothing follows them — the review is a button under the list.
+  test('the task list is headed "Notification tasklist" over the six numbered design sections in order, with nothing after them', async ({
     page
   }) => {
     await startNotification(page)
@@ -171,13 +170,13 @@ test.describe('hub feature', () => {
   // the journey's entry page and the entry guard holds a notification there
   // until it is answered, so the earliest hub a trader reaches already has
   // origin Completed; this is that hub.
-  test('every task the hub shows but Check and submit opens before a commodity is chosen', async ({
+  test('every task the hub shows opens before a commodity is chosen', async ({
     page
   }) => {
     await startNotification(page)
 
-    // The eleventh row is Check and submit; identification and transit
-    // countries do not apply to a notification with nothing chosen.
+    // Identification and transit countries do not apply to a notification with
+    // nothing chosen, so these ten are the whole list.
     const openFromTheStart = [
       copy.rows.origin,
       copy.rows.commodities,
@@ -198,7 +197,7 @@ test.describe('hub feature', () => {
       ).toBeVisible()
     }
 
-    await expect(page.getByText(copy.statuses.cannotStartYet)).toHaveCount(1)
+    await expect(page.locator(CANNOT_START_STATUS)).toHaveCount(0)
   })
 
   test('a task with nothing before it opens and saves before a commodity is chosen', async ({
@@ -358,25 +357,55 @@ test.describe('hub feature — the Commodity details row', () => {
   })
 })
 
-test.describe('hub feature — review readiness', () => {
+// Design release 1 ends the hub with a primary "Review and submit" button and
+// the secondary "Return to dashboard" beside it, and offers the review whatever
+// the notification still owes: it is how a trader reads back what they have
+// entered so far. There is no review task row and no section holding one.
+test.describe('hub feature — the Review and submit button', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
   })
 
-  test('completed answers unlock Check and submit and open the review', async ({
+  test('opens the review from a notification with only the origin answered', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await expect(
+      page.getByRole('button', { name: copy.reviewAndSubmit })
+    ).toHaveAttribute('href', /\/notifications\/[^/]+\/notification-view$/)
+
+    await openReviewFromHub(page)
+
+    await expect(
+      page.getByRole('heading', { name: checkAnswersCopy.title })
+    ).toBeVisible()
+  })
+
+  test('leads the secondary Return to dashboard button, with no review task row above them', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await expect(page.locator('.govuk-button-group .govuk-button')).toHaveText([
+      copy.reviewAndSubmit,
+      copy.returnToDashboard
+    ])
+    await expect(
+      page.getByRole('button', { name: copy.reviewAndSubmit })
+    ).not.toHaveClass(/govuk-button--secondary/)
+    await expect(page.getByText(RETIRED_REVIEW_ROW_TITLE)).toHaveCount(0)
+    await expect(page.locator(CANNOT_START_STATUS)).toHaveCount(0)
+  })
+
+  test('opens the review once every answer section is complete', async ({
     page
   }) => {
     test.slow()
     await startNotification(page)
     await completeAnswerSections(page)
 
-    const review = taskRow(page, copy.rows.review.title)
-    await expect(review).not.toContainText(copy.statuses.cannotStartYet)
-    await expect(
-      review.getByRole('link', { name: copy.rows.review.title })
-    ).toHaveAttribute('href', /\/notifications\/[^/]+\/notification-view$/)
-
-    await review.getByRole('link', { name: copy.rows.review.title }).click()
+    await openReviewFromHub(page)
 
     await expect(
       page.getByRole('heading', { name: checkAnswersCopy.title })
@@ -386,7 +415,7 @@ test.describe('hub feature — review readiness', () => {
   // Design release 1: "Animal identifiers are optional unless multiple species
   // are selected." A single-species consignment reaches the review page with
   // no identifier saved; what is outstanding is chased after submission.
-  test('a single-species notification unlocks the review with no identifier saved', async ({
+  test('a single-species notification reaches the review with no identifier saved', async ({
     page
   }) => {
     test.slow()
@@ -396,23 +425,20 @@ test.describe('hub feature — review readiness', () => {
     const identification = taskRow(page, copy.rows.animalIdentification.title)
     await expect(identification).toContainText(copy.statuses.completed)
 
-    const review = taskRow(page, copy.rows.review.title)
-    await expect(review).not.toContainText(copy.statuses.cannotStartYet)
-
-    await review.getByRole('link', { name: copy.rows.review.title }).click()
+    await openReviewFromHub(page)
 
     await expect(
       page.getByRole('heading', { name: checkAnswersCopy.title })
     ).toBeVisible()
   })
 
-  test('blocked review hub has no serious or critical axe violations', async ({
+  test('hub with nothing but the origin answered has no serious or critical axe violations', async ({
     page
   }) => {
     await startNotification(page)
 
     // The commodity summary shows from the first visit, so this run covers the
-    // zero-total panels as well as the task list with Check and submit shut.
+    // zero-total panels as well as the two buttons under the task list.
     await expect(
       page.getByRole('heading', { name: copy.commodityTotals.heading })
     ).toBeVisible()

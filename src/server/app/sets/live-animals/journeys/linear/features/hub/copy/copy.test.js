@@ -43,11 +43,7 @@ const CONSIGNMENT_DETAILS_ROW_TITLE = 'Commodity details'
 const IMPORT_REASON_ROW_TITLE = 'Main reason for importing'
 const TRANSIT_ROW_TITLE = 'Transit countries'
 const ARRIVAL_ROW_TITLE = 'Arrival details'
-const REVIEW_ROW_TITLE = 'Check and submit'
-const CANNOT_START_STATUS = {
-  text: 'Cannot start yet',
-  classes: 'govuk-task-list__status--cannot-start-yet'
-}
+const CANNOT_START_CLASS = 'govuk-task-list__status--cannot-start-yet'
 const NOT_YET_STARTED_STATUS = {
   tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
 }
@@ -123,7 +119,7 @@ describe('#hubHandler', () => {
     expect(context.progressLine).toBeUndefined()
   })
 
-  it('Should render the six numbered design sections in order, with the unnumbered review section last', async () => {
+  it('Should render the six numbered design sections in order and nothing after them', async () => {
     const { groups } = await renderHub()
     expect(groups.map((group) => group.caption)).toEqual([
       '1. About the consignment',
@@ -131,9 +127,7 @@ describe('#hubHandler', () => {
       '3. Transport and arrival',
       '4. Documents',
       '5. Consignment parties',
-      '6. Contact address',
-      // Unnumbered, and only until the review becomes a button under the list.
-      'Check and submit'
+      '6. Contact address'
     ])
   })
 
@@ -153,8 +147,7 @@ describe('#hubHandler', () => {
       [ARRIVAL_ROW_TITLE, 'Transporter'],
       ['Uploaded documents'],
       ['Roles and addresses'],
-      ['Contact address'],
-      [REVIEW_ROW_TITLE]
+      ['Contact address']
     ])
   })
 
@@ -204,21 +197,20 @@ describe('#hubHandler', () => {
   })
 
   // Design release 1 lets a trader start any task on the notification in any
-  // order, so every answer task is a link with a real status from the moment
-  // the notification exists. Nothing but Check and submit is ever shut.
-  it('Should link every answer row on a brand new notification, none of them "Cannot start yet"', async () => {
+  // order, so every task the hub shows is a link with a real status from the
+  // moment the notification exists. With the review moved to a button, no row
+  // on the page is ever shut.
+  it('Should link every row on a brand new notification, none of them "Cannot start yet"', async () => {
     const context = await renderHub()
-    const answerRows = allItems(context).filter(
-      (item) => item.title.text !== REVIEW_ROW_TITLE
-    )
+    const rows = allItems(context)
 
-    expect(answerRows).not.toHaveLength(0)
-    for (const row of answerRows) {
+    expect(rows).not.toHaveLength(0)
+    for (const row of rows) {
       expect(row.href, `${row.title.text} has no way in`).toMatch(
         /^\/notifications\/[^/]+\/.+/
       )
-      expect(row.status, `${row.title.text} is shut`).not.toEqual(
-        CANNOT_START_STATUS
+      expect(row.status.classes, `${row.title.text} is shut`).not.toBe(
+        CANNOT_START_CLASS
       )
     }
   })
@@ -320,13 +312,26 @@ describe('#hubHandler', () => {
     )
   })
 
-  it('Should lock the Check and submit row until the journey is submit-ready (RULE 2)', async () => {
-    const reviewRow = rowByTitle(await renderHub(), REVIEW_ROW_TITLE)
-    expect(reviewRow.hint.text).toBe(
-      'Check your answers before you submit the notification'
+  // Design release 1 reaches the review from a button under the task list, not
+  // from a task row, and offers it on a notification with nothing answered:
+  // the review page is where a trader reads back what they have entered so far.
+  it('Should offer the review as a button under the list, not as a task row', async () => {
+    const context = await renderHub()
+
+    expect(context.reviewHref).toBe(
+      pagePath(context.journeyId, 'notification-view')
     )
-    expect(reviewRow.href).toBeUndefined()
-    expect(reviewRow.status).toEqual(CANNOT_START_STATUS)
+    expect(copy.reviewAndSubmit).toBe('Review and submit')
+    expect(rowByTitle(context, 'Check and submit')).toBeUndefined()
+    expect(copy.groups['check-and-submit']).toBeUndefined()
+  })
+
+  it('Should offer the same review button on a part-answered notification', async () => {
+    const context = await renderHub(unlockedSeed)
+
+    expect(context.reviewHref).toBe(
+      pagePath(context.journeyId, 'notification-view')
+    )
   })
 })
 

@@ -5,6 +5,7 @@ import {
   completeAnswerSections,
   journeyIdFromPage,
   journeyUrl,
+  openReviewFromHub,
   signIn,
   startNotification
 } from '../../../../../../../../../fit/live-animals-journey.js'
@@ -521,7 +522,7 @@ test.describe('check-answers feature submitted notification', () => {
     await signIn(page)
     await startNotification(page)
     await completeAnswerSections(page)
-    await page.getByRole('link', { name: 'Check and submit' }).click()
+    await openReviewFromHub(page)
     await page.getByRole('button', { name: copy.submit.button }).click()
     await page
       .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
