@@ -114,9 +114,9 @@ const formValuesFromAnswers = (answers) => ({
 // The list feeds a type-ahead that enhances this select, so it carries only the
 // placeholder and the real countries — a scroll-only list needed a divider rule
 // under the placeholder, a searchable one does not.
-const countryItems = () => [
+const countryItems = async () => [
   { value: '', text: copy.country.placeholder },
-  ...countries.originCountries()
+  ...(await countries.originCountries())
 ]
 
 // The code is only asked for when the user says the consignment has one, so
@@ -142,13 +142,12 @@ const regionCodeSuffixRule = (requirement) =>
 // The obligation behind the answer keeps it mandatory, so the unanswered
 // country still shows the origin task as unfinished on the hub and still
 // stops the notification at the check page.
-const fields = (requirement) =>
-  compose(
-    oneOf(
-      'countryOfOrigin',
-      countries.originCountries().map(({ value }) => value),
-      copy.errors.countryFromList
-    ),
+const fields = async (requirement) => {
+  const countryValues = (await countries.originCountries()).map(
+    ({ value }) => value
+  )
+  return compose(
+    oneOf('countryOfOrigin', countryValues, copy.errors.countryFromList),
     oneOf('regionOfOriginCodeRequirement', REGION_CODE_REQUIREMENT_ANSWERS),
     regionCodeSuffixRule(requirement),
     // The reference is the user's own, and the service never reads it: a
@@ -161,6 +160,7 @@ const fields = (requirement) =>
       copy.errors.internalReferenceMaxLength
     )
   )
+}
 
 // The back link is the one thing on this page told by what has been saved: a
 // notification with nothing saved has no hub to go back to, so it goes to the
@@ -174,7 +174,7 @@ const backLinkFor = (journey, answers) =>
 // and the notification reference — is drawn from the first request, matching
 // every later page. The reference exists by then: starting a notification
 // creates the record, and the user arrives here redirected under it.
-const render = (
+const render = async (
   h,
   journey,
   values,
@@ -193,7 +193,7 @@ const render = (
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
-    countryItems: countryItems(),
+    countryItems: await countryItems(),
     regionCodePrefix: prefixFor(values.countryOfOrigin)
   })
 
@@ -217,12 +217,12 @@ const post = async (request, h) => {
   const payload = request.payload ?? {}
   const values = formValuesFrom(payload)
   const { errors } = validate(
-    fields(values.regionOfOriginCodeRequirement),
+    await fields(values.regionOfOriginCodeRequirement),
     validationPayloadFrom(payload, values)
   )
   if (errors) {
     const { journey, answers } = await state.get(request, h)
-    return render(h, journey, values, errors, answers).code(
+    return (await render(h, journey, values, errors, answers)).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
@@ -234,7 +234,7 @@ const post = async (request, h) => {
     },
     async () => {
       const { journey, answers } = await state.get(request, h)
-      return render(h, journey, values, {}, answers, true).code(
+      return (await render(h, journey, values, {}, answers, true)).code(
         HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
     }

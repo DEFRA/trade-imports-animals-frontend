@@ -30,25 +30,24 @@ const copy = copyFor({ en, cy }).transitCountries
 // placeholder and the real countries. Countries already added stay in the list:
 // the server refuses a repeat by name, which says more than a country quietly
 // missing from the search would.
-const countryItems = () => [
+const countryItems = async () => [
   { value: '', text: copy.country.placeholder },
-  ...countries.originCountries()
+  ...(await countries.originCountries())
 ]
-
-const labelOf = (code) => countries.originLabel(code)
 
 // The offered list, not the label lookup: `originLabel` resolves GB to
 // "United Kingdom" for address forms, but GB is not a country this page
 // offers — the copy above the control says so.
-const isOffered = (code) =>
-  countries.originCountries().some((country) => country.value === code)
+const offeredCodesSet = async () =>
+  new Set((await countries.originCountries()).map(({ value }) => value))
 
 // The saved answer, not the page: these are the guards against a submitted list
 // that no rendering of this page could have produced. An EMPTY list is not one
 // of them — the question is optional (design release 1), so continuing without
 // adding a country saves the empty list and moves on.
-const transitedCountriesErrors = (selected) => {
-  if (selected.some((code) => !isOffered(code))) {
+const transitedCountriesErrors = async (selected) => {
+  const offered = await offeredCodesSet()
+  if (selected.some((code) => !offered.has(code))) {
     return { [COUNTRY_FIELD]: copy.errors.fromList }
   }
   if (selected.length > MAX_TRANSITED_COUNTRIES) {
@@ -59,15 +58,20 @@ const transitedCountriesErrors = (selected) => {
   return {}
 }
 
-const render = (
+const render = async (
   h,
   journey,
   selected,
   { errors = {}, status = '', chosen = '', recoverableError = false } = {}
 ) => {
+  const offered = await offeredCodesSet()
   // A code the list does not contain could only have arrived by tampering. It
   // is refused by the guards above; it is not rendered back.
-  const known = selected.filter(isOffered)
+  const known = selected.filter((code) => offered.has(code))
+  const knownLabels = await Promise.all(
+    known.map(async (code) => (await countries.originLabel(code)) ?? code)
+  )
+  const chosenLabel = (await countries.originLabel(chosen)) ?? ''
   return h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
@@ -78,9 +82,12 @@ const render = (
     copy,
     errors,
     errorSummary: kit.errorSummary(errors),
-    countryItems: countryItems(),
+    countryItems: await countryItems(),
     selectedCountries: known,
-    countryRows: countryRows(known, labelOf),
+    countryRows: countryRows(known, (code) => {
+      const index = known.indexOf(code)
+      return knownLabels[index]
+    }),
     hasCountries: known.length > 0,
     // At the cap the search goes and the limit message takes its place, so a
     // thirteenth country cannot be offered at all. An error state keeps the
@@ -93,7 +100,7 @@ const render = (
     // A refused country goes back into the search box the trader typed it
     // into: the native select holds the code, the enhanced input the name.
     chosenValue: chosen,
-    chosenLabel: labelOf(chosen) ?? '',
+    chosenLabel,
     status
   })
 }
@@ -114,15 +121,17 @@ const statusFor = (message, selected) =>
     ? `${message} ${copy.limitReached(MAX_TRANSITED_COUNTRIES)}`
     : message
 
-const addErrors = (chosen, selected) => {
+const addErrors = async (chosen, selected) => {
+  const offered = await offeredCodesSet()
   if (chosen === '') {
     return { [COUNTRY_FIELD]: copy.errors.chooseCountry }
   }
-  if (!isOffered(chosen)) {
+  if (!offered.has(chosen)) {
     return { [COUNTRY_FIELD]: copy.errors.fromList }
   }
   if (selected.includes(chosen)) {
-    return { [COUNTRY_FIELD]: copy.errors.alreadyAdded(labelOf(chosen)) }
+    const chosenLabel = await countries.originLabel(chosen)
+    return { [COUNTRY_FIELD]: copy.errors.alreadyAdded(chosenLabel) }
   }
   if (selected.length >= MAX_TRANSITED_COUNTRIES) {
     return {
@@ -135,31 +144,33 @@ const addErrors = (chosen, selected) => {
 const postAdd = async (request, h, selected) => {
   const chosen = String(request.payload?.[COUNTRY_FIELD] ?? '').trim()
   const { journey } = await state.get(request, h)
-  const errors = addErrors(chosen, selected)
+  const errors = await addErrors(chosen, selected)
   if (Object.keys(errors).length > 0) {
-    return render(h, journey, selected, { errors, chosen }).code(
+    return (await render(h, journey, selected, { errors, chosen })).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
   const added = [...selected, chosen]
+  const chosenLabel = await countries.originLabel(chosen)
   return render(h, journey, added, {
-    status: statusFor(copy.added(labelOf(chosen)), added)
+    status: statusFor(copy.added(chosenLabel), added)
   })
 }
 
 const postRemove = async (request, h, selected, code) => {
   const { journey } = await state.get(request, h)
   const remaining = selected.filter((entry) => entry !== code)
+  const codeLabel = (await countries.originLabel(code)) ?? code
   return render(h, journey, remaining, {
-    status: copy.removed(labelOf(code) ?? code)
+    status: copy.removed(codeLabel)
   })
 }
 
 const postContinue = async (request, h, selected) => {
-  const errors = transitedCountriesErrors(selected)
+  const errors = await transitedCountriesErrors(selected)
   if (Object.keys(errors).length > 0) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, selected, { errors }).code(
+    return (await render(h, journey, selected, { errors })).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
@@ -173,9 +184,9 @@ const postContinue = async (request, h, selected) => {
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return render(h, journey, selected, { recoverableError: true }).code(
-        HTTP_STATUS_INTERNAL_SERVER_ERROR
-      )
+      return (
+        await render(h, journey, selected, { recoverableError: true })
+      ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
   if (failure) {

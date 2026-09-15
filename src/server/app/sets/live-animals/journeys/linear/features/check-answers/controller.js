@@ -54,7 +54,7 @@ const reviewErrorSummary = (
     }
   )
 
-const renderCya = (
+const renderCya = async (
   h,
   journey,
   {
@@ -69,8 +69,20 @@ const renderCya = (
     cardErrors = {},
     disableAutoFocus = true
   }
-) =>
-  h.view(view, {
+) => {
+  const sections = withCardErrors(
+    await buildSections(
+      answers,
+      scope,
+      evaluation,
+      journey.journeyId,
+      readOnly,
+      parties,
+      partyErrors
+    ),
+    cardErrors
+  )
+  return h.view(view, {
     pageTitle: copy.title,
     heading: copy.title,
     copy,
@@ -83,18 +95,7 @@ const renderCya = (
       partyErrors,
       disableAutoFocus
     ),
-    sections: withCardErrors(
-      buildSections(
-        answers,
-        scope,
-        evaluation,
-        journey.journeyId,
-        readOnly,
-        parties,
-        partyErrors
-      ),
-      cardErrors
-    ),
+    sections,
     readOnly,
     amendmentCancelled,
     recoverableError,
@@ -109,6 +110,7 @@ const renderCya = (
         : null,
     backLink: hubPath(journey.journeyId)
   })
+}
 
 export const renderNotificationView = async (
   request,

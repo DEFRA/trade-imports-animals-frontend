@@ -64,21 +64,30 @@ const MAX_POSTCODE_LENGTH = 12
 const MAX_PHONE_LENGTH = 20
 const MAX_EMAIL_LENGTH = 254
 
-const fields = compose(
-  maxText('nameOrOrganisationName', MAX_NAME_LENGTH, copy.errors.nameMaxLength),
-  maxText('addressLine1', MAX_NAME_LENGTH, copy.errors.addressLine1MaxLength),
-  maxText('addressLine2', MAX_NAME_LENGTH, copy.errors.addressLine2MaxLength),
-  maxText('townOrCity', MAX_TOWN_LENGTH, copy.errors.townOrCityMaxLength),
-  maxText('county', MAX_TOWN_LENGTH, copy.errors.countyMaxLength),
-  maxText(
-    'postalOrZipCode',
-    MAX_POSTCODE_LENGTH,
-    copy.errors.postalOrZipCodeMaxLength
-  ),
-  oneOf('country', countries.addressCountries(), copy.errors.countryFromList),
-  maxText('emailAddress', MAX_EMAIL_LENGTH, copy.errors.emailMaxLength),
-  maxText('telephoneNumber', MAX_PHONE_LENGTH, copy.errors.telephoneMaxLength)
-)
+const fields = async () =>
+  compose(
+    maxText(
+      'nameOrOrganisationName',
+      MAX_NAME_LENGTH,
+      copy.errors.nameMaxLength
+    ),
+    maxText('addressLine1', MAX_NAME_LENGTH, copy.errors.addressLine1MaxLength),
+    maxText('addressLine2', MAX_NAME_LENGTH, copy.errors.addressLine2MaxLength),
+    maxText('townOrCity', MAX_TOWN_LENGTH, copy.errors.townOrCityMaxLength),
+    maxText('county', MAX_TOWN_LENGTH, copy.errors.countyMaxLength),
+    maxText(
+      'postalOrZipCode',
+      MAX_POSTCODE_LENGTH,
+      copy.errors.postalOrZipCodeMaxLength
+    ),
+    oneOf(
+      'country',
+      await countries.addressCountries(),
+      copy.errors.countryFromList
+    ),
+    maxText('emailAddress', MAX_EMAIL_LENGTH, copy.errors.emailMaxLength),
+    maxText('telephoneNumber', MAX_PHONE_LENGTH, copy.errors.telephoneMaxLength)
+  )
 
 const recordProvided = (values) =>
   FIELD_ORDER.some((field) => values[field] !== '')
@@ -92,17 +101,17 @@ const missingMandatoryErrors = (values) => {
   )
 }
 
-const countryItems = (selected) => [
+const countryItems = async (selected) => [
   { value: '', text: copy.countryPlaceholder },
   { text: '──────────', disabled: true },
-  ...countries.addressCountries().map((name) => ({
+  ...(await countries.addressCountries()).map((name) => ({
     value: name,
     text: name,
     selected: name === selected
   }))
 ]
 
-const render = (
+const render = async (
   request,
   h,
   journey,
@@ -123,7 +132,7 @@ const render = (
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
-    countryItems: countryItems(values.country)
+    countryItems: await countryItems(values.country)
   })
 
 const get = async (request, h) => {
@@ -147,8 +156,8 @@ const trimmedValues = (payload) =>
     FIELD_ORDER.map((field) => [field, (payload[field] ?? '').trim()])
   )
 
-const formErrors = (payload, values) => {
-  const { errors } = validate(fields, payload)
+const formErrors = async (payload, values) => {
+  const { errors } = validate(await fields(), payload)
   const merged = { ...missingMandatoryErrors(values), ...errors }
   return Object.fromEntries(
     FIELD_ORDER.filter((field) => merged[field]).map((field) => [
@@ -164,7 +173,7 @@ const formErrors = (payload, values) => {
 // forward lookup. An unrecognised name is refused by validation, so the code
 // is always resolvable here (bar United Kingdom, which addressCountries()
 // includes ahead of the offered list; countryCodeOf aliases it to GB).
-const privateTransporter = (values) => ({
+const privateTransporter = async (values) => ({
   name: values.nameOrOrganisationName,
   address: {
     addressLine1: values.addressLine1,
@@ -173,14 +182,14 @@ const privateTransporter = (values) => ({
     county: values.county,
     postalOrZipCode: values.postalOrZipCode,
     country: values.country,
-    countryCode: countries.countryCodeOf(values.country),
+    countryCode: await countries.countryCodeOf(values.country),
     telephoneNumber: values.telephoneNumber,
     emailAddress: values.emailAddress
   }
 })
 
-const privateTransporterRecord = (values) => ({
-  privateTransporter: privateTransporter(values)
+const privateTransporterRecord = async (values) => ({
+  privateTransporter: await privateTransporter(values)
 })
 
 /** Keep the transporter for the organisation as well as for the notification.
@@ -190,9 +199,9 @@ const privateTransporterRecord = (values) => ({
  * and the transporter list offers it from then on (design release 1). It goes
  * on as a private transporter that has not been approved yet, which is what the
  * organisation knows about it: nothing here has approved anything. */
-const remember = (request, values) =>
+const remember = async (request, values) =>
   rememberTransporter(organisationIdOf(request), {
-    ...privateTransporter(values),
+    ...(await privateTransporter(values)),
     type: PRIVATE,
     status: NEW
   })

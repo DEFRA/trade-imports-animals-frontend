@@ -11,9 +11,13 @@ export const prime = async () => {
   ports = await fetchPortsOfEntry()
 }
 
-export const list = () => ports
+// Readers are async even though the body is synchronous today — the signature
+// is what callers depend on. Behaviour is unchanged in this commit; a
+// follow-up wires each reader to await ensureLoaded so the load can be lazy
+// and driven by the point of read.
+export const list = async () => ports
 
-export const label = (code) => {
+export const label = async (code) => {
   const port = ports.find((entry) => entry.code === code)
   return port ? `${port.name} (${port.code})` : undefined
 }
