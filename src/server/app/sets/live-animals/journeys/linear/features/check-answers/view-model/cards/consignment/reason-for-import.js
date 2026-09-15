@@ -20,12 +20,12 @@ const copy = copyFor({ en, cy })
 // The exit answers the chosen reason for import asks for. Each row stands only
 // while its obligation is in scope, so the review shows an exit answer exactly
 // when one was asked for.
-const exitRows = (answers, scope) => [
+const exitRows = async (answers, scope) => [
   ...(destinationCountryApplies(answers, scope)
     ? [
         row(
           copy.rows.destinationCountry,
-          countries.originLabel(answers.destinationCountry) ??
+          (await countries.originLabel(answers.destinationCountry)) ??
             answers.destinationCountry
         )
       ]
@@ -37,7 +37,7 @@ const exitRows = (answers, scope) => [
     ? [
         row(
           copy.rows.portOfExit,
-          ports.label(answers.portOfExit) ?? answers.portOfExit
+          (await ports.label(answers.portOfExit)) ?? answers.portOfExit
         )
       ]
     : [])
@@ -49,7 +49,12 @@ const exitRows = (answers, scope) => [
  * reason-for-import page, so the card's one Change link reaches all of them —
  * which the Additional animal details card could not do while it held them.
  */
-export const reasonForImportCard = (journeyId, answers, scope, readOnly) => ({
+export const reasonForImportCard = async (
+  journeyId,
+  answers,
+  scope,
+  readOnly
+) => ({
   id: 'reasonForImport',
   title: copy.cards.reasonForImport,
   ...editableActions(
@@ -74,6 +79,6 @@ export const reasonForImportCard = (journeyId, answers, scope, readOnly) => ({
           )
         ]
       : []),
-    ...exitRows(answers, scope)
+    ...(await exitRows(answers, scope))
   ]
 })

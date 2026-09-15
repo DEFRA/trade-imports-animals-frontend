@@ -18,20 +18,27 @@ export const prime = async () => {
 const UNITED_KINGDOM = 'United Kingdom'
 const UNITED_KINGDOM_CODE = 'GB'
 
-export const originLabel = (code) =>
+// Readers are async even though the body is synchronous today — the signature
+// is what callers depend on. Behaviour is unchanged in this commit; a
+// follow-up wires each reader to await ensureLoaded so the load can be lazy
+// and driven by the point of read.
+export const originLabel = async (code) =>
   labels[code] ?? (code === UNITED_KINGDOM_CODE ? UNITED_KINGDOM : undefined)
 
-export const originCountries = () =>
+export const originCountries = async () =>
   Object.entries(labels).map(([value, text]) => ({ value, text }))
 
-export const addressCountries = () => [UNITED_KINGDOM, ...Object.values(labels)]
+export const addressCountries = async () => [
+  UNITED_KINGDOM,
+  ...Object.values(labels)
+]
 
 /** The ISO code for a country's display name (cv-011).
  *
  * Address forms collect a country by name; the address book keys on the code.
  * "United Kingdom" is offered by `addressCountries` but is not in GBNAG_SPS_EX,
  * so it is aliased to GB rather than falling through as a display name. */
-export const countryCodeOf = (name) =>
+export const countryCodeOf = async (name) =>
   name === UNITED_KINGDOM
     ? UNITED_KINGDOM_CODE
     : Object.entries(labels).find(([, label]) => label === name)?.[0]

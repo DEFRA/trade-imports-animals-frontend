@@ -135,7 +135,7 @@ describe('GET import-reason — copy reaches the view', () => {
     )
     expect(result.view.context.portItems[0].text).toBe(copy.port.placeholder)
     expect(result.view.context.portItems.slice(2)).toEqual(
-      ports.list().map((port) => ({
+      (await ports.list()).map((port) => ({
         value: port.code,
         text: `${port.name} (${port.code})`
       }))

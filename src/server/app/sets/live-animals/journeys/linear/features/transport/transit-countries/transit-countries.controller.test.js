@@ -25,7 +25,9 @@ const get = transitCountries.routes.find(
 ).handler
 const post = postHandlerOf(transitCountries)
 
-const codes = countries.originCountries().map((country) => country.value)
+const codes = (await countries.originCountries()).map(
+  (country) => country.value
+)
 const atCapacity = codes.slice(0, MAX_TRANSITED_COUNTRIES)
 const tooManyCodes = codes.slice(0, MAX_TRANSITED_COUNTRIES + 1)
 const seed = { meansOfTransport: 'ROAD_VEHICLE' }
@@ -133,7 +135,7 @@ describe('POST transit-countries — adding a country', () => {
     expect(result.view.context.showCountryField).toBe(false)
     // The country that reached the cap is said in the same breath as the cap,
     // so the whole sentence is pinned, not just the limit half.
-    const lastName = countries.originLabel(atCapacity.at(-1))
+    const lastName = await countries.originLabel(atCapacity.at(-1))
     expect(result.view.context.status).toBe(
       `${lastName} added. Maximum of ${MAX_TRANSITED_COUNTRIES} countries reached. Remove a country to add another.`
     )
@@ -278,7 +280,7 @@ describe('GET transit-countries', () => {
     const result = await driveHandler(get, { seed })
     const items = result.view.context.countryItems
     expect(items[0]).toEqual({ value: '', text: 'Search for a country' })
-    expect(items.slice(1)).toEqual(countries.originCountries())
+    expect(items.slice(1)).toEqual(await countries.originCountries())
   })
 
   it('Should read the stored countries back as rows, with nothing announced', async () => {

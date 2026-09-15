@@ -56,8 +56,8 @@ describe('#parties', () => {
     }
   })
 
-  test('Should carry every field the private-transporter form makes mandatory on every private record', () => {
-    const addresses = addressCountries()
+  test('Should carry every field the private-transporter form makes mandatory on every private record', async () => {
+    const addresses = await addressCountries()
 
     for (const record of transporters
       .parties()

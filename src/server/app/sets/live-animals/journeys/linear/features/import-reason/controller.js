@@ -69,17 +69,17 @@ const REVEALS = Object.freeze({
 const revealsFor = (reasonForImport) =>
   Object.hasOwn(REVEALS, reasonForImport) ? REVEALS[reasonForImport] : []
 
-const countryRule = (field) =>
+const countryRule = async (field) =>
   requiredOneOf(
     field,
-    countries.originCountries().map(({ value }) => value),
+    (await countries.originCountries()).map(({ value }) => value),
     copy.errors.countryRequired
   )
 
-const portRule = (field) =>
+const portRule = async (field) =>
   requiredOneOf(
     field,
-    ports.list().map((port) => port.code),
+    (await ports.list()).map((port) => port.code),
     copy.errors.portRequired
   )
 
@@ -110,13 +110,15 @@ const RULES = Object.freeze({
 // Only the reveal the submitted reason opens is answerable, so only its
 // fields are measured. A field belonging to another branch arrives empty and
 // is neither validated nor committed.
-const fields = (reasonForImport) =>
+const fields = async (reasonForImport) =>
   compose(
     oneOf(
       'reasonForImport',
       importReasonPurpose.reasons().map((option) => option.value)
     ),
-    ...revealsFor(reasonForImport).map((reveal) => RULES[reveal.field]())
+    ...(await Promise.all(
+      revealsFor(reasonForImport).map((reveal) => RULES[reveal.field]())
+    ))
   )
 
 const formValuesFrom = (payload) => ({
@@ -160,22 +162,28 @@ const answersFrom = (values) => ({
 
 const DIVIDER_OPTION = { value: '', text: '──────────', disabled: true }
 
-const countryItems = () => [
+const countryItems = async () => [
   { value: '', text: copy.country.placeholder },
   DIVIDER_OPTION,
-  ...countries.originCountries()
+  ...(await countries.originCountries())
 ]
 
-const portItems = () => [
+const portItems = async () => [
   { value: '', text: copy.port.placeholder },
   DIVIDER_OPTION,
-  ...ports.list().map((port) => ({
+  ...(await ports.list()).map((port) => ({
     value: port.code,
     text: `${port.name} (${port.code})`
   }))
 ]
 
-const render = (h, journey, values, errors = {}, recoverableError = false) =>
+const render = async (
+  h,
+  journey,
+  values,
+  errors = {},
+  recoverableError = false
+) =>
   h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),
@@ -197,8 +205,8 @@ const render = (h, journey, values, errors = {}, recoverableError = false) =>
       hint: { text: copy.purpose.hints[option.value] },
       checked: option.value === values[PURPOSE_FIELD]
     })),
-    countryItems: countryItems(),
-    portItems: portItems(),
+    countryItems: await countryItems(),
+    portItems: await portItems(),
     exitDateField: kit.dateField(TEMPORARY_ADMISSION_DATE_FIELD, {
       label: copy.date.label,
       hint: copy.date.hint,
@@ -215,10 +223,12 @@ const get = async (request, h) => {
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const values = formValuesFrom(payload)
-  const { errors } = validate(fields(values.reasonForImport), payload)
+  const { errors } = validate(await fields(values.reasonForImport), payload)
   if (errors) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, values, errors).code(HTTP_STATUS_BAD_REQUEST)
+    return (await render(h, journey, values, errors)).code(
+      HTTP_STATUS_BAD_REQUEST
+    )
   }
 
   let committed
@@ -228,7 +238,7 @@ const post = async (request, h) => {
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return render(h, journey, values, {}, true).code(
+      return (await render(h, journey, values, {}, true)).code(
         HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
     }

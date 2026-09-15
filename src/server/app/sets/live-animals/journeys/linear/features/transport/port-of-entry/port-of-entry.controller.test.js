@@ -106,7 +106,7 @@ describe('GET port-of-entry — server-rendered select data (no-JS path)', () =>
     const result = await driveHandler(get)
     const items = result.view.context.portItems
     expect(items[0]).toEqual({ value: '', text: 'Select port of entry' })
-    const [firstPort] = ports.list()
+    const [firstPort] = await ports.list()
     expect(items[1]).toEqual({
       value: firstPort.code,
       text: `${firstPort.name} (${firstPort.code})`,

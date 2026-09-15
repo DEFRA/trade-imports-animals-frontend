@@ -72,8 +72,8 @@ describe('countries service — stub mode', () => {
   it('Should serve stub data through the accessors without priming', async () => {
     process.env.STUB_MODE = 'true'
     const countries = await import('./countries/index.js')
-    expect(countries.originLabel('AT')).toBe('Austria')
-    expect(countries.originCountries()).toContainEqual({
+    expect(await countries.originLabel('AT')).toBe('Austria')
+    expect(await countries.originCountries()).toContainEqual({
       value: 'AT',
       text: 'Austria'
     })
@@ -85,8 +85,8 @@ describe('countries service — stub mode', () => {
     const countries = await import('./countries/index.js')
     await countries.prime()
     expect(fetch).not.toHaveBeenCalled()
-    expect(countries.originLabel('AT')).toBe('Austria')
-    expect(countries.originLabel('ZZ')).toBeUndefined()
+    expect(await countries.originLabel('AT')).toBe('Austria')
+    expect(await countries.originLabel('ZZ')).toBeUndefined()
   })
 })
 
@@ -96,15 +96,18 @@ describe('countries service — real mode', () => {
     stubFetch(okOnlyForBlock('GBNAG_SPS_EX', [{ code: 'ZZ', name: 'Zedland' }]))
     const countries = await import('./countries/index.js')
 
-    expect(countries.originLabel('ZZ')).toBeUndefined()
+    expect(await countries.originLabel('ZZ')).toBeUndefined()
     await countries.prime()
 
-    expect(countries.originLabel('ZZ')).toBe('Zedland')
-    expect(countries.originLabel('AT')).toBeUndefined()
-    expect(countries.originCountries()).toEqual([
+    expect(await countries.originLabel('ZZ')).toBe('Zedland')
+    expect(await countries.originLabel('AT')).toBeUndefined()
+    expect(await countries.originCountries()).toEqual([
       { value: 'ZZ', text: 'Zedland' }
     ])
-    expect(countries.addressCountries()).toEqual(['United Kingdom', 'Zedland'])
+    expect(await countries.addressCountries()).toEqual([
+      'United Kingdom',
+      'Zedland'
+    ])
   })
 })
 
@@ -112,7 +115,7 @@ describe('ports service — stub mode', () => {
   it('Should serve stub data through list() without priming', async () => {
     process.env.STUB_MODE = 'true'
     const ports = await import('./ports/index.js')
-    expect(ports.list()).toContainEqual({
+    expect(await ports.list()).toContainEqual({
       code: 'GB ABD',
       name: 'Aberdeen Harbour'
     })
@@ -127,7 +130,7 @@ describe('ports service — real mode', () => {
 
     await ports.prime()
 
-    expect(ports.list()).toEqual([{ code: 'GB ZZZ', name: 'Zed Port' }])
+    expect(await ports.list()).toEqual([{ code: 'GB ZZZ', name: 'Zed Port' }])
   })
 })
 

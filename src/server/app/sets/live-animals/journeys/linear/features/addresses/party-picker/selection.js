@@ -28,7 +28,7 @@ export const selectedPartyFor = async (
   selectedId = committedId(answers, party)
 ) => {
   if (journey.status === SUBMITTED) {
-    const stored = toDisplayParty(answers[party.id])
+    const stored = await toDisplayParty(answers[party.id])
     if (stored && (!selectedId || stored.id === selectedId)) {
       return stored
     }
