@@ -96,7 +96,12 @@ const buildRowItem = (id, answers, scope, evaluation, journeyId) => {
   if (isHiddenRow(row, status)) {
     return null
   }
-  const base = { title: { text: title }, hint: { text: hint } }
+  // Design release 1 hints only the "Roles and addresses" row, so a row whose
+  // copy carries no hint gets no hint slot at all rather than an empty one.
+  const base = {
+    title: { text: title },
+    ...(hint ? { hint: { text: hint } } : {})
+  }
   return rowItem(base, row, scope, status, journeyId)
 }
 

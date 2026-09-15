@@ -52,6 +52,7 @@ const SAVE_AND_CONTINUE = 'Save and continue'
 // nothing on the hub carries this title or the shut status it used to read.
 const RETIRED_REVIEW_ROW_TITLE = 'Check and submit'
 const CANNOT_START_STATUS = '.govuk-task-list__status--cannot-start-yet'
+const TASK_ROW_HINT = '.govuk-task-list__hint'
 
 const selectCommodityAndOpenDetails = async (page) => {
   await startNotification(page)
@@ -293,6 +294,24 @@ test.describe('hub feature', () => {
       copy.rows.animalIdentification.title,
       copy.rows.additionalDetails.title
     ])
+  })
+
+  // Design release 1 keeps the hub to one-line rows: every task is a bare link
+  // with a status tag beside it, and only "Roles and addresses" says anything
+  // underneath — the parties that row collects.
+  test('overview: only the roles and addresses row carries a hint', async ({
+    page
+  }) => {
+    await openHubWithCommodityTotals(page)
+
+    const hints = page.locator(TASK_ROW_HINT)
+    await expect(hints).toHaveCount(1)
+    await expect(hints).toHaveText(copy.rows.addresses.hint)
+    await expect(
+      taskRow(page, copy.rows.addresses.title).locator(TASK_ROW_HINT)
+    ).toHaveText(
+      'Consignor or Exporter, Consignee, Importer and Place of Destination'
+    )
   })
 
   test('back link and return button navigate to the dashboard', async ({

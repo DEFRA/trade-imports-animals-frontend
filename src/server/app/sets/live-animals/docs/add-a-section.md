@@ -220,7 +220,11 @@ whatever the parts roll up to. See
 [`journey-flow-and-gates.md`](journey-flow-and-gates.md), "Task rows".
 
 Add the task-row id to the right object in the hub controller's `GROUPS` list.
-Add the row title and hint to both hub copy bundles. Add a new numbered hub
+Add the row title to both hub copy bundles. Hub task rows carry no hint:
+Design release 1 keeps the hub to one-line rows and "Roles and addresses" is
+the one hinted row, guarded by
+[`journeys/linear/features/hub/copy/copy.test.js`](../journeys/linear/features/hub/copy/copy.test.js).
+Add a new numbered hub
 group only when the design requires a new heading; if so, add its caption to
 both locale bundles too.
 
