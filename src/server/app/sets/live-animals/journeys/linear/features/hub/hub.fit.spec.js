@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
+  answerArrivalDetails,
   answerCountryOfOrigin,
   completeAnswerSections,
   selectSpecies,
@@ -9,6 +10,7 @@ import {
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { copy as commoditiesCopy } from '../commodities/copy/copy.en.js'
+import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 
@@ -111,22 +113,103 @@ test.describe('hub feature', () => {
       commodities.getByRole('link', { name: copy.rows.commodities.title })
     ).toBeVisible()
 
-    // The row's derived gate is the commodity selection, so on a fresh
-    // notification it reads "Cannot start yet" with no link and the trader is
-    // never sent to a details page that has nothing to ask about.
+    // Nothing has been chosen to give details about yet, and the row is still
+    // a link: the details page sends the trader on to the commodity question
+    // rather than the hub refusing to open it.
     const consignmentDetails = taskRow(page, copy.rows.consignmentDetails.title)
-    await expect(consignmentDetails).toContainText(copy.statuses.cannotStartYet)
+    await expect(consignmentDetails).toContainText(copy.statuses.notYetStarted)
     await expect(
       consignmentDetails.getByRole('link', {
         name: copy.rows.consignmentDetails.title
       })
-    ).toHaveCount(0)
+    ).toBeVisible()
 
     const review = taskRow(page, copy.rows.review.title)
     await expect(review).toContainText(copy.statuses.cannotStartYet)
     await expect(
       review.getByRole('link', { name: copy.rows.review.title })
     ).toHaveCount(0)
+  })
+
+  // Design release 1 lets a trader start any task on the notification in any
+  // order, so every task the hub shows is a link before a commodity is
+  // chosen — the arrival details, the documents and the contact address
+  // included, none of which wait on an answer given anywhere else. Origin is
+  // the journey's entry page and the entry guard holds a notification there
+  // until it is answered, so the earliest hub a trader reaches already has
+  // origin Completed; this is that hub.
+  test('every task the hub shows but Check and submit opens before a commodity is chosen', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    // The eleventh row is Check and submit; identification and transit
+    // countries do not apply to a notification with nothing chosen.
+    const openFromTheStart = [
+      copy.rows.origin,
+      copy.rows.commodities,
+      copy.rows.importReason,
+      copy.rows.consignmentDetails,
+      copy.rows.additionalDetails,
+      copy.rows.arrivalDetails,
+      copy.rows.transporter,
+      copy.rows.addresses,
+      copy.rows.contact,
+      copy.rows.documents
+    ]
+
+    for (const row of openFromTheStart) {
+      await expect(
+        taskRow(page, row.title).getByRole('link', { name: row.title }),
+        `"${row.title}" has no way in`
+      ).toBeVisible()
+    }
+
+    await expect(page.getByText(copy.statuses.cannotStartYet)).toHaveCount(1)
+  })
+
+  test('a task with nothing before it opens and saves before a commodity is chosen', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await page
+      .getByRole('link', { name: copy.rows.arrivalDetails.title, exact: true })
+      .click()
+
+    await expect(
+      page.getByRole('heading', { name: transportCopy.portOfEntry.title })
+    ).toBeVisible()
+
+    // Saving carries the trader on through the section, and with no commodity
+    // chosen the rest of the transport section is out of scope — transit
+    // countries and transporters both sit after the commodity selection in
+    // flow order, so `nextInSection` finds no further page and returns the
+    // hub. Landing back on Overview is the answer; pin it so a later change to
+    // the gate chain cannot silently send the trader to a page whose questions
+    // are out of scope.
+    await answerArrivalDetails(page)
+
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+  })
+
+  // Nothing has been chosen to give numbers for, so the consignment-details
+  // page asks the commodity question rather than drawing an empty table.
+  test('the commodity details task opens the commodity question while nothing is chosen', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await page
+      .getByRole('link', {
+        name: copy.rows.consignmentDetails.title,
+        exact: true
+      })
+      .click()
+
+    await expect(
+      page.getByRole('heading', { name: commoditiesCopy.search.title })
+    ).toBeVisible()
   })
 
   // Design release 1 inserts the identification task only once the chosen
@@ -275,7 +358,7 @@ test.describe('hub feature — review readiness', () => {
     await startNotification(page)
 
     // The commodity summary shows from the first visit, so this run covers the
-    // zero-total panels as well as the blocked task list.
+    // zero-total panels as well as the task list with Check and submit shut.
     await expect(
       page.getByRole('heading', { name: copy.commodityTotals.heading })
     ).toBeVisible()

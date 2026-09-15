@@ -17,7 +17,7 @@ import {
   readyForCheckYourAnswers,
   sectionStatus
 } from '../../../../../flow/section-status.js'
-import { rowEntry, rowGatePasses } from '../../../../../flow/navigation.js'
+import { rowEntry } from '../../../../../flow/navigation.js'
 import { sectionGatePasses } from '../../../../../flow/gates.js'
 import { rowStatus, taskRowById, taskRows } from './task-rows.js'
 
@@ -372,23 +372,21 @@ describe('#rowStatus — the conditional transit-countries row', () => {
   })
 })
 
-describe('#rowGatePasses / #rowEntry — a row is gated exactly as its first page is', () => {
-  const shownRows = (answers) =>
-    taskRows.filter((row) => statusIn(row.id, answers) !== NA)
+describe('#rowEntry — every row opens on a page, in any order', () => {
+  const entryOf = (row, answers) =>
+    rowEntry(row, makeScope(answers), 'journey-1')
 
-  it('Should open only the origin row on a blank journey', () => {
-    const scope = makeScope({})
+  it('Should give every row a page of its own to open on a blank journey — never the hub', () => {
     for (const row of taskRows) {
-      expect(rowGatePasses(row, scope)).toBe(row.id === 'origin')
+      expect(entryOf(row, {}), `${row.id} has no way in`).toBe(
+        `/notifications/journey-1/${row.pages[0].slug}`
+      )
     }
   })
 
-  it('Should unlock every row the hub shows once the origin and a commodity line are answered', () => {
-    const scope = makeScope(unlocked)
-    const shown = shownRows(unlocked)
-    expect(shown.map((row) => row.id)).toContain('animalIdentification')
-    for (const row of shown) {
-      expect(rowGatePasses(row, scope)).toBe(true)
+  it('Should still open every row once the origin and a commodity line are answered', () => {
+    for (const row of taskRows) {
+      expect(entryOf(row, unlocked)).not.toBe('/notifications/journey-1')
     }
   })
 

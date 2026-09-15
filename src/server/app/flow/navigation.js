@@ -17,12 +17,18 @@ export const sectionEntry = (sectionId, scope, journeyId) => {
   return page ? pagePath(journeyId, page.slug) : hubPath(journeyId)
 }
 
+// A task row always has a way in. The hub links every row from the moment the
+// notification exists, so this never answers "nowhere": the gate still chooses
+// which of the row's pages opens, skipping one whose questions are out of
+// scope for this consignment, but when it rules them all out the row opens at
+// its first page. That page decides for itself what to show someone who has
+// answered nothing else yet.
 export const rowEntry = (row, scope, journeyId) => {
-  const page = row.pages.find((candidate) => pageGatePasses(candidate, scope))
-  return page ? pagePath(journeyId, page.slug) : hubPath(journeyId)
+  const page =
+    row.pages.find((candidate) => pageGatePasses(candidate, scope)) ??
+    row.pages[0]
+  return pagePath(journeyId, page.slug)
 }
-
-export const rowGatePasses = (row, scope) => pageGatePasses(row.pages[0], scope)
 
 export const nextInSection = (pageId, scope, journeyId) => {
   const section = sectionOfPage(pageId)

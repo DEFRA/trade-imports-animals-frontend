@@ -47,9 +47,20 @@ configured section list through the journey-flow seam.
 
 ## Navigation and status
 
-[`src/server/app/flow/navigation.js`](../flow/navigation.js) finds the first
-gate-passing page in a section or task row. `nextInSection()` returns the next
-gate-passing page, or the hub when the section is finished.
+[`src/server/app/flow/navigation.js`](../flow/navigation.js) exports three.
+`sectionEntry()` finds the first gate-passing page in a section, or the hub when
+no page passes. `nextInSection()` returns the next gate-passing page in the
+section, or the hub when the section is finished.
+
+`rowEntry()` differs from `sectionEntry()` and `nextInSection()` in that it
+always answers with a page. A task row is a way into the notification rather
+than a step of a sequence, and a journey is worked in whatever order its user
+chooses, so a row whose pages are all gated out opens at its first page instead
+of turning back to the hub. That page decides for itself what to show someone
+who has answered nothing else — the live-animals
+[`consignmentDetails` page](../sets/live-animals/journeys/linear/features/commodities/page.js)
+sends a user to the commodity question when the notification holds no commodity
+line.
 
 [`src/server/app/flow/section-status.js`](../flow/section-status.js) calculates
 section status from dispatch ownership. Submit readiness is the conjunction of the
