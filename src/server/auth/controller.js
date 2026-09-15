@@ -3,7 +3,9 @@ import { validateState } from '../../auth/state.js'
 import { verifyToken } from '../../auth/verify-token.js'
 import { getPermissions } from '../../auth/get-permissions.js'
 import { getSafeRedirect } from '../../auth/get-safe-redirect.js'
-import { base } from '../app/shared/kit.js'
+import { base, sharedCopy } from '../app/shared/kit.js'
+
+const UNAUTHORISED_VIEW = 'auth/unauthorised'
 
 export const authController = {
   signin: {
@@ -26,13 +28,19 @@ export const authController = {
           },
           'Bell auth failed for /auth/sign-in-oidc'
         )
-        return h.view(
-          'auth/unauthorised',
-          base('Sorry, we are unable to sign you in')
-        )
+        return h.view(UNAUTHORISED_VIEW, base(sharedCopy.unauthorised.title))
       }
 
       const { profile, token, refreshToken } = request.auth.credentials
+
+      if (!profile.organisationId) {
+        request.logger?.error(
+          { crn: profile.crn },
+          'Sign-in rejected: missing organisationId in Defra ID token'
+        )
+        return h.view(UNAUTHORISED_VIEW, base(sharedCopy.unauthorised.title))
+      }
+
       // verify token returned from Defra Identity against public key
       try {
         await verifyToken(token)
@@ -41,21 +49,28 @@ export const authController = {
           { err },
           'Token verification failed for /auth/sign-in-oidc'
         )
-        return h.view(
-          'auth/unauthorised',
-          base('Sorry, we are unable to sign you in')
-        )
+        return h.view(UNAUTHORISED_VIEW, base(sharedCopy.unauthorised.title))
       }
 
       // Typically permissions for the selected organisation would be available in the `roles` property of the token
       // However, when signing in with RPA credentials, the roles only include the role name and not the permissions
       // Therefore, we need to make additional API calls to get the permissions from Siti Agri
       // These calls are authenticated using the token returned from Defra Identity
-      const { role, scope } = await getPermissions(
-        profile.crn,
-        profile.organisationId,
-        token
-      )
+      let role
+      let scope
+      try {
+        ;({ role, scope } = await getPermissions(
+          profile.crn,
+          profile.organisationId,
+          token
+        ))
+      } catch (err) {
+        request.logger?.error(
+          { err },
+          'Failed to load user permissions at sign-in'
+        )
+        return h.view(UNAUTHORISED_VIEW, base(sharedCopy.unauthorised.title))
+      }
 
       // Store token and all useful data in the session cache
       await request.server.app.cache.set(profile.sessionId, {
