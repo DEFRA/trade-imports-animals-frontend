@@ -20,9 +20,10 @@ import { organisationIdOf } from '../addresses/resolve-parties.js'
 import { addressText } from '../addresses/party-picker/view-model/address-lines.js'
 import { answerFor } from '../addresses/party-picker/selection.js'
 import { isStubMode } from '../../../../../../../common/services/mode.js'
-import { buildInsAddAddressUrl } from '../addresses/ins-handshake.js'
-import { copy as addressesEn } from '../addresses/copy/copy.en.js'
-import { copy as addressesCy } from '../addresses/copy/copy.cy.js'
+import {
+  buildInsAddAddressUrl,
+  handshakeErrorMessage
+} from '../addresses/ins-handshake.js'
 import { consignmentContactSelectPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
@@ -32,17 +33,6 @@ const view = `${TEMPLATES}/features/contact/template`
 
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
-const addressesCopy = copyFor({ en: addressesEn, cy: addressesCy }).picker
-
-const handshakeErrorMessage = (code) => {
-  if (code === 'not-found') {
-    return addressesCopy.handshakeErrors.notFound
-  }
-  if (code === 'unavailable') {
-    return addressesCopy.handshakeErrors.unavailable
-  }
-  return undefined
-}
 
 const handshakeErrorSummary = (error) =>
   error
@@ -92,7 +82,7 @@ const render = (
     errors,
     errorSummary: resolveErrorSummary(errors, handshakeError),
     addAddressHref,
-    addNewAddressLabel: addressesCopy.addNewAddress,
+    addNewAddressLabel: sharedCopy.addressHandshake.addNewAddress,
     contactOptions: options.map((option) => ({
       value: option.id,
       text: option.name,
@@ -104,7 +94,10 @@ const render = (
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const orgId = organisationIdOf(request)
-  const handshakeError = handshakeErrorMessage(request.query.handshakeError)
+  const handshakeError = handshakeErrorMessage(
+    sharedCopy.addressHandshake.errors,
+    request.query.handshakeError
+  )
   const recoverableError = request.query.handshakeError === 'unavailable'
   return render(
     h,

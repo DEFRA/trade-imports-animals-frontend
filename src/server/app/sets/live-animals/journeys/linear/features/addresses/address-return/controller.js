@@ -6,7 +6,7 @@ import * as kit from '../../../../../../../shared/kit.js'
 import { routeOptions } from '../../../../../../../shared/kit.js'
 import { isRecoverableBackendError } from '../../../../../../../services/persistence/records/errors.js'
 import { organisationIdOf } from '../resolve-parties.js'
-import { partyForFulfilmentId } from '../obligation-party-map.js'
+import { partyForFulfilmentId } from '../party-for-fulfilment-id.js'
 import { clearHandshakeToken, verifyHandshakeToken } from '../ins-handshake.js'
 import { answerFor, chosenPartyFor } from '../party-picker/selection.js'
 

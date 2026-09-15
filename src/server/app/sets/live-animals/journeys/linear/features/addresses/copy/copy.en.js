@@ -1,3 +1,5 @@
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
+
 export const copy = {
   hub: {
     title: 'Consignment addresses',
@@ -58,12 +60,7 @@ export const copy = {
     selectRowPrefix: 'Select',
     viewDetails: 'View details',
     viewDetailsFor: 'for',
-    addNewAddress: 'Add a new address',
-    handshakeErrors: {
-      notFound:
-        'The address could not be found in your address book. Select another address or try adding it again.',
-      unavailable:
-        'The address book could not be reached. Your answers on this page have been saved. Try again in a few minutes.'
-    }
+    addNewAddress: sharedCopy.addressHandshake.addNewAddress,
+    handshakeErrors: sharedCopy.addressHandshake.errors
   }
 }
