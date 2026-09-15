@@ -70,8 +70,9 @@ const fields = (options) =>
 const addressSummary = (address) =>
   [addressText(address), address.country].filter(Boolean).join(', ')
 
-const addAddressLinkFor = (journey) =>
-  !isStubMode() && buildInsAddAddressUrl(journey.journeyId, CONTACT_PARTY)
+const addAddressLinkFor = (request, h, journey) =>
+  !isStubMode() &&
+  buildInsAddAddressUrl(request, h, journey.journeyId, CONTACT_PARTY)
 
 const render = (
   h,
@@ -110,7 +111,7 @@ const get = async (request, h) => {
     journey,
     { selectedId: answers.contactAddress?.addressId },
     [...(await addressBook.all(orgId))],
-    addAddressLinkFor(journey),
+    addAddressLinkFor(request, h, journey),
     { recoverableError, handshakeError }
   )
 }
@@ -122,9 +123,16 @@ const post = async (request, h) => {
   const { errors } = validate(fields(options), payload)
   if (errors) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, {}, options, addAddressLinkFor(journey), {
-      errors
-    }).code(HTTP_STATUS_BAD_REQUEST)
+    return render(
+      h,
+      journey,
+      {},
+      options,
+      addAddressLinkFor(request, h, journey),
+      {
+        errors
+      }
+    ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   const chosen = payload.contactAddress
@@ -146,7 +154,7 @@ const post = async (request, h) => {
         journey,
         { selectedId: chosen?.id },
         options,
-        addAddressLinkFor(journey),
+        addAddressLinkFor(request, h, journey),
         {
           recoverableError: true
         }

@@ -39,6 +39,7 @@ const stubView = (captured) => (view, context) => {
 
 export const stubH = () => {
   const captured = {}
+  const cookies = {}
   return {
     view: stubView(captured),
     redirect: (to) => {
@@ -52,7 +53,13 @@ export const stubH = () => {
       return result
     },
     response: stubResponse,
-    state: () => {},
+    state: (name, value) => {
+      cookies[name] = value
+    },
+    unstate: (name) => {
+      delete cookies[name]
+    },
+    cookies,
     captured
   }
 }
@@ -91,13 +98,13 @@ export const recordingH = () => {
 
 export const driveHandler = async (
   handler,
-  { payload = {}, seed = {}, params = {}, query = {} } = {}
+  { payload = {}, seed = {}, params = {}, query = {}, state = {} } = {}
 ) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, seed)
   const h = stubH()
   const response = await handler(
-    journeyRequest(journey.journeyId, { payload, params, query }),
+    journeyRequest(journey.journeyId, { payload, params, query, state }),
     h
   )
   const after = (await store.get(journey.journeyId)).answers
