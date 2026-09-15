@@ -74,6 +74,10 @@ describe('#copy', () => {
       expect(isCopyLeaf(value), `${path} must be copy`).toBe(true)
     }
   })
+
+  test('Should head the whole task list "Notification tasklist"', () => {
+    expect(copy.taskListHeading).toBe('Notification tasklist')
+  })
 })
 
 describe('GET /hub', () => {
@@ -119,15 +123,17 @@ describe('#hubHandler', () => {
     expect(context.progressLine).toBeUndefined()
   })
 
-  it('Should render the six numbered groups in the design order', async () => {
+  it('Should render the six numbered design sections in order, with the unnumbered review section last', async () => {
     const { groups } = await renderHub()
     expect(groups.map((group) => group.caption)).toEqual([
       '1. About the consignment',
-      '2. Commodity details',
-      '3. Movement',
-      '4. Addresses',
-      '5. Documents',
-      '6. Check and submit'
+      '2. Description of the goods',
+      '3. Transport and arrival',
+      '4. Documents',
+      '5. Consignment parties',
+      '6. Contact address',
+      // Unnumbered, and only until the review becomes a button under the list.
+      'Check and submit'
     ])
   })
 
@@ -143,9 +149,10 @@ describe('#hubHandler', () => {
         'Animal identification details'
       ],
       [ARRIVAL_ROW_TITLE, 'Transporter'],
-      ['Roles and addresses', 'Contact address'],
       ['Uploaded documents'],
-      ['Check and submit']
+      ['Roles and addresses'],
+      ['Contact address'],
+      [REVIEW_ROW_TITLE]
     ])
   })
 

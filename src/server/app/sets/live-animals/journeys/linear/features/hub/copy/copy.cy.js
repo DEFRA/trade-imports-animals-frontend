@@ -16,13 +16,15 @@ export const copy = {
     notYetStarted: 'Heb ddechrau eto',
     cannotStartYet: 'Methu dechrau eto'
   },
+  taskListHeading: 'Rhestr dasgau’r hysbysiad',
   groups: {
     'about-the-consignment': '1. Am y llwyth',
-    'commodity-details': '2. Manylion y nwyddau',
-    movement: '3. Symudiad',
-    addresses: '4. Cyfeiriadau',
-    documents: '5. Dogfennau',
-    'check-and-submit': '6. Gwirio a chyflwyno'
+    'description-of-the-goods': '2. Disgrifiad o’r nwyddau',
+    'transport-and-arrival': '3. Cludiant a chyrraedd',
+    documents: '4. Dogfennau',
+    'consignment-parties': '5. Partïon y llwyth',
+    'contact-address': '6. Cyfeiriad cyswllt',
+    'check-and-submit': 'Gwirio a chyflwyno'
   },
   rows: {
     origin: {

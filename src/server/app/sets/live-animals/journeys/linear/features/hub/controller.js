@@ -26,24 +26,33 @@ const view = `${TEMPLATES}/features/hub/template`
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
+// Design release 1 divides the notification into six numbered sections under a
+// "Notification tasklist" heading: the documents come fourth rather than after
+// the addresses, and the consignment parties and the contact address are
+// sections of their own rather than one shared "Addresses".
 const GROUPS = [
   {
     id: 'about-the-consignment',
     rows: ['origin', 'commodities', 'importReason']
   },
   {
-    id: 'commodity-details',
+    id: 'description-of-the-goods',
     // Design release 1 opens this section with the commodity details, so the
     // consignment-details page leads the group rather than hanging off the
     // "What are you importing?" row in the section above.
     rows: ['consignmentDetails', 'additionalDetails', 'animalIdentification']
   },
   {
-    id: 'movement',
+    id: 'transport-and-arrival',
     rows: ['arrivalDetails', 'transitCountries', 'transporter']
   },
-  { id: 'addresses', rows: ['addresses', 'contact'] },
   { id: 'documents', rows: ['documents'] },
+  { id: 'consignment-parties', rows: ['addresses'] },
+  { id: 'contact-address', rows: ['contact'] },
+  // Design release 1 has no section here: it reaches the review from a button
+  // under the task list. Until that button exists the review row is the only
+  // route to the check-your-answers page, so the section stays, unnumbered so
+  // it cannot be read as a seventh section of the design's six.
   { id: 'check-and-submit', rows: ['review'] }
 ]
 
