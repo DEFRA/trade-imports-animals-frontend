@@ -16,6 +16,7 @@ import { pagePath } from '../../../../../../../shared/paths.js'
 
 import { routes } from '../controller.js'
 import { copy } from './copy.en.js'
+import { copy as copyCy } from './copy.cy.js'
 
 const hubHandler = routes.find((route) => route.method === 'GET').handler
 
@@ -43,6 +44,12 @@ const CONSIGNMENT_DETAILS_ROW_TITLE = 'Commodity details'
 const IMPORT_REASON_ROW_TITLE = 'Main reason for importing'
 const TRANSIT_ROW_TITLE = 'Transit countries'
 const ARRIVAL_ROW_TITLE = 'Arrival details'
+const ADDRESSES_ROW_TITLE = 'Roles and addresses'
+// The one hint Design release 1 shows on the hub, on the addresses row.
+const ADDRESSES_ROW_HINT =
+  'Consignor or Exporter, Consignee, Importer and Place of Destination'
+const ADDRESSES_ROW_HINT_CY =
+  'Anfonwr neu allforiwr, derbynnydd, mewnforiwr a man cyrchfan'
 const CANNOT_START_CLASS = 'govuk-task-list__status--cannot-start-yet'
 const NOT_YET_STARTED_STATUS = {
   tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
@@ -73,6 +80,28 @@ describe('#copy', () => {
 
   test('Should head the whole task list "Notification tasklist"', () => {
     expect(copy.taskListHeading).toBe('Notification tasklist')
+  })
+
+  // Design release 1 keeps the hub to one-line rows: only "Roles and
+  // addresses" carries a sentence underneath, naming the four parties that row
+  // collects.
+  test('Should give a hint to the roles and addresses row alone', () => {
+    const hinted = Object.entries(copy.rows)
+      .filter(([, row]) => row.hint !== undefined)
+      .map(([id]) => id)
+
+    expect(hinted).toEqual(['addresses'])
+    expect(copy.rows.addresses.hint).toBe(ADDRESSES_ROW_HINT)
+
+    // Copy parity only checks that a Welsh leaf differs from its English
+    // counterpart, so the Welsh parties list is pinned here beside the English
+    // one.
+    const hintedCy = Object.entries(copyCy.rows)
+      .filter(([, row]) => row.hint !== undefined)
+      .map(([id]) => id)
+
+    expect(hintedCy).toEqual(['addresses'])
+    expect(copyCy.rows.addresses.hint).toBe(ADDRESSES_ROW_HINT_CY)
   })
 })
 
@@ -146,7 +175,7 @@ describe('#hubHandler', () => {
       ],
       [ARRIVAL_ROW_TITLE, 'Transporter'],
       ['Uploaded documents'],
-      ['Roles and addresses'],
+      [ADDRESSES_ROW_TITLE],
       ['Contact address']
     ])
   })
@@ -307,7 +336,7 @@ describe('#hubHandler', () => {
     expect(rowByTitle(context, 'Transporter').href).toBe(
       pagePath(context.journeyId, 'transporters')
     )
-    expect(rowByTitle(context, 'Roles and addresses').href).toBe(
+    expect(rowByTitle(context, ADDRESSES_ROW_TITLE).href).toBe(
       pagePath(context.journeyId, 'addresses')
     )
   })
@@ -426,5 +455,35 @@ describe('#hubHandler — the Commodity details row', () => {
     expect(rowByTitle(answered, CONSIGNMENT_DETAILS_ROW_TITLE).status).toEqual(
       COMPLETED_STATUS
     )
+  })
+})
+
+// Design release 1 keeps the hub to one-line rows, so a row without a hint
+// gets no hint slot at all — handing govukTaskList `{ text: undefined }` would
+// still draw an empty hint element under every task.
+describe('#hubHandler — the row hints', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should build a hint slot on the roles and addresses row alone', async () => {
+    // Overland transport, so the conditional transit row is on the list too
+    // and every row the hub can show is under test.
+    const context = await renderHub({
+      ...unlockedSeed,
+      meansOfTransport: 'ROAD_VEHICLE'
+    })
+
+    expect(
+      allItems(context)
+        .filter((item) => item.hint !== undefined)
+        .map((item) => item.title.text)
+    ).toEqual([ADDRESSES_ROW_TITLE])
+    expect(rowByTitle(context, ADDRESSES_ROW_TITLE).hint).toEqual({
+      text: ADDRESSES_ROW_HINT
+    })
   })
 })

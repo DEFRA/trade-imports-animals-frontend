@@ -27,52 +27,41 @@ export const copy = {
   },
   rows: {
     origin: {
-      title: 'O ble mae’r llwyth hwn yn dod?',
-      hint: 'Gwlad tarddiad, cod rhanbarth tarddiad, eich cyfeirnod mewnol'
+      title: 'O ble mae’r llwyth hwn yn dod?'
     },
     commodities: {
-      title: 'Beth ydych chi’n ei fewnforio?',
-      hint: 'Y nwyddau a’r rhywogaethau rydych chi’n eu mewnforio'
+      title: 'Beth ydych chi’n ei fewnforio?'
     },
     importReason: {
-      title: 'Prif reswm dros fewnforio',
-      hint: 'Pam rydych chi’n mewnforio’r anifeiliaid a’u diben yn y farchnad fewnol'
+      title: 'Prif reswm dros fewnforio'
     },
     consignmentDetails: {
-      title: 'Manylion y nwyddau',
-      hint: 'Faint o anifeiliaid a phecynnau sydd ar gyfer pob nwydd'
+      title: 'Manylion y nwyddau'
     },
     additionalDetails: {
-      title: 'Manylion ychwanegol am y nwyddau',
-      hint: 'Ar gyfer beth mae’r anifeiliaid wedi’u hardystio ac a oes unrhyw rai heb eu diddyfnu'
+      title: 'Manylion ychwanegol am y nwyddau'
     },
     animalIdentification: {
-      title: 'Manylion adnabod anifeiliaid',
-      hint: 'Manylion adnabod ar gyfer yr anifeiliaid ym mhob nwydd'
+      title: 'Manylion adnabod anifeiliaid'
     },
     arrivalDetails: {
-      title: 'Manylion cyrraedd',
-      hint: 'Y porthladd mynediad, pryd bydd y llwyth yn cyrraedd a sut bydd yr anifeiliaid yn teithio'
+      title: 'Manylion cyrraedd'
     },
     transitCountries: {
-      title: 'Gwledydd tramwy',
-      hint: 'Y gwledydd y bydd y llwyth yn teithio drwyddynt'
+      title: 'Gwledydd tramwy'
     },
     transporter: {
-      title: 'Cludwr',
-      hint: 'Pwy sy’n cludo’r anifeiliaid i’w cyrchfan'
+      title: 'Cludwr'
     },
     addresses: {
       title: 'Rolau a chyfeiriadau',
-      hint: 'Yr anfonwr, y derbynnydd, y mewnforiwr a’r mannau tarddiad a chyrchfan'
+      hint: 'Anfonwr neu allforiwr, derbynnydd, mewnforiwr a man cyrchfan'
     },
     contact: {
-      title: 'Cyfeiriad cyswllt',
-      hint: 'Pwy ddylem ni gysylltu â nhw am yr hysbysiad hwn'
+      title: 'Cyfeiriad cyswllt'
     },
     documents: {
-      title: 'Dogfennau wedi’u huwchlwytho',
-      hint: 'Tystysgrifau, trwyddedau a dogfennau eraill ar gyfer y llwyth'
+      title: 'Dogfennau wedi’u huwchlwytho'
     }
   }
 }
