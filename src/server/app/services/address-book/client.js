@@ -60,6 +60,7 @@ const toRecord = (operator) => ({
     townOrCity: operator.townOrCity,
     county: operator.county,
     postalOrZipCode: operator.postcode,
+    countryCode: operator.countryCode,
     country: originLabel(operator.countryCode) ?? operator.countryCode,
     // Contact details sit inside the address block, which is where the journey
     // has always read them from.

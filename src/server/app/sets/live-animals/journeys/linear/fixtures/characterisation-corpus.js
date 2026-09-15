@@ -9,7 +9,7 @@ const animalAddress = {
   address: {
     addressLine1: '8 Stable Close',
     addressLine2: 'Little Pasture',
-    country: 'United Kingdom'
+    countryCode: 'GB'
   }
 }
 

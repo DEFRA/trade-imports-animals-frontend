@@ -106,14 +106,15 @@ const answersWithGaps = () => ({
           animalIdentifierMicrochip: '900123456789012',
           animalIdentifierTattoo: 'AB1234',
           horseName: 'Dobbin',
-          // The identification page stores the journey's own names, not the
-          // wire names the other parties are held in.
+          // The identification page stores the ISO code so persistence carries
+          // it through without a reverse lookup. Postcode still uses the journey
+          // name; the wire mapper renames it.
           permanentAddress: {
             name: 'Owner',
             address: {
               addressLine1: ORIGIN_FARM_LINE1,
               postalOrZipCode: 'AB1 2CD',
-              country: 'France',
+              countryCode: 'FR',
               telephoneNumber: '01234 567890',
               emailAddress: 'owner@example.com'
             }

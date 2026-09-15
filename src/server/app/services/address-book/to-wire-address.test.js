@@ -11,7 +11,7 @@ describe('#toWireAddress', () => {
         townOrCity: 'Rouen',
         county: 'Normandy',
         postalOrZipCode: '76000',
-        country: 'France'
+        countryCode: 'FR'
       })
     ).toEqual({
       addressLine1: '1 Farm Lane',
@@ -23,11 +23,7 @@ describe('#toWireAddress', () => {
     })
   })
 
-  it('Should map United Kingdom to GB', () => {
-    expect(toWireAddress({ country: 'United Kingdom' }).countryCode).toBe('GB')
-  })
-
-  it('Should keep an address that is already in wire shape', () => {
+  it('Should carry the ISO code through unchanged when it is already the wire name', () => {
     expect(
       toWireAddress({
         addressLine1: '2 Depot Road',
@@ -41,15 +37,31 @@ describe('#toWireAddress', () => {
     })
   })
 
-  it('Should keep an unrecognised country code left on country', () => {
-    expect(toWireAddress({ country: 'ZZ' }).countryCode).toBe('ZZ')
+  it('Should leave countryCode undefined when the source carries none', () => {
+    expect(
+      toWireAddress({ addressLine1: '3 Nowhere St' }).countryCode
+    ).toBeUndefined()
   })
 
-  it('Should leave the country code out for a name it does not recognise', () => {
-    expect(toWireAddress({ country: 'Atlantis' }).countryCode).toBeUndefined()
+  it('Should ignore a display-name country field — every persistence source now writes countryCode directly', () => {
+    // Cross-checks the removal of the old reverse lookup (address.country ??
+    // countryCodeFrom(address.country)). Sources that still carry a display
+    // name for rendering (address-book records, private-transporter answers)
+    // also carry countryCode, so the mapper reads the code and ignores the
+    // name.
+    expect(
+      toWireAddress({ country: 'France', countryCode: 'FR' }).countryCode
+    ).toBe('FR')
+    expect(toWireAddress({ country: 'France' }).countryCode).toBeUndefined()
   })
 
   it('Should map an empty address without throwing', () => {
-    expect(toWireAddress()).toEqual({})
+    const wire = toWireAddress()
+    expect(wire.addressLine1).toBeUndefined()
+    expect(wire.addressLine2).toBeUndefined()
+    expect(wire.townOrCity).toBeUndefined()
+    expect(wire.county).toBeUndefined()
+    expect(wire.postcode).toBeUndefined()
+    expect(wire.countryCode).toBeUndefined()
   })
 })

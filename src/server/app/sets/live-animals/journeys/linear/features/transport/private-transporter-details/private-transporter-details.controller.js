@@ -158,6 +158,12 @@ const formErrors = (payload, values) => {
   )
 }
 
+// The country picker offers display names; the journey answer keeps both the
+// display name and the ISO code so persistence has a code to write without a
+// reverse lookup, and check-answers renders the name it captured without a
+// forward lookup. An unrecognised name is refused by validation, so the code
+// is always resolvable here (bar United Kingdom, which addressCountries()
+// includes ahead of the offered list; countryCodeOf aliases it to GB).
 const privateTransporter = (values) => ({
   name: values.nameOrOrganisationName,
   address: {
@@ -167,6 +173,7 @@ const privateTransporter = (values) => ({
     county: values.county,
     postalOrZipCode: values.postalOrZipCode,
     country: values.country,
+    countryCode: countries.countryCodeOf(values.country),
     telephoneNumber: values.telephoneNumber,
     emailAddress: values.emailAddress
   }
