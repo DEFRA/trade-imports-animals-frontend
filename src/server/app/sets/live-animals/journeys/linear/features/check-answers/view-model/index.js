@@ -16,11 +16,18 @@ export const buildSections = async (
   readOnly = false,
   parties = answers,
   partyErrors = {}
-) =>
-  Promise.all([
+) => {
+  // aboutConsignment and transportAndArrival read reference-data through
+  // async view-model cards; the other four sections are sync. Run the two
+  // async sections in parallel and assemble the array once they resolve.
+  const [aboutConsignment, transportAndArrival] = await Promise.all([
     aboutConsignmentSection(journeyId, answers, scope, readOnly),
+    transportAndArrivalSection(journeyId, answers, scope, readOnly)
+  ])
+  return [
+    aboutConsignment,
     descriptionOfGoodsSection(journeyId, answers, evaluation, readOnly),
-    transportAndArrivalSection(journeyId, answers, scope, readOnly),
+    transportAndArrival,
     documentsSection(journeyId, answers, evaluation, readOnly),
     consignmentPartiesSection(
       journeyId,
@@ -30,4 +37,5 @@ export const buildSections = async (
       partyErrors
     ),
     contactAddressSection(journeyId, answers, readOnly, parties)
-  ])
+  ]
+}

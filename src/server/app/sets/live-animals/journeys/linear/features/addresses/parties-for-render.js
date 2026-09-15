@@ -4,7 +4,7 @@ import { partiesFromStoredAnswers } from './frozen-parties.js'
 
 /** Parties for display: SUBMITTED reads stored inline details from answers; DRAFT and
  * AMEND live-resolve from the address book and ignore any stored inline copy. */
-export const partiesForRender = async (request, journey, answers = {}) =>
+export const partiesForRender = (request, journey, answers = {}) =>
   journey.status === SUBMITTED
-    ? await partiesFromStoredAnswers(answers)
-    : await resolveParties(request, answers)
+    ? partiesFromStoredAnswers(answers)
+    : resolveParties(request, answers)
