@@ -39,8 +39,11 @@ const GROUPS = [
     id: 'description-of-the-goods',
     // Design release 1 opens this section with the commodity details, so the
     // consignment-details page leads the group rather than hanging off the
-    // "What are you importing?" row in the section above.
-    rows: ['consignmentDetails', 'additionalDetails', 'animalIdentification']
+    // "What are you importing?" row in the section above. Identification
+    // follows it and the additional details come last: the design points a
+    // trader at identifying the animals before asking what they are certified
+    // for, which is also the order the opening run visits the two pages in.
+    rows: ['consignmentDetails', 'animalIdentification', 'additionalDetails']
   },
   {
     id: 'transport-and-arrival',
