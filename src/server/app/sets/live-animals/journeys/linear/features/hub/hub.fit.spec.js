@@ -129,6 +129,36 @@ test.describe('hub feature', () => {
     ).toHaveCount(0)
   })
 
+  // Design release 1 inserts the identification task only once the chosen
+  // commodities need identifiers, so before anything is chosen the hub has
+  // nothing to say about identification and leaves the row off.
+  test('overview: when no commodity is chosen, the animal identification row is absent', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await expect(
+      taskRow(page, copy.rows.animalIdentification.title)
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole('heading', { name: copy.groups['commodity-details'] })
+    ).toBeVisible()
+  })
+
+  test('overview: when a commodity carrying identifiers is chosen, the animal identification row appears', async ({
+    page
+  }) => {
+    await openHubWithCommodityTotals(page)
+
+    const identification = taskRow(page, copy.rows.animalIdentification.title)
+    await expect(identification).toHaveCount(1)
+    await expect(
+      identification.getByRole('link', {
+        name: copy.rows.animalIdentification.title
+      })
+    ).toBeVisible()
+  })
+
   test('back link and return button navigate to the dashboard', async ({
     page
   }) => {

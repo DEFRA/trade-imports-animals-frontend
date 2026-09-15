@@ -2,14 +2,17 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   answerCountryOfOrigin,
+  journeyUrl,
   selectSpecies,
   signIn,
   startNotification
 } from '../../../../../../../../../../fit/live-animals-journey.js'
+import { animalIdentificationPage } from '../page.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 
 const SAVE_AND_CONTINUE = 'Save and continue'
+const IDENTIFICATION_SLUG = animalIdentificationPage.slug
 const PASSPORT_FIELD = '#animalIdentifierPassport-0'
 const MICROCHIP_FIELD = '#animalIdentifierMicrochip-0'
 const EAR_TAG_FIELD = '#animalIdentifierEarTag-0'
@@ -466,9 +469,12 @@ test.describe('animal identification', () => {
   }) => {
     await addLines(page, [['Fish', [SALMO_SALAR]]], ['3'])
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
-    await page
-      .getByRole('link', { name: hubCopy.rows.animalIdentification.title })
-      .click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+
+    // The hub leaves the task off a consignment with nothing to identify, so
+    // the page is reached the only way left to reach it — by its own address,
+    // as a bookmark or a back-button would.
+    await page.goto(journeyUrl(page, IDENTIFICATION_SLUG))
 
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await expect(

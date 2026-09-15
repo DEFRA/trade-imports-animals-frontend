@@ -29,6 +29,16 @@ to that row instead of falling out of all three. `conditional: true` lets the hu
 hide a row that is not applicable. Every row contributes to
 `readyForCheckYourAnswers`.
 
+`applies` is the escape hatch for a row whose parts cannot express its
+applicability. `rowStatus` calls it with the answers and reads Not applicable when
+it answers no, whatever the parts would have rolled up to. The animal
+identification row needs it: its part is the `commodityLines` collection, a
+structural group in scope from the moment the notification exists, so the roll-up
+never reaches Not applicable and `conditional: true` on its own would leave the row
+drawn. Reach for `applies` only when a scope condition genuinely cannot carry the
+rule — the transit-countries row needs no `applies`, because its answer leaves
+scope on its own.
+
 The hub's `GROUPS` array in
 [`features/hub/controller.js`](../journeys/linear/features/hub/controller.js) places
 task-row ids under visible headings and supplies their presentation order.
