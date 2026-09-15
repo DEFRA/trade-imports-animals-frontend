@@ -143,10 +143,12 @@ describe('#hubHandler', () => {
       groups.map((group) => group.items.map((item) => item.title.text))
     ).toEqual([
       [ORIGIN_ROW_TITLE, COMMODITIES_ROW_TITLE, IMPORT_REASON_ROW_TITLE],
+      // Design release 1 asks for the identifiers before the certifications,
+      // which is the order the opening run visits the two pages in too.
       [
         CONSIGNMENT_DETAILS_ROW_TITLE,
-        'Additional commodity details',
-        'Animal identification details'
+        'Animal identification details',
+        'Additional commodity details'
       ],
       [ARRIVAL_ROW_TITLE, 'Transporter'],
       ['Uploaded documents'],

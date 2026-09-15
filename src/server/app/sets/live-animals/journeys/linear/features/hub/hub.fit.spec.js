@@ -19,6 +19,16 @@ const taskRow = (page, title) =>
     has: page.getByText(title, { exact: true })
   })
 
+// Each hub group renders a task list of its own, and govukTaskList stamps the
+// group id on the status of every item in it, so a list can be named by the
+// group it belongs to rather than by where it sits on the page.
+const groupTaskList = (page, groupId) =>
+  page
+    .locator('ul.govuk-task-list')
+    .filter({ has: page.locator(`[id^="${groupId}-"]`) })
+
+const taskRowTitles = (list) => list.locator('.govuk-task-list__link')
+
 const seriousOrCritical = (violations) =>
   violations.filter(({ impact }) => ['serious', 'critical'].includes(impact))
 
@@ -265,6 +275,25 @@ test.describe('hub feature', () => {
         name: copy.rows.animalIdentification.title
       })
     ).toBeVisible()
+  })
+
+  // Design release 1 runs the second section Commodity details, then
+  // Identification details, then Additional details: a trader is pointed at
+  // identifying the animals before being asked what they are certified for.
+  // That is the order the opening run visits the two pages in as well, so the
+  // hub reading the other way round was the one place that disagreed.
+  test('overview: the second section lists identification above the additional details', async ({
+    page
+  }) => {
+    await openHubWithCommodityTotals(page)
+
+    await expect(
+      taskRowTitles(groupTaskList(page, 'description-of-the-goods'))
+    ).toHaveText([
+      copy.rows.consignmentDetails.title,
+      copy.rows.animalIdentification.title,
+      copy.rows.additionalDetails.title
+    ])
   })
 
   test('back link and return button navigate to the dashboard', async ({
