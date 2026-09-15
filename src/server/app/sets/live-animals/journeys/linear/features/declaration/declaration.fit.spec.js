@@ -4,6 +4,7 @@ import { expect, test } from '@playwright/test'
 import {
   answerOriginEntry,
   completeAnswerSections,
+  openReviewFromHub,
   signIn,
   startNotification
 } from '../../../../../../../../../fit/live-animals-journey.js'
@@ -124,7 +125,7 @@ test.describe('declaration submission', () => {
   test.beforeEach(async ({ page }) => {
     await startNotification(page)
     await completeAnswerSections(page)
-    await page.getByRole('link', { name: 'Check and submit' }).click()
+    await openReviewFromHub(page)
     await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
   })

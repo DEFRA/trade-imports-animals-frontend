@@ -44,12 +44,17 @@ The hub's `GROUPS` array in
 task-row ids under visible headings and supplies their presentation order.
 
 Design release 1 lets a trader start any task on the notification in any order.
-The one row the hub still shows shut is Check and submit, which reads the review
-section's authored gate on `readyForCheckYourAnswers` and is the only thing on
-the page that ever says "Cannot start yet". Every other row is a link carrying a
-real status from the moment the notification exists. A row that does not apply to
-this consignment leaves the list instead (`conditional`, and `applies` where the
-parts cannot express it).
+No row on the hub is ever shut: every row is a link carrying a real status from
+the moment the notification exists, and nothing on the page says "Cannot start
+yet". A row that does not apply to this consignment leaves the list instead
+(`conditional`, and `applies` where the parts cannot express it).
+
+The review is not a task row at all. Design release 1 reaches it from a primary
+"Review and submit" button under the task list, beside the secondary "Return to
+dashboard", and offers it whatever the notification still owes — the review page
+renders an unfinished notification and names what is outstanding. The review
+section's authored gate on `readyForCheckYourAnswers` still stands between that
+page and submitting: the check-answers POST refuses on the same verdict.
 
 That puts the cost on the pages, not the hub: a page behind a row has to render
 and save sensibly when nothing else has been answered. Where there is genuinely

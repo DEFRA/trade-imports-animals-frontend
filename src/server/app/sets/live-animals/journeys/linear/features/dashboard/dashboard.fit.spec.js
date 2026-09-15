@@ -4,6 +4,7 @@ import {
   ARRIVAL_DATE_IN_WINDOW_DISPLAY,
   completeAnswerSections,
   journeyIdFromPage,
+  openReviewFromHub,
   signIn,
   startNotification,
   values
@@ -20,7 +21,7 @@ const DESKTOP_BREAKPOINT_WIDTH = 769
 
 const submitNotification = async (page) => {
   await completeAnswerSections(page)
-  await page.getByRole('link', { name: 'Check and submit' }).click()
+  await openReviewFromHub(page)
   await page.getByRole('button', { name: 'Continue' }).click()
   await page
     .getByRole('checkbox', { name: /I confirm that I have reviewed/ })

@@ -235,8 +235,10 @@ Update:
   visible task row, its link and its completed state
 
 Every task row participates in `readyForCheckYourAnswers`. A mandatory new row
-therefore blocks Check and submit until it is complete. Prove both the blocked
-and complete states in `journeys/linear/flow/task-rows.test.js`.
+therefore holds the notification back from submission until it is complete —
+the hub still offers the review, and the check-answers POST is what refuses.
+Prove both the incomplete and complete states in
+`journeys/linear/flow/task-rows.test.js`.
 
 ### Check the journey registration
 

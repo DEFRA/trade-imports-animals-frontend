@@ -4,6 +4,7 @@ import {
   chooseCountryOfOrigin,
   completeAnswerSections,
   journeyIdFromPage,
+  openReviewFromHub,
   signIn,
   startNotification,
   values
@@ -14,7 +15,7 @@ import { copy } from './copy/copy.en.js'
 const submitNotification = async (page) => {
   await startNotification(page)
   await completeAnswerSections(page)
-  await page.getByRole('link', { name: 'Check and submit' }).click()
+  await openReviewFromHub(page)
   await page.getByRole('button', { name: 'Continue' }).click()
   await page
     .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
@@ -36,7 +37,7 @@ const amendAndOpenCancel = async (page, reference) => {
     .getByLabel('Your internal reference for this consignment (optional)')
     .fill('DiscardMe99')
   await page.getByRole('button', { name: 'Save and continue' }).click()
-  await page.getByRole('link', { name: 'Check and submit' }).click()
+  await openReviewFromHub(page)
   await page
     .getByRole('link', { name: checkAnswersCopy.cancelAmend.link })
     .click()

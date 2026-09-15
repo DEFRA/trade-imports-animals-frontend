@@ -1,8 +1,10 @@
-import { dashboardPath, hubRoutePath } from '../../../../../../shared/paths.js'
+import {
+  dashboardPath,
+  hubRoutePath,
+  pagePath
+} from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
-import { sections } from '../../flow/flow.js'
-import { rowEntry, sectionEntry } from '../../../../../../flow/navigation.js'
-import { sectionGatePasses } from '../../../../../../flow/gates.js'
+import { rowEntry } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
 import {
   FULFILLED,
@@ -11,8 +13,8 @@ import {
   NOT_STARTED,
   OPTIONAL
 } from '../../../../../../bridge/status/index.js'
-import { sectionStatus } from '../../../../../../flow/section-status.js'
 import { rowStatus, taskRowById } from '../../flow/task-rows.js'
+import { notificationViewPage } from '../check-answers/page.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
 import { journeyStrip, routeOptions } from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
@@ -51,12 +53,7 @@ const GROUPS = [
   },
   { id: 'documents', rows: ['documents'] },
   { id: 'consignment-parties', rows: ['addresses'] },
-  { id: 'contact-address', rows: ['contact'] },
-  // Design release 1 has no section here: it reaches the review from a button
-  // under the task list. Until that button exists the review row is the only
-  // route to the check-your-answers page, so the section stays, unnumbered so
-  // it cannot be read as a seventh section of the design's six.
-  { id: 'check-and-submit', rows: ['review'] }
+  { id: 'contact-address', rows: ['contact'] }
 ]
 
 const STATUS_TAG = {
@@ -73,36 +70,12 @@ const STATUS_TAG = {
 }
 const statusTag = (status) => STATUS_TAG[status] ?? STATUS_TAG[NOT_STARTED]
 
-// The one task the hub still shuts is Check and submit, which holds its own
-// authored gate on submit-readiness. Every other row is a link from the moment
-// the notification exists, so no answer row reads this status.
-const CANNOT_START_STATUS = {
-  text: copy.statuses.cannotStartYet,
-  classes: 'govuk-task-list__status--cannot-start-yet'
-}
-
-const reviewSection = () => sections.find((section) => section.id === 'review')
-
-const buildReviewItem = (
-  { title, hint },
-  answers,
-  scope,
-  evaluation,
-  journeyId
-) => {
-  const section = reviewSection()
-  const base = { title: { text: title }, hint: { text: hint } }
-  if (!sectionGatePasses(section, scope)) {
-    return { ...base, status: CANNOT_START_STATUS }
-  }
-  return {
-    ...base,
-    href: sectionEntry('review', scope, journeyId),
-    status: statusTag(
-      sectionStatus(section, answers, scope.inScope, evaluation)
-    )
-  }
-}
+// Design release 1 ends the hub with a primary "Review and submit" button, not
+// a task row: the review page is offered whatever else has been answered, so a
+// trader can read back what the notification holds at any point. The page
+// renders an unfinished notification, naming what is still outstanding, and the
+// review section's own gate still stands between that page and submitting.
+const reviewHref = (journeyId) => pagePath(journeyId, notificationViewPage.slug)
 
 const isHiddenRow = (row, status) => row.conditional && status === NA
 
@@ -118,15 +91,6 @@ const rowItem = (base, row, scope, status, journeyId) => ({
 
 const buildRowItem = (id, answers, scope, evaluation, journeyId) => {
   const { title, hint } = copy.rows[id]
-  if (id === 'review') {
-    return buildReviewItem(
-      { title, hint },
-      answers,
-      scope,
-      evaluation,
-      journeyId
-    )
-  }
   const row = taskRowById(id)
   const status = rowStatus(row, answers, scope.inScope, evaluation)
   if (isHiddenRow(row, status)) {
@@ -176,6 +140,7 @@ const handler = async (request, h) => {
     journeyStrip: journeyStrip(journey),
     commodityTotals: buildCommodityTotals(answers, evaluation),
     groups: buildGroups(answers, scope, evaluation, journeyId),
+    reviewHref: reviewHref(journeyId),
     dashboardHref: dashboardPath(),
     backLink: dashboardPath()
   })
