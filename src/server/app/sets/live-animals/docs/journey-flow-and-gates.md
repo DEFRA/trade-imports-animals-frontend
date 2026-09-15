@@ -43,6 +43,20 @@ The hub's `GROUPS` array in
 [`features/hub/controller.js`](../journeys/linear/features/hub/controller.js) places
 task-row ids under visible headings and supplies their presentation order.
 
+Design release 1 lets a trader start any task on the notification in any order.
+The one row the hub still shows shut is Check and submit, which reads the review
+section's authored gate on `readyForCheckYourAnswers` and is the only thing on
+the page that ever says "Cannot start yet". Every other row is a link carrying a
+real status from the moment the notification exists. A row that does not apply to
+this consignment leaves the list instead (`conditional`, and `applies` where the
+parts cannot express it).
+
+That puts the cost on the pages, not the hub: a page behind a row has to render
+and save sensibly when nothing else has been answered. Where there is genuinely
+nothing to ask yet the page says so itself — the consignment-details page
+([`consignment-details.controller.js`](../journeys/linear/features/commodities/consignment-details/consignment-details.controller.js))
+redirects to the commodity question when the notification holds no line.
+
 ## Opening run and entry guard
 
 [`run.js`](../journeys/linear/flow/run.js) owns the opening-run sequence and exports

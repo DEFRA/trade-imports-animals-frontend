@@ -42,6 +42,12 @@ const COMMODITIES_ROW_TITLE = 'What are you importing?'
 const CONSIGNMENT_DETAILS_ROW_TITLE = 'Commodity details'
 const IMPORT_REASON_ROW_TITLE = 'Main reason for importing'
 const TRANSIT_ROW_TITLE = 'Transit countries'
+const ARRIVAL_ROW_TITLE = 'Arrival details'
+const REVIEW_ROW_TITLE = 'Check and submit'
+const CANNOT_START_STATUS = {
+  text: 'Cannot start yet',
+  classes: 'govuk-task-list__status--cannot-start-yet'
+}
 const NOT_YET_STARTED_STATUS = {
   tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
 }
@@ -136,7 +142,7 @@ describe('#hubHandler', () => {
         'Additional commodity details',
         'Animal identification details'
       ],
-      ['Arrival details', 'Transporter'],
+      [ARRIVAL_ROW_TITLE, 'Transporter'],
       ['Roles and addresses', 'Contact address'],
       ['Uploaded documents'],
       ['Check and submit']
@@ -188,13 +194,41 @@ describe('#hubHandler', () => {
     expect(originRow.status).toEqual(COMPLETED_STATUS)
   })
 
-  it('Should render a gated row as "Cannot start yet" text with NO link', async () => {
-    const commoditiesRow = rowByTitle(await renderHub(), COMMODITIES_ROW_TITLE)
-    expect(commoditiesRow.href).toBeUndefined()
-    expect(commoditiesRow.status).toEqual({
-      text: 'Cannot start yet',
-      classes: 'govuk-task-list__status--cannot-start-yet'
-    })
+  // Design release 1 lets a trader start any task on the notification in any
+  // order, so every answer task is a link with a real status from the moment
+  // the notification exists. Nothing but Check and submit is ever shut.
+  it('Should link every answer row on a brand new notification, none of them "Cannot start yet"', async () => {
+    const context = await renderHub()
+    const answerRows = allItems(context).filter(
+      (item) => item.title.text !== REVIEW_ROW_TITLE
+    )
+
+    expect(answerRows).not.toHaveLength(0)
+    for (const row of answerRows) {
+      expect(row.href, `${row.title.text} has no way in`).toMatch(
+        /^\/notifications\/[^/]+\/.+/
+      )
+      expect(row.status, `${row.title.text} is shut`).not.toEqual(
+        CANNOT_START_STATUS
+      )
+    }
+  })
+
+  it('Should open each row at its own page before anything else is answered', async () => {
+    const context = await renderHub()
+
+    expect(rowByTitle(context, COMMODITIES_ROW_TITLE).href).toBe(
+      pagePath(context.journeyId, 'commodities')
+    )
+    expect(rowByTitle(context, CONSIGNMENT_DETAILS_ROW_TITLE).href).toBe(
+      pagePath(context.journeyId, 'consignment-details')
+    )
+    expect(rowByTitle(context, ARRIVAL_ROW_TITLE).href).toBe(
+      pagePath(context.journeyId, 'port-of-entry')
+    )
+    expect(rowByTitle(context, 'Contact address').href).toBe(
+      pagePath(context.journeyId, 'consignment/contact/select')
+    )
   })
 
   it('Should split the commodities and identification rows over one collection — line data completes one, identifiers the other', async () => {
@@ -266,7 +300,7 @@ describe('#hubHandler', () => {
 
   it('Should enter each movement row at its first page', async () => {
     const context = await renderHub(unlockedSeed)
-    expect(rowByTitle(context, 'Arrival details').href).toBe(
+    expect(rowByTitle(context, ARRIVAL_ROW_TITLE).href).toBe(
       pagePath(context.journeyId, 'port-of-entry')
     )
     expect(rowByTitle(context, 'Transporter').href).toBe(
@@ -278,15 +312,12 @@ describe('#hubHandler', () => {
   })
 
   it('Should lock the Check and submit row until the journey is submit-ready (RULE 2)', async () => {
-    const reviewRow = rowByTitle(await renderHub(), 'Check and submit')
+    const reviewRow = rowByTitle(await renderHub(), REVIEW_ROW_TITLE)
     expect(reviewRow.hint.text).toBe(
       'Check your answers before you submit the notification'
     )
     expect(reviewRow.href).toBeUndefined()
-    expect(reviewRow.status).toEqual({
-      text: 'Cannot start yet',
-      classes: 'govuk-task-list__status--cannot-start-yet'
-    })
+    expect(reviewRow.status).toEqual(CANNOT_START_STATUS)
   })
 })
 
