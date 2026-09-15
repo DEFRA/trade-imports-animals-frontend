@@ -1,4 +1,6 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
+import { copy as sharedCopy } from '../../../../../../../shared/copy.cy.js'
+
 export const copy = {
   hub: {
     title: 'Cyfeiriadau’r llwyth',
@@ -58,6 +60,8 @@ export const copy = {
     },
     selectRowPrefix: 'Dewis',
     viewDetails: 'Gweld manylion',
-    viewDetailsFor: 'ar gyfer'
+    viewDetailsFor: 'ar gyfer',
+    addNewAddress: sharedCopy.addressHandshake.addNewAddress,
+    handshakeErrors: sharedCopy.addressHandshake.errors
   }
 }

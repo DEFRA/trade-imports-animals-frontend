@@ -30,6 +30,10 @@ export const SKIPPED = new Map([
   [
     '/notifications/{journeyId}/delete',
     'delete lifecycle — the page exists only to confirm a destructive POST'
+  ],
+  [
+    '/notifications/{journeyId}/address-return',
+    'INS handshake return endpoint — redirects to the party picker, not a page'
   ]
 ])
 

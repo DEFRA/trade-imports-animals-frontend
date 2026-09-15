@@ -104,7 +104,8 @@ function getCookieOptions() {
       isSecure: config.get('isProduction')
     },
     redirectTo: function (request) {
-      return `/auth/sign-in?redirect=${request.url.pathname}${request.url.search}`
+      const target = `${request.url.pathname}${request.url.search}`
+      return `/auth/sign-in?redirect=${encodeURIComponent(target)}`
     },
     validate: async function (request, session) {
       const userSession = await request.server.app.cache.get(session.sessionId)

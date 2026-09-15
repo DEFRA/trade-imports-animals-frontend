@@ -1,3 +1,5 @@
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
+
 export const copy = {
   hub: {
     title: 'Consignment addresses',
@@ -57,6 +59,8 @@ export const copy = {
     },
     selectRowPrefix: 'Select',
     viewDetails: 'View details',
-    viewDetailsFor: 'for'
+    viewDetailsFor: 'for',
+    addNewAddress: sharedCopy.addressHandshake.addNewAddress,
+    handshakeErrors: sharedCopy.addressHandshake.errors
   }
 }
