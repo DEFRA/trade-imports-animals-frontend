@@ -2,17 +2,18 @@ import crypto from 'node:crypto'
 
 import { config } from '../../../../../../../../config/config.js'
 import { SESSION_COOKIES } from '../../../../../../engine/persistence/session.js'
-import { obligationPartyMap } from './obligation-party-map.js'
+import { fulfilmentIdForParty } from './party-for-fulfilment-id.js'
 
 export const JOURNEY_TYPE = 'gbn-ag'
 
 const HANDSHAKE_TOKEN_BYTES = 16
 
-export const obligationIdForParty = (party) => {
-  for (const [obligationId, mappedParty] of obligationPartyMap) {
-    if (mappedParty.id === party.id) {
-      return obligationId
-    }
+export const handshakeErrorMessage = (handshakeErrors, code) => {
+  if (code === 'not-found') {
+    return handshakeErrors.notFound
+  }
+  if (code === 'unavailable') {
+    return handshakeErrors.unavailable
   }
   return undefined
 }
@@ -45,7 +46,7 @@ export const clearHandshakeToken = (request, h, fulfilmentId) => {
 }
 
 export const buildInsAddAddressUrl = (request, h, notificationId, party) => {
-  const fulfilmentId = obligationIdForParty(party)
+  const fulfilmentId = fulfilmentIdForParty(party)
   if (!fulfilmentId) {
     return undefined
   }

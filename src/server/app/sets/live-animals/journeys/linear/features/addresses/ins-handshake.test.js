@@ -6,12 +6,29 @@ import {
   recordingH,
   journeyRequest
 } from '../../../../../../engine/test-support.js'
-import { consignor } from '../../../../obligations/index.js'
+import {
+  consignee,
+  consignor,
+  contactAddress,
+  importer,
+  placeOfDestination,
+  placeOfOrigin
+} from '../../../../obligations/index.js'
 import { CONTACT_PARTY, PARTIES } from './parties.js'
-import { buildInsAddAddressUrl, obligationIdForParty } from './ins-handshake.js'
+import { fulfilmentIdForParty } from './party-for-fulfilment-id.js'
+import { buildInsAddAddressUrl } from './ins-handshake.js'
 
 const INS_FRONTEND_BASE_URL_KEY = 'tradeImportsInsFrontend.baseUrl'
 const notificationId = 'notification-123'
+
+const fulfilmentIdByPartyId = {
+  placeOfOrigin: placeOfOrigin.id,
+  consignor: consignor.id,
+  consignee: consignee.id,
+  importer: importer.id,
+  placeOfDestination: placeOfDestination.id,
+  contactAddress: contactAddress.id
+}
 
 describe('ins-handshake', () => {
   const originalInsUrl = config.get(INS_FRONTEND_BASE_URL_KEY)
@@ -20,11 +37,16 @@ describe('ins-handshake', () => {
     config.set(INS_FRONTEND_BASE_URL_KEY, originalInsUrl)
   })
 
-  it('maps each party obligation to its fulfilment id', () => {
-    for (const party of PARTIES) {
-      expect(obligationIdForParty(party)).toBeTruthy()
-    }
-    expect(obligationIdForParty(CONTACT_PARTY)).toBeTruthy()
+  it.each([
+    ...PARTIES.map((party) => [party.id, fulfilmentIdByPartyId[party.id]]),
+    [CONTACT_PARTY.id, contactAddress.id]
+  ])('maps %s to fulfilment id %s', (partyId, expectedFulfilmentId) => {
+    const party =
+      partyId === CONTACT_PARTY.id
+        ? CONTACT_PARTY
+        : PARTIES.find((each) => each.id === partyId)
+
+    expect(fulfilmentIdForParty(party)).toBe(expectedFulfilmentId)
   })
 
   it('builds the INS add URL with handshake query params', () => {
@@ -45,7 +67,7 @@ describe('ins-handshake', () => {
     expect(h.cookies[SESSION_COOKIES.addressHandshakeTokens]).toBeDefined()
     expect(
       h.cookies[SESSION_COOKIES.addressHandshakeTokens][consignor.id]
-    ).toBeTruthy()
+    ).toMatch(/^[0-9a-f]{32}$/)
   })
 
   it('returns undefined when the party has no fulfilment mapping', () => {

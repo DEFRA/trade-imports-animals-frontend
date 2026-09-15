@@ -25,7 +25,10 @@ import {
 import { pickerViewModel } from './view-model/index.js'
 import { errorSummary } from './view-model/error-summary.js'
 import { isStubMode } from '../../../../../../../../common/services/mode.js'
-import { buildInsAddAddressUrl } from '../ins-handshake.js'
+import {
+  buildInsAddAddressUrl,
+  handshakeErrorMessage
+} from '../ins-handshake.js'
 
 const view = `${TEMPLATES}/features/addresses/party-picker/party-picker`
 
@@ -98,19 +101,12 @@ const render = async (
 const addAddressLinkFor = (request, h, journey, party) =>
   !isStubMode() && buildInsAddAddressUrl(request, h, journey.journeyId, party)
 
-const handshakeErrorMessage = (code) => {
-  if (code === 'not-found') {
-    return copy.handshakeErrors.notFound
-  }
-  if (code === 'unavailable') {
-    return copy.handshakeErrors.unavailable
-  }
-  return undefined
-}
-
 const get = (party) => async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  const handshakeError = handshakeErrorMessage(request.query.handshakeError)
+  const handshakeError = handshakeErrorMessage(
+    copy.handshakeErrors,
+    request.query.handshakeError
+  )
   const recoverableError = request.query.handshakeError === 'unavailable'
   return render(request, h, organisationIdOf(request), journey, party, {
     query: request.query.q ?? '',

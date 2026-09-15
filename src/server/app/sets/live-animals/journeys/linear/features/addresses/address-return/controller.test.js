@@ -116,6 +116,25 @@ describe('GET /address-return', () => {
     expect(result.after.consignor).toBeUndefined()
   })
 
+  it('redirects to the picker when the address id belongs to another organisation', async () => {
+    vi.spyOn(addressBook, 'party').mockImplementation(async (orgId) => {
+      expect(orgId).toBe('5900001')
+      return undefined
+    })
+
+    const result = await driveHandler(handler, {
+      query: {
+        ...handshakeQuery(),
+        addressId: 'other-org-address'
+      },
+      state: handshakeState()
+    })
+
+    expect(result.response.redirect).toContain(CONSIGNOR_PICKER_PATH)
+    expect(result.response.redirect).toContain('handshakeError=not-found')
+    expect(result.after.consignor).toBeUndefined()
+  })
+
   it('redirects to the picker when the address book is unavailable', async () => {
     vi.spyOn(addressBook, 'party').mockRejectedValue(
       new BackendRequestError('get address', {

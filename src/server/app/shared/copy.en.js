@@ -65,6 +65,15 @@ export const copy = {
     submitted: 'Submitted',
     amend: 'Amending',
     deleted: 'Deleted'
+  },
+  addressHandshake: {
+    addNewAddress: 'Add a new address',
+    errors: {
+      notFound:
+        'The address could not be found in your address book. Select another address or try adding it again.',
+      unavailable:
+        'The address book could not be reached. Your answers on this page have been saved. Try again in a few minutes.'
+    }
   }
 }
 

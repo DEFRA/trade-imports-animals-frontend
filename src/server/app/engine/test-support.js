@@ -44,6 +44,8 @@ export const stubH = () => {
     view: stubView(captured),
     redirect: (to) => {
       const result = { redirect: to }
+      // Non-enumerable so tests that assert toEqual({ redirect: to }) still
+      // match after chaining .code(...).
       Object.defineProperty(result, 'code', {
         value: (statusCode) => {
           result.statusCode = statusCode
