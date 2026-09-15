@@ -37,9 +37,6 @@ import { records } from './services/persistence/records/index.js'
 import { configureSession } from './engine/persistence/session.js'
 import { session } from './services/persistence/session/index.js'
 import { registerJourneyCookie } from './engine/journey.js'
-import { isStubMode } from '../common/services/mode.js'
-import * as countries from './services/countries/index.js'
-import * as ports from './services/ports/index.js'
 import { configureAnswersForRead } from './bridge/answers-read.js'
 import { withoutUnresolvedPartyRefs } from './sets/live-animals/journeys/linear/features/addresses/resolve-parties.js'
 
@@ -71,10 +68,6 @@ export const liveAnimals = {
         const target = await journeyEntryGuardTarget(request, h)
         return target ? h.redirect(target).takeover() : h.continue
       })
-      if (!isStubMode()) {
-        await countries.prime()
-        await ports.prime()
-      }
       server.route(allRoutes)
     }
   }

@@ -259,7 +259,7 @@ describe('POST port-of-entry — port membership follows the primed list', () =>
         json: async () => [{ code: 'ZZ 001', name: 'Zedport' }]
       }))
     )
-    await ports.prime()
+    await ports.ensureLoaded()
 
     const accepted = await driveHandler(post, {
       payload: { portOfEntry: 'ZZ 001' }

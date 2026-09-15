@@ -410,7 +410,7 @@ describe('POST /origin — country membership follows the primed list', () => {
         json: async () => [{ code: 'ZZ', name: 'Zedland' }]
       }))
     )
-    await countries.prime()
+    await countries.ensureLoaded()
 
     const accepted = await driveHandler(post, {
       payload: {
