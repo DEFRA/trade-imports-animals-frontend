@@ -184,4 +184,21 @@ export const PERMANENT_ADDRESS_COMMODITIES = ['Cat', 'Dog']
 // obligations/whitelists.test.js.
 export const UNWEANED_ANIMAL_COMMODITIES = ['Cow']
 
-export const CPH_COMMODITIES = ['Cow']
+// Design release 1 asks for a CPH number on every consignment and names the
+// commodity codes that escape the question rather than the ones that need it:
+// a code has to be listed to be let off. Two live-animal codes are — 0101, the
+// horses and donkeys code, and 01061900, the cat, dog and ferret code, which is
+// asked for each animal's permanent address instead. Everything else in design
+// release 1's catalogue, from sheep and goats through poultry to ornamental
+// fish, falls to the default and is asked for a CPH number.
+//
+// Exempting by CODE rather than by picker name is what makes the rule hold as
+// the catalogue grows: ferrets join Cat and Dog under 01061900 and donkeys join
+// Horse under 0101 without a second edit here, and a commodity added under any
+// other code is asked the question rather than silently let off.
+export const CPH_EXEMPT_COMMODITY_CODES = ['0101', '01061900']
+
+// Derived, so the default is to ask. Pinned by obligations/whitelists.test.js.
+export const CPH_COMMODITIES = COMMODITY_OPTIONS.filter(
+  (name) => !CPH_EXEMPT_COMMODITY_CODES.includes(COMMODITY_CODES[name])
+)

@@ -97,6 +97,7 @@ export const copy = {
     transportDocumentReference: 'Transport document reference',
     name: 'Name',
     address: 'Address',
+    contactAddress: 'Contact address',
     country: 'Country',
     approvalNumber: 'Approval number',
     type: 'Type',
@@ -138,9 +139,9 @@ export const copy = {
     },
     commodity: (n) => `commodity ${n}`
   },
+  // The review ends with the button and nothing else. Its label carries the
+  // whole instruction, so no heading and no sentence stand above it.
   submit: {
-    heading: 'Now submit your notification',
-    body: 'Continue to the declaration to submit your notification.',
     button: 'Continue'
   },
   errors: {

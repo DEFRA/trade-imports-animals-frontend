@@ -16,16 +16,46 @@ store rather than canonical obligation fulfilment.
 
 ## Task rows
 
-[`task-rows.js`](../journeys/linear/flow/task-rows.js) exports eleven `taskRows`. A
+[`task-rows.js`](../journeys/linear/flow/task-rows.js) exports twelve `taskRows`. A
 task row is a hub item and a submit-readiness unit; it is not a flow section.
 
 Most row status comes from the union of each page's `collects`. `parts` narrows a
-row to a collection facet. `conditional: true` lets the hub hide a row that is not
-applicable. Every row contributes to `readyForCheckYourAnswers`.
+row to a collection facet. The commodity line is split three ways — the selection
+on the `commodities` row, the numbers on the `consignmentDetails` row, the
+identifiers on the `animalIdentification` row — so each of the three pages over
+that one collection carries a status of its own. The `commodities` row claims its
+facet with `except` rather than `only`, so a new member of the collection defaults
+to that row instead of falling out of all three. `conditional: true` lets the hub
+hide a row that is not applicable. Every row contributes to
+`readyForCheckYourAnswers`.
+
+`applies` is the escape hatch for a row whose parts cannot express its
+applicability. `rowStatus` calls it with the answers and reads Not applicable when
+it answers no, whatever the parts would have rolled up to. The animal
+identification row needs it: its part is the `commodityLines` collection, a
+structural group in scope from the moment the notification exists, so the roll-up
+never reaches Not applicable and `conditional: true` on its own would leave the row
+drawn. Reach for `applies` only when a scope condition genuinely cannot carry the
+rule — the transit-countries row needs no `applies`, because its answer leaves
+scope on its own.
 
 The hub's `GROUPS` array in
 [`features/hub/controller.js`](../journeys/linear/features/hub/controller.js) places
 task-row ids under visible headings and supplies their presentation order.
+
+Design release 1 lets a trader start any task on the notification in any order.
+The one row the hub still shows shut is Check and submit, which reads the review
+section's authored gate on `readyForCheckYourAnswers` and is the only thing on
+the page that ever says "Cannot start yet". Every other row is a link carrying a
+real status from the moment the notification exists. A row that does not apply to
+this consignment leaves the list instead (`conditional`, and `applies` where the
+parts cannot express it).
+
+That puts the cost on the pages, not the hub: a page behind a row has to render
+and save sensibly when nothing else has been answered. Where there is genuinely
+nothing to ask yet the page says so itself — the consignment-details page
+([`consignment-details.controller.js`](../journeys/linear/features/commodities/consignment-details/consignment-details.controller.js))
+redirects to the commodity question when the notification holds no line.
 
 ## Opening run and entry guard
 

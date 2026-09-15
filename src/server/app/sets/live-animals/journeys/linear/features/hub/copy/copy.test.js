@@ -39,8 +39,15 @@ const unlockedSeed = {
 
 const ORIGIN_ROW_TITLE = 'Where is this consignment coming from?'
 const COMMODITIES_ROW_TITLE = 'What are you importing?'
+const CONSIGNMENT_DETAILS_ROW_TITLE = 'Commodity details'
 const IMPORT_REASON_ROW_TITLE = 'Main reason for importing'
 const TRANSIT_ROW_TITLE = 'Transit countries'
+const ARRIVAL_ROW_TITLE = 'Arrival details'
+const REVIEW_ROW_TITLE = 'Check and submit'
+const CANNOT_START_STATUS = {
+  text: 'Cannot start yet',
+  classes: 'govuk-task-list__status--cannot-start-yet'
+}
 const NOT_YET_STARTED_STATUS = {
   tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
 }
@@ -124,14 +131,18 @@ describe('#hubHandler', () => {
     ])
   })
 
-  it('Should render the ten page-level rows in their groups on an unlocked journey (transit stays absent)', async () => {
+  it('Should render the eleven page-level rows in their groups on an unlocked journey (transit stays absent)', async () => {
     const { groups } = await renderHub(unlockedSeed)
     expect(
       groups.map((group) => group.items.map((item) => item.title.text))
     ).toEqual([
       [ORIGIN_ROW_TITLE, COMMODITIES_ROW_TITLE, IMPORT_REASON_ROW_TITLE],
-      ['Additional commodity details', 'Animal identification details'],
-      ['Arrival details', 'Transporter'],
+      [
+        CONSIGNMENT_DETAILS_ROW_TITLE,
+        'Additional commodity details',
+        'Animal identification details'
+      ],
+      [ARRIVAL_ROW_TITLE, 'Transporter'],
       ['Roles and addresses', 'Contact address'],
       ['Uploaded documents'],
       ['Check and submit']
@@ -183,13 +194,41 @@ describe('#hubHandler', () => {
     expect(originRow.status).toEqual(COMPLETED_STATUS)
   })
 
-  it('Should render a gated row as "Cannot start yet" text with NO link', async () => {
-    const commoditiesRow = rowByTitle(await renderHub(), COMMODITIES_ROW_TITLE)
-    expect(commoditiesRow.href).toBeUndefined()
-    expect(commoditiesRow.status).toEqual({
-      text: 'Cannot start yet',
-      classes: 'govuk-task-list__status--cannot-start-yet'
-    })
+  // Design release 1 lets a trader start any task on the notification in any
+  // order, so every answer task is a link with a real status from the moment
+  // the notification exists. Nothing but Check and submit is ever shut.
+  it('Should link every answer row on a brand new notification, none of them "Cannot start yet"', async () => {
+    const context = await renderHub()
+    const answerRows = allItems(context).filter(
+      (item) => item.title.text !== REVIEW_ROW_TITLE
+    )
+
+    expect(answerRows).not.toHaveLength(0)
+    for (const row of answerRows) {
+      expect(row.href, `${row.title.text} has no way in`).toMatch(
+        /^\/notifications\/[^/]+\/.+/
+      )
+      expect(row.status, `${row.title.text} is shut`).not.toEqual(
+        CANNOT_START_STATUS
+      )
+    }
+  })
+
+  it('Should open each row at its own page before anything else is answered', async () => {
+    const context = await renderHub()
+
+    expect(rowByTitle(context, COMMODITIES_ROW_TITLE).href).toBe(
+      pagePath(context.journeyId, 'commodities')
+    )
+    expect(rowByTitle(context, CONSIGNMENT_DETAILS_ROW_TITLE).href).toBe(
+      pagePath(context.journeyId, 'consignment-details')
+    )
+    expect(rowByTitle(context, ARRIVAL_ROW_TITLE).href).toBe(
+      pagePath(context.journeyId, 'port-of-entry')
+    )
+    expect(rowByTitle(context, 'Contact address').href).toBe(
+      pagePath(context.journeyId, 'consignment/contact/select')
+    )
   })
 
   it('Should split the commodities and identification rows over one collection — line data completes one, identifiers the other', async () => {
@@ -261,7 +300,7 @@ describe('#hubHandler', () => {
 
   it('Should enter each movement row at its first page', async () => {
     const context = await renderHub(unlockedSeed)
-    expect(rowByTitle(context, 'Arrival details').href).toBe(
+    expect(rowByTitle(context, ARRIVAL_ROW_TITLE).href).toBe(
       pagePath(context.journeyId, 'port-of-entry')
     )
     expect(rowByTitle(context, 'Transporter').href).toBe(
@@ -272,8 +311,29 @@ describe('#hubHandler', () => {
     )
   })
 
-  it('Should omit the commodity totals on a journey with no commodity lines', async () => {
-    expect((await renderHub()).commodityTotals).toBeNull()
+  it('Should lock the Check and submit row until the journey is submit-ready (RULE 2)', async () => {
+    const reviewRow = rowByTitle(await renderHub(), REVIEW_ROW_TITLE)
+    expect(reviewRow.hint.text).toBe(
+      'Check your answers before you submit the notification'
+    )
+    expect(reviewRow.href).toBeUndefined()
+    expect(reviewRow.status).toEqual(CANNOT_START_STATUS)
+  })
+})
+
+describe('#hubHandler — the commodity totals', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should read both commodity totals as 0 on a journey with no commodity lines', async () => {
+    expect((await renderHub()).commodityTotals).toEqual({
+      animals: 0,
+      packages: 0
+    })
   })
 
   it('Should sum animals and packages over the commodity lines, treating blanks as 0', async () => {
@@ -298,16 +358,59 @@ describe('#hubHandler', () => {
     })
     expect(commodityTotals).toEqual({ animals: 28, packages: 7 })
   })
+})
 
-  it('Should lock the Check and submit row until the journey is submit-ready (RULE 2)', async () => {
-    const reviewRow = rowByTitle(await renderHub(), 'Check and submit')
-    expect(reviewRow.hint.text).toBe(
-      'Check your answers before you submit the notification'
-    )
-    expect(reviewRow.href).toBeUndefined()
-    expect(reviewRow.status).toEqual({
-      text: 'Cannot start yet',
-      classes: 'govuk-task-list__status--cannot-start-yet'
+// Design release 1 gives the commodity details a task of their own, first
+// under the second section, so a reader can tell whether the numbers and
+// packages have been entered without opening the page.
+describe('#hubHandler — the Commodity details row', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should lead the second group with a Commodity details row linking to the consignment-details page', async () => {
+    const context = await renderHub({
+      countryOfOrigin: 'FR',
+      commodityLines: [{ commoditySelection: 'Cow' }]
     })
+    const [firstItem] = context.groups[1].items
+
+    expect(firstItem.title.text).toBe(CONSIGNMENT_DETAILS_ROW_TITLE)
+    expect(firstItem.href).toBe(
+      pagePath(context.journeyId, 'consignment-details')
+    )
+    expect(firstItem.status).toEqual(NOT_YET_STARTED_STATUS)
+  })
+
+  it('Should carry a status the commodities row does not answer for', async () => {
+    const seedLine = (entry) => ({
+      countryOfOrigin: 'FR',
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          speciesSelection: '1148346',
+          commodityType: '16',
+          ...entry
+        }
+      ]
+    })
+
+    const owingTheNumbers = await renderHub(seedLine({}))
+    expect(rowByTitle(owingTheNumbers, COMMODITIES_ROW_TITLE).status).toEqual(
+      COMPLETED_STATUS
+    )
+    expect(
+      rowByTitle(owingTheNumbers, CONSIGNMENT_DETAILS_ROW_TITLE).status
+    ).toEqual(NOT_YET_STARTED_STATUS)
+
+    const answered = await renderHub(
+      seedLine({ numberOfPackages: '5', numberOfAnimalsQuantity: '25' })
+    )
+    expect(rowByTitle(answered, CONSIGNMENT_DETAILS_ROW_TITLE).status).toEqual(
+      COMPLETED_STATUS
+    )
   })
 })

@@ -17,13 +17,6 @@ const view = `${TEMPLATES}/features/confirmation/template`
 
 const copy = copyFor({ en, cy })
 
-const dateText = (value) =>
-  new Date(value).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  })
-
 const get = async (request, h) => {
   const { journey, answers, evaluation } = await state.get(request, h)
   if (journey.status !== state.SUBMITTED) {
@@ -33,7 +26,6 @@ const get = async (request, h) => {
     ...base(copy.title, { journeyId: journey.journeyId }),
     copy,
     referenceNumber: journey.journeyId,
-    submissionDate: dateText(journey.submittedAt),
     outstandingItems: outstandingItems(answers, evaluation),
     dashboardHref: dashboardPath(),
     createAction: createPath()

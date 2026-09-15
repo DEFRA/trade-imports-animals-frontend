@@ -5,7 +5,6 @@ export const copy = {
     title: 'Hysbysiad mewnforio wedi’i gyflwyno',
     referencePrefix: 'Eich cyfeirnod'
   },
-  dateOfDeclaration: 'Dyddiad y datganiad:',
   outstanding: {
     heading: 'Cyn i’r llwyth gael ei fewnforio',
     intro: 'Mae angen i chi o hyd:',

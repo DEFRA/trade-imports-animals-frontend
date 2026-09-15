@@ -31,11 +31,15 @@ export const copy = {
     },
     commodities: {
       title: 'Beth ydych chi’n ei fewnforio?',
-      hint: 'Y nwyddau, y rhywogaethau a nifer yr anifeiliaid rydych chi’n eu mewnforio'
+      hint: 'Y nwyddau a’r rhywogaethau rydych chi’n eu mewnforio'
     },
     importReason: {
       title: 'Prif reswm dros fewnforio',
       hint: 'Pam rydych chi’n mewnforio’r anifeiliaid a’u diben yn y farchnad fewnol'
+    },
+    consignmentDetails: {
+      title: 'Manylion y nwyddau',
+      hint: 'Faint o anifeiliaid a phecynnau sydd ar gyfer pob nwydd'
     },
     additionalDetails: {
       title: 'Manylion ychwanegol am y nwyddau',

@@ -469,11 +469,26 @@ describe(`${SUITE} — fully-populated notification`, () => {
     )
     const contact = cardByTitle(
       await sectionsFor(fullSeed),
-      'Contact address for this consignment'
+      CONTACT_ADDRESS_CARD
     )
-    expect(htmlOf(contact.rows, 'Address')).toBe(
+    expect(htmlOf(contact.rows, 'Contact address')).toBe(
       '<strong>Animal and Plant Health Agency</strong><br>Woodham Lane<br>Addlestone<br>KT15 3NB<br>United Kingdom'
     )
+  })
+
+  // Design release 1 keys the contact address card's one row 'Contact address',
+  // not the generic 'Address' the Transport details card keeps — on a page
+  // listing seven addresses, the row has to say which one it is. The two labels
+  // are separate copy strings so naming this one cannot rename the other.
+  it('Should key the contact address row by name while the transporter row keeps the generic address label', async () => {
+    const sections = await sectionsFor(fullSeed)
+
+    expect(keysOf(cardByTitle(sections, CONTACT_ADDRESS_CARD).rows)).toEqual([
+      'Contact address'
+    ])
+    expect(
+      keysOf(cardByTitle(sections, TRANSPORT_DETAILS_CARD).rows)
+    ).toContain('Address')
   })
 
   // Design release 1 puts the Change links in each card's heading and none on a
@@ -667,9 +682,23 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
     )
   })
 
-  it('Should omit the unweaned and CPH rows when no line is an eligible commodity', async () => {
+  it('Should omit the unweaned row when no line is an eligible commodity', async () => {
     const keys = keysOf(rowsOf(await sectionsFor(gatedOffSeed)))
     expect(keys).not.toContain(UNWEANED_KEY)
+  })
+
+  // CPH is the opposite shape: design release 1 asks every consignment for one
+  // and exempts named commodity codes, so the row goes away only on an exempt
+  // line — 0101 here. This block's own Fish line is asked for a CPH number.
+  it('Should omit the CPH row for an exempt commodity', async () => {
+    const keys = keysOf(
+      rowsOf(
+        await sectionsFor({
+          ...gatedOffSeed,
+          commodityLines: [{ commoditySelection: 'Horse' }]
+        })
+      )
+    )
     expect(keys).not.toContain(CPH_KEY)
   })
 
@@ -1175,6 +1204,10 @@ describe(`${SUITE} — commodity-gate render matrix — model metadata per selec
     }
   }
 
+  // CPH runs the other way round from the other two gates: design release 1
+  // asks every consignment for a CPH number and exempts named commodity codes,
+  // so the false rows below are the exemptions — 0101 for Horse and 01061900
+  // for Cat and Dog, which is asked for a permanent address instead.
   const MATRIX = [
     { commodity: 'Cow', packages: true, unweaned: true, cph: true },
     // Design release 1 asks the unweaned-animals question only of a commodity
@@ -1182,7 +1215,7 @@ describe(`${SUITE} — commodity-gate render matrix — model metadata per selec
     { commodity: 'Horse', packages: true, unweaned: false, cph: false },
     { commodity: 'Cat', packages: true, unweaned: false, cph: false },
     { commodity: 'Dog', packages: true, unweaned: false, cph: false },
-    { commodity: 'Fish', packages: false, unweaned: false, cph: false }
+    { commodity: 'Fish', packages: false, unweaned: false, cph: true }
   ]
 
   it.each(MATRIX)(

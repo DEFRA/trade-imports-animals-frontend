@@ -1,11 +1,7 @@
 import { dashboardPath, hubRoutePath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import { sections } from '../../flow/flow.js'
-import {
-  rowEntry,
-  rowGatePasses,
-  sectionEntry
-} from '../../../../../../flow/navigation.js'
+import { rowEntry, sectionEntry } from '../../../../../../flow/navigation.js'
 import { sectionGatePasses } from '../../../../../../flow/gates.js'
 import * as state from '../../../../../../engine/index.js'
 import {
@@ -37,7 +33,10 @@ const GROUPS = [
   },
   {
     id: 'commodity-details',
-    rows: ['additionalDetails', 'animalIdentification']
+    // Design release 1 opens this section with the commodity details, so the
+    // consignment-details page leads the group rather than hanging off the
+    // "What are you importing?" row in the section above.
+    rows: ['consignmentDetails', 'additionalDetails', 'animalIdentification']
   },
   {
     id: 'movement',
@@ -62,6 +61,9 @@ const STATUS_TAG = {
 }
 const statusTag = (status) => STATUS_TAG[status] ?? STATUS_TAG[NOT_STARTED]
 
+// The one task the hub still shuts is Check and submit, which holds its own
+// authored gate on submit-readiness. Every other row is a link from the moment
+// the notification exists, so no answer row reads this status.
 const CANNOT_START_STATUS = {
   text: copy.statuses.cannotStartYet,
   classes: 'govuk-task-list__status--cannot-start-yet'
@@ -92,9 +94,11 @@ const buildReviewItem = (
 
 const isHiddenRow = (row, status) => row.conditional && status === NA
 
-const blockedRowItem = (base) => ({ ...base, status: CANNOT_START_STATUS })
-
-const openRowItem = (base, row, scope, status, journeyId) => ({
+// Design release 1 lets a trader start any task on the notification in any
+// order, so a row is a link and carries a real status whatever else has been
+// answered. A row that does not apply to this consignment leaves the list
+// (`isHiddenRow`) rather than sitting on it shut.
+const rowItem = (base, row, scope, status, journeyId) => ({
   ...base,
   href: rowEntry(row, scope, journeyId),
   status: statusTag(status)
@@ -117,9 +121,7 @@ const buildRowItem = (id, answers, scope, evaluation, journeyId) => {
     return null
   }
   const base = { title: { text: title }, hint: { text: hint } }
-  return rowGatePasses(row, scope)
-    ? openRowItem(base, row, scope, status, journeyId)
-    : blockedRowItem(base)
+  return rowItem(base, row, scope, status, journeyId)
 }
 
 const buildGroups = (answers, scope, evaluation, journeyId) =>
@@ -139,11 +141,10 @@ const toCount = (value) => {
 const sumOverLines = (lines, field) =>
   lines.reduce((total, { entry }) => total + toCount(entry[field]), 0)
 
+// Design release 1 shows the summary on every visit to the hub, reading zero
+// before any commodity line exists, so the totals are never absent.
 const buildCommodityTotals = (answers, evaluation) => {
   const lines = state.collectionView(answers, ['commodityLines'], evaluation)
-  if (lines.length === 0) {
-    return null
-  }
   return {
     animals: sumOverLines(lines, 'numberOfAnimalsQuantity'),
     packages: sumOverLines(lines, 'numberOfPackages')

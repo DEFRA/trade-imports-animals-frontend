@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  commodityCodeFor,
+  cphCommodities,
+  cphExemptCommodityCodes,
   earTagCommodities,
   horseNameCommodities,
   identifiedCommodities,
@@ -111,6 +114,25 @@ describe('the identifier allowlists', () => {
   it('Should hold every commodity that is asked for a permanent address', () => {
     for (const commodity of permanentAddressCommodities()) {
       expect(identifiedCommodities()).toContain(commodity)
+    }
+  })
+})
+
+// CPH is the opposite shape to the identifier allowlists: design release 1
+// asks every consignment for a CPH number and exempts named commodity
+// codes, so the list is a derivation over the exemptions and the default is
+// to ask. Asserted as a derivation, not a literal — a commodity added to the
+// catalogue under a non-exempt code must be asked without a second edit here.
+describe('the CPH exemption', () => {
+  it('Should exempt exactly the horse and cat/dog/ferret codes', () => {
+    expect([...cphExemptCommodityCodes()].sort()).toEqual(['0101', '01061900'])
+  })
+
+  it('Should ask every commodity whose code is not exempt', () => {
+    for (const commodity of list()) {
+      expect(cphCommodities().includes(commodity)).toBe(
+        !cphExemptCommodityCodes().includes(commodityCodeFor(commodity))
+      )
     }
   })
 })

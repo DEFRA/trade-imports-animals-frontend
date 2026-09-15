@@ -32,8 +32,6 @@
       {{ speciesQuantityGroup(group, copy) }}
     {% endfor %}
 
-    {# Second page of the commodities row — reached from the commodity search
-       page, not from the hub, so it ends with the primary alone. #}
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, showReturnControls = false) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
   </form>
 {% endblock %}

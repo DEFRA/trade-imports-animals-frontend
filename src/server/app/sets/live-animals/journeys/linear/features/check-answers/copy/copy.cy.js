@@ -90,6 +90,7 @@ export const copy = {
     transportDocumentReference: 'Cyfeirnod dogfen cludo',
     name: 'Enw',
     address: 'Cyfeiriad',
+    contactAddress: 'Cyfeiriad cyswllt',
     country: 'Gwlad',
     approvalNumber: 'Rhif cymeradwyo',
     type: 'Math',
@@ -127,8 +128,6 @@ export const copy = {
     commodity: (n) => `nwydd ${n}`
   },
   submit: {
-    heading: 'Nawr cyflwynwch eich hysbysiad',
-    body: 'Parhewch i’r datganiad i gyflwyno eich hysbysiad.',
     button: 'Parhau'
   },
   errors: {

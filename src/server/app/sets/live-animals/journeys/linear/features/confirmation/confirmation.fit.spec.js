@@ -16,9 +16,13 @@ const expectPanelCopy = async (page) => {
   ).toBeVisible()
   await expect(page.getByText(copy.panel.referencePrefix)).toBeVisible()
   await expect(page.getByText(reference, { exact: true })).toBeVisible()
-  await expect(
-    page.getByText(new RegExp(`^${copy.dateOfDeclaration}`))
-  ).toBeVisible()
+}
+
+// The declaration date is shown once, on the declaration page. Design release 1
+// takes the submitted page from the reference panel straight to what the trader
+// still has to do, so the date is not repeated here.
+const expectNoDeclarationDate = async (page) => {
+  await expect(page.getByText(/date of declaration/i)).toHaveCount(0)
 }
 
 // The journey these tests submit uploads no documents, and documents are
@@ -110,10 +114,11 @@ test.describe('submitted confirmation feature', () => {
     await expect(page).toHaveURL(/\/notifications\/[^/]+\/confirmation$/)
   })
 
-  test('renders the notification reference, all feature copy and no back link', async ({
+  test('renders the notification reference and all feature copy, with no declaration date and no back link', async ({
     page
   }) => {
     await expectPanelCopy(page)
+    await expectNoDeclarationDate(page)
     await expectOutstandingCopy(page)
     await expectTransportingCopy(page)
     await expectViewOrAmendCopy(page)

@@ -30,11 +30,15 @@ export const copy = {
     },
     commodities: {
       title: 'What are you importing?',
-      hint: 'The commodities, species and numbers of animals you are importing'
+      hint: 'The commodities and species you are importing'
     },
     importReason: {
       title: 'Main reason for importing',
       hint: 'Why you are importing the animals and their purpose in the internal market'
+    },
+    consignmentDetails: {
+      title: 'Commodity details',
+      hint: 'How many animals and packages there are for each commodity'
     },
     additionalDetails: {
       title: 'Additional commodity details',

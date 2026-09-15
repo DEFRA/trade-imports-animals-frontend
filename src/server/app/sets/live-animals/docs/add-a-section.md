@@ -214,7 +214,10 @@ add one row:
 
 The row status defaults to the union of those pages' `collects`. Use `parts`
 only when the row needs a collection facet. Use `conditional: true` only when
-the hub must hide a Not applicable row.
+the hub must hide a Not applicable row. Use `applies` only when the row's parts
+cannot express its applicability — it makes the row read Not applicable
+whatever the parts roll up to. See
+[`journey-flow-and-gates.md`](journey-flow-and-gates.md), "Task rows".
 
 Add the task-row id to the right object in the hub controller's `GROUPS` list.
 Add the row title and hint to both hub copy bundles. Add a new numbered hub
@@ -224,12 +227,12 @@ both locale bundles too.
 Update:
 
 - [`journeys/linear/flow/task-rows.test.js`](../journeys/linear/flow/task-rows.test.js) for Not yet started, In
-  progress, Completed, Optional or Not applicable states, row gate and first
+  progress, Completed, Optional or Not applicable states, and the row's first
   entry page
 - [`journeys/linear/features/hub/copy/copy.test.js`](../journeys/linear/features/hub/copy/copy.test.js) for
   group copy, row copy, position, link and status
 - [`journeys/linear/features/hub/hub.fit.spec.js`](../journeys/linear/features/hub/hub.fit.spec.js) for the
-  visible task row, lock state, link and completed state
+  visible task row, its link and its completed state
 
 Every task row participates in `readyForCheckYourAnswers`. A mandatory new row
 therefore blocks Check and submit until it is complete. Prove both the blocked
