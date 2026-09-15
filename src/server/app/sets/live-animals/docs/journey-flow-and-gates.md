@@ -16,12 +16,18 @@ store rather than canonical obligation fulfilment.
 
 ## Task rows
 
-[`task-rows.js`](../journeys/linear/flow/task-rows.js) exports eleven `taskRows`. A
+[`task-rows.js`](../journeys/linear/flow/task-rows.js) exports twelve `taskRows`. A
 task row is a hub item and a submit-readiness unit; it is not a flow section.
 
 Most row status comes from the union of each page's `collects`. `parts` narrows a
-row to a collection facet. `conditional: true` lets the hub hide a row that is not
-applicable. Every row contributes to `readyForCheckYourAnswers`.
+row to a collection facet. The commodity line is split three ways — the selection
+on the `commodities` row, the numbers on the `consignmentDetails` row, the
+identifiers on the `animalIdentification` row — so each of the three pages over
+that one collection carries a status of its own. The `commodities` row claims its
+facet with `except` rather than `only`, so a new member of the collection defaults
+to that row instead of falling out of all three. `conditional: true` lets the hub
+hide a row that is not applicable. Every row contributes to
+`readyForCheckYourAnswers`.
 
 `applies` is the escape hatch for a row whose parts cannot express its
 applicability. `rowStatus` calls it with the answers and reads Not applicable when

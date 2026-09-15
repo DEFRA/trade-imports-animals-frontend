@@ -37,7 +37,10 @@ const GROUPS = [
   },
   {
     id: 'commodity-details',
-    rows: ['additionalDetails', 'animalIdentification']
+    // Design release 1 opens this section with the commodity details, so the
+    // consignment-details page leads the group rather than hanging off the
+    // "What are you importing?" row in the section above.
+    rows: ['consignmentDetails', 'additionalDetails', 'animalIdentification']
   },
   {
     id: 'movement',

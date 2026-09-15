@@ -21,7 +21,7 @@ const copy = copyFor({ en, cy })
  * `scope.readyForCheckYourAnswers` are the same verdict, and the POST can
  * refuse on the latter knowing the page will name something.
  *
- * The species row pair is the one entry whose anchor is not a card, and the one
+ * The species entry is the one entry whose anchor is not a card, and the one
  * entry that marks no card at all. Species cards are built one per commodity
  * line and carry no `id`, so `decorateCard` never reaches them: even when lines
  * exist the entry names the outstanding work without marking a card, and it
@@ -44,7 +44,9 @@ export const REVIEW_CARDS = [
   {
     id: 'species',
     anchor: 'description-of-the-goods',
-    rows: ['commodities', 'animalIdentification']
+    // The hub splits the commodity answers across three rows; the review shows
+    // them under one heading, so the entry names all three.
+    rows: ['commodities', 'consignmentDetails', 'animalIdentification']
   },
   {
     id: 'additionalAnimalDetails',

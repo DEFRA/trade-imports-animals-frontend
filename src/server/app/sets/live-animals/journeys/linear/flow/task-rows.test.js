@@ -141,115 +141,170 @@ describe('#rowStatus — one status per hub task row', () => {
       statusIn('documents', { ...unlocked, documents: happyPath.documents })
     ).toBe(FULFILLED)
   })
+})
 
-  describe('the commodities/identification facet split of commodityLines', () => {
-    it('Should read Not yet started on the commodities row while no line exists', () => {
-      expect(statusIn('commodities', {})).toBe(NOT_STARTED)
-    })
+describe('#rowStatus — the commodities/details/identification facet split of commodityLines', () => {
+  // With no line there is nothing to identify, so the identification row is
+  // Not applicable rather than Not yet started — the conditional-row describe
+  // below covers it.
+  it('Should read Not yet started on the commodities and details rows while no line exists', () => {
+    expect(statusIn('commodities', {})).toBe(NOT_STARTED)
+    expect(statusIn('consignmentDetails', {})).toBe(NOT_STARTED)
+  })
 
-    it('Should complete the commodities row on line data alone, owing no identifier on a single species', () => {
-      const answers = {
-        commodityLines: [
-          {
-            commoditySelection: 'Cow',
-            speciesSelection: '1148346',
-            commodityType: '16',
-            numberOfPackages: '5',
-            numberOfAnimalsQuantity: '25'
-          }
-        ]
-      }
-      expect(statusIn('commodities', answers)).toBe(FULFILLED)
-      // Design release 1 asks for identifiers only once a consignment
-      // carries more than one identified species, so a twenty-five-animal
-      // single-species line owes none of them.
-      expect(statusIn('animalIdentification', answers)).toBe(FULFILLED)
-    })
+  // Design release 1 gives the commodity details a task of their own, so a
+  // reader can tell the selection apart from the numbers on the hub.
+  it('Should complete the commodities row on the selection while the details row still owes the numbers', () => {
+    const answers = {
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          speciesSelection: '1148346',
+          commodityType: '16'
+        }
+      ]
+    }
+    expect(statusIn('commodities', answers)).toBe(FULFILLED)
+    expect(statusIn('consignmentDetails', answers)).toBe(NOT_STARTED)
+  })
 
-    it('Should leave the identification row Not yet started while a second species owes its first identifier', () => {
-      const answers = {
-        commodityLines: [
-          {
-            commoditySelection: 'Cow',
-            speciesSelection: '1148346',
-            commodityType: '16',
-            numberOfPackages: '5',
-            numberOfAnimalsQuantity: '25'
-          },
-          {
-            commoditySelection: 'Horse',
-            speciesSelection: '822332',
-            commodityType: '2',
-            numberOfPackages: '3',
-            numberOfAnimalsQuantity: '4'
-          }
-        ]
-      }
-      expect(statusIn('commodities', answers)).toBe(FULFILLED)
-      expect(statusIn('animalIdentification', answers)).toBe(NOT_STARTED)
-    })
+  it('Should complete the details row on the numbers alone, leaving the commodities row In progress', () => {
+    const answers = {
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          numberOfPackages: '5',
+          numberOfAnimalsQuantity: '25'
+        }
+      ]
+    }
+    expect(statusIn('consignmentDetails', answers)).toBe(FULFILLED)
+    expect(statusIn('commodities', answers)).toBe(IN_PROGRESS)
+  })
 
-    it('Should complete the identification row on identifiers alone, leaving commodities In progress', () => {
-      const answers = {
-        commodityLines: [
-          {
-            commoditySelection: 'Cow',
-            animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
-          }
-        ]
-      }
-      expect(statusIn('animalIdentification', answers)).toBe(FULFILLED)
-      expect(statusIn('commodities', answers)).toBe(IN_PROGRESS)
-    })
+  it('Should hold the details row In progress while a second line still owes its animal count', () => {
+    const answers = {
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          speciesSelection: '1148346',
+          commodityType: '16',
+          numberOfAnimalsQuantity: '25'
+        },
+        {
+          commoditySelection: 'Horse',
+          speciesSelection: '822332',
+          commodityType: '2'
+        }
+      ]
+    }
+    expect(statusIn('commodities', answers)).toBe(FULFILLED)
+    expect(statusIn('consignmentDetails', answers)).toBe(IN_PROGRESS)
+  })
 
-    it('Should hold the identification row In progress while any line still owes its at-least-one identifier', () => {
-      const answers = {
-        commodityLines: [
-          {
-            commoditySelection: 'Cow',
-            animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
-          },
-          { commoditySelection: 'Horse' }
-        ]
-      }
-      expect(statusIn('animalIdentification', answers)).toBe(IN_PROGRESS)
-    })
+  it('Should complete the commodities and details rows on line data alone, owing no identifier on a single species', () => {
+    const answers = {
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          speciesSelection: '1148346',
+          commodityType: '16',
+          numberOfPackages: '5',
+          numberOfAnimalsQuantity: '25'
+        }
+      ]
+    }
+    expect(statusIn('commodities', answers)).toBe(FULFILLED)
+    expect(statusIn('consignmentDetails', answers)).toBe(FULFILLED)
+    // Design release 1 asks for identifiers only once a consignment
+    // carries more than one identified species, so a twenty-five-animal
+    // single-species line owes none of them.
+    expect(statusIn('animalIdentification', answers)).toBe(FULFILLED)
+  })
 
-    it('Should ask no animal records of a line whose commodity carries no identifier of its own', () => {
-      const answers = {
-        commodityLines: [
-          {
-            commoditySelection: 'Cow',
-            animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
-          },
-          { commoditySelection: 'Fish' }
-        ]
-      }
-      expect(statusIn('animalIdentification', answers)).toBe(FULFILLED)
-    })
+  it('Should leave the identification row Not yet started while a second species owes its first identifier', () => {
+    const answers = {
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          speciesSelection: '1148346',
+          commodityType: '16',
+          numberOfPackages: '5',
+          numberOfAnimalsQuantity: '25'
+        },
+        {
+          commoditySelection: 'Horse',
+          speciesSelection: '822332',
+          commodityType: '2',
+          numberOfPackages: '3',
+          numberOfAnimalsQuantity: '4'
+        }
+      ]
+    }
+    expect(statusIn('commodities', answers)).toBe(FULFILLED)
+    expect(statusIn('animalIdentification', answers)).toBe(NOT_STARTED)
+  })
 
-    it('Should resolve the enclosing-commodity activations through the facet (a Cat identifier owes its permanent address)', () => {
-      const catLine = (identifier) => ({
-        commodityLines: [
-          { commoditySelection: 'Cat', animalIdentifiers: [identifier] }
-        ]
-      })
-      expect(
-        statusIn(
-          'animalIdentification',
-          catLine({ animalIdentifierPassport: 'UK123456789' })
-        )
-      ).toBe(IN_PROGRESS)
-      expect(
-        statusIn(
-          'animalIdentification',
-          catLine({
-            animalIdentifierPassport: 'UK123456789',
-            permanentAddress: { name: 'Pet Owner' }
-          })
-        )
-      ).toBe(FULFILLED)
+  it('Should complete the identification row on identifiers alone, leaving commodities In progress', () => {
+    const answers = {
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
+        }
+      ]
+    }
+    expect(statusIn('animalIdentification', answers)).toBe(FULFILLED)
+    expect(statusIn('commodities', answers)).toBe(IN_PROGRESS)
+  })
+
+  it('Should hold the identification row In progress while any line still owes its at-least-one identifier', () => {
+    const answers = {
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
+        },
+        { commoditySelection: 'Horse' }
+      ]
+    }
+    expect(statusIn('animalIdentification', answers)).toBe(IN_PROGRESS)
+  })
+
+  it('Should ask no animal records of a line whose commodity carries no identifier of its own', () => {
+    const answers = {
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          animalIdentifiers: [{ animalIdentifierEarTag: 'UK123456789012' }]
+        },
+        { commoditySelection: 'Fish' }
+      ]
+    }
+    expect(statusIn('animalIdentification', answers)).toBe(FULFILLED)
+  })
+
+  it('Should resolve the enclosing-commodity activations through the facet (a Cat identifier owes its permanent address)', () => {
+    const catLine = (identifier) => ({
+      commodityLines: [
+        { commoditySelection: 'Cat', animalIdentifiers: [identifier] }
+      ]
     })
+    expect(
+      statusIn(
+        'animalIdentification',
+        catLine({ animalIdentifierPassport: 'UK123456789' })
+      )
+    ).toBe(IN_PROGRESS)
+    expect(
+      statusIn(
+        'animalIdentification',
+        catLine({
+          animalIdentifierPassport: 'UK123456789',
+          permanentAddress: { name: 'Pet Owner' }
+        })
+      )
+    ).toBe(FULFILLED)
   })
 })
 
@@ -339,6 +394,12 @@ describe('#rowGatePasses / #rowEntry — a row is gated exactly as its first pag
 
   it('Should enter a row at its first gate-passing page', () => {
     const scope = makeScope(unlocked)
+    expect(rowEntry(taskRowById('commodities'), scope, 'journey-1')).toMatch(
+      /\/commodities$/
+    )
+    expect(
+      rowEntry(taskRowById('consignmentDetails'), scope, 'journey-1')
+    ).toMatch(/\/consignment-details$/)
     expect(rowEntry(taskRowById('arrivalDetails'), scope, 'journey-1')).toMatch(
       /\/port-of-entry$/
     )

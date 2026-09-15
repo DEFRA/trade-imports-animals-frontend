@@ -8,7 +8,9 @@ import {
   startNotification
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
+import { copy as commoditiesCopy } from '../commodities/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
+import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 
 const taskRow = (page, title) =>
   page.getByRole('listitem').filter({
@@ -31,20 +33,40 @@ const expectAxeClean = async (page, name) => {
 const ANIMALS = '25'
 const PACKAGES = '5'
 const TOTAL_BOX = '.app-commodity-total'
+const SAVE_AND_CONTINUE = 'Save and continue'
 
-const openHubWithCommodityTotals = async (page) => {
+const selectCommodityAndOpenDetails = async (page) => {
   await startNotification(page)
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: copy.rows.commodities.title }).click()
   await selectSpecies(page, ['Bos taurus'])
-  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(
-    page.getByRole('heading', { name: 'Commodity details' })
+    page.getByRole('heading', {
+      name: commoditiesCopy.consignmentDetails.title
+    })
   ).toBeVisible()
+}
+
+const expectHub = (page) =>
+  expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+
+const openHubWithCommodityTotals = async (page) => {
+  await selectCommodityAndOpenDetails(page)
   await page.getByLabel('Number of animals').fill(ANIMALS)
   await page.getByLabel('Number of packages (when required)').fill(PACKAGES)
-  await page.getByRole('button', { name: 'Save and continue' }).click()
-  await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+  await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+  await expectHub(page)
+}
+
+// The commodity is chosen but its numbers are not entered: the hub state the
+// "Commodity details" row exists to report.
+const openHubOwingTheCommodityNumbers = async (page) => {
+  await selectCommodityAndOpenDetails(page)
+  await page
+    .getByRole('link', { name: sharedCopy.saveActions.cancelAndReturnToHub })
+    .click()
+  await expectHub(page)
 }
 
 const expectTotalBoxes = async (page, animals, packages) => {
@@ -88,6 +110,17 @@ test.describe('hub feature', () => {
     await expect(
       commodities.getByRole('link', { name: copy.rows.commodities.title })
     ).toBeVisible()
+
+    // The row's derived gate is the commodity selection, so on a fresh
+    // notification it reads "Cannot start yet" with no link and the trader is
+    // never sent to a details page that has nothing to ask about.
+    const consignmentDetails = taskRow(page, copy.rows.consignmentDetails.title)
+    await expect(consignmentDetails).toContainText(copy.statuses.cannotStartYet)
+    await expect(
+      consignmentDetails.getByRole('link', {
+        name: copy.rows.consignmentDetails.title
+      })
+    ).toHaveCount(0)
 
     const review = taskRow(page, copy.rows.review.title)
     await expect(review).toContainText(copy.statuses.cannotStartYet)
@@ -141,6 +174,50 @@ test.describe('hub feature', () => {
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
     await expect(page).toHaveURL('/')
+  })
+})
+
+// Design release 1 gives the commodity details a task of their own, first
+// under the second section, so the hub says whether the numbers have been
+// entered rather than folding them into "What are you importing?".
+test.describe('hub feature — the Commodity details row', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('stands as its own task, linking to the consignment-details page', async ({
+    page
+  }) => {
+    // The hub links straight to the details page now, so that page carries
+    // the return controls a trader needs to stop and leave.
+    await openHubOwingTheCommodityNumbers(page)
+
+    const details = taskRow(page, copy.rows.consignmentDetails.title)
+    await expect(
+      details.getByRole('link', { name: copy.rows.consignmentDetails.title })
+    ).toHaveAttribute('href', /\/consignment-details$/)
+    await expect(details).toContainText(copy.statuses.notYetStarted)
+    await expect(taskRow(page, copy.rows.commodities.title)).toContainText(
+      copy.statuses.completed
+    )
+
+    await expectAxeClean(page, 'Partly-complete hub')
+  })
+
+  test('reads Completed once the numbers are saved, leaving the other rows alone', async ({
+    page
+  }) => {
+    await openHubWithCommodityTotals(page)
+
+    await expect(
+      taskRow(page, copy.rows.consignmentDetails.title)
+    ).toContainText(copy.statuses.completed)
+    await expect(taskRow(page, copy.rows.commodities.title)).toContainText(
+      copy.statuses.completed
+    )
+    await expect(
+      taskRow(page, copy.rows.additionalDetails.title)
+    ).toContainText(copy.statuses.notYetStarted)
   })
 })
 
