@@ -22,7 +22,7 @@ export const replaceFulfilment = async (
     notification: {
       referenceNumber: journeyId,
       concurrencyToken: known?.concurrencyToken,
-      ...fulfilmentToNotification(snapshot, journeyId),
+      ...(await fulfilmentToNotification(snapshot, journeyId)),
       fulfilments: encodeEvaluatorFulfilments(snapshot)
     },
     ...(actor ? { actor } : {})

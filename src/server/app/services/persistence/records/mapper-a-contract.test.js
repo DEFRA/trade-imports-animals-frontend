@@ -1,6 +1,11 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
 
+// The mapper reverse-looks-up display-name → ISO country code via the countries
+// service; stub-mode short-circuits its network dependency and serves the seeded
+// COUNTRY_LABELS from countries/stub.js.
+process.env.STUB_MODE = 'true'
+
 import { assembleFulfilments } from '../../../bridge/assemble-fulfilments.js'
 import { fulfilmentToNotification } from './mapper.js'
 
@@ -23,10 +28,12 @@ const CONTRACT_REFERENCE = 'GBN-AG-26-CONTRACT'
 const ORIGIN_FARM_ID = 'origin-farm'
 
 describe('Mapper A PUT /notifications contract', () => {
-  test('emits the exact backend payload from a complete canonical fulfilment', () => {
+  test('emits the exact backend payload from a complete canonical fulfilment', async () => {
     const fulfilment = assembleFulfilments(completeJourneyAnswers)
 
-    expect(fulfilmentToNotification(fulfilment, CONTRACT_REFERENCE)).toEqual({
+    expect(
+      await fulfilmentToNotification(fulfilment, CONTRACT_REFERENCE)
+    ).toEqual({
       referenceNumber: CONTRACT_REFERENCE,
       reasonForImport: 'internalMarket',
       placeOfOrigin: { addressId: ORIGIN_FARM_ID },
@@ -118,13 +125,13 @@ describe('Mapper A PUT /notifications contract', () => {
     })
   })
 
-  test('emits origin and contact as addressId when the answer is a reference', () => {
+  test('emits origin and contact as addressId when the answer is a reference', async () => {
     const answers = {
       ...completeJourneyAnswers,
       placeOfOrigin: { addressId: ORIGIN_FARM_ID },
       contactAddress: { addressId: 'apha' }
     }
-    const payload = fulfilmentToNotification(
+    const payload = await fulfilmentToNotification(
       assembleFulfilments(answers),
       CONTRACT_REFERENCE
     )

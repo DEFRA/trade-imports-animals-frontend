@@ -1,5 +1,9 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
+// Stub-mode short-circuits the countries and ports services so their readers
+// serve the seeded stubs without a fetch.
+process.env.STUB_MODE = 'true'
+
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
 import { configureRecords } from '../../../../../../../engine/persistence/records.js'
@@ -135,7 +139,7 @@ describe('GET import-reason — copy reaches the view', () => {
     )
     expect(result.view.context.portItems[0].text).toBe(copy.port.placeholder)
     expect(result.view.context.portItems.slice(2)).toEqual(
-      ports.list().map((port) => ({
+      (await ports.list()).map((port) => ({
         value: port.code,
         text: `${port.name} (${port.code})`
       }))

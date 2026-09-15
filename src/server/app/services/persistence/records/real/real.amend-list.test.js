@@ -8,6 +8,18 @@ import {
 import { config } from '../../../../../../config/config.js'
 import { records } from './index.js'
 
+// This file's tests run in real-mode intentionally (see the referenced-party
+// names describe below), so the address-book mapper's originLabel lookup would
+// try to load countries. Mock the countries service to serve a fixed lookup so
+// the fetch mock only has to respond to notification and address-book URLs.
+vi.mock('../../../countries/index.js', () => {
+  const LABELS = { CH: 'Switzerland', GB: 'United Kingdom' }
+  return {
+    ensureLoaded: async () => {},
+    originLabel: async (code) => LABELS[code]
+  }
+})
+
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
 

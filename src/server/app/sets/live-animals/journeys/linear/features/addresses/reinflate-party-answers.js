@@ -11,7 +11,7 @@ export const reinflatePartyAnswers = async (request, answers) => {
   for (const party of ALL_PARTIES) {
     const record = resolved[party.id]
     if (record) {
-      next[party.id] = answerForInlineParty(record)
+      next[party.id] = await answerForInlineParty(record)
     }
   }
   return next

@@ -37,9 +37,9 @@ const copy = copyFor({ en, cy }).portOfEntry
 
 const TRANSPORT_FIELD_MAX_LENGTH = 58
 
-const portItems = (selected) => [
+const portItems = async (selected) => [
   { value: '', text: copy.port.placeholder },
-  ...ports.list().map((port) => ({
+  ...(await ports.list()).map((port) => ({
     value: port.code,
     text: `${port.name} (${port.code})`,
     selected: port.code === selected
@@ -55,8 +55,9 @@ const meansItems = (selected) => [
   }))
 ]
 
-const fields = (dateWindow) =>
-  compose(
+const fields = async (dateWindow) => {
+  const portCodes = (await ports.list()).map((port) => port.code)
+  return compose(
     dateTextInRange('arrivalDateAtPort', {
       min: dateWindow.min,
       max: dateWindow.max,
@@ -66,10 +67,7 @@ const fields = (dateWindow) =>
         dateWindow.maxText
       )
     }),
-    oneOf(
-      'portOfEntry',
-      ports.list().map((port) => port.code)
-    ),
+    oneOf('portOfEntry', portCodes),
     oneOf('meansOfTransport', transportReference.meansOfTransport()),
     maxText(
       'transportIdentification',
@@ -82,8 +80,9 @@ const fields = (dateWindow) =>
       copy.errors.documentReferenceMaxLength
     )
   )
+}
 
-const render = (
+const render = async (
   h,
   journey,
   dateWindow,
@@ -101,7 +100,7 @@ const render = (
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
-    portItems: portItems(values.portOfEntry),
+    portItems: await portItems(values.portOfEntry),
     meansItems: meansItems(values.meansOfTransport),
     arrivalDate: kit.dateField('arrivalDateAtPort', {
       label: copy.arrivalDate.label,
@@ -141,10 +140,10 @@ const post = async (request, h) => {
       payload.transportDocumentReference ?? ''
     ).trim()
   }
-  const { errors } = validate(fields(dateWindow), payload)
+  const { errors } = validate(await fields(dateWindow), payload)
   if (errors) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, dateWindow, values, { errors }).code(
+    return (await render(h, journey, dateWindow, values, { errors })).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
@@ -156,9 +155,11 @@ const post = async (request, h) => {
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return render(h, journey, dateWindow, values, {
-        recoverableError: true
-      }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+      return (
+        await render(h, journey, dateWindow, values, {
+          recoverableError: true
+        })
+      ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )
   if (failure) {

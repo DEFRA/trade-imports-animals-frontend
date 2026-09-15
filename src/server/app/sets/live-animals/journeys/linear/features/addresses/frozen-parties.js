@@ -28,7 +28,7 @@ const JOURNEY_PARTY_IDS = [
  *
  * A party with no name never made it onto the notification, so it renders as
  * "not provided" exactly like an unanswered one. */
-export const toDisplayParty = (party) => {
+export const toDisplayParty = async (party) => {
   if (!party?.name) {
     return undefined
   }
@@ -42,7 +42,7 @@ export const toDisplayParty = (party) => {
       townOrCity: address.townOrCity,
       county: address.county,
       postalOrZipCode: address.postcode,
-      country: originLabel(address.countryCode) ?? address.countryCode,
+      country: (await originLabel(address.countryCode)) ?? address.countryCode,
       telephoneNumber: party.phone,
       emailAddress: party.email
     }
@@ -50,10 +50,12 @@ export const toDisplayParty = (party) => {
 }
 
 /** SUBMITTED render path — build display parties from stored inline answers. */
-export const partiesFromStoredAnswers = (answers = {}) =>
-  Object.fromEntries(
-    JOURNEY_PARTY_IDS.map((partyId) => [
+export const partiesFromStoredAnswers = async (answers = {}) => {
+  const entries = await Promise.all(
+    JOURNEY_PARTY_IDS.map(async (partyId) => [
       partyId,
-      toDisplayParty(answers[partyId])
+      await toDisplayParty(answers[partyId])
     ])
   )
+  return Object.fromEntries(entries)
+}

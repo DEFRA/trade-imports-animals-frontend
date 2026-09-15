@@ -16,7 +16,7 @@ const copy = copyFor({ en, cy })
  * row here, reached from a second link; design release 1 gives them their own
  * card, which now carries the link to the page that collects them.
  */
-export const arrivalDetailsCard = (journeyId, answers, readOnly) => ({
+export const arrivalDetailsCard = async (journeyId, answers, readOnly) => ({
   id: 'arrivalDetails',
   title: copy.cards.arrivalDetails,
   ...editableActions(
@@ -30,7 +30,7 @@ export const arrivalDetailsCard = (journeyId, answers, readOnly) => ({
   rows: [
     row(
       copy.rows.portOfEntry,
-      ports.label(answers.portOfEntry) ?? answers.portOfEntry
+      (await ports.label(answers.portOfEntry)) ?? answers.portOfEntry
     ),
     row(copy.rows.arrivalDate, dateText(answers.arrivalDateAtPort)),
     row(copy.rows.meansOfTransport, copy.means[answers.meansOfTransport] ?? ''),

@@ -129,7 +129,7 @@ describe.skipIf(!runsIt('real'))(
         fulfilments: encodeEvaluatorFulfilments(snapshot)
       })
       expect(current).toMatchObject(
-        fulfilmentToNotification(snapshot, journeyId)
+        await fulfilmentToNotification(snapshot, journeyId)
       )
       expect(answersOf(loaded).documents).toEqual(answers.documents)
       expect(answersOf(loaded).commodityLines[0].animalIdentifiers).toEqual(

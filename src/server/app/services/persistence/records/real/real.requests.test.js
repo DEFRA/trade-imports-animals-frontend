@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
+
+// Stub-mode short-circuits the countries service so the mapper's
+// display-name → ISO code reverse-lookup uses the seeded stub without a fetch
+// that would otherwise collide with the notification fetch mock.
+process.env.STUB_MODE = 'true'
 import {
   AMEND,
   DELETED,
@@ -195,7 +200,7 @@ describe('real records adapter — fulfilment writes', () => {
       notification: {
         referenceNumber: journeyId,
         concurrencyToken: 3,
-        ...fulfilmentToNotification(snapshot, journeyId),
+        ...(await fulfilmentToNotification(snapshot, journeyId)),
         fulfilments: encoded
       }
     })
@@ -240,7 +245,7 @@ describe('real records adapter — fulfilment writes', () => {
     expect(await jsonOf(fetchMocker.requests()[0])).toEqual({
       notification: {
         referenceNumber: journeyId,
-        ...fulfilmentToNotification(snapshot, journeyId),
+        ...(await fulfilmentToNotification(snapshot, journeyId)),
         fulfilments: encoded
       },
       actor

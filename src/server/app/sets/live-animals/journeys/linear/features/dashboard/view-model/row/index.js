@@ -7,12 +7,12 @@ import {
 } from '../../notification-helper.js'
 import { rowActions } from './actions.js'
 
-export const toRow = (journey) => ({
+export const toRow = async (journey) => ({
   reference: journey.reference ?? journey.journeyId,
   status: journeyStrip(journey).status,
   commodity: formatCommodity(journey.commodity, commodities.commodityNameFor),
   origin: journey.originCountryCode
-    ? (countries.originLabel(journey.originCountryCode) ??
+    ? ((await countries.originLabel(journey.originCountryCode)) ??
       journey.originCountryCode)
     : '',
   arrival: formatDisplayDate(journey.arrivalDate),
