@@ -157,7 +157,7 @@ test.describe('live-animals journey glue', () => {
     await completeAnswerSections(page)
 
     const [document] = values.documents
-    await page.getByRole('link', { name: 'Uploaded documents' }).click()
+    await page.getByRole('link', { name: 'Upload documents' }).click()
     await addDocument(page, document)
     await expect(
       page.locator('.govuk-table__row', {

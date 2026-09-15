@@ -39,10 +39,10 @@ export const copy = {
       title: 'Manylion y nwyddau'
     },
     additionalDetails: {
-      title: 'Manylion ychwanegol am y nwyddau'
+      title: 'Manylion ychwanegol'
     },
     animalIdentification: {
-      title: 'Manylion adnabod anifeiliaid'
+      title: 'Manylion adnabod'
     },
     arrivalDetails: {
       title: 'Manylion cyrraedd'
@@ -51,17 +51,17 @@ export const copy = {
       title: 'Gwledydd tramwy'
     },
     transporter: {
-      title: 'Cludwr'
+      title: 'Manylion cludo'
     },
     addresses: {
       title: 'Rolau a chyfeiriadau',
       hint: 'Anfonwr neu allforiwr, derbynnydd, mewnforiwr a man cyrchfan'
     },
     contact: {
-      title: 'Cyfeiriad cyswllt'
+      title: 'Cyfeiriad cyswllt ar gyfer y llwyth hwn'
     },
     documents: {
-      title: 'Dogfennau wedi’u huwchlwytho'
+      title: 'Uwchlwytho dogfennau'
     }
   }
 }
