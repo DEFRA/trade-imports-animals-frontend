@@ -35,6 +35,7 @@ const expectAxeClean = async (page, name) => {
 const ANIMALS = '25'
 const PACKAGES = '5'
 const TOTAL_BOX = '.app-commodity-total'
+const SECTION_HEADING = 'h3.govuk-heading-m'
 const SAVE_AND_CONTINUE = 'Save and continue'
 
 const selectCommodityAndOpenDetails = async (page) => {
@@ -131,6 +132,28 @@ test.describe('hub feature', () => {
     ).toHaveCount(0)
   })
 
+  // Design release 1 heads the whole list "Notification tasklist" and divides
+  // the notification into six numbered sections under it: the documents come
+  // fourth, and the consignment parties and the contact address are sections
+  // of their own. The six are followed by the unnumbered "Check and submit"
+  // section, which survives only until the review becomes a button under the
+  // list.
+  test('the task list is headed "Notification tasklist" over the six numbered design sections in order, with the unnumbered review section last', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await expect(
+      page.getByRole('heading', { level: 2, name: copy.taskListHeading })
+    ).toBeVisible()
+
+    // The commodity-total labels are h3s too, so the section headings are
+    // read off their own class rather than off the level alone.
+    await expect(page.locator(SECTION_HEADING)).toHaveText(
+      Object.values(copy.groups)
+    )
+  })
+
   // Design release 1 lets a trader start any task on the notification in any
   // order, so every task the hub shows is a link before a commodity is
   // chosen — the arrival details, the documents and the contact address
@@ -224,7 +247,9 @@ test.describe('hub feature', () => {
       taskRow(page, copy.rows.animalIdentification.title)
     ).toHaveCount(0)
     await expect(
-      page.getByRole('heading', { name: copy.groups['commodity-details'] })
+      page.getByRole('heading', {
+        name: copy.groups['description-of-the-goods']
+      })
     ).toBeVisible()
   })
 

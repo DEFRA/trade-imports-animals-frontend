@@ -15,13 +15,15 @@ export const copy = {
     notYetStarted: 'Not yet started',
     cannotStartYet: 'Cannot start yet'
   },
+  taskListHeading: 'Notification tasklist',
   groups: {
     'about-the-consignment': '1. About the consignment',
-    'commodity-details': '2. Commodity details',
-    movement: '3. Movement',
-    addresses: '4. Addresses',
-    documents: '5. Documents',
-    'check-and-submit': '6. Check and submit'
+    'description-of-the-goods': '2. Description of the goods',
+    'transport-and-arrival': '3. Transport and arrival',
+    documents: '4. Documents',
+    'consignment-parties': '5. Consignment parties',
+    'contact-address': '6. Contact address',
+    'check-and-submit': 'Check and submit'
   },
   rows: {
     origin: {

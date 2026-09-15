@@ -23,8 +23,10 @@
     </div>
   </div>
 
+  <h2 class="govuk-heading-l">{{ copy.taskListHeading }}</h2>
+
   {% for group in groups %}
-    <h2 class="govuk-heading-m">{{ group.caption }}</h2>
+    <h3 class="govuk-heading-m">{{ group.caption }}</h3>
     {{ govukTaskList({
       idPrefix: group.id,
       items: group.items,
