@@ -74,6 +74,8 @@ describe('copy convention — shared chrome', () => {
         'layout',
         'unauthorised',
         'errorSummary',
+        'recoverableError',
+        'errorPage',
         'saveActions',
         'journeyStrip'
       ])
