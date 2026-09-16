@@ -135,6 +135,9 @@ const handler = async (request, h) => {
   await completeOpeningRun(request, h, journeyId)
   const { journey, answers, scope, evaluation } = await state.get(request, h)
 
+  // No back link: Design release 1 treats the overview as the top of the
+  // notification rather than a step within it, so the way off the page is the
+  // Dashboard item in the service navigation, which every page carries.
   return h.view(view, {
     pageTitle: copy.title,
     heading: copy.title,
@@ -144,8 +147,7 @@ const handler = async (request, h) => {
     commodityTotals: buildCommodityTotals(answers, evaluation),
     groups: buildGroups(answers, scope, evaluation, journeyId),
     reviewHref: reviewHref(journeyId),
-    dashboardHref: dashboardPath(),
-    backLink: dashboardPath()
+    dashboardHref: dashboardPath()
   })
 }
 

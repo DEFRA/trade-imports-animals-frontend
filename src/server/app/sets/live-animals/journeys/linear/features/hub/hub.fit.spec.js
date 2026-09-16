@@ -314,19 +314,20 @@ test.describe('hub feature', () => {
     )
   })
 
-  test('back link and return button navigate to the dashboard', async ({
+  // Design release 1 gives the overview no back link — it is the top of the
+  // notification, not a step in it — so the routes out are the Return to
+  // dashboard button and the Dashboard item in the service navigation.
+  test('overview has no back link and returns to the dashboard', async ({
     page
   }) => {
     await startNotification(page)
 
+    await expect(page.locator('.govuk-back-link')).toHaveCount(0)
     await expect(
       page.getByRole('button', { name: copy.returnToDashboard })
     ).toHaveAttribute('href', '/')
-    await expect(
-      page.getByRole('link', { name: 'Back', exact: true })
-    ).toHaveAttribute('href', '/')
 
-    await page.getByRole('link', { name: 'Back', exact: true }).click()
+    await page.getByRole('button', { name: copy.returnToDashboard }).click()
 
     await expect(page).toHaveURL('/')
   })
