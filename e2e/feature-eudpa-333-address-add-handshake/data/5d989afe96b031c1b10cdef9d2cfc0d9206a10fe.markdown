@@ -1,0 +1,147 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/addresses-add-handshake.spec.ts >> Add an address from the journey via INS >> saving a new address in INS returns to the picker with it selected and committed
+- Location: tests/e2e/features/addresses-add-handshake.spec.ts:10:3
+
+# Error details
+
+```
+Error: expect(page).toHaveURL(expected) failed
+
+Expected pattern: /localhost:3002\/address-book\/add\?/
+Received string:  "http://localhost:3007/dcidmtest.onmicrosoft.com/oauth2/authresp"
+Timeout: 5000ms
+
+Call log:
+  - Expect "toHaveURL" with timeout 5000ms
+    14 × unexpected value "http://localhost:3007/dcidmtest.onmicrosoft.com/oauth2/authresp"
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- banner:
+  - link "GOV.UK":
+    - /url: https://www.gov.uk/
+    - img "GOV.UK"
+  - region "Service information":
+    - link "Trade Imports Defra ID stub":
+      - /url: /
+  - region "Service information":
+    - link "Trade Imports Defra ID stub":
+      - /url: /
+  - paragraph:
+    - strong: Basic
+- main:
+  - heading "Sign in using Government Gateway" [level=1]
+  - text: Government Gateway user ID This could be up to 12 characters.
+  - textbox "Government Gateway user ID"
+  - text: Password
+  - textbox "Password"
+  - button "Sign in"
+  - paragraph:
+    - link "I have forgotten my password":
+      - /url: "#"
+  - group: Help signing in
+- contentinfo:
+  - heading "Support links" [level=2]
+  - list:
+    - listitem:
+      - link "Privacy":
+        - /url: https://www.gov.uk/help/privacy-notice
+    - listitem:
+      - link "Cookies":
+        - /url: https://www.gov.uk/help/cookies
+    - listitem:
+      - link "Accessibility statement":
+        - /url: https://www.gov.uk/help/accessibility
+  - text: Built by the
+  - link "Department for Environment, Food & Rural Affairs":
+    - /url: https://www.gov.uk/government/organisations/department-for-environment-food-rural-affairs
+  - text: All content is available under the
+  - link "Open Government Licence v3.0":
+    - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+  - text: ", except where otherwise stated"
+  - link "© Crown copyright":
+    - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | import { skipUnlessComposeEnvironment } from '@utils/playwright/environment';
+  3  | import { type NewAddressDetails } from '@page-objects/ins/ins-address-book-add-page';
+  4  | 
+  5  | test.describe('Add an address from the journey via INS', { tag: ['@integration'] }, () => {
+  6  |   test.beforeEach(() => {
+  7  |     skipUnlessComposeEnvironment('the handshake crosses animals-frontend and ins-frontend, which only the compose stack runs together');
+  8  |   });
+  9  | 
+  10 |   test('saving a new address in INS returns to the picker with it selected and committed', async ({ journey, pages }) => {
+  11 |     const stamp = Date.now();
+  12 |     const farmName = `Handshake Farm ${stamp}`;
+  13 |     const details: NewAddressDetails = {
+  14 |       name: farmName,
+  15 |       addressLine1: '9 Handshake Lane',
+  16 |       townOrCity: 'Carlisle',
+  17 |       postcode: 'CA2 7AA',
+  18 |       country: 'United Kingdom',
+  19 |       phone: '01228 555 0199',
+  20 |       email: `handshake-${stamp}@example.co.uk`,
+  21 |     };
+  22 | 
+  23 |     await journey.startNotification();
+  24 |     await journey.unlockSections();
+  25 | 
+  26 |     await pages.overview.task('Roles and addresses').click();
+  27 |     await pages.addresses.addParty('Consignor or exporter').click();
+  28 | 
+  29 |     await pages.consignorSelection.addNewAddress.click();
+> 30 |     await expect(pages.page).toHaveURL(/localhost:3002\/address-book\/add\?/);
+     |                              ^ Error: expect(page).toHaveURL(expected) failed
+  31 |     await expect(pages.insAddressBookAdd.heading).toBeVisible();
+  32 | 
+  33 |     await pages.insAddressBookAdd.fill(details);
+  34 |     await pages.insAddressBookAdd.save();
+  35 | 
+  36 |     await expect(pages.consignorSelection.heading).toBeVisible();
+  37 |     await expect(pages.page).toHaveURL(/consignors\/select/);
+  38 |     await pages.consignorSelection.search.fill(farmName);
+  39 |     await pages.consignorSelection.searchButton.click();
+  40 |     await expect(pages.consignorSelection.party(farmName)).toBeChecked();
+  41 | 
+  42 |     await pages.consignorSelection.saveAndContinue.click();
+  43 |     await expect(pages.addresses.heading).toBeVisible();
+  44 |     await expect(pages.addresses.partyRow('Consignor or exporter')).toContainText(farmName);
+  45 |   });
+  46 | 
+  47 |   test('cancelling INS add returns to the picker without saving an address', async ({ journey, pages }) => {
+  48 |     await journey.startNotification();
+  49 |     await journey.unlockSections();
+  50 | 
+  51 |     await pages.overview.task('Roles and addresses').click();
+  52 |     await pages.addresses.addParty('Consignor or exporter').click();
+  53 | 
+  54 |     await pages.consignorSelection.addNewAddress.click();
+  55 |     await expect(pages.insAddressBookAdd.heading).toBeVisible();
+  56 | 
+  57 |     await pages.insAddressBookAdd.btnCancelFromJourney.click();
+  58 | 
+  59 |     await expect(pages.consignorSelection.heading).toBeVisible();
+  60 |     await expect(pages.page).toHaveURL(/consignors\/select/);
+  61 | 
+  62 |     await pages.page.getByRole('link', { name: 'Back' }).click();
+  63 |     await expect(pages.addresses.heading).toBeVisible();
+  64 |     await expect(pages.addresses.partyRow('Consignor or exporter')).toContainText('Not added yet');
+  65 |   });
+  66 | });
+  67 | 
+```

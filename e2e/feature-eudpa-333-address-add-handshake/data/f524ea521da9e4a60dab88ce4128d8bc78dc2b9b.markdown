@@ -1,0 +1,480 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/cancel-amend-ui.spec.ts >> Cancel amendment through the UI >> from an amending notification >> No returns to the notification view with the amendment still in progress
+- Location: tests/e2e/features/cancel-amend-ui.spec.ts:27:5
+
+# Error details
+
+```
+Test timeout of 30000ms exceeded while running "beforeEach" hook.
+```
+
+```
+Error: locator.waitFor: Test timeout of 30000ms exceeded.
+Call log:
+  - waiting for getByRole('heading', { name: 'Review your notification', level: 1 }) to be visible
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - generic [ref=e23]:
+        - link "Import notification service" [ref=e25] [cursor=pointer]:
+          - /url: /
+        - navigation "Menu" [ref=e26]:
+          - list [ref=e27]:
+            - listitem [ref=e28]:
+              - link "Dashboard" [ref=e29] [cursor=pointer]:
+                - /url: /
+                - strong [ref=e30]: Dashboard
+            - listitem [ref=e31]:
+              - link "Address book" [ref=e32] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e33]:
+              - link "Manage account" [ref=e34] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e35]:
+              - link "Log out" [ref=e36] [cursor=pointer]:
+                - /url: /auth/sign-out
+  - generic [ref=e37]:
+    - paragraph [ref=e39]:
+      - strong [ref=e40]: Alpha
+      - generic [ref=e41]:
+        - text: This is a new service. Help us improve it and
+        - link "give your feedback by email" [ref=e42] [cursor=pointer]:
+          - /url: mailto:APHAServiceDesk@apha.gov.uk
+        - text: .
+    - link "Back" [ref=e43] [cursor=pointer]:
+      - /url: /notifications/GBN-AG-26-3JG6RT
+    - main [ref=e44]:
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - strong [ref=e48]: Amending
+          - text: GBN-AG-26-3JG6RT
+        - heading "Check your answers" [level=1] [ref=e49]
+        - paragraph [ref=e50]:
+          - link "Cancel amendment" [ref=e51] [cursor=pointer]:
+            - /url: /notifications/GBN-AG-26-3JG6RT/cancel-amend
+        - heading "1. About the consignment" [level=2] [ref=e52]
+        - heading "Consignment details" [level=3] [ref=e53]
+        - generic [ref=e54]:
+          - heading "Import details" [level=4] [ref=e56]
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - term [ref=e60]: Country of origin
+              - definition [ref=e61]: France
+              - definition [ref=e62]:
+                - link "Change country of origin (Import details)" [ref=e63] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/origin?change=1
+                  - text: Change
+                  - generic [ref=e64]: country of origin (Import details)
+            - generic [ref=e65]:
+              - term [ref=e66]: Region of origin code required
+              - definition [ref=e67]: "Yes"
+              - definition [ref=e68]:
+                - link "Change region of origin code required (Import details)" [ref=e69] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/origin?change=1
+                  - text: Change
+                  - generic [ref=e70]: region of origin code required (Import details)
+            - generic [ref=e71]:
+              - term [ref=e72]: Region of origin code
+              - definition [ref=e73]: FR-75
+              - definition [ref=e74]:
+                - link "Change region of origin code (Import details)" [ref=e75] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/origin?change=1
+                  - text: Change
+                  - generic [ref=e76]: region of origin code (Import details)
+            - generic [ref=e77]:
+              - term [ref=e78]: Internal reference number
+              - definition [ref=e79]: Imports456GB
+              - definition [ref=e80]:
+                - link "Change internal reference number (Import details)" [ref=e81] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/origin?change=1
+                  - text: Change
+                  - generic [ref=e82]: internal reference number (Import details)
+        - heading "Commodity details" [level=3] [ref=e83]
+        - generic [ref=e84]:
+          - heading "Additional animal details" [level=4] [ref=e86]
+          - generic [ref=e88]:
+            - generic [ref=e89]:
+              - term [ref=e90]: Certified for
+              - definition [ref=e91]: Slaughter
+              - definition [ref=e92]:
+                - link "Change certified for (Additional animal details)" [ref=e93] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/additional-details?change=1
+                  - text: Change
+                  - generic [ref=e94]: certified for (Additional animal details)
+            - generic [ref=e95]:
+              - term [ref=e96]: Includes unweaned animals
+              - definition [ref=e97]: "No"
+              - definition [ref=e98]:
+                - link "Change includes unweaned animals (Additional animal details)" [ref=e99] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/additional-details?change=1
+                  - text: Change
+                  - generic [ref=e100]: includes unweaned animals (Additional animal details)
+            - generic [ref=e101]:
+              - term [ref=e102]: Reason for import
+              - definition [ref=e103]: Internal market
+              - definition [ref=e104]:
+                - link "Change reason for import (Additional animal details)" [ref=e105] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/import-reason?change=1
+                  - text: Change
+                  - generic [ref=e106]: reason for import (Additional animal details)
+            - generic [ref=e107]:
+              - term [ref=e108]: Purpose in the market
+              - definition [ref=e109]: Breeding
+              - definition [ref=e110]:
+                - link "Change purpose in the market (Additional animal details)" [ref=e111] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/import-reason?change=1
+                  - text: Change
+                  - generic [ref=e112]: purpose in the market (Additional animal details)
+        - heading "Species" [level=3] [ref=e113]
+        - generic [ref=e114]:
+          - generic [ref=e115]:
+            - heading "Cow (0102) — Bos taurus" [level=4] [ref=e116]
+            - list [ref=e117]:
+              - listitem [ref=e118]:
+                - link "Change commodity 1" [ref=e119] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/consignment-details?change=1
+                  - text: Change
+                  - generic [ref=e120]: commodity 1
+              - listitem [ref=e121]:
+                - link "Change animal identifiers for commodity 1" [ref=e122] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/commodities/identification?change=1#identification-card-0
+                  - text: Change
+                  - generic [ref=e123]: animal identifiers for commodity 1
+          - generic [ref=e124]:
+            - generic [ref=e125]:
+              - generic [ref=e126]:
+                - term [ref=e127]: Commodity code
+                - definition [ref=e128]: "0102"
+              - generic [ref=e129]:
+                - term [ref=e130]: Common name
+                - definition [ref=e131]: Cow
+              - generic [ref=e132]:
+                - term [ref=e133]: Species
+                - definition [ref=e134]: Bos taurus
+              - generic [ref=e135]:
+                - term [ref=e136]: Number of animals
+                - definition [ref=e137]: "1"
+              - generic [ref=e138]:
+                - term [ref=e139]: Number of packages
+                - definition [ref=e140]: "5"
+            - heading "Animal details" [level=5] [ref=e141]
+            - table [ref=e142]:
+              - rowgroup [ref=e143]:
+                - row "Animal Ear tag" [ref=e144]:
+                  - columnheader "Animal" [ref=e145]
+                  - columnheader "Ear tag" [ref=e146]
+              - rowgroup [ref=e147]:
+                - row "Animal 1 UK123456789012" [ref=e148]:
+                  - cell "Animal 1" [ref=e149]
+                  - cell "UK123456789012" [ref=e150]
+        - separator [ref=e151]
+        - heading "2. Movement" [level=2] [ref=e152]
+        - generic [ref=e153]:
+          - heading "Arrival details" [level=3] [ref=e155]
+          - generic [ref=e157]:
+            - generic [ref=e158]:
+              - term [ref=e159]: Port of entry
+              - definition [ref=e160]: Aberdeen Harbour (GB ABD)
+              - definition [ref=e161]:
+                - link "Change port of entry (Arrival details)" [ref=e162] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/port-of-entry?change=1
+                  - text: Change
+                  - generic [ref=e163]: port of entry (Arrival details)
+            - generic [ref=e164]:
+              - term [ref=e165]: Arrival date at port of entry
+              - definition [ref=e166]: 13/10/2026
+              - definition [ref=e167]:
+                - link "Change arrival date at port of entry (Arrival details)" [ref=e168] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/port-of-entry?change=1
+                  - text: Change
+                  - generic [ref=e169]: arrival date at port of entry (Arrival details)
+            - generic [ref=e170]:
+              - term [ref=e171]: Means of transport
+              - definition [ref=e172]: Road Vehicle
+              - definition [ref=e173]:
+                - link "Change means of transport (Arrival details)" [ref=e174] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/port-of-entry?change=1
+                  - text: Change
+                  - generic [ref=e175]: means of transport (Arrival details)
+            - generic [ref=e176]:
+              - term [ref=e177]: Countries that the consignment will travel through
+              - definition [ref=e178]: France, Belgium
+              - definition [ref=e179]:
+                - link "Change countries that the consignment will travel through (Arrival details)" [ref=e180] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/transit-countries?change=1
+                  - text: Change
+                  - generic [ref=e181]: countries that the consignment will travel through (Arrival details)
+            - generic [ref=e182]:
+              - term [ref=e183]: Transport identification
+              - definition [ref=e184]: FR-892-LK
+              - definition [ref=e185]:
+                - link "Change transport identification (Arrival details)" [ref=e186] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/port-of-entry?change=1
+                  - text: Change
+                  - generic [ref=e187]: transport identification (Arrival details)
+            - generic [ref=e188]:
+              - term [ref=e189]: Transport document reference
+              - definition [ref=e190]: CMR-2026-884721
+              - definition [ref=e191]:
+                - link "Change transport document reference (Arrival details)" [ref=e192] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/port-of-entry?change=1
+                  - text: Change
+                  - generic [ref=e193]: transport document reference (Arrival details)
+        - generic [ref=e194]:
+          - heading "Transport details" [level=3] [ref=e196]
+          - generic [ref=e198]:
+            - generic [ref=e199]:
+              - term [ref=e200]: Name
+              - definition [ref=e201]: García Livestock Transport SL
+              - definition [ref=e202]:
+                - link "Change transporter name (Transport details)" [ref=e203] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/transporters?change=1
+                  - text: Change
+                  - generic [ref=e204]: transporter name (Transport details)
+            - generic [ref=e205]:
+              - term [ref=e206]: Address
+              - definition [ref=e207]:
+                - text: 43 East Hague Extension
+                - text: Delectus sitodio p. Laborum Odio tempor
+                - text: Quasoccaecat ut ear, 30055
+              - definition [ref=e208]:
+                - link "Change transporter address (Transport details)" [ref=e209] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/transporters?change=1
+                  - text: Change
+                  - generic [ref=e210]: transporter address (Transport details)
+            - generic [ref=e211]:
+              - term [ref=e212]: Country
+              - definition [ref=e213]: Switzerland
+              - definition [ref=e214]:
+                - link "Change transporter country (Transport details)" [ref=e215] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/transporters?change=1
+                  - text: Change
+                  - generic [ref=e216]: transporter country (Transport details)
+            - generic [ref=e217]:
+              - term [ref=e218]: Approval number
+              - definition [ref=e219]: ES-T2-45001294
+              - definition [ref=e220]:
+                - link "Change transporter approval number (Transport details)" [ref=e221] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/transporters?change=1
+                  - text: Change
+                  - generic [ref=e222]: transporter approval number (Transport details)
+            - generic [ref=e223]:
+              - term [ref=e224]: Type
+              - definition [ref=e225]: Commercial
+              - definition [ref=e226]:
+                - link "Change transporter type (Transport details)" [ref=e227] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/transporters?change=1
+                  - text: Change
+                  - generic [ref=e228]: transporter type (Transport details)
+        - separator [ref=e229]
+        - heading "3. Addresses" [level=2] [ref=e230]
+        - generic [ref=e231]:
+          - heading "Roles and addresses" [level=3] [ref=e233]
+          - generic [ref=e235]:
+            - generic [ref=e236]:
+              - term [ref=e237]: Place of origin
+              - definition [ref=e238]:
+                - strong [ref=e239]: Origin Farm
+                - text: 1 Farm Lane
+                - text: Ennis
+                - text: V95 X7P2
+                - text: Ireland
+              - definition [ref=e240]:
+                - link "Change place of origin (Roles and addresses)" [ref=e241] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/addresses?change=1
+                  - text: Change
+                  - generic [ref=e242]: place of origin (Roles and addresses)
+            - generic [ref=e243]:
+              - term [ref=e244]: Consignor
+              - definition [ref=e245]:
+                - strong [ref=e246]: Astra Rosales
+                - text: 43 East Hague Extension
+                - text: Bern
+                - text: "30055"
+                - text: Switzerland
+              - definition [ref=e247]:
+                - link "Change consignor (Roles and addresses)" [ref=e248] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/addresses?change=1
+                  - text: Change
+                  - generic [ref=e249]: consignor (Roles and addresses)
+            - generic [ref=e250]:
+              - term [ref=e251]: Consignee
+              - definition [ref=e252]:
+                - strong [ref=e253]: British Livestock Ltd
+                - text: 10 Market Street
+                - text: Leeds
+                - text: LS1 6HB
+                - text: United Kingdom
+              - definition [ref=e254]:
+                - link "Change consignee (Roles and addresses)" [ref=e255] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/addresses?change=1
+                  - text: Change
+                  - generic [ref=e256]: consignee (Roles and addresses)
+            - generic [ref=e257]:
+              - term [ref=e258]: Importer
+              - definition [ref=e259]:
+                - strong [ref=e260]: Import Co UK
+                - text: 20 Trade Road
+                - text: London
+                - text: EC1A 1BB
+                - text: United Kingdom
+              - definition [ref=e261]:
+                - link "Change importer (Roles and addresses)" [ref=e262] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/addresses?change=1
+                  - text: Change
+                  - generic [ref=e263]: importer (Roles and addresses)
+            - generic [ref=e264]:
+              - term [ref=e265]: Place of destination
+              - definition [ref=e266]:
+                - strong [ref=e267]: Tech Imports Ltd
+                - text: 18 Dockside Road
+                - text: London
+                - text: E14 9GE
+                - text: United Kingdom
+              - definition [ref=e268]:
+                - link "Change place of destination (Roles and addresses)" [ref=e269] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/addresses?change=1
+                  - text: Change
+                  - generic [ref=e270]: place of destination (Roles and addresses)
+            - generic [ref=e271]:
+              - term [ref=e272]: County parish holding (CPH) number
+              - definition [ref=e273]: "123456789"
+              - definition [ref=e274]:
+                - link "Change county parish holding (cph) number (Roles and addresses)" [ref=e275] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-3JG6RT/cph-number?change=1
+                  - text: Change
+                  - generic [ref=e276]: county parish holding (cph) number (Roles and addresses)
+        - generic [ref=e277]:
+          - heading "Contact address for this consignment" [level=3] [ref=e279]
+          - generic [ref=e282]:
+            - term [ref=e283]: Address
+            - definition [ref=e284]:
+              - strong [ref=e285]: Animal and Plant Health Agency
+              - text: Woodham Lane
+              - text: Addlestone
+              - text: KT15 3NB
+              - text: United Kingdom
+            - definition [ref=e286]:
+              - link "Change contact address (Contact address for this consignment)" [ref=e287] [cursor=pointer]:
+                - /url: /notifications/GBN-AG-26-3JG6RT/consignment/contact/select?change=1
+                - text: Change
+                - generic [ref=e288]: contact address (Contact address for this consignment)
+        - heading "Now submit your notification" [level=2] [ref=e289]
+        - paragraph [ref=e290]: Continue to the declaration to submit your notification.
+        - button "Continue" [ref=e292] [cursor=pointer]
+  - contentinfo [ref=e293]:
+    - generic [ref=e306]:
+      - generic [ref=e307]:
+        - heading "Support links" [level=2] [ref=e308]
+        - list [ref=e309]:
+          - listitem [ref=e310]:
+            - link "Privacy" [ref=e311] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e312]:
+            - link "Cookies" [ref=e313] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e314]:
+            - link "Accessibility statement" [ref=e315] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e316]
+        - generic [ref=e318]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e319] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e321] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { type Locator, type Page } from '@playwright/test';
+  2  | import { NotificationPage } from '@page-objects/base/base-page';
+  3  | 
+  4  | export class NotificationViewPage extends NotificationPage {
+  5  |   constructor(page: Page) {
+  6  |     super(page, 'notification-view');
+  7  |   }
+  8  | 
+  9  |   get heading(): Locator {
+  10 |     return this.page.getByRole('heading', { level: 1, name: 'Review your notification' });
+  11 |   }
+  12 | 
+  13 |   get journeyStrip(): Locator {
+  14 |     return this.page.locator('.app-journey-strip');
+  15 |   }
+  16 | 
+  17 |   get referenceNumberCaption(): Locator {
+  18 |     return this.journeyStrip;
+  19 |   }
+  20 | 
+  21 |   get btnCopyAsNew(): Locator {
+  22 |     return this.page.getByRole('button', { name: 'Copy as new' });
+  23 |   }
+  24 | 
+  25 |   get btnDelete(): Locator {
+  26 |     return this.page.getByRole('button', { name: 'Delete' });
+  27 |   }
+  28 | 
+  29 |   get continueButton(): Locator {
+  30 |     return this.page.getByRole('button', { name: 'Continue' });
+  31 |   }
+  32 | 
+  33 |   get cancelAmendment(): Locator {
+  34 |     return this.page.getByRole('link', { name: 'Cancel amendment' });
+  35 |   }
+  36 | 
+  37 |   changeLink(name: string | RegExp): Locator {
+  38 |     return this.page.getByRole('link', { name });
+  39 |   }
+  40 | 
+  41 |   summaryCard(name: string): Locator {
+  42 |     return this.page.locator('.govuk-summary-card', { hasText: name });
+  43 |   }
+  44 | 
+  45 |   get errorSummary(): Locator {
+  46 |     return this.page.locator('.govuk-error-summary');
+  47 |   }
+  48 | 
+  49 |   /** The summary-list row whose accessible term is the role, selected directly
+  50 |    * rather than climbing to it, so no XPath parent-axis hop is needed. */
+  51 |   partyRow(card: string, role: string): Locator {
+  52 |     return this.summaryCard(card)
+  53 |       .locator('.govuk-summary-list__row')
+  54 |       .filter({ has: this.page.getByRole('term').and(this.page.getByText(role, { exact: true })) });
+  55 |   }
+  56 | 
+  57 |   /** A summary list has no error state of its own, so an outstanding role
+  58 |    * carries its message in the row's value cell — the first definition of the
+  59 |    * row, ahead of the actions cell. */
+  60 |   partyError(card: string, role: string): Locator {
+  61 |     return this.partyRow(card, role).getByRole('definition').first();
+  62 |   }
+  63 | 
+  64 |   async open(journeyId: string, attemptSignIn: boolean = true): Promise<void> {
+  65 |     await super.open(journeyId, attemptSignIn);
+> 66 |     if (attemptSignIn) await this.heading.waitFor();
+     |                                           ^ Error: locator.waitFor: Test timeout of 30000ms exceeded.
+  67 |   }
+  68 | }
+  69 | 
+```

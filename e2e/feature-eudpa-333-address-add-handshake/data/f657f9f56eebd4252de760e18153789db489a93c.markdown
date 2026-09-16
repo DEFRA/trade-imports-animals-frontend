@@ -1,0 +1,338 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/pages/notification-view-states.spec.ts >> Notification view states >> SUBMITTED >> offers Copy as new and Delete on the read-only view
+- Location: tests/e2e/pages/notification-view-states.spec.ts:85:5
+
+# Error details
+
+```
+Test timeout of 30000ms exceeded while running "beforeEach" hook.
+```
+
+```
+Error: locator.waitFor: Test timeout of 30000ms exceeded.
+Call log:
+  - waiting for getByRole('heading', { name: 'Review your notification', level: 1 }) to be visible
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - generic [ref=e23]:
+        - link "Import notification service" [ref=e25] [cursor=pointer]:
+          - /url: /
+        - navigation "Menu" [ref=e26]:
+          - list [ref=e27]:
+            - listitem [ref=e28]:
+              - link "Dashboard" [ref=e29] [cursor=pointer]:
+                - /url: /
+                - strong [ref=e30]: Dashboard
+            - listitem [ref=e31]:
+              - link "Address book" [ref=e32] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e33]:
+              - link "Manage account" [ref=e34] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e35]:
+              - link "Log out" [ref=e36] [cursor=pointer]:
+                - /url: /auth/sign-out
+  - generic [ref=e37]:
+    - paragraph [ref=e39]:
+      - strong [ref=e40]: Alpha
+      - generic [ref=e41]:
+        - text: This is a new service. Help us improve it and
+        - link "give your feedback by email" [ref=e42] [cursor=pointer]:
+          - /url: mailto:APHAServiceDesk@apha.gov.uk
+        - text: .
+    - link "Back" [ref=e43] [cursor=pointer]:
+      - /url: /notifications/GBN-AG-26-MK5C2W
+    - main [ref=e44]:
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - strong [ref=e48]: Submitted
+          - text: GBN-AG-26-MK5C2W
+        - heading "Check your answers" [level=1] [ref=e49]
+        - generic [ref=e50]:
+          - button "Copy as new" [ref=e52] [cursor=pointer]
+          - button "Delete" [ref=e53] [cursor=pointer]
+        - heading "1. About the consignment" [level=2] [ref=e54]
+        - heading "Consignment details" [level=3] [ref=e55]
+        - generic [ref=e56]:
+          - heading "Import details" [level=4] [ref=e58]
+          - generic [ref=e60]:
+            - generic [ref=e61]:
+              - term [ref=e62]: Country of origin
+              - definition [ref=e63]: France
+            - generic [ref=e64]:
+              - term [ref=e65]: Region of origin code required
+              - definition [ref=e66]: "Yes"
+            - generic [ref=e67]:
+              - term [ref=e68]: Region of origin code
+              - definition [ref=e69]: FR-75
+            - generic [ref=e70]:
+              - term [ref=e71]: Internal reference number
+              - definition [ref=e72]: Imports456GB
+        - heading "Commodity details" [level=3] [ref=e73]
+        - generic [ref=e74]:
+          - heading "Additional animal details" [level=4] [ref=e76]
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - term [ref=e80]: Certified for
+              - definition [ref=e81]: Slaughter
+            - generic [ref=e82]:
+              - term [ref=e83]: Includes unweaned animals
+              - definition [ref=e84]: "No"
+            - generic [ref=e85]:
+              - term [ref=e86]: Reason for import
+              - definition [ref=e87]: Internal market
+            - generic [ref=e88]:
+              - term [ref=e89]: Purpose in the market
+              - definition [ref=e90]: Breeding
+        - heading "Species" [level=3] [ref=e91]
+        - generic [ref=e92]:
+          - heading "Cow (0102) — Bos taurus" [level=4] [ref=e94]
+          - generic [ref=e95]:
+            - generic [ref=e96]:
+              - generic [ref=e97]:
+                - term [ref=e98]: Commodity code
+                - definition [ref=e99]: "0102"
+              - generic [ref=e100]:
+                - term [ref=e101]: Common name
+                - definition [ref=e102]: Cow
+              - generic [ref=e103]:
+                - term [ref=e104]: Species
+                - definition [ref=e105]: Bos taurus
+              - generic [ref=e106]:
+                - term [ref=e107]: Number of animals
+                - definition [ref=e108]: "1"
+              - generic [ref=e109]:
+                - term [ref=e110]: Number of packages
+                - definition [ref=e111]: "5"
+            - heading "Animal details" [level=5] [ref=e112]
+            - table [ref=e113]:
+              - rowgroup [ref=e114]:
+                - row "Animal Ear tag" [ref=e115]:
+                  - columnheader "Animal" [ref=e116]
+                  - columnheader "Ear tag" [ref=e117]
+              - rowgroup [ref=e118]:
+                - row "Animal 1 UK123456789012" [ref=e119]:
+                  - cell "Animal 1" [ref=e120]
+                  - cell "UK123456789012" [ref=e121]
+        - separator [ref=e122]
+        - heading "2. Movement" [level=2] [ref=e123]
+        - generic [ref=e124]:
+          - heading "Arrival details" [level=3] [ref=e126]
+          - generic [ref=e128]:
+            - generic [ref=e129]:
+              - term [ref=e130]: Port of entry
+              - definition [ref=e131]: Aberdeen Harbour (GB ABD)
+            - generic [ref=e132]:
+              - term [ref=e133]: Arrival date at port of entry
+              - definition [ref=e134]: 13/10/2026
+            - generic [ref=e135]:
+              - term [ref=e136]: Means of transport
+              - definition [ref=e137]: Road Vehicle
+            - generic [ref=e138]:
+              - term [ref=e139]: Countries that the consignment will travel through
+              - definition [ref=e140]: France, Belgium
+            - generic [ref=e141]:
+              - term [ref=e142]: Transport identification
+              - definition [ref=e143]: FR-892-LK
+            - generic [ref=e144]:
+              - term [ref=e145]: Transport document reference
+              - definition [ref=e146]: CMR-2026-884721
+        - generic [ref=e147]:
+          - heading "Transport details" [level=3] [ref=e149]
+          - generic [ref=e151]:
+            - generic [ref=e152]:
+              - term [ref=e153]: Name
+              - definition [ref=e154]: García Livestock Transport SL
+            - generic [ref=e155]:
+              - term [ref=e156]: Address
+              - definition [ref=e157]:
+                - text: 43 East Hague Extension
+                - text: Delectus sitodio p. Laborum Odio tempor
+                - text: Quasoccaecat ut ear, 30055
+            - generic [ref=e158]:
+              - term [ref=e159]: Country
+              - definition [ref=e160]: Switzerland
+            - generic [ref=e161]:
+              - term [ref=e162]: Approval number
+              - definition [ref=e163]: ES-T2-45001294
+            - generic [ref=e164]:
+              - term [ref=e165]: Type
+              - definition [ref=e166]: Commercial
+        - separator [ref=e167]
+        - heading "3. Addresses" [level=2] [ref=e168]
+        - generic [ref=e169]:
+          - heading "Roles and addresses" [level=3] [ref=e171]
+          - generic [ref=e173]:
+            - generic [ref=e174]:
+              - term [ref=e175]: Place of origin
+              - definition [ref=e176]:
+                - strong [ref=e177]: Origin Farm
+                - text: 1 Farm Lane
+                - text: Ennis
+                - text: V95 X7P2
+                - text: Ireland
+            - generic [ref=e178]:
+              - term [ref=e179]: Consignor
+              - definition [ref=e180]:
+                - strong [ref=e181]: Astra Rosales
+                - text: 43 East Hague Extension
+                - text: Bern
+                - text: "30055"
+                - text: Switzerland
+            - generic [ref=e182]:
+              - term [ref=e183]: Consignee
+              - definition [ref=e184]:
+                - strong [ref=e185]: British Livestock Ltd
+                - text: 10 Market Street
+                - text: Leeds
+                - text: LS1 6HB
+                - text: United Kingdom
+            - generic [ref=e186]:
+              - term [ref=e187]: Importer
+              - definition [ref=e188]:
+                - strong [ref=e189]: Import Co UK
+                - text: 20 Trade Road
+                - text: London
+                - text: EC1A 1BB
+                - text: United Kingdom
+            - generic [ref=e190]:
+              - term [ref=e191]: Place of destination
+              - definition [ref=e192]:
+                - strong [ref=e193]: Tech Imports Ltd
+                - text: 18 Dockside Road
+                - text: London
+                - text: E14 9GE
+                - text: United Kingdom
+            - generic [ref=e194]:
+              - term [ref=e195]: County parish holding (CPH) number
+              - definition [ref=e196]: "123456789"
+        - generic [ref=e197]:
+          - heading "Contact address for this consignment" [level=3] [ref=e199]
+          - generic [ref=e202]:
+            - term [ref=e203]: Address
+            - definition [ref=e204]:
+              - strong [ref=e205]: Animal and Plant Health Agency
+              - text: Woodham Lane
+              - text: Addlestone
+              - text: KT15 3NB
+              - text: United Kingdom
+        - heading "Now submit your notification" [level=2] [ref=e206]
+        - paragraph [ref=e207]: Continue to the declaration to submit your notification.
+        - button "Continue" [ref=e209] [cursor=pointer]
+  - contentinfo [ref=e210]:
+    - generic [ref=e223]:
+      - generic [ref=e224]:
+        - heading "Support links" [level=2] [ref=e225]
+        - list [ref=e226]:
+          - listitem [ref=e227]:
+            - link "Privacy" [ref=e228] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e229]:
+            - link "Cookies" [ref=e230] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e231]:
+            - link "Accessibility statement" [ref=e232] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e233]
+        - generic [ref=e235]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e236] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e238] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { type Locator, type Page } from '@playwright/test';
+  2  | import { NotificationPage } from '@page-objects/base/base-page';
+  3  | 
+  4  | export class NotificationViewPage extends NotificationPage {
+  5  |   constructor(page: Page) {
+  6  |     super(page, 'notification-view');
+  7  |   }
+  8  | 
+  9  |   get heading(): Locator {
+  10 |     return this.page.getByRole('heading', { level: 1, name: 'Review your notification' });
+  11 |   }
+  12 | 
+  13 |   get journeyStrip(): Locator {
+  14 |     return this.page.locator('.app-journey-strip');
+  15 |   }
+  16 | 
+  17 |   get referenceNumberCaption(): Locator {
+  18 |     return this.journeyStrip;
+  19 |   }
+  20 | 
+  21 |   get btnCopyAsNew(): Locator {
+  22 |     return this.page.getByRole('button', { name: 'Copy as new' });
+  23 |   }
+  24 | 
+  25 |   get btnDelete(): Locator {
+  26 |     return this.page.getByRole('button', { name: 'Delete' });
+  27 |   }
+  28 | 
+  29 |   get continueButton(): Locator {
+  30 |     return this.page.getByRole('button', { name: 'Continue' });
+  31 |   }
+  32 | 
+  33 |   get cancelAmendment(): Locator {
+  34 |     return this.page.getByRole('link', { name: 'Cancel amendment' });
+  35 |   }
+  36 | 
+  37 |   changeLink(name: string | RegExp): Locator {
+  38 |     return this.page.getByRole('link', { name });
+  39 |   }
+  40 | 
+  41 |   summaryCard(name: string): Locator {
+  42 |     return this.page.locator('.govuk-summary-card', { hasText: name });
+  43 |   }
+  44 | 
+  45 |   get errorSummary(): Locator {
+  46 |     return this.page.locator('.govuk-error-summary');
+  47 |   }
+  48 | 
+  49 |   /** The summary-list row whose accessible term is the role, selected directly
+  50 |    * rather than climbing to it, so no XPath parent-axis hop is needed. */
+  51 |   partyRow(card: string, role: string): Locator {
+  52 |     return this.summaryCard(card)
+  53 |       .locator('.govuk-summary-list__row')
+  54 |       .filter({ has: this.page.getByRole('term').and(this.page.getByText(role, { exact: true })) });
+  55 |   }
+  56 | 
+  57 |   /** A summary list has no error state of its own, so an outstanding role
+  58 |    * carries its message in the row's value cell — the first definition of the
+  59 |    * row, ahead of the actions cell. */
+  60 |   partyError(card: string, role: string): Locator {
+  61 |     return this.partyRow(card, role).getByRole('definition').first();
+  62 |   }
+  63 | 
+  64 |   async open(journeyId: string, attemptSignIn: boolean = true): Promise<void> {
+  65 |     await super.open(journeyId, attemptSignIn);
+> 66 |     if (attemptSignIn) await this.heading.waitFor();
+     |                                           ^ Error: locator.waitFor: Test timeout of 30000ms exceeded.
+  67 |   }
+  68 | }
+  69 | 
+```

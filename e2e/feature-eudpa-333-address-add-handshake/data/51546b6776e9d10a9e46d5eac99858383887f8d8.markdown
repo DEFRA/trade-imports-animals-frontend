@@ -1,0 +1,89 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/ins/address-book-add-handshake-guard.spec.ts >> INS address book add handshake guard >> refuses an unrecognised journey type
+- Location: tests/e2e/features/ins/address-book-add-handshake-guard.spec.ts:9:3
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: getByText('Page not found')
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" with timeout 5000ms
+  - waiting for getByText('Page not found')
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- link "GOV.UK":
+  - /url: https://www.gov.uk/
+  - img "GOV.UK"
+- navigation "Menu":
+  - list:
+    - listitem:
+      - link "Dashboard":
+        - /url: /
+    - listitem:
+      - link "Address book":
+        - /url: /address-book
+        - strong: Address book
+- text: Andrew Farmer
+- link "Sign out":
+  - /url: /signout
+- main:
+  - heading "400" [level=1]
+  - paragraph: Bad Request
+- heading "Support links" [level=2]
+- list:
+  - listitem:
+    - link "Privacy":
+      - /url: https://www.gov.uk/help/privacy-notice
+  - listitem:
+    - link "Cookies":
+      - /url: https://www.gov.uk/help/cookies
+  - listitem:
+    - link "Accessibility statement":
+      - /url: https://www.gov.uk/help/accessibility-statement
+- text: All content is available under the
+- link "Open Government Licence v3.0":
+  - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+- text: ", except where otherwise stated"
+- link "© Crown copyright":
+  - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | import { skipUnlessComposeEnvironment } from '@utils/playwright/environment';
+  3  | 
+  4  | test.describe('INS address book add handshake guard', { tag: ['@integration'] }, () => {
+  5  |   test.beforeEach(() => {
+  6  |     skipUnlessComposeEnvironment('INS handshake routes are only exercised against the compose stack');
+  7  |   });
+  8  | 
+  9  |   test('refuses an unrecognised journey type', async ({ pages }) => {
+  10 |     await pages.page.goto(
+  11 |       '/address-book/add?journey-type=not-a-journey&notification-id=GBN-AG-26-4F7K2P&fulfilment-id=9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d',
+  12 |     );
+  13 | 
+> 14 |     await expect(pages.page.getByText('Page not found')).toBeVisible();
+     |                                                          ^ Error: expect(locator).toBeVisible() failed
+  15 |   });
+  16 | });
+  17 | 
+```

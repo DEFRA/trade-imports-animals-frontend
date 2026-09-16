@@ -1,0 +1,283 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/addresses-add-handshake.spec.ts >> Add an address from the journey via INS >> cancelling INS add returns to the picker without saving an address
+- Location: tests/e2e/features/addresses-add-handshake.spec.ts:49:3
+
+# Error details
+
+```
+Error: locator.click: Error: strict mode violation: getByRole('link', { name: 'Back' }) resolved to 2 elements:
+    1) <a class="govuk-link" href="mailto:APHAServiceDesk@apha.gov.uk">give your feedback by email</a> aka getByRole('link', { name: 'give your feedback by email' })
+    2) <a class="govuk-back-link" href="/notifications/GBN-AG-26-AZ7NC5/addresses">Back</a> aka getByRole('link', { name: 'Back', exact: true })
+
+Call log:
+  - waiting for getByRole('link', { name: 'Back' })
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "GOV.UK" [ref=e7] [cursor=pointer]:
+      - /url: https://www.gov.uk/
+      - img "GOV.UK" [ref=e8]
+    - region "Service information" [ref=e21]:
+      - generic [ref=e23]:
+        - link "Import notification service" [ref=e25] [cursor=pointer]:
+          - /url: /
+        - navigation "Menu" [ref=e26]:
+          - list [ref=e27]:
+            - listitem [ref=e28]:
+              - link "Dashboard" [ref=e29] [cursor=pointer]:
+                - /url: /
+                - strong [ref=e30]: Dashboard
+            - listitem [ref=e31]:
+              - link "Address book" [ref=e32] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e33]:
+              - link "Manage account" [ref=e34] [cursor=pointer]:
+                - /url: "#"
+            - listitem [ref=e35]:
+              - link "Log out" [ref=e36] [cursor=pointer]:
+                - /url: /auth/sign-out
+  - generic [ref=e37]:
+    - paragraph [ref=e39]:
+      - strong [ref=e40]: Alpha
+      - generic [ref=e41]:
+        - text: This is a new service. Help us improve it and
+        - link "give your feedback by email" [ref=e42] [cursor=pointer]:
+          - /url: mailto:APHAServiceDesk@apha.gov.uk
+        - text: .
+    - link "Back" [ref=e43] [cursor=pointer]:
+      - /url: /notifications/GBN-AG-26-AZ7NC5/addresses
+    - main [ref=e44]:
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - strong [ref=e48]: Draft
+          - text: GBN-AG-26-AZ7NC5
+        - generic [ref=e49]: Consignment parties
+        - heading "Consignor or exporter" [level=1] [ref=e50]
+        - paragraph [ref=e51]: This is the sender of the consignment.
+        - paragraph [ref=e52]:
+          - link "Add a new address" [ref=e53] [cursor=pointer]:
+            - /url: http://localhost:3002/address-book/add?journey-type=gbn-ag&notification-id=GBN-AG-26-AZ7NC5&fulfilment-id=9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e56]: Search
+            - generic [ref=e57]: Name, address or country
+            - textbox "Search" [ref=e58]
+          - button "Search" [ref=e59] [cursor=pointer]
+          - table "Showing 5 of 17 addresses" [ref=e60]:
+            - caption [ref=e61]: Showing 5 of 17 addresses
+            - rowgroup [ref=e62]:
+              - row "Select Name Address Country Actions" [ref=e63]:
+                - columnheader "Select" [ref=e64]:
+                  - generic [ref=e65]: Select
+                - columnheader "Name" [ref=e66]
+                - columnheader "Address" [ref=e67]
+                - columnheader "Country" [ref=e68]
+                - columnheader "Actions" [ref=e69]:
+                  - generic [ref=e70]: Actions
+            - rowgroup [ref=e71]:
+              - row "Select Doomed Farm 1789322607759 Doomed Farm 1789322607759 7 Gone Street, Carlisle, CA1 2BB United Kingdom" [ref=e72]:
+                - cell "Select Doomed Farm 1789322607759" [ref=e73]:
+                  - generic [ref=e76]:
+                    - radio "Select Doomed Farm 1789322607759" [ref=e77] [cursor=pointer]
+                    - generic [ref=e79] [cursor=pointer]: Select Doomed Farm 1789322607759
+                - cell "Doomed Farm 1789322607759" [ref=e80]
+                - cell "7 Gone Street, Carlisle, CA1 2BB" [ref=e81]
+                - cell "United Kingdom" [ref=e82]
+                - cell [ref=e83]:
+                  - group [ref=e84]:
+                    - generic "View details for Doomed Farm 1789322607759" [ref=e85] [cursor=pointer]:
+                      - generic [ref=e86]:
+                        - text: View details
+                        - generic [ref=e87]: for Doomed Farm 1789322607759
+              - row "Select Renamed Origin 1789322605305 Renamed Origin 1789322605305 4 Origin Lane, Penrith, CA11 7AA United Kingdom" [ref=e88]:
+                - cell "Select Renamed Origin 1789322605305" [ref=e89]:
+                  - generic [ref=e92]:
+                    - radio "Select Renamed Origin 1789322605305" [ref=e93] [cursor=pointer]
+                    - generic [ref=e95] [cursor=pointer]: Select Renamed Origin 1789322605305
+                - cell "Renamed Origin 1789322605305" [ref=e96]
+                - cell "4 Origin Lane, Penrith, CA11 7AA" [ref=e97]
+                - cell "United Kingdom" [ref=e98]
+                - cell [ref=e99]:
+                  - group [ref=e100]:
+                    - generic "View details for Renamed Origin 1789322605305" [ref=e101] [cursor=pointer]:
+                      - generic [ref=e102]:
+                        - text: View details
+                        - generic [ref=e103]: for Renamed Origin 1789322605305
+              - row "Select Renamed Holding 1789322603048 Renamed Holding 1789322603048 3 Link Lane, Penrith, CA11 7AA United Kingdom" [ref=e104]:
+                - cell "Select Renamed Holding 1789322603048" [ref=e105]:
+                  - generic [ref=e108]:
+                    - radio "Select Renamed Holding 1789322603048" [ref=e109] [cursor=pointer]
+                    - generic [ref=e111] [cursor=pointer]: Select Renamed Holding 1789322603048
+                - cell "Renamed Holding 1789322603048" [ref=e112]
+                - cell "3 Link Lane, Penrith, CA11 7AA" [ref=e113]
+                - cell "United Kingdom" [ref=e114]
+                - cell [ref=e115]:
+                  - group [ref=e116]:
+                    - generic "View details for Renamed Holding 1789322603048" [ref=e117] [cursor=pointer]:
+                      - generic [ref=e118]:
+                        - text: View details
+                        - generic [ref=e119]: for Renamed Holding 1789322603048
+              - row "Select Handshake Farm 1789322598807 Handshake Farm 1789322598807 9 Handshake Lane, Carlisle, CA2 7AA United Kingdom" [ref=e120]:
+                - cell "Select Handshake Farm 1789322598807" [ref=e121]:
+                  - generic [ref=e124]:
+                    - radio "Select Handshake Farm 1789322598807" [ref=e125] [cursor=pointer]
+                    - generic [ref=e127] [cursor=pointer]: Select Handshake Farm 1789322598807
+                - cell "Handshake Farm 1789322598807" [ref=e128]
+                - cell "9 Handshake Lane, Carlisle, CA2 7AA" [ref=e129]
+                - cell "United Kingdom" [ref=e130]
+                - cell [ref=e131]:
+                  - group [ref=e132]:
+                    - generic "View details for Handshake Farm 1789322598807" [ref=e133] [cursor=pointer]:
+                      - generic [ref=e134]:
+                        - text: View details
+                        - generic [ref=e135]: for Handshake Farm 1789322598807
+              - row "Select Import Co UK Import Co UK 20 Trade Road, London, EC1A 1BB United Kingdom" [ref=e136]:
+                - cell "Select Import Co UK" [ref=e137]:
+                  - generic [ref=e140]:
+                    - radio "Select Import Co UK" [ref=e141] [cursor=pointer]
+                    - generic [ref=e143] [cursor=pointer]: Select Import Co UK
+                - cell "Import Co UK" [ref=e144]
+                - cell "20 Trade Road, London, EC1A 1BB" [ref=e145]
+                - cell "United Kingdom" [ref=e146]
+                - cell [ref=e147]:
+                  - group [ref=e148]:
+                    - generic "View details for Import Co UK" [ref=e149] [cursor=pointer]:
+                      - generic [ref=e150]:
+                        - text: View details
+                        - generic [ref=e151]: for Import Co UK
+          - navigation "Pagination" [ref=e152]:
+            - list [ref=e153]:
+              - listitem [ref=e154]:
+                - link "Page 1" [ref=e155] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-AZ7NC5/consignors/select?page=1
+                  - text: "1"
+              - listitem [ref=e156]:
+                - link "Page 2" [ref=e157] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-AZ7NC5/consignors/select?page=2
+                  - text: "2"
+              - listitem [ref=e158]: ⋯
+              - listitem [ref=e159]:
+                - link "Page 4" [ref=e160] [cursor=pointer]:
+                  - /url: /notifications/GBN-AG-26-AZ7NC5/consignors/select?page=4
+                  - text: "4"
+            - link "Next page" [ref=e162] [cursor=pointer]:
+              - /url: /notifications/GBN-AG-26-AZ7NC5/consignors/select?page=2
+              - generic [ref=e163]:
+                - text: Next
+                - generic [ref=e164]: page
+              - img [ref=e165]
+          - button "Save and continue" [ref=e168] [cursor=pointer]
+  - contentinfo [ref=e169]:
+    - generic [ref=e182]:
+      - generic [ref=e183]:
+        - heading "Support links" [level=2] [ref=e184]
+        - list [ref=e185]:
+          - listitem [ref=e186]:
+            - link "Privacy" [ref=e187] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/privacy-notice
+          - listitem [ref=e188]:
+            - link "Cookies" [ref=e189] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/cookies
+          - listitem [ref=e190]:
+            - link "Accessibility statement" [ref=e191] [cursor=pointer]:
+              - /url: https://www.gov.uk/help/accessibility-statement
+        - img [ref=e192]
+        - generic [ref=e194]:
+          - text: All content is available under the
+          - link "Open Government Licence v3.0" [ref=e195] [cursor=pointer]:
+            - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+          - text: ", except where otherwise stated"
+      - link "© Crown copyright" [ref=e197] [cursor=pointer]:
+        - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | import { skipUnlessComposeEnvironment } from '@utils/playwright/environment';
+  3  | import { type NewAddressDetails } from '@page-objects/ins/ins-address-book-add-page';
+  4  | 
+  5  | test.describe('Add an address from the journey via INS', { tag: ['@integration'] }, () => {
+  6  |   test.beforeEach(() => {
+  7  |     skipUnlessComposeEnvironment('the handshake crosses animals-frontend and ins-frontend, which only the compose stack runs together');
+  8  |   });
+  9  | 
+  10 |   test('saving a new address in INS returns to the picker with it selected and committed', async ({ journey, pages }) => {
+  11 |     const stamp = Date.now();
+  12 |     const farmName = `Handshake Farm ${stamp}`;
+  13 |     const details: NewAddressDetails = {
+  14 |       name: farmName,
+  15 |       addressLine1: '9 Handshake Lane',
+  16 |       townOrCity: 'Carlisle',
+  17 |       postcode: 'CA2 7AA',
+  18 |       country: 'United Kingdom',
+  19 |       phone: '01228 555 0199',
+  20 |       email: `handshake-${stamp}@example.co.uk`,
+  21 |     };
+  22 | 
+  23 |     await journey.startNotification();
+  24 |     await journey.unlockSections();
+  25 | 
+  26 |     await pages.overview.task('Roles and addresses').click();
+  27 |     await pages.addresses.addParty('Consignor or exporter').click();
+  28 | 
+  29 |     await pages.consignorSelection.addNewAddress.click();
+  30 |     await pages.insAddressBookAdd.ensureSignedIn();
+  31 |     await expect(pages.page).toHaveURL(/localhost:3002\/address-book\/add\?/);
+  32 |     await expect(pages.insAddressBookAdd.heading).toBeVisible();
+  33 | 
+  34 |     await pages.insAddressBookAdd.fill(details);
+  35 |     await pages.insAddressBookAdd.save();
+  36 |     await pages.page.waitForURL(/consignors\/select/, { timeout: 15_000 });
+  37 | 
+  38 |     await expect(pages.consignorSelection.heading).toBeVisible();
+  39 |     await expect(pages.page).toHaveURL(/consignors\/select/);
+  40 |     await pages.consignorSelection.search.fill(farmName);
+  41 |     await pages.consignorSelection.searchButton.click();
+  42 |     await expect(pages.consignorSelection.party(farmName)).toBeChecked();
+  43 | 
+  44 |     await pages.consignorSelection.saveAndContinue.click();
+  45 |     await expect(pages.addresses.heading).toBeVisible();
+  46 |     await expect(pages.addresses.partyRow('Consignor or exporter')).toContainText(farmName);
+  47 |   });
+  48 | 
+  49 |   test('cancelling INS add returns to the picker without saving an address', async ({ journey, pages }) => {
+  50 |     await journey.startNotification();
+  51 |     await journey.unlockSections();
+  52 | 
+  53 |     await pages.overview.task('Roles and addresses').click();
+  54 |     await pages.addresses.addParty('Consignor or exporter').click();
+  55 | 
+  56 |     await pages.consignorSelection.addNewAddress.click();
+  57 |     await pages.insAddressBookAdd.ensureSignedIn();
+  58 |     await expect(pages.insAddressBookAdd.heading).toBeVisible();
+  59 | 
+  60 |     await pages.insAddressBookAdd.btnCancelFromJourney.click();
+  61 |     await pages.page.waitForURL(/consignors\/select/, { timeout: 15_000 });
+  62 | 
+  63 |     await expect(pages.consignorSelection.heading).toBeVisible();
+  64 |     await expect(pages.page).toHaveURL(/consignors\/select/);
+  65 | 
+> 66 |     await pages.page.getByRole('link', { name: 'Back' }).click();
+     |                                                          ^ Error: locator.click: Error: strict mode violation: getByRole('link', { name: 'Back' }) resolved to 2 elements:
+  67 |     await expect(pages.addresses.heading).toBeVisible();
+  68 |     await expect(pages.addresses.partyRow('Consignor or exporter')).toContainText('Not added yet');
+  69 |   });
+  70 | });
+  71 | 
+```

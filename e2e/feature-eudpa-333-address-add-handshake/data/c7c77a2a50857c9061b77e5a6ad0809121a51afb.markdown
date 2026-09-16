@@ -1,0 +1,283 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/notification-dashboard-search.spec.ts >> Notification dashboard search >> opens notification view when clicking View after searching by reference number
+- Location: tests/e2e/features/notification-dashboard-search.spec.ts:36:3
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: getByRole('heading', { name: 'Review your notification', level: 1 })
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" with timeout 5000ms
+  - waiting for getByRole('heading', { name: 'Review your notification', level: 1 })
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- banner:
+  - link "GOV.UK":
+    - /url: https://www.gov.uk/
+    - img "GOV.UK"
+  - region "Service information":
+    - link "Import notification service":
+      - /url: /
+    - navigation "Menu":
+      - list:
+        - listitem:
+          - link "Dashboard":
+            - /url: /
+            - strong: Dashboard
+        - listitem:
+          - link "Address book":
+            - /url: "#"
+        - listitem:
+          - link "Manage account":
+            - /url: "#"
+        - listitem:
+          - link "Log out":
+            - /url: /auth/sign-out
+- paragraph:
+  - strong: Alpha
+  - text: This is a new service. Help us improve it and
+  - link "give your feedback by email":
+    - /url: mailto:APHAServiceDesk@apha.gov.uk
+  - text: .
+- link "Back":
+  - /url: /notifications/GBN-AG-26-DXAPAT
+- main:
+  - strong: Submitted
+  - text: GBN-AG-26-DXAPAT
+  - heading "Check your answers" [level=1]
+  - button "Copy as new"
+  - button "Delete"
+  - heading "1. About the consignment" [level=2]
+  - heading "Consignment details" [level=3]
+  - heading "Import details" [level=4]
+  - term: Country of origin
+  - definition: France
+  - term: Region of origin code required
+  - definition: "Yes"
+  - term: Region of origin code
+  - definition: FR-75
+  - term: Internal reference number
+  - definition: Imports456GB
+  - heading "Commodity details" [level=3]
+  - heading "Additional animal details" [level=4]
+  - term: Certified for
+  - definition: Slaughter
+  - term: Includes unweaned animals
+  - definition: "No"
+  - term: Reason for import
+  - definition: Internal market
+  - term: Purpose in the market
+  - definition: Breeding
+  - heading "Species" [level=3]
+  - heading "Cow (0102) — Bos taurus" [level=4]
+  - term: Commodity code
+  - definition: "0102"
+  - term: Common name
+  - definition: Cow
+  - term: Species
+  - definition: Bos taurus
+  - term: Number of animals
+  - definition: "1"
+  - term: Number of packages
+  - definition: "5"
+  - heading "Animal details" [level=5]
+  - table:
+    - rowgroup:
+      - row "Animal Ear tag":
+        - columnheader "Animal"
+        - columnheader "Ear tag"
+    - rowgroup:
+      - row "Animal 1 UK123456789012":
+        - cell "Animal 1"
+        - cell "UK123456789012"
+  - separator
+  - heading "2. Movement" [level=2]
+  - heading "Arrival details" [level=3]
+  - term: Port of entry
+  - definition: Aberdeen Harbour (GB ABD)
+  - term: Arrival date at port of entry
+  - definition: 13/10/2026
+  - term: Means of transport
+  - definition: Road Vehicle
+  - term: Countries that the consignment will travel through
+  - definition: France, Belgium
+  - term: Transport identification
+  - definition: FR-892-LK
+  - term: Transport document reference
+  - definition: CMR-2026-884721
+  - heading "Transport details" [level=3]
+  - term: Name
+  - definition: García Livestock Transport SL
+  - term: Address
+  - definition: 43 East Hague Extension Delectus sitodio p. Laborum Odio tempor Quasoccaecat ut ear, 30055
+  - term: Country
+  - definition: Switzerland
+  - term: Approval number
+  - definition: ES-T2-45001294
+  - term: Type
+  - definition: Commercial
+  - separator
+  - heading "3. Addresses" [level=2]
+  - heading "Roles and addresses" [level=3]
+  - term: Place of origin
+  - definition:
+    - strong: Origin Farm
+    - text: 1 Farm Lane Ennis V95 X7P2 Ireland
+  - term: Consignor
+  - definition:
+    - strong: Astra Rosales
+    - text: 43 East Hague Extension Bern 30055 Switzerland
+  - term: Consignee
+  - definition:
+    - strong: British Livestock Ltd
+    - text: 10 Market Street Leeds LS1 6HB United Kingdom
+  - term: Importer
+  - definition:
+    - strong: Import Co UK
+    - text: 20 Trade Road London EC1A 1BB United Kingdom
+  - term: Place of destination
+  - definition:
+    - strong: Tech Imports Ltd
+    - text: 18 Dockside Road London E14 9GE United Kingdom
+  - term: County parish holding (CPH) number
+  - definition: "123456789"
+  - heading "Contact address for this consignment" [level=3]
+  - term: Address
+  - definition:
+    - strong: Animal and Plant Health Agency
+    - text: Woodham Lane Addlestone KT15 3NB United Kingdom
+  - heading "Now submit your notification" [level=2]
+  - paragraph: Continue to the declaration to submit your notification.
+  - button "Continue"
+- contentinfo:
+  - heading "Support links" [level=2]
+  - list:
+    - listitem:
+      - link "Privacy":
+        - /url: https://www.gov.uk/help/privacy-notice
+    - listitem:
+      - link "Cookies":
+        - /url: https://www.gov.uk/help/cookies
+    - listitem:
+      - link "Accessibility statement":
+        - /url: https://www.gov.uk/help/accessibility-statement
+  - text: All content is available under the
+  - link "Open Government Licence v3.0":
+    - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+  - text: ", except where otherwise stated"
+  - link "© Crown copyright":
+    - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | import { sortByValues } from '@domain/constants/sort-by-values';
+  3  | 
+  4  | const NO_MATCH_REFERENCE_NUMBER = 'GBN-AG-26-ZZZZZZ';
+  5  | 
+  6  | const escapeHyphens = (reference: string) => reference.replace(/-/g, '\\-');
+  7  | 
+  8  | const wholeReferenceNumberParamPattern = (reference: string) => new RegExp(`[?&]referenceNumber=${escapeHyphens(reference)}(?:&|$)`);
+  9  | 
+  10 | const referenceNumberAnywhereInUrlPattern = (reference: string) => new RegExp(`referenceNumber=${escapeHyphens(reference)}`);
+  11 | 
+  12 | test.describe('Notification dashboard search', () => {
+  13 |   test.beforeEach(async ({ journey }) => {
+  14 |     await journey.toNotificationDashboard();
+  15 |   });
+  16 | 
+  17 |   test('displays the filter notifications search form', async ({ pages }) => {
+  18 |     await expect(pages.notificationDashboard.filterHeading).toBeVisible();
+  19 |     await expect(pages.notificationDashboard.searchForm).toBeVisible();
+  20 |     await expect(pages.notificationDashboard.inputReferenceSearch).toBeVisible();
+  21 |     await expect(pages.notificationDashboard.btnSearch).toBeVisible();
+  22 |   });
+  23 | 
+  24 |   test('returns matching notification when searching by complete reference number', async ({ pages, seededJourney, journey }) => {
+  25 |     const referenceNumber = await seededJourney.createSubmittedNotification();
+  26 |     await journey.toNotificationDashboard();
+  27 | 
+  28 |     await pages.notificationDashboard.searchForReference(referenceNumber);
+  29 | 
+  30 |     await expect(pages.page).toHaveURL(wholeReferenceNumberParamPattern(referenceNumber));
+  31 |     await expect(pages.notificationDashboard.notificationCards).toHaveCount(1);
+  32 |     await expect(pages.notificationDashboard.notificationCardDetails(0).heading).toContainText(referenceNumber);
+  33 |     await expect(pages.notificationDashboard.resultsLabel).toHaveText('Showing 1 Result');
+  34 |   });
+  35 | 
+  36 |   test('opens notification view when clicking View after searching by reference number', async ({ pages, seededJourney, journey }) => {
+  37 |     const referenceNumber = await seededJourney.createSubmittedNotification();
+  38 |     await journey.toNotificationDashboard();
+  39 | 
+  40 |     await pages.notificationDashboard.searchForReference(referenceNumber);
+  41 |     await expect(pages.notificationDashboard.notificationCards).toHaveCount(1);
+  42 | 
+  43 |     await pages.notificationDashboard.viewLink(referenceNumber).click();
+  44 | 
+  45 |     await expect(pages.page).toHaveURL(new RegExp(pages.notificationView.expectedUrl(referenceNumber)));
+> 46 |     await expect(pages.notificationView.heading).toBeVisible();
+     |                                                  ^ Error: expect(locator).toBeVisible() failed
+  47 |     await expect(pages.notificationView.referenceNumberCaption).toContainText(referenceNumber);
+  48 |   });
+  49 | 
+  50 |   test('shows no notifications found when search has no matches', async ({ pages }) => {
+  51 |     await pages.notificationDashboard.searchForReference(NO_MATCH_REFERENCE_NUMBER);
+  52 | 
+  53 |     await expect(pages.page).toHaveURL(wholeReferenceNumberParamPattern(NO_MATCH_REFERENCE_NUMBER));
+  54 |     await expect(pages.notificationDashboard.notificationCards).toHaveCount(0);
+  55 |     await expect(pages.notificationDashboard.resultsLabel).toHaveText('No notifications found');
+  56 |   });
+  57 | 
+  58 |   test('shows no notifications found when search text is free text', async ({ pages }) => {
+  59 |     await pages.notificationDashboard.searchForReference('not-a-valid-reference');
+  60 | 
+  61 |     await expect(pages.page).toHaveURL(/referenceNumber=not-a-valid-reference/);
+  62 |     await expect(pages.notificationDashboard.notificationCards).toHaveCount(0);
+  63 |     await expect(pages.notificationDashboard.resultsLabel).toHaveText('No notifications found');
+  64 |     await expect(pages.notificationDashboard.errorSummary).not.toBeVisible();
+  65 |   });
+  66 | 
+  67 |   test('preserves referenceNumber when updating sort after search', async ({ pages, seededJourney, journey }) => {
+  68 |     const referenceNumber = await seededJourney.createSubmittedNotification();
+  69 |     await journey.toNotificationDashboard();
+  70 | 
+  71 |     await pages.notificationDashboard.searchForReference(referenceNumber);
+  72 |     await pages.notificationDashboard.sortBy(sortByValues.dateCreatedNewestToOldest);
+  73 | 
+  74 |     await expect(pages.page).toHaveURL(referenceNumberAnywhereInUrlPattern(referenceNumber));
+  75 |     await expect(pages.page).toHaveURL(/sort=createdAt%2Cdesc/);
+  76 |     await expect(pages.notificationDashboard.inputReferenceSearch).toHaveValue(referenceNumber);
+  77 |   });
+  78 | 
+  79 |   test('preserves referenceNumber in the URL when a page param is present', async ({ pages }) => {
+  80 |     await pages.notificationDashboard.searchForReference(NO_MATCH_REFERENCE_NUMBER);
+  81 | 
+  82 |     await pages.page.goto(`/?referenceNumber=${NO_MATCH_REFERENCE_NUMBER}&page=2`);
+  83 |     await pages.notificationDashboard.heading.waitFor();
+  84 |     await pages.notificationDashboard.waitForNotificationList();
+  85 | 
+  86 |     await expect(pages.page).toHaveURL(referenceNumberAnywhereInUrlPattern(NO_MATCH_REFERENCE_NUMBER));
+  87 |     await expect(pages.notificationDashboard.inputReferenceSearch).toHaveValue(NO_MATCH_REFERENCE_NUMBER);
+  88 |   });
+  89 | });
+  90 | 
+```

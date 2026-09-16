@@ -1,0 +1,195 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/addresses-add-handshake.spec.ts >> Add an address from the journey via INS >> saving a new address in INS returns to the picker with it selected and committed
+- Location: tests/e2e/features/addresses-add-handshake.spec.ts:10:3
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: getByRole('heading', { name: 'Consignor or exporter', level: 1 })
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" with timeout 5000ms
+  - waiting for getByRole('heading', { name: 'Consignor or exporter', level: 1 })
+
+```
+
+```yaml
+- link "Skip to main content":
+  - /url: "#main-content"
+- link "GOV.UK":
+  - /url: https://www.gov.uk/
+  - img "GOV.UK"
+- navigation "Menu":
+  - list:
+    - listitem:
+      - link "Dashboard":
+        - /url: /
+    - listitem:
+      - link "Address book":
+        - /url: /address-book
+        - strong: Address book
+- text: Andrew Farmer
+- link "Sign out":
+  - /url: /signout
+- main:
+  - heading "Add address details" [level=1]
+  - heading "Enter address details" [level=2]
+  - text: Name or organisation name
+  - textbox "Name or organisation name": Handshake Farm 1789141888505
+  - text: Address line 1
+  - textbox "Address line 1": 9 Handshake Lane
+  - text: Address line 2 (optional)
+  - textbox "Address line 2 (optional)"
+  - text: Town or city
+  - textbox "Town or city": Carlisle
+  - text: County (optional)
+  - textbox "County (optional)"
+  - text: Postcode or Zip code
+  - textbox "Postcode or Zip code": CA2 7AA
+  - text: Country
+  - combobox "Country":
+    - option "Select a country"
+    - option "United Kingdom" [selected]
+    - option "Austria"
+    - option "Belgium"
+    - option "Bulgaria"
+    - option "Croatia"
+    - option "Cyprus"
+    - option "Czechia"
+    - option "Denmark"
+    - option "Estonia"
+    - option "Finland"
+    - option "France"
+    - option "Germany"
+    - option "Greece"
+    - option "Hungary"
+    - option "Iceland"
+    - option "Ireland"
+    - option "Italy"
+    - option "Latvia"
+    - option "Liechtenstein"
+    - option "Lithuania"
+    - option "Luxembourg"
+    - option "Malta"
+    - option "Netherlands (the)"
+    - option "Norway"
+    - option "Poland"
+    - option "Portugal"
+    - option "Romania"
+    - option "Slovakia"
+    - option "Slovenia"
+    - option "Spain"
+    - option "Sweden"
+    - option "Switzerland"
+  - heading "Enter contact details" [level=2]
+  - text: Email address
+  - textbox "Email address": handshake-1789141888505@example.co.uk
+  - text: Phone number For international numbers include the country code
+  - textbox "Phone number": 01228 555 0199
+  - button "Save and continue"
+  - button "Cancel and return to address page"
+- heading "Support links" [level=2]
+- list:
+  - listitem:
+    - link "Privacy":
+      - /url: https://www.gov.uk/help/privacy-notice
+  - listitem:
+    - link "Cookies":
+      - /url: https://www.gov.uk/help/cookies
+  - listitem:
+    - link "Accessibility statement":
+      - /url: https://www.gov.uk/help/accessibility-statement
+- text: All content is available under the
+- link "Open Government Licence v3.0":
+  - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+- text: ", except where otherwise stated"
+- link "© Crown copyright":
+  - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | import { skipUnlessComposeEnvironment } from '@utils/playwright/environment';
+  3  | import { type NewAddressDetails } from '@page-objects/ins/ins-address-book-add-page';
+  4  | 
+  5  | test.describe('Add an address from the journey via INS', { tag: ['@integration'] }, () => {
+  6  |   test.beforeEach(() => {
+  7  |     skipUnlessComposeEnvironment('the handshake crosses animals-frontend and ins-frontend, which only the compose stack runs together');
+  8  |   });
+  9  | 
+  10 |   test('saving a new address in INS returns to the picker with it selected and committed', async ({ journey, pages }) => {
+  11 |     const stamp = Date.now();
+  12 |     const farmName = `Handshake Farm ${stamp}`;
+  13 |     const details: NewAddressDetails = {
+  14 |       name: farmName,
+  15 |       addressLine1: '9 Handshake Lane',
+  16 |       townOrCity: 'Carlisle',
+  17 |       postcode: 'CA2 7AA',
+  18 |       country: 'United Kingdom',
+  19 |       phone: '01228 555 0199',
+  20 |       email: `handshake-${stamp}@example.co.uk`,
+  21 |     };
+  22 | 
+  23 |     await journey.startNotification();
+  24 |     await journey.unlockSections();
+  25 | 
+  26 |     await pages.overview.task('Roles and addresses').click();
+  27 |     await pages.addresses.addParty('Consignor or exporter').click();
+  28 | 
+  29 |     await pages.consignorSelection.addNewAddress.click();
+  30 |     await pages.insAddressBookAdd.ensureSignedIn();
+  31 |     await expect(pages.page).toHaveURL(/localhost:3002\/address-book\/add\?/);
+  32 |     await expect(pages.insAddressBookAdd.heading).toBeVisible();
+  33 | 
+  34 |     await pages.insAddressBookAdd.fill(details);
+  35 |     await pages.insAddressBookAdd.save();
+  36 | 
+> 37 |     await expect(pages.consignorSelection.heading).toBeVisible();
+     |                                                    ^ Error: expect(locator).toBeVisible() failed
+  38 |     await expect(pages.page).toHaveURL(/consignors\/select/);
+  39 |     await pages.consignorSelection.search.fill(farmName);
+  40 |     await pages.consignorSelection.searchButton.click();
+  41 |     await expect(pages.consignorSelection.party(farmName)).toBeChecked();
+  42 | 
+  43 |     await pages.consignorSelection.saveAndContinue.click();
+  44 |     await expect(pages.addresses.heading).toBeVisible();
+  45 |     await expect(pages.addresses.partyRow('Consignor or exporter')).toContainText(farmName);
+  46 |   });
+  47 | 
+  48 |   test('cancelling INS add returns to the picker without saving an address', async ({ journey, pages }) => {
+  49 |     await journey.startNotification();
+  50 |     await journey.unlockSections();
+  51 | 
+  52 |     await pages.overview.task('Roles and addresses').click();
+  53 |     await pages.addresses.addParty('Consignor or exporter').click();
+  54 | 
+  55 |     await pages.consignorSelection.addNewAddress.click();
+  56 |     await pages.insAddressBookAdd.ensureSignedIn();
+  57 |     await expect(pages.insAddressBookAdd.heading).toBeVisible();
+  58 | 
+  59 |     await pages.insAddressBookAdd.btnCancelFromJourney.click();
+  60 | 
+  61 |     await expect(pages.consignorSelection.heading).toBeVisible();
+  62 |     await expect(pages.page).toHaveURL(/consignors\/select/);
+  63 | 
+  64 |     await pages.page.getByRole('link', { name: 'Back' }).click();
+  65 |     await expect(pages.addresses.heading).toBeVisible();
+  66 |     await expect(pages.addresses.partyRow('Consignor or exporter')).toContainText('Not added yet');
+  67 |   });
+  68 | });
+  69 | 
+```

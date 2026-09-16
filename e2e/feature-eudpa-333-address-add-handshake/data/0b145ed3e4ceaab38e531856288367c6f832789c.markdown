@@ -1,0 +1,214 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/addresses-add-handshake.spec.ts >> Add an address from the journey via INS >> saving a new address in INS returns to the picker with it selected and committed
+- Location: tests/e2e/features/addresses-add-handshake.spec.ts:10:3
+
+# Error details
+
+```
+TimeoutError: page.waitForURL: Timeout 15000ms exceeded.
+=========================== logs ===========================
+waiting for navigation until "load"
+============================================================
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - link "GOV.UK" [ref=e6] [cursor=pointer]:
+    - /url: https://www.gov.uk/
+    - img "GOV.UK" [ref=e7]
+  - navigation "Menu" [ref=e23]:
+    - list [ref=e24]:
+      - listitem [ref=e25]:
+        - link "Dashboard" [ref=e26] [cursor=pointer]:
+          - /url: /
+      - listitem [ref=e27]:
+        - link "Address book" [ref=e28] [cursor=pointer]:
+          - /url: /address-book
+          - strong [ref=e29]: Address book
+  - generic [ref=e30]:
+    - generic [ref=e33]:
+      - generic [ref=e34]:
+        - img [ref=e35]
+        - generic [ref=e38]: Andrew Farmer
+      - generic [ref=e39]: "|"
+      - link "Sign out" [ref=e40] [cursor=pointer]:
+        - /url: /signout
+    - main [ref=e41]:
+      - heading "Add address details" [level=1] [ref=e44]
+      - generic [ref=e46]:
+        - heading "Enter address details" [level=2] [ref=e47]
+        - generic [ref=e48]:
+          - generic [ref=e49]: Name or organisation name
+          - textbox "Name or organisation name" [ref=e50]: Handshake Farm 1789143670817
+        - generic [ref=e51]:
+          - generic [ref=e52]: Address line 1
+          - textbox "Address line 1" [ref=e53]: 9 Handshake Lane
+        - generic [ref=e54]:
+          - generic [ref=e55]: Address line 2 (optional)
+          - textbox "Address line 2 (optional)" [ref=e56]
+        - generic [ref=e57]:
+          - generic [ref=e58]: Town or city
+          - textbox "Town or city" [ref=e59]: Carlisle
+        - generic [ref=e60]:
+          - generic [ref=e61]: County (optional)
+          - textbox "County (optional)" [ref=e62]
+        - generic [ref=e63]:
+          - generic [ref=e64]: Postcode or Zip code
+          - textbox "Postcode or Zip code" [ref=e65]: CA2 7AA
+        - generic [ref=e66]:
+          - generic [ref=e67]: Country
+          - combobox "Country" [ref=e68]:
+            - option "Select a country"
+            - option "United Kingdom" [selected]
+            - option "Austria"
+            - option "Belgium"
+            - option "Bulgaria"
+            - option "Croatia"
+            - option "Cyprus"
+            - option "Czechia"
+            - option "Denmark"
+            - option "Estonia"
+            - option "Finland"
+            - option "France"
+            - option "Germany"
+            - option "Greece"
+            - option "Hungary"
+            - option "Iceland"
+            - option "Ireland"
+            - option "Italy"
+            - option "Latvia"
+            - option "Liechtenstein"
+            - option "Lithuania"
+            - option "Luxembourg"
+            - option "Malta"
+            - option "Netherlands (the)"
+            - option "Norway"
+            - option "Poland"
+            - option "Portugal"
+            - option "Romania"
+            - option "Slovakia"
+            - option "Slovenia"
+            - option "Spain"
+            - option "Sweden"
+            - option "Switzerland"
+        - heading "Enter contact details" [level=2] [ref=e69]
+        - generic [ref=e70]:
+          - generic [ref=e71]: Email address
+          - textbox "Email address" [ref=e72]: handshake-1789143670817@example.co.uk
+        - generic [ref=e73]:
+          - generic [ref=e74]: Phone number
+          - generic [ref=e75]: For international numbers include the country code
+          - textbox "Phone number" [ref=e76]: 01228 555 0199
+        - generic [ref=e77]:
+          - button "Save and continue" [active] [ref=e78] [cursor=pointer]
+          - button "Cancel and return to address page" [ref=e79] [cursor=pointer]
+  - generic [ref=e92]:
+    - generic [ref=e93]:
+      - heading "Support links" [level=2] [ref=e94]
+      - list [ref=e95]:
+        - listitem [ref=e96]:
+          - link "Privacy" [ref=e97] [cursor=pointer]:
+            - /url: https://www.gov.uk/help/privacy-notice
+        - listitem [ref=e98]:
+          - link "Cookies" [ref=e99] [cursor=pointer]:
+            - /url: https://www.gov.uk/help/cookies
+        - listitem [ref=e100]:
+          - link "Accessibility statement" [ref=e101] [cursor=pointer]:
+            - /url: https://www.gov.uk/help/accessibility-statement
+      - img [ref=e102]
+      - generic [ref=e104]:
+        - text: All content is available under the
+        - link "Open Government Licence v3.0" [ref=e105] [cursor=pointer]:
+          - /url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+        - text: ", except where otherwise stated"
+    - link "© Crown copyright" [ref=e107] [cursor=pointer]:
+      - /url: https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@fixtures';
+  2  | import { skipUnlessComposeEnvironment } from '@utils/playwright/environment';
+  3  | import { type NewAddressDetails } from '@page-objects/ins/ins-address-book-add-page';
+  4  | 
+  5  | test.describe('Add an address from the journey via INS', { tag: ['@integration'] }, () => {
+  6  |   test.beforeEach(() => {
+  7  |     skipUnlessComposeEnvironment('the handshake crosses animals-frontend and ins-frontend, which only the compose stack runs together');
+  8  |   });
+  9  | 
+  10 |   test('saving a new address in INS returns to the picker with it selected and committed', async ({ journey, pages }) => {
+  11 |     const stamp = Date.now();
+  12 |     const farmName = `Handshake Farm ${stamp}`;
+  13 |     const details: NewAddressDetails = {
+  14 |       name: farmName,
+  15 |       addressLine1: '9 Handshake Lane',
+  16 |       townOrCity: 'Carlisle',
+  17 |       postcode: 'CA2 7AA',
+  18 |       country: 'United Kingdom',
+  19 |       phone: '01228 555 0199',
+  20 |       email: `handshake-${stamp}@example.co.uk`,
+  21 |     };
+  22 | 
+  23 |     await journey.startNotification();
+  24 |     await journey.unlockSections();
+  25 | 
+  26 |     await pages.overview.task('Roles and addresses').click();
+  27 |     await pages.addresses.addParty('Consignor or exporter').click();
+  28 | 
+  29 |     await pages.consignorSelection.addNewAddress.click();
+  30 |     await pages.insAddressBookAdd.ensureSignedIn();
+  31 |     await expect(pages.page).toHaveURL(/localhost:3002\/address-book\/add\?/);
+  32 |     await expect(pages.insAddressBookAdd.heading).toBeVisible();
+  33 | 
+  34 |     await pages.insAddressBookAdd.fill(details);
+  35 |     await pages.insAddressBookAdd.save();
+> 36 |     await pages.page.waitForURL(/consignors\/select/, { timeout: 15_000 });
+     |                      ^ TimeoutError: page.waitForURL: Timeout 15000ms exceeded.
+  37 | 
+  38 |     await expect(pages.consignorSelection.heading).toBeVisible();
+  39 |     await expect(pages.page).toHaveURL(/consignors\/select/);
+  40 |     await pages.consignorSelection.search.fill(farmName);
+  41 |     await pages.consignorSelection.searchButton.click();
+  42 |     await expect(pages.consignorSelection.party(farmName)).toBeChecked();
+  43 | 
+  44 |     await pages.consignorSelection.saveAndContinue.click();
+  45 |     await expect(pages.addresses.heading).toBeVisible();
+  46 |     await expect(pages.addresses.partyRow('Consignor or exporter')).toContainText(farmName);
+  47 |   });
+  48 | 
+  49 |   test('cancelling INS add returns to the picker without saving an address', async ({ journey, pages }) => {
+  50 |     await journey.startNotification();
+  51 |     await journey.unlockSections();
+  52 | 
+  53 |     await pages.overview.task('Roles and addresses').click();
+  54 |     await pages.addresses.addParty('Consignor or exporter').click();
+  55 | 
+  56 |     await pages.consignorSelection.addNewAddress.click();
+  57 |     await pages.insAddressBookAdd.ensureSignedIn();
+  58 |     await expect(pages.insAddressBookAdd.heading).toBeVisible();
+  59 | 
+  60 |     await pages.insAddressBookAdd.btnCancelFromJourney.click();
+  61 |     await pages.page.waitForURL(/consignors\/select/, { timeout: 15_000 });
+  62 | 
+  63 |     await expect(pages.consignorSelection.heading).toBeVisible();
+  64 |     await expect(pages.page).toHaveURL(/consignors\/select/);
+  65 | 
+  66 |     await pages.page.getByRole('link', { name: 'Back' }).click();
+  67 |     await expect(pages.addresses.heading).toBeVisible();
+  68 |     await expect(pages.addresses.partyRow('Consignor or exporter')).toContainText('Not added yet');
+  69 |   });
+  70 | });
+  71 | 
+```
