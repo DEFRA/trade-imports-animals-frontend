@@ -39,7 +39,10 @@ const featuresWithCopy = readdirSync(FEATURES_DIR, { withFileTypes: true })
 // - search.help.lookupHref is the Trade Tariff gov.uk URL, likewise.
 // - documents.guidance.additional.linkHref is the IPAFFS guidance gov.uk URL,
 //   likewise.
+// - layout.govukSuffix is the GOV.UK brand word that closes every page title;
+//   the Welsh GOV.UK carries the same name.
 const IDENTICAL_ALLOWLIST = new Set([
+  'shared:layout.govukSuffix',
   'documents:guidance.additional.linkHref',
   'transport:transporters.guidance.linkHref',
   'commodities:search.help.lookupHref'

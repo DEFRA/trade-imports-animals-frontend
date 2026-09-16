@@ -49,7 +49,9 @@ describe('#errors', () => {
     })
 
     expect(result).toEqual(
-      expect.stringContaining('Page not found | Import notification service')
+      expect.stringContaining(
+        'Page not found - Import notification service - GOV.UK'
+      )
     )
     expect(result).not.toEqual(expect.stringContaining('Prototype'))
     expect(statusCode).toBe(statusCodes.notFound)
@@ -64,7 +66,7 @@ describe('#errors', () => {
     expect(statusCode).toBe(statusCodes.internalServerError)
     expect(result).toEqual(
       expect.stringContaining(
-        'Something went wrong | Import notification service'
+        'Something went wrong - Import notification service - GOV.UK'
       )
     )
     expect(result).toEqual(expect.stringContaining('>500</h1>'))
@@ -90,7 +92,7 @@ describe('#errors', () => {
       expect(statusCode).toBe(statusCodes.serviceUnavailable)
       expect(result).toEqual(
         expect.stringContaining(
-          'Something went wrong | Import notification service'
+          'Something went wrong - Import notification service - GOV.UK'
         )
       )
       expect(result).toEqual(expect.stringContaining('>503</h1>'))
