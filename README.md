@@ -30,6 +30,8 @@ Run its unit suite from the frontend repo root: `npm run test:live-animals`.
 
 ### Node.js
 
+Node 24 or later, and npm 11.6.2 or later — the floor in `engines`.
+
 To use the correct version of Node.js for this application, via nvm:
 
 ```bash
@@ -84,6 +86,12 @@ Install application dependencies:
 ```bash
 npm install
 ```
+
+### Git hooks
+
+`npm install` installs the pre-commit hook — `postinstall` runs
+`npm run setup:husky`. The hook runs `npm run git:pre-commit-hook`: format
+check, lint and the unit suite.
 
 ### Development
 
