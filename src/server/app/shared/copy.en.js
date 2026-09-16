@@ -1,9 +1,9 @@
 /**
  * Shared chrome copy — the only copy that legitimately lives outside a
- * feature folder: the layout (service name, service navigation,
- * back link, error title prefix), the unauthorised page, error-summary
- * title, the recoverable-error banner, the error page's messages,
- * save-actions buttons and journey-strip tags. Every view reaches
+ * feature folder: the layout (service name, GOV.UK title suffix, service
+ * navigation, back link, error title prefix), the unauthorised page,
+ * error-summary title, the recoverable-error banner, the error page's
+ * messages, save-actions buttons and journey-strip tags. Every view reaches
  * it as `sharedCopy` (via `kit.base`, or passed directly by the controllers
  * that build their view models without it).
  */
@@ -11,6 +11,9 @@ export const copy = {
   layout: {
     serviceName: 'Import notification service',
     errorTitlePrefix: 'Error: ',
+    // The GOV.UK brand word that closes every page title. A brand name, not
+    // translated copy, so the Welsh pair carries the same value.
+    govukSuffix: 'GOV.UK',
     back: 'Back',
     phaseBanner: {
       tag: 'Alpha',
