@@ -1,4 +1,3 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   signIn,
@@ -6,6 +5,7 @@ import {
   unlockSections,
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
+import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { MAX_DOCUMENTS } from '../contracts/max-documents.js'
@@ -101,19 +101,6 @@ const expectPreservedMetadata = async (page) => {
   await expect(page.getByLabel(copy.dateOfIssue.label)).toHaveValue(
     validDocument.accompanyingDocumentDateOfIssue
   )
-}
-
-const expectNoSeriousAxeViolations = async (page, name) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  const seriousOrCritical = results.violations.filter(({ impact }) =>
-    ['serious', 'critical'].includes(impact)
-  )
-  expect(
-    seriousOrCritical,
-    `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-  ).toEqual([])
 }
 
 test.describe('document upload page', () => {
@@ -694,7 +681,10 @@ test.describe('document upload capacity and accessibility', () => {
   test('empty upload state has no serious or critical axe violations', async ({
     page
   }) => {
-    await expectNoSeriousAxeViolations(page, 'Empty document upload page')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Empty document upload page'
+    )
   })
 
   test('validation error state has no serious or critical axe violations', async ({
@@ -703,7 +693,10 @@ test.describe('document upload capacity and accessibility', () => {
     await submitAdd(page)
     await expect(page.locator('.govuk-error-summary')).toBeVisible()
     await expect(page.locator('#accompanyingDocumentType-error')).toBeVisible()
-    await expectNoSeriousAxeViolations(page, 'Document upload error state')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Document upload error state'
+    )
   })
 
   test('document date picker has no serious or critical axe violations', async ({
@@ -711,7 +704,10 @@ test.describe('document upload capacity and accessibility', () => {
   }) => {
     await page.getByRole('button', { name: 'Choose date' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
-    await expectNoSeriousAxeViolations(page, 'Document date picker dialog')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Document date picker dialog'
+    )
   })
 
   test('populated upload state has no serious or critical axe violations', async ({
@@ -722,6 +718,9 @@ test.describe('document upload capacity and accessibility', () => {
     await expect(
       rowFor(page, validDocument.accompanyingDocumentReference)
     ).toContainText(copy.scanTags.complete)
-    await expectNoSeriousAxeViolations(page, 'Populated document upload page')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Populated document upload page'
+    )
   })
 })

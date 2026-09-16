@@ -31,7 +31,7 @@ export const meta = {
     'transportDocumentReference'
   ]
 }
-const view = `${TEMPLATES}/features/transport/port-of-entry/port-of-entry`
+const view = `${TEMPLATES}/features/transport/port-of-entry/template`
 
 const copy = copyFor({ en, cy }).portOfEntry
 

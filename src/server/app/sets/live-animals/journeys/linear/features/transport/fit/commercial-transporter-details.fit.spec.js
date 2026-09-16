@@ -1,4 +1,3 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   expectPageEndsWithPrimaryAlone,
@@ -7,6 +6,7 @@ import {
   startNotification,
   unlockSections
 } from '../../../../../../../../../../fit/live-animals-journey.js'
+import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 
@@ -35,19 +35,6 @@ const openCommercialForm = async (page) => {
 
 const errorLink = (page, message) =>
   page.locator('.govuk-error-summary').getByRole('link', { name: message })
-
-const expectAxeClean = async (page, name) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  const seriousOrCritical = results.violations.filter(({ impact }) =>
-    ['serious', 'critical'].includes(impact)
-  )
-  expect(
-    seriousOrCritical,
-    `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-  ).toEqual([])
-}
 
 // Not on the transporter list, so it can only have come from this form.
 const validTransporter = {
@@ -344,7 +331,10 @@ test.describe('commercial transporter form accessibility', () => {
   }) => {
     await openCommercialForm(page)
 
-    await expectAxeClean(page, 'Add commercial transporter')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Add commercial transporter'
+    )
   })
 
   test('the form in its error state has no serious or critical axe violations', async ({
@@ -356,6 +346,9 @@ test.describe('commercial transporter form accessibility', () => {
     await submit(page)
 
     await expect(page.locator('.govuk-error-summary')).toBeVisible()
-    await expectAxeClean(page, 'Add commercial transporter in error')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Add commercial transporter in error'
+    )
   })
 })

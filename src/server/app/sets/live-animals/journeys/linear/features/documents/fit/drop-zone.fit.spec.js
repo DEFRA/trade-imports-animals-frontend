@@ -1,10 +1,10 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   signIn,
   startNotification,
   unlockSections
 } from '../../../../../../../../../../fit/live-animals-journey.js'
+import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
 
 const DROPPED_FILENAME = 'dropped-itahc.pdf'
@@ -123,15 +123,6 @@ test.describe('document upload drop zone', () => {
     await chooseFile(page, CHOSEN_FILENAME)
     await expect(chosenFileStatus(page)).toHaveText(CHOSEN_FILENAME)
 
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
-    )
-    expect(
-      seriousOrCritical,
-      `Document upload drop zone has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
+    await expectNoSeriousOrCriticalViolations(page, 'Document upload drop zone')
   })
 })
