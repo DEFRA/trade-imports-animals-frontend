@@ -22,8 +22,8 @@ const stored = {
 }
 
 describe('partiesFromStoredAnswers', () => {
-  it('Should map stored inline answers onto journey party ids', () => {
-    const parties = partiesFromStoredAnswers(stored)
+  it('Should map stored inline answers onto journey party ids', async () => {
+    const parties = await partiesFromStoredAnswers(stored)
 
     expect(parties.placeOfDestination).toMatchObject({
       name: 'Frozen Destination'
@@ -33,8 +33,8 @@ describe('partiesFromStoredAnswers', () => {
     expect(parties.consignor).toMatchObject({ name: 'Frozen Consignor' })
   })
 
-  it('Should map the stored address names onto the journey address shape', () => {
-    const { placeOfOrigin } = partiesFromStoredAnswers(stored)
+  it('Should map the stored address names onto the journey address shape', async () => {
+    const { placeOfOrigin } = await partiesFromStoredAnswers(stored)
 
     expect(placeOfOrigin.address).toMatchObject({
       addressLine1: '1 Farm Lane',
@@ -43,19 +43,22 @@ describe('partiesFromStoredAnswers', () => {
       telephoneNumber: '01228 555 0001',
       emailAddress: 'origin@example.co.uk'
     })
-    expect(placeOfOrigin.address.country).toBe(originLabel('IE') ?? 'IE')
+    expect(placeOfOrigin.address.country).toBe(
+      (await originLabel('IE')) ?? 'IE'
+    )
   })
 
-  it('Should treat a nameless stored role as unanswered', () => {
-    expect(
-      partiesFromStoredAnswers({ consignor: { addressId: 'gone' } }).consignor
-    ).toBeUndefined()
+  it('Should treat a nameless stored role as unanswered', async () => {
+    const parties = await partiesFromStoredAnswers({
+      consignor: { addressId: 'gone' }
+    })
+    expect(parties.consignor).toBeUndefined()
   })
 })
 
 describe('toDisplayParty', () => {
-  it('Should fall back to the raw country code when the label is unknown', () => {
-    const party = toDisplayParty({
+  it('Should fall back to the raw country code when the label is unknown', async () => {
+    const party = await toDisplayParty({
       name: 'Unknown Farm',
       address: { countryCode: 'XX' }
     })

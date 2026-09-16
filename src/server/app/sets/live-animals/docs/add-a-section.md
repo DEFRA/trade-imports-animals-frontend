@@ -220,7 +220,11 @@ whatever the parts roll up to. See
 [`journey-flow-and-gates.md`](journey-flow-and-gates.md), "Task rows".
 
 Add the task-row id to the right object in the hub controller's `GROUPS` list.
-Add the row title and hint to both hub copy bundles. Add a new numbered hub
+Add the row title to both hub copy bundles. Hub task rows carry no hint:
+Design release 1 keeps the hub to one-line rows and "Roles and addresses" is
+the one hinted row, guarded by
+[`journeys/linear/features/hub/copy/copy.test.js`](../journeys/linear/features/hub/copy/copy.test.js).
+Add a new numbered hub
 group only when the design requires a new heading; if so, add its caption to
 both locale bundles too.
 
@@ -235,8 +239,10 @@ Update:
   visible task row, its link and its completed state
 
 Every task row participates in `readyForCheckYourAnswers`. A mandatory new row
-therefore blocks Check and submit until it is complete. Prove both the blocked
-and complete states in `journeys/linear/flow/task-rows.test.js`.
+therefore holds the notification back from submission until it is complete —
+the hub still offers the review, and the check-answers POST is what refuses.
+Prove both the incomplete and complete states in
+`journeys/linear/flow/task-rows.test.js`.
 
 ### Check the journey registration
 

@@ -7,74 +7,65 @@ export const copy = {
     packagesLabel: 'Packages/boxes',
     packagesCaption: 'Total number of packages in this consignment'
   },
+  reviewAndSubmit: 'Review and submit',
   returnToDashboard: 'Return to dashboard',
+  // Design release 1 tags a task with one of two words and no others:
+  // "Complete" when the task is finished, "To do" everywhere else. It draws no
+  // part-done state, and never tells a trader on the hub that a task is
+  // optional.
   statuses: {
-    completed: 'Completed',
-    optional: 'Optional',
-    inProgress: 'In progress',
-    notYetStarted: 'Not yet started',
-    cannotStartYet: 'Cannot start yet'
+    complete: 'Complete',
+    toDo: 'To do'
   },
+  taskListHeading: 'Notification tasklist',
   groups: {
     'about-the-consignment': '1. About the consignment',
-    'commodity-details': '2. Commodity details',
-    movement: '3. Movement',
-    addresses: '4. Addresses',
-    documents: '5. Documents',
-    'check-and-submit': '6. Check and submit'
+    'description-of-the-goods': '2. Description of the goods',
+    'transport-and-arrival': '3. Transport and arrival',
+    documents: '4. Documents',
+    'consignment-parties': '5. Consignment parties',
+    'contact-address': '6. Contact address'
   },
+  // Design release 1 keeps the hub compact: nine of its ten rows are a bare
+  // link with a status tag beside it, and only "Roles and addresses" carries a
+  // sentence underneath naming the parties it collects.
   rows: {
     origin: {
-      title: 'Where is this consignment coming from?',
-      hint: 'Country of origin, region of origin code, your internal reference'
+      title: 'Where is this consignment coming from?'
     },
     commodities: {
-      title: 'What are you importing?',
-      hint: 'The commodities and species you are importing'
+      title: 'What are you importing?'
     },
     importReason: {
-      title: 'Main reason for importing',
-      hint: 'Why you are importing the animals and their purpose in the internal market'
+      title: 'Main reason for import'
     },
     consignmentDetails: {
-      title: 'Commodity details',
-      hint: 'How many animals and packages there are for each commodity'
+      title: 'Commodity details'
     },
     additionalDetails: {
-      title: 'Additional commodity details',
-      hint: 'What the animals are certified for and whether any are unweaned'
+      title: 'Additional details'
     },
     animalIdentification: {
-      title: 'Animal identification details',
-      hint: 'Identification details for the animals in each commodity'
+      title: 'Identification details'
     },
     arrivalDetails: {
-      title: 'Arrival details',
-      hint: 'The port of entry, when the consignment will arrive and how the animals will travel'
+      title: 'Arrival details'
     },
     transitCountries: {
-      title: 'Transit countries',
-      hint: 'The countries the consignment will travel through'
+      title: 'Transit countries'
     },
     transporter: {
-      title: 'Transporter',
-      hint: 'Who transports the animals to their destination'
+      title: 'Transport details'
     },
     addresses: {
       title: 'Roles and addresses',
-      hint: 'The consignor, consignee, importer and the places of origin and destination'
+      hint: 'Consignor or Exporter, Consignee, Importer and Place of Destination'
     },
     contact: {
-      title: 'Contact address',
-      hint: 'Who we should contact about this notification'
+      title: 'Contact address for this consignment'
     },
     documents: {
-      title: 'Uploaded documents',
-      hint: 'Certificates, permits and other documents for the consignment'
-    },
-    review: {
-      title: 'Check and submit',
-      hint: 'Check your answers before you submit the notification'
+      title: 'Upload documents'
     }
   }
 }

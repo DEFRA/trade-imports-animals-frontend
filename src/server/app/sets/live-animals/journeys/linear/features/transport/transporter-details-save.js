@@ -33,7 +33,7 @@ export const saveTransporterDetails =
   async (request, h) => {
     const payload = request.payload ?? {}
     const values = trimmedValues(payload)
-    const allErrors = formErrors(payload, values)
+    const allErrors = await formErrors(payload, values)
     if (Object.keys(allErrors).length > 0) {
       const { journey } = await state.get(request, h)
       return render(request, h, journey, values, { errors: allErrors })
@@ -46,14 +46,16 @@ export const saveTransporterDetails =
           committed = await state.get(request, h)
           return
         }
-        committed = await state.commit(request, h, record(values))
-        remember?.(request, values)
+        committed = await state.commit(request, h, await record(values))
+        await remember?.(request, values)
       },
       async () => {
         const { journey } = await state.get(request, h)
-        return render(request, h, journey, values, {
-          recoverableError: true
-        }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+        return (
+          await render(request, h, journey, values, {
+            recoverableError: true
+          })
+        ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
       }
     )
     if (failure) {

@@ -1,18 +1,14 @@
-import { dashboardPath, hubRoutePath } from '../../../../../../shared/paths.js'
-import { TEMPLATES } from '../../config.js'
-import { sections } from '../../flow/flow.js'
-import { rowEntry, sectionEntry } from '../../../../../../flow/navigation.js'
-import { sectionGatePasses } from '../../../../../../flow/gates.js'
-import * as state from '../../../../../../engine/index.js'
 import {
-  FULFILLED,
-  IN_PROGRESS,
-  NA,
-  NOT_STARTED,
-  OPTIONAL
-} from '../../../../../../bridge/status/index.js'
-import { sectionStatus } from '../../../../../../flow/section-status.js'
+  dashboardPath,
+  hubRoutePath,
+  pagePath
+} from '../../../../../../shared/paths.js'
+import { TEMPLATES } from '../../config.js'
+import { rowEntry } from '../../../../../../flow/navigation.js'
+import * as state from '../../../../../../engine/index.js'
+import { FULFILLED, NA } from '../../../../../../bridge/status/index.js'
 import { rowStatus, taskRowById } from '../../flow/task-rows.js'
+import { notificationViewPage } from '../check-answers/page.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
 import { journeyStrip, routeOptions } from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
@@ -26,71 +22,58 @@ const view = `${TEMPLATES}/features/hub/template`
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
+// Design release 1 divides the notification into six numbered sections under a
+// "Notification tasklist" heading: the documents come fourth rather than after
+// the addresses, and the consignment parties and the contact address are
+// sections of their own rather than one shared "Addresses".
 const GROUPS = [
   {
     id: 'about-the-consignment',
     rows: ['origin', 'commodities', 'importReason']
   },
   {
-    id: 'commodity-details',
+    id: 'description-of-the-goods',
     // Design release 1 opens this section with the commodity details, so the
     // consignment-details page leads the group rather than hanging off the
-    // "What are you importing?" row in the section above.
-    rows: ['consignmentDetails', 'additionalDetails', 'animalIdentification']
+    // "What are you importing?" row in the section above. Identification
+    // follows it and the additional details come last: the design points a
+    // trader at identifying the animals before asking what they are certified
+    // for, which is also the order the opening run visits the two pages in.
+    rows: ['consignmentDetails', 'animalIdentification', 'additionalDetails']
   },
   {
-    id: 'movement',
+    id: 'transport-and-arrival',
     rows: ['arrivalDetails', 'transitCountries', 'transporter']
   },
-  { id: 'addresses', rows: ['addresses', 'contact'] },
   { id: 'documents', rows: ['documents'] },
-  { id: 'check-and-submit', rows: ['review'] }
+  { id: 'consignment-parties', rows: ['addresses'] },
+  { id: 'contact-address', rows: ['contact'] }
 ]
 
-const STATUS_TAG = {
-  [FULFILLED]: {
-    tag: { text: copy.statuses.completed, classes: 'govuk-tag--green' }
-  },
-  [OPTIONAL]: { text: copy.statuses.optional },
-  [IN_PROGRESS]: {
-    tag: { text: copy.statuses.inProgress, classes: 'govuk-tag--light-blue' }
-  },
-  [NOT_STARTED]: {
-    tag: { text: copy.statuses.notYetStarted, classes: 'govuk-tag--blue' }
-  }
+const COMPLETE_TAG = {
+  tag: { text: copy.statuses.complete, classes: 'govuk-tag--green' }
 }
-const statusTag = (status) => STATUS_TAG[status] ?? STATUS_TAG[NOT_STARTED]
-
-// The one task the hub still shuts is Check and submit, which holds its own
-// authored gate on submit-readiness. Every other row is a link from the moment
-// the notification exists, so no answer row reads this status.
-const CANNOT_START_STATUS = {
-  text: copy.statuses.cannotStartYet,
-  classes: 'govuk-task-list__status--cannot-start-yet'
+const TO_DO_TAG = {
+  tag: { text: copy.statuses.toDo, classes: 'govuk-tag--blue' }
 }
 
-const reviewSection = () => sections.find((section) => section.id === 'review')
+// Design release 1 tells a trader one of two things about a task: it is
+// "Complete", or it is still "To do". It has no third state, so a task the
+// engine holds part-answered and one it holds optional both read "To do"
+// beside the untouched ones — the design never says on the hub that a task is
+// half-done, nor that it can be left out. The engine keeps those distinctions:
+// they still drive what the review page asks for and when the notification may
+// be submitted. Only the word on the hub stops drawing them. Finished is the
+// single thing the tag reads off the status, so this asks that one question
+// rather than tabulating the five answers the engine can give.
+const statusTag = (status) => (status === FULFILLED ? COMPLETE_TAG : TO_DO_TAG)
 
-const buildReviewItem = (
-  { title, hint },
-  answers,
-  scope,
-  evaluation,
-  journeyId
-) => {
-  const section = reviewSection()
-  const base = { title: { text: title }, hint: { text: hint } }
-  if (!sectionGatePasses(section, scope)) {
-    return { ...base, status: CANNOT_START_STATUS }
-  }
-  return {
-    ...base,
-    href: sectionEntry('review', scope, journeyId),
-    status: statusTag(
-      sectionStatus(section, answers, scope.inScope, evaluation)
-    )
-  }
-}
+// Design release 1 ends the hub with a primary "Review and submit" button, not
+// a task row: the review page is offered whatever else has been answered, so a
+// trader can read back what the notification holds at any point. The page
+// renders an unfinished notification, naming what is still outstanding, and the
+// review section's own gate still stands between that page and submitting.
+const reviewHref = (journeyId) => pagePath(journeyId, notificationViewPage.slug)
 
 const isHiddenRow = (row, status) => row.conditional && status === NA
 
@@ -106,21 +89,17 @@ const rowItem = (base, row, scope, status, journeyId) => ({
 
 const buildRowItem = (id, answers, scope, evaluation, journeyId) => {
   const { title, hint } = copy.rows[id]
-  if (id === 'review') {
-    return buildReviewItem(
-      { title, hint },
-      answers,
-      scope,
-      evaluation,
-      journeyId
-    )
-  }
   const row = taskRowById(id)
   const status = rowStatus(row, answers, scope.inScope, evaluation)
   if (isHiddenRow(row, status)) {
     return null
   }
-  const base = { title: { text: title }, hint: { text: hint } }
+  // Design release 1 hints only the "Roles and addresses" row, so a row whose
+  // copy carries no hint gets no hint slot at all rather than an empty one.
+  const base = {
+    title: { text: title },
+    ...(hint ? { hint: { text: hint } } : {})
+  }
   return rowItem(base, row, scope, status, journeyId)
 }
 
@@ -164,6 +143,7 @@ const handler = async (request, h) => {
     journeyStrip: journeyStrip(journey),
     commodityTotals: buildCommodityTotals(answers, evaluation),
     groups: buildGroups(answers, scope, evaluation, journeyId),
+    reviewHref: reviewHref(journeyId),
     dashboardHref: dashboardPath(),
     backLink: dashboardPath()
   })

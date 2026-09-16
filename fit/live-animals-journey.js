@@ -427,12 +427,12 @@ export const completeAnswerSections = async (
   await overview()
 
   if (!skipAnimalIdentification) {
-    await task('Animal identification details')
+    await task('Identification details')
     await answerAnimalIdentification(page)
     await overview()
   }
 
-  await task('Main reason for importing')
+  await task('Main reason for import')
   await answerImportReason(page)
   await answerAdditionalDetails(page)
 
@@ -445,8 +445,17 @@ export const completeAnswerSections = async (
   await answerTransitCountries(page)
   await answerTransporter(page)
 
-  await task('Contact address')
+  await task('Contact address for this consignment')
   await answerContactAddress(page)
+}
+
+/**
+ * Design release 1 reaches the review from a primary button under the hub's
+ * task list rather than from a task row, and offers it whatever the
+ * notification still owes.
+ */
+export const openReviewFromHub = async (page) => {
+  await page.getByRole('button', { name: 'Review and submit' }).click()
 }
 
 /**

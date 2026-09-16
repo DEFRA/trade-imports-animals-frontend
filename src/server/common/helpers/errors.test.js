@@ -3,6 +3,8 @@ import { vi } from 'vitest'
 import { catchAll } from './errors.js'
 import { createServer } from '../../server.js'
 import { statusCodes } from '../constants/status-codes.js'
+import * as countries from '../../app/services/countries/index.js'
+import { config } from '../../../config/config.js'
 
 import { mockOidcConfig } from '../test-helpers/mock-oidc-config.js'
 
@@ -22,6 +24,16 @@ describe('#errors', () => {
       handler: () => {
         throw new TypeError('programming failure')
       }
+    })
+    // Simulates a page that reads reference data — with self-loading readers,
+    // the read triggers a countries load; if that load fails the reader
+    // rejects with Boom.serverUnavailable and catchAll renders the error
+    // page as a 503.
+    server.route({
+      method: 'GET',
+      path: '/test/refdata-missing',
+      options: { auth: false },
+      handler: () => countries.originLabel('FR')
     })
     await server.initialize()
   })
@@ -61,6 +73,30 @@ describe('#errors', () => {
         'Your answers on this page have been saved. Try again in a few minutes.'
       )
     )
+  })
+
+  test('Should serve the shared error page as a 503 when a page reads reference data that will not load', async () => {
+    // Flip to real mode for the length of this request so the reader tries
+    // to load; with no fetch stubbed the load rejects, the reader throws
+    // Boom.serverUnavailable, and catchAll renders the shared error page.
+    const originalStubMode = config.get('stubMode')
+    config.set('stubMode', false)
+    try {
+      const { result, statusCode } = await server.inject({
+        method: 'GET',
+        url: '/test/refdata-missing'
+      })
+
+      expect(statusCode).toBe(statusCodes.serviceUnavailable)
+      expect(result).toEqual(
+        expect.stringContaining(
+          'Something went wrong | Import notification service'
+        )
+      )
+      expect(result).toEqual(expect.stringContaining('>503</h1>'))
+    } finally {
+      config.set('stubMode', originalStubMode)
+    }
   })
 })
 

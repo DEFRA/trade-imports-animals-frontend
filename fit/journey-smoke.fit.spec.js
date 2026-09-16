@@ -15,6 +15,7 @@ import {
   chooseCountryOfOrigin,
   completeAnswerSections,
   journeyUrl,
+  openReviewFromHub,
   selectSpecies,
   signIn,
   startNotification,
@@ -156,7 +157,7 @@ test.describe('live-animals journey glue', () => {
     await completeAnswerSections(page)
 
     const [document] = values.documents
-    await page.getByRole('link', { name: 'Uploaded documents' }).click()
+    await page.getByRole('link', { name: 'Upload documents' }).click()
     await addDocument(page, document)
     await expect(
       page.locator('.govuk-table__row', {
@@ -165,7 +166,7 @@ test.describe('live-animals journey glue', () => {
     ).toContainText('Check completed')
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
-    await page.getByRole('link', { name: 'Check and submit' }).click()
+    await openReviewFromHub(page)
 
     // The review offers one Change link per card (design release 1), and the
     // Species card's goes to the consignment details. The review no longer

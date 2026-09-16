@@ -9,7 +9,12 @@ import { row } from '../../rows/summary-row.js'
 
 const copy = copyFor({ en, cy })
 
-export const importDetailsCard = (journeyId, answers, scope, readOnly) => ({
+export const importDetailsCard = async (
+  journeyId,
+  answers,
+  scope,
+  readOnly
+) => ({
   id: 'importDetails',
   title: copy.cards.importDetails,
   ...editableActions(
@@ -19,7 +24,7 @@ export const importDetailsCard = (journeyId, answers, scope, readOnly) => ({
   rows: [
     row(
       copy.rows.countryOfOrigin,
-      countries.originLabel(answers.countryOfOrigin) ?? ''
+      (await countries.originLabel(answers.countryOfOrigin)) ?? ''
     ),
     row(
       copy.rows.regionCodeRequired,
