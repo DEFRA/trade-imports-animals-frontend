@@ -163,12 +163,12 @@ describe('#hubHandler', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should title the hub Overview with the design chrome — back link and Return to dashboard, no breadcrumbs, no progress line', async () => {
+  it('Should title the hub Overview with the design chrome — Return to dashboard, no back link, no breadcrumbs, no progress line', async () => {
     const context = await renderHub()
     expect(context.heading).toBe('Overview')
     expect(context.pageTitle).toBe('Overview')
-    expect(context.backLink).toBe('/')
     expect(context.dashboardHref).toBe('/')
+    expect(context.backLink).toBeUndefined()
     expect(context.breadcrumbs).toBeUndefined()
     expect(context.progressLine).toBeUndefined()
   })
