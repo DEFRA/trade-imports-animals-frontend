@@ -559,3 +559,46 @@ describe('#hubHandler — the row hints', () => {
     })
   })
 })
+
+// Temporary admission of horses makes a port of exit and an exit date
+// compulsory, and once a trader has answered them and moved on, the hub is
+// their only way back to change an answer. Design release 1 asks both under
+// "Main reason for import", so that row carries the return route.
+describe('#hubHandler — the way back to the exit questions', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should open the import-reason page from its row while the exit date is still owing', async () => {
+    const context = await renderHub(temporaryAdmissionSeed)
+
+    expect(rowByTitle(context, IMPORT_REASON_ROW_TITLE).href).toBe(
+      pagePath(context.journeyId, 'import-reason')
+    )
+  })
+
+  it('Should still link that row once both exit questions are answered', async () => {
+    const context = await renderHub({
+      ...temporaryAdmissionSeed,
+      exitDate: EXIT_DATE
+    })
+
+    expect(rowByTitle(context, IMPORT_REASON_ROW_TITLE).href).toBe(
+      pagePath(context.journeyId, 'import-reason')
+    )
+  })
+
+  it('Should leave no row on that hub without a way in', async () => {
+    const rows = allItems(await renderHub(temporaryAdmissionSeed))
+
+    expect(rows).not.toHaveLength(0)
+    for (const row of rows) {
+      expect(row.href, `${row.title.text} has no way in`).toMatch(
+        /^\/notifications\/[^/]+\/.+/
+      )
+    }
+  })
+})
