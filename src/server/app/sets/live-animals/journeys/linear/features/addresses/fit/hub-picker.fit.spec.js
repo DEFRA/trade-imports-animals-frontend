@@ -9,6 +9,7 @@ import {
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
+import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { PARTIES } from '../parties.js'
 
 const NO_MATCH_QUERY = 'no such address'
@@ -110,7 +111,7 @@ test.describe('addresses hub', () => {
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
-  test('completing every party marks the hub task as completed', async ({
+  test('completing every party marks the hub task Complete', async ({
     page
   }) => {
     for (const party of PARTIES) {
@@ -127,7 +128,7 @@ test.describe('addresses hub', () => {
       page.locator('.govuk-task-list__item', {
         hasText: ROLES_AND_ADDRESSES
       })
-    ).toContainText('Completed')
+    ).toContainText(hubCopy.statuses.complete)
   })
 
   test('hub page has no serious or critical axe violations', async ({

@@ -122,10 +122,10 @@ test.describe('hub feature', () => {
     await expect(
       origin.getByRole('link', { name: copy.rows.origin.title })
     ).toBeVisible()
-    await expect(origin).toContainText(copy.statuses.completed)
+    await expect(origin).toContainText(copy.statuses.complete)
 
     const commodities = taskRow(page, copy.rows.commodities.title)
-    await expect(commodities).toContainText(copy.statuses.notYetStarted)
+    await expect(commodities).toContainText(copy.statuses.toDo)
     await expect(
       commodities.getByRole('link', { name: copy.rows.commodities.title })
     ).toBeVisible()
@@ -134,7 +134,7 @@ test.describe('hub feature', () => {
     // a link: the details page sends the trader on to the commodity question
     // rather than the hub refusing to open it.
     const consignmentDetails = taskRow(page, copy.rows.consignmentDetails.title)
-    await expect(consignmentDetails).toContainText(copy.statuses.notYetStarted)
+    await expect(consignmentDetails).toContainText(copy.statuses.toDo)
     await expect(
       consignmentDetails.getByRole('link', {
         name: copy.rows.consignmentDetails.title
@@ -170,7 +170,7 @@ test.describe('hub feature', () => {
   // included, none of which wait on an answer given anywhere else. Origin is
   // the journey's entry page and the entry guard holds a notification there
   // until it is answered, so the earliest hub a trader reaches already has
-  // origin Completed; this is that hub.
+  // origin Complete; this is that hub.
   test('every task the hub shows opens before a commodity is chosen', async ({
     page
   }) => {
@@ -351,28 +351,28 @@ test.describe('hub feature — the Commodity details row', () => {
     await expect(
       details.getByRole('link', { name: copy.rows.consignmentDetails.title })
     ).toHaveAttribute('href', /\/consignment-details$/)
-    await expect(details).toContainText(copy.statuses.notYetStarted)
+    await expect(details).toContainText(copy.statuses.toDo)
     await expect(taskRow(page, copy.rows.commodities.title)).toContainText(
-      copy.statuses.completed
+      copy.statuses.complete
     )
 
     await expectAxeClean(page, 'Partly-complete hub')
   })
 
-  test('reads Completed once the numbers are saved, leaving the other rows alone', async ({
+  test('reads Complete once the numbers are saved, leaving the other rows alone', async ({
     page
   }) => {
     await openHubWithCommodityTotals(page)
 
     await expect(
       taskRow(page, copy.rows.consignmentDetails.title)
-    ).toContainText(copy.statuses.completed)
+    ).toContainText(copy.statuses.complete)
     await expect(taskRow(page, copy.rows.commodities.title)).toContainText(
-      copy.statuses.completed
+      copy.statuses.complete
     )
     await expect(
       taskRow(page, copy.rows.additionalDetails.title)
-    ).toContainText(copy.statuses.notYetStarted)
+    ).toContainText(copy.statuses.toDo)
   })
 })
 
@@ -442,7 +442,7 @@ test.describe('hub feature — the Review and submit button', () => {
     await completeAnswerSections(page, { skipAnimalIdentification: true })
 
     const identification = taskRow(page, copy.rows.animalIdentification.title)
-    await expect(identification).toContainText(copy.statuses.completed)
+    await expect(identification).toContainText(copy.statuses.complete)
 
     await openReviewFromHub(page)
 

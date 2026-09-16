@@ -526,6 +526,8 @@ test.describe('origin country and region validation', () => {
 
   // The country is mandatory for completeness even though it does not block
   // the save, so the gap is shown on the hub rather than enforced at the page.
+  // Design release 1 draws the gap with the same "To do" it gives an untouched
+  // task: it tells a trader the task is unfinished, not how far in they are.
   test('country: an unanswered country leaves the origin task unfinished', async ({
     page
   }) => {
@@ -535,7 +537,8 @@ test.describe('origin country and region validation', () => {
     const originRow = page.getByRole('listitem').filter({
       has: page.getByText(hubCopy.rows.origin.title, { exact: true })
     })
-    await expect(originRow).toContainText(hubCopy.statuses.inProgress)
+    await expect(originRow).toContainText(hubCopy.statuses.toDo)
+    await expect(originRow).not.toContainText(hubCopy.statuses.complete)
   })
 
   test('country validation: an out-of-list country links to and focuses the cleared field', async ({

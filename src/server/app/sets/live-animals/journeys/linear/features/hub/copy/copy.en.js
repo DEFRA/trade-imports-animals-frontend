@@ -9,11 +9,13 @@ export const copy = {
   },
   reviewAndSubmit: 'Review and submit',
   returnToDashboard: 'Return to dashboard',
+  // Design release 1 tags a task with one of two words and no others:
+  // "Complete" when the task is finished, "To do" everywhere else. It draws no
+  // part-done state, and never tells a trader on the hub that a task is
+  // optional.
   statuses: {
-    completed: 'Completed',
-    optional: 'Optional',
-    inProgress: 'In progress',
-    notYetStarted: 'Not yet started'
+    complete: 'Complete',
+    toDo: 'To do'
   },
   taskListHeading: 'Notification tasklist',
   groups: {
