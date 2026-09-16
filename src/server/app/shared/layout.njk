@@ -23,7 +23,7 @@
   <link href="{{ getAssetPath('stylesheets/application.scss') }}" rel="stylesheet">
 {% endblock %}
 
-{% block pageTitle %}{% if errorSummary %}{{ sharedCopy.layout.errorTitlePrefix }}{% endif %}{{ pageTitle }} | {{ sharedCopy.layout.serviceName }}{% endblock %}
+{% block pageTitle %}{% if errorSummary %}{{ sharedCopy.layout.errorTitlePrefix }}{% endif %}{{ pageTitle }} - {{ sharedCopy.layout.serviceName }} - {{ sharedCopy.layout.govukSuffix }}{% endblock %}
 
 {% block govukHeader %}
   {{ govukHeader({
