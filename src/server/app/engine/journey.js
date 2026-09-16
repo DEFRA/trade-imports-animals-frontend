@@ -31,6 +31,10 @@ export const registerJourneyCookie = (server) => {
     ...cookieOptions,
     encoding: 'base64json'
   })
+  server.state(SESSION_COOKIES.addressHandshakeTokens, {
+    ...cookieOptions,
+    encoding: 'base64json'
+  })
 }
 
 const JOURNEY_MEMO = Symbol('currentJourney')

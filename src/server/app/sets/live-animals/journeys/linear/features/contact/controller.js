@@ -12,11 +12,18 @@ import {
 } from '../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
+import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
+import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import { CONTACT_PARTY } from '../addresses/parties.js'
 import { organisationIdOf } from '../addresses/resolve-parties.js'
 import { addressText } from '../addresses/party-picker/view-model/address-lines.js'
 import { answerFor } from '../addresses/party-picker/selection.js'
+import { isStubMode } from '../../../../../../../common/services/mode.js'
+import {
+  buildInsAddAddressUrl,
+  handshakeErrorMessage
+} from '../addresses/ins-handshake.js'
 import { consignmentContactSelectPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
@@ -25,6 +32,18 @@ export const meta = { ...page, collects: ['contactAddress'] }
 const view = `${TEMPLATES}/features/contact/template`
 
 const copy = copyFor({ en, cy })
+const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
+
+const handshakeErrorSummary = (error) =>
+  error
+    ? {
+        titleText: sharedCopy.errorSummary.title,
+        errorList: [{ text: error, href: '#contactAddress' }]
+      }
+    : null
+
+const resolveErrorSummary = (errors, handshakeError) =>
+  kit.errorSummary(errors) ?? handshakeErrorSummary(handshakeError)
 
 const fields = (options) =>
   compose(
@@ -41,13 +60,17 @@ const fields = (options) =>
 const addressSummary = (address) =>
   [addressText(address), address.country].filter(Boolean).join(', ')
 
+const addAddressLinkFor = (request, h, journey) =>
+  !isStubMode() &&
+  buildInsAddAddressUrl(request, h, journey.journeyId, CONTACT_PARTY)
+
 const render = (
   h,
   journey,
   values,
   options,
-  errors = {},
-  recoverableError = false
+  addAddressHref,
+  { errors = {}, recoverableError = false, handshakeError } = {}
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
@@ -57,7 +80,9 @@ const render = (
     }),
     copy,
     errors,
-    errorSummary: kit.errorSummary(errors),
+    errorSummary: resolveErrorSummary(errors, handshakeError),
+    addAddressHref,
+    addNewAddressLabel: sharedCopy.addressHandshake.addNewAddress,
     contactOptions: options.map((option) => ({
       value: option.id,
       text: option.name,
@@ -69,9 +94,19 @@ const render = (
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const orgId = organisationIdOf(request)
-  return render(h, journey, { selectedId: answers.contactAddress?.addressId }, [
-    ...(await addressBook.all(orgId))
-  ])
+  const handshakeError = handshakeErrorMessage(
+    sharedCopy.addressHandshake.errors,
+    request.query.handshakeError
+  )
+  const recoverableError = request.query.handshakeError === 'unavailable'
+  return render(
+    h,
+    journey,
+    { selectedId: answers.contactAddress?.addressId },
+    [...(await addressBook.all(orgId))],
+    addAddressLinkFor(request, h, journey),
+    { recoverableError, handshakeError }
+  )
 }
 
 const post = async (request, h) => {
@@ -81,7 +116,16 @@ const post = async (request, h) => {
   const { errors } = validate(fields(options), payload)
   if (errors) {
     const { journey } = await state.get(request, h)
-    return render(h, journey, {}, options, errors).code(HTTP_STATUS_BAD_REQUEST)
+    return render(
+      h,
+      journey,
+      {},
+      options,
+      addAddressLinkFor(request, h, journey),
+      {
+        errors
+      }
+    ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   const chosen = payload.contactAddress
@@ -103,8 +147,10 @@ const post = async (request, h) => {
         journey,
         { selectedId: chosen?.id },
         options,
-        {},
-        true
+        addAddressLinkFor(request, h, journey),
+        {
+          recoverableError: true
+        }
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
   )

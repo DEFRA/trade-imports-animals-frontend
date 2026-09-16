@@ -69,6 +69,15 @@ export const copy = {
     submitted: "Wedi'i gyflwyno",
     amend: 'Wrthi’n diwygio',
     deleted: "Wedi'i ddileu"
+  },
+  addressHandshake: {
+    addNewAddress: 'Ychwanegu cyfeiriad newydd',
+    errors: {
+      notFound:
+        "Ni ellid dod o hyd i'r cyfeiriad yn eich llyfr cyfeiriadau. Dewiswch gyfeiriad arall neu ceisiwch ei ychwanegu eto.",
+      unavailable:
+        "Ni ellid cyrchu'r llyfr cyfeiriadau. Mae eich atebion ar y dudalen hon wedi'u cadw. Rhowch gynnig arall arni ymhen ychydig funudau."
+    }
   }
 }
 

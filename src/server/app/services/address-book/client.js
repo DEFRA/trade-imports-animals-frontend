@@ -1,12 +1,12 @@
 import { getTraceId } from '@defra/hapi-tracing'
+import { config } from '../../../../config/config.js'
 import { originLabel } from '../countries/index.js'
 import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
 import { BackendRequestError } from '../persistence/records/errors.js'
 
 const ORGANISATION_ID_HEADER = 'Trade-Imports-Organisation-Id'
 
-const addressBookUrl =
-  process.env.TRADE_IMPORTS_ADDRESS_BOOK_URL ?? 'http://localhost:8089'
+const addressBookUrl = () => config.get('tradeImportsAddressBookApi.baseUrl')
 
 const tracingHeader = process.env.TRACING_HEADER ?? 'x-cdp-request-id'
 
@@ -28,7 +28,7 @@ const addressesUrl = (orgId, addressId) => {
       'Cannot reach the address book without an organisation: the signed-in session carries none'
     )
   }
-  const base = `${addressBookUrl}/organisation/${encodeURIComponent(orgId)}/addresses`
+  const base = `${addressBookUrl()}/organisation/${encodeURIComponent(orgId)}/addresses`
   return addressId ? `${base}/${encodeURIComponent(addressId)}` : base
 }
 

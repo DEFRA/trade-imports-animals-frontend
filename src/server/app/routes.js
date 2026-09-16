@@ -26,6 +26,7 @@ import {
 import * as liveAnimalsObligationSet from './sets/live-animals/obligations/index.js'
 import * as commodities from './sets/live-animals/services/commodities/index.js'
 import { assertObligationPurity } from './obligation-purity.js'
+import { assertPartyBindingsAreScalar } from './sets/live-animals/journeys/linear/features/addresses/assert-party-bindings.js'
 import {
   assertFulfilmentBindingCoverage,
   configureFulfilmentRegistry
@@ -60,6 +61,7 @@ export const serviceRoutes = {
       })
       assertObligationPurity()
       assertFulfilmentBindingCoverage()
+      assertPartyBindingsAreScalar()
       buildDispatch(dispatchPages)
       configureRecords(records)
       configureSession(session, SESSION_COOKIE_NAMES)
