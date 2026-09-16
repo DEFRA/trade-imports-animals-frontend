@@ -6,13 +6,7 @@ import {
 import { TEMPLATES } from '../../config.js'
 import { rowEntry } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
-import {
-  FULFILLED,
-  IN_PROGRESS,
-  NA,
-  NOT_STARTED,
-  OPTIONAL
-} from '../../../../../../bridge/status/index.js'
+import { FULFILLED, NA } from '../../../../../../bridge/status/index.js'
 import { rowStatus, taskRowById } from '../../flow/task-rows.js'
 import { notificationViewPage } from '../check-answers/page.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
@@ -69,14 +63,10 @@ const TO_DO_TAG = {
 // beside the untouched ones — the design never says on the hub that a task is
 // half-done, nor that it can be left out. The engine keeps those distinctions:
 // they still drive what the review page asks for and when the notification may
-// be submitted. Only the word on the hub stops drawing them.
-const STATUS_TAG = {
-  [FULFILLED]: COMPLETE_TAG,
-  [OPTIONAL]: TO_DO_TAG,
-  [IN_PROGRESS]: TO_DO_TAG,
-  [NOT_STARTED]: TO_DO_TAG
-}
-const statusTag = (status) => STATUS_TAG[status] ?? TO_DO_TAG
+// be submitted. Only the word on the hub stops drawing them. Finished is the
+// single thing the tag reads off the status, so this asks that one question
+// rather than tabulating the five answers the engine can give.
+const statusTag = (status) => (status === FULFILLED ? COMPLETE_TAG : TO_DO_TAG)
 
 // Design release 1 ends the hub with a primary "Review and submit" button, not
 // a task row: the review page is offered whatever else has been answered, so a
