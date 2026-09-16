@@ -1,10 +1,10 @@
 import { vi } from 'vitest'
 
-const DEFAULT_SESSION_COOKIE_PASSWORD =
-  'this-must-be-at-least-32-characters-long'
+const SESSION_COOKIE_MIN_LENGTH = 32
+const SESSION_COOKIE_TEST_VALUE = 'x'.repeat(SESSION_COOKIE_MIN_LENGTH)
 
 export async function mockAuthConfig(importOriginal) {
-  const sessionCookiePassword = DEFAULT_SESSION_COOKIE_PASSWORD
+  const sessionCookiePassword = SESSION_COOKIE_TEST_VALUE
 
   const mod = await importOriginal()
   const originalGet = mod.config.get.bind(mod.config)
@@ -15,7 +15,7 @@ export async function mockAuthConfig(importOriginal) {
       return {
         ...session,
         cookie: {
-          ...(session.cookie ?? {}),
+          ...session.cookie,
           password: sessionCookiePassword
         }
       }
