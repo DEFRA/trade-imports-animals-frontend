@@ -44,4 +44,47 @@ describe('#config', () => {
       )
     })
   })
+
+  describe('env-backed booleans', () => {
+    const STRICT_BOOLEAN_ENV_VARS = [
+      'LOG_ENABLED',
+      'ENABLE_SECURE_CONTEXT',
+      'SESSION_COOKIE_SECURE',
+      'DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_ENABLED',
+      'DEFRA_ID_REFRESH_TOKENS',
+      'STUB_MODE',
+      'AUTH_ENABLED',
+      'USE_SINGLE_INSTANCE_CACHE',
+      'REDIS_TLS',
+      'NUNJUCKS_WATCH',
+      'NUNJUCKS_NO_CACHE'
+    ]
+
+    beforeEach(() => {
+      vi.resetModules()
+    })
+
+    afterEach(() => {
+      vi.unstubAllEnvs()
+    })
+
+    test.each(STRICT_BOOLEAN_ENV_VARS)(
+      "refuses %s when it is not 'true' or 'false'",
+      async (envVar) => {
+        vi.stubEnv(envVar, 'flase')
+
+        await expect(import('./config.js')).rejects.toThrow(
+          "must be 'true' or 'false'"
+        )
+      }
+    )
+
+    test('reads AUTH_ENABLED=false as false', async () => {
+      vi.stubEnv('AUTH_ENABLED', 'false')
+
+      const { config: freshConfig } = await import('./config.js')
+
+      expect(freshConfig.get('auth.enabled')).toBe(false)
+    })
+  })
 })

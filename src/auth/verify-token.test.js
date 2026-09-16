@@ -46,6 +46,7 @@ describe('verifyToken', () => {
   beforeEach(() => {
     configGetMock.mockImplementation((key) => {
       if (key === 'tracing.header') return tracingHeader
+      if (key === 'defraId.clientId') return 'test-client-id'
     })
     getTraceIdMock.mockReturnValue(traceId)
   })
@@ -60,7 +61,10 @@ describe('verifyToken', () => {
     const pem = '-----BEGIN PUBLIC KEY-----...'
     const decoded = { header: {}, payload: { sub: '123' } }
 
-    getOidcConfigMock.mockResolvedValue({ jwks_uri: jwksUri })
+    getOidcConfigMock.mockResolvedValue({
+      jwks_uri: jwksUri,
+      issuer: 'https://mock-auth-server'
+    })
     wreckGetMock.mockResolvedValue({ payload: { keys } })
     createPublicKeyMock.mockReturnValue({
       export: vi.fn().mockReturnValue(pem)
@@ -83,7 +87,9 @@ describe('verifyToken', () => {
     expect(jwtDecodeMock).toHaveBeenCalledWith(token)
     expect(jwtVerifyMock).toHaveBeenCalledWith(decoded, {
       key: pem,
-      algorithm: 'RS256'
+      algorithm: 'RS256',
+      aud: 'test-client-id',
+      iss: 'https://mock-auth-server'
     })
   })
 

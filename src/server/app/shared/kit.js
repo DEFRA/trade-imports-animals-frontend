@@ -12,7 +12,7 @@ import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
 import { isRecoverableBackendError } from '../services/persistence/records/errors.js'
 
-export const routeOptions = {}
+export const routeOptions = { auth: 'session' }
 
 /**
  * The one resolved instance of the shared chrome copy. `base` puts it in
