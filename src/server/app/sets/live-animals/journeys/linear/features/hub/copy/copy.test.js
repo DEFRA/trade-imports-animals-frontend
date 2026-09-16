@@ -51,15 +51,15 @@ const ADDRESSES_ROW_HINT =
 const ADDRESSES_ROW_HINT_CY =
   'Anfonwr neu allforiwr, derbynnydd, mewnforiwr a man cyrchfan'
 const CANNOT_START_CLASS = 'govuk-task-list__status--cannot-start-yet'
-const NOT_YET_STARTED_STATUS = {
-  tag: { text: 'Not yet started', classes: 'govuk-tag--blue' }
+// Design release 1 has two task statuses and no more: "To do" in blue and
+// "Complete" in green.
+const TO_DO_STATUS = {
+  tag: { text: 'To do', classes: 'govuk-tag--blue' }
 }
-const IN_PROGRESS_STATUS = {
-  tag: { text: 'In progress', classes: 'govuk-tag--light-blue' }
+const COMPLETE_STATUS = {
+  tag: { text: 'Complete', classes: 'govuk-tag--green' }
 }
-const COMPLETED_STATUS = {
-  tag: { text: 'Completed', classes: 'govuk-tag--green' }
-}
+const DESIGN_STATUSES = [TO_DO_STATUS, COMPLETE_STATUS]
 
 // Temporary admission of horses is the one reason that opens both a port of
 // exit and an exit date under it — the state the retired "Exit details" task
@@ -218,28 +218,31 @@ describe('#hubHandler', () => {
   })
 
   it('Should carry the exit questions in the import-reason row status rather than a task of their own', async () => {
+    // Owing the exit date holds the row short of Complete. Design release 1
+    // draws that with the plain "To do" it gives an untouched task — the row
+    // is unfinished, and the hub says no more than that.
     const owingTheExitDate = await renderHub(temporaryAdmissionSeed)
     expect(
       rowByTitle(owingTheExitDate, IMPORT_REASON_ROW_TITLE).status
-    ).toEqual(IN_PROGRESS_STATUS)
+    ).toEqual(TO_DO_STATUS)
 
     const answered = await renderHub({
       ...temporaryAdmissionSeed,
       exitDate: EXIT_DATE
     })
     expect(rowByTitle(answered, IMPORT_REASON_ROW_TITLE).status).toEqual(
-      COMPLETED_STATUS
+      COMPLETE_STATUS
     )
   })
 
-  it('Should render the always-open origin row as a blue "Not yet started" tag with a link', async () => {
+  it('Should render the always-open origin row as a blue "To do" tag with a link', async () => {
     const context = await renderHub()
     const originRow = rowByTitle(context, ORIGIN_ROW_TITLE)
     expect(originRow.href).toBe(pagePath(context.journeyId, 'origin'))
-    expect(originRow.status).toEqual(NOT_YET_STARTED_STATUS)
+    expect(originRow.status).toEqual(TO_DO_STATUS)
   })
 
-  it('Should render a completed row as a green "Completed" tag', async () => {
+  it('Should render a finished row as a green "Complete" tag', async () => {
     const originRow = rowByTitle(
       await renderHub({
         countryOfOrigin: 'FR',
@@ -247,7 +250,7 @@ describe('#hubHandler', () => {
       }),
       ORIGIN_ROW_TITLE
     )
-    expect(originRow.status).toEqual(COMPLETED_STATUS)
+    expect(originRow.status).toEqual(COMPLETE_STATUS)
   })
 
   // Design release 1 lets a trader start any task on the notification in any
@@ -310,10 +313,10 @@ describe('#hubHandler', () => {
       ]
     })
     expect(rowByTitle(context, COMMODITIES_ROW_TITLE).status).toEqual(
-      COMPLETED_STATUS
+      COMPLETE_STATUS
     )
     const identificationRow = rowByTitle(context, 'Identification details')
-    expect(identificationRow.status).toEqual(NOT_YET_STARTED_STATUS)
+    expect(identificationRow.status).toEqual(TO_DO_STATUS)
     expect(identificationRow.href).toBe(
       pagePath(context.journeyId, 'commodities/identification')
     )
@@ -337,17 +340,18 @@ describe('#hubHandler', () => {
     expect(transitRow.href).toBe(
       pagePath(byRoad.journeyId, 'transit-countries')
     )
-    // Asked overland, but the answer is optional, so an untouched row reads
-    // Optional rather than Not yet started.
-    expect(transitRow.status).toEqual({ text: 'Optional' })
+    // The answer is optional, but Design release 1 does not say so on the hub:
+    // an untouched optional row carries the same "To do" tag as any other
+    // untouched row.
+    expect(transitRow.status).toEqual(TO_DO_STATUS)
   })
 
-  it('Should render the optional documents row as an Optional status', async () => {
+  it('Should tag the optional documents row "To do" like any other unfinished row', async () => {
     const documentsRow = rowByTitle(
       await renderHub(unlockedSeed),
       'Upload documents'
     )
-    expect(documentsRow.status).toEqual({ text: 'Optional' })
+    expect(documentsRow.status).toEqual(TO_DO_STATUS)
   })
 
   it('Should enter each movement row at its first page', async () => {
@@ -383,6 +387,52 @@ describe('#hubHandler', () => {
     expect(context.reviewHref).toBe(
       pagePath(context.journeyId, 'notification-view')
     )
+  })
+})
+
+describe('#hubHandler — the task statuses', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  // Design release 1 gives a task one of two statuses and has no third. A row
+  // the engine holds part-answered, and one it holds optional, both read
+  // "To do": the hub never tells a trader a task is half-done, and never tells
+  // them on this page that a task can be left out.
+  it('Should tag every row with one of the two design statuses, whatever is answered', async () => {
+    const seeds = [
+      {},
+      unlockedSeed,
+      temporaryAdmissionSeed,
+      { ...temporaryAdmissionSeed, meansOfTransport: 'ROAD_VEHICLE' },
+      { countryOfOrigin: 'FR', regionOfOriginCodeRequirement: 'no' }
+    ]
+
+    for (const seed of seeds) {
+      const rows = allItems(await renderHub(seed))
+      expect(rows).not.toHaveLength(0)
+      for (const row of rows) {
+        expect(
+          DESIGN_STATUSES,
+          `${row.title.text} is tagged ${JSON.stringify(row.status)}`
+        ).toContainEqual(row.status)
+      }
+    }
+  })
+
+  it('Should hold the two design statuses in both locales', () => {
+    expect(copy.statuses).toEqual({ complete: 'Complete', toDo: 'To do' })
+
+    // Copy parity only checks that a Welsh leaf differs from its English
+    // counterpart, so the Welsh statuses are pinned here beside the English
+    // ones.
+    expect(copyCy.statuses).toEqual({
+      complete: 'Wedi’i gwblhau',
+      toDo: 'I’w wneud'
+    })
   })
 })
 
@@ -447,7 +497,7 @@ describe('#hubHandler — the Commodity details row', () => {
     expect(firstItem.href).toBe(
       pagePath(context.journeyId, 'consignment-details')
     )
-    expect(firstItem.status).toEqual(NOT_YET_STARTED_STATUS)
+    expect(firstItem.status).toEqual(TO_DO_STATUS)
   })
 
   it('Should carry a status the commodities row does not answer for', async () => {
@@ -465,17 +515,17 @@ describe('#hubHandler — the Commodity details row', () => {
 
     const owingTheNumbers = await renderHub(seedLine({}))
     expect(rowByTitle(owingTheNumbers, COMMODITIES_ROW_TITLE).status).toEqual(
-      COMPLETED_STATUS
+      COMPLETE_STATUS
     )
     expect(
       rowByTitle(owingTheNumbers, CONSIGNMENT_DETAILS_ROW_TITLE).status
-    ).toEqual(NOT_YET_STARTED_STATUS)
+    ).toEqual(TO_DO_STATUS)
 
     const answered = await renderHub(
       seedLine({ numberOfPackages: '5', numberOfAnimalsQuantity: '25' })
     )
     expect(rowByTitle(answered, CONSIGNMENT_DETAILS_ROW_TITLE).status).toEqual(
-      COMPLETED_STATUS
+      COMPLETE_STATUS
     )
   })
 })

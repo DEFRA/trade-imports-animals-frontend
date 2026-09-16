@@ -11,10 +11,8 @@ export const copy = {
   reviewAndSubmit: 'Adolygu a chyflwyno',
   returnToDashboard: 'Dychwelyd i’r dangosfwrdd',
   statuses: {
-    completed: 'Wedi’i gwblhau',
-    optional: 'Dewisol',
-    inProgress: 'Ar y gweill',
-    notYetStarted: 'Heb ddechrau eto'
+    complete: 'Wedi’i gwblhau',
+    toDo: 'I’w wneud'
   },
   taskListHeading: 'Rhestr dasgau’r hysbysiad',
   groups: {
