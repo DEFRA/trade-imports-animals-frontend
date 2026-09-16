@@ -28,6 +28,9 @@ export function activeNavigationItem(requestPath = '') {
   return inDashboardSection(requestPath) ? 'dashboard' : null
 }
 
+const insAddressBookUrl = () =>
+  `${config.get('tradeImportsInsFrontend.baseUrl').replace(/\/$/, '')}/address-book`
+
 async function context(request) {
   if (!webpackManifest) {
     try {
@@ -51,6 +54,7 @@ async function context(request) {
     authEnabled: config.get('auth.enabled'),
     staleActionRejected: request.query?.staleAction === '1',
     activeNavigationItem: activeNavigationItem(request.path),
+    addressBookUrl: insAddressBookUrl(),
     userSession: authData
       ? {
           isAuthenticated: true,
