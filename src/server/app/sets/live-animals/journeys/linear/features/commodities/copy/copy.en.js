@@ -39,8 +39,7 @@ export const copy = {
       remove: 'Remove'
     },
     animals: {
-      label: 'Number of animals',
-      hint: 'For example, 1, 25 or 5000.'
+      label: 'Number of animals'
     },
     packages: {
       label: 'Number of packages (when required)',

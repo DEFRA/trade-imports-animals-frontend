@@ -83,7 +83,13 @@ test.describe('commodity consignment details — rendering and validation', () =
     ).toBeVisible()
     await expect(
       page.locator(FIRST_ANIMALS_QUANTITY_INPUT)
-    ).toHaveAccessibleDescription(copy.consignmentDetails.animals.hint)
+    ).toHaveAccessibleName(copy.consignmentDetails.animals.label)
+    // The number of animals question carries its label alone — the design
+    // gives it no hint, and the page repeats the question per species, so an
+    // example would repeat with it.
+    await expect(
+      page.locator(FIRST_ANIMALS_QUANTITY_INPUT)
+    ).toHaveAccessibleDescription('')
     await expect(page.locator(FIRST_PACKAGES_INPUT)).toHaveAccessibleName(
       copy.consignmentDetails.packages.label
     )

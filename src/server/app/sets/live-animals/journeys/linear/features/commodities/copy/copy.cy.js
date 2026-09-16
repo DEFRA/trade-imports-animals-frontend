@@ -47,8 +47,7 @@ export const copy = {
       remove: 'Tynnu'
     },
     animals: {
-      label: 'Nifer yr anifeiliaid',
-      hint: 'Er enghraifft, 1, 25 neu 5000.'
+      label: 'Nifer yr anifeiliaid'
     },
     packages: {
       label: 'Nifer y pecynnau (pan fo angen)',
