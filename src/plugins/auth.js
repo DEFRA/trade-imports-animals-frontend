@@ -99,6 +99,7 @@ function getBellOptions(oidcConfig) {
 function getCookieOptions() {
   return {
     cookie: {
+      name: config.get('auth.cookieName'),
       password: config.get('session.cookie.password'),
       path: '/',
       isSecure: config.get('isProduction')

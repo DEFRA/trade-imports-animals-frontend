@@ -271,6 +271,12 @@ export const config = convict({
     env: 'STUB_MODE'
   },
   auth: {
+    cookieName: {
+      doc: 'Auth session cookie name. Each frontend uses a distinct name in development so signing in to one does not overwrite another frontend session on localhost.',
+      format: String,
+      default: 'sid',
+      env: 'AUTH_SESSION_COOKIE_NAME'
+    },
     enabled: {
       doc: 'Enable authentication (Bell + session cookie)',
       format: STRICT_BOOLEAN,
@@ -380,7 +386,7 @@ export const config = convict({
   tradeImportsInsFrontend: {
     baseUrl: {
       doc: "Trade Imports INS Frontend base URL. Browser-visible — used to build deep links the trader's own browser navigates to, so it must resolve outside the Docker network (unlike the server-side API base URLs above).",
-      format: String,
+      format: 'url',
       default: 'http://localhost:3002',
       env: 'TRADE_IMPORTS_INS_FRONTEND_URL'
     }
@@ -388,3 +394,7 @@ export const config = convict({
 })
 
 config.validate({ allowed: 'strict' })
+
+export const siblingFrontendBaseUrls = [
+  config.get('tradeImportsInsFrontend.baseUrl')
+]

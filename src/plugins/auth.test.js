@@ -41,6 +41,8 @@ vi.mock('@hapi/jwt', () => ({
   }
 }))
 
+const AUTH_COOKIE_NAME = 'test-auth-cookie'
+
 describe('auth plugin', () => {
   const oidcConfig = {
     authorization_endpoint: 'https://idp.example.com/auth',
@@ -65,6 +67,7 @@ describe('auth plugin', () => {
         'defraId.clientId': 'test-client-id',
         'defraId.clientSecret': 'test-client-secret',
         'session.cookie.password': 'some-password-32-chars-long-000000',
+        'auth.cookieName': AUTH_COOKIE_NAME,
         isProduction: false,
         'session.cookie.sameSite': 'Lax',
         'defraId.redirectUrl': 'http://localhost:3000/auth/sign-in-oidc',
@@ -264,6 +267,10 @@ describe('auth plugin', () => {
           }
         }
       }
+    })
+
+    test('uses the configured auth cookie name', () => {
+      expect(getCookieOptions().cookie.name).toBe(AUTH_COOKIE_NAME)
     })
 
     test('redirectTo builds /auth/sign-in redirect including pathname and search', () => {
