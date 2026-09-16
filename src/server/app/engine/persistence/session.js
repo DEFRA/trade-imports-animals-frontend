@@ -1,7 +1,8 @@
 export const SESSION_COOKIES = {
   knownJourneys: 'knownJourneys',
   openingRun: 'openingRun',
-  flowOnlyAnswers: 'flowOnlyAnswers'
+  flowOnlyAnswers: 'flowOnlyAnswers',
+  addressHandshakeTokens: 'addressHandshakeTokens'
 }
 
 const unconfigured = () => {
