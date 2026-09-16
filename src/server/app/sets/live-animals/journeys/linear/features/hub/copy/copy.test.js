@@ -41,7 +41,7 @@ const unlockedSeed = {
 const ORIGIN_ROW_TITLE = 'Where is this consignment coming from?'
 const COMMODITIES_ROW_TITLE = 'What are you importing?'
 const CONSIGNMENT_DETAILS_ROW_TITLE = 'Commodity details'
-const IMPORT_REASON_ROW_TITLE = 'Main reason for importing'
+const IMPORT_REASON_ROW_TITLE = 'Main reason for import'
 const TRANSIT_ROW_TITLE = 'Transit countries'
 const ARRIVAL_ROW_TITLE = 'Arrival details'
 const ADDRESSES_ROW_TITLE = 'Roles and addresses'
@@ -102,6 +102,31 @@ describe('#copy', () => {
 
     expect(hintedCy).toEqual(['addresses'])
     expect(copyCy.rows.addresses.hint).toBe(ADDRESSES_ROW_HINT_CY)
+  })
+
+  // The English row titles are pinned exhaustively by the rendered-row table
+  // in 'GET /hub', but copy parity only checks that a Welsh leaf differs from
+  // its English counterpart, so the Welsh titles are pinned here the same way
+  // the Welsh parties hint above is. Design release 1 wording, both locales.
+  test('Should pin the Welsh row titles', () => {
+    const titlesCy = Object.fromEntries(
+      Object.entries(copyCy.rows).map(([id, row]) => [id, row.title])
+    )
+
+    expect(titlesCy).toEqual({
+      origin: 'O ble mae’r llwyth hwn yn dod?',
+      commodities: 'Beth ydych chi’n ei fewnforio?',
+      importReason: 'Prif reswm dros fewnforio',
+      consignmentDetails: 'Manylion y nwyddau',
+      additionalDetails: 'Manylion ychwanegol',
+      animalIdentification: 'Manylion adnabod',
+      arrivalDetails: 'Manylion cyrraedd',
+      transitCountries: 'Gwledydd tramwy',
+      transporter: 'Manylion cludo',
+      addresses: 'Rolau a chyfeiriadau',
+      contact: 'Cyfeiriad cyswllt ar gyfer y llwyth hwn',
+      documents: 'Uwchlwytho dogfennau'
+    })
   })
 })
 
@@ -170,13 +195,13 @@ describe('#hubHandler', () => {
       // which is the order the opening run visits the two pages in too.
       [
         CONSIGNMENT_DETAILS_ROW_TITLE,
-        'Animal identification details',
-        'Additional commodity details'
+        'Identification details',
+        'Additional details'
       ],
-      [ARRIVAL_ROW_TITLE, 'Transporter'],
-      ['Uploaded documents'],
+      [ARRIVAL_ROW_TITLE, 'Transport details'],
+      ['Upload documents'],
       [ADDRESSES_ROW_TITLE],
-      ['Contact address']
+      ['Contact address for this consignment']
     ])
   })
 
@@ -256,9 +281,9 @@ describe('#hubHandler', () => {
     expect(rowByTitle(context, ARRIVAL_ROW_TITLE).href).toBe(
       pagePath(context.journeyId, 'port-of-entry')
     )
-    expect(rowByTitle(context, 'Contact address').href).toBe(
-      pagePath(context.journeyId, 'consignment/contact/select')
-    )
+    expect(
+      rowByTitle(context, 'Contact address for this consignment').href
+    ).toBe(pagePath(context.journeyId, 'consignment/contact/select'))
   })
 
   it('Should split the commodities and identification rows over one collection — line data completes one, identifiers the other', async () => {
@@ -287,10 +312,7 @@ describe('#hubHandler', () => {
     expect(rowByTitle(context, COMMODITIES_ROW_TITLE).status).toEqual(
       COMPLETED_STATUS
     )
-    const identificationRow = rowByTitle(
-      context,
-      'Animal identification details'
-    )
+    const identificationRow = rowByTitle(context, 'Identification details')
     expect(identificationRow.status).toEqual(NOT_YET_STARTED_STATUS)
     expect(identificationRow.href).toBe(
       pagePath(context.journeyId, 'commodities/identification')
@@ -323,7 +345,7 @@ describe('#hubHandler', () => {
   it('Should render the optional documents row as an Optional status', async () => {
     const documentsRow = rowByTitle(
       await renderHub(unlockedSeed),
-      'Uploaded documents'
+      'Upload documents'
     )
     expect(documentsRow.status).toEqual({ text: 'Optional' })
   })
@@ -333,7 +355,7 @@ describe('#hubHandler', () => {
     expect(rowByTitle(context, ARRIVAL_ROW_TITLE).href).toBe(
       pagePath(context.journeyId, 'port-of-entry')
     )
-    expect(rowByTitle(context, 'Transporter').href).toBe(
+    expect(rowByTitle(context, 'Transport details').href).toBe(
       pagePath(context.journeyId, 'transporters')
     )
     expect(rowByTitle(context, ADDRESSES_ROW_TITLE).href).toBe(

@@ -35,16 +35,16 @@ export const copy = {
       title: 'What are you importing?'
     },
     importReason: {
-      title: 'Main reason for importing'
+      title: 'Main reason for import'
     },
     consignmentDetails: {
       title: 'Commodity details'
     },
     additionalDetails: {
-      title: 'Additional commodity details'
+      title: 'Additional details'
     },
     animalIdentification: {
-      title: 'Animal identification details'
+      title: 'Identification details'
     },
     arrivalDetails: {
       title: 'Arrival details'
@@ -53,17 +53,17 @@ export const copy = {
       title: 'Transit countries'
     },
     transporter: {
-      title: 'Transporter'
+      title: 'Transport details'
     },
     addresses: {
       title: 'Roles and addresses',
       hint: 'Consignor or Exporter, Consignee, Importer and Place of Destination'
     },
     contact: {
-      title: 'Contact address'
+      title: 'Contact address for this consignment'
     },
     documents: {
-      title: 'Uploaded documents'
+      title: 'Upload documents'
     }
   }
 }

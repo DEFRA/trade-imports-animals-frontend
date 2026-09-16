@@ -26,7 +26,7 @@ const OVERSIZE_FILENAME = 'oversize.pdf'
 const openDocuments = async (page) => {
   await startNotification(page)
   await unlockSections(page)
-  await page.getByRole('link', { name: 'Uploaded documents' }).click()
+  await page.getByRole('link', { name: 'Upload documents' }).click()
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
 
