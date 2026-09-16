@@ -21,13 +21,15 @@ const csrfEnabled = !isTest
 
 convict.addFormats(convictFormatWithValidator)
 
+const STRICT_BOOLEAN = 'strict-boolean'
+
 // convict's built-in Boolean format coerces any string other than exactly
 // 'false' to true (e.g. a typo like 'flase' silently enables the flag), so
 // every env-backed boolean uses this stricter format instead - it only
 // accepts an actual boolean, or the literal strings 'true'/'false' from an
 // env var, and fails config.validate() on anything else.
 convict.addFormat({
-  name: 'strict-boolean',
+  name: STRICT_BOOLEAN,
   validate(val) {
     if (typeof val !== 'boolean') {
       throw new TypeError("must be 'true' or 'false'")
@@ -104,7 +106,7 @@ export const config = convict({
   log: {
     enabled: {
       doc: 'Is logging enabled',
-      format: 'strict-boolean',
+      format: STRICT_BOOLEAN,
       default: process.env.NODE_ENV !== 'test',
       env: 'LOG_ENABLED'
     },
@@ -137,7 +139,7 @@ export const config = convict({
   },
   isSecureContextEnabled: {
     doc: 'Enable Secure Context',
-    format: 'strict-boolean',
+    format: STRICT_BOOLEAN,
     default: isProduction,
     env: 'ENABLE_SECURE_CONTEXT'
   },
@@ -178,7 +180,7 @@ export const config = convict({
       },
       secure: {
         doc: 'set secure flag on cookie',
-        format: 'strict-boolean',
+        format: STRICT_BOOLEAN,
         default: isProduction,
         env: 'SESSION_COOKIE_SECURE'
       },
@@ -239,7 +241,7 @@ export const config = convict({
     signOutHostnameRewrite: {
       enabled: {
         doc: 'Rewrite internal OIDC hostnames in sign-out URL for local environments',
-        format: 'strict-boolean',
+        format: STRICT_BOOLEAN,
         default: !isProduction,
         env: 'DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_ENABLED'
       },
@@ -257,21 +259,21 @@ export const config = convict({
     },
     refreshTokens: {
       doc: 'True if Defra Identity refresh tokens are enabled.',
-      format: 'strict-boolean',
+      format: STRICT_BOOLEAN,
       default: true,
       env: 'DEFRA_ID_REFRESH_TOKENS'
     }
   },
   stubMode: {
     doc: 'Run against stubs rather than real dependencies: stub data in place of the address book, backend and reference data, and a locally signed session in place of the Defra ID OIDC exchange. Auth is still enforced - only the external OIDC round-trip is bypassed. Ignored in production (see isStubMode).',
-    format: 'strict-boolean',
+    format: STRICT_BOOLEAN,
     default: false,
     env: 'STUB_MODE'
   },
   auth: {
     enabled: {
       doc: 'Enable authentication (Bell + session cookie)',
-      format: 'strict-boolean',
+      format: STRICT_BOOLEAN,
       default: true,
       env: 'AUTH_ENABLED'
     }
@@ -304,13 +306,13 @@ export const config = convict({
     },
     useSingleInstanceCache: {
       doc: 'Connect to a single instance of redis instead of a cluster.',
-      format: 'strict-boolean',
+      format: STRICT_BOOLEAN,
       default: !isProduction,
       env: 'USE_SINGLE_INSTANCE_CACHE'
     },
     useTLS: {
       doc: 'Connect to redis using TLS',
-      format: 'strict-boolean',
+      format: STRICT_BOOLEAN,
       default: isProduction,
       env: 'REDIS_TLS'
     }
@@ -318,13 +320,13 @@ export const config = convict({
   nunjucks: {
     watch: {
       doc: 'Reload templates when they are changed.',
-      format: 'strict-boolean',
+      format: STRICT_BOOLEAN,
       default: isDevelopment,
       env: 'NUNJUCKS_WATCH'
     },
     noCache: {
       doc: 'Recompile every template on every render instead of caching it.',
-      format: 'strict-boolean',
+      format: STRICT_BOOLEAN,
       default: isDevelopment,
       env: 'NUNJUCKS_NO_CACHE'
     }
