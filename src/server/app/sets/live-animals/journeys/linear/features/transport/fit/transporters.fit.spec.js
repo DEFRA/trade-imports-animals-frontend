@@ -1,4 +1,3 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   expectPageEndsWithPrimaryAlone,
@@ -16,6 +15,7 @@ import {
   PRIVATE,
   parties
 } from '../../../../../../../services/transporters/index.js'
+import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy as sectionCaptionsCopy } from '../../../flow/section-captions/copy/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { addressSummary } from '../transporters/transporter-record.js'
@@ -118,29 +118,6 @@ const openPrivate = async (page) => {
 
 const errorLink = (page, message) =>
   page.locator(ERROR_SUMMARY).getByRole('link', { name: message })
-
-const seriousOrCritical = (violations) =>
-  violations
-    .filter(({ impact }) => ['serious', 'critical'].includes(impact))
-    .filter(
-      (violation) =>
-        !(
-          violation.id === 'aria-allowed-attr' &&
-          violation.nodes.every((node) =>
-            /govuk-(radios|checkboxes)__input/.test(node.html)
-          )
-        )
-    )
-
-const expectAxeClean = async (page, name) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  expect(
-    seriousOrCritical(results.violations),
-    `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-  ).toEqual([])
-}
 
 const validPrivateTransporter = {
   nameOrOrganisationName: 'Jean Dupont',
@@ -581,7 +558,10 @@ test.describe('searching the transporter list', () => {
     await openTransporterList(page)
     await searchTransporters(page, privateRecord.name)
 
-    await expectAxeClean(page, 'Transporter list search results')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Transporter list search results'
+    )
   })
 })
 
@@ -1019,27 +999,30 @@ test.describe('transporter pages accessibility', () => {
     page
   }) => {
     await openTransporterList(page)
-    await expectAxeClean(page, 'Transporter list')
+    await expectNoSeriousOrCriticalViolations(page, 'Transporter list')
   })
 
   test('transporter type page has no serious or critical axe violations', async ({
     page
   }) => {
     await openTransporterType(page)
-    await expectAxeClean(page, 'Transporter type')
+    await expectNoSeriousOrCriticalViolations(page, 'Transporter type')
   })
 
   test('commercial transporter page has no serious or critical axe violations', async ({
     page
   }) => {
     await openCommercialRegister(page)
-    await expectAxeClean(page, 'Commercial transporter')
+    await expectNoSeriousOrCriticalViolations(page, 'Commercial transporter')
   })
 
   test('private transporter page has no serious or critical axe violations', async ({
     page
   }) => {
     await openPrivate(page)
-    await expectAxeClean(page, 'Private transporter details')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Private transporter details'
+    )
   })
 })

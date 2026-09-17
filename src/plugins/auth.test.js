@@ -41,6 +41,8 @@ vi.mock('@hapi/jwt', () => ({
   }
 }))
 
+const AUTH_COOKIE_NAME = 'test-auth-cookie'
+
 describe('auth plugin', () => {
   const oidcConfig = {
     authorization_endpoint: 'https://idp.example.com/auth',
@@ -65,6 +67,7 @@ describe('auth plugin', () => {
         'defraId.clientId': 'test-client-id',
         'defraId.clientSecret': 'test-client-secret',
         'session.cookie.password': 'some-password-32-chars-long-000000',
+        'auth.cookieName': AUTH_COOKIE_NAME,
         isProduction: false,
         'session.cookie.sameSite': 'Lax',
         'defraId.redirectUrl': 'http://localhost:3000/auth/sign-in-oidc',
@@ -255,7 +258,51 @@ describe('auth plugin', () => {
   })
 
   describe('getCookieOptions', () => {
+    const buildRequestWithCachedSession = (userSession) => ({
+      server: {
+        app: {
+          cache: {
+            get: vi.fn().mockResolvedValue(userSession),
+            set: vi.fn()
+          }
+        }
+      }
+    })
+
+    test('uses the configured auth cookie name', () => {
+      expect(getCookieOptions().cookie.name).toBe(AUTH_COOKIE_NAME)
+    })
+
     test('redirectTo builds /auth/sign-in redirect including pathname and search', () => {
+      const options = getCookieOptions()
+
+      const redirect = options.redirectTo({
+        url: {
+          pathname: '/origin',
+          search: '?a=1'
+        }
+      })
+
+      expect(redirect).toBe('/auth/sign-in?redirect=%2Forigin%3Fa%3D1')
+    })
+
+    test('redirectTo encodes the return URL query string', () => {
+      const options = getCookieOptions()
+
+      const redirect = options.redirectTo({
+        url: {
+          pathname: '/address-book',
+          search: '?q=France&page=2'
+        }
+      })
+
+      expect(redirect).toBe(
+        '/auth/sign-in?redirect=%2Faddress-book%3Fq%3DFrance%26page%3D2'
+      )
+    })
+
+    test('redirectTo keeps sending unauthenticated requests to /auth/sign-in in stub mode', () => {
+      isStubModeMock.mockReturnValue(true)
       const options = getCookieOptions()
 
       const redirect = options.redirectTo({
@@ -292,16 +339,7 @@ describe('auth plugin', () => {
         refreshToken: 'refresh-token'
       }
 
-      const request = {
-        server: {
-          app: {
-            cache: {
-              get: vi.fn().mockResolvedValue(userSession),
-              set: vi.fn()
-            }
-          }
-        }
-      }
+      const request = buildRequestWithCachedSession(userSession)
 
       jwtDecodeMock.mockReturnValue({ exp: 999999 })
       jwtVerifyTimeMock.mockImplementation(() => undefined)
@@ -320,16 +358,7 @@ describe('auth plugin', () => {
         refreshToken: 'old-refresh'
       }
 
-      const request = {
-        server: {
-          app: {
-            cache: {
-              get: vi.fn().mockResolvedValue(userSession),
-              set: vi.fn()
-            }
-          }
-        }
-      }
+      const request = buildRequestWithCachedSession(userSession)
 
       jwtDecodeMock.mockReturnValue({ exp: 1 })
       jwtVerifyTimeMock.mockImplementation(() => {
@@ -385,16 +414,7 @@ describe('auth plugin', () => {
         refreshToken: 'old-refresh'
       }
 
-      const request = {
-        server: {
-          app: {
-            cache: {
-              get: vi.fn().mockResolvedValue(userSession),
-              set: vi.fn()
-            }
-          }
-        }
-      }
+      const request = buildRequestWithCachedSession(userSession)
 
       jwtDecodeMock.mockReturnValue({ exp: 1 })
       jwtVerifyTimeMock.mockImplementation(() => {
@@ -405,6 +425,27 @@ describe('auth plugin', () => {
 
       expect(res).toEqual({ isValid: false })
       expect(refreshTokensMock).not.toHaveBeenCalled()
+      expect(request.server.app.cache.set).not.toHaveBeenCalled()
+    })
+
+    test('validate returns isValid:false when refreshTokens rejects', async () => {
+      const options = getCookieOptions()
+      const userSession = {
+        token: 'old-token',
+        refreshToken: 'old-refresh'
+      }
+
+      const request = buildRequestWithCachedSession(userSession)
+
+      jwtDecodeMock.mockReturnValue({ exp: 1 })
+      jwtVerifyTimeMock.mockImplementation(() => {
+        throw new Error('token expired')
+      })
+      refreshTokensMock.mockRejectedValue(new Error('refresh failed'))
+
+      const res = await options.validate(request, { sessionId: 'session-1' })
+
+      expect(res).toEqual({ isValid: false })
       expect(request.server.app.cache.set).not.toHaveBeenCalled()
     })
   })

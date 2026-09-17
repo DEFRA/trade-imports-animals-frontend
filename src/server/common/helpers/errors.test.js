@@ -1,11 +1,9 @@
+import Boom from '@hapi/boom'
 import { vi } from 'vitest'
 
 import { catchAll } from './errors.js'
 import { createServer } from '../../server.js'
 import { statusCodes } from '../constants/status-codes.js'
-import * as countries from '../../app/services/countries/index.js'
-import { config } from '../../../config/config.js'
-
 import { mockOidcConfig } from '../test-helpers/mock-oidc-config.js'
 
 vi.mock('../../../auth/get-oidc-config.js', () => ({
@@ -25,15 +23,13 @@ describe('#errors', () => {
         throw new TypeError('programming failure')
       }
     })
-    // Simulates a page that reads reference data — with self-loading readers,
-    // the read triggers a countries load; if that load fails the reader
-    // rejects with Boom.serverUnavailable and catchAll renders the error
-    // page as a 503.
     server.route({
       method: 'GET',
-      path: '/test/refdata-missing',
+      path: '/test/service-unavailable',
       options: { auth: false },
-      handler: () => countries.originLabel('FR')
+      handler: () => {
+        throw Boom.serverUnavailable()
+      }
     })
     await server.initialize()
   })
@@ -53,11 +49,10 @@ describe('#errors', () => {
         'Page not found - Import notification service - GOV.UK'
       )
     )
-    expect(result).not.toEqual(expect.stringContaining('Prototype'))
     expect(statusCode).toBe(statusCodes.notFound)
   })
 
-  test('Should render an unexpected programming error in promoted chrome without the recoverable banner', async () => {
+  test('Should render an unexpected programming error in the shared layout without the recoverable banner', async () => {
     const { result, statusCode } = await server.inject({
       method: 'GET',
       url: '/test/programming-error'
@@ -71,34 +66,23 @@ describe('#errors', () => {
     )
     expect(result).toEqual(expect.stringContaining('>500</h1>'))
     expect(result).not.toEqual(
-      expect.stringContaining(
-        'Your answers on this page have been saved. Try again in a few minutes.'
-      )
+      expect.stringContaining('Try again in a few minutes.')
     )
   })
 
-  test('Should serve the shared error page as a 503 when a page reads reference data that will not load', async () => {
-    // Flip to real mode for the length of this request so the reader tries
-    // to load; with no fetch stubbed the load rejects, the reader throws
-    // Boom.serverUnavailable, and catchAll renders the shared error page.
-    const originalStubMode = config.get('stubMode')
-    config.set('stubMode', false)
-    try {
-      const { result, statusCode } = await server.inject({
-        method: 'GET',
-        url: '/test/refdata-missing'
-      })
+  test('Should serve the shared error page as a 503 when a service behind the page is unavailable', async () => {
+    const { result, statusCode } = await server.inject({
+      method: 'GET',
+      url: '/test/service-unavailable'
+    })
 
-      expect(statusCode).toBe(statusCodes.serviceUnavailable)
-      expect(result).toEqual(
-        expect.stringContaining(
-          'Something went wrong - Import notification service - GOV.UK'
-        )
+    expect(statusCode).toBe(statusCodes.serviceUnavailable)
+    expect(result).toEqual(
+      expect.stringContaining(
+        'Something went wrong - Import notification service - GOV.UK'
       )
-      expect(result).toEqual(expect.stringContaining('>503</h1>'))
-    } finally {
-      config.set('stubMode', originalStubMode)
-    }
+    )
+    expect(result).toEqual(expect.stringContaining('>503</h1>'))
   })
 })
 
@@ -133,7 +117,6 @@ describe('#catchAll', () => {
       pageTitle,
       heading,
       message: pageTitle,
-      journeyStrip: null,
       recoverableError: false
     })
 
@@ -165,7 +148,10 @@ describe('#catchAll', () => {
     expect(mockErrorLogger).not.toHaveBeenCalledWith(mockStack)
     expect(mockToolkitView).toHaveBeenCalledWith(
       errorPage,
-      expectedContext('Unauthorized', statusCodes.unauthorized)
+      expectedContext(
+        'You need to sign in to view this page',
+        statusCodes.unauthorized
+      )
     )
     expect(mockToolkitCode).toHaveBeenCalledWith(statusCodes.unauthorized)
   })
@@ -176,7 +162,10 @@ describe('#catchAll', () => {
     expect(mockErrorLogger).not.toHaveBeenCalledWith(mockStack)
     expect(mockToolkitView).toHaveBeenCalledWith(
       errorPage,
-      expectedContext('Bad Request', statusCodes.badRequest)
+      expectedContext(
+        'There is a problem with your request',
+        statusCodes.badRequest
+      )
     )
     expect(mockToolkitCode).toHaveBeenCalledWith(statusCodes.badRequest)
   })

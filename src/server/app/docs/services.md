@@ -43,3 +43,16 @@ See [Persistence](persistence.md).
 Reference data that only makes sense for one obligation set belongs to that set.
 The live-animals commodities service is documented in the
 [live-animals services guide](../sets/live-animals/docs/services.md).
+
+## Configuration
+
+| Convict key                             | Env var                             | Default                 |
+| --------------------------------------- | ----------------------------------- | ----------------------- |
+| `tradeImportsAnimalsBackendApi.baseUrl` | `TRADE_IMPORTS_ANIMALS_BACKEND_URL` | `http://localhost:8085` |
+| `tradeImportsReferenceDataApi.baseUrl`  | `TRADE_IMPORTS_REFERENCE_DATA_URL`  | `http://localhost:8086` |
+| `tradeImportsAddressBookApi.baseUrl`    | `TRADE_IMPORTS_ADDRESS_BOOK_URL`    | `http://localhost:8089` |
+| `tradeImportsInsFrontend.baseUrl`       | `TRADE_IMPORTS_INS_FRONTEND_URL`    | `http://localhost:3002` |
+
+The last one is browser-visible (the service navigation's Address book link
+and the address handshake), so under the workspace stack it stays `localhost`
+while the three API URLs use `host.docker.internal`.

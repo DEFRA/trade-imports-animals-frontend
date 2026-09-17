@@ -1,20 +1,15 @@
 import { statusCodes } from '../constants/status-codes.js'
-import { base } from '../../app/shared/kit.js'
+import { base, sharedCopy } from '../../app/shared/kit.js'
 
-function statusCodeMessage(statusCode) {
-  switch (statusCode) {
-    case statusCodes.notFound:
-      return 'Page not found'
-    case statusCodes.forbidden:
-      return 'Forbidden'
-    case statusCodes.unauthorized:
-      return 'Unauthorized'
-    case statusCodes.badRequest:
-      return 'Bad Request'
-    default:
-      return 'Something went wrong'
-  }
+const ERROR_PAGE_COPY_KEY = {
+  [statusCodes.notFound]: 'notFound',
+  [statusCodes.forbidden]: 'forbidden',
+  [statusCodes.unauthorized]: 'unauthorized',
+  [statusCodes.badRequest]: 'badRequest'
 }
+
+const errorMessageFor = (statusCode) =>
+  sharedCopy.errorPage[ERROR_PAGE_COPY_KEY[statusCode] ?? 'unexpected']
 
 export function catchAll(request, h) {
   const { response } = request
@@ -24,7 +19,7 @@ export function catchAll(request, h) {
   }
 
   const statusCode = response.output.statusCode
-  const errorMessage = statusCodeMessage(statusCode)
+  const errorMessage = errorMessageFor(statusCode)
 
   if (statusCode >= statusCodes.internalServerError) {
     request.logger.error(response?.stack)

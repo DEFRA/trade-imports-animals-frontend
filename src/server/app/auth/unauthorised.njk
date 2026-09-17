@@ -2,7 +2,11 @@
 
 {% set mainClasses = "govuk-main-wrapper--l" %}
 
+{# Destination for the retry link. A destination, not copy, so it lives here
+   rather than in copy.en.js/copy.cy.js — it is identical in both locales. #}
+{% set signInUrl = "/auth/sign-in" %}
+
 {% block journeyContent %}
-  <h1 class="govuk-heading-l">Sorry, we are unable to sign you in.</h1>
-  <p class="govuk-body">Please <a class="govuk-link" href="/auth/sign-in">try again</a>.</p>
+  <h1 class="govuk-heading-l">{{ sharedCopy.unauthorised.heading }}</h1>
+  <p class="govuk-body">{{ sharedCopy.unauthorised.bodyPrefix }} <a class="govuk-link" href="{{ signInUrl }}">{{ sharedCopy.unauthorised.signInLinkText }}</a>.</p>
 {% endblock %}

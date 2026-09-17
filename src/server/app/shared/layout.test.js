@@ -9,12 +9,14 @@ const environment = nunjucksConfig.options.compileOptions.environment
 
 const PHASE_BANNER = 'govuk-phase-banner'
 const BREADCRUMBS = 'govuk-breadcrumbs'
+const ADDRESS_BOOK_URL = 'http://ins.test/address-book'
 
 const renderLayout = (userSession, context = {}) =>
   environment.render('shared/layout.njk', {
     pageTitle: 'Create an import notification',
     sharedCopy,
     userSession,
+    addressBookUrl: ADDRESS_BOOK_URL,
     getAssetPath: (asset) => `/assets/${asset}`,
     ...context
   })
@@ -44,7 +46,7 @@ describe('service navigation', () => {
     ])
     expect(links.map((_, a) => $(a).attr('href')).get()).toEqual([
       '/',
-      '#',
+      ADDRESS_BOOK_URL,
       '#',
       '/auth/sign-out'
     ])

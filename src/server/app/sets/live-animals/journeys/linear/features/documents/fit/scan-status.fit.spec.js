@@ -5,6 +5,7 @@ import {
   startNotification,
   unlockSections
 } from '../../../../../../../../../../fit/live-animals-journey.js'
+import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { SCAN_STATUS } from '../scan-poll.js'
@@ -143,6 +144,19 @@ test.describe('document scan-status rendering', () => {
       })
       .click()
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  })
+
+  test('the settled scan-status table has no serious or critical axe violations', async ({
+    page
+  }) => {
+    test.slow()
+    const document = documentNamed('SCAN-AXE-0001', 'itahc-axe.pdf')
+    await uploadDocument(page, document)
+    await expect(
+      rowFor(page, document.accompanyingDocumentReference)
+    ).toContainText(copy.scanTags.complete)
+
+    await expectNoSeriousOrCriticalViolations(page, 'Documents, scan complete')
   })
 })
 

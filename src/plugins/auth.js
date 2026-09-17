@@ -99,6 +99,7 @@ function getBellOptions(oidcConfig) {
 function getCookieOptions() {
   return {
     cookie: {
+      name: config.get('auth.cookieName'),
       password: config.get('session.cookie.password'),
       path: '/',
       isSecure: config.get('isProduction')
@@ -124,11 +125,15 @@ function getCookieOptions() {
         if (!config.get('defraId.refreshTokens')) {
           return { isValid: false }
         }
-        const { access_token: token, refresh_token: refreshToken } =
-          await refreshTokens(userSession.refreshToken)
-        userSession.token = token
-        userSession.refreshToken = refreshToken
-        await request.server.app.cache.set(session.sessionId, userSession)
+        try {
+          const { access_token: token, refresh_token: refreshToken } =
+            await refreshTokens(userSession.refreshToken)
+          userSession.token = token
+          userSession.refreshToken = refreshToken
+          await request.server.app.cache.set(session.sessionId, userSession)
+        } catch {
+          return { isValid: false }
+        }
       }
 
       // Set the user's details on the request object and allow the request to continue

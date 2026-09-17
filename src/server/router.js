@@ -1,10 +1,9 @@
 import inert from '@hapi/inert'
 
 import { health } from './health/index.js'
-import { signout } from './signout/index.js'
+import { serviceRoutes } from './app/routes.js'
 import { serveStaticFiles } from './common/helpers/serve-static-files.js'
 import { config } from '../config/config.js'
-import { liveAnimals } from './app/routes.js'
 
 export const router = {
   plugin: {
@@ -12,20 +11,12 @@ export const router = {
     async register(server) {
       await server.register([inert])
 
-      // Health-check route. Used by platform to check if service is running, do not remove!
       await server.register([health])
 
-      // Application specific routes, add your own routes here
-      const authEnabled = config.get('auth.enabled')
-      const routes = [liveAnimals]
-
-      if (authEnabled) {
-        routes.push(signout)
+      if (config.get('auth.enabled')) {
+        await server.register([serviceRoutes])
       }
 
-      await server.register(routes)
-
-      // Static assets
       await server.register([serveStaticFiles])
     }
   }

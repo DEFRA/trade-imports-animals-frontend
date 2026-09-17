@@ -6,6 +6,7 @@ export {
   optionalText,
   maxText,
   requiredMaxText,
+  requiredEmail,
   pattern,
   postcode,
   vehicleReg,
@@ -17,7 +18,9 @@ export {
   dateParts,
   dateText,
   dateTextInRange,
-  requiredDateText
+  requiredDateText,
+  requiredDateTextInRange,
+  requiredTime
 } from './validators.js'
 export {
   addUtcDays,

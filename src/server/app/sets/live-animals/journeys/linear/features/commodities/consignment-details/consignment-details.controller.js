@@ -30,7 +30,7 @@ import { buildSelectedRows } from './view-model/selected-rows.js'
 import { payloadValues, storedValues } from './view-model/values.js'
 
 export const meta = { ...page, collects: [] }
-const view = `${TEMPLATES}/features/commodities/consignment-details/consignment-details`
+const view = `${TEMPLATES}/features/commodities/consignment-details/template`
 
 const copy = copyFor({ en, cy }).consignmentDetails
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })

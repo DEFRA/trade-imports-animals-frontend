@@ -1,5 +1,11 @@
 import Blankie from 'blankie'
 
+import { siblingFrontendBaseUrls } from '../../../config/config.js'
+
+const siblingFrontendOrigins = siblingFrontendBaseUrls.map(
+  (baseUrl) => new URL(baseUrl).origin
+)
+
 /**
  * Manage content security policies.
  * @satisfies {import('@hapi/hapi').Plugin}
@@ -22,7 +28,8 @@ const contentSecurityPolicy = {
     frameSrc: ['self', 'data:'],
     objectSrc: ['none'],
     frameAncestors: ['none'],
-    formAction: ['self'],
+    // A browser enforces form-action across the 302 that follows a cross-service POST.
+    formAction: ['self', ...siblingFrontendOrigins],
     manifestSrc: ['self'],
     generateNonces: false
   }

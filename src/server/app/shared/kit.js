@@ -12,9 +12,15 @@ import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
 import { isRecoverableBackendError } from '../services/persistence/records/errors.js'
 
-export const routeOptions = {}
+export const routeOptions = { auth: 'session' }
 
-const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
+/**
+ * The one resolved instance of the shared chrome copy. `base` puts it in
+ * every journey view model; a controller that builds its own view model —
+ * `src/server/auth/controller.js` — imports it from here rather than
+ * re-wiring `copyFor`.
+ */
+export const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 export const SURFACES = Object.freeze({
   form: 'govuk-grid-column-two-thirds',

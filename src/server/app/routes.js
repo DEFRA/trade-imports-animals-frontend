@@ -41,7 +41,7 @@ import { registerJourneyCookie } from './engine/journey.js'
 import { configureAnswersForRead } from './bridge/answers-read.js'
 import { withoutUnresolvedPartyRefs } from './sets/live-animals/journeys/linear/features/addresses/resolve-parties.js'
 
-export const liveAnimals = {
+export const serviceRoutes = {
   plugin: {
     name: 'live-animals',
     register: async (server) => {

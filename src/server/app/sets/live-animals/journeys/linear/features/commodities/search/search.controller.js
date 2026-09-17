@@ -16,7 +16,7 @@ import { selectedSummary } from './view-model/selected-summary.js'
 export { lineKey } from './selection/line-key.js'
 
 export const meta = { ...page, collects: ['commodityLines'] }
-const view = `${TEMPLATES}/features/commodities/search/search`
+const view = `${TEMPLATES}/features/commodities/search/template`
 
 const copy = copyFor({ en, cy }).search
 

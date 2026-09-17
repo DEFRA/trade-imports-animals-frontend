@@ -26,7 +26,7 @@ export { IDENTIFIER_LABELS } from './identifier/table.js'
 export { scopedFields }
 
 export const meta = { ...page, collects: [] }
-const view = `${TEMPLATES}/features/commodities/animal-identification/animal-identification`
+const view = `${TEMPLATES}/features/commodities/animal-identification/template`
 
 const copy = copyFor({ en, cy }).identification
 

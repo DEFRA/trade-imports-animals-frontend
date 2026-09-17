@@ -13,6 +13,7 @@ import {
   driveHandler,
   journeyRequest,
   postHandlerOf,
+  registerTestSessionAuth,
   stubH
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
@@ -639,6 +640,7 @@ describe(`${SUITE} — Remove`, () => {
   it('Should reject a remove POST carrying no CSRF crumb and serve no GET route that removes', async () => {
     const server = Hapi.server()
     await server.register(Crumb)
+    registerTestSessionAuth(server)
     server.route(animalIdentification.routes)
 
     const forged = await server.inject({

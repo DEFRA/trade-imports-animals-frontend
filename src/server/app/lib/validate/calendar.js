@@ -8,6 +8,7 @@ import { addDays, addMonths, isValid, parse } from 'date-fns'
 // `startOfDay` and `format` do NOT — both normalise to local — so day starts
 // and formatting are done through the UTC accessors instead.
 const DATE_TEXT_FORMAT = 'd/M/yyyy'
+const DATE_TEXT_SHAPE = /^\d{1,2}\/\d{1,2}\/\d{4}$/
 const MONTHS_IN_YEAR = 12
 
 /**
@@ -80,11 +81,17 @@ export const addUtcMonths = (date, months) =>
   addMonths(startOfUtcDay(date), months)
 
 /**
- * @param {string} raw - A `d/m/yyyy` or `dd/mm/yyyy` value.
+ * @param {string} raw - A `d/m/yyyy` or `dd/mm/yyyy` value, four-digit year.
  * @returns {Date|null} Midnight UTC, or null when the value is not a real date.
  */
 export const parseDateText = (raw) => {
-  const parsed = parse(String(raw ?? '').trim(), DATE_TEXT_FORMAT, new Date())
+  const text = String(raw ?? '').trim()
+  // date-fns reads `yyyy` as one to four digits, so without this guard
+  // `27/3/26` parses as the year 26 and slips under a `max` bound.
+  if (!DATE_TEXT_SHAPE.test(text)) {
+    return null
+  }
+  const parsed = parse(text, DATE_TEXT_FORMAT, new Date())
   // `parse` returns a local-time Date; the calendar day it names is what
   // matters, so it is re-anchored at midnight UTC.
   return isValid(parsed)

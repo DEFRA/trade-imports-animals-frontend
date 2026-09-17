@@ -17,6 +17,7 @@ import {
   driveHandler,
   journeyRequest,
   postHandlerOf,
+  registerTestSessionAuth,
   stubH
 } from '../../../../../../engine/test-support.js'
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
@@ -427,6 +428,7 @@ describe('documents — listing, scanning and removing', () => {
   it('Should reject a remove POST carrying no CSRF crumb and serve no GET route that removes', async () => {
     const server = Hapi.server()
     await server.register(Crumb)
+    registerTestSessionAuth(server)
     server.route(documents.routes)
 
     const forged = await server.inject({
@@ -725,6 +727,7 @@ describe('documents — scan-status poll and view context', () => {
 
   it('Should register the multipart POST route with the 10MB payload cap', () => {
     const server = Hapi.server()
+    registerTestSessionAuth(server)
     server.route(documents.routes)
     const route = server.table().find((entry) => entry.method === 'post')
     expect(route.settings.payload.maxBytes).toBe(MAX_PAYLOAD_BYTES)
@@ -739,6 +742,7 @@ describe('documents — reading an uploaded file back', () => {
   const journeyHolding = async (uploadId) => {
     const server = Hapi.server()
     registerJourneyCookie(server)
+    registerTestSessionAuth(server)
     server.route(documents.routes)
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, {
@@ -813,6 +817,7 @@ describe('documents — reading an uploaded file back', () => {
   it('Should answer 404 for a journey with no documents at all', async () => {
     const server = Hapi.server()
     registerJourneyCookie(server)
+    registerTestSessionAuth(server)
     server.route(documents.routes)
     const journey = await store.create()
 

@@ -62,6 +62,18 @@ describe('service-navigation copy', () => {
   })
 })
 
+describe('error-page copy', () => {
+  it('Should carry one message per status the catch-all names, and the fallback', () => {
+    expect(sharedEn.errorPage).toEqual({
+      notFound: 'Page not found',
+      forbidden: 'Forbidden',
+      unauthorized: 'You need to sign in to view this page',
+      badRequest: 'There is a problem with your request',
+      unexpected: 'Something went wrong'
+    })
+  })
+})
+
 describe('save-actions copy', () => {
   it('Should carry the Design release 1 control labels', () => {
     expect(sharedEn.saveActions).toEqual({

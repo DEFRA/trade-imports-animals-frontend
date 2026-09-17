@@ -21,6 +21,31 @@ const csrfEnabled = !isTest
 
 convict.addFormats(convictFormatWithValidator)
 
+const STRICT_BOOLEAN = 'strict-boolean'
+
+// convict's built-in Boolean format coerces any string other than exactly
+// 'false' to true (e.g. a typo like 'flase' silently enables the flag), so
+// every env-backed boolean uses this stricter format instead - it only
+// accepts an actual boolean, or the literal strings 'true'/'false' from an
+// env var, and fails config.validate() on anything else.
+convict.addFormat({
+  name: STRICT_BOOLEAN,
+  validate(val) {
+    if (typeof val !== 'boolean') {
+      throw new TypeError("must be 'true' or 'false'")
+    }
+  },
+  coerce(val) {
+    if (val === 'true') {
+      return true
+    }
+    if (val === 'false') {
+      return false
+    }
+    return val
+  }
+})
+
 export const config = convict({
   serviceVersion: {
     doc: 'The service version, this variable is injected into your docker container in CDP environments',
@@ -81,7 +106,7 @@ export const config = convict({
   log: {
     enabled: {
       doc: 'Is logging enabled',
-      format: Boolean,
+      format: STRICT_BOOLEAN,
       default: process.env.NODE_ENV !== 'test',
       env: 'LOG_ENABLED'
     },
@@ -114,7 +139,7 @@ export const config = convict({
   },
   isSecureContextEnabled: {
     doc: 'Enable Secure Context',
-    format: Boolean,
+    format: STRICT_BOOLEAN,
     default: isProduction,
     env: 'ENABLE_SECURE_CONTEXT'
   },
@@ -137,11 +162,6 @@ export const config = convict({
         format: Number,
         default: fourHoursMs,
         env: 'SESSION_CACHE_TTL'
-      },
-      segment: {
-        doc: 'The cache segment.',
-        format: String,
-        default: 'session'
       }
     },
     cookie: {
@@ -160,7 +180,7 @@ export const config = convict({
       },
       secure: {
         doc: 'set secure flag on cookie',
-        format: Boolean,
+        format: STRICT_BOOLEAN,
         default: isProduction,
         env: 'SESSION_COOKIE_SECURE'
       },
@@ -221,7 +241,7 @@ export const config = convict({
     signOutHostnameRewrite: {
       enabled: {
         doc: 'Rewrite internal OIDC hostnames in sign-out URL for local environments',
-        format: Boolean,
+        format: STRICT_BOOLEAN,
         default: !isProduction,
         env: 'DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_ENABLED'
       },
@@ -239,21 +259,27 @@ export const config = convict({
     },
     refreshTokens: {
       doc: 'True if Defra Identity refresh tokens are enabled.',
-      format: Boolean,
+      format: STRICT_BOOLEAN,
       default: true,
       env: 'DEFRA_ID_REFRESH_TOKENS'
     }
   },
   stubMode: {
     doc: 'Run against stubs rather than real dependencies: stub data in place of the address book, backend and reference data, and a locally signed session in place of the Defra ID OIDC exchange. Auth is still enforced - only the external OIDC round-trip is bypassed. Ignored in production (see isStubMode).',
-    format: Boolean,
+    format: STRICT_BOOLEAN,
     default: false,
     env: 'STUB_MODE'
   },
   auth: {
+    cookieName: {
+      doc: 'Auth session cookie name. Each frontend uses a distinct name in development so signing in to one does not overwrite another frontend session on localhost.',
+      format: String,
+      default: 'sid',
+      env: 'AUTH_SESSION_COOKIE_NAME'
+    },
     enabled: {
       doc: 'Enable authentication (Bell + session cookie)',
-      format: Boolean,
+      format: STRICT_BOOLEAN,
       default: true,
       env: 'AUTH_ENABLED'
     }
@@ -286,13 +312,13 @@ export const config = convict({
     },
     useSingleInstanceCache: {
       doc: 'Connect to a single instance of redis instead of a cluster.',
-      format: Boolean,
+      format: STRICT_BOOLEAN,
       default: !isProduction,
       env: 'USE_SINGLE_INSTANCE_CACHE'
     },
     useTLS: {
       doc: 'Connect to redis using TLS',
-      format: Boolean,
+      format: STRICT_BOOLEAN,
       default: isProduction,
       env: 'REDIS_TLS'
     }
@@ -300,13 +326,13 @@ export const config = convict({
   nunjucks: {
     watch: {
       doc: 'Reload templates when they are changed.',
-      format: Boolean,
+      format: STRICT_BOOLEAN,
       default: isDevelopment,
       env: 'NUNJUCKS_WATCH'
     },
     noCache: {
       doc: 'Recompile every template on every render instead of caching it.',
-      format: Boolean,
+      format: STRICT_BOOLEAN,
       default: isDevelopment,
       env: 'NUNJUCKS_NO_CACHE'
     }
@@ -360,7 +386,7 @@ export const config = convict({
   tradeImportsInsFrontend: {
     baseUrl: {
       doc: "Trade Imports INS Frontend base URL. Browser-visible — used to build deep links the trader's own browser navigates to, so it must resolve outside the Docker network (unlike the server-side API base URLs above).",
-      format: String,
+      format: 'url',
       default: 'http://localhost:3002',
       env: 'TRADE_IMPORTS_INS_FRONTEND_URL'
     }
@@ -368,3 +394,7 @@ export const config = convict({
 })
 
 config.validate({ allowed: 'strict' })
+
+export const siblingFrontendBaseUrls = [
+  config.get('tradeImportsInsFrontend.baseUrl')
+]

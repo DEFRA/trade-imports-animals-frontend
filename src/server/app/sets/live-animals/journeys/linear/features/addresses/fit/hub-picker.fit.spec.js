@@ -1,4 +1,3 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   partyPickerName,
@@ -7,6 +6,7 @@ import {
   unlockSections,
   values
 } from '../../../../../../../../../../fit/live-animals-journey.js'
+import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
@@ -29,29 +29,6 @@ const openAddresses = async (page, species) => {
   await expect(
     page.getByRole('heading', { name: copy.hub.title })
   ).toBeVisible()
-}
-
-const seriousOrCritical = (violations) =>
-  violations
-    .filter(({ impact }) => ['serious', 'critical'].includes(impact))
-    .filter(
-      (violation) =>
-        !(
-          violation.id === 'aria-allowed-attr' &&
-          violation.nodes.every((node) =>
-            /govuk-(radios|checkboxes)__input/.test(node.html)
-          )
-        )
-    )
-
-const expectAxeClean = async (page, name) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  expect(
-    seriousOrCritical(results.violations),
-    `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-  ).toEqual([])
 }
 
 const openPartyPicker = async (page, party) => {
@@ -134,7 +111,7 @@ test.describe('addresses hub', () => {
   test('hub page has no serious or critical axe violations', async ({
     page
   }) => {
-    await expectAxeClean(page, 'Addresses hub')
+    await expectNoSeriousOrCriticalViolations(page, 'Addresses hub')
   })
 })
 
@@ -337,6 +314,6 @@ test.describe('party picker details and pagination', () => {
     await expect(
       page.getByRole('button', { name: copy.picker.search.button })
     ).toBeVisible()
-    await expectAxeClean(page, 'Address party picker')
+    await expectNoSeriousOrCriticalViolations(page, 'Address party picker')
   })
 })
