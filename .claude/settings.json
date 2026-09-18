@@ -10,6 +10,16 @@
             "timeout": 60
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $HOME/git/defra/trade-imports-workspace/tools/sonar/sonar-push-check.sh",
+            "timeout": 600
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
@@ -20,17 +30,6 @@
             "type": "command",
             "command": ".claude/hooks/sonar-secrets/build-scripts/prompt-secrets.sh",
             "timeout": 60
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/sonar-analyze.sh",
-            "timeout": 120
           }
         ]
       }
