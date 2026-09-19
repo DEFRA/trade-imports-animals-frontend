@@ -1,0 +1,287 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/features/plants/review.spec.ts >> High-risk plants check and submit section >> declaration is required and submission produces a read-only notification and Submitted dashboard card
+- Location: tests/e2e/features/plants/review.spec.ts:156:3
+
+# Error details
+
+```
+Error: expect(locator).toContainText(expected) failed
+
+Locator: getByRole('main')
+Timeout: 5000ms
+Expected pattern: /Date of notification[^0-9]{0,20}(17 September 2026|18 September 2026)/
+Received string:  "····························
+  Submitted··
+          GBN-HRP-26-P5CS9F··················
+    Notification submitted······
+    Your notification referenceGBN-HRP-26-P5CS9F·····
+  Your notification has been submitted. Keep the reference for your records.
+  Date of notification: 16 September 2026
+  View your notification
+  Return to dashboard········
+        "
+
+Call log:
+  - Expect "toContainText" with timeout 5000ms
+  - waiting for getByRole('main')
+    14 × locator resolved to <main id="main-content" class="govuk-main-wrapper">…</main>
+       - unexpected value "
+  
+    
+        
+          
+  Submitted
+
+
+          GBN-HRP-26-P5CS9F
+        
+  
+  
+  
+    Notification submitted
+  
+  
+    Your notification referenceGBN-HRP-26-P5CS9F
+  
+
+
+  Your notification has been submitted. Keep the reference for your records.
+  Date of notification: 16 September 2026
+  View your notification
+  Return to dashboard
+    
+  
+        "
+
+```
+
+```yaml
+- main:
+  - strong: Submitted
+  - text: GBN-HRP-26-P5CS9F
+  - heading "Notification submitted" [level=1]
+  - text: Your notification reference
+  - strong: GBN-HRP-26-P5CS9F
+  - paragraph: Your notification has been submitted. Keep the reference for your records.
+  - paragraph: "Date of notification: 16 September 2026"
+  - paragraph:
+    - link "View your notification":
+      - /url: /notifications/GBN-HRP-26-P5CS9F/notification-view
+  - paragraph:
+    - link "Return to dashboard":
+      - /url: /
+```
+
+# Test source
+
+```ts
+  75  |   await pages.plantsConsignmentContactSelect.btnSaveAndContinue.click();
+  76  |   await expect(pages.page).toHaveURL(pages.plantsOverview.expectedUrl(reference));
+  77  |   return { reference, address };
+  78  | }
+  79  | 
+  80  | async function openReview(pages: PageObjects) {
+  81  |   await pages.plantsOverview.taskRowLink('Check and submit').click();
+  82  |   await expect(pages.plantsNotificationView.heading).toBeVisible();
+  83  | }
+  84  | 
+  85  | async function submit(pages: PageObjects) {
+  86  |   await pages.plantsNotificationView.btnContinue.click();
+  87  |   await pages.plantsDeclaration.checkbox.check();
+  88  |   await pages.plantsDeclaration.btnContinue.click();
+  89  |   await expect(pages.plantsConfirmation.heading).toBeVisible();
+  90  | }
+  91  | 
+  92  | async function assertReadOnly(pages: PageObjects) {
+  93  |   await expect(pages.plantsNotificationView.heading).toBeVisible();
+  94  |   await expect(pages.plantsOverview.statusTag).toHaveText('Submitted');
+  95  |   await expect(pages.plantsNotificationView.changeLinks).toHaveCount(0);
+  96  |   await expect(pages.plantsNotificationView.btnContinue).toHaveCount(0);
+  97  | }
+  98  | 
+  99  | async function amend(pages: PageObjects, reference: string) {
+  100 |   await pages.plantsDashboard.open();
+  101 |   await pages.plantsDashboard.searchForReference(reference);
+  102 |   await pages.plantsDashboard
+  103 |     .notificationCard(reference)
+  104 |     .getByRole('button', { name: `Amend notification ${reference}`, exact: true })
+  105 |     .click();
+  106 |   await expect(pages.page).toHaveURL(pages.plantsOverview.expectedUrl(reference));
+  107 |   await expect(pages.plantsOverview.statusTag).toHaveText('Amending');
+  108 | }
+  109 | 
+  110 | test.describe('High-risk plants check and submit section', { tag: '@integration' }, () => {
+  111 |   test('review stays blocked until the final required row is complete', async ({ pages, plantsJourney, addressBookApi }) => {
+  112 |     const { reference, address } = await completeNotification(pages, plantsJourney, addressBookApi, { contact: false });
+  113 |     const review = pages.plantsOverview.taskRowByTitle('Check and submit');
+  114 |     await expect(review).toContainText('Cannot start yet');
+  115 |     await expect(review.getByRole('link')).toHaveCount(0);
+  116 |     await pages.plantsConsignmentContactSelect.open(reference);
+  117 |     await pages.plantsConsignmentContactSelect.searchFor(address.name);
+  118 |     await pages.plantsConsignmentContactSelect.address(address.name).check();
+  119 |     await pages.plantsConsignmentContactSelect.btnSaveAndContinue.click();
+  120 |     await openReview(pages);
+  121 |   });
+  122 | 
+  123 |   test('CYA renders numbered sections, scoped cards and contact details, and Change returns to saved answers', async ({
+  124 |     pages,
+  125 |     plantsJourney,
+  126 |     addressBookApi,
+  127 |   }) => {
+  128 |     const { address } = await completeNotification(pages, plantsJourney, addressBookApi);
+  129 |     await openReview(pages);
+  130 |     await expect(pages.page.getByRole('heading', { level: 2, name: /^[1-3]\. / })).toHaveText([
+  131 |       '1. About the consignment',
+  132 |       '2. Arrival and destination',
+  133 |       '3. Consignment parties',
+  134 |     ]);
+  135 |     await expect(pages.plantsNotificationView.card('Consignor or exporter')).toHaveCount(0);
+  136 |     const contact = pages.plantsNotificationView.card('Contact');
+  137 |     await expect(contact).toContainText(address.name);
+  138 |     await expect(contact).toContainText('4 Nursery Lane, Perth, PH1 5EX');
+  139 |     await expect(contact).toContainText('01738 555 0143');
+  140 |     await expect(contact).toContainText('review@example.co.uk');
+  141 |     await pages.plantsNotificationView.change('Change country of origin (Import details)').click();
+  142 |     await expect(pages.page).toHaveURL(/\/origin\?change=1$/);
+  143 |     await pages.plantsOrigin.selectCountry('Germany');
+  144 |     await pages.plantsOrigin.btnSaveAndContinue.click();
+  145 |     await expect(pages.plantsNotificationView.heading).toBeVisible();
+  146 |     await expect(pages.plantsNotificationView.card('Import details')).toContainText('Germany');
+  147 |     await pages.plantsNotificationView.change('Change Commodity 1 (Commodity 1)').click();
+  148 |     await pages.plantsCommodityDetails.field('Quantity').fill('300');
+  149 |     await pages.plantsCommodityDetails.btnSaveAndContinue.click();
+  150 |     await pages.plantsCommodities.btnSaveAndContinue.click();
+  151 |     await expect(pages.plantsNotificationView.heading).toBeVisible();
+  152 |     await pages.page.reload();
+  153 |     await expect(pages.plantsNotificationView.card('Commodity 1')).toContainText('300');
+  154 |   });
+  155 | 
+  156 |   test('declaration is required and submission produces a read-only notification and Submitted dashboard card', async ({
+  157 |     pages,
+  158 |     plantsJourney,
+  159 |     addressBookApi,
+  160 |   }) => {
+  161 |     const { reference } = await completeNotification(pages, plantsJourney, addressBookApi);
+  162 |     await openReview(pages);
+  163 |     await pages.plantsNotificationView.btnContinue.click();
+  164 |     await expect(pages.page).toHaveURL(pages.plantsDeclaration.expectedUrl(reference));
+  165 |     await pages.plantsDeclaration.btnContinue.click();
+  166 |     await expect(pages.plantsDeclaration.errorSummary).toContainText('Confirm that the information is true and correct before submitting');
+  167 |     await expect(pages.page).toHaveURL(pages.plantsDeclaration.expectedUrl(reference));
+  168 |     await pages.plantsDeclaration.linkBack.click();
+  169 |     await expect(pages.plantsNotificationView.heading).toBeVisible();
+  170 |     await submit(pages);
+  171 |     await expect(pages.page).toHaveURL(pages.plantsConfirmation.expectedUrl(reference));
+  172 |     await expect(pages.plantsConfirmation.panel).toContainText(reference);
+  173 |     await expect(pages.plantsOverview.statusTag).toHaveText('Submitted');
+  174 |     await expect(pages.plantsConfirmation.notificationDate).toBeVisible();
+> 175 |     await expect(pages.plantsConfirmation.content).toContainText(
+      |                                                    ^ Error: expect(locator).toContainText(expected) failed
+  176 |       new RegExp(`Date of notification[^0-9]{0,20}(${getRelativeServiceDisplayDate()}|${getRelativeServiceDisplayDate(1)})`),
+  177 |     );
+  178 |     await expect(pages.plantsConfirmation.lateBanner).toHaveCount(0);
+  179 |     await pages.plantsConfirmation.viewNotification.click();
+  180 |     await assertReadOnly(pages);
+  181 |     await expect(pages.plantsNotificationView.lateBanner).toHaveCount(0);
+  182 |     await pages.plantsDashboard.open();
+  183 |     await pages.plantsDashboard.searchForReference(reference);
+  184 |     await expect(pages.plantsDashboard.notificationCard(reference).getByText('Submitted', { exact: true })).toBeVisible();
+  185 |   });
+  186 | 
+  187 |   for (const { type, days, rule } of [
+  188 |     { type: POTATOES, days: 0, rule: 'Notifications for potatoes must be made at least 2 days before the expected date of arrival.' },
+  189 |     {
+  190 |       type: PLANTS,
+  191 |       days: -7,
+  192 |       rule: 'Notifications for plants for planting and wood must be made no later than 4 days after the date of arrival.',
+  193 |     },
+  194 |   ]) {
+  195 |     test(`${type}: late notifications are accepted and highlighted`, async ({ pages, plantsJourney, addressBookApi }) => {
+  196 |       const { reference } = await completeNotification(pages, plantsJourney, addressBookApi, { type, days });
+  197 |       await openReview(pages);
+  198 |       // govukWarningText always prepends a visually-hidden "Warning" fallback inside
+  199 |       // the same <strong>, so an exact match can never pass here — pin the message
+  200 |       // as a substring instead (unpassable-assertion exception: the accessible-tree
+  201 |       // snapshot shows `strong: Warning If you submit...`, the app renders the
+  202 |       // correct message, and no other spec in this repo asserts govukWarningText by exact text).
+  203 |       await expect(
+  204 |         pages.page.getByText(`If you submit this notification today it will be late. ${rule} You can still submit it.`, { exact: false }),
+  205 |       ).toBeVisible();
+  206 |       await submit(pages);
+  207 |       await expect(pages.plantsConfirmation.panel).toContainText(reference);
+  208 |       await expect(pages.plantsConfirmation.lateBanner).toBeVisible();
+  209 |       await expect(pages.page.getByText(rule, { exact: false })).toBeVisible();
+  210 |       await pages.plantsConfirmation.viewNotification.click();
+  211 |       await assertReadOnly(pages);
+  212 |       await expect(pages.plantsNotificationView.lateBanner).toBeVisible();
+  213 |       await pages.plantsDashboard.open();
+  214 |       await pages.plantsDashboard.searchForReference(reference);
+  215 |       await expect(pages.plantsDashboard.notificationCard(reference).getByText('Submitted', { exact: true })).toBeVisible();
+  216 |       // No dashboard Late tag assertion: ruled c-030/c-035 parks projecting
+  217 |       // lateNotificationIndicator onto the backend NotificationDto ("the mapper
+  218 |       // has no typed home for it ... explicit omission assertion on the
+  219 |       // NotificationDto" — plants-frontend rulings.json panel/rulings.json). The
+  220 |       // stub persistence layer already carries the row field correctly (proven
+  221 |       // directly against the stub), but this stack runs the real
+  222 |       // trade-imports-plants-backend, which has no such field yet (confirmed:
+  223 |       // no lateNotificationIndicator anywhere under plants-backend/src/main) — so
+  224 |       // the tag cannot render here until that residual-parked mapping is built.
+  225 |     });
+  226 |   }
+  227 | 
+  228 |   test('a saved French origin becomes invalid when a ware-potato line is added and prevents submission', async ({
+  229 |     pages,
+  230 |     plantsJourney,
+  231 |     addressBookApi,
+  232 |   }) => {
+  233 |     const { reference } = await completeNotification(pages, plantsJourney, addressBookApi);
+  234 |     await pages.plantsCommodities.open(reference);
+  235 |     await plantsJourney.addAnotherCommodityLine('Ware potatoes', { ...potatoLine, 'Intended use': 'Consumption' });
+  236 |     await pages.plantsNotificationView.open(reference);
+  237 |     await expect(pages.plantsNotificationView.card('Import details')).toContainText('France');
+  238 |     await pages.plantsNotificationView.btnContinue.click();
+  239 |     await expect(pages.page).toHaveURL(pages.plantsNotificationView.expectedUrl(reference));
+  240 |     const correction = pages.plantsNotificationView.errorSummary.getByRole('link', { name: /Poland/ });
+  241 |     await expect(correction).toHaveAttribute('href', `/notifications/${reference}/origin?change=1`);
+  242 |     await expect(pages.plantsOverview.statusTag).toHaveText('Draft');
+  243 |     await correction.click();
+  244 |     await expect(pages.page).toHaveURL(/\/origin\?change=1$/);
+  245 |   });
+  246 | 
+  247 |   test('a deleted destination renders Not provided on CYA and blocks submission', async ({ pages, plantsJourney, addressBookApi }) => {
+  248 |     const { reference, address } = await completeNotification(pages, plantsJourney, addressBookApi);
+  249 |     await openReview(pages);
+  250 |     await addressBookApi.deleteAddress(address.id);
+  251 |     await pages.page.reload();
+  252 |     const destination = pages.plantsNotificationView.card('Place of destination');
+  253 |     await expect(destination.getByText('Not provided', { exact: true })).toHaveCount(4);
+  254 |     await expect(destination).not.toContainText(address.name);
+  255 |     await pages.plantsNotificationView.btnContinue.click();
+  256 |     await expect(pages.page).toHaveURL(pages.plantsNotificationView.expectedUrl(reference));
+  257 |     await expect(pages.plantsNotificationView.errorSummary).toContainText('Select an address for the place of destination');
+  258 |   });
+  259 | 
+  260 |   for (const source of ['dashboard', 'CYA']) {
+  261 |     test(`cancel amendment from ${source} restores submitted answers and read-only CYA`, async ({
+  262 |       pages,
+  263 |       plantsJourney,
+  264 |       addressBookApi,
+  265 |     }) => {
+  266 |       const { reference } = await completeNotification(pages, plantsJourney, addressBookApi);
+  267 |       await openReview(pages);
+  268 |       await submit(pages);
+  269 |       await amend(pages, reference);
+  270 |       await pages.plantsIdentificationNumbers.open(reference);
+  271 |       await pages.plantsIdentificationNumbers.producer.fill('DiscardMe99');
+  272 |       await pages.plantsIdentificationNumbers.btnSaveAndContinue.click();
+  273 |       await pages.plantsDashboard.open();
+  274 |       await pages.plantsDashboard.searchForReference(reference);
+  275 |       await expect(pages.plantsDashboard.statusTag(reference)).toHaveText('Amending');
+```
