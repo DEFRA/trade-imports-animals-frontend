@@ -196,9 +196,21 @@ const postContinue = async (request, h, selected) => {
   return h.redirect(await kit.nextTarget(request, page, committed.scope))
 }
 
+// The render filters stored codes the current reader no longer offers before
+// it draws the list, so a stale entry disappears silently. That is safe in
+// storage terms — the next Continue commits only the filtered working list —
+// but it deprives the trader of the chance to notice, and the drop is
+// permanent on their next save. Surfacing a banner-style error on GET makes
+// the change visible without changing the filter or the commit path.
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, [answers.transitedCountries ?? []].flat())
+  const stored = [answers.transitedCountries ?? []].flat()
+  const offered = await offeredCodesSet()
+  const hasStale = stored.some((code) => !offered.has(code))
+  const errors = hasStale
+    ? { [COUNTRY_FIELD]: copy.errors.someNoLongerAvailable }
+    : {}
+  return render(h, journey, stored, { errors })
 }
 
 const post = async (request, h) => {

@@ -79,7 +79,9 @@ export const copy = {
       fromList: 'Dewiswch wledydd o’r rhestr',
       maxCountries: (max) => `Dewiswch hyd at ${max} gwlad`,
       chooseCountry: 'Rhowch wlad i’w hychwanegu',
-      alreadyAdded: (country) => `Rydych eisoes wedi ychwanegu ${country}`
+      alreadyAdded: (country) => `Rydych eisoes wedi ychwanegu ${country}`,
+      someNoLongerAvailable:
+        "Nid yw rhai o'r gwledydd tramwy a arbedwyd ar gael mwyach. Adolygwch y rhestr cyn parhau."
     }
   },
   transporters: {

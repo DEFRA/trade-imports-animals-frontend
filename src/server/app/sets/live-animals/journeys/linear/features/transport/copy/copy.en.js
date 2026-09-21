@@ -87,7 +87,9 @@ export const copy = {
       fromList: 'Select countries from the list',
       maxCountries: (max) => `Select up to ${max} countries`,
       chooseCountry: 'Enter a country to add',
-      alreadyAdded: (country) => `You have already added ${country}`
+      alreadyAdded: (country) => `You have already added ${country}`,
+      someNoLongerAvailable:
+        'Some of your saved transit countries are no longer available. Review the list before you continue.'
     }
   },
   transporters: {
