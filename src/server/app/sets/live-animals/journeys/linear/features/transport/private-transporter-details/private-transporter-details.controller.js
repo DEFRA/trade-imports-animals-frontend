@@ -151,21 +151,27 @@ const get = async (request, h) => {
   const isStaleCountry =
     storedCountry !== '' && !validCountryNames.has(storedCountry)
 
-  return render(request, h, journey, {
-    nameOrOrganisationName: saved?.name ?? '',
-    addressLine1: saved?.address?.addressLine1 ?? '',
-    addressLine2: saved?.address?.addressLine2 ?? '',
-    townOrCity: saved?.address?.townOrCity ?? '',
-    county: saved?.address?.county ?? '',
-    postalOrZipCode: saved?.address?.postalOrZipCode ?? '',
-    country: isStaleCountry ? '' : storedCountry,
-    emailAddress: saved?.address?.emailAddress ?? '',
-    telephoneNumber: saved?.address?.telephoneNumber ?? ''
-  }, {
-    errors: isStaleCountry
-      ? { country: copy.errors.countryNoLongerAvailable }
-      : {}
-  })
+  return render(
+    request,
+    h,
+    journey,
+    {
+      nameOrOrganisationName: saved?.name ?? '',
+      addressLine1: saved?.address?.addressLine1 ?? '',
+      addressLine2: saved?.address?.addressLine2 ?? '',
+      townOrCity: saved?.address?.townOrCity ?? '',
+      county: saved?.address?.county ?? '',
+      postalOrZipCode: saved?.address?.postalOrZipCode ?? '',
+      country: isStaleCountry ? '' : storedCountry,
+      emailAddress: saved?.address?.emailAddress ?? '',
+      telephoneNumber: saved?.address?.telephoneNumber ?? ''
+    },
+    {
+      errors: isStaleCountry
+        ? { country: copy.errors.countryNoLongerAvailable }
+        : {}
+    }
+  )
 }
 
 const trimmedValues = (payload) =>

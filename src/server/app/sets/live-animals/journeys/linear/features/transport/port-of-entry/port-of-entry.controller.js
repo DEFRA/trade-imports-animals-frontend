@@ -124,12 +124,9 @@ const render = async (
 // field makes the diagnostic honest; the stored answer itself is not touched.
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  const validPortCodes = new Set(
-    (await ports.list()).map((port) => port.code)
-  )
+  const validPortCodes = new Set((await ports.list()).map((port) => port.code))
   const storedPort = answers.portOfEntry ?? ''
-  const isStalePort =
-    storedPort !== '' && !validPortCodes.has(storedPort)
+  const isStalePort = storedPort !== '' && !validPortCodes.has(storedPort)
 
   const values = {
     arrivalDateAtPort: answers.arrivalDateAtPort ?? {},
