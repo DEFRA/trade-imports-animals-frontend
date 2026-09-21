@@ -135,6 +135,17 @@ const render = async (
     countryItems: await countryItems(values.country)
   })
 
+const addressValues = (saved) => ({
+  addressLine1: saved?.address?.addressLine1 ?? '',
+  addressLine2: saved?.address?.addressLine2 ?? '',
+  townOrCity: saved?.address?.townOrCity ?? '',
+  county: saved?.address?.county ?? '',
+  postalOrZipCode: saved?.address?.postalOrZipCode ?? '',
+  country: saved?.address?.country ?? '',
+  emailAddress: saved?.address?.emailAddress ?? '',
+  telephoneNumber: saved?.address?.telephoneNumber ?? ''
+})
+
 // A stored address.country the current addressCountries reader no longer
 // includes (an MDM re-release dropped it, say) would otherwise render as an
 // unselected select with no explanation. Because the trader typically arrives
@@ -146,32 +157,21 @@ const render = async (
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const saved = answers.privateTransporter
-  const storedCountry = saved?.address?.country ?? ''
+  const address = addressValues(saved)
   const validCountryNames = new Set(await countries.addressCountries())
   const isStaleCountry =
-    storedCountry !== '' && !validCountryNames.has(storedCountry)
+    address.country !== '' && !validCountryNames.has(address.country)
 
-  return render(
-    request,
-    h,
-    journey,
-    {
-      nameOrOrganisationName: saved?.name ?? '',
-      addressLine1: saved?.address?.addressLine1 ?? '',
-      addressLine2: saved?.address?.addressLine2 ?? '',
-      townOrCity: saved?.address?.townOrCity ?? '',
-      county: saved?.address?.county ?? '',
-      postalOrZipCode: saved?.address?.postalOrZipCode ?? '',
-      country: isStaleCountry ? '' : storedCountry,
-      emailAddress: saved?.address?.emailAddress ?? '',
-      telephoneNumber: saved?.address?.telephoneNumber ?? ''
-    },
-    {
-      errors: isStaleCountry
-        ? { country: copy.errors.countryNoLongerAvailable }
-        : {}
-    }
-  )
+  const values = {
+    nameOrOrganisationName: saved?.name ?? '',
+    ...address,
+    country: isStaleCountry ? '' : address.country
+  }
+  const errors = isStaleCountry
+    ? { country: copy.errors.countryNoLongerAvailable }
+    : {}
+
+  return render(request, h, journey, values, { errors })
 }
 
 const trimmedValues = (payload) =>
