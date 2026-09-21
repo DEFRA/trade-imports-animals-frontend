@@ -54,7 +54,11 @@ export const copy = {
   errors: {
     purposeRequired: 'Dewiswch ddiben yn y farchnad fewnol',
     countryRequired: 'Dewiswch wlad gyrchfan',
+    countryNoLongerAvailable:
+      "Nid yw'r wlad gyrchfan a arbedwyd ar gael mwyach. Dewiswch wlad o’r rhestr.",
     portRequired: 'Dewiswch borthladd ymadael',
+    portNoLongerAvailable:
+      "Nid yw'r porthladd ymadael a arbedwyd ar gael mwyach. Dewiswch borthladd o’r rhestr.",
     dateRequired: 'Rhowch ddyddiad ymadael',
     dateInvalid: 'Rhowch ddyddiad go iawn'
   }

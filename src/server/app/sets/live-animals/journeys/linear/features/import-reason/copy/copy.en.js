@@ -52,7 +52,11 @@ export const copy = {
   errors: {
     purposeRequired: 'Select a purpose in the internal market',
     countryRequired: 'Select a destination country',
+    countryNoLongerAvailable:
+      'The saved destination country is no longer available. Select a country from the list.',
     portRequired: 'Select a port of exit',
+    portNoLongerAvailable:
+      'The saved port of exit is no longer available. Select a port from the list.',
     dateRequired: 'Enter an exit date',
     dateInvalid: 'Enter a real date'
   }
