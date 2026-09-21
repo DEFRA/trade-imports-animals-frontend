@@ -197,9 +197,33 @@ const render = async (
     regionCodePrefix: prefixFor(values.countryOfOrigin)
   })
 
+// A stored country the current countries reader no longer offers (an MDM
+// re-release dropped it, say) would otherwise render as an unselected select
+// with no explanation, silently overwrite on empty save, and cascade the
+// whole stored region code into the 5-char suffix input via `suffixOf`
+// falling through when the current prefix no longer matches. Detecting the
+// staleness at GET and blanking both fields surfaces the problem to the
+// trader instead of hiding it — the stored answer itself is not touched, so
+// the trader can still see it via other surfaces and the record is not
+// mutated by a read.
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, formValuesFromAnswers(answers), {}, answers)
+  const validCountryCodes = new Set(
+    (await countries.originCountries()).map(({ value }) => value)
+  )
+  const storedCountry = answers.countryOfOrigin ?? ''
+  const isStaleCountry =
+    storedCountry !== '' && !validCountryCodes.has(storedCountry)
+
+  const values = formValuesFromAnswers(answers)
+  const errors = {}
+  if (isStaleCountry) {
+    values.countryOfOrigin = ''
+    values[REGION_CODE_SUFFIX_FIELD] = ''
+    errors.countryOfOrigin = copy.errors.countryNoLongerAvailable
+  }
+
+  return render(h, journey, values, errors, answers)
 }
 
 // The rules measure the code the answer would store, not the raw box: a user
