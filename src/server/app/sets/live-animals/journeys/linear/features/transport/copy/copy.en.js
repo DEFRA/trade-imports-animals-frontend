@@ -271,6 +271,8 @@ export const copy = {
       postalOrZipCodeMaxLength:
         'Postcode or Zip code must be 12 characters or less',
       countryFromList: 'Select a country from the list',
+      countryNoLongerAvailable:
+        'The saved country is no longer available. Select a country from the list.',
       telephoneMaxLength: 'Phone number must be 20 characters or less',
       emailMaxLength: 'Email address must be 254 characters or less'
     }

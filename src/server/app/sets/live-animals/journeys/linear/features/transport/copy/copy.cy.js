@@ -234,6 +234,8 @@ export const copy = {
       postalOrZipCodeMaxLength:
         'Rhaid i’r cod post neu’r cod zip fod yn 12 nod neu lai',
       countryFromList: 'Dewiswch wlad o’r rhestr',
+      countryNoLongerAvailable:
+        "Nid yw'r wlad a arbedwyd ar gael mwyach. Dewiswch wlad o’r rhestr.",
       telephoneMaxLength: 'Rhaid i’r rhif ffôn fod yn 20 nod neu lai',
       emailMaxLength: 'Rhaid i’r cyfeiriad e-bost fod yn 254 nod neu lai'
     }
