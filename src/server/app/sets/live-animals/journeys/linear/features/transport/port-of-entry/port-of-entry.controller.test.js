@@ -235,6 +235,73 @@ describe('port-of-entry — the arrival-date window', () => {
   })
 })
 
+// `GB ZZZ` is absent from the captured ports fixture, so it doubles as an
+// out-of-list "stale" stored code. Placed before the "primed list" describe
+// below because that describe swaps the ports reader for a stub with a
+// different (and non-restored) list.
+
+describe('GET port-of-entry — a stored port the reader no longer offers', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should blank the port in values so the select renders unselected, without adding the stale option', async () => {
+    const result = await driveHandler(get, {
+      seed: { portOfEntry: 'GB ZZZ' }
+    })
+
+    expect(result.view.context.values.portOfEntry).toBe('')
+    expect(
+      result.view.context.portItems.find((item) => item.value === 'GB ZZZ')
+    ).toBeUndefined()
+  })
+
+  it('Should surface a port-no-longer-available error on the port field', async () => {
+    const result = await driveHandler(get, {
+      seed: { portOfEntry: 'GB ZZZ' }
+    })
+
+    expect(result.view.context.errors.portOfEntry).toBe(
+      copy.portOfEntry.errors.portNoLongerAvailable
+    )
+  })
+
+  it('Should leave the stored port intact — GET only reshapes what the page renders', async () => {
+    const result = await driveHandler(get, {
+      seed: { portOfEntry: 'GB ZZZ' }
+    })
+
+    expect(result.before.portOfEntry).toBe('GB ZZZ')
+    expect(result.after.portOfEntry).toBe('GB ZZZ')
+  })
+})
+
+describe('POST port-of-entry — empty port overwrites a stored answer', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should replace a previously stored port with an empty string when the placeholder is submitted', async () => {
+    const result = await driveHandler(post, {
+      seed: { portOfEntry: 'GB DVR' },
+      payload: {
+        portOfEntry: '',
+        meansOfTransport: 'VESSEL'
+      }
+    })
+
+    expect(result.view).toBeUndefined()
+    expect(result.before.portOfEntry).toBe('GB DVR')
+    expect(result.after.portOfEntry).toBe('')
+  })
+})
+
 describe('POST port-of-entry — port membership follows the primed list', () => {
   const originalMode = config.get('stubMode')
 
