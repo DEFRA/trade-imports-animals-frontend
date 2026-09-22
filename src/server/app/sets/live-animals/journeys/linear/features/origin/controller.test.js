@@ -389,10 +389,7 @@ describe('GET /origin — server-rendered select data (no-JS path)', () => {
 })
 
 // `ZZ` is deliberately absent from the captured countries fixture, so seeding
-// it doubles as an out-of-list "stale" code. Placed before the "primed list"
-// describe below because that describe swaps the countries reader for a stub
-// with a different (and non-restored) list.
-
+// it doubles as an out-of-list "stale" code.
 describe('POST /origin — empty country overwrites a stored answer', () => {
   beforeAll(() => {
     configureRecords(recordsStub)

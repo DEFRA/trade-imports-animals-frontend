@@ -215,9 +215,6 @@ const render = async (
     })
   })
 
-// Returns a Map of stale stored answer key → error message. Keyed by the
-// stored answer name (destinationCountry / portOfExit), not by form field —
-// each stored answer feeds several reveals under different reasons.
 const staleAnswerErrors = async (answers) => {
   const [offeredCountries, offeredPorts] = await Promise.all([
     countries

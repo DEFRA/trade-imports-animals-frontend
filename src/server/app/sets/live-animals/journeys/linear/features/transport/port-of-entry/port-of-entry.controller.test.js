@@ -236,10 +236,7 @@ describe('port-of-entry — the arrival-date window', () => {
 })
 
 // `GB ZZZ` is absent from the captured ports fixture, so it doubles as an
-// out-of-list "stale" stored code. Placed before the "primed list" describe
-// below because that describe swaps the ports reader for a stub with a
-// different (and non-restored) list.
-
+// out-of-list "stale" stored code.
 describe('GET port-of-entry — a stored port the reader no longer offers', () => {
   beforeAll(() => {
     configureRecords(recordsStub)
