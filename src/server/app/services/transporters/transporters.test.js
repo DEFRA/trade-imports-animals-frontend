@@ -56,6 +56,12 @@ describe('#parties', () => {
     }
   })
 
+  test('Should carry a country code on every commercial record', () => {
+    for (const record of transporters.commercialParties()) {
+      expect(record.address.countryCode, record.id).toBeTruthy()
+    }
+  })
+
   test('Should carry every field the private-transporter form makes mandatory on every private record', async () => {
     const addresses = await addressCountries()
 
@@ -69,6 +75,7 @@ describe('#parties', () => {
         'townOrCity',
         'postalOrZipCode',
         'country',
+        'countryCode',
         'telephoneNumber',
         'emailAddress'
       ]) {
