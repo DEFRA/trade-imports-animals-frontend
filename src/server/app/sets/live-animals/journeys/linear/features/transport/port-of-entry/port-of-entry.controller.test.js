@@ -240,9 +240,9 @@ describe('port-of-entry — the arrival-date window', () => {
 // out-of-list "stale" stored code.
 describe('GET port-of-entry — a stored port the reader no longer offers', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -279,9 +279,9 @@ describe('GET port-of-entry — a stored port the reader no longer offers', () =
 
 describe('POST port-of-entry — empty port overwrites a stored answer', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

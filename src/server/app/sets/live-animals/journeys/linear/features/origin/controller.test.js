@@ -393,9 +393,9 @@ describe('GET /origin — server-rendered select data (no-JS path)', () => {
 // it doubles as an out-of-list "stale" code.
 describe('POST /origin — empty country overwrites a stored answer', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -421,9 +421,9 @@ describe('POST /origin — empty country overwrites a stored answer', () => {
 
 describe('GET /origin — a stored country the reader no longer offers', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -490,9 +490,9 @@ describe('GET /origin — a stored country the reader no longer offers', () => {
 // suffix. Kept as a pathological-payload guard.
 describe('POST /origin — a stored region code cascades to a length error under a stale country', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
