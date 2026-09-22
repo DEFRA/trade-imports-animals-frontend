@@ -58,17 +58,22 @@ const claimObligationOwner = (pageOfObligationMap, obligationId, pageId) => {
 }
 
 const indexPages = (pages) => {
-  const pageOfObligation = new Map()
+  const pageOfObligationMap = new Map()
   const collectsByPage = new Map()
   const slugByPage = new Map()
   for (const page of pages) {
     collectsByPage.set(page.id, page.collects ?? [])
     slugByPage.set(page.id, page.slug)
     for (const obligationId of page.collects ?? []) {
-      claimObligationOwner(pageOfObligation, obligationId, page.id)
+      claimObligationOwner(pageOfObligationMap, obligationId, page.id)
     }
   }
-  return { built: true, pageOfObligation, collectsByPage, slugByPage }
+  return {
+    built: true,
+    pageOfObligation: pageOfObligationMap,
+    collectsByPage,
+    slugByPage
+  }
 }
 
 const assertFullCoverage = (pageOfObligationMap) => {
