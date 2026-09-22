@@ -223,6 +223,24 @@ describe('co-residency — each set answers with its own configuration', () => {
   })
 })
 
+describe('co-residency — a real set’s entry guard', () => {
+  it('Should run the shipped set’s entry guard with that set’s configuration', async () => {
+    // The guard is an `onPreHandler` registered on the server, so — unlike a
+    // route handler — `routeWithSetContext` does not wrap it. Authentication
+    // crosses an async boundary after the `onPreAuth` that entered the
+    // context, so the gateway has to re-enter it around the guard itself.
+    // Without that the guard resolves only by the sole-set fallback, and every
+    // journey page 500s as soon as a second set mounts.
+    const response = await server.inject(
+      `${LIVE_ANIMALS_BASE}/notifications/GBN-AG-26-NOTREAL`
+    )
+
+    // 404 or a redirect are both the guard working. A 500 is it throwing for
+    // want of a set.
+    expect(response.statusCode).not.toBe(500)
+  })
+})
+
 describe('co-residency — interleaved requests', () => {
   it('Should keep each in-flight request in its own set while the other is still running', async () => {
     // Genuinely interleaved, not sequential: both injections are started

@@ -90,7 +90,13 @@ export const liveAnimals = {
         server.ext(
           'onPreHandler',
           async (request, h) => {
-            const target = await journeyEntryGuardTarget(request, h)
+            // Wrapped, not left to the onPreAuth above: authentication crosses
+            // an async boundary in between, and `enterWith` does not always
+            // survive it. Bare, this resolves only by the sole-set fallback and
+            // throws the moment a second set mounts.
+            const target = await withSetContext(SET_ID, () =>
+              journeyEntryGuardTarget(request, h)
+            )
             return target ? h.redirect(target).takeover() : h.continue
           },
           { sandbox: 'plugin' }
