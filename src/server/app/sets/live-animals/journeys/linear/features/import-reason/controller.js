@@ -215,9 +215,42 @@ const render = async (
     })
   })
 
+const staleAnswerErrors = async (answers) => {
+  const [offeredCountries, offeredPorts] = await Promise.all([
+    countries
+      .originCountries()
+      .then((list) => new Set(list.map(({ value }) => value))),
+    ports.list().then((list) => new Set(list.map((port) => port.code)))
+  ])
+  const errors = new Map()
+  if (
+    answers.destinationCountry &&
+    !offeredCountries.has(answers.destinationCountry)
+  ) {
+    errors.set('destinationCountry', copy.errors.countryNoLongerAvailable)
+  }
+  if (answers.portOfExit && !offeredPorts.has(answers.portOfExit)) {
+    errors.set('portOfExit', copy.errors.portNoLongerAvailable)
+  }
+  return errors
+}
+
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, formValuesFromAnswers(answers))
+  const stale = await staleAnswerErrors(answers)
+  const scrubbedAnswers = { ...answers }
+  for (const key of stale.keys()) {
+    scrubbedAnswers[key] = ''
+  }
+  // Only surface the error against reveals the current reason actually opens;
+  // a reason that does not reveal the stale answer keeps the error summary
+  // free of noise.
+  const errors = Object.fromEntries(
+    revealsFor(answers.reasonForImport)
+      .filter(({ answer }) => stale.has(answer))
+      .map(({ field, answer }) => [field, stale.get(answer)])
+  )
+  return render(h, journey, formValuesFromAnswers(scrubbedAnswers), errors)
 }
 
 const post = async (request, h) => {

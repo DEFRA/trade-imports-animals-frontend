@@ -272,6 +272,64 @@ describe('POST transit-countries — continuing', () => {
   })
 })
 
+// `ZZ` is absent from the captured countries fixture, so seeding it inside
+// the stored list puts one entry outside the current offered set — a
+// "stale" code the reader no longer offers.
+
+describe('GET transit-countries — a stored list containing a stale code', () => {
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  it('Should filter the stale code out of the rendered rows', async () => {
+    const result = await driveHandler(get, {
+      seed: { ...seed, transitedCountries: ['FR', 'BE', 'ZZ'] }
+    })
+    expect(result.view.context.selectedCountries).toEqual(['FR', 'BE'])
+    expect(
+      result.view.context.countryRows.map((row) => row.code)
+    ).not.toContain('ZZ')
+  })
+
+  it('Should surface a banner-style error naming that some saved countries are no longer available', async () => {
+    const result = await driveHandler(get, {
+      seed: { ...seed, transitedCountries: ['FR', 'BE', 'ZZ'] }
+    })
+    expect(result.view.context.errors[COUNTRY_FIELD]).toBe(
+      'Some of your saved transit countries are no longer available. Review the list before you continue.'
+    )
+    expect(result.view.context.errorSummary).not.toBeNull()
+  })
+
+  it('Should not surface the banner when every stored code is still offered', async () => {
+    const result = await driveHandler(get, {
+      seed: { ...seed, transitedCountries: ['FR', 'BE'] }
+    })
+    expect(result.view.context.errors).toEqual({})
+  })
+
+  it('Should leave the stored list intact on GET', async () => {
+    const result = await driveHandler(get, {
+      seed: { ...seed, transitedCountries: ['FR', 'BE', 'ZZ'] }
+    })
+    expect(result.after.transitedCountries).toEqual(['FR', 'BE', 'ZZ'])
+  })
+})
+
+describe('POST transit-countries — Continue silently drops stored stale codes via the filtered working list', () => {
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  it('Should commit only the codes the render filtered through', async () => {
+    const result = await driveHandler(post, {
+      seed: { ...seed, transitedCountries: ['FR', 'BE', 'ZZ'] },
+      payload: { transitedCountries: ['FR', 'BE'] }
+    })
+    expect(result.before.transitedCountries).toEqual(['FR', 'BE', 'ZZ'])
+    expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
+    expect(result.response.redirect).toBeDefined()
+  })
+})
+
 describe('GET transit-countries', () => {
   beforeAll(configure)
   beforeEach(() => store.clear())

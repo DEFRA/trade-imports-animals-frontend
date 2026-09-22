@@ -135,20 +135,40 @@ const render = async (
     countryItems: await countryItems(values.country)
   })
 
+const addressValues = (saved) => ({
+  addressLine1: saved?.address?.addressLine1 ?? '',
+  addressLine2: saved?.address?.addressLine2 ?? '',
+  townOrCity: saved?.address?.townOrCity ?? '',
+  county: saved?.address?.county ?? '',
+  postalOrZipCode: saved?.address?.postalOrZipCode ?? '',
+  country: saved?.address?.country ?? '',
+  emailAddress: saved?.address?.emailAddress ?? '',
+  telephoneNumber: saved?.address?.telephoneNumber ?? ''
+})
+
+// The reader returns display names (e.g. "France"), so we check by name.
+const isCountryStale = async (name) => {
+  if (!name) {
+    return false
+  }
+  const offered = new Set(await countries.addressCountries())
+  return !offered.has(name)
+}
+
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const saved = answers.privateTransporter
-  return render(request, h, journey, {
+  const address = addressValues(saved)
+  const staleCountry = await isCountryStale(address.country)
+  const values = {
     nameOrOrganisationName: saved?.name ?? '',
-    addressLine1: saved?.address?.addressLine1 ?? '',
-    addressLine2: saved?.address?.addressLine2 ?? '',
-    townOrCity: saved?.address?.townOrCity ?? '',
-    county: saved?.address?.county ?? '',
-    postalOrZipCode: saved?.address?.postalOrZipCode ?? '',
-    country: saved?.address?.country ?? '',
-    emailAddress: saved?.address?.emailAddress ?? '',
-    telephoneNumber: saved?.address?.telephoneNumber ?? ''
-  })
+    ...address,
+    country: staleCountry ? '' : address.country
+  }
+  const errors = staleCountry
+    ? { country: copy.errors.countryNoLongerAvailable }
+    : {}
+  return render(request, h, journey, values, { errors })
 }
 
 const trimmedValues = (payload) =>

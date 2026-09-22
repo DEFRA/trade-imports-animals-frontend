@@ -29,6 +29,8 @@ const get = origin.routes.find((route) => route.method === 'GET').handler
 
 const COUNTRY_FROM_LIST_MESSAGE = 'Select a country from the list'
 const REGION_CODE_REQUIRED_MESSAGE = 'Enter the region of origin code'
+const REGION_CODE_MAX_LENGTH_MESSAGE =
+  'Region of origin code must be 5 characters or less'
 const INTERNAL_REFERENCE_MAX_LENGTH = 58
 const INTERNAL_REFERENCE_MAX_LENGTH_MESSAGE =
   'Internal reference must be 58 characters or less'
@@ -316,7 +318,7 @@ describe('POST /origin — region of origin code prefix and suffix', () => {
 
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
-      'Region of origin code must be 5 characters or less'
+      REGION_CODE_MAX_LENGTH_MESSAGE
     )
     expect(result.after).toEqual(result.before)
   })
@@ -326,7 +328,7 @@ describe('POST /origin — region of origin code prefix and suffix', () => {
 
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
-      'Region of origin code must be 5 characters or less'
+      REGION_CODE_MAX_LENGTH_MESSAGE
     )
     expect(result.view.context.regionCodePrefix).toBe('FR')
     expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('ABCDEF')
@@ -383,6 +385,136 @@ describe('GET /origin — server-rendered select data (no-JS path)', () => {
     const items = result.view.context.countryItems
     expect(items.filter((item) => item.disabled)).toEqual([])
     expect(items.filter((item) => item.value === '')).toHaveLength(1)
+  })
+})
+
+// `ZZ` is deliberately absent from the captured countries fixture, so seeding
+// it doubles as an out-of-list "stale" code.
+describe('POST /origin — empty country overwrites a stored answer', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should replace a previously stored country with an empty string when the placeholder is submitted', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'no',
+        internalReferenceNumber: 'existing-ref'
+      },
+      payload: {
+        countryOfOrigin: '',
+        regionOfOriginCodeRequirement: 'no',
+        internalReferenceNumber: 'existing-ref'
+      }
+    })
+
+    expect(result.view).toBeUndefined()
+    expect(result.before.countryOfOrigin).toBe('FR')
+    expect(result.after.countryOfOrigin).toBe('')
+  })
+})
+
+describe('GET /origin — a stored country the reader no longer offers', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should blank the country in values so the select renders unselected', async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        countryOfOrigin: 'ZZ',
+        regionOfOriginCodeRequirement: 'no',
+        internalReferenceNumber: ''
+      }
+    })
+
+    expect(result.view.context.values.countryOfOrigin).toBe('')
+    expect(
+      result.view.context.countryItems.find((item) => item.value === 'ZZ')
+    ).toBeUndefined()
+  })
+
+  it('Should surface a country-no-longer-available error on the country field', async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        countryOfOrigin: 'ZZ',
+        regionOfOriginCodeRequirement: 'no',
+        internalReferenceNumber: ''
+      }
+    })
+
+    expect(result.view.context.errors.countryOfOrigin).toBe(
+      'The saved country is no longer available. Select a country from the list.'
+    )
+  })
+
+  it('Should blank the region-code suffix input so the whole stored code does not cascade into it', async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        countryOfOrigin: 'ZZ',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCode: 'AT-123'
+      }
+    })
+
+    expect(result.view.context.regionCodePrefix).toBe('')
+    expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('')
+  })
+
+  it('Should leave the stored answer intact — GET only reshapes what the page renders', async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        countryOfOrigin: 'ZZ',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCode: 'AT-123'
+      }
+    })
+
+    expect(result.before.countryOfOrigin).toBe('ZZ')
+    expect(result.after.countryOfOrigin).toBe('ZZ')
+    expect(result.after.regionOfOriginCode).toBe('AT-123')
+  })
+})
+
+// This POST payload is unreachable from a normal browser flow after the GET
+// fix above (which blanks the suffix input on render). The controller still
+// handles the shape verbatim, so the max-length rule still fires on the
+// suffix. Kept as a pathological-payload guard.
+describe('POST /origin — a stored region code cascades to a length error under a stale country', () => {
+  beforeAll(() => {
+    configureRecords(recordsStub)
+    configureSession(sessionStub)
+    buildDispatch(dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should reject the payload with a max-length error on the region code', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        countryOfOrigin: 'ZZ',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCode: 'AT-123'
+      },
+      payload: {
+        countryOfOrigin: '',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCodeSuffix: 'AT-123',
+        internalReferenceNumber: ''
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
+      REGION_CODE_MAX_LENGTH_MESSAGE
+    )
+    expect(result.view.context.errors.countryOfOrigin).toBeUndefined()
   })
 })
 
