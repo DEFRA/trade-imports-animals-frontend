@@ -146,31 +146,28 @@ const addressValues = (saved) => ({
   telephoneNumber: saved?.address?.telephoneNumber ?? ''
 })
 
-// A stored address.country the current addressCountries reader no longer
-// includes (an MDM re-release dropped it, say) would otherwise render as an
-// unselected select with no explanation. Because the trader typically arrives
-// here with the rest of the record already saved, Save-and-continue would
-// then fire the generic countryRequired copy — the trader cannot tell a
-// stale prior answer from one they never gave. Detecting the staleness at
-// GET, blanking the value and surfacing a "no longer available" error makes
-// the diagnostic honest. The stored answer itself is not touched.
+// The reader returns display names (e.g. "France"), so we check by name.
+const isCountryStale = async (name) => {
+  if (!name) {
+    return false
+  }
+  const offered = new Set(await countries.addressCountries())
+  return !offered.has(name)
+}
+
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const saved = answers.privateTransporter
   const address = addressValues(saved)
-  const validCountryNames = new Set(await countries.addressCountries())
-  const isStaleCountry =
-    address.country !== '' && !validCountryNames.has(address.country)
-
+  const staleCountry = await isCountryStale(address.country)
   const values = {
     nameOrOrganisationName: saved?.name ?? '',
     ...address,
-    country: isStaleCountry ? '' : address.country
+    country: staleCountry ? '' : address.country
   }
-  const errors = isStaleCountry
+  const errors = staleCountry
     ? { country: copy.errors.countryNoLongerAvailable }
     : {}
-
   return render(request, h, journey, values, { errors })
 }
 

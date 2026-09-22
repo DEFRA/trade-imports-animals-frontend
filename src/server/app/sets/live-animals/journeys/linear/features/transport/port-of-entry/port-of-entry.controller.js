@@ -115,30 +115,27 @@ const render = async (
     })
   })
 
-// A stored portOfEntry the current ports reader no longer offers (an MDM
-// re-release dropped it, say) would otherwise render as an unselected select
-// with no explanation, and — because the POST rule is `oneOf` (empty allowed
-// on partial save) — Save-and-continue would silently overwrite the stored
-// answer with an empty string. Detecting the staleness at GET and blanking
-// the value plus surfacing a "no longer available" error against the port
-// field makes the diagnostic honest; the stored answer itself is not touched.
+const isPortStale = async (code) => {
+  if (!code) {
+    return false
+  }
+  const offered = new Set((await ports.list()).map((port) => port.code))
+  return !offered.has(code)
+}
+
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  const validPortCodes = new Set((await ports.list()).map((port) => port.code))
-  const storedPort = answers.portOfEntry ?? ''
-  const isStalePort = storedPort !== '' && !validPortCodes.has(storedPort)
-
+  const stalePort = await isPortStale(answers.portOfEntry)
   const values = {
     arrivalDateAtPort: answers.arrivalDateAtPort ?? {},
-    portOfEntry: isStalePort ? '' : storedPort,
+    portOfEntry: stalePort ? '' : (answers.portOfEntry ?? ''),
     meansOfTransport: answers.meansOfTransport ?? '',
     transportIdentification: answers.transportIdentification ?? '',
     transportDocumentReference: answers.transportDocumentReference ?? ''
   }
-  const errors = isStalePort
+  const errors = stalePort
     ? { portOfEntry: copy.errors.portNoLongerAvailable }
     : {}
-
   return render(h, journey, arrivalWindow(), values, { errors })
 }
 

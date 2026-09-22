@@ -215,45 +215,43 @@ const render = async (
     })
   })
 
-// A stored destinationCountry or portOfExit the reference-data reader no
-// longer offers (an MDM re-release dropped it, say) would otherwise render as
-// an unselected select with no explanation, and Save-and-continue would fire
-// the generic countryRequired / portRequired copy — the trader can't tell a
-// stale prior answer from one they never gave. Detecting the staleness at GET
-// and surfacing a "no longer available" error against the reveal fields the
-// current reason actually opens makes the diagnostic honest without noise on
-// reveals the trader isn't looking at. The stored answer is not touched — GET
-// only reshapes what the page renders.
-const stalenessCheck = async (answers) => {
-  const [validCountryCodes, validPortCodes] = await Promise.all([
+// Returns a Map of stale stored answer key → error message. Keyed by the
+// stored answer name (destinationCountry / portOfExit), not by form field —
+// each stored answer feeds several reveals under different reasons.
+const staleAnswerErrors = async (answers) => {
+  const [offeredCountries, offeredPorts] = await Promise.all([
     countries
       .originCountries()
       .then((list) => new Set(list.map(({ value }) => value))),
     ports.list().then((list) => new Set(list.map((port) => port.code)))
   ])
-  const staleAnswers = new Map()
-  const storedCountry = answers.destinationCountry ?? ''
-  if (storedCountry !== '' && !validCountryCodes.has(storedCountry)) {
-    staleAnswers.set('destinationCountry', copy.errors.countryNoLongerAvailable)
+  const errors = new Map()
+  if (
+    answers.destinationCountry &&
+    !offeredCountries.has(answers.destinationCountry)
+  ) {
+    errors.set('destinationCountry', copy.errors.countryNoLongerAvailable)
   }
-  const storedPort = answers.portOfExit ?? ''
-  if (storedPort !== '' && !validPortCodes.has(storedPort)) {
-    staleAnswers.set('portOfExit', copy.errors.portNoLongerAvailable)
+  if (answers.portOfExit && !offeredPorts.has(answers.portOfExit)) {
+    errors.set('portOfExit', copy.errors.portNoLongerAvailable)
   }
-  return staleAnswers
+  return errors
 }
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  const staleAnswers = await stalenessCheck(answers)
+  const stale = await staleAnswerErrors(answers)
   const scrubbedAnswers = { ...answers }
-  for (const answer of staleAnswers.keys()) {
-    scrubbedAnswers[answer] = ''
+  for (const key of stale.keys()) {
+    scrubbedAnswers[key] = ''
   }
+  // Only surface the error against reveals the current reason actually opens;
+  // a reason that does not reveal the stale answer keeps the error summary
+  // free of noise.
   const errors = Object.fromEntries(
     revealsFor(answers.reasonForImport)
-      .filter(({ answer }) => staleAnswers.has(answer))
-      .map(({ field, answer }) => [field, staleAnswers.get(answer)])
+      .filter(({ answer }) => stale.has(answer))
+      .map(({ field, answer }) => [field, stale.get(answer)])
   )
   return render(h, journey, formValuesFromAnswers(scrubbedAnswers), errors)
 }
