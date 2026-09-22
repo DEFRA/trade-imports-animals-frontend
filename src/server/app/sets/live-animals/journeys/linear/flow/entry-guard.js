@@ -1,4 +1,4 @@
-import { BASE, createPath, pagePath } from '../../../../../shared/paths.js'
+import { createPath, pagePath, setBase } from '../../../../../shared/paths.js'
 import { isAnswered } from '../../../../../lib/answered.js'
 import { get } from '../../../../../engine/read.js'
 import {
@@ -8,14 +8,17 @@ import {
 import { originPage } from '../features/origin/page.js'
 import { openingRunStarted } from '../../../../../flow/run-state.js'
 
-const JOURNEY_PREFIX = `${BASE}/notifications/`
+// A function, not a module-load constant: `request.path` now carries the Hapi
+// mount prefix, which is only known inside a request's set context.
+const journeyPrefix = () => `${setBase()}/notifications/`
 const ACTION_SLUGS = new Set(['amend', 'cancel-amend', 'copy', 'delete'])
 
 export const guardedJourneyPath = (path) => {
-  if (!path.startsWith(JOURNEY_PREFIX) || path === createPath()) {
+  const prefix = journeyPrefix()
+  if (!path.startsWith(prefix) || path === createPath()) {
     return false
   }
-  const [journeyId, ...slugParts] = path.slice(JOURNEY_PREFIX.length).split('/')
+  const [journeyId, ...slugParts] = path.slice(prefix.length).split('/')
   const slug = slugParts.join('/')
   if (ACTION_SLUGS.has(slug)) {
     return false

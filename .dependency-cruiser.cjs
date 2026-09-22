@@ -24,11 +24,16 @@ module.exports = {
     {
       name: 'routes-is-the-gateway',
       comment:
-        'routes.js is the sole L1 composition point allowed to import sets/** from outside a set.',
+        'routes.js and the per-set routes-<set-id>.js gateways it re-exports are the sole L1 composition points allowed to import sets/** from outside a set.',
       severity: 'error',
       from: {
         path: `^${APP}/`,
-        pathNot: [`^${APP}/sets/`, `^${APP}/routes\\.js$`, '\\.test\\.js$']
+        pathNot: [
+          `^${APP}/sets/`,
+          `^${APP}/routes\\.js$`,
+          `^${APP}/routes-[a-z0-9-]+\\.js$`,
+          '\\.test\\.js$'
+        ]
       },
       to: { path: `^${APP}/sets/` }
     },

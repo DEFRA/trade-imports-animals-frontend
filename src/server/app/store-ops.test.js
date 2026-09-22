@@ -1,3 +1,4 @@
+import { SET_ID } from './sets/live-animals/set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {
   appendEntryAt,
@@ -42,9 +43,9 @@ const address = { name: 'Owner', address: { addressLine1: '1 Farm Lane' } }
 
 const setupJourneyEngine = () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(async () => {
     await store.clear()

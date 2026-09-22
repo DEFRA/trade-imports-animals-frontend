@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../set.js'
 import {
   afterAll,
   beforeAll,
@@ -37,9 +38,9 @@ const INS_FRONTEND_BASE_URL_KEY = 'tradeImportsInsFrontend.baseUrl'
 
 describe('GET contact — select an address from the book', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -96,9 +97,9 @@ describe('GET contact — select an address from the book', () => {
 
 describe('POST contact — invalid payload', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -142,9 +143,9 @@ describe('GET contact — INS add-address link', () => {
   const originalInsUrl = config.get(INS_FRONTEND_BASE_URL_KEY)
 
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -192,9 +193,9 @@ describe('GET contact — INS add-address link', () => {
 
 describe('POST contact — recoverable save failure', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
   afterEach(() => vi.restoreAllMocks())

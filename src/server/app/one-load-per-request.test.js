@@ -1,10 +1,11 @@
+import { SET_ID } from './sets/live-animals/set.js'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
 import { get, commit } from './engine/index.js'
 import { configureRecords } from './engine/persistence/records.js'
 import { configureReadyForCheckYourAnswers } from './engine/read.js'
 import {
-  SESSION_COOKIES,
+  knownJourneysCookie,
   configureSession
 } from './engine/persistence/session.js'
 import { records as realRecords } from './services/persistence/records/real/index.js'
@@ -40,7 +41,7 @@ const fulfilmentBody = JSON.stringify({
 
 const buildRequest = () => ({
   params: { journeyId: ref },
-  state: { [SESSION_COOKIES.knownJourneys]: [ref] },
+  state: { [knownJourneysCookie()]: [ref] },
   app: {},
   headers: {}
 })
@@ -93,9 +94,9 @@ describe('one load per request — real records adapter GET count', () => {
       }
       return { status: 404, body: 'Not Found' }
     })
-    configureRecords(realRecords)
-    configureSession(sessionStub)
-    configureReadyForCheckYourAnswers(() => false)
+    configureRecords(SET_ID, realRecords)
+    configureSession(SET_ID, sessionStub)
+    configureReadyForCheckYourAnswers(SET_ID, () => false)
   })
 
   test('Should issue exactly one GET for a read-then-write request, plus one PUT to the notifications endpoint', async () => {

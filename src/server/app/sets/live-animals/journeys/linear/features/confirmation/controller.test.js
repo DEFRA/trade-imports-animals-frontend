@@ -1,6 +1,11 @@
+import { SET_ID } from '../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { createPath, hubPath } from '../../../../../../shared/paths.js'
+import {
+  createPath,
+  dashboardPath,
+  hubPath
+} from '../../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
 import { configureRecords } from '../../../../../../engine/persistence/records.js'
@@ -35,9 +40,9 @@ const submittedView = async (seed) => {
 
 describe('GET /confirmation', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -83,7 +88,7 @@ describe('GET /confirmation', () => {
   it('Should supply the create-a-notification action alongside the dashboard link', async () => {
     const view = await submittedView()
 
-    expect(view.context.dashboardHref).toBe('/')
+    expect(view.context.dashboardHref).toBe(dashboardPath())
     expect(view.context.createAction).toBe(createPath())
   })
 

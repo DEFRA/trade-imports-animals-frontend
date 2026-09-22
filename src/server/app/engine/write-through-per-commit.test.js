@@ -1,3 +1,4 @@
+import { SET_ID } from '../sets/live-animals/set.js'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { commit } from './index.js'
 import { records, configureRecords } from './persistence/records.js'
@@ -15,10 +16,10 @@ const buildRequest = () => journeyRequest(journeyId)
 
 describe('#commit', () => {
   beforeEach(async () => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
     await records.clear()
-    configureReadyForCheckYourAnswers(() => false)
+    configureReadyForCheckYourAnswers(SET_ID, () => false)
     journeyId = (await records.create()).journeyId
   })
 

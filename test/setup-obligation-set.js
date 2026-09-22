@@ -17,11 +17,19 @@ import { sectionCaptionOf } from '../src/server/app/sets/live-animals/journeys/l
 import { nextRunTarget } from '../src/server/app/sets/live-animals/journeys/linear/flow/run.js'
 import { entryGuardTarget } from '../src/server/app/sets/live-animals/journeys/linear/flow/entry-guard.js'
 import { LAYOUT } from '../src/server/app/sets/live-animals/journeys/linear/config.js'
+import { registerSetMount } from '../src/server/app/shared/set-context.js'
+import { SET_BASE, SET_ID } from '../src/server/app/sets/live-animals/set.js'
 
-configureObligationSet(liveAnimalsObligationSet)
-configureFulfilmentRegistry(featureEvaluationBindings)
-configureCommodityReference(commodities)
-configureJourneyFlow({
+// Registering the mount is what lets `currentSetId()` fall back to the sole
+// mounted set, so a unit test that never enters a request's set context still
+// resolves to live-animals. A test that needs two sets mounts the second
+// itself and enters the context explicitly.
+registerSetMount(SET_ID, SET_BASE)
+
+configureObligationSet(SET_ID, liveAnimalsObligationSet)
+configureFulfilmentRegistry(SET_ID, featureEvaluationBindings)
+configureCommodityReference(SET_ID, commodities)
+configureJourneyFlow(SET_ID, {
   sections,
   taskRows,
   rowStatus,

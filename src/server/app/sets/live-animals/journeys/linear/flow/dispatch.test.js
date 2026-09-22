@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../set.js'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { dispatchPages } from '../features/index.js'
 import { makeScope } from '../../../../../engine/index.js'
@@ -84,11 +85,11 @@ const completeAnswers = {
 
 describe('#buildDispatch', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   it('Should build the dispatch without throwing for every non-system obligation', () => {
-    expect(() => buildDispatch(dispatchPages)).not.toThrow()
+    expect(() => buildDispatch(SET_ID, dispatchPages)).not.toThrow()
   })
 
   it('Should resolve pageOfObligation for a top-level obligation', () => {
@@ -122,15 +123,15 @@ describe('#buildDispatch', () => {
         }
       })
     try {
-      expect(() => buildDispatch([{ id: 'x', collects: [] }])).toThrow(
+      expect(() => buildDispatch(SET_ID, [{ id: 'x', collects: [] }])).toThrow(
         /contains a path metacharacter/
       )
-      expect(() => buildDispatch([{ id: 'x', collects: [] }])).toThrow(
+      expect(() => buildDispatch(SET_ID, [{ id: 'x', collects: [] }])).toThrow(
         /"bad\.id"/
       )
     } finally {
       spy.mockRestore()
-      buildDispatch(dispatchPages)
+      buildDispatch(SET_ID, dispatchPages)
     }
   })
 
@@ -140,10 +141,12 @@ describe('#buildDispatch', () => {
       { id: 'b', collects: ['countryOfOrigin'] }
     ]
     try {
-      expect(() => buildDispatch(twoOwners)).toThrow(/collected by two pages/)
-      expect(() => buildDispatch(twoOwners)).toThrow(/"a" and "b"/)
+      expect(() => buildDispatch(SET_ID, twoOwners)).toThrow(
+        /collected by two pages/
+      )
+      expect(() => buildDispatch(SET_ID, twoOwners)).toThrow(/"a" and "b"/)
     } finally {
-      buildDispatch(dispatchPages)
+      buildDispatch(SET_ID, dispatchPages)
     }
   })
 
@@ -164,11 +167,13 @@ describe('#buildDispatch', () => {
     const withoutCommodities = dispatchPages.filter(
       (page) => page.id !== 'commodities'
     )
-    expect(() => buildDispatch(withoutCommodities)).toThrow(
+    expect(() => buildDispatch(SET_ID, withoutCommodities)).toThrow(
       /collected by no page/
     )
-    expect(() => buildDispatch(withoutCommodities)).toThrow(/commodityLines/)
-    buildDispatch(dispatchPages)
+    expect(() => buildDispatch(SET_ID, withoutCommodities)).toThrow(
+      /commodityLines/
+    )
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   it('Should resolve a sub-obligation to its collection owner by template and instance address', () => {

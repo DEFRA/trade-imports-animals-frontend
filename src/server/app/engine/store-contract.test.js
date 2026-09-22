@@ -1,3 +1,4 @@
+import { SET_ID } from '../sets/live-animals/set.js'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { store, DRAFT, SUBMITTED } from './store.js'
 import { configureRecords } from './persistence/records.js'
@@ -8,7 +9,7 @@ const { countryOfOrigin, placeOfOrigin } = obligationSet()
 
 describe('store clone/freeze contract', () => {
   beforeEach(() => {
-    configureRecords(recordsStub)
+    configureRecords(SET_ID, recordsStub)
     store.clear()
   })
 

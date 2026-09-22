@@ -1,40 +1,51 @@
 import Boom from '@hapi/boom'
-import { BASE } from '../shared/paths.js'
-import { session, SESSION_COOKIES } from './persistence/session.js'
+import {
+  addressHandshakeTokensCookie,
+  flowOnlyAnswersCookie,
+  knownJourneysCookie,
+  openingRunCookie,
+  session
+} from './persistence/session.js'
 import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
 import { buildActor } from '../../common/helpers/actor-helpers.js'
 import { organisationIdOf } from '../../common/helpers/organisation-id.js'
 
-export { SESSION_COOKIES } from './persistence/session.js'
+export {
+  addressHandshakeTokensCookie,
+  flowOnlyAnswersCookie,
+  knownJourneysCookie,
+  openingRunCookie
+} from './persistence/session.js'
 
-const cookieOptions = Object.freeze({
-  path: BASE || '/',
-  ttl: null,
-  encoding: 'none',
-  isSecure: false,
-  isHttpOnly: true,
-  isSameSite: 'Lax',
-  clearInvalid: true,
-  strictHeader: true
-})
+/**
+ * Scoped to the set's own mount, so a draft started in one set is invisible to
+ * another set's dashboard. Moving these off `/` invalidates existing browser
+ * sessions, which is the intended one-off cost of splitting the namespace.
+ *
+ * The names come from the configured session seam rather than from a second
+ * argument, so the registered cookies and the ones the session reads cannot
+ * drift apart. Call it inside the set's context, after `configureSession`.
+ */
+export const registerJourneyCookie = (server, { base }) => {
+  const cookieOptions = Object.freeze({
+    path: base,
+    ttl: null,
+    encoding: 'base64json',
+    isSecure: false,
+    isHttpOnly: true,
+    isSameSite: 'Lax',
+    clearInvalid: true,
+    strictHeader: true
+  })
 
-export const registerJourneyCookie = (server) => {
-  server.state(SESSION_COOKIES.knownJourneys, {
-    ...cookieOptions,
-    encoding: 'base64json'
-  })
-  server.state(SESSION_COOKIES.openingRun, {
-    ...cookieOptions,
-    encoding: 'base64json'
-  })
-  server.state(SESSION_COOKIES.flowOnlyAnswers, {
-    ...cookieOptions,
-    encoding: 'base64json'
-  })
-  server.state(SESSION_COOKIES.addressHandshakeTokens, {
-    ...cookieOptions,
-    encoding: 'base64json'
-  })
+  for (const name of [
+    knownJourneysCookie(),
+    openingRunCookie(),
+    flowOnlyAnswersCookie(),
+    addressHandshakeTokensCookie()
+  ]) {
+    server.state(name, cookieOptions)
+  }
 }
 
 const JOURNEY_MEMO = Symbol('currentJourney')

@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../set.js'
 import {
   afterAll,
   beforeAll,
@@ -35,9 +36,9 @@ const INTERNAL_REFERENCE_MAX_LENGTH_MESSAGE =
 
 describe('POST /origin — invalid payload', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -77,9 +78,9 @@ describe('POST /origin — invalid payload', () => {
 
 describe('POST /origin — an unanswered country still saves', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -155,9 +156,9 @@ describe('POST /origin — an unanswered country still saves', () => {
 
 describe('POST /origin — valid internal reference', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -216,9 +217,9 @@ describe('POST /origin — valid internal reference', () => {
 
 describe('POST /origin — region of origin code prefix and suffix', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -336,9 +337,9 @@ describe('POST /origin — region of origin code prefix and suffix', () => {
 
 describe('GET /origin — region of origin code splits back into its two parts', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -365,9 +366,9 @@ describe('GET /origin — region of origin code splits back into its two parts',
 
 describe('GET /origin — server-rendered select data (no-JS path)', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -390,9 +391,9 @@ describe('POST /origin — country membership follows the primed list', () => {
   const originalMode = config.get('stubMode')
 
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

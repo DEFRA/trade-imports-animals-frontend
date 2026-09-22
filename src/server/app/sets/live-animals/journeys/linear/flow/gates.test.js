@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../set.js'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { dispatchPages } from '../features/index.js'
@@ -56,7 +57,7 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
 
   describe('once the dispatch index is built', () => {
     beforeAll(() => {
-      buildDispatch(dispatchPages)
+      buildDispatch(SET_ID, dispatchPages)
     })
 
     it('Should pass the derived transit-countries page gate exactly when the transited countries are owed, in every scope state', () => {
@@ -82,7 +83,7 @@ describe('#pageGatePasses / #sectionGatePasses', () => {
 
 describe('#sectionGatePasses — RULE 1: mandate-derived flow sequencing', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   const sectionById = (id) => sections.find((section) => section.id === id)
@@ -136,7 +137,7 @@ describe('#sectionGatePasses — RULE 1: mandate-derived flow sequencing', () =>
 
 describe('#sectionGatePasses — RULE 2: review gates on submit-readiness (no deadlock)', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   const reviewSection = sections.find((section) => section.id === 'review')

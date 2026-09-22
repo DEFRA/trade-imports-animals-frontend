@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
@@ -39,9 +40,9 @@ const rowTitled = (rows, title) =>
 
 describe('GET addresses — conditional CPH hub row', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -82,9 +83,9 @@ describe('GET addresses — conditional CPH hub row', () => {
 
 describe('GET addresses — resolveParties hub rows', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -126,9 +127,9 @@ describe('GET addresses — resolveParties hub rows', () => {
 
 describe('GET addresses — frozen parties on submitted notification', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -159,9 +160,9 @@ describe('GET addresses — frozen parties on submitted notification', () => {
 
 describe('GET addresses — change context', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -223,9 +224,9 @@ describe('GET addresses — change context', () => {
 
 describe('POST addresses — change context', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

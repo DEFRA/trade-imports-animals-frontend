@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../../set.js'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
@@ -48,9 +49,9 @@ const getHandler = handlerFor('GET')
 const postHandler = handlerFor('POST')
 
 const configure = () => {
-  configureRecords(recordsStub)
-  configureSession(sessionStub)
-  buildDispatch(dispatchPages)
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  buildDispatch(SET_ID, dispatchPages)
 }
 
 /** Drive a POST whose save fails the way a backend outage fails it: recoverably,
@@ -59,7 +60,7 @@ const driveSaveFailure = async (payload) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, { transporterType: PRIVATE })
   const h = stubH()
-  configureRecords({
+  configureRecords(SET_ID, {
     ...recordsStub,
     replaceFulfilment: () => {
       throw new BackendRequestError('save the transporter', {
@@ -71,7 +72,7 @@ const driveSaveFailure = async (payload) => {
   try {
     return await postHandler(journeyRequest(journey.journeyId, { payload }), h)
   } finally {
-    configureRecords(recordsStub)
+    configureRecords(SET_ID, recordsStub)
   }
 }
 

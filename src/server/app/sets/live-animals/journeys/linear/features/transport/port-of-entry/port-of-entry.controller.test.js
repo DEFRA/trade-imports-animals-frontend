@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../../set.js'
 import {
   afterAll,
   beforeAll,
@@ -37,9 +38,9 @@ const oneOfError = 'Select a valid option'
 
 describe('POST port-of-entry — port membership', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -55,9 +56,9 @@ describe('POST port-of-entry — port membership', () => {
 
 describe('POST port-of-entry — means of transport on the merged page', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -96,9 +97,9 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
 
 describe('GET port-of-entry — server-rendered select data (no-JS path)', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -156,9 +157,9 @@ describe('port-of-entry — the arrival-date window', () => {
   beforeAll(() => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(now)
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
   afterAll(() => vi.useRealTimers())
@@ -239,9 +240,9 @@ describe('POST port-of-entry — port membership follows the primed list', () =>
   const originalMode = config.get('stubMode')
 
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

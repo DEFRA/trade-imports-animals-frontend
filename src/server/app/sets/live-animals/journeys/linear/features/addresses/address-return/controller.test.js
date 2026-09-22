@@ -1,9 +1,10 @@
+import { SET_ID } from '../../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import * as state from '../../../../../../../engine/index.js'
 import { store } from '../../../../../../../engine/store.js'
-import { SESSION_COOKIES } from '../../../../../../../engine/persistence/session.js'
+import { addressHandshakeTokensCookie } from '../../../../../../../engine/persistence/session.js'
 import { configureRecords } from '../../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
@@ -27,15 +28,15 @@ const handshakeQuery = (fulfilmentId = consignor.id) => ({
 })
 
 const handshakeState = (fulfilmentId = consignor.id) => ({
-  [SESSION_COOKIES.addressHandshakeTokens]: {
+  [addressHandshakeTokensCookie()]: {
     [fulfilmentId]: handshakeToken
   }
 })
 
 const configure = () => {
-  configureRecords(recordsStub)
-  configureSession(sessionStub)
-  buildDispatch(dispatchPages)
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  buildDispatch(SET_ID, dispatchPages)
 }
 
 describe('GET /address-return', () => {

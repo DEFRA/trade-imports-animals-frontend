@@ -1,3 +1,4 @@
+import { SET_ID } from '../../sets/live-animals/set.js'
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 
 import { configureObligationSet } from './manifest.js'
@@ -28,11 +29,11 @@ const syntheticSet = {
 
 describe('#manifest-graph', () => {
   beforeAll(() => {
-    configureObligationSet(syntheticSet)
+    configureObligationSet(SET_ID, syntheticSet)
   })
 
   afterAll(() => {
-    configureObligationSet(undefined)
+    configureObligationSet(SET_ID, undefined)
   })
 
   describe('#ancestorChain', () => {

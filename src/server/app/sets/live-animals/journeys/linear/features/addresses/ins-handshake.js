@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 
 import { config } from '../../../../../../../../config/config.js'
-import { SESSION_COOKIES } from '../../../../../../engine/persistence/session.js'
+import { addressHandshakeTokensCookie } from '../../../../../../engine/persistence/session.js'
 import { fulfilmentIdForParty } from './party-for-fulfilment-id.js'
 
 export const JOURNEY_TYPE = 'gbn-ag'
@@ -19,10 +19,10 @@ export const handshakeErrorMessage = (handshakeErrors, code) => {
 }
 
 const handshakeTokenMap = (request) =>
-  request.state[SESSION_COOKIES.addressHandshakeTokens] ?? {}
+  request.state[addressHandshakeTokensCookie()] ?? {}
 
 const storeHandshakeToken = (request, h, fulfilmentId, token) => {
-  h.state(SESSION_COOKIES.addressHandshakeTokens, {
+  h.state(addressHandshakeTokensCookie(), {
     ...handshakeTokenMap(request),
     [fulfilmentId]: token
   })
@@ -39,10 +39,10 @@ export const clearHandshakeToken = (request, h, fulfilmentId) => {
   const map = { ...handshakeTokenMap(request) }
   delete map[fulfilmentId]
   if (Object.keys(map).length === 0) {
-    h.unstate(SESSION_COOKIES.addressHandshakeTokens)
+    h.unstate(addressHandshakeTokensCookie())
     return
   }
-  h.state(SESSION_COOKIES.addressHandshakeTokens, map)
+  h.state(addressHandshakeTokensCookie(), map)
 }
 
 export const buildInsAddAddressUrl = (request, h, notificationId, party) => {

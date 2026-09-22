@@ -1,3 +1,4 @@
+import { SET_ID } from '../sets/live-animals/set.js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { commit, submitJourney } from './index.js'
 import {
@@ -22,16 +23,16 @@ const buildRequest = () => journeyRequest(journeyId)
 
 describe('submitJourney — gates on scope readiness, finalises via records', () => {
   beforeEach(async () => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
     await records.clear()
     journeyId = (await records.create()).journeyId
   })
 
   it('Should finalise the CYA-ready journey', async () => {
     const finalise = vi.fn(recordsStub.finalise)
-    configureRecords({ ...recordsStub, finalise })
-    configureReadyForCheckYourAnswers(() => true)
+    configureRecords(SET_ID, { ...recordsStub, finalise })
+    configureReadyForCheckYourAnswers(SET_ID, () => true)
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
 
     const result = await submitJourney(buildRequest(), stubH())
@@ -44,7 +45,7 @@ describe('submitJourney — gates on scope readiness, finalises via records', ()
   })
 
   it('Should return { ok: false } and leave the journey in draft when not CYA-ready', async () => {
-    configureReadyForCheckYourAnswers(() => false)
+    configureReadyForCheckYourAnswers(SET_ID, () => false)
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
 
     const result = await submitJourney(buildRequest(), stubH())

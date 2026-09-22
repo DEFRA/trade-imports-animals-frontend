@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../set.js'
 import {
   afterEach,
   beforeAll,
@@ -8,7 +9,7 @@ import {
   vi
 } from 'vitest'
 
-import { pagePath } from '../../../../../../shared/paths.js'
+import { dashboardPath, pagePath } from '../../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import {
   configureRecords,
@@ -28,17 +29,17 @@ const post = routes.find((route) => route.method === 'POST').handler
 
 describe('delete notification routes', () => {
   beforeAll(() => {
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   beforeEach(() => {
-    configureRecords(recordsStub)
+    configureRecords(SET_ID, recordsStub)
     records.clear()
   })
 
   afterEach(() => {
-    configureRecords(recordsStub)
+    configureRecords(SET_ID, recordsStub)
     vi.unstubAllGlobals()
   })
 
@@ -53,7 +54,7 @@ describe('delete notification routes', () => {
     expect(response.context).toMatchObject({
       heading: 'Delete this notification?',
       deleteAction: pagePath(journey.journeyId, 'delete'),
-      noHref: '/'
+      noHref: dashboardPath()
     })
     expect(response.context.copy.body).toBe('This cannot be undone.')
   })
@@ -63,7 +64,7 @@ describe('delete notification routes', () => {
 
     const response = await post(journeyRequest(journey.journeyId), stubH())
 
-    expect(response).toEqual({ redirect: '/?deleted=1' })
+    expect(response).toEqual({ redirect: `${dashboardPath()}?deleted=1` })
     expect((await records.load({ journeyId: journey.journeyId })).status).toBe(
       DELETED
     )
@@ -77,15 +78,15 @@ describe('delete notification routes', () => {
     await records.softDelete(journey.journeyId)
 
     expect(await get(journeyRequest(journey.journeyId), stubH())).toEqual({
-      redirect: '/'
+      redirect: dashboardPath()
     })
     expect(await post(journeyRequest(journey.journeyId), stubH())).toEqual({
-      redirect: '/'
+      redirect: dashboardPath()
     })
   })
 
   it('Should re-render confirmation at 500 with the recoverable-save banner after a backend failure', async () => {
-    configureRecords({
+    configureRecords(SET_ID, {
       ...recordsStub,
       softDelete: realRecords.softDelete
     })

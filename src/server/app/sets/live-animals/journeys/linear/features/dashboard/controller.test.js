@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
@@ -9,14 +10,16 @@ import {
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
-  SESSION_COOKIES
+  knownJourneysCookie,
+  openingRunCookie
 } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { assembleFulfilments } from '../../../../../../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../../../../../../bridge/fulfilments/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
-  createPath,
+  createRoutePath,
+  dashboardPath,
   hubPath,
   pagePath
 } from '../../../../../../shared/paths.js'
@@ -38,7 +41,7 @@ const handlerOf = (method, pathSuffix) =>
 const listGet = handlerOf('GET', '/')
 const amendPost = handlerOf('POST', '/amend')
 const startPost = routes.find(
-  (route) => route.method === 'POST' && route.path === createPath()
+  (route) => route.method === 'POST' && route.path === createRoutePath()
 ).handler
 
 const buildRequest = ({
@@ -51,8 +54,8 @@ const buildRequest = ({
   params: journeyId ? { journeyId } : {},
   query,
   state: {
-    [SESSION_COOKIES.knownJourneys]: knownJourneyIds,
-    ...(openingRun ? { [SESSION_COOKIES.openingRun]: openingRun } : {})
+    [knownJourneysCookie()]: knownJourneyIds,
+    ...(openingRun ? { [openingRunCookie()]: openingRun } : {})
   },
   headers: {},
   auth: {
@@ -93,8 +96,8 @@ const startSubmitted = async () => {
 
 describe('dashboard notifications list', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -322,8 +325,8 @@ describe('dashboard notifications list', () => {
 
 describe('dashboard content width', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
   })
 
   it('Should render the notification list as a display surface', async () => {
@@ -335,8 +338,8 @@ describe('dashboard content width', () => {
 
 describe('dashboard row actions', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -422,7 +425,7 @@ describe('dashboard row actions', () => {
       h
     )
 
-    expect(h.captured.redirect).toBe('/')
+    expect(h.captured.redirect).toBe(dashboardPath())
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
     ).toBe(SUBMITTED)
@@ -476,8 +479,8 @@ describe('dashboard row actions', () => {
 
 describe('dashboard start with an in-flight draft', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -491,10 +494,9 @@ describe('dashboard start with an in-flight draft', () => {
 
     await startPost(buildRequest({ knownJourneyIds: [oldDraft.journeyId] }), h)
 
-    const newJourneyId =
-      h.captured.cookies[SESSION_COOKIES.knownJourneys].at(-1)
+    const newJourneyId = h.captured.cookies[knownJourneysCookie()].at(-1)
     expect(newJourneyId).not.toBe(oldDraft.journeyId)
-    expect(h.captured.cookies[SESSION_COOKIES.knownJourneys]).toEqual([
+    expect(h.captured.cookies[knownJourneysCookie()]).toEqual([
       oldDraft.journeyId,
       newJourneyId
     ])
@@ -508,8 +510,8 @@ describe('dashboard start with an in-flight draft', () => {
 
 describe('dashboard start opens the opening run', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -518,10 +520,9 @@ describe('dashboard start opens the opening run', () => {
 
     await startPost(buildRequest(), h)
 
-    const newJourneyId =
-      h.captured.cookies[SESSION_COOKIES.knownJourneys].at(-1)
+    const newJourneyId = h.captured.cookies[knownJourneysCookie()].at(-1)
     expect(h.captured.redirect).toBe(pagePath(newJourneyId, ORIGIN_SLUG))
-    expect(h.captured.cookies[SESSION_COOKIES.openingRun]).toEqual({
+    expect(h.captured.cookies[openingRunCookie()]).toEqual({
       [newJourneyId]: RUN_ACTIVE
     })
   })
@@ -534,9 +535,8 @@ describe('dashboard start opens the opening run', () => {
       h
     )
 
-    const newJourneyId =
-      h.captured.cookies[SESSION_COOKIES.knownJourneys].at(-1)
-    expect(h.captured.cookies[SESSION_COOKIES.openingRun]).toEqual({
+    const newJourneyId = h.captured.cookies[knownJourneysCookie()].at(-1)
+    expect(h.captured.cookies[openingRunCookie()]).toEqual({
       'an-earlier-journey': RUN_ACTIVE,
       [newJourneyId]: RUN_ACTIVE
     })
@@ -555,6 +555,6 @@ describe('dashboard start opens the opening run', () => {
     )
 
     expect(h.captured.redirect).toBe(hubPath(submitted.journeyId))
-    expect(SESSION_COOKIES.openingRun in h.captured.cookies).toBe(false)
+    expect(openingRunCookie() in h.captured.cookies).toBe(false)
   })
 })

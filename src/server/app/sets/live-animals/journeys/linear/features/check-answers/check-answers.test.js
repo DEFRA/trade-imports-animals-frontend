@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../set.js'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
@@ -186,9 +187,9 @@ const SUITE = `#${buildSections.name} (check-answers GET)`
 
 const setupCheckAnswersEngine = () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 }
@@ -1145,8 +1146,10 @@ describe(`${SUITE} — outstanding referenced roles`, () => {
 describe(`${SUITE} — outstanding roles behind the read-path sanitiser`, () => {
   setupCheckAnswersEngine()
 
-  beforeAll(() => configureAnswersForRead(withoutUnresolvedPartyRefs))
-  afterAll(() => configureAnswersForRead((_request, answers) => answers))
+  beforeAll(() => configureAnswersForRead(SET_ID, withoutUnresolvedPartyRefs))
+  afterAll(() =>
+    configureAnswersForRead(SET_ID, (_request, answers) => answers)
+  )
 
   it('Should still name a deleted address the sanitiser has stripped', async () => {
     const { view } = await driveHandler(getHandler, {

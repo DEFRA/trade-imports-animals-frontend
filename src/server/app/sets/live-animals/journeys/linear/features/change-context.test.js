@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../../../../../shared/paths.js'
@@ -60,9 +61,9 @@ const lineSeed = {
 const lineCountPayload = { 'numberOfAnimalsQuantity-0': '1' }
 
 const configure = () => {
-  configureRecords(recordsStub)
-  configureSession(sessionStub)
-  buildDispatch(dispatchPages)
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  buildDispatch(SET_ID, dispatchPages)
 }
 
 describe('change context — kit contracts', () => {

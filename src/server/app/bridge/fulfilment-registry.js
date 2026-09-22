@@ -1,5 +1,6 @@
 import { obligations } from '../model/obligations/manifest.js'
 import { ancestorChain } from '../model/obligations/manifest-graph.js'
+import { setKeyed } from '../shared/set-context.js'
 
 // Binding field names appear inside the store-path grammar
 // (`groupedPathOf`/`pathOf`), so they cannot contain the grammar's
@@ -170,17 +171,12 @@ export const createFulfilmentRegistry = (
   })
 }
 
-let configuredRegistry
+const store = setKeyed('Fulfilment registry')
 
-const currentRegistry = () => {
-  if (!configuredRegistry) {
-    throw new Error('Fulfilment registry has not been configured')
-  }
-  return configuredRegistry
-}
+const currentRegistry = () => store.current()
 
-export const configureFulfilmentRegistry = (features) => {
-  configuredRegistry = createFulfilmentRegistry(features)
+export const configureFulfilmentRegistry = (setId, features) => {
+  store.configure(setId, createFulfilmentRegistry(features))
 }
 
 export const fulfilmentRegistry = Object.freeze({

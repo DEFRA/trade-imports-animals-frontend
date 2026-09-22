@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../sets/live-animals/set.js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { configureObligationSet } from '../../../model/obligations/manifest.js'
@@ -69,7 +70,7 @@ const stateWithCommodity = (value) => ({
 
 describe('#emptyCollectionSatisfiesFloor', () => {
   beforeAll(() => {
-    configureObligationSet({
+    configureObligationSet(SET_ID, {
       obligations: [
         commoditySelection,
         allowListedLeaf,
@@ -81,7 +82,7 @@ describe('#emptyCollectionSatisfiesFloor', () => {
   })
 
   afterAll(() => {
-    configureObligationSet(undefined)
+    configureObligationSet(SET_ID, undefined)
   })
 
   it('Should hold the floor open where the collection asks for no entry at all', () => {

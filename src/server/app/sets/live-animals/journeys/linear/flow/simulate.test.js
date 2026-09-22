@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../set.js'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../flow/dispatch.js'
@@ -14,7 +15,7 @@ const ADD_SPOKE_PAGES = [
 
 describe('#simulateJourney', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   const prereqs = {

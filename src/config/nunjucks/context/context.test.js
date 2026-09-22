@@ -1,5 +1,7 @@
 import { vi } from 'vitest'
 
+import { SET_BASE, SET_ID } from '../../../server/app/sets/live-animals/set.js'
+
 const mockReadFileSync = vi.fn()
 const mockLoggerError = vi.fn()
 
@@ -15,15 +17,25 @@ vi.mock('../../../server/common/helpers/logging/logger.js', () => ({
   createLogger: () => ({ error: (...args) => mockLoggerError(...args) })
 }))
 
+// `vi.resetModules()` gives each test a fresh `shared/set-context.js` with an
+// empty mount registry, so the global setup's registration does not carry over.
+// Re-register it, or every path builder throws for want of a set.
+const remountLiveAnimals = async () => {
+  const { registerSetMount } =
+    await import('../../../server/app/shared/set-context.js')
+  registerSetMount(SET_ID, SET_BASE)
+}
+
 describe('context and cache', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     mockReadFileSync.mockReset()
     mockLoggerError.mockReset()
     vi.resetModules()
+    await remountLiveAnimals()
   })
 
   describe('#context', () => {
-    const mockRequest = { path: '/' }
+    const mockRequest = { path: SET_BASE }
 
     describe('When webpack manifest file read succeeds', () => {
       let contextImport
@@ -67,7 +79,7 @@ describe('context and cache', () => {
           .fn()
           .mockResolvedValue({ email: 'trader@example.com' })
         const result = await contextImport.context({
-          path: '/',
+          path: SET_BASE,
           auth: {
             isAuthenticated: true,
             credentials: { sessionId: 'session-1' }
@@ -137,7 +149,7 @@ describe('context and cache', () => {
   })
 
   describe('#context cache', () => {
-    const mockRequest = { path: '/' }
+    const mockRequest = { path: SET_BASE }
     let contextResult
 
     describe('Webpack manifest file cache', () => {
@@ -185,17 +197,20 @@ describe('#activeNavigationItem', () => {
   let activeNavigationItem
 
   beforeAll(async () => {
+    // The describes above reset the module graph, so the mount has to be put
+    // back before `context.js` resolves a set-aware path.
+    await remountLiveAnimals()
     ;({ activeNavigationItem } = await import('./context.js'))
   })
 
   test('Should mark the dashboard on the notifications list', () => {
-    expect(activeNavigationItem('/')).toBe('dashboard')
+    expect(activeNavigationItem(SET_BASE)).toBe('dashboard')
   })
 
   test('Should keep the dashboard marked inside a notification', () => {
-    expect(activeNavigationItem('/notifications/abc-123/origin')).toBe(
-      'dashboard'
-    )
+    expect(
+      activeNavigationItem(`${SET_BASE}/notifications/abc-123/origin`)
+    ).toBe('dashboard')
   })
 
   test('Should mark nothing on a page outside the navigation', () => {
@@ -203,7 +218,11 @@ describe('#activeNavigationItem', () => {
   })
 
   test('Should mark nothing on a path that merely starts with the section name', () => {
-    expect(activeNavigationItem('/notificationsomething')).toBeNull()
+    expect(activeNavigationItem(`${SET_BASE}/notificationsomething`)).toBeNull()
+  })
+
+  test('Should mark nothing on another set’s dashboard', () => {
+    expect(activeNavigationItem('/high-risk-plants')).toBeNull()
   })
 
   test('Should mark nothing when there is no path', () => {
@@ -212,8 +231,9 @@ describe('#activeNavigationItem', () => {
 })
 
 describe('When auth.enabled is set to false', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.resetModules()
+    await remountLiveAnimals()
     mockReadFileSync.mockReset()
     mockLoggerError.mockReset()
   })
@@ -232,7 +252,7 @@ describe('When auth.enabled is set to false', () => {
       "application.js": "javascripts/application.js",
       "stylesheets/application.scss": "stylesheets/application.css"
     }`)
-    const mockRequest = { path: '/' }
+    const mockRequest = { path: SET_BASE }
     const contextResult = await contextImport.context(mockRequest)
     expect(contextResult.authEnabled).toBe(false)
     expect(contextResult.userSession).toEqual({ isAuthenticated: false })

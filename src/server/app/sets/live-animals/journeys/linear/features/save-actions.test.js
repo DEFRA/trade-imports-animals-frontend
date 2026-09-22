@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { hubPath, pagePath } from '../../../../../shared/paths.js'
@@ -43,9 +44,9 @@ const drivePost = async (
 
 describe('save actions — hub exit semantics', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
