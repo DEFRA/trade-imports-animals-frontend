@@ -83,11 +83,8 @@ describe('#errors', () => {
     // Boom.serverUnavailable, and catchAll renders the shared error page.
     const originalStubMode = config.get('stubMode')
     config.set('stubMode', false)
-    // A developer running the workspace stack locally has a real
-    // ref-data-service on the reference-data port, so an un-stubbed fetch
-    // succeeds and the reader returns stub data — this test would then read
-    // 200. Stubbing fetch to reject makes the "will not load" case
-    // deterministic regardless of what the developer has running.
+    // Stub the fetch to make this deterministic even if a developer is running
+    // the local stack with a real ref-data-service on the reference-data port.
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => {
