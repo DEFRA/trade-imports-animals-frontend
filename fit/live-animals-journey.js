@@ -18,16 +18,23 @@ const stubNameById = new Map(STUB_BOOK.map(({ id, name }) => [id, name]))
 export const partyPickerName = (party) =>
   party?.name ?? stubNameById.get(party?.addressId)
 
-export const BASE = ''
+import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
+
+export { SET_BASE as BASE } from '../src/server/app/sets/live-animals/set.js'
+
+// Anchored at the set base, so a URL that lost or doubled the prefix fails
+// here with an honest message rather than yielding a journey id that then
+// surfaces as a confusing 404 further down the spec.
+const JOURNEY_ID_IN_URL = new RegExp(`^${SET_BASE}/notifications/([^/]+)`)
 
 export const journeyIdFromPage = (page) => {
-  const match = new URL(page.url()).pathname.match(/\/notifications\/([^/]+)/)
+  const match = new URL(page.url()).pathname.match(JOURNEY_ID_IN_URL)
   if (!match) throw new Error(`No journey id in URL: ${page.url()}`)
   return match[1]
 }
 
 export const journeyUrl = (page, slug = '') =>
-  `${BASE}/notifications/${journeyIdFromPage(page)}${slug ? `/${slug}` : ''}`
+  `${SET_BASE}/notifications/${journeyIdFromPage(page)}${slug ? `/${slug}` : ''}`
 
 export const chooseTodayFromDatePicker = async (page, label) => {
   const expected = await page.evaluate(() => {

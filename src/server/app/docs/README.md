@@ -21,6 +21,7 @@ the `configure*` seams.
 
 - [Architecture](architecture.md)
 - [Architecture decisions](decisions.md)
+- [How to add a set](add-a-set.md)
 - [Engine](engine.md)
 - [Obligation model](obligation-model.md)
 - [Flow machinery and gates](flow-and-gates.md)

@@ -1,3 +1,4 @@
+import { BASE } from '../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
@@ -26,13 +27,13 @@ test.describe('service navigation', () => {
   })
 
   test('offers the four items on the dashboard', async ({ page }) => {
-    await page.goto('/')
+    await page.goto(BASE)
 
     await expect(navigation(page).getByRole('listitem')).toHaveText(ITEMS)
   })
 
   test('marks the dashboard as the current section', async ({ page }) => {
-    await page.goto('/')
+    await page.goto(BASE)
 
     await expect(
       navigation(page).getByRole('link', { name: serviceNavigation.dashboard })
@@ -56,13 +57,13 @@ test.describe('service navigation', () => {
       .getByRole('link', { name: serviceNavigation.dashboard })
       .click()
 
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL(BASE)
   })
 
   // Clicking through would leave the service for the OIDC provider's sign-out
   // endpoint, so this pins the destination rather than following it.
   test('offers sign-out from the navigation', async ({ page }) => {
-    await page.goto('/')
+    await page.goto(BASE)
 
     await expect(
       navigation(page).getByRole('link', { name: serviceNavigation.logOut })
@@ -72,7 +73,7 @@ test.describe('service navigation', () => {
   test('shows the signed-in user nowhere, as Design release 1 does not', async ({
     page
   }) => {
-    await page.goto('/')
+    await page.goto(BASE)
 
     await expect(page.getByText(STUB_USER_EMAIL)).toHaveCount(0)
     await expect(
@@ -81,7 +82,7 @@ test.describe('service navigation', () => {
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
-    await page.goto('/')
+    await page.goto(BASE)
 
     await expect(navigation(page).getByRole('listitem')).toHaveText(ITEMS)
 

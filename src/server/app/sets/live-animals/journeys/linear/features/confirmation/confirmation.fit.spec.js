@@ -1,3 +1,4 @@
+import { BASE } from '../../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
@@ -133,11 +134,11 @@ test.describe('submitted confirmation feature', () => {
     const dashboardLink = page.getByRole('link', {
       name: copy.viewOrAmend.dashboardLink
     })
-    await expect(dashboardLink).toHaveAttribute('href', '/')
+    await expect(dashboardLink).toHaveAttribute('href', BASE)
 
     await dashboardLink.click()
 
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL(BASE)
   })
 
   // Second consignment, no detour: the page starts a fresh notification without

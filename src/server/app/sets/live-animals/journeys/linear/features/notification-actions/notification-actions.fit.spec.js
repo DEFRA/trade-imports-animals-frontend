@@ -1,3 +1,4 @@
+import { BASE } from '../../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
@@ -18,7 +19,7 @@ const createAnsweredNotification = async (page) => {
   await startNotification(page)
   await completeAnswerSections(page)
   const sourceReference = journeyIdFromPage(page)
-  await page.goto('/')
+  await page.goto(BASE)
   return sourceReference
 }
 
@@ -73,7 +74,7 @@ test.describe('notification-actions feature', () => {
     await copyNotification(page, sourceReference)
     const copiedReference = journeyIdFromPage(page)
 
-    await page.goto('/')
+    await page.goto(BASE)
 
     await expect(
       page.getByRole('heading', { name: sourceReference, exact: true })

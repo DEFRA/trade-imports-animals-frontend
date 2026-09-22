@@ -1,3 +1,4 @@
+import { BASE } from '../../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { countriesOrigin } from '../../../../../../services/_capture/fixtures.js'
@@ -32,9 +33,9 @@ const countryField = (page) =>
 const hubUrlOf = (originUrl) => originUrl.replace(/\/origin$/, '')
 
 const startAtOrigin = async (page) => {
-  await page.goto('/')
+  await page.goto(BASE)
   await page
-    .locator('form[action="/notifications"]')
+    .locator(`form[action="${BASE}/notifications"]`)
     .getByRole('button')
     .click()
   await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
@@ -229,7 +230,7 @@ test.describe('origin feature', () => {
   }) => {
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL(BASE)
   })
 
   test('back link returns to the notification hub once the journey has answers', async ({

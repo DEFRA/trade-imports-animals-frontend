@@ -1,3 +1,4 @@
+import { BASE } from '../../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
@@ -39,9 +40,9 @@ const expectNoSeriousAxeViolations = async (page, label) => {
 }
 
 const startAtCphNumber = async (page) => {
-  await page.goto('/')
+  await page.goto(BASE)
   await page
-    .locator('form[action="/notifications"]')
+    .locator(`form[action="${BASE}/notifications"]`)
     .getByRole('button')
     .click()
   await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)

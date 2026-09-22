@@ -1,3 +1,4 @@
+import { BASE } from '../../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
@@ -325,11 +326,11 @@ test.describe('hub feature', () => {
     await expect(page.locator('.govuk-back-link')).toHaveCount(0)
     await expect(
       page.getByRole('button', { name: copy.returnToDashboard })
-    ).toHaveAttribute('href', '/')
+    ).toHaveAttribute('href', BASE)
 
     await page.getByRole('button', { name: copy.returnToDashboard }).click()
 
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL(BASE)
   })
 })
 

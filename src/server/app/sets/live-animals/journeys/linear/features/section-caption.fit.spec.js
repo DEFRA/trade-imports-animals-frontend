@@ -1,3 +1,4 @@
+import { BASE } from '../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
@@ -26,7 +27,7 @@ const isGovukConditionalRevealFalsePositive = (violation) =>
   )
 
 const startAtOrigin = async (page) => {
-  await page.goto('/')
+  await page.goto(BASE)
   await page.getByRole('button', { name: dashboardCopy.startButton }).click()
   await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
 }
@@ -81,7 +82,7 @@ test.describe('section caption above the page heading', () => {
   })
 
   test('names the dashboard above its heading', async ({ page }) => {
-    await page.goto('/')
+    await page.goto(BASE)
 
     await expect(
       page.locator('span.govuk-caption-xl + h1.govuk-heading-xl')

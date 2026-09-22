@@ -1,3 +1,4 @@
+import { BASE } from './live-animals-journey.js'
 import { expect, test } from '@playwright/test'
 import {
   addDocument,
@@ -34,7 +35,7 @@ test.describe('live-animals journey glue', () => {
     const save = () =>
       page.getByRole('button', { name: 'Save and continue' }).click()
 
-    await page.goto('/')
+    await page.goto(BASE)
     await page.getByRole('button', { name: 'Start a new notification' }).click()
     await expect(heading('Origin of the import')).toBeVisible()
 
@@ -94,7 +95,7 @@ test.describe('live-animals journey glue', () => {
     test.slow()
     const heading = (name) => page.getByRole('heading', { name })
 
-    await page.goto('/')
+    await page.goto(BASE)
     await page.getByRole('button', { name: 'Start a new notification' }).click()
     await expect(heading('Origin of the import')).toBeVisible()
 
@@ -131,7 +132,7 @@ test.describe('live-animals journey glue', () => {
     page,
     browser
   }) => {
-    await page.goto('/')
+    await page.goto(BASE)
     await page.getByRole('button', { name: 'Start a new notification' }).click()
     await expect(
       page.getByRole('heading', { name: 'Origin of the import' })

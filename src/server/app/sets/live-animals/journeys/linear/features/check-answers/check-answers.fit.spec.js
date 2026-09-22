@@ -1,3 +1,4 @@
+import { BASE } from '../../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
@@ -529,7 +530,7 @@ test.describe('check-answers feature submitted notification', () => {
       .check()
     await page.getByRole('button', { name: 'Continue' }).click()
     const reference = journeyIdFromPage(page)
-    await page.goto('/')
+    await page.goto(BASE)
     await page
       .getByRole('link', {
         name: `View ${dashboardCopy.actionHidden(reference)}`

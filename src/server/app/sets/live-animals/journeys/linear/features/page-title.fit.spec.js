@@ -1,3 +1,4 @@
+import { BASE } from '../../../../../../../../fit/live-animals-journey.js'
 import { expect, test } from '@playwright/test'
 
 import {
@@ -14,9 +15,9 @@ const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
 // Origin is the journey's entry page, so it is the cheapest page to reach that
 // both carries a page name of its own and can be made to show errors.
 const startAtOrigin = async (page) => {
-  await page.goto('/')
+  await page.goto(BASE)
   await page
-    .locator('form[action="/notifications"]')
+    .locator(`form[action="${BASE}/notifications"]`)
     .getByRole('button')
     .click()
   await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
