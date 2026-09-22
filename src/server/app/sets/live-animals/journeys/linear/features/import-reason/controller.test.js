@@ -315,3 +315,154 @@ describe('GET import-reason — the reveals prefill from the one answer behind t
     expect(result.view.context.values.transitDestinationCountry).toBe('IE')
   })
 })
+
+// `ZZ` is absent from the captured countries fixture and `GB ZZZ` is absent
+// from the captured ports fixture, so each doubles as a stale stored value.
+
+describe('GET import-reason — a stored destination country the reader no longer offers', () => {
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  it('Should blank the stale country in both country reveals so both selects render unselected', async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        reasonForImport: 'transhipmentOrOnwardTravel',
+        destinationCountry: 'ZZ'
+      }
+    })
+
+    expect(result.view.context.values.transhipmentDestinationCountry).toBe('')
+    expect(result.view.context.values.transitDestinationCountry).toBe('')
+    expect(
+      result.view.context.countryItems.find((item) => item.value === 'ZZ')
+    ).toBeUndefined()
+  })
+
+  it('Should surface the error on the transhipment reveal field under a transhipment reason', async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        reasonForImport: 'transhipmentOrOnwardTravel',
+        destinationCountry: 'ZZ'
+      }
+    })
+
+    expect(result.view.context.errors.transhipmentDestinationCountry).toBe(
+      copy.errors.countryNoLongerAvailable
+    )
+    expect(result.view.context.errors.transitDestinationCountry).toBeUndefined()
+  })
+
+  it('Should surface the error on the transit reveal field under a transit reason', async () => {
+    const result = await driveHandler(get, {
+      seed: { reasonForImport: 'transit', destinationCountry: 'ZZ' }
+    })
+
+    expect(result.view.context.errors.transitDestinationCountry).toBe(
+      copy.errors.countryNoLongerAvailable
+    )
+    expect(
+      result.view.context.errors.transhipmentDestinationCountry
+    ).toBeUndefined()
+  })
+
+  it('Should surface no country error under a reason whose reveal does not ask the destination country', async () => {
+    const result = await driveHandler(get, {
+      seed: { reasonForImport: 'internalMarket', destinationCountry: 'ZZ' }
+    })
+
+    expect(
+      result.view.context.errors.transhipmentDestinationCountry
+    ).toBeUndefined()
+    expect(result.view.context.errors.transitDestinationCountry).toBeUndefined()
+  })
+
+  it('Should leave the stored destination country intact — GET only reshapes what the page renders', async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        reasonForImport: 'transhipmentOrOnwardTravel',
+        destinationCountry: 'ZZ'
+      }
+    })
+
+    expect(result.before.destinationCountry).toBe('ZZ')
+    expect(result.after.destinationCountry).toBe('ZZ')
+  })
+})
+
+describe('GET import-reason — a stored port of exit the reader no longer offers', () => {
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  it('Should blank the stale port in both port reveals so both selects render unselected', async () => {
+    const result = await driveHandler(get, {
+      seed: { reasonForImport: 'transit', portOfExit: 'GB ZZZ' }
+    })
+
+    expect(result.view.context.values.transitPortOfExit).toBe('')
+    expect(result.view.context.values.temporaryAdmissionPortOfExit).toBe('')
+    expect(
+      result.view.context.portItems.find((item) => item.value === 'GB ZZZ')
+    ).toBeUndefined()
+  })
+
+  it('Should surface the error on the transit reveal field under a transit reason', async () => {
+    const result = await driveHandler(get, {
+      seed: { reasonForImport: 'transit', portOfExit: 'GB ZZZ' }
+    })
+
+    expect(result.view.context.errors.transitPortOfExit).toBe(
+      copy.errors.portNoLongerAvailable
+    )
+    expect(
+      result.view.context.errors.temporaryAdmissionPortOfExit
+    ).toBeUndefined()
+  })
+
+  it('Should surface the error on the temporary-admission reveal field under a temporary-admission reason', async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        reasonForImport: 'temporaryAdmissionHorses',
+        portOfExit: 'GB ZZZ'
+      }
+    })
+
+    expect(result.view.context.errors.temporaryAdmissionPortOfExit).toBe(
+      copy.errors.portNoLongerAvailable
+    )
+    expect(result.view.context.errors.transitPortOfExit).toBeUndefined()
+  })
+
+  it('Should surface no port error under a reason whose reveal does not ask the port', async () => {
+    const result = await driveHandler(get, {
+      seed: { reasonForImport: 'internalMarket', portOfExit: 'GB ZZZ' }
+    })
+
+    expect(result.view.context.errors.transitPortOfExit).toBeUndefined()
+    expect(
+      result.view.context.errors.temporaryAdmissionPortOfExit
+    ).toBeUndefined()
+  })
+})
+
+describe('POST import-reason — a stale destination country submitted verbatim reads the same as empty', () => {
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  it('Should reject a payload with the stale code using the standard countryRequired copy', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        reasonForImport: 'transhipmentOrOnwardTravel',
+        destinationCountry: 'ZZ'
+      },
+      payload: {
+        reasonForImport: 'transhipmentOrOnwardTravel',
+        transhipmentDestinationCountry: 'ZZ'
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.transhipmentDestinationCountry).toBe(
+      copy.errors.countryRequired
+    )
+  })
+})

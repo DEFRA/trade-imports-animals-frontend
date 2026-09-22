@@ -23,6 +23,8 @@ export const copy = {
   },
   errors: {
     countryFromList: 'Dewiswch wlad o’r rhestr',
+    countryNoLongerAvailable:
+      "Nid yw'r wlad a arbedwyd ar gael mwyach. Dewiswch wlad o’r rhestr.",
     regionCodeRequired: 'Rhowch god rhanbarth tarddiad',
     regionCodeMaxLength:
       "Rhaid i'r cod rhanbarth tarddiad fod yn 5 nod neu lai",

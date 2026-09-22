@@ -22,6 +22,8 @@ export const copy = {
   },
   errors: {
     countryFromList: 'Select a country from the list',
+    countryNoLongerAvailable:
+      'The saved country is no longer available. Select a country from the list.',
     regionCodeRequired: 'Enter the region of origin code',
     regionCodeMaxLength: 'Region of origin code must be 5 characters or less',
     internalReferenceMaxLength:

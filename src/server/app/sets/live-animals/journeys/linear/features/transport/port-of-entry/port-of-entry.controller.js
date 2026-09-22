@@ -115,15 +115,28 @@ const render = async (
     })
   })
 
+const isPortStale = async (code) => {
+  if (!code) {
+    return false
+  }
+  const offered = new Set((await ports.list()).map((port) => port.code))
+  return !offered.has(code)
+}
+
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, arrivalWindow(), {
+  const stalePort = await isPortStale(answers.portOfEntry)
+  const values = {
     arrivalDateAtPort: answers.arrivalDateAtPort ?? {},
-    portOfEntry: answers.portOfEntry ?? '',
+    portOfEntry: stalePort ? '' : (answers.portOfEntry ?? ''),
     meansOfTransport: answers.meansOfTransport ?? '',
     transportIdentification: answers.transportIdentification ?? '',
     transportDocumentReference: answers.transportDocumentReference ?? ''
-  })
+  }
+  const errors = stalePort
+    ? { portOfEntry: copy.errors.portNoLongerAvailable }
+    : {}
+  return render(h, journey, arrivalWindow(), values, { errors })
 }
 
 const post = async (request, h) => {
