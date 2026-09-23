@@ -83,7 +83,7 @@ module.exports = {
       from: { path: `^${APP}/sets/` },
       to: {
         path: [
-          `^${APP}/(routes|obligation-purity)\\.js$`,
+          `^${APP}/(routes|routes-[a-z0-9-]+|obligation-purity)\\.js$`,
           `^${APP}/(copy-convention|copy-parity)\\.test\\.js$`
         ]
       }

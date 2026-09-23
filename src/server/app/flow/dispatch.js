@@ -2,7 +2,11 @@ import {
   walkObligations,
   SYSTEM_POPULATED
 } from '../bridge/obligation-source.js'
-import { currentSetId, setKeyed } from '../shared/set-context.js'
+import {
+  currentSetId,
+  setKeyed,
+  withSetContext
+} from '../shared/set-context.js'
 
 const ID_UNSAFE = /[.[\]]/
 
@@ -90,9 +94,15 @@ const assertFullCoverage = (pageOfObligationMap) => {
 }
 
 export const buildDispatch = (setId, pages) => {
-  assertPathSafeIds()
-  const built = indexPages(pages)
-  assertFullCoverage(built.pageOfObligation)
+  // Validated inside the set the index is being written for. Both assertions
+  // walk `obligations()`, so resolving them from whichever set is ambient would
+  // check this set's pages against another set's obligations.
+  const built = withSetContext(setId, () => {
+    assertPathSafeIds()
+    const pageIndex = indexPages(pages)
+    assertFullCoverage(pageIndex.pageOfObligation)
+    return pageIndex
+  })
   store.configure(setId, built)
 }
 

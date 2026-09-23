@@ -45,7 +45,8 @@ Trace its registration through:
 - [`journeys/linear/features/hub/hub.fit.spec.js`](../journeys/linear/features/hub/hub.fit.spec.js)
 - [`journeys/linear/config.js`](../journeys/linear/config.js)
 - [`src/server/app/flow/journey-flow.js`](../../../flow/journey-flow.js)
-- [`src/server/app/routes.js`](../../../routes.js)
+- [`src/server/app/routes-live-animals.js`](../../../routes-live-animals.js) —
+  this set's gateway; [`routes.js`](../../../routes.js) only re-exports it
 
 The transport flow section has five pages. The hub does not render that
 section directly. It renders three task rows: arrival details, transit
@@ -250,9 +251,11 @@ Prove both the incomplete and complete states in
 prefix, shared layout name and three session cookie names. A new feature group,
 flow section or task row does not add a config entry.
 
-[`src/server/app/routes.js`](../../../routes.js) already imports the journey's
-`sections`, `taskRows`, `rowStatus`, `nextRunTarget`, `FLOW_ONLY_KEYS`,
-`entryGuardTarget` and `LAYOUT`. It passes them to
+This set's gateway,
+[`src/server/app/routes-live-animals.js`](../../../routes-live-animals.js) (the
+[`routes.js`](../../../routes.js) barrel only re-exports it), already imports the
+journey's `sections`, `taskRows`, `rowStatus`, `nextRunTarget`,
+`FLOW_ONLY_KEYS`, `entryGuardTarget` and `LAYOUT`. It passes them to
 [`configureJourneyFlow()`](../../../flow/journey-flow.js). Because it injects the
 whole exported arrays, adding a section or task row to the existing modules needs no
 new L1 import or configure call.

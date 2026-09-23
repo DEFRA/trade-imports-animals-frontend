@@ -1,11 +1,12 @@
-import { BASE } from '../../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
+  BASE,
   answerOriginEntry,
   expectPageEndsWithPrimaryAlone,
-  selectSpecies
+  selectSpecies,
+  urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
@@ -45,7 +46,7 @@ const startAtCphNumber = async (page) => {
     .locator(`form[action="${BASE}/notifications"]`)
     .getByRole('button')
     .click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+  await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
 
   const commodityUrl = page.url().replace(/\/origin$/, '/commodities')
   await answerOriginEntry(page)
@@ -53,7 +54,9 @@ const startAtCphNumber = async (page) => {
   await page.goto(commodityUrl)
   await selectSpecies(page, ['Bos taurus'])
   await page.getByRole('button', { name: 'Save and continue' }).click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/consignment-details$/)
+  await expect(page).toHaveURL(
+    urlUnderBase('/notifications/[^/]+/consignment-details')
+  )
 
   await page.goto(commodityUrl.replace(/\/commodities$/, '/cph-number'))
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()

@@ -1,13 +1,14 @@
-import { BASE } from '../../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
+  BASE,
   completeAnswerSections,
   journeyIdFromPage,
   journeyUrl,
   openReviewFromHub,
   signIn,
-  startNotification
+  startNotification,
+  urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 
@@ -113,7 +114,9 @@ test.describe('submitted confirmation feature', () => {
       .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
       .check()
     await page.getByRole('button', { name: 'Continue' }).click()
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/confirmation$/)
+    await expect(page).toHaveURL(
+      urlUnderBase('/notifications/[^/]+/confirmation')
+    )
   })
 
   test('renders the notification reference and all feature copy, with no declaration date and no back link', async ({

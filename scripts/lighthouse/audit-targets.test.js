@@ -74,6 +74,16 @@ describe('#auditPaths', () => {
     )
   })
 
+  it('Should audit the dashboard at the set base itself, with no trailing slash', () => {
+    const paths = auditPaths(journeyIds)
+
+    // Hapi mounts the dashboard's `/` shape at the set base, not at
+    // `<base>/`. Emitting the prefix plus the shape would make the one target
+    // that is not a prefix-plus-path 404 against the running app.
+    expect(paths).toContain(SET_BASE)
+    expect(paths).not.toContain(`${SET_BASE}/`)
+  })
+
   it('Should refuse to audit a route whose notification shape was never seeded', () => {
     const unseeded = { ...journeyIds, transit: undefined }
 

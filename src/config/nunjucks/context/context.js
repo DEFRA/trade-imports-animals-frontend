@@ -3,7 +3,14 @@ import { readFileSync } from 'node:fs'
 
 import { config } from '../../config.js'
 import { createLogger } from '../../../server/common/helpers/logging/logger.js'
-import { inDashboardSection } from '../../../server/app/shared/paths.js'
+import {
+  dashboardPath,
+  inDashboardSection
+} from '../../../server/app/shared/paths.js'
+import {
+  setIdForPath,
+  withSetContext
+} from '../../../server/app/shared/set-context.js'
 
 const logger = createLogger()
 const assetPath = config.get('assetPath')
@@ -44,13 +51,24 @@ async function context(request) {
     ? await request.server.app.cache.get(sessionId)
     : null
 
+  // Resolved from the path, not from an ambient context: hapi-vision marshals
+  // the view after the handler has returned, so an `enterWith` from a set's own
+  // extension may already have gone by the time this global context is built.
+  const setId = setIdForPath(request.path)
+
   return {
     assetPath: `${assetPath}/assets`,
     serviceName: config.get('serviceName'),
     serviceUrl: '/',
     authEnabled: config.get('auth.enabled'),
     staleActionRejected: request.query?.staleAction === '1',
-    activeNavigationItem: activeNavigationItem(request.path),
+    // The chrome's home link for every rendered page, so a view built without
+    // kit.base() — the dashboard's own, for one — still links back into its own
+    // set. kit.base() supplies the same key, and a view's own context wins.
+    homeUrl: setId ? withSetContext(setId, dashboardPath) : '/',
+    activeNavigationItem: setId
+      ? withSetContext(setId, () => activeNavigationItem(request.path))
+      : null,
     userSession: authData
       ? {
           isAuthenticated: true,

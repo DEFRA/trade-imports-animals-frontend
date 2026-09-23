@@ -18,9 +18,17 @@ export {
 } from './persistence/session.js'
 
 /**
- * Scoped to the set's own mount, so a draft started in one set is invisible to
- * another set's dashboard. Moving these off `/` invalidates existing browser
- * sessions, which is the intended one-off cost of splitting the namespace.
+ * Registers the journey cookies a set reads in STUB mode, scoped to that set's
+ * own mount: stub mode keeps each value in a native cookie of its own, so a
+ * draft started in one set is invisible to another set's dashboard. Moving
+ * these off `/` invalidates existing browser sessions, which is the intended
+ * one-off cost of splitting the namespace.
+ *
+ * The `path` scoping applies to those per-name cookies only. In REAL mode the
+ * same values are keys inside the single @hapi/yar session cookie, which is
+ * registered server-wide at path `/`; isolation there comes from each set's
+ * cookie NAMES being distinct, not from the path. See
+ * services/persistence/session/real.js.
  *
  * The names come from the configured session seam rather than from a second
  * argument, so the registered cookies and the ones the session reads cannot

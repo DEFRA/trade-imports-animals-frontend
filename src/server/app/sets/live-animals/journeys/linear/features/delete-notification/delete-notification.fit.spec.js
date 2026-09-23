@@ -1,8 +1,8 @@
-import { BASE } from '../../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
+  BASE,
   completeAnswerSections,
   journeyIdFromPage,
   openReviewFromHub,

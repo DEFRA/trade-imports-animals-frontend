@@ -1,8 +1,8 @@
-import { BASE } from '../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
+  BASE,
   signIn,
   startNotification
 } from '../../../../../../../../fit/live-animals-journey.js'
@@ -52,6 +52,13 @@ test.describe('service navigation', () => {
 
   test('reaches the dashboard from inside a notification', async ({ page }) => {
     await startNotification(page)
+
+    // The href itself, before the click: a bare `/` would still land on BASE
+    // through the root redirect, so following the link proves nothing on its
+    // own about the link carrying this set's prefix.
+    await expect(
+      navigation(page).getByRole('link', { name: serviceNavigation.dashboard })
+    ).toHaveAttribute('href', BASE)
 
     await navigation(page)
       .getByRole('link', { name: serviceNavigation.dashboard })

@@ -1,9 +1,10 @@
-import { BASE } from '../../../../../../../../fit/live-animals-journey.js'
 import { expect, test } from '@playwright/test'
 
 import {
+  BASE,
   chooseCountryOfOrigin,
-  signIn
+  signIn,
+  urlUnderBase
 } from '../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../shared/copy.en.js'
 import { copy as originCopy } from './origin/copy/copy.en.js'
@@ -20,7 +21,7 @@ const startAtOrigin = async (page) => {
     .locator(`form[action="${BASE}/notifications"]`)
     .getByRole('button')
     .click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+  await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
   await expect(
     page.getByRole('heading', { name: originCopy.title })
   ).toBeVisible()

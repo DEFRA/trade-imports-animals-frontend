@@ -26,10 +26,12 @@ describe('#journeyIdIn', () => {
     ).toBe(JOURNEY_ID)
   })
 
-  it('Should answer empty for a Location that is not a created notification', () => {
-    expect(journeyIdIn(`${SET_BASE}/notifications`)).toBe('')
-    expect(journeyIdIn('/somewhere-else')).toBe('')
-    expect(journeyIdIn(undefined)).toBe('')
+  it.each([
+    ['the bare create path', `${SET_BASE}/notifications`],
+    ['a path outside the set', '/somewhere-else'],
+    ['no Location header at all', undefined]
+  ])('Should answer empty for %s', (_shape, location) => {
+    expect(journeyIdIn(location)).toBe('')
   })
 })
 

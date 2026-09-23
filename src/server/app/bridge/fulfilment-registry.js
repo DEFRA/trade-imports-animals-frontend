@@ -1,6 +1,6 @@
 import { obligations } from '../model/obligations/manifest.js'
 import { ancestorChain } from '../model/obligations/manifest-graph.js'
-import { setKeyed } from '../shared/set-context.js'
+import { setKeyed, withSetContext } from '../shared/set-context.js'
 
 // Binding field names appear inside the store-path grammar
 // (`groupedPathOf`/`pathOf`), so they cannot contain the grammar's
@@ -176,7 +176,14 @@ const store = setKeyed('Fulfilment registry')
 const currentRegistry = () => store.current()
 
 export const configureFulfilmentRegistry = (setId, features) => {
-  store.configure(setId, createFulfilmentRegistry(features))
+  // Built inside the named set, not whichever set is ambient: the manifest
+  // default the registry validates against is `obligations()`, so building
+  // outside the set being configured checks the bindings against another set's
+  // obligations — or throws, with two sets mounted and no ambient context.
+  store.configure(
+    setId,
+    withSetContext(setId, () => createFulfilmentRegistry(features))
+  )
 }
 
 export const fulfilmentRegistry = Object.freeze({

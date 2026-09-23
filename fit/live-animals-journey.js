@@ -9,8 +9,26 @@ import { COUNTRY_LABELS } from '../src/server/app/services/countries/stub.js'
 import { STUB_BOOK } from '../src/server/app/services/address-book/stub/index.js'
 import { PORTS } from '../src/server/app/services/ports/stub.js'
 import { copy as sharedAppCopy } from '../src/server/app/shared/copy.en.js'
+import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
 
 export { signIn } from './sign-in.js'
+
+/** The set's mount, under the one name every spec imports. */
+export const BASE = SET_BASE
+
+/**
+ * An anchored matcher for a URL under this set's mount.
+ *
+ * `toHaveURL` matches the WHOLE url, origin included, so a pattern anchored at
+ * the mount alone never matches and one anchored nowhere passes on a doubled
+ * prefix. Anchoring at the origin is what makes a dropped or doubled prefix
+ * fail here rather than 404 further down the spec.
+ *
+ * @param {string} pathPattern - the path under the mount, as regex source.
+ * @returns {RegExp} the anchored matcher.
+ */
+export const urlUnderBase = (pathPattern) =>
+  new RegExp(`^https?://[^/]+${BASE}${pathPattern}$`)
 
 const stubNameById = new Map(STUB_BOOK.map(({ id, name }) => [id, name]))
 
@@ -18,14 +36,10 @@ const stubNameById = new Map(STUB_BOOK.map(({ id, name }) => [id, name]))
 export const partyPickerName = (party) =>
   party?.name ?? stubNameById.get(party?.addressId)
 
-import { SET_BASE } from '../src/server/app/sets/live-animals/set.js'
-
-export { SET_BASE as BASE } from '../src/server/app/sets/live-animals/set.js'
-
 // Anchored at the set base, so a URL that lost or doubled the prefix fails
 // here with an honest message rather than yielding a journey id that then
 // surfaces as a confusing 404 further down the spec.
-const JOURNEY_ID_IN_URL = new RegExp(`^${SET_BASE}/notifications/([^/]+)`)
+const JOURNEY_ID_IN_URL = new RegExp(`^${BASE}/notifications/([^/]+)`)
 
 export const journeyIdFromPage = (page) => {
   const match = new URL(page.url()).pathname.match(JOURNEY_ID_IN_URL)
@@ -34,7 +48,7 @@ export const journeyIdFromPage = (page) => {
 }
 
 export const journeyUrl = (page, slug = '') =>
-  `${SET_BASE}/notifications/${journeyIdFromPage(page)}${slug ? `/${slug}` : ''}`
+  `${BASE}/notifications/${journeyIdFromPage(page)}${slug ? `/${slug}` : ''}`
 
 export const chooseTodayFromDatePicker = async (page, label) => {
   const expected = await page.evaluate(() => {
@@ -153,7 +167,10 @@ export const answerOriginEntry = async (page) => {
 /** Origin is the journey's entry page: the entry guard holds a notification
  * there until it is answered, so reaching the hub means answering it. */
 export const startNotification = async (page) => {
-  await page.goto('/')
+  // The set's own base, not '/': entering through the root redirect would make
+  // this driver depend on live-animals being the default set. The root
+  // redirect has its own coverage in the service-navigation spec.
+  await page.goto(BASE)
   await page.getByRole('button', { name: 'Start a new notification' }).click()
   await expect(
     page.getByRole('heading', { name: 'Origin of the import' })

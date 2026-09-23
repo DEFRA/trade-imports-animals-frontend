@@ -1,7 +1,7 @@
-import { BASE } from './live-animals-journey.js'
 import { expect, test } from '@playwright/test'
 import {
   addDocument,
+  BASE,
   answerAdditionalDetails,
   answerAnimalIdentification,
   answerArrivalDetails,

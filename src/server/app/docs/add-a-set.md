@@ -144,14 +144,17 @@ name the set without importing the whole composition root.
 
 Create `sets/<set-id>/` with its obligations manifest, its journey config, its
 flow modules and its features, following the `live-animals` tree. Its cookie
-names must be its own — all four of them:
+names must be its own — all four of them. The prefix is the camelCase form of
+the kebab-case `<set-id>` from step 1, so `live-animals` gives
+`liveAnimalsKnownJourneys`. The shipped values are in
+[`../sets/live-animals/journeys/linear/config.js`](../sets/live-animals/journeys/linear/config.js):
 
 ```js
 export const SESSION_COOKIE_NAMES = {
-  knownJourneys: '<setId>KnownJourneys',
-  openingRun: '<setId>OpeningRun',
-  flowOnlyAnswers: '<setId>FlowOnlyAnswers',
-  addressHandshakeTokens: '<setId>AddressHandshakeTokens'
+  knownJourneys: 'liveAnimalsKnownJourneys',
+  openingRun: 'liveAnimalsOpeningRun',
+  flowOnlyAnswers: 'liveAnimalsFlowOnlyAnswers',
+  addressHandshakeTokens: 'liveAnimalsAddressHandshakeTokens'
 }
 ```
 
@@ -183,12 +186,13 @@ await server.register(yourSet, { routes: { prefix: YOUR_SET_BASE } })
 Leave the server-wide routes where they are. Do not move `/` — it stays a 302
 to `DEFAULT_SET_BASE`.
 
-## 6. Widen the dependency rules
+## 6. Check the dependency rules
 
-`routes-<set-id>.js` is matched by the existing
-`^src/server/app/routes-[a-z0-9-]+\.js$` entry in the
-`routes-is-the-gateway` allowlist in `.dependency-cruiser.cjs`, so no change is
-needed for a conventionally named gateway. Run `npm run lint:arch` and leave
+`routes-<set-id>.js` is matched by the existing `routes-[a-z0-9-]+\.js`
+alternatives in both rules that name the gateways in `.dependency-cruiser.cjs` —
+`routes-is-the-gateway`, which lets a gateway import `sets/**`, and
+`sets-not-l1`, which stops a set importing a gateway back. A conventionally
+named gateway needs no change to either. Run `npm run lint:arch` and leave
 `.dependency-cruiser-known-violations.json` untouched.
 
 ## 7. Prove it
@@ -209,7 +213,36 @@ The second set in those suites is `test/fixtures/second-set.js`, a fixture
 rather than a real journey. If you are adding a real set, the fixture stays:
 the suites are about the platform, not about any one set.
 
-## 8. Move the tests with the URLs
+Do **not** register your set in `test/setup-obligation-set.js`, the vitest
+global setup file. That file mounts exactly one set, and the whole unit suite
+leans on that: with one mount, `shared/set-context.js`'s `soleSetId()` fallback
+resolves `currentSetId()` for a test that never enters a request's context. A
+second mount there retires the fallback and makes `currentSetId()` throw across
+the suite.
+
+Your set's own unit tests mount their set and enter its context themselves, the
+way [`../co-residency.test.js`](../co-residency.test.js) does —
+`registerSetMount(SET_ID, SET_BASE)` in the suite, then `withSetContext(SET_ID,
+...)` around anything that resolves set-owned configuration.
+
+## 8. Add the set to the test matrix
+
+Three config files name each set's directories literally, so a new set has to be
+added to each by hand:
+
+- `playwright.config.js` — a per-set project whose `testDir` is that set's
+  features directory (today
+  `./src/server/app/sets/live-animals/journeys/linear/features`). Skip it and
+  Playwright never discovers your set's `.fit.spec.js` files, so the suite goes
+  green having run none of them.
+- `vitest.config.js` — a per-set `exclude` entry for that set's
+  `**/*.fit.spec.js`. Skip it and vitest tries to run the Playwright specs as
+  unit tests, and the unit suite fails on `test` not being defined.
+- `webpack.config.js` — a per-set client entry, for a set that ships
+  client-side JS. Skip it and the set's pages render without their
+  progressive enhancement, with no build error to say so.
+
+## 9. Move the tests with the URLs
 
 A new set does not move existing URLs, but adding the FIRST prefix to a set did
 — and any change to a set's mount does. The `trade-imports-animals-tests`

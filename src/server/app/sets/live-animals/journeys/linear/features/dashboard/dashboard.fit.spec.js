@@ -1,13 +1,14 @@
-import { BASE } from '../../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   ARRIVAL_DATE_IN_WINDOW_DISPLAY,
+  BASE,
   completeAnswerSections,
   journeyIdFromPage,
   openReviewFromHub,
   signIn,
   startNotification,
+  urlUnderBase,
   values
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
@@ -115,7 +116,7 @@ test.describe('dashboard feature — empty state and start', () => {
     await expect(
       page.getByRole('heading', { name: 'Origin of the import' })
     ).toBeVisible()
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+    await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
   })
 })
 

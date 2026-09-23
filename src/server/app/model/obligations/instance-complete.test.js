@@ -1,5 +1,5 @@
 import { SET_ID } from '../../sets/live-animals/set.js'
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll } from 'vitest'
 
 import { configureObligationSet } from './manifest.js'
 import { instanceComplete } from './instance-complete.js'
@@ -54,14 +54,14 @@ const impls = (entries) =>
   Object.fromEntries(entries.map((entry) => [entry.id, entry.implication]))
 
 describe('#instanceComplete', () => {
+  // No teardown. Vitest isolates module state per test file, so the synthetic
+  // manifest never leaves this one. Configuring the set back to `undefined`
+  // would be worse than nothing: setKeyed's `has()` asks whether the set was
+  // configured, not whether it holds a value, so the set would stay
+  // "configured" — to undefined — and manifest.js's named "not configured"
+  // error would become a TypeError on the next read.
   beforeAll(() => {
     configureObligationSet(SET_ID, syntheticSet)
-  })
-
-  afterAll(() => {
-    // Vitest workers isolate module state per test file, so leaving the
-    // configured set doesn't leak. Reset defensively anyway.
-    configureObligationSet(SET_ID, undefined)
   })
 
   it('reads a fully-populated instance as complete', () => {

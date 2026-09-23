@@ -1,8 +1,11 @@
-import { BASE } from '../../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
-import { answerOriginEntry } from '../../../../../../../../../fit/live-animals-journey.js'
+import {
+  BASE,
+  answerOriginEntry,
+  urlUnderBase
+} from '../../../../../../../../../fit/live-animals-journey.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import { addressText } from '../addresses/party-picker/view-model/address-lines.js'
 import { copy } from './copy/copy.en.js'
@@ -16,7 +19,7 @@ const startAtContact = async (page) => {
     .locator(`form[action="${BASE}/notifications"]`)
     .getByRole('button')
     .click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+  await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
 
   const contactUrl = page
     .url()
@@ -92,7 +95,7 @@ test.describe('contact feature', () => {
     await page.getByRole('radio', { name: selected.name, exact: true }).check()
     await page.locator('form button[type="submit"]').first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+'))
     await page.goto(contactUrl)
     await expect(
       page.getByRole('radio', { name: selected.name, exact: true })

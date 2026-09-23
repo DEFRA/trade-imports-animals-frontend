@@ -24,7 +24,10 @@ import {
 import { configureObligationSet } from '../../src/server/app/model/obligations/manifest.js'
 import { configureFulfilmentRegistry } from '../../src/server/app/bridge/fulfilment-registry.js'
 import { configureRecords } from '../../src/server/app/engine/persistence/records.js'
-import { configureSession } from '../../src/server/app/engine/persistence/session.js'
+import {
+  configureSession,
+  session
+} from '../../src/server/app/engine/persistence/session.js'
 import { configureAnswersForRead } from '../../src/server/app/bridge/answers-read.js'
 import { registerJourneyCookie } from '../../src/server/app/engine/journey.js'
 import {
@@ -42,10 +45,15 @@ import {
   pageRoutePath
 } from '../../src/server/app/shared/paths.js'
 import { obligations as obligationsOf } from '../../src/server/app/model/obligations/manifest.js'
+import { base } from '../../src/server/app/shared/kit.js'
 import { session as sessionStub } from '../../src/server/app/services/persistence/session/stub.js'
 
 export const SET_ID = 'sundry-goods'
 export const SET_BASE = `/${SET_ID}`
+
+/** Named so it cannot collide with any live-animals feature name — the point
+ * a per-set registry assertion turns on. */
+export const FEATURE_NAME = 'sundry-details'
 
 export const SESSION_COOKIE_NAMES = Object.freeze({
   knownJourneys: 'sundryGoodsKnownJourneys',
@@ -113,6 +121,10 @@ const createRecordsStub = () => {
 
 export const records = createRecordsStub()
 
+/** A route shape whose handler renders a real Nunjucks view. */
+export const RENDERED_ROUTE_PATH = '/rendered'
+export const RENDERED_TITLE = 'Sundry goods rendered'
+
 /** Reports which set answered, and with whose configuration — the two facts
  * every co-residency assertion turns on. */
 const whoAnswered = () => ({
@@ -154,10 +166,29 @@ export const routes = [
     method: 'POST',
     path: createRoutePath(),
     options: { auth: false },
-    handler: async (_request, h) => {
+    handler: async (request, h) => {
       const journey = await records.create()
+      // The live-animals gateway starts a journey through the engine, which
+      // records it in the session. Without this the set issues no journey
+      // cookie at all, and a test asserting the cookie does not cross into the
+      // other set would pass on an empty jar.
+      await session.addKnownJourney(request, h, journey.journeyId)
       return h.redirect(pagePath(journey.journeyId, detailsPage.slug))
     }
+  },
+  {
+    // The only route here that renders a template rather than echoing JSON:
+    // the view is marshalled after the handler returns, so it is the one shape
+    // that proves the RENDER path resolves this set with two sets mounted.
+    method: 'GET',
+    path: RENDERED_ROUTE_PATH,
+    options: { auth: false },
+    handler: (_request, h) =>
+      h.view('shared/error', {
+        ...base(RENDERED_TITLE),
+        heading: RENDERED_TITLE,
+        message: dashboardPath()
+      })
   }
 ]
 
@@ -183,7 +214,7 @@ export const secondSet = {
         )
         configureObligationSet(SET_ID, { obligations, groups })
         configureFulfilmentRegistry(SET_ID, [
-          feature('details', [
+          feature(FEATURE_NAME, [
             scalar({
               field: shipmentReference.name,
               obligation: shipmentReference
@@ -207,7 +238,12 @@ export const secondSet = {
         server.ext(
           'onPreHandler',
           async (request, h) => {
-            const target = await journeyEntryGuardTarget(request, h)
+            // Wrapped the way routes-live-animals.js wraps it: authentication
+            // crosses an async boundary after the onPreAuth above, so the guard
+            // has to re-enter the context itself.
+            const target = await withSetContext(SET_ID, () =>
+              journeyEntryGuardTarget(request, h)
+            )
             return target ? h.redirect(target).takeover() : h.continue
           },
           { sandbox: 'plugin' }

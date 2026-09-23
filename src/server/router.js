@@ -27,7 +27,9 @@ export const router = {
 
       // Server-wide, NOT per set. /signout registers happily under a set's
       // prefix and fails only when a user tries to sign out, so it is
-      // registered outside the prefixed call and pinned by router.test.js.
+      // registered outside the prefixed call and pinned by
+      // app/co-residency.test.js, test name 'Should serve /signout outside
+      // every set prefix'.
       const authEnabled = config.get('auth.enabled')
       if (authEnabled) {
         await server.register([signout])
