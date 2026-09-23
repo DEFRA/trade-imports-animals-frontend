@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
@@ -95,9 +96,9 @@ describe('declaration copy module', () => {
 
 describe('GET /declaration', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

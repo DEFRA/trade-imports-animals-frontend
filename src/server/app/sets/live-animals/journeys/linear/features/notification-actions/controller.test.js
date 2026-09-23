@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../set.js'
 import {
   afterEach,
   beforeAll,
@@ -8,7 +9,7 @@ import {
   vi
 } from 'vitest'
 
-import { hubPath } from '../../../../../../shared/paths.js'
+import { dashboardPath, hubPath } from '../../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import {
   configureRecords,
@@ -16,7 +17,7 @@ import {
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
-  SESSION_COOKIES
+  knownJourneysCookie
 } from '../../../../../../engine/persistence/session.js'
 import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
@@ -29,17 +30,17 @@ const copyPost = routes[0].handler
 
 describe('copy notification action', () => {
   beforeAll(() => {
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   beforeEach(() => {
-    configureRecords(recordsStub)
+    configureRecords(SET_ID, recordsStub)
     records.clear()
   })
 
   afterEach(() => {
-    configureRecords(recordsStub)
+    configureRecords(SET_ID, recordsStub)
     vi.unstubAllGlobals()
   })
 
@@ -67,7 +68,7 @@ describe('copy notification action', () => {
   })
 
   it('Should re-render the dashboard at 500 after a recoverable backend failure', async () => {
-    configureRecords({ ...recordsStub, copy: realRecords.copy })
+    configureRecords(SET_ID, { ...recordsStub, copy: realRecords.copy })
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({
@@ -96,7 +97,7 @@ describe('copy notification action', () => {
   })
 
   it('Should redirect to the dashboard with ?staleToken=1 on 409 STALE_CONCURRENCY_TOKEN from copy', async () => {
-    configureRecords({ ...recordsStub, copy: realRecords.copy })
+    configureRecords(SET_ID, { ...recordsStub, copy: realRecords.copy })
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({
@@ -121,11 +122,11 @@ describe('copy notification action', () => {
       stubH()
     )
 
-    expect(response.redirect).toBe('/?staleAction=1')
+    expect(response.redirect).toBe(`${dashboardPath()}?staleAction=1`)
   })
 
   it('Should propagate a non-STALE_CONCURRENCY_TOKEN error thrown from copy', async () => {
-    configureRecords({
+    configureRecords(SET_ID, {
       ...recordsStub,
       copy: async () => {
         throw new TypeError('programmer error')
@@ -150,11 +151,11 @@ describe('copy notification action', () => {
           concurrencyToken: '0',
           copyOrigin: 'dashboard'
         },
-        state: { [SESSION_COOKIES.knownJourneys]: [] }
+        state: { [knownJourneysCookie()]: [] }
       }),
       stubH()
     )
 
-    expect(response.redirect).toBe('/')
+    expect(response.redirect).toBe(dashboardPath())
   })
 })

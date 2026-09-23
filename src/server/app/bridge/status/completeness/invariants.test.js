@@ -1,4 +1,5 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { SET_ID } from '../../../sets/live-animals/set.js'
+import { beforeAll, describe, expect, it } from 'vitest'
 
 import { configureObligationSet } from '../../../model/obligations/manifest.js'
 import {
@@ -69,7 +70,7 @@ const stateWithCommodity = (value) => ({
 
 describe('#emptyCollectionSatisfiesFloor', () => {
   beforeAll(() => {
-    configureObligationSet({
+    configureObligationSet(SET_ID, {
       obligations: [
         commoditySelection,
         allowListedLeaf,
@@ -80,9 +81,9 @@ describe('#emptyCollectionSatisfiesFloor', () => {
     })
   })
 
-  afterAll(() => {
-    configureObligationSet(undefined)
-  })
+  // No teardown: vitest isolates module state per test file, and configuring
+  // the set back to `undefined` would leave it "configured" to undefined —
+  // turning manifest.js's named "not configured" error into a TypeError.
 
   it('Should hold the floor open where the collection asks for no entry at all', () => {
     expect(

@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../set.js'
 import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
@@ -226,7 +227,7 @@ const cases = {
 
 describe('statusOf — the presentation rollup', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   describe.each(Object.entries(cases))(

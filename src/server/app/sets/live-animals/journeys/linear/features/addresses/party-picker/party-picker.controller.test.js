@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../../set.js'
 import {
   afterAll,
   beforeAll,
@@ -46,9 +47,9 @@ const pickerFrom = (result) => result.view.context.picker
 const idsOf = (picker) => picker.rows.map((row) => row.id)
 
 const configure = () => {
-  configureRecords(recordsStub)
-  configureSession(sessionStub)
-  buildDispatch(dispatchPages)
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  buildDispatch(SET_ID, dispatchPages)
 }
 
 describe('GET /consignors/select', () => {

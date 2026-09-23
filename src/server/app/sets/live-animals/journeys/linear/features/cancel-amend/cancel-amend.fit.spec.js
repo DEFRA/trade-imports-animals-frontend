@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
+  BASE,
   chooseCountryOfOrigin,
   completeAnswerSections,
   journeyIdFromPage,
@@ -25,7 +26,7 @@ const submitNotification = async (page) => {
 }
 
 const amendAndOpenCancel = async (page, reference) => {
-  await page.goto('/')
+  await page.goto(BASE)
   await page
     .getByRole('button', { name: `Amend notification ${reference}` })
     .click()

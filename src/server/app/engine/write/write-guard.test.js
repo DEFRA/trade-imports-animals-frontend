@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../../test/fixtures/index.js'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { commit, appendEntryAt, submitJourney } from './index.js'
 import { records, configureRecords, DRAFT } from '../persistence/records.js'
@@ -17,9 +18,9 @@ const buildRequest = () => journeyRequest(journeyId)
 
 describe('#write.js — answer-key guard', () => {
   beforeEach(async () => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    configureReadyForCheckYourAnswers(() => true)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    configureReadyForCheckYourAnswers(SET_ID, () => true)
     await records.clear()
     journeyId = (await records.create()).journeyId
   })

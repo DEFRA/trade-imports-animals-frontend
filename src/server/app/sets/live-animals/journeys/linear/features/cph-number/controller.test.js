@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
@@ -41,9 +42,9 @@ const driveWithQuery = async (handler, { payload = {}, query = {} } = {}) => {
 
 describe('POST cph-number — three parts joined into the nine stored digits', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -140,9 +141,9 @@ describe('POST cph-number — three parts joined into the nine stored digits', (
 
 describe('GET cph-number — the stored number back in its parts', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -174,9 +175,9 @@ describe('GET cph-number — the stored number back in its parts', () => {
 
 describe('cph-number — addresses-hub entry (?return=addresses)', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

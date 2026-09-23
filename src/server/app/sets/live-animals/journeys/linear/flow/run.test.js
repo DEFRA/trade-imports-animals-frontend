@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../set.js'
 import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
@@ -47,7 +48,7 @@ const { values: completeSeed } = JSON.parse(
 
 describe('#nextRunTarget — the opening run sequence', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   it('Should send origin to the commodity search page once the country is answered', () => {
@@ -111,7 +112,7 @@ describe('#nextRunTarget — the opening run sequence', () => {
 
 describe('#nextRunTarget — the run past the arrival details', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   const step = (stepId) => next(stepId, completeSeed)

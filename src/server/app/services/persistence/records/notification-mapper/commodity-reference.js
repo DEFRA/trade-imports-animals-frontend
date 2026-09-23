@@ -1,14 +1,11 @@
-let implementation
+import { setKeyed } from '../../../../shared/set-context.js'
 
-const reference = () => {
-  if (!implementation) {
-    throw new Error('Commodity reference has not been configured')
-  }
-  return implementation
-}
+const store = setKeyed('Commodity reference')
 
-export const configureCommodityReference = (commodityReference) => {
-  implementation = commodityReference
+const reference = () => store.current()
+
+export const configureCommodityReference = (setId, commodityReference) => {
+  store.configure(setId, commodityReference)
 }
 
 export const commodityCodeFor = (...args) =>

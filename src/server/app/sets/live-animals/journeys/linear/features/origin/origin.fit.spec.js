@@ -1,3 +1,7 @@
+import {
+  BASE,
+  urlUnderBase
+} from '../../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { countriesOrigin } from '../../../../../../services/_capture/fixtures.js'
@@ -9,6 +13,7 @@ import { copy } from './copy/copy.en.js'
 import { copy as hubCopy } from '../hub/copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
+const COMMODITIES_PATH_PATTERN = '/notifications/[^/]+/commodities'
 const france = countriesOrigin.find(({ code }) => code === 'FR')
 const ireland = countriesOrigin.find(({ code }) => code === 'IE')
 
@@ -32,12 +37,12 @@ const countryField = (page) =>
 const hubUrlOf = (originUrl) => originUrl.replace(/\/origin$/, '')
 
 const startAtOrigin = async (page) => {
-  await page.goto('/')
+  await page.goto(BASE)
   await page
-    .locator('form[action="/notifications"]')
+    .locator(`form[action="${BASE}/notifications"]`)
     .getByRole('button')
     .click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+  await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
 
@@ -171,7 +176,7 @@ test.describe('origin feature', () => {
     await page.getByLabel(copy.internalReference.label).fill('Imports456_GB')
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/commodities$/)
+    await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
 
     await page.goto(originUrl)
     await expect(page.locator(countryHidden)).toHaveValue(france.code)
@@ -229,7 +234,7 @@ test.describe('origin feature', () => {
   }) => {
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL(BASE)
   })
 
   test('back link returns to the notification hub once the journey has answers', async ({
@@ -485,7 +490,7 @@ test.describe('country of origin without JavaScript', () => {
     await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/commodities$/)
+    await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
     await page.goto(originUrl)
     await expect(page.locator('select#countryOfOrigin')).toHaveValue(
       france.code
@@ -628,7 +633,7 @@ test.describe('origin country and region validation', () => {
     await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/commodities$/)
+    await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
   })
 
   test('empty region code error page has no serious or critical axe violations', async ({
@@ -711,7 +716,7 @@ test.describe('origin internal reference validation', () => {
       .fill(PUNCTUATED_INTERNAL_REFERENCE)
     await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/commodities$/)
+    await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
 
     await page.goto(originUrl)
     await expect(page.getByLabel(copy.internalReference.label)).toHaveValue(

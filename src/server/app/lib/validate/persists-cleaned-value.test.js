@@ -1,3 +1,4 @@
+import { SET_ID } from '../../sets/live-animals/set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { store } from '../../engine/store.js'
@@ -27,9 +28,9 @@ const commitReference = async (request, h) => {
 
 describe('The cleaned value is persisted, not the raw payload', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    configureReadyForCheckYourAnswers(() => false)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    configureReadyForCheckYourAnswers(SET_ID, () => false)
   })
   beforeEach(() => store.clear())
 
@@ -43,9 +44,9 @@ describe('The cleaned value is persisted, not the raw payload', () => {
 
 describe('An invalid value echoes the raw input and commits nothing', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    configureReadyForCheckYourAnswers(() => false)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    configureReadyForCheckYourAnswers(SET_ID, () => false)
   })
   beforeEach(() => store.clear())
 

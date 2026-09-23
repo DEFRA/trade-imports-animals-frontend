@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
@@ -22,9 +23,9 @@ const EXIT_DATE_TEXT = '20/12/2026'
 const EXIT_DATE_PARTS = { day: '20', month: '12', year: '2026' }
 
 const configure = () => {
-  configureRecords(recordsStub)
-  configureSession(sessionStub)
-  buildDispatch(dispatchPages)
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  buildDispatch(SET_ID, dispatchPages)
 }
 
 describe('POST import-reason — invalid payload', () => {

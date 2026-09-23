@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { SET_BASE } from '../../src/server/app/sets/live-animals/set.js'
 import { allRoutes } from '../../src/server/app/sets/live-animals/journeys/linear/features/index.js'
 import {
   assertTargetsAreCurrent,
@@ -36,10 +37,10 @@ describe('#auditPaths', () => {
     const paths = auditPaths(journeyIds)
 
     expect(paths.filter((path) => path.includes(journeyIds.submitted))).toEqual(
-      [`/notifications/${journeyIds.submitted}/confirmation`]
+      [`${SET_BASE}/notifications/${journeyIds.submitted}/confirmation`]
     )
     expect(paths.filter((path) => path.includes(journeyIds.transit))).toEqual([
-      `/notifications/${journeyIds.transit}/transporters/add/private`
+      `${SET_BASE}/notifications/${journeyIds.transit}/transporters/add/private`
     ])
     expect(
       paths.filter((path) => path.includes(journeyIds.draft))
@@ -55,7 +56,7 @@ describe('#auditPaths', () => {
 
     try {
       expect(auditPaths(journeyIds, routes)).toContain(
-        `/notifications/${journeyIds.draft}/needs-a-query?for=placeOfOrigin`
+        `${SET_BASE}/notifications/${journeyIds.draft}/needs-a-query?for=placeOfOrigin`
       )
     } finally {
       QUERY.delete(path)
@@ -69,8 +70,18 @@ describe('#auditPaths', () => {
     ]
 
     expect(auditPaths(journeyIds, routes)).toContain(
-      `/notifications/${journeyIds.draft}/brand-new`
+      `${SET_BASE}/notifications/${journeyIds.draft}/brand-new`
     )
+  })
+
+  it('Should audit the dashboard at the set base itself, with no trailing slash', () => {
+    const paths = auditPaths(journeyIds)
+
+    // Hapi mounts the dashboard's `/` shape at the set base, not at
+    // `<base>/`. Emitting the prefix plus the shape would make the one target
+    // that is not a prefix-plus-path 404 against the running app.
+    expect(paths).toContain(SET_BASE)
+    expect(paths).not.toContain(`${SET_BASE}/`)
   })
 
   it('Should refuse to audit a route whose notification shape was never seeded', () => {
@@ -121,20 +132,20 @@ describe('#reportName', () => {
   it('Should name a report after its route, without the seeded journey id', () => {
     expect(
       reportName(
-        `${ORIGIN}/notifications/${journeyIds.draft}/commodities/identification`,
+        `${ORIGIN}${SET_BASE}/notifications/${journeyIds.draft}/commodities/identification`,
         journeyIds
       )
     ).toBe('notifications_commodities_identification')
   })
 
   it('Should name the report for the service start page', () => {
-    expect(reportName(`${ORIGIN}/`, journeyIds)).toBe('home')
+    expect(reportName(`${ORIGIN}${SET_BASE}`, journeyIds)).toBe('home')
   })
 
   it('Should drop the query string a route needs to render', () => {
     expect(
       reportName(
-        `${ORIGIN}/notifications/${journeyIds.draft}/consignors/select?page=2`,
+        `${ORIGIN}${SET_BASE}/notifications/${journeyIds.draft}/consignors/select?page=2`,
         journeyIds
       )
     ).toBe('notifications_consignors_select')
@@ -164,8 +175,8 @@ describe('#reportNames', () => {
 
   it('Should refuse two routes that would overwrite each other', () => {
     const urls = [
-      `${ORIGIN}/notifications/${journeyIds.draft}/origin`,
-      `${ORIGIN}/notifications/${journeyIds.transit}/origin`
+      `${ORIGIN}${SET_BASE}/notifications/${journeyIds.draft}/origin`,
+      `${ORIGIN}${SET_BASE}/notifications/${journeyIds.transit}/origin`
     ]
 
     expect(() => reportNames(urls, journeyIds)).toThrow(

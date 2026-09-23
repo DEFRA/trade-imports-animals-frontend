@@ -1,3 +1,5 @@
+import { pagePath } from '../../../../../shared/paths.js'
+import { SET_ID } from '../../../set.js'
 import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
 
@@ -41,7 +43,7 @@ const unlocked = {
 }
 
 beforeAll(() => {
-  buildDispatch(dispatchPages)
+  buildDispatch(SET_ID, dispatchPages)
 })
 
 describe('#rowStatus — one status per hub task row', () => {
@@ -379,7 +381,7 @@ describe('#rowEntry — every row opens on a page, in any order', () => {
   it('Should give every row a page of its own to open on a blank journey — never the hub', () => {
     for (const row of taskRows) {
       expect(entryOf(row, {}), `${row.id} has no way in`).toBe(
-        `/notifications/journey-1/${row.pages[0].slug}`
+        pagePath('journey-1', row.pages[0].slug)
       )
     }
   })

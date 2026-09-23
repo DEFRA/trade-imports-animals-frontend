@@ -1,7 +1,11 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
-import { answerOriginEntry } from '../../../../../../../../../fit/live-animals-journey.js'
+import {
+  BASE,
+  answerOriginEntry,
+  urlUnderBase
+} from '../../../../../../../../../fit/live-animals-journey.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import { addressText } from '../addresses/party-picker/view-model/address-lines.js'
 import { copy } from './copy/copy.en.js'
@@ -10,12 +14,12 @@ import { signIn } from '../../../../../../../../../fit/sign-in.js'
 const CONTACT_ADDRESS_INPUT = 'input[name="contactAddress"]'
 
 const startAtContact = async (page) => {
-  await page.goto('/')
+  await page.goto(BASE)
   await page
-    .locator('form[action="/notifications"]')
+    .locator(`form[action="${BASE}/notifications"]`)
     .getByRole('button')
     .click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+  await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
 
   const contactUrl = page
     .url()
@@ -91,7 +95,7 @@ test.describe('contact feature', () => {
     await page.getByRole('radio', { name: selected.name, exact: true }).check()
     await page.locator('form button[type="submit"]').first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+'))
     await page.goto(contactUrl)
     await expect(
       page.getByRole('radio', { name: selected.name, exact: true })

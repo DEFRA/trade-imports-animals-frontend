@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../set.js'
 import {
   afterEach,
   beforeAll,
@@ -36,9 +37,9 @@ describe('#declaration', () => {
   describe('POST /declaration', () => {
     describe('invalid payload', () => {
       beforeAll(() => {
-        configureRecords(recordsStub)
-        configureSession(sessionStub)
-        buildDispatch(dispatchPages)
+        configureRecords(SET_ID, recordsStub)
+        configureSession(SET_ID, sessionStub)
+        buildDispatch(SET_ID, dispatchPages)
       })
       beforeEach(() => store.clear())
 
@@ -56,15 +57,15 @@ describe('#declaration', () => {
 
     describe('submitted journeys land on the confirmation page', () => {
       beforeAll(() => {
-        configureRecords(recordsStub)
-        configureSession(sessionStub)
-        buildDispatch(dispatchPages)
+        configureRecords(SET_ID, recordsStub)
+        configureSession(SET_ID, sessionStub)
+        buildDispatch(SET_ID, dispatchPages)
       })
       beforeEach(() => store.clear())
       afterEach(() => vi.restoreAllMocks())
 
       it('Should redirect to the confirmation page after a successful submit', async () => {
-        configureReadyForCheckYourAnswers(() => true)
+        configureReadyForCheckYourAnswers(SET_ID, () => true)
         const result = await driveHandler(post, {
           payload: { declaration: 'confirmed' }
         })
@@ -74,7 +75,7 @@ describe('#declaration', () => {
       })
 
       it('Should persist reinflated party answers before submit', async () => {
-        configureReadyForCheckYourAnswers(() => true)
+        configureReadyForCheckYourAnswers(SET_ID, () => true)
         const inflated = {
           consignor: {
             addressId: 'consignor-1',
@@ -102,7 +103,7 @@ describe('#declaration', () => {
       })
 
       it('Should keep the not-ready outcome as a redirect to check answers', async () => {
-        configureReadyForCheckYourAnswers(() => false)
+        configureReadyForCheckYourAnswers(SET_ID, () => false)
         const result = await driveHandler(post, {
           payload: { declaration: 'confirmed' }
         })
@@ -112,7 +113,7 @@ describe('#declaration', () => {
       })
 
       it('Should redirect an already-submitted POST retry to confirmation', async () => {
-        configureReadyForCheckYourAnswers(() => true)
+        configureReadyForCheckYourAnswers(SET_ID, () => true)
         const { journeyId } = await store.create()
         await store.submit(journeyId)
 
@@ -131,14 +132,17 @@ describe('#declaration', () => {
 
     describe('recoverable backend failure', () => {
       beforeAll(() => {
-        configureSession(sessionStub)
-        buildDispatch(dispatchPages)
+        configureSession(SET_ID, sessionStub)
+        buildDispatch(SET_ID, dispatchPages)
       })
 
       beforeEach(() => {
         store.clear()
-        configureReadyForCheckYourAnswers(() => true)
-        configureRecords({ ...recordsStub, finalise: realRecords.finalise })
+        configureReadyForCheckYourAnswers(SET_ID, () => true)
+        configureRecords(SET_ID, {
+          ...recordsStub,
+          finalise: realRecords.finalise
+        })
         vi.stubGlobal(
           'fetch',
           vi.fn(async () => ({
@@ -150,7 +154,7 @@ describe('#declaration', () => {
       })
 
       afterEach(() => {
-        configureRecords(recordsStub)
+        configureRecords(SET_ID, recordsStub)
         vi.unstubAllGlobals()
       })
 
@@ -173,14 +177,14 @@ describe('#declaration', () => {
 
   describe('GET /declaration', () => {
     beforeAll(() => {
-      configureRecords(recordsStub)
-      configureSession(sessionStub)
-      buildDispatch(dispatchPages)
+      configureRecords(SET_ID, recordsStub)
+      configureSession(SET_ID, sessionStub)
+      buildDispatch(SET_ID, dispatchPages)
     })
     beforeEach(() => store.clear())
 
     it('Should redirect a GET on an already-submitted journey to the confirmation page', async () => {
-      configureReadyForCheckYourAnswers(() => true)
+      configureReadyForCheckYourAnswers(SET_ID, () => true)
       const { journeyId } = await store.create()
       await store.submit(journeyId)
 

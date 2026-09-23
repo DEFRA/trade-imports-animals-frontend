@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../test/fixtures/index.js'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { updateEntryAt } from './write/index.js'
 import { makeScope, configureReadyForCheckYourAnswers } from './read.js'
@@ -56,10 +57,10 @@ const wipeOf = (answers) => {
 
 describe('entry-write canonical purge', () => {
   beforeEach(async () => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
     await records.clear()
-    configureReadyForCheckYourAnswers(() => false)
+    configureReadyForCheckYourAnswers(SET_ID, () => false)
     journeyId = (await records.create()).journeyId
   })
 

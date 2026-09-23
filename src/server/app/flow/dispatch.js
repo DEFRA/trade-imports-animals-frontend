@@ -2,20 +2,34 @@ import {
   walkObligations,
   SYSTEM_POPULATED
 } from '../bridge/obligation-source.js'
-
-const pageOfObligationMap = new Map()
-const collectsByPageMap = new Map()
-const slugByPageMap = new Map()
-let dispatchBuilt = false
+import {
+  currentSetId,
+  setKeyed,
+  withSetContext
+} from '../shared/set-context.js'
 
 const ID_UNSAFE = /[.[\]]/
+
+const EMPTY = Object.freeze({
+  built: false,
+  pageOfObligation: new Map(),
+  collectsByPage: new Map(),
+  slugByPage: new Map()
+})
+
+const store = setKeyed('dispatch', { configuredBy: 'buildDispatch' })
+
+// Reading before `buildDispatch` is the un-booted case. It answers empty rather
+// than throwing, because `flow/gates.js` distinguishes the two itself — an empty
+// index would otherwise silently gate every page.
+const index = () => (store.has(currentSetId()) ? store.current() : EMPTY)
 
 const ancestorTemplate = (templatePath) => {
   const dot = templatePath.lastIndexOf('.')
   return dot === -1 ? null : templatePath.slice(0, dot)
 }
 
-const ownerOfObligation = (address) => {
+const ownerOfObligation = (address, pageOfObligationMap) => {
   let current = address.replace(/\[\d+\]/g, '')
   while (current !== null) {
     if (pageOfObligationMap.has(current)) {
@@ -24,13 +38,6 @@ const ownerOfObligation = (address) => {
     current = ancestorTemplate(current)
   }
   return undefined
-}
-
-const resetDispatchState = () => {
-  dispatchBuilt = false
-  pageOfObligationMap.clear()
-  collectsByPageMap.clear()
-  slugByPageMap.clear()
 }
 
 const assertPathSafeIds = () => {
@@ -44,12 +51,7 @@ const assertPathSafeIds = () => {
   }
 }
 
-const indexPageMetadata = (page) => {
-  collectsByPageMap.set(page.id, page.collects ?? [])
-  slugByPageMap.set(page.id, page.slug)
-}
-
-const claimObligationOwner = (obligationId, pageId) => {
+const claimObligationOwner = (pageOfObligationMap, obligationId, pageId) => {
   if (pageOfObligationMap.has(obligationId)) {
     throw new Error(
       `Obligation "${obligationId}" is collected by two pages: ` +
@@ -60,20 +62,30 @@ const claimObligationOwner = (obligationId, pageId) => {
 }
 
 const indexPages = (pages) => {
+  const pageOfObligationMap = new Map()
+  const collectsByPage = new Map()
+  const slugByPage = new Map()
   for (const page of pages) {
-    indexPageMetadata(page)
+    collectsByPage.set(page.id, page.collects ?? [])
+    slugByPage.set(page.id, page.slug)
     for (const obligationId of page.collects ?? []) {
-      claimObligationOwner(obligationId, page.id)
+      claimObligationOwner(pageOfObligationMap, obligationId, page.id)
     }
+  }
+  return {
+    built: true,
+    pageOfObligation: pageOfObligationMap,
+    collectsByPage,
+    slugByPage
   }
 }
 
-const assertFullCoverage = () => {
+const assertFullCoverage = (pageOfObligationMap) => {
   const uncovered = [...walkObligations()]
     .filter(
       ({ templatePath, obligation }) =>
         !SYSTEM_POPULATED.has(obligation.name) &&
-        !ownerOfObligation(templatePath)
+        !ownerOfObligation(templatePath, pageOfObligationMap)
     )
     .map(({ templatePath }) => templatePath)
   if (uncovered.length) {
@@ -81,19 +93,24 @@ const assertFullCoverage = () => {
   }
 }
 
-export const buildDispatch = (pages) => {
-  resetDispatchState()
-  assertPathSafeIds()
-  indexPages(pages)
-  assertFullCoverage()
-  dispatchBuilt = true
+export const buildDispatch = (setId, pages) => {
+  // Validated inside the set the index is being written for. Both assertions
+  // walk `obligations()`, so resolving them from whichever set is ambient would
+  // check this set's pages against another set's obligations.
+  const built = withSetContext(setId, () => {
+    assertPathSafeIds()
+    const pageIndex = indexPages(pages)
+    assertFullCoverage(pageIndex.pageOfObligation)
+    return pageIndex
+  })
+  store.configure(setId, built)
 }
 
-export const isDispatchBuilt = () => dispatchBuilt
+export const isDispatchBuilt = () => index().built
 
 export const pageOfObligation = (obligationId) =>
-  ownerOfObligation(obligationId)
+  ownerOfObligation(obligationId, index().pageOfObligation)
 
-export const collectsOf = (pageId) => collectsByPageMap.get(pageId) ?? []
+export const collectsOf = (pageId) => index().collectsByPage.get(pageId) ?? []
 
-export const slugOfPage = (pageId) => slugByPageMap.get(pageId)
+export const slugOfPage = (pageId) => index().slugByPage.get(pageId)

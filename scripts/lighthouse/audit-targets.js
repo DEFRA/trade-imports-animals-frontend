@@ -1,4 +1,17 @@
+import {
+  dashboardPath,
+  dashboardRoutePath,
+  setBase
+} from '../../src/server/app/shared/paths.js'
+import { registerSetMount } from '../../src/server/app/shared/set-context.js'
+import { SET_BASE, SET_ID } from '../../src/server/app/sets/live-animals/set.js'
 import { allRoutes } from '../../src/server/app/sets/live-animals/journeys/linear/features/index.js'
+
+// Lighthouse builds its URLs from outside the server, so it never enters a
+// request's set context. Registering the mount makes this the sole mounted set,
+// which is what lets the link builders below resolve the prefix the server
+// actually serves on — the same standing seed-notification.js takes.
+registerSetMount(SET_ID, SET_BASE)
 
 const JOURNEY_PARAM = '{journeyId}'
 const OTHER_PARAM = /\{(?!journeyId})[^}]+}/
@@ -91,25 +104,47 @@ const journeyIdFor = (journeyIds, path) => {
   return journeyId
 }
 
+/**
+ * The route table holds prefix-free route SHAPES — Hapi supplies the set's
+ * mount when it registers them. Lighthouse fetches real URLs, so every shape
+ * becomes a link under the set's mount here. Without it every target 404s.
+ */
 export const auditPaths = (journeyIds, routes = allRoutes) => {
   assertTargetsAreCurrent(routes)
   return getPathsOf(routes)
     .filter((path) => !SKIPPED.has(path))
-    .map(
-      (path) =>
-        `${path.replace(JOURNEY_PARAM, journeyIdFor(journeyIds, path))}${QUERY.get(path) ?? ''}`
-    )
+    .map((path) => {
+      const resolved = path.includes(JOURNEY_PARAM)
+        ? path.replace(JOURNEY_PARAM, journeyIdFor(journeyIds, path))
+        : path
+      // Hapi mounts the dashboard's `/` shape at the set base itself rather
+      // than at `<base>/`, so it is the one shape that is not a prefix plus a
+      // path.
+      const link =
+        resolved === dashboardRoutePath()
+          ? dashboardPath()
+          : `${setBase()}${resolved}`
+      return `${link}${QUERY.get(path) ?? ''}`
+    })
 }
 
 export const auditUrls = (origin, journeyIds, routes = allRoutes) =>
   auditPaths(journeyIds, routes).map((path) => new URL(path, origin).toString())
 
-/** The report filename a URL earns, with the seeded journey id dropped so the
- * name is the page's route and nothing else. Reports then overwrite their
- * predecessor instead of piling up a fresh set on every run. */
+/** A URL's path with the set's mount taken back off, so a report is named after
+ * the page's own route rather than the prefix every page shares. */
+const withoutMount = (pathname) => {
+  const base = setBase()
+  return pathname.startsWith(base) ? pathname.slice(base.length) : pathname
+}
+
+/** The report filename a URL earns, with the set's mount prefix and the seeded
+ * journey id dropped so the name is the page's route and nothing else. Reports
+ * then overwrite their predecessor instead of piling up a fresh set on every
+ * run. */
 export const reportName = (url, journeyIds) => {
   const seeded = new Set(Object.values(journeyIds))
-  const name = new URL(url).pathname
+  const name = withoutMount(new URL(url).pathname)
     .split('/')
     .filter((segment) => segment !== '' && !seeded.has(segment))
     .join('_')

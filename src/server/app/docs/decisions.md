@@ -46,7 +46,11 @@ code.
 
 ## Composition is explicit
 
-[`src/server/app/routes.js`](../routes.js) is allowed to know which set and journey
-exist. Model, bridge, engine and flow accept their concrete policy through
-`configureObligationSet`, `configureFulfilmentRegistry`, `configureJourneyFlow`,
-`configureRecords` and `configureSession`.
+A set's own gateway — today
+[`routes-live-animals.js`](../routes-live-animals.js), re-exported by the
+[`routes.js`](../routes.js) barrel and mounted by
+[`src/server/router.js`](../../router.js) — is allowed to know which set and
+journey exist. Model, bridge, engine and flow accept their concrete policy,
+keyed by set id, through `configureObligationSet`,
+`configureFulfilmentRegistry`, `configureJourneyFlow`, `configureRecords` and
+`configureSession`.

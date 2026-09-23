@@ -13,14 +13,18 @@ The application has four layers:
 3. L3 — `sets/<set>/obligations/`: one set's obligation data
 4. L4 — `sets/<set>/journeys/<style>/`: one journey's pages and topology
 
-[`src/server/app/routes.js`](../routes.js) is the composition point. It selects
-the live-animals set and linear journey, then supplies them to the platform through
-the `configure*` seams.
+[`src/server/app/routes.js`](../routes.js) is only the export barrel. Each set
+has a gateway of its own beside it — today
+[`routes-live-animals.js`](../routes-live-animals.js) — which supplies that set's
+configuration to the platform through the `configure*` seams, keyed by its set
+id. [`src/server/router.js`](../../router.js) mounts each gateway under its own
+prefix and redirects `/` to the default set.
 
 ## Platform guides
 
 - [Architecture](architecture.md)
 - [Architecture decisions](decisions.md)
+- [How to add a set](add-a-set.md)
 - [Engine](engine.md)
 - [Obligation model](obligation-model.md)
 - [Flow machinery and gates](flow-and-gates.md)

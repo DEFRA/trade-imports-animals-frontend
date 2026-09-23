@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { SET_ID } from '../../../../../test/fixtures/index.js'
+import { describe, it, expect, beforeAll } from 'vitest'
 
 import { configureObligationSet } from './manifest.js'
 import {
@@ -27,12 +28,11 @@ const syntheticSet = {
 }
 
 describe('#manifest-graph', () => {
+  // No teardown: vitest isolates module state per test file, and configuring
+  // the set back to `undefined` would leave it "configured" to undefined —
+  // turning manifest.js's named "not configured" error into a TypeError.
   beforeAll(() => {
-    configureObligationSet(syntheticSet)
-  })
-
-  afterAll(() => {
-    configureObligationSet(undefined)
+    configureObligationSet(SET_ID, syntheticSet)
   })
 
   describe('#ancestorChain', () => {

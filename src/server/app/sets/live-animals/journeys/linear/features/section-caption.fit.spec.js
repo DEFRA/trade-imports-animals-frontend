@@ -2,10 +2,12 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
+  BASE,
   answerOriginEntry,
   journeyUrl,
   signIn,
-  startNotification
+  startNotification,
+  urlUnderBase
 } from '../../../../../../../../fit/live-animals-journey.js'
 import { copy as sectionCaptionsCopy } from '../flow/section-captions/copy/copy.en.js'
 import { copy as dashboardCopy } from './dashboard/copy/copy.en.js'
@@ -26,9 +28,9 @@ const isGovukConditionalRevealFalsePositive = (violation) =>
   )
 
 const startAtOrigin = async (page) => {
-  await page.goto('/')
+  await page.goto(BASE)
   await page.getByRole('button', { name: dashboardCopy.startButton }).click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+  await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
 }
 
 /** Import reason is the first page whose question is a hidden legend, so its
@@ -81,7 +83,7 @@ test.describe('section caption above the page heading', () => {
   })
 
   test('names the dashboard above its heading', async ({ page }) => {
-    await page.goto('/')
+    await page.goto(BASE)
 
     await expect(
       page.locator('span.govuk-caption-xl + h1.govuk-heading-xl')

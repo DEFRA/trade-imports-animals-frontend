@@ -1,9 +1,25 @@
 import { readFileSync } from 'node:fs'
 
+import {
+  createPath,
+  dashboardPath,
+  pagePath
+} from '../../src/server/app/shared/paths.js'
+import { registerSetMount } from '../../src/server/app/shared/set-context.js'
+import { SET_BASE, SET_ID } from '../../src/server/app/sets/live-animals/set.js'
 import { lineKey } from '../../src/server/app/sets/live-animals/journeys/linear/features/commodities/search/selection/line-key.js'
+
+// This script drives a running server from the outside, so it never enters a
+// request's set context. Registering the mount makes it the sole mounted set,
+// which is what lets the path builders below resolve the prefix the server
+// actually serves on.
+registerSetMount(SET_ID, SET_BASE)
 
 const HTTP_FOUND = 302
 const HTTP_OK = 200
+
+const DECLARATION_SLUG = 'declaration'
+const CONFIRMATION_SLUG = 'confirmation'
 
 export const { values } = JSON.parse(
   readFileSync(
@@ -239,10 +255,21 @@ export const seedSteps = ({ reasonForImport, transporterType }) => [
 const fieldsFor = (step, page) =>
   typeof step.fields === 'function' ? step.fields(page) : step.fields
 
+/** The journey id out of the Location the create POST answers with. Read off
+ * the create path rather than a fixed segment index, which the set's mount
+ * prefix would otherwise shift. */
+export const journeyIdIn = (location) => {
+  const prefix = `${createPath()}/`
+  if (!location?.startsWith(prefix)) {
+    return ''
+  }
+  return location.slice(prefix.length).split(/[/?#]/)[0]
+}
+
 export const createNotification = async (client) => {
-  const dashboard = await client.document('/')
-  const created = await client.submit('/notifications', {}, dashboard.crumb)
-  const journeyId = created.location?.split('/')[2]
+  const dashboard = await client.document(dashboardPath())
+  const created = await client.submit(createPath(), {}, dashboard.crumb)
+  const journeyId = journeyIdIn(created.location)
   if (created.status !== HTTP_FOUND || !journeyId) {
     throw new Error(
       `Could not create a notification (status ${created.status}, location ${created.location})`
@@ -253,7 +280,7 @@ export const createNotification = async (client) => {
 
 export const fillNotification = async (client, journeyId, shape) => {
   for (const step of seedSteps(shape)) {
-    const path = `/notifications/${journeyId}/${step.slug}`
+    const path = pagePath(journeyId, step.slug)
     const page = await client.document(path)
     if (page.status !== HTTP_OK) {
       throw new Error(`Seed step ${step.slug} did not render (${page.status})`)
@@ -269,14 +296,14 @@ export const fillNotification = async (client, journeyId, shape) => {
 }
 
 export const submitNotification = async (client, journeyId) => {
-  const path = `/notifications/${journeyId}/declaration`
+  const path = pagePath(journeyId, DECLARATION_SLUG)
   const page = await client.document(path)
   const posted = await client.submit(
     path,
     { declaration: values.declaration },
     page.crumb
   )
-  const confirmation = `/notifications/${journeyId}/confirmation`
+  const confirmation = pagePath(journeyId, CONFIRMATION_SLUG)
   if (posted.location !== confirmation) {
     throw new Error(
       `Declaration did not submit the notification (went to ${posted.location}, ` +
