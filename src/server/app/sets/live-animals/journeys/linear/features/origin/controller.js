@@ -91,7 +91,7 @@ const regionCodeFrom = (countryOfOrigin, suffix) => {
   return prefix ? `${prefix}${REGION_CODE_SEPARATOR}${rest}` : rest
 }
 
-const answersFrom = (formValues) => ({
+export const answersFrom = (formValues) => ({
   countryOfOrigin: formValues.countryOfOrigin,
   regionOfOriginCodeRequirement: formValues.regionOfOriginCodeRequirement,
   regionOfOriginCode: regionCodeFrom(
@@ -101,7 +101,7 @@ const answersFrom = (formValues) => ({
   internalReferenceNumber: formValues.internalReferenceNumber
 })
 
-const formValuesFromAnswers = (answers) => ({
+export const formValuesFromAnswers = (answers) => ({
   countryOfOrigin: answers.countryOfOrigin ?? '',
   regionOfOriginCodeRequirement: answers.regionOfOriginCodeRequirement ?? '',
   [REGION_CODE_SUFFIX_FIELD]: suffixOf(
@@ -142,7 +142,7 @@ const regionCodeSuffixRule = (requirement) =>
 // The obligation behind the answer keeps it mandatory, so the unanswered
 // country still shows the origin task as unfinished on the hub and still
 // stops the notification at the check page.
-const fields = async (requirement) => {
+export const fields = async (requirement) => {
   const countryValues = (await countries.originCountries()).map(
     ({ value }) => value
   )

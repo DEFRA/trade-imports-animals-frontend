@@ -1,6 +1,7 @@
 import * as dashboard from './dashboard/controller.js'
 import * as hub from './hub/controller.js'
 import * as origin from './origin/controller.js'
+import { validateStoredAnswers as originValidateStored } from './origin/validate-stored.js'
 import * as commoditiesSearch from './commodities/search/search.controller.js'
 import * as consignmentDetails from './commodities/consignment-details/consignment-details.controller.js'
 import * as animalIdentification from './commodities/animal-identification/animal-identification.controller.js'
@@ -31,7 +32,7 @@ import * as confirmation from './confirmation/controller.js'
 const pageModules = [
   dashboard,
   hub,
-  origin,
+  { ...origin, validateStoredAnswers: originValidateStored },
   commoditiesSearch,
   consignmentDetails,
   animalIdentification,
