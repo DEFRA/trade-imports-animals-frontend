@@ -22,6 +22,7 @@ import * as transportersSelect from './transport/transporters-select/transporter
 import * as commercialTransporterDetails from './transport/commercial-transporter-details/commercial-transporter-details.controller.js'
 import * as privateTransporterDetails from './transport/private-transporter-details/private-transporter-details.controller.js'
 import * as contactSelect from './contact/controller.js'
+import { validateStoredAnswers as contactValidateStored } from './contact/validate-stored.js'
 import * as cya from './check-answers/controller.js'
 import * as cancelAmend from './cancel-amend/controller.js'
 import * as notificationActions from './notification-actions/controller.js'
@@ -51,7 +52,7 @@ const pageModules = [
   transportersSelect,
   commercialTransporterDetails,
   privateTransporterDetails,
-  contactSelect,
+  { ...contactSelect, validateStoredAnswers: contactValidateStored },
   cya,
   cancelAmend,
   notificationActions,
