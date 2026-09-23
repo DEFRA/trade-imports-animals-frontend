@@ -1,4 +1,4 @@
-import { SET_ID } from '../sets/live-animals/set.js'
+import { SET_ID } from '../../../../test/fixtures/index.js'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { store, DRAFT, SUBMITTED } from './store.js'
 import { configureRecords } from './persistence/records.js'

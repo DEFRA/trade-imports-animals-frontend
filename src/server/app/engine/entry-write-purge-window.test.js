@@ -1,4 +1,4 @@
-import { SET_ID } from '../sets/live-animals/set.js'
+import { SET_ID } from '../../../../test/fixtures/index.js'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { updateEntryAt } from './write/index.js'
 import { makeScope, configureReadyForCheckYourAnswers } from './read.js'

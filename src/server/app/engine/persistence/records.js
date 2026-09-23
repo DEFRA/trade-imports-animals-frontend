@@ -23,7 +23,7 @@ const UNCONFIGURED = Object.freeze({
   clear: unconfigured
 })
 
-const store = setKeyed('records')
+const store = setKeyed('records', { configuredBy: 'configureRecords' })
 
 // Reading before configuration is the un-booted case, which must report itself
 // through `unconfigured` rather than through setKeyed's "no such set" error.

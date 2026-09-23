@@ -23,7 +23,7 @@ const UNCONFIGURED = Object.freeze({
   cookieNames: DEFAULT_COOKIE_NAMES
 })
 
-const store = setKeyed('session')
+const store = setKeyed('session', { configuredBy: 'configureSession' })
 
 // Reading before configuration is the un-booted case, which must report itself
 // through `unconfigured` rather than through setKeyed's "no such set" error.

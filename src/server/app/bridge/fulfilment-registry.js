@@ -171,7 +171,9 @@ export const createFulfilmentRegistry = (
   })
 }
 
-const store = setKeyed('Fulfilment registry')
+const store = setKeyed('Fulfilment registry', {
+  configuredBy: 'configureFulfilmentRegistry'
+})
 
 const currentRegistry = () => store.current()
 

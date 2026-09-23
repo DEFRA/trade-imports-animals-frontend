@@ -15,7 +15,7 @@ const UNCONFIGURED = Object.freeze({
   entryGuardTarget: unconfigured
 })
 
-const store = setKeyed('journey flow')
+const store = setKeyed('journey flow', { configuredBy: 'configureJourneyFlow' })
 
 // Reading before configuration is the un-booted case, which must report itself
 // through `unconfigured` rather than through setKeyed's "no such set" error.

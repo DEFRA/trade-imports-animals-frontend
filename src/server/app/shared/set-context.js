@@ -134,8 +134,34 @@ export const routeWithSetContext = (setId, route) => ({
   ...(route.handler && { handler: contextualMethod(setId, route.handler) })
 })
 
-export const setKeyed = (label) => {
+/**
+ * The seams a mounted set MUST configure, indexed by label as each seam module
+ * loads. A seam opts in by naming the function that configures it, so the
+ * completeness check at mount reads this rather than a hand-kept list a new
+ * seam could quietly fall out of.
+ *
+ * Seams with a real default — the answers-for-read sanitiser, the
+ * ready-for-check-your-answers roll-up — register nothing here: a set that
+ * leaves them alone is correctly configured.
+ */
+const requiredSeams = new Map()
+
+/**
+ * A per-set store for one configuration seam.
+ *
+ * @param {string} label - the seam's name, as it appears in error messages.
+ * @param {object} [options] - seam options.
+ * @param {string} [options.configuredBy] - the configure function a set calls
+ * to fill this seam. Naming it marks the seam required, so a set that mounts
+ * without calling it is rejected at registration.
+ * @returns {{configure: Function, current: Function, has: Function}} the store.
+ */
+export const setKeyed = (label, { configuredBy } = {}) => {
   const bySet = new Map()
+  const has = (setId) => bySet.has(setId)
+  if (configuredBy) {
+    requiredSeams.set(label, { configuredBy, has })
+  }
   return {
     configure: (setId, value) => bySet.set(setId, value),
     current: () => {
@@ -145,6 +171,22 @@ export const setKeyed = (label) => {
       }
       return bySet.get(setId)
     },
-    has: (setId) => bySet.has(setId)
+    has
   }
 }
+
+/** Every required seam's label, in the order the seam modules declared them. */
+export const requiredSeamLabels = () => [...requiredSeams.keys()]
+
+/**
+ * The required seams a set has not configured, each named alongside the call
+ * that would configure it.
+ *
+ * @param {string} setId - the set to check.
+ * @returns {string[]} descriptions such as `journey flow (configureJourneyFlow)`,
+ * empty when the set has configured every required seam.
+ */
+export const unconfiguredSeamsOf = (setId) =>
+  [...requiredSeams]
+    .filter(([, seam]) => !seam.has(setId))
+    .map(([label, { configuredBy }]) => `${label} (${configuredBy})`)

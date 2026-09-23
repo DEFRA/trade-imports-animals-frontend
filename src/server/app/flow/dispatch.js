@@ -17,7 +17,7 @@ const EMPTY = Object.freeze({
   slugByPage: new Map()
 })
 
-const store = setKeyed('dispatch')
+const store = setKeyed('dispatch', { configuredBy: 'buildDispatch' })
 
 // Reading before `buildDispatch` is the un-booted case. It answers empty rather
 // than throwing, because `flow/gates.js` distinguishes the two itself — an empty

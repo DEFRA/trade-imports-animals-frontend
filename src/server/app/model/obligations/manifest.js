@@ -1,6 +1,8 @@
 import { setKeyed } from '../../services/set-context/index.js'
 
-const store = setKeyed('Obligation set')
+const store = setKeyed('Obligation set', {
+  configuredBy: 'configureObligationSet'
+})
 
 export const configureObligationSet = (setId, nextObligationSet) => {
   store.configure(setId, nextObligationSet)

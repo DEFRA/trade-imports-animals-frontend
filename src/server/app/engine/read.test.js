@@ -1,4 +1,4 @@
-import { SET_ID } from '../sets/live-animals/set.js'
+import { SET_ID } from '../../../../test/fixtures/index.js'
 import { afterEach, beforeAll, describe, expect, test } from 'vitest'
 import {
   configureAnswersForRead,

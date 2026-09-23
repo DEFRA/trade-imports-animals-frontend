@@ -30,6 +30,7 @@ import {
 } from '../../src/server/app/engine/persistence/session.js'
 import { configureAnswersForRead } from '../../src/server/app/bridge/answers-read.js'
 import { registerJourneyCookie } from '../../src/server/app/engine/journey.js'
+import { assertSetConfigured } from '../../src/server/app/set-completeness.js'
 import {
   enterSetContext,
   registerSetMount,
@@ -249,6 +250,7 @@ export const secondSet = {
           { sandbox: 'plugin' }
         )
         server.route(routes.map((route) => routeWithSetContext(SET_ID, route)))
+        assertSetConfigured(server, SET_ID)
       })
     }
   }

@@ -26,6 +26,7 @@ import {
 import * as liveAnimalsObligationSet from './sets/live-animals/obligations/index.js'
 import * as commodities from './sets/live-animals/services/commodities/index.js'
 import { assertObligationPurity } from './obligation-purity.js'
+import { assertSetConfigured } from './set-completeness.js'
 import { assertPartyBindingsAreScalar } from './sets/live-animals/journeys/linear/features/addresses/assert-party-bindings.js'
 import {
   assertFulfilmentBindingCoverage,
@@ -104,6 +105,10 @@ export const liveAnimals = {
         server.route(
           allRoutes.map((route) => routeWithSetContext(SET_ID, route))
         )
+        // Last act of the registration: a seam this set never configured would
+        // otherwise answer with its fallback at request time, and two of those
+        // fallbacks are silent. Refusing here stops the server instead.
+        assertSetConfigured(server, SET_ID)
       })
     }
   }
