@@ -16,6 +16,9 @@ import { selectedSummary } from './view-model/selected-summary.js'
 export { lineKey } from './selection/line-key.js'
 
 export const meta = { ...page, collects: ['commodityLines'] }
+
+// Deferred: waits on the un-stubbed reference-data lookup / type-ahead search API.
+export const skipValidateStored = true
 const view = `${TEMPLATES}/features/commodities/search/search`
 
 const copy = copyFor({ en, cy }).search

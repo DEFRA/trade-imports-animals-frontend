@@ -22,6 +22,10 @@ export const meta = {
   ...page,
   collects: ['animalsCertifiedFor', 'containsUnweanedAnimals']
 }
+
+// Deferred: covered by the follow-up that extends validate-stored to the remaining collectors.
+export const skipValidateStored = true
+
 const view = `${TEMPLATES}/features/additional-details/template`
 
 const copy = copyFor({ en, cy })

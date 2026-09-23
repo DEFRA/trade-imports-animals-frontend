@@ -18,6 +18,10 @@ import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 
 export const meta = { ...page, collects: ['countyParishHoldingCph'] }
+
+// Deferred: covered by the follow-up that extends validate-stored to the remaining collectors.
+export const skipValidateStored = true
+
 const view = `${TEMPLATES}/features/cph-number/template`
 
 const copy = copyFor({ en, cy })

@@ -38,6 +38,10 @@ import {
 import { render as renderView } from './view-model/render.js'
 
 export const meta = { ...page, collects: ['documents'] }
+
+// Deferred: rules interact with the file-upload workflow; needs care not to flag mid-upload.
+export const skipValidateStored = true
+
 const view = `${TEMPLATES}/features/documents/template`
 
 const copy = copyFor({ en, cy })

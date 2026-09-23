@@ -22,6 +22,10 @@ import { buildActor } from '../../../../../../../common/helpers/actor-helpers.js
 import { reinflatePartyAnswers } from '../addresses/reinflate-party-answers.js'
 
 export const meta = { ...page, collects: ['declaration'] }
+
+// Terminal page: the one obligation is a fixed 'confirmed' enum with no drift possible.
+export const skipValidateStored = true
+
 const view = `${TEMPLATES}/features/declaration/template`
 
 const copy = copyFor({ en, cy })

@@ -26,6 +26,10 @@ export { IDENTIFIER_LABELS } from './identifier/table.js'
 export { scopedFields }
 
 export const meta = { ...page, collects: [] }
+
+// Deferred alongside commodities-search — per-line identifiers need the un-stubbed catalogue.
+export const skipValidateStored = true
+
 const view = `${TEMPLATES}/features/commodities/animal-identification/animal-identification`
 
 const copy = copyFor({ en, cy }).identification

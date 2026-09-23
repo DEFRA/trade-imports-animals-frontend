@@ -27,8 +27,10 @@ import * as declaration from './declaration/controller.js'
 import * as confirmation from './confirmation/controller.js'
 
 /** Both dispatchPages and allRoutes derive from this list, so a new page
- * lands with one entry, and can't be in one and forgotten from the other. */
-const pageModules = [
+ * lands with one entry, and can't be in one and forgotten from the other.
+ * Exported so the pinning test in `features/index.test.js` can enforce that
+ * every dispatch page either has a revalidator or explicitly opts out. */
+export const pageModules = [
   dashboard,
   hub,
   origin,
