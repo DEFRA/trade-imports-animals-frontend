@@ -50,7 +50,7 @@ const TEMPORARY_ADMISSION_DATE_FIELD = 'temporaryAdmissionExitDate'
 // `regionOfOriginCode` it stores. Which of the four answers is in scope stays
 // the obligations' call (obligations/sections/import-reason.js); this says
 // only where the question is asked.
-const REVEALS = Object.freeze({
+export const REVEALS = Object.freeze({
   internalMarket: [{ field: PURPOSE_FIELD, answer: 'purposeInInternalMarket' }],
   transhipmentOrOnwardTravel: [
     { field: TRANSHIPMENT_COUNTRY_FIELD, answer: 'destinationCountry' }
@@ -110,7 +110,7 @@ const RULES = Object.freeze({
 // Only the reveal the submitted reason opens is answerable, so only its
 // fields are measured. A field belonging to another branch arrives empty and
 // is neither validated nor committed.
-const fields = async (reasonForImport) =>
+export const fields = async (reasonForImport) =>
   compose(
     oneOf(
       'reasonForImport',
@@ -137,7 +137,7 @@ const formValuesFrom = (payload) => ({
 
 // A stored answer prefills every branch that asks for it, so switching between
 // two reasons that share a question keeps the answer in front of the user.
-const formValuesFromAnswers = (answers) => ({
+export const formValuesFromAnswers = (answers) => ({
   reasonForImport: answers.reasonForImport ?? '',
   [PURPOSE_FIELD]: answers.purposeInInternalMarket ?? '',
   [TRANSHIPMENT_COUNTRY_FIELD]: answers.destinationCountry ?? '',
@@ -150,7 +150,7 @@ const formValuesFromAnswers = (answers) => ({
 // The reason and the answers its own reveal collected. An answer belonging to
 // a reason no longer chosen is left out and the evaluator purges it, so a
 // flip never carries a stale answer forward.
-const answersFrom = (values) => ({
+export const answersFrom = (values) => ({
   reasonForImport: values.reasonForImport,
   ...Object.fromEntries(
     revealsFor(values.reasonForImport).map(({ field, answer }) => [

@@ -6,6 +6,7 @@ import * as commoditiesSearch from './commodities/search/search.controller.js'
 import * as consignmentDetails from './commodities/consignment-details/consignment-details.controller.js'
 import * as animalIdentification from './commodities/animal-identification/animal-identification.controller.js'
 import * as importReason from './import-reason/controller.js'
+import { validateStoredAnswers as importReasonValidateStored } from './import-reason/validate-stored.js'
 import * as additionalDetails from './additional-details/controller.js'
 import * as documents from './documents/controller.js'
 import * as addresses from './addresses/controller.js'
@@ -36,7 +37,7 @@ const pageModules = [
   commoditiesSearch,
   consignmentDetails,
   animalIdentification,
-  importReason,
+  { ...importReason, validateStoredAnswers: importReasonValidateStored },
   additionalDetails,
   documents,
   addresses,
