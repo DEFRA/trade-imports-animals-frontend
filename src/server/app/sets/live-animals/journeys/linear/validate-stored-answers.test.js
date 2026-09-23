@@ -5,11 +5,11 @@ const { mockRevalidators, mockPartiesByIds } = vi.hoisted(() => ({
   mockPartiesByIds: vi.fn()
 }))
 
-vi.mock('./features/index.js', () => ({
+vi.mock('./revalidators.js', () => ({
   revalidators: mockRevalidators
 }))
 
-vi.mock('../../../services/address-book/index.js', () => ({
+vi.mock('../../../../services/address-book/index.js', () => ({
   partiesByIds: mockPartiesByIds
 }))
 

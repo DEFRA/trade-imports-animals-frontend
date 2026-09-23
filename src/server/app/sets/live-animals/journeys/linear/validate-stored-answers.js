@@ -1,5 +1,5 @@
-import * as addressBook from '../../../services/address-book/index.js'
-import { revalidators } from './features/index.js'
+import * as addressBook from '../../../../services/address-book/index.js'
+import { revalidators } from './revalidators.js'
 
 // Ids the aggregator pre-resolves so each hook reads from ctx rather than
 // re-fetching. Extractors grow as hooks that need pre-resolved data land.

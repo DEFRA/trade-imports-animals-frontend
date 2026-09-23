@@ -151,6 +151,18 @@ export const copy = {
       consignee: 'Dewiswch gyfeiriad ar gyfer y derbynnydd',
       importer: 'Dewiswch gyfeiriad ar gyfer y mewnforiwr',
       placeOfDestination: 'Dewiswch gyfeiriad ar gyfer y man cyrchfan'
+    },
+    invalidCards: {
+      importDetails:
+        "Gwiriwch fanylion y mewnforio — mae ateb wedi'i gadw sydd bellach ddim yn ddilys",
+      reasonForImport:
+        "Gwiriwch reswm y mewnforio — mae ateb wedi'i gadw sydd bellach ddim yn ddilys",
+      arrivalDetails:
+        "Gwiriwch y manylion cyrraedd — mae ateb wedi'i gadw sydd bellach ddim yn ddilys",
+      transitCountries:
+        "Gwiriwch y gwledydd tramwy — mae ateb wedi'i gadw sydd bellach ddim yn ddilys",
+      contactAddress:
+        "Gwiriwch y cyfeiriad cyswllt — mae ateb wedi'i gadw sydd bellach ddim yn ddilys"
     }
   }
 }

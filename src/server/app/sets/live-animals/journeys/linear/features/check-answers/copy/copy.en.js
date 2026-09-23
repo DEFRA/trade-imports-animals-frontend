@@ -167,6 +167,19 @@ export const copy = {
       consignee: 'Select an address for the consignee',
       importer: 'Select an address for the importer',
       placeOfDestination: 'Select an address for the place of destination'
+    },
+    // Section-level "an answer is no longer valid" — one per card that carries
+    // a validateStoredAnswers hook. Draft copy pending designer sign-off.
+    invalidCards: {
+      importDetails: 'Check import details — a saved answer is no longer valid',
+      reasonForImport:
+        'Check reason for import — a saved answer is no longer valid',
+      arrivalDetails:
+        'Check arrival details — a saved answer is no longer valid',
+      transitCountries:
+        'Check transit countries — a saved answer is no longer valid',
+      contactAddress:
+        'Check contact address — a saved answer is no longer valid'
     }
   }
 }

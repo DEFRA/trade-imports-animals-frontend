@@ -91,6 +91,7 @@ const IMPORT_DETAILS_INCOMPLETE = 'Complete import details'
 const ADDRESSES_INCOMPLETE = 'Complete roles and addresses'
 const SPECIES_INCOMPLETE = 'Complete species details'
 const DOCUMENTS_INCOMPLETE = 'Complete documents'
+const ARRIVAL_DETAILS_INCOMPLETE = 'Complete arrival details'
 
 const withoutParty = (seed, partyId) => {
   const next = { ...seed }
@@ -1325,7 +1326,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
       'Complete reason for import',
       SPECIES_INCOMPLETE,
       'Complete additional animal details',
-      'Complete arrival details',
+      ARRIVAL_DETAILS_INCOMPLETE,
       'Complete transport details',
       'Complete roles and addresses',
       'Complete contact address for this consignment'
@@ -1344,7 +1345,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
     })
 
     expect(texts).not.toContain(IMPORT_DETAILS_INCOMPLETE)
-    expect(texts).not.toContain('Complete arrival details')
+    expect(texts).not.toContain(ARRIVAL_DETAILS_INCOMPLETE)
     expect(texts).toContain('Complete transport details')
   })
 
@@ -1480,5 +1481,82 @@ describe('#REVIEW_CARDS — the cards cover the task rows exactly', () => {
     for (const card of REVIEW_CARDS) {
       expect(typeof copyEn.errors.cards[card.id]).toBe('string')
     }
+  })
+})
+
+describe(`${SUITE} — stored-answer validation`, () => {
+  setupCheckAnswersEngine()
+
+  const STALE_PORT = 'XX GONE'
+  const OUT_OF_WINDOW_DATE = { day: '1', month: '1', year: '2020' }
+  const MISSING_ADDRESS_ID = 'address-that-does-not-exist'
+  const ARRIVAL_DETAILS_INVALID = copyEn.errors.invalidCards.arrivalDetails
+  const CONTACT_ADDRESS_INVALID = copyEn.errors.invalidCards.contactAddress
+
+  it('Should render an invalid-section error against arrivalDetails when the stored arrival date is out of window', async () => {
+    const view = await viewForStatus(DRAFT, {
+      ...fullSeed,
+      arrivalDateAtPort: OUT_OF_WINDOW_DATE
+    })
+    const card = cardByTitle(view.context.sections, ARRIVAL_DETAILS_CARD)
+
+    expect(card.error).toBe(ARRIVAL_DETAILS_INVALID)
+  })
+
+  it('Should surface a stale stored port on the arrival-details card', async () => {
+    const view = await viewForStatus(DRAFT, {
+      ...fullSeed,
+      portOfEntry: STALE_PORT
+    })
+    const card = cardByTitle(view.context.sections, ARRIVAL_DETAILS_CARD)
+
+    expect(card.error).toBe(ARRIVAL_DETAILS_INVALID)
+  })
+
+  it('Should surface an unresolvable contact addressId on the contact-address card', async () => {
+    const view = await viewForStatus(DRAFT, {
+      ...fullSeed,
+      contactAddress: { addressId: MISSING_ADDRESS_ID }
+    })
+    const card = cardByTitle(view.context.sections, CONTACT_ADDRESS_CARD)
+
+    expect(card.error).toBe(CONTACT_ADDRESS_INVALID)
+  })
+
+  it('Should let incomplete win when both incomplete and invalid apply to the same card', async () => {
+    const view = await viewForStatus(DRAFT, {
+      ...fullSeed,
+      portOfEntry: STALE_PORT,
+      meansOfTransport: ''
+    })
+    const card = cardByTitle(view.context.sections, ARRIVAL_DETAILS_CARD)
+
+    expect(card.error).toBe(ARRIVAL_DETAILS_INCOMPLETE)
+  })
+
+  it('Should refuse Continue when a stored answer is invalid on an otherwise complete notification', async () => {
+    const { response } = await driveHandler(postHandler, {
+      seed: { ...fullSeed, portOfEntry: STALE_PORT }
+    })
+
+    expect(response.redirect).toBeUndefined()
+    expect(response.statusCode).toBe(400)
+  })
+
+  it('Should not refuse a submitted notification carrying a stored value that is no longer valid', async () => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, {
+      ...fullSeed,
+      portOfEntry: STALE_PORT
+    })
+    await store.submit(journey.journeyId)
+
+    const response = await postHandler(
+      journeyRequest(journey.journeyId),
+      stubH()
+    )
+
+    expect(response.statusCode).not.toBe(400)
+    expect(response.redirect).toBeDefined()
   })
 })

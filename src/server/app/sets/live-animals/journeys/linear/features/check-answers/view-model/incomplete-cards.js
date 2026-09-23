@@ -35,49 +35,75 @@ const copy = copyFor({ en, cy })
  * the page.
  */
 export const REVIEW_CARDS = [
-  { id: 'importDetails', anchor: 'import-details', rows: ['origin'] },
+  {
+    id: 'importDetails',
+    anchor: 'import-details',
+    rows: ['origin'],
+    pages: ['origin']
+  },
   {
     id: 'reasonForImport',
     anchor: 'reason-for-import',
-    rows: ['importReason']
+    rows: ['importReason'],
+    pages: ['import-reason']
   },
   {
     id: 'species',
     anchor: 'description-of-the-goods',
     // The hub splits the commodity answers across three rows; the review shows
     // them under one heading, so the entry names all three.
-    rows: ['commodities', 'consignmentDetails', 'animalIdentification']
+    rows: ['commodities', 'consignmentDetails', 'animalIdentification'],
+    pages: []
   },
   {
     id: 'additionalAnimalDetails',
     anchor: 'additional-animal-details',
-    rows: ['additionalDetails']
+    rows: ['additionalDetails'],
+    pages: []
   },
   {
     id: 'arrivalDetails',
     anchor: 'arrival-details',
-    rows: ['arrivalDetails']
+    rows: ['arrivalDetails'],
+    pages: ['port-of-entry']
   },
   {
     id: 'transitCountries',
     anchor: 'transit-countries',
-    rows: ['transitCountries']
+    rows: ['transitCountries'],
+    pages: ['transit-countries']
   },
   {
     id: 'transportDetails',
     anchor: 'transport-details',
-    rows: ['transporter']
+    rows: ['transporter'],
+    pages: []
   },
-  { id: 'documents', anchor: 'documents', rows: ['documents'] },
+  { id: 'documents', anchor: 'documents', rows: ['documents'], pages: [] },
   {
     id: 'rolesAndAddresses',
     anchor: 'roles-and-addresses',
-    rows: ['addresses']
+    rows: ['addresses'],
+    pages: []
   },
-  { id: 'contactAddress', anchor: 'contact-address', rows: ['contact'] }
+  {
+    id: 'contactAddress',
+    anchor: 'contact-address',
+    rows: ['contact'],
+    pages: ['consignment-contact-select']
+  }
 ]
 
 const cardById = new Map(REVIEW_CARDS.map((card) => [card.id, card]))
+
+const cardIdByPageId = new Map(
+  REVIEW_CARDS.flatMap((card) =>
+    (card.pages ?? []).map((pageId) => [pageId, card.id])
+  )
+)
+
+/** The card the given page's stored-answer errors roll up under. */
+export const cardForPageId = (pageId) => cardIdByPageId.get(pageId)
 
 const cardUnfinished = (card, answers, scope, evaluation) =>
   card.rows.some(

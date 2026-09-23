@@ -22,6 +22,9 @@ import {
   withCardErrors
 } from './view-model/incomplete-cards.js'
 import { partiesForRender } from '../addresses/parties-for-render.js'
+import { organisationIdOf } from '../addresses/resolve-parties.js'
+import { validateAllStored } from '../../validate-stored-answers.js'
+import { invalidCardErrors } from './view-model/invalid-cards.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
@@ -126,6 +129,17 @@ export const renderNotificationView = async (
   // name. The rest of the page still renders from the sanitised answers.
   const source = storedAnswers ?? answers
   const parties = await partiesForRender(request, journey, source)
+  const perPageErrors = readOnly
+    ? []
+    : await validateAllStored(source, { orgId: organisationIdOf(request) })
+  // Incomplete wins over invalid on the same card: "you haven't finished this
+  // section" subsumes "one of your answers is no longer valid".
+  const cardErrors = readOnly
+    ? {}
+    : {
+        ...invalidCardErrors(perPageErrors),
+        ...incompleteCardErrors(answers, scope, evaluation)
+      }
   return renderCya(h, journey, {
     answers,
     scope,
@@ -137,9 +151,7 @@ export const renderNotificationView = async (
     partyErrors: readOnly ? {} : outstandingPartyErrors(source, parties),
     // A submitted notification is a record of what was sent, so nothing on it
     // is outstanding however its answers now read.
-    cardErrors: readOnly
-      ? {}
-      : incompleteCardErrors(answers, scope, evaluation),
+    cardErrors,
     disableAutoFocus
   })
 }
@@ -159,10 +171,14 @@ const post = async (request, h) => {
   // trader back to this page saying nothing. `readyForCheckYourAnswers` is the
   // roll-up of the very task rows `incompleteCardErrors` reads, so a refusal
   // always arrives with a summary naming what is left.
+  const perPageInvalid = readOnly
+    ? []
+    : await validateAllStored(source, { orgId: organisationIdOf(request) })
   const refused =
     !readOnly &&
     (!scope.readyForCheckYourAnswers ||
-      Object.keys(outstandingPartyErrors(source, parties)).length > 0)
+      Object.keys(outstandingPartyErrors(source, parties)).length > 0 ||
+      perPageInvalid.length > 0)
   if (refused) {
     const rendered = await renderNotificationView(request, h, {
       disableAutoFocus: false
