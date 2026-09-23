@@ -55,7 +55,7 @@ const meansItems = (selected) => [
   }))
 ]
 
-const fields = async (dateWindow) => {
+export const fields = async (dateWindow) => {
   const portCodes = (await ports.list()).map((port) => port.code)
   return compose(
     dateTextInRange('arrivalDateAtPort', {
@@ -139,20 +139,20 @@ const get = async (request, h) => {
   return render(h, journey, arrivalWindow(), values, { errors })
 }
 
+export const answersFrom = (payload) => ({
+  arrivalDateAtPort: kit.readDate(payload, 'arrivalDateAtPort'),
+  portOfEntry: payload.portOfEntry ?? '',
+  meansOfTransport: payload.meansOfTransport ?? '',
+  transportIdentification: (payload.transportIdentification ?? '').trim(),
+  transportDocumentReference: (payload.transportDocumentReference ?? '').trim()
+})
+
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   // One clock read per request: two would let the widget bounds and the server
   // bounds disagree across a midnight boundary.
   const dateWindow = arrivalWindow()
-  const values = {
-    arrivalDateAtPort: kit.readDate(payload, 'arrivalDateAtPort'),
-    portOfEntry: payload.portOfEntry ?? '',
-    meansOfTransport: payload.meansOfTransport ?? '',
-    transportIdentification: (payload.transportIdentification ?? '').trim(),
-    transportDocumentReference: (
-      payload.transportDocumentReference ?? ''
-    ).trim()
-  }
+  const values = answersFrom(payload)
   const { errors } = validate(await fields(dateWindow), payload)
   if (errors) {
     const { journey } = await state.get(request, h)

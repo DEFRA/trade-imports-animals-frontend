@@ -12,6 +12,7 @@ import * as partyPicker from './addresses/party-picker/party-picker.controller.j
 import * as addressReturn from './addresses/address-return/controller.js'
 import * as cphNumber from './cph-number/controller.js'
 import * as portOfEntry from './transport/port-of-entry/port-of-entry.controller.js'
+import { validateStoredAnswers as portOfEntryValidateStored } from './transport/port-of-entry/validate-stored.js'
 import * as transitCountries from './transport/transit-countries/transit-countries.controller.js'
 import * as transporters from './transport/transporters/transporters.controller.js'
 import * as transporterAdd from './transport/transporter-add/transporter-add.controller.js'
@@ -41,7 +42,7 @@ const pageModules = [
   partyPicker,
   addressReturn,
   cphNumber,
-  portOfEntry,
+  { ...portOfEntry, validateStoredAnswers: portOfEntryValidateStored },
   transitCountries,
   transporters,
   transporterAdd,
