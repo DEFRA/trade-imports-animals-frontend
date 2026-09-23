@@ -27,49 +27,42 @@ import * as declaration from './declaration/controller.js'
 import * as confirmation from './confirmation/controller.js'
 
 /** The pages whose page-side `collects` build the obligation->page index. */
-export const dispatchPages = [
-  origin.meta,
-  commoditiesSearch.meta,
-  consignmentDetails.meta,
-  animalIdentification.meta,
-  importReason.meta,
-  additionalDetails.meta,
-  documents.meta,
-  addresses.meta,
-  cphNumber.meta,
-  portOfEntry.meta,
-  transitCountries.meta,
-  transporters.meta,
-  contactSelect.meta,
-  declaration.meta
+const pageModules = [
+  dashboard,
+  hub,
+  origin,
+  commoditiesSearch,
+  consignmentDetails,
+  animalIdentification,
+  importReason,
+  additionalDetails,
+  documents,
+  addresses,
+  partyPicker,
+  addressReturn,
+  cphNumber,
+  portOfEntry,
+  transitCountries,
+  transporters,
+  transporterAdd,
+  transportersSelect,
+  commercialTransporterDetails,
+  privateTransporterDetails,
+  contactSelect,
+  cya,
+  cancelAmend,
+  notificationActions,
+  deleteNotification,
+  declaration,
+  confirmation
 ]
 
-export const allRoutes = [
-  ...dashboard.routes,
-  ...hub.routes,
-  ...origin.routes,
-  ...commoditiesSearch.routes,
-  ...consignmentDetails.routes,
-  ...animalIdentification.routes,
-  ...importReason.routes,
-  ...additionalDetails.routes,
-  ...documents.routes,
-  ...addresses.routes,
-  ...partyPicker.routes,
-  ...addressReturn.routes,
-  ...cphNumber.routes,
-  ...portOfEntry.routes,
-  ...transitCountries.routes,
-  ...transporters.routes,
-  ...transporterAdd.routes,
-  ...transportersSelect.routes,
-  ...commercialTransporterDetails.routes,
-  ...privateTransporterDetails.routes,
-  ...contactSelect.routes,
-  ...cya.routes,
-  ...cancelAmend.routes,
-  ...notificationActions.routes,
-  ...deleteNotification.routes,
-  ...declaration.routes,
-  ...confirmation.routes
-]
+/** The pages whose page-side `collects` build the obligation->page index. A
+ * module contributes when it exports `meta` — read-only pages (hub, dashboard,
+ * CYA and friends) collect no obligations and export no `meta`, so they fall
+ * out of this list without an explicit opt-out. */
+export const dispatchPages = pageModules
+  .filter((module) => module.meta)
+  .map((module) => module.meta)
+
+export const allRoutes = pageModules.flatMap((module) => module.routes)
