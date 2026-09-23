@@ -238,7 +238,7 @@ export const secondSet = {
         buildDispatch(SET_ID, dispatchPages)
         configureRecords(SET_ID, records)
         configureSession(SET_ID, sessionStub, SESSION_COOKIE_NAMES)
-        registerJourneyCookie(server, { base: SET_BASE })
+        registerJourneyCookie(server)
         server.ext(
           'onPreHandler',
           async (request, h) => {

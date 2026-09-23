@@ -165,15 +165,16 @@ Two sets sharing a cookie name would share the draft list behind it.
 Create `routes-<set-id>.js` following
 [`../routes-live-animals.js`](../routes-live-animals.js) exactly: register the
 mount, open the set context, install the sandboxed `onPreAuth`, configure every
-seam this set uses with `SET_ID` first, register the journey cookies against
-`SET_BASE`, install the sandboxed entry guard, and wrap every route.
+seam this set uses with `SET_ID` first, register the journey cookies, install
+the sandboxed entry guard, and wrap every route.
 
 Then re-export it from [`../routes.js`](../routes.js), which is only a barrel.
 
-`registerJourneyCookie(server, { base: SET_BASE })` takes no cookie names: it
-reads them back from the configured session seam, so the cookies Hapi registers
-and the cookies the session reads cannot drift apart. Call it after
-`configureSession`.
+`registerJourneyCookie(server)` takes neither a base nor cookie names: it reads
+the path back from the registered mount and the names back from the configured
+session seam, so the cookies Hapi registers and the ones the set actually uses
+cannot drift apart. Call it inside the set context, after `registerSetMount`
+and `configureSession` — it throws if the session seam is not configured yet.
 
 ## 5. Mount it
 

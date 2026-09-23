@@ -139,13 +139,13 @@ const probeGateway = (
       registerSetMount(setId, `/${setId}`)
       await withSetContext(setId, async () => {
         if (cookies && cookiesFirst) {
-          registerJourneyCookie(server, { base: `/${setId}` })
+          registerJourneyCookie(server)
         }
         if (seams) {
           installSeams(setId, omit)
         }
         if (cookies && !cookiesFirst) {
-          registerJourneyCookie(server, { base: `/${setId}` })
+          registerJourneyCookie(server)
         }
         assertSetConfigured(server, setId)
       })

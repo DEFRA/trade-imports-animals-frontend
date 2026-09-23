@@ -184,12 +184,13 @@ describe('no set singletons — every gateway is keyed by its set', () => {
     }
   })
 
-  it('Should scope its journey cookies to its own base', () => {
+  it('Should register its journey cookies through the set-scoped seam', () => {
     for (const { name, source } of gatewayFiles()) {
-      expect(
-        source,
-        `${name} registers journey cookies without its set base`
-      ).toContain('registerJourneyCookie(server, { base: SET_BASE })')
+      // The path comes from the registered mount, not from an argument, so a
+      // gateway cannot scope its cookies to anything but its own base.
+      expect(source, `${name} never registers its journey cookies`).toContain(
+        'registerJourneyCookie(server)'
+      )
     }
   })
 

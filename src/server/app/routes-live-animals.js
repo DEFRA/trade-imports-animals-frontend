@@ -93,7 +93,7 @@ export const liveAnimals = {
         buildDispatch(SET_ID, dispatchPages)
         configureRecords(SET_ID, records)
         configureSession(SET_ID, session, SESSION_COOKIE_NAMES)
-        registerJourneyCookie(server, { base: SET_BASE })
+        registerJourneyCookie(server)
         server.ext(
           'onPreHandler',
           async (request, h) => {

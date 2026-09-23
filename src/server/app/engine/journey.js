@@ -7,7 +7,7 @@ import {
   session,
   sessionConfiguredFor
 } from './persistence/session.js'
-import { currentSetId } from '../shared/set-context.js'
+import { currentSetBase, currentSetId } from '../shared/set-context.js'
 import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
 import { buildActor } from '../../common/helpers/actor-helpers.js'
 import { organisationIdOf } from '../../common/helpers/organisation-id.js'
@@ -32,16 +32,23 @@ export {
  * cookie NAMES being distinct, not from the path. See
  * services/persistence/session/real.js.
  *
- * The names come from the configured session seam rather than from a second
- * argument, so the registered cookies and the ones the session reads cannot
- * drift apart. Call it inside the set's context, after `configureSession` —
- * called before it, the seam hands back the shared default names and the set
- * registers cookies it will never read, so this refuses at its own point of
- * use. `set-completeness.js` still compares the registered names against the
- * configured ones at the end of registration, which is the only thing that
- * catches a gateway that skipped this call altogether.
+ * Both the path and the names come from the active set — the mount it
+ * registered and the session seam it configured — rather than from arguments,
+ * so what is registered cannot drift from what the set actually uses. A caller
+ * free to name its own base could scope the cookies to a path the set never
+ * reads, and the set would then silently read nothing.
+ *
+ * Call it inside the set's context, after `registerSetMount` and
+ * `configureSession` — called before the session seam, that seam hands back the
+ * shared default names and the set registers cookies it will never read, so
+ * this refuses at its own point of use. `set-completeness.js` still compares
+ * the registered names against the configured ones at the end of registration,
+ * which is the only thing that catches a gateway that skipped this call
+ * altogether.
+ *
+ * @param {object} server - the Hapi server the set is registering on.
  */
-export const registerJourneyCookie = (server, { base }) => {
+export const registerJourneyCookie = (server) => {
   const setId = currentSetId()
   if (!sessionConfiguredFor(setId)) {
     throw new Error(
@@ -50,7 +57,7 @@ export const registerJourneyCookie = (server, { base }) => {
   }
 
   const cookieOptions = Object.freeze({
-    path: base,
+    path: currentSetBase(),
     ttl: null,
     encoding: 'base64json',
     isSecure: false,

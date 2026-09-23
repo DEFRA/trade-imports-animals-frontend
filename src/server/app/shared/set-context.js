@@ -56,10 +56,25 @@ export const currentSetId = () => {
   return id
 }
 
-export const currentSetBase = () =>
-  // Defensive default only: registered sets never have an empty prefix;
-  // `''` means an active set id has no registered mount, not a root-mounted set.
-  mounts.get(currentSetId()) ?? ''
+/**
+ * The mount prefix the active set registered.
+ *
+ * Refuses rather than defaulting: an empty prefix would read as a root-mounted
+ * set, so a set id with no registered mount would quietly hand back a
+ * prefix-free URL pointing at the root instead of at that set. A set that never
+ * called `registerSetMount` is a wiring fault, and it should say so.
+ *
+ * @returns {string} the active set's mount prefix, always non-empty.
+ * @throws {Error} when the active set registered no mount.
+ */
+export const currentSetBase = () => {
+  const setId = currentSetId()
+  const base = mounts.get(setId)
+  if (base === undefined) {
+    throw new Error(`Set "${setId}" has no registered mount`)
+  }
+  return base
+}
 
 export const withSetContext = (setId, fn) => storage.run({ setId }, fn)
 

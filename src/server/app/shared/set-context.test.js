@@ -9,10 +9,12 @@ import Hapi from '@hapi/hapi'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import {
+  currentSetBase,
   currentSetId,
   registerSetMount,
   routeWithSetContext,
-  setIdForPath
+  setIdForPath,
+  withSetContext
 } from './set-context.js'
 import { SET_BASE, SET_ID } from '../sets/live-animals/set.js'
 
@@ -67,6 +69,21 @@ describe('#routeWithSetContext', () => {
       expect(response.result.setId).toBe(OTHER_SET)
     }
   )
+})
+
+describe('#currentSetBase', () => {
+  it('Should give the active set the mount it registered', () => {
+    expect(withSetContext(OTHER_SET, currentSetBase)).toBe(OTHER_BASE)
+    expect(withSetContext(SET_ID, currentSetBase)).toBe(SET_BASE)
+  })
+
+  it('Should refuse an active set with no registered mount', () => {
+    // Answering `''` here would read as a root-mounted set, and every link the
+    // set builds would point at the root instead of at the set.
+    expect(() => withSetContext('never-mounted', currentSetBase)).toThrow(
+      'Set "never-mounted" has no registered mount'
+    )
+  })
 })
 
 describe('#setIdForPath', () => {

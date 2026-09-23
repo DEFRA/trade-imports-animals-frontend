@@ -50,7 +50,7 @@ const serverWithDocumentRoutes = async ({
 } = {}) => {
   const server = Hapi.server()
   if (cookies) {
-    registerJourneyCookie(server, { base: SET_BASE })
+    registerJourneyCookie(server)
   }
   if (crumb) {
     await server.register(Crumb)
