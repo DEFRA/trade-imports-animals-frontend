@@ -16,6 +16,7 @@ import * as cphNumber from './cph-number/controller.js'
 import * as portOfEntry from './transport/port-of-entry/port-of-entry.controller.js'
 import { validateStoredAnswers as portOfEntryValidateStored } from './transport/port-of-entry/validate-stored.js'
 import * as transitCountries from './transport/transit-countries/transit-countries.controller.js'
+import { validateStoredAnswers as transitCountriesValidateStored } from './transport/transit-countries/validate-stored.js'
 import * as transporters from './transport/transporters/transporters.controller.js'
 import * as transporterAdd from './transport/transporter-add/transporter-add.controller.js'
 import * as transportersSelect from './transport/transporters-select/transporters-select.controller.js'
@@ -46,7 +47,10 @@ const pageModules = [
   addressReturn,
   cphNumber,
   { ...portOfEntry, validateStoredAnswers: portOfEntryValidateStored },
-  transitCountries,
+  {
+    ...transitCountries,
+    validateStoredAnswers: transitCountriesValidateStored
+  },
   transporters,
   transporterAdd,
   transportersSelect,
