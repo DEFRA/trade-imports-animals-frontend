@@ -47,6 +47,7 @@ const privateRecord = ({
   county = '',
   postalOrZipCode,
   country,
+  countryCode,
   telephoneNumber,
   emailAddress
 }) => ({
@@ -61,6 +62,7 @@ const privateRecord = ({
     county,
     postalOrZipCode,
     country,
+    countryCode,
     telephoneNumber,
     emailAddress
   }
@@ -80,7 +82,8 @@ export const TRANSPORTER_OPTIONS = [
       addressLine1: '43 East Hague Extension',
       addressLine2: 'Delectus sitodio p. Laborum Odio tempor',
       addressLine3: 'Quasoccaecat ut ear, 30055',
-      country: 'Switzerland'
+      country: 'Switzerland',
+      countryCode: 'CH'
     }
   },
   {
@@ -95,7 +98,8 @@ export const TRANSPORTER_OPTIONS = [
     address: {
       addressLine1: 'Rue de la Loi 200',
       addressLine2: '1040 Brussels',
-      country: 'Belgium'
+      country: 'Belgium',
+      countryCode: 'BE'
     }
   },
   privateRecord({
@@ -107,6 +111,7 @@ export const TRANSPORTER_OPTIONS = [
     county: 'Aberdeenshire',
     postalOrZipCode: 'AB11 5DQ',
     country: 'United Kingdom',
+    countryCode: 'GB',
     telephoneNumber: '+44 1224 000 111',
     emailAddress: 'movements@aberdeen-livestock.example.com'
   }),
@@ -118,6 +123,7 @@ export const TRANSPORTER_OPTIONS = [
     townOrCity: 'Cluj-Napoca',
     postalOrZipCode: '400000',
     country: 'Romania',
+    countryCode: 'RO',
     telephoneNumber: '+40 264 000 222',
     emailAddress: 'transport@romanian-agri.example.com'
   }),
@@ -129,6 +135,7 @@ export const TRANSPORTER_OPTIONS = [
     townOrCity: 'Košice',
     postalOrZipCode: '040 01',
     country: 'Slovakia',
+    countryCode: 'SK',
     telephoneNumber: '+421 55 000 333',
     emailAddress: 'export@slovak-farm.example.com'
   }),
@@ -140,6 +147,7 @@ export const TRANSPORTER_OPTIONS = [
     townOrCity: 'Turku',
     postalOrZipCode: '20100',
     country: 'Finland',
+    countryCode: 'FI',
     telephoneNumber: '+358 2 000 444',
     emailAddress: 'kuljetus@finnish-livestock.example.com'
   })

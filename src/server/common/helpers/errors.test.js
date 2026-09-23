@@ -83,6 +83,14 @@ describe('#errors', () => {
     // Boom.serverUnavailable, and catchAll renders the shared error page.
     const originalStubMode = config.get('stubMode')
     config.set('stubMode', false)
+    // Stub the fetch to make this deterministic even if a developer is running
+    // the local stack with a real ref-data-service on the reference-data port.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('ECONNREFUSED test-injected')
+      })
+    )
     try {
       const { result, statusCode } = await server.inject({
         method: 'GET',
@@ -97,6 +105,7 @@ describe('#errors', () => {
       )
       expect(result).toEqual(expect.stringContaining('>503</h1>'))
     } finally {
+      vi.unstubAllGlobals()
       config.set('stubMode', originalStubMode)
     }
   })
