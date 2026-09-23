@@ -26,7 +26,14 @@ export const obligationByPath = (templatePath) =>
     (obligation) => templatePathOf(obligation) === templatePath
   )
 
-export const SYSTEM_POPULATED = new Set(['poApprovedReferenceNumber'])
+// Resolve system ownership from the configured manifest, never a set-specific list.
+class SystemPopulated extends Set {
+  has(name) {
+    return super.has(name) || obligationByName(name)?.system === true
+  }
+}
+
+export const SYSTEM_POPULATED = new SystemPopulated()
 
 export const ENFORCED_AT_CONTINUE = new Set([
   'countryOfOrigin',

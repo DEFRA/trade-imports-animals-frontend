@@ -10,5 +10,6 @@
 export const poApprovedReferenceNumber = {
   id: '9a0b1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d',
   name: 'poApprovedReferenceNumber',
-  status: 'mandatory'
+  status: 'mandatory',
+  system: true
 }

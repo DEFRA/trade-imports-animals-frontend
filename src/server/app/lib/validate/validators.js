@@ -15,6 +15,7 @@ const PHONE_ALLOWED = /^[0-9+()\-.,;\s]+$/
 const UK_PHONE_MIN_DIGITS = 7
 const UK_PHONE_MAX_DIGITS = 15
 const INVALID_ERROR_CODE = 'any.invalid'
+const ONLY_ERROR_CODE = 'any.only'
 const RANGE_ERROR_CODE = 'date.range'
 const NUMBER_ERROR_CODE = 'number.base'
 const NUMBER_RANGE_ERROR_CODE = 'number.range'
@@ -124,19 +125,29 @@ export const ukPhone = (name, message = defaults.ukPhone) =>
       })
   )
 
-export const requiredOneOf = (name, values, message) =>
-  single(
+/**
+ * Save-blocking membership of an allow-list. An empty allow-list rejects every
+ * value: `Joi.valid()` with no arguments leaves the `only` flag unset, so the
+ * rule would otherwise degrade to any non-empty string.
+ * @param {string} name
+ * @param {readonly string[]} values - the values the field accepts.
+ * @param {string} message - shown when the value is blank, absent or unknown.
+ */
+export const requiredOneOf = (name, values, message) => {
+  const required = Joi.string().trim().required()
+  const membership =
+    values.length === 0
+      ? required.custom((_raw, helpers) => helpers.error(ONLY_ERROR_CODE))
+      : required.valid(...values)
+  return single(
     name,
-    Joi.string()
-      .trim()
-      .required()
-      .valid(...values)
-      .messages({
-        'string.empty': message,
-        'any.required': message,
-        'any.only': message
-      })
+    membership.messages({
+      'string.empty': message,
+      'any.required': message,
+      [ONLY_ERROR_CODE]: message
+    })
   )
+}
 
 export const oneOf = (name, values, message = defaults.oneOf) =>
   single(

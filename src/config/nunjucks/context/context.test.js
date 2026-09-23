@@ -253,6 +253,12 @@ describe('#activeNavigationItem', () => {
   test('Should mark nothing when there is no path', () => {
     expect(inLiveAnimals(undefined)).toBeNull()
   })
+
+  test('Should mark nothing on a server-wide page, outside every set', () => {
+    // Two sets are mounted, so the sole-set fallback cannot stand in. Without
+    // the `hasSetContext` guard this throws for want of a set.
+    expect(activeNavigationItem('/signout')).toBeNull()
+  })
 })
 
 describe('When auth.enabled is set to false', () => {
