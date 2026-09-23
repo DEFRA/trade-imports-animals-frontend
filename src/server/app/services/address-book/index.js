@@ -130,3 +130,11 @@ export const party = async (orgId, id) => {
   }
   return client.getAddress(orgId, id)
 }
+
+/** For each unique id, the current record or `undefined`. Fans out over
+ * `party` — no batch endpoint yet, and per-notification lists are short. */
+export const partiesByIds = async (orgId, ids) => {
+  const uniqueIds = [...new Set(ids)]
+  const records = await Promise.all(uniqueIds.map((id) => party(orgId, id)))
+  return new Map(uniqueIds.map((id, index) => [id, records[index]]))
+}

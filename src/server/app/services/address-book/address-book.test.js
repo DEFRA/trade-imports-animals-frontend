@@ -303,6 +303,67 @@ describe('#party', () => {
   })
 })
 
+describe('#partiesByIds', () => {
+  test('Should return an empty map for no ids', async () => {
+    realMode()
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { partiesByIds } = await addressBook()
+
+    expect(await partiesByIds(ORG, [])).toEqual(new Map())
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  test('Should resolve a batch of ids to their current records', async () => {
+    realMode()
+    stubFetch(async (url) => {
+      const id = new URL(url).pathname.split('/').pop()
+      return okResponse(operator(id))
+    })
+
+    const { partiesByIds } = await addressBook()
+    const result = await partiesByIds(ORG, ['record-7', 'record-9'])
+
+    expect(result.get('record-7')).toMatchObject({ id: 'record-7' })
+    expect(result.get('record-9')).toMatchObject({ id: 'record-9' })
+  })
+
+  test('Should carry soft-deleted records through unchanged', async () => {
+    realMode()
+    stubFetch(async () => okResponse(operator('record-7', { deleted: true })))
+
+    const { partiesByIds } = await addressBook()
+
+    expect(await partiesByIds(ORG, ['record-7'])).toEqual(
+      new Map([['record-7', expect.objectContaining({ deleted: true })]])
+    )
+  })
+
+  test('Should map an id the organisation cannot see to undefined', async () => {
+    realMode()
+    stubFetch(async () => ({ ok: false, status: 404, statusText: 'Not Found' }))
+
+    const { partiesByIds } = await addressBook()
+
+    expect(await partiesByIds(ORG, ['record-7'])).toEqual(
+      new Map([['record-7', undefined]])
+    )
+  })
+
+  test('Should deduplicate repeated ids to a single fetch and a single entry', async () => {
+    realMode()
+    const fetchMock = vi.fn(async () => okResponse(operator('record-7')))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { partiesByIds } = await addressBook()
+    const result = await partiesByIds(ORG, ['record-7', 'record-7', 'record-7'])
+
+    expect(result.size).toBe(1)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('#all', () => {
   test('Should gather every page for the unpaginated contact list', async () => {
     realMode()
@@ -336,6 +397,7 @@ describe('writes', () => {
     expect(Object.keys(book).sort()).toEqual([
       'PAGE_SIZE',
       'all',
+      'partiesByIds',
       'party',
       'search'
     ])
