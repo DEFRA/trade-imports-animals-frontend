@@ -66,3 +66,11 @@ export const dispatchPages = pageModules
   .map((module) => module.meta)
 
 export const allRoutes = pageModules.flatMap((module) => module.routes)
+
+/** The pages that opt into re-running their rules against stored answers. */
+export const revalidators = pageModules
+  .filter((module) => typeof module.validateStoredAnswers === 'function')
+  .map((module) => ({
+    id: module.meta.id,
+    run: module.validateStoredAnswers
+  }))
