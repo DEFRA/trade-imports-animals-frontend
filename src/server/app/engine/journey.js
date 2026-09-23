@@ -4,8 +4,10 @@ import {
   flowOnlyAnswersCookie,
   knownJourneysCookie,
   openingRunCookie,
-  session
+  session,
+  sessionConfiguredFor
 } from './persistence/session.js'
+import { currentSetId } from '../shared/set-context.js'
 import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
 import { buildActor } from '../../common/helpers/actor-helpers.js'
 import { organisationIdOf } from '../../common/helpers/organisation-id.js'
@@ -32,9 +34,21 @@ export {
  *
  * The names come from the configured session seam rather than from a second
  * argument, so the registered cookies and the ones the session reads cannot
- * drift apart. Call it inside the set's context, after `configureSession`.
+ * drift apart. Call it inside the set's context, after `configureSession` —
+ * called before it, the seam hands back the shared default names and the set
+ * registers cookies it will never read, so this refuses at its own point of
+ * use. `set-completeness.js` still compares the registered names against the
+ * configured ones at the end of registration, which is the only thing that
+ * catches a gateway that skipped this call altogether.
  */
 export const registerJourneyCookie = (server, { base }) => {
+  const setId = currentSetId()
+  if (!sessionConfiguredFor(setId)) {
+    throw new Error(
+      `Session not configured for set "${setId}" — call configureSession before registerJourneyCookie`
+    )
+  }
+
   const cookieOptions = Object.freeze({
     path: base,
     ttl: null,

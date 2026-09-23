@@ -32,6 +32,11 @@ const store = setKeyed('session', { configuredBy: 'configureSession' })
 const current = () =>
   store.has(currentSetId()) ? store.current() : UNCONFIGURED
 
+/** Whether this set has been through `configureSession`. Callers that must run
+ * after it — `registerJourneyCookie` reads the configured cookie names — ask
+ * rather than silently taking the default names. */
+export const sessionConfiguredFor = (setId) => store.has(setId)
+
 export const configureSession = (setId, impl, cookieNames) => {
   store.configure(setId, {
     impl,

@@ -3,7 +3,7 @@ import {
   obligations
 } from '../model/obligations/manifest.js'
 import { isGroup } from '../model/obligations/manifest-graph.js'
-import { journeyFlowOnlyKeys } from '../flow/journey-flow.js'
+import { flowOnlyKeys } from './flow-only-keys.js'
 
 const namesUpTo = (obligation) =>
   obligation ? [...namesUpTo(obligation.within), obligation.name] : []
@@ -51,7 +51,7 @@ export const MAX_ENTRIES_FROM = {
 
 // Flow-owned obligations the notification model does not carry, such as the
 // submit-time declaration step.
-export const flowOnlyObligations = () => journeyFlowOnlyKeys()
+export const flowOnlyObligations = () => flowOnlyKeys()
 
 export const flowOnlyAnswersFrom = (answers) =>
   Object.fromEntries(

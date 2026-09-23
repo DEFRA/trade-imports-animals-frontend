@@ -29,6 +29,8 @@ import {
   session
 } from '../../src/server/app/engine/persistence/session.js'
 import { configureAnswersForRead } from '../../src/server/app/bridge/answers-read.js'
+import { configureReadyForCheckYourAnswers } from '../../src/server/app/bridge/readiness-config.js'
+import { readyForCheckYourAnswers } from '../../src/server/app/flow/section-status.js'
 import { registerJourneyCookie } from '../../src/server/app/engine/journey.js'
 import { assertSetConfigured } from '../../src/server/app/set-completeness.js'
 import {
@@ -223,6 +225,7 @@ export const secondSet = {
           ])
         ])
         configureAnswersForRead(SET_ID, async (_request, answers) => answers)
+        configureReadyForCheckYourAnswers(SET_ID, readyForCheckYourAnswers)
         configureJourneyFlow(SET_ID, {
           sections,
           taskRows: [],

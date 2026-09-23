@@ -3,10 +3,11 @@
  *
  * Each seam still has its UNCONFIGURED fallback, untouched — this suite proves
  * the fallbacks can no longer be reached from a mounted set, because the mount
- * itself fails first. The two that matter most answer benignly rather than
+ * itself fails first. The three that matter most answer benignly rather than
  * throwing (`flow/journey-flow.js` returns no sections and no task rows,
- * `engine/persistence/session.js` returns the shared default cookie names), so
- * before this gate a forgotten seam showed up as an empty dashboard.
+ * `engine/persistence/session.js` returns the shared default cookie names, and
+ * `bridge/readiness-config.js` answers false forever), so before this gate a
+ * forgotten seam showed up as an empty dashboard or a jammed submit gate.
  *
  * The probes below are minimal gateways built here rather than in
  * `test/fixtures/second-set.js`: that fixture is a correctly wired set by
@@ -21,6 +22,7 @@ import { describe, expect, it } from 'vitest'
 import { assertSetConfigured } from './set-completeness.js'
 import { feature, scalar } from './bridge/fulfilment-bindings.js'
 import { configureFulfilmentRegistry } from './bridge/fulfilment-registry.js'
+import { configureReadyForCheckYourAnswers } from './bridge/readiness-config.js'
 import { buildDispatch } from './flow/dispatch.js'
 import { configureJourneyFlow } from './flow/journey-flow.js'
 import { configureObligationSet } from './model/obligations/manifest.js'
@@ -50,19 +52,23 @@ const REQUIRED_SEAMS = [
   'Obligation set',
   'Fulfilment registry',
   'journey flow',
+  'Ready-for-check-your-answers',
   'dispatch',
   'records',
   'session'
 ]
 
 /**
- * The obligation set has to be configured before the fulfilment registry and
- * the dispatch index, because both validate themselves against it as they are
- * built. Leaving it out is therefore covered by the "configures nothing" probe
- * rather than by omitting it from an otherwise complete install.
+ * The seams an otherwise complete install can leave out one at a time.
+ *
+ * `Obligation set` cannot: the fulfilment registry and the dispatch index both
+ * validate themselves against it as they are built, so omitting it fails
+ * earlier than the gate. `session` cannot either: `registerJourneyCookie`
+ * refuses at its own point of use, which is covered on its own below. Both are
+ * still covered by the "configures nothing" probe.
  */
 const OMITTABLE_SEAMS = REQUIRED_SEAMS.filter(
-  (label) => label !== 'Obligation set'
+  (label) => label !== 'Obligation set' && label !== 'session'
 )
 
 const cookieNamesFor = (setId) => ({
@@ -92,6 +98,8 @@ const seamInstallers = {
       ])
     ]),
   'journey flow': (setId) => configureJourneyFlow(setId, journeyFlowFor()),
+  'Ready-for-check-your-answers': (setId) =>
+    configureReadyForCheckYourAnswers(setId, () => true),
   dispatch: (setId) => buildDispatch(setId, dispatchPages),
   records: (setId) => configureRecords(setId, recordsStub),
   session: (setId) =>
@@ -115,26 +123,28 @@ const installSeams = (setId, omitted) => {
  * @param {object} [options] - what to get wrong.
  * @param {string} [options.omit] - a seam to leave unconfigured.
  * @param {boolean} [options.seams] - false to configure no seam at all.
+ * @param {boolean} [options.cookies] - false to skip registering the journey
+ * cookies, which is what a gateway that forgot the call looks like.
  * @param {boolean} [options.cookiesFirst] - true to register the journey
  * cookies before the session seam, which is the ordering the gate rejects.
  * @returns {object} a Hapi plugin.
  */
 const probeGateway = (
   setId,
-  { omit, seams = true, cookiesFirst = false } = {}
+  { omit, seams = true, cookies = true, cookiesFirst = false } = {}
 ) => ({
   plugin: {
     name: setId,
     register: async (server) => {
       registerSetMount(setId, `/${setId}`)
       await withSetContext(setId, async () => {
-        if (cookiesFirst) {
+        if (cookies && cookiesFirst) {
           registerJourneyCookie(server, { base: `/${setId}` })
         }
         if (seams) {
           installSeams(setId, omit)
         }
-        if (!cookiesFirst) {
+        if (cookies && !cookiesFirst) {
           registerJourneyCookie(server, { base: `/${setId}` })
         }
         assertSetConfigured(server, setId)
@@ -157,9 +167,23 @@ describe('set completeness — a set that forgets a seam refuses to mount', () =
     }
   )
 
+  it('Should refuse to mount a set that never configured the session seam', async () => {
+    const setId = 'probe-no-session'
+
+    // Cookies skipped too: `registerJourneyCookie` refuses an unconfigured
+    // session at its own point of use, so the gate would never be reached.
+    await expect(
+      mount(probeGateway(setId, { omit: 'session', cookies: false }))
+    ).rejects.toThrow(
+      `Set "${setId}" mounted without configuring: session (configureSession)`
+    )
+  })
+
   it('Should name every seam when a set configured none of them', async () => {
     const setId = 'probe-no-seams'
-    const registration = mount(probeGateway(setId, { seams: false }))
+    const registration = mount(
+      probeGateway(setId, { seams: false, cookies: false })
+    )
 
     // The obligation set can only be missed this way: the fulfilment registry
     // and the dispatch index both validate against it as they are built, so an
@@ -180,7 +204,8 @@ describe('set completeness — a set that forgets a seam refuses to mount', () =
         'records (configureRecords)',
         'dispatch (buildDispatch)',
         'Obligation set (configureObligationSet)',
-        'Fulfilment registry (configureFulfilmentRegistry)'
+        'Fulfilment registry (configureFulfilmentRegistry)',
+        'Ready-for-check-your-answers (configureReadyForCheckYourAnswers)'
       ])
     )
   })
@@ -195,16 +220,33 @@ describe('set completeness — a fully configured set mounts', () => {
 })
 
 describe('set completeness — journey cookies come after the session seam', () => {
+  it('Should refuse a set that never registered its journey cookies', async () => {
+    const setId = 'probe-no-cookies'
+
+    // Every seam configured, so the seam check passes and the cookie-name
+    // comparison is the only thing left to catch it. The point-of-use guard
+    // cannot: a call that never happens cannot refuse. Nothing else would
+    // either — the set reads cookies the server never registered, and loses
+    // drafts at request time.
+    await expect(
+      mount(probeGateway(setId, { cookies: false }))
+    ).rejects.toThrow(
+      `Set "${setId}" mounted without its journey cookies: ${setId}-known`
+    )
+  })
+
   it('Should refuse a set that registered its journey cookies first', async () => {
     const setId = 'probe-cookies-first'
 
     // registerJourneyCookie reads the names off the session seam, so running it
-    // first silently registers the shared defaults. The set then reads cookies
-    // nobody set — invisible until a user loses their draft.
+    // first would silently register the shared defaults. It refuses at the
+    // point of use rather than waiting for the gate — the cookie-name
+    // comparison in set-completeness.js is the backstop for a gateway that
+    // skipped the call altogether, covered above.
     await expect(
       mount(probeGateway(setId, { cookiesFirst: true }))
     ).rejects.toThrow(
-      `Set "${setId}" mounted without its journey cookies: ${setId}-known`
+      `Session not configured for set "${setId}" — call configureSession before registerJourneyCookie`
     )
   })
 })

@@ -140,9 +140,9 @@ export const routeWithSetContext = (setId, route) => ({
  * completeness check at mount reads this rather than a hand-kept list a new
  * seam could quietly fall out of.
  *
- * Seams with a real default — the answers-for-read sanitiser, the
- * ready-for-check-your-answers roll-up — register nothing here: a set that
- * leaves them alone is correctly configured.
+ * Seams with a real default — the answers-for-read sanitiser, the flow-only
+ * keys the journey flow forwards — register nothing here: a set that leaves
+ * them alone is correctly configured.
  */
 const requiredSeams = new Map()
 

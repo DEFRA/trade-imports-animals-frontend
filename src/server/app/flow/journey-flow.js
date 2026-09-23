@@ -1,3 +1,4 @@
+import { configureFlowOnlyKeys } from '../bridge/flow-only-keys.js'
 import { currentSetId, setKeyed } from '../shared/set-context.js'
 
 const unconfigured = () => {
@@ -11,7 +12,6 @@ const UNCONFIGURED = Object.freeze({
   taskRows: [],
   rowStatus: unconfigured,
   nextRunTarget: unconfigured,
-  flowOnlyKeys: [],
   entryGuardTarget: unconfigured
 })
 
@@ -24,6 +24,10 @@ const configured = () =>
 
 export const configureJourneyFlow = (setId, journeyFlow) => {
   store.configure(setId, journeyFlow)
+  // Forwarded to the bridge sibling rather than left for a reader up here: the
+  // two bridge modules that consume the list must not import from flow. The
+  // journey still declares it in one place, in its own flow module.
+  configureFlowOnlyKeys(setId, journeyFlow.flowOnlyKeys ?? [])
 }
 
 export const journeySections = () => configured().sections
@@ -31,7 +35,6 @@ export const journeyTaskRows = () => configured().taskRows
 export const journeyRowStatus = (...args) => configured().rowStatus(...args)
 export const journeyNextRunTarget = (...args) =>
   configured().nextRunTarget(...args)
-export const journeyFlowOnlyKeys = () => configured().flowOnlyKeys
 export const journeyEntryGuardTarget = async (...args) =>
   configured().entryGuardTarget(...args)
 export const journeyLayout = () => configured().layout

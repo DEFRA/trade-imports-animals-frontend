@@ -1,4 +1,6 @@
 import { configureFulfilmentRegistry } from '../src/server/app/bridge/fulfilment-registry.js'
+import { configureReadyForCheckYourAnswers } from '../src/server/app/bridge/readiness-config.js'
+import { readyForCheckYourAnswers } from '../src/server/app/flow/section-status.js'
 import { configureObligationSet } from '../src/server/app/model/obligations/manifest.js'
 import { configureCommodityReference } from '../src/server/app/services/persistence/records/notification-mapper/commodity-reference.js'
 import { featureEvaluationBindings } from '../src/server/app/sets/live-animals/journeys/linear/features/evaluation.js'
@@ -28,6 +30,12 @@ registerSetMount(SET_ID, SET_BASE)
 
 configureObligationSet(SET_ID, liveAnimalsObligationSet)
 configureFulfilmentRegistry(SET_ID, featureEvaluationBindings)
+// The readiness seam is fail-closed until it is injected, so this setup wires
+// the real roll-up exactly as `routes-live-animals.js` does. A suite that wants
+// a fixed answer overrides it with `configureReadyForCheckYourAnswers` of its
+// own; `bridge/readiness-config.test.js` observes the default from a set id
+// this setup never touches.
+configureReadyForCheckYourAnswers(SET_ID, readyForCheckYourAnswers)
 configureCommodityReference(SET_ID, commodities)
 configureJourneyFlow(SET_ID, {
   sections,
