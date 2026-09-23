@@ -7,11 +7,11 @@ const addressIdsIn = (answers) =>
   [answers?.contactAddress?.addressId].filter(Boolean)
 
 export const buildValidationContext = async (answers, { orgId }) => {
-  const addressResolutions = await addressBook.partiesByIds(
+  const addressStatuses = await addressBook.addressStatusByIds(
     orgId,
     addressIdsIn(answers)
   )
-  return { addressResolutions }
+  return { addressStatuses }
 }
 
 export const validateAllStored = async (answers, { orgId }) => {

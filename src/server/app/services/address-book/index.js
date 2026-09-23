@@ -131,10 +131,18 @@ export const party = async (orgId, id) => {
   return client.getAddress(orgId, id)
 }
 
-/** For each unique id, the current record or `undefined`. Fans out over
- * `party` — no batch endpoint yet, and per-notification lists are short. */
-export const partiesByIds = async (orgId, ids) => {
-  const uniqueIds = [...new Set(ids)]
+/** For each unique address id, `true` when the record exists and is not
+ * soft-deleted, `false` otherwise. Fans out over `party` — no batch
+ * endpoint yet, and per-notification lists are short. Returns the lean
+ * shape the validate-on-load aggregator needs; callers that want the
+ * whole record should call `party` per id. */
+export const addressStatusByIds = async (orgId, addressIds) => {
+  const uniqueIds = [...new Set(addressIds)]
   const records = await Promise.all(uniqueIds.map((id) => party(orgId, id)))
-  return new Map(uniqueIds.map((id, index) => [id, records[index]]))
+  return new Map(
+    uniqueIds.map((id, index) => [
+      id,
+      Boolean(records[index] && !records[index].deleted)
+    ])
+  )
 }

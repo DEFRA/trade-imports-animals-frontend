@@ -303,51 +303,54 @@ describe('#party', () => {
   })
 })
 
-describe('#partiesByIds', () => {
+describe('#addressStatusByIds', () => {
   test('Should return an empty map for no ids', async () => {
     realMode()
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
 
-    const { partiesByIds } = await addressBook()
+    const { addressStatusByIds } = await addressBook()
 
-    expect(await partiesByIds(ORG, [])).toEqual(new Map())
+    expect(await addressStatusByIds(ORG, [])).toEqual(new Map())
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  test('Should resolve a batch of ids to their current records', async () => {
+  test('Should mark every resolvable id as true', async () => {
     realMode()
     stubFetch(async (url) => {
       const id = new URL(url).pathname.split('/').pop()
       return okResponse(operator(id))
     })
 
-    const { partiesByIds } = await addressBook()
-    const result = await partiesByIds(ORG, ['record-7', 'record-9'])
+    const { addressStatusByIds } = await addressBook()
 
-    expect(result.get('record-7')).toMatchObject({ id: 'record-7' })
-    expect(result.get('record-9')).toMatchObject({ id: 'record-9' })
-  })
-
-  test('Should carry soft-deleted records through unchanged', async () => {
-    realMode()
-    stubFetch(async () => okResponse(operator('record-7', { deleted: true })))
-
-    const { partiesByIds } = await addressBook()
-
-    expect(await partiesByIds(ORG, ['record-7'])).toEqual(
-      new Map([['record-7', expect.objectContaining({ deleted: true })]])
+    expect(await addressStatusByIds(ORG, ['record-7', 'record-9'])).toEqual(
+      new Map([
+        ['record-7', true],
+        ['record-9', true]
+      ])
     )
   })
 
-  test('Should map an id the organisation cannot see to undefined', async () => {
+  test('Should mark a soft-deleted id as false', async () => {
+    realMode()
+    stubFetch(async () => okResponse(operator('record-7', { deleted: true })))
+
+    const { addressStatusByIds } = await addressBook()
+
+    expect(await addressStatusByIds(ORG, ['record-7'])).toEqual(
+      new Map([['record-7', false]])
+    )
+  })
+
+  test('Should mark an id the organisation cannot see as false', async () => {
     realMode()
     stubFetch(async () => ({ ok: false, status: 404, statusText: 'Not Found' }))
 
-    const { partiesByIds } = await addressBook()
+    const { addressStatusByIds } = await addressBook()
 
-    expect(await partiesByIds(ORG, ['record-7'])).toEqual(
-      new Map([['record-7', undefined]])
+    expect(await addressStatusByIds(ORG, ['record-7'])).toEqual(
+      new Map([['record-7', false]])
     )
   })
 
@@ -356,8 +359,12 @@ describe('#partiesByIds', () => {
     const fetchMock = vi.fn(async () => okResponse(operator('record-7')))
     vi.stubGlobal('fetch', fetchMock)
 
-    const { partiesByIds } = await addressBook()
-    const result = await partiesByIds(ORG, ['record-7', 'record-7', 'record-7'])
+    const { addressStatusByIds } = await addressBook()
+    const result = await addressStatusByIds(ORG, [
+      'record-7',
+      'record-7',
+      'record-7'
+    ])
 
     expect(result.size).toBe(1)
     expect(fetchMock).toHaveBeenCalledTimes(1)
@@ -396,8 +403,8 @@ describe('writes', () => {
 
     expect(Object.keys(book).sort()).toEqual([
       'PAGE_SIZE',
+      'addressStatusByIds',
       'all',
-      'partiesByIds',
       'party',
       'search'
     ])

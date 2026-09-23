@@ -10,8 +10,7 @@ export const validateStoredAnswers = async (answers, ctx) => {
   if (!id) {
     return {}
   }
-  const record = ctx.addressResolutions.get(id)
-  if (!record || record.deleted) {
+  if (!ctx.addressStatuses.get(id)) {
     return { [CONTACT_PARTY.id]: copy.errors.contactNoLongerAvailable }
   }
   return {}
