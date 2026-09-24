@@ -24,6 +24,8 @@ export const copy = {
     parishDigitsOnly: 'Parish must only contain numbers',
     holdingRequired: 'Enter the holding number',
     holdingLength: 'Holding number must be 4 digits',
-    holdingDigitsOnly: 'Holding number must only contain numbers'
+    holdingDigitsOnly: 'Holding number must only contain numbers',
+    cphNoLongerValid:
+      'The saved CPH number is no longer valid. Re-enter the county, parish and holding numbers.'
   }
 }
