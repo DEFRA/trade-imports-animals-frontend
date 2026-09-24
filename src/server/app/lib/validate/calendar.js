@@ -87,7 +87,7 @@ export const addUtcMonths = (date, months) =>
 export const parseDateText = (raw) => {
   const text = String(raw ?? '').trim()
   // date-fns reads `yyyy` as one to four digits, so without this guard
-  // `27/3/26` parses as the year 26 and slips under a `max` bound.
+  // `27/3/26` parses as a year in the 1900s and slips under a `max` bound.
   if (!DATE_TEXT_SHAPE.test(text)) {
     return null
   }
