@@ -501,6 +501,26 @@ test.describe('check-answers feature unfinished notification', () => {
     ).toBeVisible()
   })
 
+  test('refuses submit of a notification with no commodity line and names the missing species details', async ({
+    page
+  }) => {
+    await startNotification(page)
+    const reviewUrl = journeyUrl(page, NOTIFICATION_VIEW_SLUG)
+    await page.goto(reviewUrl)
+
+    await page.getByRole('button', { name: copy.submit.button }).click()
+
+    await expect(page).toHaveURL(reviewUrl)
+    const speciesEntry = page.getByRole('link', {
+      name: copy.errors.cards.species
+    })
+    await expect(speciesEntry).toBeVisible()
+    await expect(speciesEntry).toHaveAttribute(
+      'href',
+      '#description-of-the-goods'
+    )
+  })
+
   test('unfinished review has no serious or critical axe violations', async ({
     page
   }) => {

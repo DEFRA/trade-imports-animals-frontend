@@ -1,5 +1,6 @@
 import {
   BASE,
+  journeyUrl,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
@@ -10,6 +11,7 @@ import {
   validatorDefaults
 } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
+import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { copy as hubCopy } from '../hub/copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
@@ -190,6 +192,41 @@ test.describe('origin feature', () => {
     await expect(page.getByLabel(copy.internalReference.label)).toHaveValue(
       'Imports456_GB'
     )
+  })
+
+  test('the region of origin code is still held and shown after it is made optional', async ({
+    page
+  }) => {
+    const originUrl = page.url()
+
+    await fillOriginAnswers(page, { regionCode: '75' })
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
+
+    await page.goto(originUrl)
+    await page.getByRole('radio', { name: copy.regionRequirement.no }).check()
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await expect(page).toHaveURL(urlUnderBase(COMMODITIES_PATH_PATTERN))
+
+    await page.goto(originUrl)
+    await expect(
+      page.getByRole('radio', { name: copy.regionRequirement.no })
+    ).toBeChecked()
+    // The box lives in the Yes conditional and is hidden under No, so the
+    // label is not a reliable locator once the requirement has flipped.
+    await expect(page.locator('#regionOfOriginCodeSuffix')).toHaveValue('75')
+
+    await page.goto(journeyUrl(page, 'notification-view'))
+    await expect(
+      page
+        .getByRole('term')
+        .filter({
+          has: page.getByText(checkAnswersCopy.rows.regionCode, {
+            exact: true
+          })
+        })
+        .locator('..')
+    ).toContainText('FR-75')
   })
 
   test('shows the country already chosen as a fixed prefix beside the region code box', async ({
