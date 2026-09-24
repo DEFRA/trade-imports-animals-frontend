@@ -28,6 +28,7 @@ import { dispatchPages } from '../index.js'
 
 import * as declaration from './controller.js'
 import * as reinflate from '../addresses/reinflate-party-answers.js'
+import * as refusal from '../check-answers/refusal.js'
 import { records } from '../../../../../../engine/persistence/records.js'
 
 const post = postHandlerOf(declaration)
@@ -76,6 +77,10 @@ describe('#declaration', () => {
 
       it('Should persist reinflated party answers before submit', async () => {
         configureReadyForCheckYourAnswers(SET_ID, () => true)
+        // The refusal predicate needs the address book set up to resolve the
+        // seeded consignor; this test is about the reinflate/replace order,
+        // not the refusal path, so short-circuit it.
+        vi.spyOn(refusal, 'isReviewRefused').mockResolvedValue(false)
         const inflated = {
           consignor: {
             addressId: 'consignor-1',
@@ -110,6 +115,23 @@ describe('#declaration', () => {
         expect(result.response).toEqual({
           redirect: pagePath(result.journeyId, 'notification-view')
         })
+      })
+
+      it('Should redirect to check answers when a stored answer has gone stale', async () => {
+        configureReadyForCheckYourAnswers(SET_ID, () => true)
+        vi.spyOn(refusal, 'isReviewRefused').mockResolvedValue(true)
+        // seedAnswers itself calls replaceFulfilment, so finalise — only
+        // submitJourney calls it — is the signal that nothing was submitted.
+        const finaliseSpy = vi.spyOn(records, 'finalise')
+
+        const result = await driveHandler(post, {
+          payload: { declaration: 'confirmed' }
+        })
+
+        expect(result.response).toEqual({
+          redirect: pagePath(result.journeyId, 'notification-view')
+        })
+        expect(finaliseSpy).not.toHaveBeenCalled()
       })
 
       it('Should redirect an already-submitted POST retry to confirmation', async () => {

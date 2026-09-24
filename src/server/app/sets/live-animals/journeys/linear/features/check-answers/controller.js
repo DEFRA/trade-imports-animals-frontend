@@ -25,6 +25,7 @@ import {
 import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { partiesForRender } from '../addresses/parties-for-render.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
+import { isReviewRefused } from './refusal.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 
@@ -168,36 +169,20 @@ export const renderNotificationView = async (
 const get = async (request, h) => renderNotificationView(request, h)
 
 const post = async (request, h) => {
-  const { journey, answers, storedAnswers, scope } = await state.get(request, h)
-  // Same source as the GET, or the refusal and the page would disagree.
-  const source = storedAnswers ?? answers
-  const parties = await partiesForRender(request, journey, source)
-  // A submitted notification is read-only: the GET zeroes its errors, so the
-  // POST must not refuse it either.
-  const readOnly = journey.status === state.SUBMITTED
-  // Sanitised `answers` in, raw `storedAnswers` via context — see the GET's
-  // comment on `cardStoredErrors`.
-  const invalidCardErrors = readOnly
-    ? {}
-    : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
-  // An unfinished notification is refused here rather than three pages later at
-  // the declaration's submit, where the same readiness test used to bounce the
-  // trader back to this page saying nothing. `readyForCheckYourAnswers` is the
-  // roll-up of the very task rows `incompleteCardErrors` reads, so a refusal
-  // always arrives with a summary naming what is left. A stored answer that no
-  // longer passes its own page's rules refuses the same way, even on a
-  // notification the roll-up otherwise counts as finished.
-  const refused =
-    !readOnly &&
-    (!scope.readyForCheckYourAnswers ||
-      Object.keys(outstandingPartyErrors(source, parties)).length > 0 ||
-      Object.keys(invalidCardErrors).length > 0)
-  if (refused) {
+  // An unfinished notification, an address whose party has been deleted, or
+  // a stored answer that no longer passes its own page's rules all refuse
+  // here rather than three pages later at the declaration's submit, where
+  // the same readiness test used to bounce the trader back to this page
+  // saying nothing. The declaration handler asks `isReviewRefused` too, so
+  // a trader who lands there past this page (bookmark, back-button) sees
+  // the same refusal — see `refusal.js`.
+  if (await isReviewRefused(request, h)) {
     const rendered = await renderNotificationView(request, h, {
       disableAutoFocus: false
     })
     return rendered.code(HTTP_STATUS_BAD_REQUEST)
   }
+  const { journey, scope } = await state.get(request, h)
   return h.redirect(nextInSection(page.id, scope, journey.journeyId))
 }
 

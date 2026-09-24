@@ -20,6 +20,7 @@ import { assembleFulfilments } from '../../../../../../bridge/assemble-fulfilmen
 import { records } from '../../../../../../engine/persistence/records.js'
 import { buildActor } from '../../../../../../../common/helpers/actor-helpers.js'
 import { reinflatePartyAnswers } from '../addresses/reinflate-party-answers.js'
+import { isReviewRefused } from '../check-answers/refusal.js'
 
 export const meta = { ...page, collects: ['declaration'] }
 const view = `${TEMPLATES}/features/declaration/template`
@@ -70,6 +71,14 @@ const post = async (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) {
     return render(h, journey, values, errors).code(HTTP_STATUS_BAD_REQUEST)
+  }
+
+  // The review page's Continue button asks the same question; a trader who
+  // lands here past it (bookmark, back-button) has to answer it too, so a
+  // stored answer that has gone stale since it was reviewed does not get
+  // submitted silently.
+  if (await isReviewRefused(request, h)) {
+    return h.redirect(pagePath(journey.journeyId, kit.CYA_SLUG))
   }
 
   let result
