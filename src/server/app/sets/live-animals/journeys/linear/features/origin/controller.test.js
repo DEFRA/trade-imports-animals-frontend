@@ -374,8 +374,8 @@ describe('POST /origin — region code kept when the requirement becomes optiona
   })
   beforeEach(() => store.clear())
 
-  it('The code survives being made optional', async () => {
-    await driveHandler(post, {
+  const flipStoredCodeToOptional = async () => {
+    const first = await driveHandler(post, {
       payload: {
         countryOfOrigin: 'FR',
         regionOfOriginCodeRequirement: 'yes',
@@ -385,6 +385,7 @@ describe('POST /origin — region code kept when the requirement becomes optiona
     })
 
     const flipped = await driveHandler(post, {
+      seed: first.after,
       payload: {
         countryOfOrigin: 'FR',
         regionOfOriginCodeRequirement: 'no',
@@ -393,8 +394,14 @@ describe('POST /origin — region code kept when the requirement becomes optiona
       }
     })
 
+    expect(flipped.view).toBeUndefined()
     expect(flipped.after.regionOfOriginCode).toBe('FR-75')
     expect(flipped.after.regionOfOriginCodeRequirement).toBe('no')
+    return flipped
+  }
+
+  it('The code survives being made optional', async () => {
+    const flipped = await flipStoredCodeToOptional()
 
     const rendered = await driveHandler(get, { seed: flipped.after })
     expect(rendered.view.context.values.regionOfOriginCodeSuffix).toBe('75')
@@ -404,28 +411,13 @@ describe('POST /origin — region code kept when the requirement becomes optiona
   })
 
   it('An answer survives a change of status', async () => {
-    await driveHandler(post, {
-      payload: {
-        countryOfOrigin: 'FR',
-        regionOfOriginCodeRequirement: 'yes',
-        regionOfOriginCodeSuffix: '75',
-        internalReferenceNumber: ''
-      }
-    })
-
-    const flipped = await driveHandler(post, {
-      payload: {
-        countryOfOrigin: 'FR',
-        regionOfOriginCodeRequirement: 'no',
-        regionOfOriginCodeSuffix: '75',
-        internalReferenceNumber: ''
-      }
-    })
-
-    expect(flipped.after.regionOfOriginCode).toBe('FR-75')
+    const flipped = await flipStoredCodeToOptional()
 
     const rendered = await driveHandler(get, { seed: flipped.after })
     expect(rendered.view.context.values.regionOfOriginCodeSuffix).toBe('75')
+    expect(rendered.view.context.values.regionOfOriginCodeRequirement).toBe(
+      'no'
+    )
   })
 })
 
