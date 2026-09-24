@@ -8,6 +8,7 @@ import { rowEntry } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
 import { FULFILLED, NA } from '../../../../../../bridge/status/index.js'
 import { rowStatus, taskRowById } from '../../flow/task-rows.js'
+import { invalidRowIds } from '../../flow/stored-answers.js'
 import { notificationViewPage } from '../check-answers/page.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
 import { journeyStrip, routeOptions } from '../../../../../../shared/kit.js'
@@ -65,8 +66,11 @@ const TO_DO_TAG = {
 // they still drive what the review page asks for and when the notification may
 // be submitted. Only the word on the hub stops drawing them. Finished is the
 // single thing the tag reads off the status, so this asks that one question
-// rather than tabulating the five answers the engine can give.
-const statusTag = (status) => (status === FULFILLED ? COMPLETE_TAG : TO_DO_TAG)
+// rather than tabulating the five answers the engine can give — except that a
+// row whose stored answer no longer passes its own page's rules (`invalid`)
+// is never read as Complete either, whatever the engine's status says.
+const statusTag = (status, invalid) =>
+  status === FULFILLED && !invalid ? COMPLETE_TAG : TO_DO_TAG
 
 // Design release 1 ends the hub with a primary "Review and submit" button, not
 // a task row: the review page is offered whatever else has been answered, so a
@@ -81,13 +85,20 @@ const isHiddenRow = (row, status) => row.conditional && status === NA
 // order, so a row is a link and carries a real status whatever else has been
 // answered. A row that does not apply to this consignment leaves the list
 // (`isHiddenRow`) rather than sitting on it shut.
-const rowItem = (base, row, scope, status, journeyId) => ({
+const rowItem = (base, row, scope, status, journeyId, invalid) => ({
   ...base,
   href: rowEntry(row, scope, journeyId),
-  status: statusTag(status)
+  status: statusTag(status, invalid)
 })
 
-const buildRowItem = (id, answers, scope, evaluation, journeyId) => {
+const buildRowItem = (
+  id,
+  answers,
+  scope,
+  evaluation,
+  journeyId,
+  invalidRows
+) => {
   const { title, hint } = copy.rows[id]
   const row = taskRowById(id)
   const status = rowStatus(row, answers, scope.inScope, evaluation)
@@ -100,15 +111,17 @@ const buildRowItem = (id, answers, scope, evaluation, journeyId) => {
     title: { text: title },
     ...(hint ? { hint: { text: hint } } : {})
   }
-  return rowItem(base, row, scope, status, journeyId)
+  return rowItem(base, row, scope, status, journeyId, invalidRows.has(id))
 }
 
-const buildGroups = (answers, scope, evaluation, journeyId) =>
+const buildGroups = (answers, scope, evaluation, journeyId, invalidRows) =>
   GROUPS.map((group) => ({
     id: group.id,
     caption: copy.groups[group.id],
     items: group.rows
-      .map((id) => buildRowItem(id, answers, scope, evaluation, journeyId))
+      .map((id) =>
+        buildRowItem(id, answers, scope, evaluation, journeyId, invalidRows)
+      )
       .filter(Boolean)
   }))
 
@@ -133,7 +146,16 @@ const buildCommodityTotals = (answers, evaluation) => {
 const handler = async (request, h) => {
   const { journeyId } = request.params
   await completeOpeningRun(request, h, journeyId)
-  const { journey, answers, scope, evaluation } = await state.get(request, h)
+  const { journey, answers, storedAnswers, scope, evaluation } =
+    await state.get(request, h)
+
+  // A row whose stored answer no longer passes its own page's rules is not
+  // complete, so it must read "To do" here — computed once per request and
+  // threaded through the group/row builders. `rowStatus` stays a pure,
+  // synchronous engine query that other callers (the review page's readiness
+  // roll-up, entry-guards) still read unchanged; this demotion is the hub's
+  // own presentation decision, not the engine's.
+  const invalidRows = await invalidRowIds(answers, { storedAnswers })
 
   // No back link: Design release 1 treats the overview as the top of the
   // notification rather than a step within it, so the way off the page is the
@@ -145,7 +167,7 @@ const handler = async (request, h) => {
     sharedCopy,
     journeyStrip: journeyStrip(journey),
     commodityTotals: buildCommodityTotals(answers, evaluation),
-    groups: buildGroups(answers, scope, evaluation, journeyId),
+    groups: buildGroups(answers, scope, evaluation, journeyId, invalidRows),
     reviewHref: reviewHref(journeyId),
     dashboardHref: dashboardPath()
   })

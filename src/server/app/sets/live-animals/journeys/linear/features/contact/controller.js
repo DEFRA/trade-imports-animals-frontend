@@ -5,11 +5,7 @@ import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../lib/http-status.js'
-import {
-  compose,
-  oneOf,
-  validate
-} from '../../../../../../lib/validate/index.js'
+import { hasErrors } from '../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
@@ -27,8 +23,9 @@ import {
 import { consignmentContactSelectPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
+import { validation } from './validate.js'
 
-export const meta = { ...page, collects: ['contactAddress'] }
+export const meta = { ...page, collects: ['contactAddress'], validation }
 const view = `${TEMPLATES}/features/contact/template`
 
 const copy = copyFor({ en, cy })
@@ -44,18 +41,6 @@ const handshakeErrorSummary = (error) =>
 
 const resolveErrorSummary = (errors, handshakeError) =>
   kit.errorSummary(errors) ?? handshakeErrorSummary(handshakeError)
-
-const fields = (options) =>
-  compose(
-    // Contact is mandatory as an obligation, but Save and continue with no
-    // selection is allowed — the trader returns to the hub with the task
-    // incomplete. Reject only values that are not in the offered list.
-    oneOf(
-      'contactAddress',
-      options.map((option) => option.id),
-      copy.errors.contactRequired
-    )
-  )
 
 const addressSummary = (address) =>
   [addressText(address), address.country].filter(Boolean).join(', ')
@@ -92,8 +77,13 @@ const render = (
   })
 
 const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
+  const { journey, answers, storedAnswers } = await state.get(request, h)
   const orgId = organisationIdOf(request)
+  const options = [...(await addressBook.all(orgId))]
+  const { values, errors } = await validation.onStored(answers, {
+    addressOptions: options,
+    storedAnswers
+  })
   const handshakeError = handshakeErrorMessage(
     sharedCopy.addressHandshake.errors,
     request.query.handshakeError
@@ -102,10 +92,10 @@ const get = async (request, h) => {
   return render(
     h,
     journey,
-    { selectedId: answers.contactAddress?.addressId },
-    [...(await addressBook.all(orgId))],
+    { selectedId: values.contactAddress },
+    options,
     addAddressLinkFor(request, h, journey),
-    { recoverableError, handshakeError }
+    { errors, recoverableError, handshakeError }
   )
 }
 
@@ -113,8 +103,10 @@ const post = async (request, h) => {
   const payload = request.payload ?? {}
   const orgId = organisationIdOf(request)
   const options = await addressBook.all(orgId)
-  const { errors } = validate(fields(options), payload)
-  if (errors) {
+  const { errors } = await validation.onSubmit(payload, {
+    addressOptions: options
+  })
+  if (hasErrors(errors)) {
     const { journey } = await state.get(request, h)
     return render(
       h,

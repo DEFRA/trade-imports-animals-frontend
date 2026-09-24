@@ -27,6 +27,7 @@ import { routes } from './controller.js'
 import { buildSections } from './view-model/index.js'
 import { REVIEW_CARDS } from './view-model/incomplete-cards.js'
 import { copy as copyEn } from './copy/copy.en.js'
+import { copy as transportCopy } from '../transport/copy/copy.en.js'
 
 const getHandler = routes.find((route) => route.method === 'GET').handler
 const postHandler = routes.find((route) => route.method === 'POST').handler
@@ -92,6 +93,7 @@ const IMPORT_DETAILS_INCOMPLETE = 'Complete import details'
 const ADDRESSES_INCOMPLETE = 'Complete roles and addresses'
 const SPECIES_INCOMPLETE = 'Complete species details'
 const DOCUMENTS_INCOMPLETE = 'Complete documents'
+const ARRIVAL_DETAILS_INCOMPLETE = 'Complete arrival details'
 
 const withoutParty = (seed, partyId) => {
   const next = { ...seed }
@@ -1328,7 +1330,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
       'Complete reason for import',
       SPECIES_INCOMPLETE,
       'Complete additional animal details',
-      'Complete arrival details',
+      ARRIVAL_DETAILS_INCOMPLETE,
       'Complete transport details',
       'Complete roles and addresses',
       'Complete contact address for this consignment'
@@ -1347,7 +1349,7 @@ describe(`${SUITE} — the unfinished notification`, () => {
     })
 
     expect(texts).not.toContain(IMPORT_DETAILS_INCOMPLETE)
-    expect(texts).not.toContain('Complete arrival details')
+    expect(texts).not.toContain(ARRIVAL_DETAILS_INCOMPLETE)
     expect(texts).toContain('Complete transport details')
   })
 
@@ -1465,6 +1467,60 @@ describe(`${SUITE} — the unfinished notification`, () => {
     for (const entry of summary.errorList) {
       expect(ids, entry.text).toContain(entry.href.slice(1))
     }
+  })
+})
+
+// The review page re-runs each page's own validation over what is stored, so
+// an answer the reference data has since retired is named here rather than
+// surviving unnoticed to submission — the same message the port-of-entry page
+// itself gives on GET (`port-of-entry.controller.test.js`). `GB ZZZ` is absent
+// from the captured ports fixture, so it doubles as a stale stored code.
+describe(`${SUITE} — stale stored answers`, () => {
+  setupCheckAnswersEngine()
+
+  const STALE_PORT = 'GB ZZZ'
+  const staleMessage = transportCopy.portOfEntry.errors.portNoLongerAvailable
+  const staleSeed = { ...fullSeed, portOfEntry: STALE_PORT }
+
+  it('Should name the arrival-details card when its stored port is no longer offered', async () => {
+    const card = cardByTitle(await sectionsFor(staleSeed), ARRIVAL_DETAILS_CARD)
+
+    expect(card.error).toBe(staleMessage)
+  })
+
+  it('Should list the stale answer in the error summary, anchored to its card', async () => {
+    const summary = await summaryFor(staleSeed)
+
+    expect(summary.errorList).toContainEqual({
+      text: staleMessage,
+      href: '#arrival-details'
+    })
+  })
+
+  // Incomplete wins over invalid on the same card: a card that is both
+  // unfinished and carrying a stale value says "complete this section", not
+  // the stale answer's own message.
+  it('Should show the unfinished message, not the stale one, when the same card is also incomplete', async () => {
+    const seed = { ...staleSeed }
+    delete seed.meansOfTransport
+    const card = cardByTitle(await sectionsFor(seed), ARRIVAL_DETAILS_CARD)
+
+    expect(card.error).toBe(ARRIVAL_DETAILS_INCOMPLETE)
+  })
+
+  it('Should refuse Continue on an otherwise-complete notification carrying a stale stored answer', async () => {
+    const { response } = await driveHandler(postHandler, { seed: staleSeed })
+
+    expect(response.redirect).toBeUndefined()
+    expect(response.statusCode).toBe(400)
+  })
+
+  it('Should show neither a card error nor a summary entry for a stale answer on a submitted notification', async () => {
+    const { context } = await viewForStatus(SUBMITTED, staleSeed)
+    const card = cardByTitle(context.sections, ARRIVAL_DETAILS_CARD)
+
+    expect(card.error).toBeNull()
+    expect(context.errorSummary).toBeNull()
   })
 })
 

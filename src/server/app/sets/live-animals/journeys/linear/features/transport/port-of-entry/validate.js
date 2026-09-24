@@ -34,7 +34,10 @@ const arrivalDateRangeMessage = (stored, dateWindow) =>
 // with — two clock reads in one request would let the widget bounds and the
 // server bounds disagree across a midnight boundary. A reading that draws no
 // widget takes the window as it stands.
-const fields = async (values, { dateWindow = arrivalWindow(), stored } = {}) => {
+const fields = async (
+  _values,
+  { dateWindow = arrivalWindow(), stored } = {}
+) => {
   const portCodes = (await ports.list()).map((port) => port.code)
   return compose(
     dateTextInRange('arrivalDateAtPort', {

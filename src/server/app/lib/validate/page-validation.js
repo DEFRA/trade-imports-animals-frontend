@@ -40,6 +40,11 @@ export const hasErrors = (errors) => Object.keys(errors).length > 0
  * what is stored.
  * @param {Function} [page.toAnswers] - `(values) => answers`. What a valid form
  * commits. Defaults to the values themselves.
+ * @param {Function} [page.blanks] - `(field) => [fieldName, ...]`. The fields a
+ * page must not render back once the given field's stored value has been
+ * rejected — itself by default. Applied only on the stored reading: a trader
+ * who has just typed something wrong keeps seeing what they typed, but a
+ * control opened on a value the rules have since rejected must not hold it.
  */
 export const pageValidation = ({
   fields,
@@ -47,7 +52,8 @@ export const pageValidation = ({
   normalise = (values) => values,
   fromPayload,
   fromAnswers,
-  toAnswers = (values) => values
+  toAnswers = (values) => values,
+  blanks = (field) => [field]
 }) => {
   const errorsIn = async (values, context) => {
     const measured = normalise(values)
@@ -70,13 +76,19 @@ export const pageValidation = ({
       }
     },
 
-    /** Stored answers, read back through the same rules. */
+    /** Stored answers, read back through the same rules. A field the rules
+     * reject is blanked in the returned `values`, along with whatever else
+     * `blanks` says depends on it, so the caller has values already safe to
+     * render. */
     onStored: async (answers, context = {}) => {
       const values = fromAnswers(answers)
-      return {
-        values,
-        errors: await errorsIn(values, { ...context, stored: true })
+      const errors = await errorsIn(values, { ...context, stored: true })
+      for (const field of Object.keys(errors)) {
+        for (const blanked of blanks(field)) {
+          values[blanked] = ''
+        }
       }
+      return { values, errors }
     }
   }
 }

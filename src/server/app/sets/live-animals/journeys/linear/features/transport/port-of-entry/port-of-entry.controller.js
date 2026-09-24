@@ -90,9 +90,6 @@ const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const dateWindow = arrivalWindow()
   const { values, errors } = await validation.onStored(answers, { dateWindow })
-  if (errors.portOfEntry) {
-    values.portOfEntry = ''
-  }
   return render(h, journey, dateWindow, values, { errors })
 }
 
