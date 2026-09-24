@@ -60,7 +60,7 @@ describe('#validation for additional-details — onStored', () => {
     expect(errors).toEqual({})
   })
 
-  it('Should surface a certification value the catalogue no longer offers', async () => {
+  it('Should surface a certification value the catalogue no longer offers with the stored copy', async () => {
     const stored = {
       animalsCertifiedFor: 'not-a-purpose',
       commodityLines: [NON_UNWEANED_COMMODITY_LINE]
@@ -68,6 +68,6 @@ describe('#validation for additional-details — onStored', () => {
     const { errors } = await validation.onStored(stored, {
       storedAnswers: stored
     })
-    expect(errors).toHaveProperty('animalsCertifiedFor')
+    expect(errors.animalsCertifiedFor).toMatch(/no longer offered/)
   })
 })

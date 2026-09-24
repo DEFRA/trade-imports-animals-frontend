@@ -91,5 +91,9 @@ export const validation = pageValidation({
       PART_ORDER.map(([part]) => [part, String(payload[part] ?? '').trim()])
     ),
   fromAnswers: (answers) => splitStored(answers.countyParishHoldingCph),
-  toAnswers: (values) => ({ countyParishHoldingCph: joinParts(values) })
+  toAnswers: (values) => ({ countyParishHoldingCph: joinParts(values) }),
+  // A rejected stored value is one nine-digit thing; clear every part so
+  // the widget does not render two stray digits from a value the rules
+  // just refused.
+  blanks: () => [COUNTY_FIELD, PARISH_FIELD, HOLDING_FIELD]
 })

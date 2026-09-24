@@ -70,4 +70,11 @@ describe('#validation for cph-number — onStored', () => {
     })
     expect(errors).toHaveProperty('cphCounty')
   })
+
+  it('Should blank every part when a stored value has been rejected', async () => {
+    const { values } = await validation.onStored({
+      countyParishHoldingCph: '12345'
+    })
+    expect(values).toEqual({ cphCounty: '', cphParish: '', cphHolding: '' })
+  })
 })
