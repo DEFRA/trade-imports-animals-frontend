@@ -5,44 +5,27 @@ import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../lib/http-status.js'
-import {
-  compose,
-  oneOf,
-  validate
-} from '../../../../../../lib/validate/index.js'
+import { hasErrors } from '../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import * as certification from '../../../../../../services/certification-purposes/index.js'
-import * as commodities from '../../../../services/commodities/index.js'
 import { additionalDetailsPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
+import { unweanedApplies, validation } from './validate.js'
+
+export { unweanedApplies }
 
 export const meta = {
   ...page,
-  collects: ['animalsCertifiedFor', 'containsUnweanedAnimals']
+  collects: ['animalsCertifiedFor', 'containsUnweanedAnimals'],
+  validation
 }
 const view = `${TEMPLATES}/features/additional-details/template`
 
 const copy = copyFor({ en, cy })
 
-const asArray = (value) => [value ?? []].flat()
-
-export const unweanedApplies = (answers) =>
-  asArray(answers.commodityLines).some((line) =>
-    commodities.unweanedCommodities().includes(line?.commoditySelection)
-  )
-
 const UNWEANED_LABEL = { yes: copy.unweaned.yes, no: copy.unweaned.no }
-
-const certifiedField = oneOf(
-  'animalsCertifiedFor',
-  certification.certificationPurposes().map((option) => option.value)
-)
-const unweanedField = oneOf(
-  'containsUnweanedAnimals',
-  Object.keys(UNWEANED_LABEL)
-)
 
 const render = (
   h,
@@ -77,30 +60,21 @@ const render = (
 
 const get = async (request, h) => {
   const { journey, answers, scope } = await state.get(request, h)
-  return render(
-    h,
-    journey,
-    {
-      animalsCertifiedFor: answers.animalsCertifiedFor ?? '',
-      containsUnweanedAnimals: answers.containsUnweanedAnimals ?? ''
-    },
-    scope.has('containsUnweanedAnimals')
-  )
+  const showUnweaned = scope.has('containsUnweanedAnimals')
+  const { values, errors } = await validation.onStored(answers, {
+    showUnweaned
+  })
+  return render(h, journey, values, showUnweaned, errors)
 }
 
 const post = async (request, h) => {
   const { journey, scope } = await state.get(request, h)
   const showUnweaned = scope.has('containsUnweanedAnimals')
-  const payload = request.payload ?? {}
-  const values = {
-    animalsCertifiedFor: payload.animalsCertifiedFor ?? '',
-    containsUnweanedAnimals: payload.containsUnweanedAnimals ?? ''
-  }
-  const fields = showUnweaned
-    ? compose(certifiedField, unweanedField)
-    : compose(certifiedField)
-  const { errors } = validate(fields, payload)
-  if (errors) {
+  const { values, answers, errors } = await validation.onSubmit(
+    request.payload ?? {},
+    { showUnweaned }
+  )
+  if (hasErrors(errors)) {
     return render(h, journey, values, showUnweaned, errors).code(
       HTTP_STATUS_BAD_REQUEST
     )
@@ -109,10 +83,13 @@ const post = async (request, h) => {
   let committed
   const { failure } = await kit.recoverableSave(
     async () => {
+      // The reveal decides which of the two fields the notification carries —
+      // committing the unweaned answer under a commodity that does not ask for
+      // it would keep it around after a flip.
       committed = await state.commit(request, h, {
-        animalsCertifiedFor: values.animalsCertifiedFor,
+        animalsCertifiedFor: answers.animalsCertifiedFor,
         ...(showUnweaned
-          ? { containsUnweanedAnimals: values.containsUnweanedAnimals }
+          ? { containsUnweanedAnimals: answers.containsUnweanedAnimals }
           : {})
       })
     },
