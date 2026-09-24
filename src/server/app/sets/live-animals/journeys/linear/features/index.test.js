@@ -2,35 +2,38 @@ import { describe, expect, test } from 'vitest'
 
 import { pageModules } from './index.js'
 import { revalidators } from '../revalidators.js'
-import {
-  REVIEW_CARDS,
-  cardForPageId
-} from './check-answers/view-model/incomplete-cards.js'
+import { REVIEW_CARDS } from './check-answers/view-model/incomplete-cards.js'
 
 const dispatchModules = pageModules.filter((module) => module.meta)
 
-describe('#revalidators — card mapping', () => {
-  test('Every revalidator id maps to exactly one review card', () => {
-    for (const { id } of revalidators) {
-      const cardMatches = REVIEW_CARDS.filter((card) =>
-        (card.pages ?? []).includes(id)
+describe('#revalidators — surfaces', () => {
+  test('Every revalidator declares a surface', () => {
+    for (const { id, surface } of revalidators) {
+      expect(surface, `revalidator "${id}"`).toBeDefined()
+      expect(['card', 'party'], `revalidator "${id}" surface kind`).toContain(
+        surface.kind
       )
-      expect(cardMatches, `revalidator "${id}"`).toHaveLength(1)
     }
   })
 
-  test('cardForPageId returns the matching card for every revalidator id', () => {
-    for (const { id } of revalidators) {
-      expect(cardForPageId(id), `revalidator "${id}"`).toBeDefined()
+  test('Every card-surfaced revalidator names a real REVIEW_CARDS entry', () => {
+    const cardIds = new Set(REVIEW_CARDS.map((card) => card.id))
+    for (const { id, surface } of revalidators) {
+      if (surface.kind !== 'card') {
+        continue
+      }
+      expect(
+        cardIds.has(surface.cardId),
+        `revalidator "${id}" surface.cardId "${surface.cardId}"`
+      ).toBe(true)
     }
   })
 
-  test('Every card page id resolves to a defined page module', () => {
-    const dispatchIds = new Set(dispatchModules.map(({ meta }) => meta.id))
-    const allCardPageIds = REVIEW_CARDS.flatMap((card) => card.pages ?? [])
-    for (const pageId of allCardPageIds) {
-      expect(dispatchIds.has(pageId), `card page "${pageId}"`).toBe(true)
-    }
+  test('No two card-surfaced revalidators share the same cardId', () => {
+    const cardIds = revalidators
+      .filter(({ surface }) => surface.kind === 'card')
+      .map(({ surface }) => surface.cardId)
+    expect(new Set(cardIds).size).toBe(cardIds.length)
   })
 })
 

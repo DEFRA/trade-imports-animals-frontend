@@ -15,16 +15,15 @@ import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import { buildSections } from './view-model/index.js'
 import { changeHref } from './view-model/rows/change-link.js'
-import { outstandingPartyErrors } from './view-model/outstanding-parties.js'
 import {
   cardAnchorHref,
   incompleteCardErrors,
   withCardErrors
 } from './view-model/incomplete-cards.js'
+import { applyPerPageErrors } from './view-model/per-page-errors.js'
 import { partiesForRender } from '../addresses/parties-for-render.js'
 import { organisationIdOf } from '../addresses/resolve-parties.js'
 import { validateAllStored } from '../../validate-stored-answers.js'
-import { invalidCardErrors } from './view-model/invalid-cards.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
@@ -132,14 +131,13 @@ export const renderNotificationView = async (
   const perPageErrors = readOnly
     ? []
     : await validateAllStored(source, { orgId: organisationIdOf(request) })
+  const { cardErrors: invalidCards, partyErrors } =
+    applyPerPageErrors(perPageErrors)
   // Incomplete wins over invalid on the same card: "you haven't finished this
   // section" subsumes "one of your answers is no longer valid".
   const cardErrors = readOnly
     ? {}
-    : {
-        ...invalidCardErrors(perPageErrors),
-        ...incompleteCardErrors(answers, scope, evaluation)
-      }
+    : { ...invalidCards, ...incompleteCardErrors(answers, scope, evaluation) }
   return renderCya(h, journey, {
     answers,
     scope,
@@ -148,9 +146,9 @@ export const renderNotificationView = async (
     amendmentCancelled: readOnly && request.query.cancelled === '1',
     recoverableError,
     parties,
-    partyErrors: readOnly ? {} : outstandingPartyErrors(source, parties),
     // A submitted notification is a record of what was sent, so nothing on it
     // is outstanding however its answers now read.
+    partyErrors: readOnly ? {} : partyErrors,
     cardErrors,
     disableAutoFocus
   })
@@ -159,26 +157,25 @@ export const renderNotificationView = async (
 const get = async (request, h) => renderNotificationView(request, h)
 
 const post = async (request, h) => {
-  const { journey, answers, storedAnswers, scope } = await state.get(request, h)
+  const { journey, storedAnswers, answers, scope } = await state.get(request, h)
   // Same source as the GET, or the refusal and the page would disagree.
   const source = storedAnswers ?? answers
-  const parties = await partiesForRender(request, journey, source)
-  // A submitted notification is read-only: the GET zeroes its errors, so the
-  // POST must not refuse it either.
   const readOnly = journey.status === state.SUBMITTED
   // An unfinished notification is refused here rather than three pages later at
   // the declaration's submit, where the same readiness test used to bounce the
   // trader back to this page saying nothing. `readyForCheckYourAnswers` is the
   // roll-up of the very task rows `incompleteCardErrors` reads, so a refusal
   // always arrives with a summary naming what is left.
-  const perPageInvalid = readOnly
+  const perPageErrors = readOnly
     ? []
     : await validateAllStored(source, { orgId: organisationIdOf(request) })
+  const { cardErrors: invalidCards, partyErrors } =
+    applyPerPageErrors(perPageErrors)
   const refused =
     !readOnly &&
     (!scope.readyForCheckYourAnswers ||
-      Object.keys(outstandingPartyErrors(source, parties)).length > 0 ||
-      perPageInvalid.length > 0)
+      Object.keys(partyErrors).length > 0 ||
+      Object.keys(invalidCards).length > 0)
   if (refused) {
     const rendered = await renderNotificationView(request, h, {
       disableAutoFocus: false

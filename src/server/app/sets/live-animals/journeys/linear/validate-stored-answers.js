@@ -1,10 +1,14 @@
 import * as addressBook from '../../../../services/address-book/index.js'
+import { CONTACT_PARTY, PARTIES } from './features/addresses/parties.js'
 import { revalidators } from './revalidators.js'
 
-// Ids the aggregator pre-resolves so each hook reads from ctx rather than
-// re-fetching. Extractors grow as hooks that need pre-resolved data land.
+// Every party role that stores an address-book reference — the five
+// PARTIES roles plus the contact-address role. Ids the aggregator
+// pre-resolves so each hook reads from ctx rather than re-fetching.
+const ADDRESS_ROLES = [...PARTIES, CONTACT_PARTY]
+
 const addressIdsIn = (answers) =>
-  [answers?.contactAddress?.addressId].filter(Boolean)
+  ADDRESS_ROLES.map((party) => answers?.[party.id]?.addressId).filter(Boolean)
 
 export const buildValidationContext = async (answers, { orgId }) => {
   const addressStatuses = await addressBook.addressStatusByIds(

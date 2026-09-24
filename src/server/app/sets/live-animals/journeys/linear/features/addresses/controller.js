@@ -20,10 +20,6 @@ export const meta = {
     'importer'
   ]
 }
-
-// Deferred: the five party-picker roles reuse the contact hook's shape in a follow-up.
-export const skipValidateStored = true
-
 const view = `${TEMPLATES}/features/addresses/template`
 
 const copy = copyFor({ en, cy }).hub
