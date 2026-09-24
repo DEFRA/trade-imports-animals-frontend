@@ -14,7 +14,8 @@ const EMPTY = Object.freeze({
   built: false,
   pageOfObligation: new Map(),
   collectsByPage: new Map(),
-  slugByPage: new Map()
+  slugByPage: new Map(),
+  validationByPage: new Map()
 })
 
 const store = setKeyed('dispatch', { configuredBy: 'buildDispatch' })
@@ -65,9 +66,13 @@ const indexPages = (pages) => {
   const pageOfObligationMap = new Map()
   const collectsByPage = new Map()
   const slugByPage = new Map()
+  const validationByPage = new Map()
   for (const page of pages) {
     collectsByPage.set(page.id, page.collects ?? [])
     slugByPage.set(page.id, page.slug)
+    if (page.validation) {
+      validationByPage.set(page.id, page.validation)
+    }
     for (const obligationId of page.collects ?? []) {
       claimObligationOwner(pageOfObligationMap, obligationId, page.id)
     }
@@ -76,7 +81,8 @@ const indexPages = (pages) => {
     built: true,
     pageOfObligation: pageOfObligationMap,
     collectsByPage,
-    slugByPage
+    slugByPage,
+    validationByPage
   }
 }
 
@@ -114,3 +120,9 @@ export const pageOfObligation = (obligationId) =>
 export const collectsOf = (pageId) => index().collectsByPage.get(pageId) ?? []
 
 export const slugOfPage = (pageId) => index().slugByPage.get(pageId)
+
+/** The page's own validation, for a caller that holds a page id rather than the
+ * page's module — the task list and the review page, which reach their pages
+ * through the obligations those pages collect. Undefined for a page that states
+ * no rules of its own. */
+export const validationOf = (pageId) => index().validationByPage.get(pageId)

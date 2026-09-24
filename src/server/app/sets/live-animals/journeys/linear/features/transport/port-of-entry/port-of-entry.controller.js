@@ -5,13 +5,7 @@ import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../../lib/http-status.js'
-import {
-  compose,
-  dateTextInRange,
-  maxText,
-  oneOf,
-  validate
-} from '../../../../../../../lib/validate/index.js'
+import { hasErrors } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as ports from '../../../../../../../services/ports/index.js'
@@ -20,6 +14,7 @@ import { portOfEntryPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { arrivalWindow } from './arrival-window.js'
+import { validation } from './validate.js'
 
 export const meta = {
   ...page,
@@ -29,13 +24,12 @@ export const meta = {
     'meansOfTransport',
     'transportIdentification',
     'transportDocumentReference'
-  ]
+  ],
+  validation
 }
 const view = `${TEMPLATES}/features/transport/port-of-entry/port-of-entry`
 
 const copy = copyFor({ en, cy }).portOfEntry
-
-const TRANSPORT_FIELD_MAX_LENGTH = 58
 
 const portItems = async (selected) => [
   { value: '', text: copy.port.placeholder },
@@ -54,33 +48,6 @@ const meansItems = (selected) => [
     selected: code === selected
   }))
 ]
-
-const fields = async (dateWindow) => {
-  const portCodes = (await ports.list()).map((port) => port.code)
-  return compose(
-    dateTextInRange('arrivalDateAtPort', {
-      min: dateWindow.min,
-      max: dateWindow.max,
-      invalidMessage: copy.errors.arrivalDateInvalid,
-      rangeMessage: copy.errors.arrivalDateOutOfRange(
-        dateWindow.minText,
-        dateWindow.maxText
-      )
-    }),
-    oneOf('portOfEntry', portCodes),
-    oneOf('meansOfTransport', transportReference.meansOfTransport()),
-    maxText(
-      'transportIdentification',
-      TRANSPORT_FIELD_MAX_LENGTH,
-      copy.errors.identificationMaxLength
-    ),
-    maxText(
-      'transportDocumentReference',
-      TRANSPORT_FIELD_MAX_LENGTH,
-      copy.errors.documentReferenceMaxLength
-    )
-  )
-}
 
 const render = async (
   h,
@@ -115,46 +82,29 @@ const render = async (
     })
   })
 
-const isPortStale = async (code) => {
-  if (!code) {
-    return false
-  }
-  const offered = new Set((await ports.list()).map((port) => port.code))
-  return !offered.has(code)
-}
-
+// The stored answers go back through the page's own rules on the way in, so an
+// answer the reference data has moved past is named here rather than surviving
+// to the review page. A port that is no longer offered cannot be the select's
+// value either: the control opens on its placeholder with the message above it.
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  const stalePort = await isPortStale(answers.portOfEntry)
-  const values = {
-    arrivalDateAtPort: answers.arrivalDateAtPort ?? {},
-    portOfEntry: stalePort ? '' : (answers.portOfEntry ?? ''),
-    meansOfTransport: answers.meansOfTransport ?? '',
-    transportIdentification: answers.transportIdentification ?? '',
-    transportDocumentReference: answers.transportDocumentReference ?? ''
+  const dateWindow = arrivalWindow()
+  const { values, errors } = await validation.onStored(answers, { dateWindow })
+  if (errors.portOfEntry) {
+    values.portOfEntry = ''
   }
-  const errors = stalePort
-    ? { portOfEntry: copy.errors.portNoLongerAvailable }
-    : {}
-  return render(h, journey, arrivalWindow(), values, { errors })
+  return render(h, journey, dateWindow, values, { errors })
 }
 
 const post = async (request, h) => {
-  const payload = request.payload ?? {}
   // One clock read per request: two would let the widget bounds and the server
   // bounds disagree across a midnight boundary.
   const dateWindow = arrivalWindow()
-  const values = {
-    arrivalDateAtPort: kit.readDate(payload, 'arrivalDateAtPort'),
-    portOfEntry: payload.portOfEntry ?? '',
-    meansOfTransport: payload.meansOfTransport ?? '',
-    transportIdentification: (payload.transportIdentification ?? '').trim(),
-    transportDocumentReference: (
-      payload.transportDocumentReference ?? ''
-    ).trim()
-  }
-  const { errors } = validate(await fields(dateWindow), payload)
-  if (errors) {
+  const { values, answers, errors } = await validation.onSubmit(
+    request.payload ?? {},
+    { dateWindow }
+  )
+  if (hasErrors(errors)) {
     const { journey } = await state.get(request, h)
     return (await render(h, journey, dateWindow, values, { errors })).code(
       HTTP_STATUS_BAD_REQUEST
@@ -164,7 +114,7 @@ const post = async (request, h) => {
   let committed
   const { failure } = await kit.recoverableSave(
     async () => {
-      committed = await state.commit(request, h, values)
+      committed = await state.commit(request, h, answers)
     },
     async () => {
       const { journey } = await state.get(request, h)

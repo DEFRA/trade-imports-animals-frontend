@@ -51,6 +51,8 @@ export const copy = {
         `Arrival date at port of entry must be between ${earliest} and ${latest}`,
       portNoLongerAvailable:
         'The saved port of entry is no longer available. Select a port from the list.',
+      arrivalDateNoLongerInWindow:
+        'The saved arrival date is no longer a date you can choose. Enter a new arrival date.',
       identificationMaxLength:
         'Transport identification must be 58 characters or less',
       documentReferenceMaxLength:

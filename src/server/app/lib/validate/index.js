@@ -1,4 +1,5 @@
 export { validate } from './run.js'
+export { hasErrors, pageValidation } from './page-validation.js'
 export {
   compose,
   requiredText,
