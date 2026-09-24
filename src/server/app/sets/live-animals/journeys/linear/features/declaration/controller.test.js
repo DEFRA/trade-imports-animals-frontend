@@ -34,6 +34,8 @@ import { records } from '../../../../../../engine/persistence/records.js'
 const post = postHandlerOf(declaration)
 const get = declaration.routes.find((route) => route.method === 'GET').handler
 
+const CHECK_ANSWERS_SLUG = 'notification-view'
+
 describe('#declaration', () => {
   describe('POST /declaration', () => {
     describe('invalid payload', () => {
@@ -113,7 +115,7 @@ describe('#declaration', () => {
           payload: { declaration: 'confirmed' }
         })
         expect(result.response).toEqual({
-          redirect: pagePath(result.journeyId, 'notification-view')
+          redirect: pagePath(result.journeyId, CHECK_ANSWERS_SLUG)
         })
       })
 
@@ -129,7 +131,22 @@ describe('#declaration', () => {
         })
 
         expect(result.response).toEqual({
-          redirect: pagePath(result.journeyId, 'notification-view')
+          redirect: pagePath(result.journeyId, CHECK_ANSWERS_SLUG)
+        })
+        expect(finaliseSpy).not.toHaveBeenCalled()
+      })
+
+      it('Should redirect to check answers when a stored port has been withdrawn', async () => {
+        configureReadyForCheckYourAnswers(SET_ID, () => true)
+        const finaliseSpy = vi.spyOn(records, 'finalise')
+
+        const result = await driveHandler(post, {
+          payload: { declaration: 'confirmed' },
+          seed: { portOfEntry: 'GB ZZZ' }
+        })
+
+        expect(result.response).toEqual({
+          redirect: pagePath(result.journeyId, CHECK_ANSWERS_SLUG)
         })
         expect(finaliseSpy).not.toHaveBeenCalled()
       })
