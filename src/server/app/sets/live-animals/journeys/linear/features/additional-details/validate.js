@@ -8,9 +8,8 @@ import * as commodities from '../../../../services/commodities/index.js'
 
 const asArray = (value) => [value ?? []].flat()
 
-// Same predicate the controller's GET / POST uses via `scope.has(...)`. Kept
-// answers-derived so a stored reading (which has answers in hand but not scope)
-// can decide the same way.
+// Derived from answers, not scope: the stored reading has answers in hand
+// but not scope. Same predicate the controller uses via `scope.has(...)`.
 export const unweanedApplies = (answers) =>
   asArray(answers?.commodityLines).some((line) =>
     commodities.unweanedCommodities().includes(line?.commoditySelection)
@@ -22,10 +21,9 @@ const certifiedField = oneOf(
 )
 const unweanedField = oneOf('containsUnweanedAnimals', ['yes', 'no'])
 
-// The controller passes `showUnweaned` from `scope.has(...)` on POST; the
-// stored path (CYA / hub) does not carry scope, so `unweanedApplies` derives
-// the same predicate from the raw `storedAnswers` in context. Same reveal
-// answer either way.
+// Reveal derivation: POST gets `showUnweaned` from `scope.has(...)`; stored
+// (CYA / hub) has no scope, so falls back to `unweanedApplies` over
+// `storedAnswers`. Same answer either way.
 const fields = (_values, { showUnweaned, storedAnswers } = {}) => {
   const reveal = showUnweaned ?? unweanedApplies(storedAnswers)
   return reveal

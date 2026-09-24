@@ -4,14 +4,11 @@ import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { REVIEW_CARDS } from './view-model/incomplete-cards.js'
 import { outstandingPartyErrors } from './view-model/outstanding-parties.js'
 
-/** True when the review page must refuse the notification: an unfinished
- * obligation, an address whose party has been deleted, or a stored answer that
- * no longer passes its own page's rules. One place so the CYA Continue button
- * and the declaration submit measure it the same way — a trader who lands on
- * the declaration URL past the review page (a bookmark, a back-button) cannot
- * sneak past a refusal the review page would have shown them.
- *
- * A submitted notification is never refused — it is a record of what was sent.
+/** True when the review page must refuse the notification: unfinished, a
+ * deleted party address, or a stored answer past its rules. Shared with the
+ * declaration submit so a bookmark or back-button cannot sneak a stale
+ * submission past the review page's refusal. Submitted notifications are
+ * never refused — they are records of what was sent.
  */
 export const isReviewRefused = async (request, h) => {
   const { journey, answers, storedAnswers, scope } = await state.get(request, h)

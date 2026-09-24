@@ -18,10 +18,8 @@ const registerFor = (request) =>
       .map((record) => [transporters.nameKey(record.name), record])
   )
 
-// The picker offers rows the org has right now, so what counts as a valid id
-// is per-request. On submit the page passes the rendered records in; the
-// stored reading derives the same list from `request`, so both paths measure
-// against the same set without the caller having to plumb a `records` context.
+// Both readings measure against the same list: submit passes `records` in,
+// stored derives it from `request`. Per-org, so per-request.
 const availableIds = (context) =>
   context.records
     ? context.records.map((record) => record.id)
@@ -32,9 +30,9 @@ const fields = (_values, context = {}) =>
     oneOf('transporter', availableIds(context), copy.errors.transporterRequired)
   )
 
-// Stored answers carry the transporter's name, not the id the picker used, so
-// the stored check is a nameKey membership against the current register — the
-// same fold-and-lookup `selectedIdFor` does at render time.
+// Stored answers hold the transporter's name, not the picker's id, so the
+// check is a nameKey membership — the same lookup `selectedIdFor` does at
+// render.
 const checks = (_values, { stored, storedAnswers, request } = {}) => {
   if (!stored || !request) {
     return {}
@@ -55,11 +53,7 @@ export const validation = pageValidation({
   fields,
   checks,
   fromPayload: (payload) => ({ transporter: payload.transporter ?? '' }),
-  // Stored answers hold the picked transporter's details rather than the id
-  // of the row it came from, so `fromAnswers` cannot produce an id without
-  // the register in hand. Leaving `transporter` empty on the stored reading
-  // is fine — the schema is gated to POST (fields returns oneOf, but only
-  // POST would have a non-empty id to check), and stored membership is
-  // handled by `checks` above.
+  // Stored answers hold the transporter's name, not an id, so `fromAnswers`
+  // leaves `transporter` empty. Stored membership is `checks`'s job.
   fromAnswers: () => ({ transporter: '' })
 })

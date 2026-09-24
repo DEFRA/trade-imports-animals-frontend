@@ -43,10 +43,9 @@ const isBlank = (values) => PART_ORDER.every(([part]) => values[part] === '')
 
 const NINE_DIGITS = /^\d{9}$/
 
-// On submit, per-part rules name what is wrong; on stored, a lightweight
-// check names the whole thing at once — the per-part copy talks in terms of
-// what the trader is being asked to fill in, and does not read right when
-// what actually happened is that a stored value came in mis-shaped.
+// Stored path skips the per-part rules — their copy is written for a trader
+// filling in the form, not for one being told a stored value has gone bad.
+// `checks` fires one whole-value message instead.
 const fields = (values, { stored } = {}) => {
   if (stored || isBlank(values)) {
     return compose()

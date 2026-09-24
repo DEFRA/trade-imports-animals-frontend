@@ -169,13 +169,9 @@ export const renderNotificationView = async (
 const get = async (request, h) => renderNotificationView(request, h)
 
 const post = async (request, h) => {
-  // An unfinished notification, an address whose party has been deleted, or
-  // a stored answer that no longer passes its own page's rules all refuse
-  // here rather than three pages later at the declaration's submit, where
-  // the same readiness test used to bounce the trader back to this page
-  // saying nothing. The declaration handler asks `isReviewRefused` too, so
-  // a trader who lands there past this page (bookmark, back-button) sees
-  // the same refusal — see `refusal.js`.
+  // Refuses on the shared predicate — see `refusal.js`. The declaration
+  // handler asks the same question, so a trader landing there past this
+  // page cannot sneak past.
   if (await isReviewRefused(request, h)) {
     const rendered = await renderNotificationView(request, h, {
       disableAutoFocus: false
