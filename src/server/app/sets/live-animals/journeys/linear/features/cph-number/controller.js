@@ -18,10 +18,6 @@ import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 
 export const meta = { ...page, collects: ['countyParishHoldingCph'] }
-
-// Deferred: covered by the follow-up that extends validate-stored to the remaining collectors.
-export const skipValidateStored = true
-
 const view = `${TEMPLATES}/features/cph-number/template`
 
 const copy = copyFor({ en, cy })
@@ -51,7 +47,7 @@ const PART_ORDER = [
   [HOLDING_FIELD, HOLDING_DIGITS]
 ]
 
-const fields = compose(
+export const fields = compose(
   requiredExactDigits(COUNTY_FIELD, COUNTY_DIGITS, {
     required: copy.errors.countyRequired,
     length: copy.errors.countyLength,
@@ -76,7 +72,7 @@ const readParts = (payload) =>
 
 // A stored answer is nine bare digits, but a seeded or legacy one can carry the
 // slashes a trader used to type, so the split reads digits only.
-const splitStored = (stored) => {
+export const splitStored = (stored) => {
   const digits = String(stored ?? '').replace(/\D/g, '')
   let taken = 0
   return Object.fromEntries(

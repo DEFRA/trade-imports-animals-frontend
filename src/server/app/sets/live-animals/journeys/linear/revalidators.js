@@ -4,6 +4,9 @@ import { validateStoredAnswers as importReasonValidateStored } from './features/
 import { validateStoredAnswers as contactValidateStored } from './features/contact/validate-stored.js'
 import { validateStoredAnswers as transitCountriesValidateStored } from './features/transport/transit-countries/validate-stored.js'
 import { validateStoredAnswers as addressesValidateStored } from './features/addresses/validate-stored.js'
+import { validateStoredAnswers as additionalDetailsValidateStored } from './features/additional-details/validate-stored.js'
+import { validateStoredAnswers as cphNumberValidateStored } from './features/cph-number/validate-stored.js'
+import { validateStoredAnswers as transportersValidateStored } from './features/transport/transporters/validate-stored.js'
 
 /** Lives in a peer file rather than features/index.js so the aggregator can
  * import it without pulling in every page controller — the check-answers
@@ -45,5 +48,20 @@ export const revalidators = [
     id: 'addresses',
     run: addressesValidateStored,
     surface: { kind: 'party' }
+  },
+  {
+    id: 'additional-details',
+    run: additionalDetailsValidateStored,
+    surface: { kind: 'card', cardId: 'additionalAnimalDetails' }
+  },
+  {
+    id: 'cphNumber',
+    run: cphNumberValidateStored,
+    surface: { kind: 'card', cardId: 'rolesAndAddresses' }
+  },
+  {
+    id: 'transporters',
+    run: transportersValidateStored,
+    surface: { kind: 'card', cardId: 'transportDetails' }
   }
 ]

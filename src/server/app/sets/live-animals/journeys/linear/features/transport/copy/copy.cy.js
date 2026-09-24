@@ -130,7 +130,9 @@ export const copy = {
     noMatches: 'Nid oes unrhyw gludwyr yn cyfateb i’ch chwiliad.',
     add: 'Ychwanegu cludwr',
     errors: {
-      transporterRequired: 'Dewiswch gludwr o’r rhestr'
+      transporterRequired: 'Dewiswch gludwr o’r rhestr',
+      transporterNoLongerAvailable:
+        "Nid yw'r cludwr a arbedwyd ar gael mwyach. Dewiswch gludwr o'r rhestr."
     }
   },
   transporterAdd: {

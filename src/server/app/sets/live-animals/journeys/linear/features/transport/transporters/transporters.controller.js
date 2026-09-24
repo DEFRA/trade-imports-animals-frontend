@@ -28,11 +28,6 @@ export const meta = {
   ...page,
   collects: ['transporterType', 'commercialTransporter', 'privateTransporter']
 }
-
-// Deferred: the transporters register carries COMMERCIAL / PRIVATE / APPROVED / NEW
-// states worth thinking through before the hook lands.
-export const skipValidateStored = true
-
 const view = `${TEMPLATES}/features/transport/transporters/transporters`
 
 const copy = copyFor({ en, cy }).transporters

@@ -174,10 +174,16 @@ export const copy = {
       importDetails: 'Check import details — a saved answer is no longer valid',
       reasonForImport:
         'Check reason for import — a saved answer is no longer valid',
+      additionalAnimalDetails:
+        'Check additional animal details — a saved answer is no longer valid',
       arrivalDetails:
         'Check arrival details — a saved answer is no longer valid',
       transitCountries:
         'Check transit countries — a saved answer is no longer valid',
+      transportDetails:
+        'Check transport details — a saved answer is no longer valid',
+      rolesAndAddresses:
+        'Check roles and addresses — a saved answer is no longer valid',
       contactAddress:
         'Check contact address — a saved answer is no longer valid'
     }

@@ -22,10 +22,6 @@ export const meta = {
   ...page,
   collects: ['animalsCertifiedFor', 'containsUnweanedAnimals']
 }
-
-// Deferred: covered by the follow-up that extends validate-stored to the remaining collectors.
-export const skipValidateStored = true
-
 const view = `${TEMPLATES}/features/additional-details/template`
 
 const copy = copyFor({ en, cy })
@@ -47,6 +43,14 @@ const unweanedField = oneOf(
   'containsUnweanedAnimals',
   Object.keys(UNWEANED_LABEL)
 )
+
+// The unweaned rule only fires when the trader picked an unweaned commodity,
+// mirroring the reveal on the page itself; the empty-passes `oneOf` means the
+// certification rule always applies without needing its own branch.
+export const fieldsFor = (showUnweaned) =>
+  showUnweaned
+    ? compose(certifiedField, unweanedField)
+    : compose(certifiedField)
 
 const render = (
   h,
@@ -100,10 +104,7 @@ const post = async (request, h) => {
     animalsCertifiedFor: payload.animalsCertifiedFor ?? '',
     containsUnweanedAnimals: payload.containsUnweanedAnimals ?? ''
   }
-  const fields = showUnweaned
-    ? compose(certifiedField, unweanedField)
-    : compose(certifiedField)
-  const { errors } = validate(fields, payload)
+  const { errors } = validate(fieldsFor(showUnweaned), payload)
   if (errors) {
     return render(h, journey, values, showUnweaned, errors).code(
       HTTP_STATUS_BAD_REQUEST

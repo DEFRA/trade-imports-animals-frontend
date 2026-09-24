@@ -157,10 +157,16 @@ export const copy = {
         "Gwiriwch fanylion y mewnforio — mae ateb wedi'i gadw sydd bellach ddim yn ddilys",
       reasonForImport:
         "Gwiriwch reswm y mewnforio — mae ateb wedi'i gadw sydd bellach ddim yn ddilys",
+      additionalAnimalDetails:
+        "Gwiriwch fanylion anifeiliaid ychwanegol — mae ateb wedi'i gadw sydd bellach ddim yn ddilys",
       arrivalDetails:
         "Gwiriwch y manylion cyrraedd — mae ateb wedi'i gadw sydd bellach ddim yn ddilys",
       transitCountries:
         "Gwiriwch y gwledydd tramwy — mae ateb wedi'i gadw sydd bellach ddim yn ddilys",
+      transportDetails:
+        "Gwiriwch y manylion cludo — mae ateb wedi'i gadw sydd bellach ddim yn ddilys",
+      rolesAndAddresses:
+        "Gwiriwch y rolau a'r cyfeiriadau — mae ateb wedi'i gadw sydd bellach ddim yn ddilys",
       contactAddress:
         "Gwiriwch y cyfeiriad cyswllt — mae ateb wedi'i gadw sydd bellach ddim yn ddilys"
     }
