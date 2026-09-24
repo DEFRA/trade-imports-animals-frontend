@@ -141,7 +141,7 @@ export const renderNotificationView = async (
   // chosen.
   const invalidCardErrors = readOnly
     ? {}
-    : await cardStoredErrors(REVIEW_CARDS, answers, { storedAnswers })
+    : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
   return renderCya(h, journey, {
     answers,
     scope,
@@ -179,7 +179,7 @@ const post = async (request, h) => {
   // comment on `cardStoredErrors`.
   const invalidCardErrors = readOnly
     ? {}
-    : await cardStoredErrors(REVIEW_CARDS, answers, { storedAnswers })
+    : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
   // An unfinished notification is refused here rather than three pages later at
   // the declaration's submit, where the same readiness test used to bounce the
   // trader back to this page saying nothing. `readyForCheckYourAnswers` is the

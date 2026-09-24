@@ -155,7 +155,7 @@ const handler = async (request, h) => {
   // synchronous engine query that other callers (the review page's readiness
   // roll-up, entry-guards) still read unchanged; this demotion is the hub's
   // own presentation decision, not the engine's.
-  const invalidRows = await invalidRowIds(answers, { storedAnswers })
+  const invalidRows = await invalidRowIds(answers, { request, storedAnswers })
 
   // No back link: Design release 1 treats the overview as the top of the
   // notification rather than a step within it, so the way off the page is the

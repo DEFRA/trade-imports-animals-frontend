@@ -153,7 +153,9 @@ export const copy = {
     noMatches: 'No transporters match your search.',
     add: 'Add a transporter',
     errors: {
-      transporterRequired: 'Select a transporter from the list'
+      transporterRequired: 'Select a transporter from the list',
+      transporterNoLongerAvailable:
+        'Select a transporter from the list. The one you chose is no longer available.'
     }
   },
   transporterAdd: {
