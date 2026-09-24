@@ -501,6 +501,21 @@ test.describe('check-answers feature unfinished notification', () => {
     ).toBeVisible()
   })
 
+  test('A notification with no commodity line cannot be submitted', async ({
+    page
+  }) => {
+    await startNotification(page)
+    const reviewUrl = journeyUrl(page, NOTIFICATION_VIEW_SLUG)
+    await page.goto(reviewUrl)
+
+    await page.getByRole('button', { name: copy.submit.button }).click()
+
+    await expect(page).toHaveURL(reviewUrl)
+    await expect(
+      page.getByRole('link', { name: copy.errors.cards.species })
+    ).toBeVisible()
+  })
+
   test('unfinished review has no serious or critical axe violations', async ({
     page
   }) => {

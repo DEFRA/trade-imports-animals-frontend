@@ -366,6 +366,69 @@ describe('GET /origin — region of origin code splits back into its two parts',
   })
 })
 
+describe('POST /origin — region code kept when the requirement becomes optional', () => {
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('The code survives being made optional', async () => {
+    await driveHandler(post, {
+      payload: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCodeSuffix: '75',
+        internalReferenceNumber: ''
+      }
+    })
+
+    const flipped = await driveHandler(post, {
+      payload: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'no',
+        regionOfOriginCodeSuffix: '75',
+        internalReferenceNumber: ''
+      }
+    })
+
+    expect(flipped.after.regionOfOriginCode).toBe('FR-75')
+    expect(flipped.after.regionOfOriginCodeRequirement).toBe('no')
+
+    const rendered = await driveHandler(get, { seed: flipped.after })
+    expect(rendered.view.context.values.regionOfOriginCodeSuffix).toBe('75')
+    expect(rendered.view.context.values.regionOfOriginCodeRequirement).toBe(
+      'no'
+    )
+  })
+
+  it('An answer survives a change of status', async () => {
+    await driveHandler(post, {
+      payload: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCodeSuffix: '75',
+        internalReferenceNumber: ''
+      }
+    })
+
+    const flipped = await driveHandler(post, {
+      payload: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'no',
+        regionOfOriginCodeSuffix: '75',
+        internalReferenceNumber: ''
+      }
+    })
+
+    expect(flipped.after.regionOfOriginCode).toBe('FR-75')
+
+    const rendered = await driveHandler(get, { seed: flipped.after })
+    expect(rendered.view.context.values.regionOfOriginCodeSuffix).toBe('75')
+  })
+})
+
 describe('GET /origin — server-rendered select data (no-JS path)', () => {
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)
