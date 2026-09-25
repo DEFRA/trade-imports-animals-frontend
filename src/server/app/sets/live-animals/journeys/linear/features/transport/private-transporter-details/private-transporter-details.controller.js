@@ -29,7 +29,7 @@ import { copy as cy } from '../copy/copy.cy.js'
  * A spoke off the type chooser rather than a step in the journey: the
  * `privateTransporter` it writes is declared by the transporter list, which is
  * where a trader normally answers it by picking a row. */
-const view = `${TEMPLATES}/features/transport/private-transporter-details/template`
+const view = `${TEMPLATES}/features/transport/private-transporter-details/private-transporter-details`
 
 const copy = copyFor({ en, cy }).privateTransporterDetails
 

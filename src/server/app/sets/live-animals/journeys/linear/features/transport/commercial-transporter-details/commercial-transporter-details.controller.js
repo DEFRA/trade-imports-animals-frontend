@@ -25,7 +25,7 @@ import { copy as cy } from '../copy/copy.cy.js'
  * for a trader whose commercial transporter is not on that list — they give
  * its authorisation number, name, address and contact details by hand
  * (design release 1). */
-const view = `${TEMPLATES}/features/transport/commercial-transporter-details/template`
+const view = `${TEMPLATES}/features/transport/commercial-transporter-details/commercial-transporter-details`
 
 const bundle = copyFor({ en, cy })
 

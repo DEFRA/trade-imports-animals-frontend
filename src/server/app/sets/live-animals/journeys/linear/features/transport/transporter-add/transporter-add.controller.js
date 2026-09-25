@@ -26,7 +26,7 @@ import { copy as cy } from '../copy/copy.cy.js'
  * `transporterType` it writes is declared by the list page, which is where a
  * trader answers it by picking a transporter (design release 1 asks the type
  * only of someone who could not find theirs). */
-const view = `${TEMPLATES}/features/transport/transporter-add/template`
+const view = `${TEMPLATES}/features/transport/transporter-add/transporter-add`
 
 const copy = copyFor({ en, cy }).transporterAdd
 

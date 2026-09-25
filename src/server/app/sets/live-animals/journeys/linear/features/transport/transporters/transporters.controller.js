@@ -28,7 +28,7 @@ export const meta = {
   ...page,
   collects: ['transporterType', 'commercialTransporter', 'privateTransporter']
 }
-const view = `${TEMPLATES}/features/transport/transporters/template`
+const view = `${TEMPLATES}/features/transport/transporters/transporters`
 
 const copy = copyFor({ en, cy }).transporters
 

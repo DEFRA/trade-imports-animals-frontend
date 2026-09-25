@@ -30,7 +30,7 @@ import {
   handshakeErrorMessage
 } from '../ins-handshake.js'
 
-const view = `${TEMPLATES}/features/addresses/party-picker/template`
+const view = `${TEMPLATES}/features/addresses/party-picker/party-picker`
 
 const copy = copyFor({ en, cy }).picker
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })

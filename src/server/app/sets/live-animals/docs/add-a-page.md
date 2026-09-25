@@ -51,8 +51,10 @@ journeys/linear/features/<name>/
 ```
 
 If the page joins an existing multi-page feature, add its controller and
-template inside that group. Keep the browser spec in that group's `fit/`
-folder.
+template inside that group, and name the template after the page —
+`<page>/<page>.njk`, not `template.njk` — as in
+[`journeys/linear/features/transport/port-of-entry/port-of-entry.njk`](../journeys/linear/features/transport/port-of-entry/port-of-entry.njk).
+Keep the browser spec in that group's `fit/` folder.
 
 `page.js` exports only `{ id, slug }` and imports nothing. The controller and
 flow import the same object. This prevents a module cycle through flow, status

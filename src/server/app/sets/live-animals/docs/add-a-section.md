@@ -29,7 +29,7 @@ Transport is the current multi-page feature-group example:
 - [`journeys/linear/features/transport/copy/copy.cy.js`](../journeys/linear/features/transport/copy/copy.cy.js)
 - [`journeys/linear/features/transport/copy/copy.test.js`](../journeys/linear/features/transport/copy/copy.test.js)
 - [`journeys/linear/features/transport/port-of-entry/port-of-entry.controller.js`](../journeys/linear/features/transport/port-of-entry/port-of-entry.controller.js)
-- [`journeys/linear/features/transport/port-of-entry/template.njk`](../journeys/linear/features/transport/port-of-entry/template.njk)
+- [`journeys/linear/features/transport/port-of-entry/port-of-entry.njk`](../journeys/linear/features/transport/port-of-entry/port-of-entry.njk)
 - [`journeys/linear/features/transport/fit/arrival-transit.fit.spec.js`](../journeys/linear/features/transport/fit/arrival-transit.fit.spec.js)
 - [`journeys/linear/features/transport/fit/transporters.fit.spec.js`](../journeys/linear/features/transport/fit/transporters.fit.spec.js)
 
@@ -103,11 +103,11 @@ journeys/linear/features/<group>/
 ├── <first-page>/
 │   ├── <first-page>.controller.js
 │   ├── <first-page>.controller.test.js
-│   └── template.njk
+│   └── <first-page>.njk
 ├── <second-page>/
 │   ├── <second-page>.controller.js
 │   ├── <second-page>.controller.test.js
-│   └── template.njk
+│   └── <second-page>.njk
 ├── evaluation.js
 └── page.js
 ```

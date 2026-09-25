@@ -15,7 +15,7 @@ import { ADD_ACTION, isRemoveAction, removeCodeOf } from './remove-action.js'
 import { countryRows } from './rows.js'
 
 export const meta = { ...page, collects: ['transitedCountries'] }
-const view = `${TEMPLATES}/features/transport/transit-countries/template`
+const view = `${TEMPLATES}/features/transport/transit-countries/transit-countries`
 
 export const MAX_TRANSITED_COUNTRIES = 12
 

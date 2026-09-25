@@ -27,7 +27,7 @@ import { addressSummary } from '../transporters/transporter-record.js'
  * the transporter list carries the register's rows itself. The
  * `commercialTransporter` it writes is declared by the transporter list, which
  * is where the answer is normally given. */
-const view = `${TEMPLATES}/features/transport/transporters-select/template`
+const view = `${TEMPLATES}/features/transport/transporters-select/transporters-select`
 
 const copy = copyFor({ en, cy }).transportersSelect
 
