@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { createServer } from './server.js'
 import { config } from '../config/config.js'
 import { statusCodes } from './common/constants/status-codes.js'
+import { DEFAULT_SET_BASE } from './router.js'
 
 describe('#router auth gating', () => {
   let server
@@ -18,8 +19,17 @@ describe('#router auth gating', () => {
     await server.stop({ timeout: 0 })
   })
 
-  test('the dashboard is not registered when auth is disabled', async () => {
+  test('the root redirect is not registered when auth is disabled', async () => {
     const { statusCode } = await server.inject({ method: 'GET', url: '/' })
+
+    expect(statusCode).toBe(statusCodes.notFound)
+  })
+
+  test('the dashboard is not registered when auth is disabled', async () => {
+    const { statusCode } = await server.inject({
+      method: 'GET',
+      url: DEFAULT_SET_BASE
+    })
 
     expect(statusCode).toBe(statusCodes.notFound)
   })

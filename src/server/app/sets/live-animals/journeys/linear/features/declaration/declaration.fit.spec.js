@@ -2,21 +2,23 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
+  BASE,
   answerOriginEntry,
   completeAnswerSections,
   openReviewFromHub,
   signIn,
-  startNotification
+  startNotification,
+  urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 
 const startAtDeclaration = async (page) => {
-  await page.goto('/')
+  await page.goto(BASE)
   await page
-    .locator('form[action="/notifications"]')
+    .locator(`form[action="${BASE}/notifications"]`)
     .getByRole('button')
     .click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+  await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
 
   const declarationUrl = page.url().replace(/\/origin$/, '/declaration')
   await answerOriginEntry(page)
@@ -97,7 +99,9 @@ test.describe('declaration feature', () => {
 
     await backLink.click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/notification-view$/)
+    await expect(page).toHaveURL(
+      urlUnderBase('/notifications/[^/]+/notification-view')
+    )
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
@@ -138,8 +142,12 @@ test.describe('declaration submission', () => {
     await page.getByRole('checkbox', { name: copy.declarationLabel }).check()
     await page.locator('form button[type="submit"]').click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/confirmation$/)
+    await expect(page).toHaveURL(
+      urlUnderBase('/notifications/[^/]+/confirmation')
+    )
     await page.goto(declarationUrl)
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/confirmation$/)
+    await expect(page).toHaveURL(
+      urlUnderBase('/notifications/[^/]+/confirmation')
+    )
   })
 })

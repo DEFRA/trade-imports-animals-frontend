@@ -196,9 +196,21 @@ const postContinue = async (request, h, selected) => {
   return h.redirect(await kit.nextTarget(request, page, committed.scope))
 }
 
+const hasStaleCountries = async (codes) => {
+  const offered = await offeredCodesSet()
+  return codes.some((code) => !offered.has(code))
+}
+
+// The render already filters stale codes out of the chip list; the banner
+// tells the trader before the next Continue silently commits the filtered
+// list.
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, [answers.transitedCountries ?? []].flat())
+  const stored = [answers.transitedCountries ?? []].flat()
+  const errors = (await hasStaleCountries(stored))
+    ? { [COUNTRY_FIELD]: copy.errors.someNoLongerAvailable }
+    : {}
+  return render(h, journey, stored, { errors })
 }
 
 const post = async (request, h) => {

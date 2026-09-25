@@ -1,3 +1,4 @@
+import { SET_BASE, SET_ID } from '../../../../../set.js'
 import Crumb from '@hapi/crumb'
 import Hapi from '@hapi/hapi'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
@@ -82,9 +83,9 @@ const SUITE =
 
 const setupIdentificationEngine = () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 }
@@ -641,7 +642,15 @@ describe(`${SUITE} — Remove`, () => {
     const server = Hapi.server()
     await server.register(Crumb)
     registerTestSessionAuth(server)
-    server.route(animalIdentification.routes)
+    // Mounted under the set prefix, as the router does, so the injected
+    // `pagePath()` URL below reaches the route rather than 404ing.
+    await server.register(
+      {
+        name: 'animal-identification-under-test',
+        register: (inner) => inner.route(animalIdentification.routes)
+      },
+      { routes: { prefix: SET_BASE } }
+    )
 
     const forged = await server.inject({
       method: 'POST',

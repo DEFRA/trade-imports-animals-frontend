@@ -26,9 +26,11 @@ knowledge.
 
 ## Registration
 
-[`src/server/app/routes.js`](../../../routes.js) imports the manifest namespace and
-passes it to `configureObligationSet()`. Generic model and bridge code then reads the
-set through
+This set's gateway,
+[`src/server/app/routes-live-animals.js`](../../../routes-live-animals.js) (the
+[`routes.js`](../../../routes.js) barrel only re-exports it), imports the
+manifest namespace and passes it to `configureObligationSet()` under this set's
+id. Generic model and bridge code then reads the set through
 [`src/server/app/model/obligations/manifest.js`](../../../model/obligations/manifest.js).
 
 The journey's feature bindings import the same obligation objects from this set.

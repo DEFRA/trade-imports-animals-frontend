@@ -1,5 +1,5 @@
 import { store } from './store.js'
-import { SESSION_COOKIES } from './journey.js'
+import { knownJourneysCookie } from './journey.js'
 
 // Mirrors what plugins/auth.js puts on credentials after sign-in: the raw
 // `currentRelationshipId` claim, plus the `organisationId` it is mapped to.
@@ -87,7 +87,7 @@ export const journeyRequest = (journeyId, overrides = {}) => ({
   ...overrides,
   params: { journeyId, ...overrides.params },
   state: {
-    [SESSION_COOKIES.knownJourneys]: [journeyId],
+    [knownJourneysCookie()]: [journeyId],
     ...overrides.state
   }
 })

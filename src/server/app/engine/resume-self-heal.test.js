@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../test/fixtures/index.js'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { get } from './index.js'
 import { records, configureRecords } from './persistence/records.js'
@@ -10,10 +11,10 @@ import { assembleFulfilments } from '../bridge/assemble-fulfilments.js'
 
 describe('re-entry self-heal (nothing derived is stored)', () => {
   beforeEach(async () => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
     await records.clear()
-    configureReadyForCheckYourAnswers(() => false)
+    configureReadyForCheckYourAnswers(SET_ID, () => false)
   })
 
   it('Should re-derive scope on re-entry, excluding a now-out-of-scope obligation', async () => {

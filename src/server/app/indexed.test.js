@@ -1,3 +1,4 @@
+import { SET_ID } from './sets/live-animals/set.js'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { makeScope } from './engine/index.js'
 import { evaluateAnswers } from './bridge/evaluation.js'
@@ -27,7 +28,7 @@ const completeDocument = {
 
 describe('indexed obligations are first-class', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   it('Should enumerate sub-obligations at every depth via walkObligations', () => {

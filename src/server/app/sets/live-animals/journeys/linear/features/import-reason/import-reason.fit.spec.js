@@ -2,8 +2,10 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
+  BASE,
   answerOriginEntry,
-  chooseTodayFromDatePicker
+  chooseTodayFromDatePicker,
+  urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { countriesOrigin } from '../../../../../../services/_capture/fixtures.js'
 import * as importReasonPurpose from '../../../../../../services/import-reason-purpose/index.js'
@@ -11,6 +13,7 @@ import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
 
+const HUB_PATH_PATTERN = '/notifications/[^/]+'
 const REASON_INPUT_SELECTOR = 'input[name="reasonForImport"]'
 const PURPOSE_INPUT_SELECTOR = 'input[name="purposeInInternalMarket"]'
 const SUBMIT_BUTTON = 'form button[type="submit"]'
@@ -47,12 +50,12 @@ const expectNoSeriousOrCriticalAxeViolations = async (page) => {
 }
 
 const startAtImportReason = async (page) => {
-  await page.goto('/')
+  await page.goto(BASE)
   await page
-    .locator('form[action="/notifications"]')
+    .locator(`form[action="${BASE}/notifications"]`)
     .getByRole('button')
     .click()
-  await expect(page).toHaveURL(/\/notifications\/[^/]+\/origin$/)
+  await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
 
   const reasonUrl = page.url().replace(/\/origin$/, '/import-reason')
   await answerOriginEntry(page)
@@ -156,7 +159,7 @@ test.describe('import-reason feature', () => {
     await page.getByRole('radio', { name: purpose.text, exact: true }).check()
     await page.locator(SUBMIT_BUTTON).first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(
       page.getByRole('radio', { name: selected.text, exact: true })
@@ -296,7 +299,7 @@ test.describe('import-reason reveals', () => {
     await page.locator(TRANSIT_COUNTRY).selectOption(COUNTRY_CODE)
     await page.locator(SUBMIT_BUTTON).first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(radioFor(page, 'transit')).toBeChecked()
     await expect(page.locator(TRANSIT_PORT)).toHaveValue(PORT_CODE)
@@ -350,7 +353,7 @@ test.describe('import-reason reveals', () => {
     await page.locator(TEMPORARY_ADMISSION_PORT).selectOption(PORT_CODE)
     await page.locator(SUBMIT_BUTTON).first().click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(page.locator(TEMPORARY_ADMISSION_DATE)).toHaveValue(expected)
     await expect(page.locator(TEMPORARY_ADMISSION_PORT)).toHaveValue(PORT_CODE)

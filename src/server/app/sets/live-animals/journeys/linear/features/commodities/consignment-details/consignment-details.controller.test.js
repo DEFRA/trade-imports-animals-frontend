@@ -1,3 +1,4 @@
+import { SET_BASE, SET_ID } from '../../../../../set.js'
 import Crumb from '@hapi/crumb'
 import Hapi from '@hapi/hapi'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
@@ -120,9 +121,9 @@ const contextOf = async (seed) => {
 
 describe('#consignmentDetailsController — per-species quantities over every line', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -310,7 +311,15 @@ describe('#consignmentDetailsController — per-species quantities over every li
     const server = Hapi.server()
     await server.register(Crumb)
     registerTestSessionAuth(server)
-    server.route(consignmentDetails.routes)
+    // Mounted under the set prefix, as the router does, so the injected
+    // `pagePath()` URL below reaches the route rather than 404ing.
+    await server.register(
+      {
+        name: 'consignment-details-under-test',
+        register: (inner) => inner.route(consignmentDetails.routes)
+      },
+      { routes: { prefix: SET_BASE } }
+    )
 
     const forged = await server.inject({
       method: 'POST',
@@ -329,9 +338,9 @@ describe('#consignmentDetailsController — per-species quantities over every li
 
 describe('#consignmentDetailsController — commodities on code 01061900 are listed species by species', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -446,9 +455,9 @@ describe('#consignmentDetailsController — commodities on code 01061900 are lis
 
 describe('#consignmentDetailsController — the animal count must be answered before the page saves', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

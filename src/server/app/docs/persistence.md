@@ -58,6 +58,8 @@ The projections are downstream views, not resume sources.
 
 ## Boot wiring
 
-[`src/server/app/routes.js`](../routes.js) passes the mode-selected records and
-session adapters to `configureRecords()` and `configureSession()`, then registers the
-configured journey cookie names before adding routes.
+Each set's gateway — today
+[`routes-live-animals.js`](../routes-live-animals.js), which
+[`routes.js`](../routes.js) re-exports — passes the mode-selected records and
+session adapters to `configureRecords()` and `configureSession()` under its own
+set id, then registers the configured journey cookie names before adding routes.

@@ -7,10 +7,15 @@ journey presentation. Dependency Cruiser enforces the boundaries in
 ## L1: composition and registry
 
 The files directly under `src/server/app/` compose the application.
-[`src/server/app/routes.js`](../routes.js) is the only production module outside a
-set that imports `sets/**`.
+[`src/server/app/routes.js`](../routes.js) is only the export barrel; the per-set
+gateways it re-exports — today
+[`routes-live-animals.js`](../routes-live-animals.js) — are the only production
+modules outside a set that import `sets/**`.
+[`src/server/router.js`](../../router.js) mounts each gateway under its own
+prefix and redirects `/` to the default set.
 
-At boot, `routes.js`:
+At boot, `routes-live-animals.js` registers its mount and, inside its own set
+context:
 
 - gives the live-animals manifest to
   [`configureObligationSet()`](../model/obligations/manifest.js)
@@ -80,7 +85,7 @@ export const LAYOUT = 'shared/layout.njk'
 Dependency Cruiser scans all of `src/server/app`. Its error-level rules prevent:
 
 - L2 production imports from `sets/**`
-- set imports outside `routes.js`
+- set imports outside `routes.js` and the per-set `routes-<set-id>.js` gateways
 - obligations importing journeys
 - one journey importing a sibling journey
 - one set importing another set

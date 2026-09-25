@@ -27,7 +27,7 @@ export const finalise = async (journeyId, _actor) => {
 }
 
 export const amend = async (journeyId, _actor) => {
-  const journey = journeys.get(journeyId)
+  const journey = journeys().get(journeyId)
   if (!journey) {
     throw new Error(`Unknown journey "${journeyId}"`)
   }
@@ -44,7 +44,7 @@ export const amend = async (journeyId, _actor) => {
 }
 
 export const cancelAmend = async (journeyId, actor) => {
-  const journey = journeys.get(journeyId)
+  const journey = journeys().get(journeyId)
   if (!journey) {
     throw new Error(`Unknown journey "${journeyId}"`)
   }
@@ -68,7 +68,7 @@ export const cancelAmend = async (journeyId, actor) => {
 }
 
 export const softDelete = async (journeyId, actor) => {
-  const journey = journeys.get(journeyId)
+  const journey = journeys().get(journeyId)
   if (!journey) {
     throw new Error(`Unknown journey "${journeyId}"`)
   }

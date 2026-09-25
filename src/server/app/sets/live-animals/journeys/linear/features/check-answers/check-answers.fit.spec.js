@@ -1,13 +1,15 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
+  BASE,
   chooseCountryOfOrigin,
   completeAnswerSections,
   journeyIdFromPage,
   journeyUrl,
   openReviewFromHub,
   signIn,
-  startNotification
+  startNotification,
+  urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
@@ -362,7 +364,9 @@ test.describe('check-answers feature change links', () => {
     await page.getByLabel(INTERNAL_REFERENCE_LABEL).clear()
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+\/notification-view$/)
+    await expect(page).toHaveURL(
+      urlUnderBase('/notifications/[^/]+/notification-view')
+    )
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
       copy.notApplicable
     )
@@ -529,7 +533,7 @@ test.describe('check-answers feature submitted notification', () => {
       .check()
     await page.getByRole('button', { name: 'Continue' }).click()
     const reference = journeyIdFromPage(page)
-    await page.goto('/')
+    await page.goto(BASE)
     await page
       .getByRole('link', {
         name: `View ${dashboardCopy.actionHidden(reference)}`

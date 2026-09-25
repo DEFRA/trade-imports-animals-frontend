@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
@@ -287,9 +288,9 @@ describe('transport copy module', () => {
 
 describe('GET /port-of-entry', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -321,9 +322,9 @@ describe('GET /port-of-entry', () => {
 
 describe('GET /transporters', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../../set.js'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
@@ -48,9 +49,9 @@ const getHandler = handlerFor('GET')
 const postHandler = handlerFor('POST')
 
 const configure = () => {
-  configureRecords(recordsStub)
-  configureSession(sessionStub)
-  buildDispatch(dispatchPages)
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  buildDispatch(SET_ID, dispatchPages)
 }
 
 /** Drive a POST whose save fails the way a backend outage fails it: recoverably,
@@ -59,7 +60,7 @@ const driveSaveFailure = async (payload) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, { transporterType: PRIVATE })
   const h = stubH()
-  configureRecords({
+  configureRecords(SET_ID, {
     ...recordsStub,
     replaceFulfilment: () => {
       throw new BackendRequestError('save the transporter', {
@@ -71,7 +72,7 @@ const driveSaveFailure = async (payload) => {
   try {
     return await postHandler(journeyRequest(journey.journeyId, { payload }), h)
   } finally {
-    configureRecords(recordsStub)
+    configureRecords(SET_ID, recordsStub)
   }
 }
 
@@ -232,5 +233,90 @@ describe('/transporters/add/private keeps the transporter for the organisation',
     await driveSaveFailure(HAULIER)
 
     expect(added()).toHaveLength(0)
+  })
+})
+
+// "Zedland" is not in the captured origin-countries fixture, so seeding
+// address.country to it puts the stored country outside the current
+// addressCountries reader.
+describe('GET /transporters/add/private — a stored country the reader no longer offers', () => {
+  const STALE_COUNTRY = 'Zedland'
+  const staleSeed = {
+    transporterType: PRIVATE,
+    privateTransporter: {
+      name: RECORD.nameOrOrganisationName,
+      address: {
+        addressLine1: RECORD.addressLine1,
+        addressLine2: RECORD.addressLine2,
+        townOrCity: RECORD.townOrCity,
+        county: RECORD.county,
+        postalOrZipCode: RECORD.postalOrZipCode,
+        country: STALE_COUNTRY,
+        telephoneNumber: RECORD.telephoneNumber,
+        emailAddress: RECORD.emailAddress
+      }
+    }
+  }
+
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  it('Should blank the country in values so the select renders unselected, without adding the stale option', async () => {
+    const result = await driveHandler(getHandler, { seed: staleSeed })
+
+    expect(result.view.context.values.country).toBe('')
+    expect(
+      result.view.context.countryItems.find(
+        (item) => item.value === STALE_COUNTRY
+      )
+    ).toBeUndefined()
+  })
+
+  it('Should surface a country-no-longer-available error on the country field', async () => {
+    const result = await driveHandler(getHandler, { seed: staleSeed })
+
+    expect(result.view.context.errors.country).toBe(
+      'The saved country is no longer available. Select a country from the list.'
+    )
+  })
+
+  it('Should leave the stored transporter intact — GET only reshapes what the page renders', async () => {
+    const result = await driveHandler(getHandler, { seed: staleSeed })
+
+    expect(result.before.privateTransporter.address.country).toBe(STALE_COUNTRY)
+    expect(result.after.privateTransporter.address.country).toBe(STALE_COUNTRY)
+  })
+})
+
+describe('POST /transporters/add/private — an empty country from a part-filled record is refused, not silently wiped', () => {
+  const STALE_COUNTRY = 'Zedland'
+  const staleSeed = {
+    transporterType: PRIVATE,
+    privateTransporter: {
+      name: RECORD.nameOrOrganisationName,
+      address: {
+        addressLine1: RECORD.addressLine1,
+        addressLine2: RECORD.addressLine2,
+        townOrCity: RECORD.townOrCity,
+        county: RECORD.county,
+        postalOrZipCode: RECORD.postalOrZipCode,
+        country: STALE_COUNTRY,
+        telephoneNumber: RECORD.telephoneNumber,
+        emailAddress: RECORD.emailAddress
+      }
+    }
+  }
+
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  it('Should refuse the save with a country-required error and preserve the stored transporter', async () => {
+    const result = await driveHandler(postHandler, {
+      seed: staleSeed,
+      payload: { ...RECORD, country: '' }
+    })
+
+    expect(result.view.context.errors.country).toBeDefined()
+    expect(result.after.privateTransporter.address.country).toBe(STALE_COUNTRY)
   })
 })

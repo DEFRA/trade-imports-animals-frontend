@@ -1,9 +1,11 @@
+import { SET_ID } from '../../../set.js'
 import { readFileSync } from 'node:fs'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
-  BASE,
+  dashboardPath,
   createPath,
+  createRoutePath,
   hubPath,
   pagePath
 } from '../../../../../shared/paths.js'
@@ -11,7 +13,8 @@ import { store } from '../../../../../engine/store.js'
 import { configureRecords } from '../../../../../engine/persistence/records.js'
 import {
   configureSession,
-  SESSION_COOKIES
+  knownJourneysCookie,
+  openingRunCookie
 } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
@@ -63,8 +66,8 @@ const buildRequest = (journeyId, { record, ...overrides } = {}) => ({
   query: {},
   headers: {},
   state: {
-    ...(journeyId ? { [SESSION_COOKIES.knownJourneys]: [journeyId] } : {}),
-    ...(record ? { [SESSION_COOKIES.openingRun]: record } : {})
+    ...(journeyId ? { [knownJourneysCookie()]: [journeyId] } : {}),
+    ...(record ? { [openingRunCookie()]: record } : {})
   },
   ...overrides
 })
@@ -113,7 +116,7 @@ const { values: completeSeed } = JSON.parse(
 
 const startPostHandler = () =>
   dashboard.routes.find(
-    (route) => route.method === 'POST' && route.path === createPath()
+    (route) => route.method === 'POST' && route.path === createRoutePath()
   ).handler
 
 const originPayload = {
@@ -125,8 +128,8 @@ const createNotification = async (overrides) => {
   const h = captureH()
   await startPostHandler()(buildRequest(undefined, overrides), h)
   return {
-    journeyId: h.captured.cookies[SESSION_COOKIES.knownJourneys][0],
-    record: h.captured.cookies[SESSION_COOKIES.openingRun],
+    journeyId: h.captured.cookies[knownJourneysCookie()][0],
+    record: h.captured.cookies[openingRunCookie()],
     h
   }
 }
@@ -135,9 +138,7 @@ const creatingANotificationOpensTheRun = () => {
   it('Should land Start a new notification on origin with the run already begun', async () => {
     const { journeyId, h } = await createNotification()
     expect(h.captured.redirect).toBe(pagePath(journeyId, ORIGIN_SLUG))
-    expect(h.captured.cookies[SESSION_COOKIES.openingRun]).toEqual(
-      active(journeyId)
-    )
+    expect(h.captured.cookies[openingRunCookie()]).toEqual(active(journeyId))
   })
 
   it('Should sequence a created notification on from origin to the commodities page rather than the hub', async () => {
@@ -155,7 +156,7 @@ const creatingANotificationOpensTheRun = () => {
       payload: originPayload
     })
     expect(h.captured.redirect).toBe(hubPath(journeyId))
-    expect(SESSION_COOKIES.openingRun in h.captured.cookies).toBe(false)
+    expect(openingRunCookie() in h.captured.cookies).toBe(false)
   })
 }
 
@@ -363,7 +364,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
 
 const deepLinkGuardTests = () => {
   it('Should exempt the dashboard, the entry page and its children, and start', () => {
-    expect(guardedJourneyPath(BASE)).toBe(false)
+    expect(guardedJourneyPath(dashboardPath())).toBe(false)
     expect(guardedJourneyPath('/')).toBe(false)
     expect(guardedJourneyPath(pagePath('j-1', ORIGIN_SLUG))).toBe(false)
     expect(guardedJourneyPath(pagePath('j-1', 'origin/anything'))).toBe(false)
@@ -455,9 +456,9 @@ const deepLinkGuardTests = () => {
 
 describe('the opening run', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -520,7 +521,7 @@ describe('the opening run', () => {
         }),
         h
       )
-      expect(h.captured.cookies[SESSION_COOKIES.openingRun]).toEqual({
+      expect(h.captured.cookies[openingRunCookie()]).toEqual({
         [journey.journeyId]: RUN_COMPLETE
       })
     })
@@ -534,7 +535,7 @@ describe('the opening run', () => {
         }),
         h
       )
-      expect(SESSION_COOKIES.openingRun in h.captured.cookies).toBe(false)
+      expect(openingRunCookie() in h.captured.cookies).toBe(false)
     })
 
     it('Should fall back to the section flow once the run is complete (change=1 and plain saves unaffected)', async () => {
@@ -551,7 +552,7 @@ describe('the opening run', () => {
         h
       )
       expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
-      expect(SESSION_COOKIES.openingRun in h.captured.cookies).toBe(false)
+      expect(openingRunCookie() in h.captured.cookies).toBe(false)
     })
   })
 
@@ -560,7 +561,7 @@ describe('the opening run', () => {
       const { journeyId, h } = await createNotification({
         record: active('some-other-journey')
       })
-      expect(h.captured.cookies[SESSION_COOKIES.openingRun]).toEqual({
+      expect(h.captured.cookies[openingRunCookie()]).toEqual({
         'some-other-journey': RUN_ACTIVE,
         [journeyId]: RUN_ACTIVE
       })

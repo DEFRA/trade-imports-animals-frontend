@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../../set.js'
 import {
   afterAll,
   beforeAll,
@@ -46,9 +47,9 @@ const pickerFrom = (result) => result.view.context.picker
 const idsOf = (picker) => picker.rows.map((row) => row.id)
 
 const configure = () => {
-  configureRecords(recordsStub)
-  configureSession(sessionStub)
-  buildDispatch(dispatchPages)
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  buildDispatch(SET_ID, dispatchPages)
 }
 
 describe('GET /consignors/select', () => {
@@ -397,34 +398,39 @@ describe('INS add-address link', () => {
     config.set(INS_FRONTEND_BASE_URL_KEY, originalInsUrl)
   })
 
-  it('Should offer an INS add-address link when not in stub mode', async () => {
-    config.set('stubMode', false)
-    config.set(INS_FRONTEND_BASE_URL_KEY, 'http://localhost:3002')
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          items: [],
-          page: 1,
-          pageSize: 25,
-          totalItems: 0,
-          totalPages: 1
-        })
-      }))
-    )
+  it.each(PARTIES.map((party) => [party.title, party.slug]))(
+    'Should offer an INS add-address link when not in stub mode (%s)',
+    async (_title, slug) => {
+      config.set('stubMode', false)
+      config.set(INS_FRONTEND_BASE_URL_KEY, 'http://localhost:3002')
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => ({
+          ok: true,
+          json: async () => ({
+            items: [],
+            page: 1,
+            pageSize: 25,
+            totalItems: 0,
+            totalPages: 1
+          })
+        }))
+      )
 
-    const result = await driveHandler(getConsignor)
+      const result = await driveHandler(handlerFor('GET', slug))
 
-    expect(result.view.context.addAddressHref).toContain(
-      'http://localhost:3002/address-book/add'
-    )
-    expect(result.view.context.addAddressHref).toContain('journey-type=gbn-ag')
-    expect(result.view.context.addAddressHref).toContain(
-      `notification-id=${result.journeyId}`
-    )
-    expect(result.view.context.addAddressHref).toContain('fulfilment-id=')
-  })
+      expect(result.view.context.addAddressHref).toContain(
+        'http://localhost:3002/address-book/add'
+      )
+      expect(result.view.context.addAddressHref).toContain(
+        'journey-type=gbn-ag'
+      )
+      expect(result.view.context.addAddressHref).toContain(
+        `notification-id=${result.journeyId}`
+      )
+      expect(result.view.context.addAddressHref).toContain('fulfilment-id=')
+    }
+  )
 })
 
 describe('POST /consignors/select — recoverable save failure', () => {

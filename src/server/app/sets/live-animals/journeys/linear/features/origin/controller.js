@@ -197,9 +197,29 @@ const render = async (
     regionCodePrefix: prefixFor(values.countryOfOrigin)
   })
 
+const isCountryStale = async (code) => {
+  if (!code) {
+    return false
+  }
+  const offered = new Set(
+    (await countries.originCountries()).map(({ value }) => value)
+  )
+  return !offered.has(code)
+}
+
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, formValuesFromAnswers(answers), {}, answers)
+  const values = formValuesFromAnswers(answers)
+  const errors = {}
+  // Blank the suffix too: its prefix mechanic depends on the country still
+  // matching, so a stale country lets the whole stored code cascade into a
+  // 5-char field.
+  if (await isCountryStale(answers.countryOfOrigin)) {
+    values.countryOfOrigin = ''
+    values[REGION_CODE_SUFFIX_FIELD] = ''
+    errors.countryOfOrigin = copy.errors.countryNoLongerAvailable
+  }
+  return render(h, journey, values, errors, answers)
 }
 
 // The rules measure the code the answer would store, not the raw box: a user

@@ -112,16 +112,18 @@ from there. Only a notification created in this session sequences through
 
 ## Registration wiring
 
-[`src/server/app/routes.js`](../../../routes.js) imports `sections`, `taskRows`,
-`rowStatus`, `nextRunTarget`, `FLOW_ONLY_KEYS` and `entryGuardTarget`, then passes
-them to
+This set's gateway,
+[`src/server/app/routes-live-animals.js`](../../../routes-live-animals.js) (the
+[`routes.js`](../../../routes.js) barrel only re-exports it), imports `sections`,
+`taskRows`, `rowStatus`, `nextRunTarget`, `FLOW_ONLY_KEYS` and
+`entryGuardTarget`, then passes them to
 [`configureJourneyFlow()`](../../../flow/journey-flow.js). It also passes the
 journey's `LAYOUT` from
 [`config.js`](../journeys/linear/config.js) and its `sectionCaptionOf` from
 [`flow/section-captions/index.js`](../journeys/linear/flow/section-captions/index.js).
 
 Adding an entry to the existing `sections` or `taskRows` arrays needs no extra L1
-registration: `routes.js` already injects the whole arrays. A new feature still
+registration: `routes-live-animals.js` already injects the whole arrays. A new feature still
 needs controller and binding registration in the journey barrels.
 
 ## Section captions

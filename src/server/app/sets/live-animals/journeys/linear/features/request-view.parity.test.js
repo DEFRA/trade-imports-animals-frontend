@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../set.js'
 import { beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { assembleFulfilments } from '../../../../../bridge/assemble-fulfilments.js'
 import { characterisationCorpus } from '../fixtures/characterisation-corpus.js'
@@ -140,9 +141,9 @@ const expectContextParity = async (feature, answers = parityFixture) => {
 
 describe('canonical request-view controller parity', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 

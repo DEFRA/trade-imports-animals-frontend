@@ -1,21 +1,18 @@
-let configuredSet
+import { setKeyed } from '../../services/set-context/index.js'
 
-const requireConfiguredSet = () => {
-  if (!configuredSet) {
-    throw new Error('Obligation set has not been configured')
-  }
-  return configuredSet
+const store = setKeyed('Obligation set', {
+  configuredBy: 'configureObligationSet'
+})
+
+export const configureObligationSet = (setId, nextObligationSet) => {
+  store.configure(setId, nextObligationSet)
 }
 
-export const configureObligationSet = (nextObligationSet) => {
-  configuredSet = nextObligationSet
-}
+export const obligationSet = () => store.current()
 
-export const obligationSet = () => requireConfiguredSet()
+export const obligations = () => store.current().obligations
 
-export const obligations = () => requireConfiguredSet().obligations
-
-export const groups = () => requireConfiguredSet().groups
+export const groups = () => store.current().groups
 
 export const obligationByName = (name) =>
   obligations().find((obligation) => obligation.name === name)

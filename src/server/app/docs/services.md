@@ -25,8 +25,9 @@ Platform services include:
 - [`transport-reference`](../services/transport-reference/index.js)
 - [`import-reason-purpose`](../services/import-reason-purpose/index.js)
 
-Countries and ports expose `prime()` operations. `routes.js` primes them when the
-application runs in real mode, before Hapi routes are registered.
+Countries and ports expose `prime()` operations. The set's gateway
+(`routes-<set-id>.js`, re-exported by the `routes.js` barrel) primes them when
+the application runs in real mode, before Hapi routes are registered.
 
 ## Persistence adapters
 

@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
@@ -9,22 +10,26 @@ import {
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
-  SESSION_COOKIES
+  knownJourneysCookie,
+  openingRunCookie
 } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { assembleFulfilments } from '../../../../../../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../../../../../../bridge/fulfilments/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
-import {
-  createPath,
-  hubPath,
-  pagePath
-} from '../../../../../../shared/paths.js'
+import { createRoutePath } from '../../../../../../shared/paths.js'
+import { SET_BASE } from '../../../../set.js'
 import { CYA_SLUG, SURFACES } from '../../../../../../shared/kit.js'
 import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
 
 import { routes } from './controller.js'
 import { authenticatedCredentials } from '../../../../../../engine/test-support.js'
+
+// Stated from the set's own base rather than by calling the production link
+// builders. Asserting `pagePath(...)` against `pagePath(...)` holds however the
+// builder is wrong — including with the mount prefix dropped entirely.
+const hubUrl = (journeyId) => `${SET_BASE}/notifications/${journeyId}`
+const pageUrl = (journeyId, slug) => `${hubUrl(journeyId)}/${slug}`
 
 const COPY_AS_NEW_ACTION = 'Copy as new'
 const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
@@ -38,7 +43,7 @@ const handlerOf = (method, pathSuffix) =>
 const listGet = handlerOf('GET', '/')
 const amendPost = handlerOf('POST', '/amend')
 const startPost = routes.find(
-  (route) => route.method === 'POST' && route.path === createPath()
+  (route) => route.method === 'POST' && route.path === createRoutePath()
 ).handler
 
 const buildRequest = ({
@@ -51,8 +56,8 @@ const buildRequest = ({
   params: journeyId ? { journeyId } : {},
   query,
   state: {
-    [SESSION_COOKIES.knownJourneys]: knownJourneyIds,
-    ...(openingRun ? { [SESSION_COOKIES.openingRun]: openingRun } : {})
+    [knownJourneysCookie()]: knownJourneyIds,
+    ...(openingRun ? { [openingRunCookie()]: openingRun } : {})
   },
   headers: {},
   auth: {
@@ -93,8 +98,8 @@ const startSubmitted = async () => {
 
 describe('dashboard notifications list', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -123,13 +128,13 @@ describe('dashboard notifications list', () => {
       COPY_AS_NEW_ACTION,
       'Delete'
     ])
-    expect(row.actions[0].href).toBe(hubPath(draft.journeyId))
+    expect(row.actions[0].href).toBe(hubUrl(draft.journeyId))
     expect(row.actions[1]).toMatchObject({
-      postAction: pagePath(draft.journeyId, 'copy'),
+      postAction: pageUrl(draft.journeyId, 'copy'),
       copyOrigin: 'dashboard',
       concurrencyToken: expect.anything()
     })
-    expect(row.actions[2].href).toBe(pagePath(draft.journeyId, 'delete'))
+    expect(row.actions[2].href).toBe(pageUrl(draft.journeyId, 'delete'))
   })
 
   it('Should list a submitted row with a Submitted tag, its dates and View + Amend actions', async () => {
@@ -151,14 +156,12 @@ describe('dashboard notifications list', () => {
       COPY_AS_NEW_ACTION,
       'Delete'
     ])
-    expect(row.actions[0].href).toBe(pagePath(submitted.journeyId, CYA_SLUG))
+    expect(row.actions[0].href).toBe(pageUrl(submitted.journeyId, CYA_SLUG))
     expect(row.actions[1].postAction).toBe(
-      pagePath(submitted.journeyId, 'amend')
+      pageUrl(submitted.journeyId, 'amend')
     )
-    expect(row.actions[2].postAction).toBe(
-      pagePath(submitted.journeyId, 'copy')
-    )
-    expect(row.actions[3].href).toBe(pagePath(submitted.journeyId, 'delete'))
+    expect(row.actions[2].postAction).toBe(pageUrl(submitted.journeyId, 'copy'))
+    expect(row.actions[3].href).toBe(pageUrl(submitted.journeyId, 'delete'))
   })
 
   it('Should list ONLY session-known journeys — never the wider store', async () => {
@@ -322,8 +325,8 @@ describe('dashboard notifications list', () => {
 
 describe('dashboard content width', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
   })
 
   it('Should render the notification list as a display surface', async () => {
@@ -335,8 +338,8 @@ describe('dashboard content width', () => {
 
 describe('dashboard row actions', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -357,7 +360,7 @@ describe('dashboard row actions', () => {
       h
     )
 
-    expect(h.captured.redirect).toBe(hubPath(submitted.journeyId))
+    expect(h.captured.redirect).toBe(hubUrl(submitted.journeyId))
     const amended = await records.load({ journeyId: submitted.journeyId })
     expect(amended.status).toBe(AMEND)
     await records.replaceFulfilment(
@@ -392,7 +395,7 @@ describe('dashboard row actions', () => {
       'Delete'
     ])
     expect(row.actions[2].href).toBe(
-      pagePath(submitted.journeyId, 'cancel-amend')
+      pageUrl(submitted.journeyId, 'cancel-amend')
     )
   })
 
@@ -407,7 +410,7 @@ describe('dashboard row actions', () => {
     const h = buildH()
     await amendPost({ ...request, app: {} }, h)
 
-    expect(h.captured.redirect).toBe(hubPath(submitted.journeyId))
+    expect(h.captured.redirect).toBe(hubUrl(submitted.journeyId))
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
     ).toBe(AMEND)
@@ -422,7 +425,7 @@ describe('dashboard row actions', () => {
       h
     )
 
-    expect(h.captured.redirect).toBe('/')
+    expect(h.captured.redirect).toBe(SET_BASE)
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
     ).toBe(SUBMITTED)
@@ -476,8 +479,8 @@ describe('dashboard row actions', () => {
 
 describe('dashboard start with an in-flight draft', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -491,10 +494,9 @@ describe('dashboard start with an in-flight draft', () => {
 
     await startPost(buildRequest({ knownJourneyIds: [oldDraft.journeyId] }), h)
 
-    const newJourneyId =
-      h.captured.cookies[SESSION_COOKIES.knownJourneys].at(-1)
+    const newJourneyId = h.captured.cookies[knownJourneysCookie()].at(-1)
     expect(newJourneyId).not.toBe(oldDraft.journeyId)
-    expect(h.captured.cookies[SESSION_COOKIES.knownJourneys]).toEqual([
+    expect(h.captured.cookies[knownJourneysCookie()]).toEqual([
       oldDraft.journeyId,
       newJourneyId
     ])
@@ -508,8 +510,8 @@ describe('dashboard start with an in-flight draft', () => {
 
 describe('dashboard start opens the opening run', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
   })
   beforeEach(() => records.clear())
 
@@ -518,10 +520,9 @@ describe('dashboard start opens the opening run', () => {
 
     await startPost(buildRequest(), h)
 
-    const newJourneyId =
-      h.captured.cookies[SESSION_COOKIES.knownJourneys].at(-1)
-    expect(h.captured.redirect).toBe(pagePath(newJourneyId, ORIGIN_SLUG))
-    expect(h.captured.cookies[SESSION_COOKIES.openingRun]).toEqual({
+    const newJourneyId = h.captured.cookies[knownJourneysCookie()].at(-1)
+    expect(h.captured.redirect).toBe(pageUrl(newJourneyId, ORIGIN_SLUG))
+    expect(h.captured.cookies[openingRunCookie()]).toEqual({
       [newJourneyId]: RUN_ACTIVE
     })
   })
@@ -534,9 +535,8 @@ describe('dashboard start opens the opening run', () => {
       h
     )
 
-    const newJourneyId =
-      h.captured.cookies[SESSION_COOKIES.knownJourneys].at(-1)
-    expect(h.captured.cookies[SESSION_COOKIES.openingRun]).toEqual({
+    const newJourneyId = h.captured.cookies[knownJourneysCookie()].at(-1)
+    expect(h.captured.cookies[openingRunCookie()]).toEqual({
       'an-earlier-journey': RUN_ACTIVE,
       [newJourneyId]: RUN_ACTIVE
     })
@@ -554,7 +554,7 @@ describe('dashboard start opens the opening run', () => {
       h
     )
 
-    expect(h.captured.redirect).toBe(hubPath(submitted.journeyId))
-    expect(SESSION_COOKIES.openingRun in h.captured.cookies).toBe(false)
+    expect(h.captured.redirect).toBe(hubUrl(submitted.journeyId))
+    expect(openingRunCookie() in h.captured.cookies).toBe(false)
   })
 })

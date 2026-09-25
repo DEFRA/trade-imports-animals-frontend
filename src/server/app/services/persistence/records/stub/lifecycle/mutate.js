@@ -12,6 +12,6 @@ export const replaceFulfilment = async (journeyId, fulfilment) => {
 }
 
 export const clear = async () => {
-  journeys.clear()
-  copiesBySourceAndKey.clear()
+  journeys().clear()
+  copiesBySourceAndKey().clear()
 }

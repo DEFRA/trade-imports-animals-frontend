@@ -1,3 +1,4 @@
+import { SET_BASE, SET_ID } from '../../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it, test } from 'vitest'
 
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
@@ -12,7 +13,7 @@ import {
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import { leaves, isCopyLeaf } from '../../../../../../../shared/copy-leaves.js'
-import { pagePath } from '../../../../../../../shared/paths.js'
+import { dashboardPath, pagePath } from '../../../../../../../shared/paths.js'
 
 import { routes } from '../controller.js'
 import { copy } from './copy.en.js'
@@ -51,6 +52,10 @@ const ADDRESSES_ROW_HINT =
 const ADDRESSES_ROW_HINT_CY =
   'Anfonwr neu allforiwr, derbynnydd, mewnforiwr a man cyrchfan'
 const CANNOT_START_CLASS = 'govuk-task-list__status--cannot-start-yet'
+
+// Anchored at the set base, not at `/notifications`: a row whose href lost or
+// doubled the set prefix would otherwise still match and pass.
+const A_JOURNEY_PAGE_URL = new RegExp(`^${SET_BASE}/notifications/[^/]+/.+`)
 // Design release 1 has two task statuses and no more: "To do" in blue and
 // "Complete" in green.
 const TO_DO_STATUS = {
@@ -132,9 +137,9 @@ describe('#copy', () => {
 
 describe('GET /hub', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -157,9 +162,9 @@ describe('GET /hub', () => {
 
 describe('#hubHandler', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -167,7 +172,7 @@ describe('#hubHandler', () => {
     const context = await renderHub()
     expect(context.heading).toBe('Overview')
     expect(context.pageTitle).toBe('Overview')
-    expect(context.dashboardHref).toBe('/')
+    expect(context.dashboardHref).toBe(dashboardPath())
     expect(context.backLink).toBeUndefined()
     expect(context.breadcrumbs).toBeUndefined()
     expect(context.progressLine).toBeUndefined()
@@ -264,7 +269,7 @@ describe('#hubHandler', () => {
     expect(rows).not.toHaveLength(0)
     for (const row of rows) {
       expect(row.href, `${row.title.text} has no way in`).toMatch(
-        /^\/notifications\/[^/]+\/.+/
+        A_JOURNEY_PAGE_URL
       )
       expect(row.status.classes, `${row.title.text} is shut`).not.toBe(
         CANNOT_START_CLASS
@@ -392,9 +397,9 @@ describe('#hubHandler', () => {
 
 describe('#hubHandler — the task statuses', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -438,9 +443,9 @@ describe('#hubHandler — the task statuses', () => {
 
 describe('#hubHandler — the commodity totals', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -480,9 +485,9 @@ describe('#hubHandler — the commodity totals', () => {
 // packages have been entered without opening the page.
 describe('#hubHandler — the Commodity details row', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -535,9 +540,9 @@ describe('#hubHandler — the Commodity details row', () => {
 // still draw an empty hint element under every task.
 describe('#hubHandler — the row hints', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -566,9 +571,9 @@ describe('#hubHandler — the row hints', () => {
 // "Main reason for import", so that row carries the return route.
 describe('#hubHandler — the way back to the exit questions', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
@@ -597,7 +602,7 @@ describe('#hubHandler — the way back to the exit questions', () => {
     expect(rows).not.toHaveLength(0)
     for (const row of rows) {
       expect(row.href, `${row.title.text} has no way in`).toMatch(
-        /^\/notifications\/[^/]+\/.+/
+        A_JOURNEY_PAGE_URL
       )
     }
   })

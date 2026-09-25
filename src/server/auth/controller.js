@@ -3,9 +3,21 @@ import { validateState } from '../../auth/state.js'
 import { verifyToken } from '../../auth/verify-token.js'
 import { getPermissions } from '../../auth/get-permissions.js'
 import { getSafeRedirect } from '../../auth/get-safe-redirect.js'
-import { base, sharedCopy } from '../app/shared/kit.js'
+import { setlessBase, sharedCopy } from '../app/shared/kit.js'
 
 const UNAUTHORISED_VIEW = 'auth/unauthorised'
+
+/**
+ * The sign-in error page's chrome.
+ *
+ * `/auth/*` is server-wide, outside every set's mount, so nothing set-owned can
+ * be resolved here. `kit.base()` would reach for the set's layout, section
+ * caption and mount prefix, and answer only by falling back to the sole
+ * mounted set — right today and wrong the moment a second set mounts.
+ *
+ * @returns {object} the set-free view model for `auth/unauthorised.njk`.
+ */
+const unauthorisedChrome = () => setlessBase(sharedCopy.unauthorised.title)
 
 export const authController = {
   signin: {
@@ -28,7 +40,7 @@ export const authController = {
           },
           'Bell auth failed for /auth/sign-in-oidc'
         )
-        return h.view(UNAUTHORISED_VIEW, base(sharedCopy.unauthorised.title))
+        return h.view(UNAUTHORISED_VIEW, unauthorisedChrome())
       }
 
       const { profile, token, refreshToken } = request.auth.credentials
@@ -38,7 +50,7 @@ export const authController = {
           { crn: profile.crn },
           'Sign-in rejected: missing organisationId in Defra ID token'
         )
-        return h.view(UNAUTHORISED_VIEW, base(sharedCopy.unauthorised.title))
+        return h.view(UNAUTHORISED_VIEW, unauthorisedChrome())
       }
 
       // verify token returned from Defra Identity against public key
@@ -49,7 +61,7 @@ export const authController = {
           { err },
           'Token verification failed for /auth/sign-in-oidc'
         )
-        return h.view(UNAUTHORISED_VIEW, base(sharedCopy.unauthorised.title))
+        return h.view(UNAUTHORISED_VIEW, unauthorisedChrome())
       }
 
       // Typically permissions for the selected organisation would be available in the `roles` property of the token
@@ -69,7 +81,7 @@ export const authController = {
           { err },
           'Failed to load user permissions at sign-in'
         )
-        return h.view(UNAUTHORISED_VIEW, base(sharedCopy.unauthorised.title))
+        return h.view(UNAUTHORISED_VIEW, unauthorisedChrome())
       }
 
       // Store token and all useful data in the session cache

@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../set.js'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { SYSTEM_POPULATED } from '../../../../../bridge/obligation-source.js'
@@ -27,7 +28,7 @@ const answerStates = enumerateAnswerStates()
 
 describe('#proveFlowReachability', () => {
   beforeAll(() => {
-    buildDispatch(dispatchPages)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   it('Should enumerate a small finite scope space', () => {

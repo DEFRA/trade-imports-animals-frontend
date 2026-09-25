@@ -1,9 +1,10 @@
+import { SET_ID } from '../../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import * as state from '../../../../../../../engine/index.js'
 import { store } from '../../../../../../../engine/store.js'
-import { SESSION_COOKIES } from '../../../../../../../engine/persistence/session.js'
+import { addressHandshakeTokensCookie } from '../../../../../../../engine/persistence/session.js'
 import { configureRecords } from '../../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
@@ -12,6 +13,8 @@ import { driveHandler } from '../../../../../../../engine/test-support.js'
 import { BackendRequestError } from '../../../../../../../services/persistence/records/errors.js'
 import { dispatchPages } from '../../index.js'
 import { consignor } from '../../../../../obligations/index.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
+import { partyForFulfilmentId } from '../party-for-fulfilment-id.js'
 import * as addressBook from '../../../../../../../services/address-book/index.js'
 
 import * as addressReturn from './controller.js'
@@ -19,7 +22,11 @@ import * as addressReturn from './controller.js'
 const handler = addressReturn.routes[0].handler
 const newAddressId = 'new-address-id'
 const handshakeToken = 'handshake-token-value'
-const CONSIGNOR_PICKER_PATH = '/consignors/select'
+
+/** Built from the same link builder the controller uses, so the assertion is
+ * exact and a redirect that lost the set's mount prefix fails here. */
+const consignorPicker = (journeyId, query = '') =>
+  `${pagePath(journeyId, partyForFulfilmentId(consignor.id).slug)}${query}`
 
 const handshakeQuery = (fulfilmentId = consignor.id) => ({
   'fulfilment-id': fulfilmentId,
@@ -27,15 +34,15 @@ const handshakeQuery = (fulfilmentId = consignor.id) => ({
 })
 
 const handshakeState = (fulfilmentId = consignor.id) => ({
-  [SESSION_COOKIES.addressHandshakeTokens]: {
+  [addressHandshakeTokensCookie()]: {
     [fulfilmentId]: handshakeToken
   }
 })
 
 const configure = () => {
-  configureRecords(recordsStub)
-  configureSession(sessionStub)
-  buildDispatch(dispatchPages)
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  buildDispatch(SET_ID, dispatchPages)
 }
 
 describe('GET /address-return', () => {
@@ -50,7 +57,7 @@ describe('GET /address-return', () => {
       query: { 'fulfilment-id': consignor.id }
     })
 
-    expect(result.response.redirect).toContain(CONSIGNOR_PICKER_PATH)
+    expect(result.response.redirect).toBe(consignorPicker(result.journeyId))
   })
 
   it('commits the returned address id and redirects to the picker', async () => {
@@ -74,8 +81,9 @@ describe('GET /address-return', () => {
       state: handshakeState()
     })
 
-    expect(result.response.redirect).toContain(CONSIGNOR_PICKER_PATH)
-    expect(result.response.redirect).toContain(`selected=${newAddressId}`)
+    expect(result.response.redirect).toBe(
+      consignorPicker(result.journeyId, `?selected=${newAddressId}`)
+    )
     expect(result.after.consignor.addressId).toBe(newAddressId)
   })
 
@@ -111,8 +119,9 @@ describe('GET /address-return', () => {
       state: handshakeState()
     })
 
-    expect(result.response.redirect).toContain(CONSIGNOR_PICKER_PATH)
-    expect(result.response.redirect).toContain('handshakeError=not-found')
+    expect(result.response.redirect).toBe(
+      consignorPicker(result.journeyId, '?handshakeError=not-found')
+    )
     expect(result.after.consignor).toBeUndefined()
   })
 
@@ -130,8 +139,9 @@ describe('GET /address-return', () => {
       state: handshakeState()
     })
 
-    expect(result.response.redirect).toContain(CONSIGNOR_PICKER_PATH)
-    expect(result.response.redirect).toContain('handshakeError=not-found')
+    expect(result.response.redirect).toBe(
+      consignorPicker(result.journeyId, '?handshakeError=not-found')
+    )
     expect(result.after.consignor).toBeUndefined()
   })
 
@@ -151,8 +161,9 @@ describe('GET /address-return', () => {
       state: handshakeState()
     })
 
-    expect(result.response.redirect).toContain(CONSIGNOR_PICKER_PATH)
-    expect(result.response.redirect).toContain('handshakeError=unavailable')
+    expect(result.response.redirect).toBe(
+      consignorPicker(result.journeyId, '?handshakeError=unavailable')
+    )
     expect(result.after.consignor).toBeUndefined()
   })
 
@@ -183,8 +194,9 @@ describe('GET /address-return', () => {
       state: handshakeState()
     })
 
-    expect(result.response.redirect).toContain(CONSIGNOR_PICKER_PATH)
-    expect(result.response.redirect).toContain('handshakeError=unavailable')
+    expect(result.response.redirect).toBe(
+      consignorPicker(result.journeyId, '?handshakeError=unavailable')
+    )
     expect(result.response.statusCode).toBeUndefined()
     expect(result.after.consignor).toBeUndefined()
   })

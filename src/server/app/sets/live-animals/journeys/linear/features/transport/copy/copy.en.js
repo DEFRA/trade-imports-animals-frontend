@@ -49,6 +49,8 @@ export const copy = {
       arrivalDateInvalid: 'Enter a real arrival date',
       arrivalDateOutOfRange: (earliest, latest) =>
         `Arrival date at port of entry must be between ${earliest} and ${latest}`,
+      portNoLongerAvailable:
+        'The saved port of entry is no longer available. Select a port from the list.',
       identificationMaxLength:
         'Transport identification must be 58 characters or less',
       documentReferenceMaxLength:
@@ -85,7 +87,9 @@ export const copy = {
       fromList: 'Select countries from the list',
       maxCountries: (max) => `Select up to ${max} countries`,
       chooseCountry: 'Enter a country to add',
-      alreadyAdded: (country) => `You have already added ${country}`
+      alreadyAdded: (country) => `You have already added ${country}`,
+      someNoLongerAvailable:
+        'Some of your saved transit countries are no longer available. Review the list before you continue.'
     }
   },
   transporters: {
@@ -269,6 +273,8 @@ export const copy = {
       postalOrZipCodeMaxLength:
         'Postcode or Zip code must be 12 characters or less',
       countryFromList: 'Select a country from the list',
+      countryNoLongerAvailable:
+        'The saved country is no longer available. Select a country from the list.',
       telephoneMaxLength: 'Phone number must be 20 characters or less',
       emailMaxLength: 'Email address must be 254 characters or less'
     }

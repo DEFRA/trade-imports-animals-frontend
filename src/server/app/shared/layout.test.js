@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { nunjucksConfig } from '../../../config/nunjucks/nunjucks.js'
 import { base, SURFACES, surfaceClass } from './kit.js'
 import { copy as sharedCopy } from './copy.en.js'
+import { SET_BASE } from '../sets/live-animals/set.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
 
@@ -11,12 +12,15 @@ const PHASE_BANNER = 'govuk-phase-banner'
 const BREADCRUMBS = 'govuk-breadcrumbs'
 const ADDRESS_BOOK_URL = 'http://ins.test/address-book'
 
+// `homeUrl` comes from the view model, the way kit.base() supplies it, so the
+// rendered chrome carries the set's own prefix rather than a bare `/`.
 const renderLayout = (userSession, context = {}) =>
   environment.render('shared/layout.njk', {
     pageTitle: 'Create an import notification',
     sharedCopy,
     userSession,
     addressBookUrl: ADDRESS_BOOK_URL,
+    homeUrl: SET_BASE,
     getAssetPath: (asset) => `/assets/${asset}`,
     ...context
   })
@@ -45,11 +49,22 @@ describe('service navigation', () => {
       serviceNavigation.logOut
     ])
     expect(links.map((_, a) => $(a).attr('href')).get()).toEqual([
-      '/',
+      SET_BASE,
       ADDRESS_BOOK_URL,
       '#',
       '/auth/sign-out'
     ])
+  })
+
+  it('Should point the dashboard link and the service name at the set’s own base', () => {
+    const $ = load(renderLayout(signedIn))
+
+    expect(
+      $(`.govuk-service-navigation__item a[href="${SET_BASE}"]`)
+    ).toHaveLength(1)
+    expect($(`.govuk-service-navigation__service-name a`).attr('href')).toBe(
+      SET_BASE
+    )
   })
 
   it('Should mark the dashboard item active inside the notifications section', () => {

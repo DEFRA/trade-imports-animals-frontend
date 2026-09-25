@@ -43,6 +43,8 @@ export const copy = {
       arrivalDateInvalid: 'Rhowch ddyddiad cyrraedd go iawn',
       arrivalDateOutOfRange: (earliest, latest) =>
         `Rhaid i ddyddiad cyrraedd y porthladd mynediad fod rhwng ${earliest} a ${latest}`,
+      portNoLongerAvailable:
+        "Nid yw'r porthladd mynediad a arbedwyd ar gael mwyach. Dewiswch borthladd o’r rhestr.",
       identificationMaxLength:
         'Rhaid i adnabod y cludiant fod yn 58 nod neu lai',
       documentReferenceMaxLength:
@@ -77,7 +79,9 @@ export const copy = {
       fromList: 'Dewiswch wledydd o’r rhestr',
       maxCountries: (max) => `Dewiswch hyd at ${max} gwlad`,
       chooseCountry: 'Rhowch wlad i’w hychwanegu',
-      alreadyAdded: (country) => `Rydych eisoes wedi ychwanegu ${country}`
+      alreadyAdded: (country) => `Rydych eisoes wedi ychwanegu ${country}`,
+      someNoLongerAvailable:
+        "Nid yw rhai o'r gwledydd tramwy a arbedwyd ar gael mwyach. Adolygwch y rhestr cyn parhau."
     }
   },
   transporters: {
@@ -232,6 +236,8 @@ export const copy = {
       postalOrZipCodeMaxLength:
         'Rhaid i’r cod post neu’r cod zip fod yn 12 nod neu lai',
       countryFromList: 'Dewiswch wlad o’r rhestr',
+      countryNoLongerAvailable:
+        "Nid yw'r wlad a arbedwyd ar gael mwyach. Dewiswch wlad o’r rhestr.",
       telephoneMaxLength: 'Rhaid i’r rhif ffôn fod yn 20 nod neu lai',
       emailMaxLength: 'Rhaid i’r cyfeiriad e-bost fod yn 254 nod neu lai'
     }

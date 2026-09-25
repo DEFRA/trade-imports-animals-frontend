@@ -1,4 +1,4 @@
-import { hubPath, pagePath, pageRoutePath } from './paths.js'
+import { dashboardPath, hubPath, pagePath, pageRoutePath } from './paths.js'
 import { AMEND, DELETED, DRAFT, SUBMITTED } from '../engine/index.js'
 import { nextInSection } from '../flow/navigation.js'
 import {
@@ -151,6 +151,10 @@ export const base = (
     pageTitle: title,
     caption: journeySectionCaption(page?.id),
     backLink,
+    // The chrome's home link, resolved in this request's set. Hardcoding `/`
+    // would send every set's service navigation to the default set's
+    // dashboard by way of the root redirect.
+    homeUrl: dashboardPath(),
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
     journeyStrip: journeyStrip(journey),
     concurrencyToken: journey?.concurrencyToken ?? null,
@@ -159,6 +163,34 @@ export const base = (
     contentColumnClass: SURFACES.form
   }
 }
+
+/** The shared layout, named here rather than read from a set's journey flow. */
+const SHARED_LAYOUT = 'shared/layout.njk'
+
+/**
+ * The chrome for a page rendered outside every set — the shared error page on
+ * an unrouted path, on `/health` or `/auth/*`.
+ *
+ * It resolves nothing set-owned: no journey layout, no section caption, no set
+ * base. Falling back to the sole mounted set instead would be right only while
+ * exactly one set is mounted, and would throw the moment a second arrived.
+ *
+ * @param {string} title - the page title.
+ * @returns {object} the set-free view model.
+ */
+export const setlessBase = (title) => ({
+  layout: SHARED_LAYOUT,
+  pageTitle: title,
+  // No caption, back link or hub link: all three are journey chrome, and there
+  // is no journey here. The home link is the root, which redirects to the
+  // default set.
+  homeUrl: '/',
+  journeyStrip: null,
+  concurrencyToken: null,
+  sharedCopy,
+  recoverableError: false,
+  contentColumnClass: SURFACES.form
+})
 
 export const recoverableSave = async (saveThunk, onRecoverableFailure) => {
   try {

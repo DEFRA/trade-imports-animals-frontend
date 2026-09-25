@@ -1,3 +1,4 @@
+import { SET_BASE, SET_ID } from '../../../../set.js'
 import Crumb from '@hapi/crumb'
 import Hapi from '@hapi/hapi'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -6,7 +7,7 @@ import { pagePath } from '../../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
 import {
-  SESSION_COOKIES,
+  knownJourneysCookie,
   registerJourneyCookie
 } from '../../../../../../engine/journey.js'
 import { configureRecords } from '../../../../../../engine/persistence/records.js'
@@ -33,6 +34,38 @@ import {
   MAX_PAYLOAD_BYTES,
   OVERSIZE_FILE_MESSAGE
 } from './upload-config.js'
+
+/**
+ * Mounts the document routes the way the router does — under the set's prefix —
+ * so an injected `pagePath()` URL reaches them. Registering them bare would
+ * leave every prefixed inject 404ing.
+ *
+ * @param {object} [options]
+ * @param {boolean} [options.cookies] - register this set's journey cookies.
+ * @param {boolean} [options.crumb] - register CSRF protection, for the tests
+ * that ask what an unprotected POST does.
+ */
+const serverWithDocumentRoutes = async ({
+  cookies = false,
+  crumb = false
+} = {}) => {
+  const server = Hapi.server()
+  registerTestSessionAuth(server)
+  if (cookies) {
+    registerJourneyCookie(server)
+  }
+  if (crumb) {
+    await server.register(Crumb)
+  }
+  await server.register(
+    {
+      name: 'documents-under-test',
+      register: (inner) => inner.route(documents.routes)
+    },
+    { routes: { prefix: SET_BASE } }
+  )
+  return server
+}
 
 const post = postHandlerOf(documents)
 const get = documents.routes.find((route) => route.method === 'GET').handler
@@ -74,9 +107,9 @@ const summaryTexts = (result) =>
   (result.view.context.errorSummary?.errorList ?? []).map((item) => item.text)
 
 const configureEngine = () => {
-  configureRecords(recordsStub)
-  configureSession(sessionStub)
-  buildDispatch(dispatchPages)
+  configureRecords(SET_ID, recordsStub)
+  configureSession(SET_ID, sessionStub)
+  buildDispatch(SET_ID, dispatchPages)
 }
 
 describe('documents — real upload leg on the single-page loop', () => {
@@ -426,10 +459,7 @@ describe('documents — listing, scanning and removing', () => {
   })
 
   it('Should reject a remove POST carrying no CSRF crumb and serve no GET route that removes', async () => {
-    const server = Hapi.server()
-    await server.register(Crumb)
-    registerTestSessionAuth(server)
-    server.route(documents.routes)
+    const server = await serverWithDocumentRoutes({ crumb: true })
 
     const forged = await server.inject({
       method: 'POST',
@@ -725,10 +755,8 @@ describe('documents — scan-status poll and view context', () => {
     expect(result.view.context.values.accompanyingDocumentType).toBe('')
   })
 
-  it('Should register the multipart POST route with the 10MB payload cap', () => {
-    const server = Hapi.server()
-    registerTestSessionAuth(server)
-    server.route(documents.routes)
+  it('Should register the multipart POST route with the 10MB payload cap', async () => {
+    const server = await serverWithDocumentRoutes()
     const route = server.table().find((entry) => entry.method === 'post')
     expect(route.settings.payload.maxBytes).toBe(MAX_PAYLOAD_BYTES)
     expect(route.settings.payload.multipart).toEqual({ output: 'annotated' })
@@ -740,10 +768,7 @@ describe('documents — reading an uploaded file back', () => {
   beforeEach(() => store.clear())
 
   const journeyHolding = async (uploadId) => {
-    const server = Hapi.server()
-    registerJourneyCookie(server)
-    registerTestSessionAuth(server)
-    server.route(documents.routes)
+    const server = await serverWithDocumentRoutes({ cookies: true })
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, {
       documents: [storedDocument({ uploadId, filename: 'itahc.pdf' })]
@@ -752,7 +777,7 @@ describe('documents — reading an uploaded file back', () => {
   }
 
   const knownCookie = (journeyIds) =>
-    `${SESSION_COOKIES.knownJourneys}=${Buffer.from(
+    `${knownJourneysCookie()}=${Buffer.from(
       JSON.stringify(journeyIds)
     ).toString('base64')}`
 
@@ -815,10 +840,7 @@ describe('documents — reading an uploaded file back', () => {
   })
 
   it('Should answer 404 for a journey with no documents at all', async () => {
-    const server = Hapi.server()
-    registerJourneyCookie(server)
-    registerTestSessionAuth(server)
-    server.route(documents.routes)
+    const server = await serverWithDocumentRoutes({ cookies: true })
     const journey = await store.create()
 
     const response = await server.inject({

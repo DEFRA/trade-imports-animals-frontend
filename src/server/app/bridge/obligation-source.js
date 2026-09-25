@@ -3,7 +3,7 @@ import {
   obligations
 } from '../model/obligations/manifest.js'
 import { isGroup } from '../model/obligations/manifest-graph.js'
-import { journeyFlowOnlyKeys } from '../flow/journey-flow.js'
+import { flowOnlyKeys } from './flow-only-keys.js'
 
 const namesUpTo = (obligation) =>
   obligation ? [...namesUpTo(obligation.within), obligation.name] : []
@@ -26,7 +26,14 @@ export const obligationByPath = (templatePath) =>
     (obligation) => templatePathOf(obligation) === templatePath
   )
 
-export const SYSTEM_POPULATED = new Set(['poApprovedReferenceNumber'])
+// Resolve system ownership from the configured manifest, never a set-specific list.
+class SystemPopulated extends Set {
+  has(name) {
+    return super.has(name) || obligationByName(name)?.system === true
+  }
+}
+
+export const SYSTEM_POPULATED = new SystemPopulated()
 
 export const ENFORCED_AT_CONTINUE = new Set([
   'countryOfOrigin',
@@ -51,7 +58,7 @@ export const MAX_ENTRIES_FROM = {
 
 // Flow-owned obligations the notification model does not carry, such as the
 // submit-time declaration step.
-export const flowOnlyObligations = () => journeyFlowOnlyKeys()
+export const flowOnlyObligations = () => flowOnlyKeys()
 
 export const flowOnlyAnswersFrom = (answers) =>
   Object.fromEntries(

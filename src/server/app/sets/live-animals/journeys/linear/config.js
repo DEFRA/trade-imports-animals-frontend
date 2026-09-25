@@ -4,5 +4,6 @@ export const LAYOUT = 'shared/layout.njk'
 export const SESSION_COOKIE_NAMES = {
   knownJourneys: 'liveAnimalsKnownJourneys',
   openingRun: 'liveAnimalsOpeningRun',
-  flowOnlyAnswers: 'liveAnimalsFlowOnlyAnswers'
+  flowOnlyAnswers: 'liveAnimalsFlowOnlyAnswers',
+  addressHandshakeTokens: 'liveAnimalsAddressHandshakeTokens'
 }

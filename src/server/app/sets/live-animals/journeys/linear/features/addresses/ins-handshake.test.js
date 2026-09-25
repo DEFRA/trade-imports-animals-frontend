@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { config } from '../../../../../../../../config/config.js'
-import { SESSION_COOKIES } from '../../../../../../engine/persistence/session.js'
+import { addressHandshakeTokensCookie } from '../../../../../../engine/persistence/session.js'
 import {
   recordingH,
   journeyRequest
@@ -64,10 +64,10 @@ describe('ins-handshake', () => {
     )
     expect(url).toContain(`fulfilment-id=${consignor.id}`)
     expect(url).toContain('handshake-token=')
-    expect(h.cookies[SESSION_COOKIES.addressHandshakeTokens]).toBeDefined()
-    expect(
-      h.cookies[SESSION_COOKIES.addressHandshakeTokens][consignor.id]
-    ).toMatch(/^[0-9a-f]{32}$/)
+    expect(h.cookies[addressHandshakeTokensCookie()]).toBeDefined()
+    expect(h.cookies[addressHandshakeTokensCookie()][consignor.id]).toMatch(
+      /^[0-9a-f]{32}$/
+    )
   })
 
   it('returns undefined when the party has no fulfilment mapping', () => {

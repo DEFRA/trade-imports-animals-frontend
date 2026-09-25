@@ -1,3 +1,4 @@
+import { SET_ID } from '../../../../set.js'
 import {
   afterEach,
   beforeAll,
@@ -8,7 +9,7 @@ import {
   vi
 } from 'vitest'
 
-import { pagePath } from '../../../../../../shared/paths.js'
+import { dashboardPath, pagePath } from '../../../../../../shared/paths.js'
 import { assembleFulfilments } from '../../../../../../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../../../../../../bridge/fulfilments/index.js'
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
@@ -19,7 +20,7 @@ import {
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
-  SESSION_COOKIES
+  knownJourneysCookie
 } from '../../../../../../engine/persistence/session.js'
 import { store } from '../../../../../../engine/store.js'
 import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
@@ -51,17 +52,17 @@ const startAmend = async () => {
 
 describe('cancel amendment routes', () => {
   beforeAll(() => {
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
 
   beforeEach(() => {
-    configureRecords(recordsStub)
+    configureRecords(SET_ID, recordsStub)
     store.clear()
   })
 
   afterEach(() => {
-    configureRecords(recordsStub)
+    configureRecords(SET_ID, recordsStub)
     vi.unstubAllGlobals()
   })
 
@@ -103,7 +104,7 @@ describe('cancel amendment routes', () => {
     await records.finalise(submitted.journeyId)
 
     expect(await get(journeyRequest(draft.journeyId), stubH())).toEqual({
-      redirect: '/'
+      redirect: dashboardPath()
     })
     expect(await post(journeyRequest(submitted.journeyId), stubH())).toEqual({
       redirect: pagePath(submitted.journeyId, NOTIFICATION_VIEW_SLUG)
@@ -120,7 +121,7 @@ describe('cancel amendment routes', () => {
     await expect(
       post(
         journeyRequest('GBN-AG-26-UNKNOWN', {
-          state: { [SESSION_COOKIES.knownJourneys]: [] }
+          state: { [knownJourneysCookie()]: [] }
         }),
         stubH()
       )
@@ -131,7 +132,7 @@ describe('cancel amendment routes', () => {
   })
 
   it('Should re-render confirmation at 500 with the recoverable-save banner after a backend failure', async () => {
-    configureRecords({
+    configureRecords(SET_ID, {
       ...recordsStub,
       cancelAmend: realRecords.cancelAmend
     })

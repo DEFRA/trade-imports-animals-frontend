@@ -21,6 +21,7 @@ import { sessionCache } from './common/helpers/session-cache/session-cache.js'
 import { getCacheEngine } from './common/helpers/session-cache/cache-engine.js'
 import { secureContext } from '@defra/hapi-secure-context'
 import { contentSecurityPolicy } from './common/helpers/content-security-policy.js'
+import { setContextExtension } from './app/shared/set-context.js'
 import { metrics } from '@defra/cdp-metrics'
 
 export async function createServer() {
@@ -86,6 +87,12 @@ export async function createServer() {
     cache: config.get('session.cache.name'),
     expiresIn: config.get('session.cache.ttl')
   })
+
+  // Server-wide, and before routing: every request under a set's mount runs in
+  // that set's context from here on, whether or not it reaches a set route.
+  // Without it the error page and the view-render step depend on an `enterWith`
+  // from a set's own extension surviving, which it does not always do.
+  server.ext(setContextExtension)
 
   server.ext('onPreResponse', catchAll)
 

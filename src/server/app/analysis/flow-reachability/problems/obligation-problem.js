@@ -1,6 +1,6 @@
 import { SYSTEM_POPULATED } from '../../../bridge/obligation-source.js'
 import { pageOfObligation } from '../../../flow/dispatch.js'
-import { journeyFlowOnlyKeys } from '../../../flow/journey-flow.js'
+import { flowOnlyKeys } from '../../../bridge/flow-only-keys.js'
 import { leafName, stripIndices } from '../path-key.js'
 import {
   REASON_NO_OWNING_PAGE,
@@ -11,7 +11,7 @@ import {
 // a page (`flow/dispatch.js` excludes SYSTEM_POPULATED from its coverage
 // assertion for the same reason), so they carry no page-reachability concern.
 export const isNotPagePresented = (key) =>
-  journeyFlowOnlyKeys().includes(stripIndices(key)) ||
+  flowOnlyKeys().includes(stripIndices(key)) ||
   SYSTEM_POPULATED.has(leafName(key))
 
 // The problem (if any) an in-scope obligation contributes: none when it's

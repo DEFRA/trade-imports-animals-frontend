@@ -1,5 +1,7 @@
 import { vi } from 'vitest'
 
+import { SET_BASE, SET_ID } from '../../../server/app/sets/live-animals/set.js'
+
 const mockReadFileSync = vi.fn()
 const mockLoggerError = vi.fn()
 
@@ -15,6 +17,18 @@ vi.mock('../../../server/common/helpers/logging/logger.js', () => ({
   createLogger: () => ({ error: (...args) => mockLoggerError(...args) })
 }))
 
+// `vi.resetModules()` gives a freshly imported `shared/set-context.js` an empty
+// mount registry, so the global setup's registration does not carry over. It
+// matters only where `context.js` is imported AFTER a reset — the '#context
+// cache' beforeAll, the '#activeNavigationItem' beforeAll and the auth.enabled
+// test, each of which calls this for itself. A remount before a module
+// instance nothing under test consults changes nothing.
+const remountLiveAnimals = async () => {
+  const { registerSetMount } =
+    await import('../../../server/app/shared/set-context.js')
+  registerSetMount(SET_ID, SET_BASE)
+}
+
 describe('context and cache', () => {
   beforeEach(() => {
     mockReadFileSync.mockReset()
@@ -23,7 +37,7 @@ describe('context and cache', () => {
   })
 
   describe('#context', () => {
-    const mockRequest = { path: '/' }
+    const mockRequest = { path: SET_BASE }
 
     describe('When webpack manifest file read succeeds', () => {
       let contextImport
@@ -49,6 +63,7 @@ describe('context and cache', () => {
           getAssetPath: expect.any(Function),
           serviceName: 'Animals',
           serviceUrl: '/',
+          homeUrl: SET_BASE,
           authEnabled: true,
           staleActionRejected: false,
           activeNavigationItem: 'dashboard',
@@ -63,12 +78,18 @@ describe('context and cache', () => {
         expect(result.activeNavigationItem).toBeNull()
       })
 
+      test('Should send the home link to the root from outside every set', async () => {
+        const result = await contextImport.context({ path: '/auth/sign-out' })
+
+        expect(result.homeUrl).toBe('/')
+      })
+
       test('Should describe the signed-in user from their session', async () => {
         const cacheGet = vi
           .fn()
           .mockResolvedValue({ email: 'trader@example.com' })
         const result = await contextImport.context({
-          path: '/',
+          path: SET_BASE,
           auth: {
             isAuthenticated: true,
             credentials: { sessionId: 'session-1' }
@@ -138,13 +159,16 @@ describe('context and cache', () => {
   })
 
   describe('#context cache', () => {
-    const mockRequest = { path: '/' }
+    const mockRequest = { path: SET_BASE }
     let contextResult
 
     describe('Webpack manifest file cache', () => {
       let contextImport
 
       beforeAll(async () => {
+        // Imported after the describes above have reset the module graph, so
+        // this instance of set-context.js starts with an empty registry.
+        await remountLiveAnimals()
         contextImport = await import('./context.js')
       })
 
@@ -172,6 +196,7 @@ describe('context and cache', () => {
           getAssetPath: expect.any(Function),
           serviceName: 'Animals',
           serviceUrl: '/',
+          homeUrl: SET_BASE,
           authEnabled: true,
           staleActionRejected: false,
           activeNavigationItem: 'dashboard',
@@ -183,39 +208,65 @@ describe('context and cache', () => {
   })
 })
 
+const OTHER_SET_ID = 'high-risk-plants'
+const OTHER_SET_BASE = `/${OTHER_SET_ID}`
+
 describe('#activeNavigationItem', () => {
   let activeNavigationItem
+  let setContext
 
   beforeAll(async () => {
+    // The describes above reset the module graph, so the mount has to be put
+    // back before `context.js` resolves a set-aware path.
+    await remountLiveAnimals()
+    setContext = await import('../../../server/app/shared/set-context.js')
+    // A second mount, so the other set's base below is a set that is really
+    // mounted rather than a string nothing has registered — and so live-animals
+    // has to be entered explicitly rather than found by the sole-set fallback.
+    setContext.registerSetMount(OTHER_SET_ID, OTHER_SET_BASE)
     ;({ activeNavigationItem } = await import('./context.js'))
   })
 
+  const inLiveAnimals = (requestPath) =>
+    setContext.withSetContext(SET_ID, () => activeNavigationItem(requestPath))
+
   test('Should mark the dashboard on the notifications list', () => {
-    expect(activeNavigationItem('/')).toBe('dashboard')
+    expect(inLiveAnimals(SET_BASE)).toBe('dashboard')
   })
 
   test('Should keep the dashboard marked inside a notification', () => {
-    expect(activeNavigationItem('/notifications/abc-123/origin')).toBe(
+    expect(inLiveAnimals(`${SET_BASE}/notifications/abc-123/origin`)).toBe(
       'dashboard'
     )
   })
 
   test('Should mark nothing on a page outside the navigation', () => {
-    expect(activeNavigationItem('/auth/sign-out')).toBeNull()
+    expect(inLiveAnimals('/auth/sign-out')).toBeNull()
   })
 
   test('Should mark nothing on a path that merely starts with the section name', () => {
-    expect(activeNavigationItem('/notificationsomething')).toBeNull()
+    expect(inLiveAnimals(`${SET_BASE}/notificationsomething`)).toBeNull()
+  })
+
+  test('Should mark nothing on another set’s dashboard', () => {
+    expect(inLiveAnimals(OTHER_SET_BASE)).toBeNull()
   })
 
   test('Should mark nothing when there is no path', () => {
-    expect(activeNavigationItem(undefined)).toBeNull()
+    expect(inLiveAnimals(undefined)).toBeNull()
+  })
+
+  test('Should mark nothing on a server-wide page, outside every set', () => {
+    // Two sets are mounted, so the sole-set fallback cannot stand in. Without
+    // the `hasSetContext` guard this throws for want of a set.
+    expect(activeNavigationItem('/auth/sign-out')).toBeNull()
   })
 })
 
 describe('When auth.enabled is set to false', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.resetModules()
+    await remountLiveAnimals()
     mockReadFileSync.mockReset()
     mockLoggerError.mockReset()
   })
@@ -234,7 +285,7 @@ describe('When auth.enabled is set to false', () => {
       "application.js": "javascripts/application.js",
       "stylesheets/application.scss": "stylesheets/application.css"
     }`)
-    const mockRequest = { path: '/' }
+    const mockRequest = { path: SET_BASE }
     const contextResult = await contextImport.context(mockRequest)
     expect(contextResult.authEnabled).toBe(false)
     expect(contextResult.userSession).toEqual({ isAuthenticated: false })

@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test'
 import {
   answerCountryOfOrigin,
   journeyUrl,
+  urlUnderBase,
   selectSpecies,
   signIn,
   startNotification
@@ -118,7 +119,7 @@ test.describe('additional-details feature — the unweaned commodity gate', () =
       .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
       .click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+'))
     await page.goto(detailsUrl)
     await expect(
       page.getByRole('radio', { name: 'Slaughter', exact: true })
@@ -213,7 +214,7 @@ test.describe('additional-details feature — persistence and accessibility', ()
       .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
       .click()
 
-    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+'))
     await page.goto(detailsUrl)
     await expect(
       page.getByRole('radio', { name: 'Slaughter', exact: true })

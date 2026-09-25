@@ -1,3 +1,4 @@
+import { SET_ID } from '../sets/live-animals/set.js'
 import { readFileSync } from 'node:fs'
 import { beforeAll, describe, it, expect } from 'vitest'
 import { rawInScope } from './scope.js'
@@ -19,7 +20,7 @@ const happyPath = JSON.parse(
 ).values
 
 // Pin readiness false through the test override seam.
-beforeAll(() => configureReadyForCheckYourAnswers(() => false))
+beforeAll(() => configureReadyForCheckYourAnswers(SET_ID, () => false))
 
 const resolveRegion = (answers) => ({
   regionOfOriginCodeRequirement: 'yes',

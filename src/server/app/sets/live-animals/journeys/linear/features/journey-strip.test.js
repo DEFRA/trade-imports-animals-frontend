@@ -1,3 +1,5 @@
+import { dashboardPath } from '../../../../../shared/paths.js'
+import { SET_ID } from '../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../flow/dispatch.js'
@@ -23,7 +25,7 @@ import { routes as importReasonRoutes } from './import-reason/controller.js'
 
 const JOURNEY_REFERENCE = 'GBN-AG-26-ABC123'
 const DRAFT_TAG = { text: 'Draft', classes: 'govuk-tag--blue' }
-const DASHBOARD_PATH = '/'
+const DASHBOARD_PATH = dashboardPath()
 
 const getHandlerOf = (routes) =>
   routes.find((route) => route.method === 'GET').handler
@@ -40,9 +42,9 @@ const renderWith = async (handler, seed) => {
 
 describe('journey reference strip', () => {
   beforeAll(() => {
-    configureRecords(recordsStub)
-    configureSession(sessionStub)
-    buildDispatch(dispatchPages)
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => store.clear())
 
