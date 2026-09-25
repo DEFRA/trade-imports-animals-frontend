@@ -12,17 +12,6 @@ export const registerSetMount = (setId, prefix) => {
 
 export const mountedSetIds = () => [...mounts.keys()]
 
-/**
- * Which set a request path belongs to, read off the registered mounts.
- *
- * Longest match wins, so a set mounted at `/live-animals/extra` would beat one
- * at `/live-animals` rather than depending on registration order.
- *
- * @param {string} [path] - the request path.
- * @returns {string|undefined} the set id, or undefined where the path is
- * outside every mount — `/health`, `/signout`, `/auth/*`, or a genuinely
- * unrouted URL.
- */
 export const setIdForPath = (path) => {
   if (typeof path !== 'string') {
     return undefined
@@ -39,16 +28,6 @@ export const setIdForPath = (path) => {
 
 const soleSetId = () => (mounts.size === 1 ? [...mounts.keys()][0] : undefined)
 
-/**
- * Whether a set can be resolved at all.
- *
- * A server-wide route — the root redirect, `/signout`, the sign-in error page,
- * the shared error page reached from outside every set — belongs to no set, so
- * anything set-owned has no answer for it. Ask this before reaching for a set
- * rather than catching the throw.
- *
- * @returns {boolean} true when `currentSetId()` would answer.
- */
 export const hasSetContext = () =>
   (storage.getStore()?.setId ?? soleSetId()) !== undefined
 

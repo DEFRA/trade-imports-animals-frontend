@@ -161,17 +161,6 @@ export const base = (
 /** The shared layout, named here rather than read from a set's journey flow. */
 const SHARED_LAYOUT = 'shared/layout.njk'
 
-/**
- * The chrome for a page rendered outside every set — the shared error page on
- * an unrouted path, on `/health`, `/signout` or `/auth/*`.
- *
- * It resolves nothing set-owned: no journey layout, no section caption, no set
- * base. Falling back to the sole mounted set instead would be right only while
- * exactly one set is mounted, and would throw the moment a second arrived.
- *
- * @param {string} title - the page title.
- * @returns {object} the set-free view model.
- */
 export const setlessBase = (title) => ({
   layout: SHARED_LAYOUT,
   pageTitle: title,
