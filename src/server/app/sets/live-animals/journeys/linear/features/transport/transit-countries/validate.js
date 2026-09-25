@@ -11,22 +11,18 @@ const copy = copyFor({ en, cy }).transitCountries
 
 export const MAX_TRANSITED_COUNTRIES = 12
 
-/** The one error key on this page. The trader adds and removes through the
- * search box, so every message this page can show is a message about that
- * control — which is where the error summary has to send them. */
+// The trader adds and removes through the search box, so every error on this
+// page anchors to that control.
 export const COUNTRY_FIELD = 'transitedCountry'
 
-/** The offered list, not the label lookup: `originLabel` resolves GB to
- * "United Kingdom" for address forms, but GB is not a country this page
- * offers — the copy above the control says so. */
+// The offered list, not the label lookup: GB resolves for address forms but
+// is not a country this page offers.
 export const offeredCodes = async () =>
   new Set((await countries.originCountries()).map(({ value }) => value))
 
-// An EMPTY list is not a failure — the question is optional (design release 1),
-// so continuing without adding a country saves the empty list and moves on.
-// A list that is too long, or holds a country the service no longer offers,
-// is: on a submitted form because no rendering of the page could have produced
-// it, and on a stored answer because the list has moved since it was saved.
+// Empty is fine — the question is optional (design release 1). Too long or
+// holding a country the service no longer offers is not: on submit because
+// no rendering could have produced it, on stored because the list has moved.
 const listErrors = async (selected, stored) => {
   const offered = await offeredCodes()
   if (selected.some((code) => !offered.has(code))) {
@@ -44,9 +40,8 @@ const listErrors = async (selected, stored) => {
   return {}
 }
 
-/** The page carries its own working list in hidden inputs: nothing is saved
- * until the trader continues, so adding and removing costs no write and a
- * trader who leaves without saving leaves the answer as they found it. */
+// The page carries its own working list in hidden inputs — nothing is saved
+// until Continue, so adding and removing costs no write.
 const selectedFrom = (payload) => [
   ...new Set(
     [payload.transitedCountries ?? []].flat().filter((code) => code !== '')
@@ -54,7 +49,7 @@ const selectedFrom = (payload) => [
 ]
 
 export const validation = pageValidation({
-  // The answer is a list, which no field schema states; it is measured whole.
+  // The answer is a list — measured whole by `checks` rather than field-by-field.
   fields: () => compose(),
   checks: (values, { stored }) => listErrors(values.transitedCountries, stored),
   fromPayload: (payload) => ({

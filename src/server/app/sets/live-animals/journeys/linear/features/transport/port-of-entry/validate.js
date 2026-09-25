@@ -17,10 +17,6 @@ const copy = copyFor({ en, cy }).portOfEntry
 
 const TRANSPORT_FIELD_MAX_LENGTH = 58
 
-// A port that has closed, and an arrival date the window has moved past, are
-// not mistakes the trader made: both were good when they answered. The rule
-// broken is the same one either way, so only what it says about the answer
-// changes.
 const portMessage = (stored) =>
   stored ? copy.errors.portNoLongerAvailable : undefined
 
@@ -29,11 +25,9 @@ const arrivalDateRangeMessage = (stored, dateWindow) =>
     ? copy.errors.arrivalDateNoLongerInWindow
     : copy.errors.arrivalDateOutOfRange(dateWindow.minText, dateWindow.maxText)
 
-// The window moves with the clock, so the rules are built per reading rather
-// than once at import. The page hands in the window it drew the date widget
-// with — two clock reads in one request would let the widget bounds and the
-// server bounds disagree across a midnight boundary. A reading that draws no
-// widget takes the window as it stands.
+// The page hands in the window it drew the date widget with — two clock
+// reads in one request would let widget bounds and server bounds disagree
+// across midnight. A reading with no widget takes the window as it stands.
 const fields = async (
   _values,
   { dateWindow = arrivalWindow(), stored } = {}
@@ -79,8 +73,6 @@ export const validation = pageValidation({
     transportIdentification: answers.transportIdentification ?? '',
     transportDocumentReference: answers.transportDocumentReference ?? ''
   }),
-  // The date goes in as the three parts the answer is stored in; every other
-  // field is stored exactly as the form holds it.
   toAnswers: (values) => ({
     ...values,
     arrivalDateAtPort: readDate(values, 'arrivalDateAtPort')

@@ -4,13 +4,8 @@ import { taskRowById, taskRows } from './task-rows.js'
 
 const NO_ERRORS = Object.freeze({})
 
-/**
- * One task row's own stored-answer errors: each of its pages' validations,
- * read back over what is stored, merged into one `{ field: message }`. A row
- * whose pages carry no validation of their own, or whose stored answers still
- * pass every rule they have, returns nothing — the same `{}` `pageValidation`
- * itself uses for a clean read.
- */
+/** One task row's stored-answer errors merged across its pages, `{}` when
+ * every stored answer still passes (or the row has no validated pages). */
 export const rowStoredErrors = async (row, answers, context) => {
   let merged = NO_ERRORS
   for (const page of row.pages) {
