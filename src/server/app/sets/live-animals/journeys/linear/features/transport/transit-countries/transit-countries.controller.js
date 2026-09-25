@@ -5,6 +5,7 @@ import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../../lib/http-status.js'
+import { hasErrors } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as countries from '../../../../../../../services/countries/index.js'
@@ -13,16 +14,21 @@ import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { ADD_ACTION, isRemoveAction, removeCodeOf } from './remove-action.js'
 import { countryRows } from './rows.js'
+import {
+  COUNTRY_FIELD,
+  MAX_TRANSITED_COUNTRIES,
+  offeredCodes,
+  validation
+} from './validate.js'
 
-export const meta = { ...page, collects: ['transitedCountries'] }
+export const meta = {
+  ...page,
+  collects: ['transitedCountries'],
+  validation
+}
 const view = `${TEMPLATES}/features/transport/transit-countries/transit-countries`
 
-export const MAX_TRANSITED_COUNTRIES = 12
-
-/** The one error key on this page. The trader adds and removes through the
- * search box, so every message this page can show is a message about that
- * control — which is where the error summary has to send them. */
-export const COUNTRY_FIELD = 'transitedCountry'
+export { COUNTRY_FIELD, MAX_TRANSITED_COUNTRIES }
 
 const copy = copyFor({ en, cy }).transitCountries
 
@@ -35,36 +41,13 @@ const countryItems = async () => [
   ...(await countries.originCountries())
 ]
 
-// The offered list, not the label lookup: `originLabel` resolves GB to
-// "United Kingdom" for address forms, but GB is not a country this page
-// offers — the copy above the control says so.
-const offeredCodesSet = async () =>
-  new Set((await countries.originCountries()).map(({ value }) => value))
-
-// The saved answer, not the page: these are the guards against a submitted list
-// that no rendering of this page could have produced. An EMPTY list is not one
-// of them — the question is optional (design release 1), so continuing without
-// adding a country saves the empty list and moves on.
-const transitedCountriesErrors = async (selected) => {
-  const offered = await offeredCodesSet()
-  if (selected.some((code) => !offered.has(code))) {
-    return { [COUNTRY_FIELD]: copy.errors.fromList }
-  }
-  if (selected.length > MAX_TRANSITED_COUNTRIES) {
-    return {
-      [COUNTRY_FIELD]: copy.errors.maxCountries(MAX_TRANSITED_COUNTRIES)
-    }
-  }
-  return {}
-}
-
 const render = async (
   h,
   journey,
   selected,
   { errors = {}, status = '', chosen = '', recoverableError = false } = {}
 ) => {
-  const offered = await offeredCodesSet()
+  const offered = await offeredCodes()
   // A code the list does not contain could only have arrived by tampering. It
   // is refused by the guards above; it is not rendered back.
   const known = selected.filter((code) => offered.has(code))
@@ -105,15 +88,6 @@ const render = async (
   })
 }
 
-// The page carries its own working list in hidden inputs: nothing is saved
-// until the trader continues, so adding and removing costs no write and a
-// trader who leaves without saving leaves the answer as they found it.
-const selectedFrom = (payload) => [
-  ...new Set(
-    [payload.transitedCountries ?? []].flat().filter((code) => code !== '')
-  )
-]
-
 // Announced as it happens, on top of the row appearing (design release 1).
 // Reaching the cap is said in the same breath as the country that reached it.
 const statusFor = (message, selected) =>
@@ -122,7 +96,7 @@ const statusFor = (message, selected) =>
     : message
 
 const addErrors = async (chosen, selected) => {
-  const offered = await offeredCodesSet()
+  const offered = await offeredCodes()
   if (chosen === '') {
     return { [COUNTRY_FIELD]: copy.errors.chooseCountry }
   }
@@ -166,9 +140,9 @@ const postRemove = async (request, h, selected, code) => {
   })
 }
 
-const postContinue = async (request, h, selected) => {
-  const errors = await transitedCountriesErrors(selected)
-  if (Object.keys(errors).length > 0) {
+const postContinue = async (request, h, payload, selected) => {
+  const { answers, errors } = await validation.onSubmit(payload)
+  if (hasErrors(errors)) {
     const { journey } = await state.get(request, h)
     return (await render(h, journey, selected, { errors })).code(
       HTTP_STATUS_BAD_REQUEST
@@ -178,9 +152,7 @@ const postContinue = async (request, h, selected) => {
   let committed
   const { failure } = await kit.recoverableSave(
     async () => {
-      committed = await state.commit(request, h, {
-        transitedCountries: selected
-      })
+      committed = await state.commit(request, h, answers)
     },
     async () => {
       const { journey } = await state.get(request, h)
@@ -196,34 +168,26 @@ const postContinue = async (request, h, selected) => {
   return h.redirect(await kit.nextTarget(request, page, committed.scope))
 }
 
-const hasStaleCountries = async (codes) => {
-  const offered = await offeredCodesSet()
-  return codes.some((code) => !offered.has(code))
-}
-
-// The render already filters stale codes out of the chip list; the banner
-// tells the trader before the next Continue silently commits the filtered
-// list.
+// The stored list goes back through the page's own rules. The render already
+// filters stale codes out of the chip list; the banner tells the trader before
+// the next Continue silently commits the filtered list.
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  const stored = [answers.transitedCountries ?? []].flat()
-  const errors = (await hasStaleCountries(stored))
-    ? { [COUNTRY_FIELD]: copy.errors.someNoLongerAvailable }
-    : {}
-  return render(h, journey, stored, { errors })
+  const { values, errors } = await validation.onStored(answers)
+  return render(h, journey, values.transitedCountries, { errors })
 }
 
 const post = async (request, h) => {
   const payload = request.payload ?? {}
   const action = String(payload.action ?? '')
-  const selected = selectedFrom(payload)
+  const { transitedCountries: selected } = validation.fromPayload(payload)
   if (action === ADD_ACTION) {
     return postAdd(request, h, selected)
   }
   if (isRemoveAction(action)) {
     return postRemove(request, h, selected, removeCodeOf(action))
   }
-  return postContinue(request, h, selected)
+  return postContinue(request, h, payload, selected)
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

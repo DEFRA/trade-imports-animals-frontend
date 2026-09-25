@@ -19,10 +19,13 @@ import { outstandingPartyErrors } from './view-model/outstanding-parties.js'
 import {
   cardAnchorHref,
   incompleteCardErrors,
+  REVIEW_CARDS,
   withCardErrors
 } from './view-model/incomplete-cards.js'
+import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { partiesForRender } from '../addresses/parties-for-render.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
+import { isReviewRefused } from './refusal.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 
@@ -126,6 +129,20 @@ export const renderNotificationView = async (
   // name. The rest of the page still renders from the sanitised answers.
   const source = storedAnswers ?? answers
   const parties = await partiesForRender(request, journey, source)
+  // A submitted notification is a record of what was sent, so nothing on it
+  // is outstanding, and no stored answer of its is named as stale either —
+  // both read as empty on a read-only notification.
+  //
+  // Each card's page reads the sanitised `answers` here, and is handed the
+  // raw `storedAnswers` via context, so its own rules decide for themselves
+  // which of the two they need. The contact page's deleted-address rule is
+  // precisely the difference between them: it fires when `storedAnswers`
+  // still carries the address id but the sanitised `answers` has had it
+  // dropped, which is exactly how it tells a deleted address from one never
+  // chosen.
+  const invalidCardErrors = readOnly
+    ? {}
+    : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
   return renderCya(h, journey, {
     answers,
     scope,
@@ -135,11 +152,16 @@ export const renderNotificationView = async (
     recoverableError,
     parties,
     partyErrors: readOnly ? {} : outstandingPartyErrors(source, parties),
-    // A submitted notification is a record of what was sent, so nothing on it
-    // is outstanding however its answers now read.
+    // Incomplete wins over invalid on the same card: spread the invalid map
+    // first and the incomplete map second, so a card that is both unfinished
+    // and carrying a stale value says "complete this section" rather than
+    // naming the stale answer.
     cardErrors: readOnly
       ? {}
-      : incompleteCardErrors(answers, scope, evaluation),
+      : {
+          ...invalidCardErrors,
+          ...incompleteCardErrors(answers, scope, evaluation)
+        },
     disableAutoFocus
   })
 }
@@ -147,28 +169,13 @@ export const renderNotificationView = async (
 const get = async (request, h) => renderNotificationView(request, h)
 
 const post = async (request, h) => {
-  const { journey, answers, storedAnswers, scope } = await state.get(request, h)
-  // Same source as the GET, or the refusal and the page would disagree.
-  const source = storedAnswers ?? answers
-  const parties = await partiesForRender(request, journey, source)
-  // A submitted notification is read-only: the GET zeroes its errors, so the
-  // POST must not refuse it either.
-  const readOnly = journey.status === state.SUBMITTED
-  // An unfinished notification is refused here rather than three pages later at
-  // the declaration's submit, where the same readiness test used to bounce the
-  // trader back to this page saying nothing. `readyForCheckYourAnswers` is the
-  // roll-up of the very task rows `incompleteCardErrors` reads, so a refusal
-  // always arrives with a summary naming what is left.
-  const refused =
-    !readOnly &&
-    (!scope.readyForCheckYourAnswers ||
-      Object.keys(outstandingPartyErrors(source, parties)).length > 0)
-  if (refused) {
+  if (await isReviewRefused(request, h)) {
     const rendered = await renderNotificationView(request, h, {
       disableAutoFocus: false
     })
     return rendered.code(HTTP_STATUS_BAD_REQUEST)
   }
+  const { journey, scope } = await state.get(request, h)
   return h.redirect(nextInSection(page.id, scope, journey.journeyId))
 }
 

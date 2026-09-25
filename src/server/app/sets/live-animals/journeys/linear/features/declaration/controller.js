@@ -20,6 +20,7 @@ import { assembleFulfilments } from '../../../../../../bridge/assemble-fulfilmen
 import { records } from '../../../../../../engine/persistence/records.js'
 import { buildActor } from '../../../../../../../common/helpers/actor-helpers.js'
 import { reinflatePartyAnswers } from '../addresses/reinflate-party-answers.js'
+import { isReviewRefused } from '../check-answers/refusal.js'
 
 export const meta = { ...page, collects: ['declaration'] }
 const view = `${TEMPLATES}/features/declaration/template`
@@ -70,6 +71,10 @@ const post = async (request, h) => {
   const { errors } = validate(fields, payload)
   if (errors) {
     return render(h, journey, values, errors).code(HTTP_STATUS_BAD_REQUEST)
+  }
+
+  if (await isReviewRefused(request, h)) {
+    return h.redirect(pagePath(journey.journeyId, kit.CYA_SLUG))
   }
 
   let result

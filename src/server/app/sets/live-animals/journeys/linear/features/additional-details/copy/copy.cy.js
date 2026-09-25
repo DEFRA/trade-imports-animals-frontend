@@ -10,5 +10,9 @@ export const copy = {
     hint: "Anifeiliaid sy'n dal i fwydo gan eu mam yw'r rhain.",
     yes: 'Ydy',
     no: 'Nac ydy'
+  },
+  errors: {
+    certifiedNoLongerOffered:
+      "Nid yw'r diben ardystio a ddewiswyd gennych yn cael ei gynnig mwyach. Dewiswch ddiben o'r rhestr."
   }
 }

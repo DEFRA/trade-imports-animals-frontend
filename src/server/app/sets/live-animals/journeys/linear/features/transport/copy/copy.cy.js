@@ -45,6 +45,8 @@ export const copy = {
         `Rhaid i ddyddiad cyrraedd y porthladd mynediad fod rhwng ${earliest} a ${latest}`,
       portNoLongerAvailable:
         "Nid yw'r porthladd mynediad a arbedwyd ar gael mwyach. Dewiswch borthladd o’r rhestr.",
+      arrivalDateNoLongerInWindow:
+        "Nid yw'r dyddiad cyrraedd a arbedwyd yn ddyddiad y gallwch ei ddewis mwyach. Rhowch ddyddiad cyrraedd newydd.",
       identificationMaxLength:
         'Rhaid i adnabod y cludiant fod yn 58 nod neu lai',
       documentReferenceMaxLength:
@@ -130,7 +132,9 @@ export const copy = {
     noMatches: 'Nid oes unrhyw gludwyr yn cyfateb i’ch chwiliad.',
     add: 'Ychwanegu cludwr',
     errors: {
-      transporterRequired: 'Dewiswch gludwr o’r rhestr'
+      transporterRequired: 'Dewiswch gludwr o’r rhestr',
+      transporterNoLongerAvailable:
+        'Dewiswch gludwr o’r rhestr. Nid yw’r un a ddewiswyd gennych ar gael mwyach.'
     }
   },
   transporterAdd: {

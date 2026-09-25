@@ -2,11 +2,7 @@ import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
-import {
-  compose,
-  oneOf,
-  validate
-} from '../../../../../../../lib/validate/index.js'
+import { hasErrors } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
 import * as transporters from '../../../../../../../services/transporters/index.js'
@@ -16,6 +12,7 @@ import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { transporterAnswer } from './transporter-record.js'
 import { matchingTransporters, transporterRows } from './rows.js'
+import { validation } from './validate.js'
 
 /** The transporter list — the journey's one transporter step.
  *
@@ -26,7 +23,8 @@ import { matchingTransporters, transporterRows } from './rows.js'
  * the address pickers write the parties the addresses page declares. */
 export const meta = {
   ...page,
-  collects: ['transporterType', 'commercialTransporter', 'privateTransporter']
+  collects: ['transporterType', 'commercialTransporter', 'privateTransporter'],
+  validation
 }
 const view = `${TEMPLATES}/features/transport/transporters/transporters`
 
@@ -37,18 +35,6 @@ const copy = copyFor({ en, cy }).transporters
  * per request rather than held at module load. */
 const availableTransporters = (request) =>
   transporters.partiesFor(organisationIdOf(request))
-
-/** A pick is valid when it is a row the page just rendered, which is why the
- * options are built from the list in hand rather than from a fixed set: a
- * transporter the organisation added is as pickable as one the service ships. */
-const fieldsFor = (records) =>
-  compose(
-    oneOf(
-      'transporter',
-      records.map((option) => option.id),
-      copy.errors.transporterRequired
-    )
-  )
 
 /** The search button and the page's own submits share the one form, told apart
  * by their `action` value — the address picker's shape. */
@@ -115,10 +101,18 @@ const selectedIdFor = (request, answers) => {
 }
 
 const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
-  return render(request, h, journey, {
-    selectedId: selectedIdFor(request, answers)
+  const { journey, answers, storedAnswers } = await state.get(request, h)
+  const { errors } = await validation.onStored(answers, {
+    request,
+    storedAnswers
   })
+  return render(
+    request,
+    h,
+    journey,
+    { selectedId: selectedIdFor(request, answers) },
+    { errors }
+  )
 }
 
 const commitOrSkip = (request, h, chosen) =>
@@ -145,8 +139,8 @@ const post = async (request, h) => {
   }
 
   const records = availableTransporters(request)
-  const { errors } = validate(fieldsFor(records), payload)
-  if (errors) {
+  const { errors } = await validation.onSubmit(payload, { records })
+  if (hasErrors(errors)) {
     const { journey } = await state.get(request, h)
     return render(request, h, journey, { query }, { errors })
   }

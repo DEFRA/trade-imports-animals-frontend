@@ -230,7 +230,11 @@ export const readDate = (payload, name) => {
   return { day, month, year }
 }
 
-const dateInputValue = (value) =>
+/** The inverse of `readDate`: a stored `{ day, month, year }` back as the
+ * `d/m/yyyy` text the date field holds and the date rules read. A value that is
+ * already text is its own answer — `readDate` hands back what it could not
+ * split, so an unreadable date survives a round trip and is still refused. */
+export const dateTextOf = (value) =>
   typeof value === 'string'
     ? value
     : [value?.day, value?.month, value?.year]
@@ -261,7 +265,7 @@ export const dateField = (
     label: { text: label, classes: 'govuk-label--s' },
     hint: hint ? { text: hint } : undefined,
     errorMessage: error ? { text: error } : undefined,
-    value: dateInputValue(value),
+    value: dateTextOf(value),
     minDate,
     maxDate,
     formGroup: formGroupClasses ? { classes: formGroupClasses } : undefined

@@ -5,13 +5,7 @@ import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_INTERNAL_SERVER_ERROR
 } from '../../../../../../lib/http-status.js'
-import {
-  compose,
-  oneOf,
-  requiredDateText,
-  requiredOneOf,
-  validate
-} from '../../../../../../lib/validate/index.js'
+import { hasErrors } from '../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../shared/copy.js'
 import * as countries from '../../../../../../services/countries/index.js'
@@ -20,6 +14,11 @@ import * as ports from '../../../../../../services/ports/index.js'
 import { importReasonPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
+import {
+  PURPOSE_FIELD,
+  TEMPORARY_ADMISSION_DATE_FIELD,
+  validation
+} from './validate.js'
 
 export const meta = {
   ...page,
@@ -29,136 +28,12 @@ export const meta = {
     'destinationCountry',
     'portOfExit',
     'exitDate'
-  ]
+  ],
+  validation
 }
 const view = `${TEMPLATES}/features/import-reason/template`
 
 const copy = copyFor({ en, cy })
-
-const PURPOSE_FIELD = 'purposeInInternalMarket'
-const TRANSHIPMENT_COUNTRY_FIELD = 'transhipmentDestinationCountry'
-const TRANSIT_COUNTRY_FIELD = 'transitDestinationCountry'
-const TRANSIT_PORT_FIELD = 'transitPortOfExit'
-const TEMPORARY_ADMISSION_PORT_FIELD = 'temporaryAdmissionPortOfExit'
-const TEMPORARY_ADMISSION_DATE_FIELD = 'temporaryAdmissionExitDate'
-
-// The follow-up questions each reason opens as a conditional reveal, in the
-// order the reveal asks them. Two reasons ask the destination country and two
-// ask the port of exit, and two inputs cannot share a name, so each branch
-// carries its own form field and maps back to the one answer behind it — the
-// same split the origin page makes between `regionOfOriginCodeSuffix` and the
-// `regionOfOriginCode` it stores. Which of the four answers is in scope stays
-// the obligations' call (obligations/sections/import-reason.js); this says
-// only where the question is asked.
-const REVEALS = Object.freeze({
-  internalMarket: [{ field: PURPOSE_FIELD, answer: 'purposeInInternalMarket' }],
-  transhipmentOrOnwardTravel: [
-    { field: TRANSHIPMENT_COUNTRY_FIELD, answer: 'destinationCountry' }
-  ],
-  transit: [
-    { field: TRANSIT_PORT_FIELD, answer: 'portOfExit' },
-    { field: TRANSIT_COUNTRY_FIELD, answer: 'destinationCountry' }
-  ],
-  temporaryAdmissionHorses: [
-    { field: TEMPORARY_ADMISSION_DATE_FIELD, answer: 'exitDate' },
-    { field: TEMPORARY_ADMISSION_PORT_FIELD, answer: 'portOfExit' }
-  ],
-  reEntry: []
-})
-
-const revealsFor = (reasonForImport) =>
-  Object.hasOwn(REVEALS, reasonForImport) ? REVEALS[reasonForImport] : []
-
-const countryRule = async (field) =>
-  requiredOneOf(
-    field,
-    (await countries.originCountries()).map(({ value }) => value),
-    copy.errors.countryRequired
-  )
-
-const portRule = async (field) =>
-  requiredOneOf(
-    field,
-    (await ports.list()).map((port) => port.code),
-    copy.errors.portRequired
-  )
-
-// The reason radio itself is optional to proceed — Design release 1 says so in
-// its own words — but the questions a chosen reason reveals are enforced here,
-// not left to the submit. The purpose, both destination countries, both ports
-// of exit and the exit date are all required, and the exit date is told apart
-// twice over: blank asks for one, unreadable says it is not a real date.
-const RULES = Object.freeze({
-  [PURPOSE_FIELD]: () =>
-    requiredOneOf(
-      PURPOSE_FIELD,
-      importReasonPurpose.purposes().map((option) => option.value),
-      copy.errors.purposeRequired
-    ),
-  [TRANSHIPMENT_COUNTRY_FIELD]: () => countryRule(TRANSHIPMENT_COUNTRY_FIELD),
-  [TRANSIT_COUNTRY_FIELD]: () => countryRule(TRANSIT_COUNTRY_FIELD),
-  [TRANSIT_PORT_FIELD]: () => portRule(TRANSIT_PORT_FIELD),
-  [TEMPORARY_ADMISSION_PORT_FIELD]: () =>
-    portRule(TEMPORARY_ADMISSION_PORT_FIELD),
-  [TEMPORARY_ADMISSION_DATE_FIELD]: () =>
-    requiredDateText(TEMPORARY_ADMISSION_DATE_FIELD, {
-      required: copy.errors.dateRequired,
-      invalid: copy.errors.dateInvalid
-    })
-})
-
-// Only the reveal the submitted reason opens is answerable, so only its
-// fields are measured. A field belonging to another branch arrives empty and
-// is neither validated nor committed.
-const fields = async (reasonForImport) =>
-  compose(
-    oneOf(
-      'reasonForImport',
-      importReasonPurpose.reasons().map((option) => option.value)
-    ),
-    ...(await Promise.all(
-      revealsFor(reasonForImport).map((reveal) => RULES[reveal.field]())
-    ))
-  )
-
-const formValuesFrom = (payload) => ({
-  reasonForImport: payload.reasonForImport ?? '',
-  [PURPOSE_FIELD]: payload[PURPOSE_FIELD] ?? '',
-  [TRANSHIPMENT_COUNTRY_FIELD]: payload[TRANSHIPMENT_COUNTRY_FIELD] ?? '',
-  [TRANSIT_COUNTRY_FIELD]: payload[TRANSIT_COUNTRY_FIELD] ?? '',
-  [TRANSIT_PORT_FIELD]: payload[TRANSIT_PORT_FIELD] ?? '',
-  [TEMPORARY_ADMISSION_PORT_FIELD]:
-    payload[TEMPORARY_ADMISSION_PORT_FIELD] ?? '',
-  [TEMPORARY_ADMISSION_DATE_FIELD]: kit.readDate(
-    payload,
-    TEMPORARY_ADMISSION_DATE_FIELD
-  )
-})
-
-// A stored answer prefills every branch that asks for it, so switching between
-// two reasons that share a question keeps the answer in front of the user.
-const formValuesFromAnswers = (answers) => ({
-  reasonForImport: answers.reasonForImport ?? '',
-  [PURPOSE_FIELD]: answers.purposeInInternalMarket ?? '',
-  [TRANSHIPMENT_COUNTRY_FIELD]: answers.destinationCountry ?? '',
-  [TRANSIT_COUNTRY_FIELD]: answers.destinationCountry ?? '',
-  [TRANSIT_PORT_FIELD]: answers.portOfExit ?? '',
-  [TEMPORARY_ADMISSION_PORT_FIELD]: answers.portOfExit ?? '',
-  [TEMPORARY_ADMISSION_DATE_FIELD]: answers.exitDate ?? {}
-})
-
-// The reason and the answers its own reveal collected. An answer belonging to
-// a reason no longer chosen is left out and the evaluator purges it, so a
-// flip never carries a stale answer forward.
-const answersFrom = (values) => ({
-  reasonForImport: values.reasonForImport,
-  ...Object.fromEntries(
-    revealsFor(values.reasonForImport).map(({ field, answer }) => [
-      answer,
-      values[field]
-    ])
-  )
-})
 
 const DIVIDER_OPTION = { value: '', text: '──────────', disabled: true }
 
@@ -215,49 +90,22 @@ const render = async (
     })
   })
 
-const staleAnswerErrors = async (answers) => {
-  const [offeredCountries, offeredPorts] = await Promise.all([
-    countries
-      .originCountries()
-      .then((list) => new Set(list.map(({ value }) => value))),
-    ports.list().then((list) => new Set(list.map((port) => port.code)))
-  ])
-  const errors = new Map()
-  if (
-    answers.destinationCountry &&
-    !offeredCountries.has(answers.destinationCountry)
-  ) {
-    errors.set('destinationCountry', copy.errors.countryNoLongerAvailable)
-  }
-  if (answers.portOfExit && !offeredPorts.has(answers.portOfExit)) {
-    errors.set('portOfExit', copy.errors.portNoLongerAvailable)
-  }
-  return errors
-}
-
+// The stored answers go back through the page's own rules on the way in, so an
+// answer the reference data has moved past is named here rather than surviving
+// to the review page. A stale answer is blanked in every field it prefills —
+// not only the one the current reason happens to reveal — so neither reveal
+// can render it as chosen.
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  const stale = await staleAnswerErrors(answers)
-  const scrubbedAnswers = { ...answers }
-  for (const key of stale.keys()) {
-    scrubbedAnswers[key] = ''
-  }
-  // Only surface the error against reveals the current reason actually opens;
-  // a reason that does not reveal the stale answer keeps the error summary
-  // free of noise.
-  const errors = Object.fromEntries(
-    revealsFor(answers.reasonForImport)
-      .filter(({ answer }) => stale.has(answer))
-      .map(({ field, answer }) => [field, stale.get(answer)])
-  )
-  return render(h, journey, formValuesFromAnswers(scrubbedAnswers), errors)
+  const { values, errors } = await validation.onStored(answers)
+  return render(h, journey, values, errors)
 }
 
 const post = async (request, h) => {
-  const payload = request.payload ?? {}
-  const values = formValuesFrom(payload)
-  const { errors } = validate(await fields(values.reasonForImport), payload)
-  if (errors) {
+  const { values, answers, errors } = await validation.onSubmit(
+    request.payload ?? {}
+  )
+  if (hasErrors(errors)) {
     const { journey } = await state.get(request, h)
     return (await render(h, journey, values, errors)).code(
       HTTP_STATUS_BAD_REQUEST
@@ -267,7 +115,7 @@ const post = async (request, h) => {
   let committed
   const { failure } = await kit.recoverableSave(
     async () => {
-      committed = await state.commit(request, h, answersFrom(values))
+      committed = await state.commit(request, h, answers)
     },
     async () => {
       const { journey } = await state.get(request, h)

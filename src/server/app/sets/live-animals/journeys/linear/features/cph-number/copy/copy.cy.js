@@ -25,6 +25,8 @@ export const copy = {
     parishDigitsOnly: "Rhaid i'r plwyf gynnwys rhifau yn unig",
     holdingRequired: 'Nodwch y rhif daliad',
     holdingLength: "Rhaid i'r rhif daliad fod yn 4 digid",
-    holdingDigitsOnly: "Rhaid i'r rhif daliad gynnwys rhifau yn unig"
+    holdingDigitsOnly: "Rhaid i'r rhif daliad gynnwys rhifau yn unig",
+    cphNoLongerValid:
+      "Nid yw'r rhif CPH a arbedwyd yn ddilys mwyach. Rhowch y sir, plwyf a rhif daliad eto."
   }
 }
