@@ -27,6 +27,7 @@ const rowByTitle = (groups, title) =>
 // port code — every other field on the row is answered, so the engine's own
 // presence-based status reads this row FULFILLED regardless.
 const STALE_PORT = 'GB ZZZ'
+const KNOWN_PORT = 'GB ABD'
 const arrivalDetailsAnswers = {
   portOfEntry: STALE_PORT,
   arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
@@ -54,7 +55,7 @@ describe('#handler — stored-answer validity demotes the hub tag', () => {
 
   it('Should read Complete for the same row once its stored port is one the reader still offers', async () => {
     const result = await driveHandler(getHandler, {
-      seed: { ...arrivalDetailsAnswers, portOfEntry: 'GB ABD' }
+      seed: { ...arrivalDetailsAnswers, portOfEntry: KNOWN_PORT }
     })
     const row = rowByTitle(result.view.context.groups, ARRIVAL_DETAILS_TITLE)
 
