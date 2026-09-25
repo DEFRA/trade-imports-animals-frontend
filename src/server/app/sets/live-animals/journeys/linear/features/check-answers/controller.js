@@ -169,9 +169,6 @@ export const renderNotificationView = async (
 const get = async (request, h) => renderNotificationView(request, h)
 
 const post = async (request, h) => {
-  // Refuses on the shared predicate — see `refusal.js`. The declaration
-  // handler asks the same question, so a trader landing there past this
-  // page cannot sneak past.
   if (await isReviewRefused(request, h)) {
     const rendered = await renderNotificationView(request, h, {
       disableAutoFocus: false

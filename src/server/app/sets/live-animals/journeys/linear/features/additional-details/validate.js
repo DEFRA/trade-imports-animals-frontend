@@ -31,9 +31,6 @@ const certifiedField = (stored) =>
   )
 const unweanedField = oneOf('containsUnweanedAnimals', ['yes', 'no'])
 
-// Reveal derivation: POST gets `showUnweaned` from `scope.has(...)`; stored
-// (CYA / hub) has no scope, so falls back to `unweanedApplies` over
-// `storedAnswers`. Same answer either way.
 const fields = (_values, { showUnweaned, storedAnswers, stored } = {}) => {
   const reveal = showUnweaned ?? unweanedApplies(storedAnswers)
   return reveal

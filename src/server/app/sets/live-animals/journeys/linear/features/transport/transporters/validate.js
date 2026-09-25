@@ -53,7 +53,5 @@ export const validation = pageValidation({
   fields,
   checks,
   fromPayload: (payload) => ({ transporter: payload.transporter ?? '' }),
-  // Stored answers hold the transporter's name, not an id, so `fromAnswers`
-  // leaves `transporter` empty. Stored membership is `checks`'s job.
   fromAnswers: () => ({ transporter: '' })
 })

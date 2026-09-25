@@ -23,10 +23,10 @@ const PART_ORDER = [
   [HOLDING_FIELD, HOLDING_DIGITS]
 ]
 
-// A stored answer is nine bare digits, but a seeded or legacy one can carry
-// the slashes a trader used to type, so the split reads digits only.
+const stripNonDigits = (value) => String(value ?? '').replace(/\D/g, '')
+
 const splitStored = (stored) => {
-  const digits = String(stored ?? '').replace(/\D/g, '')
+  const digits = stripNonDigits(stored)
   let taken = 0
   return Object.fromEntries(
     PART_ORDER.map(([part, count]) => {
@@ -74,9 +74,7 @@ const checks = (values, { stored } = {}) => {
   if (!stored && isBlank(values)) {
     return { [COUNTY_FIELD]: copy.errors.cphRequired }
   }
-  // A stored answer that was ever saved should be nine digits. Anything else
-  // is a value the rules no longer accept — one message on the county field,
-  // which is where the review-page card link lands anyway.
+  // Keyed to county — where the review-page card link lands.
   if (stored && !isBlank(values) && !NINE_DIGITS.test(joinParts(values))) {
     return { [COUNTY_FIELD]: copy.errors.cphNoLongerValid }
   }
@@ -92,8 +90,7 @@ export const validation = pageValidation({
     ),
   fromAnswers: (answers) => splitStored(answers.countyParishHoldingCph),
   toAnswers: (values) => ({ countyParishHoldingCph: joinParts(values) }),
-  // A rejected stored value is one nine-digit thing; clear every part so
-  // the widget does not render two stray digits from a value the rules
-  // just refused.
+  // A rejected stored value is one thing; clear every part or the widget
+  // re-renders two stray digits from a value the rules just refused.
   blanks: () => [COUNTY_FIELD, PARISH_FIELD, HOLDING_FIELD]
 })

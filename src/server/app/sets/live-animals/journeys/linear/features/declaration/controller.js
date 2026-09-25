@@ -73,8 +73,6 @@ const post = async (request, h) => {
     return render(h, journey, values, errors).code(HTTP_STATUS_BAD_REQUEST)
   }
 
-  // The review page's Continue asks the same question; a trader landing
-  // here past it (bookmark, back-button) has to answer it too.
   if (await isReviewRefused(request, h)) {
     return h.redirect(pagePath(journey.journeyId, kit.CYA_SLUG))
   }
