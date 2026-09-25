@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { validation } from './validate.js'
+import { copy } from '../copy/copy.en.js'
 
 const CAMPBELL_ID = 'j-and-g-campbell'
 const CAMPBELL_NAME = 'J & G Campbell LTD'
@@ -27,7 +28,9 @@ describe('#validation for transporters — onSubmit', () => {
       { transporter: 'not-a-row' },
       { records: [record(CAMPBELL_ID, CAMPBELL_NAME)] }
     )
-    expect(errors).toHaveProperty('transporter')
+    expect(errors).toMatchObject({
+      transporter: copy.transporters.errors.transporterRequired
+    })
   })
 
   // The page walks on without saving when a trader has not picked yet, matching
@@ -72,6 +75,8 @@ describe('#validation for transporters — onStored', () => {
       request: requestWithoutOrg,
       storedAnswers: stored
     })
-    expect(errors).toHaveProperty('transporter')
+    expect(errors).toMatchObject({
+      transporter: copy.transporters.errors.transporterNoLongerAvailable
+    })
   })
 })
