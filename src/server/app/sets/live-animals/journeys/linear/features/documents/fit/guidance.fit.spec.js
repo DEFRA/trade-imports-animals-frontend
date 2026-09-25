@@ -1,10 +1,10 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   signIn,
   startNotification,
   unlockSections
 } from '../../../../../../../../../../fit/live-animals-journey.js'
+import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
 
 const guidance = copy.guidance
@@ -87,15 +87,9 @@ test.describe('document upload guidance', () => {
     page
   }) => {
     await openExpander(page)
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze()
-    const seriousOrCritical = results.violations.filter(({ impact }) =>
-      ['serious', 'critical'].includes(impact)
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Expanded document guidance'
     )
-    expect(
-      seriousOrCritical,
-      `Expanded document guidance has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-    ).toEqual([])
   })
 })

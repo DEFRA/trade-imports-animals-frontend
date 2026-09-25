@@ -1,8 +1,13 @@
+import crypto from 'node:crypto'
+
 import Jwt from '@hapi/jwt'
 
 import { getSafeRedirect } from '../../auth/get-safe-redirect.js'
 
-const STUB_TOKEN_SECRET = 'animals-frontend-stub-auth-local-signing-key'
+const STUB_TOKEN_SECRET_BYTES = 32
+const STUB_TOKEN_SECRET = crypto
+  .randomBytes(STUB_TOKEN_SECRET_BYTES)
+  .toString('hex')
 const HOURS_IN_STUB_SESSION = 4
 const SECONDS_PER_MINUTE = 60
 const MINUTES_PER_HOUR = 60
@@ -58,6 +63,14 @@ const signIn = async (request, h) => {
   return h.redirect(getSafeRedirect(request.query.redirect))
 }
 
+const signOut = async (request, h) => {
+  if (request.auth.credentials?.sessionId) {
+    await request.server.app.cache.drop(request.auth.credentials.sessionId)
+  }
+  request.cookieAuth.clear()
+  return h.redirect('/')
+}
+
 /** Both paths mint the same stub session.
  *
  * `/auth/sign-in` is registered as well as the explicit stub path because it is
@@ -67,6 +80,7 @@ const signIn = async (request, h) => {
  * (server.js swaps authRoutes for this plugin), so an unauthenticated request
  * would otherwise be redirected to a 404 instead of being signed in. */
 const SIGN_IN_PATHS = ['/auth/stub-sign-in', '/auth/sign-in']
+const SIGN_OUT_PATH = '/auth/sign-out'
 
 /**
  * Replaces the real Defra ID OIDC round-trip when stub mode is on
@@ -79,14 +93,20 @@ export const stubSignInRoutes = {
   plugin: {
     name: 'stub-sign-in-routes',
     register(server) {
-      server.route(
-        SIGN_IN_PATHS.map((path) => ({
+      server.route([
+        ...SIGN_IN_PATHS.map((path) => ({
           method: 'GET',
           path,
           options: { auth: false },
           handler: signIn
-        }))
-      )
+        })),
+        {
+          method: 'GET',
+          path: SIGN_OUT_PATH,
+          options: { auth: { mode: 'try' } },
+          handler: signOut
+        }
+      ])
     }
   }
 }

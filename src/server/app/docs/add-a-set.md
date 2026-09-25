@@ -92,10 +92,11 @@ Two consequences follow:
   [`../../router.js`](../../router.js), outside every gateway. It takes the
   server's default auth strategy, so signing in with no stored redirect lands
   on the default set's dashboard.
-- **`/health`, `/signout`, the `/auth/*` routes and the static-asset route are
-  server-wide.** They must never sit inside a prefixed `server.register` call.
-  `/signout` is the live trap: it registers perfectly happily at
-  `/<set-id>/signout` and nothing fails until a user tries to sign out.
+- **`/health`, the `/auth/*` routes (including `/auth/sign-out`) and the
+  static-asset route are server-wide.** They must never sit inside a prefixed
+  `server.register` call. `/auth/sign-out` is the live trap: it registers
+  perfectly happily at `/<set-id>/auth/sign-out` and nothing fails until a user
+  tries to sign out.
 
 The resulting mount table with two sets in the tree:
 

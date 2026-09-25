@@ -12,6 +12,7 @@ const defaults = copyFor({ en, cy })
 const POSTCODE = /^[A-Za-z]{1,2}\d[A-Za-z\d]?\s*\d[A-Za-z]{2}$/
 const VEHICLE_REG = /^[A-Za-z]{2}\d{2}\s?[A-Za-z]{3}$/
 const PHONE_ALLOWED = /^[0-9+()\-.,;\s]+$/
+const TIME_24_HOUR = /^([01]\d|2[0-3]):[0-5]\d$/
 const UK_PHONE_MIN_DIGITS = 7
 const UK_PHONE_MAX_DIGITS = 15
 const INVALID_ERROR_CODE = 'any.invalid'
@@ -83,6 +84,22 @@ export const requiredMaxText = (name, max, messages) =>
         'string.empty': messages.required,
         'any.required': messages.required,
         'string.max': messages.maxLength ?? defaults.maxLength(max)
+      })
+  )
+
+export const requiredEmail = (name, max, messages) =>
+  single(
+    name,
+    Joi.string()
+      .trim()
+      .required()
+      .max(max)
+      .email({ tlds: { allow: false } })
+      .messages({
+        'string.empty': messages.required,
+        'any.required': messages.required,
+        'string.max': messages.maxLength ?? defaults.maxLength(max),
+        'string.email': messages.format
       })
   )
 
@@ -263,10 +280,7 @@ const isOutsideBounds = (date, min, max) =>
   (min != null && date.getTime() < min.getTime()) ||
   (max != null && date.getTime() > max.getTime())
 
-// Reads `dd/mm/yyyy` text and holds it to the calendar, and to the bounds when
-// there are any. Shared by the optional and the save-blocking date rules so
-// both read the same text the same way.
-const realDateWithin = (min, max) => (raw, helpers) => {
+const dateWithinBounds = (min, max) => (raw, helpers) => {
   const parsed = parseDateText(raw)
   if (!parsed) {
     return helpers.error(INVALID_ERROR_CODE)
@@ -299,7 +313,7 @@ export const dateTextInRange = (
     Joi.string()
       .trim()
       .allow('')
-      .custom(realDateWithin(min, max))
+      .custom(dateWithinBounds(min, max))
       .messages({
         [INVALID_ERROR_CODE]: invalidMessage,
         [RANGE_ERROR_CODE]: rangeMessage ?? invalidMessage
@@ -309,28 +323,34 @@ export const dateTextInRange = (
 export const dateText = (name, message = defaults.date) =>
   dateTextInRange(name, { invalidMessage: message })
 
-/**
- * Save-blocking `dd/mm/yyyy` text. A separate primitive rather than
- * `compose(requiredText, dateText)` because `dateText` allows the empty string,
- * and composing schemas merges that allowance onto the required rule — blank
- * would then pass. `requiredMaxText` and `requiredIntegerInRange` exist for the
- * same reason.
- * @param {string} name
- * @param {object} messages
- * @param {string} messages.required - Shown when the value is blank or absent.
- * @param {string} [messages.invalid] - Shown when the value is not a real
- * calendar date.
- */
-export const requiredDateText = (name, messages) =>
+export const requiredDateTextInRange = (name, { min, max, messages }) =>
   single(
     name,
     Joi.string()
       .trim()
       .required()
-      .custom(realDateWithin())
+      .custom(dateWithinBounds(min, max))
       .messages({
         'string.empty': messages.required,
         'any.required': messages.required,
-        [INVALID_ERROR_CODE]: messages.invalid ?? defaults.date
+        [INVALID_ERROR_CODE]: messages.invalid ?? defaults.date,
+        [RANGE_ERROR_CODE]: messages.range ?? messages.invalid ?? defaults.date
       })
   )
+
+export const requiredTime = (name, messages) =>
+  single(
+    name,
+    Joi.string()
+      .trim()
+      .required()
+      .pattern(TIME_24_HOUR)
+      .messages({
+        'string.empty': messages.required,
+        'any.required': messages.required,
+        'string.pattern.base': messages.invalid ?? defaults.time
+      })
+  )
+
+export const requiredDateText = (name, messages) =>
+  requiredDateTextInRange(name, { messages })

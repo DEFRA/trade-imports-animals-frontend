@@ -23,12 +23,25 @@ export const copy = {
       accessibility: 'Datganiad hygyrchedd'
     }
   },
+  unauthorised: {
+    title: "Mae'n ddrwg gennym, ni allwn eich mewngofnodi",
+    heading: "Mae'n ddrwg gennym, ni allwn eich mewngofnodi.",
+    bodyPrefix: 'Rhowch',
+    signInLinkText: 'gynnig arall arni'
+  },
   errorSummary: {
     title: 'Mae problem'
   },
   recoverableError: {
     title: 'Mae problem',
     body: "Mae'n ddrwg gennym, mae problem gyda'r gwasanaeth. Mae eich atebion ar y dudalen hon wedi'u cadw. Rhowch gynnig arall arni ymhen ychydig funudau."
+  },
+  errorPage: {
+    notFound: 'Heb ddod o hyd i’r dudalen',
+    forbidden: 'Gwaharddedig',
+    unauthorized: 'Mae angen i chi fewngofnodi i weld y dudalen hon',
+    badRequest: 'Mae problem gyda’ch cais',
+    unexpected: 'Aeth rhywbeth o’i le'
   },
   staleActionRejected: {
     title: 'Mae’r hysbysiad wedi cael ei ddiweddaru',
@@ -74,6 +87,7 @@ export const validatorDefaults = {
   vehicleReg: 'Rhowch rif cofrestru dilys',
   ukPhone: 'Rhowch rif ffôn dilys yn y DU',
   date: 'Rhowch ddyddiad dilys',
+  time: 'Rhowch amser go iawn, fel 14:30',
   wholeNumber: 'Rhowch rif cyfan',
   maxLength: (max) => `Rhowch ${max} nod neu lai`,
   numberBetween: (min, max) => `Rhowch rif rhwng ${min} a ${max}`

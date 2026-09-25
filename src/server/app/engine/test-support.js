@@ -37,6 +37,14 @@ const stubView = (captured) => (view, context) => {
   return rendered
 }
 
+export const registerTestSessionAuth = (server) => {
+  server.auth.scheme('test-session', () => ({
+    authenticate: (_request, h) =>
+      h.authenticated({ credentials: authenticatedCredentials })
+  }))
+  server.auth.strategy('session', 'test-session')
+}
+
 export const stubH = () => {
   const captured = {}
   const cookies = {}

@@ -1,11 +1,3 @@
-/**
- * Shared chrome copy — the only copy that legitimately lives outside a
- * feature folder: the layout (service name, GOV.UK title suffix, service navigation,
- * back link, error title prefix), error-summary title, save-actions
- * buttons and journey-strip tags. Every view reaches it as `sharedCopy`
- * (via `kit.base`, or passed directly by the controllers that build
- * their view models without it).
- */
 export const copy = {
   layout: {
     serviceName: 'Import notification service',
@@ -32,12 +24,25 @@ export const copy = {
       accessibility: 'Accessibility statement'
     }
   },
+  unauthorised: {
+    title: 'Sorry, we are unable to sign you in',
+    heading: 'Sorry, we are unable to sign you in.',
+    bodyPrefix: 'Please',
+    signInLinkText: 'try again'
+  },
   errorSummary: {
     title: 'There is a problem'
   },
   recoverableError: {
     title: 'There is a problem',
     body: 'Sorry, there is a problem with the service. Your answers on this page have been saved. Try again in a few minutes.'
+  },
+  errorPage: {
+    notFound: 'Page not found',
+    forbidden: 'Forbidden',
+    unauthorized: 'You need to sign in to view this page',
+    badRequest: 'There is a problem with your request',
+    unexpected: 'Something went wrong'
   },
   staleActionRejected: {
     title: 'The notification has been updated',
@@ -90,6 +95,7 @@ export const validatorDefaults = {
   vehicleReg: 'Enter a valid registration number',
   ukPhone: 'Enter a valid UK telephone number',
   date: 'Enter a valid date',
+  time: 'Enter a real time, like 14:30',
   wholeNumber: 'Enter a whole number',
   maxLength: (max) => `Enter ${max} characters or fewer`,
   numberBetween: (min, max) => `Enter a number between ${min} and ${max}`

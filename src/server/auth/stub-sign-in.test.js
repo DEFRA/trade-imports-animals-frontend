@@ -1,29 +1,42 @@
 import { describe, expect, test } from 'vitest'
+import Cookie from '@hapi/cookie'
 import Hapi from '@hapi/hapi'
 import { stubSignInRoutes } from './stub-sign-in.js'
 
 const HTTP_STATUS_FOUND = 302
+const COOKIE_PASSWORD = 'stub-sign-in-test-cookie-password-32-chars-long'
 
-/** The plugin needs two things the real server provides: a session cache to
- * write into, and `request.cookieAuth`. Stubbing them keeps the test to the
- * plugin's own behaviour rather than the whole auth stack. */
 const buildServer = async () => {
   const server = Hapi.server()
   const cached = new Map()
-  const cookiesSet = []
 
   server.app.cache = {
     set: async (key, value) => cached.set(key, value),
-    get: async (key) => cached.get(key)
+    get: async (key) => cached.get(key) ?? null,
+    drop: async (key) => cached.delete(key)
   }
-  server.ext('onRequest', (request, h) => {
-    request.cookieAuth = { set: (value) => cookiesSet.push(value) }
-    return h.continue
+  await server.register(Cookie)
+  server.auth.strategy('session', 'cookie', {
+    cookie: { password: COOKIE_PASSWORD, isSecure: false },
+    validate: async (_request, session) => {
+      const userSession = cached.get(session.sessionId)
+      return userSession
+        ? { isValid: true, credentials: userSession }
+        : { isValid: false }
+    }
   })
-
+  server.auth.default('session')
   await server.register(stubSignInRoutes)
-  return { server, cached, cookiesSet }
+  return { server, cached }
 }
+
+const sessionCookieOf = (response) => {
+  const setCookie = response.headers['set-cookie'] ?? []
+  const cookies = Array.isArray(setCookie) ? setCookie : [setCookie]
+  return cookies.find((cookie) => cookie.startsWith('sid=')).split(';')[0]
+}
+
+const onlySession = (cached) => [...cached.values()][0]
 
 describe('stub sign-in', () => {
   test.each(['/auth/stub-sign-in', '/auth/sign-in'])(
@@ -32,14 +45,16 @@ describe('stub sign-in', () => {
       // Both paths sign the caller in. /auth/sign-in matters because it is where
       // the session cookie and the unauthorised page already send people, and in
       // stub mode the real route that would serve it is not registered.
-      const { server, cached, cookiesSet } = await buildServer()
+      const { server, cached } = await buildServer()
 
       const response = await server.inject({ method: 'GET', url: path })
 
       expect(response.statusCode).toBe(HTTP_STATUS_FOUND)
-      expect(cookiesSet).toHaveLength(1)
-      const session = cached.get(cookiesSet[0].sessionId)
+      expect(sessionCookieOf(response)).not.toBe('sid=')
+      expect(cached.size).toBe(1)
+      const session = onlySession(cached)
       expect(session.isAuthenticated).toBe(true)
+      expect(session.contactId).toBe(2100010101)
       expect(session.organisationId).toBe('stub-org-1')
       // Real Defra ID carries both keys and different readers use each.
       expect(session.currentRelationshipId).toBe('stub-org-1')
@@ -47,14 +62,14 @@ describe('stub sign-in', () => {
   )
 
   test('Should take the organisation from the query when one is given', async () => {
-    const { server, cached, cookiesSet } = await buildServer()
+    const { server, cached } = await buildServer()
 
     await server.inject({
       method: 'GET',
       url: '/auth/stub-sign-in?organisationId=5900002'
     })
 
-    const session = cached.get(cookiesSet[0].sessionId)
+    const session = onlySession(cached)
     expect(session.organisationId).toBe('5900002')
     expect(session.currentRelationshipId).toBe('5900002')
   })
@@ -86,5 +101,39 @@ describe('stub sign-in', () => {
     const response = await server.inject({ method: 'GET', url })
 
     expect(response.headers.location).toBe(location)
+  })
+})
+
+describe('stub sign-out', () => {
+  test('Should drop the session, clear the cookie and land on the root', async () => {
+    const { server, cached } = await buildServer()
+    const signedIn = await server.inject({
+      method: 'GET',
+      url: '/auth/sign-in'
+    })
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/auth/sign-out',
+      headers: { cookie: sessionCookieOf(signedIn) }
+    })
+
+    expect(response.statusCode).toBe(HTTP_STATUS_FOUND)
+    expect(response.headers.location).toBe('/')
+    expect(cached.size).toBe(0)
+    expect(sessionCookieOf(response)).toBe('sid=')
+  })
+
+  test('Should land a caller with no session on the root', async () => {
+    const { server, cached } = await buildServer()
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/auth/sign-out'
+    })
+
+    expect(response.statusCode).toBe(HTTP_STATUS_FOUND)
+    expect(response.headers.location).toBe('/')
+    expect(cached.size).toBe(0)
   })
 })

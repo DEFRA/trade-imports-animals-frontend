@@ -2,7 +2,18 @@ import hapiPino from 'hapi-pino'
 
 import { loggerOptions } from './logger-options.js'
 
-export const requestLogger = {
+const pathToIgnore = (_, request) =>
+  request.path === '/public' ||
+  request.path.startsWith('/public/') ||
+  request.path === '/health' ||
+  request.path === '/favicon.ico'
+
+const requestLogger = {
   plugin: hapiPino,
-  options: loggerOptions
+  options: {
+    ignoreFunc: pathToIgnore,
+    ...loggerOptions
+  }
 }
+
+export { requestLogger }

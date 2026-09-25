@@ -6,9 +6,8 @@ import { config } from '../../../config/config.js'
  * and needs neither the dependent services nor Defra ID, and a real run wants
  * both.
  *
- * Never honoured in production, whatever the environment says. Stub mode signs
- * its own sessions with a key committed to this repo, so obeying the flag in
- * production would let anyone able to set an environment variable mint an
- * authenticated session. */
+ * Never honoured in production. Stub mode hands a session to any
+ * unauthenticated caller with no identity provider involved, so flipping
+ * the flag there would let anyone sign in as the stub user. */
 export const isStubMode = () =>
   config.get('stubMode') && !config.get('isProduction')

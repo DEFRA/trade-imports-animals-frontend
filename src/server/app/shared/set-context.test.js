@@ -95,7 +95,6 @@ describe('#setIdForPath', () => {
 
   it('Should answer nothing for a path outside every mount', () => {
     expect(setIdForPath('/health')).toBeUndefined()
-    expect(setIdForPath('/signout')).toBeUndefined()
     expect(setIdForPath('/auth/sign-out')).toBeUndefined()
     expect(setIdForPath('/no-such-page')).toBeUndefined()
   })

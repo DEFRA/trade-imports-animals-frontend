@@ -18,6 +18,7 @@ import {
   driveHandler,
   journeyRequest,
   postHandlerOf,
+  registerTestSessionAuth,
   stubH
 } from '../../../../../../engine/test-support.js'
 import { documentUploads } from '../../../../../../services/document-uploads/index.js'
@@ -49,6 +50,7 @@ const serverWithDocumentRoutes = async ({
   crumb = false
 } = {}) => {
   const server = Hapi.server()
+  registerTestSessionAuth(server)
   if (cookies) {
     registerJourneyCookie(server)
   }

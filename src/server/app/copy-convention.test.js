@@ -72,7 +72,10 @@ describe('copy convention — shared chrome', () => {
     expect(Object.keys(sharedCopy)).toEqual(
       expect.arrayContaining([
         'layout',
+        'unauthorised',
         'errorSummary',
+        'recoverableError',
+        'errorPage',
         'saveActions',
         'journeyStrip'
       ])

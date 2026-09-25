@@ -97,7 +97,9 @@ journeys/linear/features/<group>/
 │   ├── copy.en.js
 │   └── copy.test.js
 ├── fit/
-│   └── <group>.fit.spec.js
+│   ├── axe.js
+│   ├── <first-page>.fit.spec.js
+│   └── <second-page>.fit.spec.js
 ├── <first-page>/
 │   ├── <first-page>.controller.js
 │   ├── <first-page>.controller.test.js
@@ -356,14 +358,24 @@ Add axe coverage for every new page in both states:
 - initial render
 - validation error state after the error summary appears
 
-Use the helper pattern in
-[`journeys/linear/features/transport/fit/arrival-transit.fit.spec.js`](../journeys/linear/features/transport/fit/arrival-transit.fit.spec.js).
-Run `AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa'])` and fail on every
-`serious` or `critical` violation. Filter only a proved component false
-positive.
+Build axe with `AxeBuilder({ page })`, fail on every `serious` or `critical`
+violation, and filter only a proved component false positive. Do not spell the
+tag list out in each spec: put it in one helper the whole group calls.
 
 Add or extend the hub axe test when the new row or a new group heading changes
 the hub state.
+
+[`journeys/linear/features/transport/fit/axe.js`](../journeys/linear/features/transport/fit/axe.js)
+is that helper for the multi-page group, and
+[`arrival-transit.fit.spec.js`](../journeys/linear/features/transport/fit/arrival-transit.fit.spec.js)
+and
+[`transporters.fit.spec.js`](../journeys/linear/features/transport/fit/transporters.fit.spec.js)
+both call it. One helper beside the group's specs keeps the tag list and the
+impact threshold identical on every page of the group, so a second page cannot
+quietly be checked against a narrower set of rules than the first. Its tags are
+`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` and `wcag22aa`: axe-core tags a rule
+by the WCAG version that introduced it, so a rule reachable only through the
+2.1 or 2.2 tags would never run on the two WCAG 2.0 tags alone.
 
 ## 11. Run every check
 

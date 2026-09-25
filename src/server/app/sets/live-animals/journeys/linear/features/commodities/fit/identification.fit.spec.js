@@ -1,4 +1,3 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   answerCountryOfOrigin,
@@ -8,6 +7,7 @@ import {
   startNotification
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { animalIdentificationPage } from '../page.js'
+import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
 import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 
@@ -82,29 +82,6 @@ const expectErrorFocus = async (page, message, selector) => {
   await expect(link).toBeVisible()
   await link.click()
   await expect(page.locator(selector)).toBeFocused()
-}
-
-const seriousOrCritical = (violations) =>
-  violations
-    .filter(({ impact }) => ['serious', 'critical'].includes(impact))
-    .filter(
-      (violation) =>
-        !(
-          violation.id === 'aria-allowed-attr' &&
-          violation.nodes.every((node) =>
-            /govuk-(radios|checkboxes)__input/.test(node.html)
-          )
-        )
-    )
-
-const expectAxeClean = async (page, name) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  expect(
-    seriousOrCritical(results.violations),
-    `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-  ).toEqual([])
 }
 
 const validPermanentAddress = {
@@ -449,7 +426,7 @@ test.describe('animal identification', () => {
 
   test('has no serious or critical axe violations', async ({ page }) => {
     await openIdentification(page, [['Cow', [BOS_TAURUS]]])
-    await expectAxeClean(page, 'Animal identification')
+    await expectNoSeriousOrCriticalViolations(page, 'Animal identification')
   })
 
   test('has no serious or critical axe violations with the microchip field rendered', async ({
@@ -457,7 +434,10 @@ test.describe('animal identification', () => {
   }) => {
     await openCatIdentification(page)
     await expect(page.locator(MICROCHIP_FIELD)).toBeVisible()
-    await expectAxeClean(page, 'Animal identification with a microchip field')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Animal identification with a microchip field'
+    )
   })
 
   // Design release 1 asks for identification only where the commodity has an
@@ -558,7 +538,10 @@ test.describe('animal identification in-card save button', () => {
     await expect(
       inCardSaveButton(page, copy.identification.saveAndFinish)
     ).toBeVisible()
-    await expectAxeClean(page, 'Animal identification on the last animal')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Animal identification on the last animal'
+    )
   })
 })
 
@@ -682,7 +665,10 @@ test.describe('animal identification identifier validation', () => {
         copy.identification.errors.identifierMax.animalIdentifierMicrochip
       )
     ).toBeVisible()
-    await expectAxeClean(page, 'Animal identification with a microchip error')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Animal identification with a microchip error'
+    )
   })
 })
 
@@ -840,7 +826,10 @@ test.describe('animal identification records', () => {
   }) => {
     const row = await addCatRecordRow(page)
     await expect(row).toBeVisible()
-    await expectAxeClean(page, 'Animal identification with a saved animal')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Animal identification with a saved animal'
+    )
   })
 
   test('rejects a stale add action after the animal-count cap is reached', async ({

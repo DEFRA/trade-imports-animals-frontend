@@ -31,8 +31,6 @@ describe('#serveStaticFiles', () => {
     })
 
     test('Should serve assets as expected', async () => {
-      // Note npm run build is ran in the postinstall hook in package.json to make sure there is always a file
-      // available for this test. Remove as you see fit
       const { statusCode } = await server.inject({
         method: 'GET',
         url: '/public/assets/images/govuk-crest.svg'

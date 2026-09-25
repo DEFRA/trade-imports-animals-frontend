@@ -1,1 +1,1 @@
-export { liveAnimals } from './routes-live-animals.js'
+export { liveAnimals as serviceRoutes } from './routes-live-animals.js'

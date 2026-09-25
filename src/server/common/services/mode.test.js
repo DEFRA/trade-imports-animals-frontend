@@ -28,10 +28,6 @@ describe('#isStubMode', () => {
 
   test('Should be off in production even when the flag is set', () => {
     // The reason this helper exists rather than reading the flag directly.
-    // Stub mode signs its own sessions with a key committed to this repo, so
-    // honouring the flag in production would mean anyone able to set an
-    // environment variable could mint an authenticated session. It would also
-    // serve stub data in place of the real address book and backend.
     withConfig({ stubMode: true, isProduction: true })
 
     expect(isStubMode()).toBe(false)

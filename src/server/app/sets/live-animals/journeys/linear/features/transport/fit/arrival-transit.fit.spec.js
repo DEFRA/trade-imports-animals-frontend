@@ -1,4 +1,3 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   ARRIVAL_DATE_IN_WINDOW,
@@ -17,6 +16,7 @@ import {
   formatDateText
 } from '../../../../../../../lib/validate/calendar.js'
 import { validatorDefaults } from '../../../../../../../shared/copy.en.js'
+import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
 import { arrivalWindow, DAYS_BEFORE } from '../port-of-entry/arrival-window.js'
 import { MAX_TRANSITED_COUNTRIES } from '../transit-countries/transit-countries.controller.js'
@@ -128,29 +128,6 @@ const ERROR_SUMMARY = '.govuk-error-summary'
 
 const errorLink = (page, message) =>
   page.locator(ERROR_SUMMARY).getByRole('link', { name: message })
-
-const seriousOrCritical = (violations) =>
-  violations
-    .filter(({ impact }) => ['serious', 'critical'].includes(impact))
-    .filter(
-      (violation) =>
-        !(
-          violation.id === 'aria-allowed-attr' &&
-          violation.nodes.every((node) =>
-            /govuk-(radios|checkboxes)__input/.test(node.html)
-          )
-        )
-    )
-
-const expectAxeClean = async (page, name) => {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-  expect(
-    seriousOrCritical(results.violations),
-    `${name} has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
-  ).toEqual([])
-}
 
 const submit = (page) =>
   page.getByRole('button', { name: 'Save and continue' }).click()
@@ -1032,14 +1009,17 @@ test.describe('arrival and transit accessibility', () => {
     await openArrival(page)
     await page.getByRole('button', { name: CHOOSE_DATE }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
-    await expectAxeClean(page, 'Arrival details with date picker open')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Arrival details with date picker open'
+    )
   })
 
   test('transit page has no serious or critical axe violations', async ({
     page
   }) => {
     await openTransit(page)
-    await expectAxeClean(page, 'Transit countries')
+    await expectNoSeriousOrCriticalViolations(page, 'Transit countries')
   })
 
   test('transit page with a country added has no serious or critical axe violations', async ({
@@ -1048,7 +1028,10 @@ test.describe('arrival and transit accessibility', () => {
     await openTransit(page)
     await addTransitCountry(page, 'France')
     await expect(removeControl(page, 'France')).toBeVisible()
-    await expectAxeClean(page, 'Transit countries with a country added')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Transit countries with a country added'
+    )
   })
 
   test('transit page with an empty Add attempt has no serious or critical axe violations', async ({
@@ -1059,6 +1042,9 @@ test.describe('arrival and transit accessibility', () => {
       .getByRole('button', { name: copy.transitCountries.add, exact: true })
       .click()
     await expect(page.locator(ERROR_SUMMARY)).toBeVisible()
-    await expectAxeClean(page, 'Transit countries with a validation error')
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Transit countries with a validation error'
+    )
   })
 })

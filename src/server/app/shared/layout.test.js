@@ -10,6 +10,7 @@ const environment = nunjucksConfig.options.compileOptions.environment
 
 const PHASE_BANNER = 'govuk-phase-banner'
 const BREADCRUMBS = 'govuk-breadcrumbs'
+const ADDRESS_BOOK_URL = 'http://ins.test/address-book'
 
 // `homeUrl` comes from the view model, the way kit.base() supplies it, so the
 // rendered chrome carries the set's own prefix rather than a bare `/`.
@@ -18,6 +19,7 @@ const renderLayout = (userSession, context = {}) =>
     pageTitle: 'Create an import notification',
     sharedCopy,
     userSession,
+    addressBookUrl: ADDRESS_BOOK_URL,
     homeUrl: SET_BASE,
     getAssetPath: (asset) => `/assets/${asset}`,
     ...context
@@ -48,7 +50,7 @@ describe('service navigation', () => {
     ])
     expect(links.map((_, a) => $(a).attr('href')).get()).toEqual([
       SET_BASE,
-      '#',
+      ADDRESS_BOOK_URL,
       '#',
       '/auth/sign-out'
     ])

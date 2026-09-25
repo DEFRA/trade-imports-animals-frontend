@@ -33,14 +33,14 @@ let webpackManifest
  * request is under none of them.
  */
 export function activeNavigationItem(requestPath = '') {
-  // A server-wide page — the root redirect, `/signout`, the sign-in error
-  // page — belongs to no set, so no set's navigation item is active on it.
-  // Asking `inDashboardSection` there would throw for want of a set.
   if (!hasSetContext()) {
     return null
   }
   return inDashboardSection(requestPath) ? 'dashboard' : null
 }
+
+const insAddressBookUrl = () =>
+  `${config.get('tradeImportsInsFrontend.baseUrl').replace(/\/$/, '')}/address-book`
 
 async function context(request) {
   if (!webpackManifest) {
@@ -76,6 +76,7 @@ async function context(request) {
     activeNavigationItem: setId
       ? withSetContext(setId, () => activeNavigationItem(request.path))
       : null,
+    addressBookUrl: insAddressBookUrl(),
     userSession: authData
       ? {
           isAuthenticated: true,

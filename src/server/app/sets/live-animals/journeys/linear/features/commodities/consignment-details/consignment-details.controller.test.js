@@ -14,6 +14,7 @@ import {
   driveHandler,
   postHandlerOf,
   journeyRequest,
+  registerTestSessionAuth,
   stubH
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
@@ -309,6 +310,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
   it('Should reject a remove POST carrying no CSRF crumb and serve no GET route that removes', async () => {
     const server = Hapi.server()
     await server.register(Crumb)
+    registerTestSessionAuth(server)
     // Mounted under the set prefix, as the router does, so the injected
     // `pagePath()` URL below reaches the route rather than 404ing.
     await server.register(
