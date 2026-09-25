@@ -68,7 +68,10 @@ describe('#validation for cph-number — onStored', () => {
     const { errors } = await validation.onStored({
       countyParishHoldingCph: '12ABC6789'
     })
-    expect(errors).toHaveProperty('cphCounty')
+    expect(errors).toEqual({
+      cphCounty:
+        'The saved CPH number is no longer valid. Re-enter the county, parish and holding numbers.'
+    })
   })
 
   it('Should blank every part when a stored value has been rejected', async () => {
