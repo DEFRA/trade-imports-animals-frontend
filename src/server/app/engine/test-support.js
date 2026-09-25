@@ -37,8 +37,6 @@ const stubView = (captured) => (view, context) => {
   return rendered
 }
 
-/** A 'session' strategy that authenticates every request, for tests that
- * register kit.routeOptions routes on a bare Hapi.server(). */
 export const registerTestSessionAuth = (server) => {
   server.auth.scheme('test-session', () => ({
     authenticate: (_request, h) =>

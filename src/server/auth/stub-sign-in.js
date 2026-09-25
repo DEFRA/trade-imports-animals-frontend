@@ -4,10 +4,6 @@ import Jwt from '@hapi/jwt'
 
 import { getSafeRedirect } from '../../auth/get-safe-redirect.js'
 
-// Generated once per process rather than hardcoded - this token is only ever
-// decoded (never verified against a known key) by the session validator, so
-// the secret has no real security value, but a random one avoids committing
-// a static credential-shaped string to source.
 const STUB_TOKEN_SECRET_BYTES = 32
 const STUB_TOKEN_SECRET = crypto
   .randomBytes(STUB_TOKEN_SECRET_BYTES)
@@ -67,9 +63,6 @@ const signIn = async (request, h) => {
   return h.redirect(getSafeRedirect(request.query.redirect))
 }
 
-/** The stub counterpart of the real sign-out: there is no identity provider
- * to send the browser to, so the session is dropped here and the caller lands
- * on the root. `mode: 'try'` so a caller with no session lands there too. */
 const signOut = async (request, h) => {
   if (request.auth.credentials?.sessionId) {
     await request.server.app.cache.drop(request.auth.credentials.sessionId)
@@ -94,8 +87,7 @@ const SIGN_OUT_PATH = '/auth/sign-out'
  * (see mode.js / plugins/auth.js). Auth is still enforced everywhere else -
  * this only produces the same end state the real sign-in-oidc handler does
  * (cached session + session cookie), signed locally rather than verified
- * against a real identity provider, and ends it at the same sign-out path the
- * layout links.
+ * against a real identity provider.
  */
 export const stubSignInRoutes = {
   plugin: {

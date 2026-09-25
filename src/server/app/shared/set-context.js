@@ -20,7 +20,8 @@ export const mountedSetIds = () => [...mounts.keys()]
  *
  * @param {string} [path] - the request path.
  * @returns {string|undefined} the set id, or undefined where the path is
- * outside every mount — `/health`, `/auth/*`, or a genuinely unrouted URL.
+ * outside every mount — `/health`, `/signout`, `/auth/*`, or a genuinely
+ * unrouted URL.
  */
 export const setIdForPath = (path) => {
   if (typeof path !== 'string') {
@@ -41,10 +42,10 @@ const soleSetId = () => (mounts.size === 1 ? [...mounts.keys()][0] : undefined)
 /**
  * Whether a set can be resolved at all.
  *
- * A server-wide route — the root redirect, the `/auth/*` routes, the sign-in
- * error page, the shared error page reached from outside every set — belongs
- * to no set, so anything set-owned has no answer for it. Ask this before
- * reaching for a set rather than catching the throw.
+ * A server-wide route — the root redirect, `/signout`, the sign-in error page,
+ * the shared error page reached from outside every set — belongs to no set, so
+ * anything set-owned has no answer for it. Ask this before reaching for a set
+ * rather than catching the throw.
  *
  * @returns {boolean} true when `currentSetId()` would answer.
  */

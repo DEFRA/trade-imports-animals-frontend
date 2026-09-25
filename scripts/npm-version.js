@@ -13,11 +13,6 @@
  *
  * Consumed by .github/workflows/{check-pull-request,publish,publish-hotfix,
  * lighthouse}.yml and by both install stages of the Dockerfile.
- *
- * This file and `packageManager` in package.json stay past the rest of the npm-pin
- * removal because `workflow_run`-triggered workflows (lighthouse.yml) run main's copy
- * against this branch, and main's copy still calls this script — both go once this
- * change lands on main.
  */
 
 import { readFileSync } from 'node:fs'

@@ -28,7 +28,6 @@ const contentSecurityPolicy = {
     frameSrc: ['self', 'data:'],
     objectSrc: ['none'],
     frameAncestors: ['none'],
-    // A browser enforces form-action across the 302 that follows a cross-service POST.
     formAction: ['self', ...siblingFrontendOrigins],
     manifestSrc: ['self'],
     generateNonces: false

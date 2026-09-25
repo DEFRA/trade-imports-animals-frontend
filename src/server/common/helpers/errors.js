@@ -16,10 +16,10 @@ const errorMessageFor = (statusCode) =>
  * The error page's chrome, resolved from the request path rather than from
  * whichever set happens to be ambient.
  *
- * An unrouted 404, `/health` and `/auth/*` all reach here outside every set,
- * where a set's layout and section caption cannot be resolved at all. Asking
- * for them anyway — directly or through the sole-set fallback — turns the 404
- * the user should see into a 500 as soon as a second set mounts.
+ * An unrouted 404, `/health`, `/signout` and `/auth/*` all reach here outside
+ * every set, where a set's layout and section caption cannot be resolved at
+ * all. Asking for them anyway — directly or through the sole-set fallback —
+ * turns the 404 the user should see into a 500 as soon as a second set mounts.
  */
 const errorChrome = (request, errorMessage) => {
   const setId = setIdForPath(request.path)

@@ -73,12 +73,6 @@ jobs:
       - name: Security audit
         run: npm run security-audit
 
-  # The frontend owns two Playwright projects — `features` and `journeys` —
-  # which boot the app themselves with STUB_MODE=true: stub data and a locally
-  # signed session in place of the Defra ID round-trip, auth still enforced (see
-  # src/server/auth/stub-sign-in.js), so they need no workspace stack, unlike
-  # the separate "E2E Tests" check. Kept out of pr-validator so a browser run
-  # does not sit in front of the rest of the PR checks.
   playwright:
     name: FIT Tests
     runs-on: ubuntu-latest

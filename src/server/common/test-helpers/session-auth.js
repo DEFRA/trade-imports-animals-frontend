@@ -1,6 +1,3 @@
-/**
- * @returns {import('@hapi/hapi').ServerInjectOptions['auth']}
- */
 export function sessionAuth(sessionId, overrides = {}) {
   return {
     strategy: 'session',

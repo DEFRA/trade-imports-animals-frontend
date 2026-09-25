@@ -6,11 +6,6 @@ import { stubSignInRoutes } from './stub-sign-in.js'
 const HTTP_STATUS_FOUND = 302
 const COOKIE_PASSWORD = 'stub-sign-in-test-cookie-password-32-chars-long'
 
-/** The plugin needs two things the real server provides: a session cache to
- * write into and drop from, and the cookie strategy that decorates
- * `request.cookieAuth` and reads a session back from the cookie. A Map stands
- * in for the cache; the strategy is the real one, validating against that Map,
- * so a sign-in's cookie signs the next request in and a sign-out clears it. */
 const buildServer = async () => {
   const server = Hapi.server()
   const cached = new Map()

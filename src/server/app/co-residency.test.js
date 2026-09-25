@@ -3,9 +3,6 @@
  *
  * This is the suite EUDPA-619 exists to satisfy, so it boots the PRODUCTION
  * router rather than hand-rolling the composition it is meant to be checking.
- * A hand-rolled boot would assert against the test's own wiring: mounting a
- * set at the root in router.js, or dropping the / redirect, would leave it
- * green.
  *
  * The second set is a test fixture (test/fixtures/second-set.js) rather than a
  * real journey. Co-residency is a property of the platform, and shipping a
@@ -128,8 +125,6 @@ beforeAll(async () => {
       files: { relativeTo: path.resolve(config.get('root'), '.public') }
     }
   })
-  // The branch's set routes name the 'session' strategy (kit.routeOptions); a
-  // bare server has none, and Hapi refuses the route at registration.
   registerTestSessionAuth(server)
   await server.register([nunjucksConfig, router])
   // The two server-wide extensions server.js registers, in the same order:
@@ -531,9 +526,6 @@ describe('co-residency — the real composition root', () => {
   it('Should serve /auth/sign-out outside every set prefix', () => {
     const paths = realServer.table().map((route) => route.path)
 
-    // /auth/sign-out registers perfectly happily at /live-animals/auth/sign-out
-    // and fails only when a user tries to sign out, so it is pinned rather than
-    // trusted.
     expect(paths).toContain('/auth/sign-out')
     expect(paths).not.toContain(`${LIVE_ANIMALS_BASE}/auth/sign-out`)
   })

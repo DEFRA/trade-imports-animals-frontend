@@ -23,11 +23,9 @@ convict.addFormats(convictFormatWithValidator)
 
 const STRICT_BOOLEAN = 'strict-boolean'
 
-// convict's built-in Boolean format coerces any string other than exactly
-// 'false' to true (e.g. a typo like 'flase' silently enables the flag), so
-// every env-backed boolean uses this stricter format instead - it only
-// accepts an actual boolean, or the literal strings 'true'/'false' from an
-// env var, and fails config.validate() on anything else.
+// convict's built-in Boolean format coerces any string other than 'false' to
+// true, so a typo like 'flase' would silently enable the flag; this format
+// only accepts a real boolean or the literal 'true'/'false' string.
 convict.addFormat({
   name: STRICT_BOOLEAN,
   validate(val) {

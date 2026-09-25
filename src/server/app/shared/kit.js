@@ -14,12 +14,6 @@ import { isRecoverableBackendError } from '../services/persistence/records/error
 
 export const routeOptions = { auth: 'session' }
 
-/**
- * The one resolved instance of the shared chrome copy. `base` puts it in
- * every journey view model; a controller that builds its own view model —
- * `src/server/auth/controller.js` — imports it from here rather than
- * re-wiring `copyFor`.
- */
 export const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
 export const SURFACES = Object.freeze({
@@ -169,7 +163,7 @@ const SHARED_LAYOUT = 'shared/layout.njk'
 
 /**
  * The chrome for a page rendered outside every set — the shared error page on
- * an unrouted path, on `/health` or `/auth/*`.
+ * an unrouted path, on `/health`, `/signout` or `/auth/*`.
  *
  * It resolves nothing set-owned: no journey layout, no section caption, no set
  * base. Falling back to the sole mounted set instead would be right only while
