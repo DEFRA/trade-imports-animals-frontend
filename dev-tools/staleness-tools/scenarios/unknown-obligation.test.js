@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { obligations } from '../../src/server/app/sets/live-animals/obligations/index.js'
+import { obligations } from '../../../src/server/app/sets/live-animals/obligations/index.js'
 import { unknownObligation } from './unknown-obligation.js'
 
 const REFERENCE_NUMBER = 'GBN-AG-26-TEST01'

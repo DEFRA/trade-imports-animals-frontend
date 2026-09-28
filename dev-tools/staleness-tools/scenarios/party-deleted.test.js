@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { obligations } from '../../src/server/app/sets/live-animals/obligations/index.js'
+import { obligations } from '../../../src/server/app/sets/live-animals/obligations/index.js'
 import {
   CONTACT_PARTY,
   PARTIES
-} from '../../src/server/app/sets/live-animals/journeys/linear/features/addresses/parties.js'
+} from '../../../src/server/app/sets/live-animals/journeys/linear/features/addresses/parties.js'
 import { partyDeleted } from './party-deleted.js'
 
 const REFERENCE_NUMBER = 'GBN-AG-26-TEST01'

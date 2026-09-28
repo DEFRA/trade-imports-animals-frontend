@@ -1,4 +1,4 @@
-import { obligations } from '../../src/server/app/sets/live-animals/obligations/index.js'
+import { obligations } from '../../../src/server/app/sets/live-animals/obligations/index.js'
 
 const GHOST_OBLIGATION_ID = 'eudpa-573-ghost-obligation-abcdef'
 

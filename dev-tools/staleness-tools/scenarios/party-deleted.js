@@ -1,8 +1,8 @@
-import { obligations } from '../../src/server/app/sets/live-animals/obligations/index.js'
+import { obligations } from '../../../src/server/app/sets/live-animals/obligations/index.js'
 import {
   CONTACT_PARTY,
   PARTIES
-} from '../../src/server/app/sets/live-animals/journeys/linear/features/addresses/parties.js'
+} from '../../../src/server/app/sets/live-animals/journeys/linear/features/addresses/parties.js'
 
 const GHOST_ADDRESS_ID = 'eudpa-573-ghost-address-abcdef'
 

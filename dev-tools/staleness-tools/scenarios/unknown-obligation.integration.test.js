@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { MongoClient } from 'mongodb'
 import { GenericContainer } from 'testcontainers'
 
-import { runsIt } from '../../src/server/app/services/persistence/it-mode.js'
+import { runsIt } from '../../../src/server/app/services/persistence/it-mode.js'
 import { unknownObligation } from './unknown-obligation.js'
 
 const REFERENCE_NUMBER = 'GBN-AG-26-SMOKE1'

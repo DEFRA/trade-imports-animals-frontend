@@ -1,5 +1,5 @@
-import { assembleFulfilments } from '../../src/server/app/bridge/assemble-fulfilments.js'
-import * as countries from '../../src/server/app/services/countries/index.js'
+import { assembleFulfilments } from '../../../src/server/app/bridge/assemble-fulfilments.js'
+import * as countries from '../../../src/server/app/services/countries/index.js'
 
 const STALE_CODE = 'ZZ'
 

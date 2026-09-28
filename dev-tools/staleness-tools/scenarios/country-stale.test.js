@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { assembleFulfilments } from '../../src/server/app/bridge/assemble-fulfilments.js'
-import * as countries from '../../src/server/app/services/countries/index.js'
+import { assembleFulfilments } from '../../../src/server/app/bridge/assemble-fulfilments.js'
+import * as countries from '../../../src/server/app/services/countries/index.js'
 import { countryStale } from './country-stale.js'
 
 const REFERENCE_NUMBER = 'GBN-AG-26-TEST01'
