@@ -1,4 +1,5 @@
 import { assembleFulfilments } from '../../src/server/app/bridge/assemble-fulfilments.js'
+import { encodeEvaluatorFulfilments } from '../../src/server/app/services/persistence/records/fulfilment-codec/index.js'
 
 // One document fulfilment with the four mandatory fields — matches the fullSeed
 // used in check-answers.test.js. Values are the shape a trader would submit;
@@ -18,19 +19,20 @@ const MIN_DOC = {
  * seed documents (file uploads aren't scriptable via form POSTs). Direct-
  * Mongo write is fine because the demo tool is already Mongo-direct. */
 export const completeDocuments = async (notifications, referenceNumber) => {
+  // `documents` is an indexed group — its encoded shape is
+  // `{obligationId, records: [{fulfilmentId, values: {…}}]}`, not the plain
+  // `{obligationId, value}` a scalar takes. Delegate to
+  // `encodeEvaluatorFulfilments` so the persisted form matches the write
+  // path the frontend itself takes.
   const contributions = assembleFulfilments({ documents: [MIN_DOC] })
-  for (const [obligationId, value] of Object.entries(contributions)) {
-    await notifications.updateOne(
-      { referenceNumber },
-      {
-        $pull: { fulfilments: { obligationId } }
-      }
-    )
-    await notifications.updateOne(
-      { referenceNumber },
-      {
-        $push: { fulfilments: { obligationId, value } }
-      }
-    )
-  }
+  const entries = encodeEvaluatorFulfilments(contributions)
+  const ids = entries.map((e) => e.obligationId)
+  await notifications.updateOne(
+    { referenceNumber },
+    { $pull: { fulfilments: { obligationId: { $in: ids } } } }
+  )
+  await notifications.updateOne(
+    { referenceNumber },
+    { $push: { fulfilments: { $each: entries } } }
+  )
 }
