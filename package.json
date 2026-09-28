@@ -39,6 +39,7 @@
     "test:live-animals": "TZ=UTC vitest run src/server/app/sets/live-animals --no-coverage",
     "capture:live-animals": "node src/server/app/services/_capture/capture.js",
     "seed:stale": "node dev-tools/staleness-tools/seed.js",
+    "seed:demo": "node dev-tools/staleness-tools/demo.js",
     "lighthouse": "run-s lighthouse:targets lighthouse:run",
     "lighthouse:targets": "node scripts/lighthouse/seed-audit-targets.js",
     "lighthouse:run": "node scripts/lighthouse/run-audit.js",

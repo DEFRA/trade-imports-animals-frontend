@@ -19,16 +19,30 @@ write path.
 
 ## Usage
 
-From the frontend repo root:
+### One-liner — seed a fresh notification, mutate it, print the URL to open
+
+```sh
+npm run seed:demo -- --scenario country-stale
+# Seeded draft notification: GBN-AG-26-ABCDEF
+# Applied country-stale to GBN-AG-26-ABCDEF.
+# Open: http://localhost:3000/notifications/GBN-AG-26-ABCDEF/notification-view
+```
+
+Optional `--state draft|submitted|amend` (default `draft`).
+
+Requires the `trade-imports-animals-tests` clone to be a sibling of this
+repo (the workspace layout); set `TRADE_IMPORTS_ANIMALS_TESTS_PATH` for
+anything else, and `TRADE_IMPORTS_ANIMALS_FRONTEND_BASE_URL` if the
+frontend isn't at `http://localhost:3000`.
+
+### Mutate an existing notification
 
 ```sh
 # List every scenario the tool knows
 npm run seed:stale -- --list
 
-# Apply a scenario to a notification
+# Apply a scenario to a notification you already have a ref for
 npm run seed:stale -- --scenario country-stale --ref GBN-AG-26-ABCDEF
-npm run seed:stale -- --scenario party-deleted --ref GBN-AG-26-ABCDEF
-npm run seed:stale -- --scenario unknown-obligation --ref GBN-AG-26-ABCDEF
 ```
 
 Each scenario is idempotent — running it twice leaves the notification in
@@ -39,20 +53,15 @@ cleanest walk-through.
 Refresh the frontend after seeding — the frontend re-reads the notification
 on every request, so no restart is needed.
 
-### Getting a reference number
-
-Chain with `seed:notification` in the tests repo, which drives the frontend's
-own save-and-continue routes to a DRAFT / SUBMITTED / AMEND notification and
-prints the ref:
+### Just seed a notification (no mutation)
 
 ```sh
-REF=$(npm --prefix ../trade-imports-animals-tests \
-  run --silent seed:notification -- --state draft)
-npm run seed:stale -- --scenario country-stale --ref $REF
+npm --prefix ../trade-imports-animals-tests \
+  run --silent seed:notification -- --state draft
+# prints GBN-AG-26-ABCDEF
 ```
 
-Or create a notification manually via the UI and read the ref off the
-dashboard card.
+Or create one manually via the UI and read the ref off the dashboard card.
 
 ## Scenarios
 
