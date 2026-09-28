@@ -19,6 +19,11 @@ export const countryStale = {
   mutate: async (notifications, referenceNumber) => {
     await assertBogus()
     const contributions = assembleFulfilments({ countryOfOrigin: STALE_CODE })
+    if (Object.keys(contributions).length === 0) {
+      throw new Error(
+        `assembleFulfilments produced no contribution for countryOfOrigin — the answer key may have been renamed or the feature binding removed; update country-stale.js to match.`
+      )
+    }
     for (const [obligationId, value] of Object.entries(contributions)) {
       const { matchedCount } = await notifications.updateOne(
         { referenceNumber, 'fulfilments.obligationId': obligationId },
