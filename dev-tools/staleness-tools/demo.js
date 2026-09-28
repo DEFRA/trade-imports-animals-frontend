@@ -74,7 +74,7 @@ const main = () => {
   const ref = seedNotification(args.state, testsRepoPath)
   console.log(`Seeded ${args.state} notification: ${ref}`)
   applyScenario(args.scenario, ref)
-  console.log(`\nOpen: ${baseUrl}/notifications/${ref}/notification-view`)
+  console.log(`\nOpen: ${baseUrl}/live-animals/notifications/${ref}`)
 }
 
 try {

@@ -25,7 +25,7 @@ write path.
 npm run seed:demo -- --scenario country-stale
 # Seeded draft notification: GBN-AG-26-ABCDEF
 # Applied country-stale to GBN-AG-26-ABCDEF.
-# Open: http://localhost:3000/notifications/GBN-AG-26-ABCDEF/notification-view
+# Open: http://localhost:3000/live-animals/notifications/GBN-AG-26-ABCDEF
 ```
 
 Optional `--state draft|submitted|amend` (default `draft`).
