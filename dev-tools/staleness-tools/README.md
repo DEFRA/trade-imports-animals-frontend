@@ -1,14 +1,11 @@
 # Staleness tools
 
-CLI for planting an EUDPA-573 stale-state scenario on a notification, so the
-frontend's amend / review / declaration flow can be walked with a value the
-current reference data or address book no longer recognises. Used for
-demoing the review-page validation behaviour (EUDPA-130) and for
-reproducing the shonky Amend UX documented in the workspace notes at
-`workareas/shared/eudpa-573-stale-state/notes.md`.
+CLI for updating a notification into a stale state.
+
+Intended to facilitate manual testing.
 
 The tool writes direct to Mongo. It does not go through the frontend's
-write path — `records.replaceFulfilment` refuses SUBMITTED and needs an
+write path — `records.replaceFulfilment` refuses `SUBMITTED` and needs an
 authenticated organisation actor, neither of which fits a dev tool.
 
 ## Prerequisites
@@ -89,35 +86,20 @@ lost its meaning:
 
 Every scenario has a two-tier test.
 
-### Unit tier — `*.test.js`, runs by default with `npm test`
-
-Mocks the Mongo collection. Pins three concrete regressions:
-
-- **`assembleFulfilments` silently returns `{}` for the sentinel.** If a
-  feature binding ever starts validating answers on the write path, the
-  scenario would no-op and every future demo would silently be against a
-  notification with the trader's original answer, not the sentinel.
-- **Sentinel becomes meaningful.** A country code the reference data
-  now offers, or an obligation id the manifest now knows, no longer
-  simulates the failure the scenario claims to. Assertion fails at
-  test time rather than in front of an audience.
-- **Mongo mutation shape.** Filter uses the right composite key,
-  `$set` targets the right field, `matchedCount === 0` throws with a
-  useful message.
+The scope is deliberately narrow: **do the staleness mechanisms work?** For
+each scenario that means "run it, end up with the promised stale state on a
+real Mongo document". Filter shapes, error messages, self-check guards etc.
+are implementation, verified in use rather than in isolation.
 
 ### Integration tier — `*.integration.test.js`, gated by `LIVE_ANIMALS_IT=testcontainer`
 
-Spins up a real MongoDB container via `testcontainers` (already a
-devDependency for the Redis IT), seeds a doc, runs the scenario end-to-end,
-asserts:
+The load-bearing tier. Spins up a real MongoDB container via
+`testcontainers` (already a devDependency for the Redis IT), seeds a doc,
+runs the scenario end-to-end, asserts:
 
-- **The mutation lands.** Not just the driver call, the actual document.
-- **Other fulfilments are untouched.** A scenario that accidentally
-  starts matching too broadly is caught here — the unit tier only sees
-  what the scenario asked to do, not what it actually did to unrelated
-  entries.
-- **Idempotency.** A second run leaves the same terminal state. Regression
-  guard for a scenario that starts double-applying its own mutation.
+- **The mutation lands.** The document is in the target stale state.
+- **Other fulfilments are untouched.** Scenarios don't over-match.
+- **Idempotency.** A second run leaves the same terminal state.
 
 Run with:
 
@@ -125,34 +107,33 @@ Run with:
 LIVE_ANIMALS_IT=testcontainer npm test
 ```
 
-Or narrow to just the integration tier:
+Or narrow to just this tool's integration tests:
 
 ```sh
 LIVE_ANIMALS_IT=testcontainer npx vitest run dev-tools/staleness-tools/scenarios/*.integration.test.js
 ```
 
-The integration tier is gated because Docker is a prerequisite (fine for
-local, but a CI job that doesn't have Docker would fail without the gate),
-and because container startup adds a couple of seconds — worth paying on
-demand, not every commit.
+Gated because Docker is a prerequisite and container startup takes a
+couple of seconds. The frontend's own CI runs `npm test` without the
+flag, so these skip on main; run them locally before touching a scenario.
 
-### Why both tiers, when the integration tier catches everything the unit tier does
+### Unit tier — one test, in `party-deleted.test.js`
 
-The unit tier catches wiring bugs immediately without Docker and runs in
-milliseconds. It is the tier that fires when someone unrelated to this
-tool changes `assembleFulfilments`, the obligations manifest, or the
-countries service. The integration tier catches driver-level issues the
-mocks can't — Mongo filter semantics against arrays, `$set` on positional
-matches, driver options — and pins idempotency and non-interference in a
-way mocks can't. Together they cover the two failure modes a purely-mocked
-suite tends to leak: assumptions about the driver, and mutations that
-succeed against the mock but do the wrong thing against a real database.
+Pins that every role name in `PARTIES` + `CONTACT_PARTY` resolves to an
+obligation. That drift — adding a role without a matching obligation entry
+— is one the smoke tier cannot catch (the smoke tests seed specific
+obligation ids). This fires on main CI before anyone runs the tool.
+
+The other scenarios' sanity checks (`assertBogus` / `assertUnknown`) fire
+at runtime inside the scenario itself — a sentinel that has lost its
+meaning errors loudly on first invocation, so a separate test would
+duplicate what the runtime guard already does.
 
 ## Adding a scenario
 
 - New file at `scenarios/<id>.js` exporting `{ id, summary, mutate(notifications, referenceNumber) }`.
 - Add it to the barrel at `scenarios/index.js`.
-- Write a `*.test.js` (unit) and a `*.integration.test.js` (smoke) following the shape of `country-stale`'s pair.
+- Write a `*.integration.test.js` (smoke) proving the mutation lands, doesn't over-match, and is idempotent. Follow the shape of `country-stale.integration.test.js`.
 - If the scenario has a sentinel — a value or id chosen to be nonsense
   under today's reference data / manifest — add an assertion that fires
   when it becomes meaningful, or a test that pins it. Losing the ability

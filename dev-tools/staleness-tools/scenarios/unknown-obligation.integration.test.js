@@ -62,5 +62,17 @@ describe.skipIf(!runsIt('testcontainer'))(
       )
       expect(real?.value).toBe('real-value')
     })
+
+    it('Should be idempotent — a second run leaves the same terminal state', async () => {
+      await unknownObligation.mutate(notifications, REFERENCE_NUMBER)
+      const after1 = await notifications.findOne({
+        referenceNumber: REFERENCE_NUMBER
+      })
+      await unknownObligation.mutate(notifications, REFERENCE_NUMBER)
+      const after2 = await notifications.findOne({
+        referenceNumber: REFERENCE_NUMBER
+      })
+      expect(after2.fulfilments).toEqual(after1.fulfilments)
+    })
   }
 )

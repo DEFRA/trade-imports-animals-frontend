@@ -22,9 +22,11 @@ export const unknownObligation = {
       obligationId: GHOST_OBLIGATION_ID,
       value: 'the-answer-that-nobody-will-ever-see'
     }
+    // $addToSet dedupes by deep equality so a re-run adds nothing — keeps
+    // the scenario idempotent, like `country-stale` and `party-deleted`.
     const { matchedCount } = await notifications.updateOne(
       { referenceNumber },
-      { $push: { fulfilments: ghost } }
+      { $addToSet: { fulfilments: ghost } }
     )
     if (matchedCount === 0) {
       throw new Error(
