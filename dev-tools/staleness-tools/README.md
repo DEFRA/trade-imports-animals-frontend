@@ -39,6 +39,21 @@ cleanest walk-through.
 Refresh the frontend after seeding — the frontend re-reads the notification
 on every request, so no restart is needed.
 
+### Getting a reference number
+
+Chain with `seed:notification` in the tests repo, which drives the frontend's
+own save-and-continue routes to a DRAFT / SUBMITTED / AMEND notification and
+prints the ref:
+
+```sh
+REF=$(npm --prefix ../trade-imports-animals-tests \
+  run --silent seed:notification -- --state draft)
+npm run seed:stale -- --scenario country-stale --ref $REF
+```
+
+Or create a notification manually via the UI and read the ref off the
+dashboard card.
+
 ## Scenarios
 
 | Scenario id          | Simulates                                                                                         | What to look for                                                                                                                                                       |
@@ -141,6 +156,9 @@ would duplicate what the runtime guard already does.
 
 ## Related
 
+- Companion seeder: `bin/seed-notification.ts` on
+  `trade-imports-animals-tests` — produces a DRAFT / SUBMITTED / AMEND
+  notification the staleness tool can then mutate.
 - Workspace notes on the underlying stale-state design conversation:
   `~/git/defra/trade-imports-workspace/workareas/shared/eudpa-573-stale-state/notes.md`
 - Handover doc explaining why this tool lives here rather than in the
