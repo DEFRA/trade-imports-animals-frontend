@@ -2,7 +2,7 @@
 // fulfilment registry, so the set must be booted before anything else runs.
 import './boot-live-animals.js'
 import { openNotifications } from './mongodb-client.js'
-import * as scenarios from './scenarios/index.js'
+import * as scenarios from './stale-state-scenarios/index.js'
 
 const parseArgs = (argv) => {
   const args = {}
