@@ -5,20 +5,17 @@ CLI for updating a notification into a stale state.
 Intended to facilitate manual testing.
 
 The tool writes direct to Mongo. It does not go through the frontend's
-write path — `records.replaceFulfilment` refuses `SUBMITTED` and needs an
-authenticated organisation actor, neither of which fits a dev tool.
+write path.
 
 ## Prerequisites
 
 - Workspace compose stack running locally (`tim docker dev` or
   `scripts/stack/run-stack.sh`). MongoDB, backend, and frontend up.
-- A notification in your own organisation you can identify by
-  reference number. DRAFT or AMEND — the tool does not require the
-  notification to be submitted. Enough for testing the review page,
-  CYA and declaration surfaces.
-- `MONGODB_URI` reachable at `mongodb://localhost:27017` (the compose
-  stack default). Override with the env var if your Mongo is
-  somewhere else.
+- A notification you can identify by reference number. The tool does not
+  require the notification to be submitted.
+- - `MONGODB_URI` reachable at `mongodb://localhost:27017` (the compose
+    stack default). Override with the env var if your Mongo is
+    somewhere else.
 
 ## Usage
 
