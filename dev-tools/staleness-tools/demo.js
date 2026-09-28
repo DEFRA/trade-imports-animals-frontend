@@ -1,6 +1,11 @@
+// The document-completion step below calls `assembleFulfilments`, which needs
+// the set booted before it runs.
+import './boot-live-animals.js'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
+import { openNotifications } from './mongodb-client.js'
+import { completeDocuments } from './complete-documents.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const DEFAULT_TESTS_REPO = resolve(HERE, '../../../trade-imports-animals-tests')
@@ -63,7 +68,19 @@ const applyScenario = (scenario, ref) => {
   }
 }
 
-const main = () => {
+// SeededJourney deliberately skips documents (file upload can't be scripted
+// via form POSTs), so a fresh notification always shows "Upload documents"
+// incomplete. Write a minimal document fulfilment directly for demo purposes.
+const completeDocumentsSection = async (ref) => {
+  const { notifications, close } = await openNotifications()
+  try {
+    await completeDocuments(notifications, ref)
+  } finally {
+    await close()
+  }
+}
+
+const main = async () => {
   const args = parseArgs(process.argv.slice(2))
   const testsRepoPath =
     process.env.TRADE_IMPORTS_ANIMALS_TESTS_PATH ?? DEFAULT_TESTS_REPO
@@ -73,13 +90,12 @@ const main = () => {
 
   const ref = seedNotification(args.state, testsRepoPath)
   console.log(`Seeded ${args.state} notification: ${ref}`)
+  await completeDocumentsSection(ref)
   applyScenario(args.scenario, ref)
   console.log(`\nOpen: ${baseUrl}/live-animals/notifications/${ref}`)
 }
 
-try {
-  main()
-} catch (err) {
+main().catch((err) => {
   console.error(err instanceof Error ? err.message : String(err))
   process.exit(1)
-}
+})
