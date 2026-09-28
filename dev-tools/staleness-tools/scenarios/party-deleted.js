@@ -8,9 +8,16 @@ const GHOST_ADDRESS_ID = 'eudpa-573-ghost-address-abcdef'
 
 const partyIdToName = () => {
   const names = [...PARTIES.map((p) => p.id), CONTACT_PARTY.id]
-  return new Map(
+  const map = new Map(
     obligations.filter((o) => names.includes(o.name)).map((o) => [o.id, o.name])
   )
+  if (map.size !== names.length) {
+    const missing = names.filter((name) => ![...map.values()].includes(name))
+    throw new Error(
+      `Party roles ${missing.join(', ')} are in PARTIES / CONTACT_PARTY but not in the obligations manifest — update party-deleted.js to match.`
+    )
+  }
+  return map
 }
 
 const isPartyEntry = (idToName, entry) =>
