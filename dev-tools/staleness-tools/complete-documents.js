@@ -1,9 +1,6 @@
 import { assembleFulfilments } from '../../src/server/app/bridge/assemble-fulfilments.js'
 import { encodeEvaluatorFulfilments } from '../../src/server/app/services/persistence/records/fulfilment-codec/index.js'
 
-// One document fulfilment with the four mandatory fields — matches the fullSeed
-// used in check-answers.test.js. Values are the shape a trader would submit;
-// the real upload path attaches a file too, which the seed script skips.
 const MIN_DOC = {
   accompanyingDocumentType: 'VETERINARY_HEALTH_CERTIFICATE',
   accompanyingDocumentAttachmentType: 'PDF',

@@ -25,9 +25,6 @@ const fulfilmentsForAnswers = (answers) =>
     value
   }))
 
-// Not gated — no Docker needed. `party-deleted.js` throws the same drift
-// at runtime; this fires it on main CI so the drift is spotted before
-// anyone runs the tool.
 describe('#partyDeleted — data source integrity', () => {
   it('Should resolve every role name in PARTIES + CONTACT_PARTY to an obligation', () => {
     const names = [...PARTIES.map((p) => p.id), CONTACT_PARTY.id]
