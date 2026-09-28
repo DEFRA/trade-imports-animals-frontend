@@ -2,7 +2,7 @@ import { MongoClient } from 'mongodb'
 
 const DEFAULT_URI = 'mongodb://localhost:27017'
 const DATABASE = 'trade-imports-animals-backend'
-const COLLECTION = 'notifications'
+const COLLECTION = 'notification'
 
 // The seed CLI writes direct to Mongo — `records.replaceFulfilment` refuses
 // SUBMITTED and needs an authenticated actor, neither of which fits a dev

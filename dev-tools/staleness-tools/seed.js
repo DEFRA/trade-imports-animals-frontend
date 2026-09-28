@@ -1,3 +1,6 @@
+// The scenarios read the obligations manifest and (for country-stale) the
+// fulfilment registry, so the set must be booted before anything else runs.
+import './boot-live-animals.js'
 import { openNotifications } from './mongodb-client.js'
 import * as scenarios from './scenarios/index.js'
 
