@@ -81,18 +81,18 @@ lost its meaning:
 
 ## Tests
 
-Every scenario has a two-tier test.
-
 The scope is deliberately narrow: **do the staleness mechanisms work?** For
-each scenario that means "run it, end up with the promised stale state on a
-real Mongo document". Filter shapes, error messages, self-check guards etc.
-are implementation, verified in use rather than in isolation.
+each scenario that means "run it, end up with the promised stale state on
+a real Mongo document". Filter shapes, error messages, self-check guards
+etc. are implementation, verified in use rather than in isolation.
 
-### Integration tier — `*.integration.test.js`, gated by `LIVE_ANIMALS_IT=testcontainer`
+All the tests live in `scenarios/stale-scenarios.integration.test.js`.
 
-The load-bearing tier. Spins up a real MongoDB container via
-`testcontainers` (already a devDependency for the Redis IT), seeds a doc,
-runs the scenario end-to-end, asserts:
+### Smoke suite (gated by `LIVE_ANIMALS_IT=testcontainer`)
+
+Spins up one real MongoDB container via `testcontainers` (already a
+devDependency for the Redis IT), shared across all three scenarios, and
+for each asserts:
 
 - **The mutation lands.** The document is in the target stale state.
 - **Other fulfilments are untouched.** Scenarios don't over-match.
@@ -104,33 +104,35 @@ Run with:
 LIVE_ANIMALS_IT=testcontainer npm test
 ```
 
-Or narrow to just this tool's integration tests:
+Or narrow to just this file:
 
 ```sh
-LIVE_ANIMALS_IT=testcontainer npx vitest run dev-tools/staleness-tools/scenarios/*.integration.test.js
+LIVE_ANIMALS_IT=testcontainer npx vitest run dev-tools/staleness-tools/scenarios/stale-scenarios.integration.test.js
 ```
 
 Gated because Docker is a prerequisite and container startup takes a
 couple of seconds. The frontend's own CI runs `npm test` without the
-flag, so these skip on main; run them locally before touching a scenario.
+flag, so the smoke suite skips on main; run it locally before touching
+a scenario.
 
-### Unit tier — one test, in `party-deleted.test.js`
+### Data source integrity (not gated — runs on main CI)
 
-Pins that every role name in `PARTIES` + `CONTACT_PARTY` resolves to an
-obligation. That drift — adding a role without a matching obligation entry
-— is one the smoke tier cannot catch (the smoke tests seed specific
-obligation ids). This fires on main CI before anyone runs the tool.
+One always-on describe in the same file pins that every role name in
+`PARTIES` + `CONTACT_PARTY` resolves to an obligation. That drift —
+adding a role without a matching obligation entry — is one the smoke
+suite cannot catch (it seeds specific obligation ids). This fires on
+main CI before anyone runs the tool.
 
-The other scenarios' sanity checks (`assertBogus` / `assertUnknown`) fire
-at runtime inside the scenario itself — a sentinel that has lost its
-meaning errors loudly on first invocation, so a separate test would
-duplicate what the runtime guard already does.
+The other scenarios' sanity checks (`assertBogus` / `assertUnknown`)
+fire at runtime inside the scenario itself — a sentinel that has lost
+its meaning errors loudly on first invocation, so a separate test
+would duplicate what the runtime guard already does.
 
 ## Adding a scenario
 
 - New file at `scenarios/<id>.js` exporting `{ id, summary, mutate(notifications, referenceNumber) }`.
 - Add it to the barrel at `scenarios/index.js`.
-- Write a `*.integration.test.js` (smoke) proving the mutation lands, doesn't over-match, and is idempotent. Follow the shape of `country-stale.integration.test.js`.
+- Add a `describe('#<yourScenario>', () => { ... })` block to `stale-scenarios.integration.test.js` proving the mutation lands, doesn't over-match, and is idempotent. Follow the shape of the existing three.
 - If the scenario has a sentinel — a value or id chosen to be nonsense
   under today's reference data / manifest — add an assertion that fires
   when it becomes meaningful, or a test that pins it. Losing the ability
