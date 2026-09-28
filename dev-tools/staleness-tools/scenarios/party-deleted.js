@@ -6,9 +6,6 @@ import {
 
 const GHOST_ADDRESS_ID = 'eudpa-573-ghost-address-abcdef'
 
-// Every party a trader can pick from the address book, sourced from the
-// frontend's own definitions so any future role addition flows in without
-// the scenario knowing.
 const partyIdToName = () => {
   const names = [...PARTIES.map((p) => p.id), CONTACT_PARTY.id]
   return new Map(

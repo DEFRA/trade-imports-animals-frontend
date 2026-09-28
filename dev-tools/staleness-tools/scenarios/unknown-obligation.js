@@ -2,8 +2,6 @@ import { obligations } from '../../../src/server/app/sets/live-animals/obligatio
 
 const GHOST_OBLIGATION_ID = 'eudpa-573-ghost-obligation-abcdef'
 
-// A scenario whose ghost id has crept into the manifest would exercise a
-// path that IS known, not one that isn't. Fail loud.
 const assertUnknown = () => {
   if (obligations.some((o) => o.id === GHOST_OBLIGATION_ID)) {
     throw new Error(

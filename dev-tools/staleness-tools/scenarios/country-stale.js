@@ -3,8 +3,6 @@ import * as countries from '../../../src/server/app/services/countries/index.js'
 
 const STALE_CODE = 'ZZ'
 
-// A scenario whose sentinel has become resolvable no longer simulates the
-// failure it claims to. Fail loud.
 const assertBogus = async () => {
   const list = await countries.originCountries()
   if (list.some((c) => c.value === STALE_CODE)) {
