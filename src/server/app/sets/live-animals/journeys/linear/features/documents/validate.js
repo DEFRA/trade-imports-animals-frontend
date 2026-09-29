@@ -9,9 +9,7 @@ import { copy as cy } from './copy/copy.cy.js'
 
 const copy = copyFor({ en, cy })
 
-// Full catalogue, not the offered subset — a stored `HEALTH_CERTIFICATE` is
-// retained-but-not-offered (see contracts/document-type-options.js), so it is
-// still valid data, it just cannot be re-picked.
+// Full catalogue — HEALTH_CERTIFICATE is retained-but-not-offered.
 const isStaleType = (validTypes, doc) =>
   !validTypes.has(doc.accompanyingDocumentType)
 
@@ -29,8 +27,7 @@ const listErrors = (documents) => {
 }
 
 export const validation = pageValidation({
-  // Add-time rules for a new document live in form/errors.js — the submit
-  // reading here is a no-op.
+  // Add-time rules live in form/errors.js.
   fields: () => compose(),
   checks: (values, { stored } = {}) =>
     stored ? listErrors(values.documents) : {},

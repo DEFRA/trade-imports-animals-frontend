@@ -22,9 +22,6 @@ const documentScanStatuses = async (answers) => {
   )
 }
 
-/** REJECTED docs on the read path. Safe because REJECTED is terminal —
- * PENDING would false-positive a mid-upload (AC5).
- */
 export const documentsRejectedCardErrors = async (answers) => {
   const withStatus = await documentScanStatuses(answers)
   return withStatus.some((doc) => doc.scanStatus === SCAN_STATUS.REJECTED)
@@ -32,9 +29,6 @@ export const documentsRejectedCardErrors = async (answers) => {
     : {}
 }
 
-/** Submit-time gate — REJECTED plus PENDING. PENDING lives here so a
- * mid-upload never false-positives (AC5); REJECTED wins for the message.
- */
 export const documentScanCardErrors = async (answers) => {
   const withStatus = await documentScanStatuses(answers)
   if (withStatus.some((doc) => doc.scanStatus === SCAN_STATUS.REJECTED)) {
