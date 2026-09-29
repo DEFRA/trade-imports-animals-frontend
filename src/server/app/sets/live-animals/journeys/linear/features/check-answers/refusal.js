@@ -11,23 +11,32 @@ import { copy as cy } from '../documents/copy/copy.cy.js'
 
 const documentsCopy = copyFor({ en, cy })
 
-/** Submit-time scan gate. The catalogue-staleness rules live on the
- * documents pageValidation and fire on every read — scan state is
- * deliberately checked only from here, so a mid-upload PENDING does
- * not turn the stored-view rendering into an error (AC5). Refresh
- * false so the cached status is read; a live re-fetch would race the
- * poller and does nothing for a submit-time decision. REJECTED wins
- * over PENDING because it names a file the trader must act on rather
- * than a state they only have to wait through. */
-export const documentScanCardErrors = async (answers) => {
+const documentScanStatuses = async (answers) => {
   const documents = [answers.documents ?? []].flat()
   if (documents.length === 0) {
-    return {}
+    return []
   }
-  const withStatus = await withScanStatus(
+  return withScanStatus(
     documents.map((entry) => ({ entry })),
     false
   )
+}
+
+/** REJECTED docs on the read path. Safe because REJECTED is terminal —
+ * PENDING would false-positive a mid-upload (AC5).
+ */
+export const documentsRejectedCardErrors = async (answers) => {
+  const withStatus = await documentScanStatuses(answers)
+  return withStatus.some((doc) => doc.scanStatus === SCAN_STATUS.REJECTED)
+    ? { documents: documentsCopy.errors.someRejected }
+    : {}
+}
+
+/** Submit-time gate — REJECTED plus PENDING. PENDING lives here so a
+ * mid-upload never false-positives (AC5); REJECTED wins for the message.
+ */
+export const documentScanCardErrors = async (answers) => {
+  const withStatus = await documentScanStatuses(answers)
   if (withStatus.some((doc) => doc.scanStatus === SCAN_STATUS.REJECTED)) {
     return { documents: documentsCopy.errors.someRejected }
   }

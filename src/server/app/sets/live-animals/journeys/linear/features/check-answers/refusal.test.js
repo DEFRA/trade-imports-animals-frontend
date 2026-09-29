@@ -14,7 +14,8 @@ import {
 import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import { withoutUnresolvedPartyRefs } from '../addresses/resolve-parties.js'
-import { isReviewRefused } from './refusal.js'
+import { copy as documentsEn } from '../documents/copy/copy.en.js'
+import { documentsRejectedCardErrors, isReviewRefused } from './refusal.js'
 
 const KNOWN_PORT = 'GB ABD'
 const STALE_PORT = 'GB ZZZ'
@@ -124,5 +125,35 @@ describe('#isReviewRefused', () => {
     )
 
     expect(await askRefused(journey.journeyId)).toBe(false)
+  })
+})
+
+describe('#documentsRejectedCardErrors', () => {
+  it('Should return no errors when no documents are stored', async () => {
+    expect(await documentsRejectedCardErrors({})).toEqual({})
+  })
+
+  it('Should return no errors when every stored document has completed scanning', async () => {
+    expect(
+      await documentsRejectedCardErrors({
+        documents: [doc({ filename: 'clean.pdf' })]
+      })
+    ).toEqual({})
+  })
+
+  it('Should not surface a PENDING scan — a mid-upload is not a permanent problem', async () => {
+    expect(
+      await documentsRejectedCardErrors({
+        documents: [doc({ filename: 'notes-never-scans.pdf' })]
+      })
+    ).toEqual({})
+  })
+
+  it('Should surface a REJECTED scan on the read path', async () => {
+    expect(
+      await documentsRejectedCardErrors({
+        documents: [doc({ filename: 'virus-alert.pdf' })]
+      })
+    ).toEqual({ documents: documentsEn.errors.someRejected })
   })
 })

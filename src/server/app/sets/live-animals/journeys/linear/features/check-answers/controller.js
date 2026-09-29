@@ -25,7 +25,11 @@ import {
 import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { partiesForRender } from '../addresses/parties-for-render.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
-import { documentScanCardErrors, isReviewRefused } from './refusal.js'
+import {
+  documentScanCardErrors,
+  documentsRejectedCardErrors,
+  isReviewRefused
+} from './refusal.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 
@@ -147,6 +151,13 @@ export const renderNotificationView = async (
   const invalidCardErrors = readOnly
     ? {}
     : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
+  // A REJECTED scan is a permanent verdict on a stored file, so it belongs
+  // on the read path — a mid-upload PENDING would false-positive (AC5),
+  // but REJECTED never can. The submit-time gate below still catches
+  // PENDING, so the read-path check does not have to.
+  const rejectedDocErrors = readOnly
+    ? {}
+    : await documentsRejectedCardErrors(answers)
   return renderCya(h, journey, {
     answers,
     scope,
@@ -164,6 +175,7 @@ export const renderNotificationView = async (
       ? {}
       : {
           ...invalidCardErrors,
+          ...rejectedDocErrors,
           ...extraCardErrors,
           ...incompleteCardErrors(answers, scope, evaluation)
         },
