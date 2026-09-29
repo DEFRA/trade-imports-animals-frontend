@@ -1,5 +1,8 @@
 import { isValid, parseISO } from 'date-fns'
-import { formatInServiceZone } from '../../../../../../lib/validate/index.js'
+import {
+  formatCalendarDate,
+  formatMoment
+} from '../../../../../../lib/validate/index.js'
 
 export const DEFAULT_NOTIFICATION_SORT = 'arrivalDate,desc'
 
@@ -10,25 +13,31 @@ export const NOTIFICATION_SORT_OPTIONS = [
   { value: 'createdAt,asc', text: 'Date created (oldest to newest)' }
 ]
 
-/**
- * Every date in the list comes off the wire as an instant, so it has to be
- * rendered in some zone. That zone is the service's, not the container's:
- * date-fns `format` reads the ambient `TZ`, which differs between production
- * (`Europe/London`), CI (`TZ=UTC`) and a laptop, and can be dropped — the same
- * class of environment dependency EUDPA-282 removed from the backend.
- *
- * One formatter covers both kinds of value because the UK is never behind UTC:
- * a calendar date arrives as midnight UTC and renders as the day the user
- * typed, and a moment renders as the UK day it happened.
- */
-export const formatDisplayDate = (value) => {
+const displayDate = (value, formatter) => {
   if (!value) {
     return ''
   }
 
   const date = typeof value === 'string' ? parseISO(value) : value
-  return isValid(date) ? formatInServiceZone(date) : ''
+  return isValid(date) ? formatter(date) : ''
 }
+
+/**
+ * A day the user chose — an arrival date. Rendered from its own UTC
+ * components, because the value already is the day.
+ * @param {string|Date} value
+ */
+export const formatDisplayCalendarDate = (value) =>
+  displayDate(value, formatCalendarDate)
+
+/**
+ * A moment that happened — created, submitted. Rendered as the day it
+ * happened in the service's zone, not the container's ambient `TZ`, which
+ * differs between production, CI and a laptop and can be dropped. Same class
+ * of environment dependency EUDPA-282 removed from the backend.
+ * @param {string|Date} value
+ */
+export const formatDisplayMoment = (value) => displayDate(value, formatMoment)
 
 const commodityDisplayValue = (commodity) =>
   commodity.name ??

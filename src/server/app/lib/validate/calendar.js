@@ -16,15 +16,12 @@ const MONTH_DIGITS = 2
 const DAY_DIGITS = 2
 
 /**
- * The zone this service reasons and renders in. A code constant, not config:
- * the displayed date must be a property of the code, not of whichever `TZ` the
- * container happens to carry — that differs between production
- * (`Europe/London`), CI (`TZ=UTC`) and a laptop, and it can be dropped.
+ * The zone this service reasons in, and renders *moments* in. A code constant,
+ * not config: the displayed date must be a property of the code, not of
+ * whichever `TZ` the container happens to carry — that differs between
+ * production (`Europe/London`), CI (`TZ=UTC`) and a laptop, and can be dropped.
  *
- * Rendering a calendar date correctly depends on this zone being at or east of
- * UTC. A calendar date travels as midnight UTC (see `instantFromDateParts`), so
- * a zone west of UTC would render it as the previous day. Somewhere at or east
- * of UTC — as the UK is, always — it renders as the day the user typed.
+ * Calendar dates do not go through this — see {@link formatCalendarDate}.
  */
 export const SERVICE_TIME_ZONE = 'Europe/London'
 
@@ -157,28 +154,49 @@ export const instantFromDateParts = (parts) => {
 const DISPLAY_DATE_FORMAT = 'd MMM yyyy'
 
 /**
- * Renders a wire date in {@link SERVICE_TIME_ZONE} rather than the ambient one,
- * so the output is the same wherever the process runs.
+ * Formats the calendar day a `Date` names in UTC, with no zone conversion.
  *
- * One formatter serves both kinds of value the API returns, because the UK is
- * never behind UTC: a calendar date (`2026-07-21T00:00:00.000Z`) renders as
- * 21 Jul, the day the user typed, and a moment (`2026-09-10T23:35:39.455Z`)
- * renders as 11 Sep, the UK day it happened.
- *
- * `Intl.DateTimeFormat` would take a `timeZone` directly and save the two
- * steps, but ICU's `en-GB` short month is four letters for September — `Sept`,
- * not `Sep` — so it would quietly reword every September date in the service.
- * Changing that is a copy decision, not this ticket's. So the civil day is
- * resolved in the service zone first, then handed to date-fns as plain local
- * components: both halves of that last step use the same ambient zone, so it
- * round-trips whatever `TZ` is set to, and the month names stay date-fns'.
+ * `format` on its own reads the ambient zone, so the day is taken from the UTC
+ * accessors and the components are handed back as plain local ones purely to
+ * get date-fns' month names. `Intl.DateTimeFormat` would be shorter but ICU's
+ * `en-GB` short month for September is `Sept`, four letters, which would
+ * reword every September date in the service.
  * @param {Date} date
  * @returns {string} e.g. `5 Mar 2026`.
  */
-export const formatInServiceZone = (date) => {
-  const civil = startOfDayInZone(date, SERVICE_TIME_ZONE)
-  return format(
-    new Date(civil.getUTCFullYear(), civil.getUTCMonth(), civil.getUTCDate()),
+const formatUtcComponents = (date) =>
+  format(
+    new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
     DISPLAY_DATE_FORMAT
   )
-}
+
+/**
+ * Renders a **calendar date** — a day the user chose, carried on the wire as
+ * midnight UTC by {@link instantFromDateParts}.
+ *
+ * Read straight off the UTC components, because the value already *is* the
+ * day: there is nothing to convert, and converting would only be safe while
+ * the target zone is at or east of UTC. Rendering it in {@link
+ * SERVICE_TIME_ZONE} happens to give the same answer today — the UK is never
+ * behind UTC, so BST moves midnight to 01:00 on the same day — but that is an
+ * accident of geography, not a property of the value. Depending on it would
+ * mean every calendar date in the service silently shifting a day back if the
+ * service zone ever moved west.
+ * @param {Date} date
+ * @returns {string} e.g. `21 Jul 2026` for `2026-07-21T00:00:00.000Z`.
+ */
+export const formatCalendarDate = (date) => formatUtcComponents(date)
+
+/**
+ * Renders a **moment** — something that happened at an instant, such as when a
+ * notification was created or submitted — as the day it happened in
+ * {@link SERVICE_TIME_ZONE}.
+ *
+ * Here the conversion is the point, and it does real work: a notification
+ * submitted at `2026-09-10T23:35:39.455Z` happened on 11 September in the UK,
+ * and showing the user 10 September would be wrong.
+ * @param {Date} date
+ * @returns {string} e.g. `11 Sep 2026` for `2026-09-10T23:35:39.455Z`.
+ */
+export const formatMoment = (date) =>
+  formatUtcComponents(startOfDayInZone(date, SERVICE_TIME_ZONE))

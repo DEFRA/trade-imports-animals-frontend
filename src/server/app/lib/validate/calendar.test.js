@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest'
 import {
   addUtcDays,
   addUtcMonths,
+  formatCalendarDate,
   formatDateText,
-  formatInServiceZone,
+  formatMoment,
   instantFromDateParts,
   parseDateText,
   startOfDayInZone,
@@ -22,14 +23,20 @@ const SUBMITTED_INSTANT = '2026-09-10T23:35:39.455Z'
 const SUBMITTED_DISPLAY = '11 Sep 2026'
 
 /**
+ * West of UTC, and the only zone on that side in this repo. It is here on
+ * purpose: west of UTC is where a UTC-midnight calendar date renders a day
+ * early and where a local-components `Date` builds the wrong instant. Do not
+ * "tidy" it to match the rest of the suite — that silently disarms the tests.
+ */
+const WEST_OF_UTC = 'America/New_York'
+
+/** East of UTC, for showing that a calendar date does not move either way. */
+const EAST_OF_UTC = 'Pacific/Auckland'
+
+/**
  * The suite runs under `TZ=UTC` (see `package.json`), which is the one setting
  * where an ambient-zone bug and a zone-explicit fix agree — so a test that does
  * not change the zone cannot fail even when the bug is live.
- *
- * `America/New_York` is the only west-of-UTC zone in this repo, and it is here
- * on purpose: west of UTC is where a UTC-midnight calendar date renders a day
- * early, and where a local-components `Date` builds the wrong instant. Do not
- * "tidy" it to match the rest of the suite — that silently disarms the test.
  */
 const runInZone = (zone, assertions) => {
   const original = process.env.TZ
@@ -38,7 +45,7 @@ const runInZone = (zone, assertions) => {
     // Prove the override actually took: Node caches the zone, and if a future
     // runtime stops honouring reassignment these tests would pass vacuously.
     const offsetMinutes = new Date('2026-07-21T00:00:00Z').getTimezoneOffset()
-    expect(offsetMinutes).toBeGreaterThan(0)
+    expect(offsetMinutes).not.toBe(0)
     assertions()
   } finally {
     process.env.TZ = original
@@ -173,7 +180,7 @@ describe('#instantFromDateParts', () => {
     // only where nobody looks. Labelling as UTC cannot drift.
     const underUtc = instantFromDateParts({ day: 21, month: 7, year: 2026 })
 
-    runInZone('America/New_York', () => {
+    runInZone(WEST_OF_UTC, () => {
       expect(instantFromDateParts({ day: 21, month: 7, year: 2026 })).toBe(
         underUtc
       )
@@ -181,36 +188,72 @@ describe('#instantFromDateParts', () => {
   })
 })
 
-describe('#formatInServiceZone', () => {
-  it('renders a calendar date as the day the user typed', () => {
-    expect(formatInServiceZone(new Date(ARRIVAL_INSTANT))).toBe(ARRIVAL_DISPLAY)
-  })
-
-  it('renders a moment as the UK day it happened, not the UTC one', () => {
-    // 23:35 UTC on the 10th is 00:35 on the 11th in London during BST.
-    expect(formatInServiceZone(new Date(SUBMITTED_INSTANT))).toBe(
-      SUBMITTED_DISPLAY
-    )
+describe('#formatCalendarDate', () => {
+  it('renders the day the user typed', () => {
+    expect(formatCalendarDate(new Date(ARRIVAL_INSTANT))).toBe(ARRIVAL_DISPLAY)
   })
 
   it('keeps the three-letter month date-fns produces', () => {
     // ICU's en-GB short month for September is `Sept`. The service says `Sep`,
     // and this ticket is not the place to reword it.
-    expect(formatInServiceZone(new Date('2026-09-29T10:00:00.000Z'))).toBe(
+    expect(formatCalendarDate(new Date('2026-09-29T00:00:00.000Z'))).toBe(
       '29 Sep 2026'
+    )
+  })
+
+  it('reads the UTC day even for a value that is not midnight', () => {
+    // Defensive: a calendar date should always arrive as midnight UTC, but if
+    // one ever carries a time it is still the UTC day that names it.
+    expect(formatCalendarDate(new Date('2026-07-21T23:59:59.999Z'))).toBe(
+      ARRIVAL_DISPLAY
+    )
+  })
+
+  it('does not depend on the process zone, in either direction', () => {
+    // West of UTC is where an ambient-zone or service-zone implementation
+    // would render a UTC-midnight date a day early.
+    runInZone(WEST_OF_UTC, () => {
+      expect(formatCalendarDate(new Date(ARRIVAL_INSTANT))).toBe(
+        ARRIVAL_DISPLAY
+      )
+    })
+    runInZone(EAST_OF_UTC, () => {
+      expect(formatCalendarDate(new Date(ARRIVAL_INSTANT))).toBe(
+        ARRIVAL_DISPLAY
+      )
+    })
+  })
+
+  it('does not depend on the service zone being at or east of UTC', () => {
+    // The whole point of the split: a calendar date is not converted, so it
+    // survives a service zone west of UTC. Rendering it through
+    // startOfDayInZone in such a zone would give the previous day, as this
+    // shows — which is what formatMoment would do and formatCalendarDate
+    // deliberately does not.
+    const viaZone = startOfDayInZone(new Date(ARRIVAL_INSTANT), WEST_OF_UTC)
+    expect(formatCalendarDate(viaZone)).toBe('20 Jul 2026')
+    expect(formatCalendarDate(new Date(ARRIVAL_INSTANT))).toBe(ARRIVAL_DISPLAY)
+  })
+})
+
+describe('#formatMoment', () => {
+  it('renders the UK day it happened, not the UTC one', () => {
+    // 23:35 UTC on the 10th is 00:35 on the 11th in London during BST. This is
+    // the conversion doing real work — the raw UTC day would read 10 Sep.
+    expect(formatMoment(new Date(SUBMITTED_INSTANT))).toBe(SUBMITTED_DISPLAY)
+  })
+
+  it('agrees with the UTC day outside British Summer Time', () => {
+    expect(formatMoment(new Date('2026-01-10T23:35:00.000Z'))).toBe(
+      '10 Jan 2026'
     )
   })
 
   it('renders the same string west of UTC as it does under UTC', () => {
     // The only setting that separates an ambient-zone formatter from a
     // service-zone one: in London or UTC both implementations agree.
-    runInZone('America/New_York', () => {
-      expect(formatInServiceZone(new Date(ARRIVAL_INSTANT))).toBe(
-        ARRIVAL_DISPLAY
-      )
-      expect(formatInServiceZone(new Date(SUBMITTED_INSTANT))).toBe(
-        SUBMITTED_DISPLAY
-      )
+    runInZone(WEST_OF_UTC, () => {
+      expect(formatMoment(new Date(SUBMITTED_INSTANT))).toBe(SUBMITTED_DISPLAY)
     })
   })
 })
