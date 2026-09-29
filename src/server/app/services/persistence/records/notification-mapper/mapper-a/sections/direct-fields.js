@@ -1,6 +1,6 @@
 import { obligationSet } from '../../../../../../model/obligations/manifest.js'
+import { instantFromDateParts } from '../../../../../../lib/validate/index.js'
 import { compact } from '../../shared/compact.js'
-import { isoFromDateParts } from '../../shared/iso-date.js'
 
 /** Persist a party answer with inline details when an address-book id is present. */
 const asInlineParty = (answer) => {
@@ -44,6 +44,6 @@ export const directFieldsFromFulfilment = (reader, referenceNumber) => {
     purposeInInternalMarket: reader.scalar(purposeInInternalMarket),
     destinationCountry: reader.scalar(destinationCountry),
     portOfExit: reader.scalar(portOfExit),
-    exitDate: isoFromDateParts(reader.scalar(exitDate))
+    exitDate: instantFromDateParts(reader.scalar(exitDate))
   })
 }

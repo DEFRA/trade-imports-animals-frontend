@@ -54,6 +54,30 @@ describe('promoted dashboard notification helpers', () => {
     expect(formatCommodity(null)).toBe('')
   })
 
+  it('Should render each kind of wire date in the service zone', () => {
+    // Both kinds now arrive as instants. A calendar date is midnight UTC and
+    // must show as the day the user typed; a moment must show as the UK day it
+    // happened, which is the next day for anything after 23:00 UTC in BST.
+    expect(formatDisplayDate('2026-07-21T00:00:00.000Z')).toBe('21 Jul 2026')
+    expect(formatDisplayDate('2026-09-10T23:35:39.455Z')).toBe('11 Sep 2026')
+  })
+
+  it('Should render the same date whatever zone the process runs in', () => {
+    // The suite pins TZ=UTC, the one setting where an ambient-zone formatter
+    // and a service-zone one agree — so the zone has to be moved for this to
+    // mean anything. America/New_York is west of UTC on purpose: that is where
+    // a UTC-midnight date renders a day early. See calendar.test.js.
+    const original = process.env.TZ
+    process.env.TZ = 'America/New_York'
+    try {
+      expect(new Date('2026-07-21T00:00:00Z').getTimezoneOffset()).toBe(240)
+      expect(formatDisplayDate('2026-07-21T00:00:00.000Z')).toBe('21 Jul 2026')
+      expect(formatDisplayDate('2026-09-10T23:35:39.455Z')).toBe('11 Sep 2026')
+    } finally {
+      process.env.TZ = original
+    }
+  })
+
   it('Should build deployed-style result ranges and govuk pagination links', () => {
     const page = {
       page: 2,

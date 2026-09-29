@@ -14,7 +14,7 @@ const ORIGIN_FARM_LINE1 = '1 Farm Lane'
 const BOS_TAURUS = 'Bos taurus'
 const SALMO_SALAR = 'Salmo salar'
 const PORT_OF_ENTRY = 'GB ABD'
-const ARRIVAL_DATE_ISO = '2026-12-12'
+const ARRIVAL_DATE_ISO = '2026-12-12T00:00:00.000Z'
 const TRANSPORTER_NAME = 'Transporter Co'
 const currentNotificationFrom = (answers) =>
   fulfilmentToNotification(
@@ -299,7 +299,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect(notification.purposeInInternalMarket).toBe('Breeding')
     expect(notification.destinationCountry).toBe('DE')
     expect(notification.portOfExit).toBe('GB DVR')
-    expect(notification.exitDate).toBe('2026-12-20')
+    expect(notification.exitDate).toBe('2026-12-20T00:00:00.000Z')
     expect(notification.transport).toEqual({
       portOfEntry: PORT_OF_ENTRY,
       arrivalDate: ARRIVAL_DATE_ISO,

@@ -24,8 +24,8 @@ fetchMocker.enableMocks()
 const backendBaseUrl = 'http://localhost:8085'
 const notificationsUrl = `${backendBaseUrl}/notifications`
 const journeyId = 'GBN-AG-26-ABC123'
-const createdAt = '2026-07-23T09:00:00'
-const submittedTimestamp = '2026-07-23T10:00:00'
+const createdAt = '2026-07-23T09:00:00Z'
+const submittedTimestamp = '2026-07-23T10:00:00Z'
 const actor = {
   id: '2100010101',
   source: 'dynamics-contact',

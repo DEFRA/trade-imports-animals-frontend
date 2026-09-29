@@ -1,6 +1,5 @@
-import { format, isValid, parseISO } from 'date-fns'
-
-const LIST_DATE_FORMAT = 'd MMM yyyy'
+import { isValid, parseISO } from 'date-fns'
+import { formatInServiceZone } from '../../../../../../lib/validate/index.js'
 
 export const DEFAULT_NOTIFICATION_SORT = 'arrivalDate,desc'
 
@@ -11,13 +10,24 @@ export const NOTIFICATION_SORT_OPTIONS = [
   { value: 'createdAt,asc', text: 'Date created (oldest to newest)' }
 ]
 
+/**
+ * Every date in the list comes off the wire as an instant, so it has to be
+ * rendered in some zone. That zone is the service's, not the container's:
+ * date-fns `format` reads the ambient `TZ`, which differs between production
+ * (`Europe/London`), CI (`TZ=UTC`) and a laptop, and can be dropped — the same
+ * class of environment dependency EUDPA-282 removed from the backend.
+ *
+ * One formatter covers both kinds of value because the UK is never behind UTC:
+ * a calendar date arrives as midnight UTC and renders as the day the user
+ * typed, and a moment renders as the UK day it happened.
+ */
 export const formatDisplayDate = (value) => {
   if (!value) {
     return ''
   }
 
   const date = typeof value === 'string' ? parseISO(value) : value
-  return isValid(date) ? format(date, LIST_DATE_FORMAT) : ''
+  return isValid(date) ? formatInServiceZone(date) : ''
 }
 
 const commodityDisplayValue = (commodity) =>
