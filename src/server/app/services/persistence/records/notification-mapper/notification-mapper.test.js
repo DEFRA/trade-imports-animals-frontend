@@ -288,6 +288,17 @@ describe('Mapper A — current backend notification (as-is)', () => {
     )
   })
 
+  test('Should map a country of origin subdivision to parent country and subdivision code', () => {
+    const notification = currentNotificationFrom({
+      ...mappedAnswers(),
+      countryOfOrigin: 'ES-CN',
+      countryOfOriginSubdivisionCode: 'ES-CN'
+    })
+
+    expect(notification.origin.countryCode).toBe('ES')
+    expect(notification.origin.countrySubdivisionCode).toBe('ES-CN')
+  })
+
   test('Should omit the obligations with no home and map the newly homed ones', () => {
     const notification = currentNotificationFrom(answersWithGaps())
 

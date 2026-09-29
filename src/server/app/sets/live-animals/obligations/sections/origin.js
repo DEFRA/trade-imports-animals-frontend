@@ -15,6 +15,12 @@ export const countryOfOrigin = {
   status: 'mandatory'
 }
 
+export const countryOfOriginSubdivisionCode = {
+  id: 'd34e5f6a-7b8c-4d9e-0f1a-2b3c4d5e6f7a',
+  name: 'countryOfOriginSubdivisionCode',
+  status: 'optional'
+}
+
 export const regionCodeRequirement = {
   id: 'b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e',
   name: 'regionOfOriginCodeRequirement',

@@ -19,6 +19,7 @@ export const meta = {
   ...page,
   collects: [
     'countryOfOrigin',
+    'countryOfOriginSubdivisionCode',
     'regionOfOriginCodeRequirement',
     'regionOfOriginCode',
     'internalReferenceNumber'
@@ -34,7 +35,7 @@ const copy = copyFor({ en, cy })
 // under the placeholder, a searchable one does not.
 const countryItems = async () => [
   { value: '', text: copy.country.placeholder },
-  ...(await countries.originCountries())
+  ...(await countries.originCountryOptions())
 ]
 
 // The back link is the one thing on this page told by what has been saved: a

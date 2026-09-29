@@ -41,7 +41,10 @@ export const listItemMarshaller = (organisationId) => {
       concurrencyToken: notification.concurrencyToken ?? null,
       reference: notification.referenceNumber,
       commodity: notification.commodity ?? null,
-      originCountryCode: notification.origin?.countryCode ?? null,
+      originCountryCode:
+        notification.origin?.countrySubdivisionCode ??
+        notification.origin?.countryCode ??
+        null,
       arrivalDate: notification.transport?.arrivalDate ?? null,
       consignorName: await nameOf(notification.consignor, lookup, status),
       consigneeName: await nameOf(notification.consignee, lookup, status)

@@ -12,8 +12,7 @@ export const toRow = async (journey) => ({
   status: journeyStrip(journey).status,
   commodity: formatCommodity(journey.commodity, commodities.commodityNameFor),
   origin: journey.originCountryCode
-    ? ((await countries.originLabel(journey.originCountryCode)) ??
-      journey.originCountryCode)
+    ? await countries.originDisplayLabel(journey.originCountryCode)
     : '',
   arrival: formatDisplayDate(journey.arrivalDate),
   consignor: journey.consignorName ?? '',

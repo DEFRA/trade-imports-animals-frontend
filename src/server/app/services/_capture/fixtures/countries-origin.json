@@ -1,126 +1,196 @@
 [
   {
     "code": "AT",
-    "name": "Austria"
+    "name": "Austria",
+    "subDivisions": []
   },
   {
     "code": "BE",
-    "name": "Belgium"
+    "name": "Belgium",
+    "subDivisions": []
   },
   {
     "code": "BG",
-    "name": "Bulgaria"
+    "name": "Bulgaria",
+    "subDivisions": []
   },
   {
     "code": "HR",
-    "name": "Croatia"
+    "name": "Croatia",
+    "subDivisions": []
   },
   {
     "code": "CY",
-    "name": "Cyprus"
+    "name": "Cyprus",
+    "subDivisions": []
   },
   {
     "code": "CZ",
-    "name": "Czechia"
+    "name": "Czechia",
+    "subDivisions": []
   },
   {
     "code": "DK",
-    "name": "Denmark"
+    "name": "Denmark",
+    "subDivisions": []
   },
   {
     "code": "EE",
-    "name": "Estonia"
+    "name": "Estonia",
+    "subDivisions": []
   },
   {
     "code": "FI",
-    "name": "Finland"
+    "name": "Finland",
+    "subDivisions": []
   },
   {
     "code": "FR",
-    "name": "France"
+    "name": "France",
+    "subDivisions": [
+      {
+        "code": "FR-MQ",
+        "name": "Martinique"
+      },
+      {
+        "code": "FR-GP",
+        "name": "Guadeloupe"
+      },
+      {
+        "code": "FR-MF",
+        "name": "Saint Martin (French part)"
+      },
+      {
+        "code": "FR-LRE",
+        "name": "Reunion"
+      },
+      {
+        "code": "FR-GF",
+        "name": "French Guiana"
+      },
+      {
+        "code": "FR-YT",
+        "name": "Mayotte"
+      }
+    ]
   },
   {
     "code": "DE",
-    "name": "Germany"
+    "name": "Germany",
+    "subDivisions": []
   },
   {
     "code": "GR",
-    "name": "Greece"
+    "name": "Greece",
+    "subDivisions": []
   },
   {
     "code": "HU",
-    "name": "Hungary"
+    "name": "Hungary",
+    "subDivisions": []
   },
   {
     "code": "IS",
-    "name": "Iceland"
+    "name": "Iceland",
+    "subDivisions": []
   },
   {
     "code": "IE",
-    "name": "Ireland"
+    "name": "Ireland",
+    "subDivisions": []
   },
   {
     "code": "IT",
-    "name": "Italy"
+    "name": "Italy",
+    "subDivisions": []
   },
   {
     "code": "LV",
-    "name": "Latvia"
+    "name": "Latvia",
+    "subDivisions": []
   },
   {
     "code": "LI",
-    "name": "Liechtenstein"
+    "name": "Liechtenstein",
+    "subDivisions": []
   },
   {
     "code": "LT",
-    "name": "Lithuania"
+    "name": "Lithuania",
+    "subDivisions": []
   },
   {
     "code": "LU",
-    "name": "Luxembourg"
+    "name": "Luxembourg",
+    "subDivisions": []
   },
   {
     "code": "MT",
-    "name": "Malta"
+    "name": "Malta",
+    "subDivisions": []
   },
   {
     "code": "NL",
-    "name": "Netherlands (the)"
+    "name": "Netherlands (the)",
+    "subDivisions": []
   },
   {
     "code": "NO",
-    "name": "Norway"
+    "name": "Norway",
+    "subDivisions": []
   },
   {
     "code": "PL",
-    "name": "Poland"
+    "name": "Poland",
+    "subDivisions": []
   },
   {
     "code": "PT",
-    "name": "Portugal"
+    "name": "Portugal",
+    "subDivisions": [
+      {
+        "code": "PT-30",
+        "name": "Madeira"
+      },
+      {
+        "code": "PT-20",
+        "name": "Azores"
+      }
+    ]
   },
   {
     "code": "RO",
-    "name": "Romania"
+    "name": "Romania",
+    "subDivisions": []
   },
   {
     "code": "SK",
-    "name": "Slovakia"
+    "name": "Slovakia",
+    "subDivisions": []
   },
   {
     "code": "SI",
-    "name": "Slovenia"
+    "name": "Slovenia",
+    "subDivisions": []
   },
   {
     "code": "ES",
-    "name": "Spain"
+    "name": "Spain",
+    "subDivisions": [
+      {
+        "code": "ES-CN",
+        "name": "Canary Islands"
+      }
+    ]
   },
   {
     "code": "SE",
-    "name": "Sweden"
+    "name": "Sweden",
+    "subDivisions": []
   },
   {
     "code": "CH",
-    "name": "Switzerland"
+    "name": "Switzerland",
+    "subDivisions": []
   }
 ]

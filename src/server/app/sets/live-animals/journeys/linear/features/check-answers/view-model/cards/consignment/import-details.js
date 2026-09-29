@@ -24,7 +24,9 @@ export const importDetailsCard = async (
   rows: [
     row(
       copy.rows.countryOfOrigin,
-      (await countries.originLabel(answers.countryOfOrigin)) ?? ''
+      (await countries.originDisplayLabel(
+        answers.countryOfOriginSubdivisionCode || answers.countryOfOrigin
+      )) ?? ''
     ),
     row(
       copy.rows.regionCodeRequired,
