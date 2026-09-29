@@ -25,7 +25,7 @@ which fits a dev tool.
 - `MONGODB_URI` reachable at `mongodb://localhost:27017` (the compose
   stack default). Override with the env var if your Mongo is somewhere
   else.
-- `../trade-imports-animals-tests` clone as a sibling of this repo
+- `../trade-imports-ins-tests` clone as a sibling of this repo
   (the workspace layout). Set `TRADE_IMPORTS_ANIMALS_TESTS_PATH` to
   override.
 - `TRADE_IMPORTS_ANIMALS_FRONTEND_BASE_URL` overrides the default
@@ -196,7 +196,7 @@ would duplicate what the runtime guard already does.
 ## Related
 
 - Companion seeder: `bin/seed-notification.ts` on
-  `trade-imports-animals-tests` — the create half these tools drive.
+  `trade-imports-ins-tests` — the create half these tools drive.
 - Workspace notes on the underlying stale-state design conversation:
   `~/git/defra/trade-imports-workspace/workareas/shared/eudpa-573-stale-state/notes.md`
 - Handover doc explaining why these tools live here rather than in

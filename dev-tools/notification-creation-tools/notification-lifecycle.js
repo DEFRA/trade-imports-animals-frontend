@@ -11,7 +11,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 
 export const DEFAULT_TESTS_REPO = resolve(
   HERE,
-  '../../../trade-imports-animals-tests'
+  '../../../trade-imports-ins-tests'
 )
 export const DEFAULT_FRONTEND_BASE_URL = 'http://localhost:3000'
 

@@ -9,7 +9,7 @@ boots, use that set's own recipes under `sets/<set-id>/docs/` instead.
 
 This is a platform-level procedure. It changes L1 composition, the URL
 namespace, the dependency rules, the test matrix and — because the URLs move —
-the `trade-imports-animals-tests` repository. No step here is optional.
+the `trade-imports-ins-tests` repository. No step here is optional.
 
 Paths are relative to `src/server/app/` unless stated otherwise. `<set-id>` is
 the kebab-case id you choose in step 1.
@@ -247,8 +247,8 @@ added to each by hand:
 ## 9. Move the tests with the URLs
 
 A new set does not move existing URLs, but adding the FIRST prefix to a set did
-— and any change to a set's mount does. The `trade-imports-animals-tests`
-repository builds journey URLs from `page-objects/base/sets.ts`. Add your set's
+— and any change to a set's mount does. The `trade-imports-ins-tests`
+repository builds journey URLs from `page-objects/shared/sets.ts`. Add your set's
 base there and use it; do not spell the prefix out in a spec.
 
 The frontend's own FIT specs build URLs from `BASE` in

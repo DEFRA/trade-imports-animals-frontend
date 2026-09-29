@@ -3,7 +3,7 @@ import { fromRow } from './from-row.js'
 /** The address book for `STUB_MODE=true` — local development and the
  * frontend Playwright suite without the address-book service running.
  *
- * Mirrors `trade-imports-animals-tests/seeds/mongodb/30-seed-address-book.js`
+ * Mirrors `trade-imports-ins-tests/domain/shared/fixtures/e2e-address-book.ts`
  * record-for-record and in the same page order (five per page): rows 1–5 are
  * the happy-path parties, then contact plus the Danish/pagination records.
  * Country is the display name `client.js` would resolve from the seed's
