@@ -188,15 +188,21 @@ const formatUtcComponents = (date) =>
 export const formatCalendarDate = (date) => formatUtcComponents(date)
 
 /**
- * Renders a **moment** — something that happened at an instant, such as when a
- * notification was created or submitted — as the day it happened in
- * {@link SERVICE_TIME_ZONE}.
+ * Takes a **moment** — something that happened at an instant, such as when a
+ * notification was created or submitted — and renders the *day* it fell on in
+ * {@link SERVICE_TIME_ZONE}. The time is discarded, hence the name.
  *
  * Here the conversion is the point, and it does real work: a notification
  * submitted at `2026-09-10T23:35:39.455Z` happened on 11 September in the UK,
  * and showing the user 10 September would be wrong.
+ *
+ * Discarding the time is the dashboard's existing `d MMM yyyy` column format,
+ * kept as-is. It does leave a moment near midnight looking like an off-by-one
+ * to the user — 11 Sep for something they submitted at 23:35 on the 10th —
+ * which showing the time, or captioning the table "UK time", would resolve.
+ * That is a content decision, raised in the ticket's open questions.
  * @param {Date} date
  * @returns {string} e.g. `11 Sep 2026` for `2026-09-10T23:35:39.455Z`.
  */
-export const formatMoment = (date) =>
+export const formatMomentAsDay = (date) =>
   formatUtcComponents(startOfDayInZone(date, SERVICE_TIME_ZONE))

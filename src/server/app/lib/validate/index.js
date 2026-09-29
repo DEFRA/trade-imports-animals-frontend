@@ -28,7 +28,7 @@ export {
   addUtcMonths,
   formatCalendarDate,
   formatDateText,
-  formatMoment,
+  formatMomentAsDay,
   instantFromDateParts,
   isRealDate,
   parseDateText,

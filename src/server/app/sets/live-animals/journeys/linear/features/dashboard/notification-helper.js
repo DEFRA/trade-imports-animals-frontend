@@ -1,7 +1,7 @@
 import { isValid, parseISO } from 'date-fns'
 import {
   formatCalendarDate,
-  formatMoment
+  formatMomentAsDay
 } from '../../../../../../lib/validate/index.js'
 
 export const DEFAULT_NOTIFICATION_SORT = 'arrivalDate,desc'
@@ -37,7 +37,8 @@ export const formatDisplayCalendarDate = (value) =>
  * of environment dependency EUDPA-282 removed from the backend.
  * @param {string|Date} value
  */
-export const formatDisplayMoment = (value) => displayDate(value, formatMoment)
+export const formatDisplayMoment = (value) =>
+  displayDate(value, formatMomentAsDay)
 
 const commodityDisplayValue = (commodity) =>
   commodity.name ??

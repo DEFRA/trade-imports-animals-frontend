@@ -5,7 +5,7 @@ import {
   addUtcMonths,
   formatCalendarDate,
   formatDateText,
-  formatMoment,
+  formatMomentAsDay,
   instantFromDateParts,
   parseDateText,
   startOfDayInZone,
@@ -228,7 +228,7 @@ describe('#formatCalendarDate', () => {
     // The whole point of the split: a calendar date is not converted, so it
     // survives a service zone west of UTC. Rendering it through
     // startOfDayInZone in such a zone would give the previous day, as this
-    // shows — which is what formatMoment would do and formatCalendarDate
+    // shows — which is what formatMomentAsDay would do and formatCalendarDate
     // deliberately does not.
     const viaZone = startOfDayInZone(new Date(ARRIVAL_INSTANT), WEST_OF_UTC)
     expect(formatCalendarDate(viaZone)).toBe('20 Jul 2026')
@@ -236,15 +236,17 @@ describe('#formatCalendarDate', () => {
   })
 })
 
-describe('#formatMoment', () => {
+describe('#formatMomentAsDay', () => {
   it('renders the UK day it happened, not the UTC one', () => {
     // 23:35 UTC on the 10th is 00:35 on the 11th in London during BST. This is
     // the conversion doing real work — the raw UTC day would read 10 Sep.
-    expect(formatMoment(new Date(SUBMITTED_INSTANT))).toBe(SUBMITTED_DISPLAY)
+    expect(formatMomentAsDay(new Date(SUBMITTED_INSTANT))).toBe(
+      SUBMITTED_DISPLAY
+    )
   })
 
   it('agrees with the UTC day outside British Summer Time', () => {
-    expect(formatMoment(new Date('2026-01-10T23:35:00.000Z'))).toBe(
+    expect(formatMomentAsDay(new Date('2026-01-10T23:35:00.000Z'))).toBe(
       '10 Jan 2026'
     )
   })
@@ -253,7 +255,9 @@ describe('#formatMoment', () => {
     // The only setting that separates an ambient-zone formatter from a
     // service-zone one: in London or UTC both implementations agree.
     runInZone(WEST_OF_UTC, () => {
-      expect(formatMoment(new Date(SUBMITTED_INSTANT))).toBe(SUBMITTED_DISPLAY)
+      expect(formatMomentAsDay(new Date(SUBMITTED_INSTANT))).toBe(
+        SUBMITTED_DISPLAY
+      )
     })
   })
 })
