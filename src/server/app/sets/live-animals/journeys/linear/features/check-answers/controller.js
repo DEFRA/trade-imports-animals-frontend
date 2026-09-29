@@ -25,7 +25,7 @@ import {
 import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { partiesForRender } from '../addresses/parties-for-render.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
-import { isReviewRefused } from './refusal.js'
+import { documentScanCardErrors, isReviewRefused } from './refusal.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 
@@ -118,7 +118,11 @@ const renderCya = async (
 export const renderNotificationView = async (
   request,
   h,
-  { recoverableError = false, disableAutoFocus = true } = {}
+  {
+    recoverableError = false,
+    disableAutoFocus = true,
+    extraCardErrors = {}
+  } = {}
 ) => {
   const { journey, answers, storedAnswers, scope, evaluation } =
     await state.get(request, h)
@@ -160,6 +164,7 @@ export const renderNotificationView = async (
       ? {}
       : {
           ...invalidCardErrors,
+          ...extraCardErrors,
           ...incompleteCardErrors(answers, scope, evaluation)
         },
     disableAutoFocus
@@ -170,8 +175,10 @@ const get = async (request, h) => renderNotificationView(request, h)
 
 const post = async (request, h) => {
   if (await isReviewRefused(request, h)) {
+    const { answers } = await state.get(request, h)
     const rendered = await renderNotificationView(request, h, {
-      disableAutoFocus: false
+      disableAutoFocus: false,
+      extraCardErrors: await documentScanCardErrors(answers)
     })
     return rendered.code(HTTP_STATUS_BAD_REQUEST)
   }
