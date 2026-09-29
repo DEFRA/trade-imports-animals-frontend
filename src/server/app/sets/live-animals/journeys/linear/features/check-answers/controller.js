@@ -25,11 +25,7 @@ import {
 import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { partiesForRender } from '../addresses/parties-for-render.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
-import {
-  documentScanCardErrors,
-  documentsRejectedCardErrors,
-  isReviewRefused
-} from './refusal.js'
+import { documentsRejectedCardErrors, reviewRefusal } from './refusal.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 
@@ -151,10 +147,9 @@ export const renderNotificationView = async (
   const invalidCardErrors = readOnly
     ? {}
     : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
-  // A REJECTED scan is a permanent verdict on a stored file, so it belongs
-  // on the read path — a mid-upload PENDING would false-positive (AC5),
-  // but REJECTED never can. The submit-time gate below still catches
-  // PENDING, so the read-path check does not have to.
+  // A REJECTED scan is a permanent verdict on a stored file, so it belongs on the read
+  // path — a mid-upload PENDING is (or should be) a transient state so shouldn't
+  // present as an error.
   const rejectedDocErrors = readOnly
     ? {}
     : await documentsRejectedCardErrors(answers)
@@ -186,11 +181,14 @@ export const renderNotificationView = async (
 const get = async (request, h) => renderNotificationView(request, h)
 
 const post = async (request, h) => {
-  if (await isReviewRefused(request, h)) {
-    const { answers } = await state.get(request, h)
+  // Reuse the scan errors reviewRefusal already computed — a fresh
+  // documentScanCardErrors call here would issue a second HTTP GET per
+  // stored document to the upload backend.
+  const { refused, extraCardErrors } = await reviewRefusal(request, h)
+  if (refused) {
     const rendered = await renderNotificationView(request, h, {
       disableAutoFocus: false,
-      extraCardErrors: await documentScanCardErrors(answers)
+      extraCardErrors
     })
     return rendered.code(HTTP_STATUS_BAD_REQUEST)
   }

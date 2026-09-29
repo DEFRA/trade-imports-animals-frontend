@@ -40,29 +40,47 @@ export const documentScanCardErrors = async (answers) => {
   return {}
 }
 
+const NOT_REFUSED = Object.freeze({ refused: false, extraCardErrors: {} })
+
 /** Shared refusal predicate for the review page's Continue and the
  * declaration submit — a bookmark or back-button cannot sneak a stale
  * submission past. SUBMITTED notifications are never refused.
+ *
+ * Returns the scan-card errors alongside the verdict so the CYA POST handler
+ * can render them without a second scan-status fetch (each fetch issues one
+ * HTTP GET per stored document). Callers that need only the boolean use
+ * `isReviewRefused`.
  */
-export const isReviewRefused = async (request, h) => {
+export const reviewRefusal = async (request, h) => {
   const { journey, answers, storedAnswers, scope } = await state.get(request, h)
   if (journey.status === state.SUBMITTED) {
-    return false
+    return NOT_REFUSED
   }
   if (!scope.readyForCheckYourAnswers) {
-    return true
+    return { refused: true, extraCardErrors: {} }
   }
   const source = storedAnswers ?? answers
   const parties = await partiesForRender(request, journey, source)
   if (Object.keys(outstandingPartyErrors(source, parties)).length > 0) {
-    return true
+    return { refused: true, extraCardErrors: {} }
   }
   const invalidCardErrors = await cardStoredErrors(REVIEW_CARDS, answers, {
     request,
     storedAnswers
   })
   if (Object.keys(invalidCardErrors).length > 0) {
-    return true
+    return { refused: true, extraCardErrors: {} }
   }
-  return Object.keys(await documentScanCardErrors(answers)).length > 0
+  const extraCardErrors = await documentScanCardErrors(answers)
+  return {
+    refused: Object.keys(extraCardErrors).length > 0,
+    extraCardErrors
+  }
 }
+
+/** Boolean-only wrapper for callers that do not render scan errors — the
+ * declaration submit is one such caller: it redirects back to CYA on
+ * refusal and lets the CYA GET/POST paths surface any scan verdicts.
+ */
+export const isReviewRefused = async (request, h) =>
+  (await reviewRefusal(request, h)).refused
