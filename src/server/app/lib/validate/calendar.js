@@ -7,7 +7,9 @@ import { addDays, addMonths, format, isValid, parse } from 'date-fns'
 // so they hold that invariant and bring month-end clamping with them.
 // `startOfDay` and `format` do NOT — both normalise to local — so day starts
 // and formatting are done through the UTC accessors instead. The one exception
-// is `formatInServiceZone`, which uses `format` deliberately and says why.
+// is the private `formatUtcComponents`, which uses `format` deliberately and
+// says why. Converting an instant to a civil day in another zone is a separate
+// step, done through `startOfDayInZone` — see `formatMomentAsDay`.
 const DATE_TEXT_FORMAT = 'd/M/yyyy'
 const DATE_TEXT_SHAPE = /^\d{1,2}\/\d{1,2}\/\d{4}$/
 const MONTHS_IN_YEAR = 12
@@ -142,13 +144,21 @@ export const formatDateText = (date) =>
  */
 export const instantFromDateParts = (parts) => {
   const { day, month, year } = parts ?? {}
-  if (day == null || month == null || year == null) {
+  // The blank test the `dateParts` validator applies, applied again here: a
+  // part that trims to empty is an unfilled part. An all-blank optional date
+  // field passes validation as `{day: '', month: '', year: ''}`, and padding
+  // that gives `0000-00-00T00:00:00.000Z` — an instant the API's
+  // `Instant.parse` rejects. Incomplete means no date, not a malformed one.
+  const [dd, mm, yyyy] = [day, month, year].map((part) =>
+    String(part ?? '').trim()
+  )
+  if (dd === '' || mm === '' || yyyy === '') {
     return undefined
   }
-  const yyyy = String(year).padStart(YEAR_DIGITS, '0')
-  const mm = String(month).padStart(MONTH_DIGITS, '0')
-  const dd = String(day).padStart(DAY_DIGITS, '0')
-  return `${yyyy}-${mm}-${dd}T00:00:00.000Z`
+  return `${yyyy.padStart(YEAR_DIGITS, '0')}-${mm.padStart(
+    MONTH_DIGITS,
+    '0'
+  )}-${dd.padStart(DAY_DIGITS, '0')}T00:00:00.000Z`
 }
 
 const DISPLAY_DATE_FORMAT = 'd MMM yyyy'

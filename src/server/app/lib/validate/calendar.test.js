@@ -169,7 +169,13 @@ describe('#instantFromDateParts', () => {
     ['an empty object', {}],
     ['a missing day', { month: 7, year: 2026 }],
     ['a missing month', { day: 21, year: 2026 }],
-    ['a missing year', { day: 21, month: 7 }]
+    ['a missing year', { day: 21, month: 7 }],
+    // How an all-blank optional date field arrives: `dateParts` classifies it
+    // as `empty` and passes it, so this is the shape the mapper actually sees.
+    // Padding it would send `0000-00-00T00:00:00.000Z` to the API.
+    ['blank parts', { day: '', month: '', year: '' }],
+    ['whitespace-only parts', { day: ' ', month: ' ', year: ' ' }],
+    ['one blank part', { day: '', month: 7, year: 2026 }]
   ])('returns undefined for %s', (_label, parts) => {
     expect(instantFromDateParts(parts)).toBeUndefined()
   })

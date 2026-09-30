@@ -9,10 +9,6 @@ import {
 export const DAYS_BEFORE = 7
 export const MONTHS_AHEAD = 6
 
-// Re-exported for the callers that had it from here before it moved beside
-// startOfDayInZone, the function that consumes it.
-export { SERVICE_TIME_ZONE }
-
 /**
  * The window an arrival date at the port of entry may fall in, inclusive at
  * both ends.
