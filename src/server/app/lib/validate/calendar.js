@@ -1,5 +1,7 @@
 import { addDays, addMonths, format, isValid, parse } from 'date-fns'
 
+import { SERVICE_TIME_ZONE } from './service-time-zone.js'
+
 // Every Date here is midnight UTC, whatever the process timezone: the app runs
 // UTC, vitest forces TZ=UTC, but the Playwright drivers run on the developer's
 // clock, and a helper that quietly meant something different there would be
@@ -17,15 +19,10 @@ const YEAR_DIGITS = 4
 const MONTH_DIGITS = 2
 const DAY_DIGITS = 2
 
-/**
- * The zone this service reasons in, and renders *moments* in. A code constant,
- * not config: the displayed date must be a property of the code, not of
- * whichever `TZ` the container happens to carry — that differs between
- * production (`Europe/London`), CI (`TZ=UTC`) and a laptop, and can be dropped.
- *
- * Calendar dates do not go through this — see {@link formatCalendarDate}.
- */
-export const SERVICE_TIME_ZONE = 'Europe/London'
+// Re-exported so callers keep importing the service zone from here; it lives
+// in `service-time-zone.js` only so that a test can substitute it. Calendar
+// dates do not go through it — see `formatCalendarDate` below.
+export { SERVICE_TIME_ZONE }
 
 /**
  * @param {number} year

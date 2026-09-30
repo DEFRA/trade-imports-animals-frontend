@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { runInZone } from '../../../../../../../common/test-helpers/run-in-zone.js'
 import {
   buildHomeListQueryString,
   buildPageResultsRangeLabel,
@@ -11,6 +12,12 @@ import {
 } from './notification-helper.js'
 
 const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
+
+/**
+ * West of UTC on purpose: the only side where an ambient-zone renderer and a
+ * correct one disagree. Do not "tidy" it. See `calendar.test.js`.
+ */
+const WEST_OF_UTC = 'America/New_York'
 
 describe('promoted dashboard notification helpers', () => {
   it('Should validate the deployed sort vocabulary and default invalid values', () => {
@@ -72,21 +79,15 @@ describe('promoted dashboard notification helpers', () => {
   it('Should render both kinds the same whatever zone the process runs in', () => {
     // The suite pins TZ=UTC, where an ambient-zone implementation and a
     // correct one agree — so the zone has to be moved for this to mean
-    // anything. America/New_York is west of UTC on purpose: that is the only
-    // side where the two disagree. See calendar.test.js.
-    const original = process.env.TZ
-    process.env.TZ = 'America/New_York'
-    try {
-      expect(new Date('2026-07-21T00:00:00Z').getTimezoneOffset()).toBe(240)
+    // anything.
+    runInZone(WEST_OF_UTC, () => {
       expect(formatDisplayCalendarDate('2026-07-21T00:00:00.000Z')).toBe(
         '21 Jul 2026'
       )
       expect(formatDisplayMoment('2026-09-10T23:35:39.455Z')).toBe(
         '11 Sep 2026'
       )
-    } finally {
-      process.env.TZ = original
-    }
+    })
   })
 
   it('Should build deployed-style result ranges and govuk pagination links', () => {

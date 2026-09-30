@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
+import { runInZone } from '../../../common/test-helpers/run-in-zone.js'
 import {
   addUtcDays,
   addUtcMonths,
@@ -34,21 +35,22 @@ const WEST_OF_UTC = 'America/New_York'
 const EAST_OF_UTC = 'Pacific/Auckland'
 
 /**
- * The suite runs under `TZ=UTC` (see `package.json`), which is the one setting
- * where an ambient-zone bug and a zone-explicit fix agree — so a test that does
- * not change the zone cannot fail even when the bug is live.
+ * Re-imports `calendar.js` against a service zone west of UTC, so that tests can
+ * ask what the renderers do if this service ever moved to that side. Nothing
+ * else can: `Europe/London` is never behind UTC, so under the real constant a
+ * converting renderer and a non-converting one agree on every calendar date.
+ * @param {(calendar: typeof import('./calendar.js')) => void} assertions
  */
-const runInZone = (zone, assertions) => {
-  const original = process.env.TZ
-  process.env.TZ = zone
+const withServiceZoneWestOfUtc = async (assertions) => {
+  vi.resetModules()
+  vi.doMock('./service-time-zone.js', () => ({
+    SERVICE_TIME_ZONE: WEST_OF_UTC
+  }))
   try {
-    // Prove the override actually took: Node caches the zone, and if a future
-    // runtime stops honouring reassignment these tests would pass vacuously.
-    const offsetMinutes = new Date('2026-07-21T00:00:00Z').getTimezoneOffset()
-    expect(offsetMinutes).not.toBe(0)
-    assertions()
+    assertions(await import('./calendar.js'))
   } finally {
-    process.env.TZ = original
+    vi.doUnmock('./service-time-zone.js')
+    vi.resetModules()
   }
 }
 
@@ -230,16 +232,21 @@ describe('#formatCalendarDate', () => {
     })
   })
 
-  it('does not depend on the service zone being at or east of UTC', () => {
+  it('does not depend on the service zone being at or east of UTC', () =>
     // The whole point of the split: a calendar date is not converted, so it
-    // survives a service zone west of UTC. Rendering it through
-    // startOfDayInZone in such a zone would give the previous day, as this
-    // shows — which is what formatMomentAsDay would do and formatCalendarDate
-    // deliberately does not.
-    const viaZone = startOfDayInZone(new Date(ARRIVAL_INSTANT), WEST_OF_UTC)
-    expect(formatCalendarDate(viaZone)).toBe('20 Jul 2026')
-    expect(formatCalendarDate(new Date(ARRIVAL_INSTANT))).toBe(ARRIVAL_DISPLAY)
-  })
+    // survives a service zone west of UTC. The moment renderer, which does
+    // convert, moves the arrival back to 20 July there — that assertion is the
+    // proof the substituted zone is live, so the one below is not vacuous.
+    // Rendering the calendar date through the service zone instead of reading
+    // it off the UTC components would move it the same way.
+    withServiceZoneWestOfUtc((calendar) => {
+      expect(calendar.formatMomentAsDay(new Date(ARRIVAL_INSTANT))).toBe(
+        '20 Jul 2026'
+      )
+      expect(calendar.formatCalendarDate(new Date(ARRIVAL_INSTANT))).toBe(
+        ARRIVAL_DISPLAY
+      )
+    }))
 })
 
 describe('#formatMomentAsDay', () => {
