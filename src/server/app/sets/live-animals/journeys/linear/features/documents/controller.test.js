@@ -230,6 +230,23 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(entry.accompanyingDocumentType).toBe('ITAHC')
   })
 
+  it('Should hand the upload service the date of issue as an instant, not the date parts the form collected', async () => {
+    const upload = vi.spyOn(documentUploads, 'upload')
+
+    const result = await driveHandler(post, {
+      payload: { action: 'add', ...validDocument, file: pdfFile('itahc.pdf') }
+    })
+
+    expect(result.response.redirect).toBeDefined()
+    // The whole instant, pinned: `12/12/2025` is labelled as midnight UTC, not
+    // converted from a local zone, so a substring or a shape check would pass
+    // on the day-shifted value this contract exists to rule out.
+    expect(upload).toHaveBeenCalledWith(
+      expect.objectContaining({ dateOfIssue: '2025-12-12T00:00:00.000Z' })
+    )
+    upload.mockRestore()
+  })
+
   it('Should store the chosen type whatever the filename says', async () => {
     const result = await driveHandler(post, {
       payload: {
