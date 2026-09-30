@@ -19,6 +19,17 @@ const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
  */
 const WEST_OF_UTC = 'America/New_York'
 
+/**
+ * East of UTC on purpose, and in July so BST is in force: the side where a
+ * string carrying no offset, resolved against the process zone, lands on the
+ * previous UTC day. It is also the zone the service is deployed in, so this is
+ * the disagreement a user would actually see. Do not "tidy" it.
+ */
+const EAST_OF_UTC = 'Europe/London'
+
+/** The one day every spelling of 21 July 2026 in this file has to render as. */
+const ARRIVAL_DAY = '21 Jul 2026'
+
 describe('promoted dashboard notification helpers', () => {
   it('Should validate the deployed sort vocabulary and default invalid values', () => {
     expect(parseNotificationSort(CREATED_AT_ASCENDING_SORT)).toBe(
@@ -66,7 +77,7 @@ describe('promoted dashboard notification helpers', () => {
 
   it('Should render an arrival date as the day the user chose', () => {
     expect(formatDisplayCalendarDate('2026-07-21T00:00:00.000Z')).toBe(
-      '21 Jul 2026'
+      ARRIVAL_DAY
     )
   })
 
@@ -82,11 +93,19 @@ describe('promoted dashboard notification helpers', () => {
     // anything.
     runInZone(WEST_OF_UTC, () => {
       expect(formatDisplayCalendarDate('2026-07-21T00:00:00.000Z')).toBe(
-        '21 Jul 2026'
+        ARRIVAL_DAY
       )
       expect(formatDisplayMoment('2026-09-10T23:35:39.455Z')).toBe(
         '11 Sep 2026'
       )
+    })
+
+    // A value carrying no offset is the case the west-of-UTC assertions above
+    // cannot see: read as local time it moves forward into the same UTC day
+    // west of UTC, and back into the previous one east of it.
+    runInZone(EAST_OF_UTC, () => {
+      expect(formatDisplayCalendarDate('2026-07-21')).toBe(ARRIVAL_DAY)
+      expect(formatDisplayCalendarDate('2026-07-21T00:00:00')).toBe(ARRIVAL_DAY)
     })
   })
 

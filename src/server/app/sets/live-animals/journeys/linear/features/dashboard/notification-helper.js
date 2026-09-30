@@ -13,12 +13,42 @@ export const NOTIFICATION_SORT_OPTIONS = [
   { value: 'createdAt,asc', text: 'Date created (oldest to newest)' }
 ]
 
+/** The delimiters date-fns accepts between the date and the time. */
+const TIME_DELIMITER = /[T ]/
+
+/** A trailing `Z`, `+01`, `+0100` or `+01:00` on the time part. */
+const ZONE_DESIGNATOR = /(?:Z|[+-]\d\d(?::?\d\d)?)$/
+
+/**
+ * Labels an ISO string that carries no zone as UTC, so it parses to the instant
+ * the wire meant rather than to one read off the container's clock.
+ *
+ * `parseISO` resolves an offset-less value — a date-only `2026-07-21`, or a
+ * `2026-07-14T10:00:00` — against the process zone. Both renderers then read
+ * UTC components, so east of UTC the day arrives already shifted back: in a
+ * `Europe/London` container during BST, `2026-07-21` renders as `20 Jul 2026`.
+ * The zone the process happens to run in is not part of the value.
+ *
+ * Anything that is not a date at all is left to fail parsing as before.
+ * @param {string} value
+ * @returns {string} The value with an explicit UTC designator.
+ */
+const asUtcInstant = (value) => {
+  const [, time] = value.split(TIME_DELIMITER)
+
+  if (time === undefined) {
+    return `${value}T00:00:00Z`
+  }
+
+  return ZONE_DESIGNATOR.test(time) ? value : `${value}Z`
+}
+
 const displayDate = (value, formatter) => {
   if (!value) {
     return ''
   }
 
-  const date = typeof value === 'string' ? parseISO(value) : value
+  const date = typeof value === 'string' ? parseISO(asUtcInstant(value)) : value
   return isValid(date) ? formatter(date) : ''
 }
 
