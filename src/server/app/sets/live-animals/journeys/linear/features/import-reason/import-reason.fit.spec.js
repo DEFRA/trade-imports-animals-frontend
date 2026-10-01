@@ -7,7 +7,7 @@ import {
   chooseTodayFromDatePicker,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
-import { countriesOrigin } from '../../../../../../services/_capture/fixtures.js'
+import { countriesOriginEntries } from '../../../../../../services/_capture/fixtures.js'
 import * as importReasonPurpose from '../../../../../../services/import-reason-purpose/index.js'
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
@@ -248,7 +248,7 @@ test.describe('import-reason reveals', () => {
           name: option.textContent
         }))
       )
-    expect(renderedCountries).toEqual(countriesOrigin)
+    expect(renderedCountries).toEqual(countriesOriginEntries())
   })
 
   test('asks temporary admission for the exit date and then the port of exit', async ({
