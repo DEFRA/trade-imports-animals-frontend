@@ -19,10 +19,6 @@ const VALIDATION_OPT_OUTS = new Map([
     'Collects nothing directly. It aggregates identification rows added elsewhere.'
   ],
   [
-    'accompanying-documents',
-    'Uploads are validated at upload time (size, type, virus scan) rather than through pageValidation. Deferred to a follow-up ticket.'
-  ],
-  [
     'addresses',
     'The addresses hub. Per-role errors surface through outstandingPartyErrors on the review page rather than through this page.'
   ],

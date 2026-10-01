@@ -127,6 +127,12 @@ export const copy = {
     fileType: (allowedTypesHint) =>
       `Rhaid i’r ffeil a ddewiswyd fod yn ${allowedTypesHint}`,
     oversize: (maxSizeLabel) =>
-      `Rhaid i’r ffeil a ddewiswyd fod yn llai na ${maxSizeLabel}`
+      `Rhaid i’r ffeil a ddewiswyd fod yn llai na ${maxSizeLabel}`,
+    someNoLongerValid:
+      'Nid yw un neu fwy o’ch dogfennau a arbedwyd yn ddilys mwyach. Adolygwch y rhestr cyn parhau.',
+    someStillScanning:
+      'Mae un neu fwy o’ch dogfennau’n dal i gael eu sganio. Arhoswch am eiliad a rhowch gynnig arall arni.',
+    someRejected:
+      'Gwrthodwyd un neu fwy o’ch dogfennau. Dychwelwch i Ddogfennau i’w tynnu ac uwchlwytho eto.'
   }
 }
