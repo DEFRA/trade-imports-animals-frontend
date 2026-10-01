@@ -100,6 +100,7 @@ import {
 } from './sections/misc.js'
 import {
   countryOfOrigin,
+  countryOfOriginSubdivisionCode,
   regionCode,
   regionCodeRequirement
 } from './sections/origin.js'
@@ -137,6 +138,7 @@ export {
   contactAddress,
   containsUnweanedAnimals,
   countryOfOrigin,
+  countryOfOriginSubdivisionCode,
   cph,
   destinationCountry,
   documentFilename,
@@ -180,6 +182,7 @@ export {
 export const obligations = [
   poApprovedReferenceNumber,
   countryOfOrigin,
+  countryOfOriginSubdivisionCode,
   regionCodeRequirement,
   regionCode,
   reasonForImport,

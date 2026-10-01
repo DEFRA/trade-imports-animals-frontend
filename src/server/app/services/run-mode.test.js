@@ -77,6 +77,14 @@ describe('countries service — stub mode', () => {
       value: 'AT',
       text: 'Austria'
     })
+    expect(await countries.originCountryOptions()).toContainEqual({
+      value: 'ES-CN',
+      text: 'Canary Islands'
+    })
+    expect(await countries.originDisplayLabel('ES-CN')).toBe(
+      'Canary Islands (Spain)'
+    )
+    expect(countries.parentCountryCode('ES-CN')).toBe('ES')
   })
 
   it('Should short-circuit ensureLoaded and never fetch in stub mode', async () => {

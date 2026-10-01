@@ -11,3 +11,17 @@ const load = (file) =>
 // stub data and the captured real data cannot drift.
 export const countriesOrigin = load('countries-origin.json')
 export const portsOfEntry = load('ports-of-entry.json')
+
+/** { code, name } rows for each SPS origin country in fixture order. */
+export const countriesOriginEntries = () =>
+  countriesOrigin.map(({ code, name }) => ({ code, name }))
+
+/** Flat { code, name } rows rendered on the origin page (countries + subdivisions, sorted by name). */
+export const originPageCountryEntries = () => {
+  const subdivisions = countriesOrigin.flatMap(({ subDivisions = [] }) =>
+    subDivisions.map(({ code, name }) => ({ code, name }))
+  )
+  return [...countriesOriginEntries(), ...subdivisions].sort((left, right) =>
+    left.name.localeCompare(right.name)
+  )
+}

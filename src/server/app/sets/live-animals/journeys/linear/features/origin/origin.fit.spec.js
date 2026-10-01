@@ -5,7 +5,10 @@ import {
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { countriesOrigin } from '../../../../../../services/_capture/fixtures.js'
+import {
+  countriesOrigin,
+  originPageCountryEntries
+} from '../../../../../../services/_capture/fixtures.js'
 import {
   copy as sharedCopy,
   validatorDefaults
@@ -133,7 +136,7 @@ test.describe('origin feature', () => {
           name: option.textContent
         }))
       )
-    expect(renderedCountries).toEqual(countriesOrigin)
+    expect(renderedCountries).toEqual(originPageCountryEntries())
   })
 
   // The page asks three questions under one h1, so all three have to carry the
@@ -321,7 +324,9 @@ test.describe('country of origin type-ahead', () => {
     await expect(
       page.getByRole('option', { name: france.name, exact: true })
     ).toBeVisible()
-    await expect(page.getByRole('option')).toHaveCount(countriesOrigin.length)
+    await expect(page.getByRole('option')).toHaveCount(
+      originPageCountryEntries().length
+    )
   })
 
   test('filters the list as the user types, case-insensitively', async ({

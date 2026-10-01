@@ -519,6 +519,73 @@ describe('POST /origin — a stored region code cascades to a length error under
   })
 })
 
+describe('POST /origin — country subdivisions', () => {
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should store the subdivision code when a subdivision is picked', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        countryOfOrigin: 'ES-CN',
+        regionOfOriginCodeRequirement: 'no',
+        internalReferenceNumber: ''
+      }
+    })
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.countryOfOrigin).toBe('ES-CN')
+    expect(result.after.countryOfOriginSubdivisionCode).toBe('ES-CN')
+  })
+
+  it('Should clear the stored subdivision when switched to a whole country', async () => {
+    await driveHandler(post, {
+      payload: {
+        countryOfOrigin: 'ES-CN',
+        regionOfOriginCodeRequirement: 'no',
+        internalReferenceNumber: ''
+      }
+    })
+
+    const result = await driveHandler(post, {
+      payload: {
+        countryOfOrigin: 'ES',
+        regionOfOriginCodeRequirement: 'no',
+        internalReferenceNumber: ''
+      }
+    })
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.countryOfOrigin).toBe('ES')
+    expect(result.after.countryOfOriginSubdivisionCode).toBe('')
+  })
+})
+
+describe('GET /origin — country subdivisions', () => {
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should render a stored subdivision in the country field', async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        countryOfOrigin: 'ES-CN',
+        countryOfOriginSubdivisionCode: 'ES-CN',
+        regionOfOriginCodeRequirement: 'no',
+        internalReferenceNumber: ''
+      }
+    })
+
+    expect(result.view.context.values.countryOfOrigin).toBe('ES-CN')
+  })
+})
+
 describe('POST /origin — country membership follows the primed list', () => {
   const originalMode = config.get('stubMode')
 

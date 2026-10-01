@@ -1,10 +1,27 @@
 import Boom from '@hapi/boom'
-import { COUNTRY_LABELS } from './stub.js'
+import { COUNTRY_LABELS, COUNTRY_SUBDIVISIONS } from './stub.js'
 import { fetchCountries } from './client.js'
 import { isStubMode } from '../../../common/services/mode.js'
 
 let labels = { ...COUNTRY_LABELS }
+let subdivisionLabels = { ...COUNTRY_SUBDIVISIONS.labels }
+let subdivisionToParent = { ...COUNTRY_SUBDIVISIONS.parents }
 let loaded = false
+
+const indexSubDivisions = (countries) => {
+  const nextSubdivisionLabels = {}
+  const nextSubdivisionToParent = {}
+
+  for (const country of countries) {
+    for (const subdivision of country.subDivisions ?? []) {
+      nextSubdivisionLabels[subdivision.code] = subdivision.name
+      nextSubdivisionToParent[subdivision.code] = country.code
+    }
+  }
+
+  subdivisionLabels = nextSubdivisionLabels
+  subdivisionToParent = nextSubdivisionToParent
+}
 
 /** Load the country list from the reference-data service, once. Called
  * implicitly by every reader — the readers self-load on first use rather than
@@ -20,6 +37,7 @@ export const ensureLoaded = async () => {
   try {
     const countries = await fetchCountries(['GBNAG_SPS_EX'])
     labels = Object.fromEntries(countries.map(({ code, name }) => [code, name]))
+    indexSubDivisions(countries)
     loaded = true
   } catch (err) {
     throw Boom.serverUnavailable('Reference data unavailable', {
@@ -35,16 +53,56 @@ export const ensureLoaded = async () => {
 const UNITED_KINGDOM = 'United Kingdom'
 const UNITED_KINGDOM_CODE = 'GB'
 
+export const isSubdivisionCode = (code) =>
+  code != null && Object.hasOwn(subdivisionLabels, code)
+
+export const parentCountryCode = (code) => subdivisionToParent[code] ?? code
+
 export const originLabel = async (code) => {
   await ensureLoaded()
+  if (code == null || code === '') {
+    return undefined
+  }
+  if (isSubdivisionCode(code)) {
+    return subdivisionLabels[code]
+  }
   return (
     labels[code] ?? (code === UNITED_KINGDOM_CODE ? UNITED_KINGDOM : undefined)
   )
 }
 
+export const originDisplayLabel = async (code) => {
+  await ensureLoaded()
+  if (code == null || code === '') {
+    return ''
+  }
+  if (isSubdivisionCode(code)) {
+    const parentCode = parentCountryCode(code)
+    const subdivisionName = subdivisionLabels[code]
+    const parentName = labels[parentCode]
+    return parentName ? `${subdivisionName} (${parentName})` : subdivisionName
+  }
+  return (await originLabel(code)) ?? code
+}
+
 export const originCountries = async () => {
   await ensureLoaded()
   return Object.entries(labels).map(([value, text]) => ({ value, text }))
+}
+
+/** Flat country and subdivision entries for the origin page only. */
+export const originCountryOptions = async () => {
+  await ensureLoaded()
+  const countryOptions = Object.entries(labels).map(([value, text]) => ({
+    value,
+    text
+  }))
+  const subdivisionOptions = Object.entries(subdivisionLabels).map(
+    ([value, text]) => ({ value, text })
+  )
+  return [...countryOptions, ...subdivisionOptions].sort((left, right) =>
+    left.text.localeCompare(right.text)
+  )
 }
 
 export const addressCountries = async () => {
