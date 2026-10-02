@@ -56,6 +56,24 @@ describe('#declaration', () => {
         )
         expect(result.after).toEqual(result.before)
       })
+
+      it.each([
+        { now: '2026-10-01T23:29:00Z', expected: '2 October 2026' },
+        { now: '2026-01-15T23:29:00Z', expected: '15 January 2026' }
+      ])(
+        'Should date the declaration at $now as $expected, the UK day',
+        async ({ now, expected }) => {
+          vi.useFakeTimers({ toFake: ['Date'], now: new Date(now) })
+          try {
+            const result = await driveHandler(post, {
+              payload: { declaration: '' }
+            })
+            expect(result.view.context.submissionDate).toBe(expected)
+          } finally {
+            vi.useRealTimers()
+          }
+        }
+      )
     })
 
     describe('submitted journeys land on the confirmation page', () => {
