@@ -8,6 +8,7 @@ import {
 import {
   compose,
   requiredOneOf,
+  SERVICE_TIME_ZONE,
   validate
 } from '../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../shared/kit.js'
@@ -35,7 +36,8 @@ const dateText = (value) =>
   new Date(value).toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'long',
-    year: 'numeric'
+    year: 'numeric',
+    timeZone: SERVICE_TIME_ZONE
   })
 
 const render = (h, journey, values, errors = {}, recoverableError = false) =>
