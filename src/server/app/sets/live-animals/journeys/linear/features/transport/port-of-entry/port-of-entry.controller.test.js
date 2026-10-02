@@ -54,6 +54,59 @@ describe('POST port-of-entry — port membership', () => {
   })
 })
 
+describe('POST port-of-entry — a page submitted with nothing answered', () => {
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should refuse the save with an error summary naming the date and the port, and commit nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        arrivalDateAtPort: '',
+        portOfEntry: '',
+        meansOfTransport: '',
+        transportIdentification: '  ',
+        transportDocumentReference: ''
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors).toEqual({
+      arrivalDateAtPort: copy.portOfEntry.errors.arrivalDateRequired,
+      portOfEntry: copy.portOfEntry.errors.portRequired
+    })
+    expect(result.view.context.errorSummary).toMatchObject({
+      titleText: 'There is a problem',
+      errorList: [
+        {
+          text: copy.portOfEntry.errors.arrivalDateRequired,
+          href: '#arrivalDateAtPort'
+        },
+        { text: copy.portOfEntry.errors.portRequired, href: '#portOfEntry' }
+      ]
+    })
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should still save a page with only one question answered', async () => {
+    const result = await driveHandler(post, {
+      payload: { meansOfTransport: 'VESSEL' }
+    })
+
+    expect(result.view).toBeUndefined()
+    expect(result.after.meansOfTransport).toBe('VESSEL')
+  })
+
+  it('Should open an unanswered page without errors', async () => {
+    const result = await driveHandler(get, {})
+
+    expect(result.view.context.errors).toEqual({})
+  })
+})
+
 describe('POST port-of-entry — means of transport on the merged page', () => {
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)
@@ -224,7 +277,7 @@ describe('port-of-entry — the arrival-date window', () => {
 
   it('Should leave a blank arrival date optional', async () => {
     const result = await driveHandler(post, {
-      payload: { arrivalDateAtPort: '' }
+      payload: { arrivalDateAtPort: '', meansOfTransport: 'VESSEL' }
     })
 
     expect(result.view).toBeUndefined()
