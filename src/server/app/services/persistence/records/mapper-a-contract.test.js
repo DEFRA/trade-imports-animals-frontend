@@ -20,16 +20,45 @@ const { values: completeJourneyAnswers } = JSON.parse(
 // accepted document types and all 16 certifiedFor values.
 const UNITED_KINGDOM = 'United Kingdom'
 const CONTRACT_REFERENCE = 'GBN-AG-26-CONTRACT'
-const ORIGIN_FARM_ID = 'origin-farm'
+
+// Parties are stored as a literal copy of the picked address, never a
+// reference to it.
+const placeOfOriginCopy = {
+  name: 'Origin Farm',
+  phone: '01234 567890',
+  email: 'farm@example.com',
+  address: {
+    addressLine1: '1 Field Lane',
+    addressLine2: 'Hamlet',
+    townOrCity: 'Lyon',
+    county: 'Rhone',
+    postcode: '69001',
+    countryCode: 'FR'
+  }
+}
+const contactAddressCopy = {
+  name: 'Animal and Plant Health Agency',
+  address: {
+    addressLine1: 'Woodham Lane',
+    townOrCity: 'Addlestone',
+    postcode: 'KT15 3NB',
+    countryCode: 'GB'
+  }
+}
+const answersWithCopiedParties = {
+  ...completeJourneyAnswers,
+  placeOfOrigin: placeOfOriginCopy,
+  contactAddress: contactAddressCopy
+}
 
 describe('Mapper A PUT /notifications contract', () => {
   test('emits the exact backend payload from a complete canonical fulfilment', () => {
-    const fulfilment = assembleFulfilments(completeJourneyAnswers)
+    const fulfilment = assembleFulfilments(answersWithCopiedParties)
 
     expect(fulfilmentToNotification(fulfilment, CONTRACT_REFERENCE)).toEqual({
       referenceNumber: CONTRACT_REFERENCE,
       reasonForImport: 'internalMarket',
-      placeOfOrigin: { addressId: ORIGIN_FARM_ID },
+      placeOfOrigin: placeOfOriginCopy,
       consignor: {
         name: 'Astra Rosales',
         address: {
@@ -63,7 +92,7 @@ describe('Mapper A PUT /notifications contract', () => {
           country: UNITED_KINGDOM
         }
       },
-      consignment: { addressId: 'animal-and-plant-health-agency' },
+      consignment: contactAddressCopy,
       cphNumber: '12/345/6789',
       purposeInInternalMarket: 'breeding',
       origin: {
@@ -118,18 +147,45 @@ describe('Mapper A PUT /notifications contract', () => {
     })
   })
 
-  test('emits origin and contact as addressId when the answer is a reference', () => {
+  test('emits each party answer as its literal copy with no addressId', () => {
+    const payload = fulfilmentToNotification(
+      assembleFulfilments(answersWithCopiedParties),
+      CONTRACT_REFERENCE
+    )
+
+    expect(payload.placeOfOrigin).toEqual(placeOfOriginCopy)
+    expect(payload.consignment).toEqual(contactAddressCopy)
+    expect(payload.placeOfOrigin).not.toHaveProperty('addressId')
+    expect(payload.consignment).not.toHaveProperty('addressId')
+  })
+
+  test('drops the addressId from a legacy party answer that carries one', () => {
     const answers = {
       ...completeJourneyAnswers,
-      placeOfOrigin: { addressId: ORIGIN_FARM_ID },
-      contactAddress: { addressId: 'apha' }
+      placeOfOrigin: { addressId: 'origin-farm', ...placeOfOriginCopy },
+      contactAddress: { addressId: 'apha', ...contactAddressCopy }
     }
     const payload = fulfilmentToNotification(
       assembleFulfilments(answers),
       CONTRACT_REFERENCE
     )
 
-    expect(payload.placeOfOrigin).toEqual({ addressId: ORIGIN_FARM_ID })
-    expect(payload.consignment).toEqual({ addressId: 'apha' })
+    expect(payload.placeOfOrigin).toEqual(placeOfOriginCopy)
+    expect(payload.consignment).toEqual(contactAddressCopy)
+    expect(payload.placeOfOrigin).not.toHaveProperty('addressId')
+    expect(payload.consignment).not.toHaveProperty('addressId')
+  })
+
+  test('omits a legacy party answer that holds only an addressId', () => {
+    const answers = {
+      ...completeJourneyAnswers,
+      placeOfOrigin: { addressId: 'origin-farm' }
+    }
+    const payload = fulfilmentToNotification(
+      assembleFulfilments(answers),
+      CONTRACT_REFERENCE
+    )
+
+    expect(payload).not.toHaveProperty('placeOfOrigin')
   })
 })

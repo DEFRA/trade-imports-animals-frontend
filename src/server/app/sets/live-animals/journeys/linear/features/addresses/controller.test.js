@@ -1,5 +1,5 @@
 import { SET_ID } from '../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
@@ -14,6 +14,7 @@ import {
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import * as addressBook from '../../../../../../services/address-book/index.js'
 
 import * as addresses from './controller.js'
 import { PARTIES } from './parties.js'
@@ -33,6 +34,7 @@ const cphRowOf = (rows) =>
   )
 const CONSIGNOR_TITLE = 'Consignor or exporter'
 const CONSIGNOR_SELECT_SLUG = 'consignors/select'
+const ASTRA_NAME = 'Astra Rosales'
 const CYA_SLUG = 'notification-view'
 
 const rowTitled = (rows, title) =>
@@ -81,7 +83,7 @@ describe('GET addresses — conditional CPH hub row', () => {
   })
 })
 
-describe('GET addresses — resolveParties hub rows', () => {
+describe('GET addresses — copied party hub rows', () => {
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)
     configureSession(SET_ID, sessionStub)
@@ -89,39 +91,59 @@ describe('GET addresses — resolveParties hub rows', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should render the address book record name for a referenced party', async () => {
+  it('Should render the name held on the copy, offering both Change and Edit details', async () => {
     const result = await rowsFor({
-      consignor: { addressId: 'astra-rosales' }
+      consignor: { name: ASTRA_NAME, address: { countryCode: 'CH' } }
     })
     const row = rowTitled(result.view.context.rows, CONSIGNOR_TITLE)
 
-    expect(row.value.text).toBe('Astra Rosales')
-    expect(row.actions.items[0]).toMatchObject({
-      href: pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG),
-      text: 'Change'
-    })
+    expect(row.value.text).toBe(ASTRA_NAME)
+    expect(row.actions.items).toEqual([
+      {
+        href: pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG),
+        text: 'Change',
+        visuallyHiddenText: CONSIGNOR_TITLE.toLowerCase()
+      },
+      {
+        href: `${pagePath(result.journeyId, 'consignors/edit')}?return=addresses`,
+        text: 'Edit details',
+        visuallyHiddenText: CONSIGNOR_TITLE.toLowerCase()
+      }
+    ])
   })
 
-  it('Should render Not added yet with an Add link when the referenced record is gone', async () => {
-    const result = await rowsFor({
-      consignor: { addressId: 'gone' }
-    })
+  it('Should carry the change context into the Edit details link', async () => {
+    const result = await rowsFor(
+      { consignor: { name: ASTRA_NAME } },
+      { change: '1' }
+    )
+    const row = rowTitled(result.view.context.rows, CONSIGNOR_TITLE)
+
+    expect(row.actions.items[1].href).toBe(
+      `${pagePath(result.journeyId, 'consignors/edit')}?return=addresses&change=1`
+    )
+  })
+
+  it('Should offer only Add for a role never answered', async () => {
+    const result = await rowsFor({})
     const row = rowTitled(result.view.context.rows, CONSIGNOR_TITLE)
 
     expect(row.value.text).toBe('Not added yet')
-    expect(row.actions.items[0]).toMatchObject({
-      href: pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG),
-      text: 'Add'
-    })
+    expect(row.actions.items).toEqual([
+      expect.objectContaining({
+        href: pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG),
+        text: 'Add'
+      })
+    ])
   })
 
-  it('Should render the live book name for place of origin, not a stale copy on the answer', async () => {
-    const result = await rowsFor({
-      placeOfOrigin: { addressId: 'origin-farm', name: 'Stale Origin Copy' }
+  it('Should never consult the address book to name a row', async () => {
+    const partySpy = vi.spyOn(addressBook, 'party')
+    await rowsFor({
+      placeOfOrigin: { name: 'Origin Copy', address: { countryCode: 'IE' } }
     })
-    const row = rowTitled(result.view.context.rows, 'Place of origin')
 
-    expect(row.value.text).toBe('Origin Farm')
+    expect(partySpy).not.toHaveBeenCalled()
   })
 })
 
@@ -133,12 +155,11 @@ describe('GET addresses — frozen parties on submitted notification', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should render the frozen name, not the live address-book name', async () => {
+  it('Should render the name held on the copy once submitted', async () => {
     const frozenName = 'Frozen At Submit'
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, {
       placeOfOrigin: {
-        addressId: 'origin-farm',
         name: frozenName,
         address: { addressLine1: '1 Lane', countryCode: 'GB' }
       }
@@ -151,7 +172,6 @@ describe('GET addresses — frozen parties on submitted notification', () => {
       const row = rowTitled(h.captured.view.context.rows, 'Place of origin')
 
       expect(row.value.text).toBe(frozenName)
-      expect(row.value.text).not.toBe('Origin Farm')
     } finally {
       /* no spy */
     }
@@ -166,15 +186,12 @@ describe('GET addresses — change context', () => {
   })
   beforeEach(() => store.clear())
 
-  // Check your answers sends a trader here to replace an address it cannot
-  // show. The context has to survive the trip out to the picker and back, or
+  // Check your answers sends a trader here to change an address. The context
+  // has to survive the trip out to the picker and back, or
   // the save at the far end exits into the section flow instead of returning
   // them to the summary that sent them.
   it('Should carry change context into every party link', async () => {
-    const result = await rowsFor(
-      { consignor: { addressId: 'gone' } },
-      { change: '1' }
-    )
+    const result = await rowsFor({}, { change: '1' })
     const { rows } = result.view.context
 
     for (const party of PARTIES) {
@@ -196,7 +213,7 @@ describe('GET addresses — change context', () => {
   })
 
   it('Should render plain links when not changing', async () => {
-    const result = await rowsFor({ consignor: { addressId: 'gone' } })
+    const result = await rowsFor({})
     const row = rowTitled(result.view.context.rows, CONSIGNOR_TITLE)
 
     expect(row.actions.items[0].href).toBe(
@@ -205,10 +222,7 @@ describe('GET addresses — change context', () => {
   })
 
   it('Should point Back at check your answers under change context', async () => {
-    const result = await rowsFor(
-      { consignor: { addressId: 'gone' } },
-      { change: '1' }
-    )
+    const result = await rowsFor({}, { change: '1' })
 
     expect(result.view.context.backLink).toBe(
       pagePath(result.journeyId, CYA_SLUG)
@@ -216,7 +230,7 @@ describe('GET addresses — change context', () => {
   })
 
   it('Should point Back at the task list when not changing', async () => {
-    const result = await rowsFor({ consignor: { addressId: 'gone' } })
+    const result = await rowsFor({})
 
     expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
   })

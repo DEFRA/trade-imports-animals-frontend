@@ -60,7 +60,7 @@ describe('GET /address-return', () => {
     expect(result.response.redirect).toBe(consignorPicker(result.journeyId))
   })
 
-  it('commits the returned address id and redirects to the picker', async () => {
+  it('commits a copy of the returned address and redirects to the picker', async () => {
     vi.spyOn(addressBook, 'party').mockResolvedValue({
       id: newAddressId,
       name: 'New Farm',
@@ -84,7 +84,11 @@ describe('GET /address-return', () => {
     expect(result.response.redirect).toBe(
       consignorPicker(result.journeyId, `?selected=${newAddressId}`)
     )
-    expect(result.after.consignor.addressId).toBe(newAddressId)
+    expect(result.after.consignor).not.toHaveProperty('addressId')
+    expect(result.after.consignor.address).toMatchObject({
+      townOrCity: 'Carlisle',
+      postcode: 'CA1 1AA'
+    })
   })
 
   it('rejects a commit when the handshake token does not match', async () => {

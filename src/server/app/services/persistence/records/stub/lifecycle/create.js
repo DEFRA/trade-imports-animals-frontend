@@ -6,7 +6,6 @@ import {
 import { copiesBySourceAndKey, journeys } from '../store/state.js'
 import { mintReferenceNumber } from '../reference-number.js'
 import { marshal } from '../marshal/document.js'
-import { hasReferenceParty } from './has-reference-party.js'
 
 export const create = async () => {
   const document = {
@@ -20,7 +19,7 @@ export const create = async () => {
   return structuredClone(marshal(document))
 }
 
-export const copy = async (journeyId, idempotencyKey, actor) => {
+export const copy = async (journeyId, idempotencyKey, _actor) => {
   const dedupeKey = `${journeyId}\u0000${idempotencyKey}`
   const inSet = journeys()
   const copies = copiesBySourceAndKey()
@@ -40,13 +39,6 @@ export const copy = async (journeyId, idempotencyKey, actor) => {
   ) {
     throw new Error(`Journey "${journeyId}" is ${source.status} — cannot copy`)
   }
-  // Copy on the real backend still returns 200 without the actor, but ships an
-  // all-null party on the emitted event (draft-grade resolution). Mirror as a
-  // hard fail on the stub so FIT catches the regression the real backend can't.
-  if (hasReferenceParty(source.fulfilment) && !actor?.organisationId) {
-    throw new Error('organisation id is required')
-  }
-
   const document = {
     id: mintReferenceNumber(),
     status: DRAFT,

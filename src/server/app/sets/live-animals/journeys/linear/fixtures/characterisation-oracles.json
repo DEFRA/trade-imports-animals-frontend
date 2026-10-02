@@ -721,9 +721,6 @@
     "mapperA": {
       "referenceNumber": "GBN-AG-26-ABC123",
       "reasonForImport": "internalMarket",
-      "placeOfOrigin": {
-        "addressId": "origin-farm"
-      },
       "consignor": {
         "name": "Astra Rosales",
         "address": {
@@ -756,9 +753,6 @@
           "addressLine2": "Birmingham G1 3AZ",
           "country": "United Kingdom"
         }
-      },
-      "consignment": {
-        "addressId": "animal-and-plant-health-agency"
       },
       "cphNumber": "12/345/6789",
       "purposeInInternalMarket": "breeding",

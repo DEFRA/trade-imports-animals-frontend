@@ -12,9 +12,11 @@ import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import { CONTACT_PARTY } from '../addresses/parties.js'
-import { organisationIdOf } from '../addresses/resolve-parties.js'
+import { organisationIdOf } from '../../../../../../../common/helpers/organisation-id.js'
 import { addressText } from '../addresses/party-picker/view-model/address-lines.js'
 import { answerFor } from '../addresses/party-picker/selection.js'
+import { toDisplayParty } from '../addresses/frozen-parties.js'
+import { partyEditHref } from '../addresses/party-edit/edit-href.js'
 import { isStubMode } from '../../../../../../../common/services/mode.js'
 import {
   buildInsAddAddressUrl,
@@ -45,6 +47,19 @@ const resolveErrorSummary = (errors, handshakeError) =>
 const addressSummary = (address) =>
   [addressText(address), address.country].filter(Boolean).join(', ')
 
+/** The contact already copied onto this notification, with the link to edit
+ * its details here — the picker below only ever replaces it. */
+const currentContactOf = async (journeyId, answers) => {
+  const display = await toDisplayParty(answers.contactAddress)
+  return display
+    ? {
+        name: display.name,
+        summary: addressSummary(display.address),
+        editHref: partyEditHref(journeyId, CONTACT_PARTY, page.slug)
+      }
+    : null
+}
+
 const addAddressLinkFor = (request, h, journey) =>
   !isStubMode() &&
   buildInsAddAddressUrl(request, h, journey.journeyId, CONTACT_PARTY)
@@ -55,7 +70,12 @@ const render = (
   values,
   options,
   addAddressHref,
-  { errors = {}, recoverableError = false, handshakeError } = {}
+  {
+    errors = {},
+    recoverableError = false,
+    handshakeError,
+    currentContact = null
+  } = {}
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
@@ -68,6 +88,7 @@ const render = (
     errorSummary: resolveErrorSummary(errors, handshakeError),
     addAddressHref,
     addNewAddressLabel: sharedCopy.addressHandshake.addNewAddress,
+    currentContact,
     contactOptions: options.map((option) => ({
       value: option.id,
       text: option.name,
@@ -77,12 +98,11 @@ const render = (
   })
 
 const get = async (request, h) => {
-  const { journey, answers, storedAnswers } = await state.get(request, h)
+  const { journey, answers } = await state.get(request, h)
   const orgId = organisationIdOf(request)
   const options = [...(await addressBook.all(orgId))]
   const { values, errors } = await validation.onStored(answers, {
-    addressOptions: options,
-    storedAnswers
+    addressOptions: options
   })
   const handshakeError = handshakeErrorMessage(
     sharedCopy.addressHandshake.errors,
@@ -95,7 +115,12 @@ const get = async (request, h) => {
     { selectedId: values.contactAddress },
     options,
     addAddressLinkFor(request, h, journey),
-    { errors, recoverableError, handshakeError }
+    {
+      errors,
+      recoverableError,
+      handshakeError,
+      currentContact: await currentContactOf(journey.journeyId, answers)
+    }
   )
 }
 

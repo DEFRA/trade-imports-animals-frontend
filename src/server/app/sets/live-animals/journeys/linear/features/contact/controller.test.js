@@ -21,6 +21,7 @@ import {
   postHandlerOf
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import { pagePath } from '../../../../../../shared/paths.js'
 import * as state from '../../../../../../engine/index.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
 import { BackendRequestError } from '../../../../../../services/persistence/records/errors.js'
@@ -76,22 +77,40 @@ describe('GET contact — select an address from the book', () => {
     expect(result.view.context.recoverableError).toBe(true)
   })
 
-  it('Should offer the book, then pre-select and commit the address that was picked', async () => {
+  it('Should commit a copy of the picked address, then show it as the current contact with a link to edit it', async () => {
     const postResult = await driveHandler(post, {
       payload: { contactAddress: CONTACT.id }
     })
     expect(postResult.view).toBeUndefined()
+    expect(postResult.after.contactAddress).not.toHaveProperty('addressId')
     expect(postResult.after.contactAddress).toMatchObject({
-      addressId: CONTACT.id,
       name: CONTACT.name
     })
     expect(postResult.after.contactAddress.address).toBeDefined()
 
     const getResult = await driveHandler(get, { seed: postResult.after })
-    const option = getResult.view.context.contactOptions.find(
-      (candidate) => candidate.value === CONTACT.id
-    )
-    expect(option).toMatchObject({ text: CONTACT.name, checked: true })
+    const { contactOptions, currentContact } = getResult.view.context
+    expect(contactOptions.every((option) => !option.checked)).toBe(true)
+    expect(currentContact).toMatchObject({
+      name: CONTACT.name,
+      editHref: `${pagePath(getResult.journeyId, 'consignment/contact/edit')}?return=consignment%2Fcontact%2Fselect`
+    })
+  })
+
+  it('Should show no current contact when none has been picked', async () => {
+    const result = await driveHandler(get)
+
+    expect(result.view.context.currentContact).toBeNull()
+  })
+
+  it('Should keep the copy already held when saved with nothing selected', async () => {
+    const held = { name: 'Held Contact', address: { countryCode: 'GB' } }
+    const result = await driveHandler(post, {
+      seed: { contactAddress: held },
+      payload: {}
+    })
+
+    expect(result.after.contactAddress).toEqual(held)
   })
 })
 

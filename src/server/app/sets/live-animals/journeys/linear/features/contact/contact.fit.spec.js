@@ -86,7 +86,7 @@ test.describe('contact feature', () => {
     )
   })
 
-  test('selects a valid contact, redirects and persists the selection', async ({
+  test('selects a valid contact, redirects and shows it as the current contact on return', async ({
     page
   }) => {
     const contactUrl = page.url()
@@ -97,9 +97,14 @@ test.describe('contact feature', () => {
 
     await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+'))
     await page.goto(contactUrl)
+    const current = page.locator('.govuk-summary-card', {
+      hasText: copy.current.title
+    })
+    await expect(current).toContainText(selected.name)
     await expect(
-      page.getByRole('radio', { name: selected.name, exact: true })
-    ).toBeChecked()
+      current.getByRole('link', { name: copy.current.editDetails })
+    ).toBeVisible()
+    await expect(page.getByRole('radio', { checked: true })).toHaveCount(0)
   })
 })
 

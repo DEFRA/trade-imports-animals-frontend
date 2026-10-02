@@ -1,20 +1,19 @@
 import { obligationSet } from '../../../../../../model/obligations/manifest.js'
 import { instantFromDateParts } from '../../../../../../lib/validate/index.js'
-import { compact } from '../../shared/compact.js'
+import { compact, orUndefined } from '../../shared/compact.js'
 
-/** Persist a party answer with inline details when an address-book id is present. */
-const asInlineParty = (answer) => {
-  if (!answer?.addressId) {
-    return answer
-  }
-  return compact({
-    addressId: answer.addressId,
-    name: answer.name,
-    email: answer.email,
-    phone: answer.phone,
-    address: answer.address
-  })
-}
+/** Persist a party answer as its copied details — never an address-book id, so
+ * the backend has nothing to resolve. An answer with no details to copy (a
+ * bare id left from before addresses were copied) is no party at all. */
+const asInlineParty = (answer) =>
+  orUndefined(
+    compact({
+      name: answer?.name,
+      email: answer?.email,
+      phone: answer?.phone,
+      address: answer?.address
+    })
+  )
 
 export const directFieldsFromFulfilment = (reader, referenceNumber) => {
   const {

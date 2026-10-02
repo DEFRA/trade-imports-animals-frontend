@@ -1,5 +1,5 @@
 import { SET_ID } from '../../../../set.js'
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
@@ -7,19 +7,25 @@ import { configureRecords } from '../../../../../../engine/persistence/records.j
 import { configureSession } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
-import {
-  configureAnswersForRead,
-  configureReadyForCheckYourAnswers
-} from '../../../../../../engine/read.js'
+import { configureReadyForCheckYourAnswers } from '../../../../../../engine/read.js'
 import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
-import { withoutUnresolvedPartyRefs } from '../addresses/resolve-parties.js'
 import { copy as documentsEn } from '../documents/copy/copy.en.js'
 import { documentsRejectedCardErrors, isReviewRefused } from './refusal.js'
 
 const KNOWN_PORT = 'GB ABD'
 const STALE_PORT = 'GB ZZZ'
-const RESOLVING_ADDRESS_ID = 'astra-rosales'
+const VALID_COPY = {
+  name: 'Astra Rosales',
+  phone: '01632 960000',
+  email: 'astra-rosales@example.com',
+  address: {
+    addressLine1: '43 East Hague Extension',
+    townOrCity: 'Bern',
+    postcode: '30055',
+    countryCode: 'CH'
+  }
+}
 
 const doc = (overrides = {}) => ({
   accompanyingDocumentType: 'ITAHC',
@@ -33,7 +39,7 @@ const doc = (overrides = {}) => ({
 
 const fullyAnswered = (overrides = {}) => ({
   portOfEntry: KNOWN_PORT,
-  consignor: { addressId: RESOLVING_ADDRESS_ID },
+  consignor: VALID_COPY,
   ...overrides
 })
 
@@ -50,16 +56,12 @@ describe('#isReviewRefused', () => {
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)
     configureSession(SET_ID, sessionStub)
-    configureAnswersForRead(SET_ID, withoutUnresolvedPartyRefs)
     buildDispatch(SET_ID, dispatchPages)
   })
   beforeEach(() => {
     store.clear()
     configureReadyForCheckYourAnswers(SET_ID, () => true)
   })
-  afterAll(() =>
-    configureAnswersForRead(SET_ID, (_request, answers) => answers)
-  )
 
   it('Should not refuse a submitted notification, even one carrying a stale answer', async () => {
     const journey = await seedAnd({ portOfEntry: STALE_PORT })
@@ -81,10 +83,23 @@ describe('#isReviewRefused', () => {
     expect(await askRefused(journey.journeyId)).toBe(true)
   })
 
-  it('Should refuse a notification whose picked address has since been deleted', async () => {
-    // Sanitiser drops the id from `answers`; storedAnswers keeps it. The
-    // outstandingPartyErrors predicate reads exactly that difference.
-    const journey = await seedAnd({ consignor: { addressId: 'gone' } })
+  it('Should refuse a notification whose copied address breaks the address-book rules', async () => {
+    const { postcode: _dropped, ...withoutPostcode } = VALID_COPY.address
+    const journey = await seedAnd(
+      fullyAnswered({
+        consignor: { ...VALID_COPY, address: withoutPostcode }
+      })
+    )
+
+    expect(await askRefused(journey.journeyId)).toBe(true)
+  })
+
+  it('Should refuse a notification whose copied contact address breaks the rules', async () => {
+    const journey = await seedAnd(
+      fullyAnswered({
+        contactAddress: { ...VALID_COPY, email: 'not-an-email' }
+      })
+    )
 
     expect(await askRefused(journey.journeyId)).toBe(true)
   })
