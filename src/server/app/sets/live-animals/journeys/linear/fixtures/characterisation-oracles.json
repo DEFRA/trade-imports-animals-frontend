@@ -764,7 +764,7 @@
       "purposeInInternalMarket": "breeding",
       "destinationCountry": "IE",
       "portOfExit": "GB DOV",
-      "exitDate": "2026-12-20",
+      "exitDate": "2026-12-20T00:00:00.000Z",
       "origin": {
         "countryCode": "FR",
         "requiresRegionCode": "yes",
@@ -777,7 +777,7 @@
       },
       "transport": {
         "portOfEntry": "GB ABD",
-        "arrivalDate": "2026-12-12",
+        "arrivalDate": "2026-12-12T00:00:00.000Z",
         "transporter": {
           "name": "García Livestock Transport SL",
           "address": {

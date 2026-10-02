@@ -2,12 +2,12 @@ import {
   addUtcDays,
   addUtcMonths,
   formatDateText,
+  SERVICE_TIME_ZONE,
   startOfDayInZone
 } from '../../../../../../../lib/validate/index.js'
 
 export const DAYS_BEFORE = 7
 export const MONTHS_AHEAD = 6
-export const SERVICE_TIME_ZONE = 'Europe/London'
 
 /**
  * The window an arrival date at the port of entry may fall in, inclusive at

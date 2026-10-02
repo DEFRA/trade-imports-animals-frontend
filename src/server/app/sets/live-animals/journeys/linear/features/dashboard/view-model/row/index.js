@@ -3,7 +3,8 @@ import * as commodities from '../../../../../../services/commodities/index.js'
 import * as countries from '../../../../../../../../services/countries/index.js'
 import {
   formatCommodity,
-  formatDisplayDate
+  formatDisplayCalendarDate,
+  formatDisplayMoment
 } from '../../notification-helper.js'
 import { rowActions } from './actions.js'
 
@@ -14,10 +15,11 @@ export const toRow = async (journey) => ({
   origin: journey.originCountryCode
     ? await countries.originDisplayLabel(journey.originCountryCode)
     : '',
-  arrival: formatDisplayDate(journey.arrivalDate),
+  // arrival is a day the user chose; created and submitted are moments.
+  arrival: formatDisplayCalendarDate(journey.arrivalDate),
   consignor: journey.consignorName ?? '',
   consignee: journey.consigneeName ?? '',
-  created: formatDisplayDate(journey.createdAt),
-  submitted: formatDisplayDate(journey.submittedAt),
+  created: formatDisplayMoment(journey.createdAt),
+  submitted: formatDisplayMoment(journey.submittedAt),
   actions: rowActions(journey)
 })

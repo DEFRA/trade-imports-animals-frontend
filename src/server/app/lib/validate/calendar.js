@@ -1,4 +1,6 @@
-import { addDays, addMonths, isValid, parse } from 'date-fns'
+import { addDays, addMonths, format, isValid, parse } from 'date-fns'
+
+import { SERVICE_TIME_ZONE } from './service-time-zone.js'
 
 // Every Date here is midnight UTC, whatever the process timezone: the app runs
 // UTC, vitest forces TZ=UTC, but the Playwright drivers run on the developer's
@@ -6,10 +8,21 @@ import { addDays, addMonths, isValid, parse } from 'date-fns'
 // worse than useless. date-fns `addDays`/`addMonths` preserve wall-clock time,
 // so they hold that invariant and bring month-end clamping with them.
 // `startOfDay` and `format` do NOT — both normalise to local — so day starts
-// and formatting are done through the UTC accessors instead.
+// and formatting are done through the UTC accessors instead. The one exception
+// is the private `formatUtcComponents`, which uses `format` deliberately and
+// says why. Converting an instant to a civil day in another zone is a separate
+// step, done through `startOfDayInZone` — see `formatMomentAsDay`.
 const DATE_TEXT_FORMAT = 'd/M/yyyy'
 const DATE_TEXT_SHAPE = /^\d{1,2}\/\d{1,2}\/\d{4}$/
 const MONTHS_IN_YEAR = 12
+const YEAR_DIGITS = 4
+const MONTH_DIGITS = 2
+const DAY_DIGITS = 2
+
+// Re-exported so callers keep importing the service zone from here; it lives
+// in `service-time-zone.js` only so that a test can substitute it. Calendar
+// dates do not go through it — see `formatCalendarDate` below.
+export { SERVICE_TIME_ZONE }
 
 /**
  * @param {number} year
@@ -108,3 +121,95 @@ export const parseDateText = (raw) => {
  */
 export const formatDateText = (date) =>
   `${date.getUTCDate()}/${date.getUTCMonth() + 1}/${date.getUTCFullYear()}`
+
+/**
+ * The single place a user-entered calendar date becomes the instant the API
+ * takes. The parts are *labelled* as UTC midnight, never converted from a local
+ * zone: a calendar day has no time and no zone, so there is nothing to convert
+ * from, and inventing one shifts the day. London midnight for a 21 July arrival
+ * is `2026-07-20T23:00:00.000Z` during BST, which every UTC reader — PIMS
+ * included — reads as 20 July.
+ *
+ * Build it from UTC parts. The natural thing to write is the broken thing:
+ * `new Date(year, month - 1, day).toISOString()` reads the container's zone, so
+ * it is correct on a UTC laptop and in this suite (`TZ=UTC`) and wrong only in
+ * the `Europe/London` container — that is, only in production. Same hazard
+ * `parseDateText` documents above.
+ * @param {{day?: number|string, month?: number|string, year?: number|string}} [parts]
+ * @returns {string|undefined} `YYYY-MM-DDT00:00:00.000Z`, or undefined when the
+ * date is incomplete.
+ */
+export const instantFromDateParts = (parts) => {
+  const { day, month, year } = parts ?? {}
+  // The blank test the `dateParts` validator applies, applied again here: a
+  // part that trims to empty is an unfilled part. An all-blank optional date
+  // field passes validation as `{day: '', month: '', year: ''}`, and padding
+  // that gives `0000-00-00T00:00:00.000Z` — an instant the API's
+  // `Instant.parse` rejects. Incomplete means no date, not a malformed one.
+  const [dd, mm, yyyy] = [day, month, year].map((part) =>
+    String(part ?? '').trim()
+  )
+  if (dd === '' || mm === '' || yyyy === '') {
+    return undefined
+  }
+  return `${yyyy.padStart(YEAR_DIGITS, '0')}-${mm.padStart(
+    MONTH_DIGITS,
+    '0'
+  )}-${dd.padStart(DAY_DIGITS, '0')}T00:00:00.000Z`
+}
+
+const DISPLAY_DATE_FORMAT = 'd MMM yyyy'
+
+/**
+ * Formats the calendar day a `Date` names in UTC, with no zone conversion.
+ *
+ * `format` on its own reads the ambient zone, so the day is taken from the UTC
+ * accessors and the components are handed back as plain local ones purely to
+ * get date-fns' month names. `Intl.DateTimeFormat` would be shorter but ICU's
+ * `en-GB` short month for September is `Sept`, four letters, which would
+ * reword every September date in the service.
+ * @param {Date} date
+ * @returns {string} e.g. `5 Mar 2026`.
+ */
+const formatUtcComponents = (date) =>
+  format(
+    new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+    DISPLAY_DATE_FORMAT
+  )
+
+/**
+ * Renders a **calendar date** — a day the user chose, carried on the wire as
+ * midnight UTC by {@link instantFromDateParts}.
+ *
+ * Read straight off the UTC components, because the value already *is* the
+ * day: there is nothing to convert, and converting would only be safe while
+ * the target zone is at or east of UTC. Rendering it in {@link
+ * SERVICE_TIME_ZONE} happens to give the same answer today — the UK is never
+ * behind UTC, so BST moves midnight to 01:00 on the same day — but that is an
+ * accident of geography, not a property of the value. Depending on it would
+ * mean every calendar date in the service silently shifting a day back if the
+ * service zone ever moved west.
+ * @param {Date} date
+ * @returns {string} e.g. `21 Jul 2026` for `2026-07-21T00:00:00.000Z`.
+ */
+export const formatCalendarDate = (date) => formatUtcComponents(date)
+
+/**
+ * Takes a **moment** — something that happened at an instant, such as when a
+ * notification was created or submitted — and renders the *day* it fell on in
+ * {@link SERVICE_TIME_ZONE}. The time is discarded, hence the name.
+ *
+ * Here the conversion is the point, and it does real work: a notification
+ * submitted at `2026-09-10T23:35:39.455Z` happened on 11 September in the UK,
+ * and showing the user 10 September would be wrong.
+ *
+ * Discarding the time is the dashboard's existing `d MMM yyyy` column format,
+ * kept as-is. It does leave a moment near midnight looking like an off-by-one
+ * to the user — 11 Sep for something they submitted at 23:35 on the 10th —
+ * which showing the time, or captioning the table "UK time", would resolve.
+ * That is a content decision, raised in the ticket's open questions.
+ * @param {Date} date
+ * @returns {string} e.g. `11 Sep 2026` for `2026-09-10T23:35:39.455Z`.
+ */
+export const formatMomentAsDay = (date) =>
+  formatUtcComponents(startOfDayInZone(date, SERVICE_TIME_ZONE))

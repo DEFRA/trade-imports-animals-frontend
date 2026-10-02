@@ -1,15 +1,34 @@
 import { describe, expect, it } from 'vitest'
+import { runInZone } from '../../../../../../../common/test-helpers/run-in-zone.js'
 import {
   buildHomeListQueryString,
   buildPageResultsRangeLabel,
   buildPaginationLinks,
   formatCommodity,
-  formatDisplayDate,
+  formatDisplayCalendarDate,
+  formatDisplayMoment,
   normalizePageNumber,
   parseNotificationSort
 } from './notification-helper.js'
 
 const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
+
+/**
+ * West of UTC on purpose: the only side where an ambient-zone renderer and a
+ * correct one disagree. Do not "tidy" it. See `calendar.test.js`.
+ */
+const WEST_OF_UTC = 'America/New_York'
+
+/**
+ * East of UTC on purpose, and in July so BST is in force: the side where a
+ * string carrying no offset, resolved against the process zone, lands on the
+ * previous UTC day. It is also the zone the service is deployed in, so this is
+ * the disagreement a user would actually see. Do not "tidy" it.
+ */
+const EAST_OF_UTC = 'Europe/London'
+
+/** The one day every spelling of 21 July 2026 in this file has to render as. */
+const ARRIVAL_DAY = '21 Jul 2026'
 
 describe('promoted dashboard notification helpers', () => {
   it('Should validate the deployed sort vocabulary and default invalid values', () => {
@@ -42,9 +61,11 @@ describe('promoted dashboard notification helpers', () => {
   })
 
   it('Should format dashboard dates and commodity objects', () => {
-    expect(formatDisplayDate('2026-03-05')).toBe('5 Mar 2026')
-    expect(formatDisplayDate('not-a-date')).toBe('')
-    expect(formatDisplayDate(null)).toBe('')
+    expect(formatDisplayCalendarDate('2026-03-05')).toBe('5 Mar 2026')
+    expect(formatDisplayCalendarDate('not-a-date')).toBe('')
+    expect(formatDisplayCalendarDate(null)).toBe('')
+    expect(formatDisplayMoment('not-a-date')).toBe('')
+    expect(formatDisplayMoment(null)).toBe('')
     expect(formatCommodity({ name: 'Cow' })).toBe('Cow')
     expect(
       formatCommodity({ commodityCode: '0101' }, (code) =>
@@ -52,6 +73,40 @@ describe('promoted dashboard notification helpers', () => {
       )
     ).toBe('Horse')
     expect(formatCommodity(null)).toBe('')
+  })
+
+  it('Should render an arrival date as the day the user chose', () => {
+    expect(formatDisplayCalendarDate('2026-07-21T00:00:00.000Z')).toBe(
+      ARRIVAL_DAY
+    )
+  })
+
+  it('Should render a moment as the UK day it happened', () => {
+    // 23:35 UTC on the 10th is already the 11th in London during BST, and the
+    // 11th is the day the user would say they submitted it.
+    expect(formatDisplayMoment('2026-09-10T23:35:39.455Z')).toBe('11 Sep 2026')
+  })
+
+  it('Should render both kinds the same whatever zone the process runs in', () => {
+    // The suite pins TZ=UTC, where an ambient-zone implementation and a
+    // correct one agree — so the zone has to be moved for this to mean
+    // anything.
+    runInZone(WEST_OF_UTC, () => {
+      expect(formatDisplayCalendarDate('2026-07-21T00:00:00.000Z')).toBe(
+        ARRIVAL_DAY
+      )
+      expect(formatDisplayMoment('2026-09-10T23:35:39.455Z')).toBe(
+        '11 Sep 2026'
+      )
+    })
+
+    // A value carrying no offset is the case the west-of-UTC assertions above
+    // cannot see: read as local time it moves forward into the same UTC day
+    // west of UTC, and back into the previous one east of it.
+    runInZone(EAST_OF_UTC, () => {
+      expect(formatDisplayCalendarDate('2026-07-21')).toBe(ARRIVAL_DAY)
+      expect(formatDisplayCalendarDate('2026-07-21T00:00:00')).toBe(ARRIVAL_DAY)
+    })
   })
 
   it('Should build deployed-style result ranges and govuk pagination links', () => {
