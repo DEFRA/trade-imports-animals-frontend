@@ -55,8 +55,30 @@ const fields = async (
   )
 }
 
+const PAGE_FIELDS = [
+  'arrivalDateAtPort',
+  'portOfEntry',
+  'meansOfTransport',
+  'transportIdentification',
+  'transportDocumentReference'
+]
+
+const isBlank = (values) => PAGE_FIELDS.every((field) => values[field] === '')
+
+// Each question saves on its own, but a page submitted untouched is refused,
+// naming its mandatory questions. A blank stored page is the obligation
+// model's to report, not this page's.
+const checks = (values, { stored } = {}) =>
+  !stored && isBlank(values)
+    ? {
+        arrivalDateAtPort: copy.errors.arrivalDateRequired,
+        portOfEntry: copy.errors.portRequired
+      }
+    : {}
+
 export const validation = pageValidation({
   fields,
+  checks,
   fromPayload: (payload) => ({
     arrivalDateAtPort: String(payload.arrivalDateAtPort ?? '').trim(),
     portOfEntry: payload.portOfEntry ?? '',

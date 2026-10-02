@@ -46,6 +46,8 @@ export const copy = {
       hint: 'Enter the reference number on the air waybill, bill of lading, sea waybill, road consignment note (CMR) or other transport document.'
     },
     errors: {
+      arrivalDateRequired: 'Enter the arrival date at the port of entry',
+      portRequired: 'Select a port of entry',
       arrivalDateInvalid: 'Enter a real arrival date',
       arrivalDateOutOfRange: (earliest, latest) =>
         `Arrival date at port of entry must be between ${earliest} and ${latest}`,

@@ -40,6 +40,8 @@ export const copy = {
       hint: 'Rhowch y cyfeirnod ar y bil llwytho awyr, y bil llwytho, y bil llwytho môr, y nodyn llwyth ffordd (CMR) neu ddogfen gludo arall.'
     },
     errors: {
+      arrivalDateRequired: 'Rhowch ddyddiad cyrraedd y porthladd mynediad',
+      portRequired: 'Dewiswch borthladd mynediad',
       arrivalDateInvalid: 'Rhowch ddyddiad cyrraedd go iawn',
       arrivalDateOutOfRange: (earliest, latest) =>
         `Rhaid i ddyddiad cyrraedd y porthladd mynediad fod rhwng ${earliest} a ${latest}`,
