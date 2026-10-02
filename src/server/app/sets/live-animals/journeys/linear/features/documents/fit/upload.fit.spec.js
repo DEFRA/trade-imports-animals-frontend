@@ -143,7 +143,7 @@ test.describe('document upload page', () => {
     ).toBeVisible()
   })
 
-  test('offers the thirteen document types behind a placeholder, between the reference and the date', async ({
+  test('offers all fourteen document types behind a placeholder, between the reference and the date', async ({
     page
   }) => {
     const select = page.getByLabel(copy.documentType.label)
@@ -160,16 +160,10 @@ test.describe('document upload page', () => {
       copy.types.BILL_OF_LADING,
       copy.types.CATCH_CERTIFICATE,
       copy.types.LABORATORY_SAMPLING_RESULTS_FOR_AFLATOXIN,
+      copy.types.HEALTH_CERTIFICATE,
       copy.types.JOURNEY_LOG,
       copy.types.OTHER
     ])
-    // The design keeps this one for its own internal testing release.
-    await expect(
-      select.getByRole('option', {
-        name: copy.types.HEALTH_CERTIFICATE,
-        exact: true
-      })
-    ).toHaveCount(0)
 
     // A locator resolves in document order, so this pins where the select sits.
     const controlIds = await page
