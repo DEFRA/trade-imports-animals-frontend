@@ -27,7 +27,7 @@ import {
 import { dispatchPages } from '../index.js'
 
 import * as declaration from './controller.js'
-import * as reinflate from '../addresses/reinflate-party-answers.js'
+import * as addressBook from '../../../../../../services/address-book/index.js'
 import * as refusal from '../check-answers/refusal.js'
 import { records } from '../../../../../../engine/persistence/records.js'
 
@@ -35,6 +35,18 @@ const post = postHandlerOf(declaration)
 const get = declaration.routes.find((route) => route.method === 'GET').handler
 
 const CHECK_ANSWERS_SLUG = 'notification-view'
+
+const VALID_COPY = {
+  name: 'Astra Rosales',
+  phone: '01632 960000',
+  email: 'astra-rosales@example.com',
+  address: {
+    addressLine1: '43 East Hague Extension',
+    townOrCity: 'Bern',
+    postcode: '30055',
+    countryCode: 'CH'
+  }
+}
 
 describe('#declaration', () => {
   describe('POST /declaration', () => {
@@ -77,36 +89,35 @@ describe('#declaration', () => {
         })
       })
 
-      it('Should persist reinflated party answers before submit', async () => {
+      it('Should submit the copied address as stored, never consulting the address book', async () => {
         configureReadyForCheckYourAnswers(SET_ID, () => true)
-        // The refusal predicate needs the address book set up to resolve the
-        // seeded consignor; this test is about the reinflate/replace order,
-        // not the refusal path, so short-circuit it.
-        vi.spyOn(refusal, 'isReviewRefused').mockResolvedValue(false)
-        const inflated = {
-          consignor: {
-            addressId: 'consignor-1',
-            name: 'Frozen Consignor',
-            address: { addressLine1: '1 Test Street' }
-          }
-        }
-        const reinflateSpy = vi
-          .spyOn(reinflate, 'reinflatePartyAnswers')
-          .mockResolvedValue(inflated)
-        const replaceSpy = vi.spyOn(records, 'replaceFulfilment')
+        const partySpy = vi.spyOn(addressBook, 'party')
 
-        await driveHandler(post, {
+        const result = await driveHandler(post, {
           payload: { declaration: 'confirmed' },
-          seed: { consignor: { addressId: 'consignor-1' } }
+          seed: { consignor: VALID_COPY }
         })
 
-        expect(reinflateSpy).toHaveBeenCalledOnce()
-        const reinflateOrder = reinflateSpy.mock.invocationCallOrder[0]
-        const replaceAfterReinflate = replaceSpy.mock.calls.find(
-          (_, index) =>
-            replaceSpy.mock.invocationCallOrder[index] > reinflateOrder
-        )
-        expect(replaceAfterReinflate).toBeDefined()
+        expect(result.response).toEqual({
+          redirect: pagePath(result.journeyId, 'confirmation')
+        })
+        expect(result.after.consignor).toEqual(VALID_COPY)
+        expect(partySpy).not.toHaveBeenCalled()
+      })
+
+      it('Should refuse the submit while a copied address breaks the rules', async () => {
+        configureReadyForCheckYourAnswers(SET_ID, () => true)
+        const finaliseSpy = vi.spyOn(records, 'finalise')
+
+        const result = await driveHandler(post, {
+          payload: { declaration: 'confirmed' },
+          seed: { consignor: { ...VALID_COPY, email: 'not-an-email' } }
+        })
+
+        expect(result.response).toEqual({
+          redirect: pagePath(result.journeyId, CHECK_ANSWERS_SLUG)
+        })
+        expect(finaliseSpy).not.toHaveBeenCalled()
       })
 
       it('Should keep the not-ready outcome as a redirect to check answers', async () => {

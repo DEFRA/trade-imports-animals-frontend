@@ -39,10 +39,8 @@ import { records } from './services/persistence/records/index.js'
 import { configureSession } from './engine/persistence/session.js'
 import { session } from './services/persistence/session/index.js'
 import { registerJourneyCookie } from './engine/journey.js'
-import { configureAnswersForRead } from './bridge/answers-read.js'
 import { configureReadyForCheckYourAnswers } from './bridge/readiness-config.js'
 import { readyForCheckYourAnswers } from './flow/section-status.js'
-import { withoutUnresolvedPartyRefs } from './sets/live-animals/journeys/linear/features/addresses/resolve-parties.js'
 import {
   enterSetContext,
   registerSetMount,
@@ -72,7 +70,6 @@ export const liveAnimals = {
         configureObligationSet(SET_ID, liveAnimalsObligationSet)
         configureFulfilmentRegistry(SET_ID, featureEvaluationBindings)
         configureCommodityReference(SET_ID, commodities)
-        configureAnswersForRead(SET_ID, withoutUnresolvedPartyRefs)
         // The readiness seam is fail-closed until L1 injects the roll-up, so
         // this hands `bridge/scope.js` the real task-row roll-up rather than
         // letting bridge import it from flow.

@@ -7,6 +7,7 @@ export const copy = {
     warning: 'Mae darparu cyfeiriad ffug yn weithred o dwyll.',
     notAddedYet: 'Heb ei ychwanegu eto',
     change: 'Newid',
+    editDetails: 'Golygu manylion',
     add: 'Ychwanegu',
     cph: {
       title: 'Rhif daliad plwyf sirol (CPH)',

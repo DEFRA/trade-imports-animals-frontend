@@ -121,17 +121,16 @@ describe('GET /consignors/select', () => {
     expect(picker.pagination).toBeNull()
   })
 
-  it('Should pre-check the row the committed reference points at', async () => {
+  it('Should open with nothing checked when the notification already holds a copy', async () => {
     const picker = pickerFrom(
       await driveHandler(getConsignor, {
-        seed: { consignor: { addressId: ALPINE_DAIRY_ID } },
+        seed: { consignor: { name: ALPINE_DAIRY_NAME } },
         query: { page: '3' }
       })
     )
 
-    const row = picker.rows.find((each) => each.id === ALPINE_DAIRY_ID)
-    expect(picker.selected.id).toBe(ALPINE_DAIRY_ID)
-    expect(row.checked).toBe(true)
+    expect(picker.selected).toBeUndefined()
+    expect(picker.rows.some((row) => row.checked)).toBe(false)
   })
 
   it('Should treat a soft-deleted selected reference as no selection', async () => {
@@ -197,7 +196,7 @@ describe('POST /consignors/select', () => {
     expect(picker.rows.every((row) => row.checked === false)).toBe(true)
   })
 
-  it('Should reference the row ticked on a later page and return to the addresses hub', async () => {
+  it('Should copy the row ticked on a later page and return to the addresses hub', async () => {
     const result = await driveHandler(postConsignor, {
       payload: { action: 'save', page: '2', party: ALPINE_DAIRY_ID }
     })
@@ -205,20 +204,20 @@ describe('POST /consignors/select', () => {
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, 'addresses')
     })
-    expect(result.after.consignor).toMatchObject({
-      addressId: ALPINE_DAIRY_ID,
-      name: ALPINE_DAIRY_NAME
-    })
+    expect(result.after.consignor).toMatchObject({ name: ALPINE_DAIRY_NAME })
   })
 
-  it('Should store inline details alongside the address-book id', async () => {
+  it('Should store a copy of the record with no address-book id', async () => {
     const result = await driveHandler(postConsignor, {
       payload: { action: 'save', party: ALPINE_DAIRY_ID }
     })
 
-    expect(result.after.consignor.addressId).toBe(ALPINE_DAIRY_ID)
+    expect(result.after.consignor).not.toHaveProperty('addressId')
     expect(result.after.consignor.name).toBe(ALPINE_DAIRY_NAME)
-    expect(result.after.consignor.address).toBeDefined()
+    expect(result.after.consignor.address).toMatchObject({
+      addressLine1: expect.any(String),
+      countryCode: expect.any(String)
+    })
   })
 
   it('Should save the selection made on an earlier page when the page on screen has no row ticked', async () => {
@@ -228,9 +227,21 @@ describe('POST /consignors/select', () => {
 
     expect(result.view).toBeUndefined()
     expect(result.after.consignor).toMatchObject({
-      addressId: NORDVIK_ID,
       name: 'Nordvik Seafood AS'
     })
+  })
+
+  it('Should keep the copy already held when saved with nothing selected', async () => {
+    const held = { name: 'Held Consignor', address: { countryCode: 'FR' } }
+    const result = await driveHandler(postConsignor, {
+      seed: { consignor: held },
+      payload: { action: 'save' }
+    })
+
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, 'addresses')
+    })
+    expect(result.after.consignor).toEqual(held)
   })
 
   it('Should let a row ticked on the page on screen beat the selection carried from an earlier one', async () => {
@@ -243,10 +254,7 @@ describe('POST /consignors/select', () => {
       }
     })
 
-    expect(result.after.consignor).toMatchObject({
-      addressId: ALPINE_DAIRY_ID,
-      name: ALPINE_DAIRY_NAME
-    })
+    expect(result.after.consignor).toMatchObject({ name: ALPINE_DAIRY_NAME })
   })
 
   it('Should reject a save with nothing selected, anchoring the error on the first row', async () => {
@@ -325,7 +333,6 @@ describe('The five spokes share the one picker', () => {
       })
 
       expect(result.after[party.id]).toMatchObject({
-        addressId: DANISH_MEAT_ID,
         name: 'Danish Meat Export ApS'
       })
       expect(result.response).toEqual({
@@ -473,7 +480,6 @@ describe('/consignors/select — change context', () => {
       redirect: `${pagePath(result.journeyId, 'addresses')}?change=1`
     })
     expect(result.after.consignor).toMatchObject({
-      addressId: ALPINE_DAIRY_ID,
       name: ALPINE_DAIRY_NAME
     })
   })

@@ -110,6 +110,17 @@ export const addressCountries = async () => {
   return [UNITED_KINGDOM, ...Object.values(labels)]
 }
 
+/** The countries an address can be in, keyed by ISO code — the form a copied
+ * address-book record stores its country in. Same list and order as
+ * `addressCountries`. */
+export const addressCountryOptions = async () => {
+  await ensureLoaded()
+  return [
+    { code: UNITED_KINGDOM_CODE, name: UNITED_KINGDOM },
+    ...Object.entries(labels).map(([code, name]) => ({ code, name }))
+  ]
+}
+
 /** The ISO code for a country's display name (cv-011).
  *
  * Address forms collect a country by name; the address book keys on the code.

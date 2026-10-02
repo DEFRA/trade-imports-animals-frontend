@@ -36,6 +36,6 @@ export const buildSections = async (
       parties,
       partyErrors
     ),
-    contactAddressSection(journeyId, answers, readOnly, parties)
+    contactAddressSection(journeyId, answers, readOnly, parties, partyErrors)
   ]
 }

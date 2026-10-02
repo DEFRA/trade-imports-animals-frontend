@@ -12,16 +12,10 @@ const copy = copyFor({ en, cy })
 // `fields` reads from `addressOptions` — an id, nothing else.
 const addressOptionsOf = (...ids) => ids.map((id) => ({ id }))
 
-describe('#validation — deleted since picked', () => {
-  it('Should raise the "no longer available" message when a stored address id has been dropped from the sanitised answers', async () => {
-    const { errors } = await validation.onStored(
-      {},
-      { storedAnswers: { contactAddress: { addressId: 'deleted-id' } } }
-    )
-
-    expect(errors.contactAddress).toBe(copy.errors.contactNoLongerAvailable)
-  })
-})
+const STORED_COPY = {
+  name: 'Contact Ltd',
+  address: { addressLine1: '1 Road', countryCode: 'GB' }
+}
 
 describe('#validation — never answered', () => {
   it('Should raise no error when the trader has never selected a contact address', async () => {
@@ -31,18 +25,28 @@ describe('#validation — never answered', () => {
   })
 })
 
-describe('#validation — still resolves', () => {
-  it('Should raise no error when the stored address id still resolves and is present in the address book', async () => {
-    const addressId = 'still-here'
-    const { errors } = await validation.onStored(
-      { contactAddress: { addressId } },
-      {
-        addressOptions: addressOptionsOf(addressId),
-        storedAnswers: { contactAddress: { addressId } }
-      }
+describe('#validation — a stored copy', () => {
+  it('Should raise no error for a stored copy, with or without a book in hand', async () => {
+    expect(
+      (await validation.onStored({ contactAddress: STORED_COPY }, {})).errors
+    ).toEqual({})
+    expect(
+      (
+        await validation.onStored(
+          { contactAddress: STORED_COPY },
+          { addressOptions: addressOptionsOf('real-id') }
+        )
+      ).errors
+    ).toEqual({})
+  })
+
+  it('Should leave no radio selected, the copy keeping no address-book id', async () => {
+    const { values } = await validation.onStored(
+      { contactAddress: STORED_COPY },
+      {}
     )
 
-    expect(errors).toEqual({})
+    expect(values.contactAddress).toBe('')
   })
 })
 
@@ -66,39 +70,9 @@ describe('#validation — tampered submit', () => {
 
     expect(errors).toEqual({})
   })
-})
 
-describe('#validation — no book in hand (task list and review page skip the address-book fetch)', () => {
-  it('Should raise no membership error for a stored address id it has no book to check, without addressOptions', async () => {
-    const { errors } = await validation.onStored(
-      { contactAddress: { addressId: 'unverifiable-id' } },
-      {}
-    )
-
-    expect(errors).toEqual({})
-  })
-})
-
-describe('#validation — onSubmit is not the deleted-since-picked rule', () => {
-  it('Should raise no "no longer available" message on a submission with a fresh valid selection, even when storedAnswers records a previously deleted address', async () => {
-    const { errors } = await validation.onSubmit(
-      { contactAddress: 'new-id' },
-      {
-        addressOptions: addressOptionsOf('new-id'),
-        storedAnswers: { contactAddress: { addressId: 'old-deleted-id' } }
-      }
-    )
-
-    expect(errors).toEqual({})
-  })
-
-  it('Should raise no "no longer available" message on a submission with no selection, even when storedAnswers records a previously deleted address', async () => {
-    const { errors } = await validation.onSubmit(
-      {},
-      {
-        storedAnswers: { contactAddress: { addressId: 'old-deleted-id' } }
-      }
-    )
+  it('Should raise no error on a submission with no selection', async () => {
+    const { errors } = await validation.onSubmit({}, { addressOptions })
 
     expect(errors).toEqual({})
   })

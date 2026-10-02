@@ -28,7 +28,7 @@ const parseArgs = (argv) => {
   }
   if (!args.scenario) {
     throw new Error(
-      '--scenario is required. Try --scenario country-stale|party-deleted|unknown-obligation.'
+      '--scenario is required. Try --scenario country-stale|unknown-obligation.'
     )
   }
   return args

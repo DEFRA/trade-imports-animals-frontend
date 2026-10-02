@@ -34,7 +34,6 @@ export const toDisplayParty = async (party) => {
   }
   const address = party.address ?? {}
   return {
-    id: party.addressId ?? null,
     name: party.name,
     address: {
       addressLine1: address.addressLine1,
@@ -49,7 +48,7 @@ export const toDisplayParty = async (party) => {
   }
 }
 
-/** SUBMITTED render path — build display parties from stored inline answers. */
+/** Display parties for every status — the stored copy is the answer. */
 export const partiesFromStoredAnswers = async (answers = {}) => {
   const entries = await Promise.all(
     JOURNEY_PARTY_IDS.map(async (partyId) => [

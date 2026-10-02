@@ -6,6 +6,7 @@ export const copy = {
     warning: 'Providing a false address is an act of fraud.',
     notAddedYet: 'Not added yet',
     change: 'Change',
+    editDetails: 'Edit details',
     add: 'Add',
     cph: {
       title: 'County parish holding (CPH) number',

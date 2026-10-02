@@ -16,10 +16,6 @@ import { confirmationPage } from '../confirmation/page.js'
 import { declarationPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
-import { assembleFulfilments } from '../../../../../../bridge/assemble-fulfilments.js'
-import { records } from '../../../../../../engine/persistence/records.js'
-import { buildActor } from '../../../../../../../common/helpers/actor-helpers.js'
-import { reinflatePartyAnswers } from '../addresses/reinflate-party-answers.js'
 import { isReviewRefused } from '../check-answers/refusal.js'
 
 export const meta = { ...page, collects: ['declaration'] }
@@ -81,17 +77,6 @@ const post = async (request, h) => {
   const { failure } = await kit.recoverableSave(
     async () => {
       await state.commit(request, h, values)
-      const current = await state.get(request, h)
-      const actor = buildActor(request.auth.credentials)
-      const inflatedAnswers = await reinflatePartyAnswers(
-        request,
-        current.answers
-      )
-      await records.replaceFulfilment(
-        current.journey.journeyId,
-        assembleFulfilments(inflatedAnswers),
-        { known: current.journey, actor }
-      )
       result = await state.submitJourney(request, h)
     },
     () =>

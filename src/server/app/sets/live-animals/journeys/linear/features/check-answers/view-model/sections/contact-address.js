@@ -12,7 +12,8 @@ export const contactAddressSection = (
   journeyId,
   answers,
   readOnly,
-  parties = answers
+  parties = answers,
+  partyErrors = {}
 ) => ({
   // Suffixed, like the documents section and for the same reason: the contact
   // address CARD already owns the `contact-address` id, which is what the error
@@ -22,7 +23,9 @@ export const contactAddressSection = (
   groups: [
     {
       heading: copy.groups.contactAddress,
-      cards: [contactAddressCard(journeyId, answers, readOnly, parties)]
+      cards: [
+        contactAddressCard(journeyId, answers, readOnly, parties, partyErrors)
+      ]
     }
   ]
 })

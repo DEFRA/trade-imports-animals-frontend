@@ -75,7 +75,6 @@ every request, so no restart is needed after a mutation.
 | Scenario id          | Simulates                                                                                         | What to look for                                                                                                                                                       |
 | -------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `country-stale`      | Reference-data re-release dropped the ISO code the trader submitted for the country of origin.    | Origin page renders unselected with no explanation. CYA card shows the raw ISO code. Review-page Continue and declaration submit refuse until the trader re-picks.     |
-| `party-deleted`      | An address-book party (any of the six party roles) has been deleted since the trader picked it.   | CYA card shows "Not provided" plus an outstanding-party error against the affected role. Task list demotes the row to "To do". Declaration submit refuses.             |
 | `unknown-obligation` | An obligation has been removed from the manifest since submit — a fulfilment keyed on it lingers. | Engine's `dropUnrecognisedFulfilments` sweeps the entry out silently on read. Dashboard is unaffected. Amend journey has lost the answer with no user warning surface. |
 
 ## Design
@@ -106,14 +105,12 @@ shapes are used, one per scenario kind:
   payload the scenario then `$set`s. A future change to how the answer
   is serialised (bare string → object with region metadata, say) flows
   through the assembler without the scenario knowing.
-- **Raw fulfilment** (`party-deleted`, `unknown-obligation`). The
-  scenarios that operate on the fulfilment shape directly —
-  `party-deleted` walks the notification's fulfilments to find every
-  party entry with an `addressId`; `unknown-obligation` `$addToSet`s a
-  fulfilment keyed on an id the current manifest deliberately does not
-  know. `assembleFulfilments` can't help either case: it only emits
-  ids the current registry contains, which is precisely what
-  `unknown-obligation` needs to sidestep.
+- **Raw fulfilment** (`unknown-obligation`). The scenario operates on
+  the fulfilment shape directly: it `$addToSet`s a fulfilment keyed on
+  an id the current manifest deliberately does not know.
+  `assembleFulfilments` can't help here: it only emits ids the current
+  registry contains, which is precisely what `unknown-obligation`
+  needs to sidestep.
 
 Every scenario carries a runtime sanity check that fires if its
 sentinel has lost its meaning:
@@ -122,8 +119,6 @@ sentinel has lost its meaning:
   ends up in the current catalogue.
 - `unknown-obligation`'s `assertUnknown` fails if the ghost obligation
   id ever gets adopted by a real obligation.
-- `party-deleted`'s `partyIdToName` throws if a role in `PARTIES` /
-  `CONTACT_PARTY` no longer resolves to an obligation.
 
 ## Tests
 

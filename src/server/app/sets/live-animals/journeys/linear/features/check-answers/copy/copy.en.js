@@ -32,6 +32,7 @@ export const copy = {
     OTHER: 'Other'
   },
   change: 'Change',
+  editDetails: 'Edit details',
   cancelAmend: {
     link: 'Cancel amendment',
     successTitle: 'Success',
@@ -162,11 +163,13 @@ export const copy = {
       documents: 'Complete documents'
     },
     parties: {
-      placeOfOrigin: 'Select an address for the place of origin',
-      consignor: 'Select an address for the consignor',
-      consignee: 'Select an address for the consignee',
-      importer: 'Select an address for the importer',
-      placeOfDestination: 'Select an address for the place of destination'
+      placeOfOrigin: 'Correct the address details for the place of origin',
+      consignor: 'Correct the address details for the consignor',
+      consignee: 'Correct the address details for the consignee',
+      importer: 'Correct the address details for the importer',
+      placeOfDestination:
+        'Correct the address details for the place of destination',
+      contactAddress: 'Correct the contact address details for this consignment'
     }
   }
 }

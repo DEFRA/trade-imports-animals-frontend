@@ -3,9 +3,11 @@ export const copy = {
   title: 'Cyfeiriad cyswllt ar gyfer y llwyth',
   legend: 'Cyfeiriad cyswllt ar gyfer y llwyth',
   hint: "Mae dewis cyswllt yn copïo eu henw a'u cyfeiriad i'r hysbysiad hwn.",
+  current: {
+    title: 'Cyfeiriad cyswllt presennol',
+    editDetails: 'Golygu manylion'
+  },
   errors: {
-    contactRequired: 'Dewiswch gyfeiriad cyswllt',
-    contactNoLongerAvailable:
-      "Nid yw'r cyfeiriad cyswllt a arbedwyd ar gael mwyach. Dewiswch gyfeiriad cyswllt o'r rhestr."
+    contactRequired: 'Dewiswch gyfeiriad cyswllt'
   }
 }

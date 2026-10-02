@@ -208,15 +208,11 @@ test.describe('party picker per role', () => {
       ).toBeVisible()
       await expect(row).toContainText(selectedName)
       await expect(
-        row.getByRole('link', { name: copy.hub.change })
+        row.getByRole('link', { name: copy.hub.editDetails })
       ).toBeVisible()
+      // The copy keeps no address-book id, so re-picking starts afresh.
       await row.getByRole('link', { name: copy.hub.change }).click()
-      await expect(
-        page.getByText(`${copy.picker.selectedAddressPrefix} ${selectedName}`)
-      ).toBeVisible()
-      await expect(
-        page.getByRole('radio', { name: selectedName })
-      ).toBeChecked()
+      await expect(page.getByRole('radio', { checked: true })).toHaveCount(0)
     })
   }
 })
@@ -285,7 +281,7 @@ test.describe('party picker details and pagination', () => {
     await expect(detailedRow).toContainText('London')
   })
 
-  test('picker carries a later-page selection and keeps it selected off-page', async ({
+  test('picker saves a later-page choice, reopens with nothing chosen and keeps it on save', async ({
     page
   }) => {
     const row = rowFor(page, CONSIGNOR.title)
@@ -296,14 +292,11 @@ test.describe('party picker details and pagination', () => {
 
     await expect(row).toContainText(LATER_PAGE_ADDRESS)
     await row.getByRole('link', { name: copy.hub.change }).click()
-    await expect(
-      page.getByText(
-        `${copy.picker.selectedAddressPrefix} ${LATER_PAGE_ADDRESS}`
-      )
-    ).toBeVisible()
-    await expect(
-      page.getByRole('radio', { name: LATER_PAGE_ADDRESS })
-    ).toHaveCount(0)
+    // The copy keeps no address-book id, so nothing is named as selected.
+    await expect(page.getByText(copy.picker.selectedAddressPrefix)).toHaveCount(
+      0
+    )
+    await expect(page.getByRole('radio', { checked: true })).toHaveCount(0)
     await saveAndContinue(page)
     await expect(row).toContainText(LATER_PAGE_ADDRESS)
   })

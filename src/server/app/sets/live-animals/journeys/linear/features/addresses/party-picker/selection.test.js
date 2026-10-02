@@ -1,65 +1,75 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import * as addressBook from '../../../../../../../services/address-book/index.js'
-import { SUBMITTED } from '../../../../../../../engine/persistence/records.js'
 import { PARTIES } from '../parties.js'
-import { selectedPartyFor } from './selection.js'
+import { answerFor, chosenPartyFor } from './selection.js'
 
 const ORIGIN_FARM_ID = 'origin-farm'
+const ORIGIN_FARM_NAME = 'Origin Farm'
 const ORIGIN = PARTIES.find((party) => party.id === 'placeOfOrigin')
 
-describe('selectedPartyFor', () => {
+const liveRecord = (overrides = {}) => ({
+  id: ORIGIN_FARM_ID,
+  name: ORIGIN_FARM_NAME,
+  deleted: false,
+  address: {
+    addressLine1: '1 Farm Lane',
+    addressLine2: 'Rural Route',
+    townOrCity: 'Cork',
+    county: 'County Cork',
+    postalOrZipCode: 'V95 X7P2',
+    countryCode: 'IE',
+    country: 'Ireland',
+    telephoneNumber: '+353 1 234 5678',
+    emailAddress: 'farm@example.com'
+  },
+  ...overrides
+})
+
+describe('chosenPartyFor', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
   })
 
-  it('Should render stored inline details on a submitted notification without re-resolving', async () => {
-    const journey = { status: SUBMITTED }
-    const answers = {
-      placeOfOrigin: {
-        addressId: ORIGIN_FARM_ID,
-        name: 'Frozen Origin Farm',
-        address: {
-          addressLine1: '1 Farm Lane',
-          postcode: 'V95 X7P2',
-          countryCode: 'IE'
-        }
-      }
-    }
-    const partySpy = vi.spyOn(addressBook, 'party')
+  it('Should look the selected id up in the address book', async () => {
+    vi.spyOn(addressBook, 'party').mockResolvedValue(liveRecord())
 
-    const selected = await selectedPartyFor(
-      journey,
-      'org-001',
-      ORIGIN,
-      answers,
-      ORIGIN_FARM_ID
-    )
+    const chosen = await chosenPartyFor('org-001', ORIGIN_FARM_ID)
 
-    expect(selected).toMatchObject({
-      id: ORIGIN_FARM_ID,
-      name: 'Frozen Origin Farm'
-    })
-    expect(partySpy).not.toHaveBeenCalled()
+    expect(chosen).toMatchObject({ id: ORIGIN_FARM_ID, name: ORIGIN_FARM_NAME })
+    expect(addressBook.party).toHaveBeenCalledWith('org-001', ORIGIN_FARM_ID)
   })
 
-  it('Should resolve from the address book on a draft notification', async () => {
-    const live = {
-      id: ORIGIN_FARM_ID,
-      name: 'Live Origin Farm',
-      deleted: false,
-      address: { addressLine1: '1 Farm Lane', country: 'Ireland' }
-    }
-    vi.spyOn(addressBook, 'party').mockResolvedValue(live)
-
-    const selected = await selectedPartyFor(
-      { status: 'DRAFT' },
-      'org-001',
-      ORIGIN,
-      { placeOfOrigin: { addressId: ORIGIN_FARM_ID } },
-      ORIGIN_FARM_ID
+  it('Should treat a soft-deleted record as no selection', async () => {
+    vi.spyOn(addressBook, 'party').mockResolvedValue(
+      liveRecord({ deleted: true })
     )
 
-    expect(selected).toBe(live)
+    expect(await chosenPartyFor('org-001', ORIGIN_FARM_ID)).toBeUndefined()
+  })
+
+  it('Should not call the address book when nothing is selected', async () => {
+    const partySpy = vi.spyOn(addressBook, 'party')
+
+    expect(await chosenPartyFor('org-001', '')).toBeUndefined()
+    expect(partySpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('answerFor', () => {
+  it('Should copy the picked record onto the answer, with no address-book id', () => {
+    expect(answerFor(ORIGIN, liveRecord())).toEqual({
+      name: ORIGIN_FARM_NAME,
+      phone: '+353 1 234 5678',
+      email: 'farm@example.com',
+      address: {
+        addressLine1: '1 Farm Lane',
+        addressLine2: 'Rural Route',
+        townOrCity: 'Cork',
+        county: 'County Cork',
+        postcode: 'V95 X7P2',
+        countryCode: 'IE'
+      }
+    })
   })
 })

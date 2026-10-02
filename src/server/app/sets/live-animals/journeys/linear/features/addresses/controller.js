@@ -6,7 +6,8 @@ import { copyFor } from '../../../../../../shared/copy.js'
 import { isCphApplicable } from '../cph-number/controller.js'
 import { addressesPage as page } from './page.js'
 import { PARTIES } from './parties.js'
-import { partiesForRender } from './parties-for-render.js'
+import { partiesFromStoredAnswers } from './frozen-parties.js'
+import { partyEditHref } from './party-edit/edit-href.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 
@@ -29,7 +30,7 @@ const CPH_ROW = {
   slug: 'cph-number?return=addresses'
 }
 
-const hubRow = (href, { title, hint }, valueText) => ({
+const hubRow = (href, { title, hint }, valueText, editHref) => ({
   key: {
     html: `<span>${title}</span><span class="govuk-hint govuk-!-display-block govuk-!-margin-bottom-0">${hint}</span>`
   },
@@ -40,21 +41,34 @@ const hubRow = (href, { title, hint }, valueText) => ({
         href,
         text: valueText ? copy.change : copy.add,
         visuallyHiddenText: title.toLowerCase()
-      }
+      },
+      // Only an address already copied has details to edit.
+      ...(valueText && editHref
+        ? [
+            {
+              href: editHref,
+              text: copy.editDetails,
+              visuallyHiddenText: title.toLowerCase()
+            }
+          ]
+        : [])
     ]
   }
 })
 
-// A party row keeps change context so the picker can hand the trader back here
-// and this page's Continue can return them to check your answers. The CPH row
-// does not: its slug already carries `?return=addresses`, and it is a different
-// obligation reached by its own route.
+// A party row keeps change context so the picker and the edit page can hand
+// the trader back here and this page's Continue can return them to check your
+// answers. The CPH row does not: its slug already carries `?return=addresses`,
+// and it is a different obligation reached by its own route.
 const rows = (request, journeyId, answers, parties) => [
   ...PARTIES.map((party) =>
     hubRow(
       kit.withChangeContext(request, pagePath(journeyId, party.slug)),
       party,
-      parties[party.id]?.name
+      parties[party.id]?.name,
+      partyEditHref(journeyId, party, 'addresses', {
+        change: kit.changeContext(request)
+      })
     )
   ),
   ...(isCphApplicable(answers)
@@ -70,7 +84,7 @@ const rows = (request, journeyId, answers, parties) => [
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  const parties = await partiesForRender(request, journey, answers)
+  const parties = await partiesFromStoredAnswers(answers)
   // Reached from a Change link, Back has to return to the summary that sent the
   // trader here rather than dropping them on the task list.
   const backLink = kit.changeContext(request)
