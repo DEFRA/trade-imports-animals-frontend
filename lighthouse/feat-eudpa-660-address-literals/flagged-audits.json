@@ -1,0 +1,188 @@
+{
+  "generatedAt": "2026-10-02T15:59:31.211Z",
+  "pages": [
+    {
+      "pageUrl": "/live-animals",
+      "requestedUrl": "http://localhost:3000/live-animals",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/origin",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/origin",
+      "audits": [
+        {
+          "auditId": "aria-allowed-attr",
+          "title": "`[aria-*]` attributes do not match their roles",
+          "score": 0,
+          "scoreDisplayMode": "binary",
+          "displayValue": null,
+          "category": "accessibility"
+        }
+      ]
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/commodities",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/commodities",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/consignment-details",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/consignment-details",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/commodities/identification",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/commodities/identification",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/import-reason",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/import-reason",
+      "audits": [
+        {
+          "auditId": "aria-allowed-attr",
+          "title": "`[aria-*]` attributes do not match their roles",
+          "score": 0,
+          "scoreDisplayMode": "binary",
+          "displayValue": null,
+          "category": "accessibility"
+        }
+      ]
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/additional-details",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/additional-details",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/accompanying-documents",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/accompanying-documents",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/addresses",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/addresses",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/place-of-origin/select",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/place-of-origin/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/consignors/select",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/consignors/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/consignees/select",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/consignees/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/importers/select",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/importers/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/destinations/select",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/destinations/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/place-of-origin/edit",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/place-of-origin/edit",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/consignors/edit",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/consignors/edit",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/consignees/edit",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/consignees/edit",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/importers/edit",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/importers/edit",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/destinations/edit",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/destinations/edit",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/consignment/contact/edit",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/consignment/contact/edit",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/cph-number",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/cph-number",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/port-of-entry",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/port-of-entry",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/transit-countries",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/transit-countries",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/transporters",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/transporters",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/transporters/add",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/transporters/add",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/transporters/select",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/transporters/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/transporters/add/commercial",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/transporters/add/commercial",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-7FJX1Y/transporters/add/private",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-7FJX1Y/transporters/add/private",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/consignment/contact/select",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/consignment/contact/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/notification-view",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/notification-view",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-V8XN4M/declaration",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-V8XN4M/declaration",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9F861X/confirmation",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9F861X/confirmation",
+      "audits": []
+    }
+  ]
+}

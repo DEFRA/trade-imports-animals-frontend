@@ -1,0 +1,158 @@
+{
+  "generatedAt": "2026-09-30T15:09:10.323Z",
+  "pages": [
+    {
+      "pageUrl": "/live-animals",
+      "requestedUrl": "http://localhost:3000/live-animals",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/origin",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/origin",
+      "audits": [
+        {
+          "auditId": "aria-allowed-attr",
+          "title": "`[aria-*]` attributes do not match their roles",
+          "score": 0,
+          "scoreDisplayMode": "binary",
+          "displayValue": null,
+          "category": "accessibility"
+        }
+      ]
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/commodities",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/commodities",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/consignment-details",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/consignment-details",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/commodities/identification",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/commodities/identification",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/import-reason",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/import-reason",
+      "audits": [
+        {
+          "auditId": "aria-allowed-attr",
+          "title": "`[aria-*]` attributes do not match their roles",
+          "score": 0,
+          "scoreDisplayMode": "binary",
+          "displayValue": null,
+          "category": "accessibility"
+        }
+      ]
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/additional-details",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/additional-details",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/accompanying-documents",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/accompanying-documents",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/addresses",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/addresses",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/place-of-origin/select",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/place-of-origin/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/consignors/select",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/consignors/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/consignees/select",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/consignees/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/importers/select",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/importers/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/destinations/select",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/destinations/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/cph-number",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/cph-number",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/port-of-entry",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/port-of-entry",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/transit-countries",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/transit-countries",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/transporters",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/transporters",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/transporters/add",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/transporters/add",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/transporters/select",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/transporters/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/transporters/add/commercial",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/transporters/add/commercial",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-RX2N83/transporters/add/private",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-RX2N83/transporters/add/private",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/consignment/contact/select",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/consignment/contact/select",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/notification-view",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/notification-view",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-9KEXPK/declaration",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-9KEXPK/declaration",
+      "audits": []
+    },
+    {
+      "pageUrl": "/live-animals/notifications/GBN-AG-26-63Z8XK/confirmation",
+      "requestedUrl": "http://localhost:3000/live-animals/notifications/GBN-AG-26-63Z8XK/confirmation",
+      "audits": []
+    }
+  ]
+}
