@@ -121,7 +121,7 @@
     "prettier": "3.9.9",
     "puppeteer": "25.12.0",
     "sass": "1.105.1",
-    "sass-embedded": "1.100.0",
+    "sass-embedded": "1.105.1",
     "sass-loader": "17.0.0",
     "source-map-loader": "5.0.0",
     "stylelint": "16.26.1",
