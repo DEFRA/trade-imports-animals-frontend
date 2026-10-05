@@ -27,9 +27,10 @@ const WEST_OF_UTC = 'America/New_York'
  */
 const EAST_OF_UTC = 'Europe/London'
 
-/** The one day every spelling of 21 July 2026 in this file has to render as. */
 /** An arrival date as the API sends it: a calendar date, no time, no offset. */
 const ARRIVAL_DATE = '2026-07-21'
+
+/** The one day every spelling of 21 July 2026 in this file has to render as. */
 const ARRIVAL_DAY = '21 Jul 2026'
 
 describe('promoted dashboard notification helpers', () => {
