@@ -238,7 +238,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
     await expect(page.locator('#country')).toHaveValue(NORTHERN_IRELAND)
   })
 
-  test('shows a hand-entered transporter on the transporter list as no pick, leaving it alone', async ({
+  test('a transporter the trader added is on the list, checked, and saving the list again leaves it alone', async ({
     page
   }) => {
     await openCommercialForm(page)
@@ -246,11 +246,13 @@ test.describe('adding a commercial transporter that is not on the list', () => {
     await submit(page)
 
     await page.goto(journeyUrl(page, 'transporters'))
-    // A hand-typed record is not on the list, so nothing is checked and the
-    // save has no pick to commit.
-    await expect(page.locator('input[name="transporter"]:checked')).toHaveCount(
-      0
-    )
+    // The transporter joined the list on the way through, so it is the row the
+    // notification already names and the one that comes back checked.
+    await expect(
+      page.getByRole('radio', {
+        name: validTransporter.nameOrOrganisationName
+      })
+    ).toBeChecked()
     await submit(page)
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 
