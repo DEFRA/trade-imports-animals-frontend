@@ -15,7 +15,8 @@ const CREATED_AT_ASCENDING_SORT = 'createdAt,asc'
 
 /**
  * West of UTC on purpose: the only side where an ambient-zone renderer and a
- * correct one disagree. Do not "tidy" it. See `calendar.test.js`.
+ * correct one disagree about a moment, so this is the zone that guards
+ * `formatDisplayMoment`. Do not "tidy" it. See `calendar.test.js`.
  */
 const WEST_OF_UTC = 'America/New_York'
 
@@ -99,9 +100,10 @@ describe('promoted dashboard notification helpers', () => {
       )
     })
 
-    // A value carrying no offset is the case the west-of-UTC assertions above
-    // cannot see: read as local time it moves forward into the same UTC day
-    // west of UTC, and back into the previous one east of it.
+    // The west-of-UTC block above guards the moment. This one guards the
+    // date-only arrival date, which carries no offset: read as local time it
+    // moves forward into the same UTC day west of UTC, where a wrong renderer
+    // still passes, and back into the previous one east of it.
     runInZone(EAST_OF_UTC, () => {
       expect(formatDisplayCalendarDate(ARRIVAL_DATE)).toBe(ARRIVAL_DAY)
       expect(formatDisplayCalendarDate('2026-07-21T00:00:00')).toBe(ARRIVAL_DAY)
