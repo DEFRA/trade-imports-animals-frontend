@@ -1068,13 +1068,16 @@ describe(`${SUITE} — copied party addresses`, () => {
 
   it('Should render the copy for every status, never consulting the address book', async () => {
     const partySpy = vi.spyOn(addressBook, 'party')
-    for (const status of [DRAFT, AMEND, SUBMITTED]) {
-      const { context } = await viewForStatus(status, fullSeed)
-      const card = cardByTitle(context.sections, ROLES_AND_ADDRESSES_CARD)
-      expect(htmlOf(card.rows, 'Consignor')).toContain(CONSIGNOR_NAME)
+    try {
+      for (const status of [DRAFT, AMEND, SUBMITTED]) {
+        const { context } = await viewForStatus(status, fullSeed)
+        const card = cardByTitle(context.sections, ROLES_AND_ADDRESSES_CARD)
+        expect(htmlOf(card.rows, 'Consignor')).toContain(CONSIGNOR_NAME)
+      }
+      expect(partySpy).not.toHaveBeenCalled()
+    } finally {
+      partySpy.mockRestore()
     }
-    expect(partySpy).not.toHaveBeenCalled()
-    partySpy.mockRestore()
   })
 })
 
