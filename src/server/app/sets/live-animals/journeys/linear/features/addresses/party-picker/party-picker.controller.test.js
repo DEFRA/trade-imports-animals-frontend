@@ -152,8 +152,7 @@ describe('GET /consignors/select', () => {
     })
 
     try {
-      // Drive via ?selected= so render()'s chosenPartyFor path is exercised
-      // (a committed deleted ref is already cleared in state.get).
+      // Drive via ?selected= because a stored copy carries no id to look up.
       const picker = pickerFrom(
         await driveHandler(getConsignor, {
           query: { selected: deletedId }
