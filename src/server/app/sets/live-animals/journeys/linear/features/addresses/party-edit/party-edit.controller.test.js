@@ -18,6 +18,7 @@ import { session as sessionStub } from '../../../../../../../services/persistenc
 import { driveHandler } from '../../../../../../../engine/test-support.js'
 import * as state from '../../../../../../../engine/index.js'
 import * as addressBook from '../../../../../../../services/address-book/index.js'
+import * as countries from '../../../../../../../services/countries/index.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
 import { BackendRequestError } from '../../../../../../../services/persistence/records/errors.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
@@ -53,6 +54,12 @@ const FORM = {
   phone: '01632 960001',
   email: 'office@astra.example.com'
 }
+
+// US sits outside the SPS origin block but is in the address book's list.
+const ADDRESS_BOOK_COUNTRIES = [
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'US', name: 'United States' }
+]
 
 const handlerFor = (method, party) =>
   partyEdit.routes.find(
@@ -213,6 +220,37 @@ describe('Edit address details — where the trader returns to', () => {
     expect(result.response).toEqual({
       redirect: pagePath(result.journeyId, 'addresses')
     })
+  })
+
+  it('Should accept a country the address book allows outside the SPS origin block', async () => {
+    vi.spyOn(countries, 'addressCountryOptions').mockResolvedValue(
+      ADDRESS_BOOK_COUNTRIES
+    )
+
+    const result = await driveHandler(post, {
+      seed: { consignor: STORED },
+      payload: { ...FORM, countryCode: 'US' }
+    })
+
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, 'addresses')
+    })
+    expect(result.after.consignor.address.countryCode).toBe('US')
+    vi.restoreAllMocks()
+  })
+
+  it('Should offer the address-book country list on the form', async () => {
+    vi.spyOn(countries, 'addressCountryOptions').mockResolvedValue(
+      ADDRESS_BOOK_COUNTRIES
+    )
+
+    const result = await driveHandler(get, { seed: { consignor: STORED } })
+
+    expect(result.view.context.countryItems).toContainEqual({
+      value: 'US',
+      text: 'United States'
+    })
+    vi.restoreAllMocks()
   })
 
   it('Should re-render the form when saving fails', async () => {

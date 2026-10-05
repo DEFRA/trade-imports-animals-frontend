@@ -1,5 +1,9 @@
 import Boom from '@hapi/boom'
-import { COUNTRY_LABELS, COUNTRY_SUBDIVISIONS } from './stub.js'
+import {
+  ADDRESS_COUNTRY_LABELS,
+  COUNTRY_LABELS,
+  COUNTRY_SUBDIVISIONS
+} from './stub.js'
 import { fetchCountries } from './client.js'
 import { isStubMode } from '../../../common/services/mode.js'
 
@@ -7,6 +11,8 @@ let labels = { ...COUNTRY_LABELS }
 let subdivisionLabels = { ...COUNTRY_SUBDIVISIONS.labels }
 let subdivisionToParent = { ...COUNTRY_SUBDIVISIONS.parents }
 let loaded = false
+let addressLabels = { ...ADDRESS_COUNTRY_LABELS }
+let addressLoaded = false
 
 const indexSubDivisions = (countries) => {
   const nextSubdivisionLabels = {}
@@ -110,14 +116,37 @@ export const addressCountries = async () => {
   return [UNITED_KINGDOM, ...Object.values(labels)]
 }
 
-/** The countries an address can be in, keyed by ISO code — the form a copied
- * address-book record stores its country in. Same list and order as
- * `addressCountries`. */
+/** The unfiltered reference-data list, loaded once — the list the INS address
+ * book validates against, not the SPS origin block. Kept apart from
+ * `ensureLoaded` so the origin readers keep their narrower list. */
+const ensureAddressCountriesLoaded = async () => {
+  if (isStubMode() || addressLoaded) {
+    return
+  }
+  try {
+    const countries = await fetchCountries()
+    addressLabels = Object.fromEntries(
+      countries.map(({ code, name }) => [code, name])
+    )
+    addressLoaded = true
+  } catch (err) {
+    throw Boom.serverUnavailable('Reference data unavailable', {
+      dataset: 'countries',
+      cause: err
+    })
+  }
+}
+
+/** The countries a copied address-book record can be in, keyed by ISO code.
+ * Mirrors the INS address book: United Kingdom first, then the full
+ * reference-data list, so a record valid there is valid here. */
 export const addressCountryOptions = async () => {
-  await ensureLoaded()
+  await ensureAddressCountriesLoaded()
   return [
     { code: UNITED_KINGDOM_CODE, name: UNITED_KINGDOM },
-    ...Object.entries(labels).map(([code, name]) => ({ code, name }))
+    ...Object.entries(addressLabels)
+      .filter(([code]) => code !== UNITED_KINGDOM_CODE)
+      .map(([code, name]) => ({ code, name }))
   ]
 }
 
