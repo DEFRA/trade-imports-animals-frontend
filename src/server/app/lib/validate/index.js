@@ -29,7 +29,7 @@ export {
   formatCalendarDate,
   formatDateText,
   formatMomentAsDay,
-  instantFromDateParts,
+  isoDateFromDateParts,
   isRealDate,
   parseDateText,
   SERVICE_TIME_ZONE,

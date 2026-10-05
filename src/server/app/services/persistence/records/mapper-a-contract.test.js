@@ -78,7 +78,7 @@ describe('Mapper A PUT /notifications contract', () => {
       },
       transport: {
         portOfEntry: 'GB ABD',
-        arrivalDate: '2026-12-12T00:00:00.000Z',
+        arrivalDate: '2026-12-12',
         transporter: {
           name: 'García Livestock Transport SL',
           address: {

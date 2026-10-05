@@ -20,8 +20,10 @@ const TIME_DELIMITER = /[T ]/
 const ZONE_DESIGNATOR = /(?:Z|[+-]\d\d(?::?\d\d)?)$/
 
 /**
- * Labels an ISO string that carries no zone as UTC, so it parses to the instant
- * the wire meant rather than to one read off the container's clock.
+ * Labels an ISO string that carries no zone as UTC, so it parses to the value
+ * the wire meant rather than to one read off the container's clock. An arrival
+ * date arrives date-only, as `2026-07-21`, and becomes midnight UTC on that
+ * day — the `Date` the calendar renderer expects.
  *
  * `parseISO` resolves an offset-less value — a date-only `2026-07-21`, or a
  * `2026-07-14T10:00:00` — against the process zone. Both renderers then read

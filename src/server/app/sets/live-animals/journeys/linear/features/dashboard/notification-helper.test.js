@@ -28,6 +28,8 @@ const WEST_OF_UTC = 'America/New_York'
 const EAST_OF_UTC = 'Europe/London'
 
 /** The one day every spelling of 21 July 2026 in this file has to render as. */
+/** An arrival date as the API sends it: a calendar date, no time, no offset. */
+const ARRIVAL_DATE = '2026-07-21'
 const ARRIVAL_DAY = '21 Jul 2026'
 
 describe('promoted dashboard notification helpers', () => {
@@ -76,9 +78,7 @@ describe('promoted dashboard notification helpers', () => {
   })
 
   it('Should render an arrival date as the day the user chose', () => {
-    expect(formatDisplayCalendarDate('2026-07-21T00:00:00.000Z')).toBe(
-      ARRIVAL_DAY
-    )
+    expect(formatDisplayCalendarDate(ARRIVAL_DATE)).toBe(ARRIVAL_DAY)
   })
 
   it('Should render a moment as the UK day it happened', () => {
@@ -92,9 +92,7 @@ describe('promoted dashboard notification helpers', () => {
     // correct one agree — so the zone has to be moved for this to mean
     // anything.
     runInZone(WEST_OF_UTC, () => {
-      expect(formatDisplayCalendarDate('2026-07-21T00:00:00.000Z')).toBe(
-        ARRIVAL_DAY
-      )
+      expect(formatDisplayCalendarDate(ARRIVAL_DATE)).toBe(ARRIVAL_DAY)
       expect(formatDisplayMoment('2026-09-10T23:35:39.455Z')).toBe(
         '11 Sep 2026'
       )
@@ -104,7 +102,7 @@ describe('promoted dashboard notification helpers', () => {
     // cannot see: read as local time it moves forward into the same UTC day
     // west of UTC, and back into the previous one east of it.
     runInZone(EAST_OF_UTC, () => {
-      expect(formatDisplayCalendarDate('2026-07-21')).toBe(ARRIVAL_DAY)
+      expect(formatDisplayCalendarDate(ARRIVAL_DATE)).toBe(ARRIVAL_DAY)
       expect(formatDisplayCalendarDate('2026-07-21T00:00:00')).toBe(ARRIVAL_DAY)
     })
   })

@@ -7,7 +7,7 @@ import {
   formatCalendarDate,
   formatDateText,
   formatMomentAsDay,
-  instantFromDateParts,
+  isoDateFromDateParts,
   parseDateText,
   startOfDayInZone,
   startOfUtcDay
@@ -15,10 +15,12 @@ import {
 
 const utc = (year, month, day) => new Date(Date.UTC(year, month - 1, day))
 
-/** A calendar date as the wire carries it: the chosen day, labelled UTC midnight. */
+/** A calendar date as the wire carries it: the chosen day, with no time and no zone. */
+const ARRIVAL_ISO_DATE = '2026-07-21'
+/** The same day as the `Date` the renderers are handed: midnight UTC. */
 const ARRIVAL_INSTANT = '2026-07-21T00:00:00.000Z'
 const ARRIVAL_DISPLAY = '21 Jul 2026'
-const PADDED_INSTANT = '2026-03-05T00:00:00.000Z'
+const PADDED_ISO_DATE = '2026-03-05'
 /** A moment, late enough in the UTC day that London is already on the next one. */
 const SUBMITTED_INSTANT = '2026-09-10T23:35:39.455Z'
 const SUBMITTED_DISPLAY = '11 Sep 2026'
@@ -147,22 +149,22 @@ describe('#formatDateText', () => {
   })
 })
 
-describe('#instantFromDateParts', () => {
-  it('labels the parts as UTC midnight', () => {
-    expect(instantFromDateParts({ day: 21, month: 7, year: 2026 })).toBe(
-      ARRIVAL_INSTANT
+describe('#isoDateFromDateParts', () => {
+  it('writes the parts as a date with no time and no offset', () => {
+    expect(isoDateFromDateParts({ day: 21, month: 7, year: 2026 })).toBe(
+      ARRIVAL_ISO_DATE
     )
   })
 
   it('zero-pads a single-digit day and month', () => {
-    expect(instantFromDateParts({ day: 5, month: 3, year: 2026 })).toBe(
-      PADDED_INSTANT
+    expect(isoDateFromDateParts({ day: 5, month: 3, year: 2026 })).toBe(
+      PADDED_ISO_DATE
     )
   })
 
   it('accepts string parts, as the answer store holds them', () => {
-    expect(instantFromDateParts({ day: '5', month: '3', year: '2026' })).toBe(
-      PADDED_INSTANT
+    expect(isoDateFromDateParts({ day: '5', month: '3', year: '2026' })).toBe(
+      PADDED_ISO_DATE
     )
   })
 
@@ -174,23 +176,22 @@ describe('#instantFromDateParts', () => {
     ['a missing year', { day: 21, month: 7 }],
     // How an all-blank optional date field arrives: `dateParts` classifies it
     // as `empty` and passes it, so this is the shape the mapper actually sees.
-    // Padding it would send `0000-00-00T00:00:00.000Z` to the API.
+    // Padding it would send `0000-00-00` to the API.
     ['blank parts', { day: '', month: '', year: '' }],
     ['whitespace-only parts', { day: ' ', month: ' ', year: ' ' }],
     ['one blank part', { day: '', month: 7, year: 2026 }]
   ])('returns undefined for %s', (_label, parts) => {
-    expect(instantFromDateParts(parts)).toBeUndefined()
+    expect(isoDateFromDateParts(parts)).toBeUndefined()
   })
 
-  it('produces the same instant west of UTC as it does under UTC', () => {
-    // The zone proof. `new Date(year, month - 1, day).toISOString()` would give
-    // 2026-07-20T04:00:00.000Z here and the right answer under TZ=UTC — wrong
-    // only where nobody looks. Labelling as UTC cannot drift.
-    const underUtc = instantFromDateParts({ day: 21, month: 7, year: 2026 })
-
+  it('produces the same date west of UTC as it does under UTC', () => {
+    // The zone proof. Building the date through a local-components `Date` and
+    // reading it back in UTC would give the right answer under TZ=UTC and a
+    // different one elsewhere — wrong only where nobody looks. Writing the
+    // parts straight out cannot drift.
     runInZone(WEST_OF_UTC, () => {
-      expect(instantFromDateParts({ day: 21, month: 7, year: 2026 })).toBe(
-        underUtc
+      expect(isoDateFromDateParts({ day: 21, month: 7, year: 2026 })).toBe(
+        ARRIVAL_ISO_DATE
       )
     })
   })
