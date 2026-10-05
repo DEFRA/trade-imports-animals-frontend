@@ -16,7 +16,15 @@
       },
       "01a2b3c4-d5e6-4f07-8a89-0b1c2d3e4f5a": "no",
       "89c0d1e2-f3a4-4b5f-8c0b-8d9e0f1a2b3c": {
-        "addressId": "origin-farm"
+        "name": "Origin Farm",
+        "phone": "01632 960000",
+        "email": "origin-farm@example.com",
+        "address": {
+          "addressLine1": "1 Farm Lane",
+          "townOrCity": "Ennis",
+          "postcode": "V95 X7P2",
+          "countryCode": "IE"
+        }
       },
       "9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d": {
         "name": "Astra Rosales",
@@ -86,7 +94,15 @@
       },
       "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": "GB ABD",
       "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
-        "addressId": "animal-and-plant-health-agency"
+        "name": "Animal and Plant Health Agency",
+        "phone": "01632 960000",
+        "email": "animal-and-plant-health-agency@example.com",
+        "address": {
+          "addressLine1": "Woodham Lane",
+          "townOrCity": "Addlestone",
+          "postcode": "KT15 3NB",
+          "countryCode": "GB"
+        }
       },
       "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": "",
       "274c5d6e-7f80-4da4-8123-7de4f5061729": "slaughter",
@@ -180,7 +196,15 @@
         "e45f6a7b-8c9d-4e01-8f23-4a5b6c7d8e9f": "breeding",
         "01a2b3c4-d5e6-4f07-8a89-0b1c2d3e4f5a": "no",
         "89c0d1e2-f3a4-4b5f-8c0b-8d9e0f1a2b3c": {
-          "addressId": "origin-farm"
+          "name": "Origin Farm",
+          "phone": "01632 960000",
+          "email": "origin-farm@example.com",
+          "address": {
+            "addressLine1": "1 Farm Lane",
+            "townOrCity": "Ennis",
+            "postcode": "V95 X7P2",
+            "countryCode": "IE"
+          }
         },
         "9ad1e2f3-a4b5-4c60-8d1c-9e0f1a2b3c4d": {
           "name": "Astra Rosales",
@@ -237,7 +261,15 @@
         },
         "23c4d5e6-f7a8-4b09-8cab-2d3e4f5a6b7c": "GB ABD",
         "f037e8f9-a0b1-4c26-8d72-fe5f60718293": {
-          "addressId": "animal-and-plant-health-agency"
+          "name": "Animal and Plant Health Agency",
+          "phone": "01632 960000",
+          "email": "animal-and-plant-health-agency@example.com",
+          "address": {
+            "addressLine1": "Woodham Lane",
+            "townOrCity": "Addlestone",
+            "postcode": "KT15 3NB",
+            "countryCode": "GB"
+          }
         },
         "10e5f607-1829-4a3b-84c5-06d7e8f9a0b1": "",
         "274c5d6e-7f80-4da4-8123-7de4f5061729": "slaughter",
@@ -576,7 +608,15 @@
       },
       "containsUnweanedAnimals": "no",
       "placeOfOrigin": {
-        "addressId": "origin-farm"
+        "name": "Origin Farm",
+        "phone": "01632 960000",
+        "email": "origin-farm@example.com",
+        "address": {
+          "addressLine1": "1 Farm Lane",
+          "townOrCity": "Ennis",
+          "postcode": "V95 X7P2",
+          "countryCode": "IE"
+        }
       },
       "consignor": {
         "name": "Astra Rosales",
@@ -646,7 +686,15 @@
       },
       "portOfEntry": "GB ABD",
       "contactAddress": {
-        "addressId": "animal-and-plant-health-agency"
+        "name": "Animal and Plant Health Agency",
+        "phone": "01632 960000",
+        "email": "animal-and-plant-health-agency@example.com",
+        "address": {
+          "addressLine1": "Woodham Lane",
+          "townOrCity": "Addlestone",
+          "postcode": "KT15 3NB",
+          "countryCode": "GB"
+        }
       },
       "internalReferenceNumber": "",
       "animalsCertifiedFor": "slaughter",
@@ -721,6 +769,17 @@
     "mapperA": {
       "referenceNumber": "GBN-AG-26-ABC123",
       "reasonForImport": "internalMarket",
+      "placeOfOrigin": {
+        "name": "Origin Farm",
+        "email": "origin-farm@example.com",
+        "phone": "01632 960000",
+        "address": {
+          "addressLine1": "1 Farm Lane",
+          "townOrCity": "Ennis",
+          "postcode": "V95 X7P2",
+          "countryCode": "IE"
+        }
+      },
       "consignor": {
         "name": "Astra Rosales",
         "address": {
@@ -752,6 +811,17 @@
           "addressLine1": "643 Main Street",
           "addressLine2": "Birmingham G1 3AZ",
           "country": "United Kingdom"
+        }
+      },
+      "consignment": {
+        "name": "Animal and Plant Health Agency",
+        "email": "animal-and-plant-health-agency@example.com",
+        "phone": "01632 960000",
+        "address": {
+          "addressLine1": "Woodham Lane",
+          "townOrCity": "Addlestone",
+          "postcode": "KT15 3NB",
+          "countryCode": "GB"
         }
       },
       "cphNumber": "12/345/6789",

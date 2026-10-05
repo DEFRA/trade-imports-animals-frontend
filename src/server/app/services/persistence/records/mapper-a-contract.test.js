@@ -21,23 +21,23 @@ const { values: completeJourneyAnswers } = JSON.parse(
 const UNITED_KINGDOM = 'United Kingdom'
 const CONTRACT_REFERENCE = 'GBN-AG-26-CONTRACT'
 
-// Parties are stored as a literal copy of the picked address, never a
-// reference to it.
+// The fixture stores parties as a literal copy of the picked address, never a
+// reference to it; the payload carries that copy through unchanged.
 const placeOfOriginCopy = {
   name: 'Origin Farm',
-  phone: '01234 567890',
-  email: 'farm@example.com',
+  phone: '01632 960000',
+  email: 'origin-farm@example.com',
   address: {
-    addressLine1: '1 Field Lane',
-    addressLine2: 'Hamlet',
-    townOrCity: 'Lyon',
-    county: 'Rhone',
-    postcode: '69001',
-    countryCode: 'FR'
+    addressLine1: '1 Farm Lane',
+    townOrCity: 'Ennis',
+    postcode: 'V95 X7P2',
+    countryCode: 'IE'
   }
 }
 const contactAddressCopy = {
   name: 'Animal and Plant Health Agency',
+  phone: '01632 960000',
+  email: 'animal-and-plant-health-agency@example.com',
   address: {
     addressLine1: 'Woodham Lane',
     townOrCity: 'Addlestone',
@@ -45,15 +45,10 @@ const contactAddressCopy = {
     countryCode: 'GB'
   }
 }
-const answersWithCopiedParties = {
-  ...completeJourneyAnswers,
-  placeOfOrigin: placeOfOriginCopy,
-  contactAddress: contactAddressCopy
-}
 
 describe('Mapper A PUT /notifications contract', () => {
   test('emits the exact backend payload from a complete canonical fulfilment', () => {
-    const fulfilment = assembleFulfilments(answersWithCopiedParties)
+    const fulfilment = assembleFulfilments(completeJourneyAnswers)
 
     expect(fulfilmentToNotification(fulfilment, CONTRACT_REFERENCE)).toEqual({
       referenceNumber: CONTRACT_REFERENCE,
@@ -149,7 +144,7 @@ describe('Mapper A PUT /notifications contract', () => {
 
   test('emits each party answer as its literal copy with no addressId', () => {
     const payload = fulfilmentToNotification(
-      assembleFulfilments(answersWithCopiedParties),
+      assembleFulfilments(completeJourneyAnswers),
       CONTRACT_REFERENCE
     )
 
