@@ -138,7 +138,7 @@ const post = async (request, h) => {
     addressOptions: options
   })
   if (hasErrors(errors)) {
-    const { journey } = await state.get(request, h)
+    const { journey, answers } = await state.get(request, h)
     return render(
       h,
       journey,
@@ -146,7 +146,12 @@ const post = async (request, h) => {
       options,
       addAddressLinkFor(request, h, journey),
       {
-        errors
+        errors,
+        currentContact: await currentContactOf(
+          request,
+          journey.journeyId,
+          answers
+        )
       }
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
@@ -164,7 +169,7 @@ const post = async (request, h) => {
         : await state.get(request, h)
     },
     async () => {
-      const { journey } = await state.get(request, h)
+      const { journey, answers } = await state.get(request, h)
       return render(
         h,
         journey,
@@ -172,7 +177,12 @@ const post = async (request, h) => {
         options,
         addAddressLinkFor(request, h, journey),
         {
-          recoverableError: true
+          recoverableError: true,
+          currentContact: await currentContactOf(
+            request,
+            journey.journeyId,
+            answers
+          )
         }
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
