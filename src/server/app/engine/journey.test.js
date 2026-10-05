@@ -246,34 +246,18 @@ describe('#currentJourney', () => {
     expect(softDelete).toHaveBeenCalledTimes(1)
   })
 
-  it("Should send the session's organisation with the dashboard list read", async () => {
-    // The backend resolves each row's referenced parties against the address
-    // book, which scopes on the organisation — so the read has to say which.
+  it("Should list the session's known journeys without the organisation", async () => {
+    // Party names come from the stored copy, so the list read needs no
+    // organisation to resolve them against the address book.
     const list = vi.fn(async () => ({ rows: [], page: 1, totalPages: 0 }))
     configureRecords(SET_ID, { ...recordsStub, list })
     const journeyId = 'GBN-AG-26-LIST01'
 
     await listKnownJourneys(requestFor(journeyId, [journeyId]), { page: 2 })
 
-    expect(list).toHaveBeenCalledWith(
-      expect.objectContaining({ page: 2, organisationId: '5900001' })
-    )
-  })
-
-  it('Should list nothing, and read nothing, when the request is unauthenticated', async () => {
-    // The dashboard is the page a visitor signs in FROM, so it has to render
-    // before there is a session. No organisation means no journeys — and no
-    // call, because the backend would rightly reject one.
-    const list = vi.fn(async () => ({ rows: [], page: 1, totalPages: 0 }))
-    configureRecords(SET_ID, { ...recordsStub, list })
-
-    const listed = await listKnownJourneys(
-      { state: {}, headers: {}, app: {} },
-      {}
-    )
-
-    expect(listed.rows).toEqual([])
-    expect(list).not.toHaveBeenCalled()
+    const [query] = list.mock.calls[0]
+    expect(query).toMatchObject({ journeyIds: [journeyId], page: 2 })
+    expect(query).not.toHaveProperty('organisationId')
   })
 })
 

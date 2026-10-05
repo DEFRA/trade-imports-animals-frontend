@@ -10,7 +10,6 @@ import {
 import { currentSetBase, currentSetId } from '../shared/set-context.js'
 import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
 import { buildActor } from '../../common/helpers/actor-helpers.js'
-import { organisationIdOf } from '../../common/helpers/organisation-id.js'
 
 export {
   addressHandshakeTokensCookie,
@@ -144,29 +143,7 @@ export const listKnownJourneys = async (
   { page, sort, referenceNumber } = {}
 ) => {
   const journeyIds = await session.knownJourneyIds(request)
-  // Each row's referenced parties are resolved against the address book while
-  // the list is marshalled. The book scopes on the organisation and has no
-  // authentication of its own, so the read carries the reader's session
-  // organisation with it.
-  const organisationId = organisationIdOf(request)
-
-  // Not the unauthenticated case: `session` is the default strategy, so a
-  // signed-out request is redirected before it reaches this handler. This is
-  // reached when AUTH_ENABLED=false leaves the auth plugin unregistered, or
-  // when a signed-in session carries no organisation. Either way there is no
-  // book to resolve names against, so answer empty rather than start a read
-  // that cannot finish.
-  if (!organisationId) {
-    return { rows: [], page: 1, size: 0, totalElements: 0, totalPages: 0 }
-  }
-
-  return records.list({
-    journeyIds,
-    page,
-    sort,
-    referenceNumber,
-    organisationId
-  })
+  return records.list({ journeyIds, page, sort, referenceNumber })
 }
 
 export const isKnownJourney = async (request, journeyId) =>
