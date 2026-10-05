@@ -74,7 +74,7 @@
     "@hapi/wreck": "18.1.2",
     "@hapi/yar": "11.0.3",
     "@ministryofjustice/frontend": "10.0.1",
-    "accessible-autocomplete": "3.0.1",
+    "accessible-autocomplete": "3.0.2",
     "blankie": "5.0.0",
     "convict": "^6.2.5",
     "convict-format-with-validator": "6.2.0",
