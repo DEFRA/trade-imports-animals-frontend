@@ -25,7 +25,6 @@ const addressRequests = () =>
     .map(({ url }) => url)
     .filter((url) => url.startsWith(addressBookUrl))
 
-/** A party as stored: a literal copy of the picked address, no addressId. */
 const partyCopy = (name, addressLine1, countryCode) => ({
   name,
   phone: '01234 567890',
@@ -180,9 +179,8 @@ describe('real records adapter — paged list', () => {
   })
 })
 
-// Run in real mode so that, were the adapter still to resolve parties against
-// the address book, the request would reach the fetch mock and be seen. Set on
-// the loaded config, because the flag is read through config.
+// Run in real mode so any address-book request would reach the fetch mock and
+// be seen. Set on the loaded config, because the flag is read through config.
 describe('real records adapter — party names from the stored copy', () => {
   const originalMode = config.get('stubMode')
 

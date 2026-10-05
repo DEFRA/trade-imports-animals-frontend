@@ -2,8 +2,6 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { records } from './index.js'
 import { consignor } from '../../../../sets/live-animals/obligations/sections/parties.js'
 
-// Parties are stored as a literal copy, so nothing is resolved against the
-// address book and no lifecycle transition needs an organisation to do so.
 const consignorCopy = {
   name: 'Consignor Ltd',
   address: {

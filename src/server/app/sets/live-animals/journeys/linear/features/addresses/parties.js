@@ -13,9 +13,7 @@ const contactCopy = copyFor({ en: contactEn, cy: contactCy })
  * they share ONE picker (party-picker.controller.js) and the hub builds its
  * rows from the same table.
  *
- * Every party is stored as a copy of the record picked from the book, and the
- * copy is edited in place on `editSlug`. An edit or delete in the book never
- * reaches the notification. */
+ * A party's details are edited in place on `editSlug`. */
 export const PARTIES = [
   {
     id: 'placeOfOrigin',

@@ -4,8 +4,8 @@
  * the id, never a row index.
  *
  * Shaped to match what `client.js` maps a real record to, so nothing
- * downstream can tell stub mode from real mode by the shape it gets — including
- * the `countryCode` a picked record's copy keeps. */
+ * downstream can tell stub mode from real mode by the shape it gets,
+ * `countryCode` included. */
 export const fromRow = (row) => {
   const [
     id,

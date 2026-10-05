@@ -146,8 +146,7 @@ const post = (party) => async (request, h) => {
     })
   }
 
-  // The stored copy keeps no id, so the picker opens with nothing selected.
-  // Saving without choosing keeps the copy already on the notification.
+  // Saving without choosing keeps the address already on the notification.
   if (!selectedId) {
     const { answers } = await state.get(request, h)
     if (answers[party.id]) {

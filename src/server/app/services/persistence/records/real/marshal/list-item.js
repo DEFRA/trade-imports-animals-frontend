@@ -3,8 +3,7 @@ import { mapStatus } from '../status.js'
 /** Maps one NotificationDto (main's /notifications list content shape) to the
  * engine-facing row the dashboard consumes. Display fields drill into the
  * nested notification structure; the journeyId is the notification's
- * referenceNumber, which by dual-write convention matches the fulfilment id.
- * Party names are read from the stored copies. */
+ * referenceNumber, which by dual-write convention matches the fulfilment id. */
 export const marshalListItem = (notification) => ({
   journeyId: notification.referenceNumber,
   status: mapStatus(notification.status),

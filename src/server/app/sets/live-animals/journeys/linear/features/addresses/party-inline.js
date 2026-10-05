@@ -1,9 +1,7 @@
 import { toWireAddress } from '../../../../../../services/address-book/to-wire-address.js'
 
-/** A copy of the picked address-book record, persisted on the notification and
- * in journey answers. No id travels with it: once copied, the record and the
- * notification are independent, so a later edit or delete in the book never
- * reaches the notification. */
+/** The party answer for a picked address-book record, persisted on the
+ * notification and in journey answers. */
 export const answerForInlineParty = (chosen) => ({
   name: chosen.name,
   phone: chosen.address?.telephoneNumber,

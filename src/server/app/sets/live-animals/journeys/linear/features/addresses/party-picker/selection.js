@@ -11,7 +11,5 @@ export const chosenPartyFor = async (orgId, selectedId) => {
   return record && !record.deleted ? record : undefined
 }
 
-/** The answer to commit for a party the trader has just picked — a copy of the
- * record. The stored copy keeps no id, so returning to the picker starts with
- * nothing selected; picking again replaces the copy. */
+/** The answer to commit for a party the trader has just picked. */
 export const answerFor = (_party, chosen) => answerForInlineParty(chosen)

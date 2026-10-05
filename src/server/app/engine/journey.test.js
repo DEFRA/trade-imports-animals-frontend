@@ -247,8 +247,6 @@ describe('#currentJourney', () => {
   })
 
   it("Should list the session's known journeys without the organisation", async () => {
-    // Party names come from the stored copy, so the list read needs no
-    // organisation to resolve them against the address book.
     const list = vi.fn(async () => ({ rows: [], page: 1, totalPages: 0 }))
     configureRecords(SET_ID, { ...recordsStub, list })
     const journeyId = 'GBN-AG-26-LIST01'

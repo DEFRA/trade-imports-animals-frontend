@@ -21,8 +21,6 @@ const { values: completeJourneyAnswers } = JSON.parse(
 const UNITED_KINGDOM = 'United Kingdom'
 const CONTRACT_REFERENCE = 'GBN-AG-26-CONTRACT'
 
-// The fixture stores parties as a literal copy of the picked address, never a
-// reference to it; the payload carries that copy through unchanged.
 const placeOfOriginCopy = {
   name: 'Origin Farm',
   phone: '01632 960000',

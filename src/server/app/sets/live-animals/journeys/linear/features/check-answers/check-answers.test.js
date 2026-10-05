@@ -109,7 +109,6 @@ const CONSIGNOR_NAME = 'Astra Rosales'
 const CONSIGNOR_ADDRESS_ID = 'astra-rosales'
 const STUB_TELEPHONE = '01632 960000'
 
-// A party as the picker stores it: a copy of the address-book record.
 const copyOf = (id) =>
   answerForInlineParty(STUB_BOOK.find((record) => record.id === id))
 
