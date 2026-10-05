@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
+  answerArrivalDetails,
+  answerTransitCountries,
   expectPageEndsWithPrimaryAlone,
   journeyUrl,
   signIn,
@@ -54,7 +56,8 @@ const openTransporterList = async (page) => {
   await startNotification(page)
   await unlockSections(page)
   await page.getByRole('link', { name: copy.portOfEntry.title }).click()
-  await submit(page)
+  await answerArrivalDetails(page)
+  await answerTransitCountries(page)
   await expect(
     page.getByRole('heading', { name: copy.transporters.title })
   ).toBeVisible()

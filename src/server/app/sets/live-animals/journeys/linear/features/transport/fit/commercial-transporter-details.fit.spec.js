@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
+  answerArrivalDetails,
+  answerTransitCountries,
   expectPageEndsWithPrimaryAlone,
   journeyUrl,
   signIn,
@@ -23,7 +25,8 @@ const openCommercialForm = async (page) => {
   await startNotification(page)
   await unlockSections(page)
   await page.getByRole('link', { name: copy.portOfEntry.title }).click()
-  await submit(page)
+  await answerArrivalDetails(page)
+  await answerTransitCountries(page)
   // The govuk button macro renders an href as a link with role="button".
   await page.getByRole('button', { name: copy.transporters.add }).click()
   await page
