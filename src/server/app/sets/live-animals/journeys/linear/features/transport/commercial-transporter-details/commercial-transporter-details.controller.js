@@ -13,6 +13,12 @@ import {
   commercialTransporterDetailsPage as page,
   transporterAddPage
 } from '../page.js'
+import {
+  COMMERCIAL,
+  NEW,
+  rememberTransporter
+} from '../../../../../../../services/transporters/index.js'
+import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
 import { saveTransporterDetails } from '../transporter-details-save.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
@@ -176,29 +182,46 @@ const formErrors = (payload, values) => {
   )
 }
 
-const commercialTransporterRecord = (values) => ({
-  commercialTransporter: {
-    name: values.nameOrOrganisationName,
-    address: {
-      addressLine1: values.addressLine1,
-      addressLine2: values.addressLine2,
-      townOrCity: values.townOrCity,
-      county: values.county,
-      postalOrZipCode: values.postalOrZipCode,
-      country: NORTHERN_IRELAND,
-      telephoneNumber: values.telephoneNumber,
-      emailAddress: values.emailAddress
-    },
-    approvalNumber: values.approvalNumber
+const commercialTransporterParty = (values) => ({
+  name: values.nameOrOrganisationName,
+  approvalNumber: values.approvalNumber,
+  address: {
+    addressLine1: values.addressLine1,
+    addressLine2: values.addressLine2,
+    townOrCity: values.townOrCity,
+    county: values.county,
+    postalOrZipCode: values.postalOrZipCode,
+    country: NORTHERN_IRELAND,
+    telephoneNumber: values.telephoneNumber,
+    emailAddress: values.emailAddress
   }
 })
+
+const commercialTransporterRecord = (values) => ({
+  commercialTransporter: commercialTransporterParty(values)
+})
+
+/** Keep the transporter for the organisation as well as for the notification.
+ *
+ * A transporter that lives only on the notification it was typed into is typed
+ * again on the next one, so the same record joins the organisation's own list
+ * and the transporter list offers it from then on (design release 1). It goes
+ * on as a commercial transporter that has not been approved yet, which is what
+ * the organisation knows about it: nothing here has approved anything. */
+const remember = (request, values) =>
+  rememberTransporter(organisationIdOf(request), {
+    ...commercialTransporterParty(values),
+    type: COMMERCIAL,
+    status: NEW
+  })
 
 const post = saveTransporterDetails({
   trimmedValues,
   formErrors,
   recordProvided,
   record: commercialTransporterRecord,
-  render
+  render,
+  remember
 })
 
 export const routes = kit.pageRoutes(page, { get, post })
