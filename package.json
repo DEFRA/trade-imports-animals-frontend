@@ -71,7 +71,7 @@
     "@hapi/scooter": "^8.0.0",
     "@hapi/validate": "^2.0.1",
     "@hapi/vision": "7.0.3",
-    "@hapi/wreck": "^18.1.0",
+    "@hapi/wreck": "18.1.2",
     "@hapi/yar": "11.0.3",
     "@ministryofjustice/frontend": "10.0.1",
     "accessible-autocomplete": "3.0.1",
