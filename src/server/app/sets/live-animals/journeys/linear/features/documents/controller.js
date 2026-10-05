@@ -28,6 +28,7 @@ import {
 import { loadPage } from './handlers/load-page.js'
 import { fileResponse, uploadDetails } from './handlers/reads/download.js'
 import { documentsPage as page } from './page.js'
+import { validation } from './validate.js'
 import { isStillSettling, scanned, withScanStatus } from './scan/status.js'
 import { settlingSummaryErrors } from './scan/summary-errors.js'
 import {
@@ -37,7 +38,7 @@ import {
 } from './upload-config.js'
 import { render as renderView } from './view-model/render.js'
 
-export const meta = { ...page, collects: ['documents'] }
+export const meta = { ...page, collects: ['documents'], validation }
 const view = `${TEMPLATES}/features/documents/template`
 
 const copy = copyFor({ en, cy })

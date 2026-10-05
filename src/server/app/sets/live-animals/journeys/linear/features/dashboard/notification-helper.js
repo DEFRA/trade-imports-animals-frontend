@@ -1,6 +1,8 @@
-import { format, isValid, parseISO } from 'date-fns'
-
-const LIST_DATE_FORMAT = 'd MMM yyyy'
+import { isValid, parseISO } from 'date-fns'
+import {
+  formatCalendarDate,
+  formatMomentAsDay
+} from '../../../../../../lib/validate/index.js'
 
 export const DEFAULT_NOTIFICATION_SORT = 'arrivalDate,desc'
 
@@ -11,14 +13,62 @@ export const NOTIFICATION_SORT_OPTIONS = [
   { value: 'createdAt,asc', text: 'Date created (oldest to newest)' }
 ]
 
-export const formatDisplayDate = (value) => {
+/** The delimiters date-fns accepts between the date and the time. */
+const TIME_DELIMITER = /[T ]/
+
+/** A trailing `Z`, `+01`, `+0100` or `+01:00` on the time part. */
+const ZONE_DESIGNATOR = /(?:Z|[+-]\d\d(?::?\d\d)?)$/
+
+/**
+ * Labels an ISO string that carries no zone as UTC, so it parses to the instant
+ * the wire meant rather than to one read off the container's clock.
+ *
+ * `parseISO` resolves an offset-less value — a date-only `2026-07-21`, or a
+ * `2026-07-14T10:00:00` — against the process zone. Both renderers then read
+ * UTC components, so east of UTC the day arrives already shifted back: in a
+ * `Europe/London` container during BST, `2026-07-21` renders as `20 Jul 2026`.
+ * The zone the process happens to run in is not part of the value.
+ *
+ * Anything that is not a date at all is left to fail parsing as before.
+ * @param {string} value
+ * @returns {string} The value with an explicit UTC designator.
+ */
+const asUtcInstant = (value) => {
+  const [, time] = value.split(TIME_DELIMITER)
+
+  if (time === undefined) {
+    return `${value}T00:00:00Z`
+  }
+
+  return ZONE_DESIGNATOR.test(time) ? value : `${value}Z`
+}
+
+const displayDate = (value, formatter) => {
   if (!value) {
     return ''
   }
 
-  const date = typeof value === 'string' ? parseISO(value) : value
-  return isValid(date) ? format(date, LIST_DATE_FORMAT) : ''
+  const date = typeof value === 'string' ? parseISO(asUtcInstant(value)) : value
+  return isValid(date) ? formatter(date) : ''
 }
+
+/**
+ * A day the user chose — an arrival date. Rendered from its own UTC
+ * components, because the value already is the day.
+ * @param {string|Date} value
+ */
+export const formatDisplayCalendarDate = (value) =>
+  displayDate(value, formatCalendarDate)
+
+/**
+ * A moment that happened — created, submitted. Rendered as the day it
+ * happened in the service's zone, not the container's ambient `TZ`, which
+ * differs between production, CI and a laptop and can be dropped. Same class
+ * of environment dependency EUDPA-282 removed from the backend.
+ * @param {string|Date} value
+ */
+export const formatDisplayMoment = (value) =>
+  displayDate(value, formatMomentAsDay)
 
 const commodityDisplayValue = (commodity) =>
   commodity.name ??

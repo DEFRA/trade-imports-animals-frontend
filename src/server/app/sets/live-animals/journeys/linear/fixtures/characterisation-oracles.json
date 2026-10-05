@@ -311,6 +311,10 @@
           "inScope": true,
           "status": "mandatory"
         },
+        "d34e5f6a-7b8c-4d9e-0f1a-2b3c4d5e6f7a": {
+          "inScope": true,
+          "status": "optional"
+        },
         "b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e": {
           "inScope": true,
           "status": "mandatory"
@@ -760,7 +764,7 @@
       "purposeInInternalMarket": "breeding",
       "destinationCountry": "IE",
       "portOfExit": "GB DOV",
-      "exitDate": "2026-12-20",
+      "exitDate": "2026-12-20T00:00:00.000Z",
       "origin": {
         "countryCode": "FR",
         "requiresRegionCode": "yes",
@@ -773,7 +777,7 @@
       },
       "transport": {
         "portOfEntry": "GB ABD",
-        "arrivalDate": "2026-12-12",
+        "arrivalDate": "2026-12-12T00:00:00.000Z",
         "transporter": {
           "name": "García Livestock Transport SL",
           "address": {
@@ -883,6 +887,10 @@
         "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": {
           "inScope": true,
           "status": "mandatory"
+        },
+        "d34e5f6a-7b8c-4d9e-0f1a-2b3c4d5e6f7a": {
+          "inScope": true,
+          "status": "optional"
         },
         "b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e": {
           "inScope": true,
@@ -1124,6 +1132,10 @@
           "inScope": true,
           "status": "mandatory"
         },
+        "d34e5f6a-7b8c-4d9e-0f1a-2b3c4d5e6f7a": {
+          "inScope": true,
+          "status": "optional"
+        },
         "b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e": {
           "inScope": true,
           "status": "mandatory"
@@ -1361,6 +1373,10 @@
         "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": {
           "inScope": true,
           "status": "mandatory"
+        },
+        "d34e5f6a-7b8c-4d9e-0f1a-2b3c4d5e6f7a": {
+          "inScope": true,
+          "status": "optional"
         },
         "b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e": {
           "inScope": true,
@@ -1681,6 +1697,10 @@
         "a01b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d": {
           "inScope": true,
           "status": "mandatory"
+        },
+        "d34e5f6a-7b8c-4d9e-0f1a-2b3c4d5e6f7a": {
+          "inScope": true,
+          "status": "optional"
         },
         "b12c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e": {
           "inScope": true,

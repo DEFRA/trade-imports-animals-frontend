@@ -77,9 +77,9 @@ const cases = [
     collects: origin.meta.collects,
     handler: postHandlerOf(origin),
     payload: {
-      countryOfOrigin: 'FR',
+      countryOfOrigin: 'ES-CN',
       regionOfOriginCodeRequirement: 'yes',
-      regionOfOriginCodeSuffix: '75',
+      regionOfOriginCodeSuffix: '35',
       internalReferenceNumber: 'Imports456GB'
     }
   },

@@ -6,7 +6,11 @@ import {
   requiredMaxText
 } from '../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../shared/copy.js'
-import * as countries from '../../../../../../services/countries/index.js'
+import {
+  isSubdivisionCode,
+  originCountryOptions,
+  parentCountryCode
+} from '../../../../../../services/countries/index.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 
@@ -50,7 +54,7 @@ const formValuesFrom = (source) =>
   )
 
 export const prefixFor = (countryOfOrigin) =>
-  (countryOfOrigin ?? '').trim().toUpperCase()
+  parentCountryCode((countryOfOrigin ?? '').trim()).toUpperCase()
 
 // Also forgives a user who typed the prefix themselves.
 const suffixOf = (prefix, code) => {
@@ -90,9 +94,7 @@ const regionCodeSuffixRule = (requirement) =>
 // separately, so a user waiting on paperwork can save what they know and
 // come back.
 const fields = async (values, { stored } = {}) => {
-  const countryValues = (await countries.originCountries()).map(
-    ({ value }) => value
-  )
+  const countryValues = (await originCountryOptions()).map(({ value }) => value)
   return compose(
     oneOf('countryOfOrigin', countryValues, countryMessage(stored)),
     oneOf('regionOfOriginCodeRequirement', REGION_CODE_REQUIREMENT_ANSWERS),
@@ -121,7 +123,11 @@ const normalise = (values) => ({
 // country still matching, or the whole stored code cascades into a 5-char field.
 const blanks = (field) =>
   field === 'countryOfOrigin'
-    ? ['countryOfOrigin', REGION_CODE_SUFFIX_FIELD]
+    ? [
+        'countryOfOrigin',
+        'countryOfOriginSubdivisionCode',
+        REGION_CODE_SUFFIX_FIELD
+      ]
     : [field]
 
 export const validation = pageValidation({
@@ -129,7 +135,8 @@ export const validation = pageValidation({
   normalise,
   fromPayload: formValuesFrom,
   fromAnswers: (answers) => ({
-    countryOfOrigin: answers.countryOfOrigin ?? '',
+    countryOfOrigin:
+      answers.countryOfOriginSubdivisionCode || answers.countryOfOrigin || '',
     regionOfOriginCodeRequirement: answers.regionOfOriginCodeRequirement ?? '',
     [REGION_CODE_SUFFIX_FIELD]: suffixOf(
       prefixFor(answers.countryOfOrigin),
@@ -140,6 +147,9 @@ export const validation = pageValidation({
   blanks,
   toAnswers: (values) => ({
     countryOfOrigin: values.countryOfOrigin,
+    countryOfOriginSubdivisionCode: isSubdivisionCode(values.countryOfOrigin)
+      ? values.countryOfOrigin
+      : '',
     regionOfOriginCodeRequirement: values.regionOfOriginCodeRequirement,
     regionOfOriginCode: regionCodeFrom(
       values.countryOfOrigin,

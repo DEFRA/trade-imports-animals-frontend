@@ -28,6 +28,7 @@ import { buildSections } from './view-model/index.js'
 import { REVIEW_CARDS } from './view-model/incomplete-cards.js'
 import { copy as copyEn } from './copy/copy.en.js'
 import { copy as transportCopy } from '../transport/copy/copy.en.js'
+import { copy as documentsEn } from '../documents/copy/copy.en.js'
 
 const getHandler = routes.find((route) => route.method === 'GET').handler
 const postHandler = routes.find((route) => route.method === 'POST').handler
@@ -1521,6 +1522,96 @@ describe(`${SUITE} — stale stored answers`, () => {
 
     expect(card.error).toBeNull()
     expect(context.errorSummary).toBeNull()
+  })
+})
+
+// Document scan verdicts are threaded onto the uploaded-documents card
+// through two paths that renderNotificationView wires up separately: the GET
+// path names a REJECTED scan (a permanent verdict on a stored file), and the
+// POST refuse path additionally names a PENDING scan (a mid-upload) via
+// extraCardErrors. Neither is exercised by the pure-function refusal tests —
+// those hit the helpers, not the controller's spread order or option
+// threading, so this block pins the controller-level wiring.
+describe(`${SUITE} — document scan card errors`, () => {
+  setupCheckAnswersEngine()
+
+  // Stub-driven scan verdicts: filename matches the stub's rules —
+  // `virus-*` → REJECTED, `*never-scans*` → PENDING, otherwise → COMPLETED.
+  const REJECTED_FILENAME = 'virus-alert.pdf'
+  const PENDING_FILENAME = 'notes-never-scans.pdf'
+
+  const scanDoc = (overrides = {}) => ({
+    accompanyingDocumentType: 'VETERINARY_HEALTH_CERTIFICATE',
+    accompanyingDocumentAttachmentType: 'PDF',
+    accompanyingDocumentReference: 'GBHC1234567890',
+    accompanyingDocumentDateOfIssue: { day: '12', month: '12', year: '2025' },
+    uploadId: 'upload-1',
+    filename: 'clean.pdf',
+    ...overrides
+  })
+
+  const seedWithDoc = (filename) => ({
+    ...fullSeed,
+    documents: [scanDoc({ filename })]
+  })
+
+  // The GET path renders documentsRejectedCardErrors on the docs card, but
+  // only for a REJECTED scan — a PENDING is transient so must not surface.
+  it('Should name the uploaded-documents card when a stored document was rejected by the scan', async () => {
+    const card = cardByTitle(
+      await sectionsFor(seedWithDoc(REJECTED_FILENAME)),
+      UPLOADED_DOCUMENTS_CARD
+    )
+
+    expect(card.error).toBe(documentsEn.errors.someRejected)
+  })
+
+  it('Should not name the uploaded-documents card for a still-scanning document on GET', async () => {
+    const card = cardByTitle(
+      await sectionsFor(seedWithDoc(PENDING_FILENAME)),
+      UPLOADED_DOCUMENTS_CARD
+    )
+
+    expect(card.error).toBeNull()
+  })
+
+  // The POST refuse path threads extraCardErrors (documentScanCardErrors)
+  // through to the docs card, so a still-scanning document is named when
+  // Continue is refused — not on the read path, only on the write.
+  it('Should name the uploaded-documents card as still scanning when Continue is refused with a pending document', async () => {
+    const { view, response } = await driveHandler(postHandler, {
+      seed: seedWithDoc(PENDING_FILENAME)
+    })
+    const card = cardByTitle(view.context.sections, UPLOADED_DOCUMENTS_CARD)
+
+    expect(response.statusCode).toBe(400)
+    expect(card.error).toBe(documentsEn.errors.someStillScanning)
+  })
+
+  // On a rejected document, the docs card already carries the REJECTED
+  // verdict from the GET-path errors — the POST refuse path must not
+  // overwrite it with a still-scanning message, since a rejected file
+  // trumps a pending one.
+  it('Should keep the rejected message on the uploaded-documents card when Continue is refused with a rejected document', async () => {
+    const { view, response } = await driveHandler(postHandler, {
+      seed: seedWithDoc(REJECTED_FILENAME)
+    })
+    const card = cardByTitle(view.context.sections, UPLOADED_DOCUMENTS_CARD)
+
+    expect(response.statusCode).toBe(400)
+    expect(card.error).toBe(documentsEn.errors.someRejected)
+  })
+
+  // A read-only submitted notification never carries a scan error — the
+  // errors are gated on the read path by the readOnly branch.
+  it('Should not carry any scan card error on a submitted notification', async () => {
+    const { context } = await viewForStatus(
+      SUBMITTED,
+      seedWithDoc(REJECTED_FILENAME)
+    )
+    const card = cardByTitle(context.sections, UPLOADED_DOCUMENTS_CARD)
+
+    expect(card.error).toBeNull()
   })
 })
 

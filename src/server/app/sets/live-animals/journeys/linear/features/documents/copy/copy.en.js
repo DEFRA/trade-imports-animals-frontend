@@ -135,6 +135,12 @@ export const copy = {
     fileType: (allowedTypesHint) =>
       `The selected file must be a ${allowedTypesHint}`,
     oversize: (maxSizeLabel) =>
-      `The selected file must be smaller than ${maxSizeLabel}`
+      `The selected file must be smaller than ${maxSizeLabel}`,
+    someNoLongerValid:
+      'One or more of your saved documents are no longer valid. Review the list before you continue.',
+    someStillScanning:
+      'One or more of your documents are still being scanned. Wait a moment and try again.',
+    someRejected:
+      'One or more of your documents were rejected. Return to Documents to remove and re-upload.'
   }
 }

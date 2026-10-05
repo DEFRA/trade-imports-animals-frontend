@@ -1,19 +1,8 @@
+import { instantFromDateParts } from '../../../../../lib/validate/index.js'
 import { projectAnswers } from '../../../../../bridge/fulfilments/index.js'
 import { party } from '../../../../address-book/index.js'
 import { decodePersistedFulfilment } from '../../fulfilment-codec/index.js'
 import { SUBMITTED } from '../../../../../engine/persistence/records.js'
-
-const YEAR_DIGITS = 4
-const MONTH_DIGITS = 2
-const DAY_DIGITS = 2
-
-export const isoFromDateParts = (parts) => {
-  const { day, month, year } = parts ?? {}
-  if (day == null || month == null || year == null) {
-    return null
-  }
-  return `${String(year).padStart(YEAR_DIGITS, '0')}-${String(month).padStart(MONTH_DIGITS, '0')}-${String(day).padStart(DAY_DIGITS, '0')}`
-}
 
 /** Dashboard list names: references resolve from the stub book; inline answers
  * already carry the name. Mirrors `real/marshal/list-item.js`, which resolves the
@@ -47,7 +36,9 @@ export const marshalListItem = async (document) => {
     reference: document.id,
     commodity: commodityName ? { name: commodityName } : null,
     originCountryCode: answers.countryOfOrigin ?? null,
-    arrivalDate: isoFromDateParts(answers.arrivalDateAtPort),
+    // The rest of this row uses null for absent, so the helper's undefined is
+    // mapped across rather than changing the shape the stub has always sent.
+    arrivalDate: instantFromDateParts(answers.arrivalDateAtPort) ?? null,
     consignorName: await nameOf(answers.consignor, status),
     consigneeName: await nameOf(answers.consignee, status)
   }

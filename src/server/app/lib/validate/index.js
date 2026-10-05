@@ -26,9 +26,13 @@ export {
 export {
   addUtcDays,
   addUtcMonths,
+  formatCalendarDate,
   formatDateText,
+  formatMomentAsDay,
+  instantFromDateParts,
   isRealDate,
   parseDateText,
+  SERVICE_TIME_ZONE,
   startOfDayInZone,
   startOfUtcDay
 } from './calendar.js'

@@ -16,7 +16,7 @@ const uploadDetails = {
   bytes: Buffer.from('pdf-bytes'),
   documentType: 'ITAHC',
   documentReference: 'GBHC1234567890',
-  dateOfIssue: '2025-12-12',
+  dateOfIssue: '2025-12-12T00:00:00.000Z',
   maxFileSize: 10000000,
   mimeTypes: [PDF_CONTENT_TYPE]
 }
@@ -39,7 +39,7 @@ describe('#documentUploads', () => {
       expect(JSON.parse(initiateOptions.body)).toEqual({
         documentType: 'ITAHC',
         documentReference: 'GBHC1234567890',
-        dateOfIssue: '2025-12-12',
+        dateOfIssue: '2025-12-12T00:00:00.000Z',
         maxFileSize: 10000000,
         mimeTypes: [PDF_CONTENT_TYPE]
       })

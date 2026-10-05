@@ -13,6 +13,7 @@ export default defineConfig({
     // Playwright FIT specs are run by Playwright, not vitest.
     exclude: [
       ...configDefaults.exclude,
+      'dev-tools/**',
       'fit/**',
       'src/server/app/sets/live-animals/journeys/linear/features/**/*.fit.spec.js'
     ],

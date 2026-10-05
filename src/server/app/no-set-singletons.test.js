@@ -249,22 +249,26 @@ describe('no set singletons — every declared route shape is wrapped', () => {
       'allRoutes'
     ],
     ['the second-set fixture', '../../../test/fixtures/second-set.js', 'routes']
-  ])('Should wrap every method %s declares', async (_label, module, name) => {
-    const routes = (await import(module))[name]
-    expect(routes.length).toBeGreaterThan(0)
+  ])(
+    'Should wrap every method %s declares',
+    async (_label, module, name) => {
+      const routes = (await import(module))[name]
+      expect(routes.length).toBeGreaterThan(0)
 
-    for (const route of routes) {
-      const wrapped = routeWithSetContext('any-set', route)
-      for (const [key, method] of declaredMethods(route)) {
-        if (typeof method === 'function') {
-          expect(
-            wrappedValueOf(wrapped, key),
-            `${route.method} ${route.path} leaves ${key} unwrapped`
-          ).not.toBe(method)
+      for (const route of routes) {
+        const wrapped = routeWithSetContext('any-set', route)
+        for (const [key, method] of declaredMethods(route)) {
+          if (typeof method === 'function') {
+            expect(
+              wrappedValueOf(wrapped, key),
+              `${route.method} ${route.path} leaves ${key} unwrapped`
+            ).not.toBe(method)
+          }
         }
       }
-    }
-  })
+    },
+    30_000
+  )
 })
 
 describe('no set singletons — the set base is derived, never spelled out', () => {

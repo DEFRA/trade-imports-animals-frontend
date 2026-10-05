@@ -4,6 +4,7 @@ import {
 } from '../../../../../../bridge/fulfilment-bindings.js'
 import {
   countryOfOrigin,
+  countryOfOriginSubdivisionCode,
   internalReferenceNumber,
   regionCode,
   regionCodeRequirement
@@ -11,6 +12,10 @@ import {
 
 export const evaluationBindings = feature('origin', [
   scalar({ field: 'countryOfOrigin', obligation: countryOfOrigin }),
+  scalar({
+    field: 'countryOfOriginSubdivisionCode',
+    obligation: countryOfOriginSubdivisionCode
+  }),
   scalar({
     field: 'regionOfOriginCodeRequirement',
     obligation: regionCodeRequirement
