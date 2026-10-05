@@ -87,6 +87,14 @@ const post = (party) => async (request, h) => {
     return h.redirect(returnHref(request, party))
   }
 
+  const { journey, answers } = await state.get(request, h)
+  // Same guard as get: an edit can only change a copy the picker made.
+  if (!answers[party.id]) {
+    return h.redirect(
+      kit.withChangeContext(request, pagePath(journey.journeyId, party.slug))
+    )
+  }
+
   const values = valuesFrom(payload)
   const countries = await addressCountryOptions()
   const { errors, value } = validate(
@@ -94,7 +102,6 @@ const post = (party) => async (request, h) => {
     values
   )
   if (errors) {
-    const { journey } = await state.get(request, h)
     return (await render(request, h, journey, party, { values, errors })).code(
       HTTP_STATUS_BAD_REQUEST
     )
@@ -104,15 +111,13 @@ const post = (party) => async (request, h) => {
     async () => {
       await state.commit(request, h, { [party.id]: partyFrom(value) })
     },
-    async () => {
-      const { journey } = await state.get(request, h)
-      return (
+    async () =>
+      (
         await render(request, h, journey, party, {
           values,
           recoverableError: true
         })
       ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
-    }
   )
   if (failure) {
     return failure

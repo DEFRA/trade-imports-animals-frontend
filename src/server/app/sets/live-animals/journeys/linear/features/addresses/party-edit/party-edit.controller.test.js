@@ -106,6 +106,18 @@ describe.each(ALL_PARTIES)('Edit $id address details', (party) => {
     })
   })
 
+  it('Should send the trader to pick an address, saving nothing, when a save arrives with no copy', async () => {
+    const result = await driveHandler(post, {
+      payload: FORM,
+      query: { change: '1' }
+    })
+
+    expect(result.response).toEqual({
+      redirect: `${pagePath(result.journeyId, party.slug)}?change=1`
+    })
+    expect(result.after[party.id]).toBeUndefined()
+  })
+
   it('Should save the edited copy and return to where the trader came from', async () => {
     const result = await driveHandler(post, {
       seed: { [party.id]: STORED },
