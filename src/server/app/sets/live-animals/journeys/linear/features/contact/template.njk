@@ -33,7 +33,10 @@
     {# Below the radios so the page heading (the legend) stays the first heading. #}
     {% if currentContact %}
       {{ govukSummaryList({
-        card: { title: { text: copy.current.title } },
+        card: {
+          title: { text: copy.current.title },
+          attributes: { role: "region", "aria-label": copy.current.title }
+        },
         rows: [
           {
             key: { text: currentContact.name },
