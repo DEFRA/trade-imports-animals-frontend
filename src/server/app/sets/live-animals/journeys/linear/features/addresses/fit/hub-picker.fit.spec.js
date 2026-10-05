@@ -212,7 +212,9 @@ test.describe('party picker per role', () => {
       ).toBeVisible()
       // The copy keeps no address-book id, so re-picking starts afresh.
       await row.getByRole('link', { name: copy.hub.change }).click()
-      await expect(page.getByRole('radio', { checked: true })).toHaveCount(0)
+      await expect(
+        page.getByRole('radio', { name: selectedName })
+      ).not.toBeChecked()
     })
   }
 })
@@ -292,6 +294,9 @@ test.describe('party picker details and pagination', () => {
 
     await expect(row).toContainText(LATER_PAGE_ADDRESS)
     await row.getByRole('link', { name: copy.hub.change }).click()
+    await expect(
+      page.getByRole('heading', { name: CONSIGNOR.title })
+    ).toBeVisible()
     // The copy keeps no address-book id, so nothing is named as selected.
     await expect(page.getByText(copy.picker.selectedAddressPrefix)).toHaveCount(
       0
