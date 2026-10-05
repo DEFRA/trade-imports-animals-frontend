@@ -194,6 +194,7 @@ describe.each(ALL_PARTIES)('Edit $id address details', (party) => {
 describe('Edit address details — where the trader returns to', () => {
   beforeAll(configure)
   beforeEach(() => store.clear())
+  afterEach(() => vi.restoreAllMocks())
 
   const consignor = PARTIES.find((party) => party.id === 'consignor')
   const get = handlerFor('GET', consignor)
@@ -248,7 +249,6 @@ describe('Edit address details — where the trader returns to', () => {
       redirect: pagePath(result.journeyId, 'addresses')
     })
     expect(result.after.consignor.address.countryCode).toBe('US')
-    vi.restoreAllMocks()
   })
 
   it('Should offer the address-book country list on the form', async () => {
@@ -262,7 +262,6 @@ describe('Edit address details — where the trader returns to', () => {
       value: 'US',
       text: 'United States'
     })
-    vi.restoreAllMocks()
   })
 
   it('Should re-render the form when saving fails', async () => {
@@ -281,6 +280,5 @@ describe('Edit address details — where the trader returns to', () => {
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     expect(result.view.context.recoverableError).toBe(true)
     expect(result.after.consignor).toEqual(STORED)
-    vi.restoreAllMocks()
   })
 })
