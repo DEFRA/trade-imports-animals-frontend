@@ -150,6 +150,13 @@ export const addressCountryOptions = async () => {
   ]
 }
 
+/** Display name for an address's country, from the same list the address can
+ * be in — not `originLabel`, which only knows the SPS origin block. Falls back
+ * to the code. */
+export const addressCountryLabel = async (code) =>
+  (await addressCountryOptions()).find((option) => option.code === code)
+    ?.name ?? code
+
 /** The ISO code for a country's display name (cv-011).
  *
  * Address forms collect a country by name; the address book keys on the code.
