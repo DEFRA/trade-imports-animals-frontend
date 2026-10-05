@@ -49,13 +49,15 @@ const addressSummary = (address) =>
 
 /** The contact already copied onto this notification, with the link to edit
  * its details here — the picker below only ever replaces it. */
-const currentContactOf = async (journeyId, answers) => {
+const currentContactOf = async (request, journeyId, answers) => {
   const display = await toDisplayParty(answers.contactAddress)
   return display
     ? {
         name: display.name,
         summary: addressSummary(display.address),
-        editHref: partyEditHref(journeyId, CONTACT_PARTY, page.slug)
+        editHref: partyEditHref(journeyId, CONTACT_PARTY, page.slug, {
+          change: kit.changeContext(request)
+        })
       }
     : null
 }
@@ -119,7 +121,11 @@ const get = async (request, h) => {
       errors,
       recoverableError,
       handshakeError,
-      currentContact: await currentContactOf(journey.journeyId, answers)
+      currentContact: await currentContactOf(
+        request,
+        journey.journeyId,
+        answers
+      )
     }
   )
 }

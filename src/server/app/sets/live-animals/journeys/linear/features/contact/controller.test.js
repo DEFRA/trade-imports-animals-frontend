@@ -97,6 +97,18 @@ describe('GET contact — select an address from the book', () => {
     })
   })
 
+  it('Should carry the change context onto the current contact edit link', async () => {
+    const held = { name: 'Held Contact', address: { countryCode: 'GB' } }
+    const result = await driveHandler(get, {
+      seed: { contactAddress: held },
+      query: { change: '1' }
+    })
+
+    expect(result.view.context.currentContact.editHref).toBe(
+      `${pagePath(result.journeyId, 'consignment/contact/edit')}?return=consignment%2Fcontact%2Fselect&change=1`
+    )
+  })
+
   it('Should show no current contact when none has been picked', async () => {
     const result = await driveHandler(get)
 
