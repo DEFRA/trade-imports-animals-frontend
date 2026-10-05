@@ -119,7 +119,7 @@
     "postcss-load-config": "6.0.1",
     "postcss-loader": "8.2.1",
     "prettier": "3.9.9",
-    "puppeteer": "25.6.0",
+    "puppeteer": "25.12.0",
     "sass": "1.100.0",
     "sass-embedded": "1.100.0",
     "sass-loader": "17.0.0",
