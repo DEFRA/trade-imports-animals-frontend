@@ -3,7 +3,7 @@ import { CYA_SLUG } from '../../../../../../../../../shared/kit.js'
 import { copy as en } from '../../../copy/copy.en.js'
 import { copy as cy } from '../../../copy/copy.cy.js'
 import { addressesPage } from '../../../../addresses/page.js'
-import { partyOf } from '../../../../addresses/parties.js'
+import { PARTIES } from '../../../../addresses/parties.js'
 import { partyEditHref } from '../../../../addresses/party-edit/edit-href.js'
 import { cphApplies } from '../../applicability.js'
 import { cardAction, editableActions } from '../../rows/change-link.js'
@@ -11,14 +11,6 @@ import { partyRow } from '../../rows/party-row.js'
 import { row } from '../../rows/summary-row.js'
 
 const copy = copyFor({ en, cy })
-
-const ROLE_IDS = [
-  'placeOfOrigin',
-  'consignor',
-  'consignee',
-  'importer',
-  'placeOfDestination'
-]
 
 /** `parties` carries the stored party copies in display shape
  * ({@link partiesFromStoredAnswers}). `partyErrors` is computed once by the
@@ -47,12 +39,12 @@ export const rolesAndAddressesCard = (
     )
   ),
   rows: [
-    ...ROLE_IDS.map((id) =>
-      partyRow(copy.rows[id], parties[id], {
-        errorText: partyErrors[id],
+    ...PARTIES.map((party) =>
+      partyRow(copy.rows[party.id], parties[party.id], {
+        errorText: partyErrors[party.id],
         editHref: readOnly
           ? undefined
-          : partyEditHref(journeyId, partyOf(id), CYA_SLUG)
+          : partyEditHref(journeyId, party, CYA_SLUG)
       })
     ),
     ...(cphApplies(answers)
