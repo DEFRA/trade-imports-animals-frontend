@@ -45,11 +45,11 @@ mounted and only surfaces when a second arrives, which is why each is pinned by
 **1. Every `configure*` seam takes the set id first.** Each stores its value
 per set behind `setKeyed`, and each read accessor resolves through
 `currentSetId()`. A seam that kept one module-level variable would let the
-second registration overwrite the first. The nine seams are
+second registration overwrite the first. The eight seams are
 `configureObligationSet`, `configureFulfilmentRegistry`,
-`configureCommodityReference`, `configureAnswersForRead`,
-`configureReadyForCheckYourAnswers`, `configureJourneyFlow`, `buildDispatch`,
-`configureRecords` and `configureSession`.
+`configureCommodityReference`, `configureReadyForCheckYourAnswers`,
+`configureJourneyFlow`, `buildDispatch`, `configureRecords` and
+`configureSession`.
 
 **2. A request resolves its set from the owning plugin realm, never from the
 URL.** Each gateway installs an `onPreAuth` extension that calls

@@ -81,7 +81,6 @@ const SEAMS = [
   'configureObligationSet',
   'configureFulfilmentRegistry',
   'configureCommodityReference',
-  'configureAnswersForRead',
   'configureReadyForCheckYourAnswers',
   'configureJourneyFlow',
   'buildDispatch',
