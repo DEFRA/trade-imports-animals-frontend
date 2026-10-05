@@ -92,6 +92,7 @@ const MISSING_HTML =
   '<span class="govuk-visually-hidden">Missing</span>' +
   '</span>'
 const CONSIGNOR_ERROR = 'Correct the address details for the consignor'
+const CONTACT_ERROR = 'Correct the contact address details for this consignment'
 const IMPORT_DETAILS_INCOMPLETE = 'Complete import details'
 const ADDRESSES_INCOMPLETE = 'Complete roles and addresses'
 const SPECIES_INCOMPLETE = 'Complete species details'
@@ -1100,7 +1101,7 @@ describe(`${SUITE} — roles whose copy breaks the rules`, () => {
     })
 
     expect(summary.errorList.map((entry) => entry.text)).toEqual([
-      'Correct the contact address details for this consignment'
+      CONTACT_ERROR
     ])
   })
 
@@ -1137,6 +1138,21 @@ describe(`${SUITE} — roles whose copy breaks the rules`, () => {
     expect(view.context.errorSummary.errorList[0].href).toBe(
       `${pagePath(journeyId, 'consignors/edit')}?return=notification-view`
     )
+  })
+
+  it('Should link a contact address in error to its edit page, not its card', async () => {
+    const { view, journeyId } = await driveHandler(getHandler, {
+      seed: { ...fullSeed, contactAddress: BROKEN_COPY }
+    })
+
+    expect(view.context.errorSummary.errorList).toEqual([
+      {
+        text: CONTACT_ERROR,
+        href: `${pagePath(journeyId, 'consignment/contact/edit')}?return=notification-view`
+      }
+    ])
+    const card = cardByTitle(view.context.sections, CONTACT_ADDRESS_CARD)
+    expect(card.rows[0].value.html).toContain(CONTACT_ERROR)
   })
 
   it('Should leave focus where it is when the page is merely visited', async () => {

@@ -40,12 +40,16 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
  * outstanding. A role in error is a more particular statement than "complete
  * this card", so it leads; the cards follow in page order. An unfinished card
  * is somewhere on this page, so its entry is an anchor; a party's entry links
- * to the page that edits its address, returning here. `cardAnchorHref` tells
- * the two apart — the keys never collide, card ids and party ids being drawn
- * from different lists.
+ * to the page that edits its address, returning here.
+ *
+ * Party errors are keyed `party:<id>` here because `contactAddress` is both a
+ * party id and a card id: unprefixed, the card's message would overwrite the
+ * party's and the party entry would link to the card anchor.
  *
  * Focus is only moved to the summary when the user has just been refused, so a
  * plain visit does not yank the caret out of the page heading. */
+const PARTY_KEY_PREFIX = 'party:'
+
 const reviewErrorSummary = (
   journeyId,
   cardErrors,
@@ -53,13 +57,24 @@ const reviewErrorSummary = (
   disableAutoFocus
 ) =>
   errorSummary(
-    { ...partyErrors, ...cardErrors },
+    {
+      ...Object.fromEntries(
+        Object.entries(partyErrors).map(([id, text]) => [
+          `${PARTY_KEY_PREFIX}${id}`,
+          text
+        ])
+      ),
+      ...cardErrors
+    },
     {
       href: (key) =>
-        cardAnchorHref(key) ??
-        (partyOf(key)
-          ? partyEditHref(journeyId, partyOf(key), CYA_SLUG)
-          : changeHref(journeyId, key)),
+        key.startsWith(PARTY_KEY_PREFIX)
+          ? partyEditHref(
+              journeyId,
+              partyOf(key.slice(PARTY_KEY_PREFIX.length)),
+              CYA_SLUG
+            )
+          : (cardAnchorHref(key) ?? changeHref(journeyId, key)),
       disableAutoFocus
     }
   )
