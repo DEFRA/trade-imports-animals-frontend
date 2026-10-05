@@ -135,7 +135,7 @@ All the tests live in
 
 The load-bearing tier. Spins up one real MongoDB container via
 `testcontainers` (already a devDependency for the Redis IT), shared
-across all three scenarios, and for each asserts:
+across both scenarios, and for each asserts:
 
 - **The mutation lands.** The document is in the target stale state.
 - **Other fulfilments are untouched.** Scenarios don't over-match.
@@ -159,15 +159,7 @@ couple of seconds. The frontend's own CI runs `npm test` without the
 flag, so the smoke suite skips on main; run it locally before touching
 a scenario.
 
-### Data source integrity (not gated — runs on main CI)
-
-One always-on describe in the same file pins that every role name in
-`PARTIES` + `CONTACT_PARTY` resolves to an obligation. That drift —
-adding a role without a matching obligation entry — is one the smoke
-suite cannot catch (it seeds specific obligation ids). This fires on
-main CI before anyone runs the tool.
-
-The other scenarios' sanity checks (`assertBogus` / `assertUnknown`)
+The scenarios' sanity checks (`assertBogus` / `assertUnknown`)
 fire at runtime inside the scenario itself — a sentinel that has lost
 its meaning errors loudly on first invocation, so a separate test
 would duplicate what the runtime guard already does.
@@ -180,7 +172,7 @@ would duplicate what the runtime guard already does.
 - Add a `describe('#<yourScenario>', () => { ... })` block to
   `stale-scenarios.integration.test.js` proving the mutation lands,
   doesn't over-match, and is idempotent. Follow the shape of the
-  existing three.
+  existing two.
 - If the scenario has a sentinel — a value or id chosen to be
   nonsense under today's reference data / manifest — add an
   assertion that fires when it becomes meaningful, or a test that
