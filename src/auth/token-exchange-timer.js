@@ -1,4 +1,4 @@
-import { recordExternalCall } from '../server/common/helpers/external-call-metrics.js'
+import { recordExternalCallInBackground } from '../server/common/helpers/external-call-metrics.js'
 import { DEFRA_ID_CALLS } from './defra-id-calls.js'
 
 const STARTED_AT = 'defraIdTokenExchangeStartedAt'
@@ -24,7 +24,7 @@ export const recordTokenExchange = (request) => {
   if (startedAt === undefined) {
     return
   }
-  recordExternalCall(DEFRA_ID_CALLS.tokenExchange, {
+  recordExternalCallInBackground(DEFRA_ID_CALLS.tokenExchange, {
     durationMs: performance.now() - startedAt,
     failed: !request.auth.isAuthenticated
   })

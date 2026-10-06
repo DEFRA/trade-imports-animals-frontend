@@ -44,8 +44,19 @@ export const recordExternalCall = async (
   }
 }
 
+/**
+ * Emits the document for a finished call without making the caller wait for the flush.
+ * Recording never rejects, so there is nothing for the caller to handle.
+ *
+ * @param {{ dependency: string, operation: string, interfaceId?: string }} externalCall - the call, as the metric contract names it
+ * @param {{ durationMs: number, failed: boolean }} result - how long it took and whether it failed
+ */
+export const recordExternalCallInBackground = (externalCall, result) => {
+  recordExternalCall(externalCall, result).catch(() => undefined)
+}
+
 const recordSince = (externalCall, startedAt, failed) =>
-  recordExternalCall(externalCall, {
+  recordExternalCallInBackground(externalCall, {
     durationMs: performance.now() - startedAt,
     failed
   })
