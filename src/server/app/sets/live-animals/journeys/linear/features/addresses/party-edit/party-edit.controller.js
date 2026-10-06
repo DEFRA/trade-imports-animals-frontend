@@ -8,7 +8,7 @@ import {
 import { validate } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
-import { addressCountryOptions } from '../../../../../../../services/countries/index.js'
+import { addressBookCountries } from '../../../../../../../services/countries/index.js'
 import { CONTACT_PARTY, PARTIES } from '../parties.js'
 import {
   addressRules,
@@ -62,7 +62,7 @@ const render = async (
     values,
     errors,
     errorSummary: kit.errorSummary(errors),
-    countryItems: countryItemsOf(await addressCountryOptions())
+    countryItems: countryItemsOf(await addressBookCountries())
   })
 
 const valuesFrom = (payload = {}) =>
@@ -96,7 +96,7 @@ const post = (party) => async (request, h) => {
   }
 
   const values = valuesFrom(payload)
-  const countries = await addressCountryOptions()
+  const countries = await addressBookCountries()
   const { errors, value } = validate(
     addressRules(countries.map(({ code }) => code)),
     values

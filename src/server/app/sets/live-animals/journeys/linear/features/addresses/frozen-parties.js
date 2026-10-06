@@ -1,4 +1,4 @@
-import { addressCountryLabel } from '../../../../../../services/countries/index.js'
+import { addressBookCountryName } from '../../../../../../services/countries/index.js'
 import { PARTIES, CONTACT_PARTY } from './parties.js'
 
 /** Backend role name to journey party id. The two vocabularies agree on every
@@ -41,7 +41,7 @@ export const toDisplayParty = async (party) => {
       townOrCity: address.townOrCity,
       county: address.county,
       postalOrZipCode: address.postcode,
-      country: await addressCountryLabel(address.countryCode),
+      country: await addressBookCountryName(address.countryCode),
       telephoneNumber: party.phone,
       emailAddress: party.email
     }

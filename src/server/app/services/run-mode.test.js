@@ -132,8 +132,8 @@ describe('countries service — real mode', () => {
     vi.stubGlobal('fetch', fetchMock)
     const countries = await import('./countries/index.js')
 
-    expect(await countries.addressCountryOptions()).toEqual(unfiltered)
-    await countries.addressCountryOptions()
+    expect(await countries.addressBookCountries()).toEqual(unfiltered)
+    await countries.addressBookCountries()
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
@@ -178,7 +178,7 @@ describe('countries service — real mode', () => {
       isBoom: true,
       output: { statusCode: 503 }
     })
-    await expect(countries.addressCountryOptions()).rejects.toMatchObject({
+    await expect(countries.addressBookCountries()).rejects.toMatchObject({
       isBoom: true,
       output: { statusCode: 503 }
     })

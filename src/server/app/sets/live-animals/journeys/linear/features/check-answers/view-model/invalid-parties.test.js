@@ -21,7 +21,7 @@ describe('#invalidPartyErrors', () => {
   afterEach(() => vi.restoreAllMocks())
 
   it('Should accept a copy in a country the address book allows outside the SPS origin block', async () => {
-    vi.spyOn(countries, 'addressCountryOptions').mockResolvedValue([
+    vi.spyOn(countries, 'addressBookCountries').mockResolvedValue([
       { code: 'GB', name: 'United Kingdom' },
       { code: 'US', name: 'United States' }
     ])
@@ -30,7 +30,7 @@ describe('#invalidPartyErrors', () => {
   })
 
   it('Should flag a copy in a country the address book does not offer', async () => {
-    vi.spyOn(countries, 'addressCountryOptions').mockResolvedValue([
+    vi.spyOn(countries, 'addressBookCountries').mockResolvedValue([
       { code: 'GB', name: 'United Kingdom' }
     ])
 

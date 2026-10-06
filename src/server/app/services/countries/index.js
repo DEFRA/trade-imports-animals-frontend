@@ -1,6 +1,6 @@
 import Boom from '@hapi/boom'
 import {
-  ADDRESS_COUNTRY_LABELS,
+  ADDRESS_BOOK_COUNTRY_LABELS,
   COUNTRY_LABELS,
   COUNTRY_SUBDIVISIONS
 } from './stub.js'
@@ -11,8 +11,8 @@ let labels = { ...COUNTRY_LABELS }
 let subdivisionLabels = { ...COUNTRY_SUBDIVISIONS.labels }
 let subdivisionToParent = { ...COUNTRY_SUBDIVISIONS.parents }
 let loaded = false
-let addressLabels = { ...ADDRESS_COUNTRY_LABELS }
-let addressLoaded = false
+let addressBookLabels = { ...ADDRESS_BOOK_COUNTRY_LABELS }
+let addressBookLoaded = false
 
 const indexSubDivisions = (countries) => {
   const nextSubdivisionLabels = {}
@@ -116,19 +116,18 @@ export const addressCountries = async () => {
   return [UNITED_KINGDOM, ...Object.values(labels)]
 }
 
-/** The unfiltered reference-data list, loaded once — the list the INS address
- * book validates against, not the SPS origin block. Kept apart from
- * `ensureLoaded` so the origin readers keep their narrower list. */
-const ensureAddressCountriesLoaded = async () => {
-  if (isStubMode() || addressLoaded) {
+/** Kept apart from `ensureLoaded` so the origin readers keep the narrower SPS
+ * list; the address book validates against the unfiltered one. */
+const ensureAddressBookCountriesLoaded = async () => {
+  if (isStubMode() || addressBookLoaded) {
     return
   }
   try {
     const countries = await fetchCountries()
-    addressLabels = Object.fromEntries(
+    addressBookLabels = Object.fromEntries(
       countries.map(({ code, name }) => [code, name])
     )
-    addressLoaded = true
+    addressBookLoaded = true
   } catch (err) {
     throw Boom.serverUnavailable('Reference data unavailable', {
       dataset: 'countries',
@@ -137,25 +136,20 @@ const ensureAddressCountriesLoaded = async () => {
   }
 }
 
-/** The countries a copied address-book record can be in, keyed by ISO code.
- * Mirrors the INS address book: United Kingdom first, then the full
- * reference-data list, so a record valid there is valid here. */
-export const addressCountryOptions = async () => {
-  await ensureAddressCountriesLoaded()
+export const addressBookCountries = async () => {
+  await ensureAddressBookCountriesLoaded()
   return [
     { code: UNITED_KINGDOM_CODE, name: UNITED_KINGDOM },
-    ...Object.entries(addressLabels)
+    ...Object.entries(addressBookLabels)
       .filter(([code]) => code !== UNITED_KINGDOM_CODE)
       .map(([code, name]) => ({ code, name }))
   ]
 }
 
-/** Display name for an address's country, from the same list the address can
- * be in — not `originLabel`, which only knows the SPS origin block. Falls back
- * to the code. */
-export const addressCountryLabel = async (code) =>
-  (await addressCountryOptions()).find((option) => option.code === code)
-    ?.name ?? code
+/** Falls back to the code. */
+export const addressBookCountryName = async (code) =>
+  (await addressBookCountries()).find((option) => option.code === code)?.name ??
+  code
 
 /** The ISO code for a country's display name (cv-011).
  *

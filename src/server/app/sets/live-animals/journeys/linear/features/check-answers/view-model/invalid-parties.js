@@ -1,5 +1,5 @@
 import { copyFor } from '../../../../../../../shared/copy.js'
-import { addressCountryOptions } from '../../../../../../../services/countries/index.js'
+import { addressBookCountries } from '../../../../../../../services/countries/index.js'
 import { CONTACT_PARTY, PARTIES } from '../../addresses/parties.js'
 import { isValidParty } from '../../addresses/party-edit/address-rules.js'
 import { copy as en } from '../copy/copy.en.js'
@@ -18,7 +18,7 @@ export const invalidPartyErrors = async (answers = {}) => {
   if (answered.length === 0) {
     return {}
   }
-  const countryCodes = (await addressCountryOptions()).map(({ code }) => code)
+  const countryCodes = (await addressBookCountries()).map(({ code }) => code)
   return Object.fromEntries(
     answered
       .filter((party) => !isValidParty(answers[party.id], countryCodes))

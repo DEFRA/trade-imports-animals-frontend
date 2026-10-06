@@ -236,7 +236,7 @@ describe('Edit address details — where the trader returns to', () => {
   })
 
   it('Should accept a country the address book allows outside the SPS origin block', async () => {
-    vi.spyOn(countries, 'addressCountryOptions').mockResolvedValue(
+    vi.spyOn(countries, 'addressBookCountries').mockResolvedValue(
       ADDRESS_BOOK_COUNTRIES
     )
 
@@ -252,7 +252,7 @@ describe('Edit address details — where the trader returns to', () => {
   })
 
   it('Should offer the address-book country list on the form', async () => {
-    vi.spyOn(countries, 'addressCountryOptions').mockResolvedValue(
+    vi.spyOn(countries, 'addressBookCountries').mockResolvedValue(
       ADDRESS_BOOK_COUNTRIES
     )
 

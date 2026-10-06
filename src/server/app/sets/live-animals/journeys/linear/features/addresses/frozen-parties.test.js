@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { addressCountryLabel } from '../../../../../../services/countries/index.js'
+import { addressBookCountryName } from '../../../../../../services/countries/index.js'
 import { partiesFromStoredAnswers, toDisplayParty } from './frozen-parties.js'
 
 const stored = {
@@ -43,7 +43,9 @@ describe('partiesFromStoredAnswers', () => {
       telephoneNumber: '01228 555 0001',
       emailAddress: 'origin@example.co.uk'
     })
-    expect(placeOfOrigin.address.country).toBe(await addressCountryLabel('IE'))
+    expect(placeOfOrigin.address.country).toBe(
+      await addressBookCountryName('IE')
+    )
   })
 
   it('Should treat a nameless stored role as unanswered', async () => {

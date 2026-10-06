@@ -1,7 +1,6 @@
 import { countries, countriesOrigin } from '../_capture/fixtures.js'
 
-/** The unfiltered reference-data list — what the INS address book offers. */
-export const ADDRESS_COUNTRY_LABELS = Object.fromEntries(
+export const ADDRESS_BOOK_COUNTRY_LABELS = Object.fromEntries(
   countries.map(({ code, name }) => [code, name])
 )
 
