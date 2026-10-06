@@ -1,5 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { verifyToken } from './verify-token.js'
+import { readEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
 
 const wreckGetMock = vi.hoisted(() => vi.fn())
 const getOidcConfigMock = vi.hoisted(() => vi.fn())
@@ -39,16 +40,50 @@ vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: getTraceIdMock
 }))
 
+vi.mock('../server/common/helpers/logging/logger.js', () => ({
+  createLogger: () => ({
+    warn: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn()
+  })
+}))
+
 describe('verifyToken', () => {
   const tracingHeader = 'x-cdp-request-id'
   const traceId = 'test-trace-id'
 
+  let logSpy
+
   beforeEach(() => {
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     configGetMock.mockImplementation((key) => {
       if (key === 'tracing.header') return tracingHeader
       if (key === 'defraId.clientId') return 'test-client-id'
+      if (key === 'metrics.namespace') return 'trade-imports-animals-frontend'
     })
     getTraceIdMock.mockReturnValue(traceId)
+  })
+
+  afterEach(() => {
+    logSpy.mockRestore()
+  })
+
+  test('measures the key fetch as defra-id jwks', async () => {
+    getOidcConfigMock.mockResolvedValue({ jwks_uri: 'https://mock/jwks' })
+    wreckGetMock.mockResolvedValue({ payload: { keys: [{}] } })
+    createPublicKeyMock.mockReturnValue({
+      export: vi.fn().mockReturnValue('pem')
+    })
+    jwtDecodeMock.mockReturnValue({})
+
+    await verifyToken('jwt-token')
+
+    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
+    const [document] = readEmfDocuments(logSpy)
+    expect(document.Dependency).toBe('defra-id')
+    expect(document.Operation).toBe('jwks')
+    expect(document.Interface).toBe('SYN-12')
+    expect(document.ExternalCallFailure).toBe(0)
   })
 
   test('verifies token using first JWK', async () => {
@@ -118,6 +153,12 @@ describe('verifyToken', () => {
     wreckGetMock.mockRejectedValue(new Error('jwks fetch failed'))
 
     await expect(verifyToken('token')).rejects.toThrow('jwks fetch failed')
+
+    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
+    const [document] = readEmfDocuments(logSpy)
+    expect(document.Operation).toBe('jwks')
+    expect(document.ExternalCallFailure).toBe(1)
+    expect(document.Outcome).toBe('failure')
   })
 
   test('throws if JWKS has no keys', async () => {

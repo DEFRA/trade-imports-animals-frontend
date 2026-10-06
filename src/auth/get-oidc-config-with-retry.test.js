@@ -17,6 +17,14 @@ vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: getTraceIdMock
 }))
 
+vi.mock('../server/common/helpers/logging/logger.js', () => ({
+  createLogger: () => ({
+    warn: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn()
+  })
+}))
+
 function timedOut() {
   const error = new AggregateError(
     [new Error('connect ETIMEDOUT 127.0.0.1:3007')],
@@ -42,6 +50,7 @@ describe('getOidcConfigWithRetry', () => {
     configGetMock.mockImplementation((key) => {
       if (key === 'defraId.oidcDiscoveryUrl') return discoveryUrl
       if (key === 'tracing.header') return 'x-cdp-request-id'
+      if (key === 'metrics.namespace') return 'trade-imports-animals-frontend'
     })
     getTraceIdMock.mockReturnValue('test-trace-id')
 

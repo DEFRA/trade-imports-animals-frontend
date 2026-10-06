@@ -2,6 +2,8 @@ import Wreck from '@hapi/wreck'
 import { getTraceId } from '@defra/hapi-tracing'
 import { getOidcConfig } from './get-oidc-config.js'
 import { config } from '../config/config.js'
+import { measureExternalCall } from '../server/common/helpers/external-call-metrics.js'
+import { DEFRA_ID_CALLS } from './defra-id-calls.js'
 
 const TOKEN_ENDPOINT_TIMEOUT_MS = 3000
 
@@ -17,15 +19,19 @@ async function refreshTokens(refreshToken) {
     redirect_uri: config.get('defraId.redirectUrl')
   })
 
-  const { payload: responsePayload } = await Wreck.post(url, {
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      [config.get('tracing.header')]: getTraceId() ?? ''
-    },
-    payload: payload.toString(),
-    json: true,
-    timeout: TOKEN_ENDPOINT_TIMEOUT_MS
-  })
+  const { payload: responsePayload } = await measureExternalCall(
+    DEFRA_ID_CALLS.tokenRefresh,
+    () =>
+      Wreck.post(url, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          [config.get('tracing.header')]: getTraceId() ?? ''
+        },
+        payload: payload.toString(),
+        json: true,
+        timeout: TOKEN_ENDPOINT_TIMEOUT_MS
+      })
+  )
 
   // Payload will include both a new access token and a new refresh token
   // Refresh tokens can only be used once, so the new refresh token should be stored in place of the old one

@@ -1,5 +1,6 @@
 import { vi } from 'vitest'
 import { refreshTokens } from './refresh-tokens.js'
+import { readEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
 
 const wreckPostMock = vi.hoisted(() => vi.fn())
 vi.mock('@hapi/wreck', () => ({
@@ -25,9 +26,19 @@ vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: getTraceIdMock
 }))
 
+vi.mock('../server/common/helpers/logging/logger.js', () => ({
+  createLogger: () => ({
+    warn: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn()
+  })
+}))
+
 describe('refreshTokens', () => {
   const tracingHeader = 'x-cdp-request-id'
   const traceId = 'test-trace-id'
+
+  let logSpy
 
   beforeEach(() => {
     wreckPostMock.mockReset()
@@ -35,6 +46,31 @@ describe('refreshTokens', () => {
     configGetMock.mockReset()
     getTraceIdMock.mockReset()
     getTraceIdMock.mockReturnValue(traceId)
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    logSpy.mockRestore()
+  })
+
+  test('measures the refresh as defra-id token-refresh', async () => {
+    getOidcConfigMock.mockResolvedValue({
+      token_endpoint: 'https://mock-auth-server/oauth/token'
+    })
+    configGetMock.mockImplementation((key) => {
+      if (key === 'tracing.header') return tracingHeader
+      if (key === 'metrics.namespace') return 'trade-imports-animals-frontend'
+    })
+    wreckPostMock.mockResolvedValue({ payload: {} })
+
+    await refreshTokens('rt')
+
+    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
+    const [document] = readEmfDocuments(logSpy)
+    expect(document.Dependency).toBe('defra-id')
+    expect(document.Operation).toBe('token-refresh')
+    expect(document.Interface).toBe('SYN-13')
+    expect(document.ExternalCallFailure).toBe(0)
   })
 
   test('posts refresh token to token endpoint and returns payload', async () => {
@@ -123,11 +159,18 @@ describe('refreshTokens', () => {
       if (key === 'defraId.clientSecret') return 'client-secret'
       if (key === 'defraId.redirectUrl') return 'http://localhost/callback'
       if (key === 'tracing.header') return tracingHeader
+      if (key === 'metrics.namespace') return 'trade-imports-animals-frontend'
       return undefined
     })
 
     wreckPostMock.mockRejectedValue(new Error('post failed'))
 
     await expect(refreshTokens('rt')).rejects.toThrow('post failed')
+
+    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
+    const [document] = readEmfDocuments(logSpy)
+    expect(document.Operation).toBe('token-refresh')
+    expect(document.ExternalCallFailure).toBe(1)
+    expect(document.Outcome).toBe('failure')
   })
 })

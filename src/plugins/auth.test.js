@@ -32,6 +32,14 @@ vi.mock('../server/common/services/mode.js', () => ({
   isStubMode: isStubModeMock
 }))
 
+vi.mock('../server/common/helpers/logging/logger.js', () => ({
+  createLogger: () => ({
+    warn: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn()
+  })
+}))
+
 vi.mock('@hapi/jwt', () => ({
   default: {
     token: {
@@ -93,7 +101,7 @@ describe('auth plugin', () => {
       expect.objectContaining({
         provider: expect.objectContaining({
           auth: oidcConfig.authorization_endpoint,
-          token: oidcConfig.token_endpoint
+          token: expect.any(Function)
         }),
         clientId: 'test-client-id',
         clientSecret: 'test-client-secret',
@@ -151,6 +159,17 @@ describe('auth plugin', () => {
       'defra-id',
       'bell',
       expect.anything()
+    )
+  })
+
+  test('getBellOptions.provider.token returns the token endpoint and marks when the exchange started', () => {
+    const request = { app: {} }
+
+    const token = getBellOptions(oidcConfig).provider.token(request)
+
+    expect(token).toBe(oidcConfig.token_endpoint)
+    expect(request.app.defraIdTokenExchangeStartedAt).toEqual(
+      expect.any(Number)
     )
   })
 

@@ -3,6 +3,7 @@ import { validateState } from '../../auth/state.js'
 import { verifyToken } from '../../auth/verify-token.js'
 import { getPermissions } from '../../auth/get-permissions.js'
 import { getSafeRedirect } from '../../auth/get-safe-redirect.js'
+import { recordTokenExchange } from '../../auth/token-exchange-timer.js'
 import { setlessBase, sharedCopy } from '../app/shared/kit.js'
 
 const UNAUTHORISED_VIEW = 'auth/unauthorised'
@@ -27,6 +28,8 @@ export const authController = {
   },
   signinOidc: {
     handler: async function (request, h) {
+      recordTokenExchange(request)
+
       // If the user is not authenticated, redirect to the home page
       // This should only occur if the user tries to access the sign-in page directly and not part of the sign-in flow
       // eg if the user has bookmarked the Defra Identity sign-in page or they have signed out and tried to go back in the browser
