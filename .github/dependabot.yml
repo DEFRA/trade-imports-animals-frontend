@@ -29,10 +29,6 @@ updates:
         exclude-patterns:
           - 'govuk-frontend'
 
-    ignore:
-      - dependency-name: 'eslint-*'
-      - dependency-name: 'eslint'
-
     # Schedule run every day, local time
     schedule:
       interval: daily
