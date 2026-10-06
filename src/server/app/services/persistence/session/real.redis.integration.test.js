@@ -65,6 +65,7 @@ describe.skipIf(!runsIt('testcontainer'))('#session (real, Redis)', () => {
     client = new Redis({
       host: container.getHost(),
       port: container.getMappedPort(REDIS_PORT),
+      protocol: 2,
       maxRetriesPerRequest: null
     })
     await client.ping()
