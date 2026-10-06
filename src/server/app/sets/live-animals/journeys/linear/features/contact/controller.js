@@ -103,9 +103,10 @@ const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const orgId = organisationIdOf(request)
   const options = [...(await addressBook.all(orgId))]
-  const { values, errors } = await validation.onStored(answers, {
+  const { errors } = await validation.onStored(answers, {
     addressOptions: options
   })
+  const pickedFromId = answers.contactAddress?.pickedFromId
   const handshakeError = handshakeErrorMessage(
     sharedCopy.addressHandshake.errors,
     request.query.handshakeError
@@ -114,7 +115,11 @@ const get = async (request, h) => {
   return render(
     h,
     journey,
-    { selectedId: values.contactAddress },
+    {
+      selectedId: options.some((option) => option.id === pickedFromId)
+        ? pickedFromId
+        : ''
+    },
     options,
     addAddressLinkFor(request, h, journey),
     {

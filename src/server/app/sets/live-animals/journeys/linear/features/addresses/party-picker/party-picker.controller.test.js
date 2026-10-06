@@ -32,6 +32,7 @@ const NORDVIK_ID = 'nordvik-seafood'
 const ALPINE_DAIRY_ID = 'alpine-dairy'
 const ALPINE_DAIRY_NAME = 'Alpine Dairy GmbH'
 const DANISH_MEAT_ID = 'danish-meat-export-aps'
+const DANISH_MEAT_NAME = 'Danish Meat Export ApS'
 const SELECT_A_CONSIGNOR_ERROR = 'Select a consignor from the list'
 const INS_FRONTEND_BASE_URL_KEY = 'tradeImportsInsFrontend.baseUrl'
 
@@ -102,7 +103,7 @@ describe('GET /consignors/select', () => {
 
     expect(picker.page).toBe(2)
     expect(idsOf(picker)).toContain(NORDVIK_ID)
-    expect(picker.selected.name).toBe('Danish Meat Export ApS')
+    expect(picker.selected.name).toBe(DANISH_MEAT_NAME)
     expect(picker.pagination.next.href).toBe(
       `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=3&selected=${DANISH_MEAT_ID}`
     )
@@ -121,7 +122,22 @@ describe('GET /consignors/select', () => {
     expect(picker.pagination).toBeNull()
   })
 
-  it('Should open with nothing checked when the notification already holds a copy', async () => {
+  it('Should open with the record the held copy was picked from selected, carried into pagination', async () => {
+    const result = await driveHandler(getConsignor, {
+      seed: {
+        consignor: { pickedFromId: DANISH_MEAT_ID, name: 'Copied Name' }
+      },
+      query: { page: '2' }
+    })
+    const picker = pickerFrom(result)
+
+    expect(picker.selected.name).toBe(DANISH_MEAT_NAME)
+    expect(picker.pagination.next.href).toBe(
+      `${pagePath(result.journeyId, CONSIGNOR_SELECT_SLUG)}?page=3&selected=${DANISH_MEAT_ID}`
+    )
+  })
+
+  it('Should open with nothing selected when the held copy has no record it was picked from', async () => {
     const picker = pickerFrom(
       await driveHandler(getConsignor, {
         seed: { consignor: { name: ALPINE_DAIRY_NAME } },
@@ -205,12 +221,13 @@ describe('POST /consignors/select', () => {
     expect(result.after.consignor).toMatchObject({ name: ALPINE_DAIRY_NAME })
   })
 
-  it('Should store a copy of the record with no address-book id', async () => {
+  it('Should store a copy of the record, noting which record it was picked from', async () => {
     const result = await driveHandler(postConsignor, {
       payload: { action: 'save', party: ALPINE_DAIRY_ID }
     })
 
     expect(result.after.consignor).not.toHaveProperty('addressId')
+    expect(result.after.consignor.pickedFromId).toBe(ALPINE_DAIRY_ID)
     expect(result.after.consignor.name).toBe(ALPINE_DAIRY_NAME)
     expect(result.after.consignor.address).toMatchObject({
       addressLine1: expect.any(String),
@@ -331,7 +348,7 @@ describe('The five spokes share the one picker', () => {
       })
 
       expect(result.after[party.id]).toMatchObject({
-        name: 'Danish Meat Export ApS'
+        name: DANISH_MEAT_NAME
       })
       expect(result.response).toEqual({
         redirect: pagePath(result.journeyId, 'addresses')

@@ -57,8 +57,9 @@ describe('chosenPartyFor', () => {
 })
 
 describe('answerFor', () => {
-  it('Should copy the picked record onto the answer, with no address-book id', () => {
+  it('Should copy the picked record onto the answer, noting which record it was picked from', () => {
     expect(answerFor(ORIGIN, liveRecord())).toEqual({
+      pickedFromId: ORIGIN_FARM_ID,
       name: ORIGIN_FARM_NAME,
       phone: '+353 1 234 5678',
       email: 'farm@example.com',

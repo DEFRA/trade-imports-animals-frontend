@@ -80,24 +80,48 @@ describe('GET contact — select an address from the book', () => {
     expect(result.view.context.recoverableError).toBe(true)
   })
 
-  it('Should commit a copy of the picked address, then show it as the current contact with a link to edit it', async () => {
+  it('Should commit a copy of the picked address, then show it as the current contact and still selected', async () => {
     const postResult = await driveHandler(post, {
       payload: { contactAddress: CONTACT.id }
     })
     expect(postResult.view).toBeUndefined()
-    expect(postResult.after.contactAddress).not.toHaveProperty('addressId')
     expect(postResult.after.contactAddress).toMatchObject({
+      pickedFromId: CONTACT.id,
       name: CONTACT.name
     })
     expect(postResult.after.contactAddress.address).toBeDefined()
 
     const getResult = await driveHandler(get, { seed: postResult.after })
     const { contactOptions, currentContact } = getResult.view.context
-    expect(contactOptions.every((option) => !option.checked)).toBe(true)
+    expect(
+      contactOptions
+        .filter((option) => option.checked)
+        .map(({ value }) => value)
+    ).toEqual([CONTACT.id])
     expect(currentContact).toMatchObject({
       name: CONTACT.name,
       editHref: editHrefOf(getResult.journeyId)
     })
+  })
+
+  it('Should select nothing when the record the contact was picked from is gone', async () => {
+    const result = await driveHandler(get, {
+      seed: { contactAddress: { ...HELD_CONTACT, pickedFromId: 'gone' } }
+    })
+
+    const { contactOptions, errorSummary } = result.view.context
+    expect(contactOptions.every((option) => !option.checked)).toBe(true)
+    expect(errorSummary).toBeNull()
+  })
+
+  it('Should select nothing for a contact whose details were edited here', async () => {
+    const result = await driveHandler(get, {
+      seed: { contactAddress: HELD_CONTACT }
+    })
+
+    expect(
+      result.view.context.contactOptions.every((option) => !option.checked)
+    ).toBe(true)
   })
 
   it('Should carry the change context onto the current contact edit link', async () => {

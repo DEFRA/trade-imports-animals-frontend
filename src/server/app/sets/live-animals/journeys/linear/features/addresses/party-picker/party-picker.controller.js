@@ -83,7 +83,7 @@ const addAddressLinkFor = (request, h, journey, party) =>
   !isStubMode() && buildInsAddAddressUrl(request, h, journey.journeyId, party)
 
 const get = (party) => async (request, h) => {
-  const { journey } = await state.get(request, h)
+  const { journey, answers } = await state.get(request, h)
   const handshakeError = handshakeErrorMessage(
     copy.handshakeErrors,
     request.query.handshakeError
@@ -92,7 +92,7 @@ const get = (party) => async (request, h) => {
   return render(request, h, organisationIdOf(request), journey, party, {
     query: request.query.q ?? '',
     page: pageNumber(request.query.page),
-    selectedId: request.query.selected ?? '',
+    selectedId: request.query.selected ?? answers[party.id]?.pickedFromId ?? '',
     error: handshakeError,
     recoverableError,
     addAddressHref: addAddressLinkFor(request, h, journey, party)

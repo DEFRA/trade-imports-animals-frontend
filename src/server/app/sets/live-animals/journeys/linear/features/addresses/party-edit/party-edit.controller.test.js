@@ -143,6 +143,15 @@ describe.each(ALL_PARTIES)('Edit $id address details', (party) => {
     })
   })
 
+  it('Should forget which record the copy was picked from, so the picker no longer pre-selects it', async () => {
+    const result = await driveHandler(post, {
+      seed: { [party.id]: { ...STORED, pickedFromId: 'origin-farm' } },
+      payload: FORM
+    })
+
+    expect(result.after[party.id]).not.toHaveProperty('pickedFromId')
+  })
+
   it('Should change only this notification, never the address book', async () => {
     const partySpy = vi.spyOn(addressBook, 'party')
     const searchSpy = vi.spyOn(addressBook, 'search')

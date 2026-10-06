@@ -86,7 +86,7 @@ test.describe('contact feature', () => {
     )
   })
 
-  test('selects a valid contact, redirects and shows it as the current contact on return', async ({
+  test('selects a valid contact, redirects and shows it as the current contact, still selected, on return', async ({
     page
   }) => {
     const contactUrl = page.url()
@@ -102,7 +102,9 @@ test.describe('contact feature', () => {
     await expect(
       current.getByRole('link', { name: copy.current.editDetails })
     ).toBeVisible()
-    await expect(page.getByRole('radio', { checked: true })).toHaveCount(0)
+    await expect(
+      page.getByRole('radio', { name: selected.name, exact: true })
+    ).toBeChecked()
   })
 })
 

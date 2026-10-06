@@ -21,7 +21,7 @@ const { values: completeJourneyAnswers } = JSON.parse(
 const UNITED_KINGDOM = 'United Kingdom'
 const CONTRACT_REFERENCE = 'GBN-AG-26-CONTRACT'
 
-const placeOfOriginCopy = {
+const placeOfOrigin = {
   name: 'Origin Farm',
   phone: '01632 960000',
   email: 'origin-farm@example.com',
@@ -32,7 +32,7 @@ const placeOfOriginCopy = {
     countryCode: 'IE'
   }
 }
-const contactAddressCopy = {
+const contactAddress = {
   name: 'Animal and Plant Health Agency',
   phone: '01632 960000',
   email: 'animal-and-plant-health-agency@example.com',
@@ -51,7 +51,7 @@ describe('Mapper A PUT /notifications contract', () => {
     expect(fulfilmentToNotification(fulfilment, CONTRACT_REFERENCE)).toEqual({
       referenceNumber: CONTRACT_REFERENCE,
       reasonForImport: 'internalMarket',
-      placeOfOrigin: placeOfOriginCopy,
+      placeOfOrigin,
       consignor: {
         name: 'Astra Rosales',
         address: {
@@ -85,7 +85,7 @@ describe('Mapper A PUT /notifications contract', () => {
           country: UNITED_KINGDOM
         }
       },
-      consignment: contactAddressCopy,
+      consignment: contactAddress,
       cphNumber: '12/345/6789',
       purposeInInternalMarket: 'breeding',
       origin: {
@@ -146,23 +146,23 @@ describe('Mapper A PUT /notifications contract', () => {
       CONTRACT_REFERENCE
     )
 
-    expect(payload.placeOfOrigin).toEqual(placeOfOriginCopy)
-    expect(payload.consignment).toEqual(contactAddressCopy)
+    expect(payload.placeOfOrigin).toEqual(placeOfOrigin)
+    expect(payload.consignment).toEqual(contactAddress)
   })
 
-  test('carries only a party answer’s details, dropping any other key', () => {
+  test('carries only a party answer’s details, dropping pickedFromId and any other key', () => {
     const answers = {
       ...completeJourneyAnswers,
-      placeOfOrigin: { ...placeOfOriginCopy, unrelated: 'dropped' },
-      contactAddress: { ...contactAddressCopy, unrelated: 'dropped' }
+      placeOfOrigin: { ...placeOfOrigin, pickedFromId: 'origin-farm' },
+      contactAddress: { ...contactAddress, unrelated: 'dropped' }
     }
     const payload = fulfilmentToNotification(
       assembleFulfilments(answers),
       CONTRACT_REFERENCE
     )
 
-    expect(payload.placeOfOrigin).toEqual(placeOfOriginCopy)
-    expect(payload.consignment).toEqual(contactAddressCopy)
+    expect(payload.placeOfOrigin).toEqual(placeOfOrigin)
+    expect(payload.consignment).toEqual(contactAddress)
   })
 
   test('omits a party answer with no details', () => {
