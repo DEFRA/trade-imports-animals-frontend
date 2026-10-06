@@ -14,7 +14,7 @@ const ORIGIN_FARM_LINE1 = '1 Farm Lane'
 const BOS_TAURUS = 'Bos taurus'
 const SALMO_SALAR = 'Salmo salar'
 const PORT_OF_ENTRY = 'GB ABD'
-const ARRIVAL_DATE_ISO = '2026-12-12T00:00:00.000Z'
+const ARRIVAL_DATE_ISO = '2026-12-12'
 const TRANSPORTER_NAME = 'Transporter Co'
 const currentNotificationFrom = (answers) =>
   fulfilmentToNotification(
@@ -284,10 +284,23 @@ describe('Mapper A — current backend notification (as-is)', () => {
     })
   })
 
-  test('Should convert the arrival date parts to an ISO string', () => {
+  test('Should send the arrival date parts as YYYY-MM-DD, with no time and no offset', () => {
     expect(currentNotificationFrom(mappedAnswers()).transport.arrivalDate).toBe(
       ARRIVAL_DATE_ISO
     )
+  })
+
+  test('Should leave a date-only field out when the day, month and year are all blank', () => {
+    const blankDate = { day: '', month: '', year: '' }
+
+    const notification = currentNotificationFrom({
+      ...answersWithGaps(),
+      arrivalDateAtPort: blankDate,
+      exitDate: blankDate
+    })
+
+    expect('arrivalDate' in notification.transport).toBe(false)
+    expect('exitDate' in notification).toBe(false)
   })
 
   test('Should map a country of origin subdivision to parent country and subdivision code', () => {
@@ -312,7 +325,7 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect(notification.purposeInInternalMarket).toBe('Breeding')
     expect(notification.destinationCountry).toBe('DE')
     expect(notification.portOfExit).toBe('GB DVR')
-    expect(notification.exitDate).toBe('2026-12-20T00:00:00.000Z')
+    expect(notification.exitDate).toBe('2026-12-20')
     expect(notification.transport).toEqual({
       portOfEntry: PORT_OF_ENTRY,
       arrivalDate: ARRIVAL_DATE_ISO,

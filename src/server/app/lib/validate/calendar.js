@@ -123,29 +123,27 @@ export const formatDateText = (date) =>
   `${date.getUTCDate()}/${date.getUTCMonth() + 1}/${date.getUTCFullYear()}`
 
 /**
- * The single place a user-entered calendar date becomes the instant the API
- * takes. The parts are *labelled* as UTC midnight, never converted from a local
- * zone: a calendar day has no time and no zone, so there is nothing to convert
- * from, and inventing one shifts the day. London midnight for a 21 July arrival
- * is `2026-07-20T23:00:00.000Z` during BST, which every UTC reader — PIMS
- * included — reads as 20 July.
+ * The single place a user-entered calendar date becomes the date the API
+ * takes. A calendar day has no time and no zone, so the wire form has neither:
+ * the parts are written straight out as `YYYY-MM-DD`.
  *
- * Build it from UTC parts. The natural thing to write is the broken thing:
- * `new Date(year, month - 1, day).toISOString()` reads the container's zone, so
- * it is correct on a UTC laptop and in this suite (`TZ=UTC`) and wrong only in
- * the `Europe/London` container — that is, only in production. Same hazard
- * `parseDateText` documents above.
+ * Build it from the parts, never through a `Date`. The natural thing to write
+ * is the broken thing: `new Date(year, month - 1, day).toISOString()` reads
+ * the container's zone, so a 21 July arrival comes out as
+ * `2026-07-20T23:00:00.000Z` in a `Europe/London` container during BST — the
+ * day before. It is correct on a UTC laptop and in this suite (`TZ=UTC`) and
+ * wrong only in production. Same hazard `parseDateText` documents above.
  * @param {{day?: number|string, month?: number|string, year?: number|string}} [parts]
- * @returns {string|undefined} `YYYY-MM-DDT00:00:00.000Z`, or undefined when the
- * date is incomplete.
+ * @returns {string|undefined} `YYYY-MM-DD`, or undefined when the date is
+ * incomplete.
  */
-export const instantFromDateParts = (parts) => {
+export const isoDateFromDateParts = (parts) => {
   const { day, month, year } = parts ?? {}
   // The blank test the `dateParts` validator applies, applied again here: a
   // part that trims to empty is an unfilled part. An all-blank optional date
   // field passes validation as `{day: '', month: '', year: ''}`, and padding
-  // that gives `0000-00-00T00:00:00.000Z` — an instant the API's
-  // `Instant.parse` rejects. Incomplete means no date, not a malformed one.
+  // that gives `0000-00-00` — a date the API rejects. Incomplete means no
+  // date, not a malformed one.
   const [dd, mm, yyyy] = [day, month, year].map((part) =>
     String(part ?? '').trim()
   )
@@ -155,7 +153,7 @@ export const instantFromDateParts = (parts) => {
   return `${yyyy.padStart(YEAR_DIGITS, '0')}-${mm.padStart(
     MONTH_DIGITS,
     '0'
-  )}-${dd.padStart(DAY_DIGITS, '0')}T00:00:00.000Z`
+  )}-${dd.padStart(DAY_DIGITS, '0')}`
 }
 
 const DISPLAY_DATE_FORMAT = 'd MMM yyyy'
@@ -179,7 +177,8 @@ const formatUtcComponents = (date) =>
 
 /**
  * Renders a **calendar date** — a day the user chose, carried on the wire as
- * midnight UTC by {@link instantFromDateParts}.
+ * `YYYY-MM-DD` by {@link isoDateFromDateParts} and held in process as a `Date`
+ * whose UTC components are that day.
  *
  * Read straight off the UTC components, because the value already *is* the
  * day: there is nothing to convert, and converting would only be safe while
@@ -190,7 +189,7 @@ const formatUtcComponents = (date) =>
  * mean every calendar date in the service silently shifting a day back if the
  * service zone ever moved west.
  * @param {Date} date
- * @returns {string} e.g. `21 Jul 2026` for `2026-07-21T00:00:00.000Z`.
+ * @returns {string} e.g. `21 Jul 2026` for the calendar date `2026-07-21`.
  */
 export const formatCalendarDate = (date) => formatUtcComponents(date)
 

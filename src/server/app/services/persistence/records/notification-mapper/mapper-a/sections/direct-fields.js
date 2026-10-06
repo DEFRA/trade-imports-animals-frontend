@@ -1,5 +1,5 @@
 import { obligationSet } from '../../../../../../model/obligations/manifest.js'
-import { instantFromDateParts } from '../../../../../../lib/validate/index.js'
+import { isoDateFromDateParts } from '../../../../../../lib/validate/index.js'
 import { compact, orUndefined } from '../../shared/compact.js'
 
 const toParty = (answer) =>
@@ -40,6 +40,6 @@ export const directFieldsFromFulfilment = (reader, referenceNumber) => {
     purposeInInternalMarket: reader.scalar(purposeInInternalMarket),
     destinationCountry: reader.scalar(destinationCountry),
     portOfExit: reader.scalar(portOfExit),
-    exitDate: instantFromDateParts(reader.scalar(exitDate))
+    exitDate: isoDateFromDateParts(reader.scalar(exitDate))
   })
 }

@@ -1,4 +1,4 @@
-import { instantFromDateParts } from '../../../../../lib/validate/index.js'
+import { isoDateFromDateParts } from '../../../../../lib/validate/index.js'
 import { projectAnswers } from '../../../../../bridge/fulfilments/index.js'
 import { decodePersistedFulfilment } from '../../fulfilment-codec/index.js'
 
@@ -18,7 +18,7 @@ export const marshalListItem = async (document) => {
     originCountryCode: answers.countryOfOrigin ?? null,
     // The rest of this row uses null for absent, so the helper's undefined is
     // mapped across rather than changing the shape the stub has always sent.
-    arrivalDate: instantFromDateParts(answers.arrivalDateAtPort) ?? null,
+    arrivalDate: isoDateFromDateParts(answers.arrivalDateAtPort) ?? null,
     consignorName: answers.consignor?.name ?? null,
     consigneeName: answers.consignee?.name ?? null
   }
