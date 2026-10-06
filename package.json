@@ -9,7 +9,7 @@
     "node": ">=24.21.0",
     "npm": ">=11.6.2"
   },
-  "packageManager": "npm@11.6.2",
+  "packageManager": "npm@11.19.0",
   "scripts": {
     "build:frontend": "NODE_ENV=production webpack",
     "dev": "AWS_EMF_ENVIRONMENT=Local run-p frontend:watch server:watch",
