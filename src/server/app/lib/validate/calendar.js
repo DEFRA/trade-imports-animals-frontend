@@ -178,7 +178,7 @@ const formatUtcComponents = (date) =>
 /**
  * Renders a **calendar date** — a day the user chose, carried on the wire as
  * `YYYY-MM-DD` by {@link isoDateFromDateParts} and held in process as a `Date`
- * at midnight UTC on that day.
+ * whose UTC components are that day.
  *
  * Read straight off the UTC components, because the value already *is* the
  * day: there is nothing to convert, and converting would only be safe while

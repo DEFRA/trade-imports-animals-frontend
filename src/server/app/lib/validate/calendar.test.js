@@ -17,7 +17,7 @@ const utc = (year, month, day) => new Date(Date.UTC(year, month - 1, day))
 
 /** A calendar date as the wire carries it: the chosen day, with no time and no zone. */
 const ARRIVAL_ISO_DATE = '2026-07-21'
-/** The same day as the `Date` the renderers are handed: midnight UTC. */
+/** The same day as the `Date` the renderers are handed: its UTC components are the day. */
 const ARRIVAL_INSTANT = '2026-07-21T00:00:00.000Z'
 const ARRIVAL_DISPLAY = '21 Jul 2026'
 const PADDED_ISO_DATE = '2026-03-05'
@@ -27,13 +27,18 @@ const SUBMITTED_DISPLAY = '11 Sep 2026'
 
 /**
  * West of UTC, and the only zone on that side in this repo. It is here on
- * purpose: west of UTC is where a UTC-midnight calendar date renders a day
- * early and where a local-components `Date` builds the wrong instant. Do not
- * "tidy" it to match the rest of the suite — that silently disarms the tests.
+ * purpose: west of UTC is where a calendar date renders a day early if anything
+ * converts it into the zone. Do not "tidy" it to match the rest of the suite —
+ * that silently disarms the tests.
  */
 const WEST_OF_UTC = 'America/New_York'
 
-/** East of UTC, for showing that a calendar date does not move either way. */
+/**
+ * East of UTC, for showing that a calendar date does not move either way. It
+ * is also the side where a date built from local components and read back in
+ * UTC comes out a day early, so it is what arms the `isoDateFromDateParts`
+ * zone proof.
+ */
 const EAST_OF_UTC = 'Pacific/Auckland'
 
 /**
@@ -184,11 +189,17 @@ describe('#isoDateFromDateParts', () => {
     expect(isoDateFromDateParts(parts)).toBeUndefined()
   })
 
-  it('produces the same date west of UTC as it does under UTC', () => {
+  it('produces the same date on either side of UTC as it does under UTC', () => {
     // The zone proof. Building the date through a local-components `Date` and
-    // reading it back in UTC would give the right answer under TZ=UTC and a
-    // different one elsewhere — wrong only where nobody looks. Writing the
-    // parts straight out cannot drift.
+    // reading it back in UTC would give the right answer under TZ=UTC and the
+    // day before east of it — wrong only where nobody looks. East is the side
+    // that catches it: west of UTC that construction still lands on the same
+    // day. Writing the parts straight out cannot drift either way.
+    runInZone(EAST_OF_UTC, () => {
+      expect(isoDateFromDateParts({ day: 21, month: 7, year: 2026 })).toBe(
+        ARRIVAL_ISO_DATE
+      )
+    })
     runInZone(WEST_OF_UTC, () => {
       expect(isoDateFromDateParts({ day: 21, month: 7, year: 2026 })).toBe(
         ARRIVAL_ISO_DATE
@@ -211,8 +222,8 @@ describe('#formatCalendarDate', () => {
   })
 
   it('reads the UTC day even for a value that is not midnight', () => {
-    // Defensive: a calendar date should always arrive as midnight UTC, but if
-    // one ever carries a time it is still the UTC day that names it.
+    // Defensive: the `Date` holding a calendar date should never carry a time,
+    // but if one ever does it is still the UTC day that names it.
     expect(formatCalendarDate(new Date('2026-07-21T23:59:59.999Z'))).toBe(
       ARRIVAL_DISPLAY
     )
@@ -220,7 +231,7 @@ describe('#formatCalendarDate', () => {
 
   it('does not depend on the process zone, in either direction', () => {
     // West of UTC is where an ambient-zone or service-zone implementation
-    // would render a UTC-midnight date a day early.
+    // would render the date a day early.
     runInZone(WEST_OF_UTC, () => {
       expect(formatCalendarDate(new Date(ARRIVAL_INSTANT))).toBe(
         ARRIVAL_DISPLAY

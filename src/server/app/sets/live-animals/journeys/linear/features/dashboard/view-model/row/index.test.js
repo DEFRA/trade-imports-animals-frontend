@@ -10,8 +10,8 @@ import { toRow } from './index.js'
  * moment renderer converts into the service zone and says 11 September.
  *
  * The other direction does not exist: the UK is never behind UTC, so a
- * calendar date, read as midnight UTC on its day, renders as the same day
- * whichever renderer sees it. That is why the created and submitted columns,
+ * calendar date, read off the UTC components of its `Date`, renders as the
+ * same day whichever renderer sees it. That is why the created and submitted columns,
  * not the arrival column, are what pin the pairing on a realistic row.
  */
 const LATE_EVENING_INSTANT = '2026-09-10T23:35:39.455Z'
