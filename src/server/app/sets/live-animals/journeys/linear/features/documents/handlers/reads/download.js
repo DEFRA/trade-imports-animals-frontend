@@ -1,5 +1,5 @@
 import { Readable } from 'node:stream'
-import { instantFromDateParts } from '../../../../../../../../lib/validate/index.js'
+import { isoDateFromDateParts } from '../../../../../../../../lib/validate/index.js'
 import {
   resolveContentDisposition,
   resolveDownloadContentType
@@ -20,7 +20,7 @@ export const uploadDetails = (journey, entry, file, filename) => ({
   bytes: file.payload,
   documentType: entry.accompanyingDocumentType,
   documentReference: entry.accompanyingDocumentReference,
-  dateOfIssue: instantFromDateParts(entry.accompanyingDocumentDateOfIssue),
+  dateOfIssue: isoDateFromDateParts(entry.accompanyingDocumentDateOfIssue),
   maxFileSize: MAX_FILE_SIZE_BYTES,
   mimeTypes: ALLOWED_MIME_TYPES
 })
