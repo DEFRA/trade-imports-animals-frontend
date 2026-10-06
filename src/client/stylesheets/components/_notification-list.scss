@@ -23,6 +23,26 @@
   &__results {
     margin: 0;
   }
+
+  &__card-row {
+    margin-top: 0;
+    margin-bottom: govuk-spacing(3);
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    dt {
+      @include govuk-font($size: 16, $weight: bold);
+      margin-bottom: govuk-spacing(1);
+    }
+
+    dd {
+      @include govuk-font($size: 19);
+      @include govuk-text-break-word;
+      margin: 0;
+    }
+  }
 }
 
 // Elements that style nested GOV.UK components are written as top-level BEM
@@ -52,28 +72,6 @@
 
   .govuk-button {
     margin-bottom: 0;
-  }
-}
-
-.notification-list {
-  &__card-row {
-    margin-top: 0;
-    margin-bottom: govuk-spacing(3);
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-
-    dt {
-      @include govuk-font($size: 16, $weight: bold);
-      margin-bottom: govuk-spacing(1);
-    }
-
-    dd {
-      @include govuk-font($size: 19);
-      @include govuk-text-break-word;
-      margin: 0;
-    }
   }
 }
 

@@ -11,22 +11,7 @@
     display: flex;
     flex-direction: column;
   }
-}
 
-// Top-level BEM selector: stylelint 17's selector-no-qualifying-type reads a
-// nested `&__link` with a descendant selector as type selector `__link`
-// qualifying the block class.
-.notifications-pagination__link {
-  display: inline-block;
-  text-decoration: none;
-
-  &:hover .notifications-pagination__page,
-  &:focus .notifications-pagination__page {
-    text-decoration-thickness: max(3px, 0.1875rem, 0.12em);
-  }
-}
-
-.notifications-pagination {
   &__label {
     display: block;
     @include govuk-font($size: 19, $weight: bold);
@@ -50,6 +35,19 @@
   &__item--next {
     text-align: right;
     margin-left: auto;
+  }
+}
+
+// Top-level BEM selector: stylelint 17's selector-no-qualifying-type reads a
+// nested `&__link` with a descendant selector as type selector `__link`
+// qualifying the block class.
+.notifications-pagination__link {
+  display: inline-block;
+  text-decoration: none;
+
+  &:hover .notifications-pagination__page,
+  &:focus .notifications-pagination__page {
+    text-decoration-thickness: max(3px, 0.1875rem, 0.12em);
   }
 }
 
