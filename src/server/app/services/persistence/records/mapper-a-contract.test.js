@@ -140,7 +140,7 @@ describe('Mapper A PUT /notifications contract', () => {
     })
   })
 
-  test('emits each party answer as its literal copy with no addressId', () => {
+  test('emits each party answer as its details', () => {
     const payload = fulfilmentToNotification(
       assembleFulfilments(completeJourneyAnswers),
       CONTRACT_REFERENCE
@@ -148,15 +148,13 @@ describe('Mapper A PUT /notifications contract', () => {
 
     expect(payload.placeOfOrigin).toEqual(placeOfOriginCopy)
     expect(payload.consignment).toEqual(contactAddressCopy)
-    expect(payload.placeOfOrigin).not.toHaveProperty('addressId')
-    expect(payload.consignment).not.toHaveProperty('addressId')
   })
 
-  test('drops the addressId from a legacy party answer that carries one', () => {
+  test('carries only a party answer’s details, dropping any other key', () => {
     const answers = {
       ...completeJourneyAnswers,
-      placeOfOrigin: { addressId: 'origin-farm', ...placeOfOriginCopy },
-      contactAddress: { addressId: 'apha', ...contactAddressCopy }
+      placeOfOrigin: { ...placeOfOriginCopy, unrelated: 'dropped' },
+      contactAddress: { ...contactAddressCopy, unrelated: 'dropped' }
     }
     const payload = fulfilmentToNotification(
       assembleFulfilments(answers),
@@ -165,14 +163,12 @@ describe('Mapper A PUT /notifications contract', () => {
 
     expect(payload.placeOfOrigin).toEqual(placeOfOriginCopy)
     expect(payload.consignment).toEqual(contactAddressCopy)
-    expect(payload.placeOfOrigin).not.toHaveProperty('addressId')
-    expect(payload.consignment).not.toHaveProperty('addressId')
   })
 
-  test('omits a legacy party answer that holds only an addressId', () => {
+  test('omits a party answer with no details', () => {
     const answers = {
       ...completeJourneyAnswers,
-      placeOfOrigin: { addressId: 'origin-farm' }
+      placeOfOrigin: { unrelated: 'dropped' }
     }
     const payload = fulfilmentToNotification(
       assembleFulfilments(answers),

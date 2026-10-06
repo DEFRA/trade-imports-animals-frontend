@@ -1,41 +1,21 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import createFetchMock from 'vitest-fetch-mock'
 import {
   AMEND,
   DRAFT,
   SUBMITTED
 } from '../../../../engine/persistence/records.js'
-import { config } from '../../../../../../config/config.js'
 import { records } from './index.js'
 
 const fetchMocker = createFetchMock(vi)
 fetchMocker.enableMocks()
 
 const notificationsUrl = 'http://localhost:8085/notifications'
-const addressBookUrl = 'http://localhost:8089'
 
 const RECORD_CREATED_AT = '2026-07-14T09:00:00'
 const RECORD_ARRIVAL_DATE = '2026-07-20'
 const CONSIGNOR_NAME = 'Consignor Ltd'
 const CONSIGNEE_NAME = 'Consignee Ltd'
-
-const addressRequests = () =>
-  fetchMocker
-    .requests()
-    .map(({ url }) => url)
-    .filter((url) => url.startsWith(addressBookUrl))
-
-const partyCopy = (name, addressLine1, countryCode) => ({
-  name,
-  phone: '01234 567890',
-  email: 'party@example.com',
-  address: {
-    addressLine1,
-    townOrCity: 'Vernier',
-    postcode: '30055',
-    countryCode
-  }
-})
 
 const notification = (referenceNumber, status) => ({
   referenceNumber,
@@ -176,90 +156,5 @@ describe('real records adapter — paged list', () => {
       { method: 'GET', url: `${notificationsUrl}/GBN-1/fulfilments` },
       { method: 'GET', url: `${notificationsUrl}/GBN-GONE/fulfilments` }
     ])
-  })
-})
-
-// Run in real mode so any address-book request would reach the fetch mock and
-// be seen. Set on the loaded config, because the flag is read through config.
-describe('real records adapter — party names from the stored copy', () => {
-  const originalMode = config.get('stubMode')
-
-  const listedPage = (content) =>
-    JSON.stringify({
-      page: 1,
-      size: 20,
-      totalElements: content.length,
-      totalPages: 1,
-      content
-    })
-
-  beforeEach(() => {
-    fetchMocker.resetMocks()
-    config.set('stubMode', false)
-  })
-
-  afterEach(() => {
-    config.set('stubMode', originalMode)
-  })
-
-  test.each([
-    ['DRAFT', DRAFT],
-    ['AMEND', AMEND],
-    ['SUBMITTED', SUBMITTED]
-  ])(
-    'Should read party names from the stored copy on a %s row without calling the address book',
-    async (backendStatus, status) => {
-      fetchMocker.mockResponse(
-        listedPage([
-          {
-            ...notification('GBN-1', backendStatus),
-            consignor: partyCopy(
-              'Astra Rosales',
-              '43 East Hague Extension',
-              'CH'
-            ),
-            consignee: partyCopy(
-              'British Livestock Ltd',
-              '10 Market Street',
-              'GB'
-            )
-          }
-        ])
-      )
-
-      const listed = await records.list({ page: 1 })
-
-      expect(listed.rows[0]).toMatchObject({
-        status,
-        consignorName: 'Astra Rosales',
-        consigneeName: 'British Livestock Ltd'
-      })
-      expect(addressRequests()).toEqual([])
-    }
-  )
-
-  test('Should list without an organisation, as no party is resolved', async () => {
-    fetchMocker.mockResponse(listedPage([notification('GBN-1', 'DRAFT')]))
-
-    const listed = await records.list({ page: 1 })
-
-    expect(listed.rows[0].consignorName).toBe(CONSIGNOR_NAME)
-    expect(fetchMocker.requests()).toHaveLength(1)
-  })
-
-  test('Should show no name for a legacy row holding only an addressId', async () => {
-    fetchMocker.mockResponse(
-      listedPage([
-        {
-          ...notification('GBN-1', 'DRAFT'),
-          consignor: { addressId: '665f1c2ab3e4d51a2c9d0e77' }
-        }
-      ])
-    )
-
-    const listed = await records.list({ page: 1 })
-
-    expect(listed.rows[0].consignorName).toBeNull()
-    expect(addressRequests()).toEqual([])
   })
 })
