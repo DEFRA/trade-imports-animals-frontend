@@ -48,7 +48,6 @@ export const toDisplayParty = async (party) => {
   }
 }
 
-/** Display parties for every status. */
 export const partiesFromStoredAnswers = async (answers = {}) => {
   const entries = await Promise.all(
     JOURNEY_PARTY_IDS.map(async (partyId) => [

@@ -25,8 +25,7 @@ const copy = copyFor({ en, cy })
 
 const EDITABLE_PARTIES = [...PARTIES, CONTACT_PARTY]
 
-/** Where the trader came from, so Save, Cancel and Back all go back there. A
- * closed list rather than a free path: the value arrives in the query string. */
+/** A closed list, not a free path: `return` arrives in the query string. */
 const RETURN_SLUGS = ['addresses', kit.CYA_SLUG, CONTACT_PARTY.slug]
 
 const returnHref = (request, party) => {
@@ -70,7 +69,7 @@ const valuesFrom = (payload = {}) =>
 
 const get = (party) => async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  // Nothing has been copied yet, so there is nothing to edit — pick one first.
+  // Nothing to edit until an address has been picked.
   if (!answers[party.id]) {
     return h.redirect(
       kit.withChangeContext(request, pagePath(journey.journeyId, party.slug))

@@ -10,8 +10,7 @@ import { copyFor } from '../../../../../../../shared/copy.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 
-/** The INS address book's rules (features/address-book/fields.js), copied so a
- * copied address can be edited here to the same standard it was saved to there. */
+/** Copied from the INS address book (features/address-book/fields.js). */
 export const FIELD_RULES = {
   name: { maxLength: 255, required: true },
   addressLine1: { maxLength: 255, required: true },
@@ -59,11 +58,8 @@ export const addressRules = (countryCodes) =>
     })
   )
 
-/** The fields a stored party copy keeps at its top level; the rest sit in its
- * nested `address`. */
 const PARTY_LEVEL_FIELDS = new Set(['name', 'phone', 'email'])
 
-/** A stored party copy as flat form values. */
 export const formValuesOf = (party = {}) =>
   Object.fromEntries(
     FIELDS.map((field) => {
@@ -72,8 +68,8 @@ export const formValuesOf = (party = {}) =>
     })
   )
 
-/** Validated form values back into the stored party copy shape — the shape
- * `answerForInlineParty` writes when the trader picks from the book. */
+/** Leaves out `pickedFromId`: an edited copy no longer matches the record it
+ * was picked from, so the picker should not pre-select it. */
 export const partyFrom = (values) => ({
   name: values.name,
   phone: values.phone,
@@ -88,6 +84,5 @@ export const partyFrom = (values) => ({
   }
 })
 
-/** Whether a stored party copy meets the address-book rules. */
 export const isValidParty = (party, countryCodes) =>
   validate(addressRules(countryCodes), formValuesOf(party)).errors === null

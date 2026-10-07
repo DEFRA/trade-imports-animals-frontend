@@ -9,10 +9,7 @@ const copy = copyFor({ en, cy })
 
 const ALL_PARTIES = [...PARTIES, CONTACT_PARTY]
 
-/** A copied address that no longer meets the address-book rules, keyed by party
- * id. A role never answered is simply unanswered: it renders as "not provided"
- * and raises no error here, because an error before the user has had a chance
- * to answer is not an error. */
+/** An unanswered role is not an error: the user has not had a chance to answer. */
 export const invalidPartyErrors = async (answers = {}) => {
   const answered = ALL_PARTIES.filter((party) => answers[party.id])
   if (answered.length === 0) {

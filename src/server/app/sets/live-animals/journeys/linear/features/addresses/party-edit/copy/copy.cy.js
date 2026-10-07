@@ -1,6 +1,4 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
-// Field labels and error messages match the INS address book
-// (trade-imports-ins-frontend features/address-book/copy).
 export const copy = {
   title: 'Golygu manylion cyfeiriad',
   hint: "Mae newidiadau'n berthnasol i'r hysbysiad hwn yn unig. Nid yw eich llyfr cyfeiriadau yn newid.",

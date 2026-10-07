@@ -42,7 +42,6 @@ const hubRow = (href, { title, hint }, valueText, editHref) => ({
         text: valueText ? copy.change : copy.add,
         visuallyHiddenText: title.toLowerCase()
       },
-      // Only an address already copied has details to edit.
       ...(valueText && editHref
         ? [
             {

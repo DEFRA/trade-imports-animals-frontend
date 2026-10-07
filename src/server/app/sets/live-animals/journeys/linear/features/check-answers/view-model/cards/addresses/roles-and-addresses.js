@@ -19,8 +19,7 @@ const copy = copyFor({ en, cy })
  *
  * The CPH number is collected on its own page, so this card's rows span two.
  * The one Change link goes to the addresses page — the page the hub's addresses
- * task row leads with, and the page the five roles come from. Each copied
- * address also links to edit its details, returning here. */
+ * task row leads with, and the page the five roles come from. */
 export const rolesAndAddressesCard = (
   journeyId,
   answers,

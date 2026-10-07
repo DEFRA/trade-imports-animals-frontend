@@ -47,8 +47,6 @@ const resolveErrorSummary = (errors, handshakeError) =>
 const addressSummary = (address) =>
   [addressText(address), address.country].filter(Boolean).join(', ')
 
-/** The contact already copied onto this notification, with the link to edit
- * its details here — the picker below only ever replaces it. */
 const currentContactOf = async (request, journeyId, answers) => {
   const display = await toDisplayParty(answers.contactAddress)
   return display

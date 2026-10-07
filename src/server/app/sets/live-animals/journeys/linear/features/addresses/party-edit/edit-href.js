@@ -1,8 +1,6 @@
 import { pagePath } from '../../../../../../../shared/paths.js'
 
-/** The link to edit a party's copied address, naming the page to come back to.
- * `change` carries the check-your-answers context through, as the hub's own
- * links do. */
+/** `change` carries the check-your-answers context through, as the hub's links do. */
 export const partyEditHref = (
   journeyId,
   party,

@@ -11,5 +11,4 @@ export const chosenPartyFor = async (orgId, selectedId) => {
   return record && !record.deleted ? record : undefined
 }
 
-/** The answer to commit for a party the trader has just picked. */
 export const answerFor = (_party, chosen) => answerForInlineParty(chosen)

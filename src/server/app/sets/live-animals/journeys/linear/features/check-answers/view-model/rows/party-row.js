@@ -51,9 +51,7 @@ const valueCell = (lines, errorText) => {
   return { html: errorText ? errorMarkup(errorText) + details : details }
 }
 
-/** The card that holds the role carries the one Change link to the page that
- * picks it. A copied address also carries its own link to edit the details
- * held on this notification. */
+/** The card holds the one Change link; this row adds only Edit details. */
 const editAction = (lines, editHref, key) =>
   lines && editHref
     ? {

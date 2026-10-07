@@ -1,6 +1,4 @@
-// Field labels and error messages match the INS address book
-// (trade-imports-ins-frontend features/address-book/copy), so an address reads
-// and fails the same way in both places.
+// Labels and errors match the INS address book's (features/address-book/copy).
 export const copy = {
   title: 'Edit address details',
   hint: 'Changes apply to this notification only. Your address book is not changed.',
