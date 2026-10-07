@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { originLabel } from '../../../../../../services/countries/index.js'
+import { addressBookCountryName } from '../../../../../../services/countries/index.js'
 import { partiesFromStoredAnswers, toDisplayParty } from './frozen-parties.js'
 
 const stored = {
@@ -44,7 +44,7 @@ describe('partiesFromStoredAnswers', () => {
       emailAddress: 'origin@example.co.uk'
     })
     expect(placeOfOrigin.address.country).toBe(
-      (await originLabel('IE')) ?? 'IE'
+      await addressBookCountryName('IE')
     )
   })
 
@@ -64,5 +64,46 @@ describe('toDisplayParty', () => {
     })
 
     expect(party.address.country).toBe('XX')
+  })
+})
+
+describe('toDisplayParty — real reference data', () => {
+  const originalMode = process.env.STUB_MODE
+
+  beforeEach(() => {
+    vi.resetModules()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    if (originalMode === undefined) {
+      delete process.env.STUB_MODE
+    } else {
+      process.env.STUB_MODE = originalMode
+    }
+  })
+
+  it('Should name a copy in a country outside the SPS origin block', async () => {
+    process.env.STUB_MODE = 'false'
+    const okResponse = (body) => ({ ok: true, json: async () => body })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url) =>
+        new URL(url).searchParams.has('blocks')
+          ? okResponse([{ code: 'IE', name: 'Ireland' }])
+          : okResponse([
+              { code: 'GB', name: 'United Kingdom' },
+              { code: 'US', name: 'United States' }
+            ])
+      )
+    )
+    const { toDisplayParty: toDisplay } = await import('./frozen-parties.js')
+
+    const party = await toDisplay({
+      name: 'Prairie Ranch',
+      address: { countryCode: 'US' }
+    })
+
+    expect(party.address.country).toBe('United States')
   })
 })

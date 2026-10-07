@@ -208,7 +208,7 @@ test.describe('party picker per role', () => {
       ).toBeVisible()
       await expect(row).toContainText(selectedName)
       await expect(
-        row.getByRole('link', { name: copy.hub.change })
+        row.getByRole('link', { name: copy.hub.editDetails })
       ).toBeVisible()
       await row.getByRole('link', { name: copy.hub.change }).click()
       await expect(

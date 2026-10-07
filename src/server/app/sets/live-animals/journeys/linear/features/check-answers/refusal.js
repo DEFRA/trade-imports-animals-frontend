@@ -1,8 +1,7 @@
 import * as state from '../../../../../../engine/index.js'
-import { partiesForRender } from '../addresses/parties-for-render.js'
 import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { REVIEW_CARDS } from './view-model/incomplete-cards.js'
-import { outstandingPartyErrors } from './view-model/outstanding-parties.js'
+import { invalidPartyErrors } from './view-model/invalid-parties.js'
 import { withScanStatus } from '../documents/scan/status.js'
 import { SCAN_STATUS } from '../documents/scan-poll.js'
 import { copyFor } from '../../../../../../shared/copy.js'
@@ -59,9 +58,7 @@ export const reviewRefusal = async (request, h) => {
   if (!scope.readyForCheckYourAnswers) {
     return { refused: true, extraCardErrors: {} }
   }
-  const source = storedAnswers ?? answers
-  const parties = await partiesForRender(request, journey, source)
-  if (Object.keys(outstandingPartyErrors(source, parties)).length > 0) {
+  if (Object.keys(await invalidPartyErrors(answers)).length > 0) {
     return { refused: true, extraCardErrors: {} }
   }
   const invalidCardErrors = await cardStoredErrors(REVIEW_CARDS, answers, {

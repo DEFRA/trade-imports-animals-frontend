@@ -1,8 +1,9 @@
 import { toWireAddress } from '../../../../../../services/address-book/to-wire-address.js'
 
-/** Inline party shape persisted on the notification and in journey answers. */
+/** `pickedFromId` only pre-selects the record when the picker reopens: nothing
+ * reads details through it, and `toParty` drops it from the notification. */
 export const answerForInlineParty = (chosen) => ({
-  addressId: chosen.id,
+  pickedFromId: chosen.id,
   name: chosen.name,
   phone: chosen.address?.telephoneNumber,
   email: chosen.address?.emailAddress,

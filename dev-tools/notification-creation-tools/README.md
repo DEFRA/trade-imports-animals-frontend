@@ -75,7 +75,6 @@ every request, so no restart is needed after a mutation.
 | Scenario id          | Simulates                                                                                         | What to look for                                                                                                                                                       |
 | -------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `country-stale`      | Reference-data re-release dropped the ISO code the trader submitted for the country of origin.    | Origin page renders unselected with no explanation. CYA card shows the raw ISO code. Review-page Continue and declaration submit refuse until the trader re-picks.     |
-| `party-deleted`      | An address-book party (any of the six party roles) has been deleted since the trader picked it.   | CYA card shows "Not provided" plus an outstanding-party error against the affected role. Task list demotes the row to "To do". Declaration submit refuses.             |
 | `unknown-obligation` | An obligation has been removed from the manifest since submit — a fulfilment keyed on it lingers. | Engine's `dropUnrecognisedFulfilments` sweeps the entry out silently on read. Dashboard is unaffected. Amend journey has lost the answer with no user warning surface. |
 
 ## Design
@@ -106,14 +105,12 @@ shapes are used, one per scenario kind:
   payload the scenario then `$set`s. A future change to how the answer
   is serialised (bare string → object with region metadata, say) flows
   through the assembler without the scenario knowing.
-- **Raw fulfilment** (`party-deleted`, `unknown-obligation`). The
-  scenarios that operate on the fulfilment shape directly —
-  `party-deleted` walks the notification's fulfilments to find every
-  party entry with an `addressId`; `unknown-obligation` `$addToSet`s a
-  fulfilment keyed on an id the current manifest deliberately does not
-  know. `assembleFulfilments` can't help either case: it only emits
-  ids the current registry contains, which is precisely what
-  `unknown-obligation` needs to sidestep.
+- **Raw fulfilment** (`unknown-obligation`). The scenario operates on
+  the fulfilment shape directly: it `$addToSet`s a fulfilment keyed on
+  an id the current manifest deliberately does not know.
+  `assembleFulfilments` can't help here: it only emits ids the current
+  registry contains, which is precisely what `unknown-obligation`
+  needs to sidestep.
 
 Every scenario carries a runtime sanity check that fires if its
 sentinel has lost its meaning:
@@ -122,8 +119,6 @@ sentinel has lost its meaning:
   ends up in the current catalogue.
 - `unknown-obligation`'s `assertUnknown` fails if the ghost obligation
   id ever gets adopted by a real obligation.
-- `party-deleted`'s `partyIdToName` throws if a role in `PARTIES` /
-  `CONTACT_PARTY` no longer resolves to an obligation.
 
 ## Tests
 
@@ -140,7 +135,7 @@ All the tests live in
 
 The load-bearing tier. Spins up one real MongoDB container via
 `testcontainers` (already a devDependency for the Redis IT), shared
-across all three scenarios, and for each asserts:
+across both scenarios, and for each asserts:
 
 - **The mutation lands.** The document is in the target stale state.
 - **Other fulfilments are untouched.** Scenarios don't over-match.
@@ -164,15 +159,7 @@ couple of seconds. The frontend's own CI runs `npm test` without the
 flag, so the smoke suite skips on main; run it locally before touching
 a scenario.
 
-### Data source integrity (not gated — runs on main CI)
-
-One always-on describe in the same file pins that every role name in
-`PARTIES` + `CONTACT_PARTY` resolves to an obligation. That drift —
-adding a role without a matching obligation entry — is one the smoke
-suite cannot catch (it seeds specific obligation ids). This fires on
-main CI before anyone runs the tool.
-
-The other scenarios' sanity checks (`assertBogus` / `assertUnknown`)
+The scenarios' sanity checks (`assertBogus` / `assertUnknown`)
 fire at runtime inside the scenario itself — a sentinel that has lost
 its meaning errors loudly on first invocation, so a separate test
 would duplicate what the runtime guard already does.
@@ -185,7 +172,7 @@ would duplicate what the runtime guard already does.
 - Add a `describe('#<yourScenario>', () => { ... })` block to
   `stale-scenarios.integration.test.js` proving the mutation lands,
   doesn't over-match, and is idempotent. Follow the shape of the
-  existing three.
+  existing two.
 - If the scenario has a sentinel — a value or id chosen to be
   nonsense under today's reference data / manifest — add an
   assertion that fires when it becomes meaningful, or a test that

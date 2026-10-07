@@ -86,7 +86,7 @@ test.describe('contact feature', () => {
     )
   })
 
-  test('selects a valid contact, redirects and persists the selection', async ({
+  test('selects a valid contact, redirects and shows it as the current contact, still selected, on return', async ({
     page
   }) => {
     const contactUrl = page.url()
@@ -97,6 +97,11 @@ test.describe('contact feature', () => {
 
     await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+'))
     await page.goto(contactUrl)
+    const current = page.getByRole('region', { name: copy.current.title })
+    await expect(current).toContainText(selected.name)
+    await expect(
+      current.getByRole('link', { name: copy.current.editDetails })
+    ).toBeVisible()
     await expect(
       page.getByRole('radio', { name: selected.name, exact: true })
     ).toBeChecked()

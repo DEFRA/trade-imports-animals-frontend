@@ -1,4 +1,4 @@
-import { originLabel } from '../../../../../../services/countries/index.js'
+import { addressBookCountryName } from '../../../../../../services/countries/index.js'
 import { PARTIES, CONTACT_PARTY } from './parties.js'
 
 /** Backend role name to journey party id. The two vocabularies agree on every
@@ -34,7 +34,6 @@ export const toDisplayParty = async (party) => {
   }
   const address = party.address ?? {}
   return {
-    id: party.addressId ?? null,
     name: party.name,
     address: {
       addressLine1: address.addressLine1,
@@ -42,14 +41,13 @@ export const toDisplayParty = async (party) => {
       townOrCity: address.townOrCity,
       county: address.county,
       postalOrZipCode: address.postcode,
-      country: (await originLabel(address.countryCode)) ?? address.countryCode,
+      country: await addressBookCountryName(address.countryCode),
       telephoneNumber: party.phone,
       emailAddress: party.email
     }
   }
 }
 
-/** SUBMITTED render path — build display parties from stored inline answers. */
 export const partiesFromStoredAnswers = async (answers = {}) => {
   const entries = await Promise.all(
     JOURNEY_PARTY_IDS.map(async (partyId) => [

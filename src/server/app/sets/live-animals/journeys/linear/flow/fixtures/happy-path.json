@@ -54,7 +54,15 @@
       }
     },
     "placeOfOrigin": {
-      "addressId": "origin-farm"
+      "name": "Origin Farm",
+      "phone": "01632 960000",
+      "email": "origin-farm@example.com",
+      "address": {
+        "addressLine1": "1 Farm Lane",
+        "townOrCity": "Ennis",
+        "postcode": "V95 X7P2",
+        "countryCode": "IE"
+      }
     },
     "consignee": {
       "name": "British Livestock Ltd",
@@ -108,7 +116,15 @@
       }
     },
     "contactAddress": {
-      "addressId": "animal-and-plant-health-agency"
+      "name": "Animal and Plant Health Agency",
+      "phone": "01632 960000",
+      "email": "animal-and-plant-health-agency@example.com",
+      "address": {
+        "addressLine1": "Woodham Lane",
+        "townOrCity": "Addlestone",
+        "postcode": "KT15 3NB",
+        "countryCode": "GB"
+      }
     },
     "declaration": "confirmed"
   }

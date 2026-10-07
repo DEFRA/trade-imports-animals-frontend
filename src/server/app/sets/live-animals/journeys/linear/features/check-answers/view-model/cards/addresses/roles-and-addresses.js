@@ -1,7 +1,10 @@
 import { copyFor } from '../../../../../../../../../shared/copy.js'
+import { CYA_SLUG } from '../../../../../../../../../shared/kit.js'
 import { copy as en } from '../../../copy/copy.en.js'
 import { copy as cy } from '../../../copy/copy.cy.js'
 import { addressesPage } from '../../../../addresses/page.js'
+import { PARTIES } from '../../../../addresses/parties.js'
+import { partyEditHref } from '../../../../addresses/party-edit/edit-href.js'
 import { cphApplies } from '../../applicability.js'
 import { cardAction, editableActions } from '../../rows/change-link.js'
 import { partyRow } from '../../rows/party-row.js'
@@ -9,11 +12,10 @@ import { row } from '../../rows/summary-row.js'
 
 const copy = copyFor({ en, cy })
 
-/** `parties` carries party answers with address-book references resolved to
- * current details, or the submit freeze when the controller passes
- * {@link partiesFromStoredAnswers} output. `partyErrors` is computed once by the
+/** `parties` carries the stored party copies in display shape
+ * ({@link partiesFromStoredAnswers}). `partyErrors` is computed once by the
  * controller and threaded down, so the rows and the error summary always agree
- * on which roles are outstanding.
+ * on which roles are in error.
  *
  * The CPH number is collected on its own page, so this card's rows span two.
  * The one Change link goes to the addresses page — the page the hub's addresses
@@ -36,21 +38,14 @@ export const rolesAndAddressesCard = (
     )
   ),
   rows: [
-    partyRow(copy.rows.placeOfOrigin, parties.placeOfOrigin, {
-      errorText: partyErrors.placeOfOrigin
-    }),
-    partyRow(copy.rows.consignor, parties.consignor, {
-      errorText: partyErrors.consignor
-    }),
-    partyRow(copy.rows.consignee, parties.consignee, {
-      errorText: partyErrors.consignee
-    }),
-    partyRow(copy.rows.importer, parties.importer, {
-      errorText: partyErrors.importer
-    }),
-    partyRow(copy.rows.placeOfDestination, parties.placeOfDestination, {
-      errorText: partyErrors.placeOfDestination
-    }),
+    ...PARTIES.map((party) =>
+      partyRow(copy.rows[party.id], parties[party.id], {
+        errorText: partyErrors[party.id],
+        editHref: readOnly
+          ? undefined
+          : partyEditHref(journeyId, party, CYA_SLUG)
+      })
+    ),
     ...(cphApplies(answers)
       ? [row(copy.rows.cph, answers.countyParishHoldingCph)]
       : [])

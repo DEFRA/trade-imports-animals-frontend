@@ -28,6 +28,7 @@ export const copy = {
     OTHER: 'Arall'
   },
   change: 'Newid',
+  editDetails: 'Golygu manylion',
   cancelAmend: {
     link: 'Canslo’r diwygiad',
     successTitle: 'Llwyddiant',
@@ -146,11 +147,14 @@ export const copy = {
       documents: 'Cwblhewch y dogfennau'
     },
     parties: {
-      placeOfOrigin: 'Dewiswch gyfeiriad ar gyfer y man tarddiad',
-      consignor: 'Dewiswch gyfeiriad ar gyfer yr anfonwr',
-      consignee: 'Dewiswch gyfeiriad ar gyfer y derbynnydd',
-      importer: 'Dewiswch gyfeiriad ar gyfer y mewnforiwr',
-      placeOfDestination: 'Dewiswch gyfeiriad ar gyfer y man cyrchfan'
+      placeOfOrigin: 'Cywirwch fanylion y cyfeiriad ar gyfer y man tarddiad',
+      consignor: 'Cywirwch fanylion y cyfeiriad ar gyfer yr anfonwr',
+      consignee: 'Cywirwch fanylion y cyfeiriad ar gyfer y derbynnydd',
+      importer: 'Cywirwch fanylion y cyfeiriad ar gyfer y mewnforiwr',
+      placeOfDestination:
+        'Cywirwch fanylion y cyfeiriad ar gyfer y man cyrchfan',
+      contactAddress:
+        'Cywirwch fanylion y cyfeiriad cyswllt ar gyfer y llwyth hwn'
     }
   }
 }

@@ -12,16 +12,11 @@ import { copy as sharedEn } from '../../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../../shared/copy.cy.js'
 import * as addressBook from '../../../../../../../services/address-book/index.js'
 import { PARTIES } from '../parties.js'
-import { organisationIdOf } from '../resolve-parties.js'
+import { organisationIdOf } from '../../../../../../../../common/helpers/organisation-id.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
 import { isSearchAction, pageNumber } from './request-params.js'
-import {
-  answerFor,
-  chosenPartyFor,
-  committedId,
-  selectedPartyFor
-} from './selection.js'
+import { answerFor, chosenPartyFor } from './selection.js'
 import { pickerViewModel } from './view-model/index.js'
 import { errorSummary } from './view-model/error-summary.js'
 import { isStubMode } from '../../../../../../../../common/services/mode.js'
@@ -41,28 +36,14 @@ const render = async (
   orgId,
   journey,
   party,
-  {
-    query,
-    page,
-    selectedId,
-    answers,
-    error,
-    recoverableError = false,
-    addAddressHref
-  }
+  { query, page, selectedId, error, recoverableError = false, addAddressHref }
 ) => {
   // One book for every role — addresses have no type (D3).
   const found = await addressBook.search(orgId, { query, page })
-  const selected = await selectedPartyFor(
-    journey,
-    orgId,
-    party,
-    answers,
-    selectedId
-  )
-  // A deleted/missing reference must not travel as "Selected: …" or in
-  // pagination links — treat it as no selection (same as resolveOne).
-  const effectiveSelectedId = selected ? selectedId || selected.id : ''
+  const selected = await chosenPartyFor(orgId, selectedId)
+  // A deleted/missing record must not travel as "Selected: …" or in
+  // pagination links — treat it as no selection.
+  const effectiveSelectedId = selected ? selected.id : ''
   // Reached from a Change link, every way back out of the picker — Back,
   // paging, the save — has to keep the context, or the trader is dropped into
   // the section flow instead of the summary they came from.
@@ -111,8 +92,7 @@ const get = (party) => async (request, h) => {
   return render(request, h, organisationIdOf(request), journey, party, {
     query: request.query.q ?? '',
     page: pageNumber(request.query.page),
-    selectedId: request.query.selected ?? committedId(answers, party),
-    answers,
+    selectedId: request.query.selected ?? answers[party.id]?.pickedFromId ?? '',
     error: handshakeError,
     recoverableError,
     addAddressHref: addAddressLinkFor(request, h, journey, party)
@@ -127,12 +107,11 @@ const commitSelection = async (request, h, party, chosen, form) => {
       })
     },
     async () => {
-      const { journey, answers } = await state.get(request, h)
+      const { journey } = await state.get(request, h)
       return (
         await render(request, h, organisationIdOf(request), journey, party, {
           ...form,
           selectedId: chosen.id,
-          answers,
           recoverableError: true,
           addAddressHref: addAddressLinkFor(request, h, journey, party)
         })
@@ -158,25 +137,36 @@ const post = (party) => async (request, h) => {
   const orgId = organisationIdOf(request)
 
   if (isSearchAction(payload)) {
-    const { journey, answers } = await state.get(request, h)
+    const { journey } = await state.get(request, h)
     return render(request, h, orgId, journey, party, {
       query,
       page: 1,
       selectedId,
-      answers,
       addAddressHref: addAddressLinkFor(request, h, journey, party)
     })
   }
 
+  // Saving without choosing keeps the address already on the notification.
+  if (!selectedId) {
+    const { answers } = await state.get(request, h)
+    if (answers[party.id]) {
+      return h.redirect(
+        kit.withChangeContext(
+          request,
+          pagePath(request.params.journeyId, 'addresses')
+        )
+      )
+    }
+  }
+
   const chosen = await chosenPartyFor(orgId, selectedId)
   if (!chosen) {
-    const { journey, answers } = await state.get(request, h)
+    const { journey } = await state.get(request, h)
     return (
       await render(request, h, orgId, journey, party, {
         query,
         page: pageNumber(payload.page),
         selectedId: '',
-        answers,
         error: party.error,
         addAddressHref: addAddressLinkFor(request, h, journey, party)
       })

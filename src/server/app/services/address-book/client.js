@@ -1,6 +1,6 @@
 import { getTraceId } from '@defra/hapi-tracing'
 import { config } from '../../../../config/config.js'
-import { originLabel } from '../countries/index.js'
+import { addressBookCountryName } from '../countries/index.js'
 import { HTTP_STATUS_NOT_FOUND } from '../../lib/http-status.js'
 import { BackendRequestError } from '../persistence/records/errors.js'
 
@@ -47,9 +47,9 @@ const failed = (what, response) => new BackendRequestError(what, response)
 /** Wire shape to the shape the journey renders. The API is the system of
  * record and uses its own names (`postcode`, `countryCode`, `phone`, `email`);
  * the journey has carried `postalOrZipCode`/`country` since before it existed
- * and is read by two renderers plus templates. Only the addressId crosses to
- * the backend, so the display shape never has to match the wire — mapping here
- * is cheaper than renaming the journey. */
+ * and is read by two renderers plus templates. A picked record is copied to the
+ * backend through `toWireAddress`, so the display shape never has to match the
+ * wire — mapping here is cheaper than renaming the journey. */
 const toRecord = async (operator) => ({
   id: operator.id,
   name: operator.name,
@@ -61,7 +61,7 @@ const toRecord = async (operator) => ({
     county: operator.county,
     postalOrZipCode: operator.postcode,
     countryCode: operator.countryCode,
-    country: (await originLabel(operator.countryCode)) ?? operator.countryCode,
+    country: await addressBookCountryName(operator.countryCode),
     // Contact details sit inside the address block, which is where the journey
     // has always read them from.
     telephoneNumber: operator.phone,

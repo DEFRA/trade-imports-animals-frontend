@@ -21,6 +21,7 @@ import {
   postHandlerOf
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import { pagePath } from '../../../../../../shared/paths.js'
 import * as state from '../../../../../../engine/index.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../lib/http-status.js'
 import { BackendRequestError } from '../../../../../../services/persistence/records/errors.js'
@@ -35,6 +36,9 @@ const CONTACT = STUB_BOOK.find(
   (record) => record.name === 'Animal and Plant Health Agency'
 )
 const INS_FRONTEND_BASE_URL_KEY = 'tradeImportsInsFrontend.baseUrl'
+const HELD_CONTACT = { name: 'Held Contact', address: { countryCode: 'GB' } }
+const editHrefOf = (journeyId) =>
+  `${pagePath(journeyId, 'consignment/contact/edit')}?return=consignment%2Fcontact%2Fselect`
 
 describe('GET contact — select an address from the book', () => {
   beforeAll(() => {
@@ -76,22 +80,74 @@ describe('GET contact — select an address from the book', () => {
     expect(result.view.context.recoverableError).toBe(true)
   })
 
-  it('Should offer the book, then pre-select and commit the address that was picked', async () => {
+  it('Should commit a copy of the picked address, then show it as the current contact and still selected', async () => {
     const postResult = await driveHandler(post, {
       payload: { contactAddress: CONTACT.id }
     })
     expect(postResult.view).toBeUndefined()
     expect(postResult.after.contactAddress).toMatchObject({
-      addressId: CONTACT.id,
+      pickedFromId: CONTACT.id,
       name: CONTACT.name
     })
     expect(postResult.after.contactAddress.address).toBeDefined()
 
     const getResult = await driveHandler(get, { seed: postResult.after })
-    const option = getResult.view.context.contactOptions.find(
-      (candidate) => candidate.value === CONTACT.id
+    const { contactOptions, currentContact } = getResult.view.context
+    expect(
+      contactOptions
+        .filter((option) => option.checked)
+        .map(({ value }) => value)
+    ).toEqual([CONTACT.id])
+    expect(currentContact).toMatchObject({
+      name: CONTACT.name,
+      editHref: editHrefOf(getResult.journeyId)
+    })
+  })
+
+  it('Should select nothing when the record the contact was picked from is gone', async () => {
+    const result = await driveHandler(get, {
+      seed: { contactAddress: { ...HELD_CONTACT, pickedFromId: 'gone' } }
+    })
+
+    const { contactOptions, errorSummary } = result.view.context
+    expect(contactOptions.every((option) => !option.checked)).toBe(true)
+    expect(errorSummary).toBeNull()
+  })
+
+  it('Should select nothing for a contact whose details were edited here', async () => {
+    const result = await driveHandler(get, {
+      seed: { contactAddress: HELD_CONTACT }
+    })
+
+    expect(
+      result.view.context.contactOptions.every((option) => !option.checked)
+    ).toBe(true)
+  })
+
+  it('Should carry the change context onto the current contact edit link', async () => {
+    const result = await driveHandler(get, {
+      seed: { contactAddress: HELD_CONTACT },
+      query: { change: '1' }
+    })
+
+    expect(result.view.context.currentContact.editHref).toBe(
+      `${editHrefOf(result.journeyId)}&change=1`
     )
-    expect(option).toMatchObject({ text: CONTACT.name, checked: true })
+  })
+
+  it('Should show no current contact when none has been picked', async () => {
+    const result = await driveHandler(get)
+
+    expect(result.view.context.currentContact).toBeNull()
+  })
+
+  it('Should keep the copy already held when saved with nothing selected', async () => {
+    const result = await driveHandler(post, {
+      seed: { contactAddress: HELD_CONTACT },
+      payload: {}
+    })
+
+    expect(result.after.contactAddress).toEqual(HELD_CONTACT)
   })
 })
 
@@ -110,6 +166,19 @@ describe('POST contact — invalid payload', () => {
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.contactAddress).toBeDefined()
     expect(result.after).toEqual(result.before)
+  })
+
+  it('Should keep the current contact card on a 400 re-render', async () => {
+    const result = await driveHandler(post, {
+      seed: { contactAddress: HELD_CONTACT },
+      payload: { contactAddress: 'not-a-real-contact' }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.currentContact).toMatchObject({
+      name: HELD_CONTACT.name,
+      editHref: editHrefOf(result.journeyId)
+    })
   })
 
   it('Should leave the page without committing when no contact is selected', async () => {
@@ -215,5 +284,24 @@ describe('POST contact — recoverable save failure', () => {
     expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     expect(result.view.context.recoverableError).toBe(true)
     expect(result.after.contactAddress).toBeUndefined()
+  })
+
+  it('Should keep the current contact card when saving the selection fails', async () => {
+    vi.spyOn(state, 'commit').mockRejectedValue(
+      new BackendRequestError('save answers', {
+        status: 503,
+        statusText: 'Service Unavailable'
+      })
+    )
+
+    const result = await driveHandler(post, {
+      seed: { contactAddress: HELD_CONTACT },
+      payload: { contactAddress: CONTACT.id }
+    })
+
+    expect(result.response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    expect(result.view.context.currentContact).toMatchObject({
+      name: HELD_CONTACT.name
+    })
   })
 })

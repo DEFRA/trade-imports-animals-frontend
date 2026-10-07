@@ -1,14 +1,13 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 // Address-book toRecord translates a countryCode to a display name via
-// originLabel; with self-loading readers, calling originLabel in real mode
+// addressBookCountryName; with self-loading readers, calling it in real mode
 // would trigger a countries fetch. This file's tests are about the address-
 // book, not countries, so mock the reader to a fixed lookup — the fetch mock
 // only has to answer address-book URLs.
 const COUNTRY_LABELS = { BE: 'Belgium', FR: 'France' }
 vi.mock('../countries/index.js', () => ({
-  ensureLoaded: async () => {},
-  originLabel: async (code) => COUNTRY_LABELS[code]
+  addressBookCountryName: async (code) => COUNTRY_LABELS[code] ?? code
 }))
 
 const originalMode = process.env.STUB_MODE

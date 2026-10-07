@@ -3,6 +3,7 @@ import { TEMPLATES } from '../../config.js'
 import { nextInSection } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
 import {
+  CYA_SLUG,
   errorSummary,
   journeyStrip,
   pageRoutes
@@ -15,7 +16,7 @@ import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import { buildSections } from './view-model/index.js'
 import { changeHref } from './view-model/rows/change-link.js'
-import { outstandingPartyErrors } from './view-model/outstanding-parties.js'
+import { invalidPartyErrors } from './view-model/invalid-parties.js'
 import {
   cardAnchorHref,
   incompleteCardErrors,
@@ -23,7 +24,9 @@ import {
   withCardErrors
 } from './view-model/incomplete-cards.js'
 import { cardStoredErrors } from '../../flow/stored-answers.js'
-import { partiesForRender } from '../addresses/parties-for-render.js'
+import { partiesFromStoredAnswers } from '../addresses/frozen-parties.js'
+import { partyOf } from '../addresses/parties.js'
+import { partyEditHref } from '../addresses/party-edit/edit-href.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
 import { documentsRejectedCardErrors, reviewRefusal } from './refusal.js'
 
@@ -32,17 +35,21 @@ const view = `${TEMPLATES}/features/check-answers/template`
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
-/** One summary over both kinds of refusal: first the roles whose saved address
- * no longer resolves, then the cards with answers still outstanding. A role
- * that broke is a more particular statement than "complete this card", so it
- * leads; the cards follow in page order. An unfinished card is somewhere on
- * this page, so its entry is an anchor; a party's entry links back to the
- * party's own page, because that is where the answer is given.
- * `cardAnchorHref` tells the two apart — the keys never collide, card ids and
- * party ids being drawn from different lists.
+/** One summary over both kinds of refusal: first the roles whose copied address
+ * breaks the address-book rules, then the cards with answers still
+ * outstanding. A role in error is a more particular statement than "complete
+ * this card", so it leads; the cards follow in page order. An unfinished card
+ * is somewhere on this page, so its entry is an anchor; a party's entry links
+ * to the page that edits its address, returning here.
+ *
+ * Party errors are keyed `party:<id>` here because `contactAddress` is both a
+ * party id and a card id: unprefixed, the card's message would overwrite the
+ * party's and the party entry would link to the card anchor.
  *
  * Focus is only moved to the summary when the user has just been refused, so a
  * plain visit does not yank the caret out of the page heading. */
+const PARTY_KEY_PREFIX = 'party:'
+
 const reviewErrorSummary = (
   journeyId,
   cardErrors,
@@ -50,9 +57,24 @@ const reviewErrorSummary = (
   disableAutoFocus
 ) =>
   errorSummary(
-    { ...partyErrors, ...cardErrors },
     {
-      href: (key) => cardAnchorHref(key) ?? changeHref(journeyId, key),
+      ...Object.fromEntries(
+        Object.entries(partyErrors).map(([id, text]) => [
+          `${PARTY_KEY_PREFIX}${id}`,
+          text
+        ])
+      ),
+      ...cardErrors
+    },
+    {
+      href: (key) =>
+        key.startsWith(PARTY_KEY_PREFIX)
+          ? partyEditHref(
+              journeyId,
+              partyOf(key.slice(PARTY_KEY_PREFIX.length)),
+              CYA_SLUG
+            )
+          : (cardAnchorHref(key) ?? changeHref(journeyId, key)),
       disableAutoFocus
     }
   )
@@ -127,23 +149,14 @@ export const renderNotificationView = async (
   const { journey, answers, storedAnswers, scope, evaluation } =
     await state.get(request, h)
   const readOnly = journey.status === state.SUBMITTED
-  // Outstanding parties are read from what was SAVED, not from what survived
-  // the read-path sanitiser: the sanitiser drops a party whose address-book
-  // reference no longer resolves, which is precisely the case this page has to
-  // name. The rest of the page still renders from the sanitised answers.
-  const source = storedAnswers ?? answers
-  const parties = await partiesForRender(request, journey, source)
+  const parties = await partiesFromStoredAnswers(answers)
   // A submitted notification is a record of what was sent, so nothing on it
   // is outstanding, and no stored answer of its is named as stale either —
   // both read as empty on a read-only notification.
   //
-  // Each card's page reads the sanitised `answers` here, and is handed the
-  // raw `storedAnswers` via context, so its own rules decide for themselves
-  // which of the two they need. The contact page's deleted-address rule is
-  // precisely the difference between them: it fires when `storedAnswers`
-  // still carries the address id but the sanitised `answers` has had it
-  // dropped, which is exactly how it tells a deleted address from one never
-  // chosen.
+  // Each card's page reads `answers` here, and is handed the raw
+  // `storedAnswers` via context, so its own rules decide for themselves which
+  // of the two they need.
   const invalidCardErrors = readOnly
     ? {}
     : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
@@ -161,7 +174,7 @@ export const renderNotificationView = async (
     amendmentCancelled: readOnly && request.query.cancelled === '1',
     recoverableError,
     parties,
-    partyErrors: readOnly ? {} : outstandingPartyErrors(source, parties),
+    partyErrors: readOnly ? {} : await invalidPartyErrors(answers),
     // Incomplete wins over invalid on the same card: spread the invalid map
     // first and the incomplete map second, so a card that is both unfinished
     // and carrying a stale value says "complete this section" rather than

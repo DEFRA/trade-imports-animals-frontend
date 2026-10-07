@@ -22,36 +22,56 @@ export const partyLines = (party) => {
   }
   return [
     `<strong>${escapeHtml(party.name)}</strong>`,
-    ...[...addressLines(party.address), party.address?.country]
+    ...[
+      ...addressLines(party.address),
+      party.address?.country,
+      party.address?.telephoneNumber,
+      party.address?.emailAddress
+    ]
       .filter((part) => !isBlank(part))
       .map(escapeHtml)
   ]
 }
 
-/** A summary list has no error state of its own, so an outstanding role carries
+/** A summary list has no error state of its own, so a role in error carries
  * the error-message markup inside its value cell — the same class, and the same
  * visually-hidden prefix, that govukErrorMessage renders on a form field. */
-const errorCell = (errorText) => ({
-  html:
-    '<p class="govuk-error-message">' +
-    `<span class="govuk-visually-hidden">${escapeHtml(copy.errors.prefix)}</span> ` +
-    `${escapeHtml(errorText)}</p>`
-})
+const errorMarkup = (errorText) =>
+  '<p class="govuk-error-message">' +
+  `<span class="govuk-visually-hidden">${escapeHtml(copy.errors.prefix)}</span> ` +
+  `${escapeHtml(errorText)}</p>`
 
-/** Resolved lines win over `errorText`: a role that has details to show renders
- * them, and the error is dropped. The two never arrive together in practice —
- * `outstandingPartyErrors` only raises an error for a role that resolved to
- * nothing, which is exactly the case where `partyLines` returns `null`. */
+/** An address that breaks the address-book rules still shows, under its error,
+ * so the trader can see what needs correcting. */
 const valueCell = (lines, errorText) => {
-  if (lines) {
-    return { html: lines.join('<br>') }
+  if (!lines) {
+    return errorText ? { html: errorMarkup(errorText) } : notApplicableCell()
   }
-  return errorText ? errorCell(errorText) : notApplicableCell()
+  const details = lines.join('<br>')
+  return { html: errorText ? errorMarkup(errorText) + details : details }
 }
 
-/** A key and a value with no Change link of its own, like an ordinary row — the
- * card that holds the role carries the one link to the page that collects it. */
-export const partyRow = (key, party, { errorText = null } = {}) => ({
-  key: { text: key },
-  value: valueCell(partyLines(party), errorText)
-})
+/** The card holds the one Change link; this row adds only Edit details. */
+const editAction = (lines, editHref, key) =>
+  lines && editHref
+    ? {
+        actions: {
+          items: [
+            {
+              href: editHref,
+              text: copy.editDetails,
+              visuallyHiddenText: key.toLowerCase()
+            }
+          ]
+        }
+      }
+    : {}
+
+export const partyRow = (key, party, { errorText = null, editHref } = {}) => {
+  const lines = partyLines(party)
+  return {
+    key: { text: key },
+    value: valueCell(lines, errorText),
+    ...editAction(lines, editHref, key)
+  }
+}

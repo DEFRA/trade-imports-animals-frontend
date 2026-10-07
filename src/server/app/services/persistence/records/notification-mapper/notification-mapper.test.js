@@ -34,12 +34,12 @@ const mappedAnswers = () => ({
   animalsCertifiedFor: 'Further keeping',
   containsUnweanedAnimals: 'No',
   reasonForImport: 'Internal market',
-  placeOfOrigin: { addressId: 'origin-farm' },
+  placeOfOrigin: address('Origin Farm', '1 Farm Road'),
   consignor: address('Consignor Ltd', '2 Depot Road'),
   consignee: address('Consignee Ltd', '3 Dock Street'),
   importer: address('Importer Ltd', '4 Port Way'),
   placeOfDestination: address('Destination Farm', '5 Field Lane'),
-  contactAddress: { addressId: 'animal-and-plant-health-agency' },
+  contactAddress: address('Animal and Plant Health Agency', '6 Woodham Lane'),
   commercialTransporter: {
     name: TRANSPORTER_NAME,
     approvalNumber: 'UK/NEWCA/T1/00090953',
@@ -248,7 +248,9 @@ describe('Mapper A — current backend notification (as-is)', () => {
       unweanedAnimals: 'No'
     })
     expect(notification.reasonForImport).toBe('Internal market')
-    expect(notification.placeOfOrigin).toEqual({ addressId: 'origin-farm' })
+    expect(notification.placeOfOrigin).toEqual(
+      address('Origin Farm', '1 Farm Road')
+    )
     expect(notification.consignor).toEqual(
       address('Consignor Ltd', '2 Depot Road')
     )
@@ -259,9 +261,9 @@ describe('Mapper A — current backend notification (as-is)', () => {
     expect(notification.destination).toEqual(
       address('Destination Farm', '5 Field Lane')
     )
-    expect(notification.consignment).toEqual({
-      addressId: 'animal-and-plant-health-agency'
-    })
+    expect(notification.consignment).toEqual(
+      address('Animal and Plant Health Agency', '6 Woodham Lane')
+    )
     expect(notification.cphNumber).toBe('12/345/6789')
     expect(notification.transport.portOfEntry).toBe(PORT_OF_ENTRY)
     expect(notification.transport.arrivalDate).toBe(ARRIVAL_DATE_ISO)

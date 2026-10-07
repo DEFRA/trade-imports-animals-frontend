@@ -20,7 +20,29 @@ const { values: completeJourneyAnswers } = JSON.parse(
 // accepted document types and all 16 certifiedFor values.
 const UNITED_KINGDOM = 'United Kingdom'
 const CONTRACT_REFERENCE = 'GBN-AG-26-CONTRACT'
-const ORIGIN_FARM_ID = 'origin-farm'
+
+const placeOfOrigin = {
+  name: 'Origin Farm',
+  phone: '01632 960000',
+  email: 'origin-farm@example.com',
+  address: {
+    addressLine1: '1 Farm Lane',
+    townOrCity: 'Ennis',
+    postcode: 'V95 X7P2',
+    countryCode: 'IE'
+  }
+}
+const contactAddress = {
+  name: 'Animal and Plant Health Agency',
+  phone: '01632 960000',
+  email: 'animal-and-plant-health-agency@example.com',
+  address: {
+    addressLine1: 'Woodham Lane',
+    townOrCity: 'Addlestone',
+    postcode: 'KT15 3NB',
+    countryCode: 'GB'
+  }
+}
 
 describe('Mapper A PUT /notifications contract', () => {
   test('emits the exact backend payload from a complete canonical fulfilment', () => {
@@ -29,7 +51,7 @@ describe('Mapper A PUT /notifications contract', () => {
     expect(fulfilmentToNotification(fulfilment, CONTRACT_REFERENCE)).toEqual({
       referenceNumber: CONTRACT_REFERENCE,
       reasonForImport: 'internalMarket',
-      placeOfOrigin: { addressId: ORIGIN_FARM_ID },
+      placeOfOrigin,
       consignor: {
         name: 'Astra Rosales',
         address: {
@@ -63,7 +85,7 @@ describe('Mapper A PUT /notifications contract', () => {
           country: UNITED_KINGDOM
         }
       },
-      consignment: { addressId: 'animal-and-plant-health-agency' },
+      consignment: contactAddress,
       cphNumber: '12/345/6789',
       purposeInInternalMarket: 'breeding',
       origin: {
@@ -118,18 +140,41 @@ describe('Mapper A PUT /notifications contract', () => {
     })
   })
 
-  test('emits origin and contact as addressId when the answer is a reference', () => {
+  test('emits each party answer as its details', () => {
+    const payload = fulfilmentToNotification(
+      assembleFulfilments(completeJourneyAnswers),
+      CONTRACT_REFERENCE
+    )
+
+    expect(payload.placeOfOrigin).toEqual(placeOfOrigin)
+    expect(payload.consignment).toEqual(contactAddress)
+  })
+
+  test('carries only a party answer’s details, dropping pickedFromId and any other key', () => {
     const answers = {
       ...completeJourneyAnswers,
-      placeOfOrigin: { addressId: ORIGIN_FARM_ID },
-      contactAddress: { addressId: 'apha' }
+      placeOfOrigin: { ...placeOfOrigin, pickedFromId: 'origin-farm' },
+      contactAddress: { ...contactAddress, unrelated: 'dropped' }
     }
     const payload = fulfilmentToNotification(
       assembleFulfilments(answers),
       CONTRACT_REFERENCE
     )
 
-    expect(payload.placeOfOrigin).toEqual({ addressId: ORIGIN_FARM_ID })
-    expect(payload.consignment).toEqual({ addressId: 'apha' })
+    expect(payload.placeOfOrigin).toEqual(placeOfOrigin)
+    expect(payload.consignment).toEqual(contactAddress)
+  })
+
+  test('omits a party answer with no details', () => {
+    const answers = {
+      ...completeJourneyAnswers,
+      placeOfOrigin: { unrelated: 'dropped' }
+    }
+    const payload = fulfilmentToNotification(
+      assembleFulfilments(answers),
+      CONTRACT_REFERENCE
+    )
+
+    expect(payload).not.toHaveProperty('placeOfOrigin')
   })
 })

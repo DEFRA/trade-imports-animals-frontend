@@ -1,5 +1,5 @@
 import { SET_ID } from '../../../../set.js'
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { commodityCodeFor } from '../../../../services/commodities/index.js'
@@ -19,8 +19,10 @@ import {
   journeyRequest,
   stubH
 } from '../../../../../../engine/test-support.js'
-import { configureAnswersForRead } from '../../../../../../engine/read.js'
-import { withoutUnresolvedPartyRefs } from '../addresses/resolve-parties.js'
+import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
+import * as addressBook from '../../../../../../services/address-book/index.js'
+import { pagePath } from '../../../../../../shared/paths.js'
+import { answerForInlineParty } from '../addresses/party-inline.js'
 import { taskRows } from '../../flow/task-rows.js'
 import { dispatchPages } from '../index.js'
 import { routes } from './controller.js'
@@ -89,7 +91,8 @@ const MISSING_HTML =
   '<span class="app-summary-list__value--missing">' +
   '<span class="govuk-visually-hidden">Missing</span>' +
   '</span>'
-const CONSIGNOR_ERROR = 'Select an address for the consignor'
+const CONSIGNOR_ERROR = 'Correct the address details for the consignor'
+const CONTACT_ERROR = 'Correct the contact address details for this consignment'
 const IMPORT_DETAILS_INCOMPLETE = 'Complete import details'
 const ADDRESSES_INCOMPLETE = 'Complete roles and addresses'
 const SPECIES_INCOMPLETE = 'Complete species details'
@@ -104,6 +107,14 @@ const withoutParty = (seed, partyId) => {
 const ADDRESS_LINE_1 = '43 East Hague Extension'
 const CONSIGNOR_NAME = 'Astra Rosales'
 const CONSIGNOR_ADDRESS_ID = 'astra-rosales'
+const STUB_TELEPHONE = '01632 960000'
+
+const copyOf = (id) =>
+  answerForInlineParty(STUB_BOOK.find((record) => record.id === id))
+
+// A copy that breaks the address-book rules — no address line, town or
+// postcode — but still has a name to show.
+const BROKEN_COPY = { name: 'Broken Copy Ltd', address: { countryCode: 'CH' } }
 const COW_CARD_TITLE = 'Cow (0102) — Bos taurus'
 const IMPORT_DETAILS_CARD = 'Import details'
 const REASON_FOR_IMPORT_CARD = 'Reason for import'
@@ -162,11 +173,11 @@ const fullSeed = {
       accompanyingDocumentDateOfIssue: { day: '12', month: '12', year: '2025' }
     }
   ],
-  placeOfOrigin: { addressId: 'origin-farm' },
-  consignor: { addressId: CONSIGNOR_ADDRESS_ID },
-  consignee: { addressId: 'british-livestock-ltd' },
-  importer: { addressId: 'import-co-uk' },
-  placeOfDestination: { addressId: 'tech-imports-ltd' },
+  placeOfOrigin: copyOf('origin-farm'),
+  consignor: copyOf(CONSIGNOR_ADDRESS_ID),
+  consignee: copyOf('british-livestock-ltd'),
+  importer: copyOf('import-co-uk'),
+  placeOfDestination: copyOf('tech-imports-ltd'),
   countyParishHoldingCph: '123456789',
   portOfEntry: 'GB ABD',
   arrivalDateAtPort: { day: '12', month: '12', year: '2026' },
@@ -183,7 +194,7 @@ const fullSeed = {
       country: 'Switzerland'
     }
   },
-  contactAddress: { addressId: 'animal-and-plant-health-agency' }
+  contactAddress: copyOf('animal-and-plant-health-agency')
 }
 
 const SUITE = `#${buildSections.name} (check-answers GET)`
@@ -460,23 +471,23 @@ describe(`${SUITE} — fully-populated notification`, () => {
     ).toBe('12/12/2026')
   })
 
-  it('Should expand party rows to the stored name plus address lines', async () => {
+  it('Should expand party rows to the stored name, address lines, telephone and email', async () => {
     const card = cardByTitle(
       await sectionsFor(fullSeed),
       ROLES_AND_ADDRESSES_CARD
     )
     expect(htmlOf(card.rows, 'Consignor')).toBe(
-      `<strong>${CONSIGNOR_NAME}</strong><br>${ADDRESS_LINE_1}<br>Bern<br>30055<br>Switzerland`
+      `<strong>${CONSIGNOR_NAME}</strong><br>${ADDRESS_LINE_1}<br>Bern<br>30055<br>Switzerland<br>${STUB_TELEPHONE}<br>astra-rosales@example.com`
     )
     expect(htmlOf(card.rows, 'Place of destination')).toBe(
-      '<strong>Tech Imports Ltd</strong><br>18 Dockside Road<br>London<br>E14 9GE<br>United Kingdom'
+      `<strong>Tech Imports Ltd</strong><br>18 Dockside Road<br>London<br>E14 9GE<br>United Kingdom<br>${STUB_TELEPHONE}<br>tech-imports-ltd@example.com`
     )
     const contact = cardByTitle(
       await sectionsFor(fullSeed),
       CONTACT_ADDRESS_CARD
     )
     expect(htmlOf(contact.rows, 'Contact address')).toBe(
-      '<strong>Animal and Plant Health Agency</strong><br>Woodham Lane<br>Addlestone<br>KT15 3NB<br>United Kingdom'
+      `<strong>Animal and Plant Health Agency</strong><br>Woodham Lane<br>Addlestone<br>KT15 3NB<br>United Kingdom<br>${STUB_TELEPHONE}<br>animal-and-plant-health-agency@example.com`
     )
   })
 
@@ -499,13 +510,19 @@ describe(`${SUITE} — fully-populated notification`, () => {
   // row, so the page offers links per card rather than one per answer. Exactly
   // one per card: a conditional second page gets its own headed card with its
   // own link, rather than a second link on the card beside it.
-  it('Should give every card a Change action in its heading and no row any action', async () => {
+  // The one exception to "rows carry no action": a copied address can be
+  // edited on this notification, which the card's Change link (re-pick from
+  // the book) does not do.
+  it('Should give every card a Change action in its heading and no row any action but Edit details on a copied address', async () => {
     const sections = await sectionsFor(fullSeed)
 
     for (const card of cardsOf(sections)) {
       expect(card.actions.items, card.title).toHaveLength(1)
     }
-    expect(rowActionsOf(sections)).toEqual([])
+    const rowActions = rowActionsOf(sections)
+    expect(rowActions.map((action) => action.text)).toEqual(
+      Array(6).fill('Edit details')
+    )
   })
 
   it('Should point each card Change link at the page that collects its answers with a change flag', async () => {
@@ -980,14 +997,12 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
   })
 })
 
-describe(`${SUITE} — address-book party references`, () => {
+describe(`${SUITE} — copied party addresses`, () => {
   setupCheckAnswersEngine()
 
-  it('Should render the address book name and address for an addressId reference', async () => {
+  it('Should render the name and address held on the copy', async () => {
     const card = cardByTitle(
-      await sectionsFor({
-        consignor: { addressId: CONSIGNOR_ADDRESS_ID }
-      }),
+      await sectionsFor({ consignor: copyOf(CONSIGNOR_ADDRESS_ID) }),
       ROLES_AND_ADDRESSES_CARD
     )
 
@@ -995,62 +1010,118 @@ describe(`${SUITE} — address-book party references`, () => {
     expect(htmlOf(card.rows, 'Consignor')).toContain(ADDRESS_LINE_1)
   })
 
-  it('Should render a message against the role when the referenced address is gone', async () => {
+  it('Should show the error above a copy that breaks the rules, keeping its details visible', async () => {
     const card = cardByTitle(
-      await sectionsFor({
-        consignor: { addressId: 'gone' }
-      }),
+      await sectionsFor({ consignor: BROKEN_COPY }),
       ROLES_AND_ADDRESSES_CARD
     )
+    const html = htmlOf(card.rows, 'Consignor')
 
-    expect(htmlOf(card.rows, 'Consignor')).toContain(CONSIGNOR_ERROR)
-    expect(htmlOf(card.rows, 'Consignor')).toContain('govuk-error-message')
+    expect(html).toContain(CONSIGNOR_ERROR)
+    expect(html).toContain('govuk-error-message')
+    expect(html).toContain(BROKEN_COPY.name)
   })
-})
 
-describe(`${SUITE} — submitted inline vs live amend`, () => {
-  setupCheckAnswersEngine()
+  it('Should show the telephone and email of a copy refused only for its contact details', async () => {
+    const badEmail = {
+      ...copyOf(CONSIGNOR_ADDRESS_ID),
+      phone: '+44 7700 900123',
+      email: 'not-an-email'
+    }
+    const card = cardByTitle(
+      await sectionsFor({ consignor: badEmail }),
+      ROLES_AND_ADDRESSES_CARD
+    )
+    const html = htmlOf(card.rows, 'Consignor')
 
-  const FROZEN_CONSIGNOR = 'Frozen Consignor Ltd'
+    expect(html).toContain(CONSIGNOR_ERROR)
+    expect(html).toContain('+44 7700 900123')
+    expect(html).toContain('not-an-email')
+  })
 
-  it('Should render stored inline details on a submitted notification, not the live book name', async () => {
-    const { context } = await viewForStatus(SUBMITTED, {
-      ...fullSeed,
-      consignor: {
-        addressId: CONSIGNOR_ADDRESS_ID,
-        name: FROZEN_CONSIGNOR,
-        address: { addressLine1: 'Old Lane', countryCode: 'GB' }
+  it('Should give each copied role a link to edit its details, returning here', async () => {
+    const { view, journeyId } = await driveHandler(getHandler, {
+      seed: fullSeed
+    })
+    const card = cardByTitle(view.context.sections, ROLES_AND_ADDRESSES_CARD)
+    const consignorRow = card.rows.find((row) => row.key.text === 'Consignor')
+
+    expect(consignorRow.actions.items).toEqual([
+      {
+        href: `${pagePath(journeyId, 'consignors/edit')}?return=notification-view`,
+        text: 'Edit details',
+        visuallyHiddenText: 'consignor'
       }
-    })
-    const card = cardByTitle(context.sections, ROLES_AND_ADDRESSES_CARD)
-    expect(htmlOf(card.rows, 'Consignor')).toContain(FROZEN_CONSIGNOR)
-    expect(htmlOf(card.rows, 'Consignor')).not.toContain(CONSIGNOR_NAME)
+    ])
   })
 
-  it('Should resolve live on an amendment from the address book', async () => {
-    const { context } = await viewForStatus(AMEND, {
-      ...fullSeed,
-      consignor: { addressId: CONSIGNOR_ADDRESS_ID }
+  it('Should give the contact address a link to edit its details too', async () => {
+    const { view, journeyId } = await driveHandler(getHandler, {
+      seed: fullSeed
     })
+    const card = cardByTitle(view.context.sections, CONTACT_ADDRESS_CARD)
+
+    expect(card.rows[0].actions.items[0].href).toBe(
+      `${pagePath(journeyId, 'consignment/contact/edit')}?return=notification-view`
+    )
+  })
+
+  it('Should give a role never answered no edit link', async () => {
+    const card = cardByTitle(
+      await sectionsFor(withoutParty(fullSeed, 'importer')),
+      ROLES_AND_ADDRESSES_CARD
+    )
+    const importerRow = card.rows.find((row) => row.key.text === 'Importer')
+
+    expect(importerRow.actions).toBeUndefined()
+  })
+
+  it('Should offer no edit links on a submitted notification', async () => {
+    const { context } = await viewForStatus(SUBMITTED, fullSeed)
     const card = cardByTitle(context.sections, ROLES_AND_ADDRESSES_CARD)
-    expect(htmlOf(card.rows, 'Consignor')).toContain(CONSIGNOR_NAME)
-    expect(htmlOf(card.rows, 'Consignor')).not.toContain(FROZEN_CONSIGNOR)
+
+    expect(card.rows.every((row) => row.actions === undefined)).toBe(true)
+  })
+
+  it('Should render the copy for every status, never consulting the address book', async () => {
+    const partySpy = vi.spyOn(addressBook, 'party')
+    try {
+      for (const status of [DRAFT, AMEND, SUBMITTED]) {
+        const { context } = await viewForStatus(status, fullSeed)
+        const card = cardByTitle(context.sections, ROLES_AND_ADDRESSES_CARD)
+        expect(htmlOf(card.rows, 'Consignor')).toContain(CONSIGNOR_NAME)
+      }
+      expect(partySpy).not.toHaveBeenCalled()
+    } finally {
+      partySpy.mockRestore()
+    }
   })
 })
 
-describe(`${SUITE} — outstanding referenced roles`, () => {
+describe(`${SUITE} — roles whose copy breaks the rules`, () => {
   setupCheckAnswersEngine()
 
-  it('Should list every outstanding role in the error summary', async () => {
+  it('Should list every role in error in the error summary', async () => {
     const summary = await summaryFor({
       ...fullSeed,
-      consignor: { addressId: 'gone' },
-      importer: { addressId: 'gone' }
+      consignor: BROKEN_COPY,
+      importer: BROKEN_COPY
     })
 
     expect(summary.errorList.map((entry) => entry.text)).toEqual([
       CONSIGNOR_ERROR,
-      'Select an address for the importer'
+      'Correct the address details for the importer'
+    ])
+  })
+
+  it('Should name a contact address that breaks the rules', async () => {
+    const summary = await summaryFor({
+      ...fullSeed,
+      contactAddress: BROKEN_COPY
+    })
+
+    expect(summary.errorList.map((entry) => entry.text)).toEqual([
+      CONTACT_ERROR
     ])
   })
 
@@ -1079,54 +1150,59 @@ describe(`${SUITE} — outstanding referenced roles`, () => {
     expect(htmlOf(card.rows, 'Importer')).toBe(MISSING_HTML)
   })
 
-  it('Should link each summary entry where that role is changed', async () => {
-    const { view } = await driveHandler(getHandler, {
-      seed: { ...fullSeed, consignor: { addressId: 'gone' } }
+  it('Should link each summary entry to the page that edits that address', async () => {
+    const { view, journeyId } = await driveHandler(getHandler, {
+      seed: { ...fullSeed, consignor: BROKEN_COPY }
     })
-    const { errorSummary, sections } = view.context
-    const card = cardByTitle(sections, ROLES_AND_ADDRESSES_CARD)
 
-    expect(errorSummary.errorList[0].href).toMatch(/\/addresses\?change=1$/)
-    expect(errorSummary.errorList[0].href).toBe(card.actions.items[0].href)
+    expect(view.context.errorSummary.errorList[0].href).toBe(
+      `${pagePath(journeyId, 'consignors/edit')}?return=notification-view`
+    )
+  })
+
+  it('Should link a contact address in error to its edit page, not its card', async () => {
+    const { view, journeyId } = await driveHandler(getHandler, {
+      seed: { ...fullSeed, contactAddress: BROKEN_COPY }
+    })
+
+    expect(view.context.errorSummary.errorList).toEqual([
+      {
+        text: CONTACT_ERROR,
+        href: `${pagePath(journeyId, 'consignment/contact/edit')}?return=notification-view`
+      }
+    ])
+    const card = cardByTitle(view.context.sections, CONTACT_ADDRESS_CARD)
+    expect(card.rows[0].value.html).toContain(CONTACT_ERROR)
   })
 
   it('Should leave focus where it is when the page is merely visited', async () => {
     const summary = await summaryFor({
       ...fullSeed,
-      consignor: { addressId: 'gone' }
+      consignor: BROKEN_COPY
     })
 
     expect(summary.disableAutoFocus).toBe(true)
   })
 
-  it('Should carry no error summary once every referenced role resolves', async () => {
+  it('Should carry no error summary once every copy meets the rules', async () => {
     expect(await summaryFor(fullSeed)).toBeNull()
   })
 
-  it('Should carry no error summary for a reference the address book still holds', async () => {
+  it('Should flag a place of origin that breaks the rules like any other role', async () => {
     const summary = await summaryFor({
       ...fullSeed,
-      consignor: { addressId: CONSIGNOR_ADDRESS_ID }
-    })
-
-    expect(summary).toBeNull()
-  })
-
-  it('Should flag a gone place of origin like any other role', async () => {
-    const summary = await summaryFor({
-      ...fullSeed,
-      placeOfOrigin: { addressId: 'gone' }
+      placeOfOrigin: BROKEN_COPY
     })
 
     expect(summary.errorList.map((entry) => entry.text)).toContain(
-      'Select an address for the place of origin'
+      'Correct the address details for the place of origin'
     )
   })
 
   it('Should not flag a submitted notification', async () => {
     const { context } = await viewForStatus(SUBMITTED, {
       ...fullSeed,
-      consignor: { addressId: 'gone' }
+      consignor: BROKEN_COPY
     })
     expect(context.errorSummary).toBeNull()
   })
@@ -1134,56 +1210,9 @@ describe(`${SUITE} — outstanding referenced roles`, () => {
   it('Should flag an amend, which is still being worked on', async () => {
     const { context } = await viewForStatus(AMEND, {
       ...fullSeed,
-      consignor: { addressId: 'gone' }
+      consignor: BROKEN_COPY
     })
     expect(context.errorSummary.errorList[0].text).toBe(CONSIGNOR_ERROR)
-  })
-})
-
-// The rest of this file drives the handler directly, which skips the plugin
-// registration that installs the read-path sanitiser — so those tests never see
-// the answers the sanitiser strips. The server always has it installed, and it
-// deletes a party whose reference no longer resolves: exactly the answer this
-// page has to name. These cases wire the real sanitiser so the page is asserted
-// against the state a trader can actually reach.
-describe(`${SUITE} — outstanding roles behind the read-path sanitiser`, () => {
-  setupCheckAnswersEngine()
-
-  beforeAll(() => configureAnswersForRead(SET_ID, withoutUnresolvedPartyRefs))
-  afterAll(() =>
-    configureAnswersForRead(SET_ID, (_request, answers) => answers)
-  )
-
-  it('Should still name a deleted address the sanitiser has stripped', async () => {
-    const { view } = await driveHandler(getHandler, {
-      seed: { ...fullSeed, consignor: { addressId: 'gone' } }
-    })
-    const card = cardByTitle(view.context.sections, ROLES_AND_ADDRESSES_CARD)
-
-    expect(view.context.errorSummary.errorList[0].text).toBe(CONSIGNOR_ERROR)
-    expect(htmlOf(card.rows, 'Consignor')).toContain('govuk-error-message')
-    expect(valueOf(card.rows, 'Consignor')).not.toBe(NOT_APPLICABLE)
-  })
-
-  it('Should still refuse Continue while that deleted address stands', async () => {
-    const { response } = await driveHandler(postHandler, {
-      seed: { ...fullSeed, consignor: { addressId: 'gone' } }
-    })
-
-    expect(response.redirect).toBeUndefined()
-    expect(response.statusCode).toBe(400)
-  })
-
-  it('Should leave a role that was never answered marked missing', async () => {
-    const { view } = await driveHandler(getHandler, {
-      seed: withoutParty(fullSeed, 'importer')
-    })
-    const card = cardByTitle(view.context.sections, ROLES_AND_ADDRESSES_CARD)
-
-    expect(
-      view.context.errorSummary.errorList.map((entry) => entry.text)
-    ).not.toContain('Select an address for the importer')
-    expect(htmlOf(card.rows, 'Importer')).toBe(MISSING_HTML)
   })
 })
 
@@ -1263,7 +1292,7 @@ describe(`${SUITE} — POST navigation`, () => {
 
   it('Should refuse Continue while a referenced role is outstanding', async () => {
     const { response } = await driveHandler(postHandler, {
-      seed: { ...fullSeed, consignor: { addressId: 'gone' } }
+      seed: { ...fullSeed, consignor: BROKEN_COPY }
     })
 
     expect(response.redirect).toBeUndefined()
@@ -1279,7 +1308,7 @@ describe(`${SUITE} — POST navigation`, () => {
 
   it('Should re-render the page with the summary when Continue is refused', async () => {
     const { view } = await driveHandler(postHandler, {
-      seed: { ...fullSeed, consignor: { addressId: 'gone' } }
+      seed: { ...fullSeed, consignor: BROKEN_COPY }
     })
 
     expect(view.context.errorSummary.errorList[0].text).toBe(CONSIGNOR_ERROR)
@@ -1287,7 +1316,7 @@ describe(`${SUITE} — POST navigation`, () => {
 
   it('Should move focus to the summary when Continue is refused', async () => {
     const { view } = await driveHandler(postHandler, {
-      seed: { ...fullSeed, consignor: { addressId: 'gone' } }
+      seed: { ...fullSeed, consignor: BROKEN_COPY }
     })
 
     expect(view.context.errorSummary.disableAutoFocus).toBe(false)
@@ -1297,7 +1326,7 @@ describe(`${SUITE} — POST navigation`, () => {
     const journey = await store.create()
     await store.seedAnswers(journey.journeyId, {
       ...fullSeed,
-      consignor: { addressId: 'gone' }
+      consignor: BROKEN_COPY
     })
     await store.submit(journey.journeyId)
 

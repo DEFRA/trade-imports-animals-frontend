@@ -9,6 +9,7 @@ const load = (file) =>
 // The single canned reference dataset — captured from real reference-data by
 // capture.js and committed under fixtures/. The service stubs seed from here so
 // stub data and the captured real data cannot drift.
+export const countries = load('countries.json')
 export const countriesOrigin = load('countries-origin.json')
 export const portsOfEntry = load('ports-of-entry.json')
 

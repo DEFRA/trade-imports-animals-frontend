@@ -118,6 +118,25 @@ describe('countries service — real mode', () => {
     ])
   })
 
+  it('Should offer address countries from the unfiltered list, as the address book does', async () => {
+    process.env.STUB_MODE = 'false'
+    const unfiltered = [
+      { code: 'GB', name: 'United Kingdom' },
+      { code: 'US', name: 'United States' }
+    ]
+    const fetchMock = vi.fn(async (url) =>
+      new URL(url).searchParams.has('blocks')
+        ? okResponse([{ code: 'ZZ', name: 'Zedland' }])
+        : okResponse(unfiltered)
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    const countries = await import('./countries/index.js')
+
+    expect(await countries.addressBookCountries()).toEqual(unfiltered)
+    await countries.addressBookCountries()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
   it('Should fetch once across many reader calls once loaded', async () => {
     process.env.STUB_MODE = 'false'
     const fetchMock = vi.fn(
@@ -156,6 +175,10 @@ describe('countries service — real mode', () => {
     const countries = await import('./countries/index.js')
 
     await expect(countries.originLabel('ZZ')).rejects.toMatchObject({
+      isBoom: true,
+      output: { statusCode: 503 }
+    })
+    await expect(countries.addressBookCountries()).rejects.toMatchObject({
       isBoom: true,
       output: { statusCode: 503 }
     })
