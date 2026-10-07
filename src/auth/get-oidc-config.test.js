@@ -1,5 +1,6 @@
 import { vi } from 'vitest'
 import { getOidcConfig } from './get-oidc-config.js'
+import { readEmfDocuments } from '../server/common/test-helpers/emf-documents.js'
 
 // Must be hoisted too (because vi.mock factories are hoisted)
 const wreckGetMock = vi.hoisted(() => vi.fn())
@@ -18,22 +19,52 @@ vi.mock('@defra/hapi-tracing', () => ({
   getTraceId: getTraceIdMock
 }))
 
+vi.mock('../server/common/helpers/logging/logger.js', () => ({
+  createLogger: () => ({
+    warn: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn()
+  })
+}))
+
 describe('getOidcConfig', () => {
   const localDiscoveryUrl =
     'https://localhost/idp/.well-known/openid-configuration'
   const tracingHeader = 'x-cdp-request-id'
   const traceId = 'test-trace-id'
 
+  let logSpy
+
   beforeEach(() => {
     wreckGetMock.mockReset()
     configGetMock.mockReset()
     getTraceIdMock.mockReset()
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
     configGetMock.mockImplementation((key) => {
       if (key === 'defraId.oidcDiscoveryUrl') return localDiscoveryUrl
       if (key === 'tracing.header') return tracingHeader
+      if (key === 'metrics.namespace') return 'trade-imports-animals-frontend'
     })
     getTraceIdMock.mockReturnValue(traceId)
+  })
+
+  afterEach(() => {
+    logSpy.mockRestore()
+  })
+
+  test('measures the discovery call as defra-id openid-configuration', async () => {
+    wreckGetMock.mockResolvedValue({ payload: {} })
+
+    await getOidcConfig()
+
+    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
+    const [document] = readEmfDocuments(logSpy)
+    expect(document.Dependency).toBe('defra-id')
+    expect(document.Operation).toBe('openid-configuration')
+    expect(document.ExternalCallFailure).toBe(0)
+    expect(document.Outcome).toBe('success')
+    expect(document).not.toHaveProperty('Interface')
   })
 
   test('fetches discovery document with tracing header', async () => {
@@ -212,5 +243,9 @@ describe('getOidcConfig', () => {
       json: true,
       timeout: 1000
     })
+    await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
+    const [document] = readEmfDocuments(logSpy)
+    expect(document.ExternalCallFailure).toBe(1)
+    expect(document.Outcome).toBe('failure')
   })
 })

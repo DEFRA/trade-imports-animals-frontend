@@ -3,6 +3,7 @@ import Jwt from '@hapi/jwt'
 import { getOidcConfigWithRetry } from '../auth/get-oidc-config-with-retry.js'
 import { refreshTokens } from '../auth/refresh-tokens.js'
 import { getSafeRedirect } from '../auth/get-safe-redirect.js'
+import { timeTokenExchange } from '../auth/token-exchange-timer.js'
 import { config } from '../config/config.js'
 import { isStubMode } from '../server/common/services/mode.js'
 
@@ -42,7 +43,7 @@ function getBellOptions(oidcConfig) {
       protocol: 'oauth2',
       useParamsAuth: true,
       auth: oidcConfig.authorization_endpoint,
-      token: oidcConfig.token_endpoint,
+      token: timeTokenExchange(oidcConfig.token_endpoint),
       scope: ['openid', 'offline_access', config.get('defraId.clientId')],
       profile: function (credentials, _params, _get) {
         const payload = Jwt.token.decode(credentials.token).decoded.payload

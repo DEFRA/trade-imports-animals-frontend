@@ -1,6 +1,8 @@
 import Wreck from '@hapi/wreck'
 import { getTraceId } from '@defra/hapi-tracing'
 import { config } from '../config/config.js'
+import { measureExternalCall } from '../server/common/helpers/external-call-metrics.js'
+import { DEFRA_ID_CALLS } from './defra-id-calls.js'
 
 const OIDC_DOCUMENT_TIMEOUT_MS = 1000
 const SERVER_SIDE_ENDPOINTS = ['token_endpoint', 'jwks_uri']
@@ -21,11 +23,15 @@ function rewriteEndpointHostnames(payload, targetHostname) {
 
 async function getOidcConfig() {
   const discoveryUrl = config.get('defraId.oidcDiscoveryUrl')
-  const { payload } = await Wreck.get(discoveryUrl, {
-    headers: { [config.get('tracing.header')]: getTraceId() ?? '' },
-    json: true,
-    timeout: OIDC_DOCUMENT_TIMEOUT_MS
-  })
+  const { payload } = await measureExternalCall(
+    DEFRA_ID_CALLS.openidConfiguration,
+    () =>
+      Wreck.get(discoveryUrl, {
+        headers: { [config.get('tracing.header')]: getTraceId() ?? '' },
+        json: true,
+        timeout: OIDC_DOCUMENT_TIMEOUT_MS
+      })
+  )
 
   const discoveryHostname = new URL(discoveryUrl).hostname
   if (LOCAL_HOSTNAMES.has(discoveryHostname)) {

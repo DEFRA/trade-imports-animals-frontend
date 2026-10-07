@@ -4,6 +4,7 @@ import { config } from '../../config/config.js'
 import { statusCodes } from '../common/constants/status-codes.js'
 import { mockOidcConfig } from '../common/test-helpers/mock-oidc-config.js'
 import { sessionAuth } from '../common/test-helpers/session-auth.js'
+import { readEmfDocuments } from '../common/test-helpers/emf-documents.js'
 import { verifyToken } from '../../auth/verify-token.js'
 import { getPermissions } from '../../auth/get-permissions.js'
 import { copy as sharedEn } from '../app/shared/copy.en.js'
@@ -33,6 +34,7 @@ vi.mock('../../auth/get-permissions.js', () => ({
 const HTTP_STATUS_FOUND = 302
 const MOCK_TOKEN = 'mock-token'
 const SIGNED_OUT_URL = '/signed-out'
+const SIGN_IN_OIDC_URL = '/auth/sign-in-oidc'
 
 const defraIdAuth = (profileOverrides = {}) => ({
   strategy: 'defra-id',
@@ -61,7 +63,7 @@ describe('#authController', () => {
   const signInOidc = (profileOverrides) =>
     server.inject({
       method: 'GET',
-      url: '/auth/sign-in-oidc',
+      url: SIGN_IN_OIDC_URL,
       auth: defraIdAuth(profileOverrides)
     })
 
@@ -190,5 +192,56 @@ describe('#authController', () => {
     )
     expect(verifyToken).toHaveBeenCalledWith(MOCK_TOKEN)
     expect(getPermissions).toHaveBeenCalledWith('CRN123', 'org-1', MOCK_TOKEN)
+  })
+
+  describe('Defra ID token exchange metrics', () => {
+    let logSpy
+
+    beforeEach(() => {
+      logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      logSpy.mockRestore()
+    })
+
+    test('GET /auth/sign-in-oidc records the Defra ID token exchange it completed', async () => {
+      verifyToken.mockResolvedValue(undefined)
+      getPermissions.mockResolvedValue({ role: 'role', scope: [] })
+
+      const { statusCode, headers } = await server.inject({
+        method: 'GET',
+        url: SIGN_IN_OIDC_URL,
+        auth: defraIdAuth(),
+        app: { defraIdTokenExchangeStartedAt: performance.now() }
+      })
+
+      expect(statusCode).toBe(HTTP_STATUS_FOUND)
+      expect(headers.location).toBe('/')
+      await vi.waitFor(() => {
+        const [document] = readEmfDocuments(logSpy)
+        expect(readEmfDocuments(logSpy)).toHaveLength(1)
+        expect(document.Dependency).toBe('defra-id')
+        expect(document.Operation).toBe('token-exchange')
+        expect(document.Interface).toBe('SYN-11')
+        expect(document.ExternalCallFailure).toBe(0)
+      })
+    })
+
+    test('GET /auth/sign-in-oidc records the Defra ID token exchange as failed when sign-in is not authenticated', async () => {
+      const { statusCode, payload } = await server.inject({
+        method: 'GET',
+        url: `${SIGN_IN_OIDC_URL}?code=unused&state=unmatched&refresh=1`,
+        app: { defraIdTokenExchangeStartedAt: performance.now() }
+      })
+
+      expect(statusCode).toBe(statusCodes.ok)
+      expect(payload).toContain(sharedEn.unauthorised.heading)
+      await vi.waitFor(() => expect(readEmfDocuments(logSpy)).toHaveLength(1))
+      const [document] = readEmfDocuments(logSpy)
+      expect(document.Dependency).toBe('defra-id')
+      expect(document.Operation).toBe('token-exchange')
+      expect(document.ExternalCallFailure).toBe(1)
+    })
   })
 })
