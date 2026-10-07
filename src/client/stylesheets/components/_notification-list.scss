@@ -24,33 +24,6 @@
     margin: 0;
   }
 
-  &__sort-form {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: govuk-spacing(3);
-    min-width: 0;
-
-    .govuk-form-group {
-      width: auto;
-      margin-bottom: 0;
-    }
-
-    .govuk-button {
-      margin-bottom: 0;
-    }
-  }
-
-  &__search-form {
-    .govuk-form-group {
-      margin-bottom: govuk-spacing(4);
-    }
-
-    .govuk-button {
-      margin-bottom: 0;
-    }
-  }
-
   &__card-row {
     margin-top: 0;
     margin-bottom: govuk-spacing(3);
@@ -69,6 +42,36 @@
       @include govuk-text-break-word;
       margin: 0;
     }
+  }
+}
+
+// Elements that style nested GOV.UK components are written as top-level BEM
+// selectors: stylelint 17's selector-no-qualifying-type reads a nested
+// `&__x .child` as type selector `__x` qualifying the block class.
+.notification-list__sort-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: govuk-spacing(3);
+  min-width: 0;
+
+  .govuk-form-group {
+    width: auto;
+    margin-bottom: 0;
+  }
+
+  .govuk-button {
+    margin-bottom: 0;
+  }
+}
+
+.notification-list__search-form {
+  .govuk-form-group {
+    margin-bottom: govuk-spacing(4);
+  }
+
+  .govuk-button {
+    margin-bottom: 0;
   }
 }
 

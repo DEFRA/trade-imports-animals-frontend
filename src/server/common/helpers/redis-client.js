@@ -12,6 +12,9 @@ export function buildRedisClient(redisConfig) {
   const logger = createLogger()
   const port = 6379
   const db = 0
+  // ioredis 6 defaults to RESP3 (HELLO 3). Pin RESP2 so the session store
+  // keeps the wire protocol it has always used against ElastiCache.
+  const protocol = 2
   const keyPrefix = redisConfig.keyPrefix
   const host = redisConfig.host
   let redisClient
@@ -30,6 +33,7 @@ export function buildRedisClient(redisConfig) {
       port,
       host,
       db,
+      protocol,
       keyPrefix,
       ...credentials,
       ...tls
@@ -48,6 +52,7 @@ export function buildRedisClient(redisConfig) {
         dnsLookup: (address, callback) => callback(null, address),
         redisOptions: {
           db,
+          protocol,
           ...credentials,
           ...tls
         }

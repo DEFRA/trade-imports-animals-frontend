@@ -1,0 +1,21 @@
+{
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  "high": true,
+  "report-type": "summary",
+  "allowlist": [
+    {
+      "GHSA-vfj7-8cjw-p6xm": {
+        "active": true,
+        "notes": "braces stack-exhaustion DoS through deeply nested patterns; no fixed version published (all versions <=3.0.3 affected). Owner: Sam Farrington",
+        "expiry": "2027-01-02"
+      }
+    },
+    {
+      "GHSA-c475-qrg2-pj4r": {
+        "active": true,
+        "notes": "basic-ftp quadratic-time CPU DoS in Client.list(); fixed in 6.2.1 but get-uri 6 and 8 require basic-ftp ^5. Fix blocked upstream: get-uri pins basic-ftp ^5; dev-only via @lhci/cli and puppeteer. Owner: Sam Farrington",
+        "expiry": "2027-01-02"
+      }
+    }
+  ]
+}
