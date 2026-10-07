@@ -2,6 +2,11 @@ import { vi } from 'vitest'
 
 import { SET_BASE, SET_ID } from '../../../server/app/sets/live-animals/set.js'
 
+import {
+  callCountsOf,
+  newCallCounts
+} from '../../../server/common/helpers/call-counts/call-counts.js'
+
 const mockReadFileSync = vi.fn()
 const mockLoggerError = vi.fn()
 
@@ -103,6 +108,44 @@ describe('context and cache', () => {
           displayName: 'trader@example.com',
           email: 'trader@example.com'
         })
+      })
+
+      test('Should count one session resolution when it looks up the signed-in user', async () => {
+        const request = {
+          path: SET_BASE,
+          auth: {
+            isAuthenticated: true,
+            credentials: { sessionId: 'session-1' }
+          },
+          plugins: { 'call-counts': newCallCounts() },
+          server: {
+            app: {
+              cache: { get: vi.fn().mockResolvedValue({ email: 'a@b.test' }) }
+            }
+          }
+        }
+
+        expect(callCountsOf(request).sessionResolutions).toBe(0)
+
+        await contextImport.context(request)
+
+        expect(callCountsOf(request).sessionResolutions).toBe(1)
+      })
+
+      test('Should count no session resolution for a sign-in callback with no session id', async () => {
+        const request = {
+          path: '/auth/sign-in-oidc',
+          auth: {
+            isAuthenticated: true,
+            credentials: { profile: { sessionId: 'session-1' } }
+          },
+          plugins: { 'call-counts': newCallCounts() },
+          server: { app: { cache: { get: vi.fn() } } }
+        }
+
+        await contextImport.context(request)
+
+        expect(callCountsOf(request).sessionResolutions).toBe(0)
       })
 
       test('Should not look up a session for a sign-in callback that has no session id yet', async () => {

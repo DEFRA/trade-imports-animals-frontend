@@ -1,6 +1,7 @@
 import inert from '@hapi/inert'
 
 import { health } from './health/index.js'
+import { callCountsRoutes } from './common/helpers/call-counts/call-counts-routes.js'
 import { serviceRoutes } from './app/routes.js'
 import { serveStaticFiles } from './common/helpers/serve-static-files.js'
 import { config } from '../config/config.js'
@@ -15,6 +16,10 @@ export const router = {
       await server.register([inert])
 
       await server.register([health])
+
+      if (config.get('callCounts.endpoint.enabled')) {
+        await server.register([callCountsRoutes])
+      }
 
       if (config.get('auth.enabled')) {
         await server.register(serviceRoutes, {

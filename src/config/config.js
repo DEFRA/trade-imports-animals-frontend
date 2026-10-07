@@ -365,6 +365,24 @@ export const config = convict({
       env: 'AWS_EMF_NAMESPACE'
     }
   },
+  callCounts: {
+    endpoint: {
+      enabled: {
+        doc: "Serve GET and DELETE /call-counts: each route's page requests and the backend calls, session resolutions and external calls they made",
+        format: STRICT_BOOLEAN,
+        default: isLocal,
+        env: 'CALL_COUNTS_ENDPOINT_ENABLED'
+      }
+    },
+    metrics: {
+      enabled: {
+        doc: 'Write one EMF document per page request with its backend calls and session resolutions',
+        format: STRICT_BOOLEAN,
+        default: isPlatform,
+        env: 'CALL_COUNTS_METRICS_ENABLED'
+      }
+    }
+  },
   tradeImportsAnimalsBackendApi: {
     baseUrl: {
       doc: 'Trade Imports Animals Backend API base URL',

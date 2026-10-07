@@ -1,5 +1,14 @@
+import hapi from '@hapi/hapi'
+import hapiCookie from '@hapi/cookie'
 import { describe, expect, test, vi, beforeEach } from 'vitest'
 import { authPlugin, getBellOptions, getCookieOptions } from './auth.js'
+import {
+  callCounts,
+  callCountsOf,
+  newCallCounts
+} from '../server/common/helpers/call-counts/call-counts.js'
+import { callCountsRoutes } from '../server/common/helpers/call-counts/call-counts-routes.js'
+import { clearCallCountTotals } from '../server/common/helpers/call-counts/call-count-totals.js'
 
 const getOidcConfigWithRetryMock = vi.hoisted(() => vi.fn())
 const configGetMock = vi.hoisted(() => vi.fn())
@@ -349,6 +358,64 @@ describe('auth plugin', () => {
 
       const res = await options.validate(request, { sessionId: 'missing' })
       expect(res).toEqual({ isValid: false })
+    })
+
+    test('validate counts one session resolution for the request', async () => {
+      const request = {
+        ...buildRequestWithCachedSession(null),
+        plugins: { 'call-counts': newCallCounts() }
+      }
+
+      await getCookieOptions().validate(request, { sessionId: 'session-1' })
+
+      expect(callCountsOf(request).sessionResolutions).toBe(1)
+      expect(callCountsOf(request).backendCalls).toBe(0)
+    })
+
+    test('a request with a valid session cookie resolves the session once in a counted route', async () => {
+      clearCallCountTotals()
+      const userSession = { token: 'token', refreshToken: 'refresh-token' }
+      jwtDecodeMock.mockReturnValue({ exp: 999999 })
+      jwtVerifyTimeMock.mockImplementation(() => undefined)
+      const server = hapi.server()
+      server.app.cache = {
+        get: vi.fn().mockResolvedValue(userSession),
+        set: vi.fn()
+      }
+      await server.register([hapiCookie, callCounts, callCountsRoutes])
+      server.auth.strategy('session', 'cookie', getCookieOptions())
+      server.auth.default('session')
+      server.route([
+        {
+          method: 'GET',
+          path: '/sign-in',
+          options: { auth: false },
+          handler: (request, h) => {
+            request.cookieAuth.set({ sessionId: 'session-1' })
+            return h.response('signed in')
+          }
+        },
+        { method: 'GET', path: '/private', handler: () => 'private' }
+      ])
+      const signIn = await server.inject({ method: 'GET', url: '/sign-in' })
+      const cookie = signIn.headers['set-cookie'][0].split(';')[0]
+
+      const privatePage = await server.inject({
+        method: 'GET',
+        url: '/private',
+        headers: { cookie }
+      })
+      const { result } = await server.inject({
+        method: 'GET',
+        url: '/call-counts'
+      })
+      await server.stop({ timeout: 0 })
+
+      expect(privatePage.statusCode).toBe(200)
+      expect(
+        result.routes.find((route) => route.path === '/private')
+          .sessionResolutions
+      ).toBe(1)
     })
 
     test('validate returns isValid:true when token verification succeeds', async () => {

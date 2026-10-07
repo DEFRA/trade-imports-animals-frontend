@@ -1,10 +1,15 @@
+import hapi from '@hapi/hapi'
 import { vi } from 'vitest'
 import { Metrics } from '@defra/cdp-metrics'
 
 import {
   measureExternalCall,
-  recordExternalCall
+  recordExternalCall,
+  recordExternalCallInBackground
 } from './external-call-metrics.js'
+import { callCounts } from './call-counts/call-counts.js'
+import { callCountsRoutes } from './call-counts/call-counts-routes.js'
+import { clearCallCountTotals } from './call-counts/call-count-totals.js'
 import { config } from '../../../config/config.js'
 import { readEmfDocuments } from '../test-helpers/emf-documents.js'
 
@@ -67,6 +72,37 @@ describe('external call metrics', () => {
     expect(document).not.toHaveProperty('LogGroup')
     expect(document).not.toHaveProperty('ServiceName')
     expect(document).not.toHaveProperty('ServiceType')
+  })
+
+  test('recording a call in the background counts it against the route that made it', async () => {
+    clearCallCountTotals()
+    const server = hapi.server()
+    await server.register([callCounts, callCountsRoutes])
+    server.route({
+      method: 'GET',
+      path: '/ext',
+      handler: () => {
+        recordExternalCallInBackground(JWKS_CALL, {
+          durationMs: 5,
+          failed: false
+        })
+        return 'page'
+      }
+    })
+
+    await server.inject({ method: 'GET', url: '/ext' })
+    const { result } = await server.inject({
+      method: 'GET',
+      url: '/call-counts'
+    })
+    await server.stop({ timeout: 0 })
+
+    expect(result.routes).toEqual([
+      expect.objectContaining({
+        path: '/ext',
+        externalCalls: { 'defra-id': { jwks: 1 } }
+      })
+    ])
   })
 
   test('measureExternalCall rethrows the same error and emits a failure document', async () => {

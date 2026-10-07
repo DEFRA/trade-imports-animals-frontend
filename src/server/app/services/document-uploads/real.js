@@ -1,4 +1,5 @@
 import { getTraceId } from '@defra/hapi-tracing'
+import { backendFetch } from '../../../common/helpers/call-counts/backend-fetch.js'
 
 const backendBaseUrl =
   process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ?? 'http://localhost:8085'
@@ -26,7 +27,7 @@ const initiate = async ({
   maxFileSize,
   mimeTypes
 }) => {
-  const response = await fetch(
+  const response = await backendFetch(
     `${backendBaseUrl}/notifications/${journeyId}/document-uploads`,
     {
       method: 'POST',
@@ -53,7 +54,7 @@ const uploadFile = async (uploadId, { filename, contentType, bytes }) => {
     new Blob([bytes], { type: contentType ?? 'application/octet-stream' }),
     filename ?? 'upload'
   )
-  const response = await fetch(
+  const response = await backendFetch(
     `${backendBaseUrl}/document-uploads/${uploadId}/file`,
     {
       method: 'POST',
@@ -74,7 +75,7 @@ export const documentUploads = {
   },
 
   scanStatus: async ({ uploadId }) => {
-    const response = await fetch(
+    const response = await backendFetch(
       `${backendBaseUrl}/document-uploads/${uploadId}`,
       { method: 'GET', headers: traceHeaders() }
     )
@@ -86,7 +87,7 @@ export const documentUploads = {
   },
 
   remove: async (uploadId) => {
-    const response = await fetch(
+    const response = await backendFetch(
       `${backendBaseUrl}/document-uploads/${uploadId}`,
       { method: 'DELETE', headers: traceHeaders() }
     )
@@ -96,7 +97,7 @@ export const documentUploads = {
   },
 
   streamFile: async (uploadId) => {
-    const response = await fetch(
+    const response = await backendFetch(
       `${backendBaseUrl}/document-uploads/${uploadId}/file`,
       { method: 'GET', headers: traceHeaders() }
     )

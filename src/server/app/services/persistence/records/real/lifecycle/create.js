@@ -2,10 +2,11 @@ import { notificationsUrl } from '../config.js'
 import { failed } from '../http/failed.js'
 import { headers } from '../http/headers.js'
 import { marshal } from '../marshal/document.js'
+import { backendFetch } from '../../../../../../common/helpers/call-counts/backend-fetch.js'
 
 // Backend mints the reference number; response carries the created notification.
 export const create = async (actor) => {
-  const notificationResponse = await fetch(notificationsUrl, {
+  const notificationResponse = await backendFetch(notificationsUrl, {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify({
@@ -21,7 +22,7 @@ export const create = async (actor) => {
 
 export const copy = async (journeyId, concurrencyToken, actor) => {
   const url = `${notificationsUrl}/${journeyId}/copy?concurrencyToken=${encodeURIComponent(concurrencyToken)}`
-  const response = await fetch(url, {
+  const response = await backendFetch(url, {
     method: 'POST',
     headers: headers(),
     body: actor ? JSON.stringify(actor) : undefined

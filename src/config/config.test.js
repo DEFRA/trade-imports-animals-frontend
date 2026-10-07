@@ -64,7 +64,9 @@ describe('#config', () => {
       'USE_SINGLE_INSTANCE_CACHE',
       'REDIS_TLS',
       'NUNJUCKS_WATCH',
-      'NUNJUCKS_NO_CACHE'
+      'NUNJUCKS_NO_CACHE',
+      'CALL_COUNTS_ENDPOINT_ENABLED',
+      'CALL_COUNTS_METRICS_ENABLED'
     ]
 
     beforeEach(() => {
@@ -92,6 +94,49 @@ describe('#config', () => {
       const { config: freshConfig } = await import('./config.js')
 
       expect(freshConfig.get('auth.enabled')).toBe(false)
+    })
+  })
+
+  describe('callCounts', () => {
+    beforeEach(() => {
+      vi.resetModules()
+    })
+
+    afterEach(() => {
+      vi.unstubAllEnvs()
+    })
+
+    test('serves the endpoint and writes no per-request metrics under the test run', async () => {
+      const { config: freshConfig } = await import('./config.js')
+
+      expect(freshConfig.get('callCounts.endpoint.enabled')).toBe(true)
+      expect(freshConfig.get('callCounts.metrics.enabled')).toBe(false)
+    })
+
+    test('hides the endpoint and writes per-request metrics on the platform', async () => {
+      vi.stubEnv('NODE_ENV', 'production')
+
+      const { config: freshConfig } = await import('./config.js')
+
+      expect(freshConfig.get('callCounts.endpoint.enabled')).toBe(false)
+      expect(freshConfig.get('callCounts.metrics.enabled')).toBe(true)
+    })
+
+    test('reads CALL_COUNTS_METRICS_ENABLED=false as false on the platform', async () => {
+      vi.stubEnv('NODE_ENV', 'production')
+      vi.stubEnv('CALL_COUNTS_METRICS_ENABLED', 'false')
+
+      const { config: freshConfig } = await import('./config.js')
+
+      expect(freshConfig.get('callCounts.metrics.enabled')).toBe(false)
+    })
+
+    test('reads CALL_COUNTS_ENDPOINT_ENABLED=false as false', async () => {
+      vi.stubEnv('CALL_COUNTS_ENDPOINT_ENABLED', 'false')
+
+      const { config: freshConfig } = await import('./config.js')
+
+      expect(freshConfig.get('callCounts.endpoint.enabled')).toBe(false)
     })
   })
 
