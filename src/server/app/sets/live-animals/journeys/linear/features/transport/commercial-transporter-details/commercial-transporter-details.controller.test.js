@@ -1,5 +1,5 @@
 import { SET_ID } from '../../../../../set.js'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
@@ -9,12 +9,19 @@ import { records as recordsStub } from '../../../../../../../services/persistenc
 import { BackendRequestError } from '../../../../../../../services/persistence/records/errors.js'
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
+  authenticatedCredentials,
   driveHandler,
   journeyRequest,
   stubH
 } from '../../../../../../../engine/test-support.js'
 import { HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../../../../lib/http-status.js'
-import { COMMERCIAL } from '../../../../../../../services/transporters/index.js'
+import {
+  COMMERCIAL,
+  NEW,
+  forgetAddedTransporters,
+  parties,
+  partiesFor
+} from '../../../../../../../services/transporters/index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import { CYA_SLUG } from '../../../../../../../shared/kit.js'
 import { dispatchPages } from '../../index.js'
@@ -247,5 +254,63 @@ describe('/transporters/add/commercial', () => {
     expect(response.statusCode).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     expect(response.context.recoverableError).toBe(true)
     expect(response.context.values).toEqual(RECORD)
+  })
+})
+
+// Saving has to leave the transporter somewhere other than the notification, or
+// the same fields are typed again on the next one.
+describe('/transporters/add/commercial keeps the transporter for the organisation', () => {
+  const ORG = authenticatedCredentials.organisationId
+
+  // Not a name the service ships, so a row under it can only have been added.
+  const HAULIER = {
+    ...RECORD,
+    nameOrOrganisationName: 'Lough Neagh Livestock Haulage Ltd',
+    country: NORTHERN_IRELAND
+  }
+
+  const added = () =>
+    partiesFor(ORG).filter(
+      (record) => !parties().some((shipped) => shipped.id === record.id)
+    )
+
+  beforeAll(configure)
+  beforeEach(() => {
+    store.clear()
+    forgetAddedTransporters()
+  })
+  afterEach(forgetAddedTransporters)
+
+  it('Should put a saved transporter on the organisation list, commercial and not yet approved', async () => {
+    await driveHandler(postHandler, {
+      seed: { transporterType: COMMERCIAL },
+      payload: HAULIER
+    })
+
+    expect(added()).toHaveLength(1)
+    const [kept] = added()
+    expect(kept.name).toBe(HAULIER.nameOrOrganisationName)
+    expect(kept.type).toBe(COMMERCIAL)
+    expect(kept.status).toBe(NEW)
+    expect(kept.approvalNumber).toBe(HAULIER.approvalNumber)
+    expect(kept.address.postalOrZipCode).toBe(HAULIER.postalOrZipCode)
+    expect(kept.address.emailAddress).toBe(HAULIER.emailAddress)
+  })
+
+  it('Should keep nothing when the form is left blank, there being no transporter to keep', async () => {
+    await driveHandler(postHandler, {
+      seed: { transporterType: COMMERCIAL },
+      payload: { country: NORTHERN_IRELAND }
+    })
+
+    expect(added()).toHaveLength(0)
+  })
+
+  // A transporter kept after a failed save would be on the list without being
+  // on the notification the trader thought they had saved it to.
+  it('Should keep nothing when the notification refuses the save', async () => {
+    await driveSaveFailure(HAULIER)
+
+    expect(added()).toHaveLength(0)
   })
 })

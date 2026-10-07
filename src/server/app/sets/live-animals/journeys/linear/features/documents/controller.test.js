@@ -86,8 +86,8 @@ const DATE_OF_ISSUE_TEXT = '12/12/2025'
 const TAG_SCANNING = 'Scanning for virus'
 const TAG_COMPLETE = 'Check completed'
 const VIRUS_NOTES_FILENAME = 'virus-notes.pdf'
-// The one member of the service enum design release 1 keeps to itself.
-const EXCLUDED_TYPE = 'HEALTH_CERTIFICATE'
+// A value the select never carries: only a tampered form could send it.
+const UNOFFERED_TYPE = 'NOT_A_DOCUMENT_TYPE'
 
 const validDocument = {
   accompanyingDocumentReference: 'GBHC1234567890',
@@ -165,7 +165,7 @@ describe('documents — real upload leg on the single-page loop', () => {
       payload: {
         action: 'add',
         ...validDocument,
-        accompanyingDocumentType: EXCLUDED_TYPE,
+        accompanyingDocumentType: UNOFFERED_TYPE,
         file: pdfFile()
       }
     })
@@ -230,7 +230,7 @@ describe('documents — real upload leg on the single-page loop', () => {
     expect(entry.accompanyingDocumentType).toBe('ITAHC')
   })
 
-  it('Should hand the upload service the date of issue as an instant, not the date parts the form collected', async () => {
+  it('Should hand the upload service the date of issue as YYYY-MM-DD, not the date parts the form collected', async () => {
     const upload = vi.spyOn(documentUploads, 'upload')
 
     const result = await driveHandler(post, {
@@ -238,11 +238,11 @@ describe('documents — real upload leg on the single-page loop', () => {
     })
 
     expect(result.response.redirect).toBeDefined()
-    // The whole instant, pinned: `12/12/2025` is labelled as midnight UTC, not
-    // converted from a local zone, so a substring or a shape check would pass
-    // on the day-shifted value this contract exists to rule out.
+    // The whole value, pinned: `12/12/2025` goes out as a date with no time and
+    // no offset, so a substring or a shape check would pass on the instant
+    // form the API now rejects.
     expect(upload).toHaveBeenCalledWith(
-      expect.objectContaining({ dateOfIssue: '2025-12-12T00:00:00.000Z' })
+      expect.objectContaining({ dateOfIssue: '2025-12-12' })
     )
     upload.mockRestore()
   })
@@ -582,15 +582,14 @@ describe('documents — Continue finishes a part-filled document', () => {
   })
 
   // The signal is a type the page actually offers, not merely a non-empty
-  // select. HEALTH_CERTIFICATE is in the service enum but design release 1
-  // never offers it, so a Continue carrying it is carried past like any other
-  // form the trader did not start.
+  // select, so a Continue carrying a value the page never offered is carried
+  // past like any other form the trader did not start.
   it('Should carry a form whose document type the page does not offer past the page, appending nothing', async () => {
     const result = await driveHandler(post, {
       payload: {
         action: 'continue',
         ...validDocument,
-        accompanyingDocumentType: EXCLUDED_TYPE,
+        accompanyingDocumentType: UNOFFERED_TYPE,
         file: pdfFile()
       }
     })
@@ -747,12 +746,12 @@ describe('documents — scan-status poll and view context', () => {
     expect(result.view.context.rows[0][4].html).not.toContain('View file')
   })
 
-  it('Should offer the thirteen design-release document types behind a placeholder, in the service order', async () => {
+  it('Should offer all fourteen document types behind a placeholder, in the service order', async () => {
     const result = await driveHandler(get)
     const items = result.view.context.documentTypeItems
     expect(items[0]).toEqual({ value: '', text: 'Select one' })
     expect(items.slice(1).map(({ value }) => value)).toEqual(
-      documentTypes.documentTypes().filter((code) => code !== EXCLUDED_TYPE)
+      documentTypes.documentTypes()
     )
     expect(items.slice(1).map(({ text }) => text)).toEqual([
       'Intra Trade Animal Health Certificate (ITAHC)',
@@ -766,6 +765,7 @@ describe('documents — scan-status poll and view context', () => {
       'Bill of lading',
       'Catch certificate',
       'Laboratory sampling results for aflatoxin (Reg 2019/1793)',
+      'Health certificate',
       'Journey log',
       'Other'
     ])
