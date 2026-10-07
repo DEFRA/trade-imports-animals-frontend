@@ -1,5 +1,5 @@
 import { obligationSet } from '../../../../../../model/obligations/manifest.js'
-import { instantFromDateParts } from '../../../../../../lib/validate/index.js'
+import { isoDateFromDateParts } from '../../../../../../lib/validate/index.js'
 import { compact, orUndefined } from '../../shared/compact.js'
 
 export const transporterFromFulfilment = (reader) => {
@@ -33,7 +33,7 @@ export const transportFromFulfilment = (reader) => {
   return orUndefined(
     compact({
       portOfEntry: reader.scalar(portOfEntry),
-      arrivalDate: instantFromDateParts(reader.scalar(arrivalDateAtPort)),
+      arrivalDate: isoDateFromDateParts(reader.scalar(arrivalDateAtPort)),
       transporter: transporterFromFulfilment(reader),
       meansOfTransport: unlessBlank(reader.scalar(meansOfTransport)),
       transportIdentification: unlessBlank(
