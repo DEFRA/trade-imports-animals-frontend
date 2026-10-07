@@ -7,7 +7,7 @@
       "GHSA-vfj7-8cjw-p6xm": {
         "active": true,
         "notes": "braces stack-exhaustion DoS through deeply nested patterns; no fixed version published (all versions <=3.0.3 affected). Owner: Sam Farrington",
-        "expiry": "2026-10-05"
+        "expiry": "2027-01-02"
       }
     },
     {
