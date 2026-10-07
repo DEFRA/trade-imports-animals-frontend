@@ -2,9 +2,10 @@ import { notificationsUrl } from '../config.js'
 import { failed } from '../http/failed.js'
 import { headers } from '../http/headers.js'
 import { marshal } from '../marshal/document.js'
+import { backendFetch } from '../../../../../../common/helpers/call-counts/backend-fetch.js'
 
 const postTransition = async (url, action, body) => {
-  const response = await fetch(url, {
+  const response = await backendFetch(url, {
     method: 'POST',
     headers: headers(),
     body: body === undefined ? undefined : JSON.stringify(body)

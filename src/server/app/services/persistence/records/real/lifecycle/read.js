@@ -4,6 +4,7 @@ import { getFulfilment } from '../http/get-fulfilment.js'
 import { headers } from '../http/headers.js'
 import { marshal } from '../marshal/document.js'
 import { marshalListItem } from '../marshal/list-item.js'
+import { backendFetch } from '../../../../../../common/helpers/call-counts/backend-fetch.js'
 
 export const load = async ({ journeyId } = {}) => {
   if (journeyId != null) {
@@ -25,7 +26,7 @@ export const list = async ({
   const referenceQuery = referenceNumber
     ? `&referenceNumber=${encodeURIComponent(referenceNumber)}`
     : ''
-  const response = await fetch(
+  const response = await backendFetch(
     `${notificationsUrl}?page=${page}&sort=${sort}${referenceQuery}`,
     {
       method: 'GET',

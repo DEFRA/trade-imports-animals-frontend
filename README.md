@@ -55,6 +55,53 @@ Redis is an in-memory key-value store. Every instance of a service has access to
 to how services might have a database (or MongoDB). All frontend services are given access to a namespaced prefixed that
 matches the service name. e.g. `my-service` will have access to everything in Redis that is prefixed with `my-service`.
 
+## Call counts
+
+For every page request it handles, the service counts the calls that request
+made to its journey backend, the times it read the signed-in session record
+from the session store, and the calls it made to systems outside the INS
+boundary. A page request is every request except `GET /health`,
+`GET /favicon.ico`, the static asset route and `/call-counts` itself: form
+posts, redirects, rendered pages, the 404 page and the document scan-status
+poll all count. A backend call is one `fetch` to the journey backend, made
+through `backendFetch`. A session resolution is one read of the session record
+by the auth plugin or by the view context; the session state yar loads is not
+counted.
+
+Running totals are kept per route and served at `GET /call-counts`. `DELETE
+/call-counts` clears them.
+
+```json
+{
+  "service": "trade-imports-animals-frontend",
+  "since": "2026-10-07T12:00:00.000Z",
+  "totals": {
+    "pageRequests": 2,
+    "backendCalls": 3,
+    "sessionResolutions": 4,
+    "externalCalls": {}
+  },
+  "routes": [
+    {
+      "method": "get",
+      "path": "/live-animals/notifications/{id}/origin",
+      "pageRequests": 2,
+      "backendCalls": 3,
+      "sessionResolutions": 4,
+      "externalCalls": {}
+    }
+  ]
+}
+```
+
+| Variable                       | Default                        | Effect                                                                                                |
+| ------------------------------ | ------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `CALL_COUNTS_ENDPOINT_ENABLED` | `true` locally, `false` on CDP | Serves `GET` and `DELETE /call-counts`, which need no sign-in                                         |
+| `CALL_COUNTS_METRICS_ENABLED`  | `false` locally, `true` on CDP | Writes one EMF document per page request: `BackendCalls` and `SessionResolutions`, `RequestKind=page` |
+
+The performance-test suite reads these counts and reports the ratios; see Call
+ratios in the trade-imports-performance-tests README.
+
 ## Proxy
 
 We are using forward-proxy which is set up by default. To make use of this: `import { fetch } from 'undici'` then

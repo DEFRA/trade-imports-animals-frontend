@@ -16,6 +16,7 @@ import { catchAll } from './common/helpers/errors.js'
 import { nunjucksConfig } from '../config/nunjucks/nunjucks.js'
 import { setupProxy } from './common/helpers/proxy/setup-proxy.js'
 import { requestTracing } from './common/helpers/request-tracing.js'
+import { callCounts } from './common/helpers/call-counts/call-counts.js'
 import { requestLogger } from './common/helpers/logging/request-logger.js'
 import { sessionCache } from './common/helpers/session-cache/session-cache.js'
 import { getCacheEngine } from './common/helpers/session-cache/cache-engine.js'
@@ -66,6 +67,7 @@ export async function createServer() {
   await server.register([
     requestLogger,
     requestTracing,
+    callCounts,
     metrics,
     secureContext,
     pulse,

@@ -2,6 +2,7 @@ import { Metrics } from '@defra/cdp-metrics'
 
 import { config } from '../../../config/config.js'
 import { createLogger } from './logging/logger.js'
+import { countExternalCall } from './call-counts/call-counts.js'
 
 const logger = createLogger()
 
@@ -52,6 +53,7 @@ export const recordExternalCall = async (
  * @param {{ durationMs: number, failed: boolean }} result - how long it took and whether it failed
  */
 export const recordExternalCallInBackground = (externalCall, result) => {
+  countExternalCall(externalCall)
   recordExternalCall(externalCall, result).catch(() => undefined)
 }
 

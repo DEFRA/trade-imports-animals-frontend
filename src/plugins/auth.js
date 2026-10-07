@@ -6,6 +6,7 @@ import { getSafeRedirect } from '../auth/get-safe-redirect.js'
 import { timeTokenExchange } from '../auth/token-exchange-timer.js'
 import { config } from '../config/config.js'
 import { isStubMode } from '../server/common/services/mode.js'
+import { countSessionResolution } from '../server/common/helpers/call-counts/call-counts.js'
 
 export const authPlugin = {
   plugin: {
@@ -110,6 +111,7 @@ function getCookieOptions() {
       return `/auth/sign-in?redirect=${encodeURIComponent(target)}`
     },
     validate: async function (request, session) {
+      countSessionResolution(request)
       const userSession = await request.server.app.cache.get(session.sessionId)
 
       // If session does not exist, return an invalid session

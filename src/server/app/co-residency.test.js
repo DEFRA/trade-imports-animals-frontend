@@ -166,6 +166,8 @@ describe('co-residency — two sets mounted in one process', () => {
     // What is left at the root is the server-wide surface and nothing else.
     expect(rootRoutes.toSorted()).toEqual([
       '/',
+      '/call-counts',
+      '/call-counts',
       '/favicon.ico',
       '/health',
       '/public/{param*}'
