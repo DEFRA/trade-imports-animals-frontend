@@ -44,7 +44,7 @@ describe('#documents validation (stored view)', () => {
     expect(errors).toEqual({ documents: en.errors.someNoLongerValid })
   })
 
-  it('Should accept a stored HEALTH_CERTIFICATE type — retained-but-not-offered pins the full catalogue', async () => {
+  it('Should accept a stored HEALTH_CERTIFICATE type — the full catalogue is valid', async () => {
     const { errors } = await readStored({
       documents: [doc({ accompanyingDocumentType: 'HEALTH_CERTIFICATE' })]
     })
