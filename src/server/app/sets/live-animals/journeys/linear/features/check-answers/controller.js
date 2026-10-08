@@ -27,6 +27,7 @@ import { partiesFromStoredAnswers } from '../addresses/frozen-parties.js'
 import { partyOf } from '../addresses/parties.js'
 import { partyEditHref } from '../addresses/party-edit/edit-href.js'
 import { documentScanCardErrors } from './refusal.js'
+import { recordReviewed } from './reviewed.js'
 import { declarationPage } from '../declaration/page.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
@@ -183,7 +184,14 @@ export const renderNotificationView = async (
   })
 }
 
-const get = async (request, h) => renderNotificationView(request, h)
+const get = async (request, h) => {
+  const response = await renderNotificationView(request, h)
+  const { journey } = await state.get(request, h)
+  if (journey.status !== state.SUBMITTED) {
+    await recordReviewed(request, h, journey)
+  }
+  return response
+}
 
 // Continue posts to the declaration, which alone decides whether the trader may
 // declare, so the review has no POST of its own.

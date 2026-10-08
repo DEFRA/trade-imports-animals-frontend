@@ -11,8 +11,10 @@
 import {
   flowOnlyAnswersCookie,
   knownJourneysCookie,
-  openingRunCookie
+  openingRunCookie,
+  reviewedTokensCookie
 } from '../../../engine/persistence/session.js'
+import { withEntry } from './by-journey.js'
 
 const isObject = (value) =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -29,6 +31,11 @@ const flowOnlyByJourneyFrom = (request) => {
 
 const openingRunByJourneyFrom = (request) => {
   const stored = request?.yar?.get(openingRunCookie())
+  return isObject(stored) ? stored : {}
+}
+
+const reviewedByJourneyFrom = (request) => {
+  const stored = request?.yar?.get(reviewedTokensCookie())
   return isObject(stored) ? stored : {}
 }
 
@@ -70,5 +77,16 @@ export const session = {
     }
     h.request.yar.set(flowOnlyAnswersCookie(), next)
     return structuredClone(next[journeyId])
+  },
+
+  async reviewedToken(request, journeyId) {
+    return reviewedByJourneyFrom(request)[journeyId]
+  },
+
+  async setReviewedToken(h, journeyId, token) {
+    h.request.yar.set(
+      reviewedTokensCookie(),
+      withEntry(reviewedByJourneyFrom(h.request), journeyId, token)
+    )
   }
 }

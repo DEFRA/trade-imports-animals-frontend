@@ -21,6 +21,8 @@ import {
   stubH
 } from '../../../../../../engine/test-support.js'
 import * as declaration from '../declaration/controller.js'
+import { continueRequest } from '../declaration/test-support.js'
+import { reviewedTokensCookie } from '../../../../../../engine/persistence/session.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import { pagePath } from '../../../../../../shared/paths.js'
@@ -47,9 +49,7 @@ const continueFromReview = async (seed, { submitted = false } = {}) => {
   const { concurrencyToken } = await store.get(journeyId)
   const h = stubH()
   const response = await postHandlerOf(declaration)(
-    journeyRequest(journeyId, {
-      payload: { step: 'review', concurrencyToken: `${concurrencyToken}` }
-    }),
+    continueRequest(journeyRequest(journeyId), concurrencyToken),
     h
   )
   return { journeyId, response, view: h.captured.view }
@@ -1319,6 +1319,29 @@ describe(`${SUITE} — Continue to the declaration`, () => {
       pagePath(journeyId, 'declaration')
     )
     expect(view.context.concurrencyToken).toBe(concurrencyToken)
+  })
+
+  it('Should record in the session the token an editable review was rendered with', async () => {
+    const { journeyId } = await store.create()
+    await store.seedAnswers(journeyId, fullSeed)
+    const { concurrencyToken } = await store.get(journeyId)
+    const h = stubH()
+
+    await getHandler(journeyRequest(journeyId), h)
+
+    expect(h.cookies[reviewedTokensCookie()]).toEqual({
+      [journeyId]: concurrencyToken
+    })
+  })
+
+  it('Should record nothing for a submitted notification, which cannot be declared again', async () => {
+    const { journeyId } = await store.create()
+    await store.submit(journeyId)
+    const h = stubH()
+
+    await getHandler(journeyRequest(journeyId), h)
+
+    expect(reviewedTokensCookie() in h.cookies).toBe(false)
   })
 
   // Continue used to carry an unfinished notification through to the

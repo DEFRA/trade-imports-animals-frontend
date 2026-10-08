@@ -63,7 +63,11 @@ review was rendered with; the review registers no POST of its own, and
 token rather than the current one, and its Submit (`step=declare`) finalises only
 at it. If the notification changed after the review rendered — another tab,
 another user — the token no longer matches and the trader goes back to the review
-with the "notification has been updated" banner (`?staleAction=1`). A refused
+with the "notification has been updated" banner (`?staleAction=1`). The review's
+GET also records the token in the session (`check-answers/reviewed.js`), and both
+declaration steps require the posted token to match it, so a token copied off
+another page cannot reach the declaration without the review; a successful
+submit clears it. A refused
 Continue or Submit goes back with `?refused=1`, which moves focus to the review's
 error summary; the review names every refusal itself, still-scanning documents
 included.

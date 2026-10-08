@@ -5,7 +5,8 @@ import {
   configureSession,
   flowOnlyAnswersCookie,
   knownJourneysCookie,
-  openingRunCookie
+  openingRunCookie,
+  reviewedTokensCookie
 } from '../../../engine/persistence/session.js'
 import { recordingH } from '../../../engine/test-support.js'
 import {
@@ -147,6 +148,28 @@ describe('#session.flowOnlyAnswers', () => {
   })
 })
 
+describe('#session.reviewedToken', () => {
+  it('Should round-trip a reviewed token without leaking it between journeys', async () => {
+    const h = recordingH()
+    await session.setReviewedToken(h, 'journey-1', 4, { state: {} })
+
+    const stored = {
+      state: { [reviewedTokensCookie()]: h.cookies[reviewedTokensCookie()] }
+    }
+    expect(await session.reviewedToken(stored, 'journey-1')).toBe(4)
+    expect(await session.reviewedToken(stored, 'journey-2')).toBeUndefined()
+  })
+
+  it('Should drop one journey’s entry on clearing, keeping another’s', async () => {
+    const h = recordingH()
+    await session.setReviewedToken(h, 'journey-1', undefined, {
+      state: { [reviewedTokensCookie()]: { 'journey-1': 4, 'journey-2': 7 } }
+    })
+
+    expect(h.cookies[reviewedTokensCookie()]).toEqual({ 'journey-2': 7 })
+  })
+})
+
 // Mounted last on purpose: a second mount retires set-context.js's sole-set
 // fallback, so every accessor above would have to enter a context explicitly
 // from here on.
@@ -156,7 +179,8 @@ describe('per-set cookie names with two sets mounted', () => {
     knownJourneys: 'probeKnownJourneys',
     openingRun: 'probeOpeningRun',
     flowOnlyAnswers: 'probeFlowOnlyAnswers',
-    addressHandshakeTokens: 'probeAddressHandshakeTokens'
+    addressHandshakeTokens: 'probeAddressHandshakeTokens',
+    reviewedTokens: 'probeReviewedTokens'
   })
 
   it('Should answer each set its own names', () => {

@@ -26,6 +26,8 @@ import {
 import { dispatchPages } from '../index.js'
 
 import * as declaration from './controller.js'
+import { reviewedState } from './test-support.js'
+import { reviewedTokensCookie } from '../../../../../../engine/persistence/session.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import * as refusal from '../check-answers/refusal.js'
 import { records } from '../../../../../../engine/persistence/records.js'
@@ -50,13 +52,15 @@ const VALID_COPY = {
 }
 
 /** Posts to the declaration at the token the review rendered with — the
- * journey's token once seeded. `afterReview` runs between the review and the
+ * journey's token once seeded — from a session that saw that review, unless
+ * `sessionToken` says otherwise. `afterReview` runs between the review and the
  * post, standing in for an edit made in another tab or by another user. */
 const drivePost = async ({
   step = 'declare',
   payload = {},
   seed = {},
-  afterReview = async () => {}
+  afterReview = async () => {},
+  sessionToken = (reviewed) => reviewed
 } = {}) => {
   const { journeyId } = await store.create()
   await store.seedAnswers(journeyId, seed)
@@ -65,7 +69,8 @@ const drivePost = async ({
   const h = stubH()
   const response = await post(
     journeyRequest(journeyId, {
-      payload: { step, concurrencyToken: `${reviewedToken}`, ...payload }
+      payload: { step, concurrencyToken: `${reviewedToken}`, ...payload },
+      state: reviewedState(journeyId, sessionToken(reviewedToken))
     }),
     h
   )
@@ -75,7 +80,8 @@ const drivePost = async ({
     before: seed,
     after: (await store.get(journeyId)).answers,
     response,
-    view: h.captured.view
+    view: h.captured.view,
+    cookies: h.cookies
   }
 }
 
@@ -155,6 +161,37 @@ describe('#declaration', () => {
     })
   })
 
+  describe('POST /declaration from a browser that has not seen the review', () => {
+    it.each(['review', 'declare'])(
+      'Should send step=%s back to the review when the session never rendered it',
+      async (step) => {
+        const finaliseSpy = vi.spyOn(records, 'finalise')
+
+        const result = await drivePost({
+          step,
+          payload: { declaration: 'confirmed' },
+          sessionToken: () => undefined
+        })
+
+        expect(result.response).toEqual({
+          redirect: reviewPath(result.journeyId)
+        })
+        expect(finaliseSpy).not.toHaveBeenCalled()
+      }
+    )
+
+    it('Should send the trader back to the review when the session saw a different review', async () => {
+      const result = await drivePost({
+        step: 'review',
+        sessionToken: (reviewed) => reviewed + 1
+      })
+
+      expect(result.response).toEqual({
+        redirect: reviewPath(result.journeyId)
+      })
+    })
+  })
+
   describe('POST /declaration with no recognised step', () => {
     it('Should send the trader back to the review', async () => {
       const finaliseSpy = vi.spyOn(records, 'finalise')
@@ -187,12 +224,13 @@ describe('#declaration submit', () => {
       expect(result.after).toEqual(result.before)
     })
 
-    it('Should redirect to the confirmation page after a successful submit', async () => {
+    it('Should redirect to the confirmation page after a successful submit, forgetting the review', async () => {
       const result = await drivePost({ payload: { declaration: 'confirmed' } })
 
       expect(result.response).toEqual({
         redirect: pagePath(result.journeyId, 'confirmation')
       })
+      expect(result.cookies[reviewedTokensCookie()]).toEqual({})
     })
 
     it('Should refuse the submit when the notification changed after the declaration rendered', async () => {

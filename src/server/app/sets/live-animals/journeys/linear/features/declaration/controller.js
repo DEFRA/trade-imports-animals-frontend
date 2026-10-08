@@ -18,6 +18,10 @@ import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 import { isReviewRefused } from '../check-answers/refusal.js'
 import { reviewHref } from '../check-answers/review-href.js'
+import {
+  forgetReviewed,
+  reviewedToken as reviewedTokenOf
+} from '../check-answers/reviewed.js'
 
 const STEP_REVIEW = 'review'
 const STEP_DECLARE = 'declare'
@@ -116,6 +120,7 @@ const declare = async (request, h, journey, reviewedToken) => {
   if (!result.ok) {
     return h.redirect(reviewHref(journey.journeyId, { refused: true }))
   }
+  await forgetReviewed(request, h, journey.journeyId)
   return h.redirect(pagePath(journey.journeyId, confirmationPage.slug))
 }
 
@@ -133,6 +138,10 @@ const post = async (request, h) => {
   const reviewedToken = postedToken(payload)
   if (reviewedToken !== journey.concurrencyToken) {
     return h.redirect(reviewHref(journey.journeyId, { changed: true }))
+  }
+  // Nothing changed, but this browser has not rendered the review of it.
+  if (reviewedToken !== (await reviewedTokenOf(request, journey.journeyId))) {
+    return h.redirect(reviewHref(journey.journeyId))
   }
 
   if (await isReviewRefused(request, h)) {

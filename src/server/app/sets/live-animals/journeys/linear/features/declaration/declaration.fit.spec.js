@@ -185,6 +185,33 @@ test.describe('declaration reached only from the review', () => {
     await expect(page).toHaveURL(REVIEW_URL)
   })
 
+  // Every journey page carries the current token, so a form edited in the
+  // browser's developer tools could post the review's Continue without the
+  // review ever being opened. The session records only the reviews it rendered.
+  test('sends a hand-crafted Continue from a browser that never opened the review back to the review', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await completeAnswerSections(page)
+
+    await page.goto(journeyUrl(page, 'origin'))
+    const declarationPath = new URL(journeyUrl(page, 'declaration'), page.url())
+      .pathname
+    await page.evaluate((action) => {
+      const form = document.querySelector('form[method="post"]')
+      form.action = action
+      const step = document.createElement('input')
+      step.type = 'hidden'
+      step.name = 'step'
+      step.value = 'review'
+      form.append(step)
+      form.submit()
+    }, declarationPath)
+
+    await expect(page).toHaveURL(REVIEW_URL)
+    await expect(page.getByRole('heading', { name: copy.title })).toHaveCount(0)
+  })
+
   test('refuses Continue and shows the current notification when it changed after the review rendered', async ({
     page
   }) => {

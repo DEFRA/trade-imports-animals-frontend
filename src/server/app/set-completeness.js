@@ -2,7 +2,8 @@ import {
   addressHandshakeTokensCookie,
   flowOnlyAnswersCookie,
   knownJourneysCookie,
-  openingRunCookie
+  openingRunCookie,
+  reviewedTokensCookie
 } from './engine/persistence/session.js'
 import { unconfiguredSeamsOf, withSetContext } from './shared/set-context.js'
 
@@ -25,7 +26,8 @@ const cookieNamesOf = (setId) =>
     knownJourneysCookie(),
     openingRunCookie(),
     flowOnlyAnswersCookie(),
-    addressHandshakeTokensCookie()
+    addressHandshakeTokensCookie(),
+    reviewedTokensCookie()
   ])
 
 /**
