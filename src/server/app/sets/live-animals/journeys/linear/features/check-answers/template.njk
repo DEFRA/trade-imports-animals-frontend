@@ -126,9 +126,13 @@
      declaration redirects a submitted journey to a confirmation it did not
      just produce. The read-only review ends with the last card. #}
   {% if not readOnly %}
-    <form method="post" novalidate>
+    {# Continue posts straight to the declaration, carrying the token this review
+       was rendered with: the declaration is reachable no other way, and the
+       trader declares only what this page showed. #}
+    <form method="post" action="{{ declarationHref }}" novalidate>
       <input type="hidden" name="crumb" value="{{ crumb }}" />
       <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
+      <input type="hidden" name="step" value="review" />
       {{ govukButton({ text: copy.submit.button }) }}
     </form>
   {% endif %}

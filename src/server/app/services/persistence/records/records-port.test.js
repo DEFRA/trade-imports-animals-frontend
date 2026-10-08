@@ -249,3 +249,33 @@ describe('records durable port', () => {
     ).toEqual([])
   })
 })
+
+describe('records concurrency token', () => {
+  beforeEach(() => records.clear())
+
+  it('Should move the concurrency token on with every save, as the backend does', async () => {
+    const created = await records.create()
+    const replaced = await records.replaceFulfilment(
+      created.journeyId,
+      originFulfilment('FR')
+    )
+    const submitted = await records.finalise(
+      created.journeyId,
+      undefined,
+      replaced.concurrencyToken
+    )
+
+    expect(replaced.concurrencyToken).toBe(created.concurrencyToken + 1)
+    expect(submitted.concurrencyToken).toBe(replaced.concurrencyToken + 1)
+  })
+
+  it('Should refuse to finalise at a token the journey has moved on from, leaving it a draft', async () => {
+    const { journeyId, concurrencyToken: reviewed } = await records.create()
+    await records.replaceFulfilment(journeyId, originFulfilment('FR'))
+
+    await expect(
+      records.finalise(journeyId, undefined, reviewed)
+    ).rejects.toMatchObject({ status: 409, code: 'STALE_CONCURRENCY_TOKEN' })
+    expect((await records.load({ journeyId })).status).toBe(DRAFT)
+  })
+})

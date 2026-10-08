@@ -1,6 +1,5 @@
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
-import { nextInSection } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
 import {
   CYA_SLUG,
@@ -27,8 +26,8 @@ import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { partiesFromStoredAnswers } from '../addresses/frozen-parties.js'
 import { partyOf } from '../addresses/parties.js'
 import { partyEditHref } from '../addresses/party-edit/edit-href.js'
-import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
-import { documentsRejectedCardErrors, reviewRefusal } from './refusal.js'
+import { documentScanCardErrors } from './refusal.js'
+import { declarationPage } from '../declaration/page.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 
@@ -113,6 +112,7 @@ const renderCya = async (
     copy,
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
+    declarationHref: pagePath(journey.journeyId, declarationPage.slug),
     journeyStrip: journeyStrip(journey),
     errorSummary: reviewErrorSummary(
       journey.journeyId,
@@ -140,11 +140,7 @@ const renderCya = async (
 export const renderNotificationView = async (
   request,
   h,
-  {
-    recoverableError = false,
-    disableAutoFocus = true,
-    extraCardErrors = {}
-  } = {}
+  { recoverableError = false } = {}
 ) => {
   const { journey, answers, storedAnswers, scope, evaluation } =
     await state.get(request, h)
@@ -160,12 +156,9 @@ export const renderNotificationView = async (
   const invalidCardErrors = readOnly
     ? {}
     : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
-  // A REJECTED scan is a permanent verdict on a stored file, so it belongs on the read
-  // path — a mid-upload PENDING is (or should be) a transient state so shouldn't
-  // present as an error.
-  const rejectedDocErrors = readOnly
-    ? {}
-    : await documentsRejectedCardErrors(answers)
+  // A refused Continue now lands here by redirect, so the review names a
+  // still-scanning document itself rather than relying on the refusal to.
+  const scanDocErrors = readOnly ? {} : await documentScanCardErrors(answers)
   return renderCya(h, journey, {
     answers,
     scope,
@@ -183,30 +176,15 @@ export const renderNotificationView = async (
       ? {}
       : {
           ...invalidCardErrors,
-          ...rejectedDocErrors,
-          ...extraCardErrors,
+          ...scanDocErrors,
           ...incompleteCardErrors(answers, scope, evaluation)
         },
-    disableAutoFocus
+    disableAutoFocus: request.query.refused !== '1'
   })
 }
 
 const get = async (request, h) => renderNotificationView(request, h)
 
-const post = async (request, h) => {
-  // Reuse the scan errors reviewRefusal already computed — a fresh
-  // documentScanCardErrors call here would issue a second HTTP GET per
-  // stored document to the upload backend.
-  const { refused, extraCardErrors } = await reviewRefusal(request, h)
-  if (refused) {
-    const rendered = await renderNotificationView(request, h, {
-      disableAutoFocus: false,
-      extraCardErrors
-    })
-    return rendered.code(HTTP_STATUS_BAD_REQUEST)
-  }
-  const { journey, scope } = await state.get(request, h)
-  return h.redirect(nextInSection(page.id, scope, journey.journeyId))
-}
-
-export const routes = pageRoutes(page, { get, post })
+// Continue posts to the declaration, which alone decides whether the trader may
+// declare, so the review has no POST of its own.
+export const routes = pageRoutes(page, { get })

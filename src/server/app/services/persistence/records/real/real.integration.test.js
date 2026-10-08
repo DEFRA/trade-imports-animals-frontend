@@ -154,8 +154,11 @@ describe.skipIf(!runsIt('real'))(
     it('Should submit and amend through the canonical lifecycle', async () => {
       const { journeyId } = await records.create()
       await replaceAnswers(journeyId, { countryOfOrigin: 'FR' })
+      const { concurrencyToken } = await records.load({ journeyId })
 
-      expect((await records.finalise(journeyId)).status).toBe(SUBMITTED)
+      expect(
+        (await records.finalise(journeyId, undefined, concurrencyToken)).status
+      ).toBe(SUBMITTED)
       expect((await records.load({ journeyId })).status).toBe(SUBMITTED)
       await expect(
         replaceAnswers(journeyId, { countryOfOrigin: 'DE' })

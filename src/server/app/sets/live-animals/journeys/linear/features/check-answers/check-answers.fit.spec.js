@@ -495,7 +495,7 @@ test.describe('check-answers feature unfinished notification', () => {
 
     await page.getByRole('button', { name: copy.submit.button }).click()
 
-    await expect(page).toHaveURL(reviewUrl)
+    await expect(page).toHaveURL(`${reviewUrl}?refused=1`)
     await expect(
       page.getByRole('heading', { name: sharedCopy.errorSummary.title })
     ).toBeVisible()
@@ -510,7 +510,7 @@ test.describe('check-answers feature unfinished notification', () => {
 
     await page.getByRole('button', { name: copy.submit.button }).click()
 
-    await expect(page).toHaveURL(reviewUrl)
+    await expect(page).toHaveURL(`${reviewUrl}?refused=1`)
     const speciesEntry = page.getByRole('link', {
       name: copy.errors.cards.species
     })

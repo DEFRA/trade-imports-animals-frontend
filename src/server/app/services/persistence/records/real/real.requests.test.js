@@ -292,13 +292,16 @@ describe('real records adapter — lifecycle and list', () => {
       ]
     )
 
-    const submitted = await records.finalise(journeyId, actor)
+    const submitted = await records.finalise(journeyId, actor, 4)
     const amended = await records.amend(journeyId, actor)
     const restored = await records.cancelAmend(journeyId, actor)
 
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
-      { method: 'POST', url: `${notificationsUrl}/${journeyId}/submit` },
+      {
+        method: 'POST',
+        url: `${notificationsUrl}/${journeyId}/submit?concurrencyToken=4`
+      },
       { method: 'POST', url: `${notificationsUrl}/${journeyId}/amend` },
       { method: 'POST', url: `${notificationsUrl}/${journeyId}/cancel-amend` }
     ])

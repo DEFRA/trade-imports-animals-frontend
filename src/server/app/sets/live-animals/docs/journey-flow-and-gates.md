@@ -54,7 +54,19 @@ The review is not a task row at all. Design release 1 reaches it from a primary
 dashboard", and offers it whatever the notification still owes — the review page
 renders an unfinished notification and names what is outstanding. The review
 section's authored gate on `readyForCheckYourAnswers` still stands between that
-page and submitting: the check-answers POST refuses on the same verdict.
+page and submitting: the declaration refuses on the same verdict.
+
+The declaration is reachable only from the review (EUDPA-676). The review's
+Continue posts to `/declaration` with `step=review` and the concurrency token the
+review was rendered with; the review registers no POST of its own, and
+`GET /declaration` redirects to the review. The declaration renders that posted
+token rather than the current one, and its Submit (`step=declare`) finalises only
+at it. If the notification changed after the review rendered — another tab,
+another user — the token no longer matches and the trader goes back to the review
+with the "notification has been updated" banner (`?staleAction=1`). A refused
+Continue or Submit goes back with `?refused=1`, which moves focus to the review's
+error summary; the review names every refusal itself, still-scanning documents
+included.
 
 That puts the cost on the pages, not the hub: a page behind a row has to render
 and save sensibly when nothing else has been answered. Where there is genuinely

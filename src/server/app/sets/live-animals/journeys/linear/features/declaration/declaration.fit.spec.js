@@ -2,32 +2,57 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 import {
-  BASE,
-  answerOriginEntry,
   completeAnswerSections,
+  journeyUrl,
   openReviewFromHub,
   signIn,
   startNotification,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
+import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
-const startAtDeclaration = async (page) => {
-  await page.goto(BASE)
-  await page
-    .locator(`form[action="${BASE}/notifications"]`)
-    .getByRole('button')
-    .click()
-  await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
+const SUBMIT_BUTTON = 'form button[type="submit"]'
+const EDITED_REFERENCE = 'CHANGED-IN-ANOTHER-TAB'
+const REVIEW_URL = urlUnderBase('/notifications/[^/]+/notification-view')
+const CHANGED_REVIEW_URL = urlUnderBase(
+  '/notifications/[^/]+/notification-view\\?staleAction=1'
+)
 
-  const declarationUrl = page.url().replace(/\/origin$/, '/declaration')
-  await answerOriginEntry(page)
-
-  await page.goto(declarationUrl)
+/** The only way onto the declaration: Continue from a complete review. */
+const continueFromReview = async (page) => {
+  await page.getByRole('button', { name: 'Continue' }).click()
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
 
+const startAtDeclaration = async (page) => {
+  await startNotification(page)
+  await completeAnswerSections(page)
+  await openReviewFromHub(page)
+  await continueFromReview(page)
+}
+
+/** Another tab, same trader, saving an answer on the same notification. */
+const editInAnotherTab = async (page) => {
+  const other = await page.context().newPage()
+  await other.goto(journeyUrl(page, 'origin'))
+  await other
+    .getByLabel('Your internal reference for this consignment (optional)')
+    .fill(EDITED_REFERENCE)
+  await other.getByRole('button', { name: 'Save and continue' }).click()
+  await other.close()
+}
+
+const expectChangedBanner = async (page) => {
+  await expect(page).toHaveURL(CHANGED_REVIEW_URL)
+  await expect(
+    page.getByText(sharedCopy.staleActionRejected.title)
+  ).toBeVisible()
+}
+
 test.describe('declaration feature', () => {
+  test.describe.configure({ timeout: 90000 })
+
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     await startAtDeclaration(page)
@@ -69,7 +94,7 @@ test.describe('declaration feature', () => {
   test('declaration validation: when unchecked, links to and focuses the clear checkbox', async ({
     page
   }) => {
-    await page.locator('form button[type="submit"]').click()
+    await page.locator(SUBMIT_BUTTON).click()
 
     const declarationError = page
       .getByRole('alert')
@@ -88,20 +113,15 @@ test.describe('declaration feature', () => {
   })
 
   test('back link returns to check answers', async ({ page }) => {
-    const checkAnswersUrl = page
-      .url()
-      .replace(/\/declaration$/, '/notification-view')
     const backLink = page.getByRole('link', { name: 'Back', exact: true })
     await expect(backLink).toHaveAttribute(
       'href',
-      new URL(checkAnswersUrl).pathname
+      new URL(journeyUrl(page, 'notification-view'), page.url()).pathname
     )
 
     await backLink.click()
 
-    await expect(page).toHaveURL(
-      urlUnderBase('/notifications/[^/]+/notification-view')
-    )
+    await expect(page).toHaveURL(REVIEW_URL)
   })
 
   test('has no serious or critical axe violations', async ({ page }) => {
@@ -117,30 +137,14 @@ test.describe('declaration feature', () => {
       `Declaration has serious/critical accessibility violations.\nFull axe violations:\n${JSON.stringify(results.violations, null, 2)}`
     ).toEqual([])
   })
-})
-
-test.describe('declaration submission', () => {
-  test.beforeEach(async ({ page }) => {
-    await signIn(page)
-  })
-
-  test.describe.configure({ timeout: 90000 })
-
-  test.beforeEach(async ({ page }) => {
-    await startNotification(page)
-    await completeAnswerSections(page)
-    await openReviewFromHub(page)
-    await page.getByRole('button', { name: 'Continue' }).click()
-    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
-  })
 
   test('submits a complete notification, redirects to confirmation and keeps the declaration', async ({
     page
   }) => {
-    const declarationUrl = page.url()
+    const declarationUrl = journeyUrl(page, 'declaration')
 
     await page.getByRole('checkbox', { name: copy.declarationLabel }).check()
-    await page.locator('form button[type="submit"]').click()
+    await page.locator(SUBMIT_BUTTON).click()
 
     await expect(page).toHaveURL(
       urlUnderBase('/notifications/[^/]+/confirmation')
@@ -149,5 +153,49 @@ test.describe('declaration submission', () => {
     await expect(page).toHaveURL(
       urlUnderBase('/notifications/[^/]+/confirmation')
     )
+  })
+
+  test('refuses the submit and returns to the review when the notification changed after the declaration rendered', async ({
+    page
+  }) => {
+    await editInAnotherTab(page)
+
+    await page.getByRole('checkbox', { name: copy.declarationLabel }).check()
+    await page.locator(SUBMIT_BUTTON).click()
+
+    await expectChangedBanner(page)
+    await expect(page.getByText(EDITED_REFERENCE)).toBeVisible()
+  })
+})
+
+test.describe('declaration reached only from the review', () => {
+  test.describe.configure({ timeout: 90000 })
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('sends a typed or bookmarked declaration URL back to the review', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await page.goto(journeyUrl(page, 'declaration'))
+
+    await expect(page).toHaveURL(REVIEW_URL)
+  })
+
+  test('refuses Continue and shows the current notification when it changed after the review rendered', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await completeAnswerSections(page)
+    await openReviewFromHub(page)
+
+    await editInAnotherTab(page)
+    await page.getByRole('button', { name: 'Continue' }).click()
+
+    await expectChangedBanner(page)
+    await expect(page.getByText(EDITED_REFERENCE)).toBeVisible()
   })
 })

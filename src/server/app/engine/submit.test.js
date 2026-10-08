@@ -35,13 +35,32 @@ describe('submitJourney — gates on scope readiness, finalises via records', ()
     configureReadyForCheckYourAnswers(SET_ID, () => true)
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
 
-    const result = await submitJourney(buildRequest(), stubH())
+    const { concurrencyToken } = await records.load({ journeyId })
 
-    expect(finalise).toHaveBeenCalledWith(journeyId, authenticatedActor)
+    const result = await submitJourney(buildRequest(), stubH(), {
+      concurrencyToken
+    })
+
+    expect(finalise).toHaveBeenCalledWith(
+      journeyId,
+      authenticatedActor,
+      concurrencyToken
+    )
     expect(result.ok).toBe(true)
     expect(result.journey.journeyId).toBe(journeyId)
     expect(result.journey.status).toBe(SUBMITTED)
     expect((await records.load({ journeyId })).status).toBe(SUBMITTED)
+  })
+
+  it('Should refuse to finalise at a token the journey has moved on from', async () => {
+    configureReadyForCheckYourAnswers(SET_ID, () => true)
+    const { concurrencyToken: reviewed } = await records.load({ journeyId })
+    await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
+
+    await expect(
+      submitJourney(buildRequest(), stubH(), { concurrencyToken: reviewed })
+    ).rejects.toMatchObject({ code: 'STALE_CONCURRENCY_TOKEN', status: 409 })
+    expect((await records.load({ journeyId })).status).toBe(DRAFT)
   })
 
   it('Should return { ok: false } and leave the journey in draft when not CYA-ready', async () => {
