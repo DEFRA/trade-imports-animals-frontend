@@ -11,12 +11,30 @@
   @include govuk-font($size: 19);
 }
 
-// The upstream arrow has a negative z-index so it sits below the transparent
-// input. Give the wrapper its own stacking context: the arrow then paints over
-// the page background while remaining behind the interactive input.
+// The upstream dropdown arrow is replaced with a search icon (DR21 country
+// search). Hide the arrow and paint the magnifying glass behind the
+// transparent input — same stacking contract as the upstream arrow.
+$app-accessible-autocomplete-search-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20.3765 20'%3E%3Cpath d='M8.90084 14.4683C12.3848 14.4683 15.2091 11.644 15.2091 8.16008C15.2091 4.67613 12.3848 1.85184 8.90084 1.85184C5.41689 1.85184 2.59259 4.67613 2.59259 8.16008C2.59259 11.644 5.41689 14.4683 8.90084 14.4683Z' stroke='%230b0c0c' stroke-width='2.22222' fill='none'/%3E%3Cpath d='M13.2347 12.8583L19.5908 19.2143' stroke='%230b0c0c' stroke-width='2.22222' fill='none'/%3E%3C/svg%3E");
+
+.autocomplete__dropdown-arrow-down {
+  display: none;
+}
+
 .autocomplete__wrapper {
   position: relative;
   z-index: 0;
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: 8px;
+    top: 10px;
+    width: 20px;
+    height: 20px;
+    background: $app-accessible-autocomplete-search-icon no-repeat center / contain;
+    pointer-events: none;
+    z-index: -1;
+  }
 }
 
 // appAccessibleAutocomplete puts the GOV.UK error class on the form group and

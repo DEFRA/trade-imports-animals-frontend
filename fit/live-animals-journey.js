@@ -192,6 +192,22 @@ export const choosePortOfEntry = async (page, option = FIXTURE_PORT_OPTION) => {
   await page.getByRole('option', { name: option, exact: true }).click()
 }
 
+// Any accessible-autocomplete field addressed by its visible label. With
+// JavaScript off the field is still the native <select>.
+export const chooseAutocompleteByLabel = async (
+  page,
+  { label, query, optionName }
+) => {
+  const field = page.getByLabel(label, { exact: true })
+  if ((await field.evaluate((el) => el.tagName)) === 'SELECT') {
+    await field.selectOption({ label: optionName })
+    return
+  }
+  await field.click()
+  await field.fill(query)
+  await page.getByRole('option', { name: optionName, exact: true }).click()
+}
+
 export const answerCountryOfOrigin = async (page) => {
   await page
     .getByRole('link', { name: 'Where is this consignment coming from?' })

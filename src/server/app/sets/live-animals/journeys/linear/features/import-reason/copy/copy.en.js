@@ -39,11 +39,13 @@ export const copy = {
   },
   country: {
     label: 'Destination country',
-    placeholder: 'Select a country'
+    placeholder: 'Select a country',
+    noResults: 'No countries found'
   },
   port: {
     label: 'Port of exit',
-    placeholder: 'Select port of exit'
+    placeholder: 'Select port of exit',
+    noResults: 'No ports found'
   },
   date: {
     label: 'Exit date',

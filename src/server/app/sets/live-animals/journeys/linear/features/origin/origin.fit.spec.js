@@ -27,7 +27,7 @@ const ireland = countriesOrigin.find(({ code }) => code === 'IE')
 // is hidden and renamed with a "-select" suffix (it still submits the code).
 const countryInput = 'input#countryOfOrigin'
 const countryHidden = 'select#countryOfOrigin-select'
-const AUTOCOMPLETE_ARROW = '.autocomplete__dropdown-arrow-down'
+const AUTOCOMPLETE_WRAPPER = '.autocomplete__wrapper'
 const AUTOCOMPLETE_OPTION = '.autocomplete__option'
 
 const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
@@ -422,30 +422,35 @@ test.describe('country of origin type-ahead styles', () => {
     expect(typography.optionSize).toBe(typography.referenceSize)
   })
 
-  test('paints the dropdown arrow behind the interactive input', async ({
+  test('paints the search icon behind the interactive input', async ({
     page
   }) => {
     const paintStack = await page
-      .locator(AUTOCOMPLETE_ARROW)
-      .evaluate((arrow) => {
-        const bounds = arrow.getBoundingClientRect()
+      .locator(AUTOCOMPLETE_WRAPPER)
+      .first()
+      .evaluate((wrapper) => {
+        const input = wrapper.querySelector('.autocomplete__input')
+        const arrow = wrapper.querySelector(
+          '.autocomplete__dropdown-arrow-down'
+        )
+        const afterStyle = getComputedStyle(wrapper, '::after')
+        const bounds = input.getBoundingClientRect()
         const hits = document.elementsFromPoint(
-          bounds.left + bounds.width / 2,
+          bounds.right - 12,
           bounds.top + bounds.height / 2
         )
-        const wrapper = arrow.closest('.autocomplete__wrapper')
         return {
-          arrowIsInStack: hits.some(
-            (element) => element === arrow || arrow.contains(element)
-          ),
-          inputIsTopHit: hits[0]?.matches('.autocomplete__input') ?? false,
-          inputPaddingRight: getComputedStyle(hits[0]).paddingRight,
+          arrowHidden: getComputedStyle(arrow).display === 'none',
+          searchIconPainted: afterStyle.content !== 'none',
+          inputIsTopHit: hits[0] === input,
+          inputPaddingRight: getComputedStyle(input).paddingRight,
           wrapperZIndex: getComputedStyle(wrapper).zIndex
         }
       })
 
     expect(paintStack).toEqual({
-      arrowIsInStack: true,
+      arrowHidden: true,
+      searchIconPainted: true,
       inputIsTopHit: true,
       inputPaddingRight: '35px',
       wrapperZIndex: '0'
