@@ -7,7 +7,10 @@ import {
   chooseTodayFromDatePicker,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
-import { countriesOriginEntries } from '../../../../../../services/_capture/fixtures.js'
+import {
+  countriesOriginEntries,
+  portsOfEntry
+} from '../../../../../../services/_capture/fixtures.js'
 import * as importReasonPurpose from '../../../../../../services/import-reason-purpose/index.js'
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
@@ -20,11 +23,20 @@ const SUBMIT_BUTTON = 'form button[type="submit"]'
 const CHOOSE_DATE_LABEL = 'Choose date'
 const PORT_CODE = 'GB DVR'
 const COUNTRY_CODE = 'IE'
-const TRANSIT_PORT = '#transitPortOfExit'
-const TRANSIT_COUNTRY = '#transitDestinationCountry'
+const EXIT_PORT = portsOfEntry.find(({ code }) => code === PORT_CODE)
+const EXIT_PORT_LABEL = `${EXIT_PORT.name} (${EXIT_PORT.code})`
+const IRELAND = countriesOriginEntries().find(
+  ({ code }) => code === COUNTRY_CODE
+)
+const transitPortInput = 'input#transitPortOfExit'
+const transitPortHidden = 'select#transitPortOfExit-select'
+const transitCountryInput = 'input#transitDestinationCountry'
+const transitCountryHidden = 'select#transitDestinationCountry-select'
 const TRANSHIPMENT_COUNTRY = '#transhipmentDestinationCountry'
 const TEMPORARY_ADMISSION_DATE = '#temporaryAdmissionExitDate'
-const TEMPORARY_ADMISSION_PORT = '#temporaryAdmissionPortOfExit'
+const temporaryAdmissionPortInput = 'input#temporaryAdmissionPortOfExit'
+const temporaryAdmissionPortHidden =
+  'select#temporaryAdmissionPortOfExit-select'
 
 // govuk-frontend's own conditional-reveal script puts aria-expanded on the
 // radio it belongs to, which axe reads as an attribute a radio may not carry.
@@ -78,7 +90,32 @@ const revealFor = async (page, value) => {
 const fieldIdsIn = (reveal) =>
   reveal
     .locator('select, input:not([type="hidden"])')
-    .evaluateAll((fields) => fields.map((field) => field.id))
+    .evaluateAll((fields) =>
+      fields
+        .filter((field) => !field.id.endsWith('-select'))
+        .map((field) => field.id)
+    )
+
+const chooseTransitPort = async (page) => {
+  const field = page.locator(transitPortInput)
+  await field.click()
+  await field.fill(EXIT_PORT.code)
+  await page.getByRole('option', { name: EXIT_PORT_LABEL, exact: true }).click()
+}
+
+const chooseTransitCountry = async (page) => {
+  const field = page.locator(transitCountryInput)
+  await field.click()
+  await field.fill(IRELAND.name)
+  await page.getByRole('option', { name: IRELAND.name, exact: true }).click()
+}
+
+const chooseTemporaryAdmissionPort = async (page) => {
+  const field = page.locator(temporaryAdmissionPortInput)
+  await field.click()
+  await field.fill(EXIT_PORT.code)
+  await page.getByRole('option', { name: EXIT_PORT_LABEL, exact: true }).click()
+}
 
 test.describe('import-reason feature', () => {
   test.beforeEach(async ({ page }) => {
@@ -232,18 +269,22 @@ test.describe('import-reason reveals', () => {
       'transitPortOfExit',
       'transitDestinationCountry'
     ])
-    await expect(page.locator(TRANSIT_PORT)).toHaveAccessibleName(
+    await expect(page.locator(transitPortHidden)).toBeAttached()
+    await expect(page.locator(transitPortInput)).toHaveAccessibleName(
       copy.port.label
     )
-    await expect(page.locator(TRANSIT_PORT)).toHaveAccessibleDescription('')
-    await expect(page.locator(TRANSIT_COUNTRY)).toHaveAccessibleName(
+    await expect(page.locator(transitPortInput)).toHaveAccessibleDescription('')
+    await expect(page.locator(transitCountryHidden)).toBeAttached()
+    await expect(page.locator(transitCountryInput)).toHaveAccessibleName(
       copy.country.label
     )
-    await expect(page.locator(TRANSIT_COUNTRY)).toHaveAccessibleDescription('')
+    await expect(page.locator(transitCountryInput)).toHaveAccessibleDescription(
+      ''
+    )
     const renderedCountries = await page
-      .locator(`${TRANSIT_COUNTRY} option`)
+      .locator(`${transitCountryHidden} option`)
       .evaluateAll((options) =>
-        options.slice(2).map((option) => ({
+        options.slice(1).map((option) => ({
           code: option.value,
           name: option.textContent
         }))
@@ -264,8 +305,9 @@ test.describe('import-reason reveals', () => {
     await expect(
       page.locator(TEMPORARY_ADMISSION_DATE)
     ).toHaveAccessibleDescription(copy.date.hint)
+    await expect(page.locator(temporaryAdmissionPortHidden)).toBeAttached()
     await expect(
-      page.locator(TEMPORARY_ADMISSION_PORT)
+      page.locator(temporaryAdmissionPortInput)
     ).toHaveAccessibleDescription('')
     expect(await fieldIdsIn(reveal)).toEqual([
       'temporaryAdmissionExitDate',
@@ -295,22 +337,24 @@ test.describe('import-reason reveals', () => {
     const reasonUrl = page.url()
 
     await radioFor(page, 'transit').check()
-    await page.locator(TRANSIT_PORT).selectOption(PORT_CODE)
-    await page.locator(TRANSIT_COUNTRY).selectOption(COUNTRY_CODE)
+    await chooseTransitPort(page)
+    await chooseTransitCountry(page)
     await page.locator(SUBMIT_BUTTON).first().click()
 
     await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(radioFor(page, 'transit')).toBeChecked()
-    await expect(page.locator(TRANSIT_PORT)).toHaveValue(PORT_CODE)
-    await expect(page.locator(TRANSIT_COUNTRY)).toHaveValue(COUNTRY_CODE)
+    await expect(page.locator(transitPortHidden)).toHaveValue(PORT_CODE)
+    await expect(page.locator(transitPortInput)).toHaveValue(EXIT_PORT_LABEL)
+    await expect(page.locator(transitCountryHidden)).toHaveValue(COUNTRY_CODE)
+    await expect(page.locator(transitCountryInput)).toHaveValue(IRELAND.name)
   })
 
   test('refuses an unanswered reveal, links to the field and keeps the reveal open', async ({
     page
   }) => {
     await radioFor(page, 'transit').check()
-    await page.locator(TRANSIT_PORT).selectOption(PORT_CODE)
+    await chooseTransitPort(page)
     await page.locator(SUBMIT_BUTTON).first().click()
 
     const countryError = page
@@ -318,8 +362,8 @@ test.describe('import-reason reveals', () => {
       .getByRole('link', { name: copy.errors.countryRequired })
     await expect(countryError).toBeVisible()
     await countryError.click()
-    await expect(page.locator(TRANSIT_COUNTRY)).toBeFocused()
-    await expect(page.locator(TRANSIT_PORT)).toHaveValue(PORT_CODE)
+    await expect(page.locator(transitCountryInput)).toBeFocused()
+    await expect(page.locator(transitPortHidden)).toHaveValue(PORT_CODE)
   })
 
   test('refuses an unanswered internal-market purpose, links to the first radio and keeps the reveal open', async ({
@@ -350,20 +394,25 @@ test.describe('import-reason reveals', () => {
     await radioFor(page, 'temporaryAdmissionHorses').check()
     const expected = await chooseTodayFromDatePicker(page, copy.date.label)
     await expect(page.locator(TEMPORARY_ADMISSION_DATE)).toHaveValue(expected)
-    await page.locator(TEMPORARY_ADMISSION_PORT).selectOption(PORT_CODE)
+    await chooseTemporaryAdmissionPort(page)
     await page.locator(SUBMIT_BUTTON).first().click()
 
     await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
     await page.goto(reasonUrl)
     await expect(page.locator(TEMPORARY_ADMISSION_DATE)).toHaveValue(expected)
-    await expect(page.locator(TEMPORARY_ADMISSION_PORT)).toHaveValue(PORT_CODE)
+    await expect(page.locator(temporaryAdmissionPortHidden)).toHaveValue(
+      PORT_CODE
+    )
+    await expect(page.locator(temporaryAdmissionPortInput)).toHaveValue(
+      EXIT_PORT_LABEL
+    )
   })
 
   test('refuses a blank exit date, links to the picker input and keeps the port the user did choose', async ({
     page
   }) => {
     await radioFor(page, 'temporaryAdmissionHorses').check()
-    await page.locator(TEMPORARY_ADMISSION_PORT).selectOption(PORT_CODE)
+    await chooseTemporaryAdmissionPort(page)
     await page.locator(SUBMIT_BUTTON).first().click()
 
     const dateError = page
@@ -376,7 +425,98 @@ test.describe('import-reason reveals', () => {
 
     await dateError.click()
     await expect(page.locator(TEMPORARY_ADMISSION_DATE)).toBeFocused()
-    await expect(page.locator(TEMPORARY_ADMISSION_PORT)).toHaveValue(PORT_CODE)
+    await expect(page.locator(temporaryAdmissionPortHidden)).toHaveValue(
+      PORT_CODE
+    )
+  })
+})
+
+test.describe('import-reason port and country type-ahead', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startAtImportReason(page)
+    await radioFor(page, 'transit').check()
+  })
+
+  test('offers the whole port list on focus, without typing', async ({
+    page
+  }) => {
+    await page.locator(transitPortInput).click()
+    await expect(
+      page.getByRole('option', { name: EXIT_PORT_LABEL, exact: true })
+    ).toBeVisible()
+    await expect(page.getByRole('option')).toHaveCount(portsOfEntry.length)
+  })
+
+  test('filters ports as the user types', async ({ page }) => {
+    const field = page.locator(transitPortInput)
+    await field.fill('Dover')
+    await expect(
+      page.getByRole('option', { name: EXIT_PORT_LABEL, exact: true })
+    ).toBeVisible()
+    await expect(page.getByRole('option')).toHaveCount(1)
+  })
+
+  test('tells the user when no ports match what they typed', async ({
+    page
+  }) => {
+    await page.locator(transitPortInput).fill('zzzzzz')
+    await expect(page.getByText(copy.port.noResults)).toBeVisible()
+  })
+
+  test('offers the whole country list on focus, without typing', async ({
+    page
+  }) => {
+    await page.locator(transitCountryInput).click()
+    await expect(
+      page.getByRole('option', { name: IRELAND.name, exact: true })
+    ).toBeVisible()
+    await expect(page.getByRole('option')).toHaveCount(
+      countriesOriginEntries().length
+    )
+  })
+
+  test('filters countries as the user types', async ({ page }) => {
+    const field = page.locator(transitCountryInput)
+    await field.fill('ire')
+    await expect(
+      page.getByRole('option', { name: IRELAND.name, exact: true })
+    ).toBeVisible()
+  })
+
+  test('tells the user when no countries match what they typed', async ({
+    page
+  }) => {
+    await page.locator(transitCountryInput).fill('zzzzzz')
+    await expect(page.getByText(copy.country.noResults)).toBeVisible()
+  })
+})
+
+test.describe('import-reason port and country without JavaScript', () => {
+  test.use({ javaScriptEnabled: false })
+
+  test('native selects submit and persist port and country codes', async ({
+    page
+  }) => {
+    await signIn(page)
+    await startAtImportReason(page)
+    const reasonUrl = page.url()
+
+    await radioFor(page, 'transit').check()
+    await page.locator('select#transitPortOfExit').selectOption(PORT_CODE)
+    await page
+      .locator('select#transitDestinationCountry')
+      .selectOption(COUNTRY_CODE)
+    await page.locator(SUBMIT_BUTTON).first().click()
+
+    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await page.goto(reasonUrl)
+    await expect(page.locator('select#transitPortOfExit')).toHaveValue(
+      PORT_CODE
+    )
+    await expect(page.locator('select#transitDestinationCountry')).toHaveValue(
+      COUNTRY_CODE
+    )
   })
 })
 
