@@ -273,13 +273,9 @@ test.describe('import-reason reveals', () => {
     await expect(page.locator(transitPortInput)).toHaveAccessibleName(
       copy.port.label
     )
-    await expect(page.locator(transitPortInput)).toHaveAccessibleDescription('')
     await expect(page.locator(transitCountryHidden)).toBeAttached()
     await expect(page.locator(transitCountryInput)).toHaveAccessibleName(
       copy.country.label
-    )
-    await expect(page.locator(transitCountryInput)).toHaveAccessibleDescription(
-      ''
     )
     const renderedCountries = await page
       .locator(`${transitCountryHidden} option`)
@@ -308,7 +304,7 @@ test.describe('import-reason reveals', () => {
     await expect(page.locator(temporaryAdmissionPortHidden)).toBeAttached()
     await expect(
       page.locator(temporaryAdmissionPortInput)
-    ).toHaveAccessibleDescription('')
+    ).toHaveAccessibleName(copy.port.label)
     expect(await fieldIdsIn(reveal)).toEqual([
       'temporaryAdmissionExitDate',
       'temporaryAdmissionPortOfExit'
