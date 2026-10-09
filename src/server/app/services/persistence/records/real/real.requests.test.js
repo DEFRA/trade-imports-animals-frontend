@@ -292,13 +292,16 @@ describe('real records adapter — lifecycle and list', () => {
       ]
     )
 
-    const submitted = await records.finalise(journeyId, actor)
+    const submitted = await records.finalise(journeyId, actor, 4)
     const amended = await records.amend(journeyId, actor)
     const restored = await records.cancelAmend(journeyId, actor)
 
     const requests = fetchMocker.requests()
     expect(requests.map(({ method, url }) => ({ method, url }))).toEqual([
-      { method: 'POST', url: `${notificationsUrl}/${journeyId}/submit` },
+      {
+        method: 'POST',
+        url: `${notificationsUrl}/${journeyId}/submit?concurrencyToken=4`
+      },
       { method: 'POST', url: `${notificationsUrl}/${journeyId}/amend` },
       { method: 'POST', url: `${notificationsUrl}/${journeyId}/cancel-amend` }
     ])
@@ -311,6 +314,33 @@ describe('real records adapter — lifecycle and list', () => {
     expect(amended.submittedAt).toBeNull()
     expect(restored.status).toBe(SUBMITTED)
     expect(restored.submittedAt).toBe(submittedTimestamp)
+  })
+
+  it.each([undefined, null])(
+    'Should refuse to finalise without a concurrencyToken (%s) and send nothing',
+    async (concurrencyToken) => {
+      await expect(
+        records.finalise(journeyId, actor, concurrencyToken)
+      ).rejects.toThrow(
+        `finalise requires a concurrencyToken to submit notification ${journeyId}`
+      )
+      expect(fetchMocker.requests()).toHaveLength(0)
+    }
+  )
+
+  it('Should reject a stale-token submit with the 409 status and STALE_CONCURRENCY_TOKEN code', async () => {
+    fetchMocker.mockResponse(
+      JSON.stringify({ code: 'STALE_CONCURRENCY_TOKEN' }),
+      { status: 409 }
+    )
+
+    await expect(records.finalise(journeyId, actor, 4)).rejects.toMatchObject({
+      code: 'STALE_CONCURRENCY_TOKEN',
+      status: 409
+    })
+    expect(fetchMocker.requests()[0].url).toBe(
+      `${notificationsUrl}/${journeyId}/submit?concurrencyToken=4`
+    )
   })
 
   it('Should copy with the source concurrencyToken as a query parameter (WYSIWYG guarantee)', async () => {

@@ -14,10 +14,10 @@ const consignorCopy = {
 
 const seedSubmittedWithParty = async () => {
   const draft = await records.create()
-  await records.replaceFulfilment(draft.journeyId, {
+  const saved = await records.replaceFulfilment(draft.journeyId, {
     [consignor.id]: consignorCopy
   })
-  await records.finalise(draft.journeyId)
+  await records.finalise(draft.journeyId, undefined, saved.concurrencyToken)
   return draft.journeyId
 }
 

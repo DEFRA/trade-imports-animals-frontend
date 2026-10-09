@@ -69,6 +69,27 @@ const buildServer = async () => {
       handler: async (request) => ({
         values: await session.flowOnlyAnswers(request, request.params.journeyId)
       })
+    },
+    {
+      method: 'POST',
+      path: '/reviewed/{journeyId}',
+      handler: async (request, h) => {
+        await session.setReviewedToken(
+          h,
+          request.params.journeyId,
+          request.payload.token ?? undefined
+        )
+        return { ok: true }
+      }
+    },
+    {
+      method: 'GET',
+      path: '/reviewed/{journeyId}',
+      handler: async (request) => ({
+        token:
+          (await session.reviewedToken(request, request.params.journeyId)) ??
+          null
+      })
     }
   ])
   return server
@@ -110,6 +131,45 @@ describe('#session.knownJourneyIds (real, yar)', () => {
     const server = await buildServer()
     const known = await server.inject({ method: 'GET', url: '/known' })
     expect(known.result.ids).toEqual([])
+  })
+})
+
+describe('#session.reviewedToken (real, yar)', () => {
+  const REVIEWED_J1 = '/reviewed/J-1'
+
+  it('Should hold one token per journey, and drop it when cleared', async () => {
+    const server = await buildServer()
+    const first = await server.inject({
+      method: 'POST',
+      url: REVIEWED_J1,
+      payload: { token: 4 }
+    })
+    const second = await server.inject({
+      method: 'POST',
+      url: '/reviewed/J-2',
+      payload: { token: 7 },
+      headers: { cookie: cookieOf(first) }
+    })
+    const cleared = await server.inject({
+      method: 'POST',
+      url: REVIEWED_J1,
+      payload: { token: null },
+      headers: { cookie: cookieOf(second) }
+    })
+    const cookie = cookieOf(cleared) ?? cookieOf(second)
+
+    const one = await server.inject({
+      method: 'GET',
+      url: REVIEWED_J1,
+      headers: { cookie }
+    })
+    const two = await server.inject({
+      method: 'GET',
+      url: '/reviewed/J-2',
+      headers: { cookie }
+    })
+    expect(one.result.token).toBeNull()
+    expect(two.result.token).toBe(7)
   })
 })
 

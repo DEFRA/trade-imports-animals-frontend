@@ -1,3 +1,4 @@
+import { load } from 'cheerio'
 import { describe, expect, it } from 'vitest'
 
 import { SET_BASE } from '../../src/server/app/sets/live-animals/set.js'
@@ -5,6 +6,7 @@ import {
   journeyIdIn,
   SEED_SHAPES,
   seedSteps,
+  submitNotification,
   values
 } from './seed-notification.js'
 
@@ -50,5 +52,63 @@ describe('#seedSteps cph-number', () => {
     expect(`${cphCounty}${cphParish}${cphHolding}`).toBe(
       values.countyParishHoldingCph.replace(/\D/g, '')
     )
+  })
+})
+
+describe('#submitNotification', () => {
+  const notificationPath = (slug) =>
+    `${SET_BASE}/notifications/${JOURNEY_ID}/${slug}`
+
+  const pageWithToken = (token) => ({
+    status: 200,
+    location: null,
+    crumb: 'test-crumb',
+    heading: '',
+    $: load(`<input type="hidden" name="concurrencyToken" value="${token}">`)
+  })
+
+  /** A server that renders the review at token 7, the declaration from the
+   * review's Continue, and confirms a declared submit. */
+  const fakeClient = () => {
+    const posts = []
+    return {
+      posts,
+      document: async () => pageWithToken('7'),
+      submit: async (path, fields, crumb) => {
+        posts.push({ path, fields, crumb })
+        return fields.step === 'review'
+          ? pageWithToken('7')
+          : {
+              status: 302,
+              location: notificationPath('confirmation'),
+              crumb: '',
+              heading: '',
+              $: load('')
+            }
+      }
+    }
+  }
+
+  it("Should continue from the review, then declare at the review's token", async () => {
+    const client = fakeClient()
+
+    await submitNotification(client, JOURNEY_ID)
+
+    expect(client.posts).toEqual([
+      {
+        path: notificationPath('declaration'),
+        fields: { step: 'review', concurrencyToken: '7' },
+        crumb: 'test-crumb'
+      },
+      {
+        path: notificationPath('declaration'),
+        fields: {
+          step: 'declare',
+          declaration: values.declaration,
+          concurrencyToken: '7'
+        },
+        crumb: 'test-crumb'
+      }
+    ])
   })
 })

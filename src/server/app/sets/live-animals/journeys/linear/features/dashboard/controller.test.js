@@ -92,7 +92,7 @@ const startDraft = async () => records.create()
 
 const startSubmitted = async () => {
   const journey = await records.create()
-  await records.finalise(journey.journeyId)
+  await records.finalise(journey.journeyId, undefined, journey.concurrencyToken)
   return records.load({ journeyId: journey.journeyId })
 }
 

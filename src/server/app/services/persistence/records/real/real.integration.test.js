@@ -154,8 +154,11 @@ describe.skipIf(!runsIt('real'))(
     it('Should submit and amend through the canonical lifecycle', async () => {
       const { journeyId } = await records.create()
       await replaceAnswers(journeyId, { countryOfOrigin: 'FR' })
+      const { concurrencyToken } = await records.load({ journeyId })
 
-      expect((await records.finalise(journeyId)).status).toBe(SUBMITTED)
+      expect(
+        (await records.finalise(journeyId, undefined, concurrencyToken)).status
+      ).toBe(SUBMITTED)
       expect((await records.load({ journeyId })).status).toBe(SUBMITTED)
       await expect(
         replaceAnswers(journeyId, { countryOfOrigin: 'DE' })
@@ -167,6 +170,20 @@ describe.skipIf(!runsIt('real'))(
       await expect(
         replaceAnswers(journeyId, { countryOfOrigin: 'DE' })
       ).resolves.toMatchObject({ status: AMEND })
+    })
+
+    it('Should refuse to submit with a stale concurrency token and leave the notification in draft', async () => {
+      const { journeyId } = await records.create()
+      await replaceAnswers(journeyId, { countryOfOrigin: 'FR' })
+      const { concurrencyToken: staleToken } = await records.load({
+        journeyId
+      })
+      await replaceAnswers(journeyId, { countryOfOrigin: 'DE' })
+
+      await expect(
+        records.finalise(journeyId, undefined, staleToken)
+      ).rejects.toMatchObject({ status: 409, code: 'STALE_CONCURRENCY_TOKEN' })
+      expect((await records.load({ journeyId })).status).toBe(DRAFT)
     })
 
     it('Should return undefined and has=false for an unknown exact id', async () => {

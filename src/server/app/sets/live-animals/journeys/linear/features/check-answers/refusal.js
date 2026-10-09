@@ -21,63 +21,49 @@ const documentScanStatuses = async (answers) => {
   )
 }
 
-export const documentsRejectedCardErrors = async (answers) => {
-  const withStatus = await documentScanStatuses(answers)
-  return withStatus.some((doc) => doc.scanStatus === SCAN_STATUS.REJECTED)
-    ? { documents: documentsCopy.errors.someRejected }
-    : {}
-}
-
-export const documentScanCardErrors = async (answers) => {
+/** A REJECTED scan is a permanent verdict on a stored file, so it is always an
+ * error. A PENDING one is transient, so it is only an error when the trader
+ * has just been refused for it — callers rendering a plain visit pass
+ * `includePending: false`. */
+export const documentScanCardErrors = async (
+  answers,
+  { includePending = true } = {}
+) => {
   const withStatus = await documentScanStatuses(answers)
   if (withStatus.some((doc) => doc.scanStatus === SCAN_STATUS.REJECTED)) {
     return { documents: documentsCopy.errors.someRejected }
   }
-  if (withStatus.some((doc) => doc.scanStatus === SCAN_STATUS.PENDING)) {
+  if (
+    includePending &&
+    withStatus.some((doc) => doc.scanStatus === SCAN_STATUS.PENDING)
+  ) {
     return { documents: documentsCopy.errors.someStillScanning }
   }
   return {}
 }
 
-const NOT_REFUSED = Object.freeze({ refused: false, extraCardErrors: {} })
-
-/** Shared refusal predicate for the review page's Continue and the
- * declaration submit — a bookmark or back-button cannot sneak a stale
- * submission past. SUBMITTED notifications are never refused.
- *
- * Returns the scan-card errors alongside the verdict so the CYA POST handler
- * can render them without a second scan-status fetch (each fetch issues one
- * HTTP GET per stored document). Callers that need only the boolean use
- * `isReviewRefused`.
+/** Whether the declaration must send the trader back to the review, on both
+ * Continue and Submit. Each refusal is one the review page names itself, so
+ * the redirect needs to carry nothing. SUBMITTED notifications are never
+ * refused.
  */
-export const reviewRefusal = async (request, h) => {
+export const isReviewRefused = async (request, h) => {
   const { journey, answers, storedAnswers, scope } = await state.get(request, h)
   if (journey.status === state.SUBMITTED) {
-    return NOT_REFUSED
+    return false
   }
   if (!scope.readyForCheckYourAnswers) {
-    return { refused: true, extraCardErrors: {} }
+    return true
   }
   if (Object.keys(await invalidPartyErrors(answers)).length > 0) {
-    return { refused: true, extraCardErrors: {} }
+    return true
   }
   const invalidCardErrors = await cardStoredErrors(REVIEW_CARDS, answers, {
     request,
     storedAnswers
   })
   if (Object.keys(invalidCardErrors).length > 0) {
-    return { refused: true, extraCardErrors: {} }
+    return true
   }
-  const extraCardErrors = await documentScanCardErrors(answers)
-  return {
-    refused: Object.keys(extraCardErrors).length > 0,
-    extraCardErrors
-  }
+  return Object.keys(await documentScanCardErrors(answers)).length > 0
 }
-
-/** Boolean-only wrapper for callers that do not render scan errors — the
- * declaration submit is one such caller: it redirects back to CYA on
- * refusal and lets the CYA GET/POST paths surface any scan verdicts.
- */
-export const isReviewRefused = async (request, h) =>
-  (await reviewRefusal(request, h)).refused

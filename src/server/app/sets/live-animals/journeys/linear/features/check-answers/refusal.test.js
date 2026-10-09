@@ -11,8 +11,11 @@ import { configureReadyForCheckYourAnswers } from '../../../../../../engine/read
 import { journeyRequest, stubH } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import { copy as documentsEn } from '../documents/copy/copy.en.js'
-import { documentsRejectedCardErrors, isReviewRefused } from './refusal.js'
+import { documentScanCardErrors, isReviewRefused } from './refusal.js'
 
+// Stub scan verdicts by filename: `*never-scans*` stays PENDING, `virus-*` is REJECTED.
+const PENDING_FILENAME = 'notes-never-scans.pdf'
+const REJECTED_FILENAME = 'virus-alert.pdf'
 const KNOWN_PORT = 'GB ABD'
 const STALE_PORT = 'GB ZZZ'
 const VALID_COPY = {
@@ -115,7 +118,7 @@ describe('#isReviewRefused', () => {
     // seen by upload(); "never-scans" stays PENDING on non-refresh reads.
     const journey = await seedAnd(
       fullyAnswered({
-        documents: [doc({ filename: 'notes-never-scans.pdf' })]
+        documents: [doc({ filename: PENDING_FILENAME })]
       })
     )
 
@@ -125,7 +128,7 @@ describe('#isReviewRefused', () => {
   it('Should refuse a notification whose stored document was rejected by the scan', async () => {
     const journey = await seedAnd(
       fullyAnswered({
-        documents: [doc({ filename: 'virus-alert.pdf' })]
+        documents: [doc({ filename: REJECTED_FILENAME })]
       })
     )
 
@@ -143,31 +146,43 @@ describe('#isReviewRefused', () => {
   })
 })
 
-describe('#documentsRejectedCardErrors', () => {
+describe('#documentScanCardErrors', () => {
   it('Should return no errors when no documents are stored', async () => {
-    expect(await documentsRejectedCardErrors({})).toEqual({})
+    expect(await documentScanCardErrors({})).toEqual({})
   })
 
   it('Should return no errors when every stored document has completed scanning', async () => {
     expect(
-      await documentsRejectedCardErrors({
+      await documentScanCardErrors({
         documents: [doc({ filename: 'clean.pdf' })]
       })
     ).toEqual({})
   })
 
-  it('Should not surface a PENDING scan — a mid-upload is not a permanent problem', async () => {
+  it('Should name a document still being scanned', async () => {
     expect(
-      await documentsRejectedCardErrors({
-        documents: [doc({ filename: 'notes-never-scans.pdf' })]
+      await documentScanCardErrors({
+        documents: [doc({ filename: PENDING_FILENAME })]
       })
+    ).toEqual({ documents: documentsEn.errors.someStillScanning })
+  })
+
+  it('Should not name a document still being scanned when pending is excluded', async () => {
+    expect(
+      await documentScanCardErrors(
+        { documents: [doc({ filename: PENDING_FILENAME })] },
+        { includePending: false }
+      )
     ).toEqual({})
   })
 
-  it('Should surface a REJECTED scan on the read path', async () => {
+  it('Should name a REJECTED scan ahead of one still scanning', async () => {
     expect(
-      await documentsRejectedCardErrors({
-        documents: [doc({ filename: 'virus-alert.pdf' })]
+      await documentScanCardErrors({
+        documents: [
+          doc({ filename: PENDING_FILENAME }),
+          doc({ uploadId: 'upload-2', filename: REJECTED_FILENAME })
+        ]
       })
     ).toEqual({ documents: documentsEn.errors.someRejected })
   })

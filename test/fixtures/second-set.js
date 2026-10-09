@@ -61,7 +61,8 @@ export const SESSION_COOKIE_NAMES = Object.freeze({
   knownJourneys: 'sundryGoodsKnownJourneys',
   openingRun: 'sundryGoodsOpeningRun',
   flowOnlyAnswers: 'sundryGoodsFlowOnlyAnswers',
-  addressHandshakeTokens: 'sundryGoodsAddressHandshakeTokens'
+  addressHandshakeTokens: 'sundryGoodsAddressHandshakeTokens',
+  reviewedTokens: 'sundryGoodsReviewedTokens'
 })
 
 export const shipmentReference = {

@@ -145,7 +145,7 @@ name the set without importing the whole composition root.
 
 Create `sets/<set-id>/` with its obligations manifest, its journey config, its
 flow modules and its features, following the `live-animals` tree. Its cookie
-names must be its own — all four of them. The prefix is the camelCase form of
+names must be its own — all five of them. The prefix is the camelCase form of
 the kebab-case `<set-id>` from step 1, so `live-animals` gives
 `liveAnimalsKnownJourneys`. The shipped values are in
 [`../sets/live-animals/journeys/linear/config.js`](../sets/live-animals/journeys/linear/config.js):
@@ -155,7 +155,8 @@ export const SESSION_COOKIE_NAMES = {
   knownJourneys: 'liveAnimalsKnownJourneys',
   openingRun: 'liveAnimalsOpeningRun',
   flowOnlyAnswers: 'liveAnimalsFlowOnlyAnswers',
-  addressHandshakeTokens: 'liveAnimalsAddressHandshakeTokens'
+  addressHandshakeTokens: 'liveAnimalsAddressHandshakeTokens',
+  reviewedTokens: 'liveAnimalsReviewedTokens'
 }
 ```
 

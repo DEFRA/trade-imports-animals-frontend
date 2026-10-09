@@ -11,6 +11,7 @@ import { configureRecords } from '../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
+import { configureReadyForCheckYourAnswers } from '../../../../../engine/read.js'
 import { stubH, journeyRequest } from '../../../../../engine/test-support.js'
 import { characterisationCorpus } from '../fixtures/characterisation-corpus.js'
 import { dispatchPages } from './index.js'
@@ -35,7 +36,7 @@ import { routes as documentsRoutes } from './documents/controller.js'
 import { routes as hubRoutes } from './hub/controller.js'
 import { routes as checkAnswersRoutes } from './check-answers/controller.js'
 import { routes as contactRoutes } from './contact/controller.js'
-import { routes as declarationRoutes } from './declaration/controller.js'
+import { declarationRoutesFromReview as declarationRoutes } from './declaration/test-support.js'
 
 const comprehensive = characterisationCorpus.find(
   ({ name }) => name === 'comprehensive'
@@ -146,11 +147,13 @@ const CAPTIONED_PAGES = [
 ]
 
 // Design release 1 opens these pages straight into their heading.
+// The declaration shows no stored answer, and the review refuses the parity
+// fixture's parties under the address rules, so it renders from a blank one.
 const BARE_PAGES = [
-  ['overview', hubRoutes],
-  ['check your answers', checkAnswersRoutes],
-  ['contact', contactRoutes],
-  ['declaration', declarationRoutes]
+  ['overview', hubRoutes, parityFixture],
+  ['check your answers', checkAnswersRoutes, parityFixture],
+  ['contact', contactRoutes, parityFixture],
+  ['declaration', declarationRoutes, {}]
 ]
 
 describe('section caption — the view model names the section', () => {
@@ -158,6 +161,8 @@ describe('section caption — the view model names the section', () => {
     configureRecords(SET_ID, recordsStub)
     configureSession(SET_ID, sessionStub)
     buildDispatch(SET_ID, dispatchPages)
+    // The declaration renders only once the review would let the trader on.
+    configureReadyForCheckYourAnswers(SET_ID, () => true)
   })
   beforeEach(() => store.clear())
 
@@ -173,8 +178,8 @@ describe('section caption — the view model names the section', () => {
 
   it.each(BARE_PAGES)(
     'Should leave the %s page uncaptioned',
-    async (_name, routes) => {
-      const view = await renderOf(routes, parityFixture)
+    async (_name, routes, answers) => {
+      const view = await renderOf(routes, answers)
 
       expect(view.context.caption).toBeUndefined()
       expect(templateSourceOf(view.view)).not.toContain('sectionCaption(')

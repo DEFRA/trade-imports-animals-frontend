@@ -22,7 +22,9 @@ is a complete collecting page. A controller normally owns:
 - POST parsing and validation
 - canonical writes through the engine
 - navigation through `kit.nextTarget()`
-- a GET and POST route pair from `kit.pageRoutes()`
+- a GET route from `kit.pageRoutes()`, plus a POST when the page has a post
+  handler (check your answers, whose Continue posts to the declaration, is
+  GET-only)
 
 Controllers use the platform engine, validation and shared-kit APIs. They do not
 call the evaluator or service persistence adapters directly.

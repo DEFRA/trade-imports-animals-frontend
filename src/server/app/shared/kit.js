@@ -202,6 +202,8 @@ const redirectOnStaleAction = (post) => async (request, h) => {
   }
 }
 
+/** A page's GET route, and its POST route when it has a `post` handler — a
+ * page whose form posts elsewhere registers no POST of its own. */
 export const pageRoutes = (page, { get, post }) => [
   {
     method: 'GET',
@@ -209,12 +211,16 @@ export const pageRoutes = (page, { get, post }) => [
     options: routeOptions,
     handler: get
   },
-  {
-    method: 'POST',
-    path: pageRoutePath(page.slug),
-    options: routeOptions,
-    handler: redirectOnStaleAction(post)
-  }
+  ...(post
+    ? [
+        {
+          method: 'POST',
+          path: pageRoutePath(page.slug),
+          options: routeOptions,
+          handler: redirectOnStaleAction(post)
+        }
+      ]
+    : [])
 ]
 
 export const readDate = (payload, name) => {

@@ -4,6 +4,7 @@ import {
   flowOnlyAnswersCookie,
   knownJourneysCookie,
   openingRunCookie,
+  reviewedTokensCookie,
   session,
   sessionConfiguredFor
 } from './persistence/session.js'
@@ -15,7 +16,8 @@ export {
   addressHandshakeTokensCookie,
   flowOnlyAnswersCookie,
   knownJourneysCookie,
-  openingRunCookie
+  openingRunCookie,
+  reviewedTokensCookie
 } from './persistence/session.js'
 
 /**
@@ -70,7 +72,8 @@ export const registerJourneyCookie = (server) => {
     knownJourneysCookie(),
     openingRunCookie(),
     flowOnlyAnswersCookie(),
-    addressHandshakeTokensCookie()
+    addressHandshakeTokensCookie(),
+    reviewedTokensCookie()
   ]) {
     server.state(name, cookieOptions)
   }
