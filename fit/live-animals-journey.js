@@ -196,9 +196,13 @@ export const choosePortOfEntry = async (page, option = FIXTURE_PORT_OPTION) => {
 // JavaScript off the field is still the native <select>.
 export const chooseAutocompleteByLabel = async (
   page,
-  { label, query, optionName }
+  { label, query, optionName, inputId }
 ) => {
-  const field = page.getByLabel(label, { exact: true })
+  // Import-reason exposes the same port label on more than one reveal; scope by
+  // id when the caller names the field (transit vs temporary admission).
+  const field = inputId
+    ? page.locator(`#${inputId}`)
+    : page.getByLabel(label, { exact: true })
   if ((await field.evaluate((el) => el.tagName)) === 'SELECT') {
     await field.selectOption({ label: optionName })
     return

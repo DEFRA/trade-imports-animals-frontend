@@ -257,11 +257,13 @@ test.describe('check-answers feature exit answers', () => {
     await page.locator('input[name="reasonForImport"][value="transit"]').check()
     await chooseAutocompleteByLabel(page, {
       label: importReasonCopy.port.label,
+      inputId: 'transitPortOfExit',
       query: EXIT_PORT_CODE,
       optionName: EXIT_PORT_LABEL
     })
     await chooseAutocompleteByLabel(page, {
       label: importReasonCopy.country.label,
+      inputId: 'transitDestinationCountry',
       query: DESTINATION_COUNTRY_NAME,
       optionName: DESTINATION_COUNTRY_NAME
     })
@@ -310,6 +312,7 @@ test.describe('check-answers feature exit answers', () => {
     await page.locator('#temporaryAdmissionExitDate').fill('27/3/2026')
     await chooseAutocompleteByLabel(page, {
       label: importReasonCopy.port.label,
+      inputId: 'temporaryAdmissionPortOfExit',
       query: EXIT_PORT_CODE,
       optionName: EXIT_PORT_LABEL
     })
