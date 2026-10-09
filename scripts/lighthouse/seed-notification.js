@@ -18,6 +18,7 @@ registerSetMount(SET_ID, SET_BASE)
 const HTTP_FOUND = 302
 const HTTP_OK = 200
 
+const REVIEW_SLUG = 'notification-view'
 const DECLARATION_SLUG = 'declaration'
 const CONFIRMATION_SLUG = 'confirmation'
 
@@ -295,13 +296,42 @@ export const fillNotification = async (client, journeyId, shape) => {
   }
 }
 
+const tokenOn = (page) => {
+  const token = page.$('input[name="concurrencyToken"]').last().attr('value')
+  if (!token) {
+    throw new Error(`No concurrency token on ${page.heading || 'the page'}`)
+  }
+  return token
+}
+
+/** Declares the way a trader does: the declaration is reached only by the
+ * review's Continue, from a session that rendered that review, and declares at
+ * the token the review showed. */
 export const submitNotification = async (client, journeyId) => {
+  const review = await client.document(pagePath(journeyId, REVIEW_SLUG))
+  if (review.status !== HTTP_OK) {
+    throw new Error(`Check your answers did not render (${review.status})`)
+  }
   const path = pagePath(journeyId, DECLARATION_SLUG)
-  const page = await client.document(path)
+  const declarationPage = await client.submit(
+    path,
+    { step: 'review', concurrencyToken: tokenOn(review) },
+    review.crumb
+  )
+  if (declarationPage.status !== HTTP_OK) {
+    throw new Error(
+      `Continue from the review did not reach the declaration (status ` +
+        `${declarationPage.status}, went to ${declarationPage.location})`
+    )
+  }
   const posted = await client.submit(
     path,
-    { declaration: values.declaration },
-    page.crumb
+    {
+      step: 'declare',
+      declaration: values.declaration,
+      concurrencyToken: tokenOn(declarationPage)
+    },
+    declarationPage.crumb || review.crumb
   )
   const confirmation = pagePath(journeyId, CONFIRMATION_SLUG)
   if (posted.location !== confirmation) {

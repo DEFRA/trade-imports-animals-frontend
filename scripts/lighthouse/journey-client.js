@@ -26,8 +26,7 @@ export const createJourneyClient = (baseUrl, cookies = []) => {
     return response
   }
 
-  const document = async (path) => {
-    const response = await request(path)
+  const pageOf = async (response) => {
     const body = response.ok ? load(await response.text()) : load('')
     return {
       status: response.status,
@@ -38,6 +37,8 @@ export const createJourneyClient = (baseUrl, cookies = []) => {
     }
   }
 
+  const document = async (path) => pageOf(await request(path))
+
   const submit = async (path, fields, crumb) => {
     const body = new URLSearchParams([['crumb', crumb]])
     for (const [name, value] of Object.entries(fields)) {
@@ -45,15 +46,15 @@ export const createJourneyClient = (baseUrl, cookies = []) => {
         body.append(name, one)
       }
     }
-    const response = await request(path, {
-      method: 'POST',
-      body: body.toString(),
-      headers: { 'content-type': FORM_ENCODED }
-    })
-    return {
-      status: response.status,
-      location: response.headers.get('location')
-    }
+    // A POST that renders rather than redirects answers with a page, so the
+    // result reads like a document.
+    return pageOf(
+      await request(path, {
+        method: 'POST',
+        body: body.toString(),
+        headers: { 'content-type': FORM_ENCODED }
+      })
+    )
   }
 
   return { document, submit }
