@@ -284,4 +284,34 @@ describe('records concurrency token', () => {
     ).rejects.toMatchObject({ status: 409, code: 'STALE_CONCURRENCY_TOKEN' })
     expect((await records.load({ journeyId })).status).toBe(DRAFT)
   })
+
+  it('Should refuse to save at a token the journey has moved on from, leaving the fulfilment unchanged', async () => {
+    const { journeyId, concurrencyToken: stale } = await records.create()
+    await records.replaceFulfilment(journeyId, originFulfilment('FR'))
+
+    await expect(
+      records.replaceFulfilment(journeyId, originFulfilment('DE'), {
+        known: { journeyId, concurrencyToken: stale }
+      })
+    ).rejects.toMatchObject({ status: 409, code: 'STALE_CONCURRENCY_TOKEN' })
+    expect((await records.load({ journeyId })).fulfilment).toEqual(
+      originFulfilment('FR')
+    )
+  })
+
+  it('Should save at the current known token', async () => {
+    const { journeyId } = await records.create()
+    const { concurrencyToken } = await records.replaceFulfilment(
+      journeyId,
+      originFulfilment('FR')
+    )
+
+    const saved = await records.replaceFulfilment(
+      journeyId,
+      originFulfilment('DE'),
+      { known: { journeyId, concurrencyToken } }
+    )
+
+    expect(saved.fulfilment).toEqual(originFulfilment('DE'))
+  })
 })
