@@ -2,7 +2,7 @@ import { pagePath } from '../../../../../../../../shared/paths.js'
 import * as state from '../../../../../../../../engine/index.js'
 import * as kit from '../../../../../../../../shared/kit.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
-import { consignmentDetailsPage } from '../../page.js'
+import { commoditiesPage, consignmentDetailsPage } from '../../page.js'
 import { splitKey } from '../selection/keys.js'
 import { lineKey } from '../selection/line-key.js'
 
@@ -23,6 +23,19 @@ export const seedLine = (key) => {
   }
 }
 
+const detailsPath = (request) =>
+  kit.withChangeContext(
+    request,
+    pagePath(request.params.journeyId, consignmentDetailsPage.slug)
+  )
+
+const selectionTarget = async (request, scope) =>
+  kit.hubExitTarget(request) ??
+  (kit.changeContext(request)
+    ? detailsPath(request)
+    : ((await kit.runTarget(request, commoditiesPage.id, scope)) ??
+      detailsPath(request)))
+
 export const commitSelection = async (request, h, selected) => {
   await state.reconcileEntriesAt(
     request,
@@ -31,11 +44,6 @@ export const commitSelection = async (request, h, selected) => {
     lineKey,
     selected.map(seedLine)
   )
-  return h.redirect(
-    kit.hubExitTarget(request) ??
-      kit.withChangeContext(
-        request,
-        pagePath(request.params.journeyId, consignmentDetailsPage.slug)
-      )
-  )
+  const { scope } = await state.get(request, h)
+  return h.redirect(await selectionTarget(request, scope))
 }

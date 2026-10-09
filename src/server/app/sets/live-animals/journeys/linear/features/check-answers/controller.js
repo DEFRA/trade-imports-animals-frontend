@@ -2,6 +2,7 @@ import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import { nextInSection } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
+import { completeOpeningRun } from '../../../../../../flow/run-state.js'
 import {
   CYA_SLUG,
   errorSummary,
@@ -191,7 +192,10 @@ export const renderNotificationView = async (
   })
 }
 
-const get = async (request, h) => renderNotificationView(request, h)
+const get = async (request, h) => {
+  await completeOpeningRun(request, h, request.params.journeyId)
+  return renderNotificationView(request, h)
+}
 
 const post = async (request, h) => {
   // Reuse the scan errors reviewRefusal already computed — a fresh

@@ -23,7 +23,10 @@ const getCph = cphNumber.routes.find((route) => route.method === 'GET').handler
 
 const VALID_PARTS = { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
 
-const seed = () => ({ commodityLines: [{ commoditySelection: 'Cow' }] })
+const seed = () => ({
+  countryOfOrigin: 'FR',
+  commodityLines: [{ commoditySelection: 'Cow' }]
+})
 
 const driveWithQuery = async (handler, { payload = {}, query = {} } = {}) => {
   const journey = await store.create()
@@ -191,7 +194,7 @@ describe('cph-number — addresses-hub entry (?return=addresses)', () => {
       )
     })
 
-    it('Should back-link to the main hub on a sequential-walk entry', async () => {
+    it('Should back-link to the overview when entered other than from its row', async () => {
       const result = await driveWithQuery(getCph)
       expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
     })
@@ -208,12 +211,12 @@ describe('cph-number — addresses-hub entry (?return=addresses)', () => {
       })
     })
 
-    it('Should keep the sequential exit to the main hub when entered without return context', async () => {
+    it('Should hand back to the consignment addresses page when entered without return context', async () => {
       const result = await driveWithQuery(postCph, {
         payload: VALID_PARTS
       })
       expect(result.response).toEqual({
-        redirect: hubPath(result.journeyId)
+        redirect: pagePath(result.journeyId, 'addresses')
       })
     })
   })

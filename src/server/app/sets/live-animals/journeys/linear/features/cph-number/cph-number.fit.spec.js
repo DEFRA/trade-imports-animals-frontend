@@ -5,6 +5,7 @@ import {
   BASE,
   answerOriginEntry,
   expectPageEndsWithPrimaryAlone,
+  openCphNumberFromRow,
   selectSpecies,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
@@ -55,10 +56,12 @@ const startAtCphNumber = async (page) => {
   await selectSpecies(page, ['Bos taurus'])
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await expect(page).toHaveURL(
-    urlUnderBase('/notifications/[^/]+/consignment-details')
+    urlUnderBase('/notifications/[^/]+/import-reason')
   )
 
-  await page.goto(commodityUrl.replace(/\/commodities$/, '/cph-number'))
+  await page.goto(commodityUrl.replace(/\/commodities$/, '/addresses'))
+  await openCphNumberFromRow(page)
+  await expect(page).toHaveURL(/\/cph-number\?return=addresses$/)
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 }
 
@@ -168,15 +171,15 @@ test.describe('cph-number feature', () => {
     await expectPageEndsWithPrimaryAlone(page)
   })
 
-  test('back link returns to the notification hub', async ({ page }) => {
-    const hubUrl = page.url().replace(/\/cph-number$/, '')
-
+  test('back link returns to the consignment addresses page', async ({
+    page
+  }) => {
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
-    await expect(page).toHaveURL(hubUrl)
+    await expect(page).toHaveURL(/\/notifications\/[^/]+\/addresses$/)
   })
 
-  test('joins the parts, saves the nine digits, continues the run and comes back split', async ({
+  test('joins the parts, saves the nine digits, returns to the consignment addresses page and comes back split', async ({
     page
   }) => {
     const cphUrl = page.url()
@@ -184,12 +187,7 @@ test.describe('cph-number feature', () => {
     await fillCph(page, { county: '12', parish: '345', holding: '6789' })
     await page.locator(SUBMIT_BUTTON).first().click()
 
-    // The notification was created in this session, so the opening run is still
-    // running and carries the page on to the next question rather than back to
-    // the hub.
-    await expect(page).toHaveURL(
-      /\/notifications\/[^/]+\/consignment\/contact\/select$/
-    )
+    await expect(page).toHaveURL(/\/notifications\/[^/]+\/addresses$/)
 
     await page.goto(cphUrl)
     const boxes = partBoxes(page)

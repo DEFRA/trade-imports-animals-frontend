@@ -279,10 +279,13 @@ export const answerOriginDetails = async (page) => {
   await save(page)
 }
 
-export const answerCommodityDetails = async (page) => {
-  const [line] = values.commodityLines
+export const answerWhatYouAreImporting = async (page) => {
   await selectSpecies(page, ['Bos taurus'])
   await save(page)
+}
+
+export const answerCommodityCounts = async (page) => {
+  const [line] = values.commodityLines
   await expect(
     page.getByRole('heading', { name: 'Commodity details' })
   ).toBeVisible()
@@ -344,6 +347,7 @@ export const answerRolesAndAddresses = async (page) => {
     await page.getByRole('radio', { name }).check()
     await save(page)
   }
+  await answerCphNumberFromRow(page)
   await save(page)
 }
 
@@ -364,6 +368,23 @@ export const answerCphNumber = async (page) => {
     .getByLabel('Holding number', { exact: true })
     .fill(FIXTURE_CPH_HOLDING)
   await save(page)
+}
+
+export const openCphNumberFromRow = async (page) => {
+  await page
+    .locator('.govuk-summary-list__row', {
+      has: page.getByText('County parish holding (CPH) number', { exact: true })
+    })
+    .getByRole('link', { name: 'Add' })
+    .click()
+}
+
+export const answerCphNumberFromRow = async (page) => {
+  await openCphNumberFromRow(page)
+  await answerCphNumber(page)
+  await expect(
+    page.getByRole('heading', { name: 'Consignment addresses' })
+  ).toBeVisible()
 }
 
 export const answerArrivalDetails = async (page) => {
@@ -447,7 +468,8 @@ export const completeAnswerSections = async (
   await answerOriginDetails(page)
 
   await task('What are you importing?')
-  await answerCommodityDetails(page)
+  await answerWhatYouAreImporting(page)
+  await answerCommodityCounts(page)
   await overview()
 
   if (!skipAnimalIdentification) {
@@ -462,7 +484,6 @@ export const completeAnswerSections = async (
 
   await task('Roles and addresses')
   await answerRolesAndAddresses(page)
-  await answerCphNumber(page)
 
   await task('Arrival details')
   await answerArrivalDetails(page)
