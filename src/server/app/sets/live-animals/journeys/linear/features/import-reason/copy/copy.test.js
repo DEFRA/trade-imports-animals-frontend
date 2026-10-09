@@ -9,6 +9,7 @@ import { records as recordsStub } from '../../../../../../../services/persistenc
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import { driveHandler } from '../../../../../../../engine/test-support.js'
 import * as importReasonPurpose from '../../../../../../../services/import-reason-purpose/index.js'
+import * as countries from '../../../../../../../services/countries/index.js'
 import * as ports from '../../../../../../../services/ports/index.js'
 import { dispatchPages } from '../../index.js'
 
@@ -133,6 +134,9 @@ describe('GET import-reason — copy reaches the view', () => {
 
     expect(result.view.context.countryItems[0].text).toBe(
       copy.country.placeholder
+    )
+    expect(result.view.context.countryItems.slice(2)).toEqual(
+      await countries.destinationCountryOptions()
     )
     expect(result.view.context.portItems[0].text).toBe(copy.port.placeholder)
     expect(result.view.context.portItems.slice(2)).toEqual(

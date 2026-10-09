@@ -63,7 +63,9 @@ const fieldsSharingAnswerWith = (field) =>
   FIELDS_BY_ANSWER[ANSWER_OF_FIELD[field]] ?? [field]
 
 const countryRule = async (field, stored) => {
-  const codes = (await countries.originCountries()).map(({ value }) => value)
+  const codes = (await countries.destinationCountryOptions()).map(
+    ({ value }) => value
+  )
   return stored
     ? oneOf(field, codes, copy.errors.countryNoLongerAvailable)
     : requiredOneOf(field, codes, copy.errors.countryRequired)

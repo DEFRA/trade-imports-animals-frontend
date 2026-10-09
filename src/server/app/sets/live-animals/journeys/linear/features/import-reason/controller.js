@@ -40,7 +40,7 @@ const DIVIDER_OPTION = { value: '', text: '──────────', disa
 const countryItems = async () => [
   { value: '', text: copy.country.placeholder },
   DIVIDER_OPTION,
-  ...(await countries.originCountries())
+  ...(await countries.destinationCountryOptions())
 ]
 
 const portItems = async () => [

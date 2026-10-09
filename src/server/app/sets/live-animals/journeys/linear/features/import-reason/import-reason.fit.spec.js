@@ -7,7 +7,7 @@ import {
   chooseTodayFromDatePicker,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
-import { countriesOriginEntries } from '../../../../../../services/_capture/fixtures.js'
+import { destinationPageCountryEntries } from '../../../../../../services/_capture/fixtures.js'
 import * as importReasonPurpose from '../../../../../../services/import-reason-purpose/index.js'
 import { validatorDefaults } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
@@ -248,7 +248,7 @@ test.describe('import-reason reveals', () => {
           name: option.textContent
         }))
       )
-    expect(renderedCountries).toEqual(countriesOriginEntries())
+    expect(renderedCountries).toEqual(destinationPageCountryEntries())
   })
 
   test('asks temporary admission for the exit date and then the port of exit', async ({
@@ -287,6 +287,29 @@ test.describe('import-reason reveals', () => {
     await expect(
       page.locator(TRANSHIPMENT_COUNTRY)
     ).toHaveAccessibleDescription('')
+    const renderedCountries = await page
+      .locator(`${TRANSHIPMENT_COUNTRY} option`)
+      .evaluateAll((options) =>
+        options.slice(2).map((option) => ({
+          code: option.value,
+          name: option.textContent
+        }))
+      )
+    expect(renderedCountries).toEqual(destinationPageCountryEntries())
+  })
+
+  test('saves a territory as the destination country and offers it back', async ({
+    page
+  }) => {
+    const reasonUrl = page.url()
+
+    await radioFor(page, 'transhipmentOrOnwardTravel').check()
+    await page.locator(TRANSHIPMENT_COUNTRY).selectOption('ES-CN')
+    await page.locator(SUBMIT_BUTTON).first().click()
+
+    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await page.goto(reasonUrl)
+    await expect(page.locator(TRANSHIPMENT_COUNTRY)).toHaveValue('ES-CN')
   })
 
   test('saves a reason and its reveal in one submit, and offers the answers back', async ({

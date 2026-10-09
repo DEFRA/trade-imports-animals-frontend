@@ -87,6 +87,27 @@ describe('countries service — stub mode', () => {
     expect(countries.parentCountryCode('ES-CN')).toBe('ES')
   })
 
+  it('Should offer destination options as the origin countries and their subdivisions, each subdivision named with its parent, in one alphabetical list', async () => {
+    process.env.STUB_MODE = 'true'
+    const countries = await import('./countries/index.js')
+    const destination = await countries.destinationCountryOptions()
+    const origin = await countries.originCountryOptions()
+
+    expect(destination).toContainEqual({
+      value: 'ES-CN',
+      text: 'Canary Islands (Spain)'
+    })
+    expect(destination).toContainEqual({ value: 'AT', text: 'Austria' })
+    expect(destination).toHaveLength(origin.length)
+    expect(destination.map(({ value }) => value).sort()).toEqual(
+      origin.map(({ value }) => value).sort()
+    )
+    const texts = destination.map(({ text }) => text)
+    expect(texts).toEqual(
+      [...texts].sort((left, right) => left.localeCompare(right))
+    )
+  })
+
   it('Should short-circuit ensureLoaded and never fetch in stub mode', async () => {
     process.env.STUB_MODE = 'true'
     const fetchMock = vi.fn(async () =>
@@ -135,6 +156,27 @@ describe('countries service — real mode', () => {
     expect(await countries.addressBookCountries()).toEqual(unfiltered)
     await countries.addressBookCountries()
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('Should offer destination options as whatever reference data serves, each subdivision named with its parent, in one alphabetical list', async () => {
+    process.env.STUB_MODE = 'false'
+    stubFetch(
+      okOnlyForBlock('GBNAG_SPS_EX', [
+        {
+          code: 'ZZ',
+          name: 'Zedland',
+          subDivisions: [{ code: 'ZZ-1', name: 'Alpha Isle' }]
+        },
+        { code: 'AA', name: 'Aland' }
+      ])
+    )
+    const countries = await import('./countries/index.js')
+
+    expect(await countries.destinationCountryOptions()).toEqual([
+      { value: 'AA', text: 'Aland' },
+      { value: 'ZZ-1', text: 'Alpha Isle (Zedland)' },
+      { value: 'ZZ', text: 'Zedland' }
+    ])
   })
 
   it('Should fetch once across many reader calls once loaded', async () => {
