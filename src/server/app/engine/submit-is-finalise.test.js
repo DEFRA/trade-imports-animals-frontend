@@ -27,9 +27,13 @@ describe('submit is finalise', () => {
   it('Should flip to submitted, keep answers byte-equal, and freeze further writes', async () => {
     configureReadyForCheckYourAnswers(SET_ID, () => true)
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
-    const committed = (await records.load({ journeyId })).fulfilment
+    const { fulfilment: committed, concurrencyToken } = await records.load({
+      journeyId
+    })
 
-    const result = await submitJourney(buildRequest(), stubH())
+    const result = await submitJourney(buildRequest(), stubH(), {
+      concurrencyToken
+    })
 
     expect(result.ok).toBe(true)
     expect(result.journey.status).toBe(SUBMITTED)
@@ -43,8 +47,11 @@ describe('submit is finalise', () => {
   it('Should be a no-op when not ready — journey stays in draft', async () => {
     configureReadyForCheckYourAnswers(SET_ID, () => false)
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
+    const { concurrencyToken } = await records.load({ journeyId })
 
-    const result = await submitJourney(buildRequest(), stubH())
+    const result = await submitJourney(buildRequest(), stubH(), {
+      concurrencyToken
+    })
 
     expect(result.ok).toBe(false)
     expect((await records.load({ journeyId })).status).toBe(DRAFT)

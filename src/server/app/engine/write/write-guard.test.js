@@ -60,8 +60,11 @@ describe('#write.js — answer-key guard', () => {
     await records.replaceFulfilment(journeyId, {
       'historic-obligation-uuid': 'Dobbin'
     })
+    const { concurrencyToken } = await records.load({ journeyId })
 
-    const result = await submitJourney(buildRequest(), stubH())
+    const result = await submitJourney(buildRequest(), stubH(), {
+      concurrencyToken
+    })
 
     expect(result.ok).toBe(true)
     expect((await records.load({ journeyId })).status).not.toBe(DRAFT)

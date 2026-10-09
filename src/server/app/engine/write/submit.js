@@ -5,8 +5,12 @@ import { buildActor } from '../../../common/helpers/actor-helpers.js'
 
 /** Submits only at `concurrencyToken` — the token the trader reviewed — so the
  * backend refuses (STALE_CONCURRENCY_TOKEN) if the notification has changed
- * since. */
-export const submitJourney = async (request, h, { concurrencyToken } = {}) => {
+ * since. Required: without it the stub would finalise unguarded while the real
+ * backend rejects the request. */
+export const submitJourney = async (request, h, { concurrencyToken }) => {
+  if (concurrencyToken === undefined) {
+    throw new Error('submitJourney requires the reviewed concurrencyToken')
+  }
   const current = await get(request, h)
   assertRecognisedAnswerKeys(current.answers, 'submitJourney')
   if (!current.scope.readyForCheckYourAnswers) {

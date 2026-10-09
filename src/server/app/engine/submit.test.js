@@ -66,10 +66,23 @@ describe('submitJourney — gates on scope readiness, finalises via records', ()
   it('Should return { ok: false } and leave the journey in draft when not CYA-ready', async () => {
     configureReadyForCheckYourAnswers(SET_ID, () => false)
     await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
+    const { concurrencyToken } = await records.load({ journeyId })
 
-    const result = await submitJourney(buildRequest(), stubH())
+    const result = await submitJourney(buildRequest(), stubH(), {
+      concurrencyToken
+    })
 
     expect(result.ok).toBe(false)
+    expect((await records.load({ journeyId })).status).toBe(DRAFT)
+  })
+
+  it('Should refuse to submit without the reviewed concurrency token', async () => {
+    configureReadyForCheckYourAnswers(SET_ID, () => true)
+    await commit(buildRequest(), stubH(), { countryOfOrigin: 'FR' })
+
+    await expect(submitJourney(buildRequest(), stubH(), {})).rejects.toThrow(
+      /requires the reviewed concurrencyToken/
+    )
     expect((await records.load({ journeyId })).status).toBe(DRAFT)
   })
 })
