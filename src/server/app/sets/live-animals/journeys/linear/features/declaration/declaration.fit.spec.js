@@ -15,6 +15,7 @@ import { copy } from './copy/copy.en.js'
 const SUBMIT_BUTTON = 'form button[type="submit"]'
 const EDITED_REFERENCE = 'CHANGED-IN-ANOTHER-TAB'
 const REVIEW_URL = urlUnderBase('/notifications/[^/]+/notification-view')
+const ORIGIN_URL = urlUnderBase('/notifications/[^/]+/origin')
 const CHANGED_REVIEW_URL = urlUnderBase(
   '/notifications/[^/]+/notification-view\\?staleAction=1'
 )
@@ -40,6 +41,8 @@ const editInAnotherTab = async (page) => {
     .getByLabel('Your internal reference for this consignment (optional)')
     .fill(EDITED_REFERENCE)
   await other.getByRole('button', { name: 'Save and continue' }).click()
+  // A refused save re-renders the origin page, so leaving it is the edit landing.
+  await expect(other).not.toHaveURL(ORIGIN_URL)
   await other.close()
 }
 
