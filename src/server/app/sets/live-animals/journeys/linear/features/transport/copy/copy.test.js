@@ -207,9 +207,7 @@ describe('transport copy module', () => {
   // the same wording the commercial form uses. The two error messages quote
   // the label, so they have to move with it.
   test('Should ask the private form for a phone number and hint the country code', () => {
-    expect(copy.privateTransporterDetails.fields.telephoneNumber).toBe(
-      'Phone number'
-    )
+    expect(copy.privateTransporterDetails.fields.phone).toBe('Phone number')
     expect(copy.privateTransporterDetails.telephoneHint).toBe(
       'For international numbers include the country code'
     )
@@ -227,13 +225,13 @@ describe('transport copy module', () => {
   // so they move with it — an error naming a field by another word sends the
   // trader looking for a field that is not on the page.
   test('Should label the private form’s postcode field as Design release 1 does', () => {
-    expect(copy.privateTransporterDetails.fields.postalOrZipCode).toBe(
+    expect(copy.privateTransporterDetails.fields.postcode).toBe(
       'Postcode or Zip code'
     )
-    expect(copy.privateTransporterDetails.errors.postalOrZipCodeRequired).toBe(
+    expect(copy.privateTransporterDetails.errors.postcodeRequired).toBe(
       'Enter a postcode or Zip code'
     )
-    expect(copy.privateTransporterDetails.errors.postalOrZipCodeMaxLength).toBe(
+    expect(copy.privateTransporterDetails.errors.postcodeMaxLength).toBe(
       'Postcode or Zip code must be 12 characters or less'
     )
   })

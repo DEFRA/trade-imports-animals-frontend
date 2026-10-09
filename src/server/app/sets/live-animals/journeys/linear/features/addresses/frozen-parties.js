@@ -23,8 +23,8 @@ const JOURNEY_PARTY_IDS = [
  *
  * Sibling of `toRecord` in services/address-book/client.js — same target shape,
  * different source. That one maps a live address-book record; this one maps a
- * party held inline on the notification, which nests its address block and keeps
- * the API's own names (`postcode`, `countryCode`, `phone`, `email`).
+ * party held inline on the notification, which keeps phone and email on the
+ * party rather than in the address block.
  *
  * A party with no name never made it onto the notification, so it renders as
  * "not provided" exactly like an unanswered one. */
@@ -40,10 +40,10 @@ export const toDisplayParty = async (party) => {
       addressLine2: address.addressLine2,
       townOrCity: address.townOrCity,
       county: address.county,
-      postalOrZipCode: address.postcode,
+      postcode: address.postcode,
       country: await addressBookCountryName(address.countryCode),
-      telephoneNumber: party.phone,
-      emailAddress: party.email
+      phone: party.phone,
+      email: party.email
     }
   }
 }

@@ -35,10 +35,10 @@ const RECORD = {
   addressLine2: '',
   townOrCity: 'Aberdeen',
   county: 'Aberdeenshire',
-  postalOrZipCode: 'AB11 5DQ',
+  postcode: 'AB11 5DQ',
   country: 'United Kingdom',
-  telephoneNumber: '+44 1224 000 111',
-  emailAddress: 'movements@aberdeen-livestock.example.com'
+  phone: '+44 1224 000 111',
+  email: 'movements@aberdeen-livestock.example.com'
 }
 
 const handlerFor = (method) =>
@@ -114,10 +114,10 @@ describe('/transporters/add/private', () => {
             addressLine2: RECORD.addressLine2,
             townOrCity: RECORD.townOrCity,
             county: RECORD.county,
-            postalOrZipCode: RECORD.postalOrZipCode,
+            postcode: RECORD.postcode,
             country: RECORD.country,
-            telephoneNumber: RECORD.telephoneNumber,
-            emailAddress: RECORD.emailAddress
+            phone: RECORD.phone,
+            email: RECORD.email
           }
         }
       }
@@ -137,10 +137,10 @@ describe('/transporters/add/private', () => {
     expect(Object.keys(result.view.context.errors)).toEqual([
       'addressLine1',
       'townOrCity',
-      'postalOrZipCode',
+      'postcode',
       'country',
-      'emailAddress',
-      'telephoneNumber'
+      'email',
+      'phone'
     ])
     expect(result.after.privateTransporter).toBeUndefined()
   })
@@ -154,8 +154,8 @@ describe('/transporters/add/private', () => {
     expect(result.after.privateTransporter.name).toBe(
       RECORD.nameOrOrganisationName
     )
-    expect(result.after.privateTransporter.address.postalOrZipCode).toBe(
-      RECORD.postalOrZipCode
+    expect(result.after.privateTransporter.address.postcode).toBe(
+      RECORD.postcode
     )
     expect(result.response.redirect).toBeTruthy()
     expect(result.response.redirect).not.toContain(ADD_SLUG)
@@ -214,8 +214,8 @@ describe('/transporters/add/private keeps the transporter for the organisation',
     expect(kept.name).toBe(HAULIER.nameOrOrganisationName)
     expect(kept.type).toBe(PRIVATE)
     expect(kept.status).toBe(NEW)
-    expect(kept.address.postalOrZipCode).toBe(HAULIER.postalOrZipCode)
-    expect(kept.address.emailAddress).toBe(HAULIER.emailAddress)
+    expect(kept.address.postcode).toBe(HAULIER.postcode)
+    expect(kept.address.email).toBe(HAULIER.email)
   })
 
   it('Should keep nothing when the form is left blank, there being no transporter to keep', async () => {
@@ -250,10 +250,10 @@ describe('GET /transporters/add/private — a stored country the reader no longe
         addressLine2: RECORD.addressLine2,
         townOrCity: RECORD.townOrCity,
         county: RECORD.county,
-        postalOrZipCode: RECORD.postalOrZipCode,
+        postcode: RECORD.postcode,
         country: STALE_COUNTRY,
-        telephoneNumber: RECORD.telephoneNumber,
-        emailAddress: RECORD.emailAddress
+        phone: RECORD.phone,
+        email: RECORD.email
       }
     }
   }
@@ -299,10 +299,10 @@ describe('POST /transporters/add/private — an empty country from a part-filled
         addressLine2: RECORD.addressLine2,
         townOrCity: RECORD.townOrCity,
         county: RECORD.county,
-        postalOrZipCode: RECORD.postalOrZipCode,
+        postcode: RECORD.postcode,
         country: STALE_COUNTRY,
-        telephoneNumber: RECORD.telephoneNumber,
-        emailAddress: RECORD.emailAddress
+        phone: RECORD.phone,
+        email: RECORD.email
       }
     }
   }

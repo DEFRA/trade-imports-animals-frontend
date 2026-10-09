@@ -53,9 +53,9 @@ const MANDATORY_MESSAGES = {
   nameOrOrganisationName: copy.errors.nameRequired,
   addressLine1: copy.errors.addressLine1Required,
   townOrCity: copy.errors.townOrCityRequired,
-  postalOrZipCode: copy.errors.postalOrZipCodeRequired,
-  emailAddress: copy.errors.emailRequired,
-  telephoneNumber: copy.errors.telephoneRequired
+  postcode: copy.errors.postcodeRequired,
+  email: copy.errors.emailRequired,
+  phone: copy.errors.telephoneRequired
 }
 
 /** The fields the page shows, in the order it asks for them — the order the
@@ -67,10 +67,10 @@ const FIELD_ORDER = [
   'addressLine2',
   'townOrCity',
   'county',
-  'postalOrZipCode',
+  'postcode',
   'country',
-  'emailAddress',
-  'telephoneNumber'
+  'email',
+  'phone'
 ]
 
 /** The country is fixed rather than typed, so it is the one field of the order
@@ -100,17 +100,13 @@ const fields = compose(
   maxText('addressLine2', MAX_NAME_LENGTH, copy.errors.addressLine2MaxLength),
   maxText('townOrCity', MAX_TOWN_LENGTH, copy.errors.townOrCityMaxLength),
   maxText('county', MAX_TOWN_LENGTH, copy.errors.countyMaxLength),
-  maxText(
-    'postalOrZipCode',
-    MAX_POSTCODE_LENGTH,
-    copy.errors.postalOrZipCodeMaxLength
-  ),
+  maxText('postcode', MAX_POSTCODE_LENGTH, copy.errors.postcodeMaxLength),
   // The form posts the fixed country back in a hidden field, so a value that
   // is not Northern Ireland has been tampered with: refuse it rather than
   // quietly correcting it.
   oneOf('country', [NORTHERN_IRELAND], copy.errors.countryFixed),
-  maxText('emailAddress', MAX_EMAIL_LENGTH, copy.errors.emailMaxLength),
-  maxText('telephoneNumber', MAX_PHONE_LENGTH, copy.errors.telephoneMaxLength)
+  maxText('email', MAX_EMAIL_LENGTH, copy.errors.emailMaxLength),
+  maxText('phone', MAX_PHONE_LENGTH, copy.errors.telephoneMaxLength)
 )
 
 const recordProvided = (values) =>
@@ -160,9 +156,9 @@ const get = async (request, h) => {
     addressLine2: saved?.address?.addressLine2 ?? '',
     townOrCity: saved?.address?.townOrCity ?? '',
     county: saved?.address?.county ?? '',
-    postalOrZipCode: saved?.address?.postalOrZipCode ?? '',
-    emailAddress: saved?.address?.emailAddress ?? '',
-    telephoneNumber: saved?.address?.telephoneNumber ?? ''
+    postcode: saved?.address?.postcode ?? '',
+    email: saved?.address?.email ?? '',
+    phone: saved?.address?.phone ?? ''
   })
 }
 
@@ -190,10 +186,10 @@ const commercialTransporterParty = (values) => ({
     addressLine2: values.addressLine2,
     townOrCity: values.townOrCity,
     county: values.county,
-    postalOrZipCode: values.postalOrZipCode,
+    postcode: values.postcode,
     country: NORTHERN_IRELAND,
-    telephoneNumber: values.telephoneNumber,
-    emailAddress: values.emailAddress
+    phone: values.phone,
+    email: values.email
   }
 })
 

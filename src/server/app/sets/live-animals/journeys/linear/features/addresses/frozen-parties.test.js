@@ -39,9 +39,9 @@ describe('partiesFromStoredAnswers', () => {
     expect(placeOfOrigin.address).toMatchObject({
       addressLine1: '1 Farm Lane',
       townOrCity: 'Ennis',
-      postalOrZipCode: 'V95 ABC',
-      telephoneNumber: '01228 555 0001',
-      emailAddress: 'origin@example.co.uk'
+      postcode: 'V95 ABC',
+      phone: '01228 555 0001',
+      email: 'origin@example.co.uk'
     })
     expect(placeOfOrigin.address.country).toBe(
       await addressBookCountryName('IE')

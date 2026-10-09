@@ -9,6 +9,6 @@ export const toWireAddress = (address = {}) => ({
   addressLine2: address.addressLine2,
   townOrCity: address.townOrCity,
   county: address.county,
-  postcode: address.postalOrZipCode ?? address.postcode,
+  postcode: address.postcode,
   countryCode: address.countryCode
 })

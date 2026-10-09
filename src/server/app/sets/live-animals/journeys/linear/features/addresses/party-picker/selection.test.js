@@ -17,11 +17,11 @@ const liveRecord = (overrides = {}) => ({
     addressLine2: 'Rural Route',
     townOrCity: 'Cork',
     county: 'County Cork',
-    postalOrZipCode: 'V95 X7P2',
+    postcode: 'V95 X7P2',
     countryCode: 'IE',
     country: 'Ireland',
-    telephoneNumber: '+353 1 234 5678',
-    emailAddress: 'farm@example.com'
+    phone: '+353 1 234 5678',
+    email: 'farm@example.com'
   },
   ...overrides
 })

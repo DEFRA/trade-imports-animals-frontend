@@ -7,15 +7,8 @@
  * downstream can tell stub mode from real mode by the shape it gets,
  * `countryCode` included. */
 export const fromRow = (row) => {
-  const [
-    id,
-    name,
-    addressLine1,
-    townOrCity,
-    postalOrZipCode,
-    country,
-    countryCode
-  ] = row.split('|')
+  const [id, name, addressLine1, townOrCity, postcode, country, countryCode] =
+    row.split('|')
   return {
     id,
     name,
@@ -23,11 +16,11 @@ export const fromRow = (row) => {
     address: {
       addressLine1,
       townOrCity,
-      postalOrZipCode,
+      postcode,
       countryCode,
       country,
-      telephoneNumber: '01632 960000',
-      emailAddress: `${id}@example.com`
+      phone: '01632 960000',
+      email: `${id}@example.com`
     }
   }
 }

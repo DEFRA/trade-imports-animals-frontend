@@ -84,12 +84,12 @@
     }) }}
 
     {{ govukInput({
-      id: "postalOrZipCode", name: "postalOrZipCode",
-      label: { text: copy.fields.postalOrZipCode },
+      id: "postcode", name: "postcode",
+      label: { text: copy.fields.postcode },
       classes: "govuk-input--width-10",
       autocomplete: "postal-code",
-      value: values.postalOrZipCode,
-      errorMessage: errors.postalOrZipCode and { text: errors.postalOrZipCode }
+      value: values.postcode,
+      errorMessage: errors.postcode and { text: errors.postcode }
     }) }}
 
     {# A commercial transporter added by hand can only be a Northern Irish one,
@@ -108,23 +108,23 @@
     <h2 class="govuk-heading-m">{{ copy.contactHeading }}</h2>
 
     {{ govukInput({
-      id: "emailAddress", name: "emailAddress",
-      label: { text: copy.fields.emailAddress },
+      id: "email", name: "email",
+      label: { text: copy.fields.email },
       type: "email",
       autocomplete: "email",
-      value: values.emailAddress,
-      errorMessage: errors.emailAddress and { text: errors.emailAddress }
+      value: values.email,
+      errorMessage: errors.email and { text: errors.email }
     }) }}
 
     {{ govukInput({
-      id: "telephoneNumber", name: "telephoneNumber",
-      label: { text: copy.fields.telephoneNumber },
+      id: "phone", name: "phone",
+      label: { text: copy.fields.phone },
       hint: { text: copy.telephoneHint },
       type: "tel",
       classes: "govuk-input--width-20",
       autocomplete: "tel",
-      value: values.telephoneNumber,
-      errorMessage: errors.telephoneNumber and { text: errors.telephoneNumber }
+      value: values.phone,
+      errorMessage: errors.phone and { text: errors.phone }
     }) }}
 
     {# The commercial arm of the add route — reached from the type question, not

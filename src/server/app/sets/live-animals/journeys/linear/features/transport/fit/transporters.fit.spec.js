@@ -125,10 +125,10 @@ const validPrivateTransporter = {
   addressLine2: 'Bâtiment 2',
   townOrCity: 'Calais',
   county: 'Pas-de-Calais',
-  postalOrZipCode: '62100',
+  postcode: '62100',
   country: 'France',
-  telephoneNumber: '+33 3 21 00 00 00',
-  emailAddress: 'jean.dupont@example.fr'
+  phone: '+33 3 21 00 00 00',
+  email: 'jean.dupont@example.fr'
 }
 
 // Not on the fixture list, so it can only have come from the add form.
@@ -136,10 +136,10 @@ const handTypedTransporter = {
   nameOrOrganisationName: 'Jean Dupont',
   addressLine1: '12 Rue des Fermes',
   townOrCity: 'Amiens',
-  postalOrZipCode: '80000',
+  postcode: '80000',
   country: 'France',
-  telephoneNumber: '+33 3 22 55 01 44',
-  emailAddress: 'jean.dupont@example.fr'
+  phone: '+33 3 22 55 01 44',
+  email: 'jean.dupont@example.fr'
 }
 
 const fillPrivateTransporter = async (
@@ -160,10 +160,10 @@ const requiredPrivateValidations = [
   ['name or organisation name', 'nameOrOrganisationName', 'nameRequired'],
   ['address line 1', 'addressLine1', 'addressLine1Required'],
   ['town or city', 'townOrCity', 'townOrCityRequired'],
-  ['postcode or Zip code', 'postalOrZipCode', 'postalOrZipCodeRequired'],
+  ['postcode or Zip code', 'postcode', 'postcodeRequired'],
   ['country', 'country', 'countryRequired'],
-  ['phone number', 'telephoneNumber', 'telephoneRequired'],
-  ['email address', 'emailAddress', 'emailRequired']
+  ['phone number', 'phone', 'telephoneRequired'],
+  ['email address', 'email', 'emailRequired']
 ]
 
 const MAX_NAME_OR_ADDRESS_LINE_LENGTH = 255
@@ -206,19 +206,19 @@ const formatPrivateValidations = [
   ],
   [
     'postcode or Zip code over 12 characters',
-    'postalOrZipCode',
+    'postcode',
     'P'.repeat(MAX_POSTAL_OR_ZIP_CODE_LENGTH + 1),
-    'postalOrZipCodeMaxLength'
+    'postcodeMaxLength'
   ],
   [
     'phone number over 20 characters',
-    'telephoneNumber',
+    'phone',
     '1'.repeat(MAX_TELEPHONE_LENGTH + 1),
     'telephoneMaxLength'
   ],
   [
     'email address over 254 characters',
-    'emailAddress',
+    'email',
     `${'e'.repeat(MAX_EMAIL_LENGTH + 1 - exampleEmailDomain.length)}${exampleEmailDomain}`,
     'emailMaxLength'
   ]
@@ -521,7 +521,7 @@ test.describe('searching the transporter list', () => {
 
   test('searching by address finds the transporter at it', async ({ page }) => {
     await openTransporterList(page)
-    await searchTransporters(page, privateRecord.address.postalOrZipCode)
+    await searchTransporters(page, privateRecord.address.postcode)
 
     await expect(transporterRow(page, privateRecord.name)).toHaveCount(1)
     await expect(transporterRow(page, commercialRecord.name)).toHaveCount(0)
@@ -701,7 +701,7 @@ test.describe('adding a transporter that is not on the list', () => {
       addressSummary({
         addressLine1: reusedTransporter.addressLine1,
         townOrCity: reusedTransporter.townOrCity,
-        postalOrZipCode: reusedTransporter.postalOrZipCode,
+        postcode: reusedTransporter.postcode,
         country: reusedTransporter.country
       })
     )
@@ -727,8 +727,8 @@ test.describe('adding a transporter that is not on the list', () => {
       page.getByLabel(copy.privateTransporterDetails.fields.townOrCity)
     ).toHaveValue(reusedTransporter.townOrCity)
     await expect(
-      page.getByLabel(copy.privateTransporterDetails.fields.emailAddress)
-    ).toHaveValue(reusedTransporter.emailAddress)
+      page.getByLabel(copy.privateTransporterDetails.fields.email)
+    ).toHaveValue(reusedTransporter.email)
   })
 })
 
@@ -817,7 +817,7 @@ test.describe('private transporter rendering and optionality', () => {
     await openPrivate(page)
 
     await expect(
-      page.getByLabel(copy.privateTransporterDetails.fields.telephoneNumber)
+      page.getByLabel(copy.privateTransporterDetails.fields.phone)
     ).toHaveAccessibleDescription(copy.privateTransporterDetails.telephoneHint)
   })
 
@@ -834,18 +834,11 @@ test.describe('private transporter rendering and optionality', () => {
       })
     ).toBeVisible()
     const orderedIds = await page
-      .locator(
-        'form #country, form h2, form #emailAddress, form #telephoneNumber'
-      )
+      .locator('form #country, form h2, form #email, form #phone')
       .evaluateAll((nodes) =>
         nodes.map((node) => node.id || node.tagName.toLowerCase())
       )
-    expect(orderedIds).toEqual([
-      'country',
-      'h2',
-      'emailAddress',
-      'telephoneNumber'
-    ])
+    expect(orderedIds).toEqual(['country', 'h2', 'email', 'phone'])
   })
 
   test('a completely blank private transporter record is optional', async ({
@@ -985,8 +978,8 @@ test.describe('private transporter persistence', () => {
       page.getByLabel(copy.privateTransporterDetails.fields.country)
     ).toHaveValue(transporter.address.country)
     await expect(
-      page.getByLabel(copy.privateTransporterDetails.fields.emailAddress)
-    ).toHaveValue(transporter.address.emailAddress)
+      page.getByLabel(copy.privateTransporterDetails.fields.email)
+    ).toHaveValue(transporter.address.email)
   })
 })
 

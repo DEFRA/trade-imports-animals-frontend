@@ -44,9 +44,9 @@ const validTransporter = {
   addressLine2: 'Unit 3',
   townOrCity: 'Belfast',
   county: 'County Antrim',
-  postalOrZipCode: 'BT1 3LG',
-  emailAddress: 'movements@lough-neagh.example.com',
-  telephoneNumber: '+44 28 9000 0111'
+  postcode: 'BT1 3LG',
+  email: 'movements@lough-neagh.example.com',
+  phone: '+44 28 9000 0111'
 }
 
 const fillTransporter = async (page, transporter = validTransporter) => {
@@ -64,9 +64,9 @@ const requiredValidations = [
   ['name or organisation name', 'nameOrOrganisationName', 'nameRequired'],
   ['address line 1', 'addressLine1', 'addressLine1Required'],
   ['town or city', 'townOrCity', 'townOrCityRequired'],
-  ['postcode or zip code', 'postalOrZipCode', 'postalOrZipCodeRequired'],
-  ['email address', 'emailAddress', 'emailRequired'],
-  ['phone number', 'telephoneNumber', 'telephoneRequired']
+  ['postcode or zip code', 'postcode', 'postcodeRequired'],
+  ['email address', 'email', 'emailRequired'],
+  ['phone number', 'phone', 'telephoneRequired']
 ]
 
 const MAX_APPROVAL_NUMBER_LENGTH = 50
@@ -116,19 +116,19 @@ const formatValidations = [
   ],
   [
     'postcode or zip code over 12 characters',
-    'postalOrZipCode',
+    'postcode',
     'P'.repeat(MAX_POSTAL_OR_ZIP_CODE_LENGTH + 1),
-    'postalOrZipCodeMaxLength'
+    'postcodeMaxLength'
   ],
   [
     'email address over 254 characters',
-    'emailAddress',
+    'email',
     `${'e'.repeat(MAX_EMAIL_LENGTH + 1 - exampleEmailDomain.length)}${exampleEmailDomain}`,
     'emailMaxLength'
   ],
   [
     'phone number over 20 characters',
-    'telephoneNumber',
+    'phone',
     '1'.repeat(MAX_TELEPHONE_LENGTH + 1),
     'telephoneMaxLength'
   ]
@@ -186,7 +186,7 @@ test.describe('adding a commercial transporter that is not on the list', () => {
       page.getByRole('heading', { name: form.contactHeading })
     ).toBeVisible()
     await expect(
-      page.getByLabel(form.fields.telephoneNumber)
+      page.getByLabel(form.fields.phone)
     ).toHaveAccessibleDescription(form.telephoneHint)
   })
 

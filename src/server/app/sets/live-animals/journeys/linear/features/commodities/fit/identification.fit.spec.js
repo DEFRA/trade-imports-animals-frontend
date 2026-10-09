@@ -90,9 +90,9 @@ const validPermanentAddress = {
   addressLine2: 'Apartment 2',
   townOrCity: 'Skipton',
   county: 'North Yorkshire',
-  postalOrZipCode: 'BD23 1UD',
-  telephoneNumber: '+44 1756 555 0192',
-  emailAddress: 'owner@example.co.uk'
+  postcode: 'BD23 1UD',
+  phone: '+44 1756 555 0192',
+  email: 'owner@example.co.uk'
 }
 
 const fillAddress = async (page, address = validPermanentAddress) => {
@@ -189,9 +189,9 @@ const requiredAddressValidations = [
   ['name or organisation name', 'nameOrOrganisationName'],
   ['address line 1', 'addressLine1'],
   ['town or city', 'townOrCity'],
-  ['postcode or Zip code', 'postalOrZipCode'],
-  ['phone number', 'telephoneNumber'],
-  ['email address', 'emailAddress']
+  ['postcode or Zip code', 'postcode'],
+  ['phone number', 'phone'],
+  ['email address', 'email']
 ]
 
 const addressFormatValidations = [
@@ -222,17 +222,17 @@ const addressFormatValidations = [
   ],
   [
     'postcode or Zip code over 12 characters',
-    'postalOrZipCode',
+    'postcode',
     'P'.repeat(MAX_POSTAL_OR_ZIP_CODE_LENGTH + 1)
   ],
   [
     'phone number over 20 characters',
-    'telephoneNumber',
+    'phone',
     '1'.repeat(MAX_TELEPHONE_LENGTH + 1)
   ],
   [
     'email address over 254 characters',
-    'emailAddress',
+    'email',
     `${'e'.repeat(MAX_EMAIL_LENGTH + 1 - EMAIL_DOMAIN.length)}${EMAIL_DOMAIN}`
   ]
 ]
@@ -338,17 +338,15 @@ test.describe('animal identification', () => {
     await openCatIdentification(page)
 
     await expect(
-      page.getByLabel(copy.identification.address.postalOrZipCode, {
+      page.getByLabel(copy.identification.address.postcode, {
         exact: true
       })
     ).toBeVisible()
     await expect(
-      page.getByLabel(copy.identification.address.telephoneNumber, {
+      page.getByLabel(copy.identification.address.phone, {
         exact: true
       })
-    ).toHaveAccessibleDescription(
-      copy.identification.addressHints.telephoneNumber
-    )
+    ).toHaveAccessibleDescription(copy.identification.addressHints.phone)
   })
 
   // Asking for the address without saying why leaves an invented one looking

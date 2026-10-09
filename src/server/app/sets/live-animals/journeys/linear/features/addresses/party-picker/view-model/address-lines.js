@@ -4,7 +4,7 @@ const ADDRESS_PARTS = [
   'addressLine3',
   'townOrCity',
   'county',
-  'postalOrZipCode'
+  'postcode'
 ]
 
 export const addressText = (address) =>
@@ -17,6 +17,6 @@ export const detailLines = (record) =>
     record.name,
     ...ADDRESS_PARTS.map((part) => record.address[part]),
     record.address.country,
-    record.address.telephoneNumber,
-    record.address.emailAddress
+    record.address.phone,
+    record.address.email
   ].filter(Boolean)
