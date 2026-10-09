@@ -1624,8 +1624,8 @@ describe(`${SUITE} — stale stored answers`, () => {
 })
 
 // Document scan verdicts are named on the uploaded-documents card by the review
-// itself, both REJECTED and still-scanning, because a refused Continue now
-// lands back here by redirect. The pure-function refusal tests hit the helper,
+// itself — REJECTED on every visit, still-scanning only after a refused
+// Continue lands back here by redirect. The pure-function refusal tests hit the helper,
 // not the controller's spread order, so this block pins the controller wiring.
 describe(`${SUITE} — document scan card errors`, () => {
   setupCheckAnswersEngine()
@@ -1664,6 +1664,18 @@ describe(`${SUITE} — document scan card errors`, () => {
     const card = cardByTitle(view.context.sections, UPLOADED_DOCUMENTS_CARD)
 
     expect(card.error).toBe(documentsEn.errors.someStillScanning)
+  })
+
+  // Still scanning is transient, so a plain visit does not present it as an
+  // error — only a refused Continue does.
+  it('Should not name a still-scanning document on a plain visit to the review', async () => {
+    const { view } = await driveHandler(getHandler, {
+      seed: seedWithDoc(PENDING_FILENAME)
+    })
+    const card = cardByTitle(view.context.sections, UPLOADED_DOCUMENTS_CARD)
+
+    expect(card.error).toBeNull()
+    expect(view.context.errorSummary).toBeNull()
   })
 
   it('Should keep the rejected message on the uploaded-documents card when Continue is refused with a rejected document', async () => {

@@ -21,12 +21,22 @@ const documentScanStatuses = async (answers) => {
   )
 }
 
-export const documentScanCardErrors = async (answers) => {
+/** A REJECTED scan is a permanent verdict on a stored file, so it is always an
+ * error. A PENDING one is transient, so it is only an error when the trader
+ * has just been refused for it — callers rendering a plain visit pass
+ * `includePending: false`. */
+export const documentScanCardErrors = async (
+  answers,
+  { includePending = true } = {}
+) => {
   const withStatus = await documentScanStatuses(answers)
   if (withStatus.some((doc) => doc.scanStatus === SCAN_STATUS.REJECTED)) {
     return { documents: documentsCopy.errors.someRejected }
   }
-  if (withStatus.some((doc) => doc.scanStatus === SCAN_STATUS.PENDING)) {
+  if (
+    includePending &&
+    withStatus.some((doc) => doc.scanStatus === SCAN_STATUS.PENDING)
+  ) {
     return { documents: documentsCopy.errors.someStillScanning }
   }
   return {}

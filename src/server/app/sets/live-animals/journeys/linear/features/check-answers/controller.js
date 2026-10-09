@@ -157,9 +157,13 @@ export const renderNotificationView = async (
   const invalidCardErrors = readOnly
     ? {}
     : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
-  // A refused Continue now lands here by redirect, so the review names a
-  // still-scanning document itself rather than relying on the refusal to.
-  const scanDocErrors = readOnly ? {} : await documentScanCardErrors(answers)
+  // A refused Continue lands here by redirect with `refused=1`, so only then
+  // does the review name a still-scanning document; a plain visit names a
+  // rejected one alone.
+  const refused = request.query.refused === '1'
+  const scanDocErrors = readOnly
+    ? {}
+    : await documentScanCardErrors(answers, { includePending: refused })
   return renderCya(h, journey, {
     answers,
     scope,
@@ -180,7 +184,7 @@ export const renderNotificationView = async (
           ...scanDocErrors,
           ...incompleteCardErrors(answers, scope, evaluation)
         },
-    disableAutoFocus: request.query.refused !== '1'
+    disableAutoFocus: !refused
   })
 }
 

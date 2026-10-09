@@ -167,6 +167,15 @@ describe('#documentScanCardErrors', () => {
     ).toEqual({ documents: documentsEn.errors.someStillScanning })
   })
 
+  it('Should not name a document still being scanned when pending is excluded', async () => {
+    expect(
+      await documentScanCardErrors(
+        { documents: [doc({ filename: PENDING_FILENAME })] },
+        { includePending: false }
+      )
+    ).toEqual({})
+  })
+
   it('Should name a REJECTED scan ahead of one still scanning', async () => {
     expect(
       await documentScanCardErrors({
