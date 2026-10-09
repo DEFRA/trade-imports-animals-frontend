@@ -174,7 +174,11 @@ describe('#currentJourney', () => {
 
   it('Should amend a submitted journey with the authenticated actor', async () => {
     const journey = await store.create()
-    await recordsStub.finalise(journey.journeyId)
+    await recordsStub.finalise(
+      journey.journeyId,
+      undefined,
+      journey.concurrencyToken
+    )
     const amend = vi.fn(recordsStub.amend)
     configureRecords(SET_ID, { ...recordsStub, amend })
     const request = requestFor(journey.journeyId, [journey.journeyId])

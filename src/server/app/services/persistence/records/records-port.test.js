@@ -14,6 +14,11 @@ const originFulfilment = (value) => ({ [countryOfOrigin.id]: value })
 
 const UNKNOWN_JOURNEY_ID = 'GBN-AG-26-000000'
 
+const finaliseAtLoadedToken = async (journeyId) => {
+  const { concurrencyToken } = await records.load({ journeyId })
+  return records.finalise(journeyId, undefined, concurrencyToken)
+}
+
 describe('records durable port', () => {
   beforeEach(() => records.clear())
 
@@ -69,7 +74,7 @@ describe('records durable port', () => {
   it('Should freeze after finalise so a later replacement throws', async () => {
     const { journeyId } = await records.create()
     await records.replaceFulfilment(journeyId, originFulfilment('FR'))
-    await records.finalise(journeyId)
+    await finaliseAtLoadedToken(journeyId)
     await expect(
       records.replaceFulfilment(journeyId, { late: true })
     ).rejects.toThrow(/is submitted — writes blocked/)
@@ -78,13 +83,13 @@ describe('records durable port', () => {
   it('Should stamp createdAt on create and keep it through the lifecycle', async () => {
     const created = await records.create()
     expect(created.createdAt).toEqual(expect.any(String))
-    const submitted = await records.finalise(created.journeyId)
+    const submitted = await finaliseAtLoadedToken(created.journeyId)
     expect(submitted.createdAt).toBe(created.createdAt)
   })
 
   it('Should unfreeze on amend — status set to amend, submittedAt cleared, writes permitted', async () => {
     const { journeyId } = await records.create()
-    await records.finalise(journeyId)
+    await finaliseAtLoadedToken(journeyId)
 
     const amended = await records.amend(journeyId)
 
@@ -98,10 +103,10 @@ describe('records durable port', () => {
 
   it('Should re-finalise after an amend — the amend-and-resubmit cycle round-trips', async () => {
     const { journeyId } = await records.create()
-    await records.finalise(journeyId)
+    await finaliseAtLoadedToken(journeyId)
     await records.amend(journeyId)
 
-    const resubmitted = await records.finalise(journeyId)
+    const resubmitted = await finaliseAtLoadedToken(journeyId)
 
     expect(resubmitted.status).toBe(SUBMITTED)
     expect(resubmitted.submittedAt).toEqual(expect.any(String))
@@ -110,7 +115,7 @@ describe('records durable port', () => {
   it('Should cancel an amendment by restoring the submitted snapshot and freezing it again', async () => {
     const { journeyId } = await records.create()
     await records.replaceFulfilment(journeyId, originFulfilment('FR'))
-    const submitted = await records.finalise(journeyId)
+    const submitted = await finaliseAtLoadedToken(journeyId)
     await records.amend(journeyId)
     await records.replaceFulfilment(journeyId, originFulfilment('DE'))
 
@@ -284,6 +289,21 @@ describe('records concurrency token', () => {
     ).rejects.toMatchObject({ status: 409, code: 'STALE_CONCURRENCY_TOKEN' })
     expect((await records.load({ journeyId })).status).toBe(DRAFT)
   })
+
+  it.each([undefined, null])(
+    'Should refuse to finalise without a token (%s) as the backend does, leaving it a draft',
+    async (concurrencyToken) => {
+      const { journeyId } = await records.create()
+
+      await expect(
+        records.finalise(journeyId, undefined, concurrencyToken)
+      ).rejects.toMatchObject({
+        status: 400,
+        errors: { concurrencyToken: 'concurrencyToken is required' }
+      })
+      expect((await records.load({ journeyId })).status).toBe(DRAFT)
+    }
+  )
 
   it('Should refuse to save at a token the journey has moved on from, leaving the fulfilment unchanged', async () => {
     const { journeyId, concurrencyToken: stale } = await records.create()
