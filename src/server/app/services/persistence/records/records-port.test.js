@@ -264,9 +264,15 @@ describe('records concurrency token', () => {
       undefined,
       replaced.concurrencyToken
     )
+    const amended = await records.amend(created.journeyId)
+    const cancelled = await records.cancelAmend(created.journeyId)
+    const deleted = await records.softDelete(created.journeyId)
 
     expect(replaced.concurrencyToken).toBe(created.concurrencyToken + 1)
     expect(submitted.concurrencyToken).toBe(replaced.concurrencyToken + 1)
+    expect(amended.concurrencyToken).toBe(submitted.concurrencyToken + 1)
+    expect(cancelled.concurrencyToken).toBe(amended.concurrencyToken + 1)
+    expect(deleted.concurrencyToken).toBe(cancelled.concurrencyToken + 1)
   })
 
   it('Should refuse to finalise at a token the journey has moved on from, leaving it a draft', async () => {
