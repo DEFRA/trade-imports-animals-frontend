@@ -125,7 +125,7 @@ const declare = async (request, h, journey, reviewedToken) => {
 }
 
 const post = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
+  const { journey } = await state.get(request, h)
   if (journey.status === state.SUBMITTED) {
     return h.redirect(pagePath(journey.journeyId, confirmationPage.slug))
   }
@@ -148,10 +148,10 @@ const post = async (request, h) => {
     return h.redirect(reviewHref(journey.journeyId, { refused: true }))
   }
 
+  // Arriving from the review always asks afresh: a tick left in the session by
+  // a submit refused as stale was given against content since changed.
   if (payload.step === STEP_REVIEW) {
-    return render(h, journey, reviewedToken, {
-      declaration: answers.declaration ?? ''
-    })
+    return render(h, journey, reviewedToken, { declaration: '' })
   }
   return declare(request, h, journey, reviewedToken)
 }

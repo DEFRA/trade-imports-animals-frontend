@@ -26,8 +26,11 @@ import {
 import { dispatchPages } from '../index.js'
 
 import * as declaration from './controller.js'
-import { reviewedState } from './test-support.js'
-import { reviewedTokensCookie } from '../../../../../../engine/persistence/session.js'
+import { continueRequest, reviewedState } from './test-support.js'
+import {
+  flowOnlyAnswersCookie,
+  reviewedTokensCookie
+} from '../../../../../../engine/persistence/session.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import * as refusal from '../check-answers/refusal.js'
 import { records } from '../../../../../../engine/persistence/records.js'
@@ -389,6 +392,34 @@ describe('#declaration submit against the real records adapter', () => {
       expect(result.response).toEqual({
         redirect: reviewPath(result.journeyId, CHANGED)
       })
+    })
+
+    it('Should render the declaration unticked when the trader continues from the review after a submit refused as changed', async () => {
+      backendResponds({
+        ok: false,
+        status: 409,
+        statusText: 'Conflict',
+        json: async () => ({ code: 'STALE_CONCURRENCY_TOKEN' })
+      })
+      const refused = await drivePost({ payload: { declaration: 'confirmed' } })
+      const sessionAfterRefusal = refused.cookies[flowOnlyAnswersCookie()]
+      expect(sessionAfterRefusal[refused.journeyId]).toEqual({
+        declaration: 'confirmed'
+      })
+      const { concurrencyToken } = await store.get(refused.journeyId)
+      const h = stubH()
+
+      await post(
+        continueRequest(
+          journeyRequest(refused.journeyId, {
+            state: { [flowOnlyAnswersCookie()]: sessionAfterRefusal }
+          }),
+          concurrencyToken
+        ),
+        h
+      )
+
+      expect(h.captured.view.context.values).toEqual({ declaration: '' })
     })
 
     it('Should re-render declaration at 500 with its checked value, the reviewed token, banner and retry form', async () => {
