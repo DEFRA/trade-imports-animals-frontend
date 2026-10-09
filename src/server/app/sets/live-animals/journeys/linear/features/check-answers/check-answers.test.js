@@ -1673,6 +1673,20 @@ describe(`${SUITE} — document scan card errors`, () => {
     expect(card.error).toBe(documentsEn.errors.someRejected)
   })
 
+  // Pending listed first, so the infected message wins on precedence, not order.
+  it('Should name the rejected document ahead of one still scanning when Continue is refused with both', async () => {
+    const view = await reviewAfterRefusal({
+      ...fullSeed,
+      documents: [
+        scanDoc({ uploadId: 'upload-1', filename: PENDING_FILENAME }),
+        scanDoc({ uploadId: 'upload-2', filename: REJECTED_FILENAME })
+      ]
+    })
+    const card = cardByTitle(view.context.sections, UPLOADED_DOCUMENTS_CARD)
+
+    expect(card.error).toBe(documentsEn.errors.someRejected)
+  })
+
   // A read-only submitted notification never carries a scan error — the
   // errors are gated on the read path by the readOnly branch.
   it('Should not carry any scan card error on a submitted notification', async () => {
