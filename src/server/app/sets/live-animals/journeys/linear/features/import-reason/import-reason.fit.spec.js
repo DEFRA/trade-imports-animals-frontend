@@ -446,7 +446,8 @@ test.describe('import-reason port and country type-ahead', () => {
 
   test('filters ports as the user types', async ({ page }) => {
     const field = page.locator(transitPortInput)
-    await field.fill('Dover')
+    // "Dover" alone matches three Dover terminals; the code plus ")" is unique.
+    await field.fill(`${PORT_CODE})`)
     await expect(
       page.getByRole('option', { name: EXIT_PORT_LABEL, exact: true })
     ).toBeVisible()
