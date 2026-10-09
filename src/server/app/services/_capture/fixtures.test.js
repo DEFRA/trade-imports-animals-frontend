@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  countries,
   countriesOrigin,
   countriesOriginEntries,
   originPageCountryEntries,
@@ -8,12 +9,22 @@ import {
 } from './fixtures.js'
 
 describe('#captured reference fixtures', () => {
-  it('Should load countries-origin as { code, name } entries', () => {
+  it('Should load countries-origin as { code, name, subDivisions } entries', () => {
     expect(countriesOrigin).toContainEqual({
       code: 'AT',
       name: 'Austria',
       subDivisions: []
     })
+  })
+
+  it('Should load the unfiltered countries as the full reference-data list, beyond the SPS block', () => {
+    expect(countries).toContainEqual({
+      code: 'JE',
+      name: 'Jersey',
+      subDivisions: []
+    })
+    expect(countries).toHaveLength(249)
+    expect(countries.some(({ code }) => code === 'GB')).toBe(false)
   })
 
   it('Should load ports-of-entry as { code, name } entries', () => {

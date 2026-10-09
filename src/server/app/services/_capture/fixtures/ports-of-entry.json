@@ -248,10 +248,6 @@
     "name": "Port of Manchester"
   },
   {
-    "code": "GB MID",
-    "name": "Port of Middlesbrough"
-  },
-  {
     "code": "GBSHS",
     "name": "Port of Sheerness"
   },
@@ -266,6 +262,10 @@
   {
     "code": "GB PME",
     "name": "Portsmouth  Port"
+  },
+  {
+    "code": "GB MID",
+    "name": "Port of Middlesbrough"
   },
   {
     "code": "GB PFT",
