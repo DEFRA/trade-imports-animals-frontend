@@ -233,6 +233,16 @@ describe('#declaration submit', () => {
       expect(result.cookies[reviewedTokensCookie()]).toEqual({})
     })
 
+    it('Should finalise at the token the review was rendered with', async () => {
+      const finaliseSpy = vi.spyOn(records, 'finalise')
+
+      const result = await drivePost({ payload: { declaration: 'confirmed' } })
+
+      expect(finaliseSpy).toHaveBeenCalledTimes(1)
+      expect(finaliseSpy.mock.calls[0][0]).toBe(result.journeyId)
+      expect(finaliseSpy.mock.calls[0][2]).toBe(result.reviewedToken)
+    })
+
     it('Should refuse the submit when the notification changed after the declaration rendered', async () => {
       const finaliseSpy = vi.spyOn(records, 'finalise')
 
