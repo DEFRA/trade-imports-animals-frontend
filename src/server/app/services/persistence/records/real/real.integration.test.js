@@ -172,6 +172,20 @@ describe.skipIf(!runsIt('real'))(
       ).resolves.toMatchObject({ status: AMEND })
     })
 
+    it('Should refuse to submit with a stale concurrency token and leave the notification in draft', async () => {
+      const { journeyId } = await records.create()
+      await replaceAnswers(journeyId, { countryOfOrigin: 'FR' })
+      const { concurrencyToken: staleToken } = await records.load({
+        journeyId
+      })
+      await replaceAnswers(journeyId, { countryOfOrigin: 'DE' })
+
+      await expect(
+        records.finalise(journeyId, undefined, staleToken)
+      ).rejects.toMatchObject({ status: 409, code: 'STALE_CONCURRENCY_TOKEN' })
+      expect((await records.load({ journeyId })).status).toBe(DRAFT)
+    })
+
     it('Should return undefined and has=false for an unknown exact id', async () => {
       expect(
         await records.load({ journeyId: 'GBN-AG-99-ZZZZZZ' })
