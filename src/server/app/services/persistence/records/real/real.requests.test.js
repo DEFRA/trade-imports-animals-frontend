@@ -328,6 +328,21 @@ describe('real records adapter — lifecycle and list', () => {
     }
   )
 
+  it('Should reject a stale-token submit with the 409 status and STALE_CONCURRENCY_TOKEN code', async () => {
+    fetchMocker.mockResponse(
+      JSON.stringify({ code: 'STALE_CONCURRENCY_TOKEN' }),
+      { status: 409 }
+    )
+
+    await expect(records.finalise(journeyId, actor, 4)).rejects.toMatchObject({
+      code: 'STALE_CONCURRENCY_TOKEN',
+      status: 409
+    })
+    expect(fetchMocker.requests()[0].url).toBe(
+      `${notificationsUrl}/${journeyId}/submit?concurrencyToken=4`
+    )
+  })
+
   it('Should copy with the source concurrencyToken as a query parameter (WYSIWYG guarantee)', async () => {
     const copiedJourneyId = 'GBN-AG-26-COPIED'
     fetchMocker.mockResponse(
