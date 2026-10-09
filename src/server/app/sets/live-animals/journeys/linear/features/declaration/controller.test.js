@@ -34,6 +34,7 @@ import {
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import * as refusal from '../check-answers/refusal.js'
 import { records } from '../../../../../../engine/persistence/records.js'
+import * as kit from '../../../../../../shared/kit.js'
 
 const post = postHandlerOf(declaration)
 const get = declaration.routes.find((route) => route.method === 'GET').handler
@@ -86,6 +87,18 @@ const drivePost = async ({
     view: h.captured.view,
     cookies: h.cookies
   }
+}
+
+/** The guard only lets a render through at the journey's own token, so the
+ * layout's token and the reviewed one always agree in practice. Moving the
+ * layout's lets a test see which one the page actually carries. */
+const LAYOUT_TOKEN = 'layout-token'
+const layoutTokenDiffers = () => {
+  const base = kit.base
+  vi.spyOn(kit, 'base').mockImplementation((...args) => ({
+    ...base(...args),
+    concurrencyToken: LAYOUT_TOKEN
+  }))
 }
 
 const editElsewhere = (journeyId) =>
@@ -217,6 +230,8 @@ describe('#declaration submit', () => {
 
   describe('POST /declaration to submit (step=declare)', () => {
     it('Should re-render an unconfirmed declaration with its message, the reviewed token, and commit nothing', async () => {
+      layoutTokenDiffers()
+
       const result = await drivePost({ payload: { declaration: '' } })
 
       expect(result.response.statusCode).toBe(400)
@@ -428,6 +443,7 @@ describe('#declaration submit against the real records adapter', () => {
         status: 503,
         statusText: 'Service Unavailable'
       })
+      layoutTokenDiffers()
 
       const result = await drivePost({
         payload: { declaration: 'confirmed', crumb: 'test-crumb' }
