@@ -79,7 +79,7 @@ const firstOption = (name) => (page) => {
   return { [name]: value }
 }
 
-/** The same idea for a dropdown, skipping the placeholder and the divider. */
+/** The same idea for a dropdown, skipping the placeholder row. */
 const firstListedOption = (name) => (page) => {
   const value = page
     .$(`select[name="${name}"] option[value]:not([value=""])`)
