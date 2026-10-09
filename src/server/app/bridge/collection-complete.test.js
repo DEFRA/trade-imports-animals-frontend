@@ -16,10 +16,10 @@ const address = {
     addressLine2: '',
     townOrCity: 'Yorkton',
     county: '',
-    postalOrZipCode: 'YO1 1AA',
+    postcode: 'YO1 1AA',
     country: 'United Kingdom',
-    telephoneNumber: '01000 000000',
-    emailAddress: 'owner@example.test'
+    phone: '01000 000000',
+    email: 'owner@example.test'
   }
 }
 

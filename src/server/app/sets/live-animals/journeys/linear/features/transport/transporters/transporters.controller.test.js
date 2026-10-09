@@ -379,10 +379,10 @@ describe('/transporters with a transporter the organisation added', () => {
       addressLine2: '',
       townOrCity: 'Calais',
       county: 'Pas-de-Calais',
-      postalOrZipCode: '62100',
+      postcode: '62100',
       country: 'France',
-      telephoneNumber: '+33 3 21 00 00 00',
-      emailAddress: 'transport@dupont.example.fr'
+      phone: '+33 3 21 00 00 00',
+      email: 'transport@dupont.example.fr'
     }
   })
 

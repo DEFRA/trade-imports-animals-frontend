@@ -113,10 +113,10 @@ const answersWithGaps = () => ({
             name: 'Owner',
             address: {
               addressLine1: ORIGIN_FARM_LINE1,
-              postalOrZipCode: 'AB1 2CD',
+              postcode: 'AB1 2CD',
               countryCode: 'FR',
-              telephoneNumber: '01234 567890',
-              emailAddress: 'owner@example.com'
+              phone: '01234 567890',
+              email: 'owner@example.com'
             }
           }
         },

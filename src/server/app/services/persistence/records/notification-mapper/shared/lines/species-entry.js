@@ -2,18 +2,15 @@ import { speciesLabel } from '../../commodity-reference.js'
 import { compact } from '../compact.js'
 import { toWireAddress } from '../../../../../address-book/to-wire-address.js'
 
-// Journey-shape permanent address → backend ConsignmentParty wire shape.
-// permanentAddress is the one address-collecting path in the journey that
-// bypasses answerForInlineParty and stores journey naming directly
-// (postalOrZipCode/telephoneNumber/emailAddress) — translate it the same way
-// every other party in the service already is, or postcode/phone/email are
-// silently dropped by the backend's unknown-property tolerance.
+// Journey-shape permanent address → backend ConsignmentParty wire shape. The
+// journey keeps phone and email inside the address block; the backend keeps
+// them on the party, and drops any field it does not know.
 const permanentAddressFrom = (pa) =>
   pa &&
   compact({
     name: pa.name,
-    phone: pa.address?.telephoneNumber,
-    email: pa.address?.emailAddress,
+    phone: pa.address?.phone,
+    email: pa.address?.email,
     address: toWireAddress(pa.address)
   })
 

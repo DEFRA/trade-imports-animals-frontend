@@ -45,11 +45,11 @@ const privateRecord = ({
   addressLine1,
   townOrCity,
   county = '',
-  postalOrZipCode,
+  postcode,
   country,
   countryCode,
-  telephoneNumber,
-  emailAddress
+  phone,
+  email
 }) => ({
   id,
   type: PRIVATE,
@@ -60,11 +60,11 @@ const privateRecord = ({
     addressLine2: '',
     townOrCity,
     county,
-    postalOrZipCode,
+    postcode,
     country,
     countryCode,
-    telephoneNumber,
-    emailAddress
+    phone,
+    email
   }
 })
 
@@ -109,11 +109,11 @@ export const TRANSPORTER_OPTIONS = [
     addressLine1: '12 Harbour Road',
     townOrCity: 'Aberdeen',
     county: 'Aberdeenshire',
-    postalOrZipCode: 'AB11 5DQ',
+    postcode: 'AB11 5DQ',
     country: 'United Kingdom',
     countryCode: 'GB',
-    telephoneNumber: '+44 1224 000 111',
-    emailAddress: 'movements@aberdeen-livestock.example.com'
+    phone: '+44 1224 000 111',
+    email: 'movements@aberdeen-livestock.example.com'
   }),
   privateRecord({
     id: 'romanian-agri-exports',
@@ -121,11 +121,11 @@ export const TRANSPORTER_OPTIONS = [
     status: NEW,
     addressLine1: 'Strada Agricultorilor 8',
     townOrCity: 'Cluj-Napoca',
-    postalOrZipCode: '400000',
+    postcode: '400000',
     country: 'Romania',
     countryCode: 'RO',
-    telephoneNumber: '+40 264 000 222',
-    emailAddress: 'transport@romanian-agri.example.com'
+    phone: '+40 264 000 222',
+    email: 'transport@romanian-agri.example.com'
   }),
   privateRecord({
     id: 'slovak-farm-export',
@@ -133,11 +133,11 @@ export const TRANSPORTER_OPTIONS = [
     status: APPROVED,
     addressLine1: 'Hlavná 45',
     townOrCity: 'Košice',
-    postalOrZipCode: '040 01',
+    postcode: '040 01',
     country: 'Slovakia',
     countryCode: 'SK',
-    telephoneNumber: '+421 55 000 333',
-    emailAddress: 'export@slovak-farm.example.com'
+    phone: '+421 55 000 333',
+    email: 'export@slovak-farm.example.com'
   }),
   privateRecord({
     id: 'finnish-livestock-oy',
@@ -145,10 +145,10 @@ export const TRANSPORTER_OPTIONS = [
     status: NEW,
     addressLine1: 'Satamakatu 3',
     townOrCity: 'Turku',
-    postalOrZipCode: '20100',
+    postcode: '20100',
     country: 'Finland',
     countryCode: 'FI',
-    telephoneNumber: '+358 2 000 444',
-    emailAddress: 'kuljetus@finnish-livestock.example.com'
+    phone: '+358 2 000 444',
+    email: 'kuljetus@finnish-livestock.example.com'
   })
 ]

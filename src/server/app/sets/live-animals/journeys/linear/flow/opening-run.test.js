@@ -306,10 +306,10 @@ const saveAndContinueFollowsTheRunSequence = () => {
         addressLine2: '',
         townOrCity: 'Belfast',
         county: 'County Antrim',
-        postalOrZipCode: 'BT1 3LG',
+        postcode: 'BT1 3LG',
         country: 'Northern Ireland',
-        emailAddress: 'movements@lough-neagh.example.com',
-        telephoneNumber: '+44 28 9000 0111'
+        email: 'movements@lough-neagh.example.com',
+        phone: '+44 28 9000 0111'
       }
     })
 
@@ -326,10 +326,10 @@ const saveAndContinueFollowsTheRunSequence = () => {
         addressLine2: '',
         townOrCity: 'Amiens',
         county: '',
-        postalOrZipCode: '80000',
+        postcode: '80000',
         country: 'France',
-        telephoneNumber: '+33 3 22 55 01 44',
-        emailAddress: 'jean.dupont@example.fr'
+        phone: '+33 3 22 55 01 44',
+        email: 'jean.dupont@example.fr'
       }
     })
 

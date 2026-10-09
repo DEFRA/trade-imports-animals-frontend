@@ -40,9 +40,9 @@ const RECORD = {
   addressLine2: '',
   townOrCity: 'Belfast',
   county: 'County Antrim',
-  postalOrZipCode: 'BT1 3LG',
-  emailAddress: 'movements@lough-neagh.example.com',
-  telephoneNumber: '+44 28 9000 0111'
+  postcode: 'BT1 3LG',
+  email: 'movements@lough-neagh.example.com',
+  phone: '+44 28 9000 0111'
 }
 
 const handlerFor = (method) =>
@@ -129,10 +129,10 @@ describe('/transporters/add/commercial', () => {
             addressLine2: RECORD.addressLine2,
             townOrCity: RECORD.townOrCity,
             county: RECORD.county,
-            postalOrZipCode: RECORD.postalOrZipCode,
+            postcode: RECORD.postcode,
             country: NORTHERN_IRELAND,
-            telephoneNumber: RECORD.telephoneNumber,
-            emailAddress: RECORD.emailAddress
+            phone: RECORD.phone,
+            email: RECORD.email
           },
           approvalNumber: RECORD.approvalNumber
         }
@@ -157,9 +157,9 @@ describe('/transporters/add/commercial', () => {
       'approvalNumber',
       'addressLine1',
       'townOrCity',
-      'postalOrZipCode',
-      'emailAddress',
-      'telephoneNumber'
+      'postcode',
+      'email',
+      'phone'
     ])
     expect(result.after.commercialTransporter).toBeUndefined()
   })
@@ -207,10 +207,10 @@ describe('/transporters/add/commercial', () => {
         addressLine2: RECORD.addressLine2,
         townOrCity: RECORD.townOrCity,
         county: RECORD.county,
-        postalOrZipCode: RECORD.postalOrZipCode,
+        postcode: RECORD.postcode,
         country: NORTHERN_IRELAND,
-        telephoneNumber: RECORD.telephoneNumber,
-        emailAddress: RECORD.emailAddress
+        phone: RECORD.phone,
+        email: RECORD.email
       },
       approvalNumber: RECORD.approvalNumber
     })
@@ -293,8 +293,8 @@ describe('/transporters/add/commercial keeps the transporter for the organisatio
     expect(kept.type).toBe(COMMERCIAL)
     expect(kept.status).toBe(NEW)
     expect(kept.approvalNumber).toBe(HAULIER.approvalNumber)
-    expect(kept.address.postalOrZipCode).toBe(HAULIER.postalOrZipCode)
-    expect(kept.address.emailAddress).toBe(HAULIER.emailAddress)
+    expect(kept.address.postcode).toBe(HAULIER.postcode)
+    expect(kept.address.email).toBe(HAULIER.email)
   })
 
   it('Should keep nothing when the form is left blank, there being no transporter to keep', async () => {

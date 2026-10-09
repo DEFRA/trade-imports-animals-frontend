@@ -13,7 +13,7 @@ export const addressLines = (address = {}) =>
     address.addressLine3,
     address.townOrCity,
     address.county,
-    address.postalOrZipCode
+    address.postcode
   ].filter((part) => !isBlank(part))
 
 export const partyLines = (party) => {
@@ -25,8 +25,8 @@ export const partyLines = (party) => {
     ...[
       ...addressLines(party.address),
       party.address?.country,
-      party.address?.telephoneNumber,
-      party.address?.emailAddress
+      party.address?.phone,
+      party.address?.email
     ]
       .filter((part) => !isBlank(part))
       .map(escapeHtml)

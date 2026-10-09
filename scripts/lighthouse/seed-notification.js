@@ -198,10 +198,10 @@ const TRANSPORTER_STEPS = new Map([
           addressLine2: privateTransporter.address.addressLine2,
           townOrCity: privateTransporter.address.townOrCity,
           county: privateTransporter.address.county,
-          postalOrZipCode: privateTransporter.address.postalOrZipCode,
+          postcode: privateTransporter.address.postcode,
           country: privateTransporter.address.country,
-          telephoneNumber: privateTransporter.address.telephoneNumber,
-          emailAddress: privateTransporter.address.emailAddress
+          phone: privateTransporter.address.phone,
+          email: privateTransporter.address.email
         }
       }
     ]

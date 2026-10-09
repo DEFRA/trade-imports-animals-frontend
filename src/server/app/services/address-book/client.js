@@ -44,12 +44,9 @@ const headers = (orgId) => ({
 
 const failed = (what, response) => new BackendRequestError(what, response)
 
-/** Wire shape to the shape the journey renders. The API is the system of
- * record and uses its own names (`postcode`, `countryCode`, `phone`, `email`);
- * the journey has carried `postalOrZipCode`/`country` since before it existed
- * and is read by two renderers plus templates. A picked record is copied to the
- * backend through `toWireAddress`, so the display shape never has to match the
- * wire — mapping here is cheaper than renaming the journey. */
+/** Wire shape to the shape the journey renders. The field names are the API's;
+ * what this adds is the nesting the journey reads and `country`, the display
+ * name resolved from the code. */
 const toRecord = async (operator) => ({
   id: operator.id,
   name: operator.name,
@@ -59,13 +56,13 @@ const toRecord = async (operator) => ({
     addressLine2: operator.addressLine2,
     townOrCity: operator.townOrCity,
     county: operator.county,
-    postalOrZipCode: operator.postcode,
+    postcode: operator.postcode,
     countryCode: operator.countryCode,
     country: await addressBookCountryName(operator.countryCode),
     // Contact details sit inside the address block, which is where the journey
     // has always read them from.
-    telephoneNumber: operator.phone,
-    emailAddress: operator.email
+    phone: operator.phone,
+    email: operator.email
   }
 })
 

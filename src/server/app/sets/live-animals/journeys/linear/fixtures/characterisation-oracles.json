@@ -77,10 +77,10 @@
           "addressLine2": "",
           "townOrCity": "Amiens",
           "county": "",
-          "postalOrZipCode": "80000",
+          "postcode": "80000",
           "country": "France",
-          "telephoneNumber": "+33 3 22 55 01 44",
-          "emailAddress": "jean.dupont@example.fr"
+          "phone": "+33 3 22 55 01 44",
+          "email": "jean.dupont@example.fr"
         }
       },
       "45e6f7a8-b9c0-4d1b-8ecd-4f5a6b7c8d9e": "ROAD_VEHICLE",
@@ -669,10 +669,10 @@
           "addressLine2": "",
           "townOrCity": "Amiens",
           "county": "",
-          "postalOrZipCode": "80000",
+          "postcode": "80000",
           "country": "France",
-          "telephoneNumber": "+33 3 22 55 01 44",
-          "emailAddress": "jean.dupont@example.fr"
+          "phone": "+33 3 22 55 01 44",
+          "email": "jean.dupont@example.fr"
         }
       },
       "meansOfTransport": "ROAD_VEHICLE",

@@ -134,12 +134,12 @@ export const copy = {
       addressLine2: 'Llinell gyfeiriad 2 (dewisol)',
       townOrCity: 'Tref neu ddinas',
       county: 'Sir (dewisol)',
-      postalOrZipCode: 'Cod post neu god zip',
-      telephoneNumber: 'Rhif ffôn',
-      emailAddress: 'Cyfeiriad e-bost'
+      postcode: 'Cod post neu god zip',
+      phone: 'Rhif ffôn',
+      email: 'Cyfeiriad e-bost'
     },
     addressHints: {
-      telephoneNumber: 'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad'
+      phone: 'Ar gyfer rhifau rhyngwladol, cynhwyswch god y wlad'
     },
     errors: {
       identifierMax: {
@@ -154,9 +154,9 @@ export const copy = {
         nameOrOrganisationName: 'Rhowch enw neu enw sefydliad',
         addressLine1: 'Rhowch linell gyfeiriad 1',
         townOrCity: 'Rhowch dref neu ddinas',
-        postalOrZipCode: 'Rhowch god post neu god zip',
-        telephoneNumber: 'Rhowch rif ffôn',
-        emailAddress: 'Rhowch gyfeiriad e-bost'
+        postcode: 'Rhowch god post neu god zip',
+        phone: 'Rhowch rif ffôn',
+        email: 'Rhowch gyfeiriad e-bost'
       },
       addressFormat: {
         nameOrOrganisationName:
@@ -165,10 +165,9 @@ export const copy = {
         addressLine2: 'Rhaid i linell gyfeiriad 2 fod yn 255 nod neu lai',
         townOrCity: 'Rhaid i’r dref neu ddinas fod yn 100 nod neu lai',
         county: 'Rhaid i’r sir fod yn 100 nod neu lai',
-        postalOrZipCode:
-          'Rhaid i’r cod post neu’r cod zip fod yn 12 nod neu lai',
-        telephoneNumber: 'Rhaid i’r rhif ffôn fod yn 20 nod neu lai',
-        emailAddress: 'Rhaid i’r cyfeiriad e-bost fod yn 254 nod neu lai'
+        postcode: 'Rhaid i’r cod post neu’r cod zip fod yn 12 nod neu lai',
+        phone: 'Rhaid i’r rhif ffôn fod yn 20 nod neu lai',
+        email: 'Rhaid i’r cyfeiriad e-bost fod yn 254 nod neu lai'
       },
       atLeastOneIdentifier: 'Rhowch o leiaf un dynodwr ar gyfer yr anifail hwn',
       capReached: (cap) =>
