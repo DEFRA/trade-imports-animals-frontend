@@ -37,6 +37,7 @@ describe('per-set cookie names', () => {
     expect(addressHandshakeTokensCookie()).toBe(
       'liveAnimalsAddressHandshakeTokens'
     )
+    expect(reviewedTokensCookie()).toBe('liveAnimalsReviewedTokens')
   })
 })
 
@@ -204,6 +205,12 @@ describe('per-set cookie names with two sets mounted', () => {
     )
     expect(withSetContext(OTHER_SET, flowOnlyAnswersCookie)).toBe(
       OTHER_NAMES.flowOnlyAnswers
+    )
+    expect(withSetContext(SET_ID, reviewedTokensCookie)).toBe(
+      SESSION_COOKIE_NAMES.reviewedTokens
+    )
+    expect(withSetContext(OTHER_SET, reviewedTokensCookie)).toBe(
+      OTHER_NAMES.reviewedTokens
     )
   })
 })
