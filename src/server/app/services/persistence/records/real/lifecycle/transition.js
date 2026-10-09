@@ -17,6 +17,13 @@ const postTransition = async (url, action, body) => {
 }
 
 export const finalise = async (journeyId, actor, concurrencyToken) => {
+  // URLSearchParams would send the literal 'undefined', which the backend
+  // rejects with an opaque 400.
+  if (concurrencyToken === undefined || concurrencyToken === null) {
+    throw new Error(
+      `finalise requires a concurrencyToken to submit notification ${journeyId}`
+    )
+  }
   const query = new URLSearchParams({ concurrencyToken })
   const response = await postTransition(
     `${notificationsUrl}/${journeyId}/submit?${query}`,

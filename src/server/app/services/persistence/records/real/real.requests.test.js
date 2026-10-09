@@ -316,6 +316,18 @@ describe('real records adapter — lifecycle and list', () => {
     expect(restored.submittedAt).toBe(submittedTimestamp)
   })
 
+  it.each([undefined, null])(
+    'Should refuse to finalise without a concurrencyToken (%s) and send nothing',
+    async (concurrencyToken) => {
+      await expect(
+        records.finalise(journeyId, actor, concurrencyToken)
+      ).rejects.toThrow(
+        `finalise requires a concurrencyToken to submit notification ${journeyId}`
+      )
+      expect(fetchMocker.requests()).toHaveLength(0)
+    }
+  )
+
   it('Should copy with the source concurrencyToken as a query parameter (WYSIWYG guarantee)', async () => {
     const copiedJourneyId = 'GBN-AG-26-COPIED'
     fetchMocker.mockResponse(
