@@ -136,6 +136,10 @@ export const amendReviewTarget = (request, journey) =>
     ? pagePath(request.params.journeyId, CYA_SLUG)
     : null
 
+/** True for a save that skips the page's required-answer checks: 'Save and return to overview', or 'Save and return' to the review while amending. A format rule still applies. */
+export const skipsRequiredChecks = (request, journey) =>
+  isHubExit(request) || amendReviewTarget(request, journey) !== null
+
 export const runTarget = async (request, stepId, scope) =>
   (await inOpeningRun(request, request.params.journeyId))
     ? journeyNextRunTarget(stepId, scope, request.params.journeyId)

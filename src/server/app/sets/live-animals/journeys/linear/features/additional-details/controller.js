@@ -69,6 +69,9 @@ const get = async (request, h) => {
   )
 }
 
+const answeredOnly = (patch) =>
+  Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== ''))
+
 const post = async (request, h) => {
   const { journey, scope, answers: storedAnswers } = await state.get(request, h)
   const showUnweaned = scope.has('containsUnweanedAnimals')
@@ -87,18 +90,17 @@ const post = async (request, h) => {
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
+  const patch = {
+    animalsCertifiedFor: answers.animalsCertifiedFor,
+    ...(showUnweaned
+      ? { containsUnweanedAnimals: answers.containsUnweanedAnimals }
+      : {})
+  }
+
   let committed
   const { failure } = await kit.recoverableSave(
     async () => {
-      // The reveal decides which of the two fields the notification carries —
-      // committing the unweaned answer under a commodity that does not ask for
-      // it would keep it around after a flip.
-      committed = await state.commit(request, h, {
-        animalsCertifiedFor: answers.animalsCertifiedFor,
-        ...(showUnweaned
-          ? { containsUnweanedAnimals: answers.containsUnweanedAnimals }
-          : {})
-      })
+      committed = await state.commit(request, h, answeredOnly(patch))
     },
     async () =>
       (

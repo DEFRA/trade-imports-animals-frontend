@@ -3,16 +3,21 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../engine/persistence/records.js'
+import {
+  configureRecords,
+  records
+} from '../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  postHandlerOf
+  journeyRequest,
+  postHandlerOf,
+  stubH
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
-import { hubPath } from '../../../../../../shared/paths.js'
+import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 
 import * as importReason from './controller.js'
 import { copy } from './copy/copy.en.js'
@@ -576,5 +581,138 @@ describe('POST import-reason — Save and return to overview', () => {
       copy.errors.portRequired
     )
     expect(result.after).toEqual(result.before)
+  })
+
+  it('Should keep the transit reason and its destination country when only the port of exit is blank', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'transit',
+        transitDestinationCountry: 'FR',
+        transitPortOfExit: '',
+        exit: 'hub'
+      }
+    })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.reasonForImport).toBe('transit')
+    expect(result.after.destinationCountry).toBe('FR')
+  })
+
+  it('Should clear the internal market purpose when the reason changes to transit', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        reasonForImport: 'internalMarket',
+        purposeInInternalMarket: 'breeding'
+      },
+      payload: { reasonForImport: 'transit', exit: 'hub' }
+    })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.reasonForImport).toBe('transit')
+    expect(result.after.purposeInInternalMarket).toBeUndefined()
+  })
+
+  it('Should keep every earlier reason answer when no reason is chosen', async () => {
+    const seed = {
+      reasonForImport: 'transit',
+      portOfExit: 'GB DVR',
+      destinationCountry: 'IE'
+    }
+    const result = await driveHandler(post, {
+      seed,
+      payload: { exit: 'hub' }
+    })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after).toEqual(seed)
+  })
+
+  it('Should keep every earlier reason answer when Save and continue names no reason', async () => {
+    const seed = {
+      reasonForImport: 'transit',
+      portOfExit: 'GB DVR',
+      destinationCountry: 'IE'
+    }
+    const result = await driveHandler(post, {
+      seed,
+      payload: { reasonForImport: '' }
+    })
+
+    expect(result.response.redirect).toBeDefined()
+    expect(result.after).toEqual(seed)
+  })
+})
+
+describe('POST import-reason — Save and return while amending', () => {
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  const driveAmend = async ({ payload, query }) => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, {})
+    await store.submit(journey.journeyId)
+    await records.amend(journey.journeyId)
+    const h = stubH()
+    const response = await post(
+      journeyRequest(journey.journeyId, { payload, query }),
+      h
+    )
+    return {
+      journeyId: journey.journeyId,
+      response,
+      view: h.captured.view,
+      after: (await store.get(journey.journeyId)).answers
+    }
+  }
+
+  it('Should save transit with no port of exit and go to the review', async () => {
+    const result = await driveAmend({
+      query: { change: '1' },
+      payload: {
+        reasonForImport: 'transit',
+        transitDestinationCountry: 'IE',
+        transitPortOfExit: ''
+      }
+    })
+
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, 'notification-view')
+    })
+    expect(result.after.reasonForImport).toBe('transit')
+  })
+
+  it('Should still refuse an unreal exit date', async () => {
+    const result = await driveAmend({
+      query: { change: '1' },
+      payload: {
+        reasonForImport: 'temporaryAdmissionHorses',
+        temporaryAdmissionExitDate: '31/2/2026',
+        temporaryAdmissionPortOfExit: 'GB DVR'
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.temporaryAdmissionExitDate).toBe(
+      copy.errors.dateInvalid
+    )
+    expect(result.after.reasonForImport).toBeUndefined()
+    expect(result.after.exitDate).toBeUndefined()
+    expect(result.after.portOfExit).toBeUndefined()
+  })
+
+  it('Should keep the required checks on Save and continue while amending', async () => {
+    const result = await driveAmend({
+      query: {},
+      payload: {
+        reasonForImport: 'transit',
+        transitDestinationCountry: 'IE',
+        transitPortOfExit: ''
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.transitPortOfExit).toBe(
+      copy.errors.portRequired
+    )
   })
 })
