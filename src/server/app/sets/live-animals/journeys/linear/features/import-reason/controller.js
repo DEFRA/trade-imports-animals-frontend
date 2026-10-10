@@ -40,16 +40,13 @@ const DIVIDER_OPTION = { value: '', text: '──────────', disa
 const countryItems = async () => [
   { value: '', text: copy.country.placeholder },
   DIVIDER_OPTION,
-  ...(await countries.originCountries())
+  ...(await countries.destinationCountryOptions())
 ]
 
 const portItems = async () => [
   { value: '', text: copy.port.placeholder },
   DIVIDER_OPTION,
-  ...(await ports.list()).map((port) => ({
-    value: port.code,
-    text: `${port.name} (${port.code})`
-  }))
+  ...(await ports.portOptions())
 ]
 
 const render = async (
