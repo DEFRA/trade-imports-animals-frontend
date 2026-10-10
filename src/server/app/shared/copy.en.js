@@ -69,7 +69,8 @@ export const copy = {
   journeyStrip: {
     draft: 'Draft',
     submitted: 'Submitted',
-    amend: 'Amending',
+    amend: 'Amend',
+    cancelAmend: 'Cancel amend',
     deleted: 'Deleted'
   },
   addressHandshake: {

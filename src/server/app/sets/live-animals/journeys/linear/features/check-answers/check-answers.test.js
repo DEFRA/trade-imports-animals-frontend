@@ -226,7 +226,6 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
 
     expect(view.context.readOnly).toBe(true)
     expect(changeHrefsOf(view.context.sections)).toEqual([])
-    expect(view.context.cancelAmendHref).toBeNull()
     expect(view.context.copyAction).toEqual({
       href: expect.stringMatching(/\/copy$/)
     })
@@ -261,14 +260,16 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     expect(card.emptyText).toBe('You have not added any documents yet.')
   })
 
-  it('Should expose Cancel amendment only on an amending CYA', async () => {
+  it('Should expose Cancel amend in the strip only on an amending review', async () => {
     const draft = await viewForStatus(DRAFT)
     const submitted = await viewForStatus(SUBMITTED)
     const amend = await viewForStatus(AMEND)
 
-    expect(draft.context.cancelAmendHref).toBeNull()
-    expect(submitted.context.cancelAmendHref).toBeNull()
-    expect(amend.context.cancelAmendHref).toMatch(/\/cancel-amend$/)
+    expect(draft.context.journeyStrip.cancelAmend).toBeUndefined()
+    expect(submitted.context.journeyStrip.cancelAmend).toBeUndefined()
+    expect(amend.context.journeyStrip.cancelAmend.href).toMatch(
+      /\/cancel-amend$/
+    )
   })
 
   it('Should show the cancel success indication only on the restored submitted view', async () => {

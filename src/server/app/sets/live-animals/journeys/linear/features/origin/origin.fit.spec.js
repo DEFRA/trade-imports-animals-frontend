@@ -170,6 +170,12 @@ test.describe('origin feature', () => {
     await expect(strip).toBeVisible()
     await expect(strip).toContainText(sharedCopy.journeyStrip.draft)
     await expect(strip).toContainText(reference)
+    await expect(
+      strip.getByRole('link', {
+        name: sharedCopy.journeyStrip.cancelAmend,
+        exact: true
+      })
+    ).toHaveCount(0)
   })
 
   test('saves valid values, redirects to the next page and persists the answer', async ({

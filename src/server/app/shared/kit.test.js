@@ -63,6 +63,27 @@ describe('#base — amending', () => {
     )
     expect(base('title').amending).toBe(false)
   })
+
+  it('Should offer Cancel amend in the strip only for a journey being amended', () => {
+    const amending = { journeyId: 'j', status: AMEND }
+    expect(base('t', { journey: amending }).journeyStrip.cancelAmend).toEqual({
+      href: expect.stringMatching(/\/j\/cancel-amend$/),
+      text: 'Cancel amend'
+    })
+    expect(
+      base('t', { journey: { journeyId: 'j', status: DRAFT } }).journeyStrip
+        .cancelAmend
+    ).toBeUndefined()
+  })
+
+  it('Should withhold Cancel amend when the page opts out', () => {
+    expect(
+      base('t', {
+        journey: { journeyId: 'j', status: AMEND },
+        offerCancelAmend: false
+      }).journeyStrip.cancelAmend
+    ).toBeUndefined()
+  })
 })
 
 describe('#amendReviewTarget — where a Change-link save of an amendment goes', () => {

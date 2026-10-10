@@ -130,10 +130,6 @@ const renderCya = async (
       readOnly && journey.status === state.SUBMITTED
         ? pagePath(journey.journeyId, 'delete')
         : null,
-    cancelAmendHref:
-      journey.status === state.AMEND
-        ? pagePath(journey.journeyId, 'cancel-amend')
-        : null,
     backLink: hubPath(journey.journeyId)
   })
 }

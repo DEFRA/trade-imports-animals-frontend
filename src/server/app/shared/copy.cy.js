@@ -68,7 +68,8 @@ export const copy = {
   journeyStrip: {
     draft: 'Drafft',
     submitted: "Wedi'i gyflwyno",
-    amend: 'Wrthi’n diwygio',
+    amend: 'Diwygio',
+    cancelAmend: 'Canslo diwygio',
     deleted: "Wedi'i ddileu"
   },
   addressHandshake: {

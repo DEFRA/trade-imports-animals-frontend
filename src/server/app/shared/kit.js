@@ -49,15 +49,35 @@ const STRIP_STATUS = {
   }
 }
 
-export const journeyStrip = (journey) =>
+export const CYA_SLUG = 'notification-view'
+
+export const CANCEL_AMEND_SLUG = 'cancel-amend'
+
+const cancelAmendControl = (journey) =>
+  journey.status === AMEND
+    ? {
+        href: pagePath(journey.journeyId, CANCEL_AMEND_SLUG),
+        text: sharedCopy.journeyStrip.cancelAmend
+      }
+    : undefined
+
+/**
+ * The status strip shown above a journey page's caption and heading.
+ *
+ * @param {object} [journey] - the journey, or none.
+ * @param {object} [options]
+ * @param {boolean} [options.offerCancelAmend] - offer Cancel amend while the
+ * journey is being amended. False on the page Cancel amend leads to.
+ * @returns {object|null} the strip view model, or null without a journey.
+ */
+export const journeyStrip = (journey, { offerCancelAmend = true } = {}) =>
   journey
     ? {
         reference: journey.journeyId,
-        status: STRIP_STATUS[journey.status]
+        status: STRIP_STATUS[journey.status],
+        cancelAmend: offerCancelAmend ? cancelAmendControl(journey) : undefined
       }
     : null
-
-export const CYA_SLUG = 'notification-view'
 
 const anchorHref = (field) => `#${field}`
 
@@ -144,7 +164,8 @@ export const base = (
     journey,
     journeyId = journey?.journeyId,
     page,
-    recoverableError = false
+    recoverableError = false,
+    offerCancelAmend = true
   } = {}
 ) => {
   const hasJourney = journeyId != null
@@ -158,7 +179,7 @@ export const base = (
     // dashboard by way of the root redirect.
     homeUrl: dashboardPath(),
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
-    journeyStrip: journeyStrip(journey),
+    journeyStrip: journeyStrip(journey, { offerCancelAmend }),
     amending: journey?.status === AMEND,
     concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,

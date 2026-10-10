@@ -34,7 +34,6 @@ export const copy = {
   change: 'Change',
   editDetails: 'Edit details',
   cancelAmend: {
-    link: 'Cancel amendment',
     successTitle: 'Success',
     successBody:
       'The amendment has been cancelled and the submitted version restored.'

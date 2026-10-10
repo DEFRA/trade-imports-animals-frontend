@@ -30,7 +30,6 @@ export const copy = {
   change: 'Newid',
   editDetails: 'Golygu manylion',
   cancelAmend: {
-    link: 'Canslo’r diwygiad',
     successTitle: 'Llwyddiant',
     successBody:
       'Mae’r diwygiad wedi’i ganslo ac mae’r fersiwn a gyflwynwyd wedi’i hadfer.'
