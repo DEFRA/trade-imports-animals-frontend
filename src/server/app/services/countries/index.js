@@ -77,16 +77,19 @@ export const originLabel = async (code) => {
   )
 }
 
+const subdivisionDisplayLabel = (code) => {
+  const subdivisionName = subdivisionLabels[code]
+  const parentName = labels[parentCountryCode(code)]
+  return parentName ? `${subdivisionName} (${parentName})` : subdivisionName
+}
+
 export const originDisplayLabel = async (code) => {
   await ensureLoaded()
   if (code == null || code === '') {
     return ''
   }
   if (isSubdivisionCode(code)) {
-    const parentCode = parentCountryCode(code)
-    const subdivisionName = subdivisionLabels[code]
-    const parentName = labels[parentCode]
-    return parentName ? `${subdivisionName} (${parentName})` : subdivisionName
+    return subdivisionDisplayLabel(code)
   }
   return (await originLabel(code)) ?? code
 }
@@ -106,6 +109,22 @@ export const originCountryOptions = async () => {
   const subdivisionOptions = Object.entries(subdivisionLabels).map(
     ([value, text]) => ({ value, text })
   )
+  return [...countryOptions, ...subdivisionOptions].sort((left, right) =>
+    left.text.localeCompare(right.text)
+  )
+}
+
+/** Countries and their subdivisions for a destination select, one alphabetical list, each subdivision named with its parent country. */
+export const destinationCountryOptions = async () => {
+  await ensureLoaded()
+  const countryOptions = Object.entries(labels).map(([value, text]) => ({
+    value,
+    text
+  }))
+  const subdivisionOptions = Object.keys(subdivisionLabels).map((value) => ({
+    value,
+    text: subdivisionDisplayLabel(value)
+  }))
   return [...countryOptions, ...subdivisionOptions].sort((left, right) =>
     left.text.localeCompare(right.text)
   )

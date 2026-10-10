@@ -369,7 +369,7 @@ describe('dashboard row actions', () => {
     )
   })
 
-  it('Should list an amending journey with a yellow Amending tag', async () => {
+  it('Should list an amending journey with a yellow Amend tag', async () => {
     const submitted = await startSubmitted()
     await amendPost(
       buildRequest({
@@ -384,7 +384,7 @@ describe('dashboard row actions', () => {
 
     const [row] = h.captured.view.context.notificationRows
     expect(row.status).toEqual({
-      text: 'Amending',
+      text: 'Amend',
       classes: 'govuk-tag--yellow'
     })
     expect(row.submitted).toBe('')

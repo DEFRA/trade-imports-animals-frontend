@@ -66,8 +66,8 @@ const post = async (request, h) => {
     request.payload ?? {}
   )
   if (hasErrors(errors)) {
-    const { journey } = await state.get(request, h)
-    return render(request, h, journey, values, { errors }).code(
+    const { journey: invalidJourney } = await state.get(request, h)
+    return render(request, h, invalidJourney, values, { errors }).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
@@ -75,8 +75,8 @@ const post = async (request, h) => {
   const { failure, value: committed } = await kit.recoverableSave(
     () => state.commit(request, h, answers),
     async () => {
-      const { journey } = await state.get(request, h)
-      return render(request, h, journey, values, {
+      const { journey: failedJourney } = await state.get(request, h)
+      return render(request, h, failedJourney, values, {
         recoverableError: true
       }).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
     }
@@ -86,8 +86,10 @@ const post = async (request, h) => {
   }
 
   const { scope } = committed
+  const { journey } = await state.get(request, h)
   return h.redirect(
     kit.hubExitTarget(request) ??
+      kit.amendReviewTarget(request, journey) ??
       hubEntryReturn(request) ??
       (await kit.nextTarget(request, page, scope))
   )

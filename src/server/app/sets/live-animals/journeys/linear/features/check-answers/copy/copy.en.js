@@ -9,10 +9,10 @@ export const copy = {
   missing: 'Missing',
   yesNo: { yes: 'Yes', no: 'No' },
   means: {
-    AIRPLANE: 'Airplane',
-    RAILWAY: 'Railway',
-    ROAD_VEHICLE: 'Road Vehicle',
-    VESSEL: 'Vessel'
+    AIRPLANE: 'Air',
+    RAILWAY: 'Rail',
+    ROAD_VEHICLE: 'Road',
+    VESSEL: 'Sea'
   },
   documentTypes: {
     ITAHC: 'Intra Trade Animal Health Certificate (ITAHC)',
@@ -34,7 +34,6 @@ export const copy = {
   change: 'Change',
   editDetails: 'Edit details',
   cancelAmend: {
-    link: 'Cancel amendment',
     successTitle: 'Success',
     successBody:
       'The amendment has been cancelled and the submitted version restored.'

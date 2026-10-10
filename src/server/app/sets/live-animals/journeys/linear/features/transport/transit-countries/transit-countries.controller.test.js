@@ -11,6 +11,7 @@ import {
   driveHandler,
   postHandlerOf
 } from '../../../../../../../engine/test-support.js'
+import { hubPath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 
@@ -270,6 +271,29 @@ describe('POST transit-countries — continuing', () => {
     })
     expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
     expect(result.response.redirect).not.toContain('transit-countries')
+  })
+})
+
+describe('POST transit-countries — Save and return to overview', () => {
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  it('Should go to the overview without an error when saved and returned with no country chosen', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: { exit: 'hub' }
+    })
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.transitedCountries).toEqual([])
+  })
+
+  it('Should save the listed countries and go to the overview on Save and return to overview', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: { transitedCountries: ['FR', 'BE'], exit: 'hub' }
+    })
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
   })
 })
 

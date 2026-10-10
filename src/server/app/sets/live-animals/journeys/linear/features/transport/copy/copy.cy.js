@@ -10,23 +10,23 @@ export const copy = {
     port: {
       label: 'Porthladd mynediad',
       hint: 'Dewiswch ble bydd y cludwr yn dod i mewn gyda’r llwyth. Dechreuwch deipio i chwilio yn ôl enw neu god y porthladd neu’r maes awyr.',
-      placeholder: 'Dewiswch borthladd mynediad',
+      placeholder: 'Dewiswch borthladd',
       noResults: 'Dim porthladdoedd wedi’u darganfod'
     },
     means: {
       label: 'Cyfrwng cludo i’r porthladd mynediad',
       placeholder: 'Dewiswch un',
       options: {
-        AIRPLANE: 'Awyren',
+        AIRPLANE: 'Awyr',
         RAILWAY: 'Rheilffordd',
-        ROAD_VEHICLE: 'Cerbyd ffordd',
-        VESSEL: 'Llong'
+        ROAD_VEHICLE: 'Ffordd',
+        VESSEL: 'Môr'
       }
     },
     identification: {
       label: 'Adnabod y cludiant',
       hint: {
-        lead: 'I adnabod y cyfrwng cludo, rhowch (un o’r canlynol):',
+        lead: 'Rhowch un o’r canlynol:',
         items: [
           'rhif hediad',
           'rhif trên',
@@ -43,6 +43,7 @@ export const copy = {
       arrivalDateInvalid: 'Rhowch ddyddiad cyrraedd go iawn',
       arrivalDateOutOfRange: (earliest, latest) =>
         `Rhaid i ddyddiad cyrraedd y porthladd mynediad fod rhwng ${earliest} a ${latest}`,
+      meansOfTransportRequired: 'Dewiswch gyfrwng cludo i’r porthladd mynediad',
       portNoLongerAvailable:
         "Nid yw'r porthladd mynediad a arbedwyd ar gael mwyach. Dewiswch borthladd o’r rhestr.",
       arrivalDateNoLongerInWindow:

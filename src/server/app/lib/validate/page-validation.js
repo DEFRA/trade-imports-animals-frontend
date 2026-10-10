@@ -14,6 +14,9 @@ export const hasErrors = (errors) => Object.keys(errors).length > 0
  * list" is right for a trader who just mistyped, wrong for one whose stored
  * port has since closed. Errors come back keyed by the page's own field names.
  *
+ * `onSubmit` accepts `context.allowMissing` to leave blank answers unreported
+ * (the 'Save and return to overview' reading); `onStored` callers never pass it.
+ *
  * @param {object} page
  * @param {Function} page.fields - `(values, context) => schema`. Rules keyed by field name.
  * @param {Function} [page.checks] - `(values, context) => errors`. What no schema states — a live-catalogue lookup, a cap on a list. A field the schema already failed keeps the schema's message.
@@ -34,7 +37,9 @@ export const pageValidation = ({
 }) => {
   const errorsIn = async (values, context) => {
     const measured = normalise(values)
-    const { errors } = validate(await fields(measured, context), measured)
+    const { errors } = validate(await fields(measured, context), measured, {
+      allowMissing: context.allowMissing === true
+    })
     return { ...(await checks?.(measured, context)), ...(errors ?? NO_ERRORS) }
   }
 

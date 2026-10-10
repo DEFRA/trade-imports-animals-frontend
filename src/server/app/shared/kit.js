@@ -1,6 +1,6 @@
 import { dashboardPath, hubPath, pagePath, pageRoutePath } from './paths.js'
 import { AMEND, DELETED, DRAFT, SUBMITTED } from '../engine/index.js'
-import { nextInSection } from '../flow/navigation.js'
+import { nextInTaskRow } from '../flow/navigation.js'
 import {
   journeyLayout,
   journeyNextRunTarget,
@@ -49,15 +49,35 @@ const STRIP_STATUS = {
   }
 }
 
-export const journeyStrip = (journey) =>
+export const CYA_SLUG = 'notification-view'
+
+export const CANCEL_AMEND_SLUG = 'cancel-amend'
+
+const cancelAmendControl = (journey) =>
+  journey.status === AMEND
+    ? {
+        href: pagePath(journey.journeyId, CANCEL_AMEND_SLUG),
+        text: sharedCopy.journeyStrip.cancelAmend
+      }
+    : undefined
+
+/**
+ * The status strip shown above a journey page's caption and heading.
+ *
+ * @param {object} [journey] - the journey, or none.
+ * @param {object} [options]
+ * @param {boolean} [options.offerCancelAmend] - offer Cancel amend while the
+ * journey is being amended. False on the page Cancel amend leads to.
+ * @returns {object|null} the strip view model, or null without a journey.
+ */
+export const journeyStrip = (journey, { offerCancelAmend = true } = {}) =>
   journey
     ? {
         reference: journey.journeyId,
-        status: STRIP_STATUS[journey.status]
+        status: STRIP_STATUS[journey.status],
+        cancelAmend: offerCancelAmend ? cancelAmendControl(journey) : undefined
       }
     : null
-
-export const CYA_SLUG = 'notification-view'
 
 const anchorHref = (field) => `#${field}`
 
@@ -96,6 +116,8 @@ export const fieldError = (fieldErrors, field) =>
 export const hubExitTarget = (request) =>
   request.payload?.exit === 'hub' ? hubPath(request.params.journeyId) : null
 
+export const isHubExit = (request) => hubExitTarget(request) !== null
+
 export const changeContext = (request) => Boolean(request.query.change)
 
 export const withChangeContext = (request, href) =>
@@ -107,6 +129,12 @@ export const exitTarget = (request, fallback) =>
     ? pagePath(request.params.journeyId, CYA_SLUG)
     : fallback)
 
+/** The review's path for a save made while amending from a Change link, else null. */
+export const amendReviewTarget = (request, journey) =>
+  journey?.status === AMEND && changeContext(request)
+    ? pagePath(request.params.journeyId, CYA_SLUG)
+    : null
+
 export const runTarget = async (request, stepId, scope) =>
   (await inOpeningRun(request, request.params.journeyId))
     ? journeyNextRunTarget(stepId, scope, request.params.journeyId)
@@ -116,7 +144,7 @@ export const nextTarget = async (request, page, scope) =>
   exitTarget(
     request,
     (await runTarget(request, page.id, scope)) ??
-      nextInSection(page.id, scope, request.params.journeyId)
+      nextInTaskRow(page.id, scope, request.params.journeyId)
   )
 
 /**
@@ -136,7 +164,8 @@ export const base = (
     journey,
     journeyId = journey?.journeyId,
     page,
-    recoverableError = false
+    recoverableError = false,
+    offerCancelAmend = true
   } = {}
 ) => {
   const hasJourney = journeyId != null
@@ -150,7 +179,8 @@ export const base = (
     // dashboard by way of the root redirect.
     homeUrl: dashboardPath(),
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
-    journeyStrip: journeyStrip(journey),
+    journeyStrip: journeyStrip(journey, { offerCancelAmend }),
+    amending: journey?.status === AMEND,
     concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,
     recoverableError,
@@ -253,16 +283,27 @@ export const dateTextOf = (value) =>
  * group. The picker's client-side script inserts the calendar dialog inside
  * the form group, so a class here is the simplest stylesheet hook onto one
  * picker rather than all of them.
+ * @param {string} [options.labelClasses] - classes for the label; the GOV.UK
+ * small size unless the page asks for another.
  */
 export const dateField = (
   name,
-  { label, hint, value = {}, error, minDate, maxDate, formGroupClasses } = {}
+  {
+    label,
+    hint,
+    value = {},
+    error,
+    minDate,
+    maxDate,
+    formGroupClasses,
+    labelClasses = 'govuk-label--s'
+  } = {}
 ) => {
   return {
     id: name,
     name,
     classes: 'govuk-input--width-10',
-    label: { text: label, classes: 'govuk-label--s' },
+    label: { text: label, classes: labelClasses },
     hint: hint ? { text: hint } : undefined,
     errorMessage: error ? { text: error } : undefined,
     value: dateTextOf(value),

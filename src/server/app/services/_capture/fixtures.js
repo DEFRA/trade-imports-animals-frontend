@@ -26,3 +26,17 @@ export const originPageCountryEntries = () => {
     left.name.localeCompare(right.name)
   )
 }
+
+/** Flat { code, name } rows rendered on a destination country select (countries + subdivisions named with their country, sorted by name). */
+export const destinationPageCountryEntries = () => {
+  const subdivisions = countriesOrigin.flatMap(
+    ({ name: countryName, subDivisions = [] }) =>
+      subDivisions.map(({ code, name }) => ({
+        code,
+        name: `${name} (${countryName})`
+      }))
+  )
+  return [...countriesOriginEntries(), ...subdivisions].sort((left, right) =>
+    left.name.localeCompare(right.name)
+  )
+}

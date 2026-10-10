@@ -5,10 +5,10 @@ export const copy = {
   missing: 'Ar goll',
   yesNo: { yes: 'Iawn', no: 'Na' },
   means: {
-    AIRPLANE: 'Awyren',
+    AIRPLANE: 'Awyr',
     RAILWAY: 'Rheilffordd',
-    ROAD_VEHICLE: 'Cerbyd ffordd',
-    VESSEL: 'Llong'
+    ROAD_VEHICLE: 'Ffordd',
+    VESSEL: 'Môr'
   },
   documentTypes: {
     ITAHC: 'Tystysgrif Iechyd Anifeiliaid Masnach Fewnol (ITAHC)',
@@ -30,7 +30,6 @@ export const copy = {
   change: 'Newid',
   editDetails: 'Golygu manylion',
   cancelAmend: {
-    link: 'Canslo’r diwygiad',
     successTitle: 'Llwyddiant',
     successBody:
       'Mae’r diwygiad wedi’i ganslo ac mae’r fersiwn a gyflwynwyd wedi’i hadfer.'

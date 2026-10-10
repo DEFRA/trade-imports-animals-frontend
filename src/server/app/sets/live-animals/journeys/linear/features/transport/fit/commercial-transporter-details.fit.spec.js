@@ -23,7 +23,10 @@ const openCommercialForm = async (page) => {
   await startNotification(page)
   await unlockSections(page)
   await page.getByRole('link', { name: copy.portOfEntry.title }).click()
+  await page.locator('select#meansOfTransport').selectOption('AIRPLANE')
   await submit(page)
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await page.getByRole('link', { name: 'Transport details' }).click()
   // The govuk button macro renders an href as a link with role="button".
   await page.getByRole('button', { name: copy.transporters.add }).click()
   await page

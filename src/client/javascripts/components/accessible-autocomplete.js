@@ -18,13 +18,13 @@
  *    enhanced — the component is field-agnostic and reusable across pages.
  *  - A `data-no-results` attribute drives the "no results" message so each
  *    consumer supplies its own copy (in the correct language).
+ *  - A `data-placeholder` attribute sets the library's `placeholder` option.
  */
 import accessibleAutocomplete from 'accessible-autocomplete'
 
 const ARIA_DESCRIBEDBY = 'aria-describedby'
 
-// Case-insensitive substring match over the option labels. Because each
-// option label is "{name} ({code})", this filters by name or code.
+// Case-insensitive substring match over the option labels.
 const trimQuery = (values) => (query, syncResults) => {
   const needle = query.toLowerCase().trim()
   syncResults(values.filter((value) => value.toLowerCase().includes(needle)))
@@ -80,6 +80,7 @@ const buildConfig = (selectElement, selectOptions) => {
     showAllValues: dataset.showAllValues === 'true',
     autoselect: dataset.autoSelect === 'true',
     defaultValue: dataset.defaultValue || '',
+    placeholder: dataset.placeholder || '',
     minLength: dataset.minLength || undefined,
     // Only real options are searchable — placeholder/empty entries are dropped.
     source: trimQuery(

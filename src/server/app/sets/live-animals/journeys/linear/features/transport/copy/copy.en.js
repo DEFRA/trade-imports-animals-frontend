@@ -12,18 +12,18 @@ export const copy = {
     },
     port: {
       label: 'Port of entry',
-      hint: 'Choose where the transporter will enter with the consignment. Start typing to search by port or airport name or code.',
-      placeholder: 'Select port of entry',
+      hint: 'Select where the transporter will enter with the consignment. Start typing to search by port or airport name or code.',
+      placeholder: 'Select a port',
       noResults: 'No ports found'
     },
     means: {
       label: 'Means of transport to the port of entry',
       placeholder: 'Select one',
       options: {
-        AIRPLANE: 'Airplane',
-        RAILWAY: 'Railway',
-        ROAD_VEHICLE: 'Road Vehicle',
-        VESSEL: 'Vessel'
+        AIRPLANE: 'Air',
+        RAILWAY: 'Rail',
+        ROAD_VEHICLE: 'Road',
+        VESSEL: 'Sea'
       }
     },
     identification: {
@@ -32,7 +32,7 @@ export const copy = {
       // bullet each, so the number of choices is visible without reading
       // (design release 1).
       hint: {
-        lead: 'To identify the means of transport, enter (one of the following):',
+        lead: 'Enter one of the following:',
         items: [
           'flight number',
           'train number',
@@ -49,6 +49,8 @@ export const copy = {
       arrivalDateInvalid: 'Enter a real arrival date',
       arrivalDateOutOfRange: (earliest, latest) =>
         `Arrival date at port of entry must be between ${earliest} and ${latest}`,
+      meansOfTransportRequired:
+        'Select a means of transport to the port of entry',
       portNoLongerAvailable:
         'The saved port of entry is no longer available. Select a port from the list.',
       arrivalDateNoLongerInWindow:

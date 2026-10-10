@@ -96,6 +96,7 @@
         <div class="app-journey-strip govuk-!-margin-bottom-4">
           {{ govukTag({ text: journeyStrip.status.text, classes: journeyStrip.status.classes }) }}
           <span class="govuk-body govuk-!-font-weight-bold">{{ journeyStrip.reference }}</span>
+          {% if journeyStrip.cancelAmend %}<a class="govuk-link govuk-!-font-size-19 govuk-!-margin-left-2" href="{{ journeyStrip.cancelAmend.href }}">{{ journeyStrip.cancelAmend.text }}</a>{% endif %}
         </div>
       {% endif %}
       {% block journeyContent %}{% endblock %}

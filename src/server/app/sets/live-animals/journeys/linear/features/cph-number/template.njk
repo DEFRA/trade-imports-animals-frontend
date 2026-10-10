@@ -98,8 +98,6 @@
       }) }}
     </div>
 
-    {# Second page of the addresses row — reached from the hub's addresses
-       page, not from the hub, so it ends with the primary alone. #}
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, showReturnControls = false) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions, showReturnControls = false, amend = amendFormActions if amending else none) }}
   </form>
 {% endblock %}

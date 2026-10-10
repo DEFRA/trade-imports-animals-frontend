@@ -18,6 +18,7 @@ import {
 import { validatorDefaults } from '../../../../../../../shared/copy.en.js'
 import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
+import { copy as hubCopy } from '../../hub/copy/copy.en.js'
 import { arrivalWindow, DAYS_BEFORE } from '../port-of-entry/arrival-window.js'
 import { MAX_TRANSITED_COUNTRIES } from '../transit-countries/transit-countries.controller.js'
 
@@ -40,7 +41,7 @@ const transitedCountriesInputs =
 const transitStatus = '#transit-countries-status'
 const transitLimit = '#transit-countries-limit'
 const MAX_TRANSPORT_FIELD_LENGTH = 58
-const DOVER_OPTION = 'Port of Dover (GB DVR)'
+const DOVER_OPTION = 'Port of Dover - GB DVR'
 const PORT_OF_ENTRY_PAGE = 'port-of-entry'
 // The visually hidden name the MoJ picker gives the button that opens the
 // calendar.
@@ -93,7 +94,7 @@ const openArrival = async (page) => {
 
 const portLabel = (code) => {
   const port = portsOfEntry.find((entry) => entry.code === code)
-  return `${port.name} (${port.code})`
+  return `${port.name} - ${port.code}`
 }
 
 // Pick a port. With JavaScript the field is the enhanced type-ahead: typing
@@ -132,6 +133,16 @@ const errorLink = (page, message) =>
 const submit = (page) =>
   page.getByRole('button', { name: 'Save and continue' }).click()
 
+const TRANSIT_COUNTRIES_ROW = 'Transit countries'
+
+const taskRow = (page, title) =>
+  page.getByRole('listitem').filter({
+    has: page.getByText(title, { exact: true })
+  })
+
+const expectOverview = (page) =>
+  expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+
 const fillValidArrival = async (page) => {
   await page
     .getByLabel(copy.portOfEntry.arrivalDate.label)
@@ -150,6 +161,10 @@ const openTransit = async (page) => {
   await openArrival(page)
   await page.locator(meansSelect).selectOption('ROAD_VEHICLE')
   await submit(page)
+  await expectOverview(page)
+  await page
+    .getByRole('link', { name: TRANSIT_COUNTRIES_ROW, exact: true })
+    .click()
   await expect(
     page.getByRole('heading', { name: copy.transitCountries.title })
   ).toBeVisible()
@@ -264,8 +279,32 @@ test.describe('arrival details rendering', () => {
     expect(options).toEqual(
       portsOfEntry.map((port) => ({
         code: port.code,
-        label: `${port.name} (${port.code})`
+        label: `${port.name} - ${port.code}`
       }))
+    )
+  })
+
+  // The size class is the whole of the behaviour here, so it is asserted
+  // directly rather than through a rendered role.
+  test('sets every question in the medium label size and shows the port placeholder', async ({
+    page
+  }) => {
+    await openArrival(page)
+
+    for (const id of [
+      'arrivalDateAtPort',
+      'portOfEntry',
+      'meansOfTransport',
+      'transportIdentification',
+      'transportDocumentReference'
+    ]) {
+      await expect(page.locator(`label[for="${id}"]`)).toHaveClass(
+        /govuk-label--m/
+      )
+    }
+    await expect(page.locator(portInput)).toHaveAttribute(
+      'placeholder',
+      copy.portOfEntry.port.placeholder
     )
   })
 
@@ -338,6 +377,15 @@ test.describe('port of entry without JavaScript', () => {
     page
   }) => {
     await openArrival(page)
+    await expect(page.locator('select#portOfEntry option').first()).toHaveText(
+      copy.portOfEntry.port.placeholder
+    )
+    await expect(
+      page.locator('select#portOfEntry option[value="GB DVR"]')
+    ).toHaveText(DOVER_OPTION)
+    await expect(
+      page.getByLabel(copy.portOfEntry.port.label, { exact: true })
+    ).toHaveAttribute('name', 'portOfEntry')
     await page
       .getByLabel(copy.portOfEntry.arrivalDate.label)
       .fill(ARRIVAL_DATE_IN_WINDOW)
@@ -353,9 +401,7 @@ test.describe('port of entry without JavaScript', () => {
       .fill(values.transportDocumentReference)
     await submit(page)
 
-    await expect(
-      page.getByRole('heading', { name: copy.transitCountries.title })
-    ).toBeVisible()
+    await expectOverview(page)
     await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
     await expect(page.locator('select#portOfEntry')).toHaveValue(
       values.portOfEntry
@@ -489,9 +535,7 @@ test.describe('arrival details validation', () => {
       .fill(dateWindow.exampleText)
     await submit(page)
 
-    await expect(
-      page.getByRole('heading', { name: copy.transitCountries.title })
-    ).toBeVisible()
+    await expectOverview(page)
     await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
 
     await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
@@ -547,9 +591,7 @@ test.describe('arrival details validation', () => {
 
       await fillValidArrival(page)
       await submit(page)
-      await expect(
-        page.getByRole('heading', { name: copy.transitCountries.title })
-      ).toBeVisible()
+      await expectOverview(page)
 
       await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
       await expect(
@@ -591,12 +633,44 @@ test.describe('arrival details validation', () => {
     })
     await submit(page)
 
-    const link = errorLink(page, validatorDefaults.oneOf)
+    const link = errorLink(
+      page,
+      copy.portOfEntry.errors.meansOfTransportRequired
+    )
     await expect(link).toBeVisible()
     await link.click()
     await expect(page.locator(meansSelect)).toBeFocused()
     await expect(page.locator(meansSelect)).toHaveValue('')
     await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
+  })
+})
+
+test.describe('arrival means of transport is required to continue', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('means validation: an empty save links to and focuses the means of transport', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await submit(page)
+
+    const link = errorLink(
+      page,
+      copy.portOfEntry.errors.meansOfTransportRequired
+    )
+    await expect(link).toBeVisible()
+    await expect(page.locator('#meansOfTransport-error')).toContainText(
+      copy.portOfEntry.errors.meansOfTransportRequired
+    )
+    await expect(page.locator(meansSelect)).toHaveClass(/govuk-select--error/)
+    await expect(page).toHaveTitle(/^Error: /)
+    await link.click()
+    await expect(page.locator(meansSelect)).toBeFocused()
+    await expect(
+      page.getByRole('heading', { name: copy.portOfEntry.title })
+    ).toBeVisible()
   })
 })
 
@@ -661,18 +735,17 @@ test.describe('arrival save and routing', () => {
     await signIn(page)
   })
 
-  test('saves and persists all arrival fields and routes overland transport to transit countries', async ({
+  test('saves and persists all arrival fields and returns to the overview, which offers transit countries for overland transport', async ({
     page
   }) => {
     await openArrival(page)
     await fillValidArrival(page)
     await submit(page)
 
+    await expectOverview(page)
     await expect(
-      page.getByRole('heading', { name: copy.transitCountries.title })
+      page.getByRole('link', { name: TRANSIT_COUNTRIES_ROW, exact: true })
     ).toBeVisible()
-    await page.locator('.govuk-back-link').click()
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
     await expect(
       page.getByRole('heading', { name: copy.portOfEntry.title })
@@ -688,6 +761,36 @@ test.describe('arrival save and routing', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.documentReference.label)
     ).toHaveValue(values.transportDocumentReference)
+  })
+
+  test('continues to the overview with only a means of transport chosen', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await page.locator(meansSelect).selectOption('AIRPLANE')
+    await submit(page)
+
+    await expectOverview(page)
+    await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
+  })
+
+  test('save and return to overview with no means of transport keeps the other answers and leaves arrival details not complete', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await choosePort(page)
+    await page
+      .getByRole('button', { name: 'Save and return to overview' })
+      .click()
+
+    await expectOverview(page)
+    await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
+    await expect(taskRow(page, copy.portOfEntry.title)).not.toContainText(
+      hubCopy.statuses.complete
+    )
+    await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
+    await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
+    await expect(page.locator(meansSelect)).toHaveValue('')
   })
 })
 
@@ -764,15 +867,13 @@ test.describe('transit countries rendering and validation', () => {
 
   // The question is asked overland but never compulsory, so an empty list is
   // an answer: continuing without adding a country saves it and moves on.
-  test('transit countries are optional: continuing with none saves and goes on', async ({
+  test('transit countries are optional: continuing with none saves and returns to the overview', async ({
     page
   }) => {
     await openTransit(page)
     await submit(page)
 
-    await expect(
-      page.getByRole('heading', { name: copy.transporters.title, exact: true })
-    ).toBeVisible()
+    await expectOverview(page)
     await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
 
     await page.goto(journeyUrl(page, 'transit-countries'))
@@ -962,9 +1063,7 @@ test.describe('transit countries list, limits and persistence', () => {
     await addTransitCountry(page, 'France')
     await addTransitCountry(page, 'Belgium')
     await submit(page)
-    await expect(
-      page.getByRole('heading', { name: copy.transporters.title, exact: true })
-    ).toBeVisible()
+    await expectOverview(page)
 
     await page.goto(journeyUrl(page, 'transit-countries'))
     await expect(
@@ -992,9 +1091,7 @@ test.describe('transit countries without JavaScript', () => {
       page.getByRole('cell', { name: 'France', exact: true })
     ).toBeVisible()
     await submit(page)
-    await expect(
-      page.getByRole('heading', { name: copy.transporters.title, exact: true })
-    ).toBeVisible()
+    await expectOverview(page)
   })
 })
 
