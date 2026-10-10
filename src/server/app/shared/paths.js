@@ -7,6 +7,7 @@ export const setBase = () => currentSetBase()
 export const pageRoutePath = (slug) => `/notifications/{journeyId}/${slug}`
 export const hubRoutePath = () => '/notifications/{journeyId}'
 export const createRoutePath = () => '/notifications'
+export const startRoutePath = () => '/start'
 export const dashboardRoutePath = () => '/'
 
 // Links carry the prefix, resolved inside the active request's set context.
@@ -16,6 +17,7 @@ export const pagePath = (journeyId, slug) =>
   `${setBase()}/notifications/${journeyId}/${slug}`
 export const hubPath = (journeyId) => `${setBase()}/notifications/${journeyId}`
 export const createPath = () => `${setBase()}/notifications`
+export const startPath = () => `${setBase()}/start`
 export const dashboardPath = () => setBase()
 
 export const inDashboardSection = (path) =>

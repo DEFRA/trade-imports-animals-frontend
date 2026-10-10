@@ -91,10 +91,13 @@ arrives with the notification incomplete falls through to the hub; so does a run
 whose remaining steps are all gated out.
 
 The opening run begins when the notification is created — the dashboard's
-create POST in
+create POST and its start GET (`<set>/start`, reached from the Import
+Notification Service's type question) in
 [`features/dashboard/controller.js`](../journeys/linear/features/dashboard/controller.js)
-is the only caller of `beginOpeningRun`. The origin page is the journey entry
-and an ordinary page otherwise: it has no opening-run special case.
+are the only callers of `beginOpeningRun`. Both go through one
+`openNewNotification` helper. The start entry sits outside `/notifications/`,
+so the entry guard never sees it. The origin page is the journey entry and an
+ordinary page otherwise: it has no opening-run special case.
 
 The guard admits a request when the opening run has begun for that journey in
 this session, or the journey carries committed user answers. A journey with

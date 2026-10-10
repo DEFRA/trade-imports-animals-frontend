@@ -5,7 +5,8 @@ import {
   dashboardRoutePath,
   hubPath,
   pagePath,
-  pageRoutePath
+  pageRoutePath,
+  startRoutePath
 } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import { DELETED } from '../../../../../../engine/index.js'
@@ -117,11 +118,18 @@ const amendPost = async (request, h) => {
   return journey ? h.redirect(hubPath(journey.journeyId)) : backToDashboard(h)
 }
 
-const createPost = async (request, h) => {
+const openNewNotification = async (request, h) => {
   const journey = await startJourney(request, h)
   await beginOpeningRun(request, h, journey.journeyId)
   return h.redirect(pagePath(journey.journeyId, originPage.slug))
 }
+
+const createPost = openNewNotification
+
+// The Import Notification Service's type question hands over with a plain GET:
+// a cross-origin POST cannot carry this service's crumb.
+const startGet = async (request, h) =>
+  (await openNewNotification(request, h)).header('Cache-Control', 'no-store')
 
 export const routes = [
   {
@@ -141,5 +149,11 @@ export const routes = [
     path: createRoutePath(),
     options: routeOptions,
     handler: createPost
+  },
+  {
+    method: 'GET',
+    path: startRoutePath(),
+    options: routeOptions,
+    handler: startGet
   }
 ]
