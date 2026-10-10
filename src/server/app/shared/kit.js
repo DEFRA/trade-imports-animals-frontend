@@ -4,6 +4,7 @@ import { nextInTaskRow } from '../flow/navigation.js'
 import {
   journeyLayout,
   journeyNextRunTarget,
+  journeyRunBackTarget,
   journeySectionCaption
 } from '../flow/journey-flow.js'
 import { inOpeningRun } from '../flow/run-state.js'
@@ -139,6 +140,22 @@ export const runTarget = async (request, stepId, scope) =>
   (await inOpeningRun(request, request.params.journeyId))
     ? journeyNextRunTarget(stepId, scope, request.params.journeyId)
     : null
+
+/**
+ * Where a page's Back link goes: the page before it in the opening run while
+ * the run is under way, otherwise the overview it was opened from.
+ *
+ * @param {object} request - the hapi request.
+ * @param {{ id: string }} page - the page identity.
+ * @returns {Promise<string>} the Back link's href.
+ */
+export const runBackLink = async (request, page) => {
+  const { journeyId } = request.params
+  const runBack = (await inOpeningRun(request, journeyId))
+    ? journeyRunBackTarget(page.id, journeyId)
+    : null
+  return runBack ?? hubPath(journeyId)
+}
 
 export const nextTarget = async (request, page, scope) =>
   exitTarget(

@@ -85,6 +85,12 @@ task row is already ready. The review step carries the review page's derived
 gate, so the run ends on the review page, complete or not, once a commodity has
 been chosen; a run with no open later step still falls through to the hub.
 
+While the run is under way, two Back links name the page before them
+(`RUN_BACK_STEPS` and `runBackTarget` in `run.js`). The commodity page goes back
+to the origin page. Commodity details goes back to the commodity page, not to the
+main reason for import that comes between them. Outside the run both keep the
+overview, as every other page does.
+
 The hub is somewhere the user chooses to go — through the secondary "Save and
 return to overview" button on every page, or by opening the notification from
 the dashboard — not somewhere the run puts them between sections. Rendering the

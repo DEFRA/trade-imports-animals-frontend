@@ -65,6 +65,19 @@ export const RUN_STEPS = [
   { id: notificationViewPage.id, target: flowPageTarget(notificationViewPage) }
 ]
 
+/** The page each step's Back link names while the opening run is under way, as
+ * Design Release 2.1 orders them. Commodity details names the commodity page,
+ * not the reason for import between them. A step left out keeps the overview. */
+const RUN_BACK_STEPS = Object.freeze({
+  [commoditiesPage.id]: originPage,
+  [consignmentDetailsPage.id]: commoditiesPage
+})
+
+export const runBackTarget = (pageId, journeyId) =>
+  Object.hasOwn(RUN_BACK_STEPS, pageId)
+    ? pagePath(journeyId, RUN_BACK_STEPS[pageId].slug)
+    : null
+
 export const nextRunTarget = (stepId, scope, journeyId) => {
   const index = RUN_STEPS.findIndex((step) => step.id === stepId)
   if (index === -1) {

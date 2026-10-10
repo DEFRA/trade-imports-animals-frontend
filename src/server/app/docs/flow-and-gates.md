@@ -12,6 +12,7 @@ seam. `configureJourneyFlow()` receives:
 - `taskRows`
 - `rowStatus`
 - `nextRunTarget`
+- `runBackTarget`
 - `flowOnlyKeys`
 - `entryGuardTarget`
 - `layout`
@@ -24,6 +25,10 @@ this seam once during route registration.
 the section of the journey that page belongs to, which `kit.base()` puts in the
 view as `caption` and `shared/section-caption.njk` renders above the page heading.
 A journey that names no sections leaves it out and its pages render no caption.
+
+`runBackTarget` is optional too. It maps a run step's page id to the page its Back
+link names while the opening run is under way. `kit.runBackLink` falls back to the
+hub outside the run, or for a page the journey leaves out.
 
 ## Dispatch
 

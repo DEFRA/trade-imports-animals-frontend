@@ -1,4 +1,4 @@
-import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { pagePath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import { validate } from '../../../../../../../lib/validate/index.js'
@@ -35,7 +35,7 @@ const view = `${TEMPLATES}/features/commodities/consignment-details/consignment-
 const copy = copyFor({ en, cy }).consignmentDetails
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
 
-const render = (
+const render = async (
   request,
   h,
   journey,
@@ -46,7 +46,7 @@ const render = (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: hubPath(journey.journeyId),
+      backLink: await kit.runBackLink(request, page),
       journey,
       page
     }),

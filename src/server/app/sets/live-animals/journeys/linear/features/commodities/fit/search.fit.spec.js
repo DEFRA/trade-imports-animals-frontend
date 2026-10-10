@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import {
   answerCountryOfOrigin,
+  answerOriginEntry,
+  BASE,
   searchCommodities,
   selectSpecies,
   signIn,
@@ -8,6 +10,7 @@ import {
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 
 const BISON_BISON = 'Bison bison'
 const BOS_TAURUS = 'Bos taurus'
@@ -271,5 +274,44 @@ test.describe('commodity search', () => {
       page,
       'Commodity search with error'
     )
+  })
+})
+
+test.describe('commodity search in the opening run', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await page.goto(BASE)
+    await page.getByRole('button', { name: 'Start a new notification' }).click()
+    await answerOriginEntry(page)
+    await expect(
+      page.getByRole('heading', { name: copy.search.title })
+    ).toBeVisible()
+  })
+
+  test('back link returns to the origin of the import in the opening run', async ({
+    page
+  }) => {
+    await page.locator(BACK_LINK).click()
+    await expect(
+      page.getByRole('heading', { name: 'Origin of the import' })
+    ).toBeVisible()
+  })
+
+  test('ends with Save and continue, Save and return to overview and Cancel and return to overview in the opening run', async ({
+    page
+  }) => {
+    await expect(
+      page.getByRole('button', { name: SAVE_AND_CONTINUE })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', {
+        name: sharedCopy.saveActions.saveAndReturnToHub
+      })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', {
+        name: sharedCopy.saveActions.cancelAndReturnToHub
+      })
+    ).toBeVisible()
   })
 })

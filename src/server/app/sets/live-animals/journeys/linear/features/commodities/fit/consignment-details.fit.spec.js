@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test'
 import {
   answerCountryOfOrigin,
+  answerImportReason,
+  answerOriginEntry,
+  BASE,
   expectSpeciesSelected,
   journeyUrl,
   selectSpecies,
@@ -373,5 +376,51 @@ test.describe('commodity consignment details — persistence and accessibility',
       page,
       'Commodity details with errors'
     )
+  })
+})
+
+test.describe('commodity details in the opening run', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await page.goto(BASE)
+    await page.getByRole('button', { name: 'Start a new notification' }).click()
+    await answerOriginEntry(page)
+    await selectSpecies(page, [BOS_TAURUS])
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Main reason for import' })
+    ).toBeVisible()
+    await answerImportReason(page)
+    await expect(
+      page.getByRole('heading', { name: copy.consignmentDetails.title })
+    ).toBeVisible()
+  })
+
+  test('back link returns to What are you importing? in the opening run, with the choice kept', async ({
+    page
+  }) => {
+    await page.locator('.govuk-back-link').click()
+    await expect(
+      page.getByRole('heading', { name: copy.search.title })
+    ).toBeVisible()
+    await expectSpeciesSelected(page, BOS_TAURUS)
+  })
+
+  test('ends with Save and continue, Save and return to overview and Cancel and return to overview in the opening run', async ({
+    page
+  }) => {
+    await expect(
+      page.getByRole('button', { name: SAVE_AND_CONTINUE })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', {
+        name: sharedCopy.saveActions.saveAndReturnToHub
+      })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', {
+        name: sharedCopy.saveActions.cancelAndReturnToHub
+      })
+    ).toBeVisible()
   })
 })

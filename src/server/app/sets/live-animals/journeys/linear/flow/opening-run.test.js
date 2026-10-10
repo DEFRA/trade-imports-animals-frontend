@@ -44,6 +44,8 @@ import * as hub from '../features/hub/controller.js'
 import * as dashboard from '../features/dashboard/controller.js'
 
 const ORIGIN_SLUG = 'origin'
+const ADDITIONAL_DETAILS_SLUG = 'additional-details'
+const CAT_KEY = 'Cat|923501'
 const CONSIGNMENT_DETAILS_SLUG = 'consignment-details'
 const NOTIFICATION_VIEW_SLUG = 'notification-view'
 
@@ -194,7 +196,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
     const h = captureH()
     await postHandlerOf(commoditiesSearch)(
       buildRequest(inRun.journeyId, {
-        payload: { species: ['Cat|923501'] },
+        payload: { species: [CAT_KEY] },
         record: active(inRun.journeyId)
       }),
       h
@@ -202,7 +204,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
     expect(h.captured.redirect).toBe(pagePath(inRun.journeyId, 'import-reason'))
 
     const outside = await drive(postHandlerOf(commoditiesSearch), {
-      payload: { species: ['Cat|923501'] },
+      payload: { species: [CAT_KEY] },
       seed: { countryOfOrigin: 'FR' }
     })
     expect(outside.h.captured.redirect).toBe(hubPath(outside.journeyId))
@@ -244,7 +246,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
       h
     )
     expect(h.captured.redirect).toBe(
-      pagePath(journey.journeyId, 'additional-details')
+      pagePath(journey.journeyId, ADDITIONAL_DETAILS_SLUG)
     )
   })
 
@@ -263,7 +265,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
       h
     )
     expect(h.captured.redirect).toBe(
-      pagePath(journey.journeyId, 'additional-details')
+      pagePath(journey.journeyId, ADDITIONAL_DETAILS_SLUG)
     )
     expect(h.captured.view).toBeUndefined()
   })
@@ -531,6 +533,103 @@ const deepLinkGuardTests = () => {
   })
 }
 
+const commodityPagesChainAroundTheReason = () => {
+  const complete = (journeyId) => ({ [journeyId]: RUN_COMPLETE })
+  const getHandlerOf = (controller) =>
+    controller.routes.find((route) => route.method === 'GET').handler
+
+  it("Should point the commodity page's Back link at the origin page mid-run, and at the overview outside the run", async () => {
+    const inRun = await store.create()
+    await store.seedAnswers(inRun.journeyId, { countryOfOrigin: 'FR' })
+    const runH = captureH()
+    await getHandlerOf(commoditiesSearch)(
+      buildRequest(inRun.journeyId, { record: active(inRun.journeyId) }),
+      runH
+    )
+    expect(runH.captured.view.context.backLink).toBe(
+      pagePath(inRun.journeyId, ORIGIN_SLUG)
+    )
+
+    const outside = await store.create()
+    await store.seedAnswers(outside.journeyId, { countryOfOrigin: 'FR' })
+    const outsideH = captureH()
+    await getHandlerOf(commoditiesSearch)(
+      buildRequest(outside.journeyId, { record: complete(outside.journeyId) }),
+      outsideH
+    )
+    expect(outsideH.captured.view.context.backLink).toBe(
+      hubPath(outside.journeyId)
+    )
+  })
+
+  it("Should point Commodity details' Back link at the commodity page mid-run, and at the overview outside the run", async () => {
+    const inRun = await store.create()
+    await store.seedAnswers(inRun.journeyId, lineSeed)
+    const runH = captureH()
+    await getHandlerOf(consignmentDetails)(
+      buildRequest(inRun.journeyId, { record: active(inRun.journeyId) }),
+      runH
+    )
+    expect(runH.captured.view.context.backLink).toBe(
+      pagePath(inRun.journeyId, 'commodities')
+    )
+
+    const outside = await store.create()
+    await store.seedAnswers(outside.journeyId, lineSeed)
+    const outsideH = captureH()
+    await getHandlerOf(consignmentDetails)(
+      buildRequest(outside.journeyId, { record: complete(outside.journeyId) }),
+      outsideH
+    )
+    expect(outsideH.captured.view.context.backLink).toBe(
+      hubPath(outside.journeyId)
+    )
+  })
+
+  it('Should carry a consignment with nothing to identify from Commodity details on to the additional details mid-run', async () => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, fishLineSeed)
+    const record = active(journey.journeyId)
+    const saveH = captureH()
+    await postHandlerOf(consignmentDetails)(
+      buildRequest(journey.journeyId, {
+        payload: { 'numberOfAnimalsQuantity-0': '3' },
+        record
+      }),
+      saveH
+    )
+    expect(saveH.captured.redirect).toBe(
+      pagePath(journey.journeyId, 'commodities/identification')
+    )
+
+    const identificationH = captureH()
+    await getHandlerOf(animalIdentification)(
+      buildRequest(journey.journeyId, { record }),
+      identificationH
+    )
+    expect(identificationH.captured.redirect).toBe(
+      pagePath(journey.journeyId, ADDITIONAL_DETAILS_SLUG)
+    )
+  })
+
+  it('Should hand What are you importing? back to Commodity details with the change context, so an added species is counted before the review', async () => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, lineSeed)
+    const h = captureH()
+    await postHandlerOf(commoditiesSearch)(
+      buildRequest(journey.journeyId, {
+        payload: { species: [CAT_KEY, 'Dog|923502'] },
+        query: { change: '1' },
+        record: complete(journey.journeyId)
+      }),
+      h
+    )
+    expect(h.captured.redirect).toBe(
+      `${pagePath(journey.journeyId, CONSIGNMENT_DETAILS_SLUG)}?change=1`
+    )
+  })
+}
+
 describe('the opening run', () => {
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)
@@ -702,6 +801,11 @@ describe('the opening run', () => {
       expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
     })
   })
+
+  describe(
+    'the commodity pages chain around the main reason for import',
+    commodityPagesChainAroundTheReason
+  )
 
   describe('reaching the review ends the run', () => {
     it('Should flip the record to complete when the review page is shown', async () => {

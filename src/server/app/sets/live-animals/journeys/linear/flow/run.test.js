@@ -28,7 +28,7 @@ import { declarationPage } from '../features/declaration/page.js'
 import { dashboardPage } from '../features/dashboard/page.js'
 import { makeScope } from '../../../../../engine/index.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
-import { nextRunTarget, RUN_STEPS } from './run.js'
+import { nextRunTarget, RUN_STEPS, runBackTarget } from './run.js'
 import { allFlowPages } from './flow.js'
 
 const JOURNEY_ID = 'journey-1'
@@ -224,5 +224,24 @@ describe('the run covers the journey', () => {
       unregistered,
       'a new journey page must be added to RUN_STEPS or listed as outside the run'
     ).toEqual([])
+  })
+})
+
+describe('#runBackTarget — the Back link while the opening run is under way', () => {
+  it("Should name the origin page as the commodity page's Back link", () => {
+    expect(runBackTarget(commoditiesPage.id, JOURNEY_ID)).toBe(
+      pagePath(JOURNEY_ID, 'origin')
+    )
+  })
+
+  it("Should name the commodity page, not the main reason for import, as Commodity details' Back link", () => {
+    expect(runBackTarget(consignmentDetailsPage.id, JOURNEY_ID)).toBe(
+      pagePath(JOURNEY_ID, 'commodities')
+    )
+  })
+
+  it('Should name nothing for a step the journey leaves to the overview', () => {
+    expect(runBackTarget(importReasonPage.id, JOURNEY_ID)).toBeNull()
+    expect(runBackTarget('origin', JOURNEY_ID)).toBeNull()
   })
 })

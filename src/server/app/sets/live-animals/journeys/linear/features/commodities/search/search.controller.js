@@ -1,4 +1,3 @@
-import { hubPath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
@@ -23,7 +22,12 @@ const copy = copyFor({ en, cy }).search
 const SEARCH_ACTION = 'search'
 const CLEAR_ACTION = 'clear'
 
-const render = (h, journey, { selected, query = '', errorText = null }) => {
+const render = async (
+  request,
+  h,
+  journey,
+  { selected, query = '', errorText = null }
+) => {
   const groups = commodityGroups(selected, query)
   const onScreen = new Set(
     groups.flatMap((group) => group.items.map((item) => item.value))
@@ -31,7 +35,7 @@ const render = (h, journey, { selected, query = '', errorText = null }) => {
   const errors = errorText ? { commoditySearch: errorText } : {}
   return h.view(view, {
     ...kit.base(copy.title, {
-      backLink: hubPath(journey.journeyId),
+      backLink: await kit.runBackLink(request, page),
       journey,
       page
     }),
@@ -48,12 +52,12 @@ const render = (h, journey, { selected, query = '', errorText = null }) => {
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, { selected: storedKeys(answers) })
+  return render(request, h, journey, { selected: storedKeys(answers) })
 }
 
 const rerender = async (request, h, { selected, query, errorText }) => {
   const { journey } = await state.get(request, h)
-  return render(h, journey, { selected, query, errorText })
+  return render(request, h, journey, { selected, query, errorText })
 }
 
 const post = async (request, h) => {
