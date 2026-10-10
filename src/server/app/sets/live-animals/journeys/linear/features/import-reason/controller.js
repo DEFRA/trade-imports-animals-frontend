@@ -35,17 +35,13 @@ const view = `${TEMPLATES}/features/import-reason/template`
 
 const copy = copyFor({ en, cy })
 
-const DIVIDER_OPTION = { value: '', text: '──────────', disabled: true }
-
 const countryItems = async () => [
   { value: '', text: copy.country.placeholder },
-  DIVIDER_OPTION,
   ...(await countries.destinationCountryOptions())
 ]
 
 const portItems = async () => [
   { value: '', text: copy.port.placeholder },
-  DIVIDER_OPTION,
   ...(await ports.portOptions())
 ]
 

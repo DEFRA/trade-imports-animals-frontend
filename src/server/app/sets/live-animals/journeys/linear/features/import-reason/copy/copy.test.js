@@ -17,6 +17,8 @@ import * as importReason from '../controller.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
 
+const SELECT_ONE = 'Select one'
+
 const leaves = (node, path = []) =>
   typeof node === 'object' && node !== null
     ? Object.entries(node).flatMap(([key, value]) =>
@@ -32,6 +34,15 @@ describe('import-reason copy module', () => {
         0
       )
     })
+  })
+
+  it('Should head the page Main import reason and open both selects on Select one', () => {
+    expect(copy.title).toBe('Main import reason')
+    expect(copyCy.title).toBe('Prif reswm mewnforio')
+    expect(copy.country.placeholder).toBe(SELECT_ONE)
+    expect(copy.port.placeholder).toBe(SELECT_ONE)
+    expect(copyCy.country.placeholder).toBe('Dewiswch un')
+    expect(copyCy.port.placeholder).toBe('Dewiswch un')
   })
 
   it('Should carry a hint for every service reason option', () => {
@@ -135,16 +146,36 @@ describe('GET import-reason — copy reaches the view', () => {
     expect(result.view.context.countryItems[0].text).toBe(
       copy.country.placeholder
     )
-    expect(result.view.context.countryItems.slice(2)).toEqual(
+    expect(result.view.context.countryItems.slice(1)).toEqual(
       await countries.destinationCountryOptions()
     )
     expect(result.view.context.portItems[0].text).toBe(copy.port.placeholder)
-    expect(result.view.context.portItems.slice(2)).toEqual(
+    expect(result.view.context.portItems.slice(1)).toEqual(
       (await ports.list()).map((port) => ({
         value: port.code,
         text: `${port.name} - ${port.code}`
       }))
     )
     expect(result.view.context.exitDateField.label.text).toBe(copy.date.label)
+  })
+
+  it("Should follow each select's Select one straight with the places, with no divider", async () => {
+    const get = importReason.routes.find(
+      (route) => route.method === 'GET'
+    ).handler
+    const result = await driveHandler(get)
+    const { countryItems, portItems } = result.view.context
+
+    expect(countryItems[0]).toEqual({ value: '', text: SELECT_ONE })
+    expect(countryItems[1]).toEqual(
+      (await countries.destinationCountryOptions())[0]
+    )
+    expect(portItems[0]).toEqual({ value: '', text: SELECT_ONE })
+    expect(portItems[1].value).toBe((await ports.list())[0].code)
+    for (const items of [countryItems, portItems]) {
+      expect(items.some((item) => item.disabled)).toBe(false)
+      expect(items.filter((item) => item.value === '')).toHaveLength(1)
+      expect(items[0].value).toBe('')
+    }
   })
 })

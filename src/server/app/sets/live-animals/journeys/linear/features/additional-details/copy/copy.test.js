@@ -42,9 +42,11 @@ describe('additional-details copy module', () => {
   // documents and check-answers features already show unexpanded.
   it('Should name the ITAHC as the source of the certification purpose', () => {
     expect(copy.certified.hint).toBe(
-      'This information can be found on the ITAHC.'
+      'You can find this information on the ITAHC.'
     )
-    expect(copyCy.certified.hint).toContain('ITAHC')
+    expect(copyCy.certified.hint).toBe(
+      "Gallwch ddod o hyd i'r wybodaeth hon ar yr ITAHC."
+    )
   })
 })
 

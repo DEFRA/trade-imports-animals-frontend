@@ -409,7 +409,7 @@ test.describe('commodity details in the opening run', () => {
     await selectSpecies(page, [BOS_TAURUS])
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await expect(
-      page.getByRole('heading', { name: 'Main reason for import' })
+      page.getByRole('heading', { name: 'Main import reason' })
     ).toBeVisible()
     await answerImportReason(page)
     await expect(

@@ -12,9 +12,14 @@ import {
   portsOfEntry
 } from '../../../../../../services/_capture/fixtures.js'
 import * as importReasonPurpose from '../../../../../../services/import-reason-purpose/index.js'
-import { validatorDefaults } from '../../../../../../shared/copy.en.js'
+import {
+  copy as sharedCopy,
+  validatorDefaults
+} from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
+
+const { serviceName, govukSuffix } = sharedCopy.layout
 
 const HUB_PATH_PATTERN = '/notifications/[^/]+'
 const REASON_INPUT_SELECTOR = 'input[name="reasonForImport"]'
@@ -91,6 +96,21 @@ const renderedPortsIn = (select) =>
     }))
   )
 
+const renderedCountriesIn = (page, selector) =>
+  page.locator(`${selector} option`).evaluateAll((options) =>
+    options.slice(1).map((option) => ({
+      code: option.value,
+      name: option.textContent
+    }))
+  )
+
+const expectCountryOpensOnPlaceholder = async (page, selector) => {
+  const firstOption = page.locator(`${selector} option`).first()
+  await expect(firstOption).toHaveText(copy.country.placeholder)
+  await expect(firstOption).toHaveAttribute('value', '')
+  await expect(page.locator(selector)).toHaveValue('')
+}
+
 const exitPortEntries = () =>
   portsOfEntry.map((port) => ({
     code: port.code,
@@ -99,7 +119,6 @@ const exitPortEntries = () =>
 
 const expectedExitPortOptions = () => [
   { code: '', label: copy.port.placeholder },
-  { code: '', label: '──────────' },
   ...exitPortEntries()
 ]
 
@@ -115,6 +134,9 @@ test.describe('import-reason feature', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: copy.title, exact: true })
     ).toBeVisible()
+    await expect(page).toHaveTitle(
+      `${copy.title} - ${serviceName} - ${govukSuffix}`
+    )
     await expect(page.getByRole('heading', { name: copy.legend })).toHaveCount(
       0
     )
@@ -262,19 +284,15 @@ test.describe('import-reason reveals', () => {
     expect(await renderedPortsIn(page.locator(TRANSIT_PORT))).toEqual(
       expectedExitPortOptions()
     )
+    await expect(page.locator(TRANSIT_PORT)).toHaveValue('')
     await expect(page.locator(TRANSIT_COUNTRY)).toHaveAccessibleName(
       copy.country.label
     )
     await expect(page.locator(TRANSIT_COUNTRY)).toHaveAccessibleDescription('')
-    const renderedCountries = await page
-      .locator(`${TRANSIT_COUNTRY} option`)
-      .evaluateAll((options) =>
-        options.slice(2).map((option) => ({
-          code: option.value,
-          name: option.textContent
-        }))
-      )
-    expect(renderedCountries).toEqual(destinationPageCountryEntries())
+    await expectCountryOpensOnPlaceholder(page, TRANSIT_COUNTRY)
+    expect(await renderedCountriesIn(page, TRANSIT_COUNTRY)).toEqual(
+      destinationPageCountryEntries()
+    )
   })
 
   test('asks temporary admission for the exit date and then the port of exit', async ({
@@ -296,6 +314,7 @@ test.describe('import-reason reveals', () => {
     expect(
       await renderedPortsIn(page.locator(TEMPORARY_ADMISSION_PORT))
     ).toEqual(expectedExitPortOptions())
+    await expect(page.locator(TEMPORARY_ADMISSION_PORT)).toHaveValue('')
     expect(await fieldIdsIn(reveal)).toEqual([
       'temporaryAdmissionExitDate',
       'temporaryAdmissionPortOfExit'
@@ -316,15 +335,10 @@ test.describe('import-reason reveals', () => {
     await expect(
       page.locator(TRANSHIPMENT_COUNTRY)
     ).toHaveAccessibleDescription('')
-    const renderedCountries = await page
-      .locator(`${TRANSHIPMENT_COUNTRY} option`)
-      .evaluateAll((options) =>
-        options.slice(2).map((option) => ({
-          code: option.value,
-          name: option.textContent
-        }))
-      )
-    expect(renderedCountries).toEqual(destinationPageCountryEntries())
+    await expectCountryOpensOnPlaceholder(page, TRANSHIPMENT_COUNTRY)
+    expect(await renderedCountriesIn(page, TRANSHIPMENT_COUNTRY)).toEqual(
+      destinationPageCountryEntries()
+    )
   })
 
   test('saves a territory as the destination country and offers it back', async ({
