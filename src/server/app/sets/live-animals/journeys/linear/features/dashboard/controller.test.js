@@ -17,7 +17,10 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { assembleFulfilments } from '../../../../../../bridge/assemble-fulfilments.js'
 import { projectAnswers } from '../../../../../../bridge/fulfilments/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
-import { createRoutePath } from '../../../../../../shared/paths.js'
+import {
+  createRoutePath,
+  startRoutePath
+} from '../../../../../../shared/paths.js'
 import { SET_BASE } from '../../../../set.js'
 import { CYA_SLUG, SURFACES } from '../../../../../../shared/kit.js'
 import { RUN_ACTIVE } from '../../../../../../flow/run-state.js'
@@ -45,6 +48,9 @@ const amendPost = handlerOf('POST', '/amend')
 const startPost = routes.find(
   (route) => route.method === 'POST' && route.path === createRoutePath()
 ).handler
+const startGet = routes.find(
+  (route) => route.method === 'GET' && route.path === startRoutePath()
+).handler
 
 const buildRequest = ({
   knownJourneyIds = [],
@@ -68,7 +74,7 @@ const buildRequest = ({
 })
 
 const buildH = () => {
-  const captured = { cookies: {} }
+  const captured = { cookies: {}, headers: {} }
   return {
     view: (template, context) => {
       captured.view = { template, context }
@@ -76,7 +82,14 @@ const buildH = () => {
     },
     redirect: (to) => {
       captured.redirect = to
-      return { redirect: to }
+      const response = {
+        redirect: to,
+        header: (name, value) => {
+          captured.headers[name] = value
+          return response
+        }
+      }
+      return response
     },
     state: (name, value) => {
       captured.cookies[name] = value
@@ -556,5 +569,54 @@ describe('dashboard start opens the opening run', () => {
 
     expect(h.captured.redirect).toBe(hubUrl(submitted.journeyId))
     expect(openingRunCookie() in h.captured.cookies).toBe(false)
+  })
+})
+
+describe('dashboard start from another service', () => {
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+  })
+  beforeEach(() => records.clear())
+
+  it('Should create a new notification, begin its opening run and land on the origin page', async () => {
+    const h = buildH()
+
+    await startGet(buildRequest(), h)
+
+    const newJourneyId = h.captured.cookies[knownJourneysCookie()].at(-1)
+    expect(h.captured.redirect).toBe(pageUrl(newJourneyId, ORIGIN_SLUG))
+    expect(h.captured.cookies[openingRunCookie()]).toEqual({
+      [newJourneyId]: RUN_ACTIVE
+    })
+  })
+
+  it('Should keep an earlier notification listed alongside the new one', async () => {
+    const oldDraft = await startDraft()
+    const h = buildH()
+
+    await startGet(buildRequest({ knownJourneyIds: [oldDraft.journeyId] }), h)
+
+    const knownJourneyIds = h.captured.cookies[knownJourneysCookie()]
+    expect(knownJourneyIds).toHaveLength(2)
+    expect(knownJourneyIds[0]).toBe(oldDraft.journeyId)
+  })
+
+  it('Should forbid caching the start response', async () => {
+    const h = buildH()
+
+    await startGet(buildRequest(), h)
+
+    expect(h.captured.headers['Cache-Control']).toBe('no-store')
+  })
+
+  it('Should register the start entry as a session-authenticated GET outside the notifications paths', () => {
+    const route = routes.find(
+      (candidate) =>
+        candidate.method === 'GET' && candidate.path === startRoutePath()
+    )
+
+    expect(route.path).toBe('/start')
+    expect(route.options.auth).toBe('session')
   })
 })
