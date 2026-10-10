@@ -11,6 +11,10 @@ section is a navigation sequence. The `review` section has the one authored sect
 gate: it requires `scope.readyForCheckYourAnswers`. Normal page gates are derived
 from `meta.collects`, scope and earlier continue prerequisites.
 
+The `addresses` section holds the CPH number page and then Roles and addresses, so
+the CPH page saves back to Roles and addresses and Roles and addresses ends the
+section.
+
 `FLOW_ONLY_KEYS` contains `declaration`. That value uses the session's flow-only
 store rather than canonical obligation fulfilment.
 
@@ -69,26 +73,30 @@ redirects to the commodity question when the notification holds no line.
 journey's redirect policy before handlers run.
 
 The run is the whole notification, not its first leg. `RUN_STEPS` runs origin,
-what you are importing, the consignment details, the reason for import, animal
+what you are importing, the reason for import, the commodity details, animal
 identification, the additional details, the arrival details, the transit
-countries, the transporter, the uploaded documents, the roles and addresses, the
-CPH number, the contact address and then the review page, so the primary button —
-"Save and continue" on every one of them but the review page, which ends with
-"Continue" — carries a new notification from the entry page to the review page
-in one pass. The hub is somewhere the user chooses
-to go — through the secondary "Save and return to overview" button on every
-page, or by opening the notification from the dashboard — not somewhere the run
-puts them between sections. Taking that button, or otherwise landing on the
-hub — including the run's own fall-through when the review gate or every
-remaining step is closed — renders the hub, and rendering it completes the run
+countries, the transporter, the uploaded documents, roles and addresses, the
+contact address and then the review page, so the primary button — "Save and
+continue" on every one of them but the review page, which ends with "Continue" —
+carries a new notification from the entry page to the review page in one pass.
+The CPH number page is not a step: it opens from its row on Roles and addresses
+and saves back to it. Roles and addresses ends the run on the hub when every
+task row is already ready. The review step carries the review page's derived
+gate, so the run ends on the review page, complete or not, once a commodity has
+been chosen; a run with no open later step still falls through to the hub.
+
+The hub is somewhere the user chooses to go — through the secondary "Save and
+return to overview" button on every page, or by opening the notification from
+the dashboard — not somewhere the run puts them between sections. Rendering the
+hub, or the review page, completes the run
 ([`completeOpeningRun`](../../../flow/run-state.js), called from
-[`features/hub/controller.js`](../journeys/linear/features/hub/controller.js)).
-After that, saving a page follows `nextInSection` and returns to the hub at the
-end of each section: the run is not re-entered for that notification. The review
-step
-carries the same authored gate the review flow section does, so a run that
-arrives with the notification incomplete falls through to the hub; so does a run
-whose remaining steps are all gated out.
+[`features/hub/controller.js`](../journeys/linear/features/hub/controller.js) and
+[`features/check-answers/controller.js`](../journeys/linear/features/check-answers/controller.js)).
+After that, saving a page returns to the hub: the save fallback
+(`nextInTaskRow`) moves on only to a later page of the same task row, which in
+this journey is the CPH number page handing back to Roles and addresses. Nothing
+marks a page as opened from the hub, and the run is not re-entered for that
+notification.
 
 The opening run begins when the notification is created — the dashboard's
 create POST in
@@ -104,7 +112,7 @@ exempt from the guard, so there is no redirect loop.
 
 A journey the guard bounces to the origin page does not resume the opening run
 when it saves that page. `kit.nextTarget` finds `inOpeningRun` false, so
-`runTarget` is null, and the origin section holds only the origin page — the
+`runTarget` is null, and the origin task row holds only the origin page — the
 user continues to the hub rather than into `RUN_STEPS`. That is the accepted
 rule for a returning user without run state: they land on the task list and work
 from there. Only a notification created in this session sequences through

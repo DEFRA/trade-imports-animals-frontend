@@ -63,6 +63,6 @@
        not announced. #}
     <div id="transit-countries-status" class="govuk-visually-hidden" role="status" aria-live="polite" aria-atomic="true" data-module="app-status-announcer" data-message="{{ status }}"></div>
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amendFormActions if amending else none) }}
   </form>
 {% endblock %}

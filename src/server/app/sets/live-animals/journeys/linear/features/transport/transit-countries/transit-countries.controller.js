@@ -141,7 +141,9 @@ const postRemove = async (request, h, selected, code) => {
 }
 
 const postContinue = async (request, h, payload, selected) => {
-  const { answers, errors } = await validation.onSubmit(payload)
+  const { answers, errors } = await validation.onSubmit(payload, {
+    allowMissing: kit.isHubExit(request)
+  })
   if (hasErrors(errors)) {
     const { journey } = await state.get(request, h)
     return (await render(h, journey, selected, { errors })).code(

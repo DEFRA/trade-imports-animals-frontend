@@ -25,6 +25,8 @@ const startAtAdditionalDetails = async (page, species = 'Bos taurus') => {
   await page
     .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
     .click()
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await page.getByRole('link', { name: 'Commodity details' }).click()
   await page.getByLabel('Number of animals').fill('1')
   await page.getByLabel('Number of packages (when required)').fill('1')
   await page

@@ -35,6 +35,16 @@ import { copy as documentsEn } from '../documents/copy/copy.en.js'
 const getHandler = routes.find((route) => route.method === 'GET').handler
 const postHandler = routes.find((route) => route.method === 'POST').handler
 
+const dateMonthsAhead = (months) => {
+  const date = new Date()
+  date.setMonth(date.getMonth() + months)
+  return {
+    day: String(date.getDate()),
+    month: String(date.getMonth() + 1),
+    year: String(date.getFullYear())
+  }
+}
+
 const sectionsFor = async (seed) =>
   (await driveHandler(getHandler, { seed })).view.context.sections
 
@@ -216,7 +226,6 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
 
     expect(view.context.readOnly).toBe(true)
     expect(changeHrefsOf(view.context.sections)).toEqual([])
-    expect(view.context.cancelAmendHref).toBeNull()
     expect(view.context.copyAction).toEqual({
       href: expect.stringMatching(/\/copy$/)
     })
@@ -251,14 +260,16 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     expect(card.emptyText).toBe('You have not added any documents yet.')
   })
 
-  it('Should expose Cancel amendment only on an amending CYA', async () => {
+  it('Should expose Cancel amend in the strip only on an amending review', async () => {
     const draft = await viewForStatus(DRAFT)
     const submitted = await viewForStatus(SUBMITTED)
     const amend = await viewForStatus(AMEND)
 
-    expect(draft.context.cancelAmendHref).toBeNull()
-    expect(submitted.context.cancelAmendHref).toBeNull()
-    expect(amend.context.cancelAmendHref).toMatch(/\/cancel-amend$/)
+    expect(draft.context.journeyStrip.cancelAmend).toBeUndefined()
+    expect(submitted.context.journeyStrip.cancelAmend).toBeUndefined()
+    expect(amend.context.journeyStrip.cancelAmend.href).toMatch(
+      /\/cancel-amend$/
+    )
   })
 
   it('Should show the cancel success indication only on the restored submitted view', async () => {
@@ -1207,12 +1218,88 @@ describe(`${SUITE} — roles whose copy breaks the rules`, () => {
     expect(context.errorSummary).toBeNull()
   })
 
-  it('Should flag an amend, which is still being worked on', async () => {
+  it('Should hold an amend without naming a role in error', async () => {
     const { context } = await viewForStatus(AMEND, {
       ...fullSeed,
       consignor: BROKEN_COPY
     })
-    expect(context.errorSummary.errorList[0].text).toBe(CONSIGNOR_ERROR)
+    expect(context.errorSummary).toBeNull()
+    expect(cardsOf(context.sections).filter((card) => card.error)).toEqual([])
+  })
+
+  it('Should show no error summary or card error on an incomplete amend review', async () => {
+    const { arrivalDateAtPort, ...withoutArrivalDate } = fullSeed
+    expect(arrivalDateAtPort).toBeDefined()
+
+    const { context } = await viewForStatus(AMEND, withoutArrivalDate)
+
+    expect(context.errorSummary).toBeNull()
+    expect(cardsOf(context.sections).filter((card) => card.error)).toEqual([])
+  })
+
+  it('Should show no error summary or card error when the arrival date is more than 6 months ahead', async () => {
+    const { context } = await viewForStatus(AMEND, {
+      ...fullSeed,
+      arrivalDateAtPort: dateMonthsAhead(8)
+    })
+
+    expect(context.errorSummary).toBeNull()
+    expect(cardsOf(context.sections).filter((card) => card.error)).toEqual([])
+  })
+})
+
+describe(`${SUITE} — Continue on an amend review`, () => {
+  setupCheckAnswersEngine()
+
+  const amendJourney = async (seed) => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, seed)
+    await store.submit(journey.journeyId)
+    await records.amend(journey.journeyId)
+    return journey
+  }
+
+  it('Should keep an incomplete amend on the review without an error', async () => {
+    const { arrivalDateAtPort, ...withoutArrivalDate } = fullSeed
+    expect(arrivalDateAtPort).toBeDefined()
+    const journey = await amendJourney(withoutArrivalDate)
+
+    const response = await postHandler(
+      journeyRequest(journey.journeyId),
+      stubH()
+    )
+
+    expect(response.redirect).toBe(
+      pagePath(journey.journeyId, 'notification-view')
+    )
+    expect((await store.get(journey.journeyId)).status).toBe(AMEND)
+  })
+
+  it('Should keep an amend whose arrival date is more than 6 months ahead on the review without an error', async () => {
+    const journey = await amendJourney({
+      ...fullSeed,
+      arrivalDateAtPort: dateMonthsAhead(8)
+    })
+    const h = stubH()
+
+    const response = await postHandler(journeyRequest(journey.journeyId), h)
+
+    expect(response.redirect).toBe(
+      pagePath(journey.journeyId, 'notification-view')
+    )
+    expect(h.captured.view).toBeUndefined()
+    expect((await store.get(journey.journeyId)).status).toBe(AMEND)
+  })
+
+  it('Should still refuse an incomplete draft with the summary', async () => {
+    const { arrivalDateAtPort, ...withoutArrivalDate } = fullSeed
+    expect(arrivalDateAtPort).toBeDefined()
+    const { response, view } = await driveHandler(postHandler, {
+      seed: withoutArrivalDate
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(view.context.errorSummary.errorList.length).toBeGreaterThan(0)
   })
 })
 

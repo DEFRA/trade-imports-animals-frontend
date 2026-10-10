@@ -12,6 +12,7 @@ import {
   postHandlerOf
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import { hubPath } from '../../../../../../shared/paths.js'
 
 import * as importReason from './controller.js'
 import { copy } from './copy/copy.en.js'
@@ -464,5 +465,74 @@ describe('POST import-reason — a stale destination country submitted verbatim 
     expect(result.view.context.errors.transhipmentDestinationCountry).toBe(
       copy.errors.countryRequired
     )
+  })
+})
+
+describe('POST import-reason — Save and return to overview', () => {
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  it('Should save a transit reason with its port and country left blank and go to the overview', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'transit',
+        transitPortOfExit: '',
+        transitDestinationCountry: '',
+        exit: 'hub'
+      }
+    })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.reasonForImport).toBe('transit')
+  })
+
+  it('Should refuse a date that names no day and save nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'temporaryAdmissionHorses',
+        temporaryAdmissionExitDate: '31/2/2026',
+        temporaryAdmissionPortOfExit: 'GB DVR',
+        exit: 'hub'
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.temporaryAdmissionExitDate).toBe(
+      copy.errors.dateInvalid
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should refuse a port that is not on the list and save nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'transit',
+        transitPortOfExit: 'NOT-A-PORT',
+        transitDestinationCountry: '',
+        exit: 'hub'
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.transitPortOfExit).toBe(
+      copy.errors.portRequired
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should keep refusing the blank reveal on Save and continue', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'transit',
+        transitPortOfExit: '',
+        transitDestinationCountry: ''
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.transitPortOfExit).toBe(
+      copy.errors.portRequired
+    )
+    expect(result.after).toEqual(result.before)
   })
 })

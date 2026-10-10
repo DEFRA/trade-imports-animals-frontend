@@ -73,7 +73,7 @@ const post = async (request, h) => {
     return rerender(request, h, { selected, query })
   }
 
-  if (selected.length === 0) {
+  if (selected.length === 0 && !kit.isHubExit(request)) {
     const response = await rerender(request, h, {
       selected,
       query,
