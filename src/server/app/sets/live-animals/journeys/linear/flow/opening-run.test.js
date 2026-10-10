@@ -735,3 +735,28 @@ describe('the opening run', () => {
 
   describe('deep-link guard', deepLinkGuardTests)
 })
+
+describe('the opening run — arrival details by sea', () => {
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should send the arrival details on to the transporter list mid-run for a consignment by sea', async () => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, completeSeed)
+    const h = captureH()
+    await postHandlerOf(portOfEntry)(
+      buildRequest(journey.journeyId, {
+        payload: { meansOfTransport: 'VESSEL' },
+        record: active(journey.journeyId)
+      }),
+      h
+    )
+    expect(h.captured.redirect).toBe(
+      pagePath(journey.journeyId, 'transporters')
+    )
+  })
+})

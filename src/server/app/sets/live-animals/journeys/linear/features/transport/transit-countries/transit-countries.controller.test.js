@@ -286,6 +286,15 @@ describe('POST transit-countries — Save and return to overview', () => {
     expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
     expect(result.after.transitedCountries).toEqual([])
   })
+
+  it('Should save the listed countries and go to the overview on Save and return to overview', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: { transitedCountries: ['FR', 'BE'], exit: 'hub' }
+    })
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
+  })
 })
 
 // `ZZ` is absent from the captured countries fixture, so seeding it inside

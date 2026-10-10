@@ -49,6 +49,8 @@ export const copy = {
       arrivalDateInvalid: 'Enter a real arrival date',
       arrivalDateOutOfRange: (earliest, latest) =>
         `Arrival date at port of entry must be between ${earliest} and ${latest}`,
+      meansOfTransportRequired:
+        'Select a means of transport to the port of entry',
       portNoLongerAvailable:
         'The saved port of entry is no longer available. Select a port from the list.',
       arrivalDateNoLongerInWindow:

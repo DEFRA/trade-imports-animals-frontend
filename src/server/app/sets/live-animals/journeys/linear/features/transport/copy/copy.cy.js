@@ -43,6 +43,7 @@ export const copy = {
       arrivalDateInvalid: 'Rhowch ddyddiad cyrraedd go iawn',
       arrivalDateOutOfRange: (earliest, latest) =>
         `Rhaid i ddyddiad cyrraedd y porthladd mynediad fod rhwng ${earliest} a ${latest}`,
+      meansOfTransportRequired: 'Dewiswch gyfrwng cludo i’r porthladd mynediad',
       portNoLongerAvailable:
         "Nid yw'r porthladd mynediad a arbedwyd ar gael mwyach. Dewiswch borthladd o’r rhestr.",
       arrivalDateNoLongerInWindow:
