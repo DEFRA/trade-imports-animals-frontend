@@ -24,6 +24,9 @@ import * as consignmentDetails from './consignment-details.controller.js'
 const post = postHandlerOf(consignmentDetails)
 
 const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
+const PACKAGES_REQUIRED_MESSAGE = 'Enter the number of packages'
+const PACKAGES_WHOLE_NUMBER_MESSAGE =
+  'Number of packages must be a whole number, like 5'
 const PAGE_SLUG = 'consignment-details'
 const COMMODITIES_SLUG = 'commodities'
 
@@ -182,7 +185,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
     }
     const result = await driveHandler(post, {
       seed,
-      payload: { 'numberOfAnimalsQuantity-0': '2', 'numberOfPackages-0': '' }
+      payload: { 'numberOfAnimalsQuantity-0': '2', 'numberOfPackages-0': '1' }
     })
     expect(result.view.context.errors['numberOfAnimalsQuantity-0']).toBe(
       'You have 3 identifier records for Bos taurus but entered 2 animals. Remove identifier records or keep the higher count.'
@@ -216,7 +219,7 @@ describe('#consignmentDetailsController — per-species quantities over every li
           }
         ]
       },
-      payload: { 'numberOfAnimalsQuantity-0': '1', 'numberOfPackages-0': '' }
+      payload: { 'numberOfAnimalsQuantity-0': '1', 'numberOfPackages-0': '1' }
     })
     expect(result.view).toBeUndefined()
     expect(result.after.commodityLines[0].numberOfAnimalsQuantity).toBe(1)
@@ -490,13 +493,73 @@ describe('#consignmentDetailsController — the animal count must be answered be
     })
   })
 
+  it('Should list every number of animals error before any number of packages error', async () => {
+    const seed = {
+      commodityLines: [
+        { commoditySelection: 'Cow', speciesSelection: '1148346' },
+        { commoditySelection: 'Cow', speciesSelection: '716661' }
+      ]
+    }
+    const result = await driveHandler(post, {
+      seed,
+      payload: {
+        'numberOfAnimalsQuantity-0': '',
+        'numberOfAnimalsQuantity-1': '',
+        'numberOfPackages-0': 'abc',
+        'numberOfPackages-1': 'abc'
+      }
+    })
+    const { errorList } = result.view.context.errorSummary
+    expect(errorList.map(({ href }) => href)).toEqual([
+      '#numberOfAnimalsQuantity-0',
+      '#numberOfAnimalsQuantity-1',
+      '#numberOfPackages-0',
+      '#numberOfPackages-1'
+    ])
+    expect(errorList.map(({ text }) => text)).toEqual([
+      ANIMALS_REQUIRED_MESSAGE,
+      ANIMALS_REQUIRED_MESSAGE,
+      PACKAGES_WHOLE_NUMBER_MESSAGE,
+      PACKAGES_WHOLE_NUMBER_MESSAGE
+    ])
+    expect(result.after.commodityLines).toHaveLength(2)
+  })
+
+  it('Should hold the page on a blank count when Save and return to overview is pressed, saving nothing', async () => {
+    const seed = {
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          speciesSelection: '1148346',
+          numberOfPackages: '',
+          numberOfAnimalsQuantity: '3'
+        }
+      ]
+    }
+    const result = await driveHandler(post, {
+      seed,
+      payload: {
+        'numberOfAnimalsQuantity-0': '',
+        'numberOfPackages-0': '',
+        exit: 'hub'
+      }
+    })
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.view.context.errors['numberOfAnimalsQuantity-0']).toBe(
+      ANIMALS_REQUIRED_MESSAGE
+    )
+    expect(result.after.commodityLines[0].numberOfAnimalsQuantity).toBe(3)
+  })
+
   it('Should name every line left blank in the error summary, one entry per species', async () => {
     const result = await driveHandler(post, {
       seed: seedLines(),
       payload: {
         'numberOfAnimalsQuantity-0': '',
         'numberOfAnimalsQuantity-1': '4',
-        'numberOfAnimalsQuantity-2': ''
+        'numberOfAnimalsQuantity-2': '',
+        'numberOfPackages-0': '1',
+        'numberOfPackages-1': '1'
       }
     })
     const { errors, errorSummary } = result.view.context
@@ -507,6 +570,73 @@ describe('#consignmentDetailsController — the animal count must be answered be
       '#numberOfAnimalsQuantity-0',
       '#numberOfAnimalsQuantity-2'
     ])
+    expect(result.after).toEqual(result.before)
+  })
+})
+
+describe('#consignmentDetailsController — the number of packages must be answered on a line that asks for one', () => {
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  const cowLine = () => ({
+    commodityLines: [
+      {
+        commoditySelection: 'Cow',
+        speciesSelection: '1148346',
+        numberOfPackages: '',
+        numberOfAnimalsQuantity: ''
+      }
+    ]
+  })
+
+  it('Should hold the page on a blank number of packages for a line that asks for one, naming that line and saving nothing', async () => {
+    const result = await driveHandler(post, {
+      seed: cowLine(),
+      payload: { 'numberOfAnimalsQuantity-0': '3', 'numberOfPackages-0': '' }
+    })
+    const { errors, errorSummary } = result.view.context
+    expect(errors['numberOfPackages-0']).toBe(PACKAGES_REQUIRED_MESSAGE)
+    expect(errorSummary.errorList.map(({ href }) => href)).toEqual([
+      '#numberOfPackages-0'
+    ])
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should save a line that is not asked for a number of packages without one', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [
+          {
+            commoditySelection: 'Fish',
+            speciesSelection: '801204',
+            numberOfAnimalsQuantity: ''
+          }
+        ]
+      },
+      payload: { 'numberOfAnimalsQuantity-0': '4' }
+    })
+    expect(result.view).toBeUndefined()
+    expect(result.after.commodityLines[0].numberOfAnimalsQuantity).toBe(4)
+    expect('numberOfPackages' in result.after.commodityLines[0]).toBe(false)
+  })
+
+  it('Should hold the page on a blank number of packages when Save and return to overview is pressed, saving nothing', async () => {
+    const result = await driveHandler(post, {
+      seed: cowLine(),
+      payload: {
+        'numberOfAnimalsQuantity-0': '3',
+        'numberOfPackages-0': '',
+        exit: 'hub'
+      }
+    })
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.view.context.errors['numberOfPackages-0']).toBe(
+      PACKAGES_REQUIRED_MESSAGE
+    )
     expect(result.after).toEqual(result.before)
   })
 })

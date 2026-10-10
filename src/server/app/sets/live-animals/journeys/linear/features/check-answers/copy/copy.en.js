@@ -34,7 +34,6 @@ export const copy = {
   change: 'Change',
   editDetails: 'Edit details',
   cancelAmend: {
-    link: 'Cancel amendment',
     successTitle: 'Success',
     successBody:
       'The amendment has been cancelled and the submitted version restored.'
@@ -52,7 +51,7 @@ export const copy = {
   // The subsection heading that stands above each card. Every card has one.
   groups: {
     whereFrom: 'Where is this consignment coming from?',
-    mainReasonForImport: 'Main reason for import',
+    mainImportReason: 'Main import reason',
     commodityDetails: 'Commodity details',
     additionalDetails: 'Additional details',
     arrivalDetails: 'Arrival details',

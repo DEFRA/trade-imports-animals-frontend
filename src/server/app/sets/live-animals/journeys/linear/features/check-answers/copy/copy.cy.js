@@ -30,7 +30,6 @@ export const copy = {
   change: 'Newid',
   editDetails: 'Golygu manylion',
   cancelAmend: {
-    link: 'Canslo’r diwygiad',
     successTitle: 'Llwyddiant',
     successBody:
       'Mae’r diwygiad wedi’i ganslo ac mae’r fersiwn a gyflwynwyd wedi’i hadfer.'
@@ -45,7 +44,7 @@ export const copy = {
   },
   groups: {
     whereFrom: 'O ble mae’r llwyth hwn yn dod?',
-    mainReasonForImport: 'Prif reswm dros fewnforio',
+    mainImportReason: 'Prif reswm mewnforio',
     commodityDetails: 'Manylion y nwyddau',
     additionalDetails: 'Manylion ychwanegol',
     arrivalDetails: 'Manylion cyrraedd',

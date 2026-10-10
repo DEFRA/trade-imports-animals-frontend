@@ -1,6 +1,6 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 export const copy = {
-  title: 'Prif reswm dros fewnforio',
+  title: 'Prif reswm mewnforio',
   legend: 'Beth yw prif reswm mewnforio’r anifeiliaid?',
   reasonHints: {
     internalMarket:
@@ -41,11 +41,11 @@ export const copy = {
   },
   country: {
     label: 'Gwlad gyrchfan',
-    placeholder: 'Dewiswch wlad'
+    placeholder: 'Dewiswch un'
   },
   port: {
     label: 'Porthladd ymadael',
-    placeholder: 'Dewiswch borthladd ymadael'
+    placeholder: 'Dewiswch un'
   },
   date: {
     label: 'Dyddiad ymadael',

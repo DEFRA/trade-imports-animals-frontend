@@ -48,12 +48,25 @@ const addLines = async (page, selections, counts = []) => {
     await selectSpecies(page, species)
   }
   await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await page
+    .getByRole('link', {
+      name: hubCopy.rows.consignmentDetails.title,
+      exact: true
+    })
+    .click()
   // Every line's animal count is save-blocking, so a line the caller said
   // nothing about still gets one.
   for (const index of lineIndicesOf(selections)) {
     await page
       .locator(`#numberOfAnimalsQuantity-${index}`)
       .fill(counts[index] ?? DEFAULT_ANIMALS_COUNT)
+  }
+  // Every package-count line's number of packages is save-blocking too.
+  for (const box of await page
+    .locator('input[name^="numberOfPackages-"]')
+    .all()) {
+    await box.fill('1')
   }
 }
 
@@ -870,6 +883,13 @@ test.describe('animal identification records', () => {
     await saveAndContinue(page)
     await page.getByRole('link', { name: 'What are you importing?' }).click()
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await page
+      .getByRole('link', {
+        name: hubCopy.rows.consignmentDetails.title,
+        exact: true
+      })
+      .click()
     await page.locator('#numberOfAnimalsQuantity-0').fill('1')
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     const countDrop = copy.consignmentDetails.errors.countDrop(2, BOS_TAURUS, 1)

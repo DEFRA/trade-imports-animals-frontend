@@ -7,11 +7,19 @@ import {
   chooseTodayFromDatePicker,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
-import { countriesOriginEntries } from '../../../../../../services/_capture/fixtures.js'
+import {
+  destinationPageCountryEntries,
+  portsOfEntry
+} from '../../../../../../services/_capture/fixtures.js'
 import * as importReasonPurpose from '../../../../../../services/import-reason-purpose/index.js'
-import { validatorDefaults } from '../../../../../../shared/copy.en.js'
+import {
+  copy as sharedCopy,
+  validatorDefaults
+} from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
+
+const { serviceName, govukSuffix } = sharedCopy.layout
 
 const HUB_PATH_PATTERN = '/notifications/[^/]+'
 const REASON_INPUT_SELECTOR = 'input[name="reasonForImport"]'
@@ -80,6 +88,40 @@ const fieldIdsIn = (reveal) =>
     .locator('select, input:not([type="hidden"])')
     .evaluateAll((fields) => fields.map((field) => field.id))
 
+const renderedPortsIn = (select) =>
+  select.locator('option').evaluateAll((options) =>
+    options.map((option) => ({
+      code: option.value,
+      label: option.textContent
+    }))
+  )
+
+const renderedCountriesIn = (page, selector) =>
+  page.locator(`${selector} option`).evaluateAll((options) =>
+    options.slice(1).map((option) => ({
+      code: option.value,
+      name: option.textContent
+    }))
+  )
+
+const expectCountryOpensOnPlaceholder = async (page, selector) => {
+  const firstOption = page.locator(`${selector} option`).first()
+  await expect(firstOption).toHaveText(copy.country.placeholder)
+  await expect(firstOption).toHaveAttribute('value', '')
+  await expect(page.locator(selector)).toHaveValue('')
+}
+
+const exitPortEntries = () =>
+  portsOfEntry.map((port) => ({
+    code: port.code,
+    label: `${port.name} - ${port.code}`
+  }))
+
+const expectedExitPortOptions = () => [
+  { code: '', label: copy.port.placeholder },
+  ...exitPortEntries()
+]
+
 test.describe('import-reason feature', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -92,6 +134,9 @@ test.describe('import-reason feature', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: copy.title, exact: true })
     ).toBeVisible()
+    await expect(page).toHaveTitle(
+      `${copy.title} - ${serviceName} - ${govukSuffix}`
+    )
     await expect(page.getByRole('heading', { name: copy.legend })).toHaveCount(
       0
     )
@@ -169,8 +214,26 @@ test.describe('import-reason feature', () => {
     ).toBeChecked()
   })
 
-  test('back link returns to the notification hub', async ({ page }) => {
+  test('back link returns to What are you importing? in the opening run', async ({
+    page
+  }) => {
+    const commoditiesUrl = page
+      .url()
+      .replace(/\/import-reason$/, '/commodities')
+
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(commoditiesUrl)
+  })
+
+  test('back link returns to the overview once the page is opened from it', async ({
+    page
+  }) => {
     const hubUrl = page.url().replace(/\/import-reason$/, '')
+    await page.goto(hubUrl)
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await page.getByRole('link', { name: 'Main reason for import' }).click()
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
@@ -236,19 +299,18 @@ test.describe('import-reason reveals', () => {
       copy.port.label
     )
     await expect(page.locator(TRANSIT_PORT)).toHaveAccessibleDescription('')
+    expect(await renderedPortsIn(page.locator(TRANSIT_PORT))).toEqual(
+      expectedExitPortOptions()
+    )
+    await expect(page.locator(TRANSIT_PORT)).toHaveValue('')
     await expect(page.locator(TRANSIT_COUNTRY)).toHaveAccessibleName(
       copy.country.label
     )
     await expect(page.locator(TRANSIT_COUNTRY)).toHaveAccessibleDescription('')
-    const renderedCountries = await page
-      .locator(`${TRANSIT_COUNTRY} option`)
-      .evaluateAll((options) =>
-        options.slice(2).map((option) => ({
-          code: option.value,
-          name: option.textContent
-        }))
-      )
-    expect(renderedCountries).toEqual(countriesOriginEntries())
+    await expectCountryOpensOnPlaceholder(page, TRANSIT_COUNTRY)
+    expect(await renderedCountriesIn(page, TRANSIT_COUNTRY)).toEqual(
+      destinationPageCountryEntries()
+    )
   })
 
   test('asks temporary admission for the exit date and then the port of exit', async ({
@@ -267,6 +329,10 @@ test.describe('import-reason reveals', () => {
     await expect(
       page.locator(TEMPORARY_ADMISSION_PORT)
     ).toHaveAccessibleDescription('')
+    expect(
+      await renderedPortsIn(page.locator(TEMPORARY_ADMISSION_PORT))
+    ).toEqual(expectedExitPortOptions())
+    await expect(page.locator(TEMPORARY_ADMISSION_PORT)).toHaveValue('')
     expect(await fieldIdsIn(reveal)).toEqual([
       'temporaryAdmissionExitDate',
       'temporaryAdmissionPortOfExit'
@@ -287,6 +353,24 @@ test.describe('import-reason reveals', () => {
     await expect(
       page.locator(TRANSHIPMENT_COUNTRY)
     ).toHaveAccessibleDescription('')
+    await expectCountryOpensOnPlaceholder(page, TRANSHIPMENT_COUNTRY)
+    expect(await renderedCountriesIn(page, TRANSHIPMENT_COUNTRY)).toEqual(
+      destinationPageCountryEntries()
+    )
+  })
+
+  test('saves a territory as the destination country and offers it back', async ({
+    page
+  }) => {
+    const reasonUrl = page.url()
+
+    await radioFor(page, 'transhipmentOrOnwardTravel').check()
+    await page.locator(TRANSHIPMENT_COUNTRY).selectOption('ES-CN')
+    await page.locator(SUBMIT_BUTTON).first().click()
+
+    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await page.goto(reasonUrl)
+    await expect(page.locator(TRANSHIPMENT_COUNTRY)).toHaveValue('ES-CN')
   })
 
   test('saves a reason and its reveal in one submit, and offers the answers back', async ({

@@ -1,4 +1,3 @@
-import { hubPath } from '../../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../../config.js'
 import * as state from '../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
@@ -23,18 +22,20 @@ const copy = copyFor({ en, cy }).search
 const SEARCH_ACTION = 'search'
 const CLEAR_ACTION = 'clear'
 
-const render = (h, journey, { selected, query = '', errorText = null }) => {
+const render = async (
+  request,
+  h,
+  journey,
+  { selected, query = '', errorText = null }
+) => {
   const groups = commodityGroups(selected, query)
   const onScreen = new Set(
     groups.flatMap((group) => group.items.map((item) => item.value))
   )
-  // The error belongs on the control the trader must fix: the tick boxes when
-  // results are listed, the search box when there is nothing yet to tick.
-  const errorField = groups.length > 0 ? 'species' : 'commoditySearch'
-  const errors = errorText ? { [errorField]: errorText } : {}
+  const errors = errorText ? { commoditySearch: errorText } : {}
   return h.view(view, {
     ...kit.base(copy.title, {
-      backLink: hubPath(journey.journeyId),
+      backLink: await kit.runBackLink(request, page),
       journey,
       page
     }),
@@ -51,12 +52,12 @@ const render = (h, journey, { selected, query = '', errorText = null }) => {
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  return render(h, journey, { selected: storedKeys(answers) })
+  return render(request, h, journey, { selected: storedKeys(answers) })
 }
 
 const rerender = async (request, h, { selected, query, errorText }) => {
   const { journey } = await state.get(request, h)
-  return render(h, journey, { selected, query, errorText })
+  return render(request, h, journey, { selected, query, errorText })
 }
 
 const post = async (request, h) => {
@@ -73,7 +74,7 @@ const post = async (request, h) => {
     return rerender(request, h, { selected, query })
   }
 
-  if (selected.length === 0) {
+  if (selected.length === 0 && !kit.isHubExit(request)) {
     const response = await rerender(request, h, {
       selected,
       query,

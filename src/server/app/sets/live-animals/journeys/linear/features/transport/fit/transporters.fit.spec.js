@@ -54,7 +54,10 @@ const openTransporterList = async (page) => {
   await startNotification(page)
   await unlockSections(page)
   await page.getByRole('link', { name: copy.portOfEntry.title }).click()
+  await page.locator('select#meansOfTransport').selectOption('AIRPLANE')
   await submit(page)
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await page.getByRole('link', { name: 'Transport details' }).click()
   await expect(
     page.getByRole('heading', { name: copy.transporters.title })
   ).toBeVisible()

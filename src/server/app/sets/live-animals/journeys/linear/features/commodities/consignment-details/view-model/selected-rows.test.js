@@ -4,6 +4,8 @@ import { buildSelectedRows } from './selected-rows.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
 
 const REMOVE_FIRST_SPECIES = 'remove-species:0'
+const SALMO_SALAR = 'Salmo salar'
+const BOS_TAURUS = 'Bos taurus'
 
 const linesOf = (...pairs) =>
   pairs.map(([commoditySelection, speciesSelection], index) => ({
@@ -20,9 +22,26 @@ describe('#buildSelectedRows', () => {
         linesOf(['Cow', '1148346'], ['Cow', '716661'], ['Fish', '801204'])
       )
     ).toEqual([
-      { code: '0102', name: 'Cow', removeAction: 'remove:0' },
-      { code: '0301', name: 'Fish', removeAction: 'remove:1' }
+      {
+        code: '0102',
+        name: 'Cow',
+        species: [BOS_TAURUS, 'Bison bison'],
+        removeAction: 'remove:0'
+      },
+      {
+        code: '0301',
+        name: 'Fish',
+        species: [SALMO_SALAR],
+        removeAction: 'remove:1'
+      }
     ])
+  })
+
+  it('Should list the Latin names of every species chosen under a commodity in its Species cell', () => {
+    const [cow] = buildSelectedRows(
+      linesOf(['Cow', '1148346'], ['Cow', '716661'], ['Fish', '801204'])
+    )
+    expect(cow.species).toEqual([BOS_TAURUS, 'Bison bison'])
   })
 
   it('Should key a commodity row to its group index even where a species group is built before it', () => {
@@ -32,8 +51,18 @@ describe('#buildSelectedRows', () => {
     expect(
       buildSelectedRows(linesOf(['Cat', '923501'], ['Fish', '801204']))
     ).toEqual([
-      { code: '01061900', name: 'Cat', removeAction: REMOVE_FIRST_SPECIES },
-      { code: '0301', name: 'Fish', removeAction: 'remove:1' }
+      {
+        code: '01061900',
+        name: 'Cat',
+        species: ['Felis catus'],
+        removeAction: REMOVE_FIRST_SPECIES
+      },
+      {
+        code: '0301',
+        name: 'Fish',
+        species: [SALMO_SALAR],
+        removeAction: 'remove:1'
+      }
     ])
   })
 
@@ -43,9 +72,24 @@ describe('#buildSelectedRows', () => {
         linesOf(['Cow', '1148346'], ['Dog', '923502'], ['Cat', '923501'])
       )
     ).toEqual([
-      { code: '0102', name: 'Cow', removeAction: 'remove:0' },
-      { code: '01061900', name: 'Dog', removeAction: 'remove-species:1' },
-      { code: '01061900', name: 'Cat', removeAction: 'remove-species:2' }
+      {
+        code: '0102',
+        name: 'Cow',
+        species: [BOS_TAURUS],
+        removeAction: 'remove:0'
+      },
+      {
+        code: '01061900',
+        name: 'Dog',
+        species: ['Canis lupus familiaris'],
+        removeAction: 'remove-species:1'
+      },
+      {
+        code: '01061900',
+        name: 'Cat',
+        species: ['Felis catus'],
+        removeAction: 'remove-species:2'
+      }
     ])
   })
 
@@ -62,6 +106,7 @@ describe('#buildSelectedRows', () => {
       {
         code: '01061900',
         name: 'Domestic dog',
+        species: ['Canis lupus familiaris'],
         removeAction: REMOVE_FIRST_SPECIES
       }
     ])

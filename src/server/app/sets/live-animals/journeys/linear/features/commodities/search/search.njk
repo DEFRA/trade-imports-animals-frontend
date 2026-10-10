@@ -53,7 +53,6 @@
             name: "species",
             classes: "govuk-checkboxes--small",
             fieldset: { legend: { text: group.legend, classes: "govuk-fieldset__legend--s" } },
-            errorMessage: loop.first and errors.species and { text: errors.species },
             items: group.items
           }) }}
         {% endfor %}
@@ -84,7 +83,7 @@
     {% set helpHtml %}
       <p class="govuk-body">{{ copy.help.reference }}</p>
       <p class="govuk-body">{{ copy.help.describes }}</p>
-      <p class="govuk-body">{{ copy.help.lookupPrefix }} <a href="{{ copy.help.lookupHref }}" class="govuk-link" rel="noreferrer noopener" target="_blank">{{ copy.help.lookupLink }}</a>.</p>
+      <p class="govuk-body">{{ copy.help.lookupPrefix }} <a href="{{ copy.help.lookupHref }}" class="govuk-link" rel="noreferrer noopener" target="_blank">{{ copy.help.lookupLink }}<br>{{ copy.help.lookupNewTab }}</a>.</p>
     {% endset %}
 
     {{ govukDetails({
@@ -92,6 +91,6 @@
       html: helpHtml
     }) }}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amendFormActions if amending else none) }}
   </form>
 {% endblock %}

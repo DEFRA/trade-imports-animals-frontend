@@ -14,47 +14,34 @@ import {
 } from '../features/transport/page.js'
 import { documentsPage } from '../features/documents/page.js'
 import { addressesPage } from '../features/addresses/page.js'
-import { cphNumberPage } from '../features/cph-number/page.js'
 import { consignmentContactSelectPage } from '../features/contact/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
 import { pageGatePasses } from '../../../../../flow/gates.js'
+import { identifiesAnAnimal } from './task-rows.js'
 
 const flowPageTarget = (page) => (scope, journeyId) =>
   pageGatePasses(page, scope) ? pagePath(journeyId, page.slug) : null
 
-/** The review page ends the run rather than asking a question in it, so it
- * carries the same authored gate the review flow section does: it opens once
- * every task row is ready. A run that arrives with the notification still
- * incomplete falls through to the hub instead. */
-const reviewTarget = (scope, journeyId) =>
-  scope.readyForCheckYourAnswers
-    ? pagePath(journeyId, notificationViewPage.slug)
-    : null
-
 /** The opening run's ordered steps — a null target skips the step (see
  * docs/flow-and-gates.md, "The opening run"). The run is the whole
- * notification, not a first leg of it: "Save and continue" carries a new
- * notification from the origin page through to the review page in one pass,
- * and the hub is somewhere the user chooses to go through the secondary
- * "Save and return to overview" button.
+ * notification: "Save and continue" carries a new notification from the origin
+ * page through to the review page in one pass. The reason for import is asked
+ * straight after what is being imported and before the commodity details.
  *
- * The commodity leg is a two-page shape: batch search then the consolidated
- * details page (whose derived gate holds until a line exists). The
- * identification step is a single card-per-species surface, gated like every
- * other flow page (its RULE 1 prerequisite holds it until a line exists). The
- * transporter leg is one step, the list; the add spokes behind it are a
- * detour, and they hand the run back at the list's step when they save. The
- * addresses leg lists both of its pages; each one's derived gate decides on
- * its own whether the run stops there, so the run does not need to know which
- * of them this notification needs. */
+ * The CPH number page is not a step: it is reached only from its row on the
+ * addresses page. The addresses step ends the run on the hub when nothing is
+ * outstanding. Otherwise the run ends on the review page, which names what is
+ * outstanding, whenever a commodity has been chosen. The transporter leg is
+ * one step, the list; the add spokes behind it hand the run back at the
+ * list's step when they save. */
 export const RUN_STEPS = [
   { id: originPage.id, target: flowPageTarget(originPage) },
   { id: commoditiesPage.id, target: flowPageTarget(commoditiesPage) },
+  { id: importReasonPage.id, target: flowPageTarget(importReasonPage) },
   {
     id: consignmentDetailsPage.id,
     target: flowPageTarget(consignmentDetailsPage)
   },
-  { id: importReasonPage.id, target: flowPageTarget(importReasonPage) },
   {
     id: animalIdentificationPage.id,
     target: flowPageTarget(animalIdentificationPage)
@@ -67,19 +54,54 @@ export const RUN_STEPS = [
   { id: transitCountriesPage.id, target: flowPageTarget(transitCountriesPage) },
   { id: transportersPage.id, target: flowPageTarget(transportersPage) },
   { id: documentsPage.id, target: flowPageTarget(documentsPage) },
-  { id: addressesPage.id, target: flowPageTarget(addressesPage) },
-  { id: cphNumberPage.id, target: flowPageTarget(cphNumberPage) },
+  {
+    id: addressesPage.id,
+    target: flowPageTarget(addressesPage),
+    endsRunWhenComplete: true
+  },
   {
     id: consignmentContactSelectPage.id,
     target: flowPageTarget(consignmentContactSelectPage)
   },
-  { id: notificationViewPage.id, target: reviewTarget }
+  { id: notificationViewPage.id, target: flowPageTarget(notificationViewPage) }
 ]
+
+/** The page each step's Back link names while the opening run is under way, as
+ * Design Release 2.1 orders them. The main import reason names What are you
+ * importing. Commodity details names the commodity page, not the reason between
+ * them. Additional details names Identification details when a chosen commodity
+ * needs identifiers, and Commodity details otherwise. A step left out keeps the
+ * overview. */
+const RUN_BACK_STEPS = Object.freeze({
+  [commoditiesPage.id]: () => originPage,
+  [importReasonPage.id]: () => commoditiesPage,
+  [consignmentDetailsPage.id]: () => commoditiesPage,
+  [additionalDetailsPage.id]: (answers) =>
+    identifiesAnAnimal(answers)
+      ? animalIdentificationPage
+      : consignmentDetailsPage
+})
+
+/**
+ * The path a step's Back link names while the opening run is under way.
+ *
+ * @param {string} pageId - the page's id.
+ * @param {string} journeyId - the journey the page belongs to.
+ * @param {object} [answers] - the notification's answers, for a Back link that depends on them.
+ * @returns {string | null} the path, or null when the step keeps the overview.
+ */
+export const runBackTarget = (pageId, journeyId, answers = {}) =>
+  Object.hasOwn(RUN_BACK_STEPS, pageId)
+    ? pagePath(journeyId, RUN_BACK_STEPS[pageId](answers).slug)
+    : null
 
 export const nextRunTarget = (stepId, scope, journeyId) => {
   const index = RUN_STEPS.findIndex((step) => step.id === stepId)
   if (index === -1) {
     return null
+  }
+  if (RUN_STEPS[index].endsRunWhenComplete && scope.readyForCheckYourAnswers) {
+    return hubPath(journeyId)
   }
   for (const step of RUN_STEPS.slice(index + 1)) {
     const target = step.target(scope, journeyId)

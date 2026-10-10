@@ -1,9 +1,10 @@
 import { dashboardPath, hubPath, pagePath, pageRoutePath } from './paths.js'
 import { AMEND, DELETED, DRAFT, SUBMITTED } from '../engine/index.js'
-import { nextInSection } from '../flow/navigation.js'
+import { nextInTaskRow } from '../flow/navigation.js'
 import {
   journeyLayout,
   journeyNextRunTarget,
+  journeyRunBackTarget,
   journeySectionCaption
 } from '../flow/journey-flow.js'
 import { inOpeningRun } from '../flow/run-state.js'
@@ -49,15 +50,35 @@ const STRIP_STATUS = {
   }
 }
 
-export const journeyStrip = (journey) =>
+export const CYA_SLUG = 'notification-view'
+
+export const CANCEL_AMEND_SLUG = 'cancel-amend'
+
+const cancelAmendControl = (journey) =>
+  journey.status === AMEND
+    ? {
+        href: pagePath(journey.journeyId, CANCEL_AMEND_SLUG),
+        text: sharedCopy.journeyStrip.cancelAmend
+      }
+    : undefined
+
+/**
+ * The status strip shown above a journey page's caption and heading.
+ *
+ * @param {object} [journey] - the journey, or none.
+ * @param {object} [options]
+ * @param {boolean} [options.offerCancelAmend] - offer Cancel amend while the
+ * journey is being amended. False on the page Cancel amend leads to.
+ * @returns {object|null} the strip view model, or null without a journey.
+ */
+export const journeyStrip = (journey, { offerCancelAmend = true } = {}) =>
   journey
     ? {
         reference: journey.journeyId,
-        status: STRIP_STATUS[journey.status]
+        status: STRIP_STATUS[journey.status],
+        cancelAmend: offerCancelAmend ? cancelAmendControl(journey) : undefined
       }
     : null
-
-export const CYA_SLUG = 'notification-view'
 
 const anchorHref = (field) => `#${field}`
 
@@ -96,6 +117,8 @@ export const fieldError = (fieldErrors, field) =>
 export const hubExitTarget = (request) =>
   request.payload?.exit === 'hub' ? hubPath(request.params.journeyId) : null
 
+export const isHubExit = (request) => hubExitTarget(request) !== null
+
 export const changeContext = (request) => Boolean(request.query.change)
 
 export const withChangeContext = (request, href) =>
@@ -107,16 +130,43 @@ export const exitTarget = (request, fallback) =>
     ? pagePath(request.params.journeyId, CYA_SLUG)
     : fallback)
 
+/** The review's path for a save made while amending from a Change link, else null. */
+export const amendReviewTarget = (request, journey) =>
+  journey?.status === AMEND && changeContext(request)
+    ? pagePath(request.params.journeyId, CYA_SLUG)
+    : null
+
+/** True for a save that skips the page's required-answer checks: 'Save and return to overview', or 'Save and return' to the review while amending. A format rule still applies. */
+export const skipsRequiredChecks = (request, journey) =>
+  isHubExit(request) || amendReviewTarget(request, journey) !== null
+
 export const runTarget = async (request, stepId, scope) =>
   (await inOpeningRun(request, request.params.journeyId))
     ? journeyNextRunTarget(stepId, scope, request.params.journeyId)
     : null
 
+/**
+ * Where a page's Back link goes: the page before it in the opening run while
+ * the run is under way, otherwise the overview it was opened from.
+ *
+ * @param {object} request - the hapi request.
+ * @param {{ id: string }} page - the page identity.
+ * @param {object} [answers] - the notification's answers, for a Back link that depends on them.
+ * @returns {Promise<string>} the Back link's href.
+ */
+export const runBackLink = async (request, page, answers = {}) => {
+  const { journeyId } = request.params
+  const runBack = (await inOpeningRun(request, journeyId))
+    ? journeyRunBackTarget(page.id, journeyId, answers)
+    : null
+  return runBack ?? hubPath(journeyId)
+}
+
 export const nextTarget = async (request, page, scope) =>
   exitTarget(
     request,
     (await runTarget(request, page.id, scope)) ??
-      nextInSection(page.id, scope, request.params.journeyId)
+      nextInTaskRow(page.id, scope, request.params.journeyId)
   )
 
 /**
@@ -136,7 +186,8 @@ export const base = (
     journey,
     journeyId = journey?.journeyId,
     page,
-    recoverableError = false
+    recoverableError = false,
+    offerCancelAmend = true
   } = {}
 ) => {
   const hasJourney = journeyId != null
@@ -150,7 +201,8 @@ export const base = (
     // dashboard by way of the root redirect.
     homeUrl: dashboardPath(),
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
-    journeyStrip: journeyStrip(journey),
+    journeyStrip: journeyStrip(journey, { offerCancelAmend }),
+    amending: journey?.status === AMEND,
     concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,
     recoverableError,

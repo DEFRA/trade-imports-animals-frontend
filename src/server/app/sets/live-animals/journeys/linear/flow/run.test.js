@@ -28,7 +28,7 @@ import { declarationPage } from '../features/declaration/page.js'
 import { dashboardPage } from '../features/dashboard/page.js'
 import { makeScope } from '../../../../../engine/index.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
-import { nextRunTarget, RUN_STEPS } from './run.js'
+import { nextRunTarget, RUN_STEPS, runBackTarget } from './run.js'
 import { allFlowPages } from './flow.js'
 
 const JOURNEY_ID = 'journey-1'
@@ -57,9 +57,9 @@ describe('#nextRunTarget — the opening run sequence', () => {
     )
   })
 
-  it('Should send the search page to the consignment details page once a line exists', () => {
+  it('Should send the search page to import reason once a line exists', () => {
     expect(next(commoditiesPage.id, lineSeed)).toBe(
-      pagePath(JOURNEY_ID, 'consignment-details')
+      pagePath(JOURNEY_ID, 'import-reason')
     )
   })
 
@@ -69,16 +69,16 @@ describe('#nextRunTarget — the opening run sequence', () => {
     )
   })
 
-  it('Should send the consignment details page to import reason', () => {
+  it('Should send the consignment details page to the identification surface', () => {
     expect(next(consignmentDetailsPage.id, lineSeed)).toBe(
-      pagePath(JOURNEY_ID, 'import-reason')
+      pagePath(JOURNEY_ID, animalIdentificationPage.slug)
     )
   })
 
-  it('Should send import reason straight to the identification surface — its follow-up questions are answered on the reason page itself', () => {
+  it('Should send import reason on to the consignment details, whichever reason is given', () => {
     for (const reasonForImport of ['internalMarket', 'transit']) {
       expect(next(importReasonPage.id, { ...lineSeed, reasonForImport })).toBe(
-        pagePath(JOURNEY_ID, animalIdentificationPage.slug)
+        pagePath(JOURNEY_ID, 'consignment-details')
       )
     }
   })
@@ -167,13 +167,20 @@ describe('#nextRunTarget — the run past the arrival details', () => {
     )
   })
 
-  it('Should send the roles and addresses on to the CPH number and then the contact address', () => {
-    expect(step(addressesPage.id)).toBe(
-      pagePath(JOURNEY_ID, cphNumberPage.slug)
-    )
-    expect(step(cphNumberPage.id)).toBe(
+  it('Should send the roles and addresses straight on to the contact address, never the CPH number', () => {
+    const { contactAddress, ...withoutContact } = completeSeed
+    expect(contactAddress).toBeDefined()
+    expect(next(addressesPage.id, withoutContact)).toBe(
       pagePath(JOURNEY_ID, consignmentContactSelectPage.slug)
     )
+  })
+
+  it('Should send the roles and addresses to the overview when every task is already complete', () => {
+    expect(step(addressesPage.id)).toBe(hubPath(JOURNEY_ID))
+  })
+
+  it('Should return null for the CPH number page — it is not a run step', () => {
+    expect(step(cphNumberPage.id)).toBeNull()
   })
 
   it('Should end the run on the review page once every task row is ready', () => {
@@ -182,9 +189,9 @@ describe('#nextRunTarget — the run past the arrival details', () => {
     )
   })
 
-  it('Should rest on the hub instead when the notification is not ready to review', () => {
+  it('Should end the run on the review page even when the notification is incomplete', () => {
     expect(next(consignmentContactSelectPage.id, lineSeed)).toBe(
-      hubPath(JOURNEY_ID)
+      pagePath(JOURNEY_ID, notificationViewPage.slug)
     )
   })
 
@@ -196,8 +203,14 @@ describe('#nextRunTarget — the run past the arrival details', () => {
 describe('the run covers the journey', () => {
   // Pages deliberately outside the run: the dashboard sits before a
   // notification exists, and the declaration and confirmation close it after
-  // the review page has ended the run.
-  const OUTSIDE_THE_RUN = ['dashboard', 'declaration', 'confirmation']
+  // the review page has ended the run. The CPH number page is reached only
+  // from its row on the roles and addresses page.
+  const OUTSIDE_THE_RUN = [
+    'dashboard',
+    'cphNumber',
+    'declaration',
+    'confirmation'
+  ]
 
   it('Should decide every flow page, either running it or listing it as outside the run', () => {
     const stepIds = RUN_STEPS.map((step) => step.id)
@@ -211,5 +224,50 @@ describe('the run covers the journey', () => {
       unregistered,
       'a new journey page must be added to RUN_STEPS or listed as outside the run'
     ).toEqual([])
+  })
+})
+
+describe('#runBackTarget — the Back link while the opening run is under way', () => {
+  it("Should name the origin page as the commodity page's Back link", () => {
+    expect(runBackTarget(commoditiesPage.id, JOURNEY_ID)).toBe(
+      pagePath(JOURNEY_ID, 'origin')
+    )
+  })
+
+  it("Should name the commodity page, not the main reason for import, as Commodity details' Back link", () => {
+    expect(runBackTarget(consignmentDetailsPage.id, JOURNEY_ID)).toBe(
+      pagePath(JOURNEY_ID, 'commodities')
+    )
+  })
+
+  it("Should name What are you importing? as the main import reason's Back link", () => {
+    expect(runBackTarget(importReasonPage.id, JOURNEY_ID, lineSeed)).toBe(
+      pagePath(JOURNEY_ID, 'commodities')
+    )
+  })
+
+  it("Should name Identification details as Additional details' Back link when a chosen commodity needs identifiers", () => {
+    expect(
+      runBackTarget(additionalDetailsPage.id, JOURNEY_ID, {
+        commodityLines: [{ commoditySelection: 'Cow' }]
+      })
+    ).toBe(pagePath(JOURNEY_ID, animalIdentificationPage.slug))
+  })
+
+  it("Should name Commodity details as Additional details' Back link when no chosen commodity needs identifiers", () => {
+    const commodityDetails = pagePath(JOURNEY_ID, 'consignment-details')
+    expect(
+      runBackTarget(additionalDetailsPage.id, JOURNEY_ID, {
+        commodityLines: [{ commoditySelection: 'Fish' }]
+      })
+    ).toBe(commodityDetails)
+    expect(runBackTarget(additionalDetailsPage.id, JOURNEY_ID, {})).toBe(
+      commodityDetails
+    )
+  })
+
+  it('Should name nothing for a step the journey leaves to the overview', () => {
+    expect(runBackTarget('origin', JOURNEY_ID)).toBeNull()
+    expect(runBackTarget(portOfEntryPage.id, JOURNEY_ID)).toBeNull()
   })
 })

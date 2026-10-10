@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import {
   answerCountryOfOrigin,
+  answerOriginEntry,
+  BASE,
   searchCommodities,
   selectSpecies,
   signIn,
@@ -8,6 +10,7 @@ import {
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
+import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 
 const BISON_BISON = 'Bison bison'
 const BOS_TAURUS = 'Bos taurus'
@@ -44,10 +47,7 @@ const errorLink = (page, message) =>
 
 const selectionPanel = (page) => page.locator('#commodity-selection')
 
-// Commodity details is its own hub task now, so its back link returns to the
-// hub. Reopen the search page from the row that owns it.
 const reopenSelection = async (page) => {
-  await page.locator(BACK_LINK).click()
   await page.getByRole('link', { name: 'What are you importing?' }).click()
   await expect(
     page.getByRole('heading', { name: copy.search.title })
@@ -81,9 +81,10 @@ test.describe('commodity search', () => {
     await expect(page.getByText(copy.search.help.describes)).toBeVisible()
     await expect(page.getByText(copy.search.help.lookupPrefix)).toBeVisible()
     const tradeTariff = page.getByRole('link', {
-      name: copy.search.help.lookupLink
+      name: `${copy.search.help.lookupLink} ${copy.search.help.lookupNewTab}`
     })
     await expect(tradeTariff).toBeVisible()
+    await expect(page.getByText(copy.search.help.lookupNewTab)).toBeVisible()
     await expect(tradeTariff).toHaveAttribute(
       'href',
       copy.search.help.lookupHref
@@ -185,9 +186,34 @@ test.describe('commodity search', () => {
 
     const link = errorLink(page, copy.search.errors.selectCommodity)
     await expect(link).toBeVisible()
+    await expect(
+      page.getByLabel(copy.search.searchLabel)
+    ).toHaveAccessibleDescription(
+      new RegExp(copy.search.errors.selectCommodity)
+    )
     await link.click()
     await expect(page.getByLabel(copy.search.searchLabel)).toBeFocused()
     await expect(selectionPanel(page)).toHaveCount(0)
+  })
+
+  test('validation: with results listed, the error stays on the search box', async ({
+    page
+  }) => {
+    await searchCommodities(page, 'Bos')
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+
+    const link = errorLink(page, copy.search.errors.selectCommodity)
+    await expect(link).toBeVisible()
+    await expect(
+      page.getByLabel(copy.search.searchLabel)
+    ).toHaveAccessibleDescription(
+      new RegExp(copy.search.errors.selectCommodity)
+    )
+    await expect(
+      page.getByRole('group', { name: COW_LEGEND })
+    ).not.toContainText(copy.search.errors.selectCommodity)
+    await link.click()
+    await expect(page.getByLabel(copy.search.searchLabel)).toBeFocused()
   })
 
   test('saves pairs found under different queries, in canonical order', async ({
@@ -196,6 +222,10 @@ test.describe('commodity search', () => {
     await selectSpecies(page, [FELIS_CATUS, BOS_TAURUS, BISON_BISON])
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await page
+      .getByRole('link', { name: copy.consignmentDetails.title, exact: true })
+      .click()
     await expect(
       page.getByRole('heading', { name: copy.consignmentDetails.title })
     ).toBeVisible()
@@ -204,6 +234,7 @@ test.describe('commodity search', () => {
       .allTextContents()
     expect(speciesHeadings).toEqual(canonicalSelectionOrder)
 
+    await page.locator(BACK_LINK).click()
     await reopenSelection(page)
     const panel = selectionPanel(page)
     await expect(panel).toContainText(copy.search.selected.heading(3))
@@ -231,5 +262,56 @@ test.describe('commodity search', () => {
     // Open the help details so its paragraphs and outbound link are scanned.
     await page.getByText(copy.search.help.summary, { exact: true }).click()
     await expectNoSeriousOrCriticalViolations(page, 'Commodity search')
+
+    await page
+      .getByRole('button', { name: copy.search.selected.clearAll })
+      .click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await expect(
+      errorLink(page, copy.search.errors.selectCommodity)
+    ).toBeVisible()
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Commodity search with error'
+    )
+  })
+})
+
+test.describe('commodity search in the opening run', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await page.goto(BASE)
+    await page.getByRole('button', { name: 'Start a new notification' }).click()
+    await answerOriginEntry(page)
+    await expect(
+      page.getByRole('heading', { name: copy.search.title })
+    ).toBeVisible()
+  })
+
+  test('back link returns to the origin of the import in the opening run', async ({
+    page
+  }) => {
+    await page.locator(BACK_LINK).click()
+    await expect(
+      page.getByRole('heading', { name: 'Origin of the import' })
+    ).toBeVisible()
+  })
+
+  test('ends with Save and continue, Save and return to overview and Cancel and return to overview in the opening run', async ({
+    page
+  }) => {
+    await expect(
+      page.getByRole('button', { name: SAVE_AND_CONTINUE })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', {
+        name: sharedCopy.saveActions.saveAndReturnToHub
+      })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', {
+        name: sharedCopy.saveActions.cancelAndReturnToHub
+      })
+    ).toBeVisible()
   })
 })

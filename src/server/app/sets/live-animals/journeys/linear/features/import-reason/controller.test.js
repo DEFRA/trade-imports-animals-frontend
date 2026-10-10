@@ -3,15 +3,21 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../engine/persistence/records.js'
+import {
+  configureRecords,
+  records
+} from '../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  postHandlerOf
+  journeyRequest,
+  postHandlerOf,
+  stubH
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
+import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 
 import * as importReason from './controller.js'
 import { copy } from './copy/copy.en.js'
@@ -236,6 +242,29 @@ describe('POST import-reason — the reveal the reason opens', () => {
     expect(result.after.destinationCountry).toBe('IE')
   })
 
+  it('Should commit a subdivision chosen as the transhipment destination country', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'transhipmentOrOnwardTravel',
+        transhipmentDestinationCountry: 'FR-MQ'
+      }
+    })
+    expect(result.response.redirect).toBeDefined()
+    expect(result.after.destinationCountry).toBe('FR-MQ')
+  })
+
+  it('Should commit a subdivision chosen as the transit destination country', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'transit',
+        transitPortOfExit: 'GB DVR',
+        transitDestinationCountry: 'ES-CN'
+      }
+    })
+    expect(result.response.redirect).toBeDefined()
+    expect(result.after.destinationCountry).toBe('ES-CN')
+  })
+
   it('Should drop the answers of the reason the user moved away from', async () => {
     const flipped = await driveHandler(post, {
       seed: {
@@ -313,6 +342,25 @@ describe('GET import-reason — the reveals prefill from the one answer behind t
     })
     expect(result.view.context.values.transhipmentDestinationCountry).toBe('IE')
     expect(result.view.context.values.transitDestinationCountry).toBe('IE')
+  })
+
+  it('Should offer a stored subdivision back to both reveals, with no error', async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        reasonForImport: 'transhipmentOrOnwardTravel',
+        destinationCountry: 'FR-MQ'
+      }
+    })
+    expect(result.view.context.values.transhipmentDestinationCountry).toBe(
+      'FR-MQ'
+    )
+    expect(result.view.context.values.transitDestinationCountry).toBe('FR-MQ')
+    expect(
+      result.view.context.errors?.transhipmentDestinationCountry
+    ).toBeUndefined()
+    expect(
+      result.view.context.errors?.transitDestinationCountry
+    ).toBeUndefined()
   })
 })
 
@@ -463,6 +511,208 @@ describe('POST import-reason — a stale destination country submitted verbatim 
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.transhipmentDestinationCountry).toBe(
       copy.errors.countryRequired
+    )
+  })
+})
+
+describe('POST import-reason — Save and return to overview', () => {
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  it('Should save a transit reason with its port and country left blank and go to the overview', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'transit',
+        transitPortOfExit: '',
+        transitDestinationCountry: '',
+        exit: 'hub'
+      }
+    })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.reasonForImport).toBe('transit')
+  })
+
+  it('Should refuse a date that names no day and save nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'temporaryAdmissionHorses',
+        temporaryAdmissionExitDate: '31/2/2026',
+        temporaryAdmissionPortOfExit: 'GB DVR',
+        exit: 'hub'
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.temporaryAdmissionExitDate).toBe(
+      copy.errors.dateInvalid
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should refuse a port that is not on the list and save nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'transit',
+        transitPortOfExit: 'NOT-A-PORT',
+        transitDestinationCountry: '',
+        exit: 'hub'
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.transitPortOfExit).toBe(
+      copy.errors.portRequired
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should keep refusing the blank reveal on Save and continue', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'transit',
+        transitPortOfExit: '',
+        transitDestinationCountry: ''
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.transitPortOfExit).toBe(
+      copy.errors.portRequired
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should keep the transit reason and its destination country when only the port of exit is blank', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        reasonForImport: 'transit',
+        transitDestinationCountry: 'FR',
+        transitPortOfExit: '',
+        exit: 'hub'
+      }
+    })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.reasonForImport).toBe('transit')
+    expect(result.after.destinationCountry).toBe('FR')
+  })
+
+  it('Should clear the internal market purpose when the reason changes to transit', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        reasonForImport: 'internalMarket',
+        purposeInInternalMarket: 'breeding'
+      },
+      payload: { reasonForImport: 'transit', exit: 'hub' }
+    })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.reasonForImport).toBe('transit')
+    expect(result.after.purposeInInternalMarket).toBeUndefined()
+  })
+
+  it('Should keep every earlier reason answer when no reason is chosen', async () => {
+    const seed = {
+      reasonForImport: 'transit',
+      portOfExit: 'GB DVR',
+      destinationCountry: 'IE'
+    }
+    const result = await driveHandler(post, {
+      seed,
+      payload: { exit: 'hub' }
+    })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after).toEqual(seed)
+  })
+
+  it('Should keep every earlier reason answer when Save and continue names no reason', async () => {
+    const seed = {
+      reasonForImport: 'transit',
+      portOfExit: 'GB DVR',
+      destinationCountry: 'IE'
+    }
+    const result = await driveHandler(post, {
+      seed,
+      payload: { reasonForImport: '' }
+    })
+
+    expect(result.response.redirect).toBeDefined()
+    expect(result.after).toEqual(seed)
+  })
+})
+
+describe('POST import-reason — Save and return while amending', () => {
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  const driveAmend = async ({ payload, query }) => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, {})
+    await store.submit(journey.journeyId)
+    await records.amend(journey.journeyId)
+    const h = stubH()
+    const response = await post(
+      journeyRequest(journey.journeyId, { payload, query }),
+      h
+    )
+    return {
+      journeyId: journey.journeyId,
+      response,
+      view: h.captured.view,
+      after: (await store.get(journey.journeyId)).answers
+    }
+  }
+
+  it('Should save transit with no port of exit and go to the review', async () => {
+    const result = await driveAmend({
+      query: { change: '1' },
+      payload: {
+        reasonForImport: 'transit',
+        transitDestinationCountry: 'IE',
+        transitPortOfExit: ''
+      }
+    })
+
+    expect(result.response).toEqual({
+      redirect: pagePath(result.journeyId, 'notification-view')
+    })
+    expect(result.after.reasonForImport).toBe('transit')
+  })
+
+  it('Should still refuse an unreal exit date', async () => {
+    const result = await driveAmend({
+      query: { change: '1' },
+      payload: {
+        reasonForImport: 'temporaryAdmissionHorses',
+        temporaryAdmissionExitDate: '31/2/2026',
+        temporaryAdmissionPortOfExit: 'GB DVR'
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.temporaryAdmissionExitDate).toBe(
+      copy.errors.dateInvalid
+    )
+    expect(result.after.reasonForImport).toBeUndefined()
+    expect(result.after.exitDate).toBeUndefined()
+    expect(result.after.portOfExit).toBeUndefined()
+  })
+
+  it('Should keep the required checks on Save and continue while amending', async () => {
+    const result = await driveAmend({
+      query: {},
+      payload: {
+        reasonForImport: 'transit',
+        transitDestinationCountry: 'IE',
+        transitPortOfExit: ''
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.transitPortOfExit).toBe(
+      copy.errors.portRequired
     )
   })
 })

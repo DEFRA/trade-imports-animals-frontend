@@ -65,6 +65,7 @@ const privateTransportFixture = {
 delete privateTransportFixture.commercialTransporter
 
 const ABOUT_THE_CONSIGNMENT = 'About the consignment'
+const DESCRIPTION_OF_THE_GOODS = 'Description of the goods'
 const CONSIGNMENT_PARTIES = 'Consignment parties'
 const TRANSPORT_AND_ARRIVAL = 'Transport and arrival'
 const NEW_TRANSPORTER = 'Add a new transporter'
@@ -101,7 +102,7 @@ const CAPTIONED_PAGES = [
   ],
   [
     'consignment details',
-    ABOUT_THE_CONSIGNMENT,
+    DESCRIPTION_OF_THE_GOODS,
     consignmentDetailsRoutes,
     parityFixture
   ],

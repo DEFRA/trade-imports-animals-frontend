@@ -12,6 +12,7 @@ seam. `configureJourneyFlow()` receives:
 - `taskRows`
 - `rowStatus`
 - `nextRunTarget`
+- `runBackTarget`
 - `flowOnlyKeys`
 - `entryGuardTarget`
 - `layout`
@@ -24,6 +25,12 @@ this seam once during route registration.
 the section of the journey that page belongs to, which `kit.base()` puts in the
 view as `caption` and `shared/section-caption.njk` renders above the page heading.
 A journey that names no sections leaves it out and its pages render no caption.
+
+`runBackTarget` is optional too. It maps a run step's page id to the page its Back
+link names while the opening run is under way. It also receives the notification's
+answers, so a step's Back link can depend on them, and `kit.runBackLink` passes them
+through. `kit.runBackLink` falls back to the hub outside the run, or for a page the
+journey leaves out.
 
 ## Dispatch
 
@@ -47,10 +54,14 @@ configured section list through the journey-flow seam.
 
 ## Navigation and status
 
-[`src/server/app/flow/navigation.js`](../flow/navigation.js) exports three.
+[`src/server/app/flow/navigation.js`](../flow/navigation.js) exports four.
 `sectionEntry()` finds the first gate-passing page in a section, or the hub when
 no page passes. `nextInSection()` returns the next gate-passing page in the
-section, or the hub when the section is finished.
+section, or the hub when the section is finished. `nextInTaskRow()` is where a
+save outside the opening run goes: the next gate-passing page of the section
+when it belongs to the same task row, otherwise the hub; a page in no task row
+keeps the section order. `kit.nextTarget` uses it after the opening run and the
+explicit exits.
 
 `rowEntry()` differs from `sectionEntry()` and `nextInSection()` in that it
 always answers with a page. A task row is a way into the notification rather

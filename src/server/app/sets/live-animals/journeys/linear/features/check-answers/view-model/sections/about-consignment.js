@@ -23,7 +23,7 @@ export const aboutConsignmentSection = async (
       cards: [await importDetailsCard(journeyId, answers, scope, readOnly)]
     },
     {
-      heading: copy.groups.mainReasonForImport,
+      heading: copy.groups.mainImportReason,
       cards: [await reasonForImportCard(journeyId, answers, scope, readOnly)]
     }
   ]

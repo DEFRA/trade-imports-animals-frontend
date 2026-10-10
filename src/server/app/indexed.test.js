@@ -179,10 +179,18 @@ describe('indexed obligations are first-class', () => {
   })
 
   it('Should roll per-item completeness into the commodities section status', () => {
+    // The section holds the main import reason too, so it is answered here and
+    // the roll-up turns on the commodity line alone.
+    const reasonAnswers = {
+      reasonForImport: 'internalMarket',
+      purposeInInternalMarket: 'breeding'
+    }
     const withIncompleteLine = {
+      ...reasonAnswers,
       commodityLines: [{ commoditySelection: 'Cow' }]
     }
     const withCompleteLine = {
+      ...reasonAnswers,
       commodityLines: [
         {
           commoditySelection: 'Cow',

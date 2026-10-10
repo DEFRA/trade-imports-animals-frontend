@@ -11,7 +11,11 @@ import {
   pageOfObligation,
   slugOfPage
 } from '../../../../../flow/dispatch.js'
-import { nextInSection, sectionEntry } from '../../../../../flow/navigation.js'
+import {
+  nextInSection,
+  nextInTaskRow,
+  sectionEntry
+} from '../../../../../flow/navigation.js'
 
 const unitedKingdom = 'United Kingdom'
 
@@ -81,6 +85,66 @@ const completeAnswers = {
     address: { addressLine1: 'Woodham Lane', country: unitedKingdom }
   },
   declaration: 'confirmed'
+}
+
+const nextInTaskRowTests = () => {
+  const scope = {
+    inScope: makeScope({
+      ...completeAnswers,
+      meansOfTransport: 'ROAD_VEHICLE'
+    }).inScope,
+    answered: () => true
+  }
+  const hub = /\/notifications\/journey-1$/
+
+  it('Should return What are you importing? to the hub rather than on to the main import reason', () => {
+    expect(nextInTaskRow('commodities', scope, 'journey-1')).toMatch(hub)
+    expect(nextInSection('commodities', scope, 'journey-1')).toMatch(
+      /\/import-reason$/
+    )
+  })
+
+  it('Should return the main reason for import to the hub rather than on to the commodity details', () => {
+    expect(nextInTaskRow('import-reason', scope, 'journey-1')).toMatch(hub)
+    expect(nextInSection('import-reason', scope, 'journey-1')).toMatch(
+      /\/consignment-details$/
+    )
+  })
+
+  it('Should return the arrival details to the hub rather than on to the transit countries', () => {
+    expect(nextInTaskRow('port-of-entry', scope, 'journey-1')).toMatch(hub)
+    expect(nextInSection('port-of-entry', scope, 'journey-1')).toMatch(
+      /\/transit-countries$/
+    )
+  })
+
+  it('Should return the transit countries to the hub rather than on to the transporter list', () => {
+    expect(nextInTaskRow('transit-countries', scope, 'journey-1')).toMatch(hub)
+    expect(nextInSection('transit-countries', scope, 'journey-1')).toMatch(
+      /\/transporters$/
+    )
+  })
+
+  it('Should return the roles and addresses to the hub, the last page of its task', () => {
+    expect(nextInTaskRow('addresses', scope, 'journey-1')).toMatch(hub)
+  })
+
+  it('Should hand the CPH number back to roles and addresses, the next page of the same task', () => {
+    expect(nextInTaskRow('cphNumber', scope, 'journey-1')).toMatch(
+      /\/addresses$/
+    )
+  })
+
+  it('Should keep check your answers leading on to the declaration — it belongs to no task row', () => {
+    const ready = { ...scope, readyForCheckYourAnswers: true }
+    expect(nextInTaskRow('notification-view', ready, 'journey-1')).toMatch(
+      /\/declaration$/
+    )
+  })
+
+  it('Should return a page in no section to the hub', () => {
+    expect(nextInTaskRow('not-a-real-page', scope, 'journey-1')).toMatch(hub)
+  })
 }
 
 describe('#buildDispatch', () => {
@@ -219,6 +283,11 @@ describe('#buildDispatch', () => {
       )
     }
   })
+
+  describe(
+    '#nextInTaskRow — where a save outside the opening run goes',
+    nextInTaskRowTests
+  )
 
   it('Should enter a section at its first gated-in page', () => {
     const scope = { inScope: makeScope({}).inScope, answered: () => true }
