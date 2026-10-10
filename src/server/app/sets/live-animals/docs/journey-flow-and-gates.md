@@ -11,6 +11,12 @@ section is a navigation sequence. The `review` section has the one authored sect
 gate: it requires `scope.readyForCheckYourAnswers`. Normal page gates are derived
 from `meta.collects`, scope and earlier continue prerequisites.
 
+The sections follow Design Release 2.1. The `commodities` section holds the
+commodity page, the main reason for import and Commodity details; identification
+follows; Additional details is a section of its own after it. Section order sets
+each page's continue prerequisites, so the reason still comes after the commodity
+question.
+
 The `addresses` section holds the CPH number page and then Roles and addresses, so
 the CPH page saves back to Roles and addresses and Roles and addresses ends the
 section.
@@ -85,11 +91,14 @@ task row is already ready. The review step carries the review page's derived
 gate, so the run ends on the review page, complete or not, once a commodity has
 been chosen; a run with no open later step still falls through to the hub.
 
-While the run is under way, two Back links name the page before them
+While the run is under way, four Back links name the page before them
 (`RUN_BACK_STEPS` and `runBackTarget` in `run.js`). The commodity page goes back
-to the origin page. Commodity details goes back to the commodity page, not to the
-main reason for import that comes between them. Outside the run both keep the
-overview, as every other page does.
+to the origin page. The main reason for import goes back to the commodity page.
+Commodity details goes back to the commodity page, not to the main reason for
+import that comes between them. Additional details goes back to Identification
+details when a chosen commodity needs identifiers (`identifiesAnAnimal`, shared
+with the hub row), otherwise to Commodity details. Outside the run all four keep
+the overview, as every other page does.
 
 The hub is somewhere the user chooses to go — through the secondary "Save and
 return to overview" button on every page, or by opening the notification from

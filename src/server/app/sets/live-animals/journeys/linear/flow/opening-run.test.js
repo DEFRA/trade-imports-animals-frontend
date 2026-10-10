@@ -47,6 +47,7 @@ const ORIGIN_SLUG = 'origin'
 const ADDITIONAL_DETAILS_SLUG = 'additional-details'
 const CAT_KEY = 'Cat|923501'
 const CONSIGNMENT_DETAILS_SLUG = 'consignment-details'
+const IDENTIFICATION_SLUG = 'commodities/identification'
 const NOTIFICATION_VIEW_SLUG = 'notification-view'
 
 const CONTACT = STUB_BOOK.find(
@@ -95,6 +96,9 @@ const drive = async (handler, { seed = {}, ...overrides } = {}) => {
 }
 
 const active = (journeyId) => ({ [journeyId]: RUN_ACTIVE })
+const complete = (journeyId) => ({ [journeyId]: RUN_COMPLETE })
+const getHandlerOf = (controller) =>
+  controller.routes.find((route) => route.method === 'GET').handler
 
 const lineSeed = {
   countryOfOrigin: 'FR',
@@ -104,6 +108,20 @@ const lineSeed = {
       speciesSelection: '923501',
       numberOfAnimalsQuantity: '',
       numberOfPackages: ''
+    }
+  ]
+}
+
+// A consignment of cattle: cattle carry an ear tag, so the identification page
+// has something to ask of this line.
+const cowLineSeed = {
+  countryOfOrigin: 'FR',
+  commodityLines: [
+    {
+      commoditySelection: 'Cow',
+      speciesSelection: '1148346',
+      numberOfAnimalsQuantity: '2',
+      numberOfPackages: '1'
     }
   ]
 }
@@ -225,7 +243,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
       h
     )
     expect(h.captured.redirect).toBe(
-      pagePath(inRun.journeyId, 'commodities/identification')
+      pagePath(inRun.journeyId, IDENTIFICATION_SLUG)
     )
 
     // Outside the run the page is the commodities section's last page, so
@@ -536,11 +554,60 @@ const deepLinkGuardTests = () => {
   })
 }
 
-const commodityPagesChainAroundTheReason = () => {
-  const complete = (journeyId) => ({ [journeyId]: RUN_COMPLETE })
-  const getHandlerOf = (controller) =>
-    controller.routes.find((route) => route.method === 'GET').handler
+const reasonAndAdditionalDetailsInOrder = () => {
+  const backLinkOf = async (controller, seed, record) => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, seed)
+    const h = captureH()
+    await getHandlerOf(controller)(
+      buildRequest(journey.journeyId, { record: record(journey.journeyId) }),
+      h
+    )
+    return {
+      journeyId: journey.journeyId,
+      backLink: h.captured.view.context.backLink
+    }
+  }
 
+  it("Should point the main import reason's Back link at What are you importing? mid-run, and at the overview outside the run", async () => {
+    const inRun = await backLinkOf(importReason, lineSeed, active)
+    expect(inRun.backLink).toBe(pagePath(inRun.journeyId, 'commodities'))
+
+    const outside = await backLinkOf(importReason, lineSeed, complete)
+    expect(outside.backLink).toBe(hubPath(outside.journeyId))
+  })
+
+  it("Should point Additional details' Back link at Identification details mid-run when a chosen commodity needs identifiers, and at the overview outside the run", async () => {
+    const inRun = await backLinkOf(additionalDetails, cowLineSeed, active)
+    expect(inRun.backLink).toBe(pagePath(inRun.journeyId, IDENTIFICATION_SLUG))
+
+    const outside = await backLinkOf(additionalDetails, cowLineSeed, complete)
+    expect(outside.backLink).toBe(hubPath(outside.journeyId))
+  })
+
+  it("Should point Additional details' Back link at Commodity details mid-run when nothing chosen needs identifiers", async () => {
+    const inRun = await backLinkOf(additionalDetails, fishLineSeed, active)
+    expect(inRun.backLink).toBe(
+      pagePath(inRun.journeyId, CONSIGNMENT_DETAILS_SLUG)
+    )
+  })
+
+  it('Should send Additional details to the overview outside the run, not on to the arrival details', async () => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, lineSeed)
+    const h = captureH()
+    await postHandlerOf(additionalDetails)(
+      buildRequest(journey.journeyId, {
+        payload: { animalsCertifiedFor: 'slaughter' },
+        record: complete(journey.journeyId)
+      }),
+      h
+    )
+    expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
+  })
+}
+
+const commodityPagesChainAroundTheReason = () => {
   it("Should point the commodity page's Back link at the origin page mid-run, and at the overview outside the run", async () => {
     const inRun = await store.create()
     await store.seedAnswers(inRun.journeyId, { countryOfOrigin: 'FR' })
@@ -602,7 +669,7 @@ const commodityPagesChainAroundTheReason = () => {
       saveH
     )
     expect(saveH.captured.redirect).toBe(
-      pagePath(journey.journeyId, 'commodities/identification')
+      pagePath(journey.journeyId, IDENTIFICATION_SLUG)
     )
 
     const identificationH = captureH()
@@ -741,8 +808,6 @@ describe('the opening run', () => {
   })
 
   describe('a page opened from its overview task returns to the overview', () => {
-    const complete = (journeyId) => ({ [journeyId]: RUN_COMPLETE })
-
     it('Should send the main reason for import to the overview, not on to the additional details', async () => {
       const journey = await store.create()
       await store.seedAnswers(journey.journeyId, lineSeed)
@@ -808,6 +873,11 @@ describe('the opening run', () => {
   describe(
     'the commodity pages chain around the main reason for import',
     commodityPagesChainAroundTheReason
+  )
+
+  describe(
+    'the main import reason and additional details sit in Design Release 2.1 order',
+    reasonAndAdditionalDetailsInOrder
   )
 
   describe('reaching the review ends the run', () => {

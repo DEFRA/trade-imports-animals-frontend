@@ -1,4 +1,3 @@
-import { hubPath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
@@ -27,17 +26,15 @@ const copy = copyFor({ en, cy })
 
 const UNWEANED_LABEL = { yes: copy.unweaned.yes, no: copy.unweaned.no }
 
-const render = (
+const render = async (
+  request,
   h,
-  journey,
-  values,
-  showUnweaned,
-  errors = {},
-  recoverableError = false
+  { journey, answers },
+  { values, showUnweaned, errors = {}, recoverableError = false }
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: hubPath(journey.journeyId),
+      backLink: await kit.runBackLink(request, page, answers),
       journey,
       page,
       recoverableError
@@ -64,20 +61,30 @@ const get = async (request, h) => {
   const { values, errors } = await validation.onStored(answers, {
     showUnweaned
   })
-  return render(h, journey, values, showUnweaned, errors)
+  return render(
+    request,
+    h,
+    { journey, answers },
+    { values, showUnweaned, errors }
+  )
 }
 
 const post = async (request, h) => {
-  const { journey, scope } = await state.get(request, h)
+  const { journey, scope, answers: storedAnswers } = await state.get(request, h)
   const showUnweaned = scope.has('containsUnweanedAnimals')
   const { values, answers, errors } = await validation.onSubmit(
     request.payload ?? {},
     { showUnweaned, allowMissing: kit.isHubExit(request) }
   )
   if (hasErrors(errors)) {
-    return render(h, journey, values, showUnweaned, errors).code(
-      HTTP_STATUS_BAD_REQUEST
-    )
+    return (
+      await render(
+        request,
+        h,
+        { journey, answers: storedAnswers },
+        { values, showUnweaned, errors }
+      )
+    ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   let committed
@@ -93,10 +100,15 @@ const post = async (request, h) => {
           : {})
       })
     },
-    () =>
-      render(h, journey, values, showUnweaned, {}, true).code(
-        HTTP_STATUS_INTERNAL_SERVER_ERROR
-      )
+    async () =>
+      (
+        await render(
+          request,
+          h,
+          { journey, answers: storedAnswers },
+          { values, showUnweaned, recoverableError: true }
+        )
+      ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
   )
   if (failure) {
     return failure

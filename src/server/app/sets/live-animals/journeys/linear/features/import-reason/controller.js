@@ -1,4 +1,3 @@
-import { hubPath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
@@ -46,6 +45,7 @@ const portItems = async () => [
 ]
 
 const render = async (
+  request,
   h,
   journey,
   values,
@@ -54,7 +54,7 @@ const render = async (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
-      backLink: hubPath(journey.journeyId),
+      backLink: await kit.runBackLink(request, page),
       journey,
       page,
       recoverableError
@@ -91,7 +91,7 @@ const render = async (
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const { values, errors } = await validation.onStored(answers)
-  return render(h, journey, values, errors)
+  return render(request, h, journey, values, errors)
 }
 
 const post = async (request, h) => {
@@ -101,7 +101,7 @@ const post = async (request, h) => {
   )
   if (hasErrors(errors)) {
     const { journey } = await state.get(request, h)
-    return (await render(h, journey, values, errors)).code(
+    return (await render(request, h, journey, values, errors)).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
@@ -113,7 +113,7 @@ const post = async (request, h) => {
     },
     async () => {
       const { journey } = await state.get(request, h)
-      return (await render(h, journey, values, {}, true)).code(
+      return (await render(request, h, journey, values, {}, true)).code(
         HTTP_STATUS_INTERNAL_SERVER_ERROR
       )
     }

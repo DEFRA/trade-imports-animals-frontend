@@ -156,7 +156,7 @@ const cases = {
     sections: [
       NA,
       IN_PROGRESS,
-      FULFILLED,
+      IN_PROGRESS,
       NA,
       NOT_STARTED,
       OPTIONAL,
@@ -214,7 +214,7 @@ const cases = {
     sections: [
       NA,
       FULFILLED,
-      NOT_STARTED,
+      IN_PROGRESS,
       NA,
       FULFILLED,
       FULFILLED,

@@ -9,8 +9,8 @@ const PRODUCT_SECTION_ORDER = [
   { id: 'origin', then: 'origin of the import', pageIds: ['origin'] },
   {
     id: 'commodities',
-    then: 'what are you importing and commodity details',
-    pageIds: ['commodities', 'consignmentDetails']
+    then: 'what are you importing, main import reason and commodity details',
+    pageIds: ['commodities', 'import-reason', 'consignmentDetails']
   },
   {
     id: 'animalIdentification',
@@ -18,9 +18,9 @@ const PRODUCT_SECTION_ORDER = [
     pageIds: ['animalIdentification']
   },
   {
-    id: 'consignment',
-    then: 'import reason and additional details',
-    pageIds: ['import-reason', 'additional-details']
+    id: 'additionalDetails',
+    then: 'additional details',
+    pageIds: ['additional-details']
   },
   {
     id: 'documents',

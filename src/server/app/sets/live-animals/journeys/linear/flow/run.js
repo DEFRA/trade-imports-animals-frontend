@@ -17,6 +17,7 @@ import { addressesPage } from '../features/addresses/page.js'
 import { consignmentContactSelectPage } from '../features/contact/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
 import { pageGatePasses } from '../../../../../flow/gates.js'
+import { identifiesAnAnimal } from './task-rows.js'
 
 const flowPageTarget = (page) => (scope, journeyId) =>
   pageGatePasses(page, scope) ? pagePath(journeyId, page.slug) : null
@@ -66,16 +67,32 @@ export const RUN_STEPS = [
 ]
 
 /** The page each step's Back link names while the opening run is under way, as
- * Design Release 2.1 orders them. Commodity details names the commodity page,
- * not the reason for import between them. A step left out keeps the overview. */
+ * Design Release 2.1 orders them. The main import reason names What are you
+ * importing. Commodity details names the commodity page, not the reason between
+ * them. Additional details names Identification details when a chosen commodity
+ * needs identifiers, and Commodity details otherwise. A step left out keeps the
+ * overview. */
 const RUN_BACK_STEPS = Object.freeze({
-  [commoditiesPage.id]: originPage,
-  [consignmentDetailsPage.id]: commoditiesPage
+  [commoditiesPage.id]: () => originPage,
+  [importReasonPage.id]: () => commoditiesPage,
+  [consignmentDetailsPage.id]: () => commoditiesPage,
+  [additionalDetailsPage.id]: (answers) =>
+    identifiesAnAnimal(answers)
+      ? animalIdentificationPage
+      : consignmentDetailsPage
 })
 
-export const runBackTarget = (pageId, journeyId) =>
+/**
+ * The path a step's Back link names while the opening run is under way.
+ *
+ * @param {string} pageId - the page's id.
+ * @param {string} journeyId - the journey the page belongs to.
+ * @param {object} [answers] - the notification's answers, for a Back link that depends on them.
+ * @returns {string | null} the path, or null when the step keeps the overview.
+ */
+export const runBackTarget = (pageId, journeyId, answers = {}) =>
   Object.hasOwn(RUN_BACK_STEPS, pageId)
-    ? pagePath(journeyId, RUN_BACK_STEPS[pageId].slug)
+    ? pagePath(journeyId, RUN_BACK_STEPS[pageId](answers).slug)
     : null
 
 export const nextRunTarget = (stepId, scope, journeyId) => {

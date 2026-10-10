@@ -240,8 +240,34 @@ describe('#runBackTarget — the Back link while the opening run is under way', 
     )
   })
 
+  it("Should name What are you importing? as the main import reason's Back link", () => {
+    expect(runBackTarget(importReasonPage.id, JOURNEY_ID, lineSeed)).toBe(
+      pagePath(JOURNEY_ID, 'commodities')
+    )
+  })
+
+  it("Should name Identification details as Additional details' Back link when a chosen commodity needs identifiers", () => {
+    expect(
+      runBackTarget(additionalDetailsPage.id, JOURNEY_ID, {
+        commodityLines: [{ commoditySelection: 'Cow' }]
+      })
+    ).toBe(pagePath(JOURNEY_ID, animalIdentificationPage.slug))
+  })
+
+  it("Should name Commodity details as Additional details' Back link when no chosen commodity needs identifiers", () => {
+    const commodityDetails = pagePath(JOURNEY_ID, 'consignment-details')
+    expect(
+      runBackTarget(additionalDetailsPage.id, JOURNEY_ID, {
+        commodityLines: [{ commoditySelection: 'Fish' }]
+      })
+    ).toBe(commodityDetails)
+    expect(runBackTarget(additionalDetailsPage.id, JOURNEY_ID, {})).toBe(
+      commodityDetails
+    )
+  })
+
   it('Should name nothing for a step the journey leaves to the overview', () => {
-    expect(runBackTarget(importReasonPage.id, JOURNEY_ID)).toBeNull()
     expect(runBackTarget('origin', JOURNEY_ID)).toBeNull()
+    expect(runBackTarget(portOfEntryPage.id, JOURNEY_ID)).toBeNull()
   })
 })

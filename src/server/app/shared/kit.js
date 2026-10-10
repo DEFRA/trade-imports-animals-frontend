@@ -147,12 +147,13 @@ export const runTarget = async (request, stepId, scope) =>
  *
  * @param {object} request - the hapi request.
  * @param {{ id: string }} page - the page identity.
+ * @param {object} [answers] - the notification's answers, for a Back link that depends on them.
  * @returns {Promise<string>} the Back link's href.
  */
-export const runBackLink = async (request, page) => {
+export const runBackLink = async (request, page, answers = {}) => {
   const { journeyId } = request.params
   const runBack = (await inOpeningRun(request, journeyId))
-    ? journeyRunBackTarget(page.id, journeyId)
+    ? journeyRunBackTarget(page.id, journeyId, answers)
     : null
   return runBack ?? hubPath(journeyId)
 }

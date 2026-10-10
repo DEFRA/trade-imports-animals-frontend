@@ -214,8 +214,26 @@ test.describe('import-reason feature', () => {
     ).toBeChecked()
   })
 
-  test('back link returns to the notification hub', async ({ page }) => {
+  test('back link returns to What are you importing? in the opening run', async ({
+    page
+  }) => {
+    const commoditiesUrl = page
+      .url()
+      .replace(/\/import-reason$/, '/commodities')
+
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(commoditiesUrl)
+  })
+
+  test('back link returns to the overview once the page is opened from it', async ({
+    page
+  }) => {
     const hubUrl = page.url().replace(/\/import-reason$/, '')
+    await page.goto(hubUrl)
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await page.getByRole('link', { name: 'Main reason for import' }).click()
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
