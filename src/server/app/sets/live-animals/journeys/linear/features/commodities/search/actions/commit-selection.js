@@ -33,8 +33,7 @@ const selectionTarget = async (request, scope) =>
   kit.hubExitTarget(request) ??
   (kit.changeContext(request)
     ? detailsPath(request)
-    : ((await kit.runTarget(request, commoditiesPage.id, scope)) ??
-      detailsPath(request)))
+    : await kit.nextTarget(request, commoditiesPage, scope))
 
 export const commitSelection = async (request, h, selected) => {
   await state.reconcileEntriesAt(

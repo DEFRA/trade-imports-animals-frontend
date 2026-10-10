@@ -168,8 +168,10 @@ owner to silence coverage.
 ## 6. Place the page in the journey and hub task row
 
 Import the page identity into [`journeys/linear/flow/flow.js`](../journeys/linear/flow/flow.js). Put it in the
-right `sections` entry. Its position controls `nextInSection()` and
-strictly-earlier prerequisites.
+right `sections` entry. Its position controls strictly-earlier
+prerequisites and where Save and continue goes outside the opening run
+(`nextInTaskRow()`: the next page of the section only when it is in the same
+task row).
 
 Import it into [`journeys/linear/flow/task-rows.js`](../journeys/linear/flow/task-rows.js). Put it in an
 existing task row when those pages form one user task. Add a task row only when

@@ -248,7 +248,7 @@ describe('commodity search — saving the selection', () => {
         numberOfAnimalsQuantity: ''
       }
     ])
-    expect(result.response.redirect).toContain('consignment-details')
+    expect(result.response.redirect).toMatch(/\/notifications\/[^/]+$/)
   })
 
   it('Should save what is carried alongside what is ticked on screen', async () => {

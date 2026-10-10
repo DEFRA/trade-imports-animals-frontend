@@ -92,8 +92,11 @@ hub, or the review page, completes the run
 ([`completeOpeningRun`](../../../flow/run-state.js), called from
 [`features/hub/controller.js`](../journeys/linear/features/hub/controller.js) and
 [`features/check-answers/controller.js`](../journeys/linear/features/check-answers/controller.js)).
-After that, saving a page follows `nextInSection` and returns to the hub at the
-end of each section: the run is not re-entered for that notification.
+After that, saving a page returns to the hub: the save fallback
+(`nextInTaskRow`) moves on only to a later page of the same task row, which in
+this journey is the CPH number page handing back to Roles and addresses. Nothing
+marks a page as opened from the hub, and the run is not re-entered for that
+notification.
 
 The opening run begins when the notification is created — the dashboard's
 create POST in
@@ -109,7 +112,7 @@ exempt from the guard, so there is no redirect loop.
 
 A journey the guard bounces to the origin page does not resume the opening run
 when it saves that page. `kit.nextTarget` finds `inOpeningRun` false, so
-`runTarget` is null, and the origin section holds only the origin page — the
+`runTarget` is null, and the origin task row holds only the origin page — the
 user continues to the hub rather than into `RUN_STEPS`. That is the accepted
 rule for a returning user without run state: they land on the task list and work
 from there. Only a notification created in this session sequences through

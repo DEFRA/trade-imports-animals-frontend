@@ -94,7 +94,7 @@ describe('save actions — hub exit semantics', () => {
     expect(after.purposeInInternalMarket).toBe('breeding')
   })
 
-  it('Should keep Save and continue on the flow target when no exit is named', async () => {
+  it('Should send Save and continue to the overview outside the opening run when no exit is named', async () => {
     const { journeyId, response, after } = await drivePost(
       postHandlerOf(importReason),
       {
@@ -102,9 +102,7 @@ describe('save actions — hub exit semantics', () => {
         seed: reasonPrerequisites
       }
     )
-    expect(response).toEqual({
-      redirect: pagePath(journeyId, 'additional-details')
-    })
+    expect(response).toEqual({ redirect: hubPath(journeyId) })
     expect(after.purposeInInternalMarket).toBe('breeding')
   })
 

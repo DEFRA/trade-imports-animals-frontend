@@ -32,6 +32,7 @@ import * as animalIdentification from '../features/commodities/animal-identifica
 import * as importReason from '../features/import-reason/controller.js'
 import * as additionalDetails from '../features/additional-details/controller.js'
 import * as commoditiesSearch from '../features/commodities/search/search.controller.js'
+import * as portOfEntry from '../features/transport/port-of-entry/port-of-entry.controller.js'
 import * as addresses from '../features/addresses/controller.js'
 import * as contact from '../features/contact/controller.js'
 import * as checkAnswers from '../features/check-answers/controller.js'
@@ -187,7 +188,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
     expect(h.captured.redirect).toBe(pagePath(journey.journeyId, 'commodities'))
   })
 
-  it('Should send What are you importing? on to the main reason for import mid-run, and to the commodity details outside the run', async () => {
+  it('Should send What are you importing? on to the main reason for import mid-run, and to the overview outside the run', async () => {
     const inRun = await store.create()
     await store.seedAnswers(inRun.journeyId, { countryOfOrigin: 'FR' })
     const h = captureH()
@@ -204,9 +205,7 @@ const saveAndContinueFollowsTheRunSequence = () => {
       payload: { species: ['Cat|923501'] },
       seed: { countryOfOrigin: 'FR' }
     })
-    expect(outside.h.captured.redirect).toBe(
-      pagePath(outside.journeyId, CONSIGNMENT_DETAILS_SLUG)
-    )
+    expect(outside.h.captured.redirect).toBe(hubPath(outside.journeyId))
   })
 
   it('Should send the consignment details page to the identification surface mid-run, and to the hub outside the run', async () => {
@@ -636,6 +635,71 @@ describe('the opening run', () => {
       )
       expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
       expect(openingRunCookie() in h.captured.cookies).toBe(false)
+    })
+  })
+
+  describe('a page opened from its overview task returns to the overview', () => {
+    const complete = (journeyId) => ({ [journeyId]: RUN_COMPLETE })
+
+    it('Should send the main reason for import to the overview, not on to the additional details', async () => {
+      const journey = await store.create()
+      await store.seedAnswers(journey.journeyId, lineSeed)
+      const h = captureH()
+      await postHandlerOf(importReason)(
+        buildRequest(journey.journeyId, {
+          payload: {
+            reasonForImport: 'internalMarket',
+            purposeInInternalMarket: 'breeding'
+          },
+          record: complete(journey.journeyId)
+        }),
+        h
+      )
+      expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
+    })
+
+    it('Should send the arrival details on to the transit countries mid-run, and to the overview outside the run', async () => {
+      const payload = { meansOfTransport: 'ROAD_VEHICLE' }
+      const inRun = await store.create()
+      await store.seedAnswers(inRun.journeyId, completeSeed)
+      const runH = captureH()
+      await postHandlerOf(portOfEntry)(
+        buildRequest(inRun.journeyId, {
+          payload,
+          record: active(inRun.journeyId)
+        }),
+        runH
+      )
+      expect(runH.captured.redirect).toBe(
+        pagePath(inRun.journeyId, 'transit-countries')
+      )
+
+      const outside = await store.create()
+      await store.seedAnswers(outside.journeyId, completeSeed)
+      const outsideH = captureH()
+      await postHandlerOf(portOfEntry)(
+        buildRequest(outside.journeyId, {
+          payload,
+          record: complete(outside.journeyId)
+        }),
+        outsideH
+      )
+      expect(outsideH.captured.redirect).toBe(hubPath(outside.journeyId))
+    })
+
+    it('Should send roles and addresses to the overview outside the run, even for a consignment that needs a CPH number', async () => {
+      const journey = await store.create()
+      const withoutCph = structuredClone(completeSeed)
+      delete withoutCph.countyParishHoldingCph
+      await store.seedAnswers(journey.journeyId, withoutCph)
+      const h = captureH()
+      await postHandlerOf(addresses)(
+        buildRequest(journey.journeyId, {
+          record: complete(journey.journeyId)
+        }),
+        h
+      )
+      expect(h.captured.redirect).toBe(hubPath(journey.journeyId))
     })
   })
 

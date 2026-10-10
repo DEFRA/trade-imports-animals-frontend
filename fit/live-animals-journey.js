@@ -224,6 +224,8 @@ export const unlockSections = async (page, species = 'Felis catus') => {
   await page.getByRole('link', { name: 'What are you importing?' }).click()
   await selectSpecies(page, [species])
   await save(page)
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await page.getByRole('link', { name: 'Commodity details' }).click()
   await expect(
     page.getByRole('heading', { name: 'Commodity details' })
   ).toBeVisible()
@@ -469,6 +471,8 @@ export const completeAnswerSections = async (
 
   await task('What are you importing?')
   await answerWhatYouAreImporting(page)
+  await overview()
+  await task('Commodity details')
   await answerCommodityCounts(page)
   await overview()
 
@@ -480,15 +484,23 @@ export const completeAnswerSections = async (
 
   await task('Main reason for import')
   await answerImportReason(page)
+  await overview()
+  await task('Additional details')
   await answerAdditionalDetails(page)
+  await overview()
 
   await task('Roles and addresses')
   await answerRolesAndAddresses(page)
 
   await task('Arrival details')
   await answerArrivalDetails(page)
+  await overview()
+  await task('Transit countries')
   await answerTransitCountries(page)
+  await overview()
+  await task('Transport details')
   await answerTransporter(page)
+  await overview()
 
   await task('Contact address for this consignment')
   await answerContactAddress(page)
