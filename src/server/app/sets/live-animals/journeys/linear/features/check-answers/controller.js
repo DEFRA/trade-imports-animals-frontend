@@ -204,9 +204,9 @@ const post = async (request, h) => {
   // stored document to the upload backend.
   const { refused, extraCardErrors } = await reviewRefusal(request, h)
   if (refused) {
-    const { journey } = await state.get(request, h)
-    if (journey.status === state.AMEND) {
-      return h.redirect(pagePath(journey.journeyId, CYA_SLUG))
+    const { journey: refusedJourney } = await state.get(request, h)
+    if (refusedJourney.status === state.AMEND) {
+      return h.redirect(pagePath(refusedJourney.journeyId, CYA_SLUG))
     }
     const rendered = await renderNotificationView(request, h, {
       disableAutoFocus: false,
