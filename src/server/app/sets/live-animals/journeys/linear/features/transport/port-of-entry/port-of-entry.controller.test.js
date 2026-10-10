@@ -20,6 +20,7 @@ import {
   postHandlerOf
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
+import { hubPath } from '../../../../../../../shared/paths.js'
 import * as ports from '../../../../../../../services/ports/index.js'
 import {
   addUtcDays,
@@ -220,6 +221,24 @@ describe('port-of-entry — the arrival-date window', () => {
     expect(result.view.context.errors.arrivalDateAtPort).toBe(
       copy.portOfEntry.errors.arrivalDateInvalid
     )
+  })
+
+  it('Should keep the real-date message on Save and return to overview, saving nothing', async () => {
+    const result = await driveHandler(post, {
+      payload: { arrivalDateAtPort: '31/2/2026', exit: 'hub' }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.arrivalDateAtPort).toBe(
+      copy.portOfEntry.errors.arrivalDateInvalid
+    )
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should save an empty page and go to the overview on Save and return to overview', async () => {
+    const result = await driveHandler(post, { payload: { exit: 'hub' } })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
   })
 
   it('Should leave a blank arrival date optional', async () => {

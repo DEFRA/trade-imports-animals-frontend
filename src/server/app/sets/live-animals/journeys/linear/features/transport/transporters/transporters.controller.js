@@ -139,7 +139,10 @@ const post = async (request, h) => {
   }
 
   const records = availableTransporters(request)
-  const { errors } = await validation.onSubmit(payload, { records })
+  const { errors } = await validation.onSubmit(payload, {
+    records,
+    allowMissing: kit.isHubExit(request)
+  })
   if (hasErrors(errors)) {
     const { journey } = await state.get(request, h)
     return render(request, h, journey, { query }, { errors })

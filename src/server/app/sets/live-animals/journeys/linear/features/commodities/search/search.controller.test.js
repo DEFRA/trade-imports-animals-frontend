@@ -12,6 +12,7 @@ import {
   postHandlerOf
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
+import { hubPath } from '../../../../../../../shared/paths.js'
 
 import * as search from './search.controller.js'
 
@@ -202,6 +203,13 @@ describe('commodity search — saving the selection', () => {
       { text: SELECT_COMMODITY, href: '#commoditySearch' }
     ])
     expect(result.after).toEqual(result.before)
+  })
+
+  it('Should go to the overview with nothing chosen on Save and return to overview', async () => {
+    const result = await driveHandler(post, { payload: { exit: 'hub' } })
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.view).toBeUndefined()
+    expect(result.after.commodityLines ?? []).toEqual([])
   })
 
   it('Should key the error to the tick boxes, keeping the query and the results', async () => {

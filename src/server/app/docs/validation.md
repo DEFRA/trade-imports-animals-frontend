@@ -43,6 +43,13 @@ scope and `requires` rules decide whether the journey is complete. These are
 separate checks: saving an optional blank is allowed, while submit readiness still
 reflects every in-scope mandatory obligation and group invariant.
 
+"Save and return to overview" saves what was entered without refusing the page for a
+missing required answer. A controller opts in by passing
+`{ allowMissing: kit.isHubExit(request) }` to `validate` (or to `onSubmit` of a
+`pageValidation`), which drops the blank-or-absent errors and keeps every other
+one, so an answer that breaks its own rule is still refused. A page that must stay
+strict (commodity details) does not opt in.
+
 [`src/server/app/flow/prerequisites.js`](../flow/prerequisites.js) adds the separate
 continue-time gate for configured fields that must be answered before later pages
 open.

@@ -1,6 +1,20 @@
 import { describe, expect, it } from 'vitest'
 
-import { dateField } from './kit.js'
+import { dateField, isHubExit } from './kit.js'
+
+describe('#isHubExit — the Save and return to overview submit', () => {
+  const params = { journeyId: 'journey-1' }
+
+  it('Should be true only for the named hub exit', () => {
+    expect(isHubExit({ payload: { exit: 'hub' }, params })).toBe(true)
+  })
+
+  it('Should be false with no payload, no exit or another exit', () => {
+    expect(isHubExit({ params })).toBe(false)
+    expect(isHubExit({ payload: {}, params })).toBe(false)
+    expect(isHubExit({ payload: { exit: 'other' }, params })).toBe(false)
+  })
+})
 
 describe('#dateField — MoJ date-picker view model', () => {
   it('Should carry supplied bounds through verbatim so the macro emits the restriction attributes', () => {
