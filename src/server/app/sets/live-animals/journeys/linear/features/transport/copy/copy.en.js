@@ -63,6 +63,7 @@ export const copy = {
   },
   transitCountries: {
     title: 'Which countries will the consignment travel through?',
+    pageTitle: 'Transit countries',
     betweenCountries:
       'Countries the consignment will travel through are countries between the country of origin and the destination country.',
     excludesUk: 'This does not include the United Kingdom.',
@@ -80,7 +81,6 @@ export const copy = {
     },
     remove: 'Remove',
     removeHidden: (country) => country,
-    empty: 'You have not added any countries yet.',
     added: (country) => `${country} added.`,
     removed: (country) => `${country} removed.`,
     // The cap is not stated before the trader meets it (design release 1): the

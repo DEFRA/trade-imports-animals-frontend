@@ -140,6 +140,13 @@ export const runTarget = async (request, stepId, scope) =>
     ? journeyNextRunTarget(stepId, scope, request.params.journeyId)
     : null
 
+/** Back for a page the opening run reaches from `previousSlug`: that page
+ * while the run is under way, the overview once it is not. */
+export const runBackLink = async (request, previousSlug) =>
+  (await inOpeningRun(request, request.params.journeyId))
+    ? pagePath(request.params.journeyId, previousSlug)
+    : hubPath(request.params.journeyId)
+
 export const nextTarget = async (request, page, scope) =>
   exitTarget(
     request,

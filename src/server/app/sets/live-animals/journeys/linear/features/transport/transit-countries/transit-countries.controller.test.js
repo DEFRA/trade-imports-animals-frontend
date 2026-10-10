@@ -4,14 +4,23 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
 import { configureRecords } from '../../../../../../../engine/persistence/records.js'
-import { configureSession } from '../../../../../../../engine/persistence/session.js'
+import {
+  configureSession,
+  openingRunCookie
+} from '../../../../../../../engine/persistence/session.js'
+import {
+  RUN_ACTIVE,
+  RUN_COMPLETE
+} from '../../../../../../../flow/run-state.js'
 import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  postHandlerOf
+  journeyRequest,
+  postHandlerOf,
+  stubH
 } from '../../../../../../../engine/test-support.js'
-import { hubPath } from '../../../../../../../shared/paths.js'
+import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
 import * as countries from '../../../../../../../services/countries/index.js'
 
@@ -41,6 +50,24 @@ const configure = () => {
   configureRecords(SET_ID, recordsStub)
   configureSession(SET_ID, sessionStub)
   buildDispatch(SET_ID, dispatchPages)
+}
+
+const driveWithRun = async (
+  handler,
+  phase,
+  { seed: answers = seed, payload = {} } = {}
+) => {
+  const journey = await store.create()
+  await store.seedAnswers(journey.journeyId, answers)
+  const h = stubH()
+  const response = await handler(
+    journeyRequest(journey.journeyId, {
+      payload,
+      state: { [openingRunCookie()]: { [journey.journeyId]: phase } }
+    }),
+    h
+  )
+  return { journeyId: journey.journeyId, response, view: h.captured.view }
 }
 
 describe('POST transit-countries — adding a country', () => {
@@ -379,9 +406,105 @@ describe('GET transit-countries', () => {
     expect(result.view.context.status).toBe('')
   })
 
-  it('Should say the list is empty when nothing has been added', async () => {
+  it('Should list no countries when nothing has been added', async () => {
     const result = await driveHandler(get, { seed })
     expect(result.view.context.hasCountries).toBe(false)
     expect(result.view.context.countryRows).toEqual([])
   })
+})
+
+describe('GET transit-countries — title and Back link', () => {
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  it("Should title the browser tab 'Transit countries' and keep the question as the heading", async () => {
+    const result = await driveHandler(get, { seed })
+    expect(result.view.context.pageTitle).toBe('Transit countries')
+    expect(result.view.context.copy.title).toBe(
+      'Which countries will the consignment travel through?'
+    )
+  })
+
+  it("Should keep the 'Transit countries' title when a refused Add shows an error", async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: { action: 'add', transitedCountries: [] }
+    })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.pageTitle).toBe('Transit countries')
+    expect(result.view.context.errorSummary).not.toBeNull()
+  })
+
+  it('Should point Back at the arrival details while the opening run is under way', async () => {
+    const { journeyId, view } = await driveWithRun(get, RUN_ACTIVE)
+    expect(view.context.backLink).toBe(pagePath(journeyId, 'port-of-entry'))
+  })
+
+  it('Should point Back at the overview once the opening run is over', async () => {
+    const complete = await driveWithRun(get, RUN_COMPLETE)
+    expect(complete.view.context.backLink).toBe(hubPath(complete.journeyId))
+    const result = await driveHandler(get, { seed })
+    expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
+  })
+
+  it('Should keep Back on the arrival details when an Add is refused mid-run', async () => {
+    const { journeyId, response, view } = await driveWithRun(post, RUN_ACTIVE, {
+      payload: { action: 'add' }
+    })
+    expect(response.statusCode).toBe(400)
+    expect(view.context.backLink).toBe(pagePath(journeyId, 'port-of-entry'))
+  })
+})
+
+describe('transit-countries — only for rail or road', () => {
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  const notOverland = [
+    { name: 'Air', seed: { meansOfTransport: 'AIRPLANE' } },
+    { name: 'Sea', seed: { meansOfTransport: 'VESSEL' } },
+    { name: 'not saved', seed: {} }
+  ]
+
+  it.each(notOverland)(
+    'Should send a GET to the overview when the means of transport is $name',
+    async ({ seed: answers }) => {
+      const result = await driveHandler(get, { seed: answers })
+      expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+      expect(result.view).toBeUndefined()
+    }
+  )
+
+  it.each(notOverland)(
+    'Should save no countries and go to the overview on Save and continue when the means of transport is $name',
+    async ({ seed: answers }) => {
+      const result = await driveHandler(post, {
+        seed: answers,
+        payload: { transitedCountries: ['FR', 'BE'] }
+      })
+      expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+      expect(result.after.transitedCountries).toBeUndefined()
+      expect(result.view).toBeUndefined()
+    }
+  )
+
+  it.each([
+    ['an Add', { action: 'add', transitedCountry: 'FR' }],
+    [
+      'a Remove',
+      { action: `${REMOVE_ACTION_PREFIX}FR`, transitedCountries: ['FR'] }
+    ],
+    ['Save and return to overview', { transitedCountries: ['FR'], exit: 'hub' }]
+  ])(
+    'Should send %s to the overview without rendering or saving when the means of transport is Air',
+    async (_name, payload) => {
+      const result = await driveHandler(post, {
+        seed: { meansOfTransport: 'AIRPLANE' },
+        payload
+      })
+      expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+      expect(result.view).toBeUndefined()
+      expect(result.after.transitedCountries).toBeUndefined()
+    }
+  )
 })

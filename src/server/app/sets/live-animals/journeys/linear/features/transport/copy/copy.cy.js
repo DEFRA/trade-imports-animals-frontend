@@ -56,6 +56,7 @@ export const copy = {
   },
   transitCountries: {
     title: 'Drwy ba wledydd y bydd y llwyth yn teithio?',
+    pageTitle: 'Gwledydd tramwy',
     betweenCountries:
       'Gwledydd y bydd y llwyth yn teithio drwyddynt yw’r gwledydd rhwng y wlad tarddiad a’r wlad gyrchfan.',
     excludesUk: 'Nid yw hyn yn cynnwys y Deyrnas Unedig.',
@@ -73,7 +74,6 @@ export const copy = {
     },
     remove: 'Tynnu',
     removeHidden: (country) => country,
-    empty: 'Nid ydych wedi ychwanegu unrhyw wledydd eto.',
     added: (country) => `${country} wedi’i ychwanegu.`,
     removed: (country) => `${country} wedi’i dynnu.`,
     limitReached: (max) =>

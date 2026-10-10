@@ -43,6 +43,10 @@ const transitLimit = '#transit-countries-limit'
 const MAX_TRANSPORT_FIELD_LENGTH = 58
 const DOVER_OPTION = 'Port of Dover - GB DVR'
 const PORT_OF_ENTRY_PAGE = 'port-of-entry'
+const TRANSIT_PAGE = 'transit-countries'
+const TRANSIT_BROWSER_TITLE =
+  'Transit countries - Import notification service - GOV.UK'
+const EMPTY_LIST_SENTENCE = 'You have not added any countries yet.'
 // The visually hidden name the MoJ picker gives the button that opens the
 // calendar.
 const CHOOSE_DATE = 'Choose date'
@@ -815,9 +819,8 @@ test.describe('transit countries rendering and validation', () => {
     await expect(
       page.getByRole('button', { name: copy.transitCountries.add, exact: true })
     ).toBeVisible()
-    // Nothing added yet, so there is no table to read back — just the sentence
-    // that says so, and no cap stated up front.
-    await expect(page.getByText(copy.transitCountries.empty)).toBeVisible()
+    // Nothing added yet, so there is no table and no cap stated up front.
+    await expect(page.getByText(EMPTY_LIST_SENTENCE)).toHaveCount(0)
     await expect(page.getByRole('table')).toHaveCount(0)
     await expect(
       page.getByText(
@@ -876,9 +879,35 @@ test.describe('transit countries rendering and validation', () => {
     await expectOverview(page)
     await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
 
-    await page.goto(journeyUrl(page, 'transit-countries'))
-    await expect(page.getByText(copy.transitCountries.empty)).toBeVisible()
+    await page.goto(journeyUrl(page, TRANSIT_PAGE))
+    await expect(page.getByText(EMPTY_LIST_SENTENCE)).toHaveCount(0)
+    await expect(page.getByRole('table')).toHaveCount(0)
     expect(await addedCountries(page)).toEqual([])
+  })
+
+  test('transit page is titled Transit countries in the browser, with Error: in front when it shows an error', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await expect(page).toHaveTitle(TRANSIT_BROWSER_TITLE)
+    await expect(
+      page.getByRole('heading', { name: copy.transitCountries.title })
+    ).toBeVisible()
+
+    await page
+      .getByRole('button', { name: copy.transitCountries.add, exact: true })
+      .click()
+
+    await expect(page).toHaveTitle(`Error: ${TRANSIT_BROWSER_TITLE}`)
+  })
+
+  test('transit back link returns to the overview when the page was opened from its task', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await page.locator('.govuk-back-link').click()
+
+    await expectOverview(page)
   })
 
   test('transit validation: pressing Add with nothing chosen links to and focuses the search box', async ({
@@ -940,6 +969,54 @@ test.describe('transit countries rendering and validation', () => {
     await expect(page.locator('form img')).toHaveCount(0)
     expect(await page.evaluate(() => window.__xss)).toBeUndefined()
     expect(await addedCountries(page)).toEqual([])
+  })
+})
+
+test.describe('transit countries only for rail or road', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('opening the transit page by its address goes to the overview when no means of transport is saved, or Sea is', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await unlockSections(page)
+    await page.goto(journeyUrl(page, TRANSIT_PAGE))
+    await expectOverview(page)
+
+    await page.getByRole('link', { name: copy.portOfEntry.title }).click()
+    await page.locator(meansSelect).selectOption('VESSEL')
+    await submit(page)
+    await expectOverview(page)
+    await page.goto(journeyUrl(page, TRANSIT_PAGE))
+    await expectOverview(page)
+  })
+
+  test('a transit form submitted after the means changes to Air saves no countries and goes to the overview', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await addTransitCountry(page, 'France')
+
+    const other = await page.context().newPage()
+    await other.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
+    await other.locator(meansSelect).selectOption('AIRPLANE')
+    await submit(other)
+    await expectOverview(other)
+    await other.close()
+
+    await submit(page)
+    await expectOverview(page)
+    await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
+
+    await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
+    await page.locator(meansSelect).selectOption('ROAD_VEHICLE')
+    await submit(page)
+    await page.goto(journeyUrl(page, TRANSIT_PAGE))
+    await expect(
+      page.getByRole('cell', { name: 'France', exact: true })
+    ).toHaveCount(0)
   })
 })
 
