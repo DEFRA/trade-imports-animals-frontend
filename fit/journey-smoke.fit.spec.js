@@ -63,6 +63,7 @@ test.describe('live-animals journey glue', () => {
     await expect(heading('Commodity details')).toBeVisible()
 
     await page.getByLabel('Number of animals').fill('2')
+    await page.getByLabel('Number of packages (when required)').fill('1')
     await save()
     await expect(
       page.getByRole('heading', { name: 'Identification details', exact: true })

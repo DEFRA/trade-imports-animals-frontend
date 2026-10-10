@@ -56,9 +56,10 @@ const lineSeed = {
   ]
 }
 
-// The line's animal count is save-blocking, so a details POST that is meant to
-// reach its redirect has to carry one.
-const lineCountPayload = { 'numberOfAnimalsQuantity-0': '1' }
+const lineRequiredAnswersPayload = {
+  'numberOfAnimalsQuantity-0': '1',
+  'numberOfPackages-0': '1'
+}
 
 const configure = () => {
   configureRecords(SET_ID, recordsStub)
@@ -218,7 +219,7 @@ describe('change context — only the collection exit repoints to check your ans
     const { journeyId, response } = await drive(
       postHandlerOf(consignmentDetails),
       {
-        payload: lineCountPayload,
+        payload: lineRequiredAnswersPayload,
         query: change,
         seed: lineSeed
       }
@@ -249,7 +250,7 @@ describe('change context — only the collection exit repoints to check your ans
     const { journeyId, response } = await drive(
       postHandlerOf(consignmentDetails),
       {
-        payload: lineCountPayload,
+        payload: lineRequiredAnswersPayload,
         seed: { countryOfOrigin: 'FR', ...lineSeed }
       }
     )
@@ -269,7 +270,7 @@ describe('change context — only the collection exit repoints to check your ans
 
   it('Should let an explicit hub exit win over the change context on a collection exit', async () => {
     const details = await drive(postHandlerOf(consignmentDetails), {
-      payload: { ...lineCountPayload, exit: 'hub' },
+      payload: { ...lineRequiredAnswersPayload, exit: 'hub' },
       query: change,
       seed: lineSeed
     })

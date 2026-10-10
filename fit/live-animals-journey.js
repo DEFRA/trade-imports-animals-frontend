@@ -229,9 +229,15 @@ export const unlockSections = async (page, species = 'Felis catus') => {
   await expect(
     page.getByRole('heading', { name: 'Commodity details' })
   ).toBeVisible()
-  // The animal count is save-blocking, so the page will not let the journey
-  // past it unanswered.
+  // The animal count and the number of packages are save-blocking, so the
+  // page will not let the journey past them unanswered.
   await page.getByLabel('Number of animals').fill('1')
+  // A species whose commodity is not counted in packages has no such box.
+  for (const box of await page
+    .locator('input[name^="numberOfPackages-"]')
+    .all()) {
+    await box.fill('1')
+  }
   await save(page)
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }

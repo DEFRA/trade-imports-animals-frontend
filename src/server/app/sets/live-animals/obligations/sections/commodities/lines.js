@@ -77,7 +77,7 @@ export const numberOfPackages = {
   id: '252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507',
   name: 'numberOfPackages',
   within: commodityLine,
-  status: 'optional',
+  status: 'mandatory',
   applyTo: allowListed(commodityCode, packageCountCommodities, null, [
     numberOfPackagesReason
   ])

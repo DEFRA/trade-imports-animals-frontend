@@ -169,7 +169,11 @@ describe('save actions — hub exit semantics', () => {
     const { journeyId, response, after } = await drivePost(
       postHandlerOf(consignmentDetails),
       {
-        payload: { 'numberOfAnimalsQuantity-0': '2', exit: 'hub' },
+        payload: {
+          'numberOfAnimalsQuantity-0': '2',
+          'numberOfPackages-0': '1',
+          exit: 'hub'
+        },
         seed
       }
     )

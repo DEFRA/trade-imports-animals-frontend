@@ -23,6 +23,8 @@ const SECOND_ANIMALS_QUANTITY_FIELD = 'numberOfAnimalsQuantity-1'
 const SECOND_ANIMALS_QUANTITY_INPUT = `#${SECOND_ANIMALS_QUANTITY_FIELD}`
 const FIRST_PACKAGES_FIELD = 'numberOfPackages-0'
 const FIRST_PACKAGES_INPUT = `#${FIRST_PACKAGES_FIELD}`
+const SECOND_PACKAGES_FIELD = 'numberOfPackages-1'
+const SECOND_PACKAGES_INPUT = `#${SECOND_PACKAGES_FIELD}`
 const GOVUK_TABLE = '.govuk-table'
 const CONSIGNMENT_DETAILS_PATH = 'consignment-details'
 const REMOVE_COW = 'Remove Cow'
@@ -48,7 +50,7 @@ const quantityFields = [
   ['number of animals for Bos taurus', FIRST_ANIMALS_QUANTITY_FIELD, '2.5'],
   ['number of packages for Bos taurus', FIRST_PACKAGES_FIELD, 'boxes'],
   ['number of animals for Felis catus', SECOND_ANIMALS_QUANTITY_FIELD, '0'],
-  ['number of packages for Felis catus', 'numberOfPackages-1', '-1']
+  ['number of packages for Felis catus', SECOND_PACKAGES_FIELD, '-1']
 ]
 
 const fillValidQuantities = async (page) => {
@@ -56,7 +58,7 @@ const fillValidQuantities = async (page) => {
     FIRST_ANIMALS_QUANTITY_FIELD,
     FIRST_PACKAGES_FIELD,
     SECOND_ANIMALS_QUANTITY_FIELD,
-    'numberOfPackages-1'
+    SECOND_PACKAGES_FIELD
   ].entries()) {
     await page.locator(`#${field}`).fill(validQuantities[index])
   }
@@ -215,7 +217,7 @@ test.describe('commodity consignment details — rendering and validation', () =
     page
   }) => {
     await page.locator(FIRST_PACKAGES_INPUT).fill('abc')
-    await page.locator('#numberOfPackages-1').fill('abc')
+    await page.locator(SECOND_PACKAGES_INPUT).fill('abc')
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await expect(page.getByRole('alert').getByRole('link')).toHaveText([
@@ -240,6 +242,25 @@ test.describe('commodity consignment details — rendering and validation', () =
     await expect(page.locator(SECOND_ANIMALS_QUANTITY_INPUT)).toBeFocused()
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
   })
+
+  test('validation: a blank number of packages on a line that asks for one holds the page and names it', async ({
+    page
+  }) => {
+    await fillValidQuantities(page)
+    await page.locator(FIRST_PACKAGES_INPUT).fill('')
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+
+    const link = page.getByRole('alert').getByRole('link')
+    await expect(link).toHaveCount(1)
+    await expect(link).toHaveText(
+      copy.consignmentDetails.errors.packagesRequired
+    )
+    await link.click()
+    await expect(page.locator(FIRST_PACKAGES_INPUT)).toBeFocused()
+    await expect(page.locator(SECOND_PACKAGES_INPUT)).toHaveValue(
+      validQuantities[3]
+    )
+  })
 })
 
 test.describe('commodity consignment details — persistence and accessibility', () => {
@@ -257,7 +278,7 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
     await expect(page.locator(FIRST_PACKAGES_INPUT)).toHaveValue('5')
     await expect(page.locator(SECOND_ANIMALS_QUANTITY_INPUT)).toHaveValue('2')
-    await expect(page.locator('#numberOfPackages-1')).toHaveValue('1')
+    await expect(page.locator(SECOND_PACKAGES_INPUT)).toHaveValue('1')
   })
 
   test('removes one species row without changing another quantity', async ({

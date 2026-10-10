@@ -50,6 +50,7 @@ export const copy = {
     errors: {
       animalsRequired: 'Enter the number of animals',
       animalsWholeNumber: 'Enter a whole number greater than 0',
+      packagesRequired: 'Enter the number of packages',
       packagesWholeNumber: 'Number of packages must be a whole number, like 5',
       countDrop: (records, species, entered) =>
         `You have ${plural(records, 'identifier record')} for ${species} but entered ${plural(entered, 'animal')}. Remove identifier records or keep the higher count.`

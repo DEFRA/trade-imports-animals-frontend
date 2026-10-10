@@ -80,6 +80,11 @@ describe('package-count list → numberOfPackages (line-scoped)', () => {
     })
   }
 
+  it('Should make numberOfPackages a required answer on a line whose commodity is counted in packages', () => {
+    const state = evaluate({ [commodityCode.id]: { line1: 'Cow' } })
+    expect(state.obligations[numberOfPackages.id].status).toBe('mandatory')
+  })
+
   it(`Should not put numberOfPackages in scope for a control value`, () => {
     const state = evaluate({
       [commodityCode.id]: { line1: CONTROL_NAME }

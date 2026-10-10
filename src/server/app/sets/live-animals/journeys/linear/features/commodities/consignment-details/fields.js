@@ -1,6 +1,5 @@
 import {
   compose,
-  integerInRange,
   requiredIntegerInRange
 } from '../../../../../../../lib/validate/index.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
@@ -31,9 +30,12 @@ export const fieldsFor = (lines) => {
   const packagesSchemas = lines
     .filter(({ entry }) => packagesApply(entry.commoditySelection))
     .map(({ index }) =>
-      integerInRange(packagesField(index), {
+      requiredIntegerInRange(packagesField(index), {
         min: 1,
-        message: copy.errors.packagesWholeNumber
+        messages: {
+          required: copy.errors.packagesRequired,
+          invalid: copy.errors.packagesWholeNumber
+        }
       })
     )
   return compose(...animalsSchemas, ...packagesSchemas)

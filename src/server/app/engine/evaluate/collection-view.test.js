@@ -9,6 +9,7 @@ const completeLine = {
   commodityType: '16',
   speciesSelection: ['1148346'],
   numberOfAnimalsQuantity: '1',
+  numberOfPackages: '1',
   animalIdentifiers: [
     { animalIdentifierEarTag: 'UK123456789012', permanentAddress: address }
   ]
