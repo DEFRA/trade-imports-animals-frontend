@@ -46,10 +46,7 @@ const countryItems = async () => [
 const portItems = async () => [
   { value: '', text: copy.port.placeholder },
   DIVIDER_OPTION,
-  ...(await ports.list()).map((port) => ({
-    value: port.code,
-    text: `${port.name} (${port.code})`
-  }))
+  ...(await ports.portOptions())
 ]
 
 const render = async (

@@ -233,7 +233,8 @@ describe('ports service — stub mode', () => {
     const ports = await import('./ports/index.js')
     expect(await ports.list()).toContainEqual({
       code: 'GB ABD',
-      name: 'Aberdeen Harbour'
+      name: 'Aberdeen Harbour',
+      type: 'seaport'
     })
   })
 })
@@ -245,6 +246,22 @@ describe('ports service — real mode', () => {
     const ports = await import('./ports/index.js')
 
     expect(await ports.list()).toEqual([{ code: 'GB ZZZ', name: 'Zed Port' }])
+  })
+
+  it("Should offer each served port as '<name> - <code>' valued by its code, in the order reference data serves them", async () => {
+    process.env.STUB_MODE = 'false'
+    stubFetch(async () =>
+      okResponse([
+        { code: 'GB DYC', name: 'Aberdeen Airport', type: 'airport' },
+        { code: 'GB ABD', name: 'Aberdeen Harbour', type: 'seaport' }
+      ])
+    )
+    const ports = await import('./ports/index.js')
+
+    expect(await ports.portOptions()).toEqual([
+      { value: 'GB DYC', text: 'Aberdeen Airport - GB DYC' },
+      { value: 'GB ABD', text: 'Aberdeen Harbour - GB ABD' }
+    ])
   })
 
   it('Should fetch once across many reader calls once loaded', async () => {
