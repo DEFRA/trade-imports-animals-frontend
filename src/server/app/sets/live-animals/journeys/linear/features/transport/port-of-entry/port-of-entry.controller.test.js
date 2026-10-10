@@ -111,14 +111,26 @@ describe('GET port-of-entry — server-rendered select data (no-JS path)', () =>
     const [firstPort] = await ports.list()
     expect(items[1]).toEqual({
       value: firstPort.code,
-      text: `${firstPort.name} (${firstPort.code})`,
+      text: `${firstPort.name} - ${firstPort.code}`,
       selected: false
     })
     expect(items).toContainEqual({
       value: 'GB ABD',
-      text: 'Aberdeen Harbour (GB ABD)',
+      text: 'Aberdeen Harbour - GB ABD',
       selected: false
     })
+  })
+
+  it('Should mark the saved port as the selected option, labelled with its name and code', async () => {
+    const result = await driveHandler(get, {
+      seed: { portOfEntry: 'GB DVR' }
+    })
+    const selected = result.view.context.portItems.filter(
+      (item) => item.selected
+    )
+    expect(selected).toEqual([
+      { value: 'GB DVR', text: 'Port of Dover - GB DVR', selected: true }
+    ])
   })
 
   it('Should supply the means of transport as a placeholder followed by every reference code, none selected', async () => {

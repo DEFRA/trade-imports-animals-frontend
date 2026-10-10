@@ -40,7 +40,7 @@ const transitedCountriesInputs =
 const transitStatus = '#transit-countries-status'
 const transitLimit = '#transit-countries-limit'
 const MAX_TRANSPORT_FIELD_LENGTH = 58
-const DOVER_OPTION = 'Port of Dover (GB DVR)'
+const DOVER_OPTION = 'Port of Dover - GB DVR'
 const PORT_OF_ENTRY_PAGE = 'port-of-entry'
 // The visually hidden name the MoJ picker gives the button that opens the
 // calendar.
@@ -93,7 +93,7 @@ const openArrival = async (page) => {
 
 const portLabel = (code) => {
   const port = portsOfEntry.find((entry) => entry.code === code)
-  return `${port.name} (${port.code})`
+  return `${port.name} - ${port.code}`
 }
 
 // Pick a port. With JavaScript the field is the enhanced type-ahead: typing
@@ -273,7 +273,7 @@ test.describe('arrival details rendering', () => {
     expect(options).toEqual(
       portsOfEntry.map((port) => ({
         code: port.code,
-        label: `${port.name} (${port.code})`
+        label: `${port.name} - ${port.code}`
       }))
     )
   })
@@ -374,6 +374,12 @@ test.describe('port of entry without JavaScript', () => {
     await expect(page.locator('select#portOfEntry option').first()).toHaveText(
       copy.portOfEntry.port.placeholder
     )
+    await expect(
+      page.locator('select#portOfEntry option[value="GB DVR"]')
+    ).toHaveText(DOVER_OPTION)
+    await expect(
+      page.getByLabel(copy.portOfEntry.port.label, { exact: true })
+    ).toHaveAttribute('name', 'portOfEntry')
     await page
       .getByLabel(copy.portOfEntry.arrivalDate.label)
       .fill(ARRIVAL_DATE_IN_WINDOW)

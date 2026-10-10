@@ -181,7 +181,7 @@ export const startNotification = async (page) => {
 }
 
 const FIXTURE_PORT = PORTS.find((port) => port.code === values.portOfEntry)
-const FIXTURE_PORT_OPTION = `${FIXTURE_PORT.name} (${FIXTURE_PORT.code})`
+const FIXTURE_PORT_OPTION = `${FIXTURE_PORT.name} - ${FIXTURE_PORT.code}`
 
 // Port of entry is a type-ahead (accessible-autocomplete) enhancing a native
 // <select>. Drive it the way a user does: type to filter, then pick the match.
