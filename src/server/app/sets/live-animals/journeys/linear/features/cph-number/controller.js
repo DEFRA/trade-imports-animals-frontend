@@ -86,8 +86,10 @@ const post = async (request, h) => {
   }
 
   const { scope } = committed
+  const { journey } = await state.get(request, h)
   return h.redirect(
     kit.hubExitTarget(request) ??
+      kit.amendReviewTarget(request, journey) ??
       hubEntryReturn(request) ??
       (await kit.nextTarget(request, page, scope))
   )

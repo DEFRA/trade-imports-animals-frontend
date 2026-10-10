@@ -7,6 +7,7 @@ import {
   dashboardPath,
   inDashboardSection
 } from '../../../server/app/shared/paths.js'
+import { amendFormActions } from '../../../server/app/shared/amend-form-actions.js'
 import {
   hasSetContext,
   setIdForPath,
@@ -73,6 +74,12 @@ async function context(request) {
     serviceUrl: '/',
     authEnabled: config.get('auth.enabled'),
     staleActionRejected: request.query?.staleAction === '1',
+    // Per request because an amend page's save buttons carry the page's own
+    // query, and the POST re-render needs the same URLs as the GET.
+    amendFormActions: amendFormActions(
+      request.path ?? '',
+      request.url?.searchParams
+    ),
     // The chrome's home link for every rendered page, so a view built without
     // kit.base() — the dashboard's own, for one — still links back into its own
     // set. kit.base() supplies the same key, and a view's own context wins.

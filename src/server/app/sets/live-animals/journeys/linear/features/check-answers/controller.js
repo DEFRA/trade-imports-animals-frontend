@@ -150,6 +150,7 @@ export const renderNotificationView = async (
   const { journey, answers, storedAnswers, scope, evaluation } =
     await state.get(request, h)
   const readOnly = journey.status === state.SUBMITTED
+  const holdsSilently = readOnly || journey.status === state.AMEND
   const parties = await partiesFromStoredAnswers(answers)
   // A submitted notification is a record of what was sent, so nothing on it
   // is outstanding, and no stored answer of its is named as stale either —
@@ -158,13 +159,13 @@ export const renderNotificationView = async (
   // Each card's page reads `answers` here, and is handed the raw
   // `storedAnswers` via context, so its own rules decide for themselves which
   // of the two they need.
-  const invalidCardErrors = readOnly
+  const invalidCardErrors = holdsSilently
     ? {}
     : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
   // A REJECTED scan is a permanent verdict on a stored file, so it belongs on the read
   // path — a mid-upload PENDING is (or should be) a transient state so shouldn't
   // present as an error.
-  const rejectedDocErrors = readOnly
+  const rejectedDocErrors = holdsSilently
     ? {}
     : await documentsRejectedCardErrors(answers)
   return renderCya(h, journey, {
@@ -175,12 +176,12 @@ export const renderNotificationView = async (
     amendmentCancelled: readOnly && request.query.cancelled === '1',
     recoverableError,
     parties,
-    partyErrors: readOnly ? {} : await invalidPartyErrors(answers),
+    partyErrors: holdsSilently ? {} : await invalidPartyErrors(answers),
     // Incomplete wins over invalid on the same card: spread the invalid map
     // first and the incomplete map second, so a card that is both unfinished
     // and carrying a stale value says "complete this section" rather than
     // naming the stale answer.
-    cardErrors: readOnly
+    cardErrors: holdsSilently
       ? {}
       : {
           ...invalidCardErrors,
@@ -203,6 +204,10 @@ const post = async (request, h) => {
   // stored document to the upload backend.
   const { refused, extraCardErrors } = await reviewRefusal(request, h)
   if (refused) {
+    const { journey } = await state.get(request, h)
+    if (journey.status === state.AMEND) {
+      return h.redirect(pagePath(journey.journeyId, CYA_SLUG))
+    }
     const rendered = await renderNotificationView(request, h, {
       disableAutoFocus: false,
       extraCardErrors

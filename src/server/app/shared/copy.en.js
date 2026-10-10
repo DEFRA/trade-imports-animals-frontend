@@ -61,6 +61,7 @@ export const copy = {
     }
   },
   saveActions: {
+    saveAndReturn: 'Save and return',
     saveAndContinue: 'Save and continue',
     saveAndReturnToHub: 'Save and return to overview',
     cancelAndReturnToHub: 'Cancel and return to overview'

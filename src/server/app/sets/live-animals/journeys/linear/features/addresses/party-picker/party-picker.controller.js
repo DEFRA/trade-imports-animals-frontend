@@ -99,6 +99,14 @@ const get = (party) => async (request, h) => {
   })
 }
 
+/** Where a saved picker goes: the review when an amendment saved from a Change link, else the addresses page. */
+const savedTarget = async (request, h) =>
+  kit.amendReviewTarget(request, (await state.get(request, h)).journey) ??
+  kit.withChangeContext(
+    request,
+    pagePath(request.params.journeyId, 'addresses')
+  )
+
 const commitSelection = async (request, h, party, chosen, form) => {
   const { failure } = await kit.recoverableSave(
     async () => {
@@ -122,12 +130,7 @@ const commitSelection = async (request, h, party, chosen, form) => {
     return failure
   }
 
-  return h.redirect(
-    kit.withChangeContext(
-      request,
-      pagePath(request.params.journeyId, 'addresses')
-    )
-  )
+  return h.redirect(await savedTarget(request, h))
 }
 
 const post = (party) => async (request, h) => {
@@ -150,12 +153,7 @@ const post = (party) => async (request, h) => {
   if (!selectedId) {
     const { answers } = await state.get(request, h)
     if (answers[party.id]) {
-      return h.redirect(
-        kit.withChangeContext(
-          request,
-          pagePath(request.params.journeyId, 'addresses')
-        )
-      )
+      return h.redirect(await savedTarget(request, h))
     }
   }
 

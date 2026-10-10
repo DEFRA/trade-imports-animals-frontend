@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { dateField, isHubExit } from './kit.js'
+import { AMEND, DRAFT, SUBMITTED } from '../engine/index.js'
+import { amendReviewTarget, base, dateField, isHubExit } from './kit.js'
 
 describe('#isHubExit — the Save and return to overview submit', () => {
   const params = { journeyId: 'journey-1' }
@@ -50,5 +51,36 @@ describe('#dateField — MoJ date-picker view model', () => {
     const field = dateField('exitDate', { label: 'Exit date' })
 
     expect(field.formGroup).toBeUndefined()
+  })
+})
+
+describe('#base — amending', () => {
+  it('Should be true only for a journey being amended', () => {
+    expect(base('title', { journey: { status: AMEND } }).amending).toBe(true)
+    expect(base('title', { journey: { status: DRAFT } }).amending).toBe(false)
+    expect(base('title', { journey: { status: SUBMITTED } }).amending).toBe(
+      false
+    )
+    expect(base('title').amending).toBe(false)
+  })
+})
+
+describe('#amendReviewTarget — where a Change-link save of an amendment goes', () => {
+  const params = { journeyId: 'journey-1' }
+  const fromChangeLink = { params, query: { change: '1' } }
+  const notFromChangeLink = { params, query: {} }
+
+  it('Should be the review for an amendment saved from a Change link', () => {
+    expect(amendReviewTarget(fromChangeLink, { status: AMEND })).toMatch(
+      /journey-1\/notification-view$/
+    )
+  })
+
+  it('Should be null for a draft saved from a Change link', () => {
+    expect(amendReviewTarget(fromChangeLink, { status: DRAFT })).toBeNull()
+  })
+
+  it('Should be null for an amendment saved without a Change link', () => {
+    expect(amendReviewTarget(notFromChangeLink, { status: AMEND })).toBeNull()
   })
 })

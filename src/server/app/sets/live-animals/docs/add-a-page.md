@@ -136,6 +136,14 @@ caption size that matches the heading. `journeys/linear/features/origin/template
 is the example. Render fields with GOV.UK or MoJ macros. Keep each input name, input
 id and validation error key the same so an error-summary link focuses the control.
 
+On a page linked from the overview, pass `amend = amendFormActions if amending else none`
+to `saveActions`. `amending` and `amendFormActions` come from the Nunjucks context. While
+the notification is being amended, the page then shows the amend ending: Save and return,
+Save and continue, and Save and return to overview. A page that also passes
+`showReturnControls = false` (the CPH number page, the role address pickers) or
+`hubExitWhileAmending = false` (the contact address page) shows only Save and return and
+Save and continue while amending.
+
 Import `TEMPLATES` from
 [`journeys/linear/config.js`](../journeys/linear/config.js) in the controller and
 build the view name below its `live-animals/journeys/linear` prefix. Do not prefix
@@ -289,6 +297,7 @@ Cover:
 - preservation of entered values on error
 - every error-summary link moving focus to its control
 - back, Save and return to overview, Cancel and Change navigation as applicable
+- while amending, the amend controls (three on an overview-linked page; two on pickers, the CPH number page and the contact address page) and where each one goes
 - conditional scope, skip and purge behaviour
 - the check-answers rows and Change links
 

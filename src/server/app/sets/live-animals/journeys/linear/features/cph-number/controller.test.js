@@ -3,7 +3,10 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../engine/persistence/records.js'
+import {
+  configureRecords,
+  records
+} from '../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
@@ -28,9 +31,16 @@ const seed = () => ({
   commodityLines: [{ commoditySelection: 'Cow' }]
 })
 
-const driveWithQuery = async (handler, { payload = {}, query = {} } = {}) => {
+const driveWithQuery = async (
+  handler,
+  { payload = {}, query = {}, amend = false } = {}
+) => {
   const journey = await store.create()
   await store.seedAnswers(journey.journeyId, seed())
+  if (amend) {
+    await store.submit(journey.journeyId)
+    await records.amend(journey.journeyId)
+  }
   const h = stubH()
   const response = await handler(
     journeyRequest(journey.journeyId, { payload, query }),
@@ -205,6 +215,27 @@ describe('cph-number — addresses-hub entry (?return=addresses)', () => {
       const result = await driveWithQuery(postCph, {
         payload: VALID_PARTS,
         query: { return: 'addresses' }
+      })
+      expect(result.response).toEqual({
+        redirect: pagePath(result.journeyId, 'addresses')
+      })
+    })
+
+    it('Should go to the review on Save and return, ahead of the addresses hub, when amending with both return and change', async () => {
+      const result = await driveWithQuery(postCph, {
+        payload: VALID_PARTS,
+        query: { return: 'addresses', change: '1' },
+        amend: true
+      })
+      expect(result.response).toEqual({
+        redirect: pagePath(result.journeyId, 'notification-view')
+      })
+    })
+
+    it('Should go to the addresses hub, not the review, on a draft carrying both return and change', async () => {
+      const result = await driveWithQuery(postCph, {
+        payload: VALID_PARTS,
+        query: { return: 'addresses', change: '1' }
       })
       expect(result.response).toEqual({
         redirect: pagePath(result.journeyId, 'addresses')

@@ -109,6 +109,12 @@ export const exitTarget = (request, fallback) =>
     ? pagePath(request.params.journeyId, CYA_SLUG)
     : fallback)
 
+/** The review's path for a save made while amending from a Change link, else null. */
+export const amendReviewTarget = (request, journey) =>
+  journey?.status === AMEND && changeContext(request)
+    ? pagePath(request.params.journeyId, CYA_SLUG)
+    : null
+
 export const runTarget = async (request, stepId, scope) =>
   (await inOpeningRun(request, request.params.journeyId))
     ? journeyNextRunTarget(stepId, scope, request.params.journeyId)
@@ -153,6 +159,7 @@ export const base = (
     homeUrl: dashboardPath(),
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
     journeyStrip: journeyStrip(journey),
+    amending: journey?.status === AMEND,
     concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,
     recoverableError,

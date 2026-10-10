@@ -8,18 +8,46 @@
    two return controls name the page they lead to, which is headed "Overview";
    "hub" is the internal name for it and never appears on screen. A page reached
    from another page ends with the primary alone, and the trader leaves the way
-   they came in. Pass `showReturnControls = false` on those. #}
-{% macro saveActions(hubHref, primary, copy, showReturnControls = true) %}
+   they came in. Pass `showReturnControls = false` on those.
+
+   While a notification is being amended, a page passes `amend` (the pair of
+   form actions from `amendFormActions`) and ends instead with "Save and
+   return" (back to the review, the real service's own `?change=1`), "Save and
+   continue" (on, never back to the review) and a link-styled "Save and return
+   to overview", with no cancel link. Each save button carries its own
+   `formaction`, so no new field is posted. A page reached from another page
+   (`showReturnControls = false`) or a picker (`hubExitWhileAmending = false`)
+   ends with the first two only. #}
+{% macro saveActions(hubHref, primary, copy, showReturnControls = true, amend = none, hubExitWhileAmending = true) %}
   <div class="govuk-button-group">
-    {{ govukButton(primary or { text: copy.saveAndContinue }) }}
-    {% if showReturnControls %}
+    {% if amend %}
       {{ govukButton({
-        text: copy.saveAndReturnToHub,
-        classes: "govuk-button--secondary",
-        name: "exit",
-        value: "hub"
+        text: copy.saveAndReturn,
+        name: primary.name if primary,
+        value: primary.value if primary,
+        attributes: { formaction: amend.returnAction }
       }) }}
-      <a class="govuk-link" href="{{ hubHref }}">{{ copy.cancelAndReturnToHub }}</a>
+      {{ govukButton({
+        text: copy.saveAndContinue,
+        classes: "govuk-button--secondary",
+        name: primary.name if primary,
+        value: primary.value if primary,
+        attributes: { formaction: amend.continueAction }
+      }) }}
+      {% if showReturnControls and hubExitWhileAmending %}
+        <button type="submit" class="govuk-link app-link-button" name="exit" value="hub">{{ copy.saveAndReturnToHub }}</button>
+      {% endif %}
+    {% else %}
+      {{ govukButton(primary or { text: copy.saveAndContinue }) }}
+      {% if showReturnControls %}
+        {{ govukButton({
+          text: copy.saveAndReturnToHub,
+          classes: "govuk-button--secondary",
+          name: "exit",
+          value: "hub"
+        }) }}
+        <a class="govuk-link" href="{{ hubHref }}">{{ copy.cancelAndReturnToHub }}</a>
+      {% endif %}
     {% endif %}
   </div>
 {% endmacro %}
