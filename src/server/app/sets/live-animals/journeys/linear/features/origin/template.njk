@@ -19,11 +19,10 @@
       id: "countryOfOrigin",
       name: "countryOfOrigin",
       label: { text: copy.country.label, classes: "govuk-label--m" },
-      hint: { text: copy.country.hint },
       value: values.countryOfOrigin,
       errorMessage: errors.countryOfOrigin and { text: errors.countryOfOrigin },
       items: countryItems,
-      autocomplete: { showAllValues: true, noResults: copy.country.noResults }
+      autocomplete: { showAllValues: true, noResults: copy.country.noResults, placeholder: copy.country.searchPlaceholder }
     }) }}
 
     {% set regionCodeHtml %}

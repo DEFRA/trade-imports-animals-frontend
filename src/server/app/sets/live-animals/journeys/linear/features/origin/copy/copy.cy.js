@@ -3,8 +3,8 @@ export const copy = {
   title: 'Tarddiad y mewnforyn',
   country: {
     label: 'Gwlad tarddiad',
-    hint: 'Dechreuwch deipio i chwilio am wlad.',
     placeholder: 'Dewiswch wlad',
+    searchPlaceholder: 'Chwiliwch am wlad',
     noResults: 'Dim gwledydd wedi’u darganfod'
   },
   regionRequirement: {

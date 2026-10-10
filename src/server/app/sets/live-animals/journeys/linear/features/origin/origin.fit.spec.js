@@ -35,6 +35,7 @@ const INTERNAL_REFERENCE_MAX_LENGTH = 58
 const INTERNAL_REFERENCE = 'Imports456GB'
 const PUNCTUATED_INTERNAL_REFERENCE = 'ACME-2026/01 batch 2.'
 const OUT_OF_LIST_COUNTRY = 'XX'
+const REMOVED_COUNTRY_HINT = 'Start typing to search for a country.'
 
 const countryField = (page) =>
   page.getByLabel(copy.country.label, { exact: true })
@@ -110,7 +111,6 @@ test.describe('origin feature', () => {
     // country label then names the search box rather than the select.
     await expect(page.locator(countryHidden)).toBeAttached()
     await expect(countryField(page)).toHaveAttribute('role', 'combobox')
-    await expect(page.getByText(copy.country.hint)).toBeVisible()
     await expect(
       page.getByRole('group', { name: copy.regionRequirement.legend })
     ).toContainText(copy.regionRequirement.hint)
@@ -322,6 +322,20 @@ test.describe('country of origin type-ahead', () => {
     await startAtOrigin(page)
   })
 
+  test('shows no hint under the country question and invites a search in the empty box', async ({
+    page
+  }) => {
+    await expect(page.locator(countryHidden)).toBeAttached()
+    await expect(page.locator('#countryOfOrigin-hint')).toHaveCount(0)
+    await expect(page.getByText(REMOVED_COUNTRY_HINT)).toHaveCount(0)
+    await expect(page.locator(countryInput)).toHaveValue('')
+    await expect(page.locator(countryInput)).toHaveAttribute(
+      'placeholder',
+      copy.country.searchPlaceholder
+    )
+    await expect(countryField(page)).toHaveAttribute('role', 'combobox')
+  })
+
   test('offers the whole country list on focus, without typing', async ({
     page
   }) => {
@@ -526,6 +540,22 @@ test.describe('country of origin type-ahead styles', () => {
 
 test.describe('country of origin without JavaScript', () => {
   test.use({ javaScriptEnabled: false })
+
+  test('native select begins with the blank Select a country option and shows no hint', async ({
+    page
+  }) => {
+    await signIn(page)
+    await startAtOrigin(page)
+
+    await expect(page.locator('#countryOfOrigin-hint')).toHaveCount(0)
+    await expect(page.getByText(REMOVED_COUNTRY_HINT)).toHaveCount(0)
+    const select = page.locator('select#countryOfOrigin')
+    await expect(select.locator('option').first()).toHaveText(
+      copy.country.placeholder
+    )
+    await expect(select.locator('option').first()).toHaveAttribute('value', '')
+    await expect(countryField(page)).toHaveValue('')
+  })
 
   test('native select submits and persists the country code', async ({
     page

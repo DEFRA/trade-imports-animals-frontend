@@ -35,6 +35,18 @@ describe('#copy', () => {
     }
   })
 
+  it('Should ask the country of origin without a hint', () => {
+    expect(copy.country.hint).toBeUndefined()
+    expect(copyCy.country.hint).toBeUndefined()
+  })
+
+  it("Should invite a search in the empty box and keep the select's blank option", () => {
+    expect(copy.country.searchPlaceholder).toBe('Search for a country')
+    expect(copyCy.country.searchPlaceholder).toBe('Chwiliwch am wlad')
+    expect(copy.country.placeholder).toBe('Select a country')
+    expect(copyCy.country.placeholder).toBe('Dewiswch wlad')
+  })
+
   it('Should state the internal reference length limit in the hint, not only in the error', () => {
     const limit = String(INTERNAL_REFERENCE_MAX_LENGTH)
     expect(copy.internalReference.hint).toContain(limit)
