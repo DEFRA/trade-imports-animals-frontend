@@ -37,7 +37,8 @@ const copy = copyFor({ en, cy })
  * hub's task-row groups: the hub files animal identification with the other
  * commodity work and puts every transport row under one group, while the
  * caption keeps identification with the rest of the consignment questions and
- * separates arrival, transit and adding a transporter.
+ * separates arrival, transit and adding a transporter. Commodity details is
+ * captioned with the goods section, unlike the rest of the commodity pages.
  *
  * A page that is absent is deliberately bare. The overview, check-your-
  * answers, contact-address, declaration and confirmation pages open straight
@@ -52,11 +53,11 @@ export const captionSections = [
     pages: [
       originPage,
       commoditiesPage,
-      consignmentDetailsPage,
       animalIdentificationPage,
       importReasonPage
     ]
   },
+  { id: 'descriptionOfTheGoods', pages: [consignmentDetailsPage] },
   { id: 'commodityDetails', pages: [additionalDetailsPage] },
   { id: 'consignmentParties', pages: [addressesPage, cphNumberPage] },
   { id: 'movement', pages: [transitCountriesPage] },

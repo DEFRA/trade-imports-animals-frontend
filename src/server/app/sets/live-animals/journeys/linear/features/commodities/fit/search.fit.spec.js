@@ -78,9 +78,10 @@ test.describe('commodity search', () => {
     await expect(page.getByText(copy.search.help.describes)).toBeVisible()
     await expect(page.getByText(copy.search.help.lookupPrefix)).toBeVisible()
     const tradeTariff = page.getByRole('link', {
-      name: copy.search.help.lookupLink
+      name: `${copy.search.help.lookupLink} ${copy.search.help.lookupNewTab}`
     })
     await expect(tradeTariff).toBeVisible()
+    await expect(page.getByText(copy.search.help.lookupNewTab)).toBeVisible()
     await expect(tradeTariff).toHaveAttribute(
       'href',
       copy.search.help.lookupHref
@@ -182,9 +183,34 @@ test.describe('commodity search', () => {
 
     const link = errorLink(page, copy.search.errors.selectCommodity)
     await expect(link).toBeVisible()
+    await expect(
+      page.getByLabel(copy.search.searchLabel)
+    ).toHaveAccessibleDescription(
+      new RegExp(copy.search.errors.selectCommodity)
+    )
     await link.click()
     await expect(page.getByLabel(copy.search.searchLabel)).toBeFocused()
     await expect(selectionPanel(page)).toHaveCount(0)
+  })
+
+  test('validation: with results listed, the error stays on the search box', async ({
+    page
+  }) => {
+    await searchCommodities(page, 'Bos')
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+
+    const link = errorLink(page, copy.search.errors.selectCommodity)
+    await expect(link).toBeVisible()
+    await expect(
+      page.getByLabel(copy.search.searchLabel)
+    ).toHaveAccessibleDescription(
+      new RegExp(copy.search.errors.selectCommodity)
+    )
+    await expect(
+      page.getByRole('group', { name: COW_LEGEND })
+    ).not.toContainText(copy.search.errors.selectCommodity)
+    await link.click()
+    await expect(page.getByLabel(copy.search.searchLabel)).toBeFocused()
   })
 
   test('saves pairs found under different queries, in canonical order', async ({
@@ -233,5 +259,17 @@ test.describe('commodity search', () => {
     // Open the help details so its paragraphs and outbound link are scanned.
     await page.getByText(copy.search.help.summary, { exact: true }).click()
     await expectNoSeriousOrCriticalViolations(page, 'Commodity search')
+
+    await page
+      .getByRole('button', { name: copy.search.selected.clearAll })
+      .click()
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await expect(
+      errorLink(page, copy.search.errors.selectCommodity)
+    ).toBeVisible()
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Commodity search with error'
+    )
   })
 })

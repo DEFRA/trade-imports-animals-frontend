@@ -24,6 +24,8 @@ import * as consignmentDetails from './consignment-details.controller.js'
 const post = postHandlerOf(consignmentDetails)
 
 const ANIMALS_REQUIRED_MESSAGE = 'Enter the number of animals'
+const PACKAGES_WHOLE_NUMBER_MESSAGE =
+  'Number of packages must be a whole number, like 5'
 const PAGE_SLUG = 'consignment-details'
 const COMMODITIES_SLUG = 'commodities'
 
@@ -488,6 +490,38 @@ describe('#consignmentDetailsController — the animal count must be answered be
         }
       ]
     })
+  })
+
+  it('Should list every number of animals error before any number of packages error', async () => {
+    const seed = {
+      commodityLines: [
+        { commoditySelection: 'Cow', speciesSelection: '1148346' },
+        { commoditySelection: 'Cow', speciesSelection: '716661' }
+      ]
+    }
+    const result = await driveHandler(post, {
+      seed,
+      payload: {
+        'numberOfAnimalsQuantity-0': '',
+        'numberOfAnimalsQuantity-1': '',
+        'numberOfPackages-0': 'abc',
+        'numberOfPackages-1': 'abc'
+      }
+    })
+    const { errorList } = result.view.context.errorSummary
+    expect(errorList.map(({ href }) => href)).toEqual([
+      '#numberOfAnimalsQuantity-0',
+      '#numberOfAnimalsQuantity-1',
+      '#numberOfPackages-0',
+      '#numberOfPackages-1'
+    ])
+    expect(errorList.map(({ text }) => text)).toEqual([
+      ANIMALS_REQUIRED_MESSAGE,
+      ANIMALS_REQUIRED_MESSAGE,
+      PACKAGES_WHOLE_NUMBER_MESSAGE,
+      PACKAGES_WHOLE_NUMBER_MESSAGE
+    ])
+    expect(result.after.commodityLines).toHaveLength(2)
   })
 
   it('Should hold the page on a blank count when Save and return to overview is pressed, saving nothing', async () => {

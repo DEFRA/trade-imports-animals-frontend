@@ -16,23 +16,25 @@ export const packagesApply = (commoditySelection) =>
 export const animalsField = (index) => `numberOfAnimalsQuantity-${index}`
 export const packagesField = (index) => `numberOfPackages-${index}`
 
-export const fieldsFor = (lines) =>
-  compose(
-    ...lines.flatMap(({ index, entry }) => [
-      requiredIntegerInRange(animalsField(index), {
-        min: 1,
-        messages: {
-          required: copy.errors.animalsRequired,
-          invalid: copy.errors.animalsWholeNumber
-        }
-      }),
-      ...(packagesApply(entry.commoditySelection)
-        ? [
-            integerInRange(packagesField(index), {
-              min: 1,
-              message: copy.errors.packagesWholeNumber
-            })
-          ]
-        : [])
-    ])
+// The error summary lists errors by question: every number of animals error
+// before any number of packages error.
+export const fieldsFor = (lines) => {
+  const animalsSchemas = lines.map(({ index }) =>
+    requiredIntegerInRange(animalsField(index), {
+      min: 1,
+      messages: {
+        required: copy.errors.animalsRequired,
+        invalid: copy.errors.animalsWholeNumber
+      }
+    })
   )
+  const packagesSchemas = lines
+    .filter(({ entry }) => packagesApply(entry.commoditySelection))
+    .map(({ index }) =>
+      integerInRange(packagesField(index), {
+        min: 1,
+        message: copy.errors.packagesWholeNumber
+      })
+    )
+  return compose(...animalsSchemas, ...packagesSchemas)
+}

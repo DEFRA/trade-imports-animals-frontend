@@ -28,10 +28,7 @@ const render = (h, journey, { selected, query = '', errorText = null }) => {
   const onScreen = new Set(
     groups.flatMap((group) => group.items.map((item) => item.value))
   )
-  // The error belongs on the control the trader must fix: the tick boxes when
-  // results are listed, the search box when there is nothing yet to tick.
-  const errorField = groups.length > 0 ? 'species' : 'commoditySearch'
-  const errors = errorText ? { [errorField]: errorText } : {}
+  const errors = errorText ? { commoditySearch: errorText } : {}
   return h.view(view, {
     ...kit.base(copy.title, {
       backLink: hubPath(journey.journeyId),

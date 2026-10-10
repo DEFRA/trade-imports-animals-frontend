@@ -12,6 +12,7 @@ import { copy } from '../copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../../shared/copy.en.js'
 
 const BOS_TAURUS = 'Bos taurus'
+const FELIS_CATUS = 'Felis catus'
 const SAVE_AND_CONTINUE = 'Save and continue'
 const FIRST_ANIMALS_QUANTITY_FIELD = 'numberOfAnimalsQuantity-0'
 const FIRST_ANIMALS_QUANTITY_INPUT = `#${FIRST_ANIMALS_QUANTITY_FIELD}`
@@ -28,7 +29,7 @@ const openDetails = async (page) => {
   await startNotification(page)
   await answerCountryOfOrigin(page)
   await page.getByRole('link', { name: 'What are you importing?' }).click()
-  await selectSpecies(page, [BOS_TAURUS, 'Felis catus'])
+  await selectSpecies(page, [BOS_TAURUS, FELIS_CATUS])
   await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   await page
@@ -81,10 +82,20 @@ test.describe('commodity consignment details — rendering and validation', () =
     await expect(table).toContainText('0102')
     await expect(table).toContainText('Cat')
     await expect(table).toContainText('01061900')
+    await expect(table.getByRole('columnheader')).toHaveText([
+      copy.consignmentDetails.table.commodityCode,
+      copy.consignmentDetails.table.commonName,
+      copy.consignmentDetails.table.species,
+      copy.consignmentDetails.table.actionsHidden
+    ])
+    await expect(table.getByRole('row', { name: /Cow/ })).toContainText(
+      BOS_TAURUS
+    )
+    await expect(table.getByRole('row', { name: /Cat/ })).toContainText(
+      FELIS_CATUS
+    )
     await expect(page.getByRole('heading', { name: BOS_TAURUS })).toBeVisible()
-    await expect(
-      page.getByRole('heading', { name: 'Felis catus' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: FELIS_CATUS })).toBeVisible()
     await expect(
       page.locator(FIRST_ANIMALS_QUANTITY_INPUT)
     ).toHaveAccessibleName(copy.consignmentDetails.animals.label)
@@ -186,6 +197,30 @@ test.describe('commodity consignment details — rendering and validation', () =
 
     await links.first().click()
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toBeFocused()
+  })
+
+  test('captions the page "Description of the goods"', async ({ page }) => {
+    await expect(
+      page.locator('span.govuk-caption-l + h1.govuk-heading-l')
+    ).toBeVisible()
+    await expect(page.locator('span.govuk-caption-l')).toHaveText(
+      'Description of the goods'
+    )
+  })
+
+  test('validation: lists every number of animals error before any number of packages error', async ({
+    page
+  }) => {
+    await page.locator(FIRST_PACKAGES_INPUT).fill('abc')
+    await page.locator('#numberOfPackages-1').fill('abc')
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+
+    await expect(page.getByRole('alert').getByRole('link')).toHaveText([
+      copy.consignmentDetails.errors.animalsRequired,
+      copy.consignmentDetails.errors.animalsRequired,
+      copy.consignmentDetails.errors.packagesWholeNumber,
+      copy.consignmentDetails.errors.packagesWholeNumber
+    ])
   })
 
   test('validation: when one animal count is filled, only the blank species is named', async ({
@@ -331,5 +366,12 @@ test.describe('commodity consignment details — persistence and accessibility',
 
   test('has no serious or critical axe violations', async ({ page }) => {
     await expectNoSeriousOrCriticalViolations(page, 'Commodity details')
+
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await expect(page.getByRole('alert')).toBeVisible()
+    await expectNoSeriousOrCriticalViolations(
+      page,
+      'Commodity details with errors'
+    )
   })
 })

@@ -212,15 +212,44 @@ describe('commodity search — saving the selection', () => {
     expect(result.after.commodityLines ?? []).toEqual([])
   })
 
-  it('Should key the error to the tick boxes, keeping the query and the results', async () => {
+  it('Should empty a saved selection on Save and return to overview with nothing chosen', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        commodityLines: [
+          { commoditySelection: 'Cow', speciesSelection: '1148346' }
+        ]
+      },
+      payload: { exit: 'hub' }
+    })
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.commodityLines ?? []).toEqual([])
+  })
+
+  it('Should clear a saved unweaned answer when the new choice holds only 01061900 species', async () => {
+    const result = await driveHandler(post, {
+      seed: {
+        containsUnweanedAnimals: 'yes',
+        commodityLines: [
+          { commoditySelection: 'Cow', speciesSelection: '1148346' }
+        ]
+      },
+      payload: { species: [CAT_FELIS_CATUS_KEY, 'Dog|923502'] }
+    })
+    expect('containsUnweanedAnimals' in result.after).toBe(false)
+    expect(
+      result.after.commodityLines.map((line) => line.commoditySelection)
+    ).toEqual(['Cat', 'Dog'])
+  })
+
+  it('Should key the error to the search box even with results listed, keeping the query and the results', async () => {
     const result = await driveHandler(post, {
       payload: { commoditySearch: 'Bos' }
     })
     expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.species).toBe(SELECT_COMMODITY)
-    expect(result.view.context.errors.commoditySearch).toBeUndefined()
+    expect(result.view.context.errors.commoditySearch).toBe(SELECT_COMMODITY)
+    expect(result.view.context.errors.species).toBeUndefined()
     expect(result.view.context.errorSummary.errorList).toEqual([
-      { text: SELECT_COMMODITY, href: '#species' }
+      { text: SELECT_COMMODITY, href: '#commoditySearch' }
     ])
     expect(result.view.context.query).toBe('Bos')
     expect(legendsOf(result)).toEqual([COW_LEGEND])
