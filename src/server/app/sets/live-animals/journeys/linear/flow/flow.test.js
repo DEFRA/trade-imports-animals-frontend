@@ -29,8 +29,8 @@ const PRODUCT_SECTION_ORDER = [
   },
   {
     id: 'addresses',
-    then: 'consignment addresses and County Parish Holding',
-    pageIds: ['addresses', 'cphNumber']
+    then: 'the County Parish Holding number and consignment addresses',
+    pageIds: ['cphNumber', 'addresses']
   },
   {
     id: 'transport',

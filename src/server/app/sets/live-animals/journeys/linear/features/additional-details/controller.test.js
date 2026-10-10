@@ -11,6 +11,7 @@ import {
   driveHandler,
   postHandlerOf
 } from '../../../../../../engine/test-support.js'
+import { hubPath } from '../../../../../../shared/paths.js'
 import { dispatchPages } from '../index.js'
 
 import * as additionalDetails from './controller.js'
@@ -31,6 +32,37 @@ describe('POST additional-details — invalid payload', () => {
     })
     expect(result.response.statusCode).toBe(400)
     expect(result.view.context.errors.animalsCertifiedFor).toBeDefined()
+    expect(result.after).toEqual(result.before)
+  })
+})
+
+describe('POST additional-details — Save and return to overview', () => {
+  const UNWEANED_SEED = { commodityLines: [{ commoditySelection: 'Cow' }] }
+
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should go to the overview with every answer blank and commit the blank answers', async () => {
+    const result = await driveHandler(post, {
+      seed: UNWEANED_SEED,
+      payload: { exit: 'hub' }
+    })
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after.animalsCertifiedFor).toBe('')
+    expect(result.after.containsUnweanedAnimals).toBe('')
+  })
+
+  it('Should still refuse an answer outside its allowed values and commit nothing', async () => {
+    const result = await driveHandler(post, {
+      seed: UNWEANED_SEED,
+      payload: { containsUnweanedAnimals: 'perhaps', exit: 'hub' }
+    })
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.containsUnweanedAnimals).toBeDefined()
     expect(result.after).toEqual(result.before)
   })
 })

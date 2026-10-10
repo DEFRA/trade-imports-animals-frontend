@@ -30,6 +30,10 @@ const openDetails = async (page) => {
   await page.getByRole('link', { name: 'What are you importing?' }).click()
   await selectSpecies(page, [BOS_TAURUS, 'Felis catus'])
   await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await page
+    .getByRole('link', { name: copy.consignmentDetails.title, exact: true })
+    .click()
   await expect(
     page.getByRole('heading', { name: copy.consignmentDetails.title })
   ).toBeVisible()
@@ -280,6 +284,10 @@ test.describe('commodity consignment details — persistence and accessibility',
     await expectSpeciesSelected(page, BOS_TAURUS)
     await selectSpecies(page, ['Canis lupus familiaris'])
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await page
+      .getByRole('link', { name: copy.consignmentDetails.title, exact: true })
+      .click()
     await expect(page.locator(GOVUK_TABLE)).toContainText('Dog')
     await expect(page.locator(FIRST_ANIMALS_QUANTITY_INPUT)).toHaveValue('25')
     await expect(page.locator(SECOND_ANIMALS_QUANTITY_INPUT)).toHaveValue('2')

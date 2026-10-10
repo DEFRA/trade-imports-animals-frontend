@@ -9,6 +9,7 @@ import { records as recordsStub } from '../../../../../../../services/persistenc
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import { driveHandler } from '../../../../../../../engine/test-support.js'
 import * as importReasonPurpose from '../../../../../../../services/import-reason-purpose/index.js'
+import * as countries from '../../../../../../../services/countries/index.js'
 import * as ports from '../../../../../../../services/ports/index.js'
 import { dispatchPages } from '../../index.js'
 
@@ -125,7 +126,7 @@ describe('GET import-reason — copy reaches the view', () => {
     }
   })
 
-  it('Should carry the reveal placeholders, the port list and the exit-date label into the view', async () => {
+  it("Should carry the reveal placeholders, the port list labelled '<name> - <code>' and the exit-date label into the view", async () => {
     const get = importReason.routes.find(
       (route) => route.method === 'GET'
     ).handler
@@ -134,11 +135,14 @@ describe('GET import-reason — copy reaches the view', () => {
     expect(result.view.context.countryItems[0].text).toBe(
       copy.country.placeholder
     )
+    expect(result.view.context.countryItems.slice(2)).toEqual(
+      await countries.destinationCountryOptions()
+    )
     expect(result.view.context.portItems[0].text).toBe(copy.port.placeholder)
     expect(result.view.context.portItems.slice(2)).toEqual(
       (await ports.list()).map((port) => ({
         value: port.code,
-        text: `${port.name} (${port.code})`
+        text: `${port.name} - ${port.code}`
       }))
     )
     expect(result.view.context.exitDateField.label.text).toBe(copy.date.label)

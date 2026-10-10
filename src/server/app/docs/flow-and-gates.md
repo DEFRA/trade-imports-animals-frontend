@@ -47,10 +47,14 @@ configured section list through the journey-flow seam.
 
 ## Navigation and status
 
-[`src/server/app/flow/navigation.js`](../flow/navigation.js) exports three.
+[`src/server/app/flow/navigation.js`](../flow/navigation.js) exports four.
 `sectionEntry()` finds the first gate-passing page in a section, or the hub when
 no page passes. `nextInSection()` returns the next gate-passing page in the
-section, or the hub when the section is finished.
+section, or the hub when the section is finished. `nextInTaskRow()` is where a
+save outside the opening run goes: the next gate-passing page of the section
+when it belongs to the same task row, otherwise the hub; a page in no task row
+keeps the section order. `kit.nextTarget` uses it after the opening run and the
+explicit exits.
 
 `rowEntry()` differs from `sectionEntry()` and `nextInSection()` in that it
 always answers with a page. A task row is a way into the notification rather

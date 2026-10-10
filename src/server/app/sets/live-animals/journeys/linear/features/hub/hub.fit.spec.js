@@ -61,6 +61,13 @@ const selectCommodityAndOpenDetails = async (page) => {
   await page.getByRole('link', { name: copy.rows.commodities.title }).click()
   await selectSpecies(page, ['Bos taurus'])
   await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+  await expectHub(page)
+  await page
+    .getByRole('link', {
+      name: copy.rows.consignmentDetails.title,
+      exact: true
+    })
+    .click()
   await expect(
     page.getByRole('heading', {
       name: commoditiesCopy.consignmentDetails.title
@@ -215,13 +222,8 @@ test.describe('hub feature', () => {
       page.getByRole('heading', { name: transportCopy.portOfEntry.title })
     ).toBeVisible()
 
-    // Saving carries the trader on through the section, and with no commodity
-    // chosen the rest of the transport section is out of scope — transit
-    // countries and transporters both sit after the commodity selection in
-    // flow order, so `nextInSection` finds no further page and returns the
-    // hub. Landing back on Overview is the answer; pin it so a later change to
-    // the gate chain cannot silently send the trader to a page whose questions
-    // are out of scope.
+    // A task opened from the overview returns to the overview when saved,
+    // even before a commodity is chosen.
     await answerArrivalDetails(page)
 
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
