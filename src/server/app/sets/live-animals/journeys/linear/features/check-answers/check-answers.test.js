@@ -933,6 +933,19 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     expect(keysOf(rows)).not.toContain(EXIT_DATE_KEY)
   })
 
+  it('Should name a subdivision destination country with its parent country', async () => {
+    const rows = rowsOf(
+      await sectionsFor(
+        reasonSeed({
+          reasonForImport: 'transhipmentOrOnwardTravel',
+          destinationCountry: 'FR-MQ'
+        })
+      )
+    )
+
+    expect(valueOf(rows, DESTINATION_COUNTRY_KEY)).toBe('Martinique (France)')
+  })
+
   it('Should show the destination country alone for a transhipment', async () => {
     const rows = rowsOf(
       await sectionsFor(
