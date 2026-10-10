@@ -42,9 +42,14 @@ describe('#auditPaths', () => {
     expect(paths.filter((path) => path.includes(journeyIds.transit))).toEqual([
       `${SET_BASE}/notifications/${journeyIds.transit}/transporters/add/private`
     ])
+    // The dashboard and Manage templates belong to no notification, so they
+    // answer to no journey id at all.
+    const notificationFree = getPaths.filter(
+      (path) => !path.includes('{journeyId}') && !SKIPPED.has(path)
+    )
     expect(
       paths.filter((path) => path.includes(journeyIds.draft))
-    ).toHaveLength(paths.length - FILLED_BY.size - 1)
+    ).toHaveLength(paths.length - FILLED_BY.size - notificationFree.length)
   })
 
   it('Should carry the query string a route needs before it will render', () => {

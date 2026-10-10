@@ -9,6 +9,7 @@ export const hubRoutePath = () => '/notifications/{journeyId}'
 export const createRoutePath = () => '/notifications'
 export const startRoutePath = () => '/start'
 export const dashboardRoutePath = () => '/'
+export const templatesRoutePath = () => '/templates'
 
 // Links carry the prefix, resolved inside the active request's set context.
 // Using a route builder where a link belongs drops the prefix, and the reverse
@@ -19,6 +20,7 @@ export const hubPath = (journeyId) => `${setBase()}/notifications/${journeyId}`
 export const createPath = () => `${setBase()}/notifications`
 export const startPath = () => `${setBase()}/start`
 export const dashboardPath = () => setBase()
+export const templatesPath = () => `${setBase()}/templates`
 
 export const inDashboardSection = (path) =>
   path === dashboardPath() ||
