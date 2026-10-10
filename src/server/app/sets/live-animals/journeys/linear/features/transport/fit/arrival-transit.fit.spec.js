@@ -278,6 +278,30 @@ test.describe('arrival details rendering', () => {
     )
   })
 
+  // The size class is the whole of the behaviour here, so it is asserted
+  // directly rather than through a rendered role.
+  test('sets every question in the medium label size and shows the port placeholder', async ({
+    page
+  }) => {
+    await openArrival(page)
+
+    for (const id of [
+      'arrivalDateAtPort',
+      'portOfEntry',
+      'meansOfTransport',
+      'transportIdentification',
+      'transportDocumentReference'
+    ]) {
+      await expect(page.locator(`label[for="${id}"]`)).toHaveClass(
+        /govuk-label--m/
+      )
+    }
+    await expect(page.locator(portInput)).toHaveAttribute(
+      'placeholder',
+      copy.portOfEntry.port.placeholder
+    )
+  })
+
   test('arrival back link returns to the overview', async ({ page }) => {
     await openArrival(page)
     await page.locator('.govuk-back-link').click()
@@ -347,6 +371,9 @@ test.describe('port of entry without JavaScript', () => {
     page
   }) => {
     await openArrival(page)
+    await expect(page.locator('select#portOfEntry option').first()).toHaveText(
+      copy.portOfEntry.port.placeholder
+    )
     await page
       .getByLabel(copy.portOfEntry.arrivalDate.label)
       .fill(ARRIVAL_DATE_IN_WINDOW)

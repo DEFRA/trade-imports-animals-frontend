@@ -286,6 +286,36 @@ describe('transport copy module', () => {
   })
 })
 
+// Copy parity only checks that a Welsh leaf differs from its English
+// counterpart, never the words themselves, so both decks are pinned here.
+describe('port of entry copy', () => {
+  test('Should word the port search, the means of transport and the identification lead-in as Design Release 2.1 does, in both languages', () => {
+    expect(copy.portOfEntry.port.hint).toBe(
+      'Select where the transporter will enter with the consignment. Start typing to search by port or airport name or code.'
+    )
+    expect(copy.portOfEntry.port.placeholder).toBe('Select a port')
+    expect(copyCy.portOfEntry.port.placeholder).toBe('Dewiswch borthladd')
+    expect(copy.portOfEntry.means.options).toEqual({
+      AIRPLANE: 'Air',
+      RAILWAY: 'Rail',
+      ROAD_VEHICLE: 'Road',
+      VESSEL: 'Sea'
+    })
+    expect(copyCy.portOfEntry.means.options).toEqual({
+      AIRPLANE: 'Awyr',
+      RAILWAY: 'Rheilffordd',
+      ROAD_VEHICLE: 'Ffordd',
+      VESSEL: 'Môr'
+    })
+    expect(copy.portOfEntry.identification.hint.lead).toBe(
+      'Enter one of the following:'
+    )
+    expect(copyCy.portOfEntry.identification.hint.lead).toBe(
+      'Rhowch un o’r canlynol:'
+    )
+  })
+})
+
 describe('GET /port-of-entry', () => {
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)

@@ -107,7 +107,7 @@ describe('GET port-of-entry — server-rendered select data (no-JS path)', () =>
   it('Should supply an empty-value placeholder followed by name-plus-code options (no divider)', async () => {
     const result = await driveHandler(get)
     const items = result.view.context.portItems
-    expect(items[0]).toEqual({ value: '', text: 'Select port of entry' })
+    expect(items[0]).toEqual({ value: '', text: 'Select a port' })
     const [firstPort] = await ports.list()
     expect(items[1]).toEqual({
       value: firstPort.code,
@@ -125,10 +125,10 @@ describe('GET port-of-entry — server-rendered select data (no-JS path)', () =>
     const result = await driveHandler(get)
     expect(result.view.context.meansItems).toEqual([
       { value: '', text: 'Select one' },
-      { value: 'AIRPLANE', text: 'Airplane', selected: false },
-      { value: 'RAILWAY', text: 'Railway', selected: false },
-      { value: 'ROAD_VEHICLE', text: 'Road Vehicle', selected: false },
-      { value: 'VESSEL', text: 'Vessel', selected: false }
+      { value: 'AIRPLANE', text: 'Air', selected: false },
+      { value: 'RAILWAY', text: 'Rail', selected: false },
+      { value: 'ROAD_VEHICLE', text: 'Road', selected: false },
+      { value: 'VESSEL', text: 'Sea', selected: false }
     ])
   })
 
@@ -139,9 +139,28 @@ describe('GET port-of-entry — server-rendered select data (no-JS path)', () =>
     const selected = result.view.context.meansItems.filter(
       (item) => item.selected
     )
-    expect(selected).toEqual([
-      { value: 'VESSEL', text: 'Vessel', selected: true }
-    ])
+    expect(selected).toEqual([{ value: 'VESSEL', text: 'Sea', selected: true }])
+  })
+
+  it('Should set the arrival date label in the medium size', async () => {
+    const result = await driveHandler(get)
+    expect(result.view.context.arrivalDate.label.classes).toBe('govuk-label--m')
+  })
+
+  it.each([
+    ['Air', 'AIRPLANE'],
+    ['Rail', 'RAILWAY'],
+    ['Road', 'ROAD_VEHICLE'],
+    ['Sea', 'VESSEL']
+  ])('Should offer %s and save it as %s', async (label, code) => {
+    const page = await driveHandler(get)
+    const offered = page.view.context.meansItems.find(
+      (item) => item.text === label
+    )
+    const result = await driveHandler(post, {
+      payload: { meansOfTransport: offered.value }
+    })
+    expect(result.after.meansOfTransport).toBe(code)
   })
 })
 

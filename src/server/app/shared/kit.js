@@ -283,16 +283,27 @@ export const dateTextOf = (value) =>
  * group. The picker's client-side script inserts the calendar dialog inside
  * the form group, so a class here is the simplest stylesheet hook onto one
  * picker rather than all of them.
+ * @param {string} [options.labelClasses] - classes for the label; the GOV.UK
+ * small size unless the page asks for another.
  */
 export const dateField = (
   name,
-  { label, hint, value = {}, error, minDate, maxDate, formGroupClasses } = {}
+  {
+    label,
+    hint,
+    value = {},
+    error,
+    minDate,
+    maxDate,
+    formGroupClasses,
+    labelClasses = 'govuk-label--s'
+  } = {}
 ) => {
   return {
     id: name,
     name,
     classes: 'govuk-input--width-10',
-    label: { text: label, classes: 'govuk-label--s' },
+    label: { text: label, classes: labelClasses },
     hint: hint ? { text: hint } : undefined,
     errorMessage: error ? { text: error } : undefined,
     value: dateTextOf(value),

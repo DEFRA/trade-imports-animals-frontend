@@ -383,7 +383,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
   it('Should map the means-of-transport enum to its display label', async () => {
     const rows = rowsOf(await sectionsFor(fullSeed))
     expect(valueOf(rows, 'Means of transport to the port of entry')).toBe(
-      'Road Vehicle'
+      'Road'
     )
   })
 

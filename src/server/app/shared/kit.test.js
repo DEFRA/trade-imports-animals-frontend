@@ -52,6 +52,17 @@ describe('#dateField — MoJ date-picker view model', () => {
 
     expect(field.formGroup).toBeUndefined()
   })
+
+  it('Should set the label in the size the page asks for, and small when it asks for none', () => {
+    const medium = dateField('entryDate', {
+      label: 'Entry date',
+      labelClasses: 'govuk-label--m'
+    })
+    const unasked = dateField('otherDate', { label: 'Other date' })
+
+    expect(medium.label.classes).toBe('govuk-label--m')
+    expect(unasked.label.classes).toBe('govuk-label--s')
+  })
 })
 
 describe('#base — amending', () => {
