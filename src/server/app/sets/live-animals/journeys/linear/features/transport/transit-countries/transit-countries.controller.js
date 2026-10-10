@@ -8,7 +8,6 @@ import {
 import { hasErrors } from '../../../../../../../lib/validate/index.js'
 import * as kit from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
-import * as countries from '../../../../../../../services/countries/index.js'
 import { portOfEntryPage, transitCountriesPage as page } from '../page.js'
 import { copy as en } from '../copy/copy.en.js'
 import { copy as cy } from '../copy/copy.cy.js'
@@ -18,6 +17,8 @@ import {
   COUNTRY_FIELD,
   MAX_TRANSITED_COUNTRIES,
   offeredCodes,
+  offeredCountries,
+  offeredLabel,
   validation
 } from './validate.js'
 
@@ -39,12 +40,12 @@ const TRANSITED_COUNTRIES = 'transitedCountries'
 const transitApplies = (scope) => scope.has(TRANSITED_COUNTRIES)
 
 // The list feeds a type-ahead that enhances this select, so it carries only the
-// placeholder and the real countries. Countries already added stay in the list:
-// the server refuses a repeat by name, which says more than a country quietly
-// missing from the search would.
+// placeholder, the real countries and their subdivisions. Places already added
+// stay in the list: the server refuses a repeat by name, which says more than a
+// place quietly missing from the search would.
 const countryItems = async () => [
   { value: '', text: copy.country.placeholder },
-  ...(await countries.originCountries())
+  ...(await offeredCountries())
 ]
 
 const render = async (
@@ -59,9 +60,9 @@ const render = async (
   // is refused by the guards above; it is not rendered back.
   const known = selected.filter((code) => offered.has(code))
   const knownLabels = await Promise.all(
-    known.map(async (code) => (await countries.originLabel(code)) ?? code)
+    known.map(async (code) => (await offeredLabel(code)) ?? code)
   )
-  const chosenLabel = (await countries.originLabel(chosen)) ?? ''
+  const chosenLabel = (await offeredLabel(chosen)) ?? ''
   return h.view(view, {
     ...kit.base(copy.pageTitle, {
       backLink: await kit.runBackLink(request, portOfEntryPage.slug),
@@ -111,7 +112,7 @@ const addErrors = async (chosen, selected) => {
     return { [COUNTRY_FIELD]: copy.errors.fromList }
   }
   if (selected.includes(chosen)) {
-    const chosenLabel = await countries.originLabel(chosen)
+    const chosenLabel = await offeredLabel(chosen)
     return { [COUNTRY_FIELD]: copy.errors.alreadyAdded(chosenLabel) }
   }
   if (selected.length >= MAX_TRANSITED_COUNTRIES) {
@@ -132,7 +133,7 @@ const postAdd = async (request, h, selected) => {
     ).code(HTTP_STATUS_BAD_REQUEST)
   }
   const added = [...selected, chosen]
-  const chosenLabel = await countries.originLabel(chosen)
+  const chosenLabel = await offeredLabel(chosen)
   return render(request, h, journey, added, {
     status: statusFor(copy.added(chosenLabel), added)
   })
@@ -141,7 +142,7 @@ const postAdd = async (request, h, selected) => {
 const postRemove = async (request, h, selected, code) => {
   const { journey } = await state.get(request, h)
   const remaining = selected.filter((entry) => entry !== code)
-  const codeLabel = (await countries.originLabel(code)) ?? code
+  const codeLabel = (await offeredLabel(code)) ?? code
   return render(request, h, journey, remaining, {
     status: copy.removed(codeLabel)
   })

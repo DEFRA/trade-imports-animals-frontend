@@ -45,6 +45,10 @@ const seed = { meansOfTransport: 'ROAD_VEHICLE' }
 // The one message for a code the offered list does not contain, whichever
 // guard raises it.
 const FROM_LIST = 'Select countries from the list'
+const TRANSIT_SLUG = 'transit-countries'
+// A subdivision is offered, added and listed under its parent-named label.
+const SUBDIVISION = 'ES-CN'
+const SUBDIVISION_NAME = 'Canary Islands (Spain)'
 
 const configure = () => {
   configureRecords(SET_ID, recordsStub)
@@ -95,6 +99,20 @@ describe('POST transit-countries — adding a country', () => {
       message: 'You have already added France'
     },
     {
+      name: 'a subdivision that has already been added',
+      payload: {
+        action: 'add',
+        transitedCountry: SUBDIVISION,
+        transitedCountries: [SUBDIVISION]
+      },
+      message: `You have already added ${SUBDIVISION_NAME}`
+    },
+    {
+      name: 'a subdivision that is not in the list',
+      payload: { action: 'add', transitedCountry: 'ES-XX' },
+      message: FROM_LIST
+    },
+    {
       name: 'a thirteenth country',
       payload: {
         action: 'add',
@@ -127,6 +145,37 @@ describe('POST transit-countries — adding a country', () => {
     })
     expect(result.view.context.chosenValue).toBe('FR')
     expect(result.view.context.chosenLabel).toBe('France')
+  })
+
+  it('Should put a refused subdivision back into the search box under its parent-named label', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: {
+        action: 'add',
+        transitedCountry: SUBDIVISION,
+        transitedCountries: [SUBDIVISION]
+      }
+    })
+    expect(result.view.context.chosenValue).toBe(SUBDIVISION)
+    expect(result.view.context.chosenLabel).toBe(SUBDIVISION_NAME)
+  })
+
+  it('Should add a subdivision under its parent-named label and announce it', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: {
+        action: 'add',
+        transitedCountry: SUBDIVISION,
+        transitedCountries: []
+      }
+    })
+    expect(result.response.statusCode).toBe(200)
+    expect(result.view.context.selectedCountries).toEqual([SUBDIVISION])
+    expect(result.view.context.countryRows.map((row) => row.name)).toEqual([
+      SUBDIVISION_NAME
+    ])
+    expect(result.view.context.status).toBe(`${SUBDIVISION_NAME} added.`)
+    expect(result.after).toEqual(result.before)
   })
 
   it('Should add the country to the working list, announce it and commit nothing', async () => {
@@ -225,6 +274,11 @@ describe('POST transit-countries — continuing', () => {
       message: FROM_LIST
     },
     {
+      name: 'a transited subdivision code not in the list',
+      payload: { transitedCountries: ['ES-XX'] },
+      message: FROM_LIST
+    },
+    {
       name: `more than ${MAX_TRANSITED_COUNTRIES} transited countries`,
       payload: { transitedCountries: tooManyCodes },
       message: `Select up to ${MAX_TRANSITED_COUNTRIES} countries`
@@ -288,7 +342,16 @@ describe('POST transit-countries — continuing', () => {
     const result = await driveHandler(post, { seed, payload: {} })
     expect(result.after.transitedCountries).toEqual([])
     expect(result.response.redirect).toBeDefined()
-    expect(result.response.redirect).not.toContain('transit-countries')
+    expect(result.response.redirect).not.toContain(TRANSIT_SLUG)
+  })
+
+  it('Should commit a subdivision code and continue', async () => {
+    const result = await driveHandler(post, {
+      seed,
+      payload: { transitedCountries: ['FR', SUBDIVISION] }
+    })
+    expect(result.after.transitedCountries).toEqual(['FR', SUBDIVISION])
+    expect(result.response.redirect).not.toContain(TRANSIT_SLUG)
   })
 
   it('Should deduplicate and commit the added country codes', async () => {
@@ -297,7 +360,7 @@ describe('POST transit-countries — continuing', () => {
       payload: { transitedCountries: ['FR', 'BE', 'FR'] }
     })
     expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
-    expect(result.response.redirect).not.toContain('transit-countries')
+    expect(result.response.redirect).not.toContain(TRANSIT_SLUG)
   })
 })
 
@@ -386,11 +449,34 @@ describe('GET transit-countries', () => {
   beforeAll(configure)
   beforeEach(() => store.clear())
 
-  it('Should offer every country in the search list behind a placeholder', async () => {
+  it('Should offer every country and subdivision in the search list behind a placeholder, in alphabetical order', async () => {
     const result = await driveHandler(get, { seed })
     const items = result.view.context.countryItems
     expect(items[0]).toEqual({ value: '', text: 'Search for a country' })
-    expect(items.slice(1)).toEqual(await countries.originCountries())
+    expect(items.slice(1)).toEqual(await countries.destinationCountryOptions())
+  })
+
+  it('Should name each subdivision in the search list with its parent country', async () => {
+    const result = await driveHandler(get, { seed })
+    const items = result.view.context.countryItems.slice(1)
+    expect(items).toContainEqual({
+      value: SUBDIVISION,
+      text: SUBDIVISION_NAME
+    })
+    const names = items.map((item) => item.text)
+    expect(names).toEqual(
+      [...names].sort((left, right) => left.localeCompare(right))
+    )
+  })
+
+  it('Should read a stored subdivision back under its parent-named label, with no error', async () => {
+    const result = await driveHandler(get, {
+      seed: { ...seed, transitedCountries: [SUBDIVISION] }
+    })
+    expect(result.view.context.countryRows.map((row) => row.name)).toEqual([
+      SUBDIVISION_NAME
+    ])
+    expect(result.view.context.errors).toEqual({})
   })
 
   it('Should read the stored countries back as rows, with nothing announced', async () => {

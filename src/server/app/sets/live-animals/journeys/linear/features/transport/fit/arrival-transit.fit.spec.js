@@ -61,6 +61,20 @@ const GOVUK_FOCUS_TEXT = 'rgb(11, 12, 12)'
 // The computed property those colours are read from.
 const BACKGROUND_COLOR = 'background-color'
 
+// What the transit search offers, built from the captured countries: each
+// country, and each territory named "<territory> (<country>)", by name.
+const transitPlaces = countriesOrigin
+  .flatMap((country) => [
+    { code: country.code, label: country.name },
+    ...(country.subDivisions ?? []).map((subDivision) => ({
+      code: subDivision.code,
+      label: `${subDivision.name} (${country.name})`
+    }))
+  ])
+  .sort((left, right) => left.label.localeCompare(right.label))
+// A territory code is ISO 3166-2, so it has a hyphen; a country's has none.
+const TERRITORY = transitPlaces.find(({ code }) => code.includes('-'))
+
 const dateWindow = arrivalWindow()
 const outOfRangeError = copy.portOfEntry.errors.arrivalDateOutOfRange(
   dateWindow.minText,
@@ -829,7 +843,7 @@ test.describe('transit countries rendering and validation', () => {
     ).toHaveCount(0)
   })
 
-  test('the transit type-ahead offers every captured country behind a search placeholder', async ({
+  test('the transit type-ahead offers every captured country and territory, territories named with their country, in alphabetical order behind a search placeholder', async ({
     page
   }) => {
     await openTransit(page)
@@ -846,9 +860,7 @@ test.describe('transit countries rendering and validation', () => {
       code: '',
       label: copy.transitCountries.country.placeholder
     })
-    expect(options.slice(1)).toEqual(
-      countriesOrigin.map(({ code, name }) => ({ code, label: name }))
-    )
+    expect(options.slice(1)).toEqual(transitPlaces)
   })
 
   test('filters the country list by what the user types (AC1)', async ({
@@ -1060,6 +1072,29 @@ test.describe('transit countries list, limits and persistence', () => {
     expect(await addedCountries(page)).toEqual(['FR'])
   })
 
+  test('a territory is listed under its country-named label, saves its code and is listed again under that name on return', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await addTransitCountry(page, TERRITORY.label)
+
+    await expect(
+      page.getByRole('cell', { name: TERRITORY.label, exact: true })
+    ).toBeVisible()
+    expect(await addedCountries(page)).toEqual([TERRITORY.code])
+    await expect(page.locator(transitStatus)).toHaveText(
+      copy.transitCountries.added(TERRITORY.label)
+    )
+    await submit(page)
+    await expectOverview(page)
+
+    await page.goto(journeyUrl(page, TRANSIT_PAGE))
+    await expect(
+      page.getByRole('cell', { name: TERRITORY.label, exact: true })
+    ).toBeVisible()
+    expect(await addedCountries(page)).toEqual([TERRITORY.code])
+  })
+
   test('removing a country takes its row away and announces it', async ({
     page
   }) => {
@@ -1169,6 +1204,24 @@ test.describe('transit countries without JavaScript', () => {
     ).toBeVisible()
     await submit(page)
     await expectOverview(page)
+  })
+
+  test('the native select offers territories under their country-named labels, and one added is saved and listed again', async ({
+    page
+  }) => {
+    await openTransit(page)
+    await expect(
+      page.locator(`select#transitedCountry option[value="${TERRITORY.code}"]`)
+    ).toHaveText(TERRITORY.label)
+
+    await addTransitCountry(page, TERRITORY.label)
+    await submit(page)
+    await expectOverview(page)
+
+    await page.goto(journeyUrl(page, TRANSIT_PAGE))
+    await expect(
+      page.getByRole('cell', { name: TERRITORY.label, exact: true })
+    ).toBeVisible()
   })
 })
 

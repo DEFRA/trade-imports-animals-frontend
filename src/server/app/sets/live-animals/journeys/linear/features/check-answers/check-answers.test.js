@@ -614,6 +614,20 @@ describe(`${SUITE} — transit countries`, () => {
     ).toBe('France, Belgium')
   })
 
+  it('Should name a transited subdivision with its parent country on the transit-countries card', async () => {
+    const sections = await sectionsFor({
+      ...fullSeed,
+      transitedCountries: ['FR', 'ES-CN']
+    })
+
+    expect(
+      valueOf(
+        cardByTitle(sections, TRANSIT_COUNTRIES_CARD).rows,
+        TRANSITED_COUNTRIES_KEY
+      )
+    ).toBe('France, Canary Islands (Spain)')
+  })
+
   it('Should give the transit-countries card its own Change link to the page that collects it', async () => {
     const items = cardByTitle(
       await sectionsFor(fullSeed),
