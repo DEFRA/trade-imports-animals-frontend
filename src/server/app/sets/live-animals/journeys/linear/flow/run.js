@@ -70,8 +70,8 @@ export const RUN_STEPS = [
  * Design Release 2.1 orders them. The main import reason names What are you
  * importing. Commodity details names the commodity page, not the reason between
  * them. Additional details names Identification details when a chosen commodity
- * needs identifiers, and Commodity details otherwise. A step left out keeps the
- * overview. */
+ * needs identifiers, and Commodity details otherwise. Transit countries names
+ * Arrival details. A step left out keeps the overview. */
 const RUN_BACK_STEPS = Object.freeze({
   [commoditiesPage.id]: () => originPage,
   [importReasonPage.id]: () => commoditiesPage,
@@ -79,7 +79,8 @@ const RUN_BACK_STEPS = Object.freeze({
   [additionalDetailsPage.id]: (answers) =>
     identifiesAnAnimal(answers)
       ? animalIdentificationPage
-      : consignmentDetailsPage
+      : consignmentDetailsPage,
+  [transitCountriesPage.id]: () => portOfEntryPage
 })
 
 /**

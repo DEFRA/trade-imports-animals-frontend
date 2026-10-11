@@ -117,7 +117,7 @@ const countryAndSubdivisionOptions = async () => {
 /** The origin page's countries and subdivisions, one alphabetical list, each subdivision named with its parent country. */
 export const originCountryOptions = () => countryAndSubdivisionOptions()
 
-/** Countries and their subdivisions for a destination select, one alphabetical list, each subdivision named with its parent country. */
+/** Countries and their subdivisions for a destination select or the transit countries search, one alphabetical list, each subdivision named with its parent country. */
 export const destinationCountryOptions = () => countryAndSubdivisionOptions()
 
 export const addressCountries = async () => {

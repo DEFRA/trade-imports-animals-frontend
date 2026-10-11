@@ -18,7 +18,9 @@ const copy = copyFor({ en, cy })
 export const transitCountriesCard = async (journeyId, answers, readOnly) => {
   const codes = toArray(answers.transitedCountries)
   const labels = await Promise.all(
-    codes.map(async (code) => (await countries.originLabel(code)) ?? code)
+    codes.map(
+      async (code) => (await countries.originDisplayLabel(code)) ?? code
+    )
   )
   return {
     id: 'transitCountries',
