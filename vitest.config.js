@@ -5,7 +5,10 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     clearMocks: true,
-    setupFiles: ['./test/setup-obligation-set.js'],
+    setupFiles: [
+      './test/setup-obligation-set.js',
+      './test/setup-backend-fetch.js'
+    ],
     // The service default is real mode; the unit suite opts into stub, the same
     // way the Playwright suite does. Tests that exercise real mode set the flag
     // themselves and restore it.
