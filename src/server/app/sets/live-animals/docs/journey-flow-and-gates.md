@@ -165,16 +165,24 @@ template's name in place of a notification's reference. A change to a journey pa
 therefore reaches template mode with no template work.
 
 [`flow/template-mode.js`](../journeys/linear/flow/template-mode.js) lists what a
-template leaves out: the documents, review, declaration and confirmation pages, and
-the amend, cancel-amend, copy and delete actions. None of them gets a twin, and the
-opening run skips the documents and review steps, so after the last question a
-template falls to its own overview path rather than the review.
+template leaves out: the documents, declaration and confirmation pages, and the
+amend, cancel-amend, copy and delete actions. None of them gets a twin. The opening
+run also skips the review (`TEMPLATE_MODE_RUN_SKIPPED_PAGE_IDS`), so after the last
+question a template falls to its own overview path rather than the review.
 
 The overview route is twinned at `/templates/{journeyId}` and is the template's task
 list: the hub's own handler, which in template mode drops every task whose pages
 template mode leaves out (and any section left empty, today Documents), heads the
 list "Template tasklist" and ends with "Review template" and "Return to manage
 templates".
+
+The review route is twinned too and is the template review: the review's own handler,
+which in template mode is titled "Review your template", shows no errors, leaves out
+the documents section (renumbering the last two as the task list does) and the arrival
+date, goes Back to the task list, and ends with "Save template". That button's POST
+moves the template to saved (`templates.saveFor`) and opens Manage templates instead
+of the declaration. Its Change links open each page under the template with the
+change marker, so saving that page returns to the template review.
 
 A template-mode page links to the template's task list, so its Save and return and
 Cancel controls return there. Pages that already hide the return controls (Origin, CPH number and the transporter sub-pages) still end with Save and continue alone. "What

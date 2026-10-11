@@ -7,6 +7,7 @@ import { store } from '../../../../../../engine/store.js'
 import {
   AMEND,
   configureRecords,
+  configureTemplateRecords,
   DRAFT,
   records,
   SUBMITTED
@@ -22,6 +23,8 @@ import {
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import { pagePath } from '../../../../../../shared/paths.js'
+import { withTemplateMode } from '../../../../../../shared/template-mode.js'
+import * as templates from '../../../../../../services/templates/index.js'
 import { answerForInlineParty } from '../addresses/party-inline.js'
 import { taskRows } from '../../flow/task-rows.js'
 import { dispatchPages } from '../index.js'
@@ -127,6 +130,8 @@ const CONTACT_ADDRESS_CARD = 'Contact address for this consignment'
 const UPLOADED_DOCUMENTS_CARD = 'Uploaded documents'
 const TRANSPORT_AND_ARRIVAL_ANCHOR = 'transport-and-arrival'
 const COUNTRY_OF_ORIGIN_KEY = 'Country of origin'
+const ARRIVAL_DATE_KEY = 'Arrival date at port of entry'
+const PORT_OF_ENTRY_KEY = 'Port of entry'
 const PURPOSE_IN_MARKET_KEY = 'Purpose in the market'
 const REGION_CODE_KEY = 'Region of origin code'
 const INTERNAL_REFERENCE_KEY = 'Internal reference number'
@@ -463,12 +468,9 @@ describe(`${SUITE} — fully-populated notification`, () => {
   })
 
   it('Should format the arrival date as day/month/year', async () => {
-    expect(
-      valueOf(
-        rowsOf(await sectionsFor(fullSeed)),
-        'Arrival date at port of entry'
-      )
-    ).toBe('12/12/2026')
+    expect(valueOf(rowsOf(await sectionsFor(fullSeed)), ARRIVAL_DATE_KEY)).toBe(
+      '12/12/2026'
+    )
   })
 
   it('Should expand party rows to the stored name, address lines, telephone and email', async () => {
@@ -775,7 +777,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
   it('Should mark a blank plain answer missing', async () => {
     const rows = rowsOf(await sectionsFor(gatedOffSeed))
     expect(htmlOf(rows, INTERNAL_REFERENCE_KEY)).toBe(MISSING_HTML)
-    expect(htmlOf(rows, 'Port of entry')).toBe(MISSING_HTML)
+    expect(htmlOf(rows, PORT_OF_ENTRY_KEY)).toBe(MISSING_HTML)
   })
 
   it('Should mark a coded answer with no matching label missing', async () => {
@@ -786,10 +788,7 @@ describe(`${SUITE} — gated-off answers and blanks`, () => {
 
   it('Should mark a blank date missing', async () => {
     expect(
-      htmlOf(
-        rowsOf(await sectionsFor(gatedOffSeed)),
-        'Arrival date at port of entry'
-      )
+      htmlOf(rowsOf(await sectionsFor(gatedOffSeed)), ARRIVAL_DATE_KEY)
     ).toBe(MISSING_HTML)
   })
 
@@ -1659,5 +1658,150 @@ describe('#REVIEW_CARDS — the cards cover the task rows exactly', () => {
     for (const card of REVIEW_CARDS) {
       expect(typeof copyEn.errors.cards[card.id]).toBe('string')
     }
+  })
+})
+
+describe(`${SUITE} — the template review`, () => {
+  const OWNER = '2100010101'
+  const CATTLE_TEMPLATE_SEED = {
+    countryOfOrigin: 'FR',
+    regionOfOriginCodeRequirement: 'no',
+    commodityLines: [
+      {
+        commoditySelection: 'Cow',
+        speciesSelection: '1148346',
+        commodityType: '16'
+      }
+    ]
+  }
+  const TEMPLATE_CHANGE_HREF =
+    /^\/live-animals\/templates\/[^/]+\/.+\?change=1$/
+
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureTemplateRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  const renderTemplateReview = async (seed = {}) => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, seed)
+    const h = stubH()
+    await withTemplateMode(OWNER, () =>
+      getHandler(journeyRequest(journey.journeyId), h)
+    )
+    return { ...h.captured.view.context, journeyId: journey.journeyId }
+  }
+
+  it('Should title the page Review your template with no error summary and no card errors, even with nothing answered', async () => {
+    const context = await renderTemplateReview()
+
+    expect(context.pageTitle).toBe('Review your template')
+    expect(context.heading).toBe('Review your template')
+    expect(context.errorSummary).toBeNull()
+    expect(
+      cardsOf(context.sections).filter((card) => card.errorMessage)
+    ).toEqual([])
+  })
+
+  it('Should end with Save template', async () => {
+    const context = await renderTemplateReview()
+
+    expect(context.submitText).toBe('Save template')
+  })
+
+  it("Should go Back to the template's task list", async () => {
+    const context = await renderTemplateReview()
+
+    expect(context.backLink).toBe(
+      `/live-animals/templates/${context.journeyId}`
+    )
+  })
+
+  it("Should show the five sections of the template's task list, without the documents section", async () => {
+    const { sections } = await renderTemplateReview()
+
+    expect(sections.map((section) => section.heading)).toEqual([
+      '1. About the consignment',
+      '2. Description of the goods',
+      '3. Transport and arrival',
+      '4. Consignment parties',
+      '5. Contact address'
+    ])
+    expect(cardByTitle(sections, UPLOADED_DOCUMENTS_CARD)).toBeUndefined()
+  })
+
+  it('Should leave the arrival date row off the arrival details card', async () => {
+    const { sections } = await renderTemplateReview(CATTLE_TEMPLATE_SEED)
+
+    const keys = keysOf(cardByTitle(sections, ARRIVAL_DETAILS_CARD).rows)
+
+    expect(keys).toContain(PORT_OF_ENTRY_KEY)
+    expect(keys).not.toContain(ARRIVAL_DATE_KEY)
+  })
+
+  it('Should write Not applicable in every unanswered row', async () => {
+    const { sections } = await renderTemplateReview()
+
+    const rows = rowsOf(sections)
+
+    expect(rows.length).toBeGreaterThan(0)
+    for (const entry of rows) {
+      expect(entry.value.html ?? '').not.toContain(
+        'app-summary-list__value--missing'
+      )
+    }
+    expect(valueOf(rows, PORT_OF_ENTRY_KEY)).toBe(NOT_APPLICABLE)
+    expect(valueOf(rows, REASON_FOR_IMPORT_CARD)).toBe(NOT_APPLICABLE)
+  })
+
+  it('Should show Certified for, Includes unweaned animals and the CPH number for cattle, no identifier table, and one row under Main reason for import', async () => {
+    const { sections } = await renderTemplateReview(CATTLE_TEMPLATE_SEED)
+
+    expect(
+      keysOf(cardByTitle(sections, ADDITIONAL_ANIMAL_DETAILS_CARD).rows)
+    ).toEqual(['Certified for', UNWEANED_KEY])
+    expect(
+      keysOf(cardByTitle(sections, ROLES_AND_ADDRESSES_CARD).rows)
+    ).toContain(CPH_KEY)
+    expect(cardByTitle(sections, 'Identification details')).toBeUndefined()
+    expect(cardsOf(sections).some((card) => card.identifierTable)).toBe(false)
+    expect(keysOf(cardByTitle(sections, REASON_FOR_IMPORT_CARD).rows)).toEqual([
+      REASON_FOR_IMPORT_CARD
+    ])
+  })
+
+  it('Should point every Change link at a question page under the template', async () => {
+    const { sections } = await renderTemplateReview(CATTLE_TEMPLATE_SEED)
+
+    const hrefs = changeHrefsOf(sections)
+
+    expect(hrefs.length).toBeGreaterThan(0)
+    for (const href of hrefs) {
+      expect(href).toMatch(TEMPLATE_CHANGE_HREF)
+    }
+  })
+
+  it('Should save the template and open Manage templates on Save template, refusing nothing', async () => {
+    const saveFor = vi.spyOn(templates, 'saveFor').mockResolvedValue({})
+    const journey = await store.create()
+    const h = stubH()
+
+    const response = await withTemplateMode(OWNER, () =>
+      postHandler(journeyRequest(journey.journeyId), h)
+    )
+
+    expect(saveFor).toHaveBeenCalledWith(OWNER, journey.journeyId)
+    expect(response.redirect).toBe('/live-animals/templates')
+    saveFor.mockRestore()
+  })
+
+  it("Should still title a notification's review Review your notification and end with Continue", async () => {
+    const { view } = await driveHandler(getHandler, { seed: fullSeed })
+
+    expect(view.context.pageTitle).toBe('Review your notification')
+    expect(view.context.submitText).toBe('Continue')
   })
 })

@@ -1,4 +1,13 @@
-import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import {
+  hubPath,
+  pagePath,
+  templatesPath
+} from '../../../../../../shared/paths.js'
+import {
+  inTemplateMode,
+  templateOwnerId
+} from '../../../../../../shared/template-mode.js'
+import * as templates from '../../../../../../services/templates/index.js'
 import { TEMPLATES } from '../../config.js'
 import { nextInSection } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
@@ -34,6 +43,11 @@ const view = `${TEMPLATES}/features/check-answers/template`
 
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
+
+const reviewWording = () =>
+  inTemplateMode()
+    ? { title: copy.template.title, submitText: copy.template.saveTemplate }
+    : { title: copy.title, submitText: copy.submit.button }
 
 /** One summary over both kinds of refusal: first the roles whose copied address
  * breaks the address-book rules, then the cards with answers still
@@ -95,6 +109,7 @@ const renderCya = async (
     disableAutoFocus = true
   }
 ) => {
+  const { title, submitText } = reviewWording()
   const sections = withCardErrors(
     await buildSections(
       answers,
@@ -108,8 +123,9 @@ const renderCya = async (
     cardErrors
   )
   return h.view(view, {
-    pageTitle: copy.title,
-    heading: copy.title,
+    pageTitle: title,
+    heading: title,
+    submitText,
     copy,
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
@@ -149,6 +165,9 @@ export const renderNotificationView = async (
   const { journey, answers, storedAnswers, scope, evaluation } =
     await state.get(request, h)
   const readOnly = journey.status === state.SUBMITTED
+  // A template is reviewed as it stands: nothing on it is owed, so a template
+  // review names no card, role, stale answer or document as unfinished.
+  const checked = !readOnly && !inTemplateMode()
   const parties = await partiesFromStoredAnswers(answers)
   // A submitted notification is a record of what was sent, so nothing on it
   // is outstanding, and no stored answer of its is named as stale either —
@@ -157,15 +176,15 @@ export const renderNotificationView = async (
   // Each card's page reads `answers` here, and is handed the raw
   // `storedAnswers` via context, so its own rules decide for themselves which
   // of the two they need.
-  const invalidCardErrors = readOnly
-    ? {}
-    : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
+  const invalidCardErrors = checked
+    ? await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
+    : {}
   // A REJECTED scan is a permanent verdict on a stored file, so it belongs on the read
   // path — a mid-upload PENDING is (or should be) a transient state so shouldn't
   // present as an error.
-  const rejectedDocErrors = readOnly
-    ? {}
-    : await documentsRejectedCardErrors(answers)
+  const rejectedDocErrors = checked
+    ? await documentsRejectedCardErrors(answers)
+    : {}
   return renderCya(h, journey, {
     answers,
     scope,
@@ -174,26 +193,36 @@ export const renderNotificationView = async (
     amendmentCancelled: readOnly && request.query.cancelled === '1',
     recoverableError,
     parties,
-    partyErrors: readOnly ? {} : await invalidPartyErrors(answers),
+    partyErrors: checked ? await invalidPartyErrors(answers) : {},
     // Incomplete wins over invalid on the same card: spread the invalid map
     // first and the incomplete map second, so a card that is both unfinished
     // and carrying a stale value says "complete this section" rather than
     // naming the stale answer.
-    cardErrors: readOnly
-      ? {}
-      : {
+    cardErrors: checked
+      ? {
           ...invalidCardErrors,
           ...rejectedDocErrors,
           ...extraCardErrors,
           ...incompleteCardErrors(answers, scope, evaluation)
-        },
+        }
+      : {},
     disableAutoFocus
   })
 }
 
 const get = async (request, h) => renderNotificationView(request, h)
 
+// Save template stores the template instead of going on to the declaration: a
+// template holds no declaration.
+const saveTemplate = async (request, h) => {
+  await templates.saveFor(templateOwnerId(), request.params.journeyId)
+  return h.redirect(templatesPath())
+}
+
 const post = async (request, h) => {
+  if (inTemplateMode()) {
+    return saveTemplate(request, h)
+  }
   // Reuse the scan errors reviewRefusal already computed — a fresh
   // documentScanCardErrors call here would issue a second HTTP GET per
   // stored document to the upload backend.

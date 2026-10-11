@@ -7,6 +7,7 @@ const store = new Map()
 export const stubTemplates = store
 
 const IN_PROGRESS = 'IN_PROGRESS'
+const SAVED = 'SAVED'
 
 const newestFirst = (left, right) => right.created.localeCompare(left.created)
 
@@ -104,3 +105,12 @@ export const updateDetails = (ownerId, id, { setId, name }) =>
  */
 export const replaceFulfilments = (ownerId, id, fulfilments) =>
   changeRow(ownerId, id, { fulfilments: structuredClone(fulfilments) })
+
+/**
+ * Saves one of the owner's stub templates, so it is listed.
+ *
+ * @param {string} ownerId - the signed-in user's id
+ * @param {string} id - the template's id
+ * @returns {object|undefined} the template as stored, or undefined when not found
+ */
+export const save = (ownerId, id) => changeRow(ownerId, id, { status: SAVED })

@@ -6,6 +6,7 @@ import { portOfEntryPage } from '../../../../transport/page.js'
 import { cardAction, editableActions } from '../../rows/change-link.js'
 import { row } from '../../rows/summary-row.js'
 import { dateText } from '../../rows/value-text.js'
+import { inTemplateMode } from '../../../../../../../../../shared/template-mode.js'
 
 const copy = copyFor({ en, cy })
 
@@ -15,6 +16,8 @@ const copy = copyFor({ en, cy })
  * that page needs. The countries the consignment travels through used to be a
  * row here, reached from a second link; design release 1 gives them their own
  * card, which now carries the link to the page that collects them.
+ *
+ * A template is reused across consignments, so its review shows no arrival date.
  */
 export const arrivalDetailsCard = async (journeyId, answers, readOnly) => ({
   id: 'arrivalDetails',
@@ -32,7 +35,9 @@ export const arrivalDetailsCard = async (journeyId, answers, readOnly) => ({
       copy.rows.portOfEntry,
       (await ports.label(answers.portOfEntry)) ?? answers.portOfEntry
     ),
-    row(copy.rows.arrivalDate, dateText(answers.arrivalDateAtPort)),
+    ...(inTemplateMode()
+      ? []
+      : [row(copy.rows.arrivalDate, dateText(answers.arrivalDateAtPort))]),
     row(copy.rows.meansOfTransport, copy.means[answers.meansOfTransport] ?? ''),
     row(copy.rows.transportIdentification, answers.transportIdentification),
     row(

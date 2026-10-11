@@ -76,3 +76,17 @@ export const replaceFulfilmentsFor = async (ownerId, id, fulfilments) => {
     ? stub.replaceFulfilments(ownerId, id, fulfilments)
     : client.replaceTemplateFulfilments(ownerId, id, fulfilments)
 }
+
+/**
+ * Saves one of the signed-in user's templates, so Manage templates lists it.
+ *
+ * @param {string} ownerId - the signed-in user's id
+ * @param {string} id - the template's id
+ * @returns {Promise<object|undefined>} the template as stored
+ */
+export const saveFor = async (ownerId, id) => {
+  requireOwner(ownerId, 'save a template for reuse')
+  return isStubMode()
+    ? stub.save(ownerId, id)
+    : client.saveTemplate(ownerId, id)
+}

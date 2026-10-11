@@ -19,7 +19,7 @@ import { consignmentContactSelectPage } from '../features/contact/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
 import { pageGatePasses } from '../../../../../flow/gates.js'
 import { inTemplateMode } from '../../../../../shared/template-mode.js'
-import { TEMPLATE_MODE_EXCLUDED_PAGE_IDS } from './template-mode.js'
+import { TEMPLATE_MODE_RUN_SKIPPED_PAGE_IDS } from './template-mode.js'
 
 const flowPageTarget = (page) => (scope, journeyId) =>
   pageGatePasses(page, scope) ? pagePath(journeyId, page.slug) : null
@@ -85,7 +85,9 @@ export const nextRunTarget = (stepId, scope, journeyId) => {
   }
   const steps = RUN_STEPS.slice(index + 1).filter(
     (step) =>
-      !(inTemplateMode() && TEMPLATE_MODE_EXCLUDED_PAGE_IDS.includes(step.id))
+      !(
+        inTemplateMode() && TEMPLATE_MODE_RUN_SKIPPED_PAGE_IDS.includes(step.id)
+      )
   )
   for (const step of steps) {
     const target = step.target(scope, journeyId)

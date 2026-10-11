@@ -131,6 +131,17 @@ export const copy = {
   submit: {
     button: 'Parhau'
   },
+  template: {
+    title: 'Adolygu eich templed',
+    saveTemplate: 'Cadw’r templed',
+    sections: {
+      'about-the-consignment': '1. Am y llwyth',
+      'description-of-the-goods': '2. Disgrifiad o’r nwyddau',
+      'transport-and-arrival': '3. Cludiant a chyrraedd',
+      'consignment-parties': '4. Partïon y llwyth',
+      'contact-address-section': '5. Cyfeiriad cyswllt'
+    }
+  },
   errors: {
     prefix: 'Gwall:',
     cards: {

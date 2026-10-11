@@ -207,6 +207,15 @@ export const openTemplateTaskList = async (page, name) => {
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
+/** Creates a cattle template and opens its review from the task list. */
+export const openTemplateReview = async (page, name) => {
+  await openTemplateTaskList(page, name)
+  await page.getByRole('button', { name: 'Review template' }).click()
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Review your template' })
+  ).toBeVisible()
+}
+
 const FIXTURE_PORT = PORTS.find((port) => port.code === values.portOfEntry)
 const FIXTURE_PORT_OPTION = `${FIXTURE_PORT.name} (${FIXTURE_PORT.code})`
 

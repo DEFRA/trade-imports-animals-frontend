@@ -144,3 +144,13 @@ export const replaceTemplateFulfilments = (ownerId, id, fulfilments) =>
     { fulfilments },
     'save template answers'
   )
+
+/**
+ * Saves one of the owner's templates, so it is listed.
+ *
+ * @param {string} ownerId - the signed-in user's id
+ * @param {string} id - the template's id
+ * @returns {Promise<object>} the template as stored
+ */
+export const saveTemplate = (ownerId, id) =>
+  send(`${templateUrl(id)}/save`, 'POST', ownerId, undefined, 'save template')

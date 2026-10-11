@@ -4,8 +4,11 @@ import { templateModeRoutes } from '../../../../../shared/template-mode.js'
 import { allRoutes } from '../features/index.js'
 import {
   TEMPLATE_MODE_EXCLUDED_PAGE_IDS,
+  TEMPLATE_MODE_RUN_SKIPPED_PAGE_IDS,
   TEMPLATE_MODE_EXCLUDED_SLUGS
 } from './template-mode.js'
+
+const REVIEW_SLUG = 'notification-view'
 
 const twins = templateModeRoutes(allRoutes, {
   excludedSlugs: TEMPLATE_MODE_EXCLUDED_SLUGS
@@ -22,7 +25,8 @@ describe('template mode over the live animals journey', () => {
     'origin',
     'commodities',
     'commodities/identification',
-    'transporters'
+    'transporters',
+    REVIEW_SLUG
   ])('Should walk %s in template mode, for both reading and saving', (slug) => {
     expect(twinFor('GET', slug), `GET ${slug}`).toBeDefined()
     expect(twinFor('POST', slug), `POST ${slug}`).toBeDefined()
@@ -31,7 +35,6 @@ describe('template mode over the live animals journey', () => {
   it.each([
     'accompanying-documents',
     'accompanying-documents/status',
-    'notification-view',
     'declaration',
     'confirmation',
     'amend',
@@ -45,14 +48,15 @@ describe('template mode over the live animals journey', () => {
   })
 
   it('Should leave out the pages the opening run skips in template mode', () => {
-    expect(TEMPLATE_MODE_EXCLUDED_PAGE_IDS).toEqual(
+    expect(TEMPLATE_MODE_RUN_SKIPPED_PAGE_IDS).toEqual(
       expect.arrayContaining([
         'accompanying-documents',
-        'notification-view',
+        REVIEW_SLUG,
         'declaration',
         'confirmation'
       ])
     )
+    expect(TEMPLATE_MODE_EXCLUDED_PAGE_IDS).not.toContain(REVIEW_SLUG)
   })
 
   it('Should make every twin a wrapper of a journey route, never a copy of a page', () => {

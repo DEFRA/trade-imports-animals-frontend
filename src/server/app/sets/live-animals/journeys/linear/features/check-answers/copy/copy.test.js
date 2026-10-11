@@ -16,6 +16,7 @@ import { leaves, isCopyLeaf } from '../../../../../../../shared/copy-leaves.js'
 
 import { routes } from '../controller.js'
 import { copy } from './copy.en.js'
+import { copy as copyCy } from './copy.cy.js'
 
 describe('#copy', () => {
   it('Should have a non-empty string or copy function at every leaf', () => {
@@ -28,6 +29,33 @@ describe('#copy', () => {
     expect(copy.identifierTable.animalN(2)).toBe('Animal 2')
     expect(copy.documentN(1)).toBe('Document 1')
     expect(copy.hidden.commodity(3)).toBe('commodity 3')
+  })
+})
+
+describe('#copy.template — the template review', () => {
+  it('Should pin the template review copy in both locales', () => {
+    expect(copy.template).toEqual({
+      title: 'Review your template',
+      saveTemplate: 'Save template',
+      sections: {
+        'about-the-consignment': '1. About the consignment',
+        'description-of-the-goods': '2. Description of the goods',
+        'transport-and-arrival': '3. Transport and arrival',
+        'consignment-parties': '4. Consignment parties',
+        'contact-address-section': '5. Contact address'
+      }
+    })
+    expect(copyCy.template).toEqual({
+      title: 'Adolygu eich templed',
+      saveTemplate: 'Cadw’r templed',
+      sections: {
+        'about-the-consignment': '1. Am y llwyth',
+        'description-of-the-goods': '2. Disgrifiad o’r nwyddau',
+        'transport-and-arrival': '3. Cludiant a chyrraedd',
+        'consignment-parties': '4. Partïon y llwyth',
+        'contact-address-section': '5. Cyfeiriad cyswllt'
+      }
+    })
   })
 })
 

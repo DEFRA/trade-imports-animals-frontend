@@ -138,6 +138,25 @@ describe('stub templates in progress', () => {
     stubTemplates.clear()
   })
 
+  it('Should list a template once it is saved, for its owner only', async () => {
+    stubMode()
+    const { startFor, listFor, saveFor } = await templatesService()
+    const { stubTemplates } = await import('./stub.js')
+
+    const started = await startFor(OWNER, {
+      setId: LIVE_ANIMALS,
+      name: WEEKLY_CATTLE
+    })
+    expect(await listFor(OWNER)).toEqual([])
+
+    const saved = await saveFor(OWNER, started.id)
+
+    expect(saved).toMatchObject({ status: 'SAVED', version: 1 })
+    expect(await listFor(OWNER)).toMatchObject([{ name: WEEKLY_CATTLE }])
+    expect(await saveFor('2100010102', started.id)).toBeUndefined()
+    stubTemplates.clear()
+  })
+
   it('Should start, read back, rename and fill a template for its owner only', async () => {
     stubMode()
     const { startFor, getFor, updateDetailsFor, replaceFulfilmentsFor } =
@@ -177,7 +196,8 @@ describe('stub templates in progress', () => {
     [
       'save a template',
       (service) => service.replaceFulfilmentsFor(undefined, 'a', [])
-    ]
+    ],
+    ['save a template for reuse', (service) => service.saveFor(undefined, 'a')]
   ])('Should refuse to %s without an owner', async (action, call) => {
     const service = await templatesService()
 
@@ -280,6 +300,24 @@ describe('real templates in progress', () => {
     expect(JSON.parse(answersOptions.body)).toEqual({
       fulfilments: [{ obligationId: 'a' }]
     })
+  })
+
+  it("Should post the save to the template's own route with the owner header", async () => {
+    realMode()
+    const fetched = vi.fn(async () => okResponse(detail({ status: 'SAVED' })))
+    stubFetch(fetched)
+    const { backendBaseUrl } =
+      await import('../persistence/records/real/config.js')
+    const { saveFor } = await templatesService()
+
+    const saved = await saveFor(OWNER, TEMPLATE_ID)
+
+    const [url, options] = sent(fetched)
+    expect(url).toBe(`${backendBaseUrl}/templates/${TEMPLATE_ID}/save`)
+    expect(options.method).toBe('POST')
+    expect(options.body).toBeUndefined()
+    expect(options.headers).toMatchObject({ 'User-Id': OWNER })
+    expect(saved).toMatchObject({ id: TEMPLATE_ID, status: 'SAVED' })
   })
 
   it('Should refuse a failed start with the backend status', async () => {

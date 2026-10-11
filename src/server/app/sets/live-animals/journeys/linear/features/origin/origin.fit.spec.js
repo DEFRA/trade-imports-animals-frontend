@@ -892,12 +892,10 @@ test.describe('origin in template mode', () => {
     await expect(page.locator(countryInput)).toHaveValue(france.name)
   })
 
-  test('offers no documents or review page for a template', async ({
-    page
-  }) => {
+  test('offers no documents page for a template', async ({ page }) => {
     const originUrl = page.url()
 
-    for (const slug of ['accompanying-documents', 'notification-view']) {
+    for (const slug of ['accompanying-documents']) {
       const response = await page.goto(originUrl.replace(/origin$/, slug))
       expect(response.status(), slug).toBe(NOT_FOUND)
     }

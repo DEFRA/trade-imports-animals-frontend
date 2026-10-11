@@ -4,10 +4,13 @@ import { contactAddressSection } from './sections/contact-address.js'
 import { descriptionOfGoodsSection } from './sections/description-of-goods.js'
 import { documentsSection } from './sections/documents.js'
 import { transportAndArrivalSection } from './sections/transport-and-arrival.js'
+import { inTemplateMode } from '../../../../../../../shared/template-mode.js'
+import { asTemplateReview } from './template-review.js'
 
 // Design release 1's six numbered sections, in its order. The numbers are part
 // of each section's heading copy, so the order here and the numbering there
-// have to agree.
+// have to agree. A template's review leaves out the documents section and
+// renumbers (see template-review.js).
 export const buildSections = async (
   answers,
   scope,
@@ -24,7 +27,7 @@ export const buildSections = async (
     aboutConsignmentSection(journeyId, answers, scope, readOnly),
     transportAndArrivalSection(journeyId, answers, scope, readOnly)
   ])
-  return [
+  const sections = [
     aboutConsignment,
     descriptionOfGoodsSection(journeyId, answers, evaluation, readOnly),
     transportAndArrival,
@@ -38,4 +41,5 @@ export const buildSections = async (
     ),
     contactAddressSection(journeyId, answers, readOnly, parties, partyErrors)
   ]
+  return inTemplateMode() ? asTemplateReview(sections) : sections
 }
