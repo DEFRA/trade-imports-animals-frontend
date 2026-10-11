@@ -1,4 +1,4 @@
-import { Agent, fetch as undiciFetch } from 'undici'
+import { Agent, FormData as UndiciFormData, fetch as undiciFetch } from 'undici'
 
 import { config } from '../../../../config/config.js'
 import { countBackendCall } from './call-counts.js'
@@ -40,8 +40,23 @@ const causeCodes = (error) => {
 const isConnectError = (error) =>
   causeCodes(error).some((code) => CONNECT_ERROR_CODES.has(code))
 
+// undici's fetch sends only its own FormData as multipart; Node's built-in one
+// would go as text/plain.
+const asUndiciFormData = (formData) => {
+  const copy = new UndiciFormData()
+  for (const [name, value] of formData) {
+    copy.append(name, value)
+  }
+  return copy
+}
+
+const forUndici = (init = {}) =>
+  init.body instanceof FormData
+    ? { ...init, body: asUndiciFormData(init.body), dispatcher }
+    : { ...init, dispatcher }
+
 const fetchOnce = (url, init) =>
-  dispatcher ? undiciFetch(url, { ...init, dispatcher }) : fetch(url, init)
+  dispatcher ? undiciFetch(url, forUndici(init)) : fetch(url, init)
 
 /**
  * Makes one call to the journey backend, counted against the page request in
