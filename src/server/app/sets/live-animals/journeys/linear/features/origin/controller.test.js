@@ -34,6 +34,9 @@ const REGION_CODE_REQUIRED_MESSAGE = 'Enter the region of origin code'
 const REGION_CODE_MAX_LENGTH_MESSAGE =
   'Region of origin code must be 5 characters or less'
 const INTERNAL_REFERENCE_MAX_LENGTH = 58
+const INTERNAL_REFERENCE_OVER_LIMIT = 'A'.repeat(
+  INTERNAL_REFERENCE_MAX_LENGTH + 1
+)
 const INTERNAL_REFERENCE_MAX_LENGTH_MESSAGE =
   'Internal reference must be 58 characters or less'
 
@@ -117,7 +120,7 @@ describe('POST /origin — an unanswered country still saves', () => {
     expect(result.after.regionOfOriginCodeRequirement).toBe('')
   })
 
-  it('Should store the region code without a prefix while no country is chosen', async () => {
+  it('Should save no region code while no country gives it its prefix', async () => {
     const result = await driveHandler(post, {
       payload: {
         countryOfOrigin: '',
@@ -128,13 +131,28 @@ describe('POST /origin — an unanswered country still saves', () => {
     })
 
     expect(result.view).toBeUndefined()
-    expect(result.after.regionOfOriginCode).toBe('75')
+    expect(result.after.regionOfOriginCodeRequirement).toBe('yes')
+    expect(result.after.regionOfOriginCode).toBe('')
   })
 
-  // The prefix-free region code is an intermediate value: it self-heals when
-  // the user comes back to the page and chooses the country.
+  it('Should keep the typed code on the page when the save is refused for another answer', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        countryOfOrigin: '',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCodeSuffix: '75',
+        internalReferenceNumber: INTERNAL_REFERENCE_OVER_LIMIT
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('75')
+    expect(result.view.context.regionCodePrefix).toBe('')
+    expect(result.after).toEqual(result.before)
+  })
+
   it('Should join the country prefix once the country is filled in later', async () => {
-    await driveHandler(post, {
+    const first = await driveHandler(post, {
       payload: {
         countryOfOrigin: '',
         regionOfOriginCodeRequirement: 'yes',
@@ -142,6 +160,7 @@ describe('POST /origin — an unanswered country still saves', () => {
         internalReferenceNumber: ''
       }
     })
+    expect(first.after.regionOfOriginCode).toBe('')
 
     const result = await driveHandler(post, {
       payload: {
@@ -154,6 +173,44 @@ describe('POST /origin — an unanswered country still saves', () => {
 
     expect(result.view).toBeUndefined()
     expect(result.after.regionOfOriginCode).toBe('FR-75')
+  })
+})
+
+describe('POST /origin — answering No clears a saved region code', () => {
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  const seed = {
+    countryOfOrigin: 'FR',
+    regionOfOriginCodeRequirement: 'yes',
+    regionOfOriginCode: 'FR-75'
+  }
+  const payload = {
+    countryOfOrigin: 'FR',
+    regionOfOriginCodeRequirement: 'no',
+    regionOfOriginCodeSuffix: '75',
+    internalReferenceNumber: ''
+  }
+
+  it('Should clear the stored code when the answer changes from Yes to No', async () => {
+    const result = await driveHandler(post, { seed, payload })
+
+    expect(result.before.regionOfOriginCode).toBe('FR-75')
+    expect(result.view).toBeUndefined()
+    expect(result.after.regionOfOriginCode).toBe('')
+    expect(result.after.regionOfOriginCodeRequirement).toBe('no')
+  })
+
+  it('Should show an empty box when Yes is chosen again after No', async () => {
+    await driveHandler(post, { seed, payload })
+
+    const result = await driveHandler(get)
+
+    expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('')
   })
 })
 

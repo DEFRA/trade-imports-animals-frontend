@@ -60,6 +60,33 @@ describe('#rowStatus — one status per hub task row', () => {
     ).toBe(FULFILLED)
   })
 
+  it('Should complete the origin row only once a country is chosen and the region question is answered, with a code under Yes', () => {
+    expect(statusIn('origin', { countryOfOrigin: 'FR' })).toBe(IN_PROGRESS)
+    expect(
+      statusIn('origin', {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCode: ''
+      })
+    ).toBe(IN_PROGRESS)
+    expect(
+      statusIn('origin', {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'no'
+      })
+    ).toBe(FULFILLED)
+    expect(
+      statusIn('origin', {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCode: 'FR-75'
+      })
+    ).toBe(FULFILLED)
+    expect(statusIn('origin', { regionOfOriginCodeRequirement: 'no' })).toBe(
+      IN_PROGRESS
+    )
+  })
+
   it('Should walk the import-reason row through Not yet started, In progress and Completed for the reasons that open a reveal', () => {
     expect(statusIn('importReason', unlocked)).toBe(NOT_STARTED)
     expect(

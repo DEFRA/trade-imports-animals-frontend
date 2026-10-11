@@ -32,6 +32,9 @@
         label: { text: copy.regionCode.label },
         hint: { text: copy.regionCode.hint },
         classes: "govuk-input--width-5",
+        attributes: { maxlength: "5" },
+        autocomplete: "off",
+        spellcheck: false,
         prefix: { text: regionCodePrefix },
         value: values.regionOfOriginCodeSuffix,
         errorMessage: errors.regionOfOriginCodeSuffix and { text: errors.regionOfOriginCodeSuffix }
