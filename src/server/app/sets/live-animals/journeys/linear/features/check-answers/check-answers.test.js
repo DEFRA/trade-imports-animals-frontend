@@ -136,7 +136,6 @@ const withoutParty = (seed, partyId) => {
 const ADDRESS_LINE_1 = '43 East Hague Extension'
 const CONSIGNOR_NAME = 'Astra Rosales'
 const CONSIGNOR_ADDRESS_ID = 'astra-rosales'
-const STUB_TELEPHONE = '01632 960000'
 
 const copyOf = (id) =>
   answerForInlineParty(STUB_BOOK.find((record) => record.id === id))
@@ -533,23 +532,23 @@ describe(`${SUITE} — fully-populated notification`, () => {
     )
   })
 
-  it('Should expand party rows to the stored name, address lines, telephone and email', async () => {
+  it('Should expand party rows to the stored name, address lines and country, with no telephone or email', async () => {
     const card = cardByTitle(
       await sectionsFor(fullSeed),
       ROLES_AND_ADDRESSES_CARD
     )
     expect(htmlOf(card.rows, 'Consignor')).toBe(
-      `<strong>${CONSIGNOR_NAME}</strong><br>${ADDRESS_LINE_1}<br>Bern<br>30055<br>Switzerland<br>${STUB_TELEPHONE}<br>astra-rosales@example.com`
+      `<strong>${CONSIGNOR_NAME}</strong><br>${ADDRESS_LINE_1}<br>Bern<br>30055<br>Switzerland`
     )
     expect(htmlOf(card.rows, 'Place of destination')).toBe(
-      `<strong>Tech Imports Ltd</strong><br>18 Dockside Road<br>London<br>E14 9GE<br>United Kingdom<br>${STUB_TELEPHONE}<br>tech-imports-ltd@example.com`
+      `<strong>Tech Imports Ltd</strong><br>18 Dockside Road<br>London<br>E14 9GE<br>United Kingdom`
     )
     const contact = cardByTitle(
       await sectionsFor(fullSeed),
       CONTACT_ADDRESS_CARD
     )
     expect(htmlOf(contact.rows, CONTACT_ADDRESS_KEY)).toBe(
-      `<strong>Animal and Plant Health Agency</strong><br>Woodham Lane<br>Addlestone<br>KT15 3NB<br>United Kingdom<br>${STUB_TELEPHONE}<br>animal-and-plant-health-agency@example.com`
+      `<strong>Animal and Plant Health Agency</strong><br>Woodham Lane<br>Addlestone<br>KT15 3NB<br>United Kingdom`
     )
   })
 
@@ -1307,7 +1306,7 @@ describe(`${SUITE} — copied party addresses`, () => {
     expect(html).toContain(BROKEN_COPY.name)
   })
 
-  it('Should show the telephone and email of a copy refused only for its contact details', async () => {
+  it('Should name a copy refused only for its contact details, showing its address but neither telephone nor email', async () => {
     const badEmail = {
       ...copyOf(CONSIGNOR_ADDRESS_ID),
       phone: '+44 7700 900123',
@@ -1320,8 +1319,10 @@ describe(`${SUITE} — copied party addresses`, () => {
     const html = htmlOf(card.rows, 'Consignor')
 
     expect(html).toContain(CONSIGNOR_ERROR)
-    expect(html).toContain('+44 7700 900123')
-    expect(html).toContain('not-an-email')
+    expect(html).toContain(CONSIGNOR_NAME)
+    expect(html).toContain(ADDRESS_LINE_1)
+    expect(html).not.toContain('+44 7700 900123')
+    expect(html).not.toContain('not-an-email')
   })
 
   it('Should give each copied role a link to edit its details, returning here', async () => {

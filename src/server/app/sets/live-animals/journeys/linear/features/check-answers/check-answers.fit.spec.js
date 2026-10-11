@@ -779,6 +779,41 @@ test.describe('check-answers feature submitted notification', () => {
   })
 })
 
+test.describe('check-answers feature copied addresses', () => {
+  test.describe.configure({ timeout: 90000 })
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('reads each copied address back as name, address lines and country, one per line, with no telephone or email', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await completeAnswerSections(page)
+    await openReviewFromHub(page)
+
+    await expect(
+      rowFor(page, copy.rows.consignor).locator('.govuk-summary-list__value')
+    ).toHaveJSProperty(
+      'innerText',
+      'Astra Rosales\n43 East Hague Extension\nBern\n30055\nSwitzerland'
+    )
+    await expect(
+      rowFor(page, copy.rows.contactAddress).locator(
+        '.govuk-summary-list__value'
+      )
+    ).toHaveJSProperty(
+      'innerText',
+      'Animal and Plant Health Agency\nWoodham Lane\nAddlestone\nKT15 3NB\nUnited Kingdom'
+    )
+    await expect(page.getByText('01632 960000')).toHaveCount(0)
+    await expect(
+      page.getByText('animal-and-plant-health-agency@example.com')
+    ).toHaveCount(0)
+  })
+})
+
 test.describe('check-answers feature commodity read-back', () => {
   test.describe.configure({ timeout: 90000 })
 
