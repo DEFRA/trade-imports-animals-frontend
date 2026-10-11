@@ -613,3 +613,108 @@ test.describe('hub feature — commodity totals', () => {
     await expectAxeClean(page, 'Hub with commodity totals')
   })
 })
+
+test.describe('hub feature — regions for assistive technology', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('the two total cards are regions named Animals summary and Packages summary', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    const summary = page.getByRole('region', {
+      name: copy.commodityTotals.heading,
+      exact: true
+    })
+    const animals = summary.getByRole('region', {
+      name: copy.commodityTotals.animalsRegionLabel,
+      exact: true
+    })
+    const packages = summary.getByRole('region', {
+      name: copy.commodityTotals.packagesRegionLabel,
+      exact: true
+    })
+
+    await expect(animals).toContainText(copy.commodityTotals.animalsLabel)
+    await expect(animals).toContainText('0')
+    await expect(packages).toContainText(copy.commodityTotals.packagesLabel)
+    await expect(packages).toContainText('0')
+    await expect(summary.getByRole('region')).toHaveCount(2)
+  })
+
+  test('the commodity summary, the task list and each numbered section are regions named by their own heading', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await expect(
+      page.getByRole('region', {
+        name: copy.commodityTotals.heading,
+        exact: true
+      })
+    ).toBeVisible()
+
+    const taskList = page.getByRole('region', {
+      name: copy.taskListHeading,
+      exact: true
+    })
+    await expect(taskList.getByRole('region')).toHaveCount(
+      Object.keys(copy.groups).length
+    )
+
+    for (const caption of Object.values(copy.groups)) {
+      const section = taskList.getByRole('region', {
+        name: caption,
+        exact: true
+      })
+      await expect(
+        section.getByRole('heading', { level: 3, name: caption })
+      ).toBeVisible()
+      await expect(section.locator('ul.govuk-task-list')).toHaveCount(1)
+    }
+
+    await expect(
+      taskList
+        .getByRole('region', { name: copy.groups['about-the-consignment'] })
+        .getByRole('link', { name: copy.rows.importReason.title })
+    ).toBeVisible()
+  })
+
+  test('each task link still reads its status, and Roles and addresses its hint, with the link', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await expect(
+      page.getByRole('link', { name: copy.rows.origin.title, exact: true })
+    ).toHaveAccessibleDescription(copy.statuses.complete)
+    await expect(
+      page.getByRole('link', {
+        name: copy.rows.commodities.title,
+        exact: true
+      })
+    ).toHaveAccessibleDescription(copy.statuses.toDo)
+    await expect(
+      page.getByRole('link', { name: copy.rows.addresses.title, exact: true })
+    ).toHaveAccessibleDescription(
+      `${copy.rows.addresses.hint} ${copy.statuses.toDo}`
+    )
+  })
+
+  test('the third row of the first section reads Main import reason', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await expect(
+      taskRowTitles(groupTaskList(page, 'about-the-consignment'))
+    ).toHaveText([
+      copy.rows.origin.title,
+      copy.rows.commodities.title,
+      'Main import reason'
+    ])
+    await expect(page.getByText('Main reason for import')).toHaveCount(0)
+  })
+})

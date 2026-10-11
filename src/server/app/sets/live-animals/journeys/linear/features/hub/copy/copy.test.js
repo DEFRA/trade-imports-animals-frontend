@@ -42,7 +42,7 @@ const unlockedSeed = {
 const ORIGIN_ROW_TITLE = 'Where is this consignment coming from?'
 const COMMODITIES_ROW_TITLE = 'What are you importing?'
 const CONSIGNMENT_DETAILS_ROW_TITLE = 'Commodity details'
-const IMPORT_REASON_ROW_TITLE = 'Main reason for import'
+const IMPORT_REASON_ROW_TITLE = 'Main import reason'
 const TRANSIT_ROW_TITLE = 'Transit countries'
 const ARRIVAL_ROW_TITLE = 'Arrival details'
 const ADDRESSES_ROW_TITLE = 'Roles and addresses'
@@ -121,7 +121,7 @@ describe('#copy', () => {
     expect(titlesCy).toEqual({
       origin: 'O ble mae’r llwyth hwn yn dod?',
       commodities: 'Beth ydych chi’n ei fewnforio?',
-      importReason: 'Prif reswm dros fewnforio',
+      importReason: 'Prif reswm mewnforio',
       consignmentDetails: 'Manylion y nwyddau',
       additionalDetails: 'Manylion ychwanegol',
       animalIdentification: 'Manylion adnabod',
@@ -132,6 +132,20 @@ describe('#copy', () => {
       contact: 'Cyfeiriad cyswllt ar gyfer y llwyth hwn',
       documents: 'Uwchlwytho dogfennau'
     })
+  })
+
+  test('Should name the two commodity total cards as regions in both locales', () => {
+    expect(copy.commodityTotals.animalsRegionLabel).toBe('Animals summary')
+    expect(copy.commodityTotals.packagesRegionLabel).toBe('Packages summary')
+    expect(copyCy.commodityTotals.animalsRegionLabel).toBe(
+      'Crynodeb anifeiliaid'
+    )
+    expect(copyCy.commodityTotals.packagesRegionLabel).toBe('Crynodeb pecynnau')
+  })
+
+  test('Should title the third row of the first section Main import reason in both locales', () => {
+    expect(copy.rows.importReason.title).toBe('Main import reason')
+    expect(copyCy.rows.importReason.title).toBe('Prif reswm mewnforio')
   })
 })
 
@@ -568,7 +582,7 @@ describe('#hubHandler — the row hints', () => {
 // Temporary admission of horses makes a port of exit and an exit date
 // compulsory, and once a trader has answered them and moved on, the hub is
 // their only way back to change an answer. Design release 1 asks both under
-// "Main reason for import", so that row carries the return route.
+// "Main import reason", so that row carries the return route.
 describe('#hubHandler — the way back to the exit questions', () => {
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)

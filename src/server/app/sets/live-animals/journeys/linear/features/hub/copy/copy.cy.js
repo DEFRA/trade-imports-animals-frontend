@@ -5,8 +5,10 @@ export const copy = {
     heading: 'Eich nwyddau',
     animalsLabel: 'Anifeiliaid',
     animalsCaption: 'Cyfanswm nifer yr anifeiliaid yn y llwyth hwn',
+    animalsRegionLabel: 'Crynodeb anifeiliaid',
     packagesLabel: 'Pecynnau/blychau',
-    packagesCaption: 'Cyfanswm nifer y pecynnau yn y llwyth hwn'
+    packagesCaption: 'Cyfanswm nifer y pecynnau yn y llwyth hwn',
+    packagesRegionLabel: 'Crynodeb pecynnau'
   },
   reviewAndSubmit: 'Adolygu a chyflwyno',
   returnToDashboard: 'Dychwelyd i’r dangosfwrdd',
@@ -31,7 +33,7 @@ export const copy = {
       title: 'Beth ydych chi’n ei fewnforio?'
     },
     importReason: {
-      title: 'Prif reswm dros fewnforio'
+      title: 'Prif reswm mewnforio'
     },
     consignmentDetails: {
       title: 'Manylion y nwyddau'

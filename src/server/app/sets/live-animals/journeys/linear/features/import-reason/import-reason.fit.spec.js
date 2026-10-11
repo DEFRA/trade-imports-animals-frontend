@@ -232,7 +232,7 @@ test.describe('import-reason feature', () => {
     const hubUrl = page.url().replace(/\/import-reason$/, '')
     await page.goto(hubUrl)
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-    await page.getByRole('link', { name: 'Main reason for import' }).click()
+    await page.getByRole('link', { name: 'Main import reason' }).click()
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
