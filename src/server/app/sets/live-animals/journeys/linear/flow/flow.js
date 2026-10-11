@@ -33,15 +33,15 @@ export const sections = [
   },
   {
     id: 'commodities',
-    pages: [commoditiesPage, consignmentDetailsPage]
+    pages: [commoditiesPage, importReasonPage, consignmentDetailsPage]
   },
   {
     id: 'animalIdentification',
     pages: [animalIdentificationPage]
   },
   {
-    id: 'consignment',
-    pages: [importReasonPage, additionalDetailsPage]
+    id: 'additionalDetails',
+    pages: [additionalDetailsPage]
   },
   {
     id: 'documents',

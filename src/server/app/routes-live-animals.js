@@ -17,7 +17,10 @@ import {
   taskRows
 } from './sets/live-animals/journeys/linear/flow/task-rows.js'
 import { sectionCaptionOf } from './sets/live-animals/journeys/linear/flow/section-captions/index.js'
-import { nextRunTarget } from './sets/live-animals/journeys/linear/flow/run.js'
+import {
+  nextRunTarget,
+  runBackTarget
+} from './sets/live-animals/journeys/linear/flow/run.js'
 import { entryGuardTarget } from './sets/live-animals/journeys/linear/flow/entry-guard.js'
 import {
   LAYOUT,
@@ -79,6 +82,7 @@ export const liveAnimals = {
           taskRows,
           rowStatus,
           nextRunTarget,
+          runBackTarget,
           flowOnlyKeys: FLOW_ONLY_KEYS,
           entryGuardTarget,
           layout: LAYOUT,

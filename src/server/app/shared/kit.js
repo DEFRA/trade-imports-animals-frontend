@@ -4,6 +4,7 @@ import { nextInTaskRow } from '../flow/navigation.js'
 import {
   journeyLayout,
   journeyNextRunTarget,
+  journeyRunBackTarget,
   journeySectionCaption
 } from '../flow/journey-flow.js'
 import { inOpeningRun } from '../flow/run-state.js'
@@ -135,10 +136,31 @@ export const amendReviewTarget = (request, journey) =>
     ? pagePath(request.params.journeyId, CYA_SLUG)
     : null
 
+/** True for a save that skips the page's required-answer checks: 'Save and return to overview', or 'Save and return' to the review while amending. A format rule still applies. */
+export const skipsRequiredChecks = (request, journey) =>
+  isHubExit(request) || amendReviewTarget(request, journey) !== null
+
 export const runTarget = async (request, stepId, scope) =>
   (await inOpeningRun(request, request.params.journeyId))
     ? journeyNextRunTarget(stepId, scope, request.params.journeyId)
     : null
+
+/**
+ * Where a page's Back link goes: the page before it in the opening run while
+ * the run is under way, otherwise the overview it was opened from.
+ *
+ * @param {object} request - the hapi request.
+ * @param {{ id: string }} page - the page identity.
+ * @param {object} [answers] - the notification's answers, for a Back link that depends on them.
+ * @returns {Promise<string>} the Back link's href.
+ */
+export const runBackLink = async (request, page, answers = {}) => {
+  const { journeyId } = request.params
+  const runBack = (await inOpeningRun(request, journeyId))
+    ? journeyRunBackTarget(page.id, journeyId, answers)
+    : null
+  return runBack ?? hubPath(journeyId)
+}
 
 export const nextTarget = async (request, page, scope) =>
   exitTarget(

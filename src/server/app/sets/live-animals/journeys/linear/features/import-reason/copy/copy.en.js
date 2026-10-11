@@ -1,5 +1,5 @@
 export const copy = {
-  title: 'Main reason for import',
+  title: 'Main import reason',
   legend: 'What is the main reason for importing the animals?',
   reasonHints: {
     internalMarket:
@@ -39,11 +39,11 @@ export const copy = {
   },
   country: {
     label: 'Destination country',
-    placeholder: 'Select a country'
+    placeholder: 'Select one'
   },
   port: {
     label: 'Port of exit',
-    placeholder: 'Select port of exit'
+    placeholder: 'Select one'
   },
   date: {
     label: 'Exit date',

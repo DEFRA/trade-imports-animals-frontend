@@ -97,17 +97,17 @@ const nextInTaskRowTests = () => {
   }
   const hub = /\/notifications\/journey-1$/
 
-  it('Should return What are you importing? to the hub rather than on to the commodity details', () => {
+  it('Should return What are you importing? to the hub rather than on to the main import reason', () => {
     expect(nextInTaskRow('commodities', scope, 'journey-1')).toMatch(hub)
     expect(nextInSection('commodities', scope, 'journey-1')).toMatch(
-      /\/consignment-details$/
+      /\/import-reason$/
     )
   })
 
-  it('Should return the main reason for import to the hub rather than on to the additional details', () => {
+  it('Should return the main reason for import to the hub rather than on to the commodity details', () => {
     expect(nextInTaskRow('import-reason', scope, 'journey-1')).toMatch(hub)
     expect(nextInSection('import-reason', scope, 'journey-1')).toMatch(
-      /\/additional-details$/
+      /\/consignment-details$/
     )
   })
 

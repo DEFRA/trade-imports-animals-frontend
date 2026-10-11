@@ -28,6 +28,7 @@ const completeLine = {
   speciesSelection: ['1148346'],
   commodityType: '16',
   numberOfAnimalsQuantity: '1',
+  numberOfPackages: '1',
   animalIdentifiers: [
     { animalIdentifierEarTag: 'UK123456789012', permanentAddress: address }
   ]
@@ -102,6 +103,7 @@ describe('#entryComplete', () => {
           speciesSelection: ['1148346'],
           commodityType: '16',
           numberOfAnimalsQuantity: '1',
+          numberOfPackages: '1',
           animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
         }
       ]

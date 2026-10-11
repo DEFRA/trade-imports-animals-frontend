@@ -12,8 +12,7 @@ const copy = copyFor({ en, cy })
 /**
  * What the animals are certified for, and whether any of them are unweaned.
  * Both come from the page the card is named for, so its one Change link
- * reaches every row. The reason for import used to sit here too and now has a
- * card of its own, under design release 1's "Main reason for import".
+ * reaches every row.
  */
 export const additionalAnimalDetailsCard = (journeyId, answers, readOnly) => ({
   id: 'additionalAnimalDetails',

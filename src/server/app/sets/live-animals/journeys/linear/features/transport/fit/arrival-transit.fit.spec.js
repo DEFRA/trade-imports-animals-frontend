@@ -594,12 +594,39 @@ test.describe('arrival details validation', () => {
     })
     await submit(page)
 
-    const link = errorLink(page, validatorDefaults.oneOf)
+    const link = errorLink(
+      page,
+      copy.portOfEntry.errors.meansOfTransportRequired
+    )
     await expect(link).toBeVisible()
     await link.click()
     await expect(page.locator(meansSelect)).toBeFocused()
     await expect(page.locator(meansSelect)).toHaveValue('')
     await expect(page.locator(portHidden)).toHaveValue(values.portOfEntry)
+  })
+})
+
+test.describe('arrival means of transport is required to continue', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('means validation: an empty save links to and focuses the means of transport', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await submit(page)
+
+    const link = errorLink(
+      page,
+      copy.portOfEntry.errors.meansOfTransportRequired
+    )
+    await expect(link).toBeVisible()
+    await link.click()
+    await expect(page.locator(meansSelect)).toBeFocused()
+    await expect(
+      page.getByRole('heading', { name: copy.portOfEntry.title })
+    ).toBeVisible()
   })
 })
 
@@ -690,6 +717,17 @@ test.describe('arrival save and routing', () => {
     await expect(
       page.getByLabel(copy.portOfEntry.documentReference.label)
     ).toHaveValue(values.transportDocumentReference)
+  })
+
+  test('continues to the overview with only a means of transport chosen', async ({
+    page
+  }) => {
+    await openArrival(page)
+    await page.locator(meansSelect).selectOption('AIRPLANE')
+    await submit(page)
+
+    await expectOverview(page)
+    await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
   })
 })
 

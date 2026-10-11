@@ -4,10 +4,10 @@ export const copy = {
   search: {
     title: 'What are you importing?',
     inset:
-      'A separate notification is required for each health certificate. Consignments that do not require a health certificate must still be notified.',
+      'You must submit a separate notification for every single ITAHC. You must also submit a notification for goods that do not need an ITAHC.',
     searchLabel: 'Search for a commodity',
     searchHint:
-      'You can search by commodity name (for example, Cow), commodity code (0102), or species name (Bos taurus). Enter at least 3 characters.',
+      'You can search by common name (for example, cattle), commodity code (0102), or Latin name (Bos taurus).',
     searchButton: 'Search',
     noResults: 'No results found',
     selected: {
@@ -21,7 +21,8 @@ export const copy = {
       describes:
         'A commodity code describes a specific product when importing or exporting goods.',
       lookupPrefix: 'You can look up commodity codes using the',
-      lookupLink: 'Trade Tariff tool (opens in a new tab)',
+      lookupLink: 'Trade Tariff tool',
+      lookupNewTab: '(opens in a new tab)',
       lookupHref: 'https://www.gov.uk/trade-tariff'
     },
     errors: {
@@ -35,6 +36,7 @@ export const copy = {
       caption: 'Selected commodities',
       commodityCode: 'Commodity code',
       commonName: 'Common name',
+      species: 'Species',
       actionsHidden: 'Actions',
       remove: 'Remove'
     },
@@ -48,6 +50,7 @@ export const copy = {
     errors: {
       animalsRequired: 'Enter the number of animals',
       animalsWholeNumber: 'Enter a whole number greater than 0',
+      packagesRequired: 'Enter the number of packages',
       packagesWholeNumber: 'Number of packages must be a whole number, like 5',
       countDrop: (records, species, entered) =>
         `You have ${plural(records, 'identifier record')} for ${species} but entered ${plural(entered, 'animal')}. Remove identifier records or keep the higher count.`

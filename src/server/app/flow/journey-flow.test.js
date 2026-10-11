@@ -2,7 +2,11 @@ import { SET_ID } from '../sets/live-animals/set.js'
 import { describe, expect, it } from 'vitest'
 
 import { flowOnlyKeys } from '../bridge/flow-only-keys.js'
-import { configureJourneyFlow, journeySectionCaption } from './journey-flow.js'
+import {
+  configureJourneyFlow,
+  journeyRunBackTarget,
+  journeySectionCaption
+} from './journey-flow.js'
 
 // Vitest gives each file its own module registry, so reconfiguring the journey
 // flow here leaks to no other suite and there is nothing to restore.
@@ -12,6 +16,14 @@ describe('#journeySectionCaption', () => {
     configureJourneyFlow(SET_ID, { sections: [], taskRows: [] })
 
     expect(journeySectionCaption('origin')).toBeUndefined()
+  })
+})
+
+describe('#journeyRunBackTarget', () => {
+  it('Should name no Back link for a journey that configures none', () => {
+    configureJourneyFlow(SET_ID, { sections: [], taskRows: [] })
+
+    expect(journeyRunBackTarget('commodities', 'j')).toBeNull()
   })
 })
 

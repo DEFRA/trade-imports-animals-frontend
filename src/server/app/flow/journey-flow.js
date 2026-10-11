@@ -35,6 +35,8 @@ export const journeyTaskRows = () => configured().taskRows
 export const journeyRowStatus = (...args) => configured().rowStatus(...args)
 export const journeyNextRunTarget = (...args) =>
   configured().nextRunTarget(...args)
+export const journeyRunBackTarget = (...args) =>
+  configured().runBackTarget?.(...args) ?? null
 export const journeyEntryGuardTarget = async (...args) =>
   configured().entryGuardTarget(...args)
 export const journeyLayout = () => configured().layout

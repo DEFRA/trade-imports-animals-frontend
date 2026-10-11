@@ -15,7 +15,7 @@ const CAPTIONED = [
   ['dashboard', 'Dashboard'],
   ['origin', ABOUT_THE_CONSIGNMENT],
   ['commodities', ABOUT_THE_CONSIGNMENT],
-  ['consignmentDetails', ABOUT_THE_CONSIGNMENT],
+  ['consignmentDetails', 'Description of the goods'],
   ['animalIdentification', ABOUT_THE_CONSIGNMENT],
   ['import-reason', ABOUT_THE_CONSIGNMENT],
   ['additional-details', 'Commodity details'],

@@ -186,7 +186,7 @@ test.describe('check-answers feature section structure', () => {
     // the level-3 headings are exactly the subsection headings.
     await expect(page.getByRole('heading', { level: 3 })).toHaveText([
       copy.groups.whereFrom,
-      copy.groups.mainReasonForImport,
+      copy.groups.mainImportReason,
       copy.groups.additionalDetails,
       copy.groups.arrivalDetails,
       copy.groups.transportDetails,

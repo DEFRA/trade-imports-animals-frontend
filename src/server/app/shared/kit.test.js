@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
 import { AMEND, DRAFT, SUBMITTED } from '../engine/index.js'
-import { amendReviewTarget, base, dateField, isHubExit } from './kit.js'
+import {
+  amendReviewTarget,
+  base,
+  dateField,
+  isHubExit,
+  skipsRequiredChecks
+} from './kit.js'
 
 describe('#isHubExit — the Save and return to overview submit', () => {
   const params = { journeyId: 'journey-1' }
@@ -103,5 +109,36 @@ describe('#amendReviewTarget — where a Change-link save of an amendment goes',
 
   it('Should be null for an amendment saved without a Change link', () => {
     expect(amendReviewTarget(notFromChangeLink, { status: AMEND })).toBeNull()
+  })
+})
+
+describe('#skipsRequiredChecks — the saves that do not demand every answer', () => {
+  const params = { journeyId: 'journey-1' }
+
+  it('Should be true for Save and return to overview', () => {
+    expect(
+      skipsRequiredChecks(
+        { params, payload: { exit: 'hub' }, query: {} },
+        { status: DRAFT }
+      )
+    ).toBe(true)
+  })
+
+  it('Should be true for a Change-link save while amending', () => {
+    expect(
+      skipsRequiredChecks({ params, query: { change: '1' } }, { status: AMEND })
+    ).toBe(true)
+  })
+
+  it('Should be false for a Change-link save of a draft', () => {
+    expect(
+      skipsRequiredChecks({ params, query: { change: '1' } }, { status: DRAFT })
+    ).toBe(false)
+  })
+
+  it('Should be false with neither', () => {
+    expect(skipsRequiredChecks({ params, query: {} }, { status: AMEND })).toBe(
+      false
+    )
   })
 })

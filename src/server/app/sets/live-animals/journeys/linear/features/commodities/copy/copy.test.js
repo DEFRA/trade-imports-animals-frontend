@@ -103,15 +103,28 @@ describe('#copy', () => {
     }
   })
 
-  // A user reading only the first sentence could conclude that no health
-  // certificate means no notification. The second sentence closes that off.
-  it('Should tell the user that a consignment without a health certificate must still be notified', () => {
+  // A user reading only the first sentence could conclude that no ITAHC
+  // means no notification. The second sentence closes that off.
+  it('Should tell the user to submit one notification per ITAHC, and one for goods that need none', () => {
     expect(copy.search.inset).toBe(
-      'A separate notification is required for each health certificate. Consignments that do not require a health certificate must still be notified.'
+      'You must submit a separate notification for every single ITAHC. You must also submit a notification for goods that do not need an ITAHC.'
     )
-    expect(copyCy.search.inset).toContain(
-      'Rhaid hysbysu llwythi nad oes angen tystysgrif iechyd arnynt o hyd.'
+    expect(copyCy.search.inset).toContain('ITAHC')
+  })
+
+  it('Should hint the three ways to search with no minimum-length sentence', () => {
+    expect(copy.search.searchHint).toBe(
+      'You can search by common name (for example, cattle), commodity code (0102), or Latin name (Bos taurus).'
     )
+    expect(copy.search.searchHint).not.toContain('3 characters')
+    expect(copyCy.search.searchHint).not.toContain('3 nod')
+  })
+
+  it("Should keep '(opens in a new tab)' as its own copy beside the Trade Tariff link text", () => {
+    expect(copy.search.help.lookupLink).toBe('Trade Tariff tool')
+    expect(copy.search.help.lookupNewTab).toBe('(opens in a new tab)')
+    expect(copyCy.search.help.lookupLink).toBe('teclyn Tariff Masnach')
+    expect(copyCy.search.help.lookupNewTab).toBe('(yn agor mewn tab newydd)')
   })
 
   it('Should interpolate countDrop', () => {
