@@ -440,6 +440,16 @@ describe('#rowStatus — the conditional transit-countries row', () => {
       })
     ).toBe(FULFILLED)
   })
+
+  it('Should be Not applicable (absent) for an overland means while no commodity is chosen', () => {
+    for (const means of ['ROAD_VEHICLE', 'RAILWAY']) {
+      const answers = { countryOfOrigin: 'FR', meansOfTransport: means }
+      expect(statusIn('transitCountries', answers)).toBe(NA)
+      expect(
+        statusIn('transitCountries', { ...answers, transitedCountries: ['FR'] })
+      ).toBe(NA)
+    }
+  })
 })
 
 describe('#rowEntry — every row opens on a page, in any order', () => {
@@ -549,6 +559,10 @@ describe('submit-readiness equivalence — the row roll-up admits exactly the jo
     'a blank journey': {},
     'an origin-only journey': { countryOfOrigin: 'FR' },
     'an unlocked skeleton journey': unlocked,
+    'an overland skeleton journey with no commodity': {
+      countryOfOrigin: 'FR',
+      meansOfTransport: 'ROAD_VEHICLE'
+    },
     'the happy path without a reason': { ...happyPath, reasonForImport: '' },
     'the happy path for temporary admission without an exit date': {
       ...happyPath,

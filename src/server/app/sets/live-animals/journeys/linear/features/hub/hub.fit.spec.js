@@ -8,7 +8,8 @@ import {
   openReviewFromHub,
   selectSpecies,
   signIn,
-  startNotification
+  startNotification,
+  unlockSections
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { copy as commoditiesCopy } from '../commodities/copy/copy.en.js'
@@ -264,6 +265,45 @@ test.describe('hub feature', () => {
         name: copy.groups['description-of-the-goods']
       })
     ).toBeVisible()
+  })
+
+  test('overview: with no commodity chosen, saving overland arrival details leaves the transit countries row off', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page
+      .getByRole('link', { name: copy.rows.arrivalDetails.title, exact: true })
+      .click()
+    await answerArrivalDetails(page)
+    await expectHub(page)
+
+    await expect(taskRow(page, copy.rows.transitCountries.title)).toHaveCount(0)
+    await expect(
+      taskRowTitles(groupTaskList(page, 'transport-and-arrival'))
+    ).toHaveText([copy.rows.arrivalDetails.title, copy.rows.transporter.title])
+  })
+
+  test('overview: with a commodity chosen and overland arrival details saved, transit countries sits between arrival and transport details as To do', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await unlockSections(page)
+    await page
+      .getByRole('link', { name: copy.rows.arrivalDetails.title, exact: true })
+      .click()
+    await answerArrivalDetails(page)
+    await expectHub(page)
+
+    await expect(
+      taskRowTitles(groupTaskList(page, 'transport-and-arrival'))
+    ).toHaveText([
+      copy.rows.arrivalDetails.title,
+      copy.rows.transitCountries.title,
+      copy.rows.transporter.title
+    ])
+    await expect(taskRow(page, copy.rows.transitCountries.title)).toContainText(
+      copy.statuses.toDo
+    )
   })
 
   test('overview: when a commodity carrying identifiers is chosen, the animal identification row appears', async ({

@@ -46,8 +46,10 @@ identification row needs it: its part is the `commodityLines` collection, a
 structural group in scope from the moment the notification exists, so the roll-up
 never reaches Not applicable and `conditional: true` on its own would leave the row
 drawn. Reach for `applies` only when a scope condition genuinely cannot carry the
-rule — the transit-countries row needs no `applies`, because its answer leaves
-scope on its own.
+rule. The transit-countries row's answer leaves scope on its own with the means of
+transport, and the row carries an `applies` test as well, because Design Release 2.1
+also leaves it off a notification with no commodity chosen — a condition the
+answer's scope does not carry.
 
 The hub's `GROUPS` array in
 [`features/hub/controller.js`](../journeys/linear/features/hub/controller.js) places

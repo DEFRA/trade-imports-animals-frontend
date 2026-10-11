@@ -37,6 +37,15 @@ export const identifiesAnAnimal = (answers) =>
     (line) => identifiedCommodities().includes(line?.commoditySelection)
   )
 
+// Design release 2.1 offers the Transit countries task only where the
+// notification owes transit countries. The means of transport puts the answer
+// in scope; with no commodity chosen there is no consignment to route yet, so
+// the row also waits for one.
+const hasChosenCommodity = (answers) =>
+  (Array.isArray(answers?.commodityLines) ? answers.commodityLines : []).some(
+    (line) => Boolean(line?.commoditySelection)
+  )
+
 export const taskRows = [
   { id: 'origin', pages: [originPage] },
   {
@@ -73,7 +82,12 @@ export const taskRows = [
     applies: identifiesAnAnimal
   },
   { id: 'arrivalDetails', pages: [portOfEntryPage] },
-  { id: 'transitCountries', pages: [transitCountriesPage], conditional: true },
+  {
+    id: 'transitCountries',
+    pages: [transitCountriesPage],
+    conditional: true,
+    applies: hasChosenCommodity
+  },
   // The list declares all three transporter answers, so the row still spans
   // the type and both address blocks from the one page.
   { id: 'transporter', pages: [transportersPage] },
