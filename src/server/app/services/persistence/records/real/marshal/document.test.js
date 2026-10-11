@@ -23,6 +23,19 @@ describe('marshal document', () => {
     expect(journey.status).toBe(SUBMITTED)
   })
 
+  it('Should carry answersChangedSinceSubmission only while amending', () => {
+    const withSignal = (status, answersChangedSinceSubmission) =>
+      marshal({ ...document(status), answersChangedSinceSubmission })
+
+    expect(withSignal('AMEND', true).answersChangedSinceSubmission).toBe(true)
+    expect(withSignal('AMEND', undefined).answersChangedSinceSubmission).toBe(
+      false
+    )
+    expect(withSignal('SUBMITTED', true).answersChangedSinceSubmission).toBe(
+      false
+    )
+  })
+
   it('Should map draft and amend statuses without a freeze field', () => {
     expect(marshal(document('DRAFT')).status).toBe(DRAFT)
     expect(marshal(document('AMEND')).status).toBe(AMEND)

@@ -38,7 +38,7 @@
 
   <h1 class="govuk-heading-l">{{ heading }}</h1>
 
-  {% if copyAction or deleteHref %}
+  {% if readOnly %}
     <div class="govuk-button-group">
       {% if copyAction %}
         <form method="post" action="{{ copyAction.href }}" class="app-form-inline">
@@ -121,7 +121,21 @@
     <form method="post" novalidate>
       <input type="hidden" name="crumb" value="{{ crumb }}" />
       <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
-      {{ govukButton({ text: copy.submit.button }) }}
+      <div class="govuk-button-group">
+        {{ govukButton({ text: copy.submit.button }) }}
+        {% if cancelAmendHref %}
+          {{ govukButton({
+            text: copy.cancelAmend.button,
+            href: cancelAmendHref,
+            classes: "govuk-button--secondary"
+          }) }}
+        {% endif %}
+        {{ govukButton({
+          text: sharedCopy.notificationActions.delete.text,
+          href: deleteHref,
+          classes: "govuk-button--warning"
+        }) }}
+      </div>
     </form>
   {% endif %}
 {% endblock %}

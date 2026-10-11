@@ -1,5 +1,6 @@
 export const copy = {
   title: 'Review your notification',
+  resubmitTitle: 'Review before re-submitting',
   // An empty value inside a card that is finished. Nothing more is owed on
   // that card, so the blank is a settled answer rather than a gap.
   notApplicable: 'Not applicable',
@@ -34,6 +35,7 @@ export const copy = {
   change: 'Change',
   editDetails: 'Edit details',
   cancelAmend: {
+    button: 'Cancel amend',
     successTitle: 'Success',
     successBody:
       'The amendment has been cancelled and the submitted version restored.'
@@ -133,8 +135,8 @@ export const copy = {
     identificationDetailsFor: (species) =>
       `identification details for ${species}`
   },
-  // The review ends with the button and nothing else. Its label carries the
-  // whole instruction, so no heading and no sentence stand above it.
+  // The review ends with its buttons and no heading or sentence above them.
+  // Continue's label carries the whole instruction.
   submit: {
     button: 'Continue'
   },

@@ -57,7 +57,12 @@ const amendAndOpenCancel = async (page, reference) => {
     .fill('DiscardMe99')
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await openReviewFromHub(page)
-  await cancelAmendLink(page).click()
+  await page
+    .getByRole('button', {
+      name: checkAnswersCopy.cancelAmend.button,
+      exact: true
+    })
+    .click()
 }
 
 const expectAxeClean = async (page, name) => {
@@ -99,9 +104,18 @@ test.describe('cancel-amend feature', () => {
     await page.getByRole('button', { name: copy.noLink }).click()
 
     await expect(
-      page.getByRole('heading', { name: checkAnswersCopy.title })
+      page.getByRole('heading', { name: checkAnswersCopy.resubmitTitle })
     ).toBeVisible()
-    await expectAmendStrip(page)
+    await expect(strip(page).locator(TAG)).toHaveText(
+      sharedCopy.journeyStrip.amend
+    )
+    await expect(
+      page.getByRole('button', {
+        name: checkAnswersCopy.cancelAmend.button,
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(cancelAmendLink(page)).toHaveCount(0)
     await expect(page.getByText('DiscardMe99', { exact: true })).toBeVisible()
   })
 

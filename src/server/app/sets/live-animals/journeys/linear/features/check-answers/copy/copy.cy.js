@@ -1,6 +1,7 @@
 // MACHINE-DRAFT Welsh — not reviewed by a translator. Do not ship user-facing without Welsh Language Standards sign-off.
 export const copy = {
   title: 'Adolygu eich hysbysiad',
+  resubmitTitle: 'Adolygu cyn ailgyflwyno',
   notApplicable: 'Amherthnasol',
   missing: 'Ar goll',
   yesNo: { yes: 'Iawn', no: 'Na' },
@@ -30,6 +31,7 @@ export const copy = {
   change: 'Newid',
   editDetails: 'Golygu manylion',
   cancelAmend: {
+    button: 'Canslo diwygio',
     successTitle: 'Llwyddiant',
     successBody:
       'Mae’r diwygiad wedi’i ganslo ac mae’r fersiwn a gyflwynwyd wedi’i hadfer.'

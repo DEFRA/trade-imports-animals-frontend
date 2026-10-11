@@ -44,6 +44,7 @@ describe('re-entry self-heal (nothing derived is stored)', () => {
     const result = await get(journeyRequest(journeyId), recordingH())
 
     expect(Object.keys(result.journey).sort()).toEqual([
+      'answersChangedSinceSubmission',
       'concurrencyToken',
       'createdAt',
       'fulfilment',

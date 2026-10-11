@@ -4,6 +4,7 @@ import { nextInSection } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
 import {
+  CANCEL_AMEND_SLUG,
   CYA_SLUG,
   errorSummary,
   journeyStrip,
@@ -126,13 +127,18 @@ const renderCya = async (
     ),
     cardErrors
   )
+  const amending = journey.status === state.AMEND
+  const title =
+    amending && journey.answersChangedSinceSubmission
+      ? copy.resubmitTitle
+      : copy.title
   return h.view(view, {
-    pageTitle: copy.title,
-    heading: copy.title,
+    pageTitle: title,
+    heading: title,
     copy,
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
-    journeyStrip: journeyStrip(journey),
+    journeyStrip: journeyStrip(journey, { offerCancelAmend: false }),
     errorSummary: reviewErrorSummary(
       journey.journeyId,
       withSpeciesErrors(cardErrors, speciesErrors),
@@ -145,10 +151,10 @@ const renderCya = async (
     amendmentCancelled,
     recoverableError,
     copyAction: readOnly ? { href: pagePath(journey.journeyId, 'copy') } : null,
-    deleteHref:
-      readOnly && journey.status === state.SUBMITTED
-        ? pagePath(journey.journeyId, 'delete')
-        : null,
+    deleteHref: pagePath(journey.journeyId, 'delete'),
+    cancelAmendHref: amending
+      ? pagePath(journey.journeyId, CANCEL_AMEND_SLUG)
+      : null,
     backLink: hubPath(journey.journeyId)
   })
 }
@@ -159,13 +165,14 @@ export const renderNotificationView = async (
   {
     recoverableError = false,
     disableAutoFocus = true,
-    extraCardErrors = {}
+    extraCardErrors = {},
+    refused = false
   } = {}
 ) => {
   const { journey, answers, storedAnswers, scope, evaluation } =
     await state.get(request, h)
   const readOnly = journey.status === state.SUBMITTED
-  const holdsSilently = readOnly || journey.status === state.AMEND
+  const holdsSilently = readOnly || (journey.status === state.AMEND && !refused)
   const parties = await partiesFromStoredAnswers(answers)
   // A submitted notification is a record of what was sent, so nothing on it
   // is outstanding, and no stored answer of its is named as stale either —
@@ -222,11 +229,8 @@ const post = async (request, h) => {
   // stored document to the upload backend.
   const { refused, extraCardErrors } = await reviewRefusal(request, h)
   if (refused) {
-    const { journey: refusedJourney } = await state.get(request, h)
-    if (refusedJourney.status === state.AMEND) {
-      return h.redirect(pagePath(refusedJourney.journeyId, CYA_SLUG))
-    }
     const rendered = await renderNotificationView(request, h, {
+      refused: true,
       disableAutoFocus: false,
       extraCardErrors
     })

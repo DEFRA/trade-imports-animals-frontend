@@ -292,7 +292,7 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
 
       expect(view.context.readOnly).toBe(false)
       expect(view.context.copyAction).toBeNull()
-      expect(view.context.deleteHref).toBeNull()
+      expect(view.context.deleteHref).toMatch(/\/delete$/)
       expect(hrefs).not.toHaveLength(0)
       expect(hrefs).toEqual(
         expect.arrayContaining([expect.stringMatching(/\/origin\?change=1$/)])
@@ -312,16 +312,60 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     expect(valueOf(card.rows, DOCUMENT_REFERENCE_KEY)).toBe(NOT_APPLICABLE)
   })
 
-  it('Should expose Cancel amend in the strip only on an amending review', async () => {
+  it("Should offer Cancel amend as the review's own control while amending, and never in the strip", async () => {
     const draft = await viewForStatus(DRAFT)
     const submitted = await viewForStatus(SUBMITTED)
     const amend = await viewForStatus(AMEND)
 
-    expect(draft.context.journeyStrip.cancelAmend).toBeUndefined()
-    expect(submitted.context.journeyStrip.cancelAmend).toBeUndefined()
-    expect(amend.context.journeyStrip.cancelAmend.href).toMatch(
-      /\/cancel-amend$/
-    )
+    expect(draft.context.cancelAmendHref).toBeNull()
+    expect(submitted.context.cancelAmendHref).toBeNull()
+    expect(amend.context.cancelAmendHref).toMatch(/\/cancel-amend$/)
+    for (const view of [draft, submitted, amend]) {
+      expect(view.context.journeyStrip.cancelAmend).toBeUndefined()
+    }
+  })
+
+  it("Should title an amendment's review Review before re-submitting only once its answers change", async () => {
+    const unchanged = await viewForStatus(AMEND)
+    expect(unchanged.context.pageTitle).toBe(copyEn.title)
+    expect(unchanged.context.heading).toBe(copyEn.title)
+
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, fullSeed)
+    await store.submit(journey.journeyId)
+    await records.amend(journey.journeyId)
+    await store.seedAnswers(journey.journeyId, {
+      ...fullSeed,
+      internalReferenceNumber: 'CHANGED'
+    })
+    const h = stubH()
+    await getHandler(journeyRequest(journey.journeyId), h)
+
+    expect(h.captured.view.context.pageTitle).toBe(copyEn.resubmitTitle)
+    expect(h.captured.view.context.heading).toBe(copyEn.resubmitTitle)
+
+    const draft = await store.create()
+    await store.seedAnswers(draft.journeyId, fullSeed)
+    await store.seedAnswers(draft.journeyId, {
+      ...fullSeed,
+      internalReferenceNumber: 'CHANGED'
+    })
+    const draftView = stubH()
+    await getHandler(journeyRequest(draft.journeyId), draftView)
+    expect(draftView.captured.view.context.heading).toBe(copyEn.title)
+  })
+
+  it('Should keep Review your notification when only the documents change during an amendment', async () => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, fullSeed)
+    await store.submit(journey.journeyId)
+    await records.amend(journey.journeyId)
+    await store.seedAnswers(journey.journeyId, twoDocumentsSeed)
+    const h = stubH()
+
+    await getHandler(journeyRequest(journey.journeyId), h)
+
+    expect(h.captured.view.context.heading).toBe(copyEn.title)
   })
 
   it('Should show the cancel success indication only on the restored submitted view', async () => {
@@ -1534,23 +1578,23 @@ describe(`${SUITE} — Continue on an amend review`, () => {
     return journey
   }
 
-  it('Should keep an incomplete amend on the review without an error', async () => {
+  it('Should refuse an incomplete amend with the summary naming the arrival details', async () => {
     const { arrivalDateAtPort, ...withoutArrivalDate } = fullSeed
     expect(arrivalDateAtPort).toBeDefined()
     const journey = await amendJourney(withoutArrivalDate)
+    const h = stubH()
 
-    const response = await postHandler(
-      journeyRequest(journey.journeyId),
-      stubH()
-    )
+    const response = await postHandler(journeyRequest(journey.journeyId), h)
 
-    expect(response.redirect).toBe(
-      pagePath(journey.journeyId, 'notification-view')
-    )
+    expect(response.statusCode).toBe(400)
+    expect(response.redirect).toBeUndefined()
+    expect(
+      h.captured.view.context.errorSummary.errorList.map((item) => item.text)
+    ).toContain(ARRIVAL_DETAILS_INCOMPLETE)
     expect((await store.get(journey.journeyId)).status).toBe(AMEND)
   })
 
-  it('Should keep an amend whose arrival date is more than 6 months ahead on the review without an error', async () => {
+  it('Should refuse an amend whose arrival date is more than 6 months ahead with the summary', async () => {
     const journey = await amendJourney({
       ...fullSeed,
       arrivalDateAtPort: dateMonthsAhead(8)
@@ -1559,10 +1603,11 @@ describe(`${SUITE} — Continue on an amend review`, () => {
 
     const response = await postHandler(journeyRequest(journey.journeyId), h)
 
-    expect(response.redirect).toBe(
-      pagePath(journey.journeyId, 'notification-view')
-    )
-    expect(h.captured.view).toBeUndefined()
+    expect(response.statusCode).toBe(400)
+    expect(response.redirect).toBeUndefined()
+    expect(
+      h.captured.view.context.errorSummary.errorList.length
+    ).toBeGreaterThan(0)
     expect((await store.get(journey.journeyId)).status).toBe(AMEND)
   })
 

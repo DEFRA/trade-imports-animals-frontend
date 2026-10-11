@@ -18,6 +18,7 @@ import {
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
+import { copy as deleteCopy } from '../delete-notification/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
 const INTERNAL_REFERENCE_LABEL =
@@ -573,6 +574,34 @@ test.describe('check-answers feature navigation and submission', () => {
     await expectNoSeriousOrCriticalAxeViolations(page, 'Check answers')
   })
 
+  test('a draft review ends with Continue and a red Delete that opens the delete confirmation', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    await expect(
+      page.getByRole('button', { name: copy.submit.button })
+    ).toBeVisible()
+    const deleteButton = page.getByRole('button', {
+      name: sharedCopy.notificationActions.delete.text,
+      exact: true
+    })
+    await expect(deleteButton).toHaveClass(/govuk-button--warning/)
+    await expect(
+      page.getByRole('button', {
+        name: sharedCopy.notificationActions.copy.text
+      })
+    ).toHaveCount(0)
+
+    await deleteButton.click()
+
+    await expect(page).toHaveURL(/\/delete$/)
+    await expect(
+      page.getByRole('heading', { name: deleteCopy.title })
+    ).toBeVisible()
+  })
+
   // An address error belongs to a reference that no longer resolves, not to a
   // role nobody has reached yet. A new journey must read as unanswered.
   test('new journey shows no address error before a role has been answered', async ({
@@ -775,6 +804,121 @@ test.describe('check-answers feature submitted notification', () => {
     await expectNoSeriousOrCriticalAxeViolations(
       page,
       'Submitted check answers'
+    )
+  })
+})
+
+test.describe('check-answers feature amendment', () => {
+  test.describe.configure({ timeout: 90000 })
+
+  const cancelAmendButton = (page) =>
+    page.getByRole('button', {
+      name: copy.cancelAmend.button,
+      exact: true
+    })
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startNotification(page)
+    await completeAnswerSections(page)
+    await openReviewFromHub(page)
+    await page.getByRole('button', { name: copy.submit.button }).click()
+    await page
+      .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
+      .check()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    const reference = journeyIdFromPage(page)
+    await page.goto(BASE)
+    await page
+      .getByRole('button', { name: `Amend notification ${reference}` })
+      .click()
+    await openReviewFromHub(page)
+  })
+
+  test('opens headed Review your notification with no errors, ending with Continue, Cancel amend and Delete', async ({
+    page
+  }) => {
+    await expect(
+      page.getByRole('heading', { level: 1, name: copy.title })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: sharedCopy.errorSummary.title })
+    ).toHaveCount(0)
+
+    await expect(
+      page.getByRole('button', { name: copy.submit.button })
+    ).toBeVisible()
+    await expect(cancelAmendButton(page)).toHaveAttribute(
+      'href',
+      /\/cancel-amend$/
+    )
+    await expect(cancelAmendButton(page)).toHaveClass(/govuk-button--secondary/)
+    const deleteButton = page.getByRole('button', {
+      name: sharedCopy.notificationActions.delete.text,
+      exact: true
+    })
+    await expect(deleteButton).toHaveAttribute('href', /\/delete$/)
+    await expect(deleteButton).toHaveClass(/govuk-button--warning/)
+    await expect(
+      page.getByRole('link', {
+        name: sharedCopy.journeyStrip.cancelAmend,
+        exact: true
+      })
+    ).toHaveCount(0)
+  })
+
+  test('is retitled Review before re-submitting once an answer changes', async ({
+    page
+  }) => {
+    await cardChangeLink(page, 'origin of import').click()
+    await page.getByLabel(INTERNAL_REFERENCE_LABEL).fill('RESUBMIT-REF')
+    await page
+      .getByRole('button', {
+        name: sharedCopy.saveActions.saveAndReturn,
+        exact: true
+      })
+      .click()
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: copy.resubmitTitle })
+    ).toBeVisible()
+    await expect(page).toHaveTitle(new RegExp(`^${copy.resubmitTitle}`))
+  })
+
+  test('refuses Continue on an incomplete amendment and names what is missing', async ({
+    page
+  }) => {
+    await page.goto(journeyUrl(page))
+    await page.getByRole('link', { name: 'Arrival details' }).click()
+    await page.getByLabel('Arrival date at port of entry').fill('')
+    await page
+      .getByRole('button', {
+        name: sharedCopy.saveActions.saveAndReturnToHub
+      })
+      .click()
+    await openReviewFromHub(page)
+
+    await expect(
+      page.getByRole('heading', { name: sharedCopy.errorSummary.title })
+    ).toHaveCount(0)
+
+    await page.getByRole('button', { name: copy.submit.button }).click()
+
+    await expect(page).toHaveURL(new RegExp(`${NOTIFICATION_VIEW_SLUG}$`))
+    await expect(
+      page.getByRole('heading', { name: sharedCopy.errorSummary.title })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: copy.errors.cards.arrivalDetails })
+    ).toBeVisible()
+  })
+
+  test('amendment review has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await expectNoSeriousOrCriticalAxeViolations(
+      page,
+      'Amendment check answers'
     )
   })
 })
