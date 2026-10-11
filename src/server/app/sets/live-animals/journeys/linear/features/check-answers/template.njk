@@ -69,7 +69,7 @@
     {% endif %}
     <h2 class="govuk-heading-m" id="{{ section.anchor }}" tabindex="-1">{{ section.heading }}</h2>
     {% for card in section.cards %}
-      {% if card.identifierTable or card.documents or card.emptyText or card.error %}
+      {% if card.identifierTable or card.documents or card.subsections or card.emptyText or card.error %}
         <div class="govuk-summary-card{% if card.error %} app-summary-card--error{% endif %}"{% if card.anchor %} id="{{ card.anchor }}" tabindex="-1"{% endif %}>
           <div class="govuk-summary-card__title-wrapper">
             <h{{ cardHeadingLevel }} class="govuk-summary-card__title">{{ card.title }}</h{{ cardHeadingLevel }}>
@@ -80,6 +80,10 @@
             {% if card.rows.length %}
               {{ govukSummaryList({ rows: card.rows }) }}
             {% endif %}
+            {% for subsection in card.subsections %}
+              <h{{ innerHeadingLevel }} class="govuk-heading-s">{{ subsection.heading }}</h{{ innerHeadingLevel }}>
+              {{ govukSummaryList({ rows: subsection.rows }) }}
+            {% endfor %}
             {% if card.identifierTable %}
               <h{{ innerHeadingLevel }} class="govuk-heading-s">{{ copy.identifierTable.heading }}</h{{ innerHeadingLevel }}>
               {{ govukTable({

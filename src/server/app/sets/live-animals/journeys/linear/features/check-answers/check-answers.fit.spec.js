@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
+  answerArrivalDetails,
+  answerTransitCountries,
   BASE,
   chooseCountryOfOrigin,
   completeAnswerSections,
@@ -9,6 +11,7 @@ import {
   openReviewFromHub,
   signIn,
   startNotification,
+  unlockSections,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
@@ -86,9 +89,9 @@ test.describe('check-answers feature summary rows', () => {
     await expect(rowFor(page, copy.rows.countryOfOrigin)).toContainText(
       'France'
     )
-    await expect(rowFor(page, copy.rows.regionCodeRequired)).toContainText(
-      copy.yesNo.yes
-    )
+    await expect(
+      page.getByText('Region of origin code required', { exact: true })
+    ).toHaveCount(0)
     await expect(rowFor(page, copy.rows.regionCode)).toContainText('FR-IDF75')
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
       'ReviewRef1'
@@ -127,7 +130,7 @@ test.describe('check-answers feature summary rows', () => {
 // task list, with every card straight under its numbered section heading and no
 // subsection heading between them. A brand-new notification shows the sections
 // that always stand: the commodity cards wait on a line and the
-// transit-countries card on an overland arrival.
+// transit-countries subsection on an overland arrival.
 test.describe('check-answers feature section structure', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -264,7 +267,7 @@ test.describe('check-answers feature exit answers', () => {
     await signIn(page)
   })
 
-  test('shows the destination country and port of exit a transit collected, with the one Change link in the card heading', async ({
+  test('shows the exit border control post and then the destination country a transit collected, with the one Change link in the card heading', async ({
     page
   }) => {
     await startNotification(page)
@@ -278,12 +281,22 @@ test.describe('check-answers feature exit answers', () => {
 
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
+    await expect(
+      page.locator('#reason-for-import').getByRole('term')
+    ).toHaveText([
+      copy.rows.reasonForImport,
+      copy.rows.exitBorderControlPost,
+      copy.rows.destinationCountry
+    ])
+    await expect(rowFor(page, copy.rows.exitBorderControlPost)).toContainText(
+      EXIT_PORT_LABEL
+    )
     await expect(rowFor(page, copy.rows.destinationCountry)).toContainText(
       DESTINATION_COUNTRY_NAME
     )
-    await expect(rowFor(page, copy.rows.portOfExit)).toContainText(
-      EXIT_PORT_LABEL
-    )
+    await expect(
+      page.getByText(copy.rows.portOfExit, { exact: true })
+    ).toHaveCount(0)
     await expect(
       page.getByText(copy.rows.exitDate, { exact: true })
     ).toHaveCount(0)
@@ -346,10 +359,89 @@ test.describe('check-answers feature exit answers', () => {
     for (const label of [
       copy.rows.destinationCountry,
       copy.rows.exitDate,
-      copy.rows.portOfExit
+      copy.rows.portOfExit,
+      copy.rows.exitBorderControlPost
     ]) {
       await expect(page.getByText(label, { exact: true })).toHaveCount(0)
     }
+  })
+})
+
+// Design release 2.1 reads the countries a consignment travels through inside
+// the Arrival details card, under their own heading, and does not owe them for
+// submission.
+test.describe('check-answers feature transit countries', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('reads the transit countries inside Arrival details under their own heading, with a Change link of their own', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await unlockSections(page)
+    await page.goto(journeyUrl(page, 'port-of-entry'))
+    await answerArrivalDetails(page)
+    await page.goto(journeyUrl(page, 'transit-countries'))
+    await answerTransitCountries(page)
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    const card = page.locator(ARRIVAL_DETAILS_ANCHOR)
+    await expect(
+      card.getByRole('heading', {
+        level: 4,
+        name: copy.subsections.transitCountries,
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(rowFor(page, copy.rows.transitedCountries)).toContainText(
+      'France, Belgium'
+    )
+    await expect(
+      page.getByRole('heading', {
+        level: 3,
+        name: copy.subsections.transitCountries,
+        exact: true
+      })
+    ).toHaveCount(0)
+
+    const changeLink = page.getByRole('link', {
+      name: `${copy.change} ${copy.hidden.rows.transitedCountries}`
+    })
+    await expect(changeLink).toHaveAttribute(
+      'href',
+      /\/notifications\/[^/]+\/transit-countries\?change=1$/
+    )
+
+    await changeLink.click()
+
+    await expect(page).toHaveURL(/\/transit-countries\?change=1$/)
+  })
+
+  test.describe('with every other answer given', () => {
+    test.describe.configure({ timeout: 90000 })
+
+    test('goes on to the declaration from an overland notification that lists no transit countries', async ({
+      page
+    }) => {
+      await startNotification(page)
+      await completeAnswerSections(page, { skipTransitCountries: true })
+      await openReviewFromHub(page)
+
+      await expect(
+        page.getByRole('link', { name: 'Complete transit countries' })
+      ).toHaveCount(0)
+      await expect(
+        page.getByRole('heading', { name: sharedCopy.errorSummary.title })
+      ).toHaveCount(0)
+      await expect(rowFor(page, copy.rows.transitedCountries)).toContainText(
+        copy.notApplicable
+      )
+
+      await page.getByRole('button', { name: copy.submit.button }).click()
+
+      await expect(page).toHaveURL(/\/declaration$/)
+    })
   })
 })
 
@@ -407,6 +499,8 @@ test.describe('check-answers feature change links', () => {
 
   // Design release 1 puts one Change link in each card's heading bar and none
   // on a row, so the trader meets one link per card rather than one per answer.
+  // The transit countries row is the one row-level link, and it only stands on
+  // an overland arrival (covered by the transit countries block above).
   test('every Change link sits in a card heading and no summary row carries one', async ({
     page
   }) => {

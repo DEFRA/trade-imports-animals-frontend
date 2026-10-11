@@ -6,11 +6,13 @@ import { speciesCards } from '../cards/consignment/species/species-cards.js'
 
 const copy = copyFor({ en, cy })
 
+const presentCards = (cards) => cards.filter(Boolean)
+
 /**
  * Design release 2.1's second numbered section: what is in the consignment.
  * The commodity lines lead, each as its own card, and the Additional details
- * card for the answers that apply across the whole consignment follows. Every
- * card stands straight under the section heading.
+ * card for the answers that apply across the whole consignment follows when it
+ * has a row to show. Every card stands straight under the section heading.
  *
  * The section heading always stands, even with no commodity lines yet — the
  * error summary's species entry anchors to it, and a trader with no lines yet
@@ -19,6 +21,7 @@ const copy = copyFor({ en, cy })
 export const descriptionOfGoodsSection = (
   journeyId,
   answers,
+  scope,
   evaluation,
   readOnly
 ) => ({
@@ -26,6 +29,8 @@ export const descriptionOfGoodsSection = (
   heading: copy.sections.descriptionOfTheGoods,
   cards: [
     ...speciesCards(journeyId, answers, evaluation, readOnly),
-    additionalAnimalDetailsCard(journeyId, answers, readOnly)
+    ...presentCards([
+      additionalAnimalDetailsCard(journeyId, answers, scope, readOnly)
+    ])
   ]
 })

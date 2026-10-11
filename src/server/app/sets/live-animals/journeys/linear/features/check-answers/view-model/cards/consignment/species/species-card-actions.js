@@ -2,7 +2,7 @@ import { consignmentDetailsPage } from '../../../../../commodities/page.js'
 import { copyFor } from '../../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../../copy/copy.en.js'
 import { copy as cy } from '../../../../copy/copy.cy.js'
-import { cardAction } from '../../../rows/change-link.js'
+import { changeAction } from '../../../rows/change-link.js'
 
 const copy = copyFor({ en, cy })
 
@@ -11,7 +11,7 @@ const copy = copyFor({ en, cy })
  * animal identifiers the card also shows are collected on their own page, which
  * keeps its own task row on the hub. */
 export const speciesCardActions = (journeyId, index) =>
-  cardAction(
+  changeAction(
     journeyId,
     consignmentDetailsPage.slug,
     copy.hidden.commodity(index + 1)

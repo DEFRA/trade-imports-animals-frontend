@@ -150,7 +150,9 @@ Add the row to the matching card under
 Add its label and any displayed value labels to both check-answers copy
 bundles.
 
-Use `row(key, value)` for a scalar. Rows carry no Change link: the card's
+Use `row(key, value)` for a scalar. Rows carry no Change link, except the transit countries row inside Arrival
+details, which carries its own (wrapped in `editableActions`, with a
+`hidden.rows.<key>` leaf in both copy bundles): the card's
 heading carries the one link for every answer inside it, so adding a field to
 an existing card needs no action work at all. Use a service label function when
 the stored value is a code. Show a conditional row only while the same

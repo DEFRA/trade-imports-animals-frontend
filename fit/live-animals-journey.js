@@ -460,13 +460,15 @@ export const answerContactAddress = async (page) => {
  * user works once the opening run is over.
  *
  * @param {import('@playwright/test').Page} page
- * @param {{ skipAnimalIdentification?: boolean }} [options] - pass
- *   `skipAnimalIdentification` to leave the identification row untouched, as a
- *   trader may on a single-species consignment.
+ * @param {{ skipAnimalIdentification?: boolean, skipTransitCountries?: boolean }} [options]
+ *   - pass `skipAnimalIdentification` to leave the identification row
+ *   untouched, as a trader may on a single-species consignment, and
+ *   `skipTransitCountries` to leave the transit countries row untouched, as a
+ *   trader may on an overland arrival that lists none.
  */
 export const completeAnswerSections = async (
   page,
-  { skipAnimalIdentification = false } = {}
+  { skipAnimalIdentification = false, skipTransitCountries = false } = {}
 ) => {
   const task = (name) => page.getByRole('link', { name }).click()
   const overview = () =>
@@ -501,9 +503,11 @@ export const completeAnswerSections = async (
   await task('Arrival details')
   await answerArrivalDetails(page)
   await overview()
-  await task('Transit countries')
-  await answerTransitCountries(page)
-  await overview()
+  if (!skipTransitCountries) {
+    await task('Transit countries')
+    await answerTransitCountries(page)
+    await overview()
+  }
   await task('Transport details')
   await answerTransporter(page)
   await overview()

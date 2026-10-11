@@ -26,7 +26,7 @@ export const buildSections = async (
   ])
   return [
     aboutConsignment,
-    descriptionOfGoodsSection(journeyId, answers, evaluation, readOnly),
+    descriptionOfGoodsSection(journeyId, answers, scope, evaluation, readOnly),
     transportAndArrival,
     documentsSection(journeyId, answers, evaluation, readOnly),
     consignmentPartiesSection(

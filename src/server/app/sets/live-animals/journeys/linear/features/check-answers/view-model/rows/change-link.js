@@ -15,18 +15,16 @@ export const changeHref = (journeyId, obligationId) =>
   withChange(pagePath(journeyId, slugOfPage(pageOfObligation(obligationId))))
 
 /**
- * The one Change link a card carries, level with its title (design release 1).
- * Rows carry none: a card is a page's worth of answers, so the card says once
- * where they are changed.
+ * The one Change action a card heading carries, or the transit countries row
+ * beside it. A card is a page's worth of answers, so the heading says once where
+ * they are changed; the transit countries row is the one row that has a page of
+ * its own inside a card.
  *
- * The card names its page rather than deriving it from a row, because a card's
- * rows can span two pages — roles and addresses shows the CPH number the CPH
- * page collects. A card has one destination, so it has to say which one, and
- * it says the page the hub's own task row leads with. A conditional second
- * page does not get a second link here: it gets a card of its own that
- * carries its own, as cards/movement/transit-countries.js does.
+ * The caller names the page rather than deriving it from a row, because a
+ * card's rows can span two pages — roles and addresses shows the CPH number the
+ * CPH page collects — and says the page the hub's own task row leads with.
  */
-export const cardAction = (journeyId, slug, visuallyHiddenText) => ({
+export const changeAction = (journeyId, slug, visuallyHiddenText) => ({
   items: [
     {
       href: withChange(pagePath(journeyId, slug)),

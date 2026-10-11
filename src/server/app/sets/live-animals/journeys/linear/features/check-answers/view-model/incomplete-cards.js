@@ -29,10 +29,8 @@ const copy = copyFor({ en, cy })
  * stands. Whether a short species card should be marked in its own right is an
  * open question on inc-150.
  *
- * The transit-countries card is the one entry whose card is conditional: it is
- * built only while the answer is in scope, and while it is out of scope its
- * task row is NA, so `incompleteCardErrors` never names a card that is not on
- * the page.
+ * The transit task row folds into arrival details. Transit countries are
+ * optional for submission, so an empty list never marks the card on its own.
  */
 export const REVIEW_CARDS = [
   { id: 'importDetails', anchor: 'import-details', rows: ['origin'] },
@@ -56,12 +54,7 @@ export const REVIEW_CARDS = [
   {
     id: 'arrivalDetails',
     anchor: 'arrival-details',
-    rows: ['arrivalDetails']
-  },
-  {
-    id: 'transitCountries',
-    anchor: 'transit-countries',
-    rows: ['transitCountries']
+    rows: ['arrivalDetails', 'transitCountries']
   },
   {
     id: 'transportDetails',
@@ -134,6 +127,14 @@ const blankEmptyValues = (card) => ({
         documents: card.documents.map((document) => ({
           ...document,
           rows: blankEmptyRows(document.rows)
+        }))
+      }
+    : {}),
+  ...(Array.isArray(card.subsections)
+    ? {
+        subsections: card.subsections.map((subsection) => ({
+          ...subsection,
+          rows: blankEmptyRows(subsection.rows)
         }))
       }
     : {})

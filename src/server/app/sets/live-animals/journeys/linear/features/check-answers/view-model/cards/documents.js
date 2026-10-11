@@ -3,7 +3,7 @@ import { copyFor } from '../../../../../../../../shared/copy.js'
 import { copy as en } from '../../copy/copy.en.js'
 import { copy as cy } from '../../copy/copy.cy.js'
 import { documentsPage } from '../../../documents/page.js'
-import { cardAction, editableActions } from '../rows/change-link.js'
+import { changeAction, editableActions } from '../rows/change-link.js'
 import { row } from '../rows/summary-row.js'
 import { dateText } from '../rows/value-text.js'
 
@@ -37,7 +37,7 @@ export const documentsCard = (journeyId, answers, evaluation, readOnly) => {
     title: copy.cards.documents,
     ...editableActions(
       readOnly,
-      cardAction(journeyId, documentsPage.slug, copy.hidden.cards.documents)
+      changeAction(journeyId, documentsPage.slug, copy.hidden.cards.documents)
     ),
     emptyText: documents.length === 0 ? copy.documentsEmpty : null,
     documents
