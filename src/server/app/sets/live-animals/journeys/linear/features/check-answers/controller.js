@@ -9,6 +9,7 @@ import {
 } from '../../../../../../shared/template-mode.js'
 import * as templates from '../../../../../../services/templates/index.js'
 import { TEMPLATES } from '../../config.js'
+import { rememberSavedTemplate } from '../templates/saved-banner.js'
 import { nextInSection } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
 import {
@@ -213,9 +214,16 @@ export const renderNotificationView = async (
 const get = async (request, h) => renderNotificationView(request, h)
 
 // Save template stores the template instead of going on to the declaration: a
-// template holds no declaration.
+// template holds no declaration, and Manage templates confirms it once with a
+// success banner.
 const saveTemplate = async (request, h) => {
-  await templates.saveFor(templateOwnerId(), request.params.journeyId)
+  const saved = await templates.saveFor(
+    templateOwnerId(),
+    request.params.journeyId
+  )
+  if (saved) {
+    rememberSavedTemplate(request, saved)
+  }
   return h.redirect(templatesPath())
 }
 

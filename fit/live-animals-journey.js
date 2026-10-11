@@ -199,6 +199,23 @@ export const startTemplateAtCommodities = async (
   ).toBeVisible()
 }
 
+const FRESH_CONTACT_ID_FLOOR = 2000000000
+const FRESH_CONTACT_ID_SPAN = 99999999
+
+/** A ten-digit contact id no other test uses, so a test's templates are its own. */
+export const freshContactId = () =>
+  String(
+    FRESH_CONTACT_ID_FLOOR + Math.floor(Math.random() * FRESH_CONTACT_ID_SPAN)
+  )
+
+/** Presses Save template on the template review and lands on Manage templates. */
+export const saveTemplateFromReview = async (page) => {
+  await page.getByRole('button', { name: 'Save template', exact: true }).click()
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Manage templates' })
+  ).toBeVisible()
+}
+
 /** Creates a template through Bos taurus and lands on its task list. */
 export const openTemplateTaskList = async (page, name) => {
   await startTemplateAtCommodities(page, name)

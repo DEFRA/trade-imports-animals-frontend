@@ -184,6 +184,13 @@ moves the template to saved (`templates.saveFor`) and opens Manage templates ins
 of the declaration. Its Change links open each page under the template with the
 change marker, so saving that page returns to the template review.
 
+Save template also stores `{ name }` in the session (the `templateSaved` key,
+[`features/templates/saved-banner.js`](../journeys/linear/features/templates/saved-banner.js)).
+Manage templates reads and clears it, so the Success banner shows once and a reload
+loses it. A blank name reads "Untitled template" wherever a saved template is titled
+(the banner and its card). The list is ordered by when each template was first saved,
+newest first, not by when it was started.
+
 A template-mode page links to the template's task list, so its Save and return and
 Cancel controls return there. Pages that already hide the return controls (Origin, CPH number and the transporter sub-pages) still end with Save and continue alone. "What
 are you importing?" goes Back to Origin, and its Save and continue returns to the

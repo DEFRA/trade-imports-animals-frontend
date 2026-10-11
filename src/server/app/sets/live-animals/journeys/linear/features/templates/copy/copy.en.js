@@ -8,6 +8,17 @@ export const copy = {
     all: (total) => `Show 1-${total} of ${total} results`
   },
   card: {
-    created: 'Date created'
+    label: (title) => `Template ${title}`,
+    view: 'View template',
+    use: 'Use template'
+  },
+  untitled: 'Untitled template',
+  categories: {
+    'live-animals': 'Live animals',
+    'germinal-products': 'Germinal products'
+  },
+  saved: {
+    title: 'Success',
+    heading: (title) => `${title} saved to templates`
   }
 }

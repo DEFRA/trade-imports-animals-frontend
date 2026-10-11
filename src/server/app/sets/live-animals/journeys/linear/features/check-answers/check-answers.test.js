@@ -25,6 +25,7 @@ import * as addressBook from '../../../../../../services/address-book/index.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { withTemplateMode } from '../../../../../../shared/template-mode.js'
 import * as templates from '../../../../../../services/templates/index.js'
+import { takeSavedTemplate } from '../templates/saved-banner.js'
 import { answerForInlineParty } from '../addresses/party-inline.js'
 import { taskRows } from '../../flow/task-rows.js'
 import { dispatchPages } from '../index.js'
@@ -34,6 +35,15 @@ import { REVIEW_CARDS } from './view-model/incomplete-cards.js'
 import { copy as copyEn } from './copy/copy.en.js'
 import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy as documentsEn } from '../documents/copy/copy.en.js'
+
+const sessionWith = (values = {}) => {
+  const held = new Map(Object.entries(values))
+  return {
+    get: (key) => held.get(key),
+    set: (key, value) => held.set(key, value),
+    clear: (key) => held.delete(key)
+  }
+}
 
 const getHandler = routes.find((route) => route.method === 'GET').handler
 const postHandler = routes.find((route) => route.method === 'POST').handler
@@ -1785,16 +1795,35 @@ describe(`${SUITE} — the template review`, () => {
   })
 
   it('Should save the template and open Manage templates on Save template, refusing nothing', async () => {
-    const saveFor = vi.spyOn(templates, 'saveFor').mockResolvedValue({})
+    const saveFor = vi
+      .spyOn(templates, 'saveFor')
+      .mockResolvedValue({ name: 'Weekly cattle' })
     const journey = await store.create()
     const h = stubH()
+    const request = journeyRequest(journey.journeyId, { yar: sessionWith() })
 
     const response = await withTemplateMode(OWNER, () =>
-      postHandler(journeyRequest(journey.journeyId), h)
+      postHandler(request, h)
     )
 
     expect(saveFor).toHaveBeenCalledWith(OWNER, journey.journeyId)
     expect(response.redirect).toBe('/live-animals/templates')
+    expect(takeSavedTemplate(request)).toEqual({ name: 'Weekly cattle' })
+    saveFor.mockRestore()
+  })
+
+  it('Should remember nothing for the banner when the template was not found', async () => {
+    const saveFor = vi.spyOn(templates, 'saveFor').mockResolvedValue(undefined)
+    const journey = await store.create()
+    const h = stubH()
+    const request = journeyRequest(journey.journeyId, { yar: sessionWith() })
+
+    const response = await withTemplateMode(OWNER, () =>
+      postHandler(request, h)
+    )
+
+    expect(response.redirect).toBe('/live-animals/templates')
+    expect(takeSavedTemplate(request)).toBeNull()
     saveFor.mockRestore()
   })
 

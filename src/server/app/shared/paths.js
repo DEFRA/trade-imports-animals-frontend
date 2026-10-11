@@ -35,6 +35,8 @@ export const templatesPath = () => `${setBase()}/templates`
 export const newTemplatePath = () => `${setBase()}/templates/new`
 export const templateNamePath = (templateId) =>
   `${setBase()}/templates/${templateId}/name`
+export const templatePath = (templateId) =>
+  `${setBase()}/templates/${templateId}`
 export const templatePagePath = (templateId, slug) =>
   `${setBase()}/templates/${templateId}/${slug}`
 

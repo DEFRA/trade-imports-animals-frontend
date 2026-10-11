@@ -157,6 +157,54 @@ describe('stub templates in progress', () => {
     stubTemplates.clear()
   })
 
+  it('Should list the template saved later first, whatever order they were started', async () => {
+    stubMode()
+    const { startFor, listFor, saveFor } = await templatesService()
+    const { stubTemplates } = await import('./stub.js')
+    vi.useFakeTimers()
+
+    try {
+      vi.setSystemTime(new Date('2026-10-01T10:00:00Z'))
+      const first = await startFor(OWNER, { setId: LIVE_ANIMALS, name: 'A' })
+      vi.setSystemTime(new Date('2026-10-01T11:00:00Z'))
+      const second = await startFor(OWNER, { setId: LIVE_ANIMALS, name: 'B' })
+      vi.setSystemTime(new Date('2026-10-01T12:00:00Z'))
+      await saveFor(OWNER, second.id)
+      vi.setSystemTime(new Date('2026-10-01T13:00:00Z'))
+      await saveFor(OWNER, first.id)
+
+      const names = (await listFor(OWNER)).map((item) => item.name)
+
+      expect(names).toEqual(['A', 'B'])
+    } finally {
+      vi.useRealTimers()
+      stubTemplates.clear()
+    }
+  })
+
+  it('Should keep the first saved time when a template is saved again', async () => {
+    stubMode()
+    const { startFor, saveFor } = await templatesService()
+    const { stubTemplates } = await import('./stub.js')
+    vi.useFakeTimers()
+
+    try {
+      vi.setSystemTime(new Date('2026-10-01T10:00:00Z'))
+      const started = await startFor(OWNER, {
+        setId: LIVE_ANIMALS,
+        name: WEEKLY_CATTLE
+      })
+      await saveFor(OWNER, started.id)
+      vi.setSystemTime(new Date('2026-10-01T12:00:00Z'))
+      await saveFor(OWNER, started.id)
+
+      expect(stubTemplates.get(OWNER)[0].saved).toBe('2026-10-01T10:00:00.000Z')
+    } finally {
+      vi.useRealTimers()
+      stubTemplates.clear()
+    }
+  })
+
   it('Should start, read back, rename and fill a template for its owner only', async () => {
     stubMode()
     const { startFor, getFor, updateDetailsFor, replaceFulfilmentsFor } =

@@ -1,7 +1,8 @@
 // The stub store starts empty and holds no examples: the service shows only
 // templates a user has really saved (c-183). Keyed by owner id; each value is
-// an array of rows { id, name, setId, created, status, version, fulfilments }
-// with `created` an ISO string.
+// an array of rows { id, name, setId, created, saved?, status, version,
+// fulfilments } with `created` and `saved` ISO strings (`saved` is the first
+// time the template was saved, which orders the list).
 const store = new Map()
 
 export const stubTemplates = store
@@ -9,7 +10,9 @@ export const stubTemplates = store
 const IN_PROGRESS = 'IN_PROGRESS'
 const SAVED = 'SAVED'
 
-const newestFirst = (left, right) => right.created.localeCompare(left.created)
+const newestSavedFirst = (left, right) =>
+  (right.saved ?? '').localeCompare(left.saved ?? '') ||
+  right.created.localeCompare(left.created)
 
 const rowsOf = (ownerId) => store.get(ownerId) ?? []
 
@@ -48,7 +51,7 @@ const changeRow = (ownerId, id, changes) => {
 export const list = (ownerId) =>
   rowsOf(ownerId)
     .filter((row) => row.status !== IN_PROGRESS)
-    .sort(newestFirst)
+    .sort(newestSavedFirst)
     .map(toTemplate)
 
 /**
@@ -113,4 +116,10 @@ export const replaceFulfilments = (ownerId, id, fulfilments) =>
  * @param {string} id - the template's id
  * @returns {object|undefined} the template as stored, or undefined when not found
  */
-export const save = (ownerId, id) => changeRow(ownerId, id, { status: SAVED })
+export const save = (ownerId, id) => {
+  const row = findRow(ownerId, id)
+  return changeRow(ownerId, id, {
+    status: SAVED,
+    saved: row?.saved ?? new Date().toISOString()
+  })
+}

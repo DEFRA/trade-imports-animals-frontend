@@ -37,6 +37,25 @@ describe('#copy', () => {
     expect(copy.results.all(5)).toBe('Show 1-5 of 5 results')
   })
 
+  it('Should carry the card, untitled, category and saved banner wording in both locales', () => {
+    expect(copy.card.view).toBe('View template')
+    expect(copy.card.use).toBe('Use template')
+    expect(copy.card.label('X')).toBe('Template X')
+    expect(copy.untitled).toBe('Untitled template')
+    expect(copy.categories['live-animals']).toBe('Live animals')
+    expect(copy.categories['germinal-products']).toBe('Germinal products')
+    expect(copy.saved.title).toBe('Success')
+    expect(copy.saved.heading('X')).toBe('X saved to templates')
+    expect(cy.card.view).toBe('Gweld y templed')
+    expect(cy.card.use).toBe('Defnyddio’r templed')
+    expect(cy.card.label('X')).toBe('Templed X')
+    expect(cy.untitled).toBe('Templed heb deitl')
+    expect(cy.categories['live-animals']).toBe('Anifeiliaid byw')
+    expect(cy.categories['germinal-products']).toBe('Cynhyrchion germinol')
+    expect(cy.saved.title).toBe('Llwyddiant')
+    expect(cy.saved.heading('X')).toBe('X wedi’i gadw yn y templedi')
+  })
+
   it('Should carry a Welsh draft for every string under the same key', () => {
     expect(cy.title).toBe('Rheoli templedi')
     expect(cy.results.all(2)).toBe('Dangos 1-2 o 2 canlyniad')

@@ -9,6 +9,17 @@ export const copy = {
     all: (total) => `Dangos 1-${total} o ${total} canlyniad`
   },
   card: {
-    created: 'Dyddiad creu'
+    label: (title) => `Templed ${title}`,
+    view: 'Gweld y templed',
+    use: 'Defnyddio’r templed'
+  },
+  untitled: 'Templed heb deitl',
+  categories: {
+    'live-animals': 'Anifeiliaid byw',
+    'germinal-products': 'Cynhyrchion germinol'
+  },
+  saved: {
+    title: 'Llwyddiant',
+    heading: (title) => `${title} wedi’i gadw yn y templedi`
   }
 }
