@@ -152,7 +152,7 @@ test.describe('live-animals journey glue', () => {
     await expect(heading('Review your notification')).toBeVisible()
     const summary = page.getByRole('alert')
     await expect(summary).toContainText('There is a problem')
-    await expect(summary).toContainText('Complete reason for import')
+    await expect(summary).toContainText('Complete main import reason')
     await expect(summary).toContainText('Complete roles and addresses')
   })
 

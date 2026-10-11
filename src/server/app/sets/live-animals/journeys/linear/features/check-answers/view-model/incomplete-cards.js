@@ -45,7 +45,7 @@ export const REVIEW_CARDS = [
     id: 'species',
     anchor: 'description-of-the-goods',
     // The hub splits the commodity answers across three rows; the review shows
-    // them under one heading, so the entry names all three.
+    // them as one card per line, so the entry names all three.
     rows: ['commodities', 'consignmentDetails', 'animalIdentification']
   },
   {
@@ -158,8 +158,5 @@ const decorateCard = (card, cardErrors) => {
 export const withCardErrors = (sections, cardErrors = {}) =>
   sections.map((section) => ({
     ...section,
-    groups: section.groups.map((group) => ({
-      ...group,
-      cards: group.cards.map((card) => decorateCard(card, cardErrors))
-    }))
+    cards: section.cards.map((card) => decorateCard(card, cardErrors))
   }))

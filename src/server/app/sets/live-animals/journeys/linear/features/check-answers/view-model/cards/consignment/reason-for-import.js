@@ -46,7 +46,7 @@ const exitRows = async (answers, scope) => [
  * Design release 1 gives the reason for import a card of its own rather than
  * folding it in among the animal details. Every row here comes from the
  * reason-for-import page, so the card's one Change link reaches all of them —
- * which the Additional animal details card could not do while it held them.
+ * which the Additional details card could not do while it held them.
  */
 export const reasonForImportCard = async (
   journeyId,

@@ -12,7 +12,7 @@ const copy = copyFor({ en, cy })
 /**
  * The countries the consignment travels through, collected on their own page
  * and asked for only when the means of transport is overland. Design release 1
- * gives them their own card under their own heading, so the card stands only
+ * gives them a card of their own, so the card stands only
  * while the answer is in scope — the section builder makes that call.
  */
 export const transitCountriesCard = async (journeyId, answers, readOnly) => {

@@ -5,7 +5,7 @@ import { descriptionOfGoodsSection } from './sections/description-of-goods.js'
 import { documentsSection } from './sections/documents.js'
 import { transportAndArrivalSection } from './sections/transport-and-arrival.js'
 
-// Design release 1's six numbered sections, in its order. The numbers are part
+// Design release 2.1's six numbered sections, in its order. The numbers are part
 // of each section's heading copy, so the order here and the numbering there
 // have to agree.
 export const buildSections = async (

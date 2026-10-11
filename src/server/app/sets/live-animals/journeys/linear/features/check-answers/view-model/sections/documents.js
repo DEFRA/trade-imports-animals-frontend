@@ -15,10 +15,5 @@ export const documentsSection = (journeyId, answers, evaluation, readOnly) => ({
   // send that link to this heading instead of the unfinished card.
   anchor: 'documents-section',
   heading: copy.sections.documents,
-  groups: [
-    {
-      heading: copy.groups.uploadDocuments,
-      cards: [documentsCard(journeyId, answers, evaluation, readOnly)]
-    }
-  ]
+  cards: [documentsCard(journeyId, answers, evaluation, readOnly)]
 })

@@ -38,31 +38,19 @@ export const copy = {
     aboutTheConsignment: '1. Am y llwyth',
     descriptionOfTheGoods: '2. Disgrifiad o’r nwyddau',
     transportAndArrival: '3. Cludiant a chyrraedd',
-    documents: '4. Dogfennau',
-    consignmentParties: '5. Partïon y llwyth',
+    documents: '4. Dogfennau wedi’u huwchlwytho',
+    consignmentParties: '5. Cyfeiriadau’r llwyth',
     contactAddress: '6. Cyfeiriad cyswllt'
   },
-  groups: {
-    whereFrom: 'O ble mae’r llwyth hwn yn dod?',
-    mainImportReason: 'Prif reswm mewnforio',
-    commodityDetails: 'Manylion y nwyddau',
-    additionalDetails: 'Manylion ychwanegol',
-    arrivalDetails: 'Manylion cyrraedd',
-    transitCountries: 'Gwledydd tramwy',
-    transportDetails: 'Manylion cludo',
-    uploadDocuments: 'Uwchlwytho dogfennau',
-    rolesAndAddresses: 'Rolau a chyfeiriadau',
-    contactAddress: 'Cyfeiriad cyswllt ar gyfer y llwyth hwn'
-  },
   cards: {
-    importDetails: 'Manylion mewnforio',
-    reasonForImport: 'Rheswm dros fewnforio',
-    additionalAnimalDetails: 'Manylion ychwanegol am yr anifeiliaid',
+    importDetails: 'Tarddiad y mewnforyn',
+    reasonForImport: 'Prif reswm mewnforio',
+    additionalAnimalDetails: 'Manylion ychwanegol',
     arrivalDetails: 'Manylion cyrraedd',
     transitCountries: 'Gwledydd tramwy',
     transportDetails: 'Manylion cludo',
-    rolesAndAddresses: 'Rolau a chyfeiriadau',
-    contactAddress: 'Cyfeiriad cyswllt ar gyfer y llwyth hwn',
+    rolesAndAddresses: 'Cyfeiriadau',
+    contactAddress: 'Cyfeiriad cyswllt',
     documents: 'Dogfennau wedi’u huwchlwytho'
   },
   rows: {
@@ -72,7 +60,7 @@ export const copy = {
     internalReference: 'Cyfeirnod mewnol',
     certifiedFor: 'Wedi’i ardystio ar gyfer',
     unweaned: 'Yn cynnwys anifeiliaid heb eu diddyfnu',
-    reasonForImport: 'Rheswm dros fewnforio',
+    reasonForImport: 'Prif reswm mewnforio',
     purpose: 'Diben yn y farchnad',
     destinationCountry: 'Gwlad gyrchfan',
     exitDate: 'Dyddiad ymadael',
@@ -115,14 +103,14 @@ export const copy = {
   documentsEmpty: 'Nid ydych wedi ychwanegu unrhyw ddogfennau eto.',
   hidden: {
     cards: {
-      importDetails: 'manylion mewnforio',
-      reasonForImport: 'rheswm dros fewnforio',
-      additionalAnimalDetails: 'manylion ychwanegol am yr anifeiliaid',
+      importDetails: 'tarddiad y mewnforyn',
+      reasonForImport: 'prif reswm mewnforio',
+      additionalAnimalDetails: 'manylion ychwanegol',
       arrivalDetails: 'manylion cyrraedd',
       transitCountries: 'gwledydd tramwy',
       transportDetails: 'manylion cludo',
-      rolesAndAddresses: 'rolau a chyfeiriadau',
-      contactAddress: 'cyfeiriad cyswllt ar gyfer y llwyth hwn',
+      rolesAndAddresses: 'cyfeiriadau',
+      contactAddress: 'cyfeiriad cyswllt',
       documents: 'dogfennau wedi’u huwchlwytho'
     },
     commodity: (n) => `nwydd ${n}`
@@ -133,10 +121,9 @@ export const copy = {
   errors: {
     prefix: 'Gwall:',
     cards: {
-      importDetails: 'Cwblhewch y manylion mewnforio',
-      reasonForImport: 'Cwblhewch y rheswm dros fewnforio',
-      additionalAnimalDetails:
-        'Cwblhewch y manylion ychwanegol am yr anifeiliaid',
+      importDetails: 'Cwblhewch darddiad y mewnforyn',
+      reasonForImport: 'Cwblhewch y prif reswm mewnforio',
+      additionalAnimalDetails: 'Cwblhewch y manylion ychwanegol',
       species: 'Cwblhewch fanylion y rhywogaeth',
       arrivalDetails: 'Cwblhewch y manylion cyrraedd',
       transitCountries: 'Cwblhewch y gwledydd tramwy',

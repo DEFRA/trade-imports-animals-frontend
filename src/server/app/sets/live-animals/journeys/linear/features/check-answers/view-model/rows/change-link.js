@@ -23,7 +23,7 @@ export const changeHref = (journeyId, obligationId) =>
  * rows can span two pages — roles and addresses shows the CPH number the CPH
  * page collects. A card has one destination, so it has to say which one, and
  * it says the page the hub's own task row leads with. A conditional second
- * page does not get a second link here: it gets a headed card of its own that
+ * page does not get a second link here: it gets a card of its own that
  * carries its own, as cards/movement/transit-countries.js does.
  */
 export const cardAction = (journeyId, slug, visuallyHiddenText) => ({

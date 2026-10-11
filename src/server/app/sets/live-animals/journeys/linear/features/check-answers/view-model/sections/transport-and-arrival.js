@@ -9,10 +9,10 @@ import { transportDetailsCard } from '../cards/movement/transport-details.js'
 const copy = copyFor({ en, cy })
 
 /**
- * Design release 1's third numbered section: how the consignment gets here and
- * when it lands. The transit countries are collected on their own page and
- * apply only to an overland arrival, so they stand as their own headed card
- * rather than as a row inside arrival details.
+ * Design release 2.1's third numbered section: how the consignment gets here
+ * and when it lands. The transit countries are collected on their own page and
+ * apply only to an overland arrival, so they stand as their own card rather
+ * than as a row inside arrival details.
  */
 export const transportAndArrivalSection = async (
   journeyId,
@@ -22,22 +22,11 @@ export const transportAndArrivalSection = async (
 ) => ({
   anchor: 'transport-and-arrival',
   heading: copy.sections.transportAndArrival,
-  groups: [
-    {
-      heading: copy.groups.arrivalDetails,
-      cards: [await arrivalDetailsCard(journeyId, answers, readOnly)]
-    },
+  cards: [
+    await arrivalDetailsCard(journeyId, answers, readOnly),
     ...(transitedCountriesApplies(answers, scope)
-      ? [
-          {
-            heading: copy.groups.transitCountries,
-            cards: [await transitCountriesCard(journeyId, answers, readOnly)]
-          }
-        ]
+      ? [await transitCountriesCard(journeyId, answers, readOnly)]
       : []),
-    {
-      heading: copy.groups.transportDetails,
-      cards: [transportDetailsCard(journeyId, answers, scope, readOnly)]
-    }
+    transportDetailsCard(journeyId, answers, scope, readOnly)
   ]
 })

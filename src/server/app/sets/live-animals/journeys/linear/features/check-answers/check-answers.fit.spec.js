@@ -33,7 +33,7 @@ const missingMarker = (page, label) =>
   rowFor(page, label).locator('.app-summary-list__value--missing')
 
 /** The one Change link a card carries in its heading, named the way a screen
- * reader reads it — "Change import details". */
+ * reader reads it — "Change origin of import". */
 const cardChangeLink = (page, hiddenText) =>
   page.getByRole('link', { name: `${copy.change} ${hiddenText}` })
 
@@ -123,10 +123,11 @@ test.describe('check-answers feature summary rows', () => {
   })
 })
 
-// Design release 1 lays the review out as six numbered sections mirroring the
-// task list, with a subsection heading above every card. A brand-new
-// notification shows the sections that always stand: the commodity group waits
-// on a line and the transit-countries group on an overland arrival.
+// Design release 2.1 lays the review out as six numbered sections mirroring the
+// task list, with every card straight under its numbered section heading and no
+// subsection heading between them. A brand-new notification shows the sections
+// that always stand: the commodity cards wait on a line and the
+// transit-countries card on an overland arrival.
 test.describe('check-answers feature section structure', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
@@ -178,25 +179,40 @@ test.describe('check-answers feature section structure', () => {
     ).toBeVisible()
   })
 
-  test('heads every card with its own subsection heading', async ({ page }) => {
+  test('stands every card straight under its numbered section, titled one level below it', async ({
+    page
+  }) => {
     await startNotification(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
-    // Every group carries a heading, so each card title drops to level 4 and
-    // the level-3 headings are exactly the subsection headings.
+    // No subsection heading stands between a section and its cards, so the
+    // level-3 headings are exactly the card titles.
     await expect(page.getByRole('heading', { level: 3 })).toHaveText([
-      copy.groups.whereFrom,
-      copy.groups.mainImportReason,
-      copy.groups.additionalDetails,
-      copy.groups.arrivalDetails,
-      copy.groups.transportDetails,
-      copy.groups.uploadDocuments,
-      copy.groups.rolesAndAddresses,
-      copy.groups.contactAddress
+      copy.cards.importDetails,
+      copy.cards.reasonForImport,
+      copy.cards.additionalAnimalDetails,
+      copy.cards.arrivalDetails,
+      copy.cards.transportDetails,
+      copy.cards.documents,
+      copy.cards.rolesAndAddresses,
+      copy.cards.contactAddress
     ])
-    await expect(page.getByRole('heading', { level: 4 })).toHaveCount(
+    await expect(page.getByRole('heading', { level: 3 })).toHaveCount(
       await page.locator('.govuk-summary-card').count()
     )
+    await expect(page.getByRole('heading', { level: 4 })).toHaveCount(0)
+
+    for (const name of [
+      'Where is this consignment coming from?',
+      'Commodity details',
+      'Upload documents',
+      'Roles and addresses',
+      'Contact address for this consignment'
+    ]) {
+      await expect(
+        page.getByRole('heading', { name, exact: true })
+      ).toHaveCount(0)
+    }
   })
 })
 
@@ -218,7 +234,7 @@ test.describe('check-answers feature documents section', () => {
       page.getByRole('heading', { name: copy.sections.documents })
     ).toBeVisible()
     await expect(
-      page.getByRole('heading', { name: copy.cards.documents })
+      page.getByRole('heading', { name: copy.cards.documents, exact: true })
     ).toBeVisible()
     await expect(page.getByText(copy.documentsEmpty)).toBeVisible()
 
@@ -272,7 +288,7 @@ test.describe('check-answers feature exit answers', () => {
       page.getByText(copy.rows.exitDate, { exact: true })
     ).toHaveCount(0)
 
-    // The exit answers sit in the Reason for import card, and that card — not
+    // The exit answers sit in the Main import reason card, and that card — not
     // the row — carries the one Change link. Every row on the card comes from
     // the reason-for-import page, so the link reaches all of them.
     await expect(
@@ -369,6 +385,23 @@ test.describe('check-answers feature change links', () => {
     )
     await expect(rowFor(page, copy.rows.internalReference)).toContainText(
       copy.notApplicable
+    )
+  })
+
+  test('the Addresses and Contact address cards each carry one Change link, to the addresses and contact address pages', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    await expect(
+      cardChangeLink(page, copy.hidden.cards.rolesAndAddresses)
+    ).toHaveAttribute('href', /\/notifications\/[^/]+\/addresses\?change=1$/)
+    await expect(
+      cardChangeLink(page, copy.hidden.cards.contactAddress)
+    ).toHaveAttribute(
+      'href',
+      /\/notifications\/[^/]+\/consignment\/contact\/select\?change=1$/
     )
   })
 
@@ -484,6 +517,33 @@ test.describe('check-answers feature unfinished notification', () => {
     await expect(
       page.locator(`${ARRIVAL_DETAILS_ANCHOR} .govuk-error-message`)
     ).toContainText(copy.errors.prefix)
+  })
+
+  test('names the unfinished Origin of import, Main import reason and Additional details cards in their own words', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    // Starting a notification answers the entry page, which finishes Origin of
+    // import, so only the other two are outstanding here. The unit test seeds
+    // nothing and proves "Complete origin of import".
+    await expect(
+      page.getByRole('link', { name: copy.errors.cards.importDetails })
+    ).toHaveCount(0)
+
+    for (const [key, anchor] of [
+      ['reasonForImport', '#reason-for-import'],
+      ['additionalAnimalDetails', '#additional-animal-details']
+    ]) {
+      const message = copy.errors.cards[key]
+      await expect(
+        page.getByRole('link', { name: message, exact: true })
+      ).toHaveAttribute('href', anchor)
+      await expect(
+        page.locator(`${anchor} .govuk-error-message`)
+      ).toContainText(message)
+    }
   })
 
   test('refuses Continue and keeps the trader on the review page', async ({

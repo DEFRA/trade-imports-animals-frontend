@@ -38,38 +38,25 @@ export const copy = {
     successBody:
       'The amendment has been cancelled and the submitted version restored.'
   },
-  // The six numbered sections of design release 1, in its order. The number is
-  // part of the heading, so renumbering means editing these strings.
+  // The six numbered sections of design release 2.1, in its order. The number
+  // is part of the heading, so renumbering means editing these strings.
   sections: {
     aboutTheConsignment: '1. About the consignment',
     descriptionOfTheGoods: '2. Description of the goods',
     transportAndArrival: '3. Transport and arrival',
-    documents: '4. Documents',
-    consignmentParties: '5. Consignment parties',
+    documents: '4. Uploaded documents',
+    consignmentParties: '5. Consignment addresses',
     contactAddress: '6. Contact address'
   },
-  // The subsection heading that stands above each card. Every card has one.
-  groups: {
-    whereFrom: 'Where is this consignment coming from?',
-    mainImportReason: 'Main import reason',
-    commodityDetails: 'Commodity details',
-    additionalDetails: 'Additional details',
-    arrivalDetails: 'Arrival details',
-    transitCountries: 'Transit countries',
-    transportDetails: 'Transport details',
-    uploadDocuments: 'Upload documents',
-    rolesAndAddresses: 'Roles and addresses',
-    contactAddress: 'Contact address for this consignment'
-  },
   cards: {
-    importDetails: 'Import details',
-    reasonForImport: 'Reason for import',
-    additionalAnimalDetails: 'Additional animal details',
+    importDetails: 'Origin of import',
+    reasonForImport: 'Main import reason',
+    additionalAnimalDetails: 'Additional details',
     arrivalDetails: 'Arrival details',
     transitCountries: 'Transit countries',
     transportDetails: 'Transport details',
-    rolesAndAddresses: 'Roles and addresses',
-    contactAddress: 'Contact address for this consignment',
+    rolesAndAddresses: 'Addresses',
+    contactAddress: 'Contact address',
     documents: 'Uploaded documents'
   },
   rows: {
@@ -79,7 +66,7 @@ export const copy = {
     internalReference: 'Internal reference number',
     certifiedFor: 'Certified for',
     unweaned: 'Includes unweaned animals',
-    reasonForImport: 'Reason for import',
+    reasonForImport: 'Main import reason',
     purpose: 'Purpose in the market',
     destinationCountry: 'Destination country',
     exitDate: 'Exit date',
@@ -127,14 +114,14 @@ export const copy = {
   // of "Change ..." — lower case, and the card's own title in words.
   hidden: {
     cards: {
-      importDetails: 'import details',
-      reasonForImport: 'reason for import',
-      additionalAnimalDetails: 'additional animal details',
+      importDetails: 'origin of import',
+      reasonForImport: 'main import reason',
+      additionalAnimalDetails: 'additional details',
       arrivalDetails: 'arrival details',
       transitCountries: 'transit countries',
       transportDetails: 'transport details',
-      rolesAndAddresses: 'roles and addresses',
-      contactAddress: 'contact address for this consignment',
+      rolesAndAddresses: 'addresses',
+      contactAddress: 'contact address',
       documents: 'uploaded documents'
     },
     commodity: (n) => `commodity ${n}`
@@ -150,9 +137,9 @@ export const copy = {
     // line carries the error summary entry and the message inside the card, so
     // a trader reading either sees the same words.
     cards: {
-      importDetails: 'Complete import details',
-      reasonForImport: 'Complete reason for import',
-      additionalAnimalDetails: 'Complete additional animal details',
+      importDetails: 'Complete origin of import',
+      reasonForImport: 'Complete main import reason',
+      additionalAnimalDetails: 'Complete additional details',
       species: 'Complete species details',
       arrivalDetails: 'Complete arrival details',
       transitCountries: 'Complete transit countries',
