@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import * as templates from '../../../../../../services/templates/index.js'
-import { formatDisplayMoment } from '../dashboard/notification-helper.js'
 import { routes } from './controller.js'
 
 const route = routes.find(
@@ -9,7 +8,16 @@ const route = routes.find(
 )
 const manageTemplatesGet = route.handler
 
-const request = {
+const sessionWith = (values = {}) => {
+  const held = new Map(Object.entries(values))
+  return {
+    get: (key) => held.get(key),
+    set: (key, value) => held.set(key, value),
+    clear: (key) => held.delete(key)
+  }
+}
+
+const requestWith = (yar) => ({
   auth: {
     credentials: {
       contactId: 2100010101,
@@ -18,10 +26,17 @@ const request = {
     }
   },
   query: {},
-  params: {}
-}
+  params: {},
+  yar
+})
+
+let request
 
 const h = { view: (template, context) => ({ template, context }) }
+
+const FEBRUARY = '2026-02-01T10:00:00Z'
+const JANUARY = '2026-01-01T10:00:00Z'
+const ARENA = 'Arena Aintree'
 
 const saved = (name, created) => ({
   id: name,
@@ -32,6 +47,7 @@ const saved = (name, created) => ({
 
 describe('GET /templates', () => {
   beforeEach(() => {
+    request = requestWith(sessionWith())
     vi.spyOn(templates, 'listFor').mockResolvedValue([])
   })
 
@@ -62,21 +78,78 @@ describe('GET /templates', () => {
   })
 
   it('Should count and card every template the user has saved, newest first', async () => {
-    const newer = saved('Arena Aintree', '2026-02-01T10:00:00Z')
-    const older = saved('Acorn Farm', '2026-01-01T10:00:00Z')
+    const newer = saved(ARENA, FEBRUARY)
+    const older = saved('Acorn Farm', JANUARY)
     templates.listFor.mockResolvedValue([newer, older])
 
     const { context } = await manageTemplatesGet(request, h)
 
     expect(context.resultsLabel).toBe('Show 1-2 of 2 results')
-    expect(context.templateCards.map((card) => card.name)).toEqual([
-      'Arena Aintree',
+    expect(context.templateCards.map((card) => card.title)).toEqual([
+      ARENA,
       'Acorn Farm'
     ])
-    expect(context.templateCards.map((card) => card.created)).toEqual([
-      formatDisplayMoment(newer.created),
-      formatDisplayMoment(older.created)
+  })
+
+  it('Should card each template with its title, its label, its category and its View and Use template targets', async () => {
+    templates.listFor.mockResolvedValue([saved(ARENA, FEBRUARY)])
+
+    const { context } = await manageTemplatesGet(request, h)
+
+    expect(context.templateCards).toEqual([
+      {
+        title: ARENA,
+        label: 'Template Arena Aintree',
+        category: 'Live animals',
+        viewHref: expect.stringMatching(/\/templates\/Arena Aintree$/),
+        useAction: expect.stringMatching(/\/templates\/Arena Aintree\/use$/)
+      }
     ])
+  })
+
+  it('Should title a template saved with no name Untitled template', async () => {
+    templates.listFor.mockResolvedValue([
+      saved('', FEBRUARY),
+      saved('  ', JANUARY)
+    ])
+
+    const { context } = await manageTemplatesGet(request, h)
+
+    expect(context.templateCards.map((card) => card.title)).toEqual([
+      'Untitled template',
+      'Untitled template'
+    ])
+    expect(context.templateCards[0].label).toBe('Template Untitled template')
+  })
+
+  it("Should show the saved banner once, headed with the template's title", async () => {
+    request = requestWith(
+      sessionWith({ templateSaved: { name: 'Weekly cattle' } })
+    )
+
+    const first = await manageTemplatesGet(request, h)
+    const second = await manageTemplatesGet(request, h)
+
+    expect(first.context.savedBanner.heading).toBe(
+      'Weekly cattle saved to templates'
+    )
+    expect(second.context.savedBanner).toBeNull()
+  })
+
+  it('Should head the banner Untitled template saved to templates for a template saved with no name', async () => {
+    request = requestWith(sessionWith({ templateSaved: { name: '' } }))
+
+    const { context } = await manageTemplatesGet(request, h)
+
+    expect(context.savedBanner.heading).toBe(
+      'Untitled template saved to templates'
+    )
+  })
+
+  it('Should show no banner when nothing was just saved', async () => {
+    const { context } = await manageTemplatesGet(request, h)
+
+    expect(context.savedBanner).toBeNull()
   })
 
   it('Should let a failed backend list surface as an error', async () => {
@@ -91,10 +164,23 @@ describe('GET /templates', () => {
       status: 503
     })
   })
+
+  it('Should keep the saved banner for the next visit when the list fails', async () => {
+    const justSaved = { name: 'Monthly sheep' }
+    const failure = new Error('list templates failed')
+    const yar = sessionWith({ templateSaved: justSaved })
+    request = requestWith(yar)
+    templates.listFor.mockRejectedValue(failure)
+
+    await expect(manageTemplatesGet(request, h)).rejects.toBe(failure)
+
+    expect(yar.get('templateSaved')).toBe(justSaved)
+  })
 })
 
 describe('GET /templates — Create new template', () => {
   beforeEach(() => {
+    request = requestWith(sessionWith())
     vi.spyOn(templates, 'listFor').mockResolvedValue([])
   })
 
