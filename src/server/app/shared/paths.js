@@ -26,3 +26,6 @@ export const inDashboardSection = (path) =>
   path === dashboardPath() ||
   path === createPath() ||
   path.startsWith(`${createPath()}/`)
+
+export const inTemplatesSection = (path) =>
+  path === templatesPath() || path.startsWith(`${templatesPath()}/`)

@@ -7,10 +7,12 @@ import {
   startNotification
 } from '../../../../../../../../fit/live-animals-journey.js'
 import { copy as sharedCopy } from '../../../../../shared/copy.en.js'
+import { copy as templatesCopy } from './templates/copy/copy.en.js'
 
 const { serviceNavigation } = sharedCopy.layout
 const ITEMS = [
   serviceNavigation.dashboard,
+  serviceNavigation.templates,
   serviceNavigation.addressBook,
   serviceNavigation.manageAccount,
   serviceNavigation.logOut
@@ -20,13 +22,14 @@ const navigation = (page) =>
   page.getByRole('navigation', { name: serviceNavigation.menuButton })
 
 const STUB_USER_EMAIL = 'stub.user@example.com'
+const ARIA_CURRENT = 'aria-current'
 
 test.describe('service navigation', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
   })
 
-  test('offers the four items on the dashboard', async ({ page }) => {
+  test('offers the five items on the dashboard', async ({ page }) => {
     await page.goto(BASE)
 
     await expect(navigation(page).getByRole('listitem')).toHaveText(ITEMS)
@@ -37,7 +40,51 @@ test.describe('service navigation', () => {
 
     await expect(
       navigation(page).getByRole('link', { name: serviceNavigation.dashboard })
-    ).toHaveAttribute('aria-current', 'true')
+    ).toHaveAttribute(ARIA_CURRENT, 'true')
+  })
+
+  test('marks Templates as the current section on Manage templates', async ({
+    page
+  }) => {
+    await page.goto(`${BASE}/templates`)
+
+    await expect(
+      navigation(page).getByRole('link', { name: serviceNavigation.templates })
+    ).toHaveAttribute(ARIA_CURRENT, 'true')
+    await expect(
+      navigation(page).getByRole('link', { name: serviceNavigation.dashboard })
+    ).not.toHaveAttribute(ARIA_CURRENT)
+    await expect(
+      navigation(page).getByRole('link', {
+        name: serviceNavigation.addressBook
+      })
+    ).not.toHaveAttribute(ARIA_CURRENT)
+  })
+
+  test('does not mark Templates on the dashboard', async ({ page }) => {
+    await page.goto(BASE)
+
+    await expect(
+      navigation(page).getByRole('link', { name: serviceNavigation.templates })
+    ).not.toHaveAttribute(ARIA_CURRENT)
+    await expect(
+      navigation(page).getByRole('link', { name: serviceNavigation.dashboard })
+    ).toHaveAttribute(ARIA_CURRENT, 'true')
+  })
+
+  test('reaches Manage templates from the navigation', async ({ page }) => {
+    await page.goto(BASE)
+
+    const templates = navigation(page).getByRole('link', {
+      name: serviceNavigation.templates
+    })
+    await expect(templates).toHaveAttribute('href', `${BASE}/templates`)
+
+    await templates.click()
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: templatesCopy.title })
+    ).toBeVisible()
   })
 
   test('keeps the dashboard marked on a page inside a notification', async ({
@@ -47,7 +94,7 @@ test.describe('service navigation', () => {
 
     await expect(
       navigation(page).getByRole('link', { name: serviceNavigation.dashboard })
-    ).toHaveAttribute('aria-current', 'true')
+    ).toHaveAttribute(ARIA_CURRENT, 'true')
   })
 
   test('reaches the dashboard from inside a notification', async ({ page }) => {
