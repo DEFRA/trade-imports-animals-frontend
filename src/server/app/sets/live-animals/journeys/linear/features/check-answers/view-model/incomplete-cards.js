@@ -143,14 +143,6 @@ const blankEmptyRows = (rows) =>
 const blankEmptyValues = (card) => ({
   ...card,
   rows: blankEmptyRows(card.rows),
-  ...(Array.isArray(card.documents)
-    ? {
-        documents: card.documents.map((document) => ({
-          ...document,
-          rows: blankEmptyRows(document.rows)
-        }))
-      }
-    : {}),
   ...(Array.isArray(card.subsections)
     ? {
         subsections: card.subsections.map((subsection) => ({
@@ -161,24 +153,42 @@ const blankEmptyValues = (card) => ({
     : {})
 })
 
-const decorateCard = (card, cardErrors) => {
+const decorateCard = (card, cardErrors, leadsItsId) => {
   const known = cardById.get(card.id)
   if (!known) {
     return card
   }
+  const error = cardErrors[card.id] ?? null
   const decorated = {
     ...card,
-    anchor: known.anchor,
-    error: cardErrors[card.id] ?? null
+    ...(leadsItsId ? { anchor: known.anchor, error } : { error: null })
   }
-  return decorated.error ? blankEmptyValues(decorated) : decorated
+  return error ? blankEmptyValues(decorated) : decorated
+}
+
+/** The cards that are first, in page order, to carry their `id`. */
+const leadingCards = (sections) => {
+  const cards = sections.flatMap((section) => section.cards)
+  return new Set(
+    cards.filter(
+      (card, index) =>
+        card.id === undefined ||
+        cards.findIndex((other) => other.id === card.id) === index
+    )
+  )
 }
 
 /** Give every card its anchor, and the unfinished ones their own message. The
  * decoration is a pass over the built sections rather than another argument
- * threaded through every card factory. */
-export const withCardErrors = (sections, cardErrors = {}) =>
-  sections.map((section) => ({
+ * threaded through every card factory. A card id that recurs (one card per
+ * uploaded document) anchors and names the error on its first card only, and
+ * blanks the empty rows of all of them. */
+export const withCardErrors = (sections, cardErrors = {}) => {
+  const leading = leadingCards(sections)
+  return sections.map((section) => ({
     ...section,
-    cards: section.cards.map((card) => decorateCard(card, cardErrors))
+    cards: section.cards.map((card) =>
+      decorateCard(card, cardErrors, leading.has(card))
+    )
   }))
+}

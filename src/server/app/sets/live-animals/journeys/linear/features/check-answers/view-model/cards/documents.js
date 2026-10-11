@@ -9,37 +9,39 @@ import { dateText } from '../rows/value-text.js'
 
 const copy = copyFor({ en, cy })
 
-// Documents are optional, so nothing uploaded is the ordinary case rather than
-// an edge one. The card stands either way (design release 1): the review page
-// has to say that documents are part of the notification and offer the route to
-// add them. An empty card would read as broken, so with no entries it carries a
-// line saying none have been added.
-export const documentsCard = (journeyId, answers, evaluation, readOnly) => {
-  const documents = state
-    .collectionView(answers, ['documents'], evaluation)
-    .map(({ index, entry }) => ({
-      heading: copy.documentN(index + 1),
-      rows: [
-        row(copy.rows.documentReference, entry.accompanyingDocumentReference),
-        row(
-          copy.rows.documentType,
-          copy.documentTypes[entry.accompanyingDocumentType]
-        ),
-        row(
-          copy.rows.dateOfIssue,
-          dateText(entry.accompanyingDocumentDateOfIssue)
-        ),
-        row(copy.rows.attachmentType, entry.accompanyingDocumentAttachmentType)
-      ]
-    }))
-  return {
-    id: 'documents',
-    title: copy.cards.documents,
-    ...editableActions(
-      readOnly,
-      changeAction(journeyId, documentsPage.slug, copy.hidden.cards.documents)
-    ),
-    emptyText: documents.length === 0 ? copy.documentsEmpty : null,
-    documents
+const DOCUMENTS_CARD_ID = 'documents'
+
+const documentRows = (entry) => [
+  row(copy.rows.documentReference, entry.accompanyingDocumentReference),
+  row(
+    copy.rows.documentType,
+    copy.documentTypes[entry.accompanyingDocumentType]
+  ),
+  row(copy.rows.dateOfIssue, dateText(entry.accompanyingDocumentDateOfIssue)),
+  row(copy.rows.attachment, entry.filename)
+]
+
+const noDocumentRows = () => [row(copy.rows.documentReference, null)]
+
+const documentCard = (journeyId, readOnly, number, rows) => ({
+  id: DOCUMENTS_CARD_ID,
+  title: copy.documentN(number),
+  ...editableActions(
+    readOnly,
+    changeAction(journeyId, documentsPage.slug, copy.hidden.documentN(number))
+  ),
+  rows
+})
+
+// Documents are optional, so the section always stands: with none uploaded it
+// carries the design's single "Document 1" card reading Not applicable, which
+// keeps the route to the upload page.
+export const documentCards = (journeyId, answers, evaluation, readOnly) => {
+  const documents = state.collectionView(answers, ['documents'], evaluation)
+  if (documents.length === 0) {
+    return [documentCard(journeyId, readOnly, 1, noDocumentRows())]
   }
+  return documents.map(({ index, entry }) =>
+    documentCard(journeyId, readOnly, index + 1, documentRows(entry))
+  )
 }

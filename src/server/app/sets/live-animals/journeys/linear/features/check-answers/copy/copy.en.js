@@ -56,8 +56,7 @@ export const copy = {
     arrivalDetails: 'Arrival details',
     transportDetails: 'Transport details',
     rolesAndAddresses: 'Addresses',
-    contactAddress: 'Contact address',
-    documents: 'Uploaded documents'
+    contactAddress: 'Contact address'
   },
   subsections: { transitCountries: 'Transit countries' },
   rows: {
@@ -98,7 +97,7 @@ export const copy = {
     documentReference: 'Document reference',
     documentType: 'Document type',
     dateOfIssue: 'Date of issue',
-    attachmentType: 'Attachment type'
+    attachment: 'Attachment'
   },
   identifierTable: {
     animalColumn: 'Animal',
@@ -108,14 +107,12 @@ export const copy = {
     heading: 'Identification details'
   },
   documentN: (n) => `Document ${n}`,
-  // Shown inside the uploaded-documents card when nothing has been uploaded.
-  // The card itself always stands, so it needs a line rather than an empty box.
-  documentsEmpty: 'You have not added any documents yet.',
   // What each Change link names once a screen reader reaches it. Cards carry a
   // Change link in the heading, so a card's entry here reads as the rest of
   // "Change ..." — lower case, and the card's own title in words. The transit
   // countries row and the first row of each species block carry one of their own,
   // and the Identification details table of each species block carries one too.
+  // Each document card names its own number.
   hidden: {
     cards: {
       importDetails: 'origin of import',
@@ -125,14 +122,14 @@ export const copy = {
       arrivalDetails: 'arrival details',
       transportDetails: 'transport details',
       rolesAndAddresses: 'addresses',
-      contactAddress: 'contact address',
-      documents: 'uploaded documents'
+      contactAddress: 'contact address'
     },
     // The transit countries row is the one row with a Change link of its own.
     rows: {
       transitedCountries: 'countries that the consignment will travel through'
     },
     numberOfAnimalsFor: (species) => `number of animals for ${species}`,
+    documentN: (n) => `document ${n}`,
     identificationDetailsFor: (species) =>
       `identification details for ${species}`
   },

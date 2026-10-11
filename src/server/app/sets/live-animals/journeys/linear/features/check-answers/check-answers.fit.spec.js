@@ -24,6 +24,7 @@ const INTERNAL_REFERENCE_LABEL =
   'Your internal reference for this consignment (optional)'
 const SAVE_AND_CONTINUE = 'Save and continue'
 const NOTIFICATION_VIEW_SLUG = 'notification-view'
+const NO_DOCUMENTS_SENTENCE = 'You have not added any documents yet.'
 const ARRIVAL_DETAILS_ANCHOR = '#arrival-details'
 const WHAT_ARE_YOU_IMPORTING_ANCHOR = '#what-are-you-importing'
 const COMMODITY_DETAILS_ANCHOR = '#commodity-details'
@@ -211,7 +212,7 @@ test.describe('check-answers feature section structure', () => {
       copy.cards.additionalAnimalDetails,
       copy.cards.arrivalDetails,
       copy.cards.transportDetails,
-      copy.cards.documents,
+      copy.documentN(1),
       copy.cards.rolesAndAddresses,
       copy.cards.contactAddress
     ])
@@ -242,7 +243,7 @@ test.describe('check-answers feature documents section', () => {
   // Documents are optional, so a journey with none is the ordinary case. The
   // section has to stand anyway, or the review never mentions documents and
   // offers no route to the upload page.
-  test('shows the documents section and a Change route with nothing uploaded', async ({
+  test('shows a single Document 1 card reading Not applicable, and a Change route, with nothing uploaded', async ({
     page
   }) => {
     await startNotification(page)
@@ -252,11 +253,18 @@ test.describe('check-answers feature documents section', () => {
       page.getByRole('heading', { name: copy.sections.documents })
     ).toBeVisible()
     await expect(
-      page.getByRole('heading', { name: copy.cards.documents, exact: true })
+      page.getByRole('heading', {
+        level: 3,
+        name: copy.documentN(1),
+        exact: true
+      })
     ).toBeVisible()
-    await expect(page.getByText(copy.documentsEmpty)).toBeVisible()
+    await expect(rowFor(page, copy.rows.documentReference)).toContainText(
+      copy.notApplicable
+    )
+    await expect(page.getByText(NO_DOCUMENTS_SENTENCE)).toHaveCount(0)
 
-    const changeLink = cardChangeLink(page, copy.hidden.cards.documents)
+    const changeLink = cardChangeLink(page, copy.hidden.documentN(1))
     await expect(changeLink).toHaveAttribute(
       'href',
       /\/notifications\/[^/]+\/accompanying-documents\?change=1$/

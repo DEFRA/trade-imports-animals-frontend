@@ -50,8 +50,7 @@ export const copy = {
     arrivalDetails: 'Manylion cyrraedd',
     transportDetails: 'Manylion cludo',
     rolesAndAddresses: 'Cyfeiriadau',
-    contactAddress: 'Cyfeiriad cyswllt',
-    documents: 'Dogfennau wedi’u huwchlwytho'
+    contactAddress: 'Cyfeiriad cyswllt'
   },
   subsections: { transitCountries: 'Gwledydd tramwy' },
   rows: {
@@ -92,7 +91,7 @@ export const copy = {
     documentReference: 'Cyfeirnod y ddogfen',
     documentType: 'Math o ddogfen',
     dateOfIssue: 'Dyddiad cyhoeddi',
-    attachmentType: 'Math o atodiad'
+    attachment: 'Atodiad'
   },
   identifierTable: {
     animalColumn: 'Anifail',
@@ -102,7 +101,6 @@ export const copy = {
     heading: 'Manylion adnabod'
   },
   documentN: (n) => `Dogfen ${n}`,
-  documentsEmpty: 'Nid ydych wedi ychwanegu unrhyw ddogfennau eto.',
   hidden: {
     cards: {
       importDetails: 'tarddiad y mewnforyn',
@@ -112,13 +110,13 @@ export const copy = {
       arrivalDetails: 'manylion cyrraedd',
       transportDetails: 'manylion cludo',
       rolesAndAddresses: 'cyfeiriadau',
-      contactAddress: 'cyfeiriad cyswllt',
-      documents: 'dogfennau wedi’u huwchlwytho'
+      contactAddress: 'cyfeiriad cyswllt'
     },
     rows: {
       transitedCountries: 'gwledydd y bydd y llwyth yn teithio drwyddynt'
     },
     numberOfAnimalsFor: (species) => `nifer yr anifeiliaid ar gyfer ${species}`,
+    documentN: (n) => `dogfen ${n}`,
     identificationDetailsFor: (species) =>
       `manylion adnabod ar gyfer ${species}`
   },
