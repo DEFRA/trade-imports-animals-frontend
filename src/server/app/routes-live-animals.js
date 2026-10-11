@@ -41,6 +41,7 @@ import {
 import { records } from './services/persistence/records/index.js'
 import { templateRecords } from './services/persistence/template-records/index.js'
 import { templateModeRoutes } from './shared/template-mode.js'
+import { withTemplatePage } from './sets/live-animals/journeys/linear/features/template-page/controller.js'
 import { TEMPLATE_MODE_EXCLUDED_SLUGS } from './sets/live-animals/journeys/linear/flow/template-mode.js'
 import { configureSession } from './engine/persistence/session.js'
 import { session } from './services/persistence/session/index.js'
@@ -113,12 +114,15 @@ export const liveAnimals = {
           { sandbox: 'plugin' }
         )
         // Template mode is the same journey routes again under /templates,
-        // generated from allRoutes so no page is copied.
+        // generated from allRoutes so no page is copied. The overview twin is
+        // the task list while a template is being created and the template's
+        // own page once it is saved.
         server.route(
           [
             ...allRoutes,
             ...templateModeRoutes(allRoutes, {
-              excludedSlugs: TEMPLATE_MODE_EXCLUDED_SLUGS
+              excludedSlugs: TEMPLATE_MODE_EXCLUDED_SLUGS,
+              overview: withTemplatePage
             })
           ].map((route) => routeWithSetContext(SET_ID, route))
         )

@@ -26,10 +26,11 @@ const toTemplateDetail = ({
   name,
   setId,
   created,
+  saved,
   status,
   version,
   fulfilments
-}) => ({ id, name, setId, created, status, version, fulfilments })
+}) => ({ id, name, setId, created, saved, status, version, fulfilments })
 
 const requestHeaders = (ownerId) => ({
   ...headers(),

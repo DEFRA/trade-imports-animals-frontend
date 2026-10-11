@@ -110,6 +110,31 @@ describe('#templateModeRoutes', () => {
     expect(observed).toEqual([true])
   })
 
+  it('Should wrap the overview twin alone with the overview option, inside template mode', async () => {
+    const observed = []
+    const overview = (handler) => (request, h) => {
+      observed.push({ decorated: true, inTemplateMode: inTemplateMode() })
+      return handler(request, h)
+    }
+    const [overviewTwin, originTwin] = templateModeRoutes(
+      [
+        route('GET', '/notifications/{journeyId}', () => 'task list'),
+        route('GET', ORIGIN_ROUTE, () => 'origin')
+      ],
+      { overview }
+    )
+
+    const overviewResult = await overviewTwin.handler(
+      { auth: { credentials } },
+      {}
+    )
+    const originResult = await originTwin.handler({ auth: { credentials } }, {})
+
+    expect(overviewResult).toBe('task list')
+    expect(originResult).toBe('origin')
+    expect(observed).toEqual([{ decorated: true, inTemplateMode: true }])
+  })
+
   it('Should leave routes outside the journey alone', () => {
     expect(
       templateModeRoutes([

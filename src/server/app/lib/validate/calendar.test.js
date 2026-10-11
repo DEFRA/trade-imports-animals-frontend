@@ -7,6 +7,7 @@ import {
   formatCalendarDate,
   formatDateText,
   formatMomentAsDay,
+  formatMomentAsLongDay,
   isoDateFromDateParts,
   parseDateText,
   startOfDayInZone,
@@ -284,5 +285,16 @@ describe('#formatMomentAsDay', () => {
         SUBMITTED_DISPLAY
       )
     })
+  })
+})
+
+describe('#formatMomentAsLongDay', () => {
+  it('Should format a moment as the long day it fell on in the service zone', () => {
+    expect(formatMomentAsLongDay(new Date(SUBMITTED_INSTANT))).toBe(
+      '11 September 2026'
+    )
+    expect(formatMomentAsLongDay(new Date('2026-01-05T10:00:00Z'))).toBe(
+      '5 January 2026'
+    )
   })
 })

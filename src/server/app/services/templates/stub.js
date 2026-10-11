@@ -27,6 +27,7 @@ const toTemplate = ({ id, name, setId, created }) => ({
 
 const toTemplateDetail = (row) => ({
   ...toTemplate(row),
+  saved: row.saved,
   status: row.status,
   version: row.version,
   fulfilments: structuredClone(row.fulfilments)

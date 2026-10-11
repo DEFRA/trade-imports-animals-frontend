@@ -60,36 +60,48 @@ const slugOf = (path) => {
     : null
 }
 
-const twinOf = (route, slug) => ({
-  ...route,
-  path: slug === '' ? TEMPLATE_OVERVIEW_PATH : `${TEMPLATE_PREFIX}${slug}`,
-  ...(route.handler && { handler: inTemplateModeFor(route.handler) }),
-  ...(route.options && {
-    options: {
-      ...route.options,
-      ...(route.options.handler && {
-        handler: inTemplateModeFor(route.options.handler)
-      })
-    }
-  })
-})
+const twinOf = (route, slug, overview) => {
+  // Only the overview twin is decorated, and the decorated handler is the one
+  // that runs in template mode.
+  const wrap = (method) =>
+    inTemplateModeFor(
+      slug === '' && typeof method === 'function' ? overview(method) : method
+    )
+  return {
+    ...route,
+    path: slug === '' ? TEMPLATE_OVERVIEW_PATH : `${TEMPLATE_PREFIX}${slug}`,
+    ...(route.handler && { handler: wrap(route.handler) }),
+    ...(route.options && {
+      options: {
+        ...route.options,
+        ...(route.options.handler && {
+          handler: wrap(route.options.handler)
+        })
+      }
+    })
+  }
+}
 
 /**
  * The template-mode twin of every journey route a template may walk.
  *
  * Each twin keeps the original route's method and options and runs the
  * original handler inside template mode, so no page is copied. The overview is
- * twinned at `/templates/{journeyId}` as the template's task list. Routes
- * outside the journey and the excluded slugs (and anything under them) get no
- * twin.
+ * twinned at `/templates/{journeyId}`: the template's task list, or whatever
+ * the `overview` option makes of it (a saved template's page). Routes outside
+ * the journey and the excluded slugs (and anything under them) get no twin.
  *
  * @param {object[]} routes - the set's Hapi routes.
  * @param {object} options
  * @param {string[]} [options.excludedSlugs] - journey slugs template mode leaves out.
+ * @param {Function} [options.overview] - wraps the overview twin's handler; it runs in template mode.
  * @returns {object[]} the twin routes, to register beside the originals.
  */
-export const templateModeRoutes = (routes, { excludedSlugs = [] } = {}) =>
+export const templateModeRoutes = (
+  routes,
+  { excludedSlugs = [], overview = (handler) => handler } = {}
+) =>
   routes
     .map((route) => ({ route, slug: slugOf(route.path) }))
     .filter(({ slug }) => slug !== null && !underExcluded(slug, excludedSlugs))
-    .map(({ route, slug }) => twinOf(route, slug))
+    .map(({ route, slug }) => twinOf(route, slug, overview))

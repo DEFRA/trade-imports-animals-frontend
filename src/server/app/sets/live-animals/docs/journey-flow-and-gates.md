@@ -176,6 +176,12 @@ template mode leaves out (and any section left empty, today Documents), heads th
 list "Template tasklist" and ends with "Review template" and "Return to manage
 templates".
 
+Once a template is saved, the same address is the template's page
+(`features/template-page/`): the overview twin's handler is wrapped by
+`withTemplatePage` through `templateModeRoutes`' `overview` option, so a template
+still being created keeps the task list and a saved one shows its answers in the
+review's cards. A template the user does not have opens Manage templates.
+
 The review route is twinned too and is the template review: the review's own handler,
 which in template mode is titled "Review your template", shows no errors, leaves out
 the documents section (renumbering the last two as the task list does) and the arrival

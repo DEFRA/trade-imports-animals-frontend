@@ -1,0 +1,23 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "live-animals/journeys/linear/features/check-answers/_review-sections.njk" import reviewSections %}
+
+{% block journeyContent %}
+  <span class="govuk-caption-l">{{ copy.caption }}</span>
+  <h1 class="govuk-heading-l">{{ heading }}</h1>
+  <p class="govuk-body">{{ dateCreated }}</p>
+
+  <div class="govuk-button-group">
+    <form method="post" action="{{ useAction }}" class="app-form-inline" novalidate>
+      <input type="hidden" name="crumb" value="{{ crumb }}" />
+      {{ govukButton({ text: copy.useTemplate }) }}
+    </form>
+    {{ govukButton({
+      text: copy.delete,
+      href: deleteHref,
+      classes: "govuk-button--warning"
+    }) }}
+  </div>
+
+  {{ reviewSections(sections, reviewCopy) }}
+{% endblock %}

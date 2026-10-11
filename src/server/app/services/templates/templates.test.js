@@ -382,3 +382,44 @@ describe('real templates in progress', () => {
     ).rejects.toMatchObject({ name: 'BackendRequestError', status: 503 })
   })
 })
+
+describe('the time a template was first saved', () => {
+  it('Should carry the first saved time on a template read in stub mode', async () => {
+    stubMode()
+    const { startFor, saveFor, getFor } = await templatesService()
+    const { stubTemplates } = await import('./stub.js')
+    const started = await startFor(OWNER, {
+      setId: LIVE_ANIMALS,
+      name: WEEKLY_CATTLE
+    })
+    expect((await getFor(OWNER, started.id)).saved).toBeUndefined()
+
+    await saveFor(OWNER, started.id)
+
+    expect((await getFor(OWNER, started.id)).saved).toEqual(expect.any(String))
+    stubTemplates.clear()
+  })
+
+  it('Should carry the first saved time on a template read from the backend', async () => {
+    realMode()
+    stubFetch(async () =>
+      okResponse(detail({ status: 'SAVED', saved: '2026-01-02T10:00:00Z' }))
+    )
+    const { getFor } = await templatesService()
+
+    const found = await getFor(OWNER, TEMPLATE_ID)
+
+    expect(found.saved).toBe('2026-01-02T10:00:00Z')
+  })
+})
+
+describe('#isBeingCreated', () => {
+  it('Should be true only for a template held as in progress', async () => {
+    const { isBeingCreated } = await templatesService()
+
+    expect(isBeingCreated({ status: 'IN_PROGRESS' })).toBe(true)
+    expect(isBeingCreated({ status: 'SAVED' })).toBe(false)
+    expect(isBeingCreated({})).toBe(false)
+    expect(isBeingCreated(undefined)).toBe(false)
+  })
+})

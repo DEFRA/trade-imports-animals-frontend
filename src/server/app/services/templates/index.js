@@ -2,6 +2,16 @@ import { isStubMode } from '../../../common/services/mode.js'
 import * as client from './client.js'
 import * as stub from './stub.js'
 
+const IN_PROGRESS = 'IN_PROGRESS'
+
+/**
+ * Whether a template read is one still being created rather than saved.
+ *
+ * @param {{ status?: string }|undefined} template - a template as read
+ * @returns {boolean} true for an in-progress template
+ */
+export const isBeingCreated = (template) => template?.status === IN_PROGRESS
+
 const requireOwner = (ownerId, action) => {
   if (!ownerId) {
     throw new Error(
@@ -40,7 +50,7 @@ export const startFor = async (ownerId, details) => {
  *
  * @param {string} ownerId - the signed-in user's id
  * @param {string} id - the template's id
- * @returns {Promise<object|undefined>} the template, or undefined when the user has none by that id
+ * @returns {Promise<object|undefined>} the template (with its `status` and the `saved` time it was first saved), or undefined when the user has none by that id
  */
 export const getFor = async (ownerId, id) => {
   requireOwner(ownerId, 'read a template')

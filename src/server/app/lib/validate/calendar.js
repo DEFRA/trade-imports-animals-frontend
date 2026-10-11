@@ -157,6 +157,7 @@ export const isoDateFromDateParts = (parts) => {
 }
 
 const DISPLAY_DATE_FORMAT = 'd MMM yyyy'
+const LONG_DISPLAY_DATE_FORMAT = 'd MMMM yyyy'
 
 /**
  * Formats the calendar day a `Date` names in UTC, with no zone conversion.
@@ -167,12 +168,13 @@ const DISPLAY_DATE_FORMAT = 'd MMM yyyy'
  * `en-GB` short month for September is `Sept`, four letters, which would
  * reword every September date in the service.
  * @param {Date} date
+ * @param {string} [pattern] - the date-fns pattern to write the day in.
  * @returns {string} e.g. `5 Mar 2026`.
  */
-const formatUtcComponents = (date) =>
+const formatUtcComponents = (date, pattern = DISPLAY_DATE_FORMAT) =>
   format(
     new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-    DISPLAY_DATE_FORMAT
+    pattern
   )
 
 /**
@@ -212,3 +214,16 @@ export const formatCalendarDate = (date) => formatUtcComponents(date)
  */
 export const formatMomentAsDay = (date) =>
   formatUtcComponents(startOfDayInZone(date, SERVICE_TIME_ZONE))
+
+/**
+ * Like {@link formatMomentAsDay}, but with the month written out in full, for
+ * a page that states a date in a sentence. Month names stay English in Welsh,
+ * as every other date the service renders does.
+ * @param {Date} date
+ * @returns {string} e.g. `11 September 2026` for `2026-09-10T23:35:39.455Z`.
+ */
+export const formatMomentAsLongDay = (date) =>
+  formatUtcComponents(
+    startOfDayInZone(date, SERVICE_TIME_ZONE),
+    LONG_DISPLAY_DATE_FORMAT
+  )
