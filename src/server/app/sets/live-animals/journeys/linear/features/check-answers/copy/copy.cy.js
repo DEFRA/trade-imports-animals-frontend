@@ -44,6 +44,7 @@ export const copy = {
   },
   cards: {
     importDetails: 'Tarddiad y mewnforyn',
+    whatAreYouImporting: 'Beth ydych chi’n ei fewnforio?',
     reasonForImport: 'Prif reswm mewnforio',
     additionalAnimalDetails: 'Manylion ychwanegol',
     arrivalDetails: 'Manylion cyrraedd',
@@ -69,7 +70,7 @@ export const copy = {
     commonName: 'Enw cyffredin',
     species: 'Rhywogaeth',
     numberOfAnimals: 'Nifer yr anifeiliaid',
-    numberOfPackages: 'Nifer y pecynnau',
+    numberOfPackages: 'Nifer y pecynnau (pan fo angen)',
     portOfEntry: 'Porthladd mynediad',
     arrivalDate: 'Dyddiad cyrraedd y gyrchfan',
     meansOfTransport: 'Cyfrwng cludo i’r porthladd mynediad',
@@ -104,6 +105,7 @@ export const copy = {
   hidden: {
     cards: {
       importDetails: 'tarddiad y mewnforyn',
+      whatAreYouImporting: 'beth ydych chi’n ei fewnforio',
       reasonForImport: 'prif reswm mewnforio',
       additionalAnimalDetails: 'manylion ychwanegol',
       arrivalDetails: 'manylion cyrraedd',
@@ -115,7 +117,7 @@ export const copy = {
     rows: {
       transitedCountries: 'gwledydd y bydd y llwyth yn teithio drwyddynt'
     },
-    commodity: (n) => `nwydd ${n}`
+    numberOfAnimalsFor: (species) => `nifer yr anifeiliaid ar gyfer ${species}`
   },
   submit: {
     button: 'Parhau'
@@ -124,9 +126,10 @@ export const copy = {
     prefix: 'Gwall:',
     cards: {
       importDetails: 'Cwblhewch darddiad y mewnforyn',
+      whatAreYouImporting: 'Cwblhewch beth ydych chi’n ei fewnforio',
       reasonForImport: 'Cwblhewch y prif reswm mewnforio',
+      commodityDetails: 'Cwblhewch fanylion y nwyddau',
       additionalAnimalDetails: 'Cwblhewch y manylion ychwanegol',
-      species: 'Cwblhewch fanylion y rhywogaeth',
       arrivalDetails: 'Cwblhewch y manylion cyrraedd',
       transportDetails: 'Cwblhewch y manylion cludo',
       rolesAndAddresses: 'Cwblhewch y rolau a’r cyfeiriadau',

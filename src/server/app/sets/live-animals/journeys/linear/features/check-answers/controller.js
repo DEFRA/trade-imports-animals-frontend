@@ -20,6 +20,7 @@ import { changeHref } from './view-model/rows/change-link.js'
 import { invalidPartyErrors } from './view-model/invalid-parties.js'
 import {
   cardAnchorHref,
+  pageAnchorsOf,
   incompleteCardErrors,
   REVIEW_CARDS,
   withCardErrors
@@ -55,7 +56,8 @@ const reviewErrorSummary = (
   journeyId,
   cardErrors,
   partyErrors,
-  disableAutoFocus
+  disableAutoFocus,
+  pageAnchors
 ) =>
   errorSummary(
     {
@@ -75,7 +77,7 @@ const reviewErrorSummary = (
               partyOf(key.slice(PARTY_KEY_PREFIX.length)),
               CYA_SLUG
             )
-          : (cardAnchorHref(key) ?? changeHref(journeyId, key)),
+          : (cardAnchorHref(key, pageAnchors) ?? changeHref(journeyId, key)),
       disableAutoFocus
     }
   )
@@ -119,7 +121,8 @@ const renderCya = async (
       journey.journeyId,
       cardErrors,
       partyErrors,
-      disableAutoFocus
+      disableAutoFocus,
+      pageAnchorsOf(sections)
     ),
     sections,
     readOnly,

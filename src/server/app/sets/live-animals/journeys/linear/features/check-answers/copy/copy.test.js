@@ -27,7 +27,9 @@ describe('#copy', () => {
   it('Should interpolate the parameterised leaves', () => {
     expect(copy.identifierTable.animalN(2)).toBe('Animal 2')
     expect(copy.documentN(1)).toBe('Document 1')
-    expect(copy.hidden.commodity(3)).toBe('commodity 3')
+    expect(copy.hidden.numberOfAnimalsFor('Bos Taurus')).toBe(
+      'number of animals for Bos Taurus'
+    )
   })
 })
 

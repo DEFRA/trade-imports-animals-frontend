@@ -7,6 +7,8 @@ import { missingCell } from './rows/value-text.js'
 
 const copy = copyFor({ en, cy })
 
+export const COMMODITY_DETAILS_ANCHOR = 'commodity-details'
+
 // A row is finished when `rowReady` says so — literally the predicate
 // `readyForCheckYourAnswers` applies, imported rather than restated, so a
 // notification with no unfinished card is exactly a notification that is ready
@@ -21,13 +23,10 @@ const copy = copyFor({ en, cy })
  * `scope.readyForCheckYourAnswers` are the same verdict, and the POST can
  * refuse on the latter knowing the page will name something.
  *
- * The species entry is the one entry whose anchor is not a card, and the one
- * entry that marks no card at all. Species cards are built one per commodity
- * line and carry no `id`, so `decorateCard` never reaches them: even when lines
- * exist the entry names the outstanding work without marking a card, and it
- * anchors to the heading of the section those answers live in, which always
- * stands. Whether a short species card should be marked in its own right is an
- * open question on inc-150.
+ * The commodity details entry is the one entry that marks no card. Commodity
+ * cards are built one per commodity and carry no `id`, so `decorateCard` never
+ * reaches them: the entry names the outstanding work, linking to the first
+ * commodity card, or to the section heading while no commodity card stands.
  *
  * The transit task row folds into arrival details. Transit countries are
  * optional for submission, so an empty list never marks the card on its own.
@@ -35,16 +34,20 @@ const copy = copyFor({ en, cy })
 export const REVIEW_CARDS = [
   { id: 'importDetails', anchor: 'import-details', rows: ['origin'] },
   {
+    id: 'whatAreYouImporting',
+    anchor: 'what-are-you-importing',
+    rows: ['commodities']
+  },
+  {
     id: 'reasonForImport',
     anchor: 'reason-for-import',
     rows: ['importReason']
   },
   {
-    id: 'species',
-    anchor: 'description-of-the-goods',
-    // The hub splits the commodity answers across three rows; the review shows
-    // them as one card per line, so the entry names all three.
-    rows: ['commodities', 'consignmentDetails', 'animalIdentification']
+    id: 'commodityDetails',
+    anchor: COMMODITY_DETAILS_ANCHOR,
+    fallbackAnchor: 'description-of-the-goods',
+    rows: ['consignmentDetails', 'animalIdentification']
   },
   {
     id: 'additionalAnimalDetails',
@@ -97,10 +100,28 @@ export const incompleteCardErrors = (answers, scope, evaluation) =>
 
 /** The in-page target for a card error, or undefined for a key that is not a
  * card — which is how the error summary tells the two kinds of entry apart. */
-export const cardAnchorHref = (key) => {
+export const cardAnchorHref = (key, pageAnchors = new Set()) => {
   const card = cardById.get(key)
-  return card ? `#${card.anchor}` : undefined
+  return card ? `#${anchorOnPage(card, pageAnchors)}` : undefined
 }
+
+/** A card's own anchor when the page carries it, otherwise the anchor it falls
+ * back to — the section heading, for commodity details with no commodity card. */
+const anchorOnPage = (card, pageAnchors) =>
+  pageAnchors.has(card.anchor) || !card.fallbackAnchor
+    ? card.anchor
+    : card.fallbackAnchor
+
+/** Every anchor the built sections carry: the headings and the cards. */
+export const pageAnchorsOf = (sections) =>
+  new Set(
+    sections
+      .flatMap((section) => [
+        section.anchor,
+        ...section.cards.map((card) => card.anchor)
+      ])
+      .filter(Boolean)
+  )
 
 /** An empty row is one whose value cell was built by `notApplicableCell`, which
  * stamps `empty: true` — whichever row builder produced it. The flag is the

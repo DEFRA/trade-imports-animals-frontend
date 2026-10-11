@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   answerArrivalDetails,
+  answerCountryOfOrigin,
   answerTransitCountries,
   BASE,
   chooseCountryOfOrigin,
@@ -9,6 +10,7 @@ import {
   journeyIdFromPage,
   journeyUrl,
   openReviewFromHub,
+  selectSpecies,
   signIn,
   startNotification,
   unlockSections,
@@ -23,6 +25,9 @@ const INTERNAL_REFERENCE_LABEL =
 const SAVE_AND_CONTINUE = 'Save and continue'
 const NOTIFICATION_VIEW_SLUG = 'notification-view'
 const ARRIVAL_DETAILS_ANCHOR = '#arrival-details'
+const WHAT_ARE_YOU_IMPORTING_ANCHOR = '#what-are-you-importing'
+const COMMODITY_DETAILS_ANCHOR = '#commodity-details'
+const FELIS_CATUS = 'Felis Catus'
 
 const rowFor = (page, label) =>
   page
@@ -192,6 +197,7 @@ test.describe('check-answers feature section structure', () => {
     // level-3 headings are exactly the card titles.
     await expect(page.getByRole('heading', { level: 3 })).toHaveText([
       copy.cards.importDetails,
+      copy.cards.whatAreYouImporting,
       copy.cards.reasonForImport,
       copy.cards.additionalAnimalDetails,
       copy.cards.arrivalDetails,
@@ -500,7 +506,9 @@ test.describe('check-answers feature change links', () => {
   // Design release 1 puts one Change link in each card's heading bar and none
   // on a row, so the trader meets one link per card rather than one per answer.
   // The transit countries row is the one row-level link, and it only stands on
-  // an overland arrival (covered by the transit countries block above).
+  // an overland arrival (covered by the transit countries block above). With no
+  // commodity chosen there is no species block, whose first row carries the
+  // other row-level link (covered by the commodity read-back block below).
   test('every Change link sits in a card heading and no summary row carries one', async ({
     page
   }) => {
@@ -655,7 +663,7 @@ test.describe('check-answers feature unfinished notification', () => {
     ).toBeVisible()
   })
 
-  test('refuses submit of a notification with no commodity line and names the missing species details', async ({
+  test('refuses submit of a notification with no commodity line and names what is being imported and the commodity details', async ({
     page
   }) => {
     await startNotification(page)
@@ -665,11 +673,24 @@ test.describe('check-answers feature unfinished notification', () => {
     await page.getByRole('button', { name: copy.submit.button }).click()
 
     await expect(page).toHaveURL(reviewUrl)
-    const speciesEntry = page.getByRole('link', {
-      name: copy.errors.cards.species
+    const importingEntry = page.getByRole('link', {
+      name: copy.errors.cards.whatAreYouImporting
     })
-    await expect(speciesEntry).toBeVisible()
-    await expect(speciesEntry).toHaveAttribute(
+    await expect(importingEntry).toBeVisible()
+    await expect(importingEntry).toHaveAttribute(
+      'href',
+      WHAT_ARE_YOU_IMPORTING_ANCHOR
+    )
+    const importingCard = page.locator(WHAT_ARE_YOU_IMPORTING_ANCHOR)
+    await expect(importingCard).toHaveClass(/app-summary-card--error/)
+    await expect(importingCard).toContainText(
+      copy.errors.cards.whatAreYouImporting
+    )
+    const detailsEntry = page.getByRole('link', {
+      name: copy.errors.cards.commodityDetails
+    })
+    await expect(detailsEntry).toBeVisible()
+    await expect(detailsEntry).toHaveAttribute(
       'href',
       '#description-of-the-goods'
     )
@@ -736,5 +757,85 @@ test.describe('check-answers feature submitted notification', () => {
       page,
       'Submitted check answers'
     )
+  })
+})
+
+test.describe('check-answers feature commodity read-back', () => {
+  test.describe.configure({ timeout: 90000 })
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+  })
+
+  test('reads the commodity selection back in What are you importing? and the species in a block under its commodity card', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await unlockSections(page)
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    const importing = page.locator(WHAT_ARE_YOU_IMPORTING_ANCHOR)
+    await expect(importing.getByRole('term')).toHaveText([
+      copy.rows.commodityCode,
+      copy.rows.commonName,
+      copy.rows.species
+    ])
+    await expect(importing.getByRole('definition')).toHaveText([
+      '01061900',
+      'Cat',
+      FELIS_CATUS
+    ])
+    await expect(
+      cardChangeLink(page, copy.hidden.cards.whatAreYouImporting)
+    ).toHaveAttribute('href', /\/notifications\/[^/]+\/commodities\?change=1$/)
+
+    const details = page.locator(COMMODITY_DETAILS_ANCHOR)
+    await expect(details.getByRole('heading', { level: 3 })).toHaveText(
+      'Cat (01061900)'
+    )
+    await expect(details.getByRole('heading', { level: 4 })).toHaveText(
+      FELIS_CATUS
+    )
+    await expect(details.getByRole('term')).toHaveText([
+      copy.rows.numberOfAnimals,
+      copy.rows.numberOfPackages
+    ])
+    await expect(
+      details.getByRole('term').filter({ hasText: copy.rows.commodityCode })
+    ).toHaveCount(0)
+    await expect(details).not.toHaveClass(/app-summary-card--error/)
+
+    const rowLink = page.getByRole('link', {
+      name: `${copy.change} ${copy.hidden.numberOfAnimalsFor(FELIS_CATUS)}`
+    })
+    await expect(rowLink).toHaveAttribute(
+      'href',
+      /consignment-details\?change=1$/
+    )
+    await expect(cardChangeLink(page, 'Cat (01061900)')).toHaveAttribute(
+      'href',
+      /consignment-details\?change=1$/
+    )
+
+    await rowLink.click()
+    await expect(page).toHaveURL(/\/consignment-details\?change=1$/)
+  })
+
+  test('names unfinished commodity details, linking to the first commodity card without marking it', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await answerCountryOfOrigin(page)
+    await page.getByRole('link', { name: 'What are you importing?' }).click()
+    await selectSpecies(page, ['Felis catus'])
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    await expect(
+      page.getByRole('link', { name: copy.errors.cards.commodityDetails })
+    ).toHaveAttribute('href', COMMODITY_DETAILS_ANCHOR)
+    const details = page.locator(COMMODITY_DETAILS_ANCHOR)
+    await expect(details).not.toHaveClass(/app-summary-card--error/)
+    await expect(details.locator('.govuk-error-message')).toHaveCount(0)
   })
 })

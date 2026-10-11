@@ -50,6 +50,7 @@ export const copy = {
   },
   cards: {
     importDetails: 'Origin of import',
+    whatAreYouImporting: 'What are you importing?',
     reasonForImport: 'Main import reason',
     additionalAnimalDetails: 'Additional details',
     arrivalDetails: 'Arrival details',
@@ -75,7 +76,7 @@ export const copy = {
     commonName: 'Common name',
     species: 'Species',
     numberOfAnimals: 'Number of animals',
-    numberOfPackages: 'Number of packages',
+    numberOfPackages: 'Number of packages (when required)',
     portOfEntry: 'Port of entry',
     arrivalDate: 'Arrival date at destination',
     meansOfTransport: 'Means of transport to the port of entry',
@@ -109,12 +110,14 @@ export const copy = {
   // Shown inside the uploaded-documents card when nothing has been uploaded.
   // The card itself always stands, so it needs a line rather than an empty box.
   documentsEmpty: 'You have not added any documents yet.',
-  // What each Change link names once a screen reader reaches it. Cards carry
-  // the only Change links on the page, so a card's entry here reads as the rest
-  // of "Change ..." — lower case, and the card's own title in words.
+  // What each Change link names once a screen reader reaches it. Cards carry a
+  // Change link in the heading, so a card's entry here reads as the rest of
+  // "Change ..." — lower case, and the card's own title in words. The transit
+  // countries row and the first row of each species block carry one of their own.
   hidden: {
     cards: {
       importDetails: 'origin of import',
+      whatAreYouImporting: 'what are you importing',
       reasonForImport: 'main import reason',
       additionalAnimalDetails: 'additional details',
       arrivalDetails: 'arrival details',
@@ -127,7 +130,7 @@ export const copy = {
     rows: {
       transitedCountries: 'countries that the consignment will travel through'
     },
-    commodity: (n) => `commodity ${n}`
+    numberOfAnimalsFor: (species) => `number of animals for ${species}`
   },
   // The review ends with the button and nothing else. Its label carries the
   // whole instruction, so no heading and no sentence stand above it.
@@ -141,9 +144,10 @@ export const copy = {
     // a trader reading either sees the same words.
     cards: {
       importDetails: 'Complete origin of import',
+      whatAreYouImporting: 'Complete what are you importing?',
       reasonForImport: 'Complete main import reason',
+      commodityDetails: 'Complete commodity details',
       additionalAnimalDetails: 'Complete additional details',
-      species: 'Complete species details',
       arrivalDetails: 'Complete arrival details',
       transportDetails: 'Complete transport details',
       rolesAndAddresses: 'Complete roles and addresses',

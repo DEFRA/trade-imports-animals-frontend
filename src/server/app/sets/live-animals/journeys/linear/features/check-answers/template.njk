@@ -63,13 +63,14 @@
 
   {% set cardHeadingLevel = 3 %}
   {% set innerHeadingLevel = 4 %}
+  {% set blockHeadingLevel = 5 %}
   {% for section in sections %}
     {% if not loop.first %}
       <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
     {% endif %}
     <h2 class="govuk-heading-m" id="{{ section.anchor }}" tabindex="-1">{{ section.heading }}</h2>
     {% for card in section.cards %}
-      {% if card.identifierTable or card.documents or card.subsections or card.emptyText or card.error %}
+      {% if card.speciesBlocks or card.documents or card.subsections or card.emptyText or card.error %}
         <div class="govuk-summary-card{% if card.error %} app-summary-card--error{% endif %}"{% if card.anchor %} id="{{ card.anchor }}" tabindex="-1"{% endif %}>
           <div class="govuk-summary-card__title-wrapper">
             <h{{ cardHeadingLevel }} class="govuk-summary-card__title">{{ card.title }}</h{{ cardHeadingLevel }}>
@@ -84,13 +85,14 @@
               <h{{ innerHeadingLevel }} class="govuk-heading-s">{{ subsection.heading }}</h{{ innerHeadingLevel }}>
               {{ govukSummaryList({ rows: subsection.rows }) }}
             {% endfor %}
-            {% if card.identifierTable %}
-              <h{{ innerHeadingLevel }} class="govuk-heading-s">{{ copy.identifierTable.heading }}</h{{ innerHeadingLevel }}>
-              {{ govukTable({
-                head: card.identifierTable.head,
-                rows: card.identifierTable.rows
-              }) }}
-            {% endif %}
+            {% for block in card.speciesBlocks %}
+              <h{{ innerHeadingLevel }} class="govuk-heading-s">{{ block.heading }}</h{{ innerHeadingLevel }}>
+              {{ govukSummaryList({ rows: block.rows }) }}
+              {% if block.identifierTable %}
+                <h{{ blockHeadingLevel }} class="govuk-heading-s">{{ copy.identifierTable.heading }}</h{{ blockHeadingLevel }}>
+                {{ govukTable({ head: block.identifierTable.head, rows: block.identifierTable.rows }) }}
+              {% endif %}
+            {% endfor %}
             {% for document in card.documents %}
               <h{{ innerHeadingLevel }} class="govuk-heading-s">{{ document.heading }}</h{{ innerHeadingLevel }}>
               {{ govukSummaryList({ rows: document.rows }) }}
