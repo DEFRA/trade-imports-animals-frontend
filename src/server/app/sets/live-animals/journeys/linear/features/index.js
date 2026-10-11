@@ -27,6 +27,7 @@ import * as deleteNotification from './delete-notification/controller.js'
 import * as declaration from './declaration/controller.js'
 import * as confirmation from './confirmation/controller.js'
 import * as templates from './templates/controller.js'
+import * as templateName from './template-name/controller.js'
 
 /** The pages whose page-side `collects` build the obligation->page index. */
 export const dispatchPages = [
@@ -75,5 +76,6 @@ export const allRoutes = [
   ...deleteNotification.routes,
   ...declaration.routes,
   ...confirmation.routes,
-  ...templates.routes
+  ...templates.routes,
+  ...templateName.routes
 ]

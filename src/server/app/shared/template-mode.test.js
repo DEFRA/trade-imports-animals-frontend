@@ -1,0 +1,140 @@
+import { describe, expect, it } from 'vitest'
+
+import {
+  inTemplateMode,
+  templateModeRoutes,
+  templateOwnerId,
+  withTemplateMode
+} from './template-mode.js'
+
+const OWNER = '2100010101'
+const ORIGIN_ROUTE = '/notifications/{journeyId}/origin'
+
+const credentials = { contactId: 2100010101 }
+
+const route = (method, path, handler = () => 'original') => ({
+  method,
+  path,
+  options: { auth: 'session' },
+  handler
+})
+
+describe('#inTemplateMode', () => {
+  it('Should be false outside template mode', () => {
+    expect(inTemplateMode()).toBe(false)
+    expect(templateOwnerId()).toBeUndefined()
+  })
+
+  it('Should be true inside template mode, carrying the owner', () => {
+    withTemplateMode(OWNER, () => {
+      expect(inTemplateMode()).toBe(true)
+      expect(templateOwnerId()).toBe(OWNER)
+    })
+  })
+
+  it('Should be true across an await inside template mode', async () => {
+    await withTemplateMode(OWNER, async () => {
+      await Promise.resolve()
+      expect(inTemplateMode()).toBe(true)
+    })
+    expect(inTemplateMode()).toBe(false)
+  })
+})
+
+describe('#templateModeRoutes', () => {
+  it('Should twin a notification route under /templates with the same method and options', () => {
+    const [twin] = templateModeRoutes([route('POST', ORIGIN_ROUTE)])
+
+    expect(twin.method).toBe('POST')
+    expect(twin.path).toBe('/templates/{journeyId}/origin')
+    expect(twin.options).toEqual({ auth: 'session' })
+  })
+
+  it('Should run the twin handler in template mode for the signed-in user', async () => {
+    const observed = []
+    const original = () => {
+      observed.push([inTemplateMode(), templateOwnerId()])
+      return 'done'
+    }
+    const [twin] = templateModeRoutes([route('GET', ORIGIN_ROUTE, original)])
+
+    const result = await twin.handler({ auth: { credentials } }, {})
+
+    expect(result).toBe('done')
+    expect(observed).toEqual([[true, OWNER]])
+    expect(inTemplateMode()).toBe(false)
+  })
+
+  it('Should leave the original route running in notification mode', () => {
+    const observed = []
+    const original = route('GET', ORIGIN_ROUTE, () =>
+      observed.push(inTemplateMode())
+    )
+
+    original.handler({}, {})
+
+    expect(observed).toEqual([false])
+  })
+
+  it('Should wrap a handler held in the route options as well', async () => {
+    const observed = []
+    const [twin] = templateModeRoutes([
+      {
+        method: 'GET',
+        path: ORIGIN_ROUTE,
+        options: {
+          handler: () => observed.push(inTemplateMode())
+        }
+      }
+    ])
+
+    await twin.options.handler({ auth: { credentials } }, {})
+
+    expect(observed).toEqual([true])
+  })
+
+  it('Should not twin the overview path', () => {
+    expect(
+      templateModeRoutes([route('GET', '/notifications/{journeyId}')])
+    ).toEqual([])
+  })
+
+  it('Should leave routes outside the journey alone', () => {
+    expect(
+      templateModeRoutes([
+        route('GET', '/templates'),
+        route('GET', '/'),
+        route('POST', '/notifications')
+      ])
+    ).toEqual([])
+  })
+
+  it('Should skip an excluded slug and everything under it', () => {
+    const twins = templateModeRoutes(
+      [
+        route('GET', '/notifications/{journeyId}/accompanying-documents'),
+        route(
+          'GET',
+          '/notifications/{journeyId}/accompanying-documents/status'
+        ),
+        route('GET', ORIGIN_ROUTE)
+      ],
+      { excludedSlugs: ['accompanying-documents'] }
+    )
+
+    expect(twins.map((twin) => twin.path)).toEqual([
+      '/templates/{journeyId}/origin'
+    ])
+  })
+
+  it('Should not mistake a longer slug for an excluded one', () => {
+    const twins = templateModeRoutes(
+      [route('GET', '/notifications/{journeyId}/copy-details')],
+      { excludedSlugs: ['copy'] }
+    )
+
+    expect(twins.map((twin) => twin.path)).toEqual([
+      '/templates/{journeyId}/copy-details'
+    ])
+  })
+})

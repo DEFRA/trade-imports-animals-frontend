@@ -69,7 +69,8 @@ export const copy = {
     draft: 'Drafft',
     submitted: "Wedi'i gyflwyno",
     amend: 'Wrthi’n diwygio',
-    deleted: "Wedi'i ddileu"
+    deleted: "Wedi'i ddileu",
+    template: 'Templed'
   },
   addressHandshake: {
     addNewAddress: 'Ychwanegu cyfeiriad newydd',

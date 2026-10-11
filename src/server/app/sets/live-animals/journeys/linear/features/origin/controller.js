@@ -1,4 +1,9 @@
-import { dashboardPath, hubPath } from '../../../../../../shared/paths.js'
+import {
+  dashboardPath,
+  hubPath,
+  templateNamePath
+} from '../../../../../../shared/paths.js'
+import { inTemplateMode } from '../../../../../../shared/template-mode.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
@@ -41,10 +46,15 @@ const countryItems = async () => [
 // The back link is the one thing on this page told by what has been saved: a
 // notification with nothing saved has no hub to go back to, so it goes to the
 // dashboard instead. The status strip does not follow it — see `render`.
-const backLinkFor = (journey, answers) =>
-  hasCommittedNotificationAnswers(answers)
+// While a template is being created, Back returns to the name just entered.
+const backLinkFor = (journey, answers) => {
+  if (inTemplateMode()) {
+    return templateNamePath(journey.journeyId)
+  }
+  return hasCommittedNotificationAnswers(answers)
     ? hubPath(journey.journeyId)
     : dashboardPath()
+}
 
 // The journey always reaches the layout, so the status strip — the Draft tag
 // and the notification reference — is drawn from the first request, matching
@@ -68,6 +78,8 @@ const render = async (
     copy,
     values,
     errors,
+    // Origin is where a template starts, with no overview to return to.
+    showReturnControls: !inTemplateMode(),
     errorSummary: kit.errorSummary(errors),
     countryItems: await countryItems(),
     regionCodePrefix: prefixFor(values.countryOfOrigin)

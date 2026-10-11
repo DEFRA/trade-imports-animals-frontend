@@ -1,9 +1,12 @@
 {% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
 
 {% block journeyContent %}
   <h1 class="govuk-heading-l">{{ copy.title }}</h1>
   <p class="govuk-body">{{ copy.intro }}</p>
+
+  {{ govukButton({ text: copy.createNew, href: createTemplateHref }) }}
 
   <h2 class="govuk-heading-m">{{ copy.listHeading }}</h2>
   <p class="govuk-body">{{ resultsLabel }}</p>

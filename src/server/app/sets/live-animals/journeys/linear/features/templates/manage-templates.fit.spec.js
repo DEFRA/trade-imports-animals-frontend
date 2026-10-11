@@ -65,6 +65,22 @@ test.describe('manage templates', () => {
     await expect(main(page).locator('p.govuk-body')).toHaveCount(2)
   })
 
+  test('offers a primary Create new template button that opens the type question', async ({
+    page
+  }) => {
+    const button = main(page).getByRole('button', {
+      name: copy.createNew,
+      exact: true
+    })
+
+    await expect(button).toBeVisible()
+    await expect(button).toHaveAttribute(
+      'href',
+      /\/notification-type\/template$/
+    )
+    await expect(button).not.toHaveClass(/govuk-button--secondary/)
+  })
+
   test('offers no search, filter, sort or pagination', async ({ page }) => {
     await expect(main(page).getByRole('combobox')).toHaveCount(0)
     await expect(main(page).getByRole('searchbox')).toHaveCount(0)

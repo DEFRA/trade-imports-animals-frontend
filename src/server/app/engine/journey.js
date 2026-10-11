@@ -8,6 +8,7 @@ import {
   sessionConfiguredFor
 } from './persistence/session.js'
 import { currentSetBase, currentSetId } from '../shared/set-context.js'
+import { inTemplateMode } from '../shared/template-mode.js'
 import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
 import { buildActor } from '../../common/helpers/actor-helpers.js'
 
@@ -107,7 +108,8 @@ export const currentJourney = async (request, h) => {
   if (!loaded) {
     throw Boom.notFound()
   }
-  if (!(await isKnownJourney(request, journeyId))) {
+  // A template id is not a notification: it never joins the known list.
+  if (!inTemplateMode() && !(await isKnownJourney(request, journeyId))) {
     await session.addKnownJourney(request, h, journeyId)
   }
   memoWrite(request, loaded)

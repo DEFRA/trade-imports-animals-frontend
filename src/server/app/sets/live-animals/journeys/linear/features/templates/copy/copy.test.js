@@ -27,6 +27,11 @@ describe('#copy', () => {
     expect(copy.listHeading).toBe('My templates')
   })
 
+  it('Should name the button that starts a template', () => {
+    expect(copy.createNew).toBe('Create new template')
+    expect(cy.createNew).toBe('Creu templed newydd')
+  })
+
   it('Should count no templates and every template on one page', () => {
     expect(copy.results.none).toBe('Show 0 of 0 results')
     expect(copy.results.all(5)).toBe('Show 1-5 of 5 results')

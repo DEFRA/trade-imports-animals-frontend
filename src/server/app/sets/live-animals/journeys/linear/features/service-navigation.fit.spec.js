@@ -61,6 +61,31 @@ test.describe('service navigation', () => {
     ).not.toHaveAttribute(ARIA_CURRENT)
   })
 
+  test('marks Templates as the current section while creating a template', async ({
+    page
+  }) => {
+    await page.goto(`${BASE}/templates/new?type=live-animals`)
+
+    await expect(
+      navigation(page).getByRole('link', { name: serviceNavigation.templates })
+    ).toHaveAttribute(ARIA_CURRENT, 'true')
+
+    await page
+      .getByRole('button', {
+        name: sharedCopy.saveActions.saveAndContinue,
+        exact: true
+      })
+      .click()
+
+    await expect(page).toHaveURL(/\/templates\/[^/]+\/origin$/)
+    await expect(
+      navigation(page).getByRole('link', { name: serviceNavigation.templates })
+    ).toHaveAttribute(ARIA_CURRENT, 'true')
+    await expect(
+      navigation(page).getByRole('link', { name: serviceNavigation.dashboard })
+    ).not.toHaveAttribute(ARIA_CURRENT)
+  })
+
   test('does not mark Templates on the dashboard', async ({ page }) => {
     await page.goto(BASE)
 

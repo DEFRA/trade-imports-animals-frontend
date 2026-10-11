@@ -92,3 +92,21 @@ describe('GET /templates', () => {
     })
   })
 })
+
+describe('GET /templates — Create new template', () => {
+  beforeEach(() => {
+    vi.spyOn(templates, 'listFor').mockResolvedValue([])
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('Should link the button to the type question in template mode', async () => {
+    const { context } = await manageTemplatesGet(request, h)
+
+    expect(context.createTemplateHref).toMatch(
+      /^https?:\/\/.+\/notification-type\/template$/
+    )
+  })
+})

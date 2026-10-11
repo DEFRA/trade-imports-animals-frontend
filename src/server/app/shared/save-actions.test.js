@@ -66,6 +66,18 @@ describe('#saveActions', () => {
     expect(html).not.toContain(sharedEn.saveActions.cancelAndReturnToHub)
   })
 
+  it('Should end with the primary alone when there is no overview to return to', () => {
+    const html = environment.renderString(
+      '{% from "shared/save-actions.njk" import saveActions %}{{ saveActions(hubHref, copy = copy) }}',
+      { hubHref: null, copy: sharedEn.saveActions }
+    )
+
+    expect(html).toContain(sharedEn.saveActions.saveAndContinue)
+    expect(html).not.toContain(sharedEn.saveActions.saveAndReturnToHub)
+    expect(html).not.toContain(sharedEn.saveActions.cancelAndReturnToHub)
+    expect(html).not.toContain(EXIT_NAME_ATTRIBUTE)
+  })
+
   it('Should keep the return controls when a hub-linked page names its own primary', () => {
     const html = renderActions(
       'hubHref, { text: "Save and finish", name: "action", value: "finish" }, copy'

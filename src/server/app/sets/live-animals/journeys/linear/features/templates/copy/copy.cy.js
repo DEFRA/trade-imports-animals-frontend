@@ -2,6 +2,7 @@
 export const copy = {
   title: 'Rheoli templedi',
   intro: 'Dewiswch, rheolwch neu crëwch dempledi hysbysu newydd',
+  createNew: 'Creu templed newydd',
   listHeading: 'Fy nhempledi',
   results: {
     none: 'Dangos 0 o 0 canlyniad',

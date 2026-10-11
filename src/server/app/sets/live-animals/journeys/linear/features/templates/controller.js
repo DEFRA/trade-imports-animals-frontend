@@ -11,6 +11,7 @@ import * as templates from '../../../../../../services/templates/index.js'
 import { formatDisplayMoment } from '../dashboard/notification-helper.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
+import { templateTypeQuestionUrl } from './type-question-url.js'
 
 const view = `${TEMPLATES}/features/templates/template`
 
@@ -34,6 +35,7 @@ const manageTemplatesGet = async (request, h) => {
     contentColumnClass: surfaceClass('display'),
     copy,
     sharedCopy,
+    createTemplateHref: templateTypeQuestionUrl(),
     resultsLabel: resultsLabel(saved.length),
     templateCards: saved.map(toCard)
   })

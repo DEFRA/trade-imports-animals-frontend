@@ -151,3 +151,24 @@ map renders no caption; its unit test lists those pages so a new page cannot be
 added without a decision either way.
 
 The generic algorithms are documented in [Flow machinery and gates](../../../docs/flow-and-gates.md).
+
+## Template mode
+
+Template mode is another way of walking the journey's own pages, never a copy of
+them. The set gateway registers, beside every
+`/notifications/{journeyId}/<slug>` route, a twin at `/templates/{journeyId}/<slug>`
+whose handler is the same handler run inside a template-mode context
+([`shared/template-mode.js`](../../../shared/template-mode.js)). In that context
+the records port reads the template store, `pagePath` and `hubPath` build
+`/templates/...` links, and the page chrome draws the grey `Template` tag with the
+template's name in place of a notification's reference. A change to a journey page
+therefore reaches template mode with no template work.
+
+[`flow/template-mode.js`](../journeys/linear/flow/template-mode.js) lists what a
+template leaves out: the documents, review, declaration and confirmation pages, and
+the amend, cancel-amend, copy and delete actions. None of them gets a twin, and the
+opening run skips the documents and review steps, so after the last question a
+template falls to its own overview path rather than the review.
+
+Until a template has a task list, a template-mode page links to no overview: it ends
+with Save and continue alone.

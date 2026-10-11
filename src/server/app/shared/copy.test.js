@@ -98,6 +98,19 @@ describe('save-actions copy', () => {
   })
 })
 
+describe('journey-strip copy', () => {
+  it('Should name the tag a template shows in place of a notification status', () => {
+    expect(sharedEn.journeyStrip.template).toBe('Template')
+    expect(sharedCy.journeyStrip.template).toBe('Templed')
+  })
+
+  it('Should carry the same strip keys in Welsh', () => {
+    expect(Object.keys(sharedCy.journeyStrip)).toEqual(
+      Object.keys(sharedEn.journeyStrip)
+    )
+  })
+})
+
 describe('shared copy module', () => {
   it('Should have a non-empty string at every leaf', () => {
     for (const { path, value } of leaves(sharedEn)) {

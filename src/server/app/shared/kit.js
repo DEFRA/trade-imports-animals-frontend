@@ -7,6 +7,7 @@ import {
   journeySectionCaption
 } from '../flow/journey-flow.js'
 import { inOpeningRun } from '../flow/run-state.js'
+import { inTemplateMode } from './template-mode.js'
 import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
@@ -49,13 +50,28 @@ const STRIP_STATUS = {
   }
 }
 
-export const journeyStrip = (journey) =>
-  journey
-    ? {
-        reference: journey.journeyId,
-        status: STRIP_STATUS[journey.status]
-      }
-    : null
+// A template's strip carries its name where a notification carries its
+// reference, so the same layout element draws both.
+const TEMPLATE_STRIP_STATUS = {
+  text: sharedCopy.journeyStrip.template,
+  classes: 'govuk-tag--grey'
+}
+
+export const journeyStrip = (journey) => {
+  if (!journey) {
+    return null
+  }
+  if (inTemplateMode()) {
+    return {
+      reference: journey.templateName ?? '',
+      status: TEMPLATE_STRIP_STATUS
+    }
+  }
+  return {
+    reference: journey.journeyId,
+    status: STRIP_STATUS[journey.status]
+  }
+}
 
 export const CYA_SLUG = 'notification-view'
 
@@ -149,7 +165,8 @@ export const base = (
     // would send every set's service navigation to the default set's
     // dashboard by way of the root redirect.
     homeUrl: dashboardPath(),
-    hubHref: hasJourney ? hubPath(journeyId) : undefined,
+    // A template has no overview yet, so a template-mode page links to none.
+    hubHref: hasJourney && !inTemplateMode() ? hubPath(journeyId) : undefined,
     journeyStrip: journeyStrip(journey),
     concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,

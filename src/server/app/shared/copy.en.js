@@ -70,7 +70,8 @@ export const copy = {
     draft: 'Draft',
     submitted: 'Submitted',
     amend: 'Amending',
-    deleted: 'Deleted'
+    deleted: 'Deleted',
+    template: 'Template'
   },
   addressHandshake: {
     addNewAddress: 'Add a new address',

@@ -51,6 +51,10 @@ export const SKIPPED = new Map([
   [
     '/notifications/{journeyId}/address-return',
     'INS handshake return endpoint — redirects to the party picker, not a page'
+  ],
+  [
+    '/templates/{journeyId}/name',
+    "needs a template in progress, which only the name page's own POST creates — the empty form is audited at /templates/new"
   ]
 ])
 
