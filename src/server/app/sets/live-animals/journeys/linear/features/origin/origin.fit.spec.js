@@ -21,6 +21,9 @@ import { signIn } from '../../../../../../../../../fit/sign-in.js'
 const COMMODITIES_PATH_PATTERN = '/notifications/[^/]+/commodities'
 const france = countriesOrigin.find(({ code }) => code === 'FR')
 const ireland = countriesOrigin.find(({ code }) => code === 'IE')
+const belgium = countriesOrigin.find(({ code }) => code === 'BE')
+const spain = countriesOrigin.find(({ code }) => code === 'ES')
+const canaryIslands = { code: 'ES-CN', name: 'Canary Islands (Spain)' }
 
 // accessible-autocomplete enhances the native <select>: the visible combobox
 // input keeps the original id and holds the country name, and the native select
@@ -405,9 +408,9 @@ test.describe('country of origin type-ahead', () => {
   }) => {
     const field = page.locator(countryInput)
 
-    await field.fill('fran')
+    await field.fill('belg')
     await expect(
-      page.getByRole('option', { name: france.name, exact: true })
+      page.getByRole('option', { name: belgium.name, exact: true })
     ).toBeVisible()
     await expect(page.getByRole('option')).toHaveCount(1)
 
@@ -443,6 +446,53 @@ test.describe('country of origin type-ahead', () => {
     ).toBeVisible()
 
     await expectNoSeriousOrCriticalAxeViolations(page, 'Origin results list')
+  })
+})
+
+test.describe('country of origin territories', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startAtOrigin(page)
+  })
+
+  test('names each territory with its country and sorts it among the entries for its label', async ({
+    page
+  }) => {
+    await page.locator(countryInput).click()
+    await page.locator(countryInput).fill('canary')
+    await expect(
+      page.getByRole('option', { name: canaryIslands.name, exact: true })
+    ).toBeVisible()
+
+    const texts = (
+      await page
+        .locator(`${countryHidden} option`)
+        .evaluateAll((options) => options.map((option) => option.textContent))
+    ).slice(1)
+    const canary = texts.indexOf(canaryIslands.name)
+    expect(canary).toBeGreaterThan(texts.indexOf('Bulgaria'))
+    expect(canary).toBeLessThan(texts.indexOf('Croatia'))
+    expect(texts).not.toContain('Canary Islands')
+  })
+
+  test("a chosen territory is saved by its code and shown back named with its country and with its country's code as the prefix", async ({
+    page
+  }) => {
+    const originUrl = page.url()
+
+    await chooseCountry(page, canaryIslands)
+    await page.getByRole('radio', { name: copy.regionRequirement.yes }).check()
+    await page.getByLabel(copy.regionCode.label, { exact: true }).fill('12')
+    await saveAndReturnButtonOn(page).click()
+    await expect(page).toHaveURL(hubUrlOf(originUrl))
+
+    await page.goto(originUrl)
+    await expect(page.locator(countryHidden)).toHaveValue(canaryIslands.code)
+    await expect(page.locator(countryInput)).toHaveValue(canaryIslands.name)
+    await expect(page.locator(REGION_CODE_PREFIX)).toHaveText(spain.code)
+    await expect(
+      page.getByLabel(copy.regionCode.label, { exact: true })
+    ).toHaveValue('12')
   })
 })
 
@@ -606,6 +656,17 @@ test.describe('country of origin without JavaScript', () => {
     )
     await expect(select.locator('option').first()).toHaveAttribute('value', '')
     await expect(countryField(page)).toHaveValue('')
+  })
+
+  test('native select names each territory with its country', async ({
+    page
+  }) => {
+    await signIn(page)
+    await startAtOrigin(page)
+
+    await expect(
+      page.locator('select#countryOfOrigin option[value="ES-CN"]')
+    ).toHaveText(canaryIslands.name)
   })
 
   test('native select submits and persists the country code', async ({

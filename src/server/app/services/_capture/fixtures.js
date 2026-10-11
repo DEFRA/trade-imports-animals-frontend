@@ -17,18 +17,7 @@ export const portsOfEntry = load('ports-of-entry.json')
 export const countriesOriginEntries = () =>
   countriesOrigin.map(({ code, name }) => ({ code, name }))
 
-/** Flat { code, name } rows rendered on the origin page (countries + subdivisions, sorted by name). */
-export const originPageCountryEntries = () => {
-  const subdivisions = countriesOrigin.flatMap(({ subDivisions = [] }) =>
-    subDivisions.map(({ code, name }) => ({ code, name }))
-  )
-  return [...countriesOriginEntries(), ...subdivisions].sort((left, right) =>
-    left.name.localeCompare(right.name)
-  )
-}
-
-/** Flat { code, name } rows rendered on a destination country select (countries + subdivisions named with their country, sorted by name). */
-export const destinationPageCountryEntries = () => {
+const countryAndTerritoryEntries = () => {
   const subdivisions = countriesOrigin.flatMap(
     ({ name: countryName, subDivisions = [] }) =>
       subDivisions.map(({ code, name }) => ({
@@ -40,3 +29,9 @@ export const destinationPageCountryEntries = () => {
     left.name.localeCompare(right.name)
   )
 }
+
+/** Flat { code, name } rows rendered on the origin page (countries + subdivisions named with their country, sorted by name). */
+export const originPageCountryEntries = () => countryAndTerritoryEntries()
+
+/** Flat { code, name } rows rendered on a destination country select (countries + subdivisions named with their country, sorted by name). */
+export const destinationPageCountryEntries = () => countryAndTerritoryEntries()

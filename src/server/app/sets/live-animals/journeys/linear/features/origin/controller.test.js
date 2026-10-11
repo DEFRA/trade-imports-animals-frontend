@@ -487,6 +487,32 @@ describe('GET /origin — server-rendered select data (no-JS path)', () => {
     expect(items).toContainEqual({ value: 'FR', text: 'France' })
   })
 
+  it('Should name a subdivision with its parent country in the select', async () => {
+    const result = await driveHandler(get)
+    const items = result.view.context.countryItems
+    expect(items).toContainEqual({
+      value: 'ES-CN',
+      text: 'Canary Islands (Spain)'
+    })
+    expect(items).not.toContainEqual({
+      value: 'ES-CN',
+      text: 'Canary Islands'
+    })
+  })
+
+  it("Should sort the select's countries and subdivisions by the label shown", async () => {
+    const result = await driveHandler(get)
+    const texts = result.view.context.countryItems
+      .slice(1)
+      .map(({ text }) => text)
+    expect(texts).toEqual(
+      [...texts].sort((left, right) => left.localeCompare(right))
+    )
+    const canary = texts.indexOf('Canary Islands (Spain)')
+    expect(canary).toBeGreaterThan(texts.indexOf('Bulgaria'))
+    expect(canary).toBeLessThan(texts.indexOf('Croatia'))
+  })
+
   it('Should offer no unselectable filler rows for the type-ahead to search', async () => {
     const result = await driveHandler(get)
     const items = result.view.context.countryItems
@@ -689,6 +715,20 @@ describe('GET /origin — country subdivisions', () => {
     })
 
     expect(result.view.context.values.countryOfOrigin).toBe('ES-CN')
+  })
+
+  it("Should show the parent country's code as the region code prefix for a stored subdivision", async () => {
+    const result = await driveHandler(get, {
+      seed: {
+        countryOfOrigin: 'ES-CN',
+        countryOfOriginSubdivisionCode: 'ES-CN',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCode: 'ES-12'
+      }
+    })
+
+    expect(result.view.context.regionCodePrefix).toBe('ES')
+    expect(result.view.context.values.regionOfOriginCodeSuffix).toBe('12')
   })
 })
 

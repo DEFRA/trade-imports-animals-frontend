@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+const CANARY_ISLANDS_LABEL = 'Canary Islands (Spain)'
 const originalMode = process.env.STUB_MODE
 
 const okResponse = (body) => ({ ok: true, json: async () => body })
@@ -79,10 +80,10 @@ describe('countries service — stub mode', () => {
     })
     expect(await countries.originCountryOptions()).toContainEqual({
       value: 'ES-CN',
-      text: 'Canary Islands'
+      text: CANARY_ISLANDS_LABEL
     })
     expect(await countries.originDisplayLabel('ES-CN')).toBe(
-      'Canary Islands (Spain)'
+      CANARY_ISLANDS_LABEL
     )
     expect(countries.parentCountryCode('ES-CN')).toBe('ES')
   })
@@ -95,7 +96,7 @@ describe('countries service — stub mode', () => {
 
     expect(destination).toContainEqual({
       value: 'ES-CN',
-      text: 'Canary Islands (Spain)'
+      text: CANARY_ISLANDS_LABEL
     })
     expect(destination).toContainEqual({ value: 'AT', text: 'Austria' })
     expect(destination).toHaveLength(origin.length)
@@ -173,6 +174,27 @@ describe('countries service — real mode', () => {
     const countries = await import('./countries/index.js')
 
     expect(await countries.destinationCountryOptions()).toEqual([
+      { value: 'AA', text: 'Aland' },
+      { value: 'ZZ-1', text: 'Alpha Isle (Zedland)' },
+      { value: 'ZZ', text: 'Zedland' }
+    ])
+  })
+
+  it('Should offer origin options as whatever reference data serves, each subdivision named with its parent, in one alphabetical list', async () => {
+    process.env.STUB_MODE = 'false'
+    stubFetch(
+      okOnlyForBlock('GBNAG_SPS_EX', [
+        {
+          code: 'ZZ',
+          name: 'Zedland',
+          subDivisions: [{ code: 'ZZ-1', name: 'Alpha Isle' }]
+        },
+        { code: 'AA', name: 'Aland' }
+      ])
+    )
+    const countries = await import('./countries/index.js')
+
+    expect(await countries.originCountryOptions()).toEqual([
       { value: 'AA', text: 'Aland' },
       { value: 'ZZ-1', text: 'Alpha Isle (Zedland)' },
       { value: 'ZZ', text: 'Zedland' }
