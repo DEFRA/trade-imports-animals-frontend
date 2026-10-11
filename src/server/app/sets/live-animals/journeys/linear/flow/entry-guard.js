@@ -1,6 +1,7 @@
 import { createPath, pagePath, setBase } from '../../../../../shared/paths.js'
 import { isAnswered } from '../../../../../lib/answered.js'
 import { get } from '../../../../../engine/read.js'
+import { isJourneyNotFound } from '../../../../../engine/journey.js'
 import {
   obligationByName,
   SYSTEM_POPULATED
@@ -42,14 +43,30 @@ export const hasCommittedNotificationAnswers = (answers) =>
     ([key, value]) => userEntered(key) && isAnswered(value)
   )
 
+const viewOrNone = async (request, h) => {
+  try {
+    return await get(request, h)
+  } catch (error) {
+    if (isJourneyNotFound(error)) {
+      return null
+    }
+    throw error
+  }
+}
+
 /** Deep-link guard: a journey with neither a run record in this session nor
  * committed user answers is sent to the entry page (see
- * sets/live-animals/docs/journey-flow-and-gates.md, "Opening run and entry guard"). */
+ * sets/live-animals/docs/journey-flow-and-gates.md, "Opening run and entry guard").
+ * A notification that cannot be found is left to the page it asked for. */
 export const entryGuardTarget = async (request, h) => {
   if (!guardedJourneyPath(request.path)) {
     return null
   }
-  const { journey, answers } = await get(request, h)
+  const view = await viewOrNone(request, h)
+  if (view === null) {
+    return null
+  }
+  const { journey, answers } = view
   if (await openingRunStarted(request, journey.journeyId)) {
     return null
   }

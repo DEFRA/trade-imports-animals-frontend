@@ -4,6 +4,7 @@ import {
   cancelAmendJourney,
   copyJourney,
   currentJourney,
+  isJourneyNotFound,
   amendJourney,
   listKnownJourneys,
   replaceJourneyFulfilment,
@@ -127,6 +128,19 @@ describe('#currentJourney', () => {
       isBoom: true,
       output: { statusCode: 404 }
     })
+  })
+
+  it('Should recognise the not-found a missing notification raises, and nothing else', async () => {
+    const missing = await currentJourney(
+      requestFor('unknown', []),
+      recordingH()
+    ).catch((error) => error)
+
+    expect(isJourneyNotFound(missing)).toBe(true)
+    expect(isJourneyNotFound(new Error('boom'))).toBe(false)
+    expect(
+      isJourneyNotFound({ isBoom: true, output: { statusCode: 500 } })
+    ).toBe(false)
   })
 
   it('Should 404 a known id whose persisted record no longer exists', async () => {

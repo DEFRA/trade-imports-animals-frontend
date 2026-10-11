@@ -552,6 +552,17 @@ const deepLinkGuardTests = () => {
     )
     expect(target).toBeNull()
   })
+
+  it('Should leave a notification it cannot find to the page it asked for', async () => {
+    const missing = 'GBN-AG-00-000000'
+    const target = await entryGuardTarget(
+      buildRequest(missing, {
+        path: pagePath(missing, NOTIFICATION_VIEW_SLUG)
+      }),
+      captureH()
+    )
+    expect(target).toBeNull()
+  })
 }
 
 const reasonAndAdditionalDetailsInOrder = () => {

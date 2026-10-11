@@ -1,4 +1,9 @@
-import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import {
+  dashboardPath,
+  hubPath,
+  pagePath
+} from '../../../../../../shared/paths.js'
+import { formatMomentAsLongDay } from '../../../../../../lib/validate/index.js'
 import { TEMPLATES } from '../../config.js'
 import { nextInSection } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
@@ -98,6 +103,24 @@ const reviewErrorSummary = (
     }
   )
 
+const submittedDateText = (submittedAt) =>
+  submittedAt
+    ? copy.viewHeader.dateSubmitted(
+        formatMomentAsLongDay(new Date(submittedAt))
+      )
+    : null
+
+const viewHeaderOf = (journey) => ({
+  reference: journey.journeyId,
+  status: journeyStrip(journey).status,
+  dateSubmitted: submittedDateText(journey.submittedAt)
+})
+
+const reviewTitle = (journey) =>
+  journey.status === state.AMEND && journey.answersChangedSinceSubmission
+    ? copy.resubmitTitle
+    : copy.title
+
 const renderCya = async (
   h,
   journey,
@@ -128,17 +151,17 @@ const renderCya = async (
     cardErrors
   )
   const amending = journey.status === state.AMEND
-  const title =
-    amending && journey.answersChangedSinceSubmission
-      ? copy.resubmitTitle
-      : copy.title
+  const title = readOnly ? journey.journeyId : reviewTitle(journey)
   return h.view(view, {
     pageTitle: title,
     heading: title,
     copy,
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
-    journeyStrip: journeyStrip(journey, { offerCancelAmend: false }),
+    journeyStrip: readOnly
+      ? null
+      : journeyStrip(journey, { offerCancelAmend: false }),
+    viewHeader: readOnly ? viewHeaderOf(journey) : null,
     errorSummary: reviewErrorSummary(
       journey.journeyId,
       withSpeciesErrors(cardErrors, speciesErrors),
@@ -155,7 +178,7 @@ const renderCya = async (
     cancelAmendHref: amending
       ? pagePath(journey.journeyId, CANCEL_AMEND_SLUG)
       : null,
-    backLink: hubPath(journey.journeyId)
+    backLink: readOnly ? dashboardPath() : hubPath(journey.journeyId)
   })
 }
 
@@ -218,9 +241,20 @@ export const renderNotificationView = async (
   })
 }
 
+const renderOrList = async (request, h) => {
+  try {
+    return await renderNotificationView(request, h)
+  } catch (error) {
+    if (state.isJourneyNotFound(error)) {
+      return h.redirect(dashboardPath())
+    }
+    throw error
+  }
+}
+
 const get = async (request, h) => {
   await completeOpeningRun(request, h, request.params.journeyId)
-  return renderNotificationView(request, h)
+  return renderOrList(request, h)
 }
 
 const post = async (request, h) => {

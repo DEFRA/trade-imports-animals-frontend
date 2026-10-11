@@ -557,14 +557,32 @@ test.describe('check-answers feature navigation and submission', () => {
     await signIn(page)
   })
 
-  test('back link returns to the notification hub', async ({ page }) => {
+  test("a draft review's back link returns to the notification hub", async ({
+    page
+  }) => {
     await startNotification(page)
     const hubUrl = journeyUrl(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+    await expect(page).toHaveTitle(new RegExp(`^(Error: )?${copy.title} - `))
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
     await expect(page).toHaveURL(hubUrl)
+  })
+
+  test('opening the view of a notification that does not exist goes to the notification list', async ({
+    page
+  }) => {
+    await startNotification(page)
+
+    await page.goto(
+      `${BASE}/notifications/GBN-AG-00-000000/${NOTIFICATION_VIEW_SLUG}`
+    )
+
+    await expect(page).toHaveURL(urlUnderBase('/?'))
+    await expect(
+      page.getByRole('heading', { level: 1, name: dashboardCopy.title })
+    ).toBeVisible()
   })
 
   test('review has no serious or critical axe violations', async ({ page }) => {
@@ -765,6 +783,8 @@ test.describe('check-answers feature unfinished notification', () => {
 test.describe('check-answers feature submitted notification', () => {
   test.describe.configure({ timeout: 90000 })
 
+  let reference
+
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     await startNotification(page)
@@ -775,14 +795,52 @@ test.describe('check-answers feature submitted notification', () => {
       .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
       .check()
     await page.getByRole('button', { name: 'Continue' }).click()
-    const reference = journeyIdFromPage(page)
+    reference = journeyIdFromPage(page)
     await page.goto(BASE)
     await page
       .getByRole('link', {
         name: `View ${dashboardCopy.actionHidden(reference)}`
       })
       .click()
-    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { level: 1, name: reference, exact: true })
+    ).toBeVisible()
+  })
+
+  test('is headed by its reference with a Submitted tag and no status bar, and titled by its reference', async ({
+    page
+  }) => {
+    const tag = page
+      .getByRole('main')
+      .getByText(sharedCopy.journeyStrip.submitted, { exact: true })
+    await expect(tag).toBeVisible()
+    await expect(tag).toHaveClass(/govuk-tag--green/)
+    await expect(page.locator('.app-journey-strip')).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: copy.title })).toHaveCount(0)
+    await expect(page).toHaveTitle(
+      `${reference} - ${sharedCopy.layout.serviceName} - ${sharedCopy.layout.govukSuffix}`
+    )
+  })
+
+  test('shows the date it was submitted under its header', async ({ page }) => {
+    await expect(
+      page.getByText(
+        new RegExp(
+          `^${copy.viewHeader.dateSubmitted('\\d{1,2} [A-Z][a-z]+ \\d{4}')}$`
+        )
+      )
+    ).toBeVisible()
+  })
+
+  test("Back on a submitted notification's view goes to the notification list", async ({
+    page
+  }) => {
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(urlUnderBase('/?'))
+    await expect(
+      page.getByRole('heading', { level: 1, name: dashboardCopy.title })
+    ).toBeVisible()
   })
 
   test('ends with the last card and offers no way to submit again', async ({
@@ -841,6 +899,7 @@ test.describe('check-answers feature amendment', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: copy.title })
     ).toBeVisible()
+    await expect(page).toHaveTitle(new RegExp(`^${copy.title} - `))
     await expect(
       page.getByRole('heading', { name: sharedCopy.errorSummary.title })
     ).toHaveCount(0)

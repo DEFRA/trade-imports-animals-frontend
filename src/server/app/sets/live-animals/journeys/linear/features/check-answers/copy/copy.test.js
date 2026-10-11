@@ -26,6 +26,9 @@ describe('#copy', () => {
 
   it('Should interpolate the parameterised leaves', () => {
     expect(copy.resubmitTitle).toBe('Review before re-submitting')
+    expect(copy.viewHeader.dateSubmitted('22 July 2026')).toBe(
+      'Date submitted: 22 July 2026'
+    )
     expect(copy.identifierTable.animalN(2)).toBe('Animal 2')
     expect(copy.documentN(1)).toBe('Document 1')
     expect(copy.hidden.documentN(2)).toBe('document 2')

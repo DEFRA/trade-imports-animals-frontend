@@ -1,3 +1,4 @@
+import Boom from '@hapi/boom'
 import { SET_ID } from '../../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -21,7 +22,7 @@ import {
 } from '../../../../../../engine/test-support.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
-import { pagePath } from '../../../../../../shared/paths.js'
+import { dashboardPath, pagePath } from '../../../../../../shared/paths.js'
 import { answerForInlineParty } from '../addresses/party-inline.js'
 import { taskRows } from '../../flow/task-rows.js'
 import { dispatchPages } from '../index.js'
@@ -320,8 +321,80 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     expect(draft.context.cancelAmendHref).toBeNull()
     expect(submitted.context.cancelAmendHref).toBeNull()
     expect(amend.context.cancelAmendHref).toMatch(/\/cancel-amend$/)
-    for (const view of [draft, submitted, amend]) {
+    expect(submitted.context.journeyStrip).toBeNull()
+    for (const view of [draft, amend]) {
       expect(view.context.journeyStrip.cancelAmend).toBeUndefined()
+    }
+  })
+
+  it("Should head a submitted notification's view with its reference and a Submitted tag, with no status bar", async () => {
+    const { context } = await viewForStatus(SUBMITTED)
+
+    expect(context.viewHeader.reference).toBe(context.heading)
+    expect(context.viewHeader.reference).toMatch(/\S/)
+    expect(context.viewHeader.status).toEqual({
+      text: 'Submitted',
+      classes: 'govuk-tag--green'
+    })
+    expect(context.journeyStrip).toBeNull()
+  })
+
+  it("Should title a submitted view by its reference, and a draft's and an amendment's review Review your notification", async () => {
+    const submitted = await viewForStatus(SUBMITTED)
+    expect(submitted.context.pageTitle).toBe(
+      submitted.context.viewHeader.reference
+    )
+
+    for (const status of [DRAFT, AMEND]) {
+      const { context } = await viewForStatus(status)
+      expect(context.pageTitle).toBe(copyEn.title)
+      expect(context.viewHeader).toBeNull()
+      expect(context.journeyStrip).not.toBeNull()
+    }
+  })
+
+  it("Should date a submitted notification's view with the UK day it was submitted", async () => {
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(new Date('2026-07-21T23:30:00Z'))
+      const { context } = await viewForStatus(SUBMITTED)
+
+      expect(context.viewHeader.dateSubmitted).toBe(
+        'Date submitted: 22 July 2026'
+      )
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("Should point a submitted view's Back link at the live-animals notification list, and a draft's at Overview", async () => {
+    const submitted = await viewForStatus(SUBMITTED)
+    const draft = await viewForStatus(DRAFT)
+
+    expect(submitted.context.backLink).toBe(dashboardPath())
+    expect(draft.context.deleteHref).toBe(`${draft.context.backLink}/delete`)
+    expect(draft.context.backLink).not.toBe(dashboardPath())
+  })
+
+  it('Should send a notification that cannot be found to the notification list', async () => {
+    const h = stubH()
+    const response = await getHandler(journeyRequest('GBN-AG-00-000000'), h)
+
+    expect(response.redirect).toBe(dashboardPath())
+  })
+
+  it('Should let an error other than not-found propagate instead of redirecting to the notification list', async () => {
+    const journey = await store.create()
+    const loadSpy = vi
+      .spyOn(records, 'load')
+      .mockRejectedValueOnce(Boom.badImplementation('store unavailable'))
+
+    try {
+      await expect(
+        getHandler(journeyRequest(journey.journeyId), stubH())
+      ).rejects.toMatchObject({ output: { statusCode: 500 } })
+    } finally {
+      loadSpy.mockRestore()
     }
   })
 

@@ -2,6 +2,7 @@
 export const copy = {
   title: 'Adolygu eich hysbysiad',
   resubmitTitle: 'Adolygu cyn ailgyflwyno',
+  viewHeader: { dateSubmitted: (date) => `Dyddiad cyflwyno: ${date}` },
   notApplicable: 'Amherthnasol',
   missing: 'Ar goll',
   yesNo: { yes: 'Iawn', no: 'Na' },

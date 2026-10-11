@@ -1,6 +1,8 @@
 export const copy = {
   title: 'Review your notification',
   resubmitTitle: 'Review before re-submitting',
+  // The line under a submitted notification's reference.
+  viewHeader: { dateSubmitted: (date) => `Date submitted: ${date}` },
   // An empty value inside a card that is finished. Nothing more is owed on
   // that card, so the blank is a settled answer rather than a gap.
   notApplicable: 'Not applicable',

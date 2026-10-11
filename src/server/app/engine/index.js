@@ -10,6 +10,7 @@ export {
   reconcileEntriesAt,
   submitJourney
 } from './write/index.js'
+export { isJourneyNotFound } from './journey.js'
 export { collectionView } from './evaluate/collection-view.js'
 export { collectionCapAt } from './evaluate/cardinality.js'
 export { DRAFT, SUBMITTED, AMEND, DELETED } from './persistence/records.js'

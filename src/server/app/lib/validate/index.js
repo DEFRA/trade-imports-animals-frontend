@@ -29,6 +29,7 @@ export {
   formatCalendarDate,
   formatDateText,
   formatMomentAsDay,
+  formatMomentAsLongDay,
   isoDateFromDateParts,
   isRealDate,
   parseDateText,

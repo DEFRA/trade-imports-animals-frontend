@@ -2,6 +2,7 @@
 {% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
 {% from "govuk/components/table/macro.njk" import govukTable %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 
 {% macro cardError(text) %}
@@ -36,7 +37,15 @@
 
   {% include "shared/error-summary.njk" %}
 
-  <h1 class="govuk-heading-l">{{ heading }}</h1>
+  {% if viewHeader %}
+    <div class="govuk-!-margin-bottom-6">
+      <h1 class="govuk-heading-l govuk-!-display-inline-block govuk-!-margin-right-2 govuk-!-margin-bottom-2">{{ viewHeader.reference }}</h1>
+      {{ govukTag({ text: viewHeader.status.text, classes: viewHeader.status.classes }) }}
+      {% if viewHeader.dateSubmitted %}<p class="govuk-body govuk-!-margin-bottom-0">{{ viewHeader.dateSubmitted }}</p>{% endif %}
+    </div>
+  {% else %}
+    <h1 class="govuk-heading-l">{{ heading }}</h1>
+  {% endif %}
 
   {% if readOnly %}
     <div class="govuk-button-group">

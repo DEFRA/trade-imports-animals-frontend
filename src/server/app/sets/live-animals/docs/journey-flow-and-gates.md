@@ -136,8 +136,11 @@ and an ordinary page otherwise: it has no opening-run special case.
 The guard admits a request when the opening run has begun for that journey in
 this session, or the journey carries committed user answers. A journey with
 neither — a deep link to an id this session never created and that holds no
-answers — is sent to the origin page. The origin page and its children are
-exempt from the guard, so there is no redirect loop.
+answers — is sent to the origin page. A notification that cannot be found is not
+the guard's to judge: it admits the request, and the page answers it — the review
+page sends it to the notification list, every other page answers not found. The
+origin page and its children are exempt from the guard, so there is no redirect
+loop.
 
 A journey the guard bounces to the origin page does not resume the opening run
 when it saves that page. `kit.nextTarget` finds `inOpeningRun` false, so

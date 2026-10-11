@@ -190,9 +190,12 @@ test.describe('cancel-amend feature without JavaScript', () => {
     await noJs.getByRole('button', { name: copy.confirmButton }).click()
 
     await expect(noJs).toHaveURL(/\/notification-view\?cancelled=1$/)
-    await expect(strip(noJs).locator(TAG)).toHaveText(
-      sharedCopy.journeyStrip.submitted
-    )
+    await expect(
+      noJs
+        .getByRole('main')
+        .getByText(sharedCopy.journeyStrip.submitted, { exact: true })
+    ).toBeVisible()
+    await expect(strip(noJs)).toHaveCount(0)
     await context.close()
   })
 })
