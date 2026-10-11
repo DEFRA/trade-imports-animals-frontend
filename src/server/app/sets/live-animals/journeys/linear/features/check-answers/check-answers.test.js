@@ -101,7 +101,10 @@ const changeHrefsOf = (sections) =>
       subsection.rows.flatMap((entry) =>
         (entry.actions?.items ?? []).map((action) => action.href)
       )
-    )
+    ),
+    ...(card.speciesBlocks ?? [])
+      .flatMap((block) => block.identifierTable?.actions?.items ?? [])
+      .map((action) => action.href)
   ])
 const rowActionsOf = (sections) =>
   rowsOf(sections).flatMap((entry) => entry.actions?.items ?? [])
@@ -122,6 +125,9 @@ const WHAT_ARE_YOU_IMPORTING_INCOMPLETE = 'Complete what are you importing?'
 const COMMODITY_DETAILS_INCOMPLETE = 'Complete commodity details'
 const DOCUMENTS_INCOMPLETE = 'Complete documents'
 const ARRIVAL_DETAILS_INCOMPLETE = 'Complete arrival details'
+const FELIS_NO_IDENTIFIER = 'Enter at least 1 animal identifier for felis catus'
+const SPECIES_UNFINISHED =
+  /^Enter (the number of animals|at least 1 animal identifier) for /
 
 const withoutParty = (seed, partyId) => {
   const next = { ...seed }
@@ -488,7 +494,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
     expect(valueOf(block.rows, PACKAGES_KEY)).toBe('5')
   })
 
-  it('Should render a read-only identifier table inside the species block', async () => {
+  it("Should head the species block's identifier table with every identifier the commodity asks for and label each animal by species and number", async () => {
     const card = cardByTitle(await sectionsFor(fullSeed), COW_CARD_TITLE)
     const { identifierTable } = blockOf(card, BOS_TAURUS)
     expect(identifierTable.head.map((cell) => cell.text)).toEqual([
@@ -497,7 +503,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
       'Passport'
     ])
     expect(identifierTable.rows).toEqual([
-      [{ text: 'Animal 1' }, { text: 'UK1' }, { text: 'UK123456789' }]
+      [{ text: 'Bos taurus 1' }, { text: 'UK1' }, { text: 'UK123456789' }]
     ])
   })
 
@@ -2151,6 +2157,81 @@ describe(`${SUITE} — commodity cards`, () => {
     expect(cardByTitle(sections, WHAT_ARE_YOU_IMPORTING_CARD).error).toBeNull()
   })
 
+  it('Should give Identification details its own Change link to the identification page, naming the species', async () => {
+    const card = cardByTitle(await sectionsFor(fullSeed), COW_CARD_TITLE)
+    const { items } = blockOf(card, BOS_TAURUS).identifierTable.actions
+
+    expect(items).toHaveLength(1)
+    expect(items[0].text).toBe('Change')
+    expect(items[0].href).toMatch(/\/commodities\/identification\?change=1$/)
+    expect(items[0].visuallyHiddenText).toBe(
+      'identification details for Bos Taurus'
+    )
+  })
+
+  it('Should offer no Identification details Change link on a submitted review', async () => {
+    const view = await viewForStatus(SUBMITTED)
+    const card = cardByTitle(view.context.sections, COW_CARD_TITLE)
+
+    expect(blockOf(card, BOS_TAURUS).identifierTable.actions).toBeUndefined()
+  })
+
+  it('Should give a column to every identifier the commodity asks for, reading Not applicable where none was given', async () => {
+    const card = cardByTitle(
+      await sectionsFor({
+        ...fullSeed,
+        commodityLines: [
+          line('Cow', '1148346', {
+            animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+          })
+        ]
+      }),
+      COW_CARD_TITLE
+    )
+    const { identifierTable } = blockOf(card, BOS_TAURUS)
+
+    expect(identifierTable.head.map((cell) => cell.text)).toEqual([
+      'Animal',
+      'Ear tag',
+      'Passport'
+    ])
+    expect(identifierTable.rows[0].map((cell) => cell.text)).toEqual([
+      'Bos taurus 1',
+      'UK1',
+      NOT_APPLICABLE
+    ])
+  })
+
+  it('Should label an animal by number alone on a line with no species', async () => {
+    const card = cardByTitle(
+      await sectionsFor({
+        ...fullSeed,
+        commodityLines: [
+          {
+            commoditySelection: 'Cow',
+            numberOfAnimalsQuantity: '1',
+            numberOfPackages: '1',
+            animalIdentifiers: [{ animalIdentifierEarTag: 'UK1' }]
+          }
+        ]
+      }),
+      COW_CARD_TITLE
+    )
+
+    expect(card.speciesBlocks[0].identifierTable.rows[0][0].text).toBe(
+      'Animal 1'
+    )
+  })
+
+  it('Should anchor each species block by its line', async () => {
+    const sections = await sectionsFor(twoCowsAndFish)
+    const anchorsOf = (title) =>
+      cardByTitle(sections, title).speciesBlocks.map((block) => block.anchor)
+
+    expect(anchorsOf(COW_CARD_TITLE)).toEqual(['species-1', 'species-2'])
+    expect(anchorsOf(FISH_CARD_TITLE)).toEqual(['species-3'])
+  })
+
   it('Should resolve a card anchor, falling back only where the page lacks it', () => {
     expect(
       cardAnchorHref('commodityDetails', new Set(['commodity-details']))
@@ -2160,5 +2241,107 @@ describe(`${SUITE} — commodity cards`, () => {
     )
     expect(cardAnchorHref('importDetails')).toBe('#import-details')
     expect(cardAnchorHref('unknown')).toBeUndefined()
+  })
+})
+
+describe(`${SUITE} — species short of a count or an identifier`, () => {
+  setupCheckAnswersEngine()
+
+  const textsFor = async (seed) =>
+    (await summaryFor(seed)).errorList.map((entry) => entry.text)
+  const entriesFor = async (seed) => (await summaryFor(seed)).errorList
+  const countedNoIdsSeed = {
+    ...fullSeed,
+    commodityLines: [line('Cow', '1148346'), line('Cat', '923501')]
+  }
+
+  it('Should name each identified species with no count, in lower case, linking to its block', async () => {
+    const entries = await entriesFor({
+      ...fullSeed,
+      commodityLines: [
+        { commoditySelection: 'Cow', speciesSelection: '1148346' },
+        { commoditySelection: 'Cat', speciesSelection: '923501' }
+      ]
+    })
+
+    expect(entries).toContainEqual({
+      text: 'Enter the number of animals for bos taurus',
+      href: '#species-1'
+    })
+    expect(entries).toContainEqual({
+      text: 'Enter the number of animals for felis catus',
+      href: '#species-2'
+    })
+  })
+
+  it('Should name each counted species with no identifier, linking to its block', async () => {
+    const entries = await entriesFor(countedNoIdsSeed)
+
+    expect(entries).toContainEqual({
+      text: 'Enter at least 1 animal identifier for bos taurus',
+      href: '#species-1'
+    })
+    expect(entries).toContainEqual({
+      text: FELIS_NO_IDENTIFIER,
+      href: '#species-2'
+    })
+  })
+
+  it('Should name only the species still short', async () => {
+    const texts = await textsFor({
+      ...fullSeed,
+      commodityLines: [fullSeed.commodityLines[0], line('Cat', '923501')]
+    })
+
+    expect(texts.filter((text) => SPECIES_UNFINISHED.test(text))).toEqual([
+      FELIS_NO_IDENTIFIER
+    ])
+  })
+
+  it('Should name no species when only one carries identifiers', async () => {
+    for (const commodityLines of [
+      [line('Cow', '1148346')],
+      [line('Cow', '1148346'), line('Fish', '801204')]
+    ]) {
+      const texts = await textsFor({ ...fullSeed, commodityLines })
+      expect(texts.some((text) => SPECIES_UNFINISHED.test(text))).toBe(false)
+    }
+  })
+
+  it('Should list the species entries straight after Complete commodity details', async () => {
+    const texts = await textsFor({
+      commodityLines: [line('Cow', '1148346'), line('Cat', '923501')]
+    })
+    const at = texts.indexOf(COMMODITY_DETAILS_INCOMPLETE)
+
+    expect(texts.slice(at, at + 4)).toEqual([
+      COMMODITY_DETAILS_INCOMPLETE,
+      'Enter at least 1 animal identifier for bos taurus',
+      FELIS_NO_IDENTIFIER,
+      'Complete additional details'
+    ])
+  })
+
+  it('Should anchor every species entry to a block the page carries', async () => {
+    const driven = await driveHandler(getHandler, { seed: countedNoIdsSeed })
+    const anchors = new Set(
+      cardsOf(driven.view.context.sections)
+        .flatMap((card) => card.speciesBlocks ?? [])
+        .map((block) => block.anchor)
+    )
+    const entries = driven.view.context.errorSummary.errorList.filter((entry) =>
+      SPECIES_UNFINISHED.test(entry.text)
+    )
+
+    expect(entries).toHaveLength(2)
+    for (const entry of entries) {
+      expect(anchors.has(entry.href.slice(1))).toBe(true)
+    }
+  })
+
+  it('Should name no species on a submitted notification', async () => {
+    const view = await viewForStatus(SUBMITTED, countedNoIdsSeed)
+
+    expect(view.context.errorSummary).toBeNull()
   })
 })

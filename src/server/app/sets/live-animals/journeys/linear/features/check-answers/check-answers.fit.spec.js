@@ -28,6 +28,15 @@ const ARRIVAL_DETAILS_ANCHOR = '#arrival-details'
 const WHAT_ARE_YOU_IMPORTING_ANCHOR = '#what-are-you-importing'
 const COMMODITY_DETAILS_ANCHOR = '#commodity-details'
 const FELIS_CATUS = 'Felis Catus'
+const WHAT_ARE_YOU_IMPORTING = 'What are you importing?'
+const BOS_TAURUS_SPECIES = 'Bos taurus'
+const FELIS_CATUS_SPECIES = 'Felis catus'
+const BOS_TAURUS_LOWER = 'bos taurus'
+const FELIS_CATUS_LOWER = 'felis catus'
+const SPECIES_1_HREF = '#species-1'
+const SPECIES_2_HREF = '#species-2'
+const BOS_TAURUS_HEADING = 'Bos Taurus'
+const IDENTIFICATION_SLUG = 'commodities/identification'
 
 const rowFor = (page, label) =>
   page
@@ -509,6 +518,8 @@ test.describe('check-answers feature change links', () => {
   // an overland arrival (covered by the transit countries block above). With no
   // commodity chosen there is no species block, whose first row carries the
   // other row-level link (covered by the commodity read-back block below).
+  // The Identification details link stands only with saved identifiers and is
+  // covered by the same block.
   test('every Change link sits in a card heading and no summary row carries one', async ({
     page
   }) => {
@@ -826,8 +837,8 @@ test.describe('check-answers feature commodity read-back', () => {
   }) => {
     await startNotification(page)
     await answerCountryOfOrigin(page)
-    await page.getByRole('link', { name: 'What are you importing?' }).click()
-    await selectSpecies(page, ['Felis catus'])
+    await page.getByRole('link', { name: WHAT_ARE_YOU_IMPORTING }).click()
+    await selectSpecies(page, [FELIS_CATUS_SPECIES])
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
@@ -837,5 +848,108 @@ test.describe('check-answers feature commodity read-back', () => {
     const details = page.locator(COMMODITY_DETAILS_ANCHOR)
     await expect(details).not.toHaveClass(/app-summary-card--error/)
     await expect(details.locator('.govuk-error-message')).toHaveCount(0)
+  })
+
+  test('heads the identifier table Identification details, labels each animal by species and number, and links it to the identification page', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await unlockSections(page, BOS_TAURUS_SPECIES)
+    await page.goto(journeyUrl(page, IDENTIFICATION_SLUG))
+    await page.locator('#animalIdentifierEarTag-0').fill('UK1')
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    const details = page.locator(COMMODITY_DETAILS_ANCHOR)
+    await expect(details.getByRole('heading', { level: 5 })).toHaveText(
+      copy.identifierTable.heading
+    )
+    await expect(details.getByRole('columnheader')).toHaveText([
+      copy.identifierTable.animalColumn,
+      'Ear tag',
+      'Passport'
+    ])
+    await expect(
+      details.getByRole('cell', { name: 'Bos taurus 1', exact: true })
+    ).toBeVisible()
+
+    const changeLink = page.getByRole('link', {
+      name: `${copy.change} ${copy.hidden.identificationDetailsFor(BOS_TAURUS_HEADING)}`
+    })
+    await expect(changeLink).toHaveAttribute(
+      'href',
+      /\/commodities\/identification\?change=1$/
+    )
+    await changeLink.click()
+    await expect(page).toHaveURL(/\/commodities\/identification\?change=1$/)
+  })
+
+  test('names each species short of its number of animals, linking to its block', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await answerCountryOfOrigin(page)
+    await page.getByRole('link', { name: WHAT_ARE_YOU_IMPORTING }).click()
+    await selectSpecies(page, [BOS_TAURUS_SPECIES, FELIS_CATUS_SPECIES])
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    await expect(
+      page.getByRole('link', {
+        name: copy.errors.species.numberOfAnimals(BOS_TAURUS_LOWER)
+      })
+    ).toHaveAttribute('href', SPECIES_1_HREF)
+    await expect(
+      page.getByRole('link', {
+        name: copy.errors.species.numberOfAnimals(FELIS_CATUS_LOWER)
+      })
+    ).toHaveAttribute('href', SPECIES_2_HREF)
+    await expect(page.locator(SPECIES_1_HREF)).toHaveText(BOS_TAURUS_HEADING)
+    await expect(page.locator(SPECIES_2_HREF)).toHaveText(FELIS_CATUS)
+    await expect(page.locator(COMMODITY_DETAILS_ANCHOR)).not.toHaveClass(
+      /app-summary-card--error/
+    )
+    await expectNoSeriousOrCriticalAxeViolations(
+      page,
+      'Review naming species short of a count'
+    )
+  })
+
+  test('names each counted species short of an identifier, linking to its block', async ({
+    page
+  }) => {
+    await startNotification(page)
+    await answerCountryOfOrigin(page)
+    await page.getByRole('link', { name: WHAT_ARE_YOU_IMPORTING }).click()
+    await selectSpecies(page, [BOS_TAURUS_SPECIES, FELIS_CATUS_SPECIES])
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await page.getByRole('link', { name: 'Commodity details' }).click()
+    await page.locator('#numberOfAnimalsQuantity-0').fill('1')
+    await page.locator('#numberOfAnimalsQuantity-1').fill('1')
+    for (const box of await page
+      .locator('input[name^="numberOfPackages-"]')
+      .all()) {
+      await box.fill('1')
+    }
+    await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    await expect(
+      page.getByRole('link', {
+        name: copy.errors.species.atLeastOneIdentifier(BOS_TAURUS_LOWER)
+      })
+    ).toHaveAttribute('href', SPECIES_1_HREF)
+    await expect(
+      page.getByRole('link', {
+        name: copy.errors.species.atLeastOneIdentifier(FELIS_CATUS_LOWER)
+      })
+    ).toHaveAttribute('href', SPECIES_2_HREF)
+    await expect(
+      page.getByRole('link', {
+        name: copy.errors.species.numberOfAnimals(BOS_TAURUS_LOWER)
+      })
+    ).toHaveCount(0)
   })
 })

@@ -86,10 +86,14 @@
               {{ govukSummaryList({ rows: subsection.rows }) }}
             {% endfor %}
             {% for block in card.speciesBlocks %}
-              <h{{ innerHeadingLevel }} class="govuk-heading-s">{{ block.heading }}</h{{ innerHeadingLevel }}>
+              <h{{ innerHeadingLevel }} class="govuk-heading-s" id="{{ block.anchor }}" tabindex="-1">{{ block.heading }}</h{{ innerHeadingLevel }}>
               {{ govukSummaryList({ rows: block.rows }) }}
               {% if block.identifierTable %}
                 <h{{ blockHeadingLevel }} class="govuk-heading-s">{{ copy.identifierTable.heading }}</h{{ blockHeadingLevel }}>
+                {% if block.identifierTable.actions %}
+                  {% set identificationChange = block.identifierTable.actions.items[0] %}
+                  <p class="govuk-body"><a class="govuk-link" href="{{ identificationChange.href }}">{{ identificationChange.text }}<span class="govuk-visually-hidden"> {{ identificationChange.visuallyHiddenText }}</span></a></p>
+                {% endif %}
                 {{ govukTable({ head: block.identifierTable.head, rows: block.identifierTable.rows }) }}
               {% endif %}
             {% endfor %}

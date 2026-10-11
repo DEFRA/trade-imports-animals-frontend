@@ -25,6 +25,11 @@ import {
   REVIEW_CARDS,
   withCardErrors
 } from './view-model/incomplete-cards.js'
+import {
+  SPECIES_ENTRY_PREFIX,
+  unfinishedSpeciesErrors,
+  withSpeciesErrors
+} from './view-model/species-errors.js'
 import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { partiesFromStoredAnswers } from '../addresses/frozen-parties.js'
 import { partyOf } from '../addresses/parties.js'
@@ -44,6 +49,9 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
  * is somewhere on this page, so its entry is an anchor; a party's entry links
  * to the page that edits its address, returning here.
  *
+ * Species entries follow commodity details and link to the species block on
+ * this page.
+ *
  * Party errors are keyed `party:<id>` here because `contactAddress` is both a
  * party id and a card id: unprefixed, the card's message would overwrite the
  * party's and the party entry would link to the card anchor.
@@ -51,6 +59,20 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
  * Focus is only moved to the summary when the user has just been refused, so a
  * plain visit does not yank the caret out of the page heading. */
 const PARTY_KEY_PREFIX = 'party:'
+
+const summaryHref = (journeyId, pageAnchors) => (key) => {
+  if (key.startsWith(PARTY_KEY_PREFIX)) {
+    return partyEditHref(
+      journeyId,
+      partyOf(key.slice(PARTY_KEY_PREFIX.length)),
+      CYA_SLUG
+    )
+  }
+  if (key.startsWith(SPECIES_ENTRY_PREFIX)) {
+    return `#${key.slice(SPECIES_ENTRY_PREFIX.length)}`
+  }
+  return cardAnchorHref(key, pageAnchors) ?? changeHref(journeyId, key)
+}
 
 const reviewErrorSummary = (
   journeyId,
@@ -70,14 +92,7 @@ const reviewErrorSummary = (
       ...cardErrors
     },
     {
-      href: (key) =>
-        key.startsWith(PARTY_KEY_PREFIX)
-          ? partyEditHref(
-              journeyId,
-              partyOf(key.slice(PARTY_KEY_PREFIX.length)),
-              CYA_SLUG
-            )
-          : (cardAnchorHref(key, pageAnchors) ?? changeHref(journeyId, key)),
+      href: summaryHref(journeyId, pageAnchors),
       disableAutoFocus
     }
   )
@@ -95,6 +110,7 @@ const renderCya = async (
     parties = answers,
     partyErrors = {},
     cardErrors = {},
+    speciesErrors = {},
     disableAutoFocus = true
   }
 ) => {
@@ -119,7 +135,7 @@ const renderCya = async (
     journeyStrip: journeyStrip(journey),
     errorSummary: reviewErrorSummary(
       journey.journeyId,
-      cardErrors,
+      withSpeciesErrors(cardErrors, speciesErrors),
       partyErrors,
       disableAutoFocus,
       pageAnchorsOf(sections)
@@ -188,6 +204,9 @@ export const renderNotificationView = async (
           ...extraCardErrors,
           ...incompleteCardErrors(answers, scope, evaluation)
         },
+    speciesErrors: holdsSilently
+      ? {}
+      : unfinishedSpeciesErrors(answers, evaluation),
     disableAutoFocus
   })
 }

@@ -104,7 +104,8 @@ export const copy = {
     animalColumn: 'Animal',
     permanentAddress: 'Permanent address',
     animalN: (n) => `Animal ${n}`,
-    heading: 'Animal details'
+    animalNamed: (species, n) => `${species} ${n}`,
+    heading: 'Identification details'
   },
   documentN: (n) => `Document ${n}`,
   // Shown inside the uploaded-documents card when nothing has been uploaded.
@@ -113,7 +114,8 @@ export const copy = {
   // What each Change link names once a screen reader reaches it. Cards carry a
   // Change link in the heading, so a card's entry here reads as the rest of
   // "Change ..." — lower case, and the card's own title in words. The transit
-  // countries row and the first row of each species block carry one of their own.
+  // countries row and the first row of each species block carry one of their own,
+  // and the Identification details table of each species block carries one too.
   hidden: {
     cards: {
       importDetails: 'origin of import',
@@ -130,7 +132,9 @@ export const copy = {
     rows: {
       transitedCountries: 'countries that the consignment will travel through'
     },
-    numberOfAnimalsFor: (species) => `number of animals for ${species}`
+    numberOfAnimalsFor: (species) => `number of animals for ${species}`,
+    identificationDetailsFor: (species) =>
+      `identification details for ${species}`
   },
   // The review ends with the button and nothing else. Its label carries the
   // whole instruction, so no heading and no sentence stand above it.
@@ -153,6 +157,15 @@ export const copy = {
       rolesAndAddresses: 'Complete roles and addresses',
       contactAddress: 'Complete contact address for this consignment',
       documents: 'Complete documents'
+    },
+    // A species of a multi-species consignment that is still short of what
+    // submit needs, named in lower case. Summary entries only: the species
+    // block itself is not marked.
+    species: {
+      numberOfAnimals: (species) =>
+        `Enter the number of animals for ${species}`,
+      atLeastOneIdentifier: (species) =>
+        `Enter at least 1 animal identifier for ${species}`
     },
     parties: {
       placeOfOrigin: 'Correct the address details for the place of origin',

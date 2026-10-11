@@ -30,6 +30,18 @@ describe('#copy', () => {
     expect(copy.hidden.numberOfAnimalsFor('Bos Taurus')).toBe(
       'number of animals for Bos Taurus'
     )
+    expect(copy.identifierTable.animalNamed('Bos taurus', 2)).toBe(
+      'Bos taurus 2'
+    )
+    expect(copy.hidden.identificationDetailsFor('Bos Taurus')).toBe(
+      'identification details for Bos Taurus'
+    )
+    expect(copy.errors.species.numberOfAnimals('felis catus')).toBe(
+      'Enter the number of animals for felis catus'
+    )
+    expect(copy.errors.species.atLeastOneIdentifier('felis catus')).toBe(
+      'Enter at least 1 animal identifier for felis catus'
+    )
   })
 })
 

@@ -1,4 +1,7 @@
-import { consignmentDetailsPage } from '../../../../../commodities/page.js'
+import {
+  animalIdentificationPage,
+  consignmentDetailsPage
+} from '../../../../../commodities/page.js'
 import { copyFor } from '../../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../../copy/copy.en.js'
 import { copy as cy } from '../../../../copy/copy.cy.js'
@@ -10,14 +13,32 @@ import { speciesName } from './species-name.js'
 
 const copy = copyFor({ en, cy })
 
-const blockHeading = (entry) =>
+export const speciesBlockHeading = (entry) =>
   speciesName(entry) || entry.commoditySelection?.trim() || copy.notApplicable
 
-/** One species of a commodity: the animal and package rows, and the identifier
- * table. The first row carries its own Change link to the consignment details
- * page, which collects the numbers. */
+const identificationDetails = (journeyId, entry, units, readOnly, heading) => {
+  const table = identifierTable(units, entry)
+  return (
+    table && {
+      ...table,
+      ...editableActions(
+        readOnly,
+        changeAction(
+          journeyId,
+          animalIdentificationPage.slug,
+          copy.hidden.identificationDetailsFor(heading)
+        )
+      )
+    }
+  )
+}
+
+/** One species of a commodity: the animal and package rows, and the
+ * Identification details table, which on an editable review carries its own
+ * Change link to the identification page. The first row carries its own Change
+ * link to the consignment details page, which collects the numbers. */
 export const speciesBlock = (journeyId, entry, units, readOnly) => {
-  const heading = blockHeading(entry)
+  const heading = speciesBlockHeading(entry)
   return {
     heading,
     rows: [
@@ -36,6 +57,12 @@ export const speciesBlock = (journeyId, entry, units, readOnly) => {
         ? [row(copy.rows.numberOfPackages, entry.numberOfPackages)]
         : [])
     ],
-    identifierTable: identifierTable(units, entry.commoditySelection)
+    identifierTable: identificationDetails(
+      journeyId,
+      entry,
+      units,
+      readOnly,
+      heading
+    )
   }
 }

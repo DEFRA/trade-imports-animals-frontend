@@ -98,7 +98,8 @@ export const copy = {
     animalColumn: 'Anifail',
     permanentAddress: 'Cyfeiriad parhaol',
     animalN: (n) => `Anifail ${n}`,
-    heading: 'Manylion yr anifeiliaid'
+    animalNamed: (species, n) => `${species} ${n}`,
+    heading: 'Manylion adnabod'
   },
   documentN: (n) => `Dogfen ${n}`,
   documentsEmpty: 'Nid ydych wedi ychwanegu unrhyw ddogfennau eto.',
@@ -117,7 +118,9 @@ export const copy = {
     rows: {
       transitedCountries: 'gwledydd y bydd y llwyth yn teithio drwyddynt'
     },
-    numberOfAnimalsFor: (species) => `nifer yr anifeiliaid ar gyfer ${species}`
+    numberOfAnimalsFor: (species) => `nifer yr anifeiliaid ar gyfer ${species}`,
+    identificationDetailsFor: (species) =>
+      `manylion adnabod ar gyfer ${species}`
   },
   submit: {
     button: 'Parhau'
@@ -135,6 +138,12 @@ export const copy = {
       rolesAndAddresses: 'Cwblhewch y rolau a’r cyfeiriadau',
       contactAddress: 'Cwblhewch y cyfeiriad cyswllt ar gyfer y llwyth hwn',
       documents: 'Cwblhewch y dogfennau'
+    },
+    species: {
+      numberOfAnimals: (species) =>
+        `Rhowch nifer yr anifeiliaid ar gyfer ${species}`,
+      atLeastOneIdentifier: (species) =>
+        `Rhowch o leiaf 1 dynodwr anifail ar gyfer ${species}`
     },
     parties: {
       placeOfOrigin: 'Cywirwch fanylion y cyfeiriad ar gyfer y man tarddiad',
