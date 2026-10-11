@@ -174,12 +174,12 @@ describe('journey strip in template mode', () => {
     expect(strip).toEqual({ reference: '', status: TEMPLATE_TAG })
   })
 
-  it('Should give a template page no overview link', () => {
+  it("Should link a template page to the template's own task list", () => {
     const view = withTemplateMode('2100010101', () =>
       base('Origin', { journey: { journeyId: TEMPLATE_ID, status: DRAFT } })
     )
 
-    expect(view.hubHref).toBeUndefined()
+    expect(view.hubHref).toBe(`/live-animals/templates/${TEMPLATE_ID}`)
   })
 
   it('Should still give a notification page its overview link', () => {

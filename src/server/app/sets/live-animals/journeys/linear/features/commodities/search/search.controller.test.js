@@ -3,7 +3,11 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
+import {
+  configureRecords,
+  configureTemplateRecords
+} from '../../../../../../../engine/persistence/records.js'
+import { withTemplateMode } from '../../../../../../../shared/template-mode.js'
 import { configureSession } from '../../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
@@ -311,5 +315,57 @@ describe('commodity search — saving the selection', () => {
         (line) => `${line.commoditySelection}|${line.speciesSelection}`
       )
     ).toEqual([COW_BOS_TAURUS_KEY])
+  })
+})
+
+describe('commodity search in template mode', () => {
+  const OWNER = '2100010101'
+  const asTemplateHandler = (handler) => (request, h) =>
+    withTemplateMode(OWNER, () => handler(request, h))
+
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureTemplateRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it("Should send Back to the template's Origin of the import", async () => {
+    const result = await driveHandler(asTemplateHandler(get))
+
+    expect(result.view.context.backLink).toBe(
+      `/live-animals/templates/${result.journeyId}/origin`
+    )
+  })
+
+  it("Should link the overview controls to the template's task list", async () => {
+    const result = await driveHandler(asTemplateHandler(get))
+
+    expect(result.view.context.hubHref).toBe(
+      `/live-animals/templates/${result.journeyId}`
+    )
+  })
+
+  it("Should return to the template's task list on Save and continue", async () => {
+    const result = await driveHandler(asTemplateHandler(post), {
+      payload: { species: COW_BOS_TAURUS_KEY }
+    })
+
+    expect(result.response.redirect).toBe(
+      `/live-animals/templates/${result.journeyId}`
+    )
+  })
+
+  it('Should still go on to Commodity details for a notification', async () => {
+    const getResult = await driveHandler(get)
+    const postResult = await driveHandler(post, {
+      payload: { species: COW_BOS_TAURUS_KEY }
+    })
+
+    expect(getResult.view.context.backLink).toBe(
+      `/live-animals/notifications/${getResult.journeyId}`
+    )
+    expect(postResult.response.redirect).toContain('consignment-details')
   })
 })

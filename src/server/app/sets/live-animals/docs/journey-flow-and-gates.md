@@ -170,5 +170,13 @@ the amend, cancel-amend, copy and delete actions. None of them gets a twin, and 
 opening run skips the documents and review steps, so after the last question a
 template falls to its own overview path rather than the review.
 
-Until a template has a task list, a template-mode page links to no overview: it ends
-with Save and continue alone.
+The overview route is twinned at `/templates/{journeyId}` and is the template's task
+list: the hub's own handler, which in template mode drops every task whose pages
+template mode leaves out (and any section left empty, today Documents), heads the
+list "Template tasklist" and ends with "Review template" and "Return to manage
+templates".
+
+A template-mode page links to the template's task list, so its Save and return and
+Cancel controls return there. Pages that already hide the return controls (Origin, CPH number and the transporter sub-pages) still end with Save and continue alone. "What
+are you importing?" goes Back to Origin, and its Save and continue returns to the
+task list.

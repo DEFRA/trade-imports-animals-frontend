@@ -11,6 +11,8 @@ const storage = new AsyncLocalStorage()
 
 const NOTIFICATION_PREFIX = '/notifications/{journeyId}/'
 const TEMPLATE_PREFIX = '/templates/{journeyId}/'
+const OVERVIEW_PATH = '/notifications/{journeyId}'
+const TEMPLATE_OVERVIEW_PATH = '/templates/{journeyId}'
 
 /**
  * Whether the current request is walking a journey page in template mode.
@@ -48,9 +50,19 @@ const inTemplateModeFor = (method) =>
         )
     : method
 
+// '' for the overview, the suffix for a journey page, null for anything else.
+const slugOf = (path) => {
+  if (path === OVERVIEW_PATH) {
+    return ''
+  }
+  return path.startsWith(NOTIFICATION_PREFIX)
+    ? path.slice(NOTIFICATION_PREFIX.length)
+    : null
+}
+
 const twinOf = (route, slug) => ({
   ...route,
-  path: `${TEMPLATE_PREFIX}${slug}`,
+  path: slug === '' ? TEMPLATE_OVERVIEW_PATH : `${TEMPLATE_PREFIX}${slug}`,
   ...(route.handler && { handler: inTemplateModeFor(route.handler) }),
   ...(route.options && {
     options: {
@@ -66,9 +78,10 @@ const twinOf = (route, slug) => ({
  * The template-mode twin of every journey route a template may walk.
  *
  * Each twin keeps the original route's method and options and runs the
- * original handler inside template mode, so no page is copied. The overview
- * path, routes outside the journey and the excluded slugs (and anything under
- * them) get no twin.
+ * original handler inside template mode, so no page is copied. The overview is
+ * twinned at `/templates/{journeyId}` as the template's task list. Routes
+ * outside the journey and the excluded slugs (and anything under them) get no
+ * twin.
  *
  * @param {object[]} routes - the set's Hapi routes.
  * @param {object} options
@@ -77,10 +90,6 @@ const twinOf = (route, slug) => ({
  */
 export const templateModeRoutes = (routes, { excludedSlugs = [] } = {}) =>
   routes
-    .filter((route) => route.path.startsWith(NOTIFICATION_PREFIX))
-    .map((route) => ({
-      route,
-      slug: route.path.slice(NOTIFICATION_PREFIX.length)
-    }))
-    .filter(({ slug }) => slug !== '' && !underExcluded(slug, excludedSlugs))
+    .map((route) => ({ route, slug: slugOf(route.path) }))
+    .filter(({ slug }) => slug !== null && !underExcluded(slug, excludedSlugs))
     .map(({ route, slug }) => twinOf(route, slug))

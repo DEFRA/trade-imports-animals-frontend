@@ -93,10 +93,21 @@ describe('#templateModeRoutes', () => {
     expect(observed).toEqual([true])
   })
 
-  it('Should not twin the overview path', () => {
-    expect(
-      templateModeRoutes([route('GET', '/notifications/{journeyId}')])
-    ).toEqual([])
+  it("Should twin the overview path as the template's task list", async () => {
+    const observed = []
+    const [twin, ...rest] = templateModeRoutes([
+      route('GET', '/notifications/{journeyId}', () =>
+        observed.push(inTemplateMode())
+      )
+    ])
+
+    await twin.handler({ auth: { credentials } }, {})
+
+    expect(rest).toEqual([])
+    expect(twin.path).toBe('/templates/{journeyId}')
+    expect(twin.method).toBe('GET')
+    expect(twin.options).toEqual({ auth: 'session' })
+    expect(observed).toEqual([true])
   })
 
   it('Should leave routes outside the journey alone', () => {

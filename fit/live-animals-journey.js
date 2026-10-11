@@ -180,6 +180,33 @@ export const startNotification = async (page) => {
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
+/** Starts a new template, names it and answers Origin, ending on 'What are you importing?'. */
+export const startTemplateAtCommodities = async (
+  page,
+  name = 'Weekly cattle'
+) => {
+  await page.goto(`${BASE}/templates/new?type=live-animals`)
+  await page
+    .getByRole('textbox', { name: 'Enter template name', exact: true })
+    .fill(name)
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Origin of the import' })
+  ).toBeVisible()
+  await answerOriginEntry(page)
+  await expect(
+    page.getByRole('heading', { name: 'What are you importing?' })
+  ).toBeVisible()
+}
+
+/** Creates a template through Bos taurus and lands on its task list. */
+export const openTemplateTaskList = async (page, name) => {
+  await startTemplateAtCommodities(page, name)
+  await selectSpecies(page, ['Bos taurus'])
+  await save(page)
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+}
+
 const FIXTURE_PORT = PORTS.find((port) => port.code === values.portOfEntry)
 const FIXTURE_PORT_OPTION = `${FIXTURE_PORT.name} (${FIXTURE_PORT.code})`
 

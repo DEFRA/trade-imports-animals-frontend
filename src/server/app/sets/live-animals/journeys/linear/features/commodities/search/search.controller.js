@@ -1,5 +1,7 @@
-import { hubPath } from '../../../../../../../shared/paths.js'
+import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
+import { inTemplateMode } from '../../../../../../../shared/template-mode.js'
 import { TEMPLATES } from '../../../config.js'
+import { originPage } from '../../origin/page.js'
 import * as state from '../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../../shared/kit.js'
@@ -23,6 +25,11 @@ const copy = copyFor({ en, cy }).search
 const SEARCH_ACTION = 'search'
 const CLEAR_ACTION = 'clear'
 
+// A template is being created in order, from Origin of the import, so the
+// commodity question goes Back there rather than to the overview.
+const backLinkFor = (journeyId) =>
+  inTemplateMode() ? pagePath(journeyId, originPage.slug) : hubPath(journeyId)
+
 const render = (h, journey, { selected, query = '', errorText = null }) => {
   const groups = commodityGroups(selected, query)
   const onScreen = new Set(
@@ -34,7 +41,7 @@ const render = (h, journey, { selected, query = '', errorText = null }) => {
   const errors = errorText ? { [errorField]: errorText } : {}
   return h.view(view, {
     ...kit.base(copy.title, {
-      backLink: hubPath(journey.journeyId),
+      backLink: backLinkFor(journey.journeyId),
       journey,
       page
     }),

@@ -660,11 +660,10 @@ describe('origin in template mode', () => {
     )
   })
 
-  it('Should end with Save and continue alone and link to no overview', async () => {
+  it('Should end with Save and continue alone', async () => {
     const result = await driveHandler(asTemplateHandler(get))
 
     expect(result.view.context.showReturnControls).toBe(false)
-    expect(result.view.context.hubHref).toBeUndefined()
   })
 
   it('Should draw the Template tag in the strip', async () => {

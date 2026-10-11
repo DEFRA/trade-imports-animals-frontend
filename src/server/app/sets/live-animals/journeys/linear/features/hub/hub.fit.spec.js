@@ -6,6 +6,7 @@ import {
   answerCountryOfOrigin,
   completeAnswerSections,
   openReviewFromHub,
+  openTemplateTaskList,
   selectSpecies,
   signIn,
   startNotification
@@ -609,5 +610,134 @@ test.describe('hub feature — commodity totals', () => {
     ).toBeVisible()
 
     await expectAxeClean(page, 'Hub with commodity totals')
+  })
+})
+
+const TEMPLATE_NAME = 'Weekly cattle'
+const TEMPLATE_TASK_LIST_PATH = /\/live-animals\/templates\/[^/]+$/
+
+const templateGroupTitles = (page) =>
+  Promise.all(
+    Object.keys(copy.template.groups).map(async (groupId) => {
+      const titles = await taskRowTitles(
+        groupTaskList(page, groupId)
+      ).allTextContents()
+      return titles.map((title) => title.trim())
+    })
+  )
+
+test.describe("hub feature — a template's task list", () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openTemplateTaskList(page, TEMPLATE_NAME)
+  })
+
+  test('shows the Template tag and name in place of the status and reference, the Overview heading and "Template tasklist"', async ({
+    page
+  }) => {
+    const strip = page.locator('.app-journey-strip')
+
+    await expect(page).toHaveURL(TEMPLATE_TASK_LIST_PATH)
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+    await expect(strip.locator('.govuk-tag')).toHaveText(
+      sharedCopy.journeyStrip.template
+    )
+    await expect(strip).toContainText(TEMPLATE_NAME)
+    await expect(strip).not.toContainText('GBN-AG-')
+    await expect(
+      page.getByRole('heading', { name: copy.template.taskListHeading })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: copy.taskListHeading })
+    ).toHaveCount(0)
+  })
+
+  test('keeps the commodity totals, reading 0 and 0', async ({ page }) => {
+    await expect(
+      page.getByRole('heading', { name: copy.commodityTotals.heading })
+    ).toBeVisible()
+    await expectTotalBoxes(page, '0', '0')
+  })
+
+  test("lists five sections without Documents, holding the notification's own tasks", async ({
+    page
+  }) => {
+    await expect(page.locator(SECTION_HEADING)).toHaveText(
+      Object.values(copy.template.groups)
+    )
+    expect(await templateGroupTitles(page)).toEqual([
+      [
+        copy.rows.origin.title,
+        copy.rows.commodities.title,
+        copy.rows.importReason.title
+      ],
+      [
+        copy.rows.consignmentDetails.title,
+        copy.rows.animalIdentification.title,
+        copy.rows.additionalDetails.title
+      ],
+      [copy.rows.arrivalDetails.title, copy.rows.transporter.title],
+      [copy.rows.addresses.title],
+      [copy.rows.contact.title]
+    ])
+    await expect(page.getByText(copy.rows.documents.title)).toHaveCount(0)
+  })
+
+  test('tags answered tasks Complete and the rest To do, and opens each task within the template', async ({
+    page
+  }) => {
+    await expect(
+      taskRow(page, copy.rows.origin.title).getByText(copy.statuses.complete)
+    ).toBeVisible()
+    await expect(
+      taskRow(page, copy.rows.commodities.title).getByText(
+        copy.statuses.complete
+      )
+    ).toBeVisible()
+    await expect(
+      taskRow(page, copy.rows.importReason.title).getByText(copy.statuses.toDo)
+    ).toBeVisible()
+
+    const hrefs = await page
+      .locator('.app-task-list .govuk-task-list__link')
+      .evaluateAll((links) => links.map((link) => link.getAttribute('href')))
+    expect(hrefs.length).toBeGreaterThan(0)
+    for (const href of hrefs) {
+      expect(href).toMatch(/^\/live-animals\/templates\/[^/]+\/.+/)
+    }
+
+    await page.getByRole('link', { name: copy.rows.origin.title }).click()
+    await expect(page).toHaveURL(/\/live-animals\/templates\/[^/]+\/origin$/)
+  })
+
+  test('ends with Review template and Return to manage templates, and no Save template', async ({
+    page
+  }) => {
+    await expect(page.locator('.govuk-button-group .govuk-button')).toHaveText([
+      copy.template.reviewTemplate,
+      copy.template.returnToManageTemplates
+    ])
+    await expect(
+      page.getByRole('button', { name: 'Save template', exact: true })
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole('button', { name: copy.reviewAndSubmit })
+    ).toHaveCount(0)
+  })
+
+  test('Return to manage templates opens Manage templates', async ({
+    page
+  }) => {
+    await page
+      .getByRole('button', { name: copy.template.returnToManageTemplates })
+      .click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Manage templates' })
+    ).toBeVisible()
+  })
+
+  test('has no serious or critical axe violations', async ({ page }) => {
+    await expectAxeClean(page, "A template's task list")
   })
 })

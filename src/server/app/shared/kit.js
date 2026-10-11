@@ -165,8 +165,8 @@ export const base = (
     // would send every set's service navigation to the default set's
     // dashboard by way of the root redirect.
     homeUrl: dashboardPath(),
-    // A template has no overview yet, so a template-mode page links to none.
-    hubHref: hasJourney && !inTemplateMode() ? hubPath(journeyId) : undefined,
+    // In template mode `hubPath` resolves to the template's own task list.
+    hubHref: hasJourney ? hubPath(journeyId) : undefined,
     journeyStrip: journeyStrip(journey),
     concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,

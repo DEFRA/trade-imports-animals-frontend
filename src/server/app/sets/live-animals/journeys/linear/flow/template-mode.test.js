@@ -68,14 +68,24 @@ describe('template mode over the live animals journey', () => {
     }
   })
 
+  it('Should give the overview a template twin', () => {
+    expect(
+      twins.find(
+        (twin) =>
+          twin.method === 'GET' && twin.path === '/templates/{journeyId}'
+      )
+    ).toBeDefined()
+  })
+
   it('Should twin every journey route except the excluded ones', () => {
     const journeyRoutes = allRoutes.filter(
       (route) =>
-        route.path.startsWith('/notifications/{journeyId}/') &&
-        !TEMPLATE_MODE_EXCLUDED_SLUGS.some((excluded) => {
-          const slug = route.path.slice('/notifications/{journeyId}/'.length)
-          return slug === excluded || slug.startsWith(`${excluded}/`)
-        })
+        route.path === '/notifications/{journeyId}' ||
+        (route.path.startsWith('/notifications/{journeyId}/') &&
+          !TEMPLATE_MODE_EXCLUDED_SLUGS.some((excluded) => {
+            const slug = route.path.slice('/notifications/{journeyId}/'.length)
+            return slug === excluded || slug.startsWith(`${excluded}/`)
+          }))
     )
 
     expect(twins).toHaveLength(journeyRoutes.length)
