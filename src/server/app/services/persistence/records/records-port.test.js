@@ -258,7 +258,7 @@ describe('records durable port', () => {
 describe('records concurrency token', () => {
   beforeEach(() => records.clear())
 
-  it('Should move the concurrency token on with every save, as the backend does', async () => {
+  it('Should move the concurrency token on every save, as the backend does', async () => {
     const created = await records.create()
     const replaced = await records.replaceFulfilment(
       created.journeyId,
