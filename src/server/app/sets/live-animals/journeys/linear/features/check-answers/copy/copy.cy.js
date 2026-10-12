@@ -2,7 +2,18 @@
 export const copy = {
   title: 'Adolygu eich hysbysiad',
   resubmitTitle: 'Adolygu cyn ailgyflwyno',
-  viewHeader: { dateSubmitted: (date) => `Dyddiad cyflwyno: ${date}` },
+  viewHeader: {
+    dateSubmitted: (date) => `Dyddiad cyflwyno: ${date}`,
+    amend: 'Diwygio’r hysbysiad hwn'
+  },
+  importReferences: {
+    heading: 'Cyfeirnodau mewnforio',
+    warning:
+      'Rhaid i chi ddefnyddio’r cyfeirnod a’r cod cywir ar y datganiad tollau neu bydd oedi i’ch llwyth.',
+    warningIcon: 'Rhybudd',
+    notificationReference: 'Cyfeirnod yr hysbysiad',
+    customsDocumentCode: 'Cod dogfen tollau'
+  },
   notApplicable: 'Amherthnasol',
   missing: 'Ar goll',
   yesNo: { yes: 'Iawn', no: 'Na' },

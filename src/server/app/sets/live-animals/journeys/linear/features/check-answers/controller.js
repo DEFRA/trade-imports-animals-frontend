@@ -3,7 +3,6 @@ import {
   hubPath,
   pagePath
 } from '../../../../../../shared/paths.js'
-import { formatMomentAsLongDay } from '../../../../../../lib/validate/index.js'
 import { TEMPLATES } from '../../config.js'
 import { nextInSection } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
@@ -24,6 +23,7 @@ import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import { buildSections } from './view-model/index.js'
 import { changeHref } from './view-model/rows/change-link.js'
 import { invalidPartyErrors } from './view-model/invalid-parties.js'
+import { viewHeaderOf } from './view-model/view-header.js'
 import {
   cardAnchorHref,
   pageAnchorsOf,
@@ -103,19 +103,6 @@ const reviewErrorSummary = (
     }
   )
 
-const submittedDateText = (submittedAt) =>
-  submittedAt
-    ? copy.viewHeader.dateSubmitted(
-        formatMomentAsLongDay(new Date(submittedAt))
-      )
-    : null
-
-const viewHeaderOf = (journey) => ({
-  reference: journey.journeyId,
-  status: journeyStrip(journey).status,
-  dateSubmitted: submittedDateText(journey.submittedAt)
-})
-
 const reviewTitle = (journey) =>
   journey.status === state.AMEND && journey.answersChangedSinceSubmission
     ? copy.resubmitTitle
@@ -173,7 +160,6 @@ const renderCya = async (
     readOnly,
     amendmentCancelled,
     recoverableError,
-    copyAction: readOnly ? { href: pagePath(journey.journeyId, 'copy') } : null,
     deleteHref: pagePath(journey.journeyId, 'delete'),
     cancelAmendHref: amending
       ? pagePath(journey.journeyId, CANCEL_AMEND_SLUG)

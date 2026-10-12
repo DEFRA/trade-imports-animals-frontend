@@ -3,6 +3,7 @@
 {% from "govuk/components/table/macro.njk" import govukTable %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
+{% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
 {% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 
 {% macro cardError(text) %}
@@ -42,32 +43,39 @@
       <h1 class="govuk-heading-l govuk-!-display-inline-block govuk-!-margin-right-2 govuk-!-margin-bottom-2">{{ viewHeader.reference }}</h1>
       {{ govukTag({ text: viewHeader.status.text, classes: viewHeader.status.classes }) }}
       {% if viewHeader.dateSubmitted %}<p class="govuk-body govuk-!-margin-bottom-0">{{ viewHeader.dateSubmitted }}</p>{% endif %}
+      <form method="post" action="{{ viewHeader.actions.copyHref }}" novalidate>
+        <input type="hidden" name="crumb" value="{{ crumb }}" />
+        <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
+        <input type="hidden" name="copyOrigin" value="notification-view" />
+        <div class="govuk-button-group govuk-!-margin-top-4">
+          {% if viewHeader.actions.amendHref %}
+            {{ govukButton({
+              text: copy.viewHeader.amend,
+              attributes: { formaction: viewHeader.actions.amendHref }
+            }) }}
+          {% endif %}
+          {{ govukButton({
+            text: sharedCopy.notificationActions.copy.text,
+            classes: "" if viewHeader.actions.copyIsPrimary else "govuk-button--secondary"
+          }) }}
+          {{ govukButton({
+            text: sharedCopy.notificationActions.delete.text,
+            href: viewHeader.actions.deleteHref,
+            classes: "govuk-button--warning"
+          }) }}
+        </div>
+      </form>
+      <section class="govuk-!-margin-bottom-6" aria-labelledby="import-reference-numbers">
+        <h2 class="govuk-heading-m" id="import-reference-numbers">{{ copy.importReferences.heading }}</h2>
+        {{ govukWarningText({
+          text: copy.importReferences.warning,
+          iconFallbackText: copy.importReferences.warningIcon
+        }) }}
+        {{ govukSummaryList({ rows: viewHeader.importReferences }) }}
+      </section>
     </div>
   {% else %}
     <h1 class="govuk-heading-l">{{ heading }}</h1>
-  {% endif %}
-
-  {% if readOnly %}
-    <div class="govuk-button-group">
-      {% if copyAction %}
-        <form method="post" action="{{ copyAction.href }}" class="app-form-inline">
-          <input type="hidden" name="crumb" value="{{ crumb }}" />
-          <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
-          <input type="hidden" name="copyOrigin" value="notification-view" />
-          {{ govukButton({
-            text: sharedCopy.notificationActions.copy.text,
-            classes: "govuk-button--secondary"
-          }) }}
-        </form>
-      {% endif %}
-      {% if deleteHref %}
-        {{ govukButton({
-          text: sharedCopy.notificationActions.delete.text,
-          href: deleteHref,
-          classes: "govuk-button--warning"
-        }) }}
-      {% endif %}
-    </div>
   {% endif %}
 
   {% set cardHeadingLevel = 3 %}

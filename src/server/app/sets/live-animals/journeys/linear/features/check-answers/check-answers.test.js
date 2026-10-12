@@ -279,10 +279,26 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
 
     expect(view.context.readOnly).toBe(true)
     expect(changeHrefsOf(view.context.sections)).toEqual([])
-    expect(view.context.copyAction).toEqual({
-      href: expect.stringMatching(/\/copy$/)
+    expect(view.context.viewHeader.actions).toMatchObject({
+      amendHref: expect.stringMatching(/\/amend$/),
+      copyHref: expect.stringMatching(/\/copy$/),
+      copyIsPrimary: false,
+      deleteHref: expect.stringMatching(/\/delete$/)
     })
-    expect(view.context.deleteHref).toMatch(/\/delete$/)
+  })
+
+  it("Should show a submitted notification's import reference numbers", async () => {
+    const { context } = await viewForStatus(SUBMITTED)
+
+    expect(
+      context.viewHeader.importReferences.map(({ key, value }) => [
+        key.text,
+        value.text
+      ])
+    ).toEqual([
+      ['Notification reference', context.viewHeader.reference],
+      ['Customs document code', 'C640']
+    ])
   })
 
   it.each([DRAFT, AMEND])(
@@ -292,7 +308,7 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
       const hrefs = changeHrefsOf(view.context.sections)
 
       expect(view.context.readOnly).toBe(false)
-      expect(view.context.copyAction).toBeNull()
+      expect(view.context.viewHeader).toBeNull()
       expect(view.context.deleteHref).toMatch(/\/delete$/)
       expect(hrefs).not.toHaveLength(0)
       expect(hrefs).toEqual(

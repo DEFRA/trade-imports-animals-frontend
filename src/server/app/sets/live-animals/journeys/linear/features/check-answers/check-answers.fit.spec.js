@@ -611,6 +611,12 @@ test.describe('check-answers feature navigation and submission', () => {
         name: sharedCopy.notificationActions.copy.text
       })
     ).toHaveCount(0)
+    await expect(
+      page.getByRole('button', { name: copy.viewHeader.amend })
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole('region', { name: copy.importReferences.heading })
+    ).toHaveCount(0)
 
     await deleteButton.click()
 
@@ -841,6 +847,92 @@ test.describe('check-answers feature submitted notification', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: dashboardCopy.title })
     ).toBeVisible()
+  })
+
+  test('offers Amend this notification, a secondary Copy as new and a red Delete in its header', async ({
+    page
+  }) => {
+    const group = page.locator('.govuk-button-group').filter({
+      has: page.getByRole('button', {
+        name: copy.viewHeader.amend,
+        exact: true
+      })
+    })
+    const buttons = group.getByRole('button')
+
+    await expect(buttons).toHaveText([
+      copy.viewHeader.amend,
+      sharedCopy.notificationActions.copy.text,
+      sharedCopy.notificationActions.delete.text
+    ])
+    await expect(buttons.nth(0)).not.toHaveClass(
+      /govuk-button--(secondary|warning)/
+    )
+    await expect(buttons.nth(1)).toHaveClass(/govuk-button--secondary/)
+    await expect(buttons.nth(2)).toHaveClass(/govuk-button--warning/)
+    await expect(buttons.nth(2)).toHaveAttribute('href', /\/delete$/)
+  })
+
+  test('Amend this notification starts the amendment', async ({ page }) => {
+    await page
+      .getByRole('button', { name: copy.viewHeader.amend, exact: true })
+      .click()
+
+    await expect(page).toHaveURL(new RegExp(`/notifications/${reference}$`))
+    await expect(
+      page
+        .getByRole('main')
+        .getByText(sharedCopy.journeyStrip.amend, { exact: true })
+    ).toBeVisible()
+  })
+
+  test('Delete in the header opens the delete confirmation', async ({
+    page
+  }) => {
+    await page
+      .getByRole('button', {
+        name: sharedCopy.notificationActions.delete.text,
+        exact: true
+      })
+      .click()
+
+    await expect(page).toHaveURL(/\/delete$/)
+    await expect(
+      page.getByRole('heading', { name: deleteCopy.title })
+    ).toBeVisible()
+  })
+
+  test('shows the import reference numbers as plain text, with no Copy button, without JavaScript', async ({
+    page,
+    browser
+  }) => {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      storageState: await page.context().storageState()
+    })
+    const noJs = await context.newPage()
+
+    await noJs.goto(
+      `${BASE}/notifications/${reference}/${NOTIFICATION_VIEW_SLUG}`
+    )
+
+    const region = noJs.getByRole('region', {
+      name: copy.importReferences.heading
+    })
+    await expect(region).toContainText(copy.importReferences.warning)
+    await expect(
+      rowFor(noJs, copy.importReferences.notificationReference).getByRole(
+        'definition'
+      )
+    ).toHaveText(reference)
+    await expect(
+      rowFor(noJs, copy.importReferences.customsDocumentCode).getByRole(
+        'definition'
+      )
+    ).toHaveText('C640')
+    await expect(region.getByRole('button')).toHaveCount(0)
+
+    await context.close()
   })
 
   test('ends with the last card and offers no way to submit again', async ({

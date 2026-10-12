@@ -2,7 +2,19 @@ export const copy = {
   title: 'Review your notification',
   resubmitTitle: 'Review before re-submitting',
   // The line under a submitted notification's reference.
-  viewHeader: { dateSubmitted: (date) => `Date submitted: ${date}` },
+  viewHeader: {
+    dateSubmitted: (date) => `Date submitted: ${date}`,
+    amend: 'Amend this notification'
+  },
+  // The section under a submitted notification's header; its values read as plain text.
+  importReferences: {
+    heading: 'Import reference numbers',
+    warning:
+      'You must use the correct reference and code on the customs declaration or your consignment will be delayed.',
+    warningIcon: 'Warning',
+    notificationReference: 'Notification reference',
+    customsDocumentCode: 'Customs document code'
+  },
   // An empty value inside a card that is finished. Nothing more is owed on
   // that card, so the blank is a settled answer rather than a gap.
   notApplicable: 'Not applicable',
