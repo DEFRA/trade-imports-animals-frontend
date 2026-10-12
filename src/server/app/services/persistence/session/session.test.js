@@ -6,7 +6,7 @@ import {
   flowOnlyAnswersCookie,
   knownJourneysCookie,
   openingRunCookie,
-  reviewedTokensCookie
+  reviewedConcurrencyTokensCookie
 } from '../../../engine/persistence/session.js'
 import { recordingH } from '../../../engine/test-support.js'
 import {
@@ -37,7 +37,9 @@ describe('per-set cookie names', () => {
     expect(addressHandshakeTokensCookie()).toBe(
       'liveAnimalsAddressHandshakeTokens'
     )
-    expect(reviewedTokensCookie()).toBe('liveAnimalsReviewedTokens')
+    expect(reviewedConcurrencyTokensCookie()).toBe(
+      'liveAnimalsReviewedConcurrencyTokens'
+    )
   })
 })
 
@@ -149,25 +151,34 @@ describe('#session.flowOnlyAnswers', () => {
   })
 })
 
-describe('#session.reviewedToken', () => {
+describe('#session.reviewedConcurrencyToken', () => {
   it('Should round-trip a reviewed token without leaking it between journeys', async () => {
     const h = recordingH()
-    await session.setReviewedToken(h, 'journey-1', 4, { state: {} })
+    await session.setReviewedConcurrencyToken(h, 'journey-1', 4, { state: {} })
 
     const stored = {
-      state: { [reviewedTokensCookie()]: h.cookies[reviewedTokensCookie()] }
+      state: {
+        [reviewedConcurrencyTokensCookie()]:
+          h.cookies[reviewedConcurrencyTokensCookie()]
+      }
     }
-    expect(await session.reviewedToken(stored, 'journey-1')).toBe(4)
-    expect(await session.reviewedToken(stored, 'journey-2')).toBeUndefined()
+    expect(await session.reviewedConcurrencyToken(stored, 'journey-1')).toBe(4)
+    expect(
+      await session.reviewedConcurrencyToken(stored, 'journey-2')
+    ).toBeUndefined()
   })
 
   it('Should drop one journey’s entry on clearing, keeping another’s', async () => {
     const h = recordingH()
-    await session.setReviewedToken(h, 'journey-1', undefined, {
-      state: { [reviewedTokensCookie()]: { 'journey-1': 4, 'journey-2': 7 } }
+    await session.setReviewedConcurrencyToken(h, 'journey-1', undefined, {
+      state: {
+        [reviewedConcurrencyTokensCookie()]: { 'journey-1': 4, 'journey-2': 7 }
+      }
     })
 
-    expect(h.cookies[reviewedTokensCookie()]).toEqual({ 'journey-2': 7 })
+    expect(h.cookies[reviewedConcurrencyTokensCookie()]).toEqual({
+      'journey-2': 7
+    })
   })
 })
 
@@ -181,7 +192,7 @@ describe('per-set cookie names with two sets mounted', () => {
     openingRun: 'probeOpeningRun',
     flowOnlyAnswers: 'probeFlowOnlyAnswers',
     addressHandshakeTokens: 'probeAddressHandshakeTokens',
-    reviewedTokens: 'probeReviewedTokens'
+    reviewedConcurrencyTokens: 'probeReviewedConcurrencyTokens'
   })
 
   it('Should answer each set its own names', () => {
@@ -206,11 +217,11 @@ describe('per-set cookie names with two sets mounted', () => {
     expect(withSetContext(OTHER_SET, flowOnlyAnswersCookie)).toBe(
       OTHER_NAMES.flowOnlyAnswers
     )
-    expect(withSetContext(SET_ID, reviewedTokensCookie)).toBe(
-      SESSION_COOKIE_NAMES.reviewedTokens
+    expect(withSetContext(SET_ID, reviewedConcurrencyTokensCookie)).toBe(
+      SESSION_COOKIE_NAMES.reviewedConcurrencyTokens
     )
-    expect(withSetContext(OTHER_SET, reviewedTokensCookie)).toBe(
-      OTHER_NAMES.reviewedTokens
+    expect(withSetContext(OTHER_SET, reviewedConcurrencyTokensCookie)).toBe(
+      OTHER_NAMES.reviewedConcurrencyTokens
     )
   })
 })

@@ -74,7 +74,7 @@ const buildServer = async () => {
       method: 'POST',
       path: '/reviewed/{journeyId}',
       handler: async (request, h) => {
-        await session.setReviewedToken(
+        await session.setReviewedConcurrencyToken(
           h,
           request.params.journeyId,
           request.payload.token ?? undefined
@@ -87,8 +87,10 @@ const buildServer = async () => {
       path: '/reviewed/{journeyId}',
       handler: async (request) => ({
         token:
-          (await session.reviewedToken(request, request.params.journeyId)) ??
-          null
+          (await session.reviewedConcurrencyToken(
+            request,
+            request.params.journeyId
+          )) ?? null
       })
     }
   ])
@@ -134,7 +136,7 @@ describe('#session.knownJourneyIds (real, yar)', () => {
   })
 })
 
-describe('#session.reviewedToken (real, yar)', () => {
+describe('#session.reviewedConcurrencyToken (real, yar)', () => {
   const REVIEWED_J1 = '/reviewed/J-1'
 
   it('Should hold one token per journey, and drop it when cleared', async () => {

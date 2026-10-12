@@ -38,7 +38,7 @@ The live-animals journey supplies these names in its
   openingRun: 'liveAnimalsOpeningRun',
   flowOnlyAnswers: 'liveAnimalsFlowOnlyAnswers',
   addressHandshakeTokens: 'liveAnimalsAddressHandshakeTokens',
-  reviewedTokens: 'liveAnimalsReviewedTokens'
+  reviewedConcurrencyTokens: 'liveAnimalsReviewedConcurrencyTokens'
 }
 ```
 

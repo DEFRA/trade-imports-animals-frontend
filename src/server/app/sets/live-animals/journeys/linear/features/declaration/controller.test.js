@@ -29,7 +29,7 @@ import * as declaration from './controller.js'
 import { continueRequest, reviewedState } from './test-support.js'
 import {
   flowOnlyAnswersCookie,
-  reviewedTokensCookie
+  reviewedConcurrencyTokensCookie
 } from '../../../../../../engine/persistence/session.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import * as refusal from '../check-answers/refusal.js'
@@ -64,19 +64,24 @@ const drivePost = async ({
 } = {}) => {
   const { journeyId } = await store.create()
   await store.seedAnswers(journeyId, seed)
-  const { concurrencyToken: reviewedToken } = await store.get(journeyId)
+  const { concurrencyToken: reviewedConcurrencyToken } =
+    await store.get(journeyId)
   await afterReview(journeyId)
   const h = stubH()
   const response = await post(
     journeyRequest(journeyId, {
-      payload: { step, concurrencyToken: `${reviewedToken}`, ...payload },
-      state: reviewedState(journeyId, sessionToken(reviewedToken))
+      payload: {
+        step,
+        concurrencyToken: `${reviewedConcurrencyToken}`,
+        ...payload
+      },
+      state: reviewedState(journeyId, sessionToken(reviewedConcurrencyToken))
     }),
     h
   )
   return {
     journeyId,
-    reviewedToken,
+    reviewedConcurrencyToken,
     before: seed,
     after: (await store.get(journeyId)).answers,
     response,
@@ -146,7 +151,9 @@ describe('#declaration', () => {
       expect(result.view.view).toBe(
         'live-animals/journeys/linear/features/declaration/template'
       )
-      expect(result.view.context.concurrencyToken).toBe(result.reviewedToken)
+      expect(result.view.context.concurrencyToken).toBe(
+        result.reviewedConcurrencyToken
+      )
       expect(result.view.context.values).toEqual({ declaration: '' })
     })
 
@@ -233,7 +240,9 @@ describe('#declaration submit', () => {
       expect(result.view.context.errors.declaration).toBe(
         'Confirm that you have reviewed and comply with this declaration'
       )
-      expect(result.view.context.concurrencyToken).toBe(result.reviewedToken)
+      expect(result.view.context.concurrencyToken).toBe(
+        result.reviewedConcurrencyToken
+      )
       expect(result.after).toEqual(result.before)
     })
 
@@ -243,7 +252,7 @@ describe('#declaration submit', () => {
       expect(result.response).toEqual({
         redirect: pagePath(result.journeyId, 'confirmation')
       })
-      expect(result.cookies[reviewedTokensCookie()]).toEqual({})
+      expect(result.cookies[reviewedConcurrencyTokensCookie()]).toEqual({})
     })
 
     it('Should finalise at the token the review was rendered with', async () => {
@@ -253,7 +262,7 @@ describe('#declaration submit', () => {
 
       expect(finaliseSpy).toHaveBeenCalledTimes(1)
       expect(finaliseSpy.mock.calls[0][0]).toBe(result.journeyId)
-      expect(finaliseSpy.mock.calls[0][2]).toBe(result.reviewedToken)
+      expect(finaliseSpy.mock.calls[0][2]).toBe(result.reviewedConcurrencyToken)
     })
 
     it('Should refuse the submit when the notification changed after the declaration rendered', async () => {
@@ -446,7 +455,9 @@ describe('#declaration submit against the real records adapter', () => {
 
       expect(result.response.statusCode).toBe(500)
       expect(result.view.context.recoverableError).toBe(true)
-      expect(result.view.context.concurrencyToken).toBe(result.reviewedToken)
+      expect(result.view.context.concurrencyToken).toBe(
+        result.reviewedConcurrencyToken
+      )
       expect(result.view.context.values).toEqual({
         declaration: 'confirmed'
       })

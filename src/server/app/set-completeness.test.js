@@ -76,7 +76,7 @@ const cookieNamesFor = (setId) => ({
   openingRun: `${setId}-run`,
   flowOnlyAnswers: `${setId}-flow`,
   addressHandshakeTokens: `${setId}-tokens`,
-  reviewedTokens: `${setId}-reviewed`
+  reviewedConcurrencyTokens: `${setId}-reviewed`
 })
 
 const journeyFlowFor = () => ({

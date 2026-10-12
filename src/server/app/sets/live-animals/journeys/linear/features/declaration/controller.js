@@ -20,7 +20,7 @@ import { isReviewRefused } from '../check-answers/refusal.js'
 import { reviewHref } from '../check-answers/review-href.js'
 import {
   forgetReviewed,
-  reviewedToken as reviewedTokenOf
+  reviewedConcurrencyToken as reviewedConcurrencyTokenOf
 } from '../check-answers/reviewed.js'
 
 const STEP_REVIEW = 'review'
@@ -48,7 +48,7 @@ const dateText = (value) =>
 const render = (
   h,
   journey,
-  reviewedToken,
+  reviewedConcurrencyToken,
   values,
   errors = {},
   recoverableError = false
@@ -59,7 +59,7 @@ const render = (
       journey,
       recoverableError
     }),
-    concurrencyToken: reviewedToken,
+    concurrencyToken: reviewedConcurrencyToken,
     copy,
     submissionDate: dateText(Date.now()),
     values,
@@ -80,12 +80,12 @@ const get = async (request, h) => {
   return h.redirect(reviewHref(journey.journeyId))
 }
 
-const declare = async (request, h, journey, reviewedToken) => {
+const declare = async (request, h, journey, reviewedConcurrencyToken) => {
   const payload = request.payload
   const values = { declaration: payload.declaration ?? '' }
   const { errors } = validate(fields, payload)
   if (errors) {
-    return render(h, journey, reviewedToken, values, errors).code(
+    return render(h, journey, reviewedConcurrencyToken, values, errors).code(
       HTTP_STATUS_BAD_REQUEST
     )
   }
@@ -96,11 +96,11 @@ const declare = async (request, h, journey, reviewedToken) => {
       async () => {
         await state.commit(request, h, values)
         result = await state.submitJourney(request, h, {
-          concurrencyToken: reviewedToken
+          concurrencyToken: reviewedConcurrencyToken
         })
       },
       () =>
-        render(h, journey, reviewedToken, values, {}, true).code(
+        render(h, journey, reviewedConcurrencyToken, values, {}, true).code(
           HTTP_STATUS_INTERNAL_SERVER_ERROR
         )
     )
@@ -132,11 +132,14 @@ const post = async (request, h) => {
     return h.redirect(reviewHref(journey.journeyId))
   }
 
-  const reviewedToken = postedToken(payload)
-  if (reviewedToken !== journey.concurrencyToken) {
+  const reviewedConcurrencyToken = postedToken(payload)
+  if (reviewedConcurrencyToken !== journey.concurrencyToken) {
     return h.redirect(reviewHref(journey.journeyId, { changed: true }))
   }
-  if (reviewedToken !== (await reviewedTokenOf(request, journey.journeyId))) {
+  if (
+    reviewedConcurrencyToken !==
+    (await reviewedConcurrencyTokenOf(request, journey.journeyId))
+  ) {
     return h.redirect(reviewHref(journey.journeyId))
   }
 
@@ -146,9 +149,9 @@ const post = async (request, h) => {
 
   // Never pre-tick: a tick left by a submit refused as stale was given to older content.
   if (payload.step === STEP_REVIEW) {
-    return render(h, journey, reviewedToken, { declaration: '' })
+    return render(h, journey, reviewedConcurrencyToken, { declaration: '' })
   }
-  return declare(request, h, journey, reviewedToken)
+  return declare(request, h, journey, reviewedConcurrencyToken)
 }
 
 export const routes = kit.pageRoutes(page, { get, post })

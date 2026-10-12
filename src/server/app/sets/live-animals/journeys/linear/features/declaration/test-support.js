@@ -1,10 +1,10 @@
 import { store } from '../../../../../../engine/store.js'
-import { reviewedTokensCookie } from '../../../../../../engine/persistence/session.js'
+import { reviewedConcurrencyTokensCookie } from '../../../../../../engine/persistence/session.js'
 import { postHandlerOf } from '../../../../../../engine/test-support.js'
 import * as declaration from './controller.js'
 
 export const reviewedState = (journeyId, token) => ({
-  [reviewedTokensCookie()]: { [journeyId]: token }
+  [reviewedConcurrencyTokensCookie()]: { [journeyId]: token }
 })
 
 export const continueRequest = (request, token, payload = {}) => ({

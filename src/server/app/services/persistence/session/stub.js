@@ -2,7 +2,7 @@ import {
   flowOnlyAnswersCookie,
   knownJourneysCookie,
   openingRunCookie,
-  reviewedTokensCookie
+  reviewedConcurrencyTokensCookie
 } from '../../../engine/persistence/session.js'
 import { withEntry } from './by-journey.js'
 
@@ -25,7 +25,7 @@ const openingRunByJourneyFrom = (request) => {
 }
 
 const reviewedByJourneyFrom = (request) => {
-  const stored = request?.state?.[reviewedTokensCookie()]
+  const stored = request?.state?.[reviewedConcurrencyTokensCookie()]
   return isObject(stored) ? stored : {}
 }
 
@@ -69,13 +69,13 @@ export const session = {
     return structuredClone(next[journeyId])
   },
 
-  async reviewedToken(request, journeyId) {
+  async reviewedConcurrencyToken(request, journeyId) {
     return reviewedByJourneyFrom(request)[journeyId]
   },
 
-  async setReviewedToken(toolkit, journeyId, token, request) {
+  async setReviewedConcurrencyToken(toolkit, journeyId, token, request) {
     toolkit.state(
-      reviewedTokensCookie(),
+      reviewedConcurrencyTokensCookie(),
       withEntry(
         reviewedByJourneyFrom(request ?? toolkit?.request),
         journeyId,

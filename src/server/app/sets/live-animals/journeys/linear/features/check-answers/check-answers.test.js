@@ -22,7 +22,7 @@ import {
 } from '../../../../../../engine/test-support.js'
 import * as declaration from '../declaration/controller.js'
 import { continueRequest } from '../declaration/test-support.js'
-import { reviewedTokensCookie } from '../../../../../../engine/persistence/session.js'
+import { reviewedConcurrencyTokensCookie } from '../../../../../../engine/persistence/session.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import { pagePath } from '../../../../../../shared/paths.js'
@@ -1326,7 +1326,7 @@ describe(`${SUITE} — Continue to the declaration`, () => {
 
     await getHandler(journeyRequest(journeyId), h)
 
-    expect(h.cookies[reviewedTokensCookie()]).toEqual({
+    expect(h.cookies[reviewedConcurrencyTokensCookie()]).toEqual({
       [journeyId]: concurrencyToken
     })
   })
@@ -1338,7 +1338,7 @@ describe(`${SUITE} — Continue to the declaration`, () => {
 
     await getHandler(journeyRequest(journeyId), h)
 
-    expect(reviewedTokensCookie() in h.cookies).toBe(false)
+    expect(reviewedConcurrencyTokensCookie() in h.cookies).toBe(false)
   })
 
   it('Should refuse Continue while the notification is unfinished', async () => {

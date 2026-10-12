@@ -5,7 +5,7 @@ const DEFAULT_COOKIE_NAMES = Object.freeze({
   openingRun: 'openingRun',
   flowOnlyAnswers: 'flowOnlyAnswers',
   addressHandshakeTokens: 'addressHandshakeTokens',
-  reviewedTokens: 'reviewedTokens'
+  reviewedConcurrencyTokens: 'reviewedConcurrencyTokens'
 })
 
 const unconfigured = () => {
@@ -20,8 +20,8 @@ const UNCONFIGURED = Object.freeze({
     setOpeningRun: unconfigured,
     flowOnlyAnswers: unconfigured,
     setFlowOnlyAnswers: unconfigured,
-    reviewedToken: unconfigured,
-    setReviewedToken: unconfigured
+    reviewedConcurrencyToken: unconfigured,
+    setReviewedConcurrencyToken: unconfigured
   }),
   cookieNames: DEFAULT_COOKIE_NAMES
 })
@@ -55,7 +55,8 @@ export const openingRunCookie = () => current().cookieNames.openingRun
 export const flowOnlyAnswersCookie = () => current().cookieNames.flowOnlyAnswers
 export const addressHandshakeTokensCookie = () =>
   current().cookieNames.addressHandshakeTokens
-export const reviewedTokensCookie = () => current().cookieNames.reviewedTokens
+export const reviewedConcurrencyTokensCookie = () =>
+  current().cookieNames.reviewedConcurrencyTokens
 
 export const session = {
   knownJourneyIds: async (...args) => current().impl.knownJourneyIds(...args),
@@ -65,6 +66,8 @@ export const session = {
   flowOnlyAnswers: async (...args) => current().impl.flowOnlyAnswers(...args),
   setFlowOnlyAnswers: async (...args) =>
     current().impl.setFlowOnlyAnswers(...args),
-  reviewedToken: async (...args) => current().impl.reviewedToken(...args),
-  setReviewedToken: async (...args) => current().impl.setReviewedToken(...args)
+  reviewedConcurrencyToken: async (...args) =>
+    current().impl.reviewedConcurrencyToken(...args),
+  setReviewedConcurrencyToken: async (...args) =>
+    current().impl.setReviewedConcurrencyToken(...args)
 }
