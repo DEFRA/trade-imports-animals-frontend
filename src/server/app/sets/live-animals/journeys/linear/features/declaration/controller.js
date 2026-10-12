@@ -18,10 +18,7 @@ import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 import { isReviewRefused } from '../check-answers/refusal.js'
 import { reviewHref } from '../check-answers/review-href.js'
-import {
-  forgetReviewed,
-  reviewedConcurrencyToken as reviewedConcurrencyTokenOf
-} from '../check-answers/reviewed.js'
+import { reviewedConcurrencyToken as reviewedConcurrencyTokenOf } from '../check-answers/reviewed.js'
 
 const STEP_REVIEW = 'review'
 const STEP_DECLARE = 'declare'
@@ -117,7 +114,6 @@ const declare = async (request, h, journey, reviewedConcurrencyToken) => {
   if (!result.ok) {
     return h.redirect(reviewHref(journey.journeyId, { refused: true }))
   }
-  await forgetReviewed(request, h, journey.journeyId)
   return h.redirect(pagePath(journey.journeyId, confirmationPage.slug))
 }
 

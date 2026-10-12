@@ -4,10 +4,6 @@ import {
   openingRunCookie,
   reviewedConcurrencyTokensCookie
 } from '../../../engine/persistence/session.js'
-import {
-  withReviewedConcurrencyToken,
-  withoutReviewedConcurrencyToken
-} from './reviewed-concurrency-tokens.js'
 
 const isObject = (value) =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -77,23 +73,9 @@ export const session = {
   },
 
   async setReviewedConcurrencyToken(toolkit, journeyId, token, request) {
-    toolkit.state(
-      reviewedConcurrencyTokensCookie(),
-      withReviewedConcurrencyToken(
-        reviewedConcurrencyTokensFrom(request ?? toolkit?.request),
-        journeyId,
-        token
-      )
-    )
-  },
-
-  async forgetReviewedConcurrencyToken(toolkit, journeyId, request) {
-    toolkit.state(
-      reviewedConcurrencyTokensCookie(),
-      withoutReviewedConcurrencyToken(
-        reviewedConcurrencyTokensFrom(request ?? toolkit?.request),
-        journeyId
-      )
-    )
+    toolkit.state(reviewedConcurrencyTokensCookie(), {
+      ...reviewedConcurrencyTokensFrom(request ?? toolkit?.request),
+      [journeyId]: token
+    })
   }
 }

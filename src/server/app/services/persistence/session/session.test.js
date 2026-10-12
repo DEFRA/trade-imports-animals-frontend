@@ -168,15 +168,16 @@ describe('#session.reviewedConcurrencyToken', () => {
     ).toBeUndefined()
   })
 
-  it('Should forget one journey’s token, keeping another’s', async () => {
+  it('Should keep another journey’s token while recording one', async () => {
     const h = recordingH()
-    await session.forgetReviewedConcurrencyToken(h, 'journey-1', {
+    await session.setReviewedConcurrencyToken(h, 'journey-1', 9, {
       state: {
         [reviewedConcurrencyTokensCookie()]: { 'journey-1': 4, 'journey-2': 7 }
       }
     })
 
     expect(h.cookies[reviewedConcurrencyTokensCookie()]).toEqual({
+      'journey-1': 9,
       'journey-2': 7
     })
   })

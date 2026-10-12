@@ -14,10 +14,6 @@ import {
   openingRunCookie,
   reviewedConcurrencyTokensCookie
 } from '../../../engine/persistence/session.js'
-import {
-  withReviewedConcurrencyToken,
-  withoutReviewedConcurrencyToken
-} from './reviewed-concurrency-tokens.js'
 
 const isObject = (value) =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -87,23 +83,9 @@ export const session = {
   },
 
   async setReviewedConcurrencyToken(h, journeyId, token) {
-    h.request.yar.set(
-      reviewedConcurrencyTokensCookie(),
-      withReviewedConcurrencyToken(
-        reviewedConcurrencyTokensFrom(h.request),
-        journeyId,
-        token
-      )
-    )
-  },
-
-  async forgetReviewedConcurrencyToken(h, journeyId) {
-    h.request.yar.set(
-      reviewedConcurrencyTokensCookie(),
-      withoutReviewedConcurrencyToken(
-        reviewedConcurrencyTokensFrom(h.request),
-        journeyId
-      )
-    )
+    h.request.yar.set(reviewedConcurrencyTokensCookie(), {
+      ...reviewedConcurrencyTokensFrom(h.request),
+      [journeyId]: token
+    })
   }
 }

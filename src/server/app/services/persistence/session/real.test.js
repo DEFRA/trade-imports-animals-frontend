@@ -85,17 +85,6 @@ const buildServer = async () => {
       }
     },
     {
-      method: 'DELETE',
-      path: REVIEWED_PATH,
-      handler: async (request, h) => {
-        await session.forgetReviewedConcurrencyToken(
-          h,
-          request.params.journeyId
-        )
-        return { ok: true }
-      }
-    },
-    {
       method: 'GET',
       path: REVIEWED_PATH,
       handler: async (request) => ({
@@ -150,47 +139,27 @@ describe('#session.knownJourneyIds (real, yar)', () => {
 })
 
 describe('#session.reviewedConcurrencyToken (real, yar)', () => {
-  const REVIEWED_J1 = '/reviewed/J-1'
-  const REVIEWED_J2 = '/reviewed/J-2'
-
-  const tokensForTwoJourneys = async (server) => {
-    const first = await server.inject({
-      method: 'POST',
-      url: REVIEWED_J1,
-      payload: { token: 4 }
-    })
-    const second = await server.inject({
-      method: 'POST',
-      url: REVIEWED_J2,
-      payload: { token: 7 },
-      headers: { cookie: cookieOf(first) }
-    })
-    return cookieOf(second)
-  }
-
   const tokenAt = async (server, url, cookie) =>
     (await server.inject({ method: 'GET', url, headers: { cookie } })).result
       .token
 
   it('Should hold one token per journey', async () => {
     const server = await buildServer()
-    const cookie = await tokensForTwoJourneys(server)
-
-    expect(await tokenAt(server, REVIEWED_J1, cookie)).toBe(4)
-    expect(await tokenAt(server, REVIEWED_J2, cookie)).toBe(7)
-  })
-
-  it('Should forget one journey’s token, keeping another’s', async () => {
-    const server = await buildServer()
-    const forgotten = await server.inject({
-      method: 'DELETE',
-      url: REVIEWED_J1,
-      headers: { cookie: await tokensForTwoJourneys(server) }
+    const first = await server.inject({
+      method: 'POST',
+      url: '/reviewed/J-1',
+      payload: { token: 4 }
     })
-    const cookie = cookieOf(forgotten)
+    const second = await server.inject({
+      method: 'POST',
+      url: '/reviewed/J-2',
+      payload: { token: 7 },
+      headers: { cookie: cookieOf(first) }
+    })
+    const cookie = cookieOf(second)
 
-    expect(await tokenAt(server, REVIEWED_J1, cookie)).toBeNull()
-    expect(await tokenAt(server, REVIEWED_J2, cookie)).toBe(7)
+    expect(await tokenAt(server, '/reviewed/J-1', cookie)).toBe(4)
+    expect(await tokenAt(server, '/reviewed/J-2', cookie)).toBe(7)
   })
 })
 

@@ -27,10 +27,7 @@ import { dispatchPages } from '../index.js'
 
 import * as declaration from './controller.js'
 import { continueRequest, reviewedState } from './test-support.js'
-import {
-  flowOnlyAnswersCookie,
-  reviewedConcurrencyTokensCookie
-} from '../../../../../../engine/persistence/session.js'
+import { flowOnlyAnswersCookie } from '../../../../../../engine/persistence/session.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import * as refusal from '../check-answers/refusal.js'
 import { records } from '../../../../../../engine/persistence/records.js'
@@ -249,13 +246,12 @@ describe('#declaration submit', () => {
       expect(result.after).toEqual(result.before)
     })
 
-    it('Should redirect to the confirmation page after a successful submit, forgetting the review', async () => {
+    it('Should redirect to the confirmation page after a successful submit', async () => {
       const result = await drivePost({ payload: { declaration: 'confirmed' } })
 
       expect(result.response).toEqual({
         redirect: pagePath(result.journeyId, 'confirmation')
       })
-      expect(result.cookies[reviewedConcurrencyTokensCookie()]).toEqual({})
     })
 
     it('Should finalise at the token the review was rendered with', async () => {
