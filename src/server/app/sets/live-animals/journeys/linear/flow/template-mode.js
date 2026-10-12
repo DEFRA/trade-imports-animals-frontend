@@ -1,4 +1,5 @@
 import { arrivalDateAtPort } from '../../../obligations/sections/arrival.js'
+import { documents, obligations } from '../../../obligations/index.js'
 import { documentsPage } from '../features/documents/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
 import { declarationPage } from '../features/declaration/page.js'
@@ -43,3 +44,15 @@ export const TEMPLATE_NOT_HELD_OBLIGATION_IDS =
 export const TEMPLATE_NOT_HELD_FIELDS = TEMPLATE_NOT_HELD_OBLIGATIONS.map(
   ({ name }) => name
 )
+
+// What a notification started from a template never takes from it: what a
+// template never holds, and every document.
+export const TEMPLATE_NOT_CARRIED_OBLIGATION_IDS = [
+  ...TEMPLATE_NOT_HELD_OBLIGATION_IDS,
+  ...obligations
+    .filter(
+      (obligation) =>
+        obligation === documents || obligation.within === documents
+    )
+    .map(({ id }) => id)
+]

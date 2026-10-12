@@ -480,6 +480,54 @@ export const answerContactAddress = async (page) => {
 }
 
 /**
+ * Answers every section of a template from its task list. A template's species
+ * are chosen as the template is created, so its task list already holds them:
+ * the commodity quantities are a task of their own here, which is why this
+ * walks the task list rather than `completeAnswerSections`.
+ *
+ * @param {import('@playwright/test').Page} page - on the template's task list.
+ */
+export const answerEveryTemplateSection = async (page) => {
+  const [line] = values.commodityLines
+  const task = (name) => page.getByRole('link', { name }).click()
+  const overview = () =>
+    expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  const saveAndContinue = () =>
+    page.getByRole('button', { name: 'Save and continue' }).click()
+
+  await task('Where is this consignment coming from?')
+  await answerOriginDetails(page)
+
+  await task('Commodity details')
+  await page.getByLabel('Number of animals').fill(line.numberOfAnimalsQuantity)
+  await page
+    .getByLabel('Number of packages (when required)')
+    .fill(line.numberOfPackages)
+  await saveAndContinue()
+  await overview()
+
+  await task('Identification details')
+  await answerAnimalIdentification(page)
+  await overview()
+
+  await task('Main reason for import')
+  await answerImportReason(page)
+  await answerAdditionalDetails(page)
+
+  await task('Roles and addresses')
+  await answerRolesAndAddresses(page)
+  await answerCphNumber(page)
+
+  await task('Arrival details')
+  await answerArrivalDetails(page)
+  await answerTransitCountries(page)
+  await answerTransporter(page)
+
+  await task('Contact address for this consignment')
+  await answerContactAddress(page)
+}
+
+/**
  * Answers the whole notification one task row at a time, the way a returning
  * user works once the opening run is over.
  *

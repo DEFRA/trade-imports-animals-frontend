@@ -3,16 +3,7 @@ import { expect, test } from '@playwright/test'
 
 import {
   BASE,
-  answerAdditionalDetails,
-  answerAnimalIdentification,
-  answerArrivalDetails,
-  answerContactAddress,
-  answerCphNumber,
-  answerImportReason,
-  answerOriginDetails,
-  answerRolesAndAddresses,
-  answerTransitCountries,
-  answerTransporter,
+  answerEveryTemplateSection,
   freshContactId,
   openTemplateReview,
   openTemplateTaskList,
@@ -70,49 +61,6 @@ const viewSaved = async (page, name) => {
     .getByRole('link', { name: 'View template' })
     .click()
   await expect(page).toHaveURL(TEMPLATE_PAGE_PATH)
-}
-
-// A template's species are chosen as the template is created, so its task list
-// already holds them: the commodity quantities are a task of their own here,
-// which is why this walks the task list rather than `completeAnswerSections`.
-const answerEverySection = async (page) => {
-  const [line] = values.commodityLines
-  const task = (name) => page.getByRole('link', { name }).click()
-  const overview = () =>
-    expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
-  const saveAndContinue = () =>
-    page.getByRole('button', { name: 'Save and continue' }).click()
-
-  await task('Where is this consignment coming from?')
-  await answerOriginDetails(page)
-
-  await task('Commodity details')
-  await page.getByLabel('Number of animals').fill(line.numberOfAnimalsQuantity)
-  await page
-    .getByLabel('Number of packages (when required)')
-    .fill(line.numberOfPackages)
-  await saveAndContinue()
-  await overview()
-
-  await task('Identification details')
-  await answerAnimalIdentification(page)
-  await overview()
-
-  await task('Main reason for import')
-  await answerImportReason(page)
-  await answerAdditionalDetails(page)
-
-  await task('Roles and addresses')
-  await answerRolesAndAddresses(page)
-  await answerCphNumber(page)
-
-  await task('Arrival details')
-  await answerArrivalDetails(page)
-  await answerTransitCountries(page)
-  await answerTransporter(page)
-
-  await task('Contact address for this consignment')
-  await answerContactAddress(page)
 }
 
 const expectNoSeriousOrCriticalAxeViolations = async (page) => {
@@ -352,7 +300,7 @@ test.describe('template page for a fully answered template', () => {
     const line = values.commodityLines[0]
 
     await openTemplateTaskList(page, NAME)
-    await answerEverySection(page)
+    await answerEveryTemplateSection(page)
     await page.getByRole('button', { name: 'Review template' }).click()
     await saveTemplateFromReview(page)
     await viewSaved(page, NAME)

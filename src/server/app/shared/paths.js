@@ -13,6 +13,7 @@ export const dashboardRoutePath = () => '/'
 export const templatesRoutePath = () => '/templates'
 export const newTemplateRoutePath = () => '/templates/new'
 export const templateNameRoutePath = () => '/templates/{journeyId}/name'
+export const templateUseRoutePath = () => '/templates/{journeyId}/use'
 
 // Links carry the prefix, resolved inside the active request's set context.
 // Using a route builder where a link belongs drops the prefix, and the reverse

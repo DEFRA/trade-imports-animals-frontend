@@ -263,6 +263,36 @@ describe('#currentJourney', () => {
   })
 })
 
+describe('#startJourney with a seed', () => {
+  beforeEach(async () => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    await store.clear()
+  })
+
+  it('Should create a draft seeded with the given fulfilment and add it to the known list', async () => {
+    const h = recordingH()
+    const fulfilment = { [countryOfOrigin.id]: 'FR' }
+
+    const journey = await startJourney(requestFor(undefined, []), h, {
+      fulfilment
+    })
+
+    expect((await store.get(journey.journeyId)).fulfilment).toEqual(fulfilment)
+    expect(h.cookies[knownJourneysCookie()]).toEqual([journey.journeyId])
+  })
+
+  it('Should forward the seed to records.create', async () => {
+    const create = vi.fn(recordsStub.create)
+    configureRecords(SET_ID, { ...recordsStub, create })
+    const fulfilment = { [countryOfOrigin.id]: 'FR' }
+
+    await startJourney(requestFor(undefined, []), recordingH(), { fulfilment })
+
+    expect(create).toHaveBeenCalledWith(authenticatedActor, { fulfilment })
+  })
+})
+
 describe('#replaceJourneyFulfilment', () => {
   beforeEach(async () => {
     configureRecords(SET_ID, recordsStub)

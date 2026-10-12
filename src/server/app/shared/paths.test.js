@@ -5,7 +5,8 @@ import {
   newTemplatePath,
   pagePath,
   templateNamePath,
-  templatePagePath
+  templatePagePath,
+  templateUseRoutePath
 } from './paths.js'
 import { withTemplateMode } from './template-mode.js'
 
@@ -38,5 +39,11 @@ describe('template paths', () => {
     expect(templatePagePath('abc', 'origin')).toBe(
       '/live-animals/templates/abc/origin'
     )
+  })
+})
+
+describe('template route paths', () => {
+  it('Should build the route a template is used at', () => {
+    expect(templateUseRoutePath()).toBe('/templates/{journeyId}/use')
   })
 })

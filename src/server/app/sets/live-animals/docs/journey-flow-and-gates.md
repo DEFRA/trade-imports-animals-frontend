@@ -182,6 +182,14 @@ Once a template is saved, the same address is the template's page
 still being created keeps the task list and a saved one shows its answers in the
 review's cards. A template the user does not have opens Manage templates.
 
+The card's and the page's "Use template" POST to `/templates/{journeyId}/use`
+([`features/templates/use-template.js`](../journeys/linear/features/templates/use-template.js)).
+The handler reads the user's saved template of this set, seeds a new draft through
+`startJourney`'s `fulfilment` option (`notificationSeedFrom`, which leaves out
+`TEMPLATE_NOT_CARRIED_OBLIGATION_IDS`), begins the opening run and opens the new
+notification's own task list. Any template the user cannot use opens Manage
+templates and creates nothing.
+
 The page's Change links open a question page with the change marker. Every other twin
 is wrapped by `withTemplateChange` through the `page` option, which sends a template
 the user does not have to Manage templates, and runs a saved template reached from a

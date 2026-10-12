@@ -1,7 +1,8 @@
 import {
   templatePagePath,
   templatePath,
-  templatesRoutePath
+  templatesRoutePath,
+  templateUseRoutePath
 } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import {
@@ -17,6 +18,7 @@ import { copy as cy } from './copy/copy.cy.js'
 import { takeSavedTemplate } from './saved-banner.js'
 import { templateTitle } from './template-title.js'
 import { templateTypeQuestionUrl } from './type-question-url.js'
+import { useTemplatePost } from './use-template.js'
 
 const view = `${TEMPLATES}/features/templates/template`
 
@@ -65,5 +67,11 @@ export const routes = [
     path: templatesRoutePath(),
     options: routeOptions,
     handler: manageTemplatesGet
+  },
+  {
+    method: 'POST',
+    path: templateUseRoutePath(),
+    options: routeOptions,
+    handler: useTemplatePost
   }
 ]
