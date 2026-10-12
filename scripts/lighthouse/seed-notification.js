@@ -296,7 +296,7 @@ export const fillNotification = async (client, journeyId, shape) => {
   }
 }
 
-const tokenOn = (page) => {
+const concurrencyTokenOn = (page) => {
   const token = page.$('input[name="concurrencyToken"]').last().attr('value')
   if (!token) {
     throw new Error(`No concurrency token on ${page.heading || 'the page'}`)
@@ -312,7 +312,7 @@ export const submitNotification = async (client, journeyId) => {
   const path = pagePath(journeyId, DECLARATION_SLUG)
   const declarationPage = await client.submit(
     path,
-    { step: 'review', concurrencyToken: tokenOn(review) },
+    { step: 'review', concurrencyToken: concurrencyTokenOn(review) },
     review.crumb
   )
   if (declarationPage.status !== HTTP_OK) {
@@ -326,7 +326,7 @@ export const submitNotification = async (client, journeyId) => {
     {
       step: 'declare',
       declaration: values.declaration,
-      concurrencyToken: tokenOn(declarationPage)
+      concurrencyToken: concurrencyTokenOn(declarationPage)
     },
     declarationPage.crumb || review.crumb
   )
