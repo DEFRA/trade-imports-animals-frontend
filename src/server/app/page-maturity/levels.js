@@ -7,7 +7,7 @@ export const LEVELS = Object.freeze({
 
 export const TAG_CLASSES = Object.freeze({
   [LEVELS.exploring]: 'govuk-tag--orange',
-  [LEVELS.detailing]: 'govuk-tag--light-blue',
-  [LEVELS.agreed]: 'govuk-tag--turquoise',
+  [LEVELS.detailing]: 'govuk-tag--purple',
+  [LEVELS.agreed]: 'govuk-tag--teal',
   [LEVELS.readyForLive]: 'govuk-tag--green'
 })

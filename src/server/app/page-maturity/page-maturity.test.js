@@ -77,6 +77,15 @@ describe('pageMaturityContext', () => {
     ).toEqual({})
   })
 
+  it('Should return nothing when the error page is rendered on a listed route', () => {
+    expect(
+      pageMaturityContext({
+        route: { path: `${NOTIFICATION}/origin` },
+        response: { source: { template: 'shared/error' } }
+      })
+    ).toEqual({})
+  })
+
   it('Should return nothing for a request with no route', () => {
     expect(pageMaturityContext({ path: '/live-animals' })).toEqual({})
   })

@@ -7,6 +7,11 @@ import { PAGE_LEVELS, SECTION_LEVELS } from './page-levels.js'
 
 const copy = copyFor({ en: copyEn, cy: copyCy })
 
+const ERROR_TEMPLATE = 'shared/error'
+
+const isErrorPage = (request) =>
+  request.response?.source?.template === ERROR_TEMPLATE
+
 /**
  * The maturity level of a page, found from its hapi route pattern. An exact
  * entry in the page map wins; otherwise a section covers its own path and
@@ -34,11 +39,11 @@ export function pageLevelFor(routePath) {
  *
  * @param {object} request - the hapi request.
  * @returns {{ pageMaturity?: object }} `pageMaturity` with the tag, the line and
- * the screen-reader prefix, or an empty object when the switch is off or the
- * page is unlisted.
+ * the screen-reader prefix, or an empty object when the switch is off, the
+ * page is unlisted, or the response is the error page.
  */
 export function pageMaturityContext(request) {
-  if (!config.get('pageMaturityBanner.enabled')) {
+  if (!config.get('pageMaturityBanner.enabled') || isErrorPage(request)) {
     return {}
   }
   const level = pageLevelFor(request.route?.path)

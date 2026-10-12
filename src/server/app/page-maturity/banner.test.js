@@ -3,6 +3,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import { config } from '../../../config/config.js'
 import { createServer } from '../../server.js'
+import { statusCodes } from '../../common/constants/status-codes.js'
 import { nunjucksConfig } from '../../../config/nunjucks/nunjucks.js'
 import { copy as sharedCopy } from '../shared/copy.en.js'
 import { SET_BASE } from '../sets/live-animals/set.js'
@@ -42,9 +43,7 @@ describe('page maturity banner', () => {
 
     expect(banner.find(TAG_SELECTOR)).toHaveLength(1)
     expect(normalised(banner.text())).toBe(`Alpha ${SERVICE_SENTENCE}`)
-    expect(bannerOf(renderLayout({ pageMaturity: null })).html()).toBe(
-      banner.html()
-    )
+    expect(environment.render('page-maturity/banner.njk', {})).toBe('')
   })
 
   it('Should add the level tag after Alpha, then the line', () => {
@@ -98,7 +97,7 @@ describe('page maturity banner on a served page', () => {
       url: MANAGE_TEMPLATES_URL,
       headers: { cookie }
     })
-    return load(payload)('.govuk-phase-banner')
+    return bannerOf(payload)
   }
 
   beforeAll(async () => {
@@ -137,6 +136,19 @@ describe('page maturity banner on a served page', () => {
 
     const banner = await phaseBannerOfManageTemplates()
 
+    expect(banner.find(TAG_SELECTOR)).toHaveLength(1)
+    expect(banner.text()).not.toContain(copy.levels.exploring.text)
+  })
+
+  it('Should show only the Alpha tag on the not found page of a listed route', async () => {
+    const { statusCode, payload } = await server.inject({
+      method: 'GET',
+      url: `${SET_BASE}/notifications/no-such-notification/origin`,
+      headers: { cookie }
+    })
+    const banner = bannerOf(payload)
+
+    expect(statusCode).toBe(statusCodes.notFound)
     expect(banner.find(TAG_SELECTOR)).toHaveLength(1)
     expect(banner.text()).not.toContain(copy.levels.exploring.text)
   })
