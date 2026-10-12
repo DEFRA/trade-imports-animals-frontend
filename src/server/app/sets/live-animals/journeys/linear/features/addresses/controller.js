@@ -84,11 +84,12 @@ const rows = (request, journeyId, answers, parties) => [
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
   const parties = await partiesFromStoredAnswers(answers)
-  // A draft reached from a Change link goes back to the summary that sent the
-  // trader here; an amendment never does, so Back is the task list.
+  // A draft or a template reached from a Change link goes back to the summary
+  // or the template page that sent the trader here; an amendment never does,
+  // so Back is the task list.
   const backLink =
     kit.changeContext(request) && journey.status !== state.AMEND
-      ? pagePath(journey.journeyId, kit.CYA_SLUG)
+      ? kit.changeReturnPath(journey.journeyId)
       : hubPath(journey.journeyId)
   return h.view(view, {
     ...kit.base(copy.title, {

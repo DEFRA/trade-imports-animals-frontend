@@ -14,6 +14,7 @@ import {
   journeySectionCaption
 } from '../flow/journey-flow.js'
 import { inOpeningRun } from '../flow/run-state.js'
+import { changingSavedTemplate, inTemplateMode } from './template-mode.js'
 import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
@@ -72,8 +73,15 @@ const cancelAmendControl = (journey) =>
       }
     : undefined
 
+const TEMPLATE_STRIP_STATUS = {
+  text: sharedCopy.journeyStrip.template,
+  classes: 'govuk-tag--grey'
+}
+
 /**
- * The status strip shown above a journey page's caption and heading.
+ * The status strip shown above a journey page's caption and heading. In
+ * template mode it carries the template's name where a notification carries
+ * its reference.
  *
  * @param {object} [journey] - the journey, or none.
  * @param {object} [options]
@@ -81,14 +89,22 @@ const cancelAmendControl = (journey) =>
  * journey is being amended. False on the page Cancel amend leads to.
  * @returns {object|null} the strip view model, or null without a journey.
  */
-export const journeyStrip = (journey, { offerCancelAmend = true } = {}) =>
-  journey
-    ? {
-        reference: journey.journeyId,
-        status: STRIP_STATUS[journey.status],
-        cancelAmend: offerCancelAmend ? cancelAmendControl(journey) : undefined
-      }
-    : null
+export const journeyStrip = (journey, { offerCancelAmend = true } = {}) => {
+  if (!journey) {
+    return null
+  }
+  if (inTemplateMode()) {
+    return {
+      reference: journey.templateName ?? '',
+      status: TEMPLATE_STRIP_STATUS
+    }
+  }
+  return {
+    reference: journey.journeyId,
+    status: STRIP_STATUS[journey.status],
+    cancelAmend: offerCancelAmend ? cancelAmendControl(journey) : undefined
+  }
+}
 
 const anchorHref = (field) => `#${field}`
 
@@ -134,10 +150,14 @@ export const changeContext = (request) => Boolean(request.query.change)
 export const withChangeContext = (request, href) =>
   changeContext(request) ? `${href}?change=1` : href
 
+/** Where a change-context page returns: the review, or a saved template's own page. */
+export const changeReturnPath = (journeyId) =>
+  changingSavedTemplate() ? hubPath(journeyId) : pagePath(journeyId, CYA_SLUG)
+
 export const exitTarget = (request, fallback) =>
   hubExitTarget(request) ??
   (changeContext(request)
-    ? pagePath(request.params.journeyId, CYA_SLUG)
+    ? changeReturnPath(request.params.journeyId)
     : fallback)
 
 /** The review's path for a save made while amending from a Change link, else null. */
@@ -187,6 +207,8 @@ export const nextTarget = async (request, page, scope) =>
  * @param {object} [options.page] - the page identity. Supply it and the view
  * gains the `caption` naming the section of the journey the page belongs to;
  * omit it on a page the journey deliberately leaves uncaptioned.
+ * The view also carries `templateChange`: the page ends with Save and return
+ * and Cancel, because it is changing one section of a saved template.
  * @returns {object} the common view model.
  */
 export const base = (
@@ -210,7 +232,9 @@ export const base = (
     // would send every set's service navigation to the default set's
     // dashboard by way of the root redirect.
     homeUrl: dashboardPath(),
+    // In template mode `hubPath` resolves to the template's own task list.
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
+    templateChange: changingSavedTemplate(),
     journeyStrip: journeyStrip(journey, { offerCancelAmend }),
     amending: journey?.status === AMEND,
     concurrencyToken: journey?.concurrencyToken ?? null,

@@ -1,9 +1,16 @@
 import {
   dashboardPath,
   hubPath,
-  pagePath
+  pagePath,
+  templatesPath
 } from '../../../../../../shared/paths.js'
+import {
+  inTemplateMode,
+  templateOwnerId
+} from '../../../../../../shared/template-mode.js'
+import * as templates from '../../../../../../services/templates/index.js'
 import { TEMPLATES } from '../../config.js'
+import { rememberSavedTemplate } from '../templates/saved-banner.js'
 import { nextInSection } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
@@ -109,6 +116,37 @@ const reviewTitle = (journey) =>
     ? copy.resubmitTitle
     : copy.title
 
+const notificationReviewView = (journey, readOnly) => {
+  const amending = journey.status === state.AMEND
+  const headed = readOnly || journey.status === state.DRAFT
+  const title = headed ? journey.journeyId : reviewTitle(journey)
+  return {
+    pageTitle: title,
+    heading: title,
+    submitText: copy.submit.button,
+    journeyStrip: headed
+      ? null
+      : journeyStrip(journey, { offerCancelAmend: false }),
+    viewHeader: headed ? viewHeaderOf(journey) : null,
+    deleteHref: amending ? pagePath(journey.journeyId, 'delete') : null,
+    cancelAmendHref: amending
+      ? pagePath(journey.journeyId, CANCEL_AMEND_SLUG)
+      : null,
+    backLink: amending ? hubPath(journey.journeyId) : dashboardPath()
+  }
+}
+
+const templateReviewView = (journey) => ({
+  pageTitle: copy.template.title,
+  heading: copy.template.title,
+  submitText: copy.template.saveTemplate,
+  journeyStrip: journeyStrip(journey),
+  viewHeader: null,
+  deleteHref: null,
+  cancelAmendHref: null,
+  backLink: hubPath(journey.journeyId)
+})
+
 const renderCya = async (
   h,
   journey,
@@ -143,19 +181,13 @@ const renderCya = async (
     answers,
     evaluation
   )
-  const amending = journey.status === state.AMEND
-  const headed = readOnly || journey.status === state.DRAFT
-  const title = headed ? journey.journeyId : reviewTitle(journey)
   return h.view(view, {
-    pageTitle: title,
-    heading: title,
+    ...(inTemplateMode()
+      ? templateReviewView(journey)
+      : notificationReviewView(journey, readOnly)),
     copy,
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
-    journeyStrip: headed
-      ? null
-      : journeyStrip(journey, { offerCancelAmend: false }),
-    viewHeader: headed ? viewHeaderOf(journey) : null,
     errorSummary: reviewErrorSummary(
       journey.journeyId,
       withSpeciesErrors(cardErrors, speciesErrors),
@@ -166,12 +198,7 @@ const renderCya = async (
     sections,
     readOnly,
     amendmentCancelled,
-    recoverableError,
-    deleteHref: amending ? pagePath(journey.journeyId, 'delete') : null,
-    cancelAmendHref: amending
-      ? pagePath(journey.journeyId, CANCEL_AMEND_SLUG)
-      : null,
-    backLink: amending ? hubPath(journey.journeyId) : dashboardPath()
+    recoverableError
   })
 }
 
@@ -188,7 +215,10 @@ export const renderNotificationView = async (
   const { journey, answers, storedAnswers, scope, evaluation } =
     await state.get(request, h)
   const readOnly = state.isSubmittedStatus(journey.status)
-  const holdsSilently = readOnly || (journey.status === state.AMEND && !refused)
+  // A template is reviewed as it stands: nothing on it is owed, so a template
+  // review names no card, role, stale answer or document as unfinished.
+  const holdsSilently =
+    readOnly || inTemplateMode() || (journey.status === state.AMEND && !refused)
   const parties = await partiesFromStoredAnswers(answers)
   // A submitted notification is a record of what was sent, so nothing on it
   // is outstanding, and no stored answer of its is named as stale either —
@@ -250,7 +280,24 @@ const get = async (request, h) => {
   return renderOrList(request, h)
 }
 
+// Save template stores the template instead of going on to the declaration: a
+// template holds no declaration, and Manage templates confirms it once with a
+// success banner.
+const saveTemplate = async (request, h) => {
+  const saved = await templates.saveFor(
+    templateOwnerId(),
+    request.params.journeyId
+  )
+  if (saved) {
+    rememberSavedTemplate(request, saved)
+  }
+  return h.redirect(templatesPath())
+}
+
 const post = async (request, h) => {
+  if (inTemplateMode()) {
+    return saveTemplate(request, h)
+  }
   // Reuse the scan errors reviewRefusal already computed — a fresh
   // documentScanCardErrors call here would issue a second HTTP GET per
   // stored document to the upload backend.

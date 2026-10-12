@@ -1,0 +1,28 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+
+{% block journeyContent %}
+  <span class="govuk-caption-l">{{ copy.caption }}</span>
+  <h1 class="govuk-heading-l" id="template-name-heading">{{ copy.title }}</h1>
+
+  <form method="post" novalidate>
+    <input type="hidden" name="crumb" value="{{ crumb }}" />
+    {% if notificationType %}
+      <input type="hidden" name="notificationType" value="{{ notificationType }}" />
+    {% endif %}
+
+    {{ govukInput({
+      id: "templateName",
+      name: "templateName",
+      value: templateName,
+      label: { text: copy.label, classes: "govuk-visually-hidden" },
+      attributes: { "aria-labelledby": "template-name-heading" }
+    }) }}
+
+    <div class="govuk-button-group">
+      {{ govukButton({ text: sharedCopy.saveActions.saveAndContinue }) }}
+      <a class="govuk-link" href="{{ cancelHref }}">{{ copy.cancel }}</a>
+    </div>
+  </form>
+{% endblock %}

@@ -1,4 +1,10 @@
+import { pagePath } from '../../../../../../../shared/paths.js'
+import {
+  changingSavedTemplate,
+  inTemplateMode
+} from '../../../../../../../shared/template-mode.js'
 import { TEMPLATES } from '../../../config.js'
+import { originPage } from '../../origin/page.js'
 import * as state from '../../../../../../../engine/index.js'
 import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../../lib/http-status.js'
 import * as kit from '../../../../../../../shared/kit.js'
@@ -22,6 +28,16 @@ const copy = copyFor({ en, cy }).search
 const SEARCH_ACTION = 'search'
 const CLEAR_ACTION = 'clear'
 
+// A template is being created in order, from Origin of the import, so the
+// commodity question goes Back there rather than to the overview. Changing a
+// saved template, Back returns to its page.
+const backLinkFor = async (request) => {
+  if (!changingSavedTemplate() && inTemplateMode()) {
+    return pagePath(request.params.journeyId, originPage.slug)
+  }
+  return kit.runBackLink(request, page)
+}
+
 const render = async (
   request,
   h,
@@ -35,7 +51,7 @@ const render = async (
   const errors = errorText ? { commoditySearch: errorText } : {}
   return h.view(view, {
     ...kit.base(copy.title, {
-      backLink: await kit.runBackLink(request, page),
+      backLink: await backLinkFor(request),
       journey,
       page
     }),

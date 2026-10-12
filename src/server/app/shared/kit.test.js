@@ -5,9 +5,11 @@ import {
   amendReviewTarget,
   base,
   dateField,
+  exitTarget,
   isHubExit,
   skipsRequiredChecks
 } from './kit.js'
+import { withSavedTemplateChange, withTemplateMode } from './template-mode.js'
 
 describe('#isHubExit — the Save and return to overview submit', () => {
   const params = { journeyId: 'journey-1' }
@@ -20,6 +22,67 @@ describe('#isHubExit — the Save and return to overview submit', () => {
     expect(isHubExit({ params })).toBe(false)
     expect(isHubExit({ payload: {}, params })).toBe(false)
     expect(isHubExit({ payload: { exit: 'other' }, params })).toBe(false)
+  })
+})
+
+const OWNER = '2100010101'
+const JOURNEY_ID = 'journey-1'
+
+const changeRequest = {
+  payload: {},
+  params: { journeyId: JOURNEY_ID },
+  query: { change: '1' }
+}
+
+describe('#exitTarget — where a change-context save returns', () => {
+  it('Should return to the review outside template mode', () => {
+    expect(exitTarget(changeRequest, '/next')).toMatch(
+      new RegExp(`/notifications/${JOURNEY_ID}/notification-view$`)
+    )
+  })
+
+  it('Should return to the template review from a template being created', () => {
+    withTemplateMode(OWNER, () => {
+      expect(exitTarget(changeRequest, '/next')).toMatch(
+        new RegExp(`/templates/${JOURNEY_ID}/notification-view$`)
+      )
+    })
+  })
+
+  it('Should return to the template page from a saved template', () => {
+    withTemplateMode(OWNER, () =>
+      withSavedTemplateChange(() => {
+        expect(exitTarget(changeRequest, '/next')).toMatch(
+          new RegExp(`/templates/${JOURNEY_ID}$`)
+        )
+      })
+    )
+  })
+
+  it('Should leave a page with no change marker on its fallback', () => {
+    withTemplateMode(OWNER, () =>
+      withSavedTemplateChange(() => {
+        expect(exitTarget({ ...changeRequest, query: {} }, '/next')).toBe(
+          '/next'
+        )
+      })
+    )
+  })
+})
+
+describe('#base — the page ending', () => {
+  it('Should flag a page changing a saved template, and no other', () => {
+    expect(base('Title', { journeyId: JOURNEY_ID }).templateChange).toBe(false)
+    withTemplateMode(OWNER, () => {
+      expect(base('Title', { journeyId: JOURNEY_ID }).templateChange).toBe(
+        false
+      )
+      withSavedTemplateChange(() => {
+        expect(base('Title', { journeyId: JOURNEY_ID }).templateChange).toBe(
+          true
+        )
+      })
+    })
   })
 })
 

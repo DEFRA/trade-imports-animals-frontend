@@ -16,6 +16,7 @@ const withoutReturnControls = 'hubHref, copy = copy, showReturnControls = false'
 
 // The attribute the controllers read to tell a hub exit from a plain save.
 const EXIT_NAME_ATTRIBUTE = 'name="exit"'
+const ACTION_NAME_ATTRIBUTE = 'name="action"'
 
 describe('#saveActions', () => {
   it('Should end a page the hub links to with the primary and both return controls', () => {
@@ -66,6 +67,18 @@ describe('#saveActions', () => {
     expect(html).not.toContain(sharedEn.saveActions.cancelAndReturnToHub)
   })
 
+  it('Should end with the primary alone when there is no overview to return to', () => {
+    const html = environment.renderString(
+      '{% from "shared/save-actions.njk" import saveActions %}{{ saveActions(hubHref, copy = copy) }}',
+      { hubHref: null, copy: sharedEn.saveActions }
+    )
+
+    expect(html).toContain(sharedEn.saveActions.saveAndContinue)
+    expect(html).not.toContain(sharedEn.saveActions.saveAndReturnToHub)
+    expect(html).not.toContain(sharedEn.saveActions.cancelAndReturnToHub)
+    expect(html).not.toContain(EXIT_NAME_ATTRIBUTE)
+  })
+
   it('Should keep the return controls when a hub-linked page names its own primary', () => {
     const html = renderActions(
       'hubHref, { text: "Save and finish", name: "action", value: "finish" }, copy'
@@ -75,6 +88,53 @@ describe('#saveActions', () => {
     expect(html).toContain(sharedEn.saveActions.saveAndReturnToHub)
     expect(html).toContain(sharedEn.saveActions.cancelAndReturnToHub)
     expect(html).toContain(EXIT_NAME_ATTRIBUTE)
+  })
+
+  describe('changing a saved template', () => {
+    const changing = (args = 'hubHref, copy = copy, templateChange = true') =>
+      renderActions(args)
+
+    it('Should end with Save and return and a Cancel link to the template alone', () => {
+      const html = changing()
+
+      expect(html).toContain(sharedEn.saveActions.saveAndReturn)
+      expect(html).toContain(`>${sharedEn.saveActions.cancel}</a>`)
+      expect(html).toContain('href="/notifications/journey-1/hub"')
+      expect(html).not.toContain(sharedEn.saveActions.saveAndContinue)
+      expect(html).not.toContain(sharedEn.saveActions.saveAndReturnToHub)
+      expect(html).not.toContain(sharedEn.saveActions.cancelAndReturnToHub)
+      expect(html).not.toContain(EXIT_NAME_ATTRIBUTE)
+    })
+
+    it('Should take precedence even when the page shows its return controls', () => {
+      const html = changing(
+        'hubHref, copy = copy, showReturnControls = true, templateChange = true'
+      )
+
+      expect(html).not.toContain(sharedEn.saveActions.saveAndReturnToHub)
+      expect(html.match(/<button/g)).toHaveLength(1)
+    })
+
+    it('Should take precedence over the amend ending', () => {
+      const html = changing(
+        'hubHref, copy = copy, amend = { returnAction: "/r", continueAction: "/c" }, templateChange = true'
+      )
+
+      expect(html.match(/<button/g)).toHaveLength(1)
+      expect(html).not.toContain('formaction')
+      expect(html).toContain(`>${sharedEn.saveActions.cancel}</a>`)
+    })
+
+    it('Should keep a named primary’s name and value', () => {
+      const html = changing(
+        'hubHref, { text: "Save and proceed", name: "action", value: "save" }, copy, true, templateChange = true'
+      )
+
+      expect(html).toContain(sharedEn.saveActions.saveAndReturn)
+      expect(html).not.toContain('Save and proceed')
+      expect(html).toContain(ACTION_NAME_ATTRIBUTE)
+      expect(html).toContain('value="save"')
+    })
   })
 })
 
@@ -121,14 +181,14 @@ describe('#saveActions while amending', () => {
     const [first, second] = buttons(html)
 
     for (const button of [first, second]) {
-      expect(button).toContain('name="action"')
+      expect(button).toContain(ACTION_NAME_ATTRIBUTE)
       expect(button).toContain('value="save"')
     }
     expect(html.match(/name="action"/g)).toHaveLength(2)
   })
 
   it("Should send no action field when the page's primary names none", () => {
-    expect(renderActions(amending)).not.toContain('name="action"')
+    expect(renderActions(amending)).not.toContain(ACTION_NAME_ATTRIBUTE)
   })
 
   it('Should end a page reached from another page with Save and return and Save and continue only', () => {

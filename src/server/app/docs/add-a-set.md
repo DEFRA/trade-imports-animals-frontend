@@ -110,10 +110,10 @@ The resulting mount table with two sets in the tree:
 [`../shared/paths.js`](../shared/paths.js) exports two families, and using one
 where the other belongs is the defect this split exists to prevent.
 
-| Family       | Members                                                                  | Carries the prefix?                     | Evaluated                                                |
-| ------------ | ------------------------------------------------------------------------ | --------------------------------------- | -------------------------------------------------------- |
-| Route shapes | `dashboardRoutePath`, `createRoutePath`, `hubRoutePath`, `pageRoutePath` | No — Hapi's `routes.prefix` supplies it | At module load, when a controller builds its route table |
-| Links        | `dashboardPath`, `createPath`, `hubPath`, `pagePath`                     | Yes, from `setBase()`                   | Per request, inside the set context                      |
+| Family       | Members                                                                                    | Carries the prefix?                     | Evaluated                                                |
+| ------------ | ------------------------------------------------------------------------------------------ | --------------------------------------- | -------------------------------------------------------- |
+| Route shapes | `dashboardRoutePath`, `createRoutePath`, `startRoutePath`, `hubRoutePath`, `pageRoutePath` | No — Hapi's `routes.prefix` supplies it | At module load, when a controller builds its route table |
+| Links        | `dashboardPath`, `createPath`, `startPath`, `hubPath`, `pagePath`                          | Yes, from `setBase()`                   | Per request, inside the set context                      |
 
 A link builder used as a route shape gives Hapi a path that already carries the
 prefix, which Hapi then prefixes again. A route builder used as a link drops

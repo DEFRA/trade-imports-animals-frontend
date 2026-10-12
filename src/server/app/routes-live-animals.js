@@ -37,8 +37,19 @@ import {
 } from './bridge/fulfilment-registry.js'
 import { configureObligationSet } from './model/obligations/manifest.js'
 import { configureCommodityReference } from './services/persistence/records/notification-mapper/commodity-reference.js'
-import { configureRecords } from './engine/persistence/records.js'
+import {
+  configureRecords,
+  configureTemplateRecords
+} from './engine/persistence/records.js'
 import { records } from './services/persistence/records/index.js'
+import { createTemplateRecords } from './services/persistence/template-records/index.js'
+import { templateModeRoutes } from './shared/template-mode.js'
+import { withTemplatePage } from './sets/live-animals/journeys/linear/features/template-page/controller.js'
+import { withTemplateChange } from './sets/live-animals/journeys/linear/features/template-page/change.js'
+import {
+  TEMPLATE_MODE_EXCLUDED_SLUGS,
+  TEMPLATE_NOT_HELD_OBLIGATION_IDS
+} from './sets/live-animals/journeys/linear/flow/template-mode.js'
 import { configureSession } from './engine/persistence/session.js'
 import { session } from './services/persistence/session/index.js'
 import { registerJourneyCookie } from './engine/journey.js'
@@ -93,6 +104,10 @@ export const liveAnimals = {
         assertPartyBindingsAreScalar()
         buildDispatch(SET_ID, dispatchPages)
         configureRecords(SET_ID, records)
+        configureTemplateRecords(
+          SET_ID,
+          createTemplateRecords({ notHeld: TEMPLATE_NOT_HELD_OBLIGATION_IDS })
+        )
         configureSession(SET_ID, session, SESSION_COOKIE_NAMES)
         registerJourneyCookie(server)
         server.ext(
@@ -109,8 +124,21 @@ export const liveAnimals = {
           },
           { sandbox: 'plugin' }
         )
+        // Template mode is the same journey routes again under /templates,
+        // generated from allRoutes so no page is copied. The overview twin is
+        // the task list while a template is being created and the template's
+        // own page once it is saved. Every other twin is checked for a template
+        // the user has, and changes one section of a saved template when it is
+        // reached from a Change link on that page.
         server.route(
-          allRoutes.map((route) => routeWithSetContext(SET_ID, route))
+          [
+            ...allRoutes,
+            ...templateModeRoutes(allRoutes, {
+              excludedSlugs: TEMPLATE_MODE_EXCLUDED_SLUGS,
+              overview: withTemplatePage,
+              page: withTemplateChange
+            })
+          ].map((route) => routeWithSetContext(SET_ID, route))
         )
         // Last act of the registration: a seam this set never configured would
         // otherwise answer with its fallback at request time, and two of those

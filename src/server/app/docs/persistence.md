@@ -21,6 +21,21 @@ Canonical fulfilment is the durable answer source. Writes replace a whole evalua
 and purged snapshot. Reads rebuild projected answers, scope and status, so derived
 state is not stored.
 
+## Template records port
+
+While a journey page is walked in template mode the same records port reads and
+writes the user's template store instead of a notification. The adapter is a
+second, optional seam: a set that never enters template mode need not call
+`configureTemplateRecords()`, and entering template mode without it throws
+`template records not configured for set "<id>"`.
+
+[`src/server/app/services/persistence/template-records/index.js`](../services/persistence/template-records/index.js)
+is the live-animals adapter. It supports four operations: `load`, `has`,
+`replaceFulfilment` and a no-op `clear`. Every notification lifecycle operation
+(create, list, finalise, amend, cancel amend, copy, soft delete) refuses with
+`<operation> is not offered in template mode`. It stores the same encoded
+fulfilments a notification does, so a page needs no template-specific code.
+
 ## Session port
 
 [`src/server/app/engine/persistence/session.js`](../engine/persistence/session.js)

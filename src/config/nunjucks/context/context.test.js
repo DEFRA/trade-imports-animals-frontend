@@ -76,6 +76,7 @@ describe('context and cache', () => {
             continueAction: SET_BASE
           },
           activeNavigationItem: 'dashboard',
+          templatesUrl: `${SET_BASE}/templates`,
           addressBookUrl: 'http://localhost:3002/address-book',
           userSession: { isAuthenticated: false }
         })
@@ -99,6 +100,12 @@ describe('context and cache', () => {
         const result = await contextImport.context({ path: '/auth/sign-out' })
 
         expect(result.activeNavigationItem).toBeNull()
+      })
+
+      test('Should link Templates to the live-animals Manage templates from outside every set', async () => {
+        const result = await contextImport.context({ path: '/auth/sign-out' })
+
+        expect(result.templatesUrl).toBe('/live-animals/templates')
       })
 
       test('Should send the home link to the root from outside every set', async () => {
@@ -265,6 +272,7 @@ describe('context and cache', () => {
             continueAction: SET_BASE
           },
           activeNavigationItem: 'dashboard',
+          templatesUrl: `${SET_BASE}/templates`,
           addressBookUrl: 'http://localhost:3002/address-book',
           userSession: { isAuthenticated: false }
         })
@@ -303,6 +311,18 @@ describe('#activeNavigationItem', () => {
     expect(inLiveAnimals(`${SET_BASE}/notifications/abc-123/origin`)).toBe(
       'dashboard'
     )
+  })
+
+  test('Should mark Templates on Manage templates', () => {
+    expect(inLiveAnimals(`${SET_BASE}/templates`)).toBe('templates')
+  })
+
+  test('Should keep Templates marked on a page under Manage templates', () => {
+    expect(inLiveAnimals(`${SET_BASE}/templates/abc-123`)).toBe('templates')
+  })
+
+  test('Should mark nothing on a path that merely starts with templates', () => {
+    expect(inLiveAnimals(`${SET_BASE}/templatesomething`)).toBeNull()
   })
 
   test('Should mark nothing on a page outside the navigation', () => {

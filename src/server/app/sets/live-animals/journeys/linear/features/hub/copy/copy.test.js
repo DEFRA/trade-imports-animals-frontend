@@ -3,7 +3,11 @@ import { beforeAll, beforeEach, describe, expect, it, test } from 'vitest'
 
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../../engine/persistence/records.js'
+import {
+  configureRecords,
+  configureTemplateRecords
+} from '../../../../../../../engine/persistence/records.js'
+import { withTemplateMode } from '../../../../../../../shared/template-mode.js'
 import { configureSession } from '../../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
@@ -39,6 +43,10 @@ const unlockedSeed = {
   commodityLines: [{ commoditySelection: 'Cat' }]
 }
 
+const UPLOAD_DOCUMENTS_ROW_TITLE = 'Upload documents'
+const ABOUT_SECTION = '1. About the consignment'
+const DESCRIPTION_SECTION = '2. Description of the goods'
+const TRANSPORT_SECTION = '3. Transport and arrival'
 const ORIGIN_ROW_TITLE = 'Where is this consignment coming from?'
 const COMMODITIES_ROW_TITLE = 'What are you importing?'
 const CONSIGNMENT_DETAILS_ROW_TITLE = 'Commodity details'
@@ -86,6 +94,33 @@ describe('#copy', () => {
 
   test('Should head the whole task list "Notification tasklist"', () => {
     expect(copy.taskListHeading).toBe('Notification tasklist')
+  })
+
+  test('Should pin the template task list copy in both locales', () => {
+    expect(copy.template).toEqual({
+      taskListHeading: 'Template tasklist',
+      reviewTemplate: 'Review template',
+      returnToManageTemplates: 'Return to manage templates',
+      groups: {
+        'about-the-consignment': ABOUT_SECTION,
+        'description-of-the-goods': DESCRIPTION_SECTION,
+        'transport-and-arrival': TRANSPORT_SECTION,
+        'consignment-parties': '4. Consignment parties',
+        'contact-address': '5. Contact address'
+      }
+    })
+    expect(copyCy.template).toEqual({
+      taskListHeading: 'Rhestr dasgau’r templed',
+      reviewTemplate: 'Adolygu’r templed',
+      returnToManageTemplates: 'Dychwelyd i reoli templedi',
+      groups: {
+        'about-the-consignment': '1. Am y llwyth',
+        'description-of-the-goods': '2. Disgrifiad o’r nwyddau',
+        'transport-and-arrival': '3. Cludiant a chyrraedd',
+        'consignment-parties': '4. Partïon y llwyth',
+        'contact-address': '5. Cyfeiriad cyswllt'
+      }
+    })
   })
 
   // Design release 1 keeps the hub to one-line rows: only "Roles and
@@ -183,11 +218,14 @@ describe('#hubHandler', () => {
   })
   beforeEach(() => store.clear())
 
-  it('Should title the hub Overview with the design chrome — Return to dashboard, no back link, no breadcrumbs, no progress line', async () => {
+  it('Should title the hub Overview with the design chrome — Notification tasklist, Review and submit, Return to dashboard, no back link, no breadcrumbs, no progress line', async () => {
     const context = await renderHub()
     expect(context.heading).toBe('Overview')
     expect(context.pageTitle).toBe('Overview')
-    expect(context.dashboardHref).toBe(dashboardPath())
+    expect(context.taskListHeading).toBe('Notification tasklist')
+    expect(context.reviewText).toBe('Review and submit')
+    expect(context.returnText).toBe('Return to dashboard')
+    expect(context.returnHref).toBe(dashboardPath())
     expect(context.backLink).toBeUndefined()
     expect(context.breadcrumbs).toBeUndefined()
     expect(context.progressLine).toBeUndefined()
@@ -196,9 +234,9 @@ describe('#hubHandler', () => {
   it('Should render the six numbered design sections in order and nothing after them', async () => {
     const { groups } = await renderHub()
     expect(groups.map((group) => group.caption)).toEqual([
-      '1. About the consignment',
-      '2. Description of the goods',
-      '3. Transport and arrival',
+      ABOUT_SECTION,
+      DESCRIPTION_SECTION,
+      TRANSPORT_SECTION,
       '4. Documents',
       '5. Consignment parties',
       '6. Contact address'
@@ -219,7 +257,7 @@ describe('#hubHandler', () => {
         'Additional details'
       ],
       [ARRIVAL_ROW_TITLE, TRANSPORT_ROW_TITLE],
-      ['Upload documents'],
+      [UPLOAD_DOCUMENTS_ROW_TITLE],
       [ADDRESSES_ROW_TITLE],
       ['Contact address for this consignment']
     ])
@@ -412,7 +450,7 @@ describe('#hubHandler — the transit row and the rows after it', () => {
   it('Should tag the optional documents row "To do" like any other unfinished row', async () => {
     const documentsRow = rowByTitle(
       await renderHub(unlockedSeed),
-      'Upload documents'
+      UPLOAD_DOCUMENTS_ROW_TITLE
     )
     expect(documentsRow.status).toEqual(TO_DO_STATUS)
   })
@@ -663,5 +701,101 @@ describe('#hubHandler — the way back to the exit questions', () => {
         A_JOURNEY_PAGE_URL
       )
     }
+  })
+})
+
+describe("#hubHandler — a template's task list", () => {
+  const OWNER = '2100010101'
+  const TEMPLATE_ROW_PATH = /^\/live-animals\/templates\/[^/]+\/.+/
+
+  const renderTemplateHub = async (seed = {}) => {
+    const journey = await store.create()
+    await store.seedAnswers(journey.journeyId, seed)
+    const h = stubH()
+    await withTemplateMode(OWNER, () =>
+      hubHandler(journeyRequest(journey.journeyId), h)
+    )
+    return { ...h.captured.view.context, journeyId: journey.journeyId }
+  }
+
+  const titlesByGroup = (context) =>
+    context.groups.map((group) => group.items.map((item) => item.title.text))
+
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureTemplateRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should head the list "Template tasklist" under the Overview title, with zero totals', async () => {
+    const context = await renderTemplateHub()
+
+    expect(context.heading).toBe('Overview')
+    expect(context.taskListHeading).toBe('Template tasklist')
+    expect(context.commodityTotals).toEqual({ animals: 0, packages: 0 })
+  })
+
+  it('Should render five sections with no Documents', async () => {
+    const { groups } = await renderTemplateHub()
+
+    expect(groups.map((group) => group.caption)).toEqual([
+      ABOUT_SECTION,
+      DESCRIPTION_SECTION,
+      TRANSPORT_SECTION,
+      '4. Consignment parties',
+      '5. Contact address'
+    ])
+  })
+
+  it("Should list the notification's own tasks without Upload documents, each linking under the template", async () => {
+    const notification = await renderHub(unlockedSeed)
+    const template = await renderTemplateHub(unlockedSeed)
+
+    expect(titlesByGroup(template)).toEqual(
+      titlesByGroup(notification).filter(
+        (titles) => !titles.includes(UPLOAD_DOCUMENTS_ROW_TITLE)
+      )
+    )
+    for (const item of allItems(template)) {
+      expect(
+        item.href,
+        `${item.title.text} opens outside the template`
+      ).toMatch(TEMPLATE_ROW_PATH)
+    }
+  })
+
+  it("Should give the template the notification's row hints, on the roles and addresses row alone", async () => {
+    const template = await renderTemplateHub(unlockedSeed)
+
+    expect(
+      allItems(template)
+        .filter((item) => item.hint !== undefined)
+        .map((item) => item.title.text)
+    ).toEqual([ADDRESSES_ROW_TITLE])
+    expect(rowByTitle(template, ADDRESSES_ROW_TITLE).hint).toEqual({
+      text: ADDRESSES_ROW_HINT
+    })
+  })
+
+  it('Should end with Review template and Return to manage templates', async () => {
+    const context = await renderTemplateHub()
+
+    expect(context.reviewText).toBe('Review template')
+    expect(context.reviewHref).toBe(
+      `/live-animals/templates/${context.journeyId}/notification-view`
+    )
+    expect(context.returnText).toBe('Return to manage templates')
+    expect(context.returnHref).toBe('/live-animals/templates')
+  })
+
+  it('Should draw the grey Template tag in the strip', async () => {
+    const context = await renderTemplateHub()
+
+    expect(context.journeyStrip.status).toEqual({
+      text: 'Template',
+      classes: 'govuk-tag--grey'
+    })
   })
 })

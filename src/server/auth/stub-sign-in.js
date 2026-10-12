@@ -15,6 +15,8 @@ const STUB_SESSION_TTL_SECONDS =
   HOURS_IN_STUB_SESSION * MINUTES_PER_HOUR * SECONDS_PER_MINUTE
 const MS_PER_SECOND = 1000
 
+const CONTACT_ID_PATTERN = /^\d{10}$/
+
 const DEFAULT_STUB_USER = {
   crn: 'STUB0001',
   contactId: 2100010101,
@@ -36,12 +38,18 @@ const signIn = async (request, h) => {
   const token = buildStubToken(sessionId)
   const organisationId =
     request.query.organisationId ?? DEFAULT_STUB_USER.organisationId
+  // Lets a functional test sign in as its own user, so what one test saves is
+  // not in another's list. Only a ten-digit id, the shape Defra ID's contact
+  // ids take.
+  const contactId = CONTACT_ID_PATTERN.test(request.query.contactId ?? '')
+    ? Number(request.query.contactId)
+    : DEFAULT_STUB_USER.contactId
 
   await request.server.app.cache.set(sessionId, {
     isAuthenticated: true,
     sessionId,
     crn: DEFAULT_STUB_USER.crn,
-    contactId: DEFAULT_STUB_USER.contactId,
+    contactId,
     name: DEFAULT_STUB_USER.name,
     email: DEFAULT_STUB_USER.email,
     // Real Defra ID maps organisationId from currentRelationshipId; both

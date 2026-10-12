@@ -8,6 +8,7 @@ import {
   sessionConfiguredFor
 } from './persistence/session.js'
 import { currentSetBase, currentSetId } from '../shared/set-context.js'
+import { inTemplateMode } from '../shared/template-mode.js'
 import {
   AMEND,
   DRAFT,
@@ -96,9 +97,21 @@ const memoWrite = (request, journey) => {
   }
 }
 
-export const startJourney = async (request, h) => {
+/**
+ * Creates a new draft for the signed-in user, adds it to the user's known
+ * journeys and remembers it for the rest of the request.
+ *
+ * @param {object} request - the Hapi request.
+ * @param {object} h - the Hapi response toolkit.
+ * @param {{ fulfilment?: object }} [options] - `fulfilment`: the UUID-keyed
+ * answers the new draft starts with. Without it the draft starts empty.
+ * @returns {Promise<object>} the created journey.
+ */
+export const startJourney = async (request, h, { fulfilment } = {}) => {
   const actor = buildActor(request.auth?.credentials)
-  const journey = await records.create(actor)
+  const journey = await (fulfilment === undefined
+    ? records.create(actor)
+    : records.create(actor, { fulfilment }))
   await session.addKnownJourney(request, h, journey.journeyId)
   memoWrite(request, journey)
   return journey
@@ -117,7 +130,8 @@ export const currentJourney = async (request, h) => {
   if (!loaded) {
     throw Boom.notFound()
   }
-  if (!(await isKnownJourney(request, journeyId))) {
+  // A template id is not a notification: it never joins the known list.
+  if (!inTemplateMode() && !(await isKnownJourney(request, journeyId))) {
     await session.addKnownJourney(request, h, journeyId)
   }
   memoWrite(request, loaded)

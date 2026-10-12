@@ -29,6 +29,10 @@ export const TARGETS_FILE = new URL(
  * quietly shrinking the audit. */
 export const SKIPPED = new Map([
   [
+    '/start',
+    'start entry for the Import Notification Service — a GET that creates a draft and redirects, not a page'
+  ],
+  [
     '/notifications/{journeyId}/accompanying-documents/status',
     'upload-scan polling endpoint — JSON, not a page'
   ],
@@ -47,6 +51,10 @@ export const SKIPPED = new Map([
   [
     '/notifications/{journeyId}/address-return',
     'INS handshake return endpoint — redirects to the party picker, not a page'
+  ],
+  [
+    '/templates/{journeyId}/name',
+    "needs a template in progress, which only the name page's own POST creates — the empty form is audited at /templates/new"
   ]
 ])
 

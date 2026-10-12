@@ -6,7 +6,8 @@ import { documentCards } from '../cards/documents.js'
 
 const copy = copyFor({ en, cy })
 
-const DOCUMENTS_SECTION_ANCHOR = 'documents-section'
+/** The anchor of the documents section, which a template's review leaves out. */
+export const DOCUMENTS_SECTION_ANCHOR = 'documents-section'
 
 // Unconditional: the section is part of the review whether or not anything has
 // been uploaded, so a trader with no documents still sees them named and still

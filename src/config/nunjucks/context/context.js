@@ -5,9 +5,12 @@ import { config } from '../../config.js'
 import { createLogger } from '../../../server/common/helpers/logging/logger.js'
 import {
   dashboardPath,
-  inDashboardSection
+  inDashboardSection,
+  inTemplatesSection,
+  templatesRoutePath
 } from '../../../server/app/shared/paths.js'
 import { amendFormActions } from '../../../server/app/shared/amend-form-actions.js'
+import { SET_BASE as LIVE_ANIMALS_SET_BASE } from '../../../server/app/sets/live-animals/set.js'
 import {
   hasSetContext,
   setIdForPath,
@@ -28,17 +31,24 @@ let webpackManifest
  * Which service-navigation item the current request sits under, so the layout
  * can mark it active. Section-wide, not page-wide: every notification page is
  * inside the dashboard's section of the service, which is why the answer for
- * `/notifications/123/origin` is still `dashboard`.
+ * `/notifications/123/origin` is still `dashboard`. Likewise `templates` for
+ * Manage templates and every page under it.
  *
  * @param {string} [requestPath] - the request path.
- * @returns {string|null} the id of the active navigation item, or null when the
- * request is under none of them.
+ * @returns {string|null} `dashboard`, `templates`, or null when the request is
+ * under none of them.
  */
 export function activeNavigationItem(requestPath = '') {
   if (!hasSetContext()) {
     return null
   }
-  return inDashboardSection(requestPath) ? 'dashboard' : null
+  if (inDashboardSection(requestPath)) {
+    return 'dashboard'
+  }
+  if (inTemplatesSection(requestPath)) {
+    return 'templates'
+  }
+  return null
 }
 
 const resolveSession = (request, sessionId) => {
@@ -48,6 +58,14 @@ const resolveSession = (request, sessionId) => {
 
 const insAddressBookUrl = () =>
   `${config.get('tradeImportsInsFrontend.baseUrl').replace(/\/$/, '')}/address-book`
+
+/**
+ * The Manage templates link. Manage templates is served by the live-animals set
+ * only, so every page links to that one, whichever set (or none) the request is in.
+ *
+ * @returns {string} the same-origin path of Manage templates.
+ */
+const templatesUrl = () => `${LIVE_ANIMALS_SET_BASE}${templatesRoutePath()}`
 
 async function context(request) {
   if (!webpackManifest) {
@@ -87,6 +105,7 @@ async function context(request) {
     activeNavigationItem: setId
       ? withSetContext(setId, () => activeNavigationItem(request.path))
       : null,
+    templatesUrl: templatesUrl(),
     addressBookUrl: insAddressBookUrl(),
     userSession: authData
       ? {

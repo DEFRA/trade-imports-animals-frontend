@@ -74,6 +74,31 @@ describe('stub sign-in', () => {
     expect(session.currentRelationshipId).toBe('5900002')
   })
 
+  test('Should sign in as the contact id the query gives when it is ten digits', async () => {
+    const { server, cached } = await buildServer()
+
+    await server.inject({
+      method: 'GET',
+      url: '/auth/stub-sign-in?contactId=2100099999'
+    })
+
+    expect(onlySession(cached).contactId).toBe(2100099999)
+  })
+
+  test.each(['abc', '123', '21000999999', '2100099999x'])(
+    'Should keep the default contact id for any other value (%s)',
+    async (value) => {
+      const { server, cached } = await buildServer()
+
+      await server.inject({
+        method: 'GET',
+        url: `/auth/stub-sign-in?contactId=${value}`
+      })
+
+      expect(onlySession(cached).contactId).toBe(2100010101)
+    }
+  )
+
   /** Where sign-in sends the caller afterwards. The route is unauthenticated and
    * `redirect` is attacker-supplied, so only a relative path is honoured — the
    * shape the session cookie's own redirectTo produces. An absolute URL would

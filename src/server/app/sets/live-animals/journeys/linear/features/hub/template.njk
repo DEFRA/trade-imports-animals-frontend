@@ -26,7 +26,7 @@
   </section>
 
   <section aria-labelledby="notification-tasklist-heading">
-    <h2 class="govuk-heading-l" id="notification-tasklist-heading">{{ copy.taskListHeading }}</h2>
+    <h2 class="govuk-heading-l" id="notification-tasklist-heading">{{ taskListHeading }}</h2>
 
     {% for group in groups %}
       <section aria-labelledby="{{ group.id }}-heading">
@@ -42,13 +42,13 @@
 
   <div class="govuk-button-group">
     {{ govukButton({
-      text: copy.reviewAndSubmit,
+      text: reviewText,
       href: reviewHref
     }) }}
 
     {{ govukButton({
-      text: copy.returnToDashboard,
-      href: dashboardHref,
+      text: returnText,
+      href: returnHref,
       classes: "govuk-button--secondary"
     }) }}
   </div>
