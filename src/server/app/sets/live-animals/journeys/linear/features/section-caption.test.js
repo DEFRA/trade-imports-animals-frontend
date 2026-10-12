@@ -147,8 +147,6 @@ const CAPTIONED_PAGES = [
 ]
 
 // Design release 1 opens these pages straight into their heading.
-// The declaration shows no stored answer, and the review refuses the parity
-// fixture's parties under the address rules, so it renders from a blank one.
 const BARE_PAGES = [
   ['overview', hubRoutes, parityFixture],
   ['check your answers', checkAnswersRoutes, parityFixture],
@@ -161,7 +159,6 @@ describe('section caption — the view model names the section', () => {
     configureRecords(SET_ID, recordsStub)
     configureSession(SET_ID, sessionStub)
     buildDispatch(SET_ID, dispatchPages)
-    // The declaration renders only once the review would let the trader on.
     configureReadyForCheckYourAnswers(SET_ID, () => true)
   })
   beforeEach(() => store.clear())

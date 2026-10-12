@@ -157,9 +157,6 @@ export const renderNotificationView = async (
   const invalidCardErrors = readOnly
     ? {}
     : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
-  // A refused Continue lands here by redirect with `refused=1`, so only then
-  // does the review name a still-scanning document; a plain visit names a
-  // rejected one alone.
   const refused = request.query.refused === '1'
   const scanDocErrors = readOnly
     ? {}
@@ -197,6 +194,4 @@ const get = async (request, h) => {
   return response
 }
 
-// Continue posts to the declaration, which alone decides whether the trader may
-// declare, so the review has no POST of its own.
 export const routes = pageRoutes(page, { get })

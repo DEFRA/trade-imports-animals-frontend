@@ -13,7 +13,6 @@ import { dispatchPages } from '../index.js'
 import { copy as documentsEn } from '../documents/copy/copy.en.js'
 import { documentScanCardErrors, isReviewRefused } from './refusal.js'
 
-// Stub scan verdicts by filename: `*never-scans*` stays PENDING, `virus-*` is REJECTED.
 const PENDING_FILENAME = 'notes-never-scans.pdf'
 const REJECTED_FILENAME = 'virus-alert.pdf'
 const KNOWN_PORT = 'GB ABD'

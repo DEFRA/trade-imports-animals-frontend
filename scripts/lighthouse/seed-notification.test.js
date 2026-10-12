@@ -67,8 +67,6 @@ describe('#submitNotification', () => {
     $: load(`<input type="hidden" name="concurrencyToken" value="${token}">`)
   })
 
-  /** A server that renders the review at token 7, the declaration from the
-   * review's Continue, and confirms a declared submit. */
   const fakeClient = () => {
     const posts = []
     return {

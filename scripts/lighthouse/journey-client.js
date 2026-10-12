@@ -46,8 +46,6 @@ export const createJourneyClient = (baseUrl, cookies = []) => {
         body.append(name, one)
       }
     }
-    // A POST that renders rather than redirects answers with a page, so the
-    // result reads like a document.
     return pageOf(
       await request(path, {
         method: 'POST',

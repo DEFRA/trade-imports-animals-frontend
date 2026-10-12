@@ -1,11 +1,7 @@
 import { pagePath } from '../../../../../../shared/paths.js'
 import { CYA_SLUG } from '../../../../../../shared/kit.js'
 
-/** The review page, as the declaration sends a trader back to it.
- *
- * `changed` raises the shared "this notification was updated" banner
- * (`staleAction`). `refused` asks the review to move focus to its error
- * summary, as it did when it re-rendered a refused Continue in place. */
+// `changed` raises the shared "notification has been updated" banner (`staleAction`).
 export const reviewHref = (
   journeyId,
   { changed = false, refused = false } = {}

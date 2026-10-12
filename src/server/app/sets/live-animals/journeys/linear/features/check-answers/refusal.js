@@ -21,10 +21,8 @@ const documentScanStatuses = async (answers) => {
   )
 }
 
-/** A REJECTED scan is a permanent verdict on a stored file, so it is always an
- * error. A PENDING one is transient, so it is only an error when the trader
- * has just been refused for it — callers rendering a plain visit pass
- * `includePending: false`. */
+/** A REJECTED scan is permanent, so always an error; a PENDING one is transient,
+ * so only an error when the trader has just been refused for it. */
 export const documentScanCardErrors = async (
   answers,
   { includePending = true } = {}
@@ -42,11 +40,7 @@ export const documentScanCardErrors = async (
   return {}
 }
 
-/** Whether the declaration must send the trader back to the review, on both
- * Continue and Submit. Each refusal is one the review page names itself, so
- * the redirect needs to carry nothing. SUBMITTED notifications are never
- * refused.
- */
+// The review must name every refusal here itself: the redirect back carries no reason.
 export const isReviewRefused = async (request, h) => {
   const { journey, answers, storedAnswers, scope } = await state.get(request, h)
   if (journey.status === state.SUBMITTED) {

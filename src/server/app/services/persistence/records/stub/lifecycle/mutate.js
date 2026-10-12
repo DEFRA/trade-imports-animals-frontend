@@ -13,7 +13,6 @@ export const replaceFulfilment = async (
   { known } = {}
 ) => {
   const journey = loadWritable(journeyId)
-  // Only a present token is checked: a save that carries none stays permissive.
   if (known?.concurrencyToken != null) {
     assertConcurrencyToken(journey, known.concurrencyToken, 'save notification')
   }

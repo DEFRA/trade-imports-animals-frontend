@@ -3,13 +3,10 @@ import { reviewedTokensCookie } from '../../../../../../engine/persistence/sessi
 import { postHandlerOf } from '../../../../../../engine/test-support.js'
 import * as declaration from './controller.js'
 
-/** The stub session state a review leaves behind for `journeyId` at `token`. */
 export const reviewedState = (journeyId, token) => ({
   [reviewedTokensCookie()]: { [journeyId]: token }
 })
 
-/** A request as the review's Continue sends it: posting `step=review` at
- * `token`, from a browser whose session saw the review at `token`. */
 export const continueRequest = (request, token, payload = {}) => ({
   ...request,
   payload: { step: 'review', concurrencyToken: `${token}`, ...payload },
@@ -19,9 +16,8 @@ export const continueRequest = (request, token, payload = {}) => ({
   }
 })
 
-/** The declaration's routes as a trader reaches them: the "GET" posts the
- * review's Continue at the journey's current token, so a test that renders the
- * page by its GET handler sees the declaration rather than a redirect. */
+// A stand-in GET for tests that render pages by their GET handler: it posts the
+// review's Continue instead.
 export const declarationRoutesFromReview = [
   {
     method: 'GET',

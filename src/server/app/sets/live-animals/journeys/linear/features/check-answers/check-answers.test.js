@@ -38,8 +38,6 @@ import { copy as documentsEn } from '../documents/copy/copy.en.js'
 
 const getHandler = routes.find((route) => route.method === 'GET').handler
 
-/** The review's Continue, which posts to the declaration at the token the
- * review was rendered with. */
 const continueFromReview = async (seed, { submitted = false } = {}) => {
   const { journeyId } = await store.create()
   await store.seedAnswers(journeyId, seed)
@@ -59,7 +57,6 @@ const refusedContinue = (journeyId) => ({
   redirect: `${pagePath(journeyId, 'notification-view')}?refused=1`
 })
 
-/** The review as a refused Continue lands back on it. */
 const reviewAfterRefusal = async (seed) => {
   const { journeyId, response } = await continueFromReview(seed)
   expect(response).toEqual(refusedContinue(journeyId))
@@ -1344,9 +1341,6 @@ describe(`${SUITE} — Continue to the declaration`, () => {
     expect(reviewedTokensCookie() in h.cookies).toBe(false)
   })
 
-  // Continue used to carry an unfinished notification through to the
-  // declaration, where the submit failed its readiness check and bounced the
-  // trader back here saying nothing. It is refused before the declaration shows.
   it('Should refuse Continue while the notification is unfinished', async () => {
     const { journeyId, response } = await continueFromReview(withParties({}))
 
@@ -1623,10 +1617,7 @@ describe(`${SUITE} — stale stored answers`, () => {
   })
 })
 
-// Document scan verdicts are named on the uploaded-documents card by the review
-// itself — REJECTED on every visit, still-scanning only after a refused
-// Continue lands back here by redirect. The pure-function refusal tests hit the helper,
-// not the controller's spread order, so this block pins the controller wiring.
+// The refusal tests cover the scan helper; this block pins the controller's wiring of it.
 describe(`${SUITE} — document scan card errors`, () => {
   setupCheckAnswersEngine()
 
@@ -1666,8 +1657,6 @@ describe(`${SUITE} — document scan card errors`, () => {
     expect(card.error).toBe(documentsEn.errors.someStillScanning)
   })
 
-  // Still scanning is transient, so a plain visit does not present it as an
-  // error — only a refused Continue does.
   it('Should not name a still-scanning document on a plain visit to the review', async () => {
     const { view } = await driveHandler(getHandler, {
       seed: seedWithDoc(PENDING_FILENAME)

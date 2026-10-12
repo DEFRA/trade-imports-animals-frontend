@@ -55,10 +55,6 @@ const VALID_COPY = {
   }
 }
 
-/** Posts to the declaration at the token the review rendered with — the
- * journey's token once seeded — from a session that saw that review, unless
- * `sessionToken` says otherwise. `afterReview` runs between the review and the
- * post, standing in for an edit made in another tab or by another user. */
 const drivePost = async ({
   step = 'declare',
   payload = {},
@@ -89,9 +85,8 @@ const drivePost = async ({
   }
 }
 
-/** The guard only lets a render through at the journey's own token, so the
- * layout's token and the reviewed one always agree in practice. Moving the
- * layout's lets a test see which one the page actually carries. */
+// In practice the layout's token always equals the reviewed one, so the layout's
+// is moved to show which of the two the page carries.
 const LAYOUT_TOKEN = 'layout-token'
 const layoutTokenDiffers = () => {
   const base = kit.base

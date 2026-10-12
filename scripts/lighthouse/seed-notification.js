@@ -304,9 +304,6 @@ const tokenOn = (page) => {
   return token
 }
 
-/** Declares the way a trader does: the declaration is reached only by the
- * review's Continue, from a session that rendered that review, and declares at
- * the token the review showed. */
 export const submitNotification = async (client, journeyId) => {
   const review = await client.document(pagePath(journeyId, REVIEW_SLUG))
   if (review.status !== HTTP_OK) {

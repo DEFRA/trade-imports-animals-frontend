@@ -43,9 +43,8 @@ const dateText = (value) =>
     year: 'numeric'
   })
 
-/** Every render carries `reviewedToken` — the token the review was rendered
- * with — rather than `kit.base()`'s current one, so a re-shown declaration
- * still declares exactly what the review showed. */
+// The reviewed token, not kit.base()'s current one, so a re-shown declaration
+// still declares exactly what the review showed.
 const render = (
   h,
   journey,
@@ -73,8 +72,6 @@ const postedToken = (payload) =>
     ? undefined
     : Number(payload.concurrencyToken)
 
-// The declaration is reached only by posting from the review, so a bookmark or
-// typed URL goes back to the review.
 const get = async (request, h) => {
   const { journey } = await state.get(request, h)
   if (journey.status === state.SUBMITTED) {
@@ -139,7 +136,6 @@ const post = async (request, h) => {
   if (reviewedToken !== journey.concurrencyToken) {
     return h.redirect(reviewHref(journey.journeyId, { changed: true }))
   }
-  // Nothing changed, but this browser has not rendered the review of it.
   if (reviewedToken !== (await reviewedTokenOf(request, journey.journeyId))) {
     return h.redirect(reviewHref(journey.journeyId))
   }
@@ -148,8 +144,7 @@ const post = async (request, h) => {
     return h.redirect(reviewHref(journey.journeyId, { refused: true }))
   }
 
-  // Arriving from the review always asks afresh: a tick left in the session by
-  // a submit refused as stale was given against content since changed.
+  // Never pre-tick: a tick left by a submit refused as stale was given to older content.
   if (payload.step === STEP_REVIEW) {
     return render(h, journey, reviewedToken, { declaration: '' })
   }

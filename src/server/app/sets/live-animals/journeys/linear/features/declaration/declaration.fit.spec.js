@@ -20,7 +20,6 @@ const CHANGED_REVIEW_URL = urlUnderBase(
   '/notifications/[^/]+/notification-view\\?staleAction=1'
 )
 
-/** The only way onto the declaration: Continue from a complete review. */
 const continueFromReview = async (page) => {
   await page.getByRole('button', { name: 'Continue' }).click()
   await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
@@ -33,7 +32,6 @@ const startAtDeclaration = async (page) => {
   await continueFromReview(page)
 }
 
-/** Another tab, same trader, saving an answer on the same notification. */
 const editInAnotherTab = async (page) => {
   const other = await page.context().newPage()
   await other.goto(journeyUrl(page, 'origin'))
@@ -41,7 +39,6 @@ const editInAnotherTab = async (page) => {
     .getByLabel('Your internal reference for this consignment (optional)')
     .fill(EDITED_REFERENCE)
   await other.getByRole('button', { name: 'Save and continue' }).click()
-  // A refused save re-renders the origin page, so leaving it is the edit landing.
   await expect(other).not.toHaveURL(ORIGIN_URL)
   await other.close()
 }
@@ -188,9 +185,6 @@ test.describe('declaration reached only from the review', () => {
     await expect(page).toHaveURL(REVIEW_URL)
   })
 
-  // Every journey page carries the current token, so a form edited in the
-  // browser's developer tools could post the review's Continue without the
-  // review ever being opened. The session records only the reviews it rendered.
   test('sends a hand-crafted Continue from a browser that never opened the review back to the review', async ({
     page
   }) => {

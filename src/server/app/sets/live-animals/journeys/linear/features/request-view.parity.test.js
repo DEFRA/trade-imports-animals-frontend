@@ -111,8 +111,6 @@ const scalarPages = [
   ],
   ['private transporter', privateTransporterDetails, privateTransportFixture],
   ['contact', contact, parityFixture],
-  // The declaration shows no stored answer, and the review refuses this
-  // fixture's parties under the address rules, so it renders from a blank one.
   ['declaration', declarationFromReview, {}]
 ]
 
@@ -123,8 +121,7 @@ const canonicalViewOf = (answers) =>
     )
   )
 
-// Both renders share one journey and each seed is a save, so the concurrency
-// token moves between them by design and is not part of the parity.
+// Each seed is a save, so the token differs between the two renders by design.
 const contextFor = async (handler, journeyId, answers) => {
   await store.seedAnswers(journeyId, answers)
   const h = stubH()
@@ -156,7 +153,6 @@ describe('canonical request-view controller parity', () => {
     configureRecords(SET_ID, recordsStub)
     configureSession(SET_ID, sessionStub)
     buildDispatch(SET_ID, dispatchPages)
-    // The declaration renders only once the review would let the trader on.
     configureReadyForCheckYourAnswers(SET_ID, () => true)
   })
   beforeEach(() => store.clear())
