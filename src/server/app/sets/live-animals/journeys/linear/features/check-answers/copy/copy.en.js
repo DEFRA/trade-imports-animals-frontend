@@ -1,8 +1,9 @@
 export const copy = {
   title: 'Review your notification',
   resubmitTitle: 'Review before re-submitting',
-  // The line under a submitted notification's reference.
+  // The lines under a notification's reference in its header.
   viewHeader: {
+    dateCreated: (date) => `Date created: ${date}`,
     dateSubmitted: (date) => `Date submitted: ${date}`,
     amend: 'Amend this notification',
     healthCertificateWarning: 'You need to upload a health certificate',

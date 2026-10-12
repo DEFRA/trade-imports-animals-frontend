@@ -47,6 +47,15 @@ export const journeyIdFromPage = (page) => {
   return match[1]
 }
 
+/** The level-1 heading of a notification's view header, named exactly its reference. */
+export function referenceHeading(page) {
+  return page.getByRole('heading', {
+    level: 1,
+    name: journeyIdFromPage(page),
+    exact: true
+  })
+}
+
 export const journeyUrl = (page, slug = '') =>
   `${BASE}/notifications/${journeyIdFromPage(page)}${slug ? `/${slug}` : ''}`
 

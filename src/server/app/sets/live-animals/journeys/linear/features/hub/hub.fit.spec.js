@@ -6,12 +6,12 @@ import {
   answerCountryOfOrigin,
   completeAnswerSections,
   openReviewFromHub,
+  referenceHeading,
   selectSpecies,
   signIn,
   startNotification,
   unlockSections
 } from '../../../../../../../../../fit/live-animals-journey.js'
-import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
 import { copy as commoditiesCopy } from '../commodities/copy/copy.en.js'
 import { copy as transportCopy } from '../transport/copy/copy.en.js'
 import { copy } from './copy/copy.en.js'
@@ -440,9 +440,7 @@ test.describe('hub feature — the Review and submit button', () => {
 
     await openReviewFromHub(page)
 
-    await expect(
-      page.getByRole('heading', { name: checkAnswersCopy.title })
-    ).toBeVisible()
+    await expect(referenceHeading(page)).toBeVisible()
   })
 
   test('leads the secondary Return to dashboard button, with no review task row above them', async ({
@@ -470,9 +468,7 @@ test.describe('hub feature — the Review and submit button', () => {
 
     await openReviewFromHub(page)
 
-    await expect(
-      page.getByRole('heading', { name: checkAnswersCopy.title })
-    ).toBeVisible()
+    await expect(referenceHeading(page)).toBeVisible()
   })
 
   // Design release 1: "Animal identifiers are optional unless multiple species
@@ -490,9 +486,7 @@ test.describe('hub feature — the Review and submit button', () => {
 
     await openReviewFromHub(page)
 
-    await expect(
-      page.getByRole('heading', { name: checkAnswersCopy.title })
-    ).toBeVisible()
+    await expect(referenceHeading(page)).toBeVisible()
   })
 
   test('hub with nothing but the origin answered has no serious or critical axe violations', async ({

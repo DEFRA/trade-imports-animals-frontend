@@ -144,17 +144,18 @@ const renderCya = async (
     evaluation
   )
   const amending = journey.status === state.AMEND
-  const title = readOnly ? journey.journeyId : reviewTitle(journey)
+  const headed = readOnly || journey.status === state.DRAFT
+  const title = headed ? journey.journeyId : reviewTitle(journey)
   return h.view(view, {
     pageTitle: title,
     heading: title,
     copy,
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
-    journeyStrip: readOnly
+    journeyStrip: headed
       ? null
       : journeyStrip(journey, { offerCancelAmend: false }),
-    viewHeader: readOnly ? viewHeaderOf(journey) : null,
+    viewHeader: headed ? viewHeaderOf(journey) : null,
     errorSummary: reviewErrorSummary(
       journey.journeyId,
       withSpeciesErrors(cardErrors, speciesErrors),
@@ -166,11 +167,11 @@ const renderCya = async (
     readOnly,
     amendmentCancelled,
     recoverableError,
-    deleteHref: pagePath(journey.journeyId, 'delete'),
+    deleteHref: amending ? pagePath(journey.journeyId, 'delete') : null,
     cancelAmendHref: amending
       ? pagePath(journey.journeyId, CANCEL_AMEND_SLUG)
       : null,
-    backLink: readOnly ? dashboardPath() : hubPath(journey.journeyId)
+    backLink: amending ? hubPath(journey.journeyId) : dashboardPath()
   })
 }
 

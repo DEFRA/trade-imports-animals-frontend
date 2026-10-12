@@ -1,5 +1,6 @@
 import { formatMomentAsLongDay } from '../../../../../../../lib/validate/index.js'
 import {
+  DRAFT,
   OUTSTANDING_HEALTH_CERTIFICATE,
   SUBMITTED_ACTION_REQUIRED,
   isSubmittedStatus
@@ -20,6 +21,11 @@ const submittedDateText = (submittedAt) =>
     ? copy.viewHeader.dateSubmitted(
         formatMomentAsLongDay(new Date(submittedAt))
       )
+    : null
+
+const createdDateText = (createdAt) =>
+  createdAt
+    ? copy.viewHeader.dateCreated(formatMomentAsLongDay(new Date(createdAt)))
     : null
 
 const actionsOf = (journey) => {
@@ -53,9 +59,10 @@ const importReferencesOf = (journey) => [
   }
 ]
 
-/** The header of a submitted notification's view: its reference, status and
- * date submitted, the actions it offers and the import reference numbers, and,
- * when action is required, its warning and the Continue that starts an
+/** The header of a notification's view: a submitted notification's, or a
+ * draft's review. Its reference, status and date (created for a draft,
+ * submitted otherwise), the actions it offers and the import reference numbers,
+ * and, when action is required, its warning and the Continue that starts an
  * amendment.
  * @param {object} journey
  * @returns {object}
@@ -63,7 +70,10 @@ const importReferencesOf = (journey) => [
 export const viewHeaderOf = (journey) => ({
   reference: journey.journeyId,
   status: journeyStrip(journey).status,
-  dateSubmitted: submittedDateText(journey.submittedAt),
+  dateCreated:
+    journey.status === DRAFT ? createdDateText(journey.createdAt) : null,
+  dateSubmitted:
+    journey.status === DRAFT ? null : submittedDateText(journey.submittedAt),
   warning:
     isActionRequired(journey) && onlyHealthCertificateOutstanding(journey)
       ? copy.viewHeader.healthCertificateWarning

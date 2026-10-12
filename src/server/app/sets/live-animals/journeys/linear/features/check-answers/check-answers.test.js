@@ -381,8 +381,6 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
       const hrefs = changeHrefsOf(view.context.sections)
 
       expect(view.context.readOnly).toBe(false)
-      expect(view.context.viewHeader).toBeNull()
-      expect(view.context.deleteHref).toMatch(/\/delete$/)
       expect(hrefs).not.toHaveLength(0)
       expect(hrefs).toEqual(
         expect.arrayContaining([expect.stringMatching(/\/origin\?change=1$/)])
@@ -408,9 +406,8 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     expect(submitted.context.cancelAmendHref).toBeNull()
     expect(amend.context.cancelAmendHref).toMatch(/\/cancel-amend$/)
     expect(submitted.context.journeyStrip).toBeNull()
-    for (const view of [draft, amend]) {
-      expect(view.context.journeyStrip.cancelAmend).toBeUndefined()
-    }
+    expect(draft.context.journeyStrip).toBeNull()
+    expect(amend.context.journeyStrip.cancelAmend).toBeUndefined()
   })
 
   it("Should head a submitted notification's view with its reference and a Submitted tag, with no status bar", async () => {
@@ -427,18 +424,16 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     expect(context.journeyStrip).toBeNull()
   })
 
-  it("Should title a submitted view by its reference, and a draft's and an amendment's review Review your notification", async () => {
-    const submitted = await viewForStatus(SUBMITTED)
-    expect(submitted.context.pageTitle).toBe(
-      submitted.context.viewHeader.reference
-    )
-
-    for (const status of [DRAFT, AMEND]) {
+  it("Should title a submitted view and a draft's review by its reference, and an amendment's review Review your notification", async () => {
+    for (const status of [SUBMITTED, DRAFT]) {
       const { context } = await viewForStatus(status)
-      expect(context.pageTitle).toBe(copyEn.title)
-      expect(context.viewHeader).toBeNull()
-      expect(context.journeyStrip).not.toBeNull()
+      expect(context.pageTitle).toBe(context.viewHeader.reference)
     }
+
+    const { context } = await viewForStatus(AMEND)
+    expect(context.pageTitle).toBe(copyEn.title)
+    expect(context.viewHeader).toBeNull()
+    expect(context.journeyStrip).not.toBeNull()
   })
 
   it("Should date a submitted notification's view with the UK day it was submitted", async () => {
@@ -455,13 +450,15 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     }
   })
 
-  it("Should point a submitted view's Back link at the live-animals notification list, and a draft's at Overview", async () => {
+  it("Should point a submitted view's and a draft's Back link at the live-animals notification list, and an amendment's at Overview", async () => {
     const submitted = await viewForStatus(SUBMITTED)
     const draft = await viewForStatus(DRAFT)
+    const amend = await viewForStatus(AMEND)
 
     expect(submitted.context.backLink).toBe(dashboardPath())
-    expect(draft.context.deleteHref).toBe(`${draft.context.backLink}/delete`)
-    expect(draft.context.backLink).not.toBe(dashboardPath())
+    expect(draft.context.backLink).toBe(dashboardPath())
+    expect(amend.context.deleteHref).toBe(`${amend.context.backLink}/delete`)
+    expect(amend.context.backLink).not.toBe(dashboardPath())
   })
 
   it('Should send a notification that cannot be found to the notification list', async () => {
@@ -513,7 +510,7 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     })
     const draftView = stubH()
     await getHandler(journeyRequest(draft.journeyId), draftView)
-    expect(draftView.captured.view.context.heading).toBe(copyEn.title)
+    expect(draftView.captured.view.context.heading).toBe(draft.journeyId)
   })
 
   it('Should keep Review your notification when only the documents change during an amendment', async () => {
@@ -537,6 +534,60 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
 
     expect(submitted.context.amendmentCancelled).toBe(true)
     expect(draft.context.amendmentCancelled).toBe(false)
+  })
+})
+
+describe(`${SUITE} — draft review header`, () => {
+  setupCheckAnswersEngine()
+
+  it("Should head a draft's review with its reference, a Draft tag, the date created and its header actions, with no status bar", async () => {
+    const { context } = await viewForStatus(DRAFT)
+    const { viewHeader } = context
+
+    expect(viewHeader.reference).toBe(context.heading)
+    expect(viewHeader.status).toEqual({
+      text: 'Draft',
+      classes: 'govuk-tag--blue'
+    })
+    expect(viewHeader.dateCreated).toMatch(/^Date created: /)
+    expect(viewHeader.dateSubmitted).toBeNull()
+    expect(viewHeader.actions).toMatchObject({
+      amendHref: null,
+      copyHref: expect.stringMatching(/\/copy$/),
+      copyIsPrimary: true,
+      deleteHref: expect.stringMatching(/\/delete$/)
+    })
+    expect(
+      viewHeader.importReferences.map(({ key, value }) => [
+        key.text,
+        value.text
+      ])
+    ).toEqual([
+      ['Notification reference', viewHeader.reference],
+      ['Customs document code', 'C640']
+    ])
+    expect(context.journeyStrip).toBeNull()
+    expect(context.deleteHref).toBeNull()
+  })
+
+  it("Should date a draft's review with the UK day it was created", async () => {
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(new Date('2026-07-21T23:30:00Z'))
+      const { context } = await viewForStatus(DRAFT)
+
+      expect(context.viewHeader.dateCreated).toBe('Date created: 22 July 2026')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("Should keep an amendment's review unheaded, with the status bar and Delete at its foot", async () => {
+    const { context } = await viewForStatus(AMEND)
+
+    expect(context.viewHeader).toBeNull()
+    expect(context.journeyStrip).not.toBeNull()
+    expect(context.deleteHref).toMatch(/\/delete$/)
   })
 })
 

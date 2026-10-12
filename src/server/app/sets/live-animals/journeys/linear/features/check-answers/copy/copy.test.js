@@ -26,6 +26,9 @@ describe('#copy', () => {
 
   it('Should interpolate the parameterised leaves', () => {
     expect(copy.resubmitTitle).toBe('Review before re-submitting')
+    expect(copy.viewHeader.dateCreated('22 July 2026')).toBe(
+      'Date created: 22 July 2026'
+    )
     expect(copy.viewHeader.dateSubmitted('22 July 2026')).toBe(
       'Date submitted: 22 July 2026'
     )
@@ -65,7 +68,7 @@ describe('GET check-answers — copy reaches the view', () => {
     await handler(journeyRequest(journey.journeyId), h)
     const { context } = h.captured.view
     expect(context.copy).toBe(copy)
-    expect(context.pageTitle).toBe(copy.title)
+    expect(context.pageTitle).toBe(journey.journeyId)
     expect(context.sharedCopy.layout.serviceName).toBe(
       'Import notification service'
     )

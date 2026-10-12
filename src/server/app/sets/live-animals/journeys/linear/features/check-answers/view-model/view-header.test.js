@@ -9,6 +9,7 @@ import { pagePath } from '../../../../../../../shared/paths.js'
 import { viewHeaderOf } from './view-header.js'
 
 const journeyId = 'GBN-AG-26-ABC123'
+const CREATED_AT = '2026-07-21T23:30:00Z'
 
 describe('#viewHeaderOf', () => {
   it('Should offer Amend this notification beside a secondary Copy as new, and Delete, for a submitted notification', () => {
@@ -82,6 +83,54 @@ describe('#viewHeaderOf', () => {
 
     expect(actions.amendHref).toBeNull()
     expect(actions.copyIsPrimary).toBe(true)
+  })
+
+  it("Should date a draft's header with the day it was created, and give no date submitted", () => {
+    const header = viewHeaderOf({
+      journeyId,
+      status: DRAFT,
+      createdAt: CREATED_AT,
+      submittedAt: null
+    })
+
+    expect(header.dateCreated).toBe('Date created: 22 July 2026')
+    expect(header.dateSubmitted).toBeNull()
+  })
+
+  it('Should show no Date created line for a draft with no created date', () => {
+    const header = viewHeaderOf({
+      journeyId,
+      status: DRAFT,
+      createdAt: null,
+      submittedAt: null
+    })
+
+    expect(header.dateCreated).toBeNull()
+    expect(header.dateSubmitted).toBeNull()
+  })
+
+  it('Should give a submitted header no date created', () => {
+    const header = viewHeaderOf({
+      journeyId,
+      status: SUBMITTED,
+      createdAt: CREATED_AT,
+      submittedAt: '2026-07-22T10:00:00Z'
+    })
+
+    expect(header.dateCreated).toBeNull()
+    expect(header.dateSubmitted).toBe('Date submitted: 22 July 2026')
+  })
+
+  it("Should give a draft's header no warning and no Continue", () => {
+    const header = viewHeaderOf({
+      journeyId,
+      status: DRAFT,
+      createdAt: CREATED_AT,
+      submittedAt: null
+    })
+
+    expect(header.warning).toBeNull()
+    expect(header.continueHref).toBeNull()
   })
 
   it('Should give the import reference numbers as the notification reference and customs document code C640', () => {

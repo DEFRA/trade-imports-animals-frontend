@@ -10,6 +10,7 @@ import {
   journeyIdFromPage,
   journeyUrl,
   openReviewFromHub,
+  referenceHeading,
   selectSpecies,
   signIn,
   startNotification,
@@ -40,6 +41,7 @@ const SPECIES_1_HREF = '#species-1'
 const SPECIES_2_HREF = '#species-2'
 const BOS_TAURUS_HEADING = 'Bos Taurus'
 const IDENTIFICATION_SLUG = 'commodities/identification'
+const BUTTON_GROUP = '.govuk-button-group'
 
 const rowFor = (page, label) =>
   page
@@ -97,7 +99,7 @@ test.describe('check-answers feature summary rows', () => {
 
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
-    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+    await expect(referenceHeading(page)).toBeVisible()
     await expect(
       page.getByRole('heading', {
         name: copy.sections.aboutTheConsignment
@@ -558,17 +560,97 @@ test.describe('check-answers feature navigation and submission', () => {
     await signIn(page)
   })
 
-  test("a draft review's back link returns to the notification hub", async ({
+  test("a draft's review is titled by its reference, and Back goes to the notification list", async ({
     page
   }) => {
     await startNotification(page)
-    const hubUrl = journeyUrl(page)
+    const reference = journeyIdFromPage(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
-    await expect(page).toHaveTitle(new RegExp(`^(Error: )?${copy.title} - `))
+    await expect(page).toHaveTitle(new RegExp(`^(Error: )?${reference} - `))
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
-    await expect(page).toHaveURL(hubUrl)
+    await expect(page).toHaveURL(urlUnderBase('/?'))
+    await expect(
+      page.getByRole('heading', { level: 1, name: dashboardCopy.title })
+    ).toBeVisible()
+  })
+
+  test("a draft's review opened from Review and submit is headed by its reference with a blue Draft tag, the date created and no status bar", async ({
+    page
+  }) => {
+    await startNotification(page)
+    await openReviewFromHub(page)
+    const reference = journeyIdFromPage(page)
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: reference, exact: true })
+    ).toBeVisible()
+    await expect(
+      page
+        .getByRole('main')
+        .getByText(sharedCopy.journeyStrip.draft, { exact: true })
+    ).toHaveClass(/govuk-tag--blue/)
+    await expect(page.locator('.app-journey-strip')).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: copy.title })).toHaveCount(0)
+    await expect(
+      page.getByText(
+        new RegExp(
+          `^${copy.viewHeader.dateCreated('\\d{1,2} [A-Z][a-z]+ \\d{4}')}$`
+        )
+      )
+    ).toBeVisible()
+  })
+
+  test("a draft's review shows the import reference numbers as plain text, with no Copy button, without JavaScript", async ({
+    page,
+    browser
+  }) => {
+    await startNotification(page)
+    const reference = journeyIdFromPage(page)
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      storageState: await page.context().storageState()
+    })
+    const noJs = await context.newPage()
+
+    await noJs.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    const region = noJs.getByRole('region', {
+      name: copy.importReferences.heading
+    })
+    await expect(region).toContainText(copy.importReferences.warning)
+    await expect(
+      rowFor(noJs, copy.importReferences.notificationReference).getByRole(
+        'definition'
+      )
+    ).toHaveText(reference)
+    await expect(
+      rowFor(noJs, copy.importReferences.customsDocumentCode).getByRole(
+        'definition'
+      )
+    ).toHaveText('C640')
+    await expect(region.getByRole('button')).toHaveCount(0)
+
+    await context.close()
+  })
+
+  test("Copy as new on a draft's review opens a new draft at Overview", async ({
+    page
+  }) => {
+    await startNotification(page)
+    const reference = journeyIdFromPage(page)
+    await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
+
+    await page
+      .getByRole('button', {
+        name: sharedCopy.notificationActions.copy.text,
+        exact: true
+      })
+      .click()
+
+    await expect(page).toHaveURL(/\/notifications\/[^/]+$/)
+    expect(journeyIdFromPage(page)).not.toBe(reference)
   })
 
   test('opening the view of a notification that does not exist goes to the notification list', async ({
@@ -593,31 +675,35 @@ test.describe('check-answers feature navigation and submission', () => {
     await expectNoSeriousOrCriticalAxeViolations(page, 'Check answers')
   })
 
-  test('a draft review ends with Continue and a red Delete that opens the delete confirmation', async ({
+  test("a draft's review offers Copy as new and a red Delete in its header, no Amend this notification, and ends with Continue", async ({
     page
   }) => {
     await startNotification(page)
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
 
-    await expect(
-      page.getByRole('button', { name: copy.submit.button })
-    ).toBeVisible()
+    const group = page.locator(BUTTON_GROUP).filter({
+      has: page.getByRole('button', {
+        name: sharedCopy.notificationActions.copy.text
+      })
+    })
+    const buttons = group.getByRole('button')
+    await expect(buttons).toHaveText([
+      sharedCopy.notificationActions.copy.text,
+      sharedCopy.notificationActions.delete.text
+    ])
+    await expect(buttons.nth(0)).not.toHaveClass(/govuk-button--secondary/)
+    await expect(buttons.nth(1)).toHaveClass(/govuk-button--warning/)
     const deleteButton = page.getByRole('button', {
       name: sharedCopy.notificationActions.delete.text,
       exact: true
     })
-    await expect(deleteButton).toHaveClass(/govuk-button--warning/)
-    await expect(
-      page.getByRole('button', {
-        name: sharedCopy.notificationActions.copy.text
-      })
-    ).toHaveCount(0)
+    await expect(deleteButton).toHaveCount(1)
     await expect(
       page.getByRole('button', { name: copy.viewHeader.amend })
     ).toHaveCount(0)
     await expect(
-      page.getByRole('region', { name: copy.importReferences.heading })
-    ).toHaveCount(0)
+      page.getByRole('button', { name: copy.submit.button })
+    ).toBeVisible()
 
     await deleteButton.click()
 
@@ -854,7 +940,7 @@ test.describe('check-answers feature submitted notification', () => {
   test('offers Amend this notification, a secondary Copy as new and a red Delete in its header', async ({
     page
   }) => {
-    const group = page.locator('.govuk-button-group').filter({
+    const group = page.locator(BUTTON_GROUP).filter({
       has: page.getByRole('button', {
         name: copy.viewHeader.amend,
         exact: true
@@ -1020,7 +1106,7 @@ test.describe('check-answers feature submitted notification still owed its healt
   test('offers Amend this notification, a secondary Copy as new and a red Delete in its header', async ({
     page
   }) => {
-    const group = page.locator('.govuk-button-group').filter({
+    const group = page.locator(BUTTON_GROUP).filter({
       has: page.getByRole('button', {
         name: copy.viewHeader.amend,
         exact: true

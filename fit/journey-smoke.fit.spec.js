@@ -17,6 +17,7 @@ import {
   completeAnswerSections,
   journeyUrl,
   openReviewFromHub,
+  referenceHeading,
   selectSpecies,
   signIn,
   startNotification,
@@ -127,7 +128,7 @@ test.describe('live-animals journey glue', () => {
 
     // No question in the notification sent the user to the hub on the way.
     await expect(page).toHaveURL(/\/notification-view$/)
-    await expect(heading('Review your notification')).toBeVisible()
+    await expect(referenceHeading(page)).toBeVisible()
   })
 
   test('the opening run ends on the review page, naming what is outstanding, when the notification is incomplete', async ({
@@ -149,7 +150,7 @@ test.describe('live-animals journey glue', () => {
     await answerContactAddress(page)
 
     await expect(page).toHaveURL(/\/notification-view$/)
-    await expect(heading('Review your notification')).toBeVisible()
+    await expect(referenceHeading(page)).toBeVisible()
     const summary = page.getByRole('alert')
     await expect(summary).toContainText('There is a problem')
     await expect(summary).toContainText('Complete main import reason')

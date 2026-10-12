@@ -3,6 +3,7 @@ export const copy = {
   title: 'Adolygu eich hysbysiad',
   resubmitTitle: 'Adolygu cyn ailgyflwyno',
   viewHeader: {
+    dateCreated: (date) => `Dyddiad creu: ${date}`,
     dateSubmitted: (date) => `Dyddiad cyflwyno: ${date}`,
     amend: 'Diwygio’r hysbysiad hwn',
     healthCertificateWarning: 'Mae angen i chi uwchlwytho tystysgrif iechyd',
