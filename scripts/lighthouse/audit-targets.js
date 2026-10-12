@@ -47,6 +47,10 @@ export const SKIPPED = new Map([
   [
     '/notifications/{journeyId}/address-return',
     'INS handshake return endpoint — redirects to the party picker, not a page'
+  ],
+  [
+    '/notifications/{journeyId}/declaration',
+    'reached only by posting the review’s Continue — a GET redirects to the review; declaration.fit.spec.js audits the page with axe'
   ]
 ])
 
