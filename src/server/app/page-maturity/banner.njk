@@ -1,0 +1,4 @@
+{% from "govuk/components/tag/macro.njk" import govukTag %}
+{% if pageMaturity %}
+<br><span class="govuk-visually-hidden">{{ pageMaturity.hiddenPrefix }}</span>{{ govukTag({ text: pageMaturity.tag.text, classes: pageMaturity.tag.classes + " govuk-!-margin-top-1 govuk-!-margin-right-1" }) }} {{ pageMaturity.text }}
+{% endif %}

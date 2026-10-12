@@ -62,7 +62,7 @@
 {% endblock %}
 
 {% block beforeContent %}
-  {% set phaseBannerHtml %}{{ sharedCopy.layout.phaseBanner.bodyPrefix }} <a class="govuk-link" href="{{ feedbackUrl }}">{{ sharedCopy.layout.phaseBanner.feedbackLinkText }}</a>.{% endset %}
+  {% set phaseBannerHtml %}{{ sharedCopy.layout.phaseBanner.bodyPrefix }} <a class="govuk-link" href="{{ feedbackUrl }}">{{ sharedCopy.layout.phaseBanner.feedbackLinkText }}</a>.{% include "page-maturity/banner.njk" %}{% endset %}
   {# Grey tag to match Design release 1; the GDS phase-banner example leaves the tag blue. #}
   {{ govukPhaseBanner({
     tag: { text: sharedCopy.layout.phaseBanner.tag, classes: "govuk-tag--grey" },
