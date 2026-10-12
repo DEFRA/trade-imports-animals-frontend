@@ -17,7 +17,6 @@ const postTransition = async (url, action, body) => {
 }
 
 export const finalise = async (journeyId, actor, concurrencyToken) => {
-  // URLSearchParams would otherwise send the literal string 'undefined'.
   if (concurrencyToken === undefined || concurrencyToken === null) {
     throw new Error(
       `finalise requires a concurrencyToken to submit notification ${journeyId}`
