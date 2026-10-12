@@ -14,4 +14,4 @@ export const reviewedConcurrencyToken = (request, journeyId) =>
   session.reviewedConcurrencyToken(request, journeyId)
 
 export const forgetReviewed = (request, h, journeyId) =>
-  session.setReviewedConcurrencyToken(h, journeyId, undefined, request)
+  session.forgetReviewedConcurrencyToken(h, journeyId, request)

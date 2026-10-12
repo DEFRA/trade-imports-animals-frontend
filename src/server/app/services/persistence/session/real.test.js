@@ -3,6 +3,8 @@ import Hapi from '@hapi/hapi'
 import yar from '@hapi/yar'
 import { session } from './real.js'
 
+const REVIEWED_PATH = '/reviewed/{journeyId}'
+
 const buildServer = async () => {
   const server = Hapi.server()
   await server.register({
@@ -72,19 +74,30 @@ const buildServer = async () => {
     },
     {
       method: 'POST',
-      path: '/reviewed/{journeyId}',
+      path: REVIEWED_PATH,
       handler: async (request, h) => {
         await session.setReviewedConcurrencyToken(
           h,
           request.params.journeyId,
-          request.payload.token ?? undefined
+          request.payload.token
+        )
+        return { ok: true }
+      }
+    },
+    {
+      method: 'DELETE',
+      path: REVIEWED_PATH,
+      handler: async (request, h) => {
+        await session.forgetReviewedConcurrencyToken(
+          h,
+          request.params.journeyId
         )
         return { ok: true }
       }
     },
     {
       method: 'GET',
-      path: '/reviewed/{journeyId}',
+      path: REVIEWED_PATH,
       handler: async (request) => ({
         token:
           (await session.reviewedConcurrencyToken(
@@ -138,9 +151,9 @@ describe('#session.knownJourneyIds (real, yar)', () => {
 
 describe('#session.reviewedConcurrencyToken (real, yar)', () => {
   const REVIEWED_J1 = '/reviewed/J-1'
+  const REVIEWED_J2 = '/reviewed/J-2'
 
-  it('Should hold one token per journey, and drop it when cleared', async () => {
-    const server = await buildServer()
+  const tokensForTwoJourneys = async (server) => {
     const first = await server.inject({
       method: 'POST',
       url: REVIEWED_J1,
@@ -148,30 +161,36 @@ describe('#session.reviewedConcurrencyToken (real, yar)', () => {
     })
     const second = await server.inject({
       method: 'POST',
-      url: '/reviewed/J-2',
+      url: REVIEWED_J2,
       payload: { token: 7 },
       headers: { cookie: cookieOf(first) }
     })
-    const cleared = await server.inject({
-      method: 'POST',
-      url: REVIEWED_J1,
-      payload: { token: null },
-      headers: { cookie: cookieOf(second) }
-    })
-    const cookie = cookieOf(cleared) ?? cookieOf(second)
+    return cookieOf(second)
+  }
 
-    const one = await server.inject({
-      method: 'GET',
+  const tokenAt = async (server, url, cookie) =>
+    (await server.inject({ method: 'GET', url, headers: { cookie } })).result
+      .token
+
+  it('Should hold one token per journey', async () => {
+    const server = await buildServer()
+    const cookie = await tokensForTwoJourneys(server)
+
+    expect(await tokenAt(server, REVIEWED_J1, cookie)).toBe(4)
+    expect(await tokenAt(server, REVIEWED_J2, cookie)).toBe(7)
+  })
+
+  it('Should forget one journey’s token, keeping another’s', async () => {
+    const server = await buildServer()
+    const forgotten = await server.inject({
+      method: 'DELETE',
       url: REVIEWED_J1,
-      headers: { cookie }
+      headers: { cookie: await tokensForTwoJourneys(server) }
     })
-    const two = await server.inject({
-      method: 'GET',
-      url: '/reviewed/J-2',
-      headers: { cookie }
-    })
-    expect(one.result.token).toBeNull()
-    expect(two.result.token).toBe(7)
+    const cookie = cookieOf(forgotten)
+
+    expect(await tokenAt(server, REVIEWED_J1, cookie)).toBeNull()
+    expect(await tokenAt(server, REVIEWED_J2, cookie)).toBe(7)
   })
 })
 

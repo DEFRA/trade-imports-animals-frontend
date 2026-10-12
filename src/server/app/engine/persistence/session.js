@@ -21,7 +21,8 @@ const UNCONFIGURED = Object.freeze({
     flowOnlyAnswers: unconfigured,
     setFlowOnlyAnswers: unconfigured,
     reviewedConcurrencyToken: unconfigured,
-    setReviewedConcurrencyToken: unconfigured
+    setReviewedConcurrencyToken: unconfigured,
+    forgetReviewedConcurrencyToken: unconfigured
   }),
   cookieNames: DEFAULT_COOKIE_NAMES
 })
@@ -69,5 +70,7 @@ export const session = {
   reviewedConcurrencyToken: async (...args) =>
     current().impl.reviewedConcurrencyToken(...args),
   setReviewedConcurrencyToken: async (...args) =>
-    current().impl.setReviewedConcurrencyToken(...args)
+    current().impl.setReviewedConcurrencyToken(...args),
+  forgetReviewedConcurrencyToken: async (...args) =>
+    current().impl.forgetReviewedConcurrencyToken(...args)
 }
