@@ -107,8 +107,7 @@ const answersWithGaps = () => ({
           animalIdentifierTattoo: 'AB1234',
           horseName: 'Dobbin',
           // The identification page stores the ISO code so persistence carries
-          // it through without a reverse lookup. Postcode still uses the journey
-          // name; the wire mapper renames it.
+          // it through without a reverse lookup.
           permanentAddress: {
             name: 'Owner',
             address: {
