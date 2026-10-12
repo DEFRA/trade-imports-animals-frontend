@@ -5,7 +5,7 @@ import {
   records,
   configureRecords,
   DRAFT,
-  SUBMITTED
+  SUBMITTED_ACTION_REQUIRED
 } from './persistence/records.js'
 import { configureSession } from './persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
@@ -32,7 +32,7 @@ describe('submit is finalise', () => {
     const result = await submitJourney(buildRequest(), stubH())
 
     expect(result.ok).toBe(true)
-    expect(result.journey.status).toBe(SUBMITTED)
+    expect(result.journey.status).toBe(SUBMITTED_ACTION_REQUIRED)
     expect(result.journey.submittedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
     expect(result.journey.fulfilment).toEqual(committed)
     await expect(

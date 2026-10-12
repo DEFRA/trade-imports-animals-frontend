@@ -8,6 +8,7 @@ import {
   openReviewFromHub,
   signIn,
   startNotification,
+  uploadHealthCertificate,
   values
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
@@ -32,6 +33,7 @@ const expectAmendStrip = async (page) => {
 const submitNotification = async (page) => {
   await startNotification(page)
   await completeAnswerSections(page)
+  await uploadHealthCertificate(page)
   await openReviewFromHub(page)
   await page.getByRole('button', { name: 'Continue' }).click()
   await page

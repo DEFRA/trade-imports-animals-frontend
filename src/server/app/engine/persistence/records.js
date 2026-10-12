@@ -4,6 +4,16 @@ export const DRAFT = 'draft'
 export const SUBMITTED = 'submitted'
 export const AMEND = 'amend'
 export const DELETED = 'deleted'
+export const SUBMITTED_ACTION_REQUIRED = 'submitted-action-required'
+export const OUTSTANDING_HEALTH_CERTIFICATE = 'HEALTH_CERTIFICATE'
+
+/** True for a lodged, read-only notification, with or without action required. */
+export const isSubmittedStatus = (status) =>
+  status === SUBMITTED || status === SUBMITTED_ACTION_REQUIRED
+
+/** The submitted status a submission lands in, given what it still owes. */
+export const submittedStatusFor = (outstandingItems = []) =>
+  outstandingItems.length > 0 ? SUBMITTED_ACTION_REQUIRED : SUBMITTED
 
 const unconfigured = () => {
   throw new Error('records not configured — call configureRecords() at boot')

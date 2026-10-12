@@ -50,7 +50,7 @@ const render = (h, journey, values, errors = {}, recoverableError = false) =>
 
 const get = async (request, h) => {
   const { journey, answers } = await state.get(request, h)
-  if (journey.status === state.SUBMITTED) {
+  if (state.isSubmittedStatus(journey.status)) {
     return h.redirect(pagePath(journey.journeyId, confirmationPage.slug))
   }
   return render(h, journey, { declaration: answers.declaration ?? '' })
@@ -58,7 +58,7 @@ const get = async (request, h) => {
 
 const post = async (request, h) => {
   const { journey } = await state.get(request, h)
-  if (journey.status === state.SUBMITTED) {
+  if (state.isSubmittedStatus(journey.status)) {
     return h.redirect(pagePath(journey.journeyId, confirmationPage.slug))
   }
 

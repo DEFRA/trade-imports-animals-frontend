@@ -266,6 +266,27 @@ export const addDocument = async (page, entry) => {
   await page.getByRole('button', { name: 'Save and add another' }).click()
 }
 
+/**
+ * Uploads the fixture's ITAHC, the certificate that makes a submission record
+ * nothing outstanding, and returns to the hub.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+export const uploadHealthCertificate = async (page) => {
+  const [document] = values.documents
+  await page.goto(journeyUrl(page))
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await page.getByRole('link', { name: 'Upload documents' }).click()
+  await addDocument(page, document)
+  await expect(
+    page.locator('.govuk-table__row', {
+      hasText: document.accompanyingDocumentReference
+    })
+  ).toContainText('Check completed')
+  await page.goto(journeyUrl(page))
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+}
+
 const save = (page) =>
   page.getByRole('button', { name: 'Save and continue' }).click()
 

@@ -43,7 +43,8 @@ const NOT_REFUSED = Object.freeze({ refused: false, extraCardErrors: {} })
 
 /** Shared refusal predicate for the review page's Continue and the
  * declaration submit — a bookmark or back-button cannot sneak a stale
- * submission past. SUBMITTED notifications are never refused.
+ * submission past. Submitted notifications, with or without action required,
+ * are never refused.
  *
  * Returns the scan-card errors alongside the verdict so the CYA POST handler
  * can render them without a second scan-status fetch (each fetch issues one
@@ -52,7 +53,7 @@ const NOT_REFUSED = Object.freeze({ refused: false, extraCardErrors: {} })
  */
 export const reviewRefusal = async (request, h) => {
   const { journey, answers, storedAnswers, scope } = await state.get(request, h)
-  if (journey.status === state.SUBMITTED) {
+  if (state.isSubmittedStatus(journey.status)) {
     return NOT_REFUSED
   }
   if (!scope.readyForCheckYourAnswers) {

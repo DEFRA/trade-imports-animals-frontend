@@ -29,7 +29,10 @@ import { dispatchPages } from '../index.js'
 import * as declaration from './controller.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
 import * as refusal from '../check-answers/refusal.js'
-import { records } from '../../../../../../engine/persistence/records.js'
+import {
+  records,
+  SUBMITTED_ACTION_REQUIRED
+} from '../../../../../../engine/persistence/records.js'
 
 const post = postHandlerOf(declaration)
 const get = declaration.routes.find((route) => route.method === 'GET').handler
@@ -232,6 +235,21 @@ describe('#declaration', () => {
       buildDispatch(SET_ID, dispatchPages)
     })
     beforeEach(() => store.clear())
+
+    it('Should send a notification submitted with action required to its confirmation', async () => {
+      configureReadyForCheckYourAnswers(SET_ID, () => true)
+      const { journeyId } = await store.create()
+      await store.submit(journeyId)
+      expect((await records.load({ journeyId })).status).toBe(
+        SUBMITTED_ACTION_REQUIRED
+      )
+
+      const response = await get(journeyRequest(journeyId), stubH())
+
+      expect(response).toEqual({
+        redirect: pagePath(journeyId, 'confirmation')
+      })
+    })
 
     it('Should redirect a GET on an already-submitted journey to the confirmation page', async () => {
       configureReadyForCheckYourAnswers(SET_ID, () => true)

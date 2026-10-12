@@ -2,15 +2,19 @@ import {
   AMEND,
   DELETED,
   DRAFT,
-  SUBMITTED
+  isSubmittedStatus,
+  submittedStatusFor
 } from '../../../../../engine/persistence/records.js'
 import { journeys } from '../store/state.js'
 import { loadWritable } from '../store/writable.js'
 import { marshal } from '../marshal/document.js'
+import { outstandingItemsOf } from '../outstanding-items.js'
 
 export const finalise = async (journeyId, _actor) => {
   const journey = loadWritable(journeyId)
-  journey.status = SUBMITTED
+  const outstandingItems = outstandingItemsOf(journey.fulfilment)
+  journey.outstandingItems = outstandingItems
+  journey.status = submittedStatusFor(outstandingItems)
   journey.submittedAt = new Date().toISOString()
   delete journey.submittedSnapshot
   return structuredClone(marshal(journey))
@@ -21,7 +25,7 @@ export const amend = async (journeyId, _actor) => {
   if (!journey) {
     throw new Error(`Unknown journey "${journeyId}"`)
   }
-  if (journey.status !== SUBMITTED) {
+  if (!isSubmittedStatus(journey.status)) {
     throw new Error(`Journey "${journeyId}" is not submitted — cannot amend`)
   }
   journey.submittedSnapshot = {
@@ -45,7 +49,7 @@ export const cancelAmend = async (journeyId, _actor) => {
   }
   journey.fulfilment = structuredClone(journey.submittedSnapshot.fulfilment)
   journey.submittedAt = journey.submittedSnapshot.submittedAt
-  journey.status = SUBMITTED
+  journey.status = submittedStatusFor(journey.outstandingItems)
   delete journey.submittedSnapshot
   return structuredClone(marshal(journey))
 }
@@ -57,7 +61,7 @@ export const softDelete = async (journeyId, _actor) => {
   }
   if (
     journey.status !== DRAFT &&
-    journey.status !== SUBMITTED &&
+    !isSubmittedStatus(journey.status) &&
     journey.status !== AMEND &&
     journey.status !== DELETED
   ) {

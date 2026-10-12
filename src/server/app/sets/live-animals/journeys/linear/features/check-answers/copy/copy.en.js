@@ -4,7 +4,9 @@ export const copy = {
   // The line under a submitted notification's reference.
   viewHeader: {
     dateSubmitted: (date) => `Date submitted: ${date}`,
-    amend: 'Amend this notification'
+    amend: 'Amend this notification',
+    healthCertificateWarning: 'You need to upload a health certificate',
+    warningIcon: 'Warning'
   },
   // The section under a submitted notification's header; its values read as plain text.
   importReferences: {
@@ -156,6 +158,8 @@ export const copy = {
   },
   errors: {
     prefix: 'Error:',
+    // In place of the document cards on a notification still owed its health certificate.
+    uploadHealthCertificate: 'Upload a valid health certificate',
     // One line per review card that still has answers outstanding. The same
     // line carries the error summary entry and the message inside the card, so
     // a trader reading either sees the same words.

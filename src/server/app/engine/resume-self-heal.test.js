@@ -49,6 +49,7 @@ describe('re-entry self-heal (nothing derived is stored)', () => {
       'createdAt',
       'fulfilment',
       'journeyId',
+      'outstandingItems',
       'status',
       'submittedAt'
     ])

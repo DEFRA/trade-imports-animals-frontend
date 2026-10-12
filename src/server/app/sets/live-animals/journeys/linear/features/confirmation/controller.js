@@ -19,7 +19,7 @@ const copy = copyFor({ en, cy })
 
 const get = async (request, h) => {
   const { journey, answers, evaluation } = await state.get(request, h)
-  if (journey.status !== state.SUBMITTED) {
+  if (!state.isSubmittedStatus(journey.status)) {
     return h.redirect(hubPath(journey.journeyId))
   }
   return h.view(view, {

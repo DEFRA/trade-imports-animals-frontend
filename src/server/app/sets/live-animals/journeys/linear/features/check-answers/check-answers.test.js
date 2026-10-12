@@ -163,6 +163,7 @@ const CONTACT_ADDRESS_CARD = 'Contact address'
 const CONTACT_ADDRESS_KEY = 'Contact address'
 const MAIN_IMPORT_REASON_KEY = 'Main import reason'
 const DOCUMENT_1_CARD = 'Document 1'
+const HEALTH_CERTIFICATE_WARNING = 'You need to upload a health certificate'
 const DOCUMENT_2_CARD = 'Document 2'
 const DOCUMENT_REFERENCE_KEY = 'Document reference'
 const DATE_OF_ISSUE_KEY = 'Date of issue'
@@ -246,6 +247,11 @@ const fullSeed = {
   contactAddress: copyOf('animal-and-plant-health-agency')
 }
 
+const itahcSeed = {
+  ...fullSeed,
+  documents: [{ ...fullSeed.documents[0], accompanyingDocumentType: 'ITAHC' }]
+}
+
 const twoDocumentsSeed = {
   ...fullSeed,
   documents: [
@@ -270,6 +276,73 @@ const setupCheckAnswersEngine = () => {
   })
   beforeEach(() => store.clear())
 }
+
+const noDocumentsSeed = () => {
+  const seed = { ...fullSeed }
+  delete seed.documents
+  return seed
+}
+
+describe(`${SUITE} — submitted with action required`, () => {
+  setupCheckAnswersEngine()
+
+  it('Should tag the view Submitted action required in orange, read-only, with no Change links', async () => {
+    const { context } = await viewForStatus(SUBMITTED, noDocumentsSeed())
+
+    expect(context.readOnly).toBe(true)
+    expect(context.viewHeader.status).toEqual({
+      text: 'Submitted action required',
+      classes: 'govuk-tag--orange'
+    })
+    expect(changeHrefsOf(context.sections)).toEqual([])
+  })
+
+  it('Should warn that a health certificate is needed', async () => {
+    const { context } = await viewForStatus(SUBMITTED, noDocumentsSeed())
+
+    expect(context.viewHeader.warning).toBe(HEALTH_CERTIFICATE_WARNING)
+  })
+
+  it('Should show Upload a valid health certificate in place of document cards, with no error summary', async () => {
+    const { context } = await viewForStatus(SUBMITTED, noDocumentsSeed())
+    const section = context.sections.find(
+      ({ anchor }) => anchor === DOCUMENTS_SECTION_ANCHOR
+    )
+
+    expect(section.cards).toEqual([])
+    expect(section.error).toBe('Upload a valid health certificate')
+    expect(context.errorSummary).toBeNull()
+  })
+
+  it('Should keep the document cards when a document other than a health certificate is held', async () => {
+    const { context } = await viewForStatus(SUBMITTED)
+    const section = context.sections.find(
+      ({ anchor }) => anchor === DOCUMENTS_SECTION_ANCHOR
+    )
+
+    expect(section.error).toBeUndefined()
+    expect(section.cards.map((card) => card.title)).toEqual([DOCUMENT_1_CARD])
+    expect(context.viewHeader.warning).toBe(HEALTH_CERTIFICATE_WARNING)
+  })
+
+  it('Should end with Continue posting to amend, and offer Amend, Copy as new and Delete in its header', async () => {
+    const { context } = await viewForStatus(SUBMITTED, noDocumentsSeed())
+
+    expect(context.viewHeader.continueHref).toMatch(/\/amend$/)
+    expect(context.viewHeader.actions).toMatchObject({
+      amendHref: expect.stringMatching(/\/amend$/),
+      copyHref: expect.stringMatching(/\/copy$/),
+      copyIsPrimary: false,
+      deleteHref: expect.stringMatching(/\/delete$/)
+    })
+  })
+
+  it('Should date the view with the day it was submitted', async () => {
+    const { context } = await viewForStatus(SUBMITTED, noDocumentsSeed())
+
+    expect(context.viewHeader.dateSubmitted).toMatch(/^Date submitted: /)
+  })
+})
 
 describe(`${SUITE} — journey lifecycle editability`, () => {
   setupCheckAnswersEngine()
@@ -317,15 +390,12 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
     }
   )
 
-  // A submitted journey has no Change links at all, so the single empty
-  // document card must still read on its own.
-  it('Should keep the single Document 1 card readable on a submitted journey with nothing uploaded', async () => {
+  it('Should keep the single Document 1 card readable on a draft with nothing uploaded', async () => {
     const seed = { ...fullSeed }
     delete seed.documents
-    const view = await viewForStatus(SUBMITTED, seed)
+    const view = await viewForStatus(DRAFT, seed)
     const card = cardByTitle(view.context.sections, DOCUMENT_1_CARD)
 
-    expect(card.actions).toBeUndefined()
     expect(valueOf(card.rows, DOCUMENT_REFERENCE_KEY)).toBe(NOT_APPLICABLE)
   })
 
@@ -344,7 +414,7 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
   })
 
   it("Should head a submitted notification's view with its reference and a Submitted tag, with no status bar", async () => {
-    const { context } = await viewForStatus(SUBMITTED)
+    const { context } = await viewForStatus(SUBMITTED, itahcSeed)
 
     expect(context.viewHeader.reference).toBe(context.heading)
     expect(context.viewHeader.reference).toMatch(/\S/)
@@ -352,6 +422,8 @@ describe(`${SUITE} — journey lifecycle editability`, () => {
       text: 'Submitted',
       classes: 'govuk-tag--green'
     })
+    expect(context.viewHeader.warning).toBeNull()
+    expect(context.viewHeader.continueHref).toBeNull()
     expect(context.journeyStrip).toBeNull()
   })
 
@@ -798,13 +870,7 @@ describe(`${SUITE} — uploaded document cards`, () => {
   })
 
   it('Should name an ITAHC document with the same label the documents page uses', async () => {
-    const seed = {
-      ...fullSeed,
-      documents: [
-        { ...fullSeed.documents[0], accompanyingDocumentType: 'ITAHC' }
-      ]
-    }
-    const card = cardByTitle(await sectionsFor(seed), DOCUMENT_1_CARD)
+    const card = cardByTitle(await sectionsFor(itahcSeed), DOCUMENT_1_CARD)
     expect(valueOf(card.rows, DOCUMENT_TYPE_KEY)).toBe(
       'Intra Trade Animal Health Certificate (ITAHC)'
     )

@@ -8,7 +8,12 @@ import {
   sessionConfiguredFor
 } from './persistence/session.js'
 import { currentSetBase, currentSetId } from '../shared/set-context.js'
-import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
+import {
+  AMEND,
+  DRAFT,
+  isSubmittedStatus,
+  records
+} from './persistence/records.js'
 import { buildActor } from '../../common/helpers/actor-helpers.js'
 import { HTTP_STATUS_NOT_FOUND } from '../lib/http-status.js'
 
@@ -155,7 +160,7 @@ export const isKnownJourney = async (request, journeyId) =>
   (await session.knownJourneyIds(request)).includes(journeyId)
 
 const editableFromStatus = async (journey, journeyId, actor) => {
-  if (journey.status === SUBMITTED) {
+  if (isSubmittedStatus(journey.status)) {
     return records.amend(journeyId, actor)
   }
   if (journey.status === DRAFT || journey.status === AMEND) {

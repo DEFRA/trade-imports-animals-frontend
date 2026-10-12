@@ -21,6 +21,7 @@ import { copy as cy } from './copy/copy.cy.js'
 import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import { buildSections } from './view-model/index.js'
+import { withMissingHealthCertificate } from './view-model/sections/documents.js'
 import { changeHref } from './view-model/rows/change-link.js'
 import { invalidPartyErrors } from './view-model/invalid-parties.js'
 import { viewHeaderOf } from './view-model/view-header.js'
@@ -125,17 +126,22 @@ const renderCya = async (
     disableAutoFocus = true
   }
 ) => {
-  const sections = withCardErrors(
-    await buildSections(
-      answers,
-      scope,
-      evaluation,
-      journey.journeyId,
-      readOnly,
-      parties,
-      partyErrors
+  const sections = withMissingHealthCertificate(
+    withCardErrors(
+      await buildSections(
+        answers,
+        scope,
+        evaluation,
+        journey.journeyId,
+        readOnly,
+        parties,
+        partyErrors
+      ),
+      cardErrors
     ),
-    cardErrors
+    journey,
+    answers,
+    evaluation
   )
   const amending = journey.status === state.AMEND
   const title = readOnly ? journey.journeyId : reviewTitle(journey)
@@ -180,7 +186,7 @@ export const renderNotificationView = async (
 ) => {
   const { journey, answers, storedAnswers, scope, evaluation } =
     await state.get(request, h)
-  const readOnly = journey.status === state.SUBMITTED
+  const readOnly = state.isSubmittedStatus(journey.status)
   const holdsSilently = readOnly || (journey.status === state.AMEND && !refused)
   const parties = await partiesFromStoredAnswers(answers)
   // A submitted notification is a record of what was sent, so nothing on it

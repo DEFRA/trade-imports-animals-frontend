@@ -14,6 +14,7 @@ import {
   signIn,
   startNotification,
   unlockSections,
+  uploadHealthCertificate,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
@@ -795,6 +796,7 @@ test.describe('check-answers feature submitted notification', () => {
     await signIn(page)
     await startNotification(page)
     await completeAnswerSections(page)
+    await uploadHealthCertificate(page)
     await openReviewFromHub(page)
     await page.getByRole('button', { name: copy.submit.button }).click()
     await page
@@ -958,6 +960,131 @@ test.describe('check-answers feature submitted notification', () => {
   })
 })
 
+test.describe('check-answers feature submitted notification still owed its health certificate', () => {
+  test.describe.configure({ timeout: 90000 })
+
+  let reference
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startNotification(page)
+    await completeAnswerSections(page)
+    await openReviewFromHub(page)
+    await page.getByRole('button', { name: copy.submit.button }).click()
+    await page
+      .getByRole('checkbox', { name: /I confirm that I have reviewed/ })
+      .check()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    reference = journeyIdFromPage(page)
+    await page.goto(BASE)
+    await page
+      .getByRole('link', {
+        name: `View ${dashboardCopy.actionHidden(reference)}`
+      })
+      .click()
+    await expect(
+      page.getByRole('heading', { level: 1, name: reference, exact: true })
+    ).toBeVisible()
+  })
+
+  test('is tagged Submitted action required in orange and warns that a health certificate is needed', async ({
+    page
+  }) => {
+    const tag = page
+      .getByRole('main')
+      .getByText(sharedCopy.journeyStrip.submittedActionRequired, {
+        exact: true
+      })
+    await expect(tag).toBeVisible()
+    await expect(tag).toHaveClass(/govuk-tag--orange/)
+    await expect(
+      page.locator('.govuk-warning-text').filter({
+        hasText: copy.viewHeader.healthCertificateWarning
+      })
+    ).toBeVisible()
+    await expect(page.getByRole('link', { name: /^Change/ })).toHaveCount(0)
+  })
+
+  test('shows Upload a valid health certificate in place of the document cards, with no error summary', async ({
+    page
+  }) => {
+    await expect(
+      page.getByText(copy.errors.uploadHealthCertificate)
+    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Document 1' })).toHaveCount(
+      0
+    )
+    await expect(page.locator('.govuk-error-summary')).toHaveCount(0)
+  })
+
+  test('offers Amend this notification, a secondary Copy as new and a red Delete in its header', async ({
+    page
+  }) => {
+    const group = page.locator('.govuk-button-group').filter({
+      has: page.getByRole('button', {
+        name: copy.viewHeader.amend,
+        exact: true
+      })
+    })
+    const buttons = group.getByRole('button')
+
+    await expect(buttons).toHaveText([
+      copy.viewHeader.amend,
+      sharedCopy.notificationActions.copy.text,
+      sharedCopy.notificationActions.delete.text
+    ])
+    await expect(buttons.nth(1)).toHaveClass(/govuk-button--secondary/)
+    await expect(buttons.nth(2)).toHaveClass(/govuk-button--warning/)
+  })
+
+  test('Continue starts an amendment and opens Overview', async ({ page }) => {
+    await page
+      .getByRole('button', { name: copy.submit.button, exact: true })
+      .click()
+
+    await expect(page).toHaveURL(new RegExp(`/notifications/${reference}$`))
+    await expect(
+      page
+        .getByRole('main')
+        .getByText(sharedCopy.journeyStrip.amend, { exact: true })
+    ).toBeVisible()
+  })
+
+  test('Continue starts an amendment without JavaScript', async ({
+    page,
+    browser
+  }) => {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      storageState: await page.context().storageState()
+    })
+    const noJs = await context.newPage()
+
+    await noJs.goto(
+      `${BASE}/notifications/${reference}/${NOTIFICATION_VIEW_SLUG}`
+    )
+    await noJs
+      .getByRole('button', { name: copy.submit.button, exact: true })
+      .click()
+
+    await expect(noJs).toHaveURL(new RegExp(`/notifications/${reference}$`))
+    await expect(
+      noJs
+        .getByRole('main')
+        .getByText(sharedCopy.journeyStrip.amend, { exact: true })
+    ).toBeVisible()
+
+    await context.close()
+  })
+
+  test('has no serious or critical axe violations', async ({ page }) => {
+    await expectNoSeriousOrCriticalAxeViolations(
+      page,
+      'Submitted action required check answers'
+    )
+  })
+})
+
 test.describe('check-answers feature amendment', () => {
   test.describe.configure({ timeout: 90000 })
 
@@ -983,6 +1110,9 @@ test.describe('check-answers feature amendment', () => {
       .getByRole('button', { name: `Amend notification ${reference}` })
       .click()
     await openReviewFromHub(page)
+    await expect(
+      page.getByRole('heading', { level: 1, name: copy.title })
+    ).toBeVisible()
   })
 
   test('opens headed Review your notification with no errors, ending with Continue, Cancel amend and Delete', async ({

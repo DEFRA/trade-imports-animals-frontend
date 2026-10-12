@@ -59,6 +59,19 @@ describe('GET /confirmation', () => {
     expect(h.captured.view.context.referenceNumber).toBe(journeyId)
   })
 
+  it('Should show the confirmation for a notification submitted with action required', async () => {
+    const { journeyId } = await store.create()
+    await store.submit(journeyId)
+    expect((await store.get(journeyId)).status).toBe(
+      'submitted-action-required'
+    )
+    const h = stubH()
+
+    await get(journeyRequest(journeyId), h)
+
+    expect(h.captured.view.context.referenceNumber).toBe(journeyId)
+  })
+
   // The declaration date belongs to the declaration page. Design release 1
   // takes the submitted page straight from the reference panel to what the
   // trader still has to do, so the date is not repeated here.

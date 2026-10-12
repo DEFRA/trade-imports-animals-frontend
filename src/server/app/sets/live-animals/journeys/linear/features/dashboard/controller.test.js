@@ -6,7 +6,7 @@ import {
   records,
   AMEND,
   DELETED,
-  SUBMITTED
+  SUBMITTED_ACTION_REQUIRED
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
@@ -96,6 +96,29 @@ const startSubmitted = async () => {
   return records.load({ journeyId: journey.journeyId })
 }
 
+const startSubmittedWithItahc = async () => {
+  const journey = await records.create()
+  await records.replaceFulfilment(
+    journey.journeyId,
+    assembleFulfilments({
+      countryOfOrigin: 'FR',
+      documents: [
+        {
+          accompanyingDocumentType: 'ITAHC',
+          accompanyingDocumentReference: 'ITAHC-1',
+          accompanyingDocumentDateOfIssue: {
+            day: '12',
+            month: '12',
+            year: '2025'
+          }
+        }
+      ]
+    })
+  )
+  await records.finalise(journey.journeyId)
+  return records.load({ journeyId: journey.journeyId })
+}
+
 describe('dashboard notifications list', () => {
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)
@@ -138,7 +161,7 @@ describe('dashboard notifications list', () => {
   })
 
   it('Should list a submitted row with a Submitted tag, its dates and View + Amend actions', async () => {
-    const submitted = await startSubmitted()
+    const submitted = await startSubmittedWithItahc()
     const h = buildH()
 
     await listGet(buildRequest({ knownJourneyIds: [submitted.journeyId] }), h)
@@ -343,6 +366,28 @@ describe('dashboard row actions', () => {
   })
   beforeEach(() => records.clear())
 
+  it('Should offer View, Amend, Copy as new and Delete on a notification submitted with action required', async () => {
+    const submitted = await startSubmitted()
+    const h = buildH()
+
+    await listGet(buildRequest({ knownJourneyIds: [submitted.journeyId] }), h)
+
+    const [row] = h.captured.view.context.notificationRows
+    expect(row.status).toEqual({
+      text: 'Submitted action required',
+      classes: 'govuk-tag--orange'
+    })
+    expect(row.actions.map((action) => action.text)).toEqual([
+      'View',
+      'Amend',
+      COPY_AS_NEW_ACTION,
+      'Delete'
+    ])
+    expect(row.actions[1].postAction).toBe(
+      pageUrl(submitted.journeyId, 'amend')
+    )
+  })
+
   it('Should expose no resume or view indirection routes', () => {
     expect(routes.some((route) => route.path.endsWith('/resume'))).toBe(false)
     expect(routes.some((route) => route.path.endsWith('/view'))).toBe(false)
@@ -428,7 +473,7 @@ describe('dashboard row actions', () => {
     expect(h.captured.redirect).toBe(SET_BASE)
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
-    ).toBe(SUBMITTED)
+    ).toBe(SUBMITTED_ACTION_REQUIRED)
   })
 
   it('Should carry each row source concurrencyToken onto its copy action', async () => {

@@ -4,7 +4,9 @@ export const copy = {
   resubmitTitle: 'Adolygu cyn ailgyflwyno',
   viewHeader: {
     dateSubmitted: (date) => `Dyddiad cyflwyno: ${date}`,
-    amend: 'Diwygio’r hysbysiad hwn'
+    amend: 'Diwygio’r hysbysiad hwn',
+    healthCertificateWarning: 'Mae angen i chi uwchlwytho tystysgrif iechyd',
+    warningIcon: 'Rhybudd'
   },
   importReferences: {
     heading: 'Cyfeirnodau mewnforio',
@@ -139,6 +141,7 @@ export const copy = {
   },
   errors: {
     prefix: 'Gwall:',
+    uploadHealthCertificate: 'Uwchlwythwch dystysgrif iechyd ddilys',
     cards: {
       importDetails: 'Cwblhewch darddiad y mewnforyn',
       whatAreYouImporting: 'Cwblhewch beth ydych chi’n ei fewnforio',

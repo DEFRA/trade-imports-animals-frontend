@@ -4,7 +4,7 @@ import {
   AMEND,
   DELETED,
   DRAFT,
-  SUBMITTED
+  SUBMITTED_ACTION_REQUIRED
 } from '../../../engine/persistence/records.js'
 import { obligationSet } from '../../../model/obligations/manifest.js'
 
@@ -103,7 +103,7 @@ describe('records durable port', () => {
 
     const resubmitted = await records.finalise(journeyId)
 
-    expect(resubmitted.status).toBe(SUBMITTED)
+    expect(resubmitted.status).toBe(SUBMITTED_ACTION_REQUIRED)
     expect(resubmitted.submittedAt).toEqual(expect.any(String))
   })
 
@@ -117,7 +117,7 @@ describe('records durable port', () => {
     const restored = await records.cancelAmend(journeyId)
 
     expect(restored).toMatchObject({
-      status: SUBMITTED,
+      status: SUBMITTED_ACTION_REQUIRED,
       submittedAt: submitted.submittedAt,
       fulfilment: originFulfilment('FR')
     })

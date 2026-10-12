@@ -65,6 +65,12 @@
           }) }}
         </div>
       </form>
+      {% if viewHeader.warning %}
+        {{ govukWarningText({
+          text: viewHeader.warning,
+          iconFallbackText: copy.viewHeader.warningIcon
+        }) }}
+      {% endif %}
       <section class="govuk-!-margin-bottom-6" aria-labelledby="import-reference-numbers">
         <h2 class="govuk-heading-m" id="import-reference-numbers">{{ copy.importReferences.heading }}</h2>
         {{ govukWarningText({
@@ -86,6 +92,7 @@
       <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
     {% endif %}
     <h2 class="govuk-heading-m" id="{{ section.anchor }}" tabindex="-1">{{ section.heading }}</h2>
+    {{ cardError(section.error) }}
     {% for card in section.cards %}
       {% if card.speciesBlocks or card.subsections or card.error %}
         <div class="govuk-summary-card{% if card.error %} app-summary-card--error{% endif %}"{% if card.anchor %} id="{{ card.anchor }}" tabindex="-1"{% endif %}>
@@ -129,11 +136,9 @@
     {% endfor %}
   {% endfor %}
 
-  {# A submitted notification is a record, not a form. The read-only review has
-     already dropped every Change link, so inviting the trader to submit again
-     would offer the one action the page has otherwise taken away — and the
-     declaration redirects a submitted journey to a confirmation it did not
-     just produce. The read-only review ends with the last card. #}
+  {# A submitted notification is a record, not a form, and ends with its last
+     card. One still owed a health certificate ends with Continue, which starts
+     the amendment that lets the trader upload it. #}
   {% if not readOnly %}
     <form method="post" novalidate>
       <input type="hidden" name="crumb" value="{{ crumb }}" />
@@ -153,6 +158,12 @@
           classes: "govuk-button--warning"
         }) }}
       </div>
+    </form>
+  {% endif %}
+  {% if viewHeader and viewHeader.continueHref %}
+    <form method="post" action="{{ viewHeader.continueHref }}" novalidate>
+      <input type="hidden" name="crumb" value="{{ crumb }}" />
+      {{ govukButton({ text: copy.submit.button }) }}
     </form>
   {% endif %}
 {% endblock %}
