@@ -236,6 +236,23 @@ describe('#declaration', () => {
     })
     beforeEach(() => store.clear())
 
+    it("Should draw no status strip on a draft's declaration", async () => {
+      const result = await driveHandler(get)
+      expect(result.view.context.journeyStrip).toBeNull()
+      expect(result.view.context.concurrencyToken).toBeDefined()
+    })
+
+    it("Should draw no status strip, reference or Cancel amend on an amendment's declaration", async () => {
+      const { journeyId } = await store.create()
+      await store.submit(journeyId)
+      await records.amend(journeyId)
+      const h = stubH()
+
+      await get(journeyRequest(journeyId), h)
+
+      expect(h.captured.view.context.journeyStrip).toBeNull()
+    })
+
     it('Should send a notification submitted with action required to its confirmation', async () => {
       configureReadyForCheckYourAnswers(SET_ID, () => true)
       const { journeyId } = await store.create()

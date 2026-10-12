@@ -39,6 +39,10 @@
 
     {{ govukCheckboxes({
       name: "declaration",
+      classes: "govuk-checkboxes--small",
+      fieldset: {
+        legend: { text: copy.declarationLegend, classes: "govuk-visually-hidden" }
+      },
       errorMessage: errors.declaration and { text: errors.declaration },
       items: [
         {

@@ -41,6 +41,7 @@ const render = (h, journey, values, errors = {}, recoverableError = false) =>
       journey,
       recoverableError
     }),
+    journeyStrip: null,
     copy,
     submissionDate: dateText(Date.now()),
     values,
