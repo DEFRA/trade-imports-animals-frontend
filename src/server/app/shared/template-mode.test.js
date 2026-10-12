@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  changingSavedTemplate,
   inTemplateMode,
   templateModeRoutes,
   templateOwnerId,
+  withSavedTemplateChange,
   withTemplateMode
 } from './template-mode.js'
 
 const OWNER = '2100010101'
+const OVERVIEW_ROUTE = '/notifications/{journeyId}'
 const ORIGIN_ROUTE = '/notifications/{journeyId}/origin'
 
 const credentials = { contactId: 2100010101 }
@@ -96,9 +99,7 @@ describe('#templateModeRoutes', () => {
   it("Should twin the overview path as the template's task list", async () => {
     const observed = []
     const [twin, ...rest] = templateModeRoutes([
-      route('GET', '/notifications/{journeyId}', () =>
-        observed.push(inTemplateMode())
-      )
+      route('GET', OVERVIEW_ROUTE, () => observed.push(inTemplateMode()))
     ])
 
     await twin.handler({ auth: { credentials } }, {})
@@ -118,7 +119,7 @@ describe('#templateModeRoutes', () => {
     }
     const [overviewTwin, originTwin] = templateModeRoutes(
       [
-        route('GET', '/notifications/{journeyId}', () => 'task list'),
+        route('GET', OVERVIEW_ROUTE, () => 'task list'),
         route('GET', ORIGIN_ROUTE, () => 'origin')
       ],
       { overview }
@@ -172,5 +173,48 @@ describe('#templateModeRoutes', () => {
     expect(twins.map((twin) => twin.path)).toEqual([
       '/templates/{journeyId}/copy-details'
     ])
+  })
+
+  it('Should wrap every journey page twin with the page option, not the overview, inside template mode', async () => {
+    const decorated = []
+    const page = (handler) => (request, h) => {
+      decorated.push(inTemplateMode())
+      return handler(request, h)
+    }
+    const [overviewTwin, originTwin] = templateModeRoutes(
+      [
+        route('GET', OVERVIEW_ROUTE, () => 'task list'),
+        route('POST', ORIGIN_ROUTE, () => 'origin')
+      ],
+      { page }
+    )
+
+    await overviewTwin.handler({ auth: { credentials } }, {})
+    expect(decorated).toEqual([])
+    const result = await originTwin.handler({ auth: { credentials } }, {})
+
+    expect(result).toBe('origin')
+    expect(decorated).toEqual([true])
+  })
+})
+
+describe('#changingSavedTemplate', () => {
+  it('Should be false outside the saved-change context and inside plain template mode', () => {
+    expect(changingSavedTemplate()).toBe(false)
+    withTemplateMode(OWNER, () => {
+      expect(changingSavedTemplate()).toBe(false)
+    })
+  })
+
+  it('Should be true inside withSavedTemplateChange, keeping the owner and template mode', async () => {
+    await withTemplateMode(OWNER, () =>
+      withSavedTemplateChange(async () => {
+        await Promise.resolve()
+        expect(changingSavedTemplate()).toBe(true)
+        expect(inTemplateMode()).toBe(true)
+        expect(templateOwnerId()).toBe(OWNER)
+      })
+    )
+    expect(changingSavedTemplate()).toBe(false)
   })
 })

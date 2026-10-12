@@ -1,3 +1,4 @@
+import { arrivalDateAtPort } from '../../../obligations/sections/arrival.js'
 import { documentsPage } from '../features/documents/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
 import { declarationPage } from '../features/declaration/page.js'
@@ -31,3 +32,14 @@ export const TEMPLATE_MODE_EXCLUDED_SLUGS = [
   ...TEMPLATE_MODE_EXCLUDED_PAGES.map(({ slug }) => slug),
   ...NOTIFICATION_ACTION_SLUGS
 ]
+
+// A template is reused across consignments, so it never holds an arrival date:
+// the arrival page still asks for it, but it is never stored.
+export const TEMPLATE_NOT_HELD_OBLIGATIONS = [arrivalDateAtPort]
+
+export const TEMPLATE_NOT_HELD_OBLIGATION_IDS =
+  TEMPLATE_NOT_HELD_OBLIGATIONS.map(({ id }) => id)
+
+export const TEMPLATE_NOT_HELD_FIELDS = TEMPLATE_NOT_HELD_OBLIGATIONS.map(
+  ({ name }) => name
+)

@@ -7,7 +7,7 @@ import {
   journeySectionCaption
 } from '../flow/journey-flow.js'
 import { inOpeningRun } from '../flow/run-state.js'
-import { inTemplateMode } from './template-mode.js'
+import { changingSavedTemplate, inTemplateMode } from './template-mode.js'
 import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
@@ -117,10 +117,14 @@ export const changeContext = (request) => Boolean(request.query.change)
 export const withChangeContext = (request, href) =>
   changeContext(request) ? `${href}?change=1` : href
 
+/** Where a change-context page returns: the review, or a saved template's own page. */
+export const changeReturnPath = (journeyId) =>
+  changingSavedTemplate() ? hubPath(journeyId) : pagePath(journeyId, CYA_SLUG)
+
 export const exitTarget = (request, fallback) =>
   hubExitTarget(request) ??
   (changeContext(request)
-    ? pagePath(request.params.journeyId, CYA_SLUG)
+    ? changeReturnPath(request.params.journeyId)
     : fallback)
 
 export const runTarget = async (request, stepId, scope) =>
@@ -143,6 +147,8 @@ export const nextTarget = async (request, page, scope) =>
  * @param {object} [options.page] - the page identity. Supply it and the view
  * gains the `caption` naming the section of the journey the page belongs to;
  * omit it on a page the journey deliberately leaves uncaptioned.
+ * The view also carries `templateChange`: the page ends with Save and return
+ * and Cancel, because it is changing one section of a saved template.
  * @returns {object} the common view model.
  */
 export const base = (
@@ -167,6 +173,7 @@ export const base = (
     homeUrl: dashboardPath(),
     // In template mode `hubPath` resolves to the template's own task list.
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
+    templateChange: changingSavedTemplate(),
     journeyStrip: journeyStrip(journey),
     concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,

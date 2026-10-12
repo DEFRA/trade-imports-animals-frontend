@@ -16,11 +16,16 @@ import { copy as reviewCy } from '../check-answers/copy/copy.cy.js'
 import { templateTitle } from '../templates/template-title.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
+import { takeUpdatedTemplate } from './updated-banner.js'
 
 const view = `${TEMPLATES}/features/template-page/template`
 
 const copy = copyFor({ en, cy })
 const reviewCopy = copyFor({ en: reviewEn, cy: reviewCy })
+
+// A template with no name is confirmed without one.
+const updatedHeading = (name) =>
+  name ? copy.updated.heading(name) : copy.updated.unnamedHeading
 
 const USE_SLUG = 'use'
 const DELETE_SLUG = 'delete'
@@ -40,6 +45,7 @@ const renderTemplatePage = async (request, h, template) => {
     parties
   )
   const title = templateTitle(template.name)
+  const justUpdated = takeUpdatedTemplate(request)
 
   return h.view(view, {
     ...kit.base(title, { backLink: templatesPath() }),
@@ -49,6 +55,9 @@ const renderTemplatePage = async (request, h, template) => {
     ),
     useAction: templatePagePath(template.id, USE_SLUG),
     deleteHref: templatePagePath(template.id, DELETE_SLUG),
+    updatedBanner: justUpdated
+      ? { heading: updatedHeading(justUpdated.name) }
+      : null,
     copy,
     reviewCopy,
     sections

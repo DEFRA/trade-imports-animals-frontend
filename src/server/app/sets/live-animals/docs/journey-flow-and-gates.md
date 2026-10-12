@@ -182,6 +182,17 @@ Once a template is saved, the same address is the template's page
 still being created keeps the task list and a saved one shows its answers in the
 review's cards. A template the user does not have opens Manage templates.
 
+The page's Change links open a question page with the change marker. Every other twin
+is wrapped by `withTemplateChange` through the `page` option, which sends a template
+the user does not have to Manage templates, and runs a saved template reached from a
+Change link in the saved-change context (`changingSavedTemplate()`). There the page
+ends with "Save and return" and a "Cancel" link to the template's page, Back returns
+there, and saving returns there with a Success banner kept in the session under the
+`templateUpdated` key ([`features/template-page/updated-banner.js`](../journeys/linear/features/template-page/updated-banner.js)),
+taken once. Saving moves the template's saved time on, which is its date created. A
+template never holds an arrival date (`TEMPLATE_NOT_HELD_OBLIGATIONS`): the records
+port drops it on write and on load.
+
 The review route is twinned too and is the template review: the review's own handler,
 which in template mode is titled "Review your template", shows no errors, leaves out
 the documents section (renumbering the last two as the task list does) and the arrival
@@ -194,7 +205,7 @@ Save template also stores `{ name }` in the session (the `templateSaved` key,
 [`features/templates/saved-banner.js`](../journeys/linear/features/templates/saved-banner.js)).
 Manage templates reads and clears it, so the Success banner shows once and a reload
 loses it. A blank name reads "Untitled template" wherever a saved template is titled
-(the banner and its card). The list is ordered by when each template was first saved,
+(the banner and its card). The list is ordered by when each template was last saved,
 newest first, not by when it was started.
 
 A template-mode page links to the template's task list, so its Save and return and

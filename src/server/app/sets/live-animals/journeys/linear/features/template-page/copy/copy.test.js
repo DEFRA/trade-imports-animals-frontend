@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { copy } from './copy.en.js'
 import { copy as cy } from './copy.cy.js'
 
+const WEEKLY_CATTLE = 'Weekly cattle'
+
 const leaves = (node, path = []) =>
   typeof node === 'object' && node !== null
     ? Object.entries(node).flatMap(([key, value]) =>
@@ -26,6 +28,19 @@ describe('#copy', () => {
     )
     expect(copy.useTemplate).toBe('Use template')
     expect(copy.delete).toBe('Delete')
+  })
+
+  it('Should confirm a changed template in English and in Welsh', () => {
+    expect(copy.updated.title).toBe('Success')
+    expect(copy.updated.heading(WEEKLY_CATTLE)).toBe(
+      'Weekly cattle has been updated'
+    )
+    expect(copy.updated.unnamedHeading).toBe('Template has been updated')
+    expect(cy.updated.title).not.toBe(copy.updated.title)
+    expect(cy.updated.heading(WEEKLY_CATTLE)).not.toBe(
+      copy.updated.heading(WEEKLY_CATTLE)
+    )
+    expect(cy.updated.unnamedHeading).not.toBe(copy.updated.unnamedHeading)
   })
 
   it('Should carry a Welsh draft for every string under the same key', () => {

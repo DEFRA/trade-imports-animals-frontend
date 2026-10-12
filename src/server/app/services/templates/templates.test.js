@@ -413,6 +413,49 @@ describe('the time a template was first saved', () => {
   })
 })
 
+describe('the time a saved template was last saved', () => {
+  it('Should move the saved time on when a saved template’s answers are replaced', async () => {
+    stubMode()
+    const { startFor, saveFor, replaceFulfilmentsFor, getFor } =
+      await templatesService()
+    const { stubTemplates } = await import('./stub.js')
+    try {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-10-02T10:00:00Z'))
+      const started = await startFor(OWNER, {
+        setId: LIVE_ANIMALS,
+        name: WEEKLY_CATTLE
+      })
+      await saveFor(OWNER, started.id)
+      vi.setSystemTime(new Date('2026-10-05T12:00:00Z'))
+
+      await replaceFulfilmentsFor(OWNER, started.id, [{ obligationId: 'a' }])
+
+      expect((await getFor(OWNER, started.id)).saved).toBe(
+        '2026-10-05T12:00:00.000Z'
+      )
+    } finally {
+      vi.useRealTimers()
+      stubTemplates.clear()
+    }
+  })
+
+  it('Should leave the saved time unset when a template still being created is filled', async () => {
+    stubMode()
+    const { startFor, replaceFulfilmentsFor, getFor } = await templatesService()
+    const { stubTemplates } = await import('./stub.js')
+    const started = await startFor(OWNER, {
+      setId: LIVE_ANIMALS,
+      name: WEEKLY_CATTLE
+    })
+
+    await replaceFulfilmentsFor(OWNER, started.id, [{ obligationId: 'a' }])
+
+    expect((await getFor(OWNER, started.id)).saved).toBeUndefined()
+    stubTemplates.clear()
+  })
+})
+
 describe('#isBeingCreated', () => {
   it('Should be true only for a template held as in progress', async () => {
     const { isBeingCreated } = await templatesService()

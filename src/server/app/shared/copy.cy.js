@@ -63,7 +63,9 @@ export const copy = {
   saveActions: {
     saveAndContinue: 'Cadw a pharhau',
     saveAndReturnToHub: "Cadw a dychwelyd i'r trosolwg",
-    cancelAndReturnToHub: "Canslo a dychwelyd i'r trosolwg"
+    cancelAndReturnToHub: "Canslo a dychwelyd i'r trosolwg",
+    saveAndReturn: 'Cadw a dychwelyd',
+    cancel: 'Canslo'
   },
   journeyStrip: {
     draft: 'Drafft',

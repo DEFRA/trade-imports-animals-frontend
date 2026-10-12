@@ -88,4 +88,41 @@ describe('#saveActions', () => {
     expect(html).toContain(sharedEn.saveActions.cancelAndReturnToHub)
     expect(html).toContain(EXIT_NAME_ATTRIBUTE)
   })
+
+  describe('changing a saved template', () => {
+    const changing = (args = 'hubHref, copy = copy, templateChange = true') =>
+      renderActions(args)
+
+    it('Should end with Save and return and a Cancel link to the template alone', () => {
+      const html = changing()
+
+      expect(html).toContain(sharedEn.saveActions.saveAndReturn)
+      expect(html).toContain(`>${sharedEn.saveActions.cancel}</a>`)
+      expect(html).toContain('href="/notifications/journey-1/hub"')
+      expect(html).not.toContain(sharedEn.saveActions.saveAndContinue)
+      expect(html).not.toContain(sharedEn.saveActions.saveAndReturnToHub)
+      expect(html).not.toContain(sharedEn.saveActions.cancelAndReturnToHub)
+      expect(html).not.toContain(EXIT_NAME_ATTRIBUTE)
+    })
+
+    it('Should take precedence even when the page shows its return controls', () => {
+      const html = changing(
+        'hubHref, copy = copy, showReturnControls = true, templateChange = true'
+      )
+
+      expect(html).not.toContain(sharedEn.saveActions.saveAndReturnToHub)
+      expect(html.match(/<button/g)).toHaveLength(1)
+    })
+
+    it('Should keep a named primary’s name and value', () => {
+      const html = changing(
+        'hubHref, { text: "Save and proceed", name: "action", value: "save" }, copy, true, true'
+      )
+
+      expect(html).toContain(sharedEn.saveActions.saveAndReturn)
+      expect(html).not.toContain('Save and proceed')
+      expect(html).toContain('name="action"')
+      expect(html).toContain('value="save"')
+    })
+  })
 })

@@ -50,7 +50,7 @@ export const startFor = async (ownerId, details) => {
  *
  * @param {string} ownerId - the signed-in user's id
  * @param {string} id - the template's id
- * @returns {Promise<object|undefined>} the template (with its `status` and the `saved` time it was first saved), or undefined when the user has none by that id
+ * @returns {Promise<object|undefined>} the template (with its `status` and the `saved` time it was last saved), or undefined when the user has none by that id
  */
 export const getFor = async (ownerId, id) => {
   requireOwner(ownerId, 'read a template')
@@ -73,7 +73,8 @@ export const updateDetailsFor = async (ownerId, id, details) => {
 }
 
 /**
- * Replaces the answers one of the signed-in user's templates holds.
+ * Replaces the answers one of the signed-in user's templates holds. Changing a
+ * saved template's answers moves its saved time on.
  *
  * @param {string} ownerId - the signed-in user's id
  * @param {string} id - the template's id

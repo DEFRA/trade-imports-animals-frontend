@@ -3,7 +3,10 @@ import {
   hubPath,
   templateNamePath
 } from '../../../../../../shared/paths.js'
-import { inTemplateMode } from '../../../../../../shared/template-mode.js'
+import {
+  changingSavedTemplate,
+  inTemplateMode
+} from '../../../../../../shared/template-mode.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import {
@@ -48,6 +51,10 @@ const countryItems = async () => [
 // dashboard instead. The status strip does not follow it — see `render`.
 // While a template is being created, Back returns to the name just entered.
 const backLinkFor = (journey, answers) => {
+  // Changing a saved template, Back returns to its page.
+  if (changingSavedTemplate()) {
+    return hubPath(journey.journeyId)
+  }
   if (inTemplateMode()) {
     return templateNamePath(journey.journeyId)
   }

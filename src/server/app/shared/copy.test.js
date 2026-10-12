@@ -87,7 +87,9 @@ describe('save-actions copy', () => {
     expect(sharedEn.saveActions).toEqual({
       saveAndContinue: 'Save and continue',
       saveAndReturnToHub: 'Save and return to overview',
-      cancelAndReturnToHub: 'Cancel and return to overview'
+      cancelAndReturnToHub: 'Cancel and return to overview',
+      saveAndReturn: 'Save and return',
+      cancel: 'Cancel'
     })
   })
 

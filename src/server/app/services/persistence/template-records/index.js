@@ -6,48 +6,62 @@ import {
   encodeEvaluatorFulfilments
 } from '../records/fulfilment-codec/index.js'
 
-// The records port a journey page reads through while it is walked in template
-// mode. It holds the same encoded fulfilments a notification does, in the
-// user's template store, and offers none of the notification lifecycle.
-const marshal = ({ id, name, setId, created, version, fulfilments }) => ({
-  journeyId: id,
-  status: DRAFT,
-  createdAt: created ?? null,
-  submittedAt: null,
-  concurrencyToken: version ?? null,
-  fulfilment: decodePersistedFulfilment(fulfilments),
-  templateName: name ?? '',
-  setId
-})
-
-const load = async ({ journeyId }) => {
-  const template = await templates.getFor(templateOwnerId(), journeyId)
-  return template ? marshal(template) : undefined
-}
-
-const replaceFulfilment = async (journeyId, fulfilment) =>
-  marshal(
-    await templates.replaceFulfilmentsFor(
-      templateOwnerId(),
-      journeyId,
-      encodeEvaluatorFulfilments(structuredClone(fulfilment ?? {}))
-    )
+const withoutNotHeld = (fulfilment, notHeld) =>
+  Object.fromEntries(
+    Object.entries(fulfilment ?? {}).filter(([id]) => !notHeld.includes(id))
   )
 
 const notOffered = (operation) => async () => {
   throw new Error(`${operation} is not offered in template mode`)
 }
 
-export const templateRecords = {
-  load,
-  replaceFulfilment,
-  has: async (journeyId) => Boolean(await load({ journeyId })),
-  clear: async () => {},
-  create: notOffered('create'),
-  list: notOffered('list'),
-  finalise: notOffered('finalise'),
-  amend: notOffered('amend'),
-  cancelAmend: notOffered('cancelAmend'),
-  copy: notOffered('copy'),
-  softDelete: notOffered('softDelete')
+/**
+ * Builds the records port a journey page reads through in template mode.
+ *
+ * @param {{ notHeld?: string[] }} [options] - `notHeld`: obligation ids a
+ * template never holds. They are dropped when the answers are written and when
+ * they are loaded, so a template that once held one shows none.
+ * @returns {object} the records port.
+ */
+export const createTemplateRecords = ({ notHeld = [] } = {}) => {
+  const marshal = ({ id, name, setId, created, version, fulfilments }) => ({
+    journeyId: id,
+    status: DRAFT,
+    createdAt: created ?? null,
+    submittedAt: null,
+    concurrencyToken: version ?? null,
+    fulfilment: withoutNotHeld(decodePersistedFulfilment(fulfilments), notHeld),
+    templateName: name ?? '',
+    setId
+  })
+
+  const load = async ({ journeyId }) => {
+    const template = await templates.getFor(templateOwnerId(), journeyId)
+    return template ? marshal(template) : undefined
+  }
+
+  const replaceFulfilment = async (journeyId, fulfilment) =>
+    marshal(
+      await templates.replaceFulfilmentsFor(
+        templateOwnerId(),
+        journeyId,
+        encodeEvaluatorFulfilments(
+          withoutNotHeld(structuredClone(fulfilment ?? {}), notHeld)
+        )
+      )
+    )
+
+  return {
+    load,
+    replaceFulfilment,
+    has: async (journeyId) => Boolean(await load({ journeyId })),
+    clear: async () => {},
+    create: notOffered('create'),
+    list: notOffered('list'),
+    finalise: notOffered('finalise'),
+    amend: notOffered('amend'),
+    cancelAmend: notOffered('cancelAmend'),
+    copy: notOffered('copy'),
+    softDelete: notOffered('softDelete')
+  }
 }

@@ -15,10 +15,17 @@ const NAME = 'Weekly cattle'
 const SAVED_DAY = '2026-09-10T23:35:39.455Z'
 const CREATED_DAY = '2026-01-05T10:00:00Z'
 
+const sessionStore = new Map()
+
 const request = {
   auth: { credentials: { contactId: 2100010101 } },
   params: { journeyId: ID },
-  query: {}
+  query: {},
+  yar: {
+    get: (key) => sessionStore.get(key),
+    set: (key, value) => sessionStore.set(key, value),
+    clear: (key) => sessionStore.delete(key)
+  }
 }
 
 const h = {
@@ -45,6 +52,7 @@ describe('the template page', () => {
   }
 
   beforeEach(() => {
+    sessionStore.clear()
     taskList = vi.fn(async () => 'task list')
     vi.spyOn(state, 'get').mockResolvedValue({
       journey: { journeyId: ID },
@@ -97,6 +105,34 @@ describe('the template page', () => {
 
     expect(context.useAction).toBe(`/live-animals/templates/${ID}/use`)
     expect(context.deleteHref).toBe(`/live-animals/templates/${ID}/delete`)
+  })
+
+  it('Should show no banner when nothing was remembered', async () => {
+    const { context } = await open(savedTemplate())
+
+    expect(context.updatedBanner).toBeNull()
+  })
+
+  it('Should confirm a changed template by name, once', async () => {
+    sessionStore.set('templateUpdated', { name: NAME })
+
+    const first = await open(savedTemplate())
+    const reloaded = await open(savedTemplate())
+
+    expect(first.context.updatedBanner).toEqual({
+      heading: `${NAME} has been updated`
+    })
+    expect(reloaded.context.updatedBanner).toBeNull()
+  })
+
+  it('Should confirm a changed template with no name as Template has been updated', async () => {
+    sessionStore.set('templateUpdated', { name: '' })
+
+    const { context } = await open(savedTemplate({ name: '' }))
+
+    expect(context.updatedBanner).toEqual({
+      heading: 'Template has been updated'
+    })
   })
 
   it('Should title a template saved with no name Untitled template', async () => {

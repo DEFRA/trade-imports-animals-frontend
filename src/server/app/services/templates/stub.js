@@ -1,8 +1,9 @@
 // The stub store starts empty and holds no examples: the service shows only
 // templates a user has really saved (c-183). Keyed by owner id; each value is
 // an array of rows { id, name, setId, created, saved?, status, version,
-// fulfilments } with `created` and `saved` ISO strings (`saved` is the first
-// time the template was saved, which orders the list).
+// fulfilments } with `created` and `saved` ISO strings (`saved` is when the
+// template was last saved: the first save, then each change once saved. It
+// orders the list).
 const store = new Map()
 
 export const stubTemplates = store
@@ -107,8 +108,14 @@ export const updateDetails = (ownerId, id, { setId, name }) =>
  * @param {object[]} fulfilments - the encoded answers to hold
  * @returns {object|undefined} the template as stored, or undefined when not found
  */
-export const replaceFulfilments = (ownerId, id, fulfilments) =>
-  changeRow(ownerId, id, { fulfilments: structuredClone(fulfilments) })
+export const replaceFulfilments = (ownerId, id, fulfilments) => {
+  const row = findRow(ownerId, id)
+  const movesSavedOn = row && row.status !== IN_PROGRESS
+  return changeRow(ownerId, id, {
+    fulfilments: structuredClone(fulfilments),
+    ...(movesSavedOn ? { saved: new Date().toISOString() } : {})
+  })
+}
 
 /**
  * Saves one of the owner's stub templates, so it is listed.

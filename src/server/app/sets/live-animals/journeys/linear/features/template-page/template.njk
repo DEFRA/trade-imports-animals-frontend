@@ -1,8 +1,21 @@
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 {% from "live-animals/journeys/linear/features/check-answers/_review-sections.njk" import reviewSections %}
 
 {% block journeyContent %}
+  {% if updatedBanner %}
+    {% set updatedBannerHtml %}
+      <h3 class="govuk-notification-banner__heading">{{ updatedBanner.heading }}</h3>
+    {% endset %}
+    {{ govukNotificationBanner({
+      type: "success",
+      titleText: copy.updated.title,
+      html: updatedBannerHtml,
+      role: "alert"
+    }) }}
+  {% endif %}
+
   <span class="govuk-caption-l">{{ copy.caption }}</span>
   <h1 class="govuk-heading-l">{{ heading }}</h1>
   <p class="govuk-body">{{ dateCreated }}</p>

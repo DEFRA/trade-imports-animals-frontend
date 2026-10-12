@@ -1,5 +1,8 @@
 import { hubPath, pagePath } from '../../../../../../../shared/paths.js'
-import { inTemplateMode } from '../../../../../../../shared/template-mode.js'
+import {
+  changingSavedTemplate,
+  inTemplateMode
+} from '../../../../../../../shared/template-mode.js'
 import { TEMPLATES } from '../../../config.js'
 import { originPage } from '../../origin/page.js'
 import * as state from '../../../../../../../engine/index.js'
@@ -27,8 +30,13 @@ const CLEAR_ACTION = 'clear'
 
 // A template is being created in order, from Origin of the import, so the
 // commodity question goes Back there rather than to the overview.
-const backLinkFor = (journeyId) =>
-  inTemplateMode() ? pagePath(journeyId, originPage.slug) : hubPath(journeyId)
+// Changing a saved template, Back returns to its page.
+const backLinkFor = (journeyId) => {
+  if (!changingSavedTemplate() && inTemplateMode()) {
+    return pagePath(journeyId, originPage.slug)
+  }
+  return hubPath(journeyId)
+}
 
 const render = (h, journey, { selected, query = '', errorText = null }) => {
   const groups = commodityGroups(selected, query)

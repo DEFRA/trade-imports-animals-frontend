@@ -1,5 +1,7 @@
 import { NA, statusOf } from '../../../../../bridge/status/index.js'
 import { collectsOf } from '../../../../../flow/dispatch.js'
+import { inTemplateMode } from '../../../../../shared/template-mode.js'
+import { TEMPLATE_NOT_HELD_FIELDS } from './template-mode.js'
 import { identifiedCommodities } from '../../../services/commodities/index.js'
 import { originPage } from '../features/origin/page.js'
 import {
@@ -83,8 +85,17 @@ export const taskRows = [
 
 export const taskRowById = (id) => taskRows.find((row) => row.id === id)
 
-export const rowParts = (row) =>
-  row.parts ?? row.pages.flatMap((page) => collectsOf(page.id))
+// A template never holds what TEMPLATE_NOT_HELD_FIELDS names, so a row cannot
+// wait on it there: leave those names out while a template is walked.
+export const rowParts = (row) => {
+  const parts = row.parts ?? row.pages.flatMap((page) => collectsOf(page.id))
+  return inTemplateMode()
+    ? parts.filter(
+        (part) =>
+          typeof part !== 'string' || !TEMPLATE_NOT_HELD_FIELDS.includes(part)
+      )
+    : parts
+}
 
 // A row with no `applies` test is always applicable; one that answers no is
 // Not applicable however its parts roll up, which is what lets a `conditional`

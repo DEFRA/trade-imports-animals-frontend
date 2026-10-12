@@ -3,5 +3,10 @@ export const copy = {
   caption: 'Templedi',
   dateCreated: (date) => `Dyddiad creu: ${date}`,
   useTemplate: 'Defnyddio’r templed',
-  delete: 'Dileu'
+  delete: 'Dileu',
+  updated: {
+    title: 'Llwyddiant',
+    heading: (name) => `${name} wedi’i ddiweddaru`,
+    unnamedHeading: 'Templed wedi’i ddiweddaru'
+  }
 }

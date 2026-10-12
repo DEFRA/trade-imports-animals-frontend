@@ -37,6 +37,25 @@ export const templateOwnerId = () => storage.getStore()?.ownerId
  */
 export const withTemplateMode = (ownerId, fn) => storage.run({ ownerId }, fn)
 
+/**
+ * Runs `fn` as a change of one section of a saved template, from a Change link
+ * on its page. Call it inside template mode: it keeps the owner.
+ *
+ * @param {Function} fn - what to run in the saved-change context.
+ * @returns {*} whatever `fn` returns.
+ */
+export const withSavedTemplateChange = (fn) =>
+  storage.run({ ...storage.getStore(), changingSaved: true }, fn)
+
+/**
+ * Whether the request is changing one section of a saved template, from a
+ * Change link on its page.
+ *
+ * @returns {boolean} true inside {@link withSavedTemplateChange}.
+ */
+export const changingSavedTemplate = () =>
+  storage.getStore()?.changingSaved === true
+
 const underExcluded = (slug, excludedSlugs) =>
   excludedSlugs.some(
     (excluded) => slug === excluded || slug.startsWith(`${excluded}/`)
@@ -60,13 +79,16 @@ const slugOf = (path) => {
     : null
 }
 
-const twinOf = (route, slug, overview) => {
-  // Only the overview twin is decorated, and the decorated handler is the one
-  // that runs in template mode.
-  const wrap = (method) =>
-    inTemplateModeFor(
-      slug === '' && typeof method === 'function' ? overview(method) : method
-    )
+const twinOf = (route, slug, { overview, page }) => {
+  // The overview twin is decorated by `overview`, every journey page twin by
+  // `page`; the decorated handler is the one that runs in template mode.
+  const decorate = (method) => {
+    if (typeof method !== 'function') {
+      return method
+    }
+    return slug === '' ? overview(method) : page(method)
+  }
+  const wrap = (method) => inTemplateModeFor(decorate(method))
   return {
     ...route,
     path: slug === '' ? TEMPLATE_OVERVIEW_PATH : `${TEMPLATE_PREFIX}${slug}`,
@@ -95,13 +117,18 @@ const twinOf = (route, slug, overview) => {
  * @param {object} options
  * @param {string[]} [options.excludedSlugs] - journey slugs template mode leaves out.
  * @param {Function} [options.overview] - wraps the overview twin's handler; it runs in template mode.
+ * @param {Function} [options.page] - wraps every other twin's handler; it runs in template mode.
  * @returns {object[]} the twin routes, to register beside the originals.
  */
 export const templateModeRoutes = (
   routes,
-  { excludedSlugs = [], overview = (handler) => handler } = {}
+  {
+    excludedSlugs = [],
+    overview = (handler) => handler,
+    page = (handler) => handler
+  } = {}
 ) =>
   routes
     .map((route) => ({ route, slug: slugOf(route.path) }))
     .filter(({ slug }) => slug !== null && !underExcluded(slug, excludedSlugs))
-    .map(({ route, slug }) => twinOf(route, slug, overview))
+    .map(({ route, slug }) => twinOf(route, slug, { overview, page }))
