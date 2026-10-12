@@ -3,11 +3,16 @@ import { expect, test } from '@playwright/test'
 
 import {
   BASE,
+  answerEveryTemplateSection,
   freshContactId,
   openTemplateReview,
+  openTemplateTaskList,
+  partyPickerName,
   saveTemplateFromReview,
-  signIn
+  signIn,
+  values
 } from '../../../../../../../../../fit/live-animals-journey.js'
+import { COUNTRY_LABELS } from '../../../../../../services/countries/stub.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 
@@ -225,6 +230,46 @@ test.describe('manage templates after saving a template', () => {
       'action',
       /\/live-animals\/templates\/[^/]+\/use$/
     )
+  })
+
+  test("lists Commodity, Origin, Consignee and Consignor on a part-answered template's card, Not applicable for the parties", async ({
+    page
+  }) => {
+    await saveNamed(page, NAME)
+
+    const region = card(page, NAME)
+    await expect(region.getByRole('term')).toHaveText([
+      copy.card.rows.commodity,
+      copy.card.rows.origin,
+      copy.card.rows.consignee,
+      copy.card.rows.consignor
+    ])
+    await expect(region.getByRole('definition')).toHaveText([
+      values.commodityLines[0].commoditySelection,
+      COUNTRY_LABELS[values.countryOfOrigin],
+      copy.card.notApplicable,
+      copy.card.notApplicable
+    ])
+  })
+
+  test.describe('after answering every section', () => {
+    test.describe.configure({ timeout: 90000 })
+
+    test("a fully answered template's card names its consignee and consignor", async ({
+      page
+    }) => {
+      await openTemplateTaskList(page, NAME)
+      await answerEveryTemplateSection(page)
+      await page.getByRole('button', { name: 'Review template' }).click()
+      await saveTemplateFromReview(page)
+
+      await expect(card(page, NAME).getByRole('definition')).toHaveText([
+        values.commodityLines[0].commoditySelection,
+        COUNTRY_LABELS[values.countryOfOrigin],
+        partyPickerName(values.consignee),
+        partyPickerName(values.consignor)
+      ])
+    })
   })
 
   test('Manage templates with a saved template and its banner has no serious or critical axe violations', async ({

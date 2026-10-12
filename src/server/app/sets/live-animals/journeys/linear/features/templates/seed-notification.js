@@ -1,7 +1,9 @@
 import {
   animalsCertifiedFor,
   commodityCode,
+  contactAddress,
   containsUnweanedAnimals,
+  placeOfOrigin,
   purposeInInternalMarket,
   reasonForImport
 } from '../../../../obligations/index.js'
@@ -55,13 +57,22 @@ const withPurposeOnlyForInternalMarket = (fulfilment) =>
     ? fulfilment
     : without(fulfilment, [purposeInInternalMarket.id])
 
+const withContactAddressOrPlaceOfOrigin = (fulfilment) =>
+  fulfilment[contactAddress.id]?.name || !fulfilment[placeOfOrigin.id]?.name
+    ? fulfilment
+    : {
+        ...fulfilment,
+        [contactAddress.id]: structuredClone(fulfilment[placeOfOrigin.id])
+      }
+
 /**
  * The answers a new notification starts with when it is started from a
  * template. The template's answers are carried as they are, except that the
  * arrival date and every document are left out, "Certified for" falls back to
  * "Further keeping", the unweaned answer is "No" when the commodity asks for it
  * and the template has none, and the purpose is kept only for the internal
- * market.
+ * market. Where the template has no contact address, its place of origin is
+ * the contact address.
  *
  * @param {object} fulfilment - the template's UUID-keyed answers. Not changed.
  * @returns {object} the new notification's UUID-keyed answers.
@@ -71,5 +82,6 @@ export const notificationSeedFrom = (fulfilment) =>
     withoutNotCarried,
     withCertifiedFor,
     withUnweaned,
-    withPurposeOnlyForInternalMarket
+    withPurposeOnlyForInternalMarket,
+    withContactAddressOrPlaceOfOrigin
   ].reduce((seed, step) => step(seed), structuredClone(fulfilment))

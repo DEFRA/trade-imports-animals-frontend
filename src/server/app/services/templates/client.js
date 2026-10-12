@@ -14,11 +14,12 @@ const OWNER_HEADER = 'User-Id'
 // a template's is answered here as not found.
 const TEMPLATE_ID_PATTERN = /^[0-9a-f]{24}$/
 
-const toTemplate = ({ id, name, setId, created }) => ({
+const toTemplate = ({ id, name, setId, created, fulfilments }) => ({
   id,
   name,
   setId,
-  created
+  created,
+  fulfilments: fulfilments ?? []
 })
 
 const toTemplateDetail = ({
@@ -56,7 +57,7 @@ const send = async (url, method, ownerId, body, action) => {
  * Every template the owner has saved, newest saved first.
  *
  * @param {string} ownerId - the signed-in user's id
- * @returns {Promise<Array<{ id: string, name: string, setId: string, created: string }>>} the owner's templates
+ * @returns {Promise<Array<{ id: string, name: string, setId: string, created: string, fulfilments: object[] }>>} the owner's templates, each with the encoded answers it holds
  */
 export const listTemplates = async (ownerId) => {
   const response = await backendFetch(`${backendBaseUrl}/templates`, {

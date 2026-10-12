@@ -11,7 +11,14 @@ export const copy = {
   card: {
     label: (title) => `Templed ${title}`,
     view: 'Gweld y templed',
-    use: 'Defnyddio’r templed'
+    use: 'Defnyddio’r templed',
+    rows: {
+      commodity: 'Nwydd',
+      origin: 'Tarddiad',
+      consignee: 'Derbynnydd',
+      consignor: 'Anfonwr'
+    },
+    notApplicable: 'Amherthnasol'
   },
   untitled: 'Templed heb deitl',
   categories: {

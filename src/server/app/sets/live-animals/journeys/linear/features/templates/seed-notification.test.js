@@ -5,14 +5,20 @@ import {
   animalsCertifiedFor,
   arrivalDateAtPort,
   commodityCode,
+  consignee,
+  consignor,
+  contactAddress,
   containsUnweanedAnimals,
   countryOfOrigin,
   cph,
   documents,
   documentUploadId,
+  importer,
   internalReferenceNumber,
   meansOfTransport,
   numberOfAnimals,
+  placeOfDestination,
+  placeOfOrigin,
   portOfEntry,
   purposeInInternalMarket,
   reasonForImport,
@@ -22,6 +28,7 @@ import {
 } from '../../../../obligations/index.js'
 import { notificationSeedFrom } from './seed-notification.js'
 
+const ORIGIN_FARM = 'Origin Farm'
 const LINE = 'line-1'
 const UNWEANED_COMMODITY = 'Cow'
 const OTHER_COMMODITY = 'Horse'
@@ -30,6 +37,18 @@ const withLine = (commodity, fulfilment = {}) => ({
   [commodityCode.id]: { [LINE]: commodity },
   [numberOfAnimals.id]: { [LINE]: '3' },
   ...fulfilment
+})
+
+const party = (name) => ({
+  pickedFromId: `${name}-id`,
+  name,
+  phone: '01234 567890',
+  email: 'party@example.com',
+  address: {
+    addressLine1: '1 Farm Lane',
+    townOrCity: 'Town',
+    postcode: 'AB1 2CD'
+  }
 })
 
 describe('notificationSeedFrom', () => {
@@ -127,6 +146,58 @@ describe('notificationSeedFrom', () => {
 
     expect(kept[purposeInInternalMarket.id]).toBe('breeding')
     expect(dropped).not.toHaveProperty(purposeInInternalMarket.id)
+  })
+
+  it('Should carry each party and the contact address as the template holds them', () => {
+    const held = withLine(OTHER_COMMODITY, {
+      [placeOfOrigin.id]: party(ORIGIN_FARM),
+      [consignor.id]: party('Consignor Ltd'),
+      [consignee.id]: party('Consignee Ltd'),
+      [importer.id]: party('Importer Ltd'),
+      [placeOfDestination.id]: party('Destination Farm'),
+      [contactAddress.id]: party('Contact Office')
+    })
+
+    const seed = notificationSeedFrom(held)
+
+    for (const obligation of [
+      placeOfOrigin,
+      consignor,
+      consignee,
+      importer,
+      placeOfDestination,
+      contactAddress
+    ]) {
+      expect(seed[obligation.id]).toEqual(held[obligation.id])
+    }
+  })
+
+  it('Should seed the place of origin as the contact address when the template has none', () => {
+    const held = withLine(OTHER_COMMODITY, {
+      [placeOfOrigin.id]: party(ORIGIN_FARM)
+    })
+
+    const seed = notificationSeedFrom(held)
+
+    expect(seed[contactAddress.id]).toEqual(held[placeOfOrigin.id])
+    expect(seed[contactAddress.id]).not.toBe(seed[placeOfOrigin.id])
+  })
+
+  it("Should keep the template's own contact address over its place of origin", () => {
+    const held = withLine(OTHER_COMMODITY, {
+      [placeOfOrigin.id]: party(ORIGIN_FARM),
+      [contactAddress.id]: party('Contact Office')
+    })
+
+    const seed = notificationSeedFrom(held)
+
+    expect(seed[contactAddress.id]).toEqual(held[contactAddress.id])
+  })
+
+  it('Should leave the contact address unset when the template has neither', () => {
+    const seed = notificationSeedFrom(withLine(OTHER_COMMODITY))
+
+    expect(seed).not.toHaveProperty(contactAddress.id)
   })
 
   it("Should not change the template's answers it was given", () => {

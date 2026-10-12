@@ -10,7 +10,14 @@ export const copy = {
   card: {
     label: (title) => `Template ${title}`,
     view: 'View template',
-    use: 'Use template'
+    use: 'Use template',
+    rows: {
+      commodity: 'Commodity',
+      origin: 'Origin',
+      consignee: 'Consignee',
+      consignor: 'Consignor'
+    },
+    notApplicable: 'Not applicable'
   },
   untitled: 'Untitled template',
   categories: {

@@ -190,6 +190,14 @@ The handler reads the user's saved template of this set, seeds a new draft throu
 notification's own task list. Any template the user cannot use opens Manage
 templates and creates nothing.
 
+Manage templates' cards summarise each template from the answers the list returns
+([`features/templates/card-answers.js`](../journeys/linear/features/templates/card-answers.js)):
+the commodity common names, the country of origin, and the consignee and consignor
+names, each "Not applicable" when unanswered. A saved template's page and a
+notification started from it use the template's place of origin as the contact
+address when the template has none (the template-page controller and
+`notificationSeedFrom`); the template itself keeps what was answered.
+
 The page's Change links open a question page with the change marker. Every other twin
 is wrapped by `withTemplateChange` through the `page` option, which sends a template
 the user does not have to Manage templates, and runs a saved template reached from a

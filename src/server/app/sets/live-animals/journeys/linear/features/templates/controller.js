@@ -15,6 +15,7 @@ import { buildActor } from '../../../../../../../common/helpers/actor-helpers.js
 import * as templates from '../../../../../../services/templates/index.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
+import { cardAnswersFor } from './card-answers.js'
 import { takeSavedTemplate } from './saved-banner.js'
 import { templateTitle } from './template-title.js'
 import { templateTypeQuestionUrl } from './type-question-url.js'
@@ -29,14 +30,23 @@ const ownerIdOf = (request) => buildActor(request.auth?.credentials)?.id
 const resultsLabel = (total) =>
   total === 0 ? copy.results.none : copy.results.all(total)
 
-const toCard = ({ id, name, setId }) => {
+const CARD_ANSWERS = ['commodity', 'origin', 'consignee', 'consignor']
+
+const answerRows = (answers) =>
+  CARD_ANSWERS.map((key) => ({
+    key: { text: copy.card.rows[key] },
+    value: { text: answers[key] || copy.card.notApplicable }
+  }))
+
+const toCard = async ({ id, name, setId, fulfilments }) => {
   const title = templateTitle(name)
   return {
     title,
     label: copy.card.label(title),
     category: copy.categories[setId] ?? '',
     viewHref: templatePath(id),
-    useAction: templatePagePath(id, 'use')
+    useAction: templatePagePath(id, 'use'),
+    rows: answerRows(await cardAnswersFor(fulfilments))
   }
 }
 
@@ -57,7 +67,7 @@ const manageTemplatesGet = async (request, h) => {
     createTemplateHref: templateTypeQuestionUrl(),
     resultsLabel: resultsLabel(saved.length),
     savedBanner: savedBanner(justSaved),
-    templateCards: saved.map(toCard)
+    templateCards: await Promise.all(saved.map(toCard))
   })
 }
 

@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  commodityCode,
+  consignee,
+  consignor,
+  countryOfOrigin
+} from '../../../../obligations/index.js'
+import * as countries from '../../../../../../services/countries/index.js'
+import { encodeEvaluatorFulfilments } from '../../../../../../services/persistence/records/fulfilment-codec/index.js'
 import * as templates from '../../../../../../services/templates/index.js'
 import { routes } from './controller.js'
 
@@ -42,8 +50,11 @@ const saved = (name, created) => ({
   id: name,
   name,
   setId: 'live-animals',
-  created
+  created,
+  fulfilments: []
 })
+
+const NOT_APPLICABLE = { text: 'Not applicable' }
 
 describe('GET /templates', () => {
   beforeEach(() => {
@@ -102,8 +113,45 @@ describe('GET /templates', () => {
         label: 'Template Arena Aintree',
         category: 'Live animals',
         viewHref: expect.stringMatching(/\/templates\/Arena Aintree$/),
-        useAction: expect.stringMatching(/\/templates\/Arena Aintree\/use$/)
+        useAction: expect.stringMatching(/\/templates\/Arena Aintree\/use$/),
+        rows: [
+          { key: { text: 'Commodity' }, value: NOT_APPLICABLE },
+          { key: { text: 'Origin' }, value: NOT_APPLICABLE },
+          { key: { text: 'Consignee' }, value: NOT_APPLICABLE },
+          { key: { text: 'Consignor' }, value: NOT_APPLICABLE }
+        ]
       }
+    ])
+  })
+
+  it('Should list Commodity, Origin, Consignee and Consignor on each card, in that order', async () => {
+    vi.spyOn(countries, 'originDisplayLabel').mockResolvedValue('France')
+    templates.listFor.mockResolvedValue([
+      {
+        ...saved(ARENA, FEBRUARY),
+        fulfilments: encodeEvaluatorFulfilments({
+          [commodityCode.id]: { l1: 'Cow' },
+          [countryOfOrigin.id]: 'FR',
+          [consignee.id]: { name: 'British Livestock Ltd' },
+          [consignor.id]: { name: 'Astra Rosales' }
+        })
+      }
+    ])
+
+    const { context } = await manageTemplatesGet(request, h)
+
+    const { rows } = context.templateCards[0]
+    expect(rows.map((row) => row.key.text)).toEqual([
+      'Commodity',
+      'Origin',
+      'Consignee',
+      'Consignor'
+    ])
+    expect(rows.map((row) => row.value.text)).toEqual([
+      'Cow',
+      'France',
+      'British Livestock Ltd',
+      'Astra Rosales'
     ])
   })
 

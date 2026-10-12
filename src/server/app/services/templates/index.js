@@ -24,7 +24,7 @@ const requireOwner = (ownerId, action) => {
  * The signed-in user's saved notification templates, newest saved first.
  *
  * @param {string} ownerId - the signed-in user's id
- * @returns {Promise<Array<{ id: string, name: string, setId: string, created: string }>>} the user's templates
+ * @returns {Promise<Array<{ id: string, name: string, setId: string, created: string, fulfilments: object[] }>>} the user's templates, each with the encoded answers it holds
  */
 export const listFor = async (ownerId) => {
   requireOwner(ownerId, 'list templates')

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as state from '../../../../../../engine/index.js'
 import * as templates from '../../../../../../services/templates/index.js'
 import { withTemplateMode } from '../../../../../../shared/template-mode.js'
+import { buildSections } from '../check-answers/view-model/index.js'
 import { withTemplatePage } from './controller.js'
 
 vi.mock('../check-answers/view-model/index.js', () => ({
@@ -14,6 +15,7 @@ const ID = '6650f1c2a1b2c3d4e5f60718'
 const NAME = 'Weekly cattle'
 const SAVED_DAY = '2026-09-10T23:35:39.455Z'
 const CREATED_DAY = '2026-01-05T10:00:00Z'
+const ORIGIN_FARM = 'Origin Farm'
 
 const sessionStore = new Map()
 
@@ -53,6 +55,7 @@ describe('the template page', () => {
 
   beforeEach(() => {
     sessionStore.clear()
+    vi.mocked(buildSections).mockClear()
     taskList = vi.fn(async () => 'task list')
     vi.spyOn(state, 'get').mockResolvedValue({
       journey: { journeyId: ID },
@@ -133,6 +136,48 @@ describe('the template page', () => {
     expect(context.updatedBanner).toEqual({
       heading: 'Template has been updated'
     })
+  })
+
+  it('Should show the place of origin as the contact address when none was chosen', async () => {
+    state.get.mockResolvedValue({
+      journey: { journeyId: ID },
+      answers: {
+        placeOfOrigin: {
+          name: ORIGIN_FARM,
+          address: { addressLine1: '1 Farm Lane', countryCode: 'GB' }
+        }
+      },
+      scope: {},
+      evaluation: {}
+    })
+
+    await open(savedTemplate())
+
+    expect(buildSections.mock.lastCall[5].contactAddress.name).toBe(ORIGIN_FARM)
+  })
+
+  it('Should show the chosen contact address when there is one', async () => {
+    state.get.mockResolvedValue({
+      journey: { journeyId: ID },
+      answers: {
+        placeOfOrigin: {
+          name: ORIGIN_FARM,
+          address: { addressLine1: '1 Farm Lane', countryCode: 'GB' }
+        },
+        contactAddress: {
+          name: 'Animal and Plant Health Agency',
+          address: { countryCode: 'GB' }
+        }
+      },
+      scope: {},
+      evaluation: {}
+    })
+
+    await open(savedTemplate())
+
+    expect(buildSections.mock.lastCall[5].contactAddress.name).toBe(
+      'Animal and Plant Health Agency'
+    )
   })
 
   it('Should title a template saved with no name Untitled template', async () => {

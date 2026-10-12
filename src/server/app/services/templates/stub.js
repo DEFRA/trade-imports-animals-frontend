@@ -3,7 +3,8 @@
 // an array of rows { id, name, setId, created, saved?, status, version,
 // fulfilments } with `created` and `saved` ISO strings (`saved` is when the
 // template was last saved: the first save, then each change once saved. It
-// orders the list).
+// orders the list). The list also carries each row's fulfilments, as the
+// backend's list does, so a card can summarise the answers.
 const store = new Map()
 
 export const stubTemplates = store
@@ -48,13 +49,16 @@ const changeRow = (ownerId, id, changes) => {
  * created is not listed.
  *
  * @param {string} ownerId - the signed-in user's id
- * @returns {Array<{ id: string, name: string, setId: string, created: string }>} the owner's templates
+ * @returns {Array<{ id: string, name: string, setId: string, created: string, fulfilments: object[] }>} the owner's templates, each with the encoded answers it holds
  */
 export const list = (ownerId) =>
   rowsOf(ownerId)
     .filter((row) => row.status !== IN_PROGRESS)
     .sort(newestSavedFirst)
-    .map(toTemplate)
+    .map((row) => ({
+      ...toTemplate(row),
+      fulfilments: structuredClone(row.fulfilments ?? [])
+    }))
 
 /**
  * Starts a stub template, held as in progress.

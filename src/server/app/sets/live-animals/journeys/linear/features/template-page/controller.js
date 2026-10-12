@@ -30,12 +30,21 @@ const updatedHeading = (name) =>
 const USE_SLUG = 'use'
 const DELETE_SLUG = 'delete'
 
+// The design shows the place of origin as a template's contact address
+// when none was chosen; the template itself keeps what was answered.
+const withContactOrPlaceOfOrigin = (parties) => ({
+  ...parties,
+  contactAddress: parties.contactAddress ?? parties.placeOfOrigin
+})
+
 // The page shows the review's own cards, without documents and renumbered, so
 // a change to a review card reaches a saved template with no work here. Nothing
 // on a template is owed, so no card is named as unfinished.
 const renderTemplatePage = async (request, h, template) => {
   const { journey, answers, scope, evaluation } = await state.get(request, h)
-  const parties = await partiesFromStoredAnswers(answers)
+  const parties = withContactOrPlaceOfOrigin(
+    await partiesFromStoredAnswers(answers)
+  )
   const sections = await buildSections(
     answers,
     scope,

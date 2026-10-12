@@ -7,6 +7,7 @@ import {
   freshContactId,
   openTemplateReview,
   openTemplateTaskList,
+  partyPickerName,
   saveTemplateFromReview,
   signIn,
   values
@@ -15,6 +16,10 @@ import { copy } from './copy/copy.en.js'
 
 const NAME = 'Weekly cattle'
 const NOT_APPLICABLE = 'Not applicable'
+const ROLES_CARD = 'Roles and addresses'
+const CONTACT_CARD = 'Contact address for this consignment'
+const PLACE_OF_ORIGIN = 'Place of origin'
+const REVIEW_TEMPLATE = 'Review template'
 const MANAGE_TEMPLATES = 'Manage templates'
 const TEMPLATE_PAGE_PATH = /\/live-animals\/templates\/[^/]+$/
 const SUMMARY_CARD_SELECTOR = '.govuk-summary-card'
@@ -287,11 +292,77 @@ test.describe('template page', () => {
   })
 })
 
+test.describe('template page with no contact address chosen', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page, { contactId: freshContactId() })
+  })
+
+  test('the Contact address card shows the place of origin', async ({
+    page
+  }) => {
+    await openTemplateTaskList(page, NAME)
+    await page.getByRole('link', { name: ROLES_CARD }).click()
+    await page
+      .locator('.govuk-summary-list__row', {
+        has: page.getByText(PLACE_OF_ORIGIN, { exact: true })
+      })
+      .getByRole('link', { name: 'Add' })
+      .click()
+    await page
+      .getByRole('radio', { name: partyPickerName(values.placeOfOrigin) })
+      .check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page
+      .getByRole('button', { name: 'Save and return to overview' })
+      .click()
+    await page.getByRole('button', { name: REVIEW_TEMPLATE }).click()
+    await saveTemplateFromReview(page)
+    await viewSaved(page, NAME)
+
+    await expect(
+      cardRowFor(page, CONTACT_CARD, 'Contact address')
+    ).toContainText(partyPickerName(values.placeOfOrigin))
+    await expect(cardRowFor(page, ROLES_CARD, 'Consignor')).toContainText(
+      NOT_APPLICABLE
+    )
+  })
+})
+
 test.describe('template page for a fully answered template', () => {
   test.describe.configure({ timeout: 90000 })
 
   test.beforeEach(async ({ page }) => {
     await signIn(page, { contactId: freshContactId() })
+  })
+
+  test('shows each party and the contact address as answered', async ({
+    page
+  }) => {
+    await openTemplateTaskList(page, NAME)
+    await answerEveryTemplateSection(page)
+    await page.getByRole('button', { name: REVIEW_TEMPLATE }).click()
+    await saveTemplateFromReview(page)
+    await viewSaved(page, NAME)
+
+    const parties = [
+      [PLACE_OF_ORIGIN, values.placeOfOrigin],
+      ['Consignor', values.consignor],
+      ['Consignee', values.consignee],
+      ['Importer', values.importer],
+      ['Place of destination', values.placeOfDestination]
+    ]
+    for (const [label, party] of parties) {
+      await expect(
+        cardRowFor(page, ROLES_CARD, label),
+        `${label} row`
+      ).toContainText(partyPickerName(party))
+    }
+    await expect(cardRowFor(page, ROLES_CARD, PLACE_OF_ORIGIN)).toContainText(
+      values.placeOfOrigin.address.addressLine1
+    )
+    await expect(
+      cardRowFor(page, CONTACT_CARD, 'Contact address')
+    ).toContainText(partyPickerName(values.contactAddress))
   })
 
   test('a template saved after answering every section shows every saved answer', async ({
@@ -301,7 +372,7 @@ test.describe('template page for a fully answered template', () => {
 
     await openTemplateTaskList(page, NAME)
     await answerEveryTemplateSection(page)
-    await page.getByRole('button', { name: 'Review template' }).click()
+    await page.getByRole('button', { name: REVIEW_TEMPLATE }).click()
     await saveTemplateFromReview(page)
     await viewSaved(page, NAME)
 

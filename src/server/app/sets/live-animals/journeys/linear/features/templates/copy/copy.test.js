@@ -56,6 +56,23 @@ describe('#copy', () => {
     expect(cy.saved.heading('X')).toBe('X wedi’i gadw yn y templedi')
   })
 
+  it("Should name the card's four answers and Not applicable in both locales", () => {
+    expect(copy.card.rows).toEqual({
+      commodity: 'Commodity',
+      origin: 'Origin',
+      consignee: 'Consignee',
+      consignor: 'Consignor'
+    })
+    expect(copy.card.notApplicable).toBe('Not applicable')
+    expect(cy.card.rows).toEqual({
+      commodity: 'Nwydd',
+      origin: 'Tarddiad',
+      consignee: 'Derbynnydd',
+      consignor: 'Anfonwr'
+    })
+    expect(cy.card.notApplicable).toBe('Amherthnasol')
+  })
+
   it('Should carry a Welsh draft for every string under the same key', () => {
     expect(cy.title).toBe('Rheoli templedi')
     expect(cy.results.all(2)).toBe('Dangos 1-2 o 2 canlyniad')

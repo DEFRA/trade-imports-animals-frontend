@@ -6,6 +6,7 @@ const OWNER = '2100010101'
 const LIVE_ANIMALS = 'live-animals'
 const WEEKLY_CATTLE = 'Weekly cattle'
 const JANUARY = '2026-01-01T10:00:00Z'
+const ACORN = 'Acorn Farm'
 
 const savedTemplate = (id, name, created) => ({
   id,
@@ -53,23 +54,34 @@ describe('#listFor', () => {
   test("Should list only the user's own stub templates, newest first", async () => {
     stubMode()
     const { stubTemplates } = await import('./stub.js')
-    const older = savedTemplate('a', 'Acorn Farm', JANUARY)
-    const newer = savedTemplate('b', 'Arena Aintree', '2026-02-01T10:00:00Z')
+    const older = savedTemplate('a', ACORN, JANUARY)
+    const newer = {
+      ...savedTemplate('b', 'Arena Aintree', '2026-02-01T10:00:00Z'),
+      fulfilments: [{ id: 'origin' }]
+    }
     const other = savedTemplate('c', 'Not mine', JANUARY)
     stubTemplates.set(OWNER, [older, newer])
     stubTemplates.set('2100010102', [other])
 
     const { listFor } = await templatesService()
 
-    expect(await listFor(OWNER)).toEqual([newer, older])
+    expect(await listFor(OWNER)).toEqual([
+      { ...newer },
+      { ...older, fulfilments: [] }
+    ])
     stubTemplates.clear()
   })
 
   test("Should ask the backend for the user's templates by the User-Id header", async () => {
     realMode()
-    const saved = savedTemplate('a', 'Acorn Farm', JANUARY)
+    const saved = savedTemplate('a', ACORN, JANUARY)
     const fetched = vi.fn(async () =>
-      okResponse({ items: [{ ...saved, extra: 'dropped' }], totalItems: 1 })
+      okResponse({
+        items: [
+          { ...saved, fulfilments: [{ id: 'origin' }], extra: 'dropped' }
+        ],
+        totalItems: 1
+      })
     )
     stubFetch(fetched)
     const { backendBaseUrl } =
@@ -85,7 +97,17 @@ describe('#listFor', () => {
         headers: expect.objectContaining({ 'User-Id': OWNER })
       })
     )
-    expect(found).toEqual([saved])
+    expect(found).toEqual([{ ...saved, fulfilments: [{ id: 'origin' }] }])
+  })
+
+  test('Should answer no answers for a listed template the backend sends without any', async () => {
+    realMode()
+    const saved = savedTemplate('a', ACORN, JANUARY)
+    stubFetch(async () => okResponse({ items: [saved], totalItems: 1 }))
+
+    const { listFor } = await templatesService()
+
+    expect(await listFor(OWNER)).toEqual([{ ...saved, fulfilments: [] }])
   })
 
   test('Should refuse a failed backend list with the backend status', async () => {

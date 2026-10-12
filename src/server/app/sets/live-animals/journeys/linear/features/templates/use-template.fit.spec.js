@@ -7,6 +7,7 @@ import {
   freshContactId,
   journeyIdFromPage,
   openTemplateTaskList,
+  partyPickerName,
   saveTemplateFromReview,
   signIn,
   startNotification,
@@ -247,6 +248,74 @@ test.describe('Use template', () => {
         '.app-summary-list__value--missing'
       )
     ).toHaveText(reviewCopy.missing)
+  })
+
+  test('the new notification holds each party and the contact address the template holds', async ({
+    page
+  }) => {
+    await saveFullyAnsweredTemplate(page)
+    await useOnCard(page, NAME)
+    await expectNewNotificationTaskList(page)
+
+    await page.getByRole('button', { name: hubCopy.reviewAndSubmit }).click()
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: reviewCopy.title })
+    ).toBeVisible()
+    const parties = [
+      [reviewCopy.rows.placeOfOrigin, values.placeOfOrigin],
+      [reviewCopy.rows.consignor, values.consignor],
+      [reviewCopy.rows.consignee, values.consignee],
+      [reviewCopy.rows.importer, values.importer],
+      [reviewCopy.rows.placeOfDestination, values.placeOfDestination]
+    ]
+    for (const [label, party] of parties) {
+      await expect(
+        cardRowFor(page, reviewCopy.cards.rolesAndAddresses, label),
+        `${label} row`
+      ).toContainText(partyPickerName(party))
+    }
+    await expect(
+      cardRowFor(
+        page,
+        reviewCopy.cards.contactAddress,
+        reviewCopy.rows.contactAddress
+      )
+    ).toContainText(partyPickerName(values.contactAddress))
+  })
+
+  test('a template with no contact address starts a notification whose contact address is its place of origin', async ({
+    page
+  }) => {
+    await openTemplateTaskList(page, NAME)
+    await page.getByRole('link', { name: 'Roles and addresses' }).click()
+    await page
+      .locator('.govuk-summary-list__row', {
+        has: page.getByText(reviewCopy.rows.placeOfOrigin, { exact: true })
+      })
+      .getByRole('link', { name: 'Add' })
+      .click()
+    await page
+      .getByRole('radio', { name: partyPickerName(values.placeOfOrigin) })
+      .check()
+    await page.getByRole('button', { name: 'Save and continue' }).click()
+    await page
+      .getByRole('button', { name: 'Save and return to overview' })
+      .click()
+    await page.getByRole('button', { name: 'Review template' }).click()
+    await saveTemplateFromReview(page)
+
+    await useOnCard(page, NAME)
+    await expectNewNotificationTaskList(page)
+    await page.getByRole('button', { name: hubCopy.reviewAndSubmit }).click()
+
+    await expect(
+      cardRowFor(
+        page,
+        reviewCopy.cards.contactAddress,
+        reviewCopy.rows.contactAddress
+      )
+    ).toContainText(partyPickerName(values.placeOfOrigin))
   })
 })
 

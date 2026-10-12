@@ -1,6 +1,7 @@
 {% extends "shared/layout.njk" %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
 
 {% block journeyContent %}
   {% if savedBanner %}
@@ -42,6 +43,7 @@
             }) }}
           </form>
         </div>
+        {{ govukSummaryList({ rows: card.rows }) }}
       </div>
     </section>
   {% endfor %}
