@@ -434,27 +434,22 @@ test.describe('country of origin type-ahead styles', () => {
           '.autocomplete__dropdown-arrow-down'
         )
         const afterStyle = getComputedStyle(wrapper, '::after')
-        const bounds = input.getBoundingClientRect()
-        const hits = document.elementsFromPoint(
-          bounds.right - 12,
-          bounds.top + bounds.height / 2
-        )
         return {
           arrowHidden: getComputedStyle(arrow).display === 'none',
-          searchIconPainted: afterStyle.content !== 'none',
-          inputIsTopHit: hits[0] === input,
+          searchIconBackground: afterStyle.backgroundImage,
+          searchIconZIndex: afterStyle.zIndex,
+          searchIconPointerEvents: afterStyle.pointerEvents,
           inputPaddingRight: getComputedStyle(input).paddingRight,
           wrapperZIndex: getComputedStyle(wrapper).zIndex
         }
       })
 
-    expect(paintStack).toEqual({
-      arrowHidden: true,
-      searchIconPainted: true,
-      inputIsTopHit: true,
-      inputPaddingRight: '35px',
-      wrapperZIndex: '0'
-    })
+    expect(paintStack.arrowHidden).toBe(true)
+    expect(paintStack.searchIconBackground).toContain('data:image/svg+xml')
+    expect(paintStack.searchIconZIndex).toBe('-1')
+    expect(paintStack.searchIconPointerEvents).toBe('none')
+    expect(paintStack.inputPaddingRight).toBe('35px')
+    expect(paintStack.wrapperZIndex).toBe('0')
   })
 
   test('keeps the upstream focus indicator on the enhanced input', async ({

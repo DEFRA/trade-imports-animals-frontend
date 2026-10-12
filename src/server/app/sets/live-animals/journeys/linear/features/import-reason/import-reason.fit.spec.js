@@ -32,7 +32,13 @@ const transitPortInput = 'input#transitPortOfExit'
 const transitPortHidden = 'select#transitPortOfExit-select'
 const transitCountryInput = 'input#transitDestinationCountry'
 const transitCountryHidden = 'select#transitDestinationCountry-select'
-const TRANSHIPMENT_COUNTRY = '#transhipmentDestinationCountry'
+const transhipmentCountryInput = 'input#transhipmentDestinationCountry'
+const SECOND_PORT = portsOfEntry.find(({ code }) => code !== PORT_CODE)
+const SECOND_PORT_LABEL = `${SECOND_PORT.name} (${SECOND_PORT.code})`
+const FRANCE = countriesOriginEntries().find(({ code }) => code === 'FR')
+const irelandMatches = countriesOriginEntries().filter(({ name }) =>
+  /ire/i.test(name)
+)
 const TEMPORARY_ADMISSION_DATE = '#temporaryAdmissionExitDate'
 const temporaryAdmissionPortInput = 'input#temporaryAdmissionPortOfExit'
 const temporaryAdmissionPortHidden =
@@ -319,11 +325,11 @@ test.describe('import-reason reveals', () => {
 
     await expect(reveal).toBeVisible()
     expect(await fieldIdsIn(reveal)).toEqual(['transhipmentDestinationCountry'])
-    await expect(page.locator(TRANSHIPMENT_COUNTRY)).toHaveAccessibleName(
+    await expect(page.locator(transhipmentCountryInput)).toHaveAccessibleName(
       copy.country.label
     )
     await expect(
-      page.locator(TRANSHIPMENT_COUNTRY)
+      page.locator(transhipmentCountryInput)
     ).toHaveAccessibleDescription('')
   })
 
@@ -479,6 +485,7 @@ test.describe('import-reason port and country type-ahead', () => {
     await expect(
       page.getByRole('option', { name: IRELAND.name, exact: true })
     ).toBeVisible()
+    await expect(page.getByRole('option')).toHaveCount(irelandMatches.length)
   })
 
   test('tells the user when no countries match what they typed', async ({
@@ -486,6 +493,75 @@ test.describe('import-reason port and country type-ahead', () => {
   }) => {
     await page.locator(transitCountryInput).fill('zzzzzz')
     await expect(page.getByText(copy.country.noResults)).toBeVisible()
+  })
+
+  test('lets the user change the port and country they picked', async ({
+    page
+  }) => {
+    const portField = page.locator(transitPortInput)
+    await portField.click()
+    await portField.fill(PORT_CODE)
+    await page
+      .getByRole('option', { name: EXIT_PORT_LABEL, exact: true })
+      .click()
+    await expect(page.locator(transitPortHidden)).toHaveValue(PORT_CODE)
+
+    await portField.click()
+    await portField.fill(SECOND_PORT.code)
+    await page
+      .getByRole('option', { name: SECOND_PORT_LABEL, exact: true })
+      .click()
+    await expect(page.locator(transitPortHidden)).toHaveValue(SECOND_PORT.code)
+    await expect(portField).toHaveValue(SECOND_PORT_LABEL)
+
+    const countryField = page.locator(transitCountryInput)
+    await countryField.click()
+    await countryField.fill(IRELAND.name)
+    await page.getByRole('option', { name: IRELAND.name, exact: true }).click()
+    await expect(page.locator(transitCountryHidden)).toHaveValue(COUNTRY_CODE)
+
+    await countryField.click()
+    await countryField.fill(FRANCE.name)
+    await page.getByRole('option', { name: FRANCE.name, exact: true }).click()
+    await expect(page.locator(transitCountryHidden)).toHaveValue(FRANCE.code)
+    await expect(countryField).toHaveValue(FRANCE.name)
+  })
+
+  test('offers options again after the user replaces a no-match search term', async ({
+    page
+  }) => {
+    const portField = page.locator(transitPortInput)
+    await portField.fill('zzzzzz')
+    await expect(page.getByText(copy.port.noResults)).toBeVisible()
+    await portField.fill(PORT_CODE)
+    await expect(
+      page.getByRole('option', { name: EXIT_PORT_LABEL, exact: true })
+    ).toBeVisible()
+  })
+})
+
+test.describe('import-reason temporary admission port type-ahead', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startAtImportReason(page)
+    await radioFor(page, 'temporaryAdmissionHorses').check()
+  })
+
+  test('offers the whole port list on focus, without typing', async ({
+    page
+  }) => {
+    await page.locator(temporaryAdmissionPortInput).click()
+    await expect(
+      page.getByRole('option', { name: EXIT_PORT_LABEL, exact: true })
+    ).toBeVisible()
+    await expect(page.getByRole('option')).toHaveCount(portsOfEntry.length)
+  })
+
+  test('tells the user when no ports match what they typed', async ({
+    page
+  }) => {
+    await page.locator(temporaryAdmissionPortInput).fill('zzzzzz')
+    await expect(page.getByText(copy.port.noResults)).toBeVisible()
   })
 })
 
@@ -514,6 +590,31 @@ test.describe('import-reason port and country without JavaScript', () => {
     await expect(page.locator('select#transitDestinationCountry')).toHaveValue(
       COUNTRY_CODE
     )
+
+    await page.goto(reasonUrl)
+    await radioFor(page, 'temporaryAdmissionHorses').check()
+    await page.locator(TEMPORARY_ADMISSION_DATE).fill('2030-06-15')
+    await page
+      .locator('select#temporaryAdmissionPortOfExit')
+      .selectOption(PORT_CODE)
+    await page.locator(SUBMIT_BUTTON).first().click()
+    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await page.goto(reasonUrl)
+    await expect(
+      page.locator('select#temporaryAdmissionPortOfExit')
+    ).toHaveValue(PORT_CODE)
+
+    await page.goto(reasonUrl)
+    await radioFor(page, 'transhipmentOrOnwardTravel').check()
+    await page
+      .locator('select#transhipmentDestinationCountry')
+      .selectOption(COUNTRY_CODE)
+    await page.locator(SUBMIT_BUTTON).first().click()
+    await expect(page).toHaveURL(urlUnderBase(HUB_PATH_PATTERN))
+    await page.goto(reasonUrl)
+    await expect(
+      page.locator('select#transhipmentDestinationCountry')
+    ).toHaveValue(COUNTRY_CODE)
   })
 })
 

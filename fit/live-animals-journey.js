@@ -198,11 +198,16 @@ export const chooseAutocompleteByLabel = async (
   page,
   { label, query, optionName, inputId }
 ) => {
-  // Import-reason exposes the same port label on more than one reveal; scope by
-  // id when the caller names the field (transit vs temporary admission).
-  const field = inputId
-    ? page.locator(`#${inputId}`)
-    : page.getByLabel(label, { exact: true })
+  // The enhancement is a module script, so it has run by DOMContentLoaded.
+  await page.waitForLoadState('domcontentloaded')
+  // Import-reason exposes the same port label on more than one reveal; scope the
+  // label lookup to the field's form group when the caller names the input id.
+  const scope = inputId
+    ? page
+        .locator(`#${inputId}`)
+        .locator('xpath=ancestor::*[contains(@class,"govuk-form-group")][1]')
+    : page
+  const field = scope.getByLabel(label, { exact: true })
   if ((await field.evaluate((el) => el.tagName)) === 'SELECT') {
     await field.selectOption({ label: optionName })
     return

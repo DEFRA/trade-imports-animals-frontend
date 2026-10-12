@@ -1,3 +1,4 @@
+@use 'sass:string';
 @use '../../../../../node_modules/govuk-frontend' as *;
 @use 'accessible-autocomplete/src/autocomplete.css';
 
@@ -14,10 +15,18 @@
 // The upstream dropdown arrow is replaced with a search icon (DR21 country
 // search). Hide the arrow and paint the magnifying glass behind the
 // transparent input — same stacking contract as the upstream arrow.
-$app-accessible-autocomplete-search-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20.3765 20'%3E%3Cpath d='M8.90084 14.4683C12.3848 14.4683 15.2091 11.644 15.2091 8.16008C15.2091 4.67613 12.3848 1.85184 8.90084 1.85184C5.41689 1.85184 2.59259 4.67613 2.59259 8.16008C2.59259 11.644 5.41689 14.4683 8.90084 14.4683Z' stroke='%230b0c0c' stroke-width='2.22222' fill='none'/%3E%3Cpath d='M13.2347 12.8583L19.5908 19.2143' stroke='%230b0c0c' stroke-width='2.22222' fill='none'/%3E%3C/svg%3E");
+$app-accessible-autocomplete-icon-stroke: string.slice(
+  #{govuk-colour('black')},
+  2
+);
+$app-accessible-autocomplete-search-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20.3765 20'%3E%3Cpath d='M8.90084 14.4683C12.3848 14.4683 15.2091 11.644 15.2091 8.16008C15.2091 4.67613 12.3848 1.85184 8.90084 1.85184C5.41689 1.85184 2.59259 4.67613 2.59259 8.16008C2.59259 11.644 5.41689 14.4683 8.90084 14.4683Z' stroke='%23#{$app-accessible-autocomplete-icon-stroke}' stroke-width='2.22222' fill='none'/%3E%3Cpath d='M13.2347 12.8583L19.5908 19.2143' stroke='%23#{$app-accessible-autocomplete-icon-stroke}' stroke-width='2.22222' fill='none'/%3E%3C/svg%3E");
 
 .autocomplete__dropdown-arrow-down {
   display: none;
+}
+
+.autocomplete__input {
+  padding-right: 35px;
 }
 
 .autocomplete__wrapper {
