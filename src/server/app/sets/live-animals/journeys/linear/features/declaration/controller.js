@@ -67,7 +67,7 @@ const render = (
     errorSummary: kit.errorSummary(errors)
   })
 
-const postedToken = (payload) =>
+const postedConcurrencyToken = (payload) =>
   payload.concurrencyToken == null || payload.concurrencyToken === ''
     ? undefined
     : Number(payload.concurrencyToken)
@@ -132,7 +132,7 @@ const post = async (request, h) => {
     return h.redirect(reviewHref(journey.journeyId))
   }
 
-  const reviewedConcurrencyToken = postedToken(payload)
+  const reviewedConcurrencyToken = postedConcurrencyToken(payload)
   if (reviewedConcurrencyToken !== journey.concurrencyToken) {
     return h.redirect(reviewHref(journey.journeyId, { changed: true }))
   }

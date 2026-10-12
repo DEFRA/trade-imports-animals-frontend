@@ -59,7 +59,7 @@ describe('#submitNotification', () => {
   const notificationPath = (slug) =>
     `${SET_BASE}/notifications/${JOURNEY_ID}/${slug}`
 
-  const pageWithToken = (token) => ({
+  const pageWithConcurrencyToken = (token) => ({
     status: 200,
     location: null,
     crumb: 'test-crumb',
@@ -71,11 +71,11 @@ describe('#submitNotification', () => {
     const posts = []
     return {
       posts,
-      document: async () => pageWithToken('7'),
+      document: async () => pageWithConcurrencyToken('7'),
       submit: async (path, fields, crumb) => {
         posts.push({ path, fields, crumb })
         return fields.step === 'review'
-          ? pageWithToken('7')
+          ? pageWithConcurrencyToken('7')
           : {
               status: 302,
               location: notificationPath('confirmation'),

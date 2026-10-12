@@ -60,7 +60,7 @@ const drivePost = async ({
   payload = {},
   seed = {},
   afterReview = async () => {},
-  sessionToken = (reviewed) => reviewed
+  sessionConcurrencyToken = (reviewed) => reviewed
 } = {}) => {
   const { journeyId } = await store.create()
   await store.seedAnswers(journeyId, seed)
@@ -75,7 +75,10 @@ const drivePost = async ({
         concurrencyToken: `${reviewedConcurrencyToken}`,
         ...payload
       },
-      state: reviewedState(journeyId, sessionToken(reviewedConcurrencyToken))
+      state: reviewedState(
+        journeyId,
+        sessionConcurrencyToken(reviewedConcurrencyToken)
+      )
     }),
     h
   )
@@ -92,12 +95,12 @@ const drivePost = async ({
 
 // In practice the layout's token always equals the reviewed one, so the layout's
 // is moved to show which of the two the page carries.
-const LAYOUT_TOKEN = 'layout-token'
-const layoutTokenDiffers = () => {
+const LAYOUT_CONCURRENCY_TOKEN = 'layout-token'
+const layoutConcurrencyTokenDiffers = () => {
   const base = kit.base
   vi.spyOn(kit, 'base').mockImplementation((...args) => ({
     ...base(...args),
-    concurrencyToken: LAYOUT_TOKEN
+    concurrencyToken: LAYOUT_CONCURRENCY_TOKEN
   }))
 }
 
@@ -188,7 +191,7 @@ describe('#declaration', () => {
         const result = await drivePost({
           step,
           payload: { declaration: 'confirmed' },
-          sessionToken: () => undefined
+          sessionConcurrencyToken: () => undefined
         })
 
         expect(result.response).toEqual({
@@ -201,7 +204,7 @@ describe('#declaration', () => {
     it('Should send the trader back to the review when the session saw a different review', async () => {
       const result = await drivePost({
         step: 'review',
-        sessionToken: (reviewed) => reviewed + 1
+        sessionConcurrencyToken: (reviewed) => reviewed + 1
       })
 
       expect(result.response).toEqual({
@@ -232,7 +235,7 @@ describe('#declaration submit', () => {
 
   describe('POST /declaration to submit (step=declare)', () => {
     it('Should re-render an unconfirmed declaration with its message, the reviewed token, and commit nothing', async () => {
-      layoutTokenDiffers()
+      layoutConcurrencyTokenDiffers()
 
       const result = await drivePost({ payload: { declaration: '' } })
 
@@ -447,7 +450,7 @@ describe('#declaration submit against the real records adapter', () => {
         status: 503,
         statusText: 'Service Unavailable'
       })
-      layoutTokenDiffers()
+      layoutConcurrencyTokenDiffers()
 
       const result = await drivePost({
         payload: { declaration: 'confirmed', crumb: 'test-crumb' }
