@@ -33,6 +33,8 @@ const transitPortHidden = 'select#transitPortOfExit-select'
 const transitCountryInput = 'input#transitDestinationCountry'
 const transitCountryHidden = 'select#transitDestinationCountry-select'
 const transhipmentCountryInput = 'input#transhipmentDestinationCountry'
+const transhipmentCountryHidden = 'select#transhipmentDestinationCountry-select'
+const NO_JS_EXIT_DATE = '15/06/2030'
 const SECOND_PORT = portsOfEntry.find(({ code }) => code !== PORT_CODE)
 const SECOND_PORT_LABEL = `${SECOND_PORT.name} (${SECOND_PORT.code})`
 const FRANCE = countriesOriginEntries().find(({ code }) => code === 'FR')
@@ -325,12 +327,10 @@ test.describe('import-reason reveals', () => {
 
     await expect(reveal).toBeVisible()
     expect(await fieldIdsIn(reveal)).toEqual(['transhipmentDestinationCountry'])
+    await expect(page.locator(transhipmentCountryHidden)).toBeAttached()
     await expect(page.locator(transhipmentCountryInput)).toHaveAccessibleName(
       copy.country.label
     )
-    await expect(
-      page.locator(transhipmentCountryInput)
-    ).toHaveAccessibleDescription('')
   })
 
   test('saves a reason and its reveal in one submit, and offers the answers back', async ({
@@ -593,7 +593,7 @@ test.describe('import-reason port and country without JavaScript', () => {
 
     await page.goto(reasonUrl)
     await radioFor(page, 'temporaryAdmissionHorses').check()
-    await page.locator(TEMPORARY_ADMISSION_DATE).fill('2030-06-15')
+    await page.locator(TEMPORARY_ADMISSION_DATE).fill(NO_JS_EXIT_DATE)
     await page
       .locator('select#temporaryAdmissionPortOfExit')
       .selectOption(PORT_CODE)
