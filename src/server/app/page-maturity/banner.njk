@@ -1,4 +1,10 @@
-{% from "govuk/components/tag/macro.njk" import govukTag %}
-{% if pageMaturity %}
-<br><span class="govuk-visually-hidden">{{ pageMaturity.hiddenPrefix }}</span>{{ govukTag({ text: pageMaturity.tag.text, classes: pageMaturity.tag.classes + " govuk-!-margin-top-1 govuk-!-margin-right-1" }) }} {{ pageMaturity.text }}
-{% endif %}
+{%- from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner -%}
+{%- if pageMaturity -%}
+  {%- set pageMaturityHtml -%}
+    <span class="govuk-visually-hidden">{{ pageMaturity.hiddenPrefix }}</span> {{ pageMaturity.text }}
+  {%- endset -%}
+  {{ govukPhaseBanner({
+    tag: { text: pageMaturity.tag.text, classes: pageMaturity.tag.classes },
+    html: pageMaturityHtml
+  }) }}
+{%- endif -%}

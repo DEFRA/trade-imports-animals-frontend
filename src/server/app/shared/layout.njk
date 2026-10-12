@@ -62,12 +62,13 @@
 {% endblock %}
 
 {% block beforeContent %}
-  {% set phaseBannerHtml %}{{ sharedCopy.layout.phaseBanner.bodyPrefix }} <a class="govuk-link" href="{{ feedbackUrl }}">{{ sharedCopy.layout.phaseBanner.feedbackLinkText }}</a>.{% include "page-maturity/banner.njk" %}{% endset %}
+  {% set phaseBannerHtml %}{{ sharedCopy.layout.phaseBanner.bodyPrefix }} <a class="govuk-link" href="{{ feedbackUrl }}">{{ sharedCopy.layout.phaseBanner.feedbackLinkText }}</a>.{% endset %}
   {# Grey tag to match Design release 1; the GDS phase-banner example leaves the tag blue. #}
   {{ govukPhaseBanner({
     tag: { text: sharedCopy.layout.phaseBanner.tag, classes: "govuk-tag--grey" },
     html: phaseBannerHtml
   }) }}
+  {%- include "page-maturity/banner.njk" %}
   {# No breadcrumbs: Design release 1 gives a page one route backwards — the
      back link — and one route up, the service navigation. #}
   {% if backLink %}
