@@ -7,7 +7,7 @@ export const copy = {
   outstanding: {
     heading: 'Before the consignment is imported',
     intro: 'You still need to:',
-    documents: 'upload the health certificate and any other required documents'
+    documents: 'upload the ITAHC and any other required documents'
   },
   transporting: {
     heading: 'Transporting the consignment',
@@ -22,7 +22,7 @@ export const copy = {
   },
   viewOrAmend: {
     heading: 'How to view or amend this notification',
-    body: 'You can view or amend this notification from your dashboard and resubmit it.',
+    body: 'You can view or change this notification from your dashboard.',
     dashboardLink: 'Return to your dashboard',
     createButton: 'Create a new notification'
   },
@@ -37,6 +37,7 @@ export const copy = {
     openingHours: 'Monday to Friday, 8:30am to 5pm, except bank holidays',
     customsPrefix: 'If you need help with your customs declaration,',
     customsLink: 'contact HMRC',
-    callCharges: 'Find out about call charges'
+    callCharges: 'Find out about call charges',
+    newTab: '(opens in a new tab)'
   }
 }

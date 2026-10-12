@@ -77,8 +77,14 @@ const expectHelpCopy = async (page) => {
     page.getByRole('link', { name: copy.help.customsLink })
   ).toBeVisible()
   await expect(
+    page.getByRole('link', { name: copy.help.customsLink })
+  ).toHaveAttribute('target', '_blank')
+  await expect(
     page.getByRole('link', { name: copy.help.callCharges })
   ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: copy.help.callCharges })
+  ).toHaveAttribute('target', '_blank')
 }
 
 test.describe('confirmation feature', () => {
@@ -86,15 +92,18 @@ test.describe('confirmation feature', () => {
     await signIn(page)
   })
 
-  test('redirects an unsubmitted notification back to its hub', async ({
+  test('sends an unsubmitted notification to its declaration', async ({
     page
   }) => {
     await startNotification(page)
-    const hubUrl = journeyUrl(page)
+    const declarationUrl = journeyUrl(page, 'declaration')
 
     await page.goto(journeyUrl(page, 'confirmation'))
 
-    await expect(page).toHaveURL(hubUrl)
+    await expect(page).toHaveURL(declarationUrl)
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Declaration' })
+    ).toBeVisible()
   })
 })
 

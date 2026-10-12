@@ -118,4 +118,19 @@ describe('confirmation template help section', () => {
       'https://www.gov.uk/government/organisations/hm-revenue-customs/contact/customs-international-trade-and-excise-enquiries'
     )
   })
+
+  it('Should open the HMRC links in a new tab and say so to screen readers', () => {
+    const $ = load(render([]))
+
+    for (const text of [copy.help.customsLink, copy.help.callCharges]) {
+      const link = $(`a:contains("${text}")`)
+
+      expect(link.attr('target')).toBe('_blank')
+      expect(link.attr('rel')).toBe('noreferrer noopener')
+      expect(link.find('.govuk-visually-hidden').text().trim()).toBe(
+        copy.help.newTab
+      )
+      expect(link.clone().children().remove().end().text().trim()).toBe(text)
+    }
+  })
 })
