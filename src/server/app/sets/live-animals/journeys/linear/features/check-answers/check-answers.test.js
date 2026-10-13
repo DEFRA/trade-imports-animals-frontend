@@ -1985,11 +1985,11 @@ describe(`${SUITE} — Continue to the declaration`, () => {
     expect(view.view).toMatch(/\/declaration\/template$/)
   })
 
-  it('Should redirect to the declaration when an overland notification lists no transit countries', async () => {
+  it('Should show the declaration when an overland notification lists no transit countries', async () => {
     const seed = { ...fullSeed, transitedCountries: [] }
-    const { response } = await driveHandler(postHandler, { seed })
+    const { view } = await continueFromReview(seed)
 
-    expect(response.redirect).toMatch(/\/declaration$/)
+    expect(view.view).toMatch(/\/declaration\/template$/)
     expect(await summaryFor(seed)).toBeNull()
   })
 

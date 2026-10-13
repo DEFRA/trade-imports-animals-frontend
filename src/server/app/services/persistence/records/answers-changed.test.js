@@ -7,6 +7,11 @@ const { countryOfOrigin } = obligationSet()
 
 const originFulfilment = (value) => ({ [countryOfOrigin.id]: value })
 
+const finaliseAtLoadedToken = async (journeyId) => {
+  const { concurrencyToken } = await records.load({ journeyId })
+  return records.finalise(journeyId, undefined, concurrencyToken)
+}
+
 const uploadedDocument = (reference) => ({
   accompanyingDocumentType: 'VETERINARY_HEALTH_CERTIFICATE',
   accompanyingDocumentAttachmentType: 'PDF',
@@ -24,7 +29,7 @@ describe('records durable port — answers changed since submission', () => {
   it('Should report no answers changed when an amendment starts', async () => {
     const { journeyId } = await records.create()
     await records.replaceFulfilment(journeyId, originFulfilment('FR'))
-    await records.finalise(journeyId)
+    await finaliseAtLoadedToken(journeyId)
 
     const amended = await records.amend(journeyId)
 
@@ -34,7 +39,7 @@ describe('records durable port — answers changed since submission', () => {
   it("Should report answers changed once an amendment's notification answers differ, and not once they are put back", async () => {
     const { journeyId } = await records.create()
     await records.replaceFulfilment(journeyId, originFulfilment('FR'))
-    await records.finalise(journeyId)
+    await finaliseAtLoadedToken(journeyId)
     await records.amend(journeyId)
 
     await records.replaceFulfilment(journeyId, originFulfilment('DE'))
@@ -53,7 +58,7 @@ describe('records durable port — answers changed since submission', () => {
         documents: [uploadedDocument('GBHC1234567890')]
       })
     )
-    await records.finalise(journeyId)
+    await finaliseAtLoadedToken(journeyId)
     await records.amend(journeyId)
 
     await records.replaceFulfilment(
@@ -75,7 +80,7 @@ describe('records durable port — answers changed since submission', () => {
     await records.replaceFulfilment(journeyId, originFulfilment('FR'))
     expect(await answersChanged(journeyId)).toBe(false)
 
-    await records.finalise(journeyId)
+    await finaliseAtLoadedToken(journeyId)
     expect(await answersChanged(journeyId)).toBe(false)
   })
 })

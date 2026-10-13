@@ -129,7 +129,11 @@ describe('cancel amendment routes', () => {
   it('Should restore Submitted when the cancelled amendment was of a notification submitted with an ITAHC', async () => {
     const journey = await store.create()
     await records.replaceFulfilment(journey.journeyId, itahcFulfilment())
-    await records.finalise(journey.journeyId)
+    await records.finalise(
+      journey.journeyId,
+      undefined,
+      (await records.load({ journeyId: journey.journeyId })).concurrencyToken
+    )
     await records.amend(journey.journeyId)
 
     await post(journeyRequest(journey.journeyId), stubH())
@@ -141,7 +145,11 @@ describe('cancel amendment routes', () => {
 
   it('Should restore Submitted action required when an ITAHC added in the cancelled amendment is discarded', async () => {
     const journey = await store.create()
-    await records.finalise(journey.journeyId)
+    await records.finalise(
+      journey.journeyId,
+      undefined,
+      (await records.load({ journeyId: journey.journeyId })).concurrencyToken
+    )
     await records.amend(journey.journeyId)
     await records.replaceFulfilment(journey.journeyId, itahcFulfilment())
 
@@ -177,7 +185,11 @@ describe('cancel amendment routes', () => {
 
   it('Should send a non-amending action-required notification to its view', async () => {
     const submitted = await store.create()
-    await records.finalise(submitted.journeyId)
+    await records.finalise(
+      submitted.journeyId,
+      undefined,
+      (await records.load({ journeyId: submitted.journeyId })).concurrencyToken
+    )
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
     ).toBe(SUBMITTED_ACTION_REQUIRED)

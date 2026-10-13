@@ -115,7 +115,11 @@ const startSubmittedWithItahc = async () => {
       ]
     })
   )
-  await records.finalise(journey.journeyId)
+  await records.finalise(
+    journey.journeyId,
+    undefined,
+    (await records.load({ journeyId: journey.journeyId })).concurrencyToken
+  )
   return records.load({ journeyId: journey.journeyId })
 }
 

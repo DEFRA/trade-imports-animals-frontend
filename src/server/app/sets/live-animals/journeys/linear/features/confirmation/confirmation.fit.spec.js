@@ -92,18 +92,15 @@ test.describe('confirmation feature', () => {
     await signIn(page)
   })
 
-  test('sends an unsubmitted notification to its declaration', async ({
+  test('sends an unsubmitted notification by its declaration to the review it must pass first', async ({
     page
   }) => {
     await startNotification(page)
-    const declarationUrl = journeyUrl(page, 'declaration')
+    const reviewUrl = journeyUrl(page, 'notification-view')
 
     await page.goto(journeyUrl(page, 'confirmation'))
 
-    await expect(page).toHaveURL(declarationUrl)
-    await expect(
-      page.getByRole('heading', { level: 1, name: 'Declaration' })
-    ).toBeVisible()
+    await expect(page).toHaveURL(reviewUrl)
   })
 })
 

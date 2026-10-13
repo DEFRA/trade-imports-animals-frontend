@@ -1283,7 +1283,9 @@ test.describe('check-answers feature amendment', () => {
 
     await page.getByRole('button', { name: copy.submit.button }).click()
 
-    await expect(page).toHaveURL(new RegExp(`${NOTIFICATION_VIEW_SLUG}$`))
+    await expect(page).toHaveURL(
+      new RegExp(`${NOTIFICATION_VIEW_SLUG}\\?refused=1$`)
+    )
     await expect(
       page.getByRole('heading', { name: sharedCopy.errorSummary.title })
     ).toBeVisible()

@@ -205,7 +205,16 @@ test.describe('amend review', () => {
         name: checkAnswersCopy.errors.cards.arrivalDetails
       })
     ).toBeVisible()
-    await expectAmendStrip(page)
+    await expect(strip(page).locator(TAG)).toHaveText(
+      sharedCopy.journeyStrip.amend
+    )
+    await expect(
+      page.getByRole('button', {
+        name: checkAnswersCopy.cancelAmend.button,
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(cancelAmendLink(page)).toHaveCount(0)
   })
 })
 

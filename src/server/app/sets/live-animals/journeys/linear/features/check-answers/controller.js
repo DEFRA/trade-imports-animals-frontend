@@ -228,7 +228,6 @@ export const renderNotificationView = async (
   })
 }
 
-
 const get = async (request, toolkit) => {
   await completeOpeningRun(request, toolkit, request.params.journeyId)
   try {
