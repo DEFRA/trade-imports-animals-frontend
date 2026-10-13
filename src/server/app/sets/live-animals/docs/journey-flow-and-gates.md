@@ -57,19 +57,26 @@ section's authored gate on `readyForCheckYourAnswers` still stands between that
 page and submitting: the declaration refuses on the same verdict.
 
 The declaration is reachable only from the review (EUDPA-676). The review's
-Continue posts to `/declaration` with `step=review` and the concurrency token the
-review was rendered with; the review registers no POST of its own, and
-`GET /declaration` redirects to the review. The declaration renders that posted
-token rather than the current one, and its Submit (`step=declare`) finalises only
-at it. If the notification changed after the review rendered — another tab,
-another user — the token no longer matches and the trader goes back to the review
-with the "notification has been updated" banner (`?staleAction=1`). The review's
-GET also records the token in the session (`check-answers/reviewed.js`), and both
-declaration steps require the posted token to match it, so a token copied off
-another page cannot reach the declaration without the review. A refused
-Continue or Submit goes back with `?refused=1`, which moves focus to the review's
-error summary; the review names every refusal itself, still-scanning documents
-included.
+Continue posts to `/declaration` with `step=review` - the review registers no
+`POST` of its own, and `GET /declaration` redirects to the review. This is to
+ensure that the user has seen the review in its latest state before submitting
+the notification.
+
+We use the concurrency token to ensure that the notification is unchanged since
+the user saw the review page. The declaration page renders the same concurrency
+token as the review page (RT), rather than the current concurrency token. The
+declaration submit (`step=declare`) only works if the current concurrency token
+is still the same as RT, meaning that the notification is unchanged. If the
+notification changed after the review rendered — another tab, another user — the
+token no longer matches and the trader goes back to the review with the
+"notification has been updated" banner (`?staleAction=1`).
+
+The review's GET also records the token in the session
+(`check-answers/reviewed.js`), and both declaration steps require the posted
+token to match it, so a token copied off another page cannot reach the
+declaration without the review. A refused Continue or Submit goes back with
+`?refused=1`, which moves focus to the review's error summary; the review names
+every refusal itself, still-scanning documents included.
 
 That puts the cost on the pages, not the hub: a page behind a row has to render
 and save sensibly when nothing else has been answered. Where there is genuinely
