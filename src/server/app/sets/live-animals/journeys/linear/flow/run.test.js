@@ -228,6 +228,43 @@ describe('the run covers the journey', () => {
   })
 })
 
+describe('#nextRunTarget — the run in template mode', () => {
+  beforeAll(() => {
+    buildDispatch(SET_ID, dispatchPages)
+  })
+
+  const templateStep = (stepId) =>
+    withTemplateMode('2100010101', () => next(stepId, completeSeed))
+
+  it('Should keep the run under the template, not the notification', () => {
+    expect(templateStep('origin')).toBe(
+      `/live-animals/templates/${JOURNEY_ID}/commodities`
+    )
+  })
+
+  it('Should skip the documents page on the way from the transporters to the addresses', () => {
+    expect(templateStep(transportersPage.id)).toBe(
+      pagePath(JOURNEY_ID, addressesPage.slug).replace(
+        '/notifications/',
+        '/templates/'
+      )
+    )
+  })
+
+  it('Should fall to the template path, never the review, after the last question', () => {
+    const target = templateStep(consignmentContactSelectPage.id)
+
+    expect(target).toBe(`/live-animals/templates/${JOURNEY_ID}`)
+    expect(target).not.toContain('notification-view')
+  })
+
+  it('Should still send a notification from the transporters through the documents page', () => {
+    expect(next(transportersPage.id, completeSeed)).toBe(
+      pagePath(JOURNEY_ID, documentsPage.slug)
+    )
+  })
+})
+
 describe('#runBackTarget — the Back link while the opening run is under way', () => {
   it("Should name the origin page as the commodity page's Back link", () => {
     expect(runBackTarget(commoditiesPage.id, JOURNEY_ID)).toBe(
@@ -270,42 +307,5 @@ describe('#runBackTarget — the Back link while the opening run is under way', 
   it('Should name nothing for a step the journey leaves to the overview', () => {
     expect(runBackTarget('origin', JOURNEY_ID)).toBeNull()
     expect(runBackTarget(portOfEntryPage.id, JOURNEY_ID)).toBeNull()
-  })
-})
-
-describe('#nextRunTarget — the run in template mode', () => {
-  beforeAll(() => {
-    buildDispatch(SET_ID, dispatchPages)
-  })
-
-  const templateStep = (stepId) =>
-    withTemplateMode('2100010101', () => next(stepId, completeSeed))
-
-  it('Should keep the run under the template, not the notification', () => {
-    expect(templateStep('origin')).toBe(
-      `/live-animals/templates/${JOURNEY_ID}/commodities`
-    )
-  })
-
-  it('Should skip the documents page on the way from the transporters to the addresses', () => {
-    expect(templateStep(transportersPage.id)).toBe(
-      pagePath(JOURNEY_ID, addressesPage.slug).replace(
-        '/notifications/',
-        '/templates/'
-      )
-    )
-  })
-
-  it('Should fall to the template path, never the review, after the last question', () => {
-    const target = templateStep(consignmentContactSelectPage.id)
-
-    expect(target).toBe(`/live-animals/templates/${JOURNEY_ID}`)
-    expect(target).not.toContain('notification-view')
-  })
-
-  it('Should still send a notification from the transporters through the documents page', () => {
-    expect(next(transportersPage.id, completeSeed)).toBe(
-      pagePath(JOURNEY_ID, documentsPage.slug)
-    )
   })
 })

@@ -16,6 +16,8 @@ const withoutReturnControls = 'hubHref, copy = copy, showReturnControls = false'
 
 // The attribute the controllers read to tell a hub exit from a plain save.
 const EXIT_NAME_ATTRIBUTE = 'name="exit"'
+const SECONDARY_BUTTON = 'govuk-button--secondary'
+const BUTTON_GROUP = 'class="govuk-button-group"'
 const ACTION_NAME_ATTRIBUTE = 'name="action"'
 
 describe('#saveActions', () => {
@@ -26,6 +28,17 @@ describe('#saveActions', () => {
     expect(html).toContain(sharedEn.saveActions.saveAndReturnToHub)
     expect(html).toContain(sharedEn.saveActions.cancelAndReturnToHub)
     expect(html).toContain('href="/notifications/journey-1/hub"')
+  })
+
+  it('Should put Cancel and return to overview on its own line below the two buttons', () => {
+    const [group, afterGroup] =
+      renderActions(withReturnControls).split('</div>')
+
+    expect(group).toContain(BUTTON_GROUP)
+    expect(group).toContain(sharedEn.saveActions.saveAndContinue)
+    expect(group).toContain(sharedEn.saveActions.saveAndReturnToHub)
+    expect(group).not.toContain(sharedEn.saveActions.cancelAndReturnToHub)
+    expect(afterGroup).toContain(sharedEn.saveActions.cancelAndReturnToHub)
   })
 
   it('Should submit the hub exit the controllers read from the secondary button', () => {
@@ -51,9 +64,7 @@ describe('#saveActions', () => {
   })
 
   it('Should keep the button group so the primary sits with whatever follows it', () => {
-    expect(renderActions(withoutReturnControls)).toContain(
-      'class="govuk-button-group"'
-    )
+    expect(renderActions(withoutReturnControls)).toContain(BUTTON_GROUP)
   })
 
   it('Should let a page reached from another page name its own primary and show it alone', () => {
@@ -115,19 +126,9 @@ describe('#saveActions', () => {
       expect(html.match(/<button/g)).toHaveLength(1)
     })
 
-    it('Should take precedence over the amend ending', () => {
-      const html = changing(
-        'hubHref, copy = copy, amend = { returnAction: "/r", continueAction: "/c" }, templateChange = true'
-      )
-
-      expect(html.match(/<button/g)).toHaveLength(1)
-      expect(html).not.toContain('formaction')
-      expect(html).toContain(`>${sharedEn.saveActions.cancel}</a>`)
-    })
-
     it('Should keep a named primary’s name and value', () => {
       const html = changing(
-        'hubHref, { text: "Save and proceed", name: "action", value: "save" }, copy, true, templateChange = true'
+        'hubHref, { text: "Save and proceed", name: "action", value: "save" }, copy, templateChange = true'
       )
 
       expect(html).toContain(sharedEn.saveActions.saveAndReturn)
@@ -148,25 +149,37 @@ describe('#saveActions while amending', () => {
 
   const buttons = (html) => html.split('<button').slice(1)
 
-  it('Should end an overview-linked page with Save and return, Save and continue and a link-styled Save and return to overview, in that order', () => {
+  it('Should end an overview-linked page with Save and return, Save and continue and a secondary Save and return to overview button, in that order', () => {
     const [first, second, third] = buttons(renderActions(amending))
 
     expect(first).toMatch(/>\s*Save and return\s*</)
     expect(second).toMatch(/>\s*Save and continue\s*</)
     expect(third).toMatch(/>\s*Save and return to overview\s*</)
-    expect(third).toContain('govuk-link app-link-button')
+    expect(third).toContain(SECONDARY_BUTTON)
+    expect(third).toContain('data-module="govuk-button"')
     expect(third).toContain(EXIT_NAME_ATTRIBUTE)
     expect(third).toContain('value="hub"')
     expect(third).not.toContain('formaction')
+  })
+
+  it('Should put Save and return to overview on its own line below the two save buttons', () => {
+    const html = renderActions(amending)
+    const [group, afterGroup] = html.split('</div>')
+
+    expect(group).toContain(BUTTON_GROUP)
+    expect(group).toMatch(/>\s*Save and return\s*</)
+    expect(group).toMatch(/>\s*Save and continue\s*</)
+    expect(group).not.toContain(sharedEn.saveActions.saveAndReturnToHub)
+    expect(afterGroup).toMatch(/>\s*Save and return to overview\s*</)
   })
 
   it("Should send Save and return back to the review and Save and continue onwards through the button's own form action", () => {
     const [first, second] = buttons(renderActions(amending))
 
     expect(first).toContain(`formaction="${RETURN_ACTION}"`)
-    expect(first).not.toContain('govuk-button--secondary')
+    expect(first).not.toContain(SECONDARY_BUTTON)
     expect(second).toContain(`formaction="${CONTINUE_ACTION}"`)
-    expect(second).toContain('govuk-button--secondary')
+    expect(second).toContain(SECONDARY_BUTTON)
   })
 
   it('Should offer no cancel link while amending', () => {

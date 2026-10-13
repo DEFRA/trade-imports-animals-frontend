@@ -9,7 +9,6 @@ import {
   inTemplatesSection,
   templatesRoutePath
 } from '../../../server/app/shared/paths.js'
-import { amendFormActions } from '../../../server/app/shared/amend-form-actions.js'
 import { SET_BASE as LIVE_ANIMALS_SET_BASE } from '../../../server/app/sets/live-animals/set.js'
 import {
   hasSetContext,
@@ -17,6 +16,7 @@ import {
   withSetContext
 } from '../../../server/app/shared/set-context.js'
 import { countSessionResolution } from '../../../server/common/helpers/call-counts/call-counts.js'
+import { pageMaturityContext } from '../../../server/app/page-maturity/page-maturity.js'
 
 const logger = createLogger()
 const assetPath = config.get('assetPath')
@@ -92,12 +92,6 @@ async function context(request) {
     serviceUrl: '/',
     authEnabled: config.get('auth.enabled'),
     staleActionRejected: request.query?.staleAction === '1',
-    // Per request because an amend page's save buttons carry the page's own
-    // query, and the POST re-render needs the same URLs as the GET.
-    amendFormActions: amendFormActions(
-      request.path ?? '',
-      request.url?.searchParams
-    ),
     // The chrome's home link for every rendered page, so a view built without
     // kit.base() — the dashboard's own, for one — still links back into its own
     // set. kit.base() supplies the same key, and a view's own context wins.
@@ -119,7 +113,8 @@ async function context(request) {
     getAssetPath(asset) {
       const webpackAssetPath = webpackManifest?.[asset]
       return `${assetPath}/${webpackAssetPath ?? asset}`
-    }
+    },
+    ...pageMaturityContext(request)
   }
 }
 

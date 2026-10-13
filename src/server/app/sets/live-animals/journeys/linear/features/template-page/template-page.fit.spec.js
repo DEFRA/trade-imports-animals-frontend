@@ -16,9 +16,8 @@ import { copy } from './copy/copy.en.js'
 
 const NAME = 'Weekly cattle'
 const NOT_APPLICABLE = 'Not applicable'
-const ROLES_TASK = 'Roles and addresses'
-const ROLES_CARD = 'Addresses'
-const CONTACT_ADDRESS = 'Contact address'
+const ROLES_CARD = 'Roles and addresses'
+const CONTACT_CARD = 'Contact address for this consignment'
 const PLACE_OF_ORIGIN = 'Place of origin'
 const REVIEW_TEMPLATE = 'Review template'
 const MANAGE_TEMPLATES = 'Manage templates'
@@ -184,19 +183,19 @@ test.describe('template page', () => {
     await expect(main(page).getByRole('heading', { level: 2 })).toHaveText(
       TEMPLATE_SECTIONS
     )
-    await expect(changeLink(page, 'origin of import')).toHaveAttribute(
+    await expect(changeLink(page, 'import details')).toHaveAttribute(
       'href',
       templatePage('origin')
     )
-    await expect(changeLink(page, 'main import reason')).toHaveAttribute(
+    await expect(changeLink(page, 'reason for import')).toHaveAttribute(
       'href',
       templatePage('import-reason')
     )
-    await expect(changeLink(page, 'Cow (0102)')).toHaveAttribute(
+    await expect(changeLink(page, 'commodity 1')).toHaveAttribute(
       'href',
       templatePage('consignment-details')
     )
-    await expect(changeLink(page, 'additional details')).toHaveAttribute(
+    await expect(changeLink(page, 'additional animal details')).toHaveAttribute(
       'href',
       templatePage('additional-details')
     )
@@ -208,16 +207,15 @@ test.describe('template page', () => {
       'href',
       templatePage('transporters')
     )
-    await expect(changeLink(page, 'addresses')).toHaveAttribute(
+    await expect(changeLink(page, 'roles and addresses')).toHaveAttribute(
       'href',
       templatePage('addresses')
     )
-    await expect(changeLink(page, 'contact address')).toHaveAttribute(
-      'href',
-      templatePage('consignment/contact/select')
-    )
+    await expect(
+      changeLink(page, 'contact address for this consignment')
+    ).toHaveAttribute('href', templatePage('consignment/contact/select'))
 
-    await changeLink(page, 'origin of import').click()
+    await changeLink(page, 'import details').click()
     await expect(page).toHaveURL(templatePage('origin'))
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   })
@@ -303,7 +301,7 @@ test.describe('template page with no contact address chosen', () => {
     page
   }) => {
     await openTemplateTaskList(page, NAME)
-    await page.getByRole('link', { name: ROLES_TASK }).click()
+    await page.getByRole('link', { name: ROLES_CARD }).click()
     await page
       .locator('.govuk-summary-list__row', {
         has: page.getByText(PLACE_OF_ORIGIN, { exact: true })
@@ -322,7 +320,7 @@ test.describe('template page with no contact address chosen', () => {
     await viewSaved(page, NAME)
 
     await expect(
-      cardRowFor(page, CONTACT_ADDRESS, CONTACT_ADDRESS)
+      cardRowFor(page, CONTACT_CARD, 'Contact address')
     ).toContainText(partyPickerName(values.placeOfOrigin))
     await expect(cardRowFor(page, ROLES_CARD, 'Consignor')).toContainText(
       NOT_APPLICABLE
@@ -363,7 +361,7 @@ test.describe('template page for a fully answered template', () => {
       values.placeOfOrigin.address.addressLine1
     )
     await expect(
-      cardRowFor(page, CONTACT_ADDRESS, CONTACT_ADDRESS)
+      cardRowFor(page, CONTACT_CARD, 'Contact address')
     ).toContainText(partyPickerName(values.contactAddress))
   })
 
@@ -386,8 +384,8 @@ test.describe('template page for a fully answered template', () => {
       ['Common name'],
       ['Species'],
       ['Number of animals', line.numberOfAnimalsQuantity],
-      ['Number of packages (when required)', line.numberOfPackages],
-      ['Main import reason'],
+      ['Number of packages', line.numberOfPackages],
+      ['Reason for import'],
       ['Purpose in the market'],
       ['Certified for'],
       ['Includes unweaned animals'],
@@ -419,9 +417,7 @@ test.describe('template page for a fully answered template', () => {
     }
 
     await expect(
-      main(page)
-        .getByRole('heading', { name: 'Identification details' })
-        .first()
+      main(page).getByRole('heading', { name: 'Animal details' }).first()
     ).toBeVisible()
     await expect(
       main(page).getByRole('cell', {
@@ -429,7 +425,7 @@ test.describe('template page for a fully answered template', () => {
       })
     ).toBeVisible()
     await expect(
-      page.getByText('Arrival date at destination', { exact: true })
+      page.getByText('Arrival date at port of entry', { exact: true })
     ).toHaveCount(0)
   })
 })

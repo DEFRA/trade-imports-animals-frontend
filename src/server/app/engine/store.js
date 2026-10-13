@@ -28,6 +28,11 @@ export const store = Object.freeze({
     ),
   replaceFulfilment: (journeyId, fulfilment) =>
     withAnswersProjection(records.replaceFulfilment(journeyId, fulfilment)),
-  submit: (journeyId) => withAnswersProjection(records.finalise(journeyId)),
+  submit: async (journeyId) => {
+    const current = await records.load({ journeyId })
+    return withAnswersProjection(
+      records.finalise(journeyId, undefined, current?.concurrencyToken)
+    )
+  },
   clear: records.clear
 })

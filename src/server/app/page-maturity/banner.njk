@@ -1,0 +1,11 @@
+{%- from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner -%}
+{%- if pageMaturity -%}
+  {%- set pageMaturityTagHtml -%}
+    <span class="govuk-visually-hidden">{{ pageMaturity.hiddenPrefix }} </span>{{ pageMaturity.tag.text }}<span class="govuk-visually-hidden">.</span>
+  {%- endset -%}
+  {{ govukPhaseBanner({
+    classes: pageMaturity.classes,
+    tag: { html: pageMaturityTagHtml, classes: pageMaturity.tag.classes },
+    text: pageMaturity.text
+  }) }}
+{%- endif -%}

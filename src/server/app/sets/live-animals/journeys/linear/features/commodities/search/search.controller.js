@@ -51,6 +51,7 @@ const render = async (
   const errors = errorText ? { commoditySearch: errorText } : {}
   return h.view(view, {
     ...kit.base(copy.title, {
+      request: h.request,
       backLink: await backLinkFor(request),
       journey,
       page

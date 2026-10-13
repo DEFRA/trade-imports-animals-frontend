@@ -3,6 +3,8 @@ import Hapi from '@hapi/hapi'
 import yar from '@hapi/yar'
 import { session } from './real.js'
 
+const REVIEWED_PATH = '/reviewed/{journeyId}'
+
 const buildServer = async () => {
   const server = Hapi.server()
   await server.register({
@@ -19,8 +21,8 @@ const buildServer = async () => {
     {
       method: 'POST',
       path: '/known',
-      handler: async (request, h) => {
-        await session.addKnownJourney(request, h, request.payload.id)
+      handler: async (request, toolkit) => {
+        await session.addKnownJourney(request, toolkit, request.payload.id)
         return { ok: true }
       }
     },
@@ -34,9 +36,9 @@ const buildServer = async () => {
     {
       method: 'POST',
       path: '/run/{journeyId}',
-      handler: async (request, h) => {
+      handler: async (request, toolkit) => {
         await session.setOpeningRun(
-          h,
+          toolkit,
           request.params.journeyId,
           request.payload.phase
         )
@@ -54,9 +56,9 @@ const buildServer = async () => {
     {
       method: 'POST',
       path: '/flow/{journeyId}',
-      handler: async (request, h) => {
+      handler: async (request, toolkit) => {
         await session.setFlowOnlyAnswers(
-          h,
+          toolkit,
           request.params.journeyId,
           request.payload
         )
@@ -68,6 +70,29 @@ const buildServer = async () => {
       path: '/flow/{journeyId}',
       handler: async (request) => ({
         values: await session.flowOnlyAnswers(request, request.params.journeyId)
+      })
+    },
+    {
+      method: 'POST',
+      path: REVIEWED_PATH,
+      handler: async (request, toolkit) => {
+        await session.setReviewedConcurrencyToken(
+          toolkit,
+          request.params.journeyId,
+          request.payload.token
+        )
+        return { ok: true }
+      }
+    },
+    {
+      method: 'GET',
+      path: REVIEWED_PATH,
+      handler: async (request) => ({
+        token:
+          (await session.reviewedConcurrencyToken(
+            request,
+            request.params.journeyId
+          )) ?? null
       })
     }
   ])
@@ -110,6 +135,31 @@ describe('#session.knownJourneyIds (real, yar)', () => {
     const server = await buildServer()
     const known = await server.inject({ method: 'GET', url: '/known' })
     expect(known.result.ids).toEqual([])
+  })
+})
+
+describe('#session.reviewedConcurrencyToken (real, yar)', () => {
+  const tokenAt = async (server, url, cookie) =>
+    (await server.inject({ method: 'GET', url, headers: { cookie } })).result
+      .token
+
+  it('Should hold one concurrency token per journey', async () => {
+    const server = await buildServer()
+    const first = await server.inject({
+      method: 'POST',
+      url: '/reviewed/J-1',
+      payload: { token: 4 }
+    })
+    const second = await server.inject({
+      method: 'POST',
+      url: '/reviewed/J-2',
+      payload: { token: 7 },
+      headers: { cookie: cookieOf(first) }
+    })
+    const cookie = cookieOf(second)
+
+    expect(await tokenAt(server, '/reviewed/J-1', cookie)).toBe(4)
+    expect(await tokenAt(server, '/reviewed/J-2', cookie)).toBe(7)
   })
 })
 

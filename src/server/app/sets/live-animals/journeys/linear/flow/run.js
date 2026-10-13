@@ -18,8 +18,8 @@ import { consignmentContactSelectPage } from '../features/contact/page.js'
 import { notificationViewPage } from '../features/check-answers/page.js'
 import { pageGatePasses } from '../../../../../flow/gates.js'
 import { inTemplateMode } from '../../../../../shared/template-mode.js'
-import { identifiesAnAnimal } from './task-rows.js'
 import { TEMPLATE_MODE_RUN_SKIPPED_PAGE_IDS } from './template-mode.js'
+import { identifiesAnAnimal } from './task-rows.js'
 
 const flowPageTarget = (page) => (scope, journeyId) =>
   pageGatePasses(page, scope) ? pagePath(journeyId, page.slug) : null

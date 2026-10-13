@@ -125,7 +125,7 @@ describe('GET /templates', () => {
   })
 
   it('Should list Commodity, Origin, Consignee and Consignor on each card, in that order', async () => {
-    vi.spyOn(countries, 'originDisplayLabel').mockResolvedValue('France')
+    vi.spyOn(countries, 'countryDisplayLabel').mockResolvedValue('France')
     templates.listFor.mockResolvedValue([
       {
         ...saved(ARENA, FEBRUARY),

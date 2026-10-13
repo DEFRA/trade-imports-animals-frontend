@@ -11,7 +11,8 @@
 import {
   flowOnlyAnswersCookie,
   knownJourneysCookie,
-  openingRunCookie
+  openingRunCookie,
+  reviewedConcurrencyTokensCookie
 } from '../../../engine/persistence/session.js'
 
 const isObject = (value) =>
@@ -32,26 +33,31 @@ const openingRunByJourneyFrom = (request) => {
   return isObject(stored) ? stored : {}
 }
 
+const reviewedConcurrencyTokensFrom = (request) => {
+  const stored = request?.yar?.get(reviewedConcurrencyTokensCookie())
+  return isObject(stored) ? stored : {}
+}
+
 export const session = {
   async knownJourneyIds(request) {
     return knownFrom(request)
   },
 
-  async addKnownJourney(request, h, journeyId) {
+  async addKnownJourney(request, toolkit, journeyId) {
     const known = knownFrom(request)
     if (known.includes(journeyId)) {
       return
     }
-    h.request.yar.set(knownJourneysCookie(), [...known, journeyId])
+    toolkit.request.yar.set(knownJourneysCookie(), [...known, journeyId])
   },
 
   async openingRun(request, journeyId) {
     return openingRunByJourneyFrom(request)[journeyId]
   },
 
-  async setOpeningRun(h, journeyId, phase) {
-    const byJourney = openingRunByJourneyFrom(h.request)
-    h.request.yar.set(openingRunCookie(), {
+  async setOpeningRun(toolkit, journeyId, phase) {
+    const byJourney = openingRunByJourneyFrom(toolkit.request)
+    toolkit.request.yar.set(openingRunCookie(), {
       ...byJourney,
       [journeyId]: phase
     })
@@ -62,13 +68,24 @@ export const session = {
     return isObject(values) ? structuredClone(values) : {}
   },
 
-  async setFlowOnlyAnswers(h, journeyId, values) {
-    const byJourney = flowOnlyByJourneyFrom(h.request)
+  async setFlowOnlyAnswers(toolkit, journeyId, values) {
+    const byJourney = flowOnlyByJourneyFrom(toolkit.request)
     const next = {
       ...byJourney,
       [journeyId]: structuredClone(values ?? {})
     }
-    h.request.yar.set(flowOnlyAnswersCookie(), next)
+    toolkit.request.yar.set(flowOnlyAnswersCookie(), next)
     return structuredClone(next[journeyId])
+  },
+
+  async reviewedConcurrencyToken(request, journeyId) {
+    return reviewedConcurrencyTokensFrom(request)[journeyId]
+  },
+
+  async setReviewedConcurrencyToken(toolkit, journeyId, token) {
+    toolkit.request.yar.set(reviewedConcurrencyTokensCookie(), {
+      ...reviewedConcurrencyTokensFrom(toolkit.request),
+      [journeyId]: token
+    })
   }
 }

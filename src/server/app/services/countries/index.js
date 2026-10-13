@@ -83,7 +83,8 @@ const subdivisionDisplayLabel = (code) => {
   return parentName ? `${subdivisionName} (${parentName})` : subdivisionName
 }
 
-export const originDisplayLabel = async (code) => {
+/** A country or subdivision as a review row shows it, a subdivision named with its parent country. */
+export const countryDisplayLabel = async (code) => {
   await ensureLoaded()
   if (code == null || code === '') {
     return ''

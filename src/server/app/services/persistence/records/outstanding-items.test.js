@@ -25,6 +25,11 @@ const fulfilmentHolding = (...types) =>
 
 const stored = (fulfilment) => encodeEvaluatorFulfilments(fulfilment)
 
+const finaliseAtLoadedToken = async (journeyId) => {
+  const { concurrencyToken } = await records.load({ journeyId })
+  return records.finalise(journeyId, undefined, concurrencyToken)
+}
+
 describe('stub records — outstanding items worked out at submission', () => {
   it('Should owe the health certificate when no document is held', () => {
     expect(outstandingItemsOf(stored(fulfilmentHolding()))).toEqual([
@@ -58,7 +63,7 @@ describe('records durable port — submitted with action required', () => {
     const { journeyId } = await records.create()
     await records.replaceFulfilment(journeyId, fulfilmentHolding())
 
-    const submitted = await records.finalise(journeyId)
+    const submitted = await finaliseAtLoadedToken(journeyId)
 
     expect(submitted.status).toBe(SUBMITTED_ACTION_REQUIRED)
     expect(submitted.outstandingItems).toEqual([OUTSTANDING_HEALTH_CERTIFICATE])
@@ -68,7 +73,7 @@ describe('records durable port — submitted with action required', () => {
     const { journeyId } = await records.create()
     await records.replaceFulfilment(journeyId, fulfilmentHolding('ITAHC'))
 
-    const submitted = await records.finalise(journeyId)
+    const submitted = await finaliseAtLoadedToken(journeyId)
 
     expect(submitted.status).toBe(SUBMITTED)
     expect(submitted.outstandingItems).toEqual([])
@@ -77,7 +82,7 @@ describe('records durable port — submitted with action required', () => {
   it('Should restore Submitted action required when an amendment of it is cancelled', async () => {
     const { journeyId } = await records.create()
     await records.replaceFulfilment(journeyId, fulfilmentHolding())
-    await records.finalise(journeyId)
+    await finaliseAtLoadedToken(journeyId)
     await records.amend(journeyId)
 
     const restored = await records.cancelAmend(journeyId)
@@ -91,13 +96,13 @@ describe('records durable port — outstanding items recomputed on re-submission
 
   it('Should clear the outstanding health certificate when an ITAHC is added in an amendment and re-submitted', async () => {
     const { journeyId } = await records.create()
-    const submitted = await records.finalise(journeyId)
+    const submitted = await finaliseAtLoadedToken(journeyId)
     expect(submitted.status).toBe(SUBMITTED_ACTION_REQUIRED)
     expect(submitted.outstandingItems).toEqual([OUTSTANDING_HEALTH_CERTIFICATE])
     await records.amend(journeyId)
     await records.replaceFulfilment(journeyId, fulfilmentHolding('ITAHC'))
 
-    const resubmitted = await records.finalise(journeyId)
+    const resubmitted = await finaliseAtLoadedToken(journeyId)
 
     expect(resubmitted.status).toBe(SUBMITTED)
     expect(resubmitted.outstandingItems).toEqual([])
@@ -106,12 +111,12 @@ describe('records durable port — outstanding items recomputed on re-submission
   it('Should owe the health certificate again when the ITAHC is removed in an amendment and re-submitted', async () => {
     const { journeyId } = await records.create()
     await records.replaceFulfilment(journeyId, fulfilmentHolding('ITAHC'))
-    const submitted = await records.finalise(journeyId)
+    const submitted = await finaliseAtLoadedToken(journeyId)
     expect(submitted.status).toBe(SUBMITTED)
     await records.amend(journeyId)
     await records.replaceFulfilment(journeyId, fulfilmentHolding())
 
-    const resubmitted = await records.finalise(journeyId)
+    const resubmitted = await finaliseAtLoadedToken(journeyId)
 
     expect(resubmitted.status).toBe(SUBMITTED_ACTION_REQUIRED)
     expect(resubmitted.outstandingItems).toEqual([
@@ -122,7 +127,7 @@ describe('records durable port — outstanding items recomputed on re-submission
   it('Should restore Submitted when an amendment of a Submitted notification is cancelled', async () => {
     const { journeyId } = await records.create()
     await records.replaceFulfilment(journeyId, fulfilmentHolding('ITAHC'))
-    await records.finalise(journeyId)
+    await finaliseAtLoadedToken(journeyId)
     await records.amend(journeyId)
 
     const restored = await records.cancelAmend(journeyId)

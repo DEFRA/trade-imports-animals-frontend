@@ -10,13 +10,16 @@ import {
   DRAFT,
   SUBMITTED,
   SUBMITTED_ACTION_REQUIRED,
-  configureRecords,
-  records
+  configureRecords
 } from '../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
-import { stubH, journeyRequest } from '../../../../../engine/test-support.js'
+import {
+  driveHandler,
+  journeyRequest,
+  stubH
+} from '../../../../../engine/test-support.js'
 import { dispatchPages } from './index.js'
 import { base, journeyStrip } from '../../../../../shared/kit.js'
 import { withTemplateMode } from '../../../../../shared/template-mode.js'
@@ -117,12 +120,10 @@ describe('journey reference strip', () => {
   })
 
   it('Should offer Cancel amend on the hub while amending', async () => {
-    const journey = await store.create()
-    await store.submit(journey.journeyId)
-    await records.amend(journey.journeyId)
-    const h = stubH()
-    await getHandlerOf(hubRoutes)(journeyRequest(journey.journeyId), h)
-    expect(h.captured.view.context.journeyStrip.cancelAmend.href).toMatch(
+    const { view } = await driveHandler(getHandlerOf(hubRoutes), {
+      amend: true
+    })
+    expect(view.context.journeyStrip.cancelAmend.href).toMatch(
       /\/cancel-amend$/
     )
   })

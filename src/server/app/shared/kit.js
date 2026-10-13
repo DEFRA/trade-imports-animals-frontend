@@ -19,6 +19,7 @@ import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
 import { isRecoverableBackendError } from '../services/persistence/records/errors.js'
+import { amendFormActions } from './amend-form-actions.js'
 
 export const routeOptions = { auth: 'session' }
 
@@ -61,6 +62,13 @@ const STRIP_STATUS = {
   }
 }
 
+// A template's strip carries its name where a notification carries its
+// reference, so the same layout element draws both.
+const TEMPLATE_STRIP_STATUS = {
+  text: sharedCopy.journeyStrip.template,
+  classes: 'govuk-tag--grey'
+}
+
 export const CYA_SLUG = 'notification-view'
 
 export const CANCEL_AMEND_SLUG = 'cancel-amend'
@@ -73,15 +81,8 @@ const cancelAmendControl = (journey) =>
       }
     : undefined
 
-const TEMPLATE_STRIP_STATUS = {
-  text: sharedCopy.journeyStrip.template,
-  classes: 'govuk-tag--grey'
-}
-
 /**
- * The status strip shown above a journey page's caption and heading. In
- * template mode it carries the template's name where a notification carries
- * its reference.
+ * The status strip shown above a journey page's caption and heading.
  *
  * @param {object} [journey] - the journey, or none.
  * @param {object} [options]
@@ -207,6 +208,10 @@ export const nextTarget = async (request, page, scope) =>
  * @param {object} [options.page] - the page identity. Supply it and the view
  * gains the `caption` naming the section of the journey the page belongs to;
  * omit it on a page the journey deliberately leaves uncaptioned.
+ * @param {object} [options.request] - the request being answered. Supply it
+ * on a page that ends with `saveActions`, and the view gains `amend`: the two
+ * form actions its save buttons carry while the journey is being amended, or
+ * null otherwise. A template passes it on as `amend = amend`.
  * The view also carries `templateChange`: the page ends with Save and return
  * and Cancel, because it is changing one section of a saved template.
  * @returns {object} the common view model.
@@ -219,10 +224,12 @@ export const base = (
     journeyId = journey?.journeyId,
     page,
     recoverableError = false,
-    offerCancelAmend = true
+    offerCancelAmend = true,
+    request
   } = {}
 ) => {
   const hasJourney = journeyId != null
+  const amending = journey?.status === AMEND
   return {
     layout: journeyLayout(),
     pageTitle: title,
@@ -236,7 +243,13 @@ export const base = (
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
     templateChange: changingSavedTemplate(),
     journeyStrip: journeyStrip(journey, { offerCancelAmend }),
-    amending: journey?.status === AMEND,
+    amending,
+    // Per request because an amend page's save buttons carry the page's own
+    // query, and the POST re-render needs the same URLs as the GET.
+    amend:
+      amending && request
+        ? amendFormActions(request.path ?? '', request.url?.searchParams)
+        : null,
     concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,
     recoverableError,
@@ -295,12 +308,16 @@ export const pageRoutes = (page, { get, post }) => [
     options: routeOptions,
     handler: get
   },
-  {
-    method: 'POST',
-    path: pageRoutePath(page.slug),
-    options: routeOptions,
-    handler: redirectOnStaleAction(post)
-  }
+  ...(post
+    ? [
+        {
+          method: 'POST',
+          path: pageRoutePath(page.slug),
+          options: routeOptions,
+          handler: redirectOnStaleAction(post)
+        }
+      ]
+    : [])
 ]
 
 export const readDate = (payload, name) => {

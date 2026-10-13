@@ -104,7 +104,11 @@ describe('delete notification routes', () => {
             : []
         })
       )
-      await records.finalise(journey.journeyId)
+      await records.finalise(
+        journey.journeyId,
+        undefined,
+        (await records.load({ journeyId: journey.journeyId })).concurrencyToken
+      )
       return journey.journeyId
     }
 

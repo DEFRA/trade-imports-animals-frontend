@@ -11,20 +11,6 @@ import {
 } from './kit.js'
 import { withSavedTemplateChange, withTemplateMode } from './template-mode.js'
 
-describe('#isHubExit — the Save and return to overview submit', () => {
-  const params = { journeyId: 'journey-1' }
-
-  it('Should be true only for the named hub exit', () => {
-    expect(isHubExit({ payload: { exit: 'hub' }, params })).toBe(true)
-  })
-
-  it('Should be false with no payload, no exit or another exit', () => {
-    expect(isHubExit({ params })).toBe(false)
-    expect(isHubExit({ payload: {}, params })).toBe(false)
-    expect(isHubExit({ payload: { exit: 'other' }, params })).toBe(false)
-  })
-})
-
 const OWNER = '2100010101'
 const JOURNEY_ID = 'journey-1'
 
@@ -83,6 +69,20 @@ describe('#base — the page ending', () => {
         )
       })
     })
+  })
+})
+
+describe('#isHubExit — the Save and return to overview submit', () => {
+  const params = { journeyId: 'journey-1' }
+
+  it('Should be true only for the named hub exit', () => {
+    expect(isHubExit({ payload: { exit: 'hub' }, params })).toBe(true)
+  })
+
+  it('Should be false with no payload, no exit or another exit', () => {
+    expect(isHubExit({ params })).toBe(false)
+    expect(isHubExit({ payload: {}, params })).toBe(false)
+    expect(isHubExit({ payload: { exit: 'other' }, params })).toBe(false)
   })
 })
 
@@ -163,6 +163,28 @@ describe('#base — amending', () => {
         offerCancelAmend: false
       }).journeyStrip.cancelAmend
     ).toBeUndefined()
+  })
+
+  const ORIGIN_PATH = '/n/j-1/origin'
+  const originRequest = {
+    path: ORIGIN_PATH,
+    url: new URL(`http://x${ORIGIN_PATH}?change=1&return=addresses`)
+  }
+
+  it("Should give an amended journey's page the two save-button form actions, keeping its own query", () => {
+    expect(
+      base('t', { journey: { status: AMEND }, request: originRequest }).amend
+    ).toEqual({
+      returnAction: `${ORIGIN_PATH}?change=1&return=addresses`,
+      continueAction: `${ORIGIN_PATH}?return=addresses`
+    })
+  })
+
+  it('Should give no amend form actions outside an amendment or without the request', () => {
+    expect(
+      base('t', { journey: { status: DRAFT }, request: originRequest }).amend
+    ).toBeNull()
+    expect(base('t', { journey: { status: AMEND } }).amend).toBeNull()
   })
 })
 

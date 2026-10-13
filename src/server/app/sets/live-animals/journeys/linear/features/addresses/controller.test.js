@@ -3,10 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
-import {
-  configureRecords,
-  records
-} from '../../../../../../engine/persistence/records.js'
+import { configureRecords } from '../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
@@ -233,17 +230,12 @@ describe('GET addresses — change context', () => {
   })
 
   it('Should point Back at the task list, never the review, while amending', async () => {
-    const journey = await store.create()
-    await store.submit(journey.journeyId)
-    await records.amend(journey.journeyId)
-    const h = stubH()
+    const { journeyId, view } = await driveHandler(getAddresses, {
+      query: { change: '1' },
+      amend: true
+    })
 
-    await getAddresses(
-      journeyRequest(journey.journeyId, { query: { change: '1' } }),
-      h
-    )
-
-    expect(h.captured.view.context.backLink).toBe(hubPath(journey.journeyId))
+    expect(view.context.backLink).toBe(hubPath(journeyId))
   })
 
   it('Should point Back at the task list when not changing', async () => {

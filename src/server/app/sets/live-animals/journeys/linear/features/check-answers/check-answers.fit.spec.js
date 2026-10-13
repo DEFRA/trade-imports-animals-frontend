@@ -5,6 +5,7 @@ import {
   answerCountryOfOrigin,
   answerTransitCountries,
   BASE,
+  chooseAutocompleteByLabel,
   chooseCountryOfOrigin,
   completeAnswerSections,
   journeyIdFromPage,
@@ -19,6 +20,7 @@ import {
   uploadHealthCertificate,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
+import { copy as importReasonCopy } from '../import-reason/copy/copy.en.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { copy as deleteCopy } from '../delete-notification/copy/copy.en.js'
@@ -30,6 +32,8 @@ const SAVE_AND_CONTINUE = 'Save and continue'
 const NOTIFICATION_VIEW_SLUG = 'notification-view'
 const NO_DOCUMENTS_SENTENCE = 'You have not added any documents yet.'
 const ARRIVAL_DETAILS_ANCHOR = '#arrival-details'
+const MISSING_VALUE_SELECTOR = '.app-summary-list__value--missing'
+const SUMMARY_CARD_SELECTOR = '.govuk-summary-card'
 const WHAT_ARE_YOU_IMPORTING_ANCHOR = '#what-are-you-importing'
 const COMMODITY_DETAILS_ANCHOR = '#commodity-details'
 const FELIS_CATUS = 'Felis Catus'
@@ -43,9 +47,6 @@ const SPECIES_2_HREF = '#species-2'
 const BOS_TAURUS_HEADING = 'Bos Taurus'
 const IDENTIFICATION_SLUG = 'commodities/identification'
 const BUTTON_GROUP = '.govuk-button-group'
-const MISSING_VALUE_SELECTOR = '.app-summary-list__value--missing'
-const SUMMARY_CARD_SELECTOR = '.govuk-summary-card'
-const JOURNEY_STRIP_SELECTOR = '.app-journey-strip'
 
 const rowFor = (page, label) =>
   page
@@ -225,7 +226,7 @@ test.describe('check-answers feature section structure', () => {
       copy.cards.contactAddress
     ])
     await expect(page.getByRole('heading', { level: 3 })).toHaveCount(
-      await page.locator(SUMMARY_CARD_SELECTOR).count()
+      await page.locator('.govuk-summary-card').count()
     )
     await expect(page.getByRole('heading', { level: 4 })).toHaveCount(0)
 
@@ -290,8 +291,7 @@ test.describe('check-answers feature documents section', () => {
 test.describe('check-answers feature exit answers', () => {
   const IMPORT_REASON_SLUG = 'import-reason'
   const EXIT_PORT_CODE = 'GB DVR'
-  const EXIT_PORT_LABEL = 'Port of Dover (GB DVR)'
-  const DESTINATION_COUNTRY_CODE = 'IE'
+  const EXIT_PORT_LABEL = 'Port of Dover - GB DVR'
   const DESTINATION_COUNTRY_NAME = 'Ireland'
 
   test.beforeEach(async ({ page }) => {
@@ -304,10 +304,18 @@ test.describe('check-answers feature exit answers', () => {
     await startNotification(page)
     await page.goto(journeyUrl(page, IMPORT_REASON_SLUG))
     await page.locator('input[name="reasonForImport"][value="transit"]').check()
-    await page.locator('#transitPortOfExit').selectOption(EXIT_PORT_CODE)
-    await page
-      .locator('#transitDestinationCountry')
-      .selectOption(DESTINATION_COUNTRY_CODE)
+    await chooseAutocompleteByLabel(page, {
+      label: importReasonCopy.port.label,
+      inputId: 'transitPortOfExit',
+      query: EXIT_PORT_CODE,
+      optionName: EXIT_PORT_LABEL
+    })
+    await chooseAutocompleteByLabel(page, {
+      label: importReasonCopy.country.label,
+      inputId: 'transitDestinationCountry',
+      query: DESTINATION_COUNTRY_NAME,
+      optionName: DESTINATION_COUNTRY_NAME
+    })
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
@@ -361,9 +369,12 @@ test.describe('check-answers feature exit answers', () => {
       )
       .check()
     await page.locator('#temporaryAdmissionExitDate').fill('27/3/2026')
-    await page
-      .locator('#temporaryAdmissionPortOfExit')
-      .selectOption(EXIT_PORT_CODE)
+    await chooseAutocompleteByLabel(page, {
+      label: importReasonCopy.port.label,
+      inputId: 'temporaryAdmissionPortOfExit',
+      query: EXIT_PORT_CODE,
+      optionName: EXIT_PORT_LABEL
+    })
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
@@ -595,7 +606,7 @@ test.describe('check-answers feature navigation and submission', () => {
         .getByRole('main')
         .getByText(sharedCopy.journeyStrip.draft, { exact: true })
     ).toHaveClass(/govuk-tag--blue/)
-    await expect(page.locator(JOURNEY_STRIP_SELECTOR)).toHaveCount(0)
+    await expect(page.locator('.app-journey-strip')).toHaveCount(0)
     await expect(page.getByRole('heading', { name: copy.title })).toHaveCount(0)
     await expect(
       page.getByText(
@@ -820,7 +831,7 @@ test.describe('check-answers feature unfinished notification', () => {
 
     await page.getByRole('button', { name: copy.submit.button }).click()
 
-    await expect(page).toHaveURL(reviewUrl)
+    await expect(page).toHaveURL(`${reviewUrl}?refused=1`)
     await expect(
       page.getByRole('heading', { name: sharedCopy.errorSummary.title })
     ).toBeVisible()
@@ -835,7 +846,7 @@ test.describe('check-answers feature unfinished notification', () => {
 
     await page.getByRole('button', { name: copy.submit.button }).click()
 
-    await expect(page).toHaveURL(reviewUrl)
+    await expect(page).toHaveURL(`${reviewUrl}?refused=1`)
     const importingEntry = page.getByRole('link', {
       name: copy.errors.cards.whatAreYouImporting
     })
@@ -913,7 +924,7 @@ test.describe('check-answers feature submitted notification', () => {
       .getByText(sharedCopy.journeyStrip.submitted, { exact: true })
     await expect(tag).toBeVisible()
     await expect(tag).toHaveClass(/govuk-tag--green/)
-    await expect(page.locator(JOURNEY_STRIP_SELECTOR)).toHaveCount(0)
+    await expect(page.locator('.app-journey-strip')).toHaveCount(0)
     await expect(page.getByRole('heading', { name: copy.title })).toHaveCount(0)
     await expect(page).toHaveTitle(
       `${reference} - ${sharedCopy.layout.serviceName} - ${sharedCopy.layout.govukSuffix}`
@@ -1047,6 +1058,162 @@ test.describe('check-answers feature submitted notification', () => {
       page,
       'Submitted check answers'
     )
+  })
+})
+
+const TEMPLATE_NAME = 'Weekly cattle'
+const TEMPLATE_REVIEW_TITLE = 'Review your template'
+const TEMPLATE_TASK_LIST_PATH = /\/live-animals\/templates\/[^/]+$/
+const TEMPLATE_SECTIONS = [
+  '1. About the consignment',
+  '2. Description of the goods',
+  '3. Transport and arrival',
+  '4. Consignment parties',
+  '5. Contact address'
+]
+
+const cardKeys = (page, cardTitle) =>
+  page
+    .locator(SUMMARY_CARD_SELECTOR)
+    .filter({
+      has: page.locator('.govuk-summary-card__title', { hasText: cardTitle })
+    })
+    .locator('.govuk-summary-list__key')
+
+test.describe('check-answers feature template review', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await openTemplateReview(page, TEMPLATE_NAME)
+  })
+
+  test('is titled Review your template under the Template tag and name, with no error summary and no card errors', async ({
+    page
+  }) => {
+    const strip = page.locator('.app-journey-strip')
+
+    await expect(page).toHaveTitle(
+      `${TEMPLATE_REVIEW_TITLE} - Import notification service - GOV.UK`
+    )
+    await expect(strip.locator('.govuk-tag')).toHaveText(
+      sharedCopy.journeyStrip.template
+    )
+    await expect(strip).toContainText(TEMPLATE_NAME)
+    await expect(page.locator('.govuk-error-summary')).toHaveCount(0)
+    await expect(
+      page.locator('.govuk-summary-card .govuk-error-message')
+    ).toHaveCount(0)
+  })
+
+  test("shows the task list's five sections, no uploaded documents and no arrival date, and Not applicable for every unanswered row", async ({
+    page
+  }) => {
+    await expect(
+      page.getByRole('main').getByRole('heading', { level: 2 })
+    ).toHaveText(TEMPLATE_SECTIONS)
+    await expect(
+      page.getByText(copy.cards.documents, { exact: true })
+    ).toHaveCount(0)
+    await expect(
+      page.getByText('Arrival date at port of entry', { exact: true })
+    ).toHaveCount(0)
+    await expect(page.locator(MISSING_VALUE_SELECTOR)).toHaveCount(0)
+    await expect(
+      rowFor(page, 'Port of entry').getByRole('definition')
+    ).toHaveText('Not applicable')
+  })
+
+  test('shows Certified for, Includes unweaned animals and the CPH number for cattle, and one row under Main reason for import', async ({
+    page
+  }) => {
+    await expect(cardKeys(page, copy.cards.additionalAnimalDetails)).toHaveText(
+      ['Certified for', 'Includes unweaned animals']
+    )
+    await expect(cardKeys(page, copy.cards.rolesAndAddresses)).toContainText([
+      'County parish holding (CPH) number'
+    ])
+    await expect(cardKeys(page, 'Identification details')).toHaveCount(0)
+    await expect(cardKeys(page, copy.cards.reasonForImport)).toHaveText([
+      copy.cards.reasonForImport
+    ])
+  })
+
+  test("Back returns to the template's task list", async ({ page }) => {
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(TEMPLATE_TASK_LIST_PATH)
+    await expect(
+      page.getByRole('heading', { name: 'Template tasklist' })
+    ).toBeVisible()
+  })
+
+  test('Change opens Origin for the template with Save and continue alone', async ({
+    page
+  }) => {
+    await cardChangeLink(page, copy.hidden.cards.importDetails).click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Origin of the import' })
+    ).toBeVisible()
+    await expect(page.locator('.app-journey-strip .govuk-tag')).toHaveText(
+      sharedCopy.journeyStrip.template
+    )
+    await expect(
+      page.getByRole('button', { name: SAVE_AND_CONTINUE })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Save and return to overview' })
+    ).toHaveCount(0)
+  })
+
+  test('Change opens the contact address page for the template with the template controls', async ({
+    page
+  }) => {
+    await cardChangeLink(page, copy.hidden.cards.contactAddress).click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Contact address for consignment' })
+    ).toBeVisible()
+    await expect(page.locator('.app-journey-strip .govuk-tag')).toHaveText(
+      sharedCopy.journeyStrip.template
+    )
+    await expect(
+      page.getByRole('button', { name: SAVE_AND_CONTINUE })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Save and return to overview' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', {
+        name: 'Cancel and return to overview',
+        exact: true
+      })
+    ).toHaveAttribute('href', TEMPLATE_TASK_LIST_PATH)
+    await expect(
+      page.getByRole('button', { name: 'Save and return', exact: true })
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole('link', { name: 'Cancel', exact: true })
+    ).toHaveCount(0)
+  })
+
+  // Pressing Save template is proved by the unit and end-to-end suites: here it
+  // would leave a saved template in the shared stub store, which the Manage
+  // templates specs expect to be empty.
+  test('ends with Save template, not the notification review Continue', async ({
+    page
+  }) => {
+    await expect(
+      page.getByRole('button', { name: 'Save template', exact: true })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: copy.submit.button, exact: true })
+    ).toHaveCount(0)
+  })
+
+  test('template review has no serious or critical axe violations', async ({
+    page
+  }) => {
+    await expectNoSeriousOrCriticalAxeViolations(page, 'Template review')
   })
 })
 
@@ -1275,7 +1442,9 @@ test.describe('check-answers feature amendment', () => {
 
     await page.getByRole('button', { name: copy.submit.button }).click()
 
-    await expect(page).toHaveURL(new RegExp(`${NOTIFICATION_VIEW_SLUG}$`))
+    await expect(page).toHaveURL(
+      new RegExp(`${NOTIFICATION_VIEW_SLUG}\\?refused=1$`)
+    )
     await expect(
       page.getByRole('heading', { name: sharedCopy.errorSummary.title })
     ).toBeVisible()
@@ -1509,161 +1678,5 @@ test.describe('check-answers feature commodity read-back', () => {
         name: copy.errors.species.numberOfAnimals(BOS_TAURUS_LOWER)
       })
     ).toHaveCount(0)
-  })
-})
-
-const TEMPLATE_NAME = 'Weekly cattle'
-const TEMPLATE_REVIEW_TITLE = 'Review your template'
-const TEMPLATE_TASK_LIST_PATH = /\/live-animals\/templates\/[^/]+$/
-const TEMPLATE_SECTIONS = [
-  '1. About the consignment',
-  '2. Description of the goods',
-  '3. Transport and arrival',
-  '4. Consignment parties',
-  '5. Contact address'
-]
-
-const cardKeys = (page, cardTitle) =>
-  page
-    .locator(SUMMARY_CARD_SELECTOR)
-    .filter({
-      has: page.locator('.govuk-summary-card__title', { hasText: cardTitle })
-    })
-    .locator('.govuk-summary-list__key')
-
-test.describe('check-answers feature template review', () => {
-  test.beforeEach(async ({ page }) => {
-    await signIn(page)
-    await openTemplateReview(page, TEMPLATE_NAME)
-  })
-
-  test('is titled Review your template under the Template tag and name, with no error summary and no card errors', async ({
-    page
-  }) => {
-    const strip = page.locator(JOURNEY_STRIP_SELECTOR)
-
-    await expect(page).toHaveTitle(
-      `${TEMPLATE_REVIEW_TITLE} - Import notification service - GOV.UK`
-    )
-    await expect(strip.locator('.govuk-tag')).toHaveText(
-      sharedCopy.journeyStrip.template
-    )
-    await expect(strip).toContainText(TEMPLATE_NAME)
-    await expect(page.locator('.govuk-error-summary')).toHaveCount(0)
-    await expect(
-      page.locator('.govuk-summary-card .govuk-error-message')
-    ).toHaveCount(0)
-  })
-
-  test("shows the task list's five sections, no uploaded documents and no arrival date, and Not applicable for every unanswered row", async ({
-    page
-  }) => {
-    await expect(
-      page.getByRole('main').getByRole('heading', { level: 2 })
-    ).toHaveText(TEMPLATE_SECTIONS)
-    await expect(
-      page.getByText(copy.sections.documents, { exact: true })
-    ).toHaveCount(0)
-    await expect(
-      page.getByText(copy.rows.arrivalDate, { exact: true })
-    ).toHaveCount(0)
-    await expect(page.locator(MISSING_VALUE_SELECTOR)).toHaveCount(0)
-    await expect(
-      rowFor(page, 'Port of entry').getByRole('definition')
-    ).toHaveText('Not applicable')
-  })
-
-  test('shows Certified for, Includes unweaned animals and the CPH number for cattle, and one row under Main reason for import', async ({
-    page
-  }) => {
-    await expect(cardKeys(page, copy.cards.additionalAnimalDetails)).toHaveText(
-      ['Certified for', 'Includes unweaned animals']
-    )
-    await expect(cardKeys(page, copy.cards.rolesAndAddresses)).toContainText([
-      'County parish holding (CPH) number'
-    ])
-    await expect(cardKeys(page, 'Identification details')).toHaveCount(0)
-    await expect(cardKeys(page, copy.cards.reasonForImport)).toHaveText([
-      copy.cards.reasonForImport
-    ])
-  })
-
-  test("Back returns to the template's task list", async ({ page }) => {
-    await page.getByRole('link', { name: 'Back', exact: true }).click()
-
-    await expect(page).toHaveURL(TEMPLATE_TASK_LIST_PATH)
-    await expect(
-      page.getByRole('heading', { name: 'Template tasklist' })
-    ).toBeVisible()
-  })
-
-  test('Change opens Origin for the template with Save and continue alone', async ({
-    page
-  }) => {
-    await cardChangeLink(page, copy.hidden.cards.importDetails).click()
-
-    await expect(
-      page.getByRole('heading', { name: 'Origin of the import' })
-    ).toBeVisible()
-    await expect(page.locator('.app-journey-strip .govuk-tag')).toHaveText(
-      sharedCopy.journeyStrip.template
-    )
-    await expect(
-      page.getByRole('button', { name: SAVE_AND_CONTINUE })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('button', { name: 'Save and return to overview' })
-    ).toHaveCount(0)
-  })
-
-  test('Change opens the contact address page for the template with the template controls', async ({
-    page
-  }) => {
-    await cardChangeLink(page, copy.hidden.cards.contactAddress).click()
-
-    await expect(
-      page.getByRole('heading', { name: 'Contact address for consignment' })
-    ).toBeVisible()
-    await expect(page.locator('.app-journey-strip .govuk-tag')).toHaveText(
-      sharedCopy.journeyStrip.template
-    )
-    await expect(
-      page.getByRole('button', { name: SAVE_AND_CONTINUE })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('button', { name: 'Save and return to overview' })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('link', {
-        name: 'Cancel and return to overview',
-        exact: true
-      })
-    ).toHaveAttribute('href', TEMPLATE_TASK_LIST_PATH)
-    await expect(
-      page.getByRole('button', { name: 'Save and return', exact: true })
-    ).toHaveCount(0)
-    await expect(
-      page.getByRole('link', { name: 'Cancel', exact: true })
-    ).toHaveCount(0)
-  })
-
-  // Pressing Save template is proved by the unit and end-to-end suites: here it
-  // would leave a saved template in the shared stub store, which the Manage
-  // templates specs expect to be empty.
-  test('ends with Save template, not the notification review Continue', async ({
-    page
-  }) => {
-    await expect(
-      page.getByRole('button', { name: 'Save template', exact: true })
-    ).toBeVisible()
-    await expect(
-      page.getByRole('button', { name: copy.submit.button, exact: true })
-    ).toHaveCount(0)
-  })
-
-  test('template review has no serious or critical axe violations', async ({
-    page
-  }) => {
-    await expectNoSeriousOrCriticalAxeViolations(page, 'Template review')
   })
 })

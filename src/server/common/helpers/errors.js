@@ -48,6 +48,10 @@ export function catchAll(request, h) {
 
   if (statusCode >= statusCodes.internalServerError) {
     request.logger.error(stackWithCauses(response))
+    const cause = response.data?.cause
+    if (cause) {
+      request.logger.error({ err: cause }, `Caused by: ${cause.message}`)
+    }
   }
 
   return h

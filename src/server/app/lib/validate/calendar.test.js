@@ -289,6 +289,14 @@ describe('#formatMomentAsDay', () => {
 })
 
 describe('#formatMomentAsLongDay', () => {
+  it('Should format a moment as the long day it fell on in the service zone', () => {
+    expect(formatMomentAsLongDay(new Date(SUBMITTED_INSTANT))).toBe(
+      '11 September 2026'
+    )
+    expect(formatMomentAsLongDay(new Date('2026-01-05T10:00:00Z'))).toBe(
+      '5 January 2026'
+    )
+  })
   it('renders the UK day it happened with the month written out', () => {
     expect(formatMomentAsLongDay(new Date('2026-07-21T23:30:00.000Z'))).toBe(
       '22 July 2026'
@@ -307,14 +315,5 @@ describe('#formatMomentAsLongDay', () => {
         '22 July 2026'
       )
     })
-  })
-
-  it('Should format a moment as the long day it fell on in the service zone', () => {
-    expect(formatMomentAsLongDay(new Date(SUBMITTED_INSTANT))).toBe(
-      '11 September 2026'
-    )
-    expect(formatMomentAsLongDay(new Date('2026-01-05T10:00:00Z'))).toBe(
-      '5 January 2026'
-    )
   })
 })

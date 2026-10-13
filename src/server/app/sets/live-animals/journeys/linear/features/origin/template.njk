@@ -61,6 +61,6 @@
       errorMessage: errors.internalReferenceNumber and { text: errors.internalReferenceNumber }
     }) }}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, showReturnControls = showReturnControls, amend = amendFormActions if amending else none, templateChange = templateChange) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions, showReturnControls = showReturnControls, amend = amend, templateChange = templateChange) }}
   </form>
 {% endblock %}

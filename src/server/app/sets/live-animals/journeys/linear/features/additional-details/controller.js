@@ -34,6 +34,7 @@ const render = async (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
+      request: h.request,
       backLink: await kit.runBackLink(request, page, answers),
       journey,
       page,

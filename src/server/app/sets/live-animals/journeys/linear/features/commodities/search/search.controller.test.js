@@ -394,7 +394,7 @@ describe('commodity search in template mode', () => {
     )
   })
 
-  it("Should still keep a notification on the notification's own pages", async () => {
+  it("Should still continue a notification on its own journey, not a template's", async () => {
     const getResult = await driveHandler(get)
     const postResult = await driveHandler(post, {
       payload: { species: COW_BOS_TAURUS_KEY }

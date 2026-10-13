@@ -20,7 +20,7 @@ const commodityNames = (answers) =>
   ].join(COMMODITY_SEPARATOR)
 
 const originName = (answers) =>
-  countries.originDisplayLabel(answers[countryOfOrigin.id])
+  countries.countryDisplayLabel(answers[countryOfOrigin.id])
 
 const partyName = (answers, party) => answers[party.id]?.name ?? ''
 

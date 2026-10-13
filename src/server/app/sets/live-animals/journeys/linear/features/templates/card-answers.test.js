@@ -17,7 +17,7 @@ describe('cardAnswersFor', () => {
 
   it('Should name the commodity, country of origin, consignee and consignor a template holds', async () => {
     const label = vi
-      .spyOn(countries, 'originDisplayLabel')
+      .spyOn(countries, 'countryDisplayLabel')
       .mockResolvedValue('France')
     const fulfilments = encodeEvaluatorFulfilments({
       [commodityCode.id]: { l1: 'Cow' },

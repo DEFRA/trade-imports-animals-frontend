@@ -4,13 +4,21 @@ import { expect, test } from '@playwright/test'
 import {
   ARRIVAL_DATE_IN_WINDOW,
   BASE,
+  answerAdditionalDetails,
+  answerAnimalIdentification,
   answerArrivalDetails,
-  answerEveryTemplateSection,
+  answerContactAddress,
+  answerImportReason,
+  answerOriginDetails,
+  answerRolesAndAddresses,
+  answerTransitCountries,
+  answerTransporter,
   chooseCountryOfOrigin,
   freshContactId,
   openTemplateTaskList,
   saveTemplateFromReview,
-  signIn
+  signIn,
+  values
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy } from './copy/copy.en.js'
 
@@ -27,7 +35,6 @@ const NOT_APPLICABLE = 'Not applicable'
 const MANAGE_TEMPLATES = 'Manage templates'
 const TEMPLATE_PAGE_PATH = /\/live-animals\/templates\/[^/]+$/
 const ARRIVAL_DATE_LABEL = 'Arrival date at port of entry'
-const ARRIVAL_DATE_ROW = 'Arrival date at destination'
 const REFERENCE_LABEL =
   'Your internal reference for this consignment (optional)'
 const REGION_CODE_FIELD = '#regionOfOriginCodeSuffix'
@@ -92,10 +99,57 @@ const saveWithReference = async (page, name = NAME) => {
 }
 
 const openChangeOrigin = async (page) => {
-  await changeLink(page, 'origin of import').click()
+  await changeLink(page, 'import details').click()
   await expect(
     page.getByRole('heading', { level: 1, name: 'Origin of the import' })
   ).toBeVisible()
+}
+
+const answerEverySection = async (page) => {
+  const [line] = values.commodityLines
+  const task = (name) => page.getByRole('link', { name }).click()
+  const overview = () =>
+    expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  const saveAndContinue = () =>
+    page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
+
+  await task('Where is this consignment coming from?')
+  await answerOriginDetails(page)
+
+  await task('Commodity details')
+  await page.getByLabel('Number of animals').fill(line.numberOfAnimalsQuantity)
+  await page
+    .getByLabel('Number of packages (when required)')
+    .fill(line.numberOfPackages)
+  await saveAndContinue()
+  await overview()
+
+  await task('Identification details')
+  await answerAnimalIdentification(page)
+  await overview()
+
+  await task('Main reason for import')
+  await answerImportReason(page)
+  await overview()
+  await task('Additional details')
+  await answerAdditionalDetails(page)
+  await overview()
+
+  await task('Roles and addresses')
+  await answerRolesAndAddresses(page)
+
+  await task('Arrival details')
+  await answerArrivalDetails(page)
+  await overview()
+  await task('Transit countries')
+  await answerTransitCountries(page)
+  await overview()
+  await task('Transport details')
+  await answerTransporter(page)
+  await overview()
+
+  await task('Contact address for this consignment')
+  await answerContactAddress(page)
 }
 
 const expectNoSeriousOrCriticalAxeViolations = async (page) => {
@@ -330,25 +384,19 @@ test.describe('changing every section of a saved template', () => {
     page
   }) => {
     await openTemplateTaskList(page, NAME)
-    await answerEveryTemplateSection(page)
+    await answerEverySection(page)
     await reviewAndSave(page)
     await viewSaved(page, NAME)
     const templateUrl = page.url()
 
-    const hrefs = [
-      ...new Set(
-        await main(page)
-          .locator('a[href*="?change=1"]')
-          .evaluateAll((links) =>
-            links.map((link) => link.getAttribute('href'))
-          )
-      )
-    ]
+    const hrefs = await main(page)
+      .locator('a[href*="?change=1"]')
+      .evaluateAll((links) => links.map((link) => link.getAttribute('href')))
     expect(hrefs.length).toBeGreaterThanOrEqual(8)
 
     for (const href of hrefs) {
       await page.goto(templateUrl)
-      await main(page).locator(`a[href="${href}"]`).first().click()
+      await main(page).locator(`a[href="${href}"]`).click()
       await expect(
         page.getByRole('button', { name: SAVE_AND_RETURN, exact: true }),
         href
@@ -379,22 +427,23 @@ test.describe('changing every section of a saved template', () => {
     await openTemplateTaskList(page, NAME)
     await page.getByRole('link', { name: 'Arrival details' }).click()
     await answerArrivalDetails(page)
+    // A page opened from the overview returns there when saved.
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await reviewAndSave(page)
     await viewSaved(page, NAME)
     const templateUrl = page.url()
-    await expect(page.getByText(ARRIVAL_DATE_ROW, { exact: true })).toHaveCount(
-      0
-    )
+    await expect(
+      page.getByText(ARRIVAL_DATE_LABEL, { exact: true })
+    ).toHaveCount(0)
 
     await changeLink(page, ARRIVAL_DETAILS).click()
     await expect(page.getByLabel(ARRIVAL_DATE_LABEL)).toHaveValue('')
     await page.getByLabel(ARRIVAL_DATE_LABEL).fill(ARRIVAL_DATE_IN_WINDOW)
     await saveAndReturn(page)
     await expect(page).toHaveURL(templateUrl)
-    await expect(page.getByText(ARRIVAL_DATE_ROW, { exact: true })).toHaveCount(
-      0
-    )
+    await expect(
+      page.getByText(ARRIVAL_DATE_LABEL, { exact: true })
+    ).toHaveCount(0)
 
     await changeLink(page, ARRIVAL_DETAILS).click()
     await expect(page.getByLabel(ARRIVAL_DATE_LABEL)).toHaveValue('')

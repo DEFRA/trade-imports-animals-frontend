@@ -11,7 +11,6 @@ import {
 import * as templates from '../../../../../../services/templates/index.js'
 import { TEMPLATES } from '../../config.js'
 import { rememberSavedTemplate } from '../templates/saved-banner.js'
-import { nextInSection } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
 import {
@@ -48,8 +47,9 @@ import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { partiesFromStoredAnswers } from '../addresses/frozen-parties.js'
 import { partyOf } from '../addresses/parties.js'
 import { partyEditHref } from '../addresses/party-edit/edit-href.js'
-import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
-import { documentsRejectedCardErrors, reviewRefusal } from './refusal.js'
+import { documentScanCardErrors } from './refusal.js'
+import { recordReviewed } from './reviewed.js'
+import { declarationPage } from '../declaration/page.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 
@@ -116,6 +116,9 @@ const reviewTitle = (journey) =>
     ? copy.resubmitTitle
     : copy.title
 
+/** A notification's review posts on to the declaration. A submitted view and a
+ * draft's review are headed by the reference with no status bar; an amendment
+ * keeps the status bar and offers Delete and Cancel amend at its foot. */
 const notificationReviewView = (journey, readOnly) => {
   const amending = journey.status === state.AMEND
   const headed = readOnly || journey.status === state.DRAFT
@@ -124,6 +127,8 @@ const notificationReviewView = (journey, readOnly) => {
     pageTitle: title,
     heading: title,
     submitText: copy.submit.button,
+    templateMode: false,
+    declarationHref: pagePath(journey.journeyId, declarationPage.slug),
     journeyStrip: headed
       ? null
       : journeyStrip(journey, { offerCancelAmend: false }),
@@ -136,10 +141,13 @@ const notificationReviewView = (journey, readOnly) => {
   }
 }
 
+/** A template's review posts back here to save it. */
 const templateReviewView = (journey) => ({
   pageTitle: copy.template.title,
   heading: copy.template.title,
   submitText: copy.template.saveTemplate,
+  templateMode: true,
+  declarationHref: pagePath(journey.journeyId, page.slug),
   journeyStrip: journeyStrip(journey),
   viewHeader: null,
   deleteHref: null,
@@ -148,7 +156,7 @@ const templateReviewView = (journey) => ({
 })
 
 const renderCya = async (
-  h,
+  toolkit,
   journey,
   {
     answers,
@@ -181,7 +189,7 @@ const renderCya = async (
     answers,
     evaluation
   )
-  return h.view(view, {
+  return toolkit.view(view, {
     ...(inTemplateMode()
       ? templateReviewView(journey)
       : notificationReviewView(journey, readOnly)),
@@ -204,17 +212,14 @@ const renderCya = async (
 
 export const renderNotificationView = async (
   request,
-  h,
-  {
-    recoverableError = false,
-    disableAutoFocus = true,
-    extraCardErrors = {},
-    refused = false
-  } = {}
+  toolkit,
+  { recoverableError = false } = {}
 ) => {
   const { journey, answers, storedAnswers, scope, evaluation } =
-    await state.get(request, h)
+    await state.get(request, toolkit)
   const readOnly = state.isSubmittedStatus(journey.status)
+  const refused = request.query.refused === '1'
+  // c-201: an amendment opens with no errors; Continue refused shows them.
   // A template is reviewed as it stands: nothing on it is owed, so a template
   // review names no card, role, stale answer or document as unfinished.
   const holdsSilently =
@@ -230,13 +235,10 @@ export const renderNotificationView = async (
   const invalidCardErrors = holdsSilently
     ? {}
     : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
-  // A REJECTED scan is a permanent verdict on a stored file, so it belongs on the read
-  // path — a mid-upload PENDING is (or should be) a transient state so shouldn't
-  // present as an error.
-  const rejectedDocErrors = holdsSilently
+  const scanDocErrors = holdsSilently
     ? {}
-    : await documentsRejectedCardErrors(answers)
-  return renderCya(h, journey, {
+    : await documentScanCardErrors(answers, { includePending: refused })
+  return renderCya(toolkit, journey, {
     answers,
     scope,
     evaluation,
@@ -253,37 +255,41 @@ export const renderNotificationView = async (
       ? {}
       : {
           ...invalidCardErrors,
-          ...rejectedDocErrors,
-          ...extraCardErrors,
+          ...scanDocErrors,
           ...incompleteCardErrors(answers, scope, evaluation)
         },
     speciesErrors: holdsSilently
       ? {}
       : unfinishedSpeciesErrors(answers, evaluation),
-    disableAutoFocus
+    disableAutoFocus: !refused
   })
 }
 
-const renderOrList = async (request, h) => {
+const get = async (request, toolkit) => {
+  await completeOpeningRun(request, toolkit, request.params.journeyId)
   try {
-    return await renderNotificationView(request, h)
+    const response = await renderNotificationView(request, toolkit)
+    const { journey } = await state.get(request, toolkit)
+    if (!state.isSubmittedStatus(journey.status)) {
+      await recordReviewed(request, toolkit, journey)
+    }
+    return response
   } catch (error) {
     if (state.isJourneyNotFound(error)) {
-      return h.redirect(dashboardPath())
+      return toolkit.redirect(dashboardPath())
     }
     throw error
   }
 }
 
-const get = async (request, h) => {
-  await completeOpeningRun(request, h, request.params.journeyId)
-  return renderOrList(request, h)
-}
-
 // Save template stores the template instead of going on to the declaration: a
 // template holds no declaration, and Manage templates confirms it once with a
-// success banner.
-const saveTemplate = async (request, h) => {
+// success banner. A notification's review posts to the declaration, never here,
+// so a post here outside template mode goes back to the review.
+const post = async (request, toolkit) => {
+  if (!inTemplateMode()) {
+    return toolkit.redirect(pagePath(request.params.journeyId, page.slug))
+  }
   const saved = await templates.saveFor(
     templateOwnerId(),
     request.params.journeyId
@@ -291,27 +297,7 @@ const saveTemplate = async (request, h) => {
   if (saved) {
     rememberSavedTemplate(request, saved)
   }
-  return h.redirect(templatesPath())
-}
-
-const post = async (request, h) => {
-  if (inTemplateMode()) {
-    return saveTemplate(request, h)
-  }
-  // Reuse the scan errors reviewRefusal already computed — a fresh
-  // documentScanCardErrors call here would issue a second HTTP GET per
-  // stored document to the upload backend.
-  const { refused, extraCardErrors } = await reviewRefusal(request, h)
-  if (refused) {
-    const rendered = await renderNotificationView(request, h, {
-      refused: true,
-      disableAutoFocus: false,
-      extraCardErrors
-    })
-    return rendered.code(HTTP_STATUS_BAD_REQUEST)
-  }
-  const { journey, scope } = await state.get(request, h)
-  return h.redirect(nextInSection(page.id, scope, journey.journeyId))
+  return toolkit.redirect(templatesPath())
 }
 
 export const routes = pageRoutes(page, { get, post })

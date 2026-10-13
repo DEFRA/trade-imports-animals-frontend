@@ -31,19 +31,17 @@ const detailsPath = (request) =>
   )
 
 // While a template is being created, the commodity question returns to the
-// template's task list rather than going on through the journey.
-const selectionTarget = async (request, scope) => {
-  const hubExit = kit.hubExitTarget(request)
-  if (hubExit) {
-    return hubExit
-  }
-  if (inTemplateMode()) {
-    return hubPath(request.params.journeyId)
-  }
-  return kit.changeContext(request)
+// template's task list rather than going on to Commodity details.
+const notificationTarget = async (request, scope) =>
+  kit.changeContext(request)
     ? detailsPath(request)
     : await kit.nextTarget(request, commoditiesPage, scope)
-}
+
+const selectionTarget = async (request, scope) =>
+  kit.hubExitTarget(request) ??
+  (inTemplateMode()
+    ? hubPath(request.params.journeyId)
+    : await notificationTarget(request, scope))
 
 export const commitSelection = async (request, h, selected) => {
   await state.reconcileEntriesAt(
