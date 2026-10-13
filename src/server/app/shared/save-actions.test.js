@@ -17,6 +17,7 @@ const withoutReturnControls = 'hubHref, copy = copy, showReturnControls = false'
 // The attribute the controllers read to tell a hub exit from a plain save.
 const EXIT_NAME_ATTRIBUTE = 'name="exit"'
 const SECONDARY_BUTTON = 'govuk-button--secondary'
+const BUTTON_GROUP = 'class="govuk-button-group"'
 
 describe('#saveActions', () => {
   it('Should end a page the hub links to with the primary and both return controls', () => {
@@ -26,6 +27,17 @@ describe('#saveActions', () => {
     expect(html).toContain(sharedEn.saveActions.saveAndReturnToHub)
     expect(html).toContain(sharedEn.saveActions.cancelAndReturnToHub)
     expect(html).toContain('href="/notifications/journey-1/hub"')
+  })
+
+  it('Should put Cancel and return to overview on its own line below the two buttons', () => {
+    const [group, afterGroup] =
+      renderActions(withReturnControls).split('</div>')
+
+    expect(group).toContain(BUTTON_GROUP)
+    expect(group).toContain(sharedEn.saveActions.saveAndContinue)
+    expect(group).toContain(sharedEn.saveActions.saveAndReturnToHub)
+    expect(group).not.toContain(sharedEn.saveActions.cancelAndReturnToHub)
+    expect(afterGroup).toContain(sharedEn.saveActions.cancelAndReturnToHub)
   })
 
   it('Should submit the hub exit the controllers read from the secondary button', () => {
@@ -51,9 +63,7 @@ describe('#saveActions', () => {
   })
 
   it('Should keep the button group so the primary sits with whatever follows it', () => {
-    expect(renderActions(withoutReturnControls)).toContain(
-      'class="govuk-button-group"'
-    )
+    expect(renderActions(withoutReturnControls)).toContain(BUTTON_GROUP)
   })
 
   it('Should let a page reached from another page name its own primary and show it alone', () => {
@@ -106,7 +116,7 @@ describe('#saveActions while amending', () => {
     const html = renderActions(amending)
     const [group, afterGroup] = html.split('</div>')
 
-    expect(group).toContain('class="govuk-button-group"')
+    expect(group).toContain(BUTTON_GROUP)
     expect(group).toMatch(/>\s*Save and return\s*</)
     expect(group).toMatch(/>\s*Save and continue\s*</)
     expect(group).not.toContain(sharedEn.saveActions.saveAndReturnToHub)
