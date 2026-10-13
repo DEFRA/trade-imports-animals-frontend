@@ -17,6 +17,12 @@ import { declarationPage as page } from './page.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 import { isReviewRefused } from '../check-answers/refusal.js'
+import { reviewHref } from '../check-answers/review-href.js'
+import { reviewedConcurrencyToken as reviewedConcurrencyTokenOf } from '../check-answers/reviewed.js'
+
+const STEP_REVIEW = 'review'
+const STEP_DECLARE = 'declare'
+const STALE_CONCURRENCY_TOKEN = 'STALE_CONCURRENCY_TOKEN'
 
 export const meta = { ...page, collects: ['declaration'] }
 const view = `${TEMPLATES}/features/declaration/template`
@@ -34,13 +40,23 @@ const dateText = (value) =>
     year: 'numeric'
   })
 
-const render = (h, journey, values, errors = {}, recoverableError = false) =>
-  h.view(view, {
+// The reviewed token, not kit.base()'s current one, so a re-shown declaration
+// still declares exactly what the review showed.
+const render = (
+  toolkit,
+  journey,
+  reviewedConcurrencyToken,
+  values,
+  errors = {},
+  recoverableError = false
+) =>
+  toolkit.view(view, {
     ...kit.base(copy.title, {
       backLink: pagePath(journey.journeyId, kit.CYA_SLUG),
       journey,
       recoverableError
     }),
+    concurrencyToken: reviewedConcurrencyToken,
     copy,
     submissionDate: dateText(Date.now()),
     values,
@@ -48,50 +64,101 @@ const render = (h, journey, values, errors = {}, recoverableError = false) =>
     errorSummary: kit.errorSummary(errors)
   })
 
-const get = async (request, h) => {
-  const { journey, answers } = await state.get(request, h)
+const postedConcurrencyToken = (payload) =>
+  payload.concurrencyToken == null || payload.concurrencyToken === ''
+    ? undefined
+    : Number(payload.concurrencyToken)
+
+const get = async (request, toolkit) => {
+  const { journey } = await state.get(request, toolkit)
   if (journey.status === state.SUBMITTED) {
-    return h.redirect(pagePath(journey.journeyId, confirmationPage.slug))
+    return toolkit.redirect(pagePath(journey.journeyId, confirmationPage.slug))
   }
-  return render(h, journey, { declaration: answers.declaration ?? '' })
+  return toolkit.redirect(reviewHref(journey.journeyId))
 }
 
-const post = async (request, h) => {
-  const { journey } = await state.get(request, h)
-  if (journey.status === state.SUBMITTED) {
-    return h.redirect(pagePath(journey.journeyId, confirmationPage.slug))
-  }
-
-  const payload = request.payload ?? {}
+const declare = async (request, toolkit, journey, reviewedConcurrencyToken) => {
+  const payload = request.payload
   const values = { declaration: payload.declaration ?? '' }
   const { errors } = validate(fields, payload)
   if (errors) {
-    return render(h, journey, values, errors).code(HTTP_STATUS_BAD_REQUEST)
-  }
-
-  if (await isReviewRefused(request, h)) {
-    return h.redirect(pagePath(journey.journeyId, kit.CYA_SLUG))
+    return render(
+      toolkit,
+      journey,
+      reviewedConcurrencyToken,
+      values,
+      errors
+    ).code(HTTP_STATUS_BAD_REQUEST)
   }
 
   let result
-  const { failure } = await kit.recoverableSave(
-    async () => {
-      await state.commit(request, h, values)
-      result = await state.submitJourney(request, h)
-    },
-    () =>
-      render(h, journey, values, {}, true).code(
-        HTTP_STATUS_INTERNAL_SERVER_ERROR
-      )
-  )
-  if (failure) {
-    return failure
+  try {
+    const { failure } = await kit.recoverableSave(
+      async () => {
+        await state.commit(request, toolkit, values)
+        result = await state.submitJourney(request, toolkit, {
+          concurrencyToken: reviewedConcurrencyToken
+        })
+      },
+      () =>
+        render(
+          toolkit,
+          journey,
+          reviewedConcurrencyToken,
+          values,
+          {},
+          true
+        ).code(HTTP_STATUS_INTERNAL_SERVER_ERROR)
+    )
+    if (failure) {
+      return failure
+    }
+  } catch (error) {
+    if (error?.code === STALE_CONCURRENCY_TOKEN) {
+      return toolkit.redirect(reviewHref(journey.journeyId, { changed: true }))
+    }
+    throw error
   }
 
   if (!result.ok) {
-    return h.redirect(pagePath(journey.journeyId, kit.CYA_SLUG))
+    return toolkit.redirect(reviewHref(journey.journeyId, { refused: true }))
   }
-  return h.redirect(pagePath(journey.journeyId, confirmationPage.slug))
+  return toolkit.redirect(pagePath(journey.journeyId, confirmationPage.slug))
+}
+
+const post = async (request, toolkit) => {
+  const { journey } = await state.get(request, toolkit)
+  if (journey.status === state.SUBMITTED) {
+    return toolkit.redirect(pagePath(journey.journeyId, confirmationPage.slug))
+  }
+
+  const payload = request.payload ?? {}
+  if (payload.step !== STEP_REVIEW && payload.step !== STEP_DECLARE) {
+    return toolkit.redirect(reviewHref(journey.journeyId))
+  }
+
+  const reviewedConcurrencyToken = postedConcurrencyToken(payload)
+  if (reviewedConcurrencyToken !== journey.concurrencyToken) {
+    return toolkit.redirect(reviewHref(journey.journeyId, { changed: true }))
+  }
+  if (
+    reviewedConcurrencyToken !==
+    (await reviewedConcurrencyTokenOf(request, journey.journeyId))
+  ) {
+    return toolkit.redirect(reviewHref(journey.journeyId))
+  }
+
+  if (await isReviewRefused(request, toolkit)) {
+    return toolkit.redirect(reviewHref(journey.journeyId, { refused: true }))
+  }
+
+  // Never pre-tick: a tick left by a submit refused as stale was given to older content.
+  if (payload.step === STEP_REVIEW) {
+    return render(toolkit, journey, reviewedConcurrencyToken, {
+      declaration: ''
+    })
+  }
+  return declare(request, toolkit, journey, reviewedConcurrencyToken)
 }
 
 export const routes = kit.pageRoutes(page, { get, post })
