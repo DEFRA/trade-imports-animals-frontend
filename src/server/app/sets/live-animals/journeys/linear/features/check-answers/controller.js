@@ -80,7 +80,7 @@ const reviewErrorSummary = (
   )
 
 const renderCya = async (
-  h,
+  toolkit,
   journey,
   {
     answers,
@@ -107,7 +107,7 @@ const renderCya = async (
     ),
     cardErrors
   )
-  return h.view(view, {
+  return toolkit.view(view, {
     pageTitle: copy.title,
     heading: copy.title,
     copy,
@@ -140,11 +140,11 @@ const renderCya = async (
 
 export const renderNotificationView = async (
   request,
-  h,
+  toolkit,
   { recoverableError = false } = {}
 ) => {
   const { journey, answers, storedAnswers, scope, evaluation } =
-    await state.get(request, h)
+    await state.get(request, toolkit)
   const readOnly = journey.status === state.SUBMITTED
   const parties = await partiesFromStoredAnswers(answers)
   // A submitted notification is a record of what was sent, so nothing on it
@@ -161,7 +161,7 @@ export const renderNotificationView = async (
   const scanDocErrors = readOnly
     ? {}
     : await documentScanCardErrors(answers, { includePending: refused })
-  return renderCya(h, journey, {
+  return renderCya(toolkit, journey, {
     answers,
     scope,
     evaluation,
@@ -185,11 +185,11 @@ export const renderNotificationView = async (
   })
 }
 
-const get = async (request, h) => {
-  const response = await renderNotificationView(request, h)
-  const { journey } = await state.get(request, h)
+const get = async (request, toolkit) => {
+  const response = await renderNotificationView(request, toolkit)
+  const { journey } = await state.get(request, toolkit)
   if (journey.status !== state.SUBMITTED) {
-    await recordReviewed(request, h, journey)
+    await recordReviewed(request, toolkit, journey)
   }
   return response
 }

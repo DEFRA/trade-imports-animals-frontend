@@ -64,7 +64,7 @@ const drivePost = async ({
   const { concurrencyToken: reviewedConcurrencyToken } =
     await store.get(journeyId)
   await afterReview(journeyId)
-  const h = stubH()
+  const toolkit = stubH()
   const response = await post(
     journeyRequest(journeyId, {
       payload: {
@@ -77,7 +77,7 @@ const drivePost = async ({
         sessionConcurrencyToken(reviewedConcurrencyToken)
       )
     }),
-    h
+    toolkit
   )
   return {
     journeyId,
@@ -85,8 +85,8 @@ const drivePost = async ({
     before: seed,
     after: (await store.get(journeyId)).answers,
     response,
-    view: h.captured.view,
-    cookies: h.cookies
+    view: toolkit.captured.view,
+    cookies: toolkit.cookies
   }
 }
 
@@ -425,7 +425,7 @@ describe('#declaration submit against the real records adapter', () => {
         declaration: 'confirmed'
       })
       const { concurrencyToken } = await store.get(refused.journeyId)
-      const h = stubH()
+      const toolkit = stubH()
 
       await post(
         continueRequest(
@@ -434,10 +434,10 @@ describe('#declaration submit against the real records adapter', () => {
           }),
           concurrencyToken
         ),
-        h
+        toolkit
       )
 
-      expect(h.captured.view.context.values).toEqual({ declaration: '' })
+      expect(toolkit.captured.view.context.values).toEqual({ declaration: '' })
     })
 
     it('Should re-render declaration at 500 with its checked value, the reviewed token, banner and retry form', async () => {

@@ -41,8 +41,11 @@ export const documentScanCardErrors = async (
 }
 
 // The review must name every refusal here itself: the redirect back carries no reason.
-export const isReviewRefused = async (request, h) => {
-  const { journey, answers, storedAnswers, scope } = await state.get(request, h)
+export const isReviewRefused = async (request, toolkit) => {
+  const { journey, answers, storedAnswers, scope } = await state.get(
+    request,
+    toolkit
+  )
   if (journey.status === state.SUBMITTED) {
     return false
   }
