@@ -3,7 +3,8 @@
 // Level row colours, one modifier per level (names in levels.js). The row takes
 // the 50% tint of the tag's colour; the tag keeps its 80% tint and stands out.
 // The negative margin and matching padding put the colour 10px past the content
-// edge, so the tag stays under the Alpha tag.
+// edge, so the tag stays under the Alpha tag. The selector matches the weight of
+// the rule in GOV.UK Frontend that zeroes the width container margins.
 $page-maturity-colours: (
   "exploring": "orange",
   "detailing": "purple",
@@ -12,7 +13,7 @@ $page-maturity-colours: (
 );
 
 @each $level, $colour in $page-maturity-colours {
-  .app-page-maturity--#{$level} {
+  .govuk-width-container .govuk-phase-banner.app-page-maturity--#{$level} {
     margin-right: govuk-spacing(2) * -1;
     margin-left: govuk-spacing(2) * -1;
     padding-right: govuk-spacing(2);
