@@ -33,7 +33,7 @@ export const list = async () => {
   return ports
 }
 
-const displayName = (port) => `${port.name} (${port.code})`
+const displayName = (port) => `${port.name} - ${port.code}`
 
 export const label = async (code) => {
   await ensureLoaded()

@@ -24,7 +24,7 @@ const CHOOSE_DATE_LABEL = 'Choose date'
 const PORT_CODE = 'GB DVR'
 const COUNTRY_CODE = 'IE'
 const EXIT_PORT = portsOfEntry.find(({ code }) => code === PORT_CODE)
-const EXIT_PORT_LABEL = `${EXIT_PORT.name} (${EXIT_PORT.code})`
+const EXIT_PORT_LABEL = `${EXIT_PORT.name} - ${EXIT_PORT.code}`
 const IRELAND = destinationPageCountryEntries().find(
   ({ code }) => code === COUNTRY_CODE
 )
@@ -39,7 +39,7 @@ const transhipmentCountryInput = 'input#transhipmentDestinationCountry'
 const transhipmentCountryHidden = 'select#transhipmentDestinationCountry-select'
 const NO_JS_EXIT_DATE = '15/06/2030'
 const SECOND_PORT = portsOfEntry.find(({ code }) => code !== PORT_CODE)
-const SECOND_PORT_LABEL = `${SECOND_PORT.name} (${SECOND_PORT.code})`
+const SECOND_PORT_LABEL = `${SECOND_PORT.name} - ${SECOND_PORT.code}`
 const FRANCE = destinationPageCountryEntries().find(({ code }) => code === 'FR')
 const irelandMatches = destinationPageCountryEntries().filter(({ name }) =>
   /ire/i.test(name)
@@ -140,7 +140,7 @@ const expectedExitPortOptions = () => [
   { code: '', label: copy.port.placeholder },
   ...portsOfEntry.map((port) => ({
     code: port.code,
-    label: `${port.name} (${port.code})`
+    label: `${port.name} - ${port.code}`
   }))
 ]
 
@@ -513,8 +513,9 @@ test.describe('import-reason port and country type-ahead', () => {
 
   test('filters ports as the user types', async ({ page }) => {
     const field = page.locator(transitPortInput)
-    // "Dover" alone matches three Dover terminals; the code plus ")" is unique.
-    await field.fill(`${PORT_CODE})`)
+    // "Dover" or the code alone matches three Dover terminals; the end of the
+    // name and the code together are unique.
+    await field.fill(`Dover - ${PORT_CODE}`)
     await expect(
       page.getByRole('option', { name: EXIT_PORT_LABEL, exact: true })
     ).toBeVisible()

@@ -952,7 +952,7 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     )
 
     expect(valueOf(rows, DESTINATION_COUNTRY_KEY)).toBe('Ireland')
-    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover (GB DVR)')
+    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover - GB DVR')
     expect(keysOf(rows)).not.toContain(EXIT_DATE_KEY)
   })
 
@@ -1009,7 +1009,7 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     )
 
     expect(valueOf(rows, EXIT_DATE_KEY)).toBe('27/3/2026')
-    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover (GB DVR)')
+    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover - GB DVR')
     expect(keysOf(rows)).not.toContain(DESTINATION_COUNTRY_KEY)
   })
 

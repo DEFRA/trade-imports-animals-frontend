@@ -110,12 +110,12 @@ describe('GET port-of-entry — server-rendered select data (no-JS path)', () =>
     const [firstPort] = await ports.list()
     expect(items[1]).toEqual({
       value: firstPort.code,
-      text: `${firstPort.name} (${firstPort.code})`,
+      text: `${firstPort.name} - ${firstPort.code}`,
       selected: false
     })
     expect(items).toContainEqual({
       value: 'GB ABD',
-      text: 'Aberdeen Harbour (GB ABD)',
+      text: 'Aberdeen Harbour - GB ABD',
       selected: false
     })
   })
