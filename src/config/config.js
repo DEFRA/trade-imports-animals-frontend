@@ -383,6 +383,14 @@ export const config = convict({
       }
     }
   },
+  pageMaturityBanner: {
+    enabled: {
+      doc: 'Show each page’s maturity level (Exploring, Detailing, Agreed, Ready for live) in the phase banner',
+      format: STRICT_BOOLEAN,
+      default: true,
+      env: 'PAGE_MATURITY_BANNER_ENABLED'
+    }
+  },
   tradeImportsAnimalsBackendApi: {
     baseUrl: {
       doc: 'Trade Imports Animals Backend API base URL',

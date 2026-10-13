@@ -18,12 +18,11 @@ export const countriesOriginEntries = () =>
   countriesOrigin.map(({ code, name }) => ({ code, name }))
 
 const countryAndTerritoryEntries = () => {
-  const subdivisions = countriesOrigin.flatMap(
-    ({ name: countryName, subDivisions = [] }) =>
-      subDivisions.map(({ code, name }) => ({
-        code,
-        name: `${name} (${countryName})`
-      }))
+  const subdivisions = countriesOrigin.flatMap((country) =>
+    (country.subDivisions ?? []).map((subDivision) => ({
+      code: subDivision.code,
+      name: `${subDivision.name} (${country.name})`
+    }))
   )
   return [...countriesOriginEntries(), ...subdivisions].sort((left, right) =>
     left.name.localeCompare(right.name)

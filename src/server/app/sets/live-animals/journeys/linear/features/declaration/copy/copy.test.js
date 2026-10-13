@@ -8,9 +8,10 @@ import { configureSession } from '../../../../../../../engine/persistence/sessio
 import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
 import { driveHandler } from '../../../../../../../engine/test-support.js'
+import { configureReadyForCheckYourAnswers } from '../../../../../../../engine/read.js'
 import { dispatchPages } from '../../index.js'
 
-import * as declaration from '../controller.js'
+import { declarationRoutesFromReview } from '../test-support.js'
 import { copy } from './copy.en.js'
 import { copy as copyCy } from './copy.cy.js'
 
@@ -94,19 +95,19 @@ describe('declaration copy module', () => {
   })
 })
 
-describe('GET /declaration', () => {
+describe('declaration reached from the review', () => {
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)
     configureSession(SET_ID, sessionStub)
     buildDispatch(SET_ID, dispatchPages)
   })
-  beforeEach(() => store.clear())
+  beforeEach(() => {
+    store.clear()
+    configureReadyForCheckYourAnswers(SET_ID, () => true)
+  })
 
   it('Should supply the feature copy module and the shared chrome copy', async () => {
-    const get = declaration.routes.find(
-      (route) => route.method === 'GET'
-    ).handler
-    const result = await driveHandler(get)
+    const result = await driveHandler(declarationRoutesFromReview[0].handler)
     expect(result.view.context.copy).toBe(copy)
     expect(result.view.context.pageTitle).toBe(copy.title)
     expect(result.view.context.sharedCopy.errorSummary.title).toBe(

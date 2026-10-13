@@ -9,6 +9,7 @@ import { configureRecords } from '../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
+import { configureReadyForCheckYourAnswers } from '../../../../../engine/read.js'
 import { journeyRequest, stubH } from '../../../../../engine/test-support.js'
 import {
   decodePersistedFulfilment,
@@ -29,7 +30,7 @@ import * as transportersSelect from './transport/transporters-select/transporter
 import * as commercialTransporterDetails from './transport/commercial-transporter-details/commercial-transporter-details.controller.js'
 import * as privateTransporterDetails from './transport/private-transporter-details/private-transporter-details.controller.js'
 import * as contact from './contact/controller.js'
-import * as declaration from './declaration/controller.js'
+import { declarationRoutesFromReview } from './declaration/test-support.js'
 import * as commoditiesSearch from './commodities/search/search.controller.js'
 import * as consignmentDetails from './commodities/consignment-details/consignment-details.controller.js'
 import * as animalIdentification from './commodities/animal-identification/animal-identification.controller.js'
@@ -39,6 +40,8 @@ import * as checkAnswers from './check-answers/controller.js'
 
 const getHandlerOf = (feature) =>
   feature.routes.find((route) => route.method === 'GET').handler
+
+const declarationFromReview = { routes: declarationRoutesFromReview }
 
 const comprehensive = characterisationCorpus.find(
   ({ name }) => name === 'comprehensive'
@@ -108,7 +111,7 @@ const scalarPages = [
   ],
   ['private transporter', privateTransporterDetails, privateTransportFixture],
   ['contact', contact, parityFixture],
-  ['declaration', declaration, parityFixture]
+  ['declaration', declarationFromReview, {}]
 ]
 
 const canonicalViewOf = (answers) =>
@@ -118,11 +121,17 @@ const canonicalViewOf = (answers) =>
     )
   )
 
+// Each seed is a save, so the token differs between the two renders by design.
 const contextFor = async (handler, journeyId, answers) => {
   await store.seedAnswers(journeyId, answers)
-  const h = stubH()
-  await handler(journeyRequest(journeyId), h)
-  return h.captured.view?.context
+  const toolkit = stubH()
+  await handler(journeyRequest(journeyId), toolkit)
+  const context = toolkit.captured.view?.context
+  if (!context) {
+    return context
+  }
+  const { concurrencyToken: _token, ...rest } = context
+  return rest
 }
 
 const expectContextParity = async (feature, answers = parityFixture) => {
@@ -144,6 +153,7 @@ describe('canonical request-view controller parity', () => {
     configureRecords(SET_ID, recordsStub)
     configureSession(SET_ID, sessionStub)
     buildDispatch(SET_ID, dispatchPages)
+    configureReadyForCheckYourAnswers(SET_ID, () => true)
   })
   beforeEach(() => store.clear())
 
