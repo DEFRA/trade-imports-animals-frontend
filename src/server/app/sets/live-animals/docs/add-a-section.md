@@ -243,7 +243,8 @@ Update:
 
 Every task row participates in `readyForCheckYourAnswers`. A mandatory new row
 therefore holds the notification back from submission until it is complete —
-the hub still offers the review, and the check-answers POST is what refuses.
+the hub still offers the review, and the declaration refuses the review's
+Continue.
 Prove both the incomplete and complete states in
 `journeys/linear/flow/task-rows.test.js`.
 

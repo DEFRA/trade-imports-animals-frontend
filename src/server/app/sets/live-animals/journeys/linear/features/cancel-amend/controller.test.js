@@ -41,7 +41,7 @@ const startAmend = async () => {
     journey.journeyId,
     assembleFulfilments({ internalReferenceNumber: 'SubmittedRef' })
   )
-  await records.finalise(journey.journeyId)
+  await store.submit(journey.journeyId)
   await records.amend(journey.journeyId)
   await records.replaceFulfilment(
     journey.journeyId,
@@ -101,7 +101,11 @@ describe('cancel amendment routes', () => {
   it('Should redirect non-AMEND journeys without attempting the transition', async () => {
     const draft = await store.create()
     const submitted = await store.create()
-    await records.finalise(submitted.journeyId)
+    await records.finalise(
+      submitted.journeyId,
+      undefined,
+      submitted.concurrencyToken
+    )
 
     expect(await get(journeyRequest(draft.journeyId), stubH())).toEqual({
       redirect: dashboardPath()
