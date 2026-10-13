@@ -1,6 +1,6 @@
 import { hubPath, pagePath } from '../shared/paths.js'
 import { pageGatePasses } from './gates.js'
-import { journeySections } from './journey-flow.js'
+import { journeySections, journeyTaskRows } from './journey-flow.js'
 
 const sectionOfPage = (pageId) =>
   journeySections().find((section) =>
@@ -30,14 +30,31 @@ export const rowEntry = (row, scope, journeyId) => {
   return pagePath(journeyId, page.slug)
 }
 
-export const nextInSection = (pageId, scope, journeyId) => {
+const nextSectionPage = (pageId, scope) => {
   const section = sectionOfPage(pageId)
   if (!section) {
-    return hubPath(journeyId)
+    return undefined
   }
   const index = section.pages.findIndex((page) => page.id === pageId)
-  const next = section.pages
+  return section.pages
     .slice(index + 1)
     .find((page) => pageGatePasses(page, scope))
+}
+
+const taskRowOfPage = (pageId) =>
+  journeyTaskRows().find((row) => row.pages.some((page) => page.id === pageId))
+
+const staysInTaskRow = (row, page) =>
+  !row || row.pages.some((candidate) => candidate.id === page.id)
+
+export const nextInSection = (pageId, scope, journeyId) => {
+  const next = nextSectionPage(pageId, scope)
   return next ? pagePath(journeyId, next.slug) : hubPath(journeyId)
+}
+
+export const nextInTaskRow = (pageId, scope, journeyId) => {
+  const next = nextSectionPage(pageId, scope)
+  return next && staysInTaskRow(taskRowOfPage(pageId), next)
+    ? pagePath(journeyId, next.slug)
+    : hubPath(journeyId)
 }

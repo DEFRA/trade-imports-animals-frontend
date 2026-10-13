@@ -57,6 +57,7 @@ const render = async (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
+      request: h.request,
       backLink: hubPath(journey.journeyId),
       journey,
       page,
@@ -98,7 +99,7 @@ const post = async (request, h) => {
   const dateWindow = arrivalWindow()
   const { values, answers, errors } = await validation.onSubmit(
     request.payload ?? {},
-    { dateWindow }
+    { dateWindow, allowMissing: kit.isHubExit(request) }
   )
   if (hasErrors(errors)) {
     const { journey } = await state.get(request, h)

@@ -1,6 +1,7 @@
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
+import { completeOpeningRun } from '../../../../../../flow/run-state.js'
 import {
   CYA_SLUG,
   errorSummary,
@@ -130,10 +131,6 @@ const renderCya = async (
       readOnly && journey.status === state.SUBMITTED
         ? pagePath(journey.journeyId, 'delete')
         : null,
-    cancelAmendHref:
-      journey.status === state.AMEND
-        ? pagePath(journey.journeyId, 'cancel-amend')
-        : null,
     backLink: hubPath(journey.journeyId)
   })
 }
@@ -146,6 +143,9 @@ export const renderNotificationView = async (
   const { journey, answers, storedAnswers, scope, evaluation } =
     await state.get(request, toolkit)
   const readOnly = journey.status === state.SUBMITTED
+  const refused = request.query.refused === '1'
+  // c-201: an amendment opens with no errors; Continue refused shows them.
+  const holdsSilently = readOnly || (journey.status === state.AMEND && !refused)
   const parties = await partiesFromStoredAnswers(answers)
   // A submitted notification is a record of what was sent, so nothing on it
   // is outstanding, and no stored answer of its is named as stale either —
@@ -154,11 +154,10 @@ export const renderNotificationView = async (
   // Each card's page reads `answers` here, and is handed the raw
   // `storedAnswers` via context, so its own rules decide for themselves which
   // of the two they need.
-  const invalidCardErrors = readOnly
+  const invalidCardErrors = holdsSilently
     ? {}
     : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
-  const refused = request.query.refused === '1'
-  const scanDocErrors = readOnly
+  const scanDocErrors = holdsSilently
     ? {}
     : await documentScanCardErrors(answers, { includePending: refused })
   return renderCya(toolkit, journey, {
@@ -169,12 +168,12 @@ export const renderNotificationView = async (
     amendmentCancelled: readOnly && request.query.cancelled === '1',
     recoverableError,
     parties,
-    partyErrors: readOnly ? {} : await invalidPartyErrors(answers),
+    partyErrors: holdsSilently ? {} : await invalidPartyErrors(answers),
     // Incomplete wins over invalid on the same card: spread the invalid map
     // first and the incomplete map second, so a card that is both unfinished
     // and carrying a stale value says "complete this section" rather than
     // naming the stale answer.
-    cardErrors: readOnly
+    cardErrors: holdsSilently
       ? {}
       : {
           ...invalidCardErrors,
@@ -186,6 +185,7 @@ export const renderNotificationView = async (
 }
 
 const get = async (request, toolkit) => {
+  await completeOpeningRun(request, toolkit, request.params.journeyId)
   const response = await renderNotificationView(request, toolkit)
   const { journey } = await state.get(request, toolkit)
   if (journey.status !== state.SUBMITTED) {

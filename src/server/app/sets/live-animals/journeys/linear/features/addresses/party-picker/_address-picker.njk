@@ -67,7 +67,7 @@
   {% endif %}
 {% endmacro %}
 
-{% macro addressPicker(picker, crumb, copy, saveActionsCopy, hubHref, addAddressHref) %}
+{% macro addressPicker(picker, crumb, copy, saveActionsCopy, hubHref, addAddressHref, amend = none) %}
   {% if addAddressHref %}
     <p class="govuk-body">
       <a class="govuk-link" href="{{ addAddressHref }}">{{ copy.addNewAddress }}</a>
@@ -121,7 +121,8 @@
       hubHref,
       { text: saveActionsCopy.saveAndContinue, name: "action", value: "save" },
       saveActionsCopy,
-      false
+      false,
+      amend = amend
     ) }}
   </form>
 {% endmacro %}

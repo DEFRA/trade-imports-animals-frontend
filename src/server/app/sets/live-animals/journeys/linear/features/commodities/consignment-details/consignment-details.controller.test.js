@@ -490,6 +490,32 @@ describe('#consignmentDetailsController — the animal count must be answered be
     })
   })
 
+  it('Should hold the page on a blank count when Save and return to overview is pressed, saving nothing', async () => {
+    const seed = {
+      commodityLines: [
+        {
+          commoditySelection: 'Cow',
+          speciesSelection: '1148346',
+          numberOfPackages: '',
+          numberOfAnimalsQuantity: '3'
+        }
+      ]
+    }
+    const result = await driveHandler(post, {
+      seed,
+      payload: {
+        'numberOfAnimalsQuantity-0': '',
+        'numberOfPackages-0': '',
+        exit: 'hub'
+      }
+    })
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.view.context.errors['numberOfAnimalsQuantity-0']).toBe(
+      ANIMALS_REQUIRED_MESSAGE
+    )
+    expect(result.after.commodityLines[0].numberOfAnimalsQuantity).toBe(3)
+  })
+
   it('Should name every line left blank in the error summary, one entry per species', async () => {
     const result = await driveHandler(post, {
       seed: seedLines(),

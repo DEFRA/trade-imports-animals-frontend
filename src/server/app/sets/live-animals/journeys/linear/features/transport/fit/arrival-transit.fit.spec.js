@@ -132,6 +132,11 @@ const errorLink = (page, message) =>
 const submit = (page) =>
   page.getByRole('button', { name: 'Save and continue' }).click()
 
+const TRANSIT_COUNTRIES_ROW = 'Transit countries'
+
+const expectOverview = (page) =>
+  expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+
 const fillValidArrival = async (page) => {
   await page
     .getByLabel(copy.portOfEntry.arrivalDate.label)
@@ -150,6 +155,10 @@ const openTransit = async (page) => {
   await openArrival(page)
   await page.locator(meansSelect).selectOption('ROAD_VEHICLE')
   await submit(page)
+  await expectOverview(page)
+  await page
+    .getByRole('link', { name: TRANSIT_COUNTRIES_ROW, exact: true })
+    .click()
   await expect(
     page.getByRole('heading', { name: copy.transitCountries.title })
   ).toBeVisible()
@@ -353,9 +362,7 @@ test.describe('port of entry without JavaScript', () => {
       .fill(values.transportDocumentReference)
     await submit(page)
 
-    await expect(
-      page.getByRole('heading', { name: copy.transitCountries.title })
-    ).toBeVisible()
+    await expectOverview(page)
     await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
     await expect(page.locator('select#portOfEntry')).toHaveValue(
       values.portOfEntry
@@ -489,9 +496,7 @@ test.describe('arrival details validation', () => {
       .fill(dateWindow.exampleText)
     await submit(page)
 
-    await expect(
-      page.getByRole('heading', { name: copy.transitCountries.title })
-    ).toBeVisible()
+    await expectOverview(page)
     await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
 
     await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
@@ -547,9 +552,7 @@ test.describe('arrival details validation', () => {
 
       await fillValidArrival(page)
       await submit(page)
-      await expect(
-        page.getByRole('heading', { name: copy.transitCountries.title })
-      ).toBeVisible()
+      await expectOverview(page)
 
       await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
       await expect(
@@ -661,18 +664,17 @@ test.describe('arrival save and routing', () => {
     await signIn(page)
   })
 
-  test('saves and persists all arrival fields and routes overland transport to transit countries', async ({
+  test('saves and persists all arrival fields and returns to the overview, which offers transit countries for overland transport', async ({
     page
   }) => {
     await openArrival(page)
     await fillValidArrival(page)
     await submit(page)
 
+    await expectOverview(page)
     await expect(
-      page.getByRole('heading', { name: copy.transitCountries.title })
+      page.getByRole('link', { name: TRANSIT_COUNTRIES_ROW, exact: true })
     ).toBeVisible()
-    await page.locator('.govuk-back-link').click()
-    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await page.goto(journeyUrl(page, PORT_OF_ENTRY_PAGE))
     await expect(
       page.getByRole('heading', { name: copy.portOfEntry.title })
@@ -764,15 +766,13 @@ test.describe('transit countries rendering and validation', () => {
 
   // The question is asked overland but never compulsory, so an empty list is
   // an answer: continuing without adding a country saves it and moves on.
-  test('transit countries are optional: continuing with none saves and goes on', async ({
+  test('transit countries are optional: continuing with none saves and returns to the overview', async ({
     page
   }) => {
     await openTransit(page)
     await submit(page)
 
-    await expect(
-      page.getByRole('heading', { name: copy.transporters.title, exact: true })
-    ).toBeVisible()
+    await expectOverview(page)
     await expect(page.locator(ERROR_SUMMARY)).toHaveCount(0)
 
     await page.goto(journeyUrl(page, 'transit-countries'))
@@ -962,9 +962,7 @@ test.describe('transit countries list, limits and persistence', () => {
     await addTransitCountry(page, 'France')
     await addTransitCountry(page, 'Belgium')
     await submit(page)
-    await expect(
-      page.getByRole('heading', { name: copy.transporters.title, exact: true })
-    ).toBeVisible()
+    await expectOverview(page)
 
     await page.goto(journeyUrl(page, 'transit-countries'))
     await expect(
@@ -992,9 +990,7 @@ test.describe('transit countries without JavaScript', () => {
       page.getByRole('cell', { name: 'France', exact: true })
     ).toBeVisible()
     await submit(page)
-    await expect(
-      page.getByRole('heading', { name: copy.transporters.title, exact: true })
-    ).toBeVisible()
+    await expectOverview(page)
   })
 })
 

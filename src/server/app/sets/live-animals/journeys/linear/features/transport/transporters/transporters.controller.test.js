@@ -23,6 +23,7 @@ import {
   parties,
   rememberTransporter
 } from '../../../../../../../services/transporters/index.js'
+import { hubPath } from '../../../../../../../shared/paths.js'
 import { dispatchPages } from '../../index.js'
 
 import * as transporters from './transporters.controller.js'
@@ -222,6 +223,30 @@ describe('/transporters', () => {
     expect(response.context.transporterRows.map((row) => row.id)).toEqual([
       ABERDEEN_ID
     ])
+  })
+})
+
+describe('/transporters — Save and return to overview', () => {
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  it('Should go to the overview, not the next page, and commit nothing when no transporter is picked', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { exit: 'hub' }
+    })
+
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should refuse a transporter that is not on the list and save nothing', async () => {
+    const result = await driveHandler(postHandler, {
+      payload: { transporter: NOT_ON_THE_LIST, exit: 'hub' }
+    })
+
+    expect(result.response.redirect).toBeUndefined()
+    expect(result.view.context.errors.transporter).toBeTruthy()
+    expect(result.after).toEqual(result.before)
   })
 })
 

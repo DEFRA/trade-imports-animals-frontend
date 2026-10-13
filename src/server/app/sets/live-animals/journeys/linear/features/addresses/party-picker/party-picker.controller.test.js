@@ -528,3 +528,65 @@ describe('/consignors/select — change context', () => {
     expect(pickerFrom(result).pagination.next.href).not.toContain('change')
   })
 })
+
+// Save and return on an amendment's picker goes back to the amend review, the
+// page the Change link came from; a draft keeps going to the addresses hub.
+describe('/consignors/select — save and return while amending', () => {
+  beforeAll(configure)
+  beforeEach(() => store.clear())
+
+  const HELD_CONSIGNOR = {
+    name: 'Held Consignor',
+    address: { countryCode: 'FR' }
+  }
+
+  const postAmending = (payload, query) =>
+    driveHandler(postConsignor, {
+      seed: { consignor: HELD_CONSIGNOR },
+      payload,
+      query,
+      amend: true
+    })
+
+  it('Should return a chosen party to the review from a Change link', async () => {
+    const { journeyId, response } = await postAmending(
+      { action: 'save', party: ALPINE_DAIRY_ID },
+      { change: '1' }
+    )
+
+    expect(response).toEqual({
+      redirect: pagePath(journeyId, 'notification-view')
+    })
+  })
+
+  it('Should return to the review when saved with nothing chosen and an answer held', async () => {
+    const { journeyId, response } = await postAmending(
+      { action: 'save' },
+      { change: '1' }
+    )
+
+    expect(response).toEqual({
+      redirect: pagePath(journeyId, 'notification-view')
+    })
+  })
+
+  it('Should go on to the addresses hub, plain, from Save and continue', async () => {
+    const { journeyId, response } = await postAmending(
+      { action: 'save', party: ALPINE_DAIRY_ID },
+      {}
+    )
+
+    expect(response).toEqual({ redirect: pagePath(journeyId, 'addresses') })
+  })
+
+  it('Should keep a draft going back to the addresses hub still changing', async () => {
+    const result = await driveHandler(postConsignor, {
+      payload: { action: 'save', party: ALPINE_DAIRY_ID },
+      query: { change: '1' }
+    })
+
+    expect(result.response).toEqual({
+      redirect: `${pagePath(result.journeyId, 'addresses')}?change=1`
+    })
+  })
+})

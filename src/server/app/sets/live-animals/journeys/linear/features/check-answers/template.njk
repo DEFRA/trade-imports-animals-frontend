@@ -61,12 +61,6 @@
     </div>
   {% endif %}
 
-  {% if cancelAmendHref %}
-    <p class="govuk-body">
-      <a class="govuk-link" href="{{ cancelAmendHref }}">{{ copy.cancelAmend.link }}</a>
-    </p>
-  {% endif %}
-
   {% for section in sections %}
     {% if not loop.first %}
       <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
