@@ -92,6 +92,7 @@ const get = async (request, h) => {
       : hubPath(journey.journeyId)
   return h.view(view, {
     ...kit.base(copy.title, {
+      request,
       backLink,
       journey,
       page

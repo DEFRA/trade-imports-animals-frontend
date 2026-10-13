@@ -41,11 +41,13 @@ export const copy = {
   },
   country: {
     label: 'Gwlad gyrchfan',
-    placeholder: 'Dewiswch un'
+    placeholder: 'Dewiswch un',
+    noResults: 'Dim gwledydd wedi’u darganfod'
   },
   port: {
     label: 'Porthladd ymadael',
-    placeholder: 'Dewiswch un'
+    placeholder: 'Dewiswch un',
+    noResults: 'Dim porthladdoedd wedi’u darganfod'
   },
   date: {
     label: 'Dyddiad ymadael',

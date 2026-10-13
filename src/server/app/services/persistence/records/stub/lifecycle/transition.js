@@ -9,9 +9,15 @@ import { journeys } from '../store/state.js'
 import { loadWritable } from '../store/writable.js'
 import { marshal } from '../marshal/document.js'
 import { outstandingItemsOf } from '../outstanding-items.js'
+import {
+  advanceConcurrencyToken,
+  assertConcurrencyToken
+} from '../store/concurrency.js'
 
-export const finalise = async (journeyId, _actor) => {
+export const finalise = async (journeyId, _actor, concurrencyToken) => {
   const journey = loadWritable(journeyId)
+  assertConcurrencyToken(journey, concurrencyToken, 'submit notification')
+  advanceConcurrencyToken(journey)
   const outstandingItems = outstandingItemsOf(journey.fulfilment)
   journey.outstandingItems = outstandingItems
   journey.status = submittedStatusFor(outstandingItems)
@@ -32,6 +38,7 @@ export const amend = async (journeyId, _actor) => {
     fulfilment: structuredClone(journey.fulfilment),
     submittedAt: journey.submittedAt
   }
+  advanceConcurrencyToken(journey)
   journey.status = AMEND
   journey.submittedAt = null
   return structuredClone(marshal(journey))
@@ -49,6 +56,7 @@ export const cancelAmend = async (journeyId, _actor) => {
   }
   journey.fulfilment = structuredClone(journey.submittedSnapshot.fulfilment)
   journey.submittedAt = journey.submittedSnapshot.submittedAt
+  advanceConcurrencyToken(journey)
   journey.status = submittedStatusFor(journey.outstandingItems)
   delete journey.submittedSnapshot
   return structuredClone(marshal(journey))
@@ -69,6 +77,7 @@ export const softDelete = async (journeyId, _actor) => {
       `Journey "${journeyId}" is ${journey.status} — cannot delete`
     )
   }
+  advanceConcurrencyToken(journey)
   journey.status = DELETED
   journey.submittedAt = null
   return structuredClone(marshal(journey))

@@ -4,7 +4,6 @@ import {
   pagePath
 } from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
-import { nextInSection } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
 import {
@@ -41,8 +40,9 @@ import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { partiesFromStoredAnswers } from '../addresses/frozen-parties.js'
 import { partyOf } from '../addresses/parties.js'
 import { partyEditHref } from '../addresses/party-edit/edit-href.js'
-import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
-import { documentsRejectedCardErrors, reviewRefusal } from './refusal.js'
+import { documentScanCardErrors } from './refusal.js'
+import { recordReviewed } from './reviewed.js'
+import { declarationPage } from '../declaration/page.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 
@@ -110,7 +110,7 @@ const reviewTitle = (journey) =>
     : copy.title
 
 const renderCya = async (
-  h,
+  toolkit,
   journey,
   {
     answers,
@@ -146,12 +146,13 @@ const renderCya = async (
   const amending = journey.status === state.AMEND
   const headed = readOnly || journey.status === state.DRAFT
   const title = headed ? journey.journeyId : reviewTitle(journey)
-  return h.view(view, {
+  return toolkit.view(view, {
     pageTitle: title,
     heading: title,
     copy,
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
+    declarationHref: pagePath(journey.journeyId, declarationPage.slug),
     journeyStrip: headed
       ? null
       : journeyStrip(journey, { offerCancelAmend: false }),
@@ -177,17 +178,14 @@ const renderCya = async (
 
 export const renderNotificationView = async (
   request,
-  h,
-  {
-    recoverableError = false,
-    disableAutoFocus = true,
-    extraCardErrors = {},
-    refused = false
-  } = {}
+  toolkit,
+  { recoverableError = false } = {}
 ) => {
   const { journey, answers, storedAnswers, scope, evaluation } =
-    await state.get(request, h)
+    await state.get(request, toolkit)
   const readOnly = state.isSubmittedStatus(journey.status)
+  const refused = request.query.refused === '1'
+  // c-201: an amendment opens with no errors; Continue refused shows them.
   const holdsSilently = readOnly || (journey.status === state.AMEND && !refused)
   const parties = await partiesFromStoredAnswers(answers)
   // A submitted notification is a record of what was sent, so nothing on it
@@ -200,13 +198,10 @@ export const renderNotificationView = async (
   const invalidCardErrors = holdsSilently
     ? {}
     : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
-  // A REJECTED scan is a permanent verdict on a stored file, so it belongs on the read
-  // path — a mid-upload PENDING is (or should be) a transient state so shouldn't
-  // present as an error.
-  const rejectedDocErrors = holdsSilently
+  const scanDocErrors = holdsSilently
     ? {}
-    : await documentsRejectedCardErrors(answers)
-  return renderCya(h, journey, {
+    : await documentScanCardErrors(answers, { includePending: refused })
+  return renderCya(toolkit, journey, {
     answers,
     scope,
     evaluation,
@@ -223,48 +218,32 @@ export const renderNotificationView = async (
       ? {}
       : {
           ...invalidCardErrors,
-          ...rejectedDocErrors,
-          ...extraCardErrors,
+          ...scanDocErrors,
           ...incompleteCardErrors(answers, scope, evaluation)
         },
     speciesErrors: holdsSilently
       ? {}
       : unfinishedSpeciesErrors(answers, evaluation),
-    disableAutoFocus
+    disableAutoFocus: !refused
   })
 }
 
-const renderOrList = async (request, h) => {
+
+const get = async (request, toolkit) => {
+  await completeOpeningRun(request, toolkit, request.params.journeyId)
   try {
-    return await renderNotificationView(request, h)
+    const response = await renderNotificationView(request, toolkit)
+    const { journey } = await state.get(request, toolkit)
+    if (!state.isSubmittedStatus(journey.status)) {
+      await recordReviewed(request, toolkit, journey)
+    }
+    return response
   } catch (error) {
     if (state.isJourneyNotFound(error)) {
-      return h.redirect(dashboardPath())
+      return toolkit.redirect(dashboardPath())
     }
     throw error
   }
 }
 
-const get = async (request, h) => {
-  await completeOpeningRun(request, h, request.params.journeyId)
-  return renderOrList(request, h)
-}
-
-const post = async (request, h) => {
-  // Reuse the scan errors reviewRefusal already computed — a fresh
-  // documentScanCardErrors call here would issue a second HTTP GET per
-  // stored document to the upload backend.
-  const { refused, extraCardErrors } = await reviewRefusal(request, h)
-  if (refused) {
-    const rendered = await renderNotificationView(request, h, {
-      refused: true,
-      disableAutoFocus: false,
-      extraCardErrors
-    })
-    return rendered.code(HTTP_STATUS_BAD_REQUEST)
-  }
-  const { journey, scope } = await state.get(request, h)
-  return h.redirect(nextInSection(page.id, scope, journey.journeyId))
-}
-
-export const routes = pageRoutes(page, { get, post })
+export const routes = pageRoutes(page, { get })

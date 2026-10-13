@@ -137,7 +137,7 @@ describe('GET import-reason — copy reaches the view', () => {
     }
   })
 
-  it("Should carry the reveal placeholders, the port list labelled '<name> - <code>' and the exit-date label into the view", async () => {
+  it('Should carry the reveal placeholders, the port list labelled as the ports service labels it and the exit-date label into the view', async () => {
     const get = importReason.routes.find(
       (route) => route.method === 'GET'
     ).handler
@@ -151,10 +151,7 @@ describe('GET import-reason — copy reaches the view', () => {
     )
     expect(result.view.context.portItems[0].text).toBe(copy.port.placeholder)
     expect(result.view.context.portItems.slice(1)).toEqual(
-      (await ports.list()).map((port) => ({
-        value: port.code,
-        text: `${port.name} - ${port.code}`
-      }))
+      await ports.portOptions()
     )
     expect(result.view.context.exitDateField.label.text).toBe(copy.date.label)
   })

@@ -5,6 +5,7 @@ import {
   answerCountryOfOrigin,
   answerTransitCountries,
   BASE,
+  chooseAutocompleteByLabel,
   chooseCountryOfOrigin,
   completeAnswerSections,
   journeyIdFromPage,
@@ -18,6 +19,7 @@ import {
   uploadHealthCertificate,
   urlUnderBase
 } from '../../../../../../../../../fit/live-animals-journey.js'
+import { copy as importReasonCopy } from '../import-reason/copy/copy.en.js'
 import { copy as dashboardCopy } from '../dashboard/copy/copy.en.js'
 import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { copy as deleteCopy } from '../delete-notification/copy/copy.en.js'
@@ -286,8 +288,7 @@ test.describe('check-answers feature documents section', () => {
 test.describe('check-answers feature exit answers', () => {
   const IMPORT_REASON_SLUG = 'import-reason'
   const EXIT_PORT_CODE = 'GB DVR'
-  const EXIT_PORT_LABEL = 'Port of Dover (GB DVR)'
-  const DESTINATION_COUNTRY_CODE = 'IE'
+  const EXIT_PORT_LABEL = 'Port of Dover - GB DVR'
   const DESTINATION_COUNTRY_NAME = 'Ireland'
 
   test.beforeEach(async ({ page }) => {
@@ -300,10 +301,18 @@ test.describe('check-answers feature exit answers', () => {
     await startNotification(page)
     await page.goto(journeyUrl(page, IMPORT_REASON_SLUG))
     await page.locator('input[name="reasonForImport"][value="transit"]').check()
-    await page.locator('#transitPortOfExit').selectOption(EXIT_PORT_CODE)
-    await page
-      .locator('#transitDestinationCountry')
-      .selectOption(DESTINATION_COUNTRY_CODE)
+    await chooseAutocompleteByLabel(page, {
+      label: importReasonCopy.port.label,
+      inputId: 'transitPortOfExit',
+      query: EXIT_PORT_CODE,
+      optionName: EXIT_PORT_LABEL
+    })
+    await chooseAutocompleteByLabel(page, {
+      label: importReasonCopy.country.label,
+      inputId: 'transitDestinationCountry',
+      query: DESTINATION_COUNTRY_NAME,
+      optionName: DESTINATION_COUNTRY_NAME
+    })
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
@@ -357,9 +366,12 @@ test.describe('check-answers feature exit answers', () => {
       )
       .check()
     await page.locator('#temporaryAdmissionExitDate').fill('27/3/2026')
-    await page
-      .locator('#temporaryAdmissionPortOfExit')
-      .selectOption(EXIT_PORT_CODE)
+    await chooseAutocompleteByLabel(page, {
+      label: importReasonCopy.port.label,
+      inputId: 'temporaryAdmissionPortOfExit',
+      query: EXIT_PORT_CODE,
+      optionName: EXIT_PORT_LABEL
+    })
     await page.getByRole('button', { name: SAVE_AND_CONTINUE }).click()
 
     await page.goto(journeyUrl(page, NOTIFICATION_VIEW_SLUG))
@@ -816,7 +828,7 @@ test.describe('check-answers feature unfinished notification', () => {
 
     await page.getByRole('button', { name: copy.submit.button }).click()
 
-    await expect(page).toHaveURL(reviewUrl)
+    await expect(page).toHaveURL(`${reviewUrl}?refused=1`)
     await expect(
       page.getByRole('heading', { name: sharedCopy.errorSummary.title })
     ).toBeVisible()
@@ -831,7 +843,7 @@ test.describe('check-answers feature unfinished notification', () => {
 
     await page.getByRole('button', { name: copy.submit.button }).click()
 
-    await expect(page).toHaveURL(reviewUrl)
+    await expect(page).toHaveURL(`${reviewUrl}?refused=1`)
     const importingEntry = page.getByRole('link', {
       name: copy.errors.cards.whatAreYouImporting
     })

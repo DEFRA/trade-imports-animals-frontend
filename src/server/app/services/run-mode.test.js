@@ -82,7 +82,7 @@ describe('countries service — stub mode', () => {
       value: 'ES-CN',
       text: CANARY_ISLANDS_LABEL
     })
-    expect(await countries.originDisplayLabel('ES-CN')).toBe(
+    expect(await countries.countryDisplayLabel('ES-CN')).toBe(
       CANARY_ISLANDS_LABEL
     )
     expect(countries.parentCountryCode('ES-CN')).toBe('ES')
@@ -270,7 +270,7 @@ describe('ports service — real mode', () => {
     expect(await ports.list()).toEqual([{ code: 'GB ZZZ', name: 'Zed Port' }])
   })
 
-  it("Should offer each served port as '<name> - <code>' valued by its code, in the order reference data serves them", async () => {
+  it("Should offer each served port as '<name> - <code>' valued by its code, in the order reference data serves them, matching its label", async () => {
     process.env.STUB_MODE = 'false'
     stubFetch(async () =>
       okResponse([
@@ -284,6 +284,7 @@ describe('ports service — real mode', () => {
       { value: 'GB DYC', text: 'Aberdeen Airport - GB DYC' },
       { value: 'GB ABD', text: 'Aberdeen Harbour - GB ABD' }
     ])
+    expect(await ports.label('GB ABD')).toBe('Aberdeen Harbour - GB ABD')
   })
 
   it('Should fetch once across many reader calls once loaded', async () => {

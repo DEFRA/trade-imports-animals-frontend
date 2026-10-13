@@ -143,9 +143,11 @@
      certificate ends with Continue, which starts the amendment that lets the
      trader upload it. #}
   {% if not readOnly %}
-    <form method="post" novalidate>
+    {# Carries the concurrency token this review was rendered with, so the trader declares only what it showed. #}
+    <form method="post" action="{{ declarationHref }}" novalidate>
       <input type="hidden" name="crumb" value="{{ crumb }}" />
       <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
+      <input type="hidden" name="step" value="review" />
       <div class="govuk-button-group">
         {{ govukButton({ text: copy.submit.button }) }}
         {% if cancelAmendHref %}

@@ -60,8 +60,15 @@ export default defineConfig({
       url: `http://localhost:${port}/health`,
       // The service default is real; this suite runs against stub data and a
       // locally signed session, so it opts in explicitly here. Auth stays
-      // enforced either way (see server/auth/stub-sign-in.js).
-      env: { PORT: String(port), STUB_MODE: 'true' },
+      // enforced either way (see server/auth/stub-sign-in.js). The server is
+      // started fresh for each run and no template changes during one, so it
+      // caches compiled templates rather than recompiling them on every render.
+      env: {
+        PORT: String(port),
+        STUB_MODE: 'true',
+        NUNJUCKS_NO_CACHE: 'false',
+        NUNJUCKS_WATCH: 'false'
+      },
       timeout: 180_000,
       reuseExistingServer: false
     }

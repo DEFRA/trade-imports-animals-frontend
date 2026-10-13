@@ -44,6 +44,7 @@ const render = (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
+      request,
       backLink: hubEntryReturn(request) ?? hubPath(journey.journeyId),
       journey,
       page,

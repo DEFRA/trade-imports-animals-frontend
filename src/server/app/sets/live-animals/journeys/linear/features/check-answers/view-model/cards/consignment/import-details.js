@@ -32,7 +32,7 @@ export const importDetailsCard = async (
   rows: [
     row(
       copy.rows.countryOfOrigin,
-      (await countries.originDisplayLabel(
+      (await countries.countryDisplayLabel(
         answers.countryOfOriginSubdivisionCode || answers.countryOfOrigin
       )) ?? ''
     ),

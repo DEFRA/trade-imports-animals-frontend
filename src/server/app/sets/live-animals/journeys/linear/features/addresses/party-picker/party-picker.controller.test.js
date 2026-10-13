@@ -12,18 +12,11 @@ import {
 import { config } from '../../../../../../../../../config/config.js'
 import { buildDispatch } from '../../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../../engine/store.js'
-import {
-  configureRecords,
-  records
-} from '../../../../../../../engine/persistence/records.js'
+import { configureRecords } from '../../../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../../services/persistence/session/stub.js'
-import {
-  driveHandler,
-  journeyRequest,
-  stubH
-} from '../../../../../../../engine/test-support.js'
+import { driveHandler } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
 import { pagePath } from '../../../../../../../shared/paths.js'
 import * as state from '../../../../../../../engine/index.js'
@@ -547,17 +540,13 @@ describe('/consignors/select — save and return while amending', () => {
     address: { countryCode: 'FR' }
   }
 
-  const postAmending = async (payload, query) => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, { consignor: HELD_CONSIGNOR })
-    await store.submit(journey.journeyId)
-    await records.amend(journey.journeyId)
-    const response = await postConsignor(
-      journeyRequest(journey.journeyId, { payload, query }),
-      stubH()
-    )
-    return { journeyId: journey.journeyId, response }
-  }
+  const postAmending = (payload, query) =>
+    driveHandler(postConsignor, {
+      seed: { consignor: HELD_CONSIGNOR },
+      payload,
+      query,
+      amend: true
+    })
 
   it('Should return a chosen party to the review from a Change link', async () => {
     const { journeyId, response } = await postAmending(

@@ -18,6 +18,7 @@ import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
 import { isRecoverableBackendError } from '../services/persistence/records/errors.js'
+import { amendFormActions } from './amend-form-actions.js'
 
 export const routeOptions = { auth: 'session' }
 
@@ -187,6 +188,10 @@ export const nextTarget = async (request, page, scope) =>
  * @param {object} [options.page] - the page identity. Supply it and the view
  * gains the `caption` naming the section of the journey the page belongs to;
  * omit it on a page the journey deliberately leaves uncaptioned.
+ * @param {object} [options.request] - the request being answered. Supply it
+ * on a page that ends with `saveActions`, and the view gains `amend`: the two
+ * form actions its save buttons carry while the journey is being amended, or
+ * null otherwise. A template passes it on as `amend = amend`.
  * @returns {object} the common view model.
  */
 export const base = (
@@ -197,10 +202,12 @@ export const base = (
     journeyId = journey?.journeyId,
     page,
     recoverableError = false,
-    offerCancelAmend = true
+    offerCancelAmend = true,
+    request
   } = {}
 ) => {
   const hasJourney = journeyId != null
+  const amending = journey?.status === AMEND
   return {
     layout: journeyLayout(),
     pageTitle: title,
@@ -212,7 +219,13 @@ export const base = (
     homeUrl: dashboardPath(),
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
     journeyStrip: journeyStrip(journey, { offerCancelAmend }),
-    amending: journey?.status === AMEND,
+    amending,
+    // Per request because an amend page's save buttons carry the page's own
+    // query, and the POST re-render needs the same URLs as the GET.
+    amend:
+      amending && request
+        ? amendFormActions(request.path ?? '', request.url?.searchParams)
+        : null,
     concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,
     recoverableError,
@@ -271,12 +284,16 @@ export const pageRoutes = (page, { get, post }) => [
     options: routeOptions,
     handler: get
   },
-  {
-    method: 'POST',
-    path: pageRoutePath(page.slug),
-    options: routeOptions,
-    handler: redirectOnStaleAction(post)
-  }
+  ...(post
+    ? [
+        {
+          method: 'POST',
+          path: pageRoutePath(page.slug),
+          options: routeOptions,
+          handler: redirectOnStaleAction(post)
+        }
+      ]
+    : [])
 ]
 
 export const readDate = (payload, name) => {

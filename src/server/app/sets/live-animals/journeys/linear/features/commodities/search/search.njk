@@ -91,6 +91,6 @@
       html: helpHtml
     }) }}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amendFormActions if amending else none) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend) }}
   </form>
 {% endblock %}

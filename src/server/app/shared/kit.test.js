@@ -101,6 +101,28 @@ describe('#base — amending', () => {
       }).journeyStrip.cancelAmend
     ).toBeUndefined()
   })
+
+  const ORIGIN_PATH = '/n/j-1/origin'
+  const originRequest = {
+    path: ORIGIN_PATH,
+    url: new URL(`http://x${ORIGIN_PATH}?change=1&return=addresses`)
+  }
+
+  it("Should give an amended journey's page the two save-button form actions, keeping its own query", () => {
+    expect(
+      base('t', { journey: { status: AMEND }, request: originRequest }).amend
+    ).toEqual({
+      returnAction: `${ORIGIN_PATH}?change=1&return=addresses`,
+      continueAction: `${ORIGIN_PATH}?return=addresses`
+    })
+  })
+
+  it('Should give no amend form actions outside an amendment or without the request', () => {
+    expect(
+      base('t', { journey: { status: DRAFT }, request: originRequest }).amend
+    ).toBeNull()
+    expect(base('t', { journey: { status: AMEND } }).amend).toBeNull()
+  })
 })
 
 describe('#amendReviewTarget — where a Change-link save of an amendment goes', () => {
