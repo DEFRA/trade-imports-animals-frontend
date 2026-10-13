@@ -208,17 +208,20 @@ test.describe('cancel-amend feature without JavaScript', () => {
       javaScriptEnabled: false,
       storageState: await page.context().storageState()
     })
-    const noJs = await context.newPage()
+    try {
+      const noJs = await context.newPage()
 
-    await noJs.goto(`${BASE}/notifications/${reference}/origin`)
-    await cancelAmendLink(noJs).click()
-    await expect(noJs).toHaveURL(/\/cancel-amend$/)
-    await noJs.getByRole('button', { name: copy.confirmButton }).click()
+      await noJs.goto(`${BASE}/notifications/${reference}/origin`)
+      await cancelAmendLink(noJs).click()
+      await expect(noJs).toHaveURL(/\/cancel-amend$/)
+      await noJs.getByRole('button', { name: copy.confirmButton }).click()
 
-    await expect(noJs).toHaveURL(/\/notification-view\?cancelled=1$/)
-    await expect(strip(noJs).locator(TAG)).toHaveText(
-      sharedCopy.journeyStrip.submitted
-    )
-    await context.close()
+      await expect(noJs).toHaveURL(/\/notification-view\?cancelled=1$/)
+      await expect(strip(noJs).locator(TAG)).toHaveText(
+        sharedCopy.journeyStrip.submitted
+      )
+    } finally {
+      await context.close()
+    }
   })
 })
