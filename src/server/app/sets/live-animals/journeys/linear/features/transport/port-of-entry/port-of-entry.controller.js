@@ -33,10 +33,9 @@ const copy = copyFor({ en, cy }).portOfEntry
 
 const portItems = async (selected) => [
   { value: '', text: copy.port.placeholder },
-  ...(await ports.list()).map((port) => ({
-    value: port.code,
-    text: `${port.name} (${port.code})`,
-    selected: port.code === selected
+  ...(await ports.portOptions()).map((option) => ({
+    ...option,
+    selected: option.value === selected
   }))
 ]
 

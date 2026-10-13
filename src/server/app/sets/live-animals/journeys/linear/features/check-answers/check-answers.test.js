@@ -25,6 +25,7 @@ import { continueRequest } from '../declaration/test-support.js'
 import { reviewedConcurrencyTokensCookie } from '../../../../../../engine/persistence/session.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
+import * as ports from '../../../../../../services/ports/index.js'
 import { pagePath } from '../../../../../../shared/paths.js'
 import { answerForInlineParty } from '../addresses/party-inline.js'
 import { taskRows } from '../../flow/task-rows.js'
@@ -953,6 +954,19 @@ describe(`${SUITE} — reason-for-import exit answers`, () => {
     expect(valueOf(rows, DESTINATION_COUNTRY_KEY)).toBe('Ireland')
     expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe('Port of Dover (GB DVR)')
     expect(keysOf(rows)).not.toContain(EXIT_DATE_KEY)
+  })
+
+  it('Should read the port of exit back exactly as the option the trader picked', async () => {
+    const rows = rowsOf(
+      await sectionsFor(
+        reasonSeed({ reasonForImport: 'transit', portOfExit: 'GB DVR' })
+      )
+    )
+    const picked = (await ports.portOptions()).find(
+      ({ value }) => value === 'GB DVR'
+    )
+
+    expect(valueOf(rows, PORT_OF_EXIT_KEY)).toBe(picked.text)
   })
 
   it('Should name a subdivision destination country with its parent country', async () => {

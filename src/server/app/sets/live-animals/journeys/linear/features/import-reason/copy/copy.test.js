@@ -126,7 +126,7 @@ describe('GET import-reason — copy reaches the view', () => {
     }
   })
 
-  it("Should carry the reveal placeholders, the port list labelled '<name> - <code>' and the exit-date label into the view", async () => {
+  it('Should carry the reveal placeholders, the port list labelled as the ports service labels it and the exit-date label into the view', async () => {
     const get = importReason.routes.find(
       (route) => route.method === 'GET'
     ).handler
