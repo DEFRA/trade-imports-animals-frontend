@@ -23,6 +23,4 @@ export const PAGE_LEVELS = Object.freeze({
   [`${NOTIFICATION}/confirmation`]: LEVELS.readyForLive
 })
 
-export const SECTION_LEVELS = Object.freeze([
-  Object.freeze({ section: '/live-animals/templates', level: LEVELS.exploring })
-])
+export const SECTION_LEVELS = Object.freeze([])

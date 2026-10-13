@@ -19,16 +19,18 @@ const isErrorPage = (request) =>
  *
  * @param {string} [routePath] - the route pattern, such as
  * `/live-animals/notifications/{journeyId}/origin`.
+ * @param {ReadonlyArray<{ section: string, level: string }>} [sections] - the
+ * section list, defaulting to `SECTION_LEVELS`.
  * @returns {string|undefined} a level id, or undefined when the page is unlisted.
  */
-export function pageLevelFor(routePath) {
+export function pageLevelFor(routePath, sections = SECTION_LEVELS) {
   if (!routePath) {
     return undefined
   }
   if (Object.hasOwn(PAGE_LEVELS, routePath)) {
     return PAGE_LEVELS[routePath]
   }
-  return SECTION_LEVELS.find(
+  return sections.find(
     ({ section }) =>
       routePath === section || routePath.startsWith(`${section}/`)
   )?.level

@@ -27,20 +27,28 @@ describe('pageLevelFor', () => {
   it('Should return undefined for a path that only shares a prefix with a listed path', () => {
     expect(pageLevelFor(`${NOTIFICATION}/origin-x`)).toBeUndefined()
     expect(pageLevelFor('/live-animals-extra')).toBeUndefined()
-    expect(pageLevelFor('/live-animals/templatesomething')).toBeUndefined()
   })
 
   it.each([undefined, ''])('Should return undefined for %j', (routePath) => {
     expect(pageLevelFor(routePath)).toBeUndefined()
   })
 
-  it.each([
-    '/live-animals/templates',
-    '/live-animals/templates/new',
-    '/live-animals/templates/{journeyId}',
-    '/live-animals/templates/{journeyId}/transit-countries'
-  ])('Should treat %s as Exploring through the templates section', (path) => {
-    expect(pageLevelFor(path)).toBe(LEVELS.exploring)
+  describe('with a section', () => {
+    const sections = [{ section: '/example/section', level: LEVELS.exploring }]
+
+    it.each([
+      '/example/section',
+      '/example/section/new',
+      '/example/section/{journeyId}/child'
+    ])('Should treat %s as Exploring through the section', (path) => {
+      expect(pageLevelFor(path, sections)).toBe(LEVELS.exploring)
+    })
+
+    it('Should not treat a path that only shares the section prefix as in it', () => {
+      expect(
+        pageLevelFor('/example/sectionsomething', sections)
+      ).toBeUndefined()
+    })
   })
 })
 

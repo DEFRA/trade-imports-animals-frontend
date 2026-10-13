@@ -128,14 +128,14 @@ describe('page maturity banner on a served page', () => {
   const ENABLED_KEY = 'pageMaturityBanner.enabled'
   const originalStubMode = config.get('stubMode')
   const originalEnabled = config.get(ENABLED_KEY)
-  const MANAGE_TEMPLATES_URL = `${SET_BASE}/templates`
+  const SERVED_PAGE_URL = SET_BASE
   let server
   let cookie
 
-  const phaseBannerOfManageTemplates = async () => {
+  const phaseBannerOfServedPage = async () => {
     const { payload } = await server.inject({
       method: 'GET',
-      url: MANAGE_TEMPLATES_URL,
+      url: SERVED_PAGE_URL,
       headers: { cookie }
     })
     return bannerOf(payload)
@@ -161,8 +161,8 @@ describe('page maturity banner on a served page', () => {
     await server.stop({ timeout: 0 })
   })
 
-  it('Should show the Exploring tag on Manage templates', async () => {
-    const banner = await phaseBannerOfManageTemplates()
+  it('Should show the Exploring tag on the live animals start page', async () => {
+    const banner = await phaseBannerOfServedPage()
 
     expect(banner).toHaveLength(2)
     expect(
@@ -176,7 +176,7 @@ describe('page maturity banner on a served page', () => {
   it('Should show only the Alpha tag when the switch is off', async () => {
     config.set(ENABLED_KEY, false)
 
-    const banner = await phaseBannerOfManageTemplates()
+    const banner = await phaseBannerOfServedPage()
 
     expect(banner.find(TAG_SELECTOR)).toHaveLength(1)
     expect(banner.text()).not.toContain(copy.levels.exploring.text)
