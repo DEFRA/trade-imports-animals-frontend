@@ -35,17 +35,16 @@ const view = `${TEMPLATES}/features/import-reason/template`
 
 const copy = copyFor({ en, cy })
 
-const DIVIDER_OPTION = { value: '', text: '──────────', disabled: true }
-
+// The lists feed type-aheads that enhance these selects, so each carries only the
+// placeholder and the real options — a scroll-only list needed a divider rule
+// under the placeholder, a searchable one does not.
 const countryItems = async () => [
   { value: '', text: copy.country.placeholder },
-  DIVIDER_OPTION,
   ...(await countries.destinationCountryOptions())
 ]
 
 const portItems = async () => [
   { value: '', text: copy.port.placeholder },
-  DIVIDER_OPTION,
   ...(await ports.portOptions())
 ]
 
@@ -58,6 +57,7 @@ const render = async (
 ) =>
   h.view(view, {
     ...kit.base(copy.title, {
+      request: h.request,
       backLink: hubPath(journey.journeyId),
       journey,
       page,

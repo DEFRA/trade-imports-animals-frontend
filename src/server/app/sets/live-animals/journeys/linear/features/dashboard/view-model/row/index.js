@@ -13,7 +13,7 @@ export const toRow = async (journey) => ({
   status: journeyStrip(journey).status,
   commodity: formatCommodity(journey.commodity, commodities.commodityNameFor),
   origin: journey.originCountryCode
-    ? await countries.originDisplayLabel(journey.originCountryCode)
+    ? await countries.countryDisplayLabel(journey.originCountryCode)
     : '',
   // arrival is a day the user chose; created and submitted are moments.
   arrival: formatDisplayCalendarDate(journey.arrivalDate),

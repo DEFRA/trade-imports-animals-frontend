@@ -4,14 +4,12 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { hubPath, pagePath } from '../../../../../shared/paths.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
 import { store } from '../../../../../engine/store.js'
-import {
-  configureRecords,
-  records
-} from '../../../../../engine/persistence/records.js'
+import { configureRecords } from '../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
 import {
+  driveHandler,
   stubH,
   journeyRequest,
   postHandlerOf
@@ -260,20 +258,13 @@ describe('save actions — amend endings', () => {
   }
 
   it("Should return an amend's Save and return to the review and send its Save and continue onwards", async () => {
-    const postAmending = async (query) => {
-      const journey = await store.create()
-      await store.seedAnswers(journey.journeyId, reasonPrerequisites)
-      await store.submit(journey.journeyId)
-      await records.amend(journey.journeyId)
-      const response = await postHandlerOf(importReason)(
-        journeyRequest(journey.journeyId, {
-          payload: internalMarketPayload,
-          query
-        }),
-        stubH()
-      )
-      return { journeyId: journey.journeyId, response }
-    }
+    const postAmending = (query) =>
+      driveHandler(postHandlerOf(importReason), {
+        seed: reasonPrerequisites,
+        payload: internalMarketPayload,
+        query,
+        amend: true
+      })
 
     const saveAndReturn = await postAmending({ change: '1' })
     const saveAndContinue = await postAmending({})

@@ -34,6 +34,7 @@ const render = (h, journey, { selected, query = '', errorText = null }) => {
   const errors = errorText ? { [errorField]: errorText } : {}
   return h.view(view, {
     ...kit.base(copy.title, {
+      request: h.request,
       backLink: hubPath(journey.journeyId),
       journey,
       page

@@ -65,6 +65,7 @@ const render = async (
   const chosenLabel = (await offeredLabel(chosen)) ?? ''
   return h.view(view, {
     ...kit.base(copy.pageTitle, {
+      request: h.request,
       backLink: await kit.runBackLink(request, portOfEntryPage.slug),
       journey,
       page,

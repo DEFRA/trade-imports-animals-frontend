@@ -19,7 +19,7 @@ export const transitCountriesCard = async (journeyId, answers, readOnly) => {
   const codes = toArray(answers.transitedCountries)
   const labels = await Promise.all(
     codes.map(
-      async (code) => (await countries.originDisplayLabel(code)) ?? code
+      async (code) => (await countries.countryDisplayLabel(code)) ?? code
     )
   )
   return {

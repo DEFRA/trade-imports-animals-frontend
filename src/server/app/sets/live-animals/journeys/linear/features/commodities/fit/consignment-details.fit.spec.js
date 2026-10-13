@@ -311,6 +311,11 @@ test.describe('commodity consignment details — persistence and accessibility',
       group.getByRole('link', {
         name: sharedCopy.saveActions.cancelAndReturnToHub
       })
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole('link', {
+        name: sharedCopy.saveActions.cancelAndReturnToHub
+      })
     ).toBeVisible()
   })
 
