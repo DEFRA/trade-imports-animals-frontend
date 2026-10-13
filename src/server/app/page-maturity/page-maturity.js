@@ -2,7 +2,7 @@ import { config } from '../../../config/config.js'
 import { copyFor } from '../shared/copy.js'
 import { copy as copyEn } from './copy/copy.en.js'
 import { copy as copyCy } from './copy/copy.cy.js'
-import { TAG_CLASSES } from './levels.js'
+import { BANNER_CLASSES, TAG_CLASSES } from './levels.js'
 import { PAGE_LEVELS, SECTION_LEVELS } from './page-levels.js'
 
 const copy = copyFor({ en: copyEn, cy: copyCy })
@@ -53,6 +53,7 @@ export function pageMaturityContext(request) {
   const { tag, text } = copy.levels[level]
   return {
     pageMaturity: {
+      classes: BANNER_CLASSES[level],
       tag: { text: tag, classes: TAG_CLASSES[level] },
       text,
       hiddenPrefix: copy.hiddenPrefix

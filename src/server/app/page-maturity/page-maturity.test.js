@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import { config } from '../../../config/config.js'
 import { copy } from './copy/copy.en.js'
-import { LEVELS, TAG_CLASSES } from './levels.js'
+import { BANNER_CLASSES, LEVELS, TAG_CLASSES } from './levels.js'
 import { pageLevelFor, pageMaturityContext } from './page-maturity.js'
 
 const NOTIFICATION = '/live-animals/notifications/{journeyId}'
@@ -14,7 +14,8 @@ describe('pageLevelFor', () => {
     ['/live-animals', LEVELS.exploring],
     [`${NOTIFICATION}/origin`, LEVELS.exploring],
     [`${NOTIFICATION}/transit-countries`, LEVELS.detailing],
-    [`${NOTIFICATION}/declaration`, LEVELS.detailing]
+    [`${NOTIFICATION}/declaration`, LEVELS.agreed],
+    [`${NOTIFICATION}/confirmation`, LEVELS.readyForLive]
   ])('Should return the level of the listed path %s', (routePath, level) => {
     expect(pageLevelFor(routePath)).toBe(level)
   })
@@ -60,6 +61,7 @@ describe('pageMaturityContext', () => {
           classes: TAG_CLASSES.detailing
         },
         text: copy.levels.detailing.text,
+        classes: BANNER_CLASSES.detailing,
         hiddenPrefix: copy.hiddenPrefix
       }
     })

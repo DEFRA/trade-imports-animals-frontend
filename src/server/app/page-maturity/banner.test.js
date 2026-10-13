@@ -8,18 +8,21 @@ import { nunjucksConfig } from '../../../config/nunjucks/nunjucks.js'
 import { copy as sharedCopy } from '../shared/copy.en.js'
 import { SET_BASE } from '../sets/live-animals/set.js'
 import { copy } from './copy/copy.en.js'
-import { TAG_CLASSES } from './levels.js'
+import { BANNER_CLASSES, LEVELS, TAG_CLASSES } from './levels.js'
 
 const environment = nunjucksConfig.options.compileOptions.environment
 
 const SERVICE_SENTENCE =
   'This is a new service. Help us improve it and give your feedback by email.'
 
-const pageMaturity = {
-  tag: { text: copy.levels.exploring.tag, classes: TAG_CLASSES.exploring },
-  text: copy.levels.exploring.text,
+const pageMaturityFor = (level) => ({
+  tag: { text: copy.levels[level].tag, classes: TAG_CLASSES[level] },
+  text: copy.levels[level].text,
+  classes: BANNER_CLASSES[level],
   hiddenPrefix: copy.hiddenPrefix
-}
+})
+
+const pageMaturity = pageMaturityFor(LEVELS.exploring)
 
 const renderLayout = (context = {}) =>
   environment.render('shared/layout.njk', {
@@ -57,12 +60,32 @@ describe('page maturity banner', () => {
     expect(alpha.find(TAG_SELECTOR).text().trim()).toBe('Alpha')
     expect(normalised(alpha.text())).toBe(`Alpha ${SERVICE_SENTENCE}`)
     expect(levelTag).toHaveLength(1)
-    expect(levelTag.text().trim()).toBe(pageMaturity.tag.text)
     expect(levelTag.hasClass(TAG_CLASSES.exploring)).toBe(true)
     expect(levelTag.hasClass('govuk-phase-banner__content__tag')).toBe(true)
-    expect(normalised(level.text())).toContain(
-      `${pageMaturity.tag.text} ${pageMaturity.hiddenPrefix} ${pageMaturity.text}`
+    expect(normalised(level.text())).toBe(
+      `${pageMaturity.hiddenPrefix} ${pageMaturity.tag.text}. ${pageMaturity.text}`
     )
+  })
+
+  it.each(Object.values(LEVELS))(
+    'Should give the %s row its own modifier class and tag colour',
+    (levelId) => {
+      const level = bannerOf(
+        renderLayout({ pageMaturity: pageMaturityFor(levelId) })
+      ).eq(1)
+
+      expect(level.hasClass(BANNER_CLASSES[levelId])).toBe(true)
+      expect(level.find(TAG_SELECTOR).hasClass(TAG_CLASSES[levelId])).toBe(true)
+      expect(bannerOf(renderLayout()).hasClass(BANNER_CLASSES[levelId])).toBe(
+        false
+      )
+    }
+  )
+
+  it('Should not style the Alpha row with a level modifier', () => {
+    const alpha = bannerOf(renderLayout({ pageMaturity })).eq(0)
+
+    expect(alpha.attr('class')).not.toContain('app-page-maturity')
   })
 
   it('Should leave no line break or spacing utilities in the level row', () => {
@@ -79,13 +102,18 @@ describe('page maturity banner', () => {
     expect(links.attr('href')).toMatch(/^mailto:/)
   })
 
-  it('Should put the hidden prefix in the level row, after its tag', () => {
+  it('Should read the hidden status prefix inside the tag, before the level', () => {
     const level = bannerOf(renderLayout({ pageMaturity })).eq(1)
-    const hidden = level.find('.govuk-visually-hidden')
+    const tag = level.find(TAG_SELECTOR)
 
-    expect(hidden.text()).toBe(pageMaturity.hiddenPrefix)
-    expect(level.html().indexOf(pageMaturity.tag.text)).toBeLessThan(
-      level.html().indexOf(pageMaturity.hiddenPrefix)
+    expect(tag.find('.govuk-visually-hidden').first().text().trim()).toBe(
+      pageMaturity.hiddenPrefix
+    )
+    expect(normalised(tag.text())).toBe(
+      `${pageMaturity.hiddenPrefix} ${pageMaturity.tag.text}.`
+    )
+    expect(level.find('.govuk-phase-banner__text').text()).not.toContain(
+      pageMaturity.hiddenPrefix
     )
   })
 
@@ -140,9 +168,9 @@ describe('page maturity banner on a served page', () => {
     expect(
       banner
         .find(TAG_SELECTOR)
-        .map((_, tag) => load(tag).text().trim())
+        .map((_, tag) => normalised(load(tag).text()))
         .get()
-    ).toEqual(['Alpha', copy.levels.exploring.tag])
+    ).toEqual(['Alpha', `${copy.hiddenPrefix} ${copy.levels.exploring.tag}.`])
   })
 
   it('Should show only the Alpha tag when the switch is off', async () => {

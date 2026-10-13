@@ -19,8 +19,8 @@ export const PAGE_LEVELS = Object.freeze({
   [`${NOTIFICATION}/transporters`]: LEVELS.exploring,
   [`${NOTIFICATION}/accompanying-documents`]: LEVELS.exploring,
   [`${NOTIFICATION}/notification-view`]: LEVELS.exploring,
-  [`${NOTIFICATION}/declaration`]: LEVELS.detailing,
-  [`${NOTIFICATION}/confirmation`]: LEVELS.detailing
+  [`${NOTIFICATION}/declaration`]: LEVELS.agreed,
+  [`${NOTIFICATION}/confirmation`]: LEVELS.readyForLive
 })
 
 export const SECTION_LEVELS = Object.freeze([

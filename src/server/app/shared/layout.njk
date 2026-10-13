@@ -68,7 +68,7 @@
     tag: { text: sharedCopy.layout.phaseBanner.tag, classes: "govuk-tag--grey" },
     html: phaseBannerHtml
   }) }}
-  {%- include "page-maturity/banner.njk" %}
+  {% include "page-maturity/banner.njk" %}
   {# No breadcrumbs: Design release 1 gives a page one route backwards — the
      back link — and one route up, the service navigation. #}
   {% if backLink %}
