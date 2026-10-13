@@ -61,5 +61,20 @@ export const copy = {
     documents: {
       title: 'Uwchlwytho dogfennau'
     }
+  },
+  // While a template is being created the Overview is its task list: no
+  // Documents section, so the two after it renumber, and it ends with the
+  // template's own buttons.
+  template: {
+    taskListHeading: 'Rhestr dasgau’r templed',
+    reviewTemplate: 'Adolygu’r templed',
+    returnToManageTemplates: 'Dychwelyd i reoli templedi',
+    groups: {
+      'about-the-consignment': '1. Am y llwyth',
+      'description-of-the-goods': '2. Disgrifiad o’r nwyddau',
+      'transport-and-arrival': '3. Cludiant a chyrraedd',
+      'consignment-parties': '4. Partïon y llwyth',
+      'contact-address': '5. Cyfeiriad cyswllt'
+    }
   }
 }

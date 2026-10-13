@@ -1,8 +1,11 @@
 import {
   dashboardPath,
   hubRoutePath,
-  pagePath
+  pagePath,
+  templatesPath
 } from '../../../../../../shared/paths.js'
+import { inTemplateMode } from '../../../../../../shared/template-mode.js'
+import { TEMPLATE_MODE_EXCLUDED_PAGE_IDS } from '../../flow/template-mode.js'
 import { TEMPLATES } from '../../config.js'
 import { rowEntry } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
@@ -51,6 +54,22 @@ const GROUPS = [
   { id: 'contact-address', rows: ['contact'] }
 ]
 
+const offeredInTemplateMode = (rowId) =>
+  !taskRowById(rowId).pages.every((page) =>
+    TEMPLATE_MODE_EXCLUDED_PAGE_IDS.includes(page.id)
+  )
+
+// A template holds no documents, so that task and its section leave the list.
+const TEMPLATE_GROUPS = GROUPS.map((group) => ({
+  ...group,
+  rows: group.rows.filter(offeredInTemplateMode)
+})).filter((group) => group.rows.length > 0)
+
+const groupsFor = () =>
+  inTemplateMode()
+    ? { groups: TEMPLATE_GROUPS, captions: copy.template.groups }
+    : { groups: GROUPS, captions: copy.groups }
+
 const COMPLETE_TAG = {
   tag: { text: copy.statuses.complete, classes: 'govuk-tag--green' }
 }
@@ -76,8 +95,27 @@ const statusTag = (status, invalid) =>
 // a task row: the review page is offered whatever else has been answered, so a
 // trader can read back what the notification holds at any point. The page
 // renders an unfinished notification, naming what is still outstanding, and the
-// review section's own gate still stands between that page and submitting.
+// review section's own gate still stands between that page and submitting. A
+// template's list ends instead with "Review template" and "Return to manage
+// templates".
 const reviewHref = (journeyId) => pagePath(journeyId, notificationViewPage.slug)
+
+const endingFor = (journeyId) =>
+  inTemplateMode()
+    ? {
+        taskListHeading: copy.template.taskListHeading,
+        reviewText: copy.template.reviewTemplate,
+        reviewHref: reviewHref(journeyId),
+        returnText: copy.template.returnToManageTemplates,
+        returnHref: templatesPath()
+      }
+    : {
+        taskListHeading: copy.taskListHeading,
+        reviewText: copy.reviewAndSubmit,
+        reviewHref: reviewHref(journeyId),
+        returnText: copy.returnToDashboard,
+        returnHref: dashboardPath()
+      }
 
 const isHiddenRow = (row, status) => row.conditional && status === NA
 
@@ -114,10 +152,18 @@ const buildRowItem = (
   return rowItem(base, row, scope, status, journeyId, invalidRows.has(id))
 }
 
-const buildGroups = (answers, scope, evaluation, journeyId, invalidRows) =>
-  GROUPS.map((group) => ({
+const buildGroups = (
+  groups,
+  captions,
+  answers,
+  scope,
+  evaluation,
+  journeyId,
+  invalidRows
+) =>
+  groups.map((group) => ({
     id: group.id,
-    caption: copy.groups[group.id],
+    caption: captions[group.id],
     items: group.rows
       .map((id) =>
         buildRowItem(id, answers, scope, evaluation, journeyId, invalidRows)
@@ -160,6 +206,7 @@ const handler = async (request, h) => {
   // No back link: Design release 1 treats the overview as the top of the
   // notification rather than a step within it, so the way off the page is the
   // Dashboard item in the service navigation, which every page carries.
+  const { groups, captions } = groupsFor()
   return h.view(view, {
     pageTitle: copy.title,
     heading: copy.title,
@@ -167,9 +214,16 @@ const handler = async (request, h) => {
     sharedCopy,
     journeyStrip: journeyStrip(journey),
     commodityTotals: buildCommodityTotals(answers, evaluation),
-    groups: buildGroups(answers, scope, evaluation, journeyId, invalidRows),
-    reviewHref: reviewHref(journeyId),
-    dashboardHref: dashboardPath()
+    groups: buildGroups(
+      groups,
+      captions,
+      answers,
+      scope,
+      evaluation,
+      journeyId,
+      invalidRows
+    ),
+    ...endingFor(journeyId)
   })
 }
 

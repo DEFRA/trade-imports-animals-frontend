@@ -180,6 +180,59 @@ export const startNotification = async (page) => {
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
+/** Starts a new template, names it and answers Origin, ending on 'What are you importing?'. */
+export const startTemplateAtCommodities = async (
+  page,
+  name = 'Weekly cattle'
+) => {
+  await page.goto(`${BASE}/templates/new?type=live-animals`)
+  await page
+    .getByRole('textbox', { name: 'Enter template name', exact: true })
+    .fill(name)
+  await page.getByRole('button', { name: 'Save and continue' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Origin of the import' })
+  ).toBeVisible()
+  await answerOriginEntry(page)
+  await expect(
+    page.getByRole('heading', { name: 'What are you importing?' })
+  ).toBeVisible()
+}
+
+const FRESH_CONTACT_ID_FLOOR = 2000000000
+const FRESH_CONTACT_ID_SPAN = 99999999
+
+/** A ten-digit contact id no other test uses, so a test's templates are its own. */
+export const freshContactId = () =>
+  String(
+    FRESH_CONTACT_ID_FLOOR + Math.floor(Math.random() * FRESH_CONTACT_ID_SPAN)
+  )
+
+/** Presses Save template on the template review and lands on Manage templates. */
+export const saveTemplateFromReview = async (page) => {
+  await page.getByRole('button', { name: 'Save template', exact: true }).click()
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Manage templates' })
+  ).toBeVisible()
+}
+
+/** Creates a template through Bos taurus and lands on its task list. */
+export const openTemplateTaskList = async (page, name) => {
+  await startTemplateAtCommodities(page, name)
+  await selectSpecies(page, ['Bos taurus'])
+  await save(page)
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+}
+
+/** Creates a cattle template and opens its review from the task list. */
+export const openTemplateReview = async (page, name) => {
+  await openTemplateTaskList(page, name)
+  await page.getByRole('button', { name: 'Review template' }).click()
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Review your template' })
+  ).toBeVisible()
+}
+
 const FIXTURE_PORT = PORTS.find((port) => port.code === values.portOfEntry)
 const FIXTURE_PORT_OPTION = `${FIXTURE_PORT.name} - ${FIXTURE_PORT.code}`
 
@@ -472,6 +525,61 @@ export const answerContactAddress = async (page) => {
     .getByRole('radio', { name: partyPickerName(values.contactAddress) })
     .check()
   await save(page)
+}
+
+/**
+ * Answers every section of a template from its task list. A template's species
+ * are chosen as the template is created, so its task list already holds them:
+ * the commodity quantities are a task of their own here, which is why this
+ * walks the task list rather than `completeAnswerSections`.
+ *
+ * @param {import('@playwright/test').Page} page - on the template's task list.
+ */
+export const answerEveryTemplateSection = async (page) => {
+  const [line] = values.commodityLines
+  const task = (name) => page.getByRole('link', { name }).click()
+  const overview = () =>
+    expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  const saveAndContinue = () =>
+    page.getByRole('button', { name: 'Save and continue' }).click()
+
+  await task('Where is this consignment coming from?')
+  await answerOriginDetails(page)
+
+  await task('Commodity details')
+  await page.getByLabel('Number of animals').fill(line.numberOfAnimalsQuantity)
+  await page
+    .getByLabel('Number of packages (when required)')
+    .fill(line.numberOfPackages)
+  await saveAndContinue()
+  await overview()
+
+  await task('Identification details')
+  await answerAnimalIdentification(page)
+  await overview()
+
+  await task('Main reason for import')
+  await answerImportReason(page)
+  await overview()
+  await task('Additional details')
+  await answerAdditionalDetails(page)
+  await overview()
+
+  await task('Roles and addresses')
+  await answerRolesAndAddresses(page)
+
+  await task('Arrival details')
+  await answerArrivalDetails(page)
+  await overview()
+  await task('Transit countries')
+  await answerTransitCountries(page)
+  await overview()
+  await task('Transport details')
+  await answerTransporter(page)
+  await overview()
+
+  await task('Contact address for this consignment')
+  await answerContactAddress(page)
 }
 
 /**

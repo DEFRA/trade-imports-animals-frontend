@@ -1,0 +1,50 @@
+{% extends "shared/layout.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
+{% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
+
+{% block journeyContent %}
+  {% if savedBanner %}
+    {% set savedBannerHtml %}
+      <h3 class="govuk-notification-banner__heading">{{ savedBanner.heading }}</h3>
+    {% endset %}
+    {{ govukNotificationBanner({
+      type: "success",
+      titleText: copy.saved.title,
+      html: savedBannerHtml,
+      role: "alert"
+    }) }}
+  {% endif %}
+
+  <h1 class="govuk-heading-l">{{ copy.title }}</h1>
+  <p class="govuk-body">{{ copy.intro }}</p>
+
+  {{ govukButton({ text: copy.createNew, href: createTemplateHref }) }}
+
+  <h2 class="govuk-heading-m">{{ copy.listHeading }}</h2>
+  <p class="govuk-body">{{ resultsLabel }}</p>
+
+  {% for card in templateCards %}
+    <section class="govuk-summary-card" aria-label="{{ card.label }}">
+      <div class="govuk-summary-card__title-wrapper">
+        {% if card.category %}
+          <p class="govuk-caption-m govuk-!-margin-top-0 govuk-!-margin-bottom-1">{{ card.category }}</p>
+        {% endif %}
+        <h3 class="govuk-summary-card__title">{{ card.title }}</h3>
+      </div>
+      <div class="govuk-summary-card__content">
+        <div class="govuk-button-group">
+          <a class="govuk-link" href="{{ card.viewHref }}">{{ copy.card.view }}</a>
+          <form method="post" action="{{ card.useAction }}" class="app-form-inline" novalidate>
+            <input type="hidden" name="crumb" value="{{ crumb }}" />
+            {{ govukButton({
+              text: copy.card.use,
+              classes: "govuk-button--secondary"
+            }) }}
+          </form>
+        </div>
+        {{ govukSummaryList({ rows: card.rows }) }}
+      </div>
+    </section>
+  {% endfor %}
+{% endblock %}

@@ -4,7 +4,8 @@ import {
   searchCommodities,
   selectSpecies,
   signIn,
-  startNotification
+  startNotification,
+  startTemplateAtCommodities
 } from '../../../../../../../../../../fit/live-animals-journey.js'
 import { expectNoSeriousOrCriticalViolations } from './axe.js'
 import { copy } from '../copy/copy.en.js'
@@ -233,5 +234,72 @@ test.describe('commodity search', () => {
     // Open the help details so its paragraphs and outbound link are scanned.
     await page.getByText(copy.search.help.summary, { exact: true }).click()
     await expectNoSeriousOrCriticalViolations(page, 'Commodity search')
+  })
+})
+
+const TEMPLATE_NAME = 'Weekly cattle'
+const TEMPLATE_PATH = /\/live-animals\/templates\/[^/]+$/
+const TEMPLATE_ORIGIN_PATH = /\/live-animals\/templates\/[^/]+\/origin$/
+
+test.describe('commodity search in template mode', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startTemplateAtCommodities(page, TEMPLATE_NAME)
+  })
+
+  test("shows the Template tag and name, a Back link to the template's Origin and all three controls", async ({
+    page
+  }) => {
+    const strip = page.locator('.app-journey-strip')
+
+    await expect(strip.locator('.govuk-tag')).toHaveText('Template')
+    await expect(strip).toContainText(TEMPLATE_NAME)
+    await expect(page.locator(BACK_LINK)).toHaveAttribute(
+      'href',
+      TEMPLATE_ORIGIN_PATH
+    )
+    await expect(
+      page.getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', {
+        name: 'Save and return to overview',
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', {
+        name: 'Cancel and return to overview',
+        exact: true
+      })
+    ).toHaveAttribute('href', TEMPLATE_PATH)
+  })
+
+  test("Cancel and return to overview opens the template's task list", async ({
+    page
+  }) => {
+    await page
+      .getByRole('link', { name: 'Cancel and return to overview', exact: true })
+      .click()
+
+    await expect(page).toHaveURL(TEMPLATE_PATH)
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Template tasklist' })
+    ).toBeVisible()
+  })
+
+  test("Save and continue returns to the template's task list", async ({
+    page
+  }) => {
+    await selectSpecies(page, [BOS_TAURUS])
+    await page
+      .getByRole('button', { name: SAVE_AND_CONTINUE, exact: true })
+      .click()
+
+    await expect(page).toHaveURL(TEMPLATE_PATH)
+    await expect(
+      page.getByRole('heading', { name: 'Template tasklist' })
+    ).toBeVisible()
   })
 })

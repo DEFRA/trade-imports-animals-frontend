@@ -144,6 +144,21 @@ export const copy = {
   submit: {
     button: 'Continue'
   },
+  // While a template is being created the review is the template review: the
+  // same page, titled for the template, without the documents section (so the
+  // two after it renumber, as on the template's task list), and ending with
+  // the button that saves the template.
+  template: {
+    title: 'Review your template',
+    saveTemplate: 'Save template',
+    sections: {
+      'about-the-consignment': '1. About the consignment',
+      'description-of-the-goods': '2. Description of the goods',
+      'transport-and-arrival': '3. Transport and arrival',
+      'consignment-parties': '4. Consignment parties',
+      'contact-address-section': '5. Contact address'
+    }
+  },
   errors: {
     prefix: 'Error:',
     // One line per review card that still has answers outstanding. The same

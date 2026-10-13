@@ -118,6 +118,20 @@ test.describe('dashboard feature — empty state and start', () => {
     ).toBeVisible()
     await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
   })
+
+  test('a start from another service opens a new notification at the origin page', async ({
+    page
+  }) => {
+    await page.goto(`${BASE}/start`)
+
+    await expect(
+      page.getByRole('heading', { name: 'Origin of the import' })
+    ).toBeVisible()
+    await expect(page).toHaveURL(urlUnderBase('/notifications/[^/]+/origin'))
+    const strip = page.locator('.app-journey-strip')
+    await expect(strip).toContainText('Draft')
+    await expect(strip).toContainText(journeyIdFromPage(page))
+  })
 })
 
 test.describe('dashboard feature — notification rows and actions', () => {

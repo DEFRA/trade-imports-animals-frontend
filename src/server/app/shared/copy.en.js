@@ -14,6 +14,7 @@ export const copy = {
     serviceNavigation: {
       menuButton: 'Menu',
       dashboard: 'Dashboard',
+      templates: 'Templates',
       addressBook: 'Address book',
       manageAccount: 'Manage account',
       logOut: 'Log out'
@@ -64,14 +65,16 @@ export const copy = {
     saveAndReturn: 'Save and return',
     saveAndContinue: 'Save and continue',
     saveAndReturnToHub: 'Save and return to overview',
-    cancelAndReturnToHub: 'Cancel and return to overview'
+    cancelAndReturnToHub: 'Cancel and return to overview',
+    cancel: 'Cancel'
   },
   journeyStrip: {
     draft: 'Draft',
     submitted: 'Submitted',
     amend: 'Amend',
     cancelAmend: 'Cancel amend',
-    deleted: 'Deleted'
+    deleted: 'Deleted',
+    template: 'Template'
   },
   addressHandshake: {
     addNewAddress: 'Add a new address',

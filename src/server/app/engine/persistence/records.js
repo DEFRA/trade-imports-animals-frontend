@@ -1,4 +1,5 @@
 import { currentSetId, setKeyed } from '../../shared/set-context.js'
+import { inTemplateMode } from '../../shared/template-mode.js'
 
 export const DRAFT = 'draft'
 export const SUBMITTED = 'submitted'
@@ -27,10 +28,29 @@ const store = setKeyed('records', { configuredBy: 'configureRecords' })
 
 // Reading before configuration is the un-booted case, which must report itself
 // through `unconfigured` rather than through setKeyed's "no such set" error.
-const impl = () => (store.has(currentSetId()) ? store.current() : UNCONFIGURED)
+const notificationImpl = () =>
+  store.has(currentSetId()) ? store.current() : UNCONFIGURED
+
+// Optional, unlike the notification records: a set that never enters template
+// mode need not configure it.
+const templateStore = setKeyed('template records')
+
+const templateImpl = () => {
+  const setId = currentSetId()
+  if (!templateStore.has(setId)) {
+    throw new Error(`template records not configured for set "${setId}"`)
+  }
+  return templateStore.current()
+}
+
+const impl = () => (inTemplateMode() ? templateImpl() : notificationImpl())
 
 export const configureRecords = (setId, newImpl) => {
   store.configure(setId, newImpl)
+}
+
+export const configureTemplateRecords = (setId, newImpl) => {
+  templateStore.configure(setId, newImpl)
 }
 
 export const records = {

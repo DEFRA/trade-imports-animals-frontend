@@ -67,5 +67,20 @@ export const copy = {
     documents: {
       title: 'Upload documents'
     }
+  },
+  // While a template is being created the Overview is its task list: no
+  // Documents section, so the two after it renumber, and it ends with the
+  // template's own buttons.
+  template: {
+    taskListHeading: 'Template tasklist',
+    reviewTemplate: 'Review template',
+    returnToManageTemplates: 'Return to manage templates',
+    groups: {
+      'about-the-consignment': '1. About the consignment',
+      'description-of-the-goods': '2. Description of the goods',
+      'transport-and-arrival': '3. Transport and arrival',
+      'consignment-parties': '4. Consignment parties',
+      'contact-address': '5. Contact address'
+    }
   }
 }

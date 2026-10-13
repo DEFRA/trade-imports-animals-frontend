@@ -1,5 +1,15 @@
-import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import {
+  hubPath,
+  pagePath,
+  templatesPath
+} from '../../../../../../shared/paths.js'
+import {
+  inTemplateMode,
+  templateOwnerId
+} from '../../../../../../shared/template-mode.js'
+import * as templates from '../../../../../../services/templates/index.js'
 import { TEMPLATES } from '../../config.js'
+import { rememberSavedTemplate } from '../templates/saved-banner.js'
 import * as state from '../../../../../../engine/index.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
 import {
@@ -35,6 +45,18 @@ const view = `${TEMPLATES}/features/check-answers/template`
 
 const copy = copyFor({ en, cy })
 const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
+
+const reviewWording = () =>
+  inTemplateMode()
+    ? { title: copy.template.title, submitText: copy.template.saveTemplate }
+    : { title: copy.title, submitText: copy.submit.button }
+
+/** Where the review's button posts: on to the declaration, or, for a template,
+ * back here to save it. */
+const submitAction = (journeyId) =>
+  inTemplateMode()
+    ? pagePath(journeyId, page.slug)
+    : pagePath(journeyId, declarationPage.slug)
 
 /** One summary over both kinds of refusal: first the roles whose copied address
  * breaks the address-book rules, then the cards with answers still
@@ -96,6 +118,7 @@ const renderCya = async (
     disableAutoFocus = true
   }
 ) => {
+  const { title, submitText } = reviewWording()
   const sections = withCardErrors(
     await buildSections(
       answers,
@@ -109,12 +132,14 @@ const renderCya = async (
     cardErrors
   )
   return toolkit.view(view, {
-    pageTitle: copy.title,
-    heading: copy.title,
+    pageTitle: title,
+    heading: title,
+    submitText,
+    templateMode: inTemplateMode(),
     copy,
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
-    declarationHref: pagePath(journey.journeyId, declarationPage.slug),
+    declarationHref: submitAction(journey.journeyId),
     journeyStrip: journeyStrip(journey),
     errorSummary: reviewErrorSummary(
       journey.journeyId,
@@ -145,7 +170,10 @@ export const renderNotificationView = async (
   const readOnly = journey.status === state.SUBMITTED
   const refused = request.query.refused === '1'
   // c-201: an amendment opens with no errors; Continue refused shows them.
-  const holdsSilently = readOnly || (journey.status === state.AMEND && !refused)
+  // A template is reviewed as it stands: nothing on it is owed, so a template
+  // review names no card, role, stale answer or document as unfinished.
+  const holdsSilently =
+    readOnly || inTemplateMode() || (journey.status === state.AMEND && !refused)
   const parties = await partiesFromStoredAnswers(answers)
   // A submitted notification is a record of what was sent, so nothing on it
   // is outstanding, and no stored answer of its is named as stale either —
@@ -194,4 +222,22 @@ const get = async (request, toolkit) => {
   return response
 }
 
-export const routes = pageRoutes(page, { get })
+// Save template stores the template instead of going on to the declaration: a
+// template holds no declaration, and Manage templates confirms it once with a
+// success banner. A notification's review posts to the declaration, never here,
+// so a post here outside template mode goes back to the review.
+const post = async (request, toolkit) => {
+  if (!inTemplateMode()) {
+    return toolkit.redirect(pagePath(request.params.journeyId, page.slug))
+  }
+  const saved = await templates.saveFor(
+    templateOwnerId(),
+    request.params.journeyId
+  )
+  if (saved) {
+    rememberSavedTemplate(request, saved)
+  }
+  return toolkit.redirect(templatesPath())
+}
+
+export const routes = pageRoutes(page, { get, post })

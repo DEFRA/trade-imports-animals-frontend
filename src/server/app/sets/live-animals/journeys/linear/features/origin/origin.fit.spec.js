@@ -772,3 +772,165 @@ test.describe('origin internal reference validation', () => {
     )
   })
 })
+
+const TEMPLATE_NAME = 'Weekly cattle'
+const TEMPLATE_ORIGIN_PATTERN = /\/live-animals\/templates\/[^/]+\/origin$/
+const TEMPLATE_NAME_PATTERN = /\/live-animals\/templates\/[^/]+\/name$/
+const TEMPLATE_COMMODITIES_PATTERN =
+  /\/live-animals\/templates\/[^/]+\/commodities$/
+const NOT_FOUND = 404
+
+const startAtTemplateOrigin = async (page) => {
+  await page.goto(`${BASE}/templates/new?type=live-animals`)
+  await page
+    .getByRole('textbox', { name: 'Enter template name', exact: true })
+    .fill(TEMPLATE_NAME)
+  await page
+    .getByRole('button', {
+      name: sharedCopy.saveActions.saveAndContinue,
+      exact: true
+    })
+    .click()
+  await expect(page).toHaveURL(TEMPLATE_ORIGIN_PATTERN)
+  await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+}
+
+test.describe('origin in template mode', () => {
+  test.beforeEach(async ({ page }) => {
+    await signIn(page)
+    await startAtTemplateOrigin(page)
+  })
+
+  test('shows the Template tag and name above the section caption', async ({
+    page
+  }) => {
+    const strip = page.locator('.app-journey-strip')
+
+    await expect(strip).toHaveText(/Template\s+Weekly cattle/)
+    await expect(strip.locator('.govuk-tag')).toHaveText(
+      sharedCopy.journeyStrip.template
+    )
+    const [stripBox, captionBox] = await Promise.all([
+      strip.boundingBox(),
+      page.getByText('About the consignment', { exact: true }).boundingBox()
+    ])
+    expect(stripBox.y).toBeLessThan(captionBox.y)
+  })
+
+  test('asks the same questions with the same hints as a notification', async ({
+    page
+  }) => {
+    await expect(page.locator(countryHidden)).toBeAttached()
+    await expect(page.getByText(copy.country.hint)).toBeVisible()
+    await expect(
+      page.getByRole('group', { name: copy.regionRequirement.legend })
+    ).toContainText(copy.regionRequirement.hint)
+    await expect(
+      page.getByRole('radio', { name: copy.regionRequirement.yes })
+    ).toBeVisible()
+    await expect(
+      page.getByLabel(copy.internalReference.label)
+    ).toHaveAccessibleDescription(copy.internalReference.hint)
+  })
+
+  test('ends with Save and continue alone', async ({ page }) => {
+    await expect(page.locator(SUBMIT_BUTTON_SELECTOR)).toHaveCount(1)
+    await expect(
+      page.getByRole('button', {
+        name: sharedCopy.saveActions.saveAndContinue,
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(
+      page.getByText(sharedCopy.saveActions.saveAndReturnToHub)
+    ).toHaveCount(0)
+    await expect(
+      page.getByText(sharedCopy.saveActions.cancelAndReturnToHub)
+    ).toHaveCount(0)
+  })
+
+  test('goes Back to the template name page', async ({ page }) => {
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(TEMPLATE_NAME_PATTERN)
+    await expect(
+      page.getByRole('textbox', { name: 'Enter template name', exact: true })
+    ).toHaveValue(TEMPLATE_NAME)
+  })
+
+  test('refuses a region code that is required but empty', async ({ page }) => {
+    await chooseCountry(page, france)
+    await page.getByRole('radio', { name: copy.regionRequirement.yes }).check()
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+
+    await expect(
+      page
+        .getByRole('alert')
+        .getByRole('link', { name: copy.errors.regionCodeRequired })
+    ).toBeVisible()
+    await expect(page).toHaveURL(TEMPLATE_ORIGIN_PATTERN)
+  })
+
+  test('refuses an internal reference over 58 characters', async ({ page }) => {
+    await chooseCountry(page, france)
+    await page
+      .getByLabel(copy.internalReference.label)
+      .fill('A'.repeat(INTERNAL_REFERENCE_MAX_LENGTH + 1))
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+
+    await expect(
+      page
+        .getByRole('alert')
+        .getByRole('link', { name: copy.errors.internalReferenceMaxLength })
+    ).toBeVisible()
+  })
+
+  test('shows a saved country again when reopened, and stays in the template on Save and continue', async ({
+    page
+  }) => {
+    const originUrl = page.url()
+
+    await chooseCountry(page, france)
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await expect(page).toHaveURL(TEMPLATE_COMMODITIES_PATTERN)
+
+    await page.goto(originUrl)
+    await expect(page.locator(countryInput)).toHaveValue(france.name)
+  })
+
+  test('offers no documents page for a template', async ({ page }) => {
+    const originUrl = page.url()
+
+    for (const slug of ['accompanying-documents']) {
+      const response = await page.goto(originUrl.replace(/origin$/, slug))
+      expect(response.status(), slug).toBe(NOT_FOUND)
+    }
+  })
+
+  test('highlights Templates in the service navigation', async ({ page }) => {
+    await expect(
+      page.getByRole('link', {
+        name: sharedCopy.layout.serviceNavigation.templates,
+        exact: true
+      })
+    ).toHaveAttribute('aria-current', 'true')
+  })
+
+  test('has no serious or critical axe violations, initially and in its error state', async ({
+    page
+  }) => {
+    await expectNoSeriousOrCriticalAxeViolations(page, 'Template origin')
+
+    await chooseCountry(page, france)
+    await page
+      .getByLabel(copy.internalReference.label)
+      .fill('A'.repeat(INTERNAL_REFERENCE_MAX_LENGTH + 1))
+    await page.locator(SUBMIT_BUTTON_SELECTOR).first().click()
+    await expect(page.getByRole('alert')).toBeVisible()
+
+    await expectNoSeriousOrCriticalAxeViolations(
+      page,
+      'Template origin error state'
+    )
+  })
+})

@@ -1,4 +1,5 @@
 import { pagePath } from '../../../../../shared/paths.js'
+import { withTemplateMode } from '../../../../../shared/template-mode.js'
 import { SET_ID } from '../../../set.js'
 import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'vitest'
@@ -104,6 +105,23 @@ describe('#rowStatus — one status per hub task row', () => {
         transportIdentification: 'FR-892-LK',
         transportDocumentReference: 'CMR-1'
       })
+    ).toBe(FULFILLED)
+  })
+
+  it('Should not wait on an arrival date in template mode, and still wait on it outside', () => {
+    const withoutDate = {
+      ...unlocked,
+      portOfEntry: 'GB ABD',
+      meansOfTransport: 'AIRPLANE',
+      transportIdentification: 'FR-892-LK',
+      transportDocumentReference: 'CMR-1'
+    }
+
+    expect(statusIn('arrivalDetails', withoutDate)).toBe(IN_PROGRESS)
+    expect(
+      withTemplateMode('2100010101', () =>
+        statusIn('arrivalDetails', withoutDate)
+      )
     ).toBe(FULFILLED)
   })
 

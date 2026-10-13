@@ -11,7 +11,11 @@ import {
 
 import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import { store } from '../../../../../../engine/store.js'
-import { configureRecords } from '../../../../../../engine/persistence/records.js'
+import {
+  configureRecords,
+  configureTemplateRecords
+} from '../../../../../../engine/persistence/records.js'
+import { withTemplateMode } from '../../../../../../shared/template-mode.js'
 import { configureSession } from '../../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
@@ -681,5 +685,79 @@ describe('POST /origin — country membership follows the primed list', () => {
     expect(rejected.view.context.errors.countryOfOrigin).toBe(
       COUNTRY_FROM_LIST_MESSAGE
     )
+  })
+})
+
+describe('origin in template mode', () => {
+  const OWNER = '2100010101'
+  const asTemplateHandler = (handler) => (request, h) =>
+    withTemplateMode(OWNER, () => handler(request, h))
+
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureTemplateRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should send Back to the template name page', async () => {
+    const result = await driveHandler(asTemplateHandler(get))
+
+    expect(result.view.context.backLink).toBe(
+      `/live-animals/templates/${result.journeyId}/name`
+    )
+  })
+
+  it('Should end with Save and continue alone', async () => {
+    const result = await driveHandler(asTemplateHandler(get))
+
+    expect(result.view.context.showReturnControls).toBe(false)
+  })
+
+  it('Should draw the Template tag in the strip', async () => {
+    const result = await driveHandler(asTemplateHandler(get))
+
+    expect(result.view.context.journeyStrip.status).toEqual({
+      text: 'Template',
+      classes: 'govuk-tag--grey'
+    })
+  })
+
+  it('Should keep the page’s own answer checks', async () => {
+    const result = await driveHandler(asTemplateHandler(post), {
+      payload: {
+        countryOfOrigin: 'FR',
+        regionOfOriginCodeRequirement: 'yes',
+        regionOfOriginCodeSuffix: '',
+        internalReferenceNumber: ''
+      }
+    })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.regionOfOriginCodeSuffix).toBe(
+      REGION_CODE_REQUIRED_MESSAGE
+    )
+  })
+
+  it('Should move on within the template when the answers are saved', async () => {
+    const result = await driveHandler(asTemplateHandler(post), {
+      payload: {
+        countryOfOrigin: '',
+        regionOfOriginCodeRequirement: 'no',
+        internalReferenceNumber: 'Imports456GB'
+      }
+    })
+
+    expect(result.response.redirect).toMatch(
+      new RegExp(`^/live-animals/templates/${result.journeyId}(/|$)`)
+    )
+  })
+
+  it('Should leave a notification’s origin page as it was', async () => {
+    const result = await driveHandler(get)
+
+    expect(result.view.context.showReturnControls).toBe(true)
+    expect(result.view.context.journeyStrip.status.text).toBe('Draft')
   })
 })
