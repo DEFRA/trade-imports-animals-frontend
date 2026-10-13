@@ -102,6 +102,17 @@ describe('#saveActions while amending', () => {
     expect(third).not.toContain('formaction')
   })
 
+  it('Should put Save and return to overview on its own line below the two save buttons', () => {
+    const html = renderActions(amending)
+    const [group, afterGroup] = html.split('</div>')
+
+    expect(group).toContain('class="govuk-button-group"')
+    expect(group).toMatch(/>\s*Save and return\s*</)
+    expect(group).toMatch(/>\s*Save and continue\s*</)
+    expect(group).not.toContain(sharedEn.saveActions.saveAndReturnToHub)
+    expect(afterGroup).toMatch(/>\s*Save and return to overview\s*</)
+  })
+
   it("Should send Save and return back to the review and Save and continue onwards through the button's own form action", () => {
     const [first, second] = buttons(renderActions(amending))
 

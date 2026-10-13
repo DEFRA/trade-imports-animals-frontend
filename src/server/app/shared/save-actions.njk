@@ -12,12 +12,12 @@
 
    While a notification is being amended, a page passes `amend` (the pair of
    form actions from `amendFormActions`) and ends instead with "Save and
-   return" (back to the review, the real service's own `?change=1`), "Save and
-   continue" (on, never back to the review) and a secondary "Save and return
-   to overview" button, with no cancel link. Each save button carries its own
-   `formaction`, so no new field is posted. A page reached from another page
-   (`showReturnControls = false`) or a picker (`hubExitWhileAmending = false`)
-   ends with the first two only. #}
+   return" (back to the review, the real service's own `?change=1`) and "Save
+   and continue" (on, never back to the review) side by side, then a secondary
+   "Save and return to overview" button on its own line below them, with no
+   cancel link. Each save button carries its own `formaction`, so no new field
+   is posted. A page reached from another page (`showReturnControls = false`)
+   or a picker (`hubExitWhileAmending = false`) ends with the first two only. #}
 {% macro saveActions(hubHref, primary, copy, showReturnControls = true, amend = none, hubExitWhileAmending = true) %}
   <div class="govuk-button-group">
     {% if amend %}
@@ -34,14 +34,6 @@
         value: primary.value if primary,
         attributes: { formaction: amend.continueAction }
       }) }}
-      {% if showReturnControls and hubExitWhileAmending %}
-        {{ govukButton({
-          text: copy.saveAndReturnToHub,
-          classes: "govuk-button--secondary",
-          name: "exit",
-          value: "hub"
-        }) }}
-      {% endif %}
     {% else %}
       {{ govukButton(primary or { text: copy.saveAndContinue }) }}
       {% if showReturnControls %}
@@ -55,4 +47,12 @@
       {% endif %}
     {% endif %}
   </div>
+  {% if amend and showReturnControls and hubExitWhileAmending %}
+    {{ govukButton({
+      text: copy.saveAndReturnToHub,
+      classes: "govuk-button--secondary",
+      name: "exit",
+      value: "hub"
+    }) }}
+  {% endif %}
 {% endmacro %}
