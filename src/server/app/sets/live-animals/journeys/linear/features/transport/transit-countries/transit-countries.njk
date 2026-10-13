@@ -52,8 +52,6 @@
        down a long one (design release 1). #}
     {% if hasCountries %}
       {{ addedCountriesTable(countryRows, copy) }}
-    {% else %}
-      <p class="govuk-body">{{ copy.empty }}</p>
     {% endif %}
 
     {# Each addition and removal is announced as it happens, not left to be

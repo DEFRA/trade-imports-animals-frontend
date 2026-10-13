@@ -3,7 +3,8 @@ import {
   dateTextInRange,
   maxText,
   oneOf,
-  pageValidation
+  pageValidation,
+  requiredOneOf
 } from '../../../../../../../lib/validate/index.js'
 import { dateTextOf, readDate } from '../../../../../../../shared/kit.js'
 import { copyFor } from '../../../../../../../shared/copy.js'
@@ -19,6 +20,17 @@ const TRANSPORT_FIELD_MAX_LENGTH = 58
 
 const portMessage = (stored) =>
   stored ? copy.errors.portNoLongerAvailable : undefined
+
+const meansRule = (stored) => {
+  const codes = transportReference.meansOfTransport()
+  return stored
+    ? oneOf('meansOfTransport', codes)
+    : requiredOneOf(
+        'meansOfTransport',
+        codes,
+        copy.errors.meansOfTransportRequired
+      )
+}
 
 const arrivalDateRangeMessage = (stored, dateWindow) =>
   stored
@@ -41,7 +53,7 @@ const fields = async (
       rangeMessage: arrivalDateRangeMessage(stored, dateWindow)
     }),
     oneOf('portOfEntry', portCodes, portMessage(stored)),
-    oneOf('meansOfTransport', transportReference.meansOfTransport()),
+    meansRule(stored),
     maxText(
       'transportIdentification',
       TRANSPORT_FIELD_MAX_LENGTH,

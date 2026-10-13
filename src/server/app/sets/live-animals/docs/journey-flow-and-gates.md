@@ -120,6 +120,17 @@ this journey is the CPH number page handing back to Roles and addresses. Nothing
 marks a page as opened from the hub, and the run is not re-entered for that
 notification.
 
+A page's Back link can follow the same state.
+[`kit.runBackLink(request, previousSlug)`](../../../shared/kit.js) points Back at
+the page the run came from while the run is active, and at the hub once it is
+not. The transit countries page uses it: in the run it is reached only from the
+arrival details, and outside the run only from its task on the hub. The same
+page sends a load or a submit to the hub when the means of transport leaves
+`transitedCountries` out of scope. The
+[consignment-details page](../journeys/linear/features/commodities/consignment-details/consignment-details.controller.js)
+applies the same load-time rule when it has no line, but sends the trader to the
+commodity question.
+
 The opening run begins when the notification is created — the dashboard's
 create POST in
 [`features/dashboard/controller.js`](../journeys/linear/features/dashboard/controller.js)

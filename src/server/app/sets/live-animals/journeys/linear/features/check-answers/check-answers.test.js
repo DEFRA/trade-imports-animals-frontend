@@ -422,7 +422,7 @@ describe(`${SUITE} — fully-populated notification`, () => {
   it('Should map the means-of-transport enum to its display label', async () => {
     const rows = rowsOf(await sectionsFor(fullSeed))
     expect(valueOf(rows, 'Means of transport to the port of entry')).toBe(
-      'Road Vehicle'
+      'Road'
     )
   })
 
@@ -651,6 +651,20 @@ describe(`${SUITE} — transit countries`, () => {
         TRANSITED_COUNTRIES_KEY
       )
     ).toBe('France, Belgium')
+  })
+
+  it('Should name a transited subdivision with its parent country on the transit-countries card', async () => {
+    const sections = await sectionsFor({
+      ...fullSeed,
+      transitedCountries: ['FR', 'ES-CN']
+    })
+
+    expect(
+      valueOf(
+        cardByTitle(sections, TRANSIT_COUNTRIES_CARD).rows,
+        TRANSITED_COUNTRIES_KEY
+      )
+    ).toBe('France, Canary Islands (Spain)')
   })
 
   it('Should give the transit-countries card its own Change link to the page that collects it', async () => {

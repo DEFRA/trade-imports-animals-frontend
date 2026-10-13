@@ -5,10 +5,10 @@ export const copy = {
   missing: 'Ar goll',
   yesNo: { yes: 'Iawn', no: 'Na' },
   means: {
-    AIRPLANE: 'Awyren',
+    AIRPLANE: 'Awyr',
     RAILWAY: 'Rheilffordd',
-    ROAD_VEHICLE: 'Cerbyd ffordd',
-    VESSEL: 'Llong'
+    ROAD_VEHICLE: 'Ffordd',
+    VESSEL: 'Môr'
   },
   documentTypes: {
     ITAHC: 'Tystysgrif Iechyd Anifeiliaid Masnach Fewnol (ITAHC)',
