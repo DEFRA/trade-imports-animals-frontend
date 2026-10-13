@@ -90,14 +90,14 @@ const drivePost = async ({
   }
 }
 
-// In practice the layout's token always equals the reviewed one, so the layout's
+// In practice kit.base()'s current token always equals the reviewed one, so it
 // is moved to show which of the two the page carries.
-const LAYOUT_CONCURRENCY_TOKEN = 'layout-token'
-const layoutConcurrencyTokenDiffers = () => {
+const CURRENT_CONCURRENCY_TOKEN = 'current-token'
+const currentConcurrencyTokenDiffers = () => {
   const base = kit.base
   vi.spyOn(kit, 'base').mockImplementation((...args) => ({
     ...base(...args),
-    concurrencyToken: LAYOUT_CONCURRENCY_TOKEN
+    concurrencyToken: CURRENT_CONCURRENCY_TOKEN
   }))
 }
 
@@ -232,7 +232,7 @@ describe('#declaration submit', () => {
 
   describe('POST /declaration to submit (step=declare)', () => {
     it('Should re-render an unconfirmed declaration with its message, the reviewed token, and commit nothing', async () => {
-      layoutConcurrencyTokenDiffers()
+      currentConcurrencyTokenDiffers()
 
       const result = await drivePost({ payload: { declaration: '' } })
 
@@ -446,7 +446,7 @@ describe('#declaration submit against the real records adapter', () => {
         status: 503,
         statusText: 'Service Unavailable'
       })
-      layoutConcurrencyTokenDiffers()
+      currentConcurrencyTokenDiffers()
 
       const result = await drivePost({
         payload: { declaration: 'confirmed', crumb: 'test-crumb' }
