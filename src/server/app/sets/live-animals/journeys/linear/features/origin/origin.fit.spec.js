@@ -27,7 +27,7 @@ const ireland = countriesOrigin.find(({ code }) => code === 'IE')
 // is hidden and renamed with a "-select" suffix (it still submits the code).
 const countryInput = 'input#countryOfOrigin'
 const countryHidden = 'select#countryOfOrigin-select'
-const AUTOCOMPLETE_ARROW = '.autocomplete__dropdown-arrow-down'
+const AUTOCOMPLETE_WRAPPER = '.autocomplete__wrapper'
 const AUTOCOMPLETE_OPTION = '.autocomplete__option'
 
 const SUBMIT_BUTTON_SELECTOR = 'form button[type="submit"]'
@@ -428,34 +428,34 @@ test.describe('country of origin type-ahead styles', () => {
     expect(typography.optionSize).toBe(typography.referenceSize)
   })
 
-  test('paints the dropdown arrow behind the interactive input', async ({
+  test('paints the search icon behind the interactive input', async ({
     page
   }) => {
     const paintStack = await page
-      .locator(AUTOCOMPLETE_ARROW)
-      .evaluate((arrow) => {
-        const bounds = arrow.getBoundingClientRect()
-        const hits = document.elementsFromPoint(
-          bounds.left + bounds.width / 2,
-          bounds.top + bounds.height / 2
+      .locator(AUTOCOMPLETE_WRAPPER)
+      .first()
+      .evaluate((wrapper) => {
+        const input = wrapper.querySelector('.autocomplete__input')
+        const arrow = wrapper.querySelector(
+          '.autocomplete__dropdown-arrow-down'
         )
-        const wrapper = arrow.closest('.autocomplete__wrapper')
+        const afterStyle = getComputedStyle(wrapper, '::after')
         return {
-          arrowIsInStack: hits.some(
-            (element) => element === arrow || arrow.contains(element)
-          ),
-          inputIsTopHit: hits[0]?.matches('.autocomplete__input') ?? false,
-          inputPaddingRight: getComputedStyle(hits[0]).paddingRight,
+          arrowHidden: getComputedStyle(arrow).display === 'none',
+          searchIconBackground: afterStyle.backgroundImage,
+          searchIconZIndex: afterStyle.zIndex,
+          searchIconPointerEvents: afterStyle.pointerEvents,
+          inputPaddingRight: getComputedStyle(input).paddingRight,
           wrapperZIndex: getComputedStyle(wrapper).zIndex
         }
       })
 
-    expect(paintStack).toEqual({
-      arrowIsInStack: true,
-      inputIsTopHit: true,
-      inputPaddingRight: '35px',
-      wrapperZIndex: '0'
-    })
+    expect(paintStack.arrowHidden).toBe(true)
+    expect(paintStack.searchIconBackground).toContain('data:image/svg+xml')
+    expect(paintStack.searchIconZIndex).toBe('-1')
+    expect(paintStack.searchIconPointerEvents).toBe('none')
+    expect(paintStack.inputPaddingRight).toBe('35px')
+    expect(paintStack.wrapperZIndex).toBe('0')
   })
 
   test('keeps the upstream focus indicator on the enhanced input', async ({

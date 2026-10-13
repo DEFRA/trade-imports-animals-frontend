@@ -239,12 +239,16 @@ export const pageRoutes = (page, { get, post }) => [
     options: routeOptions,
     handler: get
   },
-  {
-    method: 'POST',
-    path: pageRoutePath(page.slug),
-    options: routeOptions,
-    handler: redirectOnStaleAction(post)
-  }
+  ...(post
+    ? [
+        {
+          method: 'POST',
+          path: pageRoutePath(page.slug),
+          options: routeOptions,
+          handler: redirectOnStaleAction(post)
+        }
+      ]
+    : [])
 ]
 
 export const readDate = (payload, name) => {
