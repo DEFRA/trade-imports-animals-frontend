@@ -16,6 +16,7 @@ const withoutReturnControls = 'hubHref, copy = copy, showReturnControls = false'
 
 // The attribute the controllers read to tell a hub exit from a plain save.
 const EXIT_NAME_ATTRIBUTE = 'name="exit"'
+const SECONDARY_BUTTON = 'govuk-button--secondary'
 
 describe('#saveActions', () => {
   it('Should end a page the hub links to with the primary and both return controls', () => {
@@ -94,7 +95,7 @@ describe('#saveActions while amending', () => {
     expect(first).toMatch(/>\s*Save and return\s*</)
     expect(second).toMatch(/>\s*Save and continue\s*</)
     expect(third).toMatch(/>\s*Save and return to overview\s*</)
-    expect(third).toContain('govuk-button--secondary')
+    expect(third).toContain(SECONDARY_BUTTON)
     expect(third).toContain('data-module="govuk-button"')
     expect(third).toContain(EXIT_NAME_ATTRIBUTE)
     expect(third).toContain('value="hub"')
@@ -105,9 +106,9 @@ describe('#saveActions while amending', () => {
     const [first, second] = buttons(renderActions(amending))
 
     expect(first).toContain(`formaction="${RETURN_ACTION}"`)
-    expect(first).not.toContain('govuk-button--secondary')
+    expect(first).not.toContain(SECONDARY_BUTTON)
     expect(second).toContain(`formaction="${CONTINUE_ACTION}"`)
-    expect(second).toContain('govuk-button--secondary')
+    expect(second).toContain(SECONDARY_BUTTON)
   })
 
   it('Should offer no cancel link while amending', () => {
