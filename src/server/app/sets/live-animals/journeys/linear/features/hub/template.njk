@@ -5,34 +5,40 @@
 {% block journeyContent %}
   <h1 class="govuk-heading-xl">{{ heading }}</h1>
 
-  <h2 class="govuk-heading-l">{{ copy.commodityTotals.heading }}</h2>
-  <div class="govuk-grid-row">
-    <div class="govuk-grid-column-one-half govuk-!-margin-bottom-4">
-      <div class="app-commodity-total">
-        <p class="app-commodity-total__value">{{ commodityTotals.animals }}</p>
-        <h3 class="app-commodity-total__label">{{ copy.commodityTotals.animalsLabel }}</h3>
-        <p class="app-commodity-total__caption">{{ copy.commodityTotals.animalsCaption }}</p>
+  <section aria-labelledby="commodity-totals-heading">
+    <h2 class="govuk-heading-l" id="commodity-totals-heading">{{ copy.commodityTotals.heading }}</h2>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-one-half govuk-!-margin-bottom-4">
+        <section class="app-commodity-total" aria-label="{{ copy.commodityTotals.animalsRegionLabel }}">
+          <p class="app-commodity-total__value">{{ commodityTotals.animals }}</p>
+          <h3 class="app-commodity-total__label">{{ copy.commodityTotals.animalsLabel }}</h3>
+          <p class="app-commodity-total__caption">{{ copy.commodityTotals.animalsCaption }}</p>
+        </section>
+      </div>
+      <div class="govuk-grid-column-one-half govuk-!-margin-bottom-4">
+        <section class="app-commodity-total" aria-label="{{ copy.commodityTotals.packagesRegionLabel }}">
+          <p class="app-commodity-total__value">{{ commodityTotals.packages }}</p>
+          <h3 class="app-commodity-total__label">{{ copy.commodityTotals.packagesLabel }}</h3>
+          <p class="app-commodity-total__caption">{{ copy.commodityTotals.packagesCaption }}</p>
+        </section>
       </div>
     </div>
-    <div class="govuk-grid-column-one-half govuk-!-margin-bottom-4">
-      <div class="app-commodity-total">
-        <p class="app-commodity-total__value">{{ commodityTotals.packages }}</p>
-        <h3 class="app-commodity-total__label">{{ copy.commodityTotals.packagesLabel }}</h3>
-        <p class="app-commodity-total__caption">{{ copy.commodityTotals.packagesCaption }}</p>
-      </div>
-    </div>
-  </div>
+  </section>
 
-  <h2 class="govuk-heading-l">{{ copy.taskListHeading }}</h2>
+  <section aria-labelledby="notification-tasklist-heading">
+    <h2 class="govuk-heading-l" id="notification-tasklist-heading">{{ copy.taskListHeading }}</h2>
 
-  {% for group in groups %}
-    <h3 class="govuk-heading-m">{{ group.caption }}</h3>
-    {{ govukTaskList({
-      idPrefix: group.id,
-      items: group.items,
-      classes: "app-task-list govuk-!-margin-bottom-8"
-    }) }}
-  {% endfor %}
+    {% for group in groups %}
+      <section aria-labelledby="{{ group.id }}-heading">
+        <h3 class="govuk-heading-m" id="{{ group.id }}-heading">{{ group.caption }}</h3>
+        {{ govukTaskList({
+          idPrefix: group.id,
+          items: group.items,
+          classes: "app-task-list govuk-!-margin-bottom-8"
+        }) }}
+      </section>
+    {% endfor %}
+  </section>
 
   <div class="govuk-button-group">
     {{ govukButton({

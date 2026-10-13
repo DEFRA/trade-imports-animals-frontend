@@ -1,8 +1,13 @@
-import { hubPath, pagePath } from '../../../../../../shared/paths.js'
+import {
+  dashboardPath,
+  hubPath,
+  pagePath
+} from '../../../../../../shared/paths.js'
 import { TEMPLATES } from '../../config.js'
 import * as state from '../../../../../../engine/index.js'
 import { completeOpeningRun } from '../../../../../../flow/run-state.js'
 import {
+  CANCEL_AMEND_SLUG,
   CYA_SLUG,
   errorSummary,
   journeyStrip,
@@ -15,14 +20,22 @@ import { copy as cy } from './copy/copy.cy.js'
 import { copy as sharedEn } from '../../../../../../shared/copy.en.js'
 import { copy as sharedCy } from '../../../../../../shared/copy.cy.js'
 import { buildSections } from './view-model/index.js'
+import { withMissingHealthCertificate } from './view-model/sections/documents.js'
 import { changeHref } from './view-model/rows/change-link.js'
 import { invalidPartyErrors } from './view-model/invalid-parties.js'
+import { viewHeaderOf } from './view-model/view-header.js'
 import {
   cardAnchorHref,
+  pageAnchorsOf,
   incompleteCardErrors,
   REVIEW_CARDS,
   withCardErrors
 } from './view-model/incomplete-cards.js'
+import {
+  SPECIES_ENTRY_PREFIX,
+  unfinishedSpeciesErrors,
+  withSpeciesErrors
+} from './view-model/species-errors.js'
 import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { partiesFromStoredAnswers } from '../addresses/frozen-parties.js'
 import { partyOf } from '../addresses/parties.js'
@@ -43,6 +56,9 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
  * is somewhere on this page, so its entry is an anchor; a party's entry links
  * to the page that edits its address, returning here.
  *
+ * Species entries follow commodity details and link to the species block on
+ * this page.
+ *
  * Party errors are keyed `party:<id>` here because `contactAddress` is both a
  * party id and a card id: unprefixed, the card's message would overwrite the
  * party's and the party entry would link to the card anchor.
@@ -51,11 +67,26 @@ const sharedCopy = copyFor({ en: sharedEn, cy: sharedCy })
  * plain visit does not yank the caret out of the page heading. */
 const PARTY_KEY_PREFIX = 'party:'
 
+const summaryHref = (journeyId, pageAnchors) => (key) => {
+  if (key.startsWith(PARTY_KEY_PREFIX)) {
+    return partyEditHref(
+      journeyId,
+      partyOf(key.slice(PARTY_KEY_PREFIX.length)),
+      CYA_SLUG
+    )
+  }
+  if (key.startsWith(SPECIES_ENTRY_PREFIX)) {
+    return `#${key.slice(SPECIES_ENTRY_PREFIX.length)}`
+  }
+  return cardAnchorHref(key, pageAnchors) ?? changeHref(journeyId, key)
+}
+
 const reviewErrorSummary = (
   journeyId,
   cardErrors,
   partyErrors,
-  disableAutoFocus
+  disableAutoFocus,
+  pageAnchors
 ) =>
   errorSummary(
     {
@@ -68,17 +99,15 @@ const reviewErrorSummary = (
       ...cardErrors
     },
     {
-      href: (key) =>
-        key.startsWith(PARTY_KEY_PREFIX)
-          ? partyEditHref(
-              journeyId,
-              partyOf(key.slice(PARTY_KEY_PREFIX.length)),
-              CYA_SLUG
-            )
-          : (cardAnchorHref(key) ?? changeHref(journeyId, key)),
+      href: summaryHref(journeyId, pageAnchors),
       disableAutoFocus
     }
   )
+
+const reviewTitle = (journey) =>
+  journey.status === state.AMEND && journey.answersChangedSinceSubmission
+    ? copy.resubmitTitle
+    : copy.title
 
 const renderCya = async (
   toolkit,
@@ -93,45 +122,57 @@ const renderCya = async (
     parties = answers,
     partyErrors = {},
     cardErrors = {},
+    speciesErrors = {},
     disableAutoFocus = true
   }
 ) => {
-  const sections = withCardErrors(
-    await buildSections(
-      answers,
-      scope,
-      evaluation,
-      journey.journeyId,
-      readOnly,
-      parties,
-      partyErrors
+  const sections = withMissingHealthCertificate(
+    withCardErrors(
+      await buildSections(
+        answers,
+        scope,
+        evaluation,
+        journey.journeyId,
+        readOnly,
+        parties,
+        partyErrors
+      ),
+      cardErrors
     ),
-    cardErrors
+    journey,
+    answers,
+    evaluation
   )
+  const amending = journey.status === state.AMEND
+  const headed = readOnly || journey.status === state.DRAFT
+  const title = headed ? journey.journeyId : reviewTitle(journey)
   return toolkit.view(view, {
-    pageTitle: copy.title,
-    heading: copy.title,
+    pageTitle: title,
+    heading: title,
     copy,
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
     declarationHref: pagePath(journey.journeyId, declarationPage.slug),
-    journeyStrip: journeyStrip(journey),
+    journeyStrip: headed
+      ? null
+      : journeyStrip(journey, { offerCancelAmend: false }),
+    viewHeader: headed ? viewHeaderOf(journey) : null,
     errorSummary: reviewErrorSummary(
       journey.journeyId,
-      cardErrors,
+      withSpeciesErrors(cardErrors, speciesErrors),
       partyErrors,
-      disableAutoFocus
+      disableAutoFocus,
+      pageAnchorsOf(sections)
     ),
     sections,
     readOnly,
     amendmentCancelled,
     recoverableError,
-    copyAction: readOnly ? { href: pagePath(journey.journeyId, 'copy') } : null,
-    deleteHref:
-      readOnly && journey.status === state.SUBMITTED
-        ? pagePath(journey.journeyId, 'delete')
-        : null,
-    backLink: hubPath(journey.journeyId)
+    deleteHref: amending ? pagePath(journey.journeyId, 'delete') : null,
+    cancelAmendHref: amending
+      ? pagePath(journey.journeyId, CANCEL_AMEND_SLUG)
+      : null,
+    backLink: amending ? hubPath(journey.journeyId) : dashboardPath()
   })
 }
 
@@ -142,7 +183,7 @@ export const renderNotificationView = async (
 ) => {
   const { journey, answers, storedAnswers, scope, evaluation } =
     await state.get(request, toolkit)
-  const readOnly = journey.status === state.SUBMITTED
+  const readOnly = state.isSubmittedStatus(journey.status)
   const refused = request.query.refused === '1'
   // c-201: an amendment opens with no errors; Continue refused shows them.
   const holdsSilently = readOnly || (journey.status === state.AMEND && !refused)
@@ -180,18 +221,28 @@ export const renderNotificationView = async (
           ...scanDocErrors,
           ...incompleteCardErrors(answers, scope, evaluation)
         },
+    speciesErrors: holdsSilently
+      ? {}
+      : unfinishedSpeciesErrors(answers, evaluation),
     disableAutoFocus: !refused
   })
 }
 
 const get = async (request, toolkit) => {
   await completeOpeningRun(request, toolkit, request.params.journeyId)
-  const response = await renderNotificationView(request, toolkit)
-  const { journey } = await state.get(request, toolkit)
-  if (journey.status !== state.SUBMITTED) {
-    await recordReviewed(request, toolkit, journey)
+  try {
+    const response = await renderNotificationView(request, toolkit)
+    const { journey } = await state.get(request, toolkit)
+    if (!state.isSubmittedStatus(journey.status)) {
+      await recordReviewed(request, toolkit, journey)
+    }
+    return response
+  } catch (error) {
+    if (state.isJourneyNotFound(error)) {
+      return toolkit.redirect(dashboardPath())
+    }
+    throw error
   }
-  return response
 }
 
 export const routes = pageRoutes(page, { get })

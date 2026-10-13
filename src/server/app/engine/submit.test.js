@@ -5,7 +5,7 @@ import {
   records,
   configureRecords,
   DRAFT,
-  SUBMITTED
+  SUBMITTED_ACTION_REQUIRED
 } from './persistence/records.js'
 import { configureSession } from './persistence/session.js'
 import { records as recordsStub } from '../services/persistence/records/stub/index.js'
@@ -48,8 +48,10 @@ describe('submitJourney — gates on scope readiness, finalises via records', ()
     )
     expect(result.ok).toBe(true)
     expect(result.journey.journeyId).toBe(journeyId)
-    expect(result.journey.status).toBe(SUBMITTED)
-    expect((await records.load({ journeyId })).status).toBe(SUBMITTED)
+    expect(result.journey.status).toBe(SUBMITTED_ACTION_REQUIRED)
+    expect((await records.load({ journeyId })).status).toBe(
+      SUBMITTED_ACTION_REQUIRED
+    )
   })
 
   it('Should refuse to finalise at a token the journey has moved on from', async () => {

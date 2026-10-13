@@ -15,6 +15,7 @@
     autocomplete.showAllValues (bool)    show the full list on focus
     autocomplete.autoselect    (bool)    highlight the first match
     autocomplete.defaultValue  (string)  value to prefill the input with
+    autocomplete.placeholder   (string)  text shown in the empty search box
 
   Usage:
   {% from "accessible-autocomplete/macro.njk" import appAccessibleAutocomplete %}
@@ -45,7 +46,8 @@
       "data-show-all-values": "true" if ac.showAllValues else "false",
       "data-auto-select": "true" if ac.autoselect else "false",
       "data-default-value": ac.defaultValue if ac.defaultValue else "",
-      "data-no-results": ac.noResults if ac.noResults else ""
+      "data-no-results": ac.noResults if ac.noResults else "",
+      "data-placeholder": ac.placeholder if ac.placeholder else ""
     }
   }) }}
 {% endmacro %}

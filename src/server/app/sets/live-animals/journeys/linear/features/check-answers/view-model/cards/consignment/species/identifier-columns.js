@@ -9,14 +9,12 @@ import { copy as cy } from '../../../../copy/copy.cy.js'
 
 const copy = copyFor({ en, cy })
 
-// The commodity sets the running order of its own identifiers, so check your
-// answers reads them back in the order the identification page asked for
-// them. Only identifiers a unit actually carries get a column here — this is
-// a read-back of what was entered, not a list of what was asked for.
+// The commodity sets the running order of its own identifiers, and check your
+// answers heads one column per identifier the commodity asks for, as the
+// identification page does, so a blank cell shows an identifier not given.
+// Permanent address stands only where an animal carries one.
 export const identifierColumns = (units, commodity) => [
-  ...scopedFields(commodity)
-    .filter(({ id }) => units.some((unit) => !isBlank(unit[id])))
-    .map(({ id }) => [id, IDENTIFIER_LABELS[id]]),
+  ...scopedFields(commodity).map(({ id }) => [id, IDENTIFIER_LABELS[id]]),
   ...(units.some((unit) => !isBlank(unit.permanentAddress?.name))
     ? [['permanentAddress', copy.identifierTable.permanentAddress]]
     : [])

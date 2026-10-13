@@ -47,6 +47,15 @@ export const journeyIdFromPage = (page) => {
   return match[1]
 }
 
+/** The level-1 heading of a notification's view header, named exactly its reference. */
+export function referenceHeading(page) {
+  return page.getByRole('heading', {
+    level: 1,
+    name: journeyIdFromPage(page),
+    exact: true
+  })
+}
+
 export const journeyUrl = (page, slug = '') =>
   `${BASE}/notifications/${journeyIdFromPage(page)}${slug ? `/${slug}` : ''}`
 
@@ -254,9 +263,15 @@ export const unlockSections = async (page, species = 'Felis catus') => {
   await expect(
     page.getByRole('heading', { name: 'Commodity details' })
   ).toBeVisible()
-  // The animal count is save-blocking, so the page will not let the journey
-  // past it unanswered.
+  // The animal count and the number of packages are save-blocking, so the
+  // page will not let the journey past them unanswered.
   await page.getByLabel('Number of animals').fill('1')
+  // A species whose commodity is not counted in packages has no such box.
+  for (const box of await page
+    .locator('input[name^="numberOfPackages-"]')
+    .all()) {
+    await box.fill('1')
+  }
   await save(page)
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
@@ -283,6 +298,27 @@ export const addDocument = async (page, entry) => {
     .fill(`${issued.day}/${issued.month}/${issued.year}`)
   await setUploadFile(page, entry.filename)
   await page.getByRole('button', { name: 'Save and add another' }).click()
+}
+
+/**
+ * Uploads the fixture's ITAHC, the certificate that makes a submission record
+ * nothing outstanding, and returns to the hub.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+export const uploadHealthCertificate = async (page) => {
+  const [document] = values.documents
+  await page.goto(journeyUrl(page))
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await page.getByRole('link', { name: 'Upload documents' }).click()
+  await addDocument(page, document)
+  await expect(
+    page.locator('.govuk-table__row', {
+      hasText: document.accompanyingDocumentReference
+    })
+  ).toContainText('Check completed')
+  await page.goto(journeyUrl(page))
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
 }
 
 const save = (page) =>
@@ -479,13 +515,15 @@ export const answerContactAddress = async (page) => {
  * user works once the opening run is over.
  *
  * @param {import('@playwright/test').Page} page
- * @param {{ skipAnimalIdentification?: boolean }} [options] - pass
- *   `skipAnimalIdentification` to leave the identification row untouched, as a
- *   trader may on a single-species consignment.
+ * @param {{ skipAnimalIdentification?: boolean, skipTransitCountries?: boolean }} [options]
+ *   - pass `skipAnimalIdentification` to leave the identification row
+ *   untouched, as a trader may on a single-species consignment, and
+ *   `skipTransitCountries` to leave the transit countries row untouched, as a
+ *   trader may on an overland arrival that lists none.
  */
 export const completeAnswerSections = async (
   page,
-  { skipAnimalIdentification = false } = {}
+  { skipAnimalIdentification = false, skipTransitCountries = false } = {}
 ) => {
   const task = (name) => page.getByRole('link', { name }).click()
   const overview = () =>
@@ -507,7 +545,7 @@ export const completeAnswerSections = async (
     await overview()
   }
 
-  await task('Main reason for import')
+  await task('Main import reason')
   await answerImportReason(page)
   await overview()
   await task('Additional details')
@@ -520,9 +558,11 @@ export const completeAnswerSections = async (
   await task('Arrival details')
   await answerArrivalDetails(page)
   await overview()
-  await task('Transit countries')
-  await answerTransitCountries(page)
-  await overview()
+  if (!skipTransitCountries) {
+    await task('Transit countries')
+    await answerTransitCountries(page)
+    await overview()
+  }
   await task('Transport details')
   await answerTransporter(page)
   await overview()

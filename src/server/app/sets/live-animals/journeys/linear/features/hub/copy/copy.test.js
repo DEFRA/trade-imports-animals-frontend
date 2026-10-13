@@ -42,9 +42,10 @@ const unlockedSeed = {
 const ORIGIN_ROW_TITLE = 'Where is this consignment coming from?'
 const COMMODITIES_ROW_TITLE = 'What are you importing?'
 const CONSIGNMENT_DETAILS_ROW_TITLE = 'Commodity details'
-const IMPORT_REASON_ROW_TITLE = 'Main reason for import'
+const IMPORT_REASON_ROW_TITLE = 'Main import reason'
 const TRANSIT_ROW_TITLE = 'Transit countries'
 const ARRIVAL_ROW_TITLE = 'Arrival details'
+const TRANSPORT_ROW_TITLE = 'Transport details'
 const ADDRESSES_ROW_TITLE = 'Roles and addresses'
 // The one hint Design release 1 shows on the hub, on the addresses row.
 const ADDRESSES_ROW_HINT =
@@ -121,7 +122,7 @@ describe('#copy', () => {
     expect(titlesCy).toEqual({
       origin: 'O ble mae’r llwyth hwn yn dod?',
       commodities: 'Beth ydych chi’n ei fewnforio?',
-      importReason: 'Prif reswm dros fewnforio',
+      importReason: 'Prif reswm mewnforio',
       consignmentDetails: 'Manylion y nwyddau',
       additionalDetails: 'Manylion ychwanegol',
       animalIdentification: 'Manylion adnabod',
@@ -132,6 +133,20 @@ describe('#copy', () => {
       contact: 'Cyfeiriad cyswllt ar gyfer y llwyth hwn',
       documents: 'Uwchlwytho dogfennau'
     })
+  })
+
+  test('Should name the two commodity total cards as regions in both locales', () => {
+    expect(copy.commodityTotals.animalsRegionLabel).toBe('Animals summary')
+    expect(copy.commodityTotals.packagesRegionLabel).toBe('Packages summary')
+    expect(copyCy.commodityTotals.animalsRegionLabel).toBe(
+      'Crynodeb anifeiliaid'
+    )
+    expect(copyCy.commodityTotals.packagesRegionLabel).toBe('Crynodeb pecynnau')
+  })
+
+  test('Should title the third row of the first section Main import reason in both locales', () => {
+    expect(copy.rows.importReason.title).toBe('Main import reason')
+    expect(copyCy.rows.importReason.title).toBe('Prif reswm mewnforio')
   })
 })
 
@@ -203,7 +218,7 @@ describe('#hubHandler', () => {
         'Identification details',
         'Additional details'
       ],
-      [ARRIVAL_ROW_TITLE, 'Transport details'],
+      [ARRIVAL_ROW_TITLE, TRANSPORT_ROW_TITLE],
       ['Upload documents'],
       [ADDRESSES_ROW_TITLE],
       ['Contact address for this consignment']
@@ -350,6 +365,49 @@ describe('#hubHandler', () => {
     // untouched row.
     expect(transitRow.status).toEqual(TO_DO_STATUS)
   })
+})
+
+describe('#hubHandler — the transit row and the rows after it', () => {
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should leave the transit row off an overland notification with no commodity chosen', async () => {
+    const context = await renderHub({
+      countryOfOrigin: 'FR',
+      meansOfTransport: 'ROAD_VEHICLE'
+    })
+    expect(rowByTitle(context, TRANSIT_ROW_TITLE)).toBeUndefined()
+    expect(context.groups[2].items.map((item) => item.title.text)).toEqual([
+      ARRIVAL_ROW_TITLE,
+      TRANSPORT_ROW_TITLE
+    ])
+  })
+
+  it('Should list the transit row between arrival and transport details, reading Complete once a country is saved', async () => {
+    const byRail = await renderHub({
+      ...unlockedSeed,
+      meansOfTransport: 'RAILWAY'
+    })
+    expect(byRail.groups[2].items.map((item) => item.title.text)).toEqual([
+      ARRIVAL_ROW_TITLE,
+      TRANSIT_ROW_TITLE,
+      TRANSPORT_ROW_TITLE
+    ])
+    expect(rowByTitle(byRail, TRANSIT_ROW_TITLE).status).toEqual(TO_DO_STATUS)
+
+    const withCountry = await renderHub({
+      ...unlockedSeed,
+      meansOfTransport: 'RAILWAY',
+      transitedCountries: ['FR']
+    })
+    expect(rowByTitle(withCountry, TRANSIT_ROW_TITLE).status).toEqual(
+      COMPLETE_STATUS
+    )
+  })
 
   it('Should tag the optional documents row "To do" like any other unfinished row', async () => {
     const documentsRow = rowByTitle(
@@ -364,7 +422,7 @@ describe('#hubHandler', () => {
     expect(rowByTitle(context, ARRIVAL_ROW_TITLE).href).toBe(
       pagePath(context.journeyId, 'port-of-entry')
     )
-    expect(rowByTitle(context, 'Transport details').href).toBe(
+    expect(rowByTitle(context, TRANSPORT_ROW_TITLE).href).toBe(
       pagePath(context.journeyId, 'transporters')
     )
     expect(rowByTitle(context, ADDRESSES_ROW_TITLE).href).toBe(
@@ -568,7 +626,7 @@ describe('#hubHandler — the row hints', () => {
 // Temporary admission of horses makes a port of exit and an exit date
 // compulsory, and once a trader has answered them and moved on, the hub is
 // their only way back to change an answer. Design release 1 asks both under
-// "Main reason for import", so that row carries the return route.
+// "Main import reason", so that row carries the return route.
 describe('#hubHandler — the way back to the exit questions', () => {
   beforeAll(() => {
     configureRecords(SET_ID, recordsStub)

@@ -9,6 +9,7 @@ import {
   DELETED,
   DRAFT,
   SUBMITTED,
+  SUBMITTED_ACTION_REQUIRED,
   configureRecords
 } from '../../../../../engine/persistence/records.js'
 import { configureSession } from '../../../../../engine/persistence/session.js'
@@ -67,6 +68,21 @@ describe('journey reference strip', () => {
     ).toEqual({
       reference: JOURNEY_REFERENCE,
       status: { text: 'Submitted', classes: 'govuk-tag--green' }
+    })
+  })
+
+  it("Should tag a notification submitted with action required 'Submitted action required' in orange", () => {
+    expect(
+      journeyStrip({
+        journeyId: JOURNEY_REFERENCE,
+        status: SUBMITTED_ACTION_REQUIRED
+      })
+    ).toEqual({
+      reference: JOURNEY_REFERENCE,
+      status: {
+        text: 'Submitted action required',
+        classes: 'govuk-tag--orange'
+      }
     })
   })
 

@@ -9,8 +9,14 @@ import {
   sessionConfiguredFor
 } from './persistence/session.js'
 import { currentSetBase, currentSetId } from '../shared/set-context.js'
-import { AMEND, DRAFT, records, SUBMITTED } from './persistence/records.js'
+import {
+  AMEND,
+  DRAFT,
+  isSubmittedStatus,
+  records
+} from './persistence/records.js'
 import { buildActor } from '../../common/helpers/actor-helpers.js'
+import { HTTP_STATUS_NOT_FOUND } from '../lib/http-status.js'
 
 export {
   addressHandshakeTokensCookie,
@@ -78,6 +84,10 @@ export const registerJourneyCookie = (server) => {
     server.state(name, cookieOptions)
   }
 }
+
+/** True for the not-found `currentJourney` raises for a notification that does not exist. */
+export const isJourneyNotFound = (error) =>
+  error?.isBoom === true && error.output?.statusCode === HTTP_STATUS_NOT_FOUND
 
 const JOURNEY_MEMO = Symbol('currentJourney')
 
@@ -153,7 +163,7 @@ export const isKnownJourney = async (request, journeyId) =>
   (await session.knownJourneyIds(request)).includes(journeyId)
 
 const editableFromStatus = async (journey, journeyId, actor) => {
-  if (journey.status === SUBMITTED) {
+  if (isSubmittedStatus(journey.status)) {
     return records.amend(journeyId, actor)
   }
   if (journey.status === DRAFT || journey.status === AMEND) {

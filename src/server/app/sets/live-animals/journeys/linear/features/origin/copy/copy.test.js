@@ -21,10 +21,6 @@ const leaves = (node, path = []) =>
       )
     : [{ path: path.join('.'), value: node }]
 
-// Mirrors INTERNAL_REFERENCE_MAX_LENGTH in ../controller.js — the hint must
-// state the limit the validator enforces, not only the error message.
-const INTERNAL_REFERENCE_MAX_LENGTH = 58
-
 describe('#copy', () => {
   it('Should have a non-empty string at every leaf', () => {
     for (const { path, value } of leaves(copy)) {
@@ -35,11 +31,39 @@ describe('#copy', () => {
     }
   })
 
-  it('Should state the internal reference length limit in the hint, not only in the error', () => {
-    const limit = String(INTERNAL_REFERENCE_MAX_LENGTH)
-    expect(copy.internalReference.hint).toContain(limit)
-    expect(copyCy.internalReference.hint).toContain(limit)
-    expect(copy.errors.internalReferenceMaxLength).toContain(limit)
+  it('Should ask the country of origin without a hint', () => {
+    expect(copy.country.hint).toBeUndefined()
+    expect(copyCy.country.hint).toBeUndefined()
+  })
+
+  it("Should invite a search in the empty box and keep the select's blank option", () => {
+    expect(copy.country.searchPlaceholder).toBe('Search for a country')
+    expect(copyCy.country.searchPlaceholder).toBe('Chwiliwch am wlad')
+    expect(copy.country.placeholder).toBe('Select a country')
+    expect(copyCy.country.placeholder).toBe('Dewiswch wlad')
+  })
+
+  it('Should leave the internal reference length limit to the error, not the hint', () => {
+    expect(copy.internalReference.hint).toBe(
+      'Enter any internal reference you want to use to identify this consignment, or leave blank.'
+    )
+    expect(copyCy.internalReference.hint).toBe(
+      'Rhowch unrhyw gyfeirnod mewnol yr hoffech ei ddefnyddio i adnabod y llwyth hwn, neu gadewch yn wag.'
+    )
+    expect(copy.internalReference.hint).not.toContain('58')
+    expect(copyCy.internalReference.hint).not.toContain('58')
+    expect(copy.errors.internalReferenceMaxLength).toContain('58')
+    expect(copyCy.errors.internalReferenceMaxLength).toContain('58')
+  })
+
+  it("Should point to the health certificate in the region of origin code question's hint", () => {
+    expect(copy.regionRequirement.hint).toBe(
+      'Check the health certificate for a region of origin code. You can add the code later if you do not have the certificate now.'
+    )
+    expect(copyCy.regionRequirement.hint).toBe(
+      'Gwiriwch y dystysgrif iechyd am god rhanbarth tarddiad. Gallwch ychwanegu’r cod yn nes ymlaen os nad yw’r dystysgrif gennych nawr.'
+    )
+    expect(copy.regionCode.hint).toBe('Enter up to 5 characters.')
   })
 })
 

@@ -4,7 +4,8 @@ import {
   AMEND,
   DELETED,
   DRAFT,
-  SUBMITTED
+  SUBMITTED,
+  SUBMITTED_ACTION_REQUIRED
 } from '../../../../engine/persistence/records.js'
 import { assembleFulfilments } from '../../../../bridge/assemble-fulfilments.js'
 import { obligationSet } from '../../../../model/obligations/manifest.js'
@@ -62,6 +63,9 @@ describe('real records adapter — canonical fulfilment boundary', () => {
     expect(mapStatus('SUBMITTED')).toBe(SUBMITTED)
     expect(mapStatus('AMEND')).toBe(AMEND)
     expect(mapStatus('DELETED')).toBe(DELETED)
+    expect(mapStatus('SUBMITTED_ACTION_REQUIRED')).toBe(
+      SUBMITTED_ACTION_REQUIRED
+    )
     expect(() => mapStatus('UNKNOWN')).toThrow(
       /Unknown backend fulfilment status "UNKNOWN"/
     )
@@ -84,7 +88,9 @@ describe('real records adapter — canonical fulfilment boundary', () => {
       status: DRAFT,
       createdAt,
       submittedAt: null,
+      outstandingItems: [],
       concurrencyToken: 0,
+      answersChangedSinceSubmission: false,
       fulfilment: {}
     })
   })

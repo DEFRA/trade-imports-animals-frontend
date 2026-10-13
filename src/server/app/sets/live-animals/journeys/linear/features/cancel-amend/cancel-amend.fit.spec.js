@@ -8,6 +8,7 @@ import {
   openReviewFromHub,
   signIn,
   startNotification,
+  uploadHealthCertificate,
   values
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
@@ -32,6 +33,7 @@ const expectAmendStrip = async (page) => {
 const submitNotification = async (page) => {
   await startNotification(page)
   await completeAnswerSections(page)
+  await uploadHealthCertificate(page)
   await openReviewFromHub(page)
   await page.getByRole('button', { name: 'Continue' }).click()
   await page
@@ -57,7 +59,12 @@ const amendAndOpenCancel = async (page, reference) => {
     .fill('DiscardMe99')
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await openReviewFromHub(page)
-  await cancelAmendLink(page).click()
+  await page
+    .getByRole('button', {
+      name: checkAnswersCopy.cancelAmend.button,
+      exact: true
+    })
+    .click()
 }
 
 const expectAxeClean = async (page, name) => {
@@ -99,9 +106,18 @@ test.describe('cancel-amend feature', () => {
     await page.getByRole('button', { name: copy.noLink }).click()
 
     await expect(
-      page.getByRole('heading', { name: checkAnswersCopy.title })
+      page.getByRole('heading', { name: checkAnswersCopy.resubmitTitle })
     ).toBeVisible()
-    await expectAmendStrip(page)
+    await expect(strip(page).locator(TAG)).toHaveText(
+      sharedCopy.journeyStrip.amend
+    )
+    await expect(
+      page.getByRole('button', {
+        name: checkAnswersCopy.cancelAmend.button,
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(cancelAmendLink(page)).toHaveCount(0)
     await expect(page.getByText('DiscardMe99', { exact: true })).toBeVisible()
   })
 
@@ -189,7 +205,16 @@ test.describe('amend review', () => {
         name: checkAnswersCopy.errors.cards.arrivalDetails
       })
     ).toBeVisible()
-    await expectAmendStrip(page)
+    await expect(strip(page).locator(TAG)).toHaveText(
+      sharedCopy.journeyStrip.amend
+    )
+    await expect(
+      page.getByRole('button', {
+        name: checkAnswersCopy.cancelAmend.button,
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(cancelAmendLink(page)).toHaveCount(0)
   })
 })
 
@@ -217,9 +242,12 @@ test.describe('cancel-amend feature without JavaScript', () => {
       await noJs.getByRole('button', { name: copy.confirmButton }).click()
 
       await expect(noJs).toHaveURL(/\/notification-view\?cancelled=1$/)
-      await expect(strip(noJs).locator(TAG)).toHaveText(
-        sharedCopy.journeyStrip.submitted
-      )
+      await expect(
+        noJs
+          .getByRole('main')
+          .getByText(sharedCopy.journeyStrip.submitted, { exact: true })
+      ).toBeVisible()
+      await expect(strip(noJs)).toHaveCount(0)
     } finally {
       await context.close()
     }

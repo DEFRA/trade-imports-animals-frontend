@@ -18,6 +18,8 @@
  *    enhanced — the component is field-agnostic and reusable across pages.
  *  - A `data-no-results` attribute drives the "no results" message so each
  *    consumer supplies its own copy (in the correct language).
+ *  - A `data-placeholder` attribute sets the empty search box's placeholder,
+ *    so each consumer supplies its own copy.
  */
 import accessibleAutocomplete from 'accessible-autocomplete'
 
@@ -91,6 +93,9 @@ const buildConfig = (selectElement, selectOptions) => {
   }
   if (noResults) {
     config.tNoResults = () => noResults
+  }
+  if (dataset.placeholder) {
+    config.placeholder = dataset.placeholder
   }
   if (dataset.language === 'cy') {
     Object.assign(config, welshText(noResults))

@@ -8,8 +8,7 @@ export const copy = {
   outstanding: {
     heading: 'Cyn i’r llwyth gael ei fewnforio',
     intro: 'Mae angen i chi o hyd:',
-    documents:
-      'uwchlwytho’r dystysgrif iechyd ac unrhyw ddogfennau gofynnol eraill'
+    documents: 'uwchlwytho’r ITAHC ac unrhyw ddogfennau gofynnol eraill'
   },
   transporting: {
     heading: 'Cludo’r llwyth',
@@ -24,7 +23,7 @@ export const copy = {
   },
   viewOrAmend: {
     heading: 'Sut i weld neu ddiwygio’r hysbysiad hwn',
-    body: 'Gallwch weld neu ddiwygio’r hysbysiad hwn o’ch dangosfwrdd a’i ailgyflwyno.',
+    body: 'Gallwch weld neu newid yr hysbysiad hwn o’ch dangosfwrdd.',
     dashboardLink: 'Dychwelyd i’ch dangosfwrdd',
     createButton: 'Creu hysbysiad newydd'
   },
@@ -40,6 +39,7 @@ export const copy = {
       'Dydd Llun i ddydd Gwener, 8:30am i 5pm, ac eithrio gwyliau banc',
     customsPrefix: 'Os oes angen help arnoch gyda’ch datganiad tollau,',
     customsLink: 'cysylltwch â CThEF',
-    callCharges: 'Gwybodaeth am gostau galwadau'
+    callCharges: 'Gwybodaeth am gostau galwadau',
+    newTab: '(yn agor mewn tab newydd)'
   }
 }

@@ -2,6 +2,8 @@
 {% from "govuk/components/summary-list/macro.njk" import govukSummaryList %}
 {% from "govuk/components/table/macro.njk" import govukTable %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/tag/macro.njk" import govukTag %}
+{% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
 {% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
 
 {% macro cardError(text) %}
@@ -36,95 +38,138 @@
 
   {% include "shared/error-summary.njk" %}
 
-  <h1 class="govuk-heading-l">{{ heading }}</h1>
-
-  {% if copyAction or deleteHref %}
-    <div class="govuk-button-group">
-      {% if copyAction %}
-        <form method="post" action="{{ copyAction.href }}" class="app-form-inline">
-          <input type="hidden" name="crumb" value="{{ crumb }}" />
-          <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
-          <input type="hidden" name="copyOrigin" value="notification-view" />
+  {% if viewHeader %}
+    <div class="govuk-!-margin-bottom-6">
+      <h1 class="govuk-heading-l govuk-!-display-inline-block govuk-!-margin-right-2 govuk-!-margin-bottom-2">{{ viewHeader.reference }}</h1>
+      {{ govukTag({ text: viewHeader.status.text, classes: viewHeader.status.classes }) }}
+      {% if viewHeader.dateSubmitted %}<p class="govuk-body govuk-!-margin-bottom-0">{{ viewHeader.dateSubmitted }}</p>{% endif %}
+      {% if viewHeader.dateCreated %}<p class="govuk-body govuk-!-margin-bottom-0">{{ viewHeader.dateCreated }}</p>{% endif %}
+      <form method="post" action="{{ viewHeader.actions.copyHref }}" novalidate>
+        <input type="hidden" name="crumb" value="{{ crumb }}" />
+        <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
+        <input type="hidden" name="copyOrigin" value="notification-view" />
+        <div class="govuk-button-group govuk-!-margin-top-4">
+          {% if viewHeader.actions.amendHref %}
+            {{ govukButton({
+              text: copy.viewHeader.amend,
+              attributes: { formaction: viewHeader.actions.amendHref }
+            }) }}
+          {% endif %}
           {{ govukButton({
             text: sharedCopy.notificationActions.copy.text,
-            classes: "govuk-button--secondary"
+            classes: "" if viewHeader.actions.copyIsPrimary else "govuk-button--secondary"
           }) }}
-        </form>
-      {% endif %}
-      {% if deleteHref %}
-        {{ govukButton({
-          text: sharedCopy.notificationActions.delete.text,
-          href: deleteHref,
-          classes: "govuk-button--warning"
+          {{ govukButton({
+            text: sharedCopy.notificationActions.delete.text,
+            href: viewHeader.actions.deleteHref,
+            classes: "govuk-button--warning"
+          }) }}
+        </div>
+      </form>
+      {% if viewHeader.warning %}
+        {{ govukWarningText({
+          text: viewHeader.warning,
+          iconFallbackText: copy.viewHeader.warningIcon
         }) }}
       {% endif %}
+      <section class="govuk-!-margin-bottom-6" aria-labelledby="import-reference-numbers">
+        <h2 class="govuk-heading-m" id="import-reference-numbers">{{ copy.importReferences.heading }}</h2>
+        {{ govukWarningText({
+          text: copy.importReferences.warning,
+          iconFallbackText: copy.importReferences.warningIcon
+        }) }}
+        {{ govukSummaryList({ rows: viewHeader.importReferences }) }}
+      </section>
     </div>
+  {% else %}
+    <h1 class="govuk-heading-l">{{ heading }}</h1>
   {% endif %}
 
+  {% set cardHeadingLevel = 3 %}
+  {% set innerHeadingLevel = 4 %}
+  {% set blockHeadingLevel = 5 %}
   {% for section in sections %}
     {% if not loop.first %}
       <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
     {% endif %}
     <h2 class="govuk-heading-m" id="{{ section.anchor }}" tabindex="-1">{{ section.heading }}</h2>
-    {% for group in section.groups %}
-      {% if group.heading %}
-        <h3 class="govuk-heading-s">{{ group.heading }}</h3>
-      {% endif %}
-      {% set cardHeadingLevel = 4 if group.heading else 3 %}
-      {% set innerHeadingLevel = cardHeadingLevel + 1 %}
-      {% for card in group.cards %}
-        {% if card.identifierTable or card.documents or card.emptyText or card.error %}
-          <div class="govuk-summary-card{% if card.error %} app-summary-card--error{% endif %}"{% if card.anchor %} id="{{ card.anchor }}" tabindex="-1"{% endif %}>
-            <div class="govuk-summary-card__title-wrapper">
-              <h{{ cardHeadingLevel }} class="govuk-summary-card__title">{{ card.title }}</h{{ cardHeadingLevel }}>
-              {{ cardActions(card.actions) }}
-            </div>
-            <div class="govuk-summary-card__content">
-              {{ cardError(card.error) }}
-              {% if card.rows.length %}
-                {{ govukSummaryList({ rows: card.rows }) }}
-              {% endif %}
-              {% if card.identifierTable %}
-                <h{{ innerHeadingLevel }} class="govuk-heading-s">{{ copy.identifierTable.heading }}</h{{ innerHeadingLevel }}>
-                {{ govukTable({
-                  head: card.identifierTable.head,
-                  rows: card.identifierTable.rows
-                }) }}
-              {% endif %}
-              {% for document in card.documents %}
-                <h{{ innerHeadingLevel }} class="govuk-heading-s">{{ document.heading }}</h{{ innerHeadingLevel }}>
-                {{ govukSummaryList({ rows: document.rows }) }}
-              {% endfor %}
-              {% if card.emptyText %}
-                <p class="govuk-body">{{ card.emptyText }}</p>
-              {% endif %}
-            </div>
+    {{ cardError(section.error) }}
+    {% for card in section.cards %}
+      {% if card.speciesBlocks or card.subsections or card.error %}
+        <div class="govuk-summary-card{% if card.error %} app-summary-card--error{% endif %}"{% if card.anchor %} id="{{ card.anchor }}" tabindex="-1"{% endif %}>
+          <div class="govuk-summary-card__title-wrapper">
+            <h{{ cardHeadingLevel }} class="govuk-summary-card__title">{{ card.title }}</h{{ cardHeadingLevel }}>
+            {{ cardActions(card.actions) }}
           </div>
-        {% else %}
-          {{ govukSummaryList({
-            card: {
-              title: { text: card.title, headingLevel: cardHeadingLevel },
-              actions: card.actions,
-              attributes: { id: card.anchor, tabindex: "-1" } if card.anchor else null
-            },
-            rows: card.rows
-          }) }}
-        {% endif %}
-      {% endfor %}
+          <div class="govuk-summary-card__content">
+            {{ cardError(card.error) }}
+            {% if card.rows.length %}
+              {{ govukSummaryList({ rows: card.rows }) }}
+            {% endif %}
+            {% for subsection in card.subsections %}
+              <h{{ innerHeadingLevel }} class="govuk-heading-s">{{ subsection.heading }}</h{{ innerHeadingLevel }}>
+              {{ govukSummaryList({ rows: subsection.rows }) }}
+            {% endfor %}
+            {% for block in card.speciesBlocks %}
+              <h{{ innerHeadingLevel }} class="govuk-heading-s" id="{{ block.anchor }}" tabindex="-1">{{ block.heading }}</h{{ innerHeadingLevel }}>
+              {{ govukSummaryList({ rows: block.rows }) }}
+              {% if block.identifierTable %}
+                <h{{ blockHeadingLevel }} class="govuk-heading-s">{{ copy.identifierTable.heading }}</h{{ blockHeadingLevel }}>
+                {% if block.identifierTable.actions %}
+                  {% set identificationChange = block.identifierTable.actions.items[0] %}
+                  <p class="govuk-body"><a class="govuk-link" href="{{ identificationChange.href }}">{{ identificationChange.text }}<span class="govuk-visually-hidden"> {{ identificationChange.visuallyHiddenText }}</span></a></p>
+                {% endif %}
+                {{ govukTable({ head: block.identifierTable.head, rows: block.identifierTable.rows }) }}
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      {% else %}
+        {{ govukSummaryList({
+          card: {
+            title: { text: card.title, headingLevel: cardHeadingLevel },
+            actions: card.actions,
+            attributes: { id: card.anchor, tabindex: "-1" } if card.anchor else null
+          },
+          rows: card.rows
+        }) }}
+      {% endif %}
     {% endfor %}
   {% endfor %}
 
-  {# A submitted notification is a record, not a form. The read-only review has
-     already dropped every Change link, so inviting the trader to submit again
-     would offer the one action the page has otherwise taken away — and the
-     declaration redirects a submitted journey to a confirmation it did not
-     just produce. The read-only review ends with the last card. #}
+  {# A submitted notification is a record, not a form, and ends with its last
+     card. A draft ends with Continue, its Delete being in the header; an
+     amendment with Continue, Cancel amend and Delete. One still owed a health
+     certificate ends with Continue, which starts the amendment that lets the
+     trader upload it. #}
   {% if not readOnly %}
     {# Carries the concurrency token this review was rendered with, so the trader declares only what it showed. #}
     <form method="post" action="{{ declarationHref }}" novalidate>
       <input type="hidden" name="crumb" value="{{ crumb }}" />
       <input type="hidden" name="concurrencyToken" value="{{ concurrencyToken }}" />
       <input type="hidden" name="step" value="review" />
+      <div class="govuk-button-group">
+        {{ govukButton({ text: copy.submit.button }) }}
+        {% if cancelAmendHref %}
+          {{ govukButton({
+            text: copy.cancelAmend.button,
+            href: cancelAmendHref,
+            classes: "govuk-button--secondary"
+          }) }}
+        {% endif %}
+        {% if deleteHref %}
+          {{ govukButton({
+            text: sharedCopy.notificationActions.delete.text,
+            href: deleteHref,
+            classes: "govuk-button--warning"
+          }) }}
+        {% endif %}
+      </div>
+    </form>
+  {% endif %}
+  {% if viewHeader and viewHeader.continueHref %}
+    <form method="post" action="{{ viewHeader.continueHref }}" novalidate>
+      <input type="hidden" name="crumb" value="{{ crumb }}" />
       {{ govukButton({ text: copy.submit.button }) }}
     </form>
   {% endif %}

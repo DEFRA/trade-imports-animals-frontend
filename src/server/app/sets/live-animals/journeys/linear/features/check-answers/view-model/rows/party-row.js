@@ -22,12 +22,7 @@ export const partyLines = (party) => {
   }
   return [
     `<strong>${escapeHtml(party.name)}</strong>`,
-    ...[
-      ...addressLines(party.address),
-      party.address?.country,
-      party.address?.telephoneNumber,
-      party.address?.emailAddress
-    ]
+    ...[...addressLines(party.address), party.address?.country]
       .filter((part) => !isBlank(part))
       .map(escapeHtml)
   ]

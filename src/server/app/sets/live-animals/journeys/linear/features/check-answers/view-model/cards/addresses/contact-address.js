@@ -5,7 +5,7 @@ import { copy as cy } from '../../../copy/copy.cy.js'
 import { consignmentContactSelectPage } from '../../../../contact/page.js'
 import { CONTACT_PARTY } from '../../../../addresses/parties.js'
 import { partyEditHref } from '../../../../addresses/party-edit/edit-href.js'
-import { cardAction, editableActions } from '../../rows/change-link.js'
+import { changeAction, editableActions } from '../../rows/change-link.js'
 import { partyRow } from '../../rows/party-row.js'
 
 const copy = copyFor({ en, cy })
@@ -21,7 +21,7 @@ export const contactAddressCard = (
   title: copy.cards.contactAddress,
   ...editableActions(
     readOnly,
-    cardAction(
+    changeAction(
       journeyId,
       consignmentContactSelectPage.slug,
       copy.hidden.cards.contactAddress

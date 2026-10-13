@@ -17,6 +17,7 @@ import {
   completeAnswerSections,
   journeyUrl,
   openReviewFromHub,
+  referenceHeading,
   selectSpecies,
   signIn,
   startNotification,
@@ -51,7 +52,7 @@ test.describe('live-animals journey glue', () => {
 
     await selectSpecies(page, ['Felis catus'])
     await save()
-    await expect(heading('Main reason for import')).toBeVisible()
+    await expect(heading('Main import reason')).toBeVisible()
 
     await page.getByRole('radio', { name: 'Internal market' }).check()
     await expect(
@@ -63,6 +64,7 @@ test.describe('live-animals journey glue', () => {
     await expect(heading('Commodity details')).toBeVisible()
 
     await page.getByLabel('Number of animals').fill('2')
+    await page.getByLabel('Number of packages (when required)').fill('1')
     await save()
     await expect(
       page.getByRole('heading', { name: 'Identification details', exact: true })
@@ -103,7 +105,7 @@ test.describe('live-animals journey glue', () => {
     await expect(heading('What are you importing?')).toBeVisible()
 
     await answerWhatYouAreImporting(page)
-    await expect(heading('Main reason for import')).toBeVisible()
+    await expect(heading('Main import reason')).toBeVisible()
 
     await answerImportReason(page)
     await answerCommodityCounts(page)
@@ -126,7 +128,7 @@ test.describe('live-animals journey glue', () => {
 
     // No question in the notification sent the user to the hub on the way.
     await expect(page).toHaveURL(/\/notification-view$/)
-    await expect(heading('Review your notification')).toBeVisible()
+    await expect(referenceHeading(page)).toBeVisible()
   })
 
   test('the opening run ends on the review page, naming what is outstanding, when the notification is incomplete', async ({
@@ -142,16 +144,16 @@ test.describe('live-animals journey glue', () => {
     await expect(heading('What are you importing?')).toBeVisible()
 
     await answerWhatYouAreImporting(page)
-    await expect(heading('Main reason for import')).toBeVisible()
+    await expect(heading('Main import reason')).toBeVisible()
 
     await page.goto(journeyUrl(page, 'consignment/contact/select'))
     await answerContactAddress(page)
 
     await expect(page).toHaveURL(/\/notification-view$/)
-    await expect(heading('Review your notification')).toBeVisible()
+    await expect(referenceHeading(page)).toBeVisible()
     const summary = page.getByRole('alert')
     await expect(summary).toContainText('There is a problem')
-    await expect(summary).toContainText('Complete reason for import')
+    await expect(summary).toContainText('Complete main import reason')
     await expect(summary).toContainText('Complete roles and addresses')
   })
 
@@ -230,7 +232,7 @@ test.describe('live-animals journey glue', () => {
       accompanyingDocumentDateOfIssue: { day: '3', month: '1', year: '2026' },
       filename: 'commercial-invoice.pdf'
     }
-    await page.getByRole('link', { name: 'Change uploaded documents' }).click()
+    await page.getByRole('link', { name: 'Change document 1' }).click()
     await expect(page).toHaveURL(
       /\/accompanying-documents\?change=1(?:&attempt=\d+)?$/
     )

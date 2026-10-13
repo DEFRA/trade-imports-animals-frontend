@@ -6,9 +6,6 @@ export const anyLineApplies = (answers, name) =>
     appliesForCommodity(name, line?.commoditySelection)
   )
 
-export const regionCodeApplies = (_answers, scope) =>
-  scope.has('regionOfOriginCode')
-
 export const purposeApplies = (_answers, scope) =>
   scope.has('purposeInInternalMarket')
 

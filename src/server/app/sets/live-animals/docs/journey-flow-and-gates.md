@@ -11,6 +11,12 @@ section is a navigation sequence. The `review` section has the one authored sect
 gate: it requires `scope.readyForCheckYourAnswers`. Normal page gates are derived
 from `meta.collects`, scope and earlier continue prerequisites.
 
+The sections follow Design Release 2.1. The `commodities` section holds the
+commodity page, the main reason for import and Commodity details; identification
+follows; Additional details is a section of its own after it. Section order sets
+each page's continue prerequisites, so the reason still comes after the commodity
+question.
+
 The `addresses` section holds the CPH number page and then Roles and addresses, so
 the CPH page saves back to Roles and addresses and Roles and addresses ends the
 section.
@@ -40,8 +46,10 @@ identification row needs it: its part is the `commodityLines` collection, a
 structural group in scope from the moment the notification exists, so the roll-up
 never reaches Not applicable and `conditional: true` on its own would leave the row
 drawn. Reach for `applies` only when a scope condition genuinely cannot carry the
-rule — the transit-countries row needs no `applies`, because its answer leaves
-scope on its own.
+rule. The transit-countries row's answer leaves scope on its own with the means of
+transport, and the row carries an `applies` test as well, because Design Release 2.1
+also leaves it off a notification with no commodity chosen — a condition the
+answer's scope does not carry.
 
 The hub's `GROUPS` array in
 [`features/hub/controller.js`](../journeys/linear/features/hub/controller.js) places
@@ -107,6 +115,15 @@ task row is already ready. The review step carries the review page's derived
 gate, so the run ends on the review page, complete or not, once a commodity has
 been chosen; a run with no open later step still falls through to the hub.
 
+While the run is under way, four Back links name the page before them
+(`RUN_BACK_STEPS` and `runBackTarget` in `run.js`). The commodity page goes back
+to the origin page. The main reason for import goes back to the commodity page.
+Commodity details goes back to the commodity page, not to the main reason for
+import that comes between them. Additional details goes back to Identification
+details when a chosen commodity needs identifiers (`identifiesAnAnimal`, shared
+with the hub row), otherwise to Commodity details. Outside the run all four keep
+the overview, as every other page does.
+
 The hub is somewhere the user chooses to go — through the secondary "Save and
 return to overview" button on every page, or by opening the notification from
 the dashboard — not somewhere the run puts them between sections. Rendering the
@@ -120,6 +137,18 @@ this journey is the CPH number page handing back to Roles and addresses. Nothing
 marks a page as opened from the hub, and the run is not re-entered for that
 notification.
 
+A page's Back link can follow the same state.
+[`kit.runBackLink(request, page)`](../../../shared/kit.js) points Back at the
+page `RUN_BACK_STEPS` in [`flow/run.js`](../journeys/linear/flow/run.js) names
+for it while the run is active, and at the hub once it is not. The transit
+countries page uses it: in the run it is reached only from the arrival details,
+and outside the run only from its task on the hub. The same
+page sends a load or a submit to the hub when the means of transport leaves
+`transitedCountries` out of scope. The
+[consignment-details page](../journeys/linear/features/commodities/consignment-details/consignment-details.controller.js)
+applies the same load-time rule when it has no line, but sends the trader to the
+commodity question.
+
 The opening run begins when the notification is created — the dashboard's
 create POST in
 [`features/dashboard/controller.js`](../journeys/linear/features/dashboard/controller.js)
@@ -129,8 +158,11 @@ and an ordinary page otherwise: it has no opening-run special case.
 The guard admits a request when the opening run has begun for that journey in
 this session, or the journey carries committed user answers. A journey with
 neither — a deep link to an id this session never created and that holds no
-answers — is sent to the origin page. The origin page and its children are
-exempt from the guard, so there is no redirect loop.
+answers — is sent to the origin page. A notification that cannot be found is not
+the guard's to judge: it admits the request, and the page answers it — the review
+page sends it to the notification list, every other page answers not found. The
+origin page and its children are exempt from the guard, so there is no redirect
+loop.
 
 A journey the guard bounces to the origin page does not resume the opening run
 when it saves that page. `kit.nextTarget` finds `inOpeningRun` false, so

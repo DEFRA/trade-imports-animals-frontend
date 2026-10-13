@@ -23,6 +23,7 @@ export const copy = {
     legallyAct:
       'I can legally act on behalf of a third party in relation to the conditions of this declaration.'
   },
+  declarationLegend: 'Declaration confirmation',
   declarationLabel:
     'I confirm that I have reviewed and comply with this declaration and that the information submitted in this notification is true and correct.',
   dateOfDeclaration: 'Date of declaration:',

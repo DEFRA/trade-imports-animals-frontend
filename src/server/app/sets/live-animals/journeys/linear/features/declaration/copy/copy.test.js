@@ -74,6 +74,11 @@ describe('declaration copy module', () => {
     ])
   })
 
+  it('Should name the confirmation group for screen readers', () => {
+    expect(copy.declarationLegend).toBe('Declaration confirmation')
+    expect(copyCy.declarationLegend).toBe('Cadarnhad y datganiad')
+  })
+
   // Each accountability item names what is owed and when, rather than the
   // compressed phrases the page carried before Design release 1.
   it('Should spell out each thing the trader is accountable for', () => {

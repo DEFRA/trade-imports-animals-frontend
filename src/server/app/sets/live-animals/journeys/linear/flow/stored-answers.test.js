@@ -3,6 +3,8 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import { dispatchPages } from '../features/index.js'
 import { buildDispatch } from '../../../../../flow/dispatch.js'
+import { addUtcDays } from '../../../../../lib/validate/index.js'
+import { arrivalWindow } from '../features/transport/port-of-entry/arrival-window.js'
 import { copy as transportCopy } from '../features/transport/copy/copy.en.js'
 import { taskRowById } from './task-rows.js'
 import {
@@ -16,6 +18,12 @@ import {
 const STALE_PORT = 'GB ZZZ'
 const KNOWN_PORT = 'GB ABD'
 const portMessage = transportCopy.portOfEntry.errors.portNoLongerAvailable
+const dateMessage = transportCopy.portOfEntry.errors.arrivalDateNoLongerInWindow
+const dateParts = (date) => ({
+  day: String(date.getUTCDate()),
+  month: String(date.getUTCMonth() + 1),
+  year: String(date.getUTCFullYear())
+})
 
 beforeAll(() => {
   buildDispatch(SET_ID, dispatchPages)
@@ -40,6 +48,26 @@ describe('#rowStoredErrors', () => {
     const errors = await rowStoredErrors(
       taskRowById('arrivalDetails'),
       { portOfEntry: KNOWN_PORT },
+      {}
+    )
+    expect(errors).toEqual({})
+  })
+
+  it('Should name a saved arrival date that has fallen more than 7 days into the past', async () => {
+    const errors = await rowStoredErrors(
+      taskRowById('arrivalDetails'),
+      {
+        arrivalDateAtPort: dateParts(addUtcDays(arrivalWindow().min, -1))
+      },
+      {}
+    )
+    expect(errors).toEqual({ arrivalDateAtPort: dateMessage })
+  })
+
+  it('Should pass a saved arrival date on the earliest day of the window', async () => {
+    const errors = await rowStoredErrors(
+      taskRowById('arrivalDetails'),
+      { arrivalDateAtPort: dateParts(arrivalWindow().min) },
       {}
     )
     expect(errors).toEqual({})

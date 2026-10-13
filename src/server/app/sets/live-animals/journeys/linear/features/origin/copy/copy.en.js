@@ -2,13 +2,13 @@ export const copy = {
   title: 'Origin of the import',
   country: {
     label: 'Country of origin',
-    hint: 'Start typing to search for a country.',
     placeholder: 'Select a country',
+    searchPlaceholder: 'Search for a country',
     noResults: 'No countries found'
   },
   regionRequirement: {
     legend: 'Does the consignment have a region of origin code?',
-    hint: 'If a region of origin code is required it will be shown on your health certificate.',
+    hint: 'Check the health certificate for a region of origin code. You can add the code later if you do not have the certificate now.',
     yes: 'Yes',
     no: 'No'
   },
@@ -18,7 +18,7 @@ export const copy = {
   },
   internalReference: {
     label: 'Your internal reference for this consignment (optional)',
-    hint: 'Enter any internal reference you want to use to identify this consignment, or leave blank. It can be up to 58 characters.'
+    hint: 'Enter any internal reference you want to use to identify this consignment, or leave blank.'
   },
   errors: {
     countryFromList: 'Select a country from the list',

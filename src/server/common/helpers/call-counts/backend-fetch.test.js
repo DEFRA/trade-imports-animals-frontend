@@ -64,6 +64,62 @@ describe('backendFetch', () => {
     })
   })
 
+  describe('when the connection to the backend does not open', () => {
+    const connectFailure = (code) =>
+      new TypeError('fetch failed', {
+        cause: Object.assign(new Error('Connect Timeout Error'), { code })
+      })
+
+    test('tries once more and returns the second response', async () => {
+      const response = { ok: true, status: 200 }
+      global.fetch
+        .mockRejectedValueOnce(connectFailure('UND_ERR_CONNECT_TIMEOUT'))
+        .mockResolvedValueOnce(response)
+
+      await expect(backendFetch(BACKEND_URL, INIT)).resolves.toBe(response)
+    })
+
+    test('gives up when the second attempt cannot connect either', async () => {
+      const second = connectFailure('ECONNREFUSED')
+      global.fetch
+        .mockRejectedValueOnce(connectFailure('UND_ERR_CONNECT_TIMEOUT'))
+        .mockRejectedValueOnce(second)
+
+      await expect(backendFetch(BACKEND_URL, INIT)).rejects.toBe(second)
+    })
+
+    test('counts the call once, however many attempts it took', async () => {
+      global.fetch
+        .mockRejectedValueOnce(connectFailure('UND_ERR_CONNECT_TIMEOUT'))
+        .mockResolvedValueOnce({ ok: true })
+      server.route({
+        method: 'GET',
+        path: '/stalled',
+        handler: async () => {
+          await backendFetch(BACKEND_URL, INIT)
+          return 'page'
+        }
+      })
+
+      await server.inject({ method: 'GET', url: '/stalled' })
+
+      expect((await readRoute('/stalled')).backendCalls).toBe(1)
+    })
+  })
+
+  test('does not send a request again once the connection had opened', async () => {
+    const socketClosed = new TypeError('fetch failed', {
+      cause: Object.assign(new Error('other side closed'), {
+        code: 'UND_ERR_SOCKET'
+      })
+    })
+    global.fetch
+      .mockRejectedValueOnce(socketClosed)
+      .mockResolvedValueOnce({ ok: true })
+
+    await expect(backendFetch(BACKEND_URL, INIT)).rejects.toBe(socketClosed)
+  })
+
   test('counts every backend call a request makes', async () => {
     server.route({
       method: 'GET',

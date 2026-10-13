@@ -16,7 +16,8 @@ import { buildDispatch } from '../../../../../../flow/dispatch.js'
 import {
   configureRecords,
   records,
-  SUBMITTED
+  SUBMITTED,
+  SUBMITTED_ACTION_REQUIRED
 } from '../../../../../../engine/persistence/records.js'
 import {
   configureSession,
@@ -101,9 +102,61 @@ describe('cancel amendment routes', () => {
       redirect: `${pagePath(journeyId, NOTIFICATION_VIEW_SLUG)}?cancelled=1`
     })
     const restored = await records.load({ journeyId })
-    expect(restored.status).toBe(SUBMITTED)
+    expect(restored.status).toBe(SUBMITTED_ACTION_REQUIRED)
     expect(projectAnswers(restored.fulfilment).internalReferenceNumber).toBe(
       'SubmittedRef'
+    )
+  })
+
+  const itahcFulfilment = () =>
+    assembleFulfilments({
+      countryOfOrigin: 'FR',
+      documents: [
+        {
+          accompanyingDocumentType: 'ITAHC',
+          accompanyingDocumentAttachmentType: 'PDF',
+          accompanyingDocumentReference: 'GBHC1234567890',
+          accompanyingDocumentDateOfIssue: {
+            day: '12',
+            month: '12',
+            year: '2025'
+          },
+          filename: 'health-certificate.pdf'
+        }
+      ]
+    })
+
+  it('Should restore Submitted when the cancelled amendment was of a notification submitted with an ITAHC', async () => {
+    const journey = await store.create()
+    await records.replaceFulfilment(journey.journeyId, itahcFulfilment())
+    await records.finalise(
+      journey.journeyId,
+      undefined,
+      (await records.load({ journeyId: journey.journeyId })).concurrencyToken
+    )
+    await records.amend(journey.journeyId)
+
+    await post(journeyRequest(journey.journeyId), stubH())
+
+    expect((await records.load({ journeyId: journey.journeyId })).status).toBe(
+      SUBMITTED
+    )
+  })
+
+  it('Should restore Submitted action required when an ITAHC added in the cancelled amendment is discarded', async () => {
+    const journey = await store.create()
+    await records.finalise(
+      journey.journeyId,
+      undefined,
+      (await records.load({ journeyId: journey.journeyId })).concurrencyToken
+    )
+    await records.amend(journey.journeyId)
+    await records.replaceFulfilment(journey.journeyId, itahcFulfilment())
+
+    await post(journeyRequest(journey.journeyId), stubH())
+
+    expect((await records.load({ journeyId: journey.journeyId })).status).toBe(
+      SUBMITTED_ACTION_REQUIRED
     )
   })
 
@@ -127,7 +180,23 @@ describe('cancel amendment routes', () => {
     )
     expect(
       (await records.load({ journeyId: submitted.journeyId })).status
-    ).toBe(SUBMITTED)
+    ).toBe(SUBMITTED_ACTION_REQUIRED)
+  })
+
+  it('Should send a non-amending action-required notification to its view', async () => {
+    const submitted = await store.create()
+    await records.finalise(
+      submitted.journeyId,
+      undefined,
+      (await records.load({ journeyId: submitted.journeyId })).concurrencyToken
+    )
+    expect(
+      (await records.load({ journeyId: submitted.journeyId })).status
+    ).toBe(SUBMITTED_ACTION_REQUIRED)
+
+    expect(await get(journeyRequest(submitted.journeyId), stubH())).toEqual({
+      redirect: pagePath(submitted.journeyId, NOTIFICATION_VIEW_SLUG)
+    })
   })
 
   it('Should reject an unknown journey at the known-journey gate', async () => {

@@ -1,10 +1,9 @@
-import { isBlank } from '../../../../../../../../../lib/answered.js'
 import { copyFor } from '../../../../../../../../../shared/copy.js'
 import { copy as en } from '../../../copy/copy.en.js'
 import { copy as cy } from '../../../copy/copy.cy.js'
 import { transportersPage } from '../../../../transport/page.js'
 import { addressLines } from '../../rows/party-row.js'
-import { cardAction, editableActions } from '../../rows/change-link.js'
+import { changeAction, editableActions } from '../../rows/change-link.js'
 import { row } from '../../rows/summary-row.js'
 import { escapeHtml, notApplicableCell } from '../../rows/value-text.js'
 
@@ -28,20 +27,14 @@ export const transporterAddressRow = (party) => {
   }
 }
 
-export const approvalNumberRow = (transporter) =>
-  isBlank(transporter?.approvalNumber)
-    ? []
-    : [row(copy.rows.approvalNumber, transporter.approvalNumber)]
-
-export const activeTransporterRows = (transporter) =>
-  transporter
-    ? [
-        row(copy.rows.name, transporter.name),
-        transporterAddressRow(transporter),
-        row(copy.rows.country, transporter.address?.country),
-        ...approvalNumberRow(transporter)
-      ]
-    : []
+// Every row stands whether or not a transporter has been chosen; a blank one
+// reads Not applicable, or is marked missing on an unfinished card.
+export const activeTransporterRows = (transporter) => [
+  row(copy.rows.name, transporter?.name),
+  transporterAddressRow(transporter),
+  row(copy.rows.country, transporter?.address?.country),
+  row(copy.rows.approvalNumber, transporter?.approvalNumber)
+]
 
 export const transportDetailsCard = (journeyId, answers, scope, readOnly) => {
   const transporter = activeTransporter(answers, scope)
@@ -50,7 +43,7 @@ export const transportDetailsCard = (journeyId, answers, scope, readOnly) => {
     title: copy.cards.transportDetails,
     ...editableActions(
       readOnly,
-      cardAction(
+      changeAction(
         journeyId,
         transportersPage.slug,
         copy.hidden.cards.transportDetails
