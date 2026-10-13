@@ -135,15 +135,12 @@ describe('GET import-reason — copy reaches the view', () => {
     expect(result.view.context.countryItems[0].text).toBe(
       copy.country.placeholder
     )
-    expect(result.view.context.countryItems.slice(2)).toEqual(
+    expect(result.view.context.countryItems.slice(1)).toEqual(
       await countries.destinationCountryOptions()
     )
     expect(result.view.context.portItems[0].text).toBe(copy.port.placeholder)
-    expect(result.view.context.portItems.slice(2)).toEqual(
-      (await ports.list()).map((port) => ({
-        value: port.code,
-        text: `${port.name} - ${port.code}`
-      }))
+    expect(result.view.context.portItems.slice(1)).toEqual(
+      await ports.portOptions()
     )
     expect(result.view.context.exitDateField.label.text).toBe(copy.date.label)
   })
