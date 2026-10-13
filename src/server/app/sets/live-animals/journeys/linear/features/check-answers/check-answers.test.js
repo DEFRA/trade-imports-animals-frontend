@@ -21,7 +21,10 @@ import {
   stubH
 } from '../../../../../../engine/test-support.js'
 import * as declaration from '../declaration/controller.js'
-import { continueRequest } from '../declaration/test-support.js'
+import {
+  continueRequest,
+  declarationRoutesFromReview
+} from '../declaration/test-support.js'
 import { reviewedConcurrencyTokensCookie } from '../../../../../../engine/persistence/session.js'
 import { STUB_BOOK } from '../../../../../../services/address-book/stub/index.js'
 import * as addressBook from '../../../../../../services/address-book/index.js'
@@ -1286,46 +1289,43 @@ describe(`${SUITE} — roles whose copy breaks the rules`, () => {
 describe(`${SUITE} — Continue on an amend review`, () => {
   setupCheckAnswersEngine()
 
-  const amendJourney = async (seed) => {
-    const journey = await store.create()
-    await store.seedAnswers(journey.journeyId, seed)
-    await store.submit(journey.journeyId)
-    await records.amend(journey.journeyId)
-    return journey
-  }
+  const continueAmend = (seed) =>
+    driveHandler(declarationRoutesFromReview[0].handler, { seed, amend: true })
 
-  const continueAmend = async ({ journeyId }) => {
-    const { concurrencyToken } = await store.get(journeyId)
-    const toolkit = stubH()
-    const response = await postHandlerOf(declaration)(
-      continueRequest(journeyRequest(journeyId), concurrencyToken),
-      toolkit
-    )
-    return { response, view: toolkit.captured.view }
-  }
+  const refusedAmendReview = (seed) =>
+    driveHandler(getHandler, { seed, query: { refused: '1' }, amend: true })
 
-  it('Should keep an incomplete amend on the review without an error', async () => {
+  it('Should refuse an incomplete amend back to the review as refused', async () => {
     const { arrivalDateAtPort, ...withoutArrivalDate } = fullSeed
     expect(arrivalDateAtPort).toBeDefined()
-    const journey = await amendJourney(withoutArrivalDate)
 
-    const { response } = await continueAmend(journey)
+    const { journeyId, response } = await continueAmend(withoutArrivalDate)
 
-    expect(response.redirect).toBe(reviewPath(journey.journeyId))
-    expect((await store.get(journey.journeyId)).status).toBe(AMEND)
+    expect(response).toEqual(refusedContinue(journeyId))
+    expect((await store.get(journeyId)).status).toBe(AMEND)
   })
 
-  it('Should keep an amend whose arrival date is more than 6 months ahead on the review without an error', async () => {
-    const journey = await amendJourney({
-      ...fullSeed,
-      arrivalDateAtPort: dateMonthsAhead(8)
-    })
+  it('Should name what is outstanding on a refused amend review, with focus on the summary', async () => {
+    const { arrivalDateAtPort, ...withoutArrivalDate } = fullSeed
+    expect(arrivalDateAtPort).toBeDefined()
 
-    const { response, view } = await continueAmend(journey)
+    const { view } = await refusedAmendReview(withoutArrivalDate)
 
-    expect(response.redirect).toBe(reviewPath(journey.journeyId))
-    expect(view).toBeUndefined()
-    expect((await store.get(journey.journeyId)).status).toBe(AMEND)
+    expect(view.context.errorSummary.errorList.length).toBeGreaterThan(0)
+    expect(view.context.errorSummary.disableAutoFocus).toBe(false)
+    expect(
+      cardsOf(view.context.sections).filter((card) => card.error)
+    ).not.toEqual([])
+  })
+
+  it('Should refuse an amend whose arrival date is more than 6 months ahead, naming it on the review', async () => {
+    const seed = { ...fullSeed, arrivalDateAtPort: dateMonthsAhead(8) }
+
+    const { journeyId, response } = await continueAmend(seed)
+    expect(response).toEqual(refusedContinue(journeyId))
+
+    const { view } = await refusedAmendReview(seed)
+    expect(view.context.errorSummary.errorList.length).toBeGreaterThan(0)
   })
 
   it('Should still refuse an incomplete draft with the summary', async () => {

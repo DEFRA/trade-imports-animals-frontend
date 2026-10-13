@@ -148,13 +148,8 @@ const post = async (request, toolkit) => {
     return toolkit.redirect(reviewHref(journey.journeyId))
   }
 
-  // c-201: an amend review holds Continue silently, so it is not told it was refused.
   if (await isReviewRefused(request, toolkit)) {
-    return toolkit.redirect(
-      reviewHref(journey.journeyId, {
-        refused: journey.status !== state.AMEND
-      })
-    )
+    return toolkit.redirect(reviewHref(journey.journeyId, { refused: true }))
   }
 
   // Never pre-tick: a tick left by a submit refused as stale was given to older content.

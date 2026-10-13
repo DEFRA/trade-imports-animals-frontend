@@ -143,7 +143,9 @@ export const renderNotificationView = async (
   const { journey, answers, storedAnswers, scope, evaluation } =
     await state.get(request, toolkit)
   const readOnly = journey.status === state.SUBMITTED
-  const holdsSilently = readOnly || journey.status === state.AMEND
+  const refused = request.query.refused === '1'
+  // c-201: an amendment opens with no errors; Continue refused shows them.
+  const holdsSilently = readOnly || (journey.status === state.AMEND && !refused)
   const parties = await partiesFromStoredAnswers(answers)
   // A submitted notification is a record of what was sent, so nothing on it
   // is outstanding, and no stored answer of its is named as stale either —
@@ -155,7 +157,6 @@ export const renderNotificationView = async (
   const invalidCardErrors = holdsSilently
     ? {}
     : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
-  const refused = request.query.refused === '1'
   const scanDocErrors = holdsSilently
     ? {}
     : await documentScanCardErrors(answers, { includePending: refused })
