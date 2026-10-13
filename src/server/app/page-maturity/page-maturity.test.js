@@ -39,10 +39,11 @@ describe('pageLevelFor', () => {
 
   describe('with a section', () => {
     const sections = [{ section: '/example/section', level: LEVELS.exploring }]
+    const NEW_PAGE = '/example/section/new'
 
     it.each([
       '/example/section',
-      '/example/section/new',
+      NEW_PAGE,
       '/example/section/{journeyId}/child'
     ])('Should treat %s as Exploring through the section', (path) => {
       expect(pageLevelFor(path, sections)).toBe(LEVELS.exploring)
@@ -63,9 +64,17 @@ describe('pageLevelFor', () => {
       }
     )
 
+    it('Should let an exact page entry win over the section that holds it', () => {
+      expect(
+        pageLevelFor(NEW_PAGE, sections, {
+          [NEW_PAGE]: LEVELS.agreed
+        })
+      ).toBe(LEVELS.agreed)
+    })
+
     it('Should use the first section that holds the route', () => {
       expect(
-        pageLevelFor('/example/section/new', [
+        pageLevelFor(NEW_PAGE, [
           ...sections,
           { section: '/', level: LEVELS.detailing }
         ])
@@ -77,6 +86,10 @@ describe('pageLevelFor', () => {
 describe('pageMaturityContext', () => {
   afterEach(() => {
     config.set(ENABLED_KEY, originalEnabled)
+  })
+
+  it('Should default the switch to on', () => {
+    expect(config.default(ENABLED_KEY)).toBe(true)
   })
 
   it('Should return the tag, class, line and hidden prefix for a listed page', () => {

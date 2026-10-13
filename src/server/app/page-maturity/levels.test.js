@@ -61,6 +61,13 @@ const contrastRatio = (first, second) => {
 
 const WCAG_AA_NORMAL_TEXT = 4.5
 
+// The banner text takes its colour from `.govuk-phase-banner__content`, not
+// from the row, so contrast is measured against what GOV.UK Frontend sets.
+const BANNER_TEXT_COLOUR =
+  /\.govuk-phase-banner__content\{[^}]*color:var\(--govuk-text-colour,(#[0-9a-f]{6})\)/.exec(
+    govukFrontendCss
+  )?.[1]
+
 describe('page maturity levels', () => {
   it.each(Object.entries(TAG_CLASSES))(
     'Should give %s a tag colour that GOV.UK Frontend styles',
@@ -85,16 +92,37 @@ describe('page maturity levels', () => {
     expect(new Set(classes).size).toBe(Object.values(LEVELS).length)
   })
 
+  it('Should leave the row text in the colour GOV.UK Frontend gives the banner content', () => {
+    expect(BANNER_TEXT_COLOUR).toMatch(/^#[0-9a-f]{6}$/)
+
+    for (const bannerClass of Object.values(BANNER_CLASSES)) {
+      expect(ruleFor(bannerClass), bannerClass).not.toHaveProperty('color')
+    }
+  })
+
   it.each(Object.entries(BANNER_CLASSES))(
     'Should colour the %s banner row so its text meets WCAG AA contrast',
     (_, bannerClass) => {
-      const { color, 'background-color': background } = ruleFor(bannerClass)
+      const { 'background-color': background } = ruleFor(bannerClass)
 
       expect(background, `${bannerClass} background`).toMatch(/^#[0-9a-f]{6}$/)
-      expect(color, `${bannerClass} text`).toMatch(/^#[0-9a-f]{6}$/)
-      expect(contrastRatio(color, background)).toBeGreaterThanOrEqual(
-        WCAG_AA_NORMAL_TEXT
-      )
+      expect(
+        contrastRatio(BANNER_TEXT_COLOUR, background)
+      ).toBeGreaterThanOrEqual(WCAG_AA_NORMAL_TEXT)
     }
   )
+
+  it('Should use the status prefix and level names the ticket names', () => {
+    expect(copy.hiddenPrefix).toBe('This page’s status:')
+    expect(
+      Object.fromEntries(
+        Object.entries(copy.levels).map(([level, { tag }]) => [level, tag])
+      )
+    ).toEqual({
+      [LEVELS.exploring]: 'Exploring',
+      [LEVELS.detailing]: 'Detailing',
+      [LEVELS.agreed]: 'Agreed',
+      [LEVELS.readyForLive]: 'Ready for live'
+    })
+  })
 })

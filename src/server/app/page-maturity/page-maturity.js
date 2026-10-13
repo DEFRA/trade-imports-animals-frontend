@@ -35,15 +35,21 @@ export const isInSection = (routePath, section) =>
  * `/live-animals/notifications/{journeyId}/origin`.
  * @param {ReadonlyArray<{ section: string, level: string }>} [sections] - the
  * sections to match, defaulting to `SECTION_LEVELS`.
+ * @param {Readonly<Record<string, string>>} [pages] - the exact pages to match,
+ * defaulting to `PAGE_LEVELS`.
  * @returns {string|undefined} a level id from `LEVELS`, or undefined when the
  * page has no level.
  */
-export function pageLevelFor(routePath, sections = SECTION_LEVELS) {
+export function pageLevelFor(
+  routePath,
+  sections = SECTION_LEVELS,
+  pages = PAGE_LEVELS
+) {
   if (!routePath) {
     return undefined
   }
-  if (Object.hasOwn(PAGE_LEVELS, routePath)) {
-    return PAGE_LEVELS[routePath]
+  if (Object.hasOwn(pages, routePath)) {
+    return pages[routePath]
   }
   return sections.find(({ section }) => isInSection(routePath, section))?.level
 }
