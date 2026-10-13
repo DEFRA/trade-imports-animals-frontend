@@ -489,3 +489,40 @@ test('Mapper A should use the envelope id as the reference number', () => {
 
   expect(actual).toEqual({ referenceNumber: 'JOURNEY-ID' })
 })
+
+// GBN-AG's TradeCountry carries an ISO 3166-1 alpha-2 code, so a territory the
+// destination and transit selects offer must leave as its country.
+describe('Mapper A — territories leave as their ISO country', () => {
+  test('Should send a territory chosen as the destination country as its parent country', () => {
+    const notification = currentNotificationFrom({
+      ...answersWithGaps(),
+      reasonForImport: 'transit',
+      destinationCountry: 'FR-MQ'
+    })
+
+    expect(notification.destinationCountry).toBe('FR')
+  })
+
+  test('Should send a country chosen as the destination country unchanged', () => {
+    const notification = currentNotificationFrom({
+      ...answersWithGaps(),
+      reasonForImport: 'transit',
+      destinationCountry: 'IE'
+    })
+
+    expect(notification.destinationCountry).toBe('IE')
+  })
+
+  test('Should send transited territories as their parent countries, each country once, in the order chosen', () => {
+    const notification = currentNotificationFrom({
+      ...answersWithGaps(),
+      transitedCountries: ['ES-CN', 'FR', 'FR-MQ', 'BE']
+    })
+
+    expect(notification.transport.transitedCountries).toEqual([
+      'ES',
+      'FR',
+      'BE'
+    ])
+  })
+})
