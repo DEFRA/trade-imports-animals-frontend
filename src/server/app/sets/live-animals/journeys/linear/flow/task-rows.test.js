@@ -90,6 +90,47 @@ describe('#rowStatus — one status per hub task row', () => {
     ).toBe(FULFILLED)
   })
 
+  it("Should complete the import-reason row on each allowed reason's own answers while additional details is unanswered", () => {
+    const exitDate = { day: '20', month: '12', year: '2026' }
+    const internalMarket = {
+      ...unlocked,
+      reasonForImport: 'internalMarket',
+      purposeInInternalMarket: 'breeding'
+    }
+    const transhipment = {
+      ...unlocked,
+      reasonForImport: 'transhipmentOrOnwardTravel',
+      destinationCountry: 'FR'
+    }
+    const transit = {
+      ...unlocked,
+      reasonForImport: 'transit',
+      portOfExit: 'GB DVR',
+      destinationCountry: 'IE'
+    }
+    const temporaryAdmission = {
+      ...unlocked,
+      reasonForImport: 'temporaryAdmissionHorses',
+      exitDate,
+      portOfExit: 'GB DVR'
+    }
+    const reEntry = { ...unlocked, reasonForImport: 'reEntry' }
+
+    expect(statusIn('importReason', unlocked)).not.toBe(FULFILLED)
+    expect(statusIn('importReason', internalMarket)).toBe(FULFILLED)
+    expect(statusIn('additionalDetails', internalMarket)).not.toBe(FULFILLED)
+    expect(statusIn('importReason', transhipment)).toBe(FULFILLED)
+    expect(statusIn('additionalDetails', transhipment)).not.toBe(FULFILLED)
+    expect(statusIn('importReason', transit)).toBe(FULFILLED)
+    expect(statusIn('additionalDetails', transit)).not.toBe(FULFILLED)
+    expect(statusIn('importReason', temporaryAdmission)).toBe(FULFILLED)
+    expect(statusIn('additionalDetails', temporaryAdmission)).not.toBe(
+      FULFILLED
+    )
+    expect(statusIn('importReason', reEntry)).toBe(FULFILLED)
+    expect(statusIn('additionalDetails', reEntry)).not.toBe(FULFILLED)
+  })
+
   it('Should walk the arrival-details row over the merged page (all five arrival and transport collects)', () => {
     expect(statusIn('arrivalDetails', unlocked)).toBe(NOT_STARTED)
     expect(

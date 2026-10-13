@@ -51,7 +51,7 @@ test.describe('live-animals journey glue', () => {
 
     await selectSpecies(page, ['Felis catus'])
     await save()
-    await expect(heading('Main reason for import')).toBeVisible()
+    await expect(heading('Main import reason')).toBeVisible()
 
     await page.getByRole('radio', { name: 'Internal market' }).check()
     await expect(
@@ -63,6 +63,7 @@ test.describe('live-animals journey glue', () => {
     await expect(heading('Commodity details')).toBeVisible()
 
     await page.getByLabel('Number of animals').fill('2')
+    await page.getByLabel('Number of packages (when required)').fill('1')
     await save()
     await expect(
       page.getByRole('heading', { name: 'Identification details', exact: true })
@@ -103,7 +104,7 @@ test.describe('live-animals journey glue', () => {
     await expect(heading('What are you importing?')).toBeVisible()
 
     await answerWhatYouAreImporting(page)
-    await expect(heading('Main reason for import')).toBeVisible()
+    await expect(heading('Main import reason')).toBeVisible()
 
     await answerImportReason(page)
     await answerCommodityCounts(page)
@@ -142,7 +143,7 @@ test.describe('live-animals journey glue', () => {
     await expect(heading('What are you importing?')).toBeVisible()
 
     await answerWhatYouAreImporting(page)
-    await expect(heading('Main reason for import')).toBeVisible()
+    await expect(heading('Main import reason')).toBeVisible()
 
     await page.goto(journeyUrl(page, 'consignment/contact/select'))
     await answerContactAddress(page)

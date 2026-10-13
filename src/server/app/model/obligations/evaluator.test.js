@@ -545,7 +545,7 @@ describe('V4 — numberOfPackages (derived-leaf, commodity-code-gated)', () => {
     expect(result.obligations[numberOfPackages.id]).toEqual({
       inScope: true,
       reasons: [numberOfPackagesReason],
-      status: 'optional',
+      status: 'mandatory',
       fulfilmentIndexes: [LINE_HORSE]
     })
   })

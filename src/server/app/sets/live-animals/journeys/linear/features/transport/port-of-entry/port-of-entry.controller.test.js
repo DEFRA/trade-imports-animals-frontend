@@ -68,7 +68,9 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
       payload: { meansOfTransport: 'Hovercraft' }
     })
     expect(result.response.statusCode).toBe(400)
-    expect(result.view.context.errors.meansOfTransport).toBe(oneOfError)
+    expect(result.view.context.errors.meansOfTransport).toBe(
+      copy.portOfEntry.errors.meansOfTransportRequired
+    )
     expect(result.after).toEqual(result.before)
   })
 
@@ -93,6 +95,50 @@ describe('POST port-of-entry — means of transport on the merged page', () => {
       payload: { meansOfTransport: 'RAILWAY' }
     })
     expect(result.after.transitedCountries).toEqual(['FR', 'BE'])
+  })
+})
+
+describe('POST port-of-entry — the means of transport is the one answer needed to continue', () => {
+  beforeAll(() => {
+    configureRecords(SET_ID, recordsStub)
+    configureSession(SET_ID, sessionStub)
+    buildDispatch(SET_ID, dispatchPages)
+  })
+  beforeEach(() => store.clear())
+
+  it('Should refuse Save and continue with no means of transport, naming the means of transport question and saving nothing', async () => {
+    const result = await driveHandler(post, { payload: {} })
+
+    expect(result.response.statusCode).toBe(400)
+    expect(result.view.context.errors.meansOfTransport).toBe(
+      copy.portOfEntry.errors.meansOfTransportRequired
+    )
+    expect(Object.keys(result.view.context.errors)).toEqual([
+      'meansOfTransport'
+    ])
+    expect(result.after).toEqual(result.before)
+  })
+
+  it('Should go on with only a means of transport chosen, the other arrival answers left blank', async () => {
+    const result = await driveHandler(post, {
+      payload: {
+        meansOfTransport: 'AIRPLANE',
+        arrivalDateAtPort: '',
+        portOfEntry: '',
+        transportIdentification: '',
+        transportDocumentReference: ''
+      }
+    })
+
+    expect(result.view).toBeUndefined()
+    expect(result.response.redirect).toBeDefined()
+    expect(result.after.meansOfTransport).toBe('AIRPLANE')
+  })
+
+  it('Should open the page with no error on the means of transport before it has been answered', async () => {
+    const result = await driveHandler(get)
+
+    expect(result.view.context.errors?.meansOfTransport).toBeUndefined()
   })
 })
 
@@ -202,7 +248,10 @@ describe('port-of-entry — the arrival-date window', () => {
     ['the latest allowed date', 'max']
   ])('Should accept and commit %s', async (_label, bound) => {
     const result = await driveHandler(post, {
-      payload: { arrivalDateAtPort: formatDateText(dateWindow[bound]) }
+      payload: {
+        meansOfTransport: 'VESSEL',
+        arrivalDateAtPort: formatDateText(dateWindow[bound])
+      }
     })
 
     expect(result.view).toBeUndefined()
@@ -243,7 +292,7 @@ describe('port-of-entry — the arrival-date window', () => {
 
   it('Should leave a blank arrival date optional', async () => {
     const result = await driveHandler(post, {
-      payload: { arrivalDateAtPort: '' }
+      payload: { meansOfTransport: 'VESSEL', arrivalDateAtPort: '' }
     })
 
     expect(result.view).toBeUndefined()
@@ -346,7 +395,7 @@ describe('POST port-of-entry — port membership follows the primed list', () =>
     await ports.ensureLoaded()
 
     const accepted = await driveHandler(post, {
-      payload: { portOfEntry: 'ZZ 001' }
+      payload: { meansOfTransport: 'VESSEL', portOfEntry: 'ZZ 001' }
     })
     expect(accepted.view).toBeUndefined()
     expect(accepted.after.portOfEntry).toBe('ZZ 001')

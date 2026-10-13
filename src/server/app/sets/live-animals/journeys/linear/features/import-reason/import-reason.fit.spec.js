@@ -12,9 +12,14 @@ import {
   portsOfEntry
 } from '../../../../../../services/_capture/fixtures.js'
 import * as importReasonPurpose from '../../../../../../services/import-reason-purpose/index.js'
-import { validatorDefaults } from '../../../../../../shared/copy.en.js'
+import {
+  copy as sharedCopy,
+  validatorDefaults
+} from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
 import { signIn } from '../../../../../../../../../fit/sign-in.js'
+
+const { serviceName, govukSuffix } = sharedCopy.layout
 
 const HUB_PATH_PATTERN = '/notifications/[^/]+'
 const REASON_INPUT_SELECTOR = 'input[name="reasonForImport"]'
@@ -136,6 +141,21 @@ const renderedPortsIn = (select) =>
     }))
   )
 
+const renderedCountriesIn = (page, selector) =>
+  page.locator(`${selector} option`).evaluateAll((options) =>
+    options.slice(1).map((option) => ({
+      code: option.value,
+      name: option.textContent
+    }))
+  )
+
+const expectCountryOpensOnPlaceholder = async (page, selector) => {
+  const firstOption = page.locator(`${selector} option`).first()
+  await expect(firstOption).toHaveText(copy.country.placeholder)
+  await expect(firstOption).toHaveAttribute('value', '')
+  await expect(page.locator(selector)).toHaveValue('')
+}
+
 const expectedExitPortOptions = () => [
   { code: '', label: copy.port.placeholder },
   ...portsOfEntry.map((port) => ({
@@ -156,6 +176,9 @@ test.describe('import-reason feature', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: copy.title, exact: true })
     ).toBeVisible()
+    await expect(page).toHaveTitle(
+      `${copy.title} - ${serviceName} - ${govukSuffix}`
+    )
     await expect(page.getByRole('heading', { name: copy.legend })).toHaveCount(
       0
     )
@@ -233,8 +256,26 @@ test.describe('import-reason feature', () => {
     ).toBeChecked()
   })
 
-  test('back link returns to the notification hub', async ({ page }) => {
+  test('back link returns to What are you importing? in the opening run', async ({
+    page
+  }) => {
+    const commoditiesUrl = page
+      .url()
+      .replace(/\/import-reason$/, '/commodities')
+
+    await page.getByRole('link', { name: 'Back', exact: true }).click()
+
+    await expect(page).toHaveURL(commoditiesUrl)
+  })
+
+  test('back link returns to the overview once the page is opened from it', async ({
+    page
+  }) => {
     const hubUrl = page.url().replace(/\/import-reason$/, '')
+    await page.goto(hubUrl)
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+    await page.getByRole('link', { name: 'Main reason for import' }).click()
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
 
     await page.getByRole('link', { name: 'Back', exact: true }).click()
 
@@ -303,19 +344,15 @@ test.describe('import-reason reveals', () => {
     expect(await renderedPortsIn(page.locator(transitPortHidden))).toEqual(
       expectedExitPortOptions()
     )
+    await expect(page.locator(transitPortHidden)).toHaveValue('')
     await expect(page.locator(transitCountryHidden)).toBeAttached()
     await expect(page.locator(transitCountryInput)).toHaveAccessibleName(
       copy.country.label
     )
-    const renderedCountries = await page
-      .locator(`${transitCountryHidden} option`)
-      .evaluateAll((options) =>
-        options.slice(1).map((option) => ({
-          code: option.value,
-          name: option.textContent
-        }))
-      )
-    expect(renderedCountries).toEqual(destinationPageCountryEntries())
+    await expectCountryOpensOnPlaceholder(page, transitCountryHidden)
+    expect(await renderedCountriesIn(page, transitCountryHidden)).toEqual(
+      destinationPageCountryEntries()
+    )
   })
 
   test('asks temporary admission for the exit date and then the port of exit', async ({
@@ -338,6 +375,7 @@ test.describe('import-reason reveals', () => {
     expect(
       await renderedPortsIn(page.locator(temporaryAdmissionPortHidden))
     ).toEqual(expectedExitPortOptions())
+    await expect(page.locator(temporaryAdmissionPortHidden)).toHaveValue('')
     expect(await fieldIdsIn(reveal)).toEqual([
       'temporaryAdmissionExitDate',
       'temporaryAdmissionPortOfExit'
@@ -356,15 +394,10 @@ test.describe('import-reason reveals', () => {
     await expect(page.locator(transhipmentCountryInput)).toHaveAccessibleName(
       copy.country.label
     )
-    const renderedCountries = await page
-      .locator(`${transhipmentCountryHidden} option`)
-      .evaluateAll((options) =>
-        options.slice(1).map((option) => ({
-          code: option.value,
-          name: option.textContent
-        }))
-      )
-    expect(renderedCountries).toEqual(destinationPageCountryEntries())
+    await expectCountryOpensOnPlaceholder(page, transhipmentCountryHidden)
+    expect(await renderedCountriesIn(page, transhipmentCountryHidden)).toEqual(
+      destinationPageCountryEntries()
+    )
   })
 
   test('saves a reason and its reveal in one submit, and offers the answers back', async ({

@@ -3,6 +3,7 @@ export const copy = {
   sections: {
     dashboard: 'Dangosfwrdd',
     aboutTheConsignment: 'Am y llwyth',
+    descriptionOfTheGoods: 'Disgrifiad o’r nwyddau',
     commodityDetails: 'Manylion y nwyddau',
     consignmentParties: 'Partïon y llwyth',
     movement: 'Symudiad',

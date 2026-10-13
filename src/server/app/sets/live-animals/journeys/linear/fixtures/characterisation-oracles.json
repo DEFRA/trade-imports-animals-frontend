@@ -499,7 +499,7 @@
         },
         "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
           "inScope": true,
-          "status": "optional",
+          "status": "mandatory",
           "fulfilmentIndexes": ["line0", "line1"],
           "reasons": [
             {
@@ -1081,7 +1081,7 @@
         },
         "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
           "inScope": true,
-          "status": "optional",
+          "status": "mandatory",
           "fulfilmentIndexes": ["line0"],
           "reasons": [
             {
@@ -1574,7 +1574,7 @@
         },
         "252a3b4c-5d6e-4b82-8f01-5bc2d3e4f507": {
           "inScope": true,
-          "status": "optional",
+          "status": "mandatory",
           "fulfilmentIndexes": ["line0"],
           "reasons": [
             {

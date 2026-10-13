@@ -30,8 +30,9 @@ import { consignmentContactSelectPage } from '../features/contact/page.js'
 // moment the notification exists, so `statusOf` never reaches Not applicable
 // and `conditional: true` alone would leave the row drawn. It carries its own
 // applicability test instead — the same question the identification page asks
-// before it redirects a trader straight past itself.
-const identifiesAnAnimal = (answers) =>
+// before it redirects a trader straight past itself. The opening run's Back
+// link from Additional details asks the same question (see run.js).
+export const identifiesAnAnimal = (answers) =>
   (Array.isArray(answers?.commodityLines) ? answers.commodityLines : []).some(
     (line) => identifiedCommodities().includes(line?.commoditySelection)
   )

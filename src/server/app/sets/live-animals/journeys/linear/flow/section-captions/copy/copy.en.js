@@ -11,6 +11,7 @@ export const copy = {
   sections: {
     dashboard: 'Dashboard',
     aboutTheConsignment: 'About the consignment',
+    descriptionOfTheGoods: 'Description of the goods',
     commodityDetails: 'Commodity details',
     consignmentParties: 'Consignment parties',
     movement: 'Movement',

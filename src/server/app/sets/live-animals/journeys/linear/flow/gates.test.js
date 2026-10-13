@@ -105,7 +105,7 @@ describe('#sectionGatePasses — RULE 1: mandate-derived flow sequencing', () =>
 
   it('Should gate every post-commodities section until an item-level commoditySelection is answered', () => {
     const afterCommodities = [
-      'consignment',
+      'additionalDetails',
       'documents',
       'addresses',
       'transport',
