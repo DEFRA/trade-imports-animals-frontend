@@ -13,8 +13,8 @@
    While a notification is being amended, a page passes `amend` (the pair of
    form actions from `amendFormActions`) and ends instead with "Save and
    return" (back to the review, the real service's own `?change=1`), "Save and
-   continue" (on, never back to the review) and a link-styled "Save and return
-   to overview", with no cancel link. Each save button carries its own
+   continue" (on, never back to the review) and a secondary "Save and return
+   to overview" button, with no cancel link. Each save button carries its own
    `formaction`, so no new field is posted. A page reached from another page
    (`showReturnControls = false`) or a picker (`hubExitWhileAmending = false`)
    ends with the first two only. #}
@@ -35,7 +35,12 @@
         attributes: { formaction: amend.continueAction }
       }) }}
       {% if showReturnControls and hubExitWhileAmending %}
-        <button type="submit" class="govuk-link app-link-button" name="exit" value="hub">{{ copy.saveAndReturnToHub }}</button>
+        {{ govukButton({
+          text: copy.saveAndReturnToHub,
+          classes: "govuk-button--secondary",
+          name: "exit",
+          value: "hub"
+        }) }}
       {% endif %}
     {% else %}
       {{ govukButton(primary or { text: copy.saveAndContinue }) }}

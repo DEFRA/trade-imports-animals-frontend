@@ -88,13 +88,14 @@ describe('#saveActions while amending', () => {
 
   const buttons = (html) => html.split('<button').slice(1)
 
-  it('Should end an overview-linked page with Save and return, Save and continue and a link-styled Save and return to overview, in that order', () => {
+  it('Should end an overview-linked page with Save and return, Save and continue and a secondary Save and return to overview button, in that order', () => {
     const [first, second, third] = buttons(renderActions(amending))
 
     expect(first).toMatch(/>\s*Save and return\s*</)
     expect(second).toMatch(/>\s*Save and continue\s*</)
     expect(third).toMatch(/>\s*Save and return to overview\s*</)
-    expect(third).toContain('govuk-link app-link-button')
+    expect(third).toContain('govuk-button--secondary')
+    expect(third).toContain('data-module="govuk-button"')
     expect(third).toContain(EXIT_NAME_ATTRIBUTE)
     expect(third).toContain('value="hub"')
     expect(third).not.toContain('formaction')
