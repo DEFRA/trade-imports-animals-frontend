@@ -1,6 +1,6 @@
 import { dashboardPath, hubPath, pagePath, pageRoutePath } from './paths.js'
 import { AMEND, DELETED, DRAFT, SUBMITTED } from '../engine/index.js'
-import { nextInSection } from '../flow/navigation.js'
+import { nextInTaskRow } from '../flow/navigation.js'
 import {
   journeyLayout,
   journeyNextRunTarget,
@@ -12,6 +12,7 @@ import { copyFor } from './copy.js'
 import { copy as sharedEn } from './copy.en.js'
 import { copy as sharedCy } from './copy.cy.js'
 import { isRecoverableBackendError } from '../services/persistence/records/errors.js'
+import { amendFormActions } from './amend-form-actions.js'
 
 export const routeOptions = { auth: 'session' }
 
@@ -57,7 +58,28 @@ const TEMPLATE_STRIP_STATUS = {
   classes: 'govuk-tag--grey'
 }
 
-export const journeyStrip = (journey) => {
+export const CYA_SLUG = 'notification-view'
+
+export const CANCEL_AMEND_SLUG = 'cancel-amend'
+
+const cancelAmendControl = (journey) =>
+  journey.status === AMEND
+    ? {
+        href: pagePath(journey.journeyId, CANCEL_AMEND_SLUG),
+        text: sharedCopy.journeyStrip.cancelAmend
+      }
+    : undefined
+
+/**
+ * The status strip shown above a journey page's caption and heading.
+ *
+ * @param {object} [journey] - the journey, or none.
+ * @param {object} [options]
+ * @param {boolean} [options.offerCancelAmend] - offer Cancel amend while the
+ * journey is being amended. False on the page Cancel amend leads to.
+ * @returns {object|null} the strip view model, or null without a journey.
+ */
+export const journeyStrip = (journey, { offerCancelAmend = true } = {}) => {
   if (!journey) {
     return null
   }
@@ -69,11 +91,10 @@ export const journeyStrip = (journey) => {
   }
   return {
     reference: journey.journeyId,
-    status: STRIP_STATUS[journey.status]
+    status: STRIP_STATUS[journey.status],
+    cancelAmend: offerCancelAmend ? cancelAmendControl(journey) : undefined
   }
 }
-
-export const CYA_SLUG = 'notification-view'
 
 const anchorHref = (field) => `#${field}`
 
@@ -112,6 +133,8 @@ export const fieldError = (fieldErrors, field) =>
 export const hubExitTarget = (request) =>
   request.payload?.exit === 'hub' ? hubPath(request.params.journeyId) : null
 
+export const isHubExit = (request) => hubExitTarget(request) !== null
+
 export const changeContext = (request) => Boolean(request.query.change)
 
 export const withChangeContext = (request, href) =>
@@ -127,6 +150,12 @@ export const exitTarget = (request, fallback) =>
     ? changeReturnPath(request.params.journeyId)
     : fallback)
 
+/** The review's path for a save made while amending from a Change link, else null. */
+export const amendReviewTarget = (request, journey) =>
+  journey?.status === AMEND && changeContext(request)
+    ? pagePath(request.params.journeyId, CYA_SLUG)
+    : null
+
 export const runTarget = async (request, stepId, scope) =>
   (await inOpeningRun(request, request.params.journeyId))
     ? journeyNextRunTarget(stepId, scope, request.params.journeyId)
@@ -136,7 +165,7 @@ export const nextTarget = async (request, page, scope) =>
   exitTarget(
     request,
     (await runTarget(request, page.id, scope)) ??
-      nextInSection(page.id, scope, request.params.journeyId)
+      nextInTaskRow(page.id, scope, request.params.journeyId)
   )
 
 /**
@@ -147,6 +176,10 @@ export const nextTarget = async (request, page, scope) =>
  * @param {object} [options.page] - the page identity. Supply it and the view
  * gains the `caption` naming the section of the journey the page belongs to;
  * omit it on a page the journey deliberately leaves uncaptioned.
+ * @param {object} [options.request] - the request being answered. Supply it
+ * on a page that ends with `saveActions`, and the view gains `amend`: the two
+ * form actions its save buttons carry while the journey is being amended, or
+ * null otherwise. A template passes it on as `amend = amend`.
  * The view also carries `templateChange`: the page ends with Save and return
  * and Cancel, because it is changing one section of a saved template.
  * @returns {object} the common view model.
@@ -158,10 +191,13 @@ export const base = (
     journey,
     journeyId = journey?.journeyId,
     page,
-    recoverableError = false
+    recoverableError = false,
+    offerCancelAmend = true,
+    request
   } = {}
 ) => {
   const hasJourney = journeyId != null
+  const amending = journey?.status === AMEND
   return {
     layout: journeyLayout(),
     pageTitle: title,
@@ -174,7 +210,14 @@ export const base = (
     // In template mode `hubPath` resolves to the template's own task list.
     hubHref: hasJourney ? hubPath(journeyId) : undefined,
     templateChange: changingSavedTemplate(),
-    journeyStrip: journeyStrip(journey),
+    journeyStrip: journeyStrip(journey, { offerCancelAmend }),
+    amending,
+    // Per request because an amend page's save buttons carry the page's own
+    // query, and the POST re-render needs the same URLs as the GET.
+    amend:
+      amending && request
+        ? amendFormActions(request.path ?? '', request.url?.searchParams)
+        : null,
     concurrencyToken: journey?.concurrencyToken ?? null,
     sharedCopy,
     recoverableError,
@@ -233,12 +276,16 @@ export const pageRoutes = (page, { get, post }) => [
     options: routeOptions,
     handler: get
   },
-  {
-    method: 'POST',
-    path: pageRoutePath(page.slug),
-    options: routeOptions,
-    handler: redirectOnStaleAction(post)
-  }
+  ...(post
+    ? [
+        {
+          method: 'POST',
+          path: pageRoutePath(page.slug),
+          options: routeOptions,
+          handler: redirectOnStaleAction(post)
+        }
+      ]
+    : [])
 ]
 
 export const readDate = (payload, name) => {

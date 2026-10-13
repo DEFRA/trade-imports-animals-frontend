@@ -16,6 +16,7 @@ import {
   postHandlerOf
 } from '../../../../../../../engine/test-support.js'
 import { dispatchPages } from '../../index.js'
+import { hubPath } from '../../../../../../../shared/paths.js'
 
 import * as search from './search.controller.js'
 
@@ -208,6 +209,13 @@ describe('commodity search — saving the selection', () => {
     expect(result.after).toEqual(result.before)
   })
 
+  it('Should go to the overview with nothing chosen on Save and return to overview', async () => {
+    const result = await driveHandler(post, { payload: { exit: 'hub' } })
+    expect(result.response).toEqual({ redirect: hubPath(result.journeyId) })
+    expect(result.view).toBeUndefined()
+    expect(result.after.commodityLines ?? []).toEqual([])
+  })
+
   it('Should key the error to the tick boxes, keeping the query and the results', async () => {
     const result = await driveHandler(post, {
       payload: { commoditySearch: 'Bos' }
@@ -252,7 +260,7 @@ describe('commodity search — saving the selection', () => {
         numberOfAnimalsQuantity: ''
       }
     ])
-    expect(result.response.redirect).toContain('consignment-details')
+    expect(result.response.redirect).toMatch(/\/notifications\/[^/]+$/)
   })
 
   it('Should save what is carried alongside what is ticked on screen', async () => {
@@ -357,7 +365,7 @@ describe('commodity search in template mode', () => {
     )
   })
 
-  it('Should still go on to Commodity details for a notification', async () => {
+  it("Should still continue a notification on its own journey, not a template's", async () => {
     const getResult = await driveHandler(get)
     const postResult = await driveHandler(post, {
       payload: { species: COW_BOS_TAURUS_KEY }
@@ -366,6 +374,8 @@ describe('commodity search in template mode', () => {
     expect(getResult.view.context.backLink).toBe(
       `/live-animals/notifications/${getResult.journeyId}`
     )
-    expect(postResult.response.redirect).toContain('consignment-details')
+    expect(postResult.response.redirect).toBe(
+      `/live-animals/notifications/${postResult.journeyId}`
+    )
   })
 })

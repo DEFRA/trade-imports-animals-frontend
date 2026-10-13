@@ -55,6 +55,10 @@ export const SKIPPED = new Map([
   [
     '/templates/{journeyId}/name',
     "needs a template in progress, which only the name page's own POST creates — the empty form is audited at /templates/new"
+  ],
+  [
+    '/notifications/{journeyId}/declaration',
+    'reached only by posting the review’s Continue — a GET redirects to the review; declaration.fit.spec.js audits the page with axe'
   ]
 ])
 

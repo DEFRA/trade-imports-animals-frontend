@@ -7,8 +7,8 @@ The code uses three separate terms:
 
 - a **feature group** is a nested folder under `journeys/linear/features/` that owns related
   pages, copy and persistence bindings
-- a **flow section** is an entry in `journeys/linear/flow/flow.js`; it controls page order and
-  `nextInSection()`
+- a **flow section** is an entry in `journeys/linear/flow/flow.js`; it controls page order and, within
+  one task row, where Save and continue goes
 - a **task row** is an entry in `journeys/linear/flow/task-rows.js`; it is the item shown on the
   hub and it drives submit readiness
 
@@ -186,8 +186,9 @@ to `sections`:
 }
 ```
 
-The array order is journey order. `nextInSection()` moves through the first
-gate-passing later page, then returns to the hub. The section's place among
+The array order is journey order. Outside the opening run, Save and continue
+moves to the first gate-passing later page of the section only when it belongs
+to the same task row, and otherwise returns to the hub. The section's place among
 other sections also controls strictly-earlier continue prerequisites.
 
 Normal page and section gates are derived from `meta.collects`, in-scope
@@ -243,7 +244,8 @@ Update:
 
 Every task row participates in `readyForCheckYourAnswers`. A mandatory new row
 therefore holds the notification back from submission until it is complete —
-the hub still offers the review, and the check-answers POST is what refuses.
+the hub still offers the review, and the declaration refuses the review's
+Continue.
 Prove both the incomplete and complete states in
 `journeys/linear/flow/task-rows.test.js`.
 

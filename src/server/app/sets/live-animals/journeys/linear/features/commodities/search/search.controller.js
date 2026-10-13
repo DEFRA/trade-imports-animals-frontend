@@ -49,6 +49,7 @@ const render = (h, journey, { selected, query = '', errorText = null }) => {
   const errors = errorText ? { [errorField]: errorText } : {}
   return h.view(view, {
     ...kit.base(copy.title, {
+      request: h.request,
       backLink: backLinkFor(journey.journeyId),
       journey,
       page
@@ -88,7 +89,7 @@ const post = async (request, h) => {
     return rerender(request, h, { selected, query })
   }
 
-  if (selected.length === 0) {
+  if (selected.length === 0 && !kit.isHubExit(request)) {
     const response = await rerender(request, h, {
       selected,
       query,

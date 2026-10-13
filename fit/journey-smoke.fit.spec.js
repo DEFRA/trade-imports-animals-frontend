@@ -5,14 +5,14 @@ import {
   answerAdditionalDetails,
   answerAnimalIdentification,
   answerArrivalDetails,
-  answerCommodityDetails,
+  answerCommodityCounts,
   answerContactAddress,
-  answerCphNumber,
   answerImportReason,
   answerOriginDetails,
   answerRolesAndAddresses,
   answerTransitCountries,
   answerTransporter,
+  answerWhatYouAreImporting,
   chooseCountryOfOrigin,
   completeAnswerSections,
   journeyUrl,
@@ -51,10 +51,6 @@ test.describe('live-animals journey glue', () => {
 
     await selectSpecies(page, ['Felis catus'])
     await save()
-    await expect(heading('Commodity details')).toBeVisible()
-
-    await page.getByLabel('Number of animals').fill('2')
-    await save()
     await expect(heading('Main reason for import')).toBeVisible()
 
     await page.getByRole('radio', { name: 'Internal market' }).check()
@@ -63,6 +59,10 @@ test.describe('live-animals journey glue', () => {
     ).toBeVisible()
 
     await page.getByRole('radio', { name: 'Breeding' }).check()
+    await save()
+    await expect(heading('Commodity details')).toBeVisible()
+
+    await page.getByLabel('Number of animals').fill('2')
     await save()
     await expect(
       page.getByRole('heading', { name: 'Identification details', exact: true })
@@ -102,10 +102,11 @@ test.describe('live-animals journey glue', () => {
     await answerOriginDetails(page)
     await expect(heading('What are you importing?')).toBeVisible()
 
-    await answerCommodityDetails(page)
+    await answerWhatYouAreImporting(page)
     await expect(heading('Main reason for import')).toBeVisible()
 
     await answerImportReason(page)
+    await answerCommodityCounts(page)
     await answerAnimalIdentification(page)
     await answerAdditionalDetails(page)
 
@@ -120,12 +121,38 @@ test.describe('live-animals journey glue', () => {
     await page.getByRole('button', { name: 'Save and continue' }).click()
 
     await answerRolesAndAddresses(page)
-    await answerCphNumber(page)
+    await expect(page).toHaveURL(/\/consignment\/contact\/select$/)
     await answerContactAddress(page)
 
     // No question in the notification sent the user to the hub on the way.
     await expect(page).toHaveURL(/\/notification-view$/)
     await expect(heading('Review your notification')).toBeVisible()
+  })
+
+  test('the opening run ends on the review page, naming what is outstanding, when the notification is incomplete', async ({
+    page
+  }) => {
+    const heading = (name) => page.getByRole('heading', { name })
+
+    await page.goto(BASE)
+    await page.getByRole('button', { name: 'Start a new notification' }).click()
+    await expect(heading('Origin of the import')).toBeVisible()
+
+    await answerOriginDetails(page)
+    await expect(heading('What are you importing?')).toBeVisible()
+
+    await answerWhatYouAreImporting(page)
+    await expect(heading('Main reason for import')).toBeVisible()
+
+    await page.goto(journeyUrl(page, 'consignment/contact/select'))
+    await answerContactAddress(page)
+
+    await expect(page).toHaveURL(/\/notification-view$/)
+    await expect(heading('Review your notification')).toBeVisible()
+    const summary = page.getByRole('alert')
+    await expect(summary).toContainText('There is a problem')
+    await expect(summary).toContainText('Complete reason for import')
+    await expect(summary).toContainText('Complete roles and addresses')
   })
 
   test('a notification created in another session, holding no answers, is sent back to the entry page', async ({

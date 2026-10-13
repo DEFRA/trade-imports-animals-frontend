@@ -8,7 +8,6 @@ import {
   answerAnimalIdentification,
   answerArrivalDetails,
   answerContactAddress,
-  answerCphNumber,
   answerImportReason,
   answerOriginDetails,
   answerRolesAndAddresses,
@@ -131,16 +130,23 @@ const answerEverySection = async (page) => {
 
   await task('Main reason for import')
   await answerImportReason(page)
+  await overview()
+  await task('Additional details')
   await answerAdditionalDetails(page)
+  await overview()
 
   await task('Roles and addresses')
   await answerRolesAndAddresses(page)
-  await answerCphNumber(page)
 
   await task('Arrival details')
   await answerArrivalDetails(page)
+  await overview()
+  await task('Transit countries')
   await answerTransitCountries(page)
+  await overview()
+  await task('Transport details')
   await answerTransporter(page)
+  await overview()
 
   await task('Contact address for this consignment')
   await answerContactAddress(page)
@@ -421,10 +427,8 @@ test.describe('changing every section of a saved template', () => {
     await openTemplateTaskList(page, NAME)
     await page.getByRole('link', { name: 'Arrival details' }).click()
     await answerArrivalDetails(page)
-    // Saving arrival details moves on to the next page of the section.
-    await page
-      .getByRole('link', { name: 'Cancel and return to overview' })
-      .click()
+    // A page opened from the overview returns there when saved.
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
     await reviewAndSave(page)
     await viewSaved(page, NAME)
     const templateUrl = page.url()

@@ -32,6 +32,6 @@
       {{ identificationCard(card, copy) }}
     {% endfor %}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, templateChange = templateChange) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend, templateChange = templateChange) }}
   </form>
 {% endblock %}

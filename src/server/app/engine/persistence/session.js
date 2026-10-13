@@ -4,7 +4,8 @@ const DEFAULT_COOKIE_NAMES = Object.freeze({
   knownJourneys: 'knownJourneys',
   openingRun: 'openingRun',
   flowOnlyAnswers: 'flowOnlyAnswers',
-  addressHandshakeTokens: 'addressHandshakeTokens'
+  addressHandshakeTokens: 'addressHandshakeTokens',
+  reviewedConcurrencyTokens: 'reviewedConcurrencyTokens'
 })
 
 const unconfigured = () => {
@@ -18,7 +19,9 @@ const UNCONFIGURED = Object.freeze({
     openingRun: unconfigured,
     setOpeningRun: unconfigured,
     flowOnlyAnswers: unconfigured,
-    setFlowOnlyAnswers: unconfigured
+    setFlowOnlyAnswers: unconfigured,
+    reviewedConcurrencyToken: unconfigured,
+    setReviewedConcurrencyToken: unconfigured
   }),
   cookieNames: DEFAULT_COOKIE_NAMES
 })
@@ -52,6 +55,8 @@ export const openingRunCookie = () => current().cookieNames.openingRun
 export const flowOnlyAnswersCookie = () => current().cookieNames.flowOnlyAnswers
 export const addressHandshakeTokensCookie = () =>
   current().cookieNames.addressHandshakeTokens
+export const reviewedConcurrencyTokensCookie = () =>
+  current().cookieNames.reviewedConcurrencyTokens
 
 export const session = {
   knownJourneyIds: async (...args) => current().impl.knownJourneyIds(...args),
@@ -60,5 +65,9 @@ export const session = {
   setOpeningRun: async (...args) => current().impl.setOpeningRun(...args),
   flowOnlyAnswers: async (...args) => current().impl.flowOnlyAnswers(...args),
   setFlowOnlyAnswers: async (...args) =>
-    current().impl.setFlowOnlyAnswers(...args)
+    current().impl.setFlowOnlyAnswers(...args),
+  reviewedConcurrencyToken: async (...args) =>
+    current().impl.reviewedConcurrencyToken(...args),
+  setReviewedConcurrencyToken: async (...args) =>
+    current().impl.setReviewedConcurrencyToken(...args)
 }

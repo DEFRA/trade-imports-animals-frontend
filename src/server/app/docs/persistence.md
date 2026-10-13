@@ -39,8 +39,10 @@ fulfilments a notification does, so a page needs no template-specific code.
 ## Session port
 
 [`src/server/app/engine/persistence/session.js`](../engine/persistence/session.js)
-delegates known journey ids, opening-run state and flow-only answers. It also holds
-the configured cookie names used by `registerJourneyCookie()`.
+delegates known journey ids, opening-run state, flow-only answers and the
+reviewed token — the concurrency token this browser last rendered an editable
+review at, which the declaration requires before it will show or submit. It also
+holds the configured cookie names used by `registerJourneyCookie()`.
 
 The live-animals journey supplies these names in its
 [`config.js`](../sets/live-animals/journeys/linear/config.js):
@@ -49,7 +51,9 @@ The live-animals journey supplies these names in its
 {
   knownJourneys: 'liveAnimalsKnownJourneys',
   openingRun: 'liveAnimalsOpeningRun',
-  flowOnlyAnswers: 'liveAnimalsFlowOnlyAnswers'
+  flowOnlyAnswers: 'liveAnimalsFlowOnlyAnswers',
+  addressHandshakeTokens: 'liveAnimalsAddressHandshakeTokens',
+  reviewedConcurrencyTokens: 'liveAnimalsReviewedConcurrencyTokens'
 }
 ```
 

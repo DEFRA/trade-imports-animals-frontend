@@ -10,8 +10,8 @@ import {
 import * as templates from '../../../../../../services/templates/index.js'
 import { TEMPLATES } from '../../config.js'
 import { rememberSavedTemplate } from '../templates/saved-banner.js'
-import { nextInSection } from '../../../../../../flow/navigation.js'
 import * as state from '../../../../../../engine/index.js'
+import { completeOpeningRun } from '../../../../../../flow/run-state.js'
 import {
   CYA_SLUG,
   errorSummary,
@@ -37,8 +37,9 @@ import { cardStoredErrors } from '../../flow/stored-answers.js'
 import { partiesFromStoredAnswers } from '../addresses/frozen-parties.js'
 import { partyOf } from '../addresses/parties.js'
 import { partyEditHref } from '../addresses/party-edit/edit-href.js'
-import { HTTP_STATUS_BAD_REQUEST } from '../../../../../../lib/http-status.js'
-import { documentsRejectedCardErrors, reviewRefusal } from './refusal.js'
+import { documentScanCardErrors } from './refusal.js'
+import { recordReviewed } from './reviewed.js'
+import { declarationPage } from '../declaration/page.js'
 
 const view = `${TEMPLATES}/features/check-answers/template`
 
@@ -49,6 +50,13 @@ const reviewWording = () =>
   inTemplateMode()
     ? { title: copy.template.title, submitText: copy.template.saveTemplate }
     : { title: copy.title, submitText: copy.submit.button }
+
+/** Where the review's button posts: on to the declaration, or, for a template,
+ * back here to save it. */
+const submitAction = (journeyId) =>
+  inTemplateMode()
+    ? pagePath(journeyId, page.slug)
+    : pagePath(journeyId, declarationPage.slug)
 
 /** One summary over both kinds of refusal: first the roles whose copied address
  * breaks the address-book rules, then the cards with answers still
@@ -95,7 +103,7 @@ const reviewErrorSummary = (
   )
 
 const renderCya = async (
-  h,
+  toolkit,
   journey,
   {
     answers,
@@ -123,13 +131,15 @@ const renderCya = async (
     ),
     cardErrors
   )
-  return h.view(view, {
+  return toolkit.view(view, {
     pageTitle: title,
     heading: title,
     submitText,
+    templateMode: inTemplateMode(),
     copy,
     sharedCopy,
     concurrencyToken: journey.concurrencyToken,
+    declarationHref: submitAction(journey.journeyId),
     journeyStrip: journeyStrip(journey),
     errorSummary: reviewErrorSummary(
       journey.journeyId,
@@ -146,29 +156,24 @@ const renderCya = async (
       readOnly && journey.status === state.SUBMITTED
         ? pagePath(journey.journeyId, 'delete')
         : null,
-    cancelAmendHref:
-      journey.status === state.AMEND
-        ? pagePath(journey.journeyId, 'cancel-amend')
-        : null,
     backLink: hubPath(journey.journeyId)
   })
 }
 
 export const renderNotificationView = async (
   request,
-  h,
-  {
-    recoverableError = false,
-    disableAutoFocus = true,
-    extraCardErrors = {}
-  } = {}
+  toolkit,
+  { recoverableError = false } = {}
 ) => {
   const { journey, answers, storedAnswers, scope, evaluation } =
-    await state.get(request, h)
+    await state.get(request, toolkit)
   const readOnly = journey.status === state.SUBMITTED
+  const refused = request.query.refused === '1'
+  // c-201: an amendment opens with no errors; Continue refused shows them.
   // A template is reviewed as it stands: nothing on it is owed, so a template
   // review names no card, role, stale answer or document as unfinished.
-  const checked = !readOnly && !inTemplateMode()
+  const holdsSilently =
+    readOnly || inTemplateMode() || (journey.status === state.AMEND && !refused)
   const parties = await partiesFromStoredAnswers(answers)
   // A submitted notification is a record of what was sent, so nothing on it
   // is outstanding, and no stored answer of its is named as stale either —
@@ -177,16 +182,13 @@ export const renderNotificationView = async (
   // Each card's page reads `answers` here, and is handed the raw
   // `storedAnswers` via context, so its own rules decide for themselves which
   // of the two they need.
-  const invalidCardErrors = checked
-    ? await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
-    : {}
-  // A REJECTED scan is a permanent verdict on a stored file, so it belongs on the read
-  // path — a mid-upload PENDING is (or should be) a transient state so shouldn't
-  // present as an error.
-  const rejectedDocErrors = checked
-    ? await documentsRejectedCardErrors(answers)
-    : {}
-  return renderCya(h, journey, {
+  const invalidCardErrors = holdsSilently
+    ? {}
+    : await cardStoredErrors(REVIEW_CARDS, answers, { request, storedAnswers })
+  const scanDocErrors = holdsSilently
+    ? {}
+    : await documentScanCardErrors(answers, { includePending: refused })
+  return renderCya(toolkit, journey, {
     answers,
     scope,
     evaluation,
@@ -194,29 +196,40 @@ export const renderNotificationView = async (
     amendmentCancelled: readOnly && request.query.cancelled === '1',
     recoverableError,
     parties,
-    partyErrors: checked ? await invalidPartyErrors(answers) : {},
+    partyErrors: holdsSilently ? {} : await invalidPartyErrors(answers),
     // Incomplete wins over invalid on the same card: spread the invalid map
     // first and the incomplete map second, so a card that is both unfinished
     // and carrying a stale value says "complete this section" rather than
     // naming the stale answer.
-    cardErrors: checked
-      ? {
+    cardErrors: holdsSilently
+      ? {}
+      : {
           ...invalidCardErrors,
-          ...rejectedDocErrors,
-          ...extraCardErrors,
+          ...scanDocErrors,
           ...incompleteCardErrors(answers, scope, evaluation)
-        }
-      : {},
-    disableAutoFocus
+        },
+    disableAutoFocus: !refused
   })
 }
 
-const get = async (request, h) => renderNotificationView(request, h)
+const get = async (request, toolkit) => {
+  await completeOpeningRun(request, toolkit, request.params.journeyId)
+  const response = await renderNotificationView(request, toolkit)
+  const { journey } = await state.get(request, toolkit)
+  if (journey.status !== state.SUBMITTED) {
+    await recordReviewed(request, toolkit, journey)
+  }
+  return response
+}
 
 // Save template stores the template instead of going on to the declaration: a
 // template holds no declaration, and Manage templates confirms it once with a
-// success banner.
-const saveTemplate = async (request, h) => {
+// success banner. A notification's review posts to the declaration, never here,
+// so a post here outside template mode goes back to the review.
+const post = async (request, toolkit) => {
+  if (!inTemplateMode()) {
+    return toolkit.redirect(pagePath(request.params.journeyId, page.slug))
+  }
   const saved = await templates.saveFor(
     templateOwnerId(),
     request.params.journeyId
@@ -224,26 +237,7 @@ const saveTemplate = async (request, h) => {
   if (saved) {
     rememberSavedTemplate(request, saved)
   }
-  return h.redirect(templatesPath())
-}
-
-const post = async (request, h) => {
-  if (inTemplateMode()) {
-    return saveTemplate(request, h)
-  }
-  // Reuse the scan errors reviewRefusal already computed — a fresh
-  // documentScanCardErrors call here would issue a second HTTP GET per
-  // stored document to the upload backend.
-  const { refused, extraCardErrors } = await reviewRefusal(request, h)
-  if (refused) {
-    const rendered = await renderNotificationView(request, h, {
-      disableAutoFocus: false,
-      extraCardErrors
-    })
-    return rendered.code(HTTP_STATUS_BAD_REQUEST)
-  }
-  const { journey, scope } = await state.get(request, h)
-  return h.redirect(nextInSection(page.id, scope, journey.journeyId))
+  return toolkit.redirect(templatesPath())
 }
 
 export const routes = pageRoutes(page, { get, post })

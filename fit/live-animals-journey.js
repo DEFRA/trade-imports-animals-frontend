@@ -234,7 +234,7 @@ export const openTemplateReview = async (page, name) => {
 }
 
 const FIXTURE_PORT = PORTS.find((port) => port.code === values.portOfEntry)
-const FIXTURE_PORT_OPTION = `${FIXTURE_PORT.name} (${FIXTURE_PORT.code})`
+const FIXTURE_PORT_OPTION = `${FIXTURE_PORT.name} - ${FIXTURE_PORT.code}`
 
 // Port of entry is a type-ahead (accessible-autocomplete) enhancing a native
 // <select>. Drive it the way a user does: type to filter, then pick the match.
@@ -243,6 +243,31 @@ export const choosePortOfEntry = async (page, option = FIXTURE_PORT_OPTION) => {
   await field.click()
   await field.fill(option)
   await page.getByRole('option', { name: option, exact: true }).click()
+}
+
+// Any accessible-autocomplete field addressed by its visible label. With
+// JavaScript off the field is still the native <select>.
+export const chooseAutocompleteByLabel = async (
+  page,
+  { label, query, optionName, inputId }
+) => {
+  // The enhancement is a module script, so it has run by DOMContentLoaded.
+  await page.waitForLoadState('domcontentloaded')
+  // Import-reason exposes the same port label on more than one reveal; scope the
+  // label lookup to the field's form group when the caller names the input id.
+  const scope = inputId
+    ? page
+        .locator(`#${inputId}`)
+        .locator('xpath=ancestor::*[contains(@class,"govuk-form-group")][1]')
+    : page
+  const field = scope.getByLabel(label, { exact: true })
+  if ((await field.evaluate((el) => el.tagName)) === 'SELECT') {
+    await field.selectOption({ label: optionName })
+    return
+  }
+  await field.click()
+  await field.fill(query)
+  await page.getByRole('option', { name: optionName, exact: true }).click()
 }
 
 export const answerCountryOfOrigin = async (page) => {
@@ -277,6 +302,8 @@ export const unlockSections = async (page, species = 'Felis catus') => {
   await page.getByRole('link', { name: 'What are you importing?' }).click()
   await selectSpecies(page, [species])
   await save(page)
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await page.getByRole('link', { name: 'Commodity details' }).click()
   await expect(
     page.getByRole('heading', { name: 'Commodity details' })
   ).toBeVisible()
@@ -332,10 +359,13 @@ export const answerOriginDetails = async (page) => {
   await save(page)
 }
 
-export const answerCommodityDetails = async (page) => {
-  const [line] = values.commodityLines
+export const answerWhatYouAreImporting = async (page) => {
   await selectSpecies(page, ['Bos taurus'])
   await save(page)
+}
+
+export const answerCommodityCounts = async (page) => {
+  const [line] = values.commodityLines
   await expect(
     page.getByRole('heading', { name: 'Commodity details' })
   ).toBeVisible()
@@ -397,6 +427,7 @@ export const answerRolesAndAddresses = async (page) => {
     await page.getByRole('radio', { name }).check()
     await save(page)
   }
+  await answerCphNumberFromRow(page)
   await save(page)
 }
 
@@ -417,6 +448,23 @@ export const answerCphNumber = async (page) => {
     .getByLabel('Holding number', { exact: true })
     .fill(FIXTURE_CPH_HOLDING)
   await save(page)
+}
+
+export const openCphNumberFromRow = async (page) => {
+  await page
+    .locator('.govuk-summary-list__row', {
+      has: page.getByText('County parish holding (CPH) number', { exact: true })
+    })
+    .getByRole('link', { name: 'Add' })
+    .click()
+}
+
+export const answerCphNumberFromRow = async (page) => {
+  await openCphNumberFromRow(page)
+  await answerCphNumber(page)
+  await expect(
+    page.getByRole('heading', { name: 'Consignment addresses' })
+  ).toBeVisible()
 }
 
 export const answerArrivalDetails = async (page) => {
@@ -512,16 +560,23 @@ export const answerEveryTemplateSection = async (page) => {
 
   await task('Main reason for import')
   await answerImportReason(page)
+  await overview()
+  await task('Additional details')
   await answerAdditionalDetails(page)
+  await overview()
 
   await task('Roles and addresses')
   await answerRolesAndAddresses(page)
-  await answerCphNumber(page)
 
   await task('Arrival details')
   await answerArrivalDetails(page)
+  await overview()
+  await task('Transit countries')
   await answerTransitCountries(page)
+  await overview()
+  await task('Transport details')
   await answerTransporter(page)
+  await overview()
 
   await task('Contact address for this consignment')
   await answerContactAddress(page)
@@ -548,7 +603,10 @@ export const completeAnswerSections = async (
   await answerOriginDetails(page)
 
   await task('What are you importing?')
-  await answerCommodityDetails(page)
+  await answerWhatYouAreImporting(page)
+  await overview()
+  await task('Commodity details')
+  await answerCommodityCounts(page)
   await overview()
 
   if (!skipAnimalIdentification) {
@@ -559,16 +617,23 @@ export const completeAnswerSections = async (
 
   await task('Main reason for import')
   await answerImportReason(page)
+  await overview()
+  await task('Additional details')
   await answerAdditionalDetails(page)
+  await overview()
 
   await task('Roles and addresses')
   await answerRolesAndAddresses(page)
-  await answerCphNumber(page)
 
   await task('Arrival details')
   await answerArrivalDetails(page)
+  await overview()
+  await task('Transit countries')
   await answerTransitCountries(page)
+  await overview()
+  await task('Transport details')
   await answerTransporter(page)
+  await overview()
 
   await task('Contact address for this consignment')
   await answerContactAddress(page)

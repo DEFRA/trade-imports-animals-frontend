@@ -1,6 +1,6 @@
 {% extends "shared/layout.njk" %}
+{% from "accessible-autocomplete/macro.njk" import appAccessibleAutocomplete %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
-{% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "moj/components/date-picker/macro.njk" import mojDatePicker %}
 {% from "shared/save-actions.njk" import saveActions %}
 {% from "shared/section-caption.njk" import sectionCaption %}
@@ -30,46 +30,50 @@
   {% endset %}
 
   {% set transhipmentReveal %}
-    {{ govukSelect({
+    {{ appAccessibleAutocomplete({
       id: "transhipmentDestinationCountry",
       name: "transhipmentDestinationCountry",
       label: { text: copy.country.label, classes: "govuk-label--s" },
       value: values.transhipmentDestinationCountry,
       errorMessage: errors.transhipmentDestinationCountry and { text: errors.transhipmentDestinationCountry },
-      items: countryItems
+      items: countryItems,
+      autocomplete: { showAllValues: true, noResults: copy.country.noResults }
     }) }}
   {% endset %}
 
   {% set transitReveal %}
-    {{ govukSelect({
+    {{ appAccessibleAutocomplete({
       id: "transitPortOfExit",
       name: "transitPortOfExit",
       label: { text: copy.port.label, classes: "govuk-label--s" },
       value: values.transitPortOfExit,
       errorMessage: errors.transitPortOfExit and { text: errors.transitPortOfExit },
-      items: portItems
+      items: portItems,
+      autocomplete: { showAllValues: true, noResults: copy.port.noResults }
     }) }}
 
-    {{ govukSelect({
+    {{ appAccessibleAutocomplete({
       id: "transitDestinationCountry",
       name: "transitDestinationCountry",
       label: { text: copy.country.label, classes: "govuk-label--s" },
       value: values.transitDestinationCountry,
       errorMessage: errors.transitDestinationCountry and { text: errors.transitDestinationCountry },
-      items: countryItems
+      items: countryItems,
+      autocomplete: { showAllValues: true, noResults: copy.country.noResults }
     }) }}
   {% endset %}
 
   {% set temporaryAdmissionReveal %}
     {{ mojDatePicker(exitDateField) }}
 
-    {{ govukSelect({
+    {{ appAccessibleAutocomplete({
       id: "temporaryAdmissionPortOfExit",
       name: "temporaryAdmissionPortOfExit",
       label: { text: copy.port.label, classes: "govuk-label--s" },
       value: values.temporaryAdmissionPortOfExit,
       errorMessage: errors.temporaryAdmissionPortOfExit and { text: errors.temporaryAdmissionPortOfExit },
-      items: portItems
+      items: portItems,
+      autocomplete: { showAllValues: true, noResults: copy.port.noResults }
     }) }}
   {% endset %}
 
@@ -110,6 +114,6 @@
       items: reasonItems
     }) }}
 
-    {{ saveActions(hubHref, copy = sharedCopy.saveActions, templateChange = templateChange) }}
+    {{ saveActions(hubHref, copy = sharedCopy.saveActions, amend = amend, templateChange = templateChange) }}
   </form>
 {% endblock %}

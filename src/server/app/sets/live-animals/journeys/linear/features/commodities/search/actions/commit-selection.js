@@ -3,7 +3,7 @@ import { inTemplateMode } from '../../../../../../../../shared/template-mode.js'
 import * as state from '../../../../../../../../engine/index.js'
 import * as kit from '../../../../../../../../shared/kit.js'
 import * as commodities from '../../../../../../services/commodities/index.js'
-import { consignmentDetailsPage } from '../../page.js'
+import { commoditiesPage, consignmentDetailsPage } from '../../page.js'
 import { splitKey } from '../selection/keys.js'
 import { lineKey } from '../selection/line-key.js'
 
@@ -24,20 +24,24 @@ export const seedLine = (key) => {
   }
 }
 
+const detailsPath = (request) =>
+  kit.withChangeContext(
+    request,
+    pagePath(request.params.journeyId, consignmentDetailsPage.slug)
+  )
+
 // While a template is being created, the commodity question returns to the
 // template's task list rather than going on to Commodity details.
-const continueTarget = (request) => {
-  const { journeyId } = request.params
-  return (
-    kit.hubExitTarget(request) ??
-    (inTemplateMode()
-      ? hubPath(journeyId)
-      : kit.withChangeContext(
-          request,
-          pagePath(journeyId, consignmentDetailsPage.slug)
-        ))
-  )
-}
+const notificationTarget = async (request, scope) =>
+  kit.changeContext(request)
+    ? detailsPath(request)
+    : await kit.nextTarget(request, commoditiesPage, scope)
+
+const selectionTarget = async (request, scope) =>
+  kit.hubExitTarget(request) ??
+  (inTemplateMode()
+    ? hubPath(request.params.journeyId)
+    : await notificationTarget(request, scope))
 
 export const commitSelection = async (request, h, selected) => {
   await state.reconcileEntriesAt(
@@ -47,5 +51,6 @@ export const commitSelection = async (request, h, selected) => {
     lineKey,
     selected.map(seedLine)
   )
-  return h.redirect(continueTarget(request))
+  const { scope } = await state.get(request, h)
+  return h.redirect(await selectionTarget(request, scope))
 }

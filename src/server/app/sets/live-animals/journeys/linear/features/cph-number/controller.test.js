@@ -9,9 +9,7 @@ import { records as recordsStub } from '../../../../../../services/persistence/r
 import { session as sessionStub } from '../../../../../../services/persistence/session/stub.js'
 import {
   driveHandler,
-  journeyRequest,
-  postHandlerOf,
-  stubH
+  postHandlerOf
 } from '../../../../../../engine/test-support.js'
 import { dispatchPages } from '../index.js'
 import { hubPath, pagePath } from '../../../../../../shared/paths.js'
@@ -23,22 +21,13 @@ const getCph = cphNumber.routes.find((route) => route.method === 'GET').handler
 
 const VALID_PARTS = { cphCounty: '12', cphParish: '345', cphHolding: '6789' }
 
-const seed = () => ({ commodityLines: [{ commoditySelection: 'Cow' }] })
+const seed = () => ({
+  countryOfOrigin: 'FR',
+  commodityLines: [{ commoditySelection: 'Cow' }]
+})
 
-const driveWithQuery = async (handler, { payload = {}, query = {} } = {}) => {
-  const journey = await store.create()
-  await store.seedAnswers(journey.journeyId, seed())
-  const h = stubH()
-  const response = await handler(
-    journeyRequest(journey.journeyId, { payload, query }),
-    h
-  )
-  return {
-    journeyId: journey.journeyId,
-    response,
-    view: h.captured.view
-  }
-}
+const driveWithQuery = (handler, options = {}) =>
+  driveHandler(handler, { seed: seed(), ...options })
 
 describe('POST cph-number — three parts joined into the nine stored digits', () => {
   beforeAll(() => {
@@ -191,7 +180,7 @@ describe('cph-number — addresses-hub entry (?return=addresses)', () => {
       )
     })
 
-    it('Should back-link to the main hub on a sequential-walk entry', async () => {
+    it('Should back-link to the overview when entered other than from its row', async () => {
       const result = await driveWithQuery(getCph)
       expect(result.view.context.backLink).toBe(hubPath(result.journeyId))
     })
@@ -208,12 +197,33 @@ describe('cph-number — addresses-hub entry (?return=addresses)', () => {
       })
     })
 
-    it('Should keep the sequential exit to the main hub when entered without return context', async () => {
+    it('Should go to the review on Save and return, ahead of the addresses hub, when amending with both return and change', async () => {
+      const result = await driveWithQuery(postCph, {
+        payload: VALID_PARTS,
+        query: { return: 'addresses', change: '1' },
+        amend: true
+      })
+      expect(result.response).toEqual({
+        redirect: pagePath(result.journeyId, 'notification-view')
+      })
+    })
+
+    it('Should go to the addresses hub, not the review, on a draft carrying both return and change', async () => {
+      const result = await driveWithQuery(postCph, {
+        payload: VALID_PARTS,
+        query: { return: 'addresses', change: '1' }
+      })
+      expect(result.response).toEqual({
+        redirect: pagePath(result.journeyId, 'addresses')
+      })
+    })
+
+    it('Should hand back to the consignment addresses page when entered without return context', async () => {
       const result = await driveWithQuery(postCph, {
         payload: VALID_PARTS
       })
       expect(result.response).toEqual({
-        redirect: hubPath(result.journeyId)
+        redirect: pagePath(result.journeyId, 'addresses')
       })
     })
   })

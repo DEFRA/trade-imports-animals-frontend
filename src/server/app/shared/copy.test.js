@@ -28,6 +28,27 @@ describe('#copyFor', () => {
   })
 })
 
+describe('journey strip copy', () => {
+  it('Should carry the Amend tag and Cancel amend control in English', () => {
+    expect(sharedEn.journeyStrip).toEqual({
+      draft: 'Draft',
+      submitted: 'Submitted',
+      amend: 'Amend',
+      cancelAmend: 'Cancel amend',
+      deleted: 'Deleted',
+      template: 'Template'
+    })
+  })
+
+  it('Should carry the Amend tag and Cancel amend control in Welsh', () => {
+    expect(sharedCy.journeyStrip.amend).toBe('Diwygio')
+    expect(sharedCy.journeyStrip.cancelAmend).toBe('Canslo diwygio')
+    expect(Object.keys(sharedCy.journeyStrip)).toEqual(
+      Object.keys(sharedEn.journeyStrip)
+    )
+  })
+})
+
 describe('phase-banner copy', () => {
   it('Should carry the Design release 1 banner wording', () => {
     expect(sharedEn.layout.phaseBanner).toEqual({
@@ -85,10 +106,10 @@ describe('error-page copy', () => {
 describe('save-actions copy', () => {
   it('Should carry the Design release 1 control labels', () => {
     expect(sharedEn.saveActions).toEqual({
+      saveAndReturn: 'Save and return',
       saveAndContinue: 'Save and continue',
       saveAndReturnToHub: 'Save and return to overview',
       cancelAndReturnToHub: 'Cancel and return to overview',
-      saveAndReturn: 'Save and return',
       cancel: 'Cancel'
     })
   })

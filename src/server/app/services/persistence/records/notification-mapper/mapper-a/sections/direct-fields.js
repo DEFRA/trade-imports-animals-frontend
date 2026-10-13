@@ -1,3 +1,4 @@
+import { parentCountryCode } from '../../../../../countries/index.js'
 import { obligationSet } from '../../../../../../model/obligations/manifest.js'
 import { isoDateFromDateParts } from '../../../../../../lib/validate/index.js'
 import { compact, orUndefined } from '../../shared/compact.js'
@@ -38,7 +39,9 @@ export const directFieldsFromFulfilment = (reader, referenceNumber) => {
     consignment: toParty(reader.scalar(contactAddress)),
     cphNumber: reader.scalar(cph),
     purposeInInternalMarket: reader.scalar(purposeInInternalMarket),
-    destinationCountry: reader.scalar(destinationCountry),
+    // GBN-AG names a country by its ISO 3166-1 alpha-2 code, so a territory
+    // the trader chose travels as its country.
+    destinationCountry: parentCountryCode(reader.scalar(destinationCountry)),
     portOfExit: reader.scalar(portOfExit),
     exitDate: isoDateFromDateParts(reader.scalar(exitDate))
   })

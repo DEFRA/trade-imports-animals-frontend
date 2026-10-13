@@ -191,3 +191,42 @@ describe('#pageValidation — no toAnswers commits values unchanged', () => {
     expect(answers).toEqual(values)
   })
 })
+
+describe('#pageValidation — allowMissing on submit', () => {
+  const validation = pageValidation({
+    fields: () =>
+      compose(
+        requiredText('name', NAME_REQUIRED_SUBMIT),
+        maxText('note', 3, NOTE_MAX_MESSAGE)
+      ),
+    fromPayload: (payload) => ({
+      name: payload.name ?? '',
+      note: payload.note ?? ''
+    }),
+    fromAnswers: (answers) => ({
+      name: answers.name ?? '',
+      note: answers.note ?? ''
+    })
+  })
+
+  it('Should drop the required error but keep the format error', async () => {
+    const { errors } = await validation.onSubmit(
+      { note: 'too long' },
+      { allowMissing: true }
+    )
+
+    expect(errors).toEqual({ note: NOTE_MAX_MESSAGE })
+  })
+
+  it('Should report nothing when only a required answer is missing', async () => {
+    const { errors } = await validation.onSubmit({}, { allowMissing: true })
+
+    expect(hasErrors(errors)).toBe(false)
+  })
+
+  it('Should still report the required error without the option', async () => {
+    const { errors } = await validation.onSubmit({})
+
+    expect(errors).toEqual({ name: NAME_REQUIRED_SUBMIT })
+  })
+})

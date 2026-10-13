@@ -1,5 +1,5 @@
 import { dashboardPath } from '../../../../../shared/paths.js'
-import { SET_ID } from '../../../set.js'
+import { SET_BASE, SET_ID } from '../../../set.js'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildDispatch } from '../../../../../flow/dispatch.js'
@@ -14,7 +14,11 @@ import {
 import { configureSession } from '../../../../../engine/persistence/session.js'
 import { records as recordsStub } from '../../../../../services/persistence/records/stub/index.js'
 import { session as sessionStub } from '../../../../../services/persistence/session/stub.js'
-import { stubH, journeyRequest } from '../../../../../engine/test-support.js'
+import {
+  driveHandler,
+  journeyRequest,
+  stubH
+} from '../../../../../engine/test-support.js'
 import { dispatchPages } from './index.js'
 import { base, journeyStrip } from '../../../../../shared/kit.js'
 import { withTemplateMode } from '../../../../../shared/template-mode.js'
@@ -69,13 +73,43 @@ describe('journey reference strip', () => {
     })
   })
 
-  it('Should map an amend journey to a yellow Amending tag', () => {
+  it('Should map an amend journey to a yellow Amend tag with Cancel amend', () => {
     expect(
       journeyStrip({ journeyId: JOURNEY_REFERENCE, status: AMEND })
     ).toEqual({
       reference: JOURNEY_REFERENCE,
-      status: { text: 'Amending', classes: 'govuk-tag--yellow' }
+      status: { text: 'Amend', classes: 'govuk-tag--yellow' },
+      cancelAmend: {
+        href: `${SET_BASE}/notifications/${JOURNEY_REFERENCE}/cancel-amend`,
+        text: 'Cancel amend'
+      }
     })
+  })
+
+  it('Should offer no Cancel amend on a draft, submitted or deleted journey', () => {
+    for (const status of [DRAFT, SUBMITTED, DELETED]) {
+      expect(
+        journeyStrip({ journeyId: JOURNEY_REFERENCE, status }).cancelAmend
+      ).toBeUndefined()
+    }
+  })
+
+  it('Should withhold Cancel amend when told to', () => {
+    expect(
+      journeyStrip(
+        { journeyId: JOURNEY_REFERENCE, status: AMEND },
+        { offerCancelAmend: false }
+      ).cancelAmend
+    ).toBeUndefined()
+  })
+
+  it('Should offer Cancel amend on the hub while amending', async () => {
+    const { view } = await driveHandler(getHandlerOf(hubRoutes), {
+      amend: true
+    })
+    expect(view.context.journeyStrip.cancelAmend.href).toMatch(
+      /\/cancel-amend$/
+    )
   })
 
   it('Should map a deleted journey to a grey Deleted tag', () => {

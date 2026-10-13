@@ -62,16 +62,17 @@ export const copy = {
     }
   },
   saveActions: {
+    saveAndReturn: 'Save and return',
     saveAndContinue: 'Save and continue',
     saveAndReturnToHub: 'Save and return to overview',
     cancelAndReturnToHub: 'Cancel and return to overview',
-    saveAndReturn: 'Save and return',
     cancel: 'Cancel'
   },
   journeyStrip: {
     draft: 'Draft',
     submitted: 'Submitted',
-    amend: 'Amending',
+    amend: 'Amend',
+    cancelAmend: 'Cancel amend',
     deleted: 'Deleted',
     template: 'Template'
   },

@@ -49,7 +49,7 @@ export const sections = [
   },
   {
     id: 'addresses',
-    pages: [addressesPage, cphNumberPage]
+    pages: [cphNumberPage, addressesPage]
   },
   {
     id: 'transport',

@@ -12,7 +12,7 @@ import { copyFor } from '../../../../../../shared/copy.js'
 import { copy as en } from './copy/copy.en.js'
 import { copy as cy } from './copy/copy.cy.js'
 
-const CANCEL_AMEND_SLUG = 'cancel-amend'
+const { CANCEL_AMEND_SLUG } = kit
 
 const view = `${TEMPLATES}/features/cancel-amend/template`
 const copy = copyFor({ en, cy })
@@ -30,7 +30,8 @@ const render = (h, journey, recoverableError = false) =>
     ...kit.base(copy.title, {
       backLink: cyaPath(journey.journeyId),
       journey,
-      recoverableError
+      recoverableError,
+      offerCancelAmend: false
     }),
     heading: copy.title,
     copy,

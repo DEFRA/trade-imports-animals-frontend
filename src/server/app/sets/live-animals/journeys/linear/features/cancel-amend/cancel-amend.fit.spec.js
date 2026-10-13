@@ -11,7 +11,23 @@ import {
   values
 } from '../../../../../../../../../fit/live-animals-journey.js'
 import { copy as checkAnswersCopy } from '../check-answers/copy/copy.en.js'
+import { copy as sharedCopy } from '../../../../../../shared/copy.en.js'
 import { copy } from './copy/copy.en.js'
+
+const TAG = '.govuk-tag'
+const strip = (page) => page.locator('.app-journey-strip')
+const cancelAmendLink = (page) =>
+  strip(page).getByRole('link', {
+    name: sharedCopy.journeyStrip.cancelAmend,
+    exact: true
+  })
+
+const expectAmendStrip = async (page) => {
+  await expect(strip(page).locator(TAG)).toHaveText(
+    sharedCopy.journeyStrip.amend
+  )
+  await expect(cancelAmendLink(page)).toBeVisible()
+}
 
 const submitNotification = async (page) => {
   await startNotification(page)
@@ -30,18 +46,18 @@ const amendAndOpenCancel = async (page, reference) => {
   await page
     .getByRole('button', { name: `Amend notification ${reference}` })
     .click()
+  await expectAmendStrip(page)
   await page
     .getByRole('link', { name: 'Where is this consignment coming from?' })
     .click()
+  await expectAmendStrip(page)
   await chooseCountryOfOrigin(page, 'France')
   await page
     .getByLabel('Your internal reference for this consignment (optional)')
     .fill('DiscardMe99')
   await page.getByRole('button', { name: 'Save and continue' }).click()
   await openReviewFromHub(page)
-  await page
-    .getByRole('link', { name: checkAnswersCopy.cancelAmend.link })
-    .click()
+  await cancelAmendLink(page).click()
 }
 
 const expectAxeClean = async (page, name) => {
@@ -85,11 +101,24 @@ test.describe('cancel-amend feature', () => {
     await expect(
       page.getByRole('heading', { name: checkAnswersCopy.title })
     ).toBeVisible()
-    await expect(page.getByText('Amending', { exact: true })).toBeVisible()
+    await expectAmendStrip(page)
     await expect(page.getByText('DiscardMe99', { exact: true })).toBeVisible()
-    await expect(
-      page.getByRole('link', { name: checkAnswersCopy.cancelAmend.link })
-    ).toBeVisible()
+  })
+
+  test('Cancel amend on a question page opens the confirmation page', async ({
+    page
+  }) => {
+    await page.goto(`${BASE}/notifications/${journeyIdFromPage(page)}/origin`)
+    await expectAmendStrip(page)
+
+    await cancelAmendLink(page).click()
+
+    await expect(page).toHaveURL(/\/cancel-amend$/)
+    await expect(page.getByRole('heading', { name: copy.title })).toBeVisible()
+    await expect(strip(page).locator(TAG)).toHaveText(
+      sharedCopy.journeyStrip.amend
+    )
+    await expect(cancelAmendLink(page)).toHaveCount(0)
   })
 
   test('confirmation restores the submitted snapshot and shows its banner', async ({
@@ -121,5 +150,78 @@ test.describe('cancel-amend feature', () => {
     await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
 
     await expectAxeClean(page, 'Read-only submitted check answers')
+  })
+})
+
+test.describe('amend review', () => {
+  test('Continue on an incomplete amendment shows There is a problem, naming the unfinished card', async ({
+    page
+  }) => {
+    await signIn(page)
+    const reference = await submitNotification(page)
+    await page.goto(BASE)
+    await page
+      .getByRole('button', { name: `Amend notification ${reference}` })
+      .click()
+    await page.goto(`${BASE}/notifications/${reference}/port-of-entry`)
+    await page.getByLabel('Arrival date at port of entry').fill('')
+    await page
+      .getByRole('button', {
+        name: sharedCopy.saveActions.saveAndReturnToHub,
+        exact: true
+      })
+      .click()
+    await openReviewFromHub(page)
+    await expect(
+      page.getByRole('heading', { name: sharedCopy.errorSummary.title })
+    ).toHaveCount(0)
+
+    await page
+      .getByRole('button', { name: checkAnswersCopy.submit.button })
+      .click()
+
+    await expect(page).toHaveURL(/\/notification-view\?refused=1$/)
+    await expect(
+      page.getByRole('heading', { name: sharedCopy.errorSummary.title })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', {
+        name: checkAnswersCopy.errors.cards.arrivalDetails
+      })
+    ).toBeVisible()
+    await expectAmendStrip(page)
+  })
+})
+
+test.describe('cancel-amend feature without JavaScript', () => {
+  test('the status bar Cancel amend reaches the confirmation and Yes restores Submitted', async ({
+    page,
+    browser
+  }) => {
+    await signIn(page)
+    const reference = await submitNotification(page)
+    await page.goto(BASE)
+    await page
+      .getByRole('button', { name: `Amend notification ${reference}` })
+      .click()
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      storageState: await page.context().storageState()
+    })
+    try {
+      const noJs = await context.newPage()
+
+      await noJs.goto(`${BASE}/notifications/${reference}/origin`)
+      await cancelAmendLink(noJs).click()
+      await expect(noJs).toHaveURL(/\/cancel-amend$/)
+      await noJs.getByRole('button', { name: copy.confirmButton }).click()
+
+      await expect(noJs).toHaveURL(/\/notification-view\?cancelled=1$/)
+      await expect(strip(noJs).locator(TAG)).toHaveText(
+        sharedCopy.journeyStrip.submitted
+      )
+    } finally {
+      await context.close()
+    }
   })
 })

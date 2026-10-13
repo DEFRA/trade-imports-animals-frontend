@@ -16,6 +16,7 @@ import {
   withSetContext
 } from '../../../server/app/shared/set-context.js'
 import { countSessionResolution } from '../../../server/common/helpers/call-counts/call-counts.js'
+import { pageMaturityContext } from '../../../server/app/page-maturity/page-maturity.js'
 
 const logger = createLogger()
 const assetPath = config.get('assetPath')
@@ -112,7 +113,8 @@ async function context(request) {
     getAssetPath(asset) {
       const webpackAssetPath = webpackManifest?.[asset]
       return `${assetPath}/${webpackAssetPath ?? asset}`
-    }
+    },
+    ...pageMaturityContext(request)
   }
 }
 
