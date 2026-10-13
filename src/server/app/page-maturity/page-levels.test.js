@@ -4,6 +4,7 @@ import { config } from '../../../config/config.js'
 import { createServer } from '../../server.js'
 import { LEVELS, TAG_CLASSES } from './levels.js'
 import { PAGE_LEVELS, SECTION_LEVELS } from './page-levels.js'
+import { isInSection } from './page-maturity.js'
 
 const originalStubMode = config.get('stubMode')
 let server
@@ -38,11 +39,14 @@ describe('page maturity page levels', () => {
     }
   })
 
-  it('Should list only sections the server really registers', () => {
-    const registered = registeredGetPaths()
+  it('Should list only sections that hold at least one registered GET route', () => {
+    const registered = [...registeredGetPaths()]
 
     for (const { section } of SECTION_LEVELS) {
-      expect(registered.has(section), `${section} is not a route`).toBe(true)
+      expect(
+        registered.some((routePath) => isInSection(routePath, section)),
+        `${section} holds no route`
+      ).toBe(true)
     }
   })
 

@@ -10,14 +10,18 @@ const ENABLED_KEY = 'pageMaturityBanner.enabled'
 const originalEnabled = config.get(ENABLED_KEY)
 
 describe('pageLevelFor', () => {
+  it('Should make the notification list Exploring', () => {
+    expect(pageLevelFor('/live-animals')).toBe(LEVELS.exploring)
+  })
+
   it.each([
-    ['/live-animals', LEVELS.exploring],
-    [`${NOTIFICATION}/origin`, LEVELS.exploring],
-    [`${NOTIFICATION}/transit-countries`, LEVELS.detailing],
-    [`${NOTIFICATION}/declaration`, LEVELS.agreed],
-    [`${NOTIFICATION}/confirmation`, LEVELS.readyForLive]
-  ])('Should return the level of the listed path %s', (routePath, level) => {
-    expect(pageLevelFor(routePath)).toBe(level)
+    NOTIFICATION,
+    `${NOTIFICATION}/origin`,
+    `${NOTIFICATION}/notification-view`,
+    `${NOTIFICATION}/declaration`,
+    `${NOTIFICATION}/confirmation`
+  ])('Should make the journey page %s Detailing', (routePath) => {
+    expect(pageLevelFor(routePath)).toBe(LEVELS.detailing)
   })
 
   it('Should return undefined for an unlisted path', () => {
@@ -25,7 +29,7 @@ describe('pageLevelFor', () => {
   })
 
   it('Should return undefined for a path that only shares a prefix with a listed path', () => {
-    expect(pageLevelFor(`${NOTIFICATION}/origin-x`)).toBeUndefined()
+    expect(pageLevelFor('/live-animals/notifications-x')).toBeUndefined()
     expect(pageLevelFor('/live-animals-extra')).toBeUndefined()
   })
 
@@ -48,6 +52,24 @@ describe('pageLevelFor', () => {
       expect(
         pageLevelFor('/example/sectionsomething', sections)
       ).toBeUndefined()
+    })
+
+    it.each(['/', '/auth/sign-out', '/example/{id}/child'])(
+      'Should treat %s as in the section / that covers every route',
+      (path) => {
+        expect(
+          pageLevelFor(path, [{ section: '/', level: LEVELS.detailing }])
+        ).toBe(LEVELS.detailing)
+      }
+    )
+
+    it('Should use the first section that holds the route', () => {
+      expect(
+        pageLevelFor('/example/section/new', [
+          ...sections,
+          { section: '/', level: LEVELS.detailing }
+        ])
+      ).toBe(LEVELS.exploring)
     })
   })
 })
